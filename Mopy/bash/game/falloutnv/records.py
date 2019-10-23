@@ -46,7 +46,6 @@ class MreHeader(MreHeaderBase):
     """TES4 Record.  File header."""
     classType = 'TES4'
 
-    #--Data elements
     melSet = MelSet(
         MelStruct('HEDR', 'f2I', ('version', 1.34), 'numRecords',
                   ('nextObject', 0x800)),
@@ -90,7 +89,7 @@ class MreAchr(MelRecord):
         MelStruct('XCNT','i','count'),
         MelStruct('XRDS','f','radius',),
         MelStruct('XHLP','f','health',),
-        MelStructs('XDCR','II','linkedDecals',(FID,'reference'),'unknown'), # ??
+        MelStructs('XDCR','II','linkedDecals',(FID,'reference'),'unknown'),
         MelFid('XLKR','linkedReference'),
         MelOptStruct('XCLP','8B','linkStartColorRed','linkStartColorGreen','linkStartColorBlue',('linkColorUnused1',null1),
                      'linkEndColorRed','linkEndColorGreen','linkEndColorBlue',('linkColorUnused2',null1)),
@@ -139,7 +138,7 @@ class MreAcre(MelRecord):
         MelStruct('XCNT','i','count'),
         MelStruct('XRDS','f','radius',),
         MelStruct('XHLP','f','health',),
-        MelStructs('XDCR','II','linkedDecals',(FID,'reference'),'unknown'), # ??
+        MelStructs('XDCR','II','linkedDecals',(FID,'reference'),'unknown'),
         MelFid('XLKR','linkedReference'),
         MelOptStruct('XCLP','8B','linkStartColorRed','linkStartColorGreen','linkStartColorBlue',('linkColorUnused1',null1),
                      'linkEndColorRed','linkEndColorGreen','linkEndColorBlue',('linkColorUnused2',null1)),
@@ -305,9 +304,6 @@ class MreArma(MelRecord):
         MelModel('femaleWorld',4),
         MelString('ICO2','femaleIconPath'),
         MelString('MIC2','femaleSmallIconPath'),
-        #-1:None,0:Big Guns,1:Energy Weapons,2:Small Guns,3:Melee Weapons,
-        #4:Unarmed Weapon,5:Thrown Weapons,6:Mine,7:Body Wear,8:Head Wear,
-        #9:Hand Wear,10:Chems,11:Stimpack,12:Food,13:Alcohol
         MelStruct('ETYP','i',('etype',-1)),
         MelStruct('DATA','IIf','value','health','weight'),
         MelArmaDnam('DNAM','=hHf4s','ar',(_dnamFlags,'dnamFlags',0L),('dt',0.0),('armaDnam1',null4),),
@@ -366,9 +362,6 @@ class MreArmo(MelRecord):
         MelDestructible(),
         MelFid('REPL','repairList'),
         MelFid('BIPL','bipedModelList'),
-        #-1:None,0:Big Guns,1:Energy Weapons,2:Small Guns,3:Melee Weapons,
-        #4:Unarmed Weapon,5:Thrown Weapons,6:Mine,7:Body Wear,8:Head Wear,
-        #9:Hand Wear,10:Chems,11:Stimpack,12:Food,13:Alcohol
         MelStruct('ETYP','i',('etype',-1)),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
@@ -384,7 +377,7 @@ class MreArmo(MelRecord):
 class MreAspc(MelRecord):
     """Acoustic space record."""
     classType = 'ASPC'
-    isKeyedByEid = True # NULL fids are acceptible
+    isKeyedByEid = True # NULL fids are acceptable
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -430,7 +423,7 @@ class MreCdck(MelRecord):
         MelString('EDID','eid'),
         MelString('FULL','full'),
         MelFids('CARD','cards'),
-        MelStruct('DATA','I','count'),
+        MelStruct('DATA','I','count'), # 'Count (broken)' in xEdit - unused?
         )
     __slots__ = melSet.getSlotsUsed()
 
@@ -624,7 +617,6 @@ class MreCsty(MelRecord):
         ( 7,'meleeAlertOK'),
         ))
 
-    #--Mel Set
     melSet = MelSet(
         MelString('EDID','eid'),
         MelOptStruct('CSTD', '2B2s8f2B2s3fB3s2f5B3s2fH2s2B2sf','dodgeChance',
@@ -756,7 +748,6 @@ class MreEnch(MelRecord,MreHasEffects):
         MelFull0(), #--At least one mod has this. Odd.
         MelStruct('ENIT','3IB3s','itemType','chargeAmount','enchantCost',
                   (_flags,'flags',0L),('unused1',null3)),
-        #--itemType = 0: Scroll, 1: Staff, 2: Weapon, 3: Apparel
         MelEffects(),
         )
     __slots__ = melSet.getSlotsUsed()
@@ -775,10 +766,8 @@ class MreFact(MelRecord):
                 MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
             elif size_ == 2:
-                #--Else 2 byte record
                 unpacked = ins.unpack('2B', size_, readId)
             elif size_ == 1:
-                #--Else 1 byte record
                 unpacked = ins.unpack('B', size_, readId)
             else:
                 raise "Unexpected size encountered for FACT:DATA subrecord: %s" % size_
@@ -990,7 +979,7 @@ class MreInfo(MelRecord):
         def dumpData(self,record,out):
             if not record.schd_p:
                 MelStruct.dumpData(self,record,out)
-    #--MelSet
+
     melSet = MelSet(
         MelInfoData('DATA','HH','dialType','nextSpeaker',(_flags,'flags'),(_flags2,'flagsInfo'),),
         MelFid('QSTI','quests'),
@@ -1010,7 +999,6 @@ class MreInfo(MelRecord):
         MelFids('TCLT','choices'),
         MelFids('TCLF','linksFrom'),
         MelFids('TCFU','tcfu_p'),
-        # MelBase('SCHD','schd_p'), #--Old format script header?
         MelGroup('scriptBegin',
             MelInfoSchr('SCHR','4s4I',('unused2',null4),'numRefs','compiledSize','lastIndex','scriptType'),
             MelBase('SCDA','compiled_p'),
@@ -1175,7 +1163,6 @@ class MreMset(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
-        #-1:'No Set',0:'Battle Set',1:'Location Set',2:'Dungeon Set',3:'Incidental Set'
         MelStruct('NAM1','I','type'),
         MelString('NAM2','nam2'),
         MelString('NAM3','nam3'),
@@ -1509,7 +1496,6 @@ class MreRace(MelRecord):
                 for sub_type in ('MODL', 'MODB', 'MODT', 'MODS', 'MODD', 'ICON', 'MICO'):
                     self.melSet.loaders[sub_type] = element
 
-    #--Mel Set
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
@@ -1522,14 +1508,14 @@ class MreRace(MelRecord):
         MelFid('ONAM','Older'),
         MelFid('YNAM','Younger'),
         MelBase('NAM2','_nam2',''),
-        MelRaceVoices('VTCK','2I',(FID,'maleVoice'),(FID,'femaleVoice')), #--0 same as race fid.
-        MelOptStruct('DNAM','2I',(FID,'defaultHairMale',0L),(FID,'defaultHairFemale',0L)), #--0=None
-        MelStruct('CNAM','2B','defaultHairColorMale','defaultHairColorFemale'), #--Int corresponding to GMST sHairColorNN
+        MelRaceVoices('VTCK','2I',(FID,'maleVoice'),(FID,'femaleVoice')), # 0: same as race fid.
+        MelOptStruct('DNAM','2I',(FID,'defaultHairMale',0L),(FID,'defaultHairFemale',0L)),
+        # Int corresponding to GMST sHairColorNN
+        MelStruct('CNAM','2B','defaultHairColorMale','defaultHairColorFemale'),
         MelOptStruct('PNAM','f','mainClamp'),
         MelOptStruct('UNAM','f','faceClamp'),
         MelStruct('ATTR','2B','maleBaseAttribute','femaleBaseAttribute'),
-        #--Begin Indexed entries
-        MelBase('NAM0','_nam0',''), ####Face Data Marker, wbEmpty
+        MelBase('NAM0','_nam0',''),
         MelBase('MNAM','_mnam',''),
         MelRaceHeadModel('maleHead',0),
         MelRaceIcon('maleEars',1),
@@ -1548,26 +1534,23 @@ class MreRace(MelRecord):
         MelRaceHeadModel('femaleTongue',5),
         MelRaceHeadModel('femaleLeftEye',6),
         MelRaceHeadModel('femaleRightEye',7),
-        MelBase('NAM1','_nam1',''), ####Body Data Marker, wbEmpty
-        MelBase('MNAM','_mnam',''), ####Male Body Data Marker, wbEmpty
+        MelBase('NAM1','_nam1',''),
+        MelBase('MNAM','_mnam',''),
         MelRaceBodyModel('maleUpperBody',0),
         MelRaceBodyModel('maleLeftHand',1),
         MelRaceBodyModel('maleRightHand',2),
         MelRaceBodyModel('maleUpperBodyTexture',3),
-        MelBase('FNAM','_fnam',''), ####Female Body Data Marker, wbEmpty
+        MelBase('FNAM','_fnam',''),
         MelRaceBodyModel('femaleUpperBody',0),
         MelRaceBodyModel('femaleLeftHand',1),
         MelRaceBodyModel('femaleRightHand',2),
         MelRaceBodyModel('femaleUpperBodyTexture',3),
-        #--Normal Entries
         MelFidList('HNAM','hairs'),
         MelFidList('ENAM','eyes'),
-        #--FaceGen Entries
         MelBase('MNAM','_mnam',''),
         MelRaceFaceGen('maleFaceGen'),
         MelBase('FNAM','_fnam',''),
         MelRaceFaceGen('femaleFaceGen'),
-        #--Distributor for face and body entries.
         MelRaceDistributor(),
         )
     melSet.elements[-1].setMelSet(melSet)
@@ -1713,7 +1696,7 @@ class MreRefr(MelRecord):
         MelOptStruct('XMBO','3f','boundHalfExtentsX','boundHalfExtentsY','boundHalfExtentsZ'),
         MelOptStruct('XTEL','I6fI',(FID,'destinationFid'),'destinationPosX','destinationPosY',
             'destinationPosZ','destinationRotX','destinationRotY','destinationRotZ',(_destinationFlags,'destinationFlags')),
-        MelRefrXmrk('XMRK','',('hasXmrk',False),(_flags,'flags',0L),'full','markerType',('unused5',null1),(FID,'reputation')), ####Map Marker Start Marker, wbEmpty
+        MelRefrXmrk('XMRK','',('hasXmrk',False),(_flags,'flags',0L),'full','markerType',('unused5',null1),(FID,'reputation')),
         MelGroup('audioData',
             MelBase('MMRK','audioMarker'),
             MelBase('FULL','full_p'),
@@ -1753,7 +1736,7 @@ class MreRefr(MelRecord):
             ),
         MelStructs('XPWR','II','reflectedByWaters',(FID,'reference'),'type'),
         MelFids('XLTW','litWaters'),
-        MelStructs('XDCR','II','linkedDecals',(FID,'reference'),'unknown'), # ??
+        MelStructs('XDCR','II','linkedDecals',(FID,'reference'),'unknown'),
         MelFid('XLKR','linkedReference'),
         MelOptStruct('XCLP','8B','linkStartColorRed','linkStartColorGreen','linkStartColorBlue',('linkColorUnused1',null1),
                      'linkEndColorRed','linkEndColorGreen','linkEndColorBlue',('linkColorUnused2',null1)),
@@ -1765,8 +1748,8 @@ class MreRefr(MelRecord):
         MelOptStruct('XESP','IB3s',(FID,'parent'),(_parentFlags,'parentFlags'),('unused6',null3)),
         MelOptStruct('XEMI','I',(FID,'emittance')),
         MelFid('XMBR','multiboundReference'),
-        MelOptStruct('XACT','I',(_actFlags,'actFlags',0L)), ####Action Flag
-        MelBase('ONAM','onam_p'), ####Open by Default, wbEmpty
+        MelOptStruct('XACT','I',(_actFlags,'actFlags',0L)),
+        MelBase('ONAM','onam_p'),
         MelBase('XIBS','ignoredBySandbox'),
         MelOptStruct('XNDP','2I',(FID,'navMesh'),'unknown'),
         MelOptStruct('XPOD','II',(FID,'portalDataRoom0'),(FID,'portalDataRoom1')),
@@ -1782,15 +1765,9 @@ class MreRefr(MelRecord):
         MelOptStruct('XOCP','9f','occlusionPlaneWidth','occlusionPlaneHeight','occlusionPlanePosX','occlusionPlanePosY','occlusionPlanePosZ',
                      'occlusionPlaneRot1','occlusionPlaneRot2','occlusionPlaneRot3','occlusionPlaneRot4'),
         MelOptStruct('XORD','4I',(FID,'linkedOcclusionPlane0'),(FID,'linkedOcclusionPlane1'),(FID,'linkedOcclusionPlane2'),(FID,'linkedOcclusionPlane3')),
-        MelOptStruct('XLOD','3f',('lod1',None),('lod2',None),('lod3',None)), ####Distant LOD Data, unknown
+        MelOptStruct('XLOD','3f',('lod1',None),('lod2',None),('lod3',None)),
         MelOptStruct('XSCL','f',('scale',1.0)),
         MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
-
-        ##Oblivion subrecords
-        #MelOptStruct('XHLT','i',('health',None)),
-        #MelXpci('XPCI'), ####fid, unknown
-        #MelFid('XRTM','xrtm'), ####unknown
-        #MelOptStruct('XSOL','B',('soul',None)), ####Was entirely missing. Confirmed by creating a test mod...it isn't present in any of the official esps
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1881,20 +1858,6 @@ class MreSoun(MelRecord):
     """Sound record."""
     classType = 'SOUN'
 
-    # {0x0001} 'Random Frequency Shift',
-    # {0x0002} 'Play At Random',
-    # {0x0004} 'Environment Ignored',
-    # {0x0008} 'Random Location',
-    # {0x0010} 'Loop',
-    # {0x0020} 'Menu Sound',
-    # {0x0040} '2D',
-    # {0x0080} '360 LFE',
-    # {0x0100} 'Dialogue Sound',
-    # {0x0200} 'Envelope Fast',
-    # {0x0400} 'Envelope Slow',
-    # {0x0800} '2D Radius',
-    # {0x1000} 'Mute When Submerged',
-    # {0x2000} 'Start at Random Position'
     _flags = Flags(0L,Flags.getNames(
             'randomFrequencyShift',
             'playAtRandom',
@@ -1956,19 +1919,6 @@ class MreSoun(MelRecord):
 class MreStat(MelRecord):
     """Static model record."""
     classType = 'STAT'
-
-    # passthroughSound
-    # -1, 'NONE'
-    #  0, 'BushA',
-    #  1, 'BushB',
-    #  2, 'BushC',
-    #  3, 'BushD',
-    #  4, 'BushE',
-    #  5, 'BushF',
-    #  6, 'BushG',
-    #  7, 'BushH',
-    #  8, 'BushI',
-    #  9, 'BushJ'
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -2056,10 +2006,8 @@ class MreWeap(MelRecord):
             elif size_ == 136:
                 unpacked = ins.unpack('IffBBBBfffffIBBBBffIIfffffffffffiIffifff', size_, readId)
             elif size_ == 124:
-                #--Else 124 byte record (skips sightUsage, semiAutomaticFireDelayMin and semiAutomaticFireDelayMax...
                 unpacked = ins.unpack('IffBBBBfffffIBBBBffIIfffffffffffiIffi', size_, readId)
             elif size_ == 120:
-                #--Else 120 byte record (skips resistType, sightUsage, semiAutomaticFireDelayMin and semiAutomaticFireDelayMax...
                 unpacked = ins.unpack('IffBBBBfffffIBBBBffIIfffffffffffiIff', size_, readId)
             else:
                 raise "Unexpected size encountered for WEAP:DNAM subrecord: %s" % size_
@@ -2102,9 +2050,6 @@ class MreWeap(MelRecord):
         MelFid('NAM0','ammo'),
         MelDestructible(),
         MelFid('REPL','repairList'),
-        #-1:None,0:Big Guns,1:Energy Weapons,2:Small Guns,3:Melee Weapons,
-        #4:Unarmed Weapon,5:Thrown Weapons,6:Mine,7:Body Wear,8:Head Wear,
-        #9:Hand Wear,10:Chems,11:Stimpack,12:Food,13:Alcohol
         MelStruct('ETYP','i',('etype',-1)),
         MelFid('BIPL','bipedModelList'),
         MelFid('YNAM','pickupSound'),
@@ -2200,12 +2145,8 @@ class MelPnamNam0Handler(MelStructA):
             return
         elif (sub_type == 'PNAM' and size_ == 64) or (sub_type == 'NAM0' and size_ == 160):
             oldFormat = '3Bs3Bs3Bs3Bs'
-            ## Following code works completely, but it's depend on the implementation of MelStructA.loadData and MelStruct.loadData.
-            # newFormat = self.format
-            # self.format = oldFormat # temporarily set to older format
-            # MelStructA.loadData(self,record,ins,type,size,readId)
-            # self.format = newFormat
-            ## Following code is redundant but independent and robust.
+            # Duplicated from MelStructA.loadData - don't worry, this entire
+            # class will disappear soon ;)
             selfDefault = self.getDefault
             recordAppend = record.__getattribute__(self.attr).append
             selfAttrs = self.attrs

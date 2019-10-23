@@ -218,7 +218,6 @@ class ModReader(object):
     """
 
     def __init__(self,inName,ins):
-        """Initialize."""
         self.inName = inName
         self.ins = ins
         #--Get ins size
@@ -366,7 +365,6 @@ class ModReader(object):
 class ModWriter(object):
     """Wrapper around a TES4 output stream.  Adds utility functions."""
     def __init__(self,out):
-        """Initialize."""
         self.out = out
 
     # with statement
@@ -495,7 +493,6 @@ class MelBase(object):
     Also used as parent class for other element types."""
 
     def __init__(self, subType, attr, default=None):
-        """Initialize."""
         self.subType, self.attr, self.default = subType, attr, default
         self._debug = False
 
@@ -588,16 +585,13 @@ class MelFid(MelBase):
     """Represents a mod record fid element."""
 
     def hasFids(self,formElements):
-        """Include self if has fids."""
         formElements.add(self)
 
     def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute."""
         record.__setattr__(self.attr,ins.unpackRef())
         if self._debug: print u'  %08X' % (record.__getattribute__(self.attr),)
 
     def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
         try:
             value = record.__getattribute__(self.attr)
         except AttributeError:
@@ -605,8 +599,6 @@ class MelFid(MelBase):
         if value is not None: out.packRef(self.subType,value)
 
     def mapFids(self,record,function,save=False):
-        """Applies function to fids. If save is true, then fid is set
-        to result of function."""
         attr = self.attr
         try:
             fid = record.__getattribute__(attr)
@@ -620,29 +612,23 @@ class MelFids(MelBase):
     """Represents a mod record fid elements."""
 
     def hasFids(self,formElements):
-        """Include self if has fids."""
         formElements.add(self)
 
     def setDefault(self,record):
-        """Sets default value for record instance."""
         record.__setattr__(self.attr,[])
 
     def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute."""
         fid = ins.unpackRef()
         record.__getattribute__(self.attr).append(fid)
         if self._debug: print u' ',hex(fid)
 
     def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
         type = self.subType
         outPackRef = out.packRef
         for fid in record.__getattribute__(self.attr):
             outPackRef(type,fid)
 
     def mapFids(self,record,function,save=False):
-        """Applies function to fids. If save is true, then fid is set
-        to result of function."""
         fids = record.__getattribute__(self.attr)
         for index,fid in enumerate(fids):
             result = function(fid)
@@ -654,7 +640,6 @@ class MelNull(MelBase):
     discards them and is otherwise inactive."""
 
     def __init__(self, subType):
-        """Initialize."""
         self.subType = subType
         self._debug = False
 
@@ -662,16 +647,13 @@ class MelNull(MelBase):
         return ()
 
     def setDefault(self,record):
-        """Sets default value for record instance."""
         pass
 
     def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute."""
         junk = ins.read(size_, readId)
         if self._debug: print u' ',record.fid,unicode(junk)
 
     def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
         pass
 
 #------------------------------------------------------------------------------
@@ -692,7 +674,6 @@ class MelCountedFids(MelFids):
         self.counterFormat = counterFormat
 
     def getLoaders(self, loaders):
-        """Register loaders for both the counted and counter subrecords"""
         # Counted
         MelFids.getLoaders(self, loaders)
         # Counter
@@ -711,7 +692,6 @@ class MelFidList(MelFids):
     as a single subrecord rather than as separate subrecords."""
 
     def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute."""
         if not size_: return
         fids = ins.unpack(`size_ / 4` + 'I', size_, readId)
         record.__setattr__(self.attr,list(fids))
@@ -720,7 +700,6 @@ class MelFidList(MelFids):
                 print u'  %08X' % fid
 
     def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
         fids = record.__getattribute__(self.attr)
         if not fids: return
         out.packSub(self.subType,`len(fids)`+'I',*fids)
@@ -743,7 +722,6 @@ class MelCountedFidList(MelFidList):
         self.counterFormat = counterFormat
 
     def getLoaders(self, loaders):
-        """Register loaders for both the counted and counter subrecords"""
         # Counted
         MelFidList.getLoaders(self, loaders)
         # Counter
@@ -780,48 +758,40 @@ class MelGroup(MelBase):
     """Represents a group record."""
 
     def __init__(self,attr,*elements):
-        """Initialize."""
         self.attr,self.elements,self.formElements,self.loaders = attr,elements,set(),{}
         self._possible_sigs = {s for element in self.elements for s
                                in element.signatures}
 
     def debug(self,on=True):
-        """Sets debug flag on self."""
         for element in self.elements: element.debug(on)
         return self
 
     def getDefaulters(self,defaulters,base):
-        """Registers self as a getDefault(attr) provider."""
         defaulters[base+self.attr] = self
         for element in self.elements:
             element.getDefaulters(defaulters,base+self.attr+'.')
 
     def getLoaders(self,loaders):
-        """Adds self as loader for subelements."""
         for element in self.elements:
             element.getLoaders(self.loaders)
         for type in self.loaders:
             loaders[type] = self
 
     def hasFids(self,formElements):
-        """Include self if has fids."""
         for element in self.elements:
             element.hasFids(self.formElements)
         if self.formElements: formElements.add(self)
 
     def setDefault(self,record):
-        """Sets default value for record instance."""
         record.__setattr__(self.attr,None)
 
     def getDefault(self):
-        """Returns a default copy of object."""
         target = MelObject()
         for element in self.elements:
             element.setDefault(target)
         return target
 
     def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute."""
         target = record.__getattribute__(self.attr)
         if target is None:
             target = self.getDefault()
@@ -831,15 +801,12 @@ class MelGroup(MelBase):
         self.loaders[sub_type].loadData(target, ins, sub_type, size_, readId)
 
     def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
         target = record.__getattribute__(self.attr)
         if not target: return
         for element in self.elements:
             element.dumpData(target,out)
 
     def mapFids(self,record,function,save=False):
-        """Applies function to fids. If save is true, then fid is set
-        to result of function."""
         target = record.__getattribute__(self.attr)
         if not target: return
         for element in self.formElements:
@@ -859,11 +826,9 @@ class MelGroups(MelGroup):
         self._init_sigs = self.elements[0].signatures
 
     def setDefault(self,record):
-        """Sets default value for record instance."""
         record.__setattr__(self.attr,[])
 
     def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute."""
         if sub_type in self._init_sigs:
             # We've hit one of the initial signatures, make a new object
             target = self.getDefault()
@@ -876,15 +841,12 @@ class MelGroups(MelGroup):
         self.loaders[sub_type].loadData(target, ins, sub_type, size_, readId)
 
     def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
         elements = self.elements
         for target in record.__getattribute__(self.attr):
             for element in elements:
                 element.dumpData(target,out)
 
     def mapFids(self,record,function,save=False):
-        """Applies function to fids. If save is true, then fid is set
-        to result of function."""
         formElements = self.formElements
         for target in record.__getattribute__(self.attr):
             for element in formElements:
@@ -1224,7 +1186,6 @@ class MelReferences(MelGroups):
 class MelXpci(MelNull):
     """Handler for obsolete MelXpci record. Bascially just discards it."""
     def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute."""
         xpci = ins.unpackRef()
         #--Read ahead and get associated full as well.
         pos = ins.tell()
@@ -1241,18 +1202,15 @@ class MelString(MelBase):
     """Represents a mod record string element."""
 
     def __init__(self, subType, attr, default=None, maxSize=0):
-        """Initialize."""
         MelBase.__init__(self, subType, attr, default)
         self.maxSize = maxSize
 
     def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute."""
         value = ins.readString(size_, readId)
         record.__setattr__(self.attr,value)
         if self._debug: print u' ',record.__getattribute__(self.attr)
 
     def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
         string_val = record.__getattribute__(self.attr)
         if string_val is not None:
             out.write_string(self.subType, string_val, max_size=self.maxSize)
@@ -1266,7 +1224,6 @@ class MelUnicode(MelString):
         self.encoding = encoding # None == automatic detection
 
     def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute"""
         value = u'\n'.join(decode(x,self.encoding,avoidEncodings=('utf8','utf-8'))
                            for x in bolt.cstrip(ins.read(size_, readId)).split('\n'))
         record.__setattr__(self.attr,value)
@@ -1290,21 +1247,17 @@ class MelStrings(MelString):
     """Represents array of strings."""
 
     def setDefault(self,record):
-        """Sets default value for record instance."""
         record.__setattr__(self.attr,[])
 
     def getDefault(self):
-        """Returns a default copy of object."""
         return []
 
     def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute."""
         value = ins.readStrings(size_, readId)
         record.__setattr__(self.attr,value)
         if self._debug: print u' ',value
 
     def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
         strings = record.__getattribute__(self.attr)
         if strings:
             out.packSub0(self.subType,null1.join(encode(x,firstEncoding=bolt.pluginEncoding) for x in strings)+null1)
@@ -1314,7 +1267,6 @@ class MelStruct(MelBase):
     """Represents a structure record."""
 
     def __init__(self, subType, format, *elements, **kwdargs):
-        """Initialize."""
         dumpExtra = kwdargs.get('dumpExtra', None)
         self.subType, self.format = subType, format
         self.attrs,self.defaults,self.actions,self.formAttrs = MelBase.parseElements(*elements)
@@ -1331,18 +1283,15 @@ class MelStruct(MelBase):
         return self.attrs
 
     def hasFids(self,formElements):
-        """Include self if has fids."""
         if self.formAttrs: formElements.add(self)
 
     def setDefault(self,record):
-        """Sets default value for record instance."""
         setter = record.__setattr__
         for attr,value,action in zip(self.attrs, self.defaults, self.actions):
             if action: value = action(value)
             setter(attr,value)
 
     def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute."""
         readsize = self.formatLen if self.formatLen >= 0 else size_
         unpacked = ins.unpack(self.format,readsize,readId)
         setter = record.__setattr__
@@ -1358,7 +1307,6 @@ class MelStruct(MelBase):
                 print u' ',unpacked
 
     def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
         values = []
         valuesAppend = values.append
         getter = record.__getattribute__
@@ -1378,8 +1326,6 @@ class MelStruct(MelBase):
             raise
 
     def mapFids(self,record,function,save=False):
-        """Applies function to fids. If save is true, then fid is set
-        to result of function."""
         getter = record.__getattribute__
         setter = record.__setattr__
         for attr in self.formAttrs:
@@ -1391,7 +1337,6 @@ class MelStructs(MelStruct):
     """Represents array of structured records."""
 
     def __init__(self, subType, format, attr, *elements, **kwdargs):
-        """Initialize."""
         MelStruct.__init__(self, subType, format, *elements, **kwdargs)
         self.attr = attr
 
@@ -1399,15 +1344,12 @@ class MelStructs(MelStruct):
         return self.attr,
 
     def getDefaulters(self,defaulters,base):
-        """Registers self as a getDefault(attr) provider."""
         defaulters[base+self.attr] = self
 
     def setDefault(self,record):
-        """Sets default value for record instance."""
         record.__setattr__(self.attr,[])
 
     def getDefault(self):
-        """Returns a default copy of object."""
         target = MelObject()
         setter = target.__setattr__
         for attr_,value,action in zip(self.attrs, self.defaults, self.actions):
@@ -1416,21 +1358,17 @@ class MelStructs(MelStruct):
         return target
 
     def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute."""
         target = MelObject()
         record.__getattribute__(self.attr).append(target)
         target.__slots__ = self.attrs
         MelStruct.loadData(self, target, ins, sub_type, size_, readId)
 
     def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
         melDump = MelStruct.dumpData
         for target in record.__getattribute__(self.attr):
             melDump(self,target,out)
 
     def mapFids(self,record,function,save=False):
-        """Applies function to fids. If save is true, then fid is set
-        to result of function."""
         melMap = MelStruct.mapFids
         if not record.__getattribute__(self.attr): return
         for target in record.__getattribute__(self.attr):
@@ -1440,7 +1378,6 @@ class MelStructs(MelStruct):
 class MelStructA(MelStructs):
     """Represents a record with an array of fixed size repeating structured elements."""
     def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute."""
         if size_ == 0:
             setattr(record, self.attr, None)
             return
@@ -1466,8 +1403,6 @@ class MelStructA(MelStructs):
             out.packSub(self.subType,data)
 
     def mapFids(self,record,function,save=False):
-        """Applies function to fids. If save is true, then fid is set
-        to result of function."""
         if record.__getattribute__(self.attr) is not None:
             melMap = MelStruct.mapFids
             for target in record.__getattribute__(self.attr):
@@ -1497,23 +1432,18 @@ class MelTuple(MelBase):
     (E.g., the stats array for NPC_ which maps to the DATA subrecord.)"""
 
     def __init__(self, subType, format, attr, defaults):
-        """Initialize."""
         self.subType, self.format, self.attr, self.defaults = subType, format, attr, defaults
         self._debug = False
 
     def setDefault(self,record):
-        """Sets default value for record instance."""
         record.__setattr__(self.attr,self.defaults[:])
 
     def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute."""
         unpacked = ins.unpack(self.format, size_, readId)
         record.__setattr__(self.attr,list(unpacked))
         if self._debug: print record.__getattribute__(self.attr)
 
     def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        #print self.subType,self.format,self.attr,record.__getattribute__(self.attr)
         out.packSub(self.subType,self.format,*record.__getattribute__(self.attr))
 
 #------------------------------------------------------------------------------
@@ -1523,7 +1453,6 @@ class MelFull0(MelString):
     Which means when record has magic effects."""
 
     def __init__(self):
-        """Initialize."""
         MelString.__init__(self,'FULL','full')
 
 #------------------------------------------------------------------------------
@@ -1534,7 +1463,6 @@ class MelOptStruct(MelStruct):
     """Represents an optional structure, where if values are null, is skipped."""
 
     def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
         # TODO: Unfortunately, checking if the attribute is None is not
         # really effective.  Checking it to be 0,empty,etc isn't effective either.
         # It really just needs to check it against the default.
@@ -1552,7 +1480,6 @@ class MelSet(object):
     """Set of mod record elments."""
 
     def __init__(self,*elements):
-        """Initialize."""
         self._debug = False
         self.elements = elements
         self.defaulters = {}
@@ -1996,21 +1923,22 @@ class MreRecord(object):
 
     #--Accessing subrecords ---------------------------------------------------
     def getSubString(self,subType):
-        """Returns the (stripped) string for a zero-terminated string record."""
-        #--Common subtype expanded in self?
+        """Returns the (stripped) string for a zero-terminated string
+        record."""
+        # Common subtype expanded in self?
         attr = MreRecord.subtype_attr.get(subType)
-        value = None #--default
-        #--If not MreRecord, then will have info in data.
+        value = None # default
+        # If not MreRecord, then we will have info in data.
         if self.__class__ != MreRecord:
             if attr not in self.__slots__: return value
             return self.__getattribute__(attr)
-        #--Subrecords available?
+        # Subrecords available?
         if self.subrecords is not None:
             for subrecord in self.subrecords:
                 if subrecord.subType == subType:
                     value = bolt.cstrip(subrecord.data)
                     break
-        #--No subrecords, but have data.
+        # No subrecords, but we have data.
         elif self.data:
             with self.getReader() as reader:
                 recType = self.recType
@@ -2025,7 +1953,6 @@ class MreRecord(object):
                     else:
                         value = bolt.cstrip(readRead(size))
                         break
-        #--Return it
         return decode(value)
 
     def loadInfos(self,ins,endPos,infoClass):
@@ -2039,7 +1966,6 @@ class MelRecord(MreRecord):
     __slots__ = []
 
     def __init__(self, header, ins=None, do_unpack=False):
-        """Initialize."""
         self.__class__.melSet.initRecord(self, header, ins, do_unpack)
 
     def getDefault(self,attr):
@@ -2207,7 +2133,6 @@ class MreLeveledListBase(MelRecord):
                 # + ['flags', 'entries'] # define those in the subclasses
 
     def __init__(self, header, ins=None, do_unpack=False):
-        """Initialize"""
         MelRecord.__init__(self, header, ins, do_unpack)
         self.mergeOverLast = False #--Merge overrides last mod merged
         self.mergeSources = None #--Set to list by other functions
@@ -2288,7 +2213,6 @@ class MreLeveledListBase(MelRecord):
             self.mergeSources.append(otherMod)
         else:
             self.mergeSources = [otherMod]
-        #--Done
         self.setChanged(self.mergeOverLast)
 
 class MreDial(MelRecord):
@@ -2297,14 +2221,12 @@ class MreDial(MelRecord):
     __slots__ = ['infoStamp', 'infoStamp2', 'infos']
 
     def __init__(self, header, ins=None, do_unpack=False):
-        """Initialize."""
         MelRecord.__init__(self, header, ins, do_unpack)
         self.infoStamp = 0 #--Stamp for info GRUP
         self.infoStamp2 = 0 #--Stamp for info GRUP
         self.infos = []
 
     def loadInfos(self, ins, endPos, infoClass):
-        """Load infos from ins. Called from MobDials."""
         read_header = ins.unpackRecHeader
         ins_at_end = ins.atEnd
         append_info = self.infos.append
@@ -2334,15 +2256,11 @@ class MreDial(MelRecord):
         for info in self.infos: info.dump(out)
 
     def updateMasters(self,masters):
-        """Updates set of master names according to masters actually used."""
         MelRecord.updateMasters(self,masters)
         for info in self.infos:
             info.updateMasters(masters)
 
     def convertFids(self,mapper,toLong):
-        """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if
-        converting to short format."""
         MelRecord.convertFids(self,mapper,toLong)
         for info in self.infos:
             info.convertFids(mapper,toLong)
@@ -2353,15 +2271,12 @@ class MreDial(MelRecord):
 class MelMODS(MelBase):
     """MODS/MO2S/etc/DMDS subrecord"""
     def hasFids(self,formElements):
-        """Include self if has fids."""
         formElements.add(self)
 
     def setDefault(self,record):
-        """Sets default value for record instance."""
         record.__setattr__(self.attr,None)
 
     def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute."""
         insUnpack = ins.unpack
         insRead32 = ins.readString32
         count, = insUnpack('I',4,readId)
@@ -2375,7 +2290,6 @@ class MelMODS(MelBase):
         record.__setattr__(self.attr,data)
 
     def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
         data = record.__getattribute__(self.attr)
         if data is not None:
             data = record.__getattribute__(self.attr)
@@ -2387,8 +2301,6 @@ class MelMODS(MelBase):
             out.packSub(self.subType,outData)
 
     def mapFids(self,record,function,save=False):
-        """Applies function to fids.  If save is true, then fid is set
-           to result of function."""
         attr = self.attr
         data = record.__getattribute__(attr)
         if data is not None:

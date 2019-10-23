@@ -41,7 +41,6 @@ if brec.MelModel is None:
                     'DMDL': ('DMDL', 'DMDT', 'DMDC', 'DMDS'), }
 
         def __init__(self, attr='model', subType='MODL'):
-            """Initialize."""
             types = self.__class__.typeSets[subType]
             MelGroup.__init__(
                 self, attr, MelString(types[0], 'modPath'),
@@ -54,7 +53,6 @@ if brec.MelModel is None:
                 )
 
         def debug(self, on=True):
-            """Sets debug flag on self."""
             for element in self.elements[:2]: element.debug(on)
             return self
     brec.MelModel = _MelModel
@@ -70,7 +68,6 @@ class MreHeader(MreHeaderBase):
     """TES4 Record.  File header."""
     classType = 'TES4'
 
-    #--Data elements
     melSet = MelSet(
         MelStruct('HEDR', 'f2I', ('version', 1.0), 'numRecords',
                   ('nextObject', 0x800)),

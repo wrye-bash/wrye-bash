@@ -291,25 +291,10 @@ class MreWeap(MelRecord):
     """Weapon"""
     classType = 'WEAP'
 
-    # 'On Death'
     WeapFlags3 = Flags(0L,Flags.getNames(
         (0, 'onDeath'),
     ))
 
-    # {0x00000001}'Player Only',
-    # {0x00000002}'NPCs Use Ammo',
-    # {0x00000004}'No Jam After Reload (unused)',
-    # {0x00000008}'Unknown 4',
-    # {0x00000010}'Minor Crime',
-    # {0x00000020}'Range Fixed',
-    # {0x00000040}'Not Used in Normal Combat',
-    # {0x00000080}'Unknown 8',
-    # {0x00000100}'Don''t Use 3rd Person IS Anim (unused)',
-    # {0x00000200}'Unknown 10',
-    # {0x00000400}'Rumble - Alternate',
-    # {0x00000800}'Unknown 12',
-    # {0x00001000}'Non-hostile',
-    # {0x00002000}'Bound Weapon'
     WeapFlags2 = Flags(0L,Flags.getNames(
             (0, 'playerOnly'),
             (1, 'nPCsUseAmmo'),
@@ -327,14 +312,6 @@ class MreWeap(MelRecord):
             (13, 'boundWeapon'),
         ))
 
-    # {0x0001}'Ignores Normal Weapon Resistance',
-    # {0x0002}'Automatic (unused)',
-    # {0x0004}'Has Scope (unused)',
-    # {0x0008}'Can''t Drop',
-    # {0x0010}'Hide Backpack (unused)',
-    # {0x0020}'Embedded Weapon (unused)',
-    # {0x0040}'Don''t Use 1st Person IS Anim (unused)',
-    # {0x0080}'Non-playable'
     WeapFlags1 = Flags(0L,Flags.getNames(
             (0, 'ignoresNormalWeaponResistance'),
             (1, 'automaticunused'),
@@ -358,9 +335,14 @@ class MreWeap(MelRecord):
             if size_ == 24:
                 MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size_ == 16: # old skyrim record, do not change unpacked
-                var1, var2, var3, var4, var5, formID = ins.unpack('H2sfB3sI', size_, readId)
-                unpacked = (var1, var2, var3, var4, null3, null4, formID, null4)
+            elif size_ == 16:
+                # old skyrim record, insert null bytes in the middle(!)
+                ##: Why use null3 instead of _crdUnk2?
+                critDamage, crdtUnk1, criticalMultiplier, criticalFlags, \
+                _crdtUnk2, criticalEffect = ins.unpack('H2sfB3sI', size_,
+                                                      readId)
+                unpacked = (critDamage, crdtUnk1, criticalMultiplier,
+                            criticalFlags, null3, null4, criticalEffect, null4)
             else:
                 raise ModSizeError(record.inName, readId, 24, size_, True)
             unpacked += self.defaults[len(unpacked):]
@@ -369,7 +351,6 @@ class MreWeap(MelRecord):
                 if callable(action): value = action(value)
                 setter(attr,value)
             if self._debug: print unpacked, record.flags.getTrueAttrs()
-
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -460,12 +441,6 @@ class MreWthr(MelRecord):
             (31, 'layer_31'),
         ))
 
-    # {0x01} 'Weather - Pleasant',
-    # {0x02} 'Weather - Cloudy',
-    # {0x04} 'Weather - Rainy',
-    # {0x08} 'Weather - Snow',
-    # {0x10} 'Sky Statics - Always Visible',
-    # {0x20} 'Sky Statics - Follows Sun Position'
     WthrFlags1 = Flags(0L,Flags.getNames(
             (0, 'weatherPleasant'),
             (1, 'weatherCloudy'),
@@ -568,14 +543,14 @@ class MreWthr(MelRecord):
                   (FID,'volumetricLightingSunset'),
                   (FID,'volumetricLightingNight'),),
         MelWthrDalc('DALC','=4B4B4B4B4B4B4Bf','wthrAmbientColors',
-            'redXplus','greenXplus','blueXplus','unknownXplus', # 'X+'
-            'redXminus','greenXminus','blueXminus','unknownXminus', # 'X-'
-            'redYplus','greenYplus','blueYplus','unknownYplus', # 'Y+'
-            'redYminus','greenYminus','blueYminus','unknownYminus', # 'Y-'
-            'redZplus','greenZplus','blueZplus','unknownZplus', # 'Z+'
-            'redZminus','greenZminus','blueZminus','unknownZminus', # 'Z-'
-            'redSpec','greenSpec','blueSpec','unknownSpec', # Specular Color Values
-            'fresnelPower', # Fresnel Power
+            'redXplus','greenXplus','blueXplus','unknownXplus',
+            'redXminus','greenXminus','blueXminus','unknownXminus',
+            'redYplus','greenYplus','blueYplus','unknownYplus',
+            'redYminus','greenYminus','blueYminus','unknownYminus',
+            'redZplus','greenZplus','blueZplus','unknownZplus',
+            'redZminus','greenZminus','blueZminus','unknownZminus',
+            'redSpec','greenSpec','blueSpec','unknownSpec',
+            'fresnelPower',
             ),
         MelBase('NAM2','nam2_p'),
         MelBase('NAM3','nam3_p'),
@@ -617,7 +592,6 @@ class MreLens(MelRecord):
             (1, 'shrinksWhenOccluded'),
         ))
 
-    #--DNAM loader
     class MelDnamLoaders(DataDict):
         """Since DNAM subrecords occur in two different places, we need
         to replace ordinary 'loaders' dictionary with a 'dictionary' that will
