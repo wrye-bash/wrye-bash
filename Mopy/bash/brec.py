@@ -1502,13 +1502,6 @@ class MelTuple(MelBase):
 
 #------------------------------------------------------------------------------
 #-- Common/Special Elements
-class MelFull0(MelString):
-    """Represents the main full. Use this only when there are additional FULLs
-    Which means when record has magic effects."""
-
-    def __init__(self):
-        MelString.__init__(self,'FULL','full')
-
 #------------------------------------------------------------------------------
 # Hack for allowing record imports from parent games - set per game
 MelModel = None # type: type
@@ -1608,13 +1601,10 @@ class MelSet(object):
         self.loaders = {}
         self.formElements = set()
         self.firstFull = None
-        self.full0 = None
         for element in self.elements:
             element.getDefaulters(self.defaulters,'')
             element.getLoaders(self.loaders)
             element.hasFids(self.formElements)
-            if isinstance(element,MelFull0):
-                self.full0 = element
 
     def debug(self,on=True):
         """Sets debug flag on self."""
@@ -1638,35 +1628,39 @@ class MelSet(object):
 
     def loadData(self,record,ins,endPos):
         """Loads data from input stream. Called by load()."""
-        doFullTest = (self.full0 is not None)
-        recType = record.recType
+        rec_type = record.recType
         loaders = self.loaders
         _debug = self._debug
-        #--Read Records
         if _debug: print u'\n>>>> %08X' % record.fid
-        insAtEnd = ins.atEnd
-        insSubHeader = ins.unpackSubHeader
-        # fullLoad = self.full0.loadData
-        while not insAtEnd(endPos,recType):
-            (Type,size) = insSubHeader(recType)
-            if _debug: print Type,size
-            readId = recType + '.' + Type
+        # Load each subrecord
+        ins_at_end = ins.atEnd
+        load_sub_header = ins.unpackSubHeader
+        read_id_prefix = rec_type + '.'
+        while not ins_at_end(endPos, rec_type):
+            sub_type, sub_size = load_sub_header(rec_type)
+            if _debug: print sub_type, sub_size
             try:
-                if Type not in loaders:
-                    raise exception.ModError(ins.inName, u'Unexpected subrecord: ' + repr(readId))
-                #--Hack to handle the fact that there can be two types of FULL in spell/ench/ingr records.
-                elif doFullTest and Type == 'FULL':
-                    self.full0.loadData(record, ins, Type, size, readId)
-                else:
-                    loaders[Type].loadData(record, ins, Type, size, readId)
-                doFullTest = doFullTest and (Type != 'EFID')
+                loaders[sub_type].loadData(record, ins, sub_type, sub_size,
+                                           read_id_prefix + sub_type)
+            except KeyError:
+                # Wrap this error to make it more understandable
+                self._handle_load_error(
+                    exception.ModError(
+                        ins.inName, u'Unexpected subrecord: %s' % (
+                                read_id_prefix + sub_type)),
+                    record, ins, sub_type, sub_size)
             except Exception as error:
-                print error
-                eid = getattr(record,'eid',u'<<NO EID>>')
-                if not eid: eid = u'<<NO EID>>'
-                print u'Error loading %s record and/or subrecord: %08X\n  eid = %s\n  subrecord = %s\n  subrecord size = %d\n  file pos = %d' % (repr(record.recType),record.fid,repr(eid),repr(Type),size,ins.tell())
-                raise
+                self._handle_load_error(error, record, ins, sub_type, sub_size)
         if _debug: print u'<<<<',getattr(record,'eid',u'[NO EID]')
+
+    def _handle_load_error(self, error, record, ins, sub_type, sub_size):
+        print error
+        eid = getattr(record, 'eid', u'<<NO EID>>')
+        print(u'Error loading %r record and/or subrecord: %08X\n  '
+              u'eid = %r\n  subrecord = %r\n  subrecord size = %d\n  '
+              u'file pos = %d' % (
+            record.recType, record.fid, eid, sub_type, sub_size, ins.tell()))
+        raise
 
     def dumpData(self,record, out):
         """Dumps state into out. Called by getSize()."""

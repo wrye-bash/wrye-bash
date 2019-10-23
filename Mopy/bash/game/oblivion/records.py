@@ -29,7 +29,7 @@ from ...bass import null1, null2, null3, null4
 from ...bolt import Flags, struct_pack
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
-    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelFull0, \
+    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, \
     MelFidList, MelStructA, MelStrings, MreGmstBase, MelTuple, MreHasEffects, \
     MelReferences, MelRegnEntrySubrecord, MelFloat, MelSInt16, MelSInt32, \
     MelUInt8, MelUInt16, MelUInt32, MelOptFloat, MelOptSInt32, MelOptUInt8, \
@@ -154,6 +154,15 @@ class MelConditions(MelStructs):
             if form12[1] == 'I':
                 result = function(target.param2)
                 if save: target.param2 = result
+
+# A distributor config for use with MelEffects, since MelEffects also contains
+# a FULL subrecord
+_effects_distributor = {
+    'FULL': 'full', # don't rely on EDID being present
+    'EFID': {
+        'FULL': 'effects',
+    }
+}
 
 class MelEffects(MelGroups):
     """Represents ingredient/potion/enchantment/spell effects."""
@@ -342,14 +351,14 @@ class MreAlch(MelRecord,MreHasEffects):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelFull0(),
+        MelString('FULL', 'full'),
         MelModel(),
         MelString('ICON','iconPath'),
         MelFid('SCRI','script'),
         MelFloat('DATA', 'weight'),
         MelStruct('ENIT','iB3s','value',(_flags,'flags',0L),('unused1',null3)),
         MelEffects(),
-    )
+    ).with_distributor(_effects_distributor)
     __slots__ = melSet.getSlotsUsed()
 
 class MreAmmo(MelRecord):
@@ -881,11 +890,11 @@ class MreEnch(MelRecord,MreHasEffects):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelFull0(), #--At least one mod has this. Odd.
+        MelString('FULL', 'full'), #--At least one mod has this. Odd.
         MelStruct('ENIT', '3IB3s', 'itemType', 'chargeAmount', 'enchantCost',
                   (_flags, 'flags', 0L), ('unused1', null3)),
         MelEffects(),
-    )
+    ).with_distributor(_effects_distributor)
     __slots__ = melSet.getSlotsUsed()
 
 class MreEyes(MelRecord):
@@ -1062,14 +1071,14 @@ class MreIngr(MelRecord,MreHasEffects):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelFull0(),
+        MelString('FULL', 'full'),
         MelModel(),
         MelString('ICON','iconPath'),
         MelFid('SCRI','script'),
         MelFloat('DATA', 'weight'),
         MelStruct('ENIT','iB3s','value',(_flags,'flags',0L),('unused1',null3)),
         MelEffects(),
-    )
+    ).with_distributor(_effects_distributor)
     __slots__ = melSet.getSlotsUsed()
 
 class MreKeym(MelRecord):
@@ -1826,13 +1835,13 @@ class MreSgst(MelRecord,MreHasEffects):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelFull0(),
+        MelString('FULL', 'full'),
         MelModel(),
         MelString('ICON','iconPath'),
         MelFid('SCRI','script'),
         MelEffects(),
         MelStruct('DATA','=BIf','uses','value','weight'),
-    )
+    ).with_distributor(_effects_distributor)
     __slots__ = melSet.getSlotsUsed()
 
 class MreSkil(MelRecord):
@@ -1918,11 +1927,11 @@ class MreSpel(MelRecord,MreHasEffects):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelFull0(),
+        MelString('FULL', 'full'),
         MelStruct('SPIT', '3IB3s', 'spellType', 'cost', 'level',
                   (_SpellFlags, 'flags', 0L), ('unused1', null3)),
         MelEffects(),
-    )
+    ).with_distributor(_effects_distributor)
     __slots__ = melSet.getSlotsUsed()
 
 class MreStat(MelRecord):

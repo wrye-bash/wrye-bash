@@ -32,8 +32,8 @@ from ...bolt import Flags
 from ...brec import MelModel # set in Mopy/bash/game/fallout3/records.py
 from ...brec import MelRecord, MelStructs, MelGroups, MelStruct, FID, \
     MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
-    MelBase, MelFidList, MelStructA, MreGmstBase, MelFull0, MreHeaderBase, \
-    MelUnicode, MelColorInterpolator, MelValueInterpolator, MelReferences, \
+    MelBase, MelFidList, MelStructA, MreGmstBase, MreHeaderBase, MelUnicode, \
+    MelColorInterpolator, MelValueInterpolator, MelReferences, \
     MelRegnEntrySubrecord, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
     MelUInt32, MelOptFid, MelOptFloat, MelOptSInt32, MelOptUInt8, \
     MelOptUInt16, MelOptUInt32
@@ -59,7 +59,7 @@ class MreHeader(MreHeaderBase):
         MreHeaderBase.MelMasterName('MAST','masters'),
         MelNull('DATA'), # 8 Bytes in Length
         MelFidList('ONAM','overrides'),
-        MelBase('SCRN', 'scrn_p'),
+        MelBase('SCRN', 'screenshot'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -764,7 +764,7 @@ class MreEnch(MelRecord,MreHasEffects):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelFull0(), #--At least one mod has this. Odd.
+        MelString('FULL', 'full'),
         MelStruct('ENIT','3IB3s','itemType','chargeAmount','enchantCost',
                   (_flags,'flags',0L),('unused1',null3)),
         MelEffects(),

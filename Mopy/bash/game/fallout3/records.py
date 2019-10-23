@@ -32,7 +32,7 @@ from ...bolt import Flags, struct_unpack, struct_pack
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     MreHeaderBase, MelBase, MelUnicode, MelFidList, MelStructA, MreGmstBase, \
-    MelStrings, MelFull0, MelTuple, MelMODS, MreHasEffects, MelReferences, \
+    MelStrings, MelTuple, MelMODS, MreHasEffects, MelReferences, \
     MelColorInterpolator, MelValueInterpolator, MelUnion, AttrValDecider, \
     MelRegnEntrySubrecord, SizeDecider, MelFloat, MelSInt8, MelSInt16, \
     MelSInt32, MelUInt8, MelUInt16, MelUInt32, MelOptFid, MelOptFloat, \
@@ -223,11 +223,11 @@ class MelEffects(MelGroups):
     """Represents ingredient/potion/enchantment/spell effects."""
 
     def __init__(self,attr='effects'):
-        MelGroups.__init__(self,attr,
+        MelGroups.__init__(self, attr,
             MelFid('EFID','baseEffect'),
             MelStruct('EFIT','4Ii','magnitude','area','duration','recipient','actorValue'),
             MelConditions(),
-            )
+        )
 
 #------------------------------------------------------------------------------
 class MreLeveledList(MelRecord):
@@ -419,7 +419,7 @@ class MreHeader(MreHeaderBase):
         MreHeaderBase.MelMasterName('MAST','masters'),
         MelNull('DATA'), # 8 Bytes in Length
         MelFidList('ONAM','overrides'),
-        MelBase('SCRN', 'scrn_p'),
+        MelBase('SCRN', 'screenshot'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -572,7 +572,7 @@ class MreAlch(MelRecord,MreHasEffects):
         MelStruct('OBND','=6h',
                   'boundX1','boundY1','boundZ1',
                   'boundX2','boundY2','boundZ2'),
-        MelFull0(),
+        MelString('FULL', 'full'),
         MelModel(),
         MelString('ICON','iconPath'),
         MelString('MICO','smallIconPath'),
@@ -1390,7 +1390,7 @@ class MreEnch(MelRecord,MreHasEffects):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelFull0(), #--At least one mod has this. Odd.
+        MelString('FULL', 'full'),
         MelStruct('ENIT','3IB3s','itemType','chargeAmount','enchantCost',
                   (_flags,'flags',0L),('unused1',null3)),
         MelEffects(),
@@ -1939,7 +1939,7 @@ class MreIngr(MelRecord,MreHasEffects):
         MelStruct('OBND','=6h',
                   'boundX1','boundY1','boundZ1',
                   'boundX2','boundY2','boundZ2'),
-        MelFull0(),
+        MelString('FULL', 'full'),
         MelModel(),
         MelString('ICON','iconPath'),
         MelFid('SCRI','script'),
@@ -3496,7 +3496,7 @@ class MreSpel(MelRecord,MreHasEffects):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelFull0(),
+        MelString('FULL', 'full'),
         MelStruct('SPIT', '3IB3s', 'spellType', 'cost', 'level',
                   (_SpellFlags, 'flags', 0L), ('unused1', null3)),
         MelEffects(),
