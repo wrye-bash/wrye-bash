@@ -30,7 +30,7 @@ from ...bolt import Flags, DataDict
 from ...brec import MelModel # set in Mopy/bash/game/skyrim/records.py
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelString, MelSet, MelFid, MelOptStruct, MelFids, MelBase, \
-    MelStructA, MelLString, MelCountedFidList
+    MelStructA, MelLString, MelFloat, MelUInt8, MelUInt16, MelUInt32
 from ...exception import ModSizeError
 # Those are unused here, but need be in this file as are accessed via it
 from ..skyrim.records import MreHeader, MreGmst
@@ -39,7 +39,7 @@ from ..skyrim.records import MreHeader, MreGmst
 # Updated for SSE -------------------------------------------------------------
 #------------------------------------------------------------------------------
 class MreAmmo(MelRecord):
-    """Ammo record (arrows)"""
+    """Ammunition."""
     classType = 'AMMO'
 
     AmmoTypeFlags = Flags(0L,Flags.getNames(
@@ -81,7 +81,7 @@ class MreAmmo(MelRecord):
             (AmmoTypeFlags, 'flags', 0L), ('damage', 1.0), ('value', 0),
             ('weight', 0.1)),
         MelString('ONAM','onam_n'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
@@ -98,15 +98,15 @@ class MreLtex(MelRecord):
         MelFid('TNAM','textureSet',),
         MelFid('MNAM','materialType',),
         MelStruct('HNAM','BB','friction','restitution',),
-        MelStruct('SNAM','B','textureSpecularExponent',),
+        MelUInt8('SNAM', 'textureSpecularExponent'),
         MelFids('GNAM','grasses'),
-        MelStruct('INAM','I',(LtexSnowFlags,'flags',0L),),
-        )
+        MelUInt32('INAM', (LtexSnowFlags, 'flags', 0L)),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreMato(MelRecord):
-    """Material Object Records"""
+    """Material Object."""
     classType = 'MATO'
 
     MatoTypeFlags = Flags(0L,Flags.getNames(
@@ -137,9 +137,9 @@ class MreMato(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelModel(),
-        MelGroups('wordsOfPower',
-            MelBase('DNAM','propertyData',),
-            ),
+        MelGroups('property_data',
+            MelBase('DNAM', 'data_entry'),
+        ),
         MelMatoData('DATA','11fIB3s','falloffScale','falloffBias',
                     'noiseUVScale','materialUVScale','projectionVectorX',
                     'projectionVectorY','projectionVectorZ','normalDampener',
@@ -152,7 +152,7 @@ class MreMato(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreStat(MelRecord):
-    """Static model record."""
+    """Static."""
     classType = 'STAT'
 
     _StatSnowFlags = Flags(0L, Flags.getNames(
@@ -191,7 +191,7 @@ class MreStat(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreWatr(MelRecord):
-    """Water"""
+    """Water."""
     classType = 'WATR'
 
     WatrTypeFlags = Flags(0L,Flags.getNames(
@@ -220,15 +220,15 @@ class MreWatr(MelRecord):
         MelLString('FULL','full'),
         MelGroups('unused',
             MelString('NNAM','noiseMap',),
-            ),
-        MelStruct('ANAM','B','opacity'),
-        MelStruct('FNAM','B',(WatrTypeFlags,'flags',0L),),
+        ),
+        MelUInt8('ANAM', 'opacity'),
+        MelUInt8('FNAM', (WatrTypeFlags, 'flags', 0L)),
         MelBase('MNAM','unused1'),
         MelFid('TNAM','material',),
         MelFid('SNAM','openSound',),
         MelFid('XNAM','spell',),
         MelFid('INAM','imageSpace',),
-        MelStruct('DATA','H','damagePerSecond'),
+        MelUInt16('DATA', 'damagePerSecond'),
         MelWatrDnam('DNAM','7f4s2f3Bs3Bs3Bs4s44f','unknown1','unknown2','unknown3',
                   'unknown4','specularPropertiesSunSpecularPower',
                   'waterPropertiesReflectivityAmount',
@@ -272,8 +272,7 @@ class MreWatr(MelRecord):
                   'depthPropertiesReflections','depthPropertiesRefraction',
                   'depthPropertiesNormals','depthPropertiesSpecularLighting',
                   'specularPropertiesSunSparklePower',
-                  'noisePropertiesFlowmapScale',
-                  ),
+                  'noisePropertiesFlowmapScale'),
         MelBase('GNAM','unused2'),
         # Linear Velocity
         MelStruct('NAM0','3f','linv_x','linv_y','linv_z',),
@@ -283,12 +282,12 @@ class MreWatr(MelRecord):
         MelString('NAM3','noiseTextureLayer2'),
         MelString('NAM4','noiseTextureLayer3'),
         MelString('NAM5','flowNormalsNoiseTexture'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreWeap(MelRecord):
-    """Weapon"""
+    """Weapon."""
     classType = 'WEAP'
 
     WeapFlags3 = Flags(0L,Flags.getNames(
@@ -361,7 +360,7 @@ class MreWeap(MelRecord):
         MelString('ICON','iconPath'),
         MelString('MICO','smallIconPath'),
         MelFid('EITM','enchantment',),
-        MelOptStruct('EAMT','H','enchantPoints'),
+        MelUInt16('EAMT', 'enchantPoints'),
         MelDestructible(),
         MelFid('ETYP','equipmentType',),
         MelFid('BIDS','blockBashImpactDataSet',),
@@ -396,14 +395,14 @@ class MreWeap(MelRecord):
                     ('criticalMultiplier',1.0),(WeapFlags3,'criticalFlags',0L),
                     ('crdtUnk2',null3),('crdtUnk3',null4),
                     (FID,'criticalEffect',None),('crdtUnk4',null4),),
-        MelStruct('VNAM','I','detectionSoundLevel'),
+        MelUInt32('VNAM', 'detectionSoundLevel'),
         MelFid('CNAM','template',),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreWthr(MelRecord):
-    """Weather"""
+    """Weather."""
     classType = 'WTHR'
 
     WthrFlags2 = Flags(0L,Flags.getNames(
@@ -515,15 +514,13 @@ class MreWthr(MelRecord):
             'riseRedPnam','riseGreenPnam','riseBluePnam',('unused1',null1),
             'dayRedPnam','dayGreenPnam','dayBluePnam',('unused2',null1),
             'setRedPnam','setGreenPnam','setBluePnam',('unused3Pnam',null1),
-            'nightRedPnam','nightGreenPnam','nightBluePnam',('unused4',null1),
-            ),
+            'nightRedPnam','nightGreenPnam','nightBluePnam',('unused4',null1)),
         MelStructA('JNAM','4f','cloudAlphas','sunAlpha','dayAlpha','setAlpha','nightAlpha',),
         MelStructA('NAM0','3Bs3Bs3Bs3Bs','daytimeColors',
             'riseRed','riseGreen','riseBlue',('unused5',null1),
             'dayRed','dayGreen','dayBlue',('unused6',null1),
             'setRed','setGreen','setBlue',('unused7',null1),
-            'nightRed','nightGreen','nightBlue',('unused8',null1),
-            ),
+            'nightRed','nightGreen','nightBlue',('unused8',null1)),
         MelStruct('FNAM','8f','dayNear','dayFar','nightNear','nightFar',
                   'dayPower','nightPower','dayMax','nightMax',),
         MelStruct('DATA','B2s16B','windSpeed',('unknown',null2),'transDelta',
@@ -533,7 +530,7 @@ class MreWthr(MelRecord):
                   (WthrFlags1,'wthrFlags1',0L),'red','green','blue',
                   'visualEffectBegin','visualEffectEnd',
                   'windDirection','windDirectionRange',),
-        MelStruct('NAM1','I',(WthrFlags2,'wthrFlags2',0L),),
+        MelUInt32('NAM1', (WthrFlags2, 'wthrFlags2', 0L)),
         MelStructs('SNAM','2I','sounds',(FID,'sound'),'type'),
         MelFids('TNAM','skyStatics',),
         MelStruct('IMSP','4I',(FID,'imageSpacesSunrise'),(FID,'imageSpacesDay'),
@@ -550,41 +547,41 @@ class MreWthr(MelRecord):
             'redZplus','greenZplus','blueZplus','unknownZplus',
             'redZminus','greenZminus','blueZminus','unknownZminus',
             'redSpec','greenSpec','blueSpec','unknownSpec',
-            'fresnelPower',
-            ),
+            'fresnelPower'),
         MelBase('NAM2','nam2_p'),
         MelBase('NAM3','nam3_p'),
         MelModel('aurora','MODL'),
         MelFid('GNAM', 'sunGlareLensFlare',),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 # Added in SSE ----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class MreVoli(MelRecord):
-    """Volumetric Lighting"""
+    """Volumetric Lighting."""
     classType = 'VOLI'
+
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('CNAM','f','intensity'),
-        MelStruct('DNAM','f','customColorContribution'),
-        MelStruct('ENAM','f','red'),
-        MelStruct('FNAM','f','green'),
-        MelStruct('GNAM','f','blue'),
-        MelStruct('HNAM','f','densityContribution'),
-        MelStruct('INAM','f','densitySize'),
-        MelStruct('JNAM','f','densityWindSpeed'),
-        MelStruct('KNAM','f','densityFallingSpeed'),
-        MelStruct('LNAM','f','phaseFunctionContribution'),
-        MelStruct('MNAM','f','phaseFunctionScattering'),
-        MelStruct('NNAM','f','samplingRepartitionRangeFactor'),
-        )
+        MelFloat('CNAM', 'intensity'),
+        MelFloat('DNAM', 'customColorContribution'),
+        MelFloat('ENAM', 'red'),
+        MelFloat('FNAM', 'green'),
+        MelFloat('GNAM', 'blue'),
+        MelFloat('HNAM', 'densityContribution'),
+        MelFloat('INAM', 'densitySize'),
+        MelFloat('JNAM', 'densityWindSpeed'),
+        MelFloat('KNAM', 'densityFallingSpeed'),
+        MelFloat('LNAM', 'phaseFunctionContribution'),
+        MelFloat('MNAM', 'phaseFunctionScattering'),
+        MelFloat('NNAM', 'samplingRepartitionRangeFactor'),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLens(MelRecord):
-    """Lens Flare"""
+    """Lens Flare."""
     classType = 'LENS'
 
     LensFlareFlags = Flags(0L,Flags.getNames(
@@ -608,17 +605,17 @@ class MreLens(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('CNAM','f','colorInfluence'),
-        MelStruct('DNAM','f','fadeDistanceRadiusScale'),
-        MelStruct('LFSP','I','count'),
+        MelFloat('CNAM', 'colorInfluence'),
+        MelFloat('DNAM', 'fadeDistanceRadiusScale'),
+        MelUInt32('LFSP', 'count'),
         MelGroups('lensFlareSprites',
             MelString('DNAM','spriteID'),
             MelString('FNAM','texture'),
             MelStruct('LFSD', 'f8I', 'tintRed', 'tintGreen', 'tintBlue',
                 'width', 'height', 'position', 'angularFade', 'opacity',
                 (LensFlareFlags, 'lensFlags', 0L), ),
-            )
         )
+    )
     melSet.loaders = MelDnamLoaders(melSet.loaders, melSet.elements[2],
                                     melSet.elements[4])
     __slots__ = melSet.getSlotsUsed()

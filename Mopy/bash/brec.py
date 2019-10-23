@@ -1179,7 +1179,7 @@ class MelReferences(MelGroups):
     def __init__(self):
         MelGroups.__init__(self, 'references', MelUnion({
             'SCRO': MelFid('SCRO', 'reference'),
-            'SCRV': MelStruct('SCRV', 'I', 'reference'),
+            'SCRV': MelUInt32('SCRV', 'reference'),
         }))
 
 #------------------------------------------------------------------------------
@@ -1413,6 +1413,57 @@ class MelValueInterpolator(MelStructA):
         MelStructA.__init__(self, sub_type, '2f', attr, 'time', 'value')
 
 #------------------------------------------------------------------------------
+# Simple primitive type wrappers
+class MelFloat(MelStruct):
+    """Float. Wrapper around MelStruct to avoid having to constantly specify
+    the format."""
+    def __init__(self, signature, element):
+        """:type signature: str"""
+        MelStruct.__init__(self, signature, '=f', element)
+
+class MelSInt8(MelStruct):
+    """Signed 8-bit integer. Wrapper around MelStruct to avoid having to
+    constantly specify the format."""
+    def __init__(self, signature, element):
+        """:type signature: str"""
+        MelStruct.__init__(self, signature, '=b', element)
+
+class MelSInt16(MelStruct):
+    """Signed 16-bit integer. Wrapper around MelStruct to avoid having to
+    constantly specify the format."""
+    def __init__(self, signature, element):
+        """:type signature: str"""
+        MelStruct.__init__(self, signature, '=h', element)
+
+class MelSInt32(MelStruct):
+    """Signed 32-bit integer. Wrapper around MelStruct to avoid having to
+    constantly specify the format."""
+    def __init__(self, signature, element):
+        """:type signature: str"""
+        MelStruct.__init__(self, signature, '=i', element)
+
+class MelUInt8(MelStruct):
+    """Unsigned 8-bit integer. Wrapper around MelStruct to avoid having to
+    constantly specify the format."""
+    def __init__(self, signature, element):
+        """:type signature: str"""
+        MelStruct.__init__(self, signature, '=B', element)
+
+class MelUInt16(MelStruct):
+    """Unsigned 16-bit integer. Wrapper around MelStruct to avoid having to
+    constantly specify the format."""
+    def __init__(self, signature, element):
+        """:type signature: str"""
+        MelStruct.__init__(self, signature, '=H', element)
+
+class MelUInt32(MelStruct):
+    """Unsigned 32-bit integer. Wrapper around MelStruct to avoid having to
+    constantly specify the format."""
+    def __init__(self, signature, element):
+        """:type signature: str"""
+        MelStruct.__init__(self, signature, '=I', element)
+
+#------------------------------------------------------------------------------
 class MelTuple(MelBase):
     """Represents a fixed length array that maps to a single subrecord.
     (E.g., the stats array for NPC_ which maps to the DATA subrecord.)"""
@@ -1444,20 +1495,88 @@ class MelFull0(MelString):
 #------------------------------------------------------------------------------
 # Hack for allowing record imports from parent games - set per game
 MelModel = None # type: type
+
 #------------------------------------------------------------------------------
 class MelOptStruct(MelStruct):
-    """Represents an optional structure, where if values are null, is skipped."""
+    """Represents an optional structure that is only dumped if at least one
+    value is not equal to the default."""
 
-    def dumpData(self,record,out):
+    def dumpData(self, record, out):
         # TODO: Unfortunately, checking if the attribute is None is not
         # really effective.  Checking it to be 0,empty,etc isn't effective either.
         # It really just needs to check it against the default.
         recordGetAttr = record.__getattribute__
         for attr,default in zip(self.attrs,self.defaults):
-            oldValue=recordGetAttr(attr)
+            oldValue = recordGetAttr(attr)
             if oldValue is not None and oldValue != default:
-                MelStruct.dumpData(self,record,out)
+                MelStruct.dumpData(self, record, out)
                 break
+
+#------------------------------------------------------------------------------
+# 'Opt' versions of the type wrappers above
+class MelOptFloat(MelOptStruct):
+    """Optional float. Wrapper around MelOptStruct to avoid having to
+    constantly specify the format."""
+    def __init__(self, signature, element):
+        """:type signature: str"""
+        MelOptStruct.__init__(self, signature, '=f', element)
+
+# Unused right now - keeping around for completeness' sake and to make future
+# usage simpler.
+class MelOptSInt8(MelOptStruct):
+    """Optional signed 8-bit integer. Wrapper around MelOptStruct to avoid
+    having to constantly specify the format."""
+    def __init__(self, signature, element):
+        """:type signature: str"""
+        MelOptStruct.__init__(self, signature, '=b', element)
+
+class MelOptSInt16(MelOptStruct):
+    """Optional signed 16-bit integer. Wrapper around MelOptStruct to avoid
+    having to constantly specify the format."""
+    def __init__(self, signature, element):
+        """:type signature: str"""
+        MelOptStruct.__init__(self, signature, '=h', element)
+
+class MelOptSInt32(MelOptStruct):
+    """Optional signed 32-bit integer. Wrapper around MelOptStruct to avoid
+    having to constantly specify the format."""
+    def __init__(self, signature, element):
+        """:type signature: str"""
+        MelOptStruct.__init__(self, signature, '=i', element)
+
+class MelOptUInt8(MelOptStruct):
+    """Optional unsigned 8-bit integer. Wrapper around MelOptStruct to avoid
+    having to constantly specify the format."""
+    def __init__(self, signature, element):
+        """:type signature: str"""
+        MelOptStruct.__init__(self, signature, '=B', element)
+
+class MelOptUInt16(MelOptStruct):
+    """Optional unsigned 16-bit integer. Wrapper around MelOptStruct to avoid
+    having to constantly specify the format."""
+    def __init__(self, signature, element):
+        """:type signature: str"""
+        MelOptStruct.__init__(self, signature, '=H', element)
+
+class MelOptUInt32(MelOptStruct):
+    """Optional unsigned 32-bit integer. Wrapper around MelOptStruct to avoid
+    having to constantly specify the format."""
+    def __init__(self, signature, element):
+        """:type signature: str"""
+        MelOptStruct.__init__(self, signature, '=I', element)
+
+class MelOptFid(MelOptUInt32):
+    """Optional FormID. Wrapper around MelOptUInt32 to avoid having to
+    constantly specify the format. Also supports specifying a default value."""
+    _default_sentinel = object()
+
+    def __init__(self, signature, attr, default_val=_default_sentinel):
+        """:type signature: str
+        :type attr: str"""
+        if default_val is self._default_sentinel:
+            MelOptUInt32.__init__(self, signature, (FID, attr))
+        else:
+            MelOptUInt32.__init__(self, signature, (FID, attr, default_val))
 
 #------------------------------------------------------------------------------
 # Mod Element Sets ------------------------------------------------------------
@@ -2020,8 +2139,8 @@ class MreGlob(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('FNAM','s',('format','s')),
-        MelStruct('FLTV','f','value'),
-        )
+        MelFloat('FLTV', 'value'),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
@@ -2034,12 +2153,12 @@ class MreGmstBase(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelUnion({
-            'b': MelStruct('DATA', 'I', 'value'),
-            'f': MelStruct('DATA', 'f', 'value'),
-            's': MelLString('DATA', 'value'),
+            u'b': MelUInt32('DATA', 'value'), # actually a bool
+            u'f': MelFloat('DATA', 'value'),
+            u's': MelLString('DATA', 'value'),
         }, decider=AttrValDecider(
-            'eid', transformer=lambda eid: eid[0] if eid else 'i'),
-            fallback=MelStruct('DATA', 'i', 'value')
+            'eid', transformer=lambda eid: decode(eid[0]) if eid else u'i'),
+            fallback=MelSInt32('DATA', 'value')
         ),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -2201,6 +2320,7 @@ class MreLeveledListBase(MelRecord):
             self.mergeSources = [otherMod]
         self.setChanged(self.mergeOverLast)
 
+#------------------------------------------------------------------------------
 class MreDial(MelRecord):
     """Dialog record."""
     classType = 'DIAL'
@@ -2293,6 +2413,7 @@ class MelMODS(MelBase):
             data = [(string,function(fid),index) for (string,fid,index) in record.__getattribute__(attr)]
             if save: record.__setattr__(attr,data)
 
+#------------------------------------------------------------------------------
 class MelRegnEntrySubrecord(MelUnion):
     """Wrapper around MelUnion to correctly read/write REGN entry data.
     Skips loading and dumping if entryType != entry_type_val.

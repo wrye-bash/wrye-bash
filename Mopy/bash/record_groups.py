@@ -367,9 +367,7 @@ class MobDials(MobObjects):
 class MobCell(MobBase):
     """Represents cell block structure -- including the cell and all
     subrecords."""
-
-    __slots__ = MobBase.__slots__ + ['cell','persistent','distant','temp',
-                                     'land','pgrd']
+    __slots__ = ['cell','persistent','distant','temp', 'land','pgrd']
 
     def __init__(self, header, loadFactory, cell, ins=None, do_unpack=False):
         self.cell = cell

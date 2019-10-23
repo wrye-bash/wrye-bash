@@ -34,10 +34,12 @@ from ...brec import MelRecord, MelStructs, MelGroups, MelStruct, FID, \
     MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     MelBase, MelFidList, MelStructA, MreGmstBase, MelFull0, MreHeaderBase, \
     MelUnicode, MelColorInterpolator, MelValueInterpolator, MelReferences, \
-    MelRegnEntrySubrecord
+    MelRegnEntrySubrecord, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
+    MelUInt32, MelOptFid, MelOptFloat, MelOptSInt32, MelOptUInt8, \
+    MelOptUInt16, MelOptUInt32
 from ...exception import ModError, ModSizeError
 
-# Those are unused here, but need be in this file as are accessed via it
+# Those are unused here, but need be in this file as are accessed via itf
 from ..fallout3.records import MreNpc ##: used in Oblivion only save code really
 
 #------------------------------------------------------------------------------
@@ -58,22 +60,24 @@ class MreHeader(MreHeaderBase):
         MelNull('DATA'), # 8 Bytes in Length
         MelFidList('ONAM','overrides'),
         MelBase('SCRN', 'scrn_p'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 class MreAchr(MelRecord):
-    """Placed NPC"""
+    """Placed NPC."""
     classType = 'ACHR'
+
     _flags = Flags(0L,Flags.getNames('oppositeParent','popIn'))
     _variableFlags = Flags(0L,Flags.getNames('isLongOrShort'))
-    melSet=MelSet(
+
+    melSet = MelSet(
         MelString('EDID','eid'),
         MelFid('NAME','base'),
         MelFid('XEZN','encounterZone'),
         MelBase('XRGD','ragdollData'),
         MelBase('XRGB','ragdollBipedData'),
         MelGroup('patrolData',
-            MelStruct('XPRD','f','idleTime'),
+            MelFloat('XPRD', 'idleTime'),
             MelBase('XPPA','patrolScriptMarker'),
             MelFid('INAM', 'idle'),
             MelStruct('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
@@ -84,44 +88,46 @@ class MreAchr(MelRecord):
                 MelString('SCVR','name')),
             MelReferences(),
             MelFid('TNAM','topic'),
-            ),
-        MelStruct('XLCM','i','levelModifier'),
+        ),
+        MelSInt32('XLCM', 'levelModifier'),
         MelFid('XMRC','merchantContainer',),
-        MelStruct('XCNT','i','count'),
-        MelStruct('XRDS','f','radius',),
-        MelStruct('XHLP','f','health',),
+        MelSInt32('XCNT', 'count'),
+        MelFloat('XRDS', 'radius'),
+        MelFloat('XHLP', 'health'),
         MelStructs('XDCR','II','linkedDecals',(FID,'reference'),'unknown'),
         MelFid('XLKR','linkedReference'),
         MelOptStruct('XCLP','8B','linkStartColorRed','linkStartColorGreen','linkStartColorBlue',('linkColorUnused1',null1),
                      'linkEndColorRed','linkEndColorGreen','linkEndColorBlue',('linkColorUnused2',null1)),
         MelGroup('activateParents',
-            MelStruct('XAPD','B','flags'),
+            MelUInt8('XAPD', 'flags'),
             MelStructs('XAPR','If','activateParentRefs',(FID,'reference'),'delay')
-            ),
+        ),
         MelString('XATO','activationPrompt'),
         MelOptStruct('XESP','IB3s',(FID,'parent'),(_flags,'parentFlags'),('unused1',null3)),
-        MelOptStruct('XEMI','I',(FID,'emittance')),
+        MelOptFid('XEMI', 'emittance'),
         MelFid('XMBR','multiboundReference'),
         MelBase('XIBS','ignoredBySandbox'),
-        MelOptStruct('XSCL','f',('scale',1.0)),
+        MelOptFloat('XSCL', ('scale', 1.0)),
         MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
     )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreAcre(MelRecord):
-    """Placed Creature"""
+    """Placed Creature."""
     classType = 'ACRE'
+
     _flags = Flags(0L,Flags.getNames('oppositeParent','popIn'))
     _variableFlags = Flags(0L,Flags.getNames('isLongOrShort'))
-    melSet=MelSet(
+
+    melSet = MelSet(
         MelString('EDID','eid'),
         MelFid('NAME','base'),
         MelFid('XEZN','encounterZone'),
         MelBase('XRGD','ragdollData'),
         MelBase('XRGB','ragdollBipedData'),
         MelGroup('patrolData',
-            MelStruct('XPRD','f','idleTime'),
+            MelFloat('XPRD', 'idleTime'),
             MelBase('XPPA','patrolScriptMarker'),
             MelFid('INAM', 'idle'),
             MelStruct('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
@@ -132,34 +138,34 @@ class MreAcre(MelRecord):
                 MelString('SCVR','name')),
             MelReferences(),
             MelFid('TNAM','topic'),
-            ),
-        MelStruct('XLCM','i','levelModifier'),
+        ),
+        MelSInt32('XLCM', 'levelModifier'),
         MelOwnership(),
         MelFid('XMRC','merchantContainer'),
-        MelStruct('XCNT','i','count'),
-        MelStruct('XRDS','f','radius',),
-        MelStruct('XHLP','f','health',),
+        MelSInt32('XCNT', 'count'),
+        MelFloat('XRDS', 'radius'),
+        MelFloat('XHLP', 'health'),
         MelStructs('XDCR','II','linkedDecals',(FID,'reference'),'unknown'),
         MelFid('XLKR','linkedReference'),
         MelOptStruct('XCLP','8B','linkStartColorRed','linkStartColorGreen','linkStartColorBlue',('linkColorUnused1',null1),
                      'linkEndColorRed','linkEndColorGreen','linkEndColorBlue',('linkColorUnused2',null1)),
         MelGroup('activateParents',
-            MelStruct('XAPD','B','flags'),
+            MelUInt8('XAPD', 'flags'),
             MelStructs('XAPR','If','activateParentRefs',(FID,'reference'),'delay')
-            ),
+        ),
         MelString('XATO','activationPrompt'),
         MelOptStruct('XESP','IB3s',(FID,'parent'),(_flags,'parentFlags'),('unused1',null3)),
-        MelOptStruct('XEMI','I',(FID,'emittance')),
+        MelOptFid('XEMI', 'emittance'),
         MelFid('XMBR','multiboundReference'),
         MelBase('XIBS','ignoredBySandbox'),
-        MelOptStruct('XSCL','f',('scale',1.0)),
+        MelOptFloat('XSCL', ('scale', 1.0)),
         MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
     )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreActi(MelRecord):
-    """Activator record."""
+    """Activator."""
     classType = 'ACTI'
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -176,23 +182,24 @@ class MreActi(MelRecord):
         MelFid('RNAM','radioStation'),
         MelFid('WNAM','waterType'),
         MelString('XATO','activationPrompt'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreAloc(MelRecord):
-    """Media location controller."""
+    """Media Location Controller."""
     classType = 'ALOC'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
-        MelStruct('NAM1','I','flags'),
-        MelStruct('NAM2','I','num2'),
-        MelStruct('NAM3','I','nam3'),
-        MelStruct('NAM4','f','locationDelay'),
-        MelStruct('NAM5','I','dayStart'),
-        MelStruct('NAM6','I','nightStart'),
-        MelStruct('NAM7','f','retrigerDelay'),
+        MelUInt32('NAM1', 'flags'),
+        MelUInt32('NAM2', 'num2'),
+        MelUInt32('NAM3', 'nam3'),
+        MelUInt32('NAM4', 'locationDelay'),
+        MelUInt32('NAM5', 'dayStart'),
+        MelUInt32('NAM6', 'nightStart'),
+        MelUInt32('NAM7', 'retrigerDelay'),
         MelFids('HNAM','neutralSets'),
         MelFids('ZNAM','allySets'),
         MelFids('XNAM','friendSets'),
@@ -200,26 +207,29 @@ class MreAloc(MelRecord):
         MelFids('LNAM','locationSets'),
         MelFids('GNAM','battleSets'),
         MelFid('RNAM','conditionalFaction'),
-        MelStruct('FNAM','I','fnam'),
-        )
+        MelUInt32('FNAM', 'fnam'),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreAmef(MelRecord):
-    """Ammo effect record."""
+    """Ammo Effect."""
     classType = 'AMEF'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
         MelStruct('DATA','2If','type','operation','value'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreAmmo(MelRecord):
-    """Ammo (arrow) record."""
+    """Ammunition."""
     classType = 'AMMO'
+
     _flags = Flags(0L,Flags.getNames('notNormalWeapon','nonPlayable'))
+
     class MelAmmoDat2(MelStruct):
         """Handle older truncated DAT2 for AMMO subrecord."""
         def loadData(self, record, ins, sub_type, size_, readId):
@@ -236,6 +246,7 @@ class MreAmmo(MelRecord):
                 if callable(action): value = action(value)
                 setter(attr,value)
             if self._debug: print unpacked
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('OBND','=6h',
@@ -256,13 +267,14 @@ class MreAmmo(MelRecord):
         MelString('ONAM','shortName'),
         MelString('QNAM','abbrev'),
         MelFids('RCIL','effects'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreArma(MelRecord):
-    """Armor addon record."""
+    """Armor Addon."""
     classType = 'ARMA'
+
     _flags = MelBipedFlags(0L,Flags.getNames())
     _dnamFlags = Flags(0L,Flags.getNames(
         (0,'modulatesVoice'),
@@ -274,6 +286,7 @@ class MreArma(MelRecord):
         (6,'notPlayable'),
         (7,'heavyArmor')
     ))
+
     class MelArmaDnam(MelStruct):
         """Handle older truncated DNAM for ARMA subrecord."""
         def loadData(self, record, ins, sub_type, size_, readId):
@@ -290,6 +303,7 @@ class MreArma(MelRecord):
                 if callable(action): value = action(value)
                 setter(attr,value)
             if self._debug: print unpacked, record.flags.getTrueAttrs()
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('OBND','=6h',
@@ -305,16 +319,17 @@ class MreArma(MelRecord):
         MelModel('femaleWorld',4),
         MelString('ICO2','femaleIconPath'),
         MelString('MIC2','femaleSmallIconPath'),
-        MelStruct('ETYP','i',('etype',-1)),
+        MelSInt32('ETYP', ('etype', -1)),
         MelStruct('DATA','IIf','value','health','weight'),
         MelArmaDnam('DNAM','=hHf4s','ar',(_dnamFlags,'dnamFlags',0L),('dt',0.0),('armaDnam1',null4),),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreArmo(MelRecord):
-    """Armor record."""
+    """Armor."""
     classType = 'ARMO'
+
     _flags = MelBipedFlags(0L,Flags.getNames())
     _dnamFlags = Flags(0L,Flags.getNames(
         (0,'modulatesVoice'),
@@ -324,6 +339,7 @@ class MreArmo(MelRecord):
         (6,'notPlayable'),
         (7,'heavyArmor')
     ))
+
     class MelArmoDnam(MelStruct):
         """Handle older truncated DNAM for ARMO subrecord."""
         def loadData(self, record, ins, sub_type, size_, readId):
@@ -363,21 +379,22 @@ class MreArmo(MelRecord):
         MelDestructible(),
         MelFid('REPL','repairList'),
         MelFid('BIPL','bipedModelList'),
-        MelStruct('ETYP','i',('etype',-1)),
+        MelSInt32('ETYP', ('etype', -1)),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
         MelStruct('DATA','=2if','value','health','weight'),
         MelArmoDnam('DNAM','=hHf4s','ar',(_dnamFlags,'dnamFlags',0L),('dt',0.0),('armoDnam1',null4),),
-        MelStruct('BNAM','I',('overridesAnimationSound',0L)),
+        MelUInt32('BNAM', ('overridesAnimationSound', 0L)),
         MelStructs('SNAM','IB3sI','animationSounds',(FID,'sound'),'chance',('unused','\xb7\xe7\x0b'),'type'),
         MelFid('TNAM','animationSoundsTemplate'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreAspc(MelRecord):
-    """Acoustic space record."""
+    """Acoustic Space."""
     classType = 'ASPC'
+
     isKeyedByEid = True # NULL fids are acceptable
 
     melSet = MelSet(
@@ -386,17 +403,18 @@ class MreAspc(MelRecord):
                   'boundX1','boundY1','boundZ1',
                   'boundX2','boundY2','boundZ2'),
         MelFids('SNAM','soundLooping'),
-        MelStruct('WNAM','I','wallaTrigerCount'),
+        MelUInt32('WNAM', 'wallaTrigerCount'),
         MelFid('RDAT','useSoundFromRegion'),
-        MelStruct('ANAM','I','environmentType'),
-        MelStruct('INAM','I','isInterior'),
-        )
+        MelUInt32('ANAM', 'environmentType'),
+        MelUInt32('INAM', 'isInterior'),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreCcrd(MelRecord):
     """Caravan Card."""
     classType = 'CCRD'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('OBND','=6h',
@@ -411,31 +429,35 @@ class MreCcrd(MelRecord):
         MelFid('ZNAM','dropSound'),
         MelString('TX00','textureFace'),
         MelString('TX01','textureBack'),
+        # TODO(inf) Ugly, revisit with distributor
         MelStructs('INTV','I','suitAndValue','value'),
-        MelStruct('DATA','I','value'),
-        )
+        MelUInt32('DATA', 'value'),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreCdck(MelRecord):
-    """Caravan deck record."""
+    """Caravan Deck."""
     classType = 'CDCK'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
         MelFids('CARD','cards'),
-        MelStruct('DATA','I','count'), # 'Count (broken)' in xEdit - unused?
-        )
+        MelUInt32('DATA', 'count'), # 'Count (broken)' in xEdit - unused?
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreCell(MelRecord):
-    """Cell record."""
+    """Cell."""
     classType = 'CELL'
+
     cellFlags = Flags(0L,Flags.getNames((0, 'isInterior'),(1,'hasWater'),(2,'invertFastTravel'),
         (3,'forceHideLand'),(5,'publicPlace'),(6,'handChanged'),(7,'behaveLikeExterior')))
     inheritFlags = Flags(0L,Flags.getNames('ambientColor','directionalColor','fogColor','fogNear','fogFar',
         'directionalRotation','directionalFade','clipDistance','fogPower'))
+
     class MelCoordinates(MelOptStruct):
         """Handle older truncated XCLC for CELL subrecord."""
         def loadData(self, record, ins, sub_type, size_, readId):
@@ -452,9 +474,11 @@ class MreCell(MelRecord):
                 if callable(action): value = action(value)
                 setter(attr,value)
             if self._debug: print unpacked, record.flags.getTrueAttrs()
+
         def dumpData(self,record,out):
             if not record.flags.isInterior:
                 MelOptStruct.dumpData(self,record,out)
+
     class MelCellXcll(MelOptStruct):
         """Handle older truncated XCLL for CELL subrecord."""
         def loadData(self, record, ins, sub_type, size_, readId):
@@ -471,10 +495,11 @@ class MreCell(MelRecord):
                 if callable(action): value = action(value)
                 setter(attr,value)
             if self._debug: print unpacked, record.flags.getTrueAttrs()
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
-        MelStruct('DATA','B',(cellFlags,'flags',0L)),
+        MelUInt8('DATA', (cellFlags, 'flags', 0L)),
         MelCoordinates('XCLC','iiI',('posX',None),('posY',None),('forceHideLand',0L)),
         MelCellXcll('XCLL','=3Bs3Bs3Bs2f2i3f','ambientRed','ambientGreen','ambientBlue',
             ('unused1',null1),'directionalRed','directionalGreen','directionalBlue',
@@ -483,28 +508,29 @@ class MreCell(MelRecord):
             'directionalFade','fogClip','fogPower'),
         MelBase('IMPF','footstepMaterials'), #--todo rewrite specific class.
         MelFid('LTMP','lightTemplate'),
-        MelOptStruct('LNAM','I',(inheritFlags,'lightInheritFlags',0L)),
+        MelOptUInt32('LNAM', (inheritFlags, 'lightInheritFlags', 0L)),
         #--CS default for water is -2147483648, but by setting default here to -2147483649,
         #  we force the bashed patch to retain the value of the last mod.
-        MelOptStruct('XCLW','f',('waterHeight',-2147483649)),
+        MelOptFloat('XCLW', ('waterHeight', -2147483649)),
         MelString('XNAM','waterNoiseTexture'),
         MelFidList('XCLR','regions'),
-        MelOptStruct('XCMT','B','xcmt_p'),
+        MelOptUInt8('XCMT', 'xcmt_p'),
         MelFid('XCIM','imageSpace'),
-        MelOptStruct('XCET','B','xcet_p'),
+        MelOptUInt8('XCET', 'xcet_p'),
         MelFid('XEZN','encounterZone'),
         MelFid('XCCM','climate'),
         MelFid('XCWT','water'),
         MelOwnership(),
         MelFid('XCAS','acousticSpace'),
         MelFid('XCMO','music'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreChal(MelRecord):
-    """Challenge record."""
+    """Challenge."""
     classType = 'CHAL'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
@@ -514,13 +540,14 @@ class MreChal(MelRecord):
                   'dependOnType1','dependOnType2','dependOnType3'),
         MelFid('SNAM','dependOnType4'),
         MelFid('XNAM','dependOnType5'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreChip(MelRecord):
     """Casino Chip."""
     classType = 'CHIP'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('OBND','=6h',
@@ -533,13 +560,14 @@ class MreChip(MelRecord):
         MelDestructible(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreCmny(MelRecord):
     """Caravan Money."""
     classType = 'CMNY'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('OBND','=6h',
@@ -551,15 +579,17 @@ class MreCmny(MelRecord):
         MelString('MICO','smallIconPath'),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
-        MelStruct('DATA','I','absoluteValue'),
-        )
+        MelUInt32('DATA', 'absoluteValue'),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreCont(MelRecord):
-    """Container record."""
+    """Container."""
     classType = 'CONT'
+
     _flags = Flags(0,Flags.getNames(None,'respawns'))
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('OBND','=6h',
@@ -577,13 +607,14 @@ class MreCont(MelRecord):
         MelFid('SNAM','soundOpen'),
         MelFid('QNAM','soundClose'),
         MelFid('RNAM','soundRandomLooping'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreCsno(MelRecord):
     """Casino."""
     classType = 'CSNO'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
@@ -591,22 +622,26 @@ class MreCsno(MelRecord):
             'slotReel0','slotReel1','slotReel2','slotReel3','slotReel4','slotReel5','slotReel6',
             'numberOfDecks','maxWinnings',(FID,'currency'),(FID,'casinoWinningQuest'),'flags'),
         MelGroups('chipModels',
-            MelString('MODL','model')),
+            MelString('MODL','model')
+        ),
         MelString('MOD2','slotMachineModel'),
         MelString('MOD3','blackjackTableModel'),
         MelString('MODT','extraBlackjackTableModel'),
         MelString('MOD4','rouletteTableModel'),
         MelGroups('slotReelTextures',
-            MelString('ICON','texture')),
+            MelString('ICON','texture')
+        ),
         MelGroups('blackjackDecks',
-            MelString('ICO2','texture')),
-        )
+            MelString('ICO2','texture')
+        ),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreCsty(MelRecord):
-    """CSTY Record. Combat Styles."""
+    """Combat Style."""
     classType = 'CSTY'
+
     _flagsA = Flags(0L,Flags.getNames(
         ( 0,'advanced'),
         ( 1,'useChanceForAttack'),
@@ -641,23 +676,25 @@ class MreCsty(MelRecord):
                      'rangedWeaponRangeMultMin', 'unkCSSD1', 'weaponRestrictions',
                      'rangedWeaponRangeMultMax', 'maxTargetingFov', 'combatRadius',
                      'semiAutomaticFireDelayMultMin', 'semiAutomaticFireDelayMultMax'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreDehy(MelRecord):
-    """Dehydration stage record."""
+    """Dehydration Stage."""
     classType = 'DEHY'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('DATA','2I','trigerThreshold',(FID,'actorEffect')),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreDial(brec.MreDial):
-    """Dialog record."""
+    """Dialogue."""
     _flags = Flags(0,Flags.getNames('rumors','toplevel',))
+
     class MelDialData(MelStruct):
         """Handle older truncated DATA for DIAL subrecord."""
         def loadData(self, record, ins, sub_type, size_, readId):
@@ -674,13 +711,16 @@ class MreDial(brec.MreDial):
                 if callable(action): value = action(value)
                 setter(attr,value)
             if self._debug: print unpacked, record.flags.getTrueAttrs()
+
     class MelDialDistributor(MelNull):
         def __init__(self):
             self._debug = False
+
         def getLoaders(self,loaders):
             """Self as loader for structure types."""
             for type_ in ('INFC','INFX',):
                 loaders[type_] = self
+
         def setMelSet(self,melSet):
             """Set parent melset. Need this so that can reassign loaders later."""
             self.melSet = melSet
@@ -688,6 +728,7 @@ class MreDial(brec.MreDial):
             for element in melSet.elements:
                 attr = element.__dict__.get('attr',None)
                 if attr: self.loaders[attr] = element
+
         def loadData(self, record, ins, sub_type, size_, readId):
             if sub_type in ('INFC', 'INFX'):
                 quests = record.__getattribute__('quests')
@@ -712,19 +753,20 @@ class MreDial(brec.MreDial):
             ),
         ),
         MelString('FULL','full'),
-        MelStruct('PNAM','f','priority'),
+        MelFloat('PNAM', 'priority'),
         MelString('TDUM','tdum_p'),
         MelDialData('DATA','BB','dialType',(_flags,'dialFlags',0L)),
         MelDialDistributor(),
-     )
+    )
     melSet.elements[-1].setMelSet(melSet)
 
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreDobj(MelRecord):
-    """Default object manager record."""
+    """Default Object Manager."""
     classType = 'DOBJ'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('DATA','34I',(FID,'stimpack'),(FID,'superStimpack'),(FID,'radX'),(FID,'radAway'),
@@ -736,27 +778,30 @@ class MreDobj(MelRecord):
             (FID,'missFortuneFaction'),(FID,'meltdownExplosion'),(FID,'unarmedForwardPA'),(FID,'unarmedBackwardPA'),
             (FID,'unarmedLeftPA'),(FID,'unarmedRightPA'),(FID,'unarmedCrouchPA'),(FID,'unarmedCounterPA'),
             (FID,'spotterEffect'),(FID,'itemDetectedEffect'),(FID,'cateyeMobileEffect'),),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreEnch(MelRecord,MreHasEffects):
-    """Enchantment (Object Effect) record."""
+    """Object Effect."""
     classType = 'ENCH'
+
     _flags = Flags(0L,Flags.getNames('noAutoCalc','autoCalculate','hideEffect'))
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelFull0(), #--At least one mod has this. Odd.
         MelStruct('ENIT','3IB3s','itemType','chargeAmount','enchantCost',
                   (_flags,'flags',0L),('unused1',null3)),
         MelEffects(),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreFact(MelRecord):
-    """Faction record."""
+    """Faction."""
     classType = 'FACT'
+
     _flags = Flags(0L,Flags.getNames('hiddenFromPC','evil','specialCombat'))
     _flags2 = Flags(0L,Flags.getNames('trackCrime','allowSell',))
 
@@ -784,14 +829,15 @@ class MreFact(MelRecord):
         MelString('FULL','full'),
         MelStructs('XNAM','IiI','relations',(FID,'faction'),'mod','groupCombatReaction'),
         MelFactData('DATA','2B2s',(_flags,'flags',0L),'flagsFact',('unknown',null2),),
-        MelOptStruct('CNAM','f',('crimeGoldMultiplier',None)),
+        MelOptFloat('CNAM', ('crimeGoldMultiplier', None)),
         MelGroups('ranks',
-            MelStruct('RNAM','i','rank'),
+            MelSInt32('RNAM', 'rank'),
             MelString('MNAM','male'),
             MelString('FNAM','female'),
-            MelString('INAM','insigniaPath'),),
-        MelOptStruct('WMI1','I',(FID,'reputation',None)),
-        )
+            MelString('INAM','insigniaPath')
+        ),
+        MelOptFid('WMI1', 'reputation', None),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
@@ -800,46 +846,47 @@ class MreFact(MelRecord):
 # Defined in brec.py as class MreGlob(MelRecord) ------------------------------
 #------------------------------------------------------------------------------
 class MreGmst(MreGmstBase):
-    """Fallout New Vegas GMST record"""
+    """Game Setting."""
     isKeyedByEid = True # NULL fids are acceptable.
 
 #------------------------------------------------------------------------------
 class MreHdpt(MelRecord):
-    """Head part record."""
+    """Head Part."""
     classType = 'HDPT'
+
     _flags = Flags(0L,Flags.getNames('playable',))
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
         MelModel(),
-        MelStruct('DATA','B',(_flags,'flags')),
+        MelUInt8('DATA', (_flags, 'flags')),
         MelFids('HNAM','extraParts'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreHung(MelRecord):
-    """Hunger stage record."""
+    """Hunger Stage."""
     classType = 'HUNG'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('DATA','2I','trigerThreshold',(FID,'actorEffect')),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreImad(MelRecord):
-    """Image space modifier record."""
+    """Image Space Adapter."""
     classType = 'IMAD'
 
     _ImadDofFlags = Flags(0L, Flags.getNames(
         (0, 'useTarget'),
     ))
-
     _ImadAnimatableFlags = Flags(0L, Flags.getNames(
         (0, 'animatable'),
     ))
-
     _ImadRadialBlurFlags = Flags(0L, Flags.getNames(
         (0, 'useTarget')
     ))
@@ -931,8 +978,9 @@ class MreImad(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreImod(MelRecord):
-    """Item mod."""
+    """Item Mod."""
     classType = 'IMOD'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('OBND','=6h',
@@ -948,19 +996,21 @@ class MreImod(MelRecord):
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
         MelStruct('DATA','If','value','weight'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreInfo(MelRecord):
-    """Info (dialog entry) record."""
+    """Dialog Response."""
     classType = 'INFO'
+
     _flags = Flags(0,Flags.getNames(
         'goodbye','random','sayOnce','runImmediately','infoRefusal','randomEnd',
         'runForRumors','speechChallenge',))
     _flags2 = Flags(0,Flags.getNames(
         'sayOnceADay','alwaysDarken',None,None,'lowIntelligence','highIntelligence',))
     _variableFlags = Flags(0L,Flags.getNames('isLongOrShort'))
+
     class MelInfoData(MelStruct):
         """Support older 2 byte version."""
         def loadData(self, record, ins, sub_type, size_, readId):
@@ -995,7 +1045,7 @@ class MreInfo(MelRecord):
             MelString('NAM3','edits'),
             MelFid('SNAM','speakerAnimation'),
             MelFid('LNAM','listenerAnimation'),
-            ),
+        ),
         MelConditions(),
         MelFids('TCLT','choices'),
         MelFids('TCLF','linksFrom'),
@@ -1008,7 +1058,7 @@ class MreInfo(MelRecord):
                 MelStruct('SLSD','I12sB7s','index',('unused1',null4+null4+null4),(_variableFlags,'flags',0L),('unused2',null4+null3)),
                 MelString('SCVR','name')),
             MelReferences(),
-            ),
+        ),
         MelGroup('scriptEnd',
             MelBase('NEXT','marker'),
             MelInfoSchr('SCHR','4s4I',('unused2',null4),'numRefs','compiledSize','lastIndex','scriptType'),
@@ -1018,18 +1068,18 @@ class MreInfo(MelRecord):
                 MelStruct('SLSD','I12sB7s','index',('unused1',null4+null4+null4),(_variableFlags,'flags',0L),('unused2',null4+null3)),
                 MelString('SCVR','name')),
             MelReferences(),
-            ),
+        ),
         MelFid('SNDD','sndd_p'),
         MelString('RNAM','prompt'),
         MelFid('ANAM','speaker'),
         MelFid('KNAM','acterValuePeak'),
-        MelStruct('DNAM', 'I', 'speechChallenge')
-        )
+        MelUInt32('DNAM', 'speechChallenge')
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreIpct(MelRecord):
-    """Impact record."""
+    """Impact."""
     classType = 'IPCT'
 
     DecalDataFlags = Flags(0L,Flags.getNames(
@@ -1051,13 +1101,14 @@ class MreIpct(MelRecord):
         MelFid('DNAM','textureSet'),
         MelFid('SNAM','sound1'),
         MelFid('NAM1','sound2'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreKeym(MelRecord):
-    """MISC (miscellaneous item) record."""
+    """Key."""
     classType = 'KEYM'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('OBND','=6h',
@@ -1073,15 +1124,17 @@ class MreKeym(MelRecord):
         MelFid('ZNAM','dropSound'),
         MelStruct('DATA','if','value','weight'),
         MelFid('RNAM','soundRandomLooping'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLigh(MelRecord):
-    """Light source record."""
+    """Light."""
     classType = 'LIGH'
+
     _flags = Flags(0L,Flags.getNames('dynamic','canTake','negative','flickers',
         'unk1','offByDefault','flickerSlow','pulse','pulseSlow','spotLight','spotShadow'))
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('OBND','=6h',
@@ -1096,41 +1149,44 @@ class MreLigh(MelRecord):
         MelStruct('DATA','iI3BsI2fIf','duration','radius','red','green','blue',
                   ('unused1',null1),(_flags,'flags',0L),'falloff','fov','value',
                   'weight'),
-        MelOptStruct('FNAM','f',('fade',None)),
+        MelOptFloat('FNAM', ('fade', None)),
         MelFid('SNAM','sound'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLscr(MelRecord):
-    """Load screen."""
+    """Load Screen."""
     classType = 'LSCR'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('ICON','iconPath'),
         MelString('DESC','text'),
         MelStructs('LNAM','2I2h','Locations',(FID,'direct'),(FID,'indirect'),'gridy','gridx'),
         MelFid('WMI1','loadScreenType'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLsct(MelRecord):
-    """Load screen tip."""
+    """Load Screen Type."""
     classType = 'LSCT'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('DATA','5IfI3fI20sI3f4sI','type','data1X','data1Y','data1Width',
                          'data1Height','data1Orientation',
             'data1Font','data1ColorR','data1ColorG','data1ColorB','data1Align','unknown1',
             'data2Font','data2ColorR','data2ColorG','data2ColorB','unknown2','stats'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreMisc(MelRecord):
-    """MISC (miscellaneous item) record."""
+    """Misc. Item."""
     classType = 'MISC'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('OBND','=6h',
@@ -1146,13 +1202,14 @@ class MreMisc(MelRecord):
         MelFid('ZNAM','dropSound'),
         MelStruct('DATA','if','value','weight'),
         MelFid('RNAM','soundRandomLooping'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreMset(MelRecord):
     """Media Set."""
     classType = 'MSET'
+
     _flags = Flags(0L,Flags.getNames(
         ( 0,'dayOuter'),
         ( 1,'dayMiddle'),
@@ -1161,65 +1218,69 @@ class MreMset(MelRecord):
         ( 4,'nightMiddle'),
         ( 5,'nightInner'),
         ))
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
-        MelStruct('NAM1','I','type'),
+        MelUInt32('NAM1', 'type'),
         MelString('NAM2','nam2'),
         MelString('NAM3','nam3'),
         MelString('NAM4','nam4'),
         MelString('NAM5','nam5'),
         MelString('NAM6','nam6'),
         MelString('NAM7','nam7'),
-        MelStruct('NAM8','f','nam8'),
-        MelStruct('NAM9','f','nam9'),
-        MelStruct('NAM0','f','nam0'),
-        MelStruct('ANAM','f','anam'),
-        MelStruct('BNAM','f','bnam'),
-        MelStruct('CNAM','f','cnam'),
-        MelStruct('JNAM','f','jnam'),
-        MelStruct('KNAM','f','knam'),
-        MelStruct('LNAM','f','lnam'),
-        MelStruct('MNAM','f','mnam'),
-        MelStruct('NNAM','f','nnam'),
-        MelStruct('ONAM','f','onam'),
-        MelStruct('PNAM','B',(_flags,'enableFlags'),),
-        MelStruct('DNAM','f','dnam'),
-        MelStruct('ENAM','f','enam'),
-        MelStruct('FNAM','f','fnam'),
-        MelStruct('GNAM','f','gnam'),
-        MelOptStruct('HNAM','I',(FID,'hnam')),
-        MelOptStruct('INAM','I',(FID,'inam')),
+        MelFloat('NAM8', 'nam8'),
+        MelFloat('NAM9', 'nam9'),
+        MelFloat('NAM0', 'nam0'),
+        MelFloat('ANAM', 'anam'),
+        MelFloat('BNAM', 'bnam'),
+        MelFloat('CNAM', 'cnam'),
+        MelFloat('JNAM', 'jnam'),
+        MelFloat('KNAM', 'knam'),
+        MelFloat('LNAM', 'lnam'),
+        MelFloat('MNAM', 'mnam'),
+        MelFloat('NNAM', 'nnam'),
+        MelFloat('ONAM', 'onam'),
+        MelFloat('PNAM', (_flags, 'enableFlags')),
+        MelFloat('DNAM', 'dnam'),
+        MelFloat('ENAM', 'enam'),
+        MelFloat('FNAM', 'fnam'),
+        MelFloat('GNAM', 'gnam'),
+        MelOptFid('HNAM', 'hnam'),
+        MelOptFid('INAM', 'inam'),
         MelBase('DATA','data'),
     )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreMusc(MelRecord):
-    """Music type record."""
+    """Music Type."""
     classType = 'MUSC'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FNAM','filename'),
-        MelStruct('ANAM','f','dB'),
-        )
+        MelFloat('ANAM', 'dB'),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MrePgre(MelRecord):
-    """Placed Grenade"""
+    """Placed Grenade."""
     classType = 'PGRE'
+
     _flags = Flags(0L,Flags.getNames('oppositeParent'))
     _variableFlags = Flags(0L,Flags.getNames('isLongOrShort'))
     _watertypeFlags = Flags(0L,Flags.getNames('reflection','refraction'))
-    melSet=MelSet(
+
+    melSet = MelSet(
         MelString('EDID','eid'),
         MelFid('NAME','base'),
         MelFid('XEZN','encounterZone'),
         MelBase('XRGD','ragdollData'),
         MelBase('XRGB','ragdollBipedData'),
         MelGroup('patrolData',
-            MelStruct('XPRD','f','idleTime'),
+            MelFloat('XPRD', 'idleTime'),
             MelBase('XPPA','patrolScriptMarker'),
             MelFid('INAM', 'idle'),
             MelStruct('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
@@ -1230,11 +1291,11 @@ class MrePgre(MelRecord):
                 MelString('SCVR','name')),
             MelReferences(),
             MelFid('TNAM','topic'),
-            ),
+        ),
         MelOwnership(),
-        MelStruct('XCNT','i','count'),
-        MelStruct('XRDS','f','radius',),
-        MelStruct('XHLP','f','health',),
+        MelSInt32('XCNT', 'count'),
+        MelFloat('XRDS', 'radius',),
+        MelFloat('XHLP', 'health',),
         MelGroups('reflectedRefractedBy',
             MelStruct('XPWR','2I',(FID,'waterReference'),(_watertypeFlags,'waterFlags',0L),),
         ),
@@ -1243,34 +1304,36 @@ class MrePgre(MelRecord):
         MelOptStruct('XCLP','8B','linkStartColorRed','linkStartColorGreen','linkStartColorBlue',('linkColorUnused1',null1),
                      'linkEndColorRed','linkEndColorGreen','linkEndColorBlue',('linkColorUnused2',null1)),
         MelGroup('activateParents',
-            MelStruct('XAPD','B','flags'),
+            MelUInt8('XAPD', 'flags'),
             MelStructs('XAPR','If','activateParentRefs',(FID,'reference'),'delay')
-            ),
+        ),
         MelString('XATO','activationPrompt'),
         MelOptStruct('XESP','IB3s',(FID,'parent'),(_flags,'parentFlags'),('unused1',null3)),
-        MelOptStruct('XEMI','I',(FID,'emittance')),
+        MelOptFid('XEMI', 'emittance'),
         MelFid('XMBR','multiboundReference'),
         MelBase('XIBS','ignoredBySandbox'),
-        MelOptStruct('XSCL','f',('scale',1.0)),
+        MelOptFloat('XSCL', ('scale', 1.0)),
         MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
     )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MrePmis(MelRecord):
-    """Placed Missile"""
+    """Placed Missile."""
     classType = 'PMIS'
+
     _flags = Flags(0L,Flags.getNames('oppositeParent'))
     _variableFlags = Flags(0L,Flags.getNames('isLongOrShort'))
     _watertypeFlags = Flags(0L,Flags.getNames('reflection','refraction'))
-    melSet=MelSet(
+
+    melSet = MelSet(
         MelString('EDID','eid'),
         MelFid('NAME','base'),
         MelFid('XEZN','encounterZone'),
         MelBase('XRGD','ragdollData'),
         MelBase('XRGB','ragdollBipedData'),
         MelGroup('patrolData',
-            MelStruct('XPRD','f','idleTime'),
+            MelFloat('XPRD', 'idleTime'),
             MelBase('XPPA','patrolScriptMarker'),
             MelFid('INAM', 'idle'),
             MelStruct('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
@@ -1281,11 +1344,11 @@ class MrePmis(MelRecord):
                 MelString('SCVR','name')),
             MelReferences(),
             MelFid('TNAM','topic'),
-            ),
+        ),
         MelOwnership(),
-        MelStruct('XCNT','i','count'),
-        MelStruct('XRDS','f','radius',),
-        MelStruct('XHLP','f','health',),
+        MelSInt32('XCNT', 'count'),
+        MelFloat('XRDS', 'radius',),
+        MelFloat('XHLP', 'health',),
         MelGroups('reflectedRefractedBy',
             MelStruct('XPWR','2I',(FID,'waterReference'),(_watertypeFlags,'waterFlags',0L),),
         ),
@@ -1294,23 +1357,24 @@ class MrePmis(MelRecord):
         MelOptStruct('XCLP','8B','linkStartColorRed','linkStartColorGreen','linkStartColorBlue',('linkColorUnused1',null1),
                      'linkEndColorRed','linkEndColorGreen','linkEndColorBlue',('linkColorUnused2',null1)),
         MelGroup('activateParents',
-            MelStruct('XAPD','B','flags'),
+            MelUInt8('XAPD', 'flags'),
             MelStructs('XAPR','If','activateParentRefs',(FID,'reference'),'delay')
-            ),
+        ),
         MelString('XATO','activationPrompt'),
         MelOptStruct('XESP','IB3s',(FID,'parent'),(_flags,'parentFlags'),('unused1',null3)),
-        MelOptStruct('XEMI','I',(FID,'emittance')),
+        MelOptFid('XEMI', 'emittance'),
         MelFid('XMBR','multiboundReference'),
         MelBase('XIBS','ignoredBySandbox'),
-        MelOptStruct('XSCL','f',('scale',1.0)),
+        MelOptFloat('XSCL', ('scale', 1.0)),
         MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
     )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreProj(MelRecord):
-    """Projectile record."""
+    """Projectile."""
     classType = 'PROJ'
+
     _flags = Flags(0,Flags.getNames(
         'hitscan',
         'explosive',
@@ -1325,6 +1389,7 @@ class MreProj(MelRecord):
         'detonates',
         'rotation'
         ))
+
     class MelProjData(MelStruct):
         """Handle older truncated DATA for PROJ subrecord."""
         def loadData(self, record, ins, sub_type, size_, readId):
@@ -1343,6 +1408,7 @@ class MreProj(MelRecord):
                 if callable(action): value = action(value)
                 setter(attr,value)
             if self._debug: print unpacked
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('OBND','=6h',
@@ -1362,13 +1428,13 @@ class MreProj(MelRecord):
                   ('rotationY',0.00000),('rotationZ',0.00000),('bouncyMult',0.00000)),
         MelString('NAM1','muzzleFlashPath'),
         MelBase('NAM2','_nam2'),
-        MelStruct('VNAM','I','soundLevel'),
-        )
+        MelUInt32('VNAM', 'soundLevel'),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreRace(MelRecord):
-    """Race record.
+    """Race.
 
     This record is complex to read and write. Relatively simple problems are the VNAM
     which can be empty or zeroed depending on relationship between voices and
@@ -1383,6 +1449,7 @@ class MreRace(MelRecord):
     think of."""
 
     classType = 'RACE'
+
     _flags = Flags(0L,Flags.getNames('playable', None, 'child'))
 
     class MelRaceVoices(MelStruct):
@@ -1401,10 +1468,11 @@ class MreRace(MelRecord):
                 MelBase('MODB','modb_p'),
                 MelBase('MODT','modt_p'),
                 MelBase('MODS','mods_p'),
-                MelOptStruct('MODD','B','modd_p'),
+                MelOptUInt8('MODD', 'modd_p'),
                 MelString('ICON','iconPath'),
                 MelBase('MICO','mico'))
             self.index = index
+
         def dumpData(self,record,out):
             out.packSub('INDX','I',self.index)
             MelGroup.dumpData(self,record,out)
@@ -1418,8 +1486,9 @@ class MreRace(MelRecord):
                 MelString('MODL','modPath'),
                 MelBase('MODT','modt_p'),
                 MelBase('MODS','mods_p'),
-                MelOptStruct('MODD','B','modd_p'))
+                MelOptUInt8('MODD', 'modd_p'))
             self.index = index
+
         def dumpData(self,record,out):
             out.packSub('INDX','I',self.index)
             MelGroup.dumpData(self,record,out)
@@ -1429,6 +1498,7 @@ class MreRace(MelRecord):
         def __init__(self,attr,index):
             MelString.__init__(self,'ICON',attr)
             self.index = index
+
         def dumpData(self,record,out):
             out.packSub('INDX','I',self.index)
             MelString.dumpData(self,record,out)
@@ -1513,8 +1583,8 @@ class MreRace(MelRecord):
         MelOptStruct('DNAM','2I',(FID,'defaultHairMale',0L),(FID,'defaultHairFemale',0L)),
         # Int corresponding to GMST sHairColorNN
         MelStruct('CNAM','2B','defaultHairColorMale','defaultHairColorFemale'),
-        MelOptStruct('PNAM','f','mainClamp'),
-        MelOptStruct('UNAM','f','faceClamp'),
+        MelOptFloat('PNAM', 'mainClamp'),
+        MelOptFloat('UNAM', 'faceClamp'),
         MelStruct('ATTR','2B','maleBaseAttribute','femaleBaseAttribute'),
         MelBase('NAM0','_nam0',''),
         MelBase('MNAM','_mnam',''),
@@ -1553,7 +1623,7 @@ class MreRace(MelRecord):
         MelBase('FNAM','_fnam',''),
         MelRaceFaceGen('femaleFaceGen'),
         MelRaceDistributor(),
-        )
+    )
     melSet.elements[-1].setMelSet(melSet)
     __slots__ = melSet.getSlotsUsed()
 
@@ -1561,24 +1631,28 @@ class MreRace(MelRecord):
 class MreRcct(MelRecord):
     """Recipe Category."""
     classType = 'RCCT'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
-        MelStruct('DATA','=B','flags'),
-        )
+        MelUInt8('DATA', 'flags'),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreRcpe(MelRecord):
     """Recipe."""
     classType = 'RCPE'
+
     class MelRcpeDistributor(MelNull):
         def __init__(self):
             self._debug = False
+
         def getLoaders(self,loaders):
             """Self as loader for structure types."""
             for type_ in ('RCQY',):
                 loaders[type_] = self
+
         def setMelSet(self,melSet):
             """Set parent melset. Need this so that can reassign loaders later."""
             self.melSet = melSet
@@ -1586,6 +1660,7 @@ class MreRcpe(MelRecord):
             for element in melSet.elements:
                 attr = element.__dict__.get('attr',None)
                 if attr: self.loaders[attr] = element
+
         def loadData(self, record, ins, sub_type, size_, readId):
             if sub_type in ('RCQY',):
                 outputs = record.__getattribute__('outputs')
@@ -1594,6 +1669,7 @@ class MreRcpe(MelRecord):
                 else:
                     element = self.loaders['ingredients']
             element.loadData(record, ins, sub_type, size_, readId)
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
@@ -1601,14 +1677,14 @@ class MreRcpe(MelRecord):
         MelStruct('DATA','4I','skill','level',(FID,'category'),(FID,'subCategory')),
         MelGroups('ingredients',
             MelFid('RCIL','item'),
-            MelStruct('RCQY','I','quantity'),
-            ),
+            MelUInt32('RCQY', 'quantity'),
+        ),
         MelGroups('outputs',
             MelFid('RCOD','item'),
-            MelStruct('RCQY','I','quantity'),
-            ),
+            MelUInt32('RCQY', 'quantity'),
+        ),
         MelRcpeDistributor(),
-        )
+    )
     melSet.elements[-1].setMelSet(melSet)
     __slots__ = melSet.getSlotsUsed()
 
@@ -1616,12 +1692,14 @@ class MreRcpe(MelRecord):
 class MreRefr(MelRecord):
     """Placed Object"""
     classType = 'REFR'
+
     _flags = Flags(0L,Flags.getNames('visible', 'canTravelTo'))
     _parentFlags = Flags(0L,Flags.getNames('oppositeParent'))
     _actFlags = Flags(0L,Flags.getNames('useDefault', 'activate','open','openByDefault'))
     _lockFlags = Flags(0L,Flags.getNames(None, None, 'leveledLock'))
     _destinationFlags = Flags(0L,Flags.getNames('noAlarm'))
     _variableFlags = Flags(0L,Flags.getNames('isLongOrShort'))
+
     class MelRefrXloc(MelOptStruct):
         """Handle older truncated XLOC for REFR subrecord."""
         def loadData(self, record, ins, sub_type, size_, readId):
@@ -1666,6 +1744,7 @@ class MreRefr(MelRecord):
                 (type_, size_) = insUnpack('4sH', 6, readId + '.FULL')
             ins.seek(pos)
             if self._debug: print ' ',record.flags,record.full,record.markerType
+
         def dumpData(self,record,out):
             if (record.flags,record.full,record.markerType,record.unused5,record.reputation) != self.defaults[1:]:
                 record.hasXmrk = True
@@ -1692,7 +1771,7 @@ class MreRefr(MelRecord):
         MelBase('XRGB','ragdollBipedData'),
         MelOptStruct('XPRM','3f3IfI','primitiveBoundX','primitiveBoundY','primitiveBoundX',
                      'primitiveColorRed','primitiveColorGreen','primitiveColorBlue','primitiveUnknown','primitiveType'),
-        MelOptStruct('XTRI','I','collisionLayer'),
+        MelOptUInt32('XTRI', 'collisionLayer'),
         MelBase('XMBP','multiboundPrimitiveMarker'),
         MelOptStruct('XMBO','3f','boundHalfExtentsX','boundHalfExtentsY','boundHalfExtentsZ'),
         MelOptStruct('XTEL','I6fI',(FID,'destinationFid'),'destinationPosX','destinationPosY',
@@ -1705,13 +1784,13 @@ class MreRefr(MelRecord):
             MelBase('BNAM','bnam_p'),
             MelBase('MNAM','mnam_p'),
             MelBase('NNAM','nnam_p'),
-            ),
+        ),
         MelBase('XSRF','xsrf_p'),
         MelBase('XSRD','xsrd_p'),
         MelFid('XTRG','targetId'),
-        MelOptStruct('XLCM','i',('levelMod',None)),
+        MelOptSInt32('XLCM', ('levelMod', None)),
         MelGroup('patrolData',
-            MelStruct('XPRD','f','idleTime'),
+            MelFloat('XPRD', 'idleTime'),
             MelBase('XPPA','patrolScriptMarker'),
             MelFid('INAM', 'idle'),
             MelStruct('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
@@ -1722,19 +1801,19 @@ class MreRefr(MelRecord):
                 MelString('SCVR','name')),
             MelReferences(),
             MelFid('TNAM','topic'),
-            ),
+        ),
         MelOptStruct('XRDO','fIfI','rangeRadius','broadcastRangeType','staticPercentage',(FID,'positionReference')),
         MelOwnership(),
         MelRefrXloc('XLOC','B3sI4sB3s4s','lockLevel',('unused1',null3),(FID,'lockKey'),('unused2',null4),(_lockFlags,'lockFlags'),('unused3',null3),('unused4',null4)),
-        MelOptStruct('XCNT','i','count'),
-        MelOptStruct('XRDS','f','radius'),
-        MelOptStruct('XHLP','f','health'),
-        MelOptStruct('XRAD','f','radiation'),
-        MelOptStruct('XCHG','f',('charge',None)),
+        MelOptSInt32('XCNT', 'count'),
+        MelOptFloat('XRDS', 'radius'),
+        MelOptFloat('XHLP', 'health'),
+        MelOptFloat('XRAD', 'radiation'),
+        MelOptFloat('XCHG', ('charge', None)),
         MelGroup('ammo',
             MelFid('XAMT','type'),
-            MelStruct('XAMC','I','count'),
-            ),
+            MelUInt32('XAMC', 'count'),
+        ),
         MelStructs('XPWR','II','reflectedByWaters',(FID,'reference'),'type'),
         MelFids('XLTW','litWaters'),
         MelStructs('XDCR','II','linkedDecals',(FID,'reference'),'unknown'),
@@ -1742,14 +1821,14 @@ class MreRefr(MelRecord):
         MelOptStruct('XCLP','8B','linkStartColorRed','linkStartColorGreen','linkStartColorBlue',('linkColorUnused1',null1),
                      'linkEndColorRed','linkEndColorGreen','linkEndColorBlue',('linkColorUnused2',null1)),
         MelGroup('activateParents',
-            MelStruct('XAPD','B','flags'),
+            MelUInt8('XAPD', 'flags'),
             MelStructs('XAPR','If','activateParentRefs',(FID,'reference'),'delay')
-            ),
+        ),
         MelString('XATO','activationPrompt'),
         MelOptStruct('XESP','IB3s',(FID,'parent'),(_parentFlags,'parentFlags'),('unused6',null3)),
-        MelOptStruct('XEMI','I',(FID,'emittance')),
+        MelOptFid('XEMI', 'emittance'),
         MelFid('XMBR','multiboundReference'),
-        MelOptStruct('XACT','I',(_actFlags,'actFlags',0L)),
+        MelOptUInt32('XACT', (_actFlags, 'actFlags', 0L)),
         MelBase('ONAM','onam_p'),
         MelBase('XIBS','ignoredBySandbox'),
         MelOptStruct('XNDP','2I',(FID,'navMesh'),'unknown'),
@@ -1762,20 +1841,21 @@ class MreRefr(MelRecord):
         MelGroup('roomData',
             MelStruct('XRMR','H2s','linkedRoomsCount','unknown'),
             MelFids('XLRM','linkedRoom'),
-            ),
+        ),
         MelOptStruct('XOCP','9f','occlusionPlaneWidth','occlusionPlaneHeight','occlusionPlanePosX','occlusionPlanePosY','occlusionPlanePosZ',
                      'occlusionPlaneRot1','occlusionPlaneRot2','occlusionPlaneRot3','occlusionPlaneRot4'),
         MelOptStruct('XORD','4I',(FID,'linkedOcclusionPlane0'),(FID,'linkedOcclusionPlane1'),(FID,'linkedOcclusionPlane2'),(FID,'linkedOcclusionPlane3')),
         MelOptStruct('XLOD','3f',('lod1',None),('lod2',None),('lod3',None)),
-        MelOptStruct('XSCL','f',('scale',1.0)),
+        MelOptFloat('XSCL', ('scale', 1.0)),
         MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
     )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreRegn(MelRecord):
-    """Region record."""
+    """Region."""
     classType = 'REGN'
+
     obflags = Flags(0L,Flags.getNames(
         ( 0,'conform'),
         ( 1,'paintVertices'),
@@ -1800,8 +1880,9 @@ class MreRegn(MelRecord):
         MelStruct('RCLR','3Bs','mapRed','mapBlue','mapGreen',('unused1',null1)),
         MelFid('WNAM','worldspace'),
         MelGroups('areas',
-            MelStruct('RPLI','I','edgeFalloff'),
-            MelStructA('RPLD','2f','points','posX','posY')),
+            MelUInt32('RPLI', 'edgeFalloff'),
+            MelStructA('RPLD','2f','points','posX','posY')
+        ),
         MelGroups('entries',
             MelStruct('RDAT', 'I2B2s', 'entryType', (rdatFlags, 'flags'),
                       'priority', ('unused1', null2)),
@@ -1835,28 +1916,30 @@ class MreRegn(MelRecord):
 class MreRepu(MelRecord):
     """Reputation."""
     classType = 'REPU'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
         MelString('ICON','iconPath'),
         MelString('MICO','smallIconPath'),
-        MelStruct('DATA','f','value'),
-        )
+        MelFloat('DATA', 'value'),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreSlpd(MelRecord):
-    """Sleep deprivation stage record."""
+    """Sleep Deprivation Stage."""
     classType = 'SLPD'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('DATA','2I','trigerThreshold',(FID,'actorEffect')),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreSoun(MelRecord):
-    """Sound record."""
+    """Sound."""
     classType = 'SOUN'
 
     _flags = Flags(0L,Flags.getNames(
@@ -1901,7 +1984,7 @@ class MreSoun(MelRecord):
                   'boundX1','boundY1','boundZ1',
                   'boundX2','boundY2','boundZ2'),
         MelString('FNAM','soundFile'),
-        MelStruct('RNAM','B','_rnam'),
+        MelUInt8('RNAM', '_rnam'),
         MelOptStruct('SNDD','=2BbsIh2B6h3i',('minDist',0), ('maxDist',0),
                     ('freqAdj',0), ('unusedSndd',null1),(_flags,'flags',0L),
                     ('staticAtten',0),('stopTime',0),('startTime',0),
@@ -1913,12 +1996,12 @@ class MreSoun(MelRecord):
         MelBase('ANAM','_anam'), #--Should be a struct. Maybe later.
         MelBase('GNAM','_gnam'), #--Should be a struct. Maybe later.
         MelBase('HNAM','_hnam'), #--Should be a struct. Maybe later.
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreStat(MelRecord):
-    """Static model record."""
+    """Static."""
     classType = 'STAT'
 
     melSet = MelSet(
@@ -1927,15 +2010,16 @@ class MreStat(MelRecord):
                   'boundX1','boundY1','boundZ1',
                   'boundX2','boundY2','boundZ2'),
         MelModel(),
-        MelStruct('BRUS','=b',('passthroughSound',-1)),
+        MelSInt8('BRUS', ('passthroughSound', -1)),
         MelFid('RNAM','soundRandomLooping'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreTact(MelRecord):
-    """Talking activator record."""
+    """Talking Activator."""
     classType = 'TACT'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('OBND','=6h',
@@ -1948,13 +2032,14 @@ class MreTact(MelRecord):
         MelFid('SNAM','sound'),
         MelFid('VNAM','voiceType'),
         MelFid('INAM','radioTemplate'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreWeap(MelRecord):
-    """Weapon record."""
+    """Weapon."""
     classType = 'WEAP'
+
     _flags = Flags(0L,Flags.getNames('notNormalWeapon'))
     _dflags1 = Flags(0L,Flags.getNames(
             'ignoresNormalWeaponResistance',
@@ -2047,11 +2132,11 @@ class MreWeap(MelRecord):
         MelString('MICO','smallIconPath'),
         MelFid('SCRI','script'),
         MelFid('EITM','objectEffect'),
-        MelOptStruct('EAMT','H','objectEffectPoints'),
+        MelOptUInt16('EAMT', 'objectEffectPoints'),
         MelFid('NAM0','ammo'),
         MelDestructible(),
         MelFid('REPL','repairList'),
-        MelStruct('ETYP','i',('etype',-1)),
+        MelSInt32('ETYP', ('etype', -1)),
         MelFid('BIPL','bipedModelList'),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
@@ -2060,32 +2145,32 @@ class MreWeap(MelRecord):
         MelFid('EFSD','scopeEffect'),
         MelModel('worldModel',4),
         MelGroup('modelWithMods',
-                 MelString('MWD1','mod1Path'),
-                 MelString('MWD2','mod2Path'),
-                 MelString('MWD3','mod1and2Path'),
-                 MelString('MWD4','mod3Path'),
-                 MelString('MWD5','mod1and3Path'),
-                 MelString('MWD6','mod2and3Path'),
-                 MelString('MWD7','mod1and2and3Path'),
-                 ),
+            MelString('MWD1','mod1Path'),
+            MelString('MWD2','mod2Path'),
+            MelString('MWD3','mod1and2Path'),
+            MelString('MWD4','mod3Path'),
+            MelString('MWD5','mod1and3Path'),
+            MelString('MWD6','mod2and3Path'),
+            MelString('MWD7','mod1and2and3Path'),
+        ),
         MelString('VANM','vatsAttackName'),
         MelString('NNAM','embeddedWeaponNode'),
         MelFid('INAM','impactDataset'),
         MelFid('WNAM','firstPersonModel'),
         MelGroup('firstPersonModelWithMods',
-                 MelFid('WNM1','mod1Path'),
-                 MelFid('WNM2','mod2Path'),
-                 MelFid('WNM3','mod1and2Path'),
-                 MelFid('WNM4','mod3Path'),
-                 MelFid('WNM5','mod1and3Path'),
-                 MelFid('WNM6','mod2and3Path'),
-                 MelFid('WNM7','mod1and2and3Path'),
-                 ),
+            MelFid('WNM1','mod1Path'),
+            MelFid('WNM2','mod2Path'),
+            MelFid('WNM3','mod1and2Path'),
+            MelFid('WNM4','mod3Path'),
+            MelFid('WNM5','mod1and3Path'),
+            MelFid('WNM6','mod2and3Path'),
+            MelFid('WNM7','mod1and2and3Path'),
+        ),
         MelGroup('weaponMods',
-                 MelFid('WMI1','mod1'),
-                 MelFid('WMI2','mod2'),
-                 MelFid('WMI3','mod3'),
-                 ),
+            MelFid('WMI1','mod1'),
+            MelFid('WMI2','mod2'),
+            MelFid('WMI3','mod3'),
+        ),
         MelFids('SNAM','soundGunShot3D'),
         MelFid('XNAM','soundGunShot2D'),
         MelFid('NAM7','soundGunShot3DLooping'),
@@ -2123,7 +2208,7 @@ class MreWeap(MelRecord):
         MelWeapVats('VATS','I3f2B2s','vatsEffect','vatsSkill','vatsDamMult',
                     'vatsAp','vatsSilent','vatsModReqiured',('weapVats1',null2)),
         MelBase('VNAM','soundLevel'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
@@ -2165,7 +2250,7 @@ class MelPnamNam0Handler(MelStructA):
             raise ModSizeError(record.inName, record.recType +'.' + sub_type, (96 if sub_type == 'PNAM' else 240), size_, True)
 
 class MreWthr(MelRecord):
-    """Weather record."""
+    """Weather."""
     classType = 'WTHR'
 
     melSet = MelSet(
@@ -2192,5 +2277,5 @@ class MreWthr(MelRecord):
             'sunGlare','sunDamage','rainFadeIn','rainFadeOut','boltFadeIn',
             'boltFadeOut','boltFrequency','weatherType','boltRed','boltBlue','boltGreen'),
         MelStructs('SNAM','2I','sounds',(FID,'sound'),'type'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
