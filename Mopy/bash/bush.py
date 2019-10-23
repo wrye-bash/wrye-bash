@@ -72,11 +72,11 @@ def _supportedGames():
             _allGames[game_type.fsName] = game_type
             _fsName_display[game_type.fsName] = game_type.displayName
             #--Get this game's install path
-            game_path = get_registry_game_path(game_type)
+            registry_path = get_registry_game_path(game_type)
         except (ImportError, AttributeError):
             deprint(u'Error in game support module:', modname, traceback=True)
             continue
-        if game_path: _registryGames[game_type.fsName] = game_path
+        if registry_path: _registryGames[game_type.fsName] = registry_path
         del module
     # unload some modules, _supportedGames is meant to run once
     del pkgutil

@@ -575,9 +575,9 @@ class OblivionIni(IniFile):
     @balt.conversation
     def ask_create_target_ini(self, msg=_(
             u'The game ini must exist to apply a tweak to it.')):
+        if super(OblivionIni, self).ask_create_target_ini(msg): return True
         from . import oblivionIni, iniInfos # YAK
         if self is not oblivionIni: return True
-        if self.abs_path.exists(): return True
         srcPath = dirs['app'].join(bush.game.defaultIniFile)
         default_path_exists = srcPath.exists()
         msg = _(u'%(ini_path)s does not exist.' % {'ini_path': self.abs_path}) + \

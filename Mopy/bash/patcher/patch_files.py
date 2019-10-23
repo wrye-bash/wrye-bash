@@ -528,7 +528,7 @@ class CBash_PatchFile(_PFile, ObModFile):
             isScanned = modName in self.scanSet and modName not in self.loadSet and modName not in self.mergeSet
             if not isScanned:
                 for patcher in mod_apply:
-                    patcher(modFile, bashTags)
+                    patcher(modFile)
 
         numFinishers = 0
         for group, patchers in group_patchers.iteritems():

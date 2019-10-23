@@ -385,7 +385,7 @@ class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
                 'PACK','LSCR','LVSP','ANIO','WATR']
 
     #--Patch Phase ------------------------------------------------------------
-    def mod_apply(self,modFile,bashTags):
+    def mod_apply(self, modFile):
         """Changes the mod in place without copying any records."""
         counts = modFile.UpdateReferences(self.old_new)
         #--Done

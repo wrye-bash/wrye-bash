@@ -814,7 +814,6 @@ class SaveEnchantments:
         saveFile = self.saveFile = SaveFile(self.saveInfo)
         saveFile.load(SubProgress(progress,0,0.4))
         #--Extract created enchantments
-        createdEnchantments = self.createdEnchantments
         saveName = self.saveInfo.name
         progress(progress.full-1,saveName.s)
         for index,record in enumerate(saveFile.created):

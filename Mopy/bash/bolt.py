@@ -1024,7 +1024,7 @@ class Path(object):
         """Safely check whether a file is editable."""
         delete = not os.path.exists(self._s)
         try:
-            with open(self._s,'ab') as f:
+            with open(self._s,'ab'):
                 return True
         except:
             return False
@@ -1452,7 +1452,7 @@ class MainFunctions:
             else:
                 argDex += 1
         #--Apply
-        apply(func,args,keywords)
+        func(*args, **keywords)
 
 #--Commands Singleton
 _mainFunctions = MainFunctions()
@@ -1824,14 +1824,11 @@ def cstrip(inString): # TODO(ut): hunt down and deprecate - it's O(n)+
     else:
         return inString[:zeroDex]
 
-def csvFormat(format):
+_formats = dict.fromkeys(u'bBhHiIlLqQ', u'%d')
+_formats.update({u'f': u'%f', u'd': u'%f', u's': u'"%s"'})
+def csvFormat(format_chars, __formats=_formats):
     """Returns csv format for specified structure format."""
-    csvFormat = u''
-    for char in format:
-        if char in u'bBhHiIlLqQ': csvFormat += u',%d'
-        elif char in u'fd': csvFormat += u',%f'
-        elif char in u's': csvFormat += u',"%s"'
-    return csvFormat[1:] #--Chop leading comma
+    return u','.join([__formats[c] for c in format_chars])
 
 deprintOn = False
 
