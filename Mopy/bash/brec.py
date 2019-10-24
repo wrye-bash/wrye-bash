@@ -577,8 +577,83 @@ class MelBase(object):
     def signatures(self):
         """Returns a set containing all the signatures (aka subTypes) that
         could belong to this element. For most elements, this is just a single
-        one, but groups and unions return multiple here."""
+        one, but groups and unions return multiple here.
+
+        :rtype: set[str]"""
         return {self.subType}
+
+#------------------------------------------------------------------------------
+class MelCounter(MelBase):
+    """Wraps a MelStruct-derived object with one numeric element (meaning that
+    it is compatible with e.g. MelUInt32). Just before writing, the wrapped
+    element's value is updated to the len() of another element's value, e.g. a
+    MelGroups instance. Additionally, dumping is skipped if the counter is
+    falsy after updating.
+
+    Does not support anything that seems at odds with that goal, in particular
+    fids and defaulters. See also MelPartialCounter, which targets mixed
+    structs."""
+    def __init__(self, element, counts):
+        """Creates a new MelCounter.
+
+        :param element: The element that stores the counter's value.
+        :type element: MelStruct
+        :param counts: The attribute name that this counter counts.
+        :type couns: str"""
+        self.element = element
+        self.counted_attr = counts
+
+    def debug(self, on=True):
+        self.element.debug(on)
+
+    def getSlotsUsed(self):
+        return self.element.getSlotsUsed()
+
+    def getLoaders(self, loaders):
+        loaders[self.element.subType] = self
+
+    def setDefault(self, record):
+        self.element.setDefault(record)
+
+    def loadData(self, record, ins, sub_type, size_, readId):
+        self.element.loadData(record, ins, sub_type, size_, readId)
+
+    def dumpData(self, record, out):
+        # Count the counted type first, then check if we should even dump
+        val_len = len(getattr(record, self.counted_attr, []))
+        if val_len:
+            # We should dump, so update the counter and do it
+            setattr(record, self.element.attrs[0], val_len)
+            self.element.dumpData(record, out)
+
+    @property
+    def signatures(self):
+        return self.element.signatures
+
+class MelPartialCounter(MelCounter):
+    """Extends MelCounter to work for MelStructs that contain more than just a
+    counter. This means adding behavior for mapping fids, but dropping the
+    conditional dumping behavior."""
+    def __init__(self, element, counter, counts):
+        """Creates a new MelPartialCounter.
+
+        :param element: The element that stores the counter's value.
+        :type element: MelStruct
+        :param counter: The attribute name of the counter.
+        :type counter: str
+        :param counts: The attribute name that this counter counts.
+        :type couns: str"""
+        MelCounter.__init__(self, element, counts)
+        self.counter_attr = counter
+
+    def hasFids(self, formElements):
+        self.element.hasFids(formElements)
+
+    def dumpData(self, record, out):
+        # Count the counted type, then update and dump unconditionally
+        setattr(record, self.counter_attr,
+                len(getattr(record, self.counted_attr, [])))
+        self.element.dumpData(record, out)
 
 #------------------------------------------------------------------------------
 class MelFid(MelBase):
@@ -657,35 +732,6 @@ class MelNull(MelBase):
         pass
 
 #------------------------------------------------------------------------------
-class MelCountedFids(MelFids):
-    """Handle writing out a preceding 'count' subrecord for Fid subrecords.
-       For example, SPCT holds an int telling how  many SPLO subrecord there
-       are."""
-
-    # Used to ignore the count record on loading.  Writing is handled by dumpData
-    # In the SPCT/SPLO example, the NullLoader will handle "reading" the SPCT
-    # subrecord, where "reading" = ignoring
-    NullLoader = MelNull('ANY')
-
-    def __init__(self, countedType, attr, counterType, counterFormat='<I', default=None):
-        # In the SPCT/SPLO example, countedType is SPLO, counterType is SPCT
-        MelFids.__init__(self, countedType, attr, default)
-        self.counterType = counterType
-        self.counterFormat = counterFormat
-
-    def getLoaders(self, loaders):
-        # Counted
-        MelFids.getLoaders(self, loaders)
-        # Counter
-        loaders[self.counterType] = MelCountedFids.NullLoader
-
-    def dumpData(self, record, out):
-        value = record.__getattribute__(self.attr)
-        if value:
-            out.packSub(self.counterType, self.counterFormat, len(value))
-            MelFids.dumpData(self, record, out)
-
-#------------------------------------------------------------------------------
 class MelFidList(MelFids):
     """Represents a listmod record fid elements. The only difference from
     MelFids is how the data is stored. For MelFidList, the data is stored
@@ -705,37 +751,9 @@ class MelFidList(MelFids):
         out.packSub(self.subType,`len(fids)`+'I',*fids)
 
 #------------------------------------------------------------------------------
-class MelCountedFidList(MelFidList):
-    """Handle writing out a preceding 'count' subrecord for Fid subrecords.
-       For example, KSIZ holds an int telling how many KWDA elements there
-       are."""
-
-    # Used to ignore the count record on loading.  Writing is handled by dumpData
-    # In the KSIZ/KWDA example, the NullLoader will handle "reading" the KSIZ
-    # subrecord, where "reading" = ignoring
-    NullLoader = MelNull('ANY')
-
-    def __init__(self, countedType, attr, counterType, counterFormat='<I', default=None):
-        # In the KSIZ/KWDA example, countedType is KWDA, counterType is KSIZ
-        MelFids.__init__(self, countedType, attr, default)
-        self.counterType = counterType
-        self.counterFormat = counterFormat
-
-    def getLoaders(self, loaders):
-        # Counted
-        MelFidList.getLoaders(self, loaders)
-        # Counter
-        loaders[self.counterType] = MelCountedFids.NullLoader
-
-    def dumpData(self, record, out):
-        fids = record.__getattribute__(self.attr)
-        if not fids: return
-        out.packSub(self.counterType, self.counterFormat, len(fids))
-        MelFidList.dumpData(self, record, out)
-
-#------------------------------------------------------------------------------
 class MelSortedFidList(MelFidList):
-    """MelFidList that sorts the order of the Fids before writing them.  They are not sorted after modification, only just prior to writing."""
+    """MelFidList that sorts the order of the Fids before writing them. They
+    are not sorted after modification, only just prior to writing."""
 
     def __init__(self, subType, attr, sortKeyFn=lambda x: x, default=None):
         """sortKeyFn - function to pass to list.sort(key = ____) to sort the FidList

@@ -30,7 +30,8 @@ from ...bolt import Flags, DataDict
 from ...brec import MelModel # set in Mopy/bash/game/skyrim/records.py
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelString, MelSet, MelFid, MelOptStruct, MelFids, MelBase, \
-    MelStructA, MelLString, MelFloat, MelUInt8, MelUInt16, MelUInt32
+    MelStructA, MelLString, MelFloat, MelUInt8, MelUInt16, MelUInt32, \
+    MelCounter
 from ...exception import ModSizeError
 # Those are unused here, but need be in this file as are accessed via it
 from ..skyrim.records import MreHeader, MreGmst
@@ -607,7 +608,8 @@ class MreLens(MelRecord):
         MelString('EDID','eid'),
         MelFloat('CNAM', 'colorInfluence'),
         MelFloat('DNAM', 'fadeDistanceRadiusScale'),
-        MelUInt32('LFSP', 'count'),
+        MelCounter(MelUInt32('LFSP', 'sprite_count'),
+                   counts='lensFlareSprites'),
         MelGroups('lensFlareSprites',
             MelString('DNAM','spriteID'),
             MelString('FNAM','texture'),

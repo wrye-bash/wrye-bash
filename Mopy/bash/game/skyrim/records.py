@@ -32,12 +32,12 @@ from ...bolt import Flags, DataDict, encode, struct_pack, struct_unpack
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelFidList, \
-    MelStructA, MreGmstBase, MelLString, MelCountedFidList, MelCountedFids, \
-    MelSortedFidList, MelMODS, MreHasEffects, MelColorInterpolator, \
-    MelValueInterpolator, MelUnion, AttrValDecider, MelRegnEntrySubrecord, \
-    PartialLoadDecider, FlagDecider, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
-    MelUInt16, MelUInt32, MelOptFloat, MelOptSInt16, MelOptSInt32, \
-    MelOptUInt8, MelOptUInt16, MelOptUInt32, MelOptFid
+    MelStructA, MreGmstBase, MelLString, MelSortedFidList, MelMODS, \
+    MreHasEffects, MelColorInterpolator, MelValueInterpolator, MelUnion, \
+    AttrValDecider, MelRegnEntrySubrecord, PartialLoadDecider, FlagDecider, \
+    MelFloat, MelSInt8, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
+    MelOptFloat, MelOptSInt16, MelOptSInt32, MelOptUInt8, MelOptUInt16, \
+    MelOptUInt32, MelOptFid, MelCounter, MelPartialCounter
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -219,16 +219,6 @@ class MelColorO(MelOptStruct):
                            'unk_c')
 
 #------------------------------------------------------------------------------
-class MelComponents(MelStructs):
-    """Handle writing COCT subrecord for the CNTO subrecord"""
-    def dumpData(self,record,out):
-        components = record.__getattribute__(self.attr)
-        if components:
-            # Only write the COCT/CNTO subrecords if count > 0
-            out.packSub('COCT','I',len(components))
-            MelStructs.dumpData(self,record,out)
-
-#------------------------------------------------------------------------------
 class MelCTDAHandler(MelStructs):
     """Represents the CTDA subrecord and it components. Difficulty is that FID
     state of parameters depends on function index."""
@@ -330,15 +320,23 @@ class MelCTDAHandler(MelStructs):
                 result = function(target.param3)
                 if save: target.param3 = result
 
-class MelConditions(MelGroups):
-    """Represents a set of quest/dialog/etc conditions"""
+class MelConditionCounter(MelCounter):
+    """Wraps MelCounter for the common task of defining a counter that counts
+    MelConditions."""
+    def __init__(self):
+        MelCounter.__init__(
+            self, MelUInt32('CITC', 'conditionCount'), counts='conditions')
 
-    def __init__(self,attr='conditions'):
-        MelGroups.__init__(self,attr,
+class MelConditions(MelGroups):
+    """Wraps MelGroups for the common task of defining an array of
+    conditions. See also MelConditionCounter, which is commonly combined with
+    this class."""
+    def __init__(self, attr='conditions'):
+        MelGroups.__init__(self, attr,
             MelCTDAHandler(),
             MelString('CIS1','param_cis1'),
             MelString('CIS2','param_cis2'),
-            )
+        )
 
 #------------------------------------------------------------------------------
 class MelDecalData(MelOptStruct):
@@ -430,12 +428,30 @@ class MelIcons2(MelGroup):
             MelGroup.dumpData(self,record,out)
 
 #------------------------------------------------------------------------------
-class MelKeywords(MelCountedFidList):
-    """Wraps MelCountedFidList for the common task of defining a list of
-    keywords"""
+class MelItems(MelGroups):
+    """Wraps MelGroups for the common task of defining a list of items."""
     def __init__(self):
-        MelCountedFidList.__init__(self, countedType='KWDA', attr='keywords',
-                                   counterType='KSIZ')
+        MelGroups.__init__(self, 'items',
+            MelStruct('CNTO', 'Ii', (FID, 'item', None), 'count'),
+            MelCoed(),
+        )
+
+class MelItemsCounter(MelCounter):
+    """Wraps MelCounter for the common task of defining an items counter."""
+    def __init__(self):
+        MelCounter.__init__(
+            self, MelUInt32('COCT', 'item_count'), counts='items')
+
+#------------------------------------------------------------------------------
+class MelKeywords(MelGroup):
+    """Wraps MelGroup for the common task of defining a list of keywords"""
+    def __init__(self):
+        MelGroup.__init__(self, 'keywords',
+            # TODO(inf) Kept it as such, why little-endian?
+            MelCounter(MelStruct('KSIZ', '<I', 'keyword_count'),
+                       counts='keyword_list'),
+            MelFidList('KWDA', 'keyword_list'),
+        )
 
 #------------------------------------------------------------------------------
 class MelOwnership(MelGroup):
@@ -450,16 +466,6 @@ class MelOwnership(MelGroup):
     def dumpData(self,record,out):
         if record.ownership and record.ownership.owner:
             MelGroup.dumpData(self,record,out)
-
-#------------------------------------------------------------------------------
-# TODO(inf) Unused - Use in NPC_?
-class MelPerks(MelStructs):
-    """Handle writing PRKZ subrecord for the PRKR subrecord"""
-    def dumpData(self,record,out):
-        perks = record.__getattribute__(self.attr)
-        if perks:
-            out.packSub('PRKZ','<I',len(perks))
-            MelStructs.dumpData(self,record,out)
 
 #------------------------------------------------------------------------------
 class MelVmad(MelBase):
@@ -1666,22 +1672,10 @@ class MreCobj(MelRecord):
     classType = 'COBJ'
     isKeyedByEid = True # NULL fids are acceptable
 
-    class MelCobjCnto(MelGroups):
-        def __init__(self):
-            MelGroups.__init__(self,'items',
-                MelStruct('CNTO','=Ii',(FID,'item',None),'count'),
-                MelCoed(),
-            )
-
-        def dumpData(self,record,out):
-            # Only write the COCT/CNTO/COED subrecords if count > 0
-            out.packSub('COCT','I',len(record.items))
-            MelGroups.dumpData(self,record,out)
-
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelNull('COCT'), # Handled by MelCobjCnto
-        MelCobjCnto(),
+        MelItemsCounter(),
+        MelItems(),
         MelConditions(),
         MelFid('CNAM','resultingItem'),
         MelFid('BNAM','craftingStation'),
@@ -1717,18 +1711,6 @@ class MreCont(MelRecord):
     """Container."""
     classType = 'CONT'
 
-    class MelContCnto(MelGroups):
-        def __init__(self):
-            MelGroups.__init__(self,'items',
-                MelStruct('CNTO','Ii',(FID,'item',None),'count'),
-                MelCoed(),
-                )
-
-        def dumpData(self,record,out):
-            # Only write the COCT/CNTO/COED subrecords if count > 0
-            out.packSub('COCT','I',len(record.items))
-            MelGroups.dumpData(self,record,out)
-
     ContTypeFlags = Flags(0L,Flags.getNames(
         (0, 'allowSoundsWhenAnimation'),
         (1, 'respawns'),
@@ -1741,8 +1723,8 @@ class MreCont(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelNull('COCT'),
-        MelContCnto(),
+        MelItemsCounter(),
+        MelItems(),
         MelDestructible(),
         MelStruct('DATA','=Bf',(ContTypeFlags,'flags',0L),'weight'),
         MelFid('SNAM','soundOpen'),
@@ -1852,14 +1834,10 @@ class MreDial(brec.MreDial):
                   'subtype',),
         # SNAM is a 4 byte string no length byte - TODO(inf) MelFixedString?
         MelStruct('SNAM', '4s', 'subtypeName',),
-        MelUInt32('TIFC', 'infoCount',),
+        ##: Check if this works - if not, move back to method
+        MelCounter(MelUInt32('TIFC', 'infoCount'), counts='infos'),
     )
     __slots__ = melSet.getSlotsUsed()
-
-    def dumpData(self, out):
-        # Update the TIFC counter - unknown if needed, but can't hurt
-        self.infoCount = len(self.infos)
-        super(MreDial, self).dumpData(out)
 
 #------------------------------------------------------------------------------
 class MreDlbr(MelRecord):
@@ -2333,16 +2311,10 @@ class MreFact(MelRecord):
         MelStruct('VENV','3H2s2B2s','startHour','endHour','radius','unknownOne',
                   'onlyBuysStolenItems','notSellBuy','UnknownTwo'),
         MelOptStruct('PLVD','iIi','type',(FID,'locationValue'),'radius',),
-        MelUInt32('CITC', 'conditionCount'),
+        MelConditionCounter(),
         MelConditions(),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
-
-    def dumpData(self,out):
-        conditions = self.conditions
-        if conditions:
-            self.conditionCount = len(conditions) if conditions else 0
-            MelRecord.dumpData(self,out)
 
 #------------------------------------------------------------------------------
 class MreFlor(MelRecord):
@@ -2672,7 +2644,7 @@ class MreIdlm(MelRecord):
         MelString('EDID','eid'),
         MelBounds(),
         MelUInt8('IDLF', (IdlmTypeFlags, 'flags', 0L)),
-        MelUInt8('IDLC', 'animationCount'),
+        MelCounter(MelUInt8('IDLC', 'animation_count'), counts='animations'),
         MelFloat('IDLT', 'idleTimerSetting'),
         MelFidList('IDLA','animations'),
         MelModel(),
@@ -3198,20 +3170,22 @@ class MreLtex(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
-    """Skyrim Leveled item/creature/spell list."""
-    class MelLevListLvlo(MelGroups):
+    """Skyrim Leveled item/creature/spell list. Defines some common
+    subrecords."""
+    __slots__ = []
+
+    class MelLlct(MelCounter):
+        def __init__(self):
+            MelCounter.__init__(
+                self, MelUInt8('LLCT', 'entry_count'), counts='entries')
+
+    class MelLvlo(MelGroups):
         def __init__(self):
             MelGroups.__init__(self,'entries',
                 MelStruct('LVLO','=HHIHH','level',('unknown1',null2),
                           (FID,'listId',None),('count',1),('unknown2',null2)),
                 MelCoed(),
-                )
-
-        def dumpData(self,record,out):
-            out.packSub('LLCT','B',len(record.entries))
-            MelGroups.dumpData(self,record,out)
-
-    __slots__ = []
+            )
 
 #------------------------------------------------------------------------------
 class MreLvli(MreLeveledList):
@@ -3225,8 +3199,8 @@ class MreLvli(MreLeveledList):
         MelUInt8('LVLD', 'chanceNone'),
         MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0L)),
         MelOptFid('LVLG', 'glob'),
-        MelNull('LLCT'),
-        MreLeveledList.MelLevListLvlo(),
+        MreLeveledList.MelLlct(),
+        MreLeveledList.MelLvlo(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3242,8 +3216,8 @@ class MreLvln(MreLeveledList):
         MelUInt8('LVLD', 'chanceNone'),
         MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0L)),
         MelOptFid('LVLG', 'glob'),
-        MelNull('LLCT'),
-        MreLeveledList.MelLevListLvlo(),
+        MreLeveledList.MelLlct(),
+        MreLeveledList.MelLvlo(),
         MelString('MODL','model'),
         MelBase('MODT','modt_p'),
     )
@@ -3261,8 +3235,8 @@ class MreLvsp(MreLeveledList):
         MelBounds(),
         MelUInt8('LVLD', 'chanceNone'),
         MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0L)),
-        MelNull('LLCT'),
-        MreLeveledList.MelLevListLvlo(),
+        MreLeveledList.MelLlct(),
+        MreLeveledList.MelLvlo(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3398,32 +3372,29 @@ class MreMgef(MelRecord):
         MelLString('FULL','full'),
         MelFid('MDOB','harvestIngredient'),
         MelKeywords(),
-        MelStruct('DATA','IfIiiH2sIfIIIIffffIiIIIIiIIIfIfI4s4sIIIIff',
-            (MgefGeneralFlags,'flags',0L),'baseCost',(FID,'assocItem'),
-            'magicSkill','resistValue',
-            # 'counterEffectCount' is a count of ESCE records - updated below
-            'counterEffectCount',
-            ('unknown1',null2),(FID,'castingLight'),'taperWeight',(FID,'hitShader'),
-            (FID,'enchantShader'),'minimumSkillLevel','spellmakingArea',
-            'spellmakingCastingTime','taperCurve','taperDuration',
-            'secondAvWeight','mgefArchtype','actorValue',(FID,'projectile'),
-            (FID,'explosion'),'castingType','delivery','secondActorValue',
-            (FID,'castingArt'),(FID,'hitEffectArt'),(FID,'impactData'),
-            'skillUsageMultiplier',(FID,'dualCastingArt'),'dualCastingScale',
-            (FID,'enchantArt'),('unknown2',null4),('unknown3',null4),(FID,'equipAbility'),
-            (FID,'imageSpaceModifier'),(FID,'perkToApply'),'castingSoundLevel',
-            'scriptEffectAiScore','scriptEffectAiDelayTime',),
+        MelPartialCounter(MelStruct(
+            'DATA', 'IfI2iH2sIf4I4fIi4Ii3IfIfI4s4s4I2f',
+            (MgefGeneralFlags, 'flags', 0L), 'baseCost', (FID, 'assocItem'),
+            'magicSkill', 'resistValue', 'counterEffectCount',
+            ('unknown1', null2), (FID, 'castingLight'), 'taperWeight',
+            (FID, 'hitShader'), (FID, 'enchantShader'), 'minimumSkillLevel',
+            'spellmakingArea', 'spellmakingCastingTime', 'taperCurve',
+            'taperDuration', 'secondAvWeight', 'mgefArchtype', 'actorValue',
+            (FID, 'projectile'), (FID, 'explosion'), 'castingType', 'delivery',
+            'secondActorValue', (FID, 'castingArt'), (FID, 'hitEffectArt'),
+            (FID, 'impactData'), 'skillUsageMultiplier',
+            (FID, 'dualCastingArt'), 'dualCastingScale', (FID,'enchantArt'),
+            ('unknown2', null4), ('unknown3', null4), (FID, 'equipAbility'),
+            (FID, 'imageSpaceModifier'), (FID, 'perkToApply'),
+            'castingSoundLevel', 'scriptEffectAiScore',
+            'scriptEffectAiDelayTime'),
+            counter='counterEffectCount', counts='counterEffects'),
         MelFids('ESCE','counterEffects'),
         MelStructA('SNDD','2I','sounds','soundType',(FID,'sound')),
         MelLString('DNAM','magicItemDescription'),
         MelConditions(),
     )
     __slots__ = melSet.getSlotsUsed()
-
-    def dumpData(self,out):
-        counterEffects = self.counterEffects
-        self.counterEffectCount = len(counterEffects) if counterEffects else 0
-        MelRecord.dumpData(self,out)
 
 #------------------------------------------------------------------------------
 class MreMisc(MelRecord):
@@ -3537,16 +3508,11 @@ class MreMust(MelRecord):
         MelString('BNAM','finaleFilename'),
         MelStructA('FNAM','f','points',('cuePoints',0.0)),
         MelOptStruct('LNAM','2fI','loopBegins','loopEnds','loopCount',),
-        MelUInt32('CITC', 'conditionCount'),
+        MelConditionCounter(),
         MelConditions(),
         MelFidList('SNAM','tracks',),
     )
     __slots__ = melSet.getSlotsUsed()
-
-    def dumpData(self,out):
-        conditions = self.conditions
-        self.conditionCount = len(conditions) if conditions else 0
-        MelRecord.dumpData(self,out)
 
 #------------------------------------------------------------------------------
 # Not Mergable - FormIDs unaccounted for
@@ -3621,18 +3587,6 @@ class MreNavm(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MelNpcCnto(MelGroups):
-    def __init__(self):
-        MelGroups.__init__(self,'items',
-            MelStruct('CNTO','=Ii',(FID,'item',None),'count'),
-            MelCoed(),
-            )
-
-    def dumpData(self,record,out):
-        # Only write the COCT/CNTO/COED subrecords if count > 0
-        out.packSub('COCT','I',len(record.items))
-        MelGroups.dumpData(self,record,out)
-
 class MreNpc(MelRecord):
     """Non-Player Character."""
     classType = 'NPC_'
@@ -3703,7 +3657,9 @@ class MreNpc(MelRecord):
         MelOptFid('VTCK', 'voice'),
         MelOptFid('TPLT', 'template'),
         MelFid('RNAM','race'),
-        MelCountedFids('SPLO', 'spells', 'SPCT'),
+        # TODO(inf) Kept it as such, why little-endian?
+        MelCounter(MelStruct('SPCT', '<I', 'spell_count'), counts='spells'),
+        MelFids('SPLO', 'spells'),
         MelDestructible(),
         MelOptFid('WNAM', 'wormArmor'),
         MelOptFid('ANAM', 'farawaymodel'),
@@ -3716,12 +3672,12 @@ class MreNpc(MelRecord):
         MelOptFid('OCOR', 'observe'),
         MelOptFid('GWOR', 'guardWarn'),
         MelOptFid('ECOR', 'combat'),
-        MelOptUInt32('PRKZ', 'perkCount'),
+        MelCounter(MelUInt32('PRKZ', 'perk_count'), counts='perks'),
         MelGroups('perks',
             MelOptStruct('PRKR','IB3s',(FID, 'perk'),'rank','prkrUnused'),
         ),
-        MelNull('COCT'),
-        MelNpcCnto(),
+        MelItemsCounter(),
+        MelItems(),
         MelStruct('AIDT', 'BBBBBBBBIII', 'aggression', 'confidence',
                   'engergy', 'responsibility', 'mood', 'assistance',
                   'aggroRadiusBehavior',
@@ -3781,11 +3737,6 @@ class MreNpc(MelRecord):
         ),
     )
     __slots__ = melSet.getSlotsUsed()
-
-    def dumpData(self,out):
-        perks = self.perks
-        self.perkCount = len(perks) if perks else 0
-        MelRecord.dumpData(self,out)
 
 #------------------------------------------------------------------------------
 class MreOtft(MelRecord):
@@ -3956,9 +3907,11 @@ class MrePack(MelRecord):
         MelConditions(),
         MelGroup('idleAnimations',
             MelUInt32('IDLF', 'type'),
-            MelStruct('IDLC','B3s','count','unknown',),
+            MelPartialCounter(MelStruct('IDLC', 'B3s', 'animation_count',
+                                        'unknown'),
+                              counter='animation_count', counts='animations'),
             MelFloat('IDLT', 'timerSetting',),
-            MelFidList('IDLA','animation'),
+            MelFidList('IDLA', 'animations'),
             MelBase('IDLB','unknown'),
         ),
         MelFid('CNAM','combatStyle',),
@@ -4172,27 +4125,6 @@ class MreProj(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MelItems(MelGroups):
-    """Handle writing out a preceding COCT subrecord for count of CNTO/COED subrecords."""
-    NullLoader = MelNull('ANY')
-    def __init__(self, attr='items'):
-        MelGroups.__init__(self,attr,
-            MelStruct('CNTO','=Ii',(FID,'item',None),'count'),
-            MelCoed(),
-            )
-
-    def getLoaders(self, loaders):
-        MelGroups.getLoaders(self,loaders)
-        loaders['COCT'] = MelItems.NullLoader
-
-    def dumpData(self,record,out):
-        value = record.__getattribute__(self.attr)
-        # Only write the COCT/CNTO/COED subrecords if count > 0
-        if value:
-            out.packSub('COCT','<I',len(value))
-            MelGroups.dumpData(self,record,out)
-
-#------------------------------------------------------------------------------
 # Needs testing should be mergable
 class MreQust(MelRecord):
     """Quest."""
@@ -4357,6 +4289,7 @@ class MreQust(MelRecord):
             ),
             MelConditions(),
             MelKeywords(),
+            MelItemsCounter(),
             MelItems(),
             MelFid('SPOR','spectatorOverridePackageList'),
             MelFid('OCOR','observeDeadBodyOverridePackageList'),
@@ -4926,17 +4859,12 @@ class MreSmbn(MelRecord):
         MelString('EDID','eid'),
         MelFid('PNAM','parent',),
         MelFid('SNAM','child',),
-        MelUInt32('CITC', 'conditionCount'),
+        MelConditionCounter(),
         MelConditions(),
         MelUInt32('DNAM', (SmbnNodeFlags, 'nodeFlags', 0L)),
         MelBase('XNAM','xnam_p'),
     )
     __slots__ = melSet.getSlotsUsed()
-
-    def dumpData(self,out):
-        conditions = self.conditions
-        self.conditionCount = len(conditions) if conditions else 0
-        MelRecord.dumpData(self,out)
 
 #------------------------------------------------------------------------------
 class MreSmen(MelRecord):
@@ -4952,18 +4880,13 @@ class MreSmen(MelRecord):
         MelString('EDID','eid'),
         MelFid('PNAM','parent',),
         MelFid('SNAM','child',),
-        MelUInt32('CITC', 'conditionCount'),
+        MelConditionCounter(),
         MelConditions(),
         MelUInt32('DNAM', (SmenNodeFlags, 'nodeFlags', 0L)),
         MelBase('XNAM','xnam_p'),
         MelString('ENAM','type'),
     )
     __slots__ = melSet.getSlotsUsed()
-
-    def dumpData(self,out):
-        conditions = self.conditions
-        self.conditionCount = len(conditions) if conditions else 0
-        MelRecord.dumpData(self,out)
 
 #------------------------------------------------------------------------------
 class MreSmqn(MelRecord):
@@ -4986,12 +4909,12 @@ class MreSmqn(MelRecord):
         MelString('EDID','eid'),
         MelFid('PNAM','parent',),
         MelFid('SNAM','child',),
-        MelUInt32('CITC', 'conditionCount'),
+        MelConditionCounter(),
         MelConditions(),
         MelStruct('DNAM','2H',(SmqnNodeFlags,'nodeFlags',0L),(SmqnQuestFlags,'questFlags',0L),),
         MelUInt32('XNAM', 'maxConcurrentQuests'),
         MelOptUInt32('MNAM', ('numQuestsToRun', None)),
-        MelUInt32('QNAM', 'questCount'),
+        MelCounter(MelUInt32('QNAM', 'quest_count'), counts='quests'),
         MelGroups('quests',
             MelFid('NNAM','quest',),
             MelBase('FNAM','fnam_p'),
@@ -4999,13 +4922,6 @@ class MreSmqn(MelRecord):
         )
     )
     __slots__ = melSet.getSlotsUsed()
-
-    def dumpData(self,out):
-        quests = self.quests
-        self.questCount = len(quests) if quests else 0
-        conditions = self.conditions
-        self.conditionCount = len(conditions) if conditions else 0
-        MelRecord.dumpData(self,out)
 
 #------------------------------------------------------------------------------
 class MreSnct(MelRecord):

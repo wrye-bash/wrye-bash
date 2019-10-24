@@ -34,10 +34,10 @@ from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     MreHeaderBase, MelBase, MelUnicode, MelFidList, MelStructA, MreGmstBase, \
     MelStrings, MelFull0, MelTuple, MelMODS, MreHasEffects, MelReferences, \
     MelColorInterpolator, MelValueInterpolator, MelUnion, AttrValDecider, \
-    MelRegnEntrySubrecord, SizeDecider, MelRegnEntrySubrecord, MelFloat, \
-    MelSInt8, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
-    MelOptFid, MelOptFloat, MelOptSInt16, MelOptSInt32, MelOptUInt8, \
-    MelOptUInt16, MelOptUInt32
+    MelRegnEntrySubrecord, SizeDecider, MelFloat, MelSInt8, MelSInt16, \
+    MelSInt32, MelUInt8, MelUInt16, MelUInt32, MelOptFid, MelOptFloat, \
+    MelOptSInt16, MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, \
+    MelPartialCounter
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
@@ -1663,7 +1663,9 @@ class MreIdlm(MelRecord):
                   'boundX1','boundY1','boundZ1',
                   'boundX2','boundY2','boundZ2'),
         MelUInt8('IDLF', (_flags, 'flags')),
-        MelIdlmIdlc('IDLC','B3s','animationCount',('unused',null3)),
+        MelPartialCounter(MelIdlmIdlc('IDLC', 'B3s', 'animation_count',
+                                      ('unused', null3)),
+                          counter='animation_count', counts='animations'),
         MelFloat('IDLT', 'idleTimerSetting'),
         MelFidList('IDLA','animations'),
     )
@@ -2157,25 +2159,21 @@ class MreMgef(MelRecord):
         MelString('DESC','text'),
         MelString('ICON','iconPath'),
         MelModel(),
-        # 'counterEffectCount' is a count of ESCE and should be updated
-        MelStruct('DATA','IfI2iH2sIf6I2fIi',
-            (_flags,'flags'),'baseCost',(FID,'associated'),'school','resistValue',
-            'counterEffectCount',('unused1',null2),(FID,'light',0),'projectileSpeed',
-            (FID,'effectShader',0),(FID,'objectDisplayShader',0),
-            (FID,'castingSound',0),(FID,'boltSound',0),(FID,'hitSound',0),
-            # cefEnchantment and cefBarter are unused
-            (FID,'areaSound',0),('cefEnchantment',0.0),('cefBarter',0.0),
-            'archType','actorValue'),
+        MelPartialCounter(MelStruct(
+            'DATA','IfI2iH2sIf6I2fIi', (_flags, 'flags'), 'baseCost',
+            (FID, 'associated'), 'school', 'resistValue', 'counterEffectCount',
+            ('unused1', null2), (FID, 'light', 0), 'projectileSpeed',
+            (FID, 'effectShader' ,0), (FID, 'objectDisplayShader', 0),
+            (FID, 'castingSound', 0), (FID, 'boltSound', 0),
+            (FID, 'hitSound', 0), (FID, 'areaSound', 0),
+            ('cefEnchantment', 0.0), ('cefBarter', 0.0), 'archType',
+            'actorValue'),
+            counter='counterEffectCount', counts='counterEffects'),
         MelGroups('counterEffects',
             MelOptFid('ESCE', 'counterEffectCode', 0),
         ),
     )
     __slots__ = melSet.getSlotsUsed()
-
-    def dumpData(self,out):
-        counterEffects = self.counterEffects
-        self.counterEffectCount = len(counterEffects) if counterEffects else 0
-        MelRecord.dumpData(self,out)
 
 #------------------------------------------------------------------------------
 class MreMicn(MelRecord):
@@ -2593,7 +2591,9 @@ class MrePack(MelRecord):
         MelConditions(),
         MelGroup('idleAnimations',
             MelUInt8('IDLF', 'animationFlags'),
-            MelBase('IDLC','animationCount'), # byte or short
+            MelPartialCounter(MelStruct('IDLC', 'B3s', 'animation_count',
+                                        'unused'),
+                              counter='animation_count', counts='animations'),
             MelFloat('IDLT', 'idleTimerSetting'),
             MelFidList('IDLA','animations'),
             MelBase('IDLB','idlb_p'),
