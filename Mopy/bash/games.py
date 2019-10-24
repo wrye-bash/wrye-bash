@@ -639,13 +639,16 @@ class TimestampGame(Game):
 
 class TextfileGame(Game):
 
-    must_be_active_if_present = (bolt.GPath(u'Update.esm'),)
-
     def __init__(self, mod_infos, plugins_txt_path, loadorder_txt_path):
         super(TextfileGame, self).__init__(mod_infos, plugins_txt_path)
         self.loadorder_txt_path = loadorder_txt_path # type: bolt.Path
         self.mtime_loadorder_txt = 0
         self.size_loadorder_txt = 0
+
+    @property
+    def pinned_mods(self):
+        return super(TextfileGame, self).pinned_mods | set(
+            self.must_be_active_if_present)
 
     def load_order_changed(self):
         # if active changed externally refetch load order to check for desync
@@ -911,6 +914,18 @@ class AsteriskGame(Game):
             bolt.deprint(u'%s does not exist or could not be read, falling '
                          u'back to hardcoded CCC list' % cls._ccc_filename)
             cls.must_be_active_if_present += cls._ccc_fallback
+
+# TextfileGame overrides
+class Skyrim(TextfileGame):
+    must_be_active_if_present = (bolt.GPath(u'Update.esm'),
+                                 bolt.GPath(u'Dawnguard.esm'),
+                                 bolt.GPath(u'Hearthfires.esm'),
+                                 bolt.GPath(u'Dragonborn.esm'))
+
+class Enderal(TextfileGame):
+    must_be_active_if_present = (bolt.GPath(u'Update.esm'),
+                                 bolt.GPath(u'Enderal - Forgotten '
+                                            u'Stories.esm'))
 
 # AsteriskGame overrides
 class Fallout4(AsteriskGame):
@@ -1189,8 +1204,10 @@ class SkyrimSE(AsteriskGame):
 
 # Game factory
 def game_factory(name, mod_infos, plugins_txt_path, loadorder_txt_path=None):
-    if name in (u'Enderal', u'Skyrim'):
-        return TextfileGame(mod_infos, plugins_txt_path, loadorder_txt_path)
+    if name == u'Skyrim':
+        return Skyrim(mod_infos, plugins_txt_path, loadorder_txt_path)
+    if name == u'Enderal':
+        return Enderal(mod_infos, plugins_txt_path, loadorder_txt_path)
     elif name == u'Skyrim Special Edition':
         return SkyrimSE(mod_infos, plugins_txt_path)
     elif name == u'Fallout4':
