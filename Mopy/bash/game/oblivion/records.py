@@ -29,9 +29,9 @@ from ...bass import null1, null2, null3, null4
 from ...bolt import Flags, DataDict, struct_pack
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
-    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelXpci, \
-    MelFull0, MelFidList, MelStructA, MelStrings, MreGmstBase, MelTuple, \
-    MreHasEffects, MelReferences, MelRegnEntrySubrecord
+    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelFull0, \
+    MelFidList, MelStructA, MelStrings, MreGmstBase, MelTuple, MreHasEffects, \
+    MelReferences, MelRegnEntrySubrecord
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
@@ -274,7 +274,9 @@ class MreAchr(MelRecord): # Placed NPC
     melSet=MelSet(
         MelString('EDID','eid'),
         MelFid('NAME','base'),
-        MelXpci('XPCI'),
+        # both unused
+        MelNull('XPCI'),
+        MelNull('FULL'),
         MelOptStruct('XLOD', '3f', ('lod1', None), ('lod2', None),
                      ('lod3', None)),
         MelOptStruct('XESP', 'IB3s', (FID, 'parent'), (_flags, 'parentFlags'),
@@ -1705,7 +1707,9 @@ class MreRefr(MelRecord):
                      ('lod3', None)),
         MelOptStruct('XCHG','f',('charge',None)),
         MelOptStruct('XHLT','i',('health',None)),
-        MelXpci('XPCI'),
+        # both unused
+        MelNull('XPCI'),
+        MelNull('FULL'),
         MelOptStruct('XLCM','i',('levelMod',None)),
         MelFid('XRTM','xrtm'),
         MelOptStruct('XACT','I',(_actFlags,'actFlags',0L)),

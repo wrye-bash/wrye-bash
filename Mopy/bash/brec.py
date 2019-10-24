@@ -1183,21 +1183,6 @@ class MelReferences(MelGroups):
         }))
 
 #------------------------------------------------------------------------------
-class MelXpci(MelNull):
-    """Handler for obsolete MelXpci record. Bascially just discards it."""
-    def loadData(self, record, ins, sub_type, size_, readId):
-        xpci = ins.unpackRef()
-        #--Read ahead and get associated full as well.
-        pos = ins.tell()
-        (sub_type_, size_) = ins.unpack('4sH', 6, readId + '.FULL')
-        if sub_type_ == 'FULL':
-            full = ins.read(size_, readId)
-        else:
-            full = None
-            ins.seek(pos)
-        if self._debug: print u' ',strFid(record.fid),strFid(xpci),full
-
-#------------------------------------------------------------------------------
 class MelString(MelBase):
     """Represents a mod record string element."""
 
