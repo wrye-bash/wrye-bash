@@ -30,51 +30,34 @@ from this module outside of the patcher package."""
 # unhelpful) docs from overriding methods to save some (100s) lines. We must
 # also document which methods MUST be overridden by raising AbstractError. For
 # instance Patcher.buildPatch() apparently is NOT always overridden
-
-from . import getPatchesList
 from .. import load_order, bosh, bolt
 
 #------------------------------------------------------------------------------
-# _Abstract_Patcher and subclasses---------------------------------------------
+# Abstract_Patcher and subclasses ---------------------------------------------
 #------------------------------------------------------------------------------
-class _Abstract_Patcher(object):
+class Abstract_Patcher(object):
     """Abstract base class for patcher elements - must be the penultimate class
      in MRO (method resolution order), just before object"""
     scanOrder = 10
     editOrder = 10
     group = u'UNDEFINED'
-    name = u'UNDEFINED'
-    text = u"UNDEFINED."
-    tip = None
     iiMode = False
+    # TODO naming (_patcher_top_sigs ?) and unify getTypes/read/writeClasses
+    _read_write_records = () # top group signatures this patcher patches
 
     def getName(self):
-        """Returns patcher name."""
-        return self.__class__.name
+        """Return patcher name passed in by the gui, needed for logs."""
+        return self._patcher_name
 
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
+    def __init__(self, p_name, p_file):
         """Initialization of common values to defaults."""
-        self.patchFile = None
-        self.scanOrder = self.__class__.scanOrder
-        self.editOrder = self.__class__.editOrder
         self.isActive = True
-        #--Gui stuff
-        self.isEnabled = False #--Patcher is enabled.
-        self.gConfigPanel = None
-        # super(Abstract_Patcher, self).__init__()#UNNEEDED (ALWAYS BEFORE obj)
+        self.patchFile = p_file
+        self._patcher_name = p_name
 
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self, patchFile):
-        """Prepare to handle specified patch mod. All functions are called
-        after this. Base implementation sets the patchFile to the actively
-        executing patch - be sure to call super."""
-        self.patchFile = patchFile
-
-class Patcher(_Abstract_Patcher):
+class Patcher(Abstract_Patcher):
     """Abstract base class for patcher elements performing a PBash patch - must
     be just before Abstract_Patcher in MRO.""" ##: "performing" ? how ?
-    _read_write_records = ()
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -96,25 +79,16 @@ class Patcher(_Abstract_Patcher):
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Should write to log."""
 
-class CBash_Patcher(_Abstract_Patcher):
+class CBash_Patcher(Abstract_Patcher):
     """Abstract base class for patcher elements performing a CBash patch - must
     be just before Abstract_Patcher in MRO.""" ##: "performing" ? how ?
-    # would it make any sense to make getTypes into classmethod ?
-    unloadedText = u""
-    allowUnloaded = True
+    allowUnloaded = True # if True patcher needs a srcs attribute
     scanRequiresChecked = False # if True patcher needs a srcs attribute
     applyRequiresChecked = False # if True patcher needs a srcs attribute
 
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(CBash_Patcher, self).__init__()
-        if not self.allowUnloaded:
-            self.text += self.unloadedText
-
-    #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
         """Returns the group types that this patcher checks"""
-        return []
+        return list(self.__class__._read_write_records) if self.isActive else []
 
     def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as
@@ -131,35 +105,20 @@ class CBash_Patcher(_Abstract_Patcher):
         """Write to log."""
         pass
 
-class AListPatcher(_Abstract_Patcher):
-    """Subclass for patchers that have GUI lists of objects.
-
-    :type _patches_set: set[bolt.Path]"""
-    #--Get/Save Config
-    autoKey = None
+class AListPatcher(Abstract_Patcher):
+    """Subclass for patchers that have GUI lists of objects."""
     # log header to be used if the ListPatcher has mods/files source files
     srcsHeader = u'=== '+ _(u'Source Mods')
-    _patches_set = None
 
-    @staticmethod
-    def list_patches_dir(): AListPatcher._patches_set = getPatchesList()
-
-    @property
-    def patches_set(self): # ONLY use in patchers config phase or initData
-        if self._patches_set is None: self.list_patches_dir()
-        return self._patches_set
-
-    def initPatchFile(self, patchFile):
-        """Prepare to handle specified patch mod. All functions are called
-        after this. In addition to super implemenation this defines the
-        self.srcs AListPatcher attribute."""
-        super(AListPatcher, self).initPatchFile(patchFile)
-        self.srcs = self.getConfigChecked()
+    def __init__(self, p_name, p_file, p_sources):
+        """In addition to super implementation this defines the self.srcs
+        AListPatcher attribute."""
+        super(AListPatcher, self).__init__(p_name, p_file)
+        self.srcs = p_sources
         self.isActive = bool(self.srcs)
 
     def _srcMods(self,log):
-        """Logs the Source mods for this patcher - patcher must have `srcs`
-        attribute otherwise an AttributeError will be raised."""
+        """Logs the Source mods for this patcher."""
         log(self.__class__.srcsHeader)
         if not self.srcs:
             log(u". ~~%s~~" % _(u'None'))
@@ -167,37 +126,32 @@ class AListPatcher(_Abstract_Patcher):
             for srcFile in self.srcs:
                 log(u"* " +srcFile.s)
 
-    #--Patch Phase ------------------------------------------------------------
-    def getConfigChecked(self):
-        """Returns checked config items in list order."""
-        return [item for item in self.configItems if self.configChecks[item]]
-
-class AMultiTweaker(_Abstract_Patcher):
+class AMultiTweaker(Abstract_Patcher):
     """Combines a number of sub-tweaks which can be individually enabled and
     configured through a choice menu."""
     group = _(u'Tweakers')
     scanOrder = 20
     editOrder = 20
 
-class AAliasesPatcher(_Abstract_Patcher):
+    def __init__(self, p_name, p_file, enabled_tweaks):
+        super(AMultiTweaker, self).__init__(p_name, p_file)
+        self.enabled_tweaks = enabled_tweaks
+        self.isActive = bool(enabled_tweaks)
+
+    @classmethod
+    def tweak_instances(cls):
+        return sorted([cls() for cls in cls._tweak_classes],
+                      key=lambda a: a.tweak_name.lower())
+
+
+class AAliasesPatcher(Abstract_Patcher):
     """Specify mod aliases for patch files."""
     scanOrder = 10
     editOrder = 10
     group = _(u'General')
-    name = _(u"Alias Mod Names")
-    text = _(u"Specify mod aliases for reading CSV source files.")
-    tip = None
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self, patchFile):
-        """Prepare to handle specified patch mod. All functions are called
-        after this."""
-        super(AAliasesPatcher, self).initPatchFile(patchFile)
-        if self.isEnabled:
-            self.patchFile.aliases = self.aliases
 
 #------------------------------------------------------------------------------
-# AMultiTweakItem(object)------------------------------------------------------
+# AMultiTweakItem(object) -----------------------------------------------------
 #------------------------------------------------------------------------------
 class AMultiTweakItem(object):
     """A tweak item, optionally with configuration choices."""
@@ -230,8 +184,6 @@ class AMultiTweakItem(object):
         for srcMod in load_order.get_ordered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
 
-    #--Config Phase -----------------------------------------------------------
-    # Methods present in _Abstract_Patcher too
     def init_tweak_config(self, configs):
         """Get config from configs dictionary and/or set to default."""
         self.isEnabled,self.chosen = self.defaultEnabled,0
@@ -280,7 +232,7 @@ class DynamicNamedTweak(AMultiTweakItem):
         self.__class__.__name__, self.tweak_name)
 
 #------------------------------------------------------------------------------
-# AListPatcher subclasses------------------------------------------------------
+# AListPatcher subclasses -----------------------------------------------------
 #------------------------------------------------------------------------------
 class AImportPatcher(AListPatcher):
     """Subclass for patchers in group Importer."""
@@ -294,26 +246,17 @@ class APatchMerger(AListPatcher):
     scanOrder = 10
     editOrder = 10
     group = _(u'General')
-    name = _(u'Merge Patches')
-    text = _(u"Merge patch mods into Bashed Patch.")
-    autoKey = {u'Merge'}
 
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self, patchFile):
-        super(APatchMerger, self).initPatchFile(patchFile)
+    def __init__(self, p_name, p_file, p_sources):
+        super(APatchMerger, self).__init__(p_name, p_file, p_sources)
         #--WARNING: Since other patchers may rely on the following update
         # during their initPatchFile section, it's important that PatchMerger
         # runs first or near first.
         if not self.isActive: return
-        if self.isEnabled: #--Since other mods may rely on this
-            patchFile.set_mergeable_mods( # self.srcs set in initPatchFile
-                self.srcs)
+        p_file.set_mergeable_mods(self.srcs)
 
 class AUpdateReferences(AListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
     scanOrder = 15
     editOrder = 15
     group = _(u'General')
-    name = _(u'Replace Form IDs')
-    text = _(u"Imports Form Id replacers from csv files into the Bashed Patch.")
-    autoKey = {u'Formids'}

@@ -1130,10 +1130,10 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
                                              'bash.patch.configs', {})
         # Detect CBash/Python mode patch
         doCBash = configIsCBash(config)
-        patchers = [copy.deepcopy(x) for x in
+        _gui_patchers = [copy.deepcopy(x) for x in
                     (CBash_gui_patchers if doCBash else PBash_gui_patchers)]
-        patchers.sort(key=lambda a: a.__class__.name)
-        patchers.sort(key=lambda a: groupOrder[a.__class__.group])
+        _gui_patchers.sort(key=lambda a: a.__class__.patcher_name)
+        _gui_patchers.sort(key=lambda a: groupOrder[a.patcher_type.group])
         #--Log & Clipboard text
         log = bolt.LogFile(StringIO.StringIO())
         log.setHeader(u'= %s %s' % (self._selected_item, _(u'Config')))
@@ -1155,7 +1155,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         else:
             log(u'Python')
             clip.write(u' ** Python\n')
-        for patcher in patchers:
+        for patcher in _gui_patchers:
             patcher.log_config(config, clip, log)
         #-- Show log
         clip.write(u'[/xml][/spoiler]')

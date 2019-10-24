@@ -536,19 +536,10 @@ class GameInfo(object):
     def plugin_header_class(self):
         return brec.MreRecord.type_class[self.Esp.plugin_header_sig]
 
-    @classmethod
-    def init(cls):
-        # Setting RecordHeader class variables --------------------------------
-        # Top types in order of the main ESM
-        brec.RecordHeader.topTypes = []
-        brec.RecordHeader.recordTypes = set(
-            brec.RecordHeader.topTypes + ['GRUP', 'TES4'])
-        # Record Types
-        brec.MreRecord.type_class = dict((x.classType,x) for x in  (
-                ))
-        # Simple records
-        brec.MreRecord.simpleTypes = (
-                set(brec.MreRecord.type_class) - {'TES4'})
+    # Set in game/*/patcher.py used in Mopy/bash/basher/gui_patchers.py
+    gameSpecificPatchers = {}
+    gameSpecificListPatchers = {}
+    game_specific_import_patchers = {}
 
     # Import from the constants module ----------------------------------------
     # Class attributes moved to constants module, set dynamically at init
@@ -569,6 +560,20 @@ class GameInfo(object):
     }
 
     @classmethod
+    def init(cls):
+        # Setting RecordHeader class variables --------------------------------
+        # Top types in order of the main ESM
+        brec.RecordHeader.topTypes = []
+        brec.RecordHeader.recordTypes = set(
+            brec.RecordHeader.topTypes + ['GRUP', 'TES4'])
+        # Record Types
+        brec.MreRecord.type_class = dict((x.classType,x) for x in  (
+                ))
+        # Simple records
+        brec.MreRecord.simpleTypes = (
+                set(brec.MreRecord.type_class) - {'TES4'})
+
+    @classmethod
     def _dynamic_import_modules(cls, package_name):
         """Dynamically import package modules to avoid importing them for every
         game. We need to pass the package name in for importlib to work.
@@ -587,5 +592,11 @@ class GameInfo(object):
         vf_module = importlib.import_module('.vanilla_files',
                                             package=package_name)
         cls.vanilla_files = vf_module.vanilla_files
+        patchers_module = importlib.import_module('.patcher',
+                                                  package=package_name)
+        cls.gameSpecificPatchers = patchers_module.gameSpecificPatchers
+        cls.gameSpecificListPatchers = patchers_module.gameSpecificListPatchers
+        cls.game_specific_import_patchers = \
+            patchers_module.game_specific_import_patchers
 
 GAME_TYPE = None

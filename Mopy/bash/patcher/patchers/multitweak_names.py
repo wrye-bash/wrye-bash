@@ -611,29 +611,15 @@ class ATextReplacer(DynamicNamedTweak):
         self.logMsg = u'* '+_(u'Items Renamed') + u': %d'
 
 class TextReplacer(ATextReplacer,_AMultiTweakItem_Names):
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self, reMatch, reReplace, label, tweak_tip, key, choices):
-        super(TextReplacer, self).__init__(reMatch, reReplace, label,
-                                           tweak_tip, key, choices)
-        self.activeTypes = ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
-                            'CLAS','CLOT','CONT','CREA','DOOR',
-                            'ENCH','EYES','FACT','FLOR','FURN','GMST',
-                            'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
-                            'MISC','NPC_','QUST','RACE','SCPT','SGST',
-                            'SKIL','SLGM','SPEL','WEAP']
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return tuple(self.activeTypes)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return tuple(self.activeTypes)
+    tweak_read_classes = (
+        'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT', 'CONT',
+        'CREA', 'DOOR', 'ENCH', 'EYES', 'FACT', 'FLOR', 'FURN', 'GMST', 'HAIR',
+        'INGR', 'KEYM', 'LIGH', 'LSCR', 'MGEF', 'MISC', 'NPC_', 'QUST', 'RACE',
+        'SCPT', 'SGST', 'SKIL', 'SLGM', 'SPEL', 'WEAP')
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
-        for blockType in self.activeTypes:
+        for blockType in self.tweak_read_classes:
             if blockType not in modFile.tops: continue
             modBlock = getattr(modFile,blockType)
             patchBlock = getattr(patchFile,blockType)
@@ -648,7 +634,7 @@ class TextReplacer(ATextReplacer,_AMultiTweakItem_Names):
         keep = patchFile.getKeeper()
         reMatch = re.compile(self.reMatch)
         reReplace = self.reReplace
-        for type_ in self.activeTypes:
+        for type_ in self.tweak_read_classes:
             if type_ not in patchFile.tops: continue
             for record in patchFile.tops[type_].records:
                 changed = False
@@ -745,15 +731,12 @@ class TextReplacer(ATextReplacer,_AMultiTweakItem_Names):
         self._patchLog(log, count)
 
 class CBash_TextReplacer(ATextReplacer,CBash_MultiTweakItem):
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        ##: note it differs only in 'CELLS' from TextReplacer.activeTypes
-        return ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
-                'CELLS','CLAS','CLOT','CONT','CREA','DOOR',
-                'ENCH','EYES','FACT','FLOR','FURN','GMST',
-                'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
-                'MISC','NPC_','QUST','RACE','SCPT','SGST',
-                'SKIL','SLGM','SPEL','WEAP']
+    tweak_read_classes = ('CELLS',
+        'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT', 'CONT',
+        'CREA', 'DOOR', 'ENCH', 'EYES', 'FACT', 'FLOR', 'FURN', 'GMST', 'HAIR',
+        'INGR', 'KEYM', 'LIGH', 'LSCR', 'MGEF', 'MISC', 'NPC_', 'QUST', 'RACE',
+        'SCPT', 'SGST', 'SKIL', 'SLGM', 'SPEL', 'WEAP')
+        ##: note it differs only in 'CELLS' from TextReplacer.tweak_read_classes
 
     def save_tweak_config(self, configs):
         """Save config to configs dictionary."""
@@ -896,9 +879,6 @@ class _ANamesTweaker(AMultiTweaker):
     """Tweaks record full names in various ways."""
     scanOrder = 32
     editOrder = 32
-    name = _(u'Tweak Names')
-    text = _(u"Tweak object names in various ways such as lore friendliness or"
-             u" show type/quality.")
     _namesTweaksBody = ((_(u"Armor"),
                          _(u"Rename armor to sort by type."),
                          'ARMO',
@@ -938,46 +918,43 @@ class _ANamesTweaker(AMultiTweaker):
                     (u'Proper English Text: Staffs -> Staves', u'Staves'),),)
 
 class NamesTweaker(_ANamesTweaker,MultiTweaker):
-    tweaks = sorted(
-        [NamesTweak_Body(*x) for x in _ANamesTweaker._namesTweaksBody] + [
-            TextReplacer(*x) for x in _ANamesTweaker._txtReplacer] + [
-            NamesTweak_Potions(), NamesTweak_Scrolls(), NamesTweak_Spells(),
-            NamesTweak_Weapons()], key=lambda a: a.tweak_name.lower())
-    tweaks.insert(0, NamesTweak_BodyTags())
 
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return tuple()
-        classTuples = [tweak.getWriteClasses() for tweak in self.enabledTweaks]
-        return sum(classTuples,tuple())
-
-    def scanModFile(self,modFile,progress):
-        if not self.isActive: return
-        for tweak in self.enabledTweaks:
-            tweak.scanModFile(modFile,progress,self.patchFile)
+    @classmethod
+    def tweak_instances(cls):
+        instances = sorted(
+            [NamesTweak_Body(*x) for x in cls._namesTweaksBody] + [
+                TextReplacer(*x) for x in cls._txtReplacer] + [
+                NamesTweak_Potions(), NamesTweak_Scrolls(),
+                NamesTweak_Spells(), NamesTweak_Weapons()],
+            key=lambda a: a.tweak_name.lower())
+        instances.insert(0, NamesTweak_BodyTags())
+        return instances
 
 class CBash_NamesTweaker(_ANamesTweaker,CBash_MultiTweaker):
-    tweaks = sorted(
-        [CBash_NamesTweak_Body(*x) for x in _ANamesTweaker._namesTweaksBody] +
-        [CBash_TextReplacer(*x) for x in _ANamesTweaker._txtReplacer] + [
-            CBash_NamesTweak_Potions(), CBash_NamesTweak_Scrolls(),
-            CBash_NamesTweak_Spells(), CBash_NamesTweak_Weapons()],
-        key=lambda a: a.tweak_name.lower())
-    tweaks.insert(0,CBash_NamesTweak_BodyTags())
 
-    #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self, patchFile):
-        self.patchFile = patchFile
-        for tweak in self.tweaks[1:]:
-            tweak.patchFile = patchFile
-        bodyTagPatcher = self.tweaks[0]
-        patchFile.bodyTags = \
-            bodyTagPatcher.choiceValues[bodyTagPatcher.chosen][0]
-        patchFile.indexMGEFs = True
+    @classmethod
+    def tweak_instances(cls):
+        instances = sorted(
+            [CBash_NamesTweak_Body(*x) for x in cls._namesTweaksBody] + [
+                CBash_TextReplacer(*x) for x in cls._txtReplacer] + [
+                CBash_NamesTweak_Potions(), CBash_NamesTweak_Scrolls(),
+                CBash_NamesTweak_Spells(), CBash_NamesTweak_Weapons()],
+            key=lambda a: a.tweak_name.lower())
+        instances.insert(0,CBash_NamesTweak_BodyTags())
+        return instances
+
+    def __init__(self, p_name, p_file, enabled_tweaks):
+        super(CBash_NamesTweaker, self).__init__(p_name, p_file,
+                                                 enabled_tweaks)
+        body_tags_tweak = enabled_tweaks[0] # FIXME test - was always enabled?
+        if isinstance(body_tags_tweak, CBash_NamesTweak_BodyTags):
+            p_file.bodyTags = \
+                body_tags_tweak.choiceValues[body_tags_tweak.chosen][0]
+        p_file.indexMGEFs = True # FIXME what is this? needed if body tags are set?
 
     def initData(self,group_patchers,progress):
         if not self.isActive: return
-        for tweak in self.enabledTweaks:
+        for tweak in self.enabled_tweaks:
             for top_group_sig in tweak.getTypes():
                 group_patchers[top_group_sig].append(tweak)
             tweak.format = tweak.choiceValues[tweak.chosen][0]

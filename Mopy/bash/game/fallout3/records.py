@@ -1354,7 +1354,7 @@ class MreFlst(MelRecord):
         """Merges newLevl settings and entries with self.
         Requires that: self.items, other.deflsts be defined."""
         if not self.longFids or not other.longFids:
-            raise StateError(_("Fids not in long format"))
+            raise StateError(_(u'Fids not in long format'))
         #--Remove items based on other.removes
         if other.deflsts:
             removeItems = self.items & other.deflsts
