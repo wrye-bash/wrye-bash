@@ -1563,8 +1563,8 @@ class MreRace(MelRecord):
             bodyAttrs = ('UpperBodyPath', 'LowerBodyPath', 'HandPath',
                          'FootPath', 'TailPath')
             self.attrs = {
-                'MNAM':tuple('male'+text for text in bodyAttrs),
-                'FNAM':tuple('female'+text for text in bodyAttrs),
+                'MNAM': tuple('male' + str_ for str_ in bodyAttrs),
+                'FNAM': tuple('female' + str_ for str_ in bodyAttrs),
                 'NAM0':('head', 'maleEars', 'femaleEars', 'mouth',
                 'teethLower', 'teethUpper', 'tongue', 'leftEye', 'rightEye',)
                 }

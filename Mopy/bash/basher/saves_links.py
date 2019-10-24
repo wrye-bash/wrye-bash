@@ -83,10 +83,10 @@ class Saves_ProfilesData(balt.ListEditorData):
         profileSaves = _win_join(item)
         return bosh.saveInfos.profiles.getItem(profileSaves, 'info',
                                                _(u'About %s:') % item)
-    def setInfo(self,item,text):
+    def setInfo(self, item, info_text):
         """Sets string info on specified item."""
         profileSaves = _win_join(item)
-        bosh.saveInfos.profiles.setItem(profileSaves,'info',text)
+        bosh.saveInfos.profiles.setItem(profileSaves, 'info', info_text)
 
     def add(self):
         """Adds a new profile."""

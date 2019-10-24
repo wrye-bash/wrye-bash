@@ -332,9 +332,9 @@ class _ListPatcherPanel(_PatcherPanel):
         if not srcPaths: return
         #--Get new items
         for srcPath in srcPaths:
-            folder, name = srcPath.headTail
-            if folder == srcDir and name not in self.configItems:
-                self.configItems.append(name)
+            folder, fname = srcPath.headTail
+            if folder == srcDir and fname not in self.configItems:
+                self.configItems.append(fname)
         self.SetItems(self.configItems)
 
     def OnRemove(self):

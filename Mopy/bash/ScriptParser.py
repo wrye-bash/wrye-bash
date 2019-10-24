@@ -69,10 +69,10 @@ name_chars = name_start + u'0123456789'
 # validName ---------------------------------------
 #  Test if a string can be used as a valid name
 #--------------------------------------------------
-def validName(name):
+def validName(string):
     try:
-        if name[0] not in name_start: return False
-        for i in name:
+        if string[0] not in name_start: return False
+        for i in string:
             if i not in name_chars: return False
         return True
     except (TypeError, KeyError): # TypeError means not iterable
@@ -322,17 +322,18 @@ class Parser(object):
             self.dotFunction = dotFunction
 
     class Token:
-        def __init__(self, text, Type=None, parser=None, line=None, pos=(None,None)):
-            if isinstance(text, Parser.Token):
-                self.text = text.text
-                self.type = text.type
-                self.parser = text.parser
-                self.line = text.line
-                self.pos = text.pos
-                self.numArgs = text.numArgs
+        def __init__(self, token_or_text, Type=None, parser=None, line=None,
+                     pos=(None, None)):
+            if isinstance(token_or_text, Parser.Token):
+                self.text = token_or_text.text
+                self.type = token_or_text.type
+                self.parser = token_or_text.parser
+                self.line = token_or_text.line
+                self.pos = token_or_text.pos
+                self.numArgs = token_or_text.numArgs
             else:
-                self.text = text
-                self.type = Type or getType(text,parser)
+                self.text = token_or_text
+                self.type = Type or getType(token_or_text, parser)
                 self.parser = parser
                 self.line = line
                 self.pos = pos

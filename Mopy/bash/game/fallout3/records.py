@@ -3363,15 +3363,16 @@ class MreRace(MelRecord):
         """Handles NAM0, NAM1, MNAM, FMAN and INDX records. Distributes load
         duties to other elements as needed."""
         def __init__(self):
-            headAttrs = ('Head', 'Ears', 'Mouth', 'TeethLower', 'TeethUpper', 'Tongue', 'LeftEye', 'RightEye')
+            headAttrs = ('Head', 'Ears', 'Mouth', 'TeethLower', 'TeethUpper',
+                         'Tongue', 'LeftEye', 'RightEye')
             bodyAttrs = ('UpperBody','LeftHand','RightHand','UpperBodyTexture')
             self.headModelAttrs = {
-                'MNAM':tuple('male'+text for text in headAttrs),
-                'FNAM':tuple('female'+text for text in headAttrs),
+                'MNAM': tuple('male' + str_ for str_ in headAttrs),
+                'FNAM': tuple('female' + str_ for str_ in headAttrs),
                 }
             self.bodyModelAttrs = {
-                'MNAM':tuple('male'+text for text in bodyAttrs),
-                'FNAM':tuple('female'+text for text in bodyAttrs),
+                'MNAM': tuple('male' + str_ for str_ in bodyAttrs),
+                'FNAM': tuple('female' + str_ for str_ in bodyAttrs),
                 }
             self.attrs = {
                 'NAM0':self.headModelAttrs,

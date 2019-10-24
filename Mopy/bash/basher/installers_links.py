@@ -175,9 +175,10 @@ class Installers_ListPackages(Installers_Link):
         message = _(u'Only show Installed Packages?') + u'\n' + _(
             u'(Else shows all packages)')
         installed_only = self._askYes(message, _(u'Only Show Installed?'))
-        text = self.idata.getPackageList(showInactive=not installed_only)
-        balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'BAIN Packages'), fixedFont=False)
+        package_list = self.idata.getPackageList(
+            showInactive=not installed_only)
+        balt.copyToClipboard(package_list)
+        self._showLog(package_list, title=_(u'BAIN Packages'), fixedFont=False)
 
 class Installers_AnnealAll(Installers_Link):
     """Anneal all packages."""
@@ -334,7 +335,7 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
                 self.idata.update_for_overridden_skips(bush.game.bethDataFiles,
                                                        progress)
         # Refresh Installers
-        toRefresh = set(name for name, installer in self.idata.iteritems() if
+        toRefresh = set(iname for iname, installer in self.idata.iteritems() if
                         installer.hasBethFiles)
         self.window.rescanInstallers(toRefresh, abort=False,
                                      update_from_data=False, shallow=True)

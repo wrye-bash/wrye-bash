@@ -358,9 +358,9 @@ class SaveFile:
             #--Masters
             _pack('B',len(self.masters))
             for master in self.masters:
-                name = encode(master.s)
-                _pack('B',len(name))
-                out.write(name)
+                enc_name = encode(master.s)
+                _pack('B', len(enc_name))
+                out.write(enc_name)
             #--Fids Pointer, num records
             fidsPointerPos = out.tell()
             _pack('I',0) #--Temp. Will write real value later.
@@ -468,7 +468,8 @@ class SaveFile:
 
     def getShortMapper(self):
         """Returns a mapping function to map long fids to short fids."""
-        indices = dict([(name,index) for index,name in enumerate(self.masters)])
+        indices = dict(
+            [(mas_name, idx) for idx, mas_name in enumerate(self.masters)])
         def mapper(fid):
             if fid is None: return None
             modName,object = fid

@@ -85,8 +85,8 @@ def _parse_plugins_txt_(path, mod_infos, _star):
             modname = _re_plugins_txt_comment.sub('', line).strip()
             if not modname: continue
             # use raw strings below
-            is_active = not _star or modname.startswith('*')
-            if _star and is_active: modname = modname[1:]
+            is_active_ = not _star or modname.startswith('*')
+            if _star and is_active_: modname = modname[1:]
             try:
                 test = bolt.decode(modname, encoding='cp1252')
             except UnicodeError:
@@ -110,7 +110,7 @@ def _parse_plugins_txt_(path, mod_infos, _star):
             else:
                 modname = bolt.GPath(test)
             modnames.append(modname)
-            if is_active: active.append(modname)
+            if is_active_: active.append(modname)
     return active, modnames
 
 class FixInfo(object):

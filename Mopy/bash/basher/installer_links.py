@@ -243,7 +243,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         ui_refresh = [False, False]
         try:
             if ret.should_install:
-                if self._selected_info.isActive: #If it's currently installed, anneal
+                if self._selected_info.is_active: #If it's currently installed, anneal
                     title, doIt = _(u'Annealing...'), self.idata.bain_anneal
                 else: #Install, if it's not installed
                     title, doIt = _(u'Installing...'), self.idata.bain_install
@@ -259,7 +259,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         lastApplied = None
         new_targets = {}
         for iniFile, wizardEdits in ret.ini_edits.iteritems():
-            outFile = bass.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' %
+            outFile = bass.dirs['ini_tweaks'].join(u'%s - Wizard Tweak [%s].ini' %
                 (installer.archive, iniFile.sbody))
             with outFile.open('w') as out:
                 for line in generateTweakLines(wizardEdits, iniFile):
@@ -1162,9 +1162,9 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
 
     @balt.conversation
     def Execute(self):
-        name, archive = next(self.iselected_pairs()) # first selected pair
+        iname, archive = next(self.iselected_pairs()) # first selected pair
         #--Ask for an output filename
-        dest = self._askFilename(_(u'Output file:'), filename=name.stail)
+        dest = self._askFilename(_(u'Output file:'), filename=iname.stail)
         if not dest: return
         with balt.Progress(_(u'Extracting BCF...'),u'\n'+u' '*60) as progress:
             destinations, converted = self.idata.applyEmbeddedBCFs(

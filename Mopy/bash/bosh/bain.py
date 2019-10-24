@@ -54,7 +54,7 @@ class Installer(object):
     its installation state."""
     #--Member data
     persistent = ('archive', 'order', 'group', 'modified', 'size', 'crc',
-        'fileSizeCrcs', 'type', 'isActive', 'subNames', 'subActives',
+        'fileSizeCrcs', 'type', 'is_active', 'subNames', 'subActives',
         'dirty_sizeCrc', 'comments', 'extras_dict', 'packageDoc', 'packagePic',
         'src_sizeCrcDate', 'hasExtraData', 'skipVoices', 'espmNots', 'isSolid',
         'blockSize', 'overrideSkips', 'remaps', 'skipRefresh', 'fileRootIdex')
@@ -185,7 +185,7 @@ class Installer(object):
         self.comments = u''
         self.group = u'' #--Default from abstract. Else set by user.
         self.order = -1 #--Set by user/interface.
-        self.isActive = False
+        self.is_active = False
         self.espmNots = set() #--Lowercase plugin file names that user has decided not to install.
         self.remaps = {}
         #--Volatiles (not pickled values)
@@ -776,7 +776,7 @@ class Installer(object):
         self.unSize = unSize
         (self.ci_dest_sizeCrc, old_sizeCrc) = (data_sizeCrc, self.ci_dest_sizeCrc)
         #--Update dirty?
-        if self.isActive and data_sizeCrc != old_sizeCrc:
+        if self.is_active and data_sizeCrc != old_sizeCrc:
             dirty_sizeCrc = self.dirty_sizeCrc
             for filename,sizeCrc in old_sizeCrc.iteritems():
                 if filename not in dirty_sizeCrc and sizeCrc != data_sizeCrc.get(filename):
@@ -1649,7 +1649,7 @@ class InstallersData(DataStore):
         if destDir == self.store_dir:
             self[destName] = installer = copy.copy(self[item])
             installer.archive = destName.s
-            installer.isActive = False
+            installer.is_active = False
             self.moveArchives([destName], self[item].order + 1)
 
     def move_info(self, filename, destDir):
@@ -1867,7 +1867,7 @@ class InstallersData(DataStore):
 
     def refreshNorm(self):
         """Populate self.ci_underrides_sizeCrc with all underridden files."""
-        active_sorted = (x for x in self.sorted_values() if x.isActive)
+        active_sorted = (x for x in self.sorted_values() if x.is_active)
         #--dict mapping all should-be-installed files to their attributes
         norm_sizeCrc = bolt.LowerDict()
         for package in active_sorted:
@@ -2147,7 +2147,7 @@ class InstallersData(DataStore):
             if oldCrc is None or newCrc is None or newCrc == oldCrc: continue
             iniAbsDataPath = bass.dirs['mods'].join(relPath)
             # Create a copy of the old one
-            baseName = bass.dirs['tweaks'].join(u'%s, ~Old Settings [%s].ini' % (
+            baseName = bass.dirs['ini_tweaks'].join(u'%s, ~Old Settings [%s].ini' % (
                 iniAbsDataPath.sbody, installer.archive))
             tweakPath = self.__tweakPath(baseName)
             iniAbsDataPath.copyTo(tweakPath)
@@ -2173,26 +2173,26 @@ class InstallersData(DataStore):
             iniFile = BestIniFile(iniAbsDataPath)
             currSection = None
             lines = []
-            for (text, section, setting, value, status, lineNo,
+            for (line_text, section, setting, value, status, lineNo,
                  deleted) in iniFile.analyse_tweak(BestIniFile(tweakPath)):
-                if not text.rstrip():
+                if not line_text.rstrip():
                     continue # possible empty lines at the start
                 if status in (10, -10):
                     # A setting that exists in both INI's, but is different,
                     # or a setting that doesn't exist in the new INI.
                     if section in pseudosections:
-                        lines.append(text + u'\n')
+                        lines.append(line_text + u'\n')
                     elif section != currSection:
                         currSection = section
                         if not section: continue
                         lines.append(u'\n[%s]\n' % section)
                         # a section line may have 0 status - may be a setting ?
                         if setting is not None:
-                            lines.append(text + u'\n')
+                            lines.append(line_text + u'\n')
                     elif not section:
                         continue
                     else:
-                        lines.append(text + u'\n')
+                        lines.append(line_text + u'\n')
             if not lines: # avoid creating empty tweaks
                 removed.add((tweakPath, iniAbsDataPath))
                 tweakPath.remove()
@@ -2233,11 +2233,11 @@ class InstallersData(DataStore):
                     self.__installer_install(installer, destFiles, index,
                                              progress, refresh_ui)
                 index += 1 # increment after it's used in __installer_install
-                installer.isActive = True
+                installer.is_active = True
                 if installer.order == min_order:
                     break # we are done
             #prevent lower packages from installing any files of this installer
-            if installer.isActive: mask |= set(installer.ci_dest_sizeCrc)
+            if installer.is_active: mask |= set(installer.ci_dest_sizeCrc)
         if tweaksCreated:
             self._editTweaks(tweaksCreated)
             refresh_ui[1] |= bool(tweaksCreated)
@@ -2427,7 +2427,7 @@ class InstallersData(DataStore):
                             removes.add(cistr_file)
             #--Other active archive. May undo previous removes, or provide a restore file.
             #  And/or may block later uninstalls.
-            elif installer.isActive:
+            elif installer.is_active:
                 masked |= self.__restore(installer, removes, restores,
                                          cede_ownership)
         anneal = bass.settings['bash.installers.autoAnneal']
@@ -2441,7 +2441,7 @@ class InstallersData(DataStore):
             self._removeFiles(removes, refresh_ui, progress)
             #--De-activate
             for inst in unArchives:
-                inst.isActive = False
+                inst.is_active = False
             #--Restore files
             if anneal:
                 self._restoreFiles(restores, refresh_ui, progress)
@@ -2487,7 +2487,7 @@ class InstallersData(DataStore):
         removes = set()
         for installer in anPackages:
             removes |= installer.underrides
-            if installer.isActive:
+            if installer.is_active:
                 removes |= installer.missingFiles # re-added in __restore
                 removes |= set(installer.dirty_sizeCrc)
             installer.dirty_sizeCrc.clear()
@@ -2497,7 +2497,7 @@ class InstallersData(DataStore):
         for installer in self.sorted_values(reverse=True):
             #--Other active package. May provide a restore file.
             #  And/or may block later uninstalls.
-            if installer.isActive:
+            if installer.is_active:
                 self.__restore(installer, removes, restores, cede_ownership)
         self._remove_restore(removes, restores, refresh_ui, cede_ownership,
                              progress)
@@ -2505,7 +2505,7 @@ class InstallersData(DataStore):
     def clean_data_dir(self, refresh_ui):
         keepFiles = set()
         for installer in self.sorted_values(reverse=True):
-            if installer.isActive:
+            if installer.is_active:
                 keepFiles.update(installer.ci_dest_sizeCrc) # relative to Data/
         from . import modInfos
         keepFiles.update((bolt.CIstr(f) for f in bush.game.vanilla_files))
@@ -2595,7 +2595,7 @@ class InstallersData(DataStore):
                                                             active_bsas)
             for package, installer in self.sorted_pairs():
                 if installer.order == srcOrder or not (showInactive or
-                                                       installer.isActive):
+                                                       installer.is_active):
                     continue # check active installers different than src
                 for bsa_info in self._get_active_bsas(installer, active_bsas):
                     try: # conflicting assets from this installer active bsas
@@ -2628,7 +2628,7 @@ class InstallersData(DataStore):
         lower_loose, higher_loose = [], []
         for package, installer in self.sorted_pairs():
             if installer.order == srcOrder or not (
-                        showInactive or installer.isActive): continue
+                        showInactive or installer.is_active): continue
             if not showLower and installer.order < srcOrder: continue
             curConflicts = bolt.sortFiles(
                 [x for x, y in installer.ci_dest_sizeCrc.iteritems()
@@ -2719,7 +2719,7 @@ class InstallersData(DataStore):
             if higher_loose:
                     _print_loose_conflicts(higher_loose, _(u'Higher'))
             report = buff.getvalue()
-        if not conflictsMode and not report and not srcInstaller.isActive:
+        if not conflictsMode and not report and not srcInstaller.is_active:
             report = _(u"No Underrides. Mod is not completely un-installed.")
         return report
 
@@ -2735,7 +2735,7 @@ class InstallersData(DataStore):
                 prefix = u'%03d' % installer.order
                 if isinstance(installer, InstallerMarker):
                     log(u'%s - %s' % (prefix, package.s))
-                elif installer.isActive:
+                elif installer.is_active:
                     log(u'++ %s - %s (%08X) (Installed)' % (
                         prefix, package.s, installer.crc))
                 elif showInactive:

@@ -59,7 +59,7 @@ class ModRuleSet:
         def hasRules(self):
             return bool(self.notes or self.config or self.suggest or self.warn)
 
-        def isActive(self,actives):
+        def _mod_group_active(self, actives):
             """Determines if modgroup is active based on its set of mods."""
             if not self.modAnds: return False
             for modNot,mods in zip(self.modNots,self.modAnds):
@@ -205,8 +205,8 @@ class ModRuleSet:
                         maRule = reRule.match(line)
                         maExists = reExists.match(line)
                         if maRule:
-                            op,mod,version,text = maRule.groups()
-                            self.addGroupRule(op,mod,text)
+                            op, mod, version, rule_text = maRule.groups()
+                            self.addGroupRule(op, mod, rule_text)
                         elif maExists and u'..' not in maExists.groups(2):
                             self.addGroupRule(*stripped(maExists.groups()))
                 self.newBlock(None)
@@ -600,7 +600,7 @@ class ConfigHelpers:
                                 log(u'* '+mod.s)
                     #--Mod Rules
                     for modGroup in ruleSet.modGroups:
-                        if not modGroup.isActive(activeMerged): continue
+                        if not modGroup._mod_group_active(activeMerged): continue
                         modsList = u' + '.join([x.s for x in modGroup.getActives(activeMerged)])
                         if showNotes and modGroup.notes:
                             log.setHeader(u'=== '+_(u'NOTES: ') + modsList )

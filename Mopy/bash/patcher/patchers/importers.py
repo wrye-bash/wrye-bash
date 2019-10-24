@@ -2185,9 +2185,9 @@ class NamesPatcher(_ANamesPatcher, ImportPatcher):
                 self.skipTypes.append(type)
                 continue
             self.activeTypes.append(type)
-            for longid,(eid,name) in id_name.iteritems():
-                if name != u'NO NAME':
-                    id_full[longid] = name
+            for longid,(eid,name_) in id_name.iteritems():
+                if name_ != u'NO NAME':
+                    id_full[longid] = name_
         self.isActive = bool(self.activeTypes)
 
     def getReadClasses(self):
@@ -2273,9 +2273,9 @@ class CBash_NamesPatcher(_ANamesPatcher, _RecTypeModLogging):
         csvId_full = self.csvId_full
         for group,fid_name in fullNames.group_fid_name.iteritems():
             if group not in validTypes: continue
-            for fid,(eid,name) in fid_name.iteritems():
-                if name != u'NO NAME':
-                    csvId_full[fid] = name
+            for fid, (eid, name_) in fid_name.iteritems():
+                if name_ != u'NO NAME':
+                    csvId_full[fid] = name_
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""

@@ -144,16 +144,16 @@ class _PFile(object):
                   ) % _link(u'modsDecompileAll'))
             for mod in self.compiledAllMods: log(u'* ' + mod.s)
         log.setHeader(u'=== ' + _(u'Active Mods'), True)
-        for name in self.allMods:
-            version = bosh.modInfos.getVersion(name)
-            if name in self.loadSet:
-                message = u'* %02X ' % (self.loadMods.index(name),)
+        for mname in self.allMods:
+            version = bosh.modInfos.getVersion(mname)
+            if mname in self.loadSet:
+                message = u'* %02X ' % (self.loadMods.index(mname),)
             else:
                 message = u'* ++ '
             if version:
-                message += _(u'%s  [Version %s]') % (name.s,version)
+                message += _(u'%s  [Version %s]') % (mname.s,version)
             else:
-                message += name.s
+                message += mname.s
             log(message)
         #--Load Mods and error mods
         if self.aliases:

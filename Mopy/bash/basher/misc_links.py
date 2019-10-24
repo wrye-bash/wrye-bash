@@ -162,13 +162,13 @@ class People_AddNew(ItemLink, People_Link):
     _help = _(u'Add a new record')
 
     def Execute(self):
-        name = self._askText(_(u"Add new person:"), self.dialogTitle)
-        if not name: return
-        if name in self.pdata: return self._showInfo(
-            name + _(u" already exists."), title=self.dialogTitle)
-        self.pdata[name] = (time.time(),0,u'')
-        self.window.RefreshUI(redraw=[name])
-        self.window.EnsureVisibleItem(name, focus=True)
+        person = self._askText(_(u"Add new person:"), self.dialogTitle)
+        if not person: return
+        if person in self.pdata: return self._showInfo(
+            person + _(u" already exists."), title=self.dialogTitle)
+        self.pdata[person] = (time.time(),0,u'')
+        self.window.RefreshUI(redraw=[person])
+        self.window.EnsureVisibleItem(person, focus=True)
         self.pdata.setChanged()
 
 #------------------------------------------------------------------------------

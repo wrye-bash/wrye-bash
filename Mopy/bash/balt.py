@@ -2876,7 +2876,7 @@ class ListBoxes(Dialog):
         self.SetSize(wxSize(minWidth, -1))
         for i,item_group in enumerate(lists):
             title = item_group[0] # also serves as key in self._ids dict
-            tip = item_group[1]
+            item_tip = item_group[1]
             strings = [u'%s' % x for x in item_group[2:]] # works for Path & strings
             if len(strings) == 0: continue
             subsizer = hsbSizer(self, title)
@@ -2901,7 +2901,7 @@ class ListBoxes(Dialog):
                     for subitem in subitems:
                         checksCtrl.AppendItem(child,subitem.s)
             self._ids[title] = checksCtrl.GetId()
-            checksCtrl.SetToolTip(tooltip(tip))
+            checksCtrl.SetToolTip(tooltip(item_tip))
             subsizer.Add(checksCtrl,1,wx.EXPAND|wx.ALL,2)
             sizer.Add(subsizer,0,wx.EXPAND|wx.ALL,5)
             sizer.AddGrowableRow(i + 1)

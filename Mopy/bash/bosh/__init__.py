@@ -1321,22 +1321,22 @@ class FileInfos(TableFileInfos):
         _added = set()
         _updated = set()
         newNames = self._names()
-        for name in newNames: #--Might have '.ghost' lopped off.
-            oldInfo = self.get(name) # None if name was in corrupted or new one
+        for new in newNames: #--Might have '.ghost' lopped off.
+            oldInfo = self.get(new) # None if new was in corrupted or new one
             try:
                 if oldInfo is not None:
                     if oldInfo.do_update(): # will reread the header
-                        _updated.add(name)
+                        _updated.add(new)
                 else: # added or known corrupted, get a new info
-                    self.new_info(name, _in_refresh=True,
+                    self.new_info(new, _in_refresh=True,
                                   notify_bain=not booting)
-                    _added.add(name)
+                    _added.add(new)
             except FileError as e: # old still corrupted, or new(ly) corrupted
-                if not name in self.corrupted \
-                        or self.corrupted[name] != e.message:
-                    deprint(u'Failed to load %s: %s' % (name, e.message)) #, traceback=True)
-                    self.corrupted[name] = e.message
-                self.pop(name, None)
+                if not new in self.corrupted \
+                        or self.corrupted[new] != e.message:
+                    deprint(u'Failed to load %s: %s' % (new, e.message)) #, traceback=True)
+                    self.corrupted[new] = e.message
+                self.pop(new, None)
         _deleted = oldNames - newNames
         self.delete_refresh(_deleted, None, check_existence=False,
                             _in_refresh=True)
@@ -1450,7 +1450,7 @@ class INIInfos(TableFileInfos):
         INIInfos._default_tweaks = dict(
             (GPath(k), DefaultIniInfo(k, v)) for k, v in
             bush.game.default_tweaks.iteritems())
-        super(INIInfos, self).__init__(dirs['tweaks'],
+        super(INIInfos, self).__init__(dirs['ini_tweaks'],
                                        factory=ini_info_factory)
         self._ini = None
         # Check the list of target INIs, remove any that don't exist
@@ -1542,12 +1542,12 @@ class INIInfos(TableFileInfos):
         _added = set()
         _updated = set()
         newNames = self._names()
-        for name in newNames:
-            oldInfo = self.get(name) # None if name was added
+        for new_tweak in newNames:
+            oldInfo = self.get(new_tweak) # None if new_tweak was added
             if oldInfo is not None and not oldInfo.is_default_tweak:
-                if oldInfo.do_update(): _updated.add(name)
+                if oldInfo.do_update(): _updated.add(new_tweak)
             else: # added
-                tweak_path = self.store_dir.join(name)
+                tweak_path = self.store_dir.join(new_tweak)
                 try:
                     oldInfo = self.factory(tweak_path)
                 except UnicodeDecodeError:
@@ -1556,8 +1556,8 @@ class INIInfos(TableFileInfos):
                 except BoltError as e:
                     deprint(e.message)
                     continue
-                _added.add(name)
-            self[name] = oldInfo
+                _added.add(new_tweak)
+            self[new_tweak] = oldInfo
         _deleted = oldNames - newNames
         self.delete_refresh(_deleted, None, check_existence=False,
                             _in_refresh=True)
@@ -1882,13 +1882,13 @@ class ModInfos(FileInfos):
     def _names(self):
         names = super(ModInfos, self)._names()
         unghosted_names = set()
-        for name in sorted(names, key=lambda x: x.cext == u'.ghost'):
-            if name.cs[-6:] == u'.ghost': name = GPath(name.s[:-6])
-            if name in unghosted_names:
+        for mname in sorted(names, key=lambda x: x.cext == u'.ghost'):
+            if mname.cs[-6:] == u'.ghost': mname = GPath(mname.s[:-6])
+            if mname in unghosted_names:
                 deprint(u'Both %s and its ghost exist. The ghost will be '
                         u'ignored but this may lead to undefined behavior - '
-                        u'please remove one or the other' % name)
-            else: unghosted_names.add(name)
+                        u'please remove one or the other' % mname)
+            else: unghosted_names.add(mname)
         return unghosted_names
 
     def refresh(self, refresh_infos=True, booting=False, _modTimesChange=False):
@@ -2173,26 +2173,27 @@ class ModInfos(FileInfos):
             #--List
             modIndex = 0
             if not wtxt: log(u'[spoiler][xml]\n', appendNewline=False)
-            for name in all_mods:
-                if name in masters:
+            for mname in all_mods:
+                if mname in masters:
                     prefix = bul+u'%02X' % modIndex
                     modIndex += 1
-                elif name in merged:
+                elif mname in merged:
                     prefix = bul+u'++'
                 else:
                     prefix = bul+sImported
-                text = u'%s  %s' % (prefix,name.s,)
+                log_str = u'%s  %s' % (prefix, mname.s,)
                 if showVersion:
-                    version = self.getVersion(name)
-                    if version: text += _(u'  [Version %s]') % version
+                    version = self.getVersion(mname)
+                    if version: log_str += _(u'  [Version %s]') % version
                 if showCRC:
-                    text +=_(u'  [CRC: %s]') % (self[name].crc_string())
-                log(text)
-                if name in masters:
-                    for master2 in self[name].get_masters():
+                    log_str += _(u'  [CRC: %s]') % (self[mname].crc_string())
+                log(log_str)
+                if mname in masters:
+                    for master2 in self[mname].get_masters():
                         if master2 not in self:
                             log(sMissing+master2.s)
-                        elif load_order.get_ordered((name, master2))[1] == master2:
+                        elif load_order.get_ordered((mname, master2))[
+                            1] == master2:
                             log(sDelinquent+master2.s)
             if not wtxt: log(u'[/xml][/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
@@ -2262,10 +2263,10 @@ class ModInfos(FileInfos):
         hasBsa, hasBlocking = fileInfo.hasResources()
         if (hasBsa, hasBlocking) == (False,False):
             return u''
-        mPath, name = fileInfo.name, fileInfo.name.s
-        if hasBsa and hasBlocking: msg = bsaAndBlocking % (mPath.sroot, name)
-        elif hasBsa: msg = bsa % (mPath.sroot, name)
-        else: msg = blocking % name
+        mPath = fileInfo.name
+        if hasBsa and hasBlocking: msg = bsaAndBlocking % (mPath.sroot, mPath)
+        elif hasBsa: msg = bsa % (mPath.sroot, mPath)
+        else: msg = blocking % mPath
         return msg
 
     #--Active mods management -------------------------------------------------

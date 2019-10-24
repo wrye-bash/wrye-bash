@@ -57,7 +57,7 @@ class StatusBar_Button(ItemLink):
     @property
     def sb_button_tip(self): return self._tip
 
-    def __init__(self,uid=None,canHide=True,tip=u''):
+    def __init__(self, uid=None, canHide=True, button_tip=u''):
         """ui: Unique identifier, used for saving the order of status bar icons
                and whether they are hidden/shown.
            canHide: True if this button is allowed to be hidden."""
@@ -65,7 +65,7 @@ class StatusBar_Button(ItemLink):
         self.mainMenu = Links()
         self.canHide = canHide
         self.gButton = None
-        self._tip = tip or self.__class__._tip
+        self._tip = button_tip or self.__class__._tip
         if uid is None: uid = (self.__class__.__name__, self._tip)
         self.uid = uid
 

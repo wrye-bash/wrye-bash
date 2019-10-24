@@ -2097,7 +2097,7 @@ class InstallersList(balt.UIList):
             items.sort(key=lambda self, x: self.data_store[x].type)
     def _sortActive(self, items):
         if settings['bash.installers.sortActive']:
-            items.sort(key=lambda x: not self.data_store[x].isActive)
+            items.sort(key=lambda x: not self.data_store[x].is_active)
     def _sortProjects(self, items):
         if settings['bash.installers.sortProjects']:
             items.sort(key=lambda x: not isinstance(self.data_store[x],
@@ -2140,7 +2140,7 @@ class InstallersList(balt.UIList):
             item_format.back_key = 'installers.bkgd.outOfOrder'
             mouse_text += _(u'Needs Annealing due to a change in Install Order.')
         #--Icon
-        item_format.icon_key = 'on' if installer.isActive else 'off'
+        item_format.icon_key = 'on' if installer.is_active else 'off'
         item_format.icon_key += '.' + self._status_color[installer.status]
         if installer.type < 0: item_format.icon_key = 'corrupt'
         elif isinstance(installer, bosh.InstallerProject): item_format.icon_key += '.dir'
@@ -3022,7 +3022,7 @@ class InstallersPanel(BashTab):
                         continue
 
     def _sbCount(self):
-        active = len(filter(lambda x: x.isActive, self.listData.itervalues()))
+        active = sum(x.is_active for x in self.listData.itervalues())
         return _(u'Packages:') + u' %d/%d' % (active, len(self.listData))
 
     def RefreshUIMods(self, mods_changed, inis_changed):
@@ -3282,10 +3282,10 @@ class PeopleList(balt.UIList):
         karma = personData[1]
         return (u'-', u'+')[karma >= 0] * abs(karma)
     labels = OrderedDict([
-        ('Name',   lambda self, name: name),
-        ('Karma',  lambda self, name: self._karma(self.data_store[name])),
-        ('Header', lambda self, name:
-                            self.data_store[name][2].split(u'\n', 1)[0][:75]),
+        ('Name',   lambda self, name_: name_),
+        ('Karma',  lambda self, name_: self._karma(self.data_store[name_])),
+        ('Header', lambda self, name_:
+                            self.data_store[name_][2].split(u'\n', 1)[0][:75]),
     ])
 
     def set_item_format(self, item, item_format):
@@ -3967,13 +3967,13 @@ class BashFrame(BaltFrame):
         settings['bash.frameMax'] = self.IsMaximized()
         settings['bash.page'] = self.notebook.GetSelection()
         # use tabInfo below so we save settings of panels that the user closed
-        for _k, (_cname, name, panel) in tabInfo.iteritems():
+        for _k, (_cname, tab_name, panel) in tabInfo.iteritems():
             if panel is None: continue
             try:
                 panel.ClosePanel(destroy)
             except:
                 deprint(u'An error occurred while saving settings of '
-                        u'the %s panel:' % name, traceback=True)
+                        u'the %s panel:' % tab_name, traceback=True)
         settings.save()
 
     @staticmethod
@@ -4151,7 +4151,7 @@ def InitImages():
     for key,value in settings['bash.colors'].iteritems(): colors[key] = value
     #--Images
     imgDirJn = bass.dirs['images'].join
-    def _png(name): return Image(imgDirJn(name)) # not png necessarily, rename!
+    def _png(fname): return Image(imgDirJn(fname))
     #--Standard
     images['save.on'] = _png(u'save_on.png')
     images['save.off'] = _png(u'save_off.png')
