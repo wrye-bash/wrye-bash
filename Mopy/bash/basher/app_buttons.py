@@ -472,7 +472,7 @@ class Game_Button(App_Button):
     def sb_button_tip(self):
         tip_ = self._tip + u' ' + self.version if self.version else self._tip
         if BashStatusBar.laaButton.button_state:
-            tip_ += u' + ' + bush.game.laa.name
+            tip_ += u' + ' + bush.game.laa.laa_name
         return tip_
 
     @property
@@ -483,7 +483,7 @@ class Game_Button(App_Button):
         tip_ += u' + %s%s' % (bush.game.se.se_abbrev, self.obseVersion)
         # + LAA
         if BashStatusBar.laaButton.button_state:
-            tip_ += u' + ' + bush.game.laa.name
+            tip_ += u' + ' + bush.game.laa.laa_name
         return tip_
 
     def Execute(self):
@@ -612,7 +612,7 @@ class LAA_Button(_StatefulButton):
         return state
 
     @property
-    def sb_button_tip(self): return bush.game.laa.name + (
+    def sb_button_tip(self): return bush.game.laa.laa_name + (
         _(u' Disabled'), _(u' Enabled'))[self.button_state]
 
 #------------------------------------------------------------------------------

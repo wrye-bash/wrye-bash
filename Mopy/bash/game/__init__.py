@@ -173,7 +173,7 @@ class GameInfo(object):
 
     # 4gb Launcher
     class laa(object):
-        name = u''          # Display name of the launcher
+        laa_name = u''      # Display name of the launcher
         exe = u'*DNE*'      # Executable to run
         launchesSE = False  # Whether the launcher will automatically launch
                             # the SE
