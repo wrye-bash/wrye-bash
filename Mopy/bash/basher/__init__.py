@@ -843,7 +843,7 @@ class ModList(_ModsUIList):
             else:
                 item_format.text_key = 'mods.text.mergeable'
                 if bush.game.check_esl:
-                    mouseText += _(u"Qualifies to be ESL flagged.  ")
+                    mouseText += _(u'Can be ESL-flagged. ')
                 else:
                     if checkMark == 2:
                         mouseText += _(u"Merged into Bashed Patch.  ")
@@ -851,26 +851,25 @@ class ModList(_ModsUIList):
                         mouseText += _(u"Can be merged into Bashed Patch.  ")
         else:
             # NoMerge / Mergeable should take priority over ESL/ESM color
-            is_master = load_order.in_master_block(mod_info)
-            is_esl = mod_info.is_esl()
-            if is_master and is_esl:
-                item_format.text_key = 'mods.text.eslm'
-                mouseText += _(u"ESL Flagged file. Master file. ")
-            elif is_master:
-                item_format.text_key = 'mods.text.esm'
-                mouseText += _(u"Master file. ")
-            elif is_esl:
-                item_format.text_key = 'mods.text.esl'
-                mouseText += _(u"ESL Flagged file. ")
+            final_text_key = 'mods.text.es'
+            if mod_info.is_esl():
+                final_text_key += 'l'
+                mouseText += _(u'ESL-flagged plugin. ')
+            if load_order.in_master_block(mod_info):
+                final_text_key += 'm'
+                mouseText += _(u'Master plugin. ')
+            # Check if it's special, leave ESPs alone
+            if final_text_key != 'mods.text.es':
+                item_format.text_key = final_text_key
         #--Image messages
         if status == 30:
             mouseText += _(u"One or more masters are missing.  ")
         else:
-            if status in {21, 22}:
+            if status in {20, 21}:
                 mouseText += _(u"Loads before its master(s).  ")
-            if status in {20, 22}:
+            if status in {10, 21}:
                 mouseText += _(u"Masters have been re-ordered.  ")
-        if checkMark == 1:   mouseText += _(u"Active in load list.  ")
+        if checkMark == 1:   mouseText += _(u'Active in load order. ')
         elif checkMark == 3: mouseText += _(u"Imported into Bashed Patch.  ")
         #should mod be deactivated
         if u'Deactivate' in fileBashTags:
