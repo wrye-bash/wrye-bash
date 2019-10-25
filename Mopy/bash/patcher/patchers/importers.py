@@ -24,21 +24,21 @@
 
 """This module contains the oblivion importer patcher classes."""
 import collections
-import operator
 import re
+from itertools import chain
 from operator import attrgetter
 # Internal
+from .base import ImportPatcher, CBash_ImportPatcher
+from ..base import AImportPatcher
 from ... import bosh # for modInfos
 from ... import bush, load_order
 from ...bolt import GPath, MemorySet
 from ...brec import MreRecord, MelObject
 from ...cint import ValidateDict, ValidateList, FormID, validTypes, \
     getattr_deep, setattr_deep
-from ..base import AImportPatcher
 from ...parsers import ActorFactions, CBash_ActorFactions, FactionRelations, \
     CBash_FactionRelations, FullNames, CBash_FullNames, ItemStats, \
     CBash_ItemStats, SpellRecords, CBash_SpellRecords, LoadFactory, ModFile
-from .base import ImportPatcher, CBash_ImportPatcher
 
 class _SimpleImporter(ImportPatcher):
     """For lack of a better name - common methods of a bunch of importers.
@@ -338,8 +338,8 @@ class CellImporter(_ACellImporter, ImportPatcher):
             # print bashTags
             tags = bashTags & set(self.recAttrs)
             if not tags: continue
-            attrs = set(reduce(# adds tuples together, then takes the set
-                operator.concat, (self.recAttrs[bashKey] for bashKey in tags)))
+            attrs = set(chain.from_iterable(
+                self.recAttrs[bashKey] for bashKey in tags))
             flgs_ = tuple(self.recFlags[bashKey] for bashKey in tags if
                           self.recFlags[bashKey] != u'')
             if 'CELL' in srcFile.tops:
@@ -847,8 +847,8 @@ class ActorImporter(_SimpleImporter, _AActorImporter):
     def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data):
         mod_tags = srcFile.fileInfo.getBashTags()
         common_tags = set(self.recAttrs_class[recClass]) & mod_tags
-        attrs = set(reduce(operator.add,
-            (self.recAttrs_class[recClass][tag] for tag in common_tags)))
+        attrs = set(chain.from_iterable(
+            self.recAttrs_class[recClass][tag] for tag in common_tags))
         for record in srcFile.tops[recClass.classType].getActiveRecords():
             fid = mapper(record.fid)
             temp_id_data[fid] = dict()
@@ -1721,10 +1721,9 @@ class ImportInventory(ImportPatcher, _AImportInventory):
             x in patchFile.mergeSet and
             {u'InventOnly', u'IIM'} & bosh.modInfos[x].getBashTags()))
         self.isActive = bool(self.srcs)
-        self.masters = set()
-        for srcMod in self.srcs:
-            self.masters |= set(bosh.modInfos[srcMod].get_masters())
-        self.allMods = self.masters | set(self.srcs)
+        self.masters = set(chain.from_iterable(
+            bosh.modInfos[srcMod].get_masters() for srcMod in self.srcs))
+        self._masters_and_srcs = self.masters | set(self.srcs)
         self.mod_id_entries = {}
         self.touched = set()
 
@@ -1761,7 +1760,7 @@ class ImportInventory(ImportPatcher, _AImportInventory):
         mapper = modFile.getLongMapper()
         modName = modFile.fileInfo.name
         #--Master or source?
-        if modName in self.allMods:
+        if modName in self._masters_and_srcs:
             id_entries = mod_id_entries[modName] = {}
             modFile.convertToLongFids(bush.game.inventoryTypes)
             for inv_type in bush.game.inventoryTypes:

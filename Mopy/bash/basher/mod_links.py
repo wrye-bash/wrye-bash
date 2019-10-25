@@ -585,7 +585,7 @@ class Mod_ListBashTags(ItemLink):
         balt.copyToClipboard(tags_text)
         self._showLog(tags_text, title=_(u"Bash Tags"), fixedFont=False)
 
-def _getUrl(fileName, installer, text):
+def _getUrl(fileName, installer, log_txt):
     """"Try to get the url of the file (order of priority will be: TESNexus,
     TESAlliance)."""
     url = None
@@ -597,9 +597,9 @@ def _getUrl(fileName, installer, text):
         if ma and ma.group(2):
             url = u'http://tesalliance.org/forums/index.php?app' \
                   u'=downloads&showfile=' + ma.group(2)
-    if url: text += u'[url=' + url + u']' + fileName.s + u'[/url]'
-    else: text += fileName.s
-    return text
+    if url: log_txt += u'[url=' + url + u']' + fileName.s + u'[/url]'
+    else: log_txt += fileName.s
+    return log_txt
 
 class Mod_CreateBOSSReport(EnabledLink):
     """Copies appropriate information for making a report in the BOSS thread."""
@@ -1135,9 +1135,9 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         clip.write(u'[/xml][/spoiler]')
         balt.copyToClipboard(clip.getvalue())
         clip.close()
-        text = log.out.getvalue()
+        log_text = log.out.getvalue()
         log.out.close()
-        self._showWryeLog(text, title=_(u'Bashed Patch Configuration'))
+        self._showWryeLog(log_text, title=_(u'Bashed Patch Configuration'))
 
 class Mod_ExportPatchConfig(_Mod_BP_Link):
     """Exports the Bashed Patch configuration to a Wrye Bash readable file."""
@@ -1878,10 +1878,7 @@ class _Mod_Import_Link(OneItemLink):
             fixedFont=fixedFont, icons=icons)
 
     def _log(self, changed, fileName):
-        with bolt.sio() as buff:
-            buff.write(u'* %03d  %s\n' % (changed, fileName.s))
-            text = buff.getvalue()
-            self._showLog(text)
+        self._showLog(u'* %03d  %s\n' % (changed, fileName.s))
 
     def show_change_log(self, changed, fileName):
         if not changed:
@@ -2018,11 +2015,10 @@ class Mod_Factions_Import(_Mod_Import_Link):
         return CBash_ActorFactions() if CBashApi.Enabled else ActorFactions()
 
     def _log(self, changed, fileName):
-         with bolt.sio() as buff:
-            for groupName in sorted(changed):
-                buff.write(u'* %s : %03d  %s\n' % (
-                    groupName, changed[groupName], fileName.s))
-            self._showLog(buff.getvalue())
+        log_out = u'\n'.join(
+            (u'* %s : %03d  %s' % (group_name, v, fileName.s)) for
+            group_name, v in sorted(changed.iteritems()))
+        self._showLog(log_out)
 
 #------------------------------------------------------------------------------
 from ..parsers import ScriptText, CBash_ScriptText
@@ -2426,9 +2422,9 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
                     buff.write(u'\n'+_(u'The following EIDs are malformed and were not imported:')+u'\n')
                     for badEid in badEidsList:
                         buff.write(u"  '%s'\n" % badEid)
-                text = buff.getvalue()
+                log_text = buff.getvalue()
                 buff.close()
-                self._showLog(text, title=_(u'Objects Changed'))
+                self._showLog(log_text, title=_(u'Objects Changed'))
         except BoltError as e:
             self._showWarning('%r' % e)
 

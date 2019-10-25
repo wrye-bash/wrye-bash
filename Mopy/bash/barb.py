@@ -106,10 +106,10 @@ class BackupSettings(object):
             if not setting_files: # we have to backup everything in there
                 setting_files = bash_dir.list()
             tmp_dir = GPath(tmpdir)
-            for name in setting_files:
-                fpath = bash_dir.join(name)
+            for fname in setting_files:
+                fpath = bash_dir.join(fname)
                 if fpath.exists():
-                    self.files[tmp_dir.join(name)] = fpath
+                    self.files[tmp_dir.join(fname)] = fpath
         # backup save profile settings
         savedir = GPath(u'My Games').join(fsName)
         profiles = [u''] + initialization.getLocalSaveDirs()
@@ -262,26 +262,26 @@ class RestoreSettings(object):
         except StateError: # does not exist
             self._timestamped_old = None
         # restore all the settings files
+        def _restore_file(dest_dir_, back_path_, *end_path):
+            deprint(back_path_.join(*end_path).s + u' --> ' + dest_dir_.join(
+                *end_path).s)
+            full_back_path.join(*end_path).copyTo(dest_dir_.join(*end_path))
         restore_paths = _init_settings_files(fsName).keys()
         for dest_dir, back_path in restore_paths:
             full_back_path = self._extract_dir.join(back_path)
-            for name in full_back_path.list():
-                if full_back_path.join(name).isfile():
-                    deprint(GPath(back_path).join(
-                        name).s + u' --> ' + dest_dir.join(name).s)
-                    full_back_path.join(name).copyTo(dest_dir.join(name))
+            for fname in full_back_path.list():
+                if full_back_path.join(fname).isfile():
+                    _restore_file(dest_dir, GPath(back_path), fname)
         # restore savegame profile settings
         back_path = GPath(u'My Games').join(fsName, u'Saves')
         saves_dir = dirs['saveBase'].join(u'Saves')
         full_back_path = self._extract_dir.join(back_path)
         if full_back_path.exists():
-            for root_dir, folders, files_ in full_back_path.walk(True,None,True):
+            for root_dir, folders, files_ in full_back_path.walk(True, None,
+                                                                 True):
                 root_dir = GPath(u'.'+root_dir.s)
-                for name in files_:
-                    deprint(back_path.join(root_dir,name).s + u' --> '
-                            + saves_dir.join(root_dir, name).s)
-                    full_back_path.join(root_dir, name).copyTo(
-                        saves_dir.join(root_dir, name))
+                for fname in files_:
+                    _restore_file(saves_dir, back_path, root_dir, fname)
 
     # Validation --------------------------------------------------------------
     def incompatible_backup_error(self, current_game):

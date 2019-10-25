@@ -509,23 +509,23 @@ class Installer_Install(_InstallLink):
                 last = (self.mode == 'LAST')
                 override = (self.mode != 'MISSING')
                 try:
-                    tweaks = self.idata.bain_install(self._installables,
+                    new_tweaks = self.idata.bain_install(self._installables,
                         ui_refresh, progress, last, override)
                 except (CancelError,SkipError):
                     pass
                 except StateError as e:
                     self._showError(u'%s'%e)
                 else: # no error occurred
-                    self._warn_mismatched_ini_tweaks_created(tweaks)
+                    self._warn_mismatched_ini_tweaks_created(new_tweaks)
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
 
-    def _warn_mismatched_ini_tweaks_created(self, tweaks):
-        if tweaks:
-            msg = _(u'The following INI Tweaks were created, because the '
-                u'existing INI was different than what BAIN installed:') + \
-                u'\n' + u'\n'.join([u' * %s\n' % x.stail for (x, y) in tweaks])
-            self._showInfo(msg, title=_(u'INI Tweaks'))
+    def _warn_mismatched_ini_tweaks_created(self, new_tweaks):
+        if not new_tweaks: return
+        msg = _(u'The following INI Tweaks were created, because the '
+            u'existing INI was different than what BAIN installed:') + \
+            u'\n' + u'\n'.join([u' * %s\n' % x.stail for (x, y) in new_tweaks])
+        self._showInfo(msg, title=_(u'INI Tweaks'))
 
 class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Waruddar
     """Copies folder structure of installer to clipboard."""

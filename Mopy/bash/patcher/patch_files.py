@@ -195,22 +195,15 @@ class PatchFile(_PFile, ModFile):
     def initFactories(self,progress):
         """Gets load factories."""
         progress(0,_(u"Processing."))
-        def updateClasses(type_classes,newClasses):
-            if not newClasses: return
-            for item in newClasses:
-                if not isinstance(item,basestring):
-                    type_classes[item.classType] = item
-                elif item not in type_classes:
-                    type_classes[item] = item
-        readClasses = {}
-        writeClasses = {}
-        updateClasses(readClasses, bush.game.readClasses)
-        updateClasses(writeClasses, bush.game.writeClasses)
+        readClasses = {x for x in bush.game.readClasses}
+        writeClasses = {x for x in bush.game.writeClasses}
         for patcher in self.patchers:
-            updateClasses(readClasses, (MreRecord.type_class[x] for x in patcher.getReadClasses()))
-            updateClasses(writeClasses, (MreRecord.type_class[x] for x in patcher.getWriteClasses()))
-        self.readFactory = LoadFactory(False,*readClasses.values())
-        self.loadFactory = LoadFactory(True,*writeClasses.values())
+            readClasses.update(
+                MreRecord.type_class[x] for x in patcher.getReadClasses())
+            writeClasses.update(
+                MreRecord.type_class[x] for x in patcher.getWriteClasses())
+        self.readFactory = LoadFactory(False, *readClasses)
+        self.loadFactory = LoadFactory(True, *writeClasses)
         #--Merge Factory
         self.mergeFactory = LoadFactory(False, *bush.game.mergeClasses)
 

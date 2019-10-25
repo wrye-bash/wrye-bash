@@ -295,9 +295,9 @@ class ColorChecks(ImageList):
         return self.indices[shortKey]
 
 # Functions -------------------------------------------------------------------
-def fill(text,width=60):
+def fill(text_to_wrap, width=60):
     """Wraps paragraph to width characters."""
-    pars = [textwrap.fill(text,width) for text in text.split(u'\n')]
+    pars = [textwrap.fill(line, width) for line in text_to_wrap.split(u'\n')]
     return u'\n'.join(pars)
 
 def ensureDisplayed(frame,x=100,y=100):
@@ -333,10 +333,10 @@ def bell(arg=None):
     wx.Bell()
     return arg
 
-def tooltip(text,wrap=50):
+def tooltip(tooltip_text, wrap=50):
     """Returns tooltip with wrapped copy of text."""
-    text = textwrap.fill(text,wrap)
-    return wx.ToolTip(text)
+    tooltip_text = textwrap.fill(tooltip_text, wrap)
+    return wx.ToolTip(tooltip_text)
 
 class TextCtrl(wx.TextCtrl):
     """wx.TextCtrl with automatic tooltip if text goes past the width of the
@@ -2599,10 +2599,10 @@ class ItemLink(Link):
 class MenuLink(Link):
     """Defines a submenu. Generally used for submenus of large menus."""
 
-    def __init__(self, name=None, oneDatumOnly=False):
+    def __init__(self, menu_name=None, oneDatumOnly=False):
         """Initialize. Submenu items should append themselves to self.links."""
         super(MenuLink, self).__init__()
-        self.text = name or self.__class__._text
+        self._text = menu_name or self.__class__._text
         self.links = Links()
         self.oneDatumOnly = oneDatumOnly
 
@@ -2615,7 +2615,7 @@ class MenuLink(Link):
         super(MenuLink, self).AppendToMenu(menu, window, selection)
         Link.Frame.Bind(wx.EVT_MENU_OPEN, MenuLink.OnMenuOpen)
         subMenu = wx.Menu()
-        menu.AppendMenu(self._id, self.text, subMenu)
+        menu.AppendMenu(self._id, self._text, subMenu)
         if not self._enable():
             menu.Enable(self._id, False)
         else: # do not append sub links unless submenu enabled
