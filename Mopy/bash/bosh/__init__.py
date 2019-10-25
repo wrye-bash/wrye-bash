@@ -2854,7 +2854,7 @@ class BSAInfos(FileInfos):
 
         class BSAInfo(FileInfo, _bsa_type):
             _default_mtime = time.mktime(
-                time.strptime(u'01-01-2006 00:00:00', u'%m-%d-%Y %H:%M:%S'))
+                time.strptime('01-01-2006 00:00:00', '%m-%d-%Y %H:%M:%S'))
 
             def __init__(self, fullpath, load_cache=False):
                 try:  # Never load_cache for memory reasons - let it be
@@ -3243,6 +3243,7 @@ def initBosh(bashIni, game_ini_path):
     Installer.init_bain_dirs()
     if os.name == u'nt': # don't add local directory to binaries on linux
         archives.exe7z = dirs['compiled'].join(archives.exe7z).s
+        archives.pngcrush = dirs['compiled'].join(archives.pngcrush).s
 
 def initSettings(readOnly=False, _dat=u'BashSettings.dat',
                  _bak=u'BashSettings.dat.bak'):

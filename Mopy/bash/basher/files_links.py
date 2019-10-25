@@ -25,7 +25,8 @@
 import re
 from .. import bass, balt, bosh, bush, bolt, exception
 from ..balt import ItemLink, RadioLink, ChoiceLink, OneItemLink
-from ..bolt import GPath, formatDate
+from ..bolt import GPath
+from ..localize import format_date
 
 __all__ = ['Files_SortBy', 'Files_Unhide', 'File_Backup', 'File_Duplicate',
            'File_Snapshot', 'File_RevertToBackup', 'File_RevertToSnapshot',
@@ -237,7 +238,7 @@ class File_RevertToSnapshot(OneItemLink): # MODS LINK !
         snapName = snapPath.tail
         #--Warning box
         message = (_(u"Revert %s to snapshot %s dated %s?") % (
-            fileName.s, snapName.s, formatDate(snapPath.mtime)))
+            fileName.s, snapName.s, format_date(snapPath.mtime)))
         if not self._askYes(message, _(u'Revert to Snapshot')): return
         with balt.BusyCursor():
             destPath = self._selected_info.getPath()
@@ -286,7 +287,7 @@ class _RevertBackup(OneItemLink):
     def Execute(self):
         #--Warning box
         message = _(u"Revert %s to backup dated %s?") % (
-            self._selected_item.s, formatDate(self.backup_path.mtime))
+            self._selected_item.s, format_date(self.backup_path.mtime))
         if not self._askYes(message): return
         with balt.BusyCursor():
             try:

@@ -536,11 +536,7 @@ def build_executable(version, file_version):
     # automatically detect these)
     packages = "'bash.game'"  # notice the double quotes
     try:
-        # Ensure comtypes is generated, so the required files for wx.lib.iewin
-        # will get pulled in by py2exe
-        LOGGER.info("Generating comtypes...")
         import wx
-        import wx.lib.iewin
 
         # Write the setup script
         with open(script, "r") as ins:

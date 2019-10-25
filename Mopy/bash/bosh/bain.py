@@ -42,8 +42,8 @@ from .. import balt # YAK!
 from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
     extract7z, compressionSettings
-from ..bolt import Path, deprint, formatInteger, round_size, GPath, sio, \
-    SubProgress, CIstr, LowerDict
+from ..bolt import Path, deprint, round_size, GPath, sio, SubProgress, CIstr, \
+    LowerDict
 from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError, FileError
 
@@ -229,7 +229,7 @@ class Installer(object):
 
     @staticmethod
     def number_string(number, marker_string=u''):
-        return formatInteger(number)
+        return str(number)
 
     def size_string(self, marker_string=u''):
         return round_size(self.size)
@@ -1279,6 +1279,26 @@ class InstallerArchive(Installer):
                 # Just allow Bash's atexit function to clean it when quitting.
                 pass
 
+    @staticmethod
+    def _fix_pngs(pngs_to_fix, progress=None):
+        """Runs pngcrush on extracted PNGs to fix invalid sRGB profiles, which
+        would otherwise cause a warning in wx3. Note that we only do this for
+        archives, since people working on projects _should_ see such
+        warnings.
+
+        :param pngs_to_fix: A list of strings denoting the PNGs that we have
+                            to look at.
+        :param progress: The (optional) progress dialog to update."""
+        if not pngs_to_fix: return # fastpath out, otherwise Progress errors
+        if progress:
+            progress.setFull(len(pngs_to_fix))
+        tmp_dir = bass.getTempDir()
+        for pngs_processed, target_png in enumerate(pngs_to_fix, start=1):
+            if progress:
+                progress(pngs_processed,
+                         u'\n%s\n%s' % (_(u'Fixing PNGs...'), target_png))
+            archives.fix_png(tmp_dir.join(target_png).s)
+
     def wizard_file(self):
         with balt.Progress(_(u'Extracting wizard files...'), u'\n' + u' ' * 60,
                            abort=True) as progress:
@@ -1290,8 +1310,11 @@ class InstallerArchive(Installer):
                                         u'gif', u'pcx', u'pnm', u'tif',
                                         u'tiff', u'tga', u'iff', u'xpm',
                                         u'ico', u'cur', u'ani',)))
+            pngs_to_fix = [p for p in files_to_extract if
+                           p.lower().endswith(u'.png')]
             unpack_dir = self.unpackToTemp(files_to_extract,
-                bolt.SubProgress(progress,0,0.9), recurse=True)
+                bolt.SubProgress(progress,0,0.7), recurse=True)
+            self._fix_pngs(pngs_to_fix, bolt.SubProgress(progress, 0.7, 0.9))
         return unpack_dir.join(self.hasWizard)
 
     def fomod_file(self):
@@ -1766,6 +1789,7 @@ class InstallersData(DataStore):
         if _index is not None:
             progress = SubProgress(progress, _index, _index + 1)
         installer.refreshBasic(progress, recalculate_project_crc=_fullRefresh)
+        progress(1.0, _(u'Done'))
         if do_refresh:
             self.irefresh(what='NS')
         return installer

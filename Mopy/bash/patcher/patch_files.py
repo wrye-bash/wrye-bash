@@ -36,6 +36,7 @@ from ..bolt import GPath, SubProgress, deprint, Progress
 from ..cint import ObModFile, FormID, dump_record, ObCollection, MGEFCode
 from ..exception import AbstractError, BoltError, CancelError, ModError, \
     StateError
+from ..localize import format_date
 from ..record_groups import MobObjects
 
 # the currently executing patch set in _Mod_Patch_Update before showing the
@@ -89,7 +90,7 @@ class _PFile(object):
         #--Load Mods and error mods
         log.setHeader(u'= ' + _(u'Overview'), True)
         log.setHeader(u'=== ' + _(u'Date/Time'))
-        log(u'* ' + bolt.formatDate(time.time()))
+        log(u'* ' + format_date(time.time()))
         log(u'* ' + _(u'Elapsed Time: ') + 'TIMEPLACEHOLDER')
         def _link(link_id):
             return (readme_url(mopy=bass.dirs['mopy'], advanced=True),
@@ -344,7 +345,7 @@ class PatchFile(_PFile, ModFile):
         #--Description
         numRecords = sum([x.getNumRecords(False) for x in self.tops.values()])
         self.tes4.description = (
-            _(u'Updated: ') + bolt.formatDate(time.time()) + u'\n\n' + _(
+                _(u'Updated: ') + format_date(time.time()) + u'\n\n' + _(
                 u'Records Changed') + u': %d' % numRecords)
 
 class CBash_PatchFile(_PFile, ObModFile):
@@ -646,5 +647,5 @@ class CBash_PatchFile(_PFile, ObModFile):
         #--Description
         numRecords = sum([len(x) for x in self.aggregates.values()])
         self.TES4.description = (
-            _(u"Updated: %s") % bolt.formatDate(time.time()) + u'\n\n' + _(
+                _(u"Updated: %s") % format_date(time.time()) + u'\n\n' + _(
                 u'Records Changed') + u': %d' % numRecords)

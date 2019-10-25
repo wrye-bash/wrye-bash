@@ -67,12 +67,12 @@ import wx
 
 #--Local
 from .. import bush, bosh, bolt, bass, env, load_order, archives
-from ..bolt import GPath, SubProgress, deprint, formatInteger, formatDate, \
-    round_size
+from ..bolt import GPath, SubProgress, deprint, round_size
 from ..bosh import omods
 from ..cint import CBashApi
 from ..exception import AbstractError, BoltError, CancelError, FileError, \
     SkipError
+from ..localize import format_date, unformat_date
 
 startupinfo = bolt.startupinfo
 
@@ -773,7 +773,7 @@ class ModList(_ModsUIList):
         ('Rating',     lambda self, p: self._get(p)('rating', u'')),
         ('Group',      lambda self, p: self._get(p)('group', u'')),
         ('Installer',  lambda self, p: self._get(p)('installer', u'')),
-        ('Modified',   lambda self, p: formatDate(self.data_store[p].mtime)),
+        ('Modified',   lambda self, p: format_date(self.data_store[p].mtime)),
         ('Size',       lambda self, p: round_size(self.data_store[p].size)),
         ('Author',     lambda self, p: self.data_store[p].header.author if
                                        self.data_store[p].header else u'-'),
@@ -1367,7 +1367,7 @@ class ModDetails(_SashDetailsPanel):
             #--Remember values for edit checks
             self.fileStr = modInfo.name.s
             self.authorStr = modInfo.header.author
-            self.modifiedStr = formatDate(modInfo.mtime)
+            self.modifiedStr = format_date(modInfo.mtime)
             self.descriptionStr = modInfo.header.description
             self.versionStr = u'v%0.2f' % modInfo.header.version
             tagsStr = u'\n'.join(sorted(modInfo.getBashTags()))
@@ -1412,14 +1412,14 @@ class ModDetails(_SashDetailsPanel):
         modifiedStr = self.modified.GetValue()
         if modifiedStr == self.modifiedStr: return
         try:
-            newTimeTup = bolt.unformatDate(modifiedStr, u'%c')
+            newTimeTup = unformat_date(modifiedStr, '%c')
             time.mktime(newTimeTup)
         except ValueError:
             balt.showError(self,_(u'Unrecognized date: ')+modifiedStr)
             self.modified.SetValue(self.modifiedStr)
             return
         #--Normalize format
-        modifiedStr = time.strftime(u'%c',newTimeTup)
+        modifiedStr = time.strftime('%c', newTimeTup)
         self.modifiedStr = modifiedStr
         self.modified.SetValue(modifiedStr) #--Normalize format
         self.SetEdited()
@@ -1458,16 +1458,16 @@ class ModDetails(_SashDetailsPanel):
     def testChanges(self): # used by the master list when editing is disabled
         modInfo = self.modInfo
         if not modInfo or (self.fileStr == modInfo.name and
-                self.modifiedStr == formatDate(modInfo.mtime) and
-                self.authorStr == modInfo.header.author and
-                self.descriptionStr == modInfo.header.description):
+                           self.modifiedStr == format_date(modInfo.mtime) and
+                           self.authorStr == modInfo.header.author and
+                           self.descriptionStr == modInfo.header.description):
             self.DoCancel()
 
     def DoSave(self):
         modInfo = self.modInfo
         #--Change Tests
         changeName = (self.fileStr != modInfo.name)
-        changeDate = (self.modifiedStr != formatDate(modInfo.mtime))
+        changeDate = (self.modifiedStr != format_date(modInfo.mtime))
         changeHedr = (self.authorStr != modInfo.header.author or
                       self.descriptionStr != modInfo.header.description)
         changeMasters = self.uilist.edited
@@ -1524,7 +1524,7 @@ class ModDetails(_SashDetailsPanel):
                                     detail_item=detail_item)
 
     def _set_date(self, modInfo):
-        newTimeTup = bolt.unformatDate(self.modifiedStr, u'%c')
+        newTimeTup = unformat_date(self.modifiedStr, '%c')
         newTimeInt = int(time.mktime(newTimeTup))
         modInfo.setmtime(newTimeInt)
 
@@ -1854,7 +1854,7 @@ class SaveList(balt.UIList):
         return u'%d:%02d' % (playMinutes/60, (playMinutes % 60))
     labels = OrderedDict([
         ('File',     lambda self, p: p.s),
-        ('Modified', lambda self, p: formatDate(self.data_store[p].mtime)),
+        ('Modified', lambda self, p: format_date(self.data_store[p].mtime)),
         ('Size',     lambda self, p: round_size(self.data_store[p].size)),
         ('PlayTime', lambda self, p: self._playTime(self.data_store[p])),
         ('Player',   lambda self, p: self._headInfo(self.data_store[p],
@@ -2134,7 +2134,7 @@ class InstallersList(balt.UIList):
     labels = OrderedDict([
         ('Package',  lambda self, p: p.s),
         ('Order',    lambda self, p: unicode(self.data_store[p].order)),
-        ('Modified', lambda self, p: formatDate(self.data_store[p].modified)),
+        ('Modified', lambda self, p: format_date(self.data_store[p].modified)),
         ('Size',     lambda self, p: self.data_store[p].size_string()),
         ('Files',    lambda self, p: self.data_store[p].number_string(
             self.data_store[p].num_of_files)),
@@ -2788,14 +2788,14 @@ class InstallersDetails(_DetailsMixin, SashPanel):
                     round_size(installer.size), sSolid) + u'\n'
             else:
                 info += _(u'Size: Unrecognized')+u'\n'
-            info += (_(u'Modified:')+u' %s\n' % formatDate(installer.modified),
-                     _(u'Modified:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
+            info += (_(u'Modified:') +u' %s\n' % format_date(installer.modified),
+                     _(u'Modified:') +u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
             info += (_(u'Data CRC:')+u' %08X\n' % installer.crc,
                      _(u'Data CRC:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
             info += (_(u'Files:') + u' %s\n' % installer.number_string(
                 installer.num_of_files, marker_string=u'N/A'))
-            info += (_(u'Configured:')+u' %s (%s)\n' % (
-                formatInteger(nConfigured), round_size(installer.unSize)),
+            info += (_(u'Configured:')+u' %u (%s)\n' % (
+                nConfigured, round_size(installer.unSize)),
                      _(u'Configured:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
             info += (_(u'  Matched:') + u' %s\n' % installer.number_string(
                 nConfigured - nMissing - nMismatched, marker_string=u'N/A'))
@@ -2915,6 +2915,10 @@ class InstallersPanel(BashTab):
         self._data_dir_scanned = False
         self.refreshing = False
         self.frameActivated = False
+        # if user cancels the refresh in wx 3 because progress is an OS
+        # window Bash effectively regains focus and keeps trying to refresh
+        # FIXME(ut) hack we must rewrite Progress for wx 3
+        self._user_cancelled = False
 
     @balt.conversation
     def _first_run_set_enabled(self):
@@ -2934,7 +2938,9 @@ class InstallersPanel(BashTab):
                   **kwargs):
         """Panel is shown. Update self.data."""
         self._first_run_set_enabled() # must run _before_ if below
-        if not settings['bash.installers.enabled'] or self.refreshing: return
+        if not settings['bash.installers.enabled'] or self.refreshing or self._user_cancelled:
+            self._user_cancelled = False
+            return
         try:
             self.refreshing = True
             self._refresh_installers_if_needed(canCancel, fullRefresh,
@@ -2971,7 +2977,7 @@ class InstallersPanel(BashTab):
                                                         refresh_info)
                     self.frameActivated = False
                 except CancelError:
-                    pass # User canceled the refresh
+                    self._user_cancelled = True # User canceled the refresh
                 finally:
                     self._data_dir_scanned = True
         elif self.frameActivated and self.listData.refreshConvertersNeeded():
@@ -3100,7 +3106,7 @@ class ScreensList(balt.UIList):
     #--Labels
     labels = OrderedDict([
         ('File',     lambda self, p: p.s),
-        ('Modified', lambda self, p: formatDate(self.data_store[p][1])),
+        ('Modified', lambda self, p: format_date(self.data_store[p][1])),
         ('Size',     lambda self, p: round_size(self.data_store[p][2])),
     ])
     _extra_sortings = [_order_by_number]
@@ -3214,7 +3220,7 @@ class BSAList(balt.UIList):
     #--Labels
     labels = OrderedDict([
         ('File',     lambda self, p: p.s),
-        ('Modified', lambda self, p: formatDate(self.data_store[p].mtime)),
+        ('Modified', lambda self, p: format_date(self.data_store[p].mtime)),
         ('Size',     lambda self, p: round_size(self.data_store[p].size)),
     ])
 
@@ -4087,6 +4093,7 @@ class BashApp(wx.App):
             #--MWFrame
             progress(0.8, _(u'Initializing Windows'))
             frame = BashFrame() # Link.Frame global set here
+            progress(1.0, _(u'Done'))
         if splashScreen:
             splashScreen.Destroy()
             splashScreen.Hide() # wont be hidden if warnTooManyModsBsas warns..

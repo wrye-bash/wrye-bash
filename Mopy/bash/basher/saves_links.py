@@ -34,8 +34,7 @@ from .. import bass, bosh, bolt, balt, bush, parsers, load_order, \
     initialization
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, Image, UIList_Rename
-from ..bolt import GPath, SubProgress, formatInteger, struct_pack, \
-    struct_unpack
+from ..bolt import GPath, SubProgress, struct_pack, struct_unpack
 from ..bosh import faces, SaveInfo
 from ..exception import ArgumentError, BoltError, CancelError, ModError
 
@@ -829,11 +828,11 @@ class Save_Unbloat(OneItemLink):
         if createdCounts:
             for (created_item_rec_type, name), count_ in sorted(
                     createdCounts.items()):
-                message.append(u'  %s %s: %s' % (
-                    created_item_rec_type, name, formatInteger(count_)))
+                message.append(u'  %s %s: %u' % (
+                    created_item_rec_type, name, count_))
         if nullRefCount:
             message.append(u'  ' + _(u'Null Ref Objects:') +
-                           u' %s' % formatInteger(nullRefCount))
+                           u' %u' % nullRefCount)
         message.extend([u'', _(
             u'WARNING: This is a risky procedure that may corrupt your '
             u'savegame!  Use only if necessary!')])

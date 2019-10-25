@@ -242,17 +242,7 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     bash_dirs_initialized = True
     return game_ini_path
 
-def init_dirs_mopy_and_cd(is_standalone):
-    # ensure we are in the correct directory so relative paths will work
-    # properly
-    if is_standalone:
-        pathToProg = os.path.dirname(
-            unicode(sys.executable, Path.sys_fs_enc))
-    else:
-        pathToProg = os.path.dirname(
-            unicode(sys.argv[0], Path.sys_fs_enc))
-    if pathToProg:
-        os.chdir(pathToProg)
+def init_dirs_mopy():
     dirs['mopy'] = Path.getcwd()
     dirs['bash'] = dirs['mopy'].join(u'bash')
     dirs['compiled'] = dirs['bash'].join(u'compiled')

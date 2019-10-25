@@ -22,7 +22,6 @@
 #
 # =============================================================================
 
-import locale
 import sys
 
 from . import BashFrame, BashStatusBar
@@ -33,6 +32,7 @@ from ..balt import ItemLink, AppendableLink, RadioLink, CheckLink, MenuLink, \
     TransLink, EnabledLink, BoolLink, tooltip, Link
 from ..bolt import deprint, GPath
 from ..exception import BoltError
+from ..localize import dump_translator
 # TODO(ut): settings links do not seem to use Link.data attribute - it's None..
 
 __all__ = ['Settings_BackupSettings', 'Settings_RestoreSettings',
@@ -43,8 +43,6 @@ __all__ = ['Settings_BackupSettings', 'Settings_RestoreSettings',
            'Settings_UseAltName', 'Settings_Deprint',
            'Settings_DumpTranslator', 'Settings_UAC']
 
-def _bassLang(): return bass.language if bass.language else \
-    locale.getlocale()[0].split('_', 1)[0]
 #------------------------------------------------------------------------------
 # Settings Links --------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -316,7 +314,7 @@ class _Settings_Language(EnabledLink, RadioLink):
                                                     self._lang)
 
     def _initData(self, window, selection):
-        if self._lang == _bassLang():
+        if bass.active_locale.lower() in self._lang.lower():
             self._help = _(u"Currently using %(languagename)s as the active "
                           u"language.") % ({'languagename': self._text})
             self.check = True
@@ -495,11 +493,11 @@ class Settings_DumpTranslator(AppendableLink, ItemLink):
             u'This function is for translating Bash itself (NOT mods) into '
             u'non-English languages.  For more info, '
             u'see Internationalization section of Bash readme.')
-        if not self._askContinue(message, 'bash.dumpTranslator.continue',
+        if not self._askContinue(message, 'bash.dump_translator.continue',
                                 _(u'Dump Translator')): return
         outPath = bass.dirs['l10n']
         with balt.BusyCursor():
-            outFile = bolt.dumpTranslator(outPath.s, _bassLang())
+            outFile = dump_translator(outPath.s, bass.active_locale)
         self._showOk(_(
             u'Translation keys written to ') + u'Mopy\\bash\\l10n\\' + outFile,
                      _(u'Dump Translator') + u': ' + outPath.stail)

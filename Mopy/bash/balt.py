@@ -24,12 +24,15 @@
 
 # Imports ---------------------------------------------------------------------
 import re
+import urllib
+import urlparse
 
 import bass # for dirs - try to avoid
 #--Localization
 #..Handled by bolt, so import that.
 import bolt
 from bolt import GPath, deprint
+from windows import StartURL
 from exception import AbstractError, AccessDeniedError, ArgumentError, \
     BoltError, CancelError, SkipError, StateError
 #--Python
@@ -45,6 +48,14 @@ from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from wx.lib.embeddedimage import PyEmbeddedImage
 import wx.lib.newevent
 import wx.wizard as wiz
+#--wx webview, may not be present on all systems
+try:
+    # raise ImportError
+    import wx.html2 as _wx_html2
+except ImportError:
+    _wx_html2 = None
+    deprint(
+        _(u'wx.WebView is missing, features utilizing HTML will be disabled'))
 
 class Resources:
     #--Icon Bundles
@@ -61,6 +72,8 @@ defSize = wx.DefaultSize
 
 splitterStyle = wx.SP_LIVE_UPDATE # | wx.SP_3DSASH # ugly but
 # makes borders stand out - we need something to that effect
+
+notFound = wx.NOT_FOUND
 
 # wx Types
 wxPoint = wx.Point
@@ -894,38 +907,108 @@ def showInfo(parent,message,title=_(u'Information'),**kwdargs):
     return askStyled(parent,message,title,wx.OK|wx.ICON_INFORMATION,**kwdargs)
 
 #------------------------------------------------------------------------------
-# If comtypes is not installed, the IE ActiveX control cannot be imported
-try:
-    if wx.Platform != '__WXMSW__':
-        raise ImportError # the import below will crash on linux
-    import wx.lib.iewin as _wx_lib_iewin
-except ImportError:
-    _wx_lib_iewin = None
-    deprint(
-        _(u'Comtypes is missing, features utilizing HTML will be disabled'))
 
 class HtmlCtrl(object):
-
     @staticmethod
-    def html_lib_available(): return _wx_lib_iewin
+    def html_lib_available(): return bool(_wx_html2)
 
     def __init__(self, parent):
-        if not _wx_lib_iewin:
-            self.text_ctrl = RoTextCtrl(parent, special=True)
-            self.prevButton = self.nextButton = None
-            return
-        self.text_ctrl = _wx_lib_iewin.IEHtmlWindow(parent,
-            style=wx.NO_FULL_REPAINT_ON_RESIZE)
-        #--Html Back
-        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK, wx.ART_HELP_BROWSER,
-                                          (16, 16))
-        self.prevButton = bitmapButton(parent, bitmap,
-                                       onBBClick=self.text_ctrl.GoBack)
-        #--Html Forward
-        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,
-                                          wx.ART_HELP_BROWSER, (16, 16))
-        self.nextButton = bitmapButton(parent, bitmap,
-                                       onBBClick=self.text_ctrl.GoForward)
+        ctrl = self.web_viewer = wx.Window(parent)
+        # init the fallback/plaintext widget
+        self._text_ctrl = RoTextCtrl(ctrl, autotooltip=False)
+        items = [self._text_ctrl]
+        def _make_button(bitmap_id, callback):
+            return bitmapButton(parent, wx.ArtProvider_GetBitmap(
+                bitmap_id, wx.ART_HELP_BROWSER, (16, 16)), onBBClick=callback)
+        self._prev_button = _make_button(wx.ART_GO_BACK, self.go_back)
+        self._next_button = _make_button(wx.ART_GO_FORWARD, self.go_forward)
+        if _wx_html2:
+            self._html_ctrl = _wx_html2.WebView.New(ctrl)
+            self._html_ctrl.Bind(
+                _wx_html2.EVT_WEBVIEW_LOADED,
+                lambda _event: self._update_buttons(enable_html=True))
+            self._html_ctrl.Bind(
+                _wx_html2.EVT_WEBVIEW_NEWWINDOW,
+                lambda event: self._open_in_external(event.GetURL()))
+            items.append(self._html_ctrl)
+            self._text_ctrl.Disable()
+        main_layout = VBox(ctrl, default_weight=4, default_grow=True)
+        main_layout.add_many(*items)
+        self.switch_to_text() # default to text
+
+    @staticmethod
+    def _open_in_external(target_url):
+        # We don't support tabs and windows, just open it in the user's browser
+        # TODO(inf) just webbrowser.open() instead?
+        StartURL(target_url)
+
+    def _update_buttons(self, enable_html):
+        if _wx_html2:
+            self._html_ctrl.Enable(enable_html)
+            self._html_ctrl.Show(enable_html)
+        self._text_ctrl.Enable(not enable_html)
+        self._text_ctrl.Show(not enable_html)
+        self._prev_button.Enable(enable_html and self._html_ctrl.CanGoBack())
+        self._next_button.Enable(enable_html and
+                                 self._html_ctrl.CanGoForward())
+
+    def go_back(self):
+        # Sanity check, shouldn't ever hit this
+        if self._html_ctrl.CanGoBack():
+            self._html_ctrl.GoBack()
+        # HTML must be enabled, otherwise the button wouldn't be enabled
+        self._update_buttons(enable_html=True)
+
+    def go_forward(self):
+        if self._html_ctrl.CanGoForward():
+            self._html_ctrl.GoForward()
+        self._update_buttons(enable_html=True)
+
+    @property
+    def fallback_text(self):
+        return self._text_ctrl.GetValue()
+
+    @fallback_text.setter
+    def fallback_text(self, text_):
+        self._text_ctrl.SetValue(text_)
+
+    def load_text(self, text_):
+        self._text_ctrl.SetValue(text_)
+        self._text_ctrl.SetModified(False)
+        self.switch_to_text()
+
+    def is_text_modified(self):
+        return self._text_ctrl.IsModified()
+
+    def set_text_modified(self, modified):
+        self._text_ctrl.SetModified(modified)
+
+    def set_text_editable(self, editable):
+        # type: (bool) -> None
+        self._text_ctrl.SetEditable(editable)
+
+    def switch_to_html(self):
+        if not _wx_html2: return
+        self._update_buttons(enable_html=True)
+        self.web_viewer.Layout()
+
+    def switch_to_text(self):
+        self._update_buttons(enable_html=False)
+        self.web_viewer.Layout()
+
+    def get_buttons(self):
+        return self._prev_button, self._next_button
+
+    def try_load_html(self, file_path, file_text=u''):
+        # type: (bolt.Path) -> None
+        """Load a HTML file if wx.WebView is available, or load the text."""
+        if _wx_html2:
+            self._html_ctrl.ClearHistory()
+            url = urlparse.urljoin(u'file:', urllib.pathname2url(file_path.s))
+            self._html_ctrl.LoadURL(url)
+            self.switch_to_html()
+        else:
+            self.load_text(file_text)
 
 class _Log(object):
     _settings_key = 'balt.LogMessage'
@@ -1002,25 +1085,21 @@ class WryeLog(_Log):
             logPath = _settings.get('balt.WryeLog.temp',
                 bolt.Path.getcwd().join(u'WryeLogTemp.html'))
             convert_wtext_to_html(logPath, logText)
-        if _wx_lib_iewin is None:
-            # Comtypes not available most likely! so do it this way:
-            import webbrowser
-            webbrowser.open(logPath.s)
-            return
         super(WryeLog, self).__init__(parent, logText, title, asDialog,
                                       fixedFont, log_icons)
         #--Text
         self._html_ctrl = HtmlCtrl(self.window)
-        self._html_ctrl.text_ctrl.Navigate(logPath.s,0x2) #--0x2: Clear History
+        self._html_ctrl.try_load_html(file_path=logPath)
         #--Buttons
         gOkButton = OkButton(self.window, onButClick=self.window.Close, default=True)
         if not asDialog:
             self.window.SetBackgroundColour(gOkButton.GetBackgroundColour())
         #--Layout
+        prev_button, next_button = self._html_ctrl.get_buttons()
         self.window.SetSizer(
             vSizer(
-                (self._html_ctrl.text_ctrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
-                (hSizer(self._html_ctrl.prevButton, self._html_ctrl.nextButton,
+                (self._html_ctrl.web_viewer,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
+                (hSizer(prev_button, next_button,
                     hspacer,
                     gOkButton,
                     ),0,wx.ALL|wx.EXPAND,4),
@@ -1439,9 +1518,18 @@ class Progress(bolt.Progress):
 
     def getParent(self): return self.dialog.GetParent()
 
-    def setCancel(self, enabled=True):
-        cancel = self.dialog.FindWindowById(wx.ID_CANCEL)
-        cancel.Enable(enabled)
+    def setCancel(self, enabled=True, new_message=u''):
+        # TODO(inf) Hacky, we need to rewrite this class for wx3
+        new_title = self.dialog.GetTitle()
+        new_parent = self.dialog.GetParent()
+        new_style = self.dialog.GetWindowStyle()
+        if enabled:
+            new_style |= wx.PD_CAN_ABORT
+        else:
+            new_style &= ~wx.PD_CAN_ABORT
+        self.dialog.Destroy()
+        self.dialog = wx.ProgressDialog(new_title, new_message, 100,
+                                        new_parent, new_style)
 
     def _do_progress(self, state, message):
         if not self.dialog:
@@ -1449,7 +1537,8 @@ class Progress(bolt.Progress):
         elif (state == 0 or state == 1 or (message != self.prevMessage) or
             (state - self.prevState) > 0.05 or (time.time() - self.prevTime) > 0.5):
             if message != self.prevMessage:
-                ret = self.dialog.Update(int(state*100),message)
+                ret = self.dialog.Update(int(state * 100), u'\n'.join(
+                    [self._ellipsize(msg) for msg in message.split(u'\n')]))
             else:
                 ret = self.dialog.Update(int(state*100))
             if not ret[0]:
@@ -1458,8 +1547,26 @@ class Progress(bolt.Progress):
             self.prevState = state
             self.prevTime = time.time()
 
+    @staticmethod
+    def _ellipsize(message):
+        """A really ugly way to ellipsize messages that would cause the
+        progress dialog to resize itself when displaying them. wx2.8's
+        ProgressDialog had this built in, but wx3.0's is native, and doesn't
+        have this feature, so we emulate it here. 50 characters was chosen as
+        the cutoff point, since that produced a reasonably good-looking
+        progress dialog at 1080p during testing.
+
+        :param message: The message to ellipsize.
+        :return: The ellipsized message."""
+        if len(message) > 50:
+            first = message[:24]
+            second = message[-26:]
+            return first + u'...' + second
+        return message
+
     def Destroy(self):
         if self.dialog:
+            # self._do_progress(self.full, _(u'Done'))
             self.dialog.Destroy()
             self.dialog = None
 

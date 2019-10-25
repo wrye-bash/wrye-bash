@@ -391,7 +391,7 @@ def _query_string_field_version(file_name, version_prefix):
         lang, codepage = win32api.GetFileVersionInfo(file_name, l_query)[0]
     except win32api.error:
         # File does not have a string field section
-        return (0, 0, 0, 0)
+        return 0, 0, 0, 0
     ver_query = u'\\StringFileInfo\\%04X%04X\\%s' % (lang, codepage,
                                                      version_prefix)
     full_ver = win32api.GetFileVersionInfo(file_name, ver_query)
@@ -417,7 +417,7 @@ def _query_fixed_field_version(file_name, version_prefix):
         info = win32api.GetFileVersionInfo(file_name, u'\\')
     except win32api.error:
         # File does not have a fixed field section
-        return (0, 0, 0, 0)
+        return 0, 0, 0, 0
     ms = info[u'%sMS' % version_prefix]
     ls = info[u'%sLS' % version_prefix]
     return win32api.HIWORD(ms), win32api.LOWORD(ms), win32api.HIWORD(ls), \
@@ -496,7 +496,7 @@ def _linux_get_file_version_info(filename):
                 break
         if version_pos is not None:
             return _find_version(f, version_pos, 0)[1]
-        return None
+        return ()
 
 # NB: AccessDeniedError is not 5 but 120 as seen in:
 # https://msdn.microsoft.com/en-us/library/windows/desktop/bb762164%28v=vs.85%29.aspx
