@@ -70,7 +70,6 @@ class Installer(object):
     #--Will be skipped even if hasExtraData == True (bonus: skipped also on
     # scanning the game Data directory)
     dataDirsMinus = {u'bash', u'--'}
-    _reDataFile = None
     docExts = {u'.txt', u'.rtf', u'.htm', u'.html', u'.doc', u'.docx', u'.odt',
                u'.mht', u'.pdf', u'.css', u'.xls', u'.xlsx', u'.ods', u'.odp',
                u'.ppt', u'.pptx'}
@@ -86,6 +85,15 @@ class Installer(object):
     #--Regular game directories - needs update after bush.game has been set
     dataDirsPlus = docDirs | {u'bash patches', u'bashtags', u'ini tweaks',
                               u'docs'}
+    # Files that may be installed in top Data/ directory - note that all
+    # top-level file extensions commonly found in the wild need to go here,
+    # even ones we'll end up skipping, since this is for the detection of
+    # archive 'types' - not actually deciding which get installed
+    _top_files_extensions = bush.game.espm_extensions | {
+        bush.game.bsa_extension, u'.ini', u'.modgroups', u'.bsl', u'.ckm'}
+    _re_top_extensions = re.compile(u'(?:' + u'|'.join(
+        re.escape(ext) for ext in _top_files_extensions) + u')$', re.I)
+
     @staticmethod
     def init_bain_dirs():
         """Initialize BAIN data directories on a per game basis."""
@@ -212,17 +220,6 @@ class Installer(object):
         self.missingFiles = set()
         self.mismatchedFiles = set()
         self.mismatchedEspms = set()
-
-    @property
-    def reDataFile(self):
-        """Files that may be installed in top Data/ directory - espml,
-        bsa/ba2, ini."""
-        if self.__class__._reDataFile is None:
-            _reDataFile = r'(\.(' + u'|'.join(
-                {x[1:] for x in bush.game.espm_extensions} | {
-                    bush.game.bsa_extension, u'ini'}) + u'))$'
-            self.__class__._reDataFile = re.compile(_reDataFile, re.I | re.U)
-        return self.__class__._reDataFile
 
     @property
     def num_of_files(self): return len(self.fileSizeCrcs)
@@ -860,9 +857,8 @@ class Installer(object):
         # fileRootIdex now points to the start in the file strings to ignore
         #--Type, subNames
         type_ = 0
-        subNameSet = set()
-        subNameSet.add(u'') # set(u'') == set() (unicode is iterable), so add
-        reDataFileSearch = self.reDataFile.search
+        subNameSet = {u''}
+        valid_ext = self.__class__._re_top_extensions.search
         dataDirsPlus = self.dataDirsPlus
         # hasExtraData is NOT taken into account when calculating package
         # structure or the root_path
@@ -876,15 +872,15 @@ class Installer(object):
             nfrags = len(frags)
             f0_lower = frags[0].lower()
             #--Type 1 ? break ! data files/dirs are not allowed in type 2 top
-            if (nfrags == 1 and reDataFileSearch(f0_lower) or
-                    nfrags > 1 and f0_lower in dataDirsPlus):
+            if (nfrags == 1 and valid_ext(f0_lower) or
+                nfrags > 1 and f0_lower in dataDirsPlus):
                 type_ = 1
                 break
             #--Else churn on to see if we have a Type 2 package
             elif not frags[0] in subNameSet and not \
                     f0_lower.startswith(skips_start) and (
                     (nfrags > 2 and frags[1].lower() in dataDirsPlus) or
-                    (nfrags == 2 and reDataFileSearch(frags[1]))):
+                    (nfrags == 2 and valid_ext(frags[1]))):
                 subNameSet.add(frags[0])
                 type_ = 2
                 # keep looking for a type one package - having a loose file or
@@ -1028,7 +1024,7 @@ class Installer(object):
         installer_plugins = self.espms
         is_ini_tweak = InstallersData._is_ini_tweak
         join_data_dir = bass.dirs['mods'].join
-        bsa_ext = u'.' + bush.game.bsa_extension
+        bsa_ext = bush.game.bsa_extension
         for dest, src in dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
             # Check the destination, since plugins may have been renamed

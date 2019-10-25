@@ -84,7 +84,7 @@ class GameInfo(object):
     patchTip = u'Update via Steam'
     # Bsa info
     allow_reset_bsa_timestamps = False
-    bsa_extension = u'bsa'
+    bsa_extension = u'.bsa'
     # Whether or not the Archive.exe tool for this game creates BSL files
     has_bsl = False
     supports_mod_inis = True  # this game supports mod ini files aka ini

@@ -685,7 +685,7 @@ class ModInfo(FileInfo):
         # games other than skyrim accept more general bsa names
         if bush.game.fsName not in (u'Enderal', u'Skyrim'):
             pattern +=  r'(?: \- \w+)?'
-        pattern += r'\.%s' % bush.game.bsa_extension
+        pattern += re.escape(bush.game.bsa_extension)
         reg = re.compile(pattern, re.I | re.U)
         # bsaInfos must be updated and contain all existing bsas
         if bsa_infos is None: bsa_infos = bsaInfos
@@ -2875,7 +2875,7 @@ class BSAInfos(FileInfos):
 
     def __init__(self):
         self.__class__.file_pattern = re.compile(
-            u'' r'\.' + bush.game.bsa_extension + u'$', re.I | re.U)
+            re.escape(bush.game.bsa_extension) + u'$', re.I | re.U)
         _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
 
         class BSAInfo(FileInfo, _bsa_type):

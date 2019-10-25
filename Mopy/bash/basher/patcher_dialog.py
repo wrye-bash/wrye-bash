@@ -50,7 +50,7 @@ CBash_gui_patchers = [] #--All gui patchers classes for this game (CBash mode)
 class PatchDialog(DialogWindow):
     """Bash Patch update dialog.
 
-    :type patchers: list[basher.gui_patchers._PatcherPanel]
+    :type _gui_patchers: list[basher.gui_patchers._PatcherPanel]
     """
 
     def __init__(self,parent,patchInfo,doCBash=None,importConfig=True):
@@ -79,15 +79,15 @@ class PatchDialog(DialogWindow):
                 patchConfigs = {}
         isFirstLoad = 0 == len(patchConfigs)
         self.patchInfo = patchInfo
-        self.patchers = [copy.deepcopy(p) for p in (
+        self._gui_patchers = [copy.deepcopy(p) for p in (
             CBash_gui_patchers if doCBash else PBash_gui_patchers)]
-        self.patchers.sort(key=lambda a: a.__class__.name)
-        self.patchers.sort(key=lambda a: groupOrder[a.__class__.group])
-        for patcher in self.patchers:
+        self._gui_patchers.sort(key=lambda a: a.__class__.name)
+        self._gui_patchers.sort(key=lambda a: groupOrder[a.__class__.group])
+        for patcher in self._gui_patchers:
             patcher.getConfig(patchConfigs) #--Will set patcher.isEnabled
             patcher.SetIsFirstLoad(isFirstLoad)
         self.currentPatcher = None
-        patcherNames = [patcher.getName() for patcher in self.patchers]
+        patcherNames = [patcher.getName() for patcher in self._gui_patchers]
         #--GUI elements
         self.gExecute = OkButton(self, label=_(u'Build Patch'))
         self.gExecute.on_clicked.subscribe(self.PatchExecute)
@@ -116,7 +116,7 @@ class PatchDialog(DialogWindow):
         self.gRevertToDefault = RevertButton(self,
                                              label=_(u'Revert To Default'))
         self.gRevertToDefault.on_clicked.subscribe(self.DefaultConfig)
-        for index,patcher in enumerate(self.patchers):
+        for index,patcher in enumerate(self._gui_patchers):
             self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
         self.defaultTipText = _(u'Items that are new since the last time this patch was built are displayed in bold')
         self.gTipText = Label(self,self.defaultTipText)
@@ -143,19 +143,19 @@ class PatchDialog(DialogWindow):
                 cancelButton])
         ]).apply_to(self)
         #--Patcher panels
-        for patcher in self.patchers:
+        for patcher in self._gui_patchers:
             patcher.GetConfigPanel(self, self.config_layout,
                                    self.gTipText).pnl_hide()
-        initial_select = min(len(self.patchers)-1,1)
+        initial_select = min(len(self._gui_patchers) - 1, 1)
         if initial_select >= 0:
             self.gPatchers.lb_select_index(initial_select) # callback not fired
-            self.ShowPatcher(self.patchers[initial_select]) # so this is needed
+            self.ShowPatcher(self._gui_patchers[initial_select]) # so this is needed
         self.SetOkEnable()
 
     #--Core -------------------------------
     def SetOkEnable(self):
-        """Sets enable state for Ok button."""
-        self.gExecute.enabled = any(p.isEnabled for p in self.patchers)
+        """Enable Build Patch button if at least one patcher is enabled."""
+        self.gExecute.enabled = any(p.isEnabled for p in self._gui_patchers)
 
     def ShowPatcher(self,patcher):
         """Show patcher panel."""
@@ -181,7 +181,7 @@ class PatchDialog(DialogWindow):
             self._saveConfig(patch_name)
             #--Do it
             log = bolt.LogFile(StringIO.StringIO())
-            patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
+            patchers = [p for p in self._gui_patchers if p.isEnabled]
             patchFile = CBash_PatchFile(patch_name, patchers) if self.doCBash \
                    else PatchFile(self.patchInfo, patchers)
             patchFile.init_patchers_data(SubProgress(progress, 0, 0.1)) #try to speed this up!
@@ -342,7 +342,7 @@ class PatchDialog(DialogWindow):
 
     def __config(self):
         config = {'ImportedMods': set()}
-        for patcher in self.patchers: patcher.saveConfig(config)
+        for p in self._gui_patchers: p.saveConfig(config)
         return config
 
     def _saveConfig(self, patch_name):
@@ -394,7 +394,7 @@ class PatchDialog(DialogWindow):
         self._load_config(patchConfigs)
 
     def _load_config(self, patchConfigs, set_first_load=False, default=False):
-        for index, patcher in enumerate(self.patchers):
+        for index, patcher in enumerate(self._gui_patchers):
             patcher.import_config(patchConfigs, set_first_load=set_first_load,
                                   default=default)
             self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
@@ -437,31 +437,31 @@ class PatchDialog(DialogWindow):
         """Select or deselect all patchers and entries in patchers with child
         entries."""
         self.gPatchers.set_all_checkmarks(checked=select)
-        for patcher in self.patchers:
+        for patcher in self._gui_patchers:
             patcher.mass_select(select=select)
         self.gExecute.enabled = select
 
     #--GUI --------------------------------
     def OnSelect(self, lb_selection_dex, lb_selection_str):
         """Responds to patchers list selection."""
-        self.ShowPatcher(self.patchers[lb_selection_dex])
+        self.ShowPatcher(self._gui_patchers[lb_selection_dex])
         self.gPatchers.lb_select_index(lb_selection_dex)
 
     def CheckPatcher(self, patcher):
         """Enable a patcher - Called from a patcher's OnCheck method."""
-        index = self.patchers.index(patcher)
+        index = self._gui_patchers.index(patcher)
         self.gPatchers.lb_check_at_index(index, True)
         self.SetOkEnable()
 
     def BoldPatcher(self, patcher):
         """Set the patcher label to bold font.  Called from a patcher when
         it realizes it has something new in its list"""
-        index = self.patchers.index(patcher)
+        index = self._gui_patchers.index(patcher)
         self.gPatchers.lb_bold_font_at_index(index)
 
     def OnCheck(self, lb_selection_dex):
         """Toggle patcher activity state."""
-        patcher = self.patchers[lb_selection_dex]
+        patcher = self._gui_patchers[lb_selection_dex]
         patcher.isEnabled = self.gPatchers.lb_is_checked_at_index(lb_selection_dex)
         self.gPatchers.lb_select_index(lb_selection_dex)
         self.ShowPatcher(patcher) # SetSelection does not fire the callback
@@ -477,8 +477,8 @@ class PatchDialog(DialogWindow):
         self._set_tip_text(lb_dex)
 
     def _set_tip_text(self, mouseItem):
-        if 0 <= mouseItem < len(self.patchers):
-            patcherClass = self.patchers[mouseItem].__class__
+        if 0 <= mouseItem < len(self._gui_patchers):
+            patcherClass = self._gui_patchers[mouseItem].__class__
             tip = patcherClass.tip or re.sub(u'' r'\..*', u'.',
                             patcherClass.text.split(u'\n')[0], flags=re.U)
             self.gTipText.label_text = tip

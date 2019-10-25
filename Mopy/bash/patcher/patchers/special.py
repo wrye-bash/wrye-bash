@@ -91,7 +91,7 @@ class _AListsMerger(SpecialPatcher, AListPatcher):
             self.OverhaulUOPSkips = set()
 
 class ListsMerger(_AListsMerger, ListPatcher):
-    _read_write_records = bush.game.listTypes # bush.game must be set!
+    _read_write_records = bush.game.listTypes
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self, patchFile):

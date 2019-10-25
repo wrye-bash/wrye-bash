@@ -43,7 +43,7 @@ class Fallout4GameInfo(GameInfo):
     nexusName = u'Fallout 4 Nexus'
     nexusKey = 'bash.installers.openFallout4Nexus.continue'
 
-    bsa_extension = u'ba2'
+    bsa_extension = u'.ba2'
     vanilla_string_bsas = {
         u'fallout4.esm': [u'Fallout4 - Interface.ba2'],
         u'dlcrobot.esm': [u'DLCRobot - Main.ba2'],

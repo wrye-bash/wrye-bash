@@ -4012,8 +4012,8 @@ class ModFile(object):
                         self.topsSkipped.add(label)
                         insSeek(size-header.__class__.rec_header_size,1,type + '.' + label)
                 except:
-                    print u'Error in',self.fileInfo.name.s
-                    deprint(u' ',traceback=True)
+                    deprint(u'Error in %s' % self.fileInfo.name.s,
+                            traceback=True)
                     break
                 subProgress(insTell())
         #--Done Reading

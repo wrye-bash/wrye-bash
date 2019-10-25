@@ -43,8 +43,8 @@ from functools import partial
 from .. import bolt
 from ..bolt import decode, cstrip, unpack_string, unpack_int, unpack_str8, \
     unpack_short, unpack_float, unpack_str16, unpack_byte, struct_pack, \
-    unpack_int_delim, unpack_str16_delim, unpack_byte_delim, unpack_many, \
-    encode
+    unpack_str_int_delim, unpack_str16_delim_null, unpack_str_byte_delim, \
+    unpack_many, encode
 from ..exception import SaveHeaderError, raise_bolt_error
 
 # Utilities -------------------------------------------------------------------
@@ -426,25 +426,25 @@ class FalloutNVSaveHeader(SaveFileHeader):
     _masters_unknown_byte = 0x1B
     unpackers = OrderedDict([
         ('header_size', (00, unpack_int)),
-        ('_unknown',    (00, unpack_int_delim)),
+        ('_unknown',    (00, unpack_str_int_delim)),
         ('language',    (00, lambda ins: unpack_many(ins, '64sc')[0])),
-        ('ssWidth',     (00, unpack_int_delim)),
-        ('ssHeight',    (00, unpack_int_delim)),
-        ('ssDepth',     (00, unpack_int_delim)),
-        ('pcName',      (00, unpack_str16_delim)),
-        ('pcNick',      (00, unpack_str16_delim)),
-        ('pcLevel',     (00, unpack_int_delim)),
-        ('pcLocation',  (00, unpack_str16_delim)),
-        ('gameDate',    (00, unpack_str16_delim)),
+        ('ssWidth',     (00, unpack_str_int_delim)),
+        ('ssHeight',    (00, unpack_str_int_delim)),
+        ('ssDepth',     (00, unpack_str_int_delim)),
+        ('pcName',      (00, unpack_str16_delim_null)),
+        ('pcNick',      (00, unpack_str16_delim_null)),
+        ('pcLevel',     (00, unpack_str_int_delim)),
+        ('pcLocation',  (00, unpack_str16_delim_null)),
+        ('gameDate',    (00, unpack_str16_delim_null)),
     ])
 
     def load_masters(self, ins):
         self._mastersStart = ins.tell()
         self._master_list_size(ins)
         self.masters = []
-        numMasters = unpack_byte_delim(ins)
+        numMasters = unpack_str_byte_delim(ins)
         for count in xrange(numMasters):
-            self.masters.append(unpack_str16_delim(ins))
+            self.masters.append(unpack_str16_delim_null(ins))
 
     def _master_list_size(self, ins):
         formVersion, masterListSize = unpack_many(ins, '=BI')
@@ -458,7 +458,7 @@ class FalloutNVSaveHeader(SaveFileHeader):
         _pack(out, '=B', self._masters_unknown_byte)
         _pack(out, '=I', self._master_block_size())
         #--Skip old masters
-        numMasters = unpack_byte_delim(ins) # get me the Byte
+        numMasters = unpack_str_byte_delim(ins) # get me the Byte
         oldMasters = self._dump_masters(ins, numMasters, out)
         #--Offsets
         offset = out.tell() - ins.tell()
@@ -472,7 +472,7 @@ class FalloutNVSaveHeader(SaveFileHeader):
     def _dump_masters(self, ins, numMasters, out):
         oldMasters = []
         for count in xrange(numMasters):
-            oldMasters.append(unpack_str16_delim(ins))
+            oldMasters.append(unpack_str16_delim_null(ins))
         # Write new masters - note the silly delimiters
         _pack(out, '=B', len(self.masters))
         _pack(out, '=c', '|')
