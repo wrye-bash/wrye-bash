@@ -293,11 +293,6 @@ class ModReader(object):
         else:
             return self.readString(size,recType)
 
-    def readString16(self, recType='----'):
-        """Read wide pascal string: uint16 is used to indicate length."""
-        strLen, = self.unpack('H',2,recType)
-        return self.readString(strLen,recType)
-
     def readString32(self, recType='----'):
         """Read wide pascal string: uint32 is used to indicate length."""
         strLen, = self.unpack('I',4,recType)
