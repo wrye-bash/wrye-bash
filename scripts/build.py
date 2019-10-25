@@ -513,7 +513,6 @@ def build_executable(version, file_version):
     wbsa = os.path.join(SCRIPTS_PATH, u"build", u"standalone")
     reshacker = os.path.join(wbsa, u"Reshacker.exe")
     reshacker_log = os.path.join(wbsa, u"Reshacker.log")
-    upx = os.path.join(wbsa, u"upx.exe")
     icon = os.path.join(wbsa, u"bash.ico")
     manifest = os.path.join(wbsa, u"manifest.template")
     script = os.path.join(wbsa, u"setup.template")
@@ -546,8 +545,6 @@ def build_executable(version, file_version):
             version=version,
             file_version=file_version,
             manifest=manifest,
-            upx=None,
-            upx_compression="-9",
             packages=packages,
         )
         with open(setup, "w") as out:
@@ -584,9 +581,6 @@ def build_executable(version, file_version):
                 for line in ins:
                     LOGGER.debug(line)
         LOGGER.debug("---  RESHACKER LOG END  ---")
-        # Compress with UPX
-        LOGGER.info("Compressing with UPX...")
-        utils.run_subprocess([upx, "-9", exe], LOGGER)
     except:
         # On error, don't keep the built exe's
         rm(exe)
@@ -600,7 +594,6 @@ def build_executable(version, file_version):
         rm(os.path.join(wbsa, u"ResHacker.ini"))
         rm(reshacker_log)
         rm(setup)
-        rm(os.path.join(MOPY_PATH, u"Wrye Bash.upx"))
 
 
 def pack_standalone(version, file_list, output_dir):
