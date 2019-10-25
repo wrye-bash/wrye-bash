@@ -1022,7 +1022,7 @@ class Installer(object):
         data_sizeCrcDate_update = bolt.LowerDict()
         data_sizeCrc = self.ci_dest_sizeCrc
         mods, inis = set(), set()
-        srcs, dests = [], []
+        source_paths, dests = [], []
         for dest, src in dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
             srcFull = srcDirJoin(src)
@@ -1032,14 +1032,14 @@ class Installer(object):
             elif InstallersData._is_ini_tweak(dest):
                 inis.add(srcFull.tail)
             data_sizeCrcDate_update[dest] = (size, crc, -1) ##: HACK we must try avoid stat'ing the mtime
-            srcs.append(srcFull)
+            source_paths.append(srcFull)
             dests.append(destFull)
             subprogressPlus()
         #--Now Move
         try:
             if data_sizeCrcDate_update:
                 fs_operation = env.shellMove if unpackDir else env.shellCopy
-                fs_operation(srcs, dests, progress.getParent())
+                fs_operation(source_paths, dests, progress.getParent())
         finally:
             #--Clean up unpack dir if we're an archive
             if unpackDir: bass.rmTempDir()

@@ -516,11 +516,11 @@ def __copyOrMove(operation, source, target, renameOnCollision, parent):
                 if not dest_dir.isdir():
                     raise DirectoryFileCollisionError(fileFrom, dest_dir)
                 # dir exists at target, copy contents individually/recursively
-                srcs, dests = [], []
+                source_paths, dests = [], []
                 for content in _os.listdir(fileFrom.s):
-                    srcs.append(fileFrom.join(content))
+                    source_paths.append(fileFrom.join(content))
                     dests.append(dest_dir)
-                __copyOrMove(operation, srcs, dests, renameOnCollision, parent)
+                __copyOrMove(operation, source_paths, dests, renameOnCollision, parent)
             else:  # dir doesn't exist at the target, copy it
                 doIt(fileFrom.s, fileTo.s)
         # copy the file, overwrite as needed

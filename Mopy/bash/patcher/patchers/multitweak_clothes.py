@@ -49,7 +49,6 @@ class AClothesTweak(AMultiTweakItem):
         # u'robes':   (1<<2) + (1<<3),
         # u'rings':   (1<<6) + (1<<7),
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self, label, tweak_tip, key, *choices):
         super(AClothesTweak,self).__init__(label, tweak_tip, key, *choices)
         typeKey = key[:key.find(u'.')]
@@ -76,7 +75,7 @@ class CBash_ClothesTweak(AClothesTweak,CBash_MultiTweakItem):
 #------------------------------------------------------------------------------
 class ClothesTweak_MaxWeight(ClothesTweak):
     """Enforce a max weight for specified clothes."""
-    #--Patch Phase ------------------------------------------------------------
+
     def buildPatch(self,patchFile,keep,log):
         """Build patch."""
         tweakCount = 0
@@ -94,7 +93,6 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
     """Enforce a max weight for specified clothes."""
     name = _(u'Reweigh Clothes')
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self, label, tweak_tip, key, *choices):
         super(CBash_ClothesTweak_MaxWeight, self).__init__(label, tweak_tip,
                                                            key, *choices)
@@ -104,7 +102,6 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
                          }[key]
         self.logMsg = u'* '+_(u'Clothes Reweighed') + u': %d'
 
-    #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if record.IsNonPlayable:
@@ -140,14 +137,13 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
 #------------------------------------------------------------------------------
 class ClothesTweak_Unblock(ClothesTweak):
     """Unlimited rings, amulets."""
-    #--Config Phase -----------------------------------------------------------
+
     def __init__(self, label, tweak_tip, key, *choices):
         super(ClothesTweak_Unblock, self).__init__(label, tweak_tip, key,
                                                    *choices)
         self.unblockFlags = self.__class__.clothes_flags[
             key[key.rfind('.') + 1:]]
 
-    #--Patch Phase ------------------------------------------------------------
     def buildPatch(self,patchFile,keep,log):
         """Build patch."""
         tweakCount = 0
@@ -163,7 +159,6 @@ class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
     scanOrder = 31
     editOrder = 31
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self, label, tweak_tip, key):
         super(CBash_ClothesTweak_Unblock,self).__init__(label, tweak_tip, key)
         self.hideFlags = {'amulets.unblock.amulets':('IsAmulet',),
@@ -174,7 +169,6 @@ class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
                          }[key]
         self.logMsg = u'* '+_(u'Clothing Pieces Tweaked') + u': %d'
 
-    #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if record.IsNonPlayable:

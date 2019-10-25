@@ -47,7 +47,6 @@ from ...parsers import LoadFactory, ModFile
 class ARaceTweaker_BiggerOrcsAndNords(AMultiTweakItem):
     tweak_read_classes = 'RACE',
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(ARaceTweaker_BiggerOrcsAndNords, self).__init__(
             _(u"Bigger Nords and Orcs"),
@@ -68,7 +67,6 @@ class RaceTweaker_BiggerOrcsAndNords(ARaceTweaker_BiggerOrcsAndNords,
                                      MultiTweakItem):
     """Adjusts the Orc and Nord race records to be taller/heavier."""
 
-    #--Patch Phase ------------------------------------------------------------
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
@@ -110,7 +108,6 @@ class CBash_RaceTweaker_BiggerOrcsAndNords(ARaceTweaker_BiggerOrcsAndNords,
     """Changes all Orcs and Nords to be bigger."""
     name = _(u"Bigger Nords and Orcs")
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(CBash_RaceTweaker_BiggerOrcsAndNords, self).__init__()
         self.attrs = ['maleHeight','femaleHeight','maleWeight','femaleWeight']
@@ -141,7 +138,6 @@ class ARaceTweaker_MergeSimilarRaceHairs(AMultiTweakItem):
     bearded races)."""
     tweak_read_classes = 'RACE',
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(ARaceTweaker_MergeSimilarRaceHairs, self).__init__(
             _(u"Merge Hairs from similar races"),
@@ -156,7 +152,6 @@ class ARaceTweaker_MergeSimilarRaceHairs(AMultiTweakItem):
 class RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,
                                         MultiTweakItem):
 
-    #--Patch Phase ------------------------------------------------------------
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
@@ -211,7 +206,6 @@ class CBash_RaceTweaker_MergeSimilarRaceHairs(
     ARaceTweaker_MergeSimilarRaceHairs, CBash_MultiTweakItem):
     name = _(u"Merge Hairs from similar races")
 
-    #--Patch Phase ------------------------------------------------------------
     def finishPatch(self,patchFile,progress):
         """Edits the bashed patch file directly."""
         Current = patchFile.Current
@@ -268,7 +262,6 @@ class ARaceTweaker_MergeSimilarRaceEyes(AMultiTweakItem):
     """Merges similar race's eyes."""
     tweak_read_classes = 'RACE',
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(ARaceTweaker_MergeSimilarRaceEyes, self).__init__(
             _(u"Merge Eyes from similar races"),
@@ -283,7 +276,6 @@ class ARaceTweaker_MergeSimilarRaceEyes(AMultiTweakItem):
 class RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,
                                        MultiTweakItem):
 
-    #--Patch Phase ------------------------------------------------------------
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
@@ -340,7 +332,6 @@ class CBash_RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,
     """Merges similar race's eyes."""
     name = _(u"Merge Eyes from similar races")
 
-    #--Patch Phase ------------------------------------------------------------
     def finishPatch(self,patchFile,progress):
         """Edits the bashed patch file directly."""
         Current = patchFile.Current
@@ -398,7 +389,6 @@ class ARaceTweaker_AllHairs(AMultiTweakItem):
     """Gives all races ALL hairs."""
     tweak_read_classes = 'RACE',
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(ARaceTweaker_AllHairs, self).__init__(_(u"Races Have All Hairs"),
             _(u'Gives all races every available hair.'),
@@ -409,7 +399,6 @@ class ARaceTweaker_AllHairs(AMultiTweakItem):
 
 class RaceTweaker_AllHairs(ARaceTweaker_AllHairs,MultiTweakItem):
 
-    #--Patch Phase ------------------------------------------------------------
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
@@ -431,7 +420,6 @@ class RaceTweaker_AllHairs(ARaceTweaker_AllHairs,MultiTweakItem):
 class CBash_RaceTweaker_AllHairs(ARaceTweaker_AllHairs,CBash_MultiTweakItem):
     name = _(u"Races Have All Hairs")
 
-    #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if record.hairs != self.patchFile.races_data['HAIR']:
@@ -447,7 +435,6 @@ class ARaceTweaker_AllEyes(AMultiTweakItem):
     """Gives all races ALL eyes."""
     tweak_read_classes = 'RACE',
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self,opt=(u'what a lot of eyes you have dear',1)):
         super(ARaceTweaker_AllEyes, self).__init__(_(u"Races Have All Eyes"),
             _(u'Gives all races every available eye.'),
@@ -458,7 +445,6 @@ class ARaceTweaker_AllEyes(AMultiTweakItem):
 
 class RaceTweaker_AllEyes(ARaceTweaker_AllEyes,MultiTweakItem):
 
-    #--Patch Phase ------------------------------------------------------------
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
@@ -480,13 +466,11 @@ class RaceTweaker_AllEyes(ARaceTweaker_AllEyes,MultiTweakItem):
 class CBash_RaceTweaker_AllEyes(ARaceTweaker_AllEyes,CBash_MultiTweakItem):
     name = _(u"Races Have All Eyes")
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(CBash_RaceTweaker_AllEyes, self).__init__(
             opt=(u'them races are a real eye full', 1)
         )
 
-    #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if record.eyes != self.patchFile.races_data['EYES']:
@@ -502,7 +486,6 @@ class ARaceTweaker_PlayableEyes(AMultiTweakItem):
     """Sets all eyes to be playable."""
     tweak_read_classes = 'EYES',
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(ARaceTweaker_PlayableEyes, self).__init__(_(u"Playable Eyes"),
             _(u'Sets all eyes to be playable.'),
@@ -513,7 +496,6 @@ class ARaceTweaker_PlayableEyes(AMultiTweakItem):
 
 class RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,MultiTweakItem):
 
-    #--Patch Phase ------------------------------------------------------------
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.EYES
@@ -537,7 +519,6 @@ class CBash_RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,
     """Sets all eyes to be playable."""
     name = _(u"Playable Eyes")
 
-    #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if record.IsPlayable: return
@@ -553,7 +534,6 @@ class ARaceTweaker_PlayableHairs(AMultiTweakItem):
     """Sets all hairs to be playable."""
     tweak_read_classes = 'HAIR',
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(ARaceTweaker_PlayableHairs, self).__init__(_(u"Playable Hairs"),
             _(u'Sets all Hairs to be playable.'),
@@ -564,7 +544,6 @@ class ARaceTweaker_PlayableHairs(AMultiTweakItem):
 
 class RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,MultiTweakItem):
 
-    #--Patch Phase ------------------------------------------------------------
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.HAIR
@@ -588,7 +567,6 @@ class CBash_RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,
     """Sets all hairs to be playable."""
     name = _(u"Playable Hairs")
 
-    #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if record.IsPlayable: return
@@ -604,7 +582,6 @@ class ARaceTweaker_SexlessHairs(AMultiTweakItem):
     """Sets all hairs to be playable by both males and females."""
     tweak_read_classes = 'HAIR',
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(ARaceTweaker_SexlessHairs, self).__init__(_(u"Sexless Hairs"),
             _(u'Lets any sex of character use any hair.'),
@@ -615,7 +592,6 @@ class ARaceTweaker_SexlessHairs(AMultiTweakItem):
 
 class RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,MultiTweakItem):
 
-    #--Patch Phase ------------------------------------------------------------
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.HAIR
@@ -639,7 +615,6 @@ class CBash_RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,
                                      CBash_MultiTweakItem):
     name = _(u"Sexless Hairs")
 
-    #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if record.IsNotFemale or record.IsNotMale:

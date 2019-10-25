@@ -1731,14 +1731,15 @@ class MreHeaderBase(MelRecord):
             # Don't use ins.readString, because it will try to use bolt.pluginEncoding
             # for the filename.  This is one case where we want to use Automatic
             # encoding detection
-            name = decode(bolt.cstrip(ins.read(size_, readId)), avoidEncodings=('utf8', 'utf-8'))
-            name = GPath(name)
-            record.masters.append(name)
+            master_name = decode(bolt.cstrip(ins.read(size_, readId)),
+                                 avoidEncodings=('utf8', 'utf-8'))
+            master_name = GPath(master_name)
+            record.masters.append(master_name)
         def dumpData(self,record,out):
             pack1 = out.packSub0
             pack2 = out.packSub
-            for name in record.masters:
-                pack1('MAST', encode(name.s, firstEncoding='cp1252'))
+            for master_name in record.masters:
+                pack1('MAST', encode(master_name.s, firstEncoding='cp1252'))
                 pack2('DATA','Q',0)
 
     def getNextObject(self):

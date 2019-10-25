@@ -27,6 +27,7 @@ to the Actors Multitweaker - as well as the TweakActors itself."""
 
 import random
 import re
+from collections import Counter
 # Internal
 from ... import bass # for dirs
 from ...bolt import GPath
@@ -41,7 +42,6 @@ class BasalNPCTweaker(MultiTweakItem):
     """Base for all NPC tweakers"""
     tweak_read_classes = 'NPC_',
 
-    #--Patch Phase ------------------------------------------------------------
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.NPC_
@@ -55,7 +55,6 @@ class BasalCreatureTweaker(MultiTweakItem):
     """Base for all Creature tweakers"""
     tweak_read_classes = 'CREA',
 
-    #--Patch Phase ------------------------------------------------------------
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.CREA
@@ -77,7 +76,6 @@ class AMAONPCSkeletonPatcher(AMultiTweakItem):
     """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton
     for use with MAO."""
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(AMAONPCSkeletonPatcher, self).__init__(
             _(u"Mayu's Animation Overhaul Skeleton Tweaker"),
@@ -93,9 +91,10 @@ class AMAONPCSkeletonPatcher(AMultiTweakItem):
         self.logMsg = u'* '+_(u'Skeletons Tweaked') + u': %d'
 
 class MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher,BasalNPCTweaker):
+
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
             if self.choiceValues[self.chosen][
@@ -124,8 +123,7 @@ class MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher,BasalNPCTweaker):
             if newModPath != oldModPath:
                 record.model.modPath = newModPath
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher, _NpcCTweak):
@@ -161,7 +159,6 @@ class CBash_MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher, _NpcCTweak):
 #------------------------------------------------------------------------------
 class AVORB_NPCSkeletonPatcher(AMultiTweakItem):
     """Changes all NPCs to use the diverse skeleton for different look."""
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(AVORB_NPCSkeletonPatcher, self).__init__(
             _(u"VadersApp's Oblivion Real Bodies Skeleton Tweaker"),
@@ -197,6 +194,7 @@ class AVORB_NPCSkeletonPatcher(AMultiTweakItem):
         return skeletonList, skeletonSetSpecial
 
 class VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,BasalNPCTweaker):
+
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired.  Will write to log."""
         count = {}
@@ -237,7 +235,6 @@ class VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,BasalNPCTweaker):
 class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher, _NpcCTweak):
     name = _(u"VORB Skeleton Setter")
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(CBash_VORB_NPCSkeletonPatcher, self).__init__()
         self.modSkeletonDir = GPath(u'Characters').join(u'_male')
@@ -282,7 +279,6 @@ class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher, _NpcCTweak):
 class AVanillaNPCSkeletonPatcher(AMultiTweakItem):
     """Changes all NPCs to use the vanilla beast race skeleton."""
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(AVanillaNPCSkeletonPatcher, self).__init__(
             _(u"Vanilla Beast Skeleton Tweaker"),
@@ -296,7 +292,7 @@ class AVanillaNPCSkeletonPatcher(AMultiTweakItem):
         self.logMsg = u'* '+_(u'Skeletons Tweaked') + u': %d'
 
 class VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,BasalNPCTweaker):
-    #--Patch Phase ------------------------------------------------------------
+
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.NPC_
@@ -337,7 +333,6 @@ class CBash_VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher, _NpcCTweak):
     editOrder = 31
     name = _(u"Vanilla Beast Skeleton")
 
-    #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         oldModPath = record.modPath
@@ -362,7 +357,6 @@ class ARedguardNPCPatcher(AMultiTweakItem):
     """Changes all Redguard NPCs texture symmetry for Better Redguard
     Compatibility."""
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(ARedguardNPCPatcher, self).__init__(_(u"Redguard FGTS Nuller"),
             _(u'Nulls FGTS of all Redguard NPCs - for compatibility with'
@@ -374,6 +368,7 @@ class ARedguardNPCPatcher(AMultiTweakItem):
         self.logMsg = u'* '+_(u'Redguard NPCs Tweaked') + u': %d'
 
 class RedguardNPCPatcher(ARedguardNPCPatcher,BasalNPCTweaker):
+
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -391,7 +386,6 @@ class CBash_RedguardNPCPatcher(ARedguardNPCPatcher, _NpcCTweak):
     name = _(u"Redguard FGTS Patcher")
     redguardId = FormID(GPath(u'Oblivion.esm'),0x00000D43)
 
-    #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if record.race == self.__class__.redguardId: #Only affect npc's with
@@ -410,7 +404,6 @@ class CBash_RedguardNPCPatcher(ARedguardNPCPatcher, _NpcCTweak):
 class ANoBloodCreaturesPatcher(AMultiTweakItem):
     """Set all creatures to have no blood records."""
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(ANoBloodCreaturesPatcher, self).__init__(
             _(u"No Bloody Creatures"),
@@ -423,6 +416,7 @@ class ANoBloodCreaturesPatcher(AMultiTweakItem):
         self.logMsg = u'* '+_(u'Creatures Tweaked') + u': %d'
 
 class NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,BasalCreatureTweaker):
+
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -442,7 +436,6 @@ class NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,BasalCreatureTweaker):
 class CBash_NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher, _CreaCTweak):
     name = _(u"No Bloody Creatures")
 
-    #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if record.bloodDecalPath or record.bloodSprayPath:
@@ -463,7 +456,6 @@ class AAsIntendedImpsPatcher(AMultiTweakItem):
     reImpModPath = re.compile(u'' r'(imp(?!erial)|gargoyle)\\.', re.I | re.U)
     reImp  = re.compile(u'(imp(?!erial)|gargoyle)',re.I|re.U)
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(AAsIntendedImpsPatcher, self).__init__(_(u'As Intended: Imps'),
             _(u"Set imps to have the unassigned Bethesda Imp Spells as"
@@ -476,6 +468,7 @@ class AAsIntendedImpsPatcher(AMultiTweakItem):
         self.logMsg = u'* '+_(u'Imps Tweaked') + u': %d'
 
 class AsIntendedImpsPatcher(AAsIntendedImpsPatcher,BasalCreatureTweaker):
+
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -511,7 +504,6 @@ class CBash_AsIntendedImpsPatcher(AAsIntendedImpsPatcher, _CreaCTweak):
     name = _(u"As Intended: Imps")
     spell = FormID(GPath(u'Oblivion.esm'), 0x02B53F)
 
-    #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if not self.reImpModPath.search(record.modPath or u''): return
@@ -544,7 +536,6 @@ class AAsIntendedBoarsPatcher(AMultiTweakItem):
     reBoarModPath = re.compile(u'' r'(boar)\\.', re.I | re.U)
     reBoar  = re.compile(u'(boar)', re.I|re.U)
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(AAsIntendedBoarsPatcher, self).__init__(_(u'As Intended: Boars'),
             _(u"Set boars to have the unassigned Bethesda Boar Spells as"
@@ -555,6 +546,7 @@ class AAsIntendedBoarsPatcher(AMultiTweakItem):
         self.logMsg = u'* '+_(u'Boars Tweaked') + u': %d'
 
 class AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,BasalCreatureTweaker):
+
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -585,7 +577,6 @@ class CBash_AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher, _CreaCTweak):
     name = _(u"As Intended: Boars")
     spell = FormID(GPath(u'Oblivion.esm'), 0x02B54E)
 
-    #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if not self.reBoarModPath.search(record.modPath or ''): return
@@ -610,7 +601,6 @@ class CBash_AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher, _CreaCTweak):
 class ASWALKNPCAnimationPatcher(AMultiTweakItem):
     """Changes all female NPCs to use Mur Zuk's Sexy Walk."""
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(ASWALKNPCAnimationPatcher, self).__init__(
             _(u"Sexy Walk for female NPCs"),
@@ -622,6 +612,7 @@ class ASWALKNPCAnimationPatcher(AMultiTweakItem):
         self.logMsg = u'* '+_(u'NPCs Tweaked') + u' :%d'
 
 class SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,BasalNPCTweaker):
+
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -653,7 +644,6 @@ class CBash_SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher, _NpcCTweak):
 class ARWALKNPCAnimationPatcher(AMultiTweakItem):
     """Changes all female NPCs to use Mur Zuk's Real Walk."""
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(ARWALKNPCAnimationPatcher, self).__init__(
             _(u"Real Walk for female NPCs"),
@@ -665,16 +655,15 @@ class ARWALKNPCAnimationPatcher(AMultiTweakItem):
         self.logMsg = u'* '+_(u'NPCs Tweaked') + u': %d'
 
 class RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,BasalNPCTweaker):
+
     def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
             if record.flags.female == 1:
                 record.animations += [u'0realwalk01.kf']
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher, _NpcCTweak):
@@ -698,7 +687,6 @@ class AQuietFeetPatcher(AMultiTweakItem):
     """Removes 'foot' sounds from all/specified creatures - like the mod by
     the same name but works on all modded creatures."""
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(AQuietFeetPatcher, self).__init__(_(u'Quiet Feet'),
             _(u"Removes all/some 'foot' sounds from creatures; on some"
@@ -711,6 +699,7 @@ class AQuietFeetPatcher(AMultiTweakItem):
         self.logMsg = u'* '+_(u'Creatures Tweaked') + u': %d'
 
 class QuietFeetPatcher(AQuietFeetPatcher,BasalCreatureTweaker):
+
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -742,7 +731,6 @@ class QuietFeetPatcher(AQuietFeetPatcher,BasalCreatureTweaker):
 class CBash_QuietFeetPatcher(AQuietFeetPatcher, _CreaCTweak):
     name = _(u"Quiet Feet")
 
-    #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         chosen = self.choiceValues[self.chosen][0]
@@ -773,7 +761,6 @@ class AIrresponsibleCreaturesPatcher(AMultiTweakItem):
     """Sets responsibility to 0 for all/specified creatures - like the mod
     by the name of Irresponsible Horses but works on all modded creatures."""
 
-    #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(AIrresponsibleCreaturesPatcher, self).__init__(
             _(u'Irresponsible Creatures'),
@@ -812,7 +799,6 @@ class CBash_IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,
                                           _CreaCTweak):
     name = _(u"Irresponsible Creatures")
 
-    #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if record.responsibility == 0: return

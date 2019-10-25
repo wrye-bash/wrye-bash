@@ -102,12 +102,11 @@ def _detectGames(cli_path=u'', bash_ini_=None):
        - the sOblivionPath Bash Ini entry if present
        - one directory up from Mopy
     If a game exe is found update the path to this game and return immediately.
-    Return (foundGames, name)
+    Return (foundGames, gamename)
       - foundGames: a dict from supported games to their paths (the path will
       default to the windows registry path to the game, if present)
-      - name: the game found in the first installDir or None if no game was
-      found - a 'suggestion' for a game to use (if no game is specified/found
-      via -g argument).
+      - gamename: the game found in the first installDir or None if no game was
+      found - a 'suggestion' for a game to use.
     """
     #--Find all supported games and all games in the windows registry
     foundGames_ = _supportedGames() # sets _allGames if not set
@@ -150,30 +149,28 @@ def _detectGames(cli_path=u'', bash_ini_=None):
     deprint(u'Detecting games via the -o argument, bash.ini and relative path:')
     # iterate installPaths in insert order ('cmd', 'ini', 'upMopy')
     for test_path, foundMsg, errorMsg in installPaths.itervalues():
-        for name, info in _allGames.items():
+        for gamename, info in _allGames.items():
             if test_path.join(*info.game_detect_file).exists():
                 # Must be this game
-                deprint(foundMsg % {'gamename': name}, test_path)
-                foundGames_[name] = test_path
-                return foundGames_, name
+                deprint(foundMsg % {'gamename': gamename}, test_path)
+                foundGames_[gamename] = test_path
+                return foundGames_, gamename
         # no game exe in this install path - print error message
         deprint(errorMsg % {'path': test_path.s})
     # no game found in installPaths - foundGames are the ones from the registry
     return foundGames_, None
 
-def __setGame(name, msg):
+def __setGame(gamename, msg):
     """Set bush game globals - raise if they are already set."""
     global game, game_mod
     if game is not None: raise BoltError(u'Trying to reset the game')
-    gamePath = foundGames[name]
-    game = _allGames[name](gamePath)
-    game_mod = _allModules[name]
-    deprint(msg % {'gamename': name}, gamePath)
+    gamePath = foundGames[gamename]
+    game = _allGames[gamename](gamePath)
+    game_mod = _allModules[gamename]
+    deprint(msg % {'gamename': gamename}, gamePath)
     # Unload the other modules from the cache
-    for i in _allGames.keys():
-        if i != name:
-            del _allGames[i]
-            del _allModules[i]  # the keys should be the same
+    _allGames.clear()
+    _allModules.clear()
     game.init()
 
 def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, name=None):
