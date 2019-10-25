@@ -499,9 +499,9 @@ from other packages previously overridden by the uninstalled package's
         order!</strong> Install order determines which package's files overwrite other packages files when they conflict.
 <p>Although in general "Load Order" stands for the load order of the <em>active</em> plugins, all installed plugins have a load order assigned
     to them. In Oblivion, Fallout 3 and Fallout&colon; New Vegas this is based on the modification time of the plugin,
-    in Skyrim and Enderal&colon; Forgotten Stories it is based to a text-file based standard the community agreed on,
-    while Fallout 4 and all later games dump all installed plugins in its plugins.txt, marking active ones with an asterisk.
-    Bash needs plugin load order even for inactive plugins to correctly merge inactive mods in the Bashed Patch, for instance.
+    in Skyrim and Enderal&colon; Forgotten Stories it is based on a text-file based standard the community agreed on,
+    while Fallout 4 and all later games dump all installed plugins in its plugins.txt, marking active ones with an asterisk (<code>*</code>).
+    Bash needs plugin load order even for inactive plugins to correctly merge inactive mods in the Bashed Patch, for instance.</p>
 <p>Plugins may be activated by clicking their checkbox so that it is ticked, or by selecting a plugin or group of plugins and pressing the
     space bar on your keyboard. Plugins may be deactivated by again clicking their checkbox or pressing the spacebar. If a group of selected
     plugins contains a mix of active and inactive plugins, pressing the space bar once will activate them all, thereafter it will function as normal.
@@ -509,6 +509,8 @@ from other packages previously overridden by the uninstalled package's
 <p>When setting the load order, make sure that Wrye Bash is displaying your plugins sorted by Load Order. Do so by clicking on the <q>Load Order</q> column header near the top of the tab. You can also display the plugins sorted by other attributes by clicking on any of the other column headers. Clicking twice will reverse the display order for any column but Load Order. The load order of plugins is given in hexadecimal digits, from 00 to FE, which is 0 to 254 in decimal. (This number also forms the first two digits of a record's Form ID.)
 <p>Note that you can only have a maximum of 255 plugins active at any one time, including your game's master file.
     Wrye Bash displays a plugin count in its status bar, to the right hand side, in the format <code>Mods: [active]/[installed]</code>.
+<p>Generally speaking, if you end up with an invalid load order of some kind, Wrye Bash will automatically fix it upon booting or refreshing,
+    but a backup copy (with the <code>.bak</code> extension) will be made before doing so.</p>
 <p>With the advent of <strong>ESL files</strong>, the load order system was modified.
 The following list contains the most important facts you need to know about how Wrye Bash handles ESL files:</p>
 <ol>

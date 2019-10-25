@@ -25,6 +25,9 @@
 
 """Game class implementing load order handling - **only** imported in
 load_order.py."""
+##: multiple backups? fixes can happen in rapid succession, so preserving
+# several older files in a directory would be useful (maybe limit to some
+# number, e.g. 5 older versions)
 
 __author__ = 'Utumno'
 
@@ -249,6 +252,7 @@ class Game(object):
 
     def _save_fixed_load_order(self, fix_lo, fixed_active, lo, active):
         if fix_lo.lo_changed():
+            self._backup_load_order()
             self._persist_load_order(lo, None) # active is not used here
 
     def set_load_order(self, lord, active, previous_lord=None,
@@ -323,6 +327,16 @@ class Game(object):
         return minf.has_esm_flag()
 
     # ABSTRACT ----------------------------------------------------------------
+    def _backup_active_plugins(self):
+        """This method should make a backup of whatever file is storing the
+        active plugins list."""
+        raise exception.AbstractError
+
+    def _backup_load_order(self):
+        """This method should make a backup of whatever file is storing the
+        load order plugins list."""
+        raise exception.AbstractError
+
     def _fetch_load_order(self, cached_load_order, cached_active):
         """:type cached_load_order: tuple[bolt.Path] | None
         :type cached_active: tuple[bolt.Path]"""
@@ -475,8 +489,9 @@ class Game(object):
             fix_active.act_reordered = (before_reorder, acti)
         if fix_active.act_changed():
             if on_disc: # used when getting active and found invalid, fix 'em!
-                # Notify user - ##: maybe backup previous plugin txt ?
+                # Notify user and backup previous plugins.txt
                 fix_active.act_header = u'Invalid Plugin txt corrected:\n'
+                self._backup_active_plugins()
                 self._persist_active_plugins(acti, lord)
             else: # active list we passed in when setting load order is invalid
                 fix_active.act_header = u'Invalid active plugins list corrected:\n'
@@ -559,6 +574,12 @@ class TimestampGame(Game):
         mods.sort(key=lambda x: not self.in_master_block(self.mod_infos[x]))
         return mods
 
+    def _backup_active_plugins(self):
+        self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
+
+    def _backup_load_order(self):
+        pass # timestamps, no file to backup
+
     def _fetch_load_order(self, cached_load_order, cached_active):
         self._rebuild_mtimes_cache() ##: will need that tweaked for lock load order
         return self.__calculate_mtime_order()
@@ -622,7 +643,7 @@ class TextfileGame(Game):
 
     def __init__(self, mod_infos, plugins_txt_path, loadorder_txt_path):
         super(TextfileGame, self).__init__(mod_infos, plugins_txt_path)
-        self.loadorder_txt_path = loadorder_txt_path
+        self.loadorder_txt_path = loadorder_txt_path # type: bolt.Path
         self.mtime_loadorder_txt = 0
         self.size_loadorder_txt = 0
 
@@ -651,6 +672,12 @@ class TextfileGame(Game):
             self.loadorder_txt_path.mtime = time.time() # update mtime to trigger refresh
 
     # Abstract overrides ------------------------------------------------------
+    def _backup_active_plugins(self):
+        self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
+
+    def _backup_load_order(self):
+        self.loadorder_txt_path.copyTo(self.loadorder_txt_path.backup)
+
     def _fetch_load_order(self, cached_load_order, cached_active):
         """Read data from loadorder.txt file. If loadorder.txt does not
         exist create it and try reading plugins.txt so the load order of the
@@ -704,6 +731,8 @@ class TextfileGame(Game):
             fetched_lo = lo[:]
             lo.sort(key=w.get)
             if lo != fetched_lo:
+                # We fixed a desync, make a backup and write the load order
+                self._backup_load_order()
                 self._persist_load_order(lo, lo)
                 bolt.deprint(u'Corrected %s (order of mods differed from '
                              u'their order in %s)' % (
@@ -780,6 +809,12 @@ class AsteriskGame(Game):
     def _must_update_active(deleted, reordered): return True
 
     # Abstract overrides ------------------------------------------------------
+    def _backup_active_plugins(self):
+        self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
+
+    def _backup_load_order(self):
+        self._backup_active_plugins() # same thing for asterisk games
+
     def _fetch_load_order(self, cached_load_order, cached_active):
         """Read data from plugins.txt file. If plugins.txt does not exist
         create it. Discards information read if cached is passed in."""
@@ -792,9 +827,17 @@ class AsteriskGame(Game):
             if rem in active or rem in lo:
                 to_drop.append(rem)
         lo, active = self._readd_in_lists(lo, active)
+        msg = u''
+        if not exists:
+            # Create it if it doesn't exist
+            msg = u'Created %s'
+        if to_drop:
+            # If we need to drop some mods, then make a backup first
+            self._backup_load_order()
+            msg = (u'Removed ' + u' ,'.join(map(unicode, to_drop)) +
+                   u' from %s')
         if not exists or to_drop:
-            msg = u'Created %s' if not exists else (u'Removed ' + u' ,'.join(
-                map(unicode, to_drop)) + u' from %s')
+            # In either case, write out the LO and deprint it
             self._persist_load_order(lo, active)
             bolt.deprint(msg % self.plugins_txt_path)
         return lo, active
@@ -810,7 +853,9 @@ class AsteriskGame(Game):
 
     def _save_fixed_load_order(self, fix_lo, fixed_active, lo, active):
         if fixed_active: return # plugins.txt already saved
-        if fix_lo.lo_changed(): self._persist_load_order(lo, active)
+        if fix_lo.lo_changed():
+            self._backup_load_order()
+            self._persist_load_order(lo, active)
 
     def _persist_if_changed(self, active, lord, previous_active,
                             previous_lord):
