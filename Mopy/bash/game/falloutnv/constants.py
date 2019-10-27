@@ -400,9 +400,9 @@ condition_function_data = {
     6217: ('GetTargetUnreachable', 0, 0),
 }
 
-#--List of GMST's in the main plugin (Skyrim.esm) that have 0x00000000
-#  as the form id.  Any GMST as such needs it Editor Id listed here.
-gmstEids = [
+#--List of GMST's in the main plugin (FalloutNV.esm) that have 0x00000000
+#  as the form id.  Any GMST as such needs its Editor Id listed here.
+gmstEids = [ # same as in fallout3
     'fPlayerDeathReloadTime','iMapMarkerVisibleDistance','fVanityModeWheelMax',
     'fChase3rdPersonZUnitsPerSecond','fAutoAimMaxDegreesMiss',
     'iHoursToRespawnCell','fEssentialDeathTime','fJumpHeightMin',
@@ -418,21 +418,7 @@ gmstEids = [
     'fRemoveExcessDeadTime','fRemoveExcessComplexDeadTime',
     'iLevItemLevelDifferenceMax','fMoveWeightMax',
 ]
-"""Constants used by the patchers."""
 
-#--GLOB record tweaks used by patcher.patchers.multitweak_settings.GmstTweaker
-#  Each entry is a tuple in the following format:
-#    (DisplayText, MouseoverText, GLOB EditorID, Option1, Option2, Option3, ..., OptionN)
-#    -EditorID can be a plain string, or a tuple of multiple Editor IDs.  If it's a tuple,
-#     then Value (below) must be a tuple of equal length, providing values for each GLOB
-#  Each Option is a tuple:
-#    (DisplayText, Value)
-#    - If you enclose DisplayText in brackets like this: _(u'[Default]'), then the patcher
-#      will treat this option as the default value.
-#    - If you use _(u'Custom') as the entry, the patcher will bring up a number input dialog
-#  To make a tweak Enabled by Default, enclose the tuple entry for the tweak in a list, and make
-#  a dictionary as the second list item with {'defaultEnabled':True}.  See the UOP Vampire face
-#  fix for an example of this (in the GMST Tweaks)
 GlobalsTweaks = [
     (_(u'Timescale'),_(u'Timescale will be set to:'),
         u'timescale',
@@ -448,19 +434,6 @@ GlobalsTweaks = [
         ),
     ]
 
-#--GMST record tweaks used by patcher.patchers.multitweak_settings.GmstTweaker
-#  Each entry is a tuple in the following format:
-#    (DisplayText, MouseoverText, GMST EditorID, Option1, Option2, Option3, ..., OptionN)
-#    -EditorID can be a plain string, or a tuple of multiple Editor IDs.  If it's a tuple,
-#     then Value (below) must be a tuple of equal length, providing values for each GMST
-#  Each Option is a tuple:
-#    (DisplayText, Value)
-#    - If you enclose DisplayText in brackets like this: _(u'[Default]'), then the patcher
-#      will treat this option as the default value.
-#    - If you use _(u'Custom') as the entry, the patcher will bring up a number input dialog
-#  To make a tweak Enabled by Default, enclose the tuple entry for the tweak in a list, and make
-#  a dictionary as the second list item with {'defaultEnabled':True}.  See the UOP Vampire face
-#  fix for an example of this (in the GMST Tweaks)
 GmstTweaks = [
     (_(u'Actor Strength Encumbrance Multiplier'),_(u"Actor's Strength X this = Actor's Encumbrance capacity."),
         (u'fActorStrengthEncumbranceMult',),

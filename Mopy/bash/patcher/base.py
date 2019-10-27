@@ -235,7 +235,7 @@ class AMultiTweakItem(object):
 
     #--Config Phase -----------------------------------------------------------
     # Methods present in _Abstract_Patcher too
-    def get_tweak_config(self, configs):
+    def init_tweak_config(self, configs):
         """Get config from configs dictionary and/or set to default."""
         self.isEnabled,self.chosen = self.defaultEnabled,0
         self._isNew = not (self.key in configs)

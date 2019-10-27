@@ -530,12 +530,9 @@ class CBash_PatchFile(_PFile, ObModFile):
                 for patcher in mod_apply:
                     patcher(modFile)
 
-        numFinishers = 0
-        for group, patchers in group_patchers.iteritems():
-            for patcher in patchers:
-                if hasattr(patcher,'finishPatch'):
-                    numFinishers += 1
-                    break
+        numFinishers = sum(
+            any(hasattr(p, 'finishPatch') for p in patchers) for patchers in
+            group_patchers.itervalues())
 
         progress = progress.setFull(len(groupOrder) + max(numFinishers,1))
         maxVersion = 0

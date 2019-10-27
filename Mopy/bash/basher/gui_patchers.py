@@ -698,7 +698,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         config = super(_TweakPatcherPanel, self).getConfig(configs)
         self.tweaks = copy.deepcopy(self.__class__.tweaks)
         for tweak in self.tweaks:
-            tweak.get_tweak_config(config)
+            tweak.init_tweak_config(config)
         return config
 
     def saveConfig(self, configs):
@@ -909,7 +909,7 @@ class _GmstTweakerPanel(_TweakPatcherPanel):
                     tweaksAppend(cls(*args,**kwdargs))
         self.tweaks.sort(key=lambda a: a.label.lower())
         for tweak in self.tweaks:
-            tweak.get_tweak_config(config)
+            tweak.init_tweak_config(config)
 
 #------------------------------------------------------------------------------
 # GUI Patcher classes - mixins of patchers and the GUI patchers defined above -

@@ -669,43 +669,21 @@ class CBash_GraphicsPatcher(_RecTypeModLogging, _AGraphicsPatcher):
     def initPatchFile(self, patchFile):
         super(CBash_GraphicsPatcher, self).initPatchFile(patchFile)
         if not self.isActive: return
-        class_attrs = self.class_attrs = {}
         model = ('modPath','modb','modt_p')
         icon = ('iconPath',)
-        class_attrs['BSGN'] = icon
-        class_attrs['LSCR'] = icon
-        class_attrs['CLAS'] = icon
-        class_attrs['LTEX'] = icon
-        class_attrs['REGN'] = icon
-        class_attrs['ACTI'] = model
-        class_attrs['DOOR'] = model
-        class_attrs['FLOR'] = model
-        class_attrs['FURN'] = model
-        class_attrs['GRAS'] = model
-        class_attrs['STAT'] = model
-        class_attrs['ALCH'] = icon + model
-        class_attrs['AMMO'] = icon + model
-        class_attrs['APPA'] = icon + model
-        class_attrs['BOOK'] = icon + model
-        class_attrs['INGR'] = icon + model
-        class_attrs['KEYM'] = icon + model
-        class_attrs['LIGH'] = icon + model
-        class_attrs['MISC'] = icon + model
-        class_attrs['SGST'] = icon + model
-        class_attrs['SLGM'] = icon + model
-        class_attrs['WEAP'] = icon + model
-        class_attrs['TREE'] = icon + model
-
-        class_attrs['ARMO'] = ('maleBody_list',
-                               'maleWorld_list',
-                               'maleIconPath',
-                               'femaleBody_list',
-                               'femaleWorld_list',
-                               'femaleIconPath', 'flags')
-        class_attrs['CLOT'] = class_attrs['ARMO']
-
+        class_attrs = self.class_attrs = dict.fromkeys(
+            ['BSGN', 'LSCR', 'CLAS', 'LTEX', 'REGN'], icon)
+        class_attrs.update(dict.fromkeys(
+            ['ACTI', 'DOOR', 'FLOR', 'FURN', 'GRAS', 'STAT'], model))
+        class_attrs.update(dict.fromkeys(
+            ['ALCH', 'AMMO', 'APPA', 'BOOK', 'INGR', 'KEYM', 'LIGH', 'MISC',
+             'SGST', 'SLGM', 'WEAP', 'TREE'], icon + model))
+        class_attrs['CLOT'] = class_attrs['ARMO'] = (
+            'maleBody_list', 'maleWorld_list', 'maleIconPath',
+            'femaleBody_list', 'femaleWorld_list', 'femaleIconPath', 'flags')
         class_attrs['CREA'] = ('bodyParts', 'nift_p')
-        class_attrs['MGEF'] = icon + model + ('effectShader','enchantEffect','light')
+        class_attrs['MGEF'] = icon + model + ('effectShader',
+                                              'enchantEffect','light')
         class_attrs['EFSH'] = ('fillTexturePath','particleTexturePath','flags','memSBlend','memBlendOp',
                                'memZFunc','fillRed','fillGreen','fillBlue','fillAIn','fillAFull',
                                'fillAOut','fillAPRatio','fillAAmp','fillAFreq','fillAnimSpdU',

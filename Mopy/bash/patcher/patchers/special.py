@@ -24,6 +24,7 @@
 import collections
 import copy
 import string
+from itertools import chain
 from operator import itemgetter, attrgetter
 # Internal
 from .base import Patcher, CBash_Patcher, SpecialPatcher, ListPatcher, \
@@ -48,6 +49,49 @@ class _AListsMerger(SpecialPatcher, AListPatcher):
     autoKey = {u'Delev', u'Relev'}
     iiMode = True
 
+    def _overhaul_compat(self, mods, _skip_id):
+        OOOMods = {GPath(u"Oscuro's_Oblivion_Overhaul.esm"),
+                   GPath(u"Oscuro's_Oblivion_Overhaul.esp")}
+        FransMods = {GPath(u"Francesco's Leveled Creatures-Items Mod.esm"),
+                     GPath(u"Francesco.esp")}
+        WCMods = {GPath(u"Oblivion Warcry.esp"),
+                  GPath(u"Oblivion Warcry EV.esp")}
+        TIEMods = {GPath(u"TIE.esp")}
+        OverhaulCompat = GPath(u"Unofficial Oblivion Patch.esp") in mods and (
+                (OOOMods | WCMods) & mods) or (
+                                 FransMods & mods and not (TIEMods & mods))
+        if OverhaulCompat:
+            self.OverhaulUOPSkips = set(
+                [_skip_id(x) for x in [
+                    0x03AB5D,  # VendorWeaponBlunt
+                    0x03C7F1,  # LL0LootWeapon0Magic4Dwarven100
+                    0x03C7F2,  # LL0LootWeapon0Magic7Ebony100
+                    0x03C7F3,  # LL0LootWeapon0Magic5Elven100
+                    0x03C7F4,  # LL0LootWeapon0Magic6Glass100
+                    0x03C7F5,  # LL0LootWeapon0Magic3Silver100
+                    0x03C7F7,  # LL0LootWeapon0Magic2Steel100
+                    0x03E4D2,  # LL0NPCWeapon0MagicClaymore100
+                    0x03E4D3,  # LL0NPCWeapon0MagicClaymoreLvl100
+                    0x03E4DA,  # LL0NPCWeapon0MagicWaraxe100
+                    0x03E4DB,  # LL0NPCWeapon0MagicWaraxeLvl100
+                    0x03E4DC,  # LL0NPCWeapon0MagicWarhammer100
+                    0x03E4DD,  # LL0NPCWeapon0MagicWarhammerLvl100
+                    0x0733EA,  # ArenaLeveledHeavyShield,
+                    0x0C7615,  # FGNPCWeapon0MagicClaymoreLvl100
+                    0x181C66,  # SQ02LL0NPCWeapon0MagicClaymoreLvl100
+                    0x053877,  # LL0NPCArmor0MagicLightGauntlets100
+                    0x053878,  # LL0NPCArmor0MagicLightBoots100
+                    0x05387A,  # LL0NPCArmor0MagicLightCuirass100
+                    0x053892,  # LL0NPCArmor0MagicLightBootsLvl100
+                    0x053893,  # LL0NPCArmor0MagicLightCuirassLvl100
+                    0x053894,  # LL0NPCArmor0MagicLightGauntletsLvl100
+                    0x053D82,  # LL0LootArmor0MagicLight5Elven100
+                    0x053D83,  # LL0LootArmor0MagicLight6Glass100
+                    0x052D89,  # LL0LootArmor0MagicLight4Mithril100
+                ]])
+        else:
+            self.OverhaulUOPSkips = set()
+
 class ListsMerger(_AListsMerger, ListPatcher):
 
     #--Patch Phase ------------------------------------------------------------
@@ -61,54 +105,8 @@ class ListsMerger(_AListsMerger, ListPatcher):
         self.mastersScanned = set()
         self.levelers = None #--Will initialize later
         self.empties = set()
-        OverhaulCompat = False
-        OOOMods = {GPath(u"Oscuro's_Oblivion_Overhaul.esm"),
-                   GPath(u"Oscuro's_Oblivion_Overhaul.esp")}
-        FransMods = {GPath(u"Francesco's Leveled Creatures-Items Mod.esm"),
-                     GPath(u"Francesco.esp")}
-        WCMods = {GPath(u"Oblivion Warcry.esp"),
-                  GPath(u"Oblivion Warcry EV.esp")}
-        TIEMods = {GPath(u"TIE.esp")}
-        if GPath(u"Unofficial Oblivion Patch.esp") in self.srcs:
-            if (OOOMods|WCMods) & self.srcs:
-                OverhaulCompat = True
-            elif FransMods & self.srcs:
-                if TIEMods & self.srcs:
-                    pass
-                else:
-                    OverhaulCompat = True
-        if OverhaulCompat:
-            self.OverhaulUOPSkips = set([
-                (GPath(u'Oblivion.esm'),x) for x in [
-                    0x03AB5D,   # VendorWeaponBlunt
-                    0x03C7F1,   # LL0LootWeapon0Magic4Dwarven100
-                    0x03C7F2,   # LL0LootWeapon0Magic7Ebony100
-                    0x03C7F3,   # LL0LootWeapon0Magic5Elven100
-                    0x03C7F4,   # LL0LootWeapon0Magic6Glass100
-                    0x03C7F5,   # LL0LootWeapon0Magic3Silver100
-                    0x03C7F7,   # LL0LootWeapon0Magic2Steel100
-                    0x03E4D2,   # LL0NPCWeapon0MagicClaymore100
-                    0x03E4D3,   # LL0NPCWeapon0MagicClaymoreLvl100
-                    0x03E4DA,   # LL0NPCWeapon0MagicWaraxe100
-                    0x03E4DB,   # LL0NPCWeapon0MagicWaraxeLvl100
-                    0x03E4DC,   # LL0NPCWeapon0MagicWarhammer100
-                    0x03E4DD,   # LL0NPCWeapon0MagicWarhammerLvl100
-                    0x0733EA,   # ArenaLeveledHeavyShield,
-                    0x0C7615,   # FGNPCWeapon0MagicClaymoreLvl100
-                    0x181C66,   # SQ02LL0NPCWeapon0MagicClaymoreLvl100
-                    0x053877,   # LL0NPCArmor0MagicLightGauntlets100
-                    0x053878,   # LL0NPCArmor0MagicLightBoots100
-                    0x05387A,   # LL0NPCArmor0MagicLightCuirass100
-                    0x053892,   # LL0NPCArmor0MagicLightBootsLvl100
-                    0x053893,   # LL0NPCArmor0MagicLightCuirassLvl100
-                    0x053894,   # LL0NPCArmor0MagicLightGauntletsLvl100
-                    0x053D82,   # LL0LootArmor0MagicLight5Elven100
-                    0x053D83,   # LL0LootArmor0MagicLight6Glass100
-                    0x052D89,   # LL0LootArmor0MagicLight4Mithril100
-                    ]
-                ])
-        else:
-            self.OverhaulUOPSkips = set()
+        _skip_id = lambda x: (GPath(u'Oblivion.esm'), x)
+        self._overhaul_compat(self.srcs, _skip_id)
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -258,54 +256,8 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
         self.id_attrs = {}
         self.empties = set()
         importMods = set(self.srcs) & patchFile.loadSet
-        OverhaulCompat = False
-        OOOMods = {GPath(u"Oscuro's_Oblivion_Overhaul.esm"),
-                   GPath(u"Oscuro's_Oblivion_Overhaul.esp")}
-        FransMods = {GPath(u"Francesco's Leveled Creatures-Items Mod.esm"),
-                     GPath(u"Francesco.esp")}
-        WCMods = {GPath(u"Oblivion Warcry.esp"),
-                  GPath(u"Oblivion Warcry EV.esp")}
-        TIEMods = {GPath(u"TIE.esp")}
-        if GPath(u"Unofficial Oblivion Patch.esp") in importMods:
-            if (OOOMods|WCMods) & importMods:
-                OverhaulCompat = True
-            elif FransMods & importMods:
-                if TIEMods & importMods:
-                    pass
-                else:
-                    OverhaulCompat = True
-        if OverhaulCompat:
-            self.OverhaulUOPSkips = set([
-                FormID(GPath(u'Oblivion.esm'),x) for x in [
-                    0x03AB5D,   # VendorWeaponBlunt
-                    0x03C7F1,   # LL0LootWeapon0Magic4Dwarven100
-                    0x03C7F2,   # LL0LootWeapon0Magic7Ebony100
-                    0x03C7F3,   # LL0LootWeapon0Magic5Elven100
-                    0x03C7F4,   # LL0LootWeapon0Magic6Glass100
-                    0x03C7F5,   # LL0LootWeapon0Magic3Silver100
-                    0x03C7F7,   # LL0LootWeapon0Magic2Steel100
-                    0x03E4D2,   # LL0NPCWeapon0MagicClaymore100
-                    0x03E4D3,   # LL0NPCWeapon0MagicClaymoreLvl100
-                    0x03E4DA,   # LL0NPCWeapon0MagicWaraxe100
-                    0x03E4DB,   # LL0NPCWeapon0MagicWaraxeLvl100
-                    0x03E4DC,   # LL0NPCWeapon0MagicWarhammer100
-                    0x03E4DD,   # LL0NPCWeapon0MagicWarhammerLvl100
-                    0x0733EA,   # ArenaLeveledHeavyShield,
-                    0x0C7615,   # FGNPCWeapon0MagicClaymoreLvl100
-                    0x181C66,   # SQ02LL0NPCWeapon0MagicClaymoreLvl100
-                    0x053877,   # LL0NPCArmor0MagicLightGauntlets100
-                    0x053878,   # LL0NPCArmor0MagicLightBoots100
-                    0x05387A,   # LL0NPCArmor0MagicLightCuirass100
-                    0x053892,   # LL0NPCArmor0MagicLightBootsLvl100
-                    0x053893,   # LL0NPCArmor0MagicLightCuirassLvl100
-                    0x053894,   # LL0NPCArmor0MagicLightGauntletsLvl100
-                    0x053D82,   # LL0LootArmor0MagicLight5Elven100
-                    0x053D83,   # LL0LootArmor0MagicLight6Glass100
-                    0x052D89,   # LL0LootArmor0MagicLight4Mithril100
-                    ]
-                ])
-        else:
-            self.OverhaulUOPSkips = set()
+        _skip_id = lambda x: FormID(GPath(u'Oblivion.esm'),x)
+        self._overhaul_compat(importMods, _skip_id)
 
     def getTypes(self):
         return ['LVLC','LVLI','LVSP']
@@ -625,7 +577,7 @@ class _AContentsChecker(SpecialPatcher):
     contType_entryTypes['NPC_'] = contType_entryTypes['LVLI']
     #--Types
     contTypes = set(contType_entryTypes)
-    entryTypes = reduce(set.union, contType_entryTypes.itervalues())
+    entryTypes = set(chain.from_iterable(contType_entryTypes.itervalues()))
 
 class ContentsChecker(_AContentsChecker,Patcher):
 

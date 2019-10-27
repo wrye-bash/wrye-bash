@@ -1154,7 +1154,7 @@ class RacePatcher(_ARacePatcher, ListPatcher):
 #-------------------------- CBash only RacePatchers --------------------------#
 class CBash_RacePatcher_Relations(SpecialPatcher):
     """Merges changes to race relations."""
-    autoKey = {'R.Relations'}
+    autoKey = {u'R.Relations'}
     iiMode = False
     allowUnloaded = True
     scanRequiresChecked = True
@@ -1212,37 +1212,35 @@ class CBash_RacePatcher_Relations(SpecialPatcher):
 
 class CBash_RacePatcher_Imports(SpecialPatcher):
     """Imports various race fields."""
-    autoKey = {'Hair', 'Body-M', 'Body-F', 'Voice-M', 'Voice-F', 'R.Teeth',
-               'R.Mouth', 'R.Ears', 'R.Head', 'R.Attributes-F',
-               'R.Attributes-M', 'R.Skills', 'R.Description', 'Body-Size-F',
-               'Body-Size-M'}
     tag_attrs = {
-        'Hair'  : ('hairs',),
-        'Body-M': ('maleTail_list','maleUpperBodyPath','maleLowerBodyPath',
-                   'maleHandPath','maleFootPath','maleTailPath'),
-        'Body-F': ('femaleTail_list','femaleUpperBodyPath',
-                   'femaleLowerBodyPath', 'femaleHandPath','femaleFootPath',
-                   'femaleTailPath'),
-        'Body-Size-M': ('maleHeight','maleWeight'),
-        'Body-Size-F': ('femaleHeight','femaleWeight'),
-        'Voice-M': ('maleVoice',),
-        'Voice-F': ('femaleVoice',),
-        'R.Teeth': ('teethLower_list','teethUpper_list',),
-        'R.Mouth': ('mouth_list','tongue_list',),
-        'R.Ears': ('maleEars_list','femaleEars_list',),
-        'R.Head': ('head_list','fggs_p','fgga_p','fgts_p','snam_p'),
-        'R.Attributes-M': ('maleStrength','maleIntelligence','maleWillpower',
-                           'maleAgility','maleSpeed','maleEndurance',
-                           'malePersonality','maleLuck'),
-        'R.Attributes-F': ('femaleStrength','femaleIntelligence',
-                           'femaleWillpower','femaleAgility','femaleSpeed',
-                           'femaleEndurance','femalePersonality','femaleLuck'),
-        'R.Skills': ('skill1','skill1Boost','skill2','skill2Boost','skill3',
-                     'skill3Boost','skill4','skill4Boost','skill5',
-                     'skill5Boost','skill6','skill6Boost','skill7',
-                     'skill7Boost'),
-        'R.Description': ('text',),
+        u'Hair'  : ('hairs',),
+        u'Body-M': ('maleTail_list','maleUpperBodyPath','maleLowerBodyPath',
+                    'maleHandPath', 'maleFootPath', 'maleTailPath'),
+        u'Body-F': ('femaleTail_list','femaleUpperBodyPath',
+                    'femaleLowerBodyPath', 'femaleHandPath', 'femaleFootPath',
+                    'femaleTailPath'),
+        u'Body-Size-M': ('maleHeight','maleWeight'),
+        u'Body-Size-F': ('femaleHeight','femaleWeight'),
+        u'Voice-M': ('maleVoice',),
+        u'Voice-F': ('femaleVoice',),
+        u'R.Teeth': ('teethLower_list','teethUpper_list',),
+        u'R.Mouth': ('mouth_list','tongue_list',),
+        u'R.Ears': ('maleEars_list','femaleEars_list',),
+        u'R.Head': ('head_list','fggs_p','fgga_p','fgts_p','snam_p'),
+        u'R.Attributes-M': ('maleStrength','maleIntelligence','maleWillpower',
+                            'maleAgility', 'maleSpeed', 'maleEndurance',
+                            'malePersonality', 'maleLuck'),
+        u'R.Attributes-F': ('femaleStrength','femaleIntelligence',
+                            'femaleWillpower', 'femaleAgility', 'femaleSpeed',
+                            'femaleEndurance', 'femalePersonality',
+                            'femaleLuck'),
+        u'R.Skills': ('skill1','skill1Boost','skill2','skill2Boost','skill3',
+                      'skill3Boost', 'skill4', 'skill4Boost', 'skill5',
+                      'skill5Boost', 'skill6', 'skill6Boost', 'skill7',
+                      'skill7Boost'),
+        u'R.Description': ('text',),
         }
+    autoKey = set(tag_attrs)
     iiMode = False
     allowUnloaded = True
     scanRequiresChecked = True
@@ -1270,7 +1268,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         recordId = record.fid
         for bashKey in bashTags & self.autoKey:
             attrs = self.tag_attrs[bashKey]
-            if bashKey == 'Hair':
+            if bashKey == u'Hair':
                 hairs = self.fid_attr_value[recordId].get('hairs', [])
                 hairs.extend([hair for hair in record.hairs if
                               hair.ValidateFormID(
@@ -1304,7 +1302,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
 
 class CBash_RacePatcher_Spells(SpecialPatcher):
     """Merges changes to race spells."""
-    autoKey = {'R.AddSpells', 'R.ChangeSpells'}
+    autoKey = {u'R.AddSpells', u'R.ChangeSpells'}
     iiMode = False
     allowUnloaded = True
     scanRequiresChecked = True
@@ -1332,7 +1330,7 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
         """Records information needed to apply the patch."""
         tags = bashTags & self.autoKey
         if tags:
-            if 'R.ChangeSpells' in tags and 'R.AddSpells' in tags:
+            if u'R.ChangeSpells' in tags and u'R.AddSpells' in tags:
                 raise BoltError(
                     u'WARNING mod %s has both R.AddSpells and R.ChangeSpells '
                     u'tags - only one of those tags should be on a mod at '
@@ -1341,9 +1339,9 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
                              spell.ValidateFormID(self.patchFile)])
             if curSpells:
                 spells = self.id_spells.setdefault(record.fid,set())
-                if 'R.ChangeSpells' in tags:
+                if u'R.ChangeSpells' in tags:
                     spells = curSpells
-                elif 'R.AddSpells' in tags:
+                elif u'R.AddSpells' in tags:
                     spells |= curSpells
 
     def apply(self,modFile,record,bashTags):
@@ -1364,7 +1362,7 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
 
 class CBash_RacePatcher_Eyes(SpecialPatcher):
     """Merges and filters changes to race eyes."""
-    autoKey = {'Eyes'}
+    autoKey = {u'Eyes'}
     blueEye = FormID(GPath(u'Oblivion.esm'),0x27308)
     argonianEye = FormID(GPath(u'Oblivion.esm'),0x3e91e)
     dremoraRace = FormID(GPath(u'Oblivion.esm'),0x038010)
