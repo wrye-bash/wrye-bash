@@ -36,6 +36,7 @@ class _ARoadImporter(AImportPatcher):
 
 class RoadImporter(ImportPatcher, _ARoadImporter):
     logMsg = u'\n=== ' + _(u'Worlds Patched')
+    _read_write_records = (b'CELL', b'WRLD', b'ROAD')
 
     def __init__(self, p_name, p_file, p_sources):
         super(RoadImporter, self).__init__(p_name, p_file, p_sources)
@@ -44,10 +45,8 @@ class RoadImporter(ImportPatcher, _ARoadImporter):
     def initData(self,progress):
         """Get cells from source files."""
         if not self.isActive: return
-        loadFactory = LoadFactory(False,MreRecord.type_class['CELL'],
-                                        MreRecord.type_class['WRLD'],
-                                        MreRecord.type_class['ROAD'])
-        progress.setFull(len(self.srcs))
+        loadFactory = LoadFactory(False, *[MreRecord.type_class[x] for x in
+                                           self._read_write_records])
         for srcMod in self.srcs:
             if srcMod not in self.patchFile.p_file_minfos: continue
             srcInfo = self.patchFile.p_file_minfos[srcMod]
@@ -60,14 +59,6 @@ class RoadImporter(ImportPatcher, _ARoadImporter):
                     road = worldBlock.road.getTypeCopy()
                     self.world_road[worldId] = road
         self.isActive = bool(self.world_road)
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('CELL','WRLD','ROAD',) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('CELL','WRLD','ROAD',) if self.isActive else ()
 
     def scanModFile(self, modFile, progress): # scanModFile3 ?
         """Add lists from modFile."""

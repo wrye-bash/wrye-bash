@@ -442,16 +442,6 @@ class ImportPatcher(AImportPatcher, ListPatcher):
     # Override in subclasses as needed
     logMsg = u'\n=== ' + _(u'Modified Records')
 
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return tuple(
-            x.classType for x in self.srcClasses) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return tuple(
-            x.classType for x in self.srcClasses) if self.isActive else ()
-
     def _patchLog(self,log,type_count):
         log.setHeader(u'= ' + self._patcher_name)
         self._srcMods(log)

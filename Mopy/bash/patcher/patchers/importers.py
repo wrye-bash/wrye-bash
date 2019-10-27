@@ -58,6 +58,16 @@ class _SimpleImporter(ImportPatcher):
         #--Needs Longs
         self.longTypes = set(self.__class__.long_types or self.rec_attrs)
 
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return tuple(
+            x.classType for x in self.srcClasses) if self.isActive else ()
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return tuple(
+            x.classType for x in self.srcClasses) if self.isActive else ()
+
     def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data):
         recAttrs = self.recAttrs_class[recClass]
         for record in srcFile.tops[recClass.classType].getActiveRecords():
@@ -245,6 +255,7 @@ class _RecTypeModLogging(CBash_ImportPatcher):
 # Patchers: 20 ----------------------------------------------------------------
 class CellImporter(ImportPatcher):
     logMsg = u'\n=== ' + _(u'Cells/Worlds Patched')
+    _read_write_records = ('CELL', 'WRLD')
 
     def __init__(self, p_name, p_file, p_sources):
         super(CellImporter, self).__init__(p_name, p_file, p_sources)
@@ -253,14 +264,6 @@ class CellImporter(ImportPatcher):
         # 'unused1','unused2','unused3'
         self.recAttrs = bush.game.cellRecAttrs # dict[unicode, tuple[str]]
         self.recFlags = bush.game.cellRecFlags # dict[unicode, str]
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('CELL','WRLD',) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('CELL','WRLD',) if self.isActive else ()
 
     def initData(self,progress):
         """Get cells from source files."""
@@ -1177,11 +1180,6 @@ class ImportFactions(_SimpleImporter):
     logMsg = u'\n=== ' + _(u'Refactioned Actors')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
-    def __init__(self, p_name, p_file, p_sources):
-        super(ImportFactions, self).__init__(p_name, p_file, p_sources)
-        self.activeTypes = []  #--Types ('CREA','NPC_') of data actually
-        # provided by src mods/files.
-
     def initData(self,progress):
         """Get names from source files."""
         actorFactions = self._parse_sources(progress, parser=ActorFactions)
@@ -1190,28 +1188,20 @@ class ImportFactions(_SimpleImporter):
         id_factions= self.id_data
         for type,aFid_factions in actorFactions.type_id_factions.iteritems():
             if type not in ('CREA','NPC_'): continue
-            self.activeTypes.append(type)
+            self.srcClasses.add(MreRecord.type_class[type])
             for longid,factions in aFid_factions.iteritems():
                 id_factions[longid] = factions
-        self.isActive = bool(self.activeTypes)
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return tuple(self.activeTypes) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return tuple(self.activeTypes) if self.isActive else()
+        self.isActive = bool(self.srcClasses)
 
     def scanModFile(self, modFile, progress): # scanModFile2
         """Scan modFile."""
         id_factions = self.id_data
         mapper = modFile.getLongMapper()
-        for type in self.activeTypes: # here differs from _scanModFile
-            if type not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile,type)
+        for recClass in self.srcClasses:
+            if recClass.classType not in modFile.tops: continue
+            patchBlock = getattr(self.patchFile, recClass.classType)
             id_records = patchBlock.id_records
-            for record in modFile.tops[type].getActiveRecords():
+            for record in modFile.tops[recClass.classType].getActiveRecords():
                 fid = record.fid
                 if not record.longFids: fid = mapper(fid)
                 if fid in id_records: continue
@@ -1247,9 +1237,6 @@ class ImportFactions(_SimpleImporter):
                 record.factions = [x for x in record.factions if x.rank != -1]
                 type_count[top_mod_rec] += 1
                 keep(fid)
-
-    def buildPatch(self, log, progress, types=None):
-        super(ImportFactions, self).buildPatch(log, progress, self.activeTypes)
 
 class CBash_ImportFactions(_RecTypeModLogging):
     listSrcs = False
@@ -1729,12 +1716,12 @@ class ImportActorsSpells(ImportPatcher):
         super(ImportActorsSpells, self).__init__(p_name, p_file, p_sources)
         # long_fid -> {'merged':list[long_fid], 'deleted':list[long_fid]}
         self.id_merged_deleted = {}
-        self.target_rec_types = bush.game.actor_types
+        self._read_write_records = bush.game.actor_types
 
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive: return
-        target_rec_types = self.target_rec_types
+        target_rec_types = self._read_write_records
         loadFactory = LoadFactory(False, *[MreRecord.type_class[x] for x
                                            in target_rec_types])
         progress.setFull(len(self.srcs))
@@ -1844,19 +1831,11 @@ class ImportActorsSpells(ImportPatcher):
                                                 i += 1
             progress.plus()
 
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return bush.game.actor_types if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return bush.game.actor_types if self.isActive else ()
-
     def scanModFile(self, modFile, progress): # scanModFile2
         """Add record from modFile."""
         merged_deleted = self.id_merged_deleted
         mapper = modFile.getLongMapper()
-        for type in self.target_rec_types:
+        for type in self._read_write_records:
             patchBlock = getattr(self.patchFile,type)
             for record in getattr(modFile,type).getActiveRecords():
                 fid = mapper(record.fid)
@@ -1870,7 +1849,7 @@ class ImportActorsSpells(ImportPatcher):
         keep = self.patchFile.getKeeper()
         merged_deleted = self.id_merged_deleted
         mod_count = Counter()
-        for rec_type in self.target_rec_types:
+        for rec_type in self._read_write_records:
             for record in getattr(self.patchFile,rec_type).records:
                 fid = record.fid
                 if fid not in merged_deleted: continue
@@ -2087,6 +2066,7 @@ class CBash_NamesPatcher(_ANamesPatcher, _RecTypeModLogging):
 #------------------------------------------------------------------------------
 class _ANpcFacePatcher(AImportPatcher):
     """NPC Faces patcher, for use with TNR or similar mods."""
+    _read_write_records = (b'NPC_',)
 
     def _ignore_record(self, faceMod):
         # Ignore the record. Another option would be to just ignore the
@@ -2175,14 +2155,6 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
                                 faceData[npc.fid].setdefault(attr,value)
             progress.plus()
 
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('NPC_',) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('NPC_',) if self.isActive else ()
-
     def scanModFile(self, modFile, progress): # scanModFile3: mapper unused !
         """Add lists from modFile."""
         modName = modFile.fileInfo.name
@@ -2217,7 +2189,6 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
 
 class CBash_NpcFacePatcher(_ANpcFacePatcher,CBash_ImportPatcher):
     logMsg = u'* '+_(u'Faces Patched') + u': %d'
-    _read_write_records = ('NPC_',)
 
     def __init__(self, p_name, p_file, p_sources):
         super(CBash_NpcFacePatcher, self).__init__(p_name, p_file, p_sources)
@@ -2456,6 +2427,7 @@ class _ASpellsPatcher(AImportPatcher):
     """Import spell changes from mod files."""
     scanOrder = 29
     editOrder = 29 #--Run ahead of bow patcher
+    _read_write_records = (b'SPEL',)
 
 class SpellsPatcher(ImportPatcher, _ASpellsPatcher):
     logMsg = u'\n=== ' + _(u'Modified SPEL Stats')
@@ -2475,14 +2447,6 @@ class SpellsPatcher(ImportPatcher, _ASpellsPatcher):
         #--Finish
         self.id_stat.update(spellStats.fid_stats)
         self.isActive = bool(self.id_stat)
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('SPEL',) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('SPEL',) if self.isActive else ()
 
     def scanModFile(self, modFile, progress): # scanModFile4: ?
         """Add affected items to patchFile."""
@@ -2529,7 +2493,6 @@ class SpellsPatcher(ImportPatcher, _ASpellsPatcher):
 
 class CBash_SpellsPatcher(CBash_ImportPatcher, _ASpellsPatcher):
     logMsg = u'* ' + _(u'Modified SPEL Stats') + u': %d'
-    _read_write_records = ('SPEL',)
 
     def __init__(self, p_name, p_file, p_sources):
         super(CBash_SpellsPatcher, self).__init__(p_name, p_file, p_sources)
