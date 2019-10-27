@@ -111,12 +111,19 @@ def isPBashMergeable(modInfo, minfos, reasons):
                 newblocks.append(top_type)
                 break
     if newblocks: reasons.append(_(u'New record(s) in block(s): ')+u', '.join(sorted(newblocks))+u'.')
-    dependent = [name.s for name, info in minfos.iteritems()
-                 if not info.isBP() and modInfo.name in info.get_masters()]
+    dependent = _dependent(modInfo, minfos)
     if dependent:
         if not verbose: return False
         reasons.append(_(u'Is a master of mod(s): ')+u', '.join(sorted(dependent))+u'.')
     return False if reasons else True
+
+def _dependent(modInfo, minfos):
+    """Get mods for which modInfo is a master mod (excluding BPs and
+    mergeable)."""
+    dependent = [mname.s for mname, info in minfos.iteritems() if
+                 not info.isBP() and modInfo.name in info.get_masters() and
+                 mname not in minfos.mergeable]
+    return dependent
 
 def is_esl_capable(modInfo, _minfos, reasons):
     """Determines whether or not the specified mod can be converted to a light
@@ -204,9 +211,7 @@ def _modIsMergeableLoad(modInfo, minfos, reasons):
                     if not verbose: return False
                     reasons.append(_(u'New record(s) in block(s): %s.') % u', '.join(sorted(newblocks)))
         # dependent mods mergeability should be determined BEFORE their masters
-        dependent = [name.s for name, info in minfos.iteritems() if
-                     not info.isBP() and modInfo.name in info.get_masters()
-                     and name not in minfos.mergeable]
+        dependent = _dependent(modInfo, minfos)
         if dependent:
             if not verbose: return False
             reasons.append(_(u'Is a master of non-mergeable mod(s): %s.') % u', '.join(sorted(dependent)))
