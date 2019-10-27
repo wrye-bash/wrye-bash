@@ -29,7 +29,6 @@ from operator import attrgetter
 # Internal
 from .base import ImportPatcher, CBash_ImportPatcher
 from ..base import AImportPatcher, AListPatcher
-from ... import bosh # for modInfos
 from ... import bush, load_order
 from ...bolt import GPath, MemorySet
 from ...brec import MreRecord, MelObject
@@ -37,7 +36,8 @@ from ...cint import ValidateDict, ValidateList, FormID, validTypes, \
     getattr_deep, setattr_deep
 from ...parsers import ActorFactions, CBash_ActorFactions, FactionRelations, \
     CBash_FactionRelations, FullNames, CBash_FullNames, ItemStats, \
-    CBash_ItemStats, SpellRecords, CBash_SpellRecords, LoadFactory, ModFile
+    CBash_ItemStats, SpellRecords, CBash_SpellRecords
+from ...mod_files import ModFile, LoadFactory
 
 class _SimpleImporter(ImportPatcher):
     """For lack of a better name - common methods of a bunch of importers.
@@ -88,10 +88,11 @@ class _SimpleImporter(ImportPatcher):
             x.classType for x in self.recAttrs_class)
         progress.setFull(len(self.srcs))
         cachedMasters = {}
+        minfs = self.patchFile.p_file_minfos
         for index,srcMod in enumerate(self.srcs):
             temp_id_data = {}
-            if srcMod not in bosh.modInfos: continue
-            srcInfo = bosh.modInfos[srcMod]
+            if srcMod not in minfs: continue
+            srcInfo = minfs[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             masters = srcInfo.get_masters()
             srcFile.load(True)
@@ -104,11 +105,11 @@ class _SimpleImporter(ImportPatcher):
                 self._init_data_loop(mapper, recClass, srcFile, srcMod,
                                      temp_id_data)
             for master in masters:
-                if master not in bosh.modInfos: continue # or break filter mods
+                if master not in minfs: continue # or break filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
-                    masterInfo = bosh.modInfos[master]
+                    masterInfo = minfs[master]
                     masterFile = ModFile(masterInfo,loadFactory)
                     masterFile.load(True)
                     masterFile.convertToLongFids(longTypes)
@@ -309,15 +310,16 @@ class CellImporter(ImportPatcher):
                                         MreRecord.type_class['WRLD'])
         progress.setFull(len(self.srcs))
         cachedMasters = {}
+        minfs = self.patchFile.p_file_minfos
         for srcMod in self.srcs:
-            if srcMod not in bosh.modInfos: continue
+            if srcMod not in minfs: continue
             # tempCellData maps long fids for cells in srcMod to dicts of
             # (attributes (among attrs) -> their values for this mod). It is
             # used to update cellData with cells that change those attributes'
             # values from the value in any of srcMod's masters.
             tempCellData = defaultdict(dict)
             tempCellData['Maps'] = {} # unused !
-            srcInfo = bosh.modInfos[srcMod]
+            srcInfo = minfs[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
             srcFile.convertToLongFids(('CELL','WRLD'))
@@ -344,11 +346,11 @@ class CellImporter(ImportPatcher):
                     #     if worldBlock.world.mapPath:
                     #         tempCellData['Maps'][worldBlock.world.fid] = worldBlock.world.mapPath
             for master in masters:
-                if master not in bosh.modInfos: continue # or break filter mods
+                if master not in minfs: continue # or break filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
-                    masterInfo = bosh.modInfos[master]
+                    masterInfo = minfs[master]
                     masterFile = ModFile(masterInfo,loadFactory)
                     masterFile.load(True)
                     masterFile.convertToLongFids(('CELL','WRLD'))
@@ -689,10 +691,11 @@ class ActorImporter(_SimpleImporter):
             x.classType for x in self.recAttrs_class)
         progress.setFull(len(self.srcs))
         cachedMasters = {}
+        minfs = self.patchFile.p_file_minfos
         for index,srcMod in enumerate(self.srcs):
             temp_id_data = {}
-            if srcMod not in bosh.modInfos: continue
-            srcInfo = bosh.modInfos[srcMod]
+            if srcMod not in minfs: continue
+            srcInfo = minfs[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             masters = srcInfo.get_masters()
             srcFile.load(True)
@@ -705,11 +708,11 @@ class ActorImporter(_SimpleImporter):
                 self._init_data_loop(mapper, recClass, srcFile, srcMod,
                                      temp_id_data)
             for master in masters:
-                if master not in bosh.modInfos: continue # or break filter mods
+                if master not in minfs: continue # or break filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
-                    masterInfo = bosh.modInfos[master]
+                    masterInfo = minfs[master]
                     masterFile = ModFile(masterInfo,loadFactory)
                     masterFile.load(True)
                     masterFile.convertToLongFids(longTypes)
@@ -930,10 +933,11 @@ class NPCAIPackagePatcher(ImportPatcher):
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         mer_del = self.id_merged_deleted
+        minfs = self.patchFile.p_file_minfos
         for index,srcMod in enumerate(self.srcs):
             tempData = {}
-            if srcMod not in bosh.modInfos: continue
-            srcInfo = bosh.modInfos[srcMod]
+            if srcMod not in minfs: continue
+            srcInfo = minfs[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             masters = srcInfo.get_masters()
             bashTags = srcInfo.getBashTags()
@@ -947,11 +951,11 @@ class NPCAIPackagePatcher(ImportPatcher):
                     fid = mapper(record.fid)
                     tempData[fid] = list(record.aiPackages)
             for master in reversed(masters):
-                if master not in bosh.modInfos: continue # or break filter mods
+                if master not in minfs: continue # or break filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
-                    masterInfo = bosh.modInfos[master]
+                    masterInfo = minfs[master]
                     masterFile = ModFile(masterInfo,loadFactory)
                     masterFile.load(True)
                     masterFile.convertToLongFids(target_rec_types)
@@ -1518,17 +1522,18 @@ class _AImportInventory(AListPatcher):  # next class that has ___init__
         # patchFile.allMods)]
         self.inventOnlyMods = set(x for x in self.srcs if (
                 x in p_file.mergeSet and {u'InventOnly', u'IIM'} &
-                bosh.modInfos[x].getBashTags()))
+                p_file.p_file_minfos[x].getBashTags()))
 
 class ImportInventory(_AImportInventory, ImportPatcher):
     logMsg = u'\n=== ' + _(u'Inventories Changed') + u': %d'
 
     def __init__(self, p_name, p_file, p_sources):
         p_sources = [x for x in p_sources if
-                     x in bosh.modInfos and x in p_file.allSet]
+                     x in p_file.p_file_minfos and x in p_file.allSet]
         super(ImportInventory, self).__init__(p_name, p_file, p_sources)
         self.masters = set(chain.from_iterable(
-            bosh.modInfos[srcMod].get_masters() for srcMod in self.srcs))
+            p_file.p_file_minfos[srcMod].get_masters()
+            for srcMod in self.srcs))
         self._masters_and_srcs = self.masters | set(self.srcs)
         self.mod_id_entries = {}
         self.touched = set()
@@ -1540,7 +1545,7 @@ class ImportInventory(_AImportInventory, ImportPatcher):
         loadFactory = LoadFactory(False, *inv_types)
         progress.setFull(len(self.srcs))
         for index,srcMod in enumerate(self.srcs):
-            srcInfo = bosh.modInfos[srcMod]
+            srcInfo = self.patchFile.p_file_minfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
             mapper = srcFile.getLongMapper()
@@ -1727,10 +1732,11 @@ class ImportActorsSpells(ImportPatcher):
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         mer_del = self.id_merged_deleted
+        minfs = self.patchFile.p_file_minfos
         for index,srcMod in enumerate(self.srcs):
             tempData = {}
-            if srcMod not in bosh.modInfos: continue
-            srcInfo = bosh.modInfos[srcMod]
+            if srcMod not in minfs: continue
+            srcInfo = minfs[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             masters = srcInfo.get_masters()
             bashTags = srcInfo.getBashTags()
@@ -1743,11 +1749,11 @@ class ImportActorsSpells(ImportPatcher):
                     fid = mapper(record.fid)
                     tempData[fid] = list(record.spells)
             for master in reversed(masters):
-                if master not in bosh.modInfos: continue # or break filter mods
+                if master not in minfs: continue # or break filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
-                    masterInfo = bosh.modInfos[master]
+                    masterInfo = minfs[master]
                     masterFile = ModFile(masterInfo,loadFactory)
                     masterFile.load(True)
                     masterFile.convertToLongFids(target_rec_types)
@@ -2087,10 +2093,11 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
         loadFactory = LoadFactory(False,MreRecord.type_class['NPC_'])
         progress.setFull(len(self.srcs))
         cachedMasters = {}
+        minfs = self.patchFile.p_file_minfos
         for index,faceMod in enumerate(self.srcs):
-            if faceMod not in bosh.modInfos: continue
+            if faceMod not in minfs: continue
             temp_faceData = {}
-            faceInfo = bosh.modInfos[faceMod]
+            faceInfo = minfs[faceMod]
             faceFile = ModFile(faceInfo,loadFactory)
             masters = faceInfo.get_masters()
             bashTags = faceInfo.getBashTags()
@@ -2132,11 +2139,11 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
                     faceData[fid] = temp_faceData[fid]
             else:
                 for master in masters:
-                    if master not in bosh.modInfos: continue # or break filter mods
+                    if master not in minfs: continue # or break filter mods
                     if master in cachedMasters:
                         masterFile = cachedMasters[master]
                     else:
-                        masterInfo = bosh.modInfos[master]
+                        masterInfo = minfs[master]
                         masterFile = ModFile(masterInfo,loadFactory)
                         masterFile.load(True)
                         masterFile.convertToLongFids(('NPC_',))
@@ -2562,10 +2569,11 @@ class WeaponModsPatcher(_SimpleImporter):
             x.classType for x in self.recAttrs_class)
         progress.setFull(len(self.srcs))
         cachedMasters = {}
+        minfs = self.patchFile.p_file_minfos
         for index,srcMod in enumerate(self.srcs):
             temp_id_data = {}
-            if srcMod not in bosh.modInfos: continue
-            srcInfo = bosh.modInfos[srcMod]
+            if srcMod not in minfs: continue
+            srcInfo = minfs[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             masters = srcInfo.get_masters()
             srcFile.load(True)
@@ -2578,11 +2586,11 @@ class WeaponModsPatcher(_SimpleImporter):
                 self._init_data_loop(mapper, recClass, srcFile, srcMod,
                                      temp_id_data)
             for master in masters:
-                if master not in bosh.modInfos: continue # or break filter mods
+                if master not in minfs: continue # or break filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
-                    masterInfo = bosh.modInfos[master]
+                    masterInfo = minfs[master]
                     masterFile = ModFile(masterInfo,loadFactory)
                     masterFile.load(True)
                     masterFile.convertToLongFids(longTypes)

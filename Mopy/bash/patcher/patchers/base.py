@@ -32,7 +32,7 @@ from .. import getPatchesPath
 from ..base import AMultiTweakItem, AMultiTweaker, Patcher, CBash_Patcher, \
     AAliasesPatcher, AListPatcher, AImportPatcher, APatchMerger, \
     AUpdateReferences
-from ... import bosh, load_order, bush  # for bosh.modInfos
+from ... import load_order, bush
 from ...bolt import GPath, CsvReader, deprint
 from ...brec import MreRecord
 
@@ -43,8 +43,8 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
 
     def __init__(self, p_name, p_file, p_sources):
         if not self.allowUnloaded:
-            p_sources = [s for s in p_sources if
-                s in p_file.allSet or not bosh.ModInfos.rightFileType(s.s)]
+            p_sources = [s for s in p_sources if s in p_file.allSet or
+                         not p_file.p_file_minfos.rightFileType(s.s)]
         super(CBash_ListPatcher, self).__init__(p_name, p_file, p_sources)
         # used in all subclasses except CBash_RacePatcher,
         # CBash_PatchMerger, CBash_UpdateReferences
@@ -343,8 +343,6 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
         for srcMod in load_order.get_ordered(count.keys()):
             log(u'* %s: %d' % (srcMod.s,count[srcMod]))
 
-from ...parsers import CBash_FidReplacer
-
 class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
     _read_write_records = (
         'MOD', 'FACT', 'RACE', 'MGEF', 'SCPT', 'LTEX', 'ENCH', 'SPEL', 'BSGN',
@@ -363,10 +361,11 @@ class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
     def initData(self, progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
+        from ...parsers import CBash_FidReplacer
         fidReplacer = CBash_FidReplacer(aliases=self.patchFile.aliases)
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
-            if not bosh.ModInfos.rightFileType(srcFile):
+            if not self.patchFile.p_file_minfos.rightFileType(srcFile):
                 try: fidReplacer.readFromText(getPatchesPath(srcFile))
                 except OSError: deprint(
                     u'%s is no longer in patches set' % srcFile, traceback=True)
@@ -429,11 +428,12 @@ class SpecialPatcher(CBash_Patcher):
             self.scan(modFile,record,bashTags)
         #Must check for "unloaded" conflicts that occur past the winning record
         #If any exist, they have to be scanned
+        minfs = self.patchFile.p_file_minfos
         for conflict in record.Conflicts(True):
             if conflict != record:
                 mod = conflict.GetParentMod()
                 if mod.GName in self.srcs:
-                    tags = bosh.modInfos[mod.GName].getBashTags()
+                    tags = minfs[mod.GName].getBashTags()
                     self.scan(mod,conflict,tags)
             else: return
 
@@ -480,9 +480,10 @@ class ImportPatcher(AImportPatcher, ListPatcher):
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
-            if bosh.ModInfos.rightFileType(srcPath):
-                if srcPath not in bosh.modInfos: continue
-                srcInfo = bosh.modInfos[srcPath]
+            minfs = self.patchFile.p_file_minfos
+            if minfs.rightFileType(srcPath):
+                if srcPath not in minfs: continue
+                srcInfo = minfs[srcPath]
                 fullNames.readFromMod(srcInfo)
             else:
                 try:
@@ -524,12 +525,12 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher, SpecialPatcher):
     # helpers WIP
     def _parse_texts(self, parser_class, progress):
         actorFactions = parser_class(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs)) ##: make sure self.srcs are paths, drop GPath call below
+        progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            if not bosh.ModInfos.rightFileType(srcFile):
+            if not self.patchFile.p_file_minfos.rightFileType(srcFile):
                 try: actorFactions.readFromText(getPatchesPath(srcFile))
-                except OSError: deprint(
-                    u'%s is no longer in patches set' % srcPath, traceback=True)
+                except OSError:
+                    deprint(u'%s is no longer in patches set' % srcFile,
+                            traceback=True)
             progress.plus()
         return actorFactions

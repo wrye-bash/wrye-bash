@@ -31,12 +31,12 @@ from .. import bolt # for type hints
 from ..balt import readme_url
 from .. import load_order
 from .. import bass
-from ..parsers import LoadFactory, ModFile, MasterSet
 from ..brec import MreRecord
 from ..bolt import GPath, SubProgress, deprint, Progress
 from ..cint import ObModFile, FormID, dump_record, ObCollection, MGEFCode
 from ..exception import BoltError, CancelError, ModError, StateError
 from ..localize import format_date
+from ..mod_files import ModFile, LoadFactory, MasterSet
 from ..record_groups import MobObjects
 
 # the currently executing patch set in _Mod_Patch_Update before showing the

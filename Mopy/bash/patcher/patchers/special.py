@@ -28,7 +28,7 @@ from operator import itemgetter, attrgetter
 # Internal
 from .base import Patcher, CBash_Patcher, ListPatcher, CBash_ListPatcher
 from ..base import Abstract_Patcher, AListPatcher
-from ... import bosh, bush, load_order  # for modInfos
+from ... import bush, load_order
 from ...bolt import GPath, SubProgress
 from ...cint import FormID
 from ...exception import AbstractError
@@ -106,7 +106,7 @@ class _AListsMerger(AListPatcher):
         # 'De'-tagged plugin
         self.de_masters = set()
         for leveler in self.levelers:
-            self.de_masters.update(bosh.modInfos[leveler].get_masters())
+            self.de_masters.update(p_file.p_file_minfos[leveler].get_masters())
         self.srcs = set(self.srcs) & p_file.loadSet
         self.remove_empty_sublists = remove_empty
         self.tag_choices = tag_choices

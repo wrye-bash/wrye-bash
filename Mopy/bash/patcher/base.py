@@ -30,7 +30,7 @@ from this module outside of the patcher package."""
 # unhelpful) docs from overriding methods to save some (100s) lines. We must
 # also document which methods MUST be overridden by raising AbstractError. For
 # instance Patcher.buildPatch() apparently is NOT always overridden
-from .. import load_order, bosh, bolt
+from .. import load_order, bolt
 
 #------------------------------------------------------------------------------
 # Abstract_Patcher and subclasses ---------------------------------------------
@@ -104,8 +104,9 @@ class CBash_Patcher(Abstract_Patcher):
         for top_group_sig in self.getTypes():
             self.patchFile.group_patchers[top_group_sig].append(self)
         if self.allowUnloaded:
-            loadMods = set([mod for mod in self.srcs if bosh.ModInfos.rightFileType(
-                mod) and mod not in self.patchFile.allMods])
+            loadMods = set([mod for mod in self.srcs if
+                            self.patchFile.p_file_minfos.rightFileType(
+                                mod) and mod not in self.patchFile.allMods])
             self.patchFile.scanSet |= loadMods
 
     def buildPatchLog(self,log):

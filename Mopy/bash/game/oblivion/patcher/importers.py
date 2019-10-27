@@ -21,8 +21,8 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from ....parsers import LoadFactory, ModFile
 from ....brec import MreRecord
+from ....mod_files import ModFile, LoadFactory
 from ....patcher.patchers.base import AImportPatcher, CBash_ImportPatcher, \
     ImportPatcher
 

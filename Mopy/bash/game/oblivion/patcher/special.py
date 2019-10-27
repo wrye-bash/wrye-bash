@@ -24,13 +24,12 @@
 import os
 import re
 from collections import Counter, defaultdict
-from ....bolt import GPath, sio, SubProgress, CsvReader, deprint
-from ....patcher import getPatchesPath
-from ....parsers import LoadFactory, ModFile
-from ....brec import MreRecord, RecordHeader, null4
 from .... import bush, load_order
-from ....cint import MGEFCode, FormID
+from ....bolt import GPath, sio, SubProgress, CsvReader, deprint
+from ....brec import MreRecord, RecordHeader, null4
 from ....exception import StateError
+from ....mod_files import ModFile, LoadFactory
+from ....patcher import getPatchesPath
 from ....patcher.base import Patcher, CBash_Patcher, Abstract_Patcher, \
     AListPatcher
 from ....patcher.patchers.base import ListPatcher, CBash_ListPatcher
@@ -195,6 +194,7 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
         p_file.indexMGEFs = True
         self.id_ingred = {}
         self.effect_ingred = defaultdict(list)
+        from ....cint import MGEFCode
         self.SEFF = MGEFCode('SEFF')
         self.DebugPrintOnce = 0
 
@@ -220,7 +220,7 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
             print u"CBash_AlchemicalCatalogs:finishPatch"
             print error[0]
             return
-
+        from ....cint import FormID
         mgef_name = patchFile.mgef_name.copy()
         for mgef in mgef_name:
             mgef_name[mgef] = re.sub(_(u'(Attribute|Skill)'), u'',
@@ -466,8 +466,13 @@ class CoblExhaustion(_ACoblExhaustion,ListPatcher):
         self._pLog(log, count)
 
 class CBash_CoblExhaustion(_ACoblExhaustion, _DefaultDictLog):
-    SEFF = MGEFCode('SEFF')
-    exhaustionId = FormID(_cobl_main, 0x05139B)
+
+    def __init__(self, *args, **kwargs):
+        super(CBash_CoblExhaustion, self).__init__(*args, **kwargs)
+        from ....cint import MGEFCode, FormID
+        self.SEFF = MGEFCode('SEFF')
+        self._null_mgef = MGEFCode(None,None)
+        self.exhaustionId = FormID(_cobl_main, 0x05139B)
 
     def initData(self, progress):
         if not self.isActive: return
@@ -479,6 +484,7 @@ class CBash_CoblExhaustion(_ACoblExhaustion, _DefaultDictLog):
             except OSError: deprint(
                 u'%s is no longer in patches set' % srcFile, traceback=True)
             progress.plus()
+        from ....cint import FormID
         self.id_exhaustion = {FormID(*k): v for k, v in
                               self.id_exhaustion.iteritems()}
 
@@ -503,7 +509,7 @@ class CBash_CoblExhaustion(_ACoblExhaustion, _DefaultDictLog):
                 effect.full = u'Power Exhaustion'
                 effect.script = self.exhaustionId
                 effect.IsDestruction = True
-                effect.visual = MGEFCode(None,None)
+                effect.visual = self._null_mgef
                 effect.IsHostile = False
                 self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
@@ -631,6 +637,7 @@ class CBash_MFactMarker(_AMFactMarker, _DefaultDictLog):
         self.isActive = _cobl_main in p_file.loadSet and \
             self.patchFile.p_file_minfos.getVersionFloat(_cobl_main) > 1.27
         self.id_info = {} #--Morphable factions keyed by fid
+        from ....cint import FormID
         self.mFactLong = FormID(_cobl_main, 0x33FB)
         self.mFactable = set()
 
@@ -644,6 +651,7 @@ class CBash_MFactMarker(_AMFactMarker, _DefaultDictLog):
             except OSError: deprint(
                 u'%s is no longer in patches set' % srcFile, traceback=True)
             progress.plus()
+        from ....cint import FormID
         self.id_info = {FormID(*k): v for k, v in self.id_info.iteritems()}
 
     def apply(self,modFile,record,bashTags):

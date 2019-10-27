@@ -27,7 +27,7 @@ from ..bolt import Flags, encode, sio, Path, struct_pack, struct_unpack
 from ..exception import SaveFileError, StateError
 from . import SaveInfo
 from ._saves import SreNPC, SaveFile
-from ..parsers import LoadFactory, ModFile, MasterMap
+from ..mod_files import LoadFactory, MasterMap, ModFile
 from ..brec import getModIndex, MreRecord, genFid, RecordHeader, null2
 
 class PCFaces(object):

@@ -39,10 +39,10 @@ from ...bolt import SubProgress, GPath, deprint
 from ...brec import MreRecord, MelObject, strFid
 from ...cint import ValidateDict, FormID
 from ...exception import BoltError
+from ...mod_files import ModFile, LoadFactory
 from ...patcher.base import AMultiTweakItem, AListPatcher, AMultiTweaker
 from .base import MultiTweakItem, CBash_MultiTweakItem, SpecialPatcher, \
     ListPatcher, CBash_ListPatcher, CBash_MultiTweaker
-from ...parsers import LoadFactory, ModFile
 
 # Patchers: 40 ----------------------------------------------------------------
 class ARaceTweaker_BiggerOrcsAndNords(AMultiTweakItem):

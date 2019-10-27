@@ -28,7 +28,7 @@ from ..bolt import GPath
 from ..cint import ObCollection
 from ..exception import ModError
 from ..load_order import cached_is_active
-from ..parsers import LoadFactory, ModFile, ModHeaderReader
+from ..mod_files import LoadFactory, ModHeaderReader, ModFile
 
 def _is_mergeable_no_load(modInfo, reasons):
     verbose = reasons is not None

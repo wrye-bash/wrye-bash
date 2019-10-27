@@ -31,14 +31,15 @@ import re
 import shutil
 from . import BashFrame
 from .dialogs import ImportFaceDialog
-from .. import bass, bosh, bolt, balt, bush, parsers, load_order, \
-    initialization
+from .. import bass, bosh, bolt, balt, bush, load_order, initialization
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, UIList_Rename
-from ..gui import Image
 from ..bolt import GPath, SubProgress, struct_pack, struct_unpack
 from ..bosh import faces, SaveInfo
+from ..brec import MreRecord
 from ..exception import ArgumentError, BoltError, CancelError, ModError
+from ..mod_files import LoadFactory, MasterMap, ModFile
+from ..gui import Image
 
 __all__ = ['Saves_Profiles', 'Save_Rename', 'Save_Renumber', 'Save_Move',
            'Save_LoadMasters', 'Save_DiffMasters', 'Save_Stats',
@@ -868,15 +869,14 @@ class Save_UpdateNPCLevels(EnabledLink):
         with balt.Progress(_(u'Update NPC Levels')) as progress:
             #--Loop over active mods
             npc_info = {}
-            loadFactory = parsers.LoadFactory(
-                    False, bosh.MreRecord.type_class['NPC_'])
+            loadFactory = LoadFactory(False, MreRecord.type_class['NPC_'])
             ordered = list(load_order.cached_active_tuple())
             subProgress = SubProgress(progress,0,0.4,len(ordered))
             modErrors = []
             for index,modName in enumerate(ordered):
                 subProgress(index,_(u'Scanning ') + modName.s)
                 modInfo = bosh.modInfos[modName]
-                modFile = parsers.ModFile(modInfo, loadFactory)
+                modFile = ModFile(modInfo, loadFactory)
                 try:
                     modFile.load(True)
                 except ModError as x:
@@ -884,7 +884,8 @@ class Save_UpdateNPCLevels(EnabledLink):
                     continue
                 if 'NPC_' not in modFile.tops: continue
                 #--Loop over mod NPCs
-                mapToOrdered = parsers.MasterMap(modFile.tes4.masters + [modName], ordered)
+                mapToOrdered = MasterMap(modFile.tes4.masters + [modName],
+                                         ordered)
                 for npc in modFile.NPC_.getActiveRecords():
                     fid = mapToOrdered(npc.fid,None)
                     if not fid: continue
@@ -897,7 +898,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                 saveFile = bosh._saves.SaveFile(saveInfo)
                 saveFile.load()
                 records = saveFile.records
-                mapToOrdered = parsers.MasterMap(saveFile.masters, ordered)
+                mapToOrdered = MasterMap(saveFile.masters, ordered)
                 releveledCount = 0
                 #--Loop over change records
                 for recNum in xrange(len(records)):

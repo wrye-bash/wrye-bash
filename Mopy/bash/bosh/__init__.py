@@ -58,7 +58,7 @@ from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
     SaveFileError, SaveHeaderError, SkipError, StateError
 from ..ini_files import IniFile, OBSEIniFile, DefaultIniFile, GameIni, \
     get_ini_type_and_encoding
-from ..parsers import ModFile
+from ..mod_files import ModFile
 
 # Singletons, Constants -------------------------------------------------------
 #--Constants
