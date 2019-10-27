@@ -49,7 +49,7 @@ class _PFile(object):
     def __init__(self, patchers, patch_path):
         """:type patch_path: bolt.Path"""
         #--New attrs
-        self.patchers = patchers
+        self._patcher_instances = patchers
         self.patchName = patch_path # the bashed Patch
         # Aliases from one mod name to another. Used by text file patchers.
         self.aliases = {}
@@ -73,7 +73,7 @@ class _PFile(object):
         self.loadMods = tuple(loadMods)
         self.loadSet = frozenset(self.loadMods)
         self.set_mergeable_mods([])
-        for patcher in self.patchers:
+        for patcher in self._patcher_instances:
             patcher.initPatchFile(self)
 
     def set_mergeable_mods(self, mergeMods):
@@ -185,9 +185,9 @@ class PatchFile(_PFile, ModFile):
 
     def init_patchers_data(self, progress):
         """Gives each patcher a chance to get its source data."""
-        if not len(self.patchers): return
-        progress = progress.setFull(len(self.patchers))
-        for index,patcher in enumerate(self.patchers):
+        if not self._patcher_instances: return
+        progress = progress.setFull(len(self._patcher_instances))
+        for index,patcher in enumerate(self._patcher_instances):
             progress(index,_(u'Preparing')+u'\n'+patcher.getName())
             patcher.initData(SubProgress(progress,index))
         progress(progress.full,_(u'Patchers prepared.'))
@@ -197,7 +197,7 @@ class PatchFile(_PFile, ModFile):
         progress(0,_(u"Processing."))
         readClasses = {x for x in bush.game.readClasses}
         writeClasses = {x for x in bush.game.writeClasses}
-        for patcher in self.patchers:
+        for patcher in self._patcher_instances:
             readClasses.update(
                 MreRecord.type_class[x] for x in patcher.getReadClasses())
             writeClasses.update(
@@ -246,7 +246,7 @@ class PatchFile(_PFile, ModFile):
                 else:
                     progress(pstate,modName.s+u'\n'+_(u'Scanning...'))
                     self.update_patch_records_from_mod(modFile)
-                for patcher in sorted(self.patchers,key=attrgetter('scanOrder')):
+                for patcher in sorted(self._patcher_instances, key=attrgetter('scanOrder')):
                     if iiMode and not patcher.iiMode: continue
                     progress(pstate,u'%s\n%s' % (modName.s,patcher.name))
                     patcher.scanModFile(modFile,nullProgress)
@@ -322,13 +322,14 @@ class PatchFile(_PFile, ModFile):
                 block.updateRecords(modFile.tops[blockType],mapper,mergeIds)
 
     def buildPatch(self,log,progress):
-        """Completes merge process. Use this when finished using scanLoadMods."""
-        if not len(self.patchers): return
+        """Completes merge process. Use this when finished using
+        scanLoadMods."""
+        if not self._patcher_instances: return
         self._log_header(log, self.fileInfo.name.s)
         #--Patchers
         self.keepIds |= self.mergeIds
-        subProgress = SubProgress(progress,0,0.9,len(self.patchers))
-        for index,patcher in enumerate(sorted(self.patchers,key=attrgetter('editOrder'))):
+        subProgress = SubProgress(progress, 0, 0.9, len(self._patcher_instances))
+        for index,patcher in enumerate(sorted(self._patcher_instances, key=attrgetter('editOrder'))):
             subProgress(index,_(u'Completing')+u'\n%s...' % patcher.getName())
             patcher.buildPatch(log,SubProgress(subProgress,index))
         #--Trim records
@@ -367,9 +368,9 @@ class CBash_PatchFile(_PFile, ObModFile):
 
     def init_patchers_data(self, progress):
         """Gives each patcher a chance to get its source data."""
-        if not len(self.patchers): return
-        progress = progress.setFull(len(self.patchers))
-        for index,patcher in enumerate(sorted(self.patchers,key=attrgetter('scanOrder'))):
+        if not self._patcher_instances: return
+        progress = progress.setFull(len(self._patcher_instances))
+        for index,patcher in enumerate(sorted(self._patcher_instances, key=attrgetter('scanOrder'))):
             progress(index,_(u'Preparing')+u'\n'+patcher.getName())
             patcher.initData(self.group_patchers,SubProgress(progress,index))
         progress(progress.full,_(u'Patchers prepared.'))
@@ -634,11 +635,11 @@ class CBash_PatchFile(_PFile, ObModFile):
 
     def buildPatchLog(self, log, progress):
         """Completes merge process. Use this when finished using buildPatch."""
-        if not len(self.patchers): return
+        if not self._patcher_instances: return
         self._log_header(log, self.patchName)
         #--Patchers
-        subProgress = SubProgress(progress,0,0.9,len(self.patchers))
-        for index,patcher in enumerate(sorted(self.patchers,key=attrgetter('editOrder'))):
+        subProgress = SubProgress(progress, 0, 0.9, len(self._patcher_instances))
+        for index,patcher in enumerate(sorted(self._patcher_instances, key=attrgetter('editOrder'))):
             subProgress(index,_(u'Completing')+u'\n%s...' % patcher.getName())
             patcher.buildPatchLog(log)
         progress(1.0,_(u"Compiled."))

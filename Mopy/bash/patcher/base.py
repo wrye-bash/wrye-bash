@@ -206,10 +206,10 @@ class AMultiTweakItem(object):
     """A tweak item, optionally with configuration choices."""
     tweak_read_classes = ()
 
-    def __init__(self,label,tip,key,*choices,**kwargs):
+    def __init__(self, label, tweak_tip, key, *choices, **kwargs):
         # TODO: docs for attributes !
         self.label = label
-        self.tip = tip
+        self.tweak_tip = tweak_tip
         self.key = key
         self.choiceLabels = []
         self.choiceValues = []

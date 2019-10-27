@@ -129,9 +129,9 @@ class CBash_NamesTweak_Body(CBash_MultiTweakItem):
     """Names tweaker for armor and clothes."""
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self, label, tip, key, *choices, **kwargs):
-        super(CBash_NamesTweak_Body, self).__init__(label, tip, key, *choices,
-                                                    **kwargs)
+    def __init__(self, label, tweak_tip, key, *choices, **kwargs):
+        super(CBash_NamesTweak_Body, self).__init__(label, tweak_tip, key,
+                                                    *choices, **kwargs)
         self.logMsg = u'* ' + _(u'%(record_type)s Renamed') % {
             'record_type': (u'%s ' % self.key)} + u': %d'
 
@@ -630,17 +630,17 @@ class CBash_NamesTweak_Weapons(ANamesTweak_Weapons,CBash_MultiTweakItem):
 class ATextReplacer(AMultiTweakItem):
     """Base class for replacing any text via regular expressions."""
     #--Config Phase -----------------------------------------------------------
-    def __init__(self, reMatch, reReplace, label, tip, key, choices):
-        super(ATextReplacer, self).__init__(label, tip, key, choices)
+    def __init__(self, reMatch, reReplace, label, tweak_tip, key, choices):
+        super(ATextReplacer, self).__init__(label, tweak_tip, key, choices)
         self.reMatch = reMatch
         self.reReplace = reReplace
         self.logMsg = u'* '+_(u'Items Renamed') + u': %d'
 
 class TextReplacer(ATextReplacer,_AMultiTweakItem_Names):
     #--Config Phase -----------------------------------------------------------
-    def __init__(self, reMatch, reReplace, label, tip, key, choices):
-        super(TextReplacer, self).__init__(reMatch, reReplace, label, tip, key,
-                                           choices)
+    def __init__(self, reMatch, reReplace, label, tweak_tip, key, choices):
+        super(TextReplacer, self).__init__(reMatch, reReplace, label,
+                                           tweak_tip, key, choices)
         self.activeTypes = ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
                             'CLAS','CLOT','CONT','CREA','DOOR',
                             'ENCH','EYES','FACT','FLOR','FURN','GMST',

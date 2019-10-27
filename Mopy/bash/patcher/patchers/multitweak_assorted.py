@@ -43,8 +43,8 @@ class AssortedTweak_ArmorShows(MultiTweakItem):
     tweak_read_classes = 'ARMO',
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self,label,tip,key):
-        super(AssortedTweak_ArmorShows, self).__init__(label,tip,key)
+    def __init__(self, label, tweak_tip, key):
+        super(AssortedTweak_ArmorShows, self).__init__(label, tweak_tip, key)
         self.hidesBit = {u'armorShowsRings':16,u'armorShowsAmulets':17}[key]
         self.logMsg = u'* '+_(u'Armor Pieces Tweaked') + u': %d'
 
@@ -77,8 +77,9 @@ class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
     tweak_read_classes = 'ARMO',
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self,label,tip,key):
-        super(CBash_AssortedTweak_ArmorShows, self).__init__(label,tip,key)
+    def __init__(self, label, tweak_tip, key):
+        super(CBash_AssortedTweak_ArmorShows, self).__init__(label, tweak_tip,
+                                                             key)
         self.hideFlag = {u'armorShowsRings': 'IsHideRings',
                          u'armorShowsAmulets': 'IsHideAmulets'}[key]
         self.logMsg = u'* '+_(u'Armor Pieces Tweaked') + u': %d'
@@ -102,8 +103,9 @@ class AssortedTweak_ClothingShows(MultiTweakItem):
     tweak_read_classes = 'CLOT',
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self,label,tip,key):
-        super(AssortedTweak_ClothingShows, self).__init__(label,tip,key)
+    def __init__(self, label, tweak_tip, key):
+        super(AssortedTweak_ClothingShows, self).__init__(label, tweak_tip,
+                                                          key)
         self.hidesBit = \
             {u'ClothingShowsRings': 16, u'ClothingShowsAmulets': 17}[key]
         self.logMsg = u'* '+_(u'Clothing Pieces Tweaked') + u': %d'
@@ -137,8 +139,9 @@ class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
     tweak_read_classes = 'CLOT',
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self,label,tip,key):
-        super(CBash_AssortedTweak_ClothingShows, self).__init__(label,tip,key)
+    def __init__(self, label, tweak_tip, key):
+        super(CBash_AssortedTweak_ClothingShows, self).__init__(label,
+                                                                tweak_tip, key)
         self.hideFlag = {u'ClothingShowsRings': 'IsHideRings',
                          u'ClothingShowsAmulets': 'IsHideAmulets'}[key]
         self.logMsg = u'* '+_(u'Clothing Pieces Tweaked') + u': %d'

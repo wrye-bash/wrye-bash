@@ -50,8 +50,8 @@ class AClothesTweak(AMultiTweakItem):
         # u'rings':   (1<<6) + (1<<7),
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self,label,tip,key,*choices):
-        super(AClothesTweak,self).__init__(label,tip,key,*choices)
+    def __init__(self, label, tweak_tip, key, *choices):
+        super(AClothesTweak,self).__init__(label, tweak_tip, key, *choices)
         typeKey = key[:key.find(u'.')]
         self.orTypeFlags = typeKey == u'rings'
         self.typeFlags = self.__class__.clothes_flags[typeKey]
@@ -95,9 +95,9 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
     name = _(u'Reweigh Clothes')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self,label,tip,key,*choices):
-        super(CBash_ClothesTweak_MaxWeight, self).__init__(label, tip, key,
-                                                           *choices)
+    def __init__(self, label, tweak_tip, key, *choices):
+        super(CBash_ClothesTweak_MaxWeight, self).__init__(label, tweak_tip,
+                                                           key, *choices)
         self.matchFlags = {'amulets.maxWeight':('IsAmulet',),
                          'rings.maxWeight':('IsRightRing','IsLeftRing'),
                          'hoods.maxWeight':('IsHair',)
@@ -141,8 +141,9 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
 class ClothesTweak_Unblock(ClothesTweak):
     """Unlimited rings, amulets."""
     #--Config Phase -----------------------------------------------------------
-    def __init__(self,label,tip,key,*choices):
-        super(ClothesTweak_Unblock,self).__init__(label,tip,key,*choices)
+    def __init__(self, label, tweak_tip, key, *choices):
+        super(ClothesTweak_Unblock, self).__init__(label, tweak_tip, key,
+                                                   *choices)
         self.unblockFlags = self.__class__.clothes_flags[
             key[key.rfind('.') + 1:]]
 
@@ -163,8 +164,8 @@ class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
     editOrder = 31
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self,label,tip,key):
-        super(CBash_ClothesTweak_Unblock,self).__init__(label,tip,key)
+    def __init__(self, label, tweak_tip, key):
+        super(CBash_ClothesTweak_Unblock,self).__init__(label, tweak_tip, key)
         self.hideFlags = {'amulets.unblock.amulets':('IsAmulet',),
                          'robes.show.amulets2':('IsHideAmulets',),
                          'rings.unblock.rings':('IsRightRing','IsLeftRing'),
