@@ -585,7 +585,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 # Show tip text when changing item
                 self.mouse_dex = mouseItem
                 tip = 0 <= mouseItem < len(self.tweaks) and self.tweaks[
-                    mouseItem].tip
+                    mouseItem].tweak_tip
                 if tip:
                     self.gTipText.SetLabel(tip)
                 else:

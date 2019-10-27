@@ -67,6 +67,7 @@ class BasalCreatureTweaker(MultiTweakItem):
 
 class _NpcCTweak(CBash_MultiTweakItem):
     tweak_read_classes = 'NPC_',
+    playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007) # used in 4/6 derived
 
 class _CreaCTweak(CBash_MultiTweakItem):
     tweak_read_classes = 'CREA',
@@ -130,15 +131,10 @@ class MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher,BasalNPCTweaker):
 class CBash_MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher, _NpcCTweak):
     name = _(u"MAO Skeleton Setter")
 
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(CBash_MAONPCSkeletonPatcher, self).__init__()
-        self.playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
+    def apply(self, modFile, record, bashTags,
+              __player_fid=_NpcCTweak.playerFid):
         """Edits patch file as desired. """
-        if record.fid != self.playerFid: #skip player record
+        if record.fid != __player_fid: #skip player record
             choice = self.choiceValues[self.chosen][0]
             if choice == 1 and record.IsMale: return
             elif choice == 2 and record.IsFemale: return
@@ -245,15 +241,15 @@ class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher, _NpcCTweak):
     def __init__(self):
         super(CBash_VORB_NPCSkeletonPatcher, self).__init__()
         self.modSkeletonDir = GPath(u'Characters').join(u'_male')
-        self.playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
         self.skeletonList = None
         self.skeletonSetSpecial = None
 
     #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
+    def apply(self,modFile,record,bashTags,
+              __player_fid=_NpcCTweak.playerFid):
         """Edits patch file as desired. """
         recordId = record.fid
-        if recordId != self.playerFid: #skip player record
+        if recordId != __player_fid: #skip player record
             choice = self.choiceValues[self.chosen][0]
             if choice == 1 and record.IsMale: return
             elif choice == 2 and record.IsFemale: return
@@ -640,12 +636,11 @@ class SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,BasalNPCTweaker):
 
 class CBash_SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher, _NpcCTweak):
     name = _(u"Sexy Walk for female NPCs")
-    playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
 
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
+    def apply(self,modFile,record,bashTags,
+              __player_fid=_NpcCTweak.playerFid):
         """Edits patch file as desired. """
-        if record.fid != self.playerFid: #skip player record
+        if record.fid != __player_fid: #skip player record
             if record.IsFemale:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
@@ -684,12 +679,12 @@ class RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,BasalNPCTweaker):
 
 class CBash_RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher, _NpcCTweak):
     name = _(u"Real Walk for female NPCs")
-    playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
 
     #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
+    def apply(self,modFile,record,bashTags,
+              __player_fid=_NpcCTweak.playerFid):
         """Edits patch file as desired. """
-        if record.fid != self.playerFid: #skip player record
+        if record.fid != __player_fid: #skip player record
             if record.IsFemale:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
