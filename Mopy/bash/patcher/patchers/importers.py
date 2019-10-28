@@ -2824,9 +2824,6 @@ class CBash_StatsPatcher(_AStatsPatcher, _RecTypeModLogging):
             if group not in validTypes: continue
             self.csvFid_attr_value.update(nId_attr_value)
 
-        for group in self.getTypes():
-            group_patchers.setdefault(group,[]).append(self)
-
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return self.class_attrs.keys()

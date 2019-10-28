@@ -530,8 +530,8 @@ class CBash_PatchFile(_PFile, ObModFile):
                     self.compiledAllMods.append(modName)
             isScanned = modName in self.scanSet and modName not in self.loadSet and modName not in self.mergeSet
             if not isScanned:
-                for patcher in mod_apply:
-                    patcher(modFile)
+                for p_mod_apply in mod_apply:
+                    p_mod_apply(modFile)
 
         numFinishers = sum(
             any(hasattr(p, 'finishPatch') for p in patchers) for patchers in
@@ -540,10 +540,12 @@ class CBash_PatchFile(_PFile, ObModFile):
         progress = progress.setFull(len(groupOrder) + max(numFinishers,1))
         maxVersion = 0
         for index,group in enumerate(groupOrder):
-            patchers = group_patchers.get(group, None)
+            patchers = group_patchers.get(group, [])
             pstate = 0
             subProgress = SubProgress(progress,index)
             subProgress.setFull(max(len(self.completeMods),1))
+            p_scan_sorted = sorted([p for p in patchers if hasattr(p, 'scan')],
+                                   key=attrgetter('scanOrder'))
             for modName in self.completeMods:
                 if modName == self.patchName: continue
                 modInfo = bosh.modInfos[modName]
@@ -556,21 +558,27 @@ class CBash_PatchFile(_PFile, ObModFile):
                 iiFilter = IIMSet and not (iiMode or group in levelLists)
                 modFile = self.Current.LookupModFile(modInfo.getPath().stail)
                 modGName = modFile.GName
-
+                sorted_scan_ = [p for p in p_scan_sorted if
+                    not p.scanRequiresChecked or (modGName in p.srcs)]
                 if patchers:
                     subProgress(pstate,_(u'Patching...')+u'\n%s::%s' % (modName.s,group))
                     pstate += 1
                     #Filter the used patchers as needed
                     if iiMode:
-                        applyPatchers = [patcher.apply for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'apply') and patcher.iiMode if not patcher.applyRequiresChecked or (modGName in patcher.srcs)]
-                        scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan') and patcher.iiMode if not patcher.scanRequiresChecked or (modGName in patcher.srcs)]
+                        applyPatchers = [p.apply for p in
+                            sorted(patchers, key=attrgetter('editOrder'))
+                        if hasattr(p, 'apply') and p.iiMode
+                        if not p.applyRequiresChecked or (modGName in p.srcs)]
+                        scanPatchers = [p.scan for p in sorted_scan_ if p.iiMode]
                     elif isScanned:
                         applyPatchers = [] #Scanned mods should never be copied directly into the bashed patch.
-                        scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan') and patcher.allowUnloaded if not patcher.scanRequiresChecked or (modGName in patcher.srcs)]
+                        scanPatchers = [p.scan for p in sorted_scan_ if p.allowUnloaded]
                     else:
-                        applyPatchers = [patcher.apply for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'apply') if not patcher.applyRequiresChecked or (modGName in patcher.srcs)]
-                        scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan') if not patcher.scanRequiresChecked or (modGName in patcher.srcs)]
-
+                        applyPatchers = [p.apply for p in
+                            sorted(patchers, key=attrgetter('editOrder'))
+                        if hasattr(p, 'apply')
+                        if not p.applyRequiresChecked or (modGName in p.srcs)]
+                        scanPatchers = [p.scan for p in sorted_scan_]
                     #See if all the patchers were filtered out
                     if not (applyPatchers or scanPatchers): continue
                     for record in getattr(modFile, group):
@@ -605,9 +613,8 @@ class CBash_PatchFile(_PFile, ObModFile):
                             if isScanned and record.IsWinning(True): #Not the most optimized, but works well enough
                                 continue #doesn't work if the record's been copied into the patch...needs work
                             isWinning = record.IsWinning()
-
-                        for patcher in applyPatchers if isWinning else scanPatchers:
-                            patcher(modFile, record, bashTags)
+                        for p_apply in applyPatchers if isWinning else scanPatchers:
+                            p_apply(modFile, record, bashTags)
                         record.UnloadRecord()
                 if isMerged:
                     progress(index,modFile.ModName+u'\n'+_(u'Merging...')+u'\n'+group)
@@ -628,8 +635,8 @@ class CBash_PatchFile(_PFile, ObModFile):
             if finishPatchers:
                 subProgress(pstate,_(u'Final Patching...')+u'\n%s::%s' % (self.ModName,group))
                 pstate += 1
-                for patcher in finishPatchers:
-                    patcher(self, subProgress)
+                for p_finish in finishPatchers:
+                    p_finish(self, subProgress)
         #--Fix UDR's
         progress(0,_(u'Cleaning...'))
         records = self.ACRES + self.ACHRS + self.REFRS

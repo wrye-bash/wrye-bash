@@ -1313,11 +1313,11 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
             curSpells = set([spell for spell in record.spells if
                              spell.ValidateFormID(self.patchFile)])
             if curSpells:
-                spells = self.id_spells.setdefault(record.fid,set())
                 if u'R.ChangeSpells' in tags:
-                    spells = curSpells
+                    self.id_spells[record.fid] = curSpells
                 elif u'R.AddSpells' in tags:
-                    spells |= curSpells
+                    self.id_spells[record.fid] = curSpells | \
+                        self.id_spells.get(record.fid, set())
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""

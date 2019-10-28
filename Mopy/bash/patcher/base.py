@@ -105,8 +105,8 @@ class CBash_Patcher(_Abstract_Patcher):
     # would it make any sense to make getTypes into classmethod ?
     unloadedText = u""
     allowUnloaded = True
-    scanRequiresChecked = False
-    applyRequiresChecked = False
+    scanRequiresChecked = False # if True patcher needs a srcs attribute
+    applyRequiresChecked = False # if True patcher needs a srcs attribute
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
