@@ -250,8 +250,8 @@ class ListsMerger(_AListsMerger, ListPatcher):
 
 class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
     allowUnloaded = False
-    scanRequiresChecked = False
-    applyRequiresChecked = False
+    scanRequiresChecked = False # same as CBash_Patcher.scanRequiresChecked
+    applyRequiresChecked = False # same as CBash_Patcher.applyRequiresChecked
 
     #--Patch Phase -----------------------------------------------------------
     def initPatchFile(self, patchFile):
