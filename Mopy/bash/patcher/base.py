@@ -74,18 +74,15 @@ class _Abstract_Patcher(object):
 class Patcher(_Abstract_Patcher):
     """Abstract base class for patcher elements performing a PBash patch - must
     be just before Abstract_Patcher in MRO.""" ##: "performing" ? how ?
-    # would it make any sense to make getRead/WriteClasses() into classmethods
-    # and just define an attribute in the classes - so getReadClasses(cls):
-    # return cls.READ and have in subclasses just READ = 'AMMO' (say)
+    _read_write_records = ()
 
-    #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ()
+        return self.__class__._read_write_records if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ()
+        return self.__class__._read_write_records if self.isActive else ()
 
     def initData(self,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as

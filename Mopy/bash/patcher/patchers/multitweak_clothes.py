@@ -236,20 +236,12 @@ class _AClothesTweaker(AMultiTweaker):
     text = _(u"Tweak clothing weight and blocking.")
 
 class ClothesTweaker(_AClothesTweaker,MultiTweaker):
+    _read_write_records = ('CLOT',)
 
     tweaks = sorted(itertools.chain(
         (ClothesTweak_Unblock(*x) for x in _AClothesTweaker._unblock),
         (ClothesTweak_MaxWeight(*x) for x in _AClothesTweaker._max_weight)),
         key=lambda a: a.label.lower())
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('CLOT',) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('CLOT',) if self.isActive else ()
 
     def scanModFile(self,modFile,progress):
         if not self.isActive or 'CLOT' not in modFile.tops: return

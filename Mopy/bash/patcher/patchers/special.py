@@ -92,28 +92,20 @@ class _AListsMerger(SpecialPatcher, AListPatcher):
             self.OverhaulUOPSkips = set()
 
 class ListsMerger(_AListsMerger, ListPatcher):
+    _read_write_records = bush.game.listTypes # bush.game must be set!
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self, patchFile):
         super(ListsMerger, self).initPatchFile(patchFile)
         self.srcs_ordered = self.srcs
         self.srcs = set(self.srcs) & patchFile.loadSet
-        self.listTypes = bush.game.listTypes
-        self.type_list = dict([(type,{}) for type in self.listTypes])
+        self.type_list = dict([(rec, {}) for rec in self._read_write_records])
         self.masterItems = {}
         self.mastersScanned = set()
         self.levelers = None #--Will initialize later
         self.empties = set()
         _skip_id = lambda x: (GPath(u'Oblivion.esm'), x)
         self._overhaul_compat(self.srcs, _skip_id)
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return self.listTypes
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return self.listTypes
 
     def scanModFile(self, modFile, progress):
         """Add lists from modFile."""
@@ -126,10 +118,10 @@ class ListsMerger(_AListsMerger, ListPatcher):
                 self.delevMasters.update(bosh.modInfos[leveler].get_masters())
         #--Begin regular scan
         modName = modFile.fileInfo.name
-        modFile.convertToLongFids(self.listTypes)
+        modFile.convertToLongFids(self._read_write_records)
         #--PreScan for later Relevs/Delevs?
         if modName in self.delevMasters:
-            for list_type in self.listTypes:
+            for list_type in self._read_write_records:
                 for levList in getattr(modFile,list_type).getActiveRecords():
                     masterItems = self.masterItems.setdefault(levList.fid,{})
                     masterItems[modName] = set(
@@ -140,7 +132,7 @@ class ListsMerger(_AListsMerger, ListPatcher):
         isRelev = (u'Relev' in configChoice)
         isDelev = (u'Delev' in configChoice)
         #--Scan
-        for list_type in self.listTypes:
+        for list_type in self._read_write_records:
             levLists = self.type_list[list_type]
             newLevLists = getattr(modFile,list_type)
             for newLevList in newLevLists.getActiveRecords():
@@ -189,7 +181,7 @@ class ListsMerger(_AListsMerger, ListPatcher):
         #--Save to patch file
         for label, type in ((_(u'Creature'), 'LVLC'), (_(u'Actor'), 'LVLN'),
                 (_(u'Item'), 'LVLI'), (_(u'Spell'), 'LVSP')):
-            if type not in self.listTypes: continue
+            if type not in self._read_write_records: continue
             log.setHeader(u'=== '+_(u'Merged %s Lists') % label)
             patchBlock = getattr(self.patchFile,type)
             levLists = self.type_list[type]
@@ -209,7 +201,7 @@ class ListsMerger(_AListsMerger, ListPatcher):
         if not self.remove_empty_sublists: return
         for label, type in ((_(u'Creature'), 'LVLC'), (_(u'Actor'), 'LVLN'),
                 (_(u'Item'), 'LVLI'), (_(u'Spell'), 'LVSP')):
-            if type not in self.listTypes: continue
+            if type not in self._read_write_records: continue
             patchBlock = getattr(self.patchFile,type)
             levLists = self.type_list[type]
             #--Empty lists
@@ -477,6 +469,7 @@ class FidListsMerger(_AListsMerger,ListPatcher):
     tip = _(u"Merges changes to formid lists from all active mods.")
     autoKey = {u'Deflst'}
     iiMode = True
+    _read_write_records = ('FLST',)
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self, patchFile):
@@ -484,19 +477,10 @@ class FidListsMerger(_AListsMerger,ListPatcher):
         after this."""
         super(FidListsMerger, self).initPatchFile(patchFile)
         self.srcMods = set(self.getConfigChecked()) & patchFile.loadSet
-        self.listTypes = ('FLST',)
-        self.type_list = dict([(type,{}) for type in self.listTypes])
+        self.type_list = dict([(rec, {}) for rec in self._read_write_records])
         self.masterItems = {}
         self.mastersScanned = set()
         self.levelers = None #--Will initialize later
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return self.listTypes
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return self.listTypes
 
     def scanModFile(self, modFile, progress):
         """Add lists from modFile."""
@@ -509,10 +493,10 @@ class FidListsMerger(_AListsMerger,ListPatcher):
                 self.deflstMasters.update(bosh.modInfos[leveler].get_masters())
         #--Begin regular scan
         modName = modFile.fileInfo.name
-        modFile.convertToLongFids(self.listTypes)
+        modFile.convertToLongFids(self._read_write_records)
         #--PreScan for later Deflsts?
         if modName in self.deflstMasters:
-            for list_type in self.listTypes:
+            for list_type in self._read_write_records:
                 for levList in getattr(modFile,list_type).getActiveRecords():
                     masterItems = self.masterItems.setdefault(levList.fid,{})
                     # masterItems[modName] = set([entry.listId for entry in levList.entries])
@@ -522,7 +506,7 @@ class FidListsMerger(_AListsMerger,ListPatcher):
         configChoice = self.configChoices.get(modName,tuple())
         isDeflst = (u'Deflst' in configChoice)
         #--Scan
-        for list_type in self.listTypes:
+        for list_type in self._read_write_records:
             levLists = self.type_list[list_type]
             newLevLists = getattr(modFile,list_type)
             for newLevList in newLevLists.getActiveRecords():
