@@ -1237,6 +1237,11 @@ class Flags(object):
         trueNames.sort(key = lambda xxx: self._names[xxx])
         return tuple(trueNames)
 
+    def __repr__(self):
+        """Shows all set flags."""
+        all_flags = u', '.join(self.getTrueAttrs()) if self._field else u'None'
+        return u'0x%s (%s)' % (self.hex(), all_flags)
+
 #------------------------------------------------------------------------------
 class DataDict(object):
     """Mixin class that handles dictionary emulation, assuming that

@@ -181,8 +181,8 @@ class AFile(object):
         """
         self._file_size, self._file_mod_time = stat_tuple
 
-    def __repr__(self): return self.__class__.__name__ + u"<" + repr(
-        self.abs_path.stail) + u">"
+    def __repr__(self): return u'%s<%s>' % (self.__class__.__name__,
+                                            self.abs_path.stail)
 
 #------------------------------------------------------------------------------
 class MasterInfo(object):

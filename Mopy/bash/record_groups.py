@@ -290,6 +290,9 @@ class MobObjects(MobBase):
                 self.setRecord(record)
                 mergeIds.discard(record.fid)
 
+    def __repr__(self):
+        return u'<%s GRUP: %u record(s)>' % (self.label, len(self.records))
+
 #------------------------------------------------------------------------------
 class MobDials(MobObjects):
     """DIAL top block of mod file."""

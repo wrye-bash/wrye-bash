@@ -68,7 +68,7 @@ def _coerce(value, newtype, base=None, AllowNone=False):
 def strFid(fid):
     """Returns a string representation of the fid."""
     if isinstance(fid,tuple):
-        return u'(%s,0x%06X)' % (fid[0].s,fid[1])
+        return u'(%s, %06X)' % (fid[0].s,fid[1])
     else:
         return u'%08X' % fid
 
@@ -203,6 +203,13 @@ class RecordHeader(object):
     def form_version(self):
         if self.plugin_form_version == 0 : return 0
         return struct_unpack('=2h', struct_pack('=I', self.extra))[0]
+
+    def __repr__(self):
+        if self.recType == 'GRUP':
+            return u'<GRUP Header: %s v%u>' % (self.label, self.form_version)
+        else:
+            return u'<Record Header: %s v%u>' % (strFid(self.fid),
+                                                  self.form_version)
 
 #------------------------------------------------------------------------------
 class ModReader:
@@ -469,6 +476,18 @@ class MelObject(object):
     def __ne__(self,other):
         """Operator: !="""
         return not isinstance(other,MelObject) or self.__dict__ != other.__dict__
+
+    def __repr__(self):
+        """Carefully try to show as much info about ourselves as possible."""
+        to_show = []
+        if hasattr(self, '__slots__'):
+            for obj_attr in self.__slots__:
+                # attrs starting with _ are internal - union types,
+                # distributor states, etc.
+                if not obj_attr.startswith(u'_') and hasattr(self, obj_attr):
+                    to_show.append(
+                        u'%s: %r' % (obj_attr, getattr(self, obj_attr)))
+        return u'<%s>' % u', '.join(sorted(to_show)) # is sorted() needed here?
 
 #-----------------------------------------------------------------------------
 class MelBase:
@@ -1465,11 +1484,12 @@ class MreRecord(object):
         if ins: self.load(ins, do_unpack)
 
     def __repr__(self):
-        if hasattr(self,'eid') and self.eid is not None:
-            eid=u' '+self.eid
-        else:
-            eid=u''
-        return u'<%s object: %s (%s)%s>' % (unicode(type(self)).split(u"'")[1], self.recType, strFid(self.fid), eid)
+        return u'<%(eid)s[%(signature)s:%(fid)s]>' % {
+            u'signature': self.recType,
+            u'fid': strFid(self.fid),
+            u'eid': (self.eid + u' ' if hasattr(self, 'eid')
+                                     and self.eid is not None else u''),
+        }
 
     def getHeader(self):
         """Returns header tuple."""
@@ -1928,6 +1948,16 @@ class MreLeveledListBase(MelRecord):
             if entry.listId not in self.items:
                 entriesAppend(entry)
                 newItemsAdd(entry.listId)
+        # Check if merging exceeded the 8-bit counter's limit and, if so,
+        # truncate it back to 255 and warn
+        if len(self.entries) > 255:
+            # TODO(inf) In the future, offer an option to auto-split these into
+            #  multiple sub-lists instead
+            bolt.deprint(u'Merging changes from mod \'%s\' to leveled list %r '
+                         u'caused it to exceed 255 entries. Truncating back '
+                         u'to 255, you will have to fix this manually!' %
+                         (otherMod.s, self))
+            self.entries = self.entries[:255]
         if newItems:
             self.items |= newItems
             self.entries.sort(key=attrgetter('listId','level','count'))

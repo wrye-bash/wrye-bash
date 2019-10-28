@@ -201,6 +201,11 @@ class ListsMerger(_AListsMerger, ListPatcher):
                 log(u'* '+record.eid)
                 for mod in record.mergeSources:
                     log(u'  * ' + self.getItemLabel(mod))
+                # Emit a warning for lists that may have exceeded 255
+                if len(record.entries) == 255:
+                    log(u'  * __%s__' % _(u'Warning: Now has 255 entries, may '
+                                          u'have been truncated - check and '
+                                          u'fix manually!'))
         #--Discard empty sublists
         if not self.remove_empty_sublists: return
         for label, type in ((_(u'Creature'), 'LVLC'), (_(u'Actor'), 'LVLN'),

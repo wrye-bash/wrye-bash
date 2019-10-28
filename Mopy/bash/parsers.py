@@ -3914,6 +3914,13 @@ class LoadFactory:
         else:
             return None
 
+    def __repr__(self):
+        return u'<LoadFactory: load %u types (%s), %s others>' % (
+            len(self.recTypes),
+            u', '.join(self.recTypes),
+            u'keep' if self.keepAll else u'discard',
+        )
+
 class ModFile(object):
     """TES4 file representation.
 
@@ -4164,3 +4171,6 @@ class ModFile(object):
                 if isinstance(record,MreRecord.type_class['MGEF']):
                     mgef_name[record.eid] = record.full
         return mgef_name
+
+    def __repr__(self):
+        return u'ModFile<%s>' % self.fileInfo.name.s
