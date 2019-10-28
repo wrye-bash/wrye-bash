@@ -205,20 +205,12 @@ class GmstTweaker(MultiTweaker, _AGmstTweaker):
     editOrder = 29
     class_tweaks = [(GlobalsTweak, bush.game.GlobalsTweaks),
                     (GmstTweak, bush.game.GmstTweaks)]
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('GMST','GLOB') if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('GMST','GLOB') if self.isActive else ()
+    _read_write_records = ('GMST', 'GLOB')
 
     def scanModFile(self,modFile,progress):
         if not self.isActive: return
         mapper = modFile.getLongMapper()
-        for blockType in ['GMST','GLOB']:
+        for blockType in self._read_write_records:
             if blockType not in modFile.tops: continue
             modBlock = getattr(modFile,blockType)
             patchBlock = getattr(self.patchFile,blockType)

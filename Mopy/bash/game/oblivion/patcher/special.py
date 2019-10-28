@@ -62,16 +62,13 @@ class _AAlchemicalCatalogs(SpecialPatcher):
     default_isEnabled = True
 
 class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
+    _read_write_records = ('INGR',)
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self, patchFile):
         super(AlchemicalCatalogs, self).initPatchFile(patchFile)
         self.isActive = (GPath(u'COBL Main.esm') in patchFile.loadSet)
         self.id_ingred = {}
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('INGR',) if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
@@ -375,6 +372,7 @@ class _ACoblExhaustion(SpecialPatcher):
             log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
 
 class CoblExhaustion(_ACoblExhaustion,ListPatcher):
+    _read_write_records = ('SPEL',)
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self, patchFile):
@@ -410,14 +408,6 @@ class CoblExhaustion(_ACoblExhaustion,ListPatcher):
             if srcPath not in self.patches_set: continue
             self.readFromText(getPatchesPath(srcFile))
             progress.plus()
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('SPEL',) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('SPEL',) if self.isActive else ()
 
     def scanModFile(self,modFile,progress):
         if not self.isActive: return
@@ -558,6 +548,7 @@ class _AMFactMarker(SpecialPatcher):
             log(u'* %s: %d' % (mod.s, changed[mod]))
 
 class MFactMarker(_AMFactMarker,ListPatcher):
+    _read_write_records = ('FACT',)
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self, patchFile):
@@ -587,14 +578,6 @@ class MFactMarker(_AMFactMarker,ListPatcher):
                     if not morphName: continue
                     if not rankName: rankName = _(u'Member')
                     id_info[longid] = (morphName,rankName)
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('FACT',) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('FACT',) if self.isActive else ()
 
     def scanModFile(self, modFile, progress):
         """Scan modFile."""
@@ -775,6 +758,8 @@ class _ASEWorldEnforcer(SpecialPatcher):
     default_isEnabled = True
 
 class SEWorldEnforcer(_ASEWorldEnforcer,Patcher):
+    _read_write_records = ('QUST',)
+
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self, patchFile):
         super(SEWorldEnforcer, self).initPatchFile(patchFile)
@@ -791,14 +776,6 @@ class SEWorldEnforcer(_ASEWorldEnforcer,Patcher):
                         self.cyrodiilQuests.add(mapper(record.fid))
                         break
         self.isActive = bool(self.cyrodiilQuests)
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('QUST',) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('QUST',) if self.isActive else ()
 
     def scanModFile(self,modFile,progress):
         if not self.isActive: return
