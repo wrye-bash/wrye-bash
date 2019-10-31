@@ -788,8 +788,9 @@ class WryeParser(ScriptParser.Parser):
         self.SetFunction(u'CompareGEVersion', self.fnCompareGEVersion, 1)
         self.SetFunction(u'CompareWBVersion', self.fnCompareWBVersion, 1)
         self.SetFunction(u'DataFileExists', self.fnDataFileExists, 1, ScriptParser.KEY.NO_MAX)
-        self.SetFunction(u'GetEspmStatus', self.fn_get_plugin_status, 1)
-        self.SetFunction(u'GetPluginStatus', self.fn_get_plugin_status, 1)       # Retained for compatibility
+        self.SetFunction(u'GetPluginLoadOrder', self.fn_get_plugin_lo, 1, 2)
+        self.SetFunction(u'GetEspmStatus', self.fn_get_plugin_status, 1)         # Retained for compatibility
+        self.SetFunction(u'GetPluginStatus', self.fn_get_plugin_status, 1)
         self.SetFunction(u'EditINI', self.fnEditINI, 4, 5)
         self.SetFunction(u'DisableINILine',self.fnDisableINILine, 3)
         self.SetFunction(u'Exec', self.fnExec, 1)
@@ -1091,12 +1092,18 @@ class WryeParser(ScriptParser.Parser):
                 return False
         return True
 
+    def fn_get_plugin_lo(self, filename, default_val=-1):
+        try:
+            return load_order.cached_lo_index(bolt.GPath(filename))
+        except KeyError: # has no LO
+            return default_val
+
     def fn_get_plugin_status(self, filename):
-        file = bolt.GPath(filename)
-        if file in bosh.modInfos.merged: return 3   # Merged
-        if load_order.cached_is_active(file): return 2  # Active
-        if file in bosh.modInfos.imported: return 1 # Imported (not active/merged)
-        if file in bosh.modInfos: return 0          # Inactive
+        p_name = bolt.GPath(filename)
+        if p_name in bosh.modInfos.merged: return 3   # Merged
+        if load_order.cached_is_active(p_name): return 2  # Active
+        if p_name in bosh.modInfos.imported: return 1 # Imported (not active/merged)
+        if p_name in bosh.modInfos: return 0          # Inactive
         return -1                                   # Not found
 
     def fnEditINI(self, ini_name, section, setting, value, comment=u''):

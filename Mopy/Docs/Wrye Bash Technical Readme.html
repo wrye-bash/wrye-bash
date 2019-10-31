@@ -214,6 +214,19 @@
 	<li><code>True</code> - All of the files exist.
 	<li><code>False</code> - One or more of the files do not exist.
 </ul>
+<p><dfn>GetPluginLoadOrder</dfn> - Returns the current load order index of a plugin in the Data directory.
+	You may want to combine this with <a href="#wizardsGetPluginStatus">GetPluginStatus</a>
+	to check if the plugin is enabled first.</p>
+<code class="box">GetPluginLoadOrder(file_name [, fallback_val])</code>
+<ul>
+	<li><var>file_name</var> - A string or variable holding a string, specifying the path relative to the Data directory for the plugin whose load order should be retrieved.</li>
+	<li><var>fallback_val</var> - The value that should be returned if the plugin has no load order index (e.g. if it is disabled or not installed). <code>-1</code> by default.</li>
+</ul>
+<p class="indent">Return values:</p>
+<ul class="indent">
+	<li><var>fallback_val</var> - If the plugin has no load order index.</li>
+	<li>Otherwise, a positive integer corresponding to the plugin's load order index.</li>
+</ul>
 <p><dfn id="wizardsGetEspmStatus">GetEspmStatus</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsGetPluginStatus">GetPluginStatus</a> instead.</p>
 <p><dfn id="wizardsGetPluginStatus">GetPluginStatus</dfn> - Tests the current status of a plugin in the Data directory. Takes ghosting into account when testing the status.</p>
 <code class="box">GetPluginStatus(file_name)</code>
