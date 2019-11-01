@@ -27,12 +27,13 @@ to the Clothes Multitweaker - as well as the ClothesTweaker itself."""
 import itertools
 from collections import Counter
 from ... import load_order
-from ...patcher.base import AMultiTweakItem, AMultiTweaker
+from ...patcher.base import AMultiTweaker, DynamicNamedTweak
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
-class AClothesTweak(AMultiTweakItem):
+class AClothesTweak(DynamicNamedTweak):
+    tweak_read_classes = 'CLOT',
     clothes_flags = {
         u'hoods':    0x00000002,
         u'shirts':   0x00000004,
@@ -48,8 +49,9 @@ class AClothesTweak(AMultiTweakItem):
         # u'robes':   (1<<2) + (1<<3),
         # u'rings':   (1<<6) + (1<<7),
 
-    def __init__(self, label, tweak_tip, key, *choices):
-        super(AClothesTweak,self).__init__(label, tweak_tip, key, *choices)
+    def __init__(self, tweak_name, tweak_tip, key, *choices):
+        super(AClothesTweak, self).__init__(tweak_name, tweak_tip, key,
+                                            *choices)
         typeKey = key[:key.find(u'.')]
         self.orTypeFlags = typeKey == u'rings'
         self.typeFlags = self.__class__.clothes_flags[typeKey]
@@ -86,15 +88,14 @@ class ClothesTweak_MaxWeight(ClothesTweak):
                 record.weight = maxWeight
                 keep(record.fid)
                 tweakCount += 1
-        log(u'* %s: [%4.2f]: %d' % (self.label,maxWeight,tweakCount))
+        log(u'* %s: [%4.2f]: %d' % (self.tweak_name,maxWeight,tweakCount))
 
 class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
     """Enforce a max weight for specified clothes."""
-    name = _(u'Reweigh Clothes')
 
-    def __init__(self, label, tweak_tip, key, *choices):
-        super(CBash_ClothesTweak_MaxWeight, self).__init__(label, tweak_tip,
-                                                           key, *choices)
+    def __init__(self, tweak_name, tweak_tip, key, *choices):
+        super(CBash_ClothesTweak_MaxWeight, self).__init__(
+            tweak_name, tweak_tip, key, *choices)
         self.matchFlags = {'amulets.maxWeight':('IsAmulet',),
                          'rings.maxWeight':('IsRightRing','IsLeftRing'),
                          'hoods.maxWeight':('IsHair',)
@@ -137,8 +138,8 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
 class ClothesTweak_Unblock(ClothesTweak):
     """Unlimited rings, amulets."""
 
-    def __init__(self, label, tweak_tip, key, *choices):
-        super(ClothesTweak_Unblock, self).__init__(label, tweak_tip, key,
+    def __init__(self, tweak_name, tweak_tip, key, *choices):
+        super(ClothesTweak_Unblock, self).__init__(tweak_name, tweak_tip, key,
                                                    *choices)
         self.unblockFlags = self.__class__.clothes_flags[
             key[key.rfind('.') + 1:]]
@@ -151,15 +152,16 @@ class ClothesTweak_Unblock(ClothesTweak):
                 record.flags &= ~self.unblockFlags
                 keep(record.fid)
                 tweakCount += 1
-        log(u'* %s: %d' % (self.label,tweakCount))
+        log(u'* %s: %d' % (self.tweak_name,tweakCount))
 
 class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
     """Unlimited rings, amulets."""
     scanOrder = 31
     editOrder = 31
 
-    def __init__(self, label, tweak_tip, key):
-        super(CBash_ClothesTweak_Unblock,self).__init__(label, tweak_tip, key)
+    def __init__(self, tweak_name, tweak_tip, key):
+        super(CBash_ClothesTweak_Unblock, self).__init__(tweak_name, tweak_tip,
+                                                         key)
         self.hideFlags = {'amulets.unblock.amulets':('IsAmulet',),
                          'robes.show.amulets2':('IsHideAmulets',),
                          'rings.unblock.rings':('IsRightRing','IsLeftRing'),
@@ -241,7 +243,7 @@ class ClothesTweaker(_AClothesTweaker,MultiTweaker):
     tweaks = sorted(itertools.chain(
         (ClothesTweak_Unblock(*x) for x in _AClothesTweaker._unblock),
         (ClothesTweak_MaxWeight(*x) for x in _AClothesTweaker._max_weight)),
-        key=lambda a: a.label.lower())
+        key=lambda a: a.tweak_name.lower())
 
     def scanModFile(self,modFile,progress):
         if not self.isActive or 'CLOT' not in modFile.tops: return
@@ -269,4 +271,4 @@ class CBash_ClothesTweaker(_AClothesTweaker,CBash_MultiTweaker):
     tweaks = sorted(itertools.chain(
      (CBash_ClothesTweak_Unblock(*x) for x in _AClothesTweaker._unblock),
      (CBash_ClothesTweak_MaxWeight(*x) for x in _AClothesTweaker._max_weight)),
-        key=lambda a: a.label.lower())
+        key=lambda a: a.tweak_name.lower())

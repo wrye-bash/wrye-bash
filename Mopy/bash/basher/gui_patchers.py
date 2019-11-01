@@ -650,7 +650,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 label = self._msg + u'\n' + tweak.key[i]
                 new = balt.askNumber(
                     self.gConfigPanel, label, prompt=_(u'Value'),
-                    title=tweak.label + _(u' ~ Custom Tweak Value'),
+                    title=tweak.tweak_name + _(u' ~ Custom Tweak Value'),
                     value=tweak.choiceValues[index][i], min=-10000, max=10000)
                 if new is None: #user hit cancel
                     return
@@ -660,7 +660,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                         tweak.key[i]
                 new = balt.askNumber(
                     self.gConfigPanel, label, prompt=_(u'Value'),
-                    title=tweak.label + _(u' ~ Custom Tweak Value'),
+                    title=tweak.tweak_name + _(u' ~ Custom Tweak Value'),
                     value=tweak.choiceValues[index][i], min=-10000, max=10000)
                 if new is None: #user hit cancel
                     return
@@ -670,7 +670,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                         tweak.key[i]
                 new = balt.askText(
                     self.gConfigPanel, label,
-                    title=tweak.label + _(u' ~ Custom Tweak Text'),
+                    title=tweak.tweak_name + _(u' ~ Custom Tweak Text'),
                     default=tweak.choiceValues[index][i], strip=False) ##: strip ?
                 if new is None: #user hit cancel
                     return
@@ -922,7 +922,7 @@ class _GmstTweakerPanel(_TweakPatcherPanel):
                     args = tweak[0]
                     kwdargs = tweak[1]
                     tweaksAppend(cls(*args,**kwdargs))
-        self.tweaks.sort(key=lambda a: a.label.lower())
+        self.tweaks.sort(key=lambda a: a.tweak_name.lower())
         for tweak in self.tweaks:
             tweak.init_tweak_config(config)
 

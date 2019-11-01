@@ -202,11 +202,11 @@ class AAliasesPatcher(_Abstract_Patcher):
 class AMultiTweakItem(object):
     """A tweak item, optionally with configuration choices."""
     tweak_read_classes = ()
+    tweak_name = u'OVERRIDE'
+    tweak_tip = u'OVERRIDE'
 
-    def __init__(self, label, tweak_tip, key, *choices, **kwargs):
+    def __init__(self, key, *choices, **kwargs):
         # TODO: docs for attributes !
-        self.label = label
-        self.tweak_tip = tweak_tip
         self.key = key
         self.choiceLabels = []
         self.choiceValues = []
@@ -221,7 +221,7 @@ class AMultiTweakItem(object):
         self.defaultEnabled = kwargs.get('defaultEnabled', False)
         self.chosen = 0
         #--Log
-        self.logHeader = u'=== '+ label
+        self.logHeader = u'=== '+ self.tweak_name
 
     def _patchLog(self, log, count):
         """Log - must define self.logMsg in subclasses"""
@@ -263,10 +263,21 @@ class AMultiTweakItem(object):
 
     def getListLabel(self):
         """Returns label to be used in list"""
-        label = self.label
+        tweakname = self.tweak_name
         if len(self.choiceLabels) > 1:
-            label += u' [' + self.choiceLabels[self.chosen] + u']'
-        return label
+            tweakname += u' [' + self.choiceLabels[self.chosen] + u']'
+        return tweakname
+
+class DynamicNamedTweak(AMultiTweakItem):
+    """A tweak that has its name and tip passed in as init parameters."""
+
+    def __init__(self, tweak_name, tweak_tip, key, *choices, **kwargs):
+        self.tweak_name = tweak_name
+        self.tweak_tip = tweak_tip
+        super(DynamicNamedTweak, self).__init__(key, *choices, **kwargs)
+
+    def __repr__(self):  return u'%s(%s)' % (
+        self.__class__.__name__, self.tweak_name)
 
 #------------------------------------------------------------------------------
 # AListPatcher subclasses------------------------------------------------------

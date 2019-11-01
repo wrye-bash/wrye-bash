@@ -29,7 +29,7 @@ import re
 from collections import Counter
 # Internal
 from ... import load_order
-from ...patcher.base import AMultiTweakItem, AMultiTweaker
+from ...patcher.base import AMultiTweakItem, AMultiTweaker, DynamicNamedTweak
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
 
@@ -41,21 +41,20 @@ class _AMultiTweakItem_Names(MultiTweakItem):
         # the ANamesTweak_XX common superclass) the
         # CBash implementations which _do_ use it produce different logs. TODO:
         # unify C/P logs by using self.logMsg (mind the classes mentioned)
-        log(u'* %s: %d' % (self.label,sum(count.values())))
+        log(u'* %s: %d' % (self.tweak_name,sum(count.values())))
         for srcMod in load_order.get_ordered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 # Patchers: 30 ----------------------------------------------------------------
 class ANamesTweak_BodyTags(AMultiTweakItem):
-    #--Config Phase -----------------------------------------------------------
+    tweak_name = _(u'Body Part Codes')
+    tweak_tip = _(u'Sets body part codes used by Armor/Clothes name tweaks. '
+                  u'A: Amulet, R: Ring, etc.')
+    # FIXME tweak_read_classes?
+
     def __init__(self):
-        super(ANamesTweak_BodyTags, self).__init__(
-            _(u"Body Part Codes"),
-            _(u'Sets body part codes used by Armor/Clothes name tweaks. A: '
-            u'Amulet, R: Ring, etc.'),
-            u'bodyTags',
-            (u'ARGHTCCPBS',u'ARGHTCCPBS'),
-            (u'ABGHINOPSL',u'ABGHINOPSL'),)
+        super(ANamesTweak_BodyTags, self).__init__(u'bodyTags', (
+            u'ARGHTCCPBS', u'ARGHTCCPBS'), (u'ABGHINOPSL', u'ABGHINOPSL'))
 
 class NamesTweak_BodyTags(ANamesTweak_BodyTags,MultiTweakItem):
 
@@ -70,9 +69,9 @@ class CBash_NamesTweak_BodyTags(ANamesTweak_BodyTags,CBash_MultiTweakItem):
         pass
 
 #------------------------------------------------------------------------------
-class NamesTweak_Body(_AMultiTweakItem_Names):
+class NamesTweak_Body(DynamicNamedTweak, _AMultiTweakItem_Names):
     """Names tweaker for armor and clothes."""
-    #--Patch Phase ------------------------------------------------------------
+
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
         return self.key,
@@ -125,11 +124,11 @@ class NamesTweak_Body(_AMultiTweakItem_Names):
             count[record.fid[0]] += 1
         self._patchLog(log, count)
 
-class CBash_NamesTweak_Body(CBash_MultiTweakItem):
+class CBash_NamesTweak_Body(DynamicNamedTweak, CBash_MultiTweakItem):
     """Names tweaker for armor and clothes."""
 
-    def __init__(self, label, tweak_tip, key, *choices, **kwargs):
-        super(CBash_NamesTweak_Body, self).__init__(label, tweak_tip, key,
+    def __init__(self, tweak_name, tweak_tip, key, *choices, **kwargs):
+        super(CBash_NamesTweak_Body, self).__init__(tweak_name, tweak_tip, key,
                                                     *choices, **kwargs)
         self.logMsg = u'* ' + _(u'%(record_type)s Renamed') % {
             'record_type': (u'%s ' % self.key)} + u': %d'
@@ -174,16 +173,13 @@ class ANamesTweak_Potions(AMultiTweakItem):
     reOldLabel = re.compile(u'^(-|X) ',re.U)
     reOldEnd = re.compile(u' -$',re.U)
     tweak_read_classes = 'ALCH',
+    tweak_name = _(u'Potions')
+    tweak_tip = _(u'Label potions to sort by type and effect.')
 
     def __init__(self):
-        super(ANamesTweak_Potions, self).__init__(_(u"Potions"),
-            _(u'Label potions to sort by type and effect.'),
-            'ALCH',
-            (_(u'XD Illness'),  u'%s '),
-            (_(u'XD. Illness'), u'%s. '),
-            (_(u'XD - Illness'),u'%s - '),
-            (_(u'(XD) Illness'),u'(%s) '),
-            )
+        super(ANamesTweak_Potions, self).__init__('ALCH',
+            (_(u'XD Illness'), u'%s '), (_(u'XD. Illness'), u'%s. '),
+            (_(u'XD - Illness'), u'%s - '), (_(u'(XD) Illness'), u'(%s) '))
         self.logMsg = u'* ' + _(u'%(record_type)s Renamed') % {
             'record_type': (u'%s ' % self.key)} + u': %d'
 
@@ -284,24 +280,18 @@ reSpell = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ',re.U) # compile once
 
 class ANamesTweak_Scrolls(AMultiTweakItem):
     reOldLabel = reSpell
-    #--Config Phase -----------------------------------------------------------
+    tweak_name = _(u'Notes and Scrolls')
+    tweak_tip = _(u'Mark notes and scrolls to sort separately from books')
+
     def __init__(self):
-        super(ANamesTweak_Scrolls,self).__init__(_(u"Notes and Scrolls"),
-            _(u'Mark notes and scrolls to sort separately from books'),
-            u'scrolls',
-            (_(u'~Fire Ball'),    u'~'),
-            (_(u'~D Fire Ball'),  u'~%s '),
-            (_(u'~D. Fire Ball'), u'~%s. '),
-            (_(u'~D - Fire Ball'),u'~%s - '),
-            (_(u'~(D) Fire Ball'),u'~(%s) '),
-            (u'----',u'----'),
-            (_(u'.Fire Ball'),    u'.'),
-            (_(u'.D Fire Ball'),  u'.%s '),
-            (_(u'.D. Fire Ball'), u'.%s. '),
-            (_(u'.D - Fire Ball'),u'.%s - '),
-            (_(u'.(D) Fire Ball'),u'.(%s) '),
-            )
-        self.logMsg = u'* '+_(u'Items Renamed') + u': %d'
+        super(ANamesTweak_Scrolls, self).__init__(u'scrolls',
+            (_(u'~Fire Ball'), u'~'), (_(u'~D Fire Ball'), u'~%s '),
+            (_(u'~D. Fire Ball'), u'~%s. '), (_(u'~D - Fire Ball'), u'~%s - '),
+            (_(u'~(D) Fire Ball'), u'~(%s) '), (u'----', u'----'),
+            (_(u'.Fire Ball'), u'.'), (_(u'.D Fire Ball'), u'.%s '),
+            (_(u'.D. Fire Ball'), u'.%s. '), (_(u'.D - Fire Ball'), u'.%s - '),
+            (_(u'.(D) Fire Ball'), u'.(%s) '))
+        self.logMsg = u'* ' + _(u'Items Renamed') + u': %d'
 
     def save_tweak_config(self, configs):
         """Save config to configs dictionary."""
@@ -412,11 +402,12 @@ class CBash_NamesTweak_Scrolls(ANamesTweak_Scrolls,CBash_MultiTweakItem):
 class ANamesTweak_Spells(AMultiTweakItem):
     """Names tweaker for spells."""
     tweak_read_classes = 'SPEL',
+    tweak_name = _(u'Spells')
+    tweak_tip = _(u'Label spells to sort by school and level.')
 
     reOldLabel = reSpell
     def __init__(self):
-        super(ANamesTweak_Spells, self).__init__(_(u"Spells"),
-            _(u'Label spells to sort by school and level.'),
+        super(ANamesTweak_Spells, self).__init__(
             'SPEL',
             (_(u'Fire Ball'),  u'NOTAGS'),
             (u'----',u'----'),
@@ -519,10 +510,11 @@ class CBash_NamesTweak_Spells(ANamesTweak_Spells,CBash_MultiTweakItem):
 class ANamesTweak_Weapons(AMultiTweakItem):
     """Names tweaker for weapons and ammo."""
     tweak_read_classes = 'AMMO','WEAP',
+    tweak_name = _(u'Weapons')
+    tweak_tip = _(u'Label ammo and weapons to sort by type and damage.')
 
     def __init__(self):
-        super(ANamesTweak_Weapons, self).__init__(_(u"Weapons"),
-            _(u'Label ammo and weapons to sort by type and damage.'),
+        super(ANamesTweak_Weapons, self).__init__(
             u'WEAP',
             (_(u'B Iron Bow'),  u'%s '),
             (_(u'B. Iron Bow'), u'%s. '),
@@ -608,7 +600,7 @@ class CBash_NamesTweak_Weapons(ANamesTweak_Weapons,CBash_MultiTweakItem):
                     record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class ATextReplacer(AMultiTweakItem):
+class ATextReplacer(DynamicNamedTweak):
     """Base class for replacing any text via regular expressions."""
 
     def __init__(self, reMatch, reReplace, label, tweak_tip, key, choices):
@@ -949,15 +941,8 @@ class NamesTweaker(_ANamesTweaker,MultiTweaker):
         [NamesTweak_Body(*x) for x in _ANamesTweaker._namesTweaksBody] + [
             TextReplacer(*x) for x in _ANamesTweaker._txtReplacer] + [
             NamesTweak_Potions(), NamesTweak_Scrolls(), NamesTweak_Spells(),
-            NamesTweak_Weapons()], key=lambda a: a.label.lower())
+            NamesTweak_Weapons()], key=lambda a: a.tweak_name.lower())
     tweaks.insert(0, NamesTweak_BodyTags())
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return tuple()
-        classTuples = [tweak.getReadClasses() for tweak in self.enabledTweaks]
-        return sum(classTuples,tuple())
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
@@ -976,7 +961,7 @@ class CBash_NamesTweaker(_ANamesTweaker,CBash_MultiTweaker):
         [CBash_TextReplacer(*x) for x in _ANamesTweaker._txtReplacer] + [
             CBash_NamesTweak_Potions(), CBash_NamesTweak_Scrolls(),
             CBash_NamesTweak_Spells(), CBash_NamesTweak_Weapons()],
-        key=lambda a: a.label.lower())
+        key=lambda a: a.tweak_name.lower())
     tweaks.insert(0,CBash_NamesTweak_BodyTags())
 
     #--Config Phase -----------------------------------------------------------

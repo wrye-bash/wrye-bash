@@ -30,10 +30,10 @@ from ...brec import MreRecord, RecordHeader
 from ...exception import StateError
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
-from ...patcher.base import AMultiTweaker
+from ...patcher.base import AMultiTweaker, DynamicNamedTweak
 
 # Patchers: 30 ----------------------------------------------------------------
-class GlobalsTweak(MultiTweakItem):
+class GlobalsTweak(DynamicNamedTweak, MultiTweakItem):
     """set a global to specified value"""
     #--Patch Phase ------------------------------------------------------------
     def buildPatch(self,patchFile,keep,log):
@@ -47,9 +47,9 @@ class GlobalsTweak(MultiTweakItem):
                         keep(record.fid)
                     break
         log(u'* ' + _(u'%(label)s set to') % {
-            'label': (u'%s ' % self.label)} + (u': %4.2f' % value))
+            'label': (u'%s ' % self.tweak_name)} + (u': %4.2f' % value))
 
-class CBash_GlobalsTweak(CBash_MultiTweakItem):
+class CBash_GlobalsTweak(DynamicNamedTweak, CBash_MultiTweakItem):
     """Sets a global to specified value"""
     scanOrder = 29
     editOrder = 29
@@ -74,11 +74,12 @@ class CBash_GlobalsTweak(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         if self.count: log(u'* ' + _(u'%(label)s set to') % {
-            'label': (u'%s ' % self.label)} + (u': %4.2f' % self.value))
+            'label': (u'%s ' % self.tweak_name)} + (u': %4.2f' % self.value))
 
 #------------------------------------------------------------------------------
-class GmstTweak(MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
+class GmstTweak(DynamicNamedTweak, MultiTweakItem):
+    tweak_read_classes = 'GMST',
+
     def buildPatch(self,patchFile,keep,log):
         """Build patch."""
         eids = ((self.key,),self.key)[isinstance(self.key,tuple)]
@@ -105,18 +106,19 @@ class GmstTweak(MultiTweakItem):
             if self.choiceLabels[self.chosen].startswith(_(u'Custom')):
                 if isinstance(self.choiceValues[self.chosen][0],basestring):
                     log(u'* %s: %s %s' % (
-                        self.label, self.choiceLabels[self.chosen],
+                        self.tweak_name, self.choiceLabels[self.chosen],
                         self.choiceValues[self.chosen][0]))
                 else:
                     log(u'* %s: %s %4.2f' % (
-                        self.label, self.choiceLabels[self.chosen],
+                        self.tweak_name, self.choiceLabels[self.chosen],
                         self.choiceValues[self.chosen][0]))
             else:
-                log(u'* %s: %s' % (self.label, self.choiceLabels[self.chosen]))
+                log(u'* %s: %s' % (
+                    self.tweak_name, self.choiceLabels[self.chosen]))
         else:
-            log(u'* ' + self.label)
+            log(u'* ' + self.tweak_name)
 
-class CBash_GmstTweak(CBash_MultiTweakItem):
+class CBash_GmstTweak(DynamicNamedTweak, CBash_MultiTweakItem):
     """Sets a gmst to specified value"""
     scanOrder = 29
     editOrder = 29
@@ -180,17 +182,17 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
             if self.choiceLabels[self.chosen].startswith(_(u'Custom')):
                 if isinstance(self.values[0],basestring):
                     log(u'  * %s: %s %s' % (
-                        self.label, self.choiceLabels[self.chosen],
+                        self.tweak_name, self.choiceLabels[self.chosen],
                         self.values[0]))
                 else:
                     log(u'  * %s: %s %4.2f' % (
-                        self.label, self.choiceLabels[self.chosen],
+                        self.tweak_name, self.choiceLabels[self.chosen],
                         self.values[0]))
             else:
                 log(u'  * %s: %s' % (
-                    self.label, self.choiceLabels[self.chosen]))
+                    self.tweak_name, self.choiceLabels[self.chosen]))
         else:
-            log(u'  * ' + self.label)
+            log(u'  * ' + self.tweak_name)
 
 #------------------------------------------------------------------------------
 class _AGmstTweaker(AMultiTweaker):
