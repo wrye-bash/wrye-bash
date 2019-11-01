@@ -511,9 +511,6 @@ def build_executable(version, file_version):
     """ Builds the executable. """
     # some paths we'll use
     wbsa = os.path.join(SCRIPTS_PATH, u"build", u"standalone")
-    reshacker = os.path.join(wbsa, u"Reshacker.exe")
-    reshacker_log = os.path.join(wbsa, u"Reshacker.log")
-    icon = os.path.join(wbsa, u"bash.ico")
     manifest = os.path.join(wbsa, u"manifest.template")
     script = os.path.join(wbsa, u"setup.template")
     # for l10n
@@ -559,30 +556,8 @@ def build_executable(version, file_version):
         )
         # Copy the exe's to the Mopy folder
         mv(os.path.join(dist, u"Wrye Bash Launcher.exe"), exe)
-        # Insert the icon
-        LOGGER.info("Adding icon to executable...")
-        utils.run_subprocess(
-            [
-                reshacker,
-                "-addoverwrite",
-                exe + ",",
-                exe + ",",
-                icon + ",",
-                "ICONGROUP,",
-                "MAINICON,",
-                "0",
-            ],
-            LOGGER,
-        )
-        # Also copy contents of Reshacker.log to the build log
-        LOGGER.debug("--- RESHACKER LOG START ---")
-        if os.path.isfile(reshacker_log):
-            with open(reshacker_log, "r") as ins:
-                for line in ins:
-                    LOGGER.debug(line)
-        LOGGER.debug("---  RESHACKER LOG END  ---")
     except:
-        # On error, don't keep the built exe's
+        # On error, don't keep the built exe's -- why not in finally?
         rm(exe)
         raise
     finally:
@@ -591,8 +566,6 @@ def build_executable(version, file_version):
         rm(pygettext_dst)
         rm(dist)
         rm(os.path.join(MOPY_PATH, u"build"))
-        rm(os.path.join(wbsa, u"ResHacker.ini"))
-        rm(reshacker_log)
         rm(setup)
 
 

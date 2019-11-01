@@ -29,11 +29,14 @@ import py2exe, os, subprocess
 manifest = %(manifest)s
 RT_MANIFEST = 24
 
+icon_path = os.path.join("..", "scripts", "build", "standalone", "bash.ico")
+
 class Target:
     def __init__(self, script):
         self.name = 'Wrye Bash'
         self.description = 'Wrye Bash'
         self.version = '%(file_version)s'
+        self.icon_resources = [(1, icon_path)]
         self.author = 'Wrye Bash development team'
         self.url = 'http://tesnexus.com/downloads/file.php?id=22368'
         self.download_url = self.url
