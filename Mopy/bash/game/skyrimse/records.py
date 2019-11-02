@@ -58,7 +58,7 @@ class MreAmmo(MelRecord):
             elif size_ == 16:
                 unpacked = ins.unpack('IIfI', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 20, size_, True)
+                raise ModSizeError(ins.inName, readId, (20, 16), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -127,7 +127,7 @@ class MreMato(MelRecord):
             elif size_ == 48: # old skyrim record
                 unpacked = ins.unpack('11fI', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 52, size_, True)
+                raise ModSizeError(ins.inName, readId, (52, 48), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -169,7 +169,7 @@ class MreStat(MelRecord):
             elif size_ == 8: # old skyrim record
                 unpacked = ins.unpack('fI', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 12, size_, True)
+                raise ModSizeError(ins.inName, readId, (12, 8), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -208,7 +208,7 @@ class MreWatr(MelRecord):
             elif size_ == 228: # old skyrim record
                 unpacked = ins.unpack('7f4s2f3Bs3Bs3Bs4s43f', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 232, size_, True)
+                raise ModSizeError(ins.inName, readId, (232, 228), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -344,7 +344,7 @@ class MreWeap(MelRecord):
                 unpacked = (critDamage, crdtUnk1, criticalMultiplier,
                             criticalFlags, null3, null4, criticalEffect, null4)
             else:
-                raise ModSizeError(record.inName, readId, 24, size_, True)
+                raise ModSizeError(ins.inName, readId, (24, 16), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -459,7 +459,7 @@ class MreWthr(MelRecord):
             elif size_ == 24:
                 unpacked = ins.unpack('=4B4B4B4B4B4B', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 32, size_, True)
+                raise ModSizeError(ins.inName, readId, (32, 24), size_)
             unpacked += self.defaults[len(unpacked):]
             target = MelObject()
             record.__getattribute__(self.attr).append(target)

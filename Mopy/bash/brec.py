@@ -275,7 +275,8 @@ class ModReader(object):
         """Read from file."""
         endPos = self.ins.tell() + size
         if endPos > self.size:
-            raise exception.ModSizeError(self.inName, recType, endPos, self.size)
+            raise exception.ModSizeError(self.inName, recType, (endPos,),
+                                         self.size)
         return self.ins.read(size)
 
     def readLString(self,size,recType='----'):
@@ -340,8 +341,8 @@ class ModReader(object):
                            u'found %s instead.' % (recType, expType, rec_type))
         #--Match expected size?
         if expSize and expSize != size:
-            raise exception.ModSizeError(self.inName, recType + '.' + rec_type, size,
-                                         expSize, True)
+            raise exception.ModSizeError(self.inName, recType + '.' + rec_type,
+                                         (expSize,), size)
         return rec_type,size
 
     #--Find data ------------------------------------------

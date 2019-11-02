@@ -37,7 +37,7 @@ from ...brec import MelRecord, MelStructs, MelGroups, MelStruct, FID, \
     MelRegnEntrySubrecord, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
     MelUInt32, MelOptFid, MelOptFloat, MelOptSInt32, MelOptUInt8, \
     MelOptUInt16, MelOptUInt32
-from ...exception import ModError, ModSizeError
+from ...exception import ModSizeError
 
 # Those are unused here, but need be in this file as are accessed via itf
 from ..fallout3.records import MreNpc ##: used in Oblivion only save code really
@@ -239,7 +239,7 @@ class MreAmmo(MelRecord):
             elif size_ == 12:
                 unpacked = ins.unpack('IIf', size_, readId)
             else:
-                raise "Unexpected size encountered for AMMO:DAT2 subrecord: %s" % size_
+                raise ModSizeError(ins.inName, readId, (20, 12), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -296,7 +296,7 @@ class MreArma(MelRecord):
             elif size_ == 4:
                 unpacked = ins.unpack('=hH', size_, readId)
             else:
-                raise "Unexpected size encountered for ARMA subrecord: %s" % size_
+                raise ModSizeError(ins.inName, readId, (12, 4), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -349,7 +349,7 @@ class MreArmo(MelRecord):
             elif size_ == 4:
                 unpacked = ins.unpack('=hH', size_, readId)
             else:
-                raise "Unexpected size encountered for ARMO subrecord: %s" % size_
+                raise ModSizeError(ins.inName, readId, (12, 4), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -467,7 +467,7 @@ class MreCell(MelRecord):
             elif size_ == 8:
                 unpacked = ins.unpack('ii',size_,readId)
             else:
-                raise "Unexpected size encountered for XCLC subrecord: %s" % size_
+                raise ModSizeError(ins.inName, readId, (12, 8), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -488,7 +488,7 @@ class MreCell(MelRecord):
             elif size_ == 36:
                 unpacked = ins.unpack('=3Bs3Bs3Bs2f2i2f',size_,readId)
             else:
-                raise "Unexpected size encountered for XCLL subrecord: %s" % size_
+                raise ModSizeError(ins.inName, readId, (40, 36), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -704,7 +704,7 @@ class MreDial(brec.MreDial):
             elif size_ == 1:
                 unpacked = ins.unpack('B', size_, readId)
             else:
-                raise "Unexpected size encountered for DIAL subrecord: %s" % size_
+                raise ModSizeError(ins.inName, readId, (2, 1), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -790,7 +790,7 @@ class MreFact(MelRecord):
             elif size_ == 1:
                 unpacked = ins.unpack('B', size_, readId)
             else:
-                raise "Unexpected size encountered for FACT:DATA subrecord: %s" % size_
+                raise ModSizeError(ins.inName, readId, (4, 2, 1), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -1375,7 +1375,7 @@ class MreProj(MelRecord):
             elif size_ == 68:
                 unpacked = ins.unpack('HHfffIIfffIIfffIII', size_, readId)
             else:
-                raise "Unexpected size encountered for PROJ:DATA subrecord: %s" % size_
+                raise ModSizeError(ins.inName, readId, (84, 72, 68), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -1469,8 +1469,7 @@ class MreRefr(MelRecord):
             elif size_ == 12:
                 unpacked = ins.unpack('B3sI4s',size_,readId)
             else:
-                print ins.unpack(('%dB' % size_),size_)
-                raise ModError(ins.inName,_('Unexpected size encountered for REFR:XLOC subrecord: ')+str(size_))
+                raise ModSizeError(ins.inName, readId, (20, 12), size_)
             unpacked = unpacked[:-2] + self.defaults[len(unpacked)-2:-2] + unpacked[-2:]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -1854,7 +1853,9 @@ class MreWeap(MelRecord):
             elif size_ == 120:
                 unpacked = ins.unpack('IffBBBBfffffIBBBBffIIfffffffffffiIff', size_, readId)
             else:
-                raise "Unexpected size encountered for WEAP:DNAM subrecord: %s" % size_
+                raise ModSizeError(
+                    ins.inName, readId, (204, 200, 196, 180, 172, 164, 136,
+                                         124, 120), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -1871,7 +1872,7 @@ class MreWeap(MelRecord):
             elif size_ == 16:
                 unpacked = ins.unpack('Ifff', size_, readId)
             else:
-                raise "Unexpected size encountered for WEAP:VATS subrecord: %s" % size_
+                raise ModSizeError(ins.inName, readId, (20, 16), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -2005,7 +2006,8 @@ class MelPnamNam0Handler(MelStructA):
                     if action: value = action(value)
                     setter(attr,value)
         else:
-            raise ModSizeError(record.inName, record.recType +'.' + sub_type, (96 if sub_type == 'PNAM' else 240), size_, True)
+            exp_sizes = (96, 64) if sub_type == 'PNAM' else (240, 160)
+            raise ModSizeError(ins.inName, readId, exp_sizes, size_)
 
 class MreWthr(MelRecord):
     """Weather."""

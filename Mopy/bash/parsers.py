@@ -3909,10 +3909,8 @@ class LoadFactory(object):
             elif top_rec_type == 'CELL': return MobICells
             elif top_rec_type == 'WRLD': return MobWorlds
             else: return MobObjects
-        elif self.keepAll:
-            return MobBase
         else:
-            return None
+            return MobBase if self.keepAll else None
 
     def __repr__(self):
         return u'<LoadFactory: load %u types (%s), %s others>' % (

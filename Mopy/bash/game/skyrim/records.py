@@ -158,7 +158,7 @@ class MelBipedObjectData(MelStruct):
                 bipedFlags,legacyData = ins.unpack('=2I', size_, readId)
                 armorFlags = 0
             elif size_ != 12:
-                raise ModSizeError(ins.inName, readId, 12, size_, True)
+                raise ModSizeError(ins.inName, readId, (12, 8), size_)
             else:
                 bipedFlags,legacyData,armorFlags = ins.unpack('=3I', size_, readId)
             # legacyData is discarded except for non-playable status
@@ -238,9 +238,9 @@ class MelCTDAHandler(MelStructs):
     def loadData(self, record, ins, sub_type, size_, readId):
         if sub_type == 'CTDA':
             if size_ != 32 and size_ != 28 and size_ != 24 and size_ != 20:
-                raise ModSizeError(ins.inName, readId, 32, size_, False)
+                raise ModSizeError(ins.inName, readId, (32, 28, 24, 20), size_)
         else:
-            raise ModError(ins.inName,_(u'Unexpected subrecord: ')+readId)
+            raise ModError(ins.inName, u'Unexpected subrecord: %s' % readId)
         target = MelObject()
         record.conditions.append(target)
         target.__slots__ = self.attrs
@@ -288,7 +288,7 @@ class MelCTDAHandler(MelStructs):
         # (target.param1,target.param2) = unpacked2
         # target.unused3,target.reference,target.unused4 = ins.unpack('=4s2I',12,readId)
         else:
-            raise ModSizeError(ins.inName, readId, 32, size_, False)
+            raise ModSizeError(ins.inName, readId, (32, 28, 24, 20), size_)
         (target.ifunc,target.form12345) = (ifunc,form12345)
         if self._debug:
             unpacked = unpacked1+unpacked2
@@ -1779,7 +1779,7 @@ class MreCams(MelRecord):
             elif size_ == 40:
                 unpacked = ins.unpack('4I6f', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 44, size_, True)
+                raise ModSizeError(ins.inName, readId, (44, 40), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -1850,7 +1850,7 @@ class MreCell(MelRecord):
             elif size_ == 24:
                 unpacked = ins.unpack('BBBsBBBsBBBsffi', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 92, size_, True)
+                raise ModSizeError(ins.inName, readId, (92, 64, 24), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -1867,7 +1867,7 @@ class MreCell(MelRecord):
             elif size_ == 1:
                 unpacked = ins.unpack('B', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 2, size_, True)
+                raise ModSizeError(ins.inName, readId, (2, 1), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -2128,7 +2128,7 @@ class MreDebr(MelRecord):
             (record.percentage,) = struct_unpack('B',data[0:1])
             record.modPath = data[1:-2]
             if data[-2] != null1:
-                raise ModError(ins.inName,_('Unexpected subrecord: ')+readId)
+                raise ModError(ins.inName,u'Unexpected subrecord: %s' % readId)
             (record.flags,) = struct_unpack('B',data[-1])
 
         def dumpData(self,record,out):
@@ -2317,7 +2317,7 @@ class MreEczn(MelRecord):
             elif size_ == 8:
                 unpacked = ins.unpack('II', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 12, size_, True)
+                raise ModSizeError(ins.inName, readId, (12, 8), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -2381,7 +2381,8 @@ class MreEfsh(MelRecord):
             elif size_ == 308:
                 unpacked = ins.unpack('4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6f', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 400, size_, True)
+                raise ModSizeError(ins.inName, readId,
+                                   (400, 396, 344, 312, 308), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -2453,7 +2454,7 @@ class MreEnch(MelRecord,MreHasEffects):
             elif size_ == 32:
                 unpacked = ins.unpack('i2Ii2IfI', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 36, size_, True)
+                raise ModSizeError(ins.inName, readId, (36, 32), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -2513,7 +2514,8 @@ class MreExpl(MelRecord):
             elif size_ == 40:
                 unpacked = ins.unpack('6I4f', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 52, size_, True)
+                raise ModSizeError(ins.inName, readId, (52, 48, 44, 40),
+                                   size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -2611,7 +2613,7 @@ class MreFact(MelRecord):
             elif size_ == 12:
                 unpacked = ins.unpack('2B5H', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 20, size_, True)
+                raise ModSizeError(ins.inName, readId, (20, 16, 12), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -3233,7 +3235,7 @@ class MreIpct(MelRecord):
             elif size_ == 16:
                 unpacked = ins.unpack('=fI2f', size_, readId) #  + (0,0,0,0,)
             else:
-                raise ModSizeError(record.inName, readId, 24, size_, True)
+                raise ModSizeError(ins.inName, readId, (24, 16), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -3373,7 +3375,7 @@ class MreLgtm(MelRecord):
             elif size_ == 24:
                 unpacked = ins.unpack('=4B4B4B4B4B4B', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 32, size_, True)
+                raise ModSizeError(ins.inName, readId, (32, 24), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -3393,7 +3395,7 @@ class MreLgtm(MelRecord):
                 unpacked += null4 + null4
                 unpacked += ins.unpack('3Bs3f4s', 20, readId)
             else:
-                raise ModSizeError(record.inName, readId, 92, size_, True)
+                raise ModSizeError(ins.inName, readId, (92, 84), size_)
             setter = record.__setattr__
             for attr, value, action in zip(self.attrs, unpacked, self.actions):
                 if callable(action):
@@ -3591,7 +3593,7 @@ class MreMato(MelRecord):
             elif size_ == 28:
                 unpacked = ins.unpack('fffffff', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 48, size_, True)
+                raise ModSizeError(ins.inName, readId, (48, 28), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -3763,7 +3765,7 @@ class MreMovt(MelRecord):
             elif size_ == 40:
                 unpacked = ins.unpack('10f', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 44, size_, True)
+                raise ModSizeError(ins.inName, readId, (44, 40), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -4170,21 +4172,26 @@ class MrePack(MelRecord):
                   (self.subType == 'PTD2' and size_ == 12)):
                 unpacked = ins.unpack('iIi', size_, readId)
             else:
-                raise "Unexpected size encountered for PACK:%s subrecord: %s" % (self.subType, size_)
+                exp_sizes = ((16, 12) if self.subType in ('PTDT', 'PTD2')
+                             else (12,))
+                raise ModSizeError(ins.inName, readId, exp_sizes, size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
                 if callable(action): value = action(value)
                 setter(attr,value)
             if self._debug: print unpacked
+
         def hasFids(self,formElements):
             formElements.add(self)
+
         def dumpData(self,record,out):
             if ((self.subType == 'PLDT' and (record.locType or record.locId)) or
                 (self.subType == 'PLD2' and (record.locType2 or record.locId2)) or
                 (self.subType == 'PTDT' and (record.targetType or record.targetId)) or
                 (self.subType == 'PTD2' and (record.targetType2 or record.targetId2))):
                 MelStruct.dumpData(self,record,out)
+
         def mapFids(self,record,function,save=False):
             """Applies function to fids. If save is true, then fid is set
             to result of function."""
@@ -4266,7 +4273,7 @@ class MrePerk(MelRecord):
             elif size_ == 4:
                 unpacked = ins.unpack('BBBB', size_, readId)
             else:
-                raise "Unexpected size encountered for DATA subrecord: %s" % size_
+                raise ModSizeError(ins.inName, readId, (5, 4), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -4379,7 +4386,7 @@ class MreProj(MelRecord):
             elif size_ == 84:
                 unpacked = ins.unpack('2H3f2I3f2I3f3I4f', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 92, size_, True)
+                raise ModSizeError(ins.inName, readId, (92, 88, 84), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -4616,7 +4623,7 @@ class MreRefr(MelRecord):
             elif size_ == 12:
                 unpacked = ins.unpack('B3sIB3s', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 20, size_, True)
+                raise ModSizeError(ins.inName, readId, (20, 16, 12), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -5349,7 +5356,9 @@ class MreSpgd(MelRecord):
 
         def loadData(self, record, ins, sub_type, size_, readId):
             """Reads data from ins into record attribute."""
-            if size_ == 40:
+            if size_ == 48:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
+            elif size_ == 40:
                 # 40 Bytes for legacy data post Skyrim 1.5 DATA is always 48:
                 # fffffffIIIIf
                 # Type is an Enum 0 = Rain; 1 = Snow
@@ -5362,10 +5371,8 @@ class MreSpgd(MelRecord):
                     print u' ',zip(self.attrs,unpacked)
                     if len(unpacked) != len(self.attrs):
                         print u' ',unpacked
-            elif size_ != 48:
-                raise ModSizeError(record.inName, readId, 48, size_, True)
             else:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
+                raise ModSizeError(ins.inName, readId, (48, 40), size_)
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -5686,7 +5693,7 @@ class MreWrld(MelRecord):
             elif size_ == 16:
                 unpacked = ins.unpack('2i4h', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 28, size_, True)
+                raise ModSizeError(ins.inName, readId, (28, 24, 16), size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -5798,7 +5805,7 @@ class MreWthr(MelRecord):
             elif size_ == 24:
                 unpacked = ins.unpack('=4B4B4B4B4B4B', size_, readId)
             else:
-                raise ModSizeError(record.inName, readId, 32, size_, True)
+                raise ModSizeError(ins.inName, readId, (32, 24), size_)
             unpacked += self.defaults[len(unpacked):]
             target = MelObject()
             record.__getattribute__(self.attr).append(target)
