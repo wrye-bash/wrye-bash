@@ -354,10 +354,32 @@ class Parser(object):
             return self.text
         tkn = property(GetData) # did I catch all uses ?
 
-        def __cmp__(self, other):
+        # Implement rich comparisons, __cmp__ is deprecated
+        def __eq__(self, other):
             if isinstance(other, Parser.Token):
-                return cmp(self.tkn, other.tkn)
-            return cmp(self.tkn, other)
+                return self.tkn == other.tkn
+            return self.tkn == other
+        def __ne__(self, other):
+            if isinstance(other, Parser.Token):
+                return self.tkn != other.tkn
+            return self.tkn != other
+        def __lt__(self, other):
+            if isinstance(other, Parser.Token):
+                return self.tkn < other.tkn
+            return self.tkn < other
+        def __le__(self, other):
+            if isinstance(other, Parser.Token):
+                return self.tkn <= other.tkn
+            return self.tkn <= other
+        def __gt__(self, other):
+            if isinstance(other, Parser.Token):
+                return self.tkn > other.tkn
+            return self.tkn > other
+        def __ge__(self, other):
+            if isinstance(other, Parser.Token):
+                return self.tkn >= other.tkn
+            return self.tkn >= other
+
         def __add__(self, other): return Parser.Token(self.tkn + other.tkn)
         def __sub__(self, other): return Parser.Token(self.tkn - other.tkn)
         def __mul__(self, other): return Parser.Token(self.tkn * other.tkn)

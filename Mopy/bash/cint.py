@@ -418,10 +418,6 @@ class ICASEMixin:
         try: return self.lower() >= other.lower()
         except AttributeError: return False
 
-    def __cmp__(self, other):
-        try: return cmp(self.lower(), other.lower())
-        except AttributeError: return False
-
     def __hash__(self):
         return hash(self.lower())
 

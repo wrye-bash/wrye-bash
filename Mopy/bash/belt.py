@@ -361,10 +361,10 @@ class PageFinish(PageInstaller):
                  notes, iniedits):
         PageInstaller.__init__(self, parent)
         subs = subsList.keys()
-        subs.sort(lambda l,r: cmp(l, r))
+        subs.sort(lambda l,r: bolt.cmp_(l, r))
         subs = [x.replace(u'&',u'&&') for x in subs]
         plugins = plugin_list.keys()
-        plugins.sort(lambda l,r: cmp(l, r))
+        plugins.sort(lambda l,r: bolt.cmp_(l, r))
         #--make the list that will be displayed
         displayed_plugins = []
         for x in plugins:
@@ -1081,7 +1081,7 @@ class WryeParser(ScriptParser.Parser):
 
     def fnCompareWBVersion(self, wbWant):
         wbHave = bass.AppVersion
-        return cmp(float(wbHave), float(wbWant))
+        return bolt.cmp_(float(wbHave), float(wbWant))
 
     def fnDataFileExists(self, *filenames):
         for filename in filenames:

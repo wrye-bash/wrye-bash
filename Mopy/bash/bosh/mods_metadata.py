@@ -683,8 +683,20 @@ class ModCleaner:
                 self.parentParentFid = parentParentFid
                 self.parentParentEid = parentParentEid
 
-        def __cmp__(self,other):
-            return cmp(self.fid,other.fid)
+        # Implement rich comparison operators, __cmp__ is deprecated
+        def __eq__(self, other):
+            return self.fid == other.fid
+        def __ne__(self, other):
+            return self.fid != other.fid
+        def __lt__(self, other):
+            return self.fid < other.fid
+        def __le__(self, other):
+            return self.fid <= other.fid
+        def __gt__(self, other):
+            return self.fid > other.fid
+        def __ge__(self, other):
+            return self.fid >= other.fid
+
 
     def __init__(self,modInfo):
         self.modInfo = modInfo

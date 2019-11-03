@@ -1811,6 +1811,11 @@ class Table(DataDict):
 
 # Util Functions --------------------------------------------------------------
 #------------------------------------------------------------------------------
+def cmp_(x, y):
+    """Compares x and y. For backwards compatibility since py3 drops cmp."""
+    # TODO(lojack): Hunt down and rewrite any usages of this
+    return (x > y) - (x < y)
+
 def copyattrs(source,dest,attrs):
     """Copies specified attrbutes from source object to dest object."""
     for attr in attrs:
