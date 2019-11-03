@@ -4146,24 +4146,26 @@ class BashApp(wx.App):
     def InitVersion():
         """Perform any version to version conversion. Called by Init()."""
         #--Renames dictionary: Strings to Paths.
-        if settings['bash.version'] < 40:
-            #--Renames array
-            newRenames = {}
-            for key,value in settings['bash.mods.renames'].items():
-                newRenames[GPath(key)] = GPath(value)
-            settings['bash.mods.renames'] = newRenames
-            #--Mod table data
-            modTableData = bosh.modInfos.table.data
-            for key in modTableData.keys():
-                if not isinstance(key,bolt.Path):
-                    modTableData[GPath(key)] = modTableData[key]
-                    del modTableData[key]
-        #--Window sizes by class name rather than by class
-        if settings['bash.version'] < 43:
-            for key,value in balt.sizes.items():
-                if isinstance(key,ClassType):
-                    balt.sizes[key.__name__] = value
-                    del balt.sizes[key]
+        bash_version = settings['bash.version']
+        if isinstance(bash_version, int):
+            if bash_version < 40:
+                #--Renames array
+                newRenames = {}
+                for key,value in settings['bash.mods.renames'].iteritems():
+                    newRenames[GPath(key)] = GPath(value)
+                settings['bash.mods.renames'] = newRenames
+                #--Mod table data
+                modTableData = bosh.modInfos.table.data
+                for key in modTableData.keys():
+                    if not isinstance(key,bolt.Path):
+                        modTableData[GPath(key)] = modTableData[key]
+                        del modTableData[key]
+            #--Window sizes by class name rather than by class
+            if bash_version < 43:
+                for key,value in balt.sizes.iteritems():
+                    if isinstance(key,ClassType):
+                        balt.sizes[key.__name__] = value
+                        del balt.sizes[key]
         #--Current Version
         if settings['bash.version'] != bass.AppVersion:
             settings['bash.version'] = bass.AppVersion
