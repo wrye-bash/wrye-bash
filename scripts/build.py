@@ -230,15 +230,6 @@ def cpy(src, dst):
         shutil.copy2(src, dst)
 
 
-def real_sys_prefix():
-    if hasattr(sys, "real_prefix"):  # running in virtualenv
-        return sys.real_prefix
-    elif hasattr(sys, "base_prefix"):  # running in venv
-        return sys.base_prefix
-    else:
-        return sys.prefix
-
-
 def pack_7z(file_list, archive, list_path):
     with open(list_path, "wb") as out:
         for node in sorted(file_list, key=unicode.lower):
@@ -478,66 +469,32 @@ def pack_manual(version, file_list, output_dir):
             rm(target)
 
 
+@contextmanager
 def build_executable(version, file_version):
     """ Builds the executable. """
-    # some paths we'll use
-    wbsa = os.path.join(SCRIPTS_PATH, u"build", u"standalone")
-    manifest = os.path.join(wbsa, u"manifest.template")
-    script = os.path.join(wbsa, u"setup.template")
-    # for l10n
-    msgfmt_src = os.path.join(real_sys_prefix(), u"Tools", u"i18n", u"msgfmt.py")
-    pygettext_src = os.path.join(real_sys_prefix(), u"Tools", u"i18n", u"pygettext.py")
-    msgfmt_dst = os.path.join(MOPY_PATH, u"bash", u"msgfmt.py")
-    pygettext_dst = os.path.join(MOPY_PATH, u"bash", u"pygettext.py")
-    # output folders/files
-    exe = os.path.join(MOPY_PATH, u"Wrye Bash.exe")
-    setup = os.path.join(MOPY_PATH, u"setup.py")
-    dist = os.path.join(MOPY_PATH, u"dist")
-    # check for build requirements
-    for fpath in (script, manifest):
-        if not os.path.isfile(fpath):
-            raise IOError("Could not find '{}', aborting packaging.".format(fpath))
-    # Read in the manifest file
-    with open(manifest, "r") as man:
-        manifest = '"""\n' + man.read() + '\n"""'
-    # Include the game package and subpackages (because py2exe wont
-    # automatically detect these)
-    packages = "'bash.game'"  # notice the double quotes
+    LOGGER.info("Building executable...")
+    script_file = os.path.join(SCRIPTS_PATH, u"build", u"standalone", u"setup.py")
+    setup_file = os.path.join(MOPY_PATH, u"setup.py")
+    exe_file = os.path.join(MOPY_PATH, u"Wrye Bash.exe")
+    build_folder = os.path.join(MOPY_PATH, u"build")
+    dist_folder = os.path.join(MOPY_PATH, u"dist")
+    cpy(script_file, setup_file)
+    # Call the setup script
+    utils.run_subprocess(
+        [sys.executable, setup_file, "py2exe", "--version", file_version],
+        LOGGER,
+        cwd=MOPY_PATH
+    )
+    # Copy the exe's to the Mopy folder
+    mv(os.path.join(dist_folder, u"Wrye Bash Launcher.exe"), exe_file)
+    # Clean up py2exe generated files/folders
+    rm(setup_file)
+    rm(build_folder)
+    rm(dist_folder)
     try:
-        import wx
-
-        # Write the setup script
-        with open(script, "r") as ins:
-            script = ins.read()
-        script = script % dict(
-            version=version,
-            file_version=file_version,
-            manifest=manifest,
-            packages=packages,
-        )
-        with open(setup, "w") as out:
-            out.write(script)
-        # Copy the l10n files over
-        cpy(msgfmt_src, msgfmt_dst)
-        cpy(pygettext_src, pygettext_dst)
-        # Call the setup script
-        LOGGER.info("Running py2exe...")
-        utils.run_subprocess(
-            [sys.executable, setup, "py2exe", "-q"], LOGGER, cwd=MOPY_PATH
-        )
-        # Copy the exe's to the Mopy folder
-        mv(os.path.join(dist, u"Wrye Bash Launcher.exe"), exe)
-    except:
-        # On error, don't keep the built exe's -- why not in finally?
-        rm(exe)
-        raise
+        yield
     finally:
-        # Clean up left over files
-        rm(msgfmt_dst)
-        rm(pygettext_dst)
-        rm(dist)
-        rm(os.path.join(MOPY_PATH, u"build"))
-        rm(setup)
+        rm(exe_file)
 
 
 def pack_standalone(version, file_list, output_dir):
@@ -660,16 +617,6 @@ def handle_apps_folder():
             rm(APPS_PATH)
 
 
-@contextmanager
-def handle_executable(release_version, version_info):
-    LOGGER.info("Building executable...")
-    build_executable(release_version, version_info)
-    try:
-        yield
-    finally:
-        rm(os.path.join(MOPY_PATH, u"Wrye Bash.exe"))
-
-
 # Checks whether the current nightly timestamp
 #   is the same as the previous nightly build.
 # Returns False if it's the same, True otherwise
@@ -731,7 +678,7 @@ def main(args):
             pack_manual(args.version, all_files, args.output)
         if not args.standalone and not args.installer:
             return
-        with handle_executable(args.version, version_info):
+        with build_executable(args.version, version_info):
             if args.standalone:
                 LOGGER.info("Creating standalone distributable...")
                 pack_standalone(args.version, all_files, args.output)
