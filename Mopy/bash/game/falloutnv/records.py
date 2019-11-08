@@ -25,17 +25,17 @@
 import struct
 # Set MelModel in brec, in this case it's identical to the fallout 3 one
 from ..fallout3.records import MelOwnership, MelDestructible, MelBipedFlags, \
-    MelEffects, MelConditions, MreHasEffects
+    MelEffects, MelConditions, MreHasEffects, MelEmbeddedScript
 from ... import brec
 from ...bolt import Flags
 from ...brec import MelModel # set in Mopy/bash/game/fallout3/records.py
 from ...brec import MelRecord, MelStructs, MelGroups, MelStruct, FID, \
     MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     MelBase, MelFidList, MelStructA, MreGmstBase, MreHeaderBase, MelUnicode, \
-    MelColorInterpolator, MelValueInterpolator, MelReferences, \
-    MelRegnEntrySubrecord, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
-    MelUInt32, MelOptFid, MelOptFloat, MelOptSInt32, MelOptUInt8, \
-    MelOptUInt16, MelOptUInt32, MelBounds, null1, null2, null3, null4
+    MelColorInterpolator, MelValueInterpolator, MelRegnEntrySubrecord, \
+    MelFloat, MelSInt8, MelSInt32, MelUInt8, MelUInt32, MelOptFid, \
+    MelOptFloat, MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, \
+    MelBounds, null1, null2, null3, null4
 from ...exception import ModSizeError
 
 # Those are unused here, but need be in this file as are accessed via it
@@ -67,7 +67,6 @@ class MreAchr(MelRecord):
     classType = 'ACHR'
 
     _flags = Flags(0L,Flags.getNames('oppositeParent','popIn'))
-    _variableFlags = Flags(0L,Flags.getNames('isLongOrShort'))
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -79,13 +78,7 @@ class MreAchr(MelRecord):
             MelFloat('XPRD', 'idleTime'),
             MelBase('XPPA','patrolScriptMarker'),
             MelFid('INAM', 'idle'),
-            MelStruct('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
-            MelBase('SCDA','compiled_p'),
-            MelString('SCTX','scriptText'),
-            MelGroups('vars',
-                MelStruct('SLSD','I12sB7s','index',('unused1',null4+null4+null4),(_variableFlags,'flags',0L),('unused2',null4+null3)),
-                MelString('SCVR','name')),
-            MelReferences(),
+            MelEmbeddedScript(),
             MelFid('TNAM','topic'),
         ),
         MelSInt32('XLCM', 'levelModifier'),
@@ -117,7 +110,6 @@ class MreAcre(MelRecord):
     classType = 'ACRE'
 
     _flags = Flags(0L,Flags.getNames('oppositeParent','popIn'))
-    _variableFlags = Flags(0L,Flags.getNames('isLongOrShort'))
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -129,13 +121,7 @@ class MreAcre(MelRecord):
             MelFloat('XPRD', 'idleTime'),
             MelBase('XPPA','patrolScriptMarker'),
             MelFid('INAM', 'idle'),
-            MelStruct('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
-            MelBase('SCDA','compiled_p'),
-            MelString('SCTX','scriptText'),
-            MelGroups('vars',
-                MelStruct('SLSD','I12sB7s','index',('unused1',null4+null4+null4),(_variableFlags,'flags',0L),('unused2',null4+null3)),
-                MelString('SCVR','name')),
-            MelReferences(),
+            MelEmbeddedScript(),
             MelFid('TNAM','topic'),
         ),
         MelSInt32('XLCM', 'levelModifier'),
@@ -962,7 +948,6 @@ class MreInfo(MelRecord):
         'runForRumors','speechChallenge',))
     _flags2 = Flags(0,Flags.getNames(
         'sayOnceADay','alwaysDarken',None,None,'lowIntelligence','highIntelligence',))
-    _variableFlags = Flags(0L,Flags.getNames('isLongOrShort'))
 
     class MelInfoData(MelStruct):
         """Support older 2 byte version."""
@@ -977,12 +962,6 @@ class MreInfo(MelRecord):
                 if callable(action): value = action(value)
                 setter(attr,value)
             if self._debug: print (record.dialType,record.flags.getTrueAttrs())
-
-    class MelInfoSchr(MelStruct):
-        """Print only if schd record is null."""
-        def dumpData(self,record,out):
-            if not record.schd_p:
-                MelStruct.dumpData(self,record,out)
 
     melSet = MelSet(
         MelInfoData('DATA','HH','dialType','nextSpeaker',(_flags,'flags'),(_flags2,'flagsInfo'),),
@@ -1004,23 +983,11 @@ class MreInfo(MelRecord):
         MelFids('TCLF','linksFrom'),
         MelFids('TCFU','tcfu_p'),
         MelGroup('scriptBegin',
-            MelInfoSchr('SCHR','4s4I',('unused2',null4),'numRefs','compiledSize','lastIndex','scriptType'),
-            MelBase('SCDA','compiled_p'),
-            MelString('SCTX','scriptText'),
-            MelGroups('vars',
-                MelStruct('SLSD','I12sB7s','index',('unused1',null4+null4+null4),(_variableFlags,'flags',0L),('unused2',null4+null3)),
-                MelString('SCVR','name')),
-            MelReferences(),
+            MelEmbeddedScript(),
         ),
         MelGroup('scriptEnd',
             MelBase('NEXT','marker'),
-            MelInfoSchr('SCHR','4s4I',('unused2',null4),'numRefs','compiledSize','lastIndex','scriptType'),
-            MelBase('SCDA','compiled_p'),
-            MelString('SCTX','scriptText'),
-            MelGroups('vars',
-                MelStruct('SLSD','I12sB7s','index',('unused1',null4+null4+null4),(_variableFlags,'flags',0L),('unused2',null4+null3)),
-                MelString('SCVR','name')),
-            MelReferences(),
+            MelEmbeddedScript(),
         ),
         MelFid('SNDD','sndd_p'),
         MelString('RNAM','prompt'),
@@ -1217,7 +1184,6 @@ class MrePgre(MelRecord):
     classType = 'PGRE'
 
     _flags = Flags(0L,Flags.getNames('oppositeParent'))
-    _variableFlags = Flags(0L,Flags.getNames('isLongOrShort'))
     _watertypeFlags = Flags(0L,Flags.getNames('reflection','refraction'))
 
     melSet = MelSet(
@@ -1230,13 +1196,7 @@ class MrePgre(MelRecord):
             MelFloat('XPRD', 'idleTime'),
             MelBase('XPPA','patrolScriptMarker'),
             MelFid('INAM', 'idle'),
-            MelStruct('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
-            MelBase('SCDA','compiled_p'),
-            MelString('SCTX','scriptText'),
-            MelGroups('vars',
-                MelStruct('SLSD','I12sB7s','index',('unused1',null4+null4+null4),(_variableFlags,'flags',0L),('unused2',null4+null3)),
-                MelString('SCVR','name')),
-            MelReferences(),
+            MelEmbeddedScript(),
             MelFid('TNAM','topic'),
         ),
         MelOwnership(),
@@ -1270,7 +1230,6 @@ class MrePmis(MelRecord):
     classType = 'PMIS'
 
     _flags = Flags(0L,Flags.getNames('oppositeParent'))
-    _variableFlags = Flags(0L,Flags.getNames('isLongOrShort'))
     _watertypeFlags = Flags(0L,Flags.getNames('reflection','refraction'))
 
     melSet = MelSet(
@@ -1283,13 +1242,7 @@ class MrePmis(MelRecord):
             MelFloat('XPRD', 'idleTime'),
             MelBase('XPPA','patrolScriptMarker'),
             MelFid('INAM', 'idle'),
-            MelStruct('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
-            MelBase('SCDA','compiled_p'),
-            MelString('SCTX','scriptText'),
-            MelGroups('vars',
-                MelStruct('SLSD','I12sB7s','index',('unused1',null4+null4+null4),(_variableFlags,'flags',0L),('unused2',null4+null3)),
-                MelString('SCVR','name')),
-            MelReferences(),
+            MelEmbeddedScript(),
             MelFid('TNAM','topic'),
         ),
         MelOwnership(),
@@ -1427,7 +1380,6 @@ class MreRefr(MelRecord):
     _actFlags = Flags(0L,Flags.getNames('useDefault', 'activate','open','openByDefault'))
     _lockFlags = Flags(0L,Flags.getNames(None, None, 'leveledLock'))
     _destinationFlags = Flags(0L,Flags.getNames('noAlarm'))
-    _variableFlags = Flags(0L,Flags.getNames('isLongOrShort'))
 
     class MelRefrXloc(MelOptStruct):
         """Handle older truncated XLOC for REFR subrecord."""
@@ -1521,13 +1473,7 @@ class MreRefr(MelRecord):
             MelFloat('XPRD', 'idleTime'),
             MelBase('XPPA','patrolScriptMarker'),
             MelFid('INAM', 'idle'),
-            MelStruct('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
-            MelBase('SCDA','compiled_p'),
-            MelString('SCTX','scriptText'),
-            MelGroups('vars',
-                MelStruct('SLSD','I12sB7s','index',('unused1',null4+null4+null4),(_variableFlags,'flags',0L),('unused2',null4+null3)),
-                MelString('SCVR','name')),
-            MelReferences(),
+            MelEmbeddedScript(),
             MelFid('TNAM','topic'),
         ),
         MelOptStruct('XRDO','fIfI','rangeRadius','broadcastRangeType','staticPercentage',(FID,'positionReference')),

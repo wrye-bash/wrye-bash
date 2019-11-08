@@ -778,33 +778,73 @@ class MelSortedFidList(MelFidList):
         out.packSub(self.subType, `len(fids)` + 'I', *fids)
 
 #------------------------------------------------------------------------------
-class MelGroup(MelBase):
-    """Represents a group record."""
-
-    def __init__(self,attr,*elements):
-        self.attr,self.elements,self.formElements,self.loaders = attr,elements,set(),{}
+class MelSequential(MelBase):
+    """Represents a sequential, which is simply a way for one record element to
+    delegate loading to multiple other record elements. It basically behaves
+    like MelGroup, but does not assign to an attribute."""
+    def __init__(self, *elements):
+        self.elements, self.form_elements = elements, set()
         self._possible_sigs = {s for element in self.elements for s
                                in element.signatures}
 
     def debug(self,on=True):
-        for element in self.elements: element.debug(on)
+        for element in self.elements:
+            element.debug(on)
         return self
+
+    def getDefaulters(self, defaulters, base):
+        for element in self.elements:
+            element.getDefaulters(defaulters, base + '.')
+
+    def getLoaders(self, loaders):
+        for element in self.elements:
+            element.getLoaders(loaders)
+
+    def getSlotsUsed(self):
+        slots_ret = set()
+        for element in self.elements:
+            slots_ret.update(element.getSlotsUsed())
+        return tuple(slots_ret)
+
+    def hasFids(self, formElements):
+        for element in self.elements:
+            element.hasFids(self.form_elements)
+        if self.form_elements: formElements.add(self)
+
+    def setDefault(self, record):
+        for element in self.elements:
+            element.setDefault(record)
+
+    def dumpData(self, record, out):
+        for element in self.elements:
+            element.dumpData(record, out)
+
+    def mapFids(self, record, function, save=False):
+        for element in self.form_elements:
+            element.mapFids(record, function, save)
+
+    @property
+    def signatures(self):
+        return self._possible_sigs
+
+#------------------------------------------------------------------------------
+class MelGroup(MelSequential):
+    """Represents a group record."""
+    def __init__(self,attr,*elements):
+        MelSequential.__init__(self, *elements)
+        self.attr, self.loaders = attr, {}
 
     def getDefaulters(self,defaulters,base):
         defaulters[base+self.attr] = self
-        for element in self.elements:
-            element.getDefaulters(defaulters,base+self.attr+'.')
+        MelSequential.getDefaulters(self, defaulters, base + self.attr)
 
     def getLoaders(self,loaders):
-        for element in self.elements:
-            element.getLoaders(self.loaders)
+        MelSequential.getLoaders(self, self.loaders)
         for type in self.loaders:
             loaders[type] = self
 
-    def hasFids(self,formElements):
-        for element in self.elements:
-            element.hasFids(self.formElements)
-        if self.formElements: formElements.add(self)
+    def getSlotsUsed(self):
+        return self.attr,
 
     def setDefault(self,record):
         record.__setattr__(self.attr,None)
@@ -827,18 +867,12 @@ class MelGroup(MelBase):
     def dumpData(self,record,out):
         target = record.__getattribute__(self.attr)
         if not target: return
-        for element in self.elements:
-            element.dumpData(target,out)
+        MelSequential.dumpData(self, target, out)
 
     def mapFids(self,record,function,save=False):
         target = record.__getattribute__(self.attr)
         if not target: return
-        for element in self.formElements:
-            element.mapFids(target,function,save)
-
-    @property
-    def signatures(self):
-        return self._possible_sigs
+        MelSequential.mapFids(self, target, function, save)
 
 #------------------------------------------------------------------------------
 class MelBounds(MelGroup):
@@ -881,7 +915,7 @@ class MelGroups(MelGroup):
                 element.dumpData(target,out)
 
     def mapFids(self,record,function,save=False):
-        formElements = self.formElements
+        formElements = self.form_elements
         for target in record.__getattribute__(self.attr):
             for element in formElements:
                 element.mapFids(target,function,save)
@@ -2749,6 +2783,7 @@ class MelRaceParts(MelNull):
     def signatures(self):
         return self._possible_sigs
 
+#------------------------------------------------------------------------------
 class MelRaceVoices(MelStruct):
     """Set voices to zero, if equal race fid. If both are zero, then skip
     dumping."""
@@ -2757,6 +2792,20 @@ class MelRaceVoices(MelStruct):
         if record.femaleVoice == record.fid: record.femaleVoice = 0L
         if (record.maleVoice, record.femaleVoice) != (0, 0):
             MelStruct.dumpData(self, record, out)
+
+#------------------------------------------------------------------------------
+class MelScriptVars(MelGroups):
+    """Handles SLSD and SCVR combos defining script variables."""
+    _var_flags = bolt.Flags(0L, bolt.Flags.getNames('is_long_or_short'))
+
+    def __init__(self):
+        MelGroups.__init__(self, 'script_vars',
+            MelStruct('SLSD', 'I12sB7s', 'var_index',
+                      ('unused1', null4 + null4 + null4),
+                      (self._var_flags, 'var_flags', 0L),
+                      ('unused2', null4 + null3)),
+            MelString('SCVR', 'var_name'),
+        )
 
 #------------------------------------------------------------------------------
 # Skyrim and Fallout ----------------------------------------------------------

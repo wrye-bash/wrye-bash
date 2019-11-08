@@ -33,7 +33,7 @@ from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     MelReferences, MelRegnEntrySubrecord, MelFloat, MelSInt16, MelSInt32, \
     MelUInt8, MelUInt16, MelUInt32, MelOptFloat, MelOptSInt32, MelOptUInt8, \
     MelOptUInt16, MelOptUInt32, MelRaceParts, MelRaceVoices, null1, null2, \
-    null3, null4
+    null3, null4, MelScriptVars, MelSequential, MelUnion
 from ...exception import BoltError, ModSizeError, StateError
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
@@ -64,7 +64,7 @@ if brec.MelModel is None:
 from ...brec import MelModel
 
 #------------------------------------------------------------------------------
-# Record Elements    ----------------------------------------------------------
+# Record Elements -------------------------------------------------------------
 #------------------------------------------------------------------------------
 class MreActor(MelRecord):
     """Creatures and NPCs."""
@@ -77,6 +77,7 @@ class MreActor(MelRecord):
         self.factions = [x for x in self.factions if x.faction[0] in modSet]
         self.items = [x for x in self.items if x.item[0] in modSet]
 
+#------------------------------------------------------------------------------
 class MelBipedFlags(Flags):
     """Biped flags element. Includes biped flag set by default."""
     mask = 0xFFFF
@@ -88,6 +89,7 @@ class MelBipedFlags(Flags):
         if newNames: names.update(newNames)
         Flags.__init__(self,default,names)
 
+#------------------------------------------------------------------------------
 class MelConditions(MelStructs):
     """Represents a set of quest/dialog conditions. Difficulty is that FID
     state of parameters depends on function index."""
@@ -155,6 +157,7 @@ class MelConditions(MelStructs):
                 result = function(target.param2)
                 if save: target.param2 = result
 
+#------------------------------------------------------------------------------
 # A distributor config for use with MelEffects, since MelEffects also contains
 # a FULL subrecord
 _effects_distributor = {
@@ -211,6 +214,25 @@ class MelEffects(MelGroups):
             ),
         )
 
+#------------------------------------------------------------------------------
+class MelEmbeddedScript(MelSequential):
+    """Handles an embedded script, a SCHR/SCDA/SCTX/SLSD/SCVR/SCRO/SCRV
+    subrecord combo. SLSD and SCVR can optionally be disabled."""
+    def __init__(self, with_script_vars=False):
+        seq_elements = [
+            MelUnion({
+                'SCHR': MelStruct('SCHR', '4s4I', ('unused1', null4),
+                                  'num_refs', 'compiled_size', 'last_index',
+                                  'script_type'),
+                'SCHD': MelBase('SCHD', 'old_script_header'),
+            }),
+            MelBase('SCDA', 'compiled_script'),
+            MelString('SCTX', 'script_source')
+        ]
+        if with_script_vars: seq_elements += [MelScriptVars()]
+        MelSequential.__init__(self, *(seq_elements + [MelReferences()]))
+
+#------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
     """Leveled item/creature/spell list.."""
     copyAttrs = ('script','template','chanceNone',)
@@ -251,6 +273,7 @@ class MreLeveledList(MreLeveledListBase):
     )
     __slots__ = melSet.getSlotsUsed()
 
+#------------------------------------------------------------------------------
 class MelOwnership(MelGroup):
     """Handles XOWN, XRNK, and XGLB for cells and cell children."""
     def __init__(self,attr='ownership'):
@@ -1030,12 +1053,6 @@ class MreInfo(MelRecord):
                 setter(attr,value)
             if self._debug: print (record.dialType,record.flags.getTrueAttrs())
 
-    class MelInfoSchr(MelStruct):
-        """Print only if schd record is null."""
-        def dumpData(self,record,out):
-            if not record.schd_p:
-                MelStruct.dumpData(self,record,out)
-
     melSet = MelSet(
         MelInfoData('DATA','3B','dialType','nextSpeaker',(_flags,'flags')),
         MelFid('QSTI','quests'),
@@ -1051,13 +1068,7 @@ class MreInfo(MelRecord):
         MelConditions(),
         MelFids('TCLT','choices'),
         MelFids('TCLF','linksFrom'),
-        MelInfoSchr('SCHR', '4s4I', ('unused1', null4), 'numRefs',
-                    'compiledSize', 'lastIndex', 'scriptType'),
-        # Old format script header would need dumpExtra to handle it
-        MelBase('SCHD','schd_p'),
-        MelBase('SCDA','compiled_p'),
-        MelString('SCTX','scriptText'),
-        MelReferences(),
+        MelEmbeddedScript(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1497,11 +1508,7 @@ class MreQust(MelRecord):
                 MelUInt8('QSDT', (stageFlags, 'flags')),
                 MelConditions(),
                 MelString('CNAM','text'),
-                MelStruct('SCHR', '4s4I', ('unused1', null4), 'numRefs',
-                          'compiledSize', 'lastIndex', 'scriptType'),
-                MelBase('SCDA','compiled_p'),
-                MelString('SCTX','scriptText'),
-                MelReferences()
+                MelEmbeddedScript(),
             ),
         ),
         MelGroups('targets',
@@ -1809,17 +1816,9 @@ class MreScpt(MelRecord):
     """Script."""
     classType = 'SCPT'
 
-    _flags = Flags(0L,Flags.getNames('isLongOrShort'))
-
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
-        MelBase('SCDA','compiled_p'),
-        MelString('SCTX','scriptText'),
-        MelGroups('vars',
-            MelStruct('SLSD','I12sB7s','index',('unused1',null4+null4+null4),(_flags,'flags',0L),('unused2',null4+null3)),
-            MelString('SCVR','name')),
-        MelReferences(),
+        MelEmbeddedScript(with_script_vars=True),
     )
     __slots__ = melSet.getSlotsUsed()
 

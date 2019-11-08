@@ -37,7 +37,7 @@ from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     MelFloat, MelSInt8, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
     MelOptFloat, MelOptSInt16, MelOptSInt32, MelOptUInt8, MelOptUInt16, \
     MelOptUInt32, MelOptFid, MelCounter, MelPartialCounter, MelBounds, null1, \
-    null2, null3, null4
+    null2, null3, null4, MelSequential
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -436,14 +436,15 @@ class MelItemsCounter(MelCounter):
             self, MelUInt32('COCT', 'item_count'), counts='items')
 
 #------------------------------------------------------------------------------
-class MelKeywords(MelGroup):
-    """Wraps MelGroup for the common task of defining a list of keywords"""
+class MelKeywords(MelSequential):
+    """Wraps MelSequential for the common task of defining a list of keywords
+    and a corresponding counter."""
     def __init__(self):
-        MelGroup.__init__(self, 'keywords',
+        MelSequential.__init__(self,
             # TODO(inf) Kept it as such, why little-endian?
             MelCounter(MelStruct('KSIZ', '<I', 'keyword_count'),
                        counts='keyword_list'),
-            MelFidList('KWDA', 'keyword_list'),
+            MelFidList('KWDA', 'keywords'),
         )
 
 #------------------------------------------------------------------------------
