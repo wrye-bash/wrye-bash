@@ -31,23 +31,23 @@ from ...bolt import Flags, struct_unpack, struct_pack
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     MreHeaderBase, MelBase, MelUnicode, MelFidList, MelStructA, MreGmstBase, \
-    MelStrings, MelTuple, MelMODS, MreHasEffects, MelReferences, \
-    MelColorInterpolator, MelValueInterpolator, MelUnion, AttrValDecider, \
-    MelRegnEntrySubrecord, SizeDecider, MelFloat, MelSInt8, MelSInt16, \
-    MelSInt32, MelUInt8, MelUInt16, MelUInt32, MelOptFid, MelOptFloat, \
-    MelOptSInt16, MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, \
-    MelPartialCounter, MelRaceParts, MelRaceVoices, MelBounds, null1, null2, \
-    null3, null4, MelScriptVars, MelSequential
+    MelStrings, MelMODS, MreHasEffects, MelReferences, MelColorInterpolator, \
+    MelValueInterpolator, MelUnion, AttrValDecider, MelRegnEntrySubrecord, \
+    SizeDecider, MelFloat, MelSInt8, MelSInt16, MelSInt32, MelUInt8, \
+    MelUInt16, MelUInt32, MelOptFid, MelOptFloat, MelOptSInt16, MelOptSInt32, \
+    MelOptUInt8, MelOptUInt16, MelOptUInt32, MelPartialCounter, MelRaceParts, \
+    MelRaceVoices, MelBounds, null1, null2, null3, null4, MelScriptVars, \
+    MelSequential
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
 
-    class _MelModel(brec.MelGroup):
+    class _MelModel(MelGroup):
         """Represents a model record."""
         typeSets = (('MODL', 'MODB', 'MODT', 'MODS', 'MODD'),
-                    ('MOD2', 'MO2B', 'MO2T', 'MO2S', 'MO2D'),
+                    ('MOD2', 'MO2B', 'MO2T', 'MO2S'),
                     ('MOD3', 'MO3B', 'MO3T', 'MO3S', 'MOSD'),
-                    ('MOD4', 'MO4B', 'MO4T', 'MO4S', 'MO4D'))
+                    ('MOD4', 'MO4B', 'MO4T', 'MO4S'))
 
         _facegen_model_flags = Flags(0L, Flags.getNames(
             'head',
@@ -56,19 +56,23 @@ if brec.MelModel is None:
             'leftHand',
         ))
 
-        def __init__(self, attr='model', index=0):
+        def __init__(self, attr='model', index=0, with_facegen_flags=True):
             """Initialize. Index is 0,2,3,4 for corresponding type id."""
             types = self.__class__.typeSets[(0, index - 1)[index > 0]]
-            MelGroup.__init__(
-                self, attr,
+            model_elements = [
                 MelString(types[0], 'modPath'),
                 MelBase(types[1], 'modb_p'),
                 # Texture File Hashes
                 MelBase(types[2], 'modt_p'),
                 MelMODS(types[3], 'alternateTextures'),
-                MelUInt8(types[4], (_MelModel._facegen_model_flags,
-                                    'facegen_model_flags'))
-            )
+            ]
+            # No MODD/MOSD equivalent for MOD2 and MOD4
+            if len(types) == 5 and with_facegen_flags:
+                model_elements += [
+                    MelOptUInt8(types[4], (_MelModel._facegen_model_flags,
+                                           'facegen_model_flags'))
+                ]
+            MelGroup.__init__(self, attr, *model_elements)
 
         def debug(self, on=True):
             for element in self.elements[:2]: element.debug(on)
@@ -925,9 +929,8 @@ class MreClas(MelRecord):
         MelStruct('DATA','4i2IbB2s','tagSkill1','tagSkill2','tagSkill3',
             'tagSkill4',(_flags,'flags',0L),(aiService,'services',0L),
             ('trainSkill',-1),('trainLevel',0),('clasData1',null2)),
-        # MelTuple('ATTR','7B','attributes',[0]*7),
-        MelStructA('ATTR','7B','attributes','strength','perception','endurance',
-                   'charisma','intelligence','agility','luck'),
+        MelStruct('ATTR', '7B', 'strength', 'perception', 'endurance',
+                  'charisma', 'intelligence', 'agility', 'luck'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3678,7 +3681,7 @@ class MreWeap(MelRecord):
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
         MelModel('shellCasingModel',2),
-        MelModel('scopeModel',3),
+        MelModel('scopeModel', 3, with_facegen_flags=False),
         MelFid('EFSD','scopeEffect'),
         MelModel('worldModel',4),
         MelString('NNAM','embeddedWeaponNode'),
@@ -3741,8 +3744,8 @@ class MreWrld(MelRecord):
         MelStruct('ONAM','fff','worldMapScale','cellXOffset','cellYOffset'),
         MelFid('INAM','imageSpace'),
         MelUInt8('DATA', (_flags, 'flags', 0L)),
-        MelTuple('NAM0','ff','unknown0',(None,None)),
-        MelTuple('NAM9','ff','unknown9',(None,None)),
+        MelStruct('NAM0', '2f', 'object_bounds_min_x', 'object_bounds_min_y'),
+        MelStruct('NAM9', '2f', 'object_bounds_max_x', 'object_bounds_max_y'),
         MelFid('ZNAM','music'),
         MelString('NNAM','canopyShadow'),
         MelString('XNAM','waterNoiseTexture'),

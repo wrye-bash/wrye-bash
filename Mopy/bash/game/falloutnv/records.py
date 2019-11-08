@@ -1809,7 +1809,7 @@ class MreWeap(MelRecord):
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
         MelModel('shellCasingModel',2),
-        MelModel('scopeModel',3),
+        MelModel('scopeModel', 3, with_facegen_flags=False),
         MelFid('EFSD','scopeEffect'),
         MelModel('worldModel',4),
         MelGroup('modelWithMods',

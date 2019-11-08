@@ -1532,26 +1532,6 @@ class MelUInt32(MelStruct):
         MelStruct.__init__(self, signature, '=I', element)
 
 #------------------------------------------------------------------------------
-class MelTuple(MelBase):
-    """Represents a fixed length array that maps to a single subrecord.
-    (E.g., the stats array for NPC_ which maps to the DATA subrecord.)"""
-
-    def __init__(self, subType, format, attr, defaults):
-        self.subType, self.format, self.attr, self.defaults = subType, format, attr, defaults
-        self._debug = False
-
-    def setDefault(self,record):
-        record.__setattr__(self.attr,self.defaults[:])
-
-    def loadData(self, record, ins, sub_type, size_, readId):
-        unpacked = ins.unpack(self.format, size_, readId)
-        record.__setattr__(self.attr,list(unpacked))
-        if self._debug: print record.__getattribute__(self.attr)
-
-    def dumpData(self,record,out):
-        out.packSub(self.subType,self.format,*record.__getattribute__(self.attr))
-
-#------------------------------------------------------------------------------
 #-- Common/Special Elements
 #------------------------------------------------------------------------------
 # Hack for allowing record imports from parent games - set per game
@@ -1768,6 +1748,7 @@ class MelSet(object):
         distributor.set_mel_set(self)
         return self
 
+#------------------------------------------------------------------------------
 class _MelDistributor(MelNull):
     """Implements a distributor that can handle duplicate record signatures.
     See the wiki page '[dev] Plugin Format: Distributors' for a detailed
@@ -2042,6 +2023,7 @@ class _MelDistributor(MelNull):
     def signatures(self):
         return self._target_sigs
 
+#------------------------------------------------------------------------------
 # Mod Records -----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class MreSubrecord(object):

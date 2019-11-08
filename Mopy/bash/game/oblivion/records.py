@@ -29,11 +29,11 @@ from ...bolt import Flags, struct_pack
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, \
-    MelFidList, MelStructA, MelStrings, MreGmstBase, MelTuple, MreHasEffects, \
+    MelFidList, MelStructA, MelStrings, MreGmstBase, MreHasEffects, \
     MelReferences, MelRegnEntrySubrecord, MelFloat, MelSInt16, MelSInt32, \
     MelUInt8, MelUInt16, MelUInt32, MelOptFloat, MelOptSInt32, MelOptUInt8, \
     MelOptUInt16, MelOptUInt32, MelRaceParts, MelRaceVoices, null1, null2, \
-    null3, null4, MelScriptVars, MelSequential, MelUnion
+    null3, null4, MelScriptVars, MelSequential, MelUnion, FlagDecider
 from ...exception import BoltError, ModSizeError, StateError
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
@@ -1278,8 +1278,10 @@ class MreMisc(MelRecord):
         MelModel(),
         MelString('ICON','iconPath'),
         MelFid('SCRI','script'),
-        # FIXME(inf) DATA can have a FormID in it, this must be rewritten!!
-        MelStruct('DATA','if','value','weight'),
+        MelUnion({
+            False: MelStruct('DATA', 'if', 'value', 'weight'),
+            True: MelStruct('DATA', '2I', (FID, 'value'), 'weight'),
+        }, decider=FlagDecider('flags1', 'borderRegion', 'turnFireOff')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2056,8 +2058,8 @@ class MreWrld(MelRecord):
         MelString('ICON','mapPath'),
         MelOptStruct('MNAM','2i4h',('dimX',None),('dimY',None),('NWCellX',None),('NWCellY',None),('SECellX',None),('SECellY',None)),
         MelUInt8('DATA', (_flags, 'flags', 0L)),
-        MelTuple('NAM0','ff','unknown0',(None,None)),
-        MelTuple('NAM9','ff','unknown9',(None,None)),
+        MelStruct('NAM0', '2f', 'object_bounds_min_x', 'object_bounds_min_y'),
+        MelStruct('NAM9', '2f', 'object_bounds_max_x', 'object_bounds_max_y'),
         MelOptUInt32('SNAM', 'sound'),
         MelBase('OFST','ofst_p'),
     )
