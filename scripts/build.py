@@ -120,12 +120,6 @@ def setup_parser(parser):
         dest="version",
         help="Build with the production release format 'VERSION'.",
     )
-    version_group.add_argument(
-        "-r",
-        "--release",
-        dest="version",
-        help="Specifies the release number for Wrye Bash that you are packaging.",
-    )
     parser.add_argument(
         "-c",
         "--commit",
@@ -183,50 +177,27 @@ def setup_parser(parser):
     parser.set_defaults(version=nightly_version)
 
 
-def get_version_info(version, padding=4):
+def get_version_info(version):
     """
     Generates version strings from the passed parameter.
     Returns the a string used for the 'File Version' property of the built WBSA.
     For example, a version of 291 would with default padding would return '291.0.0.0'
     """
-    v = version.split(u".")
-    if len(v) == 2:
-        if len(v[1]) == 12 and float(v[1]) >= 201603171733L:  # 2016/03/17 17:33
-            v, v1 = v[:1], v[1]
-            v.extend((v1[:4], v1[4:8], v1[8:]))
-    # If version is too short, pad it with 0's
-    abspad = abs(padding)
-    delta = abspad - len(v)
-    if delta > 0:
-        pad = ["0"] * delta
-        if padding > 0:
-            v.extend(pad)
-        else:
-            v = pad + v
-    # If version is too long, warn and truncate
-    if delta < 0:
-        LOGGER.warning(
-            "The version specified ({}) has too many version pieces."
-            " The extra pieces will be truncated.".format(version)
+    production_regex = r"\d{3,}$"
+    nightly_regex = r"(\d{3,})\.(\d{12})$"
+    version = str(version)
+    if re.match(production_regex, version) is not None:
+        file_version = "{}.0.0.0".format(version)
+    else:
+        match = re.match(nightly_regex, version)
+        assert match is not None
+        timestamp = match.group(2)
+        file_version = "{}.{}.{}.{}".format(
+            match.group(1),
+            timestamp[:4],
+            timestamp[4:8],
+            timestamp[8:12]
         )
-        v = v[:abspad]
-    # Verify version pieces are actually integers, as non-integer values will
-    # cause much of the 'Details' section of the built exe to be non-existant
-    newv = []
-    error = False
-    for x in v:
-        try:
-            int(x)
-            newv.append(x)
-        except ValueError:
-            error = True
-            newv.append(u"0")
-    if error:
-        LOGGER.warning(
-            "The version specified ({}) does not convert "
-            "to integer values.".format(version)
-        )
-    file_version = u".".join(newv)
     LOGGER.debug("Using file version: {}".format(file_version))
     return file_version
 
