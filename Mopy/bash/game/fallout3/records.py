@@ -27,7 +27,6 @@ file must be imported till then."""
 import struct
 from operator import attrgetter
 from ... import bush, brec
-from ...bass import null1, null2, null3, null4
 from ...bolt import Flags, struct_unpack, struct_pack
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
@@ -37,7 +36,8 @@ from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     MelRegnEntrySubrecord, SizeDecider, MelFloat, MelSInt8, MelSInt16, \
     MelSInt32, MelUInt8, MelUInt16, MelUInt32, MelOptFid, MelOptFloat, \
     MelOptSInt16, MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, \
-    MelPartialCounter, MelRaceParts, MelRaceVoices, MelBounds
+    MelPartialCounter, MelRaceParts, MelRaceVoices, MelBounds, null1, null2, \
+    null3, null4
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:

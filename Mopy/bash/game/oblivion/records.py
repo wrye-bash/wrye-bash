@@ -25,7 +25,6 @@
 import struct
 from .constants import condition_function_data
 from ... import brec
-from ...bass import null1, null2, null3, null4
 from ...bolt import Flags, struct_pack
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
@@ -33,7 +32,8 @@ from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     MelFidList, MelStructA, MelStrings, MreGmstBase, MelTuple, MreHasEffects, \
     MelReferences, MelRegnEntrySubrecord, MelFloat, MelSInt16, MelSInt32, \
     MelUInt8, MelUInt16, MelUInt32, MelOptFloat, MelOptSInt32, MelOptUInt8, \
-    MelOptUInt16, MelOptUInt32, MelRaceParts, MelRaceVoices
+    MelOptUInt16, MelOptUInt32, MelRaceParts, MelRaceVoices, null1, null2, \
+    null3, null4
 from ...exception import BoltError, ModSizeError, StateError
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:

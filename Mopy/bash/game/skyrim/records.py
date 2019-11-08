@@ -27,7 +27,6 @@ import struct
 
 from .constants import condition_function_data
 from ... import brec
-from ...bass import null1, null2, null3, null4
 from ...bolt import Flags, encode, struct_pack, struct_unpack
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
@@ -37,7 +36,8 @@ from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     AttrValDecider, MelRegnEntrySubrecord, PartialLoadDecider, FlagDecider, \
     MelFloat, MelSInt8, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
     MelOptFloat, MelOptSInt16, MelOptSInt32, MelOptUInt8, MelOptUInt16, \
-    MelOptUInt32, MelOptFid, MelCounter, MelPartialCounter, MelBounds
+    MelOptUInt32, MelOptFid, MelCounter, MelPartialCounter, MelBounds, null1, \
+    null2, null3, null4
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
