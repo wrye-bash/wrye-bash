@@ -260,10 +260,12 @@ class GameInfo(object):
     allTags = set()
 
     # Patcher available when building a Bashed Patch (referenced by class name)
+    # PatchMerger must come first if enabled, see
+    # patcher.base.APatchMerger.__init__
     patchers = ()
 
     # CBash patchers available when building a Bashed Patch
-    CBash_patchers = ()
+    CBash_patchers = () # CBash_PatchMerger must come first if enabled!
 
     # Magic Info
     weaponTypes = ()
