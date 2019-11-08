@@ -28,7 +28,7 @@ import collections
 import random
 import re
 # Internal
-from ...bolt import GPath
+from ...bolt import GPath, deprint
 from ...brec import MreRecord
 from ... import load_order
 from ... import bush # from ....bush import game ? # should be set by now !
@@ -1803,10 +1803,11 @@ class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,
                 else:
                     override.iconPath = icons
             except ValueError as error:
-                print override._Type
-                print icons
-                print error
-                print self.patchFile.Current.Debug_DumpModFiles()
+                error_msg = u'%s: %s\n' % (self.tweak_name, error)
+                error_msg += u'override._Type: %s\nicons: %s\n' % (
+                    override._Type, icons)
+                error_msg += self.patchFile.Current.Debug_DumpModFiles()
+                deprint(error_msg)
                 raise
             self.mod_count[modFile.GName] += 1
             record.UnloadRecord()
