@@ -47,12 +47,6 @@ SCRIPTS_PATH = os.path.dirname(os.path.abspath(__file__))
 LOGFILE = os.path.join(SCRIPTS_PATH, "loot.log")
 MOPY_PATH = os.path.abspath(os.path.join(SCRIPTS_PATH, "..", "Mopy"))
 
-sys.path.append(MOPY_PATH)
-try:
-    import loot_api
-except ImportError:
-    loot_api = None
-
 
 def setup_parser(parser):
     parser.add_argument(
@@ -124,9 +118,13 @@ def install_msvc_redist(dl_dir, url=None):
 
 
 def is_loot_api_installed(version, revision):
+    if not all(os.path.isfile(dll) for dll in utils.LOOT_DLLS):
+        return False
+    sys.path.append(MOPY_PATH)
+    import loot_api
+
     return (
-        loot_api is not None
-        and loot_api.WrapperVersion.string() == version
+        loot_api.WrapperVersion.string() == version
         and loot_api.WrapperVersion.revision == revision
     )
 
@@ -168,7 +166,7 @@ def install_loot_api(version, revision, dl_dir, destination_path):
 
 
 def main(args):
-    utils.setup_log(LOGGER, verbosity=args.verbosity, logfile=args.logfile)
+    utils.setup_log(LOGGER, verbosity=args.verbosity, logfile=LOGFILE)
     download_dir = tempfile.mkdtemp()
     # if url is given in command line, always dl and install
     if not is_msvc_redist_installed(14, 14, 26429) or args.loot_msvc is not None:
@@ -189,13 +187,7 @@ if __name__ == "__main__":
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     utils.setup_common_parser(argparser)
-    argparser.add_argument(
-        "-l",
-        "--logfile",
-        default=LOGFILE,
-        help="Where to store the log. [default: {}]".format(utils.relpath(LOGFILE)),
-    )
     setup_parser(argparser)
     parsed_args = argparser.parse_args()
-    open(parsed_args.logfile, "w").close()
+    os.remove(LOGFILE)
     main(parsed_args)
