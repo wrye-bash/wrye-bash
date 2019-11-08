@@ -146,32 +146,33 @@ class OblivionGameInfo(GameInfo):
         u'Voice-F', u'Voice-M',
     }
 
-    patchers = (
-        'ActorImporter', 'AlchemicalCatalogs', 'AliasesPatcher',
-        'AssortedTweaker', 'CellImporter', 'ClothesTweaker', 'CoblExhaustion',
-        'ContentsChecker', 'DeathItemPatcher', 'GmstTweaker',
-        'GraphicsPatcher', 'ImportActorsSpells', 'ImportFactions',
-        'ImportInventory', 'ImportRelations', 'ImportScripts', 'KFFZPatcher',
-        'ListsMerger', 'MFactMarker', 'NamesPatcher', 'NamesTweaker',
-        'NPCAIPackagePatcher', 'NpcFacePatcher', 'PatchMerger', 'RacePatcher',
-        'RoadImporter', 'SEWorldEnforcer', 'SoundPatcher', 'SpellsPatcher',
-        'StatsPatcher', 'TextImporter', 'TweakActors', 'UpdateReferences',
+    patchers = (u'PatchMerger', # PatchMerger must come first !
+        u'ActorImporter', u'AlchemicalCatalogs', u'AliasesPatcher',
+        u'AssortedTweaker', u'CellImporter', u'ClothesTweaker', u'CoblExhaustion',
+        u'ContentsChecker', u'DeathItemPatcher', u'GmstTweaker',
+        u'GraphicsPatcher', u'ImportActorsSpells', u'ImportFactions',
+        u'ImportInventory', u'ImportRelations', u'ImportScripts', u'KFFZPatcher',
+        u'ListsMerger', u'MFactMarker', u'NamesPatcher', u'NamesTweaker',
+        u'NPCAIPackagePatcher', u'NpcFacePatcher', u'RacePatcher',
+        u'RoadImporter', u'SEWorldEnforcer', u'SoundPatcher', u'SpellsPatcher',
+        u'StatsPatcher', u'TextImporter', u'TweakActors', u'UpdateReferences',
     )
 
-    CBash_patchers = (
-        'CBash_ActorImporter', 'CBash_AlchemicalCatalogs',
-        'CBash_AliasesPatcher', 'CBash_AssortedTweaker', 'CBash_CellImporter',
-        'CBash_ClothesTweaker', 'CBash_CoblExhaustion',
-        'CBash_ContentsChecker', 'CBash_DeathItemPatcher', 'CBash_GmstTweaker',
-        'CBash_GraphicsPatcher', 'CBash_ImportActorsSpells',
-        'CBash_ImportFactions', 'CBash_ImportInventory',
-        'CBash_ImportRelations', 'CBash_ImportScripts', 'CBash_KFFZPatcher',
-        'CBash_ListsMerger', 'CBash_MFactMarker', 'CBash_NamesPatcher',
-        'CBash_NamesTweaker', 'CBash_NPCAIPackagePatcher',
-        'CBash_NpcFacePatcher', 'CBash_PatchMerger', 'CBash_RacePatcher',
-        'CBash_RoadImporter', 'CBash_SEWorldEnforcer', 'CBash_SoundPatcher',
-        'CBash_SpellsPatcher', 'CBash_StatsPatcher', 'CBash_TweakActors',
-        'CBash_UpdateReferences',
+    CBash_patchers = (u'CBash_PatchMerger', # PatchMerger must come first !
+        u'CBash_ActorImporter', u'CBash_AlchemicalCatalogs',
+        u'CBash_AliasesPatcher', u'CBash_AssortedTweaker',
+        u'CBash_CellImporter', u'CBash_ClothesTweaker',
+        u'CBash_CoblExhaustion', u'CBash_ContentsChecker',
+        u'CBash_DeathItemPatcher', u'CBash_GmstTweaker',
+        u'CBash_GraphicsPatcher', u'CBash_ImportActorsSpells',
+        u'CBash_ImportFactions', u'CBash_ImportInventory',
+        u'CBash_ImportRelations', u'CBash_ImportScripts', u'CBash_KFFZPatcher',
+        u'CBash_ListsMerger', u'CBash_MFactMarker', u'CBash_NamesPatcher',
+        u'CBash_NamesTweaker', u'CBash_NPCAIPackagePatcher',
+        u'CBash_NpcFacePatcher', u'CBash_RacePatcher', u'CBash_RoadImporter',
+        u'CBash_SEWorldEnforcer', u'CBash_SoundPatcher',
+        u'CBash_SpellsPatcher', u'CBash_StatsPatcher', u'CBash_TweakActors',
+        u'CBash_UpdateReferences',
     )
 
     weaponTypes = (

@@ -144,15 +144,15 @@ class Fallout3GameInfo(GameInfo):
     # NamesTweaker, NPCAIPackagePatcher, NpcFacePatcher, PatchMerger, RacePatcher,
     # RoadImporter, SoundPatcher, StatsPatcher, UpdateReferences,
     #--Patcher available when building a Bashed Patch (referenced by class name)
-    patchers = (
+    patchers = (u'PatchMerger', # PatchMerger must come first !
         u'ActorImporter', u'AliasesPatcher', u'CellImporter',
         u'ContentsChecker', u'DeathItemPatcher', u'DestructiblePatcher',
         u'FidListsMerger', u'GmstTweaker', u'GraphicsPatcher',
         u'ImportActorsSpells', u'ImportFactions', u'ImportInventory',
         u'ImportScripts', u'KFFZPatcher', u'ListsMerger', u'NamesPatcher',
         u'NPCAIPackagePatcher', u'NpcFacePatcher', u'ObjectBoundsImporter',
-        u'PatchMerger', u'SoundPatcher', u'SpellsPatcher', u'StatsPatcher',
-        u'TextImporter', u'TweakActors',
+        u'SoundPatcher', u'SpellsPatcher', u'StatsPatcher', u'TextImporter',
+        u'TweakActors',
     )
 
     weaponTypes = (

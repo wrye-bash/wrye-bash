@@ -128,7 +128,7 @@ class Fallout4GameInfo(GameInfo):
         u'Deactivate', u'Delev', u'Filter', u'ObjectBounds', u'Relev',
     }
 
-    patchers = (
+    patchers = ( # PatchMerger must come first if enabled!
         u'ListsMerger', u'ObjectBoundsImporter',
     )
 

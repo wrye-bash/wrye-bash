@@ -59,7 +59,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
 
     allTags = SkyrimGameInfo.allTags - {u'MustBeActiveIfImported', u'NoMerge',}
 
-    patchers = (
+    patchers = ( # PatchMerger must come first if enabled!
         u'ActorImporter', u'CellImporter', u'ContentsChecker',
         u'DeathItemPatcher', u'DestructiblePatcher', u'GmstTweaker',
         u'GraphicsPatcher', u'ImportActorsSpells', u'ImportInventory',
