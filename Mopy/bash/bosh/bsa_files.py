@@ -418,14 +418,14 @@ def _makedirs_exists_ok(target_dir):
 
 class ABsa(AFile):
     """:type bsa_folders: collections.OrderedDict[unicode, BSAFolder]"""
-    header_type = BsaHeader
+    _header_type = BsaHeader
     _assets = frozenset()
     _compression_type = _Bsa_zlib # type: _BsaCompressionType
 
     def __init__(self, fullpath, load_cache=False, names_only=True):
         super(ABsa, self).__init__(fullpath)
         self.bsa_name = self.abs_path.stail
-        self.bsa_header = self.__class__.header_type()
+        self.bsa_header = self.__class__._header_type()
         self.bsa_folders = collections.OrderedDict() # keep folder order
         self._filenames = []
         self.total_names_length = 0 # reported wrongly at times - calculate it
@@ -646,7 +646,7 @@ class BSA(ABsa):
         folders[folder_path] = folder_record
 
 class BA2(ABsa):
-    header_type = Ba2Header
+    _header_type = Ba2Header
 
     def extract_assets(self, asset_paths, dest_folder, progress=None):
         # map files to folders
@@ -783,7 +783,7 @@ class BA2(ABsa):
         self._filenames = _filenames
 
 class MorrowindBsa(ABsa):
-    header_type = MorrowindBsaHeader
+    _header_type = MorrowindBsaHeader
 
     def _load_bsa_light(self):
         self.file_records = []
@@ -846,7 +846,7 @@ class MorrowindBsa(ABsa):
                     out.write(raw_data)
 
 class OblivionBsa(BSA):
-    header_type = OblivionBsaHeader
+    _header_type = OblivionBsaHeader
     file_record_type = BSAOblivionFileRecord
     # A dictionary mapping file extensions to hash components. Used by Oblivion
     # when hashing file names for its BSAs.

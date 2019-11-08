@@ -587,14 +587,15 @@ class GameInfo(object):
     def init(cls):
         # Setting RecordHeader class variables --------------------------------
         # Top types in order of the main ESM
-        brec.RecordHeader.topTypes = []
-        brec.RecordHeader.recordTypes = set(
-            brec.RecordHeader.topTypes + ['GRUP', 'TES4'])
+        header_type = brec.RecordHeader
+        header_type.topTypes = []
+        header_type.recordTypes = set(
+            header_type.topTypes + [b'GRUP', b'TES4'])
         # Record Types
         brec.MreRecord.type_class = {x.rec_sig: x for x in ()}
         # Simple records
         brec.MreRecord.simpleTypes = (
-                set(brec.MreRecord.type_class) - {'TES4'})
+                set(brec.MreRecord.type_class) - {b'TES4'})
 
     @classmethod
     def _dynamic_import_modules(cls, package_name):

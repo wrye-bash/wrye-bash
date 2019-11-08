@@ -167,34 +167,38 @@ class FalloutNVGameInfo(Fallout3GameInfo):
                 MreTxst, MreVtyp, MreWatr, MreWeap, MreWthr, MreGmst,
             )
         # Setting RecordHeader class variables --------------------------------
-        brec.RecordHeader.topTypes = [
-            'GMST', 'TXST', 'MICN', 'GLOB', 'CLAS', 'FACT', 'HDPT', 'HAIR',
-            'EYES', 'RACE', 'SOUN', 'ASPC', 'MGEF', 'SCPT', 'LTEX', 'ENCH',
-            'SPEL', 'ACTI', 'TACT', 'TERM', 'ARMO', 'BOOK', 'CONT', 'DOOR',
-            'INGR', 'LIGH', 'MISC', 'STAT', 'SCOL', 'MSTT', 'PWAT', 'GRAS',
-            'TREE', 'FURN', 'WEAP', 'AMMO', 'NPC_', 'CREA', 'LVLC', 'LVLN',
-            'KEYM', 'ALCH', 'IDLM', 'NOTE', 'COBJ', 'PROJ', 'LVLI', 'WTHR',
-            'CLMT', 'REGN', 'NAVI', 'DIAL', 'QUST', 'IDLE', 'PACK', 'CSTY',
-            'LSCR', 'ANIO', 'WATR', 'EFSH', 'EXPL', 'DEBR', 'IMGS', 'IMAD',
-            'FLST', 'PERK', 'BPTD', 'ADDN', 'AVIF', 'RADS', 'CAMS', 'CPTH',
-            'VTYP', 'IPCT', 'IPDS', 'ARMA', 'ECZN', 'MESG', 'RGDL', 'DOBJ',
-            'LGTM', 'MUSC', 'IMOD', 'REPU', 'RCPE', 'RCCT', 'CHIP', 'CSNO',
-            'LSCT', 'MSET', 'ALOC', 'CHAL', 'AMEF', 'CCRD', 'CMNY', 'CDCK',
-            'DEHY', 'HUNG', 'SLPD', 'CELL', 'WRLD', ]
-        brec.RecordHeader.recordTypes = set(
-            brec.RecordHeader.topTypes + ['GRUP', 'TES4', 'ACHR', 'ACRE',
-                                          'INFO', 'LAND', 'NAVM', 'PGRE',
-                                          'PMIS', 'REFR'])
-        brec.RecordHeader.plugin_form_version = 15
+        header_type = brec.RecordHeader
+        header_type.topTypes = [
+            b'GMST', b'TXST', b'MICN', b'GLOB', b'CLAS', b'FACT', b'HDPT',
+            b'HAIR', b'EYES', b'RACE', b'SOUN', b'ASPC', b'MGEF', b'SCPT',
+            b'LTEX', b'ENCH', b'SPEL', b'ACTI', b'TACT', b'TERM', b'ARMO',
+            b'BOOK', b'CONT', b'DOOR', b'INGR', b'LIGH', b'MISC', b'STAT',
+            b'SCOL', b'MSTT', b'PWAT', b'GRAS', b'TREE', b'FURN', b'WEAP',
+            b'AMMO', b'NPC_', b'CREA', b'LVLC', b'LVLN', b'KEYM', b'ALCH',
+            b'IDLM', b'NOTE', b'COBJ', b'PROJ', b'LVLI', b'WTHR', b'CLMT',
+            b'REGN', b'NAVI', b'DIAL', b'QUST', b'IDLE', b'PACK', b'CSTY',
+            b'LSCR', b'ANIO', b'WATR', b'EFSH', b'EXPL', b'DEBR', b'IMGS',
+            b'IMAD', b'FLST', b'PERK', b'BPTD', b'ADDN', b'AVIF', b'RADS',
+            b'CAMS', b'CPTH', b'VTYP', b'IPCT', b'IPDS', b'ARMA', b'ECZN',
+            b'MESG', b'RGDL', b'DOBJ', b'LGTM', b'MUSC', b'IMOD', b'REPU',
+            b'RCPE', b'RCCT', b'CHIP', b'CSNO', b'LSCT', b'MSET', b'ALOC',
+            b'CHAL', b'AMEF', b'CCRD', b'CMNY', b'CDCK', b'DEHY', b'HUNG',
+            b'SLPD', b'CELL', b'WRLD',
+        ]
+        header_type.recordTypes = set(
+            header_type.topTypes + [b'GRUP', b'TES4', b'ACHR', b'ACRE',
+                                    b'INFO', b'LAND', b'NAVM', b'PGRE',
+                                    b'PMIS', b'REFR'])
+        header_type.plugin_form_version = 15
         brec.MreRecord.type_class = {
             x.rec_sig: x for x in (cls.mergeClasses +  # Not Mergeable
                 (MreAchr, MreAcre, MreCell, MreDial, MreInfo, MreNavi,
                  MreNavm, MrePgre, MrePmis, MreRefr, MreWrld, MreTes4,))}
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {
-            # 'TES4','ACHR','ACRE','REFR','CELL','PGRD','PGRE','LAND',
-            # 'WRLD','INFO','DIAL','NAVM'
-            'TES4', 'ACHR', 'ACRE', 'CELL', 'DIAL', 'INFO', 'LAND', 'NAVI',
-            'NAVM', 'PGRE', 'PMIS', 'REFR', 'WRLD', })
+            # b'TES4',b'ACHR',b'ACRE',b'REFR',b'CELL',b'PGRD',b'PGRE',b'LAND',
+            # b'WRLD',b'INFO',b'DIAL',b'NAVM'
+            b'TES4', b'ACHR', b'ACRE', b'CELL', b'DIAL', b'INFO', b'LAND', b'NAVI',
+            b'NAVM', b'PGRE', b'PMIS', b'REFR', b'WRLD', })
 
 GAME_TYPE = FalloutNVGameInfo

@@ -1257,7 +1257,7 @@ class _PluggyHudTBlock(_PluggyBlock):
 # Files
 class ACosave(_Dumpable, _Remappable, AFile):
     """The abstract base class for all cosave files."""
-    header_type = _AHeader
+    _header_type = _AHeader
     cosave_ext = u''
     re_save = re.compile(u'') # parse savename to extract root component
     __slots__ = ('cosave_header', 'cosave_chunks', 'remappable_chunks',
@@ -1304,7 +1304,7 @@ class ACosave(_Dumpable, _Remappable, AFile):
         to override this method.
 
         :param ins: The input stream to read from."""
-        self.cosave_header = self.header_type(ins, self.abs_path)
+        self.cosave_header = self._header_type(ins, self.abs_path)
 
     def _read_cosave_body(self, ins, light=False):
         """Reads the body of this cosave. The header is already read and
@@ -1402,7 +1402,7 @@ class ACosave(_Dumpable, _Remappable, AFile):
 
 class xSECosave(ACosave):
     """Represents an xSE cosave, with a .**se extension."""
-    header_type = _xSEHeader
+    _header_type = _xSEHeader
     _pluggy_signature = None # signature (aka opcodeBase) of Pluggy plugin
     _xse_signature = 0x1400 # signature (aka opcodeBase) of xSE plugin itself
     cosave_ext = u'' # set in the factory function
@@ -1525,7 +1525,7 @@ class xSECosave(ACosave):
 
 class PluggyCosave(ACosave):
     """Represents a Pluggy cosave, with a .pluggy extension."""
-    header_type = _PluggyHeader
+    _header_type = _PluggyHeader
     cosave_ext = u'.pluggy'
     # Used to convert from block type int to block class
     # See pluggy file format specification for how these map

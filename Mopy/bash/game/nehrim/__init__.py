@@ -92,27 +92,30 @@ class NehrimGameInfo(OblivionGameInfo):
         cls.readClasses = (MreMgef, MreScpt,)
         cls.writeClasses = (MreMgef,)
         # Setting RecordHeader class variables - Oblivion is special
-        __rec_type = brec.RecordHeader
-        __rec_type.rec_header_size = 20
-        __rec_type.rec_pack_format = ['=4s', 'I', 'I', 'I', 'I']
-        __rec_type.rec_pack_format_str = ''.join(__rec_type.rec_pack_format)
-        __rec_type.pack_formats = {0: '=4sI4s2I'}
-        __rec_type.pack_formats.update(
-            {x: '=4s4I' for x in {1, 6, 7, 8, 9, 10}})
-        __rec_type.pack_formats.update({x: '=4sIi2I' for x in {2, 3}})
-        __rec_type.pack_formats.update({x: '=4sIhh2I' for x in {4, 5}})
+        header_type = brec.RecordHeader
+        header_type.rec_header_size = 20
+        header_type.rec_pack_format = [u'=4s', u'I', u'I', u'I', u'I']
+        header_type.rec_pack_format_str = u''.join(header_type.rec_pack_format)
+        header_type.pack_formats = {0: u'=4sI4s2I'}
+        header_type.pack_formats.update(
+            {x: u'=4s4I' for x in {1, 6, 7, 8, 9, 10}})
+        header_type.pack_formats.update({x: u'=4sIi2I' for x in {2, 3}})
+        header_type.pack_formats.update({x: u'=4sIhh2I' for x in {4, 5}})
         # Similar to other games
-        __rec_type.topTypes = [
-            'GMST', 'GLOB', 'CLAS', 'FACT', 'HAIR', 'EYES', 'RACE', 'SOUN',
-            'SKIL', 'MGEF', 'SCPT', 'LTEX', 'ENCH', 'SPEL', 'BSGN', 'ACTI',
-            'APPA', 'ARMO', 'BOOK', 'CLOT', 'CONT', 'DOOR', 'INGR', 'LIGH',
-            'MISC', 'STAT', 'GRAS', 'TREE', 'FLOR', 'FURN', 'WEAP', 'AMMO',
-            'NPC_', 'CREA', 'LVLC', 'SLGM', 'KEYM', 'ALCH', 'SBSP', 'SGST',
-            'LVLI', 'WTHR', 'CLMT', 'REGN', 'CELL', 'WRLD', 'DIAL', 'QUST',
-            'IDLE', 'PACK', 'CSTY', 'LSCR', 'LVSP', 'ANIO', 'WATR', 'EFSH']
-        __rec_type.recordTypes = set(
-            __rec_type.topTypes + ['GRUP', 'TES4', 'ROAD', 'REFR', 'ACHR',
-                                   'ACRE', 'PGRD', 'LAND', 'INFO'])
+        header_type.topTypes = [
+            b'GMST', b'GLOB', b'CLAS', b'FACT', b'HAIR', b'EYES', b'RACE',
+            b'SOUN', b'SKIL', b'MGEF', b'SCPT', b'LTEX', b'ENCH', b'SPEL',
+            b'BSGN', b'ACTI', b'APPA', b'ARMO', b'BOOK', b'CLOT', b'CONT',
+            b'DOOR', b'INGR', b'LIGH', b'MISC', b'STAT', b'GRAS', b'TREE',
+            b'FLOR', b'FURN', b'WEAP', b'AMMO', b'NPC_', b'CREA', b'LVLC',
+            b'SLGM', b'KEYM', b'ALCH', b'SBSP', b'SGST', b'LVLI', b'WTHR',
+            b'CLMT', b'REGN', b'CELL', b'WRLD', b'DIAL', b'QUST', b'IDLE',
+            b'PACK', b'CSTY', b'LSCR', b'LVSP', b'ANIO', b'WATR', b'EFSH',
+        ]
+        header_type.recordTypes = set(
+            header_type.topTypes + [b'GRUP', b'TES4', b'ROAD', b'REFR',
+                                    b'ACHR', b'ACRE', b'PGRD', b'LAND',
+                                    b'INFO'])
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreAchr, MreAcre, MreActi, MreAlch, MreAmmo, MreAnio, MreAppa,
             MreArmo, MreBook, MreBsgn, MreCell, MreClas, MreClot, MreCont,
@@ -124,8 +127,8 @@ class NehrimGameInfo(OblivionGameInfo):
             MreTes4, MreWatr, MreWeap, MreWrld, MreWthr, MreClmt, MreCsty,
             MreIdle, MreLtex, MreRegn, MreSbsp, MreDial, MreInfo,)}
         brec.MreRecord.simpleTypes = (
-            set(brec.MreRecord.type_class) - {'TES4', 'ACHR', 'ACRE', 'REFR',
-                                              'CELL', 'PGRD', 'ROAD', 'LAND',
-                                              'WRLD', 'INFO', 'DIAL'})
+            set(brec.MreRecord.type_class) - {b'TES4', b'ACHR', b'ACRE', b'REFR',
+                                              b'CELL', b'PGRD', b'ROAD', b'LAND',
+                                              b'WRLD', b'INFO', b'DIAL'})
 
 GAME_TYPE = NehrimGameInfo

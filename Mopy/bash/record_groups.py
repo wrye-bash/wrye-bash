@@ -76,11 +76,12 @@ class MobBase(object):
         if self.debug: print(u'GRUP load:',self.label)
         #--Read, but don't analyze.
         if not do_unpack:
-            self.data = ins.read(self.size - self.header.__class__.rec_header_size, type(self))
+            self.data = ins.read(self.size - RecordHeader.rec_header_size,
+                                 type(self))
         #--Analyze ins.
         elif ins is not None:
-            self.loadData(ins,
-                          ins.tell() + self.size - self.header.__class__.rec_header_size)
+            self.loadData(ins, ins.tell() +
+                          self.size - RecordHeader.rec_header_size)
         #--Analyze internal buffer.
         else:
             with self.getReader() as reader:
@@ -324,12 +325,12 @@ class MobDials(MobObjects):
                     try: # record/recordLoadInfos should be initialized in 'if'
                         record.infoStamp = stamp
                         infoClass = loadGetRecClass('INFO')
+                        hsize = RecordHeader.rec_header_size
                         if infoClass:
-                            recordLoadInfos(ins, ins.tell() + size -
-                                            header.__class__.rec_header_size,
+                            recordLoadInfos(ins, ins.tell() + size - hsize,
                                             infoClass)
                         else:
-                            ins.seek(ins.tell() + size - header.__class__.rec_header_size)
+                            ins.seek(ins.tell() + size - hsize)
                     except AttributeError:
                         raise ModError(self.inName, u'Malformed Plugin: '
                             u'Exterior CELL subblock before worldspace GRUP')
@@ -746,7 +747,7 @@ class MobICells(MobCells):
             elif recType == 'GRUP':
                 size,groupFid,groupType = header.size,header.label, \
                                           header.groupType
-                delta = size - header.__class__.rec_header_size
+                delta = size - RecordHeader.rec_header_size
                 if groupType == 2: # Block number
                     endBlockPos = insTell() + delta
                 elif groupType == 3: # Sub-block number
@@ -827,7 +828,7 @@ class MobWorld(MobCells):
             #--Get record info and handle it
             header = insRecHeader()
             recType,size = header.recType,header.size
-            delta = size - header.__class__.rec_header_size
+            delta = size - RecordHeader.rec_header_size
             recClass = cellGet(recType)
             if recType == 'ROAD':
                 if not recClass: insSeek(size,1)
@@ -1052,7 +1053,7 @@ class MobWorlds(MobBase):
                     #raise ModError(ins.inName,'Extra subgroup %d in WRLD
                     # group.' % groupType)
                     #--Orphaned world records. Skip over.
-                    insSeek(header.size - header.__class__.rec_header_size,1)
+                    insSeek(header.size - RecordHeader.rec_header_size,1)
                     self.orphansSkipped += 1
                     continue
                 if groupFid != world.fid:
@@ -1083,7 +1084,7 @@ class MobWorlds(MobBase):
             worldHeaderPos = out.tell()
             header = RecordHeader('GRUP', 0, self.label, 0, self.stamp)
             out.write(header.pack())
-            totalSize = header.__class__.rec_header_size + sum(
+            totalSize = RecordHeader.rec_header_size + sum(
                 x.dump(out) for x in self.worldBlocks)
             out.seek(worldHeaderPos + 4)
             out.pack('I', totalSize)

@@ -41,19 +41,18 @@ class RecordHeader(object):
     # Record pack format, e.g. 4sIIII for Oblivion
     # Given as a list here, where each string matches one subrecord in the
     # header. See rec_pack_format_str below as well.
-    rec_pack_format = ['=4s', 'I', 'I', 'I', 'I', 'I']
+    rec_pack_format = [u'=4s', u'I', u'I', u'I', u'I', u'I']
     # rec_pack_format as a format string. Use for pack / unpack calls.
-    rec_pack_format_str = ''.join(rec_pack_format)
+    rec_pack_format_str = u''.join(rec_pack_format)
     # Format used by sub-record headers. Morrowind uses a different one.
     sub_header_fmt = u'=4sH'
     # Size of sub-record headers. Morrowind has a different one.
     sub_header_size = 6
     # http://en.uesp.net/wiki/Tes5Mod:Mod_File_Format#Groups
-    pack_formats = {0: '=4sI4s3I'} # Top Type
-    pack_formats.update({x: '=4s5I' for x in {1, 6, 7, 8, 9, 10}}) # Children
-    pack_formats.update({x: '=4sIi3I' for x in {2, 3}})  # Interior Cell Blocks
-    pack_formats.update({x: '=4sIhh3I' for x in {4, 5}}) # Exterior Cell Blocks
-
+    pack_formats = {0: u'=4sI4s3I'} # Top Type
+    pack_formats.update({x: u'=4s5I' for x in {1, 6, 7, 8, 9, 10}}) # Children
+    pack_formats.update({x: u'=4sIi3I' for x in {2, 3}})  #Interior Cell Blocks
+    pack_formats.update({x: u'=4sIhh3I' for x in {4, 5}}) #Exterior Cell Blocks
     #--Top types in order of the main ESM
     topTypes = []
     #--Record Types: all recognized record types (not just the top types)
@@ -272,14 +271,14 @@ class ModReader(object):
         selfUnpack = self.unpack
         (rec_type, size) = selfUnpack(RecordHeader.sub_header_fmt,
                                       RecordHeader.sub_header_size,
-                                      recType + u'.SUB_HEAD')
+                                      recType + '.SUB_HEAD')
         #--Extended storage?
         while rec_type == 'XXXX':
             size = selfUnpack('I',4,recType+'.XXXX.SIZE.')[0]
             # Throw away size here (always == 0)
             rec_type = selfUnpack(RecordHeader.sub_header_fmt,
                                   RecordHeader.sub_header_size,
-                                  recType + u'.XXXX.TYPE')[0]
+                                  recType + '.XXXX.TYPE')[0]
         #--Match expected name?
         if expType and expType != rec_type:
             raise exception.ModError(self.inName, u'%s: Expected %s subrecord, but '
