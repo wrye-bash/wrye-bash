@@ -251,7 +251,7 @@ class PatchFile(_PFile, ModFile):
                 for patcher in sorted(self._patcher_instances, key=attrgetter('scanOrder')):
                     if iiMode and not patcher.iiMode: continue
                     progress(pstate,u'%s\n%s' % (modName.s,patcher.getName()))
-                    patcher.scanModFile(modFile,nullProgress)
+                    patcher.scan_mod_file(modFile,nullProgress)
                 # Clip max version at 1.0.  See explanation in the CBash version as to why.
                 self.tes4.version = min(max(modFile.tes4.version, self.tes4.version), max(bush.game.Esp.validHeaderVersions))
             except CancelError:

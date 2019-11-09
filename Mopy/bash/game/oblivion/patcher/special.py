@@ -93,7 +93,6 @@ class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
     def scanModFile(self,modFile,progress):
         """Scans specified mod file to extract info. May add record to patch
         mod, but won't alter it."""
-        if not self.isActive: return
         id_ingred = self.id_ingred
         mapper = modFile.getLongMapper()
         for record in modFile.INGR.getActiveRecords():
@@ -422,7 +421,6 @@ class CoblExhaustion(_ACoblExhaustion,ListPatcher):
             progress.plus()
 
     def scanModFile(self,modFile,progress):
-        if not self.isActive: return
         mapper = modFile.getLongMapper()
         patchRecords = self.patchFile.SPEL
         for record in modFile.SPEL.getActiveRecords():
@@ -565,7 +563,6 @@ class MFactMarker(_AMFactMarker,ListPatcher):
 
     def scanModFile(self, modFile, progress):
         """Scan modFile."""
-        if not self.isActive: return
         id_info = self.id_info
         mapper = modFile.getLongMapper()
         patchBlock = self.patchFile.FACT
@@ -738,7 +735,6 @@ class SEWorldEnforcer(_ASEWorldEnforcer,Patcher):
         self.isActive = bool(self.cyrodiilQuests)
 
     def scanModFile(self,modFile,progress):
-        if not self.isActive: return
         if modFile.fileInfo.name == _ob_path: return
         cyrodiilQuests = self.cyrodiilQuests
         mapper = modFile.getLongMapper()

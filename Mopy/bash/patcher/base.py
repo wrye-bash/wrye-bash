@@ -71,6 +71,13 @@ class Patcher(Abstract_Patcher):
         """Compiles material, i.e. reads source text, esp's, etc. as
         necessary."""
 
+    def scan_mod_file(self, modFile, progress):
+        """Scans specified mod file to extract info. May add record to patch
+        mod, but won't alter it. If adds record, should first convert it to
+        long fids."""
+        if not self.isActive: return # TODO(ut) raise
+        self.scanModFile(modFile, progress)
+
     def scanModFile(self,modFile,progress):
         """Scans specified mod file to extract info. May add record to patch
         mod, but won't alter it. If adds record, should first convert it to

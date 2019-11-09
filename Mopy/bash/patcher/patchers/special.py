@@ -573,7 +573,6 @@ class ContentsChecker(_AContentsChecker,Patcher):
 
     def scanModFile(self, modFile, progress):
         """Scan modFile."""
-        if not self.isActive: return
         modFile.convertToLongFids(self.contTypes | self.entryTypes)
         # First, map fids to record type for all records for the valid record
         # types. We need to know if a given fid belongs to one of the valid

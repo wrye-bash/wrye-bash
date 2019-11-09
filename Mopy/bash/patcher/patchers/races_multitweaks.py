@@ -768,7 +768,6 @@ class RacePatcher(AMultiTweaker, ListPatcher):
 
     def scanModFile(self, modFile, progress):
         """Add appropriate records from modFile."""
-        if not self.isActive: return
         races_data = self.races_data
         eye_mesh = self.eye_mesh
         modName = modFile.fileInfo.name
