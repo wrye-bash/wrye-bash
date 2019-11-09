@@ -135,7 +135,6 @@ def exit_cleanup():
             raise
 
 def dump_environment():
-    import locale
     fse = sys.getfilesystemencoding()
     msg = u'\n'.join([
         u'Wrye Bash starting',
@@ -159,7 +158,7 @@ def dump_environment():
             (u' - using %s' % bolt.Path.sys_fs_enc) if not fse else u''),
         u'command line: %s' % sys.argv,
     ])
-    if bolt.scandir is not None:
+    if getattr(bolt, 'scandir', None) is not None:
         msg = u'\n'.join([msg, 'Using scandir ' + bolt.scandir.__version__])
     print msg
     return msg
