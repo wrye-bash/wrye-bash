@@ -6,4 +6,5 @@ https://github.com/wrye-bash/dev-tools/raw/master/wheels/wxPython-3.0.2.0-cp27-c
 scandir~=1.9
 # Compile/Build-time
 pygit2~=0.28
+pyfiglet~=0.8
 https://github.com/wrye-bash/dev-tools/raw/master/wheels/py2exe-0.6.9-cp27-cp27m-win32.whl
