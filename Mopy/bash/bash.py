@@ -177,7 +177,7 @@ def dump_environment():
             (u' - using %s' % bolt.Path.sys_fs_enc) if not fse else u''),
         u'command line: %s' % sys.argv,
     ]
-    if bolt.scandir is not None:
+    if getattr(bolt, 'scandir', None) is not None:
         msg.append(u'Using scandir ' + bolt.scandir.__version__)
     for m in msg:
         bolt.deprint(m)
