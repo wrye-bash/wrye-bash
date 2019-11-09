@@ -59,6 +59,7 @@ LOGGER = logging.getLogger(__name__)
 
 SCRIPTS_PATH = os.path.dirname(os.path.abspath(__file__))
 LOGFILE = os.path.join(SCRIPTS_PATH, "build.log")
+WBSA_PATH = os.path.join(SCRIPTS_PATH, u"build", u"standalone")
 DIST_PATH = os.path.join(SCRIPTS_PATH, u"dist")
 ROOT_PATH = os.path.abspath(os.path.join(SCRIPTS_PATH, u".."))
 MOPY_PATH = os.path.join(ROOT_PATH, u"Mopy")
@@ -237,18 +238,19 @@ def pack_manual(version):
     archive = os.path.join(
         DIST_PATH, u"Wrye Bash {} - Python Source.7z".format(version)
     )
-    # We want every file for the manual version
-    root_files_to_include = [u"Readme.md", u"requirements.txt"]
-    for fname in root_files_to_include:
-        orig = os.path.join(ROOT_PATH, fname)
-        target = os.path.join(MOPY_PATH, fname)
+    join = os.path.join
+    files_to_include = {
+        join(ROOT_PATH, u"Readme.md"): join(MOPY_PATH, u"Readme.md"),
+        join(ROOT_PATH, u"requirements.txt"): join(MOPY_PATH, u"requirements.txt"),
+        join(WBSA_PATH, u"bash.ico"): join(MOPY_PATH, u"bash.ico"),
+    }
+    for orig, target in files_to_include.iteritems():
         cpy(orig, target)
     try:
         pack_7z(archive)
     finally:
-        for fname in root_files_to_include:
-            target = os.path.join(MOPY_PATH, fname)
-            rm(target)
+        for path in files_to_include.itervalues():
+            rm(path)
 
 
 @contextmanager
@@ -257,7 +259,7 @@ def build_executable(version, file_version):
     LOGGER.info("Building executable...")
     build_folder = os.path.join(MOPY_PATH, u"build")
     dist_folder = os.path.join(MOPY_PATH, u"dist")
-    setup_orig = os.path.join(SCRIPTS_PATH, u"build", u"standalone", u"setup.py")
+    setup_orig = os.path.join(WBSA_PATH, u"setup.py")
     setup_target = os.path.join(MOPY_PATH, u"setup.py")
     exe_orig = os.path.join(dist_folder, u"Wrye Bash Launcher.exe")
     exe_target = os.path.join(MOPY_PATH, u"Wrye Bash.exe")
