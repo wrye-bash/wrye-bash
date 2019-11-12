@@ -5414,7 +5414,8 @@ class MreRefr(MelRecord):
 
         # {--- Emittance ---}
         MelOptStruct('XEMI','I',(FID,'emittance')),
-        MelOptStruct('XLIG','ff4sf4s','fov90Delta','fadeDelta','unknown','shadowDepthBias','unknown',),
+        MelOptStruct('XLIG', '4f4s', 'fov90Delta', 'fadeDelta',
+                     'end_distance_cap', 'shadowDepthBias', 'unknown'),
         MelOptStruct('XALP','BB','cutoffAlpha','baseAlpha',),
 
         # {--- Teleport ---}
