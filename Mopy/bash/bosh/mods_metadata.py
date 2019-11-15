@@ -25,6 +25,8 @@ import errno
 import os
 import re
 
+import loot_api
+
 from ._mergeability import is_esl_capable
 from .. import balt, bolt, bush, bass, load_order
 from ..bolt import GPath, deprint, sio, struct_pack, struct_unpack
@@ -33,11 +35,6 @@ from ..cint import ObBaseRecord, ObCollection
 from ..exception import BoltError, CancelError, ModError
 from ..patcher import getPatchesPath, getPatchesList
 
-try:
-    import loot_api
-except ImportError as e:
-    loot_api = None
-    deprint(u'Failed to import the loot_api module: ({})'.format(e))
 
 lootDb = None #--LootDb singleton
 
@@ -227,23 +224,20 @@ class ConfigHelpers(object):
     def __init__(self):
         """bass.dir must have been initialized"""
         global lootDb
-        if loot_api is not None:
-            deprint(u'Using LOOT API version:', loot_api.Version.string())
-            try:
-                gameType = self.getLootApiGameType(bush.game.fsName)
-                loot_api.initialise_locale('')
-                loot_game = loot_api.create_game_handle(gameType, bass.dirs['app'].s)
-                lootDb = loot_game.get_database()
-            except (OSError, AttributeError):
-                deprint(u'The LOOT API failed to initialize', traceback=True)
-                lootDb = None
-            except ValueError:
-                deprint(u'The LOOT API does not support the current game.')
-                lootDb = None
-            except RuntimeError:
-                deprint(u'Failed to create a LOOT API database.')
-                lootDb = None
-        else:
+        deprint(u'Using LOOT API version:', loot_api.Version.string())
+        try:
+            gameType = self.getLootApiGameType(bush.game.fsName)
+            loot_api.initialise_locale('')
+            loot_game = loot_api.create_game_handle(gameType, bass.dirs['app'].s)
+            lootDb = loot_game.get_database()
+        except (OSError, AttributeError):
+            deprint(u'The LOOT API failed to initialize', traceback=True)
+            lootDb = None
+        except ValueError:
+            deprint(u'The LOOT API does not support the current game.')
+            lootDb = None
+        except RuntimeError:
+            deprint(u'Failed to create a LOOT API database.')
             lootDb = None
         # LOOT stores the masterlist/userlist in a %LOCALAPPDATA% subdirectory.
         self.lootMasterPath = bass.dirs['userApp'].join(
@@ -317,8 +311,6 @@ class ConfigHelpers(object):
 
     @staticmethod
     def getLootApiGameType(fsName):
-        if loot_api is None:
-            return None
         if fsName == 'Oblivion':
             return loot_api.GameType.tes4
         # TODO See if LOOT adds a new GameType for Enderal
