@@ -22,7 +22,6 @@
 #
 # =============================================================================
 """This module contains the falloutnv record classes."""
-import itertools
 import struct
 # Set MelModel in brec, in this case it's identical to the fallout 3 one
 from ..fallout3.records import MelScrxen, MelOwnership, MelDestructible, \
@@ -39,8 +38,6 @@ from ...exception import ModError, ModSizeError
 # Those are unused here, but need be in this file as are accessed via it
 from ..fallout3.records import MreNpc ##: used in Oblivion only save code really
 
-from_iterable = itertools.chain.from_iterable
-
 #------------------------------------------------------------------------------
 # FalloutNV Records -----------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -50,7 +47,8 @@ class MreHeader(MreHeaderBase):
 
     #--Data elements
     melSet = MelSet(
-        MelStruct('HEDR','f2I',('version',1.34),'numRecords',('nextObject',0xCE6)),
+        MelStruct('HEDR', 'f2I', ('version', 1.34), 'numRecords',
+                  ('nextObject', 0x800)),
         MelBase('OFST','ofst_p',),  #--Obsolete?
         MelBase('DELE','dele_p',),  #--Obsolete?
         MelUnicode('CNAM','author',u'',512),

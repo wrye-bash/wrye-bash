@@ -72,7 +72,8 @@ class MreHeader(MreHeaderBase):
 
     #--Data elements
     melSet = MelSet(
-        MelStruct('HEDR','f2I',('version',0.95),'numRecords',('nextObject',0xCE6)),
+        MelStruct('HEDR', 'f2I', ('version', 0.95), 'numRecords',
+                  ('nextObject', 0x800)),
         MelBase('TNAM', 'tnam_p'),
         MelUnicode('CNAM','author',u'',512),
         MelUnicode('SNAM','description',u'',512),

@@ -67,8 +67,6 @@ if brec.MelModel is None:
     brec.MelModel = _MelModel
 from ...brec import MelModel
 
-from_iterable = itertools.chain.from_iterable
-
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -805,7 +803,8 @@ class MelVmad(MelBase):
                         #value = list(from_iterable([x+(0,) for x in value]))
                         #data += structPack('=BBI'+count*'IHH',11,self.status,count,*value)
                         # Object Format 2 - value = [NULL,aid,fid, NULL,aid,fid, ...]
-                        value = list(from_iterable([(0,aid,fid) for fid,aid in value]))
+                        value = list(itertools.chain.from_iterable(
+                            [(0,aid,fid) for fid,aid in value]))
                         data += struct_pack('=BBI' + count * 'HHI', 11,
                                             self.status, count, *value)
                     # Type 12 - Strings
@@ -1045,7 +1044,8 @@ class MreHeader(MreHeaderBase):
 
     #--Data elements
     melSet = MelSet(
-        MelStruct('HEDR','f2I',('version',1.7),'numRecords',('nextObject',0xCE6)),
+        MelStruct('HEDR', 'f2I', ('version', 1.7), 'numRecords',
+                  ('nextObject', 0x800)),
         MelUnicode('CNAM','author',u'',512),
         MelUnicode('SNAM','description',u'',512),
         MreHeaderBase.MelMasterName('MAST','masters'),

@@ -24,7 +24,6 @@
 """This module contains the fallout3 record classes. You must import from it
 __once__ only in game.fallout3.Fallout3GameInfo#init. No other game.records
 file must be imported till then."""
-import itertools
 import struct
 from operator import attrgetter
 from ... import bush, brec
@@ -63,8 +62,6 @@ if brec.MelModel is None:
     brec.MelModel = _MelModel
 
 from ...brec import MelModel
-
-from_iterable = itertools.chain.from_iterable
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -408,7 +405,8 @@ class MreHeader(MreHeaderBase):
 
     #--Data elements
     melSet = MelSet(
-        MelStruct('HEDR','f2I',('version',0.94),'numRecords',('nextObject',0xCE6)),
+        MelStruct('HEDR', 'f2I', ('version', 0.94), 'numRecords',
+                  ('nextObject', 0x800)),
         MelBase('OFST','ofst_p',),  #--Obsolete?
         MelBase('DELE','dele_p',),  #--Obsolete?
         MelUnicode('CNAM','author',u'',512),
