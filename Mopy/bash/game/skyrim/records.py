@@ -23,7 +23,6 @@
 # =============================================================================
 """This module contains the skyrim record classes."""
 from collections import OrderedDict
-import itertools
 import struct
 
 from .constants import condition_function_data
@@ -75,8 +74,6 @@ if brec.MelModel is None:
 
     brec.MelModel = _MelModel
 from ...brec import MelModel
-
-from_iterable = itertools.chain.from_iterable
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -1242,7 +1239,8 @@ class MreHeader(MreHeaderBase):
     classType = 'TES4'
 
     melSet = MelSet(
-        MelStruct('HEDR','f2I',('version',1.7),'numRecords',('nextObject',0xCE6)),
+        MelStruct('HEDR', 'f2I', ('version', 1.7), 'numRecords',
+                  ('nextObject', 0x800)),
         MelUnicode('CNAM','author',u'',512),
         MelUnicode('SNAM','description',u'',512),
         MreHeaderBase.MelMasterName('MAST','masters'),

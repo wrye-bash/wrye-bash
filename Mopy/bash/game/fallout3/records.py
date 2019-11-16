@@ -425,7 +425,8 @@ class MreHeader(MreHeaderBase):
     classType = 'TES4'
 
     melSet = MelSet(
-        MelStruct('HEDR','f2I',('version',0.94),'numRecords',('nextObject',0xCE6)),
+        MelStruct('HEDR', 'f2I', ('version', 0.94), 'numRecords',
+                  ('nextObject', 0x800)),
         MelBase('OFST','ofst_p',),  #--Obsolete?
         MelBase('DELE','dele_p',),  #--Obsolete?
         MelUnicode('CNAM','author',u'',512),
