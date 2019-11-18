@@ -107,7 +107,8 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, \
             MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, \
             MreSpgd, MreTact, MreTree, MreTxst, MreVtyp, MreWoop, MreWrld, \
-            MreAmmo, MreLtex, MreMato, MreStat, MreWatr, MreWeap, MreWthr
+            MreAmmo, MreLtex, MreMato, MreStat, MreWatr, MreWeap, MreWthr, \
+            MrePack
         cls.mergeClasses = (
             # MreAchr, MreDial, MreInfo, MreFact,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
@@ -124,9 +125,8 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             MreRegn, MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm,
             MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun,
             MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
-            MreWatr, MreWeap, MreWoop, MreWthr, MreVoli, MreLens,
-            ####### for debug
-            MreQust,
+            MreWatr, MreWeap, MreWoop, MreWthr, MreVoli, MreLens, MreQust,
+            MrePack,
         )
         # Setting RecordHeader class variables --------------------------------
         brec.RecordHeader.topTypes = [
@@ -167,9 +167,9 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, MreSmqn,
             MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd, MreStat,
             MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop,
-            MreWthr, MreCell, MreWrld, MreVoli, MreLens,  # MreNavm, MreNavi
-            ####### for debug
-            MreQust, MreHeader,
+            MreWthr, MreCell, MreWrld, MreVoli, MreLens, MreQust, MreHeader,
+            MrePack,
+            # MreNavm, MreNavi
         ))
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {'TES4', 'ACHR', 'CELL', 'DIAL',
