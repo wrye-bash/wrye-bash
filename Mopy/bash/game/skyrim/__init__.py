@@ -240,7 +240,7 @@ class SkyrimGameInfo(GameInfo):
             MreLscr, MreDlvw, MreTree, MreWatr, MreFlor, MreEyes, MreWeap, \
             MreIngr, MreClfm, MreMesg, MreLigh, MreExpl, MreLcrt, MreStat, \
             MreAmmo, MreSmqn, MreImad, MreSoun, MreAvif, MreCont, MreIpct, \
-            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk
+            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk, MrePack
         # ---------------------------------------------------------------------
         # Unused records, they have empty GRUP in skyrim.esm-------------------
         # CLDC HAIR PWAT RGDL SCOL SCPT
@@ -272,9 +272,7 @@ class SkyrimGameInfo(GameInfo):
             MreRegn, MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm,
             MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun,
             MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
-            MreWatr, MreWeap, MreWoop, MreWthr,
-            ####### for debug
-            MreQust,)
+            MreWatr, MreWeap, MreWoop, MreWthr, MreQust, MrePack, )
 
         # MreScpt is Oblivion/FO3/FNV Only
         # MreMgef, has not been verified to be used here for Skyrim
@@ -317,9 +315,8 @@ class SkyrimGameInfo(GameInfo):
             MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, MreSmqn,
             MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd, MreStat,
             MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop,
-            MreWthr, MreCell, MreWrld,  # MreNavm, MreNavi
-            ####### for debug
-            MreQust, MreHeader,
+            MreWthr, MreCell, MreWrld, MreQust, MreHeader, MrePack,
+            # MreNavm, MreNavi
         ))
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {'TES4', 'ACHR', 'CELL', 'DIAL',
