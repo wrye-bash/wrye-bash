@@ -402,7 +402,7 @@ condition_function_data = {
 
 #--List of GMST's in the main plugin (FalloutNV.esm) that have 0x00000000
 #  as the form id.  Any GMST as such needs its Editor Id listed here.
-gmstEids = [ # same as in fallout3
+gmstEids = [ # same as in fallout3 + 'fActorStrengthEncumbranceMult'
     'fPlayerDeathReloadTime','iMapMarkerVisibleDistance','fVanityModeWheelMax',
     'fChase3rdPersonZUnitsPerSecond','fAutoAimMaxDegreesMiss',
     'iHoursToRespawnCell','fEssentialDeathTime','fJumpHeightMin',
@@ -417,6 +417,7 @@ gmstEids = [ # same as in fallout3
     'iRemoveExcessDeadComplexTotalActorCount','iRemoveExcessDeadComplexCount',
     'fRemoveExcessDeadTime','fRemoveExcessComplexDeadTime',
     'iLevItemLevelDifferenceMax','fMoveWeightMax',
+    'fActorStrengthEncumbranceMult',
 ]
 
 GlobalsTweaks = [
