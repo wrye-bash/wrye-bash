@@ -108,7 +108,7 @@ class EnderalGameInfo(SkyrimGameInfo):
             MreLscr, MreDlvw, MreTree, MreWatr, MreFlor, MreEyes, MreWeap, \
             MreIngr, MreClfm, MreMesg, MreLigh, MreExpl, MreLcrt, MreStat, \
             MreAmmo, MreSmqn, MreImad, MreSoun, MreAvif, MreCont, MreIpct, \
-            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk
+            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk, MrePack
         # ---------------------------------------------------------------------
         # Unused records, they have empty GRUP in skyrim.esm-------------------
         # CLDC HAIR PWAT RGDL SCOL SCPT
@@ -123,7 +123,7 @@ class EnderalGameInfo(SkyrimGameInfo):
         # ---------------------------------------------------------------------
         # These need syntax revision but can be merged once that is corrected
         #
-        #       MreAchr, MreDial, MreLctn, MreInfo, MreFact, MrePerk,
+        #       MreAchr, MreDial, MreLctn, MreInfo, MreFact,
         # ---------------------------------------------------------------------
         cls.mergeClasses = (# MreAchr, MreDial, MreInfo, MreFact,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
@@ -140,9 +140,7 @@ class EnderalGameInfo(SkyrimGameInfo):
             MreRegn, MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm,
             MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun,
             MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
-            MreWatr, MreWeap, MreWoop, MreWthr,
-            ####### for debug
-            MreQust,)
+            MreWatr, MreWeap, MreWoop, MreWthr, MreQust, MrePack, )
 
         # MreScpt is Oblivion/FO3/FNV Only
         # MreMgef, has not been verified to be used here for Skyrim
@@ -185,9 +183,8 @@ class EnderalGameInfo(SkyrimGameInfo):
             MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, MreSmqn,
             MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd, MreStat,
             MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop,
-            MreWthr, MreCell, MreWrld,  # MreNavm, MreNavi
-            ####### for debug
-            MreQust, MreHeader,
+            MreWthr, MreCell, MreWrld, MreQust, MreHeader, MrePack,
+            # MreNavm, MreNavi
         ))
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {'TES4', 'ACHR', 'CELL', 'DIAL',
