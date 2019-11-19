@@ -1222,7 +1222,7 @@ class _ACosave(_Dumpable, _Remappable):
         to override this method.
 
         :param ins: The input stream to read from."""
-        self.cosave_header = self.header_type(ins, self.abs_path)
+        self.cosave_header = self.header_type(ins, self.cosave_path)
 
     def _read_cosave_body(self, ins, light=False):
         """Reads the body of this cosave. The header is already read and
