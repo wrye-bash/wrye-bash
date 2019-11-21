@@ -121,7 +121,7 @@ class Fallout4GameInfo(GameInfo):
     class esp(GameInfo.esp):
         canBash = True
         canEditHeader = True
-        validHeaderVersions = (0.95,)
+        validHeaderVersions = (0.95, 1.0)
 
     allTags = {u'Delev', u'Relev'}
 
