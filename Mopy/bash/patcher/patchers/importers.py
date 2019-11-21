@@ -2779,6 +2779,8 @@ class CBash_SpellsPatcher(CBash_ImportPatcher, _ASpellsPatcher):
                     record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
+# TODO(inf) Currently FNV-only, but don't move to game/falloutnv/patcher yet -
+#  this could potentially be refactored and reused for FO4's modifications
 class WeaponModsPatcher(_SimpleImporter):
     """Merge changes to weapon modifications for FalloutNV."""
     scanOrder = 27
