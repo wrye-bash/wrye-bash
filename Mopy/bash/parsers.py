@@ -1906,7 +1906,7 @@ class _UsesEffectsMixin(object):
         [(y.lower(),x) for x,y in recipientTypeNumber_Name.iteritems() if
          x is not None])
     actorValueNumber_Name = dict(
-        [(x,y) for x,y in enumerate(brec.actorValues)])
+        [(x,y) for x,y in enumerate(bush.game.actor_values)])
     actorValueNumber_Name[None] = u'NONE'
     actorValueName_Number = dict(
         [(y.lower(),x) for x,y in actorValueNumber_Name.iteritems() if
@@ -4121,33 +4121,31 @@ class ModFile(object):
             block.updateMasters(masters)
         return masters.getOrdered()
 
-    def getMgefSchool(self, _reload=False): # _reload param never used
+    def getMgefSchool(self):
         """Return a dictionary mapping magic effect code to magic effect school.
         This is intended for use with the patch file when it records for all magic effects.
         If magic effects are not available, it will revert to bush.py version."""
-        if self.mgef_school and not _reload:
-            return self.mgef_school
-        mgef_school = self.mgef_school = brec.mgef_school.copy()
+        if self.mgef_school: return self.mgef_school
+        mgef_school = self.mgef_school = bush.game.mgef_school.copy()
         if 'MGEF' in self.tops:
             for record in self.MGEF.getActiveRecords():
-                if isinstance(record,MreRecord.type_class['MGEF']):
-                    if bush.game.fsName == u'Oblivion':
-                        mgef_school[record.eid] = record.school
-                    else:
-                        mgef_school[record.eid] = record.magicSkill
+                ##: How on earth would this ever be false?
+                if isinstance(record, MreRecord.type_class['MGEF']):
+                    mgef_school[record.eid] = record.school
         return mgef_school
 
-    def getMgefHostiles(self, _reload=False): # _reload param never used
+    def getMgefHostiles(self):
         """Return a set of hostile magic effect codes.
-        This is intended for use with the patch file when it records for all magic effects.
-        If magic effects are not available, it will revert to bush.py version."""
-        if self.hostileEffects and not _reload:
-            return self.hostileEffects
-        hostileEffects = self.hostileEffects = brec.hostileEffects.copy()
+        This is intended for use with the patch file when it records for all
+        magic effects. If magic effects are not available, it will revert to
+        constants.py version."""
+        if self.hostileEffects: return self.hostileEffects
+        hostileEffects = self.hostileEffects = bush.game.hostile_effects.copy()
         if 'MGEF' in self.tops:
             hostile = set()
             nonhostile = set()
             for record in self.MGEF.getActiveRecords():
+                ##: How on earth would this ever be false?
                 if isinstance(record,MreRecord.type_class['MGEF']):
                     if record.flags.hostile:
                         hostile.add(record.eid)
@@ -4164,7 +4162,7 @@ class ModFile(object):
         If magic effects are not available, it will revert to bush.py version."""
         if self.mgef_name and not _reload:
             return self.mgef_name
-        mgef_name = self.mgef_name = brec.mgef_name.copy()
+        mgef_name = self.mgef_name = bush.game.mgef_name.copy()
         if 'MGEF' in self.tops:
             for record in self.MGEF.getActiveRecords():
                 if isinstance(record,MreRecord.type_class['MGEF']):
