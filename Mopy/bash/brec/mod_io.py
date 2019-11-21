@@ -107,9 +107,9 @@ class RecordHeader(object):
             pass
         #--Top Group
         elif args[3] == 0: #groupType == 0 (Top Type)
-            args = list(args)
             str0 = struct_pack('I', args[2])
             if str0 in RecordHeader.topTypes:
+                args = list(args)
                 args[2] = str0
             else:
                 raise exception.ModError(ins.inName,

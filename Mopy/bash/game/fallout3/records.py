@@ -1353,7 +1353,7 @@ class MreFlst(MelRecord):
     def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet."""
         if not self.longFids: raise StateError(_("Fids not in long format"))
-        self.formIDInList = [fid for fid in self.formIDInList if fid[0] in modSet]
+        self.formIDInList = [fi for fi in self.formIDInList if fi[0] in modSet]
 
     def mergeWith(self,other,otherMod):
         """Merges newLevl settings and entries with self.
@@ -1364,16 +1364,16 @@ class MreFlst(MelRecord):
         if other.de_records:
             removeItems = self.items & other.de_records
             #self.entries = [entry for entry in self.entries if entry.listId not in removeItems]
-            self.formIDInList = [fid for fid in self.formIDInList if fid not in removeItems]
+            self.formIDInList = [fi for fi in self.formIDInList if fi not in removeItems]
             self.items = (self.items | other.de_records)
         #--Add new items from other
         newItems = set()
         formIDInListAppend = self.formIDInList.append
         newItemsAdd = newItems.add
-        for fid in other.formIDInList:
-            if fid not in self.items:
-                formIDInListAppend(fid)
-                newItemsAdd(fid)
+        for fi in other.formIDInList:
+            if fi not in self.items:
+                formIDInListAppend(fi)
+                newItemsAdd(fi)
         if newItems:
             self.items |= newItems
         #--Is merged list different from other? (And thus written to patch.)

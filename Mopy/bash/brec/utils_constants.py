@@ -55,28 +55,28 @@ def _coerce(value, newtype, base=None, AllowNone=False):
         return None
 
 # Reference (fid) -------------------------------------------------------------
-def strFid(fid):
-    """Returns a string representation of the fid."""
-    if isinstance(fid,tuple):
-        return u'(%s, %06X)' % (fid[0].s,fid[1])
+def strFid(form_id):
+    """Return a string representation of the fid."""
+    if isinstance(form_id, tuple):
+        return u'(%s, %06X)' % (form_id[0].s, form_id[1])
     else:
-        return u'%08X' % fid
+        return u'%08X' % form_id
 
 def genFid(modIndex,objectIndex):
     """Generates a fid from modIndex and ObjectIndex."""
     return int(objectIndex) | (int(modIndex) << 24)
 
-def getModIndex(fid):
+def getModIndex(form_id):
     """Returns the modIndex portion of a fid."""
-    return int(fid >> 24)
+    return int(form_id >> 24)
 
-def getObjectIndex(fid):
+def getObjectIndex(form_id):
     """Returns the objectIndex portion of a fid."""
-    return int(fid & 0x00FFFFFF)
+    return int(form_id & 0x00FFFFFF)
 
-def getFormIndices(fid):
+def getFormIndices(form_id):
     """Returns tuple of modIndex and ObjectIndex of fid."""
-    return int(fid >> 24),int(fid & 0x00FFFFFF)
+    return int(form_id >> 24), int(form_id & 0x00FFFFFF)
 
 # Constants -------------------------------------------------------------------
 # Used by MelStruct classes to indicate fid elements.
