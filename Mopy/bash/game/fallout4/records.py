@@ -71,6 +71,7 @@ class MreHeader(MreHeaderBase):
     classType = 'TES4'
 
     melSet = MelSet(
+        # 1.0 breaks on older FO4 versions, so leaving it at this for now
         MelStruct('HEDR', 'f2I', ('version', 0.95), 'numRecords',
                   ('nextObject', 0x800)),
         MelBase('TNAM', 'tnam_p'),

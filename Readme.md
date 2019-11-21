@@ -22,8 +22,8 @@ tested on (previous versions or latest versions may or may not work):
 * Fallout New Vegas (patch 1.4.0.525)
 * Skyrim (patch 1.9.36.0)
 * Enderal (patch 1.5.7.0)
-* Fallout 4 (patch 1.10.138.0)
-* Skyrim Special Edition (patch 1.5.80.0)
+* Fallout 4 (patch 1.10.162.0)
+* Skyrim Special Edition (patch 1.5.97.0)
 
 ### Download
 
@@ -57,7 +57,7 @@ operating system.
 
 Once you have those, install the required packages by running:
 
-```python
+```bash
 path/to/python.exe -m pip install -r requirements.txt
 ```
 
