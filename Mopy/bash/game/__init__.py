@@ -352,31 +352,37 @@ class GameInfo(object):
     # ListsMerger patcher (leveled list patcher)
     #--------------------------------------------------------------------------
     listTypes = ()
+
     #--------------------------------------------------------------------------
     # NamesPatcher
     #--------------------------------------------------------------------------
     namesTypes = set()  # initialize with literal
+
     #--------------------------------------------------------------------------
     # ItemPrices Patcher
     #--------------------------------------------------------------------------
     pricesTypes = {}
+
     #--------------------------------------------------------------------------
     # StatsImporter
     #--------------------------------------------------------------------------
     statsTypes = {}
     statsHeaders = ()
+
     #--------------------------------------------------------------------------
     # SoundPatcher
     #--------------------------------------------------------------------------
     # Needs longs in SoundPatcher
     soundsLongsTypes = set()  # initialize with literal
     soundsTypes = {}
+
     #--------------------------------------------------------------------------
     # CellImporter
     #--------------------------------------------------------------------------
     cellAutoKeys = set()  # use a set literal
     cellRecAttrs = {}
     cellRecFlags = {}
+
     #--------------------------------------------------------------------------
     # GraphicsPatcher
     #--------------------------------------------------------------------------
@@ -384,6 +390,7 @@ class GameInfo(object):
     graphicsTypes = {}
     graphicsFidTypes = {}
     graphicsModelAttrs = ()
+
     #--------------------------------------------------------------------------
     # Inventory Patcher
     #--------------------------------------------------------------------------
@@ -445,6 +452,27 @@ class GameInfo(object):
     #--------------------------------------------------------------------------
     actor_tweaks = set()
 
+    #--------------------------------------------------------------------------
+    # Magic Effects - Oblivion-specific
+    #--------------------------------------------------------------------------
+    # Doesn't list MGEFs that use actor values, but rather MGEFs that have a
+    # generic name.
+    # Ex: Absorb Attribute becomes Absorb Magicka if the effect's actorValue
+    #     field contains 9, but it is actually using an attribute rather than
+    #     an actor value
+    # Ex: Burden uses an actual actor value (encumbrance) but it isn't listed
+    #     since its name doesn't change
+    generic_av_effects = set()
+    # MGEFs that are considered hostile
+    hostile_effects = set()
+    # Maps MGEF signatures to certain MGEF properties
+    mgef_basevalue = dict()
+    mgef_name = dict()
+    mgef_school = dict()
+
+    # Human-readable names for each actor value
+    actor_values = []
+
     # Record type to name dictionary
     record_type_name = {}
 
@@ -483,11 +511,13 @@ class GameInfo(object):
     _constants_members = {
         'GlobalsTweaks', 'GmstTweaks', 'actor_importer_attrs',
         'actor_importer_auto_key', 'actor_tweaks', 'actor_types',
-        'bethDataFiles', 'cc_valid_types', 'cc_passes', 'cellAutoKeys',
-        'cellRecAttrs', 'cellRecFlags', 'condition_function_data',
-        'default_eyes', 'destructible_types', 'gmstEids', 'graphicsFidTypes',
+        'actor_values', 'bethDataFiles', 'cc_valid_types', 'cc_passes',
+        'cellAutoKeys', 'cellRecAttrs', 'cellRecFlags',
+        'condition_function_data', 'default_eyes', 'destructible_types',
+        'generic_av_effects', 'gmstEids', 'graphicsFidTypes',
         'graphicsLongsTypes', 'graphicsModelAttrs', 'graphicsTypes',
-        'inventoryTypes', 'keywords_types', 'listTypes', 'namesTypes',
+        'hostile_effects', 'inventoryTypes', 'keywords_types', 'listTypes',
+        'mgef_basevalue', 'mgef_name', 'mgef_school', 'namesTypes',
         'object_bounds_types', 'pricesTypes', 'record_type_name',
         'save_rec_types', 'scripts_types', 'soundsLongsTypes', 'soundsTypes',
         'spell_stats_attrs', 'statsHeaders', 'statsTypes', 'text_long_types',

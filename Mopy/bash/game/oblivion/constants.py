@@ -1777,6 +1777,324 @@ actor_tweaks = {
     u'SWALKNPCAnimationPatcher',
 }
 
+#------------------------------------------------------------------------------
+# Magic Effects
+#------------------------------------------------------------------------------
+import struct as _struct # hide from dynamic importer
+_strU = _struct.Struct('I').unpack
+generic_av_effects = {
+    'ABAT', #--Absorb Attribute (Use Attribute)
+    'ABSK', #--Absorb Skill (Use Skill)
+    'DGAT', #--Damage Attribute (Use Attribute)
+    'DRAT', #--Drain Attribute (Use Attribute)
+    'DRSK', #--Drain Skill (Use Skill)
+    'FOAT', #--Fortify Attribute (Use Attribute)
+    'FOSK', #--Fortify Skill (Use Skill)
+    'REAT', #--Restore Attribute (Use Attribute)
+}
+generic_av_effects |= set((_strU(x)[0] for x in generic_av_effects))
+hostile_effects = {
+    'ABAT', #--Absorb Attribute
+    'ABFA', #--Absorb Fatigue
+    'ABHE', #--Absorb Health
+    'ABSK', #--Absorb Skill
+    'ABSP', #--Absorb Magicka
+    'BRDN', #--Burden
+    'DEMO', #--Demoralize
+    'DGAT', #--Damage Attribute
+    'DGFA', #--Damage Fatigue
+    'DGHE', #--Damage Health
+    'DGSP', #--Damage Magicka
+    'DIAR', #--Disintegrate Armor
+    'DIWE', #--Disintegrate Weapon
+    'DRAT', #--Drain Attribute
+    'DRFA', #--Drain Fatigue
+    'DRHE', #--Drain Health
+    'DRSK', #--Drain Skill
+    'DRSP', #--Drain Magicka
+    'FIDG', #--Fire Damage
+    'FRDG', #--Frost Damage
+    'FRNZ', #--Frenzy
+    'PARA', #--Paralyze
+    'SHDG', #--Shock Damage
+    'SLNC', #--Silence
+    'STMA', #--Stunted Magicka
+    'STRP', #--Soul Trap
+    'SUDG', #--Sun Damage
+    'TURN', #--Turn Undead
+    'WKDI', #--Weakness to Disease
+    'WKFI', #--Weakness to Fire
+    'WKFR', #--Weakness to Frost
+    'WKMA', #--Weakness to Magic
+    'WKNW', #--Weakness to Normal Weapons
+    'WKPO', #--Weakness to Poison
+    'WKSH', #--Weakness to Shock
+}
+hostile_effects |= set((_strU(x)[0] for x in hostile_effects))
+_magic_effects = {
+    'ABAT': [5,_(u'Absorb Attribute'),0.95],
+    'ABFA': [5,_(u'Absorb Fatigue'),6],
+    'ABHE': [5,_(u'Absorb Health'),16],
+    'ABSK': [5,_(u'Absorb Skill'),2.1],
+    'ABSP': [5,_(u'Absorb Magicka'),7.5],
+    'BA01': [1,_(u'Bound Armor Extra 01'),0],#--Formid == 0
+    'BA02': [1,_(u'Bound Armor Extra 02'),0],#--Formid == 0
+    'BA03': [1,_(u'Bound Armor Extra 03'),0],#--Formid == 0
+    'BA04': [1,_(u'Bound Armor Extra 04'),0],#--Formid == 0
+    'BA05': [1,_(u'Bound Armor Extra 05'),0],#--Formid == 0
+    'BA06': [1,_(u'Bound Armor Extra 06'),0],#--Formid == 0
+    'BA07': [1,_(u'Bound Armor Extra 07'),0],#--Formid == 0
+    'BA08': [1,_(u'Bound Armor Extra 08'),0],#--Formid == 0
+    'BA09': [1,_(u'Bound Armor Extra 09'),0],#--Formid == 0
+    'BA10': [1,_(u'Bound Armor Extra 10'),0],#--Formid == 0
+    'BABO': [1,_(u'Bound Boots'),12],
+    'BACU': [1,_(u'Bound Cuirass'),12],
+    'BAGA': [1,_(u'Bound Gauntlets'),8],
+    'BAGR': [1,_(u'Bound Greaves'),12],
+    'BAHE': [1,_(u'Bound Helmet'),12],
+    'BASH': [1,_(u'Bound Shield'),12],
+    'BRDN': [0,_(u'Burden'),0.21],
+    'BW01': [1,_(u'Bound Order Weapon 1'),1],
+    'BW02': [1,_(u'Bound Order Weapon 2'),1],
+    'BW03': [1,_(u'Bound Order Weapon 3'),1],
+    'BW04': [1,_(u'Bound Order Weapon 4'),1],
+    'BW05': [1,_(u'Bound Order Weapon 5'),1],
+    'BW06': [1,_(u'Bound Order Weapon 6'),1],
+    'BW07': [1,_(u'Summon Staff of Sheogorath'),1],
+    'BW08': [1,_(u'Bound Priest Dagger'),1],
+    'BW09': [1,_(u'Bound Weapon Extra 09'),0],#--Formid == 0
+    'BW10': [1,_(u'Bound Weapon Extra 10'),0],#--Formid == 0
+    'BWAX': [1,_(u'Bound Axe'),39],
+    'BWBO': [1,_(u'Bound Bow'),95],
+    'BWDA': [1,_(u'Bound Dagger'),14],
+    'BWMA': [1,_(u'Bound Mace'),91],
+    'BWSW': [1,_(u'Bound Sword'),235],
+    'CALM': [3,_(u'Calm'),0.47],
+    'CHML': [3,_(u'Chameleon'),0.63],
+    'CHRM': [3,_(u'Charm'),0.2],
+    'COCR': [3,_(u'Command Creature'),0.6],
+    'COHU': [3,_(u'Command Humanoid'),0.75],
+    'CUDI': [5,_(u'Cure Disease'),1400],
+    'CUPA': [5,_(u'Cure Paralysis'),500],
+    'CUPO': [5,_(u'Cure Poison'),600],
+    'DARK': [3,_(u'DO NOT USE - Darkness'),0],
+    'DEMO': [3,_(u'Demoralize'),0.49],
+    'DGAT': [2,_(u'Damage Attribute'),100],
+    'DGFA': [2,_(u'Damage Fatigue'),4.4],
+    'DGHE': [2,_(u'Damage Health'),12],
+    'DGSP': [2,_(u'Damage Magicka'),2.45],
+    'DIAR': [2,_(u'Disintegrate Armor'),6.2],
+    'DISE': [2,_(u'Disease Info'),0], #--Formid == 0
+    'DIWE': [2,_(u'Disintegrate Weapon'),6.2],
+    'DRAT': [2,_(u'Drain Attribute'),0.7],
+    'DRFA': [2,_(u'Drain Fatigue'),0.18],
+    'DRHE': [2,_(u'Drain Health'),0.9],
+    'DRSK': [2,_(u'Drain Skill'),0.65],
+    'DRSP': [2,_(u'Drain Magicka'),0.18],
+    'DSPL': [4,_(u'Dispel'),3.6],
+    'DTCT': [4,_(u'Detect Life'),0.08],
+    'DUMY': [2,_(u'Mehrunes Dagon'),0], #--Formid == 0
+    'FIDG': [2,_(u'Fire Damage'),7.5],
+    'FISH': [0,_(u'Fire Shield'),0.95],
+    'FOAT': [5,_(u'Fortify Attribute'),0.6],
+    'FOFA': [5,_(u'Fortify Fatigue'),0.04],
+    'FOHE': [5,_(u'Fortify Health'),0.14],
+    'FOMM': [5,_(u'Fortify Magicka Multiplier'),0.04],
+    'FOSK': [5,_(u'Fortify Skill'),0.6],
+    'FOSP': [5,_(u'Fortify Magicka'),0.15],
+    'FRDG': [2,_(u'Frost Damage'),7.4],
+    'FRNZ': [3,_(u'Frenzy'),0.04],
+    'FRSH': [0,_(u'Frost Shield'),0.95],
+    'FTHR': [0,_(u'Feather'),0.1],
+    'INVI': [3,_(u'Invisibility'),40],
+    'LGHT': [3,_(u'Light'),0.051],
+    'LISH': [0,_(u'Shock Shield'),0.95],
+    'LOCK': [0,_(u'DO NOT USE - Lock'),30],
+    'MYHL': [1,_(u'Summon Mythic Dawn Helm'),110],
+    'MYTH': [1,_(u'Summon Mythic Dawn Armor'),120],
+    'NEYE': [3,_(u'Night-Eye'),22],
+    'OPEN': [0,_(u'Open'),4.3],
+    'PARA': [3,_(u'Paralyze'),475],
+    'POSN': [2,_(u'Poison Info'),0],
+    'RALY': [3,_(u'Rally'),0.03],
+    'REAN': [1,_(u'Reanimate'),10],
+    'REAT': [5,_(u'Restore Attribute'),38],
+    'REDG': [4,_(u'Reflect Damage'),2.5],
+    'REFA': [5,_(u'Restore Fatigue'),2],
+    'REHE': [5,_(u'Restore Health'),10],
+    'RESP': [5,_(u'Restore Magicka'),2.5],
+    'RFLC': [4,_(u'Reflect Spell'),3.5],
+    'RSDI': [5,_(u'Resist Disease'),0.5],
+    'RSFI': [5,_(u'Resist Fire'),0.5],
+    'RSFR': [5,_(u'Resist Frost'),0.5],
+    'RSMA': [5,_(u'Resist Magic'),2],
+    'RSNW': [5,_(u'Resist Normal Weapons'),1.5],
+    'RSPA': [5,_(u'Resist Paralysis'),0.75],
+    'RSPO': [5,_(u'Resist Poison'),0.5],
+    'RSSH': [5,_(u'Resist Shock'),0.5],
+    'RSWD': [5,_(u'Resist Water Damage'),0], #--Formid == 0
+    'SABS': [4,_(u'Spell Absorption'),3],
+    'SEFF': [0,_(u'Script Effect'),0],
+    'SHDG': [2,_(u'Shock Damage'),7.8],
+    'SHLD': [0,_(u'Shield'),0.45],
+    'SLNC': [3,_(u'Silence'),60],
+    'STMA': [2,_(u'Stunted Magicka'),0],
+    'STRP': [4,_(u'Soul Trap'),30],
+    'SUDG': [2,_(u'Sun Damage'),9],
+    'TELE': [4,_(u'Telekinesis'),0.49],
+    'TURN': [1,_(u'Turn Undead'),0.083],
+    'VAMP': [2,_(u'Vampirism'),0],
+    'WABR': [0,_(u'Water Breathing'),14.5],
+    'WAWA': [0,_(u'Water Walking'),13],
+    'WKDI': [2,_(u'Weakness to Disease'),0.12],
+    'WKFI': [2,_(u'Weakness to Fire'),0.1],
+    'WKFR': [2,_(u'Weakness to Frost'),0.1],
+    'WKMA': [2,_(u'Weakness to Magic'),0.25],
+    'WKNW': [2,_(u'Weakness to Normal Weapons'),0.25],
+    'WKPO': [2,_(u'Weakness to Poison'),0.1],
+    'WKSH': [2,_(u'Weakness to Shock'),0.1],
+    'Z001': [1,_(u'Summon Rufio\'s Ghost'),13],
+    'Z002': [1,_(u'Summon Ancestor Guardian'),33.3],
+    'Z003': [1,_(u'Summon Spiderling'),45],
+    'Z004': [1,_(u'Summon Flesh Atronach'),1],
+    'Z005': [1,_(u'Summon Bear'),47.3],
+    'Z006': [1,_(u'Summon Gluttonous Hunger'),61],
+    'Z007': [1,_(u'Summon Ravenous Hunger'),123.33],
+    'Z008': [1,_(u'Summon Voracious Hunger'),175],
+    'Z009': [1,_(u'Summon Dark Seducer'),1],
+    'Z010': [1,_(u'Summon Golden Saint'),1],
+    'Z011': [1,_(u'Wabba Summon'),0],
+    'Z012': [1,_(u'Summon Decrepit Shambles'),45],
+    'Z013': [1,_(u'Summon Shambles'),87.5],
+    'Z014': [1,_(u'Summon Replete Shambles'),150],
+    'Z015': [1,_(u'Summon Hunger'),22],
+    'Z016': [1,_(u'Summon Mangled Flesh Atronach'),22],
+    'Z017': [1,_(u'Summon Torn Flesh Atronach'),32.5],
+    'Z018': [1,_(u'Summon Stitched Flesh Atronach'),75.5],
+    'Z019': [1,_(u'Summon Sewn Flesh Atronach'),195],
+    'Z020': [1,_(u'Extra Summon 20'),0],
+    'ZCLA': [1,_(u'Summon Clannfear'),75.56],
+    'ZDAE': [1,_(u'Summon Daedroth'),123.33],
+    'ZDRE': [1,_(u'Summon Dremora'),72.5],
+    'ZDRL': [1,_(u'Summon Dremora Lord'),157.14],
+    'ZFIA': [1,_(u'Summon Flame Atronach'),45],
+    'ZFRA': [1,_(u'Summon Frost Atronach'),102.86],
+    'ZGHO': [1,_(u'Summon Ghost'),22],
+    'ZHDZ': [1,_(u'Summon Headless Zombie'),56],
+    'ZLIC': [1,_(u'Summon Lich'),350],
+    'ZSCA': [1,_(u'Summon Scamp'),30],
+    'ZSKA': [1,_(u'Summon Skeleton Guardian'),32.5],
+    'ZSKC': [1,_(u'Summon Skeleton Champion'),152],
+    'ZSKE': [1,_(u'Summon Skeleton'),11.25],
+    'ZSKH': [1,_(u'Summon Skeleton Hero'),66],
+    'ZSPD': [1,_(u'Summon Spider Daedra'),195],
+    'ZSTA': [1,_(u'Summon Storm Atronach'),125],
+    'ZWRA': [1,_(u'Summon Faded Wraith'),87.5],
+    'ZWRL': [1,_(u'Summon Gloom Wraith'),260],
+    'ZXIV': [1,_(u'Summon Xivilai'),200],
+    'ZZOM': [1,_(u'Summon Zombie'),16.67],
+}
+# Note that ordering matters here, because of py2 bleeding the parameters into
+# the outer scope. Also, we have to use underscores to hide them from the
+# dynamic importer. Ugh.
+mgef_school = dict((_x, _y) for _x, [_y, _z, _num] in _magic_effects.items())
+mgef_name = dict((_x, _z) for _x, [_y, _z, __num] in _magic_effects.items())
+mgef_basevalue = dict((_x, _a) for _x, [_y, _z, _a] in _magic_effects.items())
+mgef_school.update({_strU(_x)[0]: _y for _x, [_y, _z, _a]
+                    in _magic_effects.items()})
+mgef_name.update({_strU(_x)[0]: _z for _x, [_y, _z, _a]
+                  in _magic_effects.items()})
+mgef_basevalue.update({_strU(_x)[0]: _a for _x, [_y, _z, _a]
+                       in _magic_effects.items()})
+# Clean this up, no need to keep it around now
+del _strU
+
+# TODO(inf) This could be updated for other games, see links below. Not done
+#  yet because it's only used in completely Oblivion-specific code
+# FO3/FNV: https://geck.bethsoft.com/index.php?title=Actor_Value_Codes
+# TES5: https://en.uesp.net/wiki/Tes5Mod:Actor_Value_Indices
+actor_values = [
+    _(u'Strength'), #--00
+    _(u'Intelligence'),
+    _(u'Willpower'),
+    _(u'Agility'),
+    _(u'Speed'),
+    _(u'Endurance'),
+    _(u'Personality'),
+    _(u'Luck'),
+    _(u'Health'),
+    _(u'Magicka'),
+
+    _(u'Fatigue'), #--10
+    _(u'Encumbrance'),
+    _(u'Armorer'),
+    _(u'Athletics'),
+    _(u'Blade'),
+    _(u'Block'),
+    _(u'Blunt'),
+    _(u'Hand To Hand'),
+    _(u'Heavy Armor'),
+    _(u'Alchemy'),
+
+    _(u'Alteration'), #--20
+    _(u'Conjuration'),
+    _(u'Destruction'),
+    _(u'Illusion'),
+    _(u'Mysticism'),
+    _(u'Restoration'),
+    _(u'Acrobatics'),
+    _(u'Light Armor'),
+    _(u'Marksman'),
+    _(u'Mercantile'),
+
+    _(u'Security'), #--30
+    _(u'Sneak'),
+    _(u'Speechcraft'),
+    u'Aggression', # TODO(inf) Why do the translations stop here??
+    u'Confidence',
+    u'Energy',
+    u'Responsibility',
+    u'Bounty',
+    u'UNKNOWN 38',
+    u'UNKNOWN 39',
+
+    u'MagickaMultiplier', #--40
+    u'NightEyeBonus',
+    u'AttackBonus',
+    u'DefendBonus',
+    u'CastingPenalty',
+    u'Blindness',
+    u'Chameleon',
+    u'Invisibility',
+    u'Paralysis',
+    u'Silence',
+
+    u'Confusion', #--50
+    u'DetectItemRange',
+    u'SpellAbsorbChance',
+    u'SpellReflectChance',
+    u'SwimSpeedMultiplier',
+    u'WaterBreathing',
+    u'WaterWalking',
+    u'StuntedMagicka',
+    u'DetectLifeRange',
+    u'ReflectDamage',
+
+    u'Telekinesis', #--60
+    u'ResistFire',
+    u'ResistFrost',
+    u'ResistDisease',
+    u'ResistMagic',
+    u'ResistNormalWeapons',
+    u'ResistParalysis',
+    u'ResistPoison',
+    u'ResistShock',
+    u'Vampirism',
+
+    u'Darkness', #--70
+    u'ResistWaterDamage',
+]
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH': _(u'Potions'),
