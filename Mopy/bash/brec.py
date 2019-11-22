@@ -1462,6 +1462,85 @@ class MelStructA(MelStructs):
             for target in record.__getattribute__(self.attr):
                 melMap(self,target,function,save)
 
+#------------------------------------------------------------------------------
+class MelTruncatedStruct(MelStruct):
+    """Works like a MelStruct, but automatically upgrades certain older,
+    truncated struct formats."""
+    def __init__(self, sub_sig, sub_fmt, *elements, **kwargs):
+        """Creates a new MelTruncatedStruct with the specified parameters.
+
+        :param sub_sig: The subrecord signature of this struct.
+        :param sub_fmt: The format of this struct.
+        :param elements: The element syntax of this struct. Passed to
+            MelStruct.parseElements, see that method for syntax explanations.
+        :param kwargs: Must contain an old_versions keyword argument, which
+            specifies the older formats that are supported by this struct. The
+            keyword argument is_optional can be supplied, which determines
+            whether or not this struct should behave like MelOptStruct. May
+            also contain any keyword arguments that MelStruct supports."""
+        try:
+            old_versions = kwargs.pop('old_versions')
+        except KeyError:
+            raise SyntaxError(u'MelTruncatedStruct requires an old_versions '
+                              u'keyword argument')
+        if type(old_versions) != set:
+            raise SyntaxError(u'MelTruncatedStruct: old_versions must be a '
+                              u'set')
+        self._is_optional = kwargs.pop('is_optional', False)
+        MelStruct.__init__(self, sub_sig, sub_fmt, *elements, **kwargs)
+        self._all_formats = {struct.calcsize(alt_fmt): alt_fmt for alt_fmt
+                             in old_versions}
+        self._all_formats[struct.calcsize(sub_fmt)] = sub_fmt
+
+    def loadData(self, record, ins, sub_type, size_, readId):
+        # Try retrieving the format - if not possible, wrap the error to make
+        # it more informative
+        try:
+            target_fmt = self._all_formats[size_]
+        except KeyError:
+            raise exception.ModSizeError(
+                ins.inName, readId, tuple(self._all_formats.keys()), size_)
+        # Actually unpack the struct and pad it with defaults if it's an older,
+        # truncated version
+        unpacked_val = ins.unpack(target_fmt, size_, readId)
+        unpacked_val = self._pre_process_unpacked(unpacked_val)
+        # Apply any actions and then set the attributes according to the values
+        # we just unpacked
+        setter = record.__setattr__
+        for attr, value, action in zip(self.attrs, unpacked_val, self.actions):
+            if callable(action): value = action(value)
+            setter(attr, value)
+        if self._debug: print unpacked_val
+
+    def _pre_process_unpacked(self, unpacked_val):
+        """You may override this if you need to change the unpacked value in
+        any way before it is used to assign attributes. By default, this
+        performs the actual upgrading by appending default values to
+        unpacked_val."""
+        return unpacked_val + self.defaults[len(unpacked_val):]
+
+    def dumpData(self, record, out):
+        if self._is_optional:
+            # If this struct is optional, compare the current values to the
+            # defaults and skip the dump conditionally - basically the same
+            # thing MelOptStruct does
+            record_get_attr = record.__getattribute__
+            for attr, default in zip(self.attrs, self.defaults):
+                curr_val = record_get_attr(attr)
+                if curr_val is not None and curr_val != default:
+                    break
+            else:
+                return
+        MelStruct.dumpData(self, record, out)
+
+#------------------------------------------------------------------------------
+class MelCoordinates(MelTruncatedStruct):
+    """Skip dump if we're in an interior."""
+    def dumpData(self, record, out):
+        if not record.flags.isInterior:
+            MelTruncatedStruct.dumpData(self, record, out)
+
+#------------------------------------------------------------------------------
 class MelColorInterpolator(MelStructA):
     """Wrapper around MelStructA that defines a time interpolator - an array
     of two floats, where each entry in the array describes a point on a curve,
@@ -1471,6 +1550,7 @@ class MelColorInterpolator(MelStructA):
         MelStructA.__init__(self, sub_type, '5f', attr, 'time', 'red', 'green',
                             'blue', 'alpha',)
 
+#------------------------------------------------------------------------------
 # xEdit calls this 'time interpolator', but that name doesn't really make sense
 # Both this class and the color interpolator above interpolate over time
 class MelValueInterpolator(MelStructA):

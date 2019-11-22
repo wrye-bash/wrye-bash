@@ -35,7 +35,7 @@ from ...brec import MelRecord, MelStructs, MelGroups, MelStruct, FID, \
     MelColorInterpolator, MelValueInterpolator, MelRegnEntrySubrecord, \
     MelFloat, MelSInt8, MelSInt32, MelUInt8, MelUInt32, MelOptFid, \
     MelOptFloat, MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, \
-    MelBounds, null1, null2, null3, null4
+    MelBounds, null1, null2, null3, null4, MelTruncatedStruct, MelCoordinates
 from ...exception import ModSizeError
 
 # Those are unused here, but need be in this file as are accessed via it
@@ -213,23 +213,6 @@ class MreAmmo(MelRecord):
 
     _flags = Flags(0L,Flags.getNames('notNormalWeapon','nonPlayable'))
 
-    class MelAmmoDat2(MelStruct):
-        """Handle older truncated DAT2 for AMMO subrecord."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 20:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            elif size_ == 12:
-                unpacked = ins.unpack('IIf', size_, readId)
-            else:
-                raise ModSizeError(ins.inName, readId, (20, 12), size_)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelBounds(),
@@ -243,8 +226,10 @@ class MreAmmo(MelRecord):
         MelFid('ZNAM','dropSound'),
         MelStruct('DATA','fB3siB','speed',(_flags,'flags',0L),('ammoData1',null3),
                   'value','clipRounds'),
-        MelAmmoDat2('DAT2','IIfIf','projPerShot',(FID,'projectile',0L),'weight',
-                    (FID,'consumedAmmo'),'consumedPercentage'),
+        MelTruncatedStruct('DAT2', '2IfIf', 'projPerShot',
+                           (FID, 'projectile', 0L), 'weight',
+                           (FID, 'consumedAmmo'), 'consumedPercentage',
+                           old_versions={'2If'}),
         MelString('ONAM','shortName'),
         MelString('QNAM','abbrev'),
         MelFids('RCIL','effects'),
@@ -268,23 +253,6 @@ class MreArma(MelRecord):
         (7,'heavyArmor')
     ))
 
-    class MelArmaDnam(MelStruct):
-        """Handle older truncated DNAM for ARMA subrecord."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 12:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            elif size_ == 4:
-                unpacked = ins.unpack('=hH', size_, readId)
-            else:
-                raise ModSizeError(ins.inName, readId, (12, 4), size_)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked, record.flags.getTrueAttrs()
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelBounds(),
@@ -300,7 +268,9 @@ class MreArma(MelRecord):
         MelString('MIC2','femaleSmallIconPath'),
         MelSInt32('ETYP', ('etype', -1)),
         MelStruct('DATA','IIf','value','health','weight'),
-        MelArmaDnam('DNAM','=hHf4s','ar',(_dnamFlags,'dnamFlags',0L),('dt',0.0),('armaDnam1',null4),),
+        MelTruncatedStruct('DNAM', 'hHf4s', 'ar',
+                           (_dnamFlags, 'dnamFlags', 0L), ('dt', 0.0),
+                           ('armaDnam1', null4), old_versions={'hH'}),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -318,23 +288,6 @@ class MreArmo(MelRecord):
         (6,'notPlayable'),
         (7,'heavyArmor')
     ))
-
-    class MelArmoDnam(MelStruct):
-        """Handle older truncated DNAM for ARMO subrecord."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 12:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            elif size_ == 4:
-                unpacked = ins.unpack('=hH', size_, readId)
-            else:
-                raise ModSizeError(ins.inName, readId, (12, 4), size_)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked, record.flags.getTrueAttrs()
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -360,7 +313,9 @@ class MreArmo(MelRecord):
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
         MelStruct('DATA','=2if','value','health','weight'),
-        MelArmoDnam('DNAM','=hHf4s','ar',(_dnamFlags,'dnamFlags',0L),('dt',0.0),('armoDnam1',null4),),
+        MelTruncatedStruct('DNAM', 'hHf4s', 'ar',
+                           (_dnamFlags, 'dnamFlags', 0L), ('dt', 0.0),
+                           ('armoDnam1', null4), old_versions={'hH'}),
         MelUInt32('BNAM', ('overridesAnimationSound', 0L)),
         MelStructs('SNAM','IB3sI','animationSounds',(FID,'sound'),'chance',('unused','\xb7\xe7\x0b'),'type'),
         MelFid('TNAM','animationSoundsTemplate'),
@@ -431,54 +386,22 @@ class MreCell(MelRecord):
     inheritFlags = Flags(0L,Flags.getNames('ambientColor','directionalColor','fogColor','fogNear','fogFar',
         'directionalRotation','directionalFade','clipDistance','fogPower'))
 
-    class MelCoordinates(MelOptStruct):
-        """Handle older truncated XCLC for CELL subrecord."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 12:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            elif size_ == 8:
-                unpacked = ins.unpack('ii',size_,readId)
-            else:
-                raise ModSizeError(ins.inName, readId, (12, 8), size_)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked, record.flags.getTrueAttrs()
-
-        def dumpData(self,record,out):
-            if not record.flags.isInterior:
-                MelOptStruct.dumpData(self,record,out)
-
-    class MelCellXcll(MelOptStruct):
-        """Handle older truncated XCLL for CELL subrecord."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 40:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            elif size_ == 36:
-                unpacked = ins.unpack('=3Bs3Bs3Bs2f2i2f',size_,readId)
-            else:
-                raise ModSizeError(ins.inName, readId, (40, 36), size_)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked, record.flags.getTrueAttrs()
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
         MelUInt8('DATA', (cellFlags, 'flags', 0L)),
-        MelCoordinates('XCLC','iiI',('posX',None),('posY',None),('forceHideLand',0L)),
-        MelCellXcll('XCLL','=3Bs3Bs3Bs2f2i3f','ambientRed','ambientGreen','ambientBlue',
-            ('unused1',null1),'directionalRed','directionalGreen','directionalBlue',
-            ('unused2',null1),'fogRed','fogGreen','fogBlue',
-            ('unused3',null1),'fogNear','fogFar','directionalXY','directionalZ',
-            'directionalFade','fogClip','fogPower'),
+        MelCoordinates('XCLC', '2iI', ('posX', None), ('posY', None),
+                       ('forceHideLand', 0L), is_optional=True,
+                       old_versions={'2i'}),
+        MelTruncatedStruct('XCLL', '=3Bs3Bs3Bs2f2i3f', 'ambientRed',
+                           'ambientGreen', 'ambientBlue', ('unused1', null1),
+                           'directionalRed', 'directionalGreen',
+                           'directionalBlue', ('unused2', null1), 'fogRed',
+                           'fogGreen', 'fogBlue', ('unused3', null1),
+                           'fogNear', 'fogFar', 'directionalXY',
+                           'directionalZ', 'directionalFade', 'fogClip',
+                           'fogPower', is_optional=True,
+                           old_versions={'3Bs3Bs3Bs2f2i2f'}),
         MelBase('IMPF','footstepMaterials'), #--todo rewrite specific class.
         MelFid('LTMP','lightTemplate'),
         MelOptUInt32('LNAM', (inheritFlags, 'lightInheritFlags', 0L)),
@@ -660,24 +583,7 @@ class MreDehy(MelRecord):
 #------------------------------------------------------------------------------
 class MreDial(brec.MreDial):
     """Dialogue."""
-    _flags = Flags(0,Flags.getNames('rumors','toplevel',))
-
-    class MelDialData(MelStruct):
-        """Handle older truncated DATA for DIAL subrecord."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 2:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            elif size_ == 1:
-                unpacked = ins.unpack('B', size_, readId)
-            else:
-                raise ModSizeError(ins.inName, readId, (2, 1), size_)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked, record.flags.getTrueAttrs()
+    _DialFlags = Flags(0, Flags.getNames('rumors', 'toplevel', ))
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -693,7 +599,8 @@ class MreDial(brec.MreDial):
         MelString('FULL','full'),
         MelFloat('PNAM', 'priority'),
         MelString('TDUM','tdum_p'),
-        MelDialData('DATA','BB','dialType',(_flags,'dialFlags',0L)),
+        MelTruncatedStruct('DATA', '2B', 'dialType',
+                           (_DialFlags, 'dialFlags', 0L), old_versions={'B'}),
     ).with_distributor({
         'INFC': 'bare_infc_p',
         'INFX': 'bare_infx_p',
@@ -746,30 +653,12 @@ class MreFact(MelRecord):
     _flags = Flags(0L,Flags.getNames('hiddenFromPC','evil','specialCombat'))
     _flags2 = Flags(0L,Flags.getNames('trackCrime','allowSell',))
 
-    class MelFactData(MelStruct):
-        """Handle older truncated DATA for FACT subrecord."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 4:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            elif size_ == 2:
-                unpacked = ins.unpack('2B', size_, readId)
-            elif size_ == 1:
-                unpacked = ins.unpack('B', size_, readId)
-            else:
-                raise ModSizeError(ins.inName, readId, (4, 2, 1), size_)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
         MelStructs('XNAM','IiI','relations',(FID,'faction'),'mod','groupCombatReaction'),
-        MelFactData('DATA','2B2s',(_flags,'flags',0L),'flagsFact',('unknown',null2),),
+        MelTruncatedStruct('DATA', '2B2s', (_flags, 'flags', 0L), 'flagsFact',
+                           ('unknown', null2), old_versions={'2B', 'B'}),
         MelOptFloat('CNAM', ('crimeGoldMultiplier', None)),
         MelGroups('ranks',
             MelSInt32('RNAM', 'rank'),
@@ -949,22 +838,10 @@ class MreInfo(MelRecord):
     _flags2 = Flags(0,Flags.getNames(
         'sayOnceADay','alwaysDarken',None,None,'lowIntelligence','highIntelligence',))
 
-    class MelInfoData(MelStruct):
-        """Support older 2 byte version."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ != 2:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            unpacked = ins.unpack('2B', size_, readId)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print (record.dialType,record.flags.getTrueAttrs())
-
     melSet = MelSet(
-        MelInfoData('DATA','HH','dialType','nextSpeaker',(_flags,'flags'),(_flags2,'flagsInfo'),),
+        MelTruncatedStruct('DATA', '4B', 'dialType', 'nextSpeaker',
+                           (_flags, 'flags'), (_flags2, 'flagsInfo'),
+                           old_versions={'2B'}),
         MelFid('QSTI','quests'),
         MelFid('TPIC','topic'),
         MelFid('PNAM','prevInfo'),
@@ -1290,40 +1167,24 @@ class MreProj(MelRecord):
         'rotation'
         ))
 
-    class MelProjData(MelStruct):
-        """Handle older truncated DATA for PROJ subrecord."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 84:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            elif size_ == 72:
-                unpacked = ins.unpack('HHfffIIfffIIfffIIIf', size_, readId)
-            elif size_ == 68:
-                unpacked = ins.unpack('HHfffIIfffIIfffIII', size_, readId)
-            else:
-                raise ModSizeError(ins.inName, readId, (84, 72, 68), size_)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelBounds(),
         MelString('FULL','full'),
         MelModel(),
         MelDestructible(),
-        MelProjData('DATA','HHfffIIfffIIfffIIIffff',(_flags,'flags'),'type',
-                  ('gravity',0.00000),('speed',10000.00000),('range',10000.00000),
-                  (FID,'light',0),(FID,'muzzleFlash',0),('tracerChance',0.00000),
-                  ('explosionAltTrigerProximity',0.00000),('explosionAltTrigerTimer',0.00000),
-                  (FID,'explosion',0),(FID,'sound',0),('muzzleFlashDuration',0.00000),
-                  ('fadeDuration',0.00000),('impactForce',0.00000),
-                  (FID,'soundCountDown',0),(FID,'soundDisable',0),
-                  (FID,'defaultWeaponSource',0),('rotationX',0.00000),
-                  ('rotationY',0.00000),('rotationZ',0.00000),('bouncyMult',0.00000)),
+        MelTruncatedStruct(
+            'DATA', '2H3f2I3f2I3f3I4f', (_flags,'flags'), 'type',
+            ('gravity', 0.0), ('speed', 10000.0), ('range', 10000.0),
+            (FID, 'light', 0), (FID, 'muzzleFlash', 0), ('tracerChance', 0.0),
+            ('explosionAltTrigerProximity', 0.0),
+            ('explosionAltTrigerTimer', 0.0), (FID, 'explosion', 0),
+            (FID, 'sound', 0), ('muzzleFlashDuration', 0.0),
+            ('fadeDuration', 0.0), ('impactForce', 0.0),
+            (FID, 'soundCountDown', 0), (FID, 'soundDisable', 0),
+            (FID, 'defaultWeaponSource', 0), ('rotationX', 0.0),
+            ('rotationY', 0.0), ('rotationZ', 0.0), ('bouncyMult', 0.0),
+            old_versions={'2H3f2I3f2I3f3If', '2H3f2I3f2I3f3I'}),
         MelString('NAM1','muzzleFlashPath'),
         MelBase('NAM2','_nam2'),
         MelUInt32('VNAM', 'soundLevel'),
@@ -1380,25 +1241,6 @@ class MreRefr(MelRecord):
     _actFlags = Flags(0L,Flags.getNames('useDefault', 'activate','open','openByDefault'))
     _lockFlags = Flags(0L,Flags.getNames(None, None, 'leveledLock'))
     _destinationFlags = Flags(0L,Flags.getNames('noAlarm'))
-
-    class MelRefrXloc(MelOptStruct):
-        """Handle older truncated XLOC for REFR subrecord."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 20:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            #elif size == 16:
-            #    unpacked = ins.unpack('B3sIB3s',size,readId)
-            elif size_ == 12:
-                unpacked = ins.unpack('B3sI4s',size_,readId)
-            else:
-                raise ModSizeError(ins.inName, readId, (20, 12), size_)
-            unpacked = unpacked[:-2] + self.defaults[len(unpacked)-2:-2] + unpacked[-2:]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked
 
     class MelRefrXmrk(MelStruct):
         """Handler for xmrk record. Conditionally loads next items."""
@@ -1478,7 +1320,13 @@ class MreRefr(MelRecord):
         ),
         MelOptStruct('XRDO','fIfI','rangeRadius','broadcastRangeType','staticPercentage',(FID,'positionReference')),
         MelOwnership(),
-        MelRefrXloc('XLOC','B3sI4sB3s4s','lockLevel',('unused1',null3),(FID,'lockKey'),('unused2',null4),(_lockFlags,'lockFlags'),('unused3',null3),('unused4',null4)),
+        ##: I dropped special handling here, looks like a regular truncated
+        # record to me - but no way to test since we don't load this yet
+        MelTruncatedStruct(
+            'XLOC', 'B3sI4sB3s4s', 'lockLevel', ('unused1',null3),
+            (FID, 'lockKey'), ('unused2', null4), (_lockFlags, 'lockFlags'),
+            ('unused3', null3), ('unused4', null4), is_optional=True,
+            old_versions={'B3sI4s'}),
         MelOptSInt32('XCNT', 'count'),
         MelOptFloat('XRDS', 'radius'),
         MelOptFloat('XHLP', 'health'),
@@ -1741,56 +1589,6 @@ class MreWeap(MelRecord):
             'unknown5','unknown6','unknown7',
         ))
 
-    class MelWeapDnam(MelStruct):
-        """Handle older truncated DNAM for WEAP subrecord."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 204:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            elif size_ == 200:
-                unpacked = ins.unpack('IffBBBBfffffIBBBBffIIfffffffffffiIffiffffIIIfffIIsB2sffffff', size_, readId)
-            elif size_ == 196:
-                unpacked = ins.unpack('IffBBBBfffffIBBBBffIIfffffffffffiIffiffffIIIfffIIsB2sfffff', size_, readId)
-            elif size_ == 180:
-                unpacked = ins.unpack('IffBBBBfffffIBBBBffIIfffffffffffiIffiffffIIIfffIIsB2sf', size_, readId)
-            elif size_ == 172:
-                unpacked = ins.unpack('IffBBBBfffffIBBBBffIIfffffffffffiIffiffffIIIfffII', size_, readId)
-            elif size_ == 164:
-                unpacked = ins.unpack('IffBBBBfffffIBBBBffIIfffffffffffiIffiffffIIIfff', size_, readId)
-            elif size_ == 136:
-                unpacked = ins.unpack('IffBBBBfffffIBBBBffIIfffffffffffiIffifff', size_, readId)
-            elif size_ == 124:
-                unpacked = ins.unpack('IffBBBBfffffIBBBBffIIfffffffffffiIffi', size_, readId)
-            elif size_ == 120:
-                unpacked = ins.unpack('IffBBBBfffffIBBBBffIIfffffffffffiIff', size_, readId)
-            else:
-                raise ModSizeError(
-                    ins.inName, readId, (204, 200, 196, 180, 172, 164, 136,
-                                         124, 120), size_)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked
-
-    class MelWeapVats(MelStruct):
-        """Handle older truncated VATS for WEAP subrecord."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 20:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            elif size_ == 16:
-                unpacked = ins.unpack('Ifff', size_, readId)
-            else:
-                raise ModSizeError(ins.inName, readId, (20, 16), size_)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelBounds(),
@@ -1850,7 +1648,7 @@ class MreWeap(MelRecord):
         MelFids('WMS1','soundMod1Shoot3Ds'),
         MelFid('WMS2','soundMod1Shoot2D'),
         MelStruct('DATA','2IfHB','value','health','weight','damage','clipsize'),
-        MelWeapDnam('DNAM','IffBBBBfffffIBBBBffIIfffffffffffiIffiffffIIIfffIIsB2sffffffI',
+        MelTruncatedStruct('DNAM', 'I2f4B5fI4B2f2I11fiI2fi4f3I3f2IsB2s6fI',
                     'animationType','animationMultiplier','reach',
                     (_dflags1,'dnamFlags1',0L),('gripAnimation',255),'ammoUse',
                     'reloadAnimation','minSpread','spread','weapDnam1','sightFov',
@@ -1869,12 +1667,24 @@ class MreWeap(MelRecord):
                     'valueAMod2','valueAMod3','powerAttackAnimation','strengthReq',
                     ('weapDnam4',null1),'reloadAnimationMod',('weapDnam5',null2),
                     'regenRate','killImpulse','valueBMod1','valueBMod2','valueBMod3',
-                    'impulseDist','skillReq'),
+                    'impulseDist','skillReq',
+                    old_versions={
+                        'I2f4B5fI4B2f2I11fiI2fi4f3I3f2IsB2s6f',
+                        'I2f4B5fI4B2f2I11fiI2fi4f3I3f2IsB2s5f',
+                        'I2f4B5fI4B2f2I11fiI2fi4f3I3f2IsB2sf',
+                        'I2f4B5fI4B2f2I11fiI2fi4f3I3f2I',
+                        'I2f4B5fI4B2f2I11fiI2fi4f3I3f',
+                        'I2f4B5fI4B2f2I11fiI2fi3f',
+                        'I2f4B5fI4B2f2I11fiI2fi',
+                        'I2f4B5fI4B2f2I11fiI2f',
+                    }),
         MelOptStruct('CRDT','H2sfB3sI',('criticalDamage', 0),('weapCrdt1', null2),
                      ('criticalMultiplier', 0.0),(_cflags,'criticalFlags', 0L),
                      ('weapCrdt2', null3),(FID,'criticalEffect', 0),),
-        MelWeapVats('VATS','I3f2B2s','vatsEffect','vatsSkill','vatsDamMult',
-                    'vatsAp','vatsSilent','vatsModReqiured',('weapVats1',null2)),
+        MelTruncatedStruct('VATS', 'I3f2B2s', 'vatsEffect', 'vatsSkill',
+                           'vatsDamMult', 'vatsAp', 'vatsSilent',
+                           'vatsModReqiured', ('weapVats1', null2),
+                           old_versions={'I3f'}),
         MelBase('VNAM','soundLevel'),
     )
     __slots__ = melSet.getSlotsUsed()

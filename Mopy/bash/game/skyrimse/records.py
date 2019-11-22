@@ -30,7 +30,7 @@ from ...brec import MelModel # set in Mopy/bash/game/skyrim/records.py
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelString, MelSet, MelFid, MelOptStruct, MelFids, MelBase, \
     MelStructA, MelLString, MelFloat, MelUInt8, MelUInt16, MelUInt32, \
-    MelCounter, null1, null2, null3, null4
+    MelCounter, null1, null2, null3, null4, MelTruncatedStruct
 from ...exception import ModSizeError
 # Those are unused here, but need be in this file as are accessed via it
 from ..skyrim.records import MreHeader, MreGmst
@@ -48,23 +48,6 @@ class MreAmmo(MelRecord):
         (2, 'nonBolt'),
     ))
 
-    class MelAmmoData(MelStruct):
-        """Handle older truncated DATA for AMMO subrecord."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 20:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            elif size_ == 16:
-                unpacked = ins.unpack('IIfI', size_, readId)
-            else:
-                raise ModSizeError(ins.inName, readId, (20, 16), size_)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelBounds(),
@@ -77,9 +60,10 @@ class MreAmmo(MelRecord):
         MelFid('ZNAM','dropSound'),
         MelLString('DESC','description'),
         MelKeywords(),
-        MelAmmoData('DATA', 'IIfIf', (FID, 'projectile'),
-            (AmmoTypeFlags, 'flags', 0L), ('damage', 1.0), ('value', 0),
-            ('weight', 0.1)),
+        MelTruncatedStruct('DATA', '2IfIf', (FID, 'projectile'),
+                           (AmmoTypeFlags, 'flags', 0L), ('damage', 1.0),
+                           ('value', 0), ('weight', 0.1),
+                           old_versions={'2IfI'}),
         MelString('ONAM','onam_n'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -117,36 +101,20 @@ class MreMato(MelRecord):
             (0, 'snow'),
         ))
 
-    class MelMatoData(MelStruct):
-        """Handle older truncated DATA for MATO subrecord."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 52:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            elif size_ == 48: # old skyrim record
-                unpacked = ins.unpack('11fI', size_, readId)
-            else:
-                raise ModSizeError(ins.inName, readId, (52, 48), size_)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked, record.flags.getTrueAttrs()
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelModel(),
         MelGroups('property_data',
             MelBase('DNAM', 'data_entry'),
         ),
-        MelMatoData('DATA','11fIB3s','falloffScale','falloffBias',
-                    'noiseUVScale','materialUVScale','projectionVectorX',
-                    'projectionVectorY','projectionVectorZ','normalDampener',
-                    'singlePassColorRed','singlePassColorGreen',
-                    'singlePassColorBlue',
-                    (MatoTypeFlags,'singlePassFlags',0L),
-                    (MatoSnowFlags,'snowflags',0L),'unkMato1'),
+        MelTruncatedStruct(
+            'DATA', '11fIB3s', 'falloffScale', 'falloffBias', 'noiseUVScale',
+            'materialUVScale', 'projectionVectorX', 'projectionVectorY',
+            'projectionVectorZ', 'normalDampener', 'singlePassColorRed',
+            'singlePassColorGreen', 'singlePassColorBlue',
+            (MatoTypeFlags, 'singlePassFlags', 0L),
+            (MatoSnowFlags, 'snowflags', 0L), ('unused1', null3),
+            old_versions={'11fI'}),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -159,29 +127,14 @@ class MreStat(MelRecord):
         (0, 'consideredSnow'),
     ))
 
-    class MelStatDnam(MelStruct):
-        """Handle older truncated DNAM for STAT subrecord."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 12:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            elif size_ == 8: # old skyrim record
-                unpacked = ins.unpack('fI', size_, readId)
-            else:
-                raise ModSizeError(ins.inName, readId, (12, 8), size_)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked, record.flags.getTrueAttrs()
-
     melSet = MelSet(
         MelString('EDID', 'eid'),
         MelBounds(),
         MelModel(),
-        MelStatDnam('DNAM', 'fIB3s', 'maxAngle30to120', (FID, 'material'),
-                    (_StatSnowFlags, 'snowFlags', 0L), ('unknown1', null3),),
+        MelTruncatedStruct(
+            'DNAM', 'fIB3s', 'maxAngle30to120', (FID, 'material'),
+            (_StatSnowFlags, 'snowFlags', 0L), ('unused1', null3),
+            old_versions={'fI'}),
         # Contains null-terminated mesh filename followed by random data
         # up to 260 bytes and repeats 4 times
         MelBase('MNAM', 'distantLOD'),
@@ -198,23 +151,6 @@ class MreWatr(MelRecord):
             (0, 'causesDamage'),
         ))
 
-    class MelWatrDnam(MelStruct):
-        """Handle older truncated DNAM for WATR subrecord."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 232:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            elif size_ == 228: # old skyrim record
-                unpacked = ins.unpack('7f4s2f3Bs3Bs3Bs4s43f', size_, readId)
-            else:
-                raise ModSizeError(ins.inName, readId, (232, 228), size_)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked, record.flags.getTrueAttrs()
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelLString('FULL','full'),
@@ -229,50 +165,50 @@ class MreWatr(MelRecord):
         MelFid('XNAM','spell',),
         MelFid('INAM','imageSpace',),
         MelUInt16('DATA', 'damagePerSecond'),
-        MelWatrDnam('DNAM','7f4s2f3Bs3Bs3Bs4s44f','unknown1','unknown2','unknown3',
-                  'unknown4','specularPropertiesSunSpecularPower',
-                  'waterPropertiesReflectivityAmount',
-                  'waterPropertiesFresnelAmount',('unknown5',null4),
-                  'fogPropertiesAboveWaterFogDistanceNearPlane',
-                  'fogPropertiesAboveWaterFogDistanceFarPlane',
-                  # Shallow Color
-                  'red_sc','green_sc','blue_sc','unknown_sc',
-                  # Deep Color
-                  'red_dc','green_dc','blue_dc','unknown_dc',
-                  # Reflection Color
-                  'red_rc','green_rc','blue_rc','unknown_rc',
-                  ('unknown6',null4),'unknown7','unknown8','unknown9','unknown10',
-                  'displacementSimulatorStartingSize',
-                  'displacementSimulatorForce','displacementSimulatorVelocity',
-                  'displacementSimulatorFalloff','displacementSimulatorDampner',
-                  'unknown11','noisePropertiesNoiseFalloff',
-                  'noisePropertiesLayerOneWindDirection',
-                  'noisePropertiesLayerTwoWindDirection',
-                  'noisePropertiesLayerThreeWindDirection',
-                  'noisePropertiesLayerOneWindSpeed',
-                  'noisePropertiesLayerTwoWindSpeed',
-                  'noisePropertiesLayerThreeWindSpeed',
-                  'unknown12','unknown13','fogPropertiesAboveWaterFogAmount',
-                  'unknown14','fogPropertiesUnderWaterFogAmount',
-                  'fogPropertiesUnderWaterFogDistanceNearPlane',
-                  'fogPropertiesUnderWaterFogDistanceFarPlane',
-                  'waterPropertiesRefractionMagnitude',
-                  'specularPropertiesSpecularPower',
-                  'unknown15','specularPropertiesSpecularRadius',
-                  'specularPropertiesSpecularBrightness',
-                  'noisePropertiesLayerOneUVScale',
-                  'noisePropertiesLayerTwoUVScale',
-                  'noisePropertiesLayerThreeUVScale',
-                  'noisePropertiesLayerOneAmplitudeScale',
-                  'noisePropertiesLayerTwoAmplitudeScale',
-                  'noisePropertiesLayerThreeAmplitudeScale',
-                  'waterPropertiesReflectionMagnitude',
-                  'specularPropertiesSunSparkleMagnitude',
-                  'specularPropertiesSunSpecularMagnitude',
-                  'depthPropertiesReflections','depthPropertiesRefraction',
-                  'depthPropertiesNormals','depthPropertiesSpecularLighting',
-                  'specularPropertiesSunSparklePower',
-                  'noisePropertiesFlowmapScale'),
+        MelTruncatedStruct(
+            'DNAM', '7f4s2f3Bs3Bs3Bs4s44f', 'unknown1', 'unknown2', 'unknown3',
+            'unknown4', 'specularPropertiesSunSpecularPower',
+            'waterPropertiesReflectivityAmount',
+            'waterPropertiesFresnelAmount', ('unknown5', null4),
+            'fogPropertiesAboveWaterFogDistanceNearPlane',
+            'fogPropertiesAboveWaterFogDistanceFarPlane',
+            # Shallow Color
+            'red_sc','green_sc','blue_sc','unknown_sc',
+            # Deep Color
+            'red_dc','green_dc','blue_dc','unknown_dc',
+            # Reflection Color
+            'red_rc','green_rc','blue_rc','unknown_rc',
+            ('unknown6', null4), 'unknown7', 'unknown8', 'unknown9',
+            'unknown10', 'displacementSimulatorStartingSize',
+            'displacementSimulatorForce', 'displacementSimulatorVelocity',
+            'displacementSimulatorFalloff', 'displacementSimulatorDampner',
+            'unknown11', 'noisePropertiesNoiseFalloff',
+            'noisePropertiesLayerOneWindDirection',
+            'noisePropertiesLayerTwoWindDirection',
+            'noisePropertiesLayerThreeWindDirection',
+            'noisePropertiesLayerOneWindSpeed',
+            'noisePropertiesLayerTwoWindSpeed',
+            'noisePropertiesLayerThreeWindSpeed',
+            'unknown12', 'unknown13', 'fogPropertiesAboveWaterFogAmount',
+            'unknown14', 'fogPropertiesUnderWaterFogAmount',
+            'fogPropertiesUnderWaterFogDistanceNearPlane',
+            'fogPropertiesUnderWaterFogDistanceFarPlane',
+            'waterPropertiesRefractionMagnitude',
+            'specularPropertiesSpecularPower', 'unknown15',
+            'specularPropertiesSpecularRadius',
+            'specularPropertiesSpecularBrightness',
+            'noisePropertiesLayerOneUVScale', 'noisePropertiesLayerTwoUVScale',
+            'noisePropertiesLayerThreeUVScale',
+            'noisePropertiesLayerOneAmplitudeScale',
+            'noisePropertiesLayerTwoAmplitudeScale',
+            'noisePropertiesLayerThreeAmplitudeScale',
+            'waterPropertiesReflectionMagnitude',
+            'specularPropertiesSunSparkleMagnitude',
+            'specularPropertiesSunSpecularMagnitude',
+            'depthPropertiesReflections', 'depthPropertiesRefraction',
+            'depthPropertiesNormals', 'depthPropertiesSpecularLighting',
+            'specularPropertiesSunSparklePower', 'noisePropertiesFlowmapScale',
+            old_versions={'7f4s2f3Bs3Bs3Bs4s43f'}),
         MelBase('GNAM','unused2'),
         # Linear Velocity
         MelStruct('NAM0','3f','linv_x','linv_y','linv_z',),
@@ -322,34 +258,23 @@ class MreWeap(MelRecord):
             (7, 'nonplayable'),
         ))
 
-    class MelWeapCrdt(MelStruct):
+    class MelWeapCrdt(MelTruncatedStruct):
         """Handle older truncated CRDT for WEAP subrecord.
 
-           Old Skyrim format H2sfB3sI FormID is the last integer.
+        Old Skyrim format H2sfB3sI FormID is the last integer.
 
-           New Format H2sfB3s4sI4s FormID is the integer priot to the
-           last 4S. Bethesda did not append the record they inserted bytes
-           which shifts the FormID 4 bytes. """
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 24:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            elif size_ == 16:
+        New Format H2sfB3s4sI4s FormID is the integer prior to the last 4S.
+        Bethesda did not append the record they inserted bytes which shifts the
+        FormID 4 bytes."""
+        def _pre_process_unpacked(self, unpacked_val):
+            if len(unpacked_val) == 6:
                 # old skyrim record, insert null bytes in the middle(!)
-                ##: Why use null3 instead of _crdUnk2?
-                critDamage, crdtUnk1, criticalMultiplier, criticalFlags, \
-                _crdtUnk2, criticalEffect = ins.unpack('H2sfB3sI', size_,
-                                                      readId)
-                unpacked = (critDamage, crdtUnk1, criticalMultiplier,
-                            criticalFlags, null3, null4, criticalEffect, null4)
-            else:
-                raise ModSizeError(ins.inName, readId, (24, 16), size_)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked, record.flags.getTrueAttrs()
+                crit_damage, crit_unknown1, crit_mult, crit_flags, \
+                crit_unknown2, crit_effect = unpacked_val
+                ##: Why use null3 instead of crit_unknown2?
+                unpacked_val = (crit_damage, crit_unknown1, crit_mult,
+                                crit_flags, null3, null4, crit_effect, null4)
+            return MelTruncatedStruct._pre_process_unpacked(self, unpacked_val)
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -391,10 +316,11 @@ class MreWeap(MelRecord):
                   'rumbleLeftMotorStrength','rumbleRightMotorStrength',
                   'rumbleDuration',('dnamUnk5',null4+null4+null4),'skill',
                   ('dnamUnk6',null4+null4),'resist',('dnamUnk7',null4),'stagger',),
-        MelWeapCrdt('CRDT','H2sfB3s4sI4s',('critDamage',0),('crdtUnk1',null2),
-                    ('criticalMultiplier',1.0),(WeapFlags3,'criticalFlags',0L),
-                    ('crdtUnk2',null3),('crdtUnk3',null4),
-                    (FID,'criticalEffect',None),('crdtUnk4',null4),),
+        MelWeapCrdt('CRDT', 'H2sfB3s4sI4s', ('critDamage', 0),
+                    ('crdtUnk1', null2), ('criticalMultiplier', 1.0),
+                    (WeapFlags3, 'criticalFlags', 0L), ('crdtUnk2', null3),
+                    ('crdtUnk3', null4), (FID, 'criticalEffect', None),
+                    ('crdtUnk4', null4), old_versions={'H2sfB3sI'}),
         MelUInt32('VNAM', 'detectionSoundLevel'),
         MelFid('CNAM','template',),
     )
@@ -448,26 +374,6 @@ class MreWthr(MelRecord):
             (4, 'skyStaticsAlwaysVisible'),
             (5, 'skyStaticsFollowsSunPosition'),
         ))
-
-    class MelWthrDalc(MelStructs):
-        """Handle older truncated DALC for WTHR subrecord."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 32:
-                MelStructs.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            elif size_ == 24:
-                unpacked = ins.unpack('=4B4B4B4B4B4B', size_, readId)
-            else:
-                raise ModSizeError(ins.inName, readId, (32, 24), size_)
-            unpacked += self.defaults[len(unpacked):]
-            target = MelObject()
-            record.__getattribute__(self.attr).append(target)
-            target.__slots__ = self.attrs
-            setter = target.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -539,15 +445,18 @@ class MreWthr(MelRecord):
                   (FID,'volumetricLightingDay'),
                   (FID,'volumetricLightingSunset'),
                   (FID,'volumetricLightingNight'),),
-        MelWthrDalc('DALC','=4B4B4B4B4B4B4Bf','wthrAmbientColors',
-            'redXplus','greenXplus','blueXplus','unknownXplus',
-            'redXminus','greenXminus','blueXminus','unknownXminus',
-            'redYplus','greenYplus','blueYplus','unknownYplus',
-            'redYminus','greenYminus','blueYminus','unknownYminus',
-            'redZplus','greenZplus','blueZplus','unknownZplus',
-            'redZminus','greenZminus','blueZminus','unknownZminus',
-            'redSpec','greenSpec','blueSpec','unknownSpec',
-            'fresnelPower'),
+        MelGroups('wthrAmbientColors',
+            MelTruncatedStruct(
+                'DALC', '4B4B4B4B4B4B4Bf', 'redXplus', 'greenXplus',
+                'blueXplus', 'unknownXplus', 'redXminus', 'greenXminus',
+                'blueXminus', 'unknownXminus', 'redYplus', 'greenYplus',
+                'blueYplus', 'unknownYplus', 'redYminus', 'greenYminus',
+                'blueYminus', 'unknownYminus', 'redZplus', 'greenZplus',
+                'blueZplus', 'unknownZplus', 'redZminus', 'greenZminus',
+                'blueZminus', 'unknownZminus', 'redSpec', 'greenSpec',
+                'blueSpec', 'unknownSpec', 'fresnelPower',
+                old_versions={'4B4B4B4B4B4B'}),
+        ),
         MelBase('NAM2','nam2_p'),
         MelBase('NAM3','nam3_p'),
         MelModel('aurora','MODL'),
