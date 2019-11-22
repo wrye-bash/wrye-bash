@@ -732,13 +732,13 @@ class Mod_ListDependent(OneItemLink):
 
 class Mod_JumpToInstaller(AppendableLink, OneItemLink):
     """Go to the installers tab and highlight the mods installer"""
-    _text = _(u"Jump to installer")
+    _text = _(u'Jump to Installer')
 
     def _initData(self, window, selection):
         super(Mod_JumpToInstaller, self)._initData(window, selection)
-        self._help = _(u"Jump to the installer of %(filename)s if it exists") \
-                    % ({'filename': selection[0]}) + u'. '
-        self._help += _(u'You can Alt click on the mod to the same effect')
+        self._help = _(u'Jump to the installer of %(filename)s if it exists. '
+                       u'You can Alt-Click on the mod to the same '
+                       u'effect.') % {'filename': selection[0]}
         self._installer = self.window.get_installer(self._selected_item)
 
     def _append(self, window): return balt.Link.Frame.iPanel and bass.settings[

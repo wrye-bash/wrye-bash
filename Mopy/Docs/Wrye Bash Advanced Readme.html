@@ -58,6 +58,7 @@
                         <li><a href="#bain-ui">The User Interface In Detail</a>
                         <li><a href="#bain-refresh">BAIN Refresh</a>
                         <li><a href="#bain-skipped">Skipped Files</a>
+                        <li><a href="#bain-plugin-filter">The Plugin Filter</a></li>
                         <li><a href="#bain-data-dir-skipped">Skipped Data subdirectories and uninstall quirks</a>
                         <li><a href="#bain-se">Script Extender Plugin Installation</a>
                         <li><a href="#bain-omod">OMOD Conversion Data</a>
@@ -295,6 +296,14 @@
     <li>Plugin files that are not in top level of the package/subpackage. It makes no sense to have those files in a subfolder, so those are skipped.
 </ul>
 
+<h3 id="bain-plugin-filter">The Plugin Filter <a class="back2top" href="#contents">Back to top</a></h3>
+<p>The <em>Plugin Filter</em> can be used to select which of the installer's plugins you actually want to install.
+    It can also be used to install plugins using a different name, see the documentation for the
+    <a href="#bain-rename-plugin">Rename... option</a> for more information about this.</p>
+<p>Double-clicking on a plugin or using the <a href="#bain-jump-to-mod">Jump to Mod</a> option on it will take
+    you to that plugin's position in the Mods tab.</p>
+<p>There are several more options available in the right click context menu, see the
+    <a href="#bain-plugin-filter-commands">Plugin Filter Context Menu</a> documentation for more information.</p>
 
 <h3 id="bain-data-dir-skipped">Skipped Data subdirectories and uninstall quirks <a class="back2top" href="#contents">Back to top</a></h3>
 <p>When scanning the contents of the Data folder BAIN will skip some of its subdirectories either by default or based on <a href="#bainGlobalSkips">Global Skips</a> in the installer
@@ -810,7 +819,7 @@ tab. The directories skipped are:
         <tr><td>Toggle Selection<td>Deselects currently selected sub-packages, and selects currently deselected subpackages.
         <tr><td>List Sub-Packages<td>Generates a forum-formatted list of sub-packages in the package, highlighting checked packages with <code>***</code>.
 </table>
-<table>
+<table id="bain-plugin-filter-commands">
     <thead>
         <tr><th colspan="2">Plugin Filter Context Menu
         <tr><th>Command<th>Description
@@ -818,9 +827,10 @@ tab. The directories skipped are:
         <tr><td>Select All<td>Selects all the plugins in the Filter list.
         <tr><td>Deselect All<td>Deselects all the plugins in the Filter list.
         <tr><td>List Plugins<td>Generates a forum-formatted list of plugins in the Filter list, highlighting checked plugins with <code>***</code>.
-        <tr><td>Rename...<td>Rename the selected plugin. Renamed plugins are displayed in the Filter list with a <code>*</code> before their name and are displayed in the information tabs as <code>original name -&gt; new name</code>. Renaming a plugin before installing it is preferable to renaming a BAIN-installed plugin through other means, as the former allows BAIN to keep track of it, whereas the latter does not.
+        <tr><td id="bain-rename-plugin">Rename...<td>Rename the selected plugin. Renamed plugins are displayed in the Filter list with a <code>*</code> before their name and are displayed in the information tabs as <code>original name -&gt; new name</code>. Renaming a plugin before installing it is preferable to renaming a BAIN-installed plugin through other means, as the former allows BAIN to keep track of it, whereas the latter does not.
         <tr><td>Reset Name<td>Resets the selected plugin's name to its default name.
         <tr><td>Reset All Names<td>Resets all renamed plugins to their default names.
+        <tr><td id="bain-jump-to-mod">Jump to Mod</td><td>Jumps to this plugin in the Mods tab. You can double-click on the mod to the same effect.</td></tr>
 </table>
 
 
@@ -1032,8 +1042,8 @@ tab. The directories skipped are:
             <tr><td colspan="2">List Dependencies<td>Displays and copies to the clipboard a list of mods that have the currently selected
                 mod as master. Active mods are prefixed with their load order while merged, imported and inactive mods are prefixed with
                 <code>++</code>, <code>**</code> and <code>__</code> respectively.
-            <tr><td colspan="2">Jump to installer<td>Jump to the installer of the selected mod, if the Installers tab is displayed and enabled and the
-                plugin has an installer. You can Alt click on the mod to the same effect.
+            <tr><td colspan="2">Jump to Installer<td>Jump to the installer of the selected mod, if the Installers tab is displayed and enabled and the
+                plugin has an installer. You can Alt-Click on the mod to the same effect.
             <tr><td colspan="2" id="modsDontGhost">Disallow Ghosting</td><td>Don't ghost the selected plugins when they are inactive, even if Auto-Ghost
                 is enabled. Will unghost the selected plugins if enabled.</td></tr>
             <tr><td colspan="2">Ghost/Unghost</td><td>Manually ghost/unghost selected plugins (active ones can't

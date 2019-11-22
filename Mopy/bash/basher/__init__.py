@@ -359,6 +359,7 @@ class MasterList(_ModsUIList):
 
     def OnDClick(self, event):
         event.Skip()
+        if self.mouse_index < 0: return # nothing was clicked
         mod_name = self.data_store[self.mouse_index].curr_name
         if not mod_name in bosh.modInfos: return
         balt.Link.Frame.notebook.SelectPage('Mods', mod_name)
@@ -2623,6 +2624,8 @@ class InstallersDetails(_DetailsMixin, SashPanel):
                                       onCheck=self.OnCheckEspmItem)
         set_event_hook(self.gEspmList, Events.MOUSE_RIGHT_UP,
                        self.SelectionMenu)
+        set_event_hook(self.gEspmList, Events.MOUSE_LEFT_DOUBLECLICK,
+                       self._on_plugin_filter_dclick)
         #--Comments
         commentsPanel = wx.Panel(bottom)
         commentsLabel = StaticText(commentsPanel, _(u'Comments'))
@@ -2897,6 +2900,17 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         self.gEspmList.SetSelection(index)    # so that (un)checking also selects (moves the highlight)
         if not balt.getKeyState_Shift():
             self.refreshCurrent(self.file_info)
+
+    def _on_plugin_filter_dclick(self, event):
+        """Handles double-clicking on a plugin in the plugin filter."""
+        selected_index = self.gEspmList.HitTest(event.GetPosition())
+        if selected_index < 0: return
+        selected_name = self.gEspmList.GetString(
+            selected_index).replace('&&', '&')
+        if selected_name[0] == u'*': selected_name = selected_name[1:]
+        selected_plugin = GPath(selected_name)
+        if selected_plugin not in bosh.modInfos: return
+        balt.Link.Frame.notebook.SelectPage('Mods', selected_plugin)
 
 class InstallersPanel(BashTab):
     """Panel for InstallersTank."""
