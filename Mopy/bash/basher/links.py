@@ -336,16 +336,17 @@ def InitInstallerLinks():
     InstallersList.itemMenu.append(Installer_SkipRefresh())
     InstallersList.itemMenu.append(SeparatorLink())
     InstallersList.itemMenu.append(InstallerProject_OmodConfig())
-    #--espms Main Menu
+    # Plugin Filter Main Menu
     InstallersPanel.espmMenu.append(Installer_Espm_SelectAll())
     InstallersPanel.espmMenu.append(Installer_Espm_DeselectAll())
     InstallersPanel.espmMenu.append(Installer_Espm_List())
     InstallersPanel.espmMenu.append(SeparatorLink())
-    #--espms Item Menu
+    # Plugin Filter Item Menu
     InstallersPanel.espmMenu.append(Installer_Espm_Rename())
     InstallersPanel.espmMenu.append(Installer_Espm_Reset())
-    InstallersPanel.espmMenu.append(SeparatorLink())
     InstallersPanel.espmMenu.append(Installer_Espm_ResetAll())
+    InstallersPanel.espmMenu.append(SeparatorLink())
+    InstallersPanel.espmMenu.append(Installer_Espm_JumpToMod())
     #--Sub-Package Main Menu
     InstallersPanel.subsMenu.append(Installer_Subs_SelectAll())
     InstallersPanel.subsMenu.append(Installer_Subs_DeselectAll())

@@ -65,7 +65,7 @@ __all__ = ['Installer_Open', 'Installer_Duplicate', 'InstallerOpenAt_MainMenu',
            'Installer_Espm_ResetAll', 'Installer_Subs_SelectAll',
            'Installer_Subs_DeselectAll', 'Installer_Subs_ToggleSelection',
            'Installer_Subs_ListSubPackages', 'Installer_OpenNexus',
-           'Installer_ExportAchlist']
+           'Installer_ExportAchlist', 'Installer_Espm_JumpToMod']
 
 #------------------------------------------------------------------------------
 # Installer Links -------------------------------------------------------------
@@ -800,7 +800,7 @@ class Installer_CopyConflicts(_SingleInstallable):
         self.window.RefreshUI(detail_item=destDir)
 
 #------------------------------------------------------------------------------
-# InstallerDetails Espm Links -------------------------------------------------
+# InstallerDetails Plugin Filter Links ----------------------------------------
 #------------------------------------------------------------------------------
 class _Installer_Details_Link(EnabledLink):
 
@@ -900,6 +900,25 @@ class Installer_Espm_List(_Installer_Details_Link):
         subs += u'[/spoiler]'
         balt.copyToClipboard(subs)
         self._showLog(subs, title=_(u'Plugin List'), fixedFont=False)
+
+class Installer_Espm_JumpToMod(_Installer_Details_Link):
+    """Jumps to a plugin in the Mods tab, if it is installed."""
+    _text = _(u'Jump to Mod')
+    _help = _(u'Jumps to this plugin in the Mods tab. You can double-click on '
+              u'the plugin to the same effect.')
+
+    def _enable(self):
+        if self.selected == -1: return False
+        ##: Maybe refactor all this plugin logic (especially the renamed plugin
+        # (asterisk) handling) to a property inside a base class?
+        selected_plugin = self.window.gEspmList.GetString(
+            self.selected).replace(u'&&', u'&')
+        if selected_plugin[0] == u'*': selected_plugin = selected_plugin[1:]
+        self.target_plugin = GPath(selected_plugin)
+        return self.target_plugin in bosh.modInfos
+
+    def Execute(self):
+        balt.Link.Frame.notebook.SelectPage('Mods', self.target_plugin)
 
 #------------------------------------------------------------------------------
 # InstallerDetails Subpackage Links -------------------------------------------
