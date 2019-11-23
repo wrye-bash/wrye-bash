@@ -68,7 +68,7 @@ class _PatcherPanel(object):
         self.gTipText = gTipText
         self.gConfigPanel = wx.Panel(parent, style=self.__class__.style)
         self.main_layout = VLayout(
-            default_fill=True, default_weight=1, items=[
+            default_fill=True, default_weight=1, spacing=4, items=[
                 (Label(self.gConfigPanel, fill(self.text, 70)),
                  LayoutOptions(weight=0))])
         self.main_layout.apply_to(self.gConfigPanel)
@@ -224,8 +224,8 @@ class _ListPatcherPanel(_PatcherPanel):
     def GetConfigPanel(self, parent, config_layout, gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
-        gConfigPanel = super(_ListPatcherPanel, self).GetConfigPanel(parent,
-                                                                     config_layout, gTipText)
+        gConfigPanel = super(_ListPatcherPanel, self).GetConfigPanel(
+            parent, config_layout, gTipText)
         self.forceItemCheck = self.__class__.forceItemCheck
         self.selectCommands = self.__class__.selectCommands
         if self.forceItemCheck:
@@ -259,7 +259,8 @@ class _ListPatcherPanel(_PatcherPanel):
             side_button_layout = VLayout(
                 spacing=4, items=right_side_components)
         self.main_layout.add(
-            (HBoxedLayout(gConfigPanel, title=self.__class__.listLabel, items=[
+            (HBoxedLayout(gConfigPanel, title=self.__class__.listLabel,
+                          spacing=4, items=[
                 (self.gList, LayoutOptions(fill=True, weight=1)),
                 (side_button_layout, LayoutOptions(v_align=TOP)),
                 (self._get_select_layout(), LayoutOptions(fill=True))]),
@@ -275,8 +276,7 @@ class _ListPatcherPanel(_PatcherPanel):
         self.gSelectAll.on_clicked.subscribe(self.SelectAll)
         self.gDeselectAll = Button(self.gConfigPanel, _(u'Deselect All'))
         self.gDeselectAll.on_clicked.subscribe(self.DeselectAll)
-        return VLayout(spacing=4, items=[Spacer(4), self.gSelectAll,
-                                         self.gDeselectAll])
+        return VLayout(spacing=4, items=[self.gSelectAll, self.gDeselectAll])
 
     def SetItems(self,items):
         """Set item to specified set of items."""
@@ -503,7 +503,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         #--Layout
         self.main_layout.add(
             (HBoxedLayout(gConfigPanel, title=self.__class__.tweak_label,
-                          default_fill=True, items=[
+                          default_fill=True, spacing=4, items=[
                     (self.gTweakList, LayoutOptions(weight=1)),
                     self._get_tweak_select_layout()]),
              LayoutOptions(fill=True, weight=1)))
@@ -525,7 +525,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                                             _(u'Deselect All'))
             self.gTweakDeselectAll.on_clicked.subscribe(self.TweakDeselectAll)
             tweak_select_layout = VLayout(spacing=4, items=[
-                Spacer(4), self.gTweakSelectAll, self.gTweakDeselectAll])
+                self.gTweakSelectAll, self.gTweakDeselectAll])
         else: tweak_select_layout = None
         #--Init GUI
         self.SetTweaks()

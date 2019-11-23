@@ -127,7 +127,7 @@ class PatchDialog(balt.Dialog):
         #--Layout
         self.config_layout = VLayout(default_fill=True, default_weight=1)
         VLayout(border=4, spacing=4, default_fill=True, items=[
-            (HLayout(spacing=4, default_fill=True, items=[
+            (HLayout(spacing=8, default_fill=True, items=[
                 self.gPatchers,
                 (self.config_layout, LayoutOptions(weight=1))
              ]), LayoutOptions(weight=1)),
