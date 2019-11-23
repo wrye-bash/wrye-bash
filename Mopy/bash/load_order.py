@@ -51,8 +51,8 @@ import bolt
 import bush
 import exception
 # Game instance providing load order operations API
-import games
-_game_handle = None # type: games.Game
+import _games_lo
+_game_handle = None # type: _games_lo.Game
 _plugins_txt_path = _loadorder_txt_path = _lord_pickle_path = None
 # Load order locking
 locked = False
@@ -85,8 +85,8 @@ def initialize_load_order_files():
 
 def initialize_load_order_handle(mod_infos):
     global _game_handle
-    _game_handle = games.game_factory(bush.game.fsName, mod_infos,
-                                      _plugins_txt_path, _loadorder_txt_path)
+    _game_handle = _games_lo.game_factory(bush.game.fsName, mod_infos,
+                                          _plugins_txt_path, _loadorder_txt_path)
     _game_handle.parse_ccc_file()
     __load_pickled_load_orders()
 
@@ -242,7 +242,7 @@ def save_lo(lord, acti=None, __index_move=0, quiet=False):
     asterisk method)."""
     acti_list = list(acti) if acti is not None else None
     load_list = list(lord) if lord is not None else None
-    fix_lo = games.FixInfo() if not quiet else None
+    fix_lo = _games_lo.FixInfo() if not quiet else None
     lord, acti = _game_handle.set_load_order(load_list, acti_list,
                                              list(cached_lord.loadOrder),
                                              list(cached_lord.activeOrdered),
@@ -258,7 +258,7 @@ def _update_cache(lord=None, acti_sorted=None, __index_move=0):
     """
     global cached_lord
     try:
-        fix_lo = games.FixInfo()
+        fix_lo = _games_lo.FixInfo()
         lord, acti_sorted = _game_handle.get_load_order(lord, acti_sorted,
                                                         fix_lo)
         fix_lo.lo_deprint()
