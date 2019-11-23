@@ -499,9 +499,9 @@ from other packages previously overridden by the uninstalled package's
         order!</strong> Install order determines which package's files overwrite other packages files when they conflict.
 <p>Although in general "Load Order" stands for the load order of the <em>active</em> plugins, all installed plugins have a load order assigned
     to them. In Oblivion, Fallout 3 and Fallout&colon; New Vegas this is based on the modification time of the plugin,
-    in Skyrim and Enderal&colon; Forgotten Stories it is based to a text-file based standard the community agreed on,
-    while Fallout 4 and all later games dump all installed plugins in its plugins.txt, marking active ones with an asterisk.
-    Bash needs plugin load order even for inactive plugins to correctly merge inactive mods in the Bashed Patch, for instance.
+    in Skyrim and Enderal&colon; Forgotten Stories it is based on a text-file based standard the community agreed on,
+    while Fallout 4 and all later games dump all installed plugins in its plugins.txt, marking active ones with an asterisk (<code>*</code>).
+    Bash needs plugin load order even for inactive plugins to correctly merge inactive mods in the Bashed Patch, for instance.</p>
 <p>Plugins may be activated by clicking their checkbox so that it is ticked, or by selecting a plugin or group of plugins and pressing the
     space bar on your keyboard. Plugins may be deactivated by again clicking their checkbox or pressing the spacebar. If a group of selected
     plugins contains a mix of active and inactive plugins, pressing the space bar once will activate them all, thereafter it will function as normal.
@@ -509,6 +509,8 @@ from other packages previously overridden by the uninstalled package's
 <p>When setting the load order, make sure that Wrye Bash is displaying your plugins sorted by Load Order. Do so by clicking on the <q>Load Order</q> column header near the top of the tab. You can also display the plugins sorted by other attributes by clicking on any of the other column headers. Clicking twice will reverse the display order for any column but Load Order. The load order of plugins is given in hexadecimal digits, from 00 to FE, which is 0 to 254 in decimal. (This number also forms the first two digits of a record's Form ID.)
 <p>Note that you can only have a maximum of 255 plugins active at any one time, including your game's master file.
     Wrye Bash displays a plugin count in its status bar, to the right hand side, in the format <code>Mods: [active]/[installed]</code>.
+<p>Generally speaking, if you end up with an invalid load order of some kind, Wrye Bash will automatically fix it upon booting or refreshing,
+    but a backup copy (with the <code>.bak</code> extension) will be made before doing so.</p>
 <p>With the advent of <strong>ESL files</strong>, the load order system was modified.
 The following list contains the most important facts you need to know about how Wrye Bash handles ESL files:</p>
 <ol>
@@ -558,7 +560,9 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
     relatively new feature (available in 307 beta) so it may have rough edges.</p>
 
 <h3 id="load-symbols">What Symbols &amp; Colours Mean <a class="back2top" href="#contents">Back to top</a></h3>
-<p>Like in the Installers tab, Wrye Bash uses colour-coding and other formatting effects to convey information about the state of plugins. The different types of formatting used and their meanings are explained here.
+<p>Like in the Installers tab, Wrye Bash uses colour-coding and other formatting effects to convey information about the state of plugins.
+    The different types of formatting used and their meanings are explained here.
+    Many of these can be changed in the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-colors">Color Configuration</a> menu.</p>
 <table>
     <thead><tr><th>Checkbox Type<th>Meaning
     <tbody>
@@ -570,22 +574,28 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 <table>
     <thead><tr><th>Checkbox Colours<th>Meaning
     <tbody>
-        <tr><td><img alt="Blue" src="../bash/images/checkbox_blue_on.png" width="16" height="16"/><td>The plugin's masters are all in exactly the same order as is specified in the plugin.
-        <tr><td><img alt="Green" src="../bash/images/checkbox_green_on.png" width="16" height="16"/><td>The plugin's masters are in the same order as is specified in the plugin, but their precise positions are different (ie. there are other mods between them). This is not an issue, and can be considered to be just as good as having a blue checkbox.
-        <tr><td><img alt="Orange" src="../bash/images/checkbox_orange_on.png" width="16" height="16"/><td>Some of the plugin's masters are in a different order than what is specified in the plugin. This will generally be handled automatically by the game, but it may result in changes in-game.
-        <tr><td><img alt="Red" src="../bash/images/checkbox_red_on.png" width="16" height="16"/><td>One or more of the plugin's masters is missing. This will generally cause the game to crash on startup, and must be corrected.
+<tr><td><img alt="Blue" src="../bash/images/checkbox_blue_on.png" width="16" height="16"/></td><td>The plugin's masters are all in exactly the same order as is specified in the plugin.</td></tr>
+        <tr><td><img alt="Green" src="../bash/images/checkbox_green_on.png" width="16" height="16"/></td><td>The plugin's masters are in the same order as is specified in the plugin, but their precise positions are different (ie. there are other mods between them). This is not an issue, and can be considered to be just as good as having a blue checkbox.
+        <tr><td><img alt="Yellow" src="../bash/images/checkbox_yellow_on.png" width="16" height="16"></td><td>Some of the plugin's masters are in a different order than what is specified in the plugin. This will be handled automatically by the game, but may hint at an incorrect load order on either your or the mod author's end.</td></tr>
+        <tr><td><img alt="Orange" src="../bash/images/checkbox_orange_on.png" width="16" height="16"/></td><td>This plugin loads before one or more of its masters. This will either cause the game to crash or cause mods to load in unexpected ways and must be corrected.</td>
+        <tr><td><img alt="Red" src="../bash/images/checkbox_red_on.png" width="16" height="16"/></td><td>One or more of the plugin's masters is missing. This will generally cause the game to crash on startup, and must be corrected.</td>
 </table>
 <table>
-    <thead><tr><th>Text Formatting<th>Meaning
+    <thead><tr><th>Text Formatting</th><th>Meaning</th></tr></thead>
     <tbody>
-        <tr><td class="load-symbols-blutxt">Blue text<td>A .esm plugin.
-        <tr><td class="load-symbols-grntxt">Green text<td>A mergeable plugin.
-        <tr><td class="load-symbols-prptxt">Purple text<td>A plugin that should not be merged (ie. tagged with NoMerge).
-        <tr><td class="load-symbols-pnkbg">Pink background<td><em>Oblivion only.</em> A plugin that shares its modification date with another plugin. Not a problem unless both plugins are active.
-        <tr><td class="load-symbols-redkbg">Red background<td>An active plugin that should remain deactivated (ie. tagged with Deactivate) or, for Oblivion only, an active plugin that shares its modification date with another active plugin. This must be corrected so that they have different modification dates or else it may break your load order.
-        <tr><td class="load-symbols-grybg">Grey background<td>A <a href="#modsAutoGhost">ghosted</a> plugin.
-        <tr><td class="load-symbols-ittxt">Slanted text<td>A plugin that is recommended to be imported and deactivated (ie. tagged with Deactivate).
-        <tr><td class="load-symbols-ultxt">Underlined text<td>A plugin identified as having dirty edits (Identical to Master, Deleted References, or otherwise necessary cleaning).
+        <tr><td class="load-symbols-blutxt">Blue Text</td><td>A master - refer to ESM documentation at the start of this document for more information.</td></tr>
+        <tr><td class="load-symbols-grntxt">Green Text</td><td>A mergeable plugin <em>(for games without ESL support)</em> or one that can be ESL-flagged <em>(for games with ESL support)</em>.</td></tr>
+        <tr><td class="load-symbols-pnktxt">Pink Text</td><td>An ESL-flagged plugin. <em>Only shown for games with ESL support.</em></td></tr>
+        <tr><td class="load-symbols-prptxt">Purple Text</td><td>An ESL-flagged plugin that is also a master. The color is a combination of the blue one for masters and the pink one for ESLs.</td></tr>
+        <tr><td class="load-symbols-ylwtxt">Yellow Text</td><td>A plugin that should not be merged (ie. tagged with <code>NoMerge</code> - <em>only shown in games without ESL support</em>).</td></tr>
+        <tr><td class="load-symbols-pnkbg">Pink Background</td><td><em>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only.</em> A plugin that shares its modification date with another plugin.
+            Not a problem unless both plugins are active.</td></tr>
+        <tr><td class="load-symbols-redkbg">Red Background</td><td>An active plugin that should remain deactivated (ie. tagged with <code>Deactivate</code>) or, <em>for Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only</em>,
+            an active plugin that shares its modification date with another active plugin. This must be corrected so that they have different modification dates or else it may break your load order.</td></tr>
+        <tr><td class="load-symbols-grybg">Grey Background</td><td>A <a href="#modsAutoGhost">ghosted</a> plugin.</td></tr>
+        <tr><td class="load-symbols-ittxt">Slanted Text</td><td>A plugin that is recommended to be imported and deactivated (ie. tagged with Deactivate).</td></tr>
+        <tr><td class="load-symbols-ultxt">Underlined Text</td><td>A plugin identified as having dirty edits (Identical to Master, Deleted References, or otherwise necessary cleaning).</td></tr>
+    </tbody>
 </table>
 
 <h3 id="load-commands">Useful Context Menu Commands <a class="back2top" href="#contents">Back to top</a></h3>

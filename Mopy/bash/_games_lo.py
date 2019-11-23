@@ -25,6 +25,9 @@
 
 """Game class implementing load order handling - **only** imported in
 load_order.py."""
+##: multiple backups? fixes can happen in rapid succession, so preserving
+# several older files in a directory would be useful (maybe limit to some
+# number, e.g. 5 older versions)
 
 __author__ = 'Utumno'
 
@@ -249,6 +252,7 @@ class Game(object):
 
     def _save_fixed_load_order(self, fix_lo, fixed_active, lo, active):
         if fix_lo.lo_changed():
+            self._backup_load_order()
             self._persist_load_order(lo, None) # active is not used here
 
     def set_load_order(self, lord, active, previous_lord=None,
@@ -323,6 +327,16 @@ class Game(object):
         return minf.has_esm_flag()
 
     # ABSTRACT ----------------------------------------------------------------
+    def _backup_active_plugins(self):
+        """This method should make a backup of whatever file is storing the
+        active plugins list."""
+        raise exception.AbstractError
+
+    def _backup_load_order(self):
+        """This method should make a backup of whatever file is storing the
+        load order plugins list."""
+        raise exception.AbstractError
+
     def _fetch_load_order(self, cached_load_order, cached_active):
         """:type cached_load_order: tuple[bolt.Path] | None
         :type cached_active: tuple[bolt.Path]"""
@@ -475,8 +489,9 @@ class Game(object):
             fix_active.act_reordered = (before_reorder, acti)
         if fix_active.act_changed():
             if on_disc: # used when getting active and found invalid, fix 'em!
-                # Notify user - ##: maybe backup previous plugin txt ?
+                # Notify user and backup previous plugins.txt
                 fix_active.act_header = u'Invalid Plugin txt corrected:\n'
+                self._backup_active_plugins()
                 self._persist_active_plugins(acti, lord)
             else: # active list we passed in when setting load order is invalid
                 fix_active.act_header = u'Invalid active plugins list corrected:\n'
@@ -559,6 +574,12 @@ class TimestampGame(Game):
         mods.sort(key=lambda x: not self.in_master_block(self.mod_infos[x]))
         return mods
 
+    def _backup_active_plugins(self):
+        self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
+
+    def _backup_load_order(self):
+        pass # timestamps, no file to backup
+
     def _fetch_load_order(self, cached_load_order, cached_active):
         self._rebuild_mtimes_cache() ##: will need that tweaked for lock load order
         return self.__calculate_mtime_order()
@@ -618,13 +639,16 @@ class TimestampGame(Game):
 
 class TextfileGame(Game):
 
-    must_be_active_if_present = (bolt.GPath(u'Update.esm'),)
-
     def __init__(self, mod_infos, plugins_txt_path, loadorder_txt_path):
         super(TextfileGame, self).__init__(mod_infos, plugins_txt_path)
-        self.loadorder_txt_path = loadorder_txt_path
+        self.loadorder_txt_path = loadorder_txt_path # type: bolt.Path
         self.mtime_loadorder_txt = 0
         self.size_loadorder_txt = 0
+
+    @property
+    def pinned_mods(self):
+        return super(TextfileGame, self).pinned_mods | set(
+            self.must_be_active_if_present)
 
     def load_order_changed(self):
         # if active changed externally refetch load order to check for desync
@@ -651,6 +675,12 @@ class TextfileGame(Game):
             self.loadorder_txt_path.mtime = time.time() # update mtime to trigger refresh
 
     # Abstract overrides ------------------------------------------------------
+    def _backup_active_plugins(self):
+        self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
+
+    def _backup_load_order(self):
+        self.loadorder_txt_path.copyTo(self.loadorder_txt_path.backup)
+
     def _fetch_load_order(self, cached_load_order, cached_active):
         """Read data from loadorder.txt file. If loadorder.txt does not
         exist create it and try reading plugins.txt so the load order of the
@@ -682,6 +712,12 @@ class TextfileGame(Game):
                 for i, (ordered, current) in enumerate(
                         zip(cached_active_copy, active_in_lo)):
                     if ordered != current:
+                        if ordered not in lo:
+                            # Mod is in plugins.txt, but not in loadorder.txt;
+                            # just drop it from the copy for now, we'll check
+                            # if it's really missing in _fix_active_plugins
+                            cached_active_copy.remove(ordered)
+                            break
                         for j, x in enumerate(active_in_lo[i:]):
                             if x == ordered: break
                             # x should be above ordered
@@ -698,6 +734,8 @@ class TextfileGame(Game):
             fetched_lo = lo[:]
             lo.sort(key=w.get)
             if lo != fetched_lo:
+                # We fixed a desync, make a backup and write the load order
+                self._backup_load_order()
                 self._persist_load_order(lo, lo)
                 bolt.deprint(u'Corrected %s (order of mods differed from '
                              u'their order in %s)' % (
@@ -746,6 +784,9 @@ class AsteriskGame(Game):
     max_esls = 4096 # hard limit, game runs out of fds sooner, testing needed
     # Creation Club content file - if empty, indicates that this game has no CC
     _ccc_filename = u''
+    # Hardcoded list used if the file specified above does not exist or could
+    # not be read
+    _ccc_fallback = ()
     _star = True
 
     @property
@@ -771,6 +812,12 @@ class AsteriskGame(Game):
     def _must_update_active(deleted, reordered): return True
 
     # Abstract overrides ------------------------------------------------------
+    def _backup_active_plugins(self):
+        self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
+
+    def _backup_load_order(self):
+        self._backup_active_plugins() # same thing for asterisk games
+
     def _fetch_load_order(self, cached_load_order, cached_active):
         """Read data from plugins.txt file. If plugins.txt does not exist
         create it. Discards information read if cached is passed in."""
@@ -783,9 +830,17 @@ class AsteriskGame(Game):
             if rem in active or rem in lo:
                 to_drop.append(rem)
         lo, active = self._readd_in_lists(lo, active)
+        msg = u''
+        if not exists:
+            # Create it if it doesn't exist
+            msg = u'Created %s'
+        if to_drop:
+            # If we need to drop some mods, then make a backup first
+            self._backup_load_order()
+            msg = (u'Removed ' + u' ,'.join(map(unicode, to_drop)) +
+                   u' from %s')
         if not exists or to_drop:
-            msg = u'Created %s' if not exists else (u'Removed ' + u' ,'.join(
-                map(unicode, to_drop)) + u' from %s')
+            # In either case, write out the LO and deprint it
             self._persist_load_order(lo, active)
             bolt.deprint(msg % self.plugins_txt_path)
         return lo, active
@@ -801,7 +856,9 @@ class AsteriskGame(Game):
 
     def _save_fixed_load_order(self, fix_lo, fixed_active, lo, active):
         if fixed_active: return # plugins.txt already saved
-        if fix_lo.lo_changed(): self._persist_load_order(lo, active)
+        if fix_lo.lo_changed():
+            self._backup_load_order()
+            self._persist_load_order(lo, active)
 
     def _persist_if_changed(self, active, lord, previous_active,
                             previous_lord):
@@ -854,6 +911,21 @@ class AsteriskGame(Game):
         except (OSError, IOError) as e:
             if e.errno != errno.ENOENT:
                 bolt.deprint(u'Failed to open %s' % _ccc_path, traceback=True)
+            bolt.deprint(u'%s does not exist or could not be read, falling '
+                         u'back to hardcoded CCC list' % cls._ccc_filename)
+            cls.must_be_active_if_present += cls._ccc_fallback
+
+# TextfileGame overrides
+class Skyrim(TextfileGame):
+    must_be_active_if_present = (bolt.GPath(u'Update.esm'),
+                                 bolt.GPath(u'Dawnguard.esm'),
+                                 bolt.GPath(u'Hearthfires.esm'),
+                                 bolt.GPath(u'Dragonborn.esm'))
+
+class Enderal(TextfileGame):
+    must_be_active_if_present = (bolt.GPath(u'Update.esm'),
+                                 bolt.GPath(u'Enderal - Forgotten '
+                                            u'Stories.esm'))
 
 # AsteriskGame overrides
 class Fallout4(AsteriskGame):
@@ -866,6 +938,167 @@ class Fallout4(AsteriskGame):
                                  bolt.GPath(u'DLCNukaWorld.esm'),
                                  bolt.GPath(u'DLCUltraHighResolution.esm'),)
     _ccc_filename = u'Fallout4.ccc'
+    _ccc_fallback = (
+        # Up to date as of 2019/11/22
+        bolt.GPath(u'ccBGSFO4001-PipBoy(Black).esl'),
+        bolt.GPath(u'ccBGSFO4002-PipBoy(Blue).esl'),
+        bolt.GPath(u'ccBGSFO4003-PipBoy(Camo01).esl'),
+        bolt.GPath(u'ccBGSFO4004-PipBoy(Camo02).esl'),
+        bolt.GPath(u'ccBGSFO4006-PipBoy(Chrome).esl'),
+        bolt.GPath(u'ccBGSFO4012-PipBoy(Red).esl'),
+        bolt.GPath(u'ccBGSFO4014-PipBoy(White).esl'),
+        bolt.GPath(u'ccBGSFO4005-BlueCamo.esl'),
+        bolt.GPath(u'ccBGSFO4016-Prey.esl'),
+        bolt.GPath(u'ccBGSFO4018-GaussRiflePrototype.esl'),
+        bolt.GPath(u'ccBGSFO4019-ChineseStealthArmor.esl'),
+        bolt.GPath(u'ccBGSFO4020-PowerArmorSkin(Black).esl'),
+        bolt.GPath(u'ccBGSFO4022-PowerArmorSkin(Camo01).esl'),
+        bolt.GPath(u'ccBGSFO4023-PowerArmorSkin(Camo02).esl'),
+        bolt.GPath(u'ccBGSFO4025-PowerArmorSkin(Chrome).esl'),
+        bolt.GPath(u'ccBGSFO4033-PowerArmorSkinWhite.esl'),
+        bolt.GPath(u'ccBGSFO4024-PACamo03.esl'),
+        bolt.GPath(u'ccBGSFO4038-HorseArmor.esl'),
+        bolt.GPath(u'ccBGSFO4041-DoomMarineArmor.esl'),
+        bolt.GPath(u'ccBGSFO4042-BFG.esl'),
+        bolt.GPath(u'ccBGSFO4044-HellfirePowerArmor.esl'),
+        bolt.GPath(u'ccFSVFO4001-ModularMilitaryBackpack.esl'),
+        bolt.GPath(u'ccFSVFO4002-MidCenturyModern.esl'),
+        bolt.GPath(u'ccFRSFO4001-HandmadeShotgun.esl'),
+        bolt.GPath(u'ccEEJFO4001-DecorationPack.esl'),
+        bolt.GPath(u'ccRZRFO4001-TunnelSnakes.esm'),
+        bolt.GPath(u'ccBGSFO4045-AdvArcCab.esl'),
+        bolt.GPath(u'ccFSVFO4003-Slocum.esl'),
+        bolt.GPath(u'ccGCAFO4001-FactionWS01Army.esl'),
+        bolt.GPath(u'ccGCAFO4002-FactionWS02ACat.esl'),
+        bolt.GPath(u'ccGCAFO4003-FactionWS03BOS.esl'),
+        bolt.GPath(u'ccGCAFO4004-FactionWS04Gun.esl'),
+        bolt.GPath(u'ccGCAFO4005-FactionWS05HRPink.esl'),
+        bolt.GPath(u'ccGCAFO4006-FactionWS06HRShark.esl'),
+        bolt.GPath(u'ccGCAFO4007-FactionWS07HRFlames.esl'),
+        bolt.GPath(u'ccGCAFO4008-FactionWS08Inst.esl'),
+        bolt.GPath(u'ccGCAFO4009-FactionWS09MM.esl'),
+        bolt.GPath(u'ccGCAFO4010-FactionWS10RR.esl'),
+        bolt.GPath(u'ccGCAFO4011-FactionWS11VT.esl'),
+        bolt.GPath(u'ccGCAFO4012-FactionAS01ACat.esl'),
+        bolt.GPath(u'ccGCAFO4013-FactionAS02BoS.esl'),
+        bolt.GPath(u'ccGCAFO4014-FactionAS03Gun.esl'),
+        bolt.GPath(u'ccGCAFO4015-FactionAS04HRPink.esl'),
+        bolt.GPath(u'ccGCAFO4016-FactionAS05HRShark.esl'),
+        bolt.GPath(u'ccGCAFO4017-FactionAS06Inst.esl'),
+        bolt.GPath(u'ccGCAFO4018-FactionAS07MM.esl'),
+        bolt.GPath(u'ccGCAFO4019-FactionAS08Nuk.esl'),
+        bolt.GPath(u'ccGCAFO4020-FactionAS09RR.esl'),
+        bolt.GPath(u'ccGCAFO4021-FactionAS10HRFlames.esl'),
+        bolt.GPath(u'ccGCAFO4022-FactionAS11VT.esl'),
+        bolt.GPath(u'ccGCAFO4023-FactionAS12Army.esl'),
+        bolt.GPath(u'ccAWNFO4001-BrandedAttire.esl'),
+        bolt.GPath(u'ccSWKFO4001-AstronautPowerArmor.esm'),
+        bolt.GPath(u'ccSWKFO4002-PipNuka.esl'),
+        bolt.GPath(u'ccSWKFO4003-PipQuan.esl'),
+        bolt.GPath(u'ccBGSFO4050-DgBColl.esl'),
+        bolt.GPath(u'ccBGSFO4051-DgBox.esl'),
+        bolt.GPath(u'ccBGSFO4052-DgDal.esl'),
+        bolt.GPath(u'ccBGSFO4053-DgGoldR.esl'),
+        bolt.GPath(u'ccBGSFO4054-DgGreatD.esl'),
+        bolt.GPath(u'ccBGSFO4055-DgHusk.esl'),
+        bolt.GPath(u'ccBGSFO4056-DgLabB.esl'),
+        bolt.GPath(u'ccBGSFO4057-DgLabY.esl'),
+        bolt.GPath(u'ccBGSFO4058-DGLabC.esl'),
+        bolt.GPath(u'ccBGSFO4059-DgPit.esl'),
+        bolt.GPath(u'ccBGSFO4060-DgRot.esl'),
+        bolt.GPath(u'ccBGSFO4061-DgShiInu.esl'),
+        bolt.GPath(u'ccBGSFO4036-TrnsDg.esl'),
+        bolt.GPath(u'ccRZRFO4004-PipInst.esl'),
+        bolt.GPath(u'ccBGSFO4062-PipPat.esl'),
+        bolt.GPath(u'ccRZRFO4003-PipOver.esl'),
+        bolt.GPath(u'ccFRSFO4002-AntimaterielRifle.esl'),
+        bolt.GPath(u'ccEEJFO4002-Nuka.esl'),
+        bolt.GPath(u'ccYGPFO4001-PipCruiser.esl'),
+        bolt.GPath(u'ccBGSFO4072-PipGrog.esl'),
+        bolt.GPath(u'ccBGSFO4073-PipMMan.esl'),
+        bolt.GPath(u'ccBGSFO4074-PipInspect.esl'),
+        bolt.GPath(u'ccBGSFO4075-PipShroud.esl'),
+        bolt.GPath(u'ccBGSFO4076-PipMystery.esl'),
+        bolt.GPath(u'ccBGSFO4071-PipArc.esl'),
+        bolt.GPath(u'ccBGSFO4079-PipVim.esl'),
+        bolt.GPath(u'ccBGSFO4078-PipReily.esl'),
+        bolt.GPath(u'ccBGSFO4077-PipRocket.esl'),
+        bolt.GPath(u'ccBGSFO4070-PipAbra.esl'),
+        bolt.GPath(u'ccBGSFO4008-PipGrn.esl'),
+        bolt.GPath(u'ccBGSFO4015-PipYell.esl'),
+        bolt.GPath(u'ccBGSFO4009-PipOran.esl'),
+        bolt.GPath(u'ccBGSFO4011-PipPurp.esl'),
+        bolt.GPath(u'ccBGSFO4021-PowerArmorSkinBlue.esl'),
+        bolt.GPath(u'ccBGSFO4027-PowerArmorSkinGreen.esl'),
+        bolt.GPath(u'ccBGSFO4034-PowerArmorSkinYellow.esl'),
+        bolt.GPath(u'ccBGSFO4028-PowerArmorSkinOrange.esl'),
+        bolt.GPath(u'ccBGSFO4031-PowerArmorSkinRed.esl'),
+        bolt.GPath(u'ccBGSFO4030-PowerArmorSkinPurple.esl'),
+        bolt.GPath(u'ccBGSFO4032-PowerArmorSkinTan.esl'),
+        bolt.GPath(u'ccBGSFO4029-PowerArmorSkinPink.esl'),
+        bolt.GPath(u'ccGRCFO4001-PipGreyTort.esl'),
+        bolt.GPath(u'ccGRCFO4002-PipGreenVim.esl'),
+        bolt.GPath(u'ccBGSFO4013-PipTan.esl'),
+        bolt.GPath(u'ccBGSFO4010-PipPnk.esl'),
+        bolt.GPath(u'ccSBJFO4001-SolarFlare.esl'),
+        bolt.GPath(u'ccZSEF04001-BHouse.esm'),
+        bolt.GPath(u'ccTOSFO4001-NeoSky.esm'),
+        bolt.GPath(u'ccKGJFO4001-bastion.esl'),
+        bolt.GPath(u'ccBGSFO4063-PAPat.esl'),
+        bolt.GPath(u'ccQDRFO4001_PowerArmorAI.esl'),
+        bolt.GPath(u'ccBGSFO4048-Dovah.esl'),
+        bolt.GPath(u'ccBGSFO4101-AS_Shi.esl'),
+        bolt.GPath(u'ccBGSFO4114-WS_Shi.esl'),
+        bolt.GPath(u'ccBGSFO4115-X02.esl'),
+        bolt.GPath(u'ccRZRFO4002-Disintegrate.esl'),
+        bolt.GPath(u'ccBGSFO4116-HeavyFlamer.esl'),
+        bolt.GPath(u'ccBGSFO4091-AS_Bats.esl'),
+        bolt.GPath(u'ccBGSFO4092-AS_CamoBlue.esl'),
+        bolt.GPath(u'ccBGSFO4093-AS_CamoGreen.esl'),
+        bolt.GPath(u'ccBGSFO4094-AS_CamoTan.esl'),
+        bolt.GPath(u'ccBGSFO4097-AS_Jack-oLantern.esl'),
+        bolt.GPath(u'ccBGSFO4104-WS_Bats.esl'),
+        bolt.GPath(u'ccBGSFO4105-WS_CamoBlue.esl'),
+        bolt.GPath(u'ccBGSFO4106-WS_CamoGreen.esl'),
+        bolt.GPath(u'ccBGSFO4107-WS_CamoTan.esl'),
+        bolt.GPath(u'ccBGSFO4111-WS_Jack-oLantern.esl'),
+        bolt.GPath(u'ccBGSFO4118-WS_TunnelSnakes.esl'),
+        bolt.GPath(u'ccBGSFO4113-WS_ReillysRangers.esl'),
+        bolt.GPath(u'ccBGSFO4112-WS_Pickman.esl'),
+        bolt.GPath(u'ccBGSFO4110-WS_Enclave.esl'),
+        bolt.GPath(u'ccBGSFO4108-WS_ChildrenOfAtom.esl'),
+        bolt.GPath(u'ccBGSFO4103-AS_TunnelSnakes.esl'),
+        bolt.GPath(u'ccBGSFO4099-AS_ReillysRangers.esl'),
+        bolt.GPath(u'ccBGSFO4098-AS_Pickman.esl'),
+        bolt.GPath(u'ccBGSFO4096-AS_Enclave.esl'),
+        bolt.GPath(u'ccBGSFO4095-AS_ChildrenOfAtom.esl'),
+        bolt.GPath(u'ccBGSFO4090-PipTribal.esl'),
+        bolt.GPath(u'ccBGSFO4089-PipSynthwave.esl'),
+        bolt.GPath(u'ccBGSFO4087-PipHaida.esl'),
+        bolt.GPath(u'ccBGSFO4085-PipHawaii.esl'),
+        bolt.GPath(u'ccBGSFO4084-PipRetro.esl'),
+        bolt.GPath(u'ccBGSFO4083-PipArtDeco.esl'),
+        bolt.GPath(u'ccBGSFO4082-PipPRC.esl'),
+        bolt.GPath(u'ccBGSFO4081-PipPhenolResin.esl'),
+        bolt.GPath(u'ccBGSFO4080-PipPop.esl'),
+        bolt.GPath(u'ccBGSFO4035-Pint.esl'),
+        bolt.GPath(u'ccBGSFO4086-PipAdventure.esl'),
+        bolt.GPath(u'ccJVDFO4001-Holiday.esl'),
+        bolt.GPath(u'ccBGSFO4047-QThund.esl'),
+        bolt.GPath(u'ccFRSFO4003-CR75L.esl'),
+        bolt.GPath(u'ccZSEFO4002-SManor.esm'),
+        bolt.GPath(u'ccACXFO4001-VSuit.esl'),
+        bolt.GPath(u'ccBGSFO4040-VRWorkshop01.esl'),
+        bolt.GPath(u'ccFSVFO4005-VRDesertIsland.esl'),
+        bolt.GPath(u'ccFSVFO4006-VRWasteland.esl'),
+        bolt.GPath(u'ccSBJFO4002_ManwellRifle.esl'),
+        bolt.GPath(u'ccTOSFO4002_NeonFlats.esm'),
+        bolt.GPath(u'ccBGSFO4117-CapMerc.esl'),
+        bolt.GPath(u'ccFSVFO4004-VRWorkshopGNRPlaza.esl'),
+        bolt.GPath(u'ccBGSFO4046-TesCan.esl'),
+        bolt.GPath(u'ccGCAFO4025-PAGunMM.esl'),
+        bolt.GPath(u'ccCRSFO4001-PipCoA.esl'),
+    )
 
     @property
     def remove_from_plugins_txt(self):
@@ -879,6 +1112,67 @@ class SkyrimSE(AsteriskGame):
                                  bolt.GPath(u'Hearthfires.esm'),
                                  bolt.GPath(u'Dragonborn.esm'),)
     _ccc_filename = u'Skyrim.ccc'
+    _ccc_fallback = (
+        # Up to date as of 2019/11/22
+        bolt.GPath(u'ccBGSSSE002-ExoticArrows.esl'),
+        bolt.GPath(u'ccBGSSSE003-Zombies.esl'),
+        bolt.GPath(u'ccBGSSSE004-RuinsEdge.esl'),
+        bolt.GPath(u'ccBGSSSE006-StendarsHammer.esl'),
+        bolt.GPath(u'ccBGSSSE007-Chrysamere.esl'),
+        bolt.GPath(u'ccBGSSSE010-PetDwarvenArmoredMudcrab.esl'),
+        bolt.GPath(u'ccBGSSSE014-SpellPack01.esl'),
+        bolt.GPath(u'ccBGSSSE019-StaffofSheogorath.esl'),
+        bolt.GPath(u'ccBGSSSE020-GrayCowl.esl'),
+        bolt.GPath(u'ccBGSSSE021-LordsMail.esl'),
+        bolt.GPath(u'ccMTYSSE001-KnightsoftheNine.esl'),
+        bolt.GPath(u'ccQDRSSE001-SurvivalMode.esl'),
+        bolt.GPath(u'ccTWBSSE001-PuzzleDungeon.esm'),
+        bolt.GPath(u'ccEEJSSE001-Hstead.esm'),
+        bolt.GPath(u'ccQDRSSE002-Firewood.esl'),
+        bolt.GPath(u'ccBGSSSE018-Shadowrend.esl'),
+        bolt.GPath(u'ccBGSSSE035-PetNHound.esl'),
+        bolt.GPath(u'ccFSVSSE001-Backpacks.esl'),
+        bolt.GPath(u'ccEEJSSE002-Tower.esl'),
+        bolt.GPath(u'ccEDHSSE001-NorJewel.esl'),
+        bolt.GPath(u'ccVSVSSE002-Pets.esl'),
+        bolt.GPath(u'ccBGSSSE037-Curios.esl'),
+        bolt.GPath(u'ccBGSSSE034-MntUni.esl'),
+        bolt.GPath(u'ccBGSSSE045-Hasedoki.esl'),
+        bolt.GPath(u'ccBGSSSE008-Wraithguard.esl'),
+        bolt.GPath(u'ccBGSSSE036-PetBWolf.esl'),
+        bolt.GPath(u'ccFFBSSE001-ImperialDragon.esl'),
+        bolt.GPath(u'ccMTYSSE002-VE.esl'),
+        bolt.GPath(u'ccBGSSSE043-CrossElv.esl'),
+        bolt.GPath(u'ccVSVSSE001-Winter.esl'),
+        bolt.GPath(u'ccEEJSSE003-Hollow.esl'),
+        bolt.GPath(u'ccBGSSSE016-Umbra.esm'),
+        bolt.GPath(u'ccBGSSSE031-AdvCyrus.esm'),
+        bolt.GPath(u'ccBGSSSE040-AdvObGobs.esl'),
+        bolt.GPath(u'ccBGSSSE050-BA_Daedric.esl'),
+        bolt.GPath(u'ccBGSSSE052-BA_Iron.esl'),
+        bolt.GPath(u'ccBGSSSE054-BA_Orcish.esl'),
+        bolt.GPath(u'ccBGSSSE058-BA_Steel.esl'),
+        bolt.GPath(u'ccBGSSSE059-BA_Dragonplate.esl'),
+        bolt.GPath(u'ccBGSSSE061-BA_Dwarven.esl'),
+        bolt.GPath(u'ccPEWSSE002-ArmsOfChaos.esl'),
+        bolt.GPath(u'ccBGSSSE041-NetchLeather.esl'),
+        bolt.GPath(u'ccEDHSSE002-SplKntSet.esl'),
+        bolt.GPath(u'ccBGSSSE064-BA_Elven.esl'),
+        bolt.GPath(u'ccBGSSSE063-BA_Ebony.esl'),
+        bolt.GPath(u'ccBGSSSE062-BA_DwarvenMail.esl'),
+        bolt.GPath(u'ccBGSSSE060-BA_Dragonscale.esl'),
+        bolt.GPath(u'ccBGSSSE056-BA_Silver.esl'),
+        bolt.GPath(u'ccBGSSSE055-BA_OrcishScaled.esl'),
+        bolt.GPath(u'ccBGSSSE053-BA_Leather.esl'),
+        bolt.GPath(u'ccBGSSSE051-BA_DaedricMail.esl'),
+        bolt.GPath(u'ccBGSSSE057-BA_Stalhrim.esl'),
+        bolt.GPath(u'ccVSVSSE003-NecroArts.esl'),
+        bolt.GPath(u'ccBGSSSE025-AdvDSGS.esm'),
+        bolt.GPath(u'ccFFBSSE002-CrossbowPack.esl'),
+        bolt.GPath(u'ccBGSSSE013-Dawnfang.esl'),
+        bolt.GPath(u'ccRMSSSE001-NecroHouse.esl'),
+        bolt.GPath(u'ccEEJSSE004-Hall.esl'),
+    )
 
     @property
     def remove_from_plugins_txt(self):
@@ -910,8 +1204,10 @@ class SkyrimSE(AsteriskGame):
 
 # Game factory
 def game_factory(name, mod_infos, plugins_txt_path, loadorder_txt_path=None):
-    if name in (u'Enderal', u'Skyrim'):
-        return TextfileGame(mod_infos, plugins_txt_path, loadorder_txt_path)
+    if name == u'Skyrim':
+        return Skyrim(mod_infos, plugins_txt_path, loadorder_txt_path)
+    if name == u'Enderal':
+        return Enderal(mod_infos, plugins_txt_path, loadorder_txt_path)
     elif name == u'Skyrim Special Edition':
         return SkyrimSE(mod_infos, plugins_txt_path)
     elif name == u'Fallout4':

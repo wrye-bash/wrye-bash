@@ -21,17 +21,16 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """Menu items for the _main_ menu of the mods tab - their window attribute
 points to BashFrame.modList singleton."""
 
-import re as _re
-from .. import bosh, balt, bass, load_order
+import re
+from .. import bosh, balt, load_order
 from .. import bush # for Mods_LoadListData, Mods_LoadList
+from .. import exception
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
     SeparatorLink, Link
 from ..bolt import GPath
-from .. import exception
 
 __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
            'Mods_OblivionVersion', 'Mods_CreateBlankBashedPatch',
@@ -40,14 +39,6 @@ __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
            'Mods_ScanDirty', 'Mods_CrcRefresh']
 
 # "Load" submenu --------------------------------------------------------------
-def _getLoadListsDict():
-    loadListData = bass.settings['bash.loadLists.data']
-    loadListData['Bethesda ESMs'] = [GPath(x) for x in bush.game.bethDataFiles
-        if x.endswith(u'.esm') # but avoid activating modding esms for oblivion
-    and (not _re.match(bosh.reOblivion.pattern, x, _re.IGNORECASE)
-         or x == u'oblivion.esm')]
-    return loadListData
-
 class _Mods_LoadListData(balt.ListEditorData):
     """Data capsule for load list editing dialog."""
     def __init__(self, parent, loadListsDict):
@@ -69,24 +60,23 @@ class _Mods_LoadListData(balt.ListEditorData):
                 _(u'Name must be between 1 and 64 characters long.'))
             return False
         #--Rename
-        bass.settings.setChanged('bash.loadLists.data')
         self.loadListDict[newName] = self.loadListDict[oldName]
         del self.loadListDict[oldName]
         return newName
 
     def remove(self,item):
         """Removes load list."""
-        bass.settings.setChanged('bash.loadLists.data')
         del self.loadListDict[item]
         return True
 
 class Mods_LoadList(ChoiceLink):
     """Add active mods list links."""
-    loadListsDict = {}
+    __uninitialized = {}
+    loadListsDict = __uninitialized
 
     def __init__(self):
         super(Mods_LoadList, self).__init__()
-        Mods_LoadList.loadListsDict = self.loadListsDict or _getLoadListsDict()
+        _self = self
         #--Links
         class __Activate(ItemLink):
             """Common methods used by Links de/activating mods."""
@@ -122,8 +112,7 @@ class Mods_LoadList(ChoiceLink):
             _text = _(u'Edit Active Mods Lists...')
             _help = _(u'Display a dialog to rename/remove active mods lists')
             def Execute(self):
-                editorData = _Mods_LoadListData(self.window,
-                                                Mods_LoadList.loadListsDict)
+                editorData = _Mods_LoadListData(self.window, _self.load_lists)
                 balt.ListEditor.Display(self.window, _(u'Active Mods Lists'),
                                         editorData)
         class _SaveLink(EnabledLink):
@@ -138,15 +127,14 @@ class Mods_LoadList(ChoiceLink):
                     message = _(u'Active Mods list name must be between '
                                 u'1 and 64 characters long.')
                     return self._showError(message)
-                Mods_LoadList.loadListsDict[newItem] = list(
+                _self.load_lists[newItem] = list(
                     load_order.cached_active_tuple())
-                bass.settings.setChanged('bash.loadLists.data')
         self.extraItems = [_All(), _None(), _Selected(), _SaveLink(), _Edit(),
                            SeparatorLink()]
         class _LoListLink(__Activate):
             def Execute(self):
                 """Activate mods in list."""
-                mods = set(Mods_LoadList.loadListsDict[self._text])
+                mods = set(_self.load_lists[self._text])
                 mods = [m for m in self.window.data_store.keys() if m in mods]
                 self._selectExact(mods)
             @property
@@ -156,8 +144,22 @@ class Mods_LoadList(ChoiceLink):
         self.__class__.choiceLinkType = _LoListLink
 
     @property
+    def load_lists(self):
+        """Get the load lists, since those come from BashLoadOrders.dat we must
+        wait for this being initialized in ModInfos.__init__"""
+        if self.__class__.loadListsDict is self.__class__.__uninitialized:
+            loadListData = load_order.get_active_mods_lists()
+            loadListData['Bethesda ESMs'] = [
+                GPath(x) for x in bush.game.bethDataFiles if x.endswith(
+                    u'.esm') # but avoid activating modding esms for oblivion
+                and (not re.match(bosh.reOblivion.pattern, x, re.I)
+                     or x == u'oblivion.esm')]
+            self.__class__.loadListsDict = loadListData
+        return self.__class__.loadListsDict
+
+    @property
     def _choices(self):
-        return sorted(self.loadListsDict.keys(), key=lambda a: a.lower())
+        return sorted(self.load_lists.keys(), key=lambda a: a.lower())
 
 # "Sort by" submenu -----------------------------------------------------------
 class Mods_EsmsFirst(CheckLink, EnabledLink):

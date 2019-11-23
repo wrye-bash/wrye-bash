@@ -312,8 +312,9 @@ class FileInfo(AFile):
     def getStatus(self):
         """Returns status of this file -- which depends on status of masters.
         0:  Good
-        20, 22: Out of order master
-        21, 22: Loads after its masters
+        10: Out of order master(s)
+        20: Loads before its master(s)
+        21: 10 + 20
         30: Missing master(s)."""
         #--Worst status from masters
         status = 30 if any( # if self.masterNames is empty returns False
@@ -327,11 +328,11 @@ class FileInfo(AFile):
                                    load_order.cached_lo_index(
             self.masterOrder[-1]) > load_order.cached_lo_index(self.name)
         if self.masterOrder != self.masterNames and loads_before_its_masters:
-            return 22
-        elif loads_before_its_masters:
             return 21
-        elif self.masterOrder != self.masterNames:
+        elif loads_before_its_masters:
             return 20
+        elif self.masterOrder != self.masterNames:
+            return 10
         else:
             return status
 
@@ -1006,6 +1007,8 @@ class SaveInfo(FileInfo):
 
     def getStatus(self):
         status = FileInfo.getStatus(self)
+        if status == 10:
+            status = 20 # Reordered masters are far more important in saves
         masterOrder = self.masterOrder
         #--File size?
         if status > 0 or len(masterOrder) > len(load_order.cached_active_tuple()):
