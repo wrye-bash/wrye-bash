@@ -1760,6 +1760,23 @@ actor_types = ('CREA', 'NPC_')
 #------------------------------------------------------------------------------
 spell_stats_attrs = ('eid', 'full', 'cost', 'level', 'spellType',)
 
+#------------------------------------------------------------------------------
+# Actor Tweaker
+#------------------------------------------------------------------------------
+actor_tweaks = {
+    u'VORB_NPCSkeletonPatcher',
+    u'MAONPCSkeletonPatcher',
+    u'VanillaNPCSkeletonPatcher',
+    u'RedguardNPCPatcher',
+    u'NoBloodCreaturesPatcher',
+    u'AsIntendedImpsPatcher',
+    u'AsIntendedBoarsPatcher',
+    u'QuietFeetPatcher',
+    u'IrresponsibleCreaturesPatcher',
+    u'RWALKNPCAnimationPatcher',
+    u'SWALKNPCAnimationPatcher',
+}
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH': _(u'Potions'),

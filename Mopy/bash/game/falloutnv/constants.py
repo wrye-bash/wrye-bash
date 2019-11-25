@@ -1201,6 +1201,14 @@ actor_types = ('CREA', 'NPC_')
 #------------------------------------------------------------------------------
 spell_stats_attrs = ('eid', 'full', 'cost', 'level', 'spellType',)
 
+#------------------------------------------------------------------------------
+# Actor Tweaker
+#------------------------------------------------------------------------------
+actor_tweaks = {
+    u'QuietFeetPatcher',
+    u'IrresponsibleCreaturesPatcher',
+}
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH':_(u'Potions'),

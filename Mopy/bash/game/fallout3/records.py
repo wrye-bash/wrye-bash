@@ -82,6 +82,18 @@ from ...brec import MelModel
 #------------------------------------------------------------------------------
 class MreActor(MelRecord):
     """Creatures and NPCs."""
+    TemplateFlags = Flags(0L, Flags.getNames(
+        'useTraits',
+        'useStats',
+        'useFactions',
+        'useActorEffectList',
+        'useAIData',
+        'useAIPackages',
+        'useModelAnimation',
+        'useBaseData',
+        'useInventory',
+        'useScript',
+    ))
 
     def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet.
@@ -968,7 +980,8 @@ class MreCrea(MreActor):
         MelBase('NIFT','nift_p'), # Texture File Hashes
         MelStruct('ACBS','=I2Hh3HfhH',(_flags,'flags',0L),'fatigue',
             'barterGold',('level',1),'calcMin','calcMax','speedMultiplier',
-            'karma','dispositionBase','templateFlags'),
+            'karma', 'dispositionBase',
+            (MreActor.TemplateFlags, 'templateFlags', 0L)),
         MelGroups('factions',
             MelStruct('SNAM', 'IB3s', (FID, 'faction', None), 'rank',
                       ('unused1', 'IFZ')),
@@ -2142,7 +2155,7 @@ class MreNpc(MreActor):
         MelStruct('ACBS','=I2Hh3Hf2H',
             (_flags,'flags',0L),'fatigue','barterGold',
             ('level',1),'calcMin','calcMax','speedMultiplier','karma',
-            'dispositionBase','templateFlags'),
+            'dispositionBase', (MreActor.TemplateFlags, 'templateFlags', 0L)),
         MelGroups('factions',
             MelStruct('SNAM', 'IB3s', (FID, 'faction', None), 'rank',
                       ('unused1', 'ODB')),

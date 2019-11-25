@@ -437,6 +437,11 @@ class GameInfo(object):
     #--------------------------------------------------------------------------
     spell_stats_attrs = ()
 
+    #--------------------------------------------------------------------------
+    # Actor Tweaker
+    #--------------------------------------------------------------------------
+    actor_tweaks = set()
+
     # Record type to name dictionary
     record_type_name = {}
 
@@ -474,10 +479,10 @@ class GameInfo(object):
     # Class attributes moved to constants module, set dynamically at init
     _constants_members = {
         'GlobalsTweaks', 'GmstTweaks', 'actor_importer_attrs',
-        'actor_importer_auto_key', 'actor_types', 'bethDataFiles',
-        'cc_valid_types', 'cc_passes', 'cellAutoKeys', 'cellRecAttrs',
-        'cellRecFlags', 'condition_function_data', 'default_eyes',
-        'destructible_types', 'gmstEids', 'graphicsFidTypes',
+        'actor_importer_auto_key', 'actor_tweaks', 'actor_types',
+        'bethDataFiles', 'cc_valid_types', 'cc_passes', 'cellAutoKeys',
+        'cellRecAttrs', 'cellRecFlags', 'condition_function_data',
+        'default_eyes', 'destructible_types', 'gmstEids', 'graphicsFidTypes',
         'graphicsLongsTypes', 'graphicsModelAttrs', 'graphicsTypes',
         'inventoryTypes', 'keywords_types', 'listTypes', 'namesTypes',
         'object_bounds_types', 'pricesTypes', 'record_type_name',

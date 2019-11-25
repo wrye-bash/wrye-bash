@@ -160,6 +160,7 @@ class SkyrimGameInfo(GameInfo):
         u'KeywordsImporter', u'ListsMerger', u'NamesPatcher',
         u'NPCAIPackagePatcher', u'ObjectBoundsImporter', u'PatchMerger',
         u'SoundPatcher', u'SpellsPatcher', u'StatsPatcher', u'TextImporter',
+        u'TweakActors',
     )
 
     weaponTypes = (

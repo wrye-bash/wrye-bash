@@ -2570,6 +2570,14 @@ spell_stats_attrs = ('eid', 'full', 'cost', 'spellType', 'chargeTime',
                      'castType', 'targetType', 'castDuration', 'range',
                      'halfCostPerk',)
 
+#------------------------------------------------------------------------------
+# Actor Tweaker
+#------------------------------------------------------------------------------
+actor_tweaks = {
+    u'OppositeGenderAnimsPatcher_Female',
+    u'OppositeGenderAnimsPatcher_Male',
+}
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH': _(u'Potions'),

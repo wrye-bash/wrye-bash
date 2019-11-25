@@ -151,7 +151,7 @@ class Fallout3GameInfo(GameInfo):
         u'ImportScripts', u'KFFZPatcher', u'ListsMerger', u'NamesPatcher',
         u'NPCAIPackagePatcher', u'NpcFacePatcher', u'ObjectBoundsImporter',
         u'PatchMerger', u'SoundPatcher', u'SpellsPatcher', u'StatsPatcher',
-        u'TextImporter',
+        u'TextImporter', u'TweakActors',
     )
 
     weaponTypes = (
