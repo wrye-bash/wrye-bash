@@ -26,6 +26,7 @@
 contains the data structures that are dynamically set on a per game basis in
 bush."""
 from ....patcher import PatcherInfo as pi
+from .importers import *
 from .special import * # defines the __all__ directive
 
 gameSpecificPatchers = {
@@ -36,8 +37,14 @@ gameSpecificPatchers = {
     "CBash_SEWorldEnforcer": pi(CBash_SEWorldEnforcer, 'SEWorldEnforcer'),
 }
 gameSpecificListPatchers = {
+    # special
     "CoblExhaustion": pi(CoblExhaustion, 'CBash_CoblExhaustion'),
     "CBash_CoblExhaustion": pi(CBash_CoblExhaustion, 'CoblExhaustion'),
     "MFactMarker": pi(MFactMarker, 'CBash_MFactMarker'),
     "CBash_MFactMarker": pi(CBash_MFactMarker, 'MFactMarker'),
+}
+game_specific_import_patchers = {
+    # importers
+    'RoadImporter': pi(RoadImporter, 'CBash_RoadImporter'),
+    'CBash_RoadImporter': pi(CBash_RoadImporter, 'RoadImporter'),
 }

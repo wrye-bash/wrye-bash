@@ -394,6 +394,57 @@ class GameInfo(object):
     #--------------------------------------------------------------------------
     default_eyes = {}
 
+    #--------------------------------------------------------------------------
+    # Keywords Patcher
+    #--------------------------------------------------------------------------
+    keywords_types = ()
+
+    #--------------------------------------------------------------------------
+    # Text Patcher
+    #--------------------------------------------------------------------------
+    text_long_types = set()
+    text_types = {}
+
+    #--------------------------------------------------------------------------
+    # Object Bounds Patcher
+    #--------------------------------------------------------------------------
+    object_bounds_types = ()
+
+    #--------------------------------------------------------------------------
+    # Contents Checker
+    #--------------------------------------------------------------------------
+    cc_valid_types = {}
+    # (targeted types, structs/groups name, entry/item name)
+    # OR (targeted types, fid list name)
+    cc_passes = ()
+
+    #--------------------------------------------------------------------------
+    # Scripts Patcher
+    #--------------------------------------------------------------------------
+    scripts_types = ()
+
+    #--------------------------------------------------------------------------
+    # Destructible Patcher
+    #--------------------------------------------------------------------------
+    destructible_types = ()
+
+    #--------------------------------------------------------------------------
+    # Actor Patchers
+    #--------------------------------------------------------------------------
+    actor_importer_attrs = {}
+    actor_importer_auto_key = set()
+    actor_types = ()
+
+    #--------------------------------------------------------------------------
+    # Spell Stats Patcher
+    #--------------------------------------------------------------------------
+    spell_stats_attrs = ()
+
+    #--------------------------------------------------------------------------
+    # Actor Tweaker
+    #--------------------------------------------------------------------------
+    actor_tweaks = set()
+
     # Record type to name dictionary
     record_type_name = {}
 
@@ -426,16 +477,21 @@ class GameInfo(object):
         # Simple records
         brec.MreRecord.simpleTypes = (
                 set(brec.MreRecord.type_class) - {'TES4'})
+
     # Import from the constants module ----------------------------------------
     # Class attributes moved to constants module, set dynamically at init
     _constants_members = {
-        'GlobalsTweaks', 'GmstTweaks', 'bethDataFiles', 'cellAutoKeys',
+        'GlobalsTweaks', 'GmstTweaks', 'actor_importer_attrs',
+        'actor_importer_auto_key', 'actor_tweaks', 'actor_types',
+        'bethDataFiles', 'cc_valid_types', 'cc_passes', 'cellAutoKeys',
         'cellRecAttrs', 'cellRecFlags', 'condition_function_data',
-        'default_eyes', 'gmstEids', 'graphicsFidTypes', 'graphicsLongsTypes',
-        'graphicsModelAttrs', 'graphicsTypes', 'inventoryTypes', 'listTypes',
-        'namesTypes', 'pricesTypes', 'record_type_name', 'save_rec_types',
-        'soundsLongsTypes', 'soundsTypes', 'statsHeaders', 'statsTypes',
-        'xEdit_expert',
+        'default_eyes', 'destructible_types', 'gmstEids', 'graphicsFidTypes',
+        'graphicsLongsTypes', 'graphicsModelAttrs', 'graphicsTypes',
+        'inventoryTypes', 'keywords_types', 'listTypes', 'namesTypes',
+        'object_bounds_types', 'pricesTypes', 'record_type_name',
+        'save_rec_types', 'scripts_types', 'soundsLongsTypes', 'soundsTypes',
+        'spell_stats_attrs', 'statsHeaders', 'statsTypes', 'text_long_types',
+        'text_types', 'xEdit_expert',
     }
 
     @classmethod

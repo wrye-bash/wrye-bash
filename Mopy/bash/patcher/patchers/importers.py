@@ -529,22 +529,13 @@ class CBash_CellImporter(_ACellImporter,CBash_ImportPatcher):
 #------------------------------------------------------------------------------
 class DestructiblePatcher(_SimpleImporter):
     """Merges changes to destructible records for Fallout3/FalloutNV."""
-    name = _(u"Import Destructible")
-    text = _(u"Merges changes to destructible records.\n\nWill have to use if "
-             u"Destruction Environment mod is installed and active.")
-    tip = text
+    name = _(u'Import Destructible')
+    text = _(u'Preserves changes to destructible records.\n\nWill have to use '
+             u'if a mod that allows you to destroy part of the environment is '
+             u'installed and active.')
     autoKey = {u'Destructible'}
-    if bush.game.fsName == u'Fallout3':
-        longTypes = {'ACTI', 'ALCH', 'AMMO', 'ARMO', 'BOOK', 'CONT', 'CREA',
-                     'DOOR', 'FURN', 'KEYM', 'LIGH', 'MISC', 'MSTT', 'NPC_',
-                     'PROJ', 'TACT', 'TERM', 'WEAP'}
-    elif bush.game.fsName == u'FalloutNV':
-        longTypes = {'ACTI', 'ALCH', 'AMMO', 'ARMO', 'BOOK', 'CHIP', 'CONT',
-                     'CREA', 'DOOR', 'FURN', 'IMOD', 'KEYM', 'LIGH', 'MISC',
-                     'MSTT', 'NPC_', 'PROJ', 'TACT', 'TERM', 'WEAP'}
-    else:
-        longTypes = set()
-    rec_attrs = dict((x, ('destructible',)) for x in longTypes)
+    # All destructibles may contain FIDs, so let longTypes be set automatically
+    rec_attrs = {x: ('destructible',) for x in bush.game.destructible_types}
 
     #--Patch Phase ------------------------------------------------------------
     def _inner_loop(self, keep, records, top_mod_rec, type_count):
@@ -725,60 +716,13 @@ class CBash_GraphicsPatcher(_RecTypeModLogging, _AGraphicsPatcher):
 class _AActorImporter(AImportPatcher):
     """Merges changes to actors."""
     name = _(u'Import Actors')
-    text = _(u"Import Actor components from source mods.")
+    text = _(u'Import various actor attributes from source mods.')
     tip = text
-    autoKey = {u'Actors.AIData', u'Actors.Stats', u'Actors.ACBS', u'NPC.Class',
-               u'Actors.CombatStyle', u'Creatures.Blood', u'NPC.Race',
-               u'Actors.Skeleton'}
+    autoKey = bush.game.actor_importer_auto_key
 
 class ActorImporter(_SimpleImporter, _AActorImporter):
     # note peculiar mapping of record type to dictionaries[tag, attributes]
-    rec_attrs = {'NPC_':{
-        u'Actors.AIData': ('aggression', 'confidence', 'energyLevel',
-                           'responsibility', 'services', 'trainSkill',
-                           'trainLevel'),
-        u'Actors.Stats': ('skills','health','attributes'),
-        u'Actors.ACBS': (('baseSpell', 'fatigue', 'level', 'calcMin',
-                          'calcMax', 'flags.autoCalc', 'flags.pcLevelOffset'),
-                         'barterGold', 'flags.female', 'flags.essential',
-                         'flags.respawn', 'flags.noLowLevel', 'flags.noRumors',
-                         'flags.summonable', 'flags.noPersuasion',
-                         'flags.canCorpseCheck',),
-        #u'Actors.ACBS': ('baseSpell','fatigue','barterGold','level',
-        #                 'calcMin','calcMax','flags'),
-        u'NPC.Class': ('iclass',),
-        u'NPC.Race': ('race',),
-        u'Actors.CombatStyle': ('combatStyle',),
-        u'Creatures.Blood': (),
-        u'Actors.Skeleton': ('model',),
-        },
-        'CREA':{
-            u'Actors.AIData': ('aggression', 'confidence', 'energyLevel',
-                               'responsibility', 'services', 'trainSkill',
-                               'trainLevel'),
-            u'Actors.Stats': ('combat','magic', 'stealth', 'soul', 'health',
-                              'attackDamage', 'strength', 'intelligence',
-                              'willpower', 'agility', 'speed', 'endurance',
-                              'personality','luck'),
-            u'Actors.ACBS': (('baseSpell', 'fatigue', 'level', 'calcMin',
-                              'calcMax', 'flags.pcLevelOffset',), 'barterGold',
-                             'flags.biped', 'flags.essential',
-                             'flags.weaponAndShield', 'flags.respawn',
-                             'flags.swims', 'flags.flies', 'flags.walks',
-                             'flags.noLowLevel', 'flags.noBloodSpray',
-                             'flags.noBloodDecal', 'flags.noHead',
-                             'flags.noRightArm', 'flags.noLeftArm',
-                             'flags.noCombatInWater', 'flags.noShadow',
-                             'flags.noCorpseCheck',),
-            #u'Actors.ACBS': ('baseSpell','fatigue','barterGold','level',
-            #                 'calcMin','calcMax','flags'),
-            u'NPC.Class': (),
-            u'NPC.Race': (),
-            u'Actors.CombatStyle': ('combatStyle',),
-            u'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
-            u'Actors.Skeleton': ('model',),
-        }
-    }
+    rec_attrs = bush.game.actor_importer_attrs
 
     #--Patch Phase ------------------------------------------------------------
     def initData(self,progress):
@@ -959,12 +903,12 @@ class CBash_ActorImporter(_RecTypeModLogging, _AActorImporter):
 class _AKFFZPatcher(AImportPatcher):
     """Merges changes to actor animation lists."""
     name = _(u'Import Actors: Animations')
-    text = _(u"Import Actor animations from source mods.")
+    text = _(u'Import actor animations from source mods.')
     tip = text
     autoKey = {u'Actors.Anims'}
 
 class KFFZPatcher(_SimpleImporter, _AKFFZPatcher):
-    rec_attrs = dict((x, ('animations',)) for x in {'CREA', 'NPC_'})
+    rec_attrs = {x: ('animations',) for x in bush.game.actor_types}
 
 class CBash_KFFZPatcher(CBash_ImportPatcher, _AKFFZPatcher):
     logMsg = u'* ' + _(u'Imported Animations') + u': %d'
@@ -1002,7 +946,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher, _AKFFZPatcher):
 class _ANPCAIPackagePatcher(AImportPatcher):
     """Merges changes to the AI Packages of Actors."""
     name = _(u'Import Actors: AI Packages')
-    text = _(u"Import Actor AI Package links from source mods.")
+    text = _(u'Import actor AI Package links from source mods.')
     tip = text
     autoKey = {u'Actors.AIPackages', u'Actors.AIPackagesForceAdd'}
 
@@ -1014,7 +958,7 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
         super(NPCAIPackagePatcher, self).initPatchFile(patchFile)
         # long_fid -> {'merged':list[long_fid], 'deleted':list[long_fid]}
         self.id_merged_deleted = {}
-        self.longTypes = {'CREA', 'NPC_'}
+        self.target_rec_types = bush.game.actor_types
 
     def _insertPackage(self, data, fid, index, pkg, recordData):
         if index == 0: data[fid]['merged'].insert(0, pkg)# insert as first item
@@ -1043,9 +987,9 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive: return
-        longTypes = self.longTypes
-        loadFactory = LoadFactory(False,MreRecord.type_class['CREA'],
-                                        MreRecord.type_class['NPC_'])
+        target_rec_types = self.target_rec_types
+        loadFactory = LoadFactory(False, *[MreRecord.type_class[x] for x
+                                           in target_rec_types])
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         mer_del = self.id_merged_deleted
@@ -1057,9 +1001,9 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
             masters = srcInfo.get_masters()
             bashTags = srcInfo.getBashTags()
             srcFile.load(True)
-            srcFile.convertToLongFids(longTypes)
+            srcFile.convertToLongFids(target_rec_types)
             mapper = srcFile.getLongMapper()
-            for recClass in (MreRecord.type_class[x] for x in ('NPC_','CREA')):
+            for recClass in (MreRecord.type_class[x] for x in target_rec_types):
                 if recClass.classType not in srcFile.tops: continue
                 for record in srcFile.tops[
                     recClass.classType].getActiveRecords():
@@ -1073,10 +1017,10 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
                     masterInfo = bosh.modInfos[master]
                     masterFile = ModFile(masterInfo,loadFactory)
                     masterFile.load(True)
-                    masterFile.convertToLongFids(longTypes)
+                    masterFile.convertToLongFids(target_rec_types)
                     cachedMasters[master] = masterFile
                 mapper = masterFile.getLongMapper()
-                blocks = (MreRecord.type_class[x] for x in ('NPC_', 'CREA'))
+                blocks = (MreRecord.type_class[x] for x in target_rec_types)
                 for block in blocks:
                     if block.classType not in srcFile.tops: continue
                     if block.classType not in masterFile.tops: continue
@@ -1136,18 +1080,18 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('NPC_','CREA',) if self.isActive else ()
+        return bush.game.actor_types if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('NPC_','CREA',) if self.isActive else ()
+        return bush.game.actor_types if self.isActive else ()
 
     def scanModFile(self, modFile, progress): # scanModFile2: loop, LongTypes..
         """Add record from modFile."""
         if not self.isActive: return
         merged_deleted = self.id_merged_deleted
         mapper = modFile.getLongMapper()
-        for rec_type in ('NPC_','CREA'):
+        for rec_type in self.target_rec_types:
             patchBlock = getattr(self.patchFile,rec_type)
             for record in getattr(modFile,rec_type).getActiveRecords():
                 fid = mapper(record.fid)
@@ -1161,7 +1105,7 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
         keep = self.patchFile.getKeeper()
         merged_deleted = self.id_merged_deleted
         mod_count = collections.defaultdict(int)
-        for rec_type in ('NPC_','CREA'):
+        for rec_type in self.target_rec_types:
             for record in getattr(self.patchFile,rec_type).records:
                 fid = record.fid
                 if fid not in merged_deleted: continue
@@ -1262,12 +1206,12 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher, _ANPCAIPackagePatcher):
 class _ADeathItemPatcher(AImportPatcher):
     """Merges changes to actor death items."""
     name = _(u'Import Actors: Death Items')
-    text = _(u"Import Actor death items from source mods.")
+    text = _(u'Import actor death items from source mods.')
     tip = text
     autoKey = {u'Actors.DeathItem'}
 
 class DeathItemPatcher(_SimpleImporter, _ADeathItemPatcher):
-    rec_attrs = dict((x, ('deathItem',)) for x in {'CREA', 'NPC_'})
+    rec_attrs = {x: ('deathItem',) for x in bush.game.actor_types}
 
 class CBash_DeathItemPatcher(CBash_ImportPatcher, _ADeathItemPatcher):
     logMsg = u'* ' + _(u'Imported Death Items') + u': %d'
@@ -1641,16 +1585,12 @@ class CBash_ImportRelations(CBash_ImportPatcher, _AImportRelations):
 class _AImportScripts(AImportPatcher):
     """Imports attached scripts on objects."""
     name = _(u'Import Scripts')
-    text = _(u"Import Scripts on containers, plants, misc, weapons etc from "
-             u"source mods.")
-    tip = text
+    text = _(u'Import scripts on various objects (e.g. containers, weapons, '
+             u'etc.) from source mods.')
     autoKey = {u'Scripts'}
 
 class ImportScripts(_SimpleImporter, _AImportScripts):
-    rec_attrs = dict((x, ('script',)) for x in
-                     {'WEAP', 'ACTI', 'ALCH', 'APPA', 'ARMO', 'BOOK', 'CLOT',
-                      'CONT', 'CREA', 'DOOR', 'FLOR', 'FURN', 'INGR', 'KEYM',
-                      'LIGH', 'MISC', 'NPC_', 'QUST', 'SGST', 'SLGM'})
+    rec_attrs = {x: ('script',) for x in bush.game.scripts_types}
 
 class CBash_ImportScripts(_RecTypeModLogging, _AImportScripts):
 
@@ -1921,7 +1861,7 @@ class CBash_ImportInventory(_RecTypeModLogging, _AImportInventory):
 class _AImportActorsSpells(AImportPatcher):
     """Merges changes to the spells lists of Actors."""
     name = _(u'Import Actors: Spells')
-    text = _(u"Merges changes to NPC and creature spell lists.")
+    text = _(u'Merges changes to actor spell / effect lists.')
     tip = text
     autoKey = {u'Actors.Spells', u'Actors.SpellsForceAdd'}
 
@@ -1933,14 +1873,14 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
         super(ImportActorsSpells, self).initPatchFile(patchFile)
         # long_fid -> {'merged':list[long_fid], 'deleted':list[long_fid]}
         self.id_merged_deleted = {}
-        self.longTypes = {'CREA', 'NPC_'}
+        self.target_rec_types = bush.game.actor_types
 
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive: return
-        longTypes = self.longTypes
-        loadFactory = LoadFactory(False,MreRecord.type_class['CREA'],
-                                        MreRecord.type_class['NPC_'])
+        target_rec_types = self.target_rec_types
+        loadFactory = LoadFactory(False, *[MreRecord.type_class[x] for x
+                                           in target_rec_types])
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         mer_del = self.id_merged_deleted
@@ -1952,9 +1892,9 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
             masters = srcInfo.get_masters()
             bashTags = srcInfo.getBashTags()
             srcFile.load(True)
-            srcFile.convertToLongFids(longTypes)
+            srcFile.convertToLongFids(target_rec_types)
             mapper = srcFile.getLongMapper()
-            for recClass in (MreRecord.type_class[x] for x in ('NPC_','CREA')):
+            for recClass in (MreRecord.type_class[x] for x in target_rec_types):
                 if recClass.classType not in srcFile.tops: continue
                 for record in srcFile.tops[recClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
@@ -1967,10 +1907,10 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
                     masterInfo = bosh.modInfos[master]
                     masterFile = ModFile(masterInfo,loadFactory)
                     masterFile.load(True)
-                    masterFile.convertToLongFids(longTypes)
+                    masterFile.convertToLongFids(target_rec_types)
                     cachedMasters[master] = masterFile
                 mapper = masterFile.getLongMapper()
-                for block in (MreRecord.type_class[x] for x in ('NPC_','CREA')):
+                for block in (MreRecord.type_class[x] for x in target_rec_types):
                     if block.classType not in srcFile.tops: continue
                     if block.classType not in masterFile.tops: continue
                     for record in masterFile.tops[block.classType].getActiveRecords():
@@ -2050,18 +1990,18 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('NPC_','CREA',) if self.isActive else ()
+        return bush.game.actor_types if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('NPC_','CREA',) if self.isActive else ()
+        return bush.game.actor_types if self.isActive else ()
 
     def scanModFile(self, modFile, progress): # scanModFile2
         """Add record from modFile."""
         if not self.isActive: return
         merged_deleted = self.id_merged_deleted
         mapper = modFile.getLongMapper()
-        for type in ('NPC_','CREA'):
+        for type in self.target_rec_types:
             patchBlock = getattr(self.patchFile,type)
             for record in getattr(modFile,type).getActiveRecords():
                 fid = mapper(record.fid)
@@ -2075,7 +2015,7 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
         keep = self.patchFile.getKeeper()
         merged_deleted = self.id_merged_deleted
         mod_count = collections.defaultdict(int)
-        for rec_type in ('NPC_','CREA'):
+        for rec_type in self.target_rec_types:
             for record in getattr(self.patchFile,rec_type).records:
                 fid = record.fid
                 if fid not in merged_deleted: continue
@@ -2320,7 +2260,7 @@ class _ANpcFacePatcher(AImportPatcher):
         self.patchFile.patcher_mod_skipcount[self.name][faceMod] += 1
 
 class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
-    logMsg = u'\n=== '+_(u'Faces Patched')+ u': %d'
+    logMsg = u'\n=== '+_(u'Faces Patched') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self, patchFile):
@@ -2341,7 +2281,7 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
             faceFile = ModFile(faceInfo,loadFactory)
             masters = faceInfo.get_masters()
             bashTags = faceInfo.getBashTags()
-            faceFile.load(True)
+            faceFile.load(do_unpack=True)
             faceFile.convertToLongFids(('NPC_',))
             for npc in faceFile.NPC_.getActiveRecords():
                 if npc.fid[0] in self.patchFile.loadSet:
@@ -2349,7 +2289,8 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
                     if u'Npc.HairOnly' in bashTags:
                         fidattrs += ['hair']
                         attrs = ['hairLength','hairRed','hairBlue','hairGreen']
-                    if u'Npc.EyesOnly' in bashTags: fidattrs += ['eye']
+                    if u'Npc.EyesOnly' in bashTags:
+                        fidattrs += ['eye']
                     if fidattrs:
                         attr_fidvalue = dict(
                             (attr, npc.__getattribute__(attr)) for attr in
@@ -2367,8 +2308,7 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
                             temp_faceData[npc.fid] = dict(
                                 (attr, npc.__getattribute__(attr)) for attr in
                                 ('fggs_p', 'fgga_p', 'fgts_p', 'hairLength',
-                                 'hairRed', 'hairBlue', 'hairGreen',
-                                 'unused3'))
+                                 'hairRed', 'hairBlue', 'hairGreen'))
                         else:
                             temp_faceData[npc.fid] = dict(
                                 (attr, npc.__getattribute__(attr)) for attr in
@@ -2388,7 +2328,6 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
                         masterFile.load(True)
                         masterFile.convertToLongFids(('NPC_',))
                         cachedMasters[master] = masterFile
-                    mapper = masterFile.getLongMapper()
                     if 'NPC_' not in masterFile.tops: continue
                     for npc in masterFile.NPC_.getActiveRecords():
                         if npc.fid not in temp_faceData: continue
@@ -2416,7 +2355,6 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
         modName = modFile.fileInfo.name
         if not self.isActive or modName in self.srcs or 'NPC_' not in modFile.tops:
             return
-        mapper = modFile.getLongMapper()
         faceData,patchNpcs = self.faceData,self.patchFile.NPC_
         modFile.convertToLongFids(('NPC_',))
         for npc in modFile.NPC_.getActiveRecords():
@@ -2454,7 +2392,7 @@ class CBash_NpcFacePatcher(_ANpcFacePatcher,CBash_ImportPatcher):
         self.id_face = {}
         self.faceData = (
             'fggs_p', 'fgga_p', 'fgts_p', 'eye', 'hair', 'hairLength',
-            'hairRed', 'hairBlue', 'hairGreen', 'fnam')
+            'hairRed', 'hairBlue', 'hairGreen')
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -2518,144 +2456,6 @@ class CBash_NpcFacePatcher(_ANpcFacePatcher,CBash_ImportPatcher):
     def _clog(self,log): # type 2
         self._srcMods(log)
         super(CBash_NpcFacePatcher, self)._clog(log)
-
-#------------------------------------------------------------------------------
-class _ARoadImporter(AImportPatcher):
-    """Imports roads."""
-    name = _(u'Import Roads')
-    text = _(u"Import roads from source mods.")
-    tip = text
-    autoKey = {u'Roads'}
-
-class RoadImporter(ImportPatcher, _ARoadImporter):
-    logMsg = u'\n=== ' + _(u'Worlds Patched')
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self, patchFile):
-        super(RoadImporter, self).initPatchFile(patchFile)
-        self.world_road = {}
-
-    def initData(self,progress):
-        """Get cells from source files."""
-        if not self.isActive: return
-        loadFactory = LoadFactory(False,MreRecord.type_class['CELL'],
-                                        MreRecord.type_class['WRLD'],
-                                        MreRecord.type_class['ROAD'])
-        progress.setFull(len(self.srcs))
-        for srcMod in self.srcs:
-            if srcMod not in bosh.modInfos: continue
-            srcInfo = bosh.modInfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            srcFile.load(True)
-            srcFile.convertToLongFids(('WRLD','ROAD'))
-            for worldBlock in srcFile.WRLD.worldBlocks:
-                if worldBlock.road:
-                    worldId = worldBlock.world.fid
-                    road = worldBlock.road.getTypeCopy()
-                    self.world_road[worldId] = road
-        self.isActive = bool(self.world_road)
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('CELL','WRLD','ROAD',) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('CELL','WRLD','ROAD',) if self.isActive else ()
-
-    def scanModFile(self, modFile, progress): # scanModFile3 ?
-        """Add lists from modFile."""
-        if not self.isActive or 'WRLD' not in modFile.tops: return
-        patchWorlds = self.patchFile.WRLD
-        modFile.convertToLongFids(('CELL','WRLD','ROAD'))
-        for worldBlock in modFile.WRLD.worldBlocks:
-            if worldBlock.road:
-                worldId = worldBlock.world.fid
-                road = worldBlock.road.getTypeCopy()
-                patchWorlds.setWorld(worldBlock.world)
-                patchWorlds.id_worldBlocks[worldId].road = road
-
-    def buildPatch(self,log,progress): # buildPatch3: one type
-        """Adds merged lists to patchfile."""
-        if not self.isActive: return
-        keep = self.patchFile.getKeeper()
-        worldsPatched = set()
-        for worldBlock in self.patchFile.WRLD.worldBlocks:
-            worldId = worldBlock.world.fid
-            curRoad = worldBlock.road
-            newRoad = self.world_road.get(worldId)
-            if newRoad and (not curRoad or curRoad.points_p != newRoad.points_p
-                or curRoad.connections_p != newRoad.connections_p
-                ):
-                worldBlock.road = newRoad
-                keep(worldId)
-                keep(newRoad.fid)
-                worldsPatched.add((worldId[0].s,worldBlock.world.eid))
-        self.world_road.clear()
-        self._patchLog(log,worldsPatched)
-
-    def _plog(self,log,worldsPatched):
-        log(self.__class__.logMsg)
-        for modWorld in sorted(worldsPatched):
-            log(u'* %s: %s' % modWorld)
-
-class CBash_RoadImporter(CBash_ImportPatcher, _ARoadImporter):
-    logMsg = u'* ' + _(u'Roads Imported') + u': %d'
-    #The regular patch routine doesn't allow merging of world records. The CBash patch routine does.
-    #So, allowUnloaded isn't needed for this patcher to work. The same functionality could be gained by merging the tagged record.
-    #It is needed however so that the regular patcher and the CBash patcher have the same behavior.
-    #The regular patcher has to allow unloaded mods because it can't otherwise force the road record to be merged
-    #This isn't standard behavior for import patchers, but consistency between patchers is more important.
-
-    #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self, patchFile):
-        """Prepare to handle specified patch mod. All functions are called
-        after this."""
-        super(CBash_RoadImporter, self).initPatchFile(patchFile)
-        if not self.isActive: return
-        self.id_ROAD = {}
-
-    def getTypes(self):
-        """Returns the group types that this patcher checks"""
-        return ['ROADS']
-    #--Patch Phase ------------------------------------------------------------
-    def scan(self,modFile,record,bashTags):
-        """Records information needed to apply the patch."""
-        self.id_ROAD[record.fid] = record
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired."""
-        self.scan_more(modFile,record,bashTags)
-        recordId = record.fid
-        #If a previous road was scanned, and it is replaced by a new road
-        curRoad = record
-        newRoad = self.id_ROAD.get(recordId, None)
-        if newRoad:
-            #Roads and pathgrids are complex records...
-            #No good way to tell if the roads are equal.
-            #A direct comparison can prove equality, but not inequality
-            if curRoad.pgrp_list == newRoad.pgrp_list and curRoad.pgrr_list == newRoad.pgrr_list:
-                return
-            #So some records that are actually equal won't pass the above test and end up copied over
-            #Bloats the patch a little, but won't hurt anything.
-            if newRoad.fid.ValidateFormID(self.patchFile):
-                copyRoad = newRoad #Copy the new road over
-            elif curRoad and curRoad.fid.ValidateFormID(self.patchFile):
-                copyRoad = curRoad #Copy the current road over (its formID is acceptable)
-            else:
-                #Ignore the record.
-                self.patchFile.patcher_mod_skipcount[self.name][
-                    modFile.GName] += 1
-                return
-
-            override = copyRoad.CopyAsOverride(self.patchFile, UseWinningParents=True) #Copies the road over (along with the winning version of its parents if needed)
-            if override:
-                #Copy the new road values into the override (in case the CopyAsOverride returned a record pre-existing in the patch file)
-                for copyattr in newRoad.copyattrs:
-                    setattr(override, copyattr, getattr(newRoad, copyattr))
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
 class _ASoundPatcher(AImportPatcher):
@@ -2856,8 +2656,9 @@ class _ASpellsPatcher(AImportPatcher):
     scanOrder = 29
     editOrder = 29 #--Run ahead of bow patcher
     name = _(u'Import Spell Stats')
-    text = _(u"Import stats from any spells from source mods/files.")
-    autoKey = {u'Spells',u'SpellStats'}
+    text = _(u'Import stats from any spells / actor effects from source '
+             u'mods/files.')
+    autoKey = {u'Spells', u'SpellStats'}
 
 class SpellsPatcher(ImportPatcher, _ASpellsPatcher):
     logMsg = u'\n=== ' + _(u'Modified SPEL Stats')
@@ -2892,19 +2693,18 @@ class SpellsPatcher(ImportPatcher, _ASpellsPatcher):
         if not self.isActive or 'SPEL' not in modFile.tops:
             return
         id_stat = self.id_stat
-        mapper = modFile.getLongMapper()
         spell_attrs = self.spell_attrs
         patchBlock = self.patchFile.SPEL
         id_records = patchBlock.id_records
+        modFile.convertToLongFids(('SPEL',))
         for record in modFile.SPEL.getActiveRecords():
             fid = record.fid
-            if not record.longFids: fid = mapper(fid)
             if fid in id_records: continue
             spellStats = id_stat.get(fid)
             if not spellStats: continue
             oldValues = [getattr_deep(record, attr) for attr in spell_attrs]
             if oldValues != spellStats:
-                patchBlock.setRecord(record.getTypeCopy(mapper))
+                patchBlock.setRecord(record.getTypeCopy())
 
     def buildPatch(self,log,progress):# buildPatch3: one type
         """Adds merged lists to patchfile."""
@@ -2987,6 +2787,8 @@ class CBash_SpellsPatcher(CBash_ImportPatcher, _ASpellsPatcher):
                     record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
+# TODO(inf) Currently FNV-only, but don't move to game/falloutnv/patcher yet -
+#  this could potentially be refactored and reused for FO4's modifications
 class WeaponModsPatcher(_SimpleImporter):
     """Merge changes to weapon modifications for FalloutNV."""
     scanOrder = 27
@@ -3110,3 +2912,28 @@ class WeaponModsPatcher(_SimpleImporter):
                 type_count[type] += 1
         id_data = None
         self._patchLog(log, type_count)
+
+#------------------------------------------------------------------------------
+class KeywordsImporter(_SimpleImporter):
+    name = _(u'Import Keywords')
+    text = _(u'Import keyword changes from source mods.')
+    autoKey = {u'Keywords'}
+    rec_attrs = {x: ('keywords',) for x in bush.game.keywords_types}
+    # Keywords are all fids, so default to long_types == rec_attrs
+
+#------------------------------------------------------------------------------
+class TextImporter(_SimpleImporter):
+    name = _(u'Import Text')
+    text = _(u'Import various types of long-form text like book texts, effect '
+             u'descriptions, etc. from source mods.')
+    autoKey = {u'Text'}
+    rec_attrs = bush.game.text_types
+    long_types = bush.game.text_long_types
+
+#------------------------------------------------------------------------------
+class ObjectBoundsImporter(_SimpleImporter):
+    name = _(u'Import Object Bounds')
+    text = _(u'Import object bounds for various actors, items and objects.')
+    autoKey = {u'ObjectBounds'}
+    rec_attrs = {x: ('bounds',) for x in bush.game.object_bounds_types}
+    long_types = () # OBND never has fids

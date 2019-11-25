@@ -997,9 +997,6 @@ class NpcFacePatcher(importers.NpcFacePatcher, _ImporterPatcherPanel): pass
 class CBash_NpcFacePatcher(importers.CBash_NpcFacePatcher,
                            _ImporterPatcherPanel): pass
 
-class RoadImporter(importers.RoadImporter, _ImporterPatcherPanel): pass
-class CBash_RoadImporter(importers.CBash_RoadImporter, _ImporterPatcherPanel): pass
-
 class SoundPatcher(importers.SoundPatcher, _ImporterPatcherPanel): pass
 class CBash_SoundPatcher(importers.CBash_SoundPatcher, _ImporterPatcherPanel): pass
 
@@ -1017,6 +1014,12 @@ class CBash_SpellsPatcher(importers.CBash_SpellsPatcher,
 class DestructiblePatcher(importers.DestructiblePatcher, _ImporterPatcherPanel): pass
 
 class WeaponModsPatcher(importers.WeaponModsPatcher, _ImporterPatcherPanel): pass
+
+class KeywordsImporter(importers.KeywordsImporter, _ImporterPatcherPanel): pass
+
+class TextImporter(importers.TextImporter, _ImporterPatcherPanel): pass
+
+class ObjectBoundsImporter(importers.ObjectBoundsImporter, _ImporterPatcherPanel): pass
 
 # Patchers 30 -----------------------------------------------------------------
 class AssortedTweaker(multitweak_assorted.AssortedTweaker,
@@ -1078,15 +1081,26 @@ from .patcher_dialog import PBash_gui_patchers, CBash_gui_patchers, \
 # scope
 from importlib import import_module
 gamePatcher = import_module('.patcher', ##: move in bush.py !
-                       package=bush.game_mod.__name__)
-for patcher_name, typeInfo in gamePatcher.gameSpecificPatchers.items():
-    globals()[patcher_name] = type(patcher_name, (typeInfo.clazz, _PatcherPanel), {})
-    if typeInfo.twinPatcher:
-        otherPatcherDict[patcher_name] = typeInfo.twinPatcher
-for patcher_name, typeInfo in gamePatcher.gameSpecificListPatchers.items():
-    globals()[patcher_name] = type(patcher_name, (typeInfo.clazz, _ListPatcherPanel), {})
-    if typeInfo.twinPatcher:
-        otherPatcherDict[patcher_name] = typeInfo.twinPatcher
+                            package=bush.game_mod.__name__)
+# Patchers with no options
+for patcher_name, p_info in gamePatcher.gameSpecificPatchers.items():
+    globals()[patcher_name] = type(
+        patcher_name, (p_info.clazz, _PatcherPanel), {})
+    if p_info.twinPatcher:
+        otherPatcherDict[patcher_name] = p_info.twinPatcher
+# Simple list patchers
+for patcher_name, p_info in gamePatcher.gameSpecificListPatchers.items():
+    globals()[patcher_name] = type(
+        patcher_name, (p_info.clazz, _ListPatcherPanel), {})
+    if p_info.twinPatcher:
+        otherPatcherDict[patcher_name] = p_info.twinPatcher
+# Import patchers
+for patcher_name, p_info in \
+        gamePatcher.game_specific_import_patchers.items():
+    globals()[patcher_name] = type(
+        patcher_name, (p_info.clazz, _ImporterPatcherPanel), {})
+    if p_info.twinPatcher:
+        otherPatcherDict[patcher_name] = p_info.twinPatcher
 
 del import_module
 

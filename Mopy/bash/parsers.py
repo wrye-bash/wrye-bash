@@ -3029,7 +3029,7 @@ class SpellRecords(_UsesEffectsMixin):
     def __init__(self,types=None,aliases=None,detailed=False):
         self.fid_stats = {}
         self.aliases = aliases or {} #--For aliasing mod names
-        self.attrs = ('eid', 'full', 'cost', 'level', 'spellType')
+        self.attrs = bush.game.spell_stats_attrs
         self.detailed = detailed
         if detailed:
             self.attrs += ('flags.noAutoCalc', 'flags.startSpell',

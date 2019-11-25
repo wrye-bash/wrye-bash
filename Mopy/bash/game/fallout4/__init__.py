@@ -124,9 +124,13 @@ class Fallout4GameInfo(GameInfo):
         canEditHeader = True
         validHeaderVersions = (0.95,)
 
-    allTags = {u'Delev', u'Relev'}
+    allTags = {
+        u'Deactivate', u'Delev', u'Filter', u'ObjectBounds', u'Relev',
+    }
 
-    patchers = (u'ListsMerger',)
+    patchers = (
+        u'ListsMerger', u'ObjectBoundsImporter',
+    )
 
     # ---------------------------------------------------------------------
     # --Imported - MreGlob is special import, not in records.py
