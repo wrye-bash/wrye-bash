@@ -29,18 +29,18 @@ load_order.py."""
 # several older files in a directory would be useful (maybe limit to some
 # number, e.g. 5 older versions)
 
-__author__ = 'Utumno'
-
 import errno
 import re
 import time
 from collections import defaultdict
 # Local
-import bass
-import bolt
-import env
-import exception
-from localize import format_date
+from . import bass
+from . import bolt
+from . import env
+from . import exception
+from .localize import format_date
+
+__author__ = 'Utumno'
 
 def _write_plugins_txt_(path, lord, active, _star):
     try:

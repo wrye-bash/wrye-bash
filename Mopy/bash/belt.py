@@ -28,20 +28,20 @@ from collections import OrderedDict
 from functools import partial
 import os
 
-import ScriptParser         # generic parser class
-import bass
-import load_order
-from ScriptParser import error
+from . import ScriptParser         # generic parser class
+from . import bass
+from . import load_order
+from .ScriptParser import error
 import wx
 import wx.wizard as wiz     # wxPython wizard class
-import bosh, balt, bolt, bush
-from balt import vspace, hspace, set_event_hook, Events
-from env import get_file_version
+from . import bosh, balt, bolt, bush
+from .balt import vspace, hspace, set_event_hook, Events
+from .env import get_file_version
 import StringIO
 import traceback
 
 #Translateable strings
-from bosh import OBSEIniFile
+from .bosh import OBSEIniFile
 
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")
 MISSING_ARGS = _(u"Missing arguments to '%s'.")

@@ -27,6 +27,7 @@
 from __future__ import division
 import StringIO
 import cPickle
+import chardet
 import codecs
 import collections
 import copy
@@ -47,8 +48,7 @@ from binascii import crc32
 from functools import partial
 from itertools import chain
 # Internal
-import chardet
-import exception
+from . import exception
 
 # structure aliases, mainly introduced to reduce uses of 'pack' and 'unpack'
 struct_pack = struct.pack
@@ -598,7 +598,7 @@ class Path(object):
     @property
     def version(self):
         """File version (exe/dll) embedded in the file properties."""
-        from env import get_file_version
+        from .env import get_file_version
         return get_file_version(self._s)
 
     @property

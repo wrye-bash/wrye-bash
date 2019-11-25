@@ -22,8 +22,6 @@
 #
 # =============================================================================
 
-__author__ = "Ganda"
-
 from collections import defaultdict
 import wx
 import wx.wizard as wiz
@@ -31,6 +29,7 @@ import wx.wizard as wiz
 from .. import balt, bass, bolt, bosh, bush, env
 from ..fomod import FailedCondition, FomodInstaller
 
+__author__ = "Ganda"
 
 class WizardReturn(object):
     __slots__ = ("cancelled", "install_files", "install", "page_size", "pos")

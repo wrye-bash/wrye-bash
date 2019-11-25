@@ -32,23 +32,22 @@ from operator import attrgetter, itemgetter
 from collections import defaultdict
 import re
 # Internal
-import bolt
-import brec
-import bush # for game
-import bosh # for modInfos
-import env
-import load_order
-from balt import Progress
-from bolt import GPath, decode, deprint, CsvReader, csvFormat, SubProgress, \
+from . import bolt
+from . import brec
+from . import bush # for game
+from . import env
+from . import load_order
+from .balt import Progress
+from .bolt import GPath, decode, deprint, CsvReader, csvFormat, SubProgress, \
     struct_pack, struct_unpack
-from bass import dirs, inisettings
-from brec import MreRecord, MelObject, _coerce, genFid, ModReader, ModWriter, \
+from .bass import dirs, inisettings
+from .brec import MreRecord, MelObject, _coerce, genFid, ModReader, ModWriter, \
     RecordHeader
-from cint import ObCollection, FormID, aggregateTypes, validTypes, \
+from .cint import ObCollection, FormID, aggregateTypes, validTypes, \
     MGEFCode, ActorValue, ValidateList, pickupables, ExtractExportList, \
     ValidateDict, IUNICODE, getattr_deep, setattr_deep
-from exception import ArgumentError, MasterMapError, ModError, StateError
-from record_groups import MobDials, MobICells, MobWorlds, MobObjects, MobBase
+from .exception import ArgumentError, MasterMapError, ModError, StateError
+from .record_groups import MobDials, MobICells, MobWorlds, MobObjects, MobBase
 
 class ActorFactions(object):
     """Factions for npcs and creatures with functions for
@@ -64,6 +63,7 @@ class ActorFactions(object):
 
     def readFactionEids(self,modInfo):
         """Extracts faction editor ids from modInfo and its masters."""
+        from . import bosh
         loadFactory = LoadFactory(False,MreRecord.type_class['FACT'])
         for modName in (modInfo.get_masters() + [modInfo.name]):
             if modName in self.gotFactions: continue
@@ -303,6 +303,7 @@ class ActorLevels(object):
 
     def readFromMod(self,modInfo):
         """Imports actor level data from the specified mod and its masters."""
+        from . import bosh
         mod_id_levels, gotLevels = self.mod_id_levels, self.gotLevels
         loadFactory = LoadFactory(False,MreRecord.type_class['NPC_'])
         for modName in (modInfo.get_masters() + [modInfo.name]):
@@ -823,6 +824,7 @@ class FactionRelations(object):
 
     def readFactionEids(self,modInfo):
         """Extracts faction editor ids from modInfo and its masters."""
+        from . import bosh
         loadFactory = LoadFactory(False,MreRecord.type_class['FACT'])
         for modName in (modInfo.get_masters() + [modInfo.name]):
             if modName in self.gotFactions: continue
@@ -1151,6 +1153,7 @@ class CBash_FidReplacer(object):
 
     def updateMod(self,modInfo,changeBase=False):
         """Updates specified mod file."""
+        from . import bosh
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         #Filter the fid replacements to only include existing mods
         existing = bosh.modInfos.keys()
@@ -3959,6 +3962,7 @@ class ModFile(object):
 
     def load(self, do_unpack=False, progress=None, loadStrings=True):
         """Load file."""
+        from . import bosh
         progress = progress or bolt.Progress()
         progress.setFull(1.0)
         with ModReader(self.fileInfo.name,self.fileInfo.getPath().open('rb')) as ins:

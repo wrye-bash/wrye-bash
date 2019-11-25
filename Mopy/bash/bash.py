@@ -36,11 +36,11 @@ import sys
 import traceback
 from ConfigParser import ConfigParser
 # Local
-import bass
-import bolt
-import env
-import exception
-import localize
+from . import bass
+from . import bolt
+from . import env
+from . import exception
+from . import localize
 # NO OTHER LOCAL IMPORTS HERE (apart from the ones above) !
 basher = balt = initialization = None
 _wx = None
@@ -226,7 +226,7 @@ def _main(opts, wx_locale):
 
     :param opts: command line arguments
     :param wx_locale: The wx.Locale object that we ended up using."""
-    import barg
+    from . import barg
     bass.sys_argv = barg.convert_to_long_options(sys.argv)
 
     if opts.debug:
@@ -237,7 +237,7 @@ def _main(opts, wx_locale):
     assure_single_instance(instance)
 
     global initialization
-    import initialization
+    from . import initialization
     #--Bash installation directories, set on boot, not likely to change
     initialization.init_dirs_mopy()
 
@@ -247,7 +247,7 @@ def _main(opts, wx_locale):
         msg2 = _(u'done')
         try: print msg1
         except UnicodeError: print msg1.encode(bolt.Path.sys_fs_enc)
-        import belt # this imports bosh which imports wx (DUH)
+        from . import belt # this imports bosh which imports wx (DUH)
         bolt.WryeText.genHtml(opts.genHtml)
         try: print msg2
         except UnicodeError: print msg2.encode(bolt.Path.sys_fs_enc)
@@ -256,7 +256,7 @@ def _main(opts, wx_locale):
     # We need the Mopy dirs to initialize restore settings instance
     bash_ini_path, restore_ = u'bash.ini', None
     # import barb that does not import from bosh/balt/bush
-    import barb
+    from . import barb
     if opts.restore:
         try:
             restore_ = barb.RestoreSettings(opts.filename)
@@ -279,14 +279,14 @@ def _main(opts, wx_locale):
                 bolt.deprint(u'Failed to restore backup', traceback=True)
                 restore_.restore_ini()
                 # reset the game and ini
-                import bush
+                from . import bush
                 bush.reset_bush_globals()
                 bashIni, bush_game, game_ini_path = _detect_game(opts, u'bash.ini')
-        import bosh # this imports balt (DUH) which imports wx
+        from . import bosh # this imports balt (DUH) which imports wx
         bosh.initBosh(bashIni, game_ini_path)
         env.isUAC = env.testUAC(bush_game.gamePath.join(u'Data'))
         global basher, balt
-        import basher, balt
+        from . import basher, balt
     except (exception.BoltError, ImportError, OSError, IOError) as e:
         msg = u'\n'.join([_(u'Error! Unable to start Wrye Bash.'), u'\n', _(
             u'Please ensure Wrye Bash is correctly installed.'), u'\n',
@@ -393,7 +393,7 @@ def _detect_game(opts, backup_bash_ini):
     return bashIni, bush_game, game_ini_path
 
 def _import_bush_and_set_game(opts, bashIni):
-    import bush
+    from . import bush
     bolt.deprint(u'Searching for game to manage:')
     ret, game_icons = bush.detect_and_set_game(opts.oblivionPath, bashIni)
     if ret is not None:  # None == success

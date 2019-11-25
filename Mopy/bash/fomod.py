@@ -40,8 +40,6 @@ their children are available by iteration (subclassing Sequence) and useful
 xml attributes/text are available via instance attributes.
 """
 
-__author__ = "Ganda"
-
 import os
 from collections import OrderedDict, Sequence
 from distutils.version import LooseVersion
@@ -50,6 +48,7 @@ from xml.etree import ElementTree as etree
 from .bolt import Path
 from .load_order import cached_is_active
 
+__author__ = "Ganda"
 
 class FailedCondition(Exception):
     """

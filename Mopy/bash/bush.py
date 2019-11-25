@@ -30,11 +30,11 @@ Bash to use, so must be imported and run high up in the booting sequence.
 # Imports ---------------------------------------------------------------------
 import collections
 import textwrap
-import game as game_init
-import bass
-from bolt import GPath, Path, deprint
-from env import get_registry_game_path
-from exception import BoltError
+from . import game as game_init
+from . import bass
+from .bolt import GPath, Path, deprint
+from .env import get_registry_game_path
+from .exception import BoltError
 
 # Game detection --------------------------------------------------------------
 game = None         # type: game_init.GameInfo

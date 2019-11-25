@@ -38,21 +38,22 @@ lo/active from inside Bash.
 delegate to the game_handle.
 """
 
-__author__ = 'Utumno'
-
 from __future__ import division
 import sys
 import math
 import collections
 import time
 # Internal
-import balt
-import bass
-import bolt
-import bush
-import exception
+from . import balt
+from . import bass
+from . import bolt
+from . import bush
+from . import exception
 # Game instance providing load order operations API
-import _games_lo
+from . import _games_lo
+
+__author__ = 'Utumno'
+
 _game_handle = None # type: _games_lo.Game
 _plugins_txt_path = _loadorder_txt_path = _lord_pickle_path = None
 # Load order locking

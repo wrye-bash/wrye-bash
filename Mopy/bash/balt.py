@@ -28,14 +28,14 @@ import re
 import urllib
 import urlparse
 
-import bass # for dirs - try to avoid
+from . import bass # for dirs - try to avoid
 #--Localization
 #..Handled by bolt, so import that.
-import bolt
-from bolt import GPath, deprint
-from windows import StartURL
-from exception import AbstractError, AccessDeniedError, ArgumentError, \
+from . import bolt
+from .bolt import GPath, deprint
+from .exception import AbstractError, AccessDeniedError, ArgumentError, \
     BoltError, CancelError, SkipError, StateError
+from .windows import StartURL
 #--Python
 import cPickle
 import textwrap
@@ -805,7 +805,7 @@ def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
 
 # Message Dialogs -------------------------------------------------------------
 try:
-    import windows as _win # only import here !
+    from . import windows as _win # only import here !
     canVista = _win.TASK_DIALOG_AVAILABLE
 except ImportError: # bare linux (in wine it's imported but malfunctions)
     deprint('Importing windows.py failed', traceback=True)
