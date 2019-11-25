@@ -28,11 +28,11 @@ import os
 import sys
 from ConfigParser import ConfigParser
 # Local - don't import anything else
-import env
-from bass import dirs, get_ini_option
-from bolt import GPath, Path
-from env import get_personal_path, get_local_app_data_path
-from exception import BoltError, NonExistentDriveError
+from . import env
+from .bass import dirs, get_ini_option
+from .bolt import GPath, Path
+from .env import get_personal_path, get_local_app_data_path
+from .exception import BoltError, NonExistentDriveError
 
 mopy_dirs_initialized = bash_dirs_initialized = False
 

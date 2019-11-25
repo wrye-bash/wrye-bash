@@ -29,8 +29,6 @@ http://www.uesp.net/wiki/Tes4Mod:BSA_File_Format
 http://www.uesp.net/wiki/Tes5Mod:Archive_File_Format
 """
 
-__author__ = 'Utumno'
-
 import collections
 import errno
 import os
@@ -44,6 +42,8 @@ from ..bolt import deprint, Progress, struct_pack, struct_unpack, \
     unpack_byte, unpack_string, unpack_int
 from ..exception import BSAError, BSADecodingError, BSAFlagError, \
     BSANotImplemented
+
+__author__ = 'Utumno'
 
 _bsa_encoding = 'cp1252' # rumor has it that's the files/folders names encoding
 path_sep = u'\\'

@@ -28,8 +28,6 @@
 - use the alpha data from the image
 """
 
-__author__ = 'Utumno'
-
 from __future__ import division
 import copy
 import itertools
@@ -44,6 +42,8 @@ from ..bolt import decode, cstrip, unpack_string, unpack_int, unpack_str8, \
     struct_unpack, unpack_int_delim, unpack_str16_delim, unpack_byte_delim, \
     unpack_many
 from ..exception import SaveHeaderError, raise_bolt_error
+
+__author__ = 'Utumno'
 
 class SaveFileHeader(object):
     save_magic = 'OVERRIDE'

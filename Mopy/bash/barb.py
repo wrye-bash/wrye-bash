@@ -41,13 +41,13 @@ import cPickle
 import os
 from os.path import join as jo
 
-import archives
-import bass # for settings (duh!)
-import bolt
-import initialization
-from bass import dirs, AppVersion
-from bolt import GPath, deprint
-from exception import BoltError, StateError, raise_bolt_error
+from . import archives
+from . import bass # for settings (duh!)
+from . import bolt
+from . import initialization
+from .bass import dirs, AppVersion
+from .bolt import GPath, deprint
+from .exception import BoltError, StateError, raise_bolt_error
 
 def _init_settings_files(fsName_):
     """Construct a dict mapping directory paths to setting files. Keys are

@@ -22,8 +22,6 @@
 #
 # =============================================================================
 
-__author__ = "Ganda"
-
 from collections import defaultdict
 import wx
 import wx.wizard as wiz
@@ -33,6 +31,8 @@ from ..balt import Events, set_event_hook
 from ..gui import CENTER, CheckBox, HBoxedLayout, HLayout, Label, \
     LayoutOptions, TextArea, VLayout
 from ..fomod import FailedCondition, FomodInstaller
+
+__author__ = "Ganda"
 
 class WizardReturn(object):
     __slots__ = ("cancelled", "install_files", "install", "page_size", "pos")

@@ -27,8 +27,6 @@ read them to log stats and write them to remap espm masters. We only handle
 renaming of the masters of the xSE plugin chunk itself and of the Pluggy chunk.
 """
 
-__author__ = 'Infernio'
-
 import binascii
 import re
 import string
@@ -38,6 +36,8 @@ from ..bolt import sio, decode, encode, struct_pack, struct_unpack, \
     unpack_string, unpack_int, unpack_short, unpack_4s, unpack_byte, \
     unpack_str16, unpack_float, unpack_double, unpack_int_signed, unpack_str32
 from ..exception import AbstractError, FileError, BoltError
+
+__author__ = 'Infernio'
 
 #------------------------------------------------------------------------------
 # Utilities

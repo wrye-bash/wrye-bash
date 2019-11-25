@@ -27,23 +27,21 @@ from __future__ import division
 from collections import OrderedDict
 from functools import partial
 import os
-
-import ScriptParser         # generic parser class
-import bass
-import load_order
-from ScriptParser import error
-import wx
-import wx.wizard as wiz     # wxPython wizard class
-import bosh, balt, bolt, bush
-from balt import Image, set_event_hook, Events
-from .gui import BOTTOM, CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
-    Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel
-from env import get_file_version
 import StringIO
 import traceback
+import wx
+import wx.wizard as wiz     # wxPython wizard class
+
+from . import ScriptParser         # generic parser class
+from . import balt, bass, bolt, bosh, bush, load_order
+from .balt import Image, set_event_hook, Events
+from .gui import BOTTOM, CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
+    Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel
+from .env import get_file_version
+from .ScriptParser import error
 
 #Translateable strings
-from bosh import OBSEIniFile
+from .bosh import OBSEIniFile
 
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")
 MISSING_ARGS = _(u"Missing arguments to '%s'.")

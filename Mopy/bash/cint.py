@@ -44,11 +44,11 @@ import os
 from os.path import exists, join
 try:
     #See if cint is being used by Wrye Bash
-    from bolt import CBash as CBashEnabled
-    from bolt import GPath, deprint, Path
-    from bolt import encode as _enc
-    from bolt import decode as _uni
-    import bolt
+    from .bolt import CBash as CBashEnabled
+    from .bolt import GPath, deprint, Path
+    from .bolt import encode as _enc
+    from .bolt import decode as _uni
+    from . import bolt
     def _encode(text,*args,**kwdargs):
         if len(args) > 1:
             args = list(args)
@@ -171,7 +171,7 @@ try:
             if isinstance(path,unicode) and os.name in ('nt','ce'):
                 LoadLibrary = windll.kernel32.LoadLibraryW
                 handle = LoadLibrary(path)
-            from env import get_file_version
+            from .env import get_file_version
             if get_file_version(path) < (0, 7):
                 raise ImportError(u'Bundled CBash version is too old for this '
                                   u'Wrye Bash version. Only 0.7.0+ is '
