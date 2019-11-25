@@ -23,6 +23,7 @@
 # =============================================================================
 
 """Specific parser for Wrye Bash."""
+from __future__ import division
 from collections import OrderedDict
 from functools import partial
 import os

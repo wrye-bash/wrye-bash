@@ -23,6 +23,7 @@
 # =============================================================================
 
 # Imports ---------------------------------------------------------------------
+from __future__ import division
 import re
 import bass # for dirs - try to avoid
 #--Localization
@@ -2894,7 +2895,7 @@ class DnDStatusBar(wx.StatusBar):
         for i, button in enumerate(self.buttons):
             if button._native_widget.GetId() == id_:
                 x = mouseEvent.GetPosition()[0]
-                delta = x / self.iconsSize
+                delta = x // self.iconsSize
                 if abs(x) % self.iconsSize > self.iconsSize:
                     delta += x / abs(x)
                 i += delta

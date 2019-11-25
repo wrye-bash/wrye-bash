@@ -37,6 +37,7 @@
 #
 ####### END LICENSE BLOCK ######
 
+from __future__ import division
 from ctypes import *
 import math
 import os
@@ -8999,7 +9000,7 @@ class FnvCELLRecord(FnvBaseRecord):
         #--Interior cell
         if self.IsInterior:
             ObjectID = self.fid[1]
-            return (ObjectID % 10, (ObjectID / 10) % 10)
+            return (ObjectID % 10, (ObjectID // 10) % 10)
         #--Exterior cell
         else:
             subblockX = int(math.floor((self.posX or 0) / 8.0))
@@ -11537,7 +11538,7 @@ class ObCELLRecord(ObBaseRecord):
         #--Interior cell
         if self.IsInterior:
             ObjectID = self.fid[1]
-            return (ObjectID % 10, (ObjectID / 10) % 10)
+            return (ObjectID % 10, (ObjectID // 10) % 10)
         #--Exterior cell
         else:
             subblockX = int(math.floor((self.posX or 0) / 8.0))

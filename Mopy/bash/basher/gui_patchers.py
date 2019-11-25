@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from __future__ import division
 import copy
 import string
 import re

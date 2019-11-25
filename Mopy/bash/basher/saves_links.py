@@ -25,6 +25,7 @@
 """Menu items for the main and item menus of the saves tab - their window
 attribute points to BashFrame.saveList singleton."""
 
+from __future__ import division
 import StringIO
 import re
 import shutil
