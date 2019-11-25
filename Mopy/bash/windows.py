@@ -28,7 +28,7 @@
 #
 
 from ctypes import *
-from bolt import deprint
+from .bolt import deprint
 import subprocess
 
 try:

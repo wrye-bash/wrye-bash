@@ -27,7 +27,7 @@ read them to log stats and write them to remap espm masters. We only handle
 renaming of the masters of the xSE plugin chunk itself and of the Pluggy chunk.
 """
 
-__author__ = 'Infernio'
+__author__ = u'Infernio'
 
 import binascii
 import re

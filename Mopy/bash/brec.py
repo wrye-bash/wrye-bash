@@ -33,9 +33,9 @@ import struct
 import zlib
 from operator import attrgetter
 
-import bolt
-import exception
-from bolt import decode, encode, sio, GPath, struct_pack, struct_unpack
+from . import bolt
+from . import exception
+from .bolt import decode, encode, sio, GPath, struct_pack, struct_unpack
 
 # Util Functions --------------------------------------------------------------
 #--Type coercion
@@ -2649,9 +2649,9 @@ class MreGmstBase(MelRecord):
         """Returns <Oblivion/Skyrim/etc>.esm fid in long format for specified
            eid."""
         cls = self.__class__
-        import bosh # Late import to avoid circular imports
+        from . import bosh # Late import to avoid circular imports
         if not cls.Ids:
-            import bush
+            from . import bush
             fname = bush.game.pklfile
             try:
                 with open(fname) as pkl_file:
@@ -3026,7 +3026,7 @@ class MreHasEffects(object):
 
     def getEffects(self):
         """Returns a summary of effects. Useful for alchemical catalog."""
-        import bush
+        from . import bush
         effects = []
         effectsAppend = effects.append
         for effect in self.effects:
@@ -3038,7 +3038,7 @@ class MreHasEffects(object):
 
     def getSpellSchool(self):
         """Returns the school based on the highest cost spell effect."""
-        import bush
+        from . import bush
         spellSchool = [0,0]
         for effect in self.effects:
             school = bush.game.mgef_school[effect.name]
@@ -3055,7 +3055,7 @@ class MreHasEffects(object):
 
     def getEffectsSummary(self):
         """Return a text description of magic effects."""
-        import bush
+        from . import bush
         with sio() as buff:
             avEffects = bush.game.generic_av_effects
             aValues = bush.game.actor_values

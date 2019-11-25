@@ -46,11 +46,11 @@ import os
 from os.path import exists, join
 try:
     #See if cint is being used by Wrye Bash
-    from bolt import CBash as CBashEnabled
-    from bolt import GPath, deprint, Path
-    from bolt import encode as _enc
-    from bolt import decode as _uni
-    import bolt
+    from .bolt import CBash as CBashEnabled
+    from .bolt import GPath, deprint, Path
+    from .bolt import encode as _enc
+    from .bolt import decode as _uni
+    from . import bolt
     def _encode(text,*args,**kwdargs):
         if len(args) > 1:
             args = list(args)

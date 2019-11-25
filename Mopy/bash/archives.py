@@ -25,9 +25,9 @@ import os
 import re
 import subprocess
 
-import bass
-from bolt import startupinfo, GPath, deprint, walkdir
-from exception import StateError
+from . import bass
+from .bolt import startupinfo, GPath, deprint, walkdir
+from .exception import StateError
 
 exe7z = u'7z.exe' if os.name == u'nt' else u'7z'
 # TODO(inf) stuck it here for now - should probably go somewhere else

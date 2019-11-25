@@ -33,8 +33,8 @@ from ctypes import byref, c_wchar_p, c_void_p, POINTER, Structure, windll, \
     wintypes
 from uuid import UUID
 
-from bolt import GPath, deprint, Path, decode, struct_unpack
-from exception import BoltError, CancelError, SkipError, AccessDeniedError, \
+from .bolt import GPath, deprint, Path, decode, struct_unpack
+from .exception import BoltError, CancelError, SkipError, AccessDeniedError, \
     DirectoryFileCollisionError, FileOperationError, NonExistentDriveError
 
 try:
@@ -609,7 +609,7 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
                                       parent, __shell=False)
             raise FileOperationErrorMap.get(result, FileOperationError(result))
     else: # Use custom dialogs and such
-        import balt # TODO(ut): local import, env should be above balt...
+        from . import balt # TODO(ut): local import, env should be above balt...
         source = map(GPath, source)
         target = map(GPath, target)
         if operation == FO_DELETE:
