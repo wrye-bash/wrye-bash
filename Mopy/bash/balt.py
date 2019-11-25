@@ -23,6 +23,7 @@
 # =============================================================================
 
 # Imports ---------------------------------------------------------------------
+from __future__ import division
 import re
 import urllib
 import urlparse
@@ -3175,7 +3176,7 @@ class DnDStatusBar(wx.StatusBar):
         for i, button in enumerate(self.buttons):
             if button.GetId() == id_:
                 x = mouseEvent.GetPosition()[0]
-                delta = x / self.iconsSize
+                delta = x // self.iconsSize
                 if abs(x) % self.iconsSize > self.iconsSize:
                     delta += x / abs(x)
                 i += delta

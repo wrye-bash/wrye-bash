@@ -52,6 +52,7 @@ has its own data store)."""
 
 # Imports ---------------------------------------------------------------------
 #--Python
+from __future__ import division
 import StringIO
 import collections
 import os
@@ -1851,8 +1852,8 @@ class SaveList(balt.UIList):
     @staticmethod
     def _playTime(saveInfo):
         if not saveInfo.header: return u'-'
-        playMinutes = saveInfo.header.gameTicks / 60000
-        return u'%d:%02d' % (playMinutes/60, (playMinutes % 60))
+        playMinutes = saveInfo.header.gameTicks // 60000
+        return u'%d:%02d' % (playMinutes//60, (playMinutes % 60))
     labels = OrderedDict([
         ('File',     lambda self, p: p.s),
         ('Modified', lambda self, p: format_date(self.data_store[p].mtime)),
@@ -1961,7 +1962,7 @@ class SaveDetails(_SashDetailsPanel):
         self._set_player_info_label()
         self.gCoSaves = StaticText(top,u'--\n--')
         #--Picture
-        self.picture = balt.Picture(top, textWidth, 192 * textWidth / 256,
+        self.picture = balt.Picture(top, textWidth, 192 * textWidth // 256,
             background=colors['screens.bkgd.image']) #--Native: 256x192
         #--Save Info
         self.gInfo = TextCtrl(self._bottom_low_panel, size=(textWidth, 64),
@@ -2004,7 +2005,7 @@ class SaveDetails(_SashDetailsPanel):
             self.playerNameStr = saveInfo.header.pcName
             self.curCellStr = saveInfo.header.pcLocation
             self.gameDays = saveInfo.header.gameDays
-            self.playMinutes = saveInfo.header.gameTicks/60000
+            self.playMinutes = saveInfo.header.gameTicks//60000
             self.playerLevel = saveInfo.header.pcLevel
             self.coSaves = saveInfo.get_cosave_tags()
         #--Set Fields
@@ -2029,7 +2030,7 @@ class SaveDetails(_SashDetailsPanel):
         self.playerInfo.SetLabel((self.playerNameStr + u'\n' +
             _(u'Level') + u' %d, ' + _(u'Day') + u' %d, ' +
             _(u'Play') + u' %d:%02d\n%s') % (
-            self.playerLevel, int(self.gameDays), self.playMinutes / 60,
+            self.playerLevel, int(self.gameDays), self.playMinutes // 60,
             (self.playMinutes % 60), self.curCellStr))
 
     def OnInfoEdit(self,event):

@@ -30,6 +30,7 @@
 
 __author__ = 'Utumno'
 
+from __future__ import division
 import copy
 import itertools
 import StringIO

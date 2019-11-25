@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from __future__ import division
 import subprocess
 import webbrowser
 from . import BashStatusBar, BashFrame
@@ -198,7 +199,7 @@ class App_Button(StatusBar_Button):
     def GetBitmapButton(self, window, style, **kwdargs):
         if not self.IsPresent(): return None
         size = bass.settings['bash.statusbar.iconSize'] # 16, 24, 32
-        idex = (size / 8) - 2 # 0, 1, 2, duh
+        idex = (size // 8) - 2 # 0, 1, 2, duh
         super(App_Button, self).GetBitmapButton(window, style=style,
               image=self.images[idex].GetBitmap())
         if self.obseTip is not None:

@@ -24,6 +24,7 @@
 
 """Classes that group records."""
 # Python imports
+from __future__ import division
 from operator import itemgetter
 # Wrye Bash imports
 from brec import ModReader, RecordHeader

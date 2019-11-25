@@ -24,6 +24,7 @@
 
 """This module contains oblivion multitweak item patcher classes that belong
 to the Assorted Multitweaker - as well as the AssortedTweaker itself."""
+from __future__ import division
 import collections
 import random
 import re
@@ -1494,7 +1495,7 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(
             uses = self.choiceValues[self.chosen][0]
             cost = uses
             if uses != 0:
-                cost = max(record.chargeAmount/uses,1)
+                cost = max(record.chargeAmount//uses,1)
             amount = cost * uses
             if record.enchantCost != cost or record.chargeAmount != amount:
                 override = record.CopyAsOverride(self.patchFile)
@@ -1869,7 +1870,7 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels(
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        choice = self.choiceValues[self.chosen][0] / 100
+        choice = self.choiceValues[self.chosen][0] // 100
         if choice == 1:  # Prevent any pointless changes if a custom value
             # of 100 is used.
             return

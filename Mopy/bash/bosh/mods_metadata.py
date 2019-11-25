@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from __future__ import division
 import errno
 import os
 
@@ -513,7 +514,7 @@ class ModCleaner(object):
         numMods = len(modInfos)
         if numMods > 255:
             ModsPerGroup = 200
-            numGroups = numMods / ModsPerGroup
+            numGroups = numMods // ModsPerGroup
             if numMods % ModsPerGroup:
                 numGroups += 1
         else:
@@ -715,7 +716,7 @@ class ModCleaner(object):
         numMods = len(cleaners)
         if numMods > 255:
             ModsPerGroup = 200
-            numGroups = numMods / ModsPerGroup
+            numGroups = numMods // ModsPerGroup
             if numMods % ModsPerGroup:
                 numGroups += 1
         else:
