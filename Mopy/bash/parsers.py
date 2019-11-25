@@ -24,6 +24,7 @@
 
 """This module contains the parser classes used by the importer patcher classes
 and the Mod_Import/Export Mods menu."""
+from __future__ import division
 import ctypes
 from _ctypes import POINTER
 from ctypes import cast, c_ulong

@@ -25,6 +25,7 @@
 Oblivion only . We need this split into cosaves and proper saves module and
 coded for rest of the games."""
 # TODO: Oblivion only - we need to support rest of games - help needed
+from __future__ import division
 from collections import Counter
 from itertools import starmap, repeat
 from operator import attrgetter
@@ -529,7 +530,7 @@ class SaveFile(object):
             id_created[citem.fid] = citem
         for type in sorted(createdHisto.keys()):
             count,size = createdHisto[type]
-            log(u'  %d\t%d kb\t%s' % (count,size/1024,type))
+            log(u'  %d\t%d kb\t%s' % (count,size//1024,type))
         #--Fids
         lostRefs = 0
         idHist = [0]*256
@@ -608,7 +609,7 @@ class SaveFile(object):
                     parentid = iref
                 else:
                     parentid = self.fids[iref]
-                log(u'%6d %08X %08X %6d kb' % (count,iref,parentid,cumSize/1024))
+                log(u'%6d %08X %08X %6d kb' % (count,iref,parentid,cumSize//1024))
 
     def findBloating(self,progress=None):
         """Analyzes file for bloating. Returns (createdCounts,nullRefCount)."""
@@ -833,8 +834,8 @@ class SaveEnchantments(object):
                     if record.enchantCost == 0: continue
                     record.enchantCost = 0
                 else:
-                    if record.enchantCost == max(record.chargeAmount/uses,1): continue
-                    record.enchantCost = max(record.chargeAmount/uses,1)
+                    if record.enchantCost == max(record.chargeAmount//uses,1): continue
+                    record.enchantCost = max(record.chargeAmount//uses,1)
                 record.setChanged()
                 record.getSize()
                 count += 1

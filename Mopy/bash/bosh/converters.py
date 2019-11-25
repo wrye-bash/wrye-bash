@@ -23,6 +23,7 @@
 # =============================================================================
 """BAIN Converters aka BCFs"""
 
+from __future__ import division
 import cPickle
 import re
 import sys

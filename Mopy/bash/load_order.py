@@ -40,6 +40,7 @@ delegate to the game_handle.
 
 __author__ = 'Utumno'
 
+from __future__ import division
 import sys
 import math
 import collections
@@ -179,7 +180,7 @@ def persist_orders(__keep_max=256):
     _lords_pickle.save()
 
 def _keep_max(max_to_keep, length):
-    max_2 = max_to_keep / 2
+    max_2 = max_to_keep // 2
     y = length - _current_list_index
     if y <= max_2:
         x = max_to_keep - y

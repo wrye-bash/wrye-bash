@@ -23,6 +23,7 @@
 # =============================================================================
 
 # Imports ---------------------------------------------------------------------
+from __future__ import division
 import re
 import bass # for dirs - try to avoid
 #--Localization

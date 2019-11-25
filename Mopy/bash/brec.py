@@ -24,6 +24,7 @@
 
 """This module contains all of the basic types used to read ESP/ESM mod files.
 """
+from __future__ import division
 import cPickle
 import copy
 import os
@@ -743,7 +744,7 @@ class MelFidList(MelFids):
 
     def loadData(self, record, ins, sub_type, size_, readId):
         if not size_: return
-        fids = ins.unpack(`size_ / 4` + 'I', size_, readId)
+        fids = ins.unpack(`size_ // 4` + 'I', size_, readId)
         record.__setattr__(self.attr,list(fids))
 
     def dumpData(self,record,out):
@@ -1468,7 +1469,7 @@ class MelArray(MelBase):
         entry_slots = self._element_attrs
         entry_size = self._element_size
         load_entry = self._element.loadData
-        for x in xrange(size_ / entry_size):
+        for x in xrange(size_ // entry_size):
             arr_entry = MelObject()
             append_entry(arr_entry)
             arr_entry.__slots__ = entry_slots
@@ -3045,7 +3046,7 @@ class MreHasEffects(object):
             if effect.magnitude:
                 effectValue *=  effect.magnitude
             if effect.area:
-                effectValue *=  (effect.area/10)
+                effectValue *=  (effect.area//10)
             if effect.duration:
                 effectValue *=  effect.duration
             if spellSchool[0] < effectValue:

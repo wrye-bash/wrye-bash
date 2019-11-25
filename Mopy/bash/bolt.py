@@ -24,6 +24,7 @@
 
 # Imports ---------------------------------------------------------------------
 #--Standard
+from __future__ import division
 import StringIO
 import cPickle
 import codecs
@@ -175,7 +176,7 @@ def timestamp(): return datetime.datetime.now().strftime(u'%Y-%m-%d %H.%M.%S')
 
 def round_size(kbytes):
     """Round non zero sizes to 1 KB."""
-    return u'%u KB' % (0 if kbytes == 0 else max(kbytes, 1024) / 1024)
+    return u'%u KB' % (0 if kbytes == 0 else max(kbytes, 1024) // 1024)
 
 # Helpers ---------------------------------------------------------------------
 def sortFiles(files, __split=os.path.split):
@@ -2254,7 +2255,7 @@ class WryeText(object):
                 text = maList.group(3)
                 if bullet == u'.': bullet = u'&nbsp;'
                 elif bullet == u'*': bullet = u'&bull;'
-                level = len(spaces)/2 + 1
+                level = len(spaces)//2 + 1
                 line = spaces+u'<p class="list-%i">'%level+bullet+u'&nbsp; '
                 line = line + text + u'</p>\n'
             #--Empty line
