@@ -1467,7 +1467,7 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
     # Ripped from Tank - _Monkey patch_ - we need a proper ListCtrl subclass
 
     def __id(self, item):
-        i = long(wx.NewId())
+        i = int(wx.NewId())
         self._item_itemId[item] = i
         self._itemId_item[i] = item
         return i

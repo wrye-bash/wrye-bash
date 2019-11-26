@@ -73,7 +73,7 @@ def strFid(fid):
 
 def genFid(modIndex,objectIndex):
     """Generates a fid from modIndex and ObjectIndex."""
-    return long(objectIndex) | (long(modIndex) << 24)
+    return int(objectIndex) | (int(modIndex) << 24)
 
 def getModIndex(fid):
     """Returns the modIndex portion of a fid."""
@@ -81,11 +81,11 @@ def getModIndex(fid):
 
 def getObjectIndex(fid):
     """Returns the objectIndex portion of a fid."""
-    return int(fid & 0x00FFFFFFL)
+    return int(fid & 0x00FFFFFF)
 
 def getFormIndices(fid):
     """Returns tuple of modIndex and ObjectIndex of fid."""
-    return int(fid >> 24),int(fid & 0x00FFFFFFL)
+    return int(fid >> 24),int(fid & 0x00FFFFFF)
 
 # Mod I/O ---------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2228,7 +2228,7 @@ class MreSubrecord(object):
 class MreRecord(object):
     """Generic Record. flags1 are game specific see comments."""
     subtype_attr = {'EDID':'eid','FULL':'full','MODL':'model'}
-    flags1_ = bolt.Flags(0L, bolt.Flags.getNames(
+    flags1_ = bolt.Flags(0, bolt.Flags.getNames(
         # {Sky}, {FNV} 0x00000000 ACTI: Collision Geometry (default)
         ( 0,'esm'), # {0x00000001}
         # {Sky}, {FNV} 0x00000004 ARMO: Not playable
@@ -2714,7 +2714,7 @@ class MreLeveledListBase(MelRecord):
           chanceNone
           flags
     """
-    _flags = bolt.Flags(0L,bolt.Flags.getNames(
+    _flags = bolt.Flags(0,bolt.Flags.getNames(
         (0, 'calcFromAllLevels'),
         (1, 'calcForEachItem'),
         (2, 'useAllSpells'),
@@ -2938,21 +2938,21 @@ class MelRaceVoices(MelStruct):
     """Set voices to zero, if equal race fid. If both are zero, then skip
     dumping."""
     def dumpData(self, record, out):
-        if record.maleVoice == record.fid: record.maleVoice = 0L
-        if record.femaleVoice == record.fid: record.femaleVoice = 0L
+        if record.maleVoice == record.fid: record.maleVoice = 0
+        if record.femaleVoice == record.fid: record.femaleVoice = 0
         if (record.maleVoice, record.femaleVoice) != (0, 0):
             MelStruct.dumpData(self, record, out)
 
 #------------------------------------------------------------------------------
 class MelScriptVars(MelGroups):
     """Handles SLSD and SCVR combos defining script variables."""
-    _var_flags = bolt.Flags(0L, bolt.Flags.getNames('is_long_or_short'))
+    _var_flags = bolt.Flags(0, bolt.Flags.getNames('is_long_or_short'))
 
     def __init__(self):
         MelGroups.__init__(self, 'script_vars',
             MelStruct('SLSD', 'I12sB7s', 'var_index',
                       ('unused1', null4 + null4 + null4),
-                      (self._var_flags, 'var_flags', 0L),
+                      (self._var_flags, 'var_flags', 0),
                       ('unused2', null4 + null3)),
             MelString('SCVR', 'var_name'),
         )

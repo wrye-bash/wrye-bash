@@ -71,7 +71,7 @@ undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
 empty_path = GPath(u'') # evaluates to False in boolean expressions
 undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
 #..Bit-and this with the fid to get the objectindex.
-oiMask = 0xFFFFFFL
+oiMask = 0xFFFFFF
 
 #--Singletons
 gameInis = None    # type: tuple[OblivionIni]
