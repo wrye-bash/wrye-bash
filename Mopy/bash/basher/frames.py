@@ -288,8 +288,8 @@ class DocBrowser(BaltFrame):
         super(DocBrowser, self).OnCloseWindow()
 
 #------------------------------------------------------------------------------
-_BACK, _FORWARD, _MOD_LIST, _RULE_SETS, _NOTES, _CONFIG, _SUGGEST, \
-_CRC, _VERSION, _SCAN_DIRTY, _COPY_TEXT, _UPDATE = range(12)
+_BACK, _FORWARD, _MOD_LIST, _CRC, _VERSION, _SCAN_DIRTY, _COPY_TEXT, \
+_UPDATE = range(8)
 
 def _get_mod_checker_setting(key, default=None):
     return bass.settings.get('bash.modChecker.show{}'.format(key), default)
@@ -333,10 +333,6 @@ class ModChecker(BaltFrame):
         _f(_MOD_LIST,   'toggle', _(u'Mod List'), 'ModList', False)
         _f(_VERSION,    'check',  _(u'Version Numbers'), 'Version', True)
         _f(_CRC,        'check',  _(u'CRCs'),            'CRC', False)
-        _f(_RULE_SETS,  'toggle', _(u'Rule Sets'),       'RuleSets', False)
-        _f(_NOTES,      'check',  _(u'Notes'),           'Notes', True)
-        _f(_CONFIG,     'check',  _(u'Configuration'),   'Config', True)
-        _f(_SUGGEST,    'check',  _(u'Suggestions'),     'Suggest', True)
         _f(_SCAN_DIRTY, 'toggle', (_(u'Scan for Dirty Edits')
                                    if bass.settings['bash.CBashEnabled']
                                    else _(u"Scan for UDR's")))
@@ -353,9 +349,7 @@ class ModChecker(BaltFrame):
         top_row.add(self._buttons[_COPY_TEXT])
         # Bottom row
         bottom_row = HBox(spacing=4)
-        bottom_row.add_many(self._buttons[_SCAN_DIRTY],
-                            self._buttons[_RULE_SETS], self._buttons[_NOTES],
-                            self._buttons[_CONFIG], self._buttons[_SUGGEST])
+        bottom_row.add(self._buttons[_SCAN_DIRTY])
         bottom_row.add_stretch()
         bottom_row.add(self._buttons[_UPDATE])
         # Main layout
@@ -375,17 +369,14 @@ class ModChecker(BaltFrame):
 
     def CheckMods(self):
         """Do mod check."""
-        for btn_id in [_MOD_LIST, _RULE_SETS]:
-            _set_mod_checker_setting(self._setting_names[btn_id],
-                                     self._buttons[btn_id].GetValue())
-        # Enable or disable the children of ModList and RuleSets buttons
-        for parent, btn_ids in [(_MOD_LIST, (_CRC, _VERSION)),
-                                (_RULE_SETS, (_NOTES, _CONFIG, _SUGGEST))]:
-            key = self._setting_names[parent]
-            for btn_id in btn_ids:
-                self._buttons[btn_id].Enable(_get_mod_checker_setting(key))
+        _set_mod_checker_setting(self._setting_names[_MOD_LIST],
+                                 self._buttons[_MOD_LIST].GetValue())
+        # Enable or disable the children of the ModList buttons
+        setting_key = self._setting_names[_MOD_LIST]
+        for btn_id in (_CRC, _VERSION):
+            self._buttons[btn_id].Enable(_get_mod_checker_setting(setting_key))
         # Set settings from all the buttons' values
-        for btn_id in [_NOTES, _CONFIG, _SUGGEST, _CRC, _VERSION]:
+        for btn_id in (_CRC, _VERSION):
             _set_mod_checker_setting(self._setting_names[btn_id],
                                      self._buttons[btn_id].GetValue())
         #--Cache info from modinfos to support auto-update.
@@ -394,9 +385,8 @@ class ModChecker(BaltFrame):
         self.__imported = bosh.modInfos.imported.copy()
         #--Do it
         self.check_mods_text = bosh.configHelpers.checkMods(
-            *[_get_mod_checker_setting(self._setting_names[key])
-              for key in [_MOD_LIST, _RULE_SETS, _NOTES, _CONFIG, _SUGGEST,
-                          _CRC, _VERSION]],
+            *[_get_mod_checker_setting(self._setting_names[setting_key])
+              for setting_key in (_MOD_LIST, _CRC, _VERSION)],
             mod_checker=(None, self)[self._buttons[_SCAN_DIRTY].GetValue()])
         if HtmlCtrl.html_lib_available():
             log_path = bass.dirs['saveBase'].join(u'ModChecker.html')

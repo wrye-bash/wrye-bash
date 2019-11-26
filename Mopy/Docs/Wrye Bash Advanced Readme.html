@@ -7088,14 +7088,6 @@ C.Location, -C.LockList
     <li>Missing masters occur when a plugin that an active plugin depends on is not active. This results in an immediate CTD when the game is launched.
     <li>Delinquent masters occur when a plugin's master loads after the plugin itself. This should be fixed to prevent issues in-game.
 </ul>
-<p>The next section of the report details the output of any rulesets installed. These are text files that contain a set of instructions that tell the Mod Checker what to look for and what to say in the report if anything is found. Currently the only ruleset distributed by Wrye Bash is for Cobl. Rulesets are stored in <code>Data\Bash Patches</code> and end in <q>Rules.txt</q>. Information on ruleset syntax can be found in the <a href="Wrye%20Bash%20Technical%20Readme.html#rulesets">Technical Readme</a>.
-<p>The rest of the report details any plugin groups that have been set up. Each group's section contains the following information:
-<ul>
-    <li>Notes: These are various notes on the plugin group, as entered by the user.
-    <li>Configuration: This is a summary of the plugin group's configuration. It uses a few symbols to denote the status of plugins, these are: x: active; +: merged; *: imported; -: inactive/unmerged.
-    <li>Suggestions: Specific suggestions for the plugin group. These are typically activating or deactivating certain plugins, or replacing mods with other mods.
-    <li>Warnings: Like suggestions, but the causes are more likely to cause issues. This section will detail what should be activated or deactivated to resolve the problems.
-</ul>
 <div class="prlflex clearf">
   <figure class="slideshow" style="width: 576px; min-height: 596px">
     <img alt="Mod Checker" src="../bash/images/readme/mod-checker-1.png">
@@ -7112,10 +7104,6 @@ C.Location, -C.LockList
         <tr><td>Forward/Back Arrows<td>The Mod Checker report may contain links to other pages. These two buttons allow navigation between pages viewed, similar to the forward/back buttons in a web browser.
         <tr><td>Reload</td><td>Reloads the current page. Works identically to a browser's reload button.</td></tr>
         <tr><td>Mod List<td>Toggles the display of the Active Mod Files list.
-        <tr><td>Rule Sets<td>Toggles the display of the headers for the rulesets installed, even if they produce no other output.
-        <tr><td>Notes<td>Toggles the display of plugin group notes.
-        <tr><td>Configuration<td>Toggles the display of plugin groups' configurations.
-        <tr><td>Suggestions<td>Toggles display of the suggestions produced by plugin groups.
         <tr><td>Version Numbers<td>Toggles display of version numbers where found for the plugins in the Active Mod Files list.
         <tr><td>CRCs<td>Toggles display of the CRCs for the plugins in the Active Mod Files list.
         <tr><td>Scan for Dirty Edits<td>Toggles the scanning of plugins for dirty edits. Effectively runs <a href="#modsScanForDirtyEdits">Scan for Dirty Edits</a> on each of the plugins in the Active Mod Files list and displays the results in the Mod Checker's report.

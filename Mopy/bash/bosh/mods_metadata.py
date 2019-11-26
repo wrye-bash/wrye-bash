@@ -23,7 +23,6 @@
 # =============================================================================
 import errno
 import os
-import re
 
 import loot_api
 
@@ -33,189 +32,8 @@ from ..bolt import GPath, deprint, sio, struct_pack, struct_unpack
 from ..brec import ModReader, MreRecord, RecordHeader
 from ..cint import ObBaseRecord, ObCollection
 from ..exception import BoltError, CancelError, ModError
-from ..patcher import getPatchesPath, getPatchesList
-
 
 lootDb = None #--LootDb singleton
-
-# Mod Config Help -------------------------------------------------------------
-#------------------------------------------------------------------------------
-class ModRuleSet(object):
-    """A set of rules to be used in analyzing active and/or merged mods for errors."""
-
-    class ModGroup(object):
-        """A set of specific mods and rules that affect them."""
-        def __init__(self):
-            self.modAnds = []
-            self.modNots = []
-            self.notes = ''
-            self.config = []
-            self.suggest = []
-            self.warn = []
-
-        def hasRules(self):
-            return bool(self.notes or self.config or self.suggest or self.warn)
-
-        def _mod_group_active(self, actives):
-            """Determines if modgroup is active based on its set of mods."""
-            if not self.modAnds: return False
-            for modNot,mods in zip(self.modNots,self.modAnds):
-                if modNot:
-                    for mod in mods:
-                        if mod in actives: return False
-                else:
-                    for mod in mods:
-                        if mod in actives: break
-                    else: return False
-            return True
-
-        def getActives(self,actives):
-            """Returns list of active mods."""
-            out = []
-            for modNot,mods in zip(self.modNots,self.modAnds):
-                for mod in mods:
-                    if mod in actives:
-                        out.append(mod)
-            return out
-
-    class RuleParser(object):
-        """A class for parsing ruleset files."""
-        ruleBlockIds = (u'NOTES',u'CONFIG',u'SUGGEST',u'WARN')
-        reComment = re.compile(u'##.*', re.U)
-        reBlock   = re.compile(u'' r'^>>\s+([A-Z]+)\s*(.*)', re.U)
-        reRule    = re.compile(u'' r'^(x|o|\+|-|-\+)\s+([^/]+)\s*(\[[^\]]+\])?\s*//(.*)', re.U)
-        reExists  = re.compile(u'' r'^(e)\s+([^/]+)//(.*)', re.U)
-        reMod = reModVersion = None
-
-        def __init__(self,ruleSet):
-            if self.__class__.reMod is None: # bush.game must have been set
-                espmls = u'|'.join(map(re.escape, bush.game.espm_extensions))
-                self.__class__.reMod = re.compile(
-                    u'' r'\s*([\-|]?)(.+?(' + espmls + r'))(\s*\[[^\]]\])?',
-                    re.I | re.U)
-                self.__class__.reModVersion = re.compile(
-                    u'(.+(' + espmls + r'))\s*(\[[^\]]+\])?', re.I | re.U)
-            self.ruleSet = ruleSet
-            #--Temp storage while parsing.
-            self.assumed = []
-            self.assumedNot = []
-            self.curBlockId = None
-            self.curDefineId = None
-            self.mods = []
-            self.modNots = []
-            self.group = ModRuleSet.ModGroup()
-            self.define = None
-
-        def newBlock(self,newBlock=None):
-            """Handle new blocks, finishing current block if present."""
-            #--Subblock of IF block?
-            if newBlock in self.ruleBlockIds:
-                self.curBlockId = newBlock
-                return
-            curBlockId = self.curBlockId
-            group = self.group
-            if curBlockId is not None:
-                if curBlockId == u'HEADER':
-                    self.ruleSet.rs_header = self.ruleSet.rs_header.rstrip()
-                elif curBlockId == u'ONLYONE':
-                    self.ruleSet.onlyones.append(set(self.mods))
-                elif curBlockId == u'ASSUME':
-                    self.assumed = self.mods[:]
-                    self.assumedNot = self.modNots[:]
-                elif curBlockId in self.ruleBlockIds and self.mods and group.hasRules():
-                    group.notes = group.notes.rstrip()
-                    group.modAnds = self.assumed + self.mods
-                    group.modNots = self.assumedNot + self.modNots
-                    self.ruleSet.modGroups.append(group)
-            self.curBlockId = newBlock
-            self.curDefineId = None
-            del self.mods[:]
-            del self.modNots[:]
-            self.group = ModRuleSet.ModGroup()
-
-        def addGroupRule(self,op,mod,comment):
-            """Adds a new rule to the modGroup."""
-            maModVersion = self.reModVersion.match(mod)
-            if not maModVersion: return
-            getattr(self.group,self.curBlockId.lower()).append((op,GPath(maModVersion.group(1)),comment))
-
-        def parse(self,rulePath):
-            """Parse supplied ruleset."""
-            #--Constants
-            reComment = self.reComment
-            reBlock   = self.reBlock
-            reMod     = self.reMod
-            reRule    = self.reRule
-            reExists  = self.reExists
-            reModVersion = self.reModVersion
-            ruleSet   = self.ruleSet
-
-            #--Clear info
-            ruleSet.rs_mtime = rulePath.mtime
-            ruleSet.rs_header = u''
-            del ruleSet.onlyones[:]
-            del ruleSet.modGroups[:]
-
-            def stripped(list):
-                return [(x or u'').strip() for x in list]
-
-            with rulePath.open('r',encoding='utf-8-sig') as ins:
-                for line in ins:
-                    line = reComment.sub(u'',line)
-                    maBlock = reBlock.match(line)
-                    #--Block changers
-                    if maBlock:
-                        newBlock,more = stripped(maBlock.groups())
-                        self.newBlock(newBlock)
-                        if newBlock == u'HEADER':
-                            self.ruleSet.rs_header = (more or u'')+u'\n'
-                        elif newBlock in (u'ASSUME',u'IF'):
-                            maModVersion = more and reModVersion.match(more)
-                            if maModVersion:
-                                self.mods = [[GPath(maModVersion.group(1))]]
-                                self.modNots = [False]
-                            else:
-                                self.mods = []
-                                self.modNots = []
-                    #--Block lists
-                    elif self.curBlockId == u'HEADER':
-                        self.ruleSet.rs_header += line.rstrip()+u'\n'
-                    elif self.curBlockId in (u'IF',u'ASSUME'):
-                        maMod = reMod.match(line)
-                        if maMod:
-                            op,mod,version = stripped(maMod.groups())
-                            mod = GPath(mod)
-                            if op == u'|':
-                                self.mods[-1].append(mod)
-                            else:
-                                self.mods.append([mod])
-                                self.modNots.append(op == u'-')
-                    elif self.curBlockId  == u'ONLYONE':
-                        maMod = reMod.match(line)
-                        if maMod:
-                            if maMod.group(1): raise BoltError(
-                                u"ONLYONE does not support %s operators." % maMod.group(1))
-                            self.mods.append(GPath(maMod.group(2)))
-                    elif self.curBlockId == u'NOTES':
-                        self.group.notes += line.rstrip()+u'\n'
-                    elif self.curBlockId in self.ruleBlockIds:
-                        maRule = reRule.match(line)
-                        maExists = reExists.match(line)
-                        if maRule:
-                            op, mod, version, rule_text = maRule.groups()
-                            self.addGroupRule(op, mod, rule_text)
-                        elif maExists and u'..' not in maExists.groups(2):
-                            self.addGroupRule(*stripped(maExists.groups()))
-                self.newBlock(None)
-
-    #--------------------------------------------------------------------------
-    def __init__(self):
-        """Initialize ModRuleSet."""
-        self.rs_mtime = 0
-        self.rs_header = u''
-        self.defineKeys = []
-        self.onlyones = []
-        self.modGroups = []
 
 #------------------------------------------------------------------------------
 class ConfigHelpers(object):
@@ -250,8 +68,6 @@ class ConfigHelpers(object):
         self.tagListModTime = None
         #--Bash Tags
         self.tagCache = {}
-        #--Mod Rules
-        self.name_ruleSet = {}
         #--Refresh
         self.refreshBashTags()
 
@@ -393,34 +209,16 @@ class ConfigHelpers(object):
             out.write(u', '.join(diff_tags) + u'\n')
 
     #--Mod Checker ------------------------------------------------------------
-    def refreshRuleSets(self):
-        """Reloads ruleSets if file dates have changed."""
-        name_ruleSet = self.name_ruleSet
-        reRulesFile = re.compile(u'Rules.txt$',re.I|re.U)
-        ruleFiles = set(x for x in getPatchesList() if reRulesFile.search(x.s))
-        for name in name_ruleSet.keys():
-            if name not in ruleFiles: del name_ruleSet[name]
-        for name in ruleFiles:
-            path = getPatchesPath(name)
-            ruleSet = name_ruleSet.get(name)
-            if not ruleSet:
-                ruleSet = name_ruleSet[name] = ModRuleSet()
-            if path.mtime != ruleSet.rs_mtime:
-                ModRuleSet.RuleParser(ruleSet).parse(path)
-
     _cleaning_wiki_url = u'[[!https://tes5edit.github.io/docs/5-mod-cleaning' \
                          u'-and-error-checking.html|Tome of xEdit]]'
 
-    def checkMods(self, showModList=False, showRuleSets=False, showNotes=False,
-                  showConfig=True, showSuggest=True, showCRC=False,
-                  showVersion=True, showWarn=True, mod_checker=None):
-        """Checks currently loaded mods against ruleset.
-           mod_checker should be the instance of ModChecker, to scan."""
+    def checkMods(self, showModList=False, showCRC=False, showVersion=True,
+                  mod_checker=None):
+        """Checks currently loaded mods for certain errors / warnings.
+        mod_checker should be the instance of ModChecker, to scan."""
         from . import modInfos
         active = set(load_order.cached_active_tuple())
-        merged_ = modInfos.merged
         imported_ = modInfos.imported
-        activeMerged = active | merged_
         removeEslFlag = set()
         warning = u'=== <font color=red>'+_(u'WARNING:')+u'</font> '
         #--Header
@@ -579,59 +377,6 @@ class ConfigHelpers(object):
                                 loggedMod = True
                             log(u'  * __%s__ %s' %(label,master.s))
                     previousMods.add(mod)
-            #--Rule Sets
-            if showRuleSets:
-                self.refreshRuleSets()
-                for fileName in sorted(self.name_ruleSet):
-                    ruleSet = self.name_ruleSet[fileName]
-                    log.setHeader(u'= ' + fileName.s[:-4],True)
-                    if ruleSet.rs_header: log(ruleSet.rs_header)
-                    #--One ofs
-                    for modSet in ruleSet.onlyones:
-                        modSet &= activeMerged
-                        if len(modSet) > 1:
-                            log.setHeader(warning+_(u'Only one of these should be active/merged'))
-                            for mod in sorted(modSet):
-                                log(u'* '+mod.s)
-                    #--Mod Rules
-                    for modGroup in ruleSet.modGroups:
-                        if not modGroup._mod_group_active(activeMerged): continue
-                        modsList = u' + '.join([x.s for x in modGroup.getActives(activeMerged)])
-                        if showNotes and modGroup.notes:
-                            log.setHeader(u'=== '+_(u'NOTES: ') + modsList )
-                            log(modGroup.notes)
-                        if showConfig:
-                            log.setHeader(u'=== '+_(u'CONFIGURATION: ') + modsList )
-                            #    + _(u'\nLegend: x: Active, +: Merged, -: Inactive'))
-                            for ruleType,ruleMod,comment in modGroup.config:
-                                if ruleType != u'o': continue
-                                if ruleMod in active: bullet = u'x'
-                                elif ruleMod in merged_: bullet = u'+'
-                                elif ruleMod in imported_: bullet = u'*'
-                                else: bullet = u'o'
-                                log(u'%s __%s__ -- %s' % (bullet,ruleMod.s,comment))
-                        if showSuggest:
-                            log.setHeader(u'=== '+_(u'SUGGESTIONS: ') + modsList)
-                            for ruleType,ruleMod,comment in modGroup.suggest:
-                                if ((ruleType == u'x' and ruleMod not in activeMerged) or
-                                    (ruleType == u'+' and (ruleMod in active or ruleMod not in merged_)) or
-                                    (ruleType == u'-' and ruleMod in activeMerged) or
-                                    (ruleType == u'-+' and ruleMod in active)
-                                    ):
-                                    log(u'* __%s__ -- %s' % (ruleMod.s,comment))
-                                elif ruleType == u'e' and not bass.dirs['mods'].join(ruleMod).exists():
-                                    log(u'* '+comment)
-                        if showWarn:
-                            log.setHeader(warning + modsList)
-                            for ruleType,ruleMod,comment in modGroup.warn:
-                                if ((ruleType == u'x' and ruleMod not in activeMerged) or
-                                    (ruleType == u'+' and (ruleMod in active or ruleMod not in merged_)) or
-                                    (ruleType == u'-' and ruleMod in activeMerged) or
-                                    (ruleType == u'-+' and ruleMod in active)
-                                    ):
-                                    log(u'* __%s__ -- %s' % (ruleMod.s,comment))
-                                elif ruleType == u'e' and not bass.dirs['mods'].join(ruleMod).exists():
-                                    log(u'* '+comment)
             return log.out.getvalue()
 
 #------------------------------------------------------------------------------

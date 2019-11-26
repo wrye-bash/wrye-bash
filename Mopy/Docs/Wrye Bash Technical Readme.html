@@ -63,19 +63,13 @@
                         <li><a href="#wizards-examples">Examples</a>
                         <li><a href="#wizards-obmm">Wizards vs. OBMM Scripts</a>
                     </ol>
-                <li class="list"><a href="#rulesets">Mod Checker Rulesets</a>
-                    <ol class="items">
-                        <li><a href="#rulesets-overview">Overview</a>
-                        <li><a href="#rulesets-syntax">Syntax</a>
-                        <li><a href="#rulesets-example">Example</a>
-                    </ol>
             </ol>
         </div>
     </div>
 </div>
 
 <h2 id="intro">Introduction</h2>
-<p>This readme covers the most technical aspects of Wrye Bash, being the Wizard scripting language and the syntax used in Mod Checker rulesets. Information on the most commonly used aspects of Wrye Bash may be found in the <a href="Wrye%20Bash%20General%20Readme.html">General Readme</a>, and the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a> holds information on more advanced and less commonly used features. Wrye Bash's version history is stored in the <a href="Wrye%20Bash%20Version%20History.html">Version History</a> document.
+<p>This readme covers the most technical aspects of Wrye Bash, namely the Wizard scripting language and syntax for certain other file types. Information on the most commonly used aspects of Wrye Bash may be found in the <a href="Wrye%20Bash%20General%20Readme.html">General Readme</a>, and the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a> holds information on more advanced and less commonly used features. Wrye Bash's version history is stored in the <a href="Wrye%20Bash%20Version%20History.html">Version History</a> document.
 
 <h2 id="darn">DarNified Books Wtxt Formatting</h2>
 <p>The DarNified Books setting in the Bashed Patch's tweaks allows the use of Wtxt formatting, which is applied if the first line of a book is <code>== title ==</code>
@@ -1022,171 +1016,6 @@ PatchPlugin &lt;NewFile&gt; &lt;FileToPatch&gt; [Create]</code>
 			<td>Unnecessary due to BAIN's conflict resolution abilities.
 		<tr><td><code class="box">AllowRunOnLines</code><td>Wizards support run-on lines as standard.
 </table>
-
-<h2 id="rulesets">Mod Checker Rulesets</h2>
-<h3 id="rulesets-overview">Overview</h3>
-<p>Rulesets allow the expansion of Wrye Bash's Mod Checker to analyse active load orders based on additional rules. There can be any number of ruleset files, which must be plain text files located in <code><var>[Game]</var>\Data\Bash Patches</code>, with filenames ending in <code>Rules.txt</code>, for Wrye Bash to recognise them.
-<p>Rulesets are processed in alphabetical order of their filenames. A ruleset's output is given in the following order:
-<ol>
-	<li>A header containing the ruleset name, and any supplied header text.
-	<li>Warnings for any rules violated.
-	<li>ModSet reports, in the order that they are defined in the ruleset. These consist of:
-	<ol>
-		<li>A configuration recap.
-		<li>Any suggestions made.
-		<li>Any include, exclude or merge only warnings generated.
-	</ol>
-</ol>
-
-<h3 id="rulesets-syntax">Syntax</h3>
-<h4>Comments</h4>
-<p>Any text beginning with <code>##</code> will be ignored when the ruleset is processed, so can be used for making silent comments.
-<code class="box ruleset">xxx ## [comment]</code>
-<h4>Header</h4>
-<p>The header command can be used to define what text is displayed in the header of the ruleset's output.
-<code class="box ruleset">&gt;&gt; HEADER [text]
-
-## A bulleted list:
-* [text]
-* [text]
-* [text]
-</code>
-<h4>NOTES</h4>
-<p>The <code>NOTES</code> command lets you output notes to the Mod Checker report. The possible formatting options are given in the formatting sub-section below. Notes can be multiline.
-<h4>ONLYONE</h4>
-<p>The <code>ONLYONE</code> command is a simple rule that states that only one of the rules following it may be active at any one time.
-<code class="box ruleset">&gt;&gt; ONLYONE
-Cobl Races.esp
-Cobl Races - Balanced.esp
-</code>
-<h4>IF</h4>
-<p>The <code>IF</code> command is used to specify that the <code>NOTES</code>, <code>CONFIG</code>, <code>SUGGEST</code> and <code>WARN</code> commands following it are conditional on the existence of the plugin(s) specified as part of the <code>IF</code> command. The effect of an <code>IF</code> command lasts until the next <code>IF</code> command or the end of the file, whichever comes first.
-<p>If the <code>IF</code> command lists more than one plugin, then the condition statement is a logical AND combination of all listed plugins. You can also specify logical OR and NOT combinations.
-<ul>
-	<li><code>|</code>: This is the symbol for an OR combination of the previous plugin and the following plugin.
-	<li><code>-</code>: This is the symbol for a NOT combination of the following plugin.
-</ul>
-<p>To specify that none of a set of plugins may exist, use a NOT for the first plugin of the set, then OR combine the it with the rest.
-<code class="box ruleset">&gt;&gt; IF Alpha.esp
-Beta.esp
-| Gamma.esp
-| Delta.esp
-- Epsilon.esp
-- Zeta.esp
-| Eta.esp
-Theta.esp
-</code>
-<p>The above equates to Alpha AND (Beta or Gamma or Delta) AND NOT(Epsilon) AND NOT(Zeta or Eta) AND Theta.</p>
-<h4>CONFIG</h4>
-<p>The <code>CONFIG</code> command lets you specify check the status of a plugin or plugins and output its/their status (active/inactive/merged) and a comment. It is intended as a way of reminding the user what plugins they have active.
-<code class="box ruleset">&gt;&gt; CONFIG
-o Plugin1.esp  //[comment]
-o Plugin2.esp  //[comment]
-</code>
-<p>The <code>o</code> symbol denotes an <q>Option</q> rule type.
-<h4>SUGGEST</h4>
-<p>The <code>SUGGEST</code> command is intended as a way of providing non-critical suggestions. Its syntax is similar to that of the <code>CONFIG</code> command, but it has different rule types available for usage. The rule types are:
-<ul>
-	<li><code>x</code>: <q>Inclusion</q> rule type. The specified plugin must be active. If the plugin is not active, the Mod Checker will output a message.
-	<li><code>-</code>: <q>Exclusion</q> rule type. The specified plugin must <strong>not</strong> be active. If the plugin is active, the Mod Checker will output a message.
-	<li><code>+</code>: <q>Merge Only</q> rule type. The specified plugin must be merged but <strong>not</strong> active. If the plugin is active or inactive and not merged, the Mod Checker will output a message.
-	<li><code>e</code>: <q>Existence</q> rule type. The specified file must exist. The file can be any file type, with the file path being given relative to the Data folder. If the file does not exist, the Mod Checker will output a message.
-</ul>
-<code class="box ruleset">&gt;&gt; SUGGEST
-x Plugin1.esp  //[comment]
-- Plugin2.esp  //[comment]
-+ Plugin3.esp  //[comment]
-e Plugin4.esp  //[comment]
-</code>
-<h4>WARN</h4>
-<p>The <code>WARN</code> command is intended as a way of providing critical suggestions. It shares the same rule types as the <code>SUGGEST</code> command.
-<code class="box ruleset">&gt;&gt; WARN
-x Plugin1.esp  //[comment]
-- Plugin2.esp  //[comment]
-+ Plugin3.esp  //[comment]
-e Plugin4.esp  //[comment]
-</code>
-<h4>ASSUME</h4>
-<p>The <code>ASSUME</code> command inserts the assumption that the given plugin exists into any <code>IF</code> statements following the command.
-<ul>
-	<li><code>ASSUME</code> commands last until the next <code>ASSUME</code> command or until the end of the file, whichever occurs first.
-	<li><code>ASSUME</code> commands are <strong>not</strong> additive: each <code>ASSUME</code> command completely replaces the previous one.
-	<li>To cancel the effect of an <code>ASSUME</code> command, use an <code>ASSUME</code> command with no mod listed for it.
-	<li>To assume the existence of multiple plugins, list them on separate lines after the <code>ASSUME</code> command, like how is done for the <code>IF</code> command.
-</ul>
-<code class="box ruleset">&gt;&gt; ASSUME Master.esm
-Plugin1.esp
-Plugin2.esp
-</code>
-<h4>Formatting</h4>
-<p>Non-silent comment lines have a few formatting options:
-<ul>
-	<li><code>__[bold text]__</code>
-	<li><code>~~[italic text]~~</code>
-	<li><code>**[bold italic text]**</code>
-	<li><code>[[http://example.com|Link to example.com]]</code>
-</ul>
-<h3 id="rulesets-example">Example</h3>
-<p>The example ruleset below is a simple ruleset for Cobl.
-<code class="box ruleset">&gt;&gt; HEADER This ruleset covers Cobl (Common Oblivion) and related mods.
-
-&gt;&gt; ONLYONE
-Cobl Races - Balanced.esp
-bgBalancingEVCore.esp
-
-&gt;&gt; IF Cobl Main.esm
-&gt;&gt; CONFIG
-o Cobl Glue.esp // Glues Cobl items into vanilla lists, cells
-o Cobl Si.esp // Glues Cobl items into Shivering Isles cells.
-o Cobl Tweaks.esp // Adds Cobl items to creatures and NPCs.
-o Cobl Races.esp // Additional races, hairs, eyes.
-o Cobl Races - Balanced.esp // Races and birthsigns given better balanced pros and cons.
-o Salmo the Baker, Cobl.esp // Enhances Salmo the Baker in Skingrad.
-o Cobl Filter Late.esp // Adds foods from various mods to the Dinner Plate. (Requires OBSE.)
-&gt;&gt; SUGGEST
-- Denock Arrows.esp // **Deactivate** and use Cobl Denock instead. (See Options menu.)
-## HOMES
-- AlchemistsCave.esp // Use [[http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&amp;id=3996|Coblized version]] instead.
-- Jagnot-SI-Bliss Aquaduct House.esp // Use [[http://ljosa.proboards57.com/index.cgi?board=releases&amp;action=display&amp;thread=548|Coblized version]] instead.
-- PrincessImperialCityApartment.esp // Use [[http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&amp;id=3997|Coblized version]] instead.
-- PrisonersCampsite.esp // Use [[http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&amp;id=4106|Coblized version]] instead.
-- SkyShip.esp // Use [[http://ljosa.proboards57.com/index.cgi?board=releases&amp;action=display&amp;thread=548|Coblized version]] instead.
-&gt;&gt; WARN
-## Required
-e meshes\Cobl\StaticApp\apparatusalembics.nif // __Missing meshes [StaticApp].__ Try reinstalling full Cobl package (including all textures/meshes).
-## Obsolete components
-- Cobl Glue MW Ingred.esp // **Deactivate.** Obsolete. (Merged into Cobl Glue.esp.)
-## Superceded mods.
-- Beer! for Oblivion.esp [1.2.3:]-- **Deactivate.** Included in Cobl Main.esm.
-- DaggerfallBooks.esp // **Deactivate.** Included in Cobl Main.esm.
-- FirstEditionGuidetotheEmpire.esp // **Deactivate.** Included in Cobl Main.esm.
-- Ingredient Storage Shelves.esp // **Deactivate.** Included in Cobl Glue.esp
-- MorrowindBooks.esp // **Deactivate.** Included in Cobl Main.esm.
-- Salmo the Baker v2.0.esp // **Deactivate** Use Salmo the Baker, Cobl instead.
-- Tamrielic_Ingredients.esm // **Deactivate.** Included in Cobl Main.esm.
-- Tamrielic_Ingredients.esp // **Deactivate.** Included in Cobl Main.esm.
-
-&gt;&gt; ASSUME Cobl Main.esm
-
-&gt;&gt; IF Cobl Races.esp
-&gt;&gt; WARN
-e meshes\characters\saram\femalehair\type0\01.nif // __Missing meshes [Saram].__ Be sure that you have installed [[https://www.nexusmods.com/oblivion/mods/21104|Cobl Cosmetics Res 01]].
-e meshes\clothes\asxivilai\xivilaicollar.nif // __Missing meshes [xivilai].__ Be sure that you have installed [[https://www.nexusmods.com/oblivion/mods/21104|Cobl Cosmetics Res 01]].
-x DLCShiveringIsles.esp // **Activate** Required (meshes and textures).
-
-&gt;&gt; IF Cobl Races - Balanced.esp
-&gt;&gt; WARN
-x Cobl Races.esp // **Activate.** Required.
-
-&gt;&gt; IF Cobl Si.esp
-&gt;&gt; WARN
-x DLCShiveringIsles.esp // **Activate.** Required.
-
-## Patch Mods ----------------------------------------------------------------
-&gt;&gt; IF FF_REAL_Thirst.esp
-&gt;&gt; SUGGEST
-x FF_REAL_Thirst, Cob.esp // Patch FF Real Thirst to work with Cobl water wells.
-</code>
 
 <!-- Scrolling content end -->
 </div>
