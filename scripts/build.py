@@ -266,21 +266,23 @@ def build_executable(version, file_version):
     exe_orig = os.path.join(dist_folder, u"Wrye Bash Launcher.exe")
     exe_target = os.path.join(MOPY_PATH, u"Wrye Bash.exe")
     cpy(setup_orig, setup_target)
-    # Call the setup script
-    utils.run_subprocess(
-        [sys.executable, setup_target, "py2exe", "--version", file_version],
-        LOGGER,
-        cwd=MOPY_PATH
-    )
-    # Copy the exe's to the Mopy folder
-    cpy(exe_orig, exe_target)
-    # py2exe can't read the loot.dll if it's in the exe
-    # so we have to include it before and delete it after
-    cpy(loot_orig, loot_target)
-    # Clean up py2exe generated files/folders
-    rm(setup_target)
-    rm(build_folder)
-    rm(dist_folder)
+    try:
+        # Call the setup script
+        utils.run_subprocess(
+            [sys.executable, setup_target, "py2exe", "--version", file_version],
+            LOGGER,
+            cwd=MOPY_PATH
+        )
+        # Copy the exe's to the Mopy folder
+        cpy(exe_orig, exe_target)
+        # py2exe can't read the loot.dll if it's in the exe
+        # so we have to include it before and delete it after
+        cpy(loot_orig, loot_target)
+    finally:
+        # Clean up py2exe generated files/folders
+        rm(setup_target)
+        rm(build_folder)
+        rm(dist_folder)
     try:
         yield
     finally:
