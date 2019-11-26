@@ -321,7 +321,7 @@ class InstallerConverter(object):
             raise StateError, (u'Error creating BCF.dat:\nError: %s' % e), \
                 sys.exc_info()[2]
 
-    def apply(self, destArchive, crc_installer, progress=None, embedded=0L):
+    def apply(self, destArchive, crc_installer, progress=None, embedded=0):
         """Applies the BCF and packages the converted archive"""
         #--Prepare by fully loading the BCF and clearing temp
         self.load(True)

@@ -399,7 +399,6 @@ class Parser(object):
         def __pos__(self): return Parser.Token(+self.tkn)
         def __abs__(self): return abs(self.tkn)
         def __int__(self): return int(self.tkn)
-        def __long__(self): return long(self.tkn)
         def __float__(self): return float(self.tkn)
         def __str__(self): return str(self.tkn)
 

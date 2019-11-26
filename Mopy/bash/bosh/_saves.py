@@ -46,7 +46,7 @@ from ..parsers import LoadFactory, ModFile
 class SreNPC(object):
     """NPC change record."""
     __slots__ = ('form','health','unused2','attributes','acbs','spells','factions','full','ai','skills','modifiers')
-    sre_flags = Flags(0L, Flags.getNames(
+    sre_flags = Flags(0, Flags.getNames(
         (0,'form'),
         (2,'health'),
         (3,'attributes'),
@@ -220,7 +220,7 @@ class SreNPC(object):
 # Save File -------------------------------------------------------------------
 class SaveFile(object):
     """Represents a Tes4 Save file."""
-    recordFlags = Flags(0L,Flags.getNames(
+    recordFlags = Flags(0,Flags.getNames(
         'form','baseid','moved','havocMoved','scale','allExtra','lock','owner','unk8','unk9',
         'mapMarkerFlags','hadHavokMoveFlag','unk12','unk13','unk14','unk15',
         'emptyFlag','droppedItem','doorDefaultState','doorState','teleport',
@@ -474,7 +474,7 @@ class SaveFile(object):
             if fid is None: return None
             modName,object = fid
             mod = indices[modName]
-            return (long(mod) << 24 ) | long(object)
+            return (int(mod) << 24 ) | int(object)
         return mapper
 
     def getFid(self,iref,default=None):
