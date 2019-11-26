@@ -211,7 +211,7 @@ def cached_lo_index_or_max(mod):
     try:
         return cached_lo_index(mod)
     except KeyError:
-        return sys.maxint # sort mods that do not have a load order LAST
+        return sys.maxsize # sort mods that do not have a load order LAST
 
 def cached_active_index(mod): return cached_lord.activeIndex(mod)
 
