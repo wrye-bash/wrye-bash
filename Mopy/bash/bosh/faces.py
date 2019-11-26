@@ -32,7 +32,7 @@ from ..brec import getModIndex, MreRecord, genFid, RecordHeader, null2
 
 class PCFaces(object):
     """Package: Objects and functions for working with face data."""
-    pcf_flags = Flags(0L, Flags.getNames(
+    pcf_flags = Flags(0, Flags.getNames(
         'name', 'race', 'gender', 'hair', 'eye', 'iclass', 'stats', 'factions',
         'modifiers', 'spells'))
 
@@ -193,7 +193,7 @@ class PCFaces(object):
 
     # Save Set ----------------------------------------------------------------
     @staticmethod
-    def save_setFace(saveInfo, face, pcf_flags=0L):
+    def save_setFace(saveInfo, face, pcf_flags=0):
         """DEPRECATED. Write a pcFace to a save file."""
         saveFile = SaveFile(saveInfo)
         saveFile.load()
@@ -268,7 +268,7 @@ class PCFaces(object):
         saveFile.setRecord(npc.getTuple(fid,version))
 
     @staticmethod
-    def save_setPlayerFace(saveFile, face, pcf_flags=0L, morphFacts=None):
+    def save_setPlayerFace(saveFile, face, pcf_flags=0, morphFacts=None):
         """Write a pcFace to a save file."""
         pcf_flags = PCFaces.pcf_flags(pcf_flags)
         #--Update masters

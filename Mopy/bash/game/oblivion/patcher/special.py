@@ -42,7 +42,7 @@ __all__ = ['AlchemicalCatalogs', 'CBash_AlchemicalCatalogs', 'CoblExhaustion',
 # Util Functions --------------------------------------------------------------
 def _PrintFormID(fid):
     # PBash short Fid
-    if isinstance(fid,(long,int)):
+    if isinstance(fid,int):  # PY3 ensure this can never be long
         fid = u'%08X' % fid
     # PBash long FId
     elif isinstance(fid, tuple):

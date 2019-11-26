@@ -615,7 +615,7 @@ class Path(object):
     @property
     def crc(self):
         """Calculates and returns crc value for self."""
-        crc = 0L
+        crc = 0
         with self.open('rb') as ins:
             for block in iter(partial(ins.read, 2097152), ''):
                 crc = crc32(block, crc) # 2MB at a time, probably ok
@@ -936,13 +936,13 @@ class Flags(object):
     #--Generation
     def __init__(self,value=0,names=None):
         """Initialize. Attrs, if present, is mapping of attribute names to indices. See getAttrs()"""
-        object.__setattr__(self,'_field',int(value) | 0L)
+        object.__setattr__(self,'_field',int(value))
         object.__setattr__(self,'_names',names or {})
 
     def __call__(self,newValue=None):
         """Returns a clone of self, optionally with new value."""
         if newValue is not None:
-            return Flags(int(newValue) | 0L,self._names)
+            return Flags(int(newValue),self._names)
         else:
             return Flags(self._field,self._names)
 
@@ -978,8 +978,8 @@ class Flags(object):
 
     def __setitem__(self,index,value):
         """Set value by index. E.g., flags[3] = True"""
-        value = ((value or 0L) and 1L) << index
-        mask = 1L << index
+        value = ((value or 0) and 1) << index
+        mask = 1 << index
         self._field = ((self._field & ~mask) | value)
 
     #--As class

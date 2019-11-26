@@ -3825,7 +3825,7 @@ class MasterMap(object):
         inIndex = int(fid >> 24)
         outIndex = self.map.get(inIndex,-2)
         if outIndex >= 0:
-            return (long(outIndex) << 24 ) | (fid & 0xFFFFFFL)
+            return (int(outIndex) << 24 ) | (fid & 0xFFFFFF)
         elif default != -1:
             return default
         else:
@@ -4073,7 +4073,7 @@ class ModFile(object):
         def mapper(fid):
             if fid is None: return None
             if isinstance(fid,tuple): return fid
-            mod,object = int(fid >> 24),int(fid & 0xFFFFFFL)
+            mod,object = int(fid >> 24),int(fid & 0xFFFFFF)
             return masters[min(mod,maxMaster)],object
         return mapper
 
@@ -4084,12 +4084,12 @@ class ModFile(object):
         gLong = self.getLongMapper()
         def mapper(fid):
             if fid is None: return None
-            if isinstance(fid, (long, int)):
+            if isinstance(fid, int):  # PY3 ensure this can never be long
                 fid = gLong(fid)
             modName, object_id = fid
-            long_id = long(object_id)
+            long_id = int(object_id)
             mod = indices[modName] if long_id >= 0x800 else 0
-            return (long(mod) << 24) | long_id
+            return (int(mod) << 24) | long_id
         return mapper
 
     def convertToLongFids(self,types=None):

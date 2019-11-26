@@ -139,7 +139,7 @@ class Installer(object):
             progress(done, progress_msg + rpFile)
             sub = bolt.SubProgress(progress, done, done + size + 1)
             sub.setFull(size + 1)
-            crc = 0L
+            crc = 0
             try:
                 with open(asFile, 'rb') as ins:
                     insTell = ins.tell
@@ -1176,7 +1176,7 @@ class InstallerArchive(Installer):
         with archive_path.unicodeSafe() as tempArch:
             try:
                 list_archive(tempArch, _parse_archive_line)
-                self.crc = _li.cumCRC & 0xFFFFFFFFL
+                self.crc = _li.cumCRC & 0xFFFFFFFF
             except:
                 archive_msg = u"Unable to read archive '%s'." % archive_path.s
                 deprint(archive_msg, traceback=True)
@@ -1450,7 +1450,7 @@ class InstallerProject(Installer):
             cumCRC += crc
             cumSize += size
         self.size = cumSize
-        self.crc = cumCRC & 0xFFFFFFFFL
+        self.crc = cumCRC & 0xFFFFFFFF
         self.project_refreshed = True
 
     def _install(self, dest_src, progress):
@@ -1847,7 +1847,7 @@ class InstallersData(DataStore):
         try:
             converter.apply(destArchive, crc_installer,
                             bolt.SubProgress(progress, 0.0, 0.99),
-                            embedded=installer.crc if installer else 0L)
+                            embedded=installer.crc if installer else 0)
             #--Add the new archive to Bash
             if destArchive not in self:
                 self[destArchive] = InstallerArchive(destArchive)

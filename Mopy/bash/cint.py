@@ -518,10 +518,10 @@ class FormID(object):
             return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
-            return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
+            return self.master if x == 0 else int(self.objectID & 0x00FFFFFF)
 
         def __repr__(self):
-            return u"UnvalidatedFormID('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFFL))
+            return u"UnvalidatedFormID('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFF))
 
         def Validate(self, target):
             """Unvalidated FormIDs have to be tested for each destination collection
@@ -556,7 +556,7 @@ class FormID(object):
             return hash((None, self.objectID))
 
         def __getitem__(self, x):
-            return None if x == 0 else int(self.objectID & 0x00FFFFFFL)
+            return None if x == 0 else int(self.objectID & 0x00FFFFFF)
 
         def __repr__(self):
             return "InvalidFormID(None, 0x%06X)" % (self.objectID,)
@@ -586,10 +586,10 @@ class FormID(object):
             return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
-            return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
+            return self.master if x == 0 else int(self.objectID & 0x00FFFFFF)
 
         def __repr__(self):
-            return u"ValidFormID('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFFL))
+            return u"ValidFormID('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFF))
 
         def Validate(self, target):
             """This FormID has already been validated for a specific collection.
@@ -645,7 +645,7 @@ class FormID(object):
             return hash((self.shortID, None))
 
         def __getitem__(self, x):
-            return self.shortID >> 24 if x == 0 else int(self.shortID & 0x00FFFFFFL)
+            return self.shortID >> 24 if x == 0 else int(self.shortID & 0x00FFFFFF)
 
         def __repr__(self):
             return "RawFormID(0x%08X)" % (self.shortID,)
@@ -753,10 +753,10 @@ class ActorValue(object):
             return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
-            return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
+            return self.master if x == 0 else int(self.objectID & 0x00FFFFFF)
 
         def __repr__(self):
-            return u"UnvalidatedActorValue('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFFL))
+            return u"UnvalidatedActorValue('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFF))
 
         def Validate(self, target):
             """Unvalidated ActorValues have to be tested for each destination collection.
@@ -792,7 +792,7 @@ class ActorValue(object):
             return hash((None, self.objectID))
 
         def __getitem__(self, x):
-            return None if x == 0 else int(self.objectID & 0x00FFFFFFL)
+            return None if x == 0 else int(self.objectID & 0x00FFFFFF)
 
         def __repr__(self):
             return "InvalidActorValue(None, 0x%06X)" % (self.objectID,)
@@ -821,10 +821,10 @@ class ActorValue(object):
             return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
-            return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
+            return self.master if x == 0 else int(self.objectID & 0x00FFFFFF)
 
         def __repr__(self):
-            return u"ValidActorValue('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFFL))
+            return u"ValidActorValue('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFF))
 
         def Validate(self, target):
             """This ActorValue has already been validated for a specific record.
@@ -881,7 +881,7 @@ class ActorValue(object):
             return hash((self.shortID, None))
 
         def __getitem__(self, x):
-            return self.shortID >> 24 if x == 0 else int(self.shortID & 0x00FFFFFFL)
+            return self.shortID >> 24 if x == 0 else int(self.shortID & 0x00FFFFFF)
 
         def __repr__(self):
             return "RawActorValue(0x%08X)" % (self.shortID,)
@@ -993,10 +993,10 @@ class MGEFCode(object):
             return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
-            return self.master if x == 0 else int(self.objectID & 0xFFFFFF00L)
+            return self.master if x == 0 else int(self.objectID & 0xFFFFFF00)
 
         def __repr__(self):
-            return u"UnvalidatedMGEFCode('%s', 0x%06X)" % (self.master, int(self.objectID & 0xFFFFFF00L))
+            return u"UnvalidatedMGEFCode('%s', 0x%06X)" % (self.master, int(self.objectID & 0xFFFFFF00))
 
         def Validate(self, target):
             """Unvalidated MGEFCodes have to be tested for each destination collection.
@@ -1032,7 +1032,7 @@ class MGEFCode(object):
             return hash((None, self.objectID))
 
         def __getitem__(self, x):
-            return None if x == 0 else int(self.objectID & 0xFFFFFF00L)
+            return None if x == 0 else int(self.objectID & 0xFFFFFF00)
 
         def __repr__(self):
             return "InvalidMGEFCode(None, 0x%06X)" % (self.objectID,)
@@ -1061,10 +1061,10 @@ class MGEFCode(object):
             return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
-            return self.master if x == 0 else int(self.objectID & 0xFFFFFF00L)
+            return self.master if x == 0 else int(self.objectID & 0xFFFFFF00)
 
         def __repr__(self):
-            return u"ValidMGEFCode('%s', 0x%06X)" % (self.master, int(self.objectID & 0xFFFFFF00L))
+            return u"ValidMGEFCode('%s', 0x%06X)" % (self.master, int(self.objectID & 0xFFFFFF00))
 
         def Validate(self, target):
             """This MGEFCode has already been validated for a specific record.
@@ -1127,7 +1127,7 @@ class MGEFCode(object):
             return hash((self.shortID, None))
 
         def __getitem__(self, x):
-            return self.shortID if isinstance(self.shortID, basestring) else self.shortID >> 24 if x == 0 else int(self.shortID & 0xFFFFFF00L)
+            return self.shortID if isinstance(self.shortID, basestring) else self.shortID >> 24 if x == 0 else int(self.shortID & 0xFFFFFF00)
 
         def __repr__(self):
             return "RawMGEFCode(%s)" % (self.shortID,) if isinstance(self.shortID, basestring) else "RawMGEFCode(0x%08X)" % (self.shortID,)
