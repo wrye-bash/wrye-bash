@@ -38,7 +38,7 @@ from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     MelOptUInt8, MelOptUInt16, MelOptUInt32, MelPartialCounter, MelRaceParts, \
     MelRaceVoices, MelBounds, null1, null2, null3, null4, MelScriptVars, \
     MelSequential, MelTruncatedStruct, PartialLoadDecider, MelReadOnly, \
-    MelCoordinates, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid
+    MelCoordinates, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
@@ -531,7 +531,7 @@ class MreActi(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel(),
         MelFid('SCRI','script'),
         MelDestructible(),
@@ -567,7 +567,7 @@ class MreAlch(MelRecord,MreHasEffects):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL', 'full'),
+        MelFull(),
         MelModel(),
         MelIcons(),
         MelFid('SCRI','script'),
@@ -592,7 +592,7 @@ class MreAmmo(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel(),
         MelIcons(),
         MelDestructible(),
@@ -635,7 +635,7 @@ class MreArma(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelStruct('BMDT','=2I',(_flags,'bipedFlags',0L),(_generalFlags,'generalFlags',0L)),
         MelModel('maleBody'),
         MelModel('maleWorld',2),
@@ -668,7 +668,7 @@ class MreArmo(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelFid('SCRI','script'),
         MelFid('EITM','objectEffect'),
         MelStruct('BMDT','=IB3s',(_flags,'bipedFlags',0L),
@@ -712,7 +712,7 @@ class MreAvif(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelString('FULL','full'),
+        MelFull(),
         MelString('DESC','description'),
         MelIcons(),
         MelString('ANAM','shortName'),
@@ -729,7 +729,7 @@ class MreBook(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel(),
         MelIcons(),
         MelFid('SCRI','script'),
@@ -819,7 +819,7 @@ class MreCell(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelString('FULL','full'),
+        MelFull(),
         MelUInt8('DATA', (cellFlags, 'flags', 0L)),
         MelCoordinates('XCLC', '2iI', ('posX', None), ('posY', None),
                        ('forceHideLand', 0L), is_optional=True,
@@ -879,7 +879,7 @@ class MreClas(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelString('FULL','full'),
+        MelFull(),
         MelString('DESC','description'),
         MelIcon(),
         MelStruct('DATA','4i2IbB2s','tagSkill1','tagSkill2','tagSkill3',
@@ -914,7 +914,7 @@ class MreCobj(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel(),
         MelIcons(),
         MelFid('SCRI','script'),
@@ -934,7 +934,7 @@ class MreCont(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel(),
         MelFid('SCRI','script'),
         MelGroups('items',
@@ -1015,7 +1015,7 @@ class MreCrea(MreActor):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel(),
         MelFids('SPLO','spells'),
         MelFid('EITM','effect'),
@@ -1158,7 +1158,7 @@ class MreDial(brec.MreDial):
         MelEdid(),
         MelFids('QSTI','quests'),
         MelFids('QSTR','rQuests'),
-        MelString('FULL','full'),
+        MelFull(),
         MelFloat('PNAM', 'priority'),
         MelTruncatedStruct('DATA', '2B', 'dialType',
                            (_DialFlags, 'dialFlags', 0L), old_versions={'B'}),
@@ -1196,7 +1196,7 @@ class MreDoor(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel(),
         MelFid('SCRI','script'),
         MelDestructible(),
@@ -1287,7 +1287,7 @@ class MreEnch(MelRecord,MreHasEffects):
 
     melSet = MelSet(
         MelEdid(),
-        MelString('FULL', 'full'),
+        MelFull(),
         MelStruct('ENIT','3IB3s','itemType','chargeAmount','enchantCost',
                   (_flags,'flags',0L),('unused1',null3)),
         MelEffects(),
@@ -1311,7 +1311,7 @@ class MreExpl(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel(),
         MelFid('EITM','objectEffect'),
         MelFid('MNAM','imageSpaceModifier'),
@@ -1335,7 +1335,7 @@ class MreEyes(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelString('FULL','full'),
+        MelFull(),
         MelIcon(),
         MelUInt8('DATA', (_flags, 'flags')),
     )
@@ -1351,7 +1351,7 @@ class MreFact(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelString('FULL','full'),
+        MelFull(),
         MelStructs('XNAM','IiI','relations',(FID,'faction'),'mod','groupCombatReaction'),
         MelTruncatedStruct('DATA', '2B2s', (_flags, 'flags', 0L), 'flagsFact',
                            'unknown', old_versions={'2B', 'B'}),
@@ -1438,7 +1438,7 @@ class MreFurn(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel(),
         MelFid('SCRI','script'),
         MelDestructible(),
@@ -1482,7 +1482,7 @@ class MreHair(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel(),
         MelIcon(),
         MelUInt8('DATA', (_flags, 'flags')),
@@ -1498,7 +1498,7 @@ class MreHdpt(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel(),
         MelUInt8('DATA', (_flags, 'flags')),
         MelFids('HNAM','extraParts'),
@@ -1743,7 +1743,7 @@ class MreIngr(MelRecord,MreHasEffects):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL', 'full'),
+        MelFull(),
         MelModel(),
         MelIcon(),
         MelFid('SCRI','script'),
@@ -1804,7 +1804,7 @@ class MreKeym(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel(),
         MelIcons(),
         MelFid('SCRI','script'),
@@ -1846,7 +1846,7 @@ class MreLigh(MelRecord):
         MelModel(),
         MelFid('SCRI','script'),
         MelDestructible(),
-        MelString('FULL','full'),
+        MelFull(),
         MelIcon(),
         MelStruct('DATA','iI3BsI2fIf','duration','radius','red','green','blue',
                   ('unused1',null1),(_flags,'flags',0L),'falloff','fov','value',
@@ -1915,7 +1915,7 @@ class MreMesg(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelString('DESC','description'),
-        MelString('FULL','full'),
+        MelFull(),
         MelFid('INAM','icon'),
         MelBase('NAM0', 'unused_0'),
         MelBase('NAM1', 'unused_1'),
@@ -1968,7 +1968,7 @@ class MreMgef(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelString('FULL','full'),
+        MelFull(),
         MelString('DESC','text'),
         MelIcon(),
         MelModel(),
@@ -2006,7 +2006,7 @@ class MreMisc(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel(),
         MelIcons(),
         MelFid('SCRI','script'),
@@ -2025,7 +2025,7 @@ class MreMstt(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel(),
         MelDestructible(),
         MelBase('DATA','data_p'),
@@ -2119,7 +2119,7 @@ class MreNote(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel(),
         MelIcons(),
         MelFid('YNAM','pickupSound'),
@@ -2210,7 +2210,7 @@ class MreNpc(MreActor):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel(),
         MelStruct('ACBS','=I2Hh3Hf2H',
             (_flags,'flags',0L),'fatigue','barterGold',
@@ -2418,7 +2418,7 @@ class MrePerk(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelString('FULL','full'),
+        MelFull(),
         MelString('DESC','description'),
         MelIcons(),
         MelConditions(),
@@ -2590,7 +2590,7 @@ class MreProj(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel(),
         MelDestructible(),
         MelStruct('DATA','HHfffIIfffIIfffIII',(_flags,'flags'),'type',
@@ -2653,7 +2653,7 @@ class MreQust(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFid('SCRI','script'),
-        MelString('FULL','full'),
+        MelFull(),
         MelIcon(),
         MelTruncatedStruct('DATA', '2B2sf', (_questFlags, 'questFlags', 0),
                            ('priority', 0), ('unused2', null2),
@@ -2710,7 +2710,7 @@ class MreRace(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelString('FULL','full'),
+        MelFull(),
         MelString('DESC','text'),
         MelStructs('XNAM','I2i','relations',(FID,'faction'),'mod','groupCombatReaction'),
         MelStruct('DATA','14b2s4fI','skill1','skill1Boost','skill2','skill2Boost',
@@ -3121,7 +3121,7 @@ class MreSpel(MelRecord,MreHasEffects):
 
     melSet = MelSet(
         MelEdid(),
-        MelString('FULL', 'full'),
+        MelFull(),
         MelStruct('SPIT', '3IB3s', 'spellType', 'cost', 'level',
                   (_SpellFlags, 'flags', 0L), ('unused1', null3)),
         MelEffects(),
@@ -3148,7 +3148,7 @@ class MreTact(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel('model'),
         MelFid('SCRI','script'),
         MelDestructible(),
@@ -3168,7 +3168,7 @@ class MreTerm(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel(),
         MelFid('SCRI','script'),
         MelDestructible(),
@@ -3285,7 +3285,7 @@ class MreWatr(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelString('FULL','full'),
+        MelFull(),
         MelString('NNAM','texture'),
         MelUInt8('ANAM', 'opacity'),
         MelUInt8('FNAM', (_flags, 'flags', 0)),
@@ -3374,7 +3374,7 @@ class MreWeap(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString('FULL','full'),
+        MelFull(),
         MelModel('model'),
         MelIcons(),
         MelFid('SCRI','script'),
@@ -3439,7 +3439,7 @@ class MreWrld(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelString('FULL','full'),
+        MelFull(),
         MelFid('XEZN','encounterZone'),
         MelFid('WNAM','parent'),
         MelOptStruct('PNAM','BB',(pnamFlags,'parentFlags',0L),('unknownff',0xff)),

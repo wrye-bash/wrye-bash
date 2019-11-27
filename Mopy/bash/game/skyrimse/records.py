@@ -30,7 +30,7 @@ from ...brec import MelModel # set in Mopy/bash/game/skyrim/records.py
 from ...brec import MelRecord, MelStructs, MelGroups, MelStruct, FID, \
     MelString, MelSet, MelFid, MelOptStruct, MelFids, MelBase, MelStructA, \
     MelLString, MelFloat, MelUInt8, MelUInt16, MelUInt32, MelCounter, \
-    null1, null2, null3, null4, MelTruncatedStruct, MelIcons, MelEdid
+    null1, null2, null3, null4, MelTruncatedStruct, MelIcons, MelEdid, MelFull
 # Those are unused here, but need be in this file as are accessed via it
 from ..skyrim.records import MreHeader, MreGmst
 
@@ -50,7 +50,7 @@ class MreAmmo(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelLString('FULL','full'),
+        MelFull(),
         MelModel(),
         MelIcons(),
         MelDestructible(),
@@ -151,7 +151,7 @@ class MreWatr(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelLString('FULL','full'),
+        MelFull(),
         MelGroups('unused',
             MelString('NNAM','noiseMap',),
         ),
@@ -278,7 +278,7 @@ class MreWeap(MelRecord):
         MelEdid(),
         MelVmad(),
         MelBounds(),
-        MelLString('FULL','full'),
+        MelFull(),
         MelModel('model1','MODL'),
         MelIcons(),
         MelFid('EITM','enchantment',),

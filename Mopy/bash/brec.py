@@ -1626,6 +1626,12 @@ class MelEdid(MelString):
         MelString.__init__(self, 'EDID', 'eid')
 
 #------------------------------------------------------------------------------
+class MelFull(MelLString):
+    """Handles a name (FULL) subrecord."""
+    def __init__(self):
+        MelLString.__init__(self, 'FULL', 'full')
+
+#------------------------------------------------------------------------------
 class MelIcons(MelSequential):
     """Handles icon subrecords. Defaults to ICON and MICO, with attribute names
     'iconPath' and 'smallIconPath', since that's most common."""
