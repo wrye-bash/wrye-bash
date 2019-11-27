@@ -38,7 +38,7 @@ from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     MelOptFloat, MelOptSInt16, MelOptSInt32, MelOptUInt8, MelOptUInt16, \
     MelOptUInt32, MelOptFid, MelCounter, MelPartialCounter, MelBounds, null1, \
     null2, null3, null4, MelSequential, MelTruncatedStruct, MelIcons, \
-    MelIcons2, MelIcon, MelIco2
+    MelIcons2, MelIcon, MelIco2, MelEdid
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -1272,7 +1272,7 @@ class MreAact(MelRecord):
     """Action."""
     classType = 'AACT'
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelColorO('CNAM'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1291,7 +1291,7 @@ class MreAchr(MelRecord):
     #  '4s', not FID
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelFid('NAME','base'),
         MelFid('XEZN','encounterZone'),
@@ -1356,7 +1356,7 @@ class MreActi(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
@@ -1383,7 +1383,7 @@ class MreAddn(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelModel(),
         MelSInt32('DATA', 'node_index'),
@@ -1406,7 +1406,7 @@ class MreAlch(MelRecord,MreHasEffects):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelLString('FULL','full'),
         MelKeywords(),
@@ -1436,7 +1436,7 @@ class MreAmmo(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
@@ -1456,7 +1456,7 @@ class MreAnio(MelRecord):
     """Animated Object."""
     classType = 'ANIO'
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelModel(),
         MelString('BNAM', 'unload_event'),
     )
@@ -1468,7 +1468,7 @@ class MreAppa(MelRecord):
     classType = 'APPA'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
@@ -1494,7 +1494,7 @@ class MreArma(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBipedObjectData(),
         MelFid('RNAM','race'),
         MelStruct('DNAM','4B2sBsf','malePriority','femalePriority',
@@ -1521,7 +1521,7 @@ class MreArmo(MelRecord):
     classType = 'ARMO'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
@@ -1561,7 +1561,7 @@ class MreArto(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelModel(),
         MelUInt32('DNAM', (ArtoTypeFlags, 'flags', 0L)),
@@ -1573,7 +1573,7 @@ class MreAspc(MelRecord):
     """Acoustic Space."""
     classType = 'ASPC'
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelOptFid('SNAM', 'ambientSound'),
         MelOptFid('RDAT', 'regionData'),
@@ -1589,7 +1589,7 @@ class MreAstp(MelRecord):
     AstpTypeFlags = Flags(0L,Flags.getNames('related'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('MPRT','maleParent'),
         MelString('FPRT','femaleParent'),
         MelString('MCHT','maleChild'),
@@ -1604,7 +1604,7 @@ class MreAvif(MelRecord):
     classType = 'AVIF'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelLString('FULL','full'),
         MelLString('DESC','description'),
         MelString('ANAM','abbreviation'),
@@ -1642,7 +1642,7 @@ class MreBook(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
@@ -1680,7 +1680,7 @@ class MreBptd(MelRecord):
         'explodable','ikIsHead','ikHeadtracking','toHitChanceAbsolute'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelModel(),
         MelGroups('bodyParts',
             MelString('BPTN', 'partName'),
@@ -1726,7 +1726,7 @@ class MreCams(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelModel(),
         MelTruncatedStruct('DATA', '4I7f', 'action', 'location', 'target',
                            (CamsFlagsFlags, 'flags', 0L), 'timeMultPlayer',
@@ -1800,7 +1800,7 @@ class MreCell(MelRecord):
                 MelOptFloat.dumpData(self, record, out)
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelLString('FULL','full'),
         MelTruncatedStruct('DATA', '2B', (CellDataFlags1, 'flags', 0L),
                            (CellDataFlags2, 'skyFlags', 0L),
@@ -1859,7 +1859,7 @@ class MreClas(MelRecord):
     classType = 'CLAS'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelLString('FULL','full'),
         MelLString('DESC','description'),
         MelIcons(),
@@ -1884,7 +1884,7 @@ class MreClfm(MelRecord):
     """Color."""
     classType = 'CLFM'
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelLString('FULL','full'),
         MelColorO(),
         MelUInt32('FNAM', 'playable'), # actually a bool, stored as uint32
@@ -1896,7 +1896,7 @@ class MreClmt(MelRecord):
     """Climate."""
     classType = 'CLMT'
     melSet = MelSet(
-        MelString('EDID','eid',),
+        MelEdid(),
         MelStructA('WLST','IiI','weatherTypes',(FID,'weather',None),'chance',(FID,'global',None),),
         MelString('FNAM','sunPath',),
         MelString('GNAM','glarePath',),
@@ -1912,7 +1912,7 @@ class MreCobj(MelRecord):
     isKeyedByEid = True # NULL fids are acceptable
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelItemsCounter(),
         MelItems(),
         MelConditions(),
@@ -1934,7 +1934,7 @@ class MreColl(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelLString('DESC','description'),
         MelUInt32('BNAM', 'layerID'),
         MelColor('FNAM'),
@@ -1957,7 +1957,7 @@ class MreCont(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
@@ -1977,7 +1977,7 @@ class MreCpth(MelRecord):
     classType = 'CPTH'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelConditions(),
         MelFidList('ANAM','relatedCameraPaths',),
         MelUInt8('DATA', 'cameraZoom'),
@@ -1997,7 +1997,7 @@ class MreCsty(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         # esm = Equipment Score Mult
         MelStruct('CSGD','10f','offensiveMult','defensiveMult','groupOffensiveMult',
         'esmMelee','esmMagic','esmRanged','esmShout','esmUnarmed','esmStaff',
@@ -2047,7 +2047,7 @@ class MreDebr(MelRecord):
             out.packSub('DATA',data)
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelGroups('models',
             MelDebrData(),
             MelBase('MODT','modt_p'),
@@ -2064,7 +2064,7 @@ class MreDial(brec.MreDial):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelLString('FULL','full'),
         MelFloat('PNAM', 'priority',),
         MelFid('BNAM','branch',),
@@ -2090,7 +2090,7 @@ class MreDlbr(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelFid('QNAM','quest',),
         MelUInt32('TNAM', 'unknown'),
         MelUInt32('DNAM', (DialogBranchFlags, 'flags', 0L)),
@@ -2104,7 +2104,7 @@ class MreDlvw(MelRecord):
     classType = 'DLVW'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelFid('QNAM','quest',),
         MelFids('BNAM','branches',),
         MelGroups('unknownTNAM',
@@ -2152,7 +2152,7 @@ class MreDobj(MelRecord):
             return MelStructA.getSlotsUsed(self) + ('unknownDNAM',)
 
     melSet = MelSet(
-        MelString('EDID', 'eid'),
+        MelEdid(),
         MelDobjDnam(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -2171,7 +2171,7 @@ class MreDoor(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
@@ -2196,7 +2196,7 @@ class MreDual(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelStruct('DATA','6I',(FID,'projectile'),(FID,'explosion'),(FID,'effectShader'),
                   (FID,'hitEffectArt'),(FID,'impactDataSet'),(DualCastDataFlags,'flags',0L),),
@@ -2215,7 +2215,7 @@ class MreEczn(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelTruncatedStruct('DATA', '2I2bBb', (FID, 'owner', None),
                            (FID, 'location', None), ('rank', 0),
                            ('minimumLevel', 0), (EcznTypeFlags, 'flags', 0L),
@@ -2257,7 +2257,7 @@ class MreEfsh(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelIcon('fillTexture'),
         MelIco2('particleTexture'),
         MelString('NAM7','holesTexture'),
@@ -2319,7 +2319,7 @@ class MreEnch(MelRecord,MreHasEffects):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelLString('FULL','full'),
         MelTruncatedStruct('ENIT', 'i2Ii2If2I', 'enchantmentCost',
@@ -2337,7 +2337,7 @@ class MreEqup(MelRecord):
     """Equip Type."""
     classType = 'EQUP'
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelFidList('PNAM','canBeEquipped'),
         MelUInt32('DATA', 'useAllParents'), # actually a bool
     )
@@ -2360,7 +2360,7 @@ class MreExpl(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
@@ -2388,7 +2388,7 @@ class MreEyes(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelLString('FULL','full'),
         MelIcons(),
         MelUInt8('DATA', (EyesTypeFlags, 'flags', 0L)),
@@ -2441,7 +2441,7 @@ class MreFact(MelRecord):
 #   ]);
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelLString('FULL','full'),
         MelStructs('XNAM','IiI','relations',(FID,'faction'),'mod','combatReaction',),
         MelUInt32('DATA', (FactGeneralTypeFlags, 'flags', 0L)),
@@ -2478,7 +2478,7 @@ class MreFlor(MelRecord):
     classType = 'FLOR'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
@@ -2500,7 +2500,7 @@ class MreFlst(MelRecord):
     classType = 'FLST'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelFids('LNAM','formIDInList'),
     )
     __slots__ = melSet.getSlotsUsed() + ['mergeOverLast', 'mergeSources',
@@ -2576,7 +2576,7 @@ class MreFstp(MelRecord):
     classType = 'FSTP'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelFid('DATA','impactSet'),
         MelString('ANAM','tag'),
     )
@@ -2588,7 +2588,7 @@ class MreFsts(MelRecord):
     classType = 'FSTS'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelStruct('XCNT','5I','walkForward','runForward','walkForwardAlt',
                   'runForwardAlt','walkForwardAlternate2',),
         MelFidList('DATA','footstepSets'),
@@ -2648,7 +2648,7 @@ class MreFurn(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
@@ -2692,7 +2692,7 @@ class MreGras(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelModel(),
         MelStruct('DATA','3BsH2sI4fB3s','density','minSlope','maxSlope',
@@ -2717,7 +2717,7 @@ class MreHazd(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
@@ -2742,7 +2742,7 @@ class MreHdpt(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelLString('FULL','full'),
         MelModel(),
         MelUInt8('DATA', (HdptTypeFlags, 'flags', 0L)),
@@ -2771,7 +2771,7 @@ class MreIdle(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelConditions(),
         MelString('DNAM','filename'),
         MelString('ENAM','animationEvent'),
@@ -2797,7 +2797,7 @@ class MreIdlm(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelUInt8('IDLF', (IdlmTypeFlags, 'flags', 0L)),
         MelCounter(MelUInt8('IDLC', 'animation_count'), counts='animations'),
@@ -2836,7 +2836,7 @@ class MreInfo(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelBase('DATA','unknownDATA'),
         MelStruct('ENAM','2H', (_EnamResponseFlags, 'flags', 0L),
@@ -2900,7 +2900,7 @@ class MreImad(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID', 'eid'),
+        MelEdid(),
         MelStruct('DNAM', 'If49I2f8I', (_ImadAnimatableFlags, 'aniFlags', 0L),
                   'duration', 'eyeAdaptSpeedMult', 'eyeAdaptSpeedAdd',
                   'bloomBlurRadiusMult', 'bloomBlurRadiusAdd',
@@ -2988,7 +2988,7 @@ class MreImgs(MelRecord):
     classType = 'IMGS'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBase('ENAM','eman_p'),
         MelStruct('HNAM','9f','eyeAdaptSpeed','bloomBlurRadius','bloomThreshold','bloomScale',
                   'receiveBloomThreshold','white','sunlightScale','skyScale',
@@ -3012,7 +3012,7 @@ class MreIngr(MelRecord,MreHasEffects):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
@@ -3036,7 +3036,7 @@ class MreIpct(MelRecord):
     _IpctTypeFlags = Flags(0L, Flags.getNames('noDecalData'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelModel(),
         MelTruncatedStruct('DATA', 'fI2fI2B2s', 'effectDuration',
                            'effectOrientation', 'angleThreshold',
@@ -3058,7 +3058,7 @@ class MreIpds(MelRecord):
     classType = 'IPDS'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelStructs('PNAM','2I','impactData',(FID,'material'),(FID,'impact'),),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3069,7 +3069,7 @@ class MreKeym(MelRecord):
     classType = 'KEYM'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
@@ -3089,7 +3089,7 @@ class MreKywd(MelRecord):
     classType = 'KYWD'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelColorO(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3100,7 +3100,7 @@ class MreLcrt(MelRecord):
     classType = 'LCRT'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelColorO(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3111,7 +3111,7 @@ class MreLctn(MelRecord):
     classType = 'LCTN'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelStructA('ACPR','2I2h','actorCellPersistentReference',
                    (FID,'actor'),(FID,'location'),'gridX','gridY',),
         MelStructA('LCPR','2I2h','locationCellPersistentReference',
@@ -3180,7 +3180,7 @@ class MreLgtm(MelRecord):
                 raise ModSizeError(ins.inName, readId, (92, 84), size_)
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelLgtmData(
             'DATA', '3Bs3Bs3Bs2f2i3f32s3Bs3f4s', 'redLigh', 'greenLigh',
             'blueLigh','unknownLigh', 'redDirect', 'greenDirect', 'blueDirect',
@@ -3225,7 +3225,7 @@ class MreLigh(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelBounds(),
         MelModel(),
@@ -3248,7 +3248,7 @@ class MreLscr(MelRecord):
     classType = 'LSCR'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelIcons(),
         MelLString('DESC','description'),
         MelConditions(),
@@ -3267,7 +3267,7 @@ class MreLtex(MelRecord):
     classType = 'LTEX'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelFid('TNAM','textureSet',),
         MelFid('MNAM','materialType',),
         MelStruct('HNAM','BB','friction','restitution',),
@@ -3302,7 +3302,7 @@ class MreLvli(MreLeveledList):
     copyAttrs = ('chanceNone','glob',)
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelUInt8('LVLD', 'chanceNone'),
         MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0L)),
@@ -3319,7 +3319,7 @@ class MreLvln(MreLeveledList):
     copyAttrs = ('chanceNone','model','modt_p',)
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelUInt8('LVLD', 'chanceNone'),
         MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0L)),
@@ -3339,7 +3339,7 @@ class MreLvsp(MreLeveledList):
     copyAttrs = ('chanceNone',)
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelUInt8('LVLD', 'chanceNone'),
         MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0L)),
@@ -3358,7 +3358,7 @@ class MreMato(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelModel(),
         MelGroups('property_data',
             MelBase('DNAM', 'data_entry'),
@@ -3383,7 +3383,7 @@ class MreMatt(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelFid('PNAM', 'materialParent',),
         MelString('MNAM','materialName'),
         MelStruct('CNAM', '3f', 'red', 'green', 'blue'),
@@ -3404,7 +3404,7 @@ class MreMesg(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelLString('DESC','description'),
         MelLString('FULL','full'),
         MelFid('INAM','iconUnused'), # leftover
@@ -3459,7 +3459,7 @@ class MreMgef(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelLString('FULL','full'),
         MelFid('MDOB','harvestIngredient'),
@@ -3494,7 +3494,7 @@ class MreMisc(MelRecord):
     classType = 'MISC'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
@@ -3514,7 +3514,7 @@ class MreMovt(MelRecord):
     classType = 'MOVT'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('MNAM','mnam_n'),
         MelTruncatedStruct('SPED', '11f', 'leftWalk', 'leftRun', 'rightWalk',
                            'rightRun', 'forwardWalk', 'forwardRun', 'backWalk',
@@ -3535,7 +3535,7 @@ class MreMstt(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
@@ -3560,7 +3560,7 @@ class MreMusc(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelUInt32('FNAM', (MuscTypeFlags, 'flags', 0L)),
         # Divided by 100 in TES5Edit, probably for editing only
         MelStruct('PNAM','2H','priority','duckingDB'),
@@ -3575,7 +3575,7 @@ class MreMust(MelRecord):
     classType = 'MUST'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelUInt32('CNAM', 'trackType'),
         MelOptFloat('FLTV', 'duration'),
         MelOptUInt32('DNAM', 'fadeOut'),
@@ -3596,7 +3596,7 @@ class MreNavi(MelRecord):
     classType = 'NAVI'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelUInt32('NVER', 'version'),
         # NVMI and NVPP would need special routines to handle them
         # If no mitigation is needed, then leave it as MelBase
@@ -3651,7 +3651,7 @@ class MreNavm(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         # NVNM, ONAM, PNAM, NNAM would need special routines to handle them
         # If no mitigation is needed, then leave it as MelBase
         MelBase('NVNM','navMeshGeometry'),
@@ -3718,7 +3718,7 @@ class MreNpc(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID', 'eid'),
+        MelEdid(),
         MelVmad(),
         MelBounds(),
         MelStruct('ACBS','I2Hh3Hh3H',
@@ -3819,7 +3819,7 @@ class MreOtft(MelRecord):
     classType = 'OTFT'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelFidList('INAM','items'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3900,7 +3900,7 @@ class MrePack(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelStruct('PKDT','I3BsH2s',(PackFlags1,'generalFlags',0L),'type','interruptOverride',
                   'preferredSpeed','unknown',(PackFlags2,'interruptFlags',0L),'unknown',),
@@ -3956,7 +3956,7 @@ class MrePerk(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelLString('FULL','full'),
         MelLString('DESC','description'),
@@ -4050,7 +4050,7 @@ class MreProj(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
@@ -4124,7 +4124,7 @@ class MreQust(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelLString('FULL','full'),
         MelStruct('DNAM', '=H2B4sI', (_questFlags, 'questFlags', 0L),
@@ -4250,7 +4250,7 @@ class MreRace(MelRecord):
     classType = 'RACE'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelLString('FULL','full'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -4310,7 +4310,7 @@ class MreRefr(MelRecord):
                     raise
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelFid('NAME','base'),
         MelOptStruct('XMBO','3f','boundHalfExtentsX','boundHalfExtentsY','boundHalfExtentsZ'),
@@ -4427,7 +4427,7 @@ class MreRegn(MelRecord):
         ( 0,'Override'),))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelStruct('RCLR','3Bs','mapRed','mapBlue','mapGreen',('unused1',null1)),
         MelFid('WNAM','worldspace'),
         MelGroups('areas',
@@ -4476,7 +4476,7 @@ class MreRela(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelStruct('DATA','2IHsBI',(FID,'parent'),(FID,'child'),'rankType',
                   'unknown',(RelationshipFlags,'relaFlags',0L),(FID,'associationType'),),
     )
@@ -4488,7 +4488,7 @@ class MreRevb(MelRecord):
     classType = 'REVB'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelStruct('DATA','2H4b6B','decayTimeMS','hfReferenceHZ','roomFilter',
                   'hfRoomFilter','reflections','reverbAmp','decayHFRatio',
                   'reflectDelayMS','reverbDelayMS','diffusion','density',
@@ -4508,7 +4508,7 @@ class MreRfct(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelStruct('DATA','3I',(FID,'impactSet'),(FID,'impactSet'),(RfctTypeFlags,'flags',0L),),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -4564,7 +4564,7 @@ class MreScen(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelUInt32('FNAM', (ScenFlags1, 'flags', 0L)),
         MelGroups('phases',
@@ -4665,7 +4665,7 @@ class MreScrl(MelRecord,MreHasEffects):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelLString('FULL','full'),
         MelKeywords(),
@@ -4690,7 +4690,7 @@ class MreShou(MelRecord):
     classType = 'SHOU'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelLString('FULL','full'),
         MelFid('MDOB','menuDisplayObject'),
         MelLString('DESC','description'),
@@ -4706,7 +4706,7 @@ class MreSlgm(MelRecord):
     classType = 'SLGM'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
@@ -4733,7 +4733,7 @@ class MreSmbn(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelFid('PNAM','parent',),
         MelFid('SNAM','child',),
         MelConditionCounter(),
@@ -4754,7 +4754,7 @@ class MreSmen(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelFid('PNAM','parent',),
         MelFid('SNAM','child',),
         MelConditionCounter(),
@@ -4783,7 +4783,7 @@ class MreSmqn(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelFid('PNAM','parent',),
         MelFid('SNAM','child',),
         MelConditionCounter(),
@@ -4811,7 +4811,7 @@ class MreSnct(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelLString('FULL','full'),
         MelUInt32('FNAM', (SoundCategoryFlags, 'flags', 0L)),
         MelFid('PNAM','parent',),
@@ -4826,7 +4826,7 @@ class MreSndr(MelRecord):
     classType = 'SNDR'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBase('CNAM','cnam_p'),
         MelFid('GNAM','category',),
         MelFid('SNAM','altSoundFor',),
@@ -4854,7 +4854,7 @@ class MreSopm(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelStruct('NAM1','B2sB',(SopmFlags,'flags',0L),'unknown1','reverbSendpct',),
         MelBase('FNAM','fnam_p'),
         MelUInt32('MNAM', 'outputType'),
@@ -4877,7 +4877,7 @@ class MreSoun(MelRecord):
     classType = 'SOUN'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelString('FNAM','soundFileUnused'), # leftover
         MelBase('SNDD','soundDataUnused'), # leftover
@@ -4909,7 +4909,7 @@ class MreSpel(MelRecord,MreHasEffects):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelLString('FULL','full'),
         MelKeywords(),
@@ -4931,7 +4931,7 @@ class MreSpgd(MelRecord):
     _SpgdDataFlags = Flags(0L, Flags.getNames('rain', 'snow'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelTruncatedStruct(
             'DATA', '7f4If', 'gravityVelocity', 'rotationVelocity',
             'particleSizeX', 'particleSizeY', 'centerOffsetMin',
@@ -4948,7 +4948,7 @@ class MreStat(MelRecord):
     classType = 'STAT'
 
     melSet = MelSet(
-        MelString('EDID', 'eid'),
+        MelEdid(),
         MelBounds(),
         MelModel(),
         MelStruct('DNAM', 'fI', 'maxAngle30to120', (FID, 'material'),),
@@ -4966,7 +4966,7 @@ class MreTact(MelRecord):
     classType = 'TACT'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
@@ -4986,7 +4986,7 @@ class MreTree(MelRecord):
     classType = 'TREE'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelBounds(),
         MelModel(),
@@ -5011,7 +5011,7 @@ class MreTxst(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelGroups('destructionData',
             MelString('TX00','difuse'),
@@ -5039,7 +5039,7 @@ class MreVtyp(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelUInt8('DNAM', (VtypTypeFlags, 'flags', 0L)),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -5054,7 +5054,7 @@ class MreWatr(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelLString('FULL','full'),
         MelGroups('unused',
             MelString('NNAM','noiseMap',),
@@ -5159,7 +5159,7 @@ class MreWeap(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
@@ -5210,7 +5210,7 @@ class MreWoop(MelRecord):
     classType = 'WOOP'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelLString('FULL','full'),
         MelLString('TNAM','translation'),
     )
@@ -5243,7 +5243,7 @@ class MreWrld(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelGroups('unusedRNAM', # leftover
             MelBase('RNAM','unknown',),
         ),
@@ -5340,7 +5340,7 @@ class MreWthr(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('\x300TX','cloudTextureLayer_0'),
         MelString('\x310TX','cloudTextureLayer_1'),
         MelString('\x320TX','cloudTextureLayer_2'),

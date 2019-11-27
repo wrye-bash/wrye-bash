@@ -1620,6 +1620,12 @@ class MelUInt32(MelStruct):
 #------------------------------------------------------------------------------
 #-- Common/Special Elements
 #------------------------------------------------------------------------------
+class MelEdid(MelString):
+    """Handles an Editor ID (EDID) subrecord."""
+    def __init__(self):
+        MelString.__init__(self, 'EDID', 'eid')
+
+#------------------------------------------------------------------------------
 class MelIcons(MelSequential):
     """Handles icon subrecords. Defaults to ICON and MICO, with attribute names
     'iconPath' and 'smallIconPath', since that's most common."""
@@ -2585,7 +2591,7 @@ class MreGlob(MelRecord):
        integers lose precision."""
     classType = 'GLOB'
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelStruct('FNAM','s',('format','s')),
         MelFloat('FLTV', 'value'),
     )
@@ -2599,7 +2605,7 @@ class MreGmstBase(MelRecord):
     classType = 'GMST'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelUnion({
             u'b': MelUInt32('DATA', 'value'), # actually a bool
             u'f': MelFloat('DATA', 'value'),

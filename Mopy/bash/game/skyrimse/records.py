@@ -30,7 +30,7 @@ from ...brec import MelModel # set in Mopy/bash/game/skyrim/records.py
 from ...brec import MelRecord, MelStructs, MelGroups, MelStruct, FID, \
     MelString, MelSet, MelFid, MelOptStruct, MelFids, MelBase, MelStructA, \
     MelLString, MelFloat, MelUInt8, MelUInt16, MelUInt32, MelCounter, \
-    null1, null2, null3, null4, MelTruncatedStruct, MelIcons
+    null1, null2, null3, null4, MelTruncatedStruct, MelIcons, MelEdid
 # Those are unused here, but need be in this file as are accessed via it
 from ..skyrim.records import MreHeader, MreGmst
 
@@ -48,7 +48,7 @@ class MreAmmo(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
@@ -76,7 +76,7 @@ class MreLtex(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelFid('TNAM','textureSet',),
         MelFid('MNAM','materialType',),
         MelStruct('HNAM','BB','friction','restitution',),
@@ -100,7 +100,7 @@ class MreMato(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelModel(),
         MelGroups('property_data',
             MelBase('DNAM', 'data_entry'),
@@ -126,7 +126,7 @@ class MreStat(MelRecord):
     ))
 
     melSet = MelSet(
-        MelString('EDID', 'eid'),
+        MelEdid(),
         MelBounds(),
         MelModel(),
         MelTruncatedStruct(
@@ -150,7 +150,7 @@ class MreWatr(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelLString('FULL','full'),
         MelGroups('unused',
             MelString('NNAM','noiseMap',),
@@ -275,7 +275,7 @@ class MreWeap(MelRecord):
             return MelTruncatedStruct._pre_process_unpacked(self, unpacked_val)
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
@@ -373,7 +373,7 @@ class MreWthr(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('\x300TX','cloudTextureLayer_0'),
         MelString('\x310TX','cloudTextureLayer_1'),
         MelString('\x320TX','cloudTextureLayer_2'),
@@ -469,7 +469,7 @@ class MreVoli(MelRecord):
     classType = 'VOLI'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelFloat('CNAM', 'intensity'),
         MelFloat('DNAM', 'customColorContribution'),
         MelFloat('ENAM', 'red'),
@@ -496,7 +496,7 @@ class MreLens(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelFloat('CNAM', 'colorInfluence'),
         MelFloat('DNAM', 'fadeDistanceRadiusScale'),
         MelCounter(MelUInt32('LFSP', 'sprite_count'),

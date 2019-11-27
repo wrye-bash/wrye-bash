@@ -26,7 +26,8 @@ imported from skyrim, but only after setting MelModel to the FO4 format."""
 from ... import brec
 from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelStruct, MelUnicode, MelNull, MelFidList, MreLeveledListBase, MelFid, \
-    FID, MelLString, MelStructA, MelUInt8, MelOptFid, MelOptFloat, MelBounds
+    FID, MelLString, MelStructA, MelUInt8, MelOptFid, MelOptFloat, MelBounds, \
+    MelEdid
 # Set brec.MelModel to the Fallout 4 one - do not import from skyrim.records yet
 if brec.MelModel is None:
 
@@ -101,7 +102,7 @@ class MreLvli(MreLeveledList):
                  'epicLootChance','overrideName')
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelUInt8('LVLD', 'chanceNone'),
         MelUInt8('LVLM', 'maxCount'),
@@ -125,7 +126,7 @@ class MreLvln(MreLeveledList):
                  'model','modt_p')
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelBounds(),
         MelUInt8('LVLD', 'chanceNone'),
         MelUInt8('LVLM', 'maxCount'),

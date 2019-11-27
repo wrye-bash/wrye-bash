@@ -35,7 +35,7 @@ from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     MelOptUInt16, MelOptUInt32, MelRaceParts, MelRaceVoices, null1, null2, \
     null3, null4, MelScriptVars, MelSequential, MelUnion, FlagDecider, \
     AttrValDecider, PartialLoadDecider, MelTruncatedStruct, MelCoordinates, \
-    MelIcon, MelIco2
+    MelIcon, MelIco2, MelEdid
 from ...exception import BoltError, ModSizeError, StateError
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
@@ -242,7 +242,7 @@ class MreLeveledList(MreLeveledListBase):
             return MelTruncatedStruct._pre_process_unpacked(self, unpacked_val)
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelLevListLvld(),
         MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0L)),
         MelFid('SCRI','script'),
@@ -295,7 +295,7 @@ class MreAchr(MelRecord):
     _flags = Flags(0L,Flags.getNames('oppositeParent'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelFid('NAME','base'),
         # both unused
         MelNull('XPCI'),
@@ -321,7 +321,7 @@ class MreAcre(MelRecord):
     _flags = Flags(0L,Flags.getNames('oppositeParent'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelFid('NAME','base'),
         MelOwnership(),
         MelOptStruct('XLOD', '3f', ('lod1', None), ('lod2', None),
@@ -341,7 +341,7 @@ class MreActi(MelRecord):
     classType = 'ACTI'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelModel(),
         MelFid('SCRI','script'),
@@ -356,7 +356,7 @@ class MreAlch(MelRecord,MreHasEffects):
     _flags = Flags(0L,Flags.getNames('autoCalc','isFood'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL', 'full'),
         MelModel(),
         MelIcon(),
@@ -374,7 +374,7 @@ class MreAmmo(MelRecord):
     _flags = Flags(0L,Flags.getNames('notNormalWeapon'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelModel(),
         MelIcon(),
@@ -390,7 +390,7 @@ class MreAnio(MelRecord):
     classType = 'ANIO'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelModel(),
         MelFid('DATA','animationId'),
     )
@@ -401,7 +401,7 @@ class MreAppa(MelRecord):
     classType = 'APPA'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelModel(),
         MelIcon(),
@@ -421,7 +421,7 @@ class MreArmo(MelRecord):
                                               (23, 'heavyArmor')))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelFid('SCRI','script'),
         MelFid('ENAM','enchantment'),
@@ -444,7 +444,7 @@ class MreBook(MelRecord):
     _flags = Flags(0,Flags.getNames('isScroll','isFixed'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelModel(),
         MelIcon(),
@@ -462,7 +462,7 @@ class MreBsgn(MelRecord):
     classType = 'BSGN'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelIcon(),
         MelString('DESC','text'),
@@ -485,7 +485,7 @@ class MreCell(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelUInt8('DATA', (cellFlags, 'flags', 0L)),
         MelCoordinates('XCLC', '2i', ('posX', None), ('posY', None),
@@ -533,7 +533,7 @@ class MreClas(MelRecord):
         (17,'repair'),))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelString('DESC','description'),
         MelIcon(),
@@ -551,7 +551,7 @@ class MreClmt(MelRecord):
     classType = 'CLMT'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelStructA('WLST','Ii', 'Weather', (FID,'weather'), 'chance'),
         MelString('FNAM','sunPath'),
         MelString('GNAM','glarePath'),
@@ -570,7 +570,7 @@ class MreClot(MelRecord):
                                               (22, 'notPlayable')))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelFid('SCRI','script'),
         MelFid('ENAM','enchantment'),
@@ -593,7 +593,7 @@ class MreCont(MelRecord):
     _flags = Flags(0,Flags.getNames(None,'respawns'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelModel(),
         MelFid('SCRI','script'),
@@ -644,7 +644,7 @@ class MreCrea(MreActor):
         (17,'repair'),))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelModel(),
         MelFids('SPLO','spells'),
@@ -702,7 +702,7 @@ class MreCsty(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelTruncatedStruct(
             'CSTD', '2B2s8f2B2s3fB3s2f5B3s2f2B2s7fB3sfI', 'dodgeChance',
             'lrChance', ('unused1', null2), 'lrTimerMin', 'lrTimerMax',
@@ -736,7 +736,7 @@ class MreCsty(MelRecord):
 class MreDial(brec.MreDial):
     """Dialogue."""
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelFids('QSTI','quests'),
         MelFids('QSTR','quests2'), # xEdit calls it 'Quests?'
         MelString('FULL','full'),
@@ -752,7 +752,7 @@ class MreDoor(MelRecord):
                                      'minimalUse'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelModel(),
         MelFid('SCRI','script'),
@@ -776,7 +776,7 @@ class MreEfsh(MelRecord):
         ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelIcon('fillTexture'),
         MelIco2('particleTexture'),
         MelTruncatedStruct(
@@ -812,7 +812,7 @@ class MreEnch(MelRecord,MreHasEffects):
     _flags = Flags(0L,Flags.getNames('noAutoCalc'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL', 'full'), #--At least one mod has this. Odd.
         MelStruct('ENIT', '3IB3s', 'itemType', 'chargeAmount', 'enchantCost',
                   (_flags, 'flags', 0L), ('unused1', null3)),
@@ -827,7 +827,7 @@ class MreEyes(MelRecord):
     _flags = Flags(0L,Flags.getNames('playable',))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelIcon(),
         MelUInt8('DATA', (_flags, 'flags')),
@@ -841,7 +841,7 @@ class MreFact(MelRecord):
     _flags = Flags(0L,Flags.getNames('hiddenFromPC','evil','specialCombat'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelStructs('XNAM','Ii','relations',(FID,'faction'),'mod'),
         MelUInt8('DATA', (_flags, 'flags', 0L)),
@@ -859,7 +859,7 @@ class MreFlor(MelRecord):
     classType = 'FLOR'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelModel(),
         MelFid('SCRI','script'),
@@ -877,7 +877,7 @@ class MreFurn(MelRecord):
     # are available
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelModel(),
         MelFid('SCRI','script'),
@@ -895,7 +895,7 @@ class MreGras(MelRecord):
     _flags = Flags(0,Flags.getNames('vLighting','uScaling','fitSlope'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelModel(),
         MelStruct('DATA', '3BsH2sI4fB3s', 'density', 'minSlope', 'maxSlope',
                   ('unused1', null1), 'waterDistance', ('unused2', null2),
@@ -911,7 +911,7 @@ class MreHair(MelRecord):
     _flags = Flags(0L,Flags.getNames('playable','notMale','notFemale','fixed'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelModel(),
         MelIcon(),
@@ -924,7 +924,7 @@ class MreIdle(MelRecord):
     classType = 'IDLE'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelModel(),
         MelConditions(),
         MelUInt8('ANAM', 'group'),
@@ -968,7 +968,7 @@ class MreIngr(MelRecord,MreHasEffects):
     _flags = Flags(0L,Flags.getNames('noAutoCalc','isFood'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL', 'full'),
         MelModel(),
         MelIcon(),
@@ -984,7 +984,7 @@ class MreKeym(MelRecord):
     classType = 'KEYM'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelModel(),
         MelIcon(),
@@ -1002,7 +1002,7 @@ class MreLigh(MelRecord):
         'flickerSlow', 'pulse', 'pulseSlow', 'spotLight', 'spotShadow'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelModel(),
         MelFid('SCRI','script'),
         MelString('FULL','full'),
@@ -1021,7 +1021,7 @@ class MreLscr(MelRecord):
     classType = 'LSCR'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelIcon(),
         MelString('DESC','text'),
         MelStructs('LNAM', '2I2h', 'Locations', (FID, 'direct'),
@@ -1051,7 +1051,7 @@ class MreLtex(MelRecord):
         (14,'snow'),))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelIcon(),
         MelOptStruct('HNAM', '3B', (_flags, 'flags'), 'friction',
                      'restitution'), ##: flags are actually an enum....
@@ -1105,7 +1105,7 @@ class MreMgef(MelRecord):
         (27,'noHitEffect'),))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelString('DESC','text'),
         MelIcon(),
@@ -1128,7 +1128,7 @@ class MreMisc(MelRecord):
     classType = 'MISC'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelModel(),
         MelIcon(),
@@ -1190,7 +1190,7 @@ class MreNpc(MreActor):
             out.packSub(self.subType,'=21BH2s8B',*values)
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelModel(),
         MelStruct('ACBS','=I3Hh2H',
@@ -1263,7 +1263,7 @@ class MrePack(MelRecord):
         'noIdleAnims',))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelTruncatedStruct('PKDT', 'IB3s', (_flags, 'flags'), 'aiType',
                            ('unused1', null3), old_versions={'HBs'}),
         MelUnion({
@@ -1345,7 +1345,7 @@ class MreQust(MelRecord):
     targetFlags = Flags(0,Flags.getNames('ignoresLocks'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelFid('SCRI','script'),
         MelString('FULL','full'),
         MelIcon(),
@@ -1385,7 +1385,7 @@ class MreRace(MelRecord):
     _flags = Flags(0L,Flags.getNames('playable'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelString('DESC','text'),
         MelFids('SPLO','spells'),
@@ -1534,7 +1534,7 @@ class MreRefr(MelRecord):
                     raise
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelFid('NAME','base'),
         MelOptStruct('XTEL', 'I6f', (FID, 'destinationFid'), 'destinationPosX',
                      'destinationPosY', 'destinationPosZ', 'destinationRotX',
@@ -1596,7 +1596,7 @@ class MreRegn(MelRecord):
         ( 3,'snowy'),))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelIcon(),
         MelStruct('RCLR','3Bs','mapRed','mapBlue','mapGreen',('unused1',null1)),
         MelFid('WNAM','worldspace'),
@@ -1647,7 +1647,7 @@ class MreSbsp(MelRecord):
     classType = 'SBSP'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelStruct('DNAM','3f','sizeX','sizeY','sizeZ'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1657,7 +1657,7 @@ class MreScpt(MelRecord):
     classType = 'SCPT'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelEmbeddedScript(with_script_vars=True),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1667,7 +1667,7 @@ class MreSgst(MelRecord,MreHasEffects):
     classType = 'SGST'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL', 'full'),
         MelModel(),
         MelIcon(),
@@ -1682,7 +1682,7 @@ class MreSkil(MelRecord):
     classType = 'SKIL'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelSInt32('INDX', 'skill'),
         MelString('DESC','description'),
         MelIcon(),
@@ -1699,7 +1699,7 @@ class MreSlgm(MelRecord):
     classType = 'SLGM'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelModel(),
         MelIcon(),
@@ -1729,7 +1729,7 @@ class MreSoun(MelRecord):
         def dumpData(self,record,out): return
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FNAM','soundFile'),
         MelSounSndd('SNDD', '=2BbsH2s', 'minDistance', 'maxDistance',
                     'freqAdjustment', ('unused1', null1), (_flags, 'flags'),
@@ -1759,7 +1759,7 @@ class MreSpel(MelRecord,MreHasEffects):
         'disallowAbsorbReflect', 'touchExplodesWOTarget'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL', 'full'),
         MelStruct('SPIT', '3IB3s', 'spellType', 'cost', 'level',
                   (_SpellFlags, 'flags', 0L), ('unused1', null3)),
@@ -1772,7 +1772,7 @@ class MreStat(MelRecord):
     classType = 'STAT'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelModel(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1782,7 +1782,7 @@ class MreTree(MelRecord):
     classType = 'TREE'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelModel(),
         MelIcon(),
         MelStructA('SNAM','I','speedTree','seed'),
@@ -1807,7 +1807,7 @@ class MreWatr(MelRecord):
             return MelTruncatedStruct._pre_process_unpacked(self, unpacked_val)
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('TNAM','texture'),
         MelUInt8('ANAM', 'opacity'),
         MelUInt8('FNAM', (_flags, 'flags', 0)),
@@ -1841,7 +1841,7 @@ class MreWeap(MelRecord):
     _flags = Flags(0L,Flags.getNames('notNormalWeapon'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelModel(),
         MelIcon(),
@@ -1860,7 +1860,7 @@ class MreWrld(MelRecord):
     _flags = Flags(0L,Flags.getNames('smallWorld','noFastTravel','oblivionWorldspace',None,'noLODWater'))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('FULL','full'),
         MelFid('WNAM','parent'),
         MelFid('CNAM','climate'),
@@ -1880,7 +1880,7 @@ class MreWthr(MelRecord):
     classType = 'WTHR'
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelEdid(),
         MelString('CNAM','lowerLayer'),
         MelString('DNAM','upperLayer'),
         MelModel(),
