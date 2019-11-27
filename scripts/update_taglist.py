@@ -105,13 +105,11 @@ def setup_parser(parser):
              u'[default: {}].'.format(MASTERLIST_VERSION),
     )
 
-
 def mock_game_install(master_file_name):
     game_path = tempfile.mkdtemp()
     os.mkdir(os.path.join(game_path, u'Data'))
     open(os.path.join(game_path, u'Data', master_file_name), u'a').close()
     return game_path
-
 
 def download_masterlist(repository, version, dl_path):
     url = u'https://raw.githubusercontent.com/loot/{}/v{}/masterlist.yaml'
@@ -122,7 +120,6 @@ def download_masterlist(repository, version, dl_path):
         repository, dl_path))
     utils.download_file(url, dl_path)
 
-
 def all_taglists_present():
     for game_name, _master_name, _repository, _game_type in GAME_DATA:
         taglist_path = os.path.join(MOPY_PATH, u'taglists', game_name,
@@ -130,7 +127,6 @@ def all_taglists_present():
         if not os.path.isfile(taglist_path):
             return False
     return True
-
 
 def main(verbosity=logging.INFO, logfile=LOGFILE,
          masterlist_version=MASTERLIST_VERSION):
@@ -154,7 +150,6 @@ def main(verbosity=logging.INFO, logfile=LOGFILE,
         loot_db.write_minimal_list(taglist_path, True)
         LOGGER.info(u'{} masterlist converted.'.format(game_name))
         shutil.rmtree(game_install_path)
-
 
 if __name__ == u'__main__':
     argparser = argparse.ArgumentParser(
