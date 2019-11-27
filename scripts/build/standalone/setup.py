@@ -2,6 +2,7 @@
 
 # setup.py used to compile the executable with py2exe
 
+from __future__ import absolute_import
 import argparse
 import os
 import shutil
@@ -51,7 +52,7 @@ def move_to_bash(*files):
     try:
         yield
     finally:
-        for target in file_map.itervalues():
+        for target in file_map.values():
             os.remove(target)
 
 

@@ -23,14 +23,19 @@
 #
 # =============================================================================
 
+from __future__ import absolute_import, division, print_function
 import logging
 import math
 import os
 import subprocess
 import sys
-import urllib2
 from contextlib import contextmanager
 
+# PY3: from urllib.request import urlopen
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib2 import urlopen
 
 # verbosity:
 #  quiet (warnings and above)
@@ -84,7 +89,7 @@ def convert_bytes(size_bytes):
 
 def download_file(url, fpath):
     file_name = os.path.basename(fpath)
-    response = urllib2.urlopen(url)
+    response = urlopen(url)
     meta = response.info()
     file_size = int(meta.getheaders("Content-Length")[0])
     converted_size = convert_bytes(file_size)
@@ -102,8 +107,8 @@ def download_file(url, fpath):
                 file_name, convert_bytes(file_size_dl), converted_size, percentage
             )
             status = status + chr(8) * (len(status) + 1)
-            print status,
-    print
+            print(status, end=' ')
+    print()
 
 
 def run_subprocess(command, logger, **kwargs):
