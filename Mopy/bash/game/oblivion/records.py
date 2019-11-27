@@ -26,16 +26,16 @@ import struct
 from .constants import condition_function_data
 from ... import brec
 from ...bolt import Flags, struct_pack
-from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
-    FID, MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
-    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, \
-    MelFidList, MelStructA, MelStrings, MreGmstBase, MreHasEffects, \
-    MelReferences, MelRegnEntrySubrecord, MelFloat, MelSInt16, MelSInt32, \
-    MelUInt8, MelUInt16, MelUInt32, MelOptFloat, MelOptSInt32, MelOptUInt8, \
-    MelOptUInt16, MelOptUInt32, MelRaceParts, MelRaceVoices, null1, null2, \
-    null3, null4, MelScriptVars, MelSequential, MelUnion, FlagDecider, \
-    AttrValDecider, PartialLoadDecider, MelTruncatedStruct, MelCoordinates, \
-    MelIcon, MelIco2, MelEdid, MelFull
+from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
+    MelString, MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, \
+    MelFids, MreHeaderBase, MelBase, MelUnicode, MelFidList, MelStrings, \
+    MreGmstBase, MreHasEffects, MelReferences, MelRegnEntrySubrecord, \
+    MelFloat, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
+    MelOptFloat, MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, \
+    MelRaceParts, MelRaceVoices, null1, null2, null3, null4, MelScriptVars, \
+    MelSequential, MelUnion, FlagDecider, AttrValDecider, PartialLoadDecider, \
+    MelTruncatedStruct, MelCoordinates, MelIcon, MelIco2, MelEdid, MelFull, \
+    MelArray, MelWthrColors
 from ...exception import BoltError, ModSizeError, StateError
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
@@ -92,72 +92,74 @@ class MelBipedFlags(Flags):
         Flags.__init__(self,default,names)
 
 #------------------------------------------------------------------------------
-class MelConditions(MelStructs):
+class MelConditions(MelGroups):
     """Represents a set of quest/dialog conditions. Difficulty is that FID
     state of parameters depends on function index."""
-    def __init__(self):
-        MelStructs.__init__(self,'CTDA','B3sfIii4s','conditions',
-            'operFlag',('unused1',null3),'compValue','ifunc','param1','param2',
-            ('unused2',null4))
+    class MelCtda(MelStruct):
+        def getLoaders(self,loaders):
+            # Older CTDT type for ai package records.
+            loaders[self.subType] = loaders['CTDT']= self
 
-    def getLoaders(self,loaders):
-        loaders[self.subType] = self
-        loaders['CTDT'] = self #--Older CTDT type for ai package records.
+        def setDefault(self, record):
+            MelStruct.setDefault(self, record)
+            record.form12 = 'ii'
 
-    def getDefault(self):
-        target = MelStructs.getDefault(self)
-        target.form12 = 'ii'
-        return target
+        def hasFids(self, formElements):
+            formElements.add(self)
 
-    def hasFids(self,formElements):
-        formElements.add(self)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if sub_type == 'CTDA' and size_ != 24:
+                raise ModSizeError(ins.inName, readId, (24,), size_)
+            if sub_type == 'CTDT' and size_ != 20:
+                raise ModSizeError(ins.inName, readId, (20,), size_)
+            unpacked1 = ins.unpack('B3sfI', 12, readId)
+            (record.operFlag, record.unused1, record.compValue,
+             ifunc) = unpacked1
+            #--Get parameters
+            if ifunc not in condition_function_data:
+                raise BoltError(u'Unknown condition function: %d\nparam1: '
+                                u'%08X\nparam2: %08X' % (
+                    ifunc, ins.unpackRef(), ins.unpackRef()))
+            form1 = 'iI'[condition_function_data[ifunc][1] == 2] # 2 means fid
+            form2 = 'iI'[condition_function_data[ifunc][2] == 2]
+            form12 = form1 + form2
+            unpacked2 = ins.unpack(form12,8,readId)
+            record.param1, record.param2 = unpacked2
+            if size_ == 24:
+                record.unused2 = ins.read(4)
+            else: # size == 20, verified at the start
+                record.unused2 = null4
+            record.ifunc, record.form12 = ifunc, form12
+            if self._debug:
+                unpacked = unpacked1 + unpacked2
+                print u' ',zip(self.attrs, unpacked)
+                if len(unpacked) != len(self.attrs):
+                    print u' ', unpacked
 
-    def loadData(self, record, ins, sub_type, size_, readId):
-        if sub_type == 'CTDA' and size_ != 24:
-            raise ModSizeError(ins.inName, readId, (24,), size_)
-        if sub_type == 'CTDT' and size_ != 20:
-            raise ModSizeError(ins.inName, readId, (20,), size_)
-        target = MelObject()
-        record.conditions.append(target)
-        target.__slots__ = self.attrs
-        unpacked1 = ins.unpack('B3sfI',12,readId)
-        (target.operFlag,target.unused1,target.compValue,ifunc) = unpacked1
-        #--Get parameters
-        if ifunc not in condition_function_data:
-            raise BoltError(u'Unknown condition function: %d\nparam1: '
-                            u'%08X\nparam2: %08X' % (ifunc, ins.unpackRef(),
-                                                     ins.unpackRef()))
-        form1 = 'iI'[condition_function_data[ifunc][1] == 2] # 2 means fid
-        form2 = 'iI'[condition_function_data[ifunc][2] == 2]
-        form12 = form1+form2
-        unpacked2 = ins.unpack(form12,8,readId)
-        (target.param1,target.param2) = unpacked2
-        if size_ == 24:
-            target.unused2 = ins.read(4)
-        else:
-            target.unused2 = null4
-        (target.ifunc,target.form12) = (ifunc,form12)
-        if self._debug:
-            unpacked = unpacked1+unpacked2
-            print u' ',zip(self.attrs,unpacked)
-            if len(unpacked) != len(self.attrs):
-                print u' ',unpacked
+        def dumpData(self,record,out):
+            out.packSub('CTDA','B3sfI'+ record.form12 + '4s',
+                record.operFlag, record.unused1, record.compValue,
+                record.ifunc, record.param1, record.param2, record.unused2)
 
-    def dumpData(self,record,out):
-        for target in record.conditions:
-            out.packSub('CTDA','B3sfI'+target.form12+'4s',
-                target.operFlag, target.unused1, target.compValue,
-                target.ifunc, target.param1, target.param2, target.unused2)
-
-    def mapFids(self,record,function,save=False):
-        for target in record.conditions:
-            form12 = target.form12
+        def mapFids(self,record,function,save=False):
+            form12 = record.form12
             if form12[0] == 'I':
-                result = function(target.param1)
-                if save: target.param1 = result
+                result = function(record.param1)
+                if save: record.param1 = result
             if form12[1] == 'I':
-                result = function(target.param2)
-                if save: target.param2 = result
+                result = function(record.param2)
+                if save: record.param2 = result
+
+        @property
+        def signatures(self):
+            return {'CTDA', 'CTDT'}
+
+    def __init__(self):
+        MelGroups.__init__(self, 'conditions',
+            MelConditions.MelCtda(
+                'CTDA', 'B3sfIii4s', 'operFlag', ('unused1', null3),
+                'compValue', 'ifunc', 'param1', 'param2', ('unused2',null4)),
+        )
 
 #------------------------------------------------------------------------------
 # A distributor config for use with MelEffects, since MelEffects also contains
@@ -215,6 +217,14 @@ class MelEmbeddedScript(MelSequential):
         ]
         if with_script_vars: seq_elements += [MelScriptVars()]
         MelSequential.__init__(self, *(seq_elements + [MelReferences()]))
+
+#------------------------------------------------------------------------------
+class MelItems(MelGroups):
+    """Wraps MelGroups for the common task of defining a list of items."""
+    def __init__(self):
+        MelGroups.__init__(self, 'items',
+            MelStruct('CNTO', 'Ii', (FID, 'item'), 'count'),
+        ),
 
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
@@ -552,7 +562,9 @@ class MreClmt(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelStructA('WLST','Ii', 'Weather', (FID,'weather'), 'chance'),
+        MelArray('weather_types',
+            MelStruct('WLST','Ii', (FID, 'weather'), 'chance'),
+        ),
         MelString('FNAM','sunPath'),
         MelString('GNAM','glarePath'),
         MelModel(),
@@ -597,7 +609,7 @@ class MreCont(MelRecord):
         MelFull(),
         MelModel(),
         MelFid('SCRI','script'),
-        MelStructs('CNTO','Ii','items',(FID,'item'),'count'),
+        MelItems(),
         MelStruct('DATA','=Bf',(_flags,'flags',0L),'weight'),
         MelFid('SNAM','soundOpen'),
         MelFid('QNAM','soundClose'),
@@ -653,11 +665,13 @@ class MreCrea(MreActor):
         MelStruct('ACBS','=I3Hh2H',
             (_flags,'flags',0L),'baseSpell','fatigue','barterGold',
             ('level',1),'calcMin','calcMax'),
-        MelStructs('SNAM','=IB3s','factions',
-            (FID,'faction',None),'rank',('unused1','IFZ')),
+        MelGroups('factions',
+            MelStruct('SNAM', 'IB3s', (FID, 'faction', None), 'rank',
+                      ('unused1', 'IFZ')),
+        ),
         MelFid('INAM','deathItem'),
         MelFid('SCRI','script'),
-        MelStructs('CNTO','Ii','items',(FID,'item',None),('count',1)),
+        MelItems(),
         MelStruct('AIDT','=4BIbB2s',
             ('aggression',5),('confidence',50),('energyLevel',50),
             ('responsibility',50),(aiService,'services',0L),'trainSkill',
@@ -843,7 +857,9 @@ class MreFact(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelStructs('XNAM','Ii','relations',(FID,'faction'),'mod'),
+        MelGroups('relations',
+            MelStruct('XNAM', 'Ii', (FID, 'faction'), 'mod'),
+        ),
         MelUInt8('DATA', (_flags, 'flags', 0L)),
         MelOptFloat('CNAM', ('crimeGoldMultiplier', None)),
         MelGroups('ranks',
@@ -928,8 +944,9 @@ class MreIdle(MelRecord):
         MelModel(),
         MelConditions(),
         MelUInt8('ANAM', 'group'),
-        MelStructA('DATA', '2I', 'related_animations', (FID, 'parent'),
-                   (FID, 'prevId')),
+        MelArray('related_animations',
+            MelStruct('DATA', '2I', (FID, 'parent'), (FID, 'prevId')),
+        ),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1024,8 +1041,10 @@ class MreLscr(MelRecord):
         MelEdid(),
         MelIcon(),
         MelString('DESC','text'),
-        MelStructs('LNAM', '2I2h', 'Locations', (FID, 'direct'),
-                   (FID, 'indirect'), 'gridy', 'gridx'),
+        MelGroups('locations',
+            MelStruct('LNAM', '2I2h', (FID, 'direct'), (FID, 'indirect'),
+                      'gridy', 'gridx'),
+        ),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1119,7 +1138,9 @@ class MreMgef(MelRecord):
             (FID, 'hitSound', 0), (FID, 'areaSound', 0),
             ('cefEnchantment', 0.0), ('cefBarter', 0.0),
             old_versions={'IfIiiH2sIfI'}),
-        MelStructA('ESCE','4s','counterEffects','effect'),
+        MelArray('counterEffects',
+            MelStruct('ESCE', '4s', 'effect'),
+        ),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1196,13 +1217,15 @@ class MreNpc(MreActor):
         MelStruct('ACBS','=I3Hh2H',
             (_flags,'flags',0L),'baseSpell','fatigue','barterGold',
             ('level',1),'calcMin','calcMax'),
-        MelStructs('SNAM','=IB3s','factions',
-            (FID,'faction',None),'rank',('unused1','ODB')),
+        MelGroups('factions',
+            MelStruct('SNAM', 'IB3s', (FID, 'faction', None), 'rank',
+                      ('unused1', 'ODB')),
+        ),
         MelFid('INAM','deathItem'),
         MelFid('RNAM','race'),
         MelFids('SPLO','spells'),
         MelFid('SCRI','script'),
-        MelStructs('CNTO','Ii','items',(FID,'item',None),('count',1)),
+        MelItems(),
         MelStruct('AIDT', '=4BIbB2s', ('aggression', 5), ('confidence', 50),
                   ('energyLevel', 50), ('responsibility', 50),
                   (aiService, 'services', 0L), 'trainSkill', 'trainLevel',
@@ -1302,7 +1325,7 @@ class MrePack(MelRecord):
 ## See the comments on MreLand. Commented out for same reasons.
 ##class MrePgrd(MelRecord):
 ##    """Path grid structure. Part of cells."""
-##    ####Could probably be loaded via MelStructA,
+##    ####Could probably be loaded via MelArray,
 ##    ####but little point since it is too complex to manipulate
 ##    classType = 'PGRD'
 ##    class MelPgrl(MelStructs):
@@ -1389,7 +1412,9 @@ class MreRace(MelRecord):
         MelFull(),
         MelString('DESC','text'),
         MelFids('SPLO','spells'),
-        MelStructs('XNAM','Ii','relations',(FID,'faction'),'mod'),
+        MelGroups('relations',
+            MelStruct('XNAM', 'Ii', (FID, 'faction'), 'mod'),
+        ),
         MelStruct('DATA', '14b2s4fI', 'skill1', 'skill1Boost', 'skill2',
                   'skill2Boost', 'skill3', 'skill3Boost', 'skill4',
                   'skill4Boost', 'skill5', 'skill5Boost', 'skill6',
@@ -1411,7 +1436,7 @@ class MreRace(MelRecord):
                   'femaleLuck'),
         # Indexed Entries
         MelBase('NAM0', 'face_data_marker', ''),
-        MelRaceParts('face_parts', {
+        MelRaceParts({
             0: 'head',
             1: 'maleEars',
             2: 'femaleEars',
@@ -1434,7 +1459,7 @@ class MreRace(MelRecord):
         MelBase('NAM1', 'body_data_marker', ''),
         MelBase('MNAM', 'male_body_data_marker', ''),
         MelModel('maleTailModel'),
-        MelRaceParts('male_body_parts', {
+        MelRaceParts({
             0: 'maleUpperBodyPath',
             1: 'maleLowerBodyPath',
             2: 'maleHandPath',
@@ -1443,7 +1468,7 @@ class MreRace(MelRecord):
         }, group_loaders=lambda _indx: (MelIcon(),)),
         MelBase('FNAM', 'female_body_data_marker', ''),
         MelModel('femaleTailModel'),
-        MelRaceParts('female_body_parts', {
+        MelRaceParts({
             0: 'femaleUpperBodyPath',
             1: 'femaleLowerBodyPath',
             2: 'femaleHandPath',
@@ -1459,15 +1484,15 @@ class MreRace(MelRecord):
         MelStruct('SNAM','2s',('snam_p',null2)),
     ).with_distributor({
         'NAM0': {
-            'INDX|MODL|MODB|MODT|ICON': 'face_parts',
+            'INDX|MODL|MODB|MODT|ICON': 'head',
         },
         'MNAM': {
             'MODL|MODB|MODT': 'maleTailModel',
-            'INDX|ICON': 'male_body_parts',
+            'INDX|ICON': 'maleUpperBodyPath',
         },
         'FNAM': {
             'MODL|MODB|MODT': 'femaleTailModel',
-            'INDX|ICON': 'female_body_parts',
+            'INDX|ICON': 'femaleUpperBodyPath',
         },
     })
     __slots__ = melSet.getSlotsUsed()
@@ -1495,7 +1520,7 @@ class MreRefr(MelRecord):
         """Handler for xmrk record. Conditionally loads next items."""
         def loadData(self, record, ins, sub_type, size_, readId):
             """Reads data from ins into record attribute."""
-            junk = ins.read(size_, readId)
+            ins.seek(size_, 1, readId) # skip junk
             record.hasXmrk = True
             insTell = ins.tell
             insUnpack = ins.unpack
@@ -1602,37 +1627,43 @@ class MreRegn(MelRecord):
         MelFid('WNAM','worldspace'),
         MelGroups('areas',
             MelUInt32('RPLI', 'edgeFalloff'),
-            MelStructA('RPLD','2f','points','posX','posY')
+            MelArray('points',
+                MelStruct('RPLD', '2f', 'posX', 'posY'),
+            ),
         ),
         MelGroups('entries',
             MelStruct('RDAT', 'I2B2s', 'entryType', (rdatFlags, 'flags'),
                     'priority', ('unused1', null2)),
-            MelRegnEntrySubrecord(2, MelStructA(
-                'RDOT', 'IH2sf4B2H4s4f3H2s4s', 'objects', (FID, 'objectId'),
-                'parentIndex', ('unused1', null2), 'density', 'clustering',
-                'minSlope', 'maxSlope', (obflags, 'flags'), 'radiusWRTParent',
-                'radius', ('unk1', null4), 'maxHeight', 'sink', 'sinkVar',
-                'sizeVar', 'angleVarX', 'angleVarY',  'angleVarZ',
-                ('unused2', null2), ('unk2', null4))),
+            MelRegnEntrySubrecord(2, MelArray('objects',
+                MelStruct(
+                    'RDOT', 'IH2sf4B2H5f3H2s4s', (FID, 'objectId'),
+                    'parentIndex', ('unk1', null2), 'density', 'clustering',
+                    'minSlope', 'maxSlope', (obflags, 'flags'),
+                    'radiusWRTParent', 'radius', 'minHeight', 'maxHeight',
+                    'sink', 'sinkVar', 'sizeVar', 'angleVarX', 'angleVarY',
+                    'angleVarZ', ('unk2', null2), ('unk3', null4)),
+            )),
             ##: Was disabled previously - not in xEdit either...
             # MelRegnEntrySubrecord(5, MelIcon()),
             MelRegnEntrySubrecord(4, MelString('RDMP', 'mapName')),
-            MelRegnEntrySubrecord(6, MelStructA(
-                'RDGS', 'I4s', 'grasses', (FID,'grass'), ('unk1', null4))),
-            MelRegnEntrySubrecord(7, MelOptStruct(
-                'RDMD', 'I', ('musicType', None))),
-            MelRegnEntrySubrecord(7, MelStructA(
-                'RDSD', '3I', 'sounds', (FID, 'sound'), (sdflags, 'flags'),
-                'chance')),
-            MelRegnEntrySubrecord(3, MelStructA(
-                'RDWT', '2I', 'weather', (FID, 'weather'), 'chance')),
-        )
+            MelRegnEntrySubrecord(6, MelArray('grasses',
+                MelStruct('RDGS', 'I4s', (FID, 'grass'), ('unknown', null4)),
+            )),
+            MelRegnEntrySubrecord(7, MelOptUInt32('RDMD', 'musicType')),
+            MelRegnEntrySubrecord(7, MelArray('sounds',
+                MelStruct('RDSD', '3I', (FID, 'sound'), (sdflags, 'flags'),
+                          'chance'),
+            )),
+            MelRegnEntrySubrecord(3, MelArray('weatherTypes',
+                MelStruct('RDWT', '2I', (FID, 'weather'), 'chance')
+            )),
+        ),
     )
     __slots__ = melSet.getSlotsUsed()
 
 class MreRoad(MelRecord):
     """Road. Part of large worldspaces."""
-    ####Could probably be loaded via MelStructA,
+    ####Could probably be loaded via MelArray,
     ####but little point since it is too complex to manipulate
     classType = 'ROAD'
 
@@ -1785,7 +1816,9 @@ class MreTree(MelRecord):
         MelEdid(),
         MelModel(),
         MelIcon(),
-        MelStructA('SNAM','I','speedTree','seed'),
+        MelArray('speedTree',
+            MelUInt32('SNAM', 'seed'),
+        ),
         MelStruct('CNAM','5fi2f', 'curvature','minAngle','maxAngle',
                   'branchDim','leafDim','shadowRadius','rockSpeed',
                   'rustleSpeed'),
@@ -1884,11 +1917,9 @@ class MreWthr(MelRecord):
         MelString('CNAM','lowerLayer'),
         MelString('DNAM','upperLayer'),
         MelModel(),
-        MelStructA('NAM0','3Bs3Bs3Bs3Bs','colors','riseRed','riseGreen','riseBlue',('unused1',null1),
-                   'dayRed','dayGreen','dayBlue',('unused2',null1),
-                   'setRed','setGreen','setBlue',('unused3',null1),
-                   'nightRed','nightGreen','nightBlue',('unused4',null1),
-                   ),
+        MelArray('colors',
+            MelWthrColors('NAM0'),
+        ),
         MelStruct('FNAM','4f','fogDayNear','fogDayFar','fogNightNear','fogNightFar'),
         MelStruct('HNAM','14f',
             'eyeAdaptSpeed', 'blurRadius', 'blurPasses', 'emissiveMult',
@@ -1899,6 +1930,8 @@ class MreWthr(MelRecord):
             'windSpeed','lowerCloudSpeed','upperCloudSpeed','transDelta',
             'sunGlare','sunDamage','rainFadeIn','rainFadeOut','boltFadeIn',
             'boltFadeOut','boltFrequency','weatherType','boltRed','boltBlue','boltGreen'),
-        MelStructs('SNAM','2I','sounds',(FID,'sound'),'type'),
+        MelGroups('sounds',
+            MelStruct('SNAM', '2I', (FID, 'sound'), 'type'),
+        ),
     )
     __slots__ = melSet.getSlotsUsed()

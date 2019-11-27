@@ -588,6 +588,15 @@ class MelBase(object):
         :rtype: set[str]"""
         return {self.subType}
 
+    @property
+    def static_size(self):
+        """Returns an integer denoting the number of bytes this element is
+        going to take. Raises an AbstractError if the element can't know this
+        (e.g. MelBase or MelNull).
+
+        :rtype: int"""
+        raise exception.AbstractError()
+
 #------------------------------------------------------------------------------
 class MelCounter(MelBase):
     """Wraps a MelStruct-derived object with one numeric element (meaning that
@@ -636,8 +645,12 @@ class MelCounter(MelBase):
     def signatures(self):
         return self.element.signatures
 
+    @property
+    def static_size(self):
+        return self.element.static_size
+
 class MelPartialCounter(MelCounter):
-    """Extends MelCounter to work for MelStructs that contain more than just a
+    """Extends MelCounter to work for MelStruct's that contain more than just a
     counter. This means adding behavior for mapping fids, but dropping the
     conditional dumping behavior."""
     def __init__(self, element, counter, counts):
@@ -687,6 +700,10 @@ class MelFid(MelBase):
             fid = None
         result = function(fid)
         if save: record.__setattr__(attr,result)
+
+    @property
+    def static_size(self):
+        return 4 # Always a uint32
 
 #------------------------------------------------------------------------------
 class MelFids(MelBase):
@@ -827,6 +844,10 @@ class MelSequential(MelBase):
     def signatures(self):
         return self._possible_sigs
 
+    @property
+    def static_size(self):
+        return sum([element.static_size for element in self.elements])
+
 #------------------------------------------------------------------------------
 class MelReadOnly(MelSequential):
     """A MelSequential that never writes out. Useful for obsolete elements that
@@ -837,6 +858,7 @@ class MelReadOnly(MelSequential):
 class MelGroup(MelSequential):
     """Represents a group record."""
     def __init__(self,attr,*elements):
+        """:type attr: str"""
         MelSequential.__init__(self, *elements)
         self.attr, self.loaders = attr, {}
 
@@ -925,6 +947,10 @@ class MelGroups(MelGroup):
         for target in record.__getattribute__(self.attr):
             for element in formElements:
                 element.mapFids(target,function,save)
+
+    @property
+    def static_size(self):
+        raise exception.AbstractError()
 
 #------------------------------------------------------------------------------
 # Unions and Deciders
@@ -1247,6 +1273,14 @@ class MelUnion(MelBase):
     def signatures(self):
         return self._possible_sigs
 
+    @property
+    def static_size(self):
+        stat_size = next(self.element_mapping.itervalues()).static_size
+        if any(element.static_size != stat_size for element
+               in self.element_mapping.itervalues()):
+            raise exception.AbstractError() # The sizes are not all identical
+        return stat_size
+
 #------------------------------------------------------------------------------
 class MelReferences(MelGroups):
     """Handles mixed sets of SCRO and SCRV for scripts, quests, etc."""
@@ -1391,82 +1425,92 @@ class MelStruct(MelBase):
             result = function(getter(attr))
             if save: setter(attr,result)
 
+    @property
+    def static_size(self):
+        # dumpExtra means we can't know the size
+        if self.formatLen == -1:
+            return struct.calcsize(self.format)
+        raise exception.AbstractError()
+
 #------------------------------------------------------------------------------
-class MelStructs(MelStruct):
-    """Represents array of structured records."""
+class MelArray(MelBase):
+    """Represents a single subrecord that consists of multiple fixed-size
+    components. Note that only elements that properly implement static_size
+    and fulfill len(self.signatures) == 1, i.e. ones that have a static size
+    and resolve to only a single signature, can be used."""
+    ##: MelFidList could be replaced with MelArray(MelFid), but that changes
+    # the format of the generated attribute - rewriting usages is likely tough
+    def __init__(self, array_attr, element):
+        """Creates a new MelArray with the specified attribute and element.
 
-    def __init__(self, subType, format, attr, *elements, **kwdargs):
-        MelStruct.__init__(self, subType, format, *elements, **kwdargs)
-        self.attr = attr
+        :param array_attr: The attribute name to give the entire array.
+        :type array_attr: str
+        :param element: The element that each entry in this array will be
+            loaded and dumped by.
+        :type element: MelBase"""
+        try:
+            self._element_size = element.static_size
+        except exception.AbstractError:
+            raise SyntaxError(u'MelArray may only be used with elements that '
+                              u'have a static size')
+        if len(element.signatures) != 1:
+            raise SyntaxError(u'MelArray may only be used with elements that '
+                              u'resolve to exactly one signature')
+        # Use this instead of element.subType to support e.g. unions
+        MelBase.__init__(self, next(iter(element.signatures)), array_attr)
+        self._element = element
+        # Underscore means internal usage only - e.g. distributor state
+        self._element_attrs = [s for s in element.getSlotsUsed()
+                              if not s.startswith('_')]
 
-    def getSlotsUsed(self):
-        return self.attr,
+    class _DirectModWriter(ModWriter):
+        """ModWriter that does not write out any subrecord headers."""
+        def packSub(self, sub_rec_type, data, *values):
+            if data is None: return
+            if values: data = struct_pack(data, *values)
+            self.out.write(data)
 
-    def getDefaulters(self,defaulters,base):
-        defaulters[base+self.attr] = self
+        def packSub0(self, sub_rec_type, data):
+            self.out.write(data)
+            self.out.write('\x00')
 
-    def setDefault(self,record):
-        record.__setattr__(self.attr,[])
+        def packRef(self, sub_rec_type, fid):
+            if fid is not None: self.pack('I', fid)
 
-    def getDefault(self):
-        target = MelObject()
-        setter = target.__setattr__
-        for attr_,value,action in zip(self.attrs, self.defaults, self.actions):
-            if callable(action): value = action(value)
-            setter(attr_,value)
-        return target
+    def hasFids(self, formElements):
+        temp_elements = set()
+        self._element.hasFids(temp_elements)
+        if temp_elements: formElements.add(self)
 
-    def loadData(self, record, ins, sub_type, size_, readId):
-        target = MelObject()
-        record.__getattribute__(self.attr).append(target)
-        target.__slots__ = self.attrs
-        MelStruct.loadData(self, target, ins, sub_type, size_, readId)
-
-    def dumpData(self,record,out):
-        melDump = MelStruct.dumpData
-        for target in record.__getattribute__(self.attr):
-            melDump(self,target,out)
+    def setDefault(self, record):
+        setattr(record, self.attr, [])
 
     def mapFids(self,record,function,save=False):
-        melMap = MelStruct.mapFids
-        if not record.__getattribute__(self.attr): return
-        for target in record.__getattribute__(self.attr):
-            melMap(self,target,function,save)
+        array_val = getattr(record, self.attr)
+        if array_val:
+            map_entry = self._element.mapFids
+            for arr_entry in array_val:
+                map_entry(arr_entry, function, save)
 
-#------------------------------------------------------------------------------
-class MelStructA(MelStructs):
-    """Represents a record with an array of fixed size repeating structured elements."""
     def loadData(self, record, ins, sub_type, size_, readId):
-        if size_ == 0:
-            setattr(record, self.attr, None)
-            return
-        selfDefault = self.getDefault
-        recordAppend = record.__getattribute__(self.attr).append
-        selfAttrs = self.attrs
-        itemSize = struct.calcsize(self.format)
-        melLoadData = MelStruct.loadData
-        # Note for py3: we want integer division here!
-        for x in xrange(size_/itemSize):
-            target = selfDefault()
-            recordAppend(target)
-            target.__slots__ = selfAttrs
-            melLoadData(self, target, ins, sub_type, itemSize, readId)
+        append_entry = getattr(record, self.attr).append
+        entry_slots = self._element_attrs
+        entry_size = self._element_size
+        load_entry = self._element.loadData
+        for x in xrange(size_ / entry_size):
+            arr_entry = MelObject()
+            append_entry(arr_entry)
+            arr_entry.__slots__ = entry_slots
+            load_entry(arr_entry, ins, sub_type, entry_size, readId)
 
     def dumpData(self, record, out):
-        array_val = record.__getattribute__(self.attr)
+        array_val = getattr(record, self.attr)
         if not array_val: return # don't dump out empty arrays
-        data = ''
-        attrs = self.attrs
-        format = self.format
-        for x in record.__getattribute__(self.attr):
-            data += struct_pack(format, *[getattr(x, item) for item in attrs])
-        out.packSub(self.subType,data)
-
-    def mapFids(self,record,function,save=False):
-        if record.__getattribute__(self.attr) is not None:
-            melMap = MelStruct.mapFids
-            for target in record.__getattribute__(self.attr):
-                melMap(self,target,function,save)
+        array_data = MelArray._DirectModWriter(sio())
+        dump_entry = self._element.dumpData
+        for arr_entry in array_val:
+            dump_entry(arr_entry, array_data)
+        out.packSub(self.subType, array_data.getvalue())
 
 #------------------------------------------------------------------------------
 class MelTruncatedStruct(MelStruct):
@@ -1539,6 +1583,10 @@ class MelTruncatedStruct(MelStruct):
                 return
         MelStruct.dumpData(self, record, out)
 
+    @property
+    def static_size(self):
+        raise exception.AbstractError()
+
 #------------------------------------------------------------------------------
 class MelCoordinates(MelTruncatedStruct):
     """Skip dump if we're in an interior."""
@@ -1547,24 +1595,27 @@ class MelCoordinates(MelTruncatedStruct):
             MelTruncatedStruct.dumpData(self, record, out)
 
 #------------------------------------------------------------------------------
-class MelColorInterpolator(MelStructA):
-    """Wrapper around MelStructA that defines a time interpolator - an array
-    of two floats, where each entry in the array describes a point on a curve,
+class MelColorInterpolator(MelArray):
+    """Wrapper around MelArray that defines a time interpolator - an array
+    of five floats, where each entry in the array describes a point on a curve,
     with 'time' as the X axis and 'red', 'green', 'blue' and 'alpha' as the Y
     axis."""
     def __init__(self, sub_type, attr):
-        MelStructA.__init__(self, sub_type, '5f', attr, 'time', 'red', 'green',
-                            'blue', 'alpha',)
+        MelArray.__init__(self, attr,
+            MelStruct(sub_type, '5f', 'time', 'red', 'green', 'blue', 'alpha'),
+        )
 
 #------------------------------------------------------------------------------
 # xEdit calls this 'time interpolator', but that name doesn't really make sense
 # Both this class and the color interpolator above interpolate over time
-class MelValueInterpolator(MelStructA):
-    """Wrapper around MelStructA that defines a value interpolator - an array
+class MelValueInterpolator(MelArray):
+    """Wrapper around MelArray that defines a value interpolator - an array
     of two floats, where each entry in the array describes a point on a curve,
     with 'time' as the X axis and 'value' as the Y axis."""
     def __init__(self, sub_type, attr):
-        MelStructA.__init__(self, sub_type, '2f', attr, 'time', 'value')
+        MelArray.__init__(self, attr,
+            MelStruct(sub_type, '2f', 'time', 'value'),
+        )
 
 #------------------------------------------------------------------------------
 # Simple primitive type wrappers
@@ -1753,6 +1804,17 @@ class MelOptFid(MelOptUInt32):
             MelOptUInt32.__init__(self, signature, (FID, attr, default_val))
 
 #------------------------------------------------------------------------------
+class MelWthrColors(MelStruct):
+    """Used in WTHR for PNAM and NAM0 for all games but FNV."""
+    def __init__(self, wthr_sub_sig):
+        MelStruct.__init__(
+            self, wthr_sub_sig, '3Bs3Bs3Bs3Bs', 'riseRed', 'riseGreen',
+            'riseBlue', ('unused1', null1), 'dayRed', 'dayGreen',
+            'dayBlue', ('unused2', null1), 'setRed', 'setGreen', 'setBlue',
+            ('unused3', null1), 'nightRed', 'nightGreen', 'nightBlue',
+            ('unused4', null1))
+
+#------------------------------------------------------------------------------
 # Mod Element Sets ------------------------------------------------------------
 #------------------------------------------------------------------------------
 class MelSet(object):
@@ -1787,7 +1849,7 @@ class MelSet(object):
 
     def getDefault(self,attr):
         """Returns default instance of specified instance. Only useful for
-        MelGroup, MelGroups and MelStructs."""
+        MelGroup and MelGroups."""
         return self.defaulters[attr].getDefault()
 
     def loadData(self,record,ins,endPos):
@@ -2033,18 +2095,11 @@ class _MelDistributor(MelNull):
         from each loader."""
         self.mel_set = mel_set
         for element in mel_set.elements:
-            ##: Ugly code, maybe make a MelBase method, register_attrs?
-            el_attr = getattr(element, 'attr', None)
-            # Guard against elements that don't conform to the standard
-            # attr/attrs setup - obviously means those can't be used in
-            # distributor configs though...
-            if el_attr:
+            # Underscore means internal usage only - e.g. distributor state
+            el_attrs = [s for s in element.getSlotsUsed()
+                        if not s.startswith('_')]
+            for el_attr in el_attrs:
                 self._attr_to_loader[el_attr] = element
-            else:
-                el_attrs = getattr(element, 'attrs', None)
-                if el_attrs:
-                    for a in el_attrs:
-                        self._attr_to_loader[a] = element
 
     def _accepts_signature(self, dist_specifier, signature):
         """Internal helper method that checks if the specified signature is
@@ -2535,7 +2590,7 @@ class MelRecord(MreRecord):
 
     def getDefault(self,attr):
         """Returns default instance of specified instance. Only useful for
-        MelGroup, MelGroups and MelStructs."""
+        MelGroup and MelGroups."""
         return self.__class__.melSet.getDefault(attr)
 
     def loadData(self,ins,endPos):
@@ -2669,7 +2724,9 @@ class MreLand(MelRecord):
                 False: MelNull('VTXT'),
             }, decider=AttrExistsDecider('atxt_texture')),
         ),
-        MelFidList('VTEX', 'vertex_textures'),
+        MelArray('vertex_textures',
+            MelFid('VTEX', 'vertex_texture'),
+        ),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2839,13 +2896,10 @@ class MelRaceParts(MelNull):
     INDX subrecord, which determines the meaning of the subrecord. The
     resulting attributes are set directly on the record.
     :type _indx_to_loader: dict[int, MelBase]"""
-    def __init__(self, hidden_attr, indx_to_attr, group_loaders):
+    def __init__(self, indx_to_attr, group_loaders):
         """Creates a new MelRaceParts element with the specified INDX mapping
         and group loaders.
 
-        :param hidden_attr: An attribute used for the distributor, but
-            nothing else.
-        :type hidden_attr: str
         :param indx_to_attr: A mapping from the INDX values to the final
             record attributes that will be used for the subsequent
             subrecords.
@@ -2854,7 +2908,6 @@ class MelRaceParts(MelNull):
             returns an iterable with one or more MelBase-derived subrecord
             loaders. These will be loaded and dumped directly after each
             INDX."""
-        self.attr = hidden_attr
         self._last_indx = None # used during loading
         self._debug = False
         self._indx_to_attr = indx_to_attr

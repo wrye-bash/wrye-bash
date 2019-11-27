@@ -28,17 +28,17 @@ import struct
 from .constants import condition_function_data
 from ... import brec
 from ...bolt import Flags, encode, struct_pack, struct_unpack
-from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
-    FID, MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
+from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
+    MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelFidList, \
-    MelStructA, MreGmstBase, MelLString, MelSortedFidList, MelMODS, \
-    MreHasEffects, MelColorInterpolator, MelValueInterpolator, MelUnion, \
-    AttrValDecider, MelRegnEntrySubrecord, PartialLoadDecider, FlagDecider, \
-    MelFloat, MelSInt8, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
-    MelOptFloat, MelOptSInt16, MelOptSInt32, MelOptUInt8, MelOptUInt16, \
-    MelOptUInt32, MelOptFid, MelCounter, MelPartialCounter, MelBounds, null1, \
-    null2, null3, null4, MelSequential, MelTruncatedStruct, MelIcons, \
-    MelIcons2, MelIcon, MelIco2, MelEdid, MelFull
+    MreGmstBase, MelLString, MelSortedFidList, MelMODS, MreHasEffects, \
+    MelColorInterpolator, MelValueInterpolator, MelUnion, AttrValDecider, \
+    MelRegnEntrySubrecord, PartialLoadDecider, FlagDecider, MelFloat, \
+    MelSInt8, MelSInt32, MelUInt8, MelUInt16, MelUInt32, MelOptFloat, \
+    MelOptSInt16, MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, \
+    MelOptFid, MelCounter, MelPartialCounter, MelBounds, null1, null2, null3, \
+    null4, MelSequential, MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, \
+    MelIco2, MelEdid, MelFull, MelArray, MelWthrColors
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -213,106 +213,102 @@ class MelColorO(MelOptStruct):
                            'unk_c')
 
 #------------------------------------------------------------------------------
-class MelCTDAHandler(MelStructs):
-    """Represents the CTDA subrecord and it components. Difficulty is that FID
-    state of parameters depends on function index."""
-    def __init__(self):
-        MelStructs.__init__(self,'CTDA','=B3sfH2siiIIi','conditions',
-            'operFlag',('unused1',null3),'compValue','ifunc',('unused2',null2),
-            'param1','param2','runOn','reference','param3')
+class MelConditions(MelGroups):
+    """Wraps MelGroups for the common task of defining an array of conditions.
+    See also MelConditionCounter, which is commonly combined with this class.
+    Difficulty is that FID state of parameters depends on function index."""
+    class MelCtda(MelStruct):
+        def setDefault(self, record):
+            MelStruct.setDefault(self, record)
+            record.form12345 = 'iiIIi'
 
-    def getDefault(self):
-        target = MelStructs.getDefault(self)
-        target.form12345 = 'iiIIi'
-        return target
+        def hasFids(self, formElements):
+            formElements.add(self)
 
-    def hasFids(self,formElements):
-        formElements.add(self)
-
-    def loadData(self, record, ins, sub_type, size_, readId):
-        if sub_type == 'CTDA':
-            if size_ != 32 and size_ != 28 and size_ != 24 and size_ != 20:
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ not in (32, 28, 24, 20):
                 raise ModSizeError(ins.inName, readId, (32, 28, 24, 20), size_)
-        else:
-            raise ModError(ins.inName, u'Unexpected subrecord: %s' % readId)
-        target = MelObject()
-        record.conditions.append(target)
-        target.__slots__ = self.attrs
-        unpacked1 = ins.unpack('=B3sfH2s',12,readId)
-        (target.operFlag,target.unused1,target.compValue,ifunc,target.unused2) = unpacked1
-        #--Get parameters
-        if ifunc not in condition_function_data:
-            raise BoltError(u'Unknown condition function: %d\nparam1: '
-                            u'%08X\nparam2: %08X' % (ifunc, ins.unpackRef(),
-                                                     ins.unpackRef()))
-        # Form1 is Param1 - 2 means fid
-        form1 = 'I' if condition_function_data[ifunc][1] == 2 else 'i'
-        # Form2 is Param2
-        form2 = 'I' if condition_function_data[ifunc][2] == 2 else 'i'
-        # Form3 is runOn
-        form3 = 'I'
-        # Form4 is reference, this is a formID when runOn = 2
-        form4 = 'I'
-        # Form5 is Param3
-        form5 = 'I' if condition_function_data[ifunc][3] == 2 else 'i'
-        if size_ == 32:
-            form12345 = form1+form2+form3+form4+form5
-            unpacked2 = ins.unpack(form12345,20,readId)
-            (target.param1,target.param2,target.runOn,target.reference,target.param3) = unpacked2
-        elif size_ == 28:
-            form12345 = form1+form2+form3+form4
-            unpacked2 = ins.unpack(form12345,16,readId)
-            (target.param1,target.param2,target.runOn,target.reference) = unpacked2
-            target.param3 = null4
-        elif size_ == 24:
-            form12345 = form1+form2+form3
-            unpacked2 = ins.unpack(form12345,12,readId)
-            (target.param1,target.param2,target.runOn) = unpacked2
-            target.reference = null4
-            target.param3 = null4
-        elif size_ == 20:
-            form12345 = form1+form2
-            unpacked2 = ins.unpack(form12345,8,readId)
-            (target.param1,target.param2) = unpacked2
-            target.runOn = null4
-            target.reference = null4
-            target.param3 = null4
-        # form12 = form1+form2
-        # unpacked2 = ins.unpack(form12,8,readId)
-        # (target.param1,target.param2) = unpacked2
-        # target.unused3,target.reference,target.unused4 = ins.unpack('=4s2I',12,readId)
-        else:
-            raise ModSizeError(ins.inName, readId, (32, 28, 24, 20), size_)
-        (target.ifunc,target.form12345) = (ifunc,form12345)
-        if self._debug:
-            unpacked = unpacked1+unpacked2
-            print u' ',zip(self.attrs,unpacked)
-            if len(unpacked) != len(self.attrs):
-                print u' ',unpacked
+            unpacked1 = ins.unpack('=B3sfH2s', 12, readId)
+            (record.operFlag, record.unused1, record.compValue, ifunc,
+             record.unused2) = unpacked1
+            #--Get parameters
+            if ifunc not in condition_function_data:
+                raise BoltError(u'Unknown condition function: %d\nparam1: '
+                                u'%08X\nparam2: %08X' % (
+                    ifunc, ins.unpackRef(), ins.unpackRef()))
+            # Form1 is Param1 - 2 means fid
+            form1 = 'I' if condition_function_data[ifunc][1] == 2 else 'i'
+            # Form2 is Param2
+            form2 = 'I' if condition_function_data[ifunc][2] == 2 else 'i'
+            # Form3 is runOn
+            form3 = 'I'
+            # Form4 is reference, this is a formID when runOn = 2
+            form4 = 'I'
+            # Form5 is Param3
+            form5 = 'I' if condition_function_data[ifunc][3] == 2 else 'i'
+            if size_ == 32:
+                form12345 = form1 + form2 + form3 + form4 + form5
+                unpacked2 = ins.unpack(form12345, 20, readId)
+                (record.param1, record.param2, record.runOn, record.reference,
+                 record.param3) = unpacked2
+            elif size_ == 28:
+                form12345 = form1 + form2 + form3 + form4
+                unpacked2 = ins.unpack(form12345, 16, readId)
+                (record.param1, record.param2, record.runOn,
+                 record.reference) = unpacked2
+                record.param3 = null4
+            elif size_ == 24:
+                form12345 = form1 + form2 + form3
+                unpacked2 = ins.unpack(form12345, 12, readId)
+                (record.param1, record.param2, record.runOn) = unpacked2
+                record.reference, record.param3 = null4, null4
+            else: # size_ == 20, verified at the start
+                form12345 = form1 + form2
+                unpacked2 = ins.unpack(form12345, 8, readId)
+                record.param1, record.param2 = unpacked2
+                (record.runOn, record.reference,
+                 record.param3) = null4, null4, null4
+            record.ifunc, record.form12345 = ifunc, form12345
+            if self._debug:
+                unpacked = unpacked1+unpacked2
+                print u' ',zip(self.attrs, unpacked)
+                if len(unpacked) != len(self.attrs):
+                    print u' ', unpacked
 
-    def dumpData(self,record,out):
-        for target in record.conditions:
-            out.packSub('CTDA','=B3sfH2s'+target.form12345,
-                target.operFlag, target.unused1, target.compValue,
-                target.ifunc, target.unused2, target.param1, target.param2,
-                target.runOn, target.reference, target.param3)
+        def dumpData(self,record,out):
+            out.packSub('CTDA', '=B3sfH2s' + record.form12345,
+                record.operFlag, record.unused1, record.compValue,
+                record.ifunc, record.unused2, record.param1, record.param2,
+                record.runOn, record.reference, record.param3)
 
-    def mapFids(self,record,function,save=False):
-        for target in record.conditions:
-            form12345 = target.form12345
-            if form12345[0] == 'I':
-                result = function(target.param1)
-                if save: target.param1 = result
-            if form12345[1] == 'I':
-                result = function(target.param2)
-                if save: target.param2 = result
-            # runOn is intU32, never FID
-            if len(form12345) > 3 and form12345[3] == 'I' and target.runOn == 2:
-                result = function(target.reference)
-                if save: target.reference = result
-            if len(form12345) > 4 and form12345[4] == 'I':
-                result = function(target.param3)
-                if save: target.param3 = result
+        def mapFids(self, record, function, save=False):
+                form12345 = record.form12345
+                if form12345[0] == 'I':
+                    result = function(record.param1)
+                    if save: record.param1 = result
+                if form12345[1] == 'I':
+                    result = function(record.param2)
+                    if save: record.param2 = result
+                # runOn is uint32, never FID
+                if (len(form12345) > 3 and form12345[3] == 'I'
+                        and record.runOn == 2):
+                    result = function(record.reference)
+                    if save: record.reference = result
+                if len(form12345) > 4 and form12345[4] == 'I':
+                    result = function(record.param3)
+                    if save: record.param3 = result
+
+    def __init__(self, attr='conditions'):
+        MelGroups.__init__(self, attr,
+            MelGroups('condition_list',
+                MelConditions.MelCtda(
+                    'CTDA', 'B3sfH2siiIIi', 'operFlag', ('unused1', null3),
+                    'compValue', 'ifunc', ('unused2', null2), 'param1',
+                    'param2', 'runOn', 'reference', 'param3'),
+            ),
+            MelString('CIS1','param_cis1'),
+            MelString('CIS2','param_cis2'),
+        )
 
 class MelConditionCounter(MelCounter):
     """Wraps MelCounter for the common task of defining a counter that counts
@@ -320,17 +316,6 @@ class MelConditionCounter(MelCounter):
     def __init__(self):
         MelCounter.__init__(
             self, MelUInt32('CITC', 'conditionCount'), counts='conditions')
-
-class MelConditions(MelGroups):
-    """Wraps MelGroups for the common task of defining an array of
-    conditions. See also MelConditionCounter, which is commonly combined with
-    this class."""
-    def __init__(self, attr='conditions'):
-        MelGroups.__init__(self, attr,
-            MelCTDAHandler(),
-            MelString('CIS1','param_cis1'),
-            MelString('CIS2','param_cis2'),
-        )
 
 #------------------------------------------------------------------------------
 class MelDecalData(MelOptStruct):
@@ -1308,7 +1293,9 @@ class MreAchr(MelRecord):
                 MelBase('QNAM','qnam_p'),
                 MelBase('SCRO','scro_p'),
             ),
-            MelStructs('PDTO','2I','topicData','type',(FID,'data'),),
+            MelGroups('topicData',
+                MelStruct('PDTO', '2I', 'type', (FID, 'data')),
+            ),
             MelFid('TNAM','topic'),
         ),
         MelSInt32('XLCM', 'levelModifier'),
@@ -1619,7 +1606,9 @@ class MreAvif(MelRecord):
             MelFloat('HNAM', 'horizontalPosition'),
             MelFloat('VNAM', 'verticalPosition'),
             MelFid('SNAM','associatedSkill',),
-            MelStructs('CNAM','I','connections','lineToIndex',),
+            MelGroups('connections',
+                MelUInt32('CNAM', 'lineToIndex'),
+            ),
             MelUInt32('INAM', 'index',),
         ),
     ).with_distributor({
@@ -1883,6 +1872,7 @@ class MreClas(MelRecord):
 class MreClfm(MelRecord):
     """Color."""
     classType = 'CLFM'
+
     melSet = MelSet(
         MelEdid(),
         MelFull(),
@@ -1895,9 +1885,13 @@ class MreClfm(MelRecord):
 class MreClmt(MelRecord):
     """Climate."""
     classType = 'CLMT'
+
     melSet = MelSet(
         MelEdid(),
-        MelStructA('WLST','IiI','weatherTypes',(FID,'weather',None),'chance',(FID,'global',None),),
+        MelArray('weatherTypes',
+            MelStruct('WLST', 'IiI', (FID, 'weather', None), 'chance',
+                      (FID, 'global', None)),
+        ),
         MelString('FNAM','sunPath',),
         MelString('GNAM','glarePath',),
         MelModel(),
@@ -2021,12 +2015,10 @@ class MreDebr(MelRecord):
     dataFlags = Flags(0L,Flags.getNames('hasCollissionData'))
 
     class MelDebrData(MelStruct):
-        subType = 'DATA'
-        _elements = (('percentage',0),('modPath',null1),('flags',0),)
-
         def __init__(self):
-            self.attrs,self.defaults,self.actions,self.formAttrs = MelBase.parseElements(*self._elements)
-            self._debug = False
+            # Format doesn't matter, see {load,dump}Data below
+            MelStruct.__init__(self, 'DATA', '', ('percentage', 0),
+                               ('modPath', null1), ('flags', 0))
 
         def loadData(self, record, ins, sub_type, size_, readId):
             """Reads data from ins into record attribute."""
@@ -2120,17 +2112,18 @@ class MreDobj(MelRecord):
     """Default Object Manager."""
     classType = 'DOBJ'
 
-    class MelDobjDnam(MelStructA):
+    class MelDobjDnam(MelArray):
         """This DNAM can have < 8 bytes of noise at the end, so store those
         in a variable and dump them out again when writing."""
         def __init__(self):
-            MelStructA.__init__(self, 'DNAM', '2I', 'objects', 'objectUse',
-                                (FID, 'objectID'))
+            MelArray.__init__(self, 'objects',
+                MelStruct('DNAM', '2I', 'objectUse', (FID, 'objectID')),
+            )
 
         def loadData(self, record, ins, sub_type, size_, readId):
             # Load everything but the noise
             start_pos = ins.tell()
-            MelStructA.loadData(self, record, ins, sub_type, size_, readId)
+            MelArray.loadData(self, record, ins, sub_type, size_, readId)
             # Now, read the remainder of the subrecord and store it
             read_size = ins.tell() - start_pos
             record.unknownDNAM = ins.read(size_ - read_size)
@@ -2138,18 +2131,20 @@ class MreDobj(MelRecord):
         def dumpData(self, record, out):
             # We need to fully override this to attach unknownDNAM to the data
             # we'll be writing out
-            if record.__getattribute__(self.attr) is not None:
-                to_write = ''
-                attrs = self.attrs
-                format = self.format
-                for x in record.objects:
-                    to_write += struct_pack(
-                        format, *[getattr(x, item) for item in attrs])
-                to_write += record.unknownDNAM
-                out.packSub(self.subType, to_write)
+            array_val = getattr(record, self.attr)
+            if not array_val: return # don't dump out empty arrays
+            array_data = ''
+            element_fmt = self._element.format
+            # not _element_attrs, that one has all underscores removed
+            element_attrs = self._element.attrs
+            for arr_entry in array_val:
+                array_data += struct_pack(
+                    element_fmt, *[getattr(arr_entry, item) for item
+                                   in element_attrs])
+            out.packSub(self.subType, array_data + record.unknownDNAM)
 
         def getSlotsUsed(self):
-            return MelStructA.getSlotsUsed(self) + ('unknownDNAM',)
+            return MelArray.getSlotsUsed(self) + ('unknownDNAM',)
 
     melSet = MelSet(
         MelEdid(),
@@ -2443,7 +2438,10 @@ class MreFact(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelStructs('XNAM','IiI','relations',(FID,'faction'),'mod','combatReaction',),
+        MelGroups('relations',
+            MelStruct('XNAM', 'IiI', (FID, 'faction'), 'mod',
+                      'groupCombatReaction'),
+        ),
         MelUInt32('DATA', (FactGeneralTypeFlags, 'flags', 0L)),
         MelFid('JAIL','exteriorJailMarker'),
         MelFid('WAIT','followerWaitMarker'),
@@ -2666,7 +2664,10 @@ class MreFurn(MelRecord):
             MelStruct('NAM0','2sH','unknown',(MarkerEntryPointFlags,'disabledPoints_f',None),),
             MelFid('FNMK','markerKeyword',),
         ),
-        MelStructs('FNPR','2H','entryPoints','markerType',(MarkerEntryPointFlags,'entryPointsFlags',None),),
+        MelGroups('entryPoints',
+            MelStruct('FNPR', '2H', 'markerType',
+                      (MarkerEntryPointFlags, 'entryPointsFlags', None)),
+        ),
         MelString('XMRK','modelFilename'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3059,7 +3060,9 @@ class MreIpds(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelStructs('PNAM','2I','impactData',(FID,'material'),(FID,'impact'),),
+        MelGroups('impactData',
+            MelStruct('PNAM', '2I', (FID, 'material'), (FID, 'impact')),
+        ),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3112,35 +3115,52 @@ class MreLctn(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelStructA('ACPR','2I2h','actorCellPersistentReference',
-                   (FID,'actor'),(FID,'location'),'gridX','gridY',),
-        MelStructA('LCPR','2I2h','locationCellPersistentReference',
-                     (FID,'actor'),(FID,'location'),'gridX','gridY',),
+        MelArray('actorCellPersistentReference',
+            MelStruct('ACPR', '2I2h', (FID, 'actor'), (FID, 'location'),
+                      'gridX', 'gridY'),
+        ),
+        MelArray('locationCellPersistentReference',
+            MelStruct('LCPR', '2I2h', (FID, 'actor'), (FID, 'location'),
+                      'gridX', 'gridY'),
+        ),
         MelFidList('RCPR','referenceCellPersistentReference',),
-        MelStructA('ACUN','3I','actorCellUnique',
-                     (FID,'actor'),(FID,'eef'),(FID,'location'),),
-        MelStructA('LCUN','3I','locationCellUnique',
-                     (FID,'actor'),(FID,'ref'),(FID,'location'),),
+        MelArray('actorCellUnique',
+            MelStruct('ACUN', '3I', (FID, 'actor'), (FID, 'eef'),
+                      (FID, 'location')),
+        ),
+        MelArray('locationCellUnique',
+            MelStruct('LCUN', '3I', (FID, 'actor'), (FID, 'eef'),
+                      (FID, 'location')),
+        ),
         MelFidList('RCUN','referenceCellUnique',),
-        MelStructA('ACSR','3I2h','actorCellStaticReference',
-                     (FID,'locRefType'),(FID,'marker'),(FID,'location'),
-                     'gridX','gridY',),
-        MelStructA('LCSR','3I2h','locationCellStaticReference',
-                     (FID,'locRefType'),(FID,'marker'),(FID,'location'),
-                     'gridX','gridY',),
+        MelArray('actorCellStaticReference',
+            MelStruct('ACSR', '3I2h', (FID, 'locRefType'), (FID, 'marker'),
+                      (FID, 'location'), 'gridX', 'gridY'),
+        ),
+        MelArray('locationCellStaticReference',
+            MelStruct('LCSR', '3I2h', (FID, 'locRefType'), (FID, 'marker'),
+                      (FID, 'location'), 'gridX', 'gridY'),
+        ),
         MelFidList('RCSR','referenceCellStaticReference',),
-        MelStructs('ACEC','I','actorCellEncounterCell',
-                  (FID,'actor'), dumpExtra='gridsXYAcec',),
-        MelStructs('LCEC','I','locationCellEncounterCell',
-                  (FID,'actor'), dumpExtra='gridsXYLcec',),
-        MelStructs('RCEC','I','referenceCellEncounterCell',
-                  (FID,'actor'), dumpExtra='gridsXYRcec',),
+        MelGroups('actorCellEncounterCell',
+            MelStruct('ACEC', 'I', (FID,'actor'), dumpExtra='gridsXY'),
+        ),
+        MelGroups('locationCellEncounterCell',
+            MelStruct('LCEC', 'I', (FID,'actor'), dumpExtra='gridsXY'),
+        ),
+        MelGroups('referenceCellEncounterCell',
+            MelStruct('RCEC', 'I', (FID,'actor'), dumpExtra='gridsXY'),
+        ),
         MelFidList('ACID','actorCellMarkerReference',),
         MelFidList('LCID','locationCellMarkerReference',),
-        MelStructA('ACEP','2I2h','actorCellEnablePoint',
-                     (FID,'actor'),(FID,'ref'),'gridX','gridY',),
-        MelStructA('LCEP','2I2h','locationCellEnablePoint',
-                     (FID,'actor'),(FID,'ref'),'gridX','gridY',),
+        MelArray('actorCellEnablePoint',
+            MelStruct('ACEP', '2I2h', (FID, 'actor'), (FID,'ref'), 'gridX',
+                      'gridY'),
+        ),
+        MelArray('locationCellEnablePoint',
+            MelStruct('LCEP', '2I2h', (FID, 'actor'), (FID,'ref'), 'gridX',
+                      'gridY'),
+        ),
         MelFull(),
         MelKeywords(),
         MelFid('PNAM','parentLocation',),
@@ -3482,7 +3502,9 @@ class MreMgef(MelRecord):
             'scriptEffectAiDelayTime'),
             counter='counterEffectCount', counts='counterEffects'),
         MelFids('ESCE','counterEffects'),
-        MelStructA('SNDD','2I','sounds','soundType',(FID,'sound')),
+        MelArray('sounds',
+            MelStruct('SNDD', '2I', 'soundType', (FID, 'sound')),
+        ),
         MelLString('DNAM','magicItemDescription'),
         MelConditions(),
     )
@@ -3581,7 +3603,9 @@ class MreMust(MelRecord):
         MelOptUInt32('DNAM', 'fadeOut'),
         MelString('ANAM','trackFilename'),
         MelString('BNAM','finaleFilename'),
-        MelStructA('FNAM','f','points',('cuePoints',0.0)),
+        MelArray('points',
+            MelFloat('FNAM', ('cuePoints', 0.0)),
+        ),
         MelOptStruct('LNAM','2fI','loopBegins','loopEnds','loopCount',),
         MelConditionCounter(),
         MelConditions(),
@@ -3727,7 +3751,9 @@ class MreNpc(MelRecord):
                   'calcMax','speedMultiplier','dispotionBase',
                   (NpcFlags2,'npcFlags2',0L),'healthOffset','bleedoutOverride',
                   ),
-        MelStructs('SNAM','IB3s','factions',(FID, 'faction'), 'rank', 'snamUnused'),
+        MelGroups('factions',
+            MelStruct('SNAM', 'IB3s', (FID, 'faction'), 'rank', 'snamUnused'),
+        ),
         MelOptFid('INAM', 'deathItem'),
         MelOptFid('VTCK', 'voice'),
         MelOptFid('TPLT', 'template'),
@@ -3927,7 +3953,9 @@ class MrePack(MelRecord):
                 MelBase('CNAM','unknown',),
                 MelBase('BNAM','unknown',),
                 # PDTO Needs Union Decider
-                MelStructs('PDTO','2I','topicData','type',(FID,'data'),),
+                MelGroups('topicData',
+                    MelStruct('PDTO', '2I', 'type', (FID, 'data')),
+                ),
                 # PLDT Needs Union Decider, No FormID
                 MelStruct('PLDT','iIi','locationType','locationValue','radius',),
                 # PTDA Needs Union Decider
@@ -4276,7 +4304,7 @@ class MreRefr(MelRecord):
         """Handler for xmrk record. Conditionally loads next items."""
         def loadData(self, record, ins, sub_type, size_, readId):
             """Reads data from ins into record attribute."""
-            junk = ins.read(size_, readId)
+            ins.seek(size_, 1, readId) # skip junk
             record.hasXmrk = True
             insTell = ins.tell
             insUnpack = ins.unpack
@@ -4322,7 +4350,10 @@ class MreRefr(MelRecord):
                      'occlusionPlanePosX','occlusionPlanePosY','occlusionPlanePosZ',
                      'occlusionPlaneRot1','occlusionPlaneRot2','occlusionPlaneRot3',
                      'occlusionPlaneRot4'),
-        MelStructA('XPOD','II','portalData',(FID,'portalOrigin'),(FID,'portalDestination')),
+        MelArray('portalData',
+            MelStruct('XPOD', '2I', (FID, 'portalOrigin'),
+                      (FID, 'portalDestination')),
+        ),
         MelOptStruct('XPTL','9f','portalWidth','portalHeight','portalPosX','portalPosY','portalPosZ',
                      'portalRot1','portalRot2','portalRot3','portalRot4'),
         MelGroup('roomData',
@@ -4335,7 +4366,10 @@ class MreRefr(MelRecord):
         MelBase('XRGD','ragdollData'),
         MelBase('XRGB','ragdollBipedData'),
         MelOptFloat('XRDS', 'radius'),
-        MelStructs('XPWR','II','reflectedByWaters',(FID,'reference'),(reflectFlags,'type',),),
+        MelGroups('reflectedByWaters',
+            MelStruct('XPWR', '2I', (FID, 'reference'),
+                      (reflectFlags, 'reflection_type')),
+        ),
         MelFids('XLTW','litWaters'),
         MelOptFid('XEMI', 'emittance'),
         MelOptStruct('XLIG', '4f4s', 'fov90Delta', 'fadeDelta',
@@ -4359,7 +4393,9 @@ class MreRefr(MelRecord):
         MelFid('XSPC','spawnContainer'),
         MelGroup('activateParents',
             MelUInt8('XAPD', (_parentActivate, 'flags', None)),
-            MelStructs('XAPR','If','activateParentRefs',(FID,'reference'),'delay')
+            MelGroups('activateParentRefs',
+                MelStruct('XAPR', 'If', (FID, 'reference'), 'delay'),
+            ),
         ),
         MelFid('XLIB','leveledItemBaseObject'),
         MelSInt32('XLCM', 'levelModifier'),
@@ -4379,14 +4415,18 @@ class MreRefr(MelRecord):
         MelOptFloat('XCHG', ('charge', None)),
         MelFid('XLRL','locationReference'),
         MelOptStruct('XESP','IB3s',(FID,'parent'),(_parentFlags,'parentFlags'),('unused6',null3)),
-        MelStructs('XLKR','II','linkedReference',(FID,'keywordRef'),(FID,'linkedRef')),
+        MelGroups('linkedReference',
+            MelStruct('XLKR', '2I', (FID, 'keywordRef'), (FID, 'linkedRef')),
+        ),
         MelGroup('patrolData',
             MelFloat('XPRD', 'idleTime'),
             MelBase('XPPA','patrolScriptMarker'),
             MelFid('INAM', 'idle'),
             MelBase('SCHR','schr_p',),
             MelBase('SCTX','sctx_p',),
-            MelStructs('PDTO','2I','topicData','type',(FID,'data'),),
+            MelGroups('topicData',
+                MelStruct('PDTO', '2I', 'type', (FID,'data')),
+            ),
         ),
         MelOptUInt32('XACT', (_actFlags, 'actFlags', 0L)),
         MelOptFloat('XHTW', 'headTrackingWeight'),
@@ -4409,6 +4449,7 @@ class MreRefr(MelRecord):
 class MreRegn(MelRecord):
     """Region."""
     classType = 'REGN'
+
     obflags = Flags(0L,Flags.getNames(
         ( 0,'conform'),
         ( 1,'paintVertices'),
@@ -4432,29 +4473,36 @@ class MreRegn(MelRecord):
         MelFid('WNAM','worldspace'),
         MelGroups('areas',
             MelUInt32('RPLI', 'edgeFalloff'),
-            MelStructA('RPLD','2f','points','posX','posY')
+            MelArray('points',
+                MelStruct('RPLD', '2f', 'posX', 'posY'),
+            ),
         ),
         MelGroups('entries',
-            MelStruct('RDAT', 'I2B2s','entryType', (rdatFlags,'flags'), 'priority',
-                     ('unused1',null2)),
+            MelStruct('RDAT', 'I2B2s', 'entryType', (rdatFlags, 'flags'),
+                      'priority', ('unused1', null2)),
             MelIcon(),
             MelRegnEntrySubrecord(7, MelFid('RDMO', 'music')),
-            MelRegnEntrySubrecord(7, MelStructA(
-                'RDSA', '2If', 'sounds', (FID, 'sound'), (sdflags, 'flags'),
-                'chance')),
+            MelRegnEntrySubrecord(7, MelArray('sounds',
+                MelStruct('RDSA', '2If', (FID, 'sound'), (sdflags, 'flags'),
+                          'chance'),
+            )),
             MelRegnEntrySubrecord(4, MelString('RDMP', 'mapName')),
-            MelRegnEntrySubrecord(2, MelStructA(
-                'RDOT', 'IH2sfBBBBH4sffffHHH2s4s', 'objects', (FID,'objectId'),
-                'parentIndex', ('unused1', null2), 'density', 'clustering',
-                'minSlope', 'maxSlope',(obflags, 'flags'), 'radiusWRTParent',
-                'radius', ('unk1', null4), 'maxHeight', 'sink', 'sinkVar',
-                'sizeVar', 'angleVarX','angleVarY',  'angleVarZ',
-                ('unused2', null2), ('unk2', null4))),
-            MelRegnEntrySubrecord(6, MelStructA(
-                'RDGS', 'I4s', 'grass', ('unknown',null4))),
-            MelRegnEntrySubrecord(3, MelStructA(
-                'RDWT', '3I', 'weather', (FID, 'weather', None), 'chance',
-                (FID, 'global', None))),
+            MelRegnEntrySubrecord(2, MelArray('objects',
+                MelStruct(
+                    'RDOT', 'IH2sf4B2H5f3H2s4s', (FID, 'objectId'),
+                    'parentIndex', ('unk1', null2), 'density', 'clustering',
+                    'minSlope', 'maxSlope', (obflags, 'flags'),
+                    'radiusWRTParent', 'radius', 'minHeight', 'maxHeight',
+                    'sink', 'sinkVar', 'sizeVar', 'angleVarX', 'angleVarY',
+                    'angleVarZ', ('unk2', null2), ('unk3', null4)),
+            )),
+            MelRegnEntrySubrecord(6, MelArray('grasses',
+                MelStruct('RDGS', 'I4s', (FID, 'grass'), ('unknown', null4)),
+            )),
+            MelRegnEntrySubrecord(3, MelArray('weatherTypes',
+                MelStruct('RDWT', '3I', (FID, 'weather', None), 'chance',
+                          (FID, 'global', None)),
+            )),
         ),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -5380,19 +5428,16 @@ class MreWthr(MelRecord):
         MelBase('ONAM','onam_p'),
         MelBase('RNAM','cloudSpeedY'),
         MelBase('QNAM','cloudSpeedX'),
-        MelStructA('PNAM','3Bs3Bs3Bs3Bs','cloudColors',
-            'riseRedPnam','riseGreenPnam','riseBluePnam',('unused1',null1),
-            'dayRedPnam','dayGreenPnam','dayBluePnam',('unused2',null1),
-            'setRedPnam','setGreenPnam','setBluePnam',('unused3Pnam',null1),
-            'nightRedPnam','nightGreenPnam','nightBluePnam',('unused4',null1),
-            ),
-        MelStructA('JNAM','4f','cloudAlphas','sunAlpha','dayAlpha','setAlpha','nightAlpha',),
-        MelStructA('NAM0','3Bs3Bs3Bs3Bs','daytimeColors',
-            'riseRed','riseGreen','riseBlue',('unused5',null1),
-            'dayRed','dayGreen','dayBlue',('unused6',null1),
-            'setRed','setGreen','setBlue',('unused7',null1),
-            'nightRed','nightGreen','nightBlue',('unused8',null1),
-            ),
+        MelArray('cloudColors',
+            MelWthrColors('PNAM'),
+        ),
+        MelArray('cloudAlphas',
+            MelStruct('JNAM', '4f', 'sunAlpha', 'dayAlpha', 'setAlpha',
+                      'nightAlpha'),
+        ),
+        MelArray('daytimeColors',
+            MelWthrColors('NAM0'),
+        ),
         MelStruct('FNAM','8f','dayNear','dayFar','nightNear','nightFar',
                   'dayPower','nightPower','dayMax','nightMax',),
         MelStruct('DATA','B2s16B','windSpeed',('unknown',null2),'transDelta',
@@ -5403,7 +5448,9 @@ class MreWthr(MelRecord):
                   'visualEffectBegin','visualEffectEnd',
                   'windDirection','windDirectionRange',),
         MelUInt32('NAM1', (WthrFlags2, 'wthrFlags2', 0L)),
-        MelStructs('SNAM','2I','sounds',(FID,'sound'),'type'),
+        MelGroups('sounds',
+            MelStruct('SNAM', '2I', (FID, 'sound'), 'type'),
+        ),
         MelFids('TNAM','skyStatics',),
         MelStruct('IMSP','4I',(FID,'imageSpacesSunrise'),(FID,'imageSpacesDay'),
                   (FID,'imageSpacesSunset'),(FID,'imageSpacesNight'),),

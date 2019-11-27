@@ -26,8 +26,8 @@ imported from skyrim, but only after setting MelModel to the FO4 format."""
 from ... import brec
 from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelStruct, MelUnicode, MelNull, MelFidList, MreLeveledListBase, MelFid, \
-    FID, MelLString, MelStructA, MelUInt8, MelOptFid, MelOptFloat, MelBounds, \
-    MelEdid
+    FID, MelLString, MelUInt8, MelOptFid, MelOptFloat, MelBounds, MelEdid, \
+    MelArray
 # Set brec.MelModel to the Fallout 4 one - do not import from skyrim.records yet
 if brec.MelModel is None:
 
@@ -110,8 +110,9 @@ class MreLvli(MreLeveledList):
         MelOptFid('LVLG', 'glob'),
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
-        MelStructA('LLKC','2I','filterKeywordChances',(FID,'keyword',None),
-                   ('chance',0)),
+        MelArray('filterKeywordChances',
+            MelStruct('LLKC', '2I', (FID, 'keyword', None), 'chance'),
+        ),
         MelFid('LVSG', 'epicLootChance'),
         MelLString('ONAM', 'overrideName')
     )
@@ -134,8 +135,9 @@ class MreLvln(MreLeveledList):
         MelOptFid('LVLG', 'glob'),
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
-        MelStructA('LLKC','2I','filterKeywordChances',(FID,'keyword',None),
-                      ('chance',0)),
+        MelArray('filterKeywordChances',
+            MelStruct('LLKC', '2I', (FID, 'keyword', None), 'chance'),
+        ),
         MelString('MODL','model'),
         MelBase('MODT','modt_p'),
     )

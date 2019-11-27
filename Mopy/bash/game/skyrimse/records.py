@@ -27,10 +27,10 @@ imported from skyrim."""
 from ..skyrim.records import MelBounds, MelDestructible, MelKeywords, MelVmad
 from ...bolt import Flags
 from ...brec import MelModel # set in Mopy/bash/game/skyrim/records.py
-from ...brec import MelRecord, MelStructs, MelGroups, MelStruct, FID, \
-    MelString, MelSet, MelFid, MelOptStruct, MelFids, MelBase, MelStructA, \
-    MelLString, MelFloat, MelUInt8, MelUInt16, MelUInt32, MelCounter, \
-    null1, null2, null3, null4, MelTruncatedStruct, MelIcons, MelEdid, MelFull
+from ...brec import MelRecord, MelGroups, MelStruct, FID, MelString, MelSet, \
+    MelFid, MelOptStruct, MelFids, MelBase, MelLString, MelFloat, MelUInt8, \
+    MelUInt16, MelUInt32, MelCounter, null2, null3, null4, MelIcons, MelEdid, \
+    MelFull, MelTruncatedStruct, MelArray, MelWthrColors
 # Those are unused here, but need be in this file as are accessed via it
 from ..skyrim.records import MreHeader, MreGmst
 
@@ -413,17 +413,16 @@ class MreWthr(MelRecord):
         MelBase('ONAM','onam_p'),
         MelBase('RNAM','cloudSpeedY'),
         MelBase('QNAM','cloudSpeedX'),
-        MelStructA('PNAM','3Bs3Bs3Bs3Bs','cloudColors',
-            'riseRedPnam','riseGreenPnam','riseBluePnam',('unused1',null1),
-            'dayRedPnam','dayGreenPnam','dayBluePnam',('unused2',null1),
-            'setRedPnam','setGreenPnam','setBluePnam',('unused3Pnam',null1),
-            'nightRedPnam','nightGreenPnam','nightBluePnam',('unused4',null1)),
-        MelStructA('JNAM','4f','cloudAlphas','sunAlpha','dayAlpha','setAlpha','nightAlpha',),
-        MelStructA('NAM0','3Bs3Bs3Bs3Bs','daytimeColors',
-            'riseRed','riseGreen','riseBlue',('unused5',null1),
-            'dayRed','dayGreen','dayBlue',('unused6',null1),
-            'setRed','setGreen','setBlue',('unused7',null1),
-            'nightRed','nightGreen','nightBlue',('unused8',null1)),
+        MelArray('cloudColors',
+            MelWthrColors('PNAM'),
+        ),
+        MelArray('cloudAlphas',
+            MelStruct('JNAM', '4f', 'sunAlpha', 'dayAlpha', 'setAlpha',
+                      'nightAlpha'),
+        ),
+        MelArray('daytimeColors',
+            MelWthrColors('NAM0'),
+        ),
         MelStruct('FNAM','8f','dayNear','dayFar','nightNear','nightFar',
                   'dayPower','nightPower','dayMax','nightMax',),
         MelStruct('DATA','B2s16B','windSpeed',('unknown',null2),'transDelta',
@@ -434,7 +433,9 @@ class MreWthr(MelRecord):
                   'visualEffectBegin','visualEffectEnd',
                   'windDirection','windDirectionRange',),
         MelUInt32('NAM1', (WthrFlags2, 'wthrFlags2', 0L)),
-        MelStructs('SNAM','2I','sounds',(FID,'sound'),'type'),
+        MelGroups('sounds',
+            MelStruct('SNAM', '2I', (FID, 'sound'), 'type'),
+        ),
         MelFids('TNAM','skyStatics',),
         MelStruct('IMSP','4I',(FID,'imageSpacesSunrise'),(FID,'imageSpacesDay'),
                   (FID,'imageSpacesSunset'),(FID,'imageSpacesNight'),),
