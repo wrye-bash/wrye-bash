@@ -37,7 +37,8 @@ from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     MelFloat, MelSInt8, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
     MelOptFloat, MelOptSInt16, MelOptSInt32, MelOptUInt8, MelOptUInt16, \
     MelOptUInt32, MelOptFid, MelCounter, MelPartialCounter, MelBounds, null1, \
-    null2, null3, null4, MelSequential, MelTruncatedStruct
+    null2, null3, null4, MelSequential, MelTruncatedStruct, MelIcons, \
+    MelIcons2, MelIcon, MelIco2
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -385,40 +386,6 @@ class MelEffects(MelGroups):
             MelStruct('EFIT','f2I','magnitude','area','duration',),
             MelConditions(),
         )
-
-#------------------------------------------------------------------------------
-# TODO(inf) Unused - move to brec and use it everywhere!
-class MelIcons(MelGroup):
-    """Handles ICON and MICO."""
-
-    def __init__(self,attr='iconsIaM'):
-        # iconsIaM = icons ICON and MICO
-        MelGroup.__init__(self,attr,
-            MelString('ICON','iconPath'),
-            MelString('MICO','smallIconPath'),
-        )
-    def dumpData(self,record,out):
-        if record.iconsIaM and record.iconsIaM.iconPath:
-            MelGroup.dumpData(self,record,out)
-        if record.iconsIaM and record.iconsIaM.smallIconPath:
-            MelGroup.dumpData(self,record,out)
-
-#------------------------------------------------------------------------------
-# TODO(inf) Unused - move to brec and use it everywhere!
-class MelIcons2(MelGroup):
-    """Handles ICON and MICO."""
-
-    def __init__(self,attr='iconsIaM2'):
-        # iconsIaM = icons ICON and MICO
-        MelGroup.__init__(self,attr,
-            MelString('ICO2','iconPath2'),
-            MelString('MIC2','smallIconPath2'),
-        )
-    def dumpData(self,record,out):
-        if record.iconsIaM and record.iconsIaM.iconPath2:
-            MelGroup.dumpData(self,record,out)
-        if record.iconsIaM and record.iconsIaM.smallIconPath2:
-            MelGroup.dumpData(self,record,out)
 
 #------------------------------------------------------------------------------
 class MelItems(MelGroups):
@@ -1446,8 +1413,7 @@ class MreAlch(MelRecord,MreHasEffects):
         MelLString('DESC','description'),
         MelModel(),
         MelDestructible(),
-        MelString('ICON','iconPath'),
-        MelString('MICO','smallIconPath'),
+        MelIcons(),
         MelOptFid('YNAM', 'pickupSound'),
         MelOptFid('ZNAM', 'dropSound'),
         MelOptFid('ETYP', 'equipType'),
@@ -1474,8 +1440,7 @@ class MreAmmo(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelString('ICON','iconPath'),
-        MelString('MICO','smallIconPath'),
+        MelIcons(),
         MelDestructible(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
@@ -1508,8 +1473,7 @@ class MreAppa(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelString('ICON','iconPath'),
-        MelString('MICO','smallIconPath'),
+        MelIcons(),
         MelDestructible(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
@@ -1564,11 +1528,9 @@ class MreArmo(MelRecord):
         MelOptFid('EITM', 'enchantment'),
         MelOptSInt16('EAMT', 'enchantmentAmount'),
         MelModel('model2','MOD2'),
-        MelString('ICON','maleIconPath'),
-        MelString('MICO','maleSmallIconPath'),
+        MelIcons('maleIconPath', 'maleSmallIconPath'),
         MelModel('model4','MOD4'),
-        MelString('ICO2','femaleIconPath'),
-        MelString('MIC2','femaleSmallIconPath'),
+        MelIcons2(),
         MelBipedObjectData(),
         MelDestructible(),
         MelOptFid('YNAM', 'pickupSound'),
@@ -1685,8 +1647,7 @@ class MreBook(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelString('ICON','iconPath'),
-        MelString('MICO','smallIconPath'),
+        MelIcons(),
         MelLString('DESC','description'),
         MelDestructible(),
         MelOptFid('YNAM', 'pickupSound'),
@@ -1901,8 +1862,7 @@ class MreClas(MelRecord):
         MelString('EDID','eid'),
         MelLString('FULL','full'),
         MelLString('DESC','description'),
-        MelString('ICON','iconPath'),
-        MelString('MICO','smallIconPath'),
+        MelIcons(),
         MelStruct('DATA','4sb19BfI4B','unknown','teaches','maximumtraininglevel',
                   'skillWeightsOneHanded','skillWeightsTwoHanded',
                   'skillWeightsArchery','skillWeightsBlock',
@@ -2298,8 +2258,8 @@ class MreEfsh(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelString('ICON','fillTexture'),
-        MelString('ICO2','particleShaderTexture'),
+        MelIcon('fillTexture'),
+        MelIco2('particleTexture'),
         MelString('NAM7','holesTexture'),
         MelString('NAM8','membranePaletteTexture'),
         MelString('NAM9','particlePaletteTexture'),
@@ -2430,8 +2390,7 @@ class MreEyes(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelLString('FULL','full'),
-        MelString('ICON','iconPath'),
-        MelString('MICO','smallIconPath'),
+        MelIcons(),
         MelUInt8('DATA', (EyesTypeFlags, 'flags', 0L)),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3059,8 +3018,7 @@ class MreIngr(MelRecord,MreHasEffects):
         MelLString('FULL','full'),
         MelKeywords(),
         MelModel(),
-        MelString('ICON','iconPath'),
-        MelString('MICO','smallIconPath'),
+        MelIcons(),
         MelFid('ETYP','equipmentType',),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
@@ -3116,8 +3074,7 @@ class MreKeym(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelString('ICON','iconPath'),
-        MelString('MICO','smallIconPath'),
+        MelIcons(),
         MelDestructible(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
@@ -3274,8 +3231,7 @@ class MreLigh(MelRecord):
         MelModel(),
         MelDestructible(),
         MelLString('FULL','full'),
-        MelString('ICON','iconPath'),
-        MelString('MICO','smallIconPath'),
+        MelIcons(),
         # fe = 'Flicker Effect'
         MelStruct('DATA','iI4BI6fIf','duration','radius','red','green','blue',
                   'unknown',(LighTypeFlags,'flags',0L),'falloffExponent','fov',
@@ -3293,8 +3249,7 @@ class MreLscr(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelString('ICON','iconPath'),
-        MelString('MICO','smallIconPath'),
+        MelIcons(),
         MelLString('DESC','description'),
         MelConditions(),
         MelFid('NNAM','loadingScreenNIF'),
@@ -3544,8 +3499,7 @@ class MreMisc(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelString('ICON','iconPath'),
-        MelString('MICO','smallIconPath'),
+        MelIcons(),
         MelDestructible(),
         MelOptFid('YNAM', 'pickupSound'),
         MelOptFid('ZNAM', 'dropSound'),
@@ -4006,8 +3960,7 @@ class MrePerk(MelRecord):
         MelVmad(),
         MelLString('FULL','full'),
         MelLString('DESC','description'),
-        MelString('ICON','iconPath'),
-        MelString('MICO','smallIconPath'),
+        MelIcons(),
         MelConditions(),
         MelTruncatedStruct('DATA', '5B', ('trait', 0), ('minLevel', 0),
                            ('ranks', 0), ('playable', 0), ('hidden', 0),
@@ -4484,7 +4437,7 @@ class MreRegn(MelRecord):
         MelGroups('entries',
             MelStruct('RDAT', 'I2B2s','entryType', (rdatFlags,'flags'), 'priority',
                      ('unused1',null2)),
-            MelString('ICON','iconPath'),
+            MelIcon(),
             MelRegnEntrySubrecord(7, MelFid('RDMO', 'music')),
             MelRegnEntrySubrecord(7, MelStructA(
                 'RDSA', '2If', 'sounds', (FID, 'sound'), (sdflags, 'flags'),
@@ -4757,8 +4710,7 @@ class MreSlgm(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelString('ICON','iconPath'),
-        MelString('MICO','smallIconPath'),
+        MelIcons(),
         MelDestructible(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
@@ -4986,7 +4938,7 @@ class MreSpgd(MelRecord):
             'centerOffsetMax', 'initialRotationRange', 'numSubtexturesX',
             'numSubtexturesY', (_SpgdDataFlags, 'typeFlags', 0L),
             ('boxSize', 0), ('particleDensity', 0), old_versions={'7f3I'}),
-        MelString('ICON','icon'),
+        MelIcon(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -5212,8 +5164,7 @@ class MreWeap(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel('model1','MODL'),
-        MelString('ICON','iconPath'),
-        MelString('MICO','smallIconPath'),
+        MelIcons(),
         MelFid('EITM','enchantment',),
         MelOptUInt16('EAMT', 'enchantPoints'),
         MelDestructible(),
@@ -5313,7 +5264,7 @@ class MreWrld(MelRecord):
         MelOptFloat('NAM4', ('lODWaterHeight', 0.0)),
         MelOptStruct('DNAM','2f',('defaultLandHeight', 0.0),
                      ('defaultWaterHeight', 0.0),),
-        MelString('ICON','mapImage'),
+        MelIcon('mapImage'),
         MelModel('cloudModel','MODL',),
         MelTruncatedStruct('MNAM', '2i4h3f', 'usableDimensionsX',
                            'usableDimensionsY', 'cellCoordinatesX',

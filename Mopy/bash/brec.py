@@ -1620,6 +1620,41 @@ class MelUInt32(MelStruct):
 #------------------------------------------------------------------------------
 #-- Common/Special Elements
 #------------------------------------------------------------------------------
+class MelIcons(MelSequential):
+    """Handles icon subrecords. Defaults to ICON and MICO, with attribute names
+    'iconPath' and 'smallIconPath', since that's most common."""
+    def __init__(self, icon_attr='iconPath', mico_attr='smallIconPath',
+                 icon_sig='ICON', mico_sig='MICO'):
+        """Creates a new MelIcons with the specified attributes.
+
+        :param icon_attr: The attribute to use for the ICON subrecord. If
+            falsy, this means 'do not include an ICON subrecord'.
+        :param mico_attr: The attribute to use for the MICO subrecord. If
+            falsy, this means 'do not include a MICO subrecord'."""
+        final_elements = []
+        if icon_attr: final_elements += [MelString(icon_sig, icon_attr)]
+        if mico_attr: final_elements += [MelString(mico_sig, mico_attr)]
+        MelSequential.__init__(self, *final_elements)
+
+class MelIcons2(MelIcons):
+    """Handles ICO2 and MIC2 subrecords. Defaults to attribute names
+    'femaleIconPath' and 'femaleSmallIconPath', since that's most common."""
+    def __init__(self, ico2_attr='femaleIconPath',
+                 mic2_attr='femaleSmallIconPath'):
+        MelIcons.__init__(self, icon_attr=ico2_attr, mico_attr=mic2_attr,
+                          icon_sig='ICO2', mico_sig='MIC2')
+
+class MelIcon(MelIcons):
+    """Handles a standalone ICON subrecord, i.e. without any MICO subrecord."""
+    def __init__(self, icon_attr='iconPath'):
+        MelIcons.__init__(self, icon_attr=icon_attr, mico_attr='')
+
+class MelIco2(MelIcons2):
+    """Handles a standalone ICO2 subrecord, i.e. without any MIC2 subrecord."""
+    def __init__(self, ico2_attr):
+        MelIcons2.__init__(self, ico2_attr=ico2_attr, mic2_attr='')
+
+#------------------------------------------------------------------------------
 # Hack for allowing record imports from parent games - set per game
 MelModel = None # type: type
 
