@@ -33,9 +33,10 @@ from ...brec import MelRecord, MelStructs, MelGroups, MelStruct, FID, \
     MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     MelBase, MelFidList, MelStructA, MreGmstBase, MreHeaderBase, MelUnicode, \
     MelColorInterpolator, MelValueInterpolator, MelRegnEntrySubrecord, \
-    MelFloat, MelSInt8, MelSInt32, MelUInt8, MelUInt32, MelOptFid, \
+    MelFloat, MelSInt8, MelSInt16, MelSInt32, MelUInt8, MelUInt32, MelOptFid, \
     MelOptFloat, MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, \
-    MelBounds, null1, null2, null3, null4, MelTruncatedStruct, MelCoordinates
+    MelBounds, null1, null2, null3, null4, MelTruncatedStruct, MelReadOnly, \
+    MelCoordinates
 from ...exception import ModSizeError
 
 # Those are unused here, but need be in this file as are accessed via it
@@ -1481,41 +1482,25 @@ class MreSoun(MelRecord):
             'startatRandomPosition',
         ))
 
-    class MelSounSndx(MelStruct):
-        """SNDX is a reduced version of SNDD. Allow it to read in, but not
-        set defaults or write."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-            record.point0 = 0
-            record.point1 = 0
-            record.point2 = 0
-            record.point3 = 0
-            record.point4 = 0
-            record.reverb = 0
-            record.priority = 0
-            record.xLoc = 0
-            record.yLoc = 0
-        def getSlotsUsed(self):
-            return ()
-        def setDefault(self,record): return
-        def dumpData(self,record,out): return
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelBounds(),
         MelString('FNAM','soundFile'),
-        MelUInt8('RNAM', '_rnam'),
-        MelOptStruct('SNDD','=2BbsIh2B6h3i',('minDist',0), ('maxDist',0),
-                    ('freqAdj',0), ('unusedSndd',null1),(_flags,'flags',0L),
-                    ('staticAtten',0),('stopTime',0),('startTime',0),
-                    ('point0',0),('point1',0),('point2',0),('point3',0),('point4',0),
-                    ('reverb',0),('priority',0), ('xLoc',0), ('yLoc',0),),
-        MelSounSndx('SNDX','=2BbsIh2B',('minDist',0), ('maxDist',0),
-                   ('freqAdj',0), ('unusedSndd',null1),(_flags,'flags',0L),
-                   ('staticAtten',0),('stopTime',0),('startTime',0),),
-        MelBase('ANAM','_anam'), #--Should be a struct. Maybe later.
-        MelBase('GNAM','_gnam'), #--Should be a struct. Maybe later.
-        MelBase('HNAM','_hnam'), #--Should be a struct. Maybe later.
+        MelUInt8('RNAM', 'random_chance'),
+        MelStruct('SNDD', '2BbsIh2B6h3i', 'minDist', 'maxDist', 'freqAdj',
+                  ('unusedSndd', null1), (_flags, 'flags'), 'staticAtten',
+                  'stopTime', 'startTime', 'point0', 'point1', 'point2',
+                  'point3', 'point4', 'reverb', 'priority', 'xLoc', 'yLoc'),
+        # These are the older format - read them, but only write out SNDD
+        MelReadOnly(
+            MelStruct('SNDX', '2BbsIh2B', 'minDist', 'maxDist', 'freqAdj',
+                      ('unusedSndd', null1), (_flags, 'flags'), 'staticAtten',
+                      'stopTime', 'startTime'),
+            MelStruct('ANAM', '5h', 'point0', 'point1', 'point2', 'point3',
+                      'point4'),
+            MelSInt16('GNAM', 'reverb'),
+            MelSInt32('HNAM', 'priority'),
+        ),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1750,7 +1735,7 @@ class MreWthr(MelRecord):
         MelPnamNam0Handler('PNAM','cloudColors'),
         MelPnamNam0Handler('NAM0','daytimeColors'),
         MelStruct('FNAM','6f','fogDayNear','fogDayFar','fogNightNear','fogNightFar','fogDayPower','fogNightPower'),
-        MelBase('INAM','_inam'), #--Should be a struct. Maybe later.
+        MelBase('INAM', 'unused1', null1 * 304),
         MelStruct('DATA','15B',
             'windSpeed','lowerCloudSpeed','upperCloudSpeed','transDelta',
             'sunGlare','sunDamage','rainFadeIn','rainFadeOut','boltFadeIn',

@@ -828,6 +828,12 @@ class MelSequential(MelBase):
         return self._possible_sigs
 
 #------------------------------------------------------------------------------
+class MelReadOnly(MelSequential):
+    """A MelSequential that never writes out. Useful for obsolete elements that
+    will be replaced by newer ones when dumping."""
+    def dumpData(self, record, out): pass
+
+#------------------------------------------------------------------------------
 class MelGroup(MelSequential):
     """Represents a group record."""
     def __init__(self,attr,*elements):

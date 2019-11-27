@@ -37,7 +37,8 @@ from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     MelUInt16, MelUInt32, MelOptFid, MelOptFloat, MelOptSInt16, MelOptSInt32, \
     MelOptUInt8, MelOptUInt16, MelOptUInt32, MelPartialCounter, MelRaceParts, \
     MelRaceVoices, MelBounds, null1, null2, null3, null4, MelScriptVars, \
-    MelSequential, MelTruncatedStruct, PartialLoadDecider, MelCoordinates
+    MelSequential, MelTruncatedStruct, PartialLoadDecider, MelReadOnly, \
+    MelCoordinates
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
@@ -3097,39 +3098,24 @@ class MreSoun(MelRecord):
             'muteWhenSubmerged',
         ))
 
-    class MelSounSndx(MelStruct):
-        """SNDX is a reduced version of SNDD. Allow it to read in, but not set defaults or write."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-            record.point0 = 0
-            record.point1 = 0
-            record.point2 = 0
-            record.point3 = 0
-            record.point4 = 0
-            record.reverb = 0
-            record.priority = 0
-            record.xLoc = 0
-            record.yLoc = 0
-        def getSlotsUsed(self):
-            return ()
-        def setDefault(self,record): return
-        def dumpData(self,record,out): return
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelBounds(),
         MelString('FNAM','soundFile'),
-        MelOptStruct('SNDD','=2BbsIh2B6h3i',('minDist',0), ('maxDist',0),
-                    ('freqAdj',0), ('unusedSndd',null1),(_flags,'flags',0L),
-                    ('staticAtten',0),('stopTime',0),('startTime',0),
-                    ('point0',0),('point1',0),('point2',0),('point3',0),('point4',0),
-                    ('reverb',0),('priority',0), ('xLoc',0), ('yLoc',0),),
-        MelSounSndx('SNDX','=2BbsIh2B',('minDist',0), ('maxDist',0),
-                   ('freqAdj',0), ('unusedSndd',null1),(_flags,'flags',0L),
-                   ('staticAtten',0),('stopTime',0),('startTime',0),),
-        MelBase('ANAM','_anam'), #--Should be a struct. Maybe later.
-        MelBase('GNAM','_gnam'), #--Should be a struct. Maybe later.
-        MelBase('HNAM','_hnam'), #--Should be a struct. Maybe later.
+        MelStruct('SNDD', '2BbsIh2B6h3i', 'minDist', 'maxDist', 'freqAdj',
+                  ('unusedSndd', null1), (_flags, 'flags'), 'staticAtten',
+                  'stopTime', 'startTime', 'point0', 'point1', 'point2',
+                  'point3', 'point4', 'reverb', 'priority', 'xLoc', 'yLoc'),
+        # These are the older format - read them, but only write out SNDD
+        MelReadOnly(
+            MelStruct('SNDX', '2BbsIh2B', 'minDist', 'maxDist', 'freqAdj',
+                      ('unusedSndd', null1), (_flags, 'flags'), 'staticAtten',
+                      'stopTime', 'startTime'),
+            MelStruct('ANAM', '5h', 'point0', 'point1', 'point2', 'point3',
+                      'point4'),
+            MelSInt16('GNAM', 'reverb'),
+            MelSInt32('HNAM', 'priority'),
+        ),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3497,45 +3483,10 @@ class MreWrld(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MelPnamNam0Handler(MelStructA):
-    """Handle older truncated PNAM for WTHR subrecord."""
-    def __init__(self, type_, attr):
-        MelStructA.__init__(self, type_, '3Bs3Bs3Bs3Bs', attr,
-            'riseRed','riseGreen','riseBlue', ('unused1',null1),
-            'dayRed','dayGreen','dayBlue', ('unused2',null1),
-            'setRed','setGreen','setBlue', ('unused3',null1),
-            'nightRed','nightGreen','nightBlue', ('unused4',null1),)
-
-    def loadData(self, record, ins, sub_type, size_, readId):
-        """Handle older truncated PNAM for WTHR subrecord."""
-        if (sub_type == 'PNAM' and size_ == 64) or (sub_type == 'NAM0' and size_ ==
-            160):
-            MelStructA.loadData(self, record, ins, sub_type, size_, readId)
-            return
-        elif (sub_type == 'PNAM' and size_ == 48) or (sub_type == 'NAM0' and size_ == 120):
-            oldFormat = '3Bs3Bs3Bs'
-            # Duplicated from MelStructA.loadData - don't worry, this entire
-            # class will disappear soon ;)
-            selfDefault = self.getDefault
-            recordAppend = record.__getattribute__(self.attr).append
-            selfAttrs = self.attrs
-            itemSize = struct.calcsize(oldFormat)
-            for x in xrange(size_/itemSize):
-                target = selfDefault()
-                recordAppend(target)
-                target.__slots__ = selfAttrs
-                unpacked = ins.unpack(oldFormat,itemSize,readId)
-                setter = target.__setattr__
-                for attr,value,action in zip(selfAttrs,unpacked,self.actions):
-                    if action: value = action(value)
-                    setter(attr,value)
-        else:
-            exp_sizes = (64, 48) if sub_type == 'PNAM' else (160, 120)
-            raise ModSizeError(ins.inName, readId, exp_sizes, size_)
-
 class MreWthr(MelRecord):
     """Weather record."""
     classType = 'WTHR'
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelFid("\x00IAD", 'sunriseImageSpaceModifier'),
@@ -3549,14 +3500,12 @@ class MreWthr(MelRecord):
         MelModel(),
         MelBase('LNAM','unknown1'),
         MelStruct('ONAM','4B','cloudSpeed0','cloudSpeed1','cloudSpeed3','cloudSpeed4'),
-        # MelPnamNam0Handler('PNAM','cloudColors'),
         MelStructA('PNAM','3Bs3Bs3Bs3Bs','cloudColors',
             'riseRed','riseGreen','riseBlue',('unused1',null1),
             'dayRed','dayGreen','dayBlue',('unused2',null1),
             'setRed','setGreen','setBlue',('unused3',null1),
             'nightRed','nightGreen','nightBlue',('unused4',null1),
             ),
-        # MelPnamNam0Handler('NAM0','daytimeColors'),
         MelStructA('NAM0','3Bs3Bs3Bs3Bs','daytimeColors',
             'riseRed','riseGreen','riseBlue',('unused1',null1),
             'dayRed','dayGreen','dayBlue',('unused2',null1),
@@ -3564,11 +3513,11 @@ class MreWthr(MelRecord):
             'nightRed','nightGreen','nightBlue',('unused4',null1),
             ),
         MelStruct('FNAM','6f','fogDayNear','fogDayFar','fogNightNear','fogNightFar','fogDayPower','fogNightPower'),
-        MelBase('INAM','_inam'), #--Should be a struct. Maybe later.
+        MelBase('INAM', 'unused1', null1 * 304),
         MelStruct('DATA','15B',
             'windSpeed','lowerCloudSpeed','upperCloudSpeed','transDelta',
             'sunGlare','sunDamage','rainFadeIn','rainFadeOut','boltFadeIn',
             'boltFadeOut','boltFrequency','weatherType','boltRed','boltBlue','boltGreen'),
         MelStructs('SNAM','2I','sounds',(FID,'sound'),'type'),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
