@@ -1067,8 +1067,6 @@ class DataDict(object):
         return self.data.values()
     def items(self):
         return self.data.items()
-    def has_key(self,key):
-        return self.data.has_key(key)
     def get(self,key,default=None):
         return self.data.get(key,default)
     def pop(self,key,default=None):
@@ -1486,9 +1484,6 @@ class TableColumn(object):
         tableData = self.table.data
         column = self.column
         return [(key,tableData[key][column]) for key in self]
-    def has_key(self,key):
-        """Dictionary emulation."""
-        return self.__contains__(key)
     def clear(self):
         """Dictionary emulation."""
         self.table.delColumn(self.column)
@@ -1499,7 +1494,7 @@ class TableColumn(object):
     def __contains__(self,key):
         """Dictionary emulation."""
         tableData = self.table.data
-        return tableData.has_key(key) and tableData[key].has_key(self.column)
+        return key in tableData and self.column in tableData[key]
     def __getitem__(self,key):
         """Dictionary emulation."""
         return self.table.data[key][self.column]
