@@ -1298,7 +1298,7 @@ def dump_record(record, expand=False):
                     elif not wasList:
                         print rec
                 elif isinstance(rec, basestring):
-                    print `rec`
+                    print repr(rec)
                 elif not wasList:
                     print rec
                 _dump_RecIndent += 2

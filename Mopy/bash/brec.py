@@ -744,13 +744,13 @@ class MelFidList(MelFids):
 
     def loadData(self, record, ins, sub_type, size_, readId):
         if not size_: return
-        fids = ins.unpack(`size_ // 4` + 'I', size_, readId)
+        fids = ins.unpack(repr(size_ // 4) + 'I', size_, readId)
         record.__setattr__(self.attr,list(fids))
 
     def dumpData(self,record,out):
         fids = record.__getattribute__(self.attr)
         if not fids: return
-        out.packSub(self.subType,`len(fids)`+'I',*fids)
+        out.packSub(self.subType,repr(len(fids))+'I',*fids)
 
 #------------------------------------------------------------------------------
 class MelSortedFidList(MelFidList):
@@ -771,7 +771,7 @@ class MelSortedFidList(MelFidList):
         # NOTE: fids.sort sorts from lowest to highest, so lowest values FormID will sort first
         #       if it should be opposite, use this instead:
         #  fids.sort(key=self.sortKeyFn, reverse=True)
-        out.packSub(self.subType, `len(fids)` + 'I', *fids)
+        out.packSub(self.subType, repr(len(fids)) + 'I', *fids)
 
 #------------------------------------------------------------------------------
 class MelSequential(MelBase):
@@ -1380,7 +1380,7 @@ class MelStruct(MelBase):
             valuesAppend(value)
         if self.formatLen >= 0:
             extraLen = len(values[-1])
-            format = self.format + `extraLen` + 's'
+            format = self.format + repr(extraLen) + 's'
         else:
             format = self.format
         try:
