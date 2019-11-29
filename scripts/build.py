@@ -47,6 +47,7 @@ import sys
 import tempfile
 import time
 import zipfile
+import _winreg as winreg  # PY3
 from contextlib import contextmanager
 
 import loot_api
@@ -54,11 +55,6 @@ import pygit2
 
 import utils
 
-# PY3: should be 'import winreg'
-try:
-    import winreg
-except ImportError:
-    import _winreg as winreg
 
 LOGGER = logging.getLogger(__name__)
 

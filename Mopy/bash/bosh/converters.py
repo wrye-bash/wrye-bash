@@ -24,7 +24,7 @@
 """BAIN Converters aka BCFs"""
 
 from __future__ import division
-import cPickle
+import cPickle as pickle  # PY3
 import re
 import sys
 
@@ -300,9 +300,9 @@ class InstallerConverter(object):
                         return re.sub(u'^(bolt|bosh)$', u'' r'bash.\1', s,
                                       flags=re.U)
                 translator = _Translator(stream)
-                map(self.__setattr__, self.persistBCF, cPickle.load(translator))
+                map(self.__setattr__, self.persistBCF, pickle.load(translator))
                 if fullLoad:
-                    map(self.__setattr__, self._converter_settings + self.volatile + self.addedSettings, cPickle.load(translator))
+                    map(self.__setattr__, self._converter_settings + self.volatile + self.addedSettings, pickle.load(translator))
         with self.fullPath.unicodeSafe() as converter_path:
             # Temp rename if its name wont encode correctly
             command = u'"%s" x "%s" BCF.dat -y -so -sccUTF-8' % (
@@ -313,7 +313,7 @@ class InstallerConverter(object):
     def save(self, destInstaller):
         #--Dump settings into BCF.dat
         def _dump(att, dat):
-            cPickle.dump(tuple(map(self.__getattribute__, att)), dat, -1)
+            pickle.dump(tuple(map(self.__getattribute__, att)), dat, -1)
         try:
             with bass.getTempDir().join(u'BCF.dat').open('wb') as f:
                 _dump(self.persistBCF, f)

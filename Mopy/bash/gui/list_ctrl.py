@@ -26,7 +26,7 @@ mods, saves, inis, installers etc"""
 
 __author__ = u'Lojack, Utumno'
 
-import cPickle
+import cPickle as pickle  # PY3
 
 import wx as _wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
@@ -68,7 +68,7 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
                     self.window.OnDropFiles(x, y, self.dataFile.GetFilenames())
                 elif dtype == self.dataList.GetFormat().GetType():
                     # ListCtrl indexes
-                    data = cPickle.loads(self.dataList.GetData())
+                    data = pickle.loads(self.dataList.GetData())
                     self.window._OnDropList(x, y, data)
 
         def OnDragOver(self, x, y, dragResult):
@@ -114,7 +114,7 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
 
     def OnBeginDrag(self, event):
         if not self.fnDndAllow(event): return
-        indexes = []
+        indices = []
         start = stop = -1
         for index in range(self.GetItemCount()):
             if self.GetItemState(index, _wx.LIST_STATE_SELECTED):
@@ -124,12 +124,12 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
                     return
                 if start < 0:
                     start = index
-                indexes.append(index)
+                indices.append(index)
             else:
                 if start >=0 > stop:
                     stop = index - 1
         if stop < 0: stop = self.GetItemCount()
-        selected = cPickle.dumps(indexes, 1)
+        selected = pickle.dumps(indices, 1)
         ldata = _wx.CustomDataObject('ListIndexes')
         ldata.SetData(selected)
         data = _wx.DataObjectComposite()

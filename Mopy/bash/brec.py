@@ -25,7 +25,7 @@
 """This module contains all of the basic types used to read ESP/ESM mod files.
 """
 from __future__ import division
-import cPickle
+import cPickle as pickle  # PY3
 import copy
 import os
 import re
@@ -2655,7 +2655,7 @@ class MreGmstBase(MelRecord):
             fname = bush.game.pklfile
             try:
                 with open(fname) as pkl_file:
-                    cls.Ids = cPickle.load(pkl_file)[cls.classType]
+                    cls.Ids = pickle.load(pkl_file)[cls.classType]
             except:
                 old = bolt.deprintOn
                 bolt.deprintOn = True

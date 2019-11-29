@@ -28,7 +28,7 @@ stores. bush.game must be set, to properly instantiate the data stores."""
 
 # Imports ---------------------------------------------------------------------
 #--Python
-import cPickle
+import cPickle as pickle  # PY3
 import collections
 import errno
 import os
@@ -3272,7 +3272,7 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
     #--Set bass.settings ------------------------------------------------------
     try:
         bass.settings = _load()
-    except cPickle.UnpicklingError as err:
+    except pickle.UnpicklingError as err:
         msg = _(
             u"Error reading the Bash Settings database (the error is: '%s'). "
             u"This is probably not recoverable with the current file. Do you "
@@ -3282,7 +3282,7 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
         if usebck:
             try:
                 bass.settings = _loadBakOrEmpty()
-            except cPickle.UnpicklingError as err:
+            except pickle.UnpicklingError as err:
                 msg = _(
                     u"Error reading the BackupBash Settings database (the "
                     u"error is: '%s'). This is probably not recoverable with "

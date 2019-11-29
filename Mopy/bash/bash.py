@@ -473,16 +473,16 @@ def _show_wx_error(msg):
             print u'   An error occurred while displaying the second error.'
 
 def _tkinter_error_dial(msg, but_kwargs):
-    import Tkinter
-    root_widget = Tkinter.Tk()
-    frame = Tkinter.Frame(root_widget)
+    import Tkinter as tkinter  # PY3
+    root_widget = tkinter.Tk()
+    frame = tkinter.Frame(root_widget)
     frame.pack()
-    button = Tkinter.Button(frame, command=root_widget.destroy, pady=15,
-                            borderwidth=5, relief=Tkinter.GROOVE, **but_kwargs)
-    button.pack(fill=Tkinter.BOTH, expand=1, side=Tkinter.BOTTOM)
-    w = Tkinter.Text(frame)
-    w.insert(Tkinter.END, msg)
-    w.config(state=Tkinter.DISABLED)
+    button = tkinter.Button(frame, command=root_widget.destroy, pady=15,
+                            borderwidth=5, relief=tkinter.GROOVE, **but_kwargs)
+    button.pack(fill=tkinter.BOTH, expand=1, side=tkinter.BOTTOM)
+    w = tkinter.Text(frame)
+    w.insert(tkinter.END, msg)
+    w.config(state=tkinter.DISABLED)
     w.pack()
     root_widget.mainloop()
 
