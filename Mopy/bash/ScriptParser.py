@@ -214,9 +214,9 @@ class ParserError(SyntaxError): pass
 gParser = None
 def error(msg):
     if gParser:
-        raise ParserError, u'(Line %s, Column %s): %s' % (gParser.cLine, gParser.cCol, msg)
+        raise ParserError(u'(Line %s, Column %s): %s' % (gParser.cLine, gParser.cCol, msg))
     else:
-        raise ParserError, msg
+        raise ParserError(msg)
 
 # Parser ------------------------------------------
 #  This is where the magic happens
@@ -752,7 +752,7 @@ class Parser(object):
         error(_(u'Too many values left at the end of evaluation.'))
 
     def error(self, msg):
-        raise ParserError, u'(Line %s, Column %s): %s' % (self.cLine, self.cCol, msg)
+        raise ParserError(u'(Line %s, Column %s): %s' % (self.cLine, self.cCol, msg))
 
     #Functions for parsing a line into tokens
     def _grow(self, c):
