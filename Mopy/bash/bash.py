@@ -463,7 +463,7 @@ def _show_wx_error(msg):
                               'fg': 'red'}  # foreground button color
                 _tkinter_error_dial(msg, but_kwargs)
 
-    except StandardError as e:
+    except Exception as e:
         print u'Wrye Bash encountered an error but could not display it.'
         print u'The following is the error that occurred when displaying the '\
               u'first error:'
