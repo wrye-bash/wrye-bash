@@ -22,13 +22,13 @@
 #
 # =============================================================================
 import re
-from .. import bass, bush, bolt
+from .. import bush, bolt
 from ..bolt import Flags, encode, sio, Path, struct_pack, struct_unpack
 from ..exception import SaveFileError, StateError
 from . import SaveInfo
 from ._saves import SreNPC, SaveFile
 from ..parsers import LoadFactory, ModFile, MasterMap
-from ..brec import getModIndex, MreRecord, genFid, RecordHeader
+from ..brec import getModIndex, MreRecord, genFid, RecordHeader, null2
 
 class PCFaces:
     """Package: Objects and functions for working with face data."""
@@ -46,7 +46,7 @@ class PCFaces:
             self.eid = self.pcName = u'generic'
             self.fggs_p = self.fgts_p = '\x00'*4*50
             self.fgga_p = '\x00'*4*30
-            self.unused2 = bass.null2
+            self.unused2 = null2
             self.health = self.unused3 = self.baseSpell = self.fatigue = self.level = 0
             self.skills = self.attributes = self.iclass = None
             self.factions = []

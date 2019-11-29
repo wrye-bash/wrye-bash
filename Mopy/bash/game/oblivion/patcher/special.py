@@ -27,8 +27,7 @@ import re
 from ....bolt import GPath, sio, SubProgress, CsvReader
 from ....patcher import getPatchesPath
 from ....parsers import LoadFactory, ModFile
-from ....brec import MreRecord, RecordHeader
-from ....bass import null4
+from ....brec import MreRecord, RecordHeader, null4
 from .... import brec, bosh, load_order
 from ....cint import MGEFCode, FormID
 from ....exception import StateError
