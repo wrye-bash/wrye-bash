@@ -23,7 +23,6 @@
 # =============================================================================
 from __future__ import division
 import copy
-import string
 import re
 from operator import itemgetter
 # Internal
@@ -175,7 +174,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
         aliases_text = self.gAliases.text_content
         self.aliases.clear()
         for line in aliases_text.split(u'\n'):
-            fields = map(string.strip,line.split(u'>>'))
+            fields = map(unicode.strip,line.split(u'>>'))
             if len(fields) != 2 or not fields[0] or not fields[1]: continue
             self.aliases[GPath(fields[0])] = GPath(fields[1])
         self.SetAliasText()

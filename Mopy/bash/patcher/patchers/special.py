@@ -22,7 +22,6 @@
 #
 # =============================================================================
 import copy
-import string
 from collections import Counter, defaultdict
 from itertools import chain
 from operator import itemgetter, attrgetter
@@ -247,10 +246,10 @@ class ListsMerger(_AListsMerger, ListPatcher):
                         cleaned.add(record.eid)
                         keep(super)
             log.setHeader(u'=== '+_(u'Empty %s Sublists') % label)
-            for eid in sorted(removed,key=string.lower):
+            for eid in sorted(removed,key=unicode.lower):
                 log(u'* '+eid)
             log.setHeader(u'=== '+_(u'Empty %s Sublists Removed') % label)
-            for eid in sorted(cleaned,key=string.lower):
+            for eid in sorted(cleaned,key=unicode.lower):
                 log(u'* '+eid)
 
 class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):

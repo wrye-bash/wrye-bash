@@ -33,7 +33,6 @@ import collections
 import errno
 import os
 import re
-import string
 import struct
 import sys
 import time
@@ -2987,7 +2986,7 @@ class PeopleData(DataStore):
     def dumpText(self,path,names):
         """Dump to text file."""
         with path.open('w',encoding='utf-8-sig') as out:
-            for name in sorted(names,key=string.lower):
+            for name in sorted(names,key=unicode.lower):
                 out.write(u'== %s %s\n' % (name,u'='*(75-len(name))))
                 out.write(self[name][2].strip())
                 out.write(u'\n\n')

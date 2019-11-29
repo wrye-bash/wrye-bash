@@ -22,7 +22,6 @@
 #
 # =============================================================================
 
-import string
 from . import bEnableWizard, tabInfo, BashFrame
 from .constants import colorInfo, settingDefaults, installercons
 from .. import bass, balt, bosh, bolt, bush, env
@@ -264,7 +263,7 @@ class ImportFaceDialog(DialogWindow):
             self.data = dict((u'%08X %s' % (key,face.pcName),face) for key,face in faces.items())
         else:
             self.data = faces
-        self.list_items = sorted(self.data.keys(),key=string.lower)
+        self.list_items = sorted(self.data.keys(),key=unicode.lower)
         #--GUI
         super(ImportFaceDialog, self).__init__(parent, title=title,
                                                sizes_dict=balt.sizes)
