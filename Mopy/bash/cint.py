@@ -664,8 +664,10 @@ class FormID(object):
         try: return other[1] != self.formID[1] or other[0] != self.formID[0]
         except TypeError: return False
 
-    def __nonzero__(self):
+    def __bool__(self):
         return not isinstance(self.formID, (FormID.EmptyFormID, FormID.InvalidFormID))
+    # PY3 get rid of this once we port
+    __nonzero__ = __bool__
 
     def __getitem__(self, x):
         return self.formID[0] if x == 0 else self.formID[1]
@@ -901,8 +903,10 @@ class ActorValue(object):
         try: return other[1] != self.actorValue[1] or other[0] != self.actorValue[0]
         except TypeError: return False
 
-    def __nonzero__(self):
+    def __bool__(self):
         return not isinstance(self.actorValue, (ActorValue.EmptyActorValue, ActorValue.InvalidActorValue))
+    # PY3 get rid of this once we port
+    __nonzero__ = __bool__
 
     def __getitem__(self, x):
         return self.actorValue[0] if x == 0 else self.actorValue[1]
@@ -1149,8 +1153,10 @@ class MGEFCode(object):
     def __ne__(self, other):
         return other[1] != self.mgefCode[1] or other[0] != self.mgefCode[0]
 
-    def __nonzero__(self):
+    def __bool__(self):
         return not isinstance(self.mgefCode, (MGEFCode.EmptyMGEFCode, MGEFCode.InvalidMGEFCode))
+    # PY3 get rid of this once we port
+    __nonzero__ = __bool__
 
     def __getitem__(self, x):
         return self.mgefCode[0] if x == 0 else self.mgefCode[1]
