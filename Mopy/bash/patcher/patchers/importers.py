@@ -25,6 +25,7 @@
 """This module contains the oblivion importer patcher classes."""
 import re
 from collections import defaultdict, Counter
+from functools import reduce
 from itertools import chain
 from operator import attrgetter
 # Internal

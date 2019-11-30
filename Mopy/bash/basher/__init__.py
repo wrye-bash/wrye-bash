@@ -56,11 +56,10 @@ from __future__ import division
 import StringIO
 import collections
 import os
-import re
 import sys
 import time
 from collections import OrderedDict, namedtuple
-from functools import partial
+from functools import partial, reduce
 from operator import itemgetter
 #--wxPython
 import wx
