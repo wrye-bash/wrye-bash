@@ -23,7 +23,6 @@
 # =============================================================================
 """This module contains the skyrim record classes."""
 from collections import OrderedDict
-import struct
 
 from .constants import condition_function_data
 from ... import brec
@@ -67,10 +66,6 @@ if brec.MelModel is None:
                 MelNull(types[1]),
                 MelMODS(types[2], 'alternateTextures')
             )
-
-        def debug(self, on=True):
-            for element in self.elements[:2]: element.debug(on)
-            return self
 
     brec.MelModel = _MelModel
 from ...brec import MelModel
@@ -269,11 +264,6 @@ class MelConditions(MelGroups):
                 (record.runOn, record.reference,
                  record.param3) = null4, null4, null4
             record.ifunc, record.form12345 = ifunc, form12345
-            if self._debug:
-                unpacked = unpacked1+unpacked2
-                print u' ',zip(self.attrs, unpacked)
-                if len(unpacked) != len(self.attrs):
-                    print u' ', unpacked
 
         def dumpData(self,record,out):
             out.packSub('CTDA', '=B3sfH2s' + record.form12345,
@@ -4288,7 +4278,11 @@ class MreRace(MelRecord):
 class MreRefr(MelRecord):
     """Placed Object."""
     classType = 'REFR'
-    _flags = Flags(0L,Flags.getNames('visible', 'canTravelTo','showAllHidden',))
+    _marker_flags = Flags(0, Flags.getNames(
+        'visible',
+        'can_travel_to',
+        'show_all_hidden',
+    ))
     _parentFlags = Flags(0L,Flags.getNames('oppositeParent','popIn',))
     _actFlags = Flags(0L,Flags.getNames('useDefault', 'activate','open','openByDefault'))
     _lockFlags = Flags(0L,Flags.getNames(None, None, 'leveledLock'))
@@ -4299,43 +4293,6 @@ class MreRefr(MelRecord):
         (6,'hasImageSpace'),
         (7,'hasLightingTemplate'),
     ))
-
-    class MelRefrXmrk(MelStruct):
-        """Handler for xmrk record. Conditionally loads next items."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            """Reads data from ins into record attribute."""
-            ins.seek(size_, 1, readId) # skip junk
-            record.hasXmrk = True
-            insTell = ins.tell
-            insUnpack = ins.unpack
-            pos = insTell()
-            (sub_type_, size_) = insUnpack('4sH', 6, readId + '.FULL')
-            while sub_type_ in ['FNAM', 'FULL', 'TNAM', ]:
-                if sub_type_ == 'FNAM':
-                    value = insUnpack('B', size_, readId)
-                    record.flags = MreRefr._flags(*value)
-                elif sub_type_ == 'FULL':
-                    record.full = ins.readString(size_, readId)
-                elif sub_type_ == 'TNAM':
-                    record.markerType, record.unused5 = insUnpack('Bs', size_, readId)
-                pos = insTell()
-                (sub_type_, size_) = insUnpack('4sH', 6, readId + '.FULL')
-            ins.seek(pos)
-            if self._debug: print ' ',record.flags,record.full,record.markerType
-        def dumpData(self,record,out):
-            if (record.flags,record.full,record.markerType,record.unused5,record.reputation) != self.defaults[1:]:
-                record.hasXmrk = True
-            if record.hasXmrk:
-                try:
-                    out.write(struct_pack('=4sH','XMRK',0))
-                    out.packSub('FNAM','B',record.flags.dump())
-                    value = record.full
-                    if value is not None:
-                        out.packSub0('FULL',value)
-                    out.packSub('TNAM','Bs',record.markerType, record.unused5)
-                except struct.error:
-                    print self.subType,self.format,record.flags,record.full,record.markerType
-                    raise
 
     melSet = MelSet(
         MelEdid(),
@@ -4432,11 +4389,11 @@ class MreRefr(MelRecord):
         MelOptFloat('XHTW', 'headTrackingWeight'),
         MelOptFloat('XFVC', 'favorCost'),
         MelBase('ONAM','onam_p'),
-        MelGroup('markerData',
-            MelNull('XMRK',),
-            MelOptUInt8('FNAM', 'mapFlags',),
+        MelGroup('map_marker',
+            MelBase('XMRK', 'marker_data'),
+            MelOptUInt8('FNAM', (_marker_flags, 'marker_flags')),
             MelFull(),
-            MelOptStruct('TNAM','Bs','markerType','unknown',),
+            MelOptStruct('TNAM', 'Bs', 'marker_type', 'unused1'),
         ),
         MelFid('XATR', 'attachRef'),
         MelOptStruct('XLOD','3f',('lod1',None),('lod2',None),('lod3',None)),

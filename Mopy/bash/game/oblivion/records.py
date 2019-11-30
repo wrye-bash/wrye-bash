@@ -22,10 +22,9 @@
 #
 # =============================================================================
 """This module contains the oblivion record classes."""
-import struct
 from .constants import condition_function_data
 from ... import brec
-from ...bolt import Flags, struct_pack
+from ...bolt import Flags
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, \
     MelFids, MreHeaderBase, MelBase, MelUnicode, MelFidList, MelStrings, \
@@ -57,10 +56,6 @@ if brec.MelModel is None:
                 # Texture File Hashes
                 MelBase(types[2], 'modt_p')
             )
-
-        def debug(self,on=True):
-            for element in self.elements[:2]: element.debug(on)
-            return self
 
     brec.MelModel = _MelModel
 from ...brec import MelModel
@@ -130,11 +125,6 @@ class MelConditions(MelGroups):
             else: # size == 20, verified at the start
                 record.unused2 = null4
             record.ifunc, record.form12 = ifunc, form12
-            if self._debug:
-                unpacked = unpacked1 + unpacked2
-                print u' ',zip(self.attrs, unpacked)
-                if len(unpacked) != len(self.attrs):
-                    print u' ', unpacked
 
         def dumpData(self,record,out):
             out.packSub('CTDA','B3sfI'+ record.form12 + '4s',
@@ -1202,7 +1192,6 @@ class MreNpc(MreActor):
             recordSetAttr('health',unpacked[21])
             recordSetAttr('unused1',unpacked[22])
             recordSetAttr('attributes',unpacked[23:])
-            if self._debug: print unpacked[:21],unpacked[21],unpacked[23:]
 
         def dumpData(self,record,out):
             recordGetAttr = record.__getattribute__
@@ -1501,7 +1490,10 @@ class MreRefr(MelRecord):
     """Placed Object."""
     classType = 'REFR'
 
-    _flags = Flags(0L,Flags.getNames('visible', 'canTravelTo'))
+    _marker_flags = Flags(0, Flags.getNames(
+        'visible',
+        'can_travel_to',
+    ))
     _parentFlags = Flags(0L,Flags.getNames('oppositeParent'))
     _actFlags = Flags(0L, Flags.getNames('useDefault', 'activate', 'open',
                                          'openByDefault'))
@@ -1515,48 +1507,6 @@ class MreRefr(MelRecord):
                                 + self.defaults[len(unpacked_val) - 2:-2]
                                 + unpacked_val[-2:])
             return unpacked_val
-
-    class MelRefrXmrk(MelStruct):
-        """Handler for xmrk record. Conditionally loads next items."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            """Reads data from ins into record attribute."""
-            ins.seek(size_, 1, readId) # skip junk
-            record.hasXmrk = True
-            insTell = ins.tell
-            insUnpack = ins.unpack
-            pos = insTell()
-            (sub_type_, size_) = insUnpack('4sH', 6, readId + '.FULL')
-            while sub_type_ in ['FNAM', 'FULL', 'TNAM']:
-                if sub_type_ == 'FNAM':
-                    value = insUnpack('B', size_, readId)
-                    record.flags = MreRefr._flags(*value)
-                elif sub_type_ == 'FULL':
-                    record.full = ins.readString(size_, readId)
-                elif sub_type_ == 'TNAM':
-                    record.markerType, record.unused5 = insUnpack('Bs', size_,
-                                                                  readId)
-                pos = insTell()
-                (sub_type_, size_) = insUnpack('4sH', 6, readId + '.FULL')
-            ins.seek(pos)
-            if self._debug: print ' ', record.flags, record.full, \
-                record.markerType
-
-        def dumpData(self,record,out):
-            if (record.flags, record.full, record.markerType,
-                record.unused5) != self.defaults[1:]:
-                record.hasXmrk = True
-            if record.hasXmrk:
-                try:
-                    out.write(struct_pack('=4sH','XMRK',0))
-                    out.packSub('FNAM','B',record.flags.dump())
-                    value = record.full
-                    if value is not None:
-                        out.packSub0('FULL',value)
-                    out.packSub('TNAM','Bs',record.markerType, record.unused5)
-                except struct.error:
-                    print self.subType, self.format, record.flags, \
-                        record.full, record.markerType
-                    raise
 
     melSet = MelSet(
         MelEdid(),
@@ -1587,8 +1537,12 @@ class MreRefr(MelRecord):
         MelFid('XRTM','xrtm'),
         MelOptUInt32('XACT', (_actFlags, 'actFlags', 0L)),
         MelOptSInt32('XCNT', 'count'),
-        MelRefrXmrk('XMRK', '', ('hasXmrk', False), (_flags, 'flags', 0L),
-                    'full', 'markerType', ('unused5', null1)),
+        MelGroup('map_marker',
+            MelBase('XMRK', 'marker_data'),
+            MelOptUInt8('FNAM', (_marker_flags, 'marker_flags')),
+            MelFull(),
+            MelOptStruct('TNAM', 'Bs', 'marker_type', 'unused1'),
+        ),
         MelBase('ONAM','onam_p'),
         MelBase('XRGD','xrgd_p'),
         MelOptFloat('XSCL', ('scale', 1.0)),

@@ -24,7 +24,6 @@
 """This module contains the fallout3 record classes. You must import from it
 __once__ only in game.fallout3.Fallout3GameInfo#init. No other game.records
 file must be imported till then."""
-import struct
 from operator import attrgetter
 from ... import bush, brec
 from ...bolt import Flags, struct_unpack, struct_pack
@@ -75,10 +74,6 @@ if brec.MelModel is None:
                                            'facegen_model_flags'))
                 ]
             MelGroup.__init__(self, attr, *model_elements)
-
-        def debug(self, on=True):
-            for element in self.elements[:2]: element.debug(on)
-            return self
 
     brec.MelModel = _MelModel
 from ...brec import MelModel
@@ -159,11 +154,6 @@ class MelConditions(MelGroups):
                 record.param1, record.param2 = unpacked2
                 record.runOn, record.reference = null4, null4
             record.ifunc, record.form1234 = ifunc, form1234
-            if self._debug:
-                unpacked = unpacked1 + unpacked2
-                print u' ', zip(self.attrs, unpacked)
-                if len(unpacked) != len(self.attrs):
-                    print u' ', unpacked
 
         def dumpData(self,record,out):
             out.packSub('CTDA', '=B3sfH2s' + record.form1234,
@@ -2176,7 +2166,6 @@ class MreNpc(MreActor):
             recordSetAttr = record.__setattr__
             recordSetAttr('health',unpacked[0])
             recordSetAttr('attributes',unpacked[1:])
-            if self._debug: print unpacked[0],unpacked[1:]
 
         def dumpData(self,record,out):
             recordGetAttr = record.__getattribute__
@@ -2193,7 +2182,6 @@ class MreNpc(MreActor):
             recordSetAttr = record.__setattr__
             recordSetAttr('skillValues',unpacked[:14])
             recordSetAttr('skillOffsets',unpacked[14:])
-            if self._debug: print unpacked[:14]+unpacked[14:]
 
         def dumpData(self,record,out):
             recordGetAttr = record.__getattribute__
@@ -2826,55 +2814,16 @@ class MreRefr(MelRecord):
     """Placed Object."""
     classType = 'REFR'
 
-    _flags = Flags(0L,Flags.getNames('visible', 'canTravelTo','showAllHidden'))
+    _marker_flags = Flags(0, Flags.getNames(
+        'visible',
+        'can_travel_to',
+        'show_all_hidden',
+    ))
     _parentFlags = Flags(0L,Flags.getNames('oppositeParent'))
     _actFlags = Flags(0L,Flags.getNames('useDefault', 'activate','open','openByDefault'))
     _lockFlags = Flags(0L,Flags.getNames(None, None, 'leveledLock'))
     _destinationFlags = Flags(0L,Flags.getNames('noAlarm'))
     reflectFlags = Flags(0L, Flags.getNames('reflection', 'refraction'))
-
-    class MelRefrXmrk(MelStruct):
-        """Handler for xmrk record. Conditionally loads next items."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            """Reads data from ins into record attribute."""
-            ins.seek(size_, 1, readId) # skip junk
-            record.hasXmrk = True
-            insTell = ins.tell
-            insUnpack = ins.unpack
-            pos = insTell()
-            (type_, size_) = insUnpack('4sH', 6, readId + '.FULL')
-            while type_ in ['FNAM','FULL','TNAM','WMI1']:
-                if type_ == 'FNAM':
-                    value = insUnpack('B', size_, readId)
-                    record.flags = MreRefr._flags(*value)
-                elif type_ == 'FULL':
-                    record.full = ins.readString(size_, readId)
-                elif type_ == 'TNAM':
-                    record.markerType, record.unused5 = insUnpack('Bs', size_, readId)
-                # WMI1 not used in FO3, leaving so it doesn't break something
-                elif type_ == 'WMI1':
-                    record.reputation = insUnpack('I', size_, readId)
-                pos = insTell()
-                (type_, size_) = insUnpack('4sH', 6, readId + '.FULL')
-            ins.seek(pos)
-            if self._debug: print ' ',record.flags,record.full,record.markerType
-
-        def dumpData(self,record,out):
-            if (record.flags,record.full,record.markerType,record.unused5,record.reputation) != self.defaults[1:]:
-                record.hasXmrk = True
-            if record.hasXmrk:
-                try:
-                    out.write(struct_pack('=4sH','XMRK',0))
-                    out.packSub('FNAM','B',record.flags.dump())
-                    value = record.full
-                    if value is not None:
-                        out.packSub0('FULL',value)
-                    out.packSub('TNAM','Bs',record.markerType, record.unused5)
-                    # WMI1 not used in FO3, leaving so it doesn't break something
-                    out.packRef('WMI1',record.reputation)
-                except struct.error:
-                    print self.subType,self.format,record.flags,record.full,record.markerType
-                    raise
 
     melSet = MelSet(
         MelEdid(),
@@ -2891,7 +2840,12 @@ class MreRefr(MelRecord):
         MelOptStruct('XMBO','3f','boundHalfExtentsX','boundHalfExtentsY','boundHalfExtentsZ'),
         MelOptStruct('XTEL','I6fI',(FID,'destinationFid'),'destinationPosX','destinationPosY',
             'destinationPosZ','destinationRotX','destinationRotY','destinationRotZ',(_destinationFlags,'destinationFlags')),
-        MelRefrXmrk('XMRK','',('hasXmrk',False),(_flags,'flags',0L),'full','markerType',('unused5',null1),(FID,'reputation')),
+        MelGroup('map_marker',
+            MelBase('XMRK', 'marker_data'),
+            MelOptUInt8('FNAM', (_marker_flags, 'marker_flags')),
+            MelFull(),
+            MelOptStruct('TNAM', 'Bs', 'marker_type', 'unused1'),
+        ),
         MelFid('XTRG','targetId'),
         MelOptSInt32('XLCM', ('levelMod', None)),
         MelGroup('patrolData',

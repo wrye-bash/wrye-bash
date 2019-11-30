@@ -1252,53 +1252,16 @@ class MreRefr(MelRecord):
     """Placed Object"""
     classType = 'REFR'
 
-    _flags = Flags(0L,Flags.getNames('visible', 'canTravelTo'))
+    _marker_flags = Flags(0, Flags.getNames(
+        'visible',
+        'can_travel_to',
+        'show_all_hidden',
+    ))
     _parentFlags = Flags(0L,Flags.getNames('oppositeParent'))
     _actFlags = Flags(0L,Flags.getNames('useDefault', 'activate','open','openByDefault'))
     _lockFlags = Flags(0L,Flags.getNames(None, None, 'leveledLock'))
     _destinationFlags = Flags(0L,Flags.getNames('noAlarm'))
     reflectFlags = Flags(0L, Flags.getNames('reflection', 'refraction'))
-
-    class MelRefrXmrk(MelStruct):
-        """Handler for xmrk record. Conditionally loads next items."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            """Reads data from ins into record attribute."""
-            ins.seek(size_, 1, readId) # skip junk
-            record.hasXmrk = True
-            insTell = ins.tell
-            insUnpack = ins.unpack
-            pos = insTell()
-            (type_, size_) = insUnpack('4sH', 6, readId + '.FULL')
-            while type_ in ['FNAM','FULL','TNAM','WMI1']:
-                if type_ == 'FNAM':
-                    value = insUnpack('B', size_, readId)
-                    record.flags = MreRefr._flags(*value)
-                elif type_ == 'FULL':
-                    record.full = ins.readString(size_, readId)
-                elif type_ == 'TNAM':
-                    record.markerType, record.unused5 = insUnpack('Bs', size_, readId)
-                elif type_ == 'WMI1':
-                    record.reputation = insUnpack('I', size_, readId)
-                pos = insTell()
-                (type_, size_) = insUnpack('4sH', 6, readId + '.FULL')
-            ins.seek(pos)
-            if self._debug: print ' ',record.flags,record.full,record.markerType
-
-        def dumpData(self,record,out):
-            if (record.flags,record.full,record.markerType,record.unused5,record.reputation) != self.defaults[1:]:
-                record.hasXmrk = True
-            if record.hasXmrk:
-                try:
-                    out.write(struct.pack('=4sH','XMRK',0))
-                    out.packSub('FNAM','B',record.flags.dump())
-                    value = record.full
-                    if value is not None:
-                        out.packSub0('FULL',value)
-                    out.packSub('TNAM','Bs',record.markerType, record.unused5)
-                    out.packRef('WMI1',record.reputation)
-                except struct.error:
-                    print self.subType,self.format,record.flags,record.full,record.markerType
-                    raise
 
     melSet = MelSet(
         MelEdid(),
@@ -1315,7 +1278,13 @@ class MreRefr(MelRecord):
         MelOptStruct('XMBO','3f','boundHalfExtentsX','boundHalfExtentsY','boundHalfExtentsZ'),
         MelOptStruct('XTEL','I6fI',(FID,'destinationFid'),'destinationPosX','destinationPosY',
             'destinationPosZ','destinationRotX','destinationRotY','destinationRotZ',(_destinationFlags,'destinationFlags')),
-        MelRefrXmrk('XMRK','',('hasXmrk',False),(_flags,'flags',0L),'full','markerType',('unused5',null1),(FID,'reputation')),
+        MelGroup('map_marker',
+            MelBase('XMRK', 'marker_data'),
+            MelOptUInt8('FNAM', (_marker_flags, 'marker_flags')),
+            MelFull(),
+            MelOptStruct('TNAM', 'Bs', 'marker_type', 'unused1'),
+            MelFid('WMI1', 'marker_reputation'),
+        ),
         MelGroup('audioData',
             MelBase('MMRK','audioMarker'),
             MelBase('FULL','full_p'),

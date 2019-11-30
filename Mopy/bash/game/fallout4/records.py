@@ -57,10 +57,6 @@ if brec.MelModel is None:
                 MelBase(types[3], 'modf_p')
             )
 
-        def debug(self, on=True):
-            for element in self.elements[:2]: element.debug(on)
-            return self
-
     brec.MelModel = _MelModel
 # Now we can import from parent game records file
 from ..skyrim.records import MreLeveledList

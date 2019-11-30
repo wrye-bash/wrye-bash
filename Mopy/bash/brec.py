@@ -398,9 +398,9 @@ class ModWriter(object):
                 outWrite(struct_pack('=4sHI', 'XXXX', 4, lenData))
                 outWrite(struct_pack('=4sH', sub_rec_type, 0))
             outWrite(data)
-        except Exception as e:
-            print e
-            print self,sub_rec_type,data,values
+        except Exception:
+            bolt.deprint(u'%r: Failed packing: %s, %s, %s' % (
+                self, sub_rec_type, data, values), traceback=True)
 
     def packSub0(self, sub_rec_type, data):
         """Write subrecord header plus zero terminated string to output
@@ -500,12 +500,6 @@ class MelBase(object):
 
     def __init__(self, subType, attr, default=None):
         self.subType, self.attr, self.default = subType, attr, default
-        self._debug = False
-
-    def debug(self,on=True):
-        """Sets debug flag on self."""
-        self._debug = on
-        return self
 
     def getSlotsUsed(self):
         return self.attr,
@@ -567,7 +561,6 @@ class MelBase(object):
     def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
         record.__setattr__(self.attr, ins.read(size_, readId))
-        if self._debug: print u'%s' % record.__getattribute__(self.attr)
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
@@ -617,9 +610,6 @@ class MelCounter(MelBase):
         :type couns: str"""
         self.element = element
         self.counted_attr = counts
-
-    def debug(self, on=True):
-        self.element.debug(on)
 
     def getSlotsUsed(self):
         return self.element.getSlotsUsed()
@@ -683,7 +673,6 @@ class MelFid(MelBase):
 
     def loadData(self, record, ins, sub_type, size_, readId):
         record.__setattr__(self.attr,ins.unpackRef())
-        if self._debug: print u'  %08X' % (record.__getattribute__(self.attr),)
 
     def dumpData(self,record,out):
         try:
@@ -718,7 +707,6 @@ class MelFids(MelBase):
     def loadData(self, record, ins, sub_type, size_, readId):
         fid = ins.unpackRef()
         record.__getattribute__(self.attr).append(fid)
-        if self._debug: print u' ',hex(fid)
 
     def dumpData(self,record,out):
         type = self.subType
@@ -739,7 +727,6 @@ class MelNull(MelBase):
 
     def __init__(self, subType):
         self.subType = subType
-        self._debug = False
 
     def getSlotsUsed(self):
         return ()
@@ -748,8 +735,7 @@ class MelNull(MelBase):
         pass
 
     def loadData(self, record, ins, sub_type, size_, readId):
-        junk = ins.read(size_, readId)
-        if self._debug: print u' ',record.fid,unicode(junk)
+        ins.seek(size_, 1, readId)
 
     def dumpData(self,record,out):
         pass
@@ -764,9 +750,6 @@ class MelFidList(MelFids):
         if not size_: return
         fids = ins.unpack(`size_ / 4` + 'I', size_, readId)
         record.__setattr__(self.attr,list(fids))
-        if self._debug:
-            for fid in fids:
-                print u'  %08X' % fid
 
     def dumpData(self,record,out):
         fids = record.__getattribute__(self.attr)
@@ -803,11 +786,6 @@ class MelSequential(MelBase):
         self.elements, self.form_elements = elements, set()
         self._possible_sigs = {s for element in self.elements for s
                                in element.signatures}
-
-    def debug(self,on=True):
-        for element in self.elements:
-            element.debug(on)
-        return self
 
     def getDefaulters(self, defaulters, base):
         for element in self.elements:
@@ -1171,7 +1149,6 @@ class MelUnion(MelBase):
         :param fallback: The fallback element to use. Defaults to None, which
             will raise an error if the decider returns an unknown value.
         :type fallback: MelBase"""
-        self._debug = False
         self.element_mapping = element_mapping
         self.fid_elements = set()
         if not isinstance(decider, ADecider):
@@ -1301,7 +1278,6 @@ class MelString(MelBase):
     def loadData(self, record, ins, sub_type, size_, readId):
         value = ins.readString(size_, readId)
         record.__setattr__(self.attr,value)
-        if self._debug: print u' ',record.__getattribute__(self.attr)
 
     def dumpData(self,record,out):
         string_val = record.__getattribute__(self.attr)
@@ -1333,7 +1309,6 @@ class MelLString(MelString):
     def loadData(self, record, ins, sub_type, size_, readId):
         value = ins.readLString(size_, readId)
         record.__setattr__(self.attr,value)
-        if self._debug: print u' ',record.__getattribute__(self.attr)
 
 #------------------------------------------------------------------------------
 class MelStrings(MelString):
@@ -1348,7 +1323,6 @@ class MelStrings(MelString):
     def loadData(self, record, ins, sub_type, size_, readId):
         value = ins.readStrings(size_, readId)
         record.__setattr__(self.attr,value)
-        if self._debug: print u' ',value
 
     def dumpData(self,record,out):
         strings = record.__getattribute__(self.attr)
@@ -1363,7 +1337,6 @@ class MelStruct(MelBase):
         dumpExtra = kwdargs.get('dumpExtra', None)
         self.subType, self.format = subType, format
         self.attrs,self.defaults,self.actions,self.formAttrs = MelBase.parseElements(*elements)
-        self._debug = False
         if dumpExtra:
             self.attrs += (dumpExtra,)
             self.defaults += ('',)
@@ -1394,10 +1367,6 @@ class MelStruct(MelBase):
         if self.formatLen >= 0:
             # Dump remaining subrecord data into an attribute
             setter(self.attrs[-1], ins.read(size_ - self.formatLen))
-        if self._debug:
-            print u' ',zip(self.attrs,unpacked)
-            if len(unpacked) != len(self.attrs):
-                print u' ',unpacked
 
     def dumpData(self,record,out):
         values = []
@@ -1415,7 +1384,8 @@ class MelStruct(MelBase):
         try:
             out.packSub(self.subType,format,*values)
         except struct.error:
-            print self.subType,self.format,values
+            bolt.deprint(u'Failed to dump struct: %s (%r)' % (
+                self.subType, self))
             raise
 
     def mapFids(self,record,function,save=False):
@@ -1560,7 +1530,6 @@ class MelTruncatedStruct(MelStruct):
         for attr, value, action in zip(self.attrs, unpacked_val, self.actions):
             if callable(action): value = action(value)
             setter(attr, value)
-        if self._debug: print unpacked_val
 
     def _pre_process_unpacked(self, unpacked_val):
         """You may override this if you need to change the unpacked value in
@@ -1821,7 +1790,6 @@ class MelSet(object):
     """Set of mod record elments."""
 
     def __init__(self,*elements):
-        self._debug = False
         self.elements = elements
         self.defaulters = {}
         self.loaders = {}
@@ -1831,11 +1799,6 @@ class MelSet(object):
             element.getDefaulters(self.defaulters,'')
             element.getLoaders(self.loaders)
             element.hasFids(self.formElements)
-
-    def debug(self,on=True):
-        """Sets debug flag on self."""
-        self._debug = on
-        return self
 
     def getSlotsUsed(self):
         """This function returns all of the attributes used in record instances that use this instance."""
@@ -1856,15 +1819,12 @@ class MelSet(object):
         """Loads data from input stream. Called by load()."""
         rec_type = record.recType
         loaders = self.loaders
-        _debug = self._debug
-        if _debug: print u'\n>>>> %08X' % record.fid
         # Load each subrecord
         ins_at_end = ins.atEnd
         load_sub_header = ins.unpackSubHeader
         read_id_prefix = rec_type + '.'
         while not ins_at_end(endPos, rec_type):
             sub_type, sub_size = load_sub_header(rec_type)
-            if _debug: print sub_type, sub_size
             try:
                 loaders[sub_type].loadData(record, ins, sub_type, sub_size,
                                            read_id_prefix + sub_type)
@@ -1877,15 +1837,16 @@ class MelSet(object):
                     record, ins, sub_type, sub_size)
             except Exception as error:
                 self._handle_load_error(error, record, ins, sub_type, sub_size)
-        if _debug: print u'<<<<',getattr(record,'eid',u'[NO EID]')
 
     def _handle_load_error(self, error, record, ins, sub_type, sub_size):
-        print error
+        bolt.deprint(error)
         eid = getattr(record, 'eid', u'<<NO EID>>')
-        print(u'Error loading %r record and/or subrecord: %08X\n  '
-              u'eid = %r\n  subrecord = %r\n  subrecord size = %d\n  '
-              u'file pos = %d' % (
-            record.recType, record.fid, eid, sub_type, sub_size, ins.tell()))
+        bolt.deprint(u'Error loading %r record and/or subrecord: %08X' %
+                     record.recType, record.fid)
+        bolt.deprint(u'  eid = %r' % eid)
+        bolt.deprint(u'  subrecord = %r' % sub_type)
+        bolt.deprint(u'  subrecord size = %d' % sub_size)
+        bolt.deprint(u'  file pos = %d' % ins.tell())
         raise
 
     def dumpData(self,record, out):
@@ -1894,11 +1855,18 @@ class MelSet(object):
             try:
                 element.dumpData(record,out)
             except:
-                bolt.deprint('error dumping data:',traceback=True)
-                print u'Dumping:',getattr(record,'eid',u'<<NO EID>>'),record.fid,element
+                bolt.deprint(u'Error dumping data: ', traceback=True)
+                bolt.deprint(u'Occurred while dumping '
+                             u'<%(eid)s[%(signature)s:%(fid)s]>' % {
+                    u'signature': record.recType,
+                    u'fid': strFid(record.fid),
+                    u'eid': (record.eid + u' ' if hasattr(record, 'eid')
+                             and record.eid is not None else u''),
+                })
                 for attr in record.__slots__:
-                    if hasattr(record,attr):
-                        print u"> %s: %s" % (attr,repr(getattr(record,attr)))
+                    if hasattr(record, attr):
+                        bolt.deprint(u'> %s: %s' % (
+                            attr, repr(getattr(record, attr))))
                 raise
 
     def mapFids(self,record,mapper,save=False):
@@ -1953,8 +1921,6 @@ class _MelDistributor(MelNull):
     :type _sig_to_loader: dict[str, MelBase]
     :type _target_sigs: set[str]"""
     def __init__(self, distributor_config): # type: (dict) -> None
-        # For MelBase.debug
-        self._debug = False
         # Maps attribute name to loader
         self._attr_to_loader = {}
         # Maps subrecord signature to loader
@@ -2909,7 +2875,6 @@ class MelRaceParts(MelNull):
             loaders. These will be loaded and dumped directly after each
             INDX."""
         self._last_indx = None # used during loading
-        self._debug = False
         self._indx_to_attr = indx_to_attr
         # Create loaders for use at runtime
         self._indx_to_loader = {
