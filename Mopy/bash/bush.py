@@ -169,10 +169,9 @@ def __setGame(gamename, msg):
     game_mod = _allModules[gamename]
     deprint(msg % {'gamename': gamename}, gamePath)
     # Unload the other modules from the cache
-    for i in _allGames.keys():
-        if i != gamename:
-            del _allGames[i]
-            del _allModules[i]  # the keys should be the same
+    _allGames.clear()
+    _allModules.clear()
+    # TODo gc.collect()
     game.init()
 
 def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, name=None):
