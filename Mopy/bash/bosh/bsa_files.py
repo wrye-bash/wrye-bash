@@ -938,14 +938,14 @@ class OblivionBsa(BSA):
         https://en.uesp.net/wiki/Tes4Mod:Hash_Calculation"""
         #--NOTE: fileName is NOT a Path object!
         root, ext = os.path.splitext(file_name.lower())
-        chars = map(ord, root)
+        chars = [ord(x) for x in root]
         hash_part_1 = chars[-1] | ((len(chars) > 2 and chars[-2]) or 0) << 8 \
                       | len(chars) << 16 | chars[0] << 24
         hash_part_1 |= OblivionBsa._bsa_ext_lookup[ext]
         uint_mask, hash_part_2, hash_part_3 = 0xFFFFFFFF, 0, 0
         for char in chars[1:-2]:
             hash_part_2 = ((hash_part_2 * 0x1003F) + char) & uint_mask
-        for char in map(ord, ext):
+        for char in (ord(x) for x in ext):
             hash_part_3 = ((hash_part_3 * 0x1003F) + char) & uint_mask
         hash_part_2 = (hash_part_2 + hash_part_3) & uint_mask
         return (hash_part_2 << 32) + hash_part_1

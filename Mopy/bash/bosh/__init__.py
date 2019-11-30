@@ -422,7 +422,7 @@ class FileInfo(AFile, ListInfo):
             snapNew = maSnap.group(1).split(u'.')
             #--Compare shared version numbers
             sharedNums = min(len(snapNew),len(snapLast))
-            for index in range(sharedNums):
+            for index in xrange(sharedNums):
                 (numNew,numLast) = (int(snapNew[index]),int(snapLast[index]))
                 if numNew > numLast:
                     snapLast = snapNew
@@ -1328,7 +1328,7 @@ class SaveInfo(FileInfo):
         # see if we have cosave backups - we must delete cosaves when restoring
         # if the backup does not have a cosave
         for co_type in self.cosave_types:
-            co_paths = tuple(map(co_type.get_cosave_path, back_to_dest[0]))
+            co_paths = tuple(co_type.get_cosave_path(x) for x in back_to_dest[0])
             back_to_dest.append(co_paths)
         return back_to_dest
 
@@ -1994,8 +1994,8 @@ class ModInfos(FileInfos):
 
     def __init__(self):
         self.__class__.file_pattern = re.compile(u'(' + u'|'.join(
-            map(re.escape, bush.game.espm_extensions)) + u'' r')(\.ghost)?$',
-                                                 re.I | re.U)
+                [re.escape(e) for e in bush.game.espm_extensions]) +
+            u'' r')(\.ghost)?$', re.I | re.U)
         FileInfos.__init__(self, dirs[u'mods'], factory=ModInfo)
         #--Info lists/sets
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
@@ -2676,7 +2676,7 @@ class ModInfos(FileInfos):
             def _activatable(modName):
                 tags = modInfos[modName].getBashTags()
                 return not (u'Deactivate' in tags or u'Filter' in tags)
-            mods = filter(_activatable, mods)
+            mods = [mod for mod in mods if _activatable(mod)]
             mergeable = set(self.mergeable)
             for mod in mods:
                 if not mod in mergeable: _add_to_activate(mod)

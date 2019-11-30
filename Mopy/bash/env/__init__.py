@@ -164,8 +164,8 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
             raise _file_op_error_map.get(result, FileOperationError(result))
     else: # Use custom dialogs and such
         from .. import balt # TODO(ut): local import, env should be above balt...
-        source = map(GPath, source)
-        target = map(GPath, target)
+        source = [GPath(s) for s in source]
+        target = [GPath(s) for s in target]
         if operation == FO_DELETE:
             # allowUndo - no effect, can't use recycle bin this way
             # confirm - ask if confirm is True

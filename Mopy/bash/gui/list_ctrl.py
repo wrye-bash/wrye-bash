@@ -118,7 +118,7 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
         if not self.fnDndAllow(event): return
         indices = []
         start = stop = -1
-        for index in range(self.GetItemCount()):
+        for index in xrange(self.GetItemCount()):
             if self.GetItemState(index, _wx.LIST_STATE_SELECTED):
                 if stop >= 0 and self.dndOnlyCont:
                     # Only allow moving selections if they are in a

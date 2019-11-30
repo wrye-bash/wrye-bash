@@ -632,7 +632,7 @@ class INIList(balt.UIList):
     @staticmethod
     def filterOutDefaultTweaks(ini_tweaks):
         """Filter out default tweaks from tweaks iterable."""
-        return filter(lambda x: not bosh.iniInfos[x].is_default_tweak, ini_tweaks)
+        return [x for x in ini_tweaks if not bosh.iniInfos[x].is_default_tweak]
 
     def _toDelete(self, items):
         items = super(INIList, self)._toDelete(items)
@@ -908,7 +908,7 @@ class ModList(_ModsUIList):
             pinned = load_order.filter_pinned(self.GetSelected())
             if pinned:
                 msg = _(u"You can't reorder the following mods:\n" +
-                        u', '.join(map(unicode, pinned)))
+                        u', '.join(unicode(s) for s in pinned))
                 continue_key = u'bash.mods.dnd.pinned.continue'
         if msg:
             balt.askContinue(self, msg, continue_key)
@@ -2974,7 +2974,7 @@ class InstallersDetails(_SashDetailsPanel):
         """Handle check/uncheck of item."""
         installer = self.file_info
         self.gSubList.lb_select_index(lb_selection_dex)
-        for lb_selection_dex in range(self.gSubList.lb_get_items_count()):
+        for lb_selection_dex in xrange(self.gSubList.lb_get_items_count()):
             installer.subActives[lb_selection_dex+1] = self.gSubList.lb_is_checked_at_index(lb_selection_dex)
         if not balt.getKeyState_Shift():
             self.refreshCurrent(installer)
@@ -3512,7 +3512,7 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
             iMods = None
             iInstallers = None
             iDelete = None
-            for i in range(Link.Frame.notebook.GetPageCount()):
+            for i in xrange(Link.Frame.notebook.GetPageCount()):
                 pageTitle = Link.Frame.notebook.GetPageText(i)
                 if pageTitle == tabInfo[u'Mods'][1]:
                     iMods = i
@@ -3759,7 +3759,7 @@ class BashStatusBar(DnDStatusBar):
             self._addButton(link)
             button = self.buttons.pop()
             thisIndex, insertBefore = order.index(link.uid), 0
-            for i in range(len(self.buttons)):
+            for i in xrange(len(self.buttons)):
                 otherlink = self.GetLink(index=i)
                 indexOther = order.index(otherlink.uid)
                 if indexOther > thisIndex:

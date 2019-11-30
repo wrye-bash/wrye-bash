@@ -448,8 +448,10 @@ class Installer_Rename(UIList_Rename, _InstallerLink):
     def _enable(self):
         ##Only enable if all selected items are of the same type
         firstItem = next(self.iselected_infos())
-        return all(map(lambda inf: isinstance(inf, type(firstItem)),
-                       self.iselected_infos()))
+        for info in self.iselected_infos():
+            if not isinstance(info, type(firstItem)):
+                return False
+        return True
 
 class Installer_HasExtraData(CheckLink, _RefreshingLink):
     """Toggle hasExtraData flag on installer."""
@@ -947,7 +949,7 @@ class Installer_Espm_List(_Installer_Details_Link):
     def Execute(self):
         subs = _(u'Plugin List for %s:') % self._installer + u'\n[spoiler]\n'
         espm_list = self.window.gEspmList
-        for index in range(espm_list.lb_get_items_count()):
+        for index in xrange(espm_list.lb_get_items_count()):
             subs += [u'   ',u'** '][espm_list.lb_is_checked_at_index(index)] + \
                     espm_list.lb_get_str_item_at_index(index) + u'\n'
         subs += u'[/spoiler]'
@@ -1039,7 +1041,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
     def _append(self, window):
         self.selected = window.GetSelected() # append runs before _initData
         self.window = window # and the idata access is via self.window
-        return all(map(lambda inf: inf.is_archive(), self.iselected_infos()))
+        return all(inf.is_archive() for inf in self.iselected_infos())
 
     @balt.conversation
     def Execute(self):

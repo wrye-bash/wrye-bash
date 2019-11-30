@@ -285,7 +285,7 @@ def askOpen(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=w
     if dialog.ShowModal() != wx.ID_OK:
         result = False
     elif style & wx.FD_MULTIPLE:
-        result = map(GPath,dialog.GetPaths())
+        result = [GPath(path) for path in dialog.GetPaths()]
         if mustExist:
             for returned_path in result:
                 if not returned_path.exists():
@@ -783,10 +783,10 @@ class TabDragMixin(object):
                 else:
                     left,right,step = oldPos+1,newPos+1,-1
                 insert = left+step
-                addPages = [(self.GetPage(x),self.GetPageText(x)) for x in range(left,right)]
+                addPages = [(self.GetPage(x),self.GetPageText(x)) for x in xrange(left,right)]
                 addPages.reverse()
                 num = right - left
-                for i in range(num):
+                for i in xrange(num):
                     self.RemovePage(left)
                 for page,title in addPages:
                     self.InsertPage(insert,page,title)

@@ -772,7 +772,7 @@ class Parser(object):
         # Try to figure out if it's multiple operators bunched together
         rightWord = None
         if type_ == UNKNOWN:
-            for idex in range(len(word),0,-1):
+            for idex in xrange(len(word),0,-1):
                 newType = getType(word[0:idex], self)
                 if newType != UNKNOWN:
                     rightWord = word[idex:]

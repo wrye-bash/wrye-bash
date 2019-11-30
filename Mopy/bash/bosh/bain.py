@@ -1583,7 +1583,7 @@ class InstallerProject(Installer):
         if self.fsize != proj_size: return True
         # below is for the fix me - we need to add mtimes_str_crc extra persistent attribute to Installer
         # c.sort() # is this needed or os.walk will return the same order during program run
-        # mtimes_str = b'.'.join(map(bytes, c))
+        # mtimes_str = b'.'.join([bytes(x) for x in c])
         # mtimes_str_crc = crc32(mtimes_str)
         try:
             mtime = max(c)

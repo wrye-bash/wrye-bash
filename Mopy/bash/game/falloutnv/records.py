@@ -22,6 +22,7 @@
 # =============================================================================
 """This module contains the falloutnv record classes."""
 from __future__ import division
+from __future__ import unicode_literals
 # Set MelModel in brec, in this case it's identical to the fallout 3 one
 from ..fallout3.records import MelOwnership, MelDestructible, MelEffects, \
     MelConditions, MelEmbeddedScript, MelItems, MelEquipmentType, MelBipedData

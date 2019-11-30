@@ -1230,7 +1230,7 @@ class ScriptText(CsvParser):
                     ins)[1:-2]
                 # we need a seek else we get ValueError: Mixing iteration and
                 # read methods would lose data # 12 == what we chopped off + '\r\n'
-                ins.seek(sum(map(len, (modName, FormID, eid))) + 12)
+                ins.seek(sum(len(x) for x in (modName, FormID, eid)) + 12)
                 scriptText = ins.read() # read the rest in one blob
                 self.eid_data[eid] = (scriptText, FormID)
             except (IndexError, StopIteration):

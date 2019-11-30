@@ -50,21 +50,21 @@ class MasterMap(object):
     """Serves as a map between two sets of masters."""
     def __init__(self,inMasters,outMasters):
         """Initiation."""
-        map = {}
+        mast_map = {}
         outMastersIndex = outMasters.index
         for index,master in enumerate(inMasters):
             if master in outMasters:
-                map[index] = outMastersIndex(master)
+                mast_map[index] = outMastersIndex(master)
             else:
-                map[index] = -1
-        self.map = map
+                mast_map[index] = -1
+        self._mast_map = mast_map
 
     def __call__(self,fid,default=-1):
         """Maps a fid from first set of masters to second. If no mapping
         is possible, then either returns default (if defined) or raises MasterMapError."""
         if not fid: return fid
         inIndex = int(fid >> 24)
-        outIndex = self.map.get(inIndex,-2)
+        outIndex = self._mast_map.get(inIndex, -2)
         if outIndex >= 0:
             return (int(outIndex) << 24 ) | (fid & 0xFFFFFF)
         elif default != -1:

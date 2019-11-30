@@ -87,7 +87,7 @@ class Installers_MonitorInstall(Installers_Link):
         with load_order.Unlock():
             mods_changed = bosh.modInfos.refresh()
         inis_changed = bosh.iniInfos.refresh()
-        ui_refresh = map(bool, [mods_changed, inis_changed])
+        ui_refresh = (bool(mods_changed), bool(inis_changed))
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Determine changes
         curData = self.idata.data_sizeCrcDate

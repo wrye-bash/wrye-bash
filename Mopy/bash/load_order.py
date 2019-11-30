@@ -242,7 +242,8 @@ def get_ordered(mod_paths):
     return mod_paths
 
 def filter_pinned(imods):
-    return filter(_game_handle.pinned_mods().__contains__, imods)
+    pinn = _game_handle.pinned_mods()
+    return [m for m in imods if m in pinn]
 
 def find_first_difference(lo_a, acti_a, lo_b, acti_b):
     """Returns the first different index (in terms of LO indices) between two

@@ -21,6 +21,7 @@
 #
 # =============================================================================
 """This module contains the skyrim record classes."""
+from __future__ import unicode_literals
 from collections import OrderedDict
 from itertools import izip
 
