@@ -28,6 +28,7 @@ stores. bush.game must be set, to properly instantiate the data stores."""
 
 # Imports ---------------------------------------------------------------------
 #--Python
+from __future__ import print_function
 import cPickle as pickle  # PY3
 import collections
 import errno
@@ -783,8 +784,8 @@ class ModInfo(FileInfo):
                     if bsa_info.has_assets({assetPath}):
                         break # found
                 except (BSAError, OverflowError):
-                    print u'Failed to parse %s:\n%s' % (
-                        bsa_info.name, traceback.format_exc())
+                    print(u'Failed to parse %s:\n%s' % (
+                        bsa_info.name, traceback.format_exc()))
                     continue
                 if __debug == 2:
                     deprint(u'Asset %s not in %s' % (assetPath, bsa_info.name))

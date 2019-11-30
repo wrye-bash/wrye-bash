@@ -21,7 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from __future__ import division
+from __future__ import division, print_function
 import subprocess
 import webbrowser
 from . import BashStatusBar, BashFrame
@@ -712,7 +712,7 @@ class App_GenPickle(StatusBar_Button):
             maxId = 0
         maxId = max(maxId, 0xf12345)
         maxOld = maxId
-        print 'maxId', hex(maxId)
+        print('maxId', hex(maxId))
         #--Eid list? - if the GMST has a 00000000 eid when looking at it in
         # the CS with nothing but oblivion.esm loaded you need to add the
         # gmst to this list, rebuild the pickle and overwrite the old one.
@@ -720,7 +720,7 @@ class App_GenPickle(StatusBar_Button):
             if eid not in fids:
                 maxId += 1
                 fids[eid] = maxId
-                print '%08X  %08X %s' % (0, maxId, eid)
+                print('%08X  %08X %s' % (0, maxId, eid))
         #--Source file
         if fileName:
             sorter = lambda a: a.eid
@@ -729,19 +729,19 @@ class App_GenPickle(StatusBar_Button):
             modFile = parsers.ModFile(modInfo, loadFactory)
             modFile.load(True)
             for gmst in sorted(modFile.GMST.records, key=sorter):
-                print gmst.eid, gmst.value
+                print(gmst.eid, gmst.value)
                 if gmst.eid not in fids:
                     maxId += 1
                     fids[gmst.eid] = maxId
-                    print '%08X  %08X %s' % (gmst.fid, maxId, gmst.eid)
+                    print('%08X  %08X %s' % (gmst.fid, maxId, gmst.eid))
         #--Changes?
         if maxId > maxOld:
             outData = {'GMST': fids}
             pickle.dump(outData, GPath(bush.game.pklfile).open('w'))
-            print _(u"%d new gmst ids written to " + bush.game.pklfile) % (
-                (maxId - maxOld),)
+            print(_(u"%d new gmst ids written to " + bush.game.pklfile) % (
+                (maxId - maxOld),))
         else:
-            print _(u'No changes necessary. PKL data unchanged.')
+            print(_(u'No changes necessary. PKL data unchanged.'))
 
 #------------------------------------------------------------------------------
 class App_ModChecker(StatusBar_Button):

@@ -24,7 +24,7 @@
 
 # Imports ---------------------------------------------------------------------
 #--Standard
-from __future__ import division
+from __future__ import division, print_function
 import StringIO
 import cPickle as pickle  # PY3
 import chardet
@@ -536,20 +536,20 @@ class Path(object):
         except UnicodeDecodeError:
             try:
                 traceback.print_exc()
-                print 'Trying to pass temp dir in...'
+                print('Trying to pass temp dir in...')
                 tempdir = unicode(tempfile.gettempdir(), Path.sys_fs_enc)
                 return GPath(tempfile.mkdtemp(prefix=prefix, dir=tempdir))
             except UnicodeDecodeError:
                 try:
                     traceback.print_exc()
-                    print 'Trying to encode temp dir prefix...'
+                    print('Trying to encode temp dir prefix...')
                     return GPath(tempfile.mkdtemp(
                         prefix=prefix.encode(Path.sys_fs_enc)).decode(
                         Path.sys_fs_enc))
                 except:
                     traceback.print_exc()
-                    print 'Failed to create tmp dir, Bash will not function ' \
-                          'correctly.'
+                    print('Failed to create tmp dir, Bash will not function ' \
+                          'correctly.')
 
     @staticmethod
     def baseTempDir():
@@ -1232,8 +1232,8 @@ class MainFunctions(object):
         func = self.funcs.get(key)
         if not func:
             msg = _(u"Unknown function/object: %s") % key
-            try: print msg
-            except UnicodeError: print msg.encode('mbcs')
+            try: print(msg)
+            except UnicodeError: print(msg.encode('mbcs'))
             return
         for attr in attrs:
             func = getattr(func,attr)
@@ -1685,10 +1685,10 @@ def deprint(*args,**keyargs):
         o.close()
     try:
         # Should work if stdout/stderr is going to wxPython output
-        print msg
+        print(msg)
     except UnicodeError:
         # Nope, it's going somewhere else
-        print msg.encode(Path.sys_fs_enc)
+        print(msg.encode(Path.sys_fs_enc))
 
 def getMatch(reMatch,group=0):
     """Returns the match or an empty string."""

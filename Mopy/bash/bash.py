@@ -27,6 +27,7 @@ it runs some initialization functions and then starts the main application
 loop."""
 
 # Imports ---------------------------------------------------------------------
+from __future__ import print_function
 import atexit
 import codecs
 import lz4
@@ -148,10 +149,10 @@ def exit_cleanup():
                 subprocess.Popen(cmd_line, # a list, no need to escape spaces
                                  close_fds=True)
         except Exception as error:
-            print error
-            print u'Error Attempting to Restart Wrye Bash!'
-            print u'cmd line: %s' % (cmd_line, )
-            print
+            print(error)
+            print(u'Error Attempting to Restart Wrye Bash!')
+            print(u'cmd line: %s' % (cmd_line, ))
+            print()
             raise
 
 def dump_environment():
@@ -242,12 +243,12 @@ def _main(opts, wx_locale):
     if opts.genHtml is not None:
         msg1 = _(u"generating HTML file from: '%s'") % opts.genHtml
         msg2 = _(u'done')
-        try: print msg1
-        except UnicodeError: print msg1.encode(bolt.Path.sys_fs_enc)
+        try: print(msg1)
+        except UnicodeError: print(msg1.encode(bolt.Path.sys_fs_enc))
         from . import belt # this imports bosh which imports wx (DUH)
         bolt.WryeText.genHtml(opts.genHtml)
-        try: print msg2
-        except UnicodeError: print msg2.encode(bolt.Path.sys_fs_enc)
+        try: print(msg2)
+        except UnicodeError: print(msg2.encode(bolt.Path.sys_fs_enc))
         return
 
     # We need the Mopy dirs to initialize restore settings instance
@@ -464,13 +465,13 @@ def _show_wx_error(msg):
                 _tkinter_error_dial(msg, but_kwargs)
 
     except Exception as e:
-        print u'Wrye Bash encountered an error but could not display it.'
-        print u'The following is the error that occurred when displaying the '\
-              u'first error:'
+        print(u'Wrye Bash encountered an error but could not display it.')
+        print(u'The following is the error that occurred when displaying the '\
+              u'first error:')
         try:
-            print traceback.format_exc(e)
+            print(traceback.format_exc(e))
         except Exception:
-            print u'   An error occurred while displaying the second error.'
+            print(u'   An error occurred while displaying the second error.')
 
 def _tkinter_error_dial(msg, but_kwargs):
     import Tkinter as tkinter  # PY3

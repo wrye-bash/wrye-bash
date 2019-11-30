@@ -24,6 +24,7 @@
 
 """WIP module to encapsulate environment access - currently OS dependent stuff.
 """
+from __future__ import print_function
 import errno
 import os as _os
 import re as _re
@@ -722,7 +723,7 @@ def setUAC(handle, uac=True):
 def testUAC(gameDataPath):
     if _os.name != 'nt': # skip this when not in Windows
         return False
-    print 'testing UAC'
+    print('testing UAC')
     tmpDir = Path.tempDir()
     tempFile = tmpDir.join(u'_tempfile.tmp')
     dest = gameDataPath.join(u'_tempfile.tmp')

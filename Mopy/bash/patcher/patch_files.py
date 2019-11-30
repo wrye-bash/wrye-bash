@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from __future__ import print_function
 import time
 from collections import defaultdict, Counter
 from operator import attrgetter
@@ -256,7 +257,7 @@ class PatchFile(_PFile, ModFile):
             except CancelError:
                 raise
             except:
-                print _(u"MERGE/SCAN ERROR:"),modName.s
+                print(_(u"MERGE/SCAN ERROR:"),modName.s)
                 raise
         progress(progress.full,_(u'Load mods scanned.'))
 
@@ -392,7 +393,7 @@ class CBash_PatchFile(_PFile, ObModFile):
         for record in getattr(modFile,group):
             #don't merge deleted items
             if record.IsDeleted and group not in ('REFRS','ACHRS','ACRES'):
-                print group
+                print(group)
                 continue
             fid = record.fid
             if not fid.ValidateFormID(self): continue
@@ -403,14 +404,14 @@ class CBash_PatchFile(_PFile, ObModFile):
                     if doFilter:
                         record.mergeFilter(self)
                         if record.HasInvalidFormIDs():
-                            print u"Debugging mergeModFile - Skipping", fid, u"in mod (", record.GetParentMod().ModName, u")due to failed merge filter"
+                            print(u"Debugging mergeModFile - Skipping", fid, u"in mod (", record.GetParentMod().ModName, u")due to failed merge filter")
                             dump_record(record)
-                            print
+                            print()
                             continue
                     else:
-                        print u"Debugging mergeModFile - Skipping", fid, u"in mod (", record.GetParentMod().ModName, u")due to invalid formIDs"
+                        print(u"Debugging mergeModFile - Skipping", fid, u"in mod (", record.GetParentMod().ModName, u")due to invalid formIDs")
                         dump_record(record)
-                        print
+                        print()
                         continue
                 if record.IsDeleted and group in ('REFRS','ACHRS','ACRES'):
                     undelete = True
@@ -465,7 +466,7 @@ class CBash_PatchFile(_PFile, ObModFile):
         self.Current.load()
 
         if self.Current.LookupModFileLoadOrder(self.patchName.temp.s) <= 0:
-            print (u'\n'.join(
+            print((u'\n'.join(
                 (_(u"Please copy this entire message and report it on the "
                    u"current official thread at "
                    u"https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games/."),
@@ -478,8 +479,8 @@ class CBash_PatchFile(_PFile, ObModFile):
                    u'Wrye Bash.exe is using'),
                  _(u'5. and finally... if restarting Wrye Bash and trying '
                    u'again and building the CBash Bashed Patch right away '
-                   u'works fine'))) + u'\n')
-            print self.Current.Debug_DumpModFiles()
+                   u'works fine'))) + u'\n'))
+            print(self.Current.Debug_DumpModFiles())
             raise StateError()
         ObModFile.__init__(self, patchFile._ModID)
 
@@ -590,15 +591,15 @@ class CBash_PatchFile(_PFile, ObModFile):
                             if record.HasInvalidFormIDs():
                                 record.mergeFilter(self)
                                 if record.HasInvalidFormIDs():
-                                    print u"Debugging buildPatch - Skipping", record.fid, u"in mod (", record.GetParentMod().ModName, u")due to failed merge filter"
+                                    print(u"Debugging buildPatch - Skipping", record.fid, u"in mod (", record.GetParentMod().ModName, u")due to failed merge filter")
                                     dump_record(record)
-                                    print
+                                    print()
                                     continue
 
                         if not isScanned and record.HasInvalidFormIDs():
-                            print u"Debugging buildPatch - Skipping", record.fid, u"in mod (", record.GetParentMod().ModName, u")due to invalid formIDs"
+                            print(u"Debugging buildPatch - Skipping", record.fid, u"in mod (", record.GetParentMod().ModName, u")due to invalid formIDs")
                             dump_record(record)
-                            print
+                            print()
                             continue
 
                         if iiFilter:

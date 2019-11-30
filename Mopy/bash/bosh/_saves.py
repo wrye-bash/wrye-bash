@@ -25,7 +25,7 @@
 Oblivion only . We need this split into cosaves and proper saves module and
 coded for rest of the games."""
 # TODO: Oblivion only - we need to support rest of games - help needed
-from __future__ import division
+from __future__ import division, print_function
 from collections import Counter
 from itertools import starmap, repeat
 from operator import attrgetter
@@ -562,10 +562,10 @@ class SaveFile(object):
             #--Unknown type?
             if doUnknownTypes and type not in knownTypes:
                 if mod < 255:
-                    print type,hex(fid),getMaster(mod)
+                    print(type,hex(fid),getMaster(mod))
                     knownTypes.add(type)
                 elif fid in id_created:
-                    print type,hex(fid),id_created[fid].recType
+                    print(type,hex(fid),id_created[fid].recType)
                     knownTypes.add(type)
             #--Obj ref parents
             if type == 49 and mod == 255 and (rec_flgs & 2):

@@ -24,7 +24,7 @@
 
 """This module contains all of the basic types used to read ESP/ESM mod files.
 """
-from __future__ import division
+from __future__ import division, print_function
 import cPickle as pickle  # PY3
 import copy
 import os

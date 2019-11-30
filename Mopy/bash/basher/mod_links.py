@@ -25,6 +25,7 @@
 """Menu items for the _item_ menu of the mods tab - their window attribute
 points to BashFrame.modList singleton."""
 
+from __future__ import print_function
 import StringIO
 import collections
 import copy
@@ -82,9 +83,9 @@ class Mod_FullLoad(OneItemLink):
     def Execute(self):
         with balt.Progress(_(u'Loading:') + u'\n%s'
                 % self._selected_item.stail) as progress:
-            print bosh.MreRecord.type_class
+            print(bosh.MreRecord.type_class)
             readClasses = bosh.MreRecord.type_class
-            print readClasses.values()
+            print(readClasses.values())
             loadFactory = parsers.LoadFactory(False, *readClasses.values())
             modFile = parsers.ModFile(self._selected_info, loadFactory)
             try:
@@ -2471,7 +2472,7 @@ class Mod_FullNames_Import(_Mod_Import_Link):
                 try:
                     buff.write(format_ % (eid, full, newFull))
                 except:
-                    print u'unicode error:', (format_, eid, full, newFull)
+                    print(u'unicode error:', (format_, eid, full, newFull))
             self._showLog(buff.getvalue(), title=_(u'Objects Renamed'))
 
 # CBash only Import/Export ----------------------------------------------------

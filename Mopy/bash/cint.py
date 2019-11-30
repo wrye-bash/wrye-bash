@@ -37,7 +37,7 @@
 #
 ####### END LICENSE BLOCK ######
 
-from __future__ import division
+from __future__ import division, print_function
 from ctypes import byref, cast, c_bool, c_byte, c_char, c_char_p, c_float, \
     CFUNCTYPE, c_long, c_short, c_ubyte, c_uint32, c_ushort, c_ulong, CDLL, \
     POINTER, string_at
@@ -74,7 +74,7 @@ except:
     def GPath(obj):
         return obj
     def deprint(obj):
-        print obj
+        print(obj)
     def _(obj):
         return obj
 
@@ -171,7 +171,7 @@ if CBashEnabled != 1 and exists(cb_path):
 
 if _CBash:
     def LoggingCB(logString):
-        print logString,
+        print(logString, end=' ')
         return 0
 
     def RaiseCB(raisedString):
@@ -191,7 +191,7 @@ if _CBash:
         #CBash. Dunno.
 
         #This particular callback may disappear, or be morphed into something else
-        print "CBash encountered an error", raisedString, "Check the log."
+        print("CBash encountered an error", raisedString, "Check the log.")
 ##        raise CBashError("Check the log.")
         return
 
@@ -1254,7 +1254,7 @@ def dump_record(record, expand=False):
             for x in range(32):
                 z = 1 << x
                 if y & z == z:
-                    print hex(z)
+                    print(hex(z))
         global _dump_RecIndent
         global _dump_LastIndent
         if hasattr(record, 'copyattrs'):
@@ -1269,20 +1269,20 @@ def dump_record(record, expand=False):
                         attr = attr[:-5]
                         wasList = True
                 rec = getattr(record, attr)
-                if _dump_RecIndent: print " " * (_dump_RecIndent - 1),
+                if _dump_RecIndent: print(" " * (_dump_RecIndent - 1), end=' ')
                 if wasList:
-                    print attr
+                    print(attr)
                 else:
-                    print attr + " " * (msize - len(attr)), ":",
+                    print(attr + " " * (msize - len(attr)), ":", end=' ')
                 if rec is None:
-                    print rec
+                    print(rec)
                 elif 'flag' in attr.lower() or 'service' in attr.lower():
-                    print hex(rec)
+                    print(hex(rec))
                     if _dump_ExpandLists == True:
                         for x in range(32):
                             z = pow(2, x)
                             if rec & z == z:
-                                print " " * _dump_RecIndent, " Active" + " " * (msize - len("  Active")), "  :", hex(z)
+                                print(" " * _dump_RecIndent, " Active" + " " * (msize - len("  Active")), "  :", hex(z))
 
                 elif isinstance(rec, list):
                     if len(rec) > 0:
@@ -1292,15 +1292,15 @@ def dump_record(record, expand=False):
                                 IsFidList = False
                                 break
                         if IsFidList:
-                            print rec
+                            print(rec)
                         elif not wasList:
-                            print rec
+                            print(rec)
                     elif not wasList:
-                        print rec
+                        print(rec)
                 elif isinstance(rec, basestring):
-                    print repr(rec)
+                    print(repr(rec))
                 elif not wasList:
-                    print rec
+                    print(rec)
                 _dump_RecIndent += 2
                 printRecord(rec)
                 _dump_RecIndent -= 2
@@ -1311,12 +1311,12 @@ def dump_record(record, expand=False):
                     for rec in record:
                         printRecord(rec)
                         if _dump_LastIndent == _dump_RecIndent:
-                            print
+                            print()
     global _dump_ExpandLists
     _dump_ExpandLists = expand
     try:
         msize = max([len(attr) for attr in record.copyattrs])
-        print "  fid" + " " * (msize - len("fid")), ":", record.fid
+        print("  fid" + " " * (msize - len("fid")), ":", record.fid)
     except AttributeError:
         pass
     printRecord(record)

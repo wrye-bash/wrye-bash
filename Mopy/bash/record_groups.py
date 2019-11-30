@@ -24,7 +24,7 @@
 
 """Classes that group records."""
 # Python imports
-from __future__ import division
+from __future__ import division, print_function
 from operator import itemgetter
 # Wrye Bash imports
 from .brec import ModReader, RecordHeader
@@ -73,7 +73,7 @@ class MobBase(object):
 
     def load(self, ins=None, do_unpack=False):
         """Load data from ins stream or internal data buffer."""
-        if self.debug: print u'GRUP load:',self.label
+        if self.debug: print(u'GRUP load:',self.label)
         #--Read, but don't analyze.
         if not do_unpack:
             self.data = ins.read(self.size - self.header.__class__.rec_header_size, type(self))
