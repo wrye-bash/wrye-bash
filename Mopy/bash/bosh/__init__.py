@@ -346,8 +346,8 @@ class FileInfo(AFile):
         return [backPath for first in (True, False) for backPath, __path in
                 self.backup_restore_paths(first, fname)]
 
-    def revert_backup(self, first=False):
-        backup_paths = self.backup_restore_paths(first)
+    def revert_backup(self, first=False, _backup_paths=None):
+        backup_paths = _backup_paths or self.backup_restore_paths(first)
         for tup in backup_paths[1:]: # if cosaves do not exist shellMove fails!
             if not tup[0].exists():
                 # if cosave exists while its backup not, delete it on restoring
@@ -1180,7 +1180,7 @@ class DataStore(DataDict):
     def _get_rename_paths(self, oldName, newName):
         """Return possible paths this file's renaming might affect (possibly
         omitting some that do not exist)."""
-        return [(self.store_dir.join(oldName), self.store_dir.join(newName))]
+        return [(self[oldName].abs_path, self.store_dir.join(newName))] # TTT rename ghosts
 
     @property
     def bash_dir(self):
@@ -2777,7 +2777,8 @@ class SaveInfos(FileInfos):
             if co_file.abs_path.exists(): pathFunc(co_file.abs_path, newPath)
 
     def move_infos(self, sources, destinations, window, bash_frame):
-        # cosaves sucks - operations should be atomic
+        # operations should be atomic - we should construct a list of filenames to unhide and pass that in
+        # for s in sources : s.append(cosave) ;d(append(cosave dest) # check if hide moves the backup too
         moved = super(SaveInfos, self).move_infos(sources, destinations,
                                                   window, bash_frame)
         for s, d in zip(sources, destinations):
