@@ -141,33 +141,33 @@ class ColorChecks(ImageList):
     def Get(self,status,on):
         self.GetImageList()
         if on == 3:
-            if status <= -20: shortKey = 'purple.imp'
-            elif status <= -10: shortKey = 'blue.imp'
-            elif status <= 0: shortKey = 'green.imp'
-            elif status <=10: shortKey = 'yellow.imp'
-            elif status <=20: shortKey = 'orange.imp'
-            else: shortKey = 'red.imp'
+            if status <= -20: shortKey = u'purple.imp'
+            elif status <= -10: shortKey = u'blue.imp'
+            elif status <= 0: shortKey = u'green.imp'
+            elif status <=10: shortKey = u'yellow.imp'
+            elif status <=20: shortKey = u'orange.imp'
+            else: shortKey = u'red.imp'
         elif on == 2:
-            if status <= -20: shortKey = 'purple.inc'
-            elif status <= -10: shortKey = 'blue.inc'
-            elif status <= 0: shortKey = 'green.inc'
-            elif status <=10: shortKey = 'yellow.inc'
-            elif status <=20: shortKey = 'orange.inc'
-            else: shortKey = 'red.inc'
+            if status <= -20: shortKey = u'purple.inc'
+            elif status <= -10: shortKey = u'blue.inc'
+            elif status <= 0: shortKey = u'green.inc'
+            elif status <=10: shortKey = u'yellow.inc'
+            elif status <=20: shortKey = u'orange.inc'
+            else: shortKey = u'red.inc'
         elif on:
-            if status <= -20: shortKey = 'purple.on'
-            elif status <= -10: shortKey = 'blue.on'
-            elif status <= 0: shortKey = 'green.on'
-            elif status <=10: shortKey = 'yellow.on'
-            elif status <=20: shortKey = 'orange.on'
-            else: shortKey = 'red.on'
+            if status <= -20: shortKey = u'purple.on'
+            elif status <= -10: shortKey = u'blue.on'
+            elif status <= 0: shortKey = u'green.on'
+            elif status <=10: shortKey = u'yellow.on'
+            elif status <=20: shortKey = u'orange.on'
+            else: shortKey = u'red.on'
         else:
-            if status <= -20: shortKey = 'purple.off'
-            elif status <= -10: shortKey = 'blue.off'
-            elif status == 0: shortKey = 'green.off'
-            elif status <=10: shortKey = 'yellow.off'
-            elif status <=20: shortKey = 'orange.off'
-            else: shortKey = 'red.off'
+            if status <= -20: shortKey = u'purple.off'
+            elif status <= -10: shortKey = u'blue.off'
+            elif status == 0: shortKey = u'green.off'
+            elif status <=10: shortKey = u'yellow.off'
+            elif status <=20: shortKey = u'orange.off'
+            else: shortKey = u'red.off'
         return self.indices[shortKey]
 
 # Elements --------------------------------------------------------------------
@@ -181,13 +181,13 @@ def ok_and_cancel_group(parent, on_ok=None):
     ok_button.on_clicked.subscribe(on_ok)
     return HLayout(spacing=4, items=[ok_button, CancelButton(parent)])
 
-def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
+def staticBitmap(parent, bitmap=None, size=(32, 32), special=u'warn'):
     """Tailored to current usages - IAW: do not use."""
     if bitmap is None:
         bmp = wx.ArtProvider.GetBitmap
-        if special == 'warn':
+        if special == u'warn':
             bitmap = bmp(wx.ART_WARNING,wx.ART_MESSAGE_BOX, size)
-        elif special == 'undo':
+        elif special == u'undo':
             return bmp(wx.ART_UNDO,wx.ART_TOOLBAR,size)
         else: raise ArgumentError(
             u'special must be either warn or undo: %r given' % special)
@@ -317,7 +317,7 @@ try:
     from . import windows as _win # only import here !
     canVista = _win.TASK_DIALOG_AVAILABLE
 except ImportError: # bare linux (in wine it's imported but malfunctions)
-    deprint('Importing windows.py failed', traceback=True)
+    deprint(u'Importing windows.py failed', traceback=True)
     _win = None
     canVista = False
 
@@ -713,7 +713,7 @@ class TabDragMixin(object):
         self.__dragging = wx.NOT_FOUND
         self.__justSwapped = wx.NOT_FOUND
         # TODO(inf) Test in wx3
-        if wx.Platform == '__WXMSW__': # CaptureMouse() works badly in wxGTK
+        if wx.Platform == u'__WXMSW__': # CaptureMouse() works badly in wxGTK
             self.Bind(wx.EVT_LEFT_DOWN, self.__OnDragStart)
             self.Bind(wx.EVT_LEFT_UP, self.__OnDragEnd)
             self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.__OnDragEndForced)
@@ -901,7 +901,7 @@ class UIList(wx.Panel):
     _singleCell = False # allow only single selections (no ctrl/shift+click)
     #--Sorting
     nonReversibleCols = {u'Load Order', u'Current Order'}
-    _default_sort_col = 'File' # override as needed
+    _default_sort_col = u'File' # override as needed
     _sort_keys = {} # sort_keys[col] provides the sort key for this col
     _extra_sortings = [] #extra self.methods for fancy sortings - order matters
     # Labels, map the (permanent) order of columns to the label generating code
@@ -1091,11 +1091,11 @@ class UIList(wx.Panel):
         self.autosizeColumns()
 
     __all = ()
-    def RefreshUI(self, redraw=__all, to_del=__all, detail_item='SAME',
+    def RefreshUI(self, redraw=__all, to_del=__all, detail_item=u'SAME',
                   **kwargs):
         """Populate specified files or ALL files, sort, set status bar count.
         """
-        focus_list = kwargs.pop('focus_list', True)
+        focus_list = kwargs.pop(u'focus_list', True)
         if redraw is to_del is self.__all:
             self.PopulateItems()
         else:  #--Iterable
@@ -1113,7 +1113,7 @@ class UIList(wx.Panel):
     def _refresh_details(self, redraw, detail_item):
         if detail_item is None:
             self.panel.ClearDetails()
-        elif detail_item != 'SAME':
+        elif detail_item != u'SAME':
             self.SelectAndShowItem(detail_item)
         else: # if it was a single item, refresh details for it
             if len(redraw) == 1:
@@ -1183,7 +1183,7 @@ class UIList(wx.Panel):
     # Columns callbacks
     def OnColumnClick(self, evt_col):
         """Column header was left clicked on. Sort on that column."""
-        self.SortItems(self.cols[evt_col],'INVERT')
+        self.SortItems(self.cols[evt_col],u'INVERT')
 
     def OnColumnResize(self, evt_col):
         """Column resized: enforce minimal width and save column size info."""
@@ -1306,7 +1306,7 @@ class UIList(wx.Panel):
                 deprint(u'Failed to open %s' % filepath, traceback=True)
 
     #--Sorting ----------------------------------------------------------------
-    def SortItems(self, column=None, reverse='CURRENT'):
+    def SortItems(self, column=None, reverse=u'CURRENT'):
         """Sort items. Real work is done by _SortItems, and that completed
         sort is then "cloned" to the list control.
 
@@ -1339,9 +1339,9 @@ class UIList(wx.Panel):
         curReverse = self.colReverse.get(column, False)
         if column in self.nonReversibleCols: #--Disallow reverse for load
             reverse = False
-        elif reverse == 'INVERT' and column == curColumn:
+        elif reverse == u'INVERT' and column == curColumn:
             reverse = not curReverse
-        elif reverse in {'INVERT','CURRENT'}:
+        elif reverse in {u'INVERT',u'CURRENT'}:
             reverse = curReverse
         #--Done
         self.sort_column = column
@@ -1484,7 +1484,7 @@ class UIList(wx.Panel):
             char = is_filename and bolt.Path.has_invalid_chars(newName)
             if char:
                 msg = _(u'%(new_name)s contains invalid character (%(char)s)'
-                        ) % {'new_name': newName, 'char': char}
+                        ) % {u'new_name': newName, u'char': char}
                 maPattern = None
             else:
                 msg = _(u'Bad extension or file root: ') + newName
@@ -2059,7 +2059,7 @@ class UIList_Hide(ItemLink):
         if not bass.inisettings[u'SkipHideConfirmation']:
             message = _(u'Hide these files? Note that hidden files are simply '
                         u'moved to the %(hdir)s directory.') % (
-                          {'hdir': self.window.data_store.hidden_dir})
+                          {u'hdir': self.window.data_store.hidden_dir})
             if not self._askYes(message, _(u'Hide Files')): return
         self.window.hide(self.selected)
         self.window.RefreshUI(refreshSaves=True)
@@ -2223,7 +2223,7 @@ def ask_uac_restart(message, title, mopy):
                 u'Start Wrye Bash with Administrator Privileges?'), title)
     admin = _(u'Run with Administrator Privileges')
     readme = readme_url(mopy)
-    readme += '#trouble-permissions'
+    readme += u'#trouble-permissions'
     return vistaDialog(None, message=message,
         buttons=[(True, u'+' + admin), (False, _(u'Run normally')), ],
         title=title, expander=[_(u'How to avoid this message in the future'),
@@ -2232,7 +2232,7 @@ def ask_uac_restart(message, title, mopy):
             u'\n\n' + _(u'--no-uac: always run normally') +
             u'\n' + _(u'--uac: always run with Admin Privileges') +
             u'\n\n' + _(u'See the <A href="%(readmePath)s">readme</A> '
-                u'for more information.') % {'readmePath': readme}])[0]
+                u'for more information.') % {u'readmePath': readme}])[0]
 
 def readme_url(mopy, advanced=False):
     readme = mopy.join(u'Docs',

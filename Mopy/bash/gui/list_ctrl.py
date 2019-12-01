@@ -54,7 +54,7 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
             self.window = window
             self.data_object = _wx.DataObjectComposite()
             self.dataFile = _wx.FileDataObject()                 # Accept files
-            self.dataList = _wx.CustomDataObject('ListIndexes')  # Accept indexes from a list
+            self.dataList = _wx.CustomDataObject(u'ListIndexes')  # Accept indexes from a list
             if dndFiles: self.data_object.Add(self.dataFile)
             if dndList : self.data_object.Add(self.dataList)
             self.SetDataObject(self.data_object)
@@ -132,7 +132,7 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
                     stop = index - 1
         if stop < 0: stop = self.GetItemCount()
         selected = pickle.dumps(indices, 1)
-        ldata = _wx.CustomDataObject('ListIndexes')
+        ldata = _wx.CustomDataObject(u'ListIndexes')
         ldata.SetData(selected)
         data_object = _wx.DataObjectComposite()
         data_object.Add(ldata)
