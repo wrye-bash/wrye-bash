@@ -400,7 +400,7 @@ class CreateNewProject(balt.Dialog):
             self.checkWizard.Disable()
             self.checkWizardImages.Disable()
         self.checkDocs = checkBox(self,_(u'Docs Directory'))
-        # self.checkScreenshot = checkBox(self,_(u'Preview Screenshot(No.ext)(re-enable for BAIT)'))
+        # self.checkScreenshot = checkBox(self,_(u'Preview Screenshot(No.suffix)(re-enable for BAIT)'))
         # self.checkScreenshot.Disable() #Remove this when BAIT gets preview stuff done
         okButton = OkButton(self, onButClickEventful=self.OnClose)
         cancelButton = CancelButton(self, onButClickEventful=self.OnCancel)

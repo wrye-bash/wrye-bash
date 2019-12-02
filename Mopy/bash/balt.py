@@ -2474,7 +2474,7 @@ class UIList(wx.Panel):
     @staticmethod
     def _new_name(new_name, count):
         count += 1
-        new_name = GPath(new_name.root + (u' (%d)' % count) + new_name.ext)
+        new_name = GPath(new_name.root + (u' (%d)' % count) + new_name.suffix)
         return new_name, count
 
     def new_name(self, new_name):

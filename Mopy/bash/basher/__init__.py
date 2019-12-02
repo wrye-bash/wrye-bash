@@ -3147,7 +3147,7 @@ class ScreensList(balt.UIList):
             to_del = set()
             item_edited = [self.panel.detailsPanel.displayed_item]
             for screen in selected:
-                newName = GPath(root + numStr + screen.ext)
+                newName = GPath(root + numStr + screen.suffix)
                 if not self._try_rename(screen, newName, to_select,
                                         item_edited): break
                 to_del.add(screen)

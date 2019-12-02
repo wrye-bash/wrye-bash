@@ -467,7 +467,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         curName = self._selected_item
         isdir = self.idata.store_dir.join(curName).is_dir()
         if isdir: root,ext = curName,u''
-        else: root,ext = curName.root, curName.ext
+        else: root,ext = curName.root, curName.suffix
         newName = self.window.new_name(root + _(u' Copy') + ext)
         result = self._askText(_(u"Duplicate %s to:") % curName.s,
                                default=newName.s)
@@ -482,7 +482,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
             return
         if self.idata.store_dir.join(curName).is_file() and curName.cext != newName.cext:
             self._showWarning(_(u"%s does not have correct extension (%s).")
-                              % (newName.s,curName.ext))
+                              % (newName.s,curName.suffix))
             return
         #--Duplicate
         with balt.BusyCursor():

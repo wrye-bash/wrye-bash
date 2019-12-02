@@ -88,23 +88,23 @@ class Screen_ConvertTo(EnabledLink):
 
     def __init__(self,ext,imageType):
         super(Screen_ConvertTo, self).__init__()
-        self.ext = ext.lower()
+        self.suffix = ext.lower()
         self.imageType = imageType
-        self._text = _(u'Convert to %s') % self.ext
+        self._text = _(u'Convert to %s') % self.suffix
 
     def _enable(self):
         self.convertable = [s for s in self.selected if
-                            s.cext != u'.' + self.ext]
+                            s.cext != u'.' + self.suffix]
         return bool(self.convertable)
 
     def Execute(self):
         try:
-            with balt.Progress(_(u"Converting to %s") % self.ext) as progress:
+            with balt.Progress(_(u"Converting to %s") % self.suffix) as progress:
                 progress.setFull(len(self.convertable))
                 for index, fileName in enumerate(self.convertable):
                     progress(index,fileName.s)
                     srcPath = bosh.screensData.store_dir.join(fileName)
-                    destPath = srcPath.root+u'.'+self.ext
+                    destPath = srcPath.root+u'.'+self.suffix
                     if srcPath == destPath or destPath.exists(): continue
                     bitmap = Image.Load(srcPath, quality=bass.settings[
                         'bash.screens.jpgQuality'])

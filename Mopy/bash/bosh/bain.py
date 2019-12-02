@@ -1272,7 +1272,7 @@ class InstallerArchive(Installer):
 
     def renameInstaller(self, name_new, data):
         return self._installer_rename(data,
-                                      name_new.root + GPath(self.archive).ext)
+                                      name_new.root + GPath(self.archive).suffix)
 
     def _open_txt_file(self, rel_path):
         with balt.BusyCursor():
@@ -2228,7 +2228,7 @@ class InstallersData(DataStore):
         oldIni, num = baseName, 1
         while oldIni.exists():
             suffix = u' - Copy' + (u'' if num == 1 else u' (%i)' % num)
-            oldIni = baseName.head.join(baseName.sbody + suffix + baseName.ext)
+            oldIni = baseName.head.join(baseName.sbody + suffix + baseName.suffix)
             num += 1
         return oldIni
 

@@ -353,6 +353,7 @@ def GPathPurge():
     'is_dir': 'isdir',
     'is_file': 'isfile',
     'is_absolute': 'isabs',
+    'suffix': 'ext',
     'cwd' : 'getcwd',
     })
 class Path(object):
@@ -496,7 +497,7 @@ class Path(object):
         """For alpha\beta.gamma returns alpha\beta"""
         return GPath(self.sroot)
     @property
-    def ext(self):
+    def suffix(self):
         """Extension (including leading period, e.g. '.txt')."""
         try:
             return self._ext
@@ -509,7 +510,7 @@ class Path(object):
         try:
             return self._cext
         except AttributeError:
-            self._cext = os.path.normcase(self.ext)
+            self._cext = os.path.normcase(self.suffix)
             return self._cext
     @property
     def temp(self,unicodeSafe=True):
@@ -2282,7 +2283,7 @@ class WryeText(object):
         if not cssName:
             css = WryeText.defaultCss
         else:
-            if cssName.ext != u'.css':
+            if cssName.suffix != u'.css':
                 raise exception.BoltError(u'Invalid Css file: ' + cssName.s)
             for css_dir in cssDirs:
                 cssPath = GPath(css_dir).join(cssName)
