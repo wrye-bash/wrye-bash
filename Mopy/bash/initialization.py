@@ -243,7 +243,7 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     return game_ini_path
 
 def init_dirs_mopy():
-    dirs['mopy'] = Path.getcwd()
+    dirs['mopy'] = Path.cwd()
     dirs['bash'] = dirs['mopy'].join(u'bash')
     dirs['compiled'] = dirs['bash'].join(u'compiled')
     dirs['l10n'] = dirs['bash'].join(u'l10n')

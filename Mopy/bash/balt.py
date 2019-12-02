@@ -1084,7 +1084,7 @@ class WryeLog(_Log):
             logPath = logText
         else:
             logPath = _settings.get('balt.WryeLog.temp',
-                bolt.Path.getcwd().join(u'WryeLogTemp.html'))
+                bolt.Path.cwd().join(u'WryeLogTemp.html'))
             convert_wtext_to_html(logPath, logText)
         super(WryeLog, self).__init__(parent, logText, title, asDialog,
                                       fixedFont, log_icons)

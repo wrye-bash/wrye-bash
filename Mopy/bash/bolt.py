@@ -351,6 +351,7 @@ def GPathPurge():
 #------------------------------------------------------------------------------
 @replaces({
     'is_dir': 'isdir',
+    'cwd' : 'getcwd',
     })
 class Path(object):
     """Paths are immutable objects that represent file directory paths.
@@ -376,7 +377,7 @@ class Path(object):
         return os.path.normcase(os.path.normpath(name))
 
     @staticmethod
-    def getcwd():
+    def cwd():
         return Path(os.getcwdu())
 
     def setcwd(self):

@@ -231,7 +231,7 @@ class App_Button(StatusBar_Button):
         if self.isShortcut or self.isFolder:
             webbrowser.open(self.exePath.s)
         elif self.isJava:
-            cwd = bolt.Path.getcwd()
+            cwd = bolt.Path.cwd()
             if self.workingDir:
                 self.workingDir.setcwd()
             else:
@@ -268,7 +268,7 @@ class App_Button(StatusBar_Button):
             args.extend(self.exeArgs)
             if self.extraArgs: args.extend(self.extraArgs)
             Link.Frame.SetStatusInfo(u' '.join(args[1:]))
-            cwd = bolt.Path.getcwd()
+            cwd = bolt.Path.cwd()
             if self.workingDir:
                 self.workingDir.setcwd()
             else:
@@ -294,7 +294,7 @@ class App_Button(StatusBar_Button):
             finally:
                 cwd.setcwd()
         else:
-            dir_ = self.workingDir.s if self.workingDir else bolt.Path.getcwd().s
+            dir_ = self.workingDir.s if self.workingDir else bolt.Path.cwd().s
             args = u'"%s"' % self.exePath.s
             args += u' '.join([u'%s' % arg for arg in self.exeArgs])
             try:
@@ -314,7 +314,7 @@ class App_Button(StatusBar_Button):
                     # Most likely we're here because FindExecutable failed (no file association)
                     # Or because win32api import failed.  Try doing it using os.startfile
                     # ...Changed to webbrowser.open because os.startfile is windows specific and is not cross platform compatible
-                    cwd = bolt.Path.getcwd()
+                    cwd = bolt.Path.cwd()
                     if self.workingDir:
                         self.workingDir.setcwd()
                     else:
