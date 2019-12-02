@@ -117,7 +117,7 @@ def _detectGames(cli_path=u'', bash_ini_=None):
     #--First: path specified via the -o command line argument
     if cli_path != u'':
         test_path = GPath(cli_path)
-        if not test_path.isabs():
+        if not test_path.is_absolute():
             test_path = Path.cwd().join(test_path)
         installPaths['cmd'] = (test_path,
             _(u'Set game mode to %(gamename)s specified via -o argument') +
@@ -128,7 +128,7 @@ def _detectGames(cli_path=u'', bash_ini_=None):
     ini_game_path = bass.get_ini_option(bash_ini_, u'sOblivionPath')
     if ini_game_path and not ini_game_path == u'.':
         test_path = GPath(ini_game_path.strip())
-        if not test_path.isabs():
+        if not test_path.is_absolute():
             test_path = Path.cwd().join(test_path)
         installPaths['ini'] = (test_path,
             _(u'Set game mode to %(gamename)s based on sOblivionPath setting '
@@ -139,7 +139,7 @@ def _detectGames(cli_path=u'', bash_ini_=None):
     test_path = Path.cwd()
     if test_path.cs[-4:] == u'mopy':
         test_path = GPath(test_path.s[:-5])
-        if not test_path.isabs():
+        if not test_path.is_absolute():
             test_path = Path.cwd().join(test_path)
         installPaths['upMopy'] = (test_path,
             _(u'Set game mode to %(gamename)s found in parent directory of'

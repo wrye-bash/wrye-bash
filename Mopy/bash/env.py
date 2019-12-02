@@ -175,12 +175,12 @@ def _get_default_app_icon(idex, target):
                                      u'%s\\DefaultIcon' % file_association)
             filedata = winreg.EnumValue(pathKey, 0)[1]
             winreg.CloseKey(pathKey)
-        if _os.path.isabs(filedata) and _os.path.is_file(filedata):
+        if _os.path.is_absolute(filedata) and _os.path.is_file(filedata):
             icon = filedata
         else:
             icon, idex = filedata.split(u',')
             icon = _os.path.expandvars(icon)
-        if not _os.path.isabs(icon):
+        if not _os.path.is_absolute(icon):
             # Get the correct path to the dll
             for dir_ in _os.environ['PATH'].split(u';'):
                 test = _os.path.join(dir_, icon)

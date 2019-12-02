@@ -3191,7 +3191,7 @@ def initOptions(bashIni):
                 if settingType in (bolt.Path,list):
                     if value == u'.': continue
                     value = GPath(value)
-                    if not value.isabs():
+                    if not value.is_absolute():
                         value = dirs['app'].join(value)
                 elif settingType is bool:
                     if value == u'.': continue

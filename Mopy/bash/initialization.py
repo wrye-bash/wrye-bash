@@ -55,7 +55,7 @@ def getPersonalPath(bash_ini_, my_docs_path):
         else:
             my_docs_path, sErrorInfo = get_personal_path()
     #  If path is relative, make absolute
-    if not my_docs_path.isabs():
+    if not my_docs_path.is_absolute():
         my_docs_path = dirs['app'].join(my_docs_path)
     #  Error check
     if not my_docs_path.exists():
@@ -78,7 +78,7 @@ def getLocalAppDataPath(bash_ini_, app_data_local_path):
         else:
             app_data_local_path, sErrorInfo = get_local_app_data_path()
     #  If path is relative, make absolute
-    if not app_data_local_path.isabs():
+    if not app_data_local_path.is_absolute():
         app_data_local_path = dirs['app'].join(app_data_local_path)
     #  Error check
     if not app_data_local_path.exists():
@@ -93,14 +93,14 @@ def getOblivionModsPath(bash_ini_, game_info):
     else:
         ob_mods_path = GPath(GPath(u'..').join(u'%s Mods' % game_info.fsName))
         src = u'Relative Path'
-    if not ob_mods_path.isabs(): ob_mods_path = dirs['app'].join(ob_mods_path)
+    if not ob_mods_path.is_absolute(): ob_mods_path = dirs['app'].join(ob_mods_path)
     return ob_mods_path, src
 
 def getBainDataPath(bash_ini_):
     idata_path = get_path_from_ini(bash_ini_, u'sInstallersData')
     if idata_path:
         src = [u'[General]', u'sInstallersData']
-        if not idata_path.isabs(): idata_path = dirs['app'].join(idata_path)
+        if not idata_path.is_absolute(): idata_path = dirs['app'].join(idata_path)
     else:
         idata_path = dirs['installers'].join(u'Bash')
         src = u'Relative Path'
@@ -109,7 +109,7 @@ def getBainDataPath(bash_ini_):
 def getBashModDataPath(bash_ini_, game_info):
     mod_data_path = get_path_from_ini(bash_ini_, u'sBashModData')
     if mod_data_path:
-        if not mod_data_path.isabs():
+        if not mod_data_path.is_absolute():
             mod_data_path = dirs['app'].join(mod_data_path)
         src = [u'[General]', u'sBashModData']
     else:

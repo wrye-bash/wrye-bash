@@ -352,6 +352,7 @@ def GPathPurge():
 @replaces({
     'is_dir': 'isdir',
     'is_file': 'isfile',
+    'is_absolute': 'isabs',
     'cwd' : 'getcwd',
     })
 class Path(object):
@@ -678,7 +679,7 @@ class Path(object):
         return os.path.isdir(self._s)
     def is_file(self):
         return os.path.isfile(self._s)
-    def isabs(self):
+    def is_absolute(self):
         return os.path.isabs(self._s)
 
     #--File system manipulation

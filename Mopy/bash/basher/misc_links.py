@@ -74,7 +74,7 @@ class Screens_NextScreenShot(EnabledLink):
             u'bAllowScreenShot': u'1', }}
         screensDir = GPath(newBase).head
         if screensDir:
-            if not screensDir.isabs(): screensDir = bass.dirs['app'].join(
+            if not screensDir.is_absolute(): screensDir = bass.dirs['app'].join(
                 screensDir)
             screensDir.makedirs()
         oblivionIni.saveSettings(settings_screens)
