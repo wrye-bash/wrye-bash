@@ -93,7 +93,7 @@ class IniFile(AFile):
     def get_ci_settings(self, with_deleted=False):
         """Populate and return cached settings - if not just reading them
         do a copy first !"""
-        if not self.abs_path.isfile():
+        if not self.abs_path.is_file():
             return ({}, {}) if with_deleted else {}
         if self._ci_settings_cache_linenum is self.__empty \
                 or self.do_update():
@@ -266,7 +266,7 @@ class IniFile(AFile):
 
     def ask_create_target_ini(self, msg=_(
             u'The target ini must exist to apply a tweak to it.')):
-        return self.abs_path.isfile()
+        return self.abs_path.is_file()
 
     def saveSettings(self,ini_settings,deleted_settings={}):
         """Apply dictionary of settings to ini file, latter must exist!

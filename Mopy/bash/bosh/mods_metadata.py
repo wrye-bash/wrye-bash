@@ -168,7 +168,7 @@ class ConfigHelpers(object):
         # Check if the file even exists first
         tag_files_dir = bass.dirs['tag_files']
         tag_file = tag_files_dir.join(plugin_name.body + u'.txt')
-        if not tag_file.isfile(): return set(), set()
+        if not tag_file.is_file(): return set(), set()
         removed, added = set(), set()
         with tag_file.open('r') as ins:
             for tag_line in ins:

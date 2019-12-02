@@ -1702,7 +1702,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
     def _enable_buttons(self):
         isGameIni = bosh.iniInfos.ini in bosh.gameInis
         self.button.Enable(not isGameIni)
-        self.editButton.Enable(not isGameIni or self.current_ini_path.isfile())
+        self.editButton.Enable(not isGameIni or self.current_ini_path.is_file())
 
     def _OnRemove(self):
         """Called when the 'Remove' button is pressed."""
@@ -1715,7 +1715,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
 
     def _clean_targets(self):
         for name, ini_path in self.target_inis.iteritems():
-            if ini_path is not None and not ini_path.isfile():
+            if ini_path is not None and not ini_path.is_file():
                 if not bosh.get_game_ini(ini_path):
                     self.__remove(name)
         self._combo_reset()
@@ -4067,7 +4067,7 @@ class BashFrame(BaltFrame):
             if not backupDir.is_dir(): continue
             for name in backupDir.list():
                 back_path = backupDir.join(name)
-                if name.root not in goodRoots and back_path.isfile():
+                if name.root not in goodRoots and back_path.is_file():
                     back_path.remove()
 
     @staticmethod

@@ -184,7 +184,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             if srcPath not in self.patches_set: continue
-            if getPatchesPath(srcFile).isfile():
+            if getPatchesPath(srcFile).is_file():
                 self.readFromText(getPatchesPath(srcFile))
             progress.plus()
 
@@ -361,7 +361,7 @@ class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
         for srcFile in self.srcs:
             if not bosh.ModInfos.rightFileType(srcFile):
                 if srcFile not in self.patches_set: continue
-                if getPatchesPath(srcFile).isfile():
+                if getPatchesPath(srcFile).is_file():
                     fidReplacer.readFromText(getPatchesPath(srcFile))
             progress.plus()
         #--Finish

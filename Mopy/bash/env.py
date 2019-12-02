@@ -175,7 +175,7 @@ def _get_default_app_icon(idex, target):
                                      u'%s\\DefaultIcon' % file_association)
             filedata = winreg.EnumValue(pathKey, 0)[1]
             winreg.CloseKey(pathKey)
-        if _os.path.isabs(filedata) and _os.path.isfile(filedata):
+        if _os.path.isabs(filedata) and _os.path.is_file(filedata):
             icon = filedata
         else:
             icon, idex = filedata.split(u',')
@@ -205,7 +205,7 @@ def _get_app_links(apps_dir):
         sh = win32client.Dispatch('WScript.Shell')
         for lnk in apps_dir.list():
             lnk = apps_dir.join(lnk)
-            if lnk.cext == u'.lnk' and lnk.isfile():
+            if lnk.cext == u'.lnk' and lnk.is_file():
                 shortcut = sh.CreateShortCut(lnk.s)
                 description = shortcut.Description
                 if not description:
@@ -273,12 +273,12 @@ def test_permissions(path, permissions='rwcd'):
             tmp = tmp.temp
         return tmp
     def getSmallest():  # Get the smallest file in the directory
-        if path.isfile(): return path
+        if path.is_file(): return path
         smallsize = -1
         ret = None
         for node in path.list():
             node = path.join(node)
-            if not node.isfile(): continue
+            if not node.is_file(): continue
             node_size = node.size
             if smallsize == -1 or node_size < smallsize:
                 smallsize = node_size
@@ -524,7 +524,7 @@ def __copyOrMove(operation, source, target, renameOnCollision, parent):
             else:  # dir doesn't exist at the target, copy it
                 doIt(fileFrom.s, fileTo.s)
         # copy the file, overwrite as needed
-        elif fileFrom.isfile():  # or os.path.islink(file):
+        elif fileFrom.is_file():  # or os.path.islink(file):
             # move may not work if the target exists, copy instead and
             # overwrite as needed
             try:

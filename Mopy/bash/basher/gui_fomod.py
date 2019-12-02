@@ -376,7 +376,7 @@ class PageSelect(PageInstaller):
             image = self._img_cache[img]
         except KeyError:
             image = self._img_cache.setdefault(img, (
-                    img.isfile() and balt.Image(img.s).GetBitmap()) or None)
+                    img.is_file() and balt.Image(img.s).GetBitmap()) or None)
         self.bmp_item.SetBitmap(image)
         self.bmp_item.Thaw()
         self.text_item.SetValue(

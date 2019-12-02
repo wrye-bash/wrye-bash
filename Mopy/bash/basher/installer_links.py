@@ -480,7 +480,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         if newName in self.idata:
             self._showWarning(_(u"%s already exists.") % newName.s)
             return
-        if self.idata.store_dir.join(curName).isfile() and curName.cext != newName.cext:
+        if self.idata.store_dir.join(curName).is_file() and curName.cext != newName.cext:
             self._showWarning(_(u"%s does not have correct extension (%s).")
                               % (newName.s,curName.ext))
             return
@@ -1102,7 +1102,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                     self._showWarning(_(u"%s is not a valid project name.") %
                                       result)
                     return
-                if self.idata.store_dir.join(project).isfile():
+                if self.idata.store_dir.join(project).is_file():
                     self._showWarning(_(u"%s is a file.") % project.s)
                     return
             if project in self.idata:

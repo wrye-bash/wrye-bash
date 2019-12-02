@@ -77,7 +77,7 @@ class ConvertersData(DataDict):
         scannedAdd = scanned.add
         for bcf_archive in converters_dir.list():
             apath = convertersJoin(bcf_archive)
-            if apath.isfile() and self.validConverterName(bcf_archive):
+            if apath.is_file() and self.validConverterName(bcf_archive):
                 scannedAdd(apath)
         if len(scanned) != len(self.bcfPath_sizeCrcDate):
             return True

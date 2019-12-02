@@ -1004,7 +1004,7 @@ class SaveInfo(FileInfo):
         cosaves_changed = False
         for co_type in SaveInfo.cosave_types:
             co_path = co_type.get_cosave_path(self.abs_path)
-            if co_path.isfile():
+            if co_path.is_file():
                 if co_type in self._co_saves:
                     # Existing cosave could have changed, check if it did
                     cosaves_changed |= self._co_saves[co_type].do_update()
@@ -1238,7 +1238,7 @@ class TableFileInfos(DataStore):
 
     def _names(self): # performance intensive
         return {x for x in self.store_dir.list() if
-                self.store_dir.join(x).isfile() and self.rightFileType(x)}
+                self.store_dir.join(x).is_file() and self.rightFileType(x)}
 
     #--Right File Type?
     @classmethod
@@ -1487,7 +1487,7 @@ class INIInfos(TableFileInfos):
             # will still be in here, but in English.  It wont get picked
             # up by the previous check, so we'll just delete any non-Path
             # objects.  That will take care of it.
-            if not isinstance(ini_path,bolt.Path) or not ini_path.isfile():
+            if not isinstance(ini_path,bolt.Path) or not ini_path.is_file():
                 if get_game_ini(ini_path):
                     continue # don't remove game inis even if missing
                 del _target_inis[ini_name]
@@ -1949,7 +1949,7 @@ class ModInfos(FileInfos):
     def _refresh_mod_inis(self):
         if not bush.game.supports_mod_inis: return
         iniPaths = (self[m].getIniPath() for m in load_order.cached_active_tuple())
-        iniPaths = [p for p in iniPaths if p.isfile()]
+        iniPaths = [p for p in iniPaths if p.is_file()]
         # delete non existent inis from cache
         for key in self._plugin_inis.keys():
             if key not in iniPaths:
@@ -2998,7 +2998,7 @@ class ScreensData(DataStore):
         for fileName in self.store_dir.list():
             filePath = self.store_dir.join(fileName)
             maImageExt = self.reImageExt.search(fileName.s)
-            if maImageExt and filePath.isfile():
+            if maImageExt and filePath.is_file():
                 newData[fileName] = (maImageExt.group(1).lower(),
                                      filePath.mtime, filePath.size)
         changed = (self.data != newData)

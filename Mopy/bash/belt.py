@@ -278,7 +278,7 @@ class PageSelect(PageInstaller):
 
     def OnDoubleClick(self, _event):
         img = self.images[self.index]
-        if img.isfile():
+        if img.is_file():
             try:
                 img.start()
             except OSError:
@@ -291,7 +291,7 @@ class PageSelect(PageInstaller):
         # Don't want the bitmap to resize until we call self.Layout()
         self.bmpItem.Freeze()
         img = self.images[index]
-        if img.isfile():
+        if img.is_file():
             image = wx.Bitmap(img.s)
             self.bmpItem.SetBitmap(image)
             self.bmpItem.SetCursor(wx.StockCursor(wx.CURSOR_MAGNIFIER))
@@ -865,7 +865,7 @@ class WryeParser(ScriptParser.Parser):
         self.cLine = 0
         self.reversing = 0
         self.ExecCount = 0
-        if file.exists() and file.isfile():
+        if file.exists() and file.is_file():
             try:
                 with file.open(encoding='utf-8-sig') as script:
                     # Ensure \n line endings for the script parser

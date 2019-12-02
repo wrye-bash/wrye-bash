@@ -1881,7 +1881,7 @@ class InstallersData(DataStore):
         for item in installers_paths:
             if item.s.lower().startswith((u'bash',u'--')): continue
             apath = installersJoin(item)
-            if apath.isfile() and item.cext in readExts:
+            if apath.is_file() and item.cext in readExts:
                 installer = self.get(item)
             elif apath.is_dir(): # Project - autorefresh those only if specified
                 if item.s.lower() in self.installers_dir_skips:

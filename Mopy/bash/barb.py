@@ -214,7 +214,7 @@ class RestoreSettings(object):
         """Extract the backup file and return the tmp directory used. If
         the backup file is a dir we assume it was created by us before
         restarting."""
-        if self._settings_file.isfile():
+        if self._settings_file.is_file():
             temp_dir = bolt.Path.tempDir(prefix=RestoreSettings.__tmpdir_prefix)
             archives.extract7z(self._settings_file, temp_dir)
             self._extract_dir = temp_dir
@@ -270,7 +270,7 @@ class RestoreSettings(object):
         for dest_dir, back_path in restore_paths:
             full_back_path = self._extract_dir.join(back_path)
             for fname in full_back_path.list():
-                if full_back_path.join(fname).isfile():
+                if full_back_path.join(fname).is_file():
                     _restore_file(dest_dir, GPath(back_path), fname)
         # restore savegame profile settings
         back_path = GPath(u'My Games').join(fsName, u'Saves')
