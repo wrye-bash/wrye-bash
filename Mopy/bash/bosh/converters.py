@@ -108,7 +108,7 @@ class ConvertersData(DataDict):
             self.srcCRC_converters.clear()
         for bcf_archive in converters_dir.list():
             bcfPath = convJoin(bcf_archive)
-            if bcfPath.isdir(): continue
+            if bcfPath.is_dir(): continue
             if self.validConverterName(bcf_archive):
                 size, crc, modified = self.bcfPath_sizeCrcDate.get(bcfPath, (
                     None, None, None))
@@ -147,7 +147,7 @@ class ConvertersData(DataDict):
         """Remove any converters that no longer exist."""
         bcfPath_sizeCrcDate = self.bcfPath_sizeCrcDate
         for bcfPath in bcfPath_sizeCrcDate.keys():
-            if not bcfPath.exists() or bcfPath.isdir():
+            if not bcfPath.exists() or bcfPath.is_dir():
                 self.removeConverter(bcfPath)
 
     def addConverter(self, converter):

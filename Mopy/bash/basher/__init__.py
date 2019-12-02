@@ -2405,10 +2405,10 @@ class InstallersList(balt.UIList):
     def OnDropFiles(self, x, y, filenames):
         filenames = [GPath(x) for x in filenames]
         omodnames = [x for x in filenames if
-                     not x.isdir() and x.cext == u'.omod']
+                     not x.is_dir() and x.cext == u'.omod']
         converters = [x for x in filenames if
                       bosh.converters.ConvertersData.validConverterName(x)]
-        filenames = [x for x in filenames if x.isdir()
+        filenames = [x for x in filenames if x.is_dir()
                      or x.cext in archives.readExts and x not in converters]
         if len(omodnames) > 0:
             with balt.Progress(_(u'Extracting OMODs...'), u'\n' + u' ' * 60,
@@ -4064,7 +4064,7 @@ class BashFrame(BaltFrame):
         for fileInfos in (bosh.modInfos,bosh.saveInfos):
             goodRoots = set(p.root for p in fileInfos.keys())
             backupDir = fileInfos.bash_dir.join(u'Backups')
-            if not backupDir.isdir(): continue
+            if not backupDir.is_dir(): continue
             for name in backupDir.list():
                 back_path = backupDir.join(name)
                 if name.root not in goodRoots and back_path.isfile():

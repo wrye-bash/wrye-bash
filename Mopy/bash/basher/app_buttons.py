@@ -180,7 +180,7 @@ class App_Button(StatusBar_Button):
         #--shortcut
         self.isShortcut = self.exePath and self.exePath.cext == u'.lnk'
         #--Folder
-        self.isFolder = self.exePath and self.exePath.isdir()
+        self.isFolder = self.exePath and self.exePath.is_dir()
         #--**SE stuff
         self._obseTip = obseTip
         self.obseArg = obseArg

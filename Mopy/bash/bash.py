@@ -117,7 +117,7 @@ def exit_cleanup():
         if file_.cs.startswith(u'wryebash_'):
             file_ = tmpDir.join(file_)
             try:
-                if file_.isdir():
+                if file_.is_dir():
                     file_.rmtree(safety=file_.stail)
                 else:
                     file_.remove()

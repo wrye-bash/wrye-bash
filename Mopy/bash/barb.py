@@ -218,7 +218,7 @@ class RestoreSettings(object):
             temp_dir = bolt.Path.tempDir(prefix=RestoreSettings.__tmpdir_prefix)
             archives.extract7z(self._settings_file, temp_dir)
             self._extract_dir = temp_dir
-        elif self._settings_file.isdir():
+        elif self._settings_file.is_dir():
             self._extract_dir = self._settings_file
         else:
             raise BoltError(

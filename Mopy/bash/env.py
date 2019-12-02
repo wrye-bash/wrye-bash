@@ -156,7 +156,7 @@ def _get_default_app_icon(idex, target):
     if winreg is None:
         return u'not\\a\\path', idex
     try:
-        if target.isdir():
+        if target.is_dir():
             global __folderIcon
             if not __folderIcon:
                 # Special handling of the Folder icon
@@ -265,7 +265,7 @@ def test_permissions(path, permissions='rwcd'):
     path = GPath(path)
     permissions = permissions.lower()
     def getTemp(path_):  # Get a temp file name
-        if path_.isdir():
+        if path_.is_dir():
             tmp = path_.join(u'temp.temp')
         else:
             tmp = path_.temp
@@ -301,7 +301,7 @@ def test_permissions(path, permissions='rwcd'):
                     pass
         #--Test file creation permission (only for directories)
         if 'c' in permissions:
-            if path.isdir() or not path_exists:
+            if path.is_dir() or not path_exists:
                 if not path_exists:
                     path.makedirs()
                     removeAtEnd = True
@@ -510,10 +510,10 @@ def __copyOrMove(operation, source, target, renameOnCollision, parent):
     # TODO(241): renameOnCollision NOT IMPLEMENTED
     doIt = _shutil.copytree if operation == FO_COPY else _shutil.move
     for fileFrom, fileTo in zip(source, target):
-        if fileFrom.isdir():
+        if fileFrom.is_dir():
             dest_dir = fileTo.join(fileFrom.tail)
             if dest_dir.exists():
-                if not dest_dir.isdir():
+                if not dest_dir.is_dir():
                     raise DirectoryFileCollisionError(fileFrom, dest_dir)
                 # dir exists at target, copy contents individually/recursively
                 srcs, dests = [], []
@@ -623,7 +623,7 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
             # Do deletion
             for toDelete in source:
                 if not toDelete.exists(): continue
-                if toDelete.isdir():
+                if toDelete.is_dir():
                     toDelete.rmtree(toDelete.stail)
                 else:
                     toDelete.remove()

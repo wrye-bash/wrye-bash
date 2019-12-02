@@ -49,6 +49,7 @@ from functools import partial
 from itertools import chain
 # Internal
 from . import exception
+from .migration import replaces
 
 # structure aliases, mainly introduced to reduce uses of 'pack' and 'unpack'
 struct_pack = struct.pack
@@ -348,6 +349,9 @@ def GPathPurge():
             del _gpaths[key]
 
 #------------------------------------------------------------------------------
+@replaces({
+    'is_dir': 'isdir',
+    })
 class Path(object):
     """Paths are immutable objects that represent file directory paths.
      May be just a directory, filename or full path."""
@@ -557,7 +561,7 @@ class Path(object):
     @property
     def size(self):
         """Size of file or directory."""
-        if self.isdir():
+        if self.is_dir():
             join = os.path.join
             getSize = os.path.getsize
             try:
@@ -668,7 +672,7 @@ class Path(object):
     #--THESE REALLY OUGHT TO BE PROPERTIES.
     def exists(self):
         return os.path.exists(self._s)
-    def isdir(self):
+    def is_dir(self):
         return os.path.isdir(self._s)
     def isfile(self):
         return os.path.isfile(self._s)
@@ -687,7 +691,7 @@ class Path(object):
 
     def clearRO(self):
         """Clears RO flag on self"""
-        if not self.isdir():
+        if not self.is_dir():
             os.chmod(self._s,stat.S_IWUSR|stat.S_IWOTH)
         else:
             try:
@@ -731,7 +735,7 @@ class Path(object):
             os.removedirs(self._s)
     def rmtree(self,safety='PART OF DIRECTORY NAME'):
         """Removes directory tree. As a safety factor, a part of the directory name must be supplied."""
-        if self.isdir() and safety and safety.lower() in self._cs:
+        if self.is_dir() and safety and safety.lower() in self._cs:
             shutil.rmtree(self._s,onerror=Path._onerror)
 
     #--start, move, copy, touch, untemp
@@ -747,7 +751,7 @@ class Path(object):
     def copyTo(self,destName):
         """Copy self to destName, make dirs if necessary and preserve mtime."""
         destName = GPath(destName)
-        if self.isdir():
+        if self.is_dir():
             shutil.copytree(self._s,destName._s)
         else:
             if destName.shead and not os.path.exists(destName.shead):

@@ -1159,20 +1159,20 @@ class InstallerArchive(Installer):
         fileSizeCrcs = self.fileSizeCrcs = []
         self.isSolid = False
         class _li(object): # line info - we really want python's 3 'nonlocal'
-            filepath = size = crc = isdir = cumCRC = 0
+            filepath = size = crc = is_dir = cumCRC = 0
             __slots__ = ()
         def _parse_archive_line(key, value):
             if   key == u'Solid': self.isSolid = (value[0] == u'+')
             elif key == u'Path': _li.filepath = value.decode('utf8')
             elif key == u'Size': _li.size = int(value)
-            elif key == u'Attributes': _li.isdir = value and (u'D' in value)
+            elif key == u'Attributes': _li.is_dir = value and (u'D' in value)
             elif key == u'CRC' and value: _li.crc = int(value,16)
             elif key == u'Method':
-                if _li.filepath and not _li.isdir and _li.filepath != \
+                if _li.filepath and not _li.is_dir and _li.filepath != \
                         tempArch.s:
                     fileSizeCrcs.append((_li.filepath, _li.size, _li.crc))
                     _li.cumCRC += _li.crc
-                _li.filepath = _li.size = _li.crc = _li.isdir = 0
+                _li.filepath = _li.size = _li.crc = _li.is_dir = 0
         with archive_path.unicodeSafe() as tempArch:
             try:
                 list_archive(tempArch, _parse_archive_line)
@@ -1883,7 +1883,7 @@ class InstallersData(DataStore):
             apath = installersJoin(item)
             if apath.isfile() and item.cext in readExts:
                 installer = self.get(item)
-            elif apath.isdir(): # Project - autorefresh those only if specified
+            elif apath.is_dir(): # Project - autorefresh those only if specified
                 if item.s.lower() in self.installers_dir_skips:
                     continue # skip Bash directories and user specified ones
                 installer = self.get(item)
@@ -2619,7 +2619,7 @@ class InstallersData(DataStore):
                                 full_path, destDir), traceback=True)
             modInfos.delete_refresh(mods, None, check_existence=False)
             for emptyDir in emptyDirs:
-                if emptyDir.isdir() and not emptyDir.list():
+                if emptyDir.is_dir() and not emptyDir.list():
                     emptyDir.removedirs()
         finally:
             self.irefresh(what='NS')

@@ -118,10 +118,10 @@ def getBashModDataPath(bash_ini_, game_info):
     return mod_data_path, src
 
 def getLegacyPath(newPath, oldPath):
-    return (oldPath,newPath)[newPath.isdir() or not oldPath.isdir()]
+    return (oldPath,newPath)[newPath.is_dir() or not oldPath.is_dir()]
 
 def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
-    if newPath.isdir() or not oldPath.isdir():
+    if newPath.is_dir() or not oldPath.is_dir():
         return newPath, newSrc
     else:
         return oldPath, oldSrc
@@ -259,7 +259,7 @@ def getLocalSaveDirs():
     baseSaves = dirs['saveBase'].join(u'Saves')
     # Path.list returns [] for non existent dirs
     localSaveDirs = [x for x in baseSaves.list() if
-                     (x != u'Bash' and baseSaves.join(x).isdir())]
+                     (x != u'Bash' and baseSaves.join(x).is_dir())]
     # Filter out non-encodable names
     bad = set()
     for folder in localSaveDirs:

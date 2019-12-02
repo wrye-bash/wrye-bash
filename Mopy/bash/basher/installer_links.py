@@ -123,7 +123,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
         if not archive_path.s:
             self._showWarning(_(u'%s is not a valid archive name.') % result)
             return
-        if self.idata.store_dir.join(archive_path).isdir():
+        if self.idata.store_dir.join(archive_path).is_dir():
             self._showWarning(_(u'%s is a directory.') % archive_path.s)
             return
         if archive_path.cext not in archives.writeExts:
@@ -465,7 +465,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
     def Execute(self):
         """Duplicate selected Installer."""
         curName = self._selected_item
-        isdir = self.idata.store_dir.join(curName).isdir()
+        isdir = self.idata.store_dir.join(curName).is_dir()
         if isdir: root,ext = curName,u''
         else: root,ext = curName.root, curName.ext
         newName = self.window.new_name(root + _(u' Copy') + ext)

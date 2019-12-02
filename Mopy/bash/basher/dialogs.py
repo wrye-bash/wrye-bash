@@ -383,7 +383,7 @@ class CreateNewProject(balt.Dialog):
         super(CreateNewProject, self).__init__(parent, resize=False)
         #--Build a list of existing directories
         #  The text control will use this to change background color when name collisions occur
-        self.existingProjects = [x for x in bass.dirs['installers'].list() if bass.dirs['installers'].join(x).isdir()]
+        self.existingProjects = [x for x in bass.dirs['installers'].list() if bass.dirs['installers'].join(x).is_dir()]
 
         #--Attributes
         self.textName = TextCtrl(self, _(u'New Project Name-#####'),

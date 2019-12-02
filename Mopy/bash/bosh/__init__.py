@@ -2562,13 +2562,13 @@ class ModInfos(FileInfos):
         mod_author = self[name].header.author
         if mod_author:
             authorDir = dest_dir.join(mod_author)
-            if authorDir.isdir():
+            if authorDir.is_dir():
                 return authorDir
         #--Use group subdirectory instead?
         file_group = self.table.getItem(name, 'group')
         if file_group:
             groupDir = dest_dir.join(file_group)
-            if groupDir.isdir():
+            if groupDir.is_dir():
                 return groupDir
         return dest_dir
 
@@ -3052,7 +3052,7 @@ def initDefaultTools():
         path_in_registry = env.get_registry_path(u'Boss', u'Installed Path',
                                                  [u'BOSS.exe'])
         if path_in_registry:
-            if path_in_registry.isdir():
+            if path_in_registry.is_dir():
                 path_in_registry = path_in_registry.join(u'BOSS.exe')
             tooldirs['boss'] = path_in_registry
 
