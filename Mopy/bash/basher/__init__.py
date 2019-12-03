@@ -1493,7 +1493,7 @@ class ModDetails(_ModsSavesDetails):
         modifiedStr = self.modified.text_content
         if modifiedStr == self.modifiedStr: return
         try:
-            newTimeTup = unformat_date(modifiedStr, '%c')
+            newTimeTup = unformat_date(modifiedStr)
             time.mktime(newTimeTup)
         except ValueError:
             balt.showError(self,_(u'Unrecognized date: ')+modifiedStr)
@@ -1605,7 +1605,7 @@ class ModDetails(_ModsSavesDetails):
                                     detail_item=detail_item)
 
     def _set_date(self, modInfo):
-        newTimeTup = unformat_date(self.modifiedStr, '%c')
+        newTimeTup = unformat_date(self.modifiedStr)
         modInfo.setmtime(time.mktime(newTimeTup))
 
     #--Bash Tags
