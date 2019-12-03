@@ -139,8 +139,8 @@ class LoadOrder(object):
     def activeIndex(self, mname): return self.__mod_actIndex[mname]
 
     def __getstate__(self): # we pickle _activeOrdered to avoid recreating it
-        return {'_activeOrdered': self._activeOrdered,
-                '_loadOrder': self.loadOrder}
+        return {u'_activeOrdered': self._activeOrdered,
+                u'_loadOrder': self.loadOrder}
 
     def __setstate__(self, dct):
         self.__dict__.update(dct)   # update attributes
@@ -157,7 +157,7 @@ __empty = LoadOrder()
 cached_lord = __empty # must always be valid (or __empty)
 
 # Saved load orders
-lo_entry = collections.namedtuple('lo_entry', ['date', 'lord'])
+lo_entry = collections.namedtuple(u'lo_entry', [u'date', u'lord'])
 _saved_load_orders = [] # type: list[lo_entry]
 _current_list_index = -1
 
@@ -166,17 +166,17 @@ def _new_entry():
         lo_entry(time.time(), cached_lord)]
 
 def persist_orders(__keep_max=256):
-    _lords_pickle.vdata['_lords_pickle_version'] = _LORDS_PICKLE_VERSION
+    _lords_pickle.vdata[u'_lords_pickle_version'] = _LORDS_PICKLE_VERSION
     length = len(_saved_load_orders)
     if length > __keep_max:
         x, y = _keep_max(__keep_max, length)
-        _lords_pickle.data['_saved_load_orders'] = \
+        _lords_pickle.data[u'_saved_load_orders'] = \
             _saved_load_orders[_current_list_index - x:_current_list_index + y]
-        _lords_pickle.data['_current_list_index'] = x
+        _lords_pickle.data[u'_current_list_index'] = x
     else:
-        _lords_pickle.data['_saved_load_orders'] = _saved_load_orders
-        _lords_pickle.data['_current_list_index'] = _current_list_index
-    _lords_pickle.data['_active_mods_lists'] = _active_mods_lists
+        _lords_pickle.data[u'_saved_load_orders'] = _saved_load_orders
+        _lords_pickle.data[u'_current_list_index'] = _current_list_index
+    _lords_pickle.data[u'_active_mods_lists'] = _active_mods_lists
     ##: save them also in BashSettings.dat in case someone downgrades - drop !
     bass.settings[u'bash.loadLists.data'] = _active_mods_lists
     _lords_pickle.save()
@@ -332,14 +332,14 @@ def __load_pickled_load_orders():
         _active_mods_lists
     _lords_pickle = bolt.PickleDict(_lord_pickle_path)
     _lords_pickle.load()
-    if _lords_pickle.vdata.get('_lords_pickle_version', 1) < 2:
+    if _lords_pickle.vdata.get(u'_lords_pickle_version', 1) < 2:
         # used to load active lists from settings
         active_mods_list = __active_mods_sentinel
     else:
         active_mods_list = {}
-    _saved_load_orders = _lords_pickle.data.get('_saved_load_orders', [])
-    _current_list_index = _lords_pickle.data.get('_current_list_index', -1)
-    _active_mods_lists = _lords_pickle.data.get('_active_mods_lists',
+    _saved_load_orders = _lords_pickle.data.get(u'_saved_load_orders', [])
+    _current_list_index = _lords_pickle.data.get(u'_current_list_index', -1)
+    _active_mods_lists = _lords_pickle.data.get(u'_active_mods_lists',
                                                 active_mods_list)
     if b'Bethesda ESMs' in _active_mods_lists: ##: backwards compat
         _active_mods_lists[u'Vanilla'] = _active_mods_lists[b'Bethesda ESMs']
