@@ -322,11 +322,11 @@ except ImportError: # bare linux (in wine it's imported but malfunctions)
     canVista = False
 
 def vistaDialog(parent, message, title, checkBoxTxt=None,
-                buttons=None, icon='warning', commandLinks=True, footer=u'',
+                buttons=None, icon=u'warning', commandLinks=True, footer=u'',
                 expander=[], heading=u''):
     """Always guard with canVista == True"""
-    buttons = buttons if buttons is not None else ((_win.BTN_OK, 'ok'),
-                                                   (_win.BTN_CANCEL, 'cancel'))
+    buttons = buttons if buttons is not None else (
+        (_win.BTN_OK, u'ok'), (_win.BTN_CANCEL, u'cancel'))
     heading = heading if heading is not None else title
     title = title if heading is not None else u'Wrye Bash'
     dialog = _win.TaskDialog(title, heading, message,
@@ -352,7 +352,7 @@ def vistaDialog(parent, message, title, checkBoxTxt=None,
                 return id_ in _win.GOOD_EXITS, None
     return False, checkbox
 
-def askStyled(parent, message, title, style, do_center=False, **kwdargs):
+def askStyled(parent, message, title, style, do_center=False):
     """Shows a modal MessageDialog.
     Use ErrorMessage, WarningMessage or InfoMessage."""
     parent = _AComponent._resolve(parent)
@@ -361,22 +361,22 @@ def askStyled(parent, message, title, style, do_center=False, **kwdargs):
         vista_btn = []
         icon = None
         if style & wx.YES_NO:
-            yes = 'yes'
-            no = 'no'
+            yes = u'yes'
+            no = u'no'
             if style & wx.YES_DEFAULT:
-                yes = 'Yes'
+                yes = u'Yes'
             elif style & wx.NO_DEFAULT:
-                no = 'No'
+                no = u'No'
             vista_btn.append((_win.BTN_YES, yes))
             vista_btn.append((_win.BTN_NO, no))
         if style & wx.OK:
-            vista_btn.append((_win.BTN_OK, 'ok'))
+            vista_btn.append((_win.BTN_OK, u'ok'))
         if style & wx.CANCEL:
-            vista_btn.append((_win.BTN_CANCEL, 'cancel'))
+            vista_btn.append((_win.BTN_CANCEL, u'cancel'))
         if style & (wx.ICON_EXCLAMATION|wx.ICON_INFORMATION):
-            icon = 'warning'
+            icon = u'warning'
         if style & wx.ICON_HAND:
-            icon = 'error'
+            icon = u'error'
         result, _check = vistaDialog(parent, message=message, title=title,
                                      icon=icon, buttons=vista_btn)
     else:
@@ -385,36 +385,37 @@ def askStyled(parent, message, title, style, do_center=False, **kwdargs):
         dialog.Destroy()
     return result
 
-def askOk(parent,message,title=u'',**kwdargs):
+def askOk(parent, message, title=u''):
     """Shows a modal error message."""
-    return askStyled(parent,message,title,wx.OK|wx.CANCEL,**kwdargs)
+    return askStyled(parent, message, title, wx.OK | wx.CANCEL)
 
-def askYes(parent, message, title=u'', default=True, questionIcon=False,
-           **kwdargs):
+def askYes(parent, message, title=u'', default=True, questionIcon=False):
     """Shows a modal warning or question message."""
     icon= wx.ICON_QUESTION if questionIcon else wx.ICON_EXCLAMATION
     style = wx.YES_NO|icon|(wx.YES_DEFAULT if default else wx.NO_DEFAULT)
-    return askStyled(parent,message,title,style,**kwdargs)
+    return askStyled(parent, message, title, style)
 
-def askWarning(parent,message,title=_(u'Warning'),**kwdargs):
+def askWarning(parent, message, title=_(u'Warning')):
     """Shows a modal warning message."""
-    return askStyled(parent,message,title,wx.OK|wx.CANCEL|wx.ICON_EXCLAMATION,**kwdargs)
+    return askStyled(parent, message, title,
+                     wx.OK | wx.CANCEL | wx.ICON_EXCLAMATION)
 
-def showOk(parent,message,title=u'',**kwdargs):
+def showOk(parent, message, title=u''):
     """Shows a modal error message."""
-    return askStyled(parent,message,title,wx.OK,**kwdargs)
+    return askStyled(parent, message, title, wx.OK)
 
-def showError(parent,message,title=_(u'Error'),**kwdargs):
+def showError(parent, message, title=_(u'Error')):
     """Shows a modal error message."""
-    return askStyled(parent,message,title,wx.OK|wx.ICON_HAND,**kwdargs)
+    return askStyled(parent, message, title, wx.OK | wx.ICON_HAND)
 
-def showWarning(parent,message,title=_(u'Warning'),**kwdargs):
+def showWarning(parent, message, title=_(u'Warning'), do_center=False):
     """Shows a modal warning message."""
-    return askStyled(parent,message,title,wx.OK|wx.ICON_EXCLAMATION,**kwdargs)
+    return askStyled(parent, message, title, wx.OK | wx.ICON_EXCLAMATION,
+                     do_center=do_center)
 
-def showInfo(parent,message,title=_(u'Information'),**kwdargs):
+def showInfo(parent, message, title=_(u'Information')):
     """Shows a modal information message."""
-    return askStyled(parent,message,title,wx.OK|wx.ICON_INFORMATION,**kwdargs)
+    return askStyled(parent, message, title, wx.OK | wx.ICON_INFORMATION)
 
 #------------------------------------------------------------------------------
 class _Log(object):
@@ -1700,7 +1701,7 @@ class Link(object):
     # self->window
     ##: avoid respecifying default params
     def _showWarning(self, message, title=_(u'Warning'), **kwdargs):
-        return showWarning(self.window, message, title=title, **kwdargs)
+        return showWarning(self.window, message, title=title)
 
     def _askYes(self, message, title=u'', default=True, questionIcon=False):
         if not title: title = self._text
@@ -1716,24 +1717,20 @@ class Link(object):
                        defaultFile=defaultFile, wildcard=wildcard,
                        mustExist=mustExist)
 
-    def _askOk(self, message, title=u''):
+    def _showOk(self, message, title=u''):
         if not title: title = self._text
-        return askOk(self.window, message, title)
+        return showOk(self.window, message, title)
 
-    def _showOk(self, message, title=u'', **kwdargs):
-        if not title: title = self._text
-        return showOk(self.window, message, title, **kwdargs)
-
-    def _askWarning(self, message, title=_(u'Warning'), **kwdargs):
-        return askWarning(self.window, message, title, **kwdargs)
+    def _askWarning(self, message, title=_(u'Warning')):
+        return askWarning(self.window, message, title)
 
     def _askText(self, message, title=u'', default=u'', strip=True):
         if not title: title = self._text
         return askText(self.window, message, title=title, default=default,
                        strip=strip)
 
-    def _showError(self, message, title=_(u'Error'), **kwdargs):
-        return showError(self.window, message, title, **kwdargs)
+    def _showError(self, message, title=_(u'Error')):
+        return showError(self.window, message, title)
 
     def _askSave(self, title=u'', defaultDir=u'', defaultFile=u'',
                  wildcard=u'', style=wx.FD_OVERWRITE_PROMPT):
@@ -1746,8 +1743,8 @@ class Link(object):
         if icons is self._default_icons: icons = Resources.bashBlue
         Log(self.window, logText, title, asDialog, fixedFont, log_icons=icons)
 
-    def _showInfo(self, message, title=_(u'Information'), **kwdargs):
-        return showInfo(self.window, message, title, **kwdargs)
+    def _showInfo(self, message, title=_(u'Information')):
+        return showInfo(self.window, message, title)
 
     def _showWryeLog(self, logText, title=u'', asDialog=True,
                      icons=_default_icons):
@@ -2222,12 +2219,12 @@ class ListBoxes(WrappingTextMixin, DialogWindow):
 def ask_uac_restart(message, title, mopy):
     if not canVista:
         return askYes(None, message + u'\n\n' + _(
-                u'Start Wrye Bash with Administrator Privileges?'), title)
+            u'Start Wrye Bash with Administrator Privileges?'), title)
     admin = _(u'Run with Administrator Privileges')
     readme = readme_url(mopy)
     readme += u'#trouble-permissions'
     return vistaDialog(None, message=message,
-        buttons=[(True, u'+' + admin), (False, _(u'Run normally')), ],
+        buttons=[(True, u'+' + admin), (False, _(u'Run normally'))],
         title=title, expander=[_(u'How to avoid this message in the future'),
             _(u'Less information'),
             _(u'Use one of the following command line switches:') +

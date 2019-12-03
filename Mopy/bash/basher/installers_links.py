@@ -72,7 +72,8 @@ class Installers_MonitorInstall(Installers_Link):
                 u'installing a mod via an external application or manual '
                 u'install.  This will require two refreshes of the Data folder'
                 u' and may take some time.')
-        if not self._askOk(msg, _(u'External Installation')): return
+        if not balt.askOk(self.window, msg, _(u'External Installation')):
+            return
         # Refresh Data
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Backup CRC data
