@@ -34,11 +34,12 @@ import subprocess
 try:
     from ctypes.wintypes import MAX_PATH
 except ValueError:
-    deprint("ctypes.wintypes import failure", traceback=True)
+    deprint(u'ctypes.wintypes import failure', traceback=True)
     try:
-        MAX_PATH = int(subprocess.check_output(['getconf', 'PATH_MAX', '/']))
+        MAX_PATH = int(subprocess.check_output([u'getconf', u'PATH_MAX',
+                                                u'/']))
     except (ValueError, subprocess.CalledProcessError, OSError):
-        deprint('calling getconf failed - error:', traceback=True)
+        deprint(u'calling getconf failed - error:', traceback=True)
         MAX_PATH = 4096
 ##: keep this below so it raises on linux - for now (win32gui is unused here)
 try:
@@ -94,46 +95,47 @@ PFTASKDIALOGCALLBACK = WINFUNCTYPE(c_void_p, c_void_p, c_uint, c_uint,
 
 #-------Win32 Stucts/Unions--------#
 # Callers do not have to worry about using these.
+# PY3: Verify that these structs actually need unicode strings, not bytes
 class TASKDIALOG_BUTTON(Structure):
-    _fields_ = [('nButtonID', c_int),
-                ('pszButtonText', c_wchar_p)]
+    _fields_ = [(u'nButtonID', c_int),
+                (u'pszButtonText', c_wchar_p)]
 
 class FOOTERICON(Union):
-    _fields_ = [("hFooterIcon", c_void_p),
-                ("pszFooterIcon", c_ushort)]
+    _fields_ = [(u'hFooterIcon', c_void_p),
+                (u'pszFooterIcon', c_ushort)]
 
 class MAINICON(Union):
-    _fields_ = [("hMainIcon", c_void_p),
-                ("pszMainIcon", c_ushort)]
+    _fields_ = [(u'hMainIcon', c_void_p),
+                (u'pszMainIcon', c_ushort)]
 
 class TASKDIALOGCONFIG(Structure):
     _pack_ = 1
-    _fields_ = [("cbSize", c_uint),
-                ("hwndParent", c_void_p),
-                ("hInstance", c_void_p),
-                ("dwFlags", c_uint),
-                ("dwCommonButtons", c_uint),
-                ("pszWindowTitle", c_wchar_p),
-                ("uMainIcon", MAINICON),
-                ("pszMainInstruction", c_wchar_p),
-                ("pszContent", c_wchar_p),
-                ("cButtons", c_uint),
-                ("pButtons", POINTER(TASKDIALOG_BUTTON)),
-                ('nDefaultButton', c_int),
-                ('cRadioButtons', c_uint),
-                ('pRadioButtons', POINTER(TASKDIALOG_BUTTON)),
-                ('nDefaultRadioButton', c_int),
-                ('pszVerificationText', c_wchar_p),
-                ('pszExpandedInformation', c_wchar_p),
-                ('pszExpandedControlText', c_wchar_p),
-                ('pszCollapsedControlText', c_wchar_p),
-                ('uFooterIcon', FOOTERICON),
-                ('pszFooter', c_wchar_p),
-                ('pfCallback', PFTASKDIALOGCALLBACK),
-                ('lpCallbackData', c_longlong),
-                ('cxWidth', c_uint)]
+    _fields_ = [(u'cbSize', c_uint),
+                (u'hwndParent', c_void_p),
+                (u'hInstance', c_void_p),
+                (u'dwFlags', c_uint),
+                (u'dwCommonButtons', c_uint),
+                (u'pszWindowTitle', c_wchar_p),
+                (u'uMainIcon', MAINICON),
+                (u'pszMainInstruction', c_wchar_p),
+                (u'pszContent', c_wchar_p),
+                (u'cButtons', c_uint),
+                (u'pButtons', POINTER(TASKDIALOG_BUTTON)),
+                (u'nDefaultButton', c_int),
+                (u'cRadioButtons', c_uint),
+                (u'pRadioButtons', POINTER(TASKDIALOG_BUTTON)),
+                (u'nDefaultRadioButton', c_int),
+                (u'pszVerificationText', c_wchar_p),
+                (u'pszExpandedInformation', c_wchar_p),
+                (u'pszExpandedControlText', c_wchar_p),
+                (u'pszCollapsedControlText', c_wchar_p),
+                (u'uFooterIcon', FOOTERICON),
+                (u'pszFooter', c_wchar_p),
+                (u'pfCallback', PFTASKDIALOGCALLBACK),
+                (u'lpCallbackData', c_longlong),
+                (u'cxWidth', c_uint)]
 
-    _anonymous_ = ("uMainIcon", "uFooterIcon",)
+    _anonymous_ = (u'uMainIcon', u'uFooterIcon',)
 
 try:
     indirect = windll.comctl32.TaskDialogIndirect
@@ -249,11 +251,11 @@ SHGSI_LINKOVERLAY   = 0x00008000 # get icon with a link overlay on it
 SHGSI_SELECTED      = 0x00010000 # get icon in selected state
 
 class SHSTOCKICONINFO(Structure):
-    _fields_ = [('cbSize',c_ulong),
-                ('hIcon',c_void_p),
-                ('iSysImageIndex',c_int),
-                ('iIcon',c_int),
-                ('szPath',c_wchar*MAX_PATH)]
+    _fields_ = [(u'cbSize', c_ulong),
+                (u'hIcon', c_void_p),
+                (u'iSysImageIndex', c_int),
+                (u'iIcon', c_int),
+                (u'szPath', c_wchar*MAX_PATH)]
 
 
 #--Start a webpage with an anchor ---------------------------------------------
@@ -294,22 +296,22 @@ _HEADING = 3
 class TaskDialog(object):
     """Wrapper class for the Win32 task dialog."""
 
-    stock_icons = {'warning' : 65535,
-                  'error' : 65534,
-                  'information' : 65533,
-                  'shield' : 65532}
-    stock_buttons = {'ok' : 0x01, #1
-                    'yes' : 0x02, #2
-                    'no' : 0x04, #4
-                    'cancel' : 0x08, #8
-                    'retry' : 0x10, #16
-                    'close' : 0x20} #32
-    stock_button_ids = {'ok': 1,
-                       'cancel': 2,
-                       'retry': 4,
-                       'yes': 6,
-                       'no': 7,
-                       'close': 8}
+    stock_icons = {u'warning' : 65535,
+                  u'error' : 65534,
+                  u'information' : 65533,
+                  u'shield' : 65532}
+    stock_buttons = {u'ok' : 0x01, #1
+                    u'yes' : 0x02, #2
+                    u'no' : 0x04, #4
+                    u'cancel' : 0x08, #8
+                    u'retry' : 0x10, #16
+                    u'close' : 0x20} #32
+    stock_button_ids = {u'ok': 1,
+                       u'cancel': 2,
+                       u'retry': 4,
+                       u'yes': 6,
+                       u'no': 7,
+                       u'close': 8}
 
     def __init__(self, title, heading, content, buttons=(), main_icon=None,
                  parenthwnd=None, footer=None):
@@ -433,7 +435,7 @@ class TaskDialog(object):
     def set_progress_bar(self, callback, low=0, high=100, pos=0):
         """Set the progress bar on the task dialog as a marquee progress bar."""
         _range = (high << 16) | low
-        self._progress_bar = {'func':callback, 'range': _range, 'pos':pos}
+        self._progress_bar = {u'func':callback, u'range': _range, u'pos':pos}
         return self
 
     def set_check_box(self, cbox_label, checked=False):
@@ -465,7 +467,7 @@ class TaskDialog(object):
                     break
             else:
                 button = 0
-        if getattr(self, '_radio_buttons', False):
+        if getattr(self, u'_radio_buttons', False):
             radio = self._radio_buttons[radio.value]
         else:
             radio = radio.value
@@ -479,7 +481,7 @@ class TaskDialog(object):
                     additional_flags):
         conf = TASKDIALOGCONFIG()
 
-        if c_links and len(getattr(self, '_buttons', [])) > 0:
+        if c_links and len(getattr(self, u'_buttons', [])) > 0:
             additional_flags |= USE_COMMAND_LINKS
         if centered:
             additional_flags |= POSITION_RELATIVE_TO_WINDOW
@@ -498,12 +500,12 @@ class TaskDialog(object):
 
         attributes = dir(self) # FIXME(ut): unpythonic, as the builder pattern above
 
-        if '_width' in attributes:
+        if u'_width' in attributes:
             conf.cxWidth = self._width
 
         if self._footer:
             conf.pszFooter = self._footer
-        if '_footer_icon' in attributes:
+        if u'_footer_icon' in attributes:
             if self._footer_is_stock:
                 conf.uFooterIcon.pszFooterIcon = self._footer_icon
             else:
@@ -516,7 +518,7 @@ class TaskDialog(object):
                 conf.uMainIcon.hMainIcon = self._main_icon
                 additional_flags |= USE_HICON_MAIN
 
-        if '_buttons' in attributes:
+        if u'_buttons' in attributes:
             custom_buttons = []
             # Enumerate through button list
             for i, button in enumerate(self._buttons):
@@ -546,7 +548,7 @@ class TaskDialog(object):
             conf.pButtons = c_array
             self.__custom_buttons = custom_buttons
 
-        if '_radio_buttons' in attributes:
+        if u'_radio_buttons' in attributes:
             conf.cRadioButtons = len(self._radio_buttons)
             array_type = ARRAY(TASKDIALOG_BUTTON, conf.cRadioButtons)
             c_array = array_type()
@@ -559,7 +561,7 @@ class TaskDialog(object):
             else:
                 conf.nDefaultRadioButton = self._default_radio
 
-        if '_expander_data' in attributes:
+        if u'_expander_data' in attributes:
             conf.pszCollapsedControlText = self._expander_data[0]
             conf.pszExpandedControlText = self._expander_data[1]
             conf.pszExpandedInformation = self._expander_data[2]
@@ -569,16 +571,16 @@ class TaskDialog(object):
             if self._expands_at_footer:
                 additional_flags |= EXPAND_FOOTER_AREA
 
-        if '_cbox_label' in attributes:
+        if u'_cbox_label' in attributes:
             conf.pszVerificationText = self._cbox_label
             if self._cbox_checked:
                 additional_flags |= VERIFICATION_FLAG_CHECKED
 
-        if '_marquee_progress_bar' in attributes:
+        if u'_marquee_progress_bar' in attributes:
             additional_flags |= SHOW_MARQUEE_PROGRESS_BAR
             additional_flags |= CALLBACK_TIMER
 
-        if '_progress_bar' in attributes:
+        if u'_progress_bar' in attributes:
             additional_flags |= SHOW_PROGRESS_BAR
             additional_flags |= CALLBACK_TIMER
 
@@ -590,19 +592,19 @@ class TaskDialog(object):
     def __parse_button(text):
         elevation = False
         default = False
-        if text.startswith('+') and len(text) > 1:
+        if text.startswith(u'+') and len(text) > 1:
             text = text[1:]
             elevation = True
         elif text.startswith(r'\+'):
             text = text[1:]
-        if text.startswith('+\\') and text.isupper():
+        if text.startswith(u'+\\') and text.isupper():
             text = text[0] + text[2:]
-        elif text.startswith('\\') and text.isupper():
+        elif text.startswith(u'\\') and text.isupper():
             text = text[1:]
         elif text.isupper():
             default = True
-            splits = text.partition('&')
-            if splits[0] == '':
+            splits = text.partition(u'&')
+            if splits[0] == u'':
                 text = splits[1] + splits[2].capitalize()
             else:
                 text = splits[0].capitalize() + splits[1] + splits[2]
@@ -614,7 +616,7 @@ class TaskDialog(object):
             self.__handle = handle
             for bID in self.__shield_buttons:
                 windll.user32.SendMessageW(self.__handle, _SETSHIELD, bID, 1)
-            if getattr(self, '_marquee_progress_bar', False):
+            if getattr(self, u'_marquee_progress_bar', False):
                 self.__set_marquee_speed()
         elif notification == BUTTON_CLICKED:
             if wparam >= BUTTONID_OFFSET:
@@ -631,7 +633,7 @@ class TaskDialog(object):
         elif notification == HYPERLINK_CLICKED:
             args.append(wstring_at(lparam))
         elif notification == RADIO_BUTTON_CLICKED:
-            if getattr(self, '_radio_buttons', False):
+            if getattr(self, u'_radio_buttons', False):
                 radio = self._radio_buttons[wparam]
             else:
                 radio = wparam
@@ -648,10 +650,10 @@ class TaskDialog(object):
             self.__handle = None
         elif notification == TIMER:
             args.append(wparam)
-            if getattr(self, '_progress_bar', False):
-                callback = self._progress_bar['func']
+            if getattr(self, u'_progress_bar', False):
+                callback = self._progress_bar[u'func']
                 new_pos = callback(self)
-                self._progress_bar['pos'] = new_pos
+                self._progress_bar[u'pos'] = new_pos
                 self.__update_progress_bar()
         for func in self.__events[notification]:
             func(*args)
@@ -662,15 +664,15 @@ class TaskDialog(object):
 
     def __update_element_text(self, element, text):
         if self.__handle is None:
-            raise Exception("Dialog is not yet created, or has been destroyed.")
+            raise Exception(u'Dialog is not yet created, or has been destroyed.')
         windll.user32.SendMessageW(self.__handle, _SETELEMENT, element, text)
 
     def __update_progress_bar(self):
         windll.user32.SendMessageW(self.__handle, _SETPBARRANGE, 0,
-                                   self._progress_bar['range'])
+                                   self._progress_bar[u'range'])
         windll.user32.SendMessageW(self.__handle, _SETPBARPOS,
-                                   self._progress_bar['pos'], 0)
+                                   self._progress_bar[u'pos'], 0)
 
 
-if __name__ == '__main__':
+if __name__ == u'__main__':
     help(TaskDialog)
