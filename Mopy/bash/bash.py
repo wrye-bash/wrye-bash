@@ -27,6 +27,7 @@ it runs some initialization functions and then starts the main application
 loop."""
 
 # Imports ---------------------------------------------------------------------
+from __future__ import division
 import atexit
 import codecs
 import os
@@ -115,7 +116,7 @@ def exit_cleanup():
     tmpDir = bolt.GPath(tempfile.tempdir)
     for file_ in tmpDir.list():
         if file_.cs.startswith(u'wryebash_'):
-            file_ = tmpDir.join(file_)
+            file_ = tmpDir / file_
             try:
                 if file_.is_dir():
                     file_.rmtree(safety=file_.stail)
@@ -284,7 +285,7 @@ def _main(opts, wx_locale):
                 bashIni, bush_game, game_ini_path = _detect_game(opts, u'bash.ini')
         from . import bosh # this imports balt (DUH) which imports wx
         bosh.initBosh(bashIni, game_ini_path)
-        env.isUAC = env.testUAC(bush_game.gamePath.join(u'Data'))
+        env.isUAC = env.testUAC(bush_game.gamePath / u'Data')
         global basher, balt
         from . import basher, balt
     except (exception.BoltError, ImportError, OSError, IOError) as e:

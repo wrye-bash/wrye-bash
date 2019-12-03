@@ -1729,7 +1729,7 @@ class _ScriptText(object):
                     if r >= 1 and deprefix == fileName[:r]:
                         fileName = fileName[r:]
                     num += 1
-                    outpath = dirs['patches'].join(folder).join(
+                    outpath = dirs['patches'].joinpath(folder).joinpath(
                         fileName + inisettings['ScriptFileExt'])
                     with outpath.open('wb',encoding='utf-8-sig') as out:
                         formid = u'0x%06X' % longid[1]
@@ -1806,7 +1806,7 @@ class ScriptText(_ScriptText):
                         progress(((1/y)*z),_(u"Skipping file %s.") % name.s)
                         continue
                     progress(((1 / y) * z),_(u"Reading file %s.") % name.s)
-                    with root_dir.join(name).open('r', encoding='utf-8-sig') \
+                    with root_dir.joinpath(name).open('r', encoding='utf-8-sig') \
                             as text:
                         lines = text.readlines()
                     try:
@@ -1883,7 +1883,7 @@ class CBash_ScriptText(_ScriptText):
                         progress(((1/y)*z),_(u"Skipping file %s.") % name.s)
                         continue
                     progress(((1 / y) * z),_(u"Reading file %s.") % name.s)
-                    with root_dir.join(name).open('r', encoding='utf-8-sig') \
+                    with root_dir.joinpath(name).open('r', encoding='utf-8-sig') \
                             as text:
                         lines = text.readlines()
                     if not lines: continue
@@ -4119,7 +4119,7 @@ class ModFile(object):
         """Updates set of master names according to masters actually used."""
         if not self.longFids: raise StateError(u"ModFile fids not in long form.")
         for fname in bush.game.masterFiles:
-            if dirs['mods'].join(fname).exists():
+            if dirs['mods'].joinpath(fname).exists():
                 masters = MasterSet([GPath(fname)])
                 break
         for block in self.tops.values():

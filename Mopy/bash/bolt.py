@@ -353,6 +353,7 @@ def GPathPurge():
     'is_dir': 'isdir',
     'is_file': 'isfile',
     'is_absolute': 'isabs',
+    'joinpath': 'join',
     'suffix': 'ext',
     'cwd' : 'getcwd',
     })
@@ -517,9 +518,9 @@ class Path(object):
         """Temp file path.  If unicodeSafe is True, the returned
         temp file will be a fileName that can be passes through Popen
         (Popen automatically tries to encode the name)"""
-        baseDir = GPath(unicode(tempfile.gettempdir(), Path.sys_fs_enc)).join(u'WryeBash_temp')
+        baseDir = GPath(unicode(tempfile.gettempdir(), Path.sys_fs_enc)) / u'WryeBash_temp'
         baseDir.makedirs()
-        dirJoin = baseDir.join
+        dirJoin = baseDir.joinpath
         if unicodeSafe:
             try:
                 self._s.encode('ascii')
@@ -633,9 +634,11 @@ class Path(object):
     #--New Paths, subpaths
     def __add__(self,other):
         return GPath(self._s + Path.getNorm(other))
-    def join(*args):
+    def joinpath(*args):
         norms = [Path.getNorm(x) for x in args]
         return GPath(os.path.join(*norms))
+    def __truediv__(self, other):
+        return self.joinpath(other)
     def list(self):
         """For directory: Returns list of files."""
         if not os.path.exists(self._s): return []
@@ -704,7 +707,7 @@ class Path(object):
                 stat_flags = stat.S_IWUSR|stat.S_IWOTH
                 chmod = os.chmod
                 for root_dir,dirs,files in _walk(self._s):
-                    rootJoin = root_dir.join
+                    rootJoin = root_dir.joinpath
                     for directory in dirs:
                         try: chmod(rootJoin(directory),stat_flags)
                         except: pass
@@ -1867,10 +1870,10 @@ class StringTable(dict):
 
     def load(self, modFilePath, lang=u'English', progress=Progress()):
         baseName = modFilePath.tail.body
-        baseDir = modFilePath.head.join(u'Strings')
+        baseDir = modFilePath.head / u'Strings'
         files = (baseName + u'_' + lang + x for x in
                  (u'.STRINGS', u'.DLSTRINGS', u'.ILSTRINGS'))
-        files = (baseDir.join(file) for file in files)
+        files = (baseDir / file for file in files)
         self.clear()
         progress.setFull(3)
         for i,file in enumerate(files):
@@ -2286,7 +2289,7 @@ class WryeText(object):
             if cssName.suffix != u'.css':
                 raise exception.BoltError(u'Invalid Css file: ' + cssName.s)
             for css_dir in cssDirs:
-                cssPath = GPath(css_dir).join(cssName)
+                cssPath = GPath(css_dir) / cssName
                 if cssPath.exists(): break
             else:
                 raise exception.BoltError(u'Css file not found: ' + cssName.s)

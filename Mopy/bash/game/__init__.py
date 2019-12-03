@@ -25,6 +25,7 @@
 state and methods. game.GameInfo#init classmethod is used to import rest of
 active game package as needed (currently the record and constants modules)
 and to set some brec.RecordHeader/MreRecord class variables."""
+from __future__ import division
 import importlib
 
 from .. import brec
@@ -162,7 +163,7 @@ class GameInfo(object):
         long_name = u'' # Full name
         # exe is treated specially here.  If it is a string, then it should
         # be the path relative to the root directory of the game, if it is
-        # a list, each list element should be an iterable to pass to Path.join
+        # a list, each list element should be an iterable to pass to Path.joinpath
         # relative to the root directory of the game.  In this case,
         # each filename will be tested in reverse order.  This was required
         # for Oblivion, as the newer OBGE has a different filename than the

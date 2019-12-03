@@ -23,6 +23,7 @@
 # =============================================================================
 
 """Patch dialog"""
+from __future__ import division
 import StringIO
 import copy
 import errno
@@ -224,7 +225,7 @@ class PatchDialog(balt.Dialog):
             log.out.close()
             timerString = unicode(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
             logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
-            readme = bosh.modInfos.store_dir.join(u'Docs', patch_name.sroot + u'.txt')
+            readme = bosh.modInfos.store_dir.joinpath(u'Docs', patch_name.sroot + u'.txt')
             docsDir = bass.settings.get('balt.WryeLog.cssDir', GPath(u''))
             if self.doCBash: ##: eliminate this if/else
                 with readme.open('w',encoding='utf-8') as file:
@@ -232,8 +233,8 @@ class PatchDialog(balt.Dialog):
                 #--Convert log/readme to wtxt and show log
                 bolt.WryeText.genHtml(readme,None,docsDir)
             else:
-                tempReadmeDir = Path.tempDir().join(u'Docs')
-                tempReadme = tempReadmeDir.join(patch_name.sroot+u'.txt')
+                tempReadmeDir = Path.tempDir() / u'Docs'
+                tempReadme = tempReadmeDir.joinpath(patch_name.sroot+u'.txt')
                 #--Write log/readme to temp dir first
                 with tempReadme.open('w',encoding='utf-8-sig') as file:
                     file.write(logValue)
@@ -247,7 +248,7 @@ class PatchDialog(balt.Dialog):
                     # User didn't allow UAC, move to My Games directory instead
                     env.shellMove([tempReadme, tempReadme.root + u'.html'],
                                   bass.dirs['saveBase'], parent=self)
-                    readme = bass.dirs['saveBase'].join(readme.tail)
+                    readme = bass.dirs['saveBase'] / readme.tail
                 #finally:
                 #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
             readme = readme.root + u'.html'

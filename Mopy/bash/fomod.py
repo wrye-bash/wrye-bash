@@ -40,6 +40,7 @@ their children are available by iteration (subclassing Sequence) and useful
 xml attributes/text are available via instance attributes.
 """
 
+from __future__ import division
 import os
 from collections import OrderedDict, Sequence
 from distutils.version import LooseVersion
@@ -204,7 +205,7 @@ class _FomodFileInfo(object):
                 # if empty or with a trailing slash then dest refers
                 # to a folder. Post-processing to add the filename to the
                 # end of the path.
-                destination = Path(destination).join(Path(source).tail)
+                destination = Path(destination) / Path(source).tail
             else:
                 # destination still needs normalizing
                 destination = Path(destination)
@@ -362,7 +363,7 @@ class FomodInstaller(object):
     def _test_file_condition(self, condition):
         file_name = condition.get("file")
         file_type = condition.get("state")
-        file_path = self.dst_dir.join(file_name)
+        file_path = self.dst_dir / file_name
         if not file_path.exists(): # TODO: ghosts?
             actual_type = "Missing"
         else:

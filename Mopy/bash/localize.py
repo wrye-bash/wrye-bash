@@ -25,6 +25,7 @@
 detecting and setting locale as well as code for creating Wrye Bash translation
 files."""
 
+from __future__ import division
 import gettext
 import locale
 import os
@@ -147,7 +148,7 @@ def _find_all_bash_modules(bash_path=None, cur_dir=None, _files=None):
     _files = _files or []
     cur_dir = cur_dir or os.getcwdu()
     bash_path = bash_path or bolt.Path(u'')
-    _files.extend([bash_path.join(m).s for m in os.listdir(cur_dir)
+    _files.extend([bash_path.joinpath(m).s for m in os.listdir(cur_dir)
                    if m.lower().endswith((u'.py', u'.pyw'))])
     # Find subpackages - returned format is (module_loader, name, is_pkg)
     for p in pkgutil.iter_modules([cur_dir]):
@@ -156,7 +157,7 @@ def _find_all_bash_modules(bash_path=None, cur_dir=None, _files=None):
             continue
         # Recurse into the subpackage we just found
         _find_all_bash_modules(
-            _files, bash_path.join(p[1]) if bash_path else bolt.GPath(u'bash'),
+            _files, bash_path.joinpath(p[1]) if bash_path else bolt.GPath(u'bash'),
             os.path.join(cur_dir, p[1]))
     return _files
 

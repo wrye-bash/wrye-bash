@@ -25,6 +25,7 @@
 """Links initialization functions. Each panel's UIList has main and items Links
 attributes which are populated here. Therefore the layout of the menus is
 also defined in these functions."""
+from __future__ import division
 from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
     BSAList, ScreensList, MasterList, bEnableWizard, PeopleList, \
     BashStatusBar, BashNotebook
@@ -50,7 +51,7 @@ from .bsa_links import *
 def InitStatusBar():
     """Initialize status bar links."""
     def imageList(template):
-        return [Image(bass.dirs['images'].join(template % i)) for i in
+        return [Image(bass.dirs['images'].joinpath(template % i)) for i in
                 (16, 24, 32)]
     def _init_tool_buttons(): # tooldirs must have been initialized
         return (((bass.tooldirs['OblivionBookCreatorPath'],
@@ -74,21 +75,21 @@ def InitStatusBar():
     BashStatusBar.buttons.append(AutoQuit_Button(uid=u'AutoQuit'))
     BashStatusBar.buttons.append( # Game
         Game_Button(
-            bass.dirs['app'].join(bush.game.launch_exe),
-            bass.dirs['app'].join(*bush.game.version_detect_file),
+            bass.dirs['app'] / bush.game.launch_exe,
+            bass.dirs['app'].joinpath(*bush.game.version_detect_file),
             imageList(u'%s%%s.png' % bush.game.fsName.lower()),
             u' '.join((_(u"Launch"),bush.game.displayName)),
             u' '.join((_(u"Launch"),bush.game.displayName,u'%(version)s'))))
     BashStatusBar.buttons.append( #TESCS/CreationKit
         TESCS_Button(
-            bass.dirs['app'].join(bush.game.cs.exe),
+            bass.dirs['app'] / bush.game.cs.exe,
             imageList(bush.game.cs.image_name),
             u' '.join((_(u"Launch"),bush.game.cs.cs_abbrev)),
             u' '.join((_(u"Launch"),bush.game.cs.cs_abbrev,u'%(version)s')),
             bush.game.cs.se_args,
             uid=u'TESCS'))
     BashStatusBar.buttons.append( #OBMM
-        App_Button(bass.dirs['app'].join(u'OblivionModManager.exe'),
+        App_Button(bass.dirs['app'] / u'OblivionModManager.exe',
                    imageList(u'obmm%s.png'),
                    _(u"Launch OBMM"),
                    uid=u'OBMM'))
@@ -183,8 +184,8 @@ def InitStatusBar():
     from .constants import misc_tools
     for mt in misc_tools: BashStatusBar.buttons.append(Tooldir_Button(*mt))
     #--Custom Apps
-    dirApps = bass.dirs['mopy'].join(u'Apps')
-    badIcons = [Image(bass.dirs['images'].join(u'error_cross_16.png'))] * 3
+    dirApps = bass.dirs['mopy'] / u'Apps'
+    badIcons = [Image(bass.dirs['images'].joinpath(u'error_cross_16.png'))] * 3
     def iconList(fileName):
         return [Image(fileName, Image.typesDict['ico'], x) for x in
                 (16, 24, 32)]

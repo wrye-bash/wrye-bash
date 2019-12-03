@@ -29,6 +29,7 @@ http://www.uesp.net/wiki/Tes4Mod:BSA_File_Format
 http://www.uesp.net/wiki/Tes5Mod:Archive_File_Format
 """
 
+from __future__ import division
 import collections
 import errno
 import os

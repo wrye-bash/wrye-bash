@@ -136,7 +136,7 @@ class OmodFile(object):
         """Extract the contents of the omod to a project, with omod conversion data"""
         progress = progress if progress else bolt.Progress()
         extractDir = stageBaseDir = Path.tempDir()
-        stageDir = stageBaseDir.join(outDir.tail)
+        stageDir = stageBaseDir / outDir.tail
 
         try:
             # Get contents of archive
@@ -162,27 +162,27 @@ class OmodFile(object):
 
             # Get compression type
             progress(0.4, self.omod_path.stail + u'\n' + _(u'Reading config'))
-            self.readConfig(extractDir.join(u'config'))
+            self.readConfig(extractDir / u'config')
 
             # Collect OMOD conversion data
-            ocdDir = stageDir.join(u'omod conversion data')
+            ocdDir = stageDir / u'omod conversion data'
             progress(0.46, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\ninfo.txt')
-            self.writeInfo(ocdDir.join(u'info.txt'), self.omod_path.stail, extractDir.join(u'readme').exists(), extractDir.join(u'script').exists())
+            self.writeInfo(ocdDir / u'info.txt', self.omod_path.stail, extractDir.joinpath(u'readme').exists(), extractDir.joinpath(u'script').exists())
             progress(0.47, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nscript')
-            if extractDir.join(u'script').exists():
-                with open(extractDir.join(u'script').s, 'rb') as ins:
-                    with ocdDir.join(u'script.txt').open('w') as output:
+            if extractDir.joinpath(u'script').exists():
+                with open(extractDir.joinpath(u'script').s, 'rb') as ins:
+                    with ocdDir.joinpath(u'script.txt').open('w') as output:
                         output.write(_readNetString(ins))
             progress(0.48, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nreadme.rtf')
-            if extractDir.join(u'readme').exists():
-                with open(extractDir.join(u'readme').s, 'rb') as ins:
-                    with ocdDir.join(u'readme.rtf').open('w') as output:
+            if extractDir.joinpath(u'readme').exists():
+                with open(extractDir.joinpath(u'readme').s, 'rb') as ins:
+                    with ocdDir.joinpath(u'readme.rtf').open('w') as output:
                         output.write(_readNetString(ins))
             progress(0.49, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nscreenshot')
-            if extractDir.join(u'image').exists():
-                extractDir.join(u'image').moveTo(ocdDir.join(u'screenshot'))
+            if extractDir.joinpath(u'image').exists():
+                extractDir.joinpath(u'image').moveTo(ocdDir / u'screenshot')
             progress(0.5, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nconfig')
-            extractDir.join(u'config').moveTo(ocdDir.join(u'config'))
+            extractDir.joinpath(u'config').moveTo(ocdDir / u'config')
 
             # Extract the files
             if self.compType == 0:
@@ -194,12 +194,12 @@ class OmodFile(object):
             dataSize = sizes.get('data',0)
             subprogress = bolt.SubProgress(progress, 0.5, 1)
             with stageDir.unicodeSafe() as tempOut:
-                if extractDir.join(u'plugins.crc').exists() and extractDir.join(u'plugins').exists():
+                if extractDir.joinpath(u'plugins.crc').exists() and extractDir.joinpath(u'plugins').exists():
                     pluginProgress = bolt.SubProgress(subprogress, 0, float(pluginSize)/(pluginSize+dataSize))
-                    extract(extractDir.join(u'plugins.crc'),extractDir.join(u'plugins'),tempOut,pluginProgress)
-                if extractDir.join(u'data.crc').exists() and extractDir.join(u'data').exists():
+                    extract(extractDir / u'plugins.crc',extractDir / u'plugins',tempOut,pluginProgress)
+                if extractDir.joinpath(u'data.crc').exists() and extractDir.joinpath(u'data').exists():
                     dataProgress = bolt.SubProgress(subprogress, subprogress.state, 1)
-                    extract(extractDir.join(u'data.crc'),extractDir.join(u'data'),tempOut,dataProgress)
+                    extract(extractDir / u'data.crc',extractDir / u'data',tempOut,dataProgress)
                 progress(1, self.omod_path.stail + u'\n' + _(u'Extracted'))
 
             # Move files to final directory
@@ -225,13 +225,13 @@ class OmodFile(object):
 
         # Split the uncompress stream into files
         progress(0.7, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % dataPath.stail)
-        self.splitStream(outPath.join(u'a'), outPath, fileNames, sizes,
+        self.splitStream(outPath / u'a', outPath, fileNames, sizes,
                          bolt.SubProgress(progress,0.7,1.0,len(fileNames))
                          )
         progress(1)
 
         # Clean up
-        outPath.join(u'a').remove()
+        outPath.joinpath(u'a').remove()
 
     def splitStream(self, streamPath, outDir, fileNames, sizes, progress):
         # Split the uncompressed stream into files
@@ -239,7 +239,7 @@ class OmodFile(object):
         with streamPath.open('rb') as file:
             for i,name in enumerate(fileNames):
                 progress(i, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % streamPath.stail + u'\n' + name)
-                outFile = outDir.join(name)
+                outFile = outDir / name
                 with outFile.open('wb') as output:
                     output.write(file.read(sizes[i]))
         progress(len(fileNames))
@@ -254,7 +254,7 @@ class OmodFile(object):
         subprogress(0, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % dataPath.stail)
         with dataPath.open('rb') as ins:
             done = 0
-            with open(outPath.join(dataPath.sbody+u'.tmp').s, 'wb') as output:
+            with open(outPath.joinpath(dataPath.sbody+u'.tmp').s, 'wb') as output:
                 # Decoder properties
                 output.write(ins.read(5))
                 done += 5
@@ -275,19 +275,19 @@ class OmodFile(object):
 
         # Now decompress
         progress(0.3)
-        cmd = [bass.dirs['compiled'].join(u'lzma').s,u'd',outPath.join(dataPath.sbody+u'.tmp').s, outPath.join(dataPath.sbody+u'.uncomp').s]
+        cmd = [bass.dirs['compiled'].joinpath(u'lzma').s,u'd',outPath.joinpath(dataPath.sbody+u'.tmp').s, outPath.joinpath(dataPath.sbody+u'.uncomp').s]
         subprocess.call(cmd,startupinfo=startupinfo)
         progress(0.8)
 
         # Split the uncompressed stream into files
-        self.splitStream(outPath.join(dataPath.sbody+u'.uncomp'), outPath, fileNames, sizes,
+        self.splitStream(outPath.joinpath(dataPath.sbody+u'.uncomp'), outPath, fileNames, sizes,
                          bolt.SubProgress(progress,0.8,1.0,full=len(fileNames))
                          )
         progress(1)
 
         # Clean up temp files
-        outPath.join(dataPath.sbody+u'.uncomp').remove()
-        outPath.join(dataPath.sbody+u'.tmp').remove()
+        outPath.joinpath(dataPath.sbody+u'.uncomp').remove()
+        outPath.joinpath(dataPath.sbody+u'.tmp').remove()
 
     @staticmethod
     def getFile_CrcSizes(crc_file_path):
@@ -317,7 +317,7 @@ class OmodConfig(object):
     def getOmodConfig(name):
         """Get obmm config file for project."""
         config = OmodConfig(name)
-        configPath = bass.dirs['installers'].join(name,u'omod conversion data',u'config')
+        configPath = bass.dirs['installers'].joinpath(name,u'omod conversion data',u'config')
         if configPath.exists():
             with open(configPath.s,'rb') as ins:
                 ins.read(1) #--Skip first four bytes
@@ -335,7 +335,7 @@ class OmodConfig(object):
     @staticmethod
     def writeOmodConfig(name, config):
         """Write obmm config file for project."""
-        configPath = bass.dirs['installers'].join(name,u'omod conversion data',u'config')
+        configPath = bass.dirs['installers'].joinpath(name,u'omod conversion data',u'config')
         configPath.head.makedirs()
         with open(configPath.temp.s,'wb') as out:
             out.write(struct_pack('B', 4))

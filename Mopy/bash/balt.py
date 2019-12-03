@@ -271,7 +271,7 @@ class ColorChecks(ImageList):
                            u'red'):
                 shortKey = status + u'.' + state
                 image_key = u'checkbox.' + shortKey
-                img = GPath(bass.dirs['images'].join(
+                img = GPath(bass.dirs['images'].joinpath(
                     u'checkbox_' + status + u'_' + state + u'.png'))
                 image = images[image_key] = Image(img, Image.typesDict['png'])
                 self.Add(image, shortKey)
@@ -1084,7 +1084,7 @@ class WryeLog(_Log):
             logPath = logText
         else:
             logPath = _settings.get('balt.WryeLog.temp',
-                bolt.Path.cwd().join(u'WryeLogTemp.html'))
+                bolt.Path.cwd() / u'WryeLogTemp.html')
             convert_wtext_to_html(logPath, logText)
         super(WryeLog, self).__init__(parent, logText, title, asDialog,
                                       fixedFont, log_icons)
@@ -2140,7 +2140,7 @@ class UIList(wx.Panel):
     def OnLabelEdited(self,event): event.Skip()
 
     def _try_rename(self, key, newFileName, to_select, item_edited=None):
-        newPath = self.data_store.store_dir.join(newFileName)
+        newPath = self.data_store.store_dir / newFileName
         if not newPath.exists():
             try:
                 self.data_store.rename_info(key, newFileName)
@@ -2224,7 +2224,7 @@ class UIList(wx.Panel):
             _(u'Trying to open %(num)s items - are you sure ?') % {'num': num},
             'bash.maxItemsOpen.continue'): return
         for filename in selected:
-            filepath = self.data_store.store_dir.join(filename)
+            filepath = self.data_store.store_dir / filename
             try:
                 filepath.start()
             except OSError:
@@ -2461,7 +2461,7 @@ class UIList(wx.Panel):
     def hide(self, keys):
         for key in keys:
             destDir = self.data_store.get_hide_dir(key)
-            if destDir.join(key).exists():
+            if destDir.joinpath(key).exists():
                 message = (_(u'A file named %s already exists in the hidden '
                              u'files directory. Overwrite it?') % key.s)
                 if not askYes(self, message, _(u'Hide Files')): continue
@@ -2487,7 +2487,7 @@ class UIList(wx.Panel):
     @staticmethod
     def new_path(new_name, dest_dir):
         base_name, count = new_name, 0
-        while dest_dir.join(new_name).exists() and count < 1000:
+        while dest_dir.joinpath(new_name).exists() and count < 1000:
             new_name, count = UIList._new_name(base_name, count)
         return new_name
 
@@ -3107,7 +3107,7 @@ def ask_uac_restart(message, title, mopy):
                 u'for more information.') % {'readmePath': readme}])
 
 def readme_url(mopy, advanced=False):
-    readme = mopy.join(u'Docs',
+    readme = mopy.joinpath(u'Docs',
                        u'Wrye Bash Advanced Readme.html' if advanced else
                        u'Wrye Bash General Readme.html')
     if readme.exists():
@@ -3266,7 +3266,7 @@ class WryeBashSplashScreen(wx.SplashScreen):
     """This Creates the Splash Screen widget. (The first image you see when
     starting the Application.)"""
     def __init__(self, parent=None):
-        splashScreenBitmap = wx.Image(name=bass.dirs['images'].join(
+        splashScreenBitmap = wx.Image(name=bass.dirs['images'].joinpath(
             u'wryesplash.png').s).ConvertToBitmap()
         splashStyle = (wx.SPLASH_CENTRE_ON_SCREEN | #Center image on the screen
                        wx.SPLASH_NO_TIMEOUT) # image will stay until clicked by

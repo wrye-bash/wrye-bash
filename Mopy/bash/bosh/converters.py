@@ -48,7 +48,7 @@ class ConvertersData(DataDict):
         self.dup_bcfs_dir = dup_bcfs_dir
         self.corrupt_bcfs_dir = corrupt_bcfs_dir
         #--Persistent data
-        self.converterFile = PickleDict(bain_data_dir.join(u'Converters.dat'))
+        self.converterFile = PickleDict(bain_data_dir / u'Converters.dat')
         self.srcCRC_converters = {}
         self.bcfCRC_converter = {}
         #--Volatile
@@ -71,7 +71,7 @@ class ConvertersData(DataDict):
         self._prune_converters()
         archives_set = set()
         scanned = set()
-        convertersJoin = converters_dir.join
+        convertersJoin = converters_dir.joinpath
         converterGet = self.bcfPath_sizeCrcDate.get
         archivesAdd = archives_set.add
         scannedAdd = scanned.add
@@ -100,7 +100,7 @@ class ConvertersData(DataDict):
         progress = progress or bolt.Progress()
         pending = set()
         bcfCRC_converter = self.bcfCRC_converter
-        convJoin = converters_dir.join
+        convJoin = converters_dir.joinpath
         #--Current converters
         newData = dict()
         if fullRefresh:
@@ -121,7 +121,7 @@ class ConvertersData(DataDict):
                         self.bcfPath_sizeCrcDate.pop(bcfPath, None)
                         if bcfCRC_converter[crc].fullPath.exists():
                             bcfPath.moveTo(
-                                    self.dup_bcfs_dir.join(bcfPath.tail))
+                                    self.dup_bcfs_dir / bcfPath.tail)
                         continue
                 self.bcfPath_sizeCrcDate[bcfPath] = (size, crc, modified)
                 if fullRefresh or crc not in bcfCRC_converter:
@@ -163,15 +163,15 @@ class ConvertersData(DataDict):
             try:
                 newConverter = InstallerConverter(converter)
             except:
-                fullPath = converters_dir.join(converter)
-                fullPath.moveTo(self.corrupt_bcfs_dir.join(converter.tail))
+                fullPath = converters_dir / converter
+                fullPath.moveTo(self.corrupt_bcfs_dir / converter.tail)
                 del self.bcfPath_sizeCrcDate[fullPath]
                 return False
         #--Check if overriding an existing converter
         oldConverter = self.bcfCRC_converter.get(newConverter.crc)
         if oldConverter:
             oldConverter.fullPath.moveTo(
-                    self.dup_bcfs_dir.join(oldConverter.fullPath.tail))
+                    self.dup_bcfs_dir / oldConverter.fullPath.tail)
             self.removeConverter(oldConverter)
         #--Link converter to Bash
         srcCRC_converters = self.srcCRC_converters
@@ -195,7 +195,7 @@ class ConvertersData(DataDict):
             self.bcfPath_sizeCrcDate.pop(converter.fullPath, None)
         else:
             #--Removing by filepath
-            bcfPath = converters_dir.join(converter)
+            bcfPath = converters_dir / converter
             size, crc, modified = self.bcfPath_sizeCrcDate.pop(bcfPath, (
                 None, None, None))
             if crc is not None:
@@ -255,13 +255,13 @@ class InstallerConverter(object):
         #--Cheap init overloading...
         if idata is not None:
             #--Build a BCF from scratch
-            self.fullPath = converters_dir.join(BCFArchive)
+            self.fullPath = converters_dir / BCFArchive
             self.build(srcArchives, idata, destArchive, BCFArchive, blockSize,
                        progress, crc_installer)
             self.crc = self.fullPath.crc
         elif isinstance(srcArchives, bolt.Path):
             #--Load a BCF from file
-            self.fullPath = converters_dir.join(srcArchives)
+            self.fullPath = converters_dir / srcArchives
             self.load()
             self.crc = self.fullPath.crc
         #--Else is loading from Converters.dat, called by __setstate__
@@ -315,7 +315,7 @@ class InstallerConverter(object):
         def _dump(att, dat):
             cPickle.dump(tuple(map(self.__getattribute__, att)), dat, -1)
         try:
-            with bass.getTempDir().join(u'BCF.dat').open('wb') as f:
+            with bass.getTempDir().joinpath(u'BCF.dat').open('wb') as f:
                 _dump(self.persistBCF, f)
                 _dump(self._converter_settings + self.volatile + self.addedSettings, f)
         except Exception as e:
@@ -387,8 +387,8 @@ class InstallerConverter(object):
         progress.setFull(1 + len(self.convertedFiles))
         #--Make a copy of dupeCount
         dupes = dict(self.dupeCount.iteritems())
-        destJoin = destDir.join
-        tempJoin = tmpDir.join
+        destJoin = destDir.joinpath
+        tempJoin = tmpDir.joinpath
 
         #--Move every file
         for index, (crcValue, srcDir_File, destFile) in enumerate(
@@ -475,10 +475,10 @@ class InstallerConverter(object):
             #--Note all extracted files
             tmpDir = bass.getTempDir()
             for crc in tmpDir.list():
-                fpath = tmpDir.join(crc)
+                fpath = tmpDir / crc
                 for root_dir, y, files in fpath.walk():
                     for file in files:
-                        file = root_dir.join(file)
+                        file = root_dir / file
                         archivedFiles[file.crc] = (crc, file.s[len(fpath)+1:])
             #--Add the extracted files to the source files list
             srcFiles.update(archivedFiles)
@@ -520,7 +520,7 @@ class InstallerConverter(object):
             sProgress(index, BCFArchive.s + u'\n' + _(
                     u'Mapping files...') + u'\n' + fileName)
         #--Build the BCF
-        tempDir2 = bass.newTempDir().join(u'BCF-Missing')
+        tempDir2 = bass.newTempDir() / u'BCF-Missing'
         if len(self.bcf_missing_files):
             #--Unpack missing files
             bass.rmTempDir()
@@ -531,7 +531,7 @@ class InstallerConverter(object):
             #--Work around since moveTo doesn't allow direct moving of a
             # directory into its own subdirectory
             unpack_dir.moveTo(tempDir2)
-            tempDir2.moveTo(unpack_dir.join(u'BCF-Missing'))
+            tempDir2.moveTo(unpack_dir / u'BCF-Missing')
         #--Make the temp dir in case it doesn't exist
         tmpDir = bass.getTempDir()
         tmpDir.makedirs()
@@ -563,7 +563,7 @@ class InstallerConverter(object):
         if not fileNames: raise ArgumentError(
                 u"No files to extract for %s." % srcInstaller)
         tmpDir = bass.getTempDir()
-        tempList = bolt.Path.baseTempDir().join(u'WryeBash_listfile.txt')
+        tempList = bolt.Path.baseTempDir() / u'WryeBash_listfile.txt'
         #--Dump file list
         try:
             with tempList.open('w', encoding='utf-8-sig') as out:
@@ -576,10 +576,10 @@ class InstallerConverter(object):
         from . import InstallerArchive
         if isinstance(srcInstaller, InstallerArchive):
             srcInstaller = GPath(srcInstaller.archive)
-            apath = installers_dir.join(srcInstaller)
+            apath = installers_dir / srcInstaller
         else:
             apath = srcInstaller
-        subTempDir = tmpDir.join(u"%08X" % installerCRC)
+        subTempDir = tmpDir.joinpath(u"%08X" % installerCRC)
         if progress:
             progress(0, srcInstaller.s + u'\n' + _(u'Extracting files...'))
             progress.setFull(1 + len(fileNames))
@@ -592,5 +592,5 @@ class InstallerConverter(object):
             tempList.remove()
             bolt.clearReadOnly(subTempDir) ##: do this once
         #--Recursively unpack subArchives
-        for archive in map(subTempDir.join, subArchives):
+        for archive in map(subTempDir.joinpath, subArchives):
             self._unpack(archive, [u'*']) # it will also unpack the embedded BCF if any...

@@ -31,6 +31,7 @@ Installer_Subs_*: Menu items for the Sub-Packages list in the installer tab.
 Their window attribute points to the InstallersPanel singleton.
 """
 
+from __future__ import division
 import StringIO
 import os
 import re
@@ -123,7 +124,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
         if not archive_path.s:
             self._showWarning(_(u'%s is not a valid archive name.') % result)
             return
-        if self.idata.store_dir.join(archive_path).is_dir():
+        if self.idata.store_dir.joinpath(archive_path).is_dir():
             self._showWarning(_(u'%s is a directory.') % archive_path.s)
             return
         if archive_path.cext not in archives.writeExts:
@@ -335,7 +336,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         lastApplied = None
         new_targets = {}
         for iniFile, wizardEdits in ret.ini_edits.iteritems():
-            outFile = bass.dirs['ini_tweaks'].join(u'%s - Wizard Tweak [%s].ini' %
+            outFile = bass.dirs['ini_tweaks'].joinpath(u'%s - Wizard Tweak [%s].ini' %
                 (installer.archive, iniFile.sbody))
             with outFile.open('w') as out:
                 for line in generateTweakLines(wizardEdits, iniFile):
@@ -350,7 +351,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                 target_path = game_ini.abs_path
                 target_ini_file = game_ini
             else: # suppose that the target ini file is in the Data/ dir
-                target_path = bass.dirs['mods'].join(iniFile)
+                target_path = bass.dirs['mods'] / iniFile
                 new_targets[target_path.stail] = target_path
                 if not (iniFile.s in installer.ci_dest_sizeCrc and
                         ret.should_install):
@@ -465,7 +466,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
     def Execute(self):
         """Duplicate selected Installer."""
         curName = self._selected_item
-        isdir = self.idata.store_dir.join(curName).is_dir()
+        isdir = self.idata.store_dir.joinpath(curName).is_dir()
         if isdir: root,ext = curName,u''
         else: root,ext = curName.root, curName.suffix
         newName = self.window.new_name(root + _(u' Copy') + ext)
@@ -480,7 +481,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         if newName in self.idata:
             self._showWarning(_(u"%s already exists.") % newName.s)
             return
-        if self.idata.store_dir.join(curName).is_file() and curName.cext != newName.cext:
+        if self.idata.store_dir.joinpath(curName).is_file() and curName.cext != newName.cext:
             self._showWarning(_(u"%s does not have correct extension (%s).")
                               % (newName.s,curName.suffix))
             return
@@ -635,9 +636,9 @@ class Installer_ExportAchlist(OneItemLink, _InstallerLink):
                                            bosh.InstallerMarker)
 
     def Execute(self):
-        info_dir = bass.dirs['app'].join(self.__class__._mode_info_dir)
+        info_dir = bass.dirs['app'] / self.__class__._mode_info_dir
         info_dir.makedirs()
-        achlist = info_dir.join(self._selected_info.archive + u'.achlist')
+        achlist = info_dir.joinpath(self._selected_info.archive + u'.achlist')
         with balt.BusyCursor(), open(achlist.s, 'w') as out:
             out.write(u'[\n\t"')
             lines = u'",\n\t"'.join(
@@ -840,7 +841,7 @@ class Installer_CopyConflicts(_SingleInstallable):
             numFiles += len(srcConflicts)
         if not numFiles:
             return _ok(_(u'No conflicts detected for %s'))
-        ijoin = self.idata.store_dir.join
+        ijoin = self.idata.store_dir.joinpath
         def _copy_conflicts(curFile):
             inst = self.idata[package]
             if isinstance(inst, bosh.InstallerProject):
@@ -1102,7 +1103,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                     self._showWarning(_(u"%s is not a valid project name.") %
                                       result)
                     return
-                if self.idata.store_dir.join(project).is_file():
+                if self.idata.store_dir.joinpath(project).is_file():
                     self._showWarning(_(u"%s is a file.") % project.s)
                     return
             if project in self.idata:
@@ -1335,7 +1336,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
                       u" be discarded.") % (
                               archives.defaultExt, BCFArchive.cext))
             BCFArchive = GPath(BCFArchive.sbody + archives.defaultExt).tail
-        if bass.dirs['converters'].join(BCFArchive).exists():
+        if bass.dirs['converters'].joinpath(BCFArchive).exists():
             if not self._askYes(_(
                     u'%s already exists. Overwrite it?') % BCFArchive.s,
                                 title=self.dialogTitle, default=False): return

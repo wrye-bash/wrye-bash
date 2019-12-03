@@ -1213,7 +1213,7 @@ class _EditableMixinOnFileInfos(_EditableMixin):
         elif not self._validate_filename(fileStr):
             self.file.SetValue(self.fileStr)
         #--Else file exists?
-        elif self.file_info.dir.join(fileStr).exists():
+        elif self.file_info.dir.joinpath(fileStr).exists():
             balt.showError(self,_(u"File %s already exists.") % fileStr)
             self.file.SetValue(self.fileStr)
         #--Okay?
@@ -1561,7 +1561,7 @@ class ModDetails(_SashDetailsPanel):
         class _CopyBashTagsDir(EnabledLink):
             _text = _(u'Copy to Data/BashTags')
             _help = _(u'Copies currently applied tags to %s.') % (
-                bass.dirs['tag_files'].join(mod_info.name.body + u'.txt'))
+                bass.dirs['tag_files'].joinpath(mod_info.name.body + u'.txt'))
             def _enable(self): return not is_auto and mod_tags != bashTagsDesc
             def Execute(self):
                 """Copy manually assigned bash tags into the Data/BashTags
@@ -2317,7 +2317,7 @@ class InstallersList(balt.UIList):
         try:
             for i, omod in enumerate(omodnames):
                 progress(i, omod.stail)
-                outDir = bass.dirs['installers'].join(omod.body)
+                outDir = bass.dirs['installers'] / omod.body
                 if outDir.exists():
                     if balt.askYes(progress.dialog, _(
                         u"The project '%s' already exists.  Overwrite "
@@ -2419,8 +2419,8 @@ class InstallersList(balt.UIList):
         action = self._askCopyOrMove(filenames)
         if action not in ['COPY','MOVE']: return
         with balt.BusyCursor():
-            installersJoin = bass.dirs['installers'].join
-            convertersJoin = bass.dirs['converters'].join
+            installersJoin = bass.dirs['installers'].joinpath
+            convertersJoin = bass.dirs['converters'].joinpath
             filesTo = [installersJoin(x.tail) for x in filenames]
             filesTo.extend(convertersJoin(x.tail) for x in converters)
             filenames.extend(converters)
@@ -2502,7 +2502,7 @@ class InstallersList(balt.UIList):
             self.addMarker()
         # Ctrl+C: Copy file(s) to clipboard
         elif event.CmdDown() and code == ord('C'):
-            sel = map(lambda x: bass.dirs['installers'].join(x).s,
+            sel = map(lambda x: bass.dirs['installers'].joinpath(x).s,
                       self.GetSelected())
             balt.copyListToClipboard(sel)
         super(InstallersList, self).OnKeyUp(event)
@@ -3012,7 +3012,7 @@ class InstallersPanel(BashTab):
         with balt.Progress(_(u'Extracting OMODs...'),
                            u'\n' + u' ' * 60) as progress:
             dirInstallers = bass.dirs['installers']
-            dirInstallersJoin = dirInstallers.join
+            dirInstallersJoin = dirInstallers.joinpath
             omods = [dirInstallersJoin(x) for x in dirInstallers.list() if
                      x.cext == u'.omod']
             progress.setFull(max(len(omods), 1))
@@ -3171,7 +3171,7 @@ class ScreensList(balt.UIList):
         code = event.GetKeyCode()
         # Ctrl+C: Copy file(s) to clipboard
         if event.CmdDown() and code == ord('C'):
-            sel = map(lambda x: bosh.screensData.store_dir.join(x).s,
+            sel = map(lambda x: bosh.screensData.store_dir.joinpath(x).s,
                       self.GetSelected())
             balt.copyListToClipboard(sel)
         super(ScreensList, self).OnKeyUp(event)
@@ -3198,7 +3198,7 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
         #--Reset?
         self.displayed_screen = super(ScreensDetails, self).SetFile(fileName)
         if not self.displayed_screen: return
-        filePath = bosh.screensData.store_dir.join(self.displayed_screen)
+        filePath = bosh.screensData.store_dir / self.displayed_screen
         bitmap = Image(filePath.s).GetBitmap() if filePath.exists() else None
         self.screenshot_control.SetBitmap(bitmap)
 
@@ -3992,7 +3992,7 @@ class BashFrame(BaltFrame):
 
     def _missingDocsDir(self):
         #--Missing docs directory?
-        testFile = bass.dirs['mopy'].join(u'Docs', u'wtxt_teal.css')
+        testFile = bass.dirs['mopy'].joinpath(u'Docs', u'wtxt_teal.css')
         if self.incompleteInstallError or testFile.exists(): return
         self.incompleteInstallError = True
         msg = _(u'Installation appears incomplete.  Please re-unzip bash '
@@ -4063,10 +4063,10 @@ class BashFrame(BaltFrame):
         #--Clean backup
         for fileInfos in (bosh.modInfos,bosh.saveInfos):
             goodRoots = set(p.root for p in fileInfos.keys())
-            backupDir = fileInfos.bash_dir.join(u'Backups')
+            backupDir = fileInfos.bash_dir / u'Backups'
             if not backupDir.is_dir(): continue
             for name in backupDir.list():
-                back_path = backupDir.join(name)
+                back_path = backupDir / name
                 if name.root not in goodRoots and back_path.is_file():
                     back_path.remove()
 
@@ -4092,7 +4092,7 @@ class BashApp(wx.App):
                            elapsed=False) as progress:
             # Is splash enabled in ini ?
             if bass.inisettings['EnableSplashScreen']:
-                if bass.dirs['images'].join(u'wryesplash.png').exists():
+                if bass.dirs['images'].joinpath(u'wryesplash.png').exists():
                     try:
                             splashScreen = balt.WryeBashSplashScreen()
                             splashScreen.Show()
@@ -4203,8 +4203,8 @@ def InitSettings(): # this must run first !
     # Plugin encoding used to decode mod string fields
     bolt.pluginEncoding = bass.settings['bash.pluginEncoding']
     #--Wrye Balt
-    settings['balt.WryeLog.temp'] = bass.dirs['saveBase'].join(u'WryeLogTemp.html')
-    settings['balt.WryeLog.cssDir'] = bass.dirs['mopy'].join(u'Docs')
+    settings['balt.WryeLog.temp'] = bass.dirs['saveBase'] / u'WryeLogTemp.html'
+    settings['balt.WryeLog.cssDir'] = bass.dirs['mopy'] / u'Docs'
     #--StandAlone version?
     settings['bash.standalone'] = hasattr(sys,'frozen')
     initPatchers()
@@ -4214,13 +4214,13 @@ def InitImages():
     #--Colors
     for key,value in settings['bash.colors'].iteritems(): colors[key] = value
     #--Images
-    imgDirJn = bass.dirs['images'].join
+    imgDirJn = bass.dirs['images'].joinpath
     def _png(fname): return Image(imgDirJn(fname))
     #--Standard
     images['save.on'] = _png(u'save_on.png')
     images['save.off'] = _png(u'save_off.png')
     #--Misc
-    #images['oblivion'] = Image(GPath(bass.dirs['images'].join(u'oblivion.png')),png)
+    #images['oblivion'] = Image(GPath(bass.dirs['images'] / u'oblivion.png'),png)
     images['help.16'] = _png(u'help16.png')
     images['help.24'] = _png(u'help24.png')
     images['help.32'] = _png(u'help32.png')

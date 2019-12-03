@@ -23,6 +23,7 @@
 # =============================================================================
 
 """This module contains some constants ripped out of basher.py"""
+from __future__ import division
 from .. import bass, bush
 from ..balt import Image, ImageList, defPos
 
@@ -404,7 +405,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
 
 # Images ----------------------------------------------------------------------
 #------------------------------------------------------------------------------
-imDirJn = bass.dirs['images'].join
+imDirJn = bass.dirs['images'].joinpath
 def _png(fname): return Image(imDirJn(fname))
 
 #--Image lists

@@ -60,7 +60,7 @@ class Saves_ProfilesData(balt.ListEditorData):
     """Data capsule for save profiles editing dialog."""
     def __init__(self,parent):
         """Initialize."""
-        self.baseSaves = bass.dirs['saveBase'].join(u'Saves')
+        self.baseSaves = bass.dirs['saveBase'] / u'Saves'
         #--GUI
         balt.ListEditorData.__init__(self,parent)
         self.showAdd    = True
@@ -105,7 +105,7 @@ class Saves_ProfilesData(balt.ListEditorData):
             balt.showError(self.parent,
                 _(u'Name must be encodable in Windows Codepage 1252 (Western European), due to limitations of %(gameIni)s.') % {'gameIni':bush.game.iniFiles[0]})
             return False
-        self.baseSaves.join(newName).makedirs()
+        self.baseSaves.joinpath(newName).makedirs()
         newSaves = _win_join(newName)
         bosh.saveInfos.profiles.setItem(newSaves,'vOblivion',bosh.modInfos.voCurrent)
         return newName
@@ -123,7 +123,7 @@ class Saves_ProfilesData(balt.ListEditorData):
                 _(u'Name must be between 1 and 64 characters long.'))
             return False
         #--Rename
-        oldDir, newDir = (self.baseSaves.join(subdir) for subdir in
+        oldDir, newDir = (self.baseSaves / subdir for subdir in
                           (oldName, newName))
         oldDir.moveTo(newDir)
         oldSaves, newSaves = (_win_join(name_) for name_ in (oldName, newName))
@@ -141,7 +141,7 @@ class Saves_ProfilesData(balt.ListEditorData):
             balt.showError(self.parent,_(u'Active profile cannot be removed.'))
             return False
         #--Get file count. If > zero, verify with user.
-        profileDir = bass.dirs['saveBase'].join(profileSaves)
+        profileDir = bass.dirs['saveBase'] / profileSaves
         files = [save for save in profileDir.list() if
                  bosh.SaveInfos.rightFileType(save)]
         if files:
@@ -149,7 +149,7 @@ class Saves_ProfilesData(balt.ListEditorData):
             if not balt.askYes(self.parent,message,_(u'Delete Profile')):
                 return False
         #--Remove directory
-        if GPath(bush.game.fsName).join(u'Saves').s not in profileDir.s:
+        if GPath(bush.game.fsName).joinpath(u'Saves').s not in profileDir.s:
             raise BoltError(u'Sanity check failed: No "%s\\Saves" in %s.' % (bush.game.fsName,profileDir.s))
         shutil.rmtree(profileDir.s) #--DO NOT SCREW THIS UP!!!
         bosh.saveInfos.profiles.delRow(profileSaves)
@@ -170,7 +170,7 @@ class Saves_Profiles(ChoiceLink):
     class _ProfileLink(CheckLink, EnabledLink):
         @property
         def menu_help(self):
-            profile_dir = Saves_Profiles._my_games.join(self._text)
+            profile_dir = Saves_Profiles._my_games / self._text
             return _(u'Set profile to %s (%s)') % (self._text, profile_dir)
         @property
         def relativePath(self): return _win_join(self._text)
@@ -196,7 +196,7 @@ class Saves_Profiles(ChoiceLink):
 
         @property
         def menu_help(self):
-            profile_dir = Saves_Profiles._my_games.join(bush.game.save_prefix)
+            profile_dir = Saves_Profiles._my_games / bush.game.save_prefix
             return _(u'Set profile to the default (%s)' % profile_dir)
 
         @property
@@ -608,7 +608,7 @@ class Save_Move(ChoiceLink):
         _self = self
         class _Default(EnabledLink):
             _text = _(u'Default')
-            _help = _self._help_str % bass.dirs['saveBase'].join(
+            _help = _self._help_str % bass.dirs['saveBase'].joinpath(
                 bush.game.save_prefix)
             def _enable(self):
                 return Save_Move.local != bush.game.save_prefix
@@ -616,7 +616,7 @@ class Save_Move(ChoiceLink):
         class _SaveProfileLink(EnabledLink):
             @property
             def menu_help(self):
-                return _self._help_str % bass.dirs['saveBase'].join(
+                return _self._help_str % bass.dirs['saveBase'].joinpath(
                     bush.game.save_prefix, self._text)
             def _enable(self):
                 return Save_Move.local != _win_join(self._text)
@@ -625,9 +625,9 @@ class Save_Move(ChoiceLink):
         self.extraItems = [_Default()]
 
     def MoveFiles(self,profile):
-        destDir = bass.dirs['saveBase'].join(u'Saves')
+        destDir = bass.dirs['saveBase'] / u'Saves'
         if profile != _(u'Default'):
-            destDir = destDir.join(profile)
+            destDir = destDir / profile
         if destDir == bosh.saveInfos.store_dir:
             self._showError(_(u"You can't move saves to the current profile!"))
             return
@@ -645,11 +645,11 @@ class Save_Move(ChoiceLink):
     def _move_saves(self, destDir, profile):
         savesTable = bosh.saveInfos.table
         #--bashDir
-        destTable = bolt.Table(bolt.PickleDict(destDir.join('Bash','Table.dat')))
+        destTable = bolt.Table(bolt.PickleDict(destDir.joinpath('Bash','Table.dat')))
         count = 0
         ask = True
         for fileName in self.selected:
-            if ask and destDir.join(fileName).exists():
+            if ask and destDir.joinpath(fileName).exists():
                 message = (_(u'A file named %s already exists in %s. Overwrite it?')
                     % (fileName.s,profile))
                 result = self._askContinueShortTerm(message,

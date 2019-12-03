@@ -22,6 +22,7 @@
 #
 # =============================================================================
 
+from __future__ import division
 import re
 import time
 from ..balt import EnabledLink, AppendableLink, ItemLink, RadioLink, \
@@ -74,7 +75,7 @@ class Screens_NextScreenShot(EnabledLink):
             u'bAllowScreenShot': u'1', }}
         screensDir = GPath(newBase).head
         if screensDir:
-            if not screensDir.is_absolute(): screensDir = bass.dirs['app'].join(
+            if not screensDir.is_absolute(): screensDir = bass.dirs['app'].joinpath(
                 screensDir)
             screensDir.makedirs()
         oblivionIni.saveSettings(settings_screens)
@@ -103,7 +104,7 @@ class Screen_ConvertTo(EnabledLink):
                 progress.setFull(len(self.convertable))
                 for index, fileName in enumerate(self.convertable):
                     progress(index,fileName.s)
-                    srcPath = bosh.screensData.store_dir.join(fileName)
+                    srcPath = bosh.screensData.store_dir / fileName
                     destPath = srcPath.root+u'.'+self.suffix
                     if srcPath == destPath or destPath.exists(): continue
                     bitmap = Image.Load(srcPath, quality=bass.settings[

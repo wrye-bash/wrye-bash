@@ -24,6 +24,7 @@
 """Menu items for the _item_ menu of the BSAs tab - their window attribute
 points to BashFrame.bsaList singleton."""
 
+from __future__ import division
 from .. import archives, bass, balt
 from ..balt import ItemLink, Progress
 from ..bolt import GPath, SubProgress
@@ -59,7 +60,7 @@ class BSA_ExtractToProject(ItemLink):
         # More error checking
         # TODO(inf) Maybe create bosh.installers_data singleton?
         for project, _bsa_inf in to_unpack:
-            proj_path = bass.dirs['installers'].join(project)
+            proj_path = bass.dirs['installers'] / project
             if proj_path.isfile():
                 self._showWarning(_(u'%s is a file.') % project)
                 return
@@ -79,7 +80,7 @@ class BSA_ExtractToProject(ItemLink):
                 # TODO(inf) This loads the BSA twice! Create a dedicated API
                 #  method instead
                 bsa_inf.extract_assets(
-                    bsa_inf.assets, bass.dirs['installers'].join(project).s,
+                    bsa_inf.assets, bass.dirs['installers'].joinpath(project).s,
                     progress=SubProgress(prog, prog_curr, prog_next))
                 prog_curr += step_size
                 prog_next += step_size

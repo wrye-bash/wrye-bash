@@ -25,6 +25,7 @@
 """Menu items for the _main_ menu of the installer tab - their window attribute
 points to the InstallersList singleton."""
 
+from __future__ import division
 from . import Installers_Link
 from .dialogs import CreateNewProject
 from .. import bass, bosh, balt, bush, load_order
@@ -249,7 +250,7 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
         u'being deleted so you can retrieve them later if necessary.  '
         u'Note that if you use TES4LODGen, this will also clean out the '
         u'DistantLOD folder, so on completion please run TES4LodGen again.'
-        ) % bass.dirs['bainData'].join(u'Data Folder Contents <date>')
+        ) % bass.dirs['bainData'].joinpath(u'Data Folder Contents <date>')
 
     @balt.conversation
     def Execute(self):
@@ -384,7 +385,7 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
         super(Installers_BsaRedirection, self).Execute()
         if bass.settings[self.key]:
             # Undo any alterations done to the textures BSA
-            bsaPath = bosh.modInfos.store_dir.join(
+            bsaPath = bosh.modInfos.store_dir.joinpath(
                     bass.inisettings['OblivionTexturesBSAName'])
             bsaFile = bosh.bsa_files.OblivionBsa(bsaPath, load_cache=True,
                                                  names_only=False)

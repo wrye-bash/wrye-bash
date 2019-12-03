@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from __future__ import division
 import os
 import re
 import subprocess
@@ -46,7 +47,7 @@ reListArchive = re.compile(
     u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
 
 def compress7z(command, outDir, destArchive, srcDir, progress=None):
-    outFile = outDir.join(destArchive)
+    outFile = outDir / destArchive
     if progress is not None: #--Used solely for the progress bar
         length = sum([len(files) for x, y, files in walkdir(srcDir.s)])
         progress(0, destArchive.s + u'\n' + _(u'Compressing files...'))
@@ -153,12 +154,12 @@ def compressCommand(destArchive, destDir, srcFolder, solid=u'-ms=on',
     # 7zip-zstd defaults to zstd compression, but we want to be compatible with
     # regular 7zip, so specify LZMA2 explicitly
     compression_method = [u'-m0=lzma2'] if archiveType == u'7z' else []
-    return [exe7z, u'a', destDir.join(destArchive).temp.s,
+    return [exe7z, u'a', destDir.joinpath(destArchive).temp.s,
             u'-t%s' % archiveType] + solid.split() + compression_method + [
             u'-y', u'-r', # quiet, recursive
             u'-o"%s"' % destDir.s,
             u'-scsUTF-8', u'-sccUTF-8', # encode output in unicode
-            srcFolder.join(u'*').s] # add a wildcard at the end of the path
+            srcFolder.joinpath(u'*').s] # add a wildcard at the end of the path
 
 def _extract_command(archivePath, outDirPath, recursive, filelist_to_extract):
     command = u'"%s" x "%s" -y -bb1 -o"%s" -scsUTF-8 -sccUTF-8' % (

@@ -23,6 +23,7 @@
 # =============================================================================
 """BAIN backbone classes."""
 
+from __future__ import division
 import collections
 import copy
 import errno
@@ -95,7 +96,7 @@ class Installer(object):
         InstallersData.installers_dir_skips.update(
             skipped.lower() for skipped in user_skipped if skipped)
 
-    tempList = Path.baseTempDir().join(u'WryeBash_InstallerTempList.txt')
+    tempList = Path.baseTempDir() / u'WryeBash_InstallerTempList.txt'
 
     #--Class Methods ----------------------------------------------------------
     @staticmethod
@@ -104,7 +105,7 @@ class Installer(object):
         dataDir = bass.dirs['mods']
         ghosts = [x for x in dataDir.list() if x.cs[-6:] == u'.ghost']
         return bolt.LowerDict((x.root.s, x.s) for x in ghosts if
-                              not dataDir.join(x).root.exists())
+                              not dataDir.joinpath(x).root.exists())
 
     @staticmethod
     def final_update(new_sizeCrcDate, old_sizeCrcDate, pending, pending_size,
@@ -318,7 +319,7 @@ class Installer(object):
                 rescan = True
         elif self.fileRootIdex and not self.extras_dict.get('root_path', u''):
             rescan = True ##: for people that used my wip branch, drop on 307
-        package_path = bass.dirs['installers'].join(self.archive)
+        package_path = bass.dirs['installers'] / self.archive
         if not package_path.exists():  # pickled installer deleted outside bash
             return  # don't do anything should be deleted from our data soon
         if not isinstance(self.src_sizeCrcDate, bolt.LowerDict):
@@ -780,7 +781,7 @@ class Installer(object):
                 elif fileExt in imageExts:
                     dest = os_sep.join((u'Docs', file_relative))
             if fileExt in commonlyEditedExts: ##: will track all the txt files in Docs/
-                InstallersData.track(bass.dirs['mods'].join(dest))
+                InstallersData.track(bass.dirs['mods'] / dest)
             #--Save
             data_sizeCrc[dest] = (size,crc)
             dest_src[dest] = full
@@ -975,7 +976,7 @@ class Installer(object):
         """Rename package or project."""
         g_path = GPath(self.archive)
         if newName != g_path:
-            newPath = bass.dirs['installers'].join(newName)
+            newPath = bass.dirs['installers'] / newName
             if not newPath.exists():
                 DataStore._rename_operation(data, g_path, newName)
                 # If we hit a refresh after that fs operation, BAIN may have
@@ -1049,7 +1050,7 @@ class Installer(object):
         for dest, src in dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
             srcFull = srcDirJoin(src)
-            destFull = bass.dirs['mods'].join(norm_ghostGet(dest, dest))
+            destFull = bass.dirs['mods'] / norm_ghostGet(dest, dest)
             if srcFull.tail in self.espms:
                 mods.add(srcFull.tail)
             elif InstallersData._is_ini_tweak(dest):
@@ -1075,7 +1076,7 @@ class Installer(object):
             log = bolt.LogFile(out)
             log.setHeader(u'%s ' % self.archive + _(u'Package Structure:'))
             log(u'[spoiler][xml]\n', False)
-            apath = bass.dirs['installers'].join(self.archive)
+            apath = bass.dirs['installers'] / self.archive
             self._list_package(apath, log)
             log(u'[/xml][/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
@@ -1153,7 +1154,7 @@ class InstallerArchive(Installer):
     def _refreshSource(self, progress, recalculate_project_crc):
         """Refresh fileSizeCrcs, size, modified, crc, isSolid from archive."""
         #--Basic file info
-        archive_path = bass.dirs['installers'].join(self.archive)
+        archive_path = bass.dirs['installers'] / self.archive
         self.size, self.modified = archive_path.size_mtime()
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
@@ -1193,7 +1194,7 @@ class InstallerArchive(Installer):
         #--Dump file list
         with self.tempList.open('w',encoding='utf8') as out:
             out.write(u'\n'.join(fileNames))
-        apath = bass.dirs['installers'].join(self.archive)
+        apath = bass.dirs['installers'] / self.archive
         #--Ensure temp dir empty
         bass.rmTempDir()
         with apath.unicodeSafe() as arch:
@@ -1218,7 +1219,7 @@ class InstallerArchive(Installer):
                                       SubProgress(progress, 0, 0.9))
         #--Rearrange files
         progress(0.9, self.archive + u'\n' + _(u'Organizing files...'))
-        srcDirJoin = unpackDir.join
+        srcDirJoin = unpackDir.joinpath
         subprogress = SubProgress(progress,0.9,1.0)
         subprogress.setFull(len(dest_src))
         subprogressPlus = subprogress.plus
@@ -1231,7 +1232,7 @@ class InstallerArchive(Installer):
         files = bolt.sortFiles([x[0] for x in self.fileSizeCrcs])
         if not files: return 0
         #--Clear Project
-        destDir = bass.dirs['installers'].join(project)
+        destDir = bass.dirs['installers'] / project
         destDir.rmtree(safety=u'Installers')
         #--Extract
         progress(0,project.s+u'\n'+_(u'Extracting files...'))
@@ -1239,8 +1240,8 @@ class InstallerArchive(Installer):
         #--Move
         progress(0.9,project.s+u'\n'+_(u'Moving files...'))
         count = 0
-        tempDirJoin = unpack_dir.join
-        destDirJoin = destDir.join
+        tempDirJoin = unpack_dir.joinpath
+        destDirJoin = destDir.joinpath
         for file_ in files:
             srcFull = tempDirJoin(file_)
             destFull = destDirJoin(file_)
@@ -1279,7 +1280,7 @@ class InstallerArchive(Installer):
             # This is going to leave junk temp files behind...
             try:
                 unpack_dir = self.unpackToTemp([rel_path])
-                unpack_dir.join(rel_path).start()
+                unpack_dir.joinpath(rel_path).start()
             except:
                 # Don't clean up temp dir here.  Sometimes the editor
                 # That starts to open the wizard.txt file is slower than
@@ -1305,7 +1306,7 @@ class InstallerArchive(Installer):
             if progress:
                 progress(pngs_processed,
                          u'\n%s\n%s' % (_(u'Fixing PNGs...'), target_png))
-            archives.fix_png(tmp_dir.join(target_png).s)
+            archives.fix_png(tmp_dir.joinpath(target_png).s)
 
     def wizard_file(self):
         with balt.Progress(_(u'Extracting wizard files...'), u'\n' + u' ' * 60,
@@ -1323,7 +1324,7 @@ class InstallerArchive(Installer):
             unpack_dir = self.unpackToTemp(files_to_extract,
                 bolt.SubProgress(progress,0,0.7), recurse=True)
             self._fix_pngs(pngs_to_fix, bolt.SubProgress(progress, 0.7, 0.9))
-        return unpack_dir.join(self.hasWizard)
+        return unpack_dir / self.hasWizard
 
     def fomod_file(self):
         with balt.Progress(_(u'Extracting fomod files...'), u'\n' + u' ' * 60,
@@ -1338,7 +1339,7 @@ class InstallerArchive(Installer):
             unpack_dir = self.unpackToTemp(files_to_extract,
                                            bolt.SubProgress(progress, 0, 0.9),
                                            recurse=True)
-        return unpack_dir.join(self.has_fomod_conf)
+        return unpack_dir / self.has_fomod_conf
 
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):
@@ -1362,7 +1363,7 @@ class InstallerProject(Installer):
         :return: max modification time for files/folders in project directory
         :rtype: int"""
         #--Scan for changed files
-        apRoot = bass.dirs['installers'].join(self.archive)
+        apRoot = bass.dirs['installers'] / self.archive
         rootName = apRoot.stail
         progress = progress if progress else bolt.Progress()
         progress_msg = rootName + u'\n' + _(u'Scanning...')
@@ -1429,7 +1430,7 @@ class InstallerProject(Installer):
     def removeEmpties(name):
         """Removes empty directories from project directory."""
         empties = set()
-        projectDir = bass.dirs['installers'].join(name)
+        projectDir = bass.dirs['installers'] / name
         for asDir,sDirs,sFiles in bolt.walkdir(projectDir.s):
             if not (sDirs or sFiles): empties.add(GPath(asDir))
         for empty in empties: empty.removedirs()
@@ -1458,8 +1459,8 @@ class InstallerProject(Installer):
         progress(0, self.archive + u'\n' + _(u'Moving files...'))
         progressPlus = progress.plus
         #--Copy Files
-        srcDir = bass.dirs['installers'].join(self.archive)
-        srcDirJoin = srcDir.join
+        srcDir = bass.dirs['installers'] / self.archive
+        srcDirJoin = srcDir.joinpath
         return self._fs_install(dest_src, srcDirJoin, progress, progressPlus,
                                 None)
 
@@ -1475,10 +1476,10 @@ class InstallerProject(Installer):
         #--Sync Files
         updated = removed = 0
         norm_ghost = Installer.getGhosted()
-        projDir = bass.dirs['installers'].join(self.archive)
+        projDir = bass.dirs['installers'] / self.archive
         for src,proj in srcProj:
-            srcFull = srcDir.join(norm_ghost.get(src,src))
-            projFull = projDir.join(proj)
+            srcFull = srcDir / norm_ghost.get(src,src)
+            projFull = projDir / proj
             if not srcFull.exists():
                 projFull.remove()
                 removed += 1
@@ -1496,13 +1497,13 @@ class InstallerProject(Installer):
         archive, archiveType, solid = compressionSettings(archive, blockSize,
                                                           isSolid)
         outDir = bass.dirs['installers']
-        realOutFile = outDir.join(archive)
-        outFile = outDir.join(u'bash_temp_nonunicode_name.tmp')
+        realOutFile = outDir / archive
+        outFile = outDir / u'bash_temp_nonunicode_name.tmp'
         num = 0
         while outFile.exists():
             outFile += unicode(num)
             num += 1
-        project = outDir.join(project)
+        project = outDir / project
         with project.unicodeSafe() as projectDir:
             #--Dump file list
             with self.tempList.open('w',encoding='utf-8-sig') as out:
@@ -1542,13 +1543,13 @@ class InstallerProject(Installer):
         return self._installer_rename(data, name_new)
 
     def _open_txt_file(self, rel_path):
-        bass.dirs['installers'].join(self.archive, rel_path).start()
+        bass.dirs['installers'].joinpath(self.archive, rel_path).start()
 
     def wizard_file(self):
-        return bass.dirs['installers'].join(self.archive, self.hasWizard)
+        return bass.dirs['installers'].joinpath(self.archive, self.hasWizard)
 
     def fomod_file(self):
-        return bass.dirs['installers'].join(self.archive, self.has_fomod_conf)
+        return bass.dirs['installers'].joinpath(self.archive, self.has_fomod_conf)
 
 def projects_walk_cache(func): ##: HACK ! Profile
     """Decorator to make sure I dont leak self._dir_dirs_files project cache.
@@ -1592,7 +1593,7 @@ class InstallersData(DataStore):
         self.store_dir = bass.dirs['installers']
         self.bash_dir.makedirs()
         #--Persistent data
-        self.dictFile = bolt.PickleDict(self.bash_dir.join(u'Installers.dat'))
+        self.dictFile = bolt.PickleDict(self.bash_dir / u'Installers.dat')
         self.data = {}
         self.data_sizeCrcDate = bolt.LowerDict()
         from . import converters
@@ -1610,7 +1611,7 @@ class InstallersData(DataStore):
     def bash_dir(self): return bass.dirs['bainData']
 
     @property
-    def hidden_dir(self): return bass.dirs['modsBash'].join(u'Hidden')
+    def hidden_dir(self): return bass.dirs['modsBash'] / u'Hidden'
 
     def add_marker(self, name, order):
         from . import InstallerMarker
@@ -1694,7 +1695,7 @@ class InstallersData(DataStore):
         for item in filenames:
             if item == self.lastKey: continue
             if isinstance(self[item], InstallerMarker): markers.append(item)
-            else: toDelete.append(self.store_dir.join(item))
+            else: toDelete.append(self.store_dir / item)
         return toDelete, markers
 
     def _delete_operation(self, paths, markers, **kwargs):
@@ -1713,8 +1714,8 @@ class InstallersData(DataStore):
         """Copies archive to new location."""
         if item == self.lastKey: return
         destDir = destDir or self.store_dir
-        apath = self.store_dir.join(item)
-        apath.copyTo(destDir.join(destName))
+        apath = self.store_dir / item
+        apath.copyTo(destDir / destName)
         if destDir == self.store_dir:
             self[destName] = installer = copy.copy(self[item])
             installer.archive = destName.s
@@ -1723,7 +1724,7 @@ class InstallersData(DataStore):
 
     def move_info(self, filename, destDir):
         # hasty method to use in UIList.hide(), see FileInfos.move_info()
-        self.store_dir.join(filename).moveTo(destDir.join(filename))
+        self.store_dir.joinpath(filename).moveTo(destDir / filename)
 
     def move_infos(self, sources, destinations, window, bash_frame):
         moved = super(InstallersData, self).move_infos(sources, destinations,
@@ -1820,8 +1821,8 @@ class InstallersData(DataStore):
             #--Extract the embedded BCF and move it to the Converters folder
             unpack_dir = installer.unpackToTemp([installer.hasBCF],
                 SubProgress(progress, i, i + 0.5))
-            srcBcfFile = unpack_dir.join(installer.hasBCF)
-            bcfFile = bass.dirs['converters'].join(u'temp-' + srcBcfFile.stail)
+            srcBcfFile = unpack_dir / installer.hasBCF
+            bcfFile = bass.dirs['converters'].joinpath(u'temp-' + srcBcfFile.stail)
             srcBcfFile.moveTo(bcfFile)
             bass.rmTempDir()
             #--Create the converter, apply it
@@ -1876,7 +1877,7 @@ class InstallersData(DataStore):
         boot.
         :rtype: InstallersData._RefreshInfo"""
         installers = set()
-        installersJoin = bass.dirs['installers'].join
+        installersJoin = bass.dirs['installers'].joinpath
         pending, projects = set(), set()
         for item in installers_paths:
             if item.s.lower().startswith((u'bash',u'--')): continue
@@ -2122,7 +2123,7 @@ class InstallersData(DataStore):
                 name = norm_ghost.get(path, path)
                 root_files.append((bass.dirs['mods'].s, name))
             else:
-                root_files.append((bass.dirs['mods'].join(sp[0]).s, sp[1]))
+                root_files.append((bass.dirs['mods'].joinpath(sp[0]).s, sp[1]))
         root_dirs_files = []
         root_files.sort(key=itemgetter(0)) # must sort on same key as groupby
         for key, val in groupby(root_files, key=itemgetter(0)):
@@ -2215,9 +2216,9 @@ class InstallersData(DataStore):
             oldCrc = self.data_sizeCrcDate.get(relPath, (None, None, None))[1]
             newCrc = installer.ci_dest_sizeCrc.get(relPath, (None, None))[1]
             if oldCrc is None or newCrc is None or newCrc == oldCrc: continue
-            iniAbsDataPath = bass.dirs['mods'].join(relPath)
+            iniAbsDataPath = bass.dirs['mods'] / relPath
             # Create a copy of the old one
-            baseName = bass.dirs['ini_tweaks'].join(u'%s, ~Old Settings [%s].ini' % (
+            baseName = bass.dirs['ini_tweaks'].joinpath(u'%s, ~Old Settings [%s].ini' % (
                 iniAbsDataPath.sbody, installer.archive))
             tweakPath = self.__tweakPath(baseName)
             iniAbsDataPath.copyTo(tweakPath)
@@ -2228,7 +2229,7 @@ class InstallersData(DataStore):
         oldIni, num = baseName, 1
         while oldIni.exists():
             suffix = u' - Copy' + (u'' if num == 1 else u' (%i)' % num)
-            oldIni = baseName.head.join(baseName.sbody + suffix + baseName.suffix)
+            oldIni = baseName.head.joinpath(baseName.sbody + suffix + baseName.suffix)
             num += 1
         return oldIni
 
@@ -2334,7 +2335,7 @@ class InstallersData(DataStore):
             data_sizeCrcDate_update[mod.s] = (s, c, modInfos[mod].mtime)
         # and for rest of the files - we do mods separately for ghosts
         self.data_sizeCrcDate.update((dest, (
-            s, c, (d != -1 and d) or bass.dirs['mods'].join(dest).mtime)) for
+            s, c, (d != -1 and d) or bass.dirs['mods'].joinpath(dest).mtime)) for
             dest, (s, c, d) in data_sizeCrcDate_update.iteritems())
         for ini in inis:
             iniInfos.new_info(ini, owner=installer.archive)
@@ -2370,7 +2371,7 @@ class InstallersData(DataStore):
         allRemoves = set(removedFiles)
         allRemovesAdd, removedFilesAdd = allRemoves.add, removedFiles.add
         emptyDirsClear, emptyDirsAdd = emptyDirs.clear, emptyDirs.add
-        exclude = {bass.dirs['mods'], bass.dirs['mods'].join(u'Docs')} # don't bother
+        exclude = {bass.dirs['mods'], bass.dirs['mods'] / u'Docs'} # don't bother
         # with those (Data won't likely be removed and Docs we want it around)
         emptyDirs -= exclude
         while emptyDirs:
@@ -2379,7 +2380,7 @@ class InstallersData(DataStore):
             for folder in sorted(testDirs, key=len, reverse=True):
                 # Sorting by length, descending, ensure we always
                 # are processing the deepest directories first
-                files = set(imap(folder.join, folder.list()))
+                files = set(imap(folder.joinpath, folder.list()))
                 remaining = files - allRemoves
                 if not remaining: # If all items in this directory will be
                     # removed, this directory is also safe to remove.
@@ -2400,7 +2401,7 @@ class InstallersData(DataStore):
         """Performs the actual deletion of files and updating of internal data.clear
            used by 'bain_uninstall' and 'bain_anneal'."""
         if not removes: return
-        modsDirJoin = bass.dirs['mods'].join
+        modsDirJoin = bass.dirs['mods'].joinpath
         emptyDirs = set()
         emptyDirsAdd = emptyDirs.add
         nonPlugins = set()
@@ -2592,7 +2593,7 @@ class InstallersData(DataStore):
         keepFiles.update((bolt.CIstr(f) for f in bush.game.wryeBashDataFiles))
         keepFiles.update((bolt.CIstr(f) for f in bush.game.ignoreDataFiles))
         removes = set(self.data_sizeCrcDate) - keepFiles
-        destDir = bass.dirs['bainData'].join(u'Data Folder Contents (%s)' %
+        destDir = bass.dirs['bainData'].joinpath(u'Data Folder Contents (%s)' %
             bolt.timestamp())
         skipPrefixes = [skipDir.lower() + os.sep for skipDir in
                         bush.game.wryeBashDataDirs | bush.game.ignoreDataDirs]
@@ -2604,10 +2605,10 @@ class InstallersData(DataStore):
             for filename in removes:
                 # don't remove files in Wrye Bash-related directories
                 if filename.lower().startswith(skipPrefixes): continue
-                full_path = bass.dirs['mods'].join(
+                full_path = bass.dirs['mods'].joinpath(
                     norm_ghost.get(filename, filename))
                 try:
-                    full_path.moveTo(destDir.join(filename)) # will drop .ghost
+                    full_path.moveTo(destDir / filename) # will drop .ghost
                     if modInfos.rightFileType(full_path):
                         mods.add(GPath(filename))
                         refresh_ui[0] = True
@@ -2841,8 +2842,8 @@ class InstallersData(DataStore):
         if not ci_files: return
         norm_ghost = Installer.getGhosted()
         subprogress = SubProgress(progress, 0, 0.8, full=len(ci_files))
-        srcJoin = bass.dirs['mods'].join
-        dstJoin = self.store_dir.join(projectPath).join
+        srcJoin = bass.dirs['mods'].joinpath
+        dstJoin = self.store_dir.joinpath(projectPath).joinpath
         for i,filename in enumerate(ci_files):
             subprogress(i, filename)
             srcJoin(norm_ghost.get(filename, filename)).copyTo(

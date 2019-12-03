@@ -22,6 +22,7 @@
 #
 # =============================================================================
 
+from __future__ import division
 import string
 from types import IntType, LongType
 import wx
@@ -347,7 +348,7 @@ class ImportFaceDialog(balt.Dialog):
         self.raceText.SetLabel(face.getRaceName())
         self.genderText.SetLabel(face.getGenderName())
         self.statsText.SetLabel(_(u'Health ')+unicode(face.health))
-        itemImagePath = bass.dirs['mods'].join(u'Docs', u'Images', '%s.jpg' % item)
+        itemImagePath = bass.dirs['mods'].joinpath(u'Docs', u'Images', '%s.jpg' % item)
         # TODO(ut): any way to get the picture ? see mod_links.Mod_Face_Import
         bitmap = itemImagePath.exists() and Image(
             itemImagePath.s).GetBitmap() or None
@@ -383,7 +384,7 @@ class CreateNewProject(balt.Dialog):
         super(CreateNewProject, self).__init__(parent, resize=False)
         #--Build a list of existing directories
         #  The text control will use this to change background color when name collisions occur
-        self.existingProjects = [x for x in bass.dirs['installers'].list() if bass.dirs['installers'].join(x).is_dir()]
+        self.existingProjects = [x for x in bass.dirs['installers'].list() if bass.dirs['installers'].joinpath(x).is_dir()]
 
         #--Attributes
         self.textName = TextCtrl(self, _(u'New Project Name-#####'),
@@ -461,7 +462,7 @@ class CreateNewProject(balt.Dialog):
     def OnClose(self, event):
         """ Create the New Project and add user specified extras. """
         projectName = bolt.GPath(self.textName.GetValue().strip())
-        projectDir = bass.dirs['installers'].join(projectName)
+        projectDir = bass.dirs['installers'] / projectName
 
         if projectDir.exists():
             balt.showError(self, _(
@@ -473,7 +474,7 @@ class CreateNewProject(balt.Dialog):
         # Create project in temp directory, so we can move it via
         # Shell commands (UAC workaround)
         tmpDir = bolt.Path.tempDir()
-        tempProject = tmpDir.join(projectName)
+        tempProject = tmpDir / projectName
         if self.checkEsp.IsChecked():
             fileName = u'Blank, %s.esp' % bush.game.fsName
             bosh.modInfos.create_new_mod(fileName, directory=tempProject)
@@ -483,18 +484,18 @@ class CreateNewProject(balt.Dialog):
                                          masterless=True)
         if self.checkWizard.IsChecked():
             # Create empty wizard.txt
-            wizardPath = tempProject.join(u'wizard.txt')
+            wizardPath = tempProject / u'wizard.txt'
             with wizardPath.open('w',encoding='utf-8') as out:
                 out.write(u'; %s BAIN Wizard Installation Script\n' % projectName)
         if self.checkWizardImages.IsChecked():
             # Create 'Wizard Images' directory
-            tempProject.join(u'Wizard Images').makedirs()
+            tempProject.joinpath(u'Wizard Images').makedirs()
         if self.checkDocs.IsChecked():
             #Create the 'Docs' Directory
-            tempProject.join(u'Docs').makedirs()
+            tempProject.joinpath(u'Docs').makedirs()
         # if self.checkScreenshot.IsChecked():
         #     #Copy the dummy default 'Screenshot' into the New Project
-        #     extrasDir.join(u'Screenshot').copyTo(tempProject.join(u'Screenshot'))
+        #     extrasDir.joinpath(u'Screenshot').copyTo(tempProject / u'Screenshot')
 
         # Move into the target location
         try:

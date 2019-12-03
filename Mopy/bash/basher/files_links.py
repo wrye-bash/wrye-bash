@@ -22,6 +22,7 @@
 #
 # =============================================================================
 
+from __future__ import division
 import re
 from .. import bass, balt, bosh, bush, bolt, exception
 from ..balt import ItemLink, RadioLink, ChoiceLink, OneItemLink
@@ -72,7 +73,7 @@ class Files_Unhide(ItemLink):
                     _(u"You can't unhide files from this directory."))
                 return
             #--File already unhidden?
-            destPath = destDir.join(srcFileName)
+            destPath = destDir / srcFileName
             if destPath.exists() or (destPath + u'.ghost').exists():
                 self._showWarning(_(u"File skipped: %s. File is already "
                                     u"present.") % (srcFileName.s,))
@@ -273,7 +274,7 @@ class _RevertBackup(OneItemLink):
 
     def _initData(self, window, selection):
         super(_RevertBackup, self)._initData(window, selection)
-        self.backup_path = self._selected_info.backup_dir.join(
+        self.backup_path = self._selected_info.backup_dir.joinpath(
             self._selected_item) + (u'f' if self.first else u'')
         self._help = _(u"Revert %(file)s to its first backup") if self.first \
             else _(u"Revert %(file)s to its last backup")

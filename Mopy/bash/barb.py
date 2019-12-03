@@ -37,6 +37,7 @@ the settings were created with
 the backup
 """
 
+from __future__ import division
 import cPickle
 import os
 from os.path import join as jo
@@ -58,15 +59,15 @@ def _init_settings_files(fsName_):
         raise BoltError(u'_init_settings_files: Bash dirs are not initialized')
     settings_info = {
         (dirs['mopy'], jo(fsName_, u'Mopy')): {u'bash.ini', },
-        (dirs['mods'].join(u'Bash'), jo(fsName_, u'Data', u'Bash')): {
+        (dirs['mods'] / u'Bash', jo(fsName_, u'Data', u'Bash')): {
             u'Table.dat', },
-        (dirs['mods'].join(u'Docs'), jo(fsName_, u'Data', u'Docs')): {
+        (dirs['mods'] / u'Docs', jo(fsName_, u'Data', u'Docs')): {
             u'Bash Readme Template.txt', u'Bash Readme Template.html',
             u'My Readme Template.txt', u'My Readme Template.html',
             u'wtxt_sand_small.css', u'wtxt_teal.css', },
         (dirs['modsBash'], jo(fsName_ + u' Mods', u'Bash Mod Data')): {
             u'Table.dat', },
-        (dirs['modsBash'].join(u'INI Data'),
+        (dirs['modsBash'] / u'INI Data',
          jo(fsName_ + u' Mods', u'Bash Mod Data', u'INI Data')): {
            u'Table.dat', },
         (dirs['bainData'],
@@ -78,11 +79,11 @@ def _init_settings_files(fsName_):
         # backup all files in Mopy\bash\l10n, Data\Bash Patches\,
         # Data\BashTags\ and Data\INI Tweaks\
         (dirs['l10n'], jo(fsName_, u'Mopy', u'bash', u'l10n')): {},
-        (dirs['mods'].join(u'Bash Patches'),
+        (dirs['mods'] / u'Bash Patches',
          jo(fsName_, u'Data', u'Bash Patches')): {},
-        (dirs['mods'].join(u'BashTags'),
+        (dirs['mods'] / u'BashTags',
          jo(fsName_, u'Data', u'BashTags')): {},
-        (dirs['mods'].join(u'INI Tweaks'),
+        (dirs['mods'] / u'INI Tweaks',
          jo(fsName_, u'Data', u'INI Tweaks')): {},
     }
     for setting_files in settings_info.itervalues():
@@ -107,22 +108,22 @@ class BackupSettings(object):
                 setting_files = bash_dir.list()
             tmp_dir = GPath(tmpdir)
             for fname in setting_files:
-                fpath = bash_dir.join(fname)
+                fpath = bash_dir / fname
                 if fpath.exists():
-                    self.files[tmp_dir.join(fname)] = fpath
+                    self.files[tmp_dir / fname] = fpath
         # backup save profile settings
-        savedir = GPath(u'My Games').join(fsName)
+        savedir = GPath(u'My Games') / fsName
         profiles = [u''] + initialization.getLocalSaveDirs()
         for profile in profiles:
             pluginsTxt = (u'Saves', profile, u'plugins.txt')
             loadorderTxt = (u'Saves', profile, u'loadorder.txt')
             for txt in (pluginsTxt, loadorderTxt):
-                tpath = savedir.join(*txt)
-                fpath = dirs['saveBase'].join(*txt)
+                tpath = savedir.joinpath(*txt)
+                fpath = dirs['saveBase'].joinpath(*txt)
                 if fpath.exists(): self.files[tpath] = fpath
             table = (u'Saves', profile, u'Bash', u'Table.dat')
-            tpath = savedir.join(*table)
-            fpath = dirs['saveBase'].join(*table)
+            tpath = savedir.joinpath(*table)
+            fpath = dirs['saveBase'].joinpath(*table)
             if fpath.exists(): self.files[tpath] = fpath
             if fpath.backup.exists(): self.files[tpath.backup] = fpath.backup
 
@@ -160,9 +161,9 @@ class BackupSettings(object):
         # copy all files to ~tmp backup dir
         for tpath, fpath in self.files.iteritems():
             deprint(tpath.s + u' <-- ' + fpath.s)
-            fpath.copyTo(temp_dir.join(tpath))
+            fpath.copyTo(temp_dir / tpath)
         # dump the version info and file listing
-        with temp_dir.join(u'backup.dat').open('wb') as out:
+        with temp_dir.joinpath(u'backup.dat').open('wb') as out:
             # Bash version the settings were saved with, if this is newer
             # than the installed settings version, do not allow restore
             cPickle.dump(bass.settings['bash.version'], out, -1)
@@ -253,7 +254,7 @@ class RestoreSettings(object):
         deprint(u'')
         deprint(_(u'RESTORE BASH SETTINGS: ') + self._settings_file.s)
         # backup previous Bash ini if it exists
-        old_bash_ini = dirs['mopy'].join(u'bash.ini')
+        old_bash_ini = dirs['mopy'] / u'bash.ini'
         self._timestamped_old = u''.join(
             [old_bash_ini.root.s, u'(', bolt.timestamp(), u').ini'])
         try:
@@ -263,19 +264,19 @@ class RestoreSettings(object):
             self._timestamped_old = None
         # restore all the settings files
         def _restore_file(dest_dir_, back_path_, *end_path):
-            deprint(back_path_.join(*end_path).s + u' --> ' + dest_dir_.join(
+            deprint(back_path_.joinpath(*end_path).s + u' --> ' + dest_dir_.joinpath(
                 *end_path).s)
-            full_back_path.join(*end_path).copyTo(dest_dir_.join(*end_path))
+            full_back_path.joinpath(*end_path).copyTo(dest_dir_.joinpath(*end_path))
         restore_paths = _init_settings_files(fsName).keys()
         for dest_dir, back_path in restore_paths:
-            full_back_path = self._extract_dir.join(back_path)
+            full_back_path = self._extract_dir / back_path
             for fname in full_back_path.list():
-                if full_back_path.join(fname).is_file():
+                if full_back_path.joinpath(fname).is_file():
                     _restore_file(dest_dir, GPath(back_path), fname)
         # restore savegame profile settings
-        back_path = GPath(u'My Games').join(fsName, u'Saves')
-        saves_dir = dirs['saveBase'].join(u'Saves')
-        full_back_path = self._extract_dir.join(back_path)
+        back_path = GPath(u'My Games').joinpath(fsName, u'Saves')
+        saves_dir = dirs['saveBase'] / u'Saves'
+        full_back_path = self._extract_dir / back_path
         if full_back_path.exists():
             for root_dir, folders, files_ in full_back_path.walk(True, None,
                                                                  True):
@@ -325,7 +326,7 @@ class RestoreSettings(object):
             u'_get_settings_versions: you must extract the settings file '
             u'first')
         if self._saved_settings_version is None:
-            backup_dat = self._extract_dir.join(u'backup.dat')
+            backup_dat = self._extract_dir / u'backup.dat'
             try:
                 with backup_dat.open('rb') as ins:
                     # version of Bash that created the backed up settings
@@ -340,7 +341,7 @@ class RestoreSettings(object):
         """Get the game this backup was for - hack, this info belongs to backup.dat."""
         for node in os.listdir(u'%s' % self._extract_dir):
             if node != u'My Games' and not node.endswith(
-                    u'Mods') and os.path.isdir(self._extract_dir.join(node).s):
+                    u'Mods') and os.path.isdir(self._extract_dir.joinpath(node).s):
                 return node
         raise BoltError(u'%s does not contain a game dir' % self._extract_dir)
 

@@ -25,6 +25,7 @@
 """This module contains oblivion multitweak item patcher classes that belong
 to the Actors Multitweaker - as well as the TweakActors itself."""
 
+from __future__ import division
 from collections import Counter
 import random
 import re
@@ -191,7 +192,7 @@ class AVORB_NPCSkeletonPatcher(AMultiTweakItem):
             skeletonSetSpecial gets files that match "skel_special_*.nif" """
         # Since bass.dirs hasn't been populated when __init__ executes,
         # we do this here
-        skeletonDir = bass.dirs['mods'].join(u'Meshes', u'Characters',
+        skeletonDir = bass.dirs['mods'].joinpath(u'Meshes', u'Characters',
                                                   u'_male')
         list_skel_dir = skeletonDir.list() # empty if dir does not exist
         skel_nifs = [x for x in list_skel_dir if
@@ -209,7 +210,7 @@ class VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,BasalNPCTweaker):
         count = {}
         keep = patchFile.getKeeper()
         #--Some setup
-        modSkeletonDir = GPath(u'Characters').join(u'_male')
+        modSkeletonDir = GPath(u'Characters') / u'_male'
         skeletonList, skeletonSetSpecial = \
             AVORB_NPCSkeletonPatcher._initSkeletonCollections()
         if skeletonList:
@@ -228,11 +229,11 @@ class VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,BasalNPCTweaker):
                     continue
                 specialSkelMesh = u"skel_special_%X.nif" % record.fid[1]
                 if specialSkelMesh in skeletonSetSpecial:
-                    newModPath = modSkeletonDir.join(specialSkelMesh)
+                    newModPath = modSkeletonDir / specialSkelMesh
                 else:
                     random.seed(record.fid)
                     randomNumber = random.randint(1, len(skeletonList))-1
-                    newModPath = modSkeletonDir.join(
+                    newModPath = modSkeletonDir.joinpath(
                         skeletonList[randomNumber])
                 if newModPath != oldModPath:
                     record.model.modPath = newModPath.s
@@ -247,7 +248,7 @@ class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher, _NpcCTweak):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(CBash_VORB_NPCSkeletonPatcher, self).__init__()
-        self.modSkeletonDir = GPath(u'Characters').join(u'_male')
+        self.modSkeletonDir = GPath(u'Characters') / u'_male'
         self.skeletonList = None
         self.skeletonSetSpecial = None
 
@@ -271,11 +272,11 @@ class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher, _NpcCTweak):
                 pass
             specialSkelMesh = u"skel_special_%X.nif" % recordId[1]
             if specialSkelMesh in self.skeletonSetSpecial:
-                newModPath = self.modSkeletonDir.join(specialSkelMesh)
+                newModPath = self.modSkeletonDir / specialSkelMesh
             else:
                 random.seed(recordId)
                 randomNumber = random.randint(1, len(self.skeletonList)) - 1
-                newModPath = self.modSkeletonDir.join(
+                newModPath = self.modSkeletonDir.joinpath(
                     self.skeletonList[randomNumber])
             if newModPath.cs != oldModPath:
                 override = record.CopyAsOverride(self.patchFile)

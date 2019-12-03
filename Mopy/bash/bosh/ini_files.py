@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from __future__ import division
 import codecs
 import re
 import time
@@ -578,7 +579,7 @@ class OblivionIni(IniFile):
         if super(OblivionIni, self).ask_create_target_ini(msg): return True
         from . import oblivionIni, iniInfos # YAK
         if self is not oblivionIni: return True
-        srcPath = dirs['app'].join(bush.game.defaultIniFile)
+        srcPath = dirs['app'] / bush.game.defaultIniFile
         default_path_exists = srcPath.exists()
         msg = _(u'%(ini_path)s does not exist.' % {'ini_path': self.abs_path}) + \
               u'\n\n' + ((msg + u'\n\n') if msg else u'')
@@ -610,7 +611,7 @@ class OblivionIni(IniFile):
         if self.isCorrupted: return
         section,key = bush.game.ini.bsaRedirection
         if not section or not key: return
-        aiBsa = dirs['mods'].join(u'ArchiveInvalidationInvalidated!.bsa')
+        aiBsa = dirs['mods'] / u'ArchiveInvalidationInvalidated!.bsa'
         aiBsaMTime = time.mktime((2006, 1, 2, 0, 0, 0, 0, 2, 0))
         if aiBsa.exists() and aiBsa.mtime > aiBsaMTime:
             aiBsa.mtime = aiBsaMTime
@@ -622,7 +623,7 @@ class OblivionIni(IniFile):
             return
         # Skyrim does not have an Archive Invalidation File
         if doRedirect and not aiBsa.exists():
-            source = dirs['templates'].join(bush.game.fsName, u'ArchiveInvalidationInvalidated!.bsa')
+            source = dirs['templates'].joinpath(bush.game.fsName, u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
             try:
                 env.shellCopy(source, aiBsa, allowUndo=True, autoRename=True)

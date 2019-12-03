@@ -59,13 +59,13 @@ class ConfigHelpers(object):
             deprint(u'Failed to create a LOOT API database.')
             lootDb = None
         # LOOT stores the masterlist/userlist in a %LOCALAPPDATA% subdirectory.
-        self.lootMasterPath = bass.dirs['userApp'].join(
+        self.lootMasterPath = bass.dirs['userApp'].joinpath(
             os.pardir, u'LOOT', bush.game.fsName, u'masterlist.yaml')
-        self.lootUserPath = bass.dirs['userApp'].join(
+        self.lootUserPath = bass.dirs['userApp'].joinpath(
             os.pardir, u'LOOT', bush.game.fsName, u'userlist.yaml')
         self.lootMasterTime = None
         self.lootUserTime = None
-        self.tagList = bass.dirs['defaultPatches'].join(u'taglist.yaml')
+        self.tagList = bass.dirs['defaultPatches'] / u'taglist.yaml'
         self.tagListModTime = None
         #--Bash Tags
         self.tagCache = {}
@@ -167,7 +167,7 @@ class ConfigHelpers(object):
         :return: A tuple containing two sets of added and deleted tags."""
         # Check if the file even exists first
         tag_files_dir = bass.dirs['tag_files']
-        tag_file = tag_files_dir.join(plugin_name.body + u'.txt')
+        tag_file = tag_files_dir.joinpath(plugin_name.body + u'.txt')
         if not tag_file.is_file(): return set(), set()
         removed, added = set(), set()
         with tag_file.open('r') as ins:
@@ -198,7 +198,7 @@ class ConfigHelpers(object):
             by its description and the LOOT masterlist / userlist."""
         tag_files_dir = bass.dirs['tag_files']
         tag_files_dir.makedirs()
-        tag_file = tag_files_dir.join(plugin_name.body + u'.txt')
+        tag_file = tag_files_dir.joinpath(plugin_name.body + u'.txt')
         # Calculate the diff and ignore the minus when sorting the result
         diff_tags = sorted(plugin_tags - plugin_old_tags |
                            {u'-' + t for t in plugin_old_tags - plugin_tags},

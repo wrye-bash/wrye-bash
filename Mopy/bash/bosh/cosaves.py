@@ -27,6 +27,7 @@ read them to log stats and write them to remap espm masters. We only handle
 renaming of the masters of the xSE plugin chunk itself and of the Pluggy chunk.
 """
 
+from __future__ import division
 import binascii
 import re
 import string
@@ -1322,7 +1323,7 @@ class ACosave(_Dumpable, _Remappable, AFile):
             return save_path.root + cls.cosave_ext + first
         ma_bak = bak_file_pattern.search(save_path.s)
         if ma_bak:
-            return save_path.head.join(ma_bak.group(1) + ma_bak.group(
+            return save_path.head.joinpath(ma_bak.group(1) + ma_bak.group(
                 2) + cls.cosave_ext + ma_bak.group(3))
         raise BoltError(u'Invalid save path %s' % save_path)
 

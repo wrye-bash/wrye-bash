@@ -25,6 +25,7 @@
 """Menu items for the _item_ menu of the mods tab - their window attribute
 points to BashFrame.modList singleton."""
 
+from __future__ import division
 import StringIO
 import collections
 import copy
@@ -119,7 +120,7 @@ class Mod_CreateDummyMasters(OneItemLink):
             if master in bosh.modInfos:
                 continue
             # Missing master, create a dummy plugin for it
-            newInfo = bosh.ModInfo(self._selected_info.dir.join(master))
+            newInfo = bosh.ModInfo(self._selected_info.dir / master)
             to_refresh.append((master, newInfo, previous_master))
             previous_master = master
             if doCBash:
@@ -1818,7 +1819,7 @@ class Mod_Face_Import(OneItemLink):
         #--Save Face
         npc = bosh.faces.PCFaces.mod_addFace(self._selected_info, srcFace)
         #--Save Face picture? # FIXME(ut) does not save face picture but save screen ?!
-        imagePath = bosh.modInfos.store_dir.join(u'Docs', u'Images', npc.eid + u'.jpg')
+        imagePath = bosh.modInfos.store_dir.joinpath(u'Docs', u'Images', npc.eid + u'.jpg')
         if not imagePath.exists():
             srcInfo.readHeader()
             width,height,data = srcInfo.header.image
@@ -1876,7 +1877,7 @@ class _Mod_Import_Link(OneItemLink):
             if ext == u'.csv':
                 parser.readFromText(textPath)
             else:
-                srcInfo = bosh.ModInfo(GPath(textDir).join(textName))
+                srcInfo = bosh.ModInfo(GPath(textDir) / textName)
                 parser.readFromMod(srcInfo)
             progress(0.2, _(u'Applying to') +u' ' +self._selected_item.s +u'.')
             changed = parser.writeToMod(self._selected_info)
@@ -2045,7 +2046,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
 
     def Execute(self): # overrides _Mod_Export_Link
         fileName, fileInfo = next(self.iselected_pairs()) # first selected pair
-        defaultPath = bass.dirs['patches'].join(fileName.s + u' Exported Scripts')
+        defaultPath = bass.dirs['patches'].joinpath(fileName.s + u' Exported Scripts')
         def OnOk():
             dialog.EndModal(1)
             bass.settings['bash.mods.export.deprefix'] = gdeprefix.GetValue().strip()
@@ -2113,7 +2114,7 @@ class Mod_Scripts_Import(_Mod_Import_Link):
 
     def Execute(self):
         if not self._askContinueImport(): return
-        defaultPath = bass.dirs['patches'].join(
+        defaultPath = bass.dirs['patches'].joinpath(
             self._selected_item.s + u' Exported Scripts')
         if not defaultPath.exists():
             defaultPath = bass.dirs['patches']

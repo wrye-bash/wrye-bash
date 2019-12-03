@@ -24,6 +24,7 @@
 
 """WIP module to encapsulate environment access - currently OS dependent stuff.
 """
+from __future__ import division
 import errno
 import os as _os
 import re as _re
@@ -62,7 +63,7 @@ def get_registry_path(subkey, entry, detection_file):
             if value[1] != winreg.REG_SZ: continue
             installPath = GPath(value[0])
             if not installPath.exists(): continue
-            exePath = installPath.join(*detection_file)
+            exePath = installPath.joinpath(*detection_file)
             if not exePath.exists(): continue
             return installPath
     return None
@@ -204,7 +205,7 @@ def _get_app_links(apps_dir):
     try:
         sh = win32client.Dispatch('WScript.Shell')
         for lnk in apps_dir.list():
-            lnk = apps_dir.join(lnk)
+            lnk = apps_dir / lnk
             if lnk.cext == u'.lnk' and lnk.is_file():
                 shortcut = sh.CreateShortCut(lnk.s)
                 description = shortcut.Description
@@ -229,7 +230,7 @@ def init_app_links(apps_dir, badIcons, iconList):
         # Target exists - extract path, icon and description
         # First try a custom icon #TODO(ut) docs - also comments methods here!
         fileName = u'%s%%i.png' % path.sbody
-        customIcons = [apps_dir.join(fileName % x) for x in (16, 24, 32)]
+        customIcons = [apps_dir.joinpath(fileName % x) for x in (16, 24, 32)]
         if customIcons[0].exists():
             icon = customIcons
         # Next try the shortcut specified icon
@@ -266,7 +267,7 @@ def test_permissions(path, permissions='rwcd'):
     permissions = permissions.lower()
     def getTemp(path_):  # Get a temp file name
         if path_.is_dir():
-            tmp = path_.join(u'temp.temp')
+            tmp = path_ / u'temp.temp'
         else:
             tmp = path_.temp
         while tmp.exists():
@@ -277,7 +278,7 @@ def test_permissions(path, permissions='rwcd'):
         smallsize = -1
         ret = None
         for node in path.list():
-            node = path.join(node)
+            node = path / node
             if not node.is_file(): continue
             node_size = node.size
             if smallsize == -1 or node_size < smallsize:
@@ -511,14 +512,14 @@ def __copyOrMove(operation, source, target, renameOnCollision, parent):
     doIt = _shutil.copytree if operation == FO_COPY else _shutil.move
     for fileFrom, fileTo in zip(source, target):
         if fileFrom.is_dir():
-            dest_dir = fileTo.join(fileFrom.tail)
+            dest_dir = fileTo / fileFrom.tail
             if dest_dir.exists():
                 if not dest_dir.is_dir():
                     raise DirectoryFileCollisionError(fileFrom, dest_dir)
                 # dir exists at target, copy contents individually/recursively
                 srcs, dests = [], []
                 for content in _os.listdir(fileFrom.s):
-                    srcs.append(fileFrom.join(content))
+                    srcs.append(fileFrom / content)
                     dests.append(dest_dir)
                 __copyOrMove(operation, srcs, dests, renameOnCollision, parent)
             else:  # dir doesn't exist at the target, copy it
@@ -697,9 +698,9 @@ def shellMakeDirs(dirs, parent=None):
                 if not toMake:
                     continue
                 toMake.reverse()
-                base = tmpDir.join(toMake[0])
-                toDir = folder.join(toMake[0])
-                tmpDir.join(*toMake).makedirs()
+                base = tmpDir / toMake[0]
+                toDir = folder / toMake[0]
+                tmpDir.joinpath(*toMake).makedirs()
                 fromDirs.append(base)
                 toDirs.append(toDir)
         if fromDirs:
@@ -721,8 +722,8 @@ def testUAC(gameDataPath):
         return False
     print 'testing UAC'
     tmpDir = Path.tempDir()
-    tempFile = tmpDir.join(u'_tempfile.tmp')
-    dest = gameDataPath.join(u'_tempfile.tmp')
+    tempFile = tmpDir / u'_tempfile.tmp'
+    dest = gameDataPath / u'_tempfile.tmp'
     with tempFile.open('wb'): pass # create the file
     try: # to move it into the Game/Data/ directory
         shellMove(tempFile, dest, silent=True)
@@ -746,13 +747,13 @@ def getJava():
         return GPath(java_bin_path)
     try:
         java_home = GPath(_os.environ['JAVA_HOME'])
-        java = java_home.join('bin', u'javaw.exe')
+        java = java_home.joinpath('bin', u'javaw.exe')
         if java.exists(): return java
     except KeyError: # no JAVA_HOME
         pass
     win = GPath(_os.environ['SYSTEMROOT'])
     # Default location: Windows\System32\javaw.exe
-    java = win.join(u'system32', u'javaw.exe')
+    java = win.joinpath(u'system32', u'javaw.exe')
     if not java.exists():
         # 1st possibility:
         #  - Bash is running as 32-bit
@@ -760,11 +761,11 @@ def getJava():
         # Because Bash is 32-bit, Windows\System32 redirects to
         # Windows\SysWOW64.  So look in the ACTUAL System32 folder
         # by using Windows\SysNative
-        java = win.join(u'sysnative', u'javaw.exe')
+        java = win.joinpath(u'sysnative', u'javaw.exe')
     if not java.exists():
         # 2nd possibility
         #  - Bash is running as 64-bit
         #  - The only Java installed is 32-bit
         # So javaw.exe would actually be in Windows\SysWOW64
-        java = win.join(u'syswow64', u'javaw.exe')
+        java = win.joinpath(u'syswow64', u'javaw.exe')
     return java

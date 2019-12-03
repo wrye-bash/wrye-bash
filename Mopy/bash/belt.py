@@ -483,8 +483,8 @@ class PageVersions(PageInstaller):
     def __init__(self, parent, bGameOk, gameHave, gameNeed, bSEOk, seHave,
                  seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
-        bmp = [wx.Bitmap(bass.dirs['images'].join(u'error_cross_24.png').s),
-               wx.Bitmap(bass.dirs['images'].join(u'checkmark_24.png').s)]
+        bmp = [wx.Bitmap(bass.dirs['images'].joinpath(u'error_cross_24.png').s),
+               wx.Bitmap(bass.dirs['images'].joinpath(u'checkmark_24.png').s)]
         sizerMain = wx.FlexGridSizer(5, 1, 0, 0)
         self.textWarning = balt.StaticText(self, _(u'WARNING: The following version requirements are not met for using this installer.'))
         self.textWarning.Wrap(parent.GetPageSize()[0]-20)
@@ -723,7 +723,7 @@ class WryeParser(ScriptParser.Parser):
             self._path = bolt.GPath(installer.archive) if installer else None
             if installer and installer.fileRootIdex:
                 root_path = installer.extras_dict.get('root_path', u'')
-                self._path = self._path.join(root_path)
+                self._path = self._path / root_path
             self.bAuto = bAuto
             self.page = None
             self.choices = []
@@ -1058,14 +1058,14 @@ class WryeParser(ScriptParser.Parser):
     def fnCompareGameVersion(self, obWant):
         ret = self._TestVersion(
             self._TestVersion_Want(obWant),
-            bass.dirs['app'].join(*bush.game.version_detect_file))
+            bass.dirs['app'].joinpath(*bush.game.version_detect_file))
         return ret[0]
 
     def fnCompareSEVersion(self, seWant):
         if bush.game.se.se_abbrev != u'':
             ver_path = None
             for ver_file in bush.game.se.ver_files:
-                ver_path = bass.dirs['app'].join(ver_file)
+                ver_path = bass.dirs['app'] / ver_file
                 if ver_path.exists(): break
             return self._TestVersion(self._TestVersion_Want(seWant), ver_path)
         else:
@@ -1086,7 +1086,7 @@ class WryeParser(ScriptParser.Parser):
 
     def fnDataFileExists(self, *filenames):
         for filename in filenames:
-            if not bass.dirs['mods'].join(filename).exists():
+            if not bass.dirs['mods'].joinpath(filename).exists():
                 # Check for ghosted mods
                 if bolt.GPath(filename) in bosh.modInfos:
                     return True # It's a ghosted mod
@@ -1354,10 +1354,10 @@ class WryeParser(ScriptParser.Parser):
                     error(_(u"SubPackage '%s' does not exist.") % name)
                 List = []
                 if isinstance(self.installer,bosh.InstallerProject):
-                    sub = bass.dirs['installers'].join(self.path, subpackage)
+                    sub = bass.dirs['installers'].joinpath(self.path, subpackage)
                     for root_dir, dirs, files in sub.walk():
                         for file_ in files:
-                            rel = root_dir.join(file_).relpath(sub)
+                            rel = root_dir.joinpath(file_).relpath(sub)
                             List.append(rel.s)
                 else:
                     # Archive
@@ -1451,13 +1451,13 @@ class WryeParser(ScriptParser.Parser):
             return
         # If not an auto-wizard, or an auto-wizard with no default option
         if self.bArchive:
-            imageJoin = bass.getTempDir().join
+            imageJoin = bass.getTempDir().joinpath
         else:
-            imageJoin = bass.dirs['installers'].join(self.path).join
+            imageJoin = bass.dirs['installers'].joinpath(self.path).joinpath
         for i in images:
             path = imageJoin(i)
-            if not path.exists() and bass.dirs['mopy'].join(i).exists():
-                path = bass.dirs['mopy'].join(i)
+            if not path.exists() and bass.dirs['mopy'].joinpath(i).exists():
+                path = bass.dirs['mopy'] / i
             image_paths.append(path)
         self.page = PageSelect(self.parent, bMany, _(u'Installer Wizard'),
                                main_desc, titles.keys(), descs, image_paths,
@@ -1588,13 +1588,13 @@ class WryeParser(ScriptParser.Parser):
         if not wbWant: wbWant = u'0.0'
         wbHave = bass.AppVersion
         ret = self._TestVersion(
-            gameWant, bass.dirs['app'].join(*bush.game.version_detect_file))
+            gameWant, bass.dirs['app'].joinpath(*bush.game.version_detect_file))
         bGameOk = ret[0] >= 0
         gameHave = ret[1]
         if bush.game.se.se_abbrev != u'':
             ver_path = None
             for ver_file in bush.game.se.ver_files:
-                ver_path = bass.dirs['app'].join(ver_file)
+                ver_path = bass.dirs['app'] / ver_file
                 if ver_path.exists(): break
             ret = self._TestVersion(seWant, ver_path)
             bSEOk = ret[0] >= 0
@@ -1621,9 +1621,9 @@ class WryeParser(ScriptParser.Parser):
 
     def _TestVersion_GE(self, want):
         if isinstance(bush.game.ge.exe,str):
-            files = [bass.dirs['mods'].join(bush.game.ge.exe)]
+            files = [bass.dirs['mods'] / bush.game.ge.exe]
         else:
-            files = [bass.dirs['mods'].join(*x) for x in bush.game.ge.exe]
+            files = [bass.dirs['mods'].joinpath(*x) for x in bush.game.ge.exe]
         ret = [-1, u'None']
         for file in reversed(files):
             ret = self._TestVersion(want, file)

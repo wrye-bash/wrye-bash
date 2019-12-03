@@ -22,6 +22,7 @@
 #
 # =============================================================================
 
+from __future__ import division
 from collections import defaultdict
 import wx
 import wx.wizard as wiz
@@ -62,7 +63,7 @@ class InstallerFomod(wiz.Wizard):
 
         fomod_file = installer.fomod_file().s
         data_path = bass.dirs["mods"]
-        ver = env.get_file_version(bass.dirs["app"].join(
+        ver = env.get_file_version(bass.dirs["app"].joinpath(
             *bush.game.version_detect_file).s)
         game_ver = u".".join([unicode(i) for i in ver])
 
@@ -81,7 +82,7 @@ class InstallerFomod(wiz.Wizard):
         if self.is_archive:
             self.archive_path = bass.getTempDir()
         else:
-            self.archive_path = bass.dirs["installers"].join(installer.archive)
+            self.archive_path = bass.dirs["installers"] / installer.archive
 
         # 'dummy' page tricks the wizard into always showing the "Next" button
         self.dummy = wiz.PyWizardPage(self)
@@ -371,7 +372,7 @@ class PageSelect(PageInstaller):
         self._enableForward(True)
 
         self.bmp_item.Freeze()
-        img = self.parent.archive_path.join(option.image)
+        img = self.parent.archive_path / option.image
         try:
             image = self._img_cache[img]
         except KeyError:

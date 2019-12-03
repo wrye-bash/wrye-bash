@@ -22,6 +22,7 @@
 #
 # =============================================================================
 
+from __future__ import division
 import re
 import string
 from collections import OrderedDict
@@ -203,7 +204,7 @@ class DocBrowser(BaltFrame):
             out.write(self._doc_ctrl.fallback_text)
         if self._doc_is_wtxt:
             bolt.WryeText.genHtml(doc_path, None,
-                                  bosh.modInfos.store_dir.join(u'Docs'))
+                                  bosh.modInfos.store_dir / u'Docs')
 
     def _load_data(self, path=None, data=None, editing=False):
         if path and path.cext in (u'.htm',u'.html',u'.mht') and not editing \
@@ -248,7 +249,7 @@ class DocBrowser(BaltFrame):
             self._load_data(data=u'')
         # Create new file if none exists
         elif not doc_path.exists():
-            for template_file in (bosh.modInfos.store_dir.join(
+            for template_file in (bosh.modInfos.store_dir.joinpath(
                     u'Docs', u'{} Readme Template'.format(fname))
                                   for fname in (u'My', u'Bash')):
                 if template_file.exists():
@@ -276,7 +277,7 @@ class DocBrowser(BaltFrame):
                     html_path = doc_path.root + u'.html'
                     if not html_path.exists() or (doc_path.mtime > html_path.mtime):
                         bolt.WryeText.genHtml(doc_path, None,
-                                              bosh.modInfos.store_dir.join(u'Docs'))
+                                              bosh.modInfos.store_dir / u'Docs')
             self._load_data(path=doc_path, editing=editing)
 
     def OnCloseWindow(self):
@@ -389,7 +390,7 @@ class ModChecker(BaltFrame):
               for setting_key in (_MOD_LIST, _CRC, _VERSION)],
             mod_checker=(None, self)[self._buttons[_SCAN_DIRTY].GetValue()])
         if HtmlCtrl.html_lib_available():
-            log_path = bass.dirs['saveBase'].join(u'ModChecker.html')
+            log_path = bass.dirs['saveBase'] / u'ModChecker.html'
             balt.convert_wtext_to_html(log_path, self.check_mods_text)
             self._html_ctrl.try_load_html(log_path)
         else:

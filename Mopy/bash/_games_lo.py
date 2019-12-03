@@ -29,6 +29,7 @@ load_order.py."""
 # several older files in a directory would be useful (maybe limit to some
 # number, e.g. 5 older versions)
 
+from __future__ import division
 import errno
 import re
 import time
@@ -317,9 +318,9 @@ class Game(object):
         newPath directory (if present)."""
         # Save plugins.txt inside the old (saves) directory
         if self.plugins_txt_path.exists():
-            self.plugins_txt_path.copyTo(old_path.join(u'plugins.txt'))
+            self.plugins_txt_path.copyTo(old_path / u'plugins.txt')
         # Move the new plugins.txt here for use
-        move = new_path.join(u'plugins.txt')
+        move = new_path / u'plugins.txt'
         if move.exists():
             move.copyTo(self.plugins_txt_path)
             self.plugins_txt_path.mtime = time.time() # copy will not change mtime, bad
@@ -672,9 +673,9 @@ class TextfileGame(Game):
         super(TextfileGame, self).swap(old_path, new_path)
         # Save loadorder.txt inside the old (saves) directory
         if self.loadorder_txt_path.exists():
-            self.loadorder_txt_path.copyTo(old_path.join(u'loadorder.txt'))
+            self.loadorder_txt_path.copyTo(old_path / u'loadorder.txt')
         # Move the new loadorder.txt here for use
-        move = new_path.join(u'loadorder.txt')
+        move = new_path / u'loadorder.txt'
         if move.exists():
             move.copyTo(self.loadorder_txt_path)
             self.loadorder_txt_path.mtime = time.time() # update mtime to trigger refresh
@@ -908,7 +909,7 @@ class AsteriskGame(Game):
     @classmethod
     def parse_ccc_file(cls):
         if not cls._ccc_filename: return # Abort if this game has no CC
-        _ccc_path = bass.dirs['app'].join(cls._ccc_filename)
+        _ccc_path = bass.dirs['app'] / cls._ccc_filename
         try:
             with open(_ccc_path.s, 'r') as ins:
                 lines = map(bolt.GPath, map(str.strip, ins.readlines()))

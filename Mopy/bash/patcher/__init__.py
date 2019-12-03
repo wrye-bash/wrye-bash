@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from __future__ import division
 from collections import namedtuple
 from .. import balt, bolt, bass
 
@@ -48,10 +49,10 @@ def exportConfig(patch_name, config, isCBash, win, outDir):
 
 def getPatchesPath(fileName):
     """Choose the correct Bash Patches path for the file."""
-    if bass.dirs['patches'].join(fileName).is_file():
-        return bass.dirs['patches'].join(fileName)
+    if bass.dirs['patches'].joinpath(fileName).is_file():
+        return bass.dirs['patches'] / fileName
     else:
-        return bass.dirs['defaultPatches'].join(fileName)
+        return bass.dirs['defaultPatches'] / fileName
 
 def getPatchesList():
     """Get a basic list of potential Bash Patches."""

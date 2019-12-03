@@ -28,6 +28,7 @@ Bash to use, so must be imported and run high up in the booting sequence.
 """
 
 # Imports ---------------------------------------------------------------------
+from __future__ import division
 import collections
 import textwrap
 from . import game as game_init
@@ -118,7 +119,7 @@ def _detectGames(cli_path=u'', bash_ini_=None):
     if cli_path != u'':
         test_path = GPath(cli_path)
         if not test_path.is_absolute():
-            test_path = Path.cwd().join(test_path)
+            test_path = Path.cwd() / test_path
         installPaths['cmd'] = (test_path,
             _(u'Set game mode to %(gamename)s specified via -o argument') +
               u': ',
@@ -129,7 +130,7 @@ def _detectGames(cli_path=u'', bash_ini_=None):
     if ini_game_path and not ini_game_path == u'.':
         test_path = GPath(ini_game_path.strip())
         if not test_path.is_absolute():
-            test_path = Path.cwd().join(test_path)
+            test_path = Path.cwd() / test_path
         installPaths['ini'] = (test_path,
             _(u'Set game mode to %(gamename)s based on sOblivionPath setting '
               u'in bash.ini') + u': ',
@@ -140,7 +141,7 @@ def _detectGames(cli_path=u'', bash_ini_=None):
     if test_path.cs[-4:] == u'mopy':
         test_path = GPath(test_path.s[:-5])
         if not test_path.is_absolute():
-            test_path = Path.cwd().join(test_path)
+            test_path = Path.cwd() / test_path
         installPaths['upMopy'] = (test_path,
             _(u'Set game mode to %(gamename)s found in parent directory of'
               u' Mopy') + u': ',
@@ -150,7 +151,7 @@ def _detectGames(cli_path=u'', bash_ini_=None):
     # iterate installPaths in insert order ('cmd', 'ini', 'upMopy')
     for test_path, foundMsg, errorMsg in installPaths.itervalues():
         for gamename, info in _allGames.items():
-            if test_path.join(*info.game_detect_file).exists():
+            if test_path.joinpath(*info.game_detect_file).exists():
                 # Must be this game
                 deprint(foundMsg % {'gamename': gamename}, test_path)
                 foundGames_[gamename] = test_path
@@ -188,7 +189,7 @@ def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, name=None):
         return None, None
     # No match found, return the list of possible games (may be empty if
     # nothing is found in registry)
-    game_icons = {_fsName_display[g]: bass.dirs['images'].join(g + u'32.png').s
+    game_icons = {_fsName_display[g]: bass.dirs['images'].joinpath(g + u'32.png').s
                   for g in foundGames}
     return game_icons.keys(), game_icons
 
