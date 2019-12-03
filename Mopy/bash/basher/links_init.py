@@ -260,8 +260,8 @@ def InitInstallerLinks():
     if True: # Advanced Installation Menu
         installMenu = MenuLink(_(u'Advanced Installation..'))
         installMenu.links.append(Installer_Install())
-        installMenu.links.append(Installer_Install('MISSING'))
-        installMenu.links.append(Installer_Install('LAST'))
+        installMenu.links.append(Installer_Install(u'MISSING'))
+        installMenu.links.append(Installer_Install(u'LAST'))
         installMenu.links.append(Installer_Fomod())
         if bEnableWizard:
             wizardMenu = MenuLink(_(u'Wizard Installer..'))

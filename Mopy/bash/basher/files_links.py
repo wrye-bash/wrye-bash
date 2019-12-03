@@ -156,8 +156,8 @@ class File_ListMasters(OneItemLink):
 
     @property
     def link_help(self):
-        return _("Copies list of %(filename)s's masters to the clipboard.") % (
-                        {'filename': self.selected[0]})
+        return _(u"Copies list of %(filename)s's masters to the clipboard.") % (
+                        {u'filename': self.selected[0]})
 
     def Execute(self):
         list_of_mods = bosh.modInfos.getModList(fileInfo=self._selected_info)

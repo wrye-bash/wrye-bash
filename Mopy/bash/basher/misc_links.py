@@ -237,7 +237,7 @@ class _Column(CheckLink, EnabledLink):
         self.colName = _text
         self._text = bass.settings[u'bash.colNames'][_text]
         self._help = _(u"Show/Hide '%(colname)s' column.") % {
-            'colname': self._text}
+            u'colname': self._text}
 
     def _enable(self):
         return self.colName not in self.window.persistent_columns
@@ -300,7 +300,7 @@ class _SortBy(RadioLink):
 
     def _check(self): return self.window.sort_column == self.sortCol
 
-    def Execute(self): self.window.SortItems(self.sortCol, 'INVERT')
+    def Execute(self): self.window.SortItems(self.sortCol, u'INVERT')
 
 class SortByMenu(ChoiceMenuLink):
     """Link-based interface to decide what to sort the list by."""

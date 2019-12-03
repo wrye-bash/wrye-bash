@@ -91,7 +91,8 @@ class ImportFaceDialog(DialogWindow):
         self.raceText.label_text = face.getRaceName()
         self.genderText.label_text = face.getGenderName()
         self.statsText.label_text = _(u'Health ') + unicode(face.health)
-        itemImagePath = bass.dirs[u'mods'].join(u'Docs', u'Images', '%s.jpg' % item)
+        itemImagePath = bass.dirs[u'mods'].join(u'Docs', u'Images',
+                                                u'%s.jpg' % item)
         # TODO(ut): any way to get the picture ? see mod_links.Mod_Face_Import
         self.picture.set_bitmap(itemImagePath)
         self.listBox.lb_select_index(lb_selection_dex)
@@ -157,7 +158,7 @@ class CreateNewProject(DialogWindow):
              LayoutOptions(h_align=CENTER))
         ]).apply_to(self, fit=True)
         # Dialog Icon Handlers
-        self.set_icon(installercons.get_image('off.white.dir').GetIcon())
+        self.set_icon(installercons.get_image(u'off.white.dir').GetIcon())
         self.OnCheckBoxChange()
         self.OnCheckProjectsColorTextCtrl(self.textName.text_content)
 
@@ -179,12 +180,12 @@ class CreateNewProject(DialogWindow):
         if self.checkEsp.is_checked or self.checkEspMasterless.is_checked:
             if self.checkWizard.is_checked:
                 self.set_icon(
-                    installercons.get_image('off.white.dir.wiz').GetIcon())
+                    installercons.get_image(u'off.white.dir.wiz').GetIcon())
             else:
                 self.set_icon(
-                    installercons.get_image('off.white.dir').GetIcon())
+                    installercons.get_image(u'off.white.dir').GetIcon())
         else:
-            self.set_icon(installercons.get_image('off.grey.dir').GetIcon())
+            self.set_icon(installercons.get_image(u'off.grey.dir').GetIcon())
 
     def OnClose(self):
         """ Create the New Project and add user specified extras. """

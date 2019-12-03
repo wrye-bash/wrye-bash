@@ -138,10 +138,10 @@ class INI_Apply(EnabledLink):
         if len(self.selected) == 1:
             tweak = self.selected[0]
             return _(u"Applies '%(tweak)s' to '%(ini)s'.") % {
-                'tweak': tweak, 'ini': self.window.current_ini_name}
+                u'tweak': tweak, u'ini': self.window.current_ini_name}
         else:
             return _(u"Applies selected tweaks to '%(ini)s'.") % {
-            'ini': self.window.current_ini_name}
+            u'ini': self.window.current_ini_name}
 
     def _enable(self):
         return all(imap(bosh.INIInfo.is_applicable, self.iselected_infos()))
@@ -164,7 +164,7 @@ class INI_CreateNew(OneItemLink):
         else:
             return _(u"Creates a new tweak based on '%(tweak)s' but with "
                           u"values from '%(ini)s'.") % {
-                'tweak': (self.selected[0]), 'ini': self.window.current_ini_name}
+                u'tweak': (self.selected[0]), u'ini': self.window.current_ini_name}
 
     def _enable(self): return super(INI_CreateNew, self)._enable() and \
                               self._selected_info.tweak_status >= 0

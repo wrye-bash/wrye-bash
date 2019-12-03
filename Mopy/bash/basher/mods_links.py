@@ -144,7 +144,7 @@ class Mods_LoadList(ChoiceLink):
             @property
             def link_help(self):
                 return _(u'Activate mods in the %(list_name)s list' % {
-                    'list_name': self._text})
+                    u'list_name': self._text})
         self.__class__.choiceLinkType = _LoListLink
 
     @property
@@ -211,7 +211,7 @@ class Mods_OblivionVersion(CheckLink, EnabledLink):
         bosh.modInfos.setOblivionVersion(self._version_key)
         self.window.RefreshUI(refreshSaves=True) # True: refresh save's masters
         if self.setProfile:
-            bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,'vOblivion', self._version_key)
+            bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,u'vOblivion', self._version_key)
         Link.Frame.set_bash_frame_title()
 
 # "File" submenu --------------------------------------------------------------

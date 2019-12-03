@@ -109,9 +109,9 @@ class Installers_MonitorInstall(Installers_Link):
         touchedFiles = sorted(touchedFiles)
         # Show results, select which files to include
         checklists = []
-        newFilesKey = _(u'New Files: %(count)i') % {'count':len(newFiles)}
-        changedFilesKey = _(u'Changed Files: %(count)i') % {'count':len(changedFiles)}
-        touchedFilesKey = _(u'Touched Files: %(count)i') % {'count':len(touchedFiles)}
+        newFilesKey = _(u'New Files: %(count)i') % {u'count':len(newFiles)}
+        changedFilesKey = _(u'Changed Files: %(count)i') % {u'count':len(changedFiles)}
+        touchedFilesKey = _(u'Touched Files: %(count)i') % {u'count':len(touchedFiles)}
         delFilesKey = _(u'Deleted Files')
         if newFiles:
             group = [newFilesKey, _(

@@ -630,7 +630,7 @@ class Obse_Button(_StatefulButton):
         self.button_state]) % (bush.game.Se.se_abbrev, self.obseVersion)
 
     def UpdateToolTips(self):
-        tipAttr = ('sb_button_tip', 'obseTip')[self.button_state]
+        tipAttr = (u'sb_button_tip', u'obseTip')[self.button_state]
         for button in _App_Button.obseButtons:
             button.gButton.tooltip = getattr(button, tipAttr, u'')
 
@@ -716,7 +716,7 @@ class App_Restart(StatusBar_Button):
     def GetBitmapButton(self, window, image=None, onRClick=None):
         size = bass.settings[u'bash.statusbar.iconSize']
         return super(App_Restart, self).GetBitmapButton(
-            window, staticBitmap(window, special='undo', size=(size,size)),
+            window, staticBitmap(window, special=u'undo', size=(size,size)),
             onRClick)
 
     def Execute(self): Link.Frame.Restart()

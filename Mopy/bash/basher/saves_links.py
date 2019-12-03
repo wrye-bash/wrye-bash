@@ -82,12 +82,12 @@ class Saves_ProfilesData(balt.ListEditorData):
     def getInfo(self,item):
         """Returns string info on specified item."""
         profileSaves = _win_join(item)
-        return bosh.saveInfos.profiles.getItem(profileSaves, 'info',
+        return bosh.saveInfos.profiles.getItem(profileSaves, u'info',
                                                _(u'About %s:') % item)
     def setInfo(self, item, info_text):
         """Sets string info on specified item."""
         profileSaves = _win_join(item)
-        bosh.saveInfos.profiles.setItem(profileSaves, 'info', info_text)
+        bosh.saveInfos.profiles.setItem(profileSaves, u'info', info_text)
 
     def add(self):
         """Adds a new profile."""
@@ -110,7 +110,7 @@ class Saves_ProfilesData(balt.ListEditorData):
             return False
         self.baseSaves.join(newName).makedirs()
         newSaves = _win_join(newName)
-        bosh.saveInfos.profiles.setItem(newSaves,'vOblivion',bosh.modInfos.voCurrent)
+        bosh.saveInfos.profiles.setItem(newSaves,u'vOblivion',bosh.modInfos.voCurrent)
         return newName
 
     def rename(self,oldName,newName):
@@ -404,7 +404,7 @@ class Save_EditCreatedData(balt.ListEditorData):
         self.enchantments = {}
         #--Parse records and get into name_nameRecords
         for index,record in enumerate(saveFile.created):
-            if record.recType == 'ENCH':
+            if record.recType == b'ENCH':
                 self.enchantments[record.fid] = record.getTypeCopy()
             elif record.recType in types_set:
                 record = record.getTypeCopy()
@@ -495,12 +495,12 @@ class Save_EditCreatedData(balt.ListEditorData):
 #------------------------------------------------------------------------------
 class Save_EditCreated(OneItemLink):
     """Allows user to rename custom items (spells, enchantments, etc)."""
-    menuNames = {'ENCH':_(u'Rename Enchanted...'),
-                 'SPEL':_(u'Rename Spells...'),
-                 'ALCH':_(u'Rename Potions...')
+    menuNames = {b'ENCH':_(u'Rename Enchanted...'),
+                 b'SPEL':_(u'Rename Spells...'),
+                 b'ALCH':_(u'Rename Potions...')
                  }
-    rec_types = {'ENCH': {'ARMO', 'CLOT', 'WEAP'}, 'SPEL': {'SPEL'},
-                 'ALCH': {'ALCH'}}
+    rec_types = {b'ENCH': {b'ARMO', b'CLOT', b'WEAP'}, b'SPEL': {b'SPEL'},
+                 b'ALCH': {b'ALCH'}}
     _help = _(u'Allow user to rename custom items (spells, enchantments, etc)')
 
     def __init__(self, save_rec_type):
@@ -743,7 +743,7 @@ class Save_ReweighPotions(OneItemLink):
             count = 0
             progress(0.5,_(u"Processing."))
             for index,record in enumerate(saveFile.created):
-                if record.recType == 'ALCH':
+                if record.recType == b'ALCH':
                     record = record.getTypeCopy()
                     record.weight = newWeight
                     record.getSize()
@@ -882,7 +882,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                 except ModError as x:
                     modErrors.append(u'%s'%x)
                     continue
-                if 'NPC_' not in modFile.tops: continue
+                if b'NPC_' not in modFile.tops: continue
                 short_mapper = modFile.getShortMapper()
                 #--Loop over mod NPCs
                 mapToOrdered = MasterMap(modFile.tes4.masters + [modName],

@@ -156,7 +156,7 @@ class _RefreshingLink(_SingleInstallable):
         with balt.Progress(title=_(u'Override Skips')) as progress:
             if self._overrides_skips:
                 self.idata.update_for_overridden_skips(set(dest_src), progress)
-            self.idata.irefresh(what='NS', progress=progress)
+            self.idata.irefresh(what=u'NS', progress=progress)
         self.window.RefreshUI()
 
 class _NoMarkerLink(_InstallerLink):
@@ -422,7 +422,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         #--Duplicate
         with BusyCursor():
             self.idata.copy_installer(curName,newName)
-            self.idata.irefresh(what='N')
+            self.idata.irefresh(what=u'N')
         self.window.RefreshUI(detail_item=newName)
 
 class Installer_Hide(_InstallerLink, UIList_Hide):
@@ -494,21 +494,22 @@ class Installer_SkipRefresh(CheckLink, _SingleProject):
             installer.refreshBasic(progress=None,
                                    recalculate_project_crc=False)
             installer.refreshStatus(self.idata)
-            self.idata.irefresh(what='N')
+            self.idata.irefresh(what=u'N')
             self.window.RefreshUI()
 
 class Installer_Install(_NoMarkerLink):
     """Install selected packages."""
-    mode_title = {'DEFAULT': _(u'Install Current'), 'LAST': _(u'Install Last'),
-                  'MISSING': _(u'Install Missing Files')}
-    mode_help = {'DEFAULT': _(u'Install all configured files from selected '
-                              u'installer(s).'),
-                 'LAST': _(u'Install all configured files from selected '
-                           u'installer(s) at the last position.'),
-                 'MISSING': _(u'Install all missing files from the selected '
-                              u'installer(s).')}
+    mode_title = {u'DEFAULT': _(u'Install Current'),
+                  u'LAST': _(u'Install Last'),
+                  u'MISSING': _(u'Install Missing Files')}
+    mode_help = {u'DEFAULT': _(u'Install all configured files from selected '
+                               u'installer(s).'),
+                 u'LAST': _(u'Install all configured files from selected '
+                            u'installer(s) at the last position.'),
+                 u'MISSING': _(u'Install all missing files from the selected '
+                               u'installer(s).')}
 
-    def __init__(self,mode='DEFAULT'):
+    def __init__(self,mode=u'DEFAULT'):
         super(Installer_Install, self).__init__()
         self.mode = mode
         self._text = self.mode_title[self.mode]
@@ -519,8 +520,8 @@ class Installer_Install(_NoMarkerLink):
         ui_refresh = [False, False]
         try:
             with balt.Progress(_(u'Installing...'),u'\n'+u' '*60) as progress:
-                last = (self.mode == 'LAST')
-                override = (self.mode != 'MISSING')
+                last = (self.mode == u'LAST')
+                override = (self.mode != u'MISSING')
                 try:
                     new_tweaks = self.idata.bain_install(self._installables,
                         ui_refresh, progress, last, override)
@@ -640,7 +641,7 @@ class Installer_Move(_InstallerLink):
         elif newPos == -2: newPos = self.idata[self.idata.lastKey].order+1
         elif newPos < 0: newPos = len(self.idata)
         self.idata.moveArchives(self.selected,newPos)
-        self.idata.irefresh(what='N')
+        self.idata.irefresh(what=u'N')
         self.window.RefreshUI(
             detail_item=self.iPanel.detailsPanel.displayed_item)
 
@@ -671,7 +672,7 @@ class Installer_OpenNexus(AppendableLink, _Installer_OpenAt):
     regexp = bosh.reTesNexus
     _text = _(bush.game.nexusName)
     _help = _(u"Opens this mod's page at the %(nexusName)s.") % \
-            {'nexusName': bush.game.nexusName}
+            {u'nexusName': bush.game.nexusName}
     message = _(
         u"Attempt to open this as a mod at %(nexusName)s? This assumes that "
         u"the trailing digits in the package's name are actually the id "
@@ -679,7 +680,7 @@ class Installer_OpenNexus(AppendableLink, _Installer_OpenAt):
         u"you'll just get a random mod page (or error notice) at %("
         u"nexusName)s.") % {'nexusName': bush.game.nexusName}
     _open_at_continue = bush.game.nexusKey
-    askTitle = _(u'Open at %(nexusName)s') % {'nexusName':bush.game.nexusName}
+    askTitle = _(u'Open at %(nexusName)s') % {u'nexusName':bush.game.nexusName}
     baseUrl = bush.game.nexusUrl + u'mods/'
 
     def _append(self, window): return bool(bush.game.nexusUrl)
@@ -934,7 +935,7 @@ class Installer_Espm_List(_Installer_Details_Link):
         espm_list = self.window.gEspmList
         for index in range(espm_list.lb_get_items_count()):
             subs += [u'   ',u'** '][espm_list.lb_is_checked_at_index(index)] + \
-                    espm_list.lb_get_str_item_at_index(index) + '\n'
+                    espm_list.lb_get_str_item_at_index(index) + u'\n'
         subs += u'[/spoiler]'
         balt.copyToClipboard(subs)
         self._showLog(subs, title=_(u'Plugin List'), fixedFont=False)
@@ -956,7 +957,7 @@ class Installer_Espm_JumpToMod(_Installer_Details_Link):
         return self.target_plugin in bosh.modInfos
 
     def Execute(self):
-        balt.Link.Frame.notebook.SelectPage('Mods', self.target_plugin)
+        balt.Link.Frame.notebook.SelectPage(u'Mods', self.target_plugin)
 
 #------------------------------------------------------------------------------
 # InstallerDetails Subpackage Links -------------------------------------------
@@ -1063,7 +1064,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                     install_order=installer.order + 1, do_refresh=False)
                 projects.append(project)
             if not projects: return
-            self.idata.irefresh(what='NS')
+            self.idata.irefresh(what=u'NS')
             self.window.RefreshUI(detail_item=projects[-1]) # all files ? can status of others change ?
             self.window.SelectItemsNoCallback(projects)
 
@@ -1135,7 +1136,7 @@ class Installer_SyncFromData(_SingleInstallable):
                         actual_upd, len(sel_mismatched))  + u'\n' +
                     _(u'Check the integrity of the installer.'))
             self._selected_info.refreshBasic(SubProgress(progress, 0.1, 0.99))
-            self.idata.irefresh(what='NS')
+            self.idata.irefresh(what=u'NS')
             self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -1204,7 +1205,7 @@ class InstallerConverter_Apply(_InstallerConverter_Link):
     @property
     def link_help(self):
         return _(u'Applies %(bcf)s to the selected installer(s).') % {
-            'bcf': self.dispName}
+            u'bcf': self.dispName}
 
     @balt.conversation
     def Execute(self):
@@ -1326,7 +1327,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
             #--Add the converter to Bash
             self.idata.converters_data.addConverter(converter)
             #--Refresh UI
-            self.idata.irefresh(what='C')
+            self.idata.irefresh(what=u'C')
             #--Generate log
             log = LogFile(StringIO.StringIO())
             log.setHeader(u'== '+_(u'Overview')+u'\n')

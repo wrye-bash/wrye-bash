@@ -412,7 +412,7 @@ class _Mod_Labels(ChoiceLink):
             @property
             def link_help(self): return _(
                 u"Applies the label '%(lbl)s' to the selected mod(s).") % {
-                                            'lbl': self._text}
+                                            u'lbl': self._text}
         self.__class__.choiceLinkType = _LabelLink
 
     @property
@@ -598,7 +598,7 @@ class Mod_Details(OneItemLink):
             progress(0.7,_(u'Sorting records.'))
             for group in sorted(mod_details.group_records):
                 buff.write(group+u'\n')
-                if group in ('CELL','WRLD','DIAL'):
+                if group in (b'CELL',b'WRLD',b'DIAL'):
                     buff.write(u'  '+_(u'(Details not provided for this record type.)')+u'\n\n')
                     continue
                 records = mod_details.group_records[group]
@@ -722,7 +722,7 @@ class Mod_CopyModInfo(ItemLink):
             else: info_txt += _(u'URL: %s') % _getUrl(installer)
             labels = self.window.labels
             for col in self.window.cols:
-                if col == 'File': continue
+                if col == u'File': continue
                 lab = labels[col](self.window, fileName)
                 info_txt += u'\n%s: %s' % (col, lab if lab else u'-')
             #-- Version, if it exists
@@ -2334,7 +2334,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
                 buff.close()
                 self._showLog(log_text, title=_(u'Objects Changed'))
         except BoltError as e:
-            self._showWarning('%r' % e)
+            self._showWarning(u'%r' % e)
 
 #------------------------------------------------------------------------------
 from ..parsers import FullNames
