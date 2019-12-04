@@ -270,10 +270,10 @@ class LeveledListsPatcher(_AListsMerger):
     _de_tag = u'Delev'
     _re_tag = u'Relev'
     _type_to_label = {
-        'LVLC': _(u'Creature'),
-        'LVLN': _(u'Actor'),
-        'LVLI': _(u'Item'),
-        'LVSP': _(u'Spell'),
+        b'LVLC': _(u'Creature'),
+        b'LVLN': _(u'Actor'),
+        b'LVLI': _(u'Item'),
+        b'LVSP': _(u'Spell'),
     }
     _de_re_header = _(u'Delevelers/Relevelers')
 
@@ -302,7 +302,7 @@ class FormIDListsPatcher(_AListsMerger):
     patcher_order = 46
     _read_write_records = (b'FLST',)
     _de_tag = u'Deflst'
-    _type_to_label = {'FLST': _(u'FormID')}
+    _type_to_label = {b'FLST': _(u'FormID')}
     _de_re_header = _(u'Deflsters')
 
     def _get_entries(self, target_list):

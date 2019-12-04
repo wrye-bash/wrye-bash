@@ -46,16 +46,16 @@ class SreNPC(object):
     """NPC change record."""
     __slots__ = ('form','health','unused2','attributes','acbs','spells','factions','full','ai','skills','modifiers')
     sre_flags = Flags(0, Flags.getNames(
-        (0,'form'),
-        (2,'health'),
-        (3,'attributes'),
-        (4,'acbs'),
-        (5,'spells'),
-        (6,'factions'),
-        (7,'full'),
-        (8,'ai'),
-        (9,'skills'),
-        (28,'modifiers'),
+        (0,u'form'),
+        (2,u'health'),
+        (3,u'attributes'),
+        (4,u'acbs'),
+        (5,u'spells'),
+        (6,u'factions'),
+        (7,u'full'),
+        (8,u'ai'),
+        (9,u'skills'),
+        (28,u'modifiers'),
         ))
 
     class ACBS(object):
@@ -219,12 +219,13 @@ class SreNPC(object):
 # Save File -------------------------------------------------------------------
 class SaveFile(object):
     """Represents a Tes4 Save file."""
-    recordFlags = Flags(0,Flags.getNames(
-        'form','baseid','moved','havocMoved','scale','allExtra','lock','owner','unk8','unk9',
-        'mapMarkerFlags','hadHavokMoveFlag','unk12','unk13','unk14','unk15',
-        'emptyFlag','droppedItem','doorDefaultState','doorState','teleport',
-        'extraMagic','furnMarkers','oblivionFlag','movementExtra','animation',
-        'script','inventory','created','unk29','enabled'))
+    recordFlags = Flags(0, Flags.getNames(u'form', u'baseid', u'moved',
+        u'havocMoved', u'scale', u'allExtra', u'lock', u'owner', u'unk8',
+        u'unk9', u'mapMarkerFlags', u'hadHavokMoveFlag', u'unk12', u'unk13',
+        u'unk14', u'unk15', u'emptyFlag', u'droppedItem', u'doorDefaultState',
+        u'doorState', u'teleport', u'extraMagic', u'furnMarkers',
+        u'oblivionFlag', u'movementExtra', u'animation', u'script',
+        u'inventory', u'created', u'unk29', u'enabled'))
 
     def __init__(self,saveInfo=None,canSave=True):
         self.fileInfo = saveInfo
@@ -324,7 +325,7 @@ class SaveFile(object):
     def save(self,outPath=None,progress=None):
         """Save data to file.
         outPath -- Path of the output file to write to. Defaults to original file path."""
-        if not self.canSave: raise StateError(u"Insufficient data to write file.")
+        if not self.canSave: raise StateError(u'Insufficient data to write file.')
         outPath = outPath or self.fileInfo.getPath()
         with outPath.open(u'wb') as out:
             def _pack(fmt, *args):
@@ -587,17 +588,17 @@ class SaveFile(object):
             if full:
                 createdCounts[(citem.recType, full)] += 1
             progress.plus()
-        for key in list(createdCounts):
-            minCount = (50,100)[key[0] == 'ALCH']
-            if createdCounts[key] < minCount:
-                del createdCounts[key]
+        for k in list(createdCounts):
+            minCount = (50,100)[k[0] == b'ALCH']
+            if createdCounts[k] < minCount:
+                del createdCounts[k]
         #--Change records
         progress(len(self.created),_(u'Scanning change records.'))
         fids = self.fids
         for record in self.records:
             rec_id,rec_kind,rec_flgs,version,data = record
             if rec_kind == 49 and rec_id >> 24 == 0xFF and (rec_flgs & 2):
-                iref, = struct_unpack('I', data[4:8])
+                iref, = struct_unpack(u'I', data[4:8])
                 if iref >> 24 != 0xFF and fids[iref] == 0:
                     nullRefCount += 1
             progress.plus()
@@ -696,8 +697,8 @@ class SaveSpells(object):
     def importMod(self,modInfo):
         """Imports spell info from specified mod."""
         #--Spell list already extracted?
-        if 'bash.spellList' in modInfo.extras:
-            self.allSpells.update(modInfo.extras['bash.spellList'])
+        if u'bash.spellList' in modInfo.extras:
+            self.allSpells.update(modInfo.extras[u'bash.spellList'])
             return
         #--Else extract spell list
         loadFactory = LoadFactory(False, MreRecord.type_class[b'SPEL'])
@@ -706,7 +707,7 @@ class SaveSpells(object):
         except ModError as err:
             deprint(u'skipped mod due to read error (%s)' % err)
             return
-        spells = modInfo.extras['bash.spellList'] = {
+        spells = modInfo.extras[u'bash.spellList'] = {
             record.fid: record for record in modFile.tops[b'SPEL'].getActiveRecords()}
         self.allSpells.update(spells)
 
