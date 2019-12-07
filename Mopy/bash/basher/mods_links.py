@@ -330,7 +330,16 @@ class Mods_LockLoadOrder(CheckLink):
 
     def _check(self): return load_order.locked
 
-    def Execute(self): load_order.toggle_lock_load_order()
+    def Execute(self):
+        def _show_lo_lock_warning():
+            message = _(u'Lock Load Order is a feature which resets load '
+                        u'order to a previously memorized state. While this '
+                        u'feature is good for maintaining your load order, it '
+                        u'will also undo any load order changes that you have '
+                        u'made outside Bash.')
+            return self._askContinue(message, 'bash.load_order.lock_continue',
+                                     title=_(u'Lock Load Order'))
+        load_order.toggle_lock_load_order(_show_lo_lock_warning)
 
 #------------------------------------------------------------------------------
 class Mods_CrcRefresh(ItemLink):
