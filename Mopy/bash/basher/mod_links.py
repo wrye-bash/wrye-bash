@@ -1600,7 +1600,7 @@ class _Esm_Esl_Flip(EnabledLink):
         with balt.BusyCursor():
             ##: HACK: forcing active refresh cause mods may be reordered and
             # we then need to sync order in skyrim's plugins.txt
-            bosh.modInfos.refreshLoadOrder(forceRefresh=True, forceActive=True)
+            bosh.modInfos.refreshLoadOrder()
             # converted to esps/esls - rescan mergeable
             bosh.modInfos.rescanMergeable(updated, bolt.Progress())
             # will be moved to the top - note that modification times won't

@@ -2328,6 +2328,7 @@ class InstallersData(DataStore):
             except FileError:
                 mods.discard(mod)
         modInfos.cached_lo_append_if_missing(mods)
+        modInfos.refreshLoadOrder(unlock_lo=True)
         # now that we saved load order update missing mtimes for mods:
         for mod in mods:
             s, c, _d = data_sizeCrcDate_update[mod.s]

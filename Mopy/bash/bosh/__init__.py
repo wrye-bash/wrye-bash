@@ -1776,9 +1776,16 @@ class ModInfos(FileInfos):
     # Load order API for the rest of Bash to use - if the load order or
     # active plugins changed, those methods run a refresh on modInfos data
     @_lo_cache
-    def refreshLoadOrder(self, forceRefresh=False, forceActive=False):
-        load_order.refresh_lo(cached=not forceRefresh,
-                              cached_active=not forceActive)
+    def refreshLoadOrder(self, forceRefresh=True, forceActive=True,
+                         unlock_lo=False):
+        def _do_lo_refresh():
+            load_order.refresh_lo(cached=not forceRefresh,
+                                  cached_active=not forceActive)
+        # Needed for BAIN, which may have to reorder installed plugins
+        if unlock_lo:
+            with load_order.Unlock(): _do_lo_refresh()
+        else: _do_lo_refresh()
+
 
     @_lo_cache
     def cached_lo_save_active(self, active=None):
