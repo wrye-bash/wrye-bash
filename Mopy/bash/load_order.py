@@ -44,7 +44,6 @@ import math
 import collections
 import time
 # Internal
-from . import balt
 from . import bass
 from . import bolt
 from . import bush
@@ -304,7 +303,7 @@ def refresh_lo(cached=False, cached_active=True):
             bolt.deprint(u'Saved load order is no longer valid: %s'
                          u'\nCorrected to %s' % (saved, fixed))
         saved = fixed
-    else: saved = None
+    else: saved = __empty
     if cached_lord is not __empty:
         lo = cached_lord.loadOrder if (
             cached and not _game_handle.load_order_changed()) else None
@@ -312,7 +311,7 @@ def refresh_lo(cached=False, cached_active=True):
             cached_active and not _game_handle.active_changed()) else None
     else: active = lo = None
     _update_cache(lo, active)
-    if locked and saved is not None:
+    if locked and saved is not __empty:
         if cached_lord.loadOrder != saved.loadOrder:
             save_lo(saved.loadOrder, saved.activeOrdered)
             global warn_locked
@@ -388,16 +387,12 @@ def get_free_time(start_time, default_time='+1', end_time=None):
     return _game_handle.get_free_time(start_time, default_time, end_time)
 
 # Lock load order -------------------------------------------------------------
-def toggle_lock_load_order():
+def toggle_lock_load_order(user_warning_callback):
     global locked
     lock = not locked
     if lock:
-        message =  _(u'Lock Load Order is a feature which resets load order '
-            u'to a previously memorized state.  While this feature is good '
-            u'for maintaining your load order, it will also undo any load '
-            u'order changes that you have made outside Bash.')
-        lock = balt.askContinue(None, message, 'bash.load_order.lock_continue',
-                                title=_(u'Lock Load Order'))
+        # Make sure the user actually wants to enable this
+        lock = user_warning_callback()
     bass.settings['bosh.modInfos.resetMTimes'] = locked = lock
 
 class Unlock(object):
