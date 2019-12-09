@@ -167,6 +167,8 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
                 u'SLocalMasterPath') or u'Data')
     # these are relative to the mods path so they must be set here
     dirs['patches'] = dirs['mods'].join(u'Bash Patches')
+    ##: double-check vanilla capitalization of 'scripts'
+    dirs['scripts'] = dirs['mods'].join(u'scripts')
     dirs['tag_files'] = dirs['mods'].join(u'BashTags')
     dirs['ini_tweaks'] = dirs['mods'].join(u'INI Tweaks')
     #--Mod Data, Installers

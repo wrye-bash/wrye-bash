@@ -81,6 +81,7 @@ saveInfos = None   # type: SaveInfos
 iniInfos = None    # type: INIInfos
 bsaInfos = None    # type: BSAInfos
 screensData = None # type: ScreensData
+pex_infos = None   # type: PEXInfos
 #--Config Helper files (LOOT Master List, etc.)
 configHelpers = None # type: mods_metadata.ConfigHelpers
 
@@ -3016,6 +3017,35 @@ class ScreensData(DataStore):
         super(ScreensData, self)._rename_operation(oldName, newName)
         self[newName] = self[oldName]
         del self[oldName]
+
+#------------------------------------------------------------------------------
+from . import pex_files
+
+class PEXInfos(FileInfos):
+    """PEXInfo collection. Represents pex files in the game's Data/Scripts
+    directory."""
+    def __init__(self):
+        self.__class__.file_pattern = re.compile(u'' r'\.pex$', re.I | re.U)
+        _pex_type = pex_files.get_pex_type(bush.game.fsName)
+
+        class PEXInfo(FileInfo, _pex_type):
+            def _reset_cache(self, stat_tuple, load_cache):
+                # TODO(inf) Is this needed? FileInfo._reset_cache seems to not
+                #  forward in MRO, so I'm copying PEXFile._reset_cache here
+                self.loading_state = 0
+                super(PEXInfo, self)._reset_cache(stat_tuple, load_cache)
+
+            def getFileInfos(self):
+                return pex_infos
+
+            def readHeader(self):
+                self.read_pex_file(up_to='pex_header')
+                self.header = self.pex_header
+
+        super(PEXInfos, self).__init__(dirs['scripts'], factory=PEXInfo)
+
+    @property
+    def bash_dir(self): return dirs['modsBash'].join(u'PEX Data')
 
 #------------------------------------------------------------------------------
 from . import converters
