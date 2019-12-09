@@ -60,6 +60,7 @@ import sys
 import time
 from collections import OrderedDict
 from functools import partial
+from math import log10
 from operator import itemgetter
 from types import ClassType
 #--wxPython
@@ -138,6 +139,7 @@ tabInfo = {
     'Screenshots': ['ScreensPanel', _(u"Screenshots"), None],
     'People':['PeoplePanel', _(u"People"), None],
     # 'BSAs':['BSAPanel', _(u"BSAs"), None],
+    # 'Scripts':['ScriptsPanel', _(u'Scripts'), None],
 }
 
 #------------------------------------------------------------------------------
@@ -3395,6 +3397,327 @@ class PeoplePanel(BashTab):
         super(PeoplePanel, self).ShowPanel()
 
 #------------------------------------------------------------------------------
+class ScriptsList(balt.UIList):
+    mainMenu = Links()
+    itemMenu = Links()
+    _sort_keys = {
+        'File'         : None,
+        'Modified'     : lambda self, p: self.data_store[p].mtime,
+        'Size'         : lambda self, p: self.data_store[p].size,
+        'Compiled'     : lambda self, p: self.data_store[
+            p].header.compilation_time,
+        'User Name'    : lambda self, p: self.data_store[
+            p].header.user_name.lower(),
+        'Machine Name' : lambda self, p: self.data_store[
+            p].header.machine_name.lower(),
+    }
+    labels = OrderedDict([
+        ('File',         lambda self, p: p.s),
+        ('Modified',     lambda self, p: formatDate(self.data_store[p].mtime)),
+        ('Size',         lambda self, p: round_size(self.data_store[p].size)),
+        ('Compiled',     lambda self, p: formatDate(
+            self.data_store[p].header.compilation_time)),
+        ('User Name',    lambda self, p: self.data_store[
+            p].pex_header.user_name),
+        ('Machine Name', lambda self, p: self.data_store[
+            p].pex_header.machine_name),
+    ])
+
+    def set_item_format(self, item, item_format):
+        # TODO(inf) item_format.icon_key =
+        pass
+
+#------------------------------------------------------------------------------
+class ScriptsDetails(_DetailsMixin, NotebookPanel):
+    keyPrefix = 'bash.scripts.details'
+
+    def __init__(self, parent):
+        super(ScriptsDetails, self).__init__(parent)
+        self._pex_path = None
+        self.g_tree_view = wx.TreeCtrl(self, size=(256, 192),
+                                       style=wx.TR_DEFAULT_STYLE |
+                                             wx.TR_FULL_ROW_HIGHLIGHT)
+        self.SetSizer(hSizer((self.g_tree_view, 1, wx.GROW)))
+
+    @property
+    def displayed_item(self): return self._pex_path
+
+    @property
+    def file_infos(self): return bosh.pex_infos
+
+    def _resetDetails(self):
+        self.g_tree_view.DeleteAllItems()
+
+    def SetFile(self, fileName='SAME'):
+        self._pex_path = super(ScriptsDetails, self).SetFile(fileName)
+        if not self._pex_path: return
+        # Make sure we have the full file
+        self._resetDetails()
+        self.file_info.read_pex_file()
+        self._flag_mapper = self.file_info.get_user_flag_mapper()
+        # Begin by adding the root node
+        tree_root = self.g_tree_view.AddRoot(self._pex_path.s)
+        # Add each section
+        self._create_header(tree_root)
+        self._create_string_table(tree_root)
+        self._create_debug_info(tree_root)
+        self._create_user_flags(tree_root)
+        self._create_objects(tree_root)
+        # Finally, expand the root node
+        self.g_tree_view.Expand(tree_root)
+
+    # TODO(inf) Better API for TreeCtrl is a must - wrapping sorely needed!
+    #  (see #190)
+    # TODO(inf) That API should also support an easy way to delay creation of
+    #  any section until it is needed (i.e. expanded)
+    # TODO(inf) All this should eventually end up in its own module, but see
+    #  #63 for the prerequisites
+    def _create_header(self, tree_root):
+        """Creates the Header section. Expanded by default."""
+        header_obj = self.file_info.pex_header
+        add_entry = self.g_tree_view.AppendItem
+        header_section = add_entry(tree_root, _(u'Header'))
+        add_entry(header_section, _(u'Magic: 0x%X') % header_obj.pex_magic)
+        add_entry(header_section, _(u'Version: %u.%u') % (
+            header_obj.pex_major_version, header_obj.pex_minor_version))
+        add_entry(header_section, _(u'Game ID: %u') % header_obj.game_id)
+        add_entry(header_section, _(u'Compilation Date: %s') % formatDate(
+            header_obj.compilation_time))
+        add_entry(header_section, _(u'Source Filename: %s') %
+                  header_obj.source_file_name)
+        add_entry(header_section, _(u'User Name: %s') % header_obj.user_name)
+        add_entry(header_section, _(u'Machine Name: %s') %
+                  header_obj.machine_name)
+        self.g_tree_view.Expand(header_section)
+
+    def _create_string_table(self, tree_root):
+        """Creates the String Table section. Collapsed by default."""
+        st_obj = self.file_info.string_table
+        add_entry = self.g_tree_view.AppendItem
+        st_section = add_entry(
+            tree_root, _(u'String Table <%u entries>') %
+                       len(st_obj.stored_strings))
+        for str_idx, stored_str in enumerate(st_obj.stored_strings):
+            add_entry(st_section, u'#%u: %s' % (str_idx, stored_str.str_val))
+
+    def _create_debug_info(self, tree_root):
+        """Creates the Debug Info section. Collapsed by default."""
+        debug_obj = self.file_info.debug_info
+        add_entry = self.g_tree_view.AppendItem
+        debug_section = add_entry(tree_root, _(u'Debug Info'))
+        add_entry(debug_section, _(u'Modification Time: %s') % formatDate(
+            debug_obj.modification_time))
+        df_section = add_entry(
+            debug_section, _(u'Debug Functions <%u functions>') %
+                           len(debug_obj.debug_functions))
+        for i, debug_func in enumerate(debug_obj.debug_functions):
+            self._create_debug_function(df_section, i, debug_func)
+
+    def _create_debug_function(self, df_section, func_index, debug_func):
+        """Creates a single Debug Function section. Collapsed by default."""
+        add_entry = self.g_tree_view.AppendItem
+        look_up  = self.file_info.look_up_string
+        func_section = add_entry(df_section, _(u'Debug Function #%u') %
+                                 func_index)
+        add_entry(func_section, _(u'Object Name: %s') % look_up(
+            debug_func.object_name_index))
+        add_entry(func_section, _(u'State Name: %s') % look_up(
+            debug_func.state_name_index))
+        add_entry(func_section, _(u'Function Name: %s') % look_up(
+            debug_func.function_name_index))
+        add_entry(func_section, _(u'Function Type: %u') %
+                  debug_func.function_type)
+        ln_section = add_entry(
+            func_section, _(u'Line Number Mapping <%u entries>') %
+                          len(debug_func.line_numbers))
+        for i, ln in enumerate(debug_func.line_numbers):
+            add_entry(ln_section, _(u'%u -> %u') % (i, ln.line_num))
+
+    def _create_user_flags(self, tree_root):
+        """Creates the Available User Flags section. Collapsed by default."""
+        flags_obj = self.file_info.user_flags
+        add_entry = self.g_tree_view.AppendItem
+        look_up = self.file_info.look_up_string
+        flags_section = add_entry(
+            tree_root, _(u'Available User Flags <%u flags>') %
+                       len(flags_obj.active_user_flags))
+        for user_flag in sorted(flags_obj.active_user_flags,
+                                key=lambda f: f.flag_index):
+            add_entry(flags_section, _(u'Bit #%u: %s') % (
+                user_flag.flag_index, look_up(user_flag.name_index)))
+
+    def _create_objects(self, tree_root):
+        """Creates the Objects section. Expanded partially by default."""
+        objects_obj = self.file_info.pex_objects
+        objects_section = self.g_tree_view.AppendItem(
+            tree_root, _(u'Objects <%u objects>') %
+                       len(objects_obj.object_list))
+        for i, object_obj in enumerate(objects_obj.object_list):
+            self._create_object(objects_section, i, object_obj)
+        self.g_tree_view.Expand(objects_section)
+
+    def _create_object(self, objects_section, object_index, object_obj):
+        """Creates a single Object section. Expanded partially by default."""
+        add_entry = self.g_tree_view.AppendItem
+        look_up = self.file_info.look_up_string
+        obj_section = add_entry(objects_section, u'#%u: %s' % (
+            object_index, look_up(object_obj.name_index)))
+        add_entry(obj_section, _(u'Object Size: %u bytes') %
+                  object_obj.object_size)
+        add_entry(obj_section, _(u'Parent Class: %s') % look_up(
+            object_obj.parent_class_name))
+        add_entry(obj_section, _(u'Docstring: %s') % look_up(
+            object_obj.docstring))
+        add_entry(obj_section, _(u'User Flags: %r') %
+                  self._flag_mapper(object_obj.object_user_flags))
+        add_entry(obj_section, _(u'Auto State: %s') % look_up(
+            object_obj.auto_state_name))
+        self._create_variables(obj_section, object_obj)
+        self._create_properties(obj_section, object_obj)
+        self._create_states(obj_section, object_obj)
+        self.g_tree_view.Expand(obj_section)
+
+    def _look_up_value(self, value_obj):
+        """Helper method to convert a PEX value into a human-readable string
+        representation."""
+        val_type = value_obj.value_type
+        if val_type == 0:
+            return u'' # Handle null
+        elif val_type in (1, 2):
+            return self.file_info.look_up_string(value_obj.value_data)
+        elif val_type in (3, 4):
+            return u'%r' % value_obj.value_data
+        else: # val_type == 5
+            return u'%r' % (value_obj.value_data != 0)
+
+    def _create_variables(self, obj_section, object_obj):
+        """Creates the Variables section. Collapsed by default."""
+        look_up = self.file_info.look_up_string
+        add_entry = self.g_tree_view.AppendItem
+        vars_section = add_entry(
+            obj_section, _(u'Variables <%u variables>') %
+                             len(object_obj.variables))
+        for i, var_obj in enumerate(object_obj.variables):
+            var_flags = u' '.join(self._flag_mapper(
+                var_obj.var_user_flags).getTrueAttrs())
+            var_default_val = self._look_up_value(var_obj)
+            if var_default_val:
+                var_default_val = u' = ' + var_default_val
+            add_entry(vars_section, u'#%u: %s%s %s%s' % (
+                i, var_flags, look_up(var_obj.variable_type),
+                look_up(var_obj.variable_name), var_default_val))
+
+    def _create_properties(self, obj_section, object_obj):
+        """Creates the Properties section. Collapsed by default."""
+        look_up = self.file_info.look_up_string
+        add_entry = self.g_tree_view.AppendItem
+        props_section = add_entry(
+            obj_section, _(u'Properties <%u properties>') %
+                             len(object_obj.properties))
+        for i, prop_obj in enumerate(object_obj.properties):
+            prop_section = add_entry(
+                props_section, u'#%u: %s %s' % (
+                    i, look_up(prop_obj.property_type),
+                    look_up(prop_obj.property_name)))
+            add_entry(prop_section, _(u'Docstring: %s') % look_up(
+                prop_obj.docstring))
+            add_entry(prop_section, _(u'User Flags: %r') %
+                      self._flag_mapper(prop_obj.property_user_flags))
+            prop_flags = prop_obj.property_flags
+            add_entry(prop_section, _(u'Flags: %r') % prop_flags)
+            if prop_flags.has_autovar:
+                add_entry(prop_section, u'Autovar: %s' % look_up(
+                    prop_obj.auto_var_name))
+            else:
+                # has_autovar wins out over the other flags
+                if prop_flags.is_readable:
+                    rh_section = add_entry(prop_section, u'Read Handler')
+                    self._create_function(rh_section, prop_obj.read_handler)
+                if prop_flags.is_writable:
+                    wh_section = add_entry(prop_section, u'Write Handler')
+                    self._create_function(wh_section, prop_obj.write_handler)
+
+    def _create_function(self, func_section, func_obj):
+        """Creates a single function section. Collapsed by default. Since these
+        functions have no name, needs to have its section created externally."""
+        look_up = self.file_info.look_up_string
+        add_entry = self.g_tree_view.AppendItem
+        opcode_info = self.file_info.get_opcode_info
+        add_entry(func_section, _(u'Return Type: %s') % look_up(
+            func_obj.return_type))
+        add_entry(func_section, _(u'Docstring: %s') % look_up(
+            func_obj.docstring))
+        add_entry(func_section, _(u'User Flags: %r') %
+                  self._flag_mapper(func_obj.function_user_flags))
+        add_entry(func_section, _(u'Flags: %r') % func_obj.function_flags)
+        params_section = add_entry(
+            func_section, _(u'Parameters <%u parameters>') %
+                          len(func_obj.parameters))
+        for i, func_param in enumerate(func_obj.parameters):
+            add_entry(params_section, u'#%u: %s %s' % (
+                i, look_up(func_param.variable_type),
+                look_up(func_param.variable_name)))
+        lv_section = add_entry(
+            func_section, _(u'Local Variables <%u variables>') %
+                          len(func_obj.local_vars))
+        for i, local_var in enumerate(func_obj.local_vars):
+            add_entry(lv_section, u'#%u: %s %s' % (
+                i, look_up(local_var.variable_type),
+                look_up(local_var.variable_name)))
+        bc_section = add_entry(
+            func_section, _(u'Bytecode <%u instructions>') %
+                          len(func_obj.instructions))
+        # Have to guard here, since log10(0) errors (obviously)
+        if func_obj.instructions:
+            # Precompute a format string with just enough prefix length
+            ins_fmt_str = u'%0' + unicode(
+                int(log10(len(func_obj.instructions))) + 1) + u'u: %s'
+            for i, func_ins in enumerate(func_obj.instructions):
+                mnemonic, num_args, has_varargs = opcode_info(func_ins)
+                all_args = []
+                if num_args: all_args += func_ins.arguments
+                if has_varargs: all_args += func_ins.varargs
+                full_str = ins_fmt_str % (i, mnemonic.upper())
+                if all_args: full_str += u' ' + u' '.join(
+                    self._look_up_value(a) for a in all_args)
+                add_entry(bc_section, full_str)
+
+    def _create_states(self, obj_section, object_obj):
+        """Creates the States section. Collapsed by default."""
+        look_up = self.file_info.look_up_string
+        add_entry = self.g_tree_view.AppendItem
+        states_section = add_entry(
+            obj_section, _(u'States <%u states>') % len(object_obj.states))
+        for i, state_obj in enumerate(object_obj.states):
+            state_name = look_up(state_obj.state_name)
+            if not state_name: state_name = _(u'<default state>')
+            state_section = add_entry(
+                states_section, _(u'#%u: %s, %u functions') % (
+                    i, state_name, len(state_obj.state_functions)))
+            for j, func_obj in enumerate(state_obj.state_functions):
+                func_section = add_entry(
+                    state_section, u'#%u: %s' % (
+                        j, look_up(func_obj.function_name)))
+                self._create_function(func_section, func_obj)
+
+#------------------------------------------------------------------------------
+class ScriptsPanel(BashTab):
+    """Scripts tab."""
+    keyPrefix = 'bash.scripts'
+    _status_str = _(u'Scripts:') + u' %d'
+    _ui_list_type = ScriptsList
+    _details_panel_type = ScriptsDetails
+
+    def __init__(self,parent):
+        self.listData = bosh.pex_infos = bosh.PEXInfos()
+        super(ScriptsPanel, self).__init__(parent)
+
+    def ShowPanel(self, **kwargs):
+        if bosh.pex_infos.refresh():
+            self.uiList.RefreshUI(focus_list=False)
+        super(ScriptsPanel, self).ShowPanel()
+
+#------------------------------------------------------------------------------
 #--Tabs menu
 class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
     """Handle hiding/unhiding tabs."""
@@ -3461,11 +3784,12 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
     # default tabs order and default enabled state, keys as in tabInfo
     _tabs_enabled_ordered = OrderedDict((('Installers', True),
                                         ('Mods', True),
+                                        # ('BSAs', True),
+                                        # ('Scripts', True),
                                         ('Saves', True),
                                         ('INI Edits', True),
                                         ('Screenshots', True),
                                         ('People', False),
-                                        # ('BSAs', False),
                                        ))
 
     @staticmethod
@@ -3488,6 +3812,9 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         for d in deleted: del newOrder[d]
         # Ensure the 'Mods' tab is always shown
         if 'Mods' not in newOrder: newOrder['Mods'] = True # inserts last
+        # Ensure that the 'Scripts' tab only appers for games with scripts
+        if not bush.game.script_extensions:
+            del newOrder['Scripts']
         settings['bash.tabs.order'] = newOrder
         return newOrder
 

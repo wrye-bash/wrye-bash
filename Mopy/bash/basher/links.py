@@ -27,7 +27,7 @@ attributes which are populated here. Therefore the layout of the menus is
 also defined in these functions."""
 from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
     BSAList, ScreensList, MasterList, bEnableWizard, PeopleList, \
-    BashStatusBar, BashNotebook
+    BashStatusBar, BashNotebook, ScriptsList
 from .. import bass, balt, bush
 from ..cint import CBashApi
 from ..balt import Image, MenuLink, SeparatorLink, UIList_OpenItems, \
@@ -709,7 +709,7 @@ def InitBSALinks():
 #------------------------------------------------------------------------------
 def InitScreenLinks():
     """Initialize screens tab menus."""
-    #--SaveList: Column Links
+    #--ScreensList: Column Links
     if True: # Sort
         sortMenu = MenuLink(_(u'Sort by'))
         sortMenu.links.append(Files_SortBy('File'))
@@ -797,6 +797,30 @@ def InitSettingsLinks():
     SettingsMenu.append(Settings_DumpTranslator())
     SettingsMenu.append(Settings_UAC())
 
+def init_scripts_links():
+    """Initialize Scripts tab menu."""
+    # ScriptsList: Column Links
+    if True: # Sort
+        sortMenu = MenuLink(_(u'Sort by'))
+        sortMenu.links.append(Files_SortBy('File'))
+        sortMenu.links.append(Files_SortBy('Modified'))
+        sortMenu.links.append(Files_SortBy('Size'))
+        sortMenu.links.append(Files_SortBy('Compiled'))
+        sortMenu.links.append(Files_SortBy('User Name'))
+        sortMenu.links.append(Files_SortBy('Machine Name'))
+        ScriptsList.mainMenu.append(sortMenu)
+    ScriptsList.mainMenu.append(SeparatorLink())
+    ScriptsList.mainMenu.append(ColumnsMenu())
+    ScriptsList.mainMenu.append(SeparatorLink())
+    ScriptsList.mainMenu.append(UIList_OpenStore())
+    # ScriptsList: Item Links
+    if True: #--File Menu
+        fileMenu = MenuLink(_(u'File..'))
+        fileMenu.links.append(balt.UIList_Rename())
+        fileMenu.links.append(File_Duplicate())
+        fileMenu.links.append(balt.UIList_Delete())
+        ScriptsList.itemMenu.append(fileMenu)
+
 def InitLinks():
     """Call other link initializers."""
     InitStatusBar()
@@ -809,3 +833,4 @@ def InitLinks():
     InitScreenLinks()
     InitPeopleLinks()
     # InitBSALinks()
+    init_scripts_links()

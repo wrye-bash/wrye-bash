@@ -222,6 +222,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         'Mod Status': _(u'Mod Status'),
         'Author': _(u'Author'),
         'Cell': _(u'Cell'),
+        'Compiled': _(u'Compiled'),
         'CRC':_(u'CRC'),
         'Current Order': _(u'Current LO'),
         'Date': _(u'Date'),
@@ -233,6 +234,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         'Installer':_(u'Installer'),
         'Karma': _(u'Karma'),
         'Load Order': _(u'Load Order'),
+        'Machine Name': _(u'Machine Name'),
         'Modified': _(u'Modified'),
         'Name': _(u'Name'),
         'Num': _(u'MI'),
@@ -245,6 +247,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         'Size': _(u'Size'),
         'Status': _(u'Status'),
         'Subject': _(u'Subject'),
+        'User Name': _(u'User Name'),
         },
     #--Wrye Bash: Masters
     'bash.masters.cols': ['File', 'Num', 'Current Order'],
@@ -387,6 +390,19 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         'Karma': 25,
         'Header': 50,
         },
+    # Wyre Bash: Scripts
+    'bash.scripts.cols': ['File', 'Modified', 'Size', 'User Name', 'Compiled',
+                          'Machine Name'],
+    'bash.scripts.sort': 'File',
+    'bash.scripts.colReverse': {},
+    'bash.scripts.colWidths': {
+        'File': 150,
+        'Modified': 150,
+        'Size': 75,
+        'Compiled': 150,
+        'User Name': 75,
+        'Machine Name': 75,
+    },
     #--Tes4View/Edit/Trans
     'tes4View.iKnowWhatImDoing':False,
     'tes5View.iKnowWhatImDoing':False,

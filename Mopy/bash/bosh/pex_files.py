@@ -633,6 +633,10 @@ class PEXFile(AFile):
                                       raise_on_error=True)
 
     # API ---------------------------------------------------------------------
+    def get_opcode_info(self, component):
+        """Returns opcode info as a tuple - mnemonic, #args, has varags."""
+        return _opcodes[component.opcode]
+
     def get_user_flag_mapper(self):
         """Returns a bolt.Flags instance that handles this script's user
         flags."""
