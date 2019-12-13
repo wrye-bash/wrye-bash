@@ -615,28 +615,27 @@ tab. The directories skipped are:
 </table>
 </div>
 <div class="prlflex clearf">
-    <figure class="slideshow" style="width:459px; min-height:445px">
+    <figure class="slideshow" style="width:555px; min-height:386px">
         <img alt="Installer Context Menu" src="../bash/images/readme/installers-rclick-installer-menu-1.png">
         <img alt="Installer Context Menu" src="../bash/images/readme/installers-rclick-installer-menu-2.png">
         <img alt="Installer Context Menu" src="../bash/images/readme/installers-rclick-installer-menu-3.png">
         <img alt="Installer Context Menu" src="../bash/images/readme/installers-rclick-installer-menu-4.png">
         <img alt="Installer Context Menu" src="../bash/images/readme/installers-rclick-installer-menu-5.png">
         <img alt="Installer Context Menu" src="../bash/images/readme/installers-rclick-installer-menu-6.png">
-        <img alt="Installer Context Menu" src="../bash/images/readme/installers-rclick-installer-menu-7.png">
     </figure>
 <table id="bainPackageCommands">
     <thead>
         <tr>
-            <th colspan="3">Package Context Menu</th>
+            <th colspan="4">Package Context Menu</th>
         </tr>
         <tr>
-            <th colspan="2">Command</th>
+            <th colspan="3">Command</th>
             <th>Description</th>
         </tr>
     </thead>
     <tbody>
         <tr>
-            <td rowspan="6" id="bainFileMenu">File...</td>
+            <td colspan="2" rowspan="6" id="bainFileMenu">File...</td>
             <td id="bainOpenFile">Open...</td>
             <td>Opens the selected package(s) in the file system.</td>
         </tr>
@@ -664,7 +663,7 @@ tab. The directories skipped are:
                 <strong>not</strong> sent to the Recycling Bin, they are permanently deleted.</td>
         </tr>
         <tr>
-            <td rowspan="4" id="bainOpenAt">Open at</td>
+            <td colspan="2" rowspan="4" id="bainOpenAt">Open at</td>
             <td>Google...</td>
             <td>Attempts to perform a Google search for the selected package's name.</td>
         </tr>
@@ -681,38 +680,17 @@ tab. The directories skipped are:
             <td>Attempts to open the selected package's page on TES Alliance. This command assumes that the trailing digits in a package's name is the package ID at the site.</td>
         </tr>
         <tr>
-            <td colspan="2" id="bainAnneal">Anneal</td>
+            <td colspan="3" id="bainOpenReadme">Open Readme</td>
+            <td>If BAIN detects a readme in the selected package, it will be opened.</td>
+        </tr>
+        <tr>
+            <td colspan="3" id="bainAnneal">Anneal</td>
             <td>Installs missing files and corrects install order errors. Note: If an already installed file is changed outside of Wrye Bash control, Wrye Bash will not anneal that file. Anneal is relative to other installed packages. This is because we do not want to override user changes like cleaning plugins and the like. If you do want to override the change use
                 <a href="#bainInstall">Install</a> instead. Note2: The change will be detected immediately in case of ini tweaks, mods or bsas, but on next Bash load for other files (like nifs etc). To detect the change without restarting
                 <a href="#bainQuickRefresh">(Quick) Refresh</a> the package.</td>
         </tr>
         <tr>
-            <td colspan="2" id="bainInstall">Install</td>
-            <td>Fully installs the package except for files that would be overridden by later packages.</td>
-        </tr>
-        <tr>
-            <td rowspan="3" id="bainWizardMenu">Wizard Installer...</td>
-            <td id="bainWizard">Manual Wizard</td>
-            <td>Runs the Wizard for the package, if it has one.</td>
-        </tr>
-        <tr>
-            <td id="bainAutoWizard">Auto Wizard</td>
-            <td>Runs the Wizard for the package, if it has one, selecting the default options.</td>
-        </tr>
-        <tr>
-            <td id="bainViewWizard">View Wizard...</td>
-            <td>Opens the wizard.txt for viewing.</td>
-        </tr>
-        <tr>
-            <td colspan="2" id="bainInstallMissing">Install Missing Files</td>
-            <td>The same as Install, except that it only installs missing files – i.e. it will not override any currently existing files.</td>
-        </tr>
-        <tr>
-            <td colspan="2" id="bainUninstall">Uninstall</td>
-            <td>Uninstalls the package. If Auto-Anneal is active (the default) then files from earlier packages that were previously overridden will be installed as required.</td>
-        </tr>
-        <tr>
-            <td colspan="2" id="bainQuickRefresh">Quick Refresh</td>
+            <td colspan="3" id="bainQuickRefresh">Quick Refresh</td>
             <td>
                 <p>Refreshes all info for the selected package(s), also checking the files that correspond to this package inside the Data directory. It will bypass skip refresh flags on projects (see case A below). BAIN does refresh package information whenever the installer's tab regains focus, except for projects if project skipping is on, but does not scan the Data folder but once on boot.</p> So this command is useful if:
                 <ol type="A">
@@ -727,20 +705,45 @@ tab. The directories skipped are:
             </td>
         </tr>
         <tr>
-            <td colspan="2" id="bainExportACHlist">Export ACHList</td>
-            <td> This exports a file list of the files configured to be installed by this installer (except top level files and docs installed in Data/Docs folder). This list is used when the CK asks for a list of files to make new BSA files, for use when uploading to Bethesda.net. It will generate a
-                <code>installer-name.achlist</code> file inside the Mod Info Exports directory in the game (exe) folder. Mod Info Exports will be created if it doesn't exist. If an achlist with the same name exists it will be overwritten. Import the ACHList Bash generated and it will then package your files into the proper archives for upload. Available only for Skyrim&colon; Special Edition &amp; Fallout 4. </td>
-        </tr>
-        <tr>
-            <td rowspan="10" id="bainPackageMenu">Package..</td>
-            <td id="bainOpenReadme">Open Readme</td>
-            <td>If BAIN detects a readme in the selected package, it will be opened.</td>
-        </tr>
-        <tr>
-            <td id="bainMoveTo">Move To...</td>
+            <td colspan="3" id="bainMoveTo">Move To...</td>
             <td>Moves the selected package(s) to the specified position.</td>
         </tr>
         <tr>
+            <td rowspan="7">Install..</td>
+            <td colspan="2" id="bainInstall">Install</td>
+            <td>Fully installs the package except for files that would be overridden by later packages.</td>
+        </tr>
+        <tr>
+            <td colspan="2" id="bainInstallMissing">Install Missing Files</td>
+            <td>The same as Install, except that it only installs missing files – i.e. it will not override any currently existing files.</td>
+        </tr>
+        <tr>
+            <td colspan="2" id="bainInstallLast">Install Last</td>
+            <td>Moves the package to the end of the order list and installs it.</td>
+        </tr>
+        <tr>
+            <td rowspan="4" id="bainWizardMenu">Wizard Installer...</td>
+            <td id="bainWizard">Manual Wizard...</td>
+            <td>Runs the Wizard for the package, if it has one.</td>
+        </tr>
+        <tr>
+            <td>Auto Wizard...</td>
+            <td>Runs the Wizard for the package, if it has one, selecting the default options.</td>
+        </tr>
+        <tr>
+            <td>View Wizard...</td>
+            <td>Archives Only. Opens the wizard.txt for viewing.</td>
+        </tr>
+        <tr>
+            <td>Edit Wizard...</td>
+            <td>Projects Only. Opens the wizard.txt in your system's default <code>.txt</code> editor.</td>
+        </tr>
+        <tr>
+            <td colspan="3" id="bainUninstall">Uninstall</td>
+            <td>Uninstalls the package. If Auto-Anneal is active (the default) then files from earlier packages that were previously overridden will be installed as required.</td>
+        </tr>
+        <tr>
+            <td colspan="2" rowspan="8" id="bainPackageMenu">Package..</td>
             <td id="bainRefresh">Refresh</td>
             <td>As
                 <a href="#bainRefresh">Quick Refresh</a> below. Refresh will however recalculate the
@@ -753,8 +756,9 @@ tab. The directories skipped are:
                     <strong>and</strong> its size</em> - that's super rare, you most probably just need Quick Refresh below.</td>
         </tr>
         <tr>
-            <td id="bainListStructure">List Structure...</td>
-            <td>Generates a list of the files and directories in a package. Useful for posting package structure on forums, eg. when troubleshooting an install.</td>
+            <td id="bainExportACHlist">Export Achlist</td>
+            <td> This exports a file list of the files configured to be installed by this installer (except top level files and docs installed in Data/Docs folder). This list is used when the CK asks for a list of files to make new BSA files, for use when uploading to Bethesda.net. It will generate a
+                <code>installer-name.achlist</code> file inside the Mod Info Exports directory in the game (exe) folder. Mod Info Exports will be created if it doesn't exist. If an achlist with the same name exists it will be overwritten. Import the ACHList Bash generated and it will then package your files into the proper archives for upload. Available only for Skyrim&colon; Special Edition &amp; Fallout 4. </td>
         </tr>
         <tr>
             <td id="bainPackToArchive">Pack to Archive...</td>
@@ -763,6 +767,10 @@ tab. The directories skipped are:
         <tr>
             <td id="bainPackageForRelease">Package For Release...</td>
             <td>Projects only. Just like "Pack to Archive" except it doesn't archive the following: thumbs.db, desktop.ini, and any folder that begins with "--".</td>
+        </tr>
+        <tr>
+            <td id="bainListStructure">List Structure...</td>
+            <td>Generates a list of the files and directories in a package. Useful for posting package structure on forums, eg. when troubleshooting an install.</td>
         </tr>
         <tr>
             <td id="bainSyncFromData">Sync From Data</td>
@@ -779,11 +787,7 @@ tab. The directories skipped are:
                 <a href="#bainShowLowerConflicts">Show Lower Conflicts</a> options were selected. Useful for comparing conflicting resources.</td>
         </tr>
         <tr>
-            <td id="bainInstallLast">Install Last</td>
-            <td>Moves the package to the end of the order list and installs it.</td>
-        </tr>
-        <tr>
-            <td rowspan="2" id="bainConversion">BAIN Conversions</td>
+            <td colspan="2" rowspan="2" id="bainConversion">BAIN Conversions</td>
             <td>Create...</td>
             <td>Archives only. Creates a new Bain Conversion File.</td>
         </tr>
@@ -792,7 +796,7 @@ tab. The directories skipped are:
             <td>[BCF] is the name of a Bain Conversion File listed in the Apply submenu. Selecting a BCF applies it to the selected package.</td>
         </tr>
         <tr>
-            <td colspan="2" id="bainHasExtraDirectories">Has Extra Directories</td>
+            <td colspan="3" id="bainHasExtraDirectories">Has Extra Directories</td>
             <td>BAIN only recognises a limited set of subdirectories of the Data folder (the
                 <a href="Wrye%20Bash%20General%20Readme.html#bain-structure">standard game directories</a>), and skips any unrecognised subdirectories. Checking this option will cause BAIN to install unrecognised subdirectories (Unless the files within are on the list of files which are always skipped such as .exe files, see
                 <a href="#bain-skipped">Skipped Files</a>)
@@ -800,23 +804,23 @@ tab. The directories skipped are:
                 <strong>NB:</strong> extra directories will not be taken into account at all when calculating package structure. There must be at least some standard game directory or a data file (plugin, bsa/ba2, ini) in the package for BAIN to recognise its structure.</td>
         </tr>
         <tr>
-            <td colspan="2" id="bainOverrideSkips">Override Skips</td>
+            <td colspan="3" id="bainOverrideSkips">Override Skips</td>
             <td>If this is checked, Bain will not skip over files that would normally be skipped due to a
                 <a href="#bainGlobalSkips">global skip option</a>.</td>
         </tr>
         <tr>
-            <td colspan="2" id="bainSkipVoices">Skip Voices</td>
+            <td colspan="3" id="bainSkipVoices">Skip Voices</td>
             <td>If this is checked, Bain will skip over any voice files in the package. This is useful if the voice files are empty and/or the user prefers not to use them. If this option is used, then the user should also use Elys'
                 <a href="https://www.nexusmods.com/oblivion/mods/16622">Universal Silent Voice</a> extension to prevent dialog subtitles from fading too rapidly.</td>
         </tr>
         <tr>
-            <td colspan="2" id="bainDontRefresh">Don't Refresh</td>
+            <td colspan="3" id="bainDontRefresh">Don't Refresh</td>
             <td>When refreshing installers (when switching out and in the installers tab), this
                 <em>project</em> won't be scanned for changes. The project will only get refreshed during the first refresh of BAIN on a restart, or by manually refreshing (see
                 <a href="#bainQuickRefresh">Quick Refresh</a> and co)</td>
         </tr>
         <tr>
-            <td colspan="2" id="bainOmodInfo">Omod Info...</td>
+            <td colspan="3" id="bainOmodInfo">Omod Info...</td>
             <td>Projects only. Allows you to read/write omod configuration info.</td>
         </tr>
     </tbody>

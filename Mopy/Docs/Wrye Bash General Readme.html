@@ -490,37 +490,39 @@ from other packages previously overridden by the uninstalled package's
 </table>
 <table>
     <thead>
-        <tr><th colspan="3">Package Context Menu</th></tr>
-        <tr><th colspan="2">Command</th><th>Description</th></tr>
+        <tr><th colspan="4">Package Context Menu</th></tr>
+        <tr><th colspan="3">Command</th><th>Description</th></tr>
     </thead>
     <tbody>
         <tr><td rowspan="5">File..</td>
-            <td>Open...</td><td>Opens the selected package(s) in the file system.</td></tr>
-            <tr><td>Rename...</td><td>Renames the selected package or marker.</td></tr>
-            <tr><td>Duplicate...</td><td>Makes a duplicate of the selected package(s).</td></tr>
-            <tr><td>Hide...</td><td>Hides the selected package in the list, and moves it to the
+            <td colspan="2">Open...</td><td>Opens the selected package(s) in the file system.</td></tr>
+            <tr><td colspan="2">Rename...</td><td>Renames the selected package or marker.</td></tr>
+            <tr><td colspan="2">Duplicate...</td><td>Makes a duplicate of the selected package(s).</td></tr>
+            <tr><td colspan="2">Hide...</td><td>Hides the selected package in the list, and moves it to the
                 <code>[Game] Mods/Bash Mod Data/Hidden</code> folder.</td></tr>
-            <tr><td>Delete</td><td>Deletes the selected package(s). Deleted packages are
+            <tr><td colspan="2">Delete</td><td>Deletes the selected package(s). Deleted packages are
                 sent to the Recycling Bin, not permanently deleted.</td></tr>
-        <tr><td colspan="2">Open at</td><td>Attempts to open the selected package's page on
+        <tr><td colspan="3">Open at</td><td>Attempts to open the selected package's page on
             the selected site. If Google is selected, performs a Google search for the package name.
             For the other three sites, this command assumes that the trailing digits in a package's
             name is the package ID at the sites. If this assumption is wrong, a random page, or an
             error page, will be opened.</td></tr>
-        <tr><td colspan="2" id="bainAnneal">Anneal</td><td>Installs missing files and corrects install
+        <tr><td colspan="3">Open Readme</td><td>If BAIN detects a readme in the package, it will be opened.</td></tr>
+        <tr><td colspan="3" id="bainAnneal">Anneal</td><td>Installs missing files and corrects install
             order errors according to the package configuration.</td></tr>
-        <tr><td colspan="2" id="bainInstall">Install</td><td>Fully installs the package as configured
+        <tr><td rowspan="3">Install..</td>
+            <td colspan="2" id="bainInstall">Install</td> <td>Fully installs the package as configured
             except for files that would be overridden by later packages.</td></tr>
-        <tr><td rowspan="2">Wizard Installer..</td>
-            <td id="bainWizard">Manual Wizard</td><td>Runs the Wizard for the package, if it has
-                one.</td></tr>
-            <tr><td id="bainAutoWizard">Auto Wizard</td><td>Runs the Wizard for the package, if
+            <tr><td rowspan="2">Wizard Installer..</td>
+                <td id="bainWizard">Manual Wizard...</td><td>Runs the Wizard for the package, if it has
+                    one.</td></tr>
+            <tr><td id="bainAutoWizard">Auto Wizard...</td><td>Runs the Wizard for the package, if
                 it has one, selecting the default options.</td></tr>
-        <tr><td colspan="2" id="bainUninstall">Uninstall<td>Uninstalls the package. If
+        <tr><td colspan="3" id="bainUninstall">Uninstall<td>Uninstalls the package. If
             <a href="Wrye%20Bash%20Advanced%20Readme.html#bainAutoAnneal">Auto-Anneal</a> is active
             (the default) then files from earlier packages that were previously overridden will be
             installed as required.</td></tr>
-        <tr><td colspan="2">Quick Refresh</td><td>Refreshes all info for the selected package(s). Since
+        <tr><td colspan="3">Quick Refresh</td><td>Refreshes all info for the selected package(s). Since
             BAIN refreshes package information whenever Wrye Bash regains focus after losing it (ie.
             you select another program's window, then switch back to Wrye Bash), this is only useful
             if a package has been changed and it has
@@ -528,17 +530,16 @@ from other packages previously overridden by the uninstalled package's
             or the <a href="Wrye%20Bash%20Advanced%20Readme.html#bainAutoRefreshProjects">Auto-Refresh
                 Projects</a> option is disabled. Note that scanning a project for changes takes much
             longer than scanning an archive for changes.</td></tr>
-        <tr><td rowspan="3">Package..</td>
-            <td>Open Readme</td><td>If BAIN detects a readme in the package, it will be opened.</td></tr>
-            <tr><td id="bainMoveTo">Move To...</td><td>Moves the selected package(s) to the specified
+        <tr><td rowspan="2">Package..</td>
+            <td colspan="2" id="bainMoveTo">Move To...</td><td>Moves the selected package(s) to the specified
                 position.</td></tr>
-            <tr><td>List Structure...</td><td>Generates a list of the files and directories in a
+            <tr><td colspan="2">List Structure...</td><td>Generates a list of the files and directories in a
                 package. Useful for posting package structure on forums, eg. when troubleshooting an
                 install.</td></tr>
-        <tr><td colspan="2" id="bainHasExtraDirectories">Has Extra Directories</td><td>BAIN only recognises a
+        <tr><td colspan="3" id="bainHasExtraDirectories">Has Extra Directories</td><td>BAIN only recognises a
             limited set of subdirectories of the Data folder, and skips any unrecognised subdirectories.
             Checking this option will cause BAIN to install unrecognised subdirectories.</td></tr>
-        <tr><td id="bainApply">BAIN Conversions</td>
+        <tr><td colspan="2" id="bainApply">BAIN Conversions</td>
             <td>Apply</td><td>Applies a BAIN Conversion File.</td></tr>
     </tbody>
 </table>

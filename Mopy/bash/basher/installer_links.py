@@ -187,7 +187,8 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
     def __init__(self, bAuto):
         super(Installer_Wizard, self).__init__()
         self.bAuto = bAuto
-        self._text = _(u'Auto Wizard') if self.bAuto else _(u'Manual Wizard')
+        self._text = (_(u'Auto Wizard...') if self.bAuto
+                      else _(u'Manual Wizard...'))
         self._help = _(u"Run the install wizard selecting the default options"
                        ) if self.bAuto else _(u"Run the install wizard.")
 
