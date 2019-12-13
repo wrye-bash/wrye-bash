@@ -57,7 +57,7 @@ class INI_AllowNewLines(BoolLink):
 #------------------------------------------------------------------------------
 class INI_ListINIs(ItemLink):
     """List errors that make an INI Tweak invalid."""
-    _text = _(u'List Active INIs...')
+    _text = _(u'List Active INI Tweaks...')
     _help = _(u'Lists all fully applied tweak files.')
 
     def Execute(self):

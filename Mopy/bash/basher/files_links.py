@@ -181,7 +181,8 @@ class File_ListMasters(OneItemLink):
 
 class File_Snapshot(ItemLink):
     """Take a snapshot of the file."""
-    _help = _(u"Creates a snapshot copy of the current mod in a subdirectory (Bash\Snapshots).")
+    _help = _(u'Creates a snapshot copy of the selected file(s) in a '
+              u'subdirectory (Bash\Snapshots).')
 
     def _initData(self, window, selection):
         super(File_Snapshot, self)._initData(window, selection)
@@ -268,8 +269,8 @@ class _RevertBackup(OneItemLink):
 
     def __init__(self, first=False):
         super(_RevertBackup, self).__init__()
-        self._text = _(u'Revert to First Backup') if first else _(
-            u'Revert to Backup')
+        self._text = _(u'Revert to First Backup...') if first else _(
+            u'Revert to Backup...')
         self.first = first
 
     def _initData(self, window, selection):
