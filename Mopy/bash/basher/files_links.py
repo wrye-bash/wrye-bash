@@ -23,14 +23,15 @@
 # =============================================================================
 
 import re
+import time
 from .. import bass, balt, bosh, bush, bolt, exception
 from ..balt import ItemLink, RadioLink, ChoiceLink, OneItemLink
 from ..bolt import GPath
-from ..localize import format_date
+from ..localize import format_date, unformat_date
 
 __all__ = ['Files_SortBy', 'Files_Unhide', 'File_Backup', 'File_Duplicate',
            'File_Snapshot', 'File_RevertToBackup', 'File_RevertToSnapshot',
-           'File_ListMasters']
+           'File_ListMasters', 'File_Redate']
 
 #------------------------------------------------------------------------------
 # Files Links -----------------------------------------------------------------
@@ -301,3 +302,37 @@ class _RevertBackup(OneItemLink):
 class File_RevertToBackup(ChoiceLink):
     """Revert to last or first backup."""
     extraItems = [_RevertBackup(), _RevertBackup(first=True)]
+
+class File_Redate(ItemLink):
+    """Move the selected files to start at a specified date."""
+    _text = _(u'Redate...')
+    _help = _(u'Change the modification time(s) of the selected file(s) to '
+              u'start at a specified date.')
+
+    @balt.conversation
+    def Execute(self):
+        # Ask user for revised time and parse it
+        new_time_input = self._askText(
+            _(u'Redate selected file(s) starting at...'),
+            title=_(u'Redate Files'), default=format_date(int(time.time())))
+        if not new_time_input: return
+        try:
+            new_time = int(time.mktime(unformat_date(new_time_input, '%c')))
+        except ValueError:
+            self._showError(_(u'Unrecognized date: ') + new_time_input)
+            return
+        # Perform the redate process and refresh
+        for to_redate in self._infos_to_redate():
+            to_redate.setmtime(new_time)
+            new_time += 60
+        self._perform_refresh()
+        self.window.RefreshUI(refreshSaves=True)
+
+    # Overrides for Mod_Redate
+    def _infos_to_redate(self):
+        """Returns an iterable of the FileInfo instances to redate."""
+        return self.iselected_infos()
+
+    def _perform_refresh(self):
+        """Refreshes the data store - """
+        self.window.data_store.refresh(refresh_infos=False)
