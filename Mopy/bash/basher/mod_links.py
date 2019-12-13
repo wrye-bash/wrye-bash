@@ -151,8 +151,8 @@ class Mod_CreateDummyMasters(OneItemLink):
 
 class Mod_OrderByName(EnabledLink):
     """Sort the selected files."""
-    _text = _(u'Sort')
-    _help = _(u"Sort the selected files.")
+    _text = _(u'Order By Name')
+    _help = _(u'Reorder the selected mods to be in alphabetical order.')
 
     def _enable(self): return len(self.selected) > 1
 
@@ -171,7 +171,7 @@ class Mod_OrderByName(EnabledLink):
                                  _(u'Sort Mods')): return
         #--Do it
         self.selected.sort()
-        self.selected.sort( # sort esmls first
+        self.selected.sort( # sort masters first
             key=lambda m: not load_order.in_master_block(bosh.modInfos[m]))
         if not load_order.using_txt_file():
             #--Get first time from first selected file.

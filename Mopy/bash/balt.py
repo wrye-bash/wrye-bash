@@ -2619,20 +2619,16 @@ class UIList_OpenStore(ItemLink):
 
 class UIList_Hide(ItemLink):
     """Hide the file (move it to the data store's Hidden directory)."""
-    _text = _(u'Hide')
-
-    def _initData(self, window, selection):
-        super(UIList_Hide, self)._initData(window, selection)
-        self.hidden_dir = self.window.data_store.hidden_dir
-        self._help = _(u"Move %(filename)s to %(hidden_dir)s") % (
-            {'filename': selection[0], 'hidden_dir': self.hidden_dir})
+    _text = _(u'Hide...')
+    _help = _(u"Hide the selected file(s) by moving them to the 'Hidden' "
+              u'directory.')
 
     @conversation
     def Execute(self):
         if not bass.inisettings['SkipHideConfirmation']:
             message = _(u'Hide these files? Note that hidden files are simply '
-                        u'moved to the %(hidden_dir)s directory.') % (
-                          {'hidden_dir': self.hidden_dir})
+                        u'moved to the %(hdir)s directory.') % (
+                          {'hdir': self.window.data_store.hidden_dir})
             if not self._askYes(message, _(u'Hide Files')): return
         self.window.hide(self.selected)
         self.window.RefreshUI(refreshSaves=True)

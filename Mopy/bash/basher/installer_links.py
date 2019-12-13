@@ -492,9 +492,8 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
 
 class Installer_Hide(_InstallerLink, UIList_Hide):
     """Hide selected Installers."""
-    _text = _(u'Hide...')
-    _help = _(
-        u"Hide selected installer(s). No installer markers should be selected")
+    _help = UIList_Hide._help + _(u' Not available if any markers have been '
+                                  u'selected.')
 
     def _enable(self):
         return not any(map(lambda inf: isinstance(inf, bosh.InstallerMarker),

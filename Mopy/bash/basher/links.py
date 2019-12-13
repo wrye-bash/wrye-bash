@@ -224,9 +224,9 @@ def InitMasterLinks():
 def InitInstallerLinks():
     """Initialize Installers tab menus."""
     #--Column links
-    #--Sorting
+    # Sorting and Columns
     if True:
-        sortMenu = MenuLink(_(u"Sort by"))
+        sortMenu = MenuLink(_(u'Sort by'))
         sortMenu.links.append(Installers_SortActive())
         sortMenu.links.append(Installers_SortProjects())
         #InstallersList.mainMenu.append(Installers_SortStructure())
@@ -237,22 +237,26 @@ def InitInstallerLinks():
         sortMenu.links.append(Files_SortBy('Size'))
         sortMenu.links.append(Files_SortBy('Files'))
         InstallersList.mainMenu.append(sortMenu)
-    #--Columns
-    InstallersList.mainMenu.append(SeparatorLink())
     InstallersList.mainMenu.append(ColumnsMenu())
-    #--Actions
     InstallersList.mainMenu.append(SeparatorLink())
-    InstallersList.mainMenu.append(UIList_OpenStore())
+    # Files Menu
+    if True:
+        files_menu = MenuLink(_(u'Files..'))
+        files_menu.links.append(UIList_OpenStore())
+        files_menu.links.append(Files_Unhide(u'installer'))
+        files_menu.links.append(SeparatorLink())
+        files_menu.links.append(Installers_CreateNewProject())
+        InstallersList.mainMenu.append(files_menu)
+    InstallersList.mainMenu.append(SeparatorLink())
+    #--Actions
     InstallersList.mainMenu.append(Installers_Refresh())
     InstallersList.mainMenu.append(Installers_Refresh(full_refresh=True))
     InstallersList.mainMenu.append(Installers_AddMarker())
-    InstallersList.mainMenu.append(Installers_CreateNewProject())
     InstallersList.mainMenu.append(Installers_MonitorInstall())
     InstallersList.mainMenu.append(SeparatorLink())
     InstallersList.mainMenu.append(Installers_ListPackages())
     InstallersList.mainMenu.append(SeparatorLink())
     InstallersList.mainMenu.append(Installers_AnnealAll())
-    InstallersList.mainMenu.append(Files_Unhide('installer'))
     InstallersList.mainMenu.append(SeparatorLink())
     InstallersList.mainMenu.append(Installers_UninstallAllPackages())
     InstallersList.mainMenu.append(Installers_UninstallAllUnknownFiles())
@@ -279,13 +283,14 @@ def InitInstallerLinks():
     InstallersList.mainMenu.append(Installers_RenameStrings())
     #--Item links
     if True: #--File Menu
-        fileMenu = MenuLink(_(u"File.."))
-        fileMenu.links.append(Installer_Open())
-        fileMenu.links.append(Installer_Rename())
-        fileMenu.links.append(Installer_Duplicate())
-        fileMenu.links.append(Installer_Hide())
-        fileMenu.links.append(balt.UIList_Delete())
-        InstallersList.itemMenu.append(fileMenu)
+        file_menu = MenuLink(_(u'File..'))
+        file_menu.links.append(Installer_Open())
+        file_menu.links.append(Installer_Rename())
+        file_menu.links.append(Installer_Duplicate())
+        file_menu.links.append(Installer_Hide())
+        file_menu.links.append(File_Redate())
+        file_menu.links.append(balt.UIList_Delete())
+        InstallersList.itemMenu.append(file_menu)
     if True: #--Open At...
         openAtMenu = InstallerOpenAt_MainMenu(oneDatumOnly=True)
         openAtMenu.links.append(Installer_OpenSearch())
@@ -359,18 +364,23 @@ def InitInstallerLinks():
 def InitINILinks():
     """Initialize INI Edits tab menus."""
     #--Column Links
-    if True: #--Sort by
-        sortMenu = MenuLink(_(u"Sort by"))
+    # Sorting and Columns
+    if True:
+        sortMenu = MenuLink(_(u'Sort by'))
         sortMenu.links.append(INI_SortValid())
         sortMenu.links.append(SeparatorLink())
         sortMenu.links.append(Files_SortBy('File'))
         sortMenu.links.append(Files_SortBy('Installer'))
         INIList.mainMenu.append(sortMenu)
-    INIList.mainMenu.append(SeparatorLink())
     INIList.mainMenu.append(ColumnsMenu())
     INIList.mainMenu.append(SeparatorLink())
+    # Files Menu
+    if True:
+        files_menu = MenuLink(_(u'Files..'))
+        files_menu.links.append(UIList_OpenStore())
+        INIList.mainMenu.append(files_menu)
+    INIList.mainMenu.append(SeparatorLink())
     INIList.mainMenu.append(INI_AllowNewLines())
-    INIList.mainMenu.append(UIList_OpenStore())
     INIList.mainMenu.append(INI_ListINIs())
     #--Item menu
     INIList.itemMenu.append(INI_Apply())
@@ -384,12 +394,9 @@ def InitINILinks():
 def InitModLinks():
     """Initialize Mods tab menus."""
     #--ModList: Column Links
-    if True: #--Load
-        loadMenu = MenuLink(_(u'Load Order'))
-        loadMenu.links.append(Mods_LoadList())
-        ModList.mainMenu.append(loadMenu)
-    if True: #--Sort by
-        sortMenu = MenuLink(_(u"Sort by"))
+    # Sorting and Columns
+    if True:
+        sortMenu = MenuLink(_(u'Sort by'))
         sortMenu.links.append(Mods_EsmsFirst())
         sortMenu.links.append(Mods_SelectedFirst())
         sortMenu.links.append(SeparatorLink())
@@ -405,6 +412,25 @@ def InitModLinks():
         sortMenu.links.append(Files_SortBy('CRC'))
         sortMenu.links.append(Files_SortBy('Mod Status'))
         ModList.mainMenu.append(sortMenu)
+    ModList.mainMenu.append(ColumnsMenu())
+    ModList.mainMenu.append(SeparatorLink())
+    # Files Menu
+    if True:
+        files_menu = MenuLink(_(u'Files..'))
+        files_menu.links.append(UIList_OpenStore())
+        files_menu.links.append(Files_Unhide(u'mod'))
+        if bush.game.esp.canBash:
+            files_menu.links.append(SeparatorLink())
+            files_menu.links.append(Mods_CreateBlankBashedPatch())
+            files_menu.links.append(Mods_CreateBlank())
+            files_menu.links.append(Mods_CreateBlank(masterless=True))
+        ModList.mainMenu.append(files_menu)
+    ModList.mainMenu.append(SeparatorLink())
+    if True: #--Load
+        loadMenu = MenuLink(_(u'Load Order'))
+        loadMenu.links.append(Mods_LoadList())
+        ModList.mainMenu.append(loadMenu)
+    ModList.mainMenu.append(SeparatorLink())
     if bush.game.fsName == u'Oblivion': #--Versions
         versionsMenu = MenuLink(u"Oblivion.esm")
         versionsMenu.links.append(Mods_OblivionVersion(u'1.1'))
@@ -412,23 +438,7 @@ def InitModLinks():
         versionsMenu.links.append(Mods_OblivionVersion(u'GOTY non-SI'))
         versionsMenu.links.append(Mods_OblivionVersion(u'SI'))
         ModList.mainMenu.append(versionsMenu)
-    #--Columns ----------------------------------
-    ModList.mainMenu.append(SeparatorLink())
-    ModList.mainMenu.append(ColumnsMenu())
-    #--------------------------------------------
-    ModList.mainMenu.append(SeparatorLink())
-    #--File Menu---------------------------------
-    if True:
-        fileMenu = MenuLink(_(u'File'))
-        if bush.game.esp.canBash:
-            fileMenu.links.append(Mods_CreateBlankBashedPatch())
-            fileMenu.links.append(Mods_CreateBlank())
-            fileMenu.links.append(Mods_CreateBlank(masterless=True))
-            fileMenu.links.append(SeparatorLink())
-        fileMenu.links.append(UIList_OpenStore())
-        fileMenu.links.append(Files_Unhide('mod'))
-        ModList.mainMenu.append(fileMenu)
-    ModList.mainMenu.append(SeparatorLink())
+        ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Mods_ListMods())
     ModList.mainMenu.append(Mods_ListBashTags())
     ModList.mainMenu.append(Mods_CleanDummyMasters())
@@ -444,22 +454,18 @@ def InitModLinks():
     if bass.inisettings['ShowDevTools']:
         ModList.itemMenu.append(Mod_FullLoad())
     if True: #--File
-        fileMenu = MenuLink(_(u"File"))
-        if bush.game.esp.canBash:
-            fileMenu.links.append(Mod_CreateDummyMasters())
-            fileMenu.links.append(SeparatorLink())
-        fileMenu.links.append(File_Backup())
-        fileMenu.links.append(File_Duplicate())
-        fileMenu.links.append(File_Snapshot())
-        fileMenu.links.append(SeparatorLink())
-        fileMenu.links.append(balt.UIList_Delete())
-        fileMenu.links.append(UIList_Hide())
-        fileMenu.links.append(Mod_Redate())
-        fileMenu.links.append(Mod_OrderByName())
-        fileMenu.links.append(SeparatorLink())
-        fileMenu.links.append(File_RevertToBackup())
-        fileMenu.links.append(File_RevertToSnapshot())
-        ModList.itemMenu.append(fileMenu)
+        file_menu = MenuLink(_(u'File..'))
+        file_menu.links.append(File_Duplicate())
+        file_menu.links.append(UIList_Hide())
+        file_menu.links.append(Mod_Redate())
+        file_menu.links.append(balt.UIList_Delete())
+        file_menu.links.append(SeparatorLink())
+        file_menu.links.append(File_Backup())
+        file_menu.links.append(File_RevertToBackup())
+        file_menu.links.append(SeparatorLink())
+        file_menu.links.append(File_Snapshot())
+        file_menu.links.append(File_RevertToSnapshot())
+        ModList.itemMenu.append(file_menu)
     if True: #--Groups
         groupMenu = MenuLink(_(u"Groups"))
         groupMenu.links.append(Mod_Groups())
@@ -469,6 +475,8 @@ def InitModLinks():
         ratingMenu.links.append(Mod_Ratings())
         ModList.itemMenu.append(ratingMenu)
     #--------------------------------------------
+    ModList.itemMenu.append(SeparatorLink())
+    ModList.itemMenu.append(Mod_OrderByName())
     ModList.itemMenu.append(SeparatorLink())
     if bush.game.esp.canBash:
         ModList.itemMenu.append(Mod_Details())
@@ -590,6 +598,8 @@ def InitModLinks():
         if bush.game.check_esl:
             ModList.itemMenu.append(Mod_FlipEsl())
         ModList.itemMenu.append(Mod_FlipMasters())
+        if bush.game.esp.canBash:
+            ModList.itemMenu.append(Mod_CreateDummyMasters())
         if bush.game.fsName == u'Oblivion':
             ModList.itemMenu.append(Mod_SetVersion())
 #    if bosh.inisettings['showadvanced'] == 1:
@@ -601,8 +611,9 @@ def InitModLinks():
 def InitSaveLinks():
     """Initialize save tab menus."""
     #--SaveList: Column Links
-    if True: #--Sort
-        sortMenu = MenuLink(_(u"Sort by"))
+    # Sorting and Columns
+    if True:
+        sortMenu = MenuLink(_(u'Sort by'))
         sortMenu.links.append(Files_SortBy('File'))
         sortMenu.links.append(Files_SortBy('Cell'))
         sortMenu.links.append(Files_SortBy('PlayTime'))
@@ -610,38 +621,42 @@ def InitSaveLinks():
         sortMenu.links.append(Files_SortBy('Player'))
         sortMenu.links.append(Files_SortBy('Status'))
         SaveList.mainMenu.append(sortMenu)
+    SaveList.mainMenu.append(ColumnsMenu())
+    SaveList.mainMenu.append(SeparatorLink())
+    # Files Menu
+    if True:
+        files_menu = MenuLink(_(u'Files..'))
+        files_menu.links.append(UIList_OpenStore())
+        files_menu.links.append(Files_Unhide(u'save'))
+    SaveList.mainMenu.append(files_menu)
+    SaveList.mainMenu.append(SeparatorLink())
+    if True: #--Save Profiles
+        subDirMenu = MenuLink(_(u"Profile"))
+        subDirMenu.links.append(Saves_Profiles())
+        SaveList.mainMenu.append(subDirMenu)
     if bush.game.fsName == u'Oblivion': #--Versions
+        SaveList.mainMenu.append(SeparatorLink())
         versionsMenu = MenuLink(u"Oblivion.esm")
         versionsMenu.links.append(Mods_OblivionVersion(u'1.1',setProfile=True))
         versionsMenu.links.append(Mods_OblivionVersion(u'1.1b',setProfile=True))
         versionsMenu.links.append(Mods_OblivionVersion(u'GOTY non-SI',setProfile=True))
         versionsMenu.links.append(Mods_OblivionVersion(u'SI',setProfile=True))
         SaveList.mainMenu.append(versionsMenu)
-    if True: #--Save Profiles
-        subDirMenu = MenuLink(_(u"Profile"))
-        subDirMenu.links.append(Saves_Profiles())
-        SaveList.mainMenu.append(subDirMenu)
-    #--Columns --------------------------------
-    SaveList.mainMenu.append(SeparatorLink())
-    SaveList.mainMenu.append(ColumnsMenu())
-    #------------------------------------------
-    SaveList.mainMenu.append(SeparatorLink())
-    SaveList.mainMenu.append(UIList_OpenStore())
-    SaveList.mainMenu.append(Files_Unhide('save'))
     #--SaveList: Item Links
     if True: #--File
-        fileMenu = MenuLink(_(u"File")) #>>
-        fileMenu.links.append(File_Backup())
-        fileMenu.links.append(File_Duplicate())
-        #fileMenu.links.append(File_Snapshot())
-        fileMenu.links.append(SeparatorLink())
-        fileMenu.links.append(balt.UIList_Delete())
-        fileMenu.links.append(UIList_Hide())
-        fileMenu.links.append(SeparatorLink())
-        fileMenu.links.append(File_RevertToBackup())
-        fileMenu.links.append(Save_Rename())
-        #fileMenu.links.append(File_RevertToSnapshot())
-        SaveList.itemMenu.append(fileMenu)
+        file_menu = MenuLink(_(u'File..'))
+        file_menu.links.append(Save_Rename())
+        file_menu.links.append(File_Duplicate())
+        file_menu.links.append(UIList_Hide())
+        file_menu.links.append(File_Redate())
+        file_menu.links.append(balt.UIList_Delete())
+        file_menu.links.append(SeparatorLink())
+        file_menu.links.append(File_Backup())
+        file_menu.links.append(File_RevertToBackup())
+        file_menu.links.append(SeparatorLink())
+        file_menu.links.append(File_Snapshot())
+        file_menu.links.append(File_RevertToSnapshot())
+        SaveList.itemMenu.append(file_menu)
     if True: #--Move to Profile
         moveMenu = MenuLink(_(u"Move To"))
         moveMenu.links.append(Save_Move())
@@ -686,44 +701,57 @@ def InitSaveLinks():
 def InitBSALinks():
     """Initialize BSA tab menus."""
     #--BSAList: Column Links
-    if True: #--Sort
-        sortMenu = MenuLink(_(u"Sort by"))
+    # Sorting and Columns
+    if True:
+        sortMenu = MenuLink(_(u'Sort by'))
         sortMenu.links.append(Files_SortBy('File'))
         sortMenu.links.append(Files_SortBy('Modified'))
         sortMenu.links.append(Files_SortBy('Size'))
         BSAList.mainMenu.append(sortMenu)
-    BSAList.mainMenu.append(SeparatorLink())
     BSAList.mainMenu.append(ColumnsMenu())
     BSAList.mainMenu.append(SeparatorLink())
-    BSAList.mainMenu.append(UIList_OpenStore())
+    # Files Menu
+    if True:
+        files_menu = MenuLink(_(u'Files..'))
+        files_menu.links.append(UIList_OpenStore())
+        files_menu.links.append(Files_Unhide(u'BSA'))
+    BSAList.mainMenu.append(files_menu)
+    BSAList.mainMenu.append(SeparatorLink())
     #--BSAList: Item Links
     if True: #--File
-        fileMenu = MenuLink(_(u"File")) #>>
-        fileMenu.links.append(File_Backup())
-        fileMenu.links.append(File_Duplicate())
-        fileMenu.links.append(SeparatorLink())
-        fileMenu.links.append(balt.UIList_Delete())
-        fileMenu.links.append(UIList_Hide())
-        fileMenu.links.append(SeparatorLink())
-        fileMenu.links.append(File_RevertToBackup())
-        BSAList.itemMenu.append(fileMenu)
-        BSAList.itemMenu.append(BSA_ExtractToProject())
-        BSAList.itemMenu.append(BSA_ListContents())
+        file_menu = MenuLink(_(u'File..'))
+        file_menu.links.append(File_Duplicate())
+        file_menu.links.append(UIList_Hide())
+        file_menu.links.append(File_Redate())
+        file_menu.links.append(balt.UIList_Delete())
+        file_menu.links.append(SeparatorLink())
+        file_menu.links.append(File_Backup())
+        file_menu.links.append(File_RevertToBackup())
+        file_menu.links.append(SeparatorLink())
+        file_menu.links.append(File_Snapshot())
+        file_menu.links.append(File_RevertToSnapshot())
+    BSAList.itemMenu.append(file_menu)
+    BSAList.itemMenu.append(BSA_ExtractToProject())
+    BSAList.itemMenu.append(BSA_ListContents())
 
 #------------------------------------------------------------------------------
 def InitScreenLinks():
     """Initialize screens tab menus."""
-    #--SaveList: Column Links
-    if True: # Sort
+    #--ScreensList: Column Links
+    # Sorting and Columns
+    if True:
         sortMenu = MenuLink(_(u'Sort by'))
         sortMenu.links.append(Files_SortBy('File'))
         sortMenu.links.append(Files_SortBy('Modified'))
         sortMenu.links.append(Files_SortBy('Size'))
         ScreensList.mainMenu.append(sortMenu)
-    ScreensList.mainMenu.append(SeparatorLink())
     ScreensList.mainMenu.append(ColumnsMenu())
     ScreensList.mainMenu.append(SeparatorLink())
-    ScreensList.mainMenu.append(UIList_OpenStore())
+    if True:
+        files_menu = MenuLink(_(u'Files..'))
+        files_menu.links.append(UIList_OpenStore())
+        ScreensList.mainMenu.append(files_menu)
+    ScreensList.mainMenu.append(SeparatorLink())
     ScreensList.mainMenu.append(Screens_NextScreenShot())
     #--JPEG Quality
     if True:
@@ -734,10 +762,12 @@ def InitScreenLinks():
         ScreensList.mainMenu.append(SeparatorLink())
         ScreensList.mainMenu.append(qualityMenu)
     #--ScreensList: Item Links
-    ScreensList.itemMenu.append(UIList_OpenItems())
-    ScreensList.itemMenu.append(Screen_Rename())
-    ScreensList.itemMenu.append(balt.UIList_Delete())
-    ScreensList.itemMenu.append(SeparatorLink())
+    if True: #--File
+        file_menu = MenuLink(_(u'File..'))
+        file_menu.links.append(UIList_OpenItems())
+        file_menu.links.append(Screen_Rename())
+        file_menu.links.append(balt.UIList_Delete())
+        ScreensList.itemMenu.append(file_menu)
     if True: #--Convert
         convertMenu = MenuLink(_(u'Convert'))
         image_type = Image.typesDict
@@ -751,10 +781,17 @@ def InitScreenLinks():
 def InitPeopleLinks():
     """Initialize people tab menus."""
     #--Header links
+    # Sorting and Columns
+    if True:
+        sort_menu = MenuLink(_(u'Sort by'))
+        sort_menu.links.append(Files_SortBy('Name'))
+        sort_menu.links.append(Files_SortBy('Karma'))
+        sort_menu.links.append(Files_SortBy('Header'))
+        PeopleList.mainMenu.append(sort_menu)
+    PeopleList.mainMenu.append(ColumnsMenu())
+    PeopleList.mainMenu.append(SeparatorLink())
     PeopleList.mainMenu.append(People_AddNew())
     PeopleList.mainMenu.append(People_Import())
-    PeopleList.mainMenu.append(SeparatorLink())
-    PeopleList.mainMenu.append(ColumnsMenu())
     #--Item links
     PeopleList.itemMenu.append(People_Karma())
     PeopleList.itemMenu.append(SeparatorLink())

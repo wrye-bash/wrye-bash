@@ -338,8 +338,8 @@ will be skipped (and their content listed in Skipped tab). There are also some d
 <p>Packages must first be placed in the <code>[Game] Mods\Bash Installers</code> directory. This can either be done via Windows Explorer, or by dragging and dropping the package into the Wrye Bash window when the Installers tab is open. If you drag and drop, you will be asked whether you want to copy the package or move it.
 <p>If a package contains a Wizard (ie. there is <img alt="a wand icon" src="../bash/images/wizard.png"/> overlaid on its checkbox):
 <ol>
-    <li>Right-click the package and select <a href="#bainWizard">Wizard</a>. You can also choose to install using the Wizard's default options by selecting <a href="#bainAutoWizard">Auto Wizard</a>.
-    <li>If you chose <a href="#bainWizard">Wizard</a>, navigate through the steps of the Wizard to install the package. Otherwise, you will be skipped to the Wizard finish screen.
+    <li>Right-click the package and select <a href="#bainWizard">Manual Wizard</a>. You can also choose to install using the Wizard's default options by selecting <a href="#bainAutoWizard">Auto Wizard</a>.
+    <li>If you chose <a href="#bainWizard">Manual Wizard</a>, navigate through the steps of the Wizard to install the package. Otherwise, you will be skipped to the Wizard finish screen.
     <li>At the Wizard's finish screen, click the <q>Apply</q> button to apply its selections. The Wizard window may need to be resized for the <q>Apply</q> button to become visible.
 </ol>
 <p>If a package has a Simple or a Complex/Simple structure:
@@ -441,49 +441,106 @@ from other packages previously overridden by the uninstalled package's
 <p>The following commands found in the package and column header context (ie. right-click) menus are often useful for many users.
 <table>
     <thead>
-        <tr><th colspan="2">Column Header Context Menu
-        <tr><th>Command<th>Description
+        <tr><th colspan="3">Column Header Context Menu</th></tr>
+        <tr><th colspan="2">Command</th><th>Description</th></tr>
+    </thead>
     <tbody>
-        <tr><td>Open...<td>Opens the Installers directory in Windows Explorer.
-        <tr><td>Refresh Data<td>Re-scans the Data directory and all project directories. This is done once per run of Wrye Bash, when the Installers tab is first opened. If you manually alter the directories after that, you should run this command to update BAIN to reflect the changes. BAIN refreshes itself automatically if changes are made to packages in the Bash Installers directory.
-        <tr><td>Add Marker...<td>Creates a marker for organising your packages. The <q>==</q> prefix and suffix will be added for you.
-        <tr><td>List Packages<td>Displays a list of projects and archives and copies the list to your clipboard. This is useful for posting your package order on forums, eg. when troubleshooting an install.
-        <tr><td>Uninstall All Packages<td>Uninstalls all the packages in the package list.
-        <tr><td>Clean Data<td>Removes files from the Data folder that are not from one of the following sources:
+        <tr><td rowspan="2">Files..</td>
+            <td>Open...</td><td>Opens the Installers directory in Windows Explorer.</td></tr>
+            <tr><td>Unhide...</td><td>Opens a dialogue window allowing you to select which
+                hidden packages to unhide.</td></tr>
+        <tr><td colspan="2">Refresh Data</td><td>Re-scans the Data directory and all project
+            directories. This is done once per run of Wrye Bash, when the Installers tab
+            is first opened. If you manually alter the directories after that, you should run
+            this command to update BAIN to reflect the changes. BAIN refreshes itself
+            automatically if changes are made to packages in the Bash Installers
+            directory.</td></tr>
+        <tr><td colspan="2">Add Marker...</td><td>Creates a marker for organising your
+            packages. The <q>==</q> prefix and suffix will be added for you.</td></tr>
+        <tr><td colspan="2">List Packages...</td><td>Displays a list of projects and archives
+            and copies the list to your clipboard. This is useful for posting your package
+            order on forums, eg. when troubleshooting an install.</td></tr>
+        <tr><td colspan="2">Uninstall All Packages</td><td>Uninstalls all the packages in the
+            package list.</td></tr>
+        <tr><td colspan="2">Clean Data</td><td>Removes files from the Data folder that are not
+            from one of the following sources:
             <ul>
-                <li>Vanilla game content.
-                <li>Official DLC content.
-                <li>Wrye Bash.
-                <li>Installed BAIN packages.
+                <li>Vanilla game content.</li>
+                <li>Official DLC content.</li>
+                <li>Wrye Bash.</li>
+                <li>Installed BAIN packages.</li>
             </ul>
-        The files are not deleted, but moved to the <code>[Game] Mods\Bash Installers\Bash\Data Folder Contents [timestamp]</code> folder instead, where <code>[timestamp]</code> is the date and time the command was run.
-        <tr><td id="bainAnnealAll">Anneal All<td>Installs any missing files for active installers and corrects all install order errors.
-        <tr><td>Unhide...<td>Opens a dialogue window allowing you to select which hidden packages to unhide.
-        <tr><td>Skip **SE Plugins</td><td><em>All but Skyrim and Enderal&colon; Forgotten Stories.</em> If this is checked, files in the script extender plugins folder (e.g. <code>Data\OBSE\Plugins</code> for OBSE, <code>Data\SKSE\Plugins</code> for SKSE, etc.) will not be installed.</td></tr>
-        <tr><td>Skip SKSE/Script Dragon Plugins</td><td><em>Skyrim and Enderal&colon; Forgotten Stories only.</em> If this is checked, files to go in the <code>Data\SKSE\Plugins</code> or <code>Data\asi</code> folder will not be installed.
+            The files are not deleted, but moved to the
+            <code>[Game] Mods\Bash Installers\Bash\Data Folder Contents [timestamp]</code>
+            folder instead, where <code>[timestamp]</code> is the date and time the command
+            was run.</td></tr>
+        <tr><td colspan="2" id="bainAnnealAll">Anneal All</td><td>Installs any missing files
+            for active installers and corrects all install order errors.</td></tr>
+        <tr><td rowspan="2">Global Skips</td>
+            <td>Skip **SE Plugins</td><td><em>All but Skyrim and Enderal&colon;
+                Forgotten Stories.</em> If this is checked, files in the script extender
+                plugins folder (e.g. <code>Data\OBSE\Plugins</code> for OBSE,
+                <code>Data\SKSE\Plugins</code> for SKSE, etc.) will not be
+                installed.</td></tr>
+            <tr><td>Skip SKSE/Script Dragon Plugins</td><td><em>Skyrim and
+                Enderal&colon; Forgotten Stories only.</em> If this is checked, files in
+                the <code>Data\SKSE\Plugins</code> or <code>Data\asi</code> folder will
+                not be installed.</td></tr>
+    </tbody>
 </table>
 <table>
     <thead>
-        <tr><th colspan="3">Package Context Menu
-        <tr><th colspan="2">Command<th>Description
+        <tr><th colspan="3">Package Context Menu</th></tr>
+        <tr><th colspan="2">Command</th><th>Description</th></tr>
+    </thead>
     <tbody>
-        <tr><td colspan="2">Open...<td>Opens the selected package(s) in the file system.
-        <tr><td colspan="2">Duplicate...<td>Makes a duplicate of the selected package(s).
-        <tr><td colspan="2">Delete<td>Deletes the selected package(s). Deleted packages are <strong>not</strong> sent to the Recycling Bin, they are permanently deleted.
-        <tr><td colspan="2">Open At...<td>Attempts to open the selected package's page on the selected site. If Google is selected, performs a Google search for the package name. For the other three sites, this command assumes that the trailing digits in a package's name is the package ID at the sites. If this assumption is wrong, a random page, or an error page, will be opened.
-        <tr><td colspan="2">Hide<td>Hides the selected package in the list, and moves it to the <code>[Game] Mods/Bash Mod Data/Hidden</code> folder.
-        <tr><td colspan="2">Rename<td>Renames the selected package or marker.
-        <tr><td colspan="2">Refresh<td>Refreshes all info for the selected package(s). Since BAIN refreshes package information whenever Wrye Bash regains focus after losing it (ie. you select another program's window, then switch back to Wrye Bash), this is only useful if a package has been changed and it has <a href="Wrye%20Bash%20Advanced%20Readme.html#bainDontRefresh">Don't Refresh</a> selected, or the <a href="Wrye%20Bash%20Advanced%20Readme.html#bainAutoRefreshProjects">Auto-Refresh Projects</a> option is disabled. Note that scanning a project for changes takes much longer than scanning an archive for changes.
-        <tr><td colspan="2" id="bainMoveTo">Move To...<td>Moves the selected package(s) to the specified position.
-        <tr><td colspan="2">Open readme<td>If BAIN detects a readme in the package, it will be opened.
-        <tr><td colspan="2" id="bainHasExtraDirectories">Has Extra Directories<td>BAIN only recognises a limited set of subdirectories of the Data folder, and skips any unrecognised subdirectories. Checking this option will cause BAIN to install unrecognised subdirectories.
-        <tr><td colspan="2" id="bainWizard">Wizard<td>Runs the Wizard for the package, if it has one.
-        <tr><td colspan="2" id="bainAutoWizard">Auto Wizard<td>Runs the Wizard for the package, if it has one, selecting the default options.
-        <tr><td colspan="2" id="bainAnneal">Anneal<td>Installs missing files and corrects install order errors according to the package configuration.
-        <tr><td colspan="2" id="bainInstall">Install<td>Fully installs the package as configured except for files that would be overridden by later packages.
-        <tr><td colspan="2" id="bainUninstall">Uninstall<td>Uninstalls the package. If <a href="Wrye%20Bash%20Advanced%20Readme.html#bainAutoAnneal">Auto-Anneal</a> is active (the default) then files from earlier packages that were previously overridden will be installed as required.
-        <tr><td id="bainApply">Conversions<td>Apply<td>Applies a BAIN Conversion File.
-        <tr><td colspan="2">List Structure<td>Generates a list of the files and directories in a package. Useful for posting package structure on forums, eg. when troubleshooting an install.
+        <tr><td rowspan="5">File..</td>
+            <td>Open...</td><td>Opens the selected package(s) in the file system.</td></tr>
+            <tr><td>Rename...</td><td>Renames the selected package or marker.</td></tr>
+            <tr><td>Duplicate...</td><td>Makes a duplicate of the selected package(s).</td></tr>
+            <tr><td>Hide...</td><td>Hides the selected package in the list, and moves it to the
+                <code>[Game] Mods/Bash Mod Data/Hidden</code> folder.</td></tr>
+            <tr><td>Delete</td><td>Deletes the selected package(s). Deleted packages are
+                sent to the Recycling Bin, not permanently deleted.</td></tr>
+        <tr><td colspan="2">Open at</td><td>Attempts to open the selected package's page on
+            the selected site. If Google is selected, performs a Google search for the package name.
+            For the other three sites, this command assumes that the trailing digits in a package's
+            name is the package ID at the sites. If this assumption is wrong, a random page, or an
+            error page, will be opened.</td></tr>
+        <tr><td colspan="2" id="bainAnneal">Anneal</td><td>Installs missing files and corrects install
+            order errors according to the package configuration.</td></tr>
+        <tr><td colspan="2" id="bainInstall">Install</td><td>Fully installs the package as configured
+            except for files that would be overridden by later packages.</td></tr>
+        <tr><td rowspan="2">Wizard Installer..</td>
+            <td id="bainWizard">Manual Wizard</td><td>Runs the Wizard for the package, if it has
+                one.</td></tr>
+            <tr><td id="bainAutoWizard">Auto Wizard</td><td>Runs the Wizard for the package, if
+                it has one, selecting the default options.</td></tr>
+        <tr><td colspan="2" id="bainUninstall">Uninstall<td>Uninstalls the package. If
+            <a href="Wrye%20Bash%20Advanced%20Readme.html#bainAutoAnneal">Auto-Anneal</a> is active
+            (the default) then files from earlier packages that were previously overridden will be
+            installed as required.</td></tr>
+        <tr><td colspan="2">Quick Refresh</td><td>Refreshes all info for the selected package(s). Since
+            BAIN refreshes package information whenever Wrye Bash regains focus after losing it (ie.
+            you select another program's window, then switch back to Wrye Bash), this is only useful
+            if a package has been changed and it has
+            <a href="Wrye%20Bash%20Advanced%20Readme.html#bainDontRefresh">Don't Refresh</a> selected,
+            or the <a href="Wrye%20Bash%20Advanced%20Readme.html#bainAutoRefreshProjects">Auto-Refresh
+                Projects</a> option is disabled. Note that scanning a project for changes takes much
+            longer than scanning an archive for changes.</td></tr>
+        <tr><td rowspan="3">Package..</td>
+            <td>Open Readme</td><td>If BAIN detects a readme in the package, it will be opened.</td></tr>
+            <tr><td id="bainMoveTo">Move To...</td><td>Moves the selected package(s) to the specified
+                position.</td></tr>
+            <tr><td>List Structure...</td><td>Generates a list of the files and directories in a
+                package. Useful for posting package structure on forums, eg. when troubleshooting an
+                install.</td></tr>
+        <tr><td colspan="2" id="bainHasExtraDirectories">Has Extra Directories</td><td>BAIN only recognises a
+            limited set of subdirectories of the Data folder, and skips any unrecognised subdirectories.
+            Checking this option will cause BAIN to install unrecognised subdirectories.</td></tr>
+        <tr><td id="bainApply">BAIN Conversions</td>
+            <td>Apply</td><td>Applies a BAIN Conversion File.</td></tr>
+    </tbody>
 </table>
 
 
@@ -608,7 +665,9 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
         <tr><th colspan="3">Column Header Context Menu
         <tr><th colspan="2">Command<th>Description
     <tbody>
-        <tr><td>File<td>New Bashed Patch...<td>Creates a new <a href="#patch">Bashed Patch</a> plugin. Useful if you accidentally delete your current one or wish to have more than one.
+        <tr><td>Files..<td>New Bashed Patch...</td><td>Creates a new <a href="#patch">Bashed
+            Patch</a> plugin. Useful if you accidentally delete your current one or wish to
+            have more than one.</td></tr>
         <tr><td colspan="2" id="modsListMods">List Mods<td>This lists the load order, including version information, activation status and major load order errors. It can be useful for debugging a broken load order. If the 'c' keyboard key is pressed when this command is selected, the CRCs of plugins will also be displayed in the output.
         <tr><td colspan="2" id="modsListBashTags">List Bash Tags<td>This lists all the Bash Tags applied to the plugins in your load order, and where/how the Bash Tags were specified. It can be useful for debugging a broken load order.
         <tr><td colspan="2" id="modsAutoGhost">Auto-Ghost<td>The Oblivion game engine has a bug where it reads all the plugins in the Data folder,
@@ -618,10 +677,15 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             inactive plugins automatically to prevent the game engine reading them, and so helping to avoid the performance drop. When a ghosted
             plugin is activated, the <q>.ghost</q> extension is removed, allowing it to function as normal. Note that most other utilities will not
             recognise ghosted plugins, so there are options available for individual plugins to control which get ghosted.
-        Bash displays a warning if a lot of mods and BSAs are detected that you can disable via the ini.
-        <tr><td colspan="2">ESL-Flag Bashed Patches</td><td><em>Skyrim&colon; Special Edition &amp; Fallout 4 only.</em> If enabled, then any built Bashed Patches will automatically be ESL-flagged, saving a load order slot.</td></tr>
-        <tr><td colspan="2" id="modsLockLoadOrder">Lock Load Order<td>This prevents other utilities from altering plugin modification times. More accurately, it detects
-            changes to modification times when Wrye Bash starts or is focused (ie. on top of all other program windows) and reverses those changes.
+            Bash displays a warning if a lot of mods and BSAs are detected that you can disable via the ini.
+        <tr><td colspan="2">ESL-Flag Bashed Patches</td><td><em>Skyrim&colon; Special Edition &amp;
+            Fallout 4 only.</em> If enabled, then any built Bashed Patches will automatically
+            be ESL-flagged, saving a load order slot.</td></tr>
+        <tr><td colspan="2" id="modsLockLoadOrder">Lock Load Order</td><td>This prevents other
+            utilities from altering your load order. More accurately, it detects changes to your
+            load order when Wrye Bash starts or is focused (i.e. on top of all other program
+            windows) and reverses those changes.</td></tr>
+    </tbody>
 </table>
 <table>
     <thead>
@@ -784,18 +848,28 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
         <img alt="INI Edits Header Menu" src="../bash/images/readme/ini-edits-rclick-ini-header-menu-1.png">
         <img alt="INI Edits Header Menu" src="../bash/images/readme/ini-edits-rclick-ini-header-menu-2.png">
         <img alt="INI Edits Header Menu" src="../bash/images/readme/ini-edits-rclick-ini-header-menu-3.png">
+        <img alt="INI Edits Header Menu" src="../bash/images/readme/ini-edits-rclick-ini-header-menu-4.png">
     </figure>
     <table id="iniHeaderCommands">
         <thead>
-            <tr><th colspan="2">Column Header Context Menu
-            <tr><th>Command<th>Description
+            <tr><th colspan="3">Column Header Context Menu</th></tr>
+            <tr><th colspan="2">Command</th><th>Description</th></tr>
+        </thead>
         <tbody>
-            <tr><td>Sort By<td>This submenu allows you to choose by which column the ini list is sorted. This is equivalent to clicking on a column header.
-            <tr><td>Columns<td>This submenu allows you to choose which columns are visible in the ini list.
-            <tr><td id="allowTweaksWithNewSettings">Allow Tweaks with New Settings<td>Allows tweaks which have new sections and/or settings to
-                be installed. Use carefully as you might inadvertently add bogus sections/settings to your ini.
-            <tr><td>Open...<td>Open the <code>Data/INI Tweaks</code> folder
-            <tr><td>List Active INIs...<td>Lists all currently applied INI tweaks to the selected INI.
+            <tr><td colspan="2">Sort By</td><td>This submenu allows you to choose by which
+                column the INI list is sorted. This is equivalent to clicking on a column
+                header.</td></tr>
+            <tr><td colspan="2">Columns</td><td>This submenu allows you to choose which
+                columns are visible in the INI list.</td></tr>
+            <tr><td>Files..</td>
+                <td>Open...</td><td>Opens the <code>Data/INI Tweaks</code> folder.</td></tr>
+            <tr><td colspan="2" id="allowTweaksWithNewSettings">Allow Tweaks with New
+                Settings</td><td> Allows tweaks which have new sections and/or settings to
+                be installed. Use carefully as you might inadvertently add bogus
+                sections/settings to your INI.</td></tr>
+            <tr><td colspan="2">List Active INI Tweaks...</td><td>Lists all currently
+                applied INI tweaks to the selected INI.</td></tr>
+        </tbody>
     </table>
 </div>
 <div class="prlflex clearf">

@@ -480,6 +480,7 @@ tab. The directories skipped are:
         <img alt="Installer Header Menu" src="../bash/images/readme/installers-rclick-header-menu-2.png">
         <img alt="Installer Header Menu" src="../bash/images/readme/installers-rclick-header-menu-3.png">
         <img alt="Installer Header Menu" src="../bash/images/readme/installers-rclick-header-menu-4.png">
+        <img alt="Installer Header Menu" src="../bash/images/readme/installers-rclick-header-menu-5.png">
     </figure>
 <table id="bainHeaderCommands">
     <thead>
@@ -512,7 +513,15 @@ tab. The directories skipped are:
         <tr><td>Modified<td>Display the (date) Modified column.
         <tr><td>Size<td>Display the Size column.
         <tr><td>Files<td>Display the (number of) Files column.
-        <tr><td colspan="2" id="bainOpenDir">Open...<td>Opens the Installers directory in Windows Explorer.
+        <tr><td rowspan="3">Files..</td>
+            <td id="bainOpenDir">Open...</td><td>Opens the Installers directory in Windows
+                Explorer.</td></tr>
+            <tr><td id="bainUnhide">Unhide...</td><td>Opens a dialogue window
+                allowing you to select which hidden packages to unhide. Projects are not
+                supported yet.</td></tr>
+            <tr><td id="bainCreateNewProject">Create New Project...</td><td>Displays a
+                dialog that allows you to create a new project and select some starting
+                files for it.</td></tr>
         <tr><td colspan="2" id="bainRefreshData">Refresh Data<td>Re-scans the Data directory (and all packages). Scanning of the Data directory is done once per run of Wrye Bash, when the
             Installers tab is first opened. If you manually alter files in the Data directory after that, <em>you had to run this command to update BAIN to reflect the changes</em>. However
             BAIN will now scan the Data directory for changes in files corresponding to the package(s) you run <a href="#bainQuickRefresh">Quick Refresh</a> (or
@@ -528,12 +537,9 @@ tab. The directories skipped are:
             folder, bypassing all skip refresh flags for projects. Notably this will recalculate <abbr title="Cyclic redundancy check, digital signature of the file">CRCs</abbr> for all files
             inside Data and Bash Installers (including project directories). Running this command will likely take <em>aeons</em>, and you seldom need it.
         <tr><td colspan="2" id="bainAddMarker">Add Marker...<td>Creates a marker for organising your packages. The <q>==</q> will be added for you.
-        <tr><td colspan="2" id="bainCreateNewProject">Create New Project...<td>Displays a dialog that allows you to create a new project and select some starting files for it.
         <tr><td colspan="2" id="bainMonitorExternalInstallation">Monitor External Installation...<td>When you absolutely cannot install a mod via BAIN, you can put BAIN into Monitor Mode using this command.  It will scan the Data folder before and after you install the mod, then provide an option to create a Project from the changes it detects.
         <tr><td colspan="2" id="bainListPackages">List Packages...<td>Displays a list of projects and archives and copies the list to your clipboard. This is useful for posting your package order on forums, eg. when troubleshooting an install.
         <tr><td colspan="2" id="bainAnnealAll">Anneal All<td>Installs any missing files for active installers and corrects all install order errors.
-        <tr><td colspan="2" id="bainUnhide">Unhide...<td>Opens a dialogue window allowing you to select which hidden packages to unhide.
-            Projects are not supported yet.
         <tr><td colspan="2" id="bainUninstallAll">Uninstall All Packages<td>Uninstalls all the packages in the package list.
         <tr><td colspan="2" id="bainCleanData">Clean Data<td>Removes files from the Data folder that are not from one of the following sources:
             <ul>
@@ -937,24 +943,26 @@ tab. The directories skipped are:
             <tr><th colspan="2">Command<th>Description
         </thead>
         <tbody>
-            <tr><td rowspan="6">Load Order</td><td id="modsLoadAll">Activate All</td><td>Activates all the plugins in the mod list. If more than 255 mods are
-                present Bash will activate all it can from the bashed patches, then non mergeable and then mergeable mods then will display an
-                error message. Bash will try to activate mods in their load order.</td></tr>
-            <tr><td>De-activate All<td>Deactivates all the plugins in the mod list. Some plugins will not be deactivated (for instance Fallout 4
-            DLCs) as the game force loads them when present.
-            <tr><td>Activate Selected<td>Activate only the mods selected in the mod list interface - warning: their masters won't be activated !
-            <tr><td>Save Active Mods List<td>Saves the currently active mods to a new list.
-            <tr><td>Edit Active Mods Lists...<td>Allows the deletion and renaming of active mods lists.
-            <tr><td>[Active Mods List]<td>[Active Mods List] items are listed below the separator in the Active Mods submenu. Clicking a
-                list name will apply the list, trying to activate exactly the plugins that are listed in it.
             <tr><td colspan="2">Sort By<td>This submenu allows you to choose by which column the plugin list is sorted. This is equivalent to clicking on a column header. You can also choose to sort by <q>Type</q>, which will place .esms before .esps regardless of the sorting criteria, or by <q>Selection</q>, which places selected plugins before unselected plugins regardless of criteria.
-            <tr><td colspan="2">Oblivion.esm<td><em>Oblivion only.</em> This submenu relates to <a href="#tools-swapping">Oblivion.esm Swapping</a>.
             <tr><td colspan="2">Columns<td>This submenu allows you to choose which columns are visible in the mod list.
-            <tr><td rowspan="5">File<td>New Bashed Patch...<td>Creates a new Bashed Patch plugin. Useful if you accidentally delete your current one or wish to have more than one.
-            <tr><td>New Mod...<td>Creates an empty plugin.
-            <tr><td>New Mod (masterless)...<td>Creates an empty plugin with no masters.
-            <tr><td>Open...<td>Opens the Data folder in Windows Explorer.
-            <tr><td>Unhide...<td>Opens a dialogue window allowing you to select which hidden plugins to unhide.
+            <tr><td rowspan="5">Files..</td>
+                <td>Open...</td><td>Opens the Data folder in Windows Explorer.</td></tr>
+                <tr><td>Unhide...</td><td>Opens a dialogue window allowing you to select which hidden plugins to unhide.</td></tr>
+                <tr><td>New Bashed Patch...</td><td>Creates a new Bashed Patch plugin. Useful if you accidentally delete your current one or wish to have more than one.</td></tr>
+                <tr><td>New Mod...</td><td>Creates an empty plugin.</td></tr>
+                <tr><td>New Mod (masterless)...</td><td>Creates an empty plugin with no masters.</td></tr>
+            <tr><td rowspan="6">Load Order</td>
+                <td id="modsLoadAll">Activate All</td><td>Activates all the plugins in the mod list. If more than 255 mods are
+                    present Bash will activate all it can from the bashed patches, then non mergeable and then mergeable mods then will display an
+                    error message. Bash will try to activate mods in their load order.</td></tr>
+                <tr><td>De-activate All</td><td>Deactivates all the plugins in the mod list. Some plugins will not be deactivated (for instance Fallout 4
+                    DLCs) as the game force loads them when present.</td></tr>
+                <tr><td>Activate Selected</td><td>Activate only the mods selected in the mod list interface - warning: their masters won't be activated !</td></tr>
+                <tr><td>Save Active Mods List</td><td>Saves the currently active mods to a new list.</td></tr>
+                <tr><td>Edit Active Mods Lists...</td><td>Allows the deletion and renaming of active mods lists.</td></tr>
+                <tr><td>[Active Mods List]</td><td>[Active Mods List] items are listed below the separator in the Active Mods submenu. Clicking a
+                    list name will apply the list, trying to activate exactly the plugins that are listed in it.</td></tr>
+            <tr><td colspan="2">Oblivion.esm</td><td><em>Oblivion only.</em> This submenu relates to <a href="#tools-swapping">Oblivion.esm Swapping</a>.</td></tr>
             <tr><td colspan="2" id="modsListMods">List Mods<td>This outputs a BBCode-formatted load order, including version information, activation status and major load order errors. It can be useful for debugging a broken load order. If the 'c' keyboard key is pressed when this command is selected, the CRCs of plugins will also be displayed in the output.
             <tr><td colspan="2">List Bash Tags<td>This outputs a BBCode-formatted list of all the Bash Tags applied to the plugins in your load order, and where/how the Bash Tags were specified. It can be useful for debugging a broken load order.
             <tr><td colspan="2" id="modsAutoGhost">Auto-Ghost<td>The game engine has a bug where it reads all the plugins in the Data folder, and this can affect performance when the number of plugins is around 300+. Auto-Ghosting adds a <q>.ghost</q> extension to all inactive plugins automatically to prevent the game engine reading them, and so helping to avoid the performance drop. When a ghosted plugin is activated, the <q>.ghost</q> extension is removed, allowing it to function as normal. Note that other utilities will not recognise ghosted plugins, so there are options available for individual plugins to control which get ghosted.
@@ -990,29 +998,25 @@ tab. The directories skipped are:
             <tr><th colspan="2">Command<th>Description</th></tr>
         </thead>
         <tbody>
-            <tr><td rowspan="11">File</td>
-                <td id="modsCreateDummyMasters">Create Dummy Masters...</td><td>Creates an empty plugin for each missing master a mod has.
-                    This is useful for allowing TES4Edit to open a 'Filter' patch without having all of the required masters. These dummy
-                plugins can later be removed using the <a href="#modsRemoveDummyMasters">Remove Dummy Masters</a> command.</td></tr>
-                <tr><td id="modsBackup">Backup</td><td>Creates a backup of the selected plugin in <code>[Game] Mods\Bash Mod Data\Backups</code>.
-                    On first run, the backed-up plugin has <code>f</code> appended to its file extension, giving e.g. <code>.espf</code>.</td></tr>
-                <tr><td id="modsDuplicate">Duplicate...</td><td>Creates a duplicate of the selected plugin in the Data folder.</td></tr>
-                <tr><td id="modsSnapshot">Snapshot...</td><td>Creates a snapshot copy of the selected plugin in <code>Bash\Snapshots</code>.
-                    Snapshot filenames are appended with <code>-n</code> where n is a number between 01 and 99. Eg. the first snapshot of
-                    <code>Plugin.esp</code> is <code>Plugin-01.esp</code>. The number is incremented each time the plugin has a snapshot
-                    taken. Additionally, if there is a version line in the plugin's description field, then the snapshot number will be
-                    appended to the version number in the same manner.</td></tr>
-                <tr><td>Delete</td><td><strong>Permanently</strong> deletes the selected plugin, and any backups of it, but not snapshots.</td></tr>
-                <tr><td>Hide</td><td>Moves the selected plugin to the <code>[Game] Mods/Bash Mod Data/Hidden</code> subdirectory. If the plugin's author
+            <tr><td rowspan="9">File..</td>
+                <td id="modsDuplicate">Duplicate...</td><td>Creates a duplicate of the selected plugin in the Data folder.</td></tr>
+                <tr><td>Hide...</td><td>Moves the selected plugin to the <code>[Game] Mods/Bash Mod Data/Hidden</code> subdirectory. If the plugin's author
                     is defined and there is a Bash Mod Data/Hidden subdirectory of the same name, the plugin will be placed there. If not and the
                     plugin's group is defined and there is a Bash Mod Data/Hidden subdirectory of the same name, the plugin will be placed there
                     instead. Otherwise it will be placed inside Bash Mod Data/Hidden.</td></tr>
                 <tr><td>Redate...</td><td>Change the modification time of the selected plugin. If more than one plugin is selected, then all the plugins will
                     have their modification times altered, with the first in the list being set to the specified time and the rest at one minute intervals
                     from that time.</td></tr>
-                <tr><td>Sort</td><td>Set the load order of the selected plugins starting at the lowest ordered mod, sorting them alphabetically.</td></tr>
-                <tr><td>Revert To Backup</td><td>Reverts the selected plugin to the last backup made of it.</td></tr>
-                <tr><td>Revert To First Backup</td><td>Reverts the selected plugin to the first backup made of it.</td></tr>
+                <tr><td>Delete</td><td><strong>Permanently</strong> deletes the selected plugin, and any backups of it, but not snapshots.</td></tr>
+                <tr><td id="modsBackup">Backup</td><td>Creates a backup of the selected plugin in <code>[Game] Mods\Bash Mod Data\Backups</code>.
+                    On first run, the backed-up plugin has <code>f</code> appended to its file extension, giving e.g. <code>.espf</code>.</td></tr>
+                <tr><td>Revert To Backup...</td><td>Reverts the selected plugin to the last backup made of it.</td></tr>
+                <tr><td>Revert To First Backup...</td><td>Reverts the selected plugin to the first backup made of it.</td></tr>
+                <tr><td id="modsSnapshot">Snapshot...</td><td>Creates a snapshot copy of the selected plugin in <code>Bash\Snapshots</code>.
+                    Snapshot filenames are appended with <code>-n</code> where n is a number between 01 and 99. Eg. the first snapshot of
+                    <code>Plugin.esp</code> is <code>Plugin-01.esp</code>. The number is incremented each time the plugin has a snapshot
+                    taken. Additionally, if there is a version line in the plugin's description field, then the snapshot number will be
+                    appended to the version number in the same manner.</td></tr>
                 <tr><td>Revert To Snapshot...</td><td>Reverts the selected plugin to a selected snapshot.</td></tr>
             <tr><td rowspan="9">Groups</td>
                 <td>Export Group</td><td>Exports the selected plugin's groups to a CSV file as plugin name/groups pairs.</td></tr>
@@ -1033,6 +1037,7 @@ tab. The directories skipped are:
                     <abbr title="Bash Auto Load Ordering">BALO</abbr> has been removed taking BALO groups for the ride - those of you who remember
                     them, shed a tear goodbye.</td></tr>
             <tr><td colspan="2">Rating<td>A purely cosmetic feature, this allows you to assign different rating values to plugins.
+            <tr><td colspan="2">Order By Name</td><td>Set the load order of the selected plugins starting at the lowest ordered mod, sorting them alphabetically.</td></tr>
             <tr><td colspan="2">Details...<td>Displays a list of the records in the selected plugin, similar to the Details view in the Construction Set.
             <tr><td colspan="2">List Masters...<td>Outputs a list of the selected plugin's masters.
             <tr><td colspan="2">Readme...<td>Attempts to open the selected plugin's associated readme in the <a href="#tools-docs">Doc Browser</a>.
@@ -1171,6 +1176,9 @@ tab. The directories skipped are:
                 but toggles a plugin's masters rather than the plugin itself. The load order of plugins will change to reflect their new status but
                 since the modification time won't change they will revert back to their original positions for modification time based load orders.
                 Be sure to backup your load order for Skyrim and newer games.
+            <tr><td colspan="2" id="modsCreateDummyMasters">Create Dummy Masters...</td><td>Creates an empty plugin for each missing master a mod has.
+                This is useful for allowing TES4Edit to open a 'Filter' patch without having all of the required masters. These dummy
+                plugins can later be removed using the <a href="#modsRemoveDummyMasters">Remove Dummy Masters</a> command.</td></tr>
             <tr><td colspan="2" id="modsVersion0.8">Version 0.8<td>Resets the file version number of the selected plugin so that it can be edited in an older version of the Construction Set, which is required when making certain changes due to bugs in the latest Construction Set.<br><br><strong>Warning:</strong> It is possible that this may cause data loss.
         </tbody>
     </table>
@@ -6729,69 +6737,214 @@ C.Location, -C.LockList
 </ul>
 
 <h3 id="saves-commands">Context Menu Commands <a class="back2top" href="#contents">Back to top</a></h3>
-<table>
-    <thead>
-        <tr><th colspan="3">Column Header Context Menu
-        <tr><th colspan="2">Command<th>Description
-    <tbody>
-        <tr><td colspan="2">Sort By<td>This submenu allows you to choose by which column the save list is sorted. This is equivalent to clicking on a column header.
-        <tr><td colspan="2">Oblivion.esm<td><em>Oblivion only.</em> This submenu relates to <a href="#tools-swapping">Oblivion.esm Swapping</a>. It allows you to swap the active version of Oblivion.esm.
-        <tr><td rowspan="2">Profile<td>Edit Profiles...<td>This submenu allows the creation, editing and removal of <a href="#saves-profiles">save profiles</a>.
-        <tr><td>[Profile]<td>[Profile] is the name of a save profile, which are listed below the separator in the Profile submenu. Clicking a save profile will activate it.
-        <tr><td colspan="2">Columns<td>This submenu allows you to choose which columns are visible in the save list.
-        <tr><td colspan="2">Open...<td>Opens the saves folder in Windows Explorer.
-        <tr><td colspan="2">Unhide...<td>Opens a dialogue window allowing you to select which hidden save files to unhide.
-</table>
-<table>
-    <thead>
-        <tr><th colspan="3">Save Context Menu
-        <tr><th colspan="2">Command<th>Description
-    <tbody>
-        <tr><td rowspan="7">File<td>Backup<td>Creates a backup of the selected save file in <code>[Game] Mods\Bash Mod Data\Backups</code>. On first run, the backed-up save file has <code>f</code> appended to its file extension, giving .essf.
-        <tr><td>Duplicate...<td>Creates a duplicate of the selected save file in the saves folder.
-        <tr><td>Delete<td>Permanently deletes the selected save file and any backups of it.
-        <tr><td>Hide<td>Moves the selected save file to the <code>My Games\[Game]\Saves\[optional profile dir\]Bash\Hidden</code> directory.
-        <tr><td>Revert to Backup<td>Reverts the selected save file to the last backup made of it.
-        <tr><td>Revert to First Backup<td>Reverts the selected save file to the first backup made of it.
-        <tr><td>Rename...<td>Rename the selected save file. bak files are not supported and you can't change the extension (specifying
-            another extension will make the rename fail)
-        <tr><td colspan="2" id="savesMoveTo">Move To<td>This submenu allows you to specify a save profile to move the selected save(s) to from the active save profile.
-        <tr><td colspan="2" id="savesCopyTo">Copy To<td>This submenu allows you to specify a save profile to copy the selected save(s) to, so that it is present in both the active and specified save profiles.
-        <tr><td colspan="2" id="savesLoadMasters">Load Masters<td>Synchronizes activated plugins to savegame's masters.
-        <tr><td colspan="2" id="savesListMasters">List Masters...<td>Lists savegame masters in load order and copies the list to the clipboard. Version numbers are displayed if detected.
-        <tr><td colspan="2" id="savesDiffMasters">Diff Masters...<td>If two savegames are selected, then this will compare the masters of the new save to those of the older save. If one savegame is selected, then this will compare the currently active plugins to the masters of the selected savegame. The comparison details masters that have been removed and added in the newer save since the older save, or removed and added in the load order since the selected save.
-        <tr><td colspan="2" id="savesStatistics">Statistics<td><em>Oblivion only.</em> This produces a set of various technical statistics for the selected savegame. The following information is produced:
-            <ul>
-                <li>Array sizes. These arrays are for each of the major sections in the save file.
-                <li>Created items. These are items created in-game, through scripting or some sort of crafting skill (eg. alchemy, spellmaking).
-                <li>Form IDs. This is a breakdown of the Form ID table in the savegame, sorted by source plugin. The Form ID table maps savegame reference numbers to the Form ID of the referenced record. If a reference is made to a record from a mod that is no longer loaded, the Form ID is replaced with a 0.
-                <li>Record details. This gives a breakdown of the different types of records stored in the save file. The type is given as a number and as text (eg. <code>48 Cell</code>), and then the number of records referenced from each plugin is given below.
-                <li>New ObjectRef Bases. These are objects that belong to the savegame, for example arrows dropped on the ground in-game. They generally are created and destroyed by the game as required, though bad scripting techniques can cause some of them to stick around. The "Base" of an objectRef is the baseid of the object (e.g., the formid of a steel arrow from Oblivion.esm). The objectRef refers to these indirectly through an "iref". Usually this will map back to a formid, but if the original mod has been removed from the load order, then the formid is set to zero. If this has happened, then a count of such "Null Bases" will be shown. After the "Null Base" count (if present) is a list of New ObjectRef Bases where the count is over 100 (e.g., if there are over 100 new arrows lying around). Show is the count, the iref and the base formid. Formid beginning with FF is reference to an object defined by the savegame. Otherwise, the formid will map back to a mod. The first two digits are the modindex, and can be matched to a mod through the "MI" column in the list of savegame masters.
-            </ul>
-        <tr><td colspan="2">.obse Statistics<td><em>Oblivion only.</em> This is similar to <a href="#savesStatistics">Statistics</a> above, but reports statistics for the .pluggy and/or .obse cosave files associated with the selected save.
-        <tr><td colspan="2" id="savesDeleteSpells">Delete Spells...<td><em>Oblivion only.</em> This allows you to delete unused spells from your spell list in the selected save. <strong>Warning:</strong> This cannot be undone. Most spells may be repurchased or recreated, but quest and other special spells will likely have to be added using the console.
-        <tr><td colspan="2">Rename Player...<td><em>Oblivion only.</em> Renames the player's character in the selected save.
-        <tr><td colspan="2">Set Number of Uses for Weapon Enchantments...<td><em>Oblivion only.</em> Allows you to set the number of casts available to any enchanted weapon you created in-game, or that has otherwise been recorded in your savegame.
-        <tr><td colspan="2">Import Face...<td><em>Oblivion only.</em> Relates to <a href="#saves-face">Face Importing</a>. This command allows you to import a face for the save file's player character (and possibly some NPCs) from another save file or from an NPC in a mod.
-        <tr><td colspan="2">Rename Enchanted...<td><em>Oblivion only.</em> Allows you to rename any enchanted items that you have created in-game for the selected save.
-        <tr><td colspan="2" id="savesRenamePotions">Rename Potions...<td><em>Oblivion only.</em> Allows you to rename any potions that you have created in-game for the selected save.
-        <tr><td colspan="2">Rename Spells...<td><em>Oblivion only.</em> Allows you to rename any spells that you have created in-game for the selected save.
-        <tr><td colspan="2" id="savesReweighPotions">Reweigh Potions...<td><em>Oblivion only.</em> Potions created in-game are given a weight that is somewhat arbitrarily selected and potentially high. This command may be used to set all created potions to have a specific weight. Potions created after the use of this command with new names, new effects or new durations will not be affected.
-        <tr><td colspan="2" id="savesUpdateNPCLevels">Update NPC Levels...<td><em>Oblivion only.</em> Updates the level information for NPCs stored in the selected savegame to reflect the active load order's NPC level settings. This is required because although NPC levels are set via plugins, once an NPC is encountered its level is stored in the save file, which overrides the plugin levels.
-        <tr><td colspan="2">Export Screenshot...<td>Allows you to save the image used as the save file's screenshot as a JPEG.
-        <tr><td colspan="2">Re-number Save(s)...<td>Allows the re-numbering of the selected save file(s). If more than one file is selected,
-            the first will be renumbered to the given number and the others will be numbered in increments of one from the given number.
-            The save name must be of the form
-            <code>&lt;Save (case insensitive)&gt;&lt;space&gt;&lt;some digits&gt;&lt;optional text&gt;.&lt;save extension&gt;</code>
-        <tr><td colspan="2" id="savesRemoveBloat">Remove Bloat...<td><em>Oblivion only.</em> <strong>This is an experimental command. It is recommended that saves are backed up before using it on them.</strong> It attempts to determine how much bloating there is in the selected save file and then optionally remove it. If the command reports a large number of created objects, there could be a problem with one of your mods, and such mods should be removed or updated. There are two common types of bloat:
-            <ul>
-                <li>Excess created objects can occur through the use of scripting by a mod to duplicate existing objects in-game and a failure by the mod to clean up the duplicates after their use.
-                <li>Null references are caused when objects from a mod that is removed are present in the game world. These objects then get replaced with null references when the game is next saved with the mod missing.
-            </ul>
-        <tr><td colspan="2" id="savesRepairAbomb">Repair Abomb<td><em>Oblivion only.</em> <q>Abomb Animation Slowing</q> is a slowing of animations that typically occurs around 225 hours into the game, though it may occur earlier or later. This is an engine bug, and this command avoids its effects by resetting a related counter (TesClass Abomb counter is reset to 0x41000000).
-        <tr><td colspan="2">Repair Hair<td><em>Oblivion only.</em> Oblivion has a bug that will cause a crash if your PC's hair comes from a mod that has been removed and you then run showRaceMenu. This command resets your hair to the default for that race and gender, so you can then use showRaceMenu to select a new hair again if you wish.
-</table>
-
+<div class="prlflex clearf">
+    <figure class="slideshow" style="width: 326px; min-height: 233px">
+        <img alt="Saves Context Menu" src="../bash/images/readme/saves-1-rclick-header-menu-1.png">
+        <img alt="Saves Context Menu" src="../bash/images/readme/saves-1-rclick-header-menu-2.png">
+        <img alt="Saves Context Menu" src="../bash/images/readme/saves-1-rclick-header-menu-3.png">
+        <img alt="Saves Context Menu" src="../bash/images/readme/saves-1-rclick-header-menu-4.png">
+        <img alt="Saves Context Menu" src="../bash/images/readme/saves-1-rclick-header-menu-5.png">
+        <img alt="Saves Context Menu" src="../bash/images/readme/saves-1-rclick-header-menu-6.png">
+    </figure>
+    <table>
+        <thead>
+            <tr><th colspan="3">Column Header Context Menu</th></tr>
+            <tr><th colspan="2">Command</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+            <tr><td colspan="2">Sort By</td><td>This submenu allows you to choose by which column the
+                save list is sorted. This is equivalent to clicking on a column header.</td></tr>
+            <tr><td colspan="2">Columns</td><td>This submenu allows you to choose which columns are
+                visible in the save list.</td></tr>
+            <tr><td rowspan="2">Files..</td>
+                <td>Open...</td><td>Opens the saves folder in Windows Explorer.</td></tr>
+                <tr><td>Unhide...</td><td>Opens a dialogue window allowing you to select which hidden
+                    save files to unhide.</td></tr>
+            <tr><td rowspan="2">Profile</td>
+                <td>Edit Profiles...</td><td>This submenu allows the creation, editing and removal of
+                    <a href="#saves-profiles">save profiles</a>.</td></tr>
+                <tr><td>[Profile]<td>[Profile] is the name of a save profile, which are listed below
+                    the separator in the Profile submenu. Clicking a save profile will activate
+                    it.</td></tr>
+            <tr><td colspan="2">Oblivion.esm</td><td><em>Oblivion only.</em> This submenu relates to
+                <a href="#tools-swapping">Oblivion.esm Swapping</a>. It allows you to swap the active
+                version of Oblivion.esm.</td></tr>
+        </tbody>
+    </table>
+</div>
+<div class="prlflex clearf">
+    <figure class="slideshow" style="width: 554px; min-height: 540px">
+        <img alt="Save Context Menu" src="../bash/images/readme/saves-2-rclick-save-1.png">
+        <img alt="Save Context Menu" src="../bash/images/readme/saves-2-rclick-save-2.png">
+        <img alt="Save Context Menu" src="../bash/images/readme/saves-2-rclick-save-3.png">
+        <img alt="Save Context Menu" src="../bash/images/readme/saves-2-rclick-save-4.png">
+    </figure>
+    <table>
+        <thead>
+            <tr><th colspan="3">Save Context Menu</th></tr>
+            <tr><th colspan="2">Command</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+            <tr><td rowspan="10">File..</td>
+                <td>Rename...</td><td>Rename the selected save file. <code>.bak</code> files
+                    are not supported and you can't change the extension (specifying another
+                    extension will make the rename fail).</td></tr>
+                <tr><td>Duplicate...</td><td>Creates a duplicate of the selected save file in
+                    the saves folder.</td></tr>
+                <tr><td>Hide...</td><td>Moves the selected save file to the
+                    <code>My Games\[Game]\Saves\[optional profile dir\]Bash\Hidden</code>
+                    directory.</td></tr>
+                <tr><td>Redate...</td><td>Change the modification time of the selected save.
+                    If more than one save is selected, then all the save will have their
+                    modification times altered, with the first in the list being set to the
+                    specified time and the rest at one minute intervals from that
+                    time.</td></tr>
+                <tr><td>Delete</td><td>Permanently deletes the selected save file and any
+                    backups of it.</td></tr>
+                <tr><td>Backup</td><td>Creates a backup of the selected save file in
+                    <code>[Game] Mods\Bash Mod Data\Backups</code>. On first run, the backed-up
+                    save file has <code>f</code> appended to its file extension, giving
+                    <code>.essf</code> or <code>.fosf</code>.</td></tr>
+                <tr><td>Revert to Backup...</td><td>Reverts the selected save file to the last
+                    backup made of it.</td></tr>
+                <tr><td>Revert to First Backup...</td><td>Reverts the selected save file to the
+                    first backup made of it.</td></tr>
+                <tr><td>Snapshot...</td><td>Creates a snapshot copy of the selected save in
+                    <code>Bash\Snapshots</code>. Snapshot filenames are appended with
+                    <code>-n</code> where n is a number between 01 and 99. Eg. the first
+                    snapshot of <code>MySave.ess</code> is <code>MySave-01.ess</code>. The
+                    number is incremented each time the save has a snapshot taken.</td></tr>
+                <tr><td>Revert To Snapshot...</td><td>Reverts the selected save to a selected
+                    snapshot.</td></tr>
+            <tr><td colspan="2" id="savesMoveTo">Move To</td><td>This submenu allows you to
+                specify a save profile to move the selected save(s) to from the active save
+                profile.</td></tr>
+            <tr><td colspan="2" id="savesCopyTo">Copy To</td><td>This submenu allows you to
+                specify a save profile to copy the selected save(s) to, so that it is present
+                in both the active and specified save profiles.</td></tr>
+            <tr><td colspan="2" id="savesLoadMasters">Load Masters</td><td>Synchronizes
+                activated plugins to savegame's masters.</td></tr>
+            <tr><td colspan="2" id="savesListMasters">List Masters...</td><td>Lists savegame
+                masters in load order and copies the list to the clipboard. Version numbers
+                are displayed if detected.</td></tr>
+            <tr><td colspan="2" id="savesDiffMasters">Diff Masters...</td><td>If two savegames
+                are selected, then this will compare the masters of the new save to those of
+                the older save. If one savegame is selected, then this will compare the
+                currently active plugins to the masters of the selected savegame. The
+                comparison details masters that have been removed and added in the newer save
+                since the older save, or removed and added in the load order since the
+                selected save.</td></tr>
+            <tr><td colspan="2" id="savesStatistics">Statistics</td><td><em>Oblivion only.</em>
+                This produces a set of various technical statistics for the selected savegame.
+                The following information is produced:
+                <ul>
+                    <li>Array sizes. These arrays are for each of the major sections in the
+                        save file.</li>
+                    <li>Created items. These are items created in-game, through scripting or
+                        some sort of crafting skill (eg. alchemy, spellmaking).</li>
+                    <li>Form IDs. This is a breakdown of the Form ID table in the savegame,
+                        sorted by source plugin. The Form ID table maps savegame reference
+                        numbers to the Form ID of the referenced record. If a reference is
+                        made to a record from a mod that is no longer loaded, the Form ID is
+                        replaced with a 0.</li>
+                    <li>Record details. This gives a breakdown of the different types of
+                        records stored in the save file. The type is given as a number and as
+                        text (eg. <code>48 Cell</code>), and then the number of records
+                        referenced from each plugin is given below.</li>
+                    <li>New ObjectRef Bases. These are objects that belong to the savegame, for
+                        example arrows dropped on the ground in-game. They generally are
+                        created and destroyed by the game as required, though bad scripting
+                        techniques can cause some of them to stick around. The "Base" of an
+                        objectRef is the baseid of the object (e.g., the formid of a steel
+                        arrow from Oblivion.esm). The objectRef refers to these indirectly
+                        through an "iref". Usually this will map back to a formid, but if the
+                        original mod has been removed from the load order, then the formid is
+                        set to zero. If this has happened, then a count of such "Null Bases"
+                        will be shown. After the "Null Base" count (if present) is a list of
+                        New ObjectRef Bases where the count is over 100 (e.g., if there are
+                        over 100 new arrows lying around). Show is the count, the iref and the
+                        base formid. Formid beginning with FF is reference to an object defined
+                        by the savegame. Otherwise, the formid will map back to a mod. The
+                        first two digits are the modindex, and can be matched to a mod through
+                        the "MI" column in the list of savegame masters.</li>
+                </ul></td></tr>
+            <tr><td colspan="2" id="saveDumpSE">Dump .**se Contents</td><td>This is similar to
+                <a href="#savesStatistics">Statistics</a> above, but reports statistics for the
+                <code>.**se</code> cosave file (e.g. <code>.obse</code> for Oblivion or
+                <code>.skse</code> for Skyrim) associated with the selected save.</td></tr>
+            <tr><td colspan="2">Dump .pluggy Contents</td><td><em>Oblivion only.</em> Behaves
+                like <a href="#saveDumpSE">Dump .**se Contents</a>, but for the Pluggy cosave
+                file associated with the selected save.</td></tr>
+            <tr><td colspan="2" id="savesDeleteSpells">Delete Spells...</td><td>
+                <em>Oblivion only.</em> This allows you to delete unused spells from your spell
+                list in the selected save. <strong>Warning:</strong> This cannot be undone. Most
+                spells may be repurchased or recreated, but quest and other special spells will
+                likely have to be added using the console.</td></tr>
+            <tr><td colspan="2">Rename Player...</td><td><em>Oblivion only.</em> Renames the
+                player's character in the selected save.</td></tr>
+            <tr><td colspan="2">Set Number of Uses for Weapon Enchantments...</td><td>
+                <em>Oblivion only.</em> Allows you to set the number of casts available to any
+                enchanted weapon you created in-game, or that has otherwise been recorded in
+                your savegame.</td></tr>
+            <tr><td colspan="2">Import Face...</td><td><em>Oblivion only.</em> Relates to
+                <a href="#saves-face">Face Importing</a>. This command allows you to import a
+                face for the save file's player character (and possibly some NPCs) from another
+                save file or from an NPC in a mod.</td></tr>
+            <tr><td colspan="2">Rename Enchanted...</td><td><em>Oblivion only.</em> Allows you
+                to rename any enchanted items that you have created in-game for the selected
+                save.</td></tr>
+            <tr><td colspan="2" id="savesRenamePotions">Rename Potions...</td><td>
+                <em>Oblivion only.</em> Allows you to rename any potions that you have created
+                in-game for the selected save.</td></tr>
+            <tr><td colspan="2">Rename Spells...</td><td><em>Oblivion only.</em> Allows you to
+                rename any spells that you have created in-game for the selected save.</td></tr>
+            <tr><td colspan="2" id="savesReweighPotions">Reweigh Potions...</td><td>
+                <em>Oblivion only.</em> Potions created in-game are given a weight that is
+                somewhat arbitrarily selected and potentially high. This command may be used to
+                set all created potions to have a specific weight. Potions created after the use
+                of this command with new names, new effects or new durations will not be
+                affected.</td></tr>
+            <tr><td colspan="2" id="savesUpdateNPCLevels">Update NPC Levels...</td><td>
+                <em>Oblivion only.</em> Updates the level information for NPCs stored in the
+                selected savegame to reflect the active load order's NPC level settings. This is
+                required because although NPC levels are set via plugins, once an NPC is
+                encountered its level is stored in the save file, which overrides the plugin
+                levels.</td></tr>
+            <tr><td colspan="2">Export Screenshot...</td><td>Allows you to save the image used
+                as the save file's screenshot as a JPEG.</td></tr>
+            <tr><td colspan="2">Re-number Save(s)...<td>Allows the re-numbering of the selected
+                save file(s). If more than one file is selected, the first will be renumbered to
+                the given number and the others will be numbered in increments of one from the
+                given number. The save name must be of the form
+                <code>&lt;Save (case insensitive)&gt;&lt;space&gt;&lt;some digits&gt;&lt;optional text&gt;.&lt;save extension&gt;</code>.</td></tr>
+            <tr><td colspan="2" id="savesRemoveBloat">Remove Bloat...<td><em>Oblivion only.</em>
+                <strong>This is an experimental command. It is recommended that saves are backed
+                up before using it on them.</strong> It attempts to determine how much bloating
+                there is in the selected save file and then optionally remove it. If the command
+                reports a large number of created objects, there could be a problem with one of
+                your mods, and such mods should be removed or updated. There are two common
+                types of bloat:
+                <ul>
+                    <li>Excess created objects can occur through the use of scripting by a mod
+                        to duplicate existing objects in-game and a failure by the mod to clean
+                        up the duplicates after their use.</li>
+                    <li>Null references are caused when objects from a mod that is removed are
+                        present in the game world. These objects then get replaced with null
+                        references when the game is next saved with the mod missing.</li>
+                </ul></td></tr>
+            <tr><td colspan="2" id="savesRepairAbomb">Repair Abomb<td><em>Oblivion only.</em>
+                <q>Abomb Animation Slowing</q> is a slowing of animations that typically occurs
+                around 225 hours into the game, though it may occur earlier or later. This is
+                an engine bug, and this command avoids its effects by resetting a related
+                counter (TesClass Abomb counter is reset to 0x41000000).</td></tr>
+            <tr><td colspan="2">Repair Hair<td><em>Oblivion only.</em> Oblivion has a bug that
+                will cause a crash if your PC's hair comes from a mod that has been removed and
+                you then run showRaceMenu. This command resets your hair to the default for that
+                race and gender, so you can then use showRaceMenu to select a new hair again if
+                you wish.</td></tr>
+        </tbody>
+    </table>
+</div>
 
 <table>
     <thead>
@@ -6869,19 +7022,25 @@ C.Location, -C.LockList
         <img alt="Screenshots Context Menu" src="../bash/images/readme/screenshots-4-rclick-header-menu-2.png">
         <img alt="Screenshots Context Menu" src="../bash/images/readme/screenshots-4-rclick-header-menu-3.png">
         <img alt="Screenshots Context Menu" src="../bash/images/readme/screenshots-4-rclick-header-menu-4.png">
+        <img alt="Screenshots Context Menu" src="../bash/images/readme/screenshots-4-rclick-header-menu-5.png">
     </figure>
     <table>
         <thead>
-            <tr><th colspan="2">Column Header Context Menu</th></tr>
-            <tr><th>Command<th>Description</th></tr>
+            <tr><th colspan="3">Column Header Context Menu</th></tr>
+            <tr><th colspan="2">Command<th>Description</th></tr>
         </thead>
         <tbody>
-            <tr><td>Sort By</td><td>This submenu allows you to choose by which column the screenshot list is sorted. This is equivalent
-                to clicking on a column header.</td></tr>
-            <tr><td>Columns</td><td>This submenu allows you to choose which columns are visible in the screenshot list.</td></tr>
-            <tr><td>Open<td>Open the screenshot directory in Windows Explorer.</td></tr>
-            <tr><td>Next Shot<td>Set any or all of the base name and number of the next screenshot as well as the screenshot directory.</td></tr>
-            <tr><td>JPEG Quality<td>Set the quality of JPEGs created during conversion.</td></tr>
+            <tr><td colspan="2">Sort By</td><td>This submenu allows you to choose by which
+                column the screenshot list is sorted. This is equivalent to clicking on a
+                column header.</td></tr>
+            <tr><td colspan="2">Columns</td><td>This submenu allows you to choose which
+                columns are visible in the screenshot list.</td></tr>
+            <tr><td>Files..</td>
+                <td>Open<td>Open the screenshot directory in Windows Explorer.</td></tr>
+            <tr><td colspan="2">Next Shot<td>Set any or all of the base name and number of
+                the next screenshot as well as the screenshot directory.</td></tr>
+            <tr><td colspan="2">JPEG Quality<td>Set the quality of JPEGs created during
+                conversion.</td></tr>
         </tbody>
     </table>
 </div>
@@ -6889,20 +7048,27 @@ C.Location, -C.LockList
     <figure class="slideshow" style="width: 310px; min-height: 167px">
         <img alt="Screenshot Context Menu" src="../bash/images/readme/screenshots-3-rclick-screenshot-menu-1.png">
         <img alt="Screenshot Context Menu" src="../bash/images/readme/screenshots-3-rclick-screenshot-menu-2.png">
+        <img alt="Screenshot Context Menu" src="../bash/images/readme/screenshots-3-rclick-screenshot-menu-3.png">
     </figure>
     <table>
         <thead>
-            <tr><th colspan="2">Screenshot List Context Menu</th></tr>
-            <tr><th>Command</th><th>Description</th></tr>
+            <tr><th colspan="3">Screenshot List Context Menu</th></tr>
+            <tr><th colspan="2">Command</th><th>Description</th></tr>
         </thead>
         <tbody>
-            <tr><td>Open</td><td>Opens the selected file(s) in the associated program(s).</td></tr>
-            <tr><td>Rename</td><td>Renames the selected file(s). If multiple files are selected, they will be numbered sequentially. If a file
-                already exists with the same name as a file's resulting name, that file will not be renamed. The extension will remain the same
-                and specifying a non image extension will make the rename operation fail - in short, leave the extension alone. Empty filenames
-                will also abort the rename.</td></tr>
-            <tr><td>Delete</td><td>Deletes the selected file(s).</td></tr>
-            <tr><td>Convert</td><td>Converts the selected files to one of the following formats: JPEG, PNG, BMP, TIFF. If a file of the conversion format already exists with the same name as a file to be converted, the conversion will not take place for that file.</td></tr>
+            <tr><td rowspan="3">File..</td>
+                <td>Open...</td><td>Opens the selected file(s) in the associated program(s).</td></tr>
+                <tr><td>Rename...</td><td>Renames the selected file(s). If multiple files are
+                    selected, they will be numbered sequentially. If a file already exists with the
+                    same name as a file's resulting name, that file will not be renamed. The extension
+                    will remain the same and specifying a non-image extension will make the rename
+                    operation fail - in short, leave the extension alone. Empty filenames will also
+                    abort the rename.</td></tr>
+                <tr><td>Delete</td><td>Deletes the selected file(s).</td></tr>
+            <tr><td colspan="2">Convert</td><td>Converts the selected files to one of the following
+                formats: JPEG, PNG, BMP, TIFF. If a file of the conversion format already exists with
+                the same name as a file to be converted, the conversion will not take place for that
+                file.</td></tr>
         </tbody>
     </table>
 </div>
