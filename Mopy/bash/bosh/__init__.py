@@ -2312,11 +2312,15 @@ class ModInfos(FileInfos):
             #  Disabled for now
             ##if self[fileName].hasBadMasterNames():
             ##    return
+            # Speed up lookups, since they occur for the plugin and all masters
+            acti_set = set(self._active_wip)
             for master in self[fileName].get_masters():
-                if master in _modSet: self.lo_activate(master, False, _modSet,
-                                                       _children, _activated)
+                # Check that the master is on disk and not already activated
+                if master in _modSet and master not in acti_set:
+                    self.lo_activate(master, False, _modSet, _children,
+                                     _activated)
             #--Select in plugins
-            if fileName not in self._active_wip:
+            if fileName not in acti_set:
                 self._active_wip.append(fileName)
                 _activated.add(fileName)
             return load_order.get_ordered(_activated or [])
