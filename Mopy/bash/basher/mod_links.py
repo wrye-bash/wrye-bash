@@ -29,10 +29,9 @@ import StringIO
 import collections
 import copy
 import re
-import time
-from operator import attrgetter
 # Local
 from .constants import settingDefaults
+from .files_links import File_Redate
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, CBash_gui_patchers, PBash_gui_patchers
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order
@@ -45,7 +44,6 @@ from ..bolt import GPath, SubProgress
 from ..bosh import faces
 from ..cint import CBashApi, FormID
 from ..exception import AbstractError, BoltError, CancelError
-from ..localize import format_date, unformat_date
 from ..patcher import configIsCBash, exportConfig, patch_files
 
 __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
@@ -190,34 +188,14 @@ class Mod_OrderByName(EnabledLink):
             bosh.modInfos.cached_lo_save_lo()
         self.window.RefreshUI(refreshSaves=True)
 
-class Mod_Redate(AppendableLink, ItemLink):
-    """Move the selected files to start at a specified date."""
-    _text = _(u'Redate...')
-    _help = _(u"Move the selected files to start at a specified date.")
+class Mod_Redate(File_Redate):
+    """Mods tab version of the Redate command."""
+    def _infos_to_redate(self):
+        return [self.window.data_store[to_redate] for to_redate
+                in load_order.get_ordered(self.selected)]
 
-    def _append(self, window): return not load_order.using_txt_file()
-
-    @balt.conversation
-    def Execute(self):
-        #--Ask user for revised time.
-        newTimeStr = self._askText(
-            _(u'Redate selected mods starting at...'),
-            title=_(u'Redate Mods'), default=format_date(int(time.time())))
-        if not newTimeStr: return
-        try:
-            newTimeTup = unformat_date(newTimeStr, '%c')
-            newTime = int(time.mktime(newTimeTup))
-        except ValueError:
-            self._showError(_(u'Unrecognized date: ') + newTimeStr)
-            return
-        #--Do it
-        for fileInfo in sorted(self.iselected_infos(),key=attrgetter('mtime')):
-            fileInfo.setmtime(newTime)
-            newTime += 60
-        #--Refresh
-        with load_order.Unlock():
-            bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=True)
-        self.window.RefreshUI(refreshSaves=True)
+    def _perform_refresh(self):
+        bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=True)
 
 # Group/Rating submenus -------------------------------------------------------
 #--Common ---------------------------------------------------------------------
