@@ -2002,7 +2002,7 @@ class UIList(wx.Panel):
         items = items if items is not None else self.data_store.keys()
         def key(k): # if key is None then keep it None else provide self
             k = self._sort_keys[k]
-            return k if k is None else partial(k, self)
+            return bolt.natural_key() if k is None else partial(k, self)
         defaultKey = key(self._default_sort_col)
         defSort = col == self._default_sort_col
         # always apply default sort

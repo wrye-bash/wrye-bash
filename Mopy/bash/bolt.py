@@ -1926,6 +1926,20 @@ class StringTable(dict):
             deprint(u'Error loading string file:', path.stail, traceback=True)
             return
 
+#------------------------------------------------------------------------------
+_digit_re = re.compile(u'([0-9]+)')
+
+def natural_key():
+    """Returns a sort key for 'natural' sort order, i.e. similar to how most
+    file managers display it - a1.png, a2.png, a10.png. Can handle both strings
+    and paths. Inspired by
+    https://blog.codinghorror.com/sorting-for-humans-natural-sort-order/."""
+    def _to_cmp(sub_str):
+        """Helper function that prepares substrings for comparison."""
+        return int(sub_str) if sub_str.isdigit() else sub_str.lower()
+    return lambda curr_str: [_to_cmp(s) for s in
+                             _digit_re.split(u'%s' % curr_str)]
+
 # WryeText --------------------------------------------------------------------
 codebox = None
 class WryeText(object):
