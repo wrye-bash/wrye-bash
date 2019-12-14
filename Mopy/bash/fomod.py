@@ -45,7 +45,8 @@ from collections import OrderedDict, Sequence
 from distutils.version import LooseVersion
 from xml.etree import ElementTree as etree
 
-from .bolt import Path
+from . import bush
+from .bolt import GPath
 from .load_order import cached_is_active
 
 __author__ = "Ganda"
@@ -194,7 +195,7 @@ class _FomodFileInfo(object):
             source = file_object.get("source")
             if source.endswith(("/", "\\")):
                 source = source[:-1]
-            source = Path(source)
+            source = GPath(source)
             destination = file_object.get("destination", None)
             if destination is None:  # omitted destination
                 destination = source
@@ -204,10 +205,10 @@ class _FomodFileInfo(object):
                 # if empty or with a trailing slash then dest refers
                 # to a folder. Post-processing to add the filename to the
                 # end of the path.
-                destination = Path(destination).join(Path(source).tail)
+                destination = GPath(destination).join(GPath(source).tail)
             else:
                 # destination still needs normalizing
-                destination = Path(destination)
+                destination = GPath(destination)
             priority = int(file_object.get("priority", "0"))
             for fname in file_list:
                 if fname.lower() == source.s.lower():  # it's a file
@@ -217,7 +218,7 @@ class _FomodFileInfo(object):
                     fdest = destination.s + fname[source_len:]
                     if fdest.startswith(os.sep):
                         fdest = fdest[1:]
-                    result.append(cls(Path(fname), Path(fdest), priority))
+                    result.append(cls(GPath(fname), GPath(fdest), priority))
         return result
 
 
@@ -363,13 +364,17 @@ class FomodInstaller(object):
         return flag_dict
 
     def _test_file_condition(self, condition):
-        file_name = condition.get("file")
+        file_name = GPath(condition.get("file"))
         file_type = condition.get("state")
-        file_path = self.dst_dir.join(file_name)
-        if not file_path.exists(): # TODO: ghosts?
+        # Check if it's missing, ghosted or (in)active
+        if not self.dst_dir.join(file_name).exists():
             actual_type = "Missing"
+        elif (file_name.cext in bush.game.espm_extensions and
+              self.dst_dir.join(file_name + u'.ghost').exists()):
+            actual_type = 'Inactive'
         else:
-            actual_type = "Active" if cached_is_active(file_name) else "Inactive"
+            actual_type = ("Active" if cached_is_active(file_name)
+                           else "Inactive")
         if actual_type != file_type:
             raise FailedCondition(
                 "File {} should be {} but is {} instead.".format(
