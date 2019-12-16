@@ -1335,7 +1335,7 @@ class MreFlst(MelRecord):
         MelFids('LNAM','formIDInList'),
     )
     __slots__ = melSet.getSlotsUsed() + ['mergeOverLast', 'mergeSources',
-                                         'items', 'de_plugins', 're_plugins']
+                                         'items', 'de_records', 're_records']
 
     def __init__(self, header, ins=None, do_unpack=False):
         MelRecord.__init__(self, header, ins, do_unpack)
@@ -1343,8 +1343,8 @@ class MreFlst(MelRecord):
         self.mergeSources = None #--Set to list by other functions
         self.items  = None #--Set of items included in list
         #--Set of items deleted by list (Deflst mods) unused for Skyrim
-        self.de_plugins = None #--Set of items deleted by list (Deflst mods)
-        self.re_plugins = None # unused, needed by patcher - TODO base class
+        self.de_records = None #--Set of items deleted by list (Deflst mods)
+        self.re_records = None # unused, needed by patcher - TODO base class
 
     def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet."""
@@ -1353,15 +1353,15 @@ class MreFlst(MelRecord):
 
     def mergeWith(self,other,otherMod):
         """Merges newLevl settings and entries with self.
-        Requires that: self.items, other.de_plugins be defined."""
+        Requires that: self.items, other.de_records be defined."""
         if not self.longFids or not other.longFids:
             raise StateError(_(u'Fids not in long format'))
         #--Remove items based on other.removes
-        if other.de_plugins:
-            removeItems = self.items & other.de_plugins
+        if other.de_records:
+            removeItems = self.items & other.de_records
             #self.entries = [entry for entry in self.entries if entry.listId not in removeItems]
             self.formIDInList = [fid for fid in self.formIDInList if fid not in removeItems]
-            self.items = (self.items | other.de_plugins)
+            self.items = (self.items | other.de_records)
         #--Add new items from other
         newItems = set()
         formIDInListAppend = self.formIDInList.append

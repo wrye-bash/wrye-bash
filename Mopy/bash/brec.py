@@ -2740,8 +2740,8 @@ class MreLeveledListBase(MelRecord):
     top_copy_attrs = ()
     # TODO(inf) Only overriden for FO3/FNV right now - Skyrim/FO4?
     entry_copy_attrs = ('listId', 'level', 'count')
-    __slots__ = ['mergeOverLast', 'mergeSources', 'items', 'de_plugins',
-                 're_plugins']
+    __slots__ = ['mergeOverLast', 'mergeSources', 'items', 'de_records',
+                 're_records']
                 # + ['flags', 'entries'] # define those in the subclasses
 
     def __init__(self, header, ins=None, do_unpack=False):
@@ -2749,8 +2749,8 @@ class MreLeveledListBase(MelRecord):
         self.mergeOverLast = False #--Merge overrides last mod merged
         self.mergeSources = None #--Set to list by other functions
         self.items  = None #--Set of items included in list
-        self.de_plugins = None #--Set of items deleted by list (Delev and Relev mods)
-        self.re_plugins = None #--Set of items relevelled by list (Relev mods)
+        self.de_records = None #--Set of items deleted by list (Delev and Relev mods)
+        self.re_records = None #--Set of items relevelled by list (Relev mods)
 
     def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet."""
@@ -2759,12 +2759,12 @@ class MreLeveledListBase(MelRecord):
 
     def mergeWith(self,other,otherMod):
         """Merges newLevl settings and entries with self.
-        Requires that: self.items, other.de_plugins and other.re_plugins be
+        Requires that self.items, other.de_records and other.re_records be
         defined."""
         if not self.longFids or not other.longFids:
             raise exception.StateError(u'Fids not in long format')
         #--Relevel or not?
-        if other.re_plugins:
+        if other.re_records:
             for attr in self.__class__.top_copy_attrs:
                 self.__setattr__(attr,other.__getattribute__(attr))
             self.flags = other.flags()
@@ -2775,10 +2775,10 @@ class MreLeveledListBase(MelRecord):
                     self.__setattr__(attr, otherAttr)
             self.flags |= other.flags
         #--Remove items based on other.removes
-        if other.de_plugins or other.re_plugins:
-            removeItems = self.items & (other.de_plugins | other.re_plugins)
+        if other.de_records or other.re_records:
+            removeItems = self.items & (other.de_records | other.re_records)
             self.entries = [entry for entry in self.entries if entry.listId not in removeItems]
-            self.items = (self.items | other.de_plugins) - other.re_plugins
+            self.items = (self.items | other.de_records) - other.re_records
         hasOldItems = bool(self.items)
         #--Add new items from other
         newItems = set()
