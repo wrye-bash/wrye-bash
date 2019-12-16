@@ -219,7 +219,7 @@ class MelItems(MelGroups):
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
     """Leveled item/creature/spell list.."""
-    copyAttrs = ('script','template','chanceNone',)
+    top_copy_attrs = ('script','template','chanceNone',)
 
     class MelLevListLvld(MelUInt8):
         """Subclass to handle chanceNone and flags.calcFromAllLevels."""

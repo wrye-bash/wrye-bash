@@ -24,7 +24,6 @@
 """This module contains the fallout3 record classes. You must import from it
 __once__ only in game.fallout3.Fallout3GameInfo#init. No other game.records
 file must be imported till then."""
-from operator import attrgetter
 from ... import bush, brec
 from ...bolt import Flags, struct_unpack, struct_pack
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
@@ -38,7 +37,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelRaceVoices, MelBounds, null1, null2, null3, null4, MelScriptVars, \
     MelSequential, MelTruncatedStruct, PartialLoadDecider, MelReadOnly, \
     MelCoordinates, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, \
-    MelArray, MelWthrColors
+    MelArray, MelWthrColors, MreLeveledListBase
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
@@ -239,9 +238,10 @@ class MelEmbeddedScript(MelSequential):
         )
 
 #------------------------------------------------------------------------------
-class MreLeveledList(MelRecord):
+class MreLeveledList(MreLeveledListBase):
     """Leveled item/creature/spell list.."""
-    _flags = Flags(0,Flags.getNames('calcFromAllLevels','calcForEachItem','useAllSpells'))
+    top_copy_attrs = ('chanceNone', 'glob')
+    entry_copy_attrs = ('listId', 'level', 'count', 'owner', 'condition')
 
     class MelLevListLvld(MelStruct):
         """Subclass to support alternate format."""
@@ -264,7 +264,7 @@ class MreLeveledList(MelRecord):
         MelEdid(),
         MelBounds(),
         MelLevListLvld('LVLD','B','chanceNone'),
-        MelUInt8('LVLF', (_flags, 'flags', 0L)),
+        MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0L)),
         MelFid('SCRI','script'),
         MelFid('TNAM','template'),
         MelFid('LVLG','glob'),
@@ -277,84 +277,7 @@ class MreLeveledList(MelRecord):
         ),
         MelModel(),
     )
-    __slots__ = melSet.getSlotsUsed() + ['mergeOverLast', 'mergeSources',
-                                         'items', 'delevs', 'relevs']
-
-    def __init__(self, header, ins=None, do_unpack=False):
-        MelRecord.__init__(self, header, ins, do_unpack)
-        self.mergeOverLast = False #--Merge overrides last mod merged
-        self.mergeSources = None #--Set to list by other functions
-        self.items  = None #--Set of items included in list
-        self.delevs = None #--Set of items deleted by list (Delev and Relev mods)
-        self.relevs = None #--Set of items relevelled by list (Relev mods)
-
-    def mergeFilter(self,modSet):
-        """Filter out items that don't come from specified modSet."""
-        if not self.longFids: raise StateError(_("Fids not in long format"))
-        self.entries = [entry for entry in self.entries if entry.listId[0] in modSet]
-
-    def mergeWith(self,other,otherMod):
-        """Merges newLevl settings and entries with self.
-        Requires that: self.items, other.delevs and other.relevs be defined."""
-        if not self.longFids: raise StateError(_("Fids not in long format"))
-        if not other.longFids: raise StateError(_("Fids not in long format"))
-        #--Relevel or not?
-        if other.relevs:
-            self.chanceNone = other.chanceNone
-            self.script = other.script
-            self.template = other.template
-            self.flags = other.flags()
-            self.glob = other.glob
-        else:
-            self.chanceNone = other.chanceNone or self.chanceNone
-            self.script   = other.script or self.script
-            self.template = other.template or self.template
-            self.flags |= other.flags
-            self.glob = other.glob or self.glob
-        #--Remove items based on other.removes
-        if other.delevs or other.relevs:
-            removeItems = self.items & (other.delevs | other.relevs)
-            self.entries = [entry for entry in self.entries if entry.listId not in removeItems]
-            self.items = (self.items | other.delevs) - other.relevs
-        hasOldItems = bool(self.items)
-        #--Add new items from other
-        newItems = set()
-        entriesAppend = self.entries.append
-        newItemsAdd = newItems.add
-        for entry in other.entries:
-            if entry.listId not in self.items:
-                entriesAppend(entry)
-                newItemsAdd(entry.listId)
-        if newItems:
-            self.items |= newItems
-            self.entries.sort(key=attrgetter('listId','level','count','owner','condition'))
-        #--Is merged list different from other? (And thus written to patch.)
-        if (self.chanceNone != other.chanceNone or
-            self.script != other.script or
-            self.template != other.template or
-            #self.flags != other.flags or
-            self.glob != other.glob or
-            len(self.entries) != len(other.entries)
-            ):
-            self.mergeOverLast = True
-        else:
-            otherlist = other.entries
-            otherlist.sort(key=attrgetter('listId','level','count','owner','condition'))
-            for selfEntry,otherEntry in zip(self.entries,otherlist):
-                if (selfEntry.listId != otherEntry.listId or
-                    selfEntry.level != otherEntry.level or
-                    selfEntry.count != otherEntry.count or
-                    selfEntry.owner != otherEntry.owner or
-                    selfEntry.condition != otherEntry.condition):
-                    self.mergeOverLast = True
-                    break
-            else:
-                self.mergeOverLast = False
-        if self.mergeOverLast:
-            self.mergeSources.append(otherMod)
-        else:
-            self.mergeSources = [otherMod]
-        self.setChanged(self.mergeOverLast)
+    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MelOwnership(MelGroup):

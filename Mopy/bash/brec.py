@@ -2701,7 +2701,10 @@ class MreLeveledListBase(MelRecord):
     """Base type for leveled item/creature/npc/spells.
        it requires the base class to use the following:
        classAttributes:
-          copyAttrs -> List of attributes to modify by copying when merging
+          top_copy_attrs -> List of attributes to modify by copying when
+                            merging
+          entry_copy_attrs -> List of attributes to modify by copying for each
+                              list entry when merging
        instanceAttributes:
           entries -> List of items, with the following attributes:
               listId
@@ -2716,7 +2719,9 @@ class MreLeveledListBase(MelRecord):
         (2, 'useAllSpells'),
         (3, 'specialLoot'),
         ))
-    copyAttrs = ()
+    top_copy_attrs = ()
+    # TODO(inf) Only overriden for FO3/FNV right now - Skyrim/FO4?
+    entry_copy_attrs = ('listId', 'level', 'count')
     __slots__ = ['mergeOverLast', 'mergeSources', 'items', 'delevs', 'relevs']
                 # + ['flags', 'entries'] # define those in the subclasses
 
@@ -2740,11 +2745,11 @@ class MreLeveledListBase(MelRecord):
             raise exception.StateError(u'Fids not in long format')
         #--Relevel or not?
         if other.relevs:
-            for attr in self.__class__.copyAttrs:
+            for attr in self.__class__.top_copy_attrs:
                 self.__setattr__(attr,other.__getattribute__(attr))
             self.flags = other.flags()
         else:
-            for attr in self.__class__.copyAttrs:
+            for attr in self.__class__.top_copy_attrs:
                 otherAttr = other.__getattribute__(attr)
                 if otherAttr is not None:
                     self.__setattr__(attr, otherAttr)
@@ -2773,29 +2778,40 @@ class MreLeveledListBase(MelRecord):
                          u'to 255, you will have to fix this manually!' %
                          (otherMod.s, self))
             self.entries = self.entries[:255]
+        entry_copy_attrs_key = attrgetter(*self.__class__.entry_copy_attrs)
         if newItems:
             self.items |= newItems
-            self.entries.sort(key=attrgetter('listId','level','count'))
+            self.entries.sort(key=entry_copy_attrs_key)
         #--Is merged list different from other? (And thus written to patch.)
         if ((len(self.entries) != len(other.entries)) or
-            (self.flags != other.flags)
-            ):
+                (self.flags != other.flags)):
             self.mergeOverLast = True
         else:
-            for attr in self.__class__.copyAttrs:
-                if self.__getattribute__(attr) != other.__getattribute__(attr):
+            my_val = self.__getattribute__
+            other_val = other.__getattribute__
+            # Check copy-attributes first, break if they are different
+            for attr in self.__class__.top_copy_attrs:
+                if my_val(attr) != other_val(attr):
                     self.mergeOverLast = True
                     break
             else:
+                # Then, check the sort-attributes, same story
                 otherlist = other.entries
-                otherlist.sort(key=attrgetter('listId','level','count'))
+                otherlist.sort(key=entry_copy_attrs_key)
                 for selfEntry,otherEntry in zip(self.entries,otherlist):
-                    if (selfEntry.listId != otherEntry.listId or
-                        selfEntry.level != otherEntry.level or
-                        selfEntry.count != otherEntry.count):
-                        self.mergeOverLast = True
-                        break
+                    my_val = selfEntry.__getattribute__
+                    other_val = otherEntry.__getattribute__
+                    for attr in self.__class__.entry_copy_attrs:
+                        if my_val(attr) != other_val(attr):
+                            break
+                    else:
+                        # attributes are identical, try next entry
+                        continue
+                    # attributes differ, no need to look at more entries
+                    self.mergeOverLast = True
+                    break
                 else:
+                    # Neither one had different attributes
                     self.mergeOverLast = False
         if self.mergeOverLast:
             self.mergeSources.append(otherMod)

@@ -3309,7 +3309,7 @@ class MreLeveledList(MreLeveledListBase):
 class MreLvli(MreLeveledList):
     """Leveled Item."""
     classType = 'LVLI'
-    copyAttrs = ('chanceNone','glob',)
+    top_copy_attrs = ('chanceNone','glob',)
 
     melSet = MelSet(
         MelEdid(),
@@ -3326,7 +3326,7 @@ class MreLvli(MreLeveledList):
 class MreLvln(MreLeveledList):
     """Leveled NPC."""
     classType = 'LVLN'
-    copyAttrs = ('chanceNone','model','modt_p',)
+    top_copy_attrs = ('chanceNone','model','modt_p',)
 
     melSet = MelSet(
         MelEdid(),
@@ -3346,7 +3346,7 @@ class MreLvsp(MreLeveledList):
     """Leveled Spell."""
     classType = 'LVSP'
 
-    copyAttrs = ('chanceNone',)
+    top_copy_attrs = ('chanceNone',)
 
     melSet = MelSet(
         MelEdid(),

@@ -94,7 +94,7 @@ class MreLvli(MreLeveledList):
     """Leveled Item."""
     classType = 'LVLI'
 
-    copyAttrs = ('chanceNone','maxCount','glob','filterKeywordChances',
+    top_copy_attrs = ('chanceNone','maxCount','glob','filterKeywordChances',
                  'epicLootChance','overrideName')
 
     melSet = MelSet(
@@ -119,7 +119,7 @@ class MreLvln(MreLeveledList):
     """Leveled NPC."""
     classType = 'LVLN'
 
-    copyAttrs = ('chanceNone','maxCount','glob','filterKeywordChances',
+    top_copy_attrs = ('chanceNone','maxCount','glob','filterKeywordChances',
                  'model','modt_p')
 
     melSet = MelSet(
