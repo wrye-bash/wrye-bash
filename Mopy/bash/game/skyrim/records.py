@@ -2538,7 +2538,7 @@ class MreFlst(MelRecord):
         MelFids('LNAM','formIDInList'),
     )
     __slots__ = melSet.getSlotsUsed() + ['mergeOverLast', 'mergeSources',
-                                         'items', 'deflsts', 'canListMerge']
+                                         'items', 'de_plugins', 're_plugins']
 
     """ Skyrim's FLST can't always be merged if a mod depends on the order of
     the LNAM records for the Papyrus scripts.
@@ -2561,7 +2561,8 @@ class MreFlst(MelRecord):
         self.mergeSources = None #--Set to list by other functions
         self.items  = None #--Set of items included in list
         #--Set of items deleted by list (Deflst mods) unused for Skyrim
-        self.deflsts = None
+        self.de_plugins = None
+        self.re_plugins = None # unused, needed by patcher - TODO base class
 
     def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet."""
@@ -2570,14 +2571,14 @@ class MreFlst(MelRecord):
 
     def mergeWith(self,other,otherMod):
         """Merges newLevl settings and entries with self.
-        Requires that: self.items, other.deflsts be defined."""
+        Requires that: self.items, other.de_plugins be defined."""
         if not self.longFids: raise StateError(_("Fids not in long format"))
         if not other.longFids: raise StateError(_("Fids not in long format"))
         #--Remove items based on other.removes
-        if other.deflsts:
-            removeItems = self.items & other.deflsts
+        if other.de_plugins:
+            removeItems = self.items & other.de_plugins
             self.formIDInList = [fid for fid in self.formIDInList if fid not in removeItems]
-            self.items = (self.items | other.deflsts)
+            self.items = (self.items | other.de_plugins)
         #--Add new items from other
         newItems = set()
         formIDInListAppend = self.formIDInList.append
