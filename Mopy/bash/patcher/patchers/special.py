@@ -307,13 +307,14 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
     scanRequiresChecked = False # same as CBash_Patcher.scanRequiresChecked
     applyRequiresChecked = False # same as CBash_Patcher.applyRequiresChecked
 
-    def __init__(self, p_name, p_file, p_sources, remove_empty, tag_choices): # TODO use remove_empty
+    def __init__(self, p_name, p_file, p_sources, remove_empty, tag_choices):
         super(_AListsMerger, self).__init__(p_name, p_file, p_sources)
         self.isActive = True
         self.id_delevs = {}
         self.id_list = {}
         self.id_attrs = {}
         self.empties = set()
+        self.remove_empty_sublists = remove_empty
         self.tag_choices = tag_choices
         importMods = set(self.srcs) & p_file.loadSet
         _skip_id = lambda x: FormID(GPath(u'Oblivion.esm'),x)
@@ -429,39 +430,46 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
         """Edits the bashed patch file directly."""
         if self.empties is None: return
         subProgress = SubProgress(progress)
-        subProgress.setFull(len(self.getTypes()))
+        subProgress.setFull(len(self.getTypes()) * 2)
         pstate = 0
         #Clean up any empty sublists
         empties = self.empties
         emptiesAdd = empties.add
         emptiesDiscard = empties.discard
-        for type in self.getTypes():
-            subProgress(pstate,
-                        _(u'Looking for empty %s sublists...') % type + u'\n')
-            #Remove any empty sublists
-            madeChanges = True
-            while madeChanges:
-                madeChanges = False
-                oldEmpties = empties.copy()
-                for record in getattr(patchFile,type):
-                    recordId = record.fid
-                    items = set([entry.listId for entry in record.entries])
-                    if items:
-                        emptiesDiscard(recordId)
-                    else:
-                        emptiesAdd(recordId)
-                    toRemove = empties & items
-                    if toRemove:
-                        madeChanges = True
-                        cleanedEntries = [entry for entry in record.entries if
-                                          entry.listId not in toRemove]
-                        record.entries = cleanedEntries
-                        if cleanedEntries:
+        # Only do this if 'Remove Empty Sublists' is checked
+        if self.remove_empty_sublists:
+            for type in self.getTypes():
+                subProgress(pstate, _(u'Looking for empty %s sublists...') %
+                            type + u'\n')
+                #Remove any empty sublists
+                madeChanges = True
+                while madeChanges:
+                    madeChanges = False
+                    oldEmpties = empties.copy()
+                    for record in getattr(patchFile,type):
+                        recordId = record.fid
+                        items = set([entry.listId for entry in record.entries])
+                        if items:
                             emptiesDiscard(recordId)
                         else:
                             emptiesAdd(recordId)
-                madeChanges |= oldEmpties != empties
-
+                        toRemove = empties & items
+                        if toRemove:
+                            madeChanges = True
+                            cleanedEntries = [entry for entry in record.entries
+                                              if entry.listId not in toRemove]
+                            record.entries = cleanedEntries
+                            if cleanedEntries:
+                                emptiesDiscard(recordId)
+                            else:
+                                emptiesAdd(recordId)
+                    madeChanges |= oldEmpties != empties
+                    pstate += 1
+        # Still need to clean this, even if 'Remove Empty Sublists' is off
+        # TODO(inf) We could avoid this if we rewrote apply() above
+        for type in self.getTypes():
+            subProgress(pstate,
+                        _(u'Cleaning %s ITPOs...') % type + u'\n')
             # Remove any identical to winning lists, except those that were
             # merged into the patch
             for record in getattr(patchFile,type):
