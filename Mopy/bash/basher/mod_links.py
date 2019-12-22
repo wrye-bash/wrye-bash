@@ -1563,17 +1563,18 @@ class Mod_DecompileAll(EnabledLink):
                     masterFile.load(True)
                     mapper = masterFile.getLongMapper()
                     for record in masterFile.SCPT.getActiveRecords():
-                        id_text[mapper(record.fid)] = record.scriptText
+                        id_text[mapper(record.fid)] = record.script_source
                 mapper = modFile.getLongMapper()
                 newRecords = []
                 for record in modFile.SCPT.records:
                     fid = mapper(record.fid)
                     #--Special handling for genericLoreScript
                     if (fid in id_text and record.fid == 0x00025811 and
-                        record.compiledSize == 4 and record.lastIndex == 0):
+                        record.compiled_size == 4 and record.last_index == 0):
                         removed.append(record.eid)
                         badGenericLore = True
-                    elif fid in id_text and id_text[fid] == record.scriptText:
+                    elif fid in id_text and id_text[fid] == \
+                            record.script_source:
                         removed.append(record.eid)
                     else:
                         newRecords.append(record)

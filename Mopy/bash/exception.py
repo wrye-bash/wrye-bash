@@ -107,16 +107,19 @@ class ModReadError(ModError):
 
 class ModSizeError(ModError):
     """Mod Error: Record/subrecord has wrong size."""
-    def __init__(self, in_name, rec_type, read_size, max_size,
-                 exact_size=True):
-        ## type: (Path, basestring, int, int, bool, bool) -> None
+    def __init__(self, in_name, rec_type, expected_sizes, actual_size):
+        """Indicates that a record or subrecord has the wrong size.
+
+        :type in_name: bolt.Path
+        :type rec_type: basestring
+        :type expected_sizes: tuple[int]
+        :type actual_size: int"""
         self.rec_type = rec_type
-        self.read_size = read_size
-        self.max_size = max_size
-        self.exact_size = exact_size
-        op = '==' if exact_size else '<='
-        message_form = (u'{}: Expected size {} {}, but got: {}'
-                        u''.format(rec_type, op, read_size, max_size))
+        self.expected_sizes = expected_sizes
+        self.actual_size = actual_size
+        message_form = (u'%s: Expected one of sizes [%s], but got %u' % (
+            rec_type, u', '.join([u'%s' % x for x in expected_sizes]),
+            actual_size))
         super(ModSizeError, self).__init__(in_name.s, message_form)
 
 # Shell (OS) File Operation exceptions ----------------------------------------

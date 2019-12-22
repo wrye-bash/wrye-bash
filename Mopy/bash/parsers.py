@@ -612,12 +612,12 @@ class EditorIds(object):
                 return newWord
         #--Scripts
         for script in sorted(modFile.SCPT.records,key=attrgetter('eid')):
-            if not script.scriptText: continue
-            newText = reWord.sub(subWord,script.scriptText)
-            if newText != script.scriptText:
+            if not script.script_source: continue
+            newText = reWord.sub(subWord,script.script_source)
+            if newText != script.script_source:
                 # header = u'\r\n\r\n; %s %s\r\n' % (script.eid,u'-' * (77 -
                 # len(script.eid))) # unused - bug ?
-                script.scriptText = newText
+                script.script_source = newText
                 script.setChanged()
                 changed.append((_(u"Script"),script.eid))
         #--Quest Scripts
@@ -625,11 +625,11 @@ class EditorIds(object):
             questChanged = False
             for stage in quest.stages:
                 for entry in stage.entries:
-                    oldScript = entry.scriptText
+                    oldScript = entry.script_source
                     if not oldScript: continue
                     newScript = reWord.sub(subWord,oldScript)
                     if newScript != oldScript:
-                        entry.scriptText = newScript
+                        entry.script_source = newScript
                         questChanged = True
             if questChanged:
                 changed.append((_(u"Quest"),quest.eid))
@@ -1750,7 +1750,8 @@ class ScriptText(_ScriptText):
             for record in records:
                 z += 1
                 progress((0.5/y*z),_(u"Reading scripts in %s.")% file_)
-                eid_data[record.eid] = (record.scriptText,mapper(record.fid))
+                eid_data[record.eid] = (record.script_source,
+                                        mapper(record.fid))
 
     def writeToMod(self, modInfo, makeNew=False):
         """Writes scripts to specified mod."""
@@ -1765,9 +1766,9 @@ class ScriptText(_ScriptText):
             data = eid_data.get(eid,None)
             if data is not None:
                 newText, longid = data
-                oldText = record.scriptText
+                oldText = record.script_source
                 if oldText.lower() != newText.lower():
-                    record.scriptText = newText
+                    record.script_source = newText
                     record.setChanged()
                     changed.append(eid)
                 del eid_data[eid]
@@ -1779,7 +1780,7 @@ class ScriptText(_ScriptText):
                 newScript = MreRecord.type_class['SCPT'](
                     RecordHeader('SCPT', 0, 0x40000, scriptFid, 0))
                 newScript.eid = eid
-                newScript.scriptText = newText
+                newScript.script_source = newText
                 newScript.setChanged()
                 modFile.SCPT.records.append(newScript)
                 added.append(eid)
@@ -3909,10 +3910,8 @@ class LoadFactory(object):
             elif top_rec_type == 'CELL': return MobICells
             elif top_rec_type == 'WRLD': return MobWorlds
             else: return MobObjects
-        elif self.keepAll:
-            return MobBase
         else:
-            return None
+            return MobBase if self.keepAll else None
 
     def __repr__(self):
         return u'<LoadFactory: load %u types (%s), %s others>' % (

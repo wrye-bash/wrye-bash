@@ -116,10 +116,10 @@ class FalloutNVGameInfo(Fallout3GameInfo):
             MreArmo, MreAspc, MreCcrd, MreCdck, MreChal, MreChip, MreCmny, \
             MreCont, MreCsno, MreCsty, MreDehy, MreDobj, MreEnch, MreFact, \
             MreHdpt, MreHung, MreImad, MreImod, MreIpct, MreKeym, MreLigh, \
-            MreLscr, MreLsct, MreMisc, MreMset, MreMusc, MreProj, MreRace, \
-            MreRcct, MreRcpe, MreRegn, MreRepu, MreSlpd, MreSoun, MreStat, \
-            MreTact, MreWeap, MreWthr, MreAchr, MreAcre, MreCell, MreDial, \
-            MreGmst, MreInfo, MrePgre, MrePmis, MreRefr, MreHeader
+            MreLscr, MreLsct, MreMisc, MreMset, MreMusc, MreProj, MreRcct, \
+            MreRcpe, MreRegn, MreRepu, MreSlpd, MreSoun, MreStat, MreTact, \
+            MreWeap, MreWthr, MreAchr, MreAcre, MreCell, MreDial, MreGmst, \
+            MreInfo, MrePgre, MrePmis, MreRefr, MreHeader
         # then from fallout3.records
         from ..fallout3.records import MreCpth, MreIdle, MreMesg, MrePack, \
             MrePerk, MreQust, MreSpel, MreTerm, MreNpc, MreAddn, MreAnio, \
@@ -129,7 +129,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
             MreIpds, MreLgtm, MreLtex, MreLvlc, MreLvli, MreLvln, MreMgef, \
             MreMicn, MreMstt, MreNavi, MreNavm, MreNote, MrePwat, MreRads, \
             MreRgdl, MreScol, MreScpt, MreTree, MreTxst, MreVtyp, MreWatr, \
-            MreWrld, MreAlch
+            MreWrld, MreAlch, MreRace
         # Old Mergeable from Valda's version
         # MreActi, MreAlch, MreAloc, MreAmef, MreAmmo, MreAnio, MreAppa,
         # MreArma, MreArmo, MreAspc, MreAvif, MreBook, MreBptd, MreBsgn,
