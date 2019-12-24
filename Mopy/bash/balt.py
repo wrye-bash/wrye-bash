@@ -3069,6 +3069,7 @@ class Events(object):
     WIZARD_CANCEL = 'wizard_cancel'
     WIZARD_FINISHED = 'wizard_finished'
     WIZARD_PAGE_CHANGING = 'wizard_page_changing'
+    HOVER = 'hover'
     # TODO(nycz): possibly too specific stuff here, what do?
     # also the names here... ugh. needless to say its very wip
     COMBOBOX_CHOICE = 'combobox_choice'
@@ -3086,6 +3087,7 @@ _WX_EVENTS = {Events.RESIZE:                wx.EVT_SIZE,
               Events.WIZARD_CANCEL:         wiz.EVT_WIZARD_CANCEL,
               Events.WIZARD_FINISHED:       wiz.EVT_WIZARD_FINISHED,
               Events.WIZARD_PAGE_CHANGING:  wiz.EVT_WIZARD_PAGE_CHANGING,
+              Events.HOVER:                 wx.EVT_ENTER_WINDOW,
               Events.COMBOBOX_CHOICE:       wx.EVT_COMBOBOX,
               Events.COLORPICKER_CHANGED:   wx.EVT_COLOURPICKER_CHANGED,
 }

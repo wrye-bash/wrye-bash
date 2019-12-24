@@ -305,6 +305,9 @@ class FomodInstaller(object):
             self._current_page = None
             return None
 
+    def has_previous(self):
+        return bool(self._previous_pages)
+
     def files(self):
         required_files = []
         required_files_elem = self.tree.find("requiredInstallFiles")
