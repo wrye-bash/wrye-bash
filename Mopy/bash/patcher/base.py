@@ -90,12 +90,12 @@ class CBash_Patcher(Abstract_Patcher):
         """Returns the group types that this patcher checks"""
         return list(self.__class__._read_write_records) if self.isActive else []
 
-    def initData(self,group_patchers,progress):
+    def initData(self, progress):
         """Compiles material, i.e. reads source text, esp's, etc. as
         necessary."""
         if not self.isActive: return
         for top_group_sig in self.getTypes():
-            group_patchers[top_group_sig].append(self)
+            self.patchFile.group_patchers[top_group_sig].append(self)
         if self.allowUnloaded:
             loadMods = set([mod for mod in self.srcs if bosh.ModInfos.rightFileType(
                 mod) and mod not in self.patchFile.allMods])
@@ -249,10 +249,9 @@ class APatchMerger(AListPatcher):
 
     def __init__(self, p_name, p_file, p_sources):
         super(APatchMerger, self).__init__(p_name, p_file, p_sources)
-        #--WARNING: Since other patchers may rely on the following update
-        # during their initPatchFile section, it's important that PatchMerger
-        # runs first or near first.
         if not self.isActive: return
+        #--WARNING: Since other patchers may rely on the following update
+        # during their __init__, it's important that PatchMerger runs first
         p_file.set_mergeable_mods(self.srcs)
 
 class AUpdateReferences(AListPatcher):

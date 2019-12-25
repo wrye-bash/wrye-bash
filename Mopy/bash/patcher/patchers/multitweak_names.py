@@ -952,11 +952,11 @@ class CBash_NamesTweaker(_ANamesTweaker,CBash_MultiTweaker):
                 body_tags_tweak.choiceValues[body_tags_tweak.chosen][0]
         p_file.indexMGEFs = True # FIXME what is this? needed if body tags are set?
 
-    def initData(self,group_patchers,progress):
+    def initData(self, progress):
         if not self.isActive: return
         for tweak in self.enabled_tweaks:
             for top_group_sig in tweak.getTypes():
-                group_patchers[top_group_sig].append(tweak)
+                self.patchFile.group_patchers[top_group_sig].append(tweak)
             tweak.format = tweak.choiceValues[tweak.chosen][0]
             if isinstance(tweak, CBash_NamesTweak_Body):
                 tweak.showStat = u'%02d' in tweak.format

@@ -33,7 +33,7 @@ from ..bolt import GPath
 from ..gui import Button, CheckBox, HBoxedLayout, Label, LayoutOptions, \
     Spacer, TextArea, TOP, VLayout, EventResult, PanelWin, ListBox, \
     CheckListBox
-from ..patcher import patch_files, patches_set
+from ..patcher import patch_files, patches_set, base
 
 reCsvExt = re.compile(u'' r'\.csv$', re.I | re.U)
 
@@ -42,7 +42,7 @@ class _PatcherPanel(object):
     selectCommands = True # whether this panel displays De/Select All
     # CONFIG DEFAULTS
     default_isEnabled = False # is the patcher enabled on a new bashed patch ?
-    patcher_type = None # type: patcher.base._Abstract_Patcher
+    patcher_type = None # type: base.Abstract_Patcher
     _patcher_txt = u'UNDEFINED'
     patcher_name = u'UNDEFINED'
 

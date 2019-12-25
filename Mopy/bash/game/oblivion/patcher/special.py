@@ -471,10 +471,10 @@ class CBash_CoblExhaustion(_ACoblExhaustion, _DefaultDictLog):
     SEFF = MGEFCode('SEFF')
     exhaustionId = FormID(_cobl_main, 0x05139B)
 
-    def initData(self,group_patchers,progress):
+    def initData(self, progress):
         if not self.isActive: return
         for top_group_sig in self.getTypes():
-            group_patchers[top_group_sig].append(self)
+            self.patchFile.group_patchers[top_group_sig].append(self)
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
             try: self.readFromText(getPatchesPath(srcFile))
@@ -637,10 +637,10 @@ class CBash_MFactMarker(_AMFactMarker, _DefaultDictLog):
         self.mFactLong = FormID(_cobl_main, 0x33FB)
         self.mFactable = set()
 
-    def initData(self,group_patchers,progress):
+    def initData(self, progress):
         if not self.isActive: return
         for top_group_sig in self.getTypes():
-            group_patchers[top_group_sig].append(self)
+            self.patchFile.group_patchers[top_group_sig].append(self)
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
             try: self.readFromText(getPatchesPath(srcFile))

@@ -35,8 +35,7 @@ from ..parsers import LoadFactory, ModFile, MasterSet
 from ..brec import MreRecord
 from ..bolt import GPath, SubProgress, deprint, Progress
 from ..cint import ObModFile, FormID, dump_record, ObCollection, MGEFCode
-from ..exception import AbstractError, BoltError, CancelError, ModError, \
-    StateError
+from ..exception import BoltError, CancelError, ModError, StateError
 from ..localize import format_date
 from ..record_groups import MobObjects
 
@@ -76,13 +75,10 @@ class _PFile(object):
         self.set_mergeable_mods([])
         self.p_file_minfos = bosh.modInfos
 
-    def set_patcher_instances(self, patchers_):
-        self._patcher_instances = patchers_
-
     def set_mergeable_mods(self, mergeMods):
-        """Add to mod lists and sets the mergeable mods."""
-        self.mergeMods = mergeMods
-        self.mergeSet = set(self.mergeMods)
+        """Set `mergeSet` attribute to the srcs of APatchMerger. Update allMods
+        and allSet to include the mergeMods"""
+        self.mergeSet = set(mergeMods)
         self.allMods = load_order.get_ordered(self.loadSet | self.mergeSet)
         self.allSet = frozenset(self.allMods)
 
@@ -164,7 +160,19 @@ class _PFile(object):
             for key, value in sorted(self.aliases.iteritems()):
                 log(u'* %s >> %s' % (key.s, value.s))
 
-    def init_patchers_data(self, progress): raise AbstractError
+    def init_patchers_data(self, patchers, progress):
+        """Gives each patcher a chance to get its source data."""
+        self._patcher_instances = [p for p in patchers if p.isActive]
+        if not self._patcher_instances: return
+        progress = progress.setFull(len(self._patcher_instances))
+        for index, patcher in self._enumerate_patchers():
+            progress(index, _(u'Preparing') + u'\n' + patcher.getName())
+            patcher.initData(SubProgress(progress, index))
+        progress(progress.full, _(u'Patchers prepared.'))
+        # initData may set isActive to zero - TODO(ut) track down
+        self._patcher_instances = [p for p in patchers if p.isActive]
+
+    def _enumerate_patchers(self): return enumerate(self._patcher_instances)
 
 class PatchFile(_PFile, ModFile):
     """Defines and executes patcher configuration."""
@@ -185,15 +193,6 @@ class PatchFile(_PFile, ModFile):
             self.keepIds.add(fid)
             return fid
         return keep
-
-    def init_patchers_data(self, progress):
-        """Gives each patcher a chance to get its source data."""
-        if not self._patcher_instances: return
-        progress = progress.setFull(len(self._patcher_instances))
-        for index,patcher in enumerate(self._patcher_instances):
-            progress(index,_(u'Preparing')+u'\n'+patcher.getName())
-            patcher.initData(SubProgress(progress,index))
-        progress(progress.full,_(u'Patchers prepared.'))
 
     def initFactories(self,progress):
         """Gets load factories."""
@@ -361,7 +360,6 @@ class PatchFile(_PFile, ModFile):
 class CBash_PatchFile(_PFile, ObModFile):
     """Defines and executes patcher configuration."""
 
-    #--Instance
     def __init__(self, patch_name):
         """Initialization."""
         self.group_patchers = defaultdict(list)
@@ -377,14 +375,9 @@ class CBash_PatchFile(_PFile, ObModFile):
         self.races_data = {'EYES': [], 'HAIR': []}
         _PFile.__init__(self, patch_name)
 
-    def init_patchers_data(self, progress):
-        """Gives each patcher a chance to get its source data."""
-        if not self._patcher_instances: return
-        progress = progress.setFull(len(self._patcher_instances))
-        for index,patcher in enumerate(sorted(self._patcher_instances, key=attrgetter('scanOrder'))):
-            progress(index,_(u'Preparing')+u'\n'+patcher.getName())
-            patcher.initData(self.group_patchers,SubProgress(progress,index))
-        progress(progress.full,_(u'Patchers prepared.'))
+    def _enumerate_patchers(self):
+        return enumerate(
+            sorted(self._patcher_instances, key=attrgetter(u'scanOrder')))
 
     def mergeModFile(self,modFile,progress,doFilter,iiMode,group):
         """Copies contents of modFile group into self."""

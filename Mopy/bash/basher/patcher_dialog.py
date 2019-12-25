@@ -83,7 +83,7 @@ class PatchDialog(DialogWindow):
         self._gui_patchers = [copy.deepcopy(p) for p in (
             CBash_gui_patchers if doCBash else PBash_gui_patchers)]
         self._gui_patchers.sort(key=lambda a: a.__class__.patcher_name)
-        self._gui_patchers.sort(key=lambda a: groupOrder[a.patcher_type.group])
+        self._gui_patchers.sort(key=lambda a: groupOrder[a.patcher_type.group]) ##: what does this ordering do??
         for patcher in self._gui_patchers:
             patcher.getConfig(patchConfigs) #--Will set patcher.isEnabled
             patcher.SetIsFirstLoad(isFirstLoad)
@@ -184,11 +184,9 @@ class PatchDialog(DialogWindow):
             log = bolt.LogFile(StringIO.StringIO())
             patchFile = CBash_PatchFile(patch_name) if self.doCBash else \
                 PatchFile(self.patchInfo)
-            patchers = [p.get_patcher_instance(patchFile) for p in
-                        self._gui_patchers if p.isEnabled]
-            patchers = [p for p in patchers if p.isActive]
-            patchFile.set_patcher_instances(patchers) # FIXME check what happens if empty
-            patchFile.init_patchers_data(SubProgress(progress, 0, 0.1)) #try to speed this up!
+            enabled_patchers = [p.get_patcher_instance(patchFile) for p in
+                                self._gui_patchers if p.isEnabled] ##: what happens if empty
+            patchFile.init_patchers_data(enabled_patchers, SubProgress(progress, 0, 0.1)) #try to speed this up!
             if self.doCBash:
                 #try to speed this up!
                 patchFile.buildPatch(SubProgress(progress,0.1,0.9))

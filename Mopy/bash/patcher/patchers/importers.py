@@ -1265,9 +1265,9 @@ class CBash_ImportFactions(_RecTypeModLogging):
         self.id_factions = {}
         self.csvId_factions = {}
 
-    def initData(self,group_patchers,progress):
+    def initData(self, progress):
         if not self.isActive: return
-        super(CBash_ImportFactions, self).initData(group_patchers, progress)
+        super(CBash_ImportFactions, self).initData(progress)
         actorFactions = self._parse_texts(CBash_ActorFactions, progress)
         #--Finish
         csvId_factions = self.csvId_factions
@@ -1432,9 +1432,9 @@ class CBash_ImportRelations(CBash_ImportPatcher):
         self.fid_faction_mod = {}
         self.csvFid_faction_mod = {}
 
-    def initData(self,group_patchers,progress):
+    def initData(self, progress):
         if not self.isActive: return
-        super(CBash_ImportRelations, self).initData(group_patchers, progress)
+        super(CBash_ImportRelations, self).initData(progress)
         factionRelations = self._parse_texts(CBash_FactionRelations, progress)
         #--Finish
         self.csvFid_faction_mod.update(factionRelations.fid_faction_mod)
@@ -2059,9 +2059,9 @@ class CBash_NamesPatcher(_ANamesPatcher, _RecTypeModLogging):
         self.id_full = {}
         self.csvId_full = {}
 
-    def initData(self,group_patchers,progress):
+    def initData(self, progress):
         if not self.isActive: return
-        super(CBash_NamesPatcher, self).initData(group_patchers, progress)
+        super(CBash_NamesPatcher, self).initData(progress)
         fullNames = self._parse_texts(CBash_FullNames, progress)
         #--Finish
         csvId_full = self.csvId_full
@@ -2425,10 +2425,11 @@ class CBash_StatsPatcher(_AStatsPatcher, _RecTypeModLogging):
         self.csvFid_attr_value = {}
         self.class_attrs = bush.game.statsTypes
 
-    def initData(self,group_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+    def initData(self, progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as
+        necessary."""
         if not self.isActive: return
-        super(CBash_StatsPatcher, self).initData(group_patchers, progress)
+        super(CBash_StatsPatcher, self).initData(progress)
         itemStats = self._parse_texts(CBash_ItemStats, progress)
         #--Finish
         for group,nId_attr_value in itemStats.class_fid_attr_value.iteritems():
@@ -2544,9 +2545,9 @@ class CBash_SpellsPatcher(CBash_ImportPatcher, _ASpellsPatcher):
         self.csvId_stats = {}
         self.spell_attrs = None #set in initData
 
-    def initData(self,group_patchers,progress):
+    def initData(self, progress):
         if not self.isActive: return
-        super(CBash_SpellsPatcher, self).initData(group_patchers, progress)
+        super(CBash_SpellsPatcher, self).initData(progress)
         spellStats = self._parse_texts(CBash_SpellRecords, progress)
         self.spell_attrs = spellStats.attrs
         #--Finish
