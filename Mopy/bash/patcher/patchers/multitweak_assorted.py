@@ -24,9 +24,9 @@
 
 """This module contains oblivion multitweak item patcher classes that belong
 to the Assorted Multitweaker - as well as the AssortedTweaker itself."""
-import collections
 import random
 import re
+from collections import Counter
 # Internal
 from ...bolt import GPath
 from ...brec import MreRecord
@@ -58,15 +58,14 @@ class AssortedTweak_ArmorShows(MultiTweakItem):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         hidesBit = self.hidesBit
         for record in patchFile.ARMO.records:
             if record.flags[hidesBit] and not record.flags.notPlayable:
                 record.flags[hidesBit] = False
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
@@ -116,15 +115,14 @@ class AssortedTweak_ClothingShows(MultiTweakItem):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         hidesBit = self.hidesBit
         for record in patchFile.CLOT.records:
             if record.flags[hidesBit] and not record.flags.notPlayable:
                 record.flags[hidesBit] = False
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
@@ -178,14 +176,13 @@ class AssortedTweak_BowReach(AAssortedTweak_BowReach,MultiTweakItem):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.WEAP.records:
             if record.weaponType == 5 and record.reach <= 0:
                 record.reach = 1
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_BowReach(AAssortedTweak_BowReach,
@@ -227,19 +224,17 @@ class AssortedTweak_SkyrimStyleWeapons(AAssortedTweak_SkyrimStyleWeapons,
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.WEAP.records:
             if record.weaponType == 1:
                 record.weaponType = 3
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
             elif record.weaponType == 2:
                 record.weaponType = 0
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_SkyrimStyleWeapons(AAssortedTweak_SkyrimStyleWeapons,
@@ -285,15 +280,14 @@ class AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.CLOT.records:
             if record.flags.leftRing:
                 record.flags.leftRing = False
                 record.flags.rightRing = True
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,
@@ -341,7 +335,7 @@ class AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.CLOT.records:
             if record.flags.notPlayable:
@@ -361,8 +355,7 @@ class AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,
                         != 0 or record.flags.tail != 0:
                     record.flags.notPlayable = 0
                     keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
+                    count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,
@@ -415,7 +408,7 @@ class AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,MultiTweakItem):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.ARMO.records:
             if record.flags.notPlayable:
@@ -436,8 +429,7 @@ class AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,MultiTweakItem):
                                 record.flags.shield != 0:
                     record.flags.notPlayable = 0
                     keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
+                    count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,
@@ -504,7 +496,7 @@ class AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,MultiTweakItem):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         reColor = self.__class__.reColor
         reTagInWord = self.__class__.reTagInWord
         reFont1 = self.__class__.reFont1
@@ -558,8 +550,7 @@ class AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,MultiTweakItem):
                 if rec_text != record.text:
                     record.text = rec_text
                     keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
+                    count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,
@@ -652,7 +643,7 @@ class AssortedTweak_FogFix(AAssortedTweak_FogFix,MultiTweakItem):
     def buildPatch(self,log,progress,patchFile):
         """Adds merged lists to patchfile."""
         keep = patchFile.getKeeper()
-        count = collections.defaultdict(int)
+        count = Counter()
         for cellBlock in patchFile.CELL.cellBlocks:
             cell = cellBlock.cell
             if not (cell.fogNear or cell.fogFar or cell.fogClip):
@@ -714,7 +705,7 @@ class AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         flickerFlags = self.flags
         notFlickerFlags = ~flickerFlags
         keep = patchFile.getKeeper()
@@ -722,8 +713,7 @@ class AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,
             if int(record.flags & flickerFlags):
                 record.flags &= notFlickerFlags
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,
@@ -796,15 +786,14 @@ class AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,MultiTweakItem):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         maxWeight = self.weight
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.ALCH.records:
             if maxWeight < record.weight < 1 and not (
                     'SEFF', 0) in record.getEffects():
                 record.weight = maxWeight
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log, count)
 
 class CBash_AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,
@@ -871,14 +860,13 @@ class AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         maxWeight = self.weight
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.INGR.records:
             if record.weight > maxWeight:
                 record.weight = maxWeight
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log, count)
 
 class CBash_AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,
@@ -939,14 +927,13 @@ class AssortedTweak_PotionWeightMinimum(AAssortedTweak_PotionWeightMinimum,
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         minWeight = self.weight
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.ALCH.records:
             if record.weight < minWeight:
                 record.weight = minWeight
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log, count)
 
 class CBash_AssortedTweak_PotionWeightMinimum(
@@ -1006,14 +993,13 @@ class AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,MultiTweakItem):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         maxWeight = self.weight
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.WEAP.records:
             if record.weaponType == 4 and record.weight > maxWeight:
                 record.weight = maxWeight
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log, count)
 
 class CBash_AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,
@@ -1065,14 +1051,13 @@ class AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,MultiTweakItem):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         maxWeight = self.weight
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.AMMO.records:
             if record.weight > maxWeight:
                 record.weight = maxWeight
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log, count)
 
 class CBash_AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,
@@ -1220,14 +1205,13 @@ class AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,MultiTweakItem):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         chance = self.choiceValues[self.chosen][0]
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.FLOR.records:
             record.spring, record.summer, record.fall, record.winter = \
                 chance, chance, chance, chance
             keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
+            count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,
@@ -1278,14 +1262,13 @@ class AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed,MultiTweakItem):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.WTHR.records:
             if record.windSpeed != 0:
                 record.windSpeed = 0
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed,
@@ -1332,14 +1315,13 @@ class AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.GRAS.records:
             if record.heightRange != 0:
                 record.heightRange = 0
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,
@@ -1403,7 +1385,7 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.ENCH.records:
             if record.itemType in [1,2]:
@@ -1414,8 +1396,7 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(
                 record.enchantCost = cost
                 record.chargeAmount = cost * uses
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(
@@ -1477,7 +1458,7 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,MultiTweakItem):
                     patchBlock.setRecord(record)
 
     def buildPatch(self,log,progress,patchFile):
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for type_ in self.activeTypes:
             if type_ not in patchFile.tops: continue
@@ -1613,8 +1594,7 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,MultiTweakItem):
                     changed = True
                 if changed:
                     keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
+                    count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,
@@ -1780,15 +1760,14 @@ class AssortedTweak_SetSoundAttenuationLevels(
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.SOUN.records:
             if record.staticAtten:
                 record.staticAtten = record.staticAtten * \
                                      self.choiceValues[self.chosen][0] / 100
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_SetSoundAttenuationLevels(
@@ -1847,15 +1826,14 @@ class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.SOUN.records:
             if record.staticAtten and u'nirnroot' in record.eid.lower():
                 record.staticAtten = record.staticAtten * \
                                      self.choiceValues[self.chosen][0] / 100
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(
@@ -1906,14 +1884,13 @@ class AssortedTweak_FactioncrimeGoldMultiplier(
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.FACT.records:
             if not isinstance(record.crimeGoldMultiplier,float):
                 record.crimeGoldMultiplier = 1.0
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_FactioncrimeGoldMultiplier(
@@ -1957,14 +1934,13 @@ class AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.LIGH.records:
             if not isinstance(record.fade,float):
                 record.fade = 1.0
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,
@@ -2007,14 +1983,13 @@ class AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,MultiTweakItem):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.LSCR.records:
             if record.text:
                 record.text = u''
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,

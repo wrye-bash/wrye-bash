@@ -200,7 +200,7 @@ class NamesTweak_Potions(ANamesTweak_Potions, _AMultiTweakItem_Names):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         format_ = self.choiceValues[self.chosen][0]
         hostileEffects = patchFile.getMgefHostiles()
         keep = patchFile.getKeeper()
@@ -235,8 +235,7 @@ class NamesTweak_Potions(ANamesTweak_Potions, _AMultiTweakItem_Names):
                 label = (u'X' if isPoison else u'') + u'ACDIMRU'[school]
                 record.full = format_ % label + full
             keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
+            count[record.fid[0]] += 1
         self._patchLog(log, count)
 
 class CBash_NamesTweak_Potions(ANamesTweak_Potions, CBash_MultiTweakItem):
@@ -447,7 +446,7 @@ class NamesTweak_Spells(ANamesTweak_Spells,_AMultiTweakItem_Names):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         format_ = self.choiceValues[self.chosen][0]
         removeTags = u'%s' not in format_
         showLevel = u'%d' in format_
@@ -474,8 +473,7 @@ class NamesTweak_Spells(ANamesTweak_Spells,_AMultiTweakItem_Names):
             if newFull != record.full:
                 record.full = newFull
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log, count)
 
 class CBash_NamesTweak_Spells(ANamesTweak_Spells,CBash_MultiTweakItem):
@@ -554,7 +552,7 @@ class NamesTweak_Weapons(ANamesTweak_Weapons,_AMultiTweakItem_Names):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         format_ = self.choiceValues[self.chosen][0]
         showStat = u'%02d' in format_
         keep = patchFile.getKeeper()
@@ -566,8 +564,7 @@ class NamesTweak_Weapons(ANamesTweak_Weapons,_AMultiTweakItem_Names):
             else:
                 record.full = format_ % u'A' + record.full
             keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
+            count[record.fid[0]] += 1
         for record in patchFile.WEAP.records:
             if not record.full: continue
             if showStat:
@@ -577,8 +574,7 @@ class NamesTweak_Weapons(ANamesTweak_Weapons,_AMultiTweakItem_Names):
                 record.full = format_ % u'CDEFGB'[
                     record.weaponType] + record.full
             keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
+            count[record.fid[0]] += 1
         self._patchLog(log, count)
 
 class CBash_NamesTweak_Weapons(ANamesTweak_Weapons,CBash_MultiTweakItem):
@@ -655,7 +651,7 @@ class TextReplacer(ATextReplacer,_AMultiTweakItem_Names):
                     patchBlock.setRecord(record)
 
     def buildPatch(self,log,progress,patchFile):
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         reMatch = re.compile(self.reMatch)
         reReplace = self.reReplace
@@ -752,8 +748,7 @@ class TextReplacer(ATextReplacer,_AMultiTweakItem_Names):
                         if newString:
                             record.master = reMatch.sub(reReplace, newString)
                     keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
+                    count[record.fid[0]] += 1
         self._patchLog(log, count)
 
 class CBash_TextReplacer(ATextReplacer,CBash_MultiTweakItem):

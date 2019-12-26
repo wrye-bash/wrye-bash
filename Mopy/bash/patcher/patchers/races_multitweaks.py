@@ -31,7 +31,7 @@ RacesTweaker patcher was calling their "log" method - now super's _patchLog()
 
 import random
 import re
-from collections import defaultdict
+from collections import defaultdict, Counter
 # Internal
 from ... import bosh, bush
 from ...bolt import SubProgress, GPath, deprint
@@ -79,7 +79,7 @@ class RaceTweaker_BiggerOrcsAndNords(ARaceTweaker_BiggerOrcsAndNords,
 
     def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
-        count = self.count = {}
+        count = self.count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.RACE.records:
             if not record.full: continue
@@ -161,7 +161,7 @@ class RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,
 
     def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
-        count = self.count = {}
+        count = self.count = Counter()
         #process hair lists
         changedHairs = {}
         vanilla = ['argonian', 'breton', 'dremora', 'dark elf', 'dark seducer',
@@ -285,7 +285,7 @@ class RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,
 
     def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
-        count = self.count = {}
+        count = self.count = Counter()
         #process hair lists
         changedEyes = {}
         vanilla = ['argonian', 'breton', 'dremora', 'dark elf', 'dark seducer',
@@ -407,7 +407,7 @@ class RaceTweaker_AllHairs(ARaceTweaker_AllHairs,MultiTweakItem):
 
     def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
-        count = self.count = {}
+        count = self.count = Counter()
         hairs = extra_['HAIR']
         keep = patchFile.getKeeper()
         for record in patchFile.RACE.records:
@@ -453,7 +453,7 @@ class RaceTweaker_AllEyes(ARaceTweaker_AllEyes,MultiTweakItem):
 
     def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
-        count = self.count = {}
+        count = self.count = Counter()
         eyes = extra_['EYES']
         keep = patchFile.getKeeper()
         for record in patchFile.RACE.records:
@@ -505,7 +505,7 @@ class RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,MultiTweakItem):
 
     def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
-        count = self.count = {}
+        count = self.count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.EYES.records:
             if record.flags.playable: continue
@@ -553,7 +553,7 @@ class RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,MultiTweakItem):
 
     def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
-        count = self.count = {}
+        count = self.count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.HAIR.records:
             if record.flags.playable: continue
@@ -601,7 +601,7 @@ class RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,MultiTweakItem):
 
     def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
-        count = self.count = {}
+        count = self.count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.HAIR.records:
             if record.flags.notMale or record.flags.notFemale:

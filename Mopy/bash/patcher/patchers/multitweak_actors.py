@@ -197,7 +197,7 @@ class VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,BasalNPCTweaker):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired.  Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         #--Some setup
         modSkeletonDir = GPath(u'Characters').join(u'_male')
@@ -228,8 +228,7 @@ class VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,BasalNPCTweaker):
                 if newModPath != oldModPath:
                     record.model.modPath = newModPath.s
                     keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
+                    count[record.fid[0]] += 1
         self._patchLog(log, count)
 
 class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher, _NpcCTweak):
@@ -306,7 +305,7 @@ class VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,BasalNPCTweaker):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         newModPath = u"Characters\\_Male\\SkeletonBeast.nif"
         for record in patchFile.NPC_.records:
@@ -324,8 +323,7 @@ class VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,BasalNPCTweaker):
             if newModPath != oldModPath:
                 record.model.modPath = newModPath
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher, _NpcCTweak):
@@ -371,15 +369,14 @@ class RedguardNPCPatcher(ARedguardNPCPatcher,BasalNPCTweaker):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
             if not record.race: continue
             if record.race[1] == 0x00d43:
                 record.fgts_p = '\x00'*200
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_RedguardNPCPatcher(ARedguardNPCPatcher, _NpcCTweak):
@@ -419,7 +416,7 @@ class NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,BasalCreatureTweaker):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.CREA.records:
             if record.bloodDecalPath or record.bloodSprayPath:
@@ -428,8 +425,7 @@ class NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,BasalCreatureTweaker):
                 record.flags.noBloodSpray = True
                 record.flags.noBloodDecal = True
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         #--Log
         self._patchLog(log, count)
 
@@ -471,7 +467,7 @@ class AsIntendedImpsPatcher(AAsIntendedImpsPatcher,BasalCreatureTweaker):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         spell = (GPath(u'Oblivion.esm'), 0x02B53F)
         reImp  = self.reImp
@@ -496,8 +492,7 @@ class AsIntendedImpsPatcher(AAsIntendedImpsPatcher,BasalCreatureTweaker):
             if spell not in record.spells:
                 record.spells.append(spell)
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AsIntendedImpsPatcher(AAsIntendedImpsPatcher, _CreaCTweak):
@@ -549,7 +544,7 @@ class AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,BasalCreatureTweaker):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         spell = (GPath(u'Oblivion.esm'), 0x02B54E)
         keep = patchFile.getKeeper()
         reBoar  = self.reBoar
@@ -569,8 +564,7 @@ class AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,BasalCreatureTweaker):
             if spell not in record.spells:
                 record.spells.append(spell)
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher, _CreaCTweak):
@@ -615,14 +609,13 @@ class SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,BasalNPCTweaker):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
             if record.flags.female == 1:
                 record.animations += [u'0sexywalk01.kf']
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher, _NpcCTweak):
@@ -702,7 +695,7 @@ class QuietFeetPatcher(AQuietFeetPatcher,BasalCreatureTweaker):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         chosen = self.choiceValues[self.chosen][0]
         for record in patchFile.CREA.records:
@@ -724,8 +717,7 @@ class QuietFeetPatcher(AQuietFeetPatcher,BasalCreatureTweaker):
             if sounds != record.sounds:
                 record.sounds = sounds
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_QuietFeetPatcher(AQuietFeetPatcher, _CreaCTweak):
@@ -776,7 +768,7 @@ class IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,
                                     BasalCreatureTweaker):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        count = {}
+        count = Counter()
         keep = patchFile.getKeeper()
         chosen = self.choiceValues[self.chosen][0]
         for record in patchFile.CREA.records:
@@ -784,15 +776,13 @@ class IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,
             if chosen == u'all':
                 record.responsibility = 0
                 keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                count[record.fid[0]] += 1
             else: # really is: "if chosen == 'mounts':", but less cpu to do it
                 # as else.
                 if record.creatureType == 4:
                     record.responsibility = 0
                     keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
+                    count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,

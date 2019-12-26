@@ -22,7 +22,7 @@
 #
 # =============================================================================
 import time
-from collections import defaultdict
+from collections import defaultdict, Counter
 from operator import attrgetter
 from .. import bush # for game etc
 from .. import bosh # for modInfos
@@ -59,7 +59,7 @@ class _PFile(object):
         self.worldOrphanMods = []
         self.unFilteredMods = []
         self.compiledAllMods = []
-        self.patcher_mod_skipcount = defaultdict(lambda: defaultdict(int))
+        self.patcher_mod_skipcount = defaultdict(Counter)
         #--Config
         if bush.game.fsName in (u'FalloutNV', u'Fallout3',):
             self.bodyTags = 'HAGPBFE' #--Default bodytags
