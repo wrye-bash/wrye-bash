@@ -24,9 +24,8 @@
 
 """This module contains oblivion multitweak item patcher classes that belong
 to the Clothes Multitweaker - as well as the ClothesTweaker itself."""
-import collections
 import itertools
-
+from collections import Counter
 from ... import load_order
 from ...patcher.base import AMultiTweakItem, AMultiTweaker
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
@@ -132,7 +131,7 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
         for srcMod in load_order.get_ordered(mod_count.keys()):
             log(u'  * %s: [%4.2f]: %d' % (
                 srcMod.s, maxWeight, mod_count[srcMod]))
-        self.mod_count = collections.defaultdict(int)
+        self.mod_count = Counter()
 
 #------------------------------------------------------------------------------
 class ClothesTweak_Unblock(ClothesTweak):

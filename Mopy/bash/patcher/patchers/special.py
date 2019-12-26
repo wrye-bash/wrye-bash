@@ -21,9 +21,9 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-import collections
 import copy
 import string
+from collections import Counter
 from itertools import chain
 from operator import itemgetter, attrgetter
 # Internal
@@ -451,7 +451,7 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
         log(u'* '+_(u'Modified LVL') + u': %d' % (sum(mod_count.values()),))
         for srcMod in load_order.get_ordered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = collections.defaultdict(int)
+        self.mod_count = Counter()
 
 #------------------------------------------------------------------------------
 class FidListsMerger(_AListsMerger,ListPatcher):

@@ -21,9 +21,9 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-import collections
 import os
 import re
+from collections import Counter, defaultdict
 from ....bolt import GPath, sio, SubProgress, CsvReader
 from ....patcher import getPatchesPath
 from ....parsers import LoadFactory, ModFile
@@ -142,7 +142,7 @@ class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
                     buffWrite(u'\r\n')
                 book.text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
         #--Get Ingredients by Effect
-        effect_ingred = collections.defaultdict(list)
+        effect_ingred = defaultdict(list)
         for fid,(eid,full,effects) in id_ingred.iteritems():
             for index,(mgef,actorValue) in enumerate(effects):
                 effectName = mgef_name[mgef]
@@ -184,7 +184,7 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
         if not self.isActive: return
         patchFile.indexMGEFs = True
         self.id_ingred = {}
-        self.effect_ingred = collections.defaultdict(list)
+        self.effect_ingred = defaultdict(list)
         self.SEFF = MGEFCode('SEFF')
         self.DebugPrintOnce = 0
 
@@ -287,7 +287,7 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
                     buff.write(u'\r\n')
                 book.text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
         #--Get Ingredients by Effect
-        effect_ingred = self.effect_ingred = collections.defaultdict(list)
+        effect_ingred = self.effect_ingred = defaultdict(list)
         for fid,(eid,full,effects_list) in id_ingred.iteritems():
             for index,effect in enumerate(effects_list):
                 mgef, actorValue = effect[0], effect[5]
@@ -353,7 +353,7 @@ class _DefaultDictLog(CBash_ListPatcher):
         if not self.isActive: return
         #--Log
         self._pLog(log, self.mod_count)
-        self.mod_count = collections.defaultdict(int)
+        self.mod_count = Counter()
 
 class _ACoblExhaustion(SpecialPatcher):
     """Modifies most Greater power to work with Cobl's power exhaustion
@@ -432,7 +432,7 @@ class CoblExhaustion(_ACoblExhaustion,ListPatcher):
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""
         if not self.isActive: return
-        count = {}
+        count = Counter()
         exhaustId = (self.cobl,0x05139B)
         keep = self.patchFile.getKeeper()
         for record in self.patchFile.SPEL.records:
@@ -461,8 +461,7 @@ class CoblExhaustion(_ACoblExhaustion,ListPatcher):
             effect.scriptEffect = scriptEffect
             record.effects.append(effect)
             keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
+            count[record.fid[0]] += 1
         #--Log
         self._pLog(log, count)
 
@@ -622,7 +621,7 @@ class MFactMarker(_AMFactMarker,ListPatcher):
         id_info = self.id_info
         modFile = self.patchFile
         keep = self.patchFile.getKeeper()
-        changed = collections.defaultdict(int)
+        changed = Counter()
         mFactable = []
         for record in modFile.FACT.getActiveRecords():
             if record.fid not in id_info: continue
@@ -648,8 +647,7 @@ class MFactMarker(_AMFactMarker,ListPatcher):
                         rank.insigniaPath = \
                             u'Menus\\Stats\\Cobl\\generic%02d.dds' % rank.rank
                 keep(record.fid)
-                mod = record.fid[0]
-                changed[mod] += 1
+                changed[record.fid[0]] += 1
         #--MFact record
         record = modFile.FACT.getRecord(mFactLong)
         if record:
@@ -847,7 +845,7 @@ class CBash_SEWorldEnforcer(_ASEWorldEnforcer,CBash_Patcher):
         self.cyrodiilQuests = set()
         self.srcs = [GPath(u'Oblivion.esm')]
         self.isActive = self.srcs[0] in patchFile.loadSet
-        self.mod_eids = collections.defaultdict(list)
+        self.mod_eids = defaultdict(list)
 
     def getTypes(self):
         return ['QUST']
@@ -890,7 +888,7 @@ class CBash_SEWorldEnforcer(_ASEWorldEnforcer,CBash_Patcher):
             log(u'* %s: %d' % (mod.s, len(eids)))
             for eid in sorted(eids):
                 log(u'  * %s' % eid)
-        self.mod_eids = collections.defaultdict(list)
+        self.mod_eids = defaultdict(list)
 
 # Alchemical Catalogs ---------------------------------------------------------
 _ingred_alchem = (

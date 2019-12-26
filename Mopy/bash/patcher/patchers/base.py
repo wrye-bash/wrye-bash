@@ -23,7 +23,7 @@
 # =============================================================================
 
 """This module contains base patcher classes."""
-import collections
+from collections import Counter
 from operator import itemgetter
 # Internal
 from .. import getPatchesPath
@@ -45,7 +45,7 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
         super(CBash_ListPatcher, self).initPatchFile(patchFile)
         # used in all subclasses except CBash_RacePatcher,
         # CBash_PatchMerger, CBash_UpdateReferences
-        self.mod_count = collections.defaultdict(int)
+        self.mod_count = Counter()
 
     #--Patch Phase ------------------------------------------------------------
     def getConfigChecked(self):
@@ -94,7 +94,7 @@ class CBash_MultiTweakItem(AMultiTweakItem):
         super(CBash_MultiTweakItem, self).__init__(label, tweak_tip, key,
                                                    *choices, **kwargs)
         # extra CBash_MultiTweakItem attribute, mod -> num of tweaked records
-        self.mod_count = collections.defaultdict(int)
+        self.mod_count = Counter()
 
     #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
@@ -107,7 +107,7 @@ class CBash_MultiTweakItem(AMultiTweakItem):
     def buildPatchLog(self,log):
         """Will write to log."""
         self._patchLog(log, self.mod_count)
-        self.mod_count = collections.defaultdict(int)
+        self.mod_count = Counter()
 
 class MultiTweaker(AMultiTweaker,Patcher):
 
@@ -286,7 +286,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
         if not self.isActive: return
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         keep = self.patchFile.getKeeper()
-        count = collections.defaultdict(int)
+        count = Counter()
         def swapper(oldId):
             newId = old_new.get(oldId,None)
             return newId if newId else oldId
@@ -531,7 +531,7 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher, SpecialPatcher):
         log(self.__class__.logMsg % sum(mod_count.values()))
         for srcMod in load_order.get_ordered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = collections.defaultdict(int)
+        self.mod_count = Counter()
 
     # helpers WIP
     def _parse_texts(self, parser_class, progress):

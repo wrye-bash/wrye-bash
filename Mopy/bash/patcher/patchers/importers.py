@@ -23,8 +23,8 @@
 # =============================================================================
 
 """This module contains the oblivion importer patcher classes."""
-import collections
 import re
+from collections import defaultdict, Counter
 from itertools import chain
 from operator import attrgetter
 # Internal
@@ -50,7 +50,7 @@ class _SimpleImporter(ImportPatcher):
     def initPatchFile(self, patchFile):
         super(_SimpleImporter, self).initPatchFile(patchFile)
         #--(attribute-> value) dicts keyed by long fid.
-        self.id_data = collections.defaultdict(dict)
+        self.id_data = defaultdict(dict)
         self.srcClasses = set() #--Record classes actually provided by src
         # mods/files.
         self.classestemp = set()
@@ -195,7 +195,7 @@ class _SimpleImporter(ImportPatcher):
         if not self.isActive: return
         modFileTops = self.patchFile.tops
         keep = self.patchFile.getKeeper()
-        type_count = collections.defaultdict(int)
+        type_count = Counter()
         types = filter(modFileTops.__contains__, types if types else map(
             attrgetter('classType'), self.srcClasses))
         for top_mod_rec in types:
@@ -213,9 +213,8 @@ class _RecTypeModLogging(CBash_ImportPatcher):
 
     def initPatchFile(self, patchFile):
         super(_RecTypeModLogging, self).initPatchFile(patchFile)
-        self.mod_count = collections.defaultdict(
-            lambda: collections.defaultdict(int))
-        self.fid_attr_value = collections.defaultdict(dict) # used in some
+        self.mod_count = defaultdict(Counter)
+        self.fid_attr_value = defaultdict(dict) # used in some
 
     def _clog(self, log):
         """Used in: CBash_SoundPatcher, CBash_ImportScripts,
@@ -235,8 +234,7 @@ class _RecTypeModLogging(CBash_ImportPatcher):
                               'count': sum(mod_count[group_type].values())})
             for srcMod in load_order.get_ordered(mod_count[group_type].keys()):
                 log(u'  * %s: %d' % (srcMod.s, mod_count[group_type][srcMod]))
-        self.mod_count = collections.defaultdict(
-                lambda: collections.defaultdict(int))
+        self.mod_count = defaultdict(Counter)
 
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
@@ -262,7 +260,7 @@ class CellImporter(_ACellImporter, ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self, patchFile):
         super(CellImporter, self).initPatchFile(patchFile)
-        self.cellData = collections.defaultdict(dict)
+        self.cellData = defaultdict(dict)
         # TODO: docs: recAttrs vs tag_attrs - extra in PBash:
         # 'unused1','unused2','unused3'
         self.recAttrs = bush.game.cellRecAttrs # dict[unicode, tuple[str]]
@@ -326,7 +324,7 @@ class CellImporter(_ACellImporter, ImportPatcher):
             # (attributes (among attrs) -> their values for this mod). It is
             # used to update cellData with cells that change those attributes'
             # values from the value in any of srcMod's masters.
-            tempCellData = collections.defaultdict(dict)
+            tempCellData = defaultdict(dict)
             tempCellData['Maps'] = {} # unused !
             srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
@@ -437,7 +435,7 @@ class CellImporter(_ACellImporter, ImportPatcher):
             return modified
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
-        cellData, count = self.cellData, collections.defaultdict(int)
+        cellData, count = self.cellData, Counter()
         for cellBlock in self.patchFile.CELL.cellBlocks:
             if cellBlock.cell.fid in cellData and handlePatchCellBlock(cellBlock):
                 count[cellBlock.cell.fid[0]] += 1
@@ -479,7 +477,7 @@ class CBash_CellImporter(_ACellImporter,CBash_ImportPatcher):
     def initPatchFile(self, patchFile):
         super(CBash_CellImporter, self).initPatchFile(patchFile)
         if not self.isActive: return
-        self.fid_attr_value = collections.defaultdict(dict)
+        self.fid_attr_value = defaultdict(dict)
         self.tag_attrs = {
             u'C.Climate': ('climate','IsBehaveLikeExterior'),
             u'C.Music': ('musicType',),
@@ -973,7 +971,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher, _AKFFZPatcher):
     def initPatchFile(self, patchFile):
         super(CBash_KFFZPatcher, self).initPatchFile(patchFile)
         if not self.isActive: return
-        self.id_animations = collections.defaultdict(list)
+        self.id_animations = defaultdict(list)
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -1160,7 +1158,7 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         merged_deleted = self.id_merged_deleted
-        mod_count = collections.defaultdict(int)
+        mod_count = Counter()
         for rec_type in ('NPC_','CREA'):
             for record in getattr(self.patchFile,rec_type).records:
                 fid = record.fid
@@ -1171,8 +1169,7 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
                     changed = True
                 if changed:
                     keep(record.fid)
-                    mod = record.fid[0]
-                    mod_count[mod] += 1
+                    mod_count[record.fid[0]] += 1
         self.id_merged_deleted.clear()
         self._patchLog(log,mod_count)
 
@@ -1799,7 +1796,7 @@ class ImportInventory(ImportPatcher, _AImportInventory):
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         id_deltas = self.id_deltas
-        mod_count = collections.defaultdict(int)
+        mod_count = Counter()
         for inv_type in bush.game.inventoryTypes:
             for record in getattr(self.patchFile,inv_type).records:
                 changed = False
@@ -1823,8 +1820,7 @@ class ImportInventory(ImportPatcher, _AImportInventory):
                                 changed = True
                 if changed:
                     keep(record.fid)
-                    mod = record.fid[0]
-                    mod_count[mod] += 1
+                    mod_count[record.fid[0]] += 1
         self.id_deltas.clear()
         self._patchLog(log,mod_count)
 
@@ -2074,7 +2070,7 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         merged_deleted = self.id_merged_deleted
-        mod_count = collections.defaultdict(int)
+        mod_count = Counter()
         for rec_type in ('NPC_','CREA'):
             for record in getattr(self.patchFile,rec_type).records:
                 fid = record.fid
@@ -2086,8 +2082,7 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
                     changed = True
                 if changed:
                     keep(record.fid)
-                    mod = record.fid[0]
-                    mod_count[mod] += 1
+                    mod_count[record.fid[0]] += 1
         self.id_merged_deleted.clear()
         self._patchLog(log,mod_count)
 
@@ -2235,7 +2230,7 @@ class NamesPatcher(_ANamesPatcher, ImportPatcher):
         modFile = self.patchFile
         keep = self.patchFile.getKeeper()
         id_full = self.id_full
-        type_count = collections.defaultdict(int)
+        type_count = Counter()
         for act_type in self.activeTypes:
             if act_type not in modFile.tops: continue
             if act_type == 'CELL':
@@ -2785,7 +2780,7 @@ class StatsPatcher(_AStatsPatcher, ImportPatcher):
         for group in self.activeTypes:
             if group not in patchFile.tops: continue
             attrs = self.class_attrs[group]
-            count,counts = 0,{}
+            counts = Counter()
             for record in patchFile.tops[group].records:
                 fid = record.fid
                 itemStats = fid_attr_value.get(fid,None)
@@ -2795,9 +2790,8 @@ class StatsPatcher(_AStatsPatcher, ImportPatcher):
                     for attr, value in itemStats.iteritems():
                         setattr(record,attr,value)
                     keep(fid)
-                    count += 1
-                    counts[fid[0]] = 1 + counts.get(fid[0],0)
-            allCounts.append((group,count,counts))
+                    counts[fid[0]] += 1
+            allCounts.append((group, sum(counts.values()), counts))
         self.fid_attr_value.clear()
         self._patchLog(log, allCounts)
 
@@ -2914,7 +2908,7 @@ class SpellsPatcher(ImportPatcher, _ASpellsPatcher):
         id_stat = self.id_stat
         allCounts = []
         spell_attrs = self.spell_attrs
-        count,counts = 0,{}
+        counts = Counter()
         for record in patchFile.SPEL.records:
             fid = record.fid
             spellStats = id_stat.get(fid)
@@ -2924,10 +2918,9 @@ class SpellsPatcher(ImportPatcher, _ASpellsPatcher):
             for attr,value in zip(spell_attrs,spellStats):
                 setattr_deep(record,attr,value)
             keep(fid)
-            count += 1
-            counts[fid[0]] = 1 + counts.get(fid[0],0)
+            counts[fid[0]] += 1
         self.id_stat.clear()
-        allCounts.append(('SPEL',count,counts))
+        allCounts.append(('SPEL', sum(counts.values()), counts))
         self._patchLog(log, allCounts)
 
     def _plog(self, log, allCounts): self._plog2(log, allCounts)
