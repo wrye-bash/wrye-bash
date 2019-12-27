@@ -201,16 +201,16 @@ class PatchDialog(balt.Dialog):
                 #no speeding needed/really possible (less than 1/4 second even with large LO)
                 patchFile.buildPatchLog(log, SubProgress(progress, 0.95, 0.99))
                 #--Save
-                progress.setCancel(False)
-                progress(1.0,patch_name.s+u'\n'+_(u'Saving...'))
+                progress.setCancel(False, patch_name.s+u'\n'+_(u'Saving...'))
+                progress(1.0)
                 self._save_cbash(patchFile, patch_name)
             else:
                 patchFile.initFactories(SubProgress(progress,0.1,0.2)) #no speeding needed/really possible (less than 1/4 second even with large LO)
                 patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
                 patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
                 #--Save
-                progress.setCancel(False)
-                progress(0.9,patch_name.s+u'\n'+_(u'Saving...'))
+                progress.setCancel(False, patch_name.s+u'\n'+_(u'Saving...'))
+                progress(0.9)
                 self._save_pbash(patchFile, patch_name)
             #--Done
             progress.Destroy(); progress = None
