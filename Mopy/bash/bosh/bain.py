@@ -1307,11 +1307,11 @@ class InstallerArchive(Installer):
                          u'\n%s\n%s' % (_(u'Fixing PNGs...'), target_png))
             archives.fix_png(tmp_dir.join(target_png).s)
 
-    def wizard_file(self):
-        with balt.Progress(_(u'Extracting wizard files...'), u'\n' + u' ' * 60,
+    def _extract_wizard_files(self, wizard_file_name, wizard_prog_title):
+        with balt.Progress(wizard_prog_title, u'\n' + u' ' * 60,
                            abort=True) as progress:
             # Extract the wizard, and any images as well
-            files_to_extract = [self.hasWizard]
+            files_to_extract = [wizard_file_name]
             files_to_extract.extend(x for (x, _s, _c) in self.fileSizeCrcs if
                                     x.lower().endswith((
                                         u'bmp', u'jpg', u'jpeg', u'png',
@@ -1323,22 +1323,15 @@ class InstallerArchive(Installer):
             unpack_dir = self.unpackToTemp(files_to_extract,
                 bolt.SubProgress(progress,0,0.7), recurse=True)
             self._fix_pngs(pngs_to_fix, bolt.SubProgress(progress, 0.7, 0.9))
-        return unpack_dir.join(self.hasWizard)
+        return unpack_dir.join(wizard_file_name)
+
+    def wizard_file(self):
+        return self._extract_wizard_files(self.hasWizard,
+                                          _(u'Extracting wizard files...'))
 
     def fomod_file(self):
-        with balt.Progress(_(u'Extracting fomod files...'), u'\n' + u' ' * 60,
-                           abort=True) as progress:
-            files_to_extract = [self.has_fomod_conf]
-            files_to_extract.extend(x for (x, _s, _c) in self.fileSizeCrcs if
-                                    x.lower().endswith((
-                                        u'bmp', u'jpg', u'jpeg', u'png',
-                                        u'gif', u'pcx', u'pnm', u'tif',
-                                        u'tiff', u'tga', u'iff', u'xpm',
-                                        u'ico', u'cur', u'ani',)))
-            unpack_dir = self.unpackToTemp(files_to_extract,
-                                           bolt.SubProgress(progress, 0, 0.9),
-                                           recurse=True)
-        return unpack_dir.join(self.has_fomod_conf)
+        return self._extract_wizard_files(self.has_fomod_conf,
+                                          _(u'Extracting FOMOD files...'))
 
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):
