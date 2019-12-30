@@ -37,7 +37,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelOptSInt16, MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, \
     MelOptFid, MelCounter, MelPartialCounter, MelBounds, null1, null2, null3, \
     null4, MelSequential, MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, \
-    MelIco2, MelEdid, MelFull, MelArray, MelWthrColors
+    MelIco2, MelEdid, MelFull, MelArray, MelWthrColors, GameDecider
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -402,6 +402,32 @@ class MelOwnership(MelGroup):
     def dumpData(self,record,out):
         if record.ownership and record.ownership.owner:
             MelGroup.dumpData(self,record,out)
+
+class MelIsSSE(MelUnion):
+    """Union that resolves to one of two different subrecords, depending on
+    whether we're managing Skyrim LE or SE."""
+    def __init__(self, le_version, se_version):
+        """Creates a new MelIsSSE instance, with the specified LE and SE
+        versions of the subrecord.
+
+        :type le_version: MelBase
+        :type se_version: MelBase"""
+        super(MelIsSSE, self).__init__({
+            u'Skyrim': le_version,
+            u'Skyrim Special Edition': se_version,
+        }, decider=GameDecider())
+
+class MelSSEOnly(MelIsSSE):
+    """Version of MelIsSSE that resolves to MelNull for SLE. Useful for
+    subrecords that have been added in SSE."""
+    def __init__(self, element):
+        """Creates a new MelSSEOnly instance, with the specified subrecord
+        element.
+
+        :type element: MelBase"""
+        super(MelSSEOnly, self).__init__(
+            le_version=MelNull(next(iter(element.signatures))),
+            se_version=element)
 
 #------------------------------------------------------------------------------
 # VMAD - Virtual Machine Adapters
@@ -1423,7 +1449,13 @@ class MreAmmo(MelRecord):
         MelFid('ZNAM','dropSound'),
         MelLString('DESC','description'),
         MelKeywords(),
-        MelStruct('DATA','IIfI',(FID,'projectile'),(AmmoTypeFlags,'flags',0L),'damage','value'),
+        MelIsSSE(
+            le_version=MelStruct('DATA', 'IIfI', (FID, 'projectile'),
+                                 (AmmoTypeFlags, 'flags'), 'damage', 'value'),
+            se_version=MelTruncatedStruct(
+                'DATA', '2IfIf', (FID, 'projectile'), (AmmoTypeFlags, 'flags'),
+                'damage', 'value', 'weight', old_versions={'2IfI'}),
+        ),
         MelString('ONAM', 'short_name'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3276,13 +3308,18 @@ class MreLtex(MelRecord):
     """Landscape Texture."""
     classType = 'LTEX'
 
+    _SnowFlags = Flags(0, Flags.getNames(
+        'considered_snow',
+    ))
+
     melSet = MelSet(
         MelEdid(),
         MelFid('TNAM','textureSet',),
         MelFid('MNAM','materialType',),
-        MelStruct('HNAM','BB','friction','restitution',),
+        MelStruct('HNAM', '2B', 'friction', 'restitution',),
         MelUInt8('SNAM', 'textureSpecularExponent'),
         MelFids('GNAM','grasses'),
+        MelSSEOnly(MelUInt32('INAM', (_SnowFlags, 'snow_flags')))
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3363,9 +3400,12 @@ class MreMato(MelRecord):
     """Material Object."""
     classType = 'MATO'
 
-    MatoTypeFlags = Flags(0L,Flags.getNames(
-            (0, 'singlePass'),
-        ))
+    _MatoTypeFlags = Flags(0, Flags.getNames(
+        'singlePass',
+    ))
+    _SnowFlags = Flags(0, Flags.getNames(
+        'considered_snow',
+    ))
 
     melSet = MelSet(
         MelEdid(),
@@ -3373,12 +3413,22 @@ class MreMato(MelRecord):
         MelGroups('property_data',
             MelBase('DNAM', 'data_entry'),
         ),
-        MelTruncatedStruct(
-            'DATA', '11fI', 'falloffScale', 'falloffBias', 'noiseUVScale',
-            'materialUVScale', 'projectionVectorX', 'projectionVectorY',
-            'projectionVectorZ', 'normalDampener', 'singlePassColor',
-            'singlePassColor', 'singlePassColor', (MatoTypeFlags,'flags',0L),
-            old_versions={'7f'}),
+        MelIsSSE(
+            le_version=MelTruncatedStruct(
+                'DATA', '11fI', 'falloffScale', 'falloffBias', 'noiseUVScale',
+                'materialUVScale', 'projectionVectorX', 'projectionVectorY',
+                'projectionVectorZ', 'normalDampener', 'singlePassColorRed',
+                'singlePassColorGreen', 'singlePassColorBlue',
+                (_MatoTypeFlags, 'single_pass_flags'), old_versions={'7f'}),
+            se_version=MelTruncatedStruct(
+                'DATA', '11fIB3s', 'falloffScale', 'falloffBias',
+                'noiseUVScale', 'materialUVScale', 'projectionVectorX',
+                'projectionVectorY', 'projectionVectorZ', 'normalDampener',
+                'singlePassColorRed', 'singlePassColorGreen',
+                'singlePassColorBlue', (_MatoTypeFlags, 'single_pass_flags'),
+                (_SnowFlags, 'snow_flags'), ('unused1', null3),
+                old_versions={'7f', '11fI'}),
+        ),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -4952,11 +5002,22 @@ class MreStat(MelRecord):
     """Static."""
     classType = 'STAT'
 
+    _SnowFlags = Flags(0, Flags.getNames(
+        'considered_Snow',
+    ))
+
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
         MelModel(),
-        MelStruct('DNAM', 'fI', 'maxAngle30to120', (FID, 'material'),),
+        MelIsSSE(
+            le_version=MelStruct('DNAM', 'fI', 'maxAngle30to120',
+                                 (FID, 'material')),
+            se_version=MelTruncatedStruct(
+                'DNAM', 'fIB3s', 'maxAngle30to120', (FID, 'material'),
+                (_SnowFlags, 'snow_flags'), ('unused1', null3),
+                old_versions={'fI'}),
+        ),
         # Contains null-terminated mesh filename followed by random data
         # up to 260 bytes and repeats 4 times
         MelBase('MNAM', 'distantLOD'),
@@ -5058,6 +5119,49 @@ class MreWatr(MelRecord):
             (0, 'causesDamage'),
         ))
 
+    # Struct elements shared by DNAM in SLE and SSE
+    _dnam_common = [
+        'unknown1', 'unknown2', 'unknown3', 'unknown4',
+        'specularPropertiesSunSpecularPower',
+        'waterPropertiesReflectivityAmount', 'waterPropertiesFresnelAmount',
+        ('unknown5', null4), 'fogPropertiesAboveWaterFogDistanceNearPlane',
+        'fogPropertiesAboveWaterFogDistanceFarPlane',
+        # Shallow Color
+        'red_sc','green_sc','blue_sc','unknown_sc',
+        # Deep Color
+        'red_dc','green_dc','blue_dc','unknown_dc',
+        # Reflection Color
+        'red_rc','green_rc','blue_rc','unknown_rc',
+        ('unknown6', null4), 'unknown7', 'unknown8', 'unknown9', 'unknown10',
+        'displacementSimulatorStartingSize', 'displacementSimulatorForce',
+        'displacementSimulatorVelocity', 'displacementSimulatorFalloff',
+        'displacementSimulatorDampner', 'unknown11',
+        'noisePropertiesNoiseFalloff', 'noisePropertiesLayerOneWindDirection',
+        'noisePropertiesLayerTwoWindDirection',
+        'noisePropertiesLayerThreeWindDirection',
+        'noisePropertiesLayerOneWindSpeed', 'noisePropertiesLayerTwoWindSpeed',
+        'noisePropertiesLayerThreeWindSpeed', 'unknown12', 'unknown13',
+        'fogPropertiesAboveWaterFogAmount', 'unknown14',
+        'fogPropertiesUnderWaterFogAmount',
+        'fogPropertiesUnderWaterFogDistanceNearPlane',
+        'fogPropertiesUnderWaterFogDistanceFarPlane',
+        'waterPropertiesRefractionMagnitude',
+        'specularPropertiesSpecularPower', 'unknown15',
+        'specularPropertiesSpecularRadius',
+        'specularPropertiesSpecularBrightness',
+        'noisePropertiesLayerOneUVScale', 'noisePropertiesLayerTwoUVScale',
+        'noisePropertiesLayerThreeUVScale',
+        'noisePropertiesLayerOneAmplitudeScale',
+        'noisePropertiesLayerTwoAmplitudeScale',
+        'noisePropertiesLayerThreeAmplitudeScale',
+        'waterPropertiesReflectionMagnitude',
+        'specularPropertiesSunSparkleMagnitude',
+        'specularPropertiesSunSpecularMagnitude',
+        'depthPropertiesReflections', 'depthPropertiesRefraction',
+        'depthPropertiesNormals', 'depthPropertiesSpecularLighting',
+        'specularPropertiesSunSparklePower',
+    ]
+
     melSet = MelSet(
         MelEdid(),
         MelFull(),
@@ -5072,57 +5176,23 @@ class MreWatr(MelRecord):
         MelFid('XNAM','spell',),
         MelFid('INAM','imageSpace',),
         MelUInt16('DATA', 'damagePerSecond'),
-        MelStruct('DNAM','7f4s2f3Bs3Bs3Bs4s43f','unknown1','unknown2','unknown3',
-                  'unknown4','specularPropertiesSunSpecularPower',
-                  'waterPropertiesReflectivityAmount',
-                  'waterPropertiesFresnelAmount',('unknown5',null4),
-                  'fogPropertiesAboveWaterFogDistanceNearPlane',
-                  'fogPropertiesAboveWaterFogDistanceFarPlane',
-                  # Shallow Color
-                  'red_sc','green_sc','blue_sc','unknown_sc',
-                  # Deep Color
-                  'red_dc','green_dc','blue_dc','unknown_dc',
-                  # Reflection Color
-                  'red_rc','green_rc','blue_rc','unknown_rc',
-                  ('unknown6',null4),'unknown7','unknown8','unknown9','unknown10',
-                  'displacementSimulatorStartingSize',
-                  'displacementSimulatorForce','displacementSimulatorVelocity',
-                  'displacementSimulatorFalloff','displacementSimulatorDampner',
-                  'unknown11','noisePropertiesNoiseFalloff',
-                  'noisePropertiesLayerOneWindDirection',
-                  'noisePropertiesLayerTwoWindDirection',
-                  'noisePropertiesLayerThreeWindDirection',
-                  'noisePropertiesLayerOneWindSpeed',
-                  'noisePropertiesLayerTwoWindSpeed',
-                  'noisePropertiesLayerThreeWindSpeed',
-                  'unknown12','unknown13','fogPropertiesAboveWaterFogAmount',
-                  'unknown14','fogPropertiesUnderWaterFogAmount',
-                  'fogPropertiesUnderWaterFogDistanceNearPlane',
-                  'fogPropertiesUnderWaterFogDistanceFarPlane',
-                  'waterPropertiesRefractionMagnitude',
-                  'specularPropertiesSpecularPower',
-                  'unknown15','specularPropertiesSpecularRadius',
-                  'specularPropertiesSpecularBrightness',
-                  'noisePropertiesLayerOneUVScale',
-                  'noisePropertiesLayerTwoUVScale',
-                  'noisePropertiesLayerThreeUVScale',
-                  'noisePropertiesLayerOneAmplitudeScale',
-                  'noisePropertiesLayerTwoAmplitudeScale',
-                  'noisePropertiesLayerThreeAmplitudeScale',
-                  'waterPropertiesReflectionMagnitude',
-                  'specularPropertiesSunSparkleMagnitude',
-                  'specularPropertiesSunSpecularMagnitude',
-                  'depthPropertiesReflections','depthPropertiesRefraction',
-                  'depthPropertiesNormals','depthPropertiesSpecularLighting',
-                  'specularPropertiesSunSparklePower',),
+        MelIsSSE(
+            le_version=MelStruct('DNAM', '7f4s2f3Bs3Bs3Bs4s43f',
+                                 *_dnam_common),
+            se_version=MelTruncatedStruct(
+                'DNAM', '7f4s2f3Bs3Bs3Bs4s44f',
+                *(_dnam_common + ['noisePropertiesFlowmapScale']),
+                old_versions={'7f4s2f3Bs3Bs3Bs4s43f'}),
+        ),
         MelBase('GNAM','unused2'),
         # Linear Velocity
         MelStruct('NAM0','3f','linv_x','linv_y','linv_z',),
         # Angular Velocity
         MelStruct('NAM1','3f','andv_x','andv_y','andv_z',),
-        MelString('NAM2','noiseTexture'),
-        MelString('NAM3','unused3'),
-        MelString('NAM4','unused4'),
+        MelString('NAM2', 'noiseTextureLayer1'),
+        MelString('NAM3', 'noiseTextureLayer2'),
+        MelString('NAM4', 'noiseTextureLayer3'),
+        MelSSEOnly(MelString('NAM5', 'flowNormalsNoiseTexture')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -5144,7 +5214,7 @@ class MreWeap(MelRecord):
             (5, 'rangeFixed'),
             (6, 'notUsedinNormalCombat'),
             (7, 'unknown8'),
-            (8, 'don'),
+            (8, 'dont_use_3rd_person_IS_anim'),
             (9, 'unknown10'),
             (10, 'rumbleAlternate'),
             (11, 'unknown12'),
@@ -5156,12 +5226,30 @@ class MreWeap(MelRecord):
             (0, 'ignoresNormalWeaponResistance'),
             (1, 'automaticunused'),
             (2, 'hasScopeunused'),
-            (3, 'can'),
+            (3, 'cant_drop'),
             (4, 'hideBackpackunused'),
             (5, 'embeddedWeaponunused'),
-            (6, 'don'),
+            (6, 'dont_use_1st_person_IS_anim_unused'),
             (7, 'nonplayable'),
         ))
+
+    class MelWeapCrdt(MelTruncatedStruct):
+        """Handle older truncated CRDT for WEAP subrecord.
+
+        Old Skyrim format H2sfB3sI FormID is the last integer.
+
+        New Format H2sfB3s4sI4s FormID is the integer prior to the last 4S.
+        Bethesda did not append the record they inserted bytes which shifts the
+        FormID 4 bytes."""
+        def _pre_process_unpacked(self, unpacked_val):
+            if len(unpacked_val) == 6:
+                # old skyrim record, insert null bytes in the middle(!)
+                crit_damage, crit_unknown1, crit_mult, crit_flags, \
+                crit_unknown2, crit_effect = unpacked_val
+                ##: Why use null3 instead of crit_unknown2?
+                unpacked_val = (crit_damage, crit_unknown1, crit_mult,
+                                crit_flags, null3, null4, crit_effect, null4)
+            return MelTruncatedStruct._pre_process_unpacked(self, unpacked_val)
 
     melSet = MelSet(
         MelEdid(),
@@ -5202,8 +5290,18 @@ class MreWeap(MelRecord):
                   'rumbleLeftMotorStrength','rumbleRightMotorStrength',
                   'rumbleDuration',('dnamUnk5',null4+null4+null4),'skill',
                   ('dnamUnk6',null4+null4),'resist',('dnamUnk7',null4),'stagger',),
-        MelStruct('CRDT','H2sfB3sI','critDamage',('crdtUnk1',null2),'criticalMultiplier',
-                  (WeapFlags3,'criticalFlags',0L),('crdtUnk2',null3),(FID,'criticalEffect',None),),
+        MelIsSSE(
+            le_version=MelStruct(
+                'CRDT', 'H2sfB3sI', 'critDamage', ('crdtUnk1', null2),
+                'criticalMultiplier', (WeapFlags3, 'criticalFlags'),
+                ('crdtUnk2', null3), (FID, 'criticalEffect', None)),
+            se_version=MelWeapCrdt(
+                'CRDT', 'H2sfB3s4sI4s', 'critDamage', ('crdtUnk1', null2),
+                'criticalMultiplier', (WeapFlags3, 'criticalFlags'),
+                ('crdtUnk2', null3), ('crdtUnk3', null4),
+                (FID, 'criticalEffect', None), ('crdtUnk4', null4),
+                old_versions={'H2sfB3sI'}),
+        ),
         MelUInt32('VNAM', 'detectionSoundLevel'),
         MelFid('CNAM','template',),
     )
@@ -5240,7 +5338,7 @@ class MreWrld(MelRecord):
     WrldFlags1 = Flags(0L,Flags.getNames(
             (0, 'useLandData'),
             (1, 'useLODData'),
-            (2, 'don'),
+            (2, 'useMapData'),
             (3, 'useWaterData'),
             (4, 'useClimateData'),
             (5, 'useImageSpaceDataunused'),
@@ -5375,16 +5473,20 @@ class MreWthr(MelRecord):
         MelString('J0TX','cloudTextureLayer_26'),
         MelString('K0TX','cloudTextureLayer_27'),
         MelString('L0TX','cloudTextureLayer_28'),
-        MelBase('DNAM','dnam_p'),
-        MelBase('CNAM','cnam_p'),
-        MelBase('ANAM','anam_p'),
-        MelBase('BNAM','bnam_p'),
+        MelBase('DNAM', 'unused1'),
+        MelBase('CNAM', 'unused2'),
+        MelBase('ANAM', 'unused3'),
+        MelBase('BNAM', 'unused4'),
         MelBase('LNAM','lnam_p'),
         MelFid('MNAM','precipitationType',),
         MelFid('NNAM','visualEffect',),
-        MelBase('ONAM','onam_p'),
-        MelBase('RNAM','cloudSpeedY'),
-        MelBase('QNAM','cloudSpeedX'),
+        MelBase('ONAM', 'unused5'),
+        MelArray('cloudSpeedY',
+            MelUInt8('RNAM', 'cloud_speed_layer'),
+        ),
+        MelArray('cloudSpeedX',
+            MelUInt8('QNAM', 'cloud_speed_layer'),
+        ),
         MelArray('cloudColors',
             MelWthrColors('PNAM'),
         ),
@@ -5409,8 +5511,13 @@ class MreWthr(MelRecord):
             MelStruct('SNAM', '2I', (FID, 'sound'), 'type'),
         ),
         MelFids('TNAM','skyStatics',),
-        MelStruct('IMSP','4I',(FID,'imageSpacesSunrise'),(FID,'imageSpacesDay'),
-                  (FID,'imageSpacesSunset'),(FID,'imageSpacesNight'),),
+        MelStruct('IMSP', '4I', (FID, 'image_space_sunrise'),
+                  (FID, 'image_space_day'), (FID, 'image_space_sunset'),
+                  (FID, 'image_space_night'),),
+        MelSSEOnly(MelOptStruct(
+            'HNAM', '4I', (FID, 'volumetricLightingSunrise'),
+            (FID, 'volumetricLightingDay'), (FID, 'volumetricLightingSunset'),
+            (FID, 'volumetricLightingNight'))),
         MelGroups('wthrAmbientColors',
             MelTruncatedStruct(
                 'DALC', '4B4B4B4B4B4B4Bf', 'redXplus', 'greenXplus',
@@ -5423,8 +5530,9 @@ class MreWthr(MelRecord):
                 'blueSpec', 'unknownSpec', 'fresnelPower',
                 old_versions={'4B4B4B4B4B4B'}),
         ),
-        MelBase('NAM2','nam2_p'),
-        MelBase('NAM3','nam3_p'),
+        MelBase('NAM2', 'unused6'),
+        MelBase('NAM3', 'unused7'),
         MelModel('aurora','MODL'),
+        MelSSEOnly(MelFid('GNAM', 'sunGlareLensFlare')),
     )
     __slots__ = melSet.getSlotsUsed()

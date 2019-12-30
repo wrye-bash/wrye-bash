@@ -1046,6 +1046,12 @@ class FlagDecider(ACommonDecider):
         check_flag = flags_val.__getattr__
         return all(check_flag(flag_name) for flag_name in self._required_flags)
 
+class GameDecider(ACommonDecider):
+    """Decider that returns the name of the currently managed game."""
+    def _decide_common(self, record):
+        import bush
+        return bush.game.fsName
+
 class PartialLoadDecider(ADecider):
     """Partially loads a subrecord using a given loader, then rewinds the
     input stream and delegates to a given decider. Can decide at dump-time
