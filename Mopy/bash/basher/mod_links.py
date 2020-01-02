@@ -2048,7 +2048,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         gskip = TextField(dialog)
         gdeprefix = TextField(dialog)
         gskipcomments = CheckBox(dialog, _(u'Filter Out Comments'),
-                tooltip=_(u"If active doesn't export comments in the scripts"))
+          chkbx_tooltip=_(u"If active doesn't export comments in the scripts"))
         gskip.text_content = bass.settings['bash.mods.export.skip']
         gdeprefix.text_content = bass.settings['bash.mods.export.deprefix']
         gskipcomments.is_checked = bass.settings['bash.mods.export.skipcomments']
@@ -2061,13 +2061,10 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         VLayout(border=6, spacing=4, items=[
             Label(dialog, _(u'Skip prefix (leave blank to not skip any), '
                             u'non-case sensitive):')),
-            (gskip, LayoutOptions(fill=True)),
-            Spacer(10),
+            (gskip, LayoutOptions(expand=True)), Spacer(10),
             Label(dialog, u'\n'.join(msg)),
-            (gdeprefix, LayoutOptions(fill=True)),
-            Spacer(10),
-            gskipcomments,
-            Stretch(),
+            (gdeprefix, LayoutOptions(expand=True)), Spacer(10),
+            gskipcomments, Stretch(),
             (HLayout(spacing=4, items=[ok_button, CancelButton(dialog)]),
              LayoutOptions(h_align=RIGHT))
         ]).apply_to(dialog, fit=True)

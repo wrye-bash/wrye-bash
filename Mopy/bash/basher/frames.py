@@ -66,24 +66,25 @@ class DocBrowser(BaltFrame):
                                       onSelect=self._do_select_mod)
         # Buttons
         self._set_btn = Button(main_window, _(u'Set Doc...'),
-                               tooltip=u'Associates this plugin file with a '
-                                       u'document.')
+                               btn_tooltip=u'Associates this plugin file with '
+                                           u'a document.')
         self._set_btn.on_clicked.subscribe(self._do_set)
         self._forget_btn = Button(main_window, _(u'Forget Doc'),
-                                  tooltip=_(u'Removes the link between this '
-                                            u'plugin file and the matching '
-                                            u'document.'))
+                                  btn_tooltip=_(u'Removes the link between '
+                                                u'this plugin file and the '
+                                                u'matching document.'))
         self._forget_btn.on_clicked.subscribe(self._do_forget)
         self._rename_btn = Button(main_window, _(u'Rename Doc...'),
-                                  tooltip=_(u'Renames the document.'))
+                                  btn_tooltip=_(u'Renames the document.'))
         self._rename_btn.on_clicked.subscribe(self._do_rename)
         self._edit_box = CheckBox(main_window, _(u'Allow Editing'),
-                                  tooltip=_(u'Enables or disables editing in '
-                                            u'the text field below.'))
+                                  chkbx_tooltip=_(u'Enables or disables '
+                                                  u'editing in the text field '
+                                                  u'below.'))
         self._edit_box.on_checked.subscribe(self._do_edit)
         self._open_btn = Button(main_window, _(u'Open Doc...'),
-                                tooltip=_(u'Opens the document in your '
-                                          u'default viewer/editor.'))
+                                btn_tooltip=_(u'Opens the document in your '
+                                              u'default viewer/editor.'))
         self._open_btn.on_clicked.subscribe(self._do_open)
         self._doc_name_box = TextField(main_window, editable=False)
         self._doc_ctrl = HtmlCtrl(main_window)
@@ -325,13 +326,13 @@ class ModChecker(BaltFrame):
         back_btn, forward_btn, reload_btn = self._html_ctrl.get_buttons()
         self._controls = OrderedDict()
         self._setting_names = {}
-        def _f(key, make_checkbox, caption, setting_key=None,
+        def _f(key, make_checkbox, caption_, setting_key=None,
                setting_value=None, callback=self.CheckMods):
             if make_checkbox:
-                btn = CheckBox(self, caption)
+                btn = CheckBox(self, caption_)
                 btn.on_checked.subscribe(callback)
             else:
-                btn = Button(self, caption)
+                btn = Button(self, caption_)
                 btn.on_clicked.subscribe(callback)
             if setting_key is not None:
                 new_value = bass.settings.get(
@@ -453,7 +454,7 @@ class InstallerProject_OmodConfigDialog(BaltFrame):
                                   max_length=4 * 1024)
         #--Layout
         def _no_fill_text(txt):
-            return Label(self, txt), LayoutOptions(fill=False)
+            return Label(self, txt), LayoutOptions(expand=False)
         save_button = SaveButton(self, default=True)
         save_button.on_clicked.subscribe(self.DoSave)
         cancel_button = CancelButton(self)

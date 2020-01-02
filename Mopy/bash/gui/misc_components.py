@@ -39,21 +39,21 @@ class CheckBox(_AComponent):
      - on_checked(checked: bool): Posted when this checkbox's state is changed
        by checking or unchecking it. The parameter is True if the checkbox is
        now checked and False if it is now unchecked."""
-    def __init__(self, parent, label=u'', tooltip=None, checked=False):
+    def __init__(self, parent, label=u'', chkbx_tooltip=None, checked=False):
         """Creates a new CheckBox with the specified properties.
 
         :param parent: The object that this checkbox belongs to. May be a wx
                        object or a component.
         :param label: The text shown on this checkbox.
-        :param tooltip: A tooltip to show when the user hovers over this
-                        checkbox.
+        :param chkbx_tooltip: A tooltip to show when the user hovers over this
+                              checkbox.
         :param checked: The initial state of the checkbox."""
         super(CheckBox, self).__init__()
         # Create native widget
         self._native_widget = _wx.CheckBox(self._resolve(parent), _wx.ID_ANY,
                                            label=label, name=u'checkBox')
-        if tooltip:
-            self.tooltip = tooltip
+        if chkbx_tooltip:
+            self.tooltip = chkbx_tooltip
         self.is_checked = checked
         # Events
         self.on_checked = EventHandler(self._native_widget, _wx.EVT_CHECKBOX,

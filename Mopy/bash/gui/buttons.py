@@ -50,15 +50,15 @@ class Button(_AButton):
     # The label to use when no label was explicitly specified. Set per class.
     default_label = u''
 
-    def __init__(self, parent, label=u'', tooltip=None, default=False,
+    def __init__(self, parent, label=u'', btn_tooltip=None, default=False,
                  exact_fit=False, no_border=False):
         """Creates a new Button with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
                        object or a component.
         :param label: The text shown on this button.
-        :param tooltip: A tooltip to show when the user hovers over this
-                        button.
+        :param btn_tooltip: A tooltip to show when the user hovers over this
+                            button.
         :param default: If set to True, this button will be the 'default',
                         meaning that if a user selects nothing else and hits
                         Enter, this button will activate.
@@ -80,8 +80,8 @@ class Button(_AButton):
                                          name=u'button', style=btn_style)
         if default:
             self._native_widget.SetDefault()
-        if tooltip:
-            self.tooltip = tooltip
+        if btn_tooltip:
+            self.tooltip = btn_tooltip
         # Events
         self.on_clicked = EventHandler(self._native_widget, _wx.EVT_BUTTON)
         self.on_right_clicked = EventHandler(self._native_widget,
@@ -170,19 +170,19 @@ class ApplyButton(Button):
 class ImageButton(Button):
     """A button that display an image alongside its label.
 
-    See Button for documentation on button events."""
-    # TODO(inf) This implementation locks us into wx 2.9+
-    # Since wx 2.8 can't do bitmaps with a regular button
-    def __init__(self, parent, image, label=u'', tooltip=None, default=False,
-                 exact_fit=False, no_border=False):
+    See Button for documentation on button events. Note: this implementation
+    locks us into wx 2.9+, since wx 2.8 can't do bitmaps with a regular button.
+    """
+    def __init__(self, parent, image, label=u'', btn_tooltip=None,
+                 default=False, exact_fit=False, no_border=False):
         """Creates a new _AImageButton with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
                        object or a component.
         :param image: The image shown on this button.
         :param label: The text shown on this button.
-        :param tooltip: A tooltip to show when the user hovers over this
-                        button.
+        :param btn_tooltip: A tooltip to show when the user hovers over this
+                            button.
         :param default: If set to True, this button will be the 'default',
                         meaning that if a user selects nothing else and hits
                         Enter, this button will activate.
@@ -190,7 +190,8 @@ class ImageButton(Button):
                           exactly to its contents.
         :param no_border: If set to True, the borders of this button will be
                           hidden."""
-        super(ImageButton, self).__init__(parent, label=label, tooltip=tooltip,
+        super(ImageButton, self).__init__(parent, label=label,
+                                          btn_tooltip=btn_tooltip,
                                           default=default, exact_fit=exact_fit,
                                           no_border=no_border)
         self.image = image
@@ -225,7 +226,7 @@ class BackwardButton(ImageButton):
         backward_image = _wx.ArtProvider.GetBitmap(
             _wx.ART_GO_BACK, _wx.ART_HELP_BROWSER, (16, 16))
         super(BackwardButton, self).__init__(parent, backward_image,
-                                             tooltip=_(u'Go Back'),
+                                             btn_tooltip=_(u'Go Back'),
                                              exact_fit=True)
 
 class ForwardButton(ImageButton):
@@ -241,7 +242,7 @@ class ForwardButton(ImageButton):
         forward_image = _wx.ArtProvider.GetBitmap(
             _wx.ART_GO_FORWARD, _wx.ART_HELP_BROWSER, (16, 16))
         super(ForwardButton, self).__init__(parent, forward_image,
-                                            tooltip=_(u'Go Forwards'),
+                                            btn_tooltip=_(u'Go Forwards'),
                                             exact_fit=True)
 
 class ReloadButton(ImageButton):
@@ -259,20 +260,21 @@ class ReloadButton(ImageButton):
         reload_icon = _wx.Bitmap(bass.dirs[u'images'].join(u'reload16.png').s,
                                  _wx.BITMAP_TYPE_PNG)
         super(ReloadButton, self).__init__(parent, reload_icon,
-                                           tooltip=_(u'Reload'),
+                                           btn_tooltip=_(u'Reload'),
                                            exact_fit=True)
 
 class ClickableImage(ImageButton):
     """An image that acts like a button. Has no text and no borders.
 
     See Button for documentation on button events."""
-    def __init__(self, parent, image, tooltip=None):
+    def __init__(self, parent, image, btn_tooltip=None):
         """Creates a new ClickableImage with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
                        object or a component.
         :param image: The image shown on this button.
-        :param tooltip: A tooltip to show when the user hovers over this
-                        button."""
-        super(ClickableImage, self).__init__(parent, image, tooltip=tooltip,
+        :param btn_tooltip: A tooltip to show when the user hovers over this
+                            button."""
+        super(ClickableImage, self).__init__(parent, image,
+                                             btn_tooltip=btn_tooltip,
                                              exact_fit=True, no_border=True)

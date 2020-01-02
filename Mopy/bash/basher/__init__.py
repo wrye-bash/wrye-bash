@@ -1273,7 +1273,7 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
                                  panel=mod_or_save_panel, detailsPanel=self)
         VLayout(spacing=4, items=[
             Label(self.masterPanel, _(u"Masters:")),
-            (self.uilist, LayoutOptions(weight=1, fill=True)),
+            (self.uilist, LayoutOptions(weight=1, expand=True)),
             HLayout(spacing=4, items=[self.save, self.cancel])
         ]).apply_to(self.masterPanel)
 
@@ -1341,11 +1341,11 @@ class ModDetails(_SashDetailsPanel):
             Label(top, _(u'Author:')), self.gAuthor,
             Label(top, _(u'Modified:')), self.modified,
             Label(top, _(u'Description:')),
-            (self.description, LayoutOptions(fill=True, weight=1))
+            (self.description, LayoutOptions(expand=True, weight=1))
         ]).apply_to(top)
         VLayout(spacing=4, items=[
             Label(self._bottom_low_panel, _(u'Bash Tags:')),
-            (self.gTags, LayoutOptions(fill=True, weight=1))
+            (self.gTags, LayoutOptions(expand=True, weight=1))
         ]).apply_to(self._bottom_low_panel)
         VLayout(default_weight=1, default_fill=True,
                 items=[subSplitter]).apply_to(bottom)
@@ -1655,7 +1655,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         #--Layout
         VLayout(default_fill=True, spacing=4, items=[
             HLayout(spacing=4, items=[
-                (self.comboBox, LayoutOptions(fill=True, weight=1)),
+                (self.comboBox, LayoutOptions(expand=True, weight=1)),
                 self.removeButton, self.editButton]),
             (self.iniContents, LayoutOptions(weight=1))
         ]).apply_to(right)
@@ -1969,7 +1969,7 @@ class SaveDetails(_SashDetailsPanel):
         ]).apply_to(top)
         VLayout(items=[
             Label(self._bottom_low_panel, _(u"Save Notes:")),
-            (self.gInfo, LayoutOptions(fill=True, weight=1))
+            (self.gInfo, LayoutOptions(expand=True, weight=1))
         ]).apply_to(self._bottom_low_panel)
         VLayout(default_fill=True, default_weight=1,
                 items=[subSplitter]).apply_to(bottom)
@@ -2369,7 +2369,7 @@ class InstallersList(balt.UIList):
                 VLayout(border=6, spacing=6, items=[
                     HLayout(spacing=6, default_border=6, items=[
                         (staticBitmap(dialog), LayoutOptions(v_align=TOP)),
-                        (Label(dialog, message), LayoutOptions(fill=True))
+                        (Label(dialog, message), LayoutOptions(expand=True))
                     ]),
                     Stretch(), Spacer(10), gCheckBox,
                     (HLayout(spacing=4, items=[
@@ -2585,7 +2585,7 @@ class InstallersDetails(_DetailsMixin, SashPanel):
             )
         for name,title in infoTitles:
             gPage = TextArea(self.gNotebook, editable=False,
-                             auto_tooltip=False, wrap=False)
+                             auto_tooltip=False, do_wrap=False)
             gPage.component_name = name
             # TODO(nycz): GUI to fix when Notebook is wrapped
             self.gNotebook.AddPage(gPage._native_widget,title)
@@ -2623,16 +2623,16 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         commentsSplitter.SetSashGravity(1.0)
         #--Layout
         VLayout(items=[subPackagesLabel,
-                       (self.gSubList, LayoutOptions(fill=True, weight=1))]
+                       (self.gSubList, LayoutOptions(expand=True, weight=1))]
                 ).apply_to(subPackagesPanel)
         VLayout(items=[Label(espmsPanel, _(u'Plugin Filter')),
-                       (self.gEspmList, LayoutOptions(fill=True, weight=1))]
+                       (self.gEspmList, LayoutOptions(expand=True, weight=1))]
                 ).apply_to(espmsPanel)
         VLayout(default_fill=True,
                 items=[self.gPackage, (subSplitter, LayoutOptions(weight=1))]
                 ).apply_to(top)
         VLayout(items=[Label(commentsPanel, _(u'Comments')),
-                       (self.gComments, LayoutOptions(fill=True, weight=1))]
+                       (self.gComments, LayoutOptions(expand=True, weight=1))]
                 ).apply_to(commentsPanel)
         VLayout(default_fill=True, default_weight=1, items=[commentsPanel]
                 ).apply_to(bottom)
@@ -3228,7 +3228,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         VLayout(default_fill=True, items=[Label(self.top, _(u'File:')),
                                           self.file]).apply_to(self.top)
         VLayout(spacing=4, items=[
-            (self.gInfo, LayoutOptions(fill=True)),
+            (self.gInfo, LayoutOptions(expand=True)),
             HLayout(spacing=4, items=[self.save, self.cancel])
         ]).apply_to(self.bottom)
 

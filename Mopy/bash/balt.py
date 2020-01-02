@@ -306,7 +306,7 @@ class ColorChecks(ImageList):
         return self.indices[shortKey]
 
 # Functions -------------------------------------------------------------------
-def fill(text_to_wrap, width=60):
+def text_wrap(text_to_wrap, width=60):
     """Wraps paragraph to width characters."""
     pars = [textwrap.fill(line, width) for line in text_to_wrap.split(u'\n')]
     return u'\n'.join(pars)
@@ -498,7 +498,7 @@ def _continueDialog(parent, message, title, checkBoxText):
         VLayout(border=6, spacing=6, default_fill=True, items=[
             (HLayout(spacing=6, items=[
                 (staticBitmap(dialog), LayoutOptions(border=6, v_align=TOP)),
-                (Label(dialog, message), LayoutOptions(fill=True, weight=1))]),
+                (Label(dialog, message), LayoutOptions(expand=True, weight=1))]),
              LayoutOptions(weight=1)),
             gCheckBox,
             ok_and_cancel_group(dialog)
@@ -792,7 +792,7 @@ class Log(_Log):
         ok_button = OkButton(self.window, default=True)
         ok_button.on_clicked.subscribe(self.window.Close)
         VLayout(border=2, items=[
-            (txtCtrl, LayoutOptions(fill=True, weight=1, border=2)),
+            (txtCtrl, LayoutOptions(expand=True, weight=1, border=2)),
             (ok_button, LayoutOptions(h_align=RIGHT, border=2))
         ]).apply_to(self.window)
         self.ShowLog()
@@ -855,7 +855,6 @@ class ListEditorData(object):
         self.showRemove = False
         self.showSave = False
         self.showCancel = False
-        self.caption = None
         #--Editable?
         self.showInfo = False
         self.infoWeight = 1 #--Controls width of info pane
@@ -939,10 +938,6 @@ class ListEditor(Dialog):
         super(ListEditor, self).__init__(parent, title)
         # overrides Dialog.sizesKey
         self.sizesKey = self._listEditorData.__class__.__name__
-        #--Caption
-        captionText = None # type: Label
-        if data.caption:
-            captionText = Label(self,data.caption)
         #--List Box
         self.listBox = listBox(self, choices=self._list_items)
         self.listBox.SetSizeHints(125,150)
@@ -976,12 +971,11 @@ class ListEditor(Dialog):
             buttons = None
         #--Layout
         layout = VLayout(border=4, spacing=4, items=[
-            captionText,
             (HLayout(spacing=4, default_fill=True, items=[
                 (self.listBox, LayoutOptions(weight=1)),
                 (self.gInfoBox, LayoutOptions(weight=self._listEditorData.infoWeight)),
                 buttons
-             ]), LayoutOptions(weight=1, fill=True))])
+             ]), LayoutOptions(weight=1, expand=True))])
         #--Done
         if self.sizesKey in sizes:
             layout.apply_to(self)
@@ -2735,7 +2729,7 @@ class ListBoxes(Dialog):
             layout.add((HBoxedLayout(self, default_fill=True,
                                              title=title, default_weight=1,
                                              items=[checksCtrl]),
-                        LayoutOptions(fill=True, weight=1)))
+                        LayoutOptions(expand=True, weight=1)))
         layout.add((HLayout(spacing=5, items=[
                 OkButton(self, label=bOk, default=True),
                 (CancelButton(self, label=bCancel) if canCancel else None)]

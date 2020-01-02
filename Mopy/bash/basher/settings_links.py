@@ -29,7 +29,7 @@ from .app_buttons import App_Button  # TODO(ut): ugly
 from .dialogs import ColorDialog
 from .. import barb, bush, balt, bass, bolt, env, exception
 from ..balt import ItemLink, AppendableLink, RadioLink, CheckLink, MenuLink, \
-    TransLink, EnabledLink, BoolLink, tooltip, Link
+    TransLink, EnabledLink, BoolLink, Link
 from ..bolt import deprint, GPath
 from ..exception import BoltError
 from ..localize import dump_translator

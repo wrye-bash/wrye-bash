@@ -59,7 +59,7 @@ class LayoutOptions(object):
 
     border (int)
         The width (in pixels) of the empty space around an item.
-    fill (bool)
+    expand (bool)
         Whether the items should fill the entire space the layout has
         allocated for it or not.
     weight (int)
@@ -78,10 +78,10 @@ class LayoutOptions(object):
     col_span, row_span (int)
         The number of columns or rows this items should take up.
     """
-    def __init__(self, border=None, fill=None, weight=None,
+    def __init__(self, border=None, expand=None, weight=None,
                  h_align=None, v_align=None, col_span=None, row_span=None):
         self.border = border
-        self.fill = fill
+        self.expand = expand
         self.weight = weight
         self.h_align = h_align
         self.v_align = v_align
@@ -131,7 +131,7 @@ class _ALayout(object):
         v_align = self.default_v_align
         if options:
             if options.border is not None: border = options.border
-            if options.fill is not None: fill_ = options.fill
+            if options.expand is not None: fill_ = options.expand
             if options.h_align is not None: h_align = options.h_align
             if options.v_align is not None: v_align = options.v_align
         flags = _wx.ALL | _H_ALIGNS[h_align] | _V_ALIGNS[v_align]

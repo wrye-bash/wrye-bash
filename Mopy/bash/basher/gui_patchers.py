@@ -28,7 +28,7 @@ from operator import itemgetter
 import wx
 # Internal
 from .. import bass, bosh, bush, balt, load_order, bolt, exception
-from ..balt import fill, Links, SeparatorLink, CheckLink, Link
+from ..balt import text_wrap, Links, SeparatorLink, CheckLink, Link
 from ..bolt import GPath
 from ..gui import Button, CheckBox, HBoxedLayout, Label, LayoutOptions, \
     Spacer, TextArea, TOP, VLayout
@@ -69,7 +69,7 @@ class _PatcherPanel(object):
         self.gConfigPanel = wx.Panel(parent, style=self.__class__.style)
         self.main_layout = VLayout(
             default_fill=True, default_weight=1, spacing=4, items=[
-                (Label(self.gConfigPanel, fill(self.text, 70)),
+                (Label(self.gConfigPanel, text_wrap(self.text, 70)),
                  LayoutOptions(weight=0))])
         self.main_layout.apply_to(self.gConfigPanel)
         config_layout.add(self.gConfigPanel)
@@ -164,7 +164,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
         self.SetAliasText()
         #--Sizing
         self.main_layout.add((self.gAliases,
-                              LayoutOptions(fill=True, weight=1)))
+                              LayoutOptions(expand=True, weight=1)))
         return self.gConfigPanel
 
     def SetAliasText(self):
@@ -261,10 +261,10 @@ class _ListPatcherPanel(_PatcherPanel):
         self.main_layout.add(
             (HBoxedLayout(gConfigPanel, title=self.__class__.listLabel,
                           spacing=4, items=[
-                (self.gList, LayoutOptions(fill=True, weight=1)),
+                (self.gList, LayoutOptions(expand=True, weight=1)),
                 (side_button_layout, LayoutOptions(v_align=TOP)),
-                (self._get_select_layout(), LayoutOptions(fill=True))]),
-             LayoutOptions(fill=True, weight=1)))
+                (self._get_select_layout(), LayoutOptions(expand=True))]),
+             LayoutOptions(expand=True, weight=1)))
         return gConfigPanel
 
     def _on_remove_empty_checked(self, is_checked):
@@ -506,7 +506,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                           default_fill=True, spacing=4, items=[
                     (self.gTweakList, LayoutOptions(weight=1)),
                     self._get_tweak_select_layout()]),
-             LayoutOptions(fill=True, weight=1)))
+             LayoutOptions(expand=True, weight=1)))
         return gConfigPanel
 
     def _build_tweaks_list(self):

@@ -297,7 +297,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                     focus_list=False, detail_item=lastApplied)
             ui_refresh[1] = False
         if len(manuallyApply) > 0:
-            message = balt.fill(_(
+            message = balt.text_wrap(_(
                 u'The following INI Tweaks were not automatically applied.  '
                 u'Be sure to apply them after installing the package.'))
             message += u'\n\n'

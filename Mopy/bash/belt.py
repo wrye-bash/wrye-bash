@@ -175,17 +175,17 @@ class PageInstaller(wiz.PyWizardPage):
 
     def __init__(self, parent):
         wiz.PyWizardPage.__init__(self, parent)
-        self.parent = parent
+        self._wiz_parent = parent
         self._enableForward(True)
 
     def _enableForward(self, enable):
-        self.parent.FindWindowById(wx.ID_FORWARD).Enable(enable)
+        self._wiz_parent.FindWindowById(wx.ID_FORWARD).Enable(enable)
 
-    def GetNext(self): return self.parent.dummy
+    def GetNext(self): return self._wiz_parent.dummy
 
     def GetPrev(self):
-        if self.parent.parser.choiceIdex > 0:
-            return self.parent.dummy
+        if self._wiz_parent.parser.choiceIdex > 0:
+            return self._wiz_parent.dummy
         return None
 
     def OnNext(self):
@@ -207,7 +207,7 @@ class PageError(PageInstaller):
             Label(self, title),
             (TextArea(self, editable=False, init_text=errorMsg,
                       auto_tooltip=False),
-             LayoutOptions(weight=1, fill=True))
+             LayoutOptions(weight=1, expand=True))
         ]).apply_to(self)
         self.Layout()
 
@@ -302,16 +302,16 @@ class PageSelect(PageInstaller):
         else:
             for i in self.listOptions.GetSelections():
                 temp.append(self.listItems[i])
-        if self.parent.parser.choiceIdex < len(self.parent.parser.choices):
-            oldChoices = self.parent.parser.choices[self.parent.parser.choiceIdex]
+        if self._wiz_parent.parser.choiceIdex < len(self._wiz_parent.parser.choices):
+            oldChoices = self._wiz_parent.parser.choices[self._wiz_parent.parser.choiceIdex]
             if temp == oldChoices:
                 pass
             else:
-                self.parent.parser.choices = self.parent.parser.choices[0:self.parent.parser.choiceIdex]
-                self.parent.parser.choices.append(temp)
+                self._wiz_parent.parser.choices = self._wiz_parent.parser.choices[0:self._wiz_parent.parser.choiceIdex]
+                self._wiz_parent.parser.choices.append(temp)
         else:
-            self.parent.parser.choices.append(temp)
-        self.parent.parser.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values=temp, hitCase=False)
+            self._wiz_parent.parser.choices.append(temp)
+        self._wiz_parent.parser.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values=temp, hitCase=False)
 
 _obse_mod_formats = bolt.LowerDict(
     {u']set[': u' %(setting)s to %(value)s%(comment)s',
@@ -373,20 +373,20 @@ class PageFinish(PageInstaller):
             key = key.replace(u'&&',u'&')
             if subsList[key]:
                 self.listSubs.Check(index, True)
-                self.parent.ret.select_sub_packages.append(key)
+                self._wiz_parent.ret.select_sub_packages.append(key)
         self.plugin_selection = balt.listBox(self, choices=displayed_plugins,
                                              kind='checklist',
                                              onCheck=self._on_select_plugin)
         for index,key in enumerate(plugins):
             if plugin_list[key]:
                 self.plugin_selection.Check(index, True)
-                self.parent.ret.select_plugins.append(key)
-        self.parent.ret.rename_plugins = plugin_renames
+                self._wiz_parent.ret.select_plugins.append(key)
+        self._wiz_parent.ret.rename_plugins = plugin_renames
         # Ini tweaks
         self.listInis = balt.listBox(self, onSelect=self.OnSelectIni,
                                      choices=[x.s for x in iniedits.keys()])
         self.listTweaks = balt.listBox(self)
-        self.parent.ret.ini_edits = iniedits
+        self._wiz_parent.ret.ini_edits = iniedits
         # Apply/install checkboxes
         self.checkApply = CheckBox(self, _(u'Apply these selections'),
                                    checked=bAuto)
@@ -395,7 +395,7 @@ class PageFinish(PageInstaller):
         self.checkInstall = CheckBox(self, _(u'Install this package'),
                                      checked=auto)
         self.checkInstall.on_checked.subscribe(self.OnCheckInstall)
-        self.parent.ret.should_install = auto
+        self._wiz_parent.ret.should_install = auto
         # Layout
         layout = VLayout(default_fill=True, spacing=4, items=[
             HBoxedLayout(self, items=[textTitle]),
@@ -422,14 +422,14 @@ class PageFinish(PageInstaller):
         ])
         layout.apply_to(self)
         self._enableForward(bAuto)
-        self.parent.finishing = True
+        self._wiz_parent.finishing = True
         self.Layout()
 
     def OnCheckApply(self, is_checked):
         self._enableForward(is_checked)
 
     def OnCheckInstall(self, is_checked):
-        self.parent.ret.should_install = is_checked
+        self._wiz_parent.ret.should_install = is_checked
 
     def GetNext(self): return None
 
@@ -446,7 +446,7 @@ class PageFinish(PageInstaller):
     def OnSelectIni(self, event):
         index = event.GetSelection()
         ini_path = bolt.GPath(self.listInis.GetString(index))
-        lines = generateTweakLines(self.parent.ret.ini_edits[ini_path],
+        lines = generateTweakLines(self._wiz_parent.ret.ini_edits[ini_path],
                                    ini_path)
         self.listTweaks.Set(lines)
         self.listInis.SetSelection(index)
@@ -477,11 +477,11 @@ class PageVersions(PageInstaller):
                                     Label(self, gameHave),
                                     balt.staticBitmap(self, bmp[bGameOk])])
         def _link_row(tool, tool_name, need, have, ok, title=None, url=None,
-                      tooltip=None):
+                      tooltip_=None):
             if tool is None or tool_name != u'':
                 link = HyperlinkLabel(self, title or tool.long_name,
                                       url or tool.url, always_unvisited=True)
-                link.tooltip = tooltip or tool.url_tip
+                link.tooltip = tooltip_ or tool.url_tip
                 versions_layout.append_row([link, Label(self, need),
                                             Label(self, have),
                                             balt.staticBitmap(self, bmp[ok])])
@@ -492,7 +492,7 @@ class PageVersions(PageInstaller):
         # Wrye Bash
         _link_row(None, u'', wbNeed, wbHave, bWBOk, title=u'Wrye Bash',
                   url=u'https://www.nexusmods.com/oblivion/mods/22368',
-                  tooltip=u'https://www.nexusmods.com/oblivion')
+                  tooltip_=u'https://www.nexusmods.com/oblivion')
         versions_box = HBoxedLayout(self, _(u'Version Requirements'),
                                     default_fill=True, default_weight=1,
                                     items=[versions_layout])
@@ -506,7 +506,7 @@ class PageVersions(PageInstaller):
             Stretch(1),
             (text_warning, LayoutOptions(h_align=CENTER)),
             Stretch(1),
-            (versions_box, LayoutOptions(fill=True, weight=1)),
+            (versions_box, LayoutOptions(expand=True, weight=1)),
             Stretch(2),
             (self.checkOk, LayoutOptions(h_align=RIGHT, v_align=BOTTOM,
                                          border=5))
@@ -671,10 +671,10 @@ class WryeParser(ScriptParser.Parser):
             outLines = outLines[:lastBlank]
         return outLines
 
-    def __init__(self, parent, installer, subs, bAuto, codebox=False):
+    def __init__(self, wiz_parent, installer, subs, bAuto, codebox=False):
         ScriptParser.Parser.__init__(self)
         if not codebox:
-            self.parent = parent
+            self._wiz_parent = wiz_parent
             self.installer = installer
             self.bArchive = isinstance(installer, bosh.InstallerArchive)
             self._path = bolt.GPath(installer.archive) if installer else None
@@ -829,9 +829,9 @@ class WryeParser(ScriptParser.Parser):
                     self.lines = [x.replace(u'\r\n',u'\n') for x in script.readlines()]
                 return self.Continue()
             except UnicodeError:
-                balt.showWarning(self.parent,_(u'Could not read the wizard file.  Please ensure it is encoded in UTF-8 format.'))
+                balt.showWarning(self._wiz_parent, _(u'Could not read the wizard file.  Please ensure it is encoded in UTF-8 format.'))
                 return
-        balt.showWarning(self.parent, _(u'Could not open wizard file'))
+        balt.showWarning(self._wiz_parent, _(u'Could not open wizard file'))
         return None
 
     def Continue(self):
@@ -841,7 +841,7 @@ class WryeParser(ScriptParser.Parser):
             try:
                 self.RunLine(newline)
             except ScriptParser.ParserError as e:
-                return PageError(self.parent, _(u'Installer Wizard'),
+                return PageError(self._wiz_parent, _(u'Installer Wizard'),
                                  _(u'An error occurred in the wizard script:') + '\n'
                                  + _(u'Line %s:\t%s') % (self.cLine, newline.strip(u'\n')) + '\n'
                                  + _(u'Error:\t%s') % e)
@@ -849,12 +849,12 @@ class WryeParser(ScriptParser.Parser):
                 msg = u'\n'.join([_(u'An unhandled error occurred while '
                     u'parsing the wizard:'), _(u'Line %s:\t%s') % (self.cLine,
                     newline.strip(u'\n')), u'', traceback.format_exc()])
-                return PageError(self.parent, _(u'Installer Wizard'), msg)
+                return PageError(self._wiz_parent, _(u'Installer Wizard'), msg)
             if self.page:
                 return self.page
         self.cLine += 1
         self.cLineStart = self.cLine
-        return PageFinish(self.parent, self.sublist, self.plugin_list,
+        return PageFinish(self._wiz_parent, self.sublist, self.plugin_list,
                           self.plugin_renames, self.bAuto, self.notes,
                           self.iniedits)
 
@@ -1413,7 +1413,7 @@ class WryeParser(ScriptParser.Parser):
             if not path.exists() and bass.dirs['mopy'].join(i).exists():
                 path = bass.dirs['mopy'].join(i)
             image_paths.append(path)
-        self.page = PageSelect(self.parent, bMany, _(u'Installer Wizard'),
+        self.page = PageSelect(self._wiz_parent, bMany, _(u'Installer Wizard'),
                                main_desc, titles.keys(), descs, image_paths,
                                titles.values())
 
@@ -1569,7 +1569,7 @@ class WryeParser(ScriptParser.Parser):
             # Error converting to float, just assume it's OK
             bWBOk = True
         if not bGameOk or not bSEOk or not bGEOk or not bWBOk:
-            self.page = PageVersions(self.parent, bGameOk, gameHave, game,
+            self.page = PageVersions(self._wiz_parent, bGameOk, gameHave, game,
                                      bSEOk, seHave, se, bGEOk, geHave, ge,
                                      bWBOk, wbHave, wbWant)
 
@@ -1609,11 +1609,11 @@ class WryeParser(ScriptParser.Parser):
         return [-1, u'None']
 
     def kwdReturn(self):
-        self.page = PageFinish(self.parent, self.sublist, self.plugin_list,
+        self.page = PageFinish(self._wiz_parent, self.sublist, self.plugin_list,
                                self.plugin_renames, self.bAuto, self.notes,
                                self.iniedits)
 
     def kwdCancel(self, msg=_(u"No reason given")):
-        self.page = PageError(self.parent, _(u'The installer wizard was canceled:'), msg)
+        self.page = PageError(self._wiz_parent, _(u'The installer wizard was canceled:'), msg)
 
 bolt.codebox = WryeParser.codebox

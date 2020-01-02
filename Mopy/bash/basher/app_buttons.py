@@ -26,11 +26,10 @@ import webbrowser
 from . import BashStatusBar, BashFrame
 from .frames import ModChecker, DocBrowser
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order
-from ..balt import ItemLink, Link, Links, SeparatorLink, tooltip, BoolLink, \
-    staticBitmap
+from ..balt import ItemLink, Link, Links, SeparatorLink, BoolLink, staticBitmap
 from ..bolt import GPath
-from ..exception import AbstractError
 from ..env import getJava
+from ..exception import AbstractError
 from ..gui import ClickableImage, EventResult
 
 __all__ = ['Obse_Button', 'LAA_Button', 'AutoQuit_Button', 'Game_Button',
@@ -84,7 +83,7 @@ class StatusBar_Button(ItemLink):
             # TODO(inf) de-wx!
             self.gButton._native_widget.Destroy()
         self.gButton = ClickableImage(window, btn_image,
-                                      tooltip=self.sb_button_tip)
+                                      btn_tooltip=self.sb_button_tip)
         self.gButton.on_clicked.subscribe(self.Execute)
         self.gButton.on_right_clicked.subscribe(onRClick or self.DoPopupMenu)
         return self.gButton

@@ -86,7 +86,7 @@ class ColorDialog(balt.Dialog):
         #--Layout
         VLayout(border=5, default_fill=True, spacing=5, items=[
             HLayout(items=[
-                (self.comboBox, LayoutOptions(fill=True, weight=1)),
+                (self.comboBox, LayoutOptions(expand=True, weight=1)),
                 self.picker]),
             (self.textCtrl, LayoutOptions(weight=1)),
             GridLayout(h_spacing=5, v_spacing=5, default_fill=True,
@@ -297,8 +297,8 @@ class ImportFaceDialog(balt.Dialog):
         self.picture = balt.Picture(self,350,210,scaling=2)
         GridLayout(border=4, stretch_cols=[0, 1], stretch_rows=[0], items=[
             # Row 1
-            ((self.listBox, LayoutOptions(row_span=2, fill=True)),
-             (self.picture, LayoutOptions(col_span=2, fill=True))),
+            ((self.listBox, LayoutOptions(row_span=2, expand=True)),
+             (self.picture, LayoutOptions(col_span=2, expand=True))),
             # Row 2
             (None,  # note the row_span in the prev row
              GridLayout(h_spacing=4, v_spacing=2, stretch_cols=[1], items=[
@@ -379,8 +379,8 @@ class CreateNewProject(balt.Dialog):
         ok_button.on_clicked.subscribe(self.OnClose)
         VLayout(border=5, spacing=5, items=[
             Label(self, _(u'What do you want to name the New Project?')),
-            (self.textName, LayoutOptions(fill=True)),
-            Label(self,_(u'What do you want to add to the New Project?')),
+            (self.textName, LayoutOptions(expand=True)),
+            Label(self, _(u'What do you want to add to the New Project?')),
             self.checkEsp, self.checkEspMasterless, self.checkWizard,
             self.checkWizardImages, self.checkDocs,
             Stretch(),

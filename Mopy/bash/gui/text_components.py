@@ -155,7 +155,7 @@ class TextArea(_ATextInput):
     for a list of the events this component offers."""
     def __init__(self, parent, init_text=None, editable=True,
                  auto_tooltip=True, max_length=None, no_border=False,
-                 wrap=True):
+                 do_wrap=True):
         """Creates a new TextArea instance with the specified properties.
 
         :param parent: The object that this text area belongs to. May be a wx
@@ -170,8 +170,8 @@ class TextArea(_ATextInput):
                            want a limit.
         :param no_border: True if the borders of this text area should be
                           hidden.
-        :param wrap: Whether or not to wrap text inside this text area."""
-        wrap_style = _wx.TE_DONTWRAP if not wrap else 0
+        :param do_wrap: Whether or not to wrap text inside this text area."""
+        wrap_style = _wx.TE_DONTWRAP if not do_wrap else 0
         super(TextArea, self).__init__(parent, init_text=init_text,
                                        editable=editable,
                                        auto_tooltip=auto_tooltip,
