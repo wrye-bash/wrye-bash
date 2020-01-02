@@ -80,8 +80,7 @@ class StatusBar_Button(ItemLink):
         btn_image = image or balt.images[self.imageKey %
                         bass.settings['bash.statusbar.iconSize']].GetBitmap()
         if self.gButton is not None:
-            # TODO(inf) de-wx!
-            self.gButton._native_widget.Destroy()
+            self.gButton.destroy_component()
         self.gButton = ClickableImage(window, btn_image,
                                       btn_tooltip=self.sb_button_tip)
         self.gButton.on_clicked.subscribe(self.Execute)

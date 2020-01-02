@@ -31,9 +31,9 @@ from ..balt import Link, colors, Image, bell, Resources, set_event_hook, \
 from ..bosh import faces
 from ..gui import ApplyButton, BOTTOM, Button, CancelButton, CENTER, \
     CheckBox, GridLayout, HLayout, Label, LayoutOptions, OkButton, RIGHT, \
-    Stretch, TextArea, TextField, VLayout, DropDown
+    Stretch, TextArea, TextField, VLayout, DropDown, DialogWindow
 
-class ColorDialog(balt.Dialog):
+class ColorDialog(DialogWindow):
     """Color configuration dialog"""
     title = _(u'Color Configuration')
 
@@ -47,7 +47,8 @@ class ColorDialog(balt.Dialog):
     }
 
     def __init__(self):
-        super(ColorDialog, self).__init__(parent=Link.Frame, resize=False)
+        super(ColorDialog, self).__init__(parent=Link.Frame,
+                                          icon_bundle=Resources.bashBlue)
         self.changes = dict()
         #--DropDown
         def _display_text(k):
@@ -60,7 +61,7 @@ class ColorDialog(balt.Dialog):
         self.comboBox = DropDown(self, value=combo_text, choices=colored)
         self.comboBox.on_combo_select.subscribe(lambda _sel: self.OnComboBox())
         #--Color Picker
-        self.picker = ColorPicker(self, colors[choiceKey])
+        self.picker = ColorPicker(self._native_widget, colors[choiceKey])
         #--Description
         help_ = colorInfo[choiceKey][1]
         self.textCtrl = TextArea(self, init_text=help_, editable=False)
@@ -95,7 +96,6 @@ class ColorDialog(balt.Dialog):
             ])
         ]).apply_to(self)
         self.comboBox.set_focus()
-        self.SetIcons(Resources.bashBlue)
         self.UpdateUIButtons()
 
     def GetColorKey(self):
@@ -142,8 +142,6 @@ class ColorDialog(balt.Dialog):
         self.picker.set_color(color)
         self.comboBox.set_focus_from_kb()
 
-    def _unbind_combobox(self): self.comboBox.unsubscribe_handler_()
-
     def OnDefault(self):
         color_key = self.GetColorKey()
         newColor = settingDefaults['bash.colors'][color_key]
@@ -175,15 +173,17 @@ class ColorDialog(balt.Dialog):
         self.UpdateUIButtons()
         self.UpdateUIColors()
 
-    def OnOK(self):
-        self._unbind_combobox()
+    def OnOK(self): # will also close the dialog (send EVT_CLOSE probably)
         self.OnApplyAll()
+        self._on_close_evt.unsubscribe(self.on_closing)
+        self.on_closing()
 
     def OnExport(self):
         outDir = bass.dirs['patches']
         outDir.makedirs()
         #--File dialog
-        outPath = balt.askSave(self,_(u'Export color configuration to:'), outDir, _(u'Colors.txt'), u'*.txt')
+        outPath = balt.askSave(self, _(u'Export color configuration to:'),
+                               outDir, _(u'Colors.txt'), u'*.txt')
         if not outPath: return
         try:
             with outPath.open('w') as file:
@@ -194,13 +194,16 @@ class ColorDialog(balt.Dialog):
                         color = colors[key]
                     file.write(key+u': '+color+u'\n')
         except Exception as e:
-            balt.showError(self,_(u'An error occurred writing to ')+outPath.stail+u':\n\n%s'%e)
+            balt.showError(self, _(u'An error occurred writing to ') +
+                           outPath.stail + u':\n\n%s' % e)
 
     def OnImport(self):
         inDir = bass.dirs['patches']
         inDir.makedirs()
         #--File dialog
-        inPath = balt.askOpen(self,_(u'Import color configuration from:'), inDir, _(u'Colors.txt'), u'*.txt', mustExist=True)
+        inPath = balt.askOpen(self, _(u'Import color configuration from:'),
+                              inDir, _(u'Colors.txt'), u'*.txt',
+                              mustExist=True)
         if not inPath: return
         try:
             with inPath.open('r') as file:
@@ -251,12 +254,13 @@ class ColorDialog(balt.Dialog):
         self.changes[color_key] = newColor
         self.UpdateUIButtons()
 
-    def OnCloseWindow(self, event):
-        self._unbind_combobox()
-        super(ColorDialog, self).OnCloseWindow(event)
+    def on_closing(self, destroy=True):
+        self.ok.on_clicked.unsubscribe(self.OnOK)
+        self.comboBox.unsubscribe_handler_()
+        super(ColorDialog, self).on_closing(destroy)
 
 #------------------------------------------------------------------------------
-class ImportFaceDialog(balt.Dialog):
+class ImportFaceDialog(DialogWindow):
     """Dialog for importing faces."""
     def __init__(self, parent, title, fileInfo, faces):
         #--Data
@@ -267,12 +271,13 @@ class ImportFaceDialog(balt.Dialog):
             self.data = faces
         self.list_items = sorted(self.data.keys(),key=string.lower)
         #--GUI
-        super(ImportFaceDialog, self).__init__(parent, title=title)
-        self.SetSizeHints(550,300)
+        super(ImportFaceDialog, self).__init__(parent, title=title,
+                                               sizes_dict=balt.sizes)
+        self.set_min_size(550, 300)
         #--List Box
-        self.listBox = balt.listBox(self, choices=self.list_items,
+        self.listBox = balt.ListBox(self, choices=self.list_items,
                                     onSelect=self.EvtListBox)
-        self.listBox.SetSizeHints(175,150)
+        self.listBox.set_min_size(175, 150)
         #--Name,Race,Gender Checkboxes
         fi_flgs = bosh.faces.PCFaces.pcf_flags(
             bass.settings.get('bash.faceImport.flags', 0x4))
@@ -290,7 +295,7 @@ class ImportFaceDialog(balt.Dialog):
         #--Other
         importButton = Button(self, label=_(u'Import'), default=True)
         importButton.on_clicked.subscribe(self.DoImport)
-        self.picture = balt.Picture(self,350,210,scaling=2)
+        self.picture = balt.Picture(self._native_widget,350,210,scaling=2)
         GridLayout(border=4, stretch_cols=[0, 1], stretch_rows=[0], items=[
             # Row 1
             ((self.listBox, LayoutOptions(row_span=2, expand=True)),
@@ -307,10 +312,9 @@ class ImportFaceDialog(balt.Dialog):
               LayoutOptions(h_align=RIGHT, v_align=BOTTOM)))
         ]).apply_to(self)
 
-    def EvtListBox(self,event):
+    def EvtListBox(self, lb_selection_dex, lb_selection_str):
         """Responds to listbox selection."""
-        itemDex = event.GetSelection()
-        item = self.list_items[itemDex]
+        item = self.list_items[lb_selection_dex]
         face = self.data[item]
         self.nameText.label_text = face.pcName
         self.raceText.label_text = face.getRaceName()
@@ -321,11 +325,11 @@ class ImportFaceDialog(balt.Dialog):
         bitmap = itemImagePath.exists() and Image(
             itemImagePath.s).GetBitmap() or None
         self.picture.SetBitmap(bitmap)
-        self.listBox.SetSelection(itemDex)
+        self.listBox.lb_select_index(lb_selection_dex)
 
     def DoImport(self):
         """Imports selected face into save file."""
-        selections = self.listBox.GetSelections()
+        selections = self.listBox.lb_get_selections()
         if not selections:
             bell()
             return
@@ -342,14 +346,14 @@ class ImportFaceDialog(balt.Dialog):
         #deprint(flags.getTrueAttrs())
         bass.settings['bash.faceImport.flags'] = int(pc_flags)
         bosh.faces.PCFaces.save_setFace(self.fileInfo,self.data[item],pc_flags)
-        balt.showOk(self,_(u'Face imported.'),self.fileInfo.name.s)
-        self.EndModalOK()
+        balt.showOk(self, _(u'Face imported.'), self.fileInfo.name.s)
+        self.accept_modal()
 
 #------------------------------------------------------------------------------
-class CreateNewProject(balt.Dialog):
+class CreateNewProject(DialogWindow):
     title = _(u'Create New Project')
     def __init__(self,parent=None):
-        super(CreateNewProject, self).__init__(parent, resize=False)
+        super(CreateNewProject, self).__init__(parent)
         #--Build a list of existing directories
         #  The text control will use this to change background color when name collisions occur
         self.existingProjects = [x for x in bass.dirs['installers'].list() if bass.dirs['installers'].join(x).isdir()]
@@ -383,9 +387,10 @@ class CreateNewProject(balt.Dialog):
             (HLayout(spacing=5, items=[ok_button, CancelButton(self)]),
              LayoutOptions(h_align=CENTER))
         ]).apply_to(self)
-        self.SetInitialSize()
+        # TODO(inf) de-wx!
+        self._native_widget.SetInitialSize()
         # Dialog Icon Handlers
-        self.SetIcon(installercons.get_image('off.white.dir').GetIcon())
+        self.set_icon(installercons.get_image('off.white.dir').GetIcon())
         self.OnCheckBoxChange()
 
     def OnCheckProjectsColorTextCtrl(self, new_text):
@@ -398,17 +403,17 @@ class CreateNewProject(balt.Dialog):
             self.textName.tooltip = None
 
     def OnCheckBoxChange(self, is_checked=None):
-        """ Change the Dialog Icon to represent what the project status will
+        """ Change the DialogWindow Icon to represent what the project status will
         be when created. """
         if self.checkEsp.is_checked:
             if self.checkWizard.is_checked:
-                self.SetIcon(
+                self.set_icon(
                     installercons.get_image('off.white.dir.wiz').GetIcon())
             else:
-                self.SetIcon(
+                self.set_icon(
                     installercons.get_image('off.white.dir').GetIcon())
         else:
-            self.SetIcon(installercons.get_image('off.grey.dir').GetIcon())
+            self.set_icon(installercons.get_image('off.grey.dir').GetIcon())
 
     def OnClose(self):
         """ Create the New Project and add user specified extras. """
@@ -449,7 +454,8 @@ class CreateNewProject(balt.Dialog):
 
         # Move into the target location
         try:
-            env.shellMove(tempProject, projectDir, parent=self)
+            # TODO(inf) de-wx! Investigate further
+            env.shellMove(tempProject, projectDir, parent=self._native_widget)
             # Move successful
             BashFrame.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         except:

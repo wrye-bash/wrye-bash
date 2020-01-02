@@ -23,7 +23,6 @@
 # =============================================================================
 
 """Specific parser for Wrye Bash."""
-from functools import partial
 import os
 import traceback
 from collections import OrderedDict
@@ -231,18 +230,18 @@ class PageSelect(PageInstaller):
         self.TitleDesc.wrap(parent.GetPageSize()[0] - 10)
         self.textItem = TextArea(self, editable=False, auto_tooltip=False)
         self.bmpItem = balt.Picture(self,0,0,background=None)
-        list_box = partial(balt.listBox, self, choices=listItems,
-                           isHScroll=True, onSelect=self.OnSelect)
+        kwargs = dict(choices=listItems, isHScroll=True,
+                      onSelect=self.OnSelect)
         if bMany:
-            self.listOptions = list_box(kind='checklist')
+            self.listOptions = balt.CheckListBox(self, **kwargs)
             for index, default in enumerate(defaultMap):
-                self.listOptions.Check(index, default)
+                self.listOptions.lb_check_at_index(index, default)
         else:
-            self.listOptions = list_box()
+            self.listOptions = balt.ListBox(self, **kwargs)
             self._enableForward(False)
             for index, default in enumerate(defaultMap):
                 if default:
-                    self.listOptions.SetSelection(index)
+                    self.listOptions.lb_select_index(index)
                     self.Selection(index)
                     break
         VLayout(default_fill=True, spacing=5, items=[
@@ -260,11 +259,9 @@ class PageSelect(PageInstaller):
         set_event_hook(self.bmpItem, Events.MOUSE_MIDDLE_UP,
                        self.OnDoubleClick)
 
-    def OnSelect(self, event):
-        """:type event: wx._core.CommandEvent"""
-        index = event.GetSelection()
-        self.listOptions.SetSelection(index) # event.Skip() won't do
-        self.Selection(index)
+    def OnSelect(self, lb_selection_dex, lb_selection_str):
+        self.listOptions.lb_select_index(lb_selection_dex) # event.Skip() won't do
+        self.Selection(lb_selection_dex)
 
     def OnDoubleClick(self, _event):
         img = self.images[self.index]
@@ -297,10 +294,10 @@ class PageSelect(PageInstaller):
             index = -1
             for item in self.listItems:
                 index += 1
-                if self.listOptions.IsChecked(index):
+                if self.listOptions.lb_is_checked_at_index(index):
                     temp.append(item)
         else:
-            for i in self.listOptions.GetSelections():
+            for i in self.listOptions.lb_get_selections():
                 temp.append(self.listItems[i])
         if self._wiz_parent.parser.choiceIdex < len(self._wiz_parent.parser.choices):
             oldChoices = self._wiz_parent.parser.choices[self._wiz_parent.parser.choiceIdex]
@@ -367,25 +364,24 @@ class PageFinish(PageInstaller):
                                   u'will apply the following settings:'))
         textTitle.wrap(parent.GetPageSize()[0] - 10)
         # Sub-packages
-        self.listSubs = balt.listBox(self, choices=subs, kind='checklist',
-                                     onCheck=self.OnSelectSubs)
+        self.listSubs = balt.CheckListBox(self, choices=subs,
+                                          onCheck=self._on_select_subs)
         for index,key in enumerate(subs):
             key = key.replace(u'&&',u'&')
             if subsList[key]:
-                self.listSubs.Check(index, True)
+                self.listSubs.lb_check_at_index(index, True)
                 self._wiz_parent.ret.select_sub_packages.append(key)
-        self.plugin_selection = balt.listBox(self, choices=displayed_plugins,
-                                             kind='checklist',
-                                             onCheck=self._on_select_plugin)
+        self.plugin_selection = balt.CheckListBox(
+            self, choices=displayed_plugins, onCheck=self._on_select_plugin)
         for index,key in enumerate(plugins):
             if plugin_list[key]:
-                self.plugin_selection.Check(index, True)
+                self.plugin_selection.lb_check_at_index(index, True)
                 self._wiz_parent.ret.select_plugins.append(key)
         self._wiz_parent.ret.rename_plugins = plugin_renames
         # Ini tweaks
-        self.listInis = balt.listBox(self, onSelect=self.OnSelectIni,
+        self.listInis = balt.ListBox(self, onSelect=self._on_select_ini,
                                      choices=[x.s for x in iniedits.keys()])
-        self.listTweaks = balt.listBox(self)
+        self.listTweaks = balt.ListBox(self)
         self._wiz_parent.ret.ini_edits = iniedits
         # Apply/install checkboxes
         self.checkApply = CheckBox(self, _(u'Apply these selections'),
@@ -434,22 +430,18 @@ class PageFinish(PageInstaller):
     def GetNext(self): return None
 
     # Undo selecting/deselection of items for UI consistency
-    def OnSelectSubs(self, event):
-        index = event.GetSelection()
-        self.listSubs.Check(index, not self.listSubs.IsChecked(index))
+    def _on_select_subs(self, lb_selection_dex):
+        self.listSubs.toggle_checked_at_index(lb_selection_dex)
 
-    def _on_select_plugin(self, event):
-        index = event.GetSelection()
-        self.plugin_selection.Check(
-            index, not self.plugin_selection.IsChecked(index))
+    def _on_select_plugin(self, lb_selection_dex):
+        self.plugin_selection.toggle_checked_at_index(lb_selection_dex)
 
-    def OnSelectIni(self, event):
-        index = event.GetSelection()
-        ini_path = bolt.GPath(self.listInis.GetString(index))
+    def _on_select_ini(self, lb_selection_dex, lb_selection_str):
+        ini_path = bolt.GPath(lb_selection_str)
         lines = generateTweakLines(self._wiz_parent.ret.ini_edits[ini_path],
                                    ini_path)
-        self.listTweaks.Set(lines)
-        self.listInis.SetSelection(index)
+        self.listTweaks.lb_set_items(lines)
+        self.listInis.lb_select_index(lb_selection_dex)
 
 class PageVersions(PageInstaller):
     """Page for displaying what versions an installer requires/recommends and

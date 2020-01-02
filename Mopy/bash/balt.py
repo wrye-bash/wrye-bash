@@ -48,7 +48,9 @@ import wx.wizard as wiz
 from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
     BackwardButton, ForwardButton, ReloadButton, web_viewer_available, \
-    WebViewer, wrapped_tooltip
+    WebViewer, wrapped_tooltip, EventHandler, DialogWindow, WindowFrame, \
+    EventResult
+from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
 if not web_viewer_available():
@@ -317,27 +319,6 @@ def ensureDisplayed(frame,x=100,y=100):
         topLeft = wx.Display(0).GetGeometry().GetTopLeft()
         frame.MoveXY(topLeft.x+x,topLeft.y+y)
 
-def setCheckListItems(checkListBox, names, values):
-    """Convenience method for setting a bunch of wxCheckListBox items. The
-    main advantage of this is that it doesn't clear the list unless it needs
-    to. Which is good if you want to preserve the scroll position of the list.
-    """
-    if not names:
-        checkListBox.Clear()
-    else:
-        for index, (name, value) in enumerate(zip(names, values)):
-            if index >= checkListBox.GetCount():
-                checkListBox.Append(name)
-            else:
-                if index == -1:
-                    deprint(
-                        u"index = -1, name = %s, value = %s" % (name, value))
-                    continue
-                checkListBox.SetString(index, name)
-            checkListBox.Check(index, value)
-        for index in range(checkListBox.GetCount(), len(names), -1):
-            checkListBox.Delete(index - 1)
-
 # Elements --------------------------------------------------------------------
 def bell(arg=None):
     """"Rings the system bell and returns the input argument (useful for return bell(value))."""
@@ -363,22 +344,177 @@ def spinCtrl(parent, value=u'', pos=defPos, size=defSize,
     if spin_tip: gSpinCtrl.SetToolTip(wrapped_tooltip(spin_tip))
     return gSpinCtrl
 
-def listBox(parent, choices=None, **kwargs):
-    kind = kwargs.pop('kind', 'list')
-    # cater for existing CheckListBox and ListBox style variations
-    style = 0
-    if kwargs.pop('isSingle', kind == 'list'): style |= wx.LB_SINGLE
-    if kwargs.pop('isSort', False): style |= wx.LB_SORT
-    if kwargs.pop('isHScroll', False): style |= wx.LB_HSCROLL
-    if kwargs.pop('isExtended', False): style |= wx.LB_EXTENDED
-    cls = wx.ListBox if kind=='list' else wx.CheckListBox
-    gListBox = cls(parent, choices=choices, style=style) if choices else cls(
-        parent, style=style)
-    callback = kwargs.pop('onSelect', None)
-    if callback: gListBox.Bind(wx.EVT_LISTBOX, callback)
-    callback = kwargs.pop('onCheck', None)
-    if callback: gListBox.Bind(wx.EVT_CHECKLISTBOX, callback)
-    return gListBox
+class ListBox(_AComponent):
+    """Wrap a ListBox control.
+
+    Events:
+      - on_list_box(index: int, item_text: unicode): Posted when user selects an
+      item from list. The default arg processor extracts the index of the event
+      and the list item label
+      - Mouse events. Default arg processor extracts the position of the event
+        - on_mouse_right_up(position: tuple[int]): right mouse button released.
+        - on_mouse_right_down(position: tuple[int]): right mouse button click.
+      - on_mouse_motion(WIP!): mouse moved
+     """
+    # PY3: typing!
+    # type _native_widget: wx.ListBox
+    _wx_class = wx.ListBox
+
+    def __init__(self, parent, choices=None, isSingle=True, isSort=False,
+                 isHScroll=False, isExtended=False, onSelect=None):
+        style = 0
+        if isSingle: style |= wx.LB_SINGLE
+        if isSort: style |= wx.LB_SORT
+        if isHScroll: style |= wx.LB_HSCROLL
+        if isExtended: style |= wx.LB_EXTENDED
+        kwargs_ = {u'style': style}
+        if choices: kwargs_[u'choices'] = choices
+        super(ListBox, self).__init__(self._wx_class, parent, **kwargs_)
+        if onSelect:
+            self.on_list_box = EventHandler(
+                self._native_widget, wx.EVT_LISTBOX,
+                lambda event: [event.GetSelection(), event.GetString()])
+            self.on_list_box.subscribe(onSelect)
+        self.on_mouse_right_up = EventHandler(
+            self._native_widget, wx.EVT_RIGHT_UP,
+            lambda event: [self._native_widget.HitTest(event.GetPosition())])
+        self.on_mouse_right_down = EventHandler(
+            self._native_widget, wx.EVT_RIGHT_DOWN,
+            lambda event: [event.GetPosition()])
+        self.on_mouse_motion = EventHandler(
+            self._native_widget, wx.EVT_MOTION, lambda event: [
+                event.GetPosition(), event.Dragging(), event.Moving(),
+                event.Moving() and self._native_widget.HitTest(
+                    event.GetPosition())])
+
+    def lb_select_index(self, lb_selection_dex):
+        self._native_widget.SetSelection(lb_selection_dex)
+
+    def lb_insert(self, str_item, lb_selection_dex):
+        self._native_widget.Insert(str_item, lb_selection_dex)
+
+    def lb_insert_items(self, items, pos):
+        self._native_widget.InsertItems(items, pos)
+
+    def lb_set_items(self, items):
+        """Replace all the items in the control"""
+        self._native_widget.Set(items)
+
+    def lb_set_label_at_index(self, lb_selection_dex, str_item):
+        """Set the label for the given item"""
+        self._native_widget.SetString(lb_selection_dex, str_item)
+
+    def lb_delete_at_index(self, lb_selection_dex):
+        """Delete the item at specified index."""
+        self._native_widget.Delete(lb_selection_dex)
+
+    def lb_scroll_lines(self, scroll): self._native_widget.ScrollLines(scroll)
+
+    def lb_append(self, str_item): self._native_widget.Append(str_item)
+
+    def lb_clear(self): self._native_widget.Clear()
+
+    def lb_bold_font_at_index(self, lb_selection_dex):
+        get_font = self._native_widget.GetFont()
+        self._native_widget.SetItemFont(lb_selection_dex,
+                                        Font.Style(get_font, bold=True))
+
+    # Getters - we should encapsulate index access
+    def lb_get_next_item(self, item, geometry=wx.LIST_NEXT_ALL,
+                         state=wx.LIST_STATE_SELECTED):
+        return self._native_widget.GetNextItem(item, geometry, state)
+
+    def lb_get_str_item_at_index(self, lb_selection_dex):
+        return self._native_widget.GetString(lb_selection_dex)
+
+    def lb_get_str_items(self):
+        return self._native_widget.GetStrings()
+
+    def lb_get_selections(self): return self._native_widget.GetSelections()
+
+
+    def lb_index_for_str_item(self, str_item):
+        return self._native_widget.FindString(str_item)
+
+    def lb_get_vertical_scroll_pos(self):
+        return self._native_widget.GetScrollPos(wx.VERTICAL)
+
+    def lb_get_items_count(self):
+        return self._native_widget.GetCount()
+
+class CheckListBox(ListBox):
+    """Wrap a CheckListBox control.
+
+    Events:
+      - on_check_list_box(index: int): Posted when user checks an item from
+      list. The default arg processor extracts the index of the event.
+      - on_context(evt_object: wx.Event): Posted when user checks an item
+      from list. The default arg processor extracts the index of the event.
+      - Mouse events. Default arg processor extracts the position of the event
+        - on_mouse_left_dclick(position: tuple[int]): left mouse doubleclick.
+      - on_mouse_leaving(): mouse is leaving the window
+      - on_key_pressed(WIP!): key pressed
+      - on_key_up(WIP!): key released"""
+    # PY3: typing!
+    # type _native_widget: wx.CheckListBox
+    _wx_class = wx.CheckListBox
+
+    def __init__(self, parent, choices=None, isSingle=False, isSort=False,
+                 isHScroll=False, isExtended=False, onSelect=None,
+                 onCheck=None): # note isSingle=False by default
+        super(CheckListBox, self).__init__(parent, choices, isSingle, isSort,
+                 isHScroll, isExtended, onSelect)
+        if onCheck:
+            self.on_check_list_box = EventHandler(self._native_widget,
+                wx.EVT_CHECKLISTBOX, lambda event: [event.GetSelection()])
+            self.on_check_list_box.subscribe(onCheck)
+        self.on_mouse_left_dclick = EventHandler(
+            self._native_widget, wx.EVT_LEFT_DCLICK,
+            lambda event: [self._native_widget.HitTest(event.GetPosition())])
+        self.on_mouse_leaving = EventHandler(
+            self._native_widget, wx.EVT_LEAVE_WINDOW)
+        self.on_key_pressed = EventHandler(
+            self._native_widget, wx.EVT_CHAR, lambda event: [
+                event.GetKeyCode(), event.CmdDown(), event.ShiftDown()])
+        self.on_key_up = EventHandler(
+            self._native_widget, wx.EVT_KEY_UP, lambda event: [
+                event.GetKeyCode(), event.CmdDown(), event.ShiftDown(), self])
+        self.on_context = EventHandler(
+            self._native_widget, wx.EVT_CONTEXT_MENU, lambda event: [self])
+
+    def lb_check_at_index(self, lb_selection_dex, do_check):
+        self._native_widget.Check(lb_selection_dex, do_check)
+
+    def toggle_checked_at_index(self, lb_selection_dex):
+        do_check = not self._native_widget.IsChecked(lb_selection_dex)
+        self._native_widget.Check(lb_selection_dex, do_check)
+
+    def lb_check_indexes(self, indexes):
+        self._native_widget.SetChecked(indexes)
+
+    def lb_is_checked_at_index(self, lb_selection_dex):
+        return self._native_widget.IsChecked(lb_selection_dex)
+
+    def setCheckListItems(self, names, values):
+        """Convenience method for setting a bunch of wxCheckListBox items. The
+        main advantage of this is that it doesn't clear the list unless it
+        needs to. Which is good if you want to preserve the scroll position
+        of the list. """
+        if not names:
+            self.lb_clear()
+        else:
+            for index, (name, value) in enumerate(zip(names, values)):
+                if index >= self.lb_get_items_count():
+                    self.lb_append(name)
+                else:
+                    if index == -1:
+                        deprint(u"index = -1, name = %s, value = %s" % (
+                            name, value))
+                        continue
+                    self.lb_set_label_at_index(index, name)
+                self.lb_check_at_index(index, value)
+            for index in range(self.lb_get_items_count(), len(names), -1):
+                self.lb_delete_at_index(index - 1)
 
 def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
     """Tailored to current usages - IAW: do not use."""
@@ -422,7 +558,7 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
     to true. continueKey must end in '.continue' - should be enforced
     """
     #--ContinueKey set?
-    if _settings.get(continueKey): return wx.ID_OK
+    if _settings.get(continueKey): return True
     #--Generate/show dialog
     checkBoxTxt = _(u"Don't show this in the future.")
     if canVista:
@@ -436,12 +572,12 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
                              heading=u'',
                              )
         check = result[1]
-        result = result[0]
+        result = result[0] in (wx.ID_OK, wx.ID_YES)
     else:
         result, check = _continueDialog(parent, message, title, checkBoxTxt)
     if check:
         _settings[continueKey] = 1
-    return result in (wx.ID_OK,wx.ID_YES)
+    return result
 
 def askContinueShortTerm(parent, message, title=_(u'Warning')):
     """Shows a modal continue query  Returns True to continue.
@@ -459,17 +595,17 @@ def askContinueShortTerm(parent, message, title=_(u'Warning')):
                              heading=u'',
                              )
         check = result[1]
-        result = result[0]
+        result = result[0] in (wx.ID_OK, wx.ID_YES)
     else:
         result, check = _continueDialog(parent, message, title, checkBoxTxt)
-    if result in (wx.ID_OK, wx.ID_YES):
+    if result:
         if check:
             return 2
         return True
     return False
 
 def _continueDialog(parent, message, title, checkBoxText):
-    with Dialog(parent, title, size=(350, -1)) as dialog:
+    with DialogWindow(parent, title, sizes_dict=sizes, size=(350, -1)) as dialog:
         gCheckBox = CheckBox(dialog, checkBoxText)
         #--Layout
         VLayout(border=6, spacing=6, default_fill=True, items=[
@@ -481,15 +617,18 @@ def _continueDialog(parent, message, title, checkBoxText):
             ok_and_cancel_group(dialog)
         ]).apply_to(dialog)
         #--Get continue key setting and return
-        result = dialog.ShowModal()
+        result = dialog.show_modal()
         check = gCheckBox.is_checked
         return result, check
 
 #------------------------------------------------------------------------------
+# TODO(inf) de-wx! move all the ask* methods to gui? Then we can easily
+#  resolve wrapped parents
 def askOpen(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=wx.FD_OPEN,mustExist=False):
     """Show as file dialog and return selected path(s)."""
     defaultDir,defaultFile = [GPath(x).s for x in (defaultDir,defaultFile)]
-    dialog = wx.FileDialog(parent,title,defaultDir,defaultFile,wildcard, style)
+    dialog = wx.FileDialog(_AComponent._resolve(parent), title, defaultDir,
+                           defaultFile, wildcard, style)
     if dialog.ShowModal() != wx.ID_OK:
         result = False
     elif style & wx.FD_MULTIPLE:
@@ -517,7 +656,8 @@ def askSave(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=w
 #------------------------------------------------------------------------------
 def askText(parent, message, title=u'', default=u'', strip=True):
     """Shows a text entry dialog and returns result or None if canceled."""
-    with wx.TextEntryDialog(parent, message, title, default) as dialog:
+    with wx.TextEntryDialog(_AComponent._resolve(parent), message, title,
+                            default) as dialog:
         if dialog.ShowModal() != wx.ID_OK: return None
         txt = dialog.GetValue()
         return txt.strip() if strip else txt
@@ -525,8 +665,8 @@ def askText(parent, message, title=u'', default=u'', strip=True):
 #------------------------------------------------------------------------------
 def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
     """Shows a text entry dialog and returns result or None if canceled."""
-    with wx.NumberEntryDialog(parent, message, prompt, title, value, min,
-                              max) as dialog:
+    with wx.NumberEntryDialog(_AComponent._resolve(parent), message, prompt,
+                              title, value, min, max) as dialog:
         if dialog.ShowModal() != wx.ID_OK: return None
         return dialog.GetValue()
 
@@ -571,6 +711,7 @@ def vistaDialog(parent, message, title, buttons=[], checkBoxTxt=None,
 def askStyled(parent,message,title,style,**kwdargs):
     """Shows a modal MessageDialog.
     Use ErrorMessage, WarningMessage or InfoMessage."""
+    parent = _AComponent._resolve(parent)
     if canVista:
         buttons = []
         icon = None
@@ -713,47 +854,35 @@ class HtmlCtrl(object):
 
 class _Log(object):
     _settings_key = 'balt.LogMessage'
-    def __init__(self, parent, logText, title=u'', asDialog=True,
-                 fixedFont=False, log_icons=None):
+    def __init__(self, parent, title=u'', asDialog=True, log_icons=None):
         self.asDialog = asDialog
-        self.window = self._dialog_or_frame(log_icons, parent, title)
-
-    def _dialog_or_frame(self, log_icons, parent, title):
         #--Sizing
-        pos = _settings.get(self._settings_key + '.pos', defPos)
-        size = _settings.get(self._settings_key + '.size', (400, 400))
-        #--Dialog or Frame
+        key__pos_ = self._settings_key + u'.pos'
+        key__size_ = self._settings_key + u'.size'
+        #--DialogWindow or WindowFrame
         if self.asDialog:
-            window = Dialog(parent, title, pos=pos, size=size)
+            window = DialogWindow(parent, title, sizes_dict=_settings,
+                                  icon_bundle=log_icons, sizesKey=key__size_,
+                                  posKey=key__pos_)
         else:
-            window = wx.Frame(parent, defId, title, pos=pos, size=size, style=(
-                wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU |
-                wx.CLOSE_BOX | wx.CLIP_CHILDREN))
-        if log_icons: window.SetIcons(log_icons)
-        window.SetSizeHints(200, 200)
-        window.Bind(wx.EVT_CLOSE, self._showLogClose) # Destroy the window!
-        return window
-
-    def _showLogClose(self, evt=None):
-        """Handle log message closing."""
-        window = evt.GetEventObject()
-        if not window.IsIconized() and not window.IsMaximized():
-            _settings[self._settings_key + '.pos'] = tuple(window.GetPosition())
-            _settings[self._settings_key + '.size'] = tuple(window.GetSize())
-        window.Destroy()
+            window = WindowFrame(parent, title, log_icons or Resources.bashBlue,
+                                 _base_key=self._settings_key, sizes_dict=_settings, style=(
+                        wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU |
+                        wx.CLOSE_BOX | wx.CLIP_CHILDREN))
+        window.set_min_size(200, 200)
+        self.window = window
 
     def ShowLog(self):
         #--Show
-        if self.asDialog: self.window.ShowModal()
-        else: self.window.Show()
+        if self.asDialog: self.window.show_modal()
+        else: self.window.show_frame()
 
 class Log(_Log):
     def __init__(self, parent, logText, title=u'', asDialog=True,
                  fixedFont=False, log_icons=None):
         """Display text in a log window"""
-        super(Log, self).__init__(parent, logText, title, asDialog, fixedFont,
-                                  log_icons)
-        self.window.SetBackgroundColour(wx.NullColour) #--Bug workaround to ensure that default colour is being used.
+        super(Log, self).__init__(parent, title, asDialog, log_icons)
+        self.window.background_color = wx.NullColour  #--Bug workaround to ensure that default colour is being used.
         #--Text
         txtCtrl = TextArea(self.window, init_text=logText, auto_tooltip=False)
                           # special=True) SUNKEN_BORDER and TE_RICH2
@@ -767,7 +896,7 @@ class Log(_Log):
             # txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
         #--Layout
         ok_button = OkButton(self.window, default=True)
-        ok_button.on_clicked.subscribe(self.window.Close)
+        ok_button.on_clicked.subscribe(self.window.close_win)
         VLayout(border=2, items=[
             (txtCtrl, LayoutOptions(expand=True, weight=1, border=2)),
             (ok_button, LayoutOptions(h_align=RIGHT, border=2))
@@ -778,7 +907,7 @@ class Log(_Log):
 class WryeLog(_Log):
     _settings_key = 'balt.WryeLog'
     def __init__(self, parent, logText, title=u'', asDialog=True,
-                 fixedFont=False, log_icons=None):
+                 log_icons=None):
         """Convert logText from wtxt to html and display. Optionally,
         logText can be path to an html file."""
         if isinstance(logText, bolt.Path):
@@ -787,16 +916,15 @@ class WryeLog(_Log):
             logPath = _settings.get('balt.WryeLog.temp',
                 bolt.Path.getcwd().join(u'WryeLogTemp.html'))
             convert_wtext_to_html(logPath, logText)
-        super(WryeLog, self).__init__(parent, logText, title, asDialog,
-                                      fixedFont, log_icons)
+        super(WryeLog, self).__init__(parent, title, asDialog, log_icons)
         #--Text
-        self._html_ctrl = HtmlCtrl(self.window)
+        self._html_ctrl = HtmlCtrl(_AComponent._resolve(self.window))
         self._html_ctrl.try_load_html(file_path=logPath)
         #--Buttons
         gOkButton = OkButton(self.window, default=True)
-        gOkButton.on_clicked.subscribe(self.window.Close)
+        gOkButton.on_clicked.subscribe(self.window.close_win)
         if not asDialog:
-            self.window.SetBackgroundColour(gOkButton.background_color)
+            self.window.background_color = gOkButton.background_color
         #--Layout
         VLayout(border=2, default_fill=True, items=[
             (self._html_ctrl.web_viewer, LayoutOptions(weight=1)),
@@ -865,37 +993,7 @@ class ListEditorData(object):
         pass
 
 #------------------------------------------------------------------------------
-class Dialog(wx.Dialog):
-    title = u'OVERRIDE'
-
-    def __init__(self, parent=None, title=None, size=defSize, pos=defPos,
-                 style=0, resize=True, caption=False):
-        ##: drop parent/resize parameters(parent=Link.Frame (test),resize=True)
-        self.sizesKey = self.__class__.__name__
-        self.title = title or self.__class__.title
-        style |= wx.DEFAULT_DIALOG_STYLE
-        self.resizable = resize
-        if resize: style |= wx.RESIZE_BORDER
-        if caption: style |= wx.CAPTION
-        super(Dialog, self).__init__(parent, title=self.title, size=size,
-                                     pos=pos, style=style)
-        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow) # used in ImportFaceDialog and ListEditor
-
-    def OnCloseWindow(self, event):
-        """Handle window close event.
-        Remember window size, position, etc."""
-        if self.resizable: sizes[self.sizesKey] = tuple(self.GetSize())
-        event.Skip()
-
-    @classmethod
-    def Display(cls, *args, **kwargs):
-        """Instantiate a dialog, display it and return the ShowModal result."""
-        with cls(*args, **kwargs) as dialog:
-            return dialog.ShowModal()
-
-    def EndModalOK(self): self.EndModal(wx.ID_OK)
-
-class ListEditor(Dialog):
+class ListEditor(DialogWindow):
     """Dialog for editing lists."""
 
     def __init__(self, parent, title, data, orderedDict=None):
@@ -912,12 +1010,12 @@ class ListEditor(Dialog):
         self._listEditorData = data #--Should be subclass of ListEditorData
         self._list_items = data.getItemList()
         #--GUI
-        super(ListEditor, self).__init__(parent, title)
-        # overrides Dialog.sizesKey
+        super(ListEditor, self).__init__(parent, title, sizes_dict=sizes)
+        # overrides DialogWindow.sizesKey
         self.sizesKey = self._listEditorData.__class__.__name__
         #--List Box
-        self.listBox = listBox(self, choices=self._list_items)
-        self.listBox.SetSizeHints(125,150)
+        self.listBox = ListBox(self, choices=self._list_items)
+        self.listBox.set_min_size(125, 150)
         #--Infobox
         self.gInfoBox = None # type: TextArea
         if data.showInfo:
@@ -956,12 +1054,11 @@ class ListEditor(Dialog):
         #--Done
         if self.sizesKey in sizes:
             layout.apply_to(self)
-            self.SetSize(sizes[self.sizesKey])
+            self.component_position = sizes[self.sizesKey]
         else:
             layout.apply_to(self, fit=True)
 
-    def GetSelected(self):
-        return self.listBox.GetNextItem(-1,wx.LIST_NEXT_ALL,wx.LIST_STATE_SELECTED)
+    def GetSelected(self): return self.listBox.lb_get_next_item(-1)
 
     #--List Commands
     def DoAdd(self):
@@ -970,20 +1067,20 @@ class ListEditor(Dialog):
         if newItem and newItem not in self._list_items:
             self._list_items = self._listEditorData.getItemList()
             index = self._list_items.index(newItem)
-            self.listBox.InsertItems([newItem],index)
+            self.listBox.lb_insert_items([newItem], index)
 
     def SetItemsTo(self, items):
         if self._listEditorData.setTo(items):
             self._list_items = self._listEditorData.getItemList()
-            self.listBox.Set(self._list_items)
+            self.listBox.lb_set_items(self._list_items)
 
     def DoRename(self):
         """Renames selected item."""
-        selections = self.listBox.GetSelections()
+        selections = self.listBox.lb_get_selections()
         if not selections: return bell()
         #--Rename it
         itemDex = selections[0]
-        curName = self.listBox.GetString(itemDex)
+        curName = self.listBox.lb_get_str_item_at_index(itemDex)
         #--Dialog
         newName = askText(self, _(u'Rename to:'), _(u'Rename'), curName)
         if not newName or newName == curName:
@@ -992,11 +1089,11 @@ class ListEditor(Dialog):
             showError(self,_(u'Name must be unique.'))
         elif self._listEditorData.rename(curName,newName):
             self._list_items[itemDex] = newName
-            self.listBox.SetString(itemDex,newName)
+            self.listBox.lb_set_label_at_index(itemDex, newName)
 
     def DoRemove(self):
         """Removes selected item."""
-        selections = self.listBox.GetSelections()
+        selections = self.listBox.lb_get_selections()
         if not selections: return bell()
         #--Data
         itemDex = selections[0]
@@ -1004,7 +1101,7 @@ class ListEditor(Dialog):
         if not self._listEditorData.remove(item): return
         #--GUI
         del self._list_items[itemDex]
-        self.listBox.Delete(itemDex)
+        self.listBox.lb_delete_at_index(itemDex)
         if self.gInfoBox:
             self.gInfoBox.modified = False
             self.gInfoBox.text_content = u''
@@ -1012,7 +1109,7 @@ class ListEditor(Dialog):
     #--Show Info
     def OnInfoEdit(self, new_text):
         """Info box text has been edited."""
-        selections = self.listBox.GetSelections()
+        selections = self.listBox.lb_get_selections()
         if not selections: return bell()
         item = self._list_items[selections[0]]
         if self.gInfoBox.modified:
@@ -1022,13 +1119,13 @@ class ListEditor(Dialog):
     def DoSave(self):
         """Handle save button."""
         self._listEditorData.save()
-        sizes[self.sizesKey] = tuple(self.GetSize())
-        self.EndModal(wx.ID_OK)
+        sizes[self.sizesKey] = self.component_size
+        self.accept_modal()
 
     def DoCancel(self):
         """Handle cancel button."""
-        sizes[self.sizesKey] = tuple(self.GetSize())
-        self.EndModal(wx.ID_CANCEL)
+        sizes[self.sizesKey] = self.component_size
+        self.cancel_modal()
 
 #------------------------------------------------------------------------------
 NoteBookDraggedEvent, EVT_NOTEBOOK_DRAGGED = wx.lib.newevent.NewEvent()
@@ -1117,6 +1214,7 @@ class TabDragMixin(object):
         event.Skip()
 
 #------------------------------------------------------------------------------
+# TODO(inf) de-wx! Image API!
 class Picture(wx.Window):
     """Picture panel."""
     def __init__(self, parent, width, height, scaling=1,
@@ -1197,6 +1295,8 @@ class Progress(bolt.Progress):
                  abort=False, elapsed=True, __style=_style):
         if abort: __style |= wx.PD_CAN_ABORT
         if elapsed: __style |= wx.PD_ELAPSED_TIME
+        # TODO(inf) de-wx? Or maybe stop using None as parent for Progress?
+        parent = _AComponent._resolve(parent) if parent else None
         self.dialog = wx.ProgressDialog(title, message, 100, parent, __style)
         bolt.Progress.__init__(self)
         self.message = message
@@ -2135,7 +2235,7 @@ class UIList(wx.Panel):
         msg = _(u'Delete these items to the recycling bin ?') if recycle else \
             _(u'Delete these items?  This operation cannot be undone.')
         with ListBoxes(self, dialogTitle, msg, [message]) as dialog:
-            if not dialog.askOkModal(): return []
+            if not dialog.show_modal(): return []
             return dialog.getChecked(message[0], items)
 
     def open_data_store(self):
@@ -2252,7 +2352,8 @@ class Link(object):
         In modlist/installers it's a list<Path> while in subpackage it's the
         index of the right-clicked item. In main (column header) menus it's
         the column clicked on or the first column. Set in Links.PopupMenu().
-        :type window: UIList | wx.Panel | gui.buttons.Button | DnDStatusBar
+        :type window: UIList | wx.Panel | gui.buttons.Button | DnDStatusBar |
+            wx.CheckListBox
         :type selection: list[Path | unicode | int] | int | None
         """
         self.window = window
@@ -2648,125 +2749,119 @@ class _CheckList_SelectAll(ItemLink):
         self._text = _(u'Select All') if select else _(u'Select None')
 
     def Execute(self):
+        # TODO(inf) de-wx! window currently leaks the wx object - while we're
+        #  at it, add a check_all method to the wrapper, make this a one-liner
         for i in xrange(self.window.GetCount()):
-            self.window.Check(i,self.select)
+            self.window.Check(i, self.select)
 
-class ListBoxes(Dialog):
-    """A window with 1 or more lists."""
-
-    def __init__(self, parent, title, message, lists, liststyle='check',
-                 style=0, bOk=_(u'OK'), bCancel=_(u'Cancel'), canCancel=True):
-        """lists is in this format:
-        if liststyle == 'check' or 'list'
-        [title,tooltip,item1,item2,itemn],
-        [title,tooltip,....],
-        elif liststyle == 'tree'
-        [title,tooltip,{item1:[subitem1,subitemn],item2:[subitem1,subitemn],itemn:[subitem1,subitemn]}],
-        [title,tooltip,....],
-        """
-        super(ListBoxes, self).__init__(parent, title=title, style=style,
-                                        resize=True)
-        self.itemMenu = Links()
-        self.itemMenu.append(_CheckList_SelectAll())
-        self.itemMenu.append(_CheckList_SelectAll(False))
-        self.SetIcons(Resources.bashBlue)
-        minWidth = self.GetTextExtent(title)[0] * 1.2 + 64
-        self.text = Label(self, message)
-        self.text.wrap(minWidth) # otherwise self.text expands to max width
-        layout = VLayout(border=5, spacing=5, items=[self.text])
-        self._ids = {}
-        # Size ourselves slightly larger than the wrapped text, otherwise some
-        # of it may be cut off and the buttons may become too small to read
-        self.SetSize(wxSize(minWidth + 64, -1))
-        self.SetMinSize(wxSize(minWidth + 64, 256))
-        for item_group in lists:
-            title = item_group[0] # also serves as key in self._ids dict
-            item_tip = item_group[1]
-            strings = [u'%s' % x for x in item_group[2:]] # works for Path & strings
-            if len(strings) == 0: continue
-            if liststyle == 'check':
-                checksCtrl = listBox(self, choices=strings, isSingle=True,
-                                     isHScroll=True, kind='checklist')
-                checksCtrl.Bind(wx.EVT_KEY_UP,self.OnKeyUp)
-                checksCtrl.Bind(wx.EVT_CONTEXT_MENU,self.OnContext)
-                # check all - for range and set see wx._controls.CheckListBox
-                checksCtrl.SetChecked(set(range(len(strings))))
-            elif liststyle == 'list':
-                checksCtrl = listBox(self, choices=strings, isHScroll=True)
-            else:
-                checksCtrl = wx.TreeCtrl(self, size=(150, 200),
-                                         style=wx.TR_DEFAULT_STYLE |
-                                               wx.TR_FULL_ROW_HIGHLIGHT |
-                                               wx.TR_HIDE_ROOT)
-                root = checksCtrl.AddRoot(title)
-                checksCtrl.Bind(wx.EVT_MOTION, self.OnMotion)
-                for item, subitems in item_group[2].iteritems():
-                    child = checksCtrl.AppendItem(root,item.s)
-                    for subitem in subitems:
-                        checksCtrl.AppendItem(child,subitem.s)
-            self._ids[title] = checksCtrl.GetId()
-            checksCtrl.SetToolTip(wrapped_tooltip(item_tip))
-            layout.add((HBoxedLayout(self, default_fill=True,
-                                             title=title, default_weight=1,
-                                             items=[checksCtrl]),
-                        LayoutOptions(expand=True, weight=1)))
-        layout.add((HLayout(spacing=5, items=[
-                OkButton(self, label=bOk, default=True),
-                (CancelButton(self, label=bCancel) if canCancel else None)]
-                            ), LayoutOptions(h_align=RIGHT)))
-        layout.apply_to(self)
-        set_event_hook(self, Events.RESIZE, self.OnSize)
+# TODO(inf) Needs renaming, also need to make a virtual version eventually...
+class TreeCtrl(_AComponent):
+    def __init__(self, parent, title, items_dict):
+        super(TreeCtrl, self).__init__(wx.TreeCtrl, parent, size=(150, 200),
+            style=wx.TR_DEFAULT_STYLE | wx.TR_FULL_ROW_HIGHLIGHT |
+                  wx.TR_HIDE_ROOT)
+        root = self._native_widget.AddRoot(title)
+        self._native_widget.Bind(wx.EVT_MOTION, self.OnMotion)
+        for item, subitems in items_dict.iteritems():
+            child = self._native_widget.AppendItem(root, item.s)
+            for subitem in subitems:
+                self._native_widget.AppendItem(child, subitem.s)
 
     def OnMotion(self, event): return
 
-    def OnSize(self, event):
-        # Account for the window being larger than the wrapped text
-        self.text.wrap(self.GetSize().width - 64)
-        event.Skip()
+class ListBoxes(DialogWindow):
+    """A window with 1 or more lists."""
 
-    def OnKeyUp(self,event):
+    def __init__(self, parent, title, message, lists, liststyle=u'check',
+                 style=0, bOk=_(u'OK'), bCancel=_(u'Cancel'), canCancel=True):
+        """lists is in this format:
+        if liststyle == u'check' or u'list'
+        [title,tooltip,item1,item2,itemn],
+        [title,tooltip,....],
+        elif liststyle == u'tree'
+        [title,tooltip,{item1:[subitem1,subitemn],item2:[subitem1,subitemn],itemn:[subitem1,subitemn]}],
+        [title,tooltip,....],
+        """
+        super(ListBoxes, self).__init__(parent, title=title,
+                                        icon_bundle=Resources.bashBlue,
+                                        sizes_dict=sizes, style=style)
+        self.itemMenu = Links()
+        self.itemMenu.append(_CheckList_SelectAll())
+        self.itemMenu.append(_CheckList_SelectAll(False))
+        minWidth = self._native_widget.GetTextExtent(title)[0] * 1.2 + 64
+        self.text = Label(self, message)
+        self.text.wrap(minWidth) # otherwise self.text expands to max width
+        layout = VLayout(border=5, spacing=5, items=[self.text])
+        self._ctrls = {}
+        # Size ourselves slightly larger than the wrapped text, otherwise some
+        # of it may be cut off and the buttons may become too small to read
+        self._native_widget.SetSize(wxSize(minWidth + 64, -1))
+        self._native_widget.SetMinSize(wxSize(minWidth + 64, 256))
+        for item_group in lists:
+            title = item_group[0] # also serves as key in self._ctrls dict
+            item_tip = item_group[1]
+            strings = [u'%s' % x for x in item_group[2:]] # works for Path & strings
+            if len(strings) == 0: continue
+            if liststyle == u'check':
+                checksCtrl = CheckListBox(self, choices=strings, isSingle=True,
+                                          isHScroll=True)
+                checksCtrl.on_key_up.subscribe(self._on_key_up)
+                checksCtrl.on_context.subscribe(self._on_context)
+                # check all - for range and set see wx._controls.CheckListBox
+                checksCtrl.lb_check_indexes(set(range(len(strings))))
+            elif liststyle == u'list':
+                checksCtrl = ListBox(self, choices=strings, isHScroll=True)
+            else: # u'tree'
+                checksCtrl = TreeCtrl(self, title, item_group[2])
+            self._ctrls[title] = checksCtrl
+            checksCtrl.tooltip = item_tip
+            layout.add((HBoxedLayout(self, default_fill=True, title=title,
+                                     default_weight=1, items=[checksCtrl]),
+                        LayoutOptions(expand=True, weight=1)))
+        layout.add((HLayout(spacing=5, items=[
+            OkButton(self, label=bOk, default=True),
+            (CancelButton(self, label=bCancel) if canCancel else None)]
+                            ), LayoutOptions(h_align=RIGHT)))
+        layout.apply_to(self)
+        self.on_size_changed.subscribe(self.save_size)
+
+    def save_size(self):
+        # Account for the window being larger than the wrapped text
+        self.text.wrap(self.component_size[0] - 64)
+
+    @staticmethod
+    def _on_key_up(key_code, is_cmd_down, is_shift_down, lb_instance):
         """Char events"""
         ##Ctrl-A - check all
-        obj = event.GetEventObject()
-        if event.CmdDown() and event.GetKeyCode() == ord('A'):
-            check = not event.ShiftDown()
-            for i in xrange(len(obj.GetStrings())):
-                    obj.Check(i,check)
-        else:
-            event.Skip()
+        if is_cmd_down and key_code == ord(u'A'):
+            check = not is_shift_down
+            for i in xrange(len(lb_instance.lb_get_str_items())):
+                    lb_instance.lb_check_at_index(i, check)
+            return EventResult.FINISH ##: needed?
 
-    def OnContext(self,event):
+    def _on_context(self, lb_instance):
         """Context Menu"""
-        self.itemMenu.PopupMenu(event.GetEventObject(), Link.Frame,
-                                event.GetEventObject().GetSelections())
-        event.Skip()
-
-    def OnClick(self,event):
-        id_ = event.GetId()
-        if id_ not in (wx.ID_OK,wx.ID_CANCEL):
-            self.EndModal(id_)
-        else:
-            event.Skip()
-
-    def askOkModal(self): return self.ShowModal() != wx.ID_CANCEL
+        self.itemMenu.PopupMenu(lb_instance._native_widget, Link.Frame,
+                                lb_instance.lb_get_selections())
 
     def getChecked(self, key, items, checked=True):
         """Return a sublist of 'items' containing (un)checked items.
 
         The control only displays the string names of items, that is why items
         needs to be passed in. If items is empty it will return an empty list.
-        :param key: a key for the private _ids dictionary
-        :param items: the items that correspond to the _ids[key] checksCtrl
+        :param key: a key for the private _ctrls dictionary
+        :param items: the items that correspond to the _ctrls[key] checksCtrl
         :param checked: keep checked items if True (default) else unchecked
         :rtype : list
-        :return: the items in 'items' for (un)checked checkboxes in _ids[key]
+        :return: the items in 'items' for (un)checked checkboxes in _ctrls[key]
         """
         if not items: return []
         select = []
-        checkList = self.FindWindowById(self._ids[key])
+        checkList = self._ctrls[key]
         if checkList:
             for i, mod in enumerate(items):
-                if checkList.IsChecked(i) ^ (not checked): select.append(mod)
+                if checkList.lb_is_checked_at_index(i) ^ (not checked):
+                    select.append(mod)
         return select
 
 # Some UAC stuff --------------------------------------------------------------
@@ -2864,7 +2959,7 @@ class DnDStatusBar(wx.StatusBar):
     def _getButtonIndex(self, mouseEvent):
         id_ = mouseEvent.GetId()
         for i, button in enumerate(self.buttons):
-            if button._native_widget.GetId() == id_:
+            if button.wx_id_ == id_:
                 x = mouseEvent.GetPosition()[0]
                 # position is 0 at the beginning of the button's _icon_
                 # negative beyond that (on the left) and positive after
@@ -2939,7 +3034,7 @@ class DnDStatusBar(wx.StatusBar):
         rect = self.GetFieldRect(0)
         (xPos, yPos) = (rect.x + 4, rect.y + 2)
         for button in self.buttons:
-            button.position = (xPos, yPos)
+            button.component_position = (xPos, yPos)
             xPos += self.iconsSize
         if event: event.Skip()
 
@@ -3044,32 +3139,24 @@ class Events(object):
     ACTIVATE = 'activate'
     CLOSE = 'close'
     CHAR_KEY_PRESSED = 'char_key_pressed'
-    MOUSE_MOTION = 'mouse_motion'
-    MOUSE_LEAVE_WINDOW = 'mouse_leave_window'
     MOUSE_LEFT_DOUBLECLICK = 'mouse_left_doubleclick'
-    MOUSE_RIGHT_UP = 'mouse_right_up'
     MOUSE_MIDDLE_UP = 'mouse_middle_up'
     WIZARD_CANCEL = 'wizard_cancel'
     WIZARD_FINISHED = 'wizard_finished'
     WIZARD_PAGE_CHANGING = 'wizard_page_changing'
     # TODO(nycz): possibly too specific stuff here, what do?
     # also the names here... ugh. needless to say its very wip
-    COMBOBOX_CHOICE = 'combobox_choice'
     COLORPICKER_CHANGED = 'colorpicker_changed'
 
 _WX_EVENTS = {Events.RESIZE:                wx.EVT_SIZE,
               Events.ACTIVATE:              wx.EVT_ACTIVATE,
               Events.CLOSE:                 wx.EVT_CLOSE,
               Events.CHAR_KEY_PRESSED:      wx.EVT_CHAR,
-              Events.MOUSE_MOTION:          wx.EVT_MOTION,
-              Events.MOUSE_LEAVE_WINDOW:    wx.EVT_LEAVE_WINDOW,
               Events.MOUSE_LEFT_DOUBLECLICK:wx.EVT_LEFT_DCLICK,
-              Events.MOUSE_RIGHT_UP:        wx.EVT_RIGHT_UP,
               Events.MOUSE_MIDDLE_UP:       wx.EVT_MIDDLE_UP,
               Events.WIZARD_CANCEL:         wiz.EVT_WIZARD_CANCEL,
               Events.WIZARD_FINISHED:       wiz.EVT_WIZARD_FINISHED,
               Events.WIZARD_PAGE_CHANGING:  wiz.EVT_WIZARD_PAGE_CHANGING,
-              Events.COMBOBOX_CHOICE:       wx.EVT_COMBOBOX,
               Events.COLORPICKER_CHANGED:   wx.EVT_COLOURPICKER_CHANGED,
 }
 

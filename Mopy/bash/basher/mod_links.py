@@ -40,7 +40,7 @@ from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink,\
     TransLink, RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, \
     ListBoxes
 from ..gui import CancelButton, CheckBox, HLayout, Label, LayoutOptions, \
-    OkButton, RIGHT, Spacer, Stretch, TextField, VLayout
+    OkButton, RIGHT, Spacer, Stretch, TextField, VLayout, DialogWindow
 from ..bolt import GPath, SubProgress
 from ..bosh import faces
 from ..cint import CBashApi, FormID
@@ -336,7 +336,7 @@ class _Mod_Labels(ChoiceLink):
                 data = _Mod_LabelsData(self.window, _self)  # ListEditorData
                 with balt.ListEditor(self.window, _self.edit_window_title, data,
                                      _self.extraButtons) as _self.listEditor:
-                    _self.listEditor.ShowModal()  ##: consider only refreshing
+                    _self.listEditor.show_modal()  ##: consider only refreshing
                     # the mod list if this returns true
                 del _self.listEditor  ##: used by the buttons code - should be
                 # encapsulated
@@ -1012,11 +1012,11 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             with ListBoxes(Link.Frame, _(u'Master Errors'), proceed_,[
                 [_(u'Missing Master Errors'), missingMsg, missing],
                 [_(u'Delinquent Master Errors'), delinquentMsg, delinquent]],
-                liststyle='tree',bOk=_(u'Continue Despite Errors')) as warning:
-                   if not warning.askOkModal(): return
+                liststyle=u'tree',bOk=_(u'Continue Despite Errors')) as dialog:
+                   if not dialog.show_modal(): return
         with PatchDialog(self.window, self._selected_info, self.doCBash,
                          importConfig) as patchDialog:
-            patchDialog.ShowModal()
+            patchDialog.show_modal()
         return self._selected_item
 
     def _ask_deactivate_mergeable(self, active_prior_to_patch):
@@ -1066,7 +1066,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             _(u"Deactivate these mods prior to patching"),
             _(u"The following mods should be deactivated prior to building "
               u"the patch."), checklists, bCancel=_(u'Skip')) as dialog:
-            if not dialog.askOkModal(): return
+            if not dialog.show_modal(): return
             deselect = set()
             for (lst, key) in [(unfiltered, unfilteredKey),
                                (merge, mergeKey),
@@ -2039,12 +2039,11 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         fileName, fileInfo = next(self.iselected_pairs()) # first selected pair
         defaultPath = bass.dirs['patches'].join(fileName.s + u' Exported Scripts')
         def OnOk():
-            dialog.EndModal(1)
+            dialog.accept_modal()
             bass.settings['bash.mods.export.deprefix'] = gdeprefix.text_content.strip()
             bass.settings['bash.mods.export.skip'] = gskip.text_content.strip()
             bass.settings['bash.mods.export.skipcomments'] = gskipcomments.is_checked
-        dialog = balt.Dialog(Link.Frame, _(u'Export Scripts Options'),
-                             size=(400, 180), resize=False)
+        dialog = DialogWindow(Link.Frame, _(u'Export Scripts Options'))
         gskip = TextField(dialog)
         gdeprefix = TextField(dialog)
         gskipcomments = CheckBox(dialog, _(u'Filter Out Comments'),
@@ -2068,8 +2067,8 @@ class Mod_Scripts_Export(_Mod_Export_Link):
             (HLayout(spacing=4, items=[ok_button, CancelButton(dialog)]),
              LayoutOptions(h_align=RIGHT))
         ]).apply_to(dialog, fit=True)
-        with dialog: questions = dialog.ShowModal()
-        if questions != 1: return #because for some reason cancel/close dialogue is returning 5101!
+        with dialog: questions = dialog.show_modal()
+        if not questions: return
         if not defaultPath.exists():
             defaultPath.makedirs()
         textDir = self._askDirectory(
@@ -2667,7 +2666,7 @@ class MasterList_CleanMasters(AppendableLink, ItemLink): # CRUFT
                 with ListBoxes(Link.Frame, _(u'Remove these masters?'), _(
                         u'The following master files can be safely removed.'),
                         checklists) as dialog:
-                    if not dialog.askOkModal(): return
+                    if not dialog.show_modal(): return
                     newMasters.extend(
                         dialog.getChecked(removeKey, removed, checked=False))
                     modFile.TES4.masters = newMasters

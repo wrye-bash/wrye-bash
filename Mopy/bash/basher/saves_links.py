@@ -208,7 +208,8 @@ class Saves_Profiles(ChoiceLink):
         def Execute(self):
             """Show save profiles editing dialog."""
             data = Saves_ProfilesData(self.window)
-            balt.ListEditor.Display(self.window, _(u'Save Profiles'), data)
+            balt.ListEditor.display_dialog(self.window, _(u'Save Profiles'),
+                                           data)
 
     extraItems = [_Edit(), SeparatorLink(), _Default()]
 
@@ -261,7 +262,8 @@ class Save_ImportFace(OneItemLink):
             saveFile.load(progress)
         srcFaces = bosh.faces.PCFaces.save_getFaces(saveFile)
         #--Dialog
-        ImportFaceDialog.Display(self.window,srcPath.tail.s,fileInfo,srcFaces)
+        ImportFaceDialog.display_dialog(self.window, srcPath.tail.s, fileInfo,
+                                        srcFaces)
 
     def FromMod(self,fileInfo,srcPath):
         """Import from a mod."""
@@ -274,7 +276,7 @@ class Save_ImportFace(OneItemLink):
             self._showOk(_(u'No player (PC) faces found in %s.') % mod, mod)
             return
         #--Dialog
-        ImportFaceDialog.Display(self.window, mod, fileInfo, srcFaces)
+        ImportFaceDialog.display_dialog(self.window, mod, fileInfo, srcFaces)
 
 #------------------------------------------------------------------------------
 class Save_RenamePlayer(ItemLink):
@@ -519,7 +521,7 @@ class Save_EditCreated(OneItemLink):
             return
         #--Open editor dialog
         data = Save_EditCreatedData(self.window,saveFile,types_set)
-        balt.ListEditor.Display(self.window, self._text, data)
+        balt.ListEditor.display_dialog(self.window, self._text, data)
 
 #------------------------------------------------------------------------------
 class Save_EditPCSpellsData(balt.ListEditorData):
@@ -568,7 +570,8 @@ class Save_EditPCSpells(OneItemLink):
 
     def Execute(self):
         pc_spell_data = Save_EditPCSpellsData(self.window, self._selected_info)
-        balt.ListEditor.Display(self.window, _(u'Player Spells'),pc_spell_data)
+        balt.ListEditor.display_dialog(self.window, _(u'Player Spells'),
+                                       pc_spell_data)
 
 #------------------------------------------------------------------------------
 class Save_EditCreatedEnchantmentCosts(OneItemLink):

@@ -60,10 +60,9 @@ class DocBrowser(BaltFrame):
         main_window = wx.Panel(root_window)
         # Mod Name
         self._mod_name_box = TextField(mod_list_window, editable=False)
-        self._mod_list = balt.listBox(mod_list_window,
-                                      choices=sorted(x.s for x in self._db_doc_paths.keys()),
-                                      isSort=True,
-                                      onSelect=self._do_select_mod)
+        self._mod_list = balt.ListBox(mod_list_window,
+            choices=sorted(x.s for x in self._db_doc_paths.keys()),
+            isSort=True, onSelect=self._do_select_mod)
         # Buttons
         self._set_btn = Button(main_window, _(u'Set Doc...'),
                                btn_tooltip=u'Associates this plugin file with '
@@ -150,9 +149,9 @@ class DocBrowser(BaltFrame):
         Sets help document for current mod name to None."""
         if self._mod_name not in self._db_doc_paths:
             return
-        index = self._mod_list.FindString(self._mod_name.s)
+        index = self._mod_list.lb_index_for_str_item(self._mod_name.s)
         if index != balt.notFound:
-            self._mod_list.Delete(index)
+            self._mod_list.lb_delete_at_index(index)
         del self._db_doc_paths[self._mod_name]
         self.DoSave()
         for btn in (self._edit_box, self._forget_btn, self._rename_btn,
@@ -179,7 +178,7 @@ class DocBrowser(BaltFrame):
         if not doc_path: return
         bass.settings['bash.modDocs.dir'] = doc_path.head
         if mod_name not in self._db_doc_paths:
-            self._mod_list.Append(mod_name.s)
+            self._mod_list.lb_append(mod_name.s)
         self._db_doc_paths[mod_name] = doc_path
         self.SetMod(mod_name)
 
@@ -245,7 +244,7 @@ class DocBrowser(BaltFrame):
                 btn.enabled = False
             return
         self._set_btn.enabled = True
-        self._mod_list.SetSelection(self._mod_list.FindString(mod_name.s))
+        self._mod_list.lb_select_index(self._mod_list.lb_index_for_str_item(mod_name.s))
         # Doc path
         doc_path = self._db_doc_paths.get(mod_name, GPath(u''))
         self._doc_name_box.text_content = doc_path.stail

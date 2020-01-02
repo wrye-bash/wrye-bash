@@ -35,7 +35,7 @@ __init.py__       : this file, basher.py core, must be further split
 constants.py      : constants, will grow
 *_links.py        : menus and buttons (app_buttons.py)
 links.py          : the initialization functions for menus, defines menu order
-dialogs.py        : subclasses of balt.Dialog (except patcher dialog)
+dialogs.py        : subclasses of DialogWindow (except patcher dialog)
 frames.py         : subclasses of wx.Frame (except BashFrame)
 gui_patchers.py   : the gui patcher classes used by the patcher dialog
 patcher_dialog.py : the patcher dialog
@@ -86,7 +86,7 @@ from ..balt import Links, ItemLink
 
 from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
-    TOP, VLayout, EventResult, DropDown
+    TOP, VLayout, EventResult, DropDown, DialogWindow
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons
@@ -1099,8 +1099,9 @@ class ModList(_ModsUIList):
             msg = _(u'Deactivating the following plugins caused their '
                     u'children to be deactivated')
         else: return
-        ListBoxes.Display(self, _(u'Masters/Children affected'), msg,
-                          [checklists], liststyle='tree', canCancel=False)
+        ListBoxes.display_dialog(self, _(u'Masters/Children affected'), msg,
+                                 [checklists], liststyle=u'tree',
+                                 canCancel=False)
 
     def jump_to_mods_installer(self, modName):
         installer = self.get_installer(modName)
@@ -2356,13 +2357,14 @@ class InstallersList(balt.UIList):
             else: message = _(u'You have dragged some converters into Wrye '
                             u'Bash.')
             message += u'\n' + _(u'What would you like to do with them?')
-            with balt.Dialog(self,_(u'Move or Copy?')) as dialog:
+            with DialogWindow(self, _(u'Move or Copy?'),
+                              sizes_dict=balt.sizes) as dialog:
                 gCheckBox = CheckBox(dialog,
                                      _(u"Don't show this in the future."))
                 move_button = Button(dialog, label=_(u'Move'))
-                move_button.on_clicked.subscribe(lambda: dialog.EndModal(1))
+                move_button.on_clicked.subscribe(lambda: dialog.exit_modal(1))
                 copy_button = Button(dialog, label=_(u'Copy'))
-                copy_button.on_clicked.subscribe(lambda: dialog.EndModal(2))
+                copy_button.on_clicked.subscribe(lambda: dialog.exit_modal(2))
                 VLayout(border=6, spacing=6, items=[
                     HLayout(spacing=6, default_border=6, items=[
                         (staticBitmap(dialog), LayoutOptions(v_align=TOP)),
@@ -2373,7 +2375,7 @@ class InstallersList(balt.UIList):
                         move_button, copy_button, CancelButton(dialog)
                     ]), LayoutOptions(h_align=RIGHT))
                 ]).apply_to(dialog)
-                result = dialog.ShowModal() # buttons call dialog.EndModal(1/2)
+                result = dialog.show_modal_raw() # buttons call exit_modal(1/2)
                 if result == 1: action = 'MOVE'
                 elif result == 2: action = 'COPY'
                 if gCheckBox.is_checked:
@@ -2592,20 +2594,16 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         subPackagesPanel, espmsPanel = self.checkListSplitter.make_vertical_panes()
         #--Sub-Installers
         subPackagesLabel = Label(subPackagesPanel, _(u'Sub-Packages'))
-        self.gSubList = balt.listBox(subPackagesPanel, isExtended=True,
-                                     kind='checklist',
-                                     onCheck=self.OnCheckSubItem)
-        set_event_hook(self.gSubList, Events.MOUSE_RIGHT_UP,
-                       self.SubsSelectionMenu)
+        self.gSubList = balt.CheckListBox(subPackagesPanel, isExtended=True,
+                                          onCheck=self._check_subitem)
+        self.gSubList.on_mouse_right_up.subscribe(self._sub_selection_menu)
         #--Espms
         self.espms = []
-        self.gEspmList = balt.listBox(espmsPanel, isExtended=True,
-                                      kind='checklist',
-                                      onCheck=self.OnCheckEspmItem)
-        set_event_hook(self.gEspmList, Events.MOUSE_RIGHT_UP,
-                       self.SelectionMenu)
-        set_event_hook(self.gEspmList, Events.MOUSE_LEFT_DOUBLECLICK,
-                       self._on_plugin_filter_dclick)
+        self.gEspmList = balt.CheckListBox(espmsPanel, isExtended=True,
+                                           onCheck=self._on_check_plugin)
+        self.gEspmList.on_mouse_left_dclick.subscribe(
+            self._on_plugin_filter_dclick)
+        self.gEspmList.on_mouse_right_up.subscribe(self._selection_menu)
         #--Comments
         commentsPanel = wx.Panel(bottom)
         self.gComments = TextArea(commentsPanel, auto_tooltip=False)
@@ -2675,19 +2673,24 @@ class InstallersDetails(_DetailsMixin, SashPanel):
                 if index == currentIndex: self.RefreshInfoPage(index,installer)
                 else: gPage.text_content = u''
             #--Sub-Packages
-            self.gSubList.Clear()
+            self.gSubList.lb_clear()
             if len(installer.subNames) <= 2:
-                self.gSubList.Clear()
+                self.gSubList.lb_clear()
             else:
-                balt.setCheckListItems(self.gSubList, [x.replace(u'&',u'&&') for x in installer.subNames[1:]], installer.subActives[1:])
+                sub_names_ = [x.replace(u'&', u'&&') for x in
+                              installer.subNames[1:]]
+                vals = installer.subActives[1:]
+                self.gSubList.setCheckListItems(sub_names_, vals)
             #--Espms
             if not installer.espms:
-                self.gEspmList.Clear()
+                self.gEspmList.lb_clear()
             else:
                 names = self.espms = sorted(installer.espms)
                 names.sort(key=lambda x: x.cext != u'.esm')
-                balt.setCheckListItems(self.gEspmList, [[u'',u'*'][installer.isEspmRenamed(x.s)]+x.s.replace(u'&',u'&&') for x in names],
-                    [x not in installer.espmNots for x in names])
+                names_ = [[u'', u'*'][installer.isEspmRenamed(x.s)] +
+                          x.s.replace(u'&', u'&&') for x in names]
+                vals = [x not in installer.espmNots for x in names]
+                self.gEspmList.setCheckListItems(names_, vals)
             #--Comments
             self.gComments.text_content = installer.comments
 
@@ -2696,8 +2699,8 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         for index, (gPage, state) in enumerate(self.infoPages):
             self.infoPages[index][1] = True
             gPage.text_content = u''
-        self.gSubList.Clear()
-        self.gEspmList.Clear()
+        self.gSubList.lb_clear()
+        self.gEspmList.lb_clear()
         self.gComments.text_content = u''
 
     def ShowPanel(self, **kwargs):
@@ -2806,67 +2809,59 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         installer.refreshDataSizeCrc()
         installer.refreshStatus(self._idata)
         # Save scroll bar positions, because gList.RefreshUI will
-        subScrollPos  = self.gSubList.GetScrollPos(wx.VERTICAL)
-        espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
-        subIndices = self.gSubList.GetSelections()
+        subScrollPos  = self.gSubList.lb_get_vertical_scroll_pos()
+        espmScrollPos = self.gEspmList.lb_get_vertical_scroll_pos()
+        subIndices = self.gSubList.lb_get_selections()
         self.installersPanel.uiList.RefreshUI(redraw=[self.displayed_item])
         for subIndex in subIndices:
-            self.gSubList.SetSelection(subIndex)
+            self.gSubList.lb_select_index(subIndex)
         # Reset the scroll bars back to their original position
-        subScroll = subScrollPos - self.gSubList.GetScrollPos(wx.VERTICAL)
-        self.gSubList.ScrollLines(subScroll)
-        espmScroll = espmScrollPos - self.gEspmList.GetScrollPos(wx.VERTICAL)
-        self.gEspmList.ScrollLines(espmScroll)
+        subScroll = subScrollPos - self.gSubList.lb_get_vertical_scroll_pos()
+        self.gSubList.lb_scroll_lines(subScroll)
+        espmScroll = espmScrollPos - self.gEspmList.lb_get_vertical_scroll_pos()
+        self.gEspmList.lb_scroll_lines(espmScroll)
 
-    def OnCheckSubItem(self,event):
+    def _check_subitem(self, lb_selection_dex):
         """Handle check/uncheck of item."""
         installer = self.file_info
-        index = event.GetSelection()
-        self.gSubList.SetSelection(index)
-        for index in range(self.gSubList.GetCount()):
-            installer.subActives[index+1] = self.gSubList.IsChecked(index)
+        self.gSubList.lb_select_index(lb_selection_dex)
+        for lb_selection_dex in range(self.gSubList.lb_get_items_count()):
+            installer.subActives[lb_selection_dex+1] = self.gSubList.lb_is_checked_at_index(lb_selection_dex)
         if not balt.getKeyState_Shift():
             self.refreshCurrent(installer)
 
-    def SelectionMenu(self,event):
+    def _selection_menu(self, lb_selection_dex):
         """Handle right click in espm list."""
-        x = event.GetX()
-        y = event.GetY()
-        selected = self.gEspmList.HitTest((x,y))
-        self.gEspmList.SetSelection(selected)
+        self.gEspmList.lb_select_index(lb_selection_dex)
         #--Show/Destroy Menu
-        InstallersPanel.espmMenu.PopupMenu(self, Link.Frame, selected)
+        InstallersPanel.espmMenu.PopupMenu(self, Link.Frame, lb_selection_dex)
 
-    def SubsSelectionMenu(self,event):
+    def _sub_selection_menu(self, lb_selection_dex):
         """Handle right click in espm list."""
-        x = event.GetX()
-        y = event.GetY()
-        selected = self.gSubList.HitTest((x,y))
-        self.gSubList.SetSelection(selected)
+        self.gSubList.lb_select_index(lb_selection_dex)
         #--Show/Destroy Menu
-        InstallersPanel.subsMenu.PopupMenu(self, Link.Frame, selected)
+        InstallersPanel.subsMenu.PopupMenu(self, Link.Frame, lb_selection_dex)
 
-    def OnCheckEspmItem(self,event):
+    def _on_check_plugin(self, lb_selection_dex):
         """Handle check/uncheck of item."""
         espmNots = self.file_info.espmNots
-        index = event.GetSelection()
-        name = self.gEspmList.GetString(index).replace('&&','&')
-        if name[0] == u'*':
-            name = name[1:]
-        espm = GPath(name)
-        if self.gEspmList.IsChecked(index):
+        plugin_name = self.gEspmList.lb_get_str_item_at_index(
+            lb_selection_dex).replace('&&', '&')
+        if plugin_name[0] == u'*':
+            plugin_name = plugin_name[1:]
+        espm = GPath(plugin_name)
+        if self.gEspmList.lb_is_checked_at_index(lb_selection_dex):
             espmNots.discard(espm)
         else:
             espmNots.add(espm)
-        self.gEspmList.SetSelection(index)    # so that (un)checking also selects (moves the highlight)
+        self.gEspmList.lb_select_index(lb_selection_dex)    # so that (un)checking also selects (moves the highlight)
         if not balt.getKeyState_Shift():
             self.refreshCurrent(self.file_info)
 
-    def _on_plugin_filter_dclick(self, event):
+    def _on_plugin_filter_dclick(self, selected_index):
         """Handles double-clicking on a plugin in the plugin filter."""
-        selected_index = self.gEspmList.HitTest(event.GetPosition())
         if selected_index < 0: return
-        selected_name = self.gEspmList.GetString(
+        selected_name = self.gEspmList.lb_get_str_item_at_index(
             selected_index).replace('&&', '&')
         if selected_name[0] == u'*': selected_name = selected_name[1:]
         selected_plugin = GPath(selected_name)
@@ -3860,8 +3855,8 @@ class BashFrame(BaltFrame):
     def warn_load_order(self):
         """Warn if plugins.txt has bad or missing files, or is overloaded."""
         def warn(message, lists, title=_(u'Warning: Load List Sanitized')):
-            ListBoxes.Display(self, title, message, [lists], liststyle='list',
-                              canCancel=False)
+            ListBoxes.display_dialog(self, title, message, [lists],
+                                     liststyle=u'list', canCancel=False)
         if bosh.modInfos.selectedBad:
            msg = [u'',_(u'Missing files have been removed from load list:')]
            msg.extend(sorted(bosh.modInfos.selectedBad))
@@ -3922,9 +3917,9 @@ class BashFrame(BaltFrame):
             message.append(m)
             bosh.modInfos.new_missing_strings.clear()
         if message:
-            ListBoxes.Display(
+            ListBoxes.display_dialog(
               self, _(u'Warnings'), _(u'The following warnings were found:'),
-            message, liststyle='list', canCancel=False)
+            message, liststyle=u'list', canCancel=False)
 
     _ini_missing = _(u"%(ini)s does not exist yet.  %(game)s will create this "
         u"file on first run.  INI tweaks will not be usable until then.")

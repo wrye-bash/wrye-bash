@@ -235,7 +235,7 @@ class Settings_Colors(ItemLink):
     _text = _(u'Colors...')
     _help = _(u"Configure the custom colors used in the UI.")
 
-    def Execute(self): ColorDialog.Display()
+    def Execute(self): ColorDialog.display_dialog()
 
 #------------------------------------------------------------------------------
 class Settings_IconSize(RadioLink):

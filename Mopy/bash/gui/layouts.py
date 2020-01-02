@@ -43,6 +43,8 @@ _V_ALIGNS = {None: _wx.ALIGN_CENTER_VERTICAL,
              CENTER: _wx.ALIGN_CENTER_VERTICAL,
              TOP: _wx.ALIGN_TOP,
              BOTTOM: _wx.ALIGN_BOTTOM}
+##: Figure out a nicer way to do this
+_res_parent = _AComponent._resolve
 
 class Spacer(object):
     """A fixed-size space in a layout."""
@@ -126,11 +128,10 @@ class _ALayout(object):
         self._loptions = LayoutOptions(default_border, default_fill,
                                        h_align=default_h_align,
                                        v_align=default_v_align)
-        self._parent = None
 
     def apply_to(self, parent, fit=False):
         """Apply this layout to the parent."""
-        self._parent = parent
+        parent = _res_parent(parent)
         sizer = self._border_wrapper or self._sizer
         if fit:
             parent.SetSizerAndFit(sizer)
@@ -146,7 +147,7 @@ class _ALayout(object):
         elif isinstance(item, _ALayout):
             item = item._sizer
         else:
-            item = _AComponent._resolve(item)
+            item = _res_parent(item)
         loptions = self._loptions.from_other(options) if options \
             else self._loptions
         return item, loptions
@@ -207,8 +208,8 @@ class _ALineLayout(_ALayout):
 class HBoxedLayout(_ALineLayout):
     """A horizontal layout with a border around it and an optional title."""
     def __init__(self, parent, title=u'', **kwargs):
-        sizer = _wx.StaticBoxSizer(_wx.StaticBox(parent, label=title),
-                                   _wx.HORIZONTAL)
+        sizer = _wx.StaticBoxSizer(
+            _wx.StaticBox(_res_parent(parent), label=title), _wx.HORIZONTAL)
         super(HBoxedLayout, self).__init__(sizer, **kwargs)
 
 class HLayout(_ALineLayout):

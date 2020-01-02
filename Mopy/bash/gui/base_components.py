@@ -164,8 +164,7 @@ class _AComponent(object):
         if not new_tooltip:
             self._native_widget.UnsetToolTip()
         else:
-            # TODO(inf) textwrap.fill(text, 50)?
-            self._native_widget.SetToolTipString(new_tooltip)
+            self._native_widget.SetToolTip(wrapped_tooltip(new_tooltip))
 
     # TODO: use a custom color class here
     @property
@@ -186,21 +185,43 @@ class _AComponent(object):
         self._native_widget.Refresh()
 
     @property
-    def position(self): # leaving out type here - without typing module,
-                        # PyCharm's auto-inferred type is smarter
-        """Returns the X and Y position of this widget as a tuple.
+    def component_position(self):
+        """Returns the X and Y position of this component as a tuple.
 
-        :return: A tuple containing the X and Y position of this this widget
+        :return: A tuple containing the X and Y position of this this component
                  as two integers."""
         curr_pos = self._native_widget.GetPosition()
         return curr_pos.x, curr_pos.y
 
-    @position.setter
-    def position(self, new_position): # type: (tuple) -> None
-        """Changes the X and Y position of this widget to the specified values.
+    @component_position.setter
+    def component_position(self, new_position): # type: (tuple) -> None
+        """Changes the X and Y position of this component to the specified
+        values.
 
         :param new_position: A tuple of two integers, X and Y."""
         self._native_widget.Move(new_position)
+
+    @property
+    def component_size(self):
+        """Returns the width and height of this component as a tuple.
+
+        :return: A tuple containing the width and height size of this component
+                 as two integers."""
+        curr_size = self._native_widget.GetSize()
+        return curr_size.width, curr_size.height
+
+    @component_size.setter
+    def component_size(self, new_size): # type: (tuple) -> None
+        """Changes the X and Y size of this component to the specified
+        values.
+
+        :param new_size: A tuple of two integers, X and Y size."""
+        self._native_widget.SetSize(new_size)
+
+    def set_min_size(self, width, height): # type: (int, int) -> None
+        """Sets the minimum size of this component to the specified width and
+        height."""
+        self._native_widget.SetMinSize(_wx.Size(width, height))
 
     # focus methods wrappers
     def set_focus_from_kb(self):
@@ -213,3 +234,12 @@ class _AComponent(object):
         """Set the focus to this window, allowing it to receive keyboard
         input."""
         self._native_widget.SetFocus()
+
+    def destroy_component(self):
+        """Destroys this component - non-internal usage is a smell, avoid if at
+        all possible."""
+        self._native_widget.Destroy()
+
+    @property
+    def wx_id_(self): # avoid, we do not want to program with gui ids
+        return self._native_widget.GetId()

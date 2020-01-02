@@ -31,23 +31,23 @@ import time
 from datetime import timedelta
 from . import BashFrame ##: drop this - decouple !
 from .. import bass, bosh, bolt, balt, env, load_order
-from ..balt import Link, Resources, set_event_hook, Events, HorizontalLine
+from ..balt import Link, Resources, HorizontalLine
 from ..bolt import SubProgress, GPath, Path
 from ..exception import BoltError, CancelError, FileEditError, \
     PluginsFullError, SkipError
 from ..gui import CancelButton, DeselectAllButton, HLayout, Label, \
     LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
-    SaveAsButton, SelectAllButton, Stretch, VLayout
+    SaveAsButton, SelectAllButton, Stretch, VLayout, DialogWindow
 from ..patcher import configIsCBash, exportConfig
-from ..patcher.patch_files import PatchFile, CBash_PatchFile
 from ..patcher.base import AListPatcher
+from ..patcher.patch_files import PatchFile, CBash_PatchFile
 
 # Final lists of gui patcher classes instances, initialized in
 # gui_patchers.InitPatchers() based on game. These must be copied as needed.
 PBash_gui_patchers = [] #--All gui patchers classes for this game
 CBash_gui_patchers = [] #--All gui patchers classes for this game (CBash mode)
 
-class PatchDialog(balt.Dialog):
+class PatchDialog(DialogWindow):
     """Bash Patch update dialog.
 
     :type patchers: list[basher.gui_patchers._PatcherPanel]
@@ -62,8 +62,9 @@ class PatchDialog(balt.Dialog):
         self.doCBash = doCBash
         title = _(u'Update ') + patchInfo.name.s + [u'', u' (CBash)'][doCBash]
         size = balt.sizes.get(self.__class__.__name__, (500,600))
-        super(PatchDialog, self).__init__(parent, title=title, size=size)
-        self.SetSizeHints(400,300)
+        super(PatchDialog, self).__init__(parent, title=title,
+            icon_bundle=Resources.bashMonkey, sizes_dict=balt.sizes, size=size)
+        self.set_min_size(400, 300)
         #--Data
         AListPatcher.list_patches_dir()
         groupOrder = dict([(group,index) for index,group in
@@ -101,10 +102,10 @@ class PatchDialog(balt.Dialog):
         self.gDeselectAll = DeselectAllButton(self)
         self.gDeselectAll.on_clicked.subscribe(self.DeselectAll)
         cancelButton = CancelButton(self)
-        self.gPatchers = balt.listBox(self, choices=patcherNames,
-                                      isSingle=True, kind='checklist',
-                                      onSelect=self.OnSelect,
-                                      onCheck=self.OnCheck)
+        self.gPatchers = balt.CheckListBox(self, choices=patcherNames,
+                                           isSingle=True,
+                                           onSelect=self.OnSelect,
+                                           onCheck=self.OnCheck)
         self.gExportConfig = SaveAsButton(self, label=_(u'Export'))
         self.gExportConfig.on_clicked.subscribe(self.ExportConfig)
         self.gImportConfig = OpenButton(self, label=_(u'Import'))
@@ -115,14 +116,14 @@ class PatchDialog(balt.Dialog):
                                              label=_(u'Revert To Default'))
         self.gRevertToDefault.on_clicked.subscribe(self.DefaultConfig)
         for index,patcher in enumerate(self.patchers):
-            self.gPatchers.Check(index,patcher.isEnabled)
+            self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
         self.defaultTipText = _(u'Items that are new since the last time this patch was built are displayed in bold')
         self.gTipText = Label(self,self.defaultTipText)
         #--Events
-        set_event_hook(self, Events.RESIZE, self.OnSize) # save dialog size
-        set_event_hook(self.gPatchers, Events.MOUSE_MOTION, self.OnMouse)
-        set_event_hook(self.gPatchers, Events.MOUSE_LEAVE_WINDOW, self.OnMouse)
-        set_event_hook(self.gPatchers, Events.CHAR_KEY_PRESSED, self.OnChar)
+        self.on_size_changed.subscribe(self.save_size) # save dialog size
+        self.gPatchers.on_mouse_leaving.subscribe(self._mouse_leaving)
+        self.gPatchers.on_mouse_motion.subscribe(self.OnMouse)
+        self.gPatchers.on_key_pressed.subscribe(self._on_char)
         self.mouse_dex = -1
         #--Layout
         self.config_layout = VLayout(default_fill=True, default_weight=1)
@@ -140,14 +141,13 @@ class PatchDialog(balt.Dialog):
                 Stretch(), self.gExecute, self.gSelectAll, self.gDeselectAll,
                 cancelButton])
         ]).apply_to(self)
-        self.SetIcons(Resources.bashMonkey)
         #--Patcher panels
         for patcher in self.patchers:
             patcher.GetConfigPanel(self, self.config_layout,
                                    self.gTipText).Hide()
         initial_select = min(len(self.patchers)-1,1)
         if initial_select >= 0:
-            self.gPatchers.SetSelection(initial_select) # callback not fired
+            self.gPatchers.lb_select_index(initial_select) # callback not fired
             self.ShowPatcher(self.patchers[initial_select]) # so this is needed
         self.SetOkEnable()
 
@@ -162,14 +162,14 @@ class PatchDialog(balt.Dialog):
         if self.currentPatcher is not None:
             self.currentPatcher.gConfigPanel.Hide()
         patcher.GetConfigPanel(self, self.config_layout, self.gTipText).Show()
-        self.Layout()
+        self._native_widget.Layout()
         patcher.Layout()
         self.currentPatcher = patcher
 
     @balt.conversation
     def PatchExecute(self): # TODO(ut): needs more work to reduce P/C differences to an absolute minimum
         """Do the patch."""
-        self.EndModalOK()
+        self.accept_modal()
         patchFile = progress = None
         try:
             patch_name = self.patchInfo.name
@@ -229,7 +229,7 @@ class PatchDialog(balt.Dialog):
                 #--Try moving temp log/readme to Docs dir
                 try:
                     env.shellMove(tempReadmeDir, bass.dirs['mods'],
-                                  parent=self)
+                                  parent=self._native_widget)
                 except (CancelError,SkipError):
                     # User didn't allow UAC, move to My Games directory instead
                     env.shellMove([tempReadme, tempReadme.root + u'.html'],
@@ -393,7 +393,7 @@ class PatchDialog(balt.Dialog):
         for index, patcher in enumerate(self.patchers):
             patcher.import_config(patchConfigs, set_first_load=set_first_load,
                                   default=default)
-            self.gPatchers.Check(index, patcher.isEnabled)
+            self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
         self.SetOkEnable()
 
     def UpdateConfig(self, patchConfigs):
@@ -432,59 +432,53 @@ class PatchDialog(balt.Dialog):
     def SelectAll(self):
         """Select all patchers and entries in patchers with child entries."""
         for index,patcher in enumerate(self.patchers):
-            self.gPatchers.Check(index,True)
+            self.gPatchers.lb_check_at_index(index, True)
             patcher.mass_select()
         self.gExecute.enabled = True
 
     def DeselectAll(self):
         """Deselect all patchers and entries in patchers with child entries."""
         for index,patcher in enumerate(self.patchers):
-            self.gPatchers.Check(index,False)
+            self.gPatchers.lb_check_at_index(index, False)
             patcher.mass_select(select=False)
         self.gExecute.enabled = False
 
     #--GUI --------------------------------
-    def OnSize(self,event):
-        balt.sizes[self.__class__.__name__] = tuple(self.GetSize())
-        event.Skip()
-
-    def OnSelect(self,event):
+    def OnSelect(self, lb_selection_dex, lb_selection_str):
         """Responds to patchers list selection."""
-        itemDex = event.GetSelection()
-        self.ShowPatcher(self.patchers[itemDex])
-        self.gPatchers.SetSelection(itemDex)
+        self.ShowPatcher(self.patchers[lb_selection_dex])
+        self.gPatchers.lb_select_index(lb_selection_dex)
 
     def CheckPatcher(self, patcher):
         """Enable a patcher - Called from a patcher's OnCheck method."""
         index = self.patchers.index(patcher)
-        self.gPatchers.Check(index)
+        self.gPatchers.lb_check_at_index(index, True)
         self.SetOkEnable()
 
     def BoldPatcher(self, patcher):
         """Set the patcher label to bold font.  Called from a patcher when
         it realizes it has something new in its list"""
         index = self.patchers.index(patcher)
-        get_font = self.gPatchers.GetFont()
-        self.gPatchers.SetItemFont(index, balt.Font.Style(get_font, bold=True))
+        self.gPatchers.lb_bold_font_at_index(index)
 
-    def OnCheck(self,event):
+    def OnCheck(self, lb_selection_dex):
         """Toggle patcher activity state."""
-        index = event.GetSelection()
-        patcher = self.patchers[index]
-        patcher.isEnabled = self.gPatchers.IsChecked(index)
-        self.gPatchers.SetSelection(index)
+        patcher = self.patchers[lb_selection_dex]
+        patcher.isEnabled = self.gPatchers.lb_is_checked_at_index(lb_selection_dex)
+        self.gPatchers.lb_select_index(lb_selection_dex)
         self.ShowPatcher(patcher) # SetSelection does not fire the callback
         self.SetOkEnable()
 
-    def OnMouse(self,event):
+    def _mouse_leaving(self): self._set_tip_text(-1)
+
+    def OnMouse(self, pos, is_dragging, is_moving, lb_dex):
         """Show tip text when changing item."""
-        mouseItem = -1
-        if event.Moving():
-            mouseItem = self.gPatchers.HitTest(event.GetPosition())
-            if mouseItem != self.mouse_dex:
-                self.mouse_dex = mouseItem
-        elif event.Leaving():
-            pass # will be set to defaultTipText
+        if is_moving:
+            if lb_dex != self.mouse_dex:
+                self.mouse_dex = lb_dex
+        self._set_tip_text(lb_dex)
+
+    def _set_tip_text(self, mouseItem):
         if 0 <= mouseItem < len(self.patchers):
             patcherClass = self.patchers[mouseItem].__class__
             tip = patcherClass.tip or re.sub(u'' r'\..*', u'.',
@@ -492,19 +486,17 @@ class PatchDialog(balt.Dialog):
             self.gTipText.label_text = tip
         else:
             self.gTipText.label_text = self.defaultTipText
-        event.Skip()
 
-    def OnChar(self,event):
+    def _on_char(self, key_code, is_cmd_down, is_shift_down):
         """Keyboard input to the patchers list box"""
-        if event.GetKeyCode() == 1 and event.CmdDown(): # Ctrl+'A'
+        if key_code == 1 and is_cmd_down: # Ctrl+'A'
             patcher = self.currentPatcher
             if patcher is not None:
-                if event.ShiftDown():
+                if is_shift_down:
                     patcher.DeselectAll()
                 else:
                     patcher.SelectAll()
                 return
-        event.Skip()
 
 # Used in ConvertConfig to convert between C and P *gui* patchers config - so
 # it belongs with gui_patchers (and not with patchers/ package). Still a hack

@@ -202,8 +202,8 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             subs = []
             idetails = self.iPanel.detailsPanel
             idetails.refreshCurrent(installer)
-            for index in xrange(idetails.gSubList.GetCount()):
-                subs.append(idetails.gSubList.GetString(index))
+            for index in xrange(idetails.gSubList.lb_get_items_count()):
+                subs.append(idetails.gSubList.lb_get_str_item_at_index(index))
             default, pageSize, pos = self._get_size_and_pos()
             try:
                 wizard = InstallerWizard(self.window, self._selected_info,
@@ -218,20 +218,20 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             return
         #Check the sub-packages that were selected by the wizard
         installer.resetAllEspmNames()
-        for index in xrange(idetails.gSubList.GetCount()):
+        for index in xrange(idetails.gSubList.lb_get_items_count()):
             select = installer.subNames[index + 1] in ret.select_sub_packages
-            idetails.gSubList.Check(index, select)
+            idetails.gSubList.lb_check_at_index(index, select)
             installer.subActives[index + 1] = select
         idetails.refreshCurrent(installer)
         #Check the espms that were selected by the wizard
-        espms = idetails.gEspmList.GetStrings()
+        espms = idetails.gEspmList.lb_get_str_items()
         espms = [x.replace(u'&&',u'&') for x in espms]
         installer.espmNots = set()
         for index, espm in enumerate(idetails.espms):
             if espms[index] in ret.select_plugins:
-                idetails.gEspmList.Check(index, True)
+                idetails.gEspmList.lb_check_at_index(index, True)
             else:
-                idetails.gEspmList.Check(index, False)
+                idetails.gEspmList.lb_check_at_index(index, False)
                 installer.espmNots.add(espm)
         idetails.refreshCurrent(installer)
         #Rename the espms that need renaming
@@ -819,7 +819,7 @@ class Installer_Espm_SelectAll(_Installer_Details_Link):
     def Execute(self):
         self._installer.espmNots = set()
         for i in range(len(self.window.espms)):
-            self.window.gEspmList.Check(i, True)
+            self.window.gEspmList.lb_check_at_index(i, True)
         self.window.refreshCurrent(self._installer)
 
 class Installer_Espm_DeselectAll(_Installer_Details_Link):
@@ -830,8 +830,8 @@ class Installer_Espm_DeselectAll(_Installer_Details_Link):
     def Execute(self):
         espmNots = self._installer.espmNots = set()
         for i in range(len(self.window.espms)):
-            self.window.gEspmList.Check(i, False)
-            espm =GPath(self.window.gEspmList.GetString(i).replace(u'&&',u'&'))
+            self.window.gEspmList.lb_check_at_index(i, False)
+            espm =GPath(self.window.gEspmList.lb_get_str_item_at_index(i).replace(u'&&', u'&'))
             espmNots.add(espm)
         self.window.refreshCurrent(self._installer)
 
@@ -843,7 +843,7 @@ class Installer_Espm_Rename(_Installer_Details_Link):
     def _enable(self): return self.selected != -1
 
     def Execute(self):
-        curName = self.window.gEspmList.GetString(self.selected).replace(u'&&',
+        curName = self.window.gEspmList.lb_get_str_item_at_index(self.selected).replace(u'&&',
                                                                          u'&')
         if curName[0] == u'*':
             curName = curName[1:]
@@ -863,7 +863,7 @@ class Installer_Espm_Reset(_Installer_Details_Link):
 
     def _enable(self):
         if self.selected == -1: return False
-        curName = self.window.gEspmList.GetString(self.selected).replace(u'&&',
+        curName = self.window.gEspmList.lb_get_str_item_at_index(self.selected).replace(u'&&',
                                                                          u'&')
         if curName[0] == u'*': curName = curName[1:]
         self.curName = curName
@@ -893,9 +893,9 @@ class Installer_Espm_List(_Installer_Details_Link):
         subs = (_(u'Plugin List for %s:') % self._installer.archive +
                 u'\n[spoiler]\n')
         espm_list = self.window.gEspmList
-        for index in range(espm_list.GetCount()):
-            subs += [u'   ',u'** '][espm_list.IsChecked(index)] + \
-                    espm_list.GetString(index) + '\n'
+        for index in range(espm_list.lb_get_items_count()):
+            subs += [u'   ',u'** '][espm_list.lb_is_checked_at_index(index)] + \
+                    espm_list.lb_get_str_item_at_index(index) + '\n'
         subs += u'[/spoiler]'
         balt.copyToClipboard(subs)
         self._showLog(subs, title=_(u'Plugin List'), fixedFont=False)
@@ -910,7 +910,7 @@ class Installer_Espm_JumpToMod(_Installer_Details_Link):
         if self.selected == -1: return False
         ##: Maybe refactor all this plugin logic (especially the renamed plugin
         # (asterisk) handling) to a property inside a base class?
-        selected_plugin = self.window.gEspmList.GetString(
+        selected_plugin = self.window.gEspmList.lb_get_str_item_at_index(
             self.selected).replace(u'&&', u'&')
         if selected_plugin[0] == u'*': selected_plugin = selected_plugin[1:]
         self.target_plugin = GPath(selected_plugin)
@@ -923,7 +923,7 @@ class Installer_Espm_JumpToMod(_Installer_Details_Link):
 # InstallerDetails Subpackage Links -------------------------------------------
 #------------------------------------------------------------------------------
 class _Installer_Subs(_Installer_Details_Link):
-    def _enable(self): return self.window.gSubList.GetCount() > 1
+    def _enable(self): return self.window.gSubList.lb_get_items_count() > 1
 
 class Installer_Subs_SelectAll(_Installer_Subs):
     """Select All sub-packages in installer for installation."""
@@ -931,8 +931,8 @@ class Installer_Subs_SelectAll(_Installer_Subs):
     _help = _(u'Selects all sub-packages in this installer.')
 
     def Execute(self):
-        for index in xrange(self.window.gSubList.GetCount()):
-            self.window.gSubList.Check(index, True)
+        for index in xrange(self.window.gSubList.lb_get_items_count()):
+            self.window.gSubList.lb_check_at_index(index, True)
             self._installer.subActives[index + 1] = True
         self.window.refreshCurrent(self._installer)
 
@@ -942,8 +942,8 @@ class Installer_Subs_DeselectAll(_Installer_Subs):
     _help = _(u'Deselects all sub-packages in this installer.')
 
     def Execute(self):
-        for index in xrange(self.window.gSubList.GetCount()):
-            self.window.gSubList.Check(index, False)
+        for index in xrange(self.window.gSubList.lb_get_items_count()):
+            self.window.gSubList.lb_check_at_index(index, False)
             self._installer.subActives[index + 1] = False
         self.window.refreshCurrent(self._installer)
 
@@ -954,9 +954,9 @@ class Installer_Subs_ToggleSelection(_Installer_Subs):
     _help = _(u'Deselects all selected sub-packages and vice versa.')
 
     def Execute(self):
-        for index in xrange(self.window.gSubList.GetCount()):
+        for index in xrange(self.window.gSubList.lb_get_items_count()):
             check = not self._installer.subActives[index+1]
-            self.window.gSubList.Check(index, check)
+            self.window.gSubList.lb_check_at_index(index, check)
             self._installer.subActives[index + 1] = check
         self.window.refreshCurrent(self._installer)
 
@@ -969,9 +969,9 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
     def Execute(self):
         subs = _(u'Sub-Packages List for %s:') % self._installer.archive
         subs += u'\n[spoiler]\n'
-        for index in xrange(self.window.gSubList.GetCount()):
-            subs += [u'   ', u'** '][self.window.gSubList.IsChecked(
-                index)] + self.window.gSubList.GetString(index) + u'\n'
+        for index in xrange(self.window.gSubList.lb_get_items_count()):
+            subs += [u'   ', u'** '][self.window.gSubList.lb_is_checked_at_index(
+                index)] + self.window.gSubList.lb_get_str_item_at_index(index) + u'\n'
         subs += u'[/spoiler]'
         balt.copyToClipboard(subs)
         self._showLog(subs, title=_(u'Sub-Package Lists'), fixedFont=False)
