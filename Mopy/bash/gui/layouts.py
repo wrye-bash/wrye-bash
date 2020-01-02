@@ -33,7 +33,8 @@ import wx as _wx
 
 from .base_components import _AComponent
 
-CENTER, LEFT, RIGHT, TOP, BOTTOM = 'center', 'left', 'right', 'top', 'bottom'
+CENTER, LEFT, RIGHT, TOP, BOTTOM = (u'center', u'left', u'right', u'top',
+                                    u'bottom')
 _H_ALIGNS = {None: _wx.ALIGN_LEFT,
              CENTER: _wx.ALIGN_CENTER_HORIZONTAL,
              LEFT: _wx.ALIGN_LEFT,
@@ -78,8 +79,12 @@ class LayoutOptions(object):
     col_span, row_span (int)
         The number of columns or rows this items should take up.
     """
+    __slots__ = (u'border', u'expand', u'weight', u'h_align', u'v_align',
+                 u'col_span', u'row_span')
+
     def __init__(self, border=None, expand=None, weight=None,
                  h_align=None, v_align=None, col_span=None, row_span=None):
+        # type: (int, bool, int, unicode, unicode, int, int) -> None
         self.border = border
         self.expand = expand
         self.weight = weight
@@ -88,8 +93,26 @@ class LayoutOptions(object):
         self.col_span = col_span
         self.row_span = row_span
 
+    def layout_flags(self):
+        l_flags = _wx.ALL | _H_ALIGNS[self.h_align] | _V_ALIGNS[self.v_align]
+        if self.expand: l_flags |= _wx.EXPAND
+        return l_flags
+
+    def from_other(self, other):
+        """Use only in this module - return a copy of self, updated from other.
+        """
+        if other is self:
+            instance = self.__class__()
+        else:
+            instance = self.from_other(self) # get us a copy
+        for attr in other.__slots__: # update from other if not default (None)
+            val = getattr(other, attr)
+            if val is not None: setattr(instance, attr, val)
+        return instance
+
 class _ALayout(object):
     """Abstract base class for all layouts."""
+
     def __init__(self, sizer, border=0, default_border=0, default_fill=False,
                  default_h_align=None, default_v_align=None):
         self._sizer = sizer
@@ -100,14 +123,13 @@ class _ALayout(object):
                                           border=border)
         else:
             self._border_wrapper = None
-        self.default_border = default_border
-        self.default_fill = default_fill
-        self.default_h_align = default_h_align
-        self.default_v_align = default_v_align
+        self._loptions = LayoutOptions(default_border, default_fill,
+                                       h_align=default_h_align,
+                                       v_align=default_v_align)
         self._parent = None
 
     def apply_to(self, parent, fit=False):
-        """Apply this layout to to the parent."""
+        """Apply this layout to the parent."""
         self._parent = parent
         sizer = self._border_wrapper or self._sizer
         if fit:
@@ -120,29 +142,20 @@ class _ALayout(object):
         options = None
         if isinstance(item, tuple):
             item, options = item
-        if item is None: return None, None, None, None
+        if item is None: return None, None
         elif isinstance(item, _ALayout):
             item = item._sizer
         else:
             item = _AComponent._resolve(item)
-        border = self.default_border
-        fill_ = self.default_fill
-        h_align = self.default_h_align
-        v_align = self.default_v_align
-        if options:
-            if options.border is not None: border = options.border
-            if options.expand is not None: fill_ = options.expand
-            if options.h_align is not None: h_align = options.h_align
-            if options.v_align is not None: v_align = options.v_align
-        flags = _wx.ALL | _H_ALIGNS[h_align] | _V_ALIGNS[v_align]
-        if fill_: flags |= _wx.EXPAND
-        return item, options, border, flags
+        loptions = self._loptions.from_other(options) if options \
+            else self._loptions
+        return item, loptions
 
 class _ALineLayout(_ALayout):
     """Abstract base class for one-dimensional layouts."""
-    def __init__(self, sizer, border=0, spacing=0,
-                 default_border=0, default_fill=False, default_weight=0,
-                 default_h_align=None, default_v_align=None, items=()):
+    def __init__(self, sizer, border=0, default_border=0, default_fill=False,
+                 default_weight=0, default_h_align=None, default_v_align=None,
+                 spacing=0, items=()):
         """Initiate the layout.
         The default_* arguments are for when those options are not provided
         when adding an item. See LayoutOptions for more information.
@@ -153,13 +166,13 @@ class _ALineLayout(_ALayout):
         :param items: Items or (item, options) pairs to add directly.
         """
         self.spacing = spacing
-        self.default_weight = default_weight
         super(_ALineLayout, self).__init__(sizer, border=border,
                                            default_border=default_border,
                                            default_fill=default_fill,
                                            default_h_align=default_h_align,
                                            default_v_align=default_v_align)
-        if items: self.add_many(*items)
+        self._loptions.weight = default_weight
+        if items: self._add_many(*items)
 
     def add(self, item):
         """Add one item to the layout.
@@ -169,16 +182,15 @@ class _ALineLayout(_ALayout):
         elif isinstance(item, Spacer):
             self._add_spacer(item.size)
         else:
-            item, options, border, flags = self._get_item_options(item)
+            item, options = self._get_item_options(item)
             if item is None: return
-            weight = (options.weight if options and options.weight is not None
-                      else self.default_weight)
             if self.spacing > 0 and not self._sizer.IsEmpty():
                 self._add_spacer(self.spacing)
-            self._sizer.Add(item, proportion=weight, flag=flags, border=border)
+            self._sizer.Add(item, proportion=options.weight,
+                            flag=options.layout_flags(), border=options.border)
             self._sizer.SetItemMinSize(item, -1, -1)
 
-    def add_many(self, *items):
+    def _add_many(self, *items):
         """Add multiple items to the layout.
         The items may be (item, options) pairs, Stretch- or Spacer objects."""
         for item in items:
@@ -216,6 +228,7 @@ class GridLayout(_ALayout):
     It has no fixed or set number of rows or columns, but will instead grow to
     fit its content. The weight of items are handled on a per-row and -col
     basis, specified with stretch_cols/stretch_rows or set_stretch()."""
+
     def __init__(self, border=0, h_spacing=0, v_spacing=0,
                  stretch_cols=(), stretch_rows=(),
                  default_fill=False, default_border=0,
@@ -238,6 +251,8 @@ class GridLayout(_ALayout):
                                          default_fill=default_fill,
                                          default_h_align=default_h_align,
                                          default_v_align=default_v_align)
+        self._loptions.row_span = 1
+        self._loptions.col_span = 1
         if items:
             self.append_rows(items)
         for col in stretch_cols:
@@ -249,14 +264,11 @@ class GridLayout(_ALayout):
         """Add an item to the specified place in the layout.
         If there is an item there already, it will be replaced.
         If item is None, nothing will be added."""
-        item, options, border, flags = self._get_item_options(item)
+        item, options = self._get_item_options(item)
         if item is None: return
-        col_span, row_span = 1, 1
-        if options:
-            if options.col_span is not None: col_span = options.col_span
-            if options.row_span is not None: row_span = options.row_span
-        self._sizer.Add(item, (row, col), span=(row_span, col_span),
-                        flag=flags, border=border)
+        self._sizer.Add(item, (row, col),
+                        span=(options.row_span, options.col_span),
+                        flag=options.layout_flags(), border=options.border)
         self._sizer.SetItemMinSize(item, -1, -1)
 
     def append_row(self, items):
