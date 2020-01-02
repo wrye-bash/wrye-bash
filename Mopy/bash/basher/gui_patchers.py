@@ -28,9 +28,10 @@ from operator import itemgetter
 import wx
 # Internal
 from .. import bass, bosh, bush, balt, load_order, bolt, exception
-from ..balt import fill, StaticText, vSizer, checkBox, Button, hsbSizer, \
-    Links, SeparatorLink, CheckLink, Link, vspace, VSizer
+from ..balt import fill, Links, SeparatorLink, CheckLink, Link
 from ..bolt import GPath
+from ..gui import Button, CheckBox, HBoxedLayout, Label, LayoutOptions, \
+    Spacer, TextArea, TOP, VLayout
 from ..patcher import patch_files
 
 reCsvExt = re.compile(u'' r'\.csv$', re.I | re.U)
@@ -57,7 +58,7 @@ class _PatcherPanel(object):
         else:
             return False
 
-    def GetConfigPanel(self,parent,gConfigSizer,gTipText):
+    def GetConfigPanel(self, parent, config_layout, gTipText):
         """Show config.
 
         :type parent: basher.patcher_dialog.PatchDialog
@@ -66,11 +67,12 @@ class _PatcherPanel(object):
         self.patch_dialog = parent
         self.gTipText = gTipText
         self.gConfigPanel = wx.Panel(parent, style=self.__class__.style)
-        patcher_txt = fill(self.text, 70)
-        gText = StaticText(self.gConfigPanel, patcher_txt)
-        self.gSizer = VSizer(gText)
-        self.gConfigPanel.SetSizer(self.gSizer)
-        gConfigSizer.Add(self.gConfigPanel, 1, wx.EXPAND)
+        self.main_layout = VLayout(
+            default_fill=True, default_weight=1, spacing=4, items=[
+                (Label(self.gConfigPanel, fill(self.text, 70)),
+                 LayoutOptions(weight=0))])
+        self.main_layout.apply_to(self.gConfigPanel)
+        config_layout.add(self.gConfigPanel)
         return self.gConfigPanel
 
     def Layout(self):
@@ -149,30 +151,29 @@ class _AliasesPatcherPanel(_PatcherPanel):
     # CONFIG DEFAULTS
     default_aliases = {}
 
-    def GetConfigPanel(self,parent,gConfigSizer,gTipText):
+    def GetConfigPanel(self, parent, config_layout, gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
         gConfigPanel = super(_AliasesPatcherPanel, self).GetConfigPanel(parent,
-            gConfigSizer, gTipText)
-        #gExample = StaticText(gConfigPanel,
+                                                                        config_layout, gTipText)
+        #gExample = Label(gConfigPanel,
         #    _(u"Example Mod 1.esp >> Example Mod 1.2.esp"))
         #--Aliases Text
-        self.gAliases = balt.TextCtrl(gConfigPanel, multiline=True,
-                                      onKillFocus=self.OnEditAliases)
+        self.gAliases = TextArea(gConfigPanel)
+        self.gAliases.on_focus_lost.subscribe(self.OnEditAliases)
         self.SetAliasText()
         #--Sizing
-        self.gSizer.AddElements(
-            #(gExample,0,wx.EXPAND|wx.TOP,8),
-            vspace(), (self.gAliases, 1, wx.EXPAND))
+        self.main_layout.add((self.gAliases,
+                              LayoutOptions(fill=True, weight=1)))
         return self.gConfigPanel
 
     def SetAliasText(self):
         """Sets alias text according to current aliases."""
-        self.gAliases.SetValue(u'\n'.join([
-            u'%s >> %s' % (key.s,value.s) for key,value in sorted(self.aliases.items())]))
+        self.gAliases.text_content = u'\n'.join([
+            u'%s >> %s' % (key.s,value.s) for key,value in sorted(self.aliases.items())])
 
     def OnEditAliases(self):
-        aliases_text = self.gAliases.GetValue()
+        aliases_text = self.gAliases.text_content
         self.aliases.clear()
         for line in aliases_text.split(u'\n'):
             fields = map(string.strip,line.split(u'>>'))
@@ -220,11 +221,11 @@ class _ListPatcherPanel(_PatcherPanel):
     default_configChecks  = {}
     default_configChoices = {}
 
-    def GetConfigPanel(self,parent,gConfigSizer,gTipText):
+    def GetConfigPanel(self, parent, config_layout, gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
-        gConfigPanel = super(_ListPatcherPanel, self).GetConfigPanel(parent,
-            gConfigSizer, gTipText)
+        gConfigPanel = super(_ListPatcherPanel, self).GetConfigPanel(
+            parent, config_layout, gTipText)
         self.forceItemCheck = self.__class__.forceItemCheck
         self.selectCommands = self.__class__.selectCommands
         if self.forceItemCheck:
@@ -234,50 +235,48 @@ class _ListPatcherPanel(_PatcherPanel):
                                       onCheck=self.OnListCheck)
         #--Manual controls
         if self.forceAuto:
-            gManualSizer = None
+            side_button_layout = None
             self.SetItems(self.getAutoItems())
         else:
             right_side_components = []
             if self.show_empty_sublist_checkbox:
-                self.g_remove_empty = checkBox(
+                self.g_remove_empty = CheckBox(
                     gConfigPanel, _(u'Remove Empty Sublists'),
-                    onCheck=self._on_remove_empty_checked,
                     checked=self.remove_empty_sublists)
-                right_side_components.extend([vspace(4), self.g_remove_empty])
-            self.gAuto = checkBox(gConfigPanel, _(u'Automatic'),
-                                  onCheck=self.OnAutomatic,
+                self.g_remove_empty.on_checked.subscribe(
+                    self._on_remove_empty_checked)
+                right_side_components.extend([self.g_remove_empty])
+            self.gAuto = CheckBox(gConfigPanel, _(u'Automatic'),
                                   checked=self.autoIsChecked)
-            self.gAdd = Button(gConfigPanel, _(u'Add'), onButClick=self.OnAdd)
-            self.gRemove = Button(gConfigPanel, _(u'Remove'),
-                                  onButClick=self.OnRemove)
-            right_side_components.extend([vspace(4), self.gAuto, vspace(12),
-                                          self.gAdd, vspace(4), self.gRemove])
-            self.OnAutomatic()
-            gManualSizer = (vSizer(*right_side_components), 0,
-                            wx.EXPAND | wx.LEFT, 4)
-        gSelectSizer = self._get_select_sizer()
-        #--Layout
-        self.gSizer.AddElements(vspace(),
-            (hsbSizer(gConfigPanel, self.__class__.listLabel,
-                ((4,0),0,wx.EXPAND),
-                (self.gList,1,wx.EXPAND|wx.TOP,2),
-                gManualSizer,gSelectSizer,
-                ),1,wx.EXPAND),
-            )
+            self.gAuto.on_checked.subscribe(self.OnAutomatic)
+            self.gAdd = Button(gConfigPanel, _(u'Add'))
+            self.gAdd.on_clicked.subscribe(self.OnAdd)
+            self.gRemove = Button(gConfigPanel, _(u'Remove'))
+            self.gRemove.on_clicked.subscribe(self.OnRemove)
+            right_side_components.extend([self.gAuto, Spacer(4), self.gAdd,
+                                          self.gRemove])
+            self.OnAutomatic(self.autoIsChecked)
+            side_button_layout = VLayout(
+                spacing=4, items=right_side_components)
+        self.main_layout.add(
+            (HBoxedLayout(gConfigPanel, title=self.__class__.listLabel,
+                          spacing=4, items=[
+                (self.gList, LayoutOptions(fill=True, weight=1)),
+                (side_button_layout, LayoutOptions(v_align=TOP)),
+                (self._get_select_layout(), LayoutOptions(fill=True))]),
+             LayoutOptions(fill=True, weight=1)))
         return gConfigPanel
 
-    def _on_remove_empty_checked(self):
-        self.remove_empty_sublists = self.g_remove_empty.IsChecked()
+    def _on_remove_empty_checked(self, is_checked):
+        self.remove_empty_sublists = is_checked
 
-    def _get_select_sizer(self):
+    def _get_select_layout(self):
         if not self.selectCommands: return None
-        self.gSelectAll = Button(self.gConfigPanel, _(u'Select All'),
-                                 onButClick=self.SelectAll)
-        self.gDeselectAll = Button(self.gConfigPanel, _(u'Deselect All'),
-                                   onButClick=self.DeselectAll)
-        return (vSizer(
-            vspace(12), self.gSelectAll, vspace(4), self.gDeselectAll),
-                0, wx.EXPAND | wx.LEFT, 4)
+        self.gSelectAll = Button(self.gConfigPanel, _(u'Select All'))
+        self.gSelectAll.on_clicked.subscribe(self.SelectAll)
+        self.gDeselectAll = Button(self.gConfigPanel, _(u'Deselect All'))
+        self.gDeselectAll.on_clicked.subscribe(self.DeselectAll)
+        return VLayout(spacing=4, items=[self.gSelectAll, self.gDeselectAll])
 
     def SetItems(self,items):
         """Set item to specified set of items."""
@@ -325,11 +324,11 @@ class _ListPatcherPanel(_PatcherPanel):
         elif ensureEnabled:
             self._EnsurePatcherEnabled()
 
-    def OnAutomatic(self):
+    def OnAutomatic(self, is_checked):
         """Automatic checkbox changed."""
-        self.autoIsChecked = self.gAuto.IsChecked()
-        self.gAdd.Enable(not self.autoIsChecked)
-        self.gRemove.Enable(not self.autoIsChecked)
+        self.autoIsChecked = is_checked
+        self.gAdd.enabled = not self.autoIsChecked
+        self.gRemove.enabled = not self.autoIsChecked
         if self.autoIsChecked:
             self.SetItems(self.getAutoItems())
 
@@ -495,21 +494,19 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
     tweak_label = _(u"Tweaks")
     _right_click_list = 'gTweakList'
 
-    def GetConfigPanel(self,parent,gConfigSizer,gTipText):
+    def GetConfigPanel(self, parent, config_layout, gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
         gConfigPanel = super(_TweakPatcherPanel, self).GetConfigPanel(parent,
-            gConfigSizer, gTipText)
+                                                                      config_layout, gTipText)
         self._build_tweaks_list()
-        gTweakSelectSizer = self._get_tweak_select_sizer()
         #--Layout
-        self.gSizer.AddElements(vspace(),
-            (hsbSizer(gConfigPanel, self.__class__.tweak_label,
-                ((4,0),0,wx.EXPAND),
-                (self.gTweakList,1,wx.EXPAND|wx.TOP,2),
-                gTweakSelectSizer,
-                ),1,wx.EXPAND),
-            )
+        self.main_layout.add(
+            (HBoxedLayout(gConfigPanel, title=self.__class__.tweak_label,
+                          default_fill=True, spacing=4, items=[
+                    (self.gTweakList, LayoutOptions(weight=1)),
+                    self._get_tweak_select_layout()]),
+             LayoutOptions(fill=True, weight=1)))
         return gConfigPanel
 
     def _build_tweaks_list(self):
@@ -520,20 +517,19 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         self.gTweakList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
         self.mouse_dex = -1
 
-    def _get_tweak_select_sizer(self, ):
+    def _get_tweak_select_layout(self, ):
         if self.selectCommands:
-            self.gTweakSelectAll = Button(self.gConfigPanel,
-                _(u'Select All'), onButClick=self.TweakSelectAll)
+            self.gTweakSelectAll = Button(self.gConfigPanel, _(u'Select All'))
+            self.gTweakSelectAll.on_clicked.subscribe(self.TweakSelectAll)
             self.gTweakDeselectAll = Button(self.gConfigPanel,
-                _(u'Deselect All'), onButClick=self.TweakDeselectAll)
-            gTweakSelectSizer = (vSizer(
-                 vspace(12), self.gTweakSelectAll,
-                 vspace(4), self.gTweakDeselectAll,
-                ),0,wx.EXPAND|wx.LEFT,4)
-        else: gTweakSelectSizer = None
+                                            _(u'Deselect All'))
+            self.gTweakDeselectAll.on_clicked.subscribe(self.TweakDeselectAll)
+            tweak_select_layout = VLayout(spacing=4, items=[
+                self.gTweakSelectAll, self.gTweakDeselectAll])
+        else: tweak_select_layout = None
         #--Init GUI
         self.SetTweaks()
-        return gTweakSelectSizer
+        return tweak_select_layout
 
     @staticmethod
     def _label(label, value): # edit label text with value
@@ -575,7 +571,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
     def OnMouse(self, event):
         """Check mouse motion to detect right click event."""
         if event.Leaving():
-            self.gTipText.SetLabel(u'')
+            self.gTipText.label_text = u''
             self.mouse_pos = None
             event.Skip()
         elif event.Moving():
@@ -587,9 +583,9 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 tip = 0 <= mouseItem < len(self.tweaks) and self.tweaks[
                     mouseItem].tweak_tip
                 if tip:
-                    self.gTipText.SetLabel(tip)
+                    self.gTipText.label_text = tip
                 else:
-                    self.gTipText.SetLabel(u'')
+                    self.gTipText.label_text = u''
             event.Skip()
         else:
             super(_TweakPatcherPanel, self).OnMouse(event)
@@ -759,11 +755,11 @@ class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
     # CONFIG DEFAULTS
     default_isEnabled = True # isActive will be set to True in initPatchFile
 
-    def GetConfigPanel(self,parent,gConfigSizer,gTipText):
+    def GetConfigPanel(self, parent, config_layout, gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
         gConfigPanel = super(_DoublePatcherPanel, self).GetConfigPanel(parent,
-            gConfigSizer, gTipText)
+                                                                       config_layout, gTipText)
         return gConfigPanel
 
     #--Config Phase -----------------------------------------------------------
@@ -826,10 +822,10 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         else:
             return item
 
-    def GetConfigPanel(self,parent,gConfigSizer,gTipText):
+    def GetConfigPanel(self, parent, config_layout, gTipText):
         if self.gConfigPanel: return self.gConfigPanel
         gConfigPanel = super(_ListsMergerPanel, self).GetConfigPanel(parent,
-            gConfigSizer, gTipText)
+                                                                     config_layout, gTipText)
         self._bind_mouse_events()
         return gConfigPanel
 

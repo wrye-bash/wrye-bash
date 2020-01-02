@@ -22,16 +22,18 @@
 #
 # =============================================================================
 
+import wx
 import string
 from types import IntType, LongType
-import wx
 from . import bEnableWizard, tabInfo, BashFrame
 from .constants import colorInfo, settingDefaults, installercons
 from .. import bass, balt, bosh, bolt, bush, env
-from ..balt import Button, hSizer, Link, colors, RoTextCtrl, vSizer, hspacer, \
-    checkBox, StaticText, Image, bell, TextCtrl, tooltip, OkButton, \
-    CancelButton, ApplyButton, hspace, vspace, Resources, set_event_hook, Events
+from ..balt import Link, colors, Image, bell, Resources, set_event_hook, \
+    Events, ColorPicker
 from ..bosh import faces
+from ..gui import ApplyButton, BOTTOM, Button, CancelButton, CENTER, \
+    CheckBox, GridLayout, HLayout, Label, LayoutOptions, OkButton, RIGHT, \
+    Stretch, TextArea, TextField, VLayout
 
 class ColorDialog(balt.Dialog):
     """Color configuration dialog"""
@@ -59,45 +61,42 @@ class ColorDialog(balt.Dialog):
         choiceKey = self.text_key[combo_text]
         self.comboBox = balt.ComboBox(self, value=combo_text, choices=colored)
         #--Color Picker
-        self.picker = wx.ColourPickerCtrl(self)
-        self.picker.SetColour(colors[choiceKey])
+        self.picker = ColorPicker(self, colors[choiceKey])
         #--Description
         help_ = colorInfo[choiceKey][1]
-        self.textCtrl = RoTextCtrl(self, help_)
+        self.textCtrl = TextArea(self, init_text=help_, editable=False)
         #--Buttons
-        self.default = Button(self, _(u'Default'),
-                              onButClickEventful=self.OnDefault)
-        self.defaultAll = Button(self, _(u'All Defaults'),
-                                 onButClickEventful=self.OnDefaultAll)
-        self.apply = ApplyButton(self, onButClickEventful=self.OnApply)
-        self.applyAll = Button(self, _(u'Apply All'),
-                               onButClickEventful=self.OnApplyAll)
-        self.export_config = Button(self, _(u'Export...'),
-                                    onButClickEventful=self.OnExport)
-        self.importConfig = Button(self, _(u'Import...'),
-                                   onButClickEventful=self.OnImport)
-        self.ok = OkButton(self, onButClickEventful=self.OnOK,
-                           default=True)
+        self.default = Button(self, _(u'Default'))
+        self.default.on_clicked.subscribe(self.OnDefault)
+        self.defaultAll = Button(self, _(u'All Defaults'))
+        self.defaultAll.on_clicked.subscribe(self.OnDefaultAll)
+        self.apply = ApplyButton(self)
+        self.apply.on_clicked.subscribe(self.OnApply)
+        self.applyAll = Button(self, _(u'Apply All'))
+        self.applyAll.on_clicked.subscribe(self.OnApplyAll)
+        self.export_config = Button(self, _(u'Export...'))
+        self.export_config.on_clicked.subscribe(self.OnExport)
+        self.importConfig = Button(self, _(u'Import...'))
+        self.importConfig.on_clicked.subscribe(self.OnImport)
+        self.ok = OkButton(self, default=True)
+        self.ok.on_clicked.subscribe(self.OnOK)
         #--Events
         set_event_hook(self.comboBox, Events.COMBOBOX_CHOICE, self.OnComboBox)
         set_event_hook(self.picker, Events.COLORPICKER_CHANGED,
                        self.OnColorPicker)
         #--Layout
-        sizer = vSizer(
-            (hSizer((self.comboBox,1,wx.EXPAND), hspace(5), self.picker,
-                ),0,wx.EXPAND|wx.ALL,5),
-            (self.textCtrl,1,wx.EXPAND|wx.ALL,5),
-            (hSizer(self.defaultAll, hspace(5),
-                    self.applyAll, hspace(5),
-                    self.export_config,
-                    ),0,wx.EXPAND|wx.ALL,5),
-            (hSizer(self.default, hspace(5),
-                    self.apply, hspace(5),
-                    self.importConfig, hspacer, self.ok,
-                    ),0,wx.EXPAND|wx.ALL,5),
-            )
+        VLayout(border=5, default_fill=True, spacing=5, items=[
+            HLayout(items=[
+                (self.comboBox, LayoutOptions(fill=True, weight=1)),
+                self.picker]),
+            (self.textCtrl, LayoutOptions(weight=1)),
+            GridLayout(h_spacing=5, v_spacing=5, default_fill=True,
+                       stretch_cols=[3], items=[
+                (self.defaultAll, self.applyAll, self.export_config),
+                (self.default, self.apply, self.importConfig, None, self.ok)
+            ])
+        ]).apply_to(self)
         self.comboBox.SetFocus()
-        self.SetSizer(sizer)
         self.SetIcons(Resources.bashBlue)
         self.UpdateUIButtons()
 
@@ -138,34 +137,31 @@ class ColorDialog(balt.Dialog):
             color = colors[color_key]
         default = bool(color == settingDefaults['bash.colors'][color_key])
         # Update the Buttons, ComboBox, and ColorPicker
-        self.apply.Enable(changed)
-        self.applyAll.Enable(anyChanged)
-        self.default.Enable(not default)
-        self.defaultAll.Enable(not allDefault)
-        self.picker.SetColour(color)
+        self.apply.enabled = changed
+        self.applyAll.enabled = anyChanged
+        self.default.enabled = not default
+        self.defaultAll.enabled = not allDefault
+        self.picker.set_color(color)
         self.comboBox.SetFocusFromKbd()
 
     def _unbind_combobox(self):
         # TODO(inf) de-wx!, needed for wx3, check if needed in Phoenix
         self.comboBox.Unbind(wx.EVT_SIZE)
 
-    def OnDefault(self,event):
-        event.Skip()
+    def OnDefault(self):
         color_key = self.GetColorKey()
         newColor = settingDefaults['bash.colors'][color_key]
         self.changes[color_key] = newColor
         self.UpdateUIButtons()
 
-    def OnDefaultAll(self,event):
-        event.Skip()
+    def OnDefaultAll(self):
         for key in colors:
             default = settingDefaults['bash.colors'][key]
             if colors[key] != default:
                 self.changes[key] = default
         self.UpdateUIButtons()
 
-    def OnApply(self,event):
-        event.Skip()
+    def OnApply(self):
         color_key = self.GetColorKey()
         newColor = self.changes[color_key]
         #--Update settings and colors
@@ -175,8 +171,7 @@ class ColorDialog(balt.Dialog):
         self.UpdateUIButtons()
         self.UpdateUIColors()
 
-    def OnApplyAll(self,event):
-        event.Skip()
+    def OnApplyAll(self):
         for key,newColor in self.changes.iteritems():
             bass.settings['bash.colors'][key] = newColor
             colors[key] = newColor
@@ -184,12 +179,11 @@ class ColorDialog(balt.Dialog):
         self.UpdateUIButtons()
         self.UpdateUIColors()
 
-    def OnOK(self, event):
+    def OnOK(self):
         self._unbind_combobox()
-        self.OnApplyAll(event)
+        self.OnApplyAll()
 
-    def OnExport(self,event):
-        event.Skip()
+    def OnExport(self):
         outDir = bass.dirs['patches']
         outDir.makedirs()
         #--File dialog
@@ -206,8 +200,7 @@ class ColorDialog(balt.Dialog):
         except Exception as e:
             balt.showError(self,_(u'An error occurred writing to ')+outPath.stail+u':\n\n%s'%e)
 
-    def OnImport(self,event):
-        event.Skip()
+    def OnImport(self):
         inDir = bass.dirs['patches']
         inDir.makedirs()
         #--File dialog
@@ -253,13 +246,13 @@ class ColorDialog(balt.Dialog):
         event.Skip()
         self.UpdateUIButtons()
         color_key = self.GetColorKey()
-        help = colorInfo[color_key][1]
-        self.textCtrl.SetValue(help)
+        description = colorInfo[color_key][1]
+        self.textCtrl.text_content = description
 
     def OnColorPicker(self,event):
         event.Skip()
         color_key = self.GetColorKey()
-        newColor = self.picker.GetColour()
+        newColor = self.picker.get_color()
         self.changes[color_key] = newColor
         self.UpdateUIButtons()
 
@@ -288,65 +281,46 @@ class ImportFaceDialog(balt.Dialog):
         #--Name,Race,Gender Checkboxes
         fi_flgs = bosh.faces.PCFaces.pcf_flags(
             bass.settings.get('bash.faceImport.flags', 0x4))
-        self.nameCheck = checkBox(self, _(u'Name'), checked=fi_flgs.name)
-        self.raceCheck = checkBox(self, _(u'Race'), checked=fi_flgs.race)
-        self.genderCheck = checkBox(self, _(u'Gender'), checked=fi_flgs.gender)
-        self.statsCheck = checkBox(self, _(u'Stats'), checked=fi_flgs.stats)
-        self.classCheck = checkBox(self, _(u'Class'), checked=fi_flgs.iclass)
+        self.nameCheck = CheckBox(self, _(u'Name'), checked=fi_flgs.name)
+        self.raceCheck = CheckBox(self, _(u'Race'), checked=fi_flgs.race)
+        self.genderCheck = CheckBox(self, _(u'Gender'), checked=fi_flgs.gender)
+        self.statsCheck = CheckBox(self, _(u'Stats'), checked=fi_flgs.stats)
+        self.classCheck = CheckBox(self, _(u'Class'), checked=fi_flgs.iclass)
         #--Name,Race,Gender Text
-        self.nameText  = StaticText(self,u'-----------------------------')
-        self.raceText  = StaticText(self,u'')
-        self.genderText  = StaticText(self,u'')
-        self.statsText  = StaticText(self,u'')
-        self.classText  = StaticText(self,u'')
+        self.nameText  = Label(self,u'-----------------------------')
+        self.raceText  = Label(self,u'')
+        self.genderText  = Label(self,u'')
+        self.statsText  = Label(self,u'')
+        self.classText  = Label(self,u'')
         #--Other
-        importButton = Button(self, label=_(u'Import'),
-                              onButClick=self.DoImport, default=True)
+        importButton = Button(self, label=_(u'Import'), default=True)
+        importButton.on_clicked.subscribe(self.DoImport)
         self.picture = balt.Picture(self,350,210,scaling=2)
-        #--Layout
-        fgSizer = wx.FlexGridSizer(5,2,2,4)
-        fgSizer.AddGrowableCol(1,1)
-        fgSizer.AddMany([
-            self.nameCheck,
-            self.nameText,
-            self.raceCheck,
-            self.raceText,
-            self.genderCheck,
-            self.genderText,
-            self.statsCheck,
-            self.statsText,
-            self.classCheck,
-            self.classText,
-            ])
-        sizer = hSizer(
-            (self.listBox,1,wx.EXPAND|wx.TOP,4),
-            (vSizer(
-                self.picture, vspace(),
-                (hSizer(
-                    (fgSizer,1),
-                    (vSizer(
-                        (importButton,0,wx.ALIGN_RIGHT),
-                        vspace(), CancelButton(self),
-                        )),
-                    ),0,wx.EXPAND),
-                ),0,wx.EXPAND|wx.ALL,4),
-            )
-        #--Done
-        if 'ImportFaceDialog' in balt.sizes:
-            self.SetSizer(sizer)
-            self.SetSize(balt.sizes['ImportFaceDialog'])
-        else:
-            self.SetSizerAndFit(sizer)
+        GridLayout(border=4, stretch_cols=[0, 1], stretch_rows=[0], items=[
+            # Row 1
+            ((self.listBox, LayoutOptions(row_span=2, fill=True)),
+             (self.picture, LayoutOptions(col_span=2, fill=True))),
+            # Row 2
+            (None,  # note the row_span in the prev row
+             GridLayout(h_spacing=4, v_spacing=2, stretch_cols=[1], items=[
+                 (self.nameCheck, self.nameText),
+                 (self.raceCheck, self.raceText),
+                 (self.genderCheck, self.genderText),
+                 (self.statsCheck, self.statsText),
+                 (self.classCheck, self.classText)]),
+             (VLayout(spacing=4, items=[importButton, CancelButton(self)]),
+              LayoutOptions(h_align=RIGHT, v_align=BOTTOM)))
+        ]).apply_to(self)
 
     def EvtListBox(self,event):
         """Responds to listbox selection."""
         itemDex = event.GetSelection()
         item = self.list_items[itemDex]
         face = self.data[item]
-        self.nameText.SetLabel(face.pcName)
-        self.raceText.SetLabel(face.getRaceName())
-        self.genderText.SetLabel(face.getGenderName())
-        self.statsText.SetLabel(_(u'Health ')+unicode(face.health))
+        self.nameText.label_text = face.pcName
+        self.raceText.label_text = face.getRaceName()
+        self.genderText.label_text = face.getGenderName()
+        self.statsText.label_text = _(u'Health ') + unicode(face.health)
         itemImagePath = bass.dirs['mods'].join(u'Docs', u'Images', '%s.jpg' % item)
         # TODO(ut): any way to get the picture ? see mod_links.Mod_Face_Import
         bitmap = itemImagePath.exists() and Image(
@@ -365,11 +339,11 @@ class ImportFaceDialog(balt.Dialog):
         #--Do import
         pc_flags = bosh.faces.PCFaces.pcf_flags() # make a copy of PCFaces flags
         pc_flags.hair = pc_flags.eye = True
-        pc_flags.name = self.nameCheck.GetValue()
-        pc_flags.race = self.raceCheck.GetValue()
-        pc_flags.gender = self.genderCheck.GetValue()
-        pc_flags.stats = self.statsCheck.GetValue()
-        pc_flags.iclass = self.classCheck.GetValue()
+        pc_flags.name = self.nameCheck.is_checked
+        pc_flags.race = self.raceCheck.is_checked
+        pc_flags.gender = self.genderCheck.is_checked
+        pc_flags.stats = self.statsCheck.is_checked
+        pc_flags.iclass = self.classCheck.is_checked
         #deprint(flags.getTrueAttrs())
         bass.settings['bash.faceImport.flags'] = int(pc_flags)
         bosh.faces.PCFaces.save_setFace(self.fileInfo,self.data[item],pc_flags)
@@ -386,67 +360,53 @@ class CreateNewProject(balt.Dialog):
         self.existingProjects = [x for x in bass.dirs['installers'].list() if bass.dirs['installers'].join(x).isdir()]
 
         #--Attributes
-        self.textName = TextCtrl(self, _(u'New Project Name-#####'),
-                                 onText=self.OnCheckProjectsColorTextCtrl)
-        self.checkEsp = checkBox(self, _(u'Blank.esp'),
-                                 onCheck=self.OnCheckBoxChange, checked=True)
-        self.checkEspMasterless = checkBox(self, _(u'Blank Masterless.esp'),
-                                   onCheck=self.OnCheckBoxChange, checked=False)
-        self.checkWizard = checkBox(self, _(u'Blank wizard.txt'),
-                                    onCheck=self.OnCheckBoxChange)
-        self.checkWizardImages = checkBox(self, _(u'Wizard Images Directory'))
+        self.textName = TextField(self, _(u'New Project Name-#####'))
+        self.textName.on_text_changed.subscribe(
+            self.OnCheckProjectsColorTextCtrl)
+        self.checkEsp = CheckBox(self, _(u'Blank.esp'), checked=True)
+        self.checkEspMasterless = CheckBox(self, _(u'Blank Masterless.esp'))
+        self.checkWizard = CheckBox(self, _(u'Blank wizard.txt'))
+        self.checkWizardImages = CheckBox(self, _(u'Wizard Images Directory'))
+        for checkbox in (self.checkEsp, self.checkEspMasterless,
+                         self.checkWizard):
+            checkbox.on_checked.subscribe(self.OnCheckBoxChange)
         if not bEnableWizard:
             # pywin32 not installed
-            self.checkWizard.Disable()
-            self.checkWizardImages.Disable()
-        self.checkDocs = checkBox(self,_(u'Docs Directory'))
-        # self.checkScreenshot = checkBox(self,_(u'Preview Screenshot(No.ext)(re-enable for BAIT)'))
-        # self.checkScreenshot.Disable() #Remove this when BAIT gets preview stuff done
-        okButton = OkButton(self, onButClickEventful=self.OnClose)
-        cancelButton = CancelButton(self, onButClickEventful=self.OnCancel)
+            self.checkWizard.enabled = False
+            self.checkWizardImages.enabled = False
+        self.checkDocs = CheckBox(self, _(u'Docs Directory'))
         # Panel Layout
-        hsizer = balt.hSizer()
-        hsizer.Add(okButton,0,wx.ALL|wx.ALIGN_CENTER,10)
-        hsizer.Add(cancelButton,0,wx.ALL|wx.ALIGN_CENTER,10)
-        vsizer = balt.vSizer()
-        vsizer.Add(StaticText(self,_(u'What do you want to name the New Project?'),style=wx.TE_RICH2),0,wx.ALL|wx.ALIGN_CENTER,10)
-        vsizer.Add(self.textName,0,wx.ALL|wx.ALIGN_CENTER|wx.EXPAND,2)
-        vsizer.Add(StaticText(self,_(u'What do you want to add to the New Project?')),0,wx.ALL|wx.ALIGN_CENTER,10)
-        vsizer.Add(self.checkEsp,0,wx.ALL|wx.ALIGN_TOP,5)
-        vsizer.Add(self.checkEspMasterless,0,wx.ALL|wx.ALIGN_TOP,5)
-        vsizer.Add(self.checkWizard,0,wx.ALL|wx.ALIGN_TOP,5)
-        vsizer.Add(self.checkWizardImages,0,wx.ALL|wx.ALIGN_TOP,5)
-        vsizer.Add(self.checkDocs,0,wx.ALL|wx.ALIGN_TOP,5)
-        # vsizer.Add(self.checkScreenshot,0,wx.ALL|wx.ALIGN_TOP,5)
-        vsizer.Add(wx.StaticLine(self))
-        vsizer.AddStretchSpacer()
-        vsizer.Add(hsizer,0,wx.ALIGN_CENTER)
-        vsizer.AddStretchSpacer()
-        self.SetSizer(vsizer)
+        ok_button = OkButton(self)
+        ok_button.on_clicked.subscribe(self.OnClose)
+        VLayout(border=5, spacing=5, items=[
+            Label(self, _(u'What do you want to name the New Project?')),
+            (self.textName, LayoutOptions(fill=True)),
+            Label(self,_(u'What do you want to add to the New Project?')),
+            self.checkEsp, self.checkEspMasterless, self.checkWizard,
+            self.checkWizardImages, self.checkDocs,
+            Stretch(),
+            (HLayout(spacing=5, items=[ok_button, CancelButton(self)]),
+             LayoutOptions(h_align=CENTER))
+        ]).apply_to(self)
         self.SetInitialSize()
-        # Event Handlers
-        set_event_hook(self.textName, Events.TEXT_CHANGED,
-                       self.OnCheckProjectsColorTextCtrl)
         # Dialog Icon Handlers
         self.SetIcon(installercons.get_image('off.white.dir').GetIcon())
         self.OnCheckBoxChange()
 
-    def OnCheckProjectsColorTextCtrl(self,event):
-        projectName = bolt.GPath(self.textName.GetValue())
+    def OnCheckProjectsColorTextCtrl(self, new_text):
+        projectName = bolt.GPath(new_text)
         if projectName in self.existingProjects: #Fill this in. Compare this with the self.existingprojects list
-            self.textName.SetBackgroundColour('#FF0000')
-            self.textName.SetToolTip(tooltip(_(u'There is already a project with that name!')))
+            self.textName.background_color = '#FF0000'
+            self.textName.tooltip = _(u'There is already a project with that name!')
         else:
-            self.textName.SetBackgroundColour('#FFFFFF')
-            self.textName.SetToolTip(None)
-        self.textName.Refresh()
-        event.Skip()
+            self.textName.background_color = '#FFFFFF'
+            self.textName.tooltip = None
 
-    def OnCheckBoxChange(self):
+    def OnCheckBoxChange(self, is_checked=None):
         """ Change the Dialog Icon to represent what the project status will
         be when created. """
-        if self.checkEsp.IsChecked():
-            if self.checkWizard.IsChecked():
+        if self.checkEsp.is_checked:
+            if self.checkWizard.is_checked:
                 self.SetIcon(
                     installercons.get_image('off.white.dir.wiz').GetIcon())
             else:
@@ -455,12 +415,9 @@ class CreateNewProject(balt.Dialog):
         else:
             self.SetIcon(installercons.get_image('off.grey.dir').GetIcon())
 
-    @staticmethod
-    def OnCancel(event): event.Skip()
-
-    def OnClose(self, event):
+    def OnClose(self):
         """ Create the New Project and add user specified extras. """
-        projectName = bolt.GPath(self.textName.GetValue().strip())
+        projectName = bolt.GPath(self.textName.text_content.strip())
         projectDir = bass.dirs['installers'].join(projectName)
 
         if projectDir.exists():
@@ -468,28 +425,27 @@ class CreateNewProject(balt.Dialog):
                 u'There is already a project with that name!') + u'\n' + _(
                 u'Pick a different name for the project and try again.'))
             return
-        event.Skip()
 
         # Create project in temp directory, so we can move it via
         # Shell commands (UAC workaround)
         tmpDir = bolt.Path.tempDir()
         tempProject = tmpDir.join(projectName)
-        if self.checkEsp.IsChecked():
+        if self.checkEsp.is_checked:
             fileName = u'Blank, %s.esp' % bush.game.fsName
             bosh.modInfos.create_new_mod(fileName, directory=tempProject)
-        if self.checkEspMasterless.IsChecked():
+        if self.checkEspMasterless.is_checked:
             fileName = u'Blank, %s (masterless).esp' % bush.game.fsName
             bosh.modInfos.create_new_mod(fileName, directory=tempProject,
                                          masterless=True)
-        if self.checkWizard.IsChecked():
+        if self.checkWizard.is_checked:
             # Create empty wizard.txt
             wizardPath = tempProject.join(u'wizard.txt')
             with wizardPath.open('w',encoding='utf-8') as out:
                 out.write(u'; %s BAIN Wizard Installation Script\n' % projectName)
-        if self.checkWizardImages.IsChecked():
+        if self.checkWizardImages.is_checked:
             # Create 'Wizard Images' directory
             tempProject.join(u'Wizard Images').makedirs()
-        if self.checkDocs.IsChecked():
+        if self.checkDocs.is_checked:
             #Create the 'Docs' Directory
             tempProject.join(u'Docs').makedirs()
         # if self.checkScreenshot.IsChecked():

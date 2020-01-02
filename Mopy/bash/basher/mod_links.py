@@ -36,9 +36,11 @@ from .constants import settingDefaults
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, CBash_gui_patchers, PBash_gui_patchers
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order
-from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, hspacer, \
-    StaticText, CheckLink, EnabledLink, AppendableLink, TransLink, RadioLink, \
-    SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes, OkButton
+from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink,\
+    TransLink, RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, \
+    ListBoxes
+from ..gui import CancelButton, CheckBox, HLayout, Label, LayoutOptions, \
+    OkButton, RIGHT, Spacer, Stretch, TextField, VLayout
 from ..bolt import GPath, SubProgress
 from ..bosh import faces
 from ..cint import CBashApi, FormID
@@ -2037,35 +2039,37 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         defaultPath = bass.dirs['patches'].join(fileName.s + u' Exported Scripts')
         def OnOk():
             dialog.EndModal(1)
-            bass.settings['bash.mods.export.deprefix'] = gdeprefix.GetValue().strip()
-            bass.settings['bash.mods.export.skip'] = gskip.GetValue().strip()
-            bass.settings['bash.mods.export.skipcomments'] = gskipcomments.GetValue()
+            bass.settings['bash.mods.export.deprefix'] = gdeprefix.text_content.strip()
+            bass.settings['bash.mods.export.skip'] = gskip.text_content.strip()
+            bass.settings['bash.mods.export.skipcomments'] = gskipcomments.is_checked
         dialog = balt.Dialog(Link.Frame, _(u'Export Scripts Options'),
                              size=(400, 180), resize=False)
-        okButton = OkButton(dialog, onButClick=OnOk)
-        gskip = TextCtrl(dialog)
-        gdeprefix = TextCtrl(dialog)
-        gskipcomments = toggleButton(dialog, _(u'Filter Out Comments'),
-            toggle_tip=_(u"If active doesn't export comments in the scripts"))
-        gskip.SetValue(bass.settings['bash.mods.export.skip'])
-        gdeprefix.SetValue(bass.settings['bash.mods.export.deprefix'])
-        gskipcomments.SetValue(bass.settings['bash.mods.export.skipcomments'])
-        sizer = vSizer(
-            StaticText(dialog,_(u"Skip prefix (leave blank to not skip any), non-case sensitive):"),noAutoResize=True),
-            gskip,
-            hspacer,
-            StaticText(dialog,(_(u'Remove prefix from file names i.e. enter cob to save script cobDenockInit')
-                               + u'\n' +
-                               _(u'as DenockInit.ext rather than as cobDenockInit.ext')
-                               + u'\n' +
-                               _(u'(Leave blank to not cut any prefix, non-case sensitive):')
-                               ),noAutoResize=True),
-            gdeprefix,
-            hspacer,
+        gskip = TextField(dialog)
+        gdeprefix = TextField(dialog)
+        gskipcomments = CheckBox(dialog, _(u'Filter Out Comments'),
+                tooltip=_(u"If active doesn't export comments in the scripts"))
+        gskip.text_content = bass.settings['bash.mods.export.skip']
+        gdeprefix.text_content = bass.settings['bash.mods.export.deprefix']
+        gskipcomments.is_checked = bass.settings['bash.mods.export.skipcomments']
+        ok_button = OkButton(dialog)
+        ok_button.on_clicked.subscribe(OnOk)
+        VLayout(border=6, spacing=4, items=[
+            Label(dialog, _(u'Skip prefix (leave blank to not skip any), '
+                            u'non-case sensitive):')),
+            (gskip, LayoutOptions(fill=True)),
+            Spacer(10),
+            Label(dialog, _(u'Remove prefix from file names i.e. enter cob '
+                            u'to save script cobDenockInit\nas '
+                            u'DenockInit.ext rather than as '
+                            u'cobDenockInit.ext\n(Leave blank to not cut any '
+                            u'prefix, non-case sensitive):')),
+            (gdeprefix, LayoutOptions(fill=True)),
+            Spacer(10),
             gskipcomments,
-            balt.ok_and_cancel_sizer(dialog, okButton=okButton),
-            )
-        dialog.SetSizer(sizer)
+            Stretch(),
+            (HLayout(spacing=4, items=[ok_button, CancelButton(dialog)]),
+             LayoutOptions(h_align=RIGHT))
+        ]).apply_to(dialog)
         with dialog: questions = dialog.ShowModal()
         if questions != 1: return #because for some reason cancel/close dialogue is returning 5101!
         if not defaultPath.exists():

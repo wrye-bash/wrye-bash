@@ -79,13 +79,15 @@ startupinfo = bolt.startupinfo
 #--Balt
 from .. import balt
 from ..balt import CheckLink, EnabledLink, SeparatorLink, Link, \
-    ChoiceLink, RoTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
-    SaveButton, CancelButton, INIListCtrl, DnDStatusBar, NotebookPanel, \
-    BaltFrame, set_event_hook, Events
-from ..balt import checkBox, StaticText, spinCtrl, TextCtrl
-from ..balt import hspacer, hSizer, vSizer, hspace, vspace
+    ChoiceLink, staticBitmap, AppendableLink, ListBoxes, \
+    INIListCtrl, DnDStatusBar, NotebookPanel, BaltFrame, set_event_hook, Events
+from ..balt import spinCtrl
 from ..balt import colors, images, Image, Resources
 from ..balt import Links, ItemLink
+
+from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
+    LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
+    TOP, VLayout, EventResult
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons
@@ -173,21 +175,17 @@ class SashPanel(NotebookPanel):
     def __init__(self, parent, isVertical=True):
         super(SashPanel, self).__init__(parent)
         self.splitter = splitter = balt.Splitter(self)
-        self.left = wx.Panel(splitter)
-        self.right = wx.Panel(splitter)
         if isVertical:
-            splitter.SplitVertically(self.left, self.right)
+            self.left, self.right = splitter.make_vertical_panes()
         else:
-            splitter.SplitHorizontally(self.left, self.right)
+            self.left, self.right = splitter.make_horizontal_panes()
         self.isVertical = isVertical
         self.sashPosKey = self.__class__.keyPrefix + '.sashPos'
         # Don't allow unsplitting
         splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda event: event.Veto())
         splitter.SetMinimumPaneSize(self.__class__.minimumSize)
-        sizer = vSizer(
-            (splitter,1,wx.EXPAND),
-            )
-        self.SetSizer(sizer)
+        VLayout(default_weight=1, default_fill=True,
+                items=[splitter]).apply_to(self)
 
     def ShowPanel(self, **kwargs):
         if self._firstShow:
@@ -251,8 +249,10 @@ class BashTab(_DetailsViewMixin, SashUIListPanel):
         super(BashTab, self).__init__(parent, isVertical)
         self.detailsPanel = self._details_panel_type(self.right)
         #--Layout
-        self.right.SetSizer(hSizer((self.detailsPanel, 1, wx.EXPAND)))
-        self.left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND)))
+        HLayout(default_fill=True, default_weight=1,
+                items=[self.detailsPanel]).apply_to(self.right)
+        HLayout(default_fill=True, default_weight=2,
+                items=[self.uiList]).apply_to(self.left)
 
 #------------------------------------------------------------------------------
 class _ModsUIList(balt.UIList):
@@ -709,7 +709,7 @@ class INITweakLineCtrl(INIListCtrl):
             if self.iniContents.GetItemBackgroundColour(i) != background_color:
                 self.iniContents.SetItemBackgroundColour(i, background_color)
         #--Refresh column width
-        self.SetColumnWidth(0,wx.LIST_AUTOSIZE_USEHEADER)
+        self.fit_column_to_header(0)
 
 #------------------------------------------------------------------------------
 class TargetINILineCtrl(INIListCtrl):
@@ -742,7 +742,7 @@ class TargetINILineCtrl(INIListCtrl):
         except IOError:
             if bush.game.iniFiles[0] == bosh.iniInfos.ini.abs_path.stail:
                 Link.Frame.oblivionIniMissing = True
-        self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
+        self.fit_column_to_header(0)
 
 #------------------------------------------------------------------------------
 class ModList(_ModsUIList):
@@ -1151,17 +1151,19 @@ class _EditableMixin(_DetailsMixin):
     def __init__(self, buttonsParent):
         self.edited = False
         #--Save/Cancel
-        self.save = SaveButton(buttonsParent, onButClick=self.DoSave)
-        self.cancel = CancelButton(buttonsParent, onButClick=self.DoCancel)
-        self.save.Disable()
-        self.cancel.Disable()
+        self.save = SaveButton(buttonsParent)
+        self.save.on_clicked.subscribe(self.DoSave)
+        self.cancel = CancelButton(buttonsParent)
+        self.cancel.on_clicked.subscribe(self.DoCancel)
+        self.save.enabled = False
+        self.cancel.enabled = False
 
     # Details panel API
     def SetFile(self, fileName='SAME'):
         #--Edit State
         self.edited = False
-        self.save.Disable()
-        self.cancel.Disable()
+        self.save.enabled = False
+        self.cancel.enabled = False
         return super(_EditableMixin, self).SetFile(fileName)
 
     # Abstract edit methods
@@ -1172,8 +1174,8 @@ class _EditableMixin(_DetailsMixin):
         if not self.displayed_item: return
         self.edited = True
         if self.allowDetailsEdit:
-            self.save.Enable()
-        self.cancel.Enable()
+            self.save.enabled = True
+        self.cancel.enabled = True
 
     def DoSave(self): raise AbstractError
 
@@ -1192,29 +1194,30 @@ class _EditableMixinOnFileInfos(_EditableMixin):
     def __init__(self, masterPanel, ui_list_panel):
         _EditableMixin.__init__(self, masterPanel)
         #--File Name
-        self.file = TextCtrl(self.top, onKillFocus=self.OnFileEdited,
-                             onText=self.OnFileEdit,
-                             maxChars=self._max_filename_chars,
-                             size=(self._min_controls_width, -1))
+        self.file = TextField(self.top, max_length=self._max_filename_chars)
+        self.file.on_focus_lost.subscribe(self.OnFileEdited)
+        self.file.on_text_changed.subscribe(self.OnFileEdit)
+        # TODO(nycz): GUI set_size
+        #                       size=(self._min_controls_width, -1))
         self.panel_uilist = ui_list_panel.uiList
 
     def OnFileEdited(self):
         """Event: Finished editing file name."""
         if not self.file_info: return
         #--Changed?
-        fileStr = self.file.GetValue()
+        fileStr = self.file.text_content
         if fileStr == self.fileStr: return
         #--Extension Changed?
         if fileStr[-4:].lower() != self.fileStr[-4:].lower():
             balt.showError(self,_(u"Incorrect file extension: ")+fileStr[-3:])
-            self.file.SetValue(self.fileStr)
+            self.file.text_content = self.fileStr
         #--Validate the filename - no need to check for extension again
         elif not self._validate_filename(fileStr):
-            self.file.SetValue(self.fileStr)
+            self.file.text_content = self.fileStr
         #--Else file exists?
         elif self.file_info.dir.join(fileStr).exists():
             balt.showError(self,_(u"File %s already exists.") % fileStr)
-            self.file.SetValue(self.fileStr)
+            self.file.text_content = self.fileStr
         #--Okay?
         else:
             self.fileStr = fileStr
@@ -1223,12 +1226,11 @@ class _EditableMixinOnFileInfos(_EditableMixin):
     def _validate_filename(self, fileStr):
         return self.panel_uilist.validate_filename(None, fileStr)[0]
 
-    def OnFileEdit(self, event):
+    def OnFileEdit(self, new_text):
         """Event: Editing filename."""
         if not self.file_info: return
-        if not self.edited and self.fileStr != self.file.GetValue():
+        if not self.edited and self.fileStr != new_text:
             self.SetEdited()
-        event.Skip()
 
     @balt.conversation
     def _refresh_detail_info(self):
@@ -1270,11 +1272,11 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
         #--Masters
         self.uilist = MasterList(self.masterPanel, keyPrefix=self.keyPrefix,
                                  panel=mod_or_save_panel, detailsPanel=self)
-        mastersSizer = vSizer(
-            vspace(), hSizer(StaticText(self.masterPanel,_(u"Masters:"))),
-            (hSizer((self.uilist,1,wx.EXPAND)),1,wx.EXPAND),
-            vspace(), hSizer(self.save, hspace(), self.cancel))
-        self.masterPanel.SetSizer(mastersSizer)
+        VLayout(spacing=4, items=[
+            Label(self.masterPanel, _(u"Masters:")),
+            (self.uilist, LayoutOptions(weight=1, fill=True)),
+            HLayout(spacing=4, items=[self.save, self.cancel])
+        ]).apply_to(self.masterPanel)
 
     def ShowPanel(self, **kwargs):
         if self._firstShow:
@@ -1312,46 +1314,42 @@ class ModDetails(_SashDetailsPanel):
         self.modInfo = None
         textWidth = 200
         #--Version
-        self.version = StaticText(top,u'v0.00')
+        self.version = Label(top, u'v0.00')
         #--Author
-        self.gAuthor = TextCtrl(top, onKillFocus=self.OnEditAuthor,
-                                onText=self.OnAuthorEdit, maxChars=511) # size=(textWidth,-1))
+        # TODO(inf) de-wx! all the size usages below
+        self.gAuthor = TextField(top, max_length=511) # size=(textWidth,-1))
+        self.gAuthor.on_focus_lost.subscribe(self.OnEditAuthor)
+        self.gAuthor.on_text_changed.subscribe(self.OnAuthorEdit)
         #--Modified
-        self.modified = TextCtrl(top,size=(textWidth, -1),
-                                 onKillFocus=self.OnEditModified,
-                                 onText=self.OnModifiedEdit, maxChars=32)
+        self.modified = TextField(top, max_length=32)
+        self.modified.on_focus_lost.subscribe(self.OnEditModified)
+        self.modified.on_text_changed.subscribe(self.OnModifiedEdit)
+        # size=(textWidth, -1),
         #--Description
-        self.description = TextCtrl(top, size=(textWidth, 128),
-                                    multiline=True, autotooltip=False,
-                                    onKillFocus=self.OnEditDescription,
-                                    onText=self.OnDescrEdit, maxChars=511)
+        self.description = TextArea(top, auto_tooltip=False, max_length=511)
+            # size=(textWidth, 128),
+        self.description.on_focus_lost.subscribe(self.OnEditDescription)
+        self.description.on_text_changed.subscribe(self.OnDescrEdit)
         #--Bash tags
-        self.gTags = RoTextCtrl(self._bottom_low_panel, autotooltip=False,
-                                size=(textWidth, 64))
+        self.gTags = TextArea(self._bottom_low_panel, auto_tooltip=False,
+                              editable=False)
+                                # size=(textWidth, 64))
+        self.gTags.on_right_clicked.subscribe(self.ShowBashTagsMenu)
         #--Layout
-        detailsSizer = vSizer(vspace(),
-            (hSizer(
-                (StaticText(top,_(u"File:"))), hspacer,
-                self.version, hspace()
-                ),0,wx.EXPAND),
-            (hSizer((self.file,1,wx.EXPAND)),0,wx.EXPAND),
-            vspace(), (hSizer(StaticText(top,_(u"Author:"))),0,wx.EXPAND),
-            (hSizer((self.gAuthor,1,wx.EXPAND)),0,wx.EXPAND),
-            vspace(), (hSizer(StaticText(top,_(u"Modified:"))),0,wx.EXPAND),
-            (hSizer((self.modified,1,wx.EXPAND)),0,wx.EXPAND),
-            vspace(), (hSizer(StaticText(top,_(u"Description:"))),0,wx.EXPAND),
-            (hSizer((self.description,1,wx.EXPAND)),1,wx.EXPAND))
-        detailsSizer.SetSizeHints(top)
-        top.SetSizer(detailsSizer)
-        tagsSizer = vSizer(vspace(),
-            (StaticText(self._bottom_low_panel, _(u"Bash Tags:"))),
-            (hSizer((self.gTags, 1, wx.EXPAND)), 1, wx.EXPAND))
-        tagsSizer.SetSizeHints(masterPanel)
-        self._bottom_low_panel.SetSizer(tagsSizer)
-        bottom.SetSizer(vSizer((subSplitter,1,wx.EXPAND)))
-        #--Events
-        set_event_hook(self.gTags, Events.CONTEXT_MENU,
-                       lambda __event: self.ShowBashTagsMenu())
+        VLayout(spacing=4, default_fill=True, items=[
+            HLayout(items=[Label(top, _(u'File:')), Stretch(), self.version]),
+            self.file,
+            Label(top, _(u'Author:')), self.gAuthor,
+            Label(top, _(u'Modified:')), self.modified,
+            Label(top, _(u'Description:')),
+            (self.description, LayoutOptions(fill=True, weight=1))
+        ]).apply_to(top)
+        VLayout(spacing=4, items=[
+            Label(self._bottom_low_panel, _(u'Bash Tags:')),
+            (self.gTags, LayoutOptions(fill=True, weight=1))
+        ]).apply_to(self._bottom_low_panel)
+        VLayout(default_weight=1, default_fill=True,
+                items=[subSplitter]).apply_to(bottom)
 
     def _resetDetails(self):
         self.modInfo = None
@@ -1373,63 +1371,62 @@ class ModDetails(_SashDetailsPanel):
             self.versionStr = u'v%0.2f' % modInfo.header.version
             tagsStr = u'\n'.join(sorted(modInfo.getBashTags()))
         else: tagsStr = u''
-        self.modified.SetEditable(True)
-        self.modified.SetBackgroundColour(self.gAuthor.GetBackgroundColour())
         #--Set fields
-        self.file.SetValue(self.fileStr)
-        self.gAuthor.SetValue(self.authorStr)
-        self.modified.SetValue(self.modifiedStr)
-        self.description.SetValue(self.descriptionStr)
-        self.version.SetLabel(self.versionStr)
+        self.file.text_content = self.fileStr
+        self.gAuthor.text_content = self.authorStr
+        self.modified.text_content = self.modifiedStr
+        self.description.text_content = self.descriptionStr
+        self.version.label_text = self.versionStr
         self.uilist.SetFileInfo(self.modInfo)
-        self.gTags.SetValue(tagsStr)
+        self.gTags.text_content = tagsStr
         if fileName and not bosh.modInfos.table.getItem(fileName,'autoBashTags', True):
-            self.gTags.SetBackgroundColour(self.gAuthor.GetBackgroundColour())
+            self.gTags.background_color = self.gAuthor.background_color
         else:
-            self.gTags.SetBackgroundColour(self.GetBackgroundColour())
-        self.gTags.Refresh()
+            self.gTags.background_color = self.GetBackgroundColour()
+        # TODO(inf) de-wx! - or investigate why it's needed
+        self.gTags._native_widget.Refresh()
 
-    def _OnTextEdit(self, event, value, control):
+    def _OnTextEdit(self, old_text, new_text):
         if not self.modInfo: return
-        if not self.edited and value != control.GetValue(): self.SetEdited()
-        event.Skip()
-    def OnAuthorEdit(self, event):
-        self._OnTextEdit(event, self.authorStr, self.gAuthor)
-    def OnModifiedEdit(self, event):
-        self._OnTextEdit(event, self.modifiedStr, self.modified)
-    def OnDescrEdit(self, event):
-        self._OnTextEdit(event, self.descriptionStr.replace(
-            '\r\n', '\n').replace('\r', '\n'), self.description)
+        if not self.edited and old_text != new_text: self.SetEdited()
+
+    def OnAuthorEdit(self, new_text):
+        self._OnTextEdit(self.authorStr, new_text)
+    def OnModifiedEdit(self, new_text):
+        self._OnTextEdit(self.modifiedStr, new_text)
+    def OnDescrEdit(self, new_text):
+        self._OnTextEdit(self.descriptionStr.replace(
+            '\r\n', '\n').replace('\r', '\n'), new_text)
 
     def OnEditAuthor(self):
         if not self.modInfo: return
-        authorStr = self.gAuthor.GetValue()
+        authorStr = self.gAuthor.text_content
         if authorStr != self.authorStr:
             self.authorStr = authorStr
             self.SetEdited()
 
     def OnEditModified(self):
         if not self.modInfo: return
-        modifiedStr = self.modified.GetValue()
+        modifiedStr = self.modified.text_content
         if modifiedStr == self.modifiedStr: return
         try:
             newTimeTup = unformat_date(modifiedStr, '%c')
             time.mktime(newTimeTup)
         except ValueError:
             balt.showError(self,_(u'Unrecognized date: ')+modifiedStr)
-            self.modified.SetValue(self.modifiedStr)
+            self.modified.text_content = self.modifiedStr
             return
         #--Normalize format
         modifiedStr = time.strftime('%c', newTimeTup)
         self.modifiedStr = modifiedStr
-        self.modified.SetValue(modifiedStr) #--Normalize format
+        self.modified.text_content = modifiedStr #--Normalize format
         self.SetEdited()
 
     def OnEditDescription(self):
         if not self.modInfo: return
-        if self.description.GetValue() != self.descriptionStr.replace('\r\n',
+        if self.description.text_content != self.descriptionStr.replace('\r\n',
                 '\n').replace('\r', '\n'):
-            self.descriptionStr = self.description.GetValue() ##: .replace('\n', 'r\n')
+            self.descriptionStr = self.description.text_content ##: .replace('\n', 'r\n')
             self.SetEdited()
 
     bsaAndBlocking = _(u'This mod has an associated archive (%s.' +
@@ -1532,7 +1529,9 @@ class ModDetails(_SashDetailsPanel):
     #--Bash Tags
     def ShowBashTagsMenu(self):
         """Show bash tags menu."""
-        if not self.modInfo: return
+        # Note that we have to return EventResult.FINISH, otherwise the default
+        # text menu will get shown after a tag is applied.
+        if not self.modInfo: return EventResult.FINISH
         #--Links closure
         mod_info = self.modInfo
         mod_tags = mod_info.getBashTags()
@@ -1618,6 +1617,7 @@ class ModDetails(_SashDetailsPanel):
         tagLinks = Links()
         tagLinks.append(_TagLinks())
         tagLinks.PopupMenu(self.gTags, Link.Frame, None)
+        return EventResult.FINISH
 
 #------------------------------------------------------------------------------
 class INIDetailsPanel(_DetailsMixin, SashPanel):
@@ -1634,18 +1634,19 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         self._ini_detail = None
         left,right = self.left, self.right
         #--Remove from list button
-        self.button = balt.Button(right, _(u'Remove'),
-                                  onButClick=self._OnRemove)
+        self.removeButton = Button(right, _(u'Remove'))
+        self.removeButton.on_clicked.subscribe(self._OnRemove)
         #--Edit button
-        self.editButton = balt.Button(right, _(u'Edit...'), onButClick=lambda:
-                                      self.current_ini_path.start())
+        self.editButton = Button(right, _(u'Edit...'))
+        self.editButton.on_clicked.subscribe(lambda:
+                                             self.current_ini_path.start())
         #--Ini file
         self.iniContents = TargetINILineCtrl(right)
         self.lastDir = settings.get('bash.ini.lastDir', bass.dirs['mods'].s)
         #--Tweak file
         self.tweakContents = INITweakLineCtrl(left, self.iniContents)
         self.iniContents.SetTweakLinesCtrl(self.tweakContents)
-        self.tweakName = RoTextCtrl(left, noborder=True, multiline=False)
+        self.tweakName = TextField(left, editable=False, no_border=True)
         self._enable_buttons()
         self.comboBox = balt.ComboBox(right, value=self.ini_name,
                                       choices=self._ini_keys)
@@ -1653,24 +1654,16 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         set_event_hook(self.comboBox, Events.COMBOBOX_CHOICE,
                        self.OnSelectDropDown)
         #--Layout
-        iniSizer = vSizer(
-                (hSizer(
-                    (self.comboBox,1,wx.ALIGN_CENTER|wx.EXPAND|wx.TOP,1),
-                    ((4,0),0),
-                    (self.button,0,wx.ALIGN_TOP,0),
-                    (self.editButton,0,wx.ALIGN_TOP,0),
-                    ),0,wx.EXPAND), vspace(),
-                (self.iniContents,1,wx.EXPAND),
-                )
-        right.SetSizer(iniSizer)
-        iniSizer.SetSizeHints(right)
-        lSizer = hSizer(
-            (vSizer(
-                vspace(6), (self.tweakName,0,wx.EXPAND),
-                (self.tweakContents,1,wx.EXPAND),
-                ),1,wx.EXPAND),
-            )
-        left.SetSizer(lSizer)
+        VLayout(default_fill=True, spacing=4, items=[
+            HLayout(spacing=4, items=[
+                (self.comboBox, LayoutOptions(fill=True, weight=1)),
+                self.removeButton, self.editButton]),
+            (self.iniContents, LayoutOptions(weight=1))
+        ]).apply_to(right)
+        VLayout(default_fill=True, items=[
+            self.tweakName,
+            (self.tweakContents, LayoutOptions(weight=1))
+        ]).apply_to(left)
 
     # Read only wrappers around bass.settings['bash.ini.choices']
     @property
@@ -1696,12 +1689,12 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         fileName = super(INIDetailsPanel, self).SetFile(fileName)
         self._ini_detail = fileName
         self.tweakContents.RefreshTweakLineCtrl(fileName)
-        self.tweakName.SetValue(fileName.sbody if fileName else u'')
+        self.tweakName.text_content = fileName.sbody if fileName else u''
 
     def _enable_buttons(self):
         isGameIni = bosh.iniInfos.ini in bosh.gameInis
-        self.button.Enable(not isGameIni)
-        self.editButton.Enable(not isGameIni or self.current_ini_path.isfile())
+        self.removeButton.enabled = not isGameIni
+        self.editButton.enabled = not isGameIni or self.current_ini_path.isfile()
 
     def _OnRemove(self):
         """Called when the 'Remove' button is pressed."""
@@ -1957,33 +1950,30 @@ class SaveDetails(_SashDetailsPanel):
         textWidth = 200
         #--Player Info
         self._resetDetails()
-        self.playerInfo = StaticText(top,u" \n \n ")
+        self.playerInfo = Label(top, u' \n \n ')
         self._set_player_info_label()
-        self.gCoSaves = StaticText(top,u'--\n--')
+        self.gCoSaves = Label(top, u'--\n--')
         #--Picture
         self.picture = balt.Picture(top, textWidth, 192 * textWidth / 256,
             background=colors['screens.bkgd.image']) #--Native: 256x192
         #--Save Info
-        self.gInfo = TextCtrl(self._bottom_low_panel, size=(textWidth, 64),
-                              multiline=True, onText=self.OnInfoEdit,
-                              maxChars=2048)
-        #--Layout
-        detailsSizer = vSizer(
-            vspace(), (self.file,0,wx.EXPAND),
-            vspace(), (hSizer(
-                (self.playerInfo,1,wx.EXPAND), (self.gCoSaves,0,wx.EXPAND),)
-            ,0,wx.EXPAND),
-            vspace(), (self.picture,1,wx.EXPAND),
-            )
-        detailsSizer.SetSizeHints(top)
-        top.SetSizer(detailsSizer)
-        noteSizer = vSizer(vspace(),
-            (StaticText(self._bottom_low_panel, _(u"Save Notes:"))),
-            (hSizer((self.gInfo,1,wx.EXPAND)),1,wx.EXPAND),
-            )
-        noteSizer.SetSizeHints(masterPanel)
-        self._bottom_low_panel.SetSizer(noteSizer)
-        bottom.SetSizer(vSizer((subSplitter,1,wx.EXPAND)))
+        self.gInfo = TextArea(self._bottom_low_panel, max_length=2048)
+        self.gInfo.on_text_changed.subscribe(self.OnInfoEdit)
+        # TODO(nycz): GUI set_size size=(textWidth, 64)
+        #--Layouts
+        VLayout(default_fill=True, items=[
+            self.file,
+            HLayout(default_fill=True, items=[
+                (self.playerInfo, LayoutOptions(weight=1)),
+                self.gCoSaves]),
+            (self.picture, LayoutOptions(weight=1))
+        ]).apply_to(top)
+        VLayout(items=[
+            Label(self._bottom_low_panel, _(u"Save Notes:")),
+            (self.gInfo, LayoutOptions(fill=True, weight=1))
+        ]).apply_to(self._bottom_low_panel)
+        VLayout(default_fill=True, default_weight=1,
+                items=[subSplitter]).apply_to(bottom)
 
     def _resetDetails(self):
         self.saveInfo = None
@@ -2008,9 +1998,9 @@ class SaveDetails(_SashDetailsPanel):
             self.playerLevel = saveInfo.header.pcLevel
             self.coSaves = saveInfo.get_cosave_tags()
         #--Set Fields
-        self.file.SetValue(self.fileStr)
+        self.file.text_content = self.fileStr
         self._set_player_info_label()
-        self.gCoSaves.SetLabel(self.coSaves)
+        self.gCoSaves.label_text = self.coSaves
         self.uilist.SetFileInfo(self.saveInfo)
         #--Picture
         if not self.saveInfo:
@@ -2020,24 +2010,22 @@ class SaveDetails(_SashDetailsPanel):
             image = Image.GetImage(data, height, width)
             self.picture.SetBitmap(image.ConvertToBitmap())
         #--Info Box
-        self.gInfo.DiscardEdits()
+        self.gInfo.modified = False
         note_text = bosh.saveInfos.table.getItem(fileName, 'info',
                                                  u'') if fileName else u''
-        self.gInfo.SetValue(note_text)
+        self.gInfo.text_content = note_text
 
     def _set_player_info_label(self):
-        self.playerInfo.SetLabel((self.playerNameStr + u'\n' +
+        self.playerInfo.label_text = (self.playerNameStr + u'\n' +
             _(u'Level') + u' %d, ' + _(u'Day') + u' %d, ' +
             _(u'Play') + u' %d:%02d\n%s') % (
             self.playerLevel, int(self.gameDays), self.playMinutes / 60,
-            (self.playMinutes % 60), self.curCellStr))
+            (self.playMinutes % 60), self.curCellStr)
 
-    def OnInfoEdit(self,event):
+    def OnInfoEdit(self, new_text):
         """Info field was edited."""
-        if self.saveInfo and self.gInfo.IsModified():
-            bosh.saveInfos.table.setItem(self.saveInfo.name, 'info',
-                                         self.gInfo.GetValue())
-        event.Skip() # not strictly needed - no other handler for onKillFocus
+        if self.saveInfo and self.gInfo.modified:
+            bosh.saveInfos.table.setItem(self.saveInfo.name, 'info', new_text)
 
     def _validate_filename(self, fileStr):
         return self.panel_uilist.validate_filename(
@@ -2373,30 +2361,26 @@ class InstallersList(balt.UIList):
                             u'Bash.')
             message += u'\n' + _(u'What would you like to do with them?')
             with balt.Dialog(self,_(u'Move or Copy?')) as dialog:
-                icon = staticBitmap(dialog)
-                gCheckBox = checkBox(dialog,
+                gCheckBox = CheckBox(dialog,
                                      _(u"Don't show this in the future."))
-                sizer = vSizer(
-                    (hSizer(
-                        (icon,0,wx.ALL,6), hspace(6),
-                        (StaticText(dialog,message),1,wx.EXPAND),
-                        ),1,wx.EXPAND|wx.ALL,6),
-                    (gCheckBox,0,wx.EXPAND|wx.ALL^wx.TOP,6),
-                    (hSizer(
-                        hspacer,
-                        balt.Button(dialog,label=_(u'Move'),
-                                    onButClick=lambda: dialog.EndModal(1)),
-                        hspace(),
-                        balt.Button(dialog, label=_(u'Copy'),
-                                    onButClick=lambda: dialog.EndModal(2)),
-                        hspace(), CancelButton(dialog),
-                        ),0,wx.EXPAND|wx.ALL^wx.TOP,6),
-                    )
-                dialog.SetSizer(sizer)
+                move_button = Button(dialog, label=_(u'Move'))
+                move_button.on_clicked.subscribe(lambda: dialog.EndModal(1))
+                copy_button = Button(dialog, label=_(u'Copy'))
+                copy_button.on_clicked.subscribe(lambda: dialog.EndModal(2))
+                VLayout(border=6, spacing=6, items=[
+                    HLayout(spacing=6, default_border=6, items=[
+                        (staticBitmap(dialog), LayoutOptions(v_align=TOP)),
+                        (Label(dialog, message), LayoutOptions(fill=True))
+                    ]),
+                    Stretch(), Spacer(10), gCheckBox,
+                    (HLayout(spacing=4, items=[
+                        move_button, copy_button, CancelButton(dialog)
+                    ]), LayoutOptions(h_align=RIGHT))
+                ]).apply_to(dialog)
                 result = dialog.ShowModal() # buttons call dialog.EndModal(1/2)
                 if result == 1: action = 'MOVE'
                 elif result == 2: action = 'COPY'
-                if gCheckBox.GetValue():
+                if gCheckBox.is_checked:
                     settings['bash.installers.onDropFiles.action'] = action
         return action
 
@@ -2585,7 +2569,7 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         self.subSplitter = subSplitter = balt.Splitter(top)
         self.checkListSplitter = balt.Splitter(subSplitter)
         #--Package
-        self.gPackage = RoTextCtrl(top, noborder=True)
+        self.gPackage = TextArea(top, editable=False, no_border=True)
         #--Info Tabs
         self.gNotebook = wx.Notebook(subSplitter,style=wx.NB_MULTILINE)
         self.gNotebook.SetSizeHints(100,100)
@@ -2601,23 +2585,23 @@ class InstallersDetails(_DetailsMixin, SashPanel):
             ('gSkipped',_(u'Skipped')),
             )
         for name,title in infoTitles:
-            gPage = RoTextCtrl(self.gNotebook, name=name, hscroll=True,
-                               autotooltip=False)
-            self.gNotebook.AddPage(gPage,title)
+            gPage = TextArea(self.gNotebook, editable=False,
+                             auto_tooltip=False, wrap=False)
+            gPage.component_name = name
+            # TODO(nycz): GUI to fix when Notebook is wrapped
+            self.gNotebook.AddPage(gPage._native_widget,title)
             self.infoPages.append([gPage,False])
         self.gNotebook.SetSelection(settings['bash.installers.page'])
         self.gNotebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowInfoPage)
+        subPackagesPanel, espmsPanel = self.checkListSplitter.make_vertical_panes()
         #--Sub-Installers
-        subPackagesPanel = wx.Panel(self.checkListSplitter)
-        subPackagesLabel = StaticText(subPackagesPanel, _(u'Sub-Packages'))
+        subPackagesLabel = Label(subPackagesPanel, _(u'Sub-Packages'))
         self.gSubList = balt.listBox(subPackagesPanel, isExtended=True,
                                      kind='checklist',
                                      onCheck=self.OnCheckSubItem)
         set_event_hook(self.gSubList, Events.MOUSE_RIGHT_UP,
                        self.SubsSelectionMenu)
         #--Espms
-        espmsPanel = wx.Panel(self.checkListSplitter)
-        espmsLabel = StaticText(espmsPanel, _(u'Plugin Filter'))
         self.espms = []
         self.gEspmList = balt.listBox(espmsPanel, isExtended=True,
                                       kind='checklist',
@@ -2628,12 +2612,9 @@ class InstallersDetails(_DetailsMixin, SashPanel):
                        self._on_plugin_filter_dclick)
         #--Comments
         commentsPanel = wx.Panel(bottom)
-        commentsLabel = StaticText(commentsPanel, _(u'Comments'))
-        self.gComments = TextCtrl(commentsPanel, multiline=True,
-                                  autotooltip=False)
+        self.gComments = TextArea(commentsPanel, auto_tooltip=False)
         #--Splitter settings
         self.checkListSplitter.SetMinimumPaneSize(50)
-        self.checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
         self.checkListSplitter.SetSashGravity(0.5)
         subSplitter.SetMinimumPaneSize(50)
         subSplitter.SplitHorizontally(self.gNotebook, self.checkListSplitter)
@@ -2642,24 +2623,20 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         commentsSplitter.SplitHorizontally(subSplitter, commentsPanel)
         commentsSplitter.SetSashGravity(1.0)
         #--Layout
-        subPackagesSizer = vSizer(subPackagesLabel,(self.gSubList,1,wx.EXPAND))
-        subPackagesSizer.SetSizeHints(subPackagesPanel)
-        subPackagesPanel.SetSizer(subPackagesSizer)
-        espmsSizer = vSizer(espmsLabel, (self.gEspmList, 1, wx.EXPAND))
-        espmsSizer.SetSizeHints(espmsPanel)
-        espmsPanel.SetSizer(espmsSizer)
-        topSizer = vSizer(vspace(2),
-            (self.gPackage,0,wx.EXPAND|wx.LEFT,3),
-            (subSplitter,1,wx.EXPAND),
-            )
-        top.SetSizer(topSizer)
-        commentsSizer = vSizer(commentsLabel, (self.gComments,1,wx.EXPAND))
-        commentsSizer.SetSizeHints(commentsPanel)
-        commentsPanel.SetSizer(commentsSizer)
-        bottomSizer = vSizer(
-            (commentsPanel,1,wx.EXPAND))
-        bottomSizer.SetSizeHints(bottom)
-        bottom.SetSizer(bottomSizer)
+        VLayout(items=[subPackagesLabel,
+                       (self.gSubList, LayoutOptions(fill=True, weight=1))]
+                ).apply_to(subPackagesPanel)
+        VLayout(items=[Label(espmsPanel, _(u'Plugin Filter')),
+                       (self.gEspmList, LayoutOptions(fill=True, weight=1))]
+                ).apply_to(espmsPanel)
+        VLayout(default_fill=True,
+                items=[self.gPackage, (subSplitter, LayoutOptions(weight=1))]
+                ).apply_to(top)
+        VLayout(items=[Label(commentsPanel, _(u'Comments')),
+                       (self.gComments, LayoutOptions(fill=True, weight=1))]
+                ).apply_to(commentsPanel)
+        VLayout(default_fill=True, default_weight=1, items=[commentsPanel]
+                ).apply_to(bottom)
 
     def OnShowInfoPage(self,event):
         """A specific info page has been selected."""
@@ -2680,8 +2657,8 @@ class InstallersDetails(_DetailsMixin, SashPanel):
                 self.checkListSplitter.GetSashPosition()
             settings['bash.installers.page'] = self.gNotebook.GetSelection()
         installer = self.file_info
-        if not installer or not self.gComments.IsModified(): return
-        installer.comments = self.gComments.GetValue()
+        if not installer or not self.gComments.modified: return
+        installer.comments = self.gComments.text_content
         self._idata.setChanged()
 
     def SetFile(self, fileName='SAME'):
@@ -2694,13 +2671,13 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         if fileName:
             installer = self._idata[fileName]
             #--Name
-            self.gPackage.SetValue(fileName.s)
+            self.gPackage.text_content = fileName.s
             #--Info Pages
             currentIndex = self.gNotebook.GetSelection()
             for index,(gPage,state) in enumerate(self.infoPages):
                 self.infoPages[index][1] = False
                 if index == currentIndex: self.RefreshInfoPage(index,installer)
-                else: gPage.SetValue(u'')
+                else: gPage.text_content = u''
             #--Sub-Packages
             self.gSubList.Clear()
             if len(installer.subNames) <= 2:
@@ -2719,18 +2696,16 @@ class InstallersDetails(_DetailsMixin, SashPanel):
                 balt.setCheckListItems(self.gEspmList, [[u'',u'*'][installer.isEspmRenamed(x.s)]+x.s.replace(u'&',u'&&') for x in names],
                     [x not in installer.espmNots for x in names])
             #--Comments
-            self.gComments.SetValue(installer.comments)
-        if wx.Platform == '__WXMSW__': # this only works on windows
-            self.gPackage.HideNativeCaret()
+            self.gComments.text_content = installer.comments
 
     def _resetDetails(self):
-        self.gPackage.SetValue(u'')
+        self.gPackage.text_content = u''
         for index, (gPage, state) in enumerate(self.infoPages):
             self.infoPages[index][1] = True
-            gPage.SetValue(u'')
+            gPage.text_content = u''
         self.gSubList.Clear()
         self.gEspmList.Clear()
-        self.gComments.SetValue(u'')
+        self.gComments.text_content = u''
 
     def ShowPanel(self, **kwargs):
         if self._firstShow:
@@ -2748,7 +2723,7 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         gPage,initialized = self.infoPages[index]
         if initialized: return
         else: self.infoPages[index][1] = True
-        pageName = gPage.GetName()
+        pageName = gPage.component_name
         def dumpFiles(files, header=u''):
             if files:
                 buff = StringIO.StringIO()
@@ -2808,28 +2783,29 @@ class InstallersDetails(_DetailsMixin, SashPanel):
                 nMismatched, marker_string=u'N/A'))
             info += '\n'
             #--Infoboxes
-            gPage.SetValue(info + dumpFiles(installer.ci_dest_sizeCrc,
-                                            u'== ' + _(u'Configured Files')))
+            gPage.text_content = info + dumpFiles(installer.ci_dest_sizeCrc,
+                                          u'== ' + _(u'Configured Files'))
         elif pageName == 'gMatched':
-            gPage.SetValue(dumpFiles(set(installer.ci_dest_sizeCrc) -
-                        installer.missingFiles - installer.mismatchedFiles))
+            gPage.text_content = dumpFiles(set(
+                installer.ci_dest_sizeCrc) - installer.missingFiles -
+                                           installer.mismatchedFiles)
         elif pageName == 'gMissing':
-            gPage.SetValue(dumpFiles(installer.missingFiles))
+            gPage.text_content = dumpFiles(installer.missingFiles)
         elif pageName == 'gMismatched':
-            gPage.SetValue(dumpFiles(installer.mismatchedFiles))
+            gPage.text_content = dumpFiles(installer.mismatchedFiles)
         elif pageName == 'gConflicts':
-            gPage.SetValue(self._idata.getConflictReport(installer, 'OVER',
-                                                         bosh.modInfos))
+            gPage.text_content = self._idata.getConflictReport(
+                installer, 'OVER', bosh.modInfos)
         elif pageName == 'gUnderrides':
-            gPage.SetValue(self._idata.getConflictReport(installer, 'UNDER',
-                                                         bosh.modInfos))
+            gPage.text_content = self._idata.getConflictReport(
+                installer, 'UNDER', bosh.modInfos)
         elif pageName == 'gDirty':
-            gPage.SetValue(dumpFiles(installer.dirty_sizeCrc))
+            gPage.text_content = dumpFiles(installer.dirty_sizeCrc)
         elif pageName == 'gSkipped':
-            gPage.SetValue(u'\n'.join((dumpFiles(
+            gPage.text_content = u'\n'.join((dumpFiles(
                 installer.skipExtFiles, u'== ' + _(u'Skipped (Extension)')),
-                                       dumpFiles(
-                installer.skipDirFiles, u'== ' + _(u'Skipped (Dir)')))))
+                                             dumpFiles(
+                installer.skipDirFiles, u'== ' + _(u'Skipped (Dir)'))))
 
     #--Config
     def refreshCurrent(self,installer):
@@ -3182,7 +3158,8 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
         super(ScreensDetails, self).__init__(parent)
         self.screenshot_control = balt.Picture(parent, 256, 192, background=colors['screens.bkgd.image'])
         self.displayed_screen = None # type: bolt.Path
-        self.SetSizer(hSizer((self.screenshot_control,1,wx.GROW)))
+        HLayout(default_fill=True, default_weight=True,
+                items=[self.screenshot_control]).apply_to(self)
 
     @property
     def displayed_item(self): return self.displayed_screen
@@ -3257,20 +3234,15 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         #--Data
         self._bsa_info = None
         #--BSA Info
-        self.gInfo = TextCtrl(self.bottom, multiline=True,
-                              onText=self.OnInfoEdit, maxChars=2048)
+        self.gInfo = TextArea(self.bottom)
+        self.gInfo.on_text_changed.subscribe(self.OnInfoEdit)
         #--Layout
-        nameSizer = vSizer(vspace(),
-            (hSizer(StaticText(self.top, _(u'File:'))), 0, wx.EXPAND),
-            (hSizer((self.file, 1, wx.EXPAND)), 0, wx.EXPAND))
-        nameSizer.SetSizeHints(self.top)
-        self.top.SetSizer(nameSizer)
-        infoSizer = vSizer(
-            (hSizer((self.gInfo,1,wx.EXPAND)),0,wx.EXPAND),
-            vspace(),
-        (hSizer(self.save, hspace(), self.cancel,),0,wx.EXPAND),)
-        infoSizer.SetSizeHints(self.bottom)
-        self.bottom.SetSizer(infoSizer)
+        VLayout(default_fill=True, items=[Label(self.top, _(u'File:')),
+                                          self.file]).apply_to(self.top)
+        VLayout(spacing=4, items=[
+            (self.gInfo, LayoutOptions(fill=True)),
+            HLayout(spacing=4, items=[self.save, self.cancel])
+        ]).apply_to(self.bottom)
 
     def _resetDetails(self):
         self._bsa_info = None
@@ -3284,20 +3256,19 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
             #--Remember values for edit checks
             self.fileStr = self._bsa_info.name.s
         #--Set Fields
-        self.file.SetValue(self.fileStr)
+        self.file.text_content = self.fileStr
         #--Info Box
-        self.gInfo.DiscardEdits()
+        self.gInfo.modified = False
         if fileName:
-            self.gInfo.SetValue(
-                bosh.bsaInfos.table.getItem(fileName, 'info', _(u'Notes: ')))
+            self.gInfo.text_content = \
+                bosh.bsaInfos.table.getItem(fileName, 'info', _(u'Notes: '))
         else:
-            self.gInfo.SetValue(_(u'Notes: '))
+            self.gInfo.text_content = _(u'Notes: ')
 
-    def OnInfoEdit(self,event):
+    def OnInfoEdit(self, new_text):
         """Info field was edited."""
-        if self._bsa_info and self.gInfo.IsModified():
-            bosh.bsaInfos.table.setItem(self._bsa_info.name, 'info', self.gInfo.GetValue())
-        event.Skip()
+        if self._bsa_info and self.gInfo.modified:
+            bosh.bsaInfos.table.setItem(self._bsa_info.name, 'info', new_text)
 
     def DoSave(self):
         """Event: Clicked Save button."""
@@ -3362,17 +3333,16 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
         super(PeopleDetails, self).__init__(parent)
         self._people_detail = None # type: unicode
         self.peoplePanel = parent.GetParent().GetParent()
-        self.gName = RoTextCtrl(self, multiline=False)
-        self.gText = TextCtrl(self, multiline=True)
+        self.gName = TextField(self, editable=False)
+        self.gText = TextArea(self)
         self.gKarma = spinCtrl(self,u'0',min=-5,max=5,onSpin=self.OnSpin)
         self.gKarma.SetSizeHints(40,-1)
         #--Layout
-        self.SetSizer(vSizer(
-            (hSizer((self.gName, 1, wx.GROW),
-                    (self.gKarma, 0, wx.GROW),
-                    ), 0, wx.GROW),
-            vspace(), (self.gText, 1, wx.GROW),
-        ))
+        VLayout(spacing=4, default_fill=True, items=[
+            HLayout(default_fill=True, items=[
+                (self.gName, LayoutOptions(weight=1)), self.gKarma]),
+            (self.gText, LayoutOptions(weight=1))
+        ]).apply_to(self)
 
     def OnSpin(self):
         """Karma spin."""
@@ -3385,11 +3355,11 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
 
     def ClosePanel(self, destroy=False):
         """Saves details if they need saving."""
-        if not self.gText.IsModified(): return
+        if not self.gText.modified: return
         if not self.file_info: return
         mtime, karma, __text = self.file_infos[self._people_detail]
         self.file_infos[self._people_detail] = (
-            time.time(), karma, self.gText.GetValue().strip())
+            time.time(), karma, self.gText.text_content.strip())
         self.peoplePanel.uiList.PopulateItem(item=self._people_detail)
         self.file_infos.setChanged()
 
@@ -3400,14 +3370,14 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
         self._people_detail = item
         if not item: return
         karma, details = self.peoplePanel.listData[item][1:3]
-        self.gName.SetValue(item)
+        self.gName.text_content = item
         self.gKarma.SetValue(karma)
-        self.gText.SetValue(details)
+        self.gText.text_content = details
 
     def _resetDetails(self):
         self.gKarma.SetValue(0)
-        self.gName.SetValue(u'')
-        self.gText.Clear()
+        self.gName.text_content = u''
+        self.gText.text_content = u''
 
 class PeoplePanel(BashTab):
     """Panel for PeopleTank."""
@@ -3727,7 +3697,7 @@ class BashStatusBar(DnDStatusBar):
         txt_len = 280 if bush.game.has_esl else 130
         self.SetStatusWidths([self.iconsSize * len(self.buttons), -1, txt_len])
         if refresh_icon_size: self.SetSize((-1, self.iconsSize))
-        self.GetParent().SendSizeEvent()
+        self.SendSizeEventToParent()
         self.OnSize()
 
 #------------------------------------------------------------------------------

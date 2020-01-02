@@ -24,15 +24,11 @@
 
 # Imports ---------------------------------------------------------------------
 import re
-import urllib
-import urlparse
-
 import bass # for dirs - try to avoid
 #--Localization
 #..Handled by bolt, so import that.
 import bolt
 from bolt import GPath, deprint
-from windows import StartURL
 from exception import AbstractError, AccessDeniedError, ArgumentError, \
     BoltError, CancelError, SkipError, StateError
 #--Python
@@ -48,14 +44,16 @@ from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from wx.lib.embeddedimage import PyEmbeddedImage
 import wx.lib.newevent
 import wx.wizard as wiz
-#--wx webview, may not be present on all systems
-try:
-    # raise ImportError
-    import wx.html2 as _wx_html2
-except ImportError:
-    _wx_html2 = None
-    deprint(
-        _(u'wx.WebView is missing, features utilizing HTML will be disabled'))
+#--gui
+from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
+    Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
+    BackwardButton, ForwardButton, ReloadButton, web_viewer_available, \
+    WebViewer
+
+# Print a notice if wx.html2 is missing
+if not web_viewer_available():
+    deprint(_(u'wx.html2.WebView is missing, features utilizing HTML will be '
+              u'disabled'))
 
 class Resources(object):
     #--Icon Bundles
@@ -351,60 +349,9 @@ def tooltip(tooltip_text, wrap=50):
     tooltip_text = textwrap.fill(tooltip_text, wrap)
     return wx.ToolTip(tooltip_text)
 
-class TextCtrl(wx.TextCtrl):
-    """wx.TextCtrl with automatic tooltip if text goes past the width of the
-    control."""
-
-    def __init__(self, parent, value=u'', size=defSize, style=0,
-                 multiline=False, autotooltip=True, name=wx.TextCtrlNameStr,
-                 maxChars=None, onKillFocus=None, onText=None):
-        if multiline: style |= wx.TE_MULTILINE ##: would it harm to have them all multiline ?
-        wx.TextCtrl.__init__(self, parent, defId, value, size=size, style=style,
-                             name=name)
-        if maxChars: self.SetMaxLength(maxChars)
-        if autotooltip:
-            self.Bind(wx.EVT_TEXT, self.OnTextChange)
-            self.Bind(wx.EVT_SIZE, self.OnSizeChange)
-        # event handlers must call event.Skip()
-        if onKillFocus:
-            # Wrapper to hide event, but still call Skip()
-            def handle_focus_lost(event):
-                onKillFocus()
-                event.Skip()
-            self.Bind(wx.EVT_KILL_FOCUS, handle_focus_lost)
-        if onText: self.Bind(wx.EVT_TEXT, onText)
-
-    def UpdateToolTip(self, text):
-        if self.GetClientSize()[0] < self.GetTextExtent(text)[0]:
-            self.SetToolTip(tooltip(text))
-        else:
-            self.SetToolTip(tooltip(u''))
-
-    def OnTextChange(self,event):
-        self.UpdateToolTip(event.GetString())
-        event.Skip()
-    def OnSizeChange(self, event):
-        self.UpdateToolTip(self.GetValue())
-        event.Skip()
-
-class RoTextCtrl(TextCtrl):
-    """Set some styles to a read only textCtrl.
-
-    Name intentionally ugly - tmp class to accommodate current code - do not
-    use - do not imitate my fishing in kwargs."""
-    def __init__(self, *args, **kwargs):
-        """"To accommodate for common text boxes in Bash code - borderline"""
-        # set some styles
-        style = kwargs.get('style', 0)
-        style |= wx.TE_READONLY
-        special = kwargs.pop('special', False) # used in places
-        if special: style |= wx.TE_RICH2 | wx.BORDER_SUNKEN
-        if kwargs.pop('noborder', False): style |= wx.NO_BORDER
-        if kwargs.pop('hscroll', False): style |= wx.HSCROLL
-        kwargs['style'] = style
-        # override default 'multiline' parameter value, 'False', with 'True'
-        kwargs['multiline'] = kwargs.pop('multiline', True)
-        super(RoTextCtrl, self).__init__(*args, **kwargs)
+def HorizontalLine(parent):
+    """Returns a simple horizontal graphical line."""
+    return wx.StaticLine(parent)
 
 class ComboBox(wx.ComboBox):
     """wx.ComboBox with automatic tooltip if text is wider than width of control."""
@@ -424,95 +371,10 @@ class ComboBox(wx.ComboBox):
             self.SetToolTip(tooltip(u''))
         event.Skip()
 
-def bitmapButton(parent, bitmap, button_tip=None, pos=defPos, size=defSize,
-                 style=wx.BU_AUTODRAW, val=defVal, name=u'button',
-                 onBBClick=None, onRClick=None):
-    """Creates a button, binds click function, then returns bound button."""
-    gButton = wx.BitmapButton(parent,defId,bitmap,pos,size,style,val,name)
-    if onBBClick: gButton.Bind(wx.EVT_BUTTON, lambda __event: onBBClick())
-    if onRClick: gButton.Bind(wx.EVT_CONTEXT_MENU,onRClick)
-    if button_tip: gButton.SetToolTip(tooltip(button_tip))
-    return gButton
-
-class Button(wx.Button):
-    _id = defId
-    label = u''
-
-    def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
-                 val=defVal, name='button', onButClick=None,
-                 onButClickEventful=None, button_tip=None, default=False):
-        """Create a button and bind its click function.
-        :param onButClick: a no args function to execute on button click
-        :param onButClickEventful: a function accepting as parameter the
-        EVT_BUTTON - messing with events outside balt is discouraged
-        """
-        if  not label and self.__class__.label: label = self.__class__.label
-        wx.Button.__init__(self, parent, self.__class__._id,
-                           label, pos, size, style, val, name)
-        if onButClick and onButClickEventful:
-            raise BoltError('Both onButClick and onButClickEventful specified')
-        if onButClick: self.Bind(wx.EVT_BUTTON, lambda __event: onButClick())
-        if onButClickEventful: self.Bind(wx.EVT_BUTTON, onButClickEventful)
-        if button_tip: self.SetToolTip(tooltip(button_tip))
-        if default: self.SetDefault()
-
-class OkButton(Button): _id = wx.ID_OK
-class CancelButton(Button):
-    _id = wx.ID_CANCEL
-    label = _(u'Cancel')
-
-def ok_and_cancel_sizer(parent, okButton=None):
-    return (hSizer(hspacer, okButton or OkButton(parent), hspace(),
-                   CancelButton(parent)), 0, wx.EXPAND | wx.ALL ^ wx.TOP, 6)
-
-class SaveButton(Button):
-    _id = wx.ID_SAVE
-    label = _(u'Save')
-
-class SaveAsButton(Button): _id = wx.ID_SAVEAS
-class RevertButton(Button): _id = wx.ID_SAVE
-class RevertToSavedButton(Button): _id = wx.ID_REVERT_TO_SAVED
-class OpenButton(Button): _id = wx.ID_OPEN
-class SelectAllButton(Button): _id = wx.ID_SELECTALL
-class ApplyButton(Button): _id = wx.ID_APPLY
-
-def toggleButton(parent, label=u'', pos=defPos, size=defSize, style=0,
-                 val=defVal, name='button', onClickToggle=None,
-                 toggle_tip=None):
-    """Creates a toggle button, binds toggle function, then returns bound
-    button."""
-    gButton = wx.ToggleButton(parent, defId, label, pos, size, style, val,
-                              name)
-    if onClickToggle: gButton.Bind(wx.EVT_TOGGLEBUTTON,
-                                   lambda __event: onClickToggle())
-    if toggle_tip: gButton.SetToolTip(tooltip(toggle_tip))
-    return gButton
-
-def checkBox(parent, label=u'', pos=defPos, size=defSize, style=0, val=defVal,
-             name='checkBox', onCheck=None, checkbox_tip=None, checked=False):
-    """Creates a checkBox, binds check function, then returns bound button."""
-    gCheckBox = wx.CheckBox(parent, defId, label, pos, size, style, val, name)
-    if onCheck: gCheckBox.Bind(wx.EVT_CHECKBOX, lambda __event: onCheck())
-    if checkbox_tip: gCheckBox.SetToolTip(tooltip(checkbox_tip))
-    gCheckBox.SetValue(checked)
-    return gCheckBox
-
-class StaticText(wx.StaticText):
-    """Static text element."""
-
-    def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
-                 noAutoResize=False, name=u"staticText"):
-        if noAutoResize: style |= wx.ST_NO_AUTORESIZE
-        wx.StaticText.__init__(self, parent, defId, label, pos, size, style,
-                               name)
-        self._label = label # save the unwrapped text
-        self.Rewrap()
-
-    def Rewrap(self, width=None):
-        self.Freeze()
-        self.SetLabel(self._label)
-        self.Wrap(width or self.GetSize().width)
-        self.Thaw()
+def ok_and_cancel_group(parent, on_ok=None):
+    ok_button = OkButton(parent)
+    ok_button.on_clicked.subscribe(on_ok)
+    return HLayout(spacing=4, items=[ok_button, CancelButton(parent)])
 
 def spinCtrl(parent, value=u'', pos=defPos, size=defSize,
              style=wx.SP_ARROW_KEYS, min=0, max=100, initial=0,
@@ -553,127 +415,18 @@ def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
                                   unicode(special, "utf-8") + u' given')
     return wx.StaticBitmap(parent, defId, bitmap)
 
-# Sizers ----------------------------------------------------------------------
-hspacer = ((0, 0), 1) #--Used to space elements apart.
-def hspace(pixels=4):
-    return (pixels, 0),
+class ColorPicker(wx.ColourPickerCtrl):
+    """A button with a color that launches a color picker dialog."""
+    def __init__(self, parent, color=None):
+        super(ColorPicker, self).__init__(parent)
+        if color is not None:
+            self.set_color(color)
 
-def vspace(pixels=4):
-    return (0, pixels),
+    def get_color(self):
+        return self.GetColour()
 
-def _aSizer(sizer, *elements):
-    """Adds elements to a sizer."""
-    for element in elements:
-        if isinstance(element,tuple):
-            if element[0] is not None:
-                sizer.Add(*element)
-        elif element is not None:
-            sizer.Add(element)
-    return sizer
-
-def hSizer(*elements):
-    """Horizontal sizer."""
-    return _aSizer(wx.BoxSizer(wx.HORIZONTAL), *elements)
-
-def vSizer(*elements):
-    """Vertical sizer and elements."""
-    return _aSizer(wx.BoxSizer(wx.VERTICAL), *elements)
-
-class VSizer(wx.BoxSizer):
-    """Alpha sizer API attempt - don't use!"""
-
-    def __init__(self, *args):
-        super(VSizer, self).__init__(wx.VERTICAL)
-        _aSizer(self, *args)
-
-    def AddElements(self, *args):
-        _aSizer(self, *args)
-
-def hsbSizer(parent, box_label=u'', *elements):
-    """A horizontal box sizer, but surrounded by a static box."""
-    return _aSizer(wx.StaticBoxSizer(wx.StaticBox(parent, label=box_label),
-                                     wx.HORIZONTAL), *elements)
-class _SizerWrapper(object):
-    pass
-
-class Box(_SizerWrapper):
-    def __init__(self, vertical=False, parent=None, spacing=0,
-                 default_weight=0, default_grow=False, default_border=0):
-        self._spacing = spacing
-        self._sizer = wx.BoxSizer(wx.VERTICAL if vertical else wx.HORIZONTAL)
-        if parent is not None:
-            parent.SetSizer(self._sizer)
-        self.default_weight = default_weight
-        self.default_grow = default_grow
-        self.default_border = default_border
-
-    def add(self, element, weight=None, grow=None, border=None):
-        if isinstance(element, _SizerWrapper):
-            element = element._sizer
-        if weight is None:
-            weight = self.default_weight
-        if grow is None:
-            grow = self.default_grow
-        if border is None:
-            border = self.default_border
-        flags = wx.ALL | wx.ALIGN_CENTER_VERTICAL
-        if grow:
-            flags |= wx.EXPAND
-        if self._spacing > 0 and not self._sizer.IsEmpty():
-            self._sizer.AddSpacer(self._spacing)
-        self._sizer.Add(element, proportion=weight, flag=flags, border=border)
-
-    def add_many(self, *elements):
-        for element in elements:
-            self.add(element)
-
-    def add_spacer(self, height=4):
-        self._sizer.AddSpacer(height)
-
-    def add_stretch(self, weight=1):
-        self._sizer.AddStretchSpacer(prop=weight)
-
-
-class HBox(Box):
-    def __init__(self, *args, **kwargs):
-        super(HBox, self).__init__(False, *args, **kwargs)
-
-class VBox(Box):
-    def __init__(self, *args, **kwargs):
-        super(VBox, self).__init__(True, *args, **kwargs)
-
-class GridBox(_SizerWrapper):
-    def __init__(self, parent=None, h_spacing=0, v_spacing=0,
-                 default_grow=False, default_border=0):
-        self._sizer = wx.GridBagSizer(hgap=h_spacing, vgap=v_spacing)
-        if parent is not None:
-            parent.SetSizer(self._sizer)
-        self.default_grow = default_grow
-        self.default_border = default_border
-
-    def add(self, col, row, element, grow=None, border=None):
-        if isinstance(element, _SizerWrapper):
-            element = element._sizer
-        if grow is None:
-            grow = self.default_grow
-        if border is None:
-            border = self.default_border
-        flags = wx.ALL
-        if grow:
-            flags |= wx.EXPAND
-        self._sizer.Add(element, (row, col), flag=flags,
-                        border=border)
-
-    def set_stretch(self, col=None, row=None, weight=0):
-        if row is not None:
-            if self._sizer.IsRowGrowable(row):
-                self._sizer.RemoveGrowableRow(row)
-            self._sizer.AddGrowableRow(row, proportion=weight)
-        if col is not None:
-            if self._sizer.IsColGrowable(col):
-                self._sizer.RemoveGrowableCol(col)
-            self._sizer.AddGrowableCol(col, proportion=weight)
-
+    def set_color(self, color):
+        self.SetColour(color)
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -739,22 +492,20 @@ def askContinueShortTerm(parent, message, title=_(u'Warning')):
     return False
 
 def _continueDialog(parent, message, title, checkBoxText):
-    with Dialog(parent, title, size=(350, 200)) as dialog:
-        icon = staticBitmap(dialog)
-        gCheckBox = checkBox(dialog, checkBoxText)
+    with Dialog(parent, title, size=(350, -1)) as dialog:
+        gCheckBox = CheckBox(dialog, checkBoxText)
         #--Layout
-        sizer = vSizer(
-            (hSizer((icon, 0, wx.ALL, 6), hspace(6),
-                    (StaticText(dialog, message, noAutoResize=True), 1,
-                     wx.EXPAND)
-                    ), 1, wx.EXPAND | wx.ALL, 6),
-            (gCheckBox, 0, wx.EXPAND | wx.ALL ^ wx.TOP, 6),
-            ok_and_cancel_sizer(dialog),
-            )
-        dialog.SetSizer(sizer)
+        VLayout(border=6, spacing=6, default_fill=True, items=[
+            (HLayout(spacing=6, items=[
+                (staticBitmap(dialog), LayoutOptions(border=6, v_align=TOP)),
+                (Label(dialog, message), LayoutOptions(fill=True, weight=1))]),
+             LayoutOptions(weight=1)),
+            gCheckBox,
+            ok_and_cancel_group(dialog)
+        ]).apply_to(dialog)
         #--Get continue key setting and return
         result = dialog.ShowModal()
-        check = gCheckBox.GetValue()
+        check = gCheckBox.is_checked
         return result, check
 
 #------------------------------------------------------------------------------
@@ -907,105 +658,79 @@ def showInfo(parent,message,title=_(u'Information'),**kwdargs):
     return askStyled(parent,message,title,wx.OK|wx.ICON_INFORMATION,**kwdargs)
 
 #------------------------------------------------------------------------------
-
+# TODO(inf) de-wx! Pretty much ready to be moved to webview.py, which really
+#  needs a better name - web_components.py?
 class HtmlCtrl(object):
-    @staticmethod
-    def html_lib_available(): return bool(_wx_html2)
-
     def __init__(self, parent):
         ctrl = self.web_viewer = wx.Window(parent)
         # init the fallback/plaintext widget
-        self._text_ctrl = RoTextCtrl(ctrl, autotooltip=False)
+        self._text_ctrl = TextArea(ctrl, editable=False, auto_tooltip=False)
         items = [self._text_ctrl]
-        def _make_button(bitmap_id, callback):
-            return bitmapButton(parent, wx.ArtProvider_GetBitmap(
-                bitmap_id, wx.ART_HELP_BROWSER, (16, 16)), onBBClick=callback)
-        self._prev_button = _make_button(wx.ART_GO_BACK, self.go_back)
-        self._next_button = _make_button(wx.ART_GO_FORWARD, self.go_forward)
-        if _wx_html2:
-            self._html_ctrl = _wx_html2.WebView.New(ctrl)
-            self._html_ctrl.Bind(
-                _wx_html2.EVT_WEBVIEW_LOADED,
-                lambda _event: self._update_buttons(enable_html=True))
-            self._html_ctrl.Bind(
-                _wx_html2.EVT_WEBVIEW_NEWWINDOW,
-                lambda event: self._open_in_external(event.GetURL()))
+        if web_viewer_available():
+            # We can render HTML, create the WebViewer and use its buttons
+            self._html_ctrl = WebViewer(ctrl, buttons_parent=parent)
+            self._prev_button, self._next_button, self._reload_button = \
+                self._html_ctrl.get_navigation_buttons()
             items.append(self._html_ctrl)
-            self._text_ctrl.Disable()
-        main_layout = VBox(ctrl, default_weight=4, default_grow=True)
-        main_layout.add_many(*items)
+            self._text_ctrl.enabled = False
+        else:
+            # Emulate the buttons WebViewer would normally provide
+            self._prev_button = BackwardButton(parent)
+            self._next_button = ForwardButton(parent)
+            self._reload_button = ReloadButton(parent)
+        VLayout(default_weight=4, default_fill=True,
+                items=items).apply_to(ctrl)
         self.switch_to_text() # default to text
 
-    @staticmethod
-    def _open_in_external(target_url):
-        # We don't support tabs and windows, just open it in the user's browser
-        # TODO(inf) just webbrowser.open() instead?
-        StartURL(target_url)
-
-    def _update_buttons(self, enable_html):
-        if _wx_html2:
-            self._html_ctrl.Enable(enable_html)
-            self._html_ctrl.Show(enable_html)
-        self._text_ctrl.Enable(not enable_html)
-        self._text_ctrl.Show(not enable_html)
-        self._prev_button.Enable(enable_html and self._html_ctrl.CanGoBack())
-        self._next_button.Enable(enable_html and
-                                 self._html_ctrl.CanGoForward())
-
-    def go_back(self):
-        # Sanity check, shouldn't ever hit this
-        if self._html_ctrl.CanGoBack():
-            self._html_ctrl.GoBack()
-        # HTML must be enabled, otherwise the button wouldn't be enabled
-        self._update_buttons(enable_html=True)
-
-    def go_forward(self):
-        if self._html_ctrl.CanGoForward():
-            self._html_ctrl.GoForward()
-        self._update_buttons(enable_html=True)
+    def _update_views(self, enable_html):
+        if web_viewer_available():
+            self._html_ctrl.enabled = enable_html
+            self._html_ctrl.visible = enable_html
+            self._html_ctrl.update_buttons()
+        self._text_ctrl.enabled = not enable_html
+        self._text_ctrl.visible = not enable_html
 
     @property
     def fallback_text(self):
-        return self._text_ctrl.GetValue()
+        return self._text_ctrl.text_content
 
     @fallback_text.setter
     def fallback_text(self, text_):
-        self._text_ctrl.SetValue(text_)
+        self._text_ctrl.text_content = text_
 
     def load_text(self, text_):
-        self._text_ctrl.SetValue(text_)
-        self._text_ctrl.SetModified(False)
+        self._text_ctrl.text_content = text_
+        self._text_ctrl.modified = False
         self.switch_to_text()
 
     def is_text_modified(self):
-        return self._text_ctrl.IsModified()
+        return self._text_ctrl.modified
 
     def set_text_modified(self, modified):
-        self._text_ctrl.SetModified(modified)
+        self._text_ctrl.modified = modified
 
     def set_text_editable(self, editable):
         # type: (bool) -> None
-        self._text_ctrl.SetEditable(editable)
+        self._text_ctrl.editable = editable
 
     def switch_to_html(self):
-        if not _wx_html2: return
-        self._update_buttons(enable_html=True)
+        if not web_viewer_available(): return
+        self._update_views(enable_html=True)
         self.web_viewer.Layout()
 
     def switch_to_text(self):
-        self._update_buttons(enable_html=False)
+        self._update_views(enable_html=False)
         self.web_viewer.Layout()
 
     def get_buttons(self):
-        return self._prev_button, self._next_button
+        return self._prev_button, self._next_button, self._reload_button
 
     def try_load_html(self, file_path, file_text=u''):
         # type: (bolt.Path) -> None
-        """Load a HTML file if wx.WebView is available, or load the text."""
-        if _wx_html2:
-            self._html_ctrl.ClearHistory()
-            url = urlparse.urljoin(u'file:', urllib.pathname2url(file_path.s))
-            self._html_ctrl.LoadURL(url)
+        """Load a HTML file if WebViewer is available, or load the text."""
+        if web_viewer_available():
+            self._html_ctrl.clear_history()
+            self._html_ctrl.open_file(file_path.s)
             self.switch_to_html()
         else:
             self.load_text(file_text)
@@ -1054,22 +779,23 @@ class Log(_Log):
                                   log_icons)
         self.window.SetBackgroundColour(wx.NullColour) #--Bug workaround to ensure that default colour is being used.
         #--Text
-        txtCtrl = RoTextCtrl(self.window, logText, special=True, autotooltip=False)
-        txtCtrl.SetValue(logText)
+        txtCtrl = TextArea(self.window, init_text=logText, auto_tooltip=False)
+                          # special=True) SUNKEN_BORDER and TE_RICH2
+        # TODO(nycz): GUI fixed width font
         if fixedFont:
             fixedFont = wx.SystemSettings.GetFont(wx.SYS_ANSI_FIXED_FONT)
             fixedFont.SetPointSize(8)
             fixedStyle = wx.TextAttr()
             #fixedStyle.SetFlags(0x4|0x80)
             fixedStyle.SetFont(fixedFont)
-            txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
-        #--Buttons
-        gOkButton = OkButton(self.window, onButClick=self.window.Close, default=True)
+            # txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
         #--Layout
-        self.window.SetSizer(
-            vSizer((txtCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
-                   (gOkButton,0,wx.ALIGN_RIGHT|wx.ALL,4),
-            ))
+        ok_button = OkButton(self.window, default=True)
+        ok_button.on_clicked.subscribe(self.window.Close)
+        VLayout(border=2, items=[
+            (txtCtrl, LayoutOptions(fill=True, weight=1, border=2)),
+            (ok_button, LayoutOptions(h_align=RIGHT, border=2))
+        ]).apply_to(self.window)
         self.ShowLog()
 
 #------------------------------------------------------------------------------
@@ -1091,20 +817,17 @@ class WryeLog(_Log):
         self._html_ctrl = HtmlCtrl(self.window)
         self._html_ctrl.try_load_html(file_path=logPath)
         #--Buttons
-        gOkButton = OkButton(self.window, onButClick=self.window.Close, default=True)
+        gOkButton = OkButton(self.window, default=True)
+        gOkButton.on_clicked.subscribe(self.window.Close)
         if not asDialog:
-            self.window.SetBackgroundColour(gOkButton.GetBackgroundColour())
+            self.window.SetBackgroundColour(gOkButton.background_color)
         #--Layout
-        prev_button, next_button = self._html_ctrl.get_buttons()
-        self.window.SetSizer(
-            vSizer(
-                (self._html_ctrl.web_viewer,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
-                (hSizer(prev_button, next_button,
-                    hspacer,
-                    gOkButton,
-                    ),0,wx.ALL|wx.EXPAND,4),
-                )
-            )
+        VLayout(border=2, default_fill=True, items=[
+            (self._html_ctrl.web_viewer, LayoutOptions(weight=1)),
+            (HLayout(items=(self._html_ctrl.get_buttons()
+                            + (Stretch(), gOkButton))),
+             LayoutOptions(border=2))
+        ]).apply_to(self.window)
         self.ShowLog()
 
 def convert_wtext_to_html(logPath, logText):
@@ -1218,23 +941,20 @@ class ListEditor(Dialog):
         # overrides Dialog.sizesKey
         self.sizesKey = self._listEditorData.__class__.__name__
         #--Caption
+        captionText = None # type: Label
         if data.caption:
-            captionText = StaticText(self,data.caption)
-        else:
-            captionText = None
+            captionText = Label(self,data.caption)
         #--List Box
         self.listBox = listBox(self, choices=self._list_items)
         self.listBox.SetSizeHints(125,150)
         #--Infobox
+        self.gInfoBox = None # type: TextArea
         if data.showInfo:
-            self.gInfoBox = TextCtrl(self,size=(130,-1),
-                style=(self._listEditorData.infoReadOnly*wx.TE_READONLY) |
-                      wx.TE_MULTILINE | wx.BORDER_SUNKEN)
-            if not self._listEditorData.infoReadOnly:
-                self.gInfoBox.Bind(wx.EVT_TEXT,
-                                   lambda __event: self.OnInfoEdit())
-        else:
-            self.gInfoBox = None
+            editable = not self._listEditorData.infoReadOnly
+            self.gInfoBox = TextArea(self, editable=editable)
+            if editable:
+                self.gInfoBox.on_text_changed.subscribe(self.OnInfoEdit)
+            # TODO(nycz): GUI size=(130, -1), SUNKEN_BORDER
         #--Buttons
         buttonSet = [
             (data.showAdd,    _(u'Add'),    self.DoAdd),
@@ -1246,29 +966,29 @@ class ListEditor(Dialog):
         for k,v in (orderedDict or {}).items():
             buttonSet.append((True, k, v))
         if sum(bool(x[0]) for x in buttonSet):
-            buttons = vSizer()
-            for (flag,defLabel,func) in buttonSet:
-                if not flag: continue
-                label = (flag == True and defLabel) or flag
-                buttons.Add(Button(self, label, onButClick=func),
-                            0, wx.LEFT | wx.TOP, 4)
+            def _btn(btn_label, btn_callback):
+                new_button = Button(self, btn_label)
+                new_button.on_clicked.subscribe(btn_callback)
+                return new_button
+            new_buttons = [_btn(defLabel, func) for flag, defLabel, func
+                           in buttonSet if flag]
+            buttons = VLayout(spacing=4, items=new_buttons)
         else:
             buttons = None
         #--Layout
-        sizer = vSizer(
-            (captionText,0,wx.LEFT|wx.TOP,4),
-            (hSizer(
-                (self.listBox,1,wx.EXPAND|wx.TOP,4),
-                (self.gInfoBox,self._listEditorData.infoWeight,wx.EXPAND|wx.TOP,4),
-                (buttons,0,wx.EXPAND),
-                ),1,wx.EXPAND)
-            )
+        layout = VLayout(border=4, spacing=4, items=[
+            captionText,
+            (HLayout(spacing=4, default_fill=True, items=[
+                (self.listBox, LayoutOptions(weight=1)),
+                (self.gInfoBox, LayoutOptions(weight=self._listEditorData.infoWeight)),
+                buttons
+             ]), LayoutOptions(weight=1, fill=True))])
         #--Done
         if self.sizesKey in sizes:
-            self.SetSizer(sizer)
+            layout.apply_to(self)
             self.SetSize(sizes[self.sizesKey])
         else:
-            self.SetSizerAndFit(sizer)
+            layout.apply_to(self, fit=True)
 
     def GetSelected(self):
         return self.listBox.GetNextItem(-1,wx.LIST_NEXT_ALL,wx.LIST_STATE_SELECTED)
@@ -1316,17 +1036,17 @@ class ListEditor(Dialog):
         del self._list_items[itemDex]
         self.listBox.Delete(itemDex)
         if self.gInfoBox:
-            self.gInfoBox.DiscardEdits()
-            self.gInfoBox.SetValue(u'')
+            self.gInfoBox.modified = False
+            self.gInfoBox.text_content = u''
 
     #--Show Info
-    def OnInfoEdit(self):
+    def OnInfoEdit(self, new_text):
         """Info box text has been edited."""
         selections = self.listBox.GetSelections()
         if not selections: return bell()
         item = self._list_items[selections[0]]
-        if self.gInfoBox.IsModified():
-            self._listEditorData.setInfo(item,self.gInfoBox.GetValue())
+        if self.gInfoBox.modified:
+            self._listEditorData.setInfo(item, new_text)
 
     #--Save/Cancel
     def DoSave(self):
@@ -1356,6 +1076,7 @@ class TabDragMixin(object):
         self.__dragX = 0
         self.__dragging = wx.NOT_FOUND
         self.__justSwapped = wx.NOT_FOUND
+        # TODO(inf) Test in wx3
         if wx.Platform == '__WXMSW__': # CaptureMouse() works badly in wxGTK
             self.Bind(wx.EVT_LEFT_DOWN, self.__OnDragStart)
             self.Bind(wx.EVT_LEFT_UP, self.__OnDragEnd)
@@ -1835,9 +1556,6 @@ class UIList(wx.Panel):
         wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
         self.data_store = listData # never use as local variable name !
         self.panel = panel
-        #--Layout
-        sizer = vSizer()
-        self.SetSizer(sizer)
         #--Settings key
         self.keyPrefix = keyPrefix
         #--Columns
@@ -1885,8 +1603,9 @@ class UIList(wx.Panel):
         self.mouseTextPrev = u''
         self.__gList.Bind(wx.EVT_MOTION, self.OnMouse)
         self.__gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
-        # Sizer
-        self.SetSizer(vSizer((self.__gList, 1, wx.EXPAND)))
+        #--Layout
+        VLayout(default_fill=True, default_weight=1,
+                items=[self.__gList]).apply_to(self)
         # Columns
         self.PopulateColumns()
         #--Items
@@ -2562,7 +2281,7 @@ class Link(object):
         In modlist/installers it's a list<Path> while in subpackage it's the
         index of the right-clicked item. In main (column header) menus it's
         the column clicked on or the first column. Set in Links.PopupMenu().
-        :type window: UIList | wx.Panel | wx.Button | DnDStatusBar
+        :type window: UIList | wx.Panel | gui.buttons.Button | DnDStatusBar
         :type selection: list[Path | unicode | int] | int | None
         """
         self.window = window
@@ -2974,20 +2693,16 @@ class ListBoxes(Dialog):
         self.itemMenu.append(_CheckList_SelectAll(False))
         self.SetIcons(Resources.bashBlue)
         minWidth = self.GetTextExtent(title)[0] * 1.2 + 64
-        sizer = wx.FlexGridSizer(len(lists) + 2, 1, 0, 0)
-        self.text = StaticText(self, message)
-        self.text.Rewrap(minWidth) # otherwise self.text expands to max width
-        sizer.AddGrowableRow(0) # needed so text fits - glitch on resize
-        sizer.Add(self.text, 0, wx.EXPAND)
+        self.text = Label(self, message)
+        self.text.wrap(minWidth) # otherwise self.text expands to max width
+        layout = VLayout(border=5, spacing=5, items=[self.text])
         self._ids = {}
-        labels = {wx.ID_CANCEL: bCancel, wx.ID_OK: bOk}
         self.SetSize(wxSize(minWidth, -1))
-        for i,item_group in enumerate(lists):
+        for item_group in lists:
             title = item_group[0] # also serves as key in self._ids dict
             item_tip = item_group[1]
             strings = [u'%s' % x for x in item_group[2:]] # works for Path & strings
             if len(strings) == 0: continue
-            subsizer = hsbSizer(self, title)
             if liststyle == 'check':
                 checksCtrl = listBox(self, choices=strings, isSingle=True,
                                      isHScroll=True, kind='checklist')
@@ -3010,29 +2725,25 @@ class ListBoxes(Dialog):
                         checksCtrl.AppendItem(child,subitem.s)
             self._ids[title] = checksCtrl.GetId()
             checksCtrl.SetToolTip(tooltip(item_tip))
-            subsizer.Add(checksCtrl,1,wx.EXPAND|wx.ALL,2)
-            sizer.Add(subsizer,0,wx.EXPAND|wx.ALL,5)
-            sizer.AddGrowableRow(i + 1)
-        okButton = OkButton(self, label=labels[wx.ID_OK], default=True)
-        buttonSizer = hSizer(hspacer,
-                             (okButton,0,wx.ALIGN_RIGHT),
-                             )
-        if canCancel:
-            buttonSizer.Add(CancelButton(self, label=labels[wx.ID_CANCEL]),0,wx.ALIGN_RIGHT|wx.LEFT,2)
-        sizer.Add(buttonSizer, 1, wx.EXPAND | wx.ALL ^ wx.TOP, 5)
-        sizer.AddGrowableCol(0)
-        sizer.SetSizeHints(self)
-        self.SetSizer(sizer)
+            layout.add((HBoxedLayout(self, default_fill=True,
+                                             title=title, default_weight=1,
+                                             items=[checksCtrl]),
+                        LayoutOptions(fill=True, weight=1)))
+        layout.add((HLayout(spacing=5, items=[
+                OkButton(self, label=bOk, default=True),
+                (CancelButton(self, label=bCancel) if canCancel else None)]
+                            ), LayoutOptions(h_align=RIGHT)))
+        layout.apply_to(self)
         #make sure that minimum size is at least the size of title
         if self.GetSize()[0] < minWidth:
             self.SetSize(wxSize(minWidth,-1))
-        self.text.Rewrap(self.GetSize().width)
+        self.text.wrap(self.GetSize().width)
         self.Bind(wx.EVT_SIZE, self.OnSize)
 
     def OnMotion(self, event): return
 
     def OnSize(self, event):
-        self.text.Rewrap(self.GetSize().width)
+        self.text.wrap(self.GetSize().width)
         event.Skip()
 
     def OnKeyUp(self,event):
@@ -3129,9 +2840,15 @@ class INIListCtrl(wx.ListCtrl):
             self._contents.ScrollLines(scroll)
         event.Skip()
 
+    def fit_column_to_header(self, column):
+        self.SetColumnWidth(column, wx.LIST_AUTOSIZE_USEHEADER)
+
     def _get_selected_line(self, index): raise AbstractError
 
 # Status bar ------------------------------------------------------------------
+# TODO(inf) de_wx! Wrap wx.StatusBar
+# It's currently full of _native_widget hacks to keep it functional, this one
+# is the next big step
 class DnDStatusBar(wx.StatusBar):
     buttons = Links()
 
@@ -3153,27 +2870,29 @@ class DnDStatusBar(wx.StatusBar):
     def iconsSize(self): return _settings['bash.statusbar.iconSize'] + 8
 
     def _addButton(self, link):
-        gButton = link.GetBitmapButton(self, style=wx.NO_BORDER)
+        gButton = link.GetBitmapButton(self)
         if gButton:
             self.buttons.append(gButton)
+            # TODO(inf) Test in wx3
             # DnD events (only on windows, CaptureMouse works badly in wxGTK)
             if wx.Platform == '__WXMSW__':
-                gButton.Bind(wx.EVT_LEFT_DOWN, self.OnDragStart)
-                gButton.Bind(wx.EVT_LEFT_UP, self.OnDragEnd)
-                gButton.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.OnDragEndForced)
-                gButton.Bind(wx.EVT_MOTION, self.OnDrag)
+                gButton._native_widget.Bind(wx.EVT_LEFT_DOWN, self.OnDragStart)
+                gButton._native_widget.Bind(wx.EVT_LEFT_UP, self.OnDragEnd)
+                gButton._native_widget.Bind(wx.EVT_MOUSE_CAPTURE_LOST,
+                                            self.OnDragEndForced)
+                gButton._native_widget.Bind(wx.EVT_MOTION, self.OnDrag)
 
     def _getButtonIndex(self, mouseEvent):
         id_ = mouseEvent.GetId()
         for i, button in enumerate(self.buttons):
-            if button.GetId() == id_:
+            if button._native_widget.GetId() == id_:
                 x = mouseEvent.GetPosition()[0]
                 delta = x / self.iconsSize
                 if abs(x) % self.iconsSize > self.iconsSize:
                     delta += x / abs(x)
                 i += delta
                 if i < 0: i = 0
-                elif i > len(self.buttons): i = len(self.buttons)
+                elif i >= len(self.buttons): i = len(self.buttons) - 1
                 return i
         return wx.NOT_FOUND
 
@@ -3182,7 +2901,7 @@ class DnDStatusBar(wx.StatusBar):
         if self.dragging != wx.NOT_FOUND:
             self.dragStart = event.GetPosition()[0]
             button = self.buttons[self.dragging]
-            button.CaptureMouse()
+            button._native_widget.CaptureMouse()
         event.Skip()
 
     def OnDragEndForced(self, event):
@@ -3202,23 +2921,11 @@ class DnDStatusBar(wx.StatusBar):
                 button.ReleaseMouse()
             except:
                 pass
-            # -*- Hacky code! -*-
-            # Since we've got to CaptureMouse to do DnD properly,
-            # The button will never get a EVT_BUTTON event if you
-            # just click it.  Can't figure out a good way for the
-            # two to play nicely, so we'll just simulate it for now
-            released = self._getButtonIndex(event)
-            if released != self.dragging: released = wx.NOT_FOUND
             self.dragging = wx.NOT_FOUND
             self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
             if self.moved:
                 self.moved = False
                 return
-            # -*- Rest of hacky code -*-
-            if released != wx.NOT_FOUND:
-                evt = wx.CommandEvent(wx.wxEVT_COMMAND_BUTTON_CLICKED,
-                                      button.GetId())
-                wx.PostEvent(button, evt)
         event.Skip()
 
     def OnDrag(self, event):
@@ -3249,7 +2956,7 @@ class DnDStatusBar(wx.StatusBar):
         rect = self.GetFieldRect(0)
         (xPos, yPos) = (rect.x + 4, rect.y + 2)
         for button in self.buttons:
-            button.SetPosition((xPos, yPos))
+            button.position = (xPos, yPos)
             xPos += self.iconsSize
         if event: event.Skip()
 
@@ -3282,6 +2989,17 @@ class Splitter(wx.SplitterWindow):
     def __init__(self, *args, **kwargs):
         kwargs['style'] = kwargs.pop('style', splitterStyle)
         super(Splitter, self).__init__(*args, **kwargs)
+        self._panes = None
+
+    def make_vertical_panes(self):
+        self._panes = [wx.Panel(self), wx.Panel(self)]
+        self.SplitVertically(*self._panes)
+        return self._panes[0], self._panes[1]
+
+    def make_horizontal_panes(self):
+        self._panes = [wx.Panel(self), wx.Panel(self)]
+        self.SplitHorizontally(*self._panes)
+        return self._panes[0], self._panes[1]
 
 #------------------------------------------------------------------------------
 class NotebookPanel(wx.Panel):
@@ -3336,23 +3054,18 @@ class BaltFrame(wx.Frame):
             _settings[_key + '.size'] = tuple(self.GetSize())
         self.Destroy()
 
+# TODO(inf) replace and remove, need to come up with a better system
 # Event bindings --------------------------------------------------------------
 class Events(object):
     RESIZE = 'resize'
     ACTIVATE = 'activate'
     CLOSE = 'close'
-    TEXT_CHANGED = 'text_changed'
-    CONTEXT_MENU = 'context_menu'
     CHAR_KEY_PRESSED = 'char_key_pressed'
     MOUSE_MOTION = 'mouse_motion'
     MOUSE_LEAVE_WINDOW = 'mouse_leave_window'
-    MOUSE_LEFT_UP = 'mouse_left_up'
-    MOUSE_LEFT_DOWN = 'mouse_left_down'
     MOUSE_LEFT_DOUBLECLICK = 'mouse_left_doubleclick'
     MOUSE_RIGHT_UP = 'mouse_right_up'
-    MOUSE_RIGHT_DOWN = 'mouse_right_down'
     MOUSE_MIDDLE_UP = 'mouse_middle_up'
-    MOUSE_MIDDLE_DOWN = 'mouse_middle_down'
     WIZARD_CANCEL = 'wizard_cancel'
     WIZARD_FINISHED = 'wizard_finished'
     WIZARD_PAGE_CHANGING = 'wizard_page_changing'
@@ -3364,18 +3077,12 @@ class Events(object):
 _WX_EVENTS = {Events.RESIZE:                wx.EVT_SIZE,
               Events.ACTIVATE:              wx.EVT_ACTIVATE,
               Events.CLOSE:                 wx.EVT_CLOSE,
-              Events.TEXT_CHANGED:          wx.EVT_TEXT,
-              Events.CONTEXT_MENU:          wx.EVT_CONTEXT_MENU,
               Events.CHAR_KEY_PRESSED:      wx.EVT_CHAR,
               Events.MOUSE_MOTION:          wx.EVT_MOTION,
               Events.MOUSE_LEAVE_WINDOW:    wx.EVT_LEAVE_WINDOW,
-              Events.MOUSE_LEFT_UP:         wx.EVT_LEFT_UP,
-              Events.MOUSE_LEFT_DOWN:       wx.EVT_LEFT_DOWN,
               Events.MOUSE_LEFT_DOUBLECLICK:wx.EVT_LEFT_DCLICK,
               Events.MOUSE_RIGHT_UP:        wx.EVT_RIGHT_UP,
-              Events.MOUSE_RIGHT_DOWN:      wx.EVT_RIGHT_DOWN,
               Events.MOUSE_MIDDLE_UP:       wx.EVT_MIDDLE_UP,
-              Events.MOUSE_MIDDLE_DOWN:     wx.EVT_MIDDLE_DOWN,
               Events.WIZARD_CANCEL:         wiz.EVT_WIZARD_CANCEL,
               Events.WIZARD_FINISHED:       wiz.EVT_WIZARD_FINISHED,
               Events.WIZARD_PAGE_CHANGING:  wiz.EVT_WIZARD_PAGE_CHANGING,

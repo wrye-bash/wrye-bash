@@ -266,10 +266,10 @@ class Settings_StatusBar_ShowVersions(CheckLink):
         for button in BashStatusBar.buttons:
             if isinstance(button, App_Button):
                 if button.gButton:
-                    button.gButton.SetToolTip(tooltip(button.sb_button_tip))
+                    button.gButton.tooltip = button.sb_button_tip
         if BashStatusBar.obseButton.button_state:
             for button in App_Button.obseButtons:
-                button.gButton.SetToolTip(tooltip(getattr(button,'obseTip',u'')))
+                button.gButton.tooltip = getattr(button, 'obseTip', u'')
 
 #------------------------------------------------------------------------------
 class Settings_Languages(TransLink):
