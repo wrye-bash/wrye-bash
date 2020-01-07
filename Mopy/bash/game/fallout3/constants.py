@@ -322,7 +322,7 @@ gmstEids = [
 ]
 
 GlobalsTweaks = [
-    (_(u'Timescale'),_(u'Timescale will be set to:'),
+    (_(u'World: Timescale'),_(u'Timescale will be set to:'),
         u'timescale',
         (u'1',         1),
         (u'8',         8),
@@ -346,15 +346,18 @@ GmstTweaks = [
         (_('x 10'), 600.0*10,  5000),
         (_(u'Custom'),600,      800),
         ),
-    (_(u'Compass: POI Recognition'),_(u"Distance at which POI markers begin to show on compass."),
-        ('iMapMarkerVisibleDistance',),
-        (_('x 0.05'),1000),
-        (_('x 0.25'),5000),
-        (_('x 0.50'),10000),
-        (_('x 0.75'),15000),
-        (_(u'Custom (base 1200)'),1200),
+    (_(u'Compass: Recognition Distance'),_(u'Distance at which markers (dungeons, towns etc.) begin to show on the compass.'),
+     (u'iMapMarkerVisibleDistance',),
+        (_(u'75% Shorter'),  3125),
+        (_(u'50% Shorter'),  6250),
+        (_(u'25% Shorter'),  9375),
+        (_(u'[Default]'),    12500),
+        (_(u'25% Further'),  15625),
+        (_(u'50% Further'),  18750),
+        (_(u'75% Further'),  21875),
+        (_(u'Custom'),       12500),
         ),
-    (_(u'Essential NPC Unconsciousness'),_(u"Time which essential NPCs stay unconscious."),
+    (_(u'Actor: Unconsciousness Duration'),_(u"Time which essential NPCs stay unconscious."),
         ('fEssentialDeathTime',),
         (_(u'[10 Seconds]'),10.0),
         (_(u'20 Seconds'),20.0),
@@ -366,16 +369,15 @@ GmstTweaks = [
         (_(u'5 Minutes'),5*60.0),
         (_(u'Custom (in seconds)'),10),
         ),
-    (_(u'Jump Higher'),_(u"Height player can jump to."),
-        ('fJumpHeightMin',),
-        (_('x 1.1'),64.0*1.1),
-        (_('x 1.2'),64.0*1.2),
-        (_('x 1.4'),64.0*1.4),
-        (_('x 1.6'),64.0*1.6),
-        (_('x 1.8'),64.0*1.8),
-        (_('x 2.0'),64.0*2.0),
-        (_('x 3.0'),64.0*3.0),
-        (_(u'Custom'),64),
+    (_(u'Actor: Max Jump Height'),
+     _(u'Increases the height to which you can jump.'),
+        (u'fJumpHeightMin',),
+        (u'0.5x',      38.0),
+        (u'[1x]',      76.0),
+        (u'2x',        152.0),
+        (u'3x',        228.0),
+        (u'4x',        304.0),
+        (_(u'Custom'), 76.0),
         ),
     (_(u'Camera: PC Death Time'),_(u"Time after player's death before reload menu appears."),
         ('fPlayerDeathReloadTime',),
@@ -386,7 +388,7 @@ GmstTweaks = [
         (_(u'Unlimited'),9999999.0),
         (_(u'Custom'),15),
         ),
-    (_(u'Cell Respawn Time'),_(u"Time before unvisited cell respawns. But longer times increase save sizes."),
+    (_(u'World: Cell Respawn Time'),_(u"Time before unvisited cell respawns. But longer times increase save sizes."),
         ('iHoursToRespawnCell',),
         (_(u'1 Day'),24*1),
         (_(u'[3 Days]'),24*3),
@@ -420,19 +422,21 @@ GmstTweaks = [
         ('80',80),
         (_(u'Custom'),10),
         ),
-    (_(u'AI: Max Active Actors'),_(u"Maximum actors whose AI can be active. Must be higher than Combat: Max Actors"),
-        ('iAINumberActorsComplexScene',),
-        ('20',20),
-        ('[25]',25),
-        ('30',30),
-        ('35',35),
-        (_(u'MMM Default: 40'),40),
-        ('50',50),
-        ('60',60),
-        ('100',100),
-        (_(u'Custom'),25),
+    (_(u'AI: Max Active Actors'),
+     _(u'Maximum actors whose AI can be active. Must be higher than Combat: '
+       u'Max Actors'),
+        (u'iAINumberActorsComplexScene',),
+        (u'20',         20),
+        (u'[25]',       25),
+        (u'30',         30),
+        (u'35',         35),
+        (u'40',         40),
+        (u'50',         50),
+        (u'60',         60),
+        (u'100',       100),
+        (_(u'Custom'),  20),
         ),
-    (_(u'Companions: Max Number'),_(u"Maximum number of actors following the player"),
+    (_(u'Actor: Max Companions'),_(u"Maximum number of actors following the player"),
         ('iNumberActorsAllowedToFollowPlayer',),
         ('2',2),
         ('4',4),
@@ -453,15 +457,19 @@ GmstTweaks = [
         (_('x 4'),  int(15*4)  , int(20*4)  , int(20*4)  , int(3*7), 10.0*13.0, 2.5*13.0),
         (_(u'Custom'),15,20,20,3,10,2.5),
         ),
-    (_(u'Inventory Quantity Prompt'),_(u"Number of items in a stack at which point Fallout prompts for a quantity."),
-        ('iInventoryAskQuantityAt',),
-        ('1',1),
-        ('2',2),
-        ('[3]',3),
-        ('4',4),
-        ('10',10),
-        (_(u'No Prompt'),99999),
-        (_(u'Custom'),3),
+    (_(u'Player: Inventory Quantity Prompt'),
+     _(u'Number of items in a stack at which point Fallout 3 prompts for a '
+       u'quantity.'),
+        (u'iInventoryAskQuantityAt',),
+        (_(u'Always Prompt'), 1),
+        (u'2',                2),
+        (u'3',                3),
+        (u'4',                4),
+        (u'[5]',              5),
+        (u'10',               10),
+        (u'20',               20),
+        (_(u'Never Prompt'),  99999),
+        (_(u'Custom'),        5),
         ),
     (_(u'Gore: Combat Dismember Part Chance'),_(u"The chance that body parts will be dismembered."),
         ('iCombatDismemberPartChance',),
@@ -590,11 +598,15 @@ GmstTweaks = [
         (_('[x 6]'),3000,120,402,83,126,900,900),
         (_(u'Custom'),3000,120,402,83,126,900,900),
         ),
-    (_(u'Drag: Max Moveable Weight'),_(u"Maximum weight to be able move things with the drag key."),
-        ('fMoveWeightMax',),
-        (_('1500'),1500.0),
-        (_(u'[Default (150)]'),150),
-        (_(u'Custom'),150),
+    (_(u'Player: Max Draggable Weight'),
+     _(u'Maximum weight to be able move things with the drag key.'),
+        (u'fMoveWeightMax',),
+        (u'115',        115.0),
+        (u'[150]',      150.0),
+        (u'250',        250.0),
+        (u'500',        500.0),
+        (u'1500',      1500.0),
+        (_(u'Custom'),  115.0),
         ),
     ]
 #------------------------------------------------------------------------------
@@ -605,35 +617,41 @@ listTypes = ('LVLC','LVLI','LVLN')
 # NamesPatcher
 #------------------------------------------------------------------------------
 namesTypes = {
-    'ACTI', 'ALCH', 'AMMO', 'ARMO', 'AVIF', 'BOOK', 'CLAS', 'CONT', 'CREA',
-    'DOOR', 'EYES', 'FACT', 'HAIR', 'INGR', 'KEYM', 'LIGH', 'MESG', 'MGEF',
-    'MISC', 'NOTE', 'NPC_', 'PERK', 'RACE', 'SPEL', 'TACT', 'TERM', 'WEAP',
+    'ACTI', 'ALCH', 'AMMO', 'ARMO', 'AVIF', 'BOOK', 'CLAS', 'COBJ', 'CONT',
+    'CREA', 'DOOR', 'EYES', 'FACT', 'HAIR', 'INGR', 'KEYM', 'LIGH', 'MESG',
+    'MGEF', 'MISC', 'NOTE', 'NPC_', 'PERK', 'RACE', 'SPEL', 'TACT', 'TERM',
+    'WEAP',
 }
 #------------------------------------------------------------------------------
 # ItemPrices Patcher
 #------------------------------------------------------------------------------
-pricesTypes = {'ALCH':{},'AMMO':{},'ARMO':{},'ARMA':{},'BOOK':{},'INGR':{},'KEYM':{},'LIGH':{},'MISC':{},'WEAP':{}}
+pricesTypes = {'ALCH': {}, 'AMMO': {}, 'ARMO': {}, 'ARMA': {}, 'BOOK': {},
+               'INGR': {}, 'KEYM': {}, 'LIGH': {}, 'MISC': {}, 'WEAP': {}}
 
 #------------------------------------------------------------------------------
 # StatsImporter
 #------------------------------------------------------------------------------
 statsTypes = {
-        'ALCH':('eid', 'weight', 'value'),
-        'AMMO':('eid', 'value', 'speed', 'clipRounds'),
-        'ARMA':('eid', 'weight', 'value', 'health', 'ar'),
-        'ARMO':('eid', 'weight', 'value', 'health', 'ar'),
-        'BOOK':('eid', 'weight', 'value'),
-        'INGR':('eid', 'weight', 'value'),
-        'KEYM':('eid', 'weight', 'value'),
-        'LIGH':('eid', 'weight', 'value', 'duration'),
-        'MISC':('eid', 'weight', 'value'),
-        'WEAP':('eid', 'weight', 'value', 'health', 'damage','clipsize',
-                'animationMultiplier','reach','ammoUse','minSpread','spread','sightFov','baseVatsToHitChance','projectileCount',
-                'minRange','maxRange','animationAttackMultiplier','fireRate','overrideActionPoint','rumbleLeftMotorStrength',
-                'rumbleRightMotorStrength','rumbleDuration','overrideDamageToWeaponMult','attackShotsPerSec',
-                'reloadTime','jamTime','aimArc','rambleWavelangth','limbDmgMult','sightUsage',
-                'semiAutomaticFireDelayMin','semiAutomaticFireDelayMax',
-                'criticalDamage','criticalMultiplier'),
+        'ALCH': ('eid', 'weight', 'value'),
+        'AMMO': ('eid', 'value', 'speed', 'clipRounds'),
+        'ARMA': ('eid', 'weight', 'value', 'health', 'ar'),
+        'ARMO': ('eid', 'weight', 'value', 'health', 'ar'),
+        'BOOK': ('eid', 'weight', 'value'),
+        'INGR': ('eid', 'weight', 'value'),
+        'KEYM': ('eid', 'weight', 'value'),
+        'LIGH': ('eid', 'weight', 'value', 'duration'),
+        'MISC': ('eid', 'weight', 'value'),
+        'WEAP': ('eid', 'weight', 'value', 'health', 'damage','clipsize',
+                 'animationMultiplier','reach','ammoUse','minSpread','spread',
+                 'sightFov','baseVatsToHitChance','projectileCount','minRange',
+                 'maxRange','animationAttackMultiplier','fireRate',
+                 'overrideActionPoint','rumbleLeftMotorStrength',
+                 'rumbleRightMotorStrength','rumbleDuration',
+                 'overrideDamageToWeaponMult','attackShotsPerSec','reloadTime',
+                 'jamTime','aimArc','rambleWavelangth','limbDmgMult',
+                 'sightUsage','semiAutomaticFireDelayMin',
+                 'semiAutomaticFireDelayMax','criticalDamage',
+                 'criticalMultiplier'),
         }
 statsHeaders = (
         #--Alch
@@ -693,14 +711,15 @@ statsHeaders = (
 # SoundPatcher
 #------------------------------------------------------------------------------
 # Needs longs in SoundPatcher
-soundsLongsTypes = {'ACTI', 'ADDN', 'ALCH', 'ASPC', 'CONT', 'CREA', 'DOOR',
-                    'EXPL', 'IPCT', 'LIGH', 'MGEF', 'PROJ', 'SOUN', 'TACT',
-                    'WATR', 'WEAP', 'WTHR'}
+soundsLongsTypes = {'ACTI', 'ADDN', 'ALCH', 'ASPC', 'COBJ', 'CONT', 'CREA',
+                    'DOOR', 'EXPL', 'IPCT', 'LIGH', 'MGEF', 'PROJ', 'SOUN',
+                    'TACT', 'WATR', 'WEAP', 'WTHR'}
 soundsTypes = {
     "ACTI": ('soundLooping','soundActivation',),
     "ADDN": ('ambientSound',),
     "ALCH": ('dropSound','pickupSound','soundConsume',),
     "ASPC": ('soundLooping','useSoundFromRegion',),
+    "COBJ": ('pickupSound','dropSound',),
     "CONT": ('soundOpen','soundClose',),
     "CREA": ('footWeight','inheritsSoundsFrom','sounds'),
     "DOOR": ('soundOpen','soundClose','soundLoop',),
@@ -724,46 +743,50 @@ soundsTypes = {
 #------------------------------------------------------------------------------
 # CellImporter
 #------------------------------------------------------------------------------
-cellAutoKeys = {u'C.Acoustic', u'C.Climate', u'C.Encounter', u'C.ImageSpace',
-                u'C.Light', u'C.Music', u'C.Name', u'C.Owner',
-                u'C.RecordFlags', u'C.Water'} #,u'C.Maps'}
+cellAutoKeys = {u'C.Acoustic', u'C.Climate', u'C.Encounter',
+                u'C.ForceHideLand', u'C.ImageSpace', u'C.Light', u'C.Music',
+                u'C.Name', u'C.Owner', u'C.RecordFlags', u'C.Regions',
+                u'C.Water'} #,u'C.Maps')
 cellRecAttrs = {
-            u'C.Acoustic': ('acousticSpace',),
-            u'C.Climate': ('climate',),
-            u'C.Encounter': ('encounterZone',),
-            u'C.ImageSpace': ('imageSpace',),
-            u'C.Light': ('ambientRed','ambientGreen','ambientBlue','unused1',
-                        'directionalRed','directionalGreen','directionalBlue','unused2',
-                        'fogRed','fogGreen','fogBlue','unused3',
-                        'fogNear','fogFar','directionalXY','directionalZ',
-                        'directionalFade','fogClip','fogPower',
-                        'lightTemplate','lightInheritFlags'),
-            u'C.Music': ('music',),
-            u'C.Name': ('full',),
-            u'C.Owner': ('ownership',),
-            u'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
-            u'C.Water': ('water','waterHeight','waterNoiseTexture',),
-            }
+    u'C.Acoustic': ('acousticSpace',),
+    u'C.Climate': ('climate',),
+    u'C.Encounter': ('encounterZone',),
+    u'C.ImageSpace': ('imageSpace',),
+    u'C.Light': ('ambientRed', 'ambientGreen', 'ambientBlue', 'unused1',
+                 'directionalRed', 'directionalGreen', 'directionalBlue',
+                 'unused2', 'fogRed', 'fogGreen', 'fogBlue', 'unused3',
+                 'fogNear', 'fogFar', 'directionalXY', 'directionalZ',
+                 'directionalFade', 'fogClip', 'fogPower',
+                 'lightTemplate', 'lightInheritFlags'),
+    u'C.Music': ('music',),
+    u'C.Name': ('full',),
+    u'C.Owner': ('ownership',),
+    u'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
+    u'C.Regions': ('regions',),
+    u'C.Water': ('water','waterHeight','waterNoiseTexture',),
+}
 cellRecFlags = {
-            u'C.Acoustic': '',
-            u'C.Climate': 'behaveLikeExterior',
-            u'C.Encounter': '',
-            u'C.ImageSpace': '',
-            u'C.Light': '',
-            u'C.Music': '',
-            u'C.Name': '',
-            u'C.Owner': 'publicPlace',
-            u'C.RecordFlags': '',
-            u'C.Water': 'hasWater',
-            }
+    u'C.Acoustic': '',
+    u'C.Climate': 'behaveLikeExterior',
+    u'C.Encounter': '',
+    u'C.ImageSpace': '',
+    u'C.Light': '',
+    u'C.Music': '',
+    u'C.Name': '',
+    u'C.Owner': 'publicPlace',
+    u'C.RecordFlags': '',
+    u'C.Regions': '',
+    u'C.Water': 'hasWater',
+}
 #------------------------------------------------------------------------------
 # GraphicsPatcher
 #------------------------------------------------------------------------------
 graphicsLongsTypes = {'ACTI', 'ALCH', 'AMMO', 'ARMA', 'ARMO', 'AVIF', 'BOOK',
-                      'BPTD', 'CLAS', 'CREA', 'DOOR', 'EFSH', 'EXPL', 'FURN',
-                      'GRAS', 'HDPT', 'INGR', 'IPCT', 'IPDS', 'KEYM', 'LIGH',
-                      'LSCR', 'MISC', 'MSTT', 'NPC_', 'NOTE', 'PROJ', 'PWAT',
-                      'STAT', 'TACT', 'TERM', 'TREE', 'TXST', 'WEAP', 'MGEF',}
+                      'BPTD', 'CLAS', 'COBJ', 'CREA', 'DOOR', 'EFSH', 'EXPL',
+                      'FURN', 'GRAS', 'HDPT', 'INGR', 'IPCT', 'IPDS', 'KEYM',
+                      'LIGH', 'LSCR', 'MISC', 'MSTT', 'NPC_', 'NOTE', 'PROJ',
+                      'PWAT', 'STAT', 'TACT', 'TERM', 'TREE', 'TXST', 'WEAP',
+                      'MGEF',}
 graphicsTypes = {
     "ACTI": ('model',),
     "ALCH": ('iconPath','smallIconPath','model',),
@@ -778,8 +801,8 @@ graphicsTypes = {
     "BOOK": ('iconPath','smallIconPath','model',),
     "BPTD": ('model',),
     "CLAS": ('iconPath',),
-    "CREA": ('model','bodyParts','nift_p','bodyPartData','impactDataset',
-             'effect',),
+    "COBJ": ('iconPath','smallIconPath','model',),
+    "CREA": ('model','bodyParts','nift_p','bodyPartData','effect',),
     "DOOR": ('model',),
     "EFSH": ('flags','particleTexture','fillTexture','holesTexture',
     'unused1','memSBlend',
@@ -858,6 +881,154 @@ graphicsModelAttrs = ('model','shellCasingModel','scopeModel','worldModel')
 # Inventory Patcher
 #------------------------------------------------------------------------------
 inventoryTypes = ('CREA','NPC_','CONT',)
+
+#------------------------------------------------------------------------------
+# Text Patcher
+#------------------------------------------------------------------------------
+text_long_types = {'NOTE',}
+text_types = {
+    'AVIF': ('description',),
+    'BOOK': ('text',),
+    'CLAS': ('description',),
+    'LSCR': ('text',),
+    'MESG': ('description',),
+    'MGEF': ('text',),
+    'NOTE': ('textTopic',),
+    'PERK': ('description',),
+    # omit RACE - covered by R.Description
+    'TERM': ('description',),
+}
+
+#------------------------------------------------------------------------------
+# Object Bounds Patcher
+#------------------------------------------------------------------------------
+object_bounds_types = ('ACTI', 'ADDN', 'ALCH', 'AMMO', 'ARMA', 'ARMO', 'ASPC',
+                       'BOOK', 'COBJ', 'CONT', 'CREA', 'DOOR', 'EXPL', 'FURN',
+                       'GRAS', 'IDLM', 'INGR', 'KEYM', 'LIGH', 'LVLC', 'LVLI',
+                       'LVLN', 'MISC', 'MSTT', 'NOTE', 'NPC_', 'PROJ', 'PWAT',
+                       'SCOL', 'SOUN', 'STAT', 'TACT', 'TERM', 'TREE', 'TXST',
+                       'WEAP')
+
+#------------------------------------------------------------------------------
+# Contents Checker
+#------------------------------------------------------------------------------
+# Entry types used for CONT, CREA, LVLI and NPC_
+_common_entry_types = {'ALCH', 'AMMO', 'ARMO', 'BOOK', 'KEYM', 'LVLI', 'MISC',
+                       'NOTE', 'WEAP'}
+# These are marked as {?} in xEdit for FO3, absent for FO3's LVLI, and
+# completely commented out in xEdit for FNV. Included for now just to be safe.
+_common_entry_types |= {'MSTT', 'STAT'}
+cc_valid_types = {
+    'CONT': _common_entry_types,
+    'CREA': _common_entry_types,
+    'LVLC': {'CREA', 'LVLC'},
+    'LVLN': {'LVLN', 'NPC_'},
+    'LVLI': _common_entry_types - {'MSTT', 'STAT'},
+    'NPC_': _common_entry_types,
+}
+cc_passes = (
+    (('LVLC', 'LVLN', 'LVLI'), 'entries', 'listId'),
+    (('CONT', 'CREA', 'NPC_'), 'items', 'item'),
+)
+
+#------------------------------------------------------------------------------
+# Scripts Patcher
+#------------------------------------------------------------------------------
+# In valda's version: 'WEAP', 'ACTI', 'ALCH', 'ARMO', 'BOOK', 'CONT', 'CREA',
+#                     'DOOR', 'FURN', 'INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_',
+#                     'QUST', 'TERM', 'TACT'
+# INGR and COBJ are unused - still including them, see e.g. APPA in Skyrim
+scripts_types = ('ACTI', 'ALCH', 'ARMO', 'BOOK', 'COBJ', 'CONT', 'CREA',
+                 'DOOR', 'FURN', 'INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_',
+                 'QUST', 'TACT', 'TERM', 'WEAP')
+
+#------------------------------------------------------------------------------
+# Destructible Patcher
+#------------------------------------------------------------------------------
+destructible_types = ('ACTI', 'ALCH', 'AMMO', 'ARMO', 'BOOK', 'CONT', 'CREA',
+                      'DOOR', 'FURN', 'KEYM', 'LIGH', 'MISC', 'MSTT', 'NPC_',
+                      'PROJ', 'TACT', 'TERM', 'WEAP')
+
+#------------------------------------------------------------------------------
+# Actor Patchers
+#------------------------------------------------------------------------------
+actor_importer_attrs = {
+    'CREA': {
+        u'Actors.ACBS': ('barterGold', 'calcMax', 'calcMin', 'dispositionBase',
+                         'fatigue', 'flags.allowPCDialogue',
+                         'flags.allowPickpocket', 'flags.biped',
+                         'flags.cantOpenDoors', 'flags.essential',
+                         'flags.flies', 'flags.immobile', 'flags.invulnerable',
+                         'flags.isGhost', 'flags.noBloodDecal',
+                         'flags.noBloodSpray', 'flags.noCombatInWater',
+                         'flags.noHead', 'flags.noKnockDown',
+                         'flags.noLeftArm', 'flags.noLowLevel',
+                         'flags.noRightArm', 'flags.noRotatingHeadTrack',
+                         'flags.noShadow', 'flags.notPushable',
+                         'flags.noVATSMelee', 'flags.pcLevelOffset',
+                         'flags.respawn', 'flags.swims', 'flags.tiltFrontBack',
+                         'flags.tiltLeftRight', 'flags.walks',
+                         'flags.weaponAndShield', 'karma', 'level',
+                         'speedMultiplier', 'templateFlags',),
+        u'Actors.AIData': ('aggression', 'aggroRadius', 'aggroRadiusBehavior',
+                           'assistance', 'confidence', 'energyLevel', 'mood',
+                           'responsibility', 'services', 'trainLevel',
+                           'trainSkill',),
+        u'Actors.CombatStyle': ('combatStyle',),
+        u'Actors.Skeleton': ('model',),
+        u'Actors.Stats': ('agility', 'charisma', 'combatSkill', 'damage',
+                          'endurance', 'health', 'intelligence', 'luck',
+                          'magicSkill', 'perception', 'stealthSkill',
+                          'strength',),
+        u'Creatures.Blood': ('impactDataset',),
+        u'Creatures.Type': ('creatureType',),
+        u'NPC.Class': (),
+        u'NPC.Race': (),
+    },
+    'NPC_': {
+        u'Actors.ACBS': ('barterGold', 'calcMax', 'calcMin', 'dispositionBase',
+                         'fatigue', 'flags.autoCalc', 'flags.canBeAllRaces',
+                         'flags.essential', 'flags.female',
+                         'flags.isChargenFacePreset', 'flags.noBloodDecal',
+                         'flags.noBloodSpray', 'flags.noKnockDown',
+                         'flags.noLowLevel', 'flags.noRotatingHeadTrack',
+                         'flags.notPushable', 'flags.noVATSMelee',
+                         'flags.pcLevelOffset', 'flags.respawn',
+                         'flags.useTemplate', 'karma', 'level',
+                         'speedMultiplier', 'templateFlags',),
+        u'Actors.AIData': ('aggression', 'aggroRadius', 'aggroRadiusBehavior',
+                           'assistance', 'confidence', 'energyLevel', 'mood',
+                           'responsibility', 'services', 'trainLevel',
+                           'trainSkill',),
+        u'Actors.CombatStyle': ('combatStyle',),
+        u'Actors.Skeleton': ('model',),
+        u'Actors.Stats': ('attributes', 'health', 'skillOffsets',
+                          'skillValues'),
+        u'Creatures.Blood': (),
+        u'Creatures.Type': (),
+        u'NPC.Class': ('iclass',),
+        u'NPC.Race': ('race',),
+    },
+}
+actor_importer_auto_key = {
+    u'Actors.ACBS', u'Actors.AIData', u'Actors.CombatStyle',
+    u'Actors.Skeleton', u'Actors.Stats', u'Creatures.Blood', u'Creatures.Type',
+    u'NPC.Class', u'NPC.Race',
+}
+actor_types = ('CREA', 'NPC_')
+
+#------------------------------------------------------------------------------
+# Spell Stats Patcher
+#------------------------------------------------------------------------------
+spell_stats_attrs = ('eid', 'full', 'cost', 'level', 'spellType',)
+
+#------------------------------------------------------------------------------
+# Actor Tweaker
+#------------------------------------------------------------------------------
+actor_tweaks = {
+    u'QuietFeetPatcher',
+    u'IrresponsibleCreaturesPatcher',
+}
 
 # Record type to name dictionary
 record_type_name = {

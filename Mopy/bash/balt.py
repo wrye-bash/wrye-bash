@@ -2472,8 +2472,15 @@ class ChoiceLink(Link):
             menu = submenu
         for link in self.extraItems:
             link.AppendToMenu(menu, window, selection)
+        # After every 30 added items, add a break in the menu to avoid having
+        # to use the annoying wx scrolling feature (mostly affects the Bash
+        # Tags menu, since there are so many tags)
+        i = 1
         for link in (self.choiceLinkType(_text=txt) for txt in self._choices):
+            if i % 30 == 0:
+                menu.Break()
             link.AppendToMenu(menu, window, selection)
+            i += 1
         # returns None
 
 class TransLink(Link):

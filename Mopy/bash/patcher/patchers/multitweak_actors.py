@@ -25,17 +25,24 @@
 """This module contains oblivion multitweak item patcher classes that belong
 to the Actors Multitweaker - as well as the TweakActors itself."""
 
+from collections import Counter
 import random
 import re
 from collections import Counter
 # Internal
-from ... import bass # for dirs
+from ... import bass, bush
 from ...bolt import GPath
 from ...cint import FormID
 from ...exception import AbstractError
 from ...patcher.base import AMultiTweakItem
 from .base import MultiTweakItem, CBash_MultiTweakItem, MultiTweaker, \
     CBash_MultiTweaker
+
+def _is_templated(record, flag_name):
+    """Checks if the specified record has a template record and the
+    appropriate template flag set."""
+    return (getattr(record, 'template', None) is not None
+            and getattr(record.templateFlags, flag_name))
 
 # Patchers: 30 ----------------------------------------------------------------
 class BasalNPCTweaker(MultiTweakItem):
@@ -699,6 +706,8 @@ class QuietFeetPatcher(AQuietFeetPatcher,BasalCreatureTweaker):
         keep = patchFile.getKeeper()
         chosen = self.choiceValues[self.chosen][0]
         for record in patchFile.CREA.records:
+            # Check if we're templated first (only relevant on FO3/FNV)
+            if _is_templated(record, 'useModelAnimation'): continue
             sounds = record.sounds
             if chosen == u'all':
                 sounds = [sound for sound in sounds if
@@ -773,6 +782,8 @@ class IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,
         chosen = self.choiceValues[self.chosen][0]
         for record in patchFile.CREA.records:
             if record.responsibility == 0: continue
+            # Check if we're templated first (only relevant on FO3/FNV)
+            if _is_templated(record, 'useAIData'): continue
             if chosen == u'all':
                 record.responsibility = 0
                 keep(record.fid)
@@ -802,24 +813,64 @@ class CBash_IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,
             record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
+class _AOppositeGenderAnimsPatcher(BasalNPCTweaker):
+    """Enables or disables the 'Opposite Gender Anims' flag on all male or
+    female NPCs. Similar to the 'Feminine Females' mod, but applies to the
+    whole load order."""
+    # Whether this patcher wants female or male NPCs
+    targets_female_npcs = False
+
+    def __init__(self, tweak_label, tweak_tip, tweak_key):
+        super(_AOppositeGenderAnimsPatcher, self).__init__(
+            tweak_label, tweak_tip, tweak_key,
+            (_(u'Always Disable'), u'disable_all'),
+            (_(u'Always Enable'), u'enable_all'),
+        )
+        self.logMsg = u'* '+_(u'NPCs Tweaked') + u': %d'
+
+    def buildPatch(self, log, progress, patchFile):
+        tweaked_count = Counter()
+        keep = patchFile.getKeeper()
+        # What we want to set the 'Opposite Gender Anims' flag to
+        oga_target = self.choiceValues[self.chosen][0] == u'enable_all'
+        gender_target = self.targets_female_npcs
+        for curr_record in patchFile.NPC_.records:
+            # Skip any NPCs that don't match this patcher's target gender
+            if gender_target != curr_record.flags.female: continue
+            if curr_record.flags.oppositeGenderAnims != oga_target:
+                curr_record.flags.oppositeGenderAnims = oga_target
+                keep(curr_record.fid)
+                tweaked_count[curr_record.fid[0]] += 1
+        self._patchLog(log, tweaked_count)
+
+class OppositeGenderAnimsPatcher_Female(_AOppositeGenderAnimsPatcher):
+    targets_female_npcs = True
+
+    def __init__(self):
+        super(OppositeGenderAnimsPatcher_Female, self).__init__(
+            _(u'Opposite Gender Anims: Female'),
+            _(u'Enables or disables the \'Opposite Gender Anims\' for all '
+              u'female NPCs. Similar to the \'Feminine Females\' mod.'),
+            u'opposite_gender_anims_female',
+        )
+
+class OppositeGenderAnimsPatcher_Male(_AOppositeGenderAnimsPatcher):
+    def __init__(self):
+        super(OppositeGenderAnimsPatcher_Male, self).__init__(
+            _(u'Opposite Gender Anims: Male'),
+            _(u'Enables or disables the \'Opposite Gender Anims\' for all '
+              u'male NPCs. Similar to the \'Feminine Females\' mod.'),
+            u'opposite_gender_anims_male',
+        )
+
+#------------------------------------------------------------------------------
 class TweakActors(MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to
     better work with mods or avoid bugs."""
     name = _(u'Tweak Actors')
     text = _(u"Tweak NPC and Creatures records in specified ways.")
-    tweaks = sorted([
-        VORB_NPCSkeletonPatcher(),
-        MAONPCSkeletonPatcher(),
-        VanillaNPCSkeletonPatcher(),
-        RedguardNPCPatcher(),
-        NoBloodCreaturesPatcher(),
-        AsIntendedImpsPatcher(),
-        AsIntendedBoarsPatcher(),
-        QuietFeetPatcher(),
-        IrresponsibleCreaturesPatcher(),
-        RWALKNPCAnimationPatcher(),
-        SWALKNPCAnimationPatcher(),
-        ],key=lambda a: a.label.lower())
+    tweaks = sorted([globals()[tweak_name]() for tweak_name
+                     in bush.game.actor_tweaks], key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):

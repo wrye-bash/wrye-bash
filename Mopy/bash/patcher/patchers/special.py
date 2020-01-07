@@ -29,8 +29,7 @@ from operator import itemgetter, attrgetter
 # Internal
 from .base import Patcher, CBash_Patcher, SpecialPatcher, ListPatcher, \
     CBash_ListPatcher, AListPatcher
-from ... import bosh, load_order  # for modInfos
-from ... import bush
+from ... import bosh, bush, load_order  # for modInfos
 from ...bolt import GPath, SubProgress
 from ...cint import FormID
 
@@ -207,6 +206,8 @@ class ListsMerger(_AListsMerger, ListPatcher):
             levLists = self.type_list[type]
             #--Empty lists
             empties = []
+            # Build a dict mapping leveled lists to other leveled lists that
+            # they are sublists in
             sub_supers = dict((x,[]) for x in levLists.keys())
             for record in sorted(levLists.values()):
                 listId = record.fid
@@ -222,17 +223,28 @@ class ListsMerger(_AListsMerger, ListPatcher):
             while empties:
                 empty = empties.pop()
                 if empty not in sub_supers: continue
+                # We have an empty list, look if it's a sublist in any other
+                # list
                 for super in sub_supers[empty]:
                     record = levLists[super]
+                    # Remove the emtpy list from this sublist
+                    old_entries = record.entries
                     record.entries = [x for x in record.entries if
                                       x.listId != empty]
                     record.items.remove(empty)
                     patchBlock.setRecord(record)
+                    # If removing the empty list made this list empty too, then
+                    # we should investigate it as well - could clean up even
+                    # more lists
                     if not record.items:
                         empties.append(super)
-                    cleaned.add(record.eid)
                     removed.add(levLists[empty].eid)
-                    keep(super)
+                    # We don't need to write out records where another mod has
+                    # already removed the empty sublist - that would just make
+                    # an ITPO
+                    if old_entries != record.entries:
+                        cleaned.add(record.eid)
+                        keep(super)
             log.setHeader(u'=== '+_(u'Empty %s Sublists') % label)
             for eid in sorted(removed,key=string.lower):
                 log(u'* '+eid)
@@ -554,18 +566,9 @@ class _AContentsChecker(SpecialPatcher):
     scanOrder = 50
     editOrder = 50
     name = _(u'Contents Checker')
-    text = _(u"Checks contents of leveled lists, inventories and containers"
-             u" for correct types.")
-    contType_entryTypes = {
-        'LVSP': {'LVSP', 'SPEL'},
-        'LVLC': {'LVLC', 'NPC_', 'CREA'},
-        #--LVLI will also be applied for containers.
-        'LVLI': {'LVLI', 'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'CLOT',
-                 'INGR', 'KEYM', 'LIGH', 'MISC', 'SGST', 'SLGM', 'WEAP'},
-    }
-    contType_entryTypes['CONT'] = contType_entryTypes['CREA'] = \
-    contType_entryTypes['NPC_'] = contType_entryTypes['LVLI']
-    #--Types
+    text = _(u'Checks contents of leveled lists, inventories and containers '
+             u'for correct types.')
+    contType_entryTypes = bush.game.cc_valid_types
     contTypes = set(contType_entryTypes)
     entryTypes = set(chain.from_iterable(contType_entryTypes.itervalues()))
 
@@ -574,7 +577,7 @@ class ContentsChecker(_AContentsChecker,Patcher):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self, patchFile):
         super(ContentsChecker, self).initPatchFile(patchFile)
-        self.id_type = {}
+        self.fid_to_type = {}
         self.id_eid = {}
 
     def getReadClasses(self):
@@ -588,67 +591,97 @@ class ContentsChecker(_AContentsChecker,Patcher):
     def scanModFile(self, modFile, progress):
         """Scan modFile."""
         if not self.isActive: return
-        mapper = modFile.getLongMapper()
-        #--Remember types (only when first defined)
-        id_type = self.id_type
+        modFile.convertToLongFids(self.contTypes | self.entryTypes)
+        # First, map fids to record type for all records for the valid record
+        # types. We need to know if a given fid belongs to one of the valid
+        # types, otherwise we want to remove it.
+        id_type = self.fid_to_type
         for entry_type in self.entryTypes:
             if entry_type not in modFile.tops: continue
             for record in modFile.tops[entry_type].getActiveRecords():
                 fid = record.fid
-                if not record.longFids: fid = mapper(fid)
                 if fid not in id_type:
                     id_type[fid] = entry_type
-##                if fid[0] == modName:
-##                    id_type[fid] = entry_type
-        #--Save container types
-        modFile.convertToLongFids(self.contTypes)
+        # Second, make sure the Bashed Patch contains all records for all the
+        # types we may end up patching
         for cont_type in self.contTypes:
             if cont_type not in modFile.tops: continue
             patchBlock = getattr(self.patchFile, cont_type)
+            pb_add_record = patchBlock.setRecord
             id_records = patchBlock.id_records
             for record in modFile.tops[cont_type].getActiveRecords():
                 if record.fid not in id_records:
-                    patchBlock.setRecord(record.getTypeCopy(mapper))
+                    pb_add_record(record.getTypeCopy())
 
     def buildPatch(self,log,progress):
         """Make changes to patchfile."""
         if not self.isActive: return
         modFile = self.patchFile
         keep = self.patchFile.getKeeper()
-        id_type = self.id_type
+        fid_to_type = self.fid_to_type
         id_eid = self.id_eid
-        log.setHeader('= '+self.__class__.name)
-        #--Lists
-        for cAttr,eAttr,types in (
-            ('entries','listId',('LVSP','LVLI','LVLC')),
-            ('items','item',('CONT','CREA','NPC_')),
-            ):
-            for rec_type in types:
+        log.setHeader(u'= ' + self.__class__.name)
+        # Execute each pass - one pass is needed for every distinct record
+        # class layout, e.g. leveled list classes generally share the same
+        # layout (LVLI.entries[i].listId, LVLN.entries[i].listId, etc.)
+        # whereas CONT, NPC_, etc. have a different layout (CONT.items[i].item,
+        # NPC_.items[i].item)
+        for cc_pass in bush.game.cc_passes:
+            # Validate our pass syntax first
+            if len(cc_pass) not in (2, 3):
+                raise RuntimeError(u'Unknown Contents Checker pass type %s' %
+                                   repr(cc_pass))
+            # See explanation below (entry_fid definition)
+            needs_entry_attr = len(cc_pass) == 3
+            # First entry in the pass is always the record types this pass
+            # applies to
+            for rec_type in cc_pass[0]:
                 if rec_type not in modFile.tops: continue
-                entryTypes = set(self.contType_entryTypes[rec_type])
-                id_removed = {}
+                # Set up a dict to track which entries we have removed per fid
+                id_removed = collections.defaultdict(list)
+                # Grab the types that are actually valid for our current record
+                # types
+                valid_types = set(self.contType_entryTypes[rec_type])
                 for record in modFile.tops[rec_type].records:
-                    newEntries = []
-                    oldEntries = getattr(record,cAttr)
-                    for entry in oldEntries:
-                        entryId = getattr(entry,eAttr)
-                        if id_type.get(entryId) in entryTypes:
-                            newEntries.append(entry)
+                    group_attr = cc_pass[1]
+                    # Set up two lists, one containing the current record
+                    # contents, and a second one that we will be filling with
+                    # only valid entries.
+                    new_entries = []
+                    current_entries = getattr(record, group_attr)
+                    for entry in current_entries:
+                        # If len(cc_pass) == 3, then this is a list of
+                        # MelObject instances, so we have to take an additional
+                        # step to retrieve the fids (e.g. for MelGroups or
+                        # MelStructs)
+                        entry_fid = getattr(entry, cc_pass[2]) \
+                            if needs_entry_attr else entry
+                        # Actually check if the fid has the correct type. If
+                        # it's not valid, then this will return None, which is
+                        # obviously not in the valid_types.
+                        if fid_to_type.get(entry_fid, None) in valid_types:
+                            # The type is valid, so grow our new list
+                            new_entries.append(entry)
                         else:
-                            removed = id_removed.setdefault(record.fid,[])
-                            removed.append(entryId)
+                            # The type is wrong, so discard the entry. At this
+                            # point, we know that the lists have diverged - but
+                            # we need to keep going, there may be more invalid
+                            # entries for this record.
+                            id_removed[record.fid].append(entry_fid)
                             id_eid[record.fid] = record.eid
-                    if len(newEntries) != len(oldEntries):
-                        setattr(record,cAttr,newEntries)
+                    # Check if after filtering using the code above, our two
+                    # lists have diverged and, if so, keep the changed record
+                    if len(new_entries) != len(current_entries):
+                        setattr(record, group_attr, new_entries)
                         keep(record.fid)
-                #--Log it
+                # Log the result if we removed at least one entry
                 if id_removed:
                     log(u"\n=== " + rec_type)
                     for contId in sorted(id_removed):
                         log(u'* ' + id_eid[contId])
                         for removedId in sorted(id_removed[contId]):
-                            mod,index = removedId
-                            log(u'  . %s: %06X' % (mod.s,index))
+                            log(u'  . %s: %06X' % (removedId[0].s,
+                                                   removedId[1]))
 
 class CBash_ContentsChecker(_AContentsChecker,CBash_Patcher):
     srcs = []  # so as not to fail screaming when determining load mods - but
