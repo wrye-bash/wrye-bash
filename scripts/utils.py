@@ -29,6 +29,7 @@ import os
 import subprocess
 import sys
 import urllib2
+from contextlib import contextmanager
 
 
 # verbosity:
@@ -44,7 +45,7 @@ def setup_log(logger, verbosity=logging.INFO, logfile=None):
     logger.addHandler(stdout_handler)
     if logfile is not None:
         file_handler = logging.FileHandler(logfile)
-        file_formatter = logging.Formatter("[%(name)s]: %(message)s")
+        file_formatter = logging.Formatter("%(levelname)s: %(message)s")
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
 
@@ -107,7 +108,11 @@ def download_file(url, fpath):
 
 def run_subprocess(command, logger, **kwargs):
     sp = subprocess.Popen(
-        command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kwargs
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+        **kwargs
     )
     logger.debug("Running command: {}".format(" ".join(command)))
     stdout, _ = sp.communicate()
@@ -121,3 +126,22 @@ def run_subprocess(command, logger, **kwargs):
 
 def relpath(path):
     return os.path.relpath(path, os.getcwd())
+
+
+@contextmanager
+def suppress(*exceptions):
+    try:
+        yield
+    except exceptions:
+        pass
+
+
+# https://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
+def mkdir(path, exists_ok=True):
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path) and exists_ok:
+            pass
+        else:
+            raise
