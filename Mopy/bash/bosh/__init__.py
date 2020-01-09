@@ -576,7 +576,7 @@ class ModInfo(FileInfo):
         tags = set()
         tags |= self.getBashTagsDesc()
         # Tags from LOOT take precendence over the description
-        added, removed, _userlist = configHelpers.getTagsInfoCache(self.name)
+        added, removed = configHelpers.getTagsInfoCache(self.name)
         tags |= added
         tags -= removed
         # Tags from Data/BashTags/{self.name}.txt take precedence over both
@@ -2245,7 +2245,7 @@ class ModInfos(FileInfos):
         if tags_desc:
             tagList = _tags(_(u'From Plugin Description: '), sorted(tags_desc),
                             tagList)
-        tags, removed, _userlist = configHelpers.getTagsInfoCache(mname)
+        tags, removed = configHelpers.getTagsInfoCache(mname)
         if tags:
             tagList = _tags(_(u'From LOOT Masterlist and / or Userlist: '),
                             sorted(tags), tagList)
@@ -2451,7 +2451,7 @@ class ModInfos(FileInfos):
         """Returns a dirty message from LOOT."""
         if self.table.getItem(modname, 'ignoreDirty', False):
             return False, u''
-        return configHelpers.getDirtyMessage(modname)
+        return configHelpers.getDirtyMessage(modname, self)
 
     def ini_files(self):
         iniFiles = self._plugin_inis.values() # in active order
@@ -3252,7 +3252,7 @@ def initOptions(bashIni):
     tooldirs['Tes4TransPath'] = tooldirs['Tes4EditPath'].head.join(u'TES4Trans.exe')
 
 def initBosh(bashIni, game_ini_path):
-    # Setup LOOT API, needs to be done after the dirs are initialized
+    # Setup loot_parser, needs to be done after the dirs are initialized
     if not initialization.bash_dirs_initialized:
         raise BoltError(u'initBosh: Bash dirs are not initialized')
     global configHelpers

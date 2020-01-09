@@ -36,6 +36,7 @@ import platform
 import shutil
 import sys
 import traceback
+import yaml
 from ConfigParser import ConfigParser
 # Local
 from . import bass
@@ -167,6 +168,7 @@ def dump_environment():
             u'wxPython not found',
         u'python-lz4 version: %s; bundled LZ4 version: %s' % (
             lz4.version.version, lz4.library_version_string()),
+        u'pyyaml version: %s' % yaml.__version__,
         # Standalone: stdout will actually be pointing to stderr, which has no
         # 'encoding' attribute
         u'Input encoding: %s; output encoding: %s' % (

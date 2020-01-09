@@ -314,8 +314,7 @@ class Mods_AutoESLFlagBP(BoolLink):
 class Mods_ScanDirty(BoolLink):
     """Read mod CRC's to check for dirty mods."""
     _text = _(u"Check mods against LOOT's dirty mod list")
-    _help = _(u"Display a tooltip if mod is dirty and underline dirty mods - "
-             u"checks are performed using bundled LOOT")
+    _help = _(u'Display a tooltip if mod is dirty and underline dirty mods.')
     key = 'bash.mods.scanDirty'
 
     def Execute(self):
