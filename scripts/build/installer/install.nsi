@@ -8,7 +8,9 @@
 
         ClearErrors
 
-        ; All versions require the MSVC 2015 redist for the LOOT API.
+        ; FIXME(inf) Can we drop these now?
+        ; Previous comment here mentioned that these were needed for the LOOT
+        ; API, but since we've droppped that now...
         ${If} ${RunningX64}
             StrCpy $MSVC_Sub_Key "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x86"
         ${Else}
