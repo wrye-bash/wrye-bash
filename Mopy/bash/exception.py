@@ -171,6 +171,52 @@ class BSADecodingError(BSAError):
 # DDS exceptions --------------------------------------------------------------
 class DDSError(Exception): pass
 
+# Lexing/Parsing exceptions ---------------------------------------------------
+class _ALPError(Exception):
+    """Abstract base class for lexer and parser errors."""
+    def __init__(self, err_msg, target_str=None, start_pos=-1, end_pos=-1,
+                 line_num=-1):
+        # type: (unicode, unicode, int, int) -> None
+        """Creates a new error with the specified properties. All but err_msg
+        are optional, and will simply add more details about where the error
+        occurred.
+
+        :param err_msg: The error message to show immediately after the error
+            name.
+        :param target_str: The string whose processing caused the error. Will
+            be shown on a separate line after the error message.
+        :param start_pos: The offset inside target_str at which the cause
+            begins. Pointless without target_str. Adds a small '^' on a new
+            line below the first problematic character in target_str.
+        :param end_pos: The offset inside target_str at which the cause ends.
+            Pointless without target_str and start_pos. Enhances the marker
+            created by start_pos to show all problematic characters using the
+            '^~~~' format commonly seen in compilers.
+        :param line_num: The line number on which target_str was found. Will
+            be shown on a separate line."""
+        # Build up the final error message
+        final_msg = err_msg
+        if target_str:
+            final_msg += u'\nOccurred here: {}'.format(target_str)
+        if start_pos >= 0:
+            # Offset by -1 to account for the '^' part of the marker
+            end_pos = start_pos if end_pos < 0 else end_pos - 1
+            # The whitespace before the ^~~~~ marker
+            marker_offset = u' ' * (15 + start_pos)
+            # The actual ^~~~~ marker itself
+            line_marker = u'^' + u'~' * (end_pos - start_pos)
+            final_msg += u'\n{}{}'.format(marker_offset, line_marker)
+        if line_num >= 0:
+            final_msg += u'\nLine Number: {}'.format(
+            line_num)
+        super(_ALPError, self).__init__(final_msg)
+
+class LexerError(_ALPError):
+    """An error that ocurred during lexical analysis (lexing)."""
+
+class ParserError(_ALPError):
+    """An error that ocurred during parsing."""
+
 # Misc exceptions -------------------------------------------------------------
 class StateError(BoltError):
     """Error: Object is corrupted."""
