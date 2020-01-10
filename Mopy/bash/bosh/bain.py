@@ -1006,7 +1006,7 @@ class Installer(object):
         dest_src = self.refreshDataSizeCrc(True)
         for k in dest_src.keys():
             if k not in destFiles: del dest_src[k]
-        if not dest_src: return bolt.LowerDict(), set(), set()
+        if not dest_src: return bolt.LowerDict(), set(), set(), set()
         progress = progress if progress else bolt.Progress()
         return self._install(dest_src, progress)
 
@@ -1021,16 +1021,20 @@ class Installer(object):
         norm_ghostGet = norm_ghost.get
         data_sizeCrcDate_update = bolt.LowerDict()
         data_sizeCrc = self.ci_dest_sizeCrc
-        mods, inis = set(), set()
+        mods, inis, bsas = set(), set(), set()
         source_paths, dests = [], []
+        bsa_ext = u'.' + bush.game.bsa_extension
         for dest, src in dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
             srcFull = srcDirJoin(src)
             destFull = bass.dirs['mods'].join(norm_ghostGet(dest, dest))
-            if srcFull.tail in self.espms:
-                mods.add(srcFull.tail)
+            src_tail = srcFull.tail
+            if src_tail in self.espms:
+                mods.add(src_tail)
             elif InstallersData._is_ini_tweak(dest):
-                inis.add(srcFull.tail)
+                inis.add(src_tail)
+            elif srcFull.cext == bsa_ext:
+                bsas.add(src_tail)
             data_sizeCrcDate_update[dest] = (size, crc, -1) ##: HACK we must try avoid stat'ing the mtime
             source_paths.append(srcFull)
             dests.append(destFull)
@@ -1044,7 +1048,7 @@ class Installer(object):
             #--Clean up unpack dir if we're an archive
             if unpackDir: bass.rmTempDir()
         #--Update Installers data
-        return data_sizeCrcDate_update, mods, inis
+        return data_sizeCrcDate_update, mods, inis, bsas
 
     def listSource(self):
         """Return package structure as text."""
@@ -2262,17 +2266,25 @@ class InstallersData(DataStore):
     def __installer_install(self, installer, destFiles, index, progress,
                             refresh_ui):
         sub_progress = SubProgress(progress, index, index + 1)
-        data_sizeCrcDate_update, mods, inis = installer.install(destFiles,
-                                                                sub_progress)
+        data_sizeCrcDate_update, mods, inis, bsas = installer.install(
+            destFiles, sub_progress)
         refresh_ui[0] |= bool(mods)
         refresh_ui[1] |= bool(inis)
         # refresh modInfos, iniInfos adding new/modified mods
-        from . import modInfos, iniInfos
-        for mod in set(mods):
+        from . import bsaInfos, modInfos, iniInfos
+        for mod in mods:
             try:
                 modInfos.new_info(mod, owner=installer.archive)
             except FileError:
                 mods.discard(mod)
+        # Notify the bsaInfos cache of any new BSAs, since we may have
+        # installed a localized plugin and the LO syncs below will check for
+        # missing strings ##: Identical to mods loop above!
+        for bsa in bsas:
+            try:
+                bsaInfos.new_info(bsa, owner=installer.archive)
+            except FileError:
+                bsas.discard(bsa)
         modInfos.cached_lo_append_if_missing(mods)
         modInfos.refreshLoadOrder(unlock_lo=True)
         # now that we saved load order update missing mtimes for mods:
