@@ -337,7 +337,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         'Mod Status':50,
         },
     'bash.mods.renames': {},
-    'bash.mods.scanDirty': False,
+    'bash.mods.scanDirty': True,
     'bash.mods.export.skip': u'',
     'bash.mods.export.deprefix': u'',
     'bash.mods.export.skipcomments': False,
