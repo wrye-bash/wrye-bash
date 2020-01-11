@@ -25,7 +25,8 @@
 import re
 import time
 from ..balt import EnabledLink, AppendableLink, ItemLink, RadioLink, \
-    ChoiceMenuLink, CheckLink, Image, UIList_Rename, OneItemLink
+    ChoiceMenuLink, CheckLink, Image, UIList_Rename, OneItemLink, \
+    SeparatorLink
 from .. import bass, balt, bosh, bush
 from .import People_Link, SaveDetails
 from ..bolt import GPath
@@ -34,7 +35,7 @@ __all__ = ['ColumnsMenu', 'Master_ChangeTo', 'Master_Disable',
            'Screens_NextScreenShot', 'Screen_JpgQuality',
            'Screen_JpgQualityCustom', 'Screen_Rename', 'Screen_ConvertTo',
            'People_AddNew', 'People_Import', 'People_Karma', 'People_Export',
-           'Master_AllowEdit', 'Master_ClearRenames']
+           'Master_AllowEdit', 'Master_ClearRenames', 'SortByMenu']
 
 # Screen Links ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -333,28 +334,64 @@ class _Column(CheckLink, EnabledLink):
 
 class ColumnsMenu(ChoiceMenuLink):
     """Customize visible columns."""
-    _text = _(u"Columns")
-    # extraItems
+    _text = _(u'Columns')
+    choiceLinkType = _Column
+
     class _AutoWidth(RadioLink):
         wxFlag = 0
         def _check(self): return self.wxFlag == self.window.autoColWidths
         def Execute(self):
             self.window.autoColWidths = self.wxFlag
             self.window.autosizeColumns()
+
     class _Manual(_AutoWidth):
         _text = _(u'Manual')
         _help = _(
             u'Allow to manually resize columns. Applies to all Bash lists')
+
     class _Contents(_AutoWidth):
         _text, wxFlag = _(u'Fit Contents'), 1 # wx.LIST_AUTOSIZE
         _help = _(u'Fit columns to their content. Applies to all Bash lists.'
                  u' You can hit Ctrl + Numpad+ to the same effect')
+
     class _Header(_AutoWidth):
         _text, wxFlag = _(u'Fit Header'), 2 # wx.LIST_AUTOSIZE_USEHEADER
         _help = _(u'Fit columns to their content, keep header always visible. '
                  u' Applies to all Bash lists')
-    extraItems = [_Manual(), _Contents(), _Header(), balt.SeparatorLink()]
-    # choices
-    choiceLinkType = _Column
+
+    extraItems = [_Manual(), _Contents(), _Header(), SeparatorLink()]
+
+    @property
+    def _choices(self): return self.window.allCols
+
+# Sort By menu ----------------------------------------------------------------
+#------------------------------------------------------------------------------
+class _SortBy(RadioLink):
+    """Sort files by specified key (sortCol)."""
+    def __init__(self, _text='COLNAME'):
+        super(_SortBy, self).__init__()
+        self.sortCol = _text
+        self._text = bass.settings['bash.colNames'][_text]
+        self._help = _(u'Sort by %s') % self._text
+
+    def _check(self): return self.window.sort_column == self.sortCol
+
+    def Execute(self): self.window.SortItems(self.sortCol, 'INVERT')
+
+class SortByMenu(ChoiceMenuLink):
+    """Link-based interface to decide what to sort the list by."""
+    _text = _(u'Sort by')
+    choiceLinkType = _SortBy
+
+    def __init__(self, sort_options=None):
+        """Creates a new 'sort by' menu, optionally prepending the specified
+        sort options before the choices. A separator is automatically inserted
+        if any sort options are specified.
+
+        :type sort_options: list[balt.Link]"""
+        super(SortByMenu, self).__init__()
+        if sort_options:
+            self.extraItems = sort_options + [SeparatorLink()]
+
     @property
     def _choices(self): return self.window.allCols

@@ -24,31 +24,18 @@
 
 import re
 import time
-from .. import bass, balt, bosh, bush, bolt, exception
-from ..balt import ItemLink, RadioLink, ChoiceLink, OneItemLink
+from .. import balt, bosh, bush, bolt, exception
+from ..balt import ItemLink, ChoiceLink, OneItemLink
 from ..bolt import GPath
 from ..localize import format_date, unformat_date
 
-__all__ = ['Files_SortBy', 'Files_Unhide', 'File_Backup', 'File_Duplicate',
-           'File_Snapshot', 'File_RevertToBackup', 'File_RevertToSnapshot',
-           'File_ListMasters', 'File_Redate']
+__all__ = ['Files_Unhide', 'File_Backup', 'File_Duplicate', 'File_Snapshot',
+           'File_RevertToBackup', 'File_RevertToSnapshot', 'File_ListMasters',
+           'File_Redate']
 
 #------------------------------------------------------------------------------
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Files_SortBy(RadioLink):
-    """Sort files by specified key (sortCol)."""
-
-    def __init__(self, sortCol):
-        super(Files_SortBy, self).__init__()
-        self.sortCol = sortCol
-        self._text = bass.settings['bash.colNames'][sortCol]
-        self._help = _(u'Sort by %s') % self._text
-
-    def _check(self): return self.window.sort_column == self.sortCol
-
-    def Execute(self): self.window.SortItems(self.sortCol, 'INVERT')
-
 class Files_Unhide(ItemLink):
     """Unhide file(s). (Move files back to Data Files or Save directory.)"""
     _text = _(u"Unhide...")

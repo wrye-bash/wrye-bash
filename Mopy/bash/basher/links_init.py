@@ -201,16 +201,8 @@ def InitStatusBar():
 def InitMasterLinks():
     """Initialize master list menus."""
     #--MasterList: Column Links
-    if True: #--Sort by
-        sortMenu = MenuLink(_(u"Sort by"))
-        sortMenu.links.append(Mods_EsmsFirst())
-        sortMenu.links.append(Mods_SelectedFirst())
-        sortMenu.links.append(SeparatorLink())
-        sortMenu.links.append(Files_SortBy('File'))
-        sortMenu.links.append(Files_SortBy('Num'))
-        sortMenu.links.append(Files_SortBy('Current Order'))
-        MasterList.mainMenu.append(sortMenu)
-        MasterList.mainMenu.append(SeparatorLink())
+    MasterList.mainMenu.append(SortByMenu(
+        sort_options=[Mods_EsmsFirst(), Mods_SelectedFirst()]))
     MasterList.mainMenu.append(Master_AllowEdit())
     MasterList.mainMenu.append(Master_ClearRenames())
     #--MasterList: Item Links
@@ -222,18 +214,9 @@ def InitInstallerLinks():
     """Initialize Installers tab menus."""
     #--Column links
     # Sorting and Columns
-    if True:
-        sortMenu = MenuLink(_(u'Sort by'))
-        sortMenu.links.append(Installers_SortActive())
-        sortMenu.links.append(Installers_SortProjects())
-        #InstallersList.mainMenu.append(Installers_SortStructure())
-        sortMenu.links.append(SeparatorLink())
-        sortMenu.links.append(Files_SortBy('Package'))
-        sortMenu.links.append(Files_SortBy('Order'))
-        sortMenu.links.append(Files_SortBy('Modified'))
-        sortMenu.links.append(Files_SortBy('Size'))
-        sortMenu.links.append(Files_SortBy('Files'))
-        InstallersList.mainMenu.append(sortMenu)
+    InstallersList.mainMenu.append(SortByMenu(
+        sort_options=[Installers_SortActive(), # Installers_SortStructure(),
+                      Installers_SortProjects()]))
     InstallersList.mainMenu.append(ColumnsMenu())
     InstallersList.mainMenu.append(SeparatorLink())
     # Files Menu
@@ -365,13 +348,7 @@ def InitINILinks():
     """Initialize INI Edits tab menus."""
     #--Column Links
     # Sorting and Columns
-    if True:
-        sortMenu = MenuLink(_(u'Sort by'))
-        sortMenu.links.append(INI_SortValid())
-        sortMenu.links.append(SeparatorLink())
-        sortMenu.links.append(Files_SortBy('File'))
-        sortMenu.links.append(Files_SortBy('Installer'))
-        INIList.mainMenu.append(sortMenu)
+    INIList.mainMenu.append(SortByMenu(sort_options=[INI_SortValid()]))
     INIList.mainMenu.append(ColumnsMenu())
     INIList.mainMenu.append(SeparatorLink())
     # Files Menu
@@ -395,23 +372,8 @@ def InitModLinks():
     """Initialize Mods tab menus."""
     #--ModList: Column Links
     # Sorting and Columns
-    if True:
-        sortMenu = MenuLink(_(u'Sort by'))
-        sortMenu.links.append(Mods_EsmsFirst())
-        sortMenu.links.append(Mods_SelectedFirst())
-        sortMenu.links.append(SeparatorLink())
-        sortMenu.links.append(Files_SortBy('File'))
-        sortMenu.links.append(Files_SortBy('Author'))
-        sortMenu.links.append(Files_SortBy('Group'))
-        sortMenu.links.append(Files_SortBy('Installer'))
-        sortMenu.links.append(Files_SortBy('Load Order'))
-        sortMenu.links.append(Files_SortBy('Modified'))
-        sortMenu.links.append(Files_SortBy('Rating'))
-        sortMenu.links.append(Files_SortBy('Size'))
-        sortMenu.links.append(Files_SortBy('Status'))
-        sortMenu.links.append(Files_SortBy('CRC'))
-        sortMenu.links.append(Files_SortBy('Mod Status'))
-        ModList.mainMenu.append(sortMenu)
+    ModList.mainMenu.append(SortByMenu(
+        sort_options=[Mods_EsmsFirst(), Mods_SelectedFirst()]))
     ModList.mainMenu.append(ColumnsMenu())
     ModList.mainMenu.append(SeparatorLink())
     # Files Menu
@@ -612,15 +574,7 @@ def InitSaveLinks():
     """Initialize save tab menus."""
     #--SaveList: Column Links
     # Sorting and Columns
-    if True:
-        sortMenu = MenuLink(_(u'Sort by'))
-        sortMenu.links.append(Files_SortBy('File'))
-        sortMenu.links.append(Files_SortBy('Cell'))
-        sortMenu.links.append(Files_SortBy('PlayTime'))
-        sortMenu.links.append(Files_SortBy('Modified'))
-        sortMenu.links.append(Files_SortBy('Player'))
-        sortMenu.links.append(Files_SortBy('Status'))
-        SaveList.mainMenu.append(sortMenu)
+    SaveList.mainMenu.append(SortByMenu())
     SaveList.mainMenu.append(ColumnsMenu())
     SaveList.mainMenu.append(SeparatorLink())
     # Files Menu
@@ -698,12 +652,7 @@ def InitBSALinks():
     """Initialize BSA tab menus."""
     #--BSAList: Column Links
     # Sorting and Columns
-    if True:
-        sortMenu = MenuLink(_(u'Sort by'))
-        sortMenu.links.append(Files_SortBy('File'))
-        sortMenu.links.append(Files_SortBy('Modified'))
-        sortMenu.links.append(Files_SortBy('Size'))
-        BSAList.mainMenu.append(sortMenu)
+    BSAList.mainMenu.append(SortByMenu())
     BSAList.mainMenu.append(ColumnsMenu())
     BSAList.mainMenu.append(SeparatorLink())
     # Files Menu
@@ -732,12 +681,7 @@ def InitScreenLinks():
     """Initialize screens tab menus."""
     #--ScreensList: Column Links
     # Sorting and Columns
-    if True:
-        sortMenu = MenuLink(_(u'Sort by'))
-        sortMenu.links.append(Files_SortBy('File'))
-        sortMenu.links.append(Files_SortBy('Modified'))
-        sortMenu.links.append(Files_SortBy('Size'))
-        ScreensList.mainMenu.append(sortMenu)
+    ScreensList.mainMenu.append(SortByMenu())
     ScreensList.mainMenu.append(ColumnsMenu())
     ScreensList.mainMenu.append(SeparatorLink())
     if True:
@@ -775,12 +719,7 @@ def InitPeopleLinks():
     """Initialize people tab menus."""
     #--Header links
     # Sorting and Columns
-    if True:
-        sort_menu = MenuLink(_(u'Sort by'))
-        sort_menu.links.append(Files_SortBy('Name'))
-        sort_menu.links.append(Files_SortBy('Karma'))
-        sort_menu.links.append(Files_SortBy('Header'))
-        PeopleList.mainMenu.append(sort_menu)
+    PeopleList.mainMenu.append(SortByMenu())
     PeopleList.mainMenu.append(ColumnsMenu())
     PeopleList.mainMenu.append(SeparatorLink())
     PeopleList.mainMenu.append(People_AddNew())
