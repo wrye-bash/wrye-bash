@@ -219,10 +219,11 @@ class File_Snapshot(ItemLink):
             #--Copy file
             self.window.data_store.copy_info(fileName, destDir, destName)
 
-class File_RevertToSnapshot(OneItemLink): # MODS LINK !
+class File_RevertToSnapshot(OneItemLink):
     """Revert to Snapshot."""
     _text = _(u'Revert to Snapshot...')
-    _help = _(u"Revert to a previously created snapshot from the Bash/Snapshots dir.")
+    _help = _(u'Revert to a previously created snapshot from the '
+              u'Bash/Snapshots dir.')
 
     @balt.conversation
     def Execute(self):
@@ -239,20 +240,32 @@ class File_RevertToSnapshot(OneItemLink): # MODS LINK !
         if not snapPath: return
         snapName = snapPath.tail
         #--Warning box
-        message = (_(u"Revert %s to snapshot %s dated %s?") % (
+        message = (_(u'Revert %s to snapshot %s dated %s?') % (
             fileName.s, snapName.s, format_date(snapPath.mtime)))
         if not self._askYes(message, _(u'Revert to Snapshot')): return
         with balt.BusyCursor():
-            destPath = self._selected_info.getPath()
+            destPath = self._selected_info.abs_path
             current_mtime = destPath.mtime
+            # Make a temp backup first in case reverting to snapshot fails
+            destPath.copyTo(destPath.temp)
             snapPath.copyTo(destPath)
             # keep load order but recalculate the crc
             self._selected_info.setmtime(current_mtime, crc_changed=True)
             try:
                 self.window.data_store.new_info(fileName, notify_bain=True)
-            except exception.FileError: # FIXME(ut) - we just lost the correct file
-                balt.showError(self,_(u'Snapshot file is corrupt!'))
+            except exception.FileError:
+                # Reverting to snapshot failed - may be corrupt
+                bolt.deprint(u'Failed to revert to snapshot', traceback=True)
                 self.window.panel.ClearDetails()
+                if self._askYes(
+                    _(u'Failed to revert %s to snapshot %s. The snapshot file '
+                      u'may be corrupt. Do you want to restore the original '
+                      u"file again? 'No' keeps the reverted, possibly broken "
+                      u'snapshot instead.') % (fileName.s, snapName.s),
+                        title=_(u'Revert to Snapshot - Error')):
+                    # Restore the known good file again - no error check needed
+                    destPath.untemp()
+                    self.window.data_store.new_info(fileName, notify_bain=True)
         # don't refresh saves as neither selection state nor load order change
         self.window.RefreshUI(redraw=[fileName], refreshSaves=False)
 
@@ -277,8 +290,8 @@ class _RevertBackup(OneItemLink):
         super(_RevertBackup, self)._initData(window, selection)
         self.backup_path = self._selected_info.backup_dir.join(
             self._selected_item) + (u'f' if self.first else u'')
-        self._help = _(u"Revert %(file)s to its first backup") if self.first \
-            else _(u"Revert %(file)s to its last backup")
+        self._help = _(u'Revert %(file)s to its first backup') if self.first \
+            else _(u'Revert %(file)s to its last backup')
         self._help %= {'file': self._selected_item}
 
     def _enable(self):
@@ -288,17 +301,33 @@ class _RevertBackup(OneItemLink):
     @balt.conversation
     def Execute(self):
         #--Warning box
-        message = _(u"Revert %s to backup dated %s?") % (
-            self._selected_item.s, format_date(self.backup_path.mtime))
+        sel_file = self._selected_item
+        backup_date = format_date(self.backup_path.mtime)
+        message = _(u'Revert %s to backup dated %s?') % (sel_file.s,
+                                                         backup_date)
         if not self._askYes(message): return
         with balt.BusyCursor():
+            # Make a temp backup first in case reverting to backup fails
+            info_path = self._selected_info.abs_path
+            info_path.copyTo(info_path.temp)
             try:
                 self._selected_info.revert_backup(self.first)
-                self.window.RefreshUI(redraw=[self._selected_item],
-                                      refreshSaves=False)
             except exception.FileError:
-                self._showError(_(u'Old file is corrupt!'))
-                self.window.RefreshUI(refreshSaves=True)
+                # Reverting to backup failed - may be corrupt
+                bolt.deprint(u'Failed to revert to backup', traceback=True)
+                self.window.panel.ClearDetails()
+                if self._askYes(
+                    _(u'Failed to revert %s to backup dated %s. The backup '
+                      u'file may be corrupt. Do you want to restore the '
+                      u"original file again? 'No' keeps the reverted, "
+                      u'possibly broken backup instead.') % (sel_file.s,
+                                                             backup_date),
+                        title=_(u'Revert to Backup - Error')):
+                    # Restore the known good file again - no error check needed
+                    info_path.untemp()
+                    self.window.data_store.new_info(sel_file, notify_bain=True)
+        # don't refresh saves as neither selection state nor load order change
+        self.window.RefreshUI(redraw=[sel_file], refreshSaves=False)
 
 class File_RevertToBackup(ChoiceLink):
     """Revert to last or first backup."""
