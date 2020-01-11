@@ -32,8 +32,8 @@ from .import People_Link, SaveDetails
 from ..bolt import GPath
 
 __all__ = ['ColumnsMenu', 'Master_ChangeTo', 'Master_Disable',
-           'Screens_NextScreenShot', 'Screen_JpgQuality',
-           'Screen_JpgQualityCustom', 'Screen_Rename', 'Screen_ConvertTo',
+           'Screens_NextScreenShot', 'Screens_JpgQuality',
+           'Screens_JpgQualityCustom', 'Screen_Rename', 'Screen_ConvertTo',
            'People_AddNew', 'People_Import', 'People_Karma', 'People_Export',
            'Master_AllowEdit', 'Master_ClearRenames', 'SortByMenu']
 
@@ -79,7 +79,7 @@ class Screens_NextScreenShot(EnabledLink):
                 screensDir)
             screensDir.makedirs()
         oblivionIni.saveSettings(settings_screens)
-        bosh.screensData.refresh()
+        bosh.screen_infos.refresh()
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -100,11 +100,11 @@ class Screen_ConvertTo(EnabledLink):
 
     def Execute(self):
         try:
-            with balt.Progress(_(u"Converting to %s") % self.ext) as progress:
+            with balt.Progress(_(u'Converting to %s') % self.ext) as progress:
                 progress.setFull(len(self.convertable))
                 for index, fileName in enumerate(self.convertable):
                     progress(index,fileName.s)
-                    srcPath = bosh.screensData.store_dir.join(fileName)
+                    srcPath = bosh.screen_infos[fileName].abs_path
                     destPath = srcPath.root+u'.'+self.ext
                     if srcPath == destPath or destPath.exists(): continue
                     bitmap = Image.Load(srcPath, quality=bass.settings[
@@ -113,16 +113,16 @@ class Screen_ConvertTo(EnabledLink):
                     if not result: continue
                     srcPath.remove()
         finally:
-            bosh.screensData.refresh()
+            bosh.screen_infos.refresh()
             self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
-class Screen_JpgQuality(RadioLink):
+class Screens_JpgQuality(RadioLink):
     """Sets JPEG quality for saving."""
     _help = _(u'Sets JPEG quality for saving')
 
     def __init__(self, quality):
-        super(Screen_JpgQuality, self).__init__()
+        super(Screens_JpgQuality, self).__init__()
         self.quality = quality
         self._text = u'%i' % self.quality
 
@@ -133,10 +133,10 @@ class Screen_JpgQuality(RadioLink):
         bass.settings['bash.screens.jpgQuality'] = self.quality
 
 #------------------------------------------------------------------------------
-class Screen_JpgQualityCustom(Screen_JpgQuality):
+class Screens_JpgQualityCustom(Screens_JpgQuality):
     """Sets a custom JPG quality."""
     def __init__(self):
-        super(Screen_JpgQualityCustom, self).__init__(
+        super(Screens_JpgQualityCustom, self).__init__(
             bass.settings['bash.screens.jpgCustomQuality'])
         self._text = _(u'Custom [%i]') % self.quality
 
@@ -147,7 +147,7 @@ class Screen_JpgQualityCustom(Screen_JpgQuality):
         self.quality = quality
         bass.settings['bash.screens.jpgCustomQuality'] = self.quality
         self._text = _(u'Custom [%i]') % quality
-        super(Screen_JpgQualityCustom, self).Execute()
+        super(Screens_JpgQualityCustom, self).Execute()
 
 #------------------------------------------------------------------------------
 class Screen_Rename(UIList_Rename):

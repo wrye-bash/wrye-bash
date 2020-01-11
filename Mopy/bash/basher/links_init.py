@@ -694,9 +694,9 @@ def InitScreenLinks():
     #--JPEG Quality
     if True:
         qualityMenu = MenuLink(_(u'JPEG Quality'))
-        for i in range(100,80,-5):
-            qualityMenu.links.append(Screen_JpgQuality(i))
-        qualityMenu.links.append(Screen_JpgQualityCustom())
+        for i in range(100, 80, -5):
+            qualityMenu.links.append(Screens_JpgQuality(i))
+        qualityMenu.links.append(Screens_JpgQualityCustom())
         ScreensList.mainMenu.append(SeparatorLink())
         ScreensList.mainMenu.append(qualityMenu)
     #--ScreensList: Item Links
@@ -704,6 +704,7 @@ def InitScreenLinks():
         file_menu = MenuLink(_(u'File..'))
         file_menu.links.append(UIList_OpenItems())
         file_menu.links.append(Screen_Rename())
+        file_menu.links.append(File_Duplicate())
         file_menu.links.append(balt.UIList_Delete())
         ScreensList.itemMenu.append(file_menu)
     if True: #--Convert

@@ -81,7 +81,7 @@ modInfos  = None   # type: ModInfos
 saveInfos = None   # type: SaveInfos
 iniInfos = None    # type: INIInfos
 bsaInfos = None    # type: BSAInfos
-screensData = None # type: ScreensData
+screen_infos = None # type: ScreenInfos
 #--Config Helper files (LOOT Master List, etc.)
 configHelpers = None # type: mods_metadata.ConfigHelpers
 
@@ -1083,6 +1083,30 @@ class SaveInfo(FileInfo):
         # Fall back on the regular masters - either the cosave is unnecessary,
         # doesn't exist or isn't accurate
         return self.header.masters
+
+#------------------------------------------------------------------------------
+class ScreenInfo(FileInfo):
+    """Cached screenshot, stores a bitmap and refreshes it when its cache is
+    invalidated."""
+    def __init__(self, fullpath, load_cache=False):
+        self._cached_bitmap = None
+        super(ScreenInfo, self).__init__(fullpath, load_cache)
+
+    def _reset_cache(self, stat_tuple, load_cache):
+        self._cached_bitmap = None # Lazily reloaded in as_bitmap
+        super(ScreenInfo, self)._reset_cache(stat_tuple, load_cache)
+
+    def getFileInfos(self):
+        return screen_infos
+
+    def as_bitmap(self):
+        """Returns the wx.Bitmap version of this screenshot."""
+        # TODO(inf) I don't like having this here because balt shouldn't be
+        #  coupled to bosh in the first place - but this seems the only way to
+        #  efficiently cache and invalidate the bitmaps
+        if not self._cached_bitmap:
+            self._cached_bitmap = balt.Image(self.abs_path.s).GetBitmap()
+        return self._cached_bitmap
 
 #------------------------------------------------------------------------------
 class DataStore(DataDict):
@@ -2969,46 +2993,29 @@ class PeopleData(DataStore):
                 out.write(u'\n\n')
 
 #------------------------------------------------------------------------------
-class ScreensData(DataStore):
-    reImageExt = re.compile(
-        r'\.(' + u'|'.join(ext[1:] for ext in imageExts) + u')$',
-        re.I | re.U)
+class ScreenInfos(FileInfos):
+    """Collection of screenshot. This is the backend of the Screens tab."""
+    _bain_notify = False # BAIN can't install to game dir
 
     def __init__(self):
-        self.store_dir = dirs['app']
-        self.data = {} #--data[Path] = (ext,mtime,size)
+        self._orig_store_dir = dirs['app'] # type: bolt.Path
+        self.__class__.file_pattern = re.compile(
+            r'\.(' + u'|'.join(ext[1:] for ext in imageExts) + u')$',
+            re.I | re.U)
+        super(ScreenInfos, self).__init__(self._orig_store_dir,
+                                          factory=ScreenInfo)
 
-    def refresh(self):
-        """Refresh list of screenshots."""
-        self.store_dir = dirs['app']
-        ssBase = GPath(oblivionIni.getSetting(
+    def refresh(self, refresh_infos=True, booting=False):
+        # Check if we need to adjust the screenshot dir
+        ss_base = GPath(oblivionIni.getSetting(
             u'Display', u'SScreenShotBaseName', u'ScreenShot'))
-        if ssBase.head:
-            self.store_dir = self.store_dir.join(ssBase.head)
-        newData = {}
-        #--Loop over files in directory
-        for fileName in self.store_dir.list():
-            filePath = self.store_dir.join(fileName)
-            maImageExt = self.reImageExt.search(fileName.s)
-            if maImageExt and filePath.isfile():
-                newData[fileName] = (maImageExt.group(1).lower(),
-                                     filePath.mtime, filePath.size)
-        changed = (self.data != newData)
-        self.data = newData
-        return changed
+        new_store_dir = self._orig_store_dir.join(ss_base.head)
+        if self.store_dir != new_store_dir:
+            self.store_dir = new_store_dir
+        return super(ScreenInfos, self).refresh(refresh_infos, booting)
 
-    def files_to_delete(self, filenames, **kwargs):
-        toDelete = [self.store_dir.join(screen) for screen in filenames]
-        return toDelete, None
-
-    def delete_refresh(self, deleted, deleted2, check_existence):
-        for item in deleted:
-            if not item.exists(): del self[item.tail]
-
-    def _rename_operation(self, oldName, newName):
-        super(ScreensData, self)._rename_operation(oldName, newName)
-        self[newName] = self[oldName]
-        del self[oldName]
+    @property
+    def bash_dir(self): return dirs['modsBash'].join(u'Screenshot Data')
 
 #------------------------------------------------------------------------------
 from . import converters

@@ -3040,33 +3040,23 @@ class InstallersPanel(BashTab):
 
 #------------------------------------------------------------------------------
 class ScreensList(balt.UIList):
-
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     _shellUI = True
     _editLabels = True
     __ext_group = \
         r'(\.(' + u'|'.join(ext[1:] for ext in bosh.imageExts) + u')+)'
-    def _order_by_number(self, items):
-        if self.sort_column != 'File': return
-        regex = re.compile(u'(.*?)(\d*)' + self.__ext_group + u'$')
-        keys = {k: regex.match(k.s) for k in items}
-        keys = {k: (v.groups()[0].lower(), int(v.groups()[1] or 0)) for k, v in
-                keys.iteritems()}
-        items.sort(key=keys.__getitem__,
-                   reverse=self.colReverse.get('File', False))
 
     _sort_keys = {'File'    : None,
-                  'Modified': lambda self, a: self.data_store[a][1],
-                  'Size'    : lambda self, a: self.data_store[a][2],
+                  'Modified': lambda self, a: self.data_store[a].mtime,
+                  'Size'    : lambda self, a: self.data_store[a].size,
                  }
     #--Labels
     labels = OrderedDict([
         ('File',     lambda self, p: p.s),
-        ('Modified', lambda self, p: format_date(self.data_store[p][1])),
-        ('Size',     lambda self, p: round_size(self.data_store[p][2])),
+        ('Modified', lambda self, p: format_date(self.data_store[p].mtime)),
+        ('Size',     lambda self, p: round_size(self.data_store[p].size)),
     ])
-    _extra_sortings = [_order_by_number]
 
     #--Events ---------------------------------------------
     def OnDClick(self, lb_dex_and_flags):
@@ -3075,6 +3065,7 @@ class ScreensList(balt.UIList):
         if hitItem:
             self.OpenSelected(selected=[hitItem])
         return EventResult.FINISH
+
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Rename selected screenshots."""
         if is_edit_cancelled: return EventResult.CANCEL
@@ -3113,8 +3104,8 @@ class ScreensList(balt.UIList):
         """Char event: Activate selected items, select all items"""
         code = wrapped_evt.key_code
         # Ctrl+C: Copy file(s) to clipboard
-        if wrapped_evt.is_cmd_down and code == ord('C'):
-            sel = map(lambda x: bosh.screensData.store_dir.join(x).s,
+        if wrapped_evt.is_cmd_down and code == ord(u'C'):
+            sel = map(lambda x: bosh.screen_infos.store_dir.join(x).s,
                       self.GetSelected())
             balt.copyListToClipboard(sel)
         super(ScreensList, self)._handle_key_up(wrapped_evt, g_list)
@@ -3124,31 +3115,33 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
 
     def __init__(self, parent, ui_list_panel):
         super(ScreensDetails, self).__init__(parent)
-        self.screenshot_control = balt.Picture(parent._native_widget, 256, 192, background=colors['screens.bkgd.image'])
+        self.screenshot_control = balt.Picture(
+            parent._native_widget, 256, 192,
+            background=colors[u'screens.bkgd.image'])
         self.displayed_screen = None # type: bolt.Path
-        HLayout(item_expand=True, item_weight=True,
+        HLayout(item_expand=True, item_weight=1,
                 items=[self.screenshot_control]).apply_to(self)
 
     @property
     def displayed_item(self): return self.displayed_screen
+
     @property
-    def file_infos(self): return bosh.screensData
+    def file_infos(self): return bosh.screen_infos
 
     def _resetDetails(self):
         self.screenshot_control.SetBitmap(None)
 
-    def SetFile(self, fileName='SAME'):
+    def SetFile(self, fileName=u'SAME'):
         """Set file to be viewed."""
         #--Reset?
         self.displayed_screen = super(ScreensDetails, self).SetFile(fileName)
         if not self.displayed_screen: return
-        filePath = bosh.screensData.store_dir.join(self.displayed_screen)
-        bitmap = Image(filePath.s).GetBitmap() if filePath.exists() else None
-        self.screenshot_control.SetBitmap(bitmap)
+        self.screenshot_control.SetBitmap(self.file_info.as_bitmap())
 
     def RefreshUIColors(self):
-        self.screenshot_control.SetBackground(colors['screens.bkgd.image'])
+        self.screenshot_control.SetBackground(colors[u'screens.bkgd.image'])
 
+#------------------------------------------------------------------------------
 class ScreensPanel(BashTab):
     """Screenshots tab."""
     keyPrefix = 'bash.screens'
@@ -3158,12 +3151,12 @@ class ScreensPanel(BashTab):
 
     def __init__(self,parent):
         """Initialize."""
-        self.listData = bosh.screensData = bosh.ScreensData()
+        self.listData = bosh.screen_infos = bosh.ScreenInfos()
         super(ScreensPanel, self).__init__(parent)
 
     def ShowPanel(self, **kwargs):
         """Panel is shown. Update self.data."""
-        if bosh.screensData.refresh():
+        if bosh.screen_infos.refresh():
             self.uiList.RefreshUI(focus_list=False)
         super(ScreensPanel, self).ShowPanel()
 
