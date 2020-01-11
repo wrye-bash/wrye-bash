@@ -88,7 +88,7 @@ class MreActor(MelRecord):
 #------------------------------------------------------------------------------
 class MelBipedObjectData(MelStruct):
     """Handler for BODT/BOD2 subrecords.  Reads both types, writes only BOD2"""
-    BipedFlags = Flags(0L,Flags.getNames(
+    BipedFlags = Flags(0, Flags.getNames(
             (0, 'head'),
             (1, 'hair'),
             (2, 'body'),
@@ -124,7 +124,7 @@ class MelBipedObjectData(MelStruct):
         ))
 
     ## Legacy Flags, (For BODT subrecords) - #4 is the only one not discarded.
-    LegacyFlags = Flags(0L,Flags.getNames(
+    LegacyFlags = Flags(0, Flags.getNames(
             (0, 'modulates_voice'), #{>>> From ARMA <<<}
             (1, 'unknown_2'),
             (2, 'unknown_3'),
@@ -132,14 +132,16 @@ class MelBipedObjectData(MelStruct):
             (4, 'non_playable'), #{>>> From ARMO <<<}
         ))
 
-    ArmorTypeFlags = Flags(0L,Flags.getNames(
+    ArmorTypeFlags = Flags(0, Flags.getNames(
         (0, 'light_armor'),
         (1, 'heavy_armor'),
         (2, 'clothing'),
         ))
 
     def __init__(self):
-        MelStruct.__init__(self,'BOD2','=2I',(MelBipedObjectData.BipedFlags,'bipedFlags',0L),(MelBipedObjectData.ArmorTypeFlags,'armorFlags',0L))
+        MelStruct.__init__(self,'BOD2','=2I',
+            (MelBipedObjectData.BipedFlags, 'bipedFlags', 0),
+            (MelBipedObjectData.ArmorTypeFlags, 'armorFlags', 0))
 
     def getLoaders(self,loaders):
         # Loads either old style BODT or new style BOD2 records
@@ -171,7 +173,7 @@ class MelBipedObjectData(MelStruct):
 class MelAttackData(MelStruct):
     """Wrapper around MelStruct to share some code between the NPC_ and RACE
     definitions."""
-    DataFlags = Flags(0L, Flags.getNames('ignoreWeapon', 'bashAttack',
+    DataFlags = Flags(0, Flags.getNames('ignoreWeapon', 'bashAttack',
                                          'powerAttack', 'leftAttack',
                                          'rotatingAttack', 'unknown6',
                                          'unknown7', 'unknown8', 'unknown9',
@@ -182,7 +184,7 @@ class MelAttackData(MelStruct):
     def __init__(self):
         MelStruct.__init__(self, 'ATKD', '2f2I3fI3f', 'damageMult',
                            'attackChance', (FID, 'attackSpell'),
-                           (MelAttackData.DataFlags, 'attackDataFlags', 0L),
+                           (MelAttackData.DataFlags, 'attackDataFlags', 0),
                            'attackAngle', 'strikeAngle', 'stagger',
                            (FID, 'attackType'), 'knockdown', 'recoveryTime',
                            'staminaMult')
@@ -313,7 +315,7 @@ class MelConditionCounter(MelCounter):
 class MelDecalData(MelOptStruct):
     """Represents Decal Data."""
 
-    DecalDataFlags = Flags(0L,Flags.getNames(
+    DecalDataFlags = Flags(0, Flags.getNames(
             (0, 'parallax'),
             (1, 'alphaBlending'),
             (2, 'alphaTesting'),
@@ -325,7 +327,7 @@ class MelDecalData(MelOptStruct):
         MelOptStruct.__init__(
             self, 'DODT', '7f2B2s3Bs', 'minWidth', 'maxWidth',
             'minHeight', 'maxHeight', 'depth', 'shininess', 'parallaxScale',
-            'parallaxPasses', (MelDecalData.DecalDataFlags, 'flags', 0L),
+            'parallaxPasses', (MelDecalData.DecalDataFlags, 'flags', 0),
             ('unknownDecal1', null2), 'redDecal', 'greenDecal', 'blueDecal',
             ('unknownDecal2', null1)
         )
@@ -334,7 +336,7 @@ class MelDecalData(MelOptStruct):
 class MelDestructible(MelGroup):
     """Represents a set of destruct record."""
 
-    MelDestStageFlags = Flags(0L,Flags.getNames(
+    MelDestStageFlags = Flags(0, Flags.getNames(
         (0, 'capDamage'),
         (1, 'disable'),
         (2, 'destroy'),
@@ -346,7 +348,7 @@ class MelDestructible(MelGroup):
             MelStruct('DEST','i2B2s','health','count','vatsTargetable','dest_unused'),
             MelGroups('stages',
                 MelStruct('DSTD','=4Bi2Ii','health','index','damageStage',
-                         (MelDestructible.MelDestStageFlags,'flags',0L),'selfDamagePerSecond',
+                         (MelDestructible.MelDestStageFlags,'flags',0),'selfDamagePerSecond',
                          (FID,'explosion',None),(FID,'debris',None),'debrisCount'),
                 MelModel('model','DMDL'),
                 MelBase('DSTF','footer'),
@@ -767,7 +769,7 @@ class MelVmad(MelBase):
             ('script_name',    ('str16',)),
             ('fragment_name',  ('str16',)),
         ])
-        _scen_fragment_phase_flags = Flags(0L, Flags.getNames(
+        _scen_fragment_phase_flags = Flags(0, Flags.getNames(
             (0, 'on_start'),
             (1, 'on_completion'),
         ))
@@ -787,7 +789,7 @@ class MelVmad(MelBase):
             ('fragment_flags', ('B', 1)), # Updated before writing
             ('file_name',      ('str16',)),
         ])
-        flags_mapper = Flags(0L, Flags.getNames(
+        flags_mapper = Flags(0, Flags.getNames(
             (0, 'on_begin'),
             (1, 'on_end'),
         ))
@@ -807,7 +809,7 @@ class MelVmad(MelBase):
             ('fragment_flags', ('B', 1)), # Updated before writing
             ('file_name',      ('str16',)),
         ])
-        flags_mapper = Flags(0L, Flags.getNames(
+        flags_mapper = Flags(0, Flags.getNames(
             (0, 'on_begin'),
             (1, 'on_end'),
             (2, 'on_change'),
@@ -890,7 +892,7 @@ class MelVmad(MelBase):
             ('fragment_flags', ('B', 1)), # Updated before writing
             ('file_name',      ('str16',)),
         ])
-        flags_mapper = Flags(0L, Flags.getNames(
+        flags_mapper = Flags(0, Flags.getNames(
             (0, 'on_begin'),
             (1, 'on_end'),
         ))
@@ -946,7 +948,7 @@ class MelVmad(MelBase):
             ('script_flags',   ('B', 1)),
             ('property_count', ('H', 2)),
         ])
-        _script_status_flags = Flags(0L, Flags.getNames(
+        _script_status_flags = Flags(0, Flags.getNames(
             # actually an enum, 0x0 means 'local'
             (0, 'inherited'),
             (1, 'removed'),
@@ -977,7 +979,7 @@ class MelVmad(MelBase):
             ('prop_name', ('str16',)),
             ('prop_type', ('B', 1)),
         ])
-        _property_status_flags = Flags(0L, Flags.getNames(
+        _property_status_flags = Flags(0, Flags.getNames(
             (0, 'edited'),
             (1, 'removed'),
         ))
@@ -1299,9 +1301,9 @@ class MreAact(MelRecord):
 class MreAchr(MelRecord):
     """Placed NPC."""
     classType = 'ACHR'
-    _flags = Flags(0L,Flags.getNames('oppositeParent','popIn'))
+    _flags = Flags(0,Flags.getNames('oppositeParent','popIn'))
 
-    ActivateParentsFlags = Flags(0L,Flags.getNames(
+    ActivateParentsFlags = Flags(0, Flags.getNames(
             (0, 'parentActivateOnly'),
         ))
 
@@ -1335,7 +1337,7 @@ class MreAchr(MelRecord):
             MelSortedFidList('XLKR', 'fids'),
         ),
         MelGroup('activateParents',
-            MelUInt32('XAPD', (ActivateParentsFlags, 'flags', 0L)),
+            MelUInt32('XAPD', (ActivateParentsFlags, 'flags', 0)),
             MelGroups('activateParentRefs',
                 MelStruct('XAPR','If',(FID,'reference'),'delay',),
             ),
@@ -1365,7 +1367,7 @@ class MreActi(MelRecord):
     """Activator."""
     classType = 'ACTI'
 
-    ActivatorFlags = Flags(0L,Flags.getNames(
+    ActivatorFlags = Flags(0, Flags.getNames(
         (0, 'noDisplacement'),
         (1, 'ignoredBySandbox'),
     ))
@@ -1383,7 +1385,7 @@ class MreActi(MelRecord):
         MelOptFid('VNAM', 'pickupSound'),
         MelOptFid('WNAM', 'water'),
         MelLString('RNAM', 'activate_text_override'),
-        MelOptUInt16('FNAM', (ActivatorFlags, 'flags', 0L)),
+        MelOptUInt16('FNAM', (ActivatorFlags, 'flags', 0)),
         MelOptFid('KNAM', 'keyword'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1393,7 +1395,7 @@ class MreAddn(MelRecord):
     """Addon Node."""
     classType = 'ADDN'
 
-    _AddnFlags = Flags(0L, Flags.getNames(
+    _AddnFlags = Flags(0, Flags.getNames(
         (1, 'alwaysLoaded'),
     ))
 
@@ -1413,7 +1415,7 @@ class MreAlch(MelRecord,MreHasEffects):
     """Ingestible."""
     classType = 'ALCH'
 
-    IngestibleFlags = Flags(0L,Flags.getNames(
+    IngestibleFlags = Flags(0, Flags.getNames(
         (0, 'noAutoCalc'),
         (1, 'isFood'),
         (16, 'medicine'),
@@ -1433,7 +1435,7 @@ class MreAlch(MelRecord,MreHasEffects):
         MelOptFid('ZNAM', 'dropSound'),
         MelOptFid('ETYP', 'equipType'),
         MelFloat('DATA', 'weight'),
-        MelStruct('ENIT','i2IfI','value',(IngestibleFlags,'flags',0L),
+        MelStruct('ENIT','i2IfI','value',(IngestibleFlags,'flags',0),
                   'addiction','addictionChance','soundConsume',),
         MelEffects(),
     )
@@ -1444,7 +1446,7 @@ class MreAmmo(MelRecord):
     """Ammunition."""
     classType = 'AMMO'
 
-    AmmoTypeFlags = Flags(0L,Flags.getNames(
+    AmmoTypeFlags = Flags(0, Flags.getNames(
         (0, 'notNormalWeapon'),
         (1, 'nonPlayable'),
         (2, 'nonBolt'),
@@ -1509,7 +1511,7 @@ class MreArma(MelRecord):
     """Armor Addon."""
     classType = 'ARMA'
 
-    WeightSliderFlags = Flags(0L,Flags.getNames(
+    WeightSliderFlags = Flags(0, Flags.getNames(
             (0, 'unknown0'),
             (1, 'enabled'),
         ))
@@ -1519,8 +1521,8 @@ class MreArma(MelRecord):
         MelBipedObjectData(),
         MelFid('RNAM','race'),
         MelStruct('DNAM','4B2sBsf','malePriority','femalePriority',
-                  (WeightSliderFlags,'maleFlags',0L),
-                  (WeightSliderFlags,'femaleFlags',0L),
+                  (WeightSliderFlags,'maleFlags',0),
+                  (WeightSliderFlags,'femaleFlags',0),
                   'unknown','detectionSoundValue','unknown1','weaponAdjust',),
         MelModel('male_model','MOD2'),
         MelModel('female_model','MOD3'),
@@ -1575,7 +1577,7 @@ class MreArto(MelRecord):
     """Art Effect Object."""
     classType = 'ARTO'
 
-    ArtoTypeFlags = Flags(0L,Flags.getNames(
+    ArtoTypeFlags = Flags(0, Flags.getNames(
             (0, 'magic_casting'),
             (1, 'magic_hit_effect'),
             (2, 'enchantment_effect'),
@@ -1585,7 +1587,7 @@ class MreArto(MelRecord):
         MelEdid(),
         MelBounds(),
         MelModel(),
-        MelUInt32('DNAM', (ArtoTypeFlags, 'flags', 0L)),
+        MelUInt32('DNAM', (ArtoTypeFlags, 'flags', 0)),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1607,7 +1609,7 @@ class MreAstp(MelRecord):
     """Association Type."""
     classType = 'ASTP'
 
-    AstpTypeFlags = Flags(0L,Flags.getNames('related'))
+    AstpTypeFlags = Flags(0, Flags.getNames('related'))
 
     melSet = MelSet(
         MelEdid(),
@@ -1615,7 +1617,7 @@ class MreAstp(MelRecord):
         MelString('FPRT','femaleParent'),
         MelString('MCHT','maleChild'),
         MelString('FCHT','femaleChild'),
-        MelUInt32('DATA', (AstpTypeFlags, 'flags', 0L)),
+        MelUInt32('DATA', (AstpTypeFlags, 'flags', 0)),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1699,7 +1701,7 @@ class MreBptd(MelRecord):
     """Body Part Data."""
     classType = 'BPTD'
 
-    _flags = Flags(0L,Flags.getNames('severable','ikData','ikBipedData',
+    _flags = Flags(0, Flags.getNames('severable','ikData','ikBipedData',
         'explodable','ikIsHead','ikHeadtracking','toHitChanceAbsolute'))
 
     melSet = MelSet(
@@ -1714,15 +1716,15 @@ class MreBptd(MelRecord):
             MelStruct('BPND','f3Bb2BH2I2fi2I7f2I2B2sf','damageMult',
                       (_flags,'flags'),'partType','healthPercent','actorValue',
                       'toHitChance','explodableChancePercent',
-                      'explodableDebrisCount',(FID,'explodableDebris',0L),
-                      (FID,'explodableExplosion',0L),'trackingMaxAngle',
+                      'explodableDebrisCount',(FID,'explodableDebris',0),
+                      (FID,'explodableExplosion',0),'trackingMaxAngle',
                       'explodableDebrisScale','severableDebrisCount',
-                      (FID,'severableDebris',0L),(FID,'severableExplosion',0L),
+                      (FID,'severableDebris',0),(FID,'severableExplosion',0),
                       'severableDebrisScale','goreEffectPosTransX',
                       'goreEffectPosTransY','goreEffectPosTransZ',
                       'goreEffectPosRotX','goreEffectPosRotY','goreEffectPosRotZ',
-                      (FID,'severableImpactDataSet',0L),
-                      (FID,'explodableImpactDataSet',0L),'severableDecalCount',
+                      (FID,'severableImpactDataSet',0),
+                      (FID,'explodableImpactDataSet',0),'severableDecalCount',
                       'explodableDecalCount',('unused',null2),
                       'limbReplacementScale'),
             MelString('NAM1','limbReplacementModel'),
@@ -1739,7 +1741,7 @@ class MreCams(MelRecord):
     """Camera Shot."""
     classType = 'CAMS'
 
-    CamsFlagsFlags = Flags(0L,Flags.getNames(
+    CamsFlagsFlags = Flags(0, Flags.getNames(
             (0, 'positionFollowsLocation'),
             (1, 'rotationFollowsTarget'),
             (2, 'dontFollowBone'),
@@ -1752,7 +1754,7 @@ class MreCams(MelRecord):
         MelEdid(),
         MelModel(),
         MelTruncatedStruct('DATA', '4I7f', 'action', 'location', 'target',
-                           (CamsFlagsFlags, 'flags', 0L), 'timeMultPlayer',
+                           (CamsFlagsFlags, 'flags', 0), 'timeMultPlayer',
                            'timeMultTarget', 'timeMultGlobal', 'maxTime',
                            'minTime', 'targetPctBetweenActors',
                            'nearTargetDistance', old_versions={'4I6f'}),
@@ -1765,7 +1767,7 @@ class MreCell(MelRecord):
     """Cell."""
     classType = 'CELL'
 
-    CellDataFlags1 = Flags(0L,Flags.getNames(
+    CellDataFlags1 = Flags(0, Flags.getNames(
         (0,'isInterior'),
         (1,'hasWater'),
         (2,'cantFastTravel'),
@@ -1775,11 +1777,11 @@ class MreCell(MelRecord):
         (7,'showSky'),
         ))
 
-    CellDataFlags2 = Flags(0L,Flags.getNames(
+    CellDataFlags2 = Flags(0, Flags.getNames(
         (0,'useSkyLighting'),
         ))
 
-    CellInheritedFlags = Flags(0L,Flags.getNames(
+    CellInheritedFlags = Flags(0, Flags.getNames(
             (0, 'ambientColor'),
             (1, 'directionalColor'),
             (2, 'fogColor'),
@@ -1794,7 +1796,7 @@ class MreCell(MelRecord):
         ))
 
     # 'Force Hide Land' flags
-    CellFHLFlags = Flags(0L, Flags.getNames(
+    CellFHLFlags = Flags(0, Flags.getNames(
         (0, 'quad1'),
         (1, 'quad2'),
         (2, 'quad3'),
@@ -1825,10 +1827,10 @@ class MreCell(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelTruncatedStruct('DATA', '2B', (CellDataFlags1, 'flags', 0L),
-                           (CellDataFlags2, 'skyFlags', 0L),
+        MelTruncatedStruct('DATA', '2B', (CellDataFlags1, 'flags', 0),
+                           (CellDataFlags2, 'skyFlags', 0),
                            old_versions={'B'}),
-        MelOptStruct('XCLC','2iI',('posX', 0),('posY', 0),(CellFHLFlags,'fhlFlags',0L),),
+        MelOptStruct('XCLC','2iI',('posX', 0),('posY', 0),(CellFHLFlags,'fhlFlags',0),),
         MelTruncatedStruct(
             'XCLL', '3Bs3Bs3Bs2f2i3f3Bs3Bs3Bs3Bs3Bs3Bs3Bsf3Bs3fI',
             'ambientRed', 'ambientGreen', 'ambientBlue', ('unused1', null1),
@@ -1845,7 +1847,7 @@ class MreCell(MelRecord):
             'redSpec', 'greenSpec', 'blueSpec', ('unknownSpec', null1),
             'fresnelPower', 'fogColorFarRed', 'fogColorFarGreen',
             'fogColorFarBlue', ('unused4', null1), 'fogMax', 'lightFadeBegin',
-            'lightFadeEnd', (CellInheritedFlags, 'inherits', 0L),
+            'lightFadeEnd', (CellInheritedFlags, 'inherits', 0),
             is_optional=True, old_versions={
                 '3Bs3Bs3Bs2f2i3f3Bs3Bs3Bs3Bs3Bs3Bs', '3Bs3Bs3Bs2fi'}),
         MelBase('TVDT','occlusionData'),
@@ -1955,7 +1957,7 @@ class MreColl(MelRecord):
     """Collision Layer."""
     classType = 'COLL'
 
-    CollisionLayerFlags = Flags(0L,Flags.getNames(
+    CollisionLayerFlags = Flags(0, Flags.getNames(
         (0,'triggerVolume'),
         (1,'sensor'),
         (2,'navmeshObstacle'),
@@ -1966,7 +1968,7 @@ class MreColl(MelRecord):
         MelLString('DESC','description'),
         MelUInt32('BNAM', 'layerID'),
         MelColor('FNAM'),
-        MelUInt32('GNAM', (CollisionLayerFlags,'flags',0L),),
+        MelUInt32('GNAM', (CollisionLayerFlags,'flags',0),),
         MelString('MNAM','name',),
         MelUInt32('INTV', 'interactablesCount'),
         MelFidList('CNAM','collidesWith',),
@@ -1978,7 +1980,7 @@ class MreCont(MelRecord):
     """Container."""
     classType = 'CONT'
 
-    ContTypeFlags = Flags(0L,Flags.getNames(
+    ContTypeFlags = Flags(0, Flags.getNames(
         (0, 'allowSoundsWhenAnimation'),
         (1, 'respawns'),
         (2, 'showOwner'),
@@ -1993,7 +1995,7 @@ class MreCont(MelRecord):
         MelItemsCounter(),
         MelItems(),
         MelDestructible(),
-        MelStruct('DATA','=Bf',(ContTypeFlags,'flags',0L),'weight'),
+        MelStruct('DATA','=Bf',(ContTypeFlags,'flags',0),'weight'),
         MelFid('SNAM','soundOpen'),
         MelFid('QNAM','soundClose'),
     )
@@ -2018,7 +2020,7 @@ class MreCsty(MelRecord):
     """Combat Style."""
     classType = 'CSTY'
 
-    CstyTypeFlags = Flags(0L,Flags.getNames(
+    CstyTypeFlags = Flags(0, Flags.getNames(
         (0, 'dueling'),
         (1, 'flanking'),
         (2, 'allowDualWielding'),
@@ -2037,7 +2039,7 @@ class MreCsty(MelRecord):
         MelFloat('CSLR', 'strafeMult'),
         MelStruct('CSFL','8f','hoverChance','diveBombChance','groundAttackChance','hoverTime',
         'groundAttackTime','perchAttackChance','perchAttackTime','flyingAttackChance',),
-        MelUInt32('DATA', (CstyTypeFlags, 'flags', 0L)),
+        MelUInt32('DATA', (CstyTypeFlags, 'flags', 0)),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2046,7 +2048,7 @@ class MreDebr(MelRecord):
     """Debris."""
     classType = 'DEBR'
 
-    dataFlags = Flags(0L,Flags.getNames('hasCollissionData'))
+    dataFlags = Flags(0, Flags.getNames('hasCollissionData'))
 
     class MelDebrData(MelStruct):
         def __init__(self):
@@ -2085,7 +2087,7 @@ class MreDebr(MelRecord):
 class MreDial(brec.MreDial):
     """Dialogue."""
 
-    DialTopicFlags = Flags(0L,Flags.getNames(
+    DialTopicFlags = Flags(0, Flags.getNames(
         (0, 'doAllBeforeRepeating'),
     ))
 
@@ -2095,7 +2097,7 @@ class MreDial(brec.MreDial):
         MelFloat('PNAM', 'priority',),
         MelFid('BNAM','branch',),
         MelFid('QNAM','quest',),
-        MelStruct('DATA','2BH',(DialTopicFlags,'flags_dt',0L),'category',
+        MelStruct('DATA','2BH',(DialTopicFlags,'flags_dt',0),'category',
                   'subtype',),
         # SNAM is a 4 byte string no length byte - TODO(inf) MelFixedString?
         MelStruct('SNAM', '4s', 'subtypeName',),
@@ -2109,7 +2111,7 @@ class MreDlbr(MelRecord):
     """Dialog Branch."""
     classType = 'DLBR'
 
-    DialogBranchFlags = Flags(0L,Flags.getNames(
+    DialogBranchFlags = Flags(0, Flags.getNames(
         (0,'topLevel'),
         (1,'blocking'),
         (2,'exclusive'),
@@ -2119,7 +2121,7 @@ class MreDlbr(MelRecord):
         MelEdid(),
         MelFid('QNAM','quest',),
         MelUInt32('TNAM', 'unknown'),
-        MelUInt32('DNAM', (DialogBranchFlags, 'flags', 0L)),
+        MelUInt32('DNAM', (DialogBranchFlags, 'flags', 0)),
         MelFid('SNAM','startingTopic',),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -2191,7 +2193,7 @@ class MreDoor(MelRecord):
     """Door."""
     classType = 'DOOR'
 
-    DoorTypeFlags = Flags(0L,Flags.getNames(
+    DoorTypeFlags = Flags(0, Flags.getNames(
         (1, 'automatic'),
         (2, 'hidden'),
         (3, 'minimalUse'),
@@ -2209,7 +2211,7 @@ class MreDoor(MelRecord):
         MelFid('SNAM','soundOpen'),
         MelFid('ANAM','soundClose'),
         MelFid('BNAM','soundLoop'),
-        MelUInt8('FNAM', (DoorTypeFlags, 'flags', 0L)),
+        MelUInt8('FNAM', (DoorTypeFlags, 'flags', 0)),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2218,7 +2220,7 @@ class MreDual(MelRecord):
     """Dual Cast Data."""
     classType = 'DUAL'
 
-    DualCastDataFlags = Flags(0L,Flags.getNames(
+    DualCastDataFlags = Flags(0, Flags.getNames(
         (0,'hitEffectArt'),
         (1,'projectile'),
         (2,'explosion'),
@@ -2228,7 +2230,7 @@ class MreDual(MelRecord):
         MelEdid(),
         MelBounds(),
         MelStruct('DATA','6I',(FID,'projectile'),(FID,'explosion'),(FID,'effectShader'),
-                  (FID,'hitEffectArt'),(FID,'impactDataSet'),(DualCastDataFlags,'flags',0L),),
+                  (FID,'hitEffectArt'),(FID,'impactDataSet'),(DualCastDataFlags,'flags',0),),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2237,7 +2239,7 @@ class MreEczn(MelRecord):
     """Encounter Zone."""
     classType = 'ECZN'
 
-    EcznTypeFlags = Flags(0L,Flags.getNames(
+    EcznTypeFlags = Flags(0, Flags.getNames(
             (0, 'neverResets'),
             (1, 'matchPCBelowMinimumLevel'),
             (2, 'disableCombatBoundary'),
@@ -2247,7 +2249,7 @@ class MreEczn(MelRecord):
         MelEdid(),
         MelTruncatedStruct('DATA', '2I2bBb', (FID, 'owner', None),
                            (FID, 'location', None), ('rank', 0),
-                           ('minimumLevel', 0), (EcznTypeFlags, 'flags', 0L),
+                           ('minimumLevel', 0), (EcznTypeFlags, 'flags', 0),
                            ('maxLevel', 0), old_versions={'2I'}),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -2257,7 +2259,7 @@ class MreEfsh(MelRecord):
     """Effect Shader."""
     classType = 'EFSH'
 
-    EfshGeneralFlags = Flags(0L,Flags.getNames(
+    EfshGeneralFlags = Flags(0, Flags.getNames(
         (0, 'noMembraneShader'),
         (1, 'membraneGrayscaleColor'),
         (2, 'membraneGrayscaleAlpha'),
@@ -2325,7 +2327,7 @@ class MreEfsh(MelRecord):
             'key3FillTime', 'colorScale', 'birthPosOffset',
             'birthPosOffsetRange','startFrame', 'startFrameVariation',
             'endFrame','loopStartFrame', 'loopStartVariation', 'frameCount',
-            'frameCountVariation', (EfshGeneralFlags, 'flags', 0L),
+            'frameCountVariation', (EfshGeneralFlags, 'flags', 0),
             'fillTextScaleU', 'fillTextScaleV', 'sceneGraphDepthLimit',
             old_versions={
                 '4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6fI3Bs3Bs9f8I2f',
@@ -2341,7 +2343,7 @@ class MreEnch(MelRecord,MreHasEffects):
     """Object Effect."""
     classType = 'ENCH'
 
-    EnchGeneralFlags = Flags(0L,Flags.getNames(
+    EnchGeneralFlags = Flags(0, Flags.getNames(
         (0, 'noAutoCalc'),
         (1, 'unknownTwo'),
         (2, 'extendDurationOnRecast'),
@@ -2352,7 +2354,7 @@ class MreEnch(MelRecord,MreHasEffects):
         MelBounds(),
         MelFull(),
         MelTruncatedStruct('ENIT', 'i2Ii2If2I', 'enchantmentCost',
-                           (EnchGeneralFlags, 'generalFlags', 0L), 'castType',
+                           (EnchGeneralFlags, 'generalFlags', 0), 'castType',
                            'enchantmentAmount', 'targetType', 'enchantType',
                            'chargeTime', (FID, 'baseEnchantment'),
                            (FID, 'wornRestrictions'),
@@ -2377,7 +2379,7 @@ class MreExpl(MelRecord):
     """Explosion."""
     classType = 'EXPL'
 
-    ExplTypeFlags = Flags(0L,Flags.getNames(
+    ExplTypeFlags = Flags(0, Flags.getNames(
         (1, 'alwaysUsesWorldOrientation'),
         (2, 'knockDownAlways'),
         (3, 'knockDownByFormular'),
@@ -2400,7 +2402,7 @@ class MreExpl(MelRecord):
             (FID, 'sound2', None), (FID, 'impactDataset', None),
             (FID, 'placedObject', None), (FID, 'spawnProjectile', None),
             'force', 'damage', 'radius', 'isRadius', 'verticalOffsetMult',
-            (ExplTypeFlags, 'flags', 0L), 'soundLevel',
+            (ExplTypeFlags, 'flags', 0), 'soundLevel',
             old_versions={'6I5fI', '6I5f', '6I4f'}),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -2410,7 +2412,7 @@ class MreEyes(MelRecord):
     """Eyes."""
     classType = 'EYES'
 
-    EyesTypeFlags = Flags(0L,Flags.getNames(
+    EyesTypeFlags = Flags(0, Flags.getNames(
             (0, 'playable'),
             (1, 'notMale'),
             (2, 'notFemale'),
@@ -2420,7 +2422,7 @@ class MreEyes(MelRecord):
         MelEdid(),
         MelFull(),
         MelIcons(),
-        MelUInt8('DATA', (EyesTypeFlags, 'flags', 0L)),
+        MelUInt8('DATA', (EyesTypeFlags, 'flags', 0)),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2429,7 +2431,7 @@ class MreFact(MelRecord):
     """Faction."""
     classType = 'FACT'
 
-    FactGeneralTypeFlags = Flags(0L,Flags.getNames(
+    FactGeneralTypeFlags = Flags(0, Flags.getNames(
         (0, 'hiddenFromPC'),
         (1, 'specialCombat'),
         (2, 'unknown3'),
@@ -2476,7 +2478,7 @@ class MreFact(MelRecord):
             MelStruct('XNAM', 'IiI', (FID, 'faction'), 'mod',
                       'groupCombatReaction'),
         ),
-        MelUInt32('DATA', (FactGeneralTypeFlags, 'flags', 0L)),
+        MelUInt32('DATA', (FactGeneralTypeFlags, 'flags', 0)),
         MelFid('JAIL','exteriorJailMarker'),
         MelFid('WAIT','followerWaitMarker'),
         MelFid('STOL','stolenGoodsContainer'),
@@ -2632,11 +2634,11 @@ class MreFurn(MelRecord):
     """Furniture."""
     classType = 'FURN'
 
-    FurnGeneralFlags = Flags(0L,Flags.getNames(
+    FurnGeneralFlags = Flags(0, Flags.getNames(
         (1, 'ignoredBySandbox'),
     ))
 
-    FurnActiveMarkerFlags = Flags(0L,Flags.getNames(
+    FurnActiveMarkerFlags = Flags(0, Flags.getNames(
         (0, 'sit0'),
         (1, 'sit1'),
         (2, 'sit2'),
@@ -2671,7 +2673,7 @@ class MreFurn(MelRecord):
         (31, 'unknown32'),
     ))
 
-    MarkerEntryPointFlags = Flags(0L,Flags.getNames(
+    MarkerEntryPointFlags = Flags(0, Flags.getNames(
             (0, 'front'),
             (1, 'behind'),
             (2, 'right'),
@@ -2720,7 +2722,7 @@ class MreGras(MelRecord):
     """Grass."""
     classType = 'GRAS'
 
-    GrasTypeFlags = Flags(0L,Flags.getNames(
+    GrasTypeFlags = Flags(0, Flags.getNames(
             (0, 'vertexLighting'),
             (1, 'uniformScaling'),
             (2, 'fitToSlope'),
@@ -2733,7 +2735,7 @@ class MreGras(MelRecord):
         MelStruct('DATA','3BsH2sI4fB3s','density','minSlope','maxSlope',
                   ('unkGras1', null1),'unitsFromWater',('unkGras2', null2),
                   'unitsFromWaterType','positionRange','heightRange',
-                  'colorRange','wavePeriod',(GrasTypeFlags,'flags',0L),
+                  'colorRange','wavePeriod',(GrasTypeFlags,'flags',0),
                   ('unkGras3', null3),),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -2743,7 +2745,7 @@ class MreHazd(MelRecord):
     """Hazard."""
     classType = 'HAZD'
 
-    HazdTypeFlags = Flags(0L,Flags.getNames(
+    HazdTypeFlags = Flags(0, Flags.getNames(
         (0, 'affectsPlayerOnly'),
         (1, 'inheritDurationFromSpawnSpell'),
         (2, 'alignToImpactNormal'),
@@ -2758,7 +2760,7 @@ class MreHazd(MelRecord):
         MelModel(),
         MelFid('MNAM','imageSpaceModifier'),
         MelStruct('DATA','I4f5I','limit','radius','lifetime',
-                  'imageSpaceRadius','targetInterval',(HazdTypeFlags,'flags',0L),
+                  'imageSpaceRadius','targetInterval',(HazdTypeFlags,'flags',0),
                   (FID,'spell'),(FID,'light'),(FID,'impactDataSet'),(FID,'sound'),),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -2768,7 +2770,7 @@ class MreHdpt(MelRecord):
     """Head Part."""
     classType = 'HDPT'
 
-    HdptTypeFlags = Flags(0L,Flags.getNames(
+    HdptTypeFlags = Flags(0, Flags.getNames(
         (0, 'playable'),
         (1, 'male'),
         (2, 'female'),
@@ -2780,7 +2782,7 @@ class MreHdpt(MelRecord):
         MelEdid(),
         MelFull(),
         MelModel(),
-        MelUInt8('DATA', (HdptTypeFlags, 'flags', 0L)),
+        MelUInt8('DATA', (HdptTypeFlags, 'flags', 0)),
         MelUInt32('PNAM', 'hdptTypes'),
         MelFids('HNAM','extraParts'),
         MelGroups('partsData',
@@ -2798,7 +2800,7 @@ class MreIdle(MelRecord):
     """Idle Animation."""
     classType = 'IDLE'
 
-    IdleTypeFlags = Flags(0L,Flags.getNames(
+    IdleTypeFlags = Flags(0, Flags.getNames(
             (0, 'parent'),
             (1, 'sequence'),
             (2, 'noAttacking'),
@@ -2813,7 +2815,7 @@ class MreIdle(MelRecord):
         MelGroups('idleAnimations',
             MelStruct('ANAM','II',(FID,'parent'),(FID,'prevId'),),
         ),
-        MelStruct('DATA','4BH','loopMin','loopMax',(IdleTypeFlags,'flags',0L),
+        MelStruct('DATA','4BH','loopMin','loopMax',(IdleTypeFlags,'flags',0),
                   'animationGroupSection','replayDelay',),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -2823,7 +2825,7 @@ class MreIdlm(MelRecord):
     """Idle Marker."""
     classType = 'IDLM'
 
-    IdlmTypeFlags = Flags(0L,Flags.getNames(
+    IdlmTypeFlags = Flags(0, Flags.getNames(
         (0, 'runInSequence'),
         (1, 'unknown1'),
         (2, 'doOnce'),
@@ -2834,7 +2836,7 @@ class MreIdlm(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelUInt8('IDLF', (IdlmTypeFlags, 'flags', 0L)),
+        MelUInt8('IDLF', (IdlmTypeFlags, 'flags', 0)),
         MelCounter(MelUInt8('IDLC', 'animation_count'), counts='animations'),
         MelFloat('IDLT', 'idleTimerSetting'),
         MelFidList('IDLA','animations'),
@@ -2847,11 +2849,11 @@ class MreInfo(MelRecord):
     """Dialog Response."""
     classType = 'INFO'
 
-    _InfoResponsesFlags = Flags(0L, Flags.getNames(
+    _InfoResponsesFlags = Flags(0, Flags.getNames(
             (0, 'useEmotionAnimation'),
         ))
 
-    _EnamResponseFlags = Flags(0L, Flags.getNames(
+    _EnamResponseFlags = Flags(0, Flags.getNames(
             (0, 'goodbye'),
             (1, 'random'),
             (2, 'sayonce'),
@@ -2874,7 +2876,7 @@ class MreInfo(MelRecord):
         MelEdid(),
         MelVmad(),
         MelBase('DATA','unknownDATA'),
-        MelStruct('ENAM','2H', (_EnamResponseFlags, 'flags', 0L),
+        MelStruct('ENAM','2H', (_EnamResponseFlags, 'flags', 0),
                   'resetHours',),
         MelFid('TPIC','topic',),
         MelFid('PNAM','prevInfo',),
@@ -2885,7 +2887,7 @@ class MreInfo(MelRecord):
             MelStruct('TRDT', '2I4sB3sIB3s', 'emotionType', 'emotionValue',
                       ('unused1', null4), 'responseNumber', ('unused2', null3),
                       (FID, 'sound', None),
-                      (_InfoResponsesFlags, 'responseFlags', 0L),
+                      (_InfoResponsesFlags, 'responseFlags', 0),
                       ('unused3', null3),),
             MelLString('NAM1','responseText'),
             MelString('NAM2','scriptNotes'),
@@ -2911,7 +2913,7 @@ class MreImad(MelRecord):
     """Image Space Adapter."""
     classType = 'IMAD'
 
-    _ImadDofFlags = Flags(0L, Flags.getNames(
+    _ImadDofFlags = Flags(0, Flags.getNames(
         (0, 'useTarget'),
         (1, 'unknown2'),
         (2, 'unknown3'),
@@ -2927,16 +2929,16 @@ class MreImad(MelRecord):
         (12, 'blurRadiusBit1'),
         (13, 'blurRadiusBit0'),
     ))
-    _ImadAnimatableFlags = Flags(0L, Flags.getNames(
+    _ImadAnimatableFlags = Flags(0, Flags.getNames(
         (0, 'animatable'),
     ))
-    _ImadRadialBlurFlags = Flags(0L, Flags.getNames(
+    _ImadRadialBlurFlags = Flags(0, Flags.getNames(
         (0, 'useTarget')
     ))
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct('DNAM', 'If49I2f8I', (_ImadAnimatableFlags, 'aniFlags', 0L),
+        MelStruct('DNAM', 'If49I2f8I', (_ImadAnimatableFlags, 'aniFlags', 0),
                   'duration', 'eyeAdaptSpeedMult', 'eyeAdaptSpeedAdd',
                   'bloomBlurRadiusMult', 'bloomBlurRadiusAdd',
                   'bloomThresholdMult', 'bloomThresholdAdd', 'bloomScaleMult',
@@ -2954,9 +2956,9 @@ class MreImad(MelRecord):
                   'unknown14Mult', 'unknown54Add',
                   'tintColor', 'blurRadius', 'doubleVisionStrength',
                   'radialBlurStrength', 'radialBlurRampUp', 'radialBlurStart',
-                  (_ImadRadialBlurFlags, 'radialBlurFlags', 0L),
+                  (_ImadRadialBlurFlags, 'radialBlurFlags', 0),
                   'radialBlurCenterX', 'radialBlurCenterY', 'dofStrength',
-                  'dofDistance', 'dofRange', (_ImadDofFlags, 'dofFlags', 0L),
+                  'dofDistance', 'dofRange', (_ImadDofFlags, 'dofFlags', 0),
                   'radialBlurRampDown', 'radialBlurDownStart', 'fadeColor',
                   'motionBlurStrength'),
         MelValueInterpolator('BNAM', 'blurRadiusInterp'),
@@ -3040,7 +3042,7 @@ class MreIngr(MelRecord,MreHasEffects):
     """Ingredient."""
     classType = 'INGR'
 
-    IngrTypeFlags = Flags(0L, Flags.getNames(
+    IngrTypeFlags = Flags(0,  Flags.getNames(
         (0, 'no_auto_calc'),
         (1, 'food_item'),
         (8, 'references_persist'),
@@ -3058,7 +3060,7 @@ class MreIngr(MelRecord,MreHasEffects):
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
         MelStruct('DATA','if','value','weight'),
-        MelStruct('ENIT','iI','ingrValue',(IngrTypeFlags,'flags',0L),),
+        MelStruct('ENIT','iI','ingrValue',(IngrTypeFlags,'flags',0),),
         MelEffects(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3068,7 +3070,7 @@ class MreIpct(MelRecord):
     """Impact."""
     classType = 'IPCT'
 
-    _IpctTypeFlags = Flags(0L, Flags.getNames('noDecalData'))
+    _IpctTypeFlags = Flags(0, Flags.getNames('noDecalData'))
 
     melSet = MelSet(
         MelEdid(),
@@ -3076,7 +3078,7 @@ class MreIpct(MelRecord):
         MelTruncatedStruct('DATA', 'fI2fI2B2s', 'effectDuration',
                            'effectOrientation', 'angleThreshold',
                            'placementRadius', 'soundLevel',
-                           (_IpctTypeFlags, 'ipctFlags', 0L), 'impactResult',
+                           (_IpctTypeFlags, 'ipctFlags', 0), 'impactResult',
                            ('unkIpct1', null1), old_versions={'fI2f'}),
         MelDecalData(),
         MelFid('DNAM','textureSet'),
@@ -3261,7 +3263,7 @@ class MreLigh(MelRecord):
     """Light."""
     classType = 'LIGH'
 
-    LighTypeFlags = Flags(0L,Flags.getNames(
+    LighTypeFlags = Flags(0, Flags.getNames(
             (0, 'dynamic'),
             (1, 'canbeCarried'),
             (2, 'negative'),
@@ -3288,7 +3290,7 @@ class MreLigh(MelRecord):
         MelIcons(),
         # fe = 'Flicker Effect'
         MelStruct('DATA','iI4BI6fIf','duration','radius','red','green','blue',
-                  'unknown',(LighTypeFlags,'flags',0L),'falloffExponent','fov',
+                  'unknown',(LighTypeFlags,'flags',0),'falloffExponent','fov',
                   'nearClip','fePeriod','feIntensityAmplitude',
                   'feMovementAmplitude','value','weight',),
         MelFloat('FNAM', 'fade'),
@@ -3364,7 +3366,7 @@ class MreLvli(MreLeveledList):
         MelEdid(),
         MelBounds(),
         MelUInt8('LVLD', 'chanceNone'),
-        MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0L)),
+        MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0)),
         MelOptFid('LVLG', 'glob'),
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
@@ -3381,7 +3383,7 @@ class MreLvln(MreLeveledList):
         MelEdid(),
         MelBounds(),
         MelUInt8('LVLD', 'chanceNone'),
-        MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0L)),
+        MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0)),
         MelOptFid('LVLG', 'glob'),
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
@@ -3401,7 +3403,7 @@ class MreLvsp(MreLeveledList):
         MelEdid(),
         MelBounds(),
         MelUInt8('LVLD', 'chanceNone'),
-        MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0L)),
+        MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0)),
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
     )
@@ -3449,7 +3451,7 @@ class MreMatt(MelRecord):
     """Material Type."""
     classType = 'MATT'
 
-    MattTypeFlags = Flags(0L,Flags.getNames(
+    MattTypeFlags = Flags(0, Flags.getNames(
             (0, 'stairMaterial'),
             (1, 'arrowsStick'),
         ))
@@ -3460,7 +3462,7 @@ class MreMatt(MelRecord):
         MelString('MNAM','materialName'),
         MelStruct('CNAM', '3f', 'red', 'green', 'blue'),
         MelFloat('BNAM', 'buoyancy'),
-        MelUInt32('FNAM', (MattTypeFlags, 'flags', 0L)),
+        MelUInt32('FNAM', (MattTypeFlags, 'flags', 0)),
         MelFid('HNAM', 'havokImpactDataSet',),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3470,7 +3472,7 @@ class MreMesg(MelRecord):
     """Message."""
     classType = 'MESG'
 
-    MesgTypeFlags = Flags(0L,Flags.getNames(
+    MesgTypeFlags = Flags(0, Flags.getNames(
             (0, 'messageBox'),
             (1, 'autoDisplay'),
         ))
@@ -3481,7 +3483,7 @@ class MreMesg(MelRecord):
         MelFull(),
         MelFid('INAM','iconUnused'), # leftover
         MelFid('QNAM','materialParent'),
-        MelUInt32('DNAM', (MesgTypeFlags, 'flags', 0L)),
+        MelUInt32('DNAM', (MesgTypeFlags, 'flags', 0)),
         MelUInt32('TNAM', 'displayTime'),
         MelGroups('menuButtons',
             MelLString('ITXT','buttonText'),
@@ -3495,7 +3497,7 @@ class MreMgef(MelRecord):
     """Magic Effect."""
     classType = 'MGEF'
 
-    MgefGeneralFlags = Flags(0L,Flags.getNames(
+    MgefGeneralFlags = Flags(0, Flags.getNames(
             (0, 'hostile'),
             (1, 'recover'),
             (2, 'detrimental'),
@@ -3538,7 +3540,7 @@ class MreMgef(MelRecord):
         MelKeywords(),
         MelPartialCounter(MelStruct(
             'DATA', 'IfI2iH2sIf4I4fIi4Ii3IfIfI4s4s4I2f',
-            (MgefGeneralFlags, 'flags', 0L), 'baseCost', (FID, 'assocItem'),
+            (MgefGeneralFlags, 'flags', 0), 'baseCost', (FID, 'assocItem'),
             'magicSkill', 'resistValue', 'counterEffectCount',
             ('unknown1', null2), (FID, 'castingLight'), 'taperWeight',
             (FID, 'hitShader'), (FID, 'enchantShader'), 'minimumSkillLevel',
@@ -3603,7 +3605,7 @@ class MreMstt(MelRecord):
     """Moveable Static."""
     classType = 'MSTT'
 
-    MsttTypeFlags = Flags(0L,Flags.getNames(
+    MsttTypeFlags = Flags(0, Flags.getNames(
         (0, 'onLocalMap'),
         (1, 'unknown2'),
     ))
@@ -3614,7 +3616,7 @@ class MreMstt(MelRecord):
         MelFull(),
         MelModel(),
         MelDestructible(),
-        MelUInt8('DATA', (MsttTypeFlags, 'flags', 0L)),
+        MelUInt8('DATA', (MsttTypeFlags, 'flags', 0)),
         MelFid('SNAM','sound'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3624,7 +3626,7 @@ class MreMusc(MelRecord):
     """Music Type."""
     classType = 'MUSC'
 
-    MuscTypeFlags = Flags(0L,Flags.getNames(
+    MuscTypeFlags = Flags(0, Flags.getNames(
             (0,'playsOneSelection'),
             (1,'abruptTransition'),
             (2,'cycleTracks'),
@@ -3635,7 +3637,7 @@ class MreMusc(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelUInt32('FNAM', (MuscTypeFlags, 'flags', 0L)),
+        MelUInt32('FNAM', (MuscTypeFlags, 'flags', 0)),
         # Divided by 100 in TES5Edit, probably for editing only
         MelStruct('PNAM','2H','priority','duckingDB'),
         MelFloat('WNAM', 'fadeDuration'),
@@ -3688,7 +3690,7 @@ class MreNavm(MelRecord):
     """Navigation Mesh."""
     classType = 'NAVM'
 
-    NavmTrianglesFlags = Flags(0L,Flags.getNames(
+    NavmTrianglesFlags = Flags(0, Flags.getNames(
             (0, 'edge01link'),
             (1, 'edge12link'),
             (2, 'edge20link'),
@@ -3707,7 +3709,7 @@ class MreNavm(MelRecord):
             (15, 'unknown16'),
         ))
 
-    NavmCoverFlags = Flags(0L,Flags.getNames(
+    NavmCoverFlags = Flags(0, Flags.getNames(
             (0, 'edge01wall'),
             (1, 'edge01ledgecover'),
             (2, 'unknown3'),
@@ -3742,7 +3744,7 @@ class MreNpc(MelRecord):
     """Non-Player Character."""
     classType = 'NPC_'
 
-    _TemplateFlags = Flags(0L, Flags.getNames(
+    _TemplateFlags = Flags(0, Flags.getNames(
             (0, 'useTraits'),
             (1, 'useStats'),
             (2, 'useFactions'),
@@ -3758,7 +3760,7 @@ class MreNpc(MelRecord):
             (12, 'useKeywords'),
         ))
 
-    NpcFlags1 = Flags(0L,Flags.getNames(
+    NpcFlags1 = Flags(0, Flags.getNames(
             (0, 'female'),
             (1, 'essential'),
             (2, 'isCharGenFacePreset'),
@@ -3798,10 +3800,10 @@ class MreNpc(MelRecord):
         MelVmad(),
         MelBounds(),
         MelStruct('ACBS','I2Hh3Hh3H',
-                  (NpcFlags1,'flags',0L),'magickaOffset',
+                  (NpcFlags1,'flags',0),'magickaOffset',
                   'staminaOffset','level','calcMin',
                   'calcMax','speedMultiplier','dispositionBase',
-                  (_TemplateFlags, 'templateFlags', 0L), 'healthOffset',
+                  (_TemplateFlags, 'templateFlags', 0), 'healthOffset',
                   'bleedoutOverride',),
         MelGroups('factions',
             MelStruct('SNAM', 'IB3s', (FID, 'faction'), 'rank', 'snamUnused'),
@@ -4131,7 +4133,7 @@ class MrePerk(MelRecord):
     """Perk."""
     classType = 'PERK'
 
-    _PerkScriptFlags = Flags(0L,Flags.getNames(
+    _PerkScriptFlags = Flags(0, Flags.getNames(
         (0, 'runImmediately'),
         (1, 'replaceDefault'),
     ))
@@ -4163,7 +4165,7 @@ class MrePerk(MelRecord):
             MelGroups('effectParams',
                 MelUInt8('EPFT', 'function_parameter_type'),
                 MelLString('EPF2','buttonLabel'),
-                MelStruct('EPF3','2H',(_PerkScriptFlags, 'script_flags', 0L),
+                MelStruct('EPF3','2H',(_PerkScriptFlags, 'script_flags', 0),
                           'fragment_index'),
                 # EPFT has the following meanings:
                 #  0: Unknown
@@ -4215,7 +4217,7 @@ class MreProj(MelRecord):
     """Projectile."""
     classType = 'PROJ'
 
-    ProjTypeFlags = Flags(0L,Flags.getNames(
+    ProjTypeFlags = Flags(0, Flags.getNames(
         (0, 'hitscan'),
         (1, 'explosive'),
         (2, 'altTriger'),
@@ -4237,7 +4239,7 @@ class MreProj(MelRecord):
         MelModel(),
         MelDestructible(),
         MelTruncatedStruct(
-            'DATA', '2H3f2I3f2I3f3I4f2I', (ProjTypeFlags, 'flags', 0L),
+            'DATA', '2H3f2I3f2I3f3I4f2I', (ProjTypeFlags, 'flags', 0),
             'projectileTypes', ('gravity', 0.0), ('speed', 10000.0),
             ('range', 10000.0), (FID, 'light', 0), (FID, 'muzzleFlash', 0),
             ('tracerChance', 0.0), ('explosionAltTrigerProximity', 0.0),
@@ -4308,7 +4310,7 @@ class MreQust(MelRecord):
         MelEdid(),
         MelVmad(),
         MelFull(),
-        MelStruct('DNAM', '=H2B4sI', (_questFlags, 'questFlags', 0L),
+        MelStruct('DNAM', '=H2B4sI', (_questFlags, 'questFlags', 0),
                   'priority', 'formVersion', 'unknown', 'questType'),
         MelOptStruct('ENAM','4s',('event',None)),
         MelFids('QTGL','textDisplayGlobals'),
@@ -4317,9 +4319,9 @@ class MreQust(MelRecord):
         MelBase('NEXT','marker'),
         MelConditions('eventConditions'),
         MelGroups('stages',
-            MelStruct('INDX','H2B','index',(_stageFlags,'flags',0L),'unknown'),
+            MelStruct('INDX','H2B','index',(_stageFlags,'flags',0),'unknown'),
             MelGroups('logEntries',
-                MelUInt8('QSDT', (stageEntryFlags, 'stageFlags', 0L)),
+                MelUInt8('QSDT', (stageEntryFlags, 'stageFlags', 0)),
                 MelConditions(),
                 MelLString('CNAM','log_text'),
                 MelFid('NAM0', 'nextQuest'),
@@ -4330,7 +4332,7 @@ class MreQust(MelRecord):
         ),
         MelGroups('objectives',
             MelUInt16('QOBJ', 'index'),
-            MelUInt32('FNAM', (objectiveFlags, 'flags', 0L)),
+            MelUInt32('FNAM', (objectiveFlags, 'flags', 0)),
             MelLString('NNAM','description'),
             MelGroups('targets',
                 MelStruct('QSTA','iB3s','alias',(targetFlags,'flags'),('unused1',null3)),
@@ -4344,7 +4346,7 @@ class MreQust(MelRecord):
                 'ALLS': MelOptUInt32('ALLS', ('aliasId', None)),
             }),
             MelString('ALID', 'aliasName'),
-            MelUInt32('FNAM', (aliasFlags, 'flags', 0L)),
+            MelUInt32('FNAM', (aliasFlags, 'flags', 0)),
             MelOptSInt32('ALFI', ('forcedIntoAlias', None)),
             MelFid('ALFL','specificLocation'),
             MelFid('ALFR','forcedReference'),
@@ -4446,13 +4448,13 @@ class MreRefr(MelRecord):
         'can_travel_to',
         'show_all_hidden',
     ))
-    _parentFlags = Flags(0L,Flags.getNames('oppositeParent','popIn',))
-    _actFlags = Flags(0L,Flags.getNames('useDefault', 'activate','open','openByDefault'))
-    _lockFlags = Flags(0L,Flags.getNames(None, None, 'leveledLock'))
-    _destinationFlags = Flags(0L,Flags.getNames('noAlarm'))
-    _parentActivate = Flags(0L,Flags.getNames('parentActivateOnly'))
-    reflectFlags = Flags(0L,Flags.getNames('reflection', 'refraction'))
-    roomDataFlags = Flags(0L,Flags.getNames(
+    _parentFlags = Flags(0, Flags.getNames('oppositeParent','popIn',))
+    _actFlags = Flags(0, Flags.getNames('useDefault', 'activate','open','openByDefault'))
+    _lockFlags = Flags(0, Flags.getNames(None, None, 'leveledLock'))
+    _destinationFlags = Flags(0, Flags.getNames('noAlarm'))
+    _parentActivate = Flags(0, Flags.getNames('parentActivateOnly'))
+    reflectFlags = Flags(0, Flags.getNames('reflection', 'refraction'))
+    roomDataFlags = Flags(0, Flags.getNames(
         (6,'hasImageSpace'),
         (7,'hasLightingTemplate'),
     ))
@@ -4546,7 +4548,7 @@ class MreRefr(MelRecord):
             MelBase('SCTX','sctx_p',),
             MelTopicData('topic_data'),
         ),
-        MelOptUInt32('XACT', (_actFlags, 'actFlags', 0L)),
+        MelOptUInt32('XACT', (_actFlags, 'actFlags', 0)),
         MelOptFloat('XHTW', 'headTrackingWeight'),
         MelOptFloat('XFVC', 'favorCost'),
         MelBase('ONAM','onam_p'),
@@ -4568,7 +4570,7 @@ class MreRegn(MelRecord):
     """Region."""
     classType = 'REGN'
 
-    obflags = Flags(0L,Flags.getNames(
+    obflags = Flags(0, Flags.getNames(
         ( 0,'conform'),
         ( 1,'paintVertices'),
         ( 2,'sizeVariance'),
@@ -4577,12 +4579,12 @@ class MreRegn(MelRecord):
         ( 5,'deltaZ'),
         ( 6,'Tree'),
         ( 7,'hugeRock'),))
-    sdflags = Flags(0L,Flags.getNames(
+    sdflags = Flags(0, Flags.getNames(
         ( 0,'pleasant'),
         ( 1,'cloudy'),
         ( 2,'rainy'),
         ( 3,'snowy'),))
-    rdatFlags = Flags(0L,Flags.getNames(
+    rdatFlags = Flags(0, Flags.getNames(
         ( 0,'Override'),))
 
     melSet = MelSet(
@@ -4630,7 +4632,7 @@ class MreRela(MelRecord):
     """Relationship."""
     classType = 'RELA'
 
-    RelationshipFlags = Flags(0L,Flags.getNames(
+    RelationshipFlags = Flags(0, Flags.getNames(
         (0,'Unknown 1'),
         (1,'Unknown 2'),
         (2,'Unknown 3'),
@@ -4644,7 +4646,7 @@ class MreRela(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelStruct('DATA','2IHsBI',(FID,'parent'),(FID,'child'),'rankType',
-                  'unknown',(RelationshipFlags,'relaFlags',0L),(FID,'associationType'),),
+                  'unknown',(RelationshipFlags,'relaFlags',0),(FID,'associationType'),),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -4667,7 +4669,7 @@ class MreRfct(MelRecord):
     """Visual Effect."""
     classType = 'RFCT'
 
-    RfctTypeFlags = Flags(0L,Flags.getNames(
+    RfctTypeFlags = Flags(0, Flags.getNames(
         (0, 'rotateToFaceTarget'),
         (1, 'attachToCamera'),
         (2, 'inheritRotation'),
@@ -4675,7 +4677,7 @@ class MreRfct(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct('DATA','3I',(FID,'impactSet'),(FID,'impactSet'),(RfctTypeFlags,'flags',0L),),
+        MelStruct('DATA','3I',(FID,'impactSet'),(FID,'impactSet'),(RfctTypeFlags,'flags',0),),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -4684,7 +4686,7 @@ class MreScen(MelRecord):
     """Scene."""
     classType = 'SCEN'
 
-    ScenFlags5 = Flags(0L,Flags.getNames(
+    ScenFlags5 = Flags(0, Flags.getNames(
             (0, 'unknown1'),
             (1, 'unknown2'),
             (2, 'unknown3'),
@@ -4705,7 +4707,7 @@ class MreScen(MelRecord):
             (17, 'headtrackPlayer'),
         ))
 
-    ScenFlags3 = Flags(0L,Flags.getNames(
+    ScenFlags3 = Flags(0, Flags.getNames(
             (0, 'deathPauseunsused'),
             (1, 'deathEnd'),
             (2, 'combatPause'),
@@ -4716,12 +4718,12 @@ class MreScen(MelRecord):
             (7, 'oBS_COMEnd'),
         ))
 
-    ScenFlags2 = Flags(0L,Flags.getNames(
+    ScenFlags2 = Flags(0, Flags.getNames(
             (0, 'noPlayerActivation'),
             (1, 'optional'),
         ))
 
-    ScenFlags1 = Flags(0L,Flags.getNames(
+    ScenFlags1 = Flags(0, Flags.getNames(
             (0, 'beginonQuestStart'),
             (1, 'stoponQuestEnd'),
             (2, 'unknown3'),
@@ -4732,7 +4734,7 @@ class MreScen(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelVmad(),
-        MelUInt32('FNAM', (ScenFlags1, 'flags', 0L)),
+        MelUInt32('FNAM', (ScenFlags1, 'flags', 0)),
         MelGroups('phases',
             MelNull('HNAM'),
             MelString('NAM0','name',),
@@ -4764,8 +4766,8 @@ class MreScen(MelRecord):
         ),
         MelGroups('actors',
             MelUInt32('ALID', 'actorID'),
-            MelUInt32('LNAM', (ScenFlags2, 'scenFlags2' ,0L)),
-            MelUInt32('DNAM', (ScenFlags3, 'flags3' ,0L)),
+            MelUInt32('LNAM', (ScenFlags2, 'scenFlags2', 0)),
+            MelUInt32('DNAM', (ScenFlags3, 'flags3', 0)),
         ),
         MelGroups('actions',
             MelUInt16('ANAM', 'actionType'),
@@ -4773,7 +4775,7 @@ class MreScen(MelRecord):
             MelUInt32('ALID', 'actorID',),
             MelBase('LNAM','lnam_p',),
             MelUInt32('INAM', 'index'),
-            MelUInt32('FNAM', (ScenFlags5,'flags',0L)),
+            MelUInt32('FNAM', (ScenFlags5,'flags',0)),
             MelUInt32('SNAM', 'startPhase'),
             MelUInt32('ENAM', 'endPhase'),
             MelFloat('SNAM', 'timerSeconds'),
@@ -4821,7 +4823,7 @@ class MreScrl(MelRecord,MreHasEffects):
     """Scroll."""
     classType = 'SCRL'
 
-    ScrollDataFlags = Flags(0L,Flags.getNames(
+    ScrollDataFlags = Flags(0, Flags.getNames(
         (0, 'manualCostCalc'),
         (17, 'pcStartSpell'),
         (19, 'areaEffectIgnoresLOS'),
@@ -4843,7 +4845,7 @@ class MreScrl(MelRecord,MreHasEffects):
         MelFid('YNAM','pickupSound',),
         MelFid('ZNAM','dropSound',),
         MelStruct('DATA','If','itemValue','itemWeight',),
-        MelStruct('SPIT','IIIfIIffI','baseCost',(ScrollDataFlags,'dataFlags',0L),
+        MelStruct('SPIT','IIIfIIffI','baseCost',(ScrollDataFlags,'dataFlags',0),
                   'scrollType','chargeTime','castType','targetType',
                   'castDuration','range',(FID,'halfCostPerk'),),
         MelEffects(),
@@ -4893,7 +4895,7 @@ class MreSmbn(MelRecord):
     """Story Manager Branch Node."""
     classType = 'SMBN'
 
-    SmbnNodeFlags = Flags(0L,Flags.getNames(
+    SmbnNodeFlags = Flags(0, Flags.getNames(
         (0,'Random'),
         (1,'noChildWarn'),
     ))
@@ -4904,7 +4906,7 @@ class MreSmbn(MelRecord):
         MelFid('SNAM','child',),
         MelConditionCounter(),
         MelConditions(),
-        MelUInt32('DNAM', (SmbnNodeFlags, 'nodeFlags', 0L)),
+        MelUInt32('DNAM', (SmbnNodeFlags, 'nodeFlags', 0)),
         MelBase('XNAM','xnam_p'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -4914,7 +4916,7 @@ class MreSmen(MelRecord):
     """Story Manager Event Node."""
     classType = 'SMEN'
 
-    SmenNodeFlags = Flags(0L,Flags.getNames(
+    SmenNodeFlags = Flags(0, Flags.getNames(
         (0,'Random'),
         (1,'noChildWarn'),
     ))
@@ -4925,7 +4927,7 @@ class MreSmen(MelRecord):
         MelFid('SNAM','child',),
         MelConditionCounter(),
         MelConditions(),
-        MelUInt32('DNAM', (SmenNodeFlags, 'nodeFlags', 0L)),
+        MelUInt32('DNAM', (SmenNodeFlags, 'nodeFlags', 0)),
         MelBase('XNAM','xnam_p'),
         MelString('ENAM','type'),
     )
@@ -4937,13 +4939,13 @@ class MreSmqn(MelRecord):
     classType = 'SMQN'
 
     # "Do all" = "Do all before repeating"
-    SmqnQuestFlags = Flags(0L,Flags.getNames(
+    SmqnQuestFlags = Flags(0, Flags.getNames(
         (0,'doAll'),
         (1,'sharesEvent'),
         (2,'numQuestsToRun'),
     ))
 
-    SmqnNodeFlags = Flags(0L,Flags.getNames(
+    SmqnNodeFlags = Flags(0, Flags.getNames(
         (0,'Random'),
         (1,'noChildWarn'),
     ))
@@ -4954,7 +4956,8 @@ class MreSmqn(MelRecord):
         MelFid('SNAM','child',),
         MelConditionCounter(),
         MelConditions(),
-        MelStruct('DNAM','2H',(SmqnNodeFlags,'nodeFlags',0L),(SmqnQuestFlags,'questFlags',0L),),
+        MelStruct('DNAM', '2H', (SmqnNodeFlags, 'nodeFlags', 0),
+                  (SmqnQuestFlags, 'questFlags', 0), ),
         MelUInt32('XNAM', 'maxConcurrentQuests'),
         MelOptUInt32('MNAM', ('numQuestsToRun', None)),
         MelCounter(MelUInt32('QNAM', 'quest_count'), counts='quests'),
@@ -4971,7 +4974,7 @@ class MreSnct(MelRecord):
     """Sound Category."""
     classType = 'SNCT'
 
-    SoundCategoryFlags = Flags(0L,Flags.getNames(
+    SoundCategoryFlags = Flags(0, Flags.getNames(
         (0,'muteWhenSubmerged'),
         (1,'shouldAppearOnMenu'),
     ))
@@ -4979,7 +4982,7 @@ class MreSnct(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelUInt32('FNAM', (SoundCategoryFlags, 'flags', 0L)),
+        MelUInt32('FNAM', (SoundCategoryFlags, 'flags', 0)),
         MelFid('PNAM','parent',),
         MelUInt16('VNAM', 'staticVolumeMultiplier'),
         MelUInt16('UNAM', 'defaultMenuValue'),
@@ -5014,14 +5017,14 @@ class MreSopm(MelRecord):
     """Sound Output Model."""
     classType = 'SOPM'
 
-    SopmFlags = Flags(0L,Flags.getNames(
+    SopmFlags = Flags(0, Flags.getNames(
             (0, 'attenuatesWithDistance'),
             (1, 'allowsRumble'),
         ))
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct('NAM1','B2sB',(SopmFlags,'flags',0L),'unknown1','reverbSendpct',),
+        MelStruct('NAM1','B2sB',(SopmFlags,'flags',0),'unknown1','reverbSendpct',),
         MelBase('FNAM','fnam_p'),
         MelUInt32('MNAM', 'outputType'),
         MelBase('CNAM','cnam_p'),
@@ -5065,7 +5068,7 @@ class MreSpel(MelRecord,MreHasEffects):
     #         if index == 1:
     #             setter(self,3,value)
 
-    SpelTypeFlags = Flags(0L,Flags.getNames(
+    SpelTypeFlags = Flags(0, Flags.getNames(
         (0, 'manualCostCalc'),
         (17, 'pcStartSpell'),
         (19, 'areaEffectIgnoresLOS'),
@@ -5082,7 +5085,7 @@ class MreSpel(MelRecord,MreHasEffects):
         MelFid('MDOB', 'menuDisplayObject'),
         MelFid('ETYP', 'equipmentType'),
         MelLString('DESC','description'),
-        MelStruct('SPIT','IIIfIIffI','cost',(SpelTypeFlags,'dataFlags',0L),
+        MelStruct('SPIT','IIIfIIffI','cost',(SpelTypeFlags,'dataFlags',0),
                   'spellType','chargeTime','castType','targetType',
                   'castDuration','range',(FID,'halfCostPerk'),),
         MelEffects(),
@@ -5094,7 +5097,7 @@ class MreSpgd(MelRecord):
     """Shader Particle Geometry."""
     classType = 'SPGD'
 
-    _SpgdDataFlags = Flags(0L, Flags.getNames('rain', 'snow'))
+    _SpgdDataFlags = Flags(0, Flags.getNames('rain', 'snow'))
 
     melSet = MelSet(
         MelEdid(),
@@ -5102,7 +5105,7 @@ class MreSpgd(MelRecord):
             'DATA', '7f4If', 'gravityVelocity', 'rotationVelocity',
             'particleSizeX', 'particleSizeY', 'centerOffsetMin',
             'centerOffsetMax', 'initialRotationRange', 'numSubtexturesX',
-            'numSubtexturesY', (_SpgdDataFlags, 'typeFlags', 0L),
+            'numSubtexturesY', (_SpgdDataFlags, 'typeFlags', 0),
             ('boxSize', 0), ('particleDensity', 0), old_versions={'7f3I'}),
         MelIcon(),
     )
@@ -5181,7 +5184,7 @@ class MreTxst(MelRecord):
     """Texture Set."""
     classType = 'TXST'
 
-    TxstTypeFlags = Flags(0L,Flags.getNames(
+    TxstTypeFlags = Flags(0, Flags.getNames(
         (0, 'noSpecularMap'),
         (1, 'facegenTextures'),
         (2, 'hasModelSpaceNormalMap'),
@@ -5201,7 +5204,7 @@ class MreTxst(MelRecord):
             MelString('TX07','backlightMaskSpecular'),
         ),
         MelDecalData(),
-        MelUInt16('DNAM', (TxstTypeFlags, 'flags', 0L)),
+        MelUInt16('DNAM', (TxstTypeFlags, 'flags', 0)),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -5210,14 +5213,14 @@ class MreVtyp(MelRecord):
     """Voice Type."""
     classType = 'VTYP'
 
-    VtypTypeFlags = Flags(0L,Flags.getNames(
+    VtypTypeFlags = Flags(0, Flags.getNames(
             (0, 'allowDefaultDialog'),
             (1, 'female'),
         ))
 
     melSet = MelSet(
         MelEdid(),
-        MelUInt8('DNAM', (VtypTypeFlags, 'flags', 0L)),
+        MelUInt8('DNAM', (VtypTypeFlags, 'flags', 0)),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -5226,7 +5229,7 @@ class MreWatr(MelRecord):
     """Water."""
     classType = 'WATR'
 
-    WatrTypeFlags = Flags(0L,Flags.getNames(
+    WatrTypeFlags = Flags(0, Flags.getNames(
             (0, 'causesDamage'),
         ))
 
@@ -5280,7 +5283,7 @@ class MreWatr(MelRecord):
             MelString('NNAM','noiseMap',),
         ),
         MelUInt8('ANAM', 'opacity'),
-        MelUInt8('FNAM', (WatrTypeFlags, 'flags', 0L)),
+        MelUInt8('FNAM', (WatrTypeFlags, 'flags', 0)),
         MelBase('MNAM','unused1'),
         MelFid('TNAM','material',),
         MelFid('SNAM','openSound',),
@@ -5312,11 +5315,11 @@ class MreWeap(MelRecord):
     """Weapon"""
     classType = 'WEAP'
 
-    WeapFlags3 = Flags(0L,Flags.getNames(
+    WeapFlags3 = Flags(0, Flags.getNames(
         (0, 'onDeath'),
     ))
 
-    WeapFlags2 = Flags(0L,Flags.getNames(
+    WeapFlags2 = Flags(0, Flags.getNames(
             (0, 'playerOnly'),
             (1, 'nPCsUseAmmo'),
             (2, 'noJamAfterReloadunused'),
@@ -5333,7 +5336,7 @@ class MreWeap(MelRecord):
             (13, 'boundWeapon'),
         ))
 
-    WeapFlags1 = Flags(0L,Flags.getNames(
+    WeapFlags1 = Flags(0, Flags.getNames(
             (0, 'ignoresNormalWeaponResistance'),
             (1, 'automaticunused'),
             (2, 'hasScopeunused'),
@@ -5435,7 +5438,7 @@ class MreWrld(MelRecord):
     """Worldspace."""
     classType = 'WRLD'
 
-    WrldFlags2 = Flags(0L,Flags.getNames(
+    WrldFlags2 = Flags(0, Flags.getNames(
             (0, 'smallWorld'),
             (1, 'noFastTravel'),
             (2, 'unknown3'),
@@ -5446,7 +5449,7 @@ class MreWrld(MelRecord):
             (7, 'noGrass'),
         ))
 
-    WrldFlags1 = Flags(0L,Flags.getNames(
+    WrldFlags1 = Flags(0, Flags.getNames(
             (0, 'useLandData'),
             (1, 'useLODData'),
             (2, 'useMapData'),
@@ -5470,7 +5473,7 @@ class MreWrld(MelRecord):
         MelFid('XLCN','location',),
         MelGroup('parent',
             MelFid('WNAM','worldspace',),
-            MelStruct('PNAM','Bs',(WrldFlags1,'parentFlags',0L),'unknown',),
+            MelStruct('PNAM','Bs',(WrldFlags1,'parentFlags',0),'unknown',),
         ),
         MelFid('CNAM','climate',),
         MelFid('NAM2','water',),
@@ -5489,7 +5492,7 @@ class MreWrld(MelRecord):
         MelStruct('ONAM','4f','worldMapScale','cellXOffset','cellYOffset',
                   'cellZOffset',),
         MelFloat('NAMA', 'distantLODMultiplier'),
-        MelUInt8('DATA', (WrldFlags2, 'dataFlags', 0L)),
+        MelUInt8('DATA', (WrldFlags2, 'dataFlags', 0)),
         # {>>> Object Bounds doesn't show up in CK <<<}
         MelStruct('NAM0','2f','minObjX','minObjY',),
         MelStruct('NAM9','2f','maxObjX','maxObjY',),
@@ -5509,7 +5512,7 @@ class MreWthr(MelRecord):
     """Weather"""
     classType = 'WTHR'
 
-    WthrFlags2 = Flags(0L,Flags.getNames(
+    WthrFlags2 = Flags(0, Flags.getNames(
             (0, 'layer_0'),
             (1, 'layer_1'),
             (2, 'layer_2'),
@@ -5544,7 +5547,7 @@ class MreWthr(MelRecord):
             (31, 'layer_31'),
         ))
 
-    WthrFlags1 = Flags(0L,Flags.getNames(
+    WthrFlags1 = Flags(0, Flags.getNames(
             (0, 'weatherPleasant'),
             (1, 'weatherCloudy'),
             (2, 'weatherRainy'),
@@ -5614,10 +5617,10 @@ class MreWthr(MelRecord):
                   'sunGlare','sunDamage','precipitationBeginFadeIn',
                   'precipitationEndFadeOut','thunderLightningBeginFadeIn',
                   'thunderLightningEndFadeOut','thunderLightningFrequency',
-                  (WthrFlags1,'wthrFlags1',0L),'red','green','blue',
+                  (WthrFlags1,'wthrFlags1',0),'red','green','blue',
                   'visualEffectBegin','visualEffectEnd',
                   'windDirection','windDirectionRange',),
-        MelUInt32('NAM1', (WthrFlags2, 'wthrFlags2', 0L)),
+        MelUInt32('NAM1', (WthrFlags2, 'wthrFlags2', 0)),
         MelGroups('sounds',
             MelStruct('SNAM', '2I', (FID, 'sound'), 'type'),
         ),

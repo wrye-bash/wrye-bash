@@ -58,7 +58,7 @@ class MreLens(MelRecord):
     """Lens Flare."""
     classType = 'LENS'
 
-    LensFlareFlags = Flags(0L,Flags.getNames(
+    LensFlareFlags = Flags(0,Flags.getNames(
             (0, 'rotates'),
             (1, 'shrinksWhenOccluded'),
         ))
@@ -74,7 +74,7 @@ class MreLens(MelRecord):
             MelString('FNAM','texture'),
             MelStruct('LFSD', 'f8I', 'tintRed', 'tintGreen', 'tintBlue',
                 'width', 'height', 'position', 'angularFade', 'opacity',
-                (LensFlareFlags, 'lensFlags', 0L), ),
+                (LensFlareFlags, 'lensFlags', 0), ),
         )
     ).with_distributor({
         'DNAM': 'fadeDistanceRadiusScale',

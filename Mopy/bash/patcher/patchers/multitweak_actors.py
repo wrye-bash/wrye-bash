@@ -25,7 +25,6 @@
 """This module contains oblivion multitweak item patcher classes that belong
 to the Actors Multitweaker - as well as the TweakActors itself."""
 
-from collections import Counter
 import random
 import re
 from collections import Counter

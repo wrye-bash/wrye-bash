@@ -2938,21 +2938,21 @@ class MelRaceVoices(MelStruct):
     """Set voices to zero, if equal race fid. If both are zero, then skip
     dumping."""
     def dumpData(self, record, out):
-        if record.maleVoice == record.fid: record.maleVoice = 0L
-        if record.femaleVoice == record.fid: record.femaleVoice = 0L
+        if record.maleVoice == record.fid: record.maleVoice = 0
+        if record.femaleVoice == record.fid: record.femaleVoice = 0
         if (record.maleVoice, record.femaleVoice) != (0, 0):
             MelStruct.dumpData(self, record, out)
 
 #------------------------------------------------------------------------------
 class MelScriptVars(MelGroups):
     """Handles SLSD and SCVR combos defining script variables."""
-    _var_flags = bolt.Flags(0L, bolt.Flags.getNames('is_long_or_short'))
+    _var_flags = bolt.Flags(0, bolt.Flags.getNames('is_long_or_short'))
 
     def __init__(self):
         MelGroups.__init__(self, 'script_vars',
             MelStruct('SLSD', 'I12sB7s', 'var_index',
                       ('unused1', null4 + null4 + null4),
-                      (self._var_flags, 'var_flags', 0L),
+                      (self._var_flags, 'var_flags', 0),
                       ('unused2', null4 + null3)),
             MelString('SCVR', 'var_name'),
         )
