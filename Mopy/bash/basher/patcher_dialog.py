@@ -30,7 +30,7 @@ import re
 import time
 from datetime import timedelta
 from . import BashFrame ##: drop this - decouple !
-from .. import bass, bosh, bolt, balt, env, load_order
+from .. import balt, bass, bolt, bosh, bush, env, load_order
 from ..balt import Link, Resources, HorizontalLine
 from ..bolt import SubProgress, GPath, Path
 from ..exception import BoltError, CancelError, FileEditError, \
@@ -318,24 +318,27 @@ class PatchDialog(DialogWindow):
                 raise
 
     def _pretry(self, patch_name):
-        return balt.askYes(self, (
-            _(u'Bash encountered and error when saving %(patch_name)s.') +
-            u'\n\n' + _(u'Either Bash needs Administrator Privileges to '
-            u'save the file, or the file is in use by another process '
-            u'such as TES4Edit.') + u'\n' + _(u'Please close any program '
-            u'that is accessing %(patch_name)s, and provide Administrator '
-            u'Privileges if prompted to do so.') + u'\n\n' +
-            _(u'Try again?')) % {'patch_name': patch_name.s},
-                           _(u'Bash Patch - Save Error'))
+        return balt.askYes(
+            self, _(u'Bash encountered an error when saving %(patch_name)s.'
+                    u'\n\nEither Bash needs Administrator Privileges to save '
+                    u'the file, or the file is in use by another process such '
+                    u'as %(xedit_name)s.\nPlease close any program that is '
+                    u'accessing %(patch_name)s, and provide Administrator '
+                    u'Privileges if prompted to do so.\n\nTry again?') % {
+                u'patch_name': patch_name.s,
+                u'xedit_name': bush.game.xe.full_name},
+            _(u'Bashed Patch - Save Error'))
 
     def _cretry(self, patch_name):
-        return balt.askYes(self, (
-            _(u'Bash encountered an error when renaming %s to %s.') + u'\n\n' +
-            _(u'The file is in use by another process such as TES4Edit.') +
-            u'\n' + _(u'Please close the other program that is accessing %s.')
-            + u'\n\n' + _(u'Try again?')) % (
-                               patch_name.temp.s, patch_name.s, patch_name.s),
-                           _(u'Bash Patch - Save Error'))
+        return balt.askYes(
+            self, _(u'Bash encountered an error when renaming '
+                    u'%(temp_patch)s to %(patch_name)s.\n\nThe file is in use '
+                    u'by another process such as %(xedit_name)s.\nPlease '
+                    u'close the other program that is accessing %s.\n\nTry '
+                    u'again?') % {
+                u'temp_patch': patch_name.temp.s, u'patch_name': patch_name.s,
+                u'xedit_name': bush.game.xe.full_name},
+            _(u'Bashed Patch - Save Error'))
 
     def __config(self):
         config = {'ImportedMods': set()}

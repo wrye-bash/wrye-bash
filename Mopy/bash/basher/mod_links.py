@@ -94,10 +94,12 @@ class Mod_FullLoad(OneItemLink):
 # File submenu ----------------------------------------------------------------
 # the rest of the File submenu links come from file_links.py
 class Mod_CreateDummyMasters(OneItemLink):
-    """TES4Edit tool, makes dummy plugins for each missing master, for use if looking at a 'Filter' patch."""
+    """xEdit tool, makes dummy plugins for each missing master, for use if
+    looking at a 'Filter' patch."""
     _text = _(u'Create Dummy Masters...')
-    _help = _(u"TES4Edit tool, makes dummy plugins for each missing master of"
-             u" the selected mod, for use if looking at a 'Filter' patch")
+    _help = _(u'Creates empty plugins for each missing master of the selected '
+              u'mod, allowing it to be loaded by tools like %s or the %s.') % (
+        bush.game.xe.full_name, bush.game.ck.long_name)
 
     def _enable(self):
         return super(Mod_CreateDummyMasters, self)._enable() and \
@@ -105,12 +107,14 @@ class Mod_CreateDummyMasters(OneItemLink):
 
     def Execute(self):
         """Create Dummy Masters"""
-        msg = _(u"This is an advanced feature for editing 'Filter' patches in "
-                u"TES4Edit.  It will create dummy plugins for each missing "
-                u"master.  Are you sure you want to continue?") + u'\n\n' + _(
-                u"To remove these files later, use 'Clean Dummy Masters...'")
+        msg = _(u'This is an advanced feature, originally intended for '
+                u"viewing and editing 'Filter' patches in %s. It will create "
+                u'empty plugins for each missing master. Are you sure you '
+                u'want to continue?\n\nTo remove these files later, use '
+                u"'Clean Dummy Masters...'") % bush.game.xe.full_name
         if not self._askYes(msg, title=_(u'Create Files')): return
-        doCBash = bass.settings['bash.CBashEnabled'] # something odd's going on, can't rename temp names
+        # something odd's going on, can't rename temp names
+        doCBash = bass.settings['bash.CBashEnabled']
         if doCBash:
             newFiles = []
         to_refresh = []
@@ -1660,8 +1664,8 @@ class Mod_FlipEsl(_Esm_Esl_Flip):
 class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
     """Swaps masters between esp and esm versions."""
     _help = _(u'Flips the ESM flag on all masters of the selected plugin, '
-              u'allowing you to load it in the %(csName)s.') % (
-              {'csName': bush.game.cs.long_name})
+              u'allowing you to load it in the %(ck_name)s.') % (
+              {u'ck_name': bush.game.ck.long_name})
 
     def _initData(self, window, selection,
                   __reEspExt=re.compile(u'' r'\.esp(.ghost)?$', re.I | re.U)):
@@ -1686,10 +1690,10 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
 
     @balt.conversation
     def Execute(self):
-        message = _(u"WARNING! For advanced modders only! Flips the ESM flag "
-                    u"of all ESP masters of the selected plugin. Useful for "
-                    u"loading ESP-mastered mods in the %(csName)s.") % (
-                    {'csName': bush.game.cs.long_name})
+        message = _(u'WARNING! For advanced modders only! Flips the ESM flag '
+                    u'of all ESP masters of the selected plugin. Useful for '
+                    u'loading ESP-mastered mods in the %(ck_name)s.') % (
+                    {u'ck_name': bush.game.ck.long_name})
         if not self._askContinue(message, 'bash.flipMasters.continue'): return
         updated = [self._selected_item]
         for masterPath in self.espMasters:
@@ -1704,11 +1708,12 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
 class Mod_SetVersion(OneItemLink):
     """Sets version of file back to 0.8."""
     _text = _(u'Version 0.8')
-    _help = _(u'Sets version of file back to 0.8')
-    message = _(u"WARNING! For advanced modders only! This feature allows you "
-        u"to edit newer official mods in the TES Construction Set by resetting"
-        u" the internal file version number back to 0.8. While this will make "
-        u"the mod editable, it may also break the mod in some way.")
+    _help = _(u'Sets version of file back to 0.8.')
+    message = _(u'WARNING! For advanced modders only! This feature allows you '
+                u'to edit newer official mods in the %s by resetting the '
+                u'internal file version number back to 0.8. While this will '
+                u'make the mod editable, it may also break the mod in some '
+                u'way.' % bush.game.ck.long_name)
 
     def _enable(self):
         return (super(Mod_SetVersion, self)._enable() and

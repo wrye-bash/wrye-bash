@@ -498,7 +498,7 @@ class MreCell(MelRecord):
                      'directionalFade', 'fogClip'),
         MelFidList('XCLR','regions'),
         MelOptUInt8('XCMT', 'music'),
-        #--CS default for water is -2147483648, but by setting default here
+        # CS default for water is -2147483648, but by setting default here
         # to -2147483649, we force the bashed patch to retain the value of
         # the last mod.
         MelOptFloat('XCLW', ('waterHeight', -2147483649)),

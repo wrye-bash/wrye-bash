@@ -151,10 +151,10 @@ def is_esl_capable(modInfo, _minfos, reasons):
     #--Skipped over types?
     if modFile.topsSkipped:
         if not verbose: return False
-        reasons.append(_(u'Record type: ') + u', '.join(sorted(
-            modFile.topsSkipped)) + u' ; currently unsupported by ESLify ' \
-                                    u'verification. Use xEdit to check ESL '
-                                    u'qualifications and modify ESL flag.')
+        reasons.append(_(u'Record type(s): %s; currently unsupported by ESL '
+                         u'verification. Use %s to check ESL qualifications '
+                         u'and modify ESL flag.') % (
+            u', '.join(sorted(modFile.topsSkipped)), bush.game.xe.full_name))
     #--Form greater then 0xFFF
     lenMasters = len(modFile.tes4.masters)
     for rec_typ,block in modFile.tops.iteritems():

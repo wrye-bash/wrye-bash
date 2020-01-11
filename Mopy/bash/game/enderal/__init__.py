@@ -45,6 +45,11 @@ class EnderalGameInfo(SkyrimGameInfo):
         u'SureAI\\Enderal',
         u'Install_Path'
     )
+
+    class xe(SkyrimGameInfo.xe):
+        full_name = u'EnderalEdit'
+        expert_key = 'enderalView.iKnowWhatImDoing'
+
     save_prefix = u'..\\Enderal\\Saves'
 
     nexusUrl = u'https://www.nexusmods.com/enderal/'

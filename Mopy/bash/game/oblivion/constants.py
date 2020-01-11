@@ -2112,6 +2112,3 @@ record_type_name = {
     'SPEL': _(u'Spells'),
     'WEAP': _(u'Weapons'),
 }
-
-# xEdit menu string and key for expert setting
-xEdit_expert = (_(u'Tes4Edit Expert'), 'tes4View.iKnowWhatImDoing')

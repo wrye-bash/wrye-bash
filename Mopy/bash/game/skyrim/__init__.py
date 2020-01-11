@@ -56,8 +56,8 @@ class SkyrimGameInfo(GameInfo):
     resource_archives_keys = (u'sResourceArchiveList', u'sResourceArchiveList2')
     script_extensions = {u'.psc'}
 
-    class cs(GameInfo.cs):
-        cs_abbrev = u'CK'
+    class ck(GameInfo.ck):
+        ck_abbrev = u'CK'
         long_name = u'Creation Kit'
         exe = u'CreationKit.exe'
         se_args = None  # u'-editor'
@@ -93,6 +93,10 @@ class SkyrimGameInfo(GameInfo):
                          u'facegeom']
         facegen_dir_2 = [u'textures', u'actors', u'character', u'facegendata',
                          u'facetint']
+
+    class xe(GameInfo.xe):
+        full_name = u'TES5Edit'
+        expert_key = 'tes5View.iKnowWhatImDoing'
 
     # BAIN:
     dataDirs = GameInfo.dataDirs | {

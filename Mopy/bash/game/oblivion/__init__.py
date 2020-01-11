@@ -53,8 +53,8 @@ class OblivionGameInfo(GameInfo):
     using_txt_file = False
     has_standalone_pluggy = True
 
-    class cs(GameInfo.cs):
-        cs_abbrev = u'TESCS'
+    class ck(GameInfo.ck):
+        ck_abbrev = u'TESCS'
         long_name = u'Construction Set'
         exe = u'TESConstructionSet.exe'
         se_args = u'-editor'
@@ -85,6 +85,10 @@ class OblivionGameInfo(GameInfo):
 
     class ess(GameInfo.ess):
         canEditMore = True
+
+    class xe(GameInfo.xe):
+        full_name = u'TES4Edit'
+        expert_key = 'tes4View.iKnowWhatImDoing'
 
     # BAIN:
     dataDirs = GameInfo.dataDirs | {

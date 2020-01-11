@@ -81,11 +81,11 @@ def InitStatusBar():
             u' '.join((_(u"Launch"),bush.game.displayName,u'%(version)s'))))
     BashStatusBar.buttons.append( #TESCS/CreationKit
         TESCS_Button(
-            bass.dirs['app'].join(bush.game.cs.exe),
-            imageList(bush.game.cs.image_name),
-            u' '.join((_(u"Launch"),bush.game.cs.cs_abbrev)),
-            u' '.join((_(u"Launch"),bush.game.cs.cs_abbrev,u'%(version)s')),
-            bush.game.cs.se_args))
+            bass.dirs['app'].join(bush.game.ck.exe),
+            imageList(bush.game.ck.image_name),
+            u' '.join((_(u"Launch"),bush.game.ck.ck_abbrev)),
+            u' '.join((_(u"Launch"),bush.game.ck.ck_abbrev,u'%(version)s')),
+            bush.game.ck.se_args))
     BashStatusBar.buttons.append( #OBMM
         app_button_factory(bass.dirs['app'].join(u'OblivionModManager.exe'),
                            imageList(u'obmm%s.png'), _(u"Launch OBMM"),
@@ -104,6 +104,9 @@ def InitStatusBar():
             imageList(u'tools/tes4view%s.png'),
             _(u"Launch TES4View"),
             uid=u'TES4View'))
+    # TODO(inf) Refactor this! I made bush.game.xe a class precisely for stuff
+    #  like this - so add stuff like xe.command_line_arg and drop these 30+
+    #  braindead lines
     BashStatusBar.buttons.append( #Tes4Edit
         App_Tes4View((bass.tooldirs['Tes4EditPath'], u'-TES4 -edit'),
                      imageList(u'tools/tes4edit%s.png'),

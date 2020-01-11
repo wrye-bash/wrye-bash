@@ -509,9 +509,10 @@ class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Warudd
 class Installer_ExportAchlist(OneItemLink, _InstallerLink):
     """Write an achlist file with all the destinations files for this
     installer in this configuration."""
-    _text = _(u"Export Achlist")
+    _text = _(u'Export Achlist')
     _mode_info_dir = u'Mod Info Exports'
-    _help = _(u'Create achlist file for use by the CK')
+    _help = (_(u'Create achlist file for use by the %s.') %
+             bush.game.ck.long_name)
 
     def _enable(self):
         single_item = super(Installer_ExportAchlist, self)._enable()

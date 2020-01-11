@@ -83,6 +83,10 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         long_name = u''
         install_dir = u''
 
+    class xe(SkyrimGameInfo.xe):
+        full_name = u'SSEEdit'
+        expert_key = 'sseView.iKnowWhatImDoing'
+
     SkipBAINRefresh = {u'sseedit backups', u'sseedit cache'}
 
     @classmethod

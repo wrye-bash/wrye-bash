@@ -48,8 +48,8 @@ class Fallout3GameInfo(GameInfo):
 
     using_txt_file = False
 
-    class cs(GameInfo.cs):
-        cs_abbrev = u'GECK'
+    class ck(GameInfo.ck):
+        ck_abbrev = u'GECK'
         long_name = u'Garden of Eden Creation Kit'
         exe = u'GECK.exe'
         se_args = u'-editor'
@@ -77,6 +77,10 @@ class Fallout3GameInfo(GameInfo):
     class pnd(GameInfo.pnd):
         facegen_dir_1 = [u'textures', u'characters', u'BodyMods']
         facegen_dir_2 = [u'textures', u'characters', u'FaceMods']
+
+    class xe(GameInfo.xe):
+        full_name = u'FO3Edit'
+        expert_key = 'fo3View.iKnowWhatImDoing'
 
     # BAIN:
     dataDirs = GameInfo.dataDirs | {

@@ -63,7 +63,7 @@ class SkipError(CancelError):
 
 # File exceptions -------------------------------------------------------------
 class FileError(BoltError):
-    """TES4/Tes4SaveFile Error: File is corrupted."""
+    """An error that occurred while handling a file."""
     def __init__(self, in_name, message):
         ## type: (Union[Path, unicode], unicode) -> None
         super(FileError, self).__init__(message)

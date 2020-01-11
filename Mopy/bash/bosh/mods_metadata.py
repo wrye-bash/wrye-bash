@@ -296,8 +296,8 @@ class ConfigHelpers(object):
             if removeEslFlag:
                 log.setHeader(u'=== ' + _(u'Potentially Incorrect ESL Flag'))
                 log(_(u'Following mods have an ESL flag, but may not qualify. '
-                      u'Run \'Check ESL Qualifications\' on them and/or check '
-                      u'them with xEdit to be sure.'))
+                      u"Run 'Check ESL Qualifications' on them and/or check "
+                      u'them with %s to be sure.') % bush.game.xe.full_name)
                 for mod in sorted(removeEslFlag):
                     log(u'* __' + mod.s + u'__')
             if shouldDeactivateB:
@@ -323,34 +323,42 @@ class ConfigHelpers(object):
                     log(u'* __'+mod.s+u'__')
             if shouldClean:
                 log.setHeader(
-                    u'=== ' + _(u'Mods that need cleaning with TES4Edit'))
-                log(_(u'Following mods have identical to master (ITM) records,'
-                      u' deleted records (UDR), or other issues that should be'
-                      u' fixed with TES4Edit.  Visit the %(cleaning_wiki_url)s'
-                      u' for more information.') % {
-                        'cleaning_wiki_url': self._cleaning_wiki_url})
+                    u'=== ' + _(u'Mods that need cleaning with %s') %
+                    bush.game.xe.full_name)
+                log(_(u'Following mods have identical to master (ITM) '
+                      u'records, deleted records (UDR), or other issues that '
+                      u'should be fixed with %(xedit_name)s. Visit the '
+                      u'%(cleaning_wiki_url)s for more information.') % {
+                    u'cleaning_wiki_url': self._cleaning_wiki_url,
+                    u'xedit_name': bush.game.xe.full_name})
                 for mod in sorted(shouldClean.keys()):
                     log(u'* __'+mod.s+u':__  %s' % shouldClean[mod])
             if shouldCleanMaybe:
                 log.setHeader(
                     u'=== ' + _(u'Mods with special cleaning instructions'))
                 log(_(u'Following mods have special instructions for cleaning '
-                      u'with TES4Edit'))
+                      u'with %s') % bush.game.xe.full_name)
                 for mod in sorted(shouldCleanMaybe):
                     log(u'* __'+mod[0].s+u':__  '+mod[1])
             elif mod_checker and not shouldClean:
                 log.setHeader(
-                    u'=== ' + _(u'Mods that need cleaning with TES4Edit'))
-                log(_(u'Congratulations all mods appear clean.'))
+                    u'=== ' + _(u'Mods that need cleaning with %s') %
+                    bush.game.xe.full_name)
+                log(_(u'Congratulations, all mods appear clean.'))
             if invalidVersion:
-                ver_list = u', '.join(
-                    sorted(bush.game.esp.validHeaderVersions))
+                # Always an ASCII byte string, so this is fine
+                header_sig = unicode(
+                    bush.game_mod.records.MreHeader.classType,
+                    encoding='ascii')
+                ver_list = u', '.join(sorted([
+                    unicode(v) for v in bush.game.esp.validHeaderVersions]))
                 log.setHeader(
-                    u'=== ' + _(u'Mods with non standard TES4 versions'))
-                log(_(u"Following mods have a TES4 version that isn't "
-                      u"recognized as (one of) the standard version(s) "
-                      u"(%s).  It is untested what effect this can have on "
-                      u"%s.") % (ver_list, bush.game.displayName))
+                    u'=== ' + _(u'Mods with non-standard %s versions') %
+                    header_sig)
+                log(_(u"The following mods have a %s version that isn't "
+                      u'recognized as one of the standard versions '
+                      u'(%s). It is untested what effects this can have on '
+                      u'%s.') % (header_sig, ver_list, bush.game.displayName))
                 for mod in sorted(invalidVersion):
                     log(u'* __'+mod[0].s+u':__  '+mod[1])
             #--Missing/Delinquent Masters
@@ -828,18 +836,18 @@ class ModCleaner(object):
                             else:
                                 copy(rec_size)
             #--Save
-            retry = _(u'Bash encountered an error when saving %s.') + u'\n\n' \
-                + _(u'The file is in use by another process such as TES4Edit.'
-                ) + u'\n' + _(u'Please close the other program that is '
-                              u'accessing %s.') + u'\n\n' + _(u'Try again?')
+            retry = _(u'Bash encountered an error when saving %(newpath)s.'
+                      u'\n\nThe file is in use by another process such as '
+                      u'%(xedit_name)s.\nPlease close the other program that '
+                      u'is accessing %(newpath)s.\n\nTry again?') % {
+                u'newpath': path.stail, u'xedit_name': bush.game.xe.full_name}
             if changed:
                 cleaner.modInfo.makeBackup()
                 try:
                     path.untemp()
                 except OSError as werr:
                     while werr.errno == errno.EACCES and balt.askYes(
-                            None, retry % (path.stail, path.stail),
-                            path.stail + _(u' - Save Error')):
+                            None, retry, _(u'%s - Save Error') % path.stail):
                         try:
                             path.untemp()
                             break

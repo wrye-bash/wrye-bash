@@ -1043,6 +1043,3 @@ record_type_name = {
     'MISC':_(u'Misc'),
     'WEAP':_(u'Weapons'),
 }
-
-# xEdit menu string and key for expert setting
-xEdit_expert = (_(u'Fo3Edit Expert'), 'fo3View.iKnowWhatImDoing')

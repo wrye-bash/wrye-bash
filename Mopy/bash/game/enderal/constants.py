@@ -949,6 +949,3 @@ gmstEids = [
     'sNoChargeItems_', 'sRemoveItemFromInventory', 'sVerletCape',
     'uiMuteMusicPauseTime',
 ]
-
-# xEdit menu string and key for expert setting
-xEdit_expert = (_(u'EnderalEdit Expert'), 'enderalView.iKnowWhatImDoing')

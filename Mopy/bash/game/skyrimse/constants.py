@@ -51,6 +51,3 @@ bethDataFiles = {
     u'skyrim - textures8.bsa',
     u'skyrim - voices_en0.bsa',
 }
-
-# xEdit menu string and key for expert setting
-xEdit_expert = (_(u'SSEEdit Expert'), 'sseView.iKnowWhatImDoing')

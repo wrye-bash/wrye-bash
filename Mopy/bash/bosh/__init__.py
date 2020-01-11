@@ -2612,12 +2612,14 @@ class ModInfos(FileInfos):
         else: self.voCurrent = None # just in case
 
     def _retry(self, old, new):
-        return balt.askYes(self,
-            _(u'Bash encountered an error when renaming %s to %s.') + u'\n\n' +
-            _(u'The file is in use by another process such as TES4Edit.') +
-            u'\n' + _(u'Please close the other program that is accessing %s.')
-            + u'\n\n' + _(u'Try again?') % (old.s, new.s, old.s),
-            _(u'File in use'))
+        return balt.askYes(
+            self, _(u'Bash encountered an error when renaming %(old)s to '
+                    u'%(new)s.\n\nThe file is in use by another process such '
+                    u'as %(xedit_name)s.\nPlease close the other program that '
+                    u'is accessing %(new)s.\n\nTry again?') % {
+                u'xedit_name': bush.game.xe.full_name, u'old': old.s,
+                u'new': new.s},
+        _(u'File in use'))
 
     def _get_version_paths(self, newVersion):
         baseName = self.masterName # Oblivion.esm, say it's currently SI one

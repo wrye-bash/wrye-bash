@@ -54,6 +54,10 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         url = u'http://nvse.silverlock.org/'
         url_tip = u'http://nvse.silverlock.org/'
 
+    class xe(Fallout3GameInfo.xe):
+        full_name = u'FNVEdit'
+        expert_key = 'fnvView.iKnowWhatImDoing'
+
     # BAIN:
     dataDirs = (Fallout3GameInfo.dataDirs - {u'fose'}) | {u'nvse'}
     SkipBAINRefresh = {u'fnvedit backups', u'fnvedit cache'}

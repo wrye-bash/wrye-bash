@@ -580,6 +580,3 @@ inventoryTypes = ('NPC_','CONT',)
 # Object Bounds Patcher
 #------------------------------------------------------------------------------
 object_bounds_types = ('LVLI', 'LVLN')
-
-# xEdit menu string and key for expert setting
-xEdit_expert = (_(u'FO4Edit Expert'), 'fo4View.iKnowWhatImDoing')

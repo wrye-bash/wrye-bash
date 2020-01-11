@@ -109,16 +109,17 @@ class GameInfo(object):
         self.gamePath = gamePath # absolute bolt Path to the game directory
         self.has_esl = u'.esl' in self.espm_extensions
 
-    # Construction Set information
-    class cs(object):
-        cs_abbrev = u''   # Abbreviated name
+    class ck(object):
+        """Information about the official plugin editor (generally called some
+        variation of 'Creation Kit') for this game."""
+        ck_abbrev = u''   # Abbreviated name
         long_name = u''   # Full name
         exe = u'*DNE*'    # Executable to run
-        se_args = u''     # Argument to pass to the SE to load the CS
+        se_args = u''     # Argument to pass to the SE to load the CK
         image_name = u''  # Image name template for the status bar
 
-    # Script Extender information
     class se(object):
+        """Information about the Script Extender for this game."""
         se_abbrev = u''   # Abbreviated name. If this is empty, it signals that
                           # no xSE is available for this game. Note that this
                           # should NEVER be used to program other xSE
@@ -139,24 +140,24 @@ class GameInfo(object):
         url = u''         # URL to download from
         url_tip = u''     # Tooltip for mouse over the URL
 
-    # Script Dragon
     class sd(object):
+        """Information about Script Dragon for this game."""
         sd_abbrev = u''   # Abbreviated name. If this is empty, it signals that
                           # no Script Dragon is available for this game.
         long_name = u''   # Full name
         install_dir = u'' # The directory, relative to the Data folder, into
                           # which Script Dragon plugins will be installed.
 
-    # SkyProc Patchers
     class sp(object):
+        """Information about SkyProc patchers for this game."""
         sp_abbrev = u''   # Abbreviated name. If this is empty, it signals that
                           # this game does not support SkyProc patchers.
         long_name = u''   # Full name
         install_dir = u'' # The directory, relative to the Data folder, into
                           # which SkyProc patchers will be installed.
 
-    # Graphics Extender information
     class ge(object):
+        """Information about the Graphics Extender for this game."""
         ge_abbrev = u'' # Abbreviated name. If this is empty, it signals
                         # that no graphics extender is available for this game.
         long_name = u'' # Full name
@@ -171,33 +172,36 @@ class GameInfo(object):
         url = u''       # URL to download from
         url_tip = u''   # Tooltip for mouse over the URL
 
-    # 4gb Launcher
     class laa(object):
+        """Information about the LAA (Large Address Aware) launcher for this
+        game."""
         laa_name = u''      # Display name of the launcher
         exe = u'*DNE*'      # Executable to run
         launchesSE = False  # Whether the launcher will automatically launch
                             # the SE
 
-    # Some stuff dealing with INI files
     class ini(object):
+        """Information about this game's INI handling."""
         # True means new lines are allowed to be added via INI tweaks
         #  (by default)
         allowNewLines = False
         # INI Entry to enable BSA Redirection
         bsaRedirection = (u'Archive', u'sArchiveList')
 
-    # Save Game format stuff
     class ess(object):
-        # Save file capabilities
+        """Information about WB's capabilities with regards to save file
+        viewing and editing for this game."""
         canReadBasic = True # Can read the info needed for the Save Tab display
         canEditMore = False # Advanced editing
         ext = u'.ess'       # Save file extension
 
-    # Information about Plugin-Name-specific Directories supported by this game
-    # Some examples are sound\voices\PLUGIN_NAME.esp, or the facegendata ones.
-    # All paths are given as lists for future cross-platform support.
-    # An empty list means that the game does not have such a directory.
     class pnd(object):
+        """Information about Plugin-Name-specific Directories supported by this
+        game.
+
+        Some examples are sound\voices\PLUGIN_NAME.esp, or the facegendata
+        ones. All paths are given as lists for future cross-platform support.
+        An empty list means that the game does not have such a directory."""
         # The path to the first plugin-name-specific directory for facegen.
         # Meshes in newer games, textures in older ones.
         facegen_dir_1 = []
@@ -207,6 +211,14 @@ class GameInfo(object):
         # The path to the plugin-name-specific directory for voice files
         # This is the same for every game released thus far (sound\\voice\\%s)
         voice_dir = [u'sound', u'voice']
+
+    class xe(object):
+        """Information about xEdit for this game."""
+        # The name that xEdit has for this game, e.g. 'TES5Edit' for Skyrim
+        full_name = u'xEdit'
+        # A settings key used to store whether or not 'expert' mode for xEdit
+        # has been activated (the -IKnowWhatImDoing CLI switch)
+        expert_key = ''
 
     # INI setting used to setup Save Profiles
     #  (section,key)
@@ -245,7 +257,8 @@ class GameInfo(object):
         # Wrye Bash capabilities
         canBash = False         # Can create Bashed Patches
         canCBash = False        # CBash can handle this game's records
-        canEditHeader = False   # Can edit basic info in the TES4 record
+        canEditHeader = False   # Can edit basic info in the main header
+                                # record - generally has signature 'TES4'
         # Valid ESM/ESP header versions
         #  These are the valid 'version' numbers for the game file headers
         validHeaderVersions = tuple()
@@ -480,9 +493,6 @@ class GameInfo(object):
     # Record type to name dictionary
     record_type_name = {}
 
-    # xEdit menu string and key for expert setting
-    xEdit_expert = ()
-
     # Set in game/*/default_tweaks.py, this is a dictionary mapping names for
     # 'default' INI tweaks (i.e. ones that we ship with WB and that can't be
     # deleted) to OrderedDicts that implement the actual tweaks. See
@@ -529,7 +539,7 @@ class GameInfo(object):
         'object_bounds_types', 'pricesTypes', 'record_type_name',
         'save_rec_types', 'scripts_types', 'soundsLongsTypes', 'soundsTypes',
         'spell_stats_attrs', 'statsHeaders', 'statsTypes', 'text_long_types',
-        'text_types', 'xEdit_expert',
+        'text_types',
     }
 
     @classmethod

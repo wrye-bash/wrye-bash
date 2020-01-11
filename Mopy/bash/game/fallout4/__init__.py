@@ -64,10 +64,10 @@ class Fallout4GameInfo(GameInfo):
     has_achlist = True
     check_esl = True
 
-    class cs(GameInfo.cs):
+    class ck(GameInfo.ck):
         # TODO:  When the Fallout 4 Creation Kit is actually released,
         # double check that the filename is correct, and create an actual icon
-        cs_abbrev = u'FO4CK'
+        ck_abbrev = u'FO4CK'
         long_name = u'Creation Kit'
         exe = u'CreationKit.exe'
         se_args = None
@@ -96,6 +96,10 @@ class Fallout4GameInfo(GameInfo):
                          u'facegeom']
         facegen_dir_2 = [u'meshes', u'actors', u'character',
                          u'facecustomization']
+
+    class xe(GameInfo.xe):
+        full_name = u'FO4Edit'
+        expert_key = 'fo4View.iKnowWhatImDoing'
 
     # BAIN:
     dataDirs = GameInfo.dataDirs | {

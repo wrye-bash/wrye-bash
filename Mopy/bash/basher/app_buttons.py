@@ -331,7 +331,8 @@ class _Mods_xEditExpert(BoolLink):
 
     def __init__(self):
         super(_Mods_xEditExpert, self).__init__()
-        self._text, self.key = bush.game.xEdit_expert
+        self._text = _(u'%s Expert') % bush.game.xe.full_name
+        self.key = bush.game.xe.expert_key
 
 class App_Tes4View(_ExeButton):
     """Allow some extra args for Tes4View."""
@@ -372,7 +373,7 @@ class App_Tes4View(_ExeButton):
     def __init__(self, *args, **kwdargs):
         exePath, exeArgs = _parse_button_arguments(args[0])
         super(App_Tes4View, self).__init__(exePath, exeArgs, *args[1:], **kwdargs)
-        if bush.game.xEdit_expert:
+        if bush.game.xe.expert_key:
             self.mainMenu.append(_Mods_xEditExpert())
 
     def IsPresent(self): # FIXME(inf) What on earth is this? What's the point??
@@ -385,8 +386,8 @@ class App_Tes4View(_ExeButton):
         return True
 
     def Execute(self):
-        is_expert = bush.game.xEdit_expert and bass.settings[
-            bush.game.xEdit_expert[1]]
+        is_expert = bush.game.xe.expert_key and bass.settings[
+            bush.game.xe.expert_key]
         extraArgs = bass.inisettings[
             'xEditCommandLineArguments'].split() if is_expert else []
         if balt.getKeyState_Control():

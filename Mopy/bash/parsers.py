@@ -3926,11 +3926,10 @@ class LoadFactory(object):
         )
 
 class ModFile(object):
-    """TES4 file representation.
+    """Plugin file representation.
 
     Will load only the top record types specified in its LoadFactory. Overrides
-    __getattr__ to return its collection of records for a top record type.
-    """
+    __getattr__ to return its collection of records for a top record type."""
     def __init__(self, fileInfo,loadFactory=None):
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True)
@@ -3974,10 +3973,10 @@ class ModFile(object):
         progress.setFull(1.0)
         with ModReader(self.fileInfo.name,self.fileInfo.getPath().open('rb')) as ins:
             insRecHeader = ins.unpackRecHeader
-            #--TES4 Header of the mod file
+            # Main header of the mod file - generally has 'TES4' signature
             header = insRecHeader()
             self.tes4 = bush.game.plugin_header_class(header,ins,True)
-            #--Strings
+            # Check if we need to handle strings
             self.strings.clear()
             if do_unpack and self.tes4.flags1[7] and loadStrings:
                 stringsProgress = SubProgress(progress,0,0.1) # Use 10% of progress bar for strings
@@ -4051,7 +4050,7 @@ class ModFile(object):
         self.save(filePath.temp)
         if self.fileInfo.mtime is not None: # fileInfo created before the file
             filePath.temp.mtime = self.fileInfo.mtime
-        # FIXME If saving a locked (by TES4Edit f.i.) bashed patch a bogus UAC
+        # FIXME If saving a locked (by xEdit f.i.) bashed patch a bogus UAC
         # permissions dialog is displayed (should display file in use)
         env.shellMove(filePath.temp, filePath, parent=None) # silent=True just returns - no error!
         self.fileInfo.extras.clear()
