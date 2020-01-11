@@ -1349,7 +1349,8 @@ class TabDragMixin(object):
            event.oldIdex = old tab position (of tab that was moved
            event.newIdex = new tab position (of tab that was moved
     """
-    __slots__=('__dragX','__dragging','__justSwapped')
+    # PY3: These slots cause a crash on wx4
+    #__slots__ = ('__dragX','__dragging','__justSwapped')
 
     def __init__(self):
         self.__dragX = 0

@@ -453,12 +453,12 @@ def _show_wx_error(msg):
         app = _wx.GetApp() # wx.App is a singleton, get it if it exists.
         if app:
             MessageBox(msg)
-            app.Exit()
+            _wx.Exit()
         else:
             app = _wx.App(False) # wx.App is not instantiated, do so now .
             if app:
                 MessageBox(msg)
-                app.Exit()
+                _wx.Exit()
             else:
                 # Instantiating wx.App failed, fallback to tkinter.
                 but_kwargs = {'text': _(u"QUIT"),

@@ -61,7 +61,6 @@ import time
 from collections import OrderedDict
 from functools import partial
 from operator import itemgetter
-from types import ClassType
 #--wxPython
 import wx
 
@@ -3786,7 +3785,8 @@ class BashFrame(BaltFrame):
             balt.showWarning(self, message, _(u'Too many mod files.'))
 
     def BindRefresh(self, bind=True, __event=wx.EVT_ACTIVATE):
-        self.Bind(__event, self.RefreshData) if bind else self.Unbind(__event)
+        if self:
+            self.Bind(__event, self.RefreshData) if bind else self.Unbind(__event)
 
     def Restart(self, *args):
         """Restart Bash - edit bass.sys_argv with specified args then let
@@ -4166,7 +4166,7 @@ class BashApp(wx.App):
             #--Window sizes by class name rather than by class
             if bash_version < 43:
                 for key,value in balt.sizes.iteritems():
-                    if isinstance(key,ClassType):
+                    if isinstance(key, type):
                         balt.sizes[key.__name__] = value
                         del balt.sizes[key]
         #--Current Version

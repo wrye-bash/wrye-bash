@@ -23,7 +23,6 @@
 # =============================================================================
 
 import string
-from types import IntType, LongType
 import wx
 from . import bEnableWizard, tabInfo, BashFrame
 from .constants import colorInfo, settingDefaults, installercons
@@ -273,7 +272,7 @@ class ImportFaceDialog(balt.Dialog):
     def __init__(self, parent, title, fileInfo, faces):
         #--Data
         self.fileInfo = fileInfo
-        if faces and isinstance(faces.keys()[0],(IntType,LongType)):
+        if faces and isinstance(faces.keys()[0], int):
             self.data = dict((u'%08X %s' % (key,face.pcName),face) for key,face in faces.items())
         else:
             self.data = faces
