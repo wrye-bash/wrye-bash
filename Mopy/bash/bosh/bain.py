@@ -2026,10 +2026,6 @@ class InstallersData(DataStore):
     def _skips_in_data_dir(sDirs):
         """Skip some top level directories based on global settings - EVEN
         on a fullRefresh."""
-        log = None
-        if bass.inisettings['KeepLog'] > 1:
-            try: log = bass.inisettings['LogFile'].open('a', encoding='utf-8-sig')
-            except: pass
         setSkipOBSE = not bass.settings['bash.installers.allowOBSEPlugins']
         setSkipDocs = bass.settings['bash.installers.skipDocs']
         setSkipImages = bass.settings['bash.installers.skipImages']
@@ -2058,10 +2054,6 @@ class InstallersData(DataStore):
         newSDirs = (x for x in newSDirs if
                     x.lower() not in bush.game.SkipBAINRefresh)
         sDirs[:] = [x for x in newSDirs]
-        if log:
-            log.write(u'(in refreshSizeCRCDate after accounting for skipping) '
-                      u'sDirs = %s\r\n' % (sDirs[:]))
-            log.close()
 
     def update_data_SizeCrcDate(self, dest_paths, progress=None):
         """Update data_SizeCrcDate with info on given paths.

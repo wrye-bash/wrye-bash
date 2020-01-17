@@ -794,14 +794,6 @@ class Path(object):
         except UnicodeEncodeError:
             return self.tempMoveTo(self.temp)
 
-    def touch(self):
-        """Like unix 'touch' command. Creates a file with current date/time."""
-        if self.exists():
-            self.mtime = time.time()
-        else:
-            with self.temp.open('w'):
-                pass
-            self.untemp()
     def untemp(self,doBackup=False):
         """Replaces file with temp version, optionally making backup of file first."""
         if self.temp.exists():

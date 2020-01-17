@@ -3101,10 +3101,7 @@ def initDefaultTools():
 
 def initDefaultSettings():
     #other settings from the INI:
-    inisettings['EnableUnicode'] = False
     inisettings['ScriptFileExt'] = u'.txt'
-    inisettings['KeepLog'] = 0
-    inisettings['LogFile'] = dirs['mopy'].join(u'bash.log')
     inisettings['ResetBSATimestamps'] = True
     inisettings['EnsurePatchExists'] = True
     inisettings['OblivionTexturesBSAName'] = GPath(u'Oblivion - Textures - Compressed.bsa')
@@ -3174,13 +3171,6 @@ def initOptions(bashIni):
     tooldirs['Tes4ViewPath'] = tooldirs['Tes4EditPath'].head.join(u'TES4View.exe')
     tooldirs['Tes4TransPath'] = tooldirs['Tes4EditPath'].head.join(u'TES4Trans.exe')
 
-def initLogFile():
-    if inisettings['KeepLog'] == 0: return
-    with inisettings['LogFile'].open('a', encoding='utf-8-sig') as log:
-        log.write(_(u'%s Wrye Bash ini file read, Keep Log level: %d, '
-                    u'initialized.') % (
-                  bolt.timestamp(), inisettings['KeepLog']) + u'\r\n')
-
 def initBosh(bashIni, game_ini_path):
     # Setup LOOT API, needs to be done after the dirs are initialized
     if not initialization.bash_dirs_initialized:
@@ -3195,10 +3185,6 @@ def initBosh(bashIni, game_ini_path):
                     bush.game.iniFiles[1:])
     load_order.initialize_load_order_files()
     initOptions(bashIni)
-    try:
-        initLogFile()
-    except IOError:
-        deprint('Error creating log file', traceback=True)
     from .bain import Installer
     Installer.init_bain_dirs()
     if os.name == u'nt': # don't add local directory to binaries on linux
