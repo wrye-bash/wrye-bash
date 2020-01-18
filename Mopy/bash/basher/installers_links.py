@@ -468,9 +468,9 @@ class _Installers_Skip(Installers_Link, BoolLink):
     def Execute(self):
         super(_Installers_Skip, self).Execute()
         bosh.bain.Installer.init_global_skips()
-        self._refreshInstallers()
+        self._do_installers_refresh()
 
-    def _refreshInstallers(self):
+    def _do_installers_refresh(self):
         self.window.rescanInstallers(self.idata.keys(), abort=False,
             update_from_data=False,##:update data too when turning skips off ??
             shallow=True)
@@ -536,7 +536,7 @@ class _Installers_Process_Skip(_Installers_Skip):
 
     def Execute(self):
         super(Installers_Link, self).Execute() # note Installers_Link !
-        self._refreshInstallers()
+        self._do_installers_refresh()
 
 class _Installers_SkipDocs(_Installers_Process_Skip):
     """Toggle skipDocs setting and update."""

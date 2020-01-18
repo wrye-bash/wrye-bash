@@ -598,7 +598,7 @@ class Installer(object):
          irefresh, ShowPanel ?)
          - in InstallersPanel.refreshCurrent()
          - in 2 subclasses' install() and InstallerProject.syncToData()
-         - in _Installers_Skip._refreshInstallers()
+         - in _Installers_Skip._do_installers_refresh()
          - in _RefreshingLink (override skips, HasExtraData, skip voices)
          - in Installer_CopyConflicts
         """
@@ -635,9 +635,10 @@ class Installer(object):
         else: lang = u''
         languageLower = lang.lower()
         hasExtraData = self.hasExtraData
-        if type_ == 2: # exclude u'' from active subpackages
-            activeSubs = set(
-                x for x, y in zip(self.subNames[1:], self.subActives[1:]) if y)
+        # exclude u'' from active subpackages
+        activeSubs = (
+            set(x for x, y in zip(self.subNames[1:], self.subActives[1:]) if y)
+            if type_ == 2 else set())
         data_sizeCrc = bolt.LowerDict()
         skipDirFiles = self.skipDirFiles
         skipDirFilesAdd = skipDirFiles.add
@@ -1262,7 +1263,7 @@ class InstallerArchive(Installer):
             try:
                 unpack_dir = self.unpackToTemp([rel_path])
                 unpack_dir.join(rel_path).start()
-            except:
+            except OSError:
                 # Don't clean up temp dir here.  Sometimes the editor
                 # That starts to open the wizard.txt file is slower than
                 # Bash, and the file will be deleted before it opens.
@@ -1564,6 +1565,9 @@ class InstallersData(DataStore):
         self.hasChanged = False
         self.loaded = False
         self.lastKey = GPath(u'==Last==')
+        # Need to delay the main bosh import until here
+        from . import InstallerArchive, InstallerProject
+        self._inst_types = [InstallerArchive, InstallerProject]
 
     @property
     def bash_dir(self): return bass.dirs['bainData']
@@ -1745,13 +1749,10 @@ class InstallersData(DataStore):
 
     def refresh_installer(self, package, is_project, progress,
                           install_order=None, do_refresh=False, _index=None,
-                          _fullRefresh=False, __types=[]):
-        if not __types: # use the bosh types
-            from . import InstallerArchive, InstallerProject
-            __types = [InstallerArchive, InstallerProject]
-        installer = self.get(package, None)
+                          _fullRefresh=False):
+        installer = self.get(package)
         if not installer:
-            installer = self[package] = __types[is_project](package)
+            installer = self[package] = self._inst_types[is_project](package)
             if install_order is not None:
                 self.moveArchives([package], install_order)
         if _index is not None:
@@ -2420,7 +2421,7 @@ class InstallersData(DataStore):
         files = set(installer.ci_dest_sizeCrc)
         # keep those to be removed while not restored by a higher order package
         to_keep = (removes & files) - set(restores)
-        if to_keep: g_path = GPath(installer.archive)
+        g_path = GPath(installer.archive) if to_keep else None
         for dest_file in to_keep:
             if installer.ci_dest_sizeCrc[dest_file] != \
                     self.data_sizeCrcDate.get(dest_file,(0, 0, 0))[:2]:
@@ -2573,7 +2574,7 @@ class InstallersData(DataStore):
                         refresh_ui[0] = True
                     self.data_sizeCrcDate.pop(filename, None)
                     emptyDirs.add(full_path.head)
-                except:
+                except OSError:
                     #It's not imperative that files get moved, so ignore errors
                     deprint(u'Clean Data: moving %s to % s failed' % (
                                 full_path, destDir), traceback=True)
@@ -2585,10 +2586,12 @@ class InstallersData(DataStore):
             self.irefresh(what='NS')
 
     #--Utils
-    def _get_active_bsas(self, inst, active_bsas):
+    @staticmethod
+    def _filter_installer_bsas(inst, active_bsas):
         return (k for k in active_bsas if k.name.s in inst.ci_dest_sizeCrc)
 
-    def _deprint(self, bs, inst):
+    @staticmethod
+    def _parse_error(bs, inst):
         deprint(u'Error parsing %s [%s]' % (bs.name, inst.archive),
                 traceback=True)
 
@@ -2630,11 +2633,12 @@ class InstallersData(DataStore):
                 if installer.order == srcOrder or not (showInactive or
                                                        installer.is_active):
                     continue # check active installers different than src
-                for bsa_info in self._get_active_bsas(installer, active_bsas):
+                for bsa_info in self._filter_installer_bsas(
+                        installer, active_bsas):
                     try: # conflicting assets from this installer active bsas
                         curConflicts = bsa_info.assets & src_assets
                     except BSAError:
-                        self._deprint(bsa_info, installer)
+                        self._parse_error(bsa_info, installer)
                         continue
                     if curConflicts:
                         lower_result, higher_result = set(), set()
@@ -2652,7 +2656,8 @@ class InstallersData(DataStore):
                         if higher_result:
                             higher_bsa.append((package, bsa_info,
                                                bolt.sortFiles(higher_result)))
-            def _sort_bsa_conflicts(conflict): return active_bsas[conflict[1]]
+            def _sort_bsa_conflicts(bsa_conflict):
+                return active_bsas[bsa_conflict[1]]
             lower_bsa.sort(key=_sort_bsa_conflicts)
             higher_bsa.sort(key=_sort_bsa_conflicts)
         else:
@@ -2686,12 +2691,12 @@ class InstallersData(DataStore):
         :return: An OrderedDict containing a mapping from asset to BSA and the
                  relevant assets from the installer's BSAs in a set."""
         asset_to_bsa, src_assets = collections.OrderedDict(), set()
-        for b in reversed(list(self._get_active_bsas(src_installer,
-                                                     active_bsas))):
+        for b in reversed(list(self._filter_installer_bsas(
+                src_installer, active_bsas))):
             try:
                 b_assets = b.assets - src_assets
             except BSAError:
-                self._deprint(b, src_installer)
+                self._parse_error(b, src_installer)
                 continue
             if b_assets:
                 for b_asset in b_assets:

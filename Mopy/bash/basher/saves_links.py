@@ -360,9 +360,9 @@ class Save_Rename(UIList_Rename):
 class Save_Renumber(EnabledLink):
     """Renumbers a whole lot of save files."""
     _text = _(u'Re-number Save(s)...')
-    _help = _(u'Renumber a whole lot of save files') + u'.  ' + _(
-        u'Savename must be "Save <some number><optional text>"')
-    _re_numbered_save = re.compile(u'' r'^(save )(\d*)(.*)', re.I | re.U)
+    _help = _(u'Renumber a whole lot of save files. Savename must be of the '
+              u'form "Save <some number><optional text>"')
+    _re_numbered_save = re.compile(u'' r'^(save ?)(\d*)(.*)', re.I | re.U)
 
     def _enable(self):
         self._matches = []
@@ -373,26 +373,28 @@ class Save_Renumber(EnabledLink):
 
     def Execute(self):
         newNumber = self._askNumber(
-            _(u"Enter new number to start numbering the selected saves at."),
+            _(u'Enter new number to start numbering the selected saves at.'),
             prompt=_(u'Save Number'), title=_(u'Re-number Saves'), value=1,
             min=1, max=10000)
         if not newNumber: return
-        to_select = []
-        for name, maPattern in self._matches:
-            maPattern = maPattern.groups()
-            if not maPattern[1]: continue
-            newFileName = u"%s%d%s" % (maPattern[0],newNumber,maPattern[2])
-            if newFileName != name.s:
+        old_names = []
+        new_names = []
+        for old_file_path, maPattern in self._matches:
+            s_groups = maPattern.groups()
+            if not s_groups[1]: continue
+            newFileName = u'%s%d%s' % (s_groups[0], newNumber, s_groups[2])
+            if newFileName != old_file_path.s:
                 new_file_path = GPath(newFileName)
                 try:
-                    bosh.saveInfos.rename_info(name, new_file_path)
+                    bosh.saveInfos.rename_info(old_file_path, new_file_path)
                 except (CancelError, OSError, IOError):
                     break
                 newNumber += 1
-                to_select.append(new_file_path)
-        if to_select:
-            self.window.RefreshUI()
-            self.window.SelectItemsNoCallback(to_select)
+                old_names.append(old_file_path)
+                new_names.append(new_file_path)
+        if new_names:
+            self.window.RefreshUI(redraw=new_names, to_del=old_names)
+            self.window.SelectItemsNoCallback(new_names)
 
 #------------------------------------------------------------------------------
 class Save_EditCreatedData(balt.ListEditorData):
