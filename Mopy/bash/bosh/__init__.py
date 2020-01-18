@@ -2068,11 +2068,14 @@ class ModInfos(FileInfos):
         result, tagged_no_merge = OrderedDict(), set()
         for i,fileName in enumerate(names):
             progress(i,fileName.s)
-            if not doCBash and reOblivion.match(fileName.s): continue
             fileInfo = self[fileName]
-            # do not mark esls as esl capable
-            if fileInfo.is_esl():
-                if return_results: reasons.append(u'Already ESL-flagged.')
+            cs_name = fileName.cs
+            if cs_name in bush.game.bethDataFiles:
+                if return_results: reasons.append(_(u'Is Bethesda Plugin.'))
+                canMerge = False
+            elif fileInfo.is_esl():
+                # Do not mark esls as esl capable
+                if return_results: reasons.append(_(u'Already ESL-flagged.'))
                 canMerge = False
             elif not bush.game.esp.canBash:
                 canMerge = False

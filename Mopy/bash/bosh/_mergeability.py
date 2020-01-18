@@ -27,7 +27,7 @@ from ..bolt import GPath
 from ..cint import ObCollection
 from ..exception import ModError
 from ..load_order import cached_is_active
-from ..parsers import ModFile, LoadFactory
+from ..parsers import LoadFactory, ModFile, ModHeaderReader
 
 def _is_mergeable_no_load(modInfo, reasons):
     verbose = reasons is not None
@@ -137,36 +137,25 @@ def is_esl_capable(modInfo, _minfos, reasons):
                     return value of this method is of interest.
     :return: True if the specified mod could be flagged as ESL."""
     verbose = reasons is not None
-    if modInfo.isBP():
-        if not verbose: return False
-        reasons.append(_(u'Is Bashed Patch.'))
-    # FIXME check all record types - return undecidable (False) if record not decoded
-    modFile = ModFile(modInfo, LoadFactory(False, *set(
-        recClass.classType for recClass in bush.game.mergeClasses)))
+    record_headers = {}
     try:
-        modFile.load(True,loadStrings=False)
-    except ModError as error:
+        record_headers = ModHeaderReader.read_mod_headers(modInfo)
+    except ModError as e:
         if not verbose: return False
-        reasons.append(u'%s.' % error)
-    #--Skipped over types?
-    if modFile.topsSkipped:
-        if not verbose: return False
-        reasons.append(_(u'Record type(s): %s; currently unsupported by ESL '
-                         u'verification. Use %s to check ESL qualifications '
-                         u'and modify ESL flag.') % (
-            u', '.join(sorted(modFile.topsSkipped)), bush.game.xe.full_name))
-    #--Form greater then 0xFFF
-    lenMasters = len(modFile.tes4.masters)
-    for rec_typ,block in modFile.tops.iteritems():
-        for record in block.getActiveRecords():
-            if record.fid >> 24 >= lenMasters:
-                if (record.fid & 0xFFFFFF) > 0xFFF:
-                    if not verbose: return False
-                    reasons.append(_(u'New Forms greater than 0xFFF.'))
+        reasons.append(u'%s.' % e)
+    # Check for new FormIDs greater then 0xFFF
+    num_masters = len(modInfo.header.masters)
+    has_new_recs = False
+    for _rec_type, rec_headers in record_headers.iteritems():
+        for header in rec_headers:
+            if header.fid >> 24 >= num_masters:
+                if (header.fid & 0xFFFFFF) > 0xFFF:
+                    has_new_recs = True
                     break
-        else:
-            continue
-        break
+        if has_new_recs:
+            if not verbose: return False
+            reasons.append(_(u'New FormIDs greater than 0xFFF.'))
+            break
     return False if reasons else True
 
 def _modIsMergeableLoad(modInfo, minfos, reasons):

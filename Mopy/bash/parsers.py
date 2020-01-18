@@ -33,7 +33,6 @@ from collections import defaultdict, Counter
 import re
 # Internal
 from . import bolt
-from . import brec
 from . import bush # for game
 from . import env
 from . import load_order
@@ -46,7 +45,8 @@ from .brec import MreRecord, MelObject, _coerce, genFid, ModReader, ModWriter, \
 from .cint import ObCollection, FormID, aggregateTypes, validTypes, \
     MGEFCode, ActorValue, ValidateList, pickupables, ExtractExportList, \
     ValidateDict, IUNICODE, getattr_deep, setattr_deep
-from .exception import ArgumentError, MasterMapError, ModError, StateError
+from .exception import ArgumentError, CancelError, MasterMapError, ModError, \
+    StateError
 from .record_groups import MobDials, MobICells, MobWorlds, MobObjects, MobBase
 
 class ActorFactions(object):
@@ -4182,3 +4182,34 @@ class ModFile(object):
 
     def __repr__(self):
         return u'ModFile<%s>' % self.fileInfo.name.s
+
+# TODO(inf) Use this for a bunch of stuff in mods_metadata.py (e.g. UDRs)
+class ModHeaderReader(object):
+    """Allows very fast reading of a plugin's headers, skipping reading and
+    decoding of anything but the headers."""
+    @staticmethod
+    def read_mod_headers(mod_info):
+        """Reads the headers of every record in the specified mod, returning
+        them as a dict, mapping record signature to a list of the headers of
+        every record with that signature. Note that the flags are not processed
+        either - if you need that, manually call MreRecord.flags1_() on them.
+
+        :rtype: defaultdict[str, list[RecordHeader]]"""
+        ret_headers = defaultdict(list)
+        with ModReader(mod_info.name, mod_info.abs_path.open(u'rb')) as ins:
+            try:
+                ins_at_end = ins.atEnd
+                ins_unpack_rec_header = ins.unpackRecHeader
+                ins_seek = ins.seek
+                while not ins_at_end():
+                    header = ins_unpack_rec_header()
+                    # Skip GRUPs themselves, only process their records
+                    header_rec_type = header.recType
+                    if header_rec_type != b'GRUP':
+                        ret_headers[header_rec_type].append(header)
+                        ins_seek(header.size, 1)
+            except OSError as e:
+                raise ModError(ins.inName, u'Error scanning %s, file read '
+                                           u"pos: %i\nCaused by: '%r'" % (
+                    mod_info.name.s, ins.tell(), e))
+        return ret_headers

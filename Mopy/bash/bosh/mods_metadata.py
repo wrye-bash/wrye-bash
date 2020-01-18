@@ -294,10 +294,10 @@ class ConfigHelpers(object):
                 for mod in sorted(shouldMerge):
                     log(u'* __'+mod.s+u'__')
             if removeEslFlag:
-                log.setHeader(u'=== ' + _(u'Potentially Incorrect ESL Flag'))
-                log(_(u'Following mods have an ESL flag, but may not qualify. '
-                      u"Run 'Check ESL Qualifications' on them and/or check "
-                      u'them with %s to be sure.') % bush.game.xe.full_name)
+                log.setHeader(u'=== ' + _(u'Incorrect ESL Flag'))
+                log(_(u'Following mods have an ESL flag, but do not qualify. '
+                      u"Either remove the flag with 'Remove ESL Flag', or "
+                      u"change the extension to '.esp' if it is '.esl'."))
                 for mod in sorted(removeEslFlag):
                     log(u'* __' + mod.s + u'__')
             if shouldDeactivateB:
