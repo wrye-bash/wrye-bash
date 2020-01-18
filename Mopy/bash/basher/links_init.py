@@ -438,6 +438,7 @@ def InitModLinks():
         ModList.itemMenu.append(ratingMenu)
     #--------------------------------------------
     ModList.itemMenu.append(SeparatorLink())
+    ModList.itemMenu.append(Mod_Move())
     ModList.itemMenu.append(Mod_OrderByName())
     ModList.itemMenu.append(SeparatorLink())
     if bush.game.esp.canBash:

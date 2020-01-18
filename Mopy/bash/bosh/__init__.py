@@ -1845,8 +1845,12 @@ class ModInfos(FileInfos):
         # hasty method for Mod_OrderByName
         mod_set = set(modlist)
         first_dex = self._lo_wip.index(first)
+        # Begin by splitting out the remainder
         rest = self._lo_wip[first_dex:]
         del self._lo_wip[first_dex:]
+        # Clean out any duplicates left behind, in case we're moving forwards
+        self._lo_wip[:] = [x for x in self._lo_wip if x not in mod_set]
+        # Append the remainder, then insert the requested plugins
         for mod in rest:
             if mod in mod_set: continue
             self._lo_wip.append(mod)

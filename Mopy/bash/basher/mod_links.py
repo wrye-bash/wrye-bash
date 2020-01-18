@@ -68,7 +68,7 @@ __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
            'Mod_UndeleteRefs', 'Mod_AddMaster', 'Mod_CopyToEsmp',
            'Mod_DecompileAll', 'Mod_FlipEsm', 'Mod_FlipEsl',
            'Mod_FlipMasters', 'Mod_SetVersion', 'Mod_ListDependent',
-           'Mod_JumpToInstaller']
+           'Mod_JumpToInstaller', 'Mod_Move']
 
 #------------------------------------------------------------------------------
 # Mod Links -------------------------------------------------------------------
@@ -154,6 +154,7 @@ class Mod_CreateDummyMasters(OneItemLink):
         self.window.RefreshUI(refreshSaves=True, detail_item=to_select[-1])
         self.window.SelectItemsNoCallback(to_select)
 
+#------------------------------------------------------------------------------
 class Mod_OrderByName(EnabledLink):
     """Sort the selected files."""
     _text = _(u'Order By Name')
@@ -190,9 +191,53 @@ class Mod_OrderByName(EnabledLink):
         else:
             lowest = load_order.get_ordered(self.selected)[0]
             bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
-            bosh.modInfos.cached_lo_save_lo()
+            # Reorder the actives too to avoid bogus LO warnings
+            bosh.modInfos.cached_lo_save_all()
         self.window.RefreshUI(refreshSaves=True)
 
+#------------------------------------------------------------------------------
+class Mod_Move(EnabledLink):
+    """Moves selected mod(s) to a different LO position."""
+    _text = _(u'Move To...')
+    _help = _(u'Move the selected plugin(s) to a position of your choice. '
+              u'Only works if the selected plugin(s) may be reordered.')
+
+    def _enable(self):
+        # Can't be used if at least one of the selected mods is pinned
+        return not load_order.filter_pinned(self.selected)
+
+    def Execute(self):
+        entered_text = u''
+        # Default to the index of the first selected active plugin, or 0
+        default_index = (load_order.cached_active_index(self.selected[0])
+                         if any(load_order.cached_is_active(p)
+                                for p in self.selected) else 0)
+        try:
+            # Only accept hexadecimal numbers, trying to guess what they are
+            # will just lead to sadness
+            entered_text = self._askText(
+                _(u'Please enter the plugin index to which the selected '
+                  u'plugins should be moved.\nNote that it must be a '
+                  u'hexadecimal number, as shown in the Mods tab.'),
+                default=u'%X' % default_index)
+            if not entered_text: return # Abort if canceled or empty string
+            target_index = int(entered_text, base=16)
+        except (TypeError, ValueError):
+            self._showError(_(u"'%s' is not a valid hexadecimal number.") %
+                            entered_text)
+            return
+        # We can obviously only target active plugins, since inactive
+        # plugins do not have a *user-exposed* index
+        active_plugins = load_order.cached_active_tuple()
+        # Clamp between 0 and max plugin index
+        target_index = max(0, min(target_index, len(active_plugins) - 1))
+        bosh.modInfos.cached_lo_insert_at(active_plugins[target_index],
+                                          self.selected)
+        # Reorder the actives too to avoid bogus LO warnings
+        bosh.modInfos.cached_lo_save_all()
+        self.window.RefreshUI(refreshSaves=True, detail_item=self.selected[0])
+
+#------------------------------------------------------------------------------
 class Mod_Redate(File_Redate):
     """Mods tab version of the Redate command."""
     def _infos_to_redate(self):

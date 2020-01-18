@@ -1048,6 +1048,11 @@ tab. The directories skipped are:
                     <abbr title="Bash Auto Load Ordering">BALO</abbr> has been removed taking BALO groups for the ride - those of you who remember
                     them, shed a tear goodbye.</td></tr>
             <tr><td colspan="2">Rating<td>A purely cosmetic feature, this allows you to assign different rating values to plugins.
+            <tr><td colspan="2">Move To...</td><td>Moves the selected plugin(s) to the specified position. Note that the way this works with
+                inactive plugins may seem a bit counter-intuitive. Since inactive plugins do not have indices, it will be moved to occupy
+                the selected position, but since it's inactive, <em>the next active plugin after it</em> is the one that actually receives
+                the position. In practical terms, this means you will often end up moving an inactive plugin to one spot before the one you
+                wanted and adjusting its position via drag and drop or via <code>Ctrl+Arrow Keys</code> will be necessary.</td></tr>
             <tr><td colspan="2">Order By Name</td><td>Set the load order of the selected plugins starting at the lowest ordered mod, sorting them alphabetically.</td></tr>
             <tr><td colspan="2">Details...<td>Displays a list of the records in the selected plugin, similar to the Details view in the Construction Set.
             <tr><td colspan="2">List Masters...<td>Outputs a list of the selected plugin's masters.
