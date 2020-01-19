@@ -166,8 +166,8 @@ class Installer(object):
                         crc = crc32(block, crc) # 2MB at a time, probably ok
                         sub(insTell())
             except IOError:
-                deprint(_(u'Failed to calculate crc for %s - please report '
-                          u'this, and the following traceback:') % asFile,
+                deprint(u'Failed to calculate crc for %s - please report '
+                        u'this, and the following traceback:' % asFile,
                         traceback=True)
                 continue
             crc &= 0xFFFFFFFF
@@ -1052,7 +1052,7 @@ class Installer(object):
     def fomod_file(self): raise AbstractError
 
     def __repr__(self):
-        return self.__class__.__name__ + u"<" + repr(self.archive) + u">"
+        return u'%s<%r>' % (self.__class__.__name__, self.archive)
 
     #--ABSTRACT ---------------------------------------------------------------
     def _refreshSource(self, progress, recalculate_project_crc):

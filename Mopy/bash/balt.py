@@ -54,8 +54,8 @@ from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
 if not web_viewer_available():
-    deprint(_(u'wx.html2.WebView is missing, features utilizing HTML will be '
-              u'disabled'))
+    deprint(u'wx.html2.WebView is missing, features utilizing HTML will be '
+            u'disabled')
 
 class Resources(object):
     #--Icon Bundles

@@ -88,8 +88,8 @@ class GmstTweak(DynamicNamedTweak, MultiTweakItem):
         isOblivion = bush.game.fsName.lower() == u'oblivion'
         for eid,value in zip(eids,self.choiceValues[self.chosen]):
             if isOblivion and value < 0:
-                deprint(_(u"GMST values can't be negative - currently %s - "
-                          u"skipping setting GMST.") % value)
+                deprint(u"GMST values can't be negative - currently %s - "
+                        u'skipping setting GMST.' % value)
                 return
             eidLower = eid.lower()
             for record in patchFile.GMST.records:
@@ -138,14 +138,14 @@ class CBash_GmstTweak(DynamicNamedTweak, CBash_MultiTweakItem):
         else:
             return
         if recEid.startswith(u"f") and type(newValue) != float:
-            deprint(_(u"converting custom value to float for GMST %s: %s") % (
+            deprint(u'converting custom value to float for GMST %s: %s' % (
                 recEid, newValue))
             newValue = float(newValue)
         if record.value != newValue:
             self.eid_count[eid] = 1
             if newValue < 0:
-                deprint(_(u"GMST values can't be negative - currently %s - "
-                          u"skipping setting GMST.") % newValue)
+                deprint(u"GMST values can't be negative - currently %s - "
+                        u'skipping setting GMST.' % newValue)
                 return
             override = record.CopyAsOverride(self.patchFile)
             if override:
@@ -171,8 +171,8 @@ class CBash_GmstTweak(DynamicNamedTweak, CBash_MultiTweakItem):
                         print(conflict.GetParentMod().ModName)
                     raise StateError(u"Tweak Settings: Unable to create GMST!")
                 if eid.startswith("f") and type(value) != float:
-                    deprint(_(u"converting custom value to float for GMST"
-                              u" %s: %s") % (eid, value))
+                    deprint(u'Converting custom value to float for GMST %s: '
+                            u'%s' % (eid, value))
                     value = float(value)
                 record.value = value
             pstate += 1

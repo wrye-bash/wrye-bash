@@ -151,7 +151,7 @@ class BackupSettings(object):
 
     def backup_settings(self, balt_):
         deprint(u'')
-        deprint(_(u'BACKUP BASH SETTINGS: ') + self._backup_dest_file.s)
+        deprint(u'BACKUP BASH SETTINGS: %s' % self._backup_dest_file)
         temp_settings_backup_dir = bolt.Path.tempDir()
         try:
             self._backup_settings(temp_settings_backup_dir)
@@ -255,7 +255,7 @@ class RestoreSettings(object):
 
     def _restore_settings(self, fsName, root_prefix, mods_folder):
         deprint(u'')
-        deprint(_(u'RESTORE BASH SETTINGS: ') + self._settings_file.s)
+        deprint(u'RESTORE BASH SETTINGS: %s' % self._settings_file)
         # backup previous Bash ini if it exists
         old_bash_ini = dirs['mopy'].join(u'bash.ini')
         self._timestamped_old = u''.join(

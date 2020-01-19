@@ -802,8 +802,8 @@ class RacePatcher(AMultiTweaker, ListPatcher):
                 # Don't complain if the FULL is missing, that probably means
                 # it's an internal or unused RACE
                 if record.full:
-                    deprint(_(u'No right and/or no left eye recorded in race '
-                              u'%s, from mod %s') % (record.full, modName))
+                    deprint(u'No right and/or no left eye recorded in race '
+                            u'%s, from mod %s' % (record.full, modName))
                 continue
             for eye in record.eyes:
                 if eye in srcEyes:
@@ -845,18 +845,16 @@ class RacePatcher(AMultiTweaker, ListPatcher):
             #-- Eye paths:
             if 'rightEye' in raceData:
                 if not race.rightEye:
-                    deprint(_(
-                        u'Very odd race %s found - no right eye assigned') %
-                            race.full)
+                    deprint(u'Very odd race %s found - no right eye '
+                            u'assigned' % race.full)
                 else:
                     if race.rightEye.modPath != raceData['rightEye'].modPath:
                         race.rightEye.modPath = raceData['rightEye'].modPath
                         raceChanged = True
             if 'leftEye' in raceData:
                 if not race.leftEye:
-                    deprint(_(
-                        u'Very odd race %s found - no left eye assigned') %
-                            race.full)
+                    deprint(u'Very odd race %s found - no left eye '
+                            u'assigned' % race.full)
                 else:
                     if race.leftEye.modPath != raceData['leftEye'].modPath:
                         race.leftEye.modPath = raceData['leftEye'].modPath

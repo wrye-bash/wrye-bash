@@ -151,7 +151,7 @@ class MasterInfo(object):
         return 30 if not self.mod_info else 0
 
     def __repr__(self):
-        return self.__class__.__name__ + u"<" + repr(self.curr_name) + u">"
+        return u'%s<%r>' % (self.__class__.__name__, self.curr_name)
 
 #------------------------------------------------------------------------------
 class FileInfo(AFile):
@@ -3342,22 +3342,22 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
         bass.settings = _load()
     except pickle.UnpicklingError as err:
         msg = _(
-            u"Error reading the Bash Settings database (the error is: '%s'). "
+            u"Error reading the Bash Settings database (the error is: '%r'). "
             u"This is probably not recoverable with the current file. Do you "
             u"want to try the backup BashSettings.dat? (It will have all your "
             u"UI choices of the time before last that you used Wrye Bash.")
-        usebck = balt.askYes(None, msg % repr(err), _(u"Settings Load Error"))
+        usebck = balt.askYes(None, msg % err, _(u"Settings Load Error"))
         if usebck:
             try:
                 bass.settings = _loadBakOrEmpty()
             except pickle.UnpicklingError as err:
                 msg = _(
                     u"Error reading the BackupBash Settings database (the "
-                    u"error is: '%s'). This is probably not recoverable with "
+                    u"error is: '%r'). This is probably not recoverable with "
                     u"the current file. Do you want to delete the corrupted "
                     u"settings and load Wrye Bash without your saved UI "
                     u"settings?. (Otherwise Wrye Bash won't start up)")
-                delete = balt.askYes(None, msg % repr(err),
+                delete = balt.askYes(None, msg % err,
                                      _(u"Settings Load Error"))
                 if delete: bass.settings = _loadBakOrEmpty(delBackup=True)
                 else:raise

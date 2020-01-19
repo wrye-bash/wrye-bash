@@ -98,7 +98,7 @@ try:
     bEnableWizard = True
 except ImportError:
     bEnableWizard = False
-    deprint(_(u"Error initializing installer wizards:"),traceback=True)
+    deprint(u'Error initializing installer wizards:', traceback=True)
 
 #  - Make sure that python root directory is in PATH, so can access dll's.
 if sys.prefix not in set(os.environ['PATH'].split(';')):
@@ -3126,7 +3126,7 @@ class InstallersPanel(BashTab):
                 except (CancelError, SkipError):
                     omodMoves.add(omod)
                 except:
-                    deprint(_(u"Error extracting OMOD '%s':") % omod.stail,
+                    deprint(u"Error extracting OMOD '%s':" % omod.stail,
                             traceback=True)
                     # Ensure we don't infinitely refresh if moving the omod
                     # fails
@@ -3633,9 +3633,10 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
                 _widget_to_panel[item.wx_id_] = item
             except:
                 if page == 'Mods':
-                    deprint(_(u"Fatal error constructing '%s' panel.") % title)
+                    deprint(u"Fatal error constructing '%s' panel." % title)
                     raise
-                deprint(_(u"Error constructing '%s' panel.") % title,traceback=True)
+                deprint(u"Error constructing '%s' panel." % title,
+                        traceback=True)
                 settings['bash.tabs.order'][page] = False
         #--Selection
         pageIndex = max(min(settings['bash.page'], self.GetPageCount() - 1), 0)
@@ -4121,7 +4122,7 @@ class BashFrame(WindowFrame):
             self.bind_refresh(bind=False)
             self.SaveSettings(destroy=True)
         except:
-                deprint(_(u'An error occurred while trying to save settings:'),
+                deprint(u'An error occurred while trying to save settings:',
                         traceback=True)
         finally:
             self.destroy_component()

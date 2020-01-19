@@ -593,8 +593,8 @@ class ContentsChecker(_AContentsChecker,Patcher):
         for cc_pass in bush.game.cc_passes:
             # Validate our pass syntax first
             if len(cc_pass) not in (2, 3):
-                raise RuntimeError(u'Unknown Contents Checker pass type %s' %
-                                   repr(cc_pass))
+                raise RuntimeError(u'Unknown Contents Checker pass type %r' %
+                                   cc_pass)
             # See explanation below (entry_fid definition)
             needs_entry_attr = len(cc_pass) == 3
             # First entry in the pass is always the record types this pass

@@ -112,8 +112,8 @@ class MelSet(object):
                 })
                 for attr in record.__slots__:
                     if hasattr(record, attr):
-                        bolt.deprint(u'> %s: %s' % (
-                            attr, repr(getattr(record, attr))))
+                        bolt.deprint(u'> %s: %r' % (
+                            attr, getattr(record, attr)))
                 raise
 
     def mapFids(self,record,mapper,save=False):

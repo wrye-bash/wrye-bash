@@ -744,7 +744,7 @@ class SaveSpells(object):
         modFile = ModFile(modInfo, loadFactory)
         try: modFile.load(True)
         except ModError as err:
-            deprint(_(u'skipped mod due to read error (%s)') % err)
+            deprint(u'skipped mod due to read error (%s)' % err)
             return
         modFile.convertToLongFids(('SPEL',))
         spells = modInfo.extras['bash.spellList'] = dict(

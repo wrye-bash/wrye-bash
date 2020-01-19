@@ -481,7 +481,7 @@ class _ListPatcherPanel(_PatcherPanel):
                 self.gList.lb_check_at_index(index, self.configChecks[item])
             except KeyError: # keys should be all bolt.Paths
                 pass
-                # bolt.deprint(_(u'item %s not in saved configs [%s]') % (
+                # bolt.deprint(u'item %s not in saved configs [%s]' % (
                 #     item, u', '.join(map(repr, self.configChecks))))
 
     def get_patcher_instance(self, patch_file):
@@ -752,8 +752,9 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 self.gTweakList.lb_check_at_index(index, tweakie.isEnabled)
                 self.gTweakList.lb_set_label_at_index(index, tweakie.getListLabel())
             except KeyError: pass # no such key don't spam the log
-            except: bolt.deprint(_(u'Error importing Bashed patch '
-                u'configuration. Item %s skipped.') % tweakie, traceback=True)
+            except: bolt.deprint(u'Error importing Bashed Patch '
+                                 u'configuration. Item %s skipped.' % tweakie,
+                                 traceback=True)
 
     def get_patcher_instance(self, patch_file):
         enabledTweaks = [t for t in self._all_tweaks if t.isEnabled]

@@ -474,9 +474,9 @@ class Settings_Deprint(CheckLink):
     def _check(self): return bolt.deprintOn
 
     def Execute(self):
-        deprint(_(u'Debug Printing: Off'))
+        deprint(u'Debug Printing: Off')
         bolt.deprintOn = not bolt.deprintOn
-        deprint(_(u'Debug Printing: On'))
+        deprint(u'Debug Printing: On')
 
 class Settings_DumpTranslator(AppendableLink, ItemLink):
     """Dumps new translation key file using existing key, value pairs."""

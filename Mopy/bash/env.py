@@ -192,7 +192,7 @@ def _get_default_app_icon(idex, target):
                     icon = test
                     break
     except: # TODO(ut) comment the code above - what exception can I get here?
-        deprint(_(u'Error finding icon for %s:') % target.s, traceback=True)
+        deprint(u'Error finding icon for %s:' % target, traceback=True)
         icon = u'not\\a\\path'
     return icon, idex
 
@@ -218,7 +218,7 @@ def _get_app_links(apps_dir):
                               # shortcut.WorkingDirectory, shortcut.Arguments,
                               description)
     except:
-        deprint(_(u"Error initializing links:"), traceback=True)
+        deprint(u'Error initializing links:', traceback=True)
     return links
 
 def init_app_links(apps_dir, badIcons, iconList):
