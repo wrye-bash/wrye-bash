@@ -229,8 +229,7 @@ class _APreserver(ImportPatcher):
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
-                    masterInfo = minfs[master]
-                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile = ModFile(minfs[master], loadFactory)
                     masterFile.load(True)
                     masterFile.convertToLongFids(longTypes)
                     cachedMasters[master] = masterFile
