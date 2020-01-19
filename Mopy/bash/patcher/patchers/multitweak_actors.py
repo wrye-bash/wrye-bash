@@ -91,8 +91,8 @@ class AMAONPCSkeletonPatcher(AMultiTweakItem):
         super(AMAONPCSkeletonPatcher, self).__init__(u'MAO Skeleton',
             (_(u'All NPCs'), 0), (_(u'Only Female NPCs'), 1),
             (_(u'Only Male NPCs'), 2))
-        self.logHeader = u'=== '+_(u'MAO Skeleton Setter')
-        self.logMsg = u'* '+_(u'Skeletons Tweaked') + u': %d'
+        self.logHeader = u'=== ' + _(u'MAO Skeleton Setter')
+        self.logMsg = u'* ' + _(u'Skeletons Tweaked: %d')
 
 class MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher,BasalNPCTweaker):
 
@@ -171,8 +171,8 @@ class AVORB_NPCSkeletonPatcher(AMultiTweakItem):
         super(AVORB_NPCSkeletonPatcher, self).__init__(u'VORB',
             (_(u'All NPCs'), 0), (_(u'Only Female NPCs'), 1),
             (_(u'Only Male NPCs'), 2))
-        self.logHeader = u'=== '+_(u"VadersApp's Oblivion Real Bodies")
-        self.logMsg = u'* '+_(u'Skeletons Tweaked') + u': %d'
+        self.logHeader = u'=== ' + _(u"VadersApp's Oblivion Real Bodies")
+        self.logMsg = u'* ' + _(u'Skeletons Tweaked: %d')
 
     @staticmethod
     def _initSkeletonCollections():
@@ -285,8 +285,8 @@ class AVanillaNPCSkeletonPatcher(AMultiTweakItem):
     def __init__(self):
         super(AVanillaNPCSkeletonPatcher, self).__init__(u'Vanilla Skeleton',
             (u'1.0', u'1.0'))
-        self.logHeader = u'=== '+_(u'Vanilla Beast Skeleton')
-        self.logMsg = u'* '+_(u'Skeletons Tweaked') + u': %d'
+        self.logHeader = u'=== ' + _(u'Vanilla Beast Skeleton')
+        self.logMsg = u'* ' + _(u'Skeletons Tweaked: %d')
 
 class VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,BasalNPCTweaker):
 
@@ -358,8 +358,8 @@ class ARedguardNPCPatcher(AMultiTweakItem):
     def __init__(self):
         super(ARedguardNPCPatcher, self).__init__(u'RedguardFGTSPatcher',
             (u'1.0', u'1.0'))
-        self.logHeader = u'=== '+_(u'Redguard FGTS Patcher')
-        self.logMsg = u'* '+_(u'Redguard NPCs Tweaked') + u': %d'
+        self.logHeader = u'=== ' + _(u'Redguard FGTS Patcher')
+        self.logMsg = u'* ' + _(u'Redguard NPCs Tweaked: %d')
 
 class RedguardNPCPatcher(ARedguardNPCPatcher,BasalNPCTweaker):
 
@@ -403,7 +403,7 @@ class ANoBloodCreaturesPatcher(AMultiTweakItem):
     def __init__(self):
         super(ANoBloodCreaturesPatcher, self).__init__(u'No bloody creatures',
             (u'1.0', u'1.0'))
-        self.logMsg = u'* '+_(u'Creatures Tweaked') + u': %d'
+        self.logMsg = u'* ' + _(u'Creatures Tweaked: %d')
 
 class NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,BasalCreatureTweaker):
 
@@ -451,7 +451,7 @@ class AAsIntendedImpsPatcher(AMultiTweakItem):
         super(AAsIntendedImpsPatcher, self).__init__(u'vicious imps!',
             (_(u'All imps'), u'all'), (_(u'Only fullsize imps'), u'big'),
             (_(u'Only implings'), u'small'))
-        self.logMsg = u'* '+_(u'Imps Tweaked') + u': %d'
+        self.logMsg = u'* ' + _(u'Imps Tweaked: %d')
 
 class AsIntendedImpsPatcher(AAsIntendedImpsPatcher,BasalCreatureTweaker):
 
@@ -526,7 +526,7 @@ class AAsIntendedBoarsPatcher(AMultiTweakItem):
     def __init__(self):
         super(AAsIntendedBoarsPatcher, self).__init__(u'vicious boars!',
             (u'1.0', u'1.0'))
-        self.logMsg = u'* '+_(u'Boars Tweaked') + u': %d'
+        self.logMsg = u'* ' + _(u'Boars Tweaked: %d')
 
 class AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,BasalCreatureTweaker):
 
@@ -588,7 +588,7 @@ class ASWALKNPCAnimationPatcher(AMultiTweakItem):
     def __init__(self):
         super(ASWALKNPCAnimationPatcher, self).__init__(u'Mur Zuk SWalk',
             (u'1.0', u'1.0'))
-        self.logMsg = u'* '+_(u'NPCs Tweaked') + u' :%d'
+        self.logMsg = u'* ' + _(u'NPCs Tweaked: %d')
 
 class SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,BasalNPCTweaker):
 
@@ -627,7 +627,7 @@ class ARWALKNPCAnimationPatcher(AMultiTweakItem):
     def __init__(self):
         super(ARWALKNPCAnimationPatcher, self).__init__(u'Mur Zuk RWalk',
             (u'1.0', u'1.0'))
-        self.logMsg = u'* '+_(u'NPCs Tweaked') + u': %d'
+        self.logMsg = u'* ' + _(u'NPCs Tweaked: %d')
 
 class RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,BasalNPCTweaker):
 
@@ -669,7 +669,7 @@ class AQuietFeetPatcher(AMultiTweakItem):
             (_(u'All Creature Foot Sounds'), u'all'),
             (_(u'Only 4 Legged Creature Foot Sounds'), u'partial'),
             (_(u'Only Mount Foot Sounds'), u'mounts'))
-        self.logMsg = u'* '+_(u'Creatures Tweaked') + u': %d'
+        self.logMsg = u'* ' + _(u'Creatures Tweaked: %d')
 
 class QuietFeetPatcher(AQuietFeetPatcher,BasalCreatureTweaker):
 
@@ -742,7 +742,7 @@ class AIrresponsibleCreaturesPatcher(AMultiTweakItem):
             u'whatbadguarddogs',
             (_(u'All Creatures'), u'all'),
             (_(u'Only Horses'), u'mounts'))
-        self.logMsg = u'* '+_(u'Creatures Tweaked') + u': %d'
+        self.logMsg = u'* ' + _(u'Creatures Tweaked: %d')
 
 class IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,
                                     BasalCreatureTweaker):
@@ -797,7 +797,7 @@ class _AOppositeGenderAnimsPatcher(BasalNPCTweaker):
             (_(u'Always Disable'), u'disable_all'),
             (_(u'Always Enable'), u'enable_all'),
         )
-        self.logMsg = u'* '+_(u'NPCs Tweaked') + u': %d'
+        self.logMsg = u'* ' + _(u'NPCs Tweaked: %d')
 
     def buildPatch(self, log, progress, patchFile):
         tweaked_count = Counter()

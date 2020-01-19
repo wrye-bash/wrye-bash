@@ -48,8 +48,7 @@ class GlobalsTweak(DynamicNamedTweak, MultiTweakItem):
                         record.value = value
                         keep(record.fid)
                     break
-        log(u'* ' + _(u'%(label)s set to') % {
-            'label': (u'%s ' % self.tweak_name)} + (u': %4.2f' % value))
+        log(u'* ' + _(u'%s set to: %4.2f') % (self.tweak_name, value))
 
 class CBash_GlobalsTweak(DynamicNamedTweak, CBash_MultiTweakItem):
     """Sets a global to specified value"""
@@ -75,8 +74,8 @@ class CBash_GlobalsTweak(DynamicNamedTweak, CBash_MultiTweakItem):
     def buildPatchLog(self,log):
         """Will write to log."""
         #--Log
-        if self.count: log(u'* ' + _(u'%(label)s set to') % {
-            'label': (u'%s ' % self.tweak_name)} + (u': %4.2f' % self.value))
+        if self.count: log(u'* ' + _(u'%s set to: %4.2f') % (
+            self.tweak_name, self.value))
 
 #------------------------------------------------------------------------------
 class GmstTweak(DynamicNamedTweak, MultiTweakItem):

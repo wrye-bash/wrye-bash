@@ -125,8 +125,7 @@ class CBash_NamesTweak_Body(DynamicNamedTweak, CBash_MultiTweakItem):
     def __init__(self, tweak_name, tweak_tip, key, *choices, **kwargs):
         super(CBash_NamesTweak_Body, self).__init__(tweak_name, tweak_tip, key,
                                                     *choices, **kwargs)
-        self.logMsg = u'* ' + _(u'%(record_type)s Renamed') % {
-            'record_type': (u'%s ' % self.key)} + u': %d'
+        self.logMsg = u'* ' + _(u'{} Renamed: %d').format(self.key)
 
     def getTypes(self):
         return [self.key]
@@ -175,8 +174,7 @@ class _ANamesTweak_Potions(AMultiTweakItem):
         super(_ANamesTweak_Potions, self).__init__(u'ALCH', # key, not sig!
             (_(u'XD Illness'), u'%s '), (_(u'XD. Illness'), u'%s. '),
             (_(u'XD - Illness'), u'%s - '), (_(u'(XD) Illness'), u'(%s) '))
-        self.logMsg = u'* ' + _(u'%(record_type)s Renamed') % {
-            'record_type': (u'%s ' % self.key)} + u': %d'
+        self.logMsg = u'* ' + _(u'{} Renamed: %d').format(self.key)
 
 class NamesTweak_Potions(_ANamesTweak_Potions, _AMultiTweakItem_Names):
 
@@ -286,7 +284,7 @@ class _ANamesTweak_Scrolls(AMultiTweakItem):
             (_(u'.Fire Ball'), u'.'), (_(u'.D Fire Ball'), u'.%s '),
             (_(u'.D. Fire Ball'), u'.%s. '), (_(u'.D - Fire Ball'), u'.%s - '),
             (_(u'.(D) Fire Ball'), u'.(%s) '))
-        self.logMsg = u'* ' + _(u'Items Renamed') + u': %d'
+        self.logMsg = u'* ' + _(u'Items Renamed: %d')
 
     def save_tweak_config(self, configs):
         """Save config to configs dictionary."""
@@ -416,7 +414,7 @@ class _ANamesTweak_Spells(AMultiTweakItem):
             (_(u'D2 - Fire Ball'),u'%s%d - '),
             (_(u'(D2) Fire Ball'),u'(%s%d) '),
             )
-        self.logMsg = u'* '+_(u'Spells Renamed') + u': %d'
+        self.logMsg = u'* '+_(u'Spells Renamed: %d')
 
 class NamesTweak_Spells(_ANamesTweak_Spells, _AMultiTweakItem_Names):
 
@@ -521,7 +519,7 @@ class _ANamesTweak_Weapons(AMultiTweakItem):
             (_(u'B08 - Iron Bow'),u'%s%02d - '),
             (_(u'(B08) Iron Bow'),u'(%s%02d) '),
             )
-        self.logMsg = u'* '+_(u'Items Renamed') + u': %d'
+        self.logMsg = u'* '+_(u'Items Renamed: %d')
 
 class NamesTweak_Weapons(_ANamesTweak_Weapons, _AMultiTweakItem_Names):
 
@@ -609,7 +607,7 @@ class _ATextReplacer(DynamicNamedTweak):
         super(_ATextReplacer, self).__init__(label, tweak_tip, key, choices)
         self.reMatch = reMatch
         self.reReplace = reReplace
-        self.logMsg = u'* '+_(u'Items Renamed') + u': %d'
+        self.logMsg = u'* '+_(u'Items Renamed: %d')
 
 class TextReplacer(_ATextReplacer, _AMultiTweakItem_Names):
 
@@ -890,21 +888,21 @@ class _ANamesTweaker(AMultiTweaker):
                          (_(u'P - Grey Trousers'),u'%s - '),
                          (_(u'(P) Grey Trousers'),u'(%s) '),),)
     _txtReplacer = ((u'' r'\b(d|D)(?:warven|warf)\b', u'' r'\1wemer',
-                     _(u"Lore Friendly Text: Dwarven -> Dwemer"),
-                     _(u'Replace any occurrences of the words "Dwarf" or'
-                       u' "Dwarven" with "Dwemer" to better follow lore.'),
+                     _(u'Lore Friendly Text: Dwarven -> Dwemer'),
+                     _(u'Replace any occurrences of the word "dwarf" or '
+                       u'"dwarven" with "dwemer" to better follow lore.'),
                      u'Dwemer',
                      (u'Lore Friendly Text: Dwarven -> Dwemer', u'Dwemer'),),
                     (u'' r'\b(d|D)(?:warfs)\b', u'' r'\1warves',
-                     _(u"Proper English Text: Dwarfs -> Dwarves"),
-                     _(u'Replace any occurrences of the words "Dwarfs" with '
-                       u'"Dwarves" to better follow proper English.'),
+                     _(u'Proper English Text: Dwarfs -> Dwarves'),
+                     _(u'Replace any occurrences of the word "dwarfs" with '
+                       u'"dwarves" to better follow proper English.'),
                      u'Dwarfs',
                      (u'Proper English Text: Dwarfs -> Dwarves', u'Dwarves'),),
                     (u'' r'\b(s|S)(?:taffs)\b', u'' r'\1taves',
-                     _(u"Proper English Text: Staffs -> Staves"),
-                     _(u'Replace any occurrences of the words "Staffs" with'
-                       u' "Staves" to better follow proper English.'),
+                     _(u'Proper English Text: Staffs -> Staves'),
+                     _(u'Replace any occurrences of the word "staffs" with '
+                       u'"staves" to better follow proper English.'),
                      u'Staffs',
                     (u'Proper English Text: Staffs -> Staves', u'Staves'),),)
 

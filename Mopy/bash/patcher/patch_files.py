@@ -311,7 +311,7 @@ class PatchFile(_PFile, ModFile):
         numRecords = sum([x.getNumRecords(False) for x in self.tops.values()])
         self.tes4.description = (
                 _(u'Updated: ') + format_date(time.time()) + u'\n\n' + _(
-                u'Records Changed') + u': %d' % numRecords)
+                u'Records Changed: %d') % numRecords)
         # Flag as ESL if the game supports them and the option is enabled
         # Note that we can always safely mark as ESL, since the BP only ever
         # contains overrides, no new records
@@ -620,4 +620,4 @@ class CBash_PatchFile(_PFile, ObModFile):
         numRecords = sum([len(x) for x in self.aggregates.values()])
         self.TES4.description = (
                 _(u"Updated: %s") % format_date(time.time()) + u'\n\n' + _(
-                u'Records Changed') + u': %d' % numRecords)
+            u'Records Changed: %d') % numRecords)

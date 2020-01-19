@@ -407,7 +407,7 @@ class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
             entries = mod_count_old_new[mod]
             log(u'\n=== %s' % mod.s)
             entries.sort(key=itemgetter(1))
-            log(u'  * '+_(u'Updated References') + u': %d' % sum([count for count, old, new in entries]))
+            log(u'  * '+_(u'Updated References: %d') % sum([count for count, old, new in entries]))
             log(u'\n'.join([u'    * %3d %s >> %s' % entry for entry in entries if entry[0] > 0]))
 
         self.old_new = {} #--Maps old fid to new fid
