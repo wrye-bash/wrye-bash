@@ -573,7 +573,7 @@ class _DDSHeaderDXT10(object):
     """A DDS DXT10 header, contains a pixel format."""
     __slots__ = (u'dxgi_format', u'resource_dimension', u'misc_flag',
                  u'array_size', u'misc_flags2')
-    _dump_dxt10 = Struct(u'=5I')
+    _dump_dxt10 = Struct(u'=5I').pack
 
     def __init__(self):
         """Initializes every field in the header to its default value."""

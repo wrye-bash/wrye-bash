@@ -1135,18 +1135,13 @@ class AAssortedTweak_HarvestChance(AMultiTweakItem):
 class AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,MultiTweakItem):
 
     def scanModFile(self,modFile,progress,patchFile):
+        modFile.convertToLongFids(self.tweak_read_classes)
         chance = self.choiceValues[self.chosen][0]
-        mapper = modFile.getLongMapper()
         patchBlock = patchFile.FLOR
         id_records = patchBlock.id_records
         for record in modFile.FLOR.getActiveRecords():
-            if record.eid.startswith('Nirnroot'): continue #skip Nirnroots
-            if mapper(record.fid) in id_records: continue
-            for attr in ['spring','summer','fall','winter']:
-                if getattr(record,attr) != chance:
-                    record = record.getTypeCopy(mapper)
-                    patchBlock.setRecord(record)
-                    break
+            if record.fid not in id_records:
+                patchBlock.setRecord(record.getTypeCopy())
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
@@ -1154,10 +1149,15 @@ class AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,MultiTweakItem):
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.FLOR.records:
-            record.spring, record.summer, record.fall, record.winter = \
-                chance, chance, chance, chance
-            keep(record.fid)
-            count[record.fid[0]] += 1
+            if record.eid.startswith(u'Nirnroot'): continue # skip Nirnroots
+            chances_changed = False
+            for attr in (u'spring', u'summer', u'fall', u'winter'):
+                if getattr(record, attr) != chance:
+                    setattr(record, attr, chance)
+                    chances_changed = True
+            if chances_changed:
+                keep(record.fid)
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,
