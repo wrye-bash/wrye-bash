@@ -268,8 +268,7 @@ class SkyrimSaveHeader(SaveFileHeader):
     def _decompress_masters_sse_zlib(ins):
         decompressed_size = unpack_int(ins)
         compressed_size = unpack_int(ins)
-        decompressed_data = zlib.decompress(ins.read(compressed_size),
-                                            bufsize=decompressed_size)
+        decompressed_data = zlib.decompress(ins.read(compressed_size))
         if len(decompressed_data) != decompressed_size:
             raise SaveHeaderError(_(u'zlib-decompressed header size incorrect '
                                     u'- expected %u, but got %u.') %
