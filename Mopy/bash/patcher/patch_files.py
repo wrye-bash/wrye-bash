@@ -234,7 +234,7 @@ class PatchFile(_PFile, ModFile):
                 if bush.game.fsName == u'Oblivion' and 'SCPT' in \
                         modFile.tops and modName != GPath(u'Oblivion.esm'):
                     gls = modFile.SCPT.getRecord(0x00025811)
-                    if gls and gls.compiledSize == 4 and gls.lastIndex == 0:
+                    if gls and gls.compiled_size == 4 and gls.last_index == 0:
                         self.compiledAllMods.append(modName)
                 pstate = index+0.5
                 isMerged = modName in self.mergeSet
