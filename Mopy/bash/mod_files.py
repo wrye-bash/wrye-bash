@@ -261,7 +261,8 @@ class ModFile(object):
                         # e.g. Mod_FullLoad
                         raise
                 subProgress(insTell())
-        #--Done Reading
+        # Done reading - convert to long FormIDs at the IO boundary
+        self._convert_fids(to_long=True)
 
     def askSave(self,hasChanged=True):
         """CLI command. If hasSaved, will ask if user wants to save the file,
@@ -290,6 +291,8 @@ class ModFile(object):
         """Save data to file.
         outPath -- Path of the output file to write to. Defaults to original file path."""
         if not self.loadFactory.keepAll: raise StateError(u"Insufficient data to write file.")
+        # Convert back to short FormIDs at the IO boundary
+        self._convert_fids(to_long=False)
         outPath = outPath or self.fileInfo.getPath()
         # Too many masters is fatal and results in cryptic struct errors, so
         # loudly complain about it here
@@ -314,22 +317,21 @@ class ModFile(object):
         maxMaster = len(masters)-1
         def mapper(fid):
             if fid is None: return None
-            if isinstance(fid,tuple): return fid
+            if type(fid) is tuple: return fid
             mod,object = int(fid >> 24),int(fid & 0xFFFFFF)
-            return masters[min(mod,maxMaster)],object
+            return masters[min(mod, maxMaster)], object # clamp HITMEs
         return mapper
 
     def getShortMapper(self):
         """Returns a mapping function to map long fids to short fids."""
         masters = self.tes4.masters + [self.fileInfo.name]
         indices = {name: index for index, name in enumerate(masters)}
-        gLong = self.getLongMapper()
         has_expanded_range = bush.game.Esp.expanded_plugin_range
         if (has_expanded_range and len(masters) > 1
                 and self.tes4.version >= 1.0):
             # Plugin has at least one master, it may freely use the
             # expanded (0x000-0x800) range
-            def _master_index(m_name, obj_id):
+            def _master_index(m_name, _obj_id):
                 return indices[m_name]
         else:
             # 0x000-0x800 are reserved for hardcoded (engine) records
@@ -337,40 +339,18 @@ class ModFile(object):
                 return indices[m_name] if obj_id >= 0x800 else 0
         def mapper(fid):
             if fid is None: return None
-            ##: #312: drop this once convertToLongFids is auto-applied
-            if isinstance(fid, (int, long)): # PY3: just int here
-                fid = gLong(fid)
+            if isinstance(fid, (int, long)): return fid # PY3: just int
             modName, object_id = fid
             return (_master_index(modName, object_id) << 24) | object_id
         return mapper
 
-    ##: Ideally we'd encapsulate all the long/short fid handling in load/save
-    def _convert_fids(self, target_types, mapper, to_long):
-        """Convert fids using the target mapper and the specified format - long
-        FormIDs if to_long is True, short FormIDs otherwise."""
-        if target_types is None:
-            target_types = self.tops.keys()
-        else:
-            assert isinstance(target_types, (list, tuple, set))
-        for target_type in target_types:
-            if target_type in self.tops:
-                self.tops[target_type].convertFids(mapper, to_long)
+    def _convert_fids(self, to_long):
+        """Convert fids to the specified format - long FormIDs if to_long is
+        True, short FormIDs otherwise."""
+        mapper = self.getLongMapper() if to_long else self.getShortMapper()
+        for target_top in self.tops.itervalues():
+            target_top.convertFids(mapper, to_long)
         self.longFids = to_long
-
-    def convertToLongFids(self, target_types=None):
-        """Convert fids to long format (mod name, object index).
-
-        :type target_types: list[str] | tuple[str] | set[str]"""
-        self._convert_fids(target_types, self.getLongMapper(), to_long=True)
-
-    def convertToShortFids(self):
-        """Convert fids to short (numeric) format. Has no types parameter,
-        since this function is only needed when writing out - so the IO
-        operations would dwarf any performance improvement gained from the
-        types parameter.
-
-        :type target_types: list[str] | tuple[str] | set[str]"""
-        self._convert_fids(None, self.getShortMapper(), to_long=False)
 
     def getMastersUsed(self):
         """Updates set of master names according to masters actually used."""

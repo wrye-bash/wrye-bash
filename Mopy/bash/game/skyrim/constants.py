@@ -2259,12 +2259,6 @@ statsHeaders = (
 #------------------------------------------------------------------------------
 # SoundPatcher
 #------------------------------------------------------------------------------
-# Needs longs in SoundPatcher
-soundsLongsTypes = {'ACTI', 'ADDN', 'ALCH', 'AMMO', 'APPA', 'ARMA', 'ARMO',
-                    'ASPC', 'BOOK', 'CONT', 'DOOR', 'EFSH', 'EXPL', 'FLOR',
-                    'HAZD', 'INGR', 'IPCT', 'KEYM', 'LIGH', 'MGEF', 'MISC',
-                    'MSTT', 'SCRL', 'SLGM', 'SNCT', 'SNDR', 'SOPM', 'SOUN',
-                    'TACT', 'TREE', 'WATR', 'WEAP', 'WTHR'}
 soundsTypes = {
     b'ACTI': (u'soundLooping', u'soundActivation'),
     "ADDN": ('ambientSound',),
@@ -2472,7 +2466,6 @@ keywords_types = ('ACTI', 'ALCH', 'AMMO', 'ARMO', 'BOOK', 'FLOR', 'FURN',
 #------------------------------------------------------------------------------
 # Text Patcher
 #------------------------------------------------------------------------------
-text_long_types = set()
 text_types = {
     b'ACTI': (u'activate_text_override',),
     b'ALCH': (u'description',),

@@ -439,8 +439,7 @@ class MreRecord(object):
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
         toLong should be True if converting to long format or False if converting to short format."""
-        raise exception.AbstractError(u'convertFids called on skipped type '
-                                      u'%s' % self.recType)
+        self.fid = mapper(self.fid)
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""

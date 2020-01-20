@@ -752,10 +752,6 @@ statsHeaders = (
 #------------------------------------------------------------------------------
 # SoundPatcher
 #------------------------------------------------------------------------------
-# Needs longs in SoundPatcher
-soundsLongsTypes = {'ACTI', 'ADDN', 'ALCH', 'ASPC', 'COBJ', 'CONT', 'CREA',
-                    'DOOR', 'EXPL', 'IPCT', 'LIGH', 'MGEF', 'PROJ', 'SOUN',
-                    'TACT', 'WATR', 'WEAP', 'WTHR'}
 soundsTypes = {
     "ACTI": ('soundLooping','soundActivation',),
     "ADDN": ('ambientSound',),
@@ -936,7 +932,6 @@ inventoryTypes = ('CREA','NPC_','CONT',)
 #------------------------------------------------------------------------------
 # Text Patcher
 #------------------------------------------------------------------------------
-text_long_types = {'NOTE',}
 text_types = {
     b'AVIF': (u'description',),
     b'BOOK': (u'text',),

@@ -457,8 +457,6 @@ class GameInfo(object):
     #--------------------------------------------------------------------------
     # SoundPatcher
     #--------------------------------------------------------------------------
-    # Needs longs in SoundPatcher
-    soundsLongsTypes = set()  # initialize with literal
     soundsTypes = {}
 
     #--------------------------------------------------------------------------
@@ -495,7 +493,6 @@ class GameInfo(object):
     #--------------------------------------------------------------------------
     # Text Patcher
     #--------------------------------------------------------------------------
-    text_long_types = set()
     text_types = {}
 
     #--------------------------------------------------------------------------
@@ -627,7 +624,7 @@ class GameInfo(object):
         u'record_type_name', u'relations_attrs', u'relations_csv_header',
         u'relations_csv_row_format', u'save_rec_types', u'scripts_types',
         u'soundsLongsTypes', u'soundsTypes', u'spell_stats_attrs',
-        u'statsHeaders', u'statsTypes', u'text_long_types', u'text_types',
+        u'statsHeaders', u'statsTypes', u'text_types',
     }
 
     @classmethod

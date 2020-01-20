@@ -628,7 +628,6 @@ class AssortedTweak_FogFix(AAssortedTweak_FogFix,MultiTweakItem):
         """Add lists from modFile."""
         if 'CELL' not in modFile.tops: return
         patchCells = patchFile.CELL
-        modFile.convertToLongFids(('CELL',))
         for cellBlock in modFile.CELL.cellBlocks:
             cell = cellBlock.cell
             if not (cell.fogNear or cell.fogFar or cell.fogClip):
@@ -1052,16 +1051,12 @@ class AssortedTweak_ScriptEffectSilencer(AAssortedTweak_ScriptEffectSilencer,
                                          MultiTweakItem):
 
     def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
         patchBlock = patchFile.MGEF
         id_records = patchBlock.id_records
-        modFile.convertToLongFids(('MGEF',))
         for record in modFile.MGEF.getActiveRecords():
-            fid = record.fid
-            if not record.longFids: fid = mapper(fid)
-            if fid in id_records: continue
+            if record.fid in id_records: continue
             if record.eid != 'SEFF': continue
-            patchBlock.setRecord(record.getTypeCopy(mapper))
+            patchBlock.setRecord(record.getTypeCopy())
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
@@ -1132,7 +1127,6 @@ class AAssortedTweak_HarvestChance(AMultiTweakItem):
 class AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,MultiTweakItem):
 
     def scanModFile(self,modFile,progress,patchFile):
-        modFile.convertToLongFids(self.tweak_read_classes)
         chance = self.choiceValues[self.chosen][0]
         patchBlock = patchFile.FLOR
         id_records = patchBlock.id_records

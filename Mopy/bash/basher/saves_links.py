@@ -878,6 +878,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                 subProgress(index,_(u'Scanning ') + modName.s)
                 modInfo = bosh.modInfos[modName]
                 modFile = ModFile(modInfo, loadFactory)
+                short_mapper = modFile.getShortMapper()
                 try:
                     modFile.load(True)
                 except ModError as x:
@@ -888,7 +889,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                 mapToOrdered = MasterMap(modFile.tes4.masters + [modName],
                                          ordered)
                 for npc in modFile.NPC_.getActiveRecords():
-                    fid = mapToOrdered(npc.fid,None)
+                    fid = mapToOrdered(short_mapper(npc.fid), None)
                     if not fid: continue
                     npc_info[fid] = (npc.eid, npc.level, npc.calcMin, npc.calcMax, npc.flags.pcLevelOffset)
             #--Loop over savefiles

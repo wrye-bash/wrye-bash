@@ -133,7 +133,6 @@ class _PListsMerger(_AListsMerger, ListPatcher):
     def scanModFile(self, modFile, progress):
         #--Begin regular scan
         sc_name = modFile.fileInfo.name
-        modFile.convertToLongFids(self._read_write_records)
         #--PreScan for later Relevs/Delevs?
         if sc_name in self.de_masters:
             for list_type in self._read_write_records:
@@ -555,7 +554,6 @@ class ContentsChecker(_AContentsChecker,Patcher):
 
     def scanModFile(self, modFile, progress):
         """Scan modFile."""
-        modFile.convertToLongFids(self.contTypes | self.entryTypes)
         # First, map fids to record type for all records for the valid record
         # types. We need to know if a given fid belongs to one of the valid
         # types, otherwise we want to remove it.

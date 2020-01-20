@@ -202,10 +202,8 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
     def scanModFile(self,modFile,progress):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
-        mapper = modFile.getLongMapper()
         patchCells = self.patchFile.CELL
         patchWorlds = self.patchFile.WRLD
-        modFile.convertToLongFids(('CELL','WRLD','REFR','ACRE','ACHR'))
 ##        for type in MreRecord.simpleTypes:
 ##            for record in getattr(modFile,type).getActiveRecords():
 ##                record = record.getTypeCopy(mapper)

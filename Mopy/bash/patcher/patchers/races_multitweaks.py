@@ -76,13 +76,12 @@ class RaceTweaker_BiggerOrcsAndNords(ARaceTweaker_BiggerOrcsAndNords,
     """Adjusts the Orc and Nord race records to be taller/heavier."""
 
     def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
         for record in modFile.RACE.getActiveRecords():
             if not record.full: continue
             if not u'orc' in record.full.lower() and not u'nord' in \
                     record.full.lower(): continue
-            record = record.getTypeCopy(mapper)
+            record = record.getTypeCopy()
             patchRecords.setRecord(record)
 
     def buildPatch(self, progress, patchFile, extra_):
@@ -158,11 +157,10 @@ class RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,
                                         MultiTweakItem):
 
     def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
         for record in modFile.RACE.getActiveRecords():
             if not record.full: continue
-            patchRecords.setRecord(record.getTypeCopy(mapper))
+            patchRecords.setRecord(record.getTypeCopy())
 
     def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
@@ -278,11 +276,10 @@ class RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,
                                        MultiTweakItem):
 
     def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
         for record in modFile.RACE.getActiveRecords():
             if not record.full: continue
-            patchRecords.setRecord(record.getTypeCopy(mapper))
+            patchRecords.setRecord(record.getTypeCopy())
 
     def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
@@ -397,10 +394,9 @@ class ARaceTweaker_AllHairs(_ARaceTweakItem):
 class RaceTweaker_AllHairs(ARaceTweaker_AllHairs,MultiTweakItem):
 
     def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
         for record in modFile.RACE.getActiveRecords():
-            patchRecords.setRecord(record.getTypeCopy(mapper))
+            patchRecords.setRecord(record.getTypeCopy())
 
     def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
@@ -439,10 +435,9 @@ class ARaceTweaker_AllEyes(_ARaceTweakItem):
 class RaceTweaker_AllEyes(ARaceTweaker_AllEyes,MultiTweakItem):
 
     def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
         for record in modFile.RACE.getActiveRecords():
-            patchRecords.setRecord(record.getTypeCopy(mapper))
+            patchRecords.setRecord(record.getTypeCopy())
 
     def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
@@ -483,11 +478,10 @@ class ARaceTweaker_PlayableEyes(AMultiTweakItem):
 class RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,MultiTweakItem):
 
     def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
         patchRecords = patchFile.EYES
         for record in modFile.EYES.getActiveRecords():
             if record.flags.playable: continue
-            patchRecords.setRecord(record.getTypeCopy(mapper))
+            patchRecords.setRecord(record.getTypeCopy())
 
     def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
@@ -529,11 +523,10 @@ class ARaceTweaker_PlayableHairs(AMultiTweakItem):
 class RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,MultiTweakItem):
 
     def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
         patchRecords = patchFile.HAIR
         for record in modFile.HAIR.getActiveRecords():
             if record.flags.playable: continue
-            patchRecords.setRecord(record.getTypeCopy(mapper))
+            patchRecords.setRecord(record.getTypeCopy())
 
     def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
@@ -575,11 +568,10 @@ class ARaceTweaker_SexlessHairs(AMultiTweakItem):
 class RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,MultiTweakItem):
 
     def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
         patchRecords = patchFile.HAIR
         for record in modFile.HAIR.getActiveRecords():
             if record.flags.notMale or record.flags.notFemale:
-                patchRecords.setRecord(record.getTypeCopy(mapper))
+                patchRecords.setRecord(record.getTypeCopy())
 
     def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
@@ -671,7 +663,6 @@ class RacePatcher(AMultiTweaker, ListPatcher):
             srcFile.load(True)
             bashTags = srcInfo.getBashTags()
             if 'RACE' not in srcFile.tops: continue
-            srcFile.convertToLongFids(('RACE',))
             self.tempRaceData = {} #so as not to carry anything over!
             if u'R.ChangeSpells' in bashTags and u'R.AddSpells' in bashTags:
                 raise BoltError(
@@ -747,7 +738,6 @@ class RacePatcher(AMultiTweaker, ListPatcher):
                     masterFile = ModFile(masterInfo,loadFactory)
                     masterFile.load(True)
                     if 'RACE' not in masterFile.tops: continue
-                    masterFile.convertToLongFids(('RACE',))
                     cachedMasters[master] = masterFile
                 for race in masterFile.RACE.getActiveRecords():
                     if race.fid not in self.tempRaceData: continue
@@ -770,9 +760,7 @@ class RacePatcher(AMultiTweaker, ListPatcher):
         races_data = self.races_data
         eye_mesh = self.eye_mesh
         modName = modFile.fileInfo.name
-        mapper = modFile.getLongMapper()
         if not (set(modFile.tops) & self.scanTypes): return
-        modFile.convertToLongFids(('RACE','EYES','HAIR','NPC_'))
         srcEyes = set(
             [record.fid for record in modFile.EYES.getActiveRecords()])
         #--Eyes, Hair
@@ -782,19 +770,19 @@ class RacePatcher(AMultiTweaker, ListPatcher):
             for record in getattr(modFile,type).getActiveRecords():
                 races_data[type].append(record.fid)
                 if record.fid not in id_records:
-                    patchBlock.setRecord(record.getTypeCopy(mapper))
+                    patchBlock.setRecord(record.getTypeCopy())
         #--Npcs with unassigned eyes
         patchBlock = self.patchFile.NPC_
         id_records = patchBlock.id_records
         for record in modFile.NPC_.getActiveRecords():
             if not record.eye and record.fid not in id_records:
-                patchBlock.setRecord(record.getTypeCopy(mapper))
+                patchBlock.setRecord(record.getTypeCopy())
         #--Race block
         patchBlock = self.patchFile.RACE
         id_records = patchBlock.id_records
         for record in modFile.RACE.getActiveRecords():
             if record.fid not in id_records:
-                patchBlock.setRecord(record.getTypeCopy(mapper))
+                patchBlock.setRecord(record.getTypeCopy())
             if not record.rightEye or not record.leftEye:
                 # Don't complain if the FULL is missing, that probably means
                 # it's an internal or unused RACE

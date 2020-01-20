@@ -93,15 +93,13 @@ class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
         """Scans specified mod file to extract info. May add record to patch
         mod, but won't alter it."""
         id_ingred = self.id_ingred
-        mapper = modFile.getLongMapper()
         for record in modFile.INGR.getActiveRecords():
             if not record.full: continue #--Ingredient must have name!
             if record.obme_record_version is not None:
                 continue ##: Skips OBME records - rework to support them
             effects = record.getEffects()
             if not ('SEFF',0) in effects:
-                id_ingred[mapper(record.fid)] = (
-                    record.eid, record.full, effects)
+                id_ingred[record.fid] = (record.eid, record.full, effects)
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""
@@ -427,13 +425,11 @@ class CoblExhaustion(_ACoblExhaustion,ListPatcher):
             progress.plus()
 
     def scanModFile(self,modFile,progress):
-        mapper = modFile.getLongMapper()
         patchRecords = self.patchFile.SPEL
         for record in modFile.SPEL.getActiveRecords():
             if not record.spellType == 2: continue
-            record = record.getTypeCopy(mapper)
             if record.fid in self.id_exhaustion:
-                patchRecords.setRecord(record)
+                patchRecords.setRecord(record.getTypeCopy())
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""
@@ -579,18 +575,14 @@ class MFactMarker(_AMFactMarker,ListPatcher):
     def scanModFile(self, modFile, progress):
         """Scan modFile."""
         id_info = self.id_info
-        mapper = modFile.getLongMapper()
         patchBlock = self.patchFile.FACT
         if modFile.fileInfo.name == _cobl_main:
-            modFile.convertToLongFids(('FACT',))
             record = modFile.FACT.getRecord(self.mFactLong)
             if record:
                 patchBlock.setRecord(record.getTypeCopy())
         for record in modFile.FACT.getActiveRecords():
-            rec_fid = record.fid
-            if not record.longFids: rec_fid = mapper(rec_fid)
-            if rec_fid in id_info:
-                patchBlock.setRecord(record.getTypeCopy(mapper))
+            if record.fid in id_info:
+                patchBlock.setRecord(record.getTypeCopy())
 
     def buildPatch(self,log,progress):
         """Make changes to patchfile."""
@@ -745,27 +737,23 @@ class SEWorldEnforcer(_ASEWorldEnforcer,Patcher):
             modInfo = self.patchFile.p_file_minfos[_ob_path]
             modFile = ModFile(modInfo,loadFactory)
             modFile.load(True)
-            mapper = modFile.getLongMapper()
             for record in modFile.QUST.getActiveRecords():
                 for condition in record.conditions:
                     if condition.ifunc == 365 and condition.compValue == 0:
-                        self.cyrodiilQuests.add(mapper(record.fid))
+                        self.cyrodiilQuests.add(record.fid)
                         break
         self.isActive = bool(self.cyrodiilQuests)
 
     def scanModFile(self,modFile,progress):
         if modFile.fileInfo.name == _ob_path: return
         cyrodiilQuests = self.cyrodiilQuests
-        mapper = modFile.getLongMapper()
         patchBlock = self.patchFile.QUST
         for record in modFile.QUST.getActiveRecords():
-            fid = mapper(record.fid)
-            if fid not in cyrodiilQuests: continue
+            if record.fid not in cyrodiilQuests: continue
             for condition in record.conditions:
                 if condition.ifunc == 365: break #--365: playerInSeWorld
             else:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
+                patchBlock.setRecord(record.getTypeCopy())
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""

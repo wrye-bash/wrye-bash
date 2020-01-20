@@ -257,7 +257,6 @@ class PatchFile(_PFile, ModFile):
 
     def mergeModFile(self, modFile, doFilter, iiMode):
         """Copies contents of modFile into self."""
-        modFile.convertToLongFids()
         def add_to_factories(merged_sig):
             """Makes sure that once we merge a record type, all later plugin
             loads will load that record type too so that we can update the
@@ -276,16 +275,13 @@ class PatchFile(_PFile, ModFile):
     def update_patch_records_from_mod(self, modFile):
         """Scans file and overwrites own records with modfile records."""
         #--Keep all MGEFs
-        modFile.convertToLongFids(('MGEF',))
-        if 'MGEF' in modFile.tops:
+        if b'MGEF' in modFile.tops:
             for record in modFile.MGEF.getActiveRecords():
                 self.MGEF.setRecord(record.getTypeCopy())
         #--Merger, override.
-        mergeIds = self.mergeIds
-        mapper = modFile.getLongMapper()
-        for blockType,block in self.tops.iteritems():
-            if blockType in modFile.tops:
-                block.updateRecords(modFile.tops[blockType],mapper,mergeIds)
+        for block_type in set(self.tops) & set(modFile.tops):
+            self.tops[block_type].updateRecords(modFile.tops[block_type],
+                                                self.mergeIds)
 
     def buildPatch(self,log,progress):
         """Completes merge process. Use this when finished using
@@ -305,7 +301,6 @@ class PatchFile(_PFile, ModFile):
         progress(0.95,_(u'Completing')+u'\n'+_(u'Converting fids...'))
         # Convert masters to short fids
         self.tes4.masters = self.getMastersUsed()
-        self.convertToShortFids()
         progress(1.0,_(u"Compiled."))
         # Build the description
         numRecords = sum([x.getNumRecords(False) for x in self.tops.values()])
