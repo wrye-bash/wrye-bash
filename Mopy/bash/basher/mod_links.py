@@ -113,10 +113,6 @@ class Mod_CreateDummyMasters(OneItemLink):
                 u'want to continue?\n\nTo remove these files later, use '
                 u"'Clean Dummy Masters...'") % bush.game.xe.full_name
         if not self._askYes(msg, title=_(u'Create Files')): return
-        # something odd's going on, can't rename temp names
-        doCBash = bass.settings['bash.CBashEnabled']
-        if doCBash:
-            newFiles = []
         to_refresh = []
         # creates esp files - so place them correctly after the last esm
         previous_master = bosh.modInfos.cached_lo_last_esm()
@@ -127,22 +123,9 @@ class Mod_CreateDummyMasters(OneItemLink):
             newInfo = bosh.ModInfo(self._selected_info.dir.join(master))
             to_refresh.append((master, newInfo, previous_master))
             previous_master = master
-            if doCBash:
-                # TODO: CBash doesn't handle unicode.  Make temp unicode safe
-                # files, then rename them to the correct unicode name later
-                newFiles.append(newInfo.getPath().stail)
-            else:
-                newFile = parsers.ModFile(newInfo, parsers.LoadFactory(True))
-                newFile.tes4.author = u'BASHED DUMMY'
-                newFile.safeSave()
-        if doCBash:
-            with ObCollection(ModsPath=bass.dirs['mods'].s) as Current:
-                tempname = u'_DummyMaster.esp.tmp'
-                modFile = Current.addMod(tempname, CreateNew=True)
-                Current.load()
-                modFile.TES4.author = u'BASHED DUMMY'
-                for newFile in newFiles:
-                    modFile.save(CloseCollection=False,DestinationName=newFile)
+            newFile = parsers.ModFile(newInfo, parsers.LoadFactory(True))
+            newFile.tes4.author = u'BASHED DUMMY'
+            newFile.safeSave()
         to_select = []
         for mod, info, previous in to_refresh:
             # add it to modInfos or lo_insert_after blows for timestamp games

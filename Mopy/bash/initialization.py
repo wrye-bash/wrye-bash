@@ -28,7 +28,7 @@ from ConfigParser import ConfigParser
 # Local - don't import anything else
 from . import env
 from .bass import dirs, get_ini_option
-from .bolt import GPath, Path
+from .bolt import GPath, Path, getbestencoding
 from .env import get_personal_path, get_local_app_data_path
 from .exception import BoltError, NonExistentDriveError
 
@@ -152,9 +152,18 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     data_oblivion_ini = dirs['app'].join(game_info.iniFiles[0])
     game_ini_path = dirs['saveBase'].join(game_info.iniFiles[0])
     dirs['mods'] = dirs['app'].join(u'Data')
-    if data_oblivion_ini.exists():
+    if data_oblivion_ini.isfile():
         oblivionIni = ConfigParser(allow_no_value=True)
-        oblivionIni.read(data_oblivion_ini.s)
+        try:
+            # Try UTF-8 first, will also work for ASCII-encoded files
+            with data_oblivion_ini.open(u'r', encoding=u'utf8') as ins:
+                oblivionIni.readfp(ins)
+        except UnicodeDecodeError:
+            # No good, this is a nonstandard encoding
+            with open(data_oblivion_ini.s, u'rb') as ins:
+                ini_enc = getbestencoding(ins.read())[0]
+            with data_oblivion_ini.open(u'r', encoding=ini_enc) as ins:
+                oblivionIni.readfp(ins)
         # is bUseMyGamesDirectory set to 0?
         if get_ini_option(oblivionIni, u'bUseMyGamesDirectory') == u'0':
             game_ini_path = data_oblivion_ini

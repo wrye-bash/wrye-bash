@@ -1019,27 +1019,30 @@ class Installer(object):
                     subprogressPlus, unpackDir):
         """Filesystem install, if unpackDir is not None we are installing
          an archive."""
-        norm_ghost = Installer.getGhosted() # some.espm -> some.espm.ghost
-        norm_ghostGet = norm_ghost.get
+        norm_ghostGet = Installer.getGhosted().get
         data_sizeCrcDate_update = bolt.LowerDict()
         data_sizeCrc = self.ci_dest_sizeCrc
         mods, inis, bsas = set(), set(), set()
         source_paths, dests = [], []
+        add_source, add_dest = source_paths.append, dests.append
+        installer_plugins = self.espms
+        is_ini_tweak = InstallersData._is_ini_tweak
+        join_data_dir = bass.dirs['mods'].join
         bsa_ext = u'.' + bush.game.bsa_extension
         for dest, src in dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
-            srcFull = srcDirJoin(src)
-            destFull = bass.dirs['mods'].join(norm_ghostGet(dest, dest))
-            src_tail = srcFull.tail
-            if src_tail in self.espms:
-                mods.add(src_tail)
-            elif InstallersData._is_ini_tweak(dest):
-                inis.add(src_tail)
-            elif srcFull.cext == bsa_ext:
-                bsas.add(src_tail)
+            # Check the destination, since plugins may have been renamed
+            destFull = join_data_dir(norm_ghostGet(dest, dest))
+            dest_tail = destFull.tail
+            if dest_tail in installer_plugins:
+                mods.add(dest_tail)
+            elif is_ini_tweak(dest):
+                inis.add(dest_tail)
+            elif dest_tail.cext == bsa_ext:
+                bsas.add(dest_tail)
             data_sizeCrcDate_update[dest] = (size, crc, -1) ##: HACK we must try avoid stat'ing the mtime
-            source_paths.append(srcFull)
-            dests.append(destFull)
+            add_source(srcDirJoin(src))
+            add_dest(destFull)
             subprogressPlus()
         #--Now Move
         try:
