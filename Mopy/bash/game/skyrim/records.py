@@ -2186,7 +2186,7 @@ class MreDobj(MelRecord):
             array_val = getattr(record, self.attr)
             if not array_val: return # don't dump out empty arrays
             array_data = ''
-            element_fmt = self._element.format
+            element_fmt = self._element.struct_format
             # not _element_attrs, that one has all underscores removed
             element_attrs = self._element.attrs
             for arr_entry in array_val:

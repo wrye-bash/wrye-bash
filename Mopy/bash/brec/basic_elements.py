@@ -82,7 +82,7 @@ class MelBase(object):
         """
         formAttrs = []
         lenEls = len(elements)
-        attrs,defaults,actions = [0]*lenEls,[0]*lenEls,[0]*lenEls
+        attrs, defaults, actions = [0] * lenEls, [0] * lenEls, [0] * lenEls
         formAttrsAppend = formAttrs.append
         for index,element in enumerate(elements):
             if not isinstance(element,tuple): element = (element,)
@@ -529,10 +529,10 @@ class MelStrings(MelString):
 class MelStruct(MelBase):
     """Represents a structure record."""
 
-    def __init__(self, subType, format, *elements):
-        self.subType, self.format = subType, format
+    def __init__(self, subType, struct_format, *elements):
+        self.subType, self.struct_format = subType, struct_format
         self.attrs,self.defaults,self.actions,self.formAttrs = MelBase.parseElements(*elements)
-        self._unpacker = struct.Struct(self.format).unpack
+        self._unpacker = struct.Struct(self.struct_format).unpack
 
     def getSlotsUsed(self):
         return self.attrs
@@ -561,7 +561,7 @@ class MelStruct(MelBase):
             value = getter(attr)
             if action: value = value.dump()
             valuesAppend(value)
-        out.packSub(self.subType, self.format, *values)
+        out.packSub(self.subType, self.struct_format, *values)
 
     def mapFids(self,record,function,save=False):
         getter = record.__getattribute__
@@ -572,58 +572,64 @@ class MelStruct(MelBase):
 
     @property
     def static_size(self):
-        return struct.calcsize(self.format)
+        return struct.calcsize(self.struct_format)
 
 #------------------------------------------------------------------------------
 # Simple primitive type wrappers
-class MelFloat(MelStruct):
-    """Float. Wrapper around MelStruct to avoid having to constantly specify
-    the format."""
-    def __init__(self, signature, element):
-        """:type signature: str"""
-        MelStruct.__init__(self, signature, '=f', element)
+class _MelSimpleStruct(MelStruct):
+    """Wrapper around MelStruct to avoid having to constantly specify the
+    format."""
+    # defaults = actions = formAttrs = (0,)
 
-class MelSInt8(MelStruct):
-    """Signed 8-bit integer. Wrapper around MelStruct to avoid having to
-    constantly specify the format."""
     def __init__(self, signature, element):
-        """:type signature: str"""
-        MelStruct.__init__(self, signature, '=b', element)
+        self.subType = signature
+        # if isinstance(element, tuple):
+        self.attrs, self.defaults, self.actions, self.formAttrs = \
+             MelBase.parseElements(element)
+        # else: # XXX broken
+        #     self.attrs = (element,)
 
-class MelSInt16(MelStruct):
-    """Signed 16-bit integer. Wrapper around MelStruct to avoid having to
-    constantly specify the format."""
-    def __init__(self, signature, element):
-        """:type signature: str"""
-        MelStruct.__init__(self, signature, '=h', element)
+class MelFloat(_MelSimpleStruct):
+    """Float."""
+    struct_format = u'=f'
+    _unpacker = struct.Struct(struct_format).unpack
+    static_size = struct.calcsize(struct_format)
 
-class MelSInt32(MelStruct):
-    """Signed 32-bit integer. Wrapper around MelStruct to avoid having to
-    constantly specify the format."""
-    def __init__(self, signature, element):
-        """:type signature: str"""
-        MelStruct.__init__(self, signature, '=i', element)
+class MelSInt8(_MelSimpleStruct):
+    """Signed 8-bit integer."""
+    struct_format = u'=b'
+    _unpacker = struct.Struct(struct_format).unpack
+    static_size = struct.calcsize(struct_format)
 
-class MelUInt8(MelStruct):
-    """Unsigned 8-bit integer. Wrapper around MelStruct to avoid having to
-    constantly specify the format."""
-    def __init__(self, signature, element):
-        """:type signature: str"""
-        MelStruct.__init__(self, signature, '=B', element)
+class MelSInt16(_MelSimpleStruct):
+    """Signed 16-bit integer."""
+    struct_format = u'=h'
+    _unpacker = struct.Struct(struct_format).unpack
+    static_size = struct.calcsize(struct_format)
 
-class MelUInt16(MelStruct):
-    """Unsigned 16-bit integer. Wrapper around MelStruct to avoid having to
-    constantly specify the format."""
-    def __init__(self, signature, element):
-        """:type signature: str"""
-        MelStruct.__init__(self, signature, '=H', element)
+class MelSInt32(_MelSimpleStruct):
+    """Signed 32-bit integer."""
+    struct_format = u'=i'
+    _unpacker = struct.Struct(struct_format).unpack
+    static_size = struct.calcsize(struct_format)
 
-class MelUInt32(MelStruct):
-    """Unsigned 32-bit integer. Wrapper around MelStruct to avoid having to
-    constantly specify the format."""
-    def __init__(self, signature, element):
-        """:type signature: str"""
-        MelStruct.__init__(self, signature, '=I', element)
+class MelUInt8(_MelSimpleStruct):
+    """Unsigned 8-bit integer."""
+    struct_format = u'=B'
+    _unpacker = struct.Struct(struct_format).unpack
+    static_size = struct.calcsize(struct_format)
+
+class MelUInt16(_MelSimpleStruct):
+    """Unsigned 16-bit integer."""
+    struct_format = u'=H'
+    _unpacker = struct.Struct(struct_format).unpack
+    static_size = struct.calcsize(struct_format)
+
+class MelUInt32(_MelSimpleStruct):
+    """Unsigned 32-bit integer."""
+    struct_format = u'=I'
+    _unpacker = struct.Struct(struct_format).unpack
+    static_size = struct.calcsize(struct_format)
 
 #------------------------------------------------------------------------------
 class MelOptStruct(MelStruct):
@@ -643,56 +649,28 @@ class MelOptStruct(MelStruct):
 
 #------------------------------------------------------------------------------
 # 'Opt' versions of the type wrappers above
-class MelOptFloat(MelOptStruct):
-    """Optional float. Wrapper around MelOptStruct to avoid having to
-    constantly specify the format."""
-    def __init__(self, signature, element):
-        """:type signature: str"""
-        MelOptStruct.__init__(self, signature, '=f', element)
+class MelOptFloat(MelFloat, MelOptStruct):
+    """Optional float."""
 
 # Unused right now - keeping around for completeness' sake and to make future
 # usage simpler.
-class MelOptSInt8(MelOptStruct):
-    """Optional signed 8-bit integer. Wrapper around MelOptStruct to avoid
-    having to constantly specify the format."""
-    def __init__(self, signature, element):
-        """:type signature: str"""
-        MelOptStruct.__init__(self, signature, '=b', element)
+class MelOptSInt8(MelSInt8, MelOptStruct):
+    """Optional signed 8-bit integer."""
 
-class MelOptSInt16(MelOptStruct):
-    """Optional signed 16-bit integer. Wrapper around MelOptStruct to avoid
-    having to constantly specify the format."""
-    def __init__(self, signature, element):
-        """:type signature: str"""
-        MelOptStruct.__init__(self, signature, '=h', element)
+class MelOptSInt16(MelSInt16, MelOptStruct):
+    """Optional signed 16-bit integer."""
 
-class MelOptSInt32(MelOptStruct):
-    """Optional signed 32-bit integer. Wrapper around MelOptStruct to avoid
-    having to constantly specify the format."""
-    def __init__(self, signature, element):
-        """:type signature: str"""
-        MelOptStruct.__init__(self, signature, '=i', element)
+class MelOptSInt32(MelSInt32, MelOptStruct):
+    """Optional signed 32-bit integer."""
 
-class MelOptUInt8(MelOptStruct):
-    """Optional unsigned 8-bit integer. Wrapper around MelOptStruct to avoid
-    having to constantly specify the format."""
-    def __init__(self, signature, element):
-        """:type signature: str"""
-        MelOptStruct.__init__(self, signature, '=B', element)
+class MelOptUInt8(MelUInt8, MelOptStruct):
+    """Optional unsigned 8-bit integer."""
 
-class MelOptUInt16(MelOptStruct):
-    """Optional unsigned 16-bit integer. Wrapper around MelOptStruct to avoid
-    having to constantly specify the format."""
-    def __init__(self, signature, element):
-        """:type signature: str"""
-        MelOptStruct.__init__(self, signature, '=H', element)
+class MelOptUInt16(MelUInt16, MelOptStruct):
+    """Optional unsigned 16-bit integer."""
 
-class MelOptUInt32(MelOptStruct):
-    """Optional unsigned 32-bit integer. Wrapper around MelOptStruct to avoid
-    having to constantly specify the format."""
-    def __init__(self, signature, element):
-        """:type signature: str"""
-        MelOptStruct.__init__(self, signature, '=I', element)
+class MelOptUInt32(MelUInt32, MelOptStruct):
+    """Optional unsigned 32-bit integer."""
 
 class MelOptFid(MelOptUInt32):
     """Optional FormID. Wrapper around MelOptUInt32 to avoid having to
