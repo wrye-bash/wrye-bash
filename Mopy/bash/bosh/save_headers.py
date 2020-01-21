@@ -32,6 +32,7 @@ __author__ = 'Utumno'
 
 import copy
 import itertools
+import lz4.block
 import StringIO
 import struct
 import zlib
@@ -40,8 +41,7 @@ from functools import partial
 from .. import bolt
 from ..bolt import decode, cstrip, unpack_string, unpack_int, unpack_str8, \
     unpack_short, unpack_float, unpack_str16, unpack_byte, struct_pack, \
-    struct_unpack, unpack_int_delim, unpack_str16_delim, unpack_byte_delim, \
-    unpack_many
+    unpack_int_delim, unpack_str16_delim, unpack_byte_delim, unpack_many
 from ..exception import SaveHeaderError, raise_bolt_error
 
 class SaveFileHeader(object):
@@ -188,7 +188,7 @@ class SkyrimSaveHeader(SaveFileHeader):
     save_magic = 'TESV_SAVEGAME'
     # extra slots - only version is really used, gameDate used once (calc_time)
     # _formVersion distinguish between old and new save formats
-    # _compressType of Skyrim SE saves - currently unused
+    # _compressType of Skyrim SE saves - used to decide how to read/write them
     __slots__ = ('gameDate', 'saveNumber', 'version', 'raceEid', 'pcSex',
                  'pcExp', 'pcLvlExp', 'filetime', '_formVersion',
                  '_compressType')
@@ -230,17 +230,20 @@ class SkyrimSaveHeader(SaveFileHeader):
             super(SkyrimSaveHeader, self).load_image_data(ins)
 
     def load_masters(self, ins):
-        sse_offset = 0
         # If on SSE, check _compressType and respond accordingly:
         #  0 means uncompressed
         #  1 means zlib
         #  2 means lz4
         if self.__is_sse() and self._compressType in (1, 2):
-            sse_offset = ins.tell() + 8 # decompressed/compressed size
-            decompressor = (self._decompress_masters_sse_lz4
+            decompressed_size = unpack_int(ins)
+            compressed_size = unpack_int(ins)
+            sse_offset = ins.tell()
+            decompressor = (self._sse_decompress_lz4
                            if self._compressType == 2
-                           else self._decompress_masters_sse_zlib)
-            ins = decompressor(ins)
+                           else self._sse_decompress_zlib)
+            ins = decompressor(ins, compressed_size, decompressed_size)
+        else:
+            sse_offset = 0
         self._formVersion = unpack_byte(ins)
         self._mastersStart = ins.tell() + sse_offset
         #--Masters
@@ -265,10 +268,12 @@ class SkyrimSaveHeader(SaveFileHeader):
                     mastersSize))
 
     @staticmethod
-    def _decompress_masters_sse_zlib(ins):
-        decompressed_size = unpack_int(ins)
-        compressed_size = unpack_int(ins)
-        decompressed_data = zlib.decompress(ins.read(compressed_size))
+    def _sse_decompress_zlib(ins, compressed_size, decompressed_size):
+        try:
+            decompressed_data = zlib.decompress(ins.read(compressed_size))
+        except zlib.error as e:
+            raise SaveHeaderError(u'zlib error while decompressing '
+                                  u'zlib-compressed header: %r' % e)
         if len(decompressed_data) != decompressed_size:
             raise SaveHeaderError(_(u'zlib-decompressed header size incorrect '
                                     u'- expected %u, but got %u.') %
@@ -276,64 +281,14 @@ class SkyrimSaveHeader(SaveFileHeader):
         return StringIO.StringIO(decompressed_data)
 
     @staticmethod
-    def _decompress_masters_sse_lz4(ins):
-        """Read the start of the LZ4 compressed data in the SSE savefile and
-        stop when the whole master table is found.
-        Return a file-like object that can be read by _load_masters_16
-        containing the now decompressed master table.
-        See https://fastcompression.blogspot.se/2011/05/lz4-explained.html
-        for an LZ4 explanation/specification."""
-        def _read_lsic_int():
-            # type: () -> int
-            """Read a compressed int from the stream.
-            In short, add every byte to the output until a byte lower than
-            255 is found, then add that as well and return the total sum.
-            LSIC stands for linear small-integer code, taken from
-            https://ticki.github.io/blog/how-lz4-works."""
-            result = 0
-            while True:  # there is no size limit to LSIC values
-                num = unpack_byte(ins)
-                result += num
-                if num != 255:
-                    return result
-        # Skip decompressed/compressed size, we only want the masters table
-        ins.seek(8, 1)
-        uncompressed = ''
-        masters_size = None  # type: int
-        while True:  # parse and decompress each block here
-            token = unpack_byte(ins)
-            # How many bytes long is the literals-field?
-            literal_length = token >> 4
-            if literal_length == 15:  # add more if we hit max value
-                literal_length += _read_lsic_int()
-            # Read all the literals (which are good ol' uncompressed bytes)
-            uncompressed += ins.read(literal_length)
-            # The offset is how many bytes back in the uncompressed string the
-            # start of the match-field (copied bytes) is
-            offset = unpack_short(ins)
-            # How many bytes long is the match-field?
-            match_length = token & 0b1111
-            if match_length == 15:
-                match_length += _read_lsic_int()
-            match_length += 4  # the match-field always gets an extra 4 bytes
-            # The boundary of the match-field
-            start_pos = len(uncompressed) - offset
-            end_pos = start_pos + match_length
-            # Matches can be overlapping (aka including not yet decompressed
-            # data) so we can't jump the whole match_length directly
-            while start_pos < end_pos:
-                uncompressed += uncompressed[start_pos:min(start_pos + offset,
-                                                           end_pos)]
-                start_pos += offset
-            # The masters table's size is found in bytes 1-5
-            if masters_size is None and len(uncompressed) >= 5:
-                masters_size = struct_unpack('I', uncompressed[1:5])[0]
-            # Stop when we have the whole masters table
-            if masters_size is not None:
-                if len(uncompressed) >= masters_size + 5:
-                    break
-        # Wrap the decompressed data in a file-like object and return it
-        return StringIO.StringIO(uncompressed)
+    def _sse_decompress_lz4(ins, compressed_size, decompressed_size):
+        decompressed_data = lz4.block.decompress(
+            ins.read(compressed_size), uncompressed_size=decompressed_size)
+        if len(decompressed_data) != decompressed_size:
+            raise SaveHeaderError(_(u'lz4-decompressed header size incorrect '
+                                    u'- expected %u, but got %u.') %
+                                  (decompressed_size, len(decompressed_data)))
+        return StringIO.StringIO(decompressed_data)
 
     def calc_time(self):
         # gameDate format: hours.minutes.seconds
