@@ -41,7 +41,8 @@ from functools import partial
 from .. import bolt
 from ..bolt import decode, cstrip, unpack_string, unpack_int, unpack_str8, \
     unpack_short, unpack_float, unpack_str16, unpack_byte, struct_pack, \
-    unpack_int_delim, unpack_str16_delim, unpack_byte_delim, unpack_many
+    unpack_int_delim, unpack_str16_delim, unpack_byte_delim, unpack_many, \
+    encode
 from ..exception import SaveHeaderError, raise_bolt_error
 
 # Utilities -------------------------------------------------------------------
@@ -298,6 +299,34 @@ class SkyrimSaveHeader(SaveFileHeader):
         self.gameDays = float(playSeconds) / (24 * 60 * 60)
         self.gameTicks = playSeconds * 1000
 
+    def _dump_masters(self, ins, numMasters, out):
+        # Store these two blocks distinctly, *never* combine them - that
+        # destroys critical information since there is no way to tell ESL
+        # status just from the name
+        regular_masters = []
+        esl_masters = []
+        for x in xrange(numMasters):
+            regular_masters.append(unpack_str16(ins))
+        # SSE/FO4 format has separate ESL block
+        has_esl_block = self._esl_block()
+        if has_esl_block:
+            _num_esl_masters = unpack_short(ins)
+            for count in xrange(_num_esl_masters):
+                esl_masters.append(unpack_str16(ins))
+        # Write out the (potentially altered) masters - note that we have to
+        # encode here, since we may be writing to StringIO instead of a file
+        num_regulars = len(regular_masters)
+        _pack(out, '=B', num_regulars)
+        for master in self.masters[:num_regulars]:
+            _pack(out, '=H', len(master))
+            out.write(encode(master.s))
+        if has_esl_block:
+            _pack(out, '=H', len(esl_masters))
+            for master in self.masters[num_regulars:]:
+                _pack(out, '=H', len(master))
+                out.write(encode(master.s))
+        return regular_masters + esl_masters
+
     def _master_block_size(self):
         return (3 if self._esl_block() else 1) + sum(
             len(x) + 2 for x in self.masters)
@@ -326,31 +355,6 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
         self._mastersStart = ins.tell()
         #--Masters
         self._load_masters_16(ins)
-
-    def _dump_masters(self, ins, numMasters, out):
-        oldMasters = []
-        self.masters.sort(key=lambda m: m.cext == u'.esl')
-        for x in xrange(numMasters):
-            oldMasters.append(unpack_str16(ins))
-        if self._esl_block(): # new FO4 save format
-            _num_esl_masters = unpack_short(ins)
-            for count in xrange(_num_esl_masters):
-                oldMasters.append(unpack_str16(ins))
-        #--Write new masters
-        esl_count = sum(1 for m in self.masters if m.cext == u'.esl')
-        _pack(out, '=B', len(self.masters) - esl_count)
-        for master in self.masters:
-            if master.cext == u'.esl':
-                break
-            _pack(out, '=H', len(master))
-            out.write(master.s)
-        if self._esl_block(): # new FO4 save format
-            _pack(out, '=H', esl_count)
-            if esl_count:
-                for master in self.masters[-esl_count:]:
-                    _pack(out, '=H', len(master))
-                    out.write(master.s)
-        return oldMasters
 
     def calc_time(self):
         # gameDate format: Xd.Xh.Xm.X days.X hours.X minutes

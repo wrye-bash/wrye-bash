@@ -1034,9 +1034,11 @@ class SaveInfo(FileInfo):
                 oldMasters = self.header.writeMasters(ins, out)
         oldMasters = [GPath(decode(x)) for x in oldMasters]
         self.abs_path.untemp()
-        #--Cosaves
-        master_map = dict((x.s, y.s) for x, y in
-                          zip(oldMasters, self.get_masters()) if x != y)
+        # Cosaves - note that we have to use self.header.masters since in
+        # FO4/SSE get_masters() returns the correct interleaved order, but
+        # oldMasters has the 'regular first, then ESLs' order
+        master_map = {x.s: y.s for x, y in zip(oldMasters, self.header.masters)
+                      if x != y}
         if master_map:
             for co_file in self.get_cosave_instances().values():
                 co_file.remap_plugins(master_map)
