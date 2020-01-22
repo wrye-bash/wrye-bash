@@ -3947,8 +3947,14 @@ class ModFile(object):
             return self.tops[topType]
         elif topType in RecordHeader.topTypes:
             topClass = self.loadFactory.getTopClass(topType)
-            self.tops[topType] = topClass(
-                RecordHeader('GRUP', 0, topType, 0, 0), self.loadFactory)
+            try:
+                self.tops[topType] = topClass(
+                    RecordHeader('GRUP', 0, topType, 0, 0), self.loadFactory)
+            except TypeError:
+                raise ModError(
+                    self.fileInfo.name,
+                    u'Failed to retrieve top class for %s; load factory is '
+                    u'%r' % (topType, self.loadFactory))
             self.tops[topType].setChanged()
             return self.tops[topType]
         elif topType == '__repr__':
