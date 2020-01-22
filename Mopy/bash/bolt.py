@@ -885,14 +885,14 @@ class CsvReader(object):
 
     def __init__(self,path):
         self.ins = path.open('rb',encoding='utf-8-sig')
-        format = ('excel','excel-tab')[u'\t' in self.ins.readline()]
-        if format == 'excel':
+        excel_fmt = ('excel','excel-tab')[u'\t' in self.ins.readline()]
+        if excel_fmt == 'excel':
             delimiter = (',',';')[u';' in self.ins.readline()]
             self.ins.seek(0)
-            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),format,delimiter=delimiter)
+            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),excel_fmt,delimiter=delimiter)
         else:
             self.ins.seek(0)
-            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),format)
+            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),excel_fmt)
 
     def __enter__(self): return self
     def __exit__(self, exc_type, exc_value, exc_traceback): self.ins.close()

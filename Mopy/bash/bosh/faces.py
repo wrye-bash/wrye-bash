@@ -62,13 +62,13 @@ class PCFaces(object):
         def convertRace(self,fromRace,toRace):
             """Converts face from one race to another while preserving structure, etc."""
             for attr,num in (('fggs_p',50),('fgga_p',30),('fgts_p',50)):
-                format = unicode(num)+u'f'
-                sValues = list(struct_unpack(format,getattr(self, attr)))
-                fValues = list(struct_unpack(format,getattr(fromRace, attr)))
-                tValues = list(struct_unpack(format,getattr(toRace, attr)))
+                fmt = unicode(num)+u'f'
+                sValues = list(struct_unpack(fmt,getattr(self, attr)))
+                fValues = list(struct_unpack(fmt,getattr(fromRace, attr)))
+                tValues = list(struct_unpack(fmt,getattr(toRace, attr)))
                 for index,(sValue,fValue,tValue) in enumerate(zip(sValues,fValues,tValues)):
                     sValues[index] = sValue + fValue - tValue
-                setattr(self,attr,struct_pack(format, *sValues))
+                setattr(self,attr,struct_pack(fmt, *sValues))
 
     # SAVES -------------------------------------------------------------------
     @staticmethod
@@ -284,8 +284,8 @@ class PCFaces(object):
         #--Player ACHR
         #--Buffer for modified record data
         buff = sio()
-        def buffPack(format,*args):
-            buff.write(struct_pack(format, *args))
+        def buffPack(*args):
+            buff.write(struct_pack(*args))
         def buffPackRef(oldFid,doPack=True):
             newFid = oldFid and masterMap(oldFid,None)
             if newFid and doPack:

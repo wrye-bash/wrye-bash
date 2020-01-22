@@ -518,7 +518,7 @@ class ARaceTweaker_PlayableHairs(AMultiTweakItem):
     """Sets all hairs to be playable."""
     tweak_read_classes = 'HAIR',
     tweak_name = _(u'Playable Hairs')
-    tweak_trip = _(u'Sets all Hairs to be playable.')
+    tweak_tip = _(u'Sets all Hairs to be playable.')
 
     def __init__(self):
         super(ARaceTweaker_PlayableHairs, self).__init__(u'playablehairs',

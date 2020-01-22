@@ -102,7 +102,7 @@ class EnderalGameInfo(SkyrimGameInfo):
             MreKywd, MreLvln, MreAact, MreSlgm, MreRegn, MreFurn, MreGras, \
             MreAstp, MreWoop, MreMovt, MreCobj, MreShou, MreSmen, MreColl, \
             MreArto, MreAddn, MreSopm, MreCsty, MreAppa, MreArma, MreArmo, \
-            MreKeym, MreTxst, MreHdpt, MreHeader, MreAlch, MreBook, MreSpgd, \
+            MreKeym, MreTxst, MreHdpt, MreTes4, MreAlch, MreBook, MreSpgd, \
             MreSndr, MreImgs, MreScrl, MreMust, MreFstp, MreFsts, MreMgef, \
             MreLgtm, MreMusc, MreClas, MreLctn, MreTact, MreBptd, MreDobj, \
             MreLscr, MreDlvw, MreTree, MreWatr, MreFlor, MreEyes, MreWeap, \
@@ -183,7 +183,7 @@ class EnderalGameInfo(SkyrimGameInfo):
             MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, MreSmqn,
             MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd, MreStat,
             MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop,
-            MreWthr, MreCell, MreWrld, MreQust, MreHeader, MrePack,
+            MreWthr, MreCell, MreWrld, MreQust, MreTes4, MrePack,
             # MreNavm, MreNavi
         ))
         brec.MreRecord.simpleTypes = (

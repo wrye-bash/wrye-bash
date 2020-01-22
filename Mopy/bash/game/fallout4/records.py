@@ -66,7 +66,7 @@ from ..skyrim.records import MreGmst # used in basher.app_buttons.App_GenPickle#
 #------------------------------------------------------------------------------
 # Fallout 4 Records -----------------------------------------------------------
 #------------------------------------------------------------------------------
-class MreHeader(MreHeaderBase):
+class MreTes4(MreHeaderBase):
     """TES4 Record.  File header."""
     classType = 'TES4'
 

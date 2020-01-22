@@ -119,7 +119,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
             MreLscr, MreLsct, MreMisc, MreMset, MreMusc, MreProj, MreRcct, \
             MreRcpe, MreRegn, MreRepu, MreSlpd, MreSoun, MreStat, MreTact, \
             MreWeap, MreWthr, MreAchr, MreAcre, MreCell, MreDial, MreGmst, \
-            MreInfo, MrePgre, MrePmis, MreRefr, MreHeader
+            MreInfo, MrePgre, MrePmis, MreRefr, MreTes4
         # then from fallout3.records
         from ..fallout3.records import MreCpth, MreIdle, MreMesg, MrePack, \
             MrePerk, MreQust, MreSpel, MreTerm, MreNpc, MreAddn, MreAnio, \
@@ -183,8 +183,8 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         brec.RecordHeader.plugin_form_version = 15
         brec.MreRecord.type_class = dict(
             (x.classType, x) for x in (cls.mergeClasses +  # Not Mergeable
-            (MreAchr, MreAcre, MreCell, MreDial, MreInfo, MreNavi,
-             MreNavm, MrePgre, MrePmis, MreRefr, MreWrld, MreHeader,)))
+                (MreAchr, MreAcre, MreCell, MreDial, MreInfo, MreNavi,
+                 MreNavm, MrePgre, MrePmis, MreRefr, MreWrld, MreTes4,)))
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {
             # 'TES4','ACHR','ACRE','REFR','CELL','PGRD','PGRE','LAND',
