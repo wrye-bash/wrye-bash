@@ -24,8 +24,6 @@
 """Functions for initializing Bash data structures on boot. For now export
 functions to init bass.dirs that need be initialized high up into the boot
 sequence to be able to backup/restore settings."""
-import os
-import sys
 from ConfigParser import ConfigParser
 # Local - don't import anything else
 import env
