@@ -33,28 +33,95 @@ __author__ = 'Utumno'
 
 import collections
 import errno
+import lz4.frame
 import os
 import struct
 import sys
+import zlib
 from functools import partial
 from itertools import groupby, imap
 from operator import itemgetter
 from . import AFile
 from ..bolt import deprint, Progress, struct_pack, struct_unpack, \
     unpack_byte, unpack_string, unpack_int
-from ..exception import BSAError, BSADecodingError, BSAFlagError, \
-    BSANotImplemented
+from ..exception import AbstractError, BSAError, BSADecodingError, \
+    BSAFlagError, BSANotImplemented
 
 _bsa_encoding = 'cp1252' # rumor has it that's the files/folders names encoding
 path_sep = u'\\'
 
-# Exceptions ------------------------------------------------------------------
-
+# Utilities -------------------------------------------------------------------
 def _decode_path(string_path):
     try:
         return unicode(string_path, encoding=_bsa_encoding)
     except UnicodeDecodeError:
         raise BSADecodingError(string_path)
+
+class _BsaCompressionType(object):
+    """Abstractly represents a way of compressing and decompressing BSA
+    records."""
+    @staticmethod
+    def compress_rec(decompressed_data):
+        """Compresses the specified record data. Raises a BSAError if the
+        underlying compression library raises an error. Returns the resulting
+        compressed data."""
+        raise AbstractError()
+
+    @staticmethod
+    def decompress_rec(compressed_data, decompressed_size):
+        """Decompresses the specified record data. Expects the specified
+        number of bytes of decompressed data and raises a BSAError if a
+        mismatch occurs or if the underlying compression library raises an
+        error. Returns the resulting decompressed data."""
+        raise AbstractError()
+
+# Note that I mirrored BSArch here by simply leaving zlib and lz4 at their
+# defaults for compression
+class _Bsa_zlib(_BsaCompressionType):
+    """Implements BSA record compression and decompression using zlib. Used for
+    all games but SSE."""
+    @staticmethod
+    def compress_rec(decompressed_data):
+        try:
+            return zlib.compress(decompressed_data)
+        except zlib.error as e:
+            raise BSAError(u'zlib error while compressing record: %r' % e)
+
+    @staticmethod
+    def decompress_rec(compressed_data, decompressed_size):
+        try:
+            decompressed_data = zlib.decompress(compressed_data)
+        except zlib.error as e:
+            raise BSAError(u'zlib error while decompressing zlib-compressed '
+                           u'record: %r' % e)
+        if len(decompressed_data) != decompressed_size:
+            raise BSAError(u'zlib-decompressed record size incorrect - '
+                           u'expected %u, but got %u.' % (
+                decompressed_size, len(decompressed_data)))
+        return decompressed_data
+
+class _Bsa_lz4(_BsaCompressionType):
+    """Implements BSA record compression and decompression using lz4. Used
+    only for SSE."""
+    @staticmethod
+    def compress_rec(decompressed_data):
+        try:
+            return lz4.frame.compress(decompressed_data, store_size=False)
+        except RuntimeError as e: # No custom lz4 exception for frames...
+            raise BSAError(u'LZ4 error while compressing record: %r' % e)
+
+    @staticmethod
+    def decompress_rec(compressed_data, decompressed_size):
+        try:
+            decompressed_data = lz4.frame.decompress(compressed_data)
+        except RuntimeError as e: # No custom lz4 exception for frames...
+            raise BSAError(u'LZ4 error while decompressing LZ4-compressed '
+                           u'record: %r' % e)
+        if len(decompressed_data) != decompressed_size:
+            raise BSAError(u'LZ4-decompressed record size incorrect - '
+                           u'expected %u, but got %u.' % (
+                decompressed_size, len(decompressed_data)))
+        return decompressed_data
 
 # Headers ---------------------------------------------------------------------
 class _Header(object):
@@ -374,6 +441,7 @@ class ABsa(AFile):
     """:type bsa_folders: collections.OrderedDict[unicode, BSAFolder]"""
     header_type = BsaHeader
     _assets = frozenset()
+    _compression_type = _Bsa_zlib # type: _BsaCompressionType
 
     def __init__(self, fullpath, load_cache=False, names_only=True):
         super(ABsa, self).__init__(fullpath)
@@ -425,7 +493,7 @@ class ABsa(AFile):
         self.bsa_folders.clear()
         # get the data from the file
         global_compression = self.bsa_header.is_compressed()
-        bsa_name = self.abs_path.tail
+        bsa_name = self.abs_path.stail
         i = 0
         if progress:
             progress.setFull(len(folder_to_assets))
@@ -434,22 +502,37 @@ class ABsa(AFile):
                 if progress:
                     progress(i, u'Extracting %s...\n%s' % (bsa_name, folder))
                     i += 1
-                target_dir = os.path.join(dest_folder, folder)
+                # BSA paths always have backslashes, so we need to convert them
+                # to the platform's path separators before we extract
+                target_dir = os.path.join(dest_folder, *folder.split(u'\\'))
                 _makedirs_exists_ok(target_dir)
                 for filename, record in file_records:
-                    if global_compression ^ record.compression_toggle():
-                        raise BSANotImplemented(
-                            u'Compressed records are not yet supported (%s)' %
-                            self.abs_path)
                     data_size = record.raw_data_size()
                     bsa_file.seek(record.raw_file_data_offset)
                     if self.bsa_header.embed_filenames(): # use len(filename) ?
                         filename_len = unpack_byte(bsa_file)
                         bsa_file.seek(filename_len, 1) # discard filename
                         data_size -= filename_len + 1
-                    # get the data!
-                    raw_data = bsa_file.read(data_size)
-                    with open(os.path.join(target_dir, filename), 'wb') as out:
+                    if global_compression ^ record.compression_toggle():
+                        # This is a compressed record, so decompress it
+                        uncompressed_size = unpack_int(bsa_file)
+                        data_size -= 4
+                        try:
+                            raw_data = self._compression_type.decompress_rec(
+                                bsa_file.read(data_size), uncompressed_size)
+                        except BSAError:
+                            # Ignore errors for Fallout - Misc.bsa - Bethesda
+                            # probably used an old buggy zlib version when
+                            # packing it (taken from BSArch sources)
+                            if bsa_name == u'Fallout - Misc.bsa':
+                                continue
+                            else:
+                                raise
+                    else:
+                        # This is an uncompressed record, just read it
+                        raw_data = bsa_file.read(data_size)
+                    with open(os.path.join(target_dir, filename),
+                              'wb') as out:
                         out.write(raw_data)
 
     def _map_assets_to_folders(self, folder_files_dict):
@@ -466,8 +549,8 @@ class ABsa(AFile):
         return folder_to_assets
 
     # Abstract
-    def _load_bsa(self): raise NotImplementedError
-    def _load_bsa_light(self): raise NotImplementedError
+    def _load_bsa(self): raise AbstractError()
+    def _load_bsa_light(self): raise AbstractError()
 
     # API - delegates to abstract methods above
     def has_assets(self, asset_paths):
@@ -596,17 +679,20 @@ class BA2(ABsa):
                 if progress:
                     progress(i, u'Extracting %s...\n%s' % (bsa_name, folder))
                     i += 1
-                target_dir = os.path.join(dest_folder, folder)
+                # BSA paths always have backslashes, so we need to convert them
+                # to the platform's path separators before we extract
+                target_dir = os.path.join(dest_folder, *folder.split(u'\\'))
                 _makedirs_exists_ok(target_dir)
                 for filename, record in file_records:
-                    if record.packed_size: # seems to signify compression
-                        raise BSANotImplemented(
-                            u'Compressed records are not yet supported (%s)' %
-                            self.abs_path)
-                    data_size = record.unpacked_size
                     bsa_file.seek(record.offset)
-                    # get the data!
-                    raw_data = bsa_file.read(data_size)
+                    if record.packed_size:
+                        # This is a compressed record, so decompress it
+                        raw_data = self._compression_type.decompress_rec(
+                            bsa_file.read(record.packed_size),
+                            record.unpacked_size)
+                    else:
+                        # This is an uncompressed record, just read it
+                        raw_data = bsa_file.read(record.unpacked_size)
                     with open(os.path.join(target_dir, filename), 'wb') as out:
                         out.write(raw_data)
 
@@ -790,12 +876,14 @@ class OblivionBsa(BSA):
                          folder_name)
         return reset_count
 
+# Note: what we call 'SkyrimBsa', BSArch calls 'baFO3'
 class SkyrimBsa(BSA):
     header_type = SkyrimBsaHeader
 
 class SkyrimSeBsa(BSA):
     header_type = SkyrimSeBsaHeader
     folder_record_type = BSASkyrimSEFolderRecord
+    _compression_type = _Bsa_lz4
 
 # Factory
 def get_bsa_type(game_fsName):
