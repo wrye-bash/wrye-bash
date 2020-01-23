@@ -29,6 +29,7 @@ loop."""
 # Imports ---------------------------------------------------------------------
 import atexit
 import codecs
+import lz4
 import os
 import platform
 import shutil
@@ -156,29 +157,25 @@ def exit_cleanup():
 def dump_environment():
     fse = sys.getfilesystemencoding()
     msg = [
-        u'Wrye Bash starting',
         u'Using Wrye Bash Version %s%s' % (bass.AppVersion,
             u' (Standalone)' if is_standalone else u''),
-        u'OS info: %s (%s) running on %s' % (
-            platform.platform(), platform.architecture()[0],
-            platform.processor()
-        ),
-        u'Python version: %d.%d.%d' % (
-            sys.version_info[0], sys.version_info[1], sys.version_info[2]
-        ),
+        u'OS info: %s, running on %s' % (
+            platform.platform(), platform.processor()),
+        u'Python version: %s' % sys.version,
         u'wxPython version: %s' % _wx.version() if _wx is not None else \
             u'wxPython not found',
+        u'python-lz4 version: %s; bundled LZ4 version: %s' % (
+            lz4.version.version, lz4.library_version_string()),
         # Standalone: stdout will actually be pointing to stderr, which has no
         # 'encoding' attribute
-        u'input encoding: %s; output encoding: %s' % (
-            sys.stdin.encoding, getattr(sys.stdout, 'encoding', None),
-        ),
-        u'filesystem encoding: %s%s' % (fse,
+        u'Input encoding: %s; output encoding: %s' % (
+            sys.stdin.encoding, getattr(sys.stdout, 'encoding', None)),
+        u'Filesystem encoding: %s%s' % (fse,
             (u' - using %s' % bolt.Path.sys_fs_enc) if not fse else u''),
-        u'command line: %s' % sys.argv,
+        u'Command line: %s' % sys.argv,
     ]
     if getattr(bolt, 'scandir', None) is not None:
-        msg.append(u'Using scandir ' + bolt.scandir.__version__)
+        msg.append(u'Using scandir v%s' % bolt.scandir.__version__)
     for m in msg:
         bolt.deprint(m)
     return u'\n'.join(msg)
