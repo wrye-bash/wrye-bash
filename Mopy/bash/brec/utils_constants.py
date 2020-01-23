@@ -25,11 +25,12 @@
 almost all other parts of brec."""
 
 from __future__ import division, print_function
+import struct
 
 from ..bolt import decode, struct_pack, struct_unpack
 # no local imports, imported everywhere in brec
 
-# Type coercion ---------------------------------------------------------------
+# Random stuff ----------------------------------------------------------------
 def _coerce(value, newtype, base=None, AllowNone=False):
     try:
         if newtype is float:
@@ -53,6 +54,8 @@ def _coerce(value, newtype, base=None, AllowNone=False):
     except (ValueError,TypeError):
         if newtype is int: return 0
         return None
+
+_int_unpacker = struct.Struct(u'I').unpack
 
 # Reference (fid) -------------------------------------------------------------
 def strFid(form_id):

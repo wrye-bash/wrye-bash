@@ -27,6 +27,7 @@ some commonly needed records."""
 from __future__ import division, print_function
 import cPickle as pickle  # PY3
 import re
+import struct
 from operator import attrgetter
 
 from .advanced_elements import AttrExistsDecider, AttrValDecider, MelArray, \
@@ -60,7 +61,8 @@ class MreHeaderBase(MelRecord):
             record.masters = []
             record.master_sizes = []
 
-        def loadData(self, record, ins, sub_type, size_, readId):
+        def loadData(self, record, ins, sub_type, size_, readId,
+                     __unpacker=struct.Struct(u'Q').unpack):
             if sub_type == b'MAST':
                 # Don't use ins.readString, because it will try to use
                 # bolt.pluginEncoding for the filename. This is one case where
@@ -70,7 +72,8 @@ class MreHeaderBase(MelRecord):
                 record.masters.append(GPath(master_name))
             else: # sub_type == 'DATA'
                 # DATA is the size for TES3, but unknown/unused for later games
-                record.master_sizes.append(ins.unpack(u'Q', size_, readId)[0])
+                record.master_sizes.append(
+                    ins.unpack(__unpacker, size_, readId)[0])
 
         def dumpData(self,record,out):
             pack1 = out.packSub0

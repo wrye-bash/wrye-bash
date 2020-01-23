@@ -311,7 +311,8 @@ class MelFidList(MelFids):
 
     def loadData(self, record, ins, sub_type, size_, readId):
         if not size_: return
-        fids = ins.unpack(repr(size_ // 4) + 'I', size_, readId)
+        fids = ins.unpack(struct.Struct(u'%dI' % (size_ // 4)).unpack, size_,
+                          readId)
         record.__setattr__(self.attr,list(fids))
 
     def dumpData(self,record,out):
@@ -531,6 +532,7 @@ class MelStruct(MelBase):
     def __init__(self, subType, format, *elements):
         self.subType, self.format = subType, format
         self.attrs,self.defaults,self.actions,self.formAttrs = MelBase.parseElements(*elements)
+        self._unpacker = struct.Struct(self.format).unpack
 
     def getSlotsUsed(self):
         return self.attrs
@@ -545,7 +547,7 @@ class MelStruct(MelBase):
             setter(attr,value)
 
     def loadData(self, record, ins, sub_type, size_, readId):
-        unpacked = ins.unpack(self.format, size_, readId)
+        unpacked = ins.unpack(self._unpacker, size_, readId)
         setter = record.__setattr__
         for attr,value,action in zip(self.attrs,unpacked,self.actions):
             if action: value = action(value)

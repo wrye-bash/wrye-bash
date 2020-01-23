@@ -24,7 +24,10 @@
 """This module contains the fallout3 record classes. You must import from it
 __once__ only in game.fallout3.Fallout3GameInfo#init. No other game.records
 file must be imported till then."""
-from ... import bush, brec
+import struct
+from collections import defaultdict
+
+from ... import brec, bush
 from ...bolt import Flags, struct_unpack, struct_pack
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, MreHeaderBase, \
@@ -37,7 +40,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelRaceVoices, MelBounds, null1, null2, null3, null4, MelScriptVars, \
     MelSequential, MelTruncatedStruct, PartialLoadDecider, MelReadOnly, \
     MelCoordinates, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, \
-    MelArray, MelWthrColors, MreLeveledListBase
+    MelArray, MelWthrColors, MreLeveledListBase, mel_cdta_unpackers
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
@@ -121,6 +124,7 @@ class MelConditions(MelGroups):
     """Represents a set of quest/dialog conditions. Difficulty is that FID
     state of parameters depends on function index."""
     class MelCtda(MelStruct):
+        ctda_sizes_list = (20, 24, 28) # must be sorted
         def setDefault(self, record):
             MelStruct.setDefault(self, record)
             record.form1234 = 'iiII'
@@ -128,61 +132,48 @@ class MelConditions(MelGroups):
         def hasFids(self, formElements):
             formElements.add(self)
 
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ not in (28, 24, 20):
-                raise ModSizeError(ins.inName, readId, (28, 24, 20), size_)
-            unpacked1 = ins.unpack('B3sfH2s', 12, readId)
+        def loadData(self, record, ins, sub_type, size_, readId,
+                     __unpacker=struct.Struct(u'B3sfH2s').unpack,
+                     __unpackers=mel_cdta_unpackers(ctda_sizes_list)):
+            if size_ not in self.ctda_sizes_list:
+                raise ModSizeError(ins.inName, readId, self.ctda_sizes_list, size_)
+            unpacked1 = ins.unpack(__unpacker, 12, readId)
             (record.operFlag, record.unused1, record.compValue, ifunc,
              record.unused2) = unpacked1
             #--Get parameters
-            if ifunc not in bush.game.condition_function_data:
+            # using bush as CTDA differs between FO3 and FNV, but they use
+            # the same record definition
+            try:
+                form12 = u'%d%d%d' % ( # 2 means fid
+                    bush.game.condition_function_data[ifunc][1] == 2,
+                    bush.game.condition_function_data[ifunc][2] == 2, size_)
+            except KeyError:
                 raise BoltError(u'Unknown condition function: %d\nparam1: '
                                 u'%08X\nparam2: %08X' % (
-                    ifunc, ins.unpackRef(), ins.unpackRef()))
-            # Form1 is Param1 - 2 means fid
-            form1 = ('I' if bush.game.condition_function_data[ifunc][1] == 2
-                     else 'i')
-            # Form2 is Param2
-            form2 = ('I' if bush.game.condition_function_data[ifunc][2] == 2
-                     else 'i')
-            # Form3 is runOn
-            form3 = 'I'
-            # Form4 is reference, this is a formID when runOn = 2
-            form4 = 'I'
-            if size_ == 28:
-                form1234 = form1 + form2 + form3 + form4
-                unpacked2 = ins.unpack(form1234, 16, readId)
-                (record.param1, record.param2, record.runOn,
-                 record.reference) = unpacked2
-            elif size_ == 24:
-                form1234 = form1 + form2 + form3
-                unpacked2 = ins.unpack(form1234, 12, readId)
-                record.param1, record.param2, record.runOn = unpacked2
-                record.reference = null4
-            else: # size_ == 20, verified at the start
-                form1234 = form1 + form2
-                unpacked2 = ins.unpack(form1234, 8, readId)
-                record.param1, record.param2 = unpacked2
-                record.runOn, record.reference = null4, null4
-            record.ifunc, record.form1234 = ifunc, form1234
+                                    ifunc, ins.unpackRef(), ins.unpackRef()))
+            form1234 = __unpackers[form12]
+            (record.param1, record.param2, record.runOn, record.reference) =\
+                ins.unpack(form1234.unpack, size_ - 12, readId) + (0,) * (
+                    (28 - size_) // 4)
+            record.ifunc, record.form1234 = ifunc, form1234.format
 
         def dumpData(self,record,out):
-            out.packSub('CTDA', '=B3sfH2s' + record.form1234,
-                record.operFlag, record.unused1, record.compValue,
+            out.packSub('CTDA', '=B3sfH2s' + record.form1234, ##: + ['I'] * ((28 - size_) // 4) to always write record with size 28??
+                *[record.operFlag, record.unused1, record.compValue,
                 record.ifunc, record.unused2, record.param1, record.param2,
-                record.runOn, record.reference)
+                record.runOn, record.reference][: 7 + (len(record.form1234) - 2)])
 
         def mapFids(self,record,function,save=False):
             form1234 = record.form1234
-            if form1234[0] == 'I':
+            if form1234[0] == u'I':
                 result = function(record.param1)
                 if save: record.param1 = result
-            if form1234[1] == 'I':
+            if form1234[1] == u'I':
                 result = function(record.param2)
                 if save: record.param2 = result
             # runOn is uint32, never FID
             #0:Subject,1:Target,2:Reference,3:Combat Target,4:Linked Reference
-            if len(form1234) > 3 and form1234[3] == 'I' and record.runOn == 2:
+            if len(form1234) > 3 and form1234[3] == u'I' and record.runOn == 2:
                 result = function(record.reference)
                 if save: record.reference = result
 
@@ -2122,11 +2113,12 @@ class MreNpc(MreActor):
 
     class MelNpcData(MelStruct):
         """Convert npc stats into skills, health, attributes."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 11:
-                unpacked = list(ins.unpack('=I7B', size_, readId))
-            else:
-                unpacked = list(ins.unpack('=I21B', size_, readId))
+
+        def loadData(self, record, ins, sub_type, size_, readId,
+                     __unpackers=defaultdict(
+                         lambda: struct.Struct(u'=I21B').unpack,
+                         {11: struct.Struct(u'=I7B').unpack})):
+            unpacked = list(ins.unpack(__unpackers[size_], size_, readId))
             recordSetAttr = record.__setattr__
             recordSetAttr('health',unpacked[0])
             recordSetAttr('attributes',unpacked[1:])
@@ -2141,8 +2133,9 @@ class MreNpc(MreActor):
 
     class MelNpcDnam(MelStruct):
         """Convert npc stats into skills."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            unpacked = list(ins.unpack('=28B', size_, readId))
+        def loadData(self, record, ins, sub_type, size_, readId,
+                     __unpacker=struct.Struct(u'=28B').unpack):
+            unpacked = list(ins.unpack(__unpacker, size_, readId))
             recordSetAttr = record.__setattr__
             recordSetAttr('skillValues',unpacked[:14])
             recordSetAttr('skillOffsets',unpacked[14:])
@@ -3209,12 +3202,13 @@ class MreWatr(MelRecord):
     # TODO(inf) Actually two separate DATA subrecords - union + distributor
     class MelWatrData(MelStruct):
         """Handle older truncated DATA for WATR subrecord."""
-        def loadData(self, record, ins, sub_type, size_, readId):
+        def loadData(self, record, ins, sub_type, size_, readId,
+                     __unpacker=struct.Struct(u'H').unpack):
             if size_ == 186:
                 MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
             elif size_ == 2:
-                (record.damage,) = ins.unpack('H', size_, readId)
+                (record.damage,) = ins.unpack(__unpacker, size_, readId)
                 return
             else:
                 raise ModSizeError(ins.inName, readId, (186, 2), size_)

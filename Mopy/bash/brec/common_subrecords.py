@@ -25,14 +25,30 @@
 definitions for some commonly needed subrecords."""
 
 from __future__ import division, print_function
+import struct
+from itertools import product
 
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
     MelUnion
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32
-from .utils_constants import null1, null3, null4
+from .utils_constants import _int_unpacker, null1, null3, null4
 from .. import bolt
 from ..bolt import encode, struct_pack
+
+#------------------------------------------------------------------------------
+def mel_cdta_unpackers(sizes_list, pad=u'I'): ##: see if MelUnion can't do this better
+    """Return compiled structure objects for each combination of size and
+    condition value (?).
+
+    :rtype: dict[unicode, struct.Struct]"""
+    sizes_list = sorted(sizes_list)
+    _formats = {u'11': u'II', u'10': u'Ii', u'01': u'iI', u'00': u'ii'}
+    _formats = {u'%s%d' % (k, s): u'%s%s' % (
+        f, u''.join([pad] * ((s - sizes_list[0]) // 4))) for (k, f), s in
+                product(_formats.items(), sizes_list)}
+    _formats = {k: struct.Struct(v) for (k, v) in _formats.items()}
+    return _formats
 
 #------------------------------------------------------------------------------
 class MelBounds(MelGroup):
@@ -186,9 +202,10 @@ class MelRaceParts(MelNull):
         for element in self._indx_to_loader.itervalues():
             element.setDefault(record)
 
-    def loadData(self, record, ins, sub_type, size_, readId):
+    def loadData(self, record, ins, sub_type, size_, readId,
+                 __unpacker=_int_unpacker):
         if sub_type == 'INDX':
-            self._last_indx, = ins.unpack('I', size_, readId)
+            self._last_indx, = ins.unpack(__unpacker, size_, readId)
         else:
             self._indx_to_loader[self._last_indx].loadData(
                 record, ins, sub_type, size_, readId)
@@ -238,16 +255,17 @@ class MelMODS(MelBase):
     def setDefault(self,record):
         record.__setattr__(self.attr,None)
 
-    def loadData(self, record, ins, sub_type, size_, readId):
+    def loadData(self, record, ins, sub_type, size_, readId,
+                 __unpacker=_int_unpacker):
         insUnpack = ins.unpack
         insRead32 = ins.readString32
-        count, = insUnpack('I',4,readId)
+        count, = insUnpack(__unpacker, 4, readId)
         data = []
         dataAppend = data.append
         for x in xrange(count):
             string = insRead32(readId)
             fid = ins.unpackRef()
-            index, = insUnpack('I',4,readId)
+            index, = insUnpack(__unpacker, 4, readId)
             dataAppend((string,fid,index))
         record.__setattr__(self.attr,data)
 

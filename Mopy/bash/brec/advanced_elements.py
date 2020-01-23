@@ -438,21 +438,23 @@ class MelTruncatedStruct(MelStruct):
                               u'set')
         self._is_optional = kwargs.pop('is_optional', False)
         MelStruct.__init__(self, sub_sig, sub_fmt, *elements)
-        self._all_formats = {struct.calcsize(alt_fmt): alt_fmt for alt_fmt
-                             in old_versions}
-        self._all_formats[struct.calcsize(sub_fmt)] = sub_fmt
+        self._all_unpackers = {
+            struct.calcsize(alt_fmt): struct.Struct(alt_fmt).unpack for
+            alt_fmt in old_versions}
+        self._all_unpackers[struct.calcsize(sub_fmt)] = struct.Struct(
+            sub_fmt).unpack
 
     def loadData(self, record, ins, sub_type, size_, readId):
         # Try retrieving the format - if not possible, wrap the error to make
         # it more informative
         try:
-            target_fmt = self._all_formats[size_]
+            target_unpacker = self._all_unpackers[size_]
         except KeyError:
             raise exception.ModSizeError(
-                ins.inName, readId, tuple(self._all_formats.keys()), size_)
+                ins.inName, readId, tuple(self._all_unpackers.keys()), size_)
         # Actually unpack the struct and pad it with defaults if it's an older,
         # truncated version
-        unpacked_val = ins.unpack(target_fmt, size_, readId)
+        unpacked_val = ins.unpack(target_unpacker, size_, readId)
         unpacked_val = self._pre_process_unpacked(unpacked_val)
         # Apply any actions and then set the attributes according to the values
         # we just unpacked

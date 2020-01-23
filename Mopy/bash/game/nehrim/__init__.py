@@ -22,6 +22,8 @@
 #
 # =============================================================================
 """GameInfo override for TES IV: Oblivion."""
+import struct
+
 from ..oblivion import OblivionGameInfo
 from ... import brec
 from ...brec import MreGlob
@@ -96,6 +98,8 @@ class NehrimGameInfo(OblivionGameInfo):
         header_type.rec_header_size = 20
         header_type.rec_pack_format = [u'=4s', u'I', u'I', u'I', u'I']
         header_type.rec_pack_format_str = u''.join(header_type.rec_pack_format)
+        header_type.header_unpack = struct.Struct(
+            header_type.rec_pack_format_str).unpack
         header_type.pack_formats = {0: u'=4sI4s2I'}
         header_type.pack_formats.update(
             {x: u'=4s4I' for x in {1, 6, 7, 8, 9, 10}})

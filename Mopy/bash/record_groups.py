@@ -25,10 +25,11 @@
 """Classes that group records."""
 # Python imports
 from __future__ import division, print_function
+import struct
 from operator import itemgetter
 # Wrye Bash imports
 from .brec import ModReader, RecordHeader
-from .bolt import sio, struct_pack, struct_unpack
+from .bolt import sio
 from . import bush # for fallout3/nv fsName
 from .exception import AbstractError, ArgumentError, ModError
 
@@ -800,7 +801,8 @@ class MobWorld(MobCells):
         self.road = None
         MobCells.__init__(self, header, loadFactory, ins, do_unpack)
 
-    def load_rec_group(self, ins, endPos):
+    def load_rec_group(self, ins, endPos, __packer=struct.Struct(u'I').pack,
+                       __unpacker=struct.Struct(u'2h').unpack):
         """Loads data from input stream. Called by load()."""
         cellType_class = self.loadFactory.getCellTypeClass()
         errLabel = u'World Block'
@@ -867,7 +869,7 @@ class MobWorld(MobCells):
             elif recType == 'GRUP':
                 groupFid,groupType = header.label,header.groupType
                 if groupType == 4: # Exterior Cell Block
-                    block = struct_unpack('2h', struct_pack('I', groupFid))
+                    block = __unpacker(__packer(groupFid))
                     block = (block[1],block[0])
                     endBlockPos = insTell() + delta
                 elif groupType == 5: # Exterior Cell Sub-Block

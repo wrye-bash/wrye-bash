@@ -22,6 +22,8 @@
 #
 # =============================================================================
 """GameInfo override for TES III: Morrowind."""
+import struct
+
 from .. import GameInfo
 from ... import brec
 
@@ -98,7 +100,11 @@ class MorrowindGameInfo(GameInfo):
         header_type.rec_header_size = 16
         header_type.rec_pack_format = [u'=4s', u'I', u'I', u'I']
         header_type.rec_pack_format_str = u''.join(header_type.rec_pack_format)
+        header_type.header_unpack = struct.Struct(
+            header_type.rec_pack_format_str).unpack
         header_type.sub_header_fmt = u'=4sI'
+        header_type.sub_header_unpack = struct.Struct(
+            header_type.sub_header_fmt).unpack
         header_type.sub_header_size = 8
         header_type.topTypes = [
             b'GMST', b'GLOB', b'CLAS', b'FACT', b'RACE', b'SOUN', b'SKIL',

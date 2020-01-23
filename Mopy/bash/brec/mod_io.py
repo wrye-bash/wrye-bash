@@ -26,9 +26,10 @@ files."""
 
 from __future__ import division, print_function
 import os
+import struct
 
 # no local imports beyond this, imported everywhere in brec
-from .utils_constants import null1, strFid
+from .utils_constants import _int_unpacker, null1, strFid
 from .. import bolt, exception
 from ..bolt import decode, encode, struct_pack, struct_unpack
 
@@ -44,8 +45,12 @@ class RecordHeader(object):
     rec_pack_format = [u'=4s', u'I', u'I', u'I', u'I', u'I']
     # rec_pack_format as a format string. Use for pack / unpack calls.
     rec_pack_format_str = u''.join(rec_pack_format)
+    # precompiled unpacker for record headers
+    header_unpack = struct.Struct(rec_pack_format_str).unpack
     # Format used by sub-record headers. Morrowind uses a different one.
     sub_header_fmt = u'=4sH'
+    # precompiled unpacker for sub-record headers
+    sub_header_unpack = struct.Struct(sub_header_fmt).unpack
     # Size of sub-record headers. Morrowind has a different one.
     sub_header_size = 6
     # http://en.uesp.net/wiki/Tes5Mod:Mod_File_Format#Groups
@@ -95,7 +100,7 @@ class RecordHeader(object):
     def unpack(ins):
         """Return a RecordHeader object by reading the input stream."""
         # args = rec_type, size, uint0, uint1, uint2[, uint3]
-        args = ins.unpack(RecordHeader.rec_pack_format_str,
+        args = ins.unpack(RecordHeader.header_unpack,
                           RecordHeader.rec_header_size, 'REC_HEADER')
         #--Bad type?
         rec_type = args[0]
@@ -223,23 +228,23 @@ class ModReader(object):
                                          self.size)
         return self.ins.read(size)
 
-    def readLString(self,size,recType='----'):
-        """Read translatible string.  If the mod has STRINGS file, this is a
-        uint32 to lookup the string in the string table.  Otherwise, this is a
+    def readLString(self, size, recType='----', __unpacker=_int_unpacker):
+        """Read translatable string. If the mod has STRINGS files, this is a
+        uint32 to lookup the string in the string table. Otherwise, this is a
         zero-terminated string."""
         if self.hasStrings:
             if size != 4:
                 endPos = self.ins.tell() + size
                 raise exception.ModReadError(self.inName, recType, endPos, self.size)
-            id_, = self.unpack('I',4,recType)
+            id_, = self.unpack(__unpacker, 4, recType)
             if id_ == 0: return u''
             else: return self.strings.get(id_,u'LOOKUP FAILED!') #--Same as Skyrim
         else:
             return self.readString(size,recType)
 
-    def readString32(self, recType='----'):
+    def readString32(self, recType='----', __unpacker=_int_unpacker):
         """Read wide pascal string: uint32 is used to indicate length."""
-        strLen, = self.unpack('I',4,recType)
+        strLen, = self.unpack(__unpacker, 4, recType)
         return self.readString(strLen,recType)
 
     def readString(self,size,recType='----'):
@@ -252,31 +257,33 @@ class ModReader(object):
         return [decode(x,bolt.pluginEncoding,avoidEncodings=('utf8','utf-8')) for x in
                 self.read(size,recType).rstrip(null1).split(null1)]
 
-    def unpack(self,format,size,recType='----'):
-        """Read file and unpack according to struct format."""
+    def unpack(self, struct_unpacker, size, recType='----'):
+        """Read size bytes from the file and unpack according to format of
+        struct_unpacker."""
         endPos = self.ins.tell() + size
         if endPos > self.size:
             raise exception.ModReadError(self.inName, recType, endPos, self.size)
-        return struct_unpack(format, self.ins.read(size))
+        return struct_unpacker(self.ins.read(size))
 
-    def unpackRef(self):
+    def unpackRef(self, __unpacker=_int_unpacker):
         """Read a ref (fid)."""
-        return self.unpack('I',4)[0]
+        return self.unpack(__unpacker, 4)[0]
 
     def unpackRecHeader(self): return RecordHeader.unpack(self)
 
-    def unpackSubHeader(self,recType='----',expType=None,expSize=0):
-        """Unpack a subrecord header.  Optionally checks for match with expected
+    def unpackSubHeader(self, recType='----', expType=None, expSize=0,
+                        __unpacker=_int_unpacker):
+        """Unpack a subrecord header. Optionally checks for match with expected
         type and size."""
         selfUnpack = self.unpack
-        (rec_type, size) = selfUnpack(RecordHeader.sub_header_fmt,
+        (rec_type, size) = selfUnpack(RecordHeader.sub_header_unpack,
                                       RecordHeader.sub_header_size,
                                       recType + '.SUB_HEAD')
         #--Extended storage?
         while rec_type == 'XXXX':
-            size = selfUnpack('I',4,recType+'.XXXX.SIZE.')[0]
+            size = selfUnpack(__unpacker, 4, recType + '.XXXX.SIZE.')[0]
             # Throw away size here (always == 0)
-            rec_type = selfUnpack(RecordHeader.sub_header_fmt,
+            rec_type = selfUnpack(RecordHeader.sub_header_unpack,
                                   RecordHeader.sub_header_size,
                                   recType + '.XXXX.TYPE')[0]
         #--Match expected name?
