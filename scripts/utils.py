@@ -120,7 +120,7 @@ def run_subprocess(command, logger, **kwargs):
         **kwargs
     )
     logger.debug("Running command: {}".format(" ".join(command)))
-    stdout, _ = sp.communicate()
+    stdout, _stderr = sp.communicate()
     if sp.returncode != 0:
         logger.error(stdout)
         raise subprocess.CalledProcessError(sp.returncode, " ".join(command))

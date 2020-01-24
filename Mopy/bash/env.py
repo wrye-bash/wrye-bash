@@ -435,7 +435,7 @@ def _linux_get_file_version_info(filename):
         """Read one or more chunks from the file, either a word or dword."""
         file_obj.seek(offset, not absolute)
         result = [struct_unpack('<' + fmt[0], file_obj.read(fmt[1]))[0]
-                  for _ in xrange(count)]
+                  for x in xrange(count)]
         return result[0] if count == 1 else result
     def _find_version(file_obj, pos, offset):
         """Look through the RT_VERSION and return VS_VERSION_INFO."""

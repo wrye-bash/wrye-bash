@@ -3978,7 +3978,7 @@ class ModFile(object):
             self.tes4 = bush.game.plugin_header_class(header,ins,True)
             # Check if we need to handle strings
             self.strings.clear()
-            if do_unpack and self.tes4.flags1[7] and loadStrings:
+            if do_unpack and self.tes4.flags1.hasStrings and loadStrings:
                 stringsProgress = SubProgress(progress,0,0.1) # Use 10% of progress bar for strings
                 lang = bosh.oblivionIni.get_ini_language()
                 stringsPaths = self.fileInfo.getStringsPaths(lang)

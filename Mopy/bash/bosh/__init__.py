@@ -736,7 +736,21 @@ class ModInfo(FileInfo):
                 extract -= set(imap(unicode.lower, found_assets))
                 if not extract:
                     break
-            else: raise ModError(self.name, u"Could not locate Strings Files")
+            else:
+                msg = (u'This plugin is localized, but the following strings '
+                       u'files seem to be missing:\n%s' %
+                       u'\n'.join(u' - %s' % e for e in extract))
+                if self._extra_bsas(): # log all BSAs we considered
+                    msg += (u'\nThe following BSAs were scanned (based on '
+                            u'name and INI settings), but none of them '
+                            u'contain the missing files:\n%s' % u'\n'.join(
+                        u' - %s' % e.name for e in self._extra_bsas()))
+                else:
+                    msg += (u'\nNo BSAs were found that could contain the '
+                            u'missing strings - this is bad, validate your '
+                            u'game installation and double-check your INI '
+                            u'settings')
+                raise ModError(self.name, msg)
             for bsa, assets in bsa_assets.iteritems():
                 out_path = dirs['bsaCache'].join(bsa.name)
                 try:

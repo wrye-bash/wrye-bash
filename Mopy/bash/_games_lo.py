@@ -934,7 +934,6 @@ class Enderal(TextfileGame):
 
 # AsteriskGame overrides
 class Fallout4(AsteriskGame):
-
     must_be_active_if_present = (bolt.GPath(u'DLCRobot.esm'),
                                  bolt.GPath(u'DLCworkshop01.esm'),
                                  bolt.GPath(u'DLCCoast.esm'),
@@ -1111,7 +1110,6 @@ class Fallout4(AsteriskGame):
             self.must_be_active_if_present)
 
 class SkyrimSE(AsteriskGame):
-
     must_be_active_if_present = (bolt.GPath(u'Update.esm'),
                                  bolt.GPath(u'Dawnguard.esm'),
                                  bolt.GPath(u'Hearthfires.esm'),
@@ -1207,6 +1205,16 @@ class SkyrimSE(AsteriskGame):
                         dlc, format_date(dlc_mtime),
                         format_date(master_mtime)))
         return add
+
+    def _persist_load_order(self, lord, active):
+        # Write the primary file, then make a copy for the CK to use (it looks
+        # for plugins.txt in the wrong path, namely the game folder, not
+        # AppData\Local - and then falls back to timestamps when it can't find
+        # plugins.txt in the game folder)
+        # Note that this is fixed in FO4, and seems to crash the Skyrim LE CK,
+        # so we only do it for SSE
+        super(SkyrimSE, self)._persist_load_order(lord, active)
+        self.plugins_txt_path.copyTo(bass.dirs[u'app'].join(u'plugins.txt'))
 
 # Game factory
 def game_factory(game_fsName, mod_infos, plugins_txt_path,

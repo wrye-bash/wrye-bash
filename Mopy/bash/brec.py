@@ -231,13 +231,9 @@ class ModReader(object):
     def __enter__(self): return self
     def __exit__(self, exc_type, exc_value, exc_traceback): self.ins.close()
 
-    def setStringTable(self,table={}):
-        if table is None:
-            self.hasStrings = False
-            self.strings = {}
-        else:
-            self.hasStrings = True
-            self.strings = table
+    def setStringTable(self, table):
+        self.hasStrings = bool(table)
+        self.strings = table or {} # table may be None
 
     #--I/O Stream -----------------------------------------
     def seek(self,offset,whence=os.SEEK_SET,recType='----'):
@@ -1044,9 +1040,12 @@ class FlagDecider(ACommonDecider):
 
 class GameDecider(ACommonDecider):
     """Decider that returns the name of the currently managed game."""
+    def __init__(self):
+        from . import bush
+        self.game_fsName = bush.game.fsName
+
     def _decide_common(self, record):
-        import bush
-        return bush.game.fsName
+        return self.game_fsName
 
 class PartialLoadDecider(ADecider):
     """Partially loads a subrecord using a given loader, then rewinds the
