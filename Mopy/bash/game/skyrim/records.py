@@ -417,6 +417,7 @@ class MelIsSSE(MelUnion):
         :type le_version: MelBase
         :type se_version: MelBase"""
         super(MelIsSSE, self).__init__({
+            u'Enderal': le_version,
             u'Skyrim': le_version,
             u'Skyrim Special Edition': se_version,
         }, decider=GameDecider())
