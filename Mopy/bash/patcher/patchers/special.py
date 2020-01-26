@@ -97,6 +97,7 @@ class ListsMerger(_AListsMerger, ListPatcher):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self, patchFile):
         super(ListsMerger, self).initPatchFile(patchFile)
+        self.isActive = True # Can do meaningful work even without sources
         self.srcs_ordered = self.srcs
         self.srcs = set(self.srcs) & patchFile.loadSet
         self.type_list = dict([(rec, {}) for rec in self._read_write_records])
