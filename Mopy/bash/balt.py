@@ -2698,7 +2698,10 @@ class ListBoxes(Dialog):
         self.text.wrap(minWidth) # otherwise self.text expands to max width
         layout = VLayout(border=5, spacing=5, items=[self.text])
         self._ids = {}
-        self.SetSize(wxSize(minWidth, -1))
+        # Size ourselves slightly larger than the wrapped text, otherwise some
+        # of it may be cut off and the buttons may become too small to read
+        self.SetSize(wxSize(minWidth + 64, -1))
+        self.SetMinSize(wxSize(minWidth + 64, 256))
         for item_group in lists:
             title = item_group[0] # also serves as key in self._ids dict
             item_tip = item_group[1]
@@ -2735,16 +2738,13 @@ class ListBoxes(Dialog):
                 (CancelButton(self, label=bCancel) if canCancel else None)]
                             ), LayoutOptions(h_align=RIGHT)))
         layout.apply_to(self)
-        #make sure that minimum size is at least the size of title
-        if self.GetSize()[0] < minWidth:
-            self.SetSize(wxSize(minWidth,-1))
-        self.text.wrap(self.GetSize().width)
-        self.Bind(wx.EVT_SIZE, self.OnSize)
+        set_event_hook(self, Events.RESIZE, self.OnSize)
 
     def OnMotion(self, event): return
 
     def OnSize(self, event):
-        self.text.wrap(self.GetSize().width)
+        # Account for the window being larger than the wrapped text
+        self.text.wrap(self.GetSize().width - 64)
         event.Skip()
 
     def OnKeyUp(self,event):
