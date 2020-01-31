@@ -119,7 +119,7 @@ def getbestencoding(bitstream):
     """Tries to detect the encoding a bitstream was saved in.  Uses Mozilla's
        detection library to find the best match (heuristics)"""
     result = chardet.detect(bitstream)
-    encoding_,confidence = result['encoding'],result['confidence']
+    encoding_,confidence = result[u'encoding'],result[u'confidence']
     encoding_ = _encodingSwap.get(encoding_,encoding_)
     ## Debug: uncomment the following to output stats on encoding detection
     #print
@@ -305,10 +305,10 @@ class LowerDict(dict):
 
     @staticmethod # because this doesn't make sense as a global function.
     def _process_args(mapping=(), **kwargs):
-        if hasattr(mapping, 'iteritems'): # PY3: items
-            mapping = getattr(mapping, 'iteritems')()
+        if hasattr(mapping, u'iteritems'): # PY3: items
+            mapping = getattr(mapping, u'iteritems')()
         return ((_ci_str(k), v) for k, v in
-                chain(mapping, getattr(kwargs, 'iteritems')()))
+                chain(mapping, getattr(kwargs, u'iteritems')()))
 
     def __init__(self, mapping=(), **kwargs):
         # dicts take a mapping or iterable as their optional first argument
@@ -461,7 +461,7 @@ class Path(object):
      May be just a directory, filename or full path."""
 
     #--Class Vars/Methods -------------------------------------------
-    sys_fs_enc = sys.getfilesystemencoding() or 'mbcs'
+    sys_fs_enc = sys.getfilesystemencoding() or u'mbcs'
     invalid_chars_re = re.compile(u'' r'(.*)([/\\:*?"<>|]+)(.*)', re.I | re.U)
 
     @staticmethod
@@ -496,8 +496,8 @@ class Path(object):
     #--Instance stuff --------------------------------------------------
     #--Slots: _s is normalized path. All other slots are just pre-calced
     #  variations of it.
-    __slots__ = ('_s', '_cs', '_sroot', '_shead', '_stail', '_ext',
-                 '_cext', '_sbody')
+    __slots__ = (u'_s', u'_cs', u'_sroot', u'_shead', u'_stail', u'_ext',
+                 u'_cext', u'_sbody')
 
     def __init__(self, name):
         """Initialize."""
@@ -628,20 +628,20 @@ class Path(object):
         except UnicodeDecodeError:
             try:
                 traceback.print_exc()
-                print('Trying to pass temp dir in...')
+                print(u'Trying to pass temp dir in...')
                 tempdir = unicode(tempfile.gettempdir(), Path.sys_fs_enc)
                 return GPath(tempfile.mkdtemp(prefix=prefix, dir=tempdir))
             except UnicodeDecodeError:
                 try:
                     traceback.print_exc()
-                    print('Trying to encode temp dir prefix...')
+                    print(u'Trying to encode temp dir prefix...')
                     return GPath(tempfile.mkdtemp(
                         prefix=prefix.encode(Path.sys_fs_enc)).decode(
                         Path.sys_fs_enc))
                 except:
                     traceback.print_exc()
-                    print('Failed to create tmp dir, Bash will not function ' \
-                          'correctly.')
+                    print(u'Failed to create tmp dir, Bash will not function '
+                          u'correctly.')
 
     @staticmethod
     def baseTempDir():
@@ -679,7 +679,7 @@ class Path(object):
         return os.path.getmtime(self._s)
     def _setmtime(self, mtime):
         os.utime(self._s, (self.atime, mtime))
-    mtime = property(_getmtime, _setmtime, doc="Time file was last modified.")
+    mtime = property(_getmtime, _setmtime, doc=u'Time file was last modified.')
 
     def size_mtime(self):
         lstat = os.lstat(self._s)
@@ -716,7 +716,7 @@ class Path(object):
         """Calculates and returns crc value for self."""
         crc = 0
         with self.open(u'rb') as ins:
-            for block in iter(partial(ins.read, 2097152), ''):
+            for block in iter(partial(ins.read, 2097152), b''):
                 crc = crc32(block, crc) # 2MB at a time, probably ok
         return crc & 0xffffffff
 
@@ -822,7 +822,7 @@ class Path(object):
         except OSError:
             self.clearRO()
             os.removedirs(self._s)
-    def rmtree(self,safety='PART OF DIRECTORY NAME'):
+    def rmtree(self,safety=u'PART OF DIRECTORY NAME'):
         """Removes directory tree. As a safety factor, a part of the directory name must be supplied."""
         if self.isdir() and safety and safety.lower() in self._cs:
             shutil.rmtree(self._s,onerror=Path._onerror)
@@ -984,7 +984,7 @@ class CsvReader(object):
     @staticmethod
     def utf_8_encoder(unicode_csv_data):
         for line in unicode_csv_data:
-            yield line.encode('utf8')
+            yield line.encode(u'utf8')
 
     def __init__(self,path): ##: Py3 Revisit - is Csv reader still bytes?  get rid of BOM?
         self.ins = GPath(path).open(u'r', encoding=u'utf-8-sig')
@@ -1034,9 +1034,9 @@ class Flags(object):
     def __init__(self, value=0, names=None, unknown_is_unused=False):
         """Initialize. Attrs, if present, is mapping of attribute names to
         indices. unknown_is_unused will discard unknown flags."""
-        object.__setattr__(self, '_names', names or {})
-        object.__setattr__(self, '_field', int(value))
-        object.__setattr__(self, '_unknown_is_unused', unknown_is_unused)
+        object.__setattr__(self, u'_names', names or {})
+        object.__setattr__(self, u'_field', int(value))
+        object.__setattr__(self, u'_unknown_is_unused', unknown_is_unused)
         self._clean_unused_flags()
 
     def __call__(self,newValue=None):
@@ -1096,15 +1096,15 @@ class Flags(object):
     def __getattr__(self,name):
         """Get value by flag name. E.g. flags.isQuestItem"""
         try:
-            names = object.__getattribute__(self,'_names')
+            names = object.__getattribute__(self, u'_names')
             index = names[name]
-            return (object.__getattribute__(self,'_field') >> index) & 1 == 1
+            return (object.__getattribute__(self, u'_field') >> index) & 1 == 1
         except KeyError:
             raise AttributeError(name)
 
     def __setattr__(self,name,value):
         """Set value by flag name. E.g., flags.isQuestItem = False"""
-        if name in ('_field','_names'):
+        if name in (u'_field', u'_names'):
             object.__setattr__(self,name,value)
         else:
             self.__setitem__(self._names[name],value)
@@ -1280,7 +1280,7 @@ class MainFunctions(object):
         if not func:
             msg = _(u'Unknown function/object: %s') % func_key
             try: print(msg)
-            except UnicodeError: print(msg.encode('mbcs'))
+            except UnicodeError: print(msg.encode(u'mbcs'))
             return
         for attr in attrs:
             func = getattr(func,attr)
@@ -1368,7 +1368,7 @@ class PickleDict(object):
                         deprint(u'Unable to load %s (will be moved to "%s")' %(
                                 path, cor_name.tail), traceback=True)
                         continue  # file corrupt - try next file
-                    if firstPickle == 'VDATA2':
+                    if firstPickle == b'VDATA2':
                         self.vdata.update(pickle.load(ins))
                         self.data.update(pickle.load(ins))
                     else:
@@ -1391,8 +1391,8 @@ class PickleDict(object):
         """
         if self.readOnly: return False
         #--Pickle it
-        with self._pkl_path.temp.open('wb') as out:
-            for data in ('VDATA2',self.vdata,self.data):
+        with self._pkl_path.temp.open(u'wb') as out:
+            for data in (b'VDATA2', self.vdata, self.data):
                 pickle.dump(data,out,-1)
         self._pkl_path.untemp(doBackup=True)
         return True
@@ -1739,7 +1739,7 @@ def copyattrs(source,dest,attrs):
 
 def cstrip(inString): # TODO(ut): hunt down and deprecate - it's O(n)+
     """Convert c-string (null-terminated string) to python string."""
-    zeroDex = inString.find('\x00')
+    zeroDex = inString.find(b'\x00')
     if zeroDex == -1:
         return inString
     else:
@@ -1761,8 +1761,8 @@ deprintOn = False
 import inspect
 def deprint(*args,**keyargs):
     """Prints message along with file and line location."""
-    if not deprintOn and not keyargs.get('on'): return
-    if keyargs.get('trace', True):
+    if not deprintOn and not keyargs.get(u'on'): return
+    if keyargs.get(u'trace', True):
         stack = inspect.stack()
         file_, line, function = stack[1][1:4]
         msg = u'%s %4d %s: ' % (GPath(file_).tail, line, function)
@@ -1778,12 +1778,12 @@ def deprint(*args,**keyargs):
                 msg += u' %s' % x
             except UnicodeError:
                 msg += u' %r' % x
-    if keyargs.get('traceback',False):
+    if keyargs.get(u'traceback',False):
         o = StringIO.StringIO()
         traceback.print_exc(file=o)
         value = o.getvalue()
         try:
-            msg += u'\n%s' % unicode(value, 'utf-8')
+            msg += u'\n%s' % unicode(value, u'utf-8')
         except UnicodeError:
             traceback.print_exc()
             msg += u'\n%r' % value
@@ -1895,7 +1895,7 @@ class Progress(object):
         """Increments progress by 1."""
         self.__call__(self.state+increment)
 
-    def __call__(self,state,message=''):
+    def __call__(self,state,message=u''):
         """Update progress with current state. Progress is state/full."""
         if (1.0*self.full) == 0: raise exception.ArgumentError(u'Full must be non-zero!')
         if message: self.message = message
@@ -1939,13 +1939,13 @@ class SubProgress(Progress):
 def readCString(ins, file_path):
     """Read null terminated string, dropping the final null byte."""
     byte_list = []
-    for b in iter(partial(ins.read, 1), ''):
-        if b == '\0': break
+    for b in iter(partial(ins.read, 1), b''):
+        if b == b'\0': break
         byte_list.append(b)
     else:
         raise exception.FileError(file_path,
                                   u'Reached end of file while expecting null')
-    return ''.join(byte_list)
+    return b''.join(byte_list)
 
 class StringTable(dict):
     """For reading .STRINGS, .DLSTRINGS, .ILSTRINGS files."""
@@ -1953,8 +1953,8 @@ class StringTable(dict):
         # Encoding to fall back to if UTF-8 fails, based on language
         # Default is 1252 (Western European), so only list languages
         # different than that
-        u'russian': 'cp1251',
-        }
+        u'russian': u'cp1251',
+    }
 
     def load(self, modFilePath, lang=u'English', progress=Progress()):
         baseName = modFilePath.tail.body
@@ -1970,7 +1970,7 @@ class StringTable(dict):
 
     def loadFile(self, path, progress, lang=u'english'):
         formatted = path.cext != u'.strings'
-        backupEncoding = self.encodings.get(lang.lower(), 'cp1252')
+        backupEncoding = self.encodings.get(lang.lower(), u'cp1252')
         try:
             with open(path.s, u'rb') as ins:
                 insSeek = ins.seek
@@ -1981,18 +1981,18 @@ class StringTable(dict):
                 insSeek(0)
                 if eof < 8:
                     deprint(u"Warning: Strings file '%s' file size (%d) is "
-                            u"less than 8 bytes.  8 bytes are the minimum "
-                            u"required by the expected format, assuming the "
-                            u"Strings file is empty." % (path, eof))
+                            u'less than 8 bytes.  8 bytes are the minimum '
+                            u'required by the expected format, assuming the '
+                            u'Strings file is empty.' % (path, eof))
                     return
 
-                numIds,dataSize = unpack_many(ins, '=2I')
+                numIds,dataSize = unpack_many(ins, u'=2I')
                 progress.setFull(max(numIds,1))
                 stringsStart = 8 + (numIds*8)
                 if stringsStart != eof-dataSize:
                     deprint(u"Warning: Strings file '%s' dataSize element "
-                            u"(%d) results in a string start location of %d, "
-                            u"but the expected location is %d"
+                            u'(%d) results in a string start location of %d, '
+                            u'but the expected location is %d'
                             % (path, dataSize, eof-dataSize, stringsStart))
 
                 id_ = -1
@@ -2000,7 +2000,7 @@ class StringTable(dict):
                 for x in xrange(numIds):
                     try:
                         progress(x)
-                        id_,offset = unpack_many(ins, '=2I')
+                        id_,offset = unpack_many(ins, u'=2I')
                         pos = insTell()
                         insSeek(stringsStart+offset)
                         if formatted:
@@ -2010,7 +2010,7 @@ class StringTable(dict):
                         else:
                             value = readCString(ins, path) #drops the null byte
                         try:
-                            value = unicode(value,'utf-8')
+                            value = unicode(value, u'utf-8')
                         except UnicodeDecodeError:
                             value = unicode(value,backupEncoding)
                         insSeek(pos)
@@ -2363,7 +2363,7 @@ class WryeText(object):
         #--Headers
         reHead = re.compile(u'(=+) *(.+)',re.U)
         headFormat = u"<h%d><a id='%s'>%s</a></h%d>\n"
-        headFormatNA = u"<h%d>%s</h%d>\n"
+        headFormatNA = u'<h%d>%s</h%d>\n'
         #--List
         reWryeList = re.compile(u'( *)([-x!?.+*o])(.*)',re.U)
         #--Code
@@ -2393,7 +2393,8 @@ class WryeText(object):
             # urllib will automatically take any unicode characters and escape them, so to
             # convert back to unicode for purposes of storing the string, everything will
             # be in cp1252, due to the escapings.
-            anchor = unicode(quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
+            anchor = unicode(quote(reWd.sub(u'', text).encode(u'utf8')),
+                             u'cp1252')
             count = 0
             if re.match(u'' r'\d', anchor):
                 anchor = u'_' + anchor
@@ -2409,15 +2410,15 @@ class WryeText(object):
         reBold = re.compile(u'__',re.U)
         reItalic = re.compile(u'~~',re.U)
         reBoldItalic = re.compile(u'' r'\*\*',re.U)
-        states = {'bold':False,'italic':False,'boldItalic':False,'code':0}
+        states = {u'bold':False,u'italic':False,u'boldItalic':False,u'code':0}
         def subBold(match):
-            state = states['bold'] = not states['bold']
+            state = states[u'bold'] = not states[u'bold']
             return u'<b>' if state else u'</b>'
         def subItalic(match):
-            state = states['italic'] = not states['italic']
+            state = states[u'italic'] = not states[u'italic']
             return u'<i>' if state else u'</i>'
         def subBoldItalic(match):
-            state = states['boldItalic'] = not states['boldItalic']
+            state = states[u'boldItalic'] = not states[u'boldItalic']
             return u'<i><b>' if state else u'</b></i>'
         #--Preformatting
         #--Links
@@ -2437,7 +2438,8 @@ class WryeText(object):
             address = text = match.group(1).strip()
             if u'|' in text:
                 (address,text) = [chunk.strip() for chunk in text.split(u'|',1)]
-                if address == u'#': address += unicode(quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
+                if address == u'#': address += unicode(quote(reWd.sub(
+                    u'', text).encode(u'utf8')), u'cp1252')
             if address.startswith(u'!'):
                 newWindow = u' target="_blank"'
                 if address == text:
@@ -2469,7 +2471,7 @@ class WryeText(object):
         anchorHeaders = True
         #--Read source file --------------------------------------------------
         for line in ins:
-            line = line.replace('\r\n','\n')
+            line = line.replace(u'\r\n',u'\n')
             #--Codebox -----------------------------------
             if codebox:
                 if codeboxLines is not None:
@@ -2557,8 +2559,9 @@ class WryeText(object):
             #--Headers
             elif maHead:
                 lead,text = maHead.group(1,2)
-                text = re.sub(u' *=*#?$','',text.strip())
-                anchor = unicode(quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
+                text = re.sub(u' *=*#?$', u'', text.strip())
+                anchor = unicode(quote(reWd.sub(u'', text).encode(u'utf8')),
+                                 u'cp1252')
                 level = len(lead)
                 if anchorHeaders:
                     if re.match(u'' r'\d', anchor):
@@ -2578,7 +2581,7 @@ class WryeText(object):
                 #--Title?
                 if not title and level <= 2: title = text
             #--Paragraph
-            elif maPar and not states['code']:
+            elif maPar and not states[u'code']:
                 line = u'<p>'+line+u'</p>\n'
             #--List item
             elif maList:
@@ -2645,7 +2648,7 @@ class WryeText(object):
             out.close()
 
 # Main -------------------------------------------------------------------------
-if __name__ == '__main__' and len(sys.argv) > 1:
+if __name__ == u'__main__' and len(sys.argv) > 1:
     #--Commands----------------------------------------------------------------
     @mainfunc
     def genHtml(*args,**keywords):
