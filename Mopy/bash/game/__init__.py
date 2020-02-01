@@ -270,6 +270,10 @@ class GameInfo(object):
         ]
         # Signature of the main plugin header record type
         plugin_header_sig = b'TES4'
+        # If True, then plugins with at least one master can use the
+        # 0x000-0x800 range for their own records.
+        # If False, that range is reserved for hardcoded engine records.
+        expanded_plugin_range = False
 
     # Bash Tags supported by this game
     allTags = set()

@@ -127,6 +127,7 @@ class Fallout4GameInfo(GameInfo):
         canBash = True
         canEditHeader = True
         validHeaderVersions = (0.95, 1.0)
+        expanded_plugin_range = True
 
     allTags = {
         u'Deactivate', u'Delev', u'Filter', u'ObjectBounds', u'Relev',

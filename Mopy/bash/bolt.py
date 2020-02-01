@@ -181,9 +181,20 @@ def encode(text_str, encodings=encodingOrder, firstEncoding=None,
 
 def timestamp(): return datetime.datetime.now().strftime(u'%Y-%m-%d %H.%M.%S')
 
-def round_size(kbytes):
-    """Round non zero sizes to 1 KB."""
-    return u'%u KB' % (0 if kbytes == 0 else max(kbytes, 1024) // 1024)
+##: Keep an eye on https://bugs.python.org/issue31749
+def round_size(size_bytes):
+    """Returns the specified size in bytes as a human-readable size string."""
+    ##: Maybe offer an option to switch between KiB and KB?
+    prefix_pt2 = u'B' # if bass.settings[...] else u'iB'
+    size_bytes /= 1024 # Don't show bytes
+    for prefix_pt1 in (u'K', u'M', u'G', u'T', u'P', u'E', u'Z', u'Y'):
+        if size_bytes < 1024:
+            # Show a single decimal digit, but never show trailing zeroes
+            return u'%s %s' % (
+                    (u'%.1f' % size_bytes).rstrip(u'0').rstrip(u'.'),
+                    prefix_pt1 + prefix_pt2)
+        size_bytes /= 1024
+    return _(u'<very large>') # ;)
 
 # Helpers ---------------------------------------------------------------------
 def sortFiles(files, __split=os.path.split):

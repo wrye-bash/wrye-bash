@@ -4086,16 +4086,25 @@ class ModFile(object):
     def getShortMapper(self):
         """Returns a mapping function to map long fids to short fids."""
         masters = self.tes4.masters + [self.fileInfo.name]
-        indices = dict((name, index) for index, name in enumerate(masters))
+        indices = {name: index for index, name in enumerate(masters)}
         gLong = self.getLongMapper()
+        has_expanded_range = bush.game.esp.expanded_plugin_range
+        if has_expanded_range and len(masters) > 1:
+            # Plugin has at least one master, it may freely use the
+            # expanded (0x000-0x800) range
+            def _master_index(m_name, obj_id):
+                return indices[m_name]
+        else:
+            # 0x000-0x800 are reserved for hardcoded (engine) records
+            def _master_index(m_name, obj_id):
+                return indices[m_name] if obj_id >= 0x800 else 0
         def mapper(fid):
             if fid is None: return None
-            if isinstance(fid, int):  # PY3 ensure this can never be long
+            ##: #312: drop this once convertToLongFids is auto-applied
+            if isinstance(fid, int):
                 fid = gLong(fid)
             modName, object_id = fid
-            long_id = int(object_id)
-            mod = indices[modName] if long_id >= 0x800 else 0
-            return (int(mod) << 24) | long_id
+            return (_master_index(modName, object_id) << 24) | object_id
         return mapper
 
     def convertToLongFids(self,types=None):

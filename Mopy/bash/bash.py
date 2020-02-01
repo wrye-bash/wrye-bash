@@ -85,11 +85,11 @@ def _import_wx():
         # moved/deleted wx modules
         from wx import _core
         sys.modules['wx._gdi'] = _core
-    except Exception as e:
+    except:
         but_kwargs = {'text': _(u"QUIT"),
                       'fg': 'red'}  # foreground button color
         msg = u'\n'.join([dump_environment(), u'', u'Unable to load wx:',
-                          traceback.format_exc(e), u'Exiting.'])
+                          traceback.format_exc(), u'Exiting.'])
         _tkinter_error_dial(msg, but_kwargs)
         sys.exit(1)
 
@@ -202,7 +202,7 @@ def main(opts):
     wx_locale = localize.setup_locale(opts.language, _wx)
     try:
         _main(opts, wx_locale)
-    except Exception as e:
+    except:
         msg = u'\n'.join([
             _(u'Wrye Bash encountered an error.'),
             _(u'Please post the information below to the official thread at'),
@@ -210,7 +210,7 @@ def main(opts):
             _(u'or to the Wrye Bash Discord at'),
             _(u'https://discord.gg/NwWvAFR'),
             u'',
-            traceback.format_exc(e)
+            traceback.format_exc()
         ])
         _close_dialog_windows()
         _show_wx_error(msg)
@@ -285,10 +285,10 @@ def _main(opts, wx_locale):
         env.isUAC = env.testUAC(bush_game.gamePath.join(u'Data'))
         global basher, balt
         from . import basher, balt
-    except (exception.BoltError, ImportError, OSError, IOError) as e:
+    except (exception.BoltError, ImportError, OSError, IOError):
         msg = u'\n'.join([_(u'Error! Unable to start Wrye Bash.'), u'\n', _(
             u'Please ensure Wrye Bash is correctly installed.'), u'\n',
-                          traceback.format_exc(e)])
+                          traceback.format_exc()])
         _close_dialog_windows()
         _show_wx_error(msg)
         return
@@ -464,13 +464,13 @@ def _show_wx_error(msg):
                               'fg': 'red'}  # foreground button color
                 _tkinter_error_dial(msg, but_kwargs)
 
-    except Exception as e:
+    except:
         print(u'Wrye Bash encountered an error but could not display it.')
         print(u'The following is the error that occurred when displaying the '\
               u'first error:')
         try:
-            print(traceback.format_exc(e))
-        except Exception:
+            print(traceback.format_exc())
+        except:
             print(u'   An error occurred while displaying the second error.')
 
 def _tkinter_error_dial(msg, but_kwargs):
