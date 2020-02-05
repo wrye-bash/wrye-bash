@@ -367,12 +367,37 @@ class Ba2FileRecordGeneral(_BsaHashedRecord):
                                                  u'I', u'I')]
 
 class Ba2FileRecordTexture(_BsaHashedRecord):
-    # chunk_header_size is always 24, unknown1 is always BAADF00D
+    # chunk_header_size is always 24, tex_chunks is reserved in slots but not
+    # read via formats - see load_record below
     __slots__ = (u'file_extension', u'dir_hash', u'unknown_tex',
                  u'num_chunks', u'chunk_header_size', u'height', u'width',
-                 u'num_mips', u'dxgi_format', u'cube_maps')
+                 u'num_mips', u'dxgi_format', u'cube_maps', u'tex_chunks')
     formats = [(f, struct.calcsize(f)) for f in (u'4s', u'I', u'B', u'B', u'H',
                                                  u'H', u'H', u'B', u'B', u'H')]
+
+    def load_record(self, ins):
+        super(Ba2FileRecordTexture, self).load_record(ins)
+        self.tex_chunks = []
+        for x in xrange(self.num_chunks):
+            tex_chunk = Ba2TexChunk()
+            tex_chunk.load_chunk(ins)
+            self.tex_chunks.append(tex_chunk)
+
+class Ba2TexChunk(object):
+    """BA2 texture chunk, used in texture file records."""
+    # unused1 is always BAADF00D
+    __slots__ = (u'offset', u'packed_size', u'unpacked_size', u'start_mip',
+                 u'end_mip', u'unused1')
+    formats = [(f, struct.calcsize(f)) for f in (u'Q', u'I', u'I', u'H', u'H',
+                                                 u'I')]
+
+    def load_chunk(self, ins): ##: Centralize this, copy-pasted everywhere
+        for fmt, attr in zip(Ba2TexChunk.formats, Ba2TexChunk.__slots__):
+            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
+
+    def __repr__(self):
+        return u'Ba2TexChunk<mipmaps #%u to #%u>' % (
+            self.start_mip, self.end_mip)
 
 # Bsa content abstraction -----------------------------------------------------
 class BSAFolder(object):
