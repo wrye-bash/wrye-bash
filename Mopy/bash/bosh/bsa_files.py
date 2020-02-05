@@ -29,7 +29,7 @@ http://www.uesp.net/wiki/Tes4Mod:BSA_File_Format
 http://www.uesp.net/wiki/Tes5Mod:Archive_File_Format
 """
 
-__author__ = 'Utumno'
+__author__ = u'Utumno'
 
 import collections
 import errno
@@ -47,7 +47,7 @@ from ..bolt import deprint, Progress, struct_pack, struct_unpack, \
 from ..exception import AbstractError, BSAError, BSADecodingError, \
     BSAFlagError, BSANotImplemented
 
-_bsa_encoding = 'cp1252' # rumor has it that's the files/folders names encoding
+_bsa_encoding = u'cp1252' #rumor has it that's the files/folders names encoding
 path_sep = u'\\'
 
 # Utilities -------------------------------------------------------------------
@@ -125,11 +125,10 @@ class _Bsa_lz4(_BsaCompressionType):
 
 # Headers ---------------------------------------------------------------------
 class _Header(object):
-    __slots__ = ('file_id', 'version')
-    formats = ['4s', 'I']
-    formats = list((f, struct.calcsize(f)) for f in formats)
-    bsa_magic = 'BSA\x00'
-    bsa_version = int('0x67', 16)
+    __slots__ = (u'file_id', u'version')
+    formats = [(f, struct.calcsize(f)) for f in (u'4s', u'I')]
+    bsa_magic = b'BSA\x00'
+    bsa_version = int(u'0x67', 16)
 
     def load_header(self, ins):
         for fmt, attr in zip(_Header.formats, _Header.__slots__):
@@ -141,11 +140,10 @@ class _Header(object):
 
 class BsaHeader(_Header):
     __slots__ = ( # in the order encountered in the header
-         'folder_records_offset', 'archive_flags', 'folder_count',
-         'file_count', 'total_folder_name_length', 'total_file_name_length',
-         'file_flags')
-    formats = ['I'] * 8
-    formats = list((f, struct.calcsize(f)) for f in formats)
+         u'folder_records_offset', u'archive_flags', u'folder_count',
+         u'file_count', u'total_folder_name_length', u'total_file_name_length',
+         u'file_flags')
+    formats = [(f, struct.calcsize(f)) for f in [u'I'] * 8]
     header_size = 36
 
     def load_header(self, ins):
@@ -170,12 +168,11 @@ class BsaHeader(_Header):
 
 class Ba2Header(_Header):
     __slots__ = ( # in the order encountered in the header
-        'ba2_files_type', 'ba2_num_files', 'ba2_name_table_offset')
-    formats = ['4s', 'I', 'Q']
-    formats = list((f, struct.calcsize(f)) for f in formats)
-    bsa_magic = 'BTDX'
-    file_types = {'GNRL', 'DX10'} # GNRL=General, DX10=Textures
-    bsa_version = int('0x01', 16)
+        u'ba2_files_type', u'ba2_num_files', u'ba2_name_table_offset')
+    formats = [(f, struct.calcsize(f)) for f in (u'4s', u'I', u'Q')]
+    bsa_magic = b'BTDX'
+    file_types = {b'GNRL', b'DX10'} # GNRL=General, DX10=Textures
+    bsa_version = int(u'0x01', 16)
     header_size = 24
 
     def load_header(self, ins):
@@ -210,16 +207,16 @@ class OblivionBsaHeader(BsaHeader):
 
 class SkyrimBsaHeader(BsaHeader):
     __slots__ = ()
-    bsa_version = int('0x68', 16)
+    bsa_version = int(u'0x68', 16)
 
 class SkyrimSeBsaHeader(BsaHeader):
     __slots__ = ()
-    bsa_version = int('0x69', 16)
+    bsa_version = int(u'0x69', 16)
 
 # Records ---------------------------------------------------------------------
 class _HashedRecord(object):
-    __slots__ = ('record_hash',)
-    formats = [('Q', struct.calcsize('Q'))]
+    __slots__ = (u'record_hash',)
+    formats = [(u'Q', struct.calcsize(u'Q'))]
 
     def load_record(self, ins):
         fmt, fmt_siz = _HashedRecord.formats[0]
@@ -277,19 +274,16 @@ class _BsaHashedRecord(_HashedRecord):
             f[1] for f in cls.formats)
 
 class BSAFolderRecord(_BsaHashedRecord):
-    __slots__ = ('files_count', 'file_records_offset')
-    formats = ['I', 'I']
-    formats = list((f, struct.calcsize(f)) for f in formats)
+    __slots__ = (u'files_count', u'file_records_offset')
+    formats = [(f, struct.calcsize(f)) for f in (u'I', u'I')]
 
 class BSASkyrimSEFolderRecord(_BsaHashedRecord):
-    __slots__ = ('files_count', 'unknown_int', 'file_records_offset')
-    formats = ['I', 'I', 'Q']
-    formats = list((f, struct.calcsize(f)) for f in formats)
+    __slots__ = (u'files_count', u'unknown_int', u'file_records_offset')
+    formats = [(f, struct.calcsize(f)) for f in (u'I', u'I', u'Q')]
 
 class BSAFileRecord(_BsaHashedRecord):
-    __slots__ = ('file_size_flags', 'raw_file_data_offset')
-    formats = ['I', 'I']
-    formats = list((f, struct.calcsize(f)) for f in formats)
+    __slots__ = (u'file_size_flags', u'raw_file_data_offset')
+    formats = [(f, struct.calcsize(f)) for f in (u'I', u'I')]
 
     def compression_toggle(self): return self.file_size_flags & 0x40000000
 
@@ -357,9 +351,8 @@ class BSAOblivionFileRecord(BSAFileRecord):
     # to make sure that the last slot, file_pos, is not read from the BSA - we
     # fill it manually in our load_record override. This is necessary to find
     # the positions of hashes for undo_alterations().
-    __slots__ = ('file_size_flags', 'raw_file_data_offset', 'file_pos')
-    formats = ['I', 'I']
-    formats = list((f, struct.calcsize(f)) for f in formats)
+    __slots__ = (u'file_size_flags', u'raw_file_data_offset', u'file_pos')
+    formats = [(f, struct.calcsize(f)) for f in (u'I', u'I')]
 
     def load_record(self, ins):
         self.file_pos = ins.tell()
@@ -367,17 +360,19 @@ class BSAOblivionFileRecord(BSAFileRecord):
 
 # BA2s
 class Ba2FileRecordGeneral(_BsaHashedRecord):
-    __slots__ = ('file_extension', 'dir_hash', 'unk0C', 'offset',
-                 'packed_size', 'unpacked_size', 'unk20')
-    formats = ['4s', 'I', 'I', 'Q', 'I', 'I', 'I']
-    formats = list((f, struct.calcsize(f)) for f in formats)
+    # unused1 is always BAADF00D
+    __slots__ = (u'file_extension', u'dir_hash', u'unknown1', u'offset',
+                 u'packed_size', u'unpacked_size', u'unused1')
+    formats = [(f, struct.calcsize(f)) for f in (u'4s', u'I', u'I', u'Q', u'I',
+                                                 u'I', u'I')]
 
 class Ba2FileRecordTexture(_BsaHashedRecord):
-    __slots__ = ('file_extension', 'dir_hash', 'unk0C', 'num_of_chunks',
-                 'chunk_header_size', 'height', 'width', 'num_mips', 'format',
-                 'unk16')
-    formats = ['4s', 'I', 'B', 'B', 'H', 'H', 'H', 'B', 'B', 'H']#TODO(ut) verify
-    formats = list((f, struct.calcsize(f)) for f in formats)
+    # chunk_header_size is always 24, unknown1 is always BAADF00D
+    __slots__ = (u'file_extension', u'dir_hash', u'unknown_tex',
+                 u'num_chunks', u'chunk_header_size', u'height', u'width',
+                 u'num_mips', u'dxgi_format', u'cube_maps')
+    formats = [(f, struct.calcsize(f)) for f in (u'4s', u'I', u'B', u'B', u'H',
+                                                 u'H', u'H', u'B', u'B', u'H')]
 
 # Bsa content abstraction -----------------------------------------------------
 class BSAFolder(object):
@@ -460,7 +455,7 @@ class ABsa(AFile):
         i = 0
         if progress:
             progress.setFull(len(folder_to_assets))
-        with open(u'%s' % self.abs_path, 'rb') as bsa_file:
+        with open(u'%s' % self.abs_path, u'rb') as bsa_file:
             for folder, file_records in folder_to_assets.iteritems():
                 if progress:
                     progress(i, u'Extracting %s...\n%s' % (bsa_name, folder))
@@ -495,7 +490,7 @@ class ABsa(AFile):
                         # This is an uncompressed record, just read it
                         raw_data = bsa_file.read(data_size)
                     with open(os.path.join(target_dir, filename),
-                              'wb') as out:
+                              u'wb') as out:
                         out.write(raw_data)
 
     def _map_assets_to_folders(self, folder_files_dict):
@@ -581,7 +576,7 @@ class BSA(ABsa):
 
     def _read_bsa_file(self, folder_records, read_file_records):
         total_names_length = 0
-        with open(u'%s' % self.abs_path, 'rb') as bsa_file: # accept string or Path
+        with open(u'%s' % self.abs_path, u'rb') as bsa_file: # accept string or Path
             # load the header from input stream
             self.bsa_header.load_header(bsa_file)
             # load the folder records from input stream
@@ -606,7 +601,7 @@ class BSA(ABsa):
                     total_names_length, self.bsa_header.folder_count))
             self.total_names_length = total_names_length
             file_names = bsa_file.read( # has an empty string at the end
-                self.bsa_header.total_file_name_length).split('\00')
+                self.bsa_header.total_file_name_length).split(b'\00')
             # close the file
         return file_names
 
@@ -626,7 +621,7 @@ class BA2(ABsa):
         # load the bsa - this should be reworked to load only needed records
         self._load_bsa()
         my_header = self.bsa_header # type: Ba2Header
-        if my_header.ba2_files_type != 'GNRL':
+        if my_header.ba2_files_type != b'GNRL':
             raise BSANotImplemented(
                 u'Texture ba2 archives are not yet supported')
         folder_to_assets = self._map_assets_to_folders(folder_files_dict)
@@ -637,7 +632,7 @@ class BA2(ABsa):
         i = 0
         if progress:
             progress.setFull(len(folder_to_assets))
-        with open(u'%s' % self.abs_path, 'rb') as bsa_file:
+        with open(u'%s' % self.abs_path, u'rb') as bsa_file:
             for folder, file_records in folder_to_assets.iteritems():
                 if progress:
                     progress(i, u'Extracting %s...\n%s' % (bsa_name, folder))
@@ -656,16 +651,17 @@ class BA2(ABsa):
                     else:
                         # This is an uncompressed record, just read it
                         raw_data = bsa_file.read(record.unpacked_size)
-                    with open(os.path.join(target_dir, filename), 'wb') as out:
+                    with open(os.path.join(target_dir, filename),
+                              u'wb') as out:
                         out.write(raw_data)
 
     def _load_bsa(self):
-        with open(u'%s' % self.abs_path, 'rb') as bsa_file:
+        with open(u'%s' % self.abs_path, u'rb') as bsa_file:
             # load the header from input stream
             my_header = self.bsa_header # type: Ba2Header
             my_header.load_header(bsa_file)
             # load the folder records from input stream
-            if my_header.ba2_files_type == 'GNRL':
+            if my_header.ba2_files_type == b'GNRL':
                 file_record_type = Ba2FileRecordGeneral
             else:
                 file_record_type = Ba2FileRecordTexture
@@ -680,7 +676,7 @@ class BA2(ABsa):
             # close the file
         current_folder_name = current_folder = None
         for index in xrange(my_header.ba2_num_files):
-            name_size = struct.unpack_from('H', file_names_block)[0]
+            name_size = struct.unpack_from(u'H', file_names_block)[0]
             filename = _decode_path(
                 file_names_block[2:name_size + 2].tobytes())
             file_names_block = file_names_block[name_size + 2:]
@@ -698,7 +694,7 @@ class BA2(ABsa):
 
     def _load_bsa_light(self):
         my_header = self.bsa_header # type: Ba2Header
-        with open(u'%s' % self.abs_path, 'rb') as bsa_file:
+        with open(u'%s' % self.abs_path, u'rb') as bsa_file:
             # load the header from input stream
             my_header.load_header(bsa_file)
             # load the file names block
@@ -707,7 +703,7 @@ class BA2(ABsa):
             # close the file
         _filenames = []
         for index in xrange(my_header.ba2_num_files):
-            name_size = struct.unpack_from('H', file_names_block)[0]
+            name_size = struct.unpack_from(u'H', file_names_block)[0]
             filename = _decode_path(
                 file_names_block[2:name_size + 2].tobytes())
             _filenames.append(filename)
@@ -784,8 +780,8 @@ class OblivionBsa(BSA):
     # A dictionary mapping file extensions to hash components. Used by Oblivion
     # when hashing file names for its BSAs.
     _bsa_ext_lookup = collections.defaultdict(int)
-    for ext, hash_part in [('.kf', 0x80), ('.nif', 0x8000), ('.dds', 0x8080),
-                           ('.wav', 0x80000000)]:
+    for ext, hash_part in [(u'.kf', 0x80), (u'.nif', 0x8000),
+                           (u'.dds', 0x8080), (u'.wav', 0x80000000)]:
         _bsa_ext_lookup[ext] = hash_part
 
     @staticmethod
@@ -825,7 +821,7 @@ class OblivionBsa(BSA):
 
         :param progress: The progress indicator to use for this process."""
         progress.setFull(self.bsa_header.folder_count)
-        with open(self.abs_path.s, 'r+b') as bsa_file:
+        with open(self.abs_path.s, u'r+b') as bsa_file:
             reset_count = 0
             for folder_name, folder in self.bsa_folders.iteritems():
                 for file_name, file_info in folder.folder_assets.iteritems():
