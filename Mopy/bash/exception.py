@@ -170,6 +170,9 @@ class BSADecodingError(BSAError):
         super(BSADecodingError, self).__init__(
             u'Undecodable string {!r}'.format(string))
 
+# DDS exceptions --------------------------------------------------------------
+class DDSError(Exception): pass
+
 # Misc exceptions -------------------------------------------------------------
 class StateError(BoltError):
     """Error: Object is corrupted."""
