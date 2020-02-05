@@ -366,55 +366,18 @@ class BSAOblivionFileRecord(BSAFileRecord):
         super(BSAOblivionFileRecord, self).load_record(ins)
 
 # BA2s
-class _Ba2FileRecordCommon(_HashedRecord):
-    __slots__ = ('file_extension', 'dir_hash', )
-    formats = ['4s', 'I']
+class Ba2FileRecordGeneral(_BsaHashedRecord):
+    __slots__ = ('file_extension', 'dir_hash', 'unk0C', 'offset',
+                 'packed_size', 'unpacked_size', 'unk20')
+    formats = ['4s', 'I', 'I', 'Q', 'I', 'I', 'I']
     formats = list((f, struct.calcsize(f)) for f in formats)
 
-    def load_record(self, ins):
-        self.record_hash = unpack_int(ins) # record_hash is I not Q !
-        for fmt, attr in zip(_Ba2FileRecordCommon.formats,
-                             _Ba2FileRecordCommon.__slots__):
-            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
-
-    def load_record_from_buffer(self, memview, start):
-        start = super(_Ba2FileRecordCommon, self).load_record_from_buffer(
-            memview, start)
-        for fmt, attr in zip(_Ba2FileRecordCommon.formats,
-                             _Ba2FileRecordCommon.__slots__):
-            self.__setattr__(attr,
-                             struct.unpack_from(fmt[0], memview, start)[0])
-            start += fmt[1]
-        return start
-
-    @classmethod
-    def total_record_size(cls): # unused !
-        return super(_Ba2FileRecordCommon, cls).total_record_size() + sum(
-            f[1] for f in _Ba2FileRecordCommon.formats) + sum(
-            f[1] for f in cls.formats)
-
-class Ba2FileRecordGeneral(_Ba2FileRecordCommon):
-    __slots__ = ('unk0C', 'offset', 'packed_size', 'unpacked_size', 'unk20')
-    formats = ['I', 'Q'] + ['I'] * 3
+class Ba2FileRecordTexture(_BsaHashedRecord):
+    __slots__ = ('file_extension', 'dir_hash', 'unk0C', 'num_of_chunks',
+                 'chunk_header_size', 'height', 'width', 'num_mips', 'format',
+                 'unk16')
+    formats = ['4s', 'I', 'B', 'B', 'H', 'H', 'H', 'B', 'B', 'H']#TODO(ut) verify
     formats = list((f, struct.calcsize(f)) for f in formats)
-
-    def load_record(self, ins):
-        super(Ba2FileRecordGeneral, self).load_record(ins)
-        for fmt, attr in zip(Ba2FileRecordGeneral.formats,
-                             Ba2FileRecordGeneral.__slots__):
-            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
-
-class Ba2FileRecordTexture(_Ba2FileRecordCommon):
-    __slots__ = ('unk0C', 'num_of_chunks', 'chunk_header_size', 'height',
-                 'width', 'num_mips', 'format', 'unk16')
-    formats = ['B'] + ['B'] + ['H'] * 3 + ['B'] + ['B'] + ['H']#TODO(ut) verify
-    formats = list((f, struct.calcsize(f)) for f in formats)
-
-    def load_record(self, ins):
-        super(Ba2FileRecordTexture, self).load_record(ins)
-        for fmt, attr in zip(Ba2FileRecordTexture.formats,
-                             Ba2FileRecordTexture.__slots__):
-            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
 
 # Bsa content abstraction -----------------------------------------------------
 class BSAFolder(object):
@@ -895,4 +858,6 @@ def get_bsa_type(game_fsName):
     elif game_fsName == u'Skyrim Special Edition':
         return SkyrimSeBsa
     elif game_fsName == u'Fallout4':
+        # Hashes are I not Q in BA2s!
+        _HashedRecord.formats = [(u'I', struct.calcsize(u'I'))]
         return BA2
