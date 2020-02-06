@@ -152,8 +152,6 @@ class NonExistentDriveError(FileOperationError):
 # BSA exceptions --------------------------------------------------------------
 class BSAError(Exception): pass
 
-class BSANotImplemented(BSAError): pass
-
 class BSAVersionError(BSAError):
     def __init__(self, version, expected_version):
         super(BSAVersionError, self).__init__(

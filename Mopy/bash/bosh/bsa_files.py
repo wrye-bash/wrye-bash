@@ -42,10 +42,11 @@ from functools import partial
 from itertools import groupby, imap
 from operator import itemgetter
 from . import AFile
+from .dds_files import DDSFile, mk_dxgi_fmt
 from ..bolt import deprint, Progress, struct_pack, struct_unpack, \
     unpack_byte, unpack_string, unpack_int
 from ..exception import AbstractError, BSAError, BSADecodingError, \
-    BSAFlagError, BSANotImplemented
+    BSAFlagError
 
 _bsa_encoding = u'cp1252' #rumor has it that's the files/folders names encoding
 path_sep = u'\\'
@@ -164,7 +165,7 @@ class BsaHeader(_Header):
     def is_compressed(self): return self.archive_flags & 4
     def is_xbox(self): return self.archive_flags & 64
 
-    def embed_filenames(self): return self.archive_flags & 0x100 # TODO Oblivion ?
+    def embed_filenames(self): return self.archive_flags & 0x100
 
 class Ba2Header(_Header):
     __slots__ = ( # in the order encountered in the header
@@ -377,6 +378,7 @@ class Ba2FileRecordTexture(_BsaHashedRecord):
 
     def load_record(self, ins):
         super(Ba2FileRecordTexture, self).load_record(ins)
+        self.dxgi_format = mk_dxgi_fmt(self.dxgi_format)
         self.tex_chunks = []
         for x in xrange(self.num_chunks):
             tex_chunk = Ba2TexChunk()
@@ -646,9 +648,7 @@ class BA2(ABsa):
         # load the bsa - this should be reworked to load only needed records
         self._load_bsa()
         my_header = self.bsa_header # type: Ba2Header
-        if my_header.ba2_files_type != b'GNRL':
-            raise BSANotImplemented(
-                u'Texture ba2 archives are not yet supported')
+        is_dx10 = my_header.ba2_files_type == b'DX10'
         folder_to_assets = self._map_assets_to_folders(folder_files_dict)
         # unload the bsa
         self.bsa_folders.clear()
@@ -658,6 +658,39 @@ class BA2(ABsa):
         if progress:
             progress.setFull(len(folder_to_assets))
         with open(u'%s' % self.abs_path, u'rb') as bsa_file:
+            def _read_rec_or_chunk(record):
+                """Helper method, handles reading both compressed and
+                uncompressed records (or texture chunks)."""
+                bsa_file.seek(record.offset)
+                if record.packed_size:
+                    # This is a compressed record, so decompress it
+                    return self._compression_type.decompress_rec(
+                        bsa_file.read(record.packed_size),
+                        record.unpacked_size)
+                else:
+                    # This is an uncompressed record, just read it
+                    return bsa_file.read(record.unpacked_size)
+            def _build_dds_header(dds_file, record):
+                """Helper method, sets up a functional DDS header for the
+                specified DDS file based on the specified record."""
+                dds_file.dds_header.dw_height = record.height
+                dds_file.dds_header.dw_width = record.width
+                dds_file.dds_header.dw_mip_map_count = record.num_mips
+                dds_file.dds_header.dw_depth = 1
+                # 3 == DDS_DIMENSION_TEXTURE2D - PY3: enum!
+                dds_file.dds_dxt10.resource_dimension = 3
+                dds_file.dds_dxt10.array_size = 1
+                if record.cube_maps == 2049:
+                    dds_file.dds_header.dw_caps.DDSCAPS_COMPLEX = True
+                    # All but DDSCAPS2_VOLUME or'd together
+                    # Archive.exe sticks these into dwCaps, which is 100%
+                    # wrong, but that's DDS for you...
+                    dds_file.dds_header.dw_caps2 = 0xFE00
+                    # 0x4 == DDS_RESOURCE_MISC_TEXTURECUBE
+                    dds_file.dds_dxt10.misc_flag = 0x4
+                # This needs to be last, it uses the header's width and height
+                record.dxgi_format.setup_file(
+                    dds_file, use_legacy_formats=True)
             for folder, file_records in folder_to_assets.iteritems():
                 if progress:
                     progress(i, u'Extracting %s...\n%s' % (bsa_name, folder))
@@ -667,15 +700,22 @@ class BA2(ABsa):
                 target_dir = os.path.join(dest_folder, *folder.split(u'\\'))
                 _makedirs_exists_ok(target_dir)
                 for filename, record in file_records:
-                    bsa_file.seek(record.offset)
-                    if record.packed_size:
-                        # This is a compressed record, so decompress it
-                        raw_data = self._compression_type.decompress_rec(
-                            bsa_file.read(record.packed_size),
-                            record.unpacked_size)
+                    if is_dx10:
+                        # We're dealing with a DX10 BA2, need to combine all
+                        # the texture chunks in the record first
+                        dds_data = b''
+                        for tex_chunk in record.tex_chunks:
+                            dds_data += _read_rec_or_chunk(tex_chunk)
+                        # Add a DDS header based on the data in the record,
+                        # then dump the resulting DDS file - cf. BSArch
+                        dds_file = DDSFile(u'')
+                        _build_dds_header(dds_file, record)
+                        dds_file.dds_contents = dds_data
+                        raw_data = dds_file.dump_file()
                     else:
-                        # This is an uncompressed record, just read it
-                        raw_data = bsa_file.read(record.unpacked_size)
+                        # Otherwise, we're dealing with a GNRL BA2, just
+                        # read/decompress/write the record directly
+                        raw_data = _read_rec_or_chunk(record)
                     with open(os.path.join(target_dir, filename),
                               u'wb') as out:
                         out.write(raw_data)
