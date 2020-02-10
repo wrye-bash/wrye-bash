@@ -86,7 +86,7 @@ from ..balt import Links, ItemLink
 
 from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
-    TOP, VLayout, EventResult
+    TOP, VLayout, EventResult, DropDown
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons
@@ -1647,15 +1647,14 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         self.iniContents.SetTweakLinesCtrl(self.tweakContents)
         self.tweakName = TextField(left, editable=False, no_border=True)
         self._enable_buttons()
-        self.comboBox = balt.ComboBox(right, value=self.ini_name,
-                                      choices=self._ini_keys)
+        self._inis_combo_box = DropDown(right, value=self.ini_name,
+                                        choices=self._ini_keys)
         #--Events
-        set_event_hook(self.comboBox, Events.COMBOBOX_CHOICE,
-                       self.OnSelectDropDown)
+        self._inis_combo_box.on_combo_select.subscribe(self._on_select_drop_down)
         #--Layout
         VLayout(default_fill=True, spacing=4, items=[
             HLayout(spacing=4, items=[
-                (self.comboBox, LayoutOptions(expand=True, weight=1)),
+                (self._inis_combo_box, LayoutOptions(expand=True, weight=1)),
                 self.removeButton, self.editButton]),
             (self.iniContents, LayoutOptions(weight=1))
         ]).apply_to(right)
@@ -1702,7 +1701,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         self.ShowPanel(target_changed=True)
         self._ini_panel.uiList.RefreshUI()
 
-    def _combo_reset(self): self.comboBox.SetItems(self._ini_keys)
+    def _combo_reset(self): self._inis_combo_box.set_choices(self._ini_keys)
 
     def _clean_targets(self):
         for name, ini_path in self.target_inis.iteritems():
@@ -1719,9 +1718,8 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         if reset_choices: self._combo_reset()
         settings['bash.ini.choice'] = self._ini_keys.index(ini_str_name)
 
-    def OnSelectDropDown(self,event):
+    def _on_select_drop_down(self, selection):
         """Called when the user selects a new target INI from the drop down."""
-        selection = event.GetString()
         full_path = self.target_inis[selection]
         if full_path is None:
             # 'Browse...'
@@ -1735,7 +1733,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
             if not full_path or ( # reselected the current target ini
                 full_path.stail in self.target_inis and settings[
                   'bash.ini.choice'] == self._ini_keys.index(full_path.stail)):
-                self.comboBox.SetSelection(settings['bash.ini.choice'])
+                self._inis_combo_box.set_selection(settings['bash.ini.choice'])
                 return
         # new file or selected an existing one different from current choice
         self.set_choice(full_path.stail, bool(bosh.INIInfos.update_targets(
@@ -1756,13 +1754,12 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         if new_target or target_changed:
             self.iniContents.RefreshIniContents(new_target)
             Link.Frame.warn_game_ini()
-        self.comboBox.SetSelection(settings['bash.ini.choice'])
+        self._inis_combo_box.set_selection(settings['bash.ini.choice'])
 
     def ClosePanel(self, destroy=False):
         super(INIDetailsPanel, self).ClosePanel(destroy)
         settings['bash.ini.lastDir'] = self.lastDir
-        # TODO(inf) de-wx!, needed for wx3, check if needed in Phoenix
-        if destroy: self.comboBox.Unbind(wx.EVT_SIZE)
+        if destroy: self._inis_combo_box.unsubscribe_handler_()
 
 class INIPanel(BashTab):
     keyPrefix = 'bash.ini'

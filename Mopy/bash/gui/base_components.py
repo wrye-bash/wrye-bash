@@ -27,9 +27,15 @@ more specialized parts (e.g. _AComponent)."""
 
 __author__ = u'nycz, Infernio'
 
+import textwrap
 import wx as _wx
 
 # Utilities -------------------------------------------------------------------
+def wrapped_tooltip(tooltip_text, wrap_width=50):
+    """Returns tooltip with wrapped copy of text."""
+    tooltip_text = textwrap.fill(tooltip_text, wrap_width)
+    return _wx.ToolTip(tooltip_text)
+
 class Color(object):
     """A simple RGB(A) color class used to avoid having to return wx.Colour
     objects."""
@@ -192,3 +198,15 @@ class _AComponent(object):
 
         :param new_position: A tuple of two integers, X and Y."""
         self._native_widget.Move(new_position)
+
+    # focus methods wrappers
+    def set_focus_from_kb(self):
+        """Set focus to this window as the result of a keyboard action.
+        Normally only called internally."""
+        # TODO(ut): Normally only called internally use set_focus?
+        self._native_widget.SetFocusFromKbd()
+
+    def set_focus(self):
+        """Set the focus to this window, allowing it to receive keyboard
+        input."""
+        self._native_widget.SetFocus()

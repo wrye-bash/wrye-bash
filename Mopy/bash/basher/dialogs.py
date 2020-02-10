@@ -22,7 +22,6 @@
 #
 # =============================================================================
 
-import wx
 import string
 from . import bEnableWizard, tabInfo, BashFrame
 from .constants import colorInfo, settingDefaults, installercons
@@ -32,7 +31,7 @@ from ..balt import Link, colors, Image, bell, Resources, set_event_hook, \
 from ..bosh import faces
 from ..gui import ApplyButton, BOTTOM, Button, CancelButton, CENTER, \
     CheckBox, GridLayout, HLayout, Label, LayoutOptions, OkButton, RIGHT, \
-    Stretch, TextArea, TextField, VLayout
+    Stretch, TextArea, TextField, VLayout, DropDown
 
 class ColorDialog(balt.Dialog):
     """Color configuration dialog"""
@@ -50,7 +49,7 @@ class ColorDialog(balt.Dialog):
     def __init__(self):
         super(ColorDialog, self).__init__(parent=Link.Frame, resize=False)
         self.changes = dict()
-        #--ComboBox
+        #--DropDown
         def _display_text(k):
             return _(self._keys_to_tabs[k.split('.')[0]]) + colorInfo[k][0]
         self.text_key = dict((_display_text(x), x) for x in colors)
@@ -58,7 +57,8 @@ class ColorDialog(balt.Dialog):
         colored.sort(key=unicode.lower)
         combo_text = colored[0]
         choiceKey = self.text_key[combo_text]
-        self.comboBox = balt.ComboBox(self, value=combo_text, choices=colored)
+        self.comboBox = DropDown(self, value=combo_text, choices=colored)
+        self.comboBox.on_combo_select.subscribe(lambda _sel: self.OnComboBox())
         #--Color Picker
         self.picker = ColorPicker(self, colors[choiceKey])
         #--Description
@@ -80,7 +80,6 @@ class ColorDialog(balt.Dialog):
         self.ok = OkButton(self, default=True)
         self.ok.on_clicked.subscribe(self.OnOK)
         #--Events
-        set_event_hook(self.comboBox, Events.COMBOBOX_CHOICE, self.OnComboBox)
         set_event_hook(self.picker, Events.COLORPICKER_CHANGED,
                        self.OnColorPicker)
         #--Layout
@@ -95,13 +94,13 @@ class ColorDialog(balt.Dialog):
                 (self.default, self.apply, self.importConfig, None, self.ok)
             ])
         ]).apply_to(self)
-        self.comboBox.SetFocus()
+        self.comboBox.set_focus()
         self.SetIcons(Resources.bashBlue)
         self.UpdateUIButtons()
 
     def GetColorKey(self):
         """Return balt.colors dict key for current combobox selection."""
-        return self.text_key[self.comboBox.GetValue()]
+        return self.text_key[self.comboBox.get_value()]
 
     @staticmethod
     def UpdateUIColors():
@@ -135,17 +134,15 @@ class ColorDialog(balt.Dialog):
         else:
             color = colors[color_key]
         default = bool(color == settingDefaults['bash.colors'][color_key])
-        # Update the Buttons, ComboBox, and ColorPicker
+        # Update the Buttons, DropDown, and ColorPicker
         self.apply.enabled = changed
         self.applyAll.enabled = anyChanged
         self.default.enabled = not default
         self.defaultAll.enabled = not allDefault
         self.picker.set_color(color)
-        self.comboBox.SetFocusFromKbd()
+        self.comboBox.set_focus_from_kb()
 
-    def _unbind_combobox(self):
-        # TODO(inf) de-wx!, needed for wx3, check if needed in Phoenix
-        self.comboBox.Unbind(wx.EVT_SIZE)
+    def _unbind_combobox(self): self.comboBox.unsubscribe_handler_()
 
     def OnDefault(self):
         color_key = self.GetColorKey()
@@ -241,8 +238,7 @@ class ColorDialog(balt.Dialog):
                            u':\n\n%s' % e)
         self.UpdateUIButtons()
 
-    def OnComboBox(self,event):
-        event.Skip()
+    def OnComboBox(self):
         self.UpdateUIButtons()
         color_key = self.GetColorKey()
         description = colorInfo[color_key][1]

@@ -48,7 +48,7 @@ import wx.wizard as wiz
 from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
     BackwardButton, ForwardButton, ReloadButton, web_viewer_available, \
-    WebViewer
+    WebViewer, wrapped_tooltip
 
 # Print a notice if wx.html2 is missing
 if not web_viewer_available():
@@ -344,32 +344,9 @@ def bell(arg=None):
     wx.Bell()
     return arg
 
-def tooltip(tooltip_text, wrap=50):
-    """Returns tooltip with wrapped copy of text."""
-    tooltip_text = textwrap.fill(tooltip_text, wrap)
-    return wx.ToolTip(tooltip_text)
-
 def HorizontalLine(parent):
     """Returns a simple horizontal graphical line."""
     return wx.StaticLine(parent)
-
-class ComboBox(wx.ComboBox):
-    """wx.ComboBox with automatic tooltip if text is wider than width of control."""
-    def __init__(self, *args, **kwdargs):
-        autotooltip = kwdargs.pop('autotooltip', True)
-        if kwdargs.pop('readonly', True):
-            kwdargs['style'] = kwdargs.get('style', 0) | wx.CB_READONLY
-        wx.ComboBox.__init__(self, *args, **kwdargs)
-        if autotooltip:
-            self.Bind(wx.EVT_SIZE, self.OnChange)
-            self.Bind(wx.EVT_TEXT, self.OnChange)
-
-    def OnChange(self, event):
-        if self.GetClientSize()[0] < self.GetTextExtent(self.GetValue())[0]+30:
-            self.SetToolTip(tooltip(self.GetValue()))
-        else:
-            self.SetToolTip(tooltip(u''))
-        event.Skip()
 
 def ok_and_cancel_group(parent, on_ok=None):
     ok_button = OkButton(parent)
@@ -383,7 +360,7 @@ def spinCtrl(parent, value=u'', pos=defPos, size=defSize,
     gSpinCtrl = wx.SpinCtrl(parent, defId, value, pos, size, style, min, max,
                             initial, name)
     if onSpin: gSpinCtrl.Bind(wx.EVT_SPINCTRL, lambda __event: onSpin())
-    if spin_tip: gSpinCtrl.SetToolTip(tooltip(spin_tip))
+    if spin_tip: gSpinCtrl.SetToolTip(wrapped_tooltip(spin_tip))
     return gSpinCtrl
 
 def listBox(parent, choices=None, **kwargs):
@@ -2728,7 +2705,7 @@ class ListBoxes(Dialog):
                     for subitem in subitems:
                         checksCtrl.AppendItem(child,subitem.s)
             self._ids[title] = checksCtrl.GetId()
-            checksCtrl.SetToolTip(tooltip(item_tip))
+            checksCtrl.SetToolTip(wrapped_tooltip(item_tip))
             layout.add((HBoxedLayout(self, default_fill=True,
                                              title=title, default_weight=1,
                                              items=[checksCtrl]),

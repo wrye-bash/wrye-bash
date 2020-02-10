@@ -74,3 +74,55 @@ class CheckBox(_AComponent):
         :param new_state: True if this checkbox should be checked, False if it
                           should be unchecked."""
         self._native_widget.SetValue(new_state)
+
+class DropDown(_AComponent):
+    """Wraps a DropDown with automatic tooltip if text is wider than width of
+    control.
+
+    Events:
+     - on_combo_select(selected_label: str): Posted when an item on the list is
+     selected. The parameter is the new value of selection."""
+    def __init__(self, parent, value, choices, __autotooltip=True,
+                 __readonly=True):
+        """Creates a new DropDown with the specified properties.
+
+        :param parent: The object that this combobox belongs to. May be a wx
+                       object or a component.
+        :param value: The selected choice, also the text shown on this
+                      combobox.
+        :param choices: The combobox choices."""
+        super(DropDown, self).__init__()
+        # Create native widget
+        self._native_widget = _wx.ComboBox(self._resolve(parent),
+            _wx.ID_ANY, value=value, choices=choices, style=_wx.CB_READONLY)
+        # Events
+        self.on_combo_select = EventHandler(self._native_widget,
+            _wx.EVT_COMBOBOX, lambda event: [event.GetString()])
+        # Internal use only - used to set the tooltip
+        self._on_size_changed = EventHandler(self._native_widget, _wx.EVT_SIZE)
+        self._on_text_changed = EventHandler(self._native_widget, _wx.EVT_TEXT)
+        self._on_size_changed.subscribe(self._set_tooltip)
+        self._on_text_changed.subscribe(self._set_tooltip)
+
+    def unsubscribe_handler_(self):
+        # PY3: TODO(inf) needed for wx3, check if needed in Phoenix
+        self._on_size_changed.unsubscribe(self._set_tooltip)
+
+    def _set_tooltip(self):
+        """Set the tooltip"""
+        cb = self._native_widget
+        if cb.GetClientSize()[0] < cb.GetTextExtent(cb.GetValue())[0] + 30:
+            tt = cb.GetValue()
+        else: tt = u''
+        self.tooltip = tt
+
+    def set_choices(self, combo_choices):
+        """Set the combobox items"""
+        self._native_widget.SetItems(combo_choices)
+
+    def set_selection(self, combo_choice):
+        """Set the combobox selected item"""
+        self._native_widget.SetSelection(combo_choice)
+
+    def get_value(self):
+        return self._native_widget.GetValue()
