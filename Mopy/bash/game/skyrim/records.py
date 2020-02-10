@@ -37,7 +37,8 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelOptSInt16, MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, \
     MelOptFid, MelCounter, MelPartialCounter, MelBounds, null1, null2, null3, \
     null4, MelSequential, MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, \
-    MelIco2, MelEdid, MelFull, MelArray, MelWthrColors, GameDecider
+    MelIco2, MelEdid, MelFull, MelArray, MelWthrColors, GameDecider, \
+    MelReadOnly
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -1804,27 +1805,6 @@ class MreCell(MelRecord):
         (3, 'quad4'),
     ))
 
-    class MelWaterHeight(MelOptFloat):
-        """XCLW sometimes has $FF7FFFFF and causes invalid floating point."""
-        default_heights = {4294953216.0, -2147483648.0,
-            -3.4028234663852886e+38, 3.4028234663852886e+38} # unused, see #302
-
-        def __init__(self):
-            MelOptFloat.__init__(self, 'XCLW', ('waterHeight', -2147483649))
-
-        def loadData(self, record, ins, sub_type, size_, readId):
-            # from brec.MelStruct#loadData - formatLen is 0 for MelWaterHeight
-            waterHeight = ins.unpack(self.format, size_, readId)
-            if not record.flags.isInterior: # drop interior cells for Skyrim
-                attr,value = self.attrs[0],waterHeight[0]
-                # if value in __default_heights:
-                #     value = 3.4028234663852886e+38 # normalize values
-                record.__setattr__(attr, value)
-
-        def dumpData(self,record,out):
-            if not record.flags.isInterior:
-                MelOptFloat.dumpData(self, record, out)
-
     melSet = MelSet(
         MelEdid(),
         MelFull(),
@@ -1858,15 +1838,21 @@ class MreCell(MelRecord):
         MelFid('LTMP','lightTemplate',),
         # leftover flags, they are now in XCLC
         MelBase('LNAM','unknown_LNAM'),
-        MelWaterHeight(),
+        MelUnion({ # see #302 for discussion on this
+            True:  MelNull(b'XCLW'), # Drop in interior cells for Skyrim
+            False: MelOptFloat(b'XCLW', (u'waterHeight', -2147483649)),
+        }, decider=FlagDecider(u'flags', u'isInterior')),
         MelString('XNAM','waterNoiseTexture'),
         MelFidList('XCLR','regions'),
         MelFid('XLCN','location',),
-        MelBase('XWCN','unknown_XWCN'), # leftover
-        MelBase('XWCS','unknown_XWCS'), # leftover
-        MelOptStruct('XWCU', '3f4s3f', ('xOffset', 0.0), ('yOffset', 0.0),
-                     ('zOffset', 0.0), ('unk1XWCU', null4), ('xAngle', 0.0),
-                     ('yAngle', 0.0), ('zAngle', 0.0), dumpExtra='unk2XWCU',),
+        # Old version of XWCN - replace with XWCN upon dumping
+        MelReadOnly(MelUInt32(b'XWCS', u'water_velocities_count')),
+        MelCounter(MelOptUInt32(b'XWCN', u'water_velocities_count'),
+                   counts=u'water_velocities'),
+        MelArray(u'water_velocities',
+            MelStruct(b'XWCU', u'4f', u'x_offset', u'y_offset', u'z_offset',
+                      u'unknown1'),
+        ),
         MelFid('XCWT','water'),
         MelOwnership(),
         MelFid('XILL','lockList',),
@@ -3177,14 +3163,23 @@ class MreLctn(MelRecord):
                       (FID, 'location'), 'gridX', 'gridY'),
         ),
         MelFidList('RCSR','referenceCellStaticReference',),
-        MelGroups('actorCellEncounterCell',
-            MelStruct('ACEC', 'I', (FID,'actor'), dumpExtra='gridsXY'),
+        MelGroups(u'actorCellEncounterCell',
+            MelArray(u'coordinates',
+                MelStruct(b'ACEC', u'2h', u'grid_x', u'grid_y'),
+                     prelude=MelFid(b'ACEC', u'location'),
+            ),
         ),
-        MelGroups('locationCellEncounterCell',
-            MelStruct('LCEC', 'I', (FID,'actor'), dumpExtra='gridsXY'),
+        MelGroups(u'locationCellEncounterCell',
+            MelArray(u'coordinates',
+                MelStruct(b'LCEC', u'2h', u'grid_x', u'grid_y'),
+                     prelude=MelFid(b'LCEC', u'location'),
+            ),
         ),
-        MelGroups('referenceCellEncounterCell',
-            MelStruct('RCEC', 'I', (FID,'actor'), dumpExtra='gridsXY'),
+        MelGroups(u'referenceCellEncounterCell',
+            MelArray(u'coordinates',
+                MelStruct(b'RCEC', u'2h', u'grid_x', u'grid_y'),
+                     prelude=MelFid(b'RCEC', u'location'),
+            ),
         ),
         MelFidList('ACID','actorCellMarkerReference',),
         MelFidList('LCID','locationCellMarkerReference',),
@@ -5043,9 +5038,9 @@ class MreSopm(MelRecord):
                   'ch1_c', 'ch1_lFE', 'ch1_rL', 'ch1_rR', 'ch1_bL', 'ch1_bR',
                   'ch2_l', 'ch2_r', 'ch2_c', 'ch2_lFE', 'ch2_rL', 'ch2_rR',
                   'ch2_bL', 'ch2_bR'),
-        MelStruct('ANAM','4s2f5B','unknown2','minDistance','maxDistance',
-                  'curve1','curve2','curve3','curve4','curve5',
-                   dumpExtra='extraData',),
+        MelStruct(b'ANAM', u'4s2f5B3s', (u'unknown2', null4), u'minDistance',
+                  u'maxDistance', u'curve1', u'curve2', u'curve3', u'curve4',
+                  u'curve5', (u'unknown3', null3)),
     )
     __slots__ = melSet.getSlotsUsed()
 
