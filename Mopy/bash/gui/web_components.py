@@ -66,12 +66,8 @@ class WebViewer(_AComponent):
                        object or a component.
         :param buttons_parent: The object that the navigation buttons belong
                                to. If None, the same parent will be used."""
-        super(WebViewer, self).__init__()
-        # Create native widget
         if buttons_parent is None: buttons_parent = parent
-        parent = self._resolve(parent)
-        self._native_widget = \
-            _wx_html2.WebView.New(parent) # type: _wx_html2.WebView
+        super(WebViewer, self).__init__(_wx_html2.WebView.New, parent) # type: _wx_html2.WebView
         self._back_button = BackwardButton(buttons_parent)
         self._back_button.on_clicked.subscribe(self.go_back)
         self._forward_button = ForwardButton(buttons_parent)

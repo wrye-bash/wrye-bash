@@ -48,10 +48,8 @@ class CheckBox(_AComponent):
         :param chkbx_tooltip: A tooltip to show when the user hovers over this
                               checkbox.
         :param checked: The initial state of the checkbox."""
-        super(CheckBox, self).__init__()
-        # Create native widget
-        self._native_widget = _wx.CheckBox(self._resolve(parent), _wx.ID_ANY,
-                                           label=label, name=u'checkBox')
+        super(CheckBox, self).__init__(_wx.CheckBox, parent, _wx.ID_ANY,
+                                       label=label)
         if chkbx_tooltip:
             self.tooltip = chkbx_tooltip
         self.is_checked = checked
@@ -91,10 +89,9 @@ class DropDown(_AComponent):
         :param value: The selected choice, also the text shown on this
                       combobox.
         :param choices: The combobox choices."""
-        super(DropDown, self).__init__()
-        # Create native widget
-        self._native_widget = _wx.ComboBox(self._resolve(parent),
-            _wx.ID_ANY, value=value, choices=choices, style=_wx.CB_READONLY)
+        super(DropDown, self).__init__(_wx.ComboBox, parent, _wx.ID_ANY,
+                                       value=value, choices=choices,
+                                       style=_wx.CB_READONLY)
         # Events
         self.on_combo_select = EventHandler(self._native_widget,
             _wx.EVT_COMBOBOX, lambda event: [event.GetString()])

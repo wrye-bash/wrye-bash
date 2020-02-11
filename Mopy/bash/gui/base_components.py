@@ -73,12 +73,15 @@ class Color(object):
 # Base Elements ---------------------------------------------------------------
 class _AComponent(object):
     """Abstract base class for all GUI items. Holds a reference to the native
-    wx widget that we abstract over."""
-    def __init__(self):
+    wx widget that we abstract over.
+    # :type _native_widget: _wx.Window FIXME(ut) PY3: add type info
+    """
+    def __init__(self, wx_window_type, parent, *args, **kwargs):
         """Creates a new _AComponent instance. This initializes _native_widget
         to None, which will later receive a proper value inside the __init__
         methods of _AComponent's subclasses."""
-        self._native_widget = None  # type: _wx.Window
+        self._native_widget = wx_window_type(self._resolve(parent), *args,
+                                             **kwargs)
 
     @staticmethod
     def _resolve(obj):

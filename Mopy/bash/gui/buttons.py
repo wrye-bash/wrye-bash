@@ -66,8 +66,6 @@ class Button(_AButton):
                           exactly to its contents.
         :param no_border: If set to True, the borders of this button will be
                           hidden."""
-        super(Button, self).__init__()
-        # Create native widget
         if not label and self.__class__.default_label:
             label = self.__class__.default_label
         btn_style = 0
@@ -75,9 +73,8 @@ class Button(_AButton):
             btn_style |= _wx.BU_EXACTFIT
         if no_border:
             btn_style |= _wx.BORDER_NONE
-        self._native_widget = _wx.Button(self._resolve(parent),
-                                         self.__class__._id, label=label,
-                                         name=u'button', style=btn_style)
+        super(Button, self).__init__(_wx.Button, parent, self.__class__._id,
+                                     label=label, style=btn_style)
         if default:
             self._native_widget.SetDefault()
         if btn_tooltip:

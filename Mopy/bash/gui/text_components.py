@@ -45,7 +45,9 @@ class _ATextInput(_AComponent):
        input changes. Be warned that changing it via _ATextInput.text_content
        also posts this event, so if you have to change text in response to this
        event, use _ATextInput.modified to check if it was a user modification;
-       otherwise, you risk getting into an infinite loop."""
+       otherwise, you risk getting into an infinite loop.
+
+    :type _native_widget: _wx.TextCtrl"""
     # TODO: (fixed) font(s)
     def __init__(self, parent, init_text=None, multiline=True, editable=True,
                  auto_tooltip=True, max_length=None, no_border=False, style=0):
@@ -66,12 +68,11 @@ class _ATextInput(_AComponent):
                           hidden.
         :param style: Internal parameter used to allow subclasses to wrap style
                       flags on their own."""
-        super(_ATextInput, self).__init__()
         # Construct the native widget
         if multiline: style |= _wx.TE_MULTILINE
         if not editable: style |= _wx.TE_READONLY
         if no_border: style |= _wx.BORDER_NONE
-        self._native_widget = _wx.TextCtrl(self._resolve(parent), style=style)
+        super(_ATextInput, self).__init__(_wx.TextCtrl, parent, style=style)
         if init_text: self._native_widget.SetValue(init_text)
         if max_length:
             self._native_widget.SetMaxLength(max_length)
@@ -223,14 +224,14 @@ class _ALabel(_AComponent):
 class Label(_ALabel):
     """A static text element. Doesn't have a border and the text can't be
     interacted with by the user."""
+    # _native_widget: type: _wx.StaticText
     def __init__(self, parent, init_text):
         """Creates a new Label with the specified parent and text.
 
         :param parent: The object that this label belongs to.
         :param init_text: The initial text of this label."""
-        super(Label, self).__init__()
-        self._native_widget = _wx.StaticText(self._resolve(parent), _wx.ID_ANY,
-                                             init_text)
+        super(Label, self).__init__(_wx.StaticText, parent, _wx.ID_ANY,
+                                    init_text)
 
     def wrap(self, max_length): # type: (int) -> None
         """Wraps this label's text so that each line is at most max_length
@@ -253,9 +254,8 @@ class HyperlinkLabel(_ALabel):
         :param always_unvisited: If set to True, this link will always appear
                                  as if it hasn't been clicked on (i.e. blue -
                                  it will never turn purple)."""
-        super(HyperlinkLabel, self).__init__()
-        self._native_widget = _wx.HyperlinkCtrl(self._resolve(parent),
-                                                _wx.ID_ANY, init_text, url)
+        super(HyperlinkLabel, self).__init__(_wx.HyperlinkCtrl, parent,
+                                             _wx.ID_ANY, init_text, url)
         if always_unvisited:
             self._native_widget.SetVisitedColour(
                 self._native_widget.GetNormalColour())
