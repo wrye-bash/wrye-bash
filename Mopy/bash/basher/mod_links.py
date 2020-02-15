@@ -312,6 +312,12 @@ class _Mod_LabelsData(balt.ListEditorData):
 class _Mod_Labels(ChoiceLink):
     """Add mod label links."""
     extraButtons = {} # extra actions for the edit dialog
+    # override in subclasses
+    edit_menu_text = _(u'Edit Groups...')
+    edit_window_title = _(u'Groups')
+    column     = u'group'
+    setKey     = u'bash.mods.groups'
+    addPrompt  = _(u'Add group:')
 
     def _refresh(self): # editing mod labels should not affect saves
         self.window.RefreshUI(redraw=self.selected, refreshSaves=False)
@@ -322,11 +328,11 @@ class _Mod_Labels(ChoiceLink):
         #-- Links
         _self = self
         class _Edit(ItemLink):
-            _text = _help = _self.editMenuText
+            _text = _help = _self.edit_menu_text
             def Execute(self):
                 """Show label editing dialog."""
                 data = _Mod_LabelsData(self.window, _self)  # ListEditorData
-                with balt.ListEditor(self.window, _self.editWindowTitle, data,
+                with balt.ListEditor(self.window, _self.edit_window_title, data,
                                      _self.extraButtons) as _self.listEditor:
                     _self.listEditor.ShowModal()  ##: consider only refreshing
                     # the mod list if this returns true
@@ -469,15 +475,11 @@ class _Mod_Groups_Import(ItemLink):
 
 class Mod_Groups(_Mod_Labels):
     """Add mod group links."""
+
     def __init__(self):
-        self.column     = 'group'
-        self.setKey     = 'bash.mods.groups'
-        self.addPrompt  = _(u'Add group:')
         self.extraButtons = collections.OrderedDict([
             (_(u'Refresh'), self._doRefresh), (_(u'Sync'), self._doSync),
             (_(u'Reset'), self._doReset)] )
-        self.editMenuText   = _(u'Edit Groups...')
-        self.editWindowTitle = _(u'Groups')
         super(Mod_Groups, self).__init__()
         self.extraItems = [_Mod_Groups_Export(),
                            _Mod_Groups_Import()] + self.extraItems
@@ -524,13 +526,11 @@ class Mod_Groups(_Mod_Labels):
 #--Ratings --------------------------------------------------------------------
 class Mod_Ratings(_Mod_Labels):
     """Add mod rating links."""
-    def __init__(self):
-        self.column     = 'rating'
-        self.setKey     = 'bash.mods.ratings'
-        self.addPrompt  = _(u'Add rating:')
-        self.editMenuText   = _(u'Edit Ratings...')
-        self.editWindowTitle = _(u'Ratings')
-        super(Mod_Ratings, self).__init__()
+    edit_menu_text = _(u'Edit Ratings...')
+    edit_window_title = _(u'Ratings')
+    column     = u'rating'
+    setKey     = u'bash.mods.ratings'
+    addPrompt  = _(u'Add rating:')
 
 # Mod info menus --------------------------------------------------------------
 #------------------------------------------------------------------------------

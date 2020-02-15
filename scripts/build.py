@@ -670,8 +670,8 @@ def update_file_version(version, commit=False):
     cpy(orig_path, bck_path)
     with open(orig_path, "r+") as fopen:
         content = fopen.read().replace(
-            '\nAppVersion = u"{}"'.format(bass.AppVersion),
-            '\nAppVersion = u"{}"'.format(version),
+            "\nAppVersion = u'{}'".format(bass.AppVersion),
+            "\nAppVersion = u'{}'".format(version),
         )
         fopen.seek(0)
         fopen.truncate(0)

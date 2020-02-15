@@ -23,9 +23,10 @@
 # =============================================================================
 
 """Specific parser for Wrye Bash."""
-from collections import OrderedDict
 from functools import partial
 import os
+import traceback
+from collections import OrderedDict
 
 import ScriptParser         # generic parser class
 import bass
@@ -36,8 +37,6 @@ import wx.wizard as wiz     # wxPython wizard class
 import bosh, balt, bolt, bush
 from balt import vspace, hspace, set_event_hook, Events
 from env import get_file_version
-import StringIO
-import traceback
 
 #Translateable strings
 from bosh import OBSEIniFile
@@ -888,12 +887,9 @@ class WryeParser(ScriptParser.Parser):
                                  + _(u'Line %s:\t%s') % (self.cLine, newline.strip(u'\n')) + '\n'
                                  + _(u'Error:\t%s') % e)
             except Exception:
-                o = StringIO.StringIO()
-                o.write(_(u'An unhandled error occurred while parsing the wizard:') + '\n'
-                        + _(u'Line %s:\t%s') % (self.cLine, newline.strip(u'\n')) + '\n\n')
-                traceback.print_exc(file=o)
-                msg = o.getvalue()
-                o.close()
+                msg = u'\n'.join([_(u'An unhandled error occurred while '
+                    u'parsing the wizard:'), _(u'Line %s:\t%s') % (self.cLine,
+                    newline.strip(u'\n')), u'', traceback.format_exc()])
                 return PageError(self.parent, _(u'Installer Wizard'), msg)
             if self.page:
                 return self.page

@@ -139,7 +139,7 @@ class OmodFile(object):
 
         try:
             # Get contents of archive
-            sizes,total = self.getOmodContents()
+            sizes_,total = self.getOmodContents()
 
             # Extract the files
             reExtracting = re.compile(u'- (.+)', re.U)
@@ -155,7 +155,7 @@ class OmodFile(object):
                         maExtracting = reExtracting.match(line)
                         if maExtracting:
                             name = maExtracting.group(1).strip().strip(u'\r')
-                            size = sizes[name]
+                            size = sizes_[name]
                             subprogress(float(current) / total, self.omod_path.stail + u'\n' + _(u'Extracting...') + u'\n' + name)
                             current += size
 
@@ -189,8 +189,8 @@ class OmodFile(object):
             else:
                 extract = self.extractFilesZip
 
-            pluginSize = sizes.get('plugins',0)
-            dataSize = sizes.get('data',0)
+            pluginSize = sizes_.get('plugins',0)
+            dataSize = sizes_.get('data',0)
             subprogress = bolt.SubProgress(progress, 0.5, 1)
             with stageDir.unicodeSafe() as tempOut:
                 if extractDir.join(u'plugins.crc').exists() and extractDir.join(u'plugins').exists():
@@ -214,7 +214,7 @@ class OmodFile(object):
             stageBaseDir.rmtree(safety=stageBaseDir.stail)
 
     def extractFilesZip(self, crcPath, dataPath, outPath, progress):
-        fileNames, crcs, sizes = self.getFile_CrcSizes(crcPath)
+        fileNames, crcs, sizes_ = self.getFile_CrcSizes(crcPath)
         if len(fileNames) == 0: return
 
         # Extracted data stream is saved as a file named 'a'
@@ -224,7 +224,7 @@ class OmodFile(object):
 
         # Split the uncompress stream into files
         progress(0.7, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % dataPath.stail)
-        self.splitStream(outPath.join(u'a'), outPath, fileNames, sizes,
+        self.splitStream(outPath.join(u'a'), outPath, fileNames, sizes_,
                          bolt.SubProgress(progress,0.7,1.0,len(fileNames))
                          )
         progress(1)
@@ -232,7 +232,7 @@ class OmodFile(object):
         # Clean up
         outPath.join(u'a').remove()
 
-    def splitStream(self, streamPath, outDir, fileNames, sizes, progress):
+    def splitStream(self, streamPath, outDir, fileNames, sizes_, progress):
         # Split the uncompressed stream into files
         progress(0, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % streamPath.stail)
         with streamPath.open('rb') as file:
@@ -240,13 +240,13 @@ class OmodFile(object):
                 progress(i, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % streamPath.stail + u'\n' + name)
                 outFile = outDir.join(name)
                 with outFile.open('wb') as output:
-                    output.write(file.read(sizes[i]))
+                    output.write(file.read(sizes_[i]))
         progress(len(fileNames))
 
     def extractFiles7z(self, crcPath, dataPath, outPath, progress):
-        fileNames, crcs, sizes = self.getFile_CrcSizes(crcPath)
+        fileNames, crcs, sizes_ = self.getFile_CrcSizes(crcPath)
         if len(fileNames) == 0: return
-        totalSize = sum(sizes)
+        totalSize = sum(sizes_)
 
         # Extract data stream to an uncompressed stream
         subprogress = bolt.SubProgress(progress,0,0.3,full=dataPath.size)
@@ -279,7 +279,7 @@ class OmodFile(object):
         progress(0.8)
 
         # Split the uncompressed stream into files
-        self.splitStream(outPath.join(dataPath.sbody+u'.uncomp'), outPath, fileNames, sizes,
+        self.splitStream(outPath.join(dataPath.sbody+u'.uncomp'), outPath, fileNames, sizes_,
                          bolt.SubProgress(progress,0.8,1.0,full=len(fileNames))
                          )
         progress(1)
@@ -292,13 +292,13 @@ class OmodFile(object):
     def getFile_CrcSizes(crc_file_path):
         fileNames = list()
         crcs = list()
-        sizes = list()
+        sizes_ = list()
         with open(crc_file_path.s, 'rb') as crc_file:
             while crc_file.tell() < crc_file_path.size:
                 fileNames.append(_readNetString(crc_file))
                 crcs.append(unpack_int_signed(crc_file))
-                sizes.append(unpack_int64_signed(crc_file))
-        return fileNames,crcs,sizes
+                sizes_.append(unpack_int64_signed(crc_file))
+        return fileNames,crcs,sizes_
 
 class OmodConfig(object):
     """Tiny little omod config class."""

@@ -396,9 +396,9 @@ def _query_string_field_version(file_name, version_prefix):
                                                      version_prefix)
     full_ver = win32api.GetFileVersionInfo(file_name, ver_query)
     # xSE uses commas in its version fields, so use this 'heuristic'
-    splitter = u',' if u',' in full_ver else u'.'
+    split_on = u',' if u',' in full_ver else u'.'
     try:
-        return tuple([int(part) for part in full_ver.split(splitter)])
+        return tuple([int(part) for part in full_ver.split(split_on)])
     except ValueError:
         return 0, 0, 0, 0
 

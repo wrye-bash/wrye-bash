@@ -192,8 +192,8 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                        ) if self.bAuto else _(u"Run the install wizard.")
 
     def _enable(self):
-        isSingle = super(Installer_Wizard, self)._enable()
-        return isSingle and self._selected_info.hasWizard != False
+        single_item = super(Installer_Wizard, self)._enable()
+        return single_item and self._selected_info.hasWizard != False
 
     @balt.conversation
     def Execute(self):
@@ -348,8 +348,8 @@ class Installer_OpenReadme(OneItemLink, _InstallerLink):
     _help = _(u"Open the installer's readme if BAIN can find one")
 
     def _enable(self):
-        isSingle = super(Installer_OpenReadme, self)._enable()
-        return isSingle and bool(self._selected_info.hasReadme)
+        single_item = super(Installer_OpenReadme, self)._enable()
+        return single_item and bool(self._selected_info.hasReadme)
 
     def Execute(self): self._selected_info.open_readme()
 
@@ -380,9 +380,9 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
             {'installername': self._selected_item})
 
     def _enable(self):
-        isSingle = super(Installer_Duplicate, self)._enable()
-        return isSingle and not isinstance(self._selected_info,
-                                           bosh.InstallerMarker)
+        single_item = super(Installer_Duplicate, self)._enable()
+        return single_item and not isinstance(self._selected_info,
+                                              bosh.InstallerMarker)
 
     @balt.conversation
     def Execute(self):
@@ -533,9 +533,9 @@ class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Warudd
               u'copies it to the system clipboard).')
 
     def _enable(self):
-        isSingle = super(Installer_ListStructure, self)._enable()
-        return isSingle and not isinstance(self._selected_info,
-                                           bosh.InstallerMarker)
+        single_item = super(Installer_ListStructure, self)._enable()
+        return single_item and not isinstance(self._selected_info,
+                                              bosh.InstallerMarker)
 
     @balt.conversation ##: no use ! _showLog returns immediately
     def Execute(self):
@@ -553,9 +553,9 @@ class Installer_ExportAchlist(OneItemLink, _InstallerLink):
     _help = _(u'Create achlist file for use by the CK')
 
     def _enable(self):
-        isSingle = super(Installer_ExportAchlist, self)._enable()
-        return isSingle and not isinstance(self._selected_info,
-                                           bosh.InstallerMarker)
+        single_item = super(Installer_ExportAchlist, self)._enable()
+        return single_item and not isinstance(self._selected_info,
+                                              bosh.InstallerMarker)
 
     def Execute(self):
         info_dir = bass.dirs['app'].join(self.__class__._mode_info_dir)

@@ -363,8 +363,8 @@ class InstallerConverter(object):
         except StateError:
             raise
         else:
-            self.pack(bass.getTempDir(), destArchive, installers_dir,
-                      SubProgress(progress, 0.7, 1.0))
+            self._pack(bass.getTempDir(), destArchive, installers_dir,
+                       SubProgress(progress, 0.7, 1.0))
             #--Lastly, apply the settings.
             #--That is done by the calling code, since it requires an
             # InstallerArchive object to work on
@@ -539,11 +539,11 @@ class InstallerConverter(object):
         #--BCF's need to be non-Solid since they have to have BCF.dat
         # extracted and read from during runtime
         self.isSolid = False
-        self.pack(tmpDir, BCFArchive, converters_dir,
-                  SubProgress(progress, lastStep, 1.0))
+        self._pack(tmpDir, BCFArchive, converters_dir,
+                   SubProgress(progress, lastStep, 1.0))
         self.isSolid = destInstaller.isSolid
 
-    def pack(self, srcFolder, destArchive, outDir, progress=None):
+    def _pack(self, srcFolder, destArchive, outDir, progress=None):
         """Creates the BAIN'ified archive and cleans up temp"""
         #--Determine settings for 7z
         destArchive, archiveType, solid = compressionSettings(destArchive,

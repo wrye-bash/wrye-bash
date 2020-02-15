@@ -1098,7 +1098,7 @@ class ModList(_ModsUIList):
                 u'deactivated plugins.'), children_deactivated]
             msg = _(u'Deactivating the following plugins caused their '
                     u'children to be deactivated')
-        if not checklists: return
+        else: return
         ListBoxes.Display(self, _(u'Masters/Children affected'), msg,
                           [checklists], liststyle='tree', canCancel=False)
 
@@ -4103,13 +4103,12 @@ class BashApp(wx.App):
         self.SetTopWindow(frame)
         frame.Show()
         frame.Maximize(settings['bash.frameMax'])
-        frame.RefreshData(booting=True)
+        frame.RefreshData(booting=True) # will bind RefreshData
         balt.ensureDisplayed(frame)
         # Moved notebook.Bind() callback here as OnShowPage() is explicitly
         # called in RefreshData
         frame.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,
                             frame.notebook.OnShowPage)
-        frame.BindRefresh(bind=True)
 
     @staticmethod
     def InitResources():

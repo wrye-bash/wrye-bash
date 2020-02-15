@@ -114,7 +114,7 @@ def isPBashMergeable(modInfo, minfos, reasons):
     dependent = _dependent(modInfo, minfos)
     if dependent:
         if not verbose: return False
-        reasons.append(_(u'Is a master of mod(s): ')+u', '.join(sorted(dependent))+u'.')
+        reasons.append(_(u'Is a master of non-mergeable mod(s): ')+u', '.join(sorted(dependent))+u'.')
     return False if reasons else True
 
 def _dependent(modInfo, minfos):
