@@ -342,19 +342,18 @@ class MreDial(MelRecord):
                   _(u'Unexpected %s record in %s group.') % (
                                              header.recType, u'INFO'))
 
-    def dump(self,out):
+    def dump(self, out, __rh=RecordHeader):
         """Dumps self., then group header and then records."""
         MreRecord.dump(self,out)
         if not self.infos: return
-        header_size = RecordHeader.rec_header_size
-        dial_size = header_size + sum([header_size + info.getSize()
-                                       for info in self.infos])
+        hsize = __rh.rec_header_size
+        dial_size = hsize + sum(hsize + info.getSize() for info in self.infos)
         # Not all pack targets may be needed - limit the unpacked amount to the
         # number of specified GRUP format entries
         pack_targets = ['GRUP', dial_size, self.fid, 7, self.infoStamp,
                         self.infoStamp2]
-        out.pack(RecordHeader.rec_pack_format_str,
-                 *pack_targets[:len(RecordHeader.rec_pack_format)])
+        out.pack(__rh.rec_pack_format_str, # TODO use pack_head here?
+                 *pack_targets[:len(__rh.rec_pack_format)])
         for info in self.infos: info.dump(out)
 
     def updateMasters(self,masters):

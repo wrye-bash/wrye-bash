@@ -481,7 +481,7 @@ class MreRecord(object):
         if self.recType != 'GRUP':
             self.header.flags1 = self.flags1
             self.header.fid = self.fid
-        out.write(self.header.pack())
+        out.write(self.header.pack_head())
         if self.size > 0: out.write(self.data)
 
     def getReader(self):

@@ -27,11 +27,11 @@ for game settings."""
 from __future__ import print_function
 from ... import bush # for game
 from ...bolt import SubProgress, deprint
-from ...brec import MreRecord, RecordHeader
+from ...brec import MreRecord, RecHeader
 from ...exception import StateError
+from ...patcher.base import AMultiTweaker, DynamicNamedTweak
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
-from ...patcher.base import AMultiTweaker, DynamicNamedTweak
 
 # Patchers: 30 ----------------------------------------------------------------
 class GlobalsTweak(DynamicNamedTweak, MultiTweakItem):
@@ -99,8 +99,7 @@ class GmstTweak(DynamicNamedTweak, MultiTweakItem):
                         keep(record.fid)
                     break
             else:
-                gmst = MreRecord.type_class['GMST'](
-                    RecordHeader('GMST', 0, 0, 0, 0))
+                gmst = MreRecord.type_class['GMST'](RecHeader('GMST'))
                 gmst.eid,gmst.value,gmst.longFids = eid,value,True
                 gmst_fid = gmst.getGMSTFid()
                 gmst.fid = gmst_fid

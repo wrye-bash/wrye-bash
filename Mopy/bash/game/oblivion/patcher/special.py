@@ -26,7 +26,7 @@ import re
 from collections import Counter, defaultdict
 from .... import bush, load_order
 from ....bolt import GPath, sio, SubProgress, CsvReader, deprint
-from ....brec import MreRecord, RecordHeader, null4
+from ....brec import MreRecord, RecHeader, null4
 from ....exception import StateError
 from ....mod_files import ModFile, LoadFactory
 from ....patcher import getPatchesPath
@@ -114,10 +114,9 @@ class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
         actorEffects = bush.game.generic_av_effects
         actorNames = bush.game.actor_values
         keep = self.patchFile.getKeeper()
-        #--Book generatator
+        #--Book generator
         def getBook(objectId,eid,full,value,iconPath,modelPath,modb_p):
-            book = MreRecord.type_class['BOOK'](
-                RecordHeader('BOOK', 0, 0, 0, 0))
+            book = MreRecord.type_class[b'BOOK'](RecHeader(b'BOOK', 0, 0, 0, 0))
             book.longFids = True
             book.changed = True
             book.eid = eid

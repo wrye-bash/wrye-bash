@@ -28,7 +28,7 @@ from __future__ import division, print_function
 import struct
 from operator import itemgetter
 # Wrye Bash imports
-from .brec import ModReader, RecordHeader
+from .brec import ModReader, RecordHeader, GrupHeader
 from .bolt import sio
 from . import bush # for fallout3/nv fsName
 from .exception import AbstractError, ArgumentError, ModError
@@ -57,13 +57,14 @@ class MobBase(object):
 
     def __init__(self, header, loadFactory, ins=None, do_unpack=False):
         self.header = header
-        if header.recType == 'GRUP':
-            self.size,self.label,self.groupType,self.stamp = (
-                header.size,header.label,header.groupType,header.stamp)
+        self.size = header.size
+        if header.recType == b'GRUP':
+            self.label, self.groupType, self.stamp = (
+                header.label, header.groupType, header.stamp)
         else:
             # Yes it's weird, but this is how it needs to work
-            self.size,self.label,self.groupType,self.stamp = (
-                header.size,header.flags1,header.fid,header.flags2)
+            self.label, self.groupType, self.stamp = (
+                header.flags1, header.fid, header.flags2)
         self.debug = False
         self.data = None
         self.changed = False
@@ -139,7 +140,7 @@ class MobBase(object):
             self.getNumRecords()
         if self.numRecords > 0:
             self.header.size = self.size
-            out.write(self.header.pack())
+            out.write(self.header.pack_head())
             out.write(self.data)
 
     def getReader(self):
@@ -210,14 +211,14 @@ class MobObjects(MobBase):
     def dump(self,out):
         """Dumps group header and then records."""
         if not self.changed:
-            out.write(RecordHeader('GRUP',self.size, self.label, 0,
-                                   self.stamp).pack())
+            out.write(GrupHeader(b'GRUP', self.size, self.label, 0,
+                                 self.stamp).pack_head())
             out.write(self.data)
         else:
             size = self.getSize()
             if size == RecordHeader.rec_header_size: return
-            out.write(
-                RecordHeader('GRUP', size, self.label, 0, self.stamp).pack())
+            out.write(GrupHeader(b'GRUP', size, self.label, 0,
+                                 self.stamp).pack_head())
             for record in self.records:
                 record.dump(out)
 
@@ -614,7 +615,7 @@ class MobCells(MobBase):
         if fid in self.id_cellBlock:
             self.id_cellBlock[fid].cell = cell
         else:
-            cellBlock = MobCell(RecordHeader('GRUP', 0, 0, 6, self.stamp),
+            cellBlock = MobCell(GrupHeader(b'GRUP', 0, 0, 6, self.stamp),
                                 self.loadFactory, cell)
             cellBlock.setChanged()
             self.cellBlocks.append(cellBlock)
@@ -663,12 +664,12 @@ class MobCells(MobBase):
             bsb0 = (block,None)
             if block != curBlock:
                 curBlock,curSubblock = bsb0
-                outWrite(RecordHeader('GRUP',bsb_size[bsb0],block,
-                                      blockGroupType,stamp).pack())
+                outWrite(GrupHeader(b'GRUP', bsb_size[bsb0], block,
+                                    blockGroupType, stamp).pack_head())
             if subblock != curSubblock:
                 curSubblock = subblock
-                outWrite(RecordHeader('GRUP',bsb_size[bsb],subblock,
-                                      subBlockGroupType,stamp).pack())
+                outWrite(GrupHeader(b'GRUP', bsb_size[bsb], subblock,
+                                    subBlockGroupType, stamp).pack_head())
             cellBlock.dump(out)
 
     def getNumRecords(self,includeGroups=1):
@@ -785,12 +786,12 @@ class MobICells(MobCells):
     def dump(self,out):
         """Dumps group header and then records."""
         if not self.changed:
-            out.write(self.header.pack())
+            out.write(self.header.pack_head())
             out.write(self.data)
         elif self.cellBlocks:
             (totalSize, bsb_size, blocks) = self.getBsbSizes()
             self.header.size = totalSize
-            out.write(self.header.pack())
+            out.write(self.header.pack_head())
             self.dumpBlocks(out,blocks,bsb_size,2,3)
 
 #------------------------------------------------------------------------------
@@ -935,7 +936,7 @@ class MobWorld(MobCells):
         worldSize = self.world.getSize() + hsize
         self.world.dump(out)
         if not self.changed:
-            out.write(self.header.pack())
+            out.write(self.header.pack_head())
             out.write(self.data)
             return self.size + worldSize
         elif self.cellBlocks or self.road or self.worldCellBlock:
@@ -947,7 +948,7 @@ class MobWorld(MobCells):
             self.header.size = totalSize
             self.header.label = self.world.fid
             self.header.groupType = 1
-            out.write(self.header.pack())
+            out.write(self.header.pack_head())
             if self.road:
                 self.road.dump(out)
             if self.worldCellBlock:
@@ -1079,13 +1080,13 @@ class MobWorlds(MobBase):
     def dump(self,out):
         """Dumps group header and then records."""
         if not self.changed:
-            out.write(self.header.pack())
+            out.write(self.header.pack_head())
             out.write(self.data)
         else:
             if not self.worldBlocks: return
             worldHeaderPos = out.tell()
-            header = RecordHeader('GRUP', 0, self.label, 0, self.stamp)
-            out.write(header.pack())
+            header = GrupHeader(b'GRUP', 0, self.label, 0, self.stamp)
+            out.write(header.pack_head())
             totalSize = RecordHeader.rec_header_size + sum(
                 x.dump(out) for x in self.worldBlocks)
             out.seek(worldHeaderPos + 4)
@@ -1133,8 +1134,8 @@ class MobWorlds(MobBase):
             self.id_worldBlocks[fid].world = world
             self.id_worldBlocks[fid].worldCellBlock = worldcellblock
         else:
-            worldBlock = MobWorld(RecordHeader('GRUP',0,0,1,self.stamp),
-                                  self.loadFactory,world)
+            worldBlock = MobWorld(GrupHeader(b'GRUP', 0, 0, 1, self.stamp),
+                                  self.loadFactory, world)
             worldBlock.setChanged()
             self.worldBlocks.append(worldBlock)
             self.id_worldBlocks[fid] = worldBlock

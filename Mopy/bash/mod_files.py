@@ -31,7 +31,8 @@ from struct import Struct
 from . import bolt, bush, env, load_order
 from .bass import dirs
 from .bolt import deprint, GPath, SubProgress
-from .brec import MreRecord, ModReader, ModWriter, RecordHeader
+from .brec import MreRecord, ModReader, ModWriter, RecordHeader, RecHeader, \
+    GrupHeader
 from .exception import ArgumentError, MasterMapError, ModError, StateError
 from .record_groups import MobBase, MobDials, MobICells, MobObjects, MobWorlds
 
@@ -161,22 +162,22 @@ class ModFile(object):
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True)
         #--Variables to load
-        self.tes4 = bush.game.plugin_header_class(RecordHeader())
+        self.tes4 = bush.game.plugin_header_class(RecHeader())
         self.tes4.setChanged()
         self.strings = bolt.StringTable()
         self.tops = {} #--Top groups.
         self.topsSkipped = set() #--Types skipped
         self.longFids = False
 
-    def __getattr__(self,topType):
+    def __getattr__(self, topType, __rh=RecordHeader):
         """Returns top block of specified topType, creating it, if necessary."""
         if topType in self.tops:
             return self.tops[topType]
-        elif topType in RecordHeader.topTypes:
+        elif topType in __rh.topTypes:
             topClass = self.loadFactory.getTopClass(topType)
             try:
                 self.tops[topType] = topClass(
-                    RecordHeader(b'GRUP', 0, topType, 0, 0), self.loadFactory)
+                    GrupHeader(b'GRUP', 0, topType, 0, 0), self.loadFactory)
             except TypeError:
                 raise ModError(
                     self.fileInfo.name,
