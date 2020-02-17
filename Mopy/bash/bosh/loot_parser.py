@@ -584,7 +584,13 @@ def _parse_list(list_path):
     :return: A LowerDict representing the list's contents.
     :rtype: LowerDict[unicode, _PluginEntry]"""
     with list_path.open('rb') as ins:
-        list_contents = yaml.load(ins, Loader=SafeLoader)
+        # HACK! https://github.com/yaml/pyyaml/issues/373
+        if u'fallout4' in list_path.cs:
+            yaml_data = ins.read().replace(b'incWithPatchVersion1.5.157.0',
+                                           b'incWithPatchVersion1_5_157_0')
+            list_contents = yaml.load(yaml_data, Loader=SafeLoader)
+        else:
+            list_contents = yaml.load(ins, Loader=SafeLoader)
     ##: Are the decode calls here (and in _PluginEntry.__init__) needed?
     return LowerDict({decode(p['name']): _PluginEntry(p) for p
                       in list_contents.get('plugins', ())})
