@@ -317,8 +317,8 @@ class MreLeveledListBase(MelRecord):
         self.setChanged(self.mergeOverLast)
 
 #------------------------------------------------------------------------------
-class MreDial(MelRecord):
-    """Dialog record."""
+class MreDialBase(MelRecord):
+    """Shared code of all MreDial classes."""
     rec_sig = b'DIAL'
     __slots__ = ['infoStamp', 'infoStamp2', 'infos']
 

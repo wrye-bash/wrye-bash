@@ -23,7 +23,6 @@
 # =============================================================================
 """This module contains the oblivion record classes."""
 import struct
-from operator import attrgetter
 
 from .constants import condition_function_data
 from ... import brec
@@ -37,7 +36,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelRaceParts, MelRaceVoices, null1, null2, null3, null4, MelScriptVars, \
     MelSequential, MelUnion, FlagDecider, AttrValDecider, PartialLoadDecider, \
     MelTruncatedStruct, MelCoordinates, MelIcon, MelIco2, MelEdid, MelFull, \
-    MelArray, MelWthrColors, MelObject, mel_cdta_unpackers
+    MelArray, MelWthrColors, MelObject, mel_cdta_unpackers, MreDialBase
 from ...exception import BoltError, ModSizeError, StateError
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
@@ -918,7 +917,7 @@ class MreCsty(MelRecord):
         )
     __slots__ = melSet.getSlotsUsed()
 
-class MreDial(brec.MreDial):
+class MreDial(MreDialBase):
     """Dialogue."""
     melSet = MelSet(
         MelEdid(),

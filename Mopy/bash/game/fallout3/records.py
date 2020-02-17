@@ -30,7 +30,7 @@ from collections import defaultdict
 from ... import brec, bush
 from ...bolt import Flags, struct_unpack, struct_pack
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
-    MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, MreHeaderBase, \
+    MelString, MelSet, MelFid, MelOptStruct, MelFids, MreHeaderBase, \
     MelBase, MelUnicode, MelFidList, MreGmstBase, MelStrings, MelMODS, \
     MreHasEffects, MelReferences, MelColorInterpolator, MelValueInterpolator, \
     MelUnion, AttrValDecider, MelRegnEntrySubrecord, SizeDecider, MelFloat, \
@@ -40,7 +40,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelRaceVoices, MelBounds, null1, null2, null3, null4, MelScriptVars, \
     MelSequential, MelTruncatedStruct, PartialLoadDecider, MelReadOnly, \
     MelCoordinates, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, \
-    MelArray, MelWthrColors, MreLeveledListBase, mel_cdta_unpackers
+    MelArray, MelWthrColors, MreLeveledListBase, mel_cdta_unpackers, \
+    MreDialBase
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
@@ -1098,7 +1099,7 @@ class MreDebr(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreDial(brec.MreDial):
+class MreDial(MreDialBase):
     """Dialogue."""
     _DialFlags = Flags(0, Flags.getNames('rumors', 'toplevel'))
 

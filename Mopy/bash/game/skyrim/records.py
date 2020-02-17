@@ -39,7 +39,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelPartialCounter, MelBounds, null1, null2, null3, null4, MelSequential, \
     MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, \
     MelFull, MelArray, MelWthrColors, GameDecider, MelReadOnly, \
-    mel_cdta_unpackers
+    mel_cdta_unpackers, MreDialBase
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -2100,7 +2100,7 @@ class MreDebr(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreDial(brec.MreDial):
+class MreDial(MreDialBase):
     """Dialogue."""
 
     DialTopicFlags = Flags(0, Flags.getNames(
@@ -2175,25 +2175,15 @@ class MreDobj(MelRecord):
         def loadData(self, record, ins, sub_type, size_, readId):
             # Load everything but the noise
             start_pos = ins.tell()
-            MelArray.loadData(self, record, ins, sub_type, size_, readId)
+            super(MreDobj.MelDobjDnam, self).loadData(record, ins, sub_type,
+                                                      size_, readId)
             # Now, read the remainder of the subrecord and store it
             read_size = ins.tell() - start_pos
             record.unknownDNAM = ins.read(size_ - read_size)
 
-        def dumpData(self, record, out):
-            # We need to fully override this to attach unknownDNAM to the data
-            # we'll be writing out
-            array_val = getattr(record, self.attr)
-            if not array_val: return # don't dump out empty arrays
-            array_data = ''
-            element_fmt = self._element.struct_format
-            # not _element_attrs, that one has all underscores removed
-            element_attrs = self._element.attrs
-            for arr_entry in array_val:
-                array_data += struct_pack(
-                    element_fmt, *[getattr(arr_entry, item) for item
-                                   in element_attrs])
-            out.packSub(self.subType, array_data + record.unknownDNAM)
+        def _collect_array_data(self, record):
+            return super(MreDobj.MelDobjDnam, self)._collect_array_data(
+                record) + record.unknownDNAM
 
         def getSlotsUsed(self):
             return MelArray.getSlotsUsed(self) + ('unknownDNAM',)

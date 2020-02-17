@@ -402,15 +402,20 @@ class MelArray(MelBase):
             load_entry(arr_entry, ins, sub_type, entry_size, readId)
 
     def dumpData(self, record, out):
+        array_data = self._collect_array_data(record)
+        if array_data: out.packSub(self.subType, array_data)
+
+    def _collect_array_data(self, record):
+        """Collects the actual data that will be dumped out."""
         array_data = MelArray._DirectModWriter(sio())
         if self._prelude:
             self._prelude.dumpData(record, array_data)
         array_val = getattr(record, self.attr)
-        if not array_val: return # don't dump out empty arrays
+        if not array_val: return b'' # don't dump out empty arrays
         dump_entry = self._element.dumpData
         for arr_entry in array_val:
             dump_entry(arr_entry, array_data)
-        out.packSub(self.subType, array_data.getvalue())
+        return array_data.getvalue()
 
 #------------------------------------------------------------------------------
 class MelTruncatedStruct(MelStruct):
