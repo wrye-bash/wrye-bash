@@ -562,17 +562,11 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
     #--Generate/show dialog
     checkBoxTxt = _(u"Don't show this in the future.")
     if canVista:
-        result = vistaDialog(parent,
-                             title=title,
-                             message=message,
-                             buttons=[(wx.ID_OK, 'ok'),
-                                      (wx.ID_CANCEL, 'cancel')],
-                             checkBoxTxt=checkBoxTxt,
-                             icon='warning',
-                             heading=u'',
-                             )
-        check = result[1]
-        result = result[0] in (wx.ID_OK, wx.ID_YES)
+        result, check = vistaDialog(parent, title=title, message=message,
+                                    buttons=[(_win.BTN_OK, 'ok'),
+                                             (_win.BTN_CANCEL, 'cancel')],
+                                    checkBoxTxt=checkBoxTxt, icon='warning',
+                                    heading=u'')
     else:
         result, check = _continueDialog(parent, message, title, checkBoxTxt)
     if check:
@@ -585,17 +579,10 @@ def askContinueShortTerm(parent, message, title=_(u'Warning')):
     #--Generate/show dialog
     checkBoxTxt = _(u"Don't show this for the rest of operation.")
     if canVista:
-        buttons=[(wx.ID_OK, 'ok'), (wx.ID_CANCEL, 'cancel')]
-        result = vistaDialog(parent,
-                             title=title,
-                             message=message,
-                             buttons=buttons,
-                             checkBoxTxt=checkBoxTxt,
-                             icon='warning',
-                             heading=u'',
-                             )
-        check = result[1]
-        result = result[0] in (wx.ID_OK, wx.ID_YES)
+        buttons=[(_win.BTN_OK, 'ok'), (_win.BTN_CANCEL, 'cancel')]
+        result, check = vistaDialog(parent, title=title, message=message,
+                                    buttons=buttons, checkBoxTxt=checkBoxTxt,
+                                    icon='warning', heading=u'')
     else:
         result, check = _continueDialog(parent, message, title, checkBoxTxt)
     if result:
@@ -703,17 +690,17 @@ def vistaDialog(parent, message, title, buttons=[], checkBoxTxt=None,
         if title.startswith(u'+'): title = title[1:]
         if title == button:
             if checkBoxTxt:
-                return id_,checkbox
+                return id_ in _win.GOOD_EXITS, checkbox
             else:
-                return id_
-    return None, checkbox
+                return id_ in _win.GOOD_EXITS, None
+    return False, checkbox
 
 def askStyled(parent,message,title,style,**kwdargs):
     """Shows a modal MessageDialog.
     Use ErrorMessage, WarningMessage or InfoMessage."""
     parent = _AComponent._resolve(parent)
     if canVista:
-        buttons = []
+        vista_btn = []
         icon = None
         if style & wx.YES_NO:
             yes = 'yes'
@@ -722,26 +709,23 @@ def askStyled(parent,message,title,style,**kwdargs):
                 yes = 'Yes'
             elif style & wx.NO_DEFAULT:
                 no = 'No'
-            buttons.append((wx.ID_YES,yes))
-            buttons.append((wx.ID_NO,no))
+            vista_btn.append((_win.BTN_YES, yes))
+            vista_btn.append((_win.BTN_NO, no))
         if style & wx.OK:
-            buttons.append((wx.ID_OK,'ok'))
+            vista_btn.append((_win.BTN_OK, 'ok'))
         if style & wx.CANCEL:
-            buttons.append((wx.ID_CANCEL,'cancel'))
+            vista_btn.append((_win.BTN_CANCEL, 'cancel'))
         if style & (wx.ICON_EXCLAMATION|wx.ICON_INFORMATION):
             icon = 'warning'
         if style & wx.ICON_HAND:
             icon = 'error'
-        result = vistaDialog(parent,
-                             message=message,
-                             title=title,
-                             icon=icon,
-                             buttons=buttons)
+        result, _check = vistaDialog(parent, message=message, title=title,
+                                     icon=icon, buttons=vista_btn)
     else:
         dialog = wx.MessageDialog(parent,message,title,style)
-        result = dialog.ShowModal()
+        result = dialog.ShowModal() in (wx.ID_OK, wx.ID_YES)
         dialog.Destroy()
-    return result in (wx.ID_OK,wx.ID_YES)
+    return result
 
 def askOk(parent,message,title=u'',**kwdargs):
     """Shows a modal error message."""
@@ -2880,7 +2864,7 @@ def ask_uac_restart(message, title, mopy):
             u'\n\n' + _(u'--no-uac: always run normally') +
             u'\n' + _(u'--uac: always run with Admin Privileges') +
             u'\n\n' + _(u'See the <A href="%(readmePath)s">readme</A> '
-                u'for more information.') % {'readmePath': readme}])
+                u'for more information.') % {'readmePath': readme}])[0]
 
 def readme_url(mopy, advanced=False):
     readme = mopy.join(u'Docs',

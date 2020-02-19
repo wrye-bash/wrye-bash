@@ -48,6 +48,13 @@ except ImportError: # linux
     raise
 from env import winreg
 
+# Button constants - happen to mirror wxPython's
+BTN_OK                          = 5100
+BTN_CANCEL                      = 5101
+BTN_YES                         = 5103
+BTN_NO                          = 5104
+GOOD_EXITS                      = (BTN_OK, BTN_YES)
+
 BUTTONID_OFFSET                 = 1000
 
 #---Internal Flags. Leave these alone unless you know what you're doing---#
