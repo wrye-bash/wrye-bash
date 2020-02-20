@@ -310,7 +310,7 @@ class TaskDialog(object):
                        'no': 7,
                        'close': 8}
 
-    def __init__(self, title, heading, content, buttons=[], main_icon=None,
+    def __init__(self, title, heading, content, buttons=(), main_icon=None,
                  parenthwnd=None, footer=None):
         """Initialize the dialog."""
         self.__events = {CREATED:[],
@@ -337,6 +337,7 @@ class TaskDialog(object):
         self._main_icon = self.stock_icons[
             main_icon] if self._main_is_stock else main_icon
         # buttons
+        buttons = list(buttons)
         self.set_buttons(buttons)
         # parent handle
         self._parent = parenthwnd

@@ -524,9 +524,9 @@ def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
             bitmap = bmp(wx.ART_WARNING,wx.ART_MESSAGE_BOX, size)
         elif special == 'undo':
             return bmp(wx.ART_UNDO,wx.ART_TOOLBAR,size)
-        else: raise ArgumentError(u'special must be either warn or undo: ' +
-                                  unicode(special, "utf-8") + u' given')
-    return wx.StaticBitmap(parent, defId, bitmap)
+        else: raise ArgumentError(
+            u'special must be either warn or undo: %r given' % special)
+    return wx.StaticBitmap(_AComponent._resolve(parent), defId, bitmap)
 
 class ColorPicker(wx.ColourPickerCtrl):
     """A button with a color that launches a color picker dialog."""
@@ -561,51 +561,54 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
     if _settings.get(continueKey): return True
     #--Generate/show dialog
     checkBoxTxt = _(u"Don't show this in the future.")
-    if canVista:
-        result, check = vistaDialog(parent, title=title, message=message,
-                                    buttons=[(_win.BTN_OK, 'ok'),
-                                             (_win.BTN_CANCEL, 'cancel')],
-                                    checkBoxTxt=checkBoxTxt, icon='warning',
-                                    heading=u'')
-    else:
-        result, check = _continueDialog(parent, message, title, checkBoxTxt)
+    result, check = _ContinueDialog.display_dialog(
+        _AComponent._resolve(parent), title=title, message=message,
+        checkBoxTxt=checkBoxTxt)
     if check:
         _settings[continueKey] = 1
     return result
 
 def askContinueShortTerm(parent, message, title=_(u'Warning')):
     """Shows a modal continue query  Returns True to continue.
-    Also provides checkbox "Don't show this in for rest of operation."."""
+    Also provides checkbox "Don't show this for rest of operation."."""
     #--Generate/show dialog
     checkBoxTxt = _(u"Don't show this for the rest of operation.")
-    if canVista:
-        buttons=[(_win.BTN_OK, 'ok'), (_win.BTN_CANCEL, 'cancel')]
-        result, check = vistaDialog(parent, title=title, message=message,
-                                    buttons=buttons, checkBoxTxt=checkBoxTxt,
-                                    icon='warning', heading=u'')
-    else:
-        result, check = _continueDialog(parent, message, title, checkBoxTxt)
+    result, check = _ContinueDialog.display_dialog(
+        _AComponent._resolve(parent), title=title, message=message,
+        checkBoxTxt=checkBoxTxt)
     if result:
         if check:
             return 2
         return True
     return False
 
-def _continueDialog(parent, message, title, checkBoxText):
-    with DialogWindow(parent, title, sizes_dict=sizes, size=(350, -1)) as dialog:
-        gCheckBox = CheckBox(dialog, checkBoxText)
+class _ContinueDialog(DialogWindow):
+    def __init__(self, parent, message, title, checkBoxText):
+        super(_ContinueDialog, parent).__init__(parent, title, sizes_dict=sizes, size=(350, -1))
+        self.gCheckBox = CheckBox(self, checkBoxText)
         #--Layout
         VLayout(border=6, spacing=6, default_fill=True, items=[
             (HLayout(spacing=6, items=[
-                (staticBitmap(dialog), LayoutOptions(border=6, v_align=TOP)),
-                (Label(dialog, message), LayoutOptions(expand=True, weight=1))]),
+                (staticBitmap(self), LayoutOptions(border=6, v_align=TOP)),
+                (Label(self, message), LayoutOptions(expand=True, weight=1))]),
              LayoutOptions(weight=1)),
-            gCheckBox,
-            ok_and_cancel_group(dialog)
-        ]).apply_to(dialog)
+            self.gCheckBox,
+            ok_and_cancel_group(self)
+        ]).apply_to(self)
+
+    def show_modal(self):
         #--Get continue key setting and return
-        result = dialog.show_modal()
-        check = gCheckBox.is_checked
+        result = super(_ContinueDialog, self).show_modal()
+        check = self.gCheckBox.is_checked
+        return result, check
+
+    @classmethod
+    def display_dialog(cls, *args, **kwargs):
+        #--Get continue key setting and return
+        if canVista:
+            result, check = vistaDialog(*args, **kwargs)
+        else:
+            return super(_ContinueDialog, cls).display_dialog(*args, **kwargs)
         return result, check
 
 #------------------------------------------------------------------------------
@@ -666,9 +669,10 @@ except ImportError: # bare linux (in wine it's imported but malfunctions)
     _win = None
     canVista = False
 
-def vistaDialog(parent, message, title, buttons=[], checkBoxTxt=None,
-                icon=None, commandLinks=True, footer=u'', expander=[],
-                heading=u''):
+def vistaDialog(parent, message, title, checkBoxTxt=None,
+                buttons=((_win.BTN_OK, 'ok'), (_win.BTN_CANCEL, 'cancel')),
+                icon='warning', commandLinks=True, footer=u'',
+                expander=[], heading=u''):
     """Always guard with canVista == True"""
     heading = heading if heading is not None else title
     title = title if heading is not None else u'Wrye Bash'
@@ -722,7 +726,7 @@ def askStyled(parent,message,title,style,**kwdargs):
         result, _check = vistaDialog(parent, message=message, title=title,
                                      icon=icon, buttons=vista_btn)
     else:
-        dialog = wx.MessageDialog(parent,message,title,style)
+        dialog = wx.MessageDialog(parent,message,title,style) # TODO de-wx!
         result = dialog.ShowModal() in (wx.ID_OK, wx.ID_YES)
         dialog.Destroy()
     return result
