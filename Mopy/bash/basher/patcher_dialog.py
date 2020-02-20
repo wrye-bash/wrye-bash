@@ -251,7 +251,7 @@ class PatchDialog(DialogWindow):
                     changedFiles = bosh.modInfos.lo_activate(patch_name,
                                                              doSave=True)
                     count = len(changedFiles)
-                    if count > 1: Link.Frame.SetStatusInfo(
+                    if count > 1: Link.Frame.set_status_info(
                             _(u'Masters Activated: ') + unicode(count - 1))
                 except PluginsFullError:
                     balt.showError(self, _(

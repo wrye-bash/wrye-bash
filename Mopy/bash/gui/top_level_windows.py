@@ -73,7 +73,12 @@ class _TopLevelWin(_AComponent):
         """SetIcons(self, wxIconBundle icons)"""
         return self._native_widget.SetIcons(wx_icon_bundle)
 
-    def close_win(self): self._native_widget.Close()
+    def close_win(self, force_close=False):
+        """This function simply generates a EVT_CLOSE event whose handler usually
+        tries to close the window. It doesn't close the window itself,
+        however.  If force is False (the default) then the window's close
+        handler will be allowed to veto the destruction of the window."""
+        self._native_widget.Close(force_close)
 
     def on_closing(self, destroy=True):
         """Invoked right before this window is destroyed."""
@@ -85,21 +90,23 @@ class _TopLevelWin(_AComponent):
 class WindowFrame(_TopLevelWin):
     """Wraps a wx.Frame - saves size/position on closing.
 
+    Events:
+     - on_activate(): Posted when the frame is activated.
      """
     _frame_settings_key = None
     _min_size = _def_size = (250, 250)
 
     def __init__(self, parent, title, icon_bundle=None, _base_key=None,
-                 sizes_dict={}, **kwargs):
+                 sizes_dict={}, style=_wx.DEFAULT_FRAME_STYLE, **kwargs):
         _key = _base_key or self.__class__._frame_settings_key
         if _key:
             self.posKey = _key + u'.pos'
             self.sizesKey = _key + u'.size'
-        _style = _wx.RESIZE_BORDER | _wx.CAPTION | _wx.SYSTEM_MENU | \
-                 _wx.CLOSE_BOX | _wx.CLIP_CHILDREN
         super(WindowFrame, self).__init__(_wx.Frame, parent, sizes_dict,
                                           icon_bundle, title=title,
-                                          style=_style, **kwargs)
+                                          style=style, **kwargs)
+        self.on_activate = EventHandler(self._native_widget, _wx.EVT_ACTIVATE,
+            arg_processor=lambda event: [event.GetActive()])
         self.background_color = _wx.NullColour
         self.set_min_size(*self._min_size)
 

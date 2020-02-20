@@ -265,7 +265,7 @@ class App_Button(StatusBar_Button):
                 args = [exePath.s]
             args.extend(self.exeArgs)
             if self.extraArgs: args.extend(self.extraArgs)
-            Link.Frame.SetStatusInfo(u' '.join(args[1:]))
+            Link.Frame.set_status_info(u' '.join(args[1:]))
             cwd = bolt.Path.getcwd()
             if self.workingDir:
                 self.workingDir.setcwd()
@@ -488,7 +488,7 @@ class Game_Button(App_Button):
     def Execute(self):
         super(Game_Button, self).Execute()
         if bass.settings.get('bash.autoQuit.on',False):
-            Link.Frame.Close(True)
+            Link.Frame.close_win(force_close=True)
 
     @property
     def version(self):

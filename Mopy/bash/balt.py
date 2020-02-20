@@ -315,7 +315,7 @@ def text_wrap(text_to_wrap, width=60):
 
 def ensureDisplayed(frame,x=100,y=100):
     """Ensure that frame is displayed."""
-    if wx.Display.GetFromWindow(frame) == -1:
+    if wx.Display.GetFromWindow(_AComponent._resolve(frame)) == -1:
         topLeft = wx.Display(0).GetGeometry().GetTopLeft()
         frame.MoveXY(topLeft.x+x,topLeft.y+y)
 
@@ -849,10 +849,11 @@ class _Log(object):
                                   icon_bundle=log_icons, sizesKey=key__size_,
                                   posKey=key__pos_)
         else:
+            style_ = wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU |  \
+                     wx.CLOSE_BOX | wx.CLIP_CHILDREN
             window = WindowFrame(parent, title, log_icons or Resources.bashBlue,
-                                 _base_key=self._settings_key, sizes_dict=_settings, style=(
-                        wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU |
-                        wx.CLOSE_BOX | wx.CLIP_CHILDREN))
+                                 _base_key=self._settings_key,
+                                 sizes_dict=_settings, style=style_)
         window.set_min_size(200, 200)
         self.window = window
 
@@ -1570,12 +1571,12 @@ def conversation(func):
         global _depth
         try:
             with _lock: _depth += 1 # hack: allow sequences of conversations
-            Link.Frame.BindRefresh(bind=False)
+            Link.Frame.bind_refresh(bind=False)
             return func(*args, **kwargs)
         finally:
             with _lock: # atomic
                 _depth -= 1
-                if not _depth: Link.Frame.BindRefresh(bind=True)
+                if not _depth: Link.Frame.bind_refresh(bind=True)
     return _conversation_wrapper
 
 class UIList(wx.Panel):
@@ -1701,7 +1702,7 @@ class UIList(wx.Panel):
     @property
     def item_count(self): return self.__gList.GetItemCount()
     @property
-    def edit_control(self): return self.__gList.GetEditControl()
+    def edit_control(self): return self.__gList.GetEditControl() # todo type?
 
     #--Items ----------------------------------------------
     def PopulateItem(self, itemDex=-1, item=None):
@@ -1823,7 +1824,7 @@ class UIList(wx.Panel):
         """Show column menu."""
         if not self.mainMenu: return
         if column is None: column = event.GetColumn()
-        self.mainMenu.PopupMenu(self, Link.Frame, column)
+        self.mainMenu.PopupMenu(self, _AComponent._resolve(Link.Frame), column)
 
     #--Item Menu
     def DoItemMenu(self,event):
@@ -1833,7 +1834,7 @@ class UIList(wx.Panel):
             self.DoColumnMenu(event,0)
             return
         if not self.itemMenu: return
-        self.itemMenu.PopupMenu(self,Link.Frame,selected)
+        self.itemMenu.PopupMenu(self,_AComponent._resolve(Link.Frame),selected)
 
     #--Callbacks --------------------------------------------------------------
     def OnMouse(self,event):
@@ -1846,11 +1847,11 @@ class UIList(wx.Panel):
                     item = self.GetItem(itemDex) # get the item for this index
                     text = self.mouseTexts.get(item, u'')
                     if text != self.mouseTextPrev:
-                        Link.Frame.SetStatusInfo(text)
+                        Link.Frame.set_status_info(text)
                         self.mouseTextPrev = text
         elif event.Leaving() and self.mouse_index is not None:
             self.mouse_index = None
-            Link.Frame.SetStatusInfo(u'')
+            Link.Frame.set_status_info(u'')
         event.Skip()
 
     def OnKeyUp(self, event):
@@ -2281,8 +2282,8 @@ class Links(list):
 
     #--Popup a menu from the links
     def PopupMenu(self, parent=None, eventWindow=None, *args):
-        parent = parent or Link.Frame
-        eventWindow = eventWindow or parent
+        parent = _AComponent._resolve(parent or Link.Frame)
+        eventWindow = _AComponent._resolve(eventWindow) or parent
         menu = wx.Menu()
         Link.Popup = menu
         for link in self:
@@ -2449,8 +2450,8 @@ class ItemLink(Link):
         """Append self as menu item and set callbacks to be executed when
         selected."""
         super(ItemLink, self).AppendToMenu(menu, window, selection)
-        Link.Frame.Bind(wx.EVT_MENU, self.__Execute, id=self._id)
-        Link.Frame.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
+        _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU, self.__Execute, id=self._id)
+        _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
         menuItem = wx.MenuItem(menu, self._id, self._text, self.menu_help,
                                self.__class__.kind)
         menu.AppendItem(menuItem)
@@ -2477,7 +2478,7 @@ class ItemLink(Link):
         """Hover over an item, set the statusbar text"""
         if Link.Popup:
             item = Link.Popup.FindItemById(event.GetId()) # <wx._core.MenuItem>
-            Link.Frame.SetStatusInfo(item.GetHelp() if item else u'')
+            Link.Frame.set_status_info(item.GetHelp() if item else u'')
 
 class MenuLink(Link):
     """Defines a submenu. Generally used for submenus of large menus."""
@@ -2496,7 +2497,7 @@ class MenuLink(Link):
     def AppendToMenu(self, menu, window, selection):
         """Append self as submenu (along with submenu items) to menu."""
         super(MenuLink, self).AppendToMenu(menu, window, selection)
-        Link.Frame.Bind(wx.EVT_MENU_OPEN, MenuLink.OnMenuOpen)
+        _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU_OPEN, MenuLink.OnMenuOpen)
         subMenu = wx.Menu()
         menu.AppendMenu(self._id, self._text, subMenu)
         if not self._enable():
@@ -2509,7 +2510,7 @@ class MenuLink(Link):
     @staticmethod
     def OnMenuOpen(event):
         """Hover over a submenu, clear the status bar text"""
-        Link.Frame.SetStatusInfo(u'')
+        Link.Frame.set_status_info(u'')
 
 class ChoiceLink(Link):
     """List of Choices with optional menu items to edit etc those choices."""
@@ -2825,7 +2826,7 @@ class ListBoxes(DialogWindow):
 
     def _on_context(self, lb_instance):
         """Context Menu"""
-        self.itemMenu.PopupMenu(lb_instance._native_widget, Link.Frame,
+        self.itemMenu.PopupMenu(lb_instance._native_widget, _AComponent._resolve(Link.Frame),
                                 lb_instance.lb_get_selections())
 
     def getChecked(self, key, items, checked=True):

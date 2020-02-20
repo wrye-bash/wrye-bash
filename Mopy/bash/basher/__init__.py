@@ -79,14 +79,14 @@ startupinfo = bolt.startupinfo
 from .. import balt
 from ..balt import CheckLink, EnabledLink, SeparatorLink, Link, \
     ChoiceLink, staticBitmap, AppendableLink, ListBoxes, \
-    INIListCtrl, DnDStatusBar, NotebookPanel, BaltFrame, set_event_hook, Events
+    INIListCtrl, DnDStatusBar, NotebookPanel, set_event_hook, Events
 from ..balt import spinCtrl
 from ..balt import colors, images, Image, Resources
-from ..balt import Links, ItemLink
+from ..balt import Links, ItemLink, _AComponent
 
 from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
-    TOP, VLayout, EventResult, DropDown, DialogWindow
+    TOP, VLayout, EventResult, DropDown, DialogWindow, WindowFrame
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons
@@ -216,7 +216,7 @@ class SashUIListPanel(SashPanel):
 
     def SetStatusCount(self):
         """Sets status bar count field."""
-        Link.Frame.SetStatusCount(self, self._sbCount())
+        Link.Frame.set_status_count(self, self._sbCount())
 
     def RefreshUIColors(self):
         self.uiList.RefreshUI(focus_list=False)
@@ -3680,7 +3680,7 @@ class BashStatusBar(DnDStatusBar):
         self.OnSize()
 
 #------------------------------------------------------------------------------
-class BashFrame(BaltFrame):
+class BashFrame(WindowFrame):
     """Main application frame."""
     ##:ex basher globals - hunt their use down - replace with methods - see #63
     docBrowser = None
@@ -3695,35 +3695,34 @@ class BashFrame(BaltFrame):
     # Panels - use sparingly
     iPanel = None # BAIN panel
     # initial size/position
-    _frame_settings_key = 'bash.frame'
+    _frame_settings_key = u'bash.frame'
     _def_size = (1024, 512)
     _size_hints = (512, 512)
 
     @property
-    def statusBar(self): return self.GetStatusBar()
+    def statusBar(self): return self._native_widget.GetStatusBar()
 
     def __init__(self, parent=None):
         #--Singleton
         balt.Link.Frame = self
         #--Window
-        super(BashFrame, self).__init__(parent, title=u'Wrye Bash')
-        self.SetTitle()
+        super(BashFrame, self).__init__(parent, title=u'Wrye Bash',
+                                        icon_bundle=Resources.bashRed,
+                                        sizes_dict=bass.settings)
+        self.set_bash_frame_title()
         #--Status Bar
-        self.SetStatusBar(BashStatusBar(self))
+        self._native_widget.SetStatusBar(BashStatusBar(self._native_widget))
         #--Notebook panel
         # attributes used when ini panel is created (warn for missing game ini)
         self.oblivionIniCorrupted = u''
         self.oblivionIniMissing = self._oblivionIniMissing = False
-        self.notebook = BashNotebook(self)
+        self.notebook = BashNotebook(self._native_widget)
         #--Data
         self.inRefreshData = False #--Prevent recursion while refreshing.
         self.knownCorrupted = set()
         self.knownInvalidVerions = set()
         self.known_sse_form43_mods = set()
         self.incompleteInstallError = False
-
-    @staticmethod
-    def _resources(): return Resources.bashRed
 
     @balt.conversation
     def warnTooManyModsBsas(self):
@@ -3745,9 +3744,13 @@ class BashFrame(BaltFrame):
                           bush.game.displayName
             balt.showWarning(self, message, _(u'Too many mod files.'))
 
-    def BindRefresh(self, bind=True, __event=wx.EVT_ACTIVATE):
-        if self:
-            self.Bind(__event, self.RefreshData) if bind else self.Unbind(__event)
+    def bind_refresh(self, bind=True):
+        if self._native_widget:
+            try:
+                self.on_activate.subscribe(self.RefreshData) if bind else \
+                    self.on_activate.unsubscribe(self.RefreshData)
+            except ValueError:
+                pass
 
     def Restart(self, *args):
         """Restart Bash - edit bass.sys_argv with specified args then let
@@ -3762,9 +3765,9 @@ class BashFrame(BaltFrame):
         bass.update_sys_argv(['--no-uac'])
         # restart
         bass.is_restarting = True
-        self.Close(True)
+        self.close_win(True)
 
-    def SetTitle(*args, **kwargs):
+    def set_bash_frame_title(self):
         """Set title. Set to default if no title supplied."""
         if bush.game.altName and settings['bash.useAltName']:
             title = bush.game.altName + u' %s%s'
@@ -3784,9 +3787,9 @@ class BashFrame(BaltFrame):
             title += _(u'Default')
         if bosh.modInfos.voCurrent:
             title += u' ['+bosh.modInfos.voCurrent+u']'
-        wx.Frame.SetTitle(args[0], title)
+        self._native_widget.SetTitle(title)
 
-    def SetStatusCount(self, requestingPanel, countTxt):
+    def set_status_count(self, requestingPanel, countTxt):
         """Sets status bar count field."""
         if self.notebook.currentPage is requestingPanel: # we need to check if
         # requesting Panel is currently shown because Refresh UI path may call
@@ -3794,17 +3797,17 @@ class BashFrame(BaltFrame):
         # count flickering when deleting a save in saves tab - ##: hunt down
             self.statusBar.SetStatusText(countTxt, 2)
 
-    def SetStatusInfo(self, infoTxt):
+    def set_status_info(self, infoTxt):
         """Sets status bar info field."""
         self.statusBar.SetStatusText(infoTxt, 1)
 
     #--Events ---------------------------------------------
     @balt.conversation
-    def RefreshData(self, event=None, booting=False):
+    def RefreshData(self, evt_active=True, booting=False):
         """Refresh all data - window activation event callback, called also
         on boot."""
         #--Ignore deactivation events.
-        if event and not event.GetActive() or self.inRefreshData: return
+        if not evt_active or self.inRefreshData: return
         #--UPDATES-----------------------------------------
         self.inRefreshData = True
         popMods = popSaves = popBsas = None
@@ -3842,6 +3845,7 @@ class BashFrame(BaltFrame):
         self._missingDocsDir()
         #--Done (end recursion blocker)
         self.inRefreshData = False
+        return EventResult.FINISH
 
     def _warn_reset_load_order(self):
         if load_order.warn_locked and not bass.inisettings[
@@ -3950,22 +3954,18 @@ class BashFrame(BaltFrame):
         u'%s\\Data\\Docs directories.') % (bush.game.fsName, bush.game.fsName)
         balt.showWarning(self, msg, _(u'Incomplete Installation'))
 
-    def OnCloseWindow(self):
+    def on_closing(self, destroy=True):
         """Handle Close event. Save application data."""
         try:
-            # copy pasted from super.OnCloseWindow() -> in the finally clause
-            # here position is not saved
-            _key = self.__class__._frame_settings_key
-            if _key and not self.IsIconized() and not self.IsMaximized():
-                bass.settings[_key + '.pos'] = tuple(self.GetPosition())
-                bass.settings[_key + '.size'] = tuple(self.GetSize())
-            self.BindRefresh(bind=False)
+            # Save sizes here, in the finally clause position is not saved - todo PY3: test if needed
+            super(BashFrame, self).on_closing(destroy=False)
+            self.bind_refresh(bind=False)
             self.SaveSettings(destroy=True)
         except:
                 deprint(_(u'An error occurred while trying to save settings:'),
                         traceback=True)
         finally:
-            self.Destroy()
+            self.destroy_component()
 
     def SaveSettings(self, destroy=False):
         """Save application data."""
@@ -3974,7 +3974,7 @@ class BashFrame(BaltFrame):
         # Clean out unneeded settings
         self.CleanSettings()
         if Link.Frame.docBrowser: Link.Frame.docBrowser.DoSave()
-        settings['bash.frameMax'] = self.IsMaximized()
+        settings['bash.frameMax'] = self.is_maximized
         settings['bash.page'] = self.notebook.GetSelection()
         # use tabInfo below so we save settings of panels that the user closed
         for _k, (_cname, tab_name, panel) in tabInfo.iteritems():
@@ -4061,9 +4061,9 @@ class BashApp(wx.App):
         if splashScreen:
             splashScreen.Destroy()
             splashScreen.Hide() # wont be hidden if warnTooManyModsBsas warns..
-        self.SetTopWindow(frame)
-        frame.Show()
-        frame.Maximize(settings['bash.frameMax'])
+        self.SetTopWindow(frame._native_widget)
+        frame.show_frame()
+        frame._native_widget.Maximize(settings['bash.frameMax'])
         frame.RefreshData(booting=True) # will bind RefreshData
         balt.ensureDisplayed(frame)
         # Moved notebook.Bind() callback here as OnShowPage() is explicitly

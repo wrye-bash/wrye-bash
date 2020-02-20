@@ -208,7 +208,7 @@ class Mods_OblivionVersion(CheckLink, EnabledLink):
         self.window.RefreshUI(refreshSaves=True) # True: refresh save's masters
         if self.setProfile:
             bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,'vOblivion',self.key)
-        Link.Frame.SetTitle()
+        Link.Frame.set_bash_frame_title()
 
 # "File" submenu --------------------------------------------------------------
 class Mods_CreateBlankBashedPatch(ItemLink):

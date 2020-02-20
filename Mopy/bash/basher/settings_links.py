@@ -24,7 +24,7 @@
 
 import sys
 
-from . import BashFrame, BashStatusBar
+from . import BashStatusBar
 from .app_buttons import App_Button  # TODO(ut): ugly
 from .dialogs import ColorDialog
 from .. import barb, bush, balt, bass, bolt, env, exception
@@ -55,7 +55,7 @@ class Settings_BackupSettings(ItemLink):
     def Execute(self):
         msg = _(u'Do you want to backup your Bash settings now?')
         if not balt.askYes(Link.Frame, msg,_(u'Backup Bash Settings?')): return
-        with balt.BusyCursor(): BashFrame.SaveSettings(Link.Frame)
+        with balt.BusyCursor(): Link.Frame.SaveSettings()
         base_dir = bass.settings['bash.backupPath'] or bass.dirs['modsBash']
         settings_file = balt.askSave(Link.Frame,
                                      title=_(u'Backup Bash Settings'),
@@ -107,7 +107,7 @@ class Settings_RestoreSettings(ItemLink):
                                                  error_title):
                 return
             restarting = True
-            balt.showInfo(balt.Link.Frame, '\n'.join([
+            balt.showInfo(Link.Frame, '\n'.join([
                 _(u'Your Bash settings have been successfully extracted.'),
                 _(u'Backup Path: ') + settings_file.s, u'', _(u'Before the '
                   u'settings can take effect, Wrye Bash must restart.'), _(
@@ -131,7 +131,7 @@ class Settings_SaveSettings(ItemLink):
     _help = _(u"Save all of Wrye Bash's settings/data now.")
 
     def Execute(self):
-        BashFrame.SaveSettings(Link.Frame)
+        Link.Frame.SaveSettings()
 
 #------------------------------------------------------------------------------
 class Settings_ExportDllInfo(AppendableLink, ItemLink):
@@ -451,7 +451,7 @@ class Settings_UseAltName(BoolLink):
 
     def Execute(self):
         super(Settings_UseAltName, self).Execute()
-        Link.Frame.SetTitle()
+        Link.Frame.set_bash_frame_title()
 
 #------------------------------------------------------------------------------
 class Settings_UAC(AppendableLink, ItemLink):

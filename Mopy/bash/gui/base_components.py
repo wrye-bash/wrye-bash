@@ -98,6 +98,8 @@ class _AComponent(object):
             return obj._native_widget
         elif isinstance(obj, _wx.Window):
             return obj
+        elif obj is None:
+            return None
         else:
             raise RuntimeError(u"Failed to resolve object '%r' to wx object." %
                                obj)
