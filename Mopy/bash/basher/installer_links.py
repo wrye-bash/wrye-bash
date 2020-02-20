@@ -204,15 +204,13 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             idetails.refreshCurrent(installer)
             for index in xrange(idetails.gSubList.lb_get_items_count()):
                 subs.append(idetails.gSubList.lb_get_str_item_at_index(index))
-            default, pageSize, pos = self._get_size_and_pos()
             try:
                 wizard = InstallerWizard(self.window, self._selected_info,
-                                         self.bAuto, subs, pageSize, pos)
+                                         self.bAuto, subs)
             except CancelError:
                 return
-            balt.ensureDisplayed(wizard)
+            balt.ensureDisplayed(wizard._native_widget)
         ret = wizard.Run()
-        self._save_size_pos(default, ret)
         if ret.canceled:
             idetails.refreshCurrent(installer)
             return
@@ -304,43 +302,6 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             message += u'\n'.join([u' * ' + x[0].stail + u'\n   TO: ' + x[1].s
                                    for x in manuallyApply])
             self._showInfo(message)
-
-    @staticmethod
-    def _save_size_pos(default, ret):
-        # Sanity checks on returned size/position
-        if not isinstance(ret.wizard_pos, balt.wxPoint):
-            deprint(_(
-                u'Returned Wizard position (%s) was not a wx.Point (%s), '
-                u'reverting to default position.') % (ret.wizard_pos,
-                                                      type(ret.wizard_pos)))
-            ret.wizard_pos = balt.defPos
-        if not isinstance(ret.wizard_size, balt.wxSize):
-            deprint(_(u'Returned Wizard size (%s) was not a wx.Size (%s), '
-                      u'reverting to default size.') % (
-                        ret.wizard_size, type(ret.wizard_size)))
-            ret.wizard_size = tuple(default)
-        bass.settings['bash.wizard.size'] = (ret.wizard_size[0],
-                                             ret.wizard_size[1])
-        bass.settings['bash.wizard.pos'] = (ret.wizard_pos[0],
-                                            ret.wizard_pos[1])
-
-    @staticmethod
-    def _get_size_and_pos():
-        saved = bass.settings['bash.wizard.size']
-        default = settingDefaults['bash.wizard.size']
-        pos = bass.settings['bash.wizard.pos']
-        # Sanity checks on saved size/position
-        if not isinstance(pos, tuple) or len(pos) != 2:
-            deprint(_(u'Saved Wizard position (%s) was not a tuple (%s), '
-                      u'reverting to default position.') % (pos, type(pos)))
-            pos = tuple(balt.defPos)
-        if not isinstance(saved, tuple) or len(saved) != 2:
-            deprint(_(u'Saved Wizard size (%s) was not a tuple (%s), '
-                      u'reverting to default size.') % (saved, type(saved)))
-            pageSize = tuple(default)
-        else:
-            pageSize = (max(saved[0], default[0]), max(saved[1], default[1]))
-        return default, pageSize, pos
 
 class Installer_OpenReadme(OneItemLink, _InstallerLink):
     """Opens the installer's readme if BAIN can find one."""

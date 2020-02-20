@@ -25,6 +25,7 @@
 __author__ = u'Utumno, Infernio'
 
 import wx as _wx
+import wx.wizard as _wiz     # wxPython wizard class
 
 defPos = _wx.DefaultPosition
 defSize = _wx.DefaultSize
@@ -43,16 +44,20 @@ class _TopLevelWin(_AComponent):
 
     def __init__(self, wx_window_type, parent, sizes_dict, icon_bundle, *args,
                  **kwargs):
+        # dict holding size/pos info ##: can be bass.settings or balt.sizes
         self._sizes_dict = sizes_dict
-        kwargs[u'pos'] = kwargs.get(u'pos', None) or sizes_dict.get(
-            self.posKey, self._defPos)
-        kwargs[u'size'] = kwargs.get(u'size', None) or sizes_dict.get(
-            self.sizesKey, self._def_size)
+        self._set_pos_size(kwargs, sizes_dict)
         super(_TopLevelWin, self).__init__(wx_window_type, parent, *args,
                                            **kwargs)
         self._on_close_evt = EventHandler(self._native_widget, _wx.EVT_CLOSE)
         self._on_close_evt.subscribe(self.on_closing)
         if icon_bundle: self.set_icons(icon_bundle)
+
+    def _set_pos_size(self, kwargs, sizes_dict):
+        kwargs['pos'] = kwargs.get('pos', None) or sizes_dict.get(
+            self.posKey, self._defPos)
+        kwargs['size'] = kwargs.get('size', None) or sizes_dict.get(
+            self.sizesKey, self._def_size)
 
     @property
     def is_maximized(self):
@@ -119,6 +124,7 @@ class WindowFrame(_TopLevelWin):
 class DialogWindow(_TopLevelWin):
     """Wrap a dialog control."""
     title = u'OVERRIDE'
+    _wx_dialog_type = _wx.Dialog
 
     def __init__(self, parent=None, title=None, icon_bundle=None,
                  sizes_dict={}, caption=False, sizesKey=None, posKey=None,
@@ -129,9 +135,8 @@ class DialogWindow(_TopLevelWin):
         style |= _wx.DEFAULT_DIALOG_STYLE
         if sizes_dict: style |= _wx.RESIZE_BORDER
         if caption: style |= _wx.CAPTION
-        super(DialogWindow, self).__init__(_wx.Dialog, parent, sizes_dict,
-                                           icon_bundle, title=self.title,
-                                           style=style, **kwargs)
+        super(DialogWindow, self).__init__(self._wx_dialog_type, parent,
+            sizes_dict, icon_bundle, title=self.title, style=style, **kwargs)
         self.on_size_changed = EventHandler(self._native_widget, _wx.EVT_SIZE)
 
     def save_size(self):
@@ -175,3 +180,56 @@ class DialogWindow(_TopLevelWin):
     def exit_modal(self, custom_code):
         """Closes the modal dialog with a custom exit code."""
         self._native_widget.EndModal(custom_code)
+
+class WizardDialog(DialogWindow):
+    """Wrap a wx wizard control.
+
+    Events:
+     - on_wiz_page_change(is_forward: bool, evt_page: PageInstaller):
+     Posted when the user clicks next or previous page. `is_forward` is True
+     for next page. PageInstaller needs to have OnNext() - see uses in belt
+     - _on_wiz_cancel(): Used internally to save size and position
+     - _on_wiz_finished(): Used internally to save size and position
+     - _on_show(): used internally to set page size on first showing the wizard
+     """
+    _wx_dialog_type = _wiz.Wizard
+
+    def __init__(self, parent, **kwargs):
+        kwargs['style'] = _wx.MAXIMIZE_BOX
+        super(WizardDialog, self).__init__(parent, **kwargs)
+        self.on_wiz_page_change = EventHandler(self._native_widget,
+            _wiz.EVT_WIZARD_PAGE_CHANGING,
+            lambda event: [event.GetDirection(), event.GetPage()])
+        # needed to correctly save size/pos, on_closing seems not enough
+        self._on_wiz_cancel = EventHandler(self._native_widget,
+                                          _wiz.EVT_WIZARD_CANCEL)
+        self._on_wiz_cancel.subscribe(self.save_size)
+        self._on_wiz_finished = EventHandler(self._native_widget,
+                                            _wiz.EVT_WIZARD_FINISHED)
+        self._on_wiz_finished.subscribe(self.save_size)
+        # we have to set initial size here, see WizardDialog._set_pos_size
+        self._on_show = EventHandler(self._native_widget, _wx.EVT_SHOW)
+        self._on_show.subscribe(self._on_show_handler)
+        # perform some one time init on show - basically set the size
+        self.__first_shown = True
+
+    def _on_show_handler(self):
+        if self.__first_shown: # EVT_SHOW is also posted on hiding the window
+            self.__first_shown = False
+            saved_size = self._sizes_dict[self.sizesKey]
+            # enforce min size
+            self.component_size = (max(saved_size[0], self._def_size[0]),
+                                   max(saved_size[1], self._def_size[1]))
+            # avoid strange size events on window creation - we used to set the
+            # size but then a size event from the system would unset it
+            self.on_size_changed.subscribe(self.save_size) # needed for correctly saving the size
+
+    def _set_pos_size(self, kwargs, sizes_dict):
+        # default keys for wizard should exist and return settingDefaults
+        # values. Moreover _wiz.Wizard does not accept a size argument (!)
+        # so this override is needed
+        ##: note wx python expects kwargs as strings - PY3: check
+        kwargs['pos'] = kwargs.get('pos', None) or sizes_dict[self.posKey]
+
+    def enable_forward_btn(self, do_enable):
+        self._native_widget.FindWindowById(_wx.ID_FORWARD).Enable(do_enable)

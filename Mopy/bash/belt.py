@@ -36,7 +36,8 @@ import wx.wizard as wiz     # wxPython wizard class
 import bosh, balt, bolt, bush
 from balt import Image, set_event_hook, Events
 from .gui import BOTTOM, CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
-    Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel
+    Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
+    WizardDialog, EventResult
 from env import get_file_version
 
 #Translateable strings
@@ -46,10 +47,9 @@ EXTRA_ARGS =   _(u"Extra arguments to '%s'.")
 MISSING_ARGS = _(u"Missing arguments to '%s'.")
 UNEXPECTED =   _(u"Unexpected '%s'.")
 
-class WizardReturn(object):
-    __slots__ = ('canceled', 'select_plugins', 'rename_plugins',
-                 'select_sub_packages', 'ini_edits', 'should_install',
-                 'wizard_size', 'wizard_pos',)
+class WizInstallInfo(object):
+    __slots__ = (u'canceled', u'select_plugins', u'rename_plugins',
+                 u'select_sub_packages', u'ini_edits', u'should_install')
     # canceled: Set to true if the user canceled the wizard, or if an error
     # occurred
     # select_plugins: List of plugins to 'select' for install
@@ -66,8 +66,6 @@ class WizardReturn(object):
     #    'setGS' or 'SetNumericGameSetting'
     # should_install: Set to True if after configuring this package, it should
     # also be installed.
-    # wizard_size: Tuple/wxSize of the saved size of the Wizard
-    # wizard_pos: Tuple/wxPoint of the saved position of the Wizard
 
     def __init__(self):
         self.canceled = False
@@ -76,21 +74,20 @@ class WizardReturn(object):
         self.select_sub_packages = []
         self.ini_edits = {}
         self.should_install = False
-        self.wizard_size = balt.defSize
-        self.wizard_pos = balt.defPos
 
-class InstallerWizard(wiz.Wizard):
+class InstallerWizard(WizardDialog):
     """Class used by Wrye Bash, creates a wx Wizard that dynamically creates
     pages based on a script."""
+    _def_size = (600, 500)
 
-    def __init__(self, parentWindow, installer, bAuto, subs, pageSize, pos):
-        wiz.Wizard.__init__(self, parentWindow, title=_(u'Installer Wizard'),
-                            pos=pos, style=wx.DEFAULT_DIALOG_STYLE |
-                                           wx.RESIZE_BORDER | wx.MAXIMIZE_BOX)
+    def __init__(self, parent, installer, bAuto, subs):
+        super(InstallerWizard, self).__init__(parent,
+            title=_(u'Installer Wizard'), sizes_dict=bass.settings,
+            sizesKey=u'bash.wizard.size', posKey=u'bash.wizard.pos')
         #'dummy' page tricks the wizard into always showing the "Next" button,
         #'next' will be set by the parser
-        self.dummy = wiz.PyWizardPage(self)
-        self.next = None
+        self.dummy = wiz.PyWizardPage(self._native_widget) # todo de-wx!
+        self.next = None # todo rename
         #True prevents actually moving to the 'next' page.  We use this after the "Next"
         #button is pressed, while the parser is running to return the _actual_ next page
         #'finishing' is to allow the "Next" button to be used when it's name is changed to
@@ -101,41 +98,16 @@ class InstallerWizard(wiz.Wizard):
         self.wizard_file = installer.wizard_file()
         self.parser = WryeParser(self, installer, subs, bAuto)
         #Intercept the changing event so we can implement 'blockChange'
-        set_event_hook(self, Events.WIZARD_PAGE_CHANGING, self.OnChange)
-        self.ret = WizardReturn()
-        self.ret.wizard_size = pageSize
-        # So we can save window size
-        set_event_hook(self, Events.RESIZE, self.OnSize)
-        set_event_hook(self, Events.CLOSE, self.OnClose)
-        set_event_hook(self, Events.WIZARD_CANCEL, self.OnClose)
-        set_event_hook(self, Events.WIZARD_FINISHED, self.OnClose)
-        #Set the minimum size for pages, and setup OnSize to resize the
-        #First page to the saved size
-        self.SetPageSize((600,500))
-        self.firstPage = True
+        self.on_wiz_page_change.subscribe(self.on_page_change)
+        self.ret = WizInstallInfo()
 
-    def OnClose(self, event):
-        if not self.IsMaximized():
-            # Only save the current size if the page isn't maximized
-            self.ret.wizard_size = self.GetSize()
-            self.ret.wizard_pos = self.GetPosition()
-        event.Skip()
+    def save_size(self):
+        # Otherwise, regular resize, save the size if we're not maximized
+        self.on_closing(destroy=False)
 
-    def OnSize(self, event):
-        if self.firstPage:
-            # On the first page, resize it to the saved size
-            self.firstPage = False
-            self.SetSize(self.ret.wizard_size)
-        else:
-            # Otherwise, regular resize, save the size if we're not
-            # maximized
-            if not self.IsMaximized():
-                self.ret.wizard_size = self.GetSize()
-                self.ret.wizard_pos = self.GetPosition()
-            event.Skip()
-
-    def OnChange(self, event):
-        if event.GetDirection():
+    def on_page_change(self, is_forward, evt_page):
+        # type: (bool, PageInstaller) -> EventResult
+        if is_forward:
             if not self.finishing:
                 # Next, continue script execution
                 if self.blockChange:
@@ -143,26 +115,27 @@ class InstallerWizard(wiz.Wizard):
                     #So the parser can continue parsing,
                     #Then show the page that the parser returns,
                     #rather than the dummy page
-                    event.GetPage().OnNext()
-                    event.Veto()
+                    evt_page.OnNext()
                     self.next = self.parser.Continue()
                     self.blockChange = False
-                    self.ShowPage(self.next)
+                    self._native_widget.ShowPage(self.next)
+                    return EventResult.CANCEL
                 else:
                     self.blockChange = True
+                    return EventResult.FINISH
         else:
             # Previous, pop back to the last state,
             # and resume execution
             self.finishing = False
-            event.Veto()
             self.next = self.parser.Back()
             self.blockChange = False
-            self.ShowPage(self.next)
+            self._native_widget.ShowPage(self.next)
+            return EventResult.CANCEL
 
     def Run(self):
         page = self.parser.Begin(self.wizard_file)
         if page:
-            self.ret.canceled = not self.RunWizard(page)
+            self.ret.canceled = not self._native_widget.RunWizard(page)
         # Clean up temp files
         if self.parser.bArchive:
             bass.rmTempDir()
@@ -173,12 +146,12 @@ class PageInstaller(wiz.PyWizardPage):
     simple things here."""
 
     def __init__(self, parent):
-        wiz.PyWizardPage.__init__(self, parent)
         self._wiz_parent = parent
+        wiz.PyWizardPage.__init__(self, parent._native_widget)
         self._enableForward(True)
 
-    def _enableForward(self, enable):
-        self._wiz_parent.FindWindowById(wx.ID_FORWARD).Enable(enable)
+    def _enableForward(self, do_enable):
+        self._wiz_parent.enable_forward_btn(do_enable)
 
     def GetNext(self): return self._wiz_parent.dummy
 
@@ -224,10 +197,9 @@ class PageSelect(PageInstaller):
         self.images = listImages
         self.descs = listDescs
         self.bMany = bMany
-        self.bmp = wx.EmptyBitmap(1, 1)
         self.index = None
         self.TitleDesc = Label(self, desc)
-        self.TitleDesc.wrap(parent.GetPageSize()[0] - 10)
+        self.TitleDesc.wrap(parent._native_widget.GetPageSize()[0] - 10)
         self.textItem = TextArea(self, editable=False, auto_tooltip=False)
         self.bmpItem = balt.Picture(self,0,0,background=None)
         kwargs = dict(choices=listItems, isHScroll=True,
@@ -362,7 +334,7 @@ class PageFinish(PageInstaller):
         parent.parser.choiceIdex += 1
         textTitle = Label(self, _(u'The installer script has finished, and '
                                   u'will apply the following settings:'))
-        textTitle.wrap(parent.GetPageSize()[0] - 10)
+        textTitle.wrap(parent._native_widget.GetPageSize()[0] - 10)
         # Sub-packages
         self.listSubs = balt.CheckListBox(self, choices=subs,
                                           onCheck=self._on_select_subs)
@@ -386,7 +358,7 @@ class PageFinish(PageInstaller):
         # Apply/install checkboxes
         self.checkApply = CheckBox(self, _(u'Apply these selections'),
                                    checked=bAuto)
-        self.checkApply.on_checked.subscribe(self.OnCheckApply)
+        self.checkApply.on_checked.subscribe(self._enableForward)
         auto = bass.settings['bash.installers.autoWizard']
         self.checkInstall = CheckBox(self, _(u'Install this package'),
                                      checked=auto)
@@ -420,9 +392,6 @@ class PageFinish(PageInstaller):
         self._enableForward(bAuto)
         self._wiz_parent.finishing = True
         self.Layout()
-
-    def OnCheckApply(self, is_checked):
-        self._enableForward(is_checked)
 
     def OnCheckInstall(self, is_checked):
         self._wiz_parent.ret.should_install = is_checked
@@ -491,9 +460,9 @@ class PageVersions(PageInstaller):
         text_warning = Label(self, _(u'WARNING: The following version '
                                      u'requirements are not met for using '
                                      u'this installer.'))
-        text_warning.wrap(parent.GetPageSize()[0] - 20)
+        text_warning.wrap(parent._native_widget.GetPageSize()[0] - 20)
         self.checkOk = CheckBox(self, _(u'Install anyway.'))
-        self.checkOk.on_checked.subscribe(self.OnCheck)
+        self.checkOk.on_checked.subscribe(self._enableForward)
         VLayout(items=[
             Stretch(1),
             (text_warning, LayoutOptions(h_align=CENTER)),
@@ -505,9 +474,6 @@ class PageVersions(PageInstaller):
         ]).apply_to(self)
         self._enableForward(False)
         self.Layout()
-
-    def OnCheck(self, is_checked):
-        self._enableForward(is_checked)
 
 class WryeParser(ScriptParser.Parser):
     """A derived class of Parser, for handling BAIN install wizards."""
@@ -984,7 +950,6 @@ class WryeParser(ScriptParser.Parser):
         new_val = l.tkn + 1
         self.variables[l.text] = new_val
         return new_val
-
     def opDec(self, l):
         if l.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
             error(_(u'Cannot decrement %s, type is %s.') % (l.text, ScriptParser.Types[l.type]))
