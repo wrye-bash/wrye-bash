@@ -112,7 +112,8 @@ Return Values:
 
 __author__ = u'Infernio'
 
-# no imports, everything else needs to be able to import this
+from ..exception import UnknownListener, ListenerBound
+# no other imports, everything else needs to be able to import this
 
 def _null_processor(_event):
     """Argument processor that simply discards the event."""
@@ -190,6 +191,9 @@ class EventHandler(object):
         the order in which they subscribed.
 
         :param listener: The listener to subscribe."""
+        if listener in self._listeners:
+            raise ListenerBound(
+                u'Listener %s already bound on %r' % (listener, self))
         self._listeners.append(listener)
         self._update_wx_binding()
 
@@ -197,7 +201,11 @@ class EventHandler(object):
         """Unsubscribes the specified listener from this event handler.
 
         :param listener: The listener to unsubscribe."""
-        self._listeners.remove(listener)
+        try:
+            self._listeners.remove(listener)
+        except ValueError:
+            raise UnknownListener(
+                u'Listener %s not subscribed on %r' % (listener, self))
         self._update_wx_binding()
 
     def _update_wx_binding(self):
@@ -216,3 +224,7 @@ class EventHandler(object):
         elif not self._listeners and self._is_bound:
             self._wx_owner.Unbind(self._wx_event_id)
             self._is_bound = False
+
+    def __repr__(self):
+        return u'%s(%s, %s)' % (
+            type(self).__name__, self._wx_owner, self._wx_event_id)

@@ -191,3 +191,12 @@ class MasterMapError(BoltError):
 class SaveHeaderError(Exception): pass
 
 class InstallerArchiveError(BoltError): pass
+
+# gui package exceptions ------------------------------------------------------
+class GuiError(Exception):
+    """Base class for exceptions thrown in the gui package."""
+class UnknownListener(GuiError):
+    """Trying to unsubscribe a listener that was not subscribed."""
+class ListenerBound(GuiError):
+    """Trying to bind a listener that is already subscribed to this event
+    handler."""

@@ -70,7 +70,7 @@ from ..bolt import GPath, SubProgress, deprint, round_size
 from ..bosh import omods
 from ..cint import CBashApi
 from ..exception import AbstractError, BoltError, CancelError, FileError, \
-    SkipError
+    SkipError, UnknownListener
 from ..localize import format_date, unformat_date
 
 startupinfo = bolt.startupinfo
@@ -3749,7 +3749,7 @@ class BashFrame(WindowFrame):
             try:
                 self.on_activate.subscribe(self.RefreshData) if bind else \
                     self.on_activate.unsubscribe(self.RefreshData)
-            except ValueError:
+            except UnknownListener: # when first called by RefreshData in balt.conversation
                 pass
 
     def Restart(self, *args):
