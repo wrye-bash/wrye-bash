@@ -923,11 +923,11 @@ class ModList(_ModsUIList):
         modInfo = self.data_store[hitItem]
         if not Link.Frame.docBrowser:
             from .frames import DocBrowser
-            DocBrowser().Show()
+            DocBrowser().show_frame()
             settings['bash.modDocs.show'] = True
         #balt.ensureDisplayed(docBrowser)
         Link.Frame.docBrowser.SetMod(modInfo.name)
-        Link.Frame.docBrowser.Raise()
+        Link.Frame.docBrowser.raise_frame()
 
     def OnChar(self,event):
         """Char event: Reorder (Ctrl+Up and Ctrl+Down)."""

@@ -26,18 +26,17 @@ import re
 import string
 from collections import OrderedDict
 
-import wx
 from .. import bass, balt, bosh, bolt, load_order
-from ..balt import bell, Link, BaltFrame, Resources, HtmlCtrl, set_event_hook
+from ..balt import bell, Link, Resources, HtmlCtrl
 from ..bolt import GPath
 from ..bosh import omods
 from ..gui import Button, CancelButton, CENTER, CheckBox, GridLayout, \
     HLayout, Label, LayoutOptions, SaveButton, Spacer, Stretch, TextArea, \
-    TextField, VLayout, web_viewer_available
+    TextField, VLayout, web_viewer_available, Splitter, WindowFrame
 
-class DocBrowser(BaltFrame):
+class DocBrowser(WindowFrame):
     """Doc Browser frame."""
-    _frame_settings_key = 'bash.modDocs'
+    _frame_settings_key = u'bash.modDocs'
     _def_size = (300, 400)
 
     def __init__(self):
@@ -53,11 +52,12 @@ class DocBrowser(BaltFrame):
         # Singleton
         Link.Frame.docBrowser = self
         # Window
-        super(DocBrowser, self).__init__(Link.Frame, title=_(u'Doc Browser'))
+        super(DocBrowser, self).__init__(Link.Frame, title=_(u'Doc Browser'),
+                                         icon_bundle=Resources.bashDocBrowser,
+                                         sizes_dict=bass.settings)
         # Base UI components
-        root_window = balt.Splitter(self)
-        mod_list_window = wx.Panel(root_window)
-        main_window = wx.Panel(root_window)
+        root_window = Splitter(self)
+        mod_list_window, main_window = root_window.make_vertical_panes(250)
         # Mod Name
         self._mod_name_box = TextField(mod_list_window, editable=False)
         self._mod_list = balt.ListBox(mod_list_window,
@@ -86,7 +86,7 @@ class DocBrowser(BaltFrame):
                                               u'default viewer/editor.'))
         self._open_btn.on_clicked.subscribe(self._do_open)
         self._doc_name_box = TextField(main_window, editable=False)
-        self._doc_ctrl = HtmlCtrl(main_window)
+        self._doc_ctrl = HtmlCtrl(main_window._native_widget)
         self._prev_btn, self._next_btn, self._reload_btn = \
             self._doc_ctrl.get_buttons()
         self._buttons = [self._edit_box, self._set_btn, self._forget_btn,
@@ -102,14 +102,10 @@ class DocBrowser(BaltFrame):
             self._doc_name_box,
             (self._doc_ctrl.web_viewer, LayoutOptions(weight=3))
         ]).apply_to(main_window)
-        root_window.SplitVertically(mod_list_window, main_window, 250)
         VLayout(default_fill=1, default_border=4, default_weight=1,
                 items=[root_window])
         for btn in self._buttons:
             btn.enabled = False
-
-    @staticmethod
-    def _resources(): return Resources.bashDocBrowser
 
     @staticmethod
     def _get_is_wtxt(path=None, data=None):
@@ -132,7 +128,7 @@ class DocBrowser(BaltFrame):
             return bell()
         if not doc_path.isfile():
             balt.showWarning(self, _(u'The assigned document is not present:')
-                             + '\n  ' + doc_path.s)
+                             + u'\n  ' + doc_path.s)
         else:
             doc_path.start()
 
@@ -160,9 +156,9 @@ class DocBrowser(BaltFrame):
         self._doc_name_box.text_content = u''
         self._load_data(data=u'')
 
-    def _do_select_mod(self, event):
+    def _do_select_mod(self, lb_selection_dex, lb_selection_str):
         """Handle mod name combobox selection."""
-        self.SetMod(event.GetString())
+        self.SetMod(lb_selection_str)
 
     def _do_set(self):
         """Handle "Set Doc" button click."""
@@ -173,7 +169,7 @@ class DocBrowser(BaltFrame):
         else:
             docs_dir = bass.settings['bash.modDocs.dir'] or bass.dirs['mods']
             file_name = GPath(u'')
-        doc_path = balt.askOpen(self ,_(u'Select doc for %s:') % mod_name.s,
+        doc_path = balt.askOpen(self, _(u'Select doc for %s:') % mod_name.s,
                                 docs_dir, file_name, u'*.*')
         if not doc_path: return
         bass.settings['bash.modDocs.dir'] = doc_path.head
@@ -287,41 +283,42 @@ class DocBrowser(BaltFrame):
                                               bosh.modInfos.store_dir.join(u'Docs'))
             self._load_data(path=doc_path, editing=editing)
 
-    def OnCloseWindow(self):
+    def on_closing(self, destroy=True):
         """Handle window close event.
         Remember window size, position, etc."""
         self.DoSave()
         bass.settings['bash.modDocs.show'] = False
         Link.Frame.docBrowser = None
-        super(DocBrowser, self).OnCloseWindow()
+        super(DocBrowser, self).on_closing(destroy)
 
 #------------------------------------------------------------------------------
 _BACK, _FORWARD, _MOD_LIST, _RULE_SETS, _NOTES, _CONFIG, _SUGGEST, \
 _CRC, _VERSION, _SCAN_DIRTY, _COPY_TEXT, _UPDATE = range(12)
 
 def _get_mod_checker_setting(key, default=None):
-    return bass.settings.get('bash.modChecker.show{}'.format(key), default)
+    return bass.settings.get(u'bash.modChecker.show%s' % key, default)
 
 def _set_mod_checker_setting(key, value):
-    bass.settings['bash.modChecker.show{}'.format(key)] = value
+    bass.settings[u'bash.modChecker.show%s' % key] = value
 
-class ModChecker(BaltFrame):
+class ModChecker(WindowFrame):
     """Mod Checker frame."""
-    _frame_settings_key = 'bash.modChecker'
+    _frame_settings_key = u'bash.modChecker'
     _def_size = (475, 500)
 
     def __init__(self):
         #--Singleton
         Link.Frame.modChecker = self
         #--Window
-        super(ModChecker, self).__init__(Link.Frame, title=_(u'Mod Checker'))
+        super(ModChecker, self).__init__(Link.Frame, title=_(u'Mod Checker'),
+            icon_bundle=Resources.bashBlue, sizes_dict=bass.settings)
         #--Data
         self.orderedActive = None
         self.__merged = None
         self.__imported = None
         #--Text
         self.check_mods_text = None
-        self._html_ctrl = HtmlCtrl(self)
+        self._html_ctrl = HtmlCtrl(self._native_widget)
         back_btn, forward_btn, reload_btn = self._html_ctrl.get_buttons()
         self._controls = OrderedDict()
         self._setting_names = {}
@@ -353,7 +350,7 @@ class ModChecker(BaltFrame):
         _f(_COPY_TEXT,  False, _(u'Copy Text'), callback=self.OnCopyText)
         _f(_UPDATE,     False, _(u'Update'))
         #--Events
-        set_event_hook(self, balt.Events.ACTIVATE, self.OnActivate)
+        self.on_activate.subscribe(self.on_activation)
         VLayout(border=4, spacing=4, default_fill=True, items=[
             (self._html_ctrl.web_viewer, LayoutOptions(weight=1)),
             HLayout(spacing=4, items=[
@@ -412,23 +409,23 @@ class ModChecker(BaltFrame):
         else:
             self._html_ctrl.load_text(self.check_mods_text)
 
-    def OnActivate(self,event):
+    def on_activation(self, evt_active):
         """Handle window activate/deactivate. Use for auto-updating list."""
-        if (event.GetActive() and (
+        if (evt_active and (
                 self.orderedActive != load_order.cached_active_tuple() or
                 self.__merged != bosh.modInfos.merged or
                 self.__imported != bosh.modInfos.imported)
             ):
             self.CheckMods()
 
-    def OnCloseWindow(self):
+    def on_closing(self, destroy=True):
         # Need to unset Link.Frame.modChecker here to avoid accessing a deleted
         # object when clicking the mod checker button again.
         Link.Frame.modChecker = None
-        super(ModChecker, self).OnCloseWindow()
+        super(ModChecker, self).on_closing(destroy)
 
 #------------------------------------------------------------------------------
-class InstallerProject_OmodConfigDialog(BaltFrame):
+class InstallerProject_OmodConfigDialog(WindowFrame):
     """Dialog for editing omod configuration data."""
     _size_hints = (300, 300)
 
@@ -440,8 +437,8 @@ class InstallerProject_OmodConfigDialog(BaltFrame):
         #--GUI
         super(InstallerProject_OmodConfigDialog, self).__init__(parent,
             title=_(u'Omod Config: ') + project.s,
-            style=wx.RESIZE_BORDER | wx.CAPTION | wx.CLIP_CHILDREN |
-                  wx.TAB_TRAVERSAL)
+            icon_bundle=Resources.bashBlue, sizes_dict=bass.settings,
+            caption=True, clip_children=True, tab_traversal=True)
         #--Fields
         self.gName = TextField(self, init_text=config.name, max_length=100)
         self.gVersion = TextField(self, u'{:d}.{:02d}'.format(
@@ -457,7 +454,7 @@ class InstallerProject_OmodConfigDialog(BaltFrame):
         save_button = SaveButton(self, default=True)
         save_button.on_clicked.subscribe(self.DoSave)
         cancel_button = CancelButton(self)
-        cancel_button.on_clicked.subscribe(self.OnCloseWindow)
+        cancel_button.on_clicked.subscribe(self.on_closing)
         VLayout(default_fill=True, spacing=4, border=4, items=[
             GridLayout(h_spacing=4, v_spacing=4, default_v_align=CENTER,
                        stretch_cols=[1], default_fill=True, items=[
@@ -471,7 +468,7 @@ class InstallerProject_OmodConfigDialog(BaltFrame):
             (self.gAbstract, LayoutOptions(weight=1)),
             HLayout(spacing=4, items=[save_button, cancel_button])
         ]).apply_to(self)
-        self.SetSize((350,400))
+        self.component_size = (350, 400)
 
     def DoSave(self):
         """Handle save button."""
@@ -491,4 +488,4 @@ class InstallerProject_OmodConfigDialog(BaltFrame):
             config.vMajor,config.vMinor = (0,0)
         #--Done
         omods.OmodConfig.writeOmodConfig(self.project, self.config)
-        self.OnCloseWindow()
+        self.on_closing()

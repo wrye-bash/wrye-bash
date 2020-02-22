@@ -1001,8 +1001,8 @@ class InstallerProject_OmodConfig(_SingleProject):
     _help = _(u'Projects only. Allows you to read/write omod configuration info')
 
     def Execute(self):
-        (InstallerProject_OmodConfigDialog(self.window, self.idata,
-                                           self._selected_item)).Show()
+        InstallerProject_OmodConfigDialog(self.window, self.idata,
+                                          self._selected_item).show_frame()
 
 #------------------------------------------------------------------------------
 class InstallerProject_Sync(_SingleProject):

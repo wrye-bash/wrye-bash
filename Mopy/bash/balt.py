@@ -3088,37 +3088,6 @@ class NotebookPanel(wx.Panel):
         saving data, scrollpos, etc - also used in BashFrame#SaveSettings."""
 
 #------------------------------------------------------------------------------
-class BaltFrame(wx.Frame):
-    """Frame subclass saving size/position on closing."""
-    _frame_settings_key = None
-    _size_hints = _def_size = (250, 250)
-
-    def __init__(self, *args, **kwargs):
-        _key = self.__class__._frame_settings_key
-        if _key is not None:
-            kwargs['pos'] = _settings.get(_key + '.pos', defPos)
-            kwargs['size'] = _settings.get(_key + '.size', self._def_size)
-        super(BaltFrame, self).__init__(*args, **kwargs)
-        self.SetBackgroundColour(wx.NullColour)
-        self.SetSizeHints(*self._size_hints)
-        #--Application Icons
-        self.SetIcons(self._resources())
-        #--Events
-        if _key: self.Bind(wx.EVT_CLOSE, lambda __event: self.OnCloseWindow())
-
-    @staticmethod
-    def _resources(): return Resources.bashBlue
-
-    #--Window Closing
-    def OnCloseWindow(self):
-        """Handle window close event.
-        Remember window size, position, etc."""
-        _key = self.__class__._frame_settings_key
-        if _key and not self.IsIconized() and not self.IsMaximized():
-            _settings[_key + '.pos'] = tuple(self.GetPosition())
-            _settings[_key + '.size'] = tuple(self.GetSize())
-        self.Destroy()
-
 # TODO(inf) replace and remove, need to come up with a better system
 # Event bindings --------------------------------------------------------------
 class Events(object):

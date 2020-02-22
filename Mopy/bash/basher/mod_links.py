@@ -570,11 +570,11 @@ class Mod_ShowReadme(OneItemLink):
 
     def Execute(self):
         if not Link.Frame.docBrowser:
-            DocBrowser().Show()
+            DocBrowser().show_frame()
             bass.settings['bash.modDocs.show'] = True
         #balt.ensureDisplayed(docBrowser)
         Link.Frame.docBrowser.SetMod(self._selected_item)
-        Link.Frame.docBrowser.Raise()
+        Link.Frame.docBrowser.raise_frame()
 
 class Mod_ListBashTags(ItemLink):
     """Copies list of bash tags to clipboard."""

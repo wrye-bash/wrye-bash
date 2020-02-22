@@ -21,7 +21,8 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""Top level windows in wx is Frame and Dialog."""
+"""Top level windows in wx is Frame and Dialog. I added some more like Panels
+and the wx.wiz stuff."""
 __author__ = u'Utumno, Infernio'
 
 import wx as _wx
@@ -102,11 +103,16 @@ class WindowFrame(_TopLevelWin):
     _min_size = _def_size = (250, 250)
 
     def __init__(self, parent, title, icon_bundle=None, _base_key=None,
-                 sizes_dict={}, style=_wx.DEFAULT_FRAME_STYLE, **kwargs):
+                 sizes_dict={}, caption=False, style=_wx.DEFAULT_FRAME_STYLE,
+                 **kwargs):
         _key = _base_key or self.__class__._frame_settings_key
         if _key:
             self.posKey = _key + u'.pos'
             self.sizesKey = _key + u'.size'
+        if caption: style |= _wx.CAPTION
+        if sizes_dict: style |= _wx.RESIZE_BORDER
+        if kwargs.pop(u'clip_children', False): style |= _wx.CLIP_CHILDREN
+        if kwargs.pop(u'tab_traversal', False): style |= _wx.TAB_TRAVERSAL
         super(WindowFrame, self).__init__(_wx.Frame, parent, sizes_dict,
                                           icon_bundle, title=title,
                                           style=style, **kwargs)
@@ -116,6 +122,8 @@ class WindowFrame(_TopLevelWin):
         self.set_min_size(*self._min_size)
 
     def show_frame(self): self._native_widget.Show()
+
+    def raise_frame(self): self._native_widget.Raise()
 
     # TODO(inf) de-wx! Menu should become a wrapped component as well
     def popup_menu(self, menu):
@@ -233,3 +241,33 @@ class WizardDialog(DialogWindow):
 
     def enable_forward_btn(self, do_enable):
         self._native_widget.FindWindowById(_wx.ID_FORWARD).Enable(do_enable)
+
+# Panels ----------------------------------------------------------------------
+class PanelWin(_AComponent):
+    def __init__(self, parent, *args, **kwargs):
+        super(PanelWin, self).__init__(_wx.Panel, parent, *args, **kwargs)
+
+class Splitter(_AComponent):
+
+    splitterStyle = _wx.SP_LIVE_UPDATE # | wx.SP_3DSASH # ugly but
+    # makes borders stand out - we need something to that effect
+
+    def __init__(self, parent, *args, **kwargs):
+        kwargs['style'] = kwargs.pop('style', self.splitterStyle)
+        super(Splitter, self).__init__(_wx.SplitterWindow, parent, *args,
+                                       **kwargs)
+        self._panes = None
+
+    def make_vertical_panes(self, sash_position=0):
+        self._panes = [PanelWin(self), PanelWin(self)]
+        self._native_widget.SplitVertically(self._panes[0]._native_widget,
+                                            self._panes[1]._native_widget,
+                                            sash_position)
+        return self._panes[0], self._panes[1]
+
+    def make_horizontal_panes(self, sash_position=0):
+        self._panes = [PanelWin(self), PanelWin(self)]
+        self._native_widget.SplitHorizontally(self._panes[0]._native_widget,
+                                              self._panes[1]._native_widget,
+                                              sash_position)
+        return self._panes[0], self._panes[1]
