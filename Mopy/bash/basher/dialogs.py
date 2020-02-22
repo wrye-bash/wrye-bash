@@ -26,12 +26,11 @@ import string
 from . import bEnableWizard, tabInfo, BashFrame
 from .constants import colorInfo, settingDefaults, installercons
 from .. import bass, balt, bosh, bolt, bush, env
-from ..balt import Link, colors, Image, bell, Resources, set_event_hook, \
-    Events, ColorPicker
+from ..balt import Link, colors, Image, bell, Resources
 from ..bosh import faces
 from ..gui import ApplyButton, BOTTOM, Button, CancelButton, CENTER, \
     CheckBox, GridLayout, HLayout, Label, LayoutOptions, OkButton, RIGHT, \
-    Stretch, TextArea, TextField, VLayout, DropDown, DialogWindow
+    Stretch, TextArea, TextField, VLayout, DropDown, DialogWindow, ColorPicker
 
 class ColorDialog(DialogWindow):
     """Color configuration dialog"""
@@ -61,7 +60,7 @@ class ColorDialog(DialogWindow):
         self.comboBox = DropDown(self, value=combo_text, choices=colored)
         self.comboBox.on_combo_select.subscribe(lambda _sel: self.OnComboBox())
         #--Color Picker
-        self.picker = ColorPicker(self._native_widget, colors[choiceKey])
+        self.picker = ColorPicker(self, colors[choiceKey])
         #--Description
         help_ = colorInfo[choiceKey][1]
         self.textCtrl = TextArea(self, init_text=help_, editable=False)
@@ -81,8 +80,7 @@ class ColorDialog(DialogWindow):
         self.ok = OkButton(self, default=True)
         self.ok.on_clicked.subscribe(self.OnOK)
         #--Events
-        set_event_hook(self.picker, Events.COLORPICKER_CHANGED,
-                       self.OnColorPicker)
+        self.picker.on_color_picker_evt.subscribe(self.OnColorPicker)
         #--Layout
         VLayout(border=5, default_fill=True, spacing=5, items=[
             HLayout(items=[
@@ -247,8 +245,7 @@ class ColorDialog(DialogWindow):
         description = colorInfo[color_key][1]
         self.textCtrl.text_content = description
 
-    def OnColorPicker(self,event):
-        event.Skip()
+    def OnColorPicker(self):
         color_key = self.GetColorKey()
         newColor = self.picker.get_color()
         self.changes[color_key] = newColor

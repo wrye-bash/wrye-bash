@@ -43,13 +43,11 @@ import wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from wx.lib.embeddedimage import PyEmbeddedImage
 import wx.lib.newevent
-import wx.wizard as wiz
 #--gui
 from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
     BackwardButton, ForwardButton, ReloadButton, web_viewer_available, \
-    WebViewer, wrapped_tooltip, EventHandler, DialogWindow, WindowFrame, \
-    EventResult
+    WebViewer, EventHandler, DialogWindow, WindowFrame, EventResult
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -334,16 +332,6 @@ def ok_and_cancel_group(parent, on_ok=None):
     ok_button.on_clicked.subscribe(on_ok)
     return HLayout(spacing=4, items=[ok_button, CancelButton(parent)])
 
-def spinCtrl(parent, value=u'', pos=defPos, size=defSize,
-             style=wx.SP_ARROW_KEYS, min=0, max=100, initial=0,
-             name=u'wxSpinctrl', onSpin=None, spin_tip=None):
-    """Spin control with event and tip setting."""
-    gSpinCtrl = wx.SpinCtrl(parent, defId, value, pos, size, style, min, max,
-                            initial, name)
-    if onSpin: gSpinCtrl.Bind(wx.EVT_SPINCTRL, lambda __event: onSpin())
-    if spin_tip: gSpinCtrl.SetToolTip(wrapped_tooltip(spin_tip))
-    return gSpinCtrl
-
 class ListBox(_AComponent):
     """Wrap a ListBox control.
 
@@ -527,19 +515,6 @@ def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
         else: raise ArgumentError(
             u'special must be either warn or undo: %r given' % special)
     return wx.StaticBitmap(_AComponent._resolve(parent), defId, bitmap)
-
-class ColorPicker(wx.ColourPickerCtrl):
-    """A button with a color that launches a color picker dialog."""
-    def __init__(self, parent, color=None):
-        super(ColorPicker, self).__init__(parent)
-        if color is not None:
-            self.set_color(color)
-
-    def get_color(self):
-        return self.GetColour()
-
-    def set_color(self, color):
-        self.SetColour(color)
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -3091,29 +3066,13 @@ class NotebookPanel(wx.Panel):
 # TODO(inf) replace and remove, need to come up with a better system
 # Event bindings --------------------------------------------------------------
 class Events(object):
-    RESIZE = 'resize'
-    ACTIVATE = 'activate'
-    CLOSE = 'close'
     CHAR_KEY_PRESSED = 'char_key_pressed'
     MOUSE_LEFT_DOUBLECLICK = 'mouse_left_doubleclick'
     MOUSE_MIDDLE_UP = 'mouse_middle_up'
-    WIZARD_CANCEL = 'wizard_cancel'
-    WIZARD_FINISHED = 'wizard_finished'
-    WIZARD_PAGE_CHANGING = 'wizard_page_changing'
-    # TODO(nycz): possibly too specific stuff here, what do?
-    # also the names here... ugh. needless to say its very wip
-    COLORPICKER_CHANGED = 'colorpicker_changed'
 
-_WX_EVENTS = {Events.RESIZE:                wx.EVT_SIZE,
-              Events.ACTIVATE:              wx.EVT_ACTIVATE,
-              Events.CLOSE:                 wx.EVT_CLOSE,
-              Events.CHAR_KEY_PRESSED:      wx.EVT_CHAR,
+_WX_EVENTS = {Events.CHAR_KEY_PRESSED:      wx.EVT_CHAR,
               Events.MOUSE_LEFT_DOUBLECLICK:wx.EVT_LEFT_DCLICK,
               Events.MOUSE_MIDDLE_UP:       wx.EVT_MIDDLE_UP,
-              Events.WIZARD_CANCEL:         wiz.EVT_WIZARD_CANCEL,
-              Events.WIZARD_FINISHED:       wiz.EVT_WIZARD_FINISHED,
-              Events.WIZARD_PAGE_CHANGING:  wiz.EVT_WIZARD_PAGE_CHANGING,
-              Events.COLORPICKER_CHANGED:   wx.EVT_COLOURPICKER_CHANGED,
 }
 
 def set_event_hook(obj, event, callback):

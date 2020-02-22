@@ -80,13 +80,12 @@ from .. import balt
 from ..balt import CheckLink, EnabledLink, SeparatorLink, Link, \
     ChoiceLink, staticBitmap, AppendableLink, ListBoxes, \
     INIListCtrl, DnDStatusBar, NotebookPanel, set_event_hook, Events
-from ..balt import spinCtrl
 from ..balt import colors, images, Image, Resources
 from ..balt import Links, ItemLink
 
 from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
-    TOP, VLayout, EventResult, DropDown, DialogWindow, WindowFrame
+    TOP, VLayout, EventResult, DropDown, DialogWindow, WindowFrame, Spinner
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons
@@ -3315,8 +3314,8 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
         self.peoplePanel = parent.GetParent().GetParent()
         self.gName = TextField(self, editable=False)
         self.gText = TextArea(self)
-        self.gKarma = spinCtrl(self,u'0',min=-5,max=5,onSpin=self.OnSpin)
-        self.gKarma.SetSizeHints(40,-1)
+        self.gKarma = Spinner(self, min_val=-5, max_val=5, onSpin=self.OnSpin)
+        self.gKarma.set_min_size(40,-1)
         #--Layout
         VLayout(spacing=4, default_fill=True, items=[
             HLayout(default_fill=True, items=[
@@ -3327,7 +3326,7 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
     def OnSpin(self):
         """Karma spin."""
         if not self._people_detail: return
-        karma = int(self.gKarma.GetValue())
+        karma = int(self.gKarma.sp_get_value())
         details = self.file_infos[self._people_detail][2]
         self.file_infos[self._people_detail] = (time.time(), karma, details)
         self.peoplePanel.uiList.PopulateItem(item=self._people_detail)
@@ -3351,11 +3350,11 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
         if not item: return
         karma, details = self.peoplePanel.listData[item][1:3]
         self.gName.text_content = item
-        self.gKarma.SetValue(karma)
+        self.gKarma.sp_set_value(karma)
         self.gText.text_content = details
 
     def _resetDetails(self):
-        self.gKarma.SetValue(0)
+        self.gKarma.sp_set_value(0)
         self.gName.text_content = u''
         self.gText.text_content = u''
 

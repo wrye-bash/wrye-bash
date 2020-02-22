@@ -123,3 +123,40 @@ class DropDown(_AComponent):
 
     def get_value(self):
         return self._native_widget.GetValue()
+
+class ColorPicker(_AComponent):
+    """A button with a color that launches a color picker dialog.
+
+    Events:
+     - on_color_picker_evt(selected_label: str): Posted when the button is
+     clicked."""
+    def __init__(self, parent, color=None):
+        super(ColorPicker, self).__init__(_wx.ColourPickerCtrl, parent)
+        if color is not None:
+            self.set_color(color)
+        self.on_color_picker_evt = EventHandler(self._native_widget,
+                                                _wx.EVT_COLOURPICKER_CHANGED)
+
+    def get_color(self):
+        return self._native_widget.GetColour()
+
+    def set_color(self, color):
+        self._native_widget.SetColour(color)
+
+class Spinner(_AComponent):
+    """Spin control with event and tip setting."""
+
+    def __init__(self, parent, value=u'', min_val=0, max_val=100, initial=0,
+                 name=u'wxSpinctrl', onSpin=None, spin_tip=None):
+        super(Spinner, self).__init__(_wx.SpinCtrl, parent, value=value,
+                                      style=_wx.SP_ARROW_KEYS, min=min_val,
+                                      max=max_val, initial=initial, name=name)
+        if onSpin:
+            self._on_spin_evt = EventHandler(self._native_widget,
+                                             _wx.EVT_SPINCTRL)
+            self._on_spin_evt.subscribe(onSpin)
+        if spin_tip: self.tooltip = spin_tip
+
+    def sp_set_value(self, sp_value): self._native_widget.SetValue(sp_value)
+
+    def sp_get_value(self): return self._native_widget.GetValue()
