@@ -3748,8 +3748,10 @@ class BashFrame(WindowFrame):
             try:
                 self.on_activate.subscribe(self.RefreshData) if bind else \
                     self.on_activate.unsubscribe(self.RefreshData)
-            except UnknownListener: # when first called by RefreshData in balt.conversation
-                pass
+                return True
+            except UnknownListener:
+                # when first called via RefreshData in balt.conversation
+                return False # we were not bound
 
     def Restart(self, *args):
         """Restart Bash - edit bass.sys_argv with specified args then let
@@ -4063,12 +4065,13 @@ class BashApp(wx.App):
         self.SetTopWindow(frame._native_widget)
         frame.show_frame()
         frame._native_widget.Maximize(settings['bash.frameMax'])
-        frame.RefreshData(booting=True) # will bind RefreshData
+        frame.RefreshData(booting=True) # used to bind RefreshData
         balt.ensureDisplayed(frame)
         # Moved notebook.Bind() callback here as OnShowPage() is explicitly
         # called in RefreshData
         frame.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,
                             frame.notebook.OnShowPage)
+        return frame
 
     @staticmethod
     def InitResources():

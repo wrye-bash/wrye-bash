@@ -1550,12 +1550,13 @@ def conversation(func):
         global _depth
         try:
             with _lock: _depth += 1 # hack: allow sequences of conversations
-            Link.Frame.bind_refresh(bind=False)
+            refresh_bound = Link.Frame.bind_refresh(bind=False)
             return func(*args, **kwargs)
         finally:
             with _lock: # atomic
                 _depth -= 1
-                if not _depth: Link.Frame.bind_refresh(bind=True)
+                if not _depth and refresh_bound:
+                    Link.Frame.bind_refresh(bind=True)
     return _conversation_wrapper
 
 class UIList(wx.Panel):
