@@ -75,7 +75,6 @@ notFound = wx.NOT_FOUND
 
 # wx Types
 wxPoint = wx.Point
-wxSize = wx.Size
 
 class Font(wx.Font):
 
@@ -310,12 +309,6 @@ def text_wrap(text_to_wrap, width=60):
     """Wraps paragraph to width characters."""
     pars = [textwrap.fill(line, width) for line in text_to_wrap.split(u'\n')]
     return u'\n'.join(pars)
-
-def ensureDisplayed(frame,x=100,y=100):
-    """Ensure that frame is displayed."""
-    if wx.Display.GetFromWindow(_AComponent._resolve(frame)) == -1:
-        topLeft = wx.Display(0).GetGeometry().GetTopLeft()
-        frame.MoveXY(topLeft.x+x,topLeft.y+y)
 
 # Elements --------------------------------------------------------------------
 def bell(arg=None):
@@ -2722,6 +2715,7 @@ class TreeCtrl(_AComponent):
             child = self._native_widget.AppendItem(root, item.s)
             for subitem in subitems:
                 self._native_widget.AppendItem(child, subitem.s)
+            self._native_widget.Expand(child)
 
     def OnMotion(self, event): return
 
@@ -2751,8 +2745,12 @@ class ListBoxes(DialogWindow):
         self._ctrls = {}
         # Size ourselves slightly larger than the wrapped text, otherwise some
         # of it may be cut off and the buttons may become too small to read
-        self._native_widget.SetSize(wxSize(minWidth + 64, -1))
-        self._native_widget.SetMinSize(wxSize(minWidth + 64, 256))
+        # TODO(ut) we should set ourselves to min(minWidth, size(btns)) - how?
+        self.component_size = (minWidth + 64, -1)
+        min_height = 128 + 128 * len(lists) #arbitrary just fits well currently
+        if self.component_size[1] < min_height:
+            self.component_size = (minWidth + 64, min_height)
+        self.set_min_size(minWidth + 64, min_height)
         for item_group in lists:
             title = item_group[0] # also serves as key in self._ctrls dict
             item_tip = item_group[1]
@@ -2774,16 +2772,19 @@ class ListBoxes(DialogWindow):
             layout.add((HBoxedLayout(self, default_fill=True, title=title,
                                      default_weight=1, items=[checksCtrl]),
                         LayoutOptions(expand=True, weight=1)))
-        layout.add((HLayout(spacing=5, items=[
-            OkButton(self, label=bOk, default=True),
-            (CancelButton(self, label=bCancel) if canCancel else None)]
-                            ), LayoutOptions(h_align=RIGHT)))
+        btns = [OkButton(self, label=bOk, default=True),
+                CancelButton(self, label=bCancel) if canCancel else None]
+        layout.add((HLayout(spacing=5, items=btns),
+                    LayoutOptions(h_align=RIGHT)))
         layout.apply_to(self)
-        self.on_size_changed.subscribe(self.save_size)
+        self.on_size_changed.subscribe(self._wrap_text)
+        self._width = self.component_size[0]
 
-    def save_size(self):
+    def _wrap_text(self):
         # Account for the window being larger than the wrapped text
-        self.text.wrap(self.component_size[0] - 64)
+        if self._width != self.component_size[0]:
+            self._width = self.component_size[0]
+            self.text.wrap(self.component_size[0] - 64)
 
     @staticmethod
     def _on_key_up(key_code, is_cmd_down, is_shift_down, lb_instance):

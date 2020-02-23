@@ -920,7 +920,6 @@ class ModList(_ModsUIList):
             from .frames import DocBrowser
             DocBrowser().show_frame()
             settings['bash.modDocs.show'] = True
-        #balt.ensureDisplayed(docBrowser)
         Link.Frame.docBrowser.SetMod(modInfo.name)
         Link.Frame.docBrowser.raise_frame()
 
@@ -4053,7 +4052,6 @@ class BashApp(wx.App):
         frame.show_frame()
         frame._native_widget.Maximize(settings['bash.frameMax'])
         frame.RefreshData(booting=True) # used to bind RefreshData
-        balt.ensureDisplayed(frame)
         # Moved notebook.Bind() callback here as OnShowPage() is explicitly
         # called in RefreshData
         frame.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,

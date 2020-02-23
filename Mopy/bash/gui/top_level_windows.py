@@ -92,6 +92,12 @@ class _TopLevelWin(_AComponent):
             if self._size_key: self._sizes_dict[self._size_key] = self.component_size
         if destroy: self.destroy_component()
 
+    def ensureDisplayed(self, x=100, y=100): ##: revisit uses
+        """Ensure that frame is displayed."""
+        if _wx.Display.GetFromWindow(self._native_widget) == -1:
+            topLeft = _wx.Display(0).GetGeometry().GetTopLeft()
+            self._native_widget.MoveXY(topLeft.x + x, topLeft.y + y)
+
 class WindowFrame(_TopLevelWin):
     """Wraps a wx.Frame - saves size/position on closing.
 

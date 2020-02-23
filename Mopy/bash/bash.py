@@ -363,6 +363,7 @@ def _main(opts, wx_locale):
                                  title=_(u'Unable to create backup!')):
                     return  # Quit
     frame = app.Init() # Link.Frame is set here !
+    frame.ensureDisplayed()
     frame.bind_refresh()
     app.MainLoop()
 

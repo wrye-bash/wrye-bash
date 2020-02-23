@@ -209,7 +209,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                                          self.bAuto, subs)
             except CancelError:
                 return
-            balt.ensureDisplayed(wizard._native_widget)
+            wizard.ensureDisplayed()
         ret = wizard.Run()
         if ret.canceled:
             idetails.refreshCurrent(installer)

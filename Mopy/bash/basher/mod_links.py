@@ -572,7 +572,6 @@ class Mod_ShowReadme(OneItemLink):
         if not Link.Frame.docBrowser:
             DocBrowser().show_frame()
             bass.settings['bash.modDocs.show'] = True
-        #balt.ensureDisplayed(docBrowser)
         Link.Frame.docBrowser.SetMod(self._selected_item)
         Link.Frame.docBrowser.raise_frame()
 

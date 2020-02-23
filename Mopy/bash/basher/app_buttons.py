@@ -659,7 +659,6 @@ class App_DocBrowser(StatusBar_Button):
         if not Link.Frame.docBrowser:
             DocBrowser().show_frame()
             bass.settings['bash.modDocs.show'] = True
-        #balt.ensureDisplayed(docBrowser)
         Link.Frame.docBrowser.raise_frame()
 
 #------------------------------------------------------------------------------
@@ -751,5 +750,4 @@ class App_ModChecker(StatusBar_Button):
     def Execute(self):
         if not Link.Frame.modChecker:
             ModChecker().show_frame()
-        #balt.ensureDisplayed(modChecker)
         Link.Frame.modChecker.raise_frame()

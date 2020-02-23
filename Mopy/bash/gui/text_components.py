@@ -229,13 +229,17 @@ class Label(_ALabel):
         :param init_text: The initial text of this label."""
         super(Label, self).__init__(_wx.StaticText, parent, _wx.ID_ANY,
                                     init_text)
+        self._init_text = init_text
 
     def wrap(self, max_length): # type: (int) -> None
         """Wraps this label's text so that each line is at most max_length
         pixels long.
 
         :param max_length: The maximum number of pixels a line may be long."""
+        self._native_widget.Freeze()
+        self._native_widget.SetLabel(self._init_text)
         self._native_widget.Wrap(max_length)
+        self._native_widget.Thaw()
 
 class HyperlinkLabel(_ALabel):
     """A label that opens a URL when clicked, imitating a hyperlink in a
