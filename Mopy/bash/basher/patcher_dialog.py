@@ -144,7 +144,7 @@ class PatchDialog(DialogWindow):
         #--Patcher panels
         for patcher in self.patchers:
             patcher.GetConfigPanel(self, self.config_layout,
-                                   self.gTipText).Hide()
+                                   self.gTipText).pnl_hide()
         initial_select = min(len(self.patchers)-1,1)
         if initial_select >= 0:
             self.gPatchers.lb_select_index(initial_select) # callback not fired
@@ -160,8 +160,8 @@ class PatchDialog(DialogWindow):
         """Show patcher panel."""
         if patcher == self.currentPatcher: return
         if self.currentPatcher is not None:
-            self.currentPatcher.gConfigPanel.Hide()
-        patcher.GetConfigPanel(self, self.config_layout, self.gTipText).Show()
+            self.currentPatcher.gConfigPanel.pnl_hide()
+        patcher.GetConfigPanel(self, self.config_layout, self.gTipText).visible = True
         self._native_widget.Layout()
         patcher.Layout()
         self.currentPatcher = patcher

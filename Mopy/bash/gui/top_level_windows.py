@@ -244,8 +244,12 @@ class WizardDialog(DialogWindow):
 
 # Panels ----------------------------------------------------------------------
 class PanelWin(_AComponent):
-    def __init__(self, parent, *args, **kwargs):
-        super(PanelWin, self).__init__(_wx.Panel, parent, *args, **kwargs)
+    def __init__(self, parent, no_border=True):
+        super(PanelWin, self).__init__(_wx.Panel, parent,
+            style=_wx.TAB_TRAVERSAL | (no_border and _wx.NO_BORDER))
+
+    def pnl_layout(self): self._native_widget.Layout()
+    def pnl_hide(self): self._native_widget.Hide()
 
 class Splitter(_AComponent):
 

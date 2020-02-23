@@ -25,14 +25,12 @@ import copy
 import string
 import re
 from operator import itemgetter
-import wx
 # Internal
 from .. import bass, bosh, bush, balt, load_order, bolt, exception
 from ..balt import text_wrap, Links, SeparatorLink, CheckLink
 from ..bolt import GPath
 from ..gui import Button, CheckBox, HBoxedLayout, Label, LayoutOptions, \
-    Spacer, TextArea, TOP, VLayout, EventResult
-from ..gui.base_components import _AComponent
+    Spacer, TextArea, TOP, VLayout, EventResult, PanelWin
 from ..patcher import patch_files
 
 reCsvExt = re.compile(u'' r'\.csv$', re.I | re.U)
@@ -40,7 +38,6 @@ reCsvExt = re.compile(u'' r'\.csv$', re.I | re.U)
 class _PatcherPanel(object):
     """Basic patcher panel with no options."""
     selectCommands = True # whether this panel displays De/Select All
-    style = wx.TAB_TRAVERSAL
     # CONFIG DEFAULTS
     default_isEnabled = False # is the patcher enabled on a new bashed patch ?
 
@@ -67,9 +64,7 @@ class _PatcherPanel(object):
         if self.gConfigPanel: return self.gConfigPanel
         self.patch_dialog = parent
         self.gTipText = gTipText
-        # TODO(inf) de-wx!
-        self.gConfigPanel = wx.Panel(_AComponent._resolve(parent),
-                                     style=self.__class__.style)
+        self.gConfigPanel = PanelWin(parent, no_border=False)
         self.main_layout = VLayout(
             default_fill=True, default_weight=1, spacing=4, items=[
                 (Label(self.gConfigPanel, text_wrap(self.text, 70)),
@@ -81,7 +76,10 @@ class _PatcherPanel(object):
     def Layout(self):
         """Layout control components."""
         if self.gConfigPanel:
-            self.gConfigPanel.Layout()
+            self.gConfigPanel.pnl_layout()
+
+    def _set_focus(self): # TODO(ut) check if set_focus is enough
+        self.patch_dialog.gPatchers.set_focus_from_kb()
 
     #--Config Phase -----------------------------------------------------------
     def getConfig(self, configs):
@@ -368,7 +366,7 @@ class _ListPatcherPanel(_PatcherPanel):
             self.OnListCheck()
         except AttributeError:
             pass #ListBox instead of CheckListBox
-        self.gConfigPanel.GetParent().gPatchers.set_focus_from_kb()
+        self._set_focus()
 
     def DeselectAll(self):
         """'Deselect All' Button was pressed, update all configChecks states."""
@@ -377,7 +375,7 @@ class _ListPatcherPanel(_PatcherPanel):
             self.OnListCheck()
         except AttributeError:
             pass #ListBox instead of CheckListBox
-        self.gConfigPanel.GetParent().gPatchers.set_focus_from_kb()
+        self._set_focus()
 
     def mass_select(self, select=True):
         self.SelectAll() if select else self.DeselectAll()
@@ -680,7 +678,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             self.TweakOnListCheck()
         except AttributeError:
             pass #ListBox instead of CheckListBox
-        self.gConfigPanel.GetParent().gPatchers.set_focus_from_kb()
+        self._set_focus()
 
     def TweakDeselectAll(self):
         """'Deselect All' Button was pressed, update all configChecks
@@ -690,7 +688,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             self.TweakOnListCheck()
         except AttributeError:
             pass #ListBox instead of CheckListBox
-        self.gConfigPanel.GetParent().gPatchers.set_focus_from_kb()
+        self._set_focus()
 
     def mass_select(self, select=True):
         super(_TweakPatcherPanel, self).mass_select(select)
