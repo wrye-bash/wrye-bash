@@ -85,18 +85,19 @@ def InitStatusBar():
             imageList(bush.game.cs.image_name),
             u' '.join((_(u"Launch"),bush.game.cs.cs_abbrev)),
             u' '.join((_(u"Launch"),bush.game.cs.cs_abbrev,u'%(version)s')),
-            bush.game.cs.se_args,
-            uid=u'TESCS'))
+            bush.game.cs.se_args))
     BashStatusBar.buttons.append( #OBMM
-        App_Button(bass.dirs['app'].join(u'OblivionModManager.exe'),
-                   imageList(u'obmm%s.png'),
-                   _(u"Launch OBMM"),
-                   uid=u'OBMM'))
+        app_button_factory(bass.dirs['app'].join(u'OblivionModManager.exe'),
+                           imageList(u'obmm%s.png'), _(u"Launch OBMM"),
+                           uid=u'OBMM'))
     from .constants import toolbar_buttons
+    # Just an _App_Button whose path is in bass.tooldirs
+    Tooldir_Button = lambda *args: app_button_factory(bass.tooldirs[args[0]],
+                                                      *args[1:])
     for tb in toolbar_buttons:
         BashStatusBar.buttons.append(Tooldir_Button(*tb))
     for tb2 in _init_tool_buttons():
-        BashStatusBar.buttons.append(App_Button(*tb2[:-1], **tb2[-1]))
+        BashStatusBar.buttons.append(app_button_factory(*tb2[:-1], **tb2[-1]))
     BashStatusBar.buttons.append( #Tes4View
         App_Tes4View(
             (bass.tooldirs['Tes4ViewPath'], u'-TES4'), #no cmd argument to force view mode
@@ -118,41 +119,34 @@ def InitStatusBar():
                      imageList(u'tools/tes4edit%s.png'),
                      _(u"Launch EnderalEdit"),
                      uid=u'EnderalEdit'))
-    BashStatusBar.buttons.append( #SSEEdit
+    BashStatusBar.buttons.append(  #SSEEdit
         App_Tes4View((bass.tooldirs['SSEEditPath'], u'-SSE -edit'),
-                     imageList(u'tools/tes4edit%s.png'),
-                     _(u"Launch SSEEdit"),
+                     imageList(u'tools/tes4edit%s.png'), _(u"Launch SSEEdit"),
                      uid=u'SSEEdit'))
-    BashStatusBar.buttons.append( #Fo4Edit
-        App_Tes4View((bass.tooldirs['Fo4EditPath'],u'-FO4 -edit'),
-                     imageList(u'tools/tes4edit%s.png'),
-                     _(u"Launch FO4Edit"),
+    BashStatusBar.buttons.append(  #Fo4Edit
+        App_Tes4View((bass.tooldirs['Fo4EditPath'], u'-FO4 -edit'),
+                     imageList(u'tools/tes4edit%s.png'), _(u"Launch FO4Edit"),
                      uid=u'FO4Edit'))
-    BashStatusBar.buttons.append( #Fo3Edit
-        App_Tes4View((bass.tooldirs['Fo3EditPath'],u'-FO3 -edit'),
-                     imageList(u'tools/tes4edit%s.png'),
-                     _(u"Launch FO3Edit"),
+    BashStatusBar.buttons.append(  #Fo3Edit
+        App_Tes4View((bass.tooldirs['Fo3EditPath'], u'-FO3 -edit'),
+                     imageList(u'tools/tes4edit%s.png'), _(u"Launch FO3Edit"),
                      uid=u'FO3Edit'))
-    BashStatusBar.buttons.append( #FnvEdit
-        App_Tes4View((bass.tooldirs['FnvEditPath'],u'-FNV -edit'),
-                     imageList(u'tools/tes4edit%s.png'),
-                     _(u"Launch FNVEdit"),
+    BashStatusBar.buttons.append(  #FnvEdit
+        App_Tes4View((bass.tooldirs['FnvEditPath'], u'-FNV -edit'),
+                     imageList(u'tools/tes4edit%s.png'), _(u"Launch FNVEdit"),
                      uid=u'FNVEdit'))
-    BashStatusBar.buttons.append( #TesVGecko
-        App_Button((bass.tooldirs['Tes5GeckoPath']),
-                   imageList(u'tools/tesvgecko%s.png'),
-                   _(u"Launch TesVGecko"),
-                   uid=u'TesVGecko'))
-    BashStatusBar.buttons.append( #Tes4Trans
+    BashStatusBar.buttons.append(  #TesVGecko
+        app_button_factory((bass.tooldirs['Tes5GeckoPath']),
+                           imageList(u'tools/tesvgecko%s.png'),
+                           _(u"Launch TesVGecko"), uid=u'TesVGecko'))
+    BashStatusBar.buttons.append(  #Tes4Trans
         App_Tes4View((bass.tooldirs['Tes4TransPath'], u'-TES4 -translate'),
                      imageList(u'tools/tes4trans%s.png'),
-                     _(u"Launch TES4Trans"),
-                     uid=u'TES4Trans'))
-    BashStatusBar.buttons.append( #Tes4LODGen
+                     _(u"Launch TES4Trans"), uid=u'TES4Trans'))
+    BashStatusBar.buttons.append(  #Tes4LODGen
         App_Tes4View((bass.tooldirs['Tes4LodGenPath'], u'-TES4 -lodgen'),
-                    imageList(u'tools/tes4lodgen%s.png'),
-                    _(u"Launch Tes4LODGen"),
-                    uid=u'TES4LODGen'))
+                     imageList(u'tools/tes4lodgen%s.png'),
+                     _(u"Launch Tes4LODGen"), uid=u'TES4LODGen'))
     BashStatusBar.buttons.append( #BOSS
         App_BOSS((bass.tooldirs['boss']),
                 imageList(u'boss%s.png'),
@@ -163,10 +157,10 @@ def InitStatusBar():
         for mb in modeling_tools_buttons:
             BashStatusBar.buttons.append(Tooldir_Button(*mb))
         BashStatusBar.buttons.append( #Softimage Mod Tool
-            App_Button((bass.tooldirs['SoftimageModTool'], u'-mod'),
-                       imageList(u'tools/softimagemodtool%s.png'),
-                       _(u"Launch Softimage Mod Tool"),
-                       uid=u'SoftimageModTool'))
+            app_button_factory((bass.tooldirs['SoftimageModTool'], u'-mod'),
+                               imageList(u'tools/softimagemodtool%s.png'),
+                               _(u"Launch Softimage Mod Tool"),
+                               uid=u'SoftimageModTool'))
     if bass.inisettings['ShowModelingToolLaunchers'] \
             or bass.inisettings['ShowTextureToolLaunchers']:
         BashStatusBar.buttons.append( #Nifskope
@@ -190,7 +184,7 @@ def InitStatusBar():
                 (16, 24, 32)]
     for pth, icon, description in init_app_links(dirApps, badIcons, iconList):
             BashStatusBar.buttons.append(
-                App_Button((pth, ()), icon, description, canHide=False))
+                app_button_factory((pth,()), icon, description, canHide=False))
     #--Final couple
     BashStatusBar.buttons.append(App_DocBrowser(uid=u'DocBrowser'))
     BashStatusBar.buttons.append(App_ModChecker(uid=u'ModChecker'))

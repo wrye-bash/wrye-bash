@@ -25,7 +25,6 @@
 import sys
 
 from . import BashStatusBar
-from .app_buttons import App_Button  # TODO(ut): ugly
 from .dialogs import ColorDialog
 from .. import barb, bush, balt, bass, bolt, env, exception
 from ..balt import ItemLink, AppendableLink, RadioLink, CheckLink, MenuLink, \
@@ -264,12 +263,9 @@ class Settings_StatusBar_ShowVersions(CheckLink):
     def Execute(self):
         bass.settings['bash.statusbar.showversion'] ^= True
         for button in BashStatusBar.buttons:
-            if isinstance(button, App_Button):
-                if button.gButton:
-                    button.gButton.tooltip = button.sb_button_tip
+            button.set_sb_button_tooltip()
         if BashStatusBar.obseButton.button_state:
-            for button in App_Button.obseButtons:
-                button.gButton.tooltip = getattr(button, 'obseTip', u'')
+            BashStatusBar.obseButton.UpdateToolTips()
 
 #------------------------------------------------------------------------------
 class Settings_Languages(TransLink):
@@ -433,7 +429,7 @@ class Settings_UnHideButton(ItemLink):
             # Use the tooltip from it
             tip_ = button.tooltip
         else:
-            # If the link is an App_Button, it will have a 'sb_button_tip' attribute
+            # If the link is an _App_Button, it will have a 'sb_button_tip' attribute
             tip_ = getattr(self.link,'sb_button_tip',None) # YAK YAK YAK
         if tip_ is None:
             # No good, use its uid as a last resort

@@ -3594,7 +3594,7 @@ class BashStatusBar(DnDStatusBar):
             # Add it
             try:
                 self._addButton(link)
-            except AttributeError: # 'App_Button' object has no attribute 'imageKey'
+            except AttributeError: # '_App_Button' object has no attribute 'imageKey'
                 deprint(u'Failed to load button %r' % (uid,), traceback=True)
         # Add any new buttons
         for link in BashStatusBar.buttons:
