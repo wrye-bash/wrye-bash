@@ -1589,7 +1589,7 @@ class UIList(wx.Panel):
     _dndColumns = ()
 
     def __init__(self, parent, keyPrefix, listData=None, panel=None):
-        wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
+        wx.Panel.__init__(self, _AComponent._resolve(parent), style=wx.WANTS_CHARS)
         self.data_store = listData # never use as local variable name !
         self.panel = panel
         #--Settings key
@@ -3024,23 +3024,6 @@ class WryeBashSplashScreen(wx.SplashScreen):
         self.Hide()
         # The program might/will freeze without this line.
         event.Skip() # Make sure the default handler runs too...
-
-class Splitter(wx.SplitterWindow):
-
-    def __init__(self, *args, **kwargs):
-        kwargs['style'] = kwargs.pop('style', splitterStyle)
-        super(Splitter, self).__init__(*args, **kwargs)
-        self._panes = None
-
-    def make_vertical_panes(self):
-        self._panes = [wx.Panel(self), wx.Panel(self)]
-        self.SplitVertically(*self._panes)
-        return self._panes[0], self._panes[1]
-
-    def make_horizontal_panes(self):
-        self._panes = [wx.Panel(self), wx.Panel(self)]
-        self.SplitHorizontally(*self._panes)
-        return self._panes[0], self._panes[1]
 
 #------------------------------------------------------------------------------
 class NotebookPanel(wx.Panel):

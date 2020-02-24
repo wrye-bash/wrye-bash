@@ -85,7 +85,8 @@ from ..balt import Links, ItemLink
 
 from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
-    TOP, VLayout, EventResult, DropDown, DialogWindow, WindowFrame, Spinner
+    TOP, VLayout, EventResult, DropDown, DialogWindow, WindowFrame, Spinner, \
+    Splitter, NotebookCtrl, PanelWin
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons
@@ -172,29 +173,24 @@ class SashPanel(NotebookPanel):
 
     def __init__(self, parent, isVertical=True):
         super(SashPanel, self).__init__(parent)
-        self.splitter = splitter = balt.Splitter(self)
-        if isVertical:
-            self.left, self.right = splitter.make_vertical_panes()
-        else:
-            self.left, self.right = splitter.make_horizontal_panes()
+        self.splitter = Splitter(self, allow_split=False,
+                                 min_pane_size=self.__class__.minimumSize)
+        self.left, self.right = self.splitter.make_panes(vertically=isVertical)
         self.isVertical = isVertical
         self.sashPosKey = self.__class__.keyPrefix + '.sashPos'
-        # Don't allow unsplitting
-        splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda event: event.Veto())
-        splitter.SetMinimumPaneSize(self.__class__.minimumSize)
         VLayout(default_weight=1, default_fill=True,
-                items=[splitter]).apply_to(self)
+                items=[self.splitter]).apply_to(self)
 
     def ShowPanel(self, **kwargs):
         if self._firstShow:
             sashPos = settings.get(self.sashPosKey,
                                    self.__class__.defaultSashPos)
-            self.splitter.SetSashPosition(sashPos)
+            self.splitter.set_sash_pos(sashPos)
             self._firstShow = False
 
     def ClosePanel(self, destroy=False):
         if not self._firstShow and destroy: # if the panel was shown
-            settings[self.sashPosKey] = self.splitter.GetSashPosition()
+            settings[self.sashPosKey] = self.splitter.get_sash_pos()
 
 class SashUIListPanel(SashPanel):
     """SashPanel featuring a UIList and a corresponding listData datasource."""
@@ -245,7 +241,7 @@ class BashTab(_DetailsViewMixin, SashUIListPanel):
 
     def __init__(self, parent, isVertical=True):
         super(BashTab, self).__init__(parent, isVertical)
-        self.detailsPanel = self._details_panel_type(self.right)
+        self.detailsPanel = self._details_panel_type(self.right._native_widget)
         #--Layout
         HLayout(default_fill=True, default_weight=1,
                 items=[self.detailsPanel]).apply_to(self.right)
@@ -1257,14 +1253,11 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
     def __init__(self, parent):
         SashPanel.__init__(self, parent, isVertical=False)
         self.top, self.bottom = self.left, self.right
-        self.subSplitter = balt.Splitter(self.bottom)
-        # split the bottom panel into the master uilist and mod tags/save notes
-        self.masterPanel = wx.Panel(self.subSplitter)
-        self._bottom_low_panel = wx.Panel(self.subSplitter)
         # needed so subpanels do not collapse
-        self.subSplitter.SetMinimumPaneSize(64)
-        self.subSplitter.SplitHorizontally(self.masterPanel,
-                                           self._bottom_low_panel)
+        self.subSplitter = Splitter(self.bottom, min_pane_size=64)
+        # min_pane_size split the bottom panel into the master uilist and mod tags/save notes
+        self.masterPanel, self._bottom_low_panel = \
+            self.subSplitter.make_panes()
         mod_or_save_panel = parent.GetParent().GetParent()
         _EditableMixinOnFileInfos.__init__(self, self.masterPanel,
                                            mod_or_save_panel)
@@ -1282,15 +1275,15 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
             super(_SashDetailsPanel, self).ShowPanel() # set sashPosition
             sashPos = settings.get(self.keyPrefix + '.subSplitterSashPos',
                                    self.__class__.defaultSubSashPos)
-            self.subSplitter.SetSashPosition(sashPos)
+            self.subSplitter.set_sash_pos(sashPos)
         self.uilist.autosizeColumns()
 
     def ClosePanel(self, destroy=False):
         if not self._firstShow:
             # Mod details Sash Positions
-            settings[self.sashPosKey] = self.splitter.GetSashPosition()
+            settings[self.sashPosKey] = self.splitter.get_sash_pos()
             settings[self.keyPrefix + '.subSplitterSashPos'] = \
-                self.subSplitter.GetSashPosition()
+                self.subSplitter.get_sash_pos()
 
     def testChanges(self): raise AbstractError
 
@@ -1307,7 +1300,6 @@ class ModDetails(_SashDetailsPanel):
 
     def __init__(self, parent):
         super(ModDetails, self).__init__(parent)
-        subSplitter, masterPanel = self.subSplitter, self.masterPanel
         top, bottom = self.top, self.bottom
         #--Data
         self.modInfo = None
@@ -1348,7 +1340,7 @@ class ModDetails(_SashDetailsPanel):
             (self.gTags, LayoutOptions(expand=True, weight=1))
         ]).apply_to(self._bottom_low_panel)
         VLayout(default_weight=1, default_fill=True,
-                items=[subSplitter]).apply_to(bottom)
+                items=[self.subSplitter]).apply_to(bottom)
 
     def _resetDetails(self):
         self.modInfo = None
@@ -1640,10 +1632,10 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         self.editButton.on_clicked.subscribe(lambda:
                                              self.current_ini_path.start())
         #--Ini file
-        self.iniContents = TargetINILineCtrl(right)
+        self.iniContents = TargetINILineCtrl(right._native_widget)
         self.lastDir = settings.get('bash.ini.lastDir', bass.dirs['mods'].s)
         #--Tweak file
-        self.tweakContents = INITweakLineCtrl(left, self.iniContents)
+        self.tweakContents = INITweakLineCtrl(left._native_widget, self.iniContents)
         self.iniContents.SetTweakLinesCtrl(self.tweakContents)
         self.tweakName = TextField(left, editable=False, no_border=True)
         self._enable_buttons()
@@ -1939,7 +1931,6 @@ class SaveDetails(_SashDetailsPanel):
 
     def __init__(self,parent):
         super(SaveDetails, self).__init__(parent)
-        subSplitter, masterPanel = self.subSplitter, self.masterPanel
         top, bottom = self.top, self.bottom
         #--Data
         self.saveInfo = None
@@ -1950,7 +1941,7 @@ class SaveDetails(_SashDetailsPanel):
         self._set_player_info_label()
         self.gCoSaves = Label(top, u'--\n--')
         #--Picture
-        self.picture = balt.Picture(top, textWidth, 192 * textWidth / 256,
+        self.picture = balt.Picture(top._native_widget, textWidth, 192 * textWidth / 256,
             background=colors['screens.bkgd.image']) #--Native: 256x192
         #--Save Info
         self.gInfo = TextArea(self._bottom_low_panel, max_length=2048)
@@ -1969,7 +1960,7 @@ class SaveDetails(_SashDetailsPanel):
             (self.gInfo, LayoutOptions(expand=True, weight=1))
         ]).apply_to(self._bottom_low_panel)
         VLayout(default_fill=True, default_weight=1,
-                items=[subSplitter]).apply_to(bottom)
+                items=[self.subSplitter]).apply_to(bottom)
 
     def _resetDetails(self):
         self.saveInfo = None
@@ -2563,13 +2554,17 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         self._displayed_installer = None
         top, bottom = self.left, self.right
         commentsSplitter = self.splitter
-        self.subSplitter = subSplitter = balt.Splitter(top)
-        self.checkListSplitter = balt.Splitter(subSplitter)
+        self.subSplitter, commentsPanel = commentsSplitter.make_panes(
+            first_pane=Splitter(top, min_pane_size=50, sash_gravity=0.5),
+            second_pane=PanelWin(bottom))
         #--Package
         self.gPackage = TextArea(top, editable=False, no_border=True)
         #--Info Tabs
-        self.gNotebook = wx.Notebook(subSplitter,style=wx.NB_MULTILINE)
-        self.gNotebook.SetSizeHints(100,100)
+        self.gNotebook, self.checkListSplitter = self.subSplitter.make_panes(
+            first_pane=NotebookCtrl(self.subSplitter, multiline=True),
+            second_pane=Splitter(self.subSplitter, min_pane_size=50,
+                                 sash_gravity=0.5))
+        self.gNotebook.set_min_size(100, 100)
         self.infoPages = []
         infoTitles = (
             ('gGeneral',_(u'General')),
@@ -2581,16 +2576,16 @@ class InstallersDetails(_DetailsMixin, SashPanel):
             ('gDirty',_(u'Dirty')),
             ('gSkipped',_(u'Skipped')),
             )
-        for name,title in infoTitles:
+        for cmp_name, page_title in infoTitles:
             gPage = TextArea(self.gNotebook, editable=False,
                              auto_tooltip=False, do_wrap=False)
-            gPage.component_name = name
-            # TODO(nycz): GUI to fix when Notebook is wrapped
-            self.gNotebook.AddPage(gPage._native_widget,title)
+            gPage.component_name = cmp_name
+            self.gNotebook.nb_add_page(gPage, page_title)
             self.infoPages.append([gPage,False])
-        self.gNotebook.SetSelection(settings['bash.installers.page'])
-        self.gNotebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowInfoPage)
-        subPackagesPanel, espmsPanel = self.checkListSplitter.make_vertical_panes()
+        self.gNotebook.nb_set_selected_index(settings['bash.installers.page'])
+        self.gNotebook.on_nb_page_change.subscribe(self.OnShowInfoPage)
+        subPackagesPanel, espmsPanel = self.checkListSplitter.make_panes(
+            vertically=True)
         #--Sub-Installers
         subPackagesLabel = Label(subPackagesPanel, _(u'Sub-Packages'))
         self.gSubList = balt.CheckListBox(subPackagesPanel, isExtended=True,
@@ -2604,17 +2599,10 @@ class InstallersDetails(_DetailsMixin, SashPanel):
             self._on_plugin_filter_dclick)
         self.gEspmList.on_mouse_right_up.subscribe(self._selection_menu)
         #--Comments
-        commentsPanel = wx.Panel(bottom)
         self.gComments = TextArea(commentsPanel, auto_tooltip=False)
         #--Splitter settings
-        self.checkListSplitter.SetMinimumPaneSize(50)
-        self.checkListSplitter.SetSashGravity(0.5)
-        subSplitter.SetMinimumPaneSize(50)
-        subSplitter.SplitHorizontally(self.gNotebook, self.checkListSplitter)
-        subSplitter.SetSashGravity(0.5)
-        commentsSplitter.SetMinimumPaneSize(-self.__class__.defaultSashPos)
-        commentsSplitter.SplitHorizontally(subSplitter, commentsPanel)
-        commentsSplitter.SetSashGravity(1.0)
+        commentsSplitter.set_min_pane_size(-self.__class__.defaultSashPos)
+        commentsSplitter.set_sash_gravity(1.0)
         #--Layout
         VLayout(items=[subPackagesLabel,
                        (self.gSubList, LayoutOptions(expand=True, weight=1))]
@@ -2622,33 +2610,32 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         VLayout(items=[Label(espmsPanel, _(u'Plugin Filter')),
                        (self.gEspmList, LayoutOptions(expand=True, weight=1))]
                 ).apply_to(espmsPanel)
-        VLayout(default_fill=True,
-                items=[self.gPackage, (subSplitter, LayoutOptions(weight=1))]
-                ).apply_to(top)
+        VLayout(default_fill=True, items=[self.gPackage, (
+            self.subSplitter, LayoutOptions(weight=1))]).apply_to(top)
         VLayout(items=[Label(commentsPanel, _(u'Comments')),
                        (self.gComments, LayoutOptions(expand=True, weight=1))]
                 ).apply_to(commentsPanel)
         VLayout(default_fill=True, default_weight=1, items=[commentsPanel]
                 ).apply_to(bottom)
 
-    def OnShowInfoPage(self,event):
+    def OnShowInfoPage(self, wx_id, selected_index):
         """A specific info page has been selected."""
-        if event.GetId() == self.gNotebook.GetId():
-            index = event.GetSelection()
-            gPage,initialized = self.infoPages[index]
+        if wx_id == self.gNotebook.wx_id_: # todo because of BashNotebook event??
+            # todo use the pages directly not the index
+            gPage,initialized = self.infoPages[selected_index]
             if self._displayed_installer and not initialized:
-                self.RefreshInfoPage(index, self.file_info)
-            event.Skip()
+                self.RefreshInfoPage(selected_index, self.file_info)
 
     def ClosePanel(self, destroy=False, only_details=False):
         """Saves details if they need saving."""
         super(InstallersDetails, self).ClosePanel(destroy)
         if not self._firstShow and not only_details: # save subsplitters
             settings[self.__class__.keyPrefix + '.subSplitterSashPos'] = \
-                self.subSplitter.GetSashPosition()
+                self.subSplitter.get_sash_pos()
             settings[self.__class__.keyPrefix + '.checkListSplitterSashPos'] =\
-                self.checkListSplitter.GetSashPosition()
-            settings['bash.installers.page'] = self.gNotebook.GetSelection()
+                self.checkListSplitter.get_sash_pos()
+            settings['bash.installers.page'] = \
+                self.gNotebook.nb_get_selected_index()
         installer = self.file_info
         if not installer or not self.gComments.modified: return
         installer.comments = self.gComments.text_content
@@ -2666,7 +2653,7 @@ class InstallersDetails(_DetailsMixin, SashPanel):
             #--Name
             self.gPackage.text_content = fileName.s
             #--Info Pages
-            currentIndex = self.gNotebook.GetSelection()
+            currentIndex = self.gNotebook.nb_get_selected_index()
             for index,(gPage,state) in enumerate(self.infoPages):
                 self.infoPages[index][1] = False
                 if index == currentIndex: self.RefreshInfoPage(index,installer)
@@ -2708,10 +2695,10 @@ class InstallersDetails(_DetailsMixin, SashPanel):
             sashPos = settings.get(
                 self.keyPrefix + '.checkListSplitterSashPos',
                 self.__class__.defaultSubSashPos)
-            self.checkListSplitter.SetSashPosition(sashPos)
+            self.checkListSplitter.set_sash_pos(sashPos)
             sashPos = settings.get(self.keyPrefix + '.subSplitterSashPos',
                                    self.__class__.defaultSubSashPos)
-            self.subSplitter.SetSashPosition(sashPos)
+            self.subSplitter.set_sash_pos(sashPos)
 
     def RefreshInfoPage(self,index,installer):
         """Refreshes notebook page."""
@@ -3209,7 +3196,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         SashPanel.__init__(self, parent, isVertical=False)
         self.top, self.bottom = self.left, self.right
         bsa_panel = self.GetParent().GetParent().GetParent()
-        _EditableMixinOnFileInfos.__init__(self, self.bottom, bsa_panel)
+        _EditableMixinOnFileInfos.__init__(self, self.bottom._native_widget, bsa_panel)
         #--Data
         self._bsa_info = None
         #--BSA Info

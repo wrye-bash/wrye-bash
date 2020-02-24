@@ -57,7 +57,8 @@ class DocBrowser(WindowFrame):
                                          sizes_dict=bass.settings)
         # Base UI components
         root_window = Splitter(self)
-        mod_list_window, main_window = root_window.make_vertical_panes(250)
+        mod_list_window, main_window = root_window.make_panes(250,
+                                                              vertically=True)
         # Mod Name
         self._mod_name_box = TextField(mod_list_window, editable=False)
         self._mod_list = balt.ListBox(mod_list_window,

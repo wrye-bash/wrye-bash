@@ -255,23 +255,53 @@ class Splitter(_AComponent):
 
     splitterStyle = _wx.SP_LIVE_UPDATE # | wx.SP_3DSASH # ugly but
     # makes borders stand out - we need something to that effect
-
-    def __init__(self, parent, *args, **kwargs):
-        kwargs['style'] = kwargs.pop('style', self.splitterStyle)
-        super(Splitter, self).__init__(_wx.SplitterWindow, parent, *args,
-                                       **kwargs)
+    def __init__(self, parent, allow_split=True, min_pane_size=0,
+                 sash_gravity=0):
+        super(Splitter, self).__init__(_wx.SplitterWindow, parent,
+                                       style = self.splitterStyle)
+        if not allow_split: # Don't allow unsplitting
+            self._native_widget.Bind(_wx.EVT_SPLITTER_DCLICK,
+                                     lambda event: event.Veto())
+        if min_pane_size:
+            self._native_widget.SetMinimumPaneSize(min_pane_size)
+        if sash_gravity:
+            self._native_widget.SetSashGravity(sash_gravity)
         self._panes = None
 
-    def make_vertical_panes(self, sash_position=0):
-        self._panes = [PanelWin(self), PanelWin(self)]
-        self._native_widget.SplitVertically(self._panes[0]._native_widget,
-                                            self._panes[1]._native_widget,
-                                            sash_position)
+    def make_panes(self, sash_position=0, first_pane=None, second_pane=None,
+                   vertically=False):
+        self._panes = [first_pane or PanelWin(self),
+                       second_pane or PanelWin(self)]
+        split = self._native_widget.SplitVertically if vertically else \
+            self._native_widget.SplitHorizontally
+        split(self._panes[0]._native_widget, self._panes[1]._native_widget,
+              sash_position)
         return self._panes[0], self._panes[1]
 
-    def make_horizontal_panes(self, sash_position=0):
-        self._panes = [PanelWin(self), PanelWin(self)]
-        self._native_widget.SplitHorizontally(self._panes[0]._native_widget,
-                                              self._panes[1]._native_widget,
-                                              sash_position)
-        return self._panes[0], self._panes[1]
+    def get_sash_pos(self): return self._native_widget.GetSashPosition()
+
+    def set_sash_pos(self, sash_position):
+        self._native_widget.SetSashPosition(sash_position)
+
+    def set_min_pane_size(self, min_pane_size):
+        self._native_widget.SetMinimumPaneSize(min_pane_size)
+
+    def set_sash_gravity(self, sash_gravity):
+        self._native_widget.SetSashGravity(sash_gravity)
+
+class NotebookCtrl(_AComponent):
+
+    def __init__(self, parent, multiline=False):
+        style = _wx.NB_MULTILINE if multiline else 0
+        super(NotebookCtrl, self).__init__(_wx.Notebook, parent, style=style)
+        self.on_nb_page_change = EventHandler(self._native_widget,
+              _wx.EVT_NOTEBOOK_PAGE_CHANGED,
+              lambda event: [event.GetId(), event.GetSelection()])
+
+    def nb_add_page(self, page_component, page_title):
+        self._native_widget.AddPage(self._resolve(page_component), page_title)
+
+    def nb_get_selected_index(self): return self._native_widget.GetSelection()
+
+    def nb_set_selected_index(self, page_index):
+        self._native_widget.SetSelection(page_index)
