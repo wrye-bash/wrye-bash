@@ -685,9 +685,9 @@ class INITweakLineCtrl(INIListCtrl):
         for i,line in enumerate(self.tweakLines):
             #--Line
             if i >= num:
-                self.InsertStringItem(i, line[0])
+                self.InsertItem(i, line[0])
             else:
-                self.SetStringItem(i, 0, line[0])
+                self.SetItem(i, 0, line[0])
             #--Line color
             status, deleted = line[4], line[6]
             if status == -10: color = colors['tweak.bkgd.invalid']
@@ -737,9 +737,9 @@ class TargetINILineCtrl(INIListCtrl):
                 Link.Frame.oblivionIniMissing = False
             for i,line in enumerate(lines):
                 if i >= num:
-                    self.InsertStringItem(i, line.rstrip())
+                    self.InsertItem(i, line.rstrip())
                 else:
-                    self.SetStringItem(i, 0, line.rstrip())
+                    self.SetItem(i, 0, line.rstrip())
             for i in xrange(len(lines), num):
                 self.DeleteItem(len(lines))
         except IOError:

@@ -41,6 +41,7 @@ from functools import partial, wraps
 from collections import OrderedDict
 #--wx
 import wx
+import wx.adv
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from wx.lib.embeddedimage import PyEmbeddedImage
 import wx.lib.newevent
@@ -127,11 +128,11 @@ class Image(object):
             if self._img_type == wx.BITMAP_TYPE_ICO:
                 self.GetIcon()
                 w, h = self.icon.GetWidth(), self.icon.GetHeight()
-                self.bitmap = wx.EmptyBitmap(w, h)
+                self.bitmap = wx.Bitmap(w, h)
                 self.bitmap.CopyFromIcon(self.icon)
                 # Hack - when user scales windows display icon may need scaling
                 if w != self.iconSize or h != self.iconSize: # rescale !
-                    self.bitmap = wx.BitmapFromImage(
+                    self.bitmap = wx.Bitmap(
                         wx.ImageFromBitmap(self.bitmap).Scale(
                           self.iconSize, self.iconSize, wx.IMAGE_QUALITY_HIGH))
             else:
@@ -147,14 +148,14 @@ class Image(object):
                 if not self.icon.GetWidth() or not self.icon.GetHeight():
                     self.icon = wx.Icon(self.file.s, wx.BITMAP_TYPE_ICO)
             else:
-                self.icon = wx.EmptyIcon()
+                self.icon = wx.Icon()
                 self.icon.CopyFromBitmap(self.GetBitmap())
         return self.icon
 
     @staticmethod
     def GetImage(image_data, height, width):
-        """Hasty wrapper around wx.EmptyImage - absorb to GetBitmap."""
-        image = wx.EmptyImage(width, height)
+        """Hasty wrapper around wx.Image - absorb to GetBitmap."""
+        image = wx.Image(width, height)
         image.SetData(image_data)
         return image
 
@@ -164,7 +165,7 @@ class Image(object):
         quality if a jpeg."""
         bitmap = wx.Image(srcPath.s)
         # This only has an effect on jpegs, so it's ok to do it on every kind
-        bitmap.SetOptionInt(wx.IMAGE_OPTION_QUALITY, quality)
+        bitmap.SetOption(wx.IMAGE_OPTION_QUALITY, quality)
         return bitmap
 
 #------------------------------------------------------------------------------
@@ -183,7 +184,7 @@ class ImageBundle(object):
         if not self.iconBundle:
             self.iconBundle = wx.IconBundle()
             for img_path in self._image_paths:
-                self.iconBundle.AddIconFromFile(
+                self.iconBundle.AddIcon(
                     img_path.s, Image.typesDict[img_path.cext[1:]])
         return self.iconBundle
 
@@ -832,11 +833,11 @@ class TabDragMixin(object):
 
     def __OnDragEndForced(self, event):
         self.__dragging = wx.NOT_FOUND
-        self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+        self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
 
     def __OnDragEnd(self, event):
         if self.__dragging != wx.NOT_FOUND:
-            self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+            self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
             self.__dragging = wx.NOT_FOUND
             try:
                 self.ReleaseMouse()
@@ -851,7 +852,7 @@ class TabDragMixin(object):
         if self.__dragging != wx.NOT_FOUND:
             pos = event.GetPosition()
             if abs(pos[0] - self.__dragX) > 5:
-                self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
+                self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
             tabId = self.HitTest(pos)
             if tabId == wx.NOT_FOUND or tabId[0] in (wx.NOT_FOUND,self.__dragging[0]):
                 self.__justSwapped = wx.NOT_FOUND
@@ -927,7 +928,7 @@ class Picture(wx.Window):
     def OnSize(self,event=None):
         x, y = self.GetSize()
         if x <= 0 or y <= 0: return
-        self.buffer = wx.EmptyBitmap(x,y)
+        self.buffer = wx.Bitmap(x,y)
         dc = wx.MemoryDC()
         dc.SelectObject(self.buffer)
         # Draw
@@ -942,7 +943,7 @@ class Picture(wx.Window):
             pos_y = max(0,y-new_y)/2
             image = self.bitmap.ConvertToImage()
             image.Rescale(new_x, new_y, wx.IMAGE_QUALITY_HIGH)
-            dc.DrawBitmap(wx.BitmapFromImage(image), pos_x, pos_y)
+            dc.DrawBitmap(wx.Bitmap(image), pos_x, pos_y)
         del dc
         self.Refresh()
         self.Update()
@@ -1197,8 +1198,7 @@ class UIList(wx.Panel):
             if insert and colDex == 0:
                 self.__gList.InsertListCtrlItem(itemDex, labelTxt, item)
             else:
-                self.__gList._native_widget.SetStringItem(itemDex, colDex,
-                                                          labelTxt)
+                self.__gList._native_widget.SetItem(itemDex, colDex, labelTxt)
         self.__setUI(item, itemDex)
 
     class _ListItemFormat(object):
@@ -1916,7 +1916,7 @@ class ItemLink(Link):
                                self.__class__.kind)
         _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU, self.__Execute, id=menuItem.GetId())
         _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
-        menu.AppendItem(menuItem)
+        menu.Append(menuItem)
         return menuItem
 
     def iselected_infos(self):
@@ -2408,7 +2408,7 @@ class DnDStatusBar(wx.StatusBar):
             self.buttons.append(gButton)
             # TODO(inf) Test in wx3
             # DnD events (only on windows, CaptureMouse works badly in wxGTK)
-            if wx.Platform == '__WXMSW__':
+            if wx.Platform == u'__WXMSW__':
                 gButton._native_widget.Bind(wx.EVT_LEFT_DOWN, self.OnDragStart)
                 gButton._native_widget.Bind(wx.EVT_LEFT_UP, self.OnDragEnd)
                 gButton._native_widget.Bind(wx.EVT_MOUSE_CAPTURE_LOST,
@@ -2444,7 +2444,7 @@ class DnDStatusBar(wx.StatusBar):
             # window.  If we're not, that means something else forced the
             # loss of mouse capture.
             self.dragging = wx.NOT_FOUND
-            self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+            self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
         event.Skip()
 
     def OnDragEnd(self, event):
@@ -2460,7 +2460,7 @@ class DnDStatusBar(wx.StatusBar):
                 #         traceback=True)
                 pass
             self.dragging = wx.NOT_FOUND
-            self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+            self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
             if self.moved:
                 self.moved = False
                 return
@@ -2469,7 +2469,7 @@ class DnDStatusBar(wx.StatusBar):
     def OnDrag(self, event):
         if self.dragging != wx.NOT_FOUND:
             if abs(event.GetPosition()[0] - self.dragStart) > 4:
-                self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
+                self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
             over = self._getButtonIndex(event)
             if over not in (wx.NOT_FOUND, self.dragging):
                 self.moved = True
@@ -2498,20 +2498,20 @@ class DnDStatusBar(wx.StatusBar):
         if event: event.Skip()
 
 #------------------------------------------------------------------------------
-class WryeBashSplashScreen(wx.SplashScreen):
+class WryeBashSplashScreen(wx.adv.SplashScreen):
     """This Creates the Splash Screen widget. (The first image you see when
     starting the Application.)"""
     def __init__(self, parent=None):
         splashScreenBitmap = wx.Image(name=bass.dirs['images'].join(
             u'wryesplash.png').s).ConvertToBitmap()
-        splashStyle = (wx.SPLASH_CENTRE_ON_SCREEN | #Center image on the screen
-                       wx.SPLASH_NO_TIMEOUT) # image will stay until clicked by
+        # Center image on the screen and image will stay until clicked by
         # user or is explicitly destroyed when the main window is ready
         # alternately wx.SPLASH_TIMEOUT and a duration can be used, but then
         # you have to guess how long it should last
+        splashStyle = wx.adv.SPLASH_CENTER_ON_SCREEN | wx.adv.SPLASH_NO_TIMEOUT
         splashDuration = 3500 # Duration in ms the splash screen will be
         # visible (only used with the TIMEOUT option)
-        wx.SplashScreen.__init__(self, splashScreenBitmap, splashStyle,
+        wx.adv.SplashScreen.__init__(self, splashScreenBitmap, splashStyle,
                                  splashDuration, parent)
         self.Bind(wx.EVT_CLOSE, self.OnExit)
         wx.Yield()

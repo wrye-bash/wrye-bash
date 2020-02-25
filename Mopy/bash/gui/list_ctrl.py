@@ -51,7 +51,7 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
     class DropFileOrList(_wx.DropTarget):
 
         def __init__(self, window, dndFiles, dndList):
-            _wx.PyDropTarget.__init__(self)
+            _wx.DropTarget.__init__(self)
             self.window = window
             self.data_object = _wx.DataObjectComposite()
             self.dataFile = _wx.FileDataObject()                 # Accept files
@@ -66,10 +66,13 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
                 if dtype == _wx.DF_FILENAME:
                     # File(s) were dropped
                     self.window.OnDropFiles(x, y, self.dataFile.GetFilenames())
+                    return _wx.DragResult.DragCopy
                 elif dtype == self.dataList.GetFormat().GetType():
                     # ListCtrl indexes
-                    data = pickle.loads(self.dataList.GetData())
+                    data = pickle.loads(self.dataList.GetData().tobytes())
                     self.window._OnDropList(x, y, data)
+                    return _wx.DragResult.DragCopy
+            return _wx.DragResult.DragNone
 
         def OnDragOver(self, x, y, dragResult):
             self.window.OnDragging(x,y,dragResult)
@@ -237,7 +240,7 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
     def InsertListCtrlItem(self, index, value, item):
         """Insert an item to the list control giving it an internal id."""
         i = self.__id(item)
-        some_long = self._native_widget.InsertStringItem(index, value) # index ?
+        some_long = self._native_widget.InsertItem(index, value) # index ?
         gItem = self._native_widget.GetItem(index) # that's what Tank did
         gItem.SetData(i)  # Associate our id with that row.
         self._native_widget.SetItem(gItem) # this is needed too - yak
@@ -258,7 +261,7 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
 
     def FindIndexOf(self, item):
         """Return index of specified item."""
-        return self._native_widget.FindItemData(-1, self._item_itemId[item])
+        return self._native_widget.FindItem(-1, self._item_itemId[item])
 
     def FindItemAt(self, index):
         """Return item for specified list index."""

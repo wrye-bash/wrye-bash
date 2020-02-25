@@ -127,9 +127,8 @@ class _ALayout(object):
         self._sizer = sizer
         if border > 0:
             self._border_wrapper = _wx.BoxSizer(_wx.VERTICAL)
-            self._border_wrapper.AddSizer(self._sizer, proportion=1,
-                                          flag=_wx.ALL | _wx.EXPAND,
-                                          border=border)
+            self._border_wrapper.Add(self._sizer, proportion=1,
+                                     flag=_wx.ALL | _wx.EXPAND, border=border)
         else:
             self._border_wrapper = None
         self._default_item_loptions = LayoutOptions(item_border, item_expand,
@@ -292,7 +291,7 @@ class GridLayout(_ALayout):
                 self._sizer.RemoveGrowableRow(row) # ...if it's already set
             try:
                 self._sizer.AddGrowableRow(row, proportion=weight)
-            except _wx.PyAssertionError: # the sizer blows up
+            except _wx.wxAssertionError: # the sizer blows up
                 self._sizer.Add((0, 0), (row, 0)) # add space to the first col
                 self._sizer.AddGrowableRow(row, proportion=weight)
         if col is not None:
@@ -300,6 +299,6 @@ class GridLayout(_ALayout):
                 self._sizer.RemoveGrowableCol(col)
             try:
                 self._sizer.AddGrowableCol(col, proportion=weight)
-            except _wx.PyAssertionError:
+            except _wx.wxAssertionError:
                 self._sizer.Add((0, 0), (0, col))
                 self._sizer.AddGrowableCol(col, proportion=weight)

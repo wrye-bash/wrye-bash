@@ -196,7 +196,7 @@ class _AComponent(object):
         tooltip is set, returns an empty string.
 
         :return: This component's tooltip."""
-        return self._native_widget.GetToolTipString() or u''
+        return self._native_widget.GetToolTipText() or u''
 
     @tooltip.setter
     def tooltip(self, new_tooltip): # type: (unicode) -> None

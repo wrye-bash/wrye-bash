@@ -26,8 +26,7 @@ and the wx.wiz stuff."""
 __author__ = u'Utumno, Infernio'
 
 import wx as _wx
-import wx.wizard as _wiz     # wxPython wizard class
-
+import wx.adv as _wiz     # wxPython wizard class
 defPos = _wx.DefaultPosition
 defSize = _wx.DefaultSize
 

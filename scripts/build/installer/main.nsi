@@ -167,10 +167,8 @@ Unicode true
     Var unFunction_Browse
     Var Python_Path
     Var Python_pywin32
-    Var Python_wx
     Var PythonVersionInstall
     Var ExeVersionInstall
-    Var MinVersion_wx
     Var MinVersion_pywin32
 
 
@@ -210,9 +208,7 @@ Unicode true
 
         !insertmacro InitializeRegistryPaths
 
-        StrCpy $MinVersion_wx '3.0.2.0'
         StrCpy $MinVersion_pywin32 '220'
-        StrCpy $Python_wx "1"
         StrCpy $Python_pywin32 "1"
 
         ${If} $Path_OB == $Empty

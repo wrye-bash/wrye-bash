@@ -29,7 +29,7 @@ from __future__ import division
 import os
 import traceback
 import wx
-import wx.wizard as wiz     # wxPython wizard class
+import wx.adv as wiz     # wxPython wizard class
 from collections import OrderedDict
 
 from . import ScriptParser         # generic parser class
@@ -86,7 +86,8 @@ class InstallerWizard(WizardDialog):
             size_key=u'bash.wizard.size', pos_key=u'bash.wizard.pos')
         #'dummy' page tricks the wizard into always showing the "Next" button,
         #'next' will be set by the parser
-        self.dummy = wiz.PyWizardPage(self._native_widget) # todo de-wx!
+        class _PageDummy(wiz.WizardPage): pass
+        self.dummy = _PageDummy(self._native_widget) # todo de-wx!
         self.next = None # todo rename
         #True prevents actually moving to the 'next' page.  We use this after the "Next"
         #button is pressed, while the parser is running to return the _actual_ next page
@@ -141,13 +142,13 @@ class InstallerWizard(WizardDialog):
             bass.rmTempDir()
         return self.ret
 
-class PageInstaller(wiz.PyWizardPage):
+class PageInstaller(wiz.WizardPage):
     """Base class for all the parser wizard pages, just to handle a couple
     simple things here."""
 
     def __init__(self, parent):
         self._wiz_parent = parent
-        wiz.PyWizardPage.__init__(self, parent._native_widget)
+        super(PageInstaller, self).__init__(parent._native_widget)
         self._enableForward(True)
 
     def _enableForward(self, do_enable):
@@ -251,10 +252,10 @@ class PageSelect(PageInstaller):
         if img.isfile():
             image = wx.Bitmap(img.s)
             self.bmpItem.SetBitmap(image)
-            self.bmpItem.SetCursor(wx.StockCursor(wx.CURSOR_MAGNIFIER))
+            self.bmpItem.SetCursor(wx.Cursor(wx.CURSOR_MAGNIFIER))
         else:
             self.bmpItem.SetBitmap(None)
-            self.bmpItem.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+            self.bmpItem.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
         self.bmpItem.Thaw()
         # self.Layout() # the bitmap would change size and sho blurred
 

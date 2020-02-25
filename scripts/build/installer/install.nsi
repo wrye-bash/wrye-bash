@@ -26,12 +26,6 @@
 
             ;Detect Python Components:
             ${If} $Python_Path != $Empty
-                ; Detect wxPython.
-                ReadRegStr $Python_wx HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\wxPython3.0-py27_is1" "DisplayVersion"
-                ${If} $Python_wx == $Empty
-                    ReadRegStr $Python_wx HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\wxPython3.0-py27_is1" "DisplayVersion"
-                ${EndIf}
-
                 ; Detect PyWin32.
                 ReadRegStr $1         HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.7" "DisplayName"
                 ${If} $1 == $Empty
@@ -42,9 +36,12 @@
 
                 ; Compare versions.
                 ${VersionCompare} $MinVersion_pywin32 $Python_pywin32 $Python_pywin32
-                ${VersionConvert} $Python_wx "+" $Python_wx
-                ${VersionCompare} $MinVersion_wx $Python_wx $Python_wx
             ${EndIf}
+
+            ; TODO(inf) The dependencies in here are woefully out of date, plus
+            ; might be impossible to do now - would need to harcode direct
+            ; downloads from PyPI... maybe just drop the installer's ability to
+            ; install python versions altogether? Doubt anyone uses it...
 
             ; Download and install missing requirements.
             ${If} $Python_Path == $Empty
@@ -66,27 +63,6 @@
                 ${EndIf}
             ${Else}
                 DetailPrint "Python 2.7 is already installed; skipping!"
-            ${EndIf}
-
-            ${If} $Python_wx == "1"
-                SetOutPath "$TEMP\PythonInstallers"
-                DetailPrint "wxPython 3.0.2.0 - Downloading..."
-                NSISdl::download http://downloads.sourceforge.net/wxpython/wxPython3.0-win32-3.0.2.0-py27.exe "$TEMP\PythonInstallers\wxPython.exe"
-                Pop $R0
-                ${If} $R0 == "success"
-                    DetailPrint "wxPython 3.0.2.0 - Installing..."
-                    Sleep 2000
-                    HideWindow
-                    ExecWait '"$TEMP\PythonInstallers\wxPython.exe"'; /VERYSILENT'
-                    BringToFront
-                    DetailPrint "wxPython 3.0.2.0 - Installed."
-                ${Else}
-                    DetailPrint "wxPython 3.0.2.0 - Download Failed!"
-                    MessageBox MB_OK "wxPython download failed, please try running installer again or manually downloading."
-                    Abort
-                ${EndIf}
-            ${Else}
-                DetailPrint "wxPython 3.0.2.0 is already installed; skipping!"
             ${EndIf}
 
             ${If} $Python_pywin32 == "1"
