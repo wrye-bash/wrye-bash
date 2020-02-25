@@ -83,7 +83,7 @@ class InstallerWizard(WizardDialog):
     def __init__(self, parent, installer, bAuto, subs):
         super(InstallerWizard, self).__init__(parent,
             title=_(u'Installer Wizard'), sizes_dict=bass.settings,
-            sizesKey=u'bash.wizard.size', posKey=u'bash.wizard.pos')
+            size_key=u'bash.wizard.size', pos_key=u'bash.wizard.pos')
         #'dummy' page tricks the wizard into always showing the "Next" button,
         #'next' will be set by the parser
         self.dummy = wiz.PyWizardPage(self._native_widget) # todo de-wx!

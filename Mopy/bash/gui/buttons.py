@@ -30,7 +30,6 @@ __author__ = u'nycz, Infernio'
 import wx as _wx
 
 from .base_components import _AComponent
-from .events import EventHandler
 
 class _AButton(_AComponent):
     """Abstract base class for all buttons."""
@@ -80,9 +79,8 @@ class Button(_AButton):
         if btn_tooltip:
             self.tooltip = btn_tooltip
         # Events
-        self.on_clicked = EventHandler(self._native_widget, _wx.EVT_BUTTON)
-        self.on_right_clicked = EventHandler(self._native_widget,
-                                             _wx.EVT_CONTEXT_MENU)
+        self.on_clicked = self._evt_handler(_wx.EVT_BUTTON)
+        self.on_right_clicked = self._evt_handler(_wx.EVT_CONTEXT_MENU)
 
 class OkButton(Button):
     """A button with the label 'OK'. Applies pending changes and closes the

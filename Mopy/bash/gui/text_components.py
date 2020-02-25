@@ -31,7 +31,6 @@ __author__ = u'nycz, Infernio'
 import wx as _wx
 
 from .base_components import _AComponent
-from .events import EventHandler
 
 # Text Input ------------------------------------------------------------------
 class _ATextInput(_AComponent):
@@ -78,12 +77,10 @@ class _ATextInput(_AComponent):
             self._native_widget.SetMaxLength(max_length)
         # Events
         # Internal use only - used to implement auto_tooltip below
-        self._on_size_changed = EventHandler(self._native_widget, _wx.EVT_SIZE)
-        self.on_focus_lost = EventHandler(self._native_widget,
-                                          _wx.EVT_KILL_FOCUS)
-        self.on_right_clicked = EventHandler(self._native_widget,
-                                             _wx.EVT_CONTEXT_MENU)
-        self.on_text_changed = EventHandler(self._native_widget, _wx.EVT_TEXT,
+        self._on_size_changed = self._evt_handler(_wx.EVT_SIZE)
+        self.on_focus_lost = self._evt_handler(_wx.EVT_KILL_FOCUS)
+        self.on_right_clicked = self._evt_handler(_wx.EVT_CONTEXT_MENU)
+        self.on_text_changed = self._evt_handler(_wx.EVT_TEXT,
                                             lambda event: [event.GetString()])
         # Need to delay this until now since it uses the events from above
         if auto_tooltip:

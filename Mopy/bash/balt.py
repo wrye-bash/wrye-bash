@@ -47,7 +47,7 @@ import wx.lib.newevent
 from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
     BackwardButton, ForwardButton, ReloadButton, web_viewer_available, \
-    WebViewer, EventHandler, DialogWindow, WindowFrame, EventResult
+    WebViewer, DialogWindow, WindowFrame, EventResult
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -359,18 +359,14 @@ class ListBox(_AComponent):
         if choices: kwargs_[u'choices'] = choices
         super(ListBox, self).__init__(self._wx_class, parent, **kwargs_)
         if onSelect:
-            self.on_list_box = EventHandler(
-                self._native_widget, wx.EVT_LISTBOX,
+            self.on_list_box = self._evt_handler(wx.EVT_LISTBOX,
                 lambda event: [event.GetSelection(), event.GetString()])
             self.on_list_box.subscribe(onSelect)
-        self.on_mouse_right_up = EventHandler(
-            self._native_widget, wx.EVT_RIGHT_UP,
+        self.on_mouse_right_up = self._evt_handler(wx.EVT_RIGHT_UP,
             lambda event: [self._native_widget.HitTest(event.GetPosition())])
-        self.on_mouse_right_down = EventHandler(
-            self._native_widget, wx.EVT_RIGHT_DOWN,
+        self.on_mouse_right_down = self._evt_handler(wx.EVT_RIGHT_DOWN,
             lambda event: [event.GetPosition()])
-        self.on_mouse_motion = EventHandler(
-            self._native_widget, wx.EVT_MOTION, lambda event: [
+        self.on_mouse_motion = self._evt_handler(wx.EVT_MOTION, lambda event: [
                 event.GetPosition(), event.Dragging(), event.Moving(),
                 event.Moving() and self._native_widget.HitTest(
                     event.GetPosition())])
@@ -453,22 +449,18 @@ class CheckListBox(ListBox):
         super(CheckListBox, self).__init__(parent, choices, isSingle, isSort,
                  isHScroll, isExtended, onSelect)
         if onCheck:
-            self.on_check_list_box = EventHandler(self._native_widget,
+            self.on_check_list_box = self._evt_handler(
                 wx.EVT_CHECKLISTBOX, lambda event: [event.GetSelection()])
             self.on_check_list_box.subscribe(onCheck)
-        self.on_mouse_left_dclick = EventHandler(
-            self._native_widget, wx.EVT_LEFT_DCLICK,
+        self.on_mouse_left_dclick = self._evt_handler(wx.EVT_LEFT_DCLICK,
             lambda event: [self._native_widget.HitTest(event.GetPosition())])
-        self.on_mouse_leaving = EventHandler(
-            self._native_widget, wx.EVT_LEAVE_WINDOW)
-        self.on_key_pressed = EventHandler(
-            self._native_widget, wx.EVT_CHAR, lambda event: [
+        self.on_mouse_leaving = self._evt_handler(wx.EVT_LEAVE_WINDOW)
+        self.on_key_pressed = self._evt_handler(wx.EVT_CHAR, lambda event: [
                 event.GetKeyCode(), event.CmdDown(), event.ShiftDown()])
-        self.on_key_up = EventHandler(
-            self._native_widget, wx.EVT_KEY_UP, lambda event: [
+        self.on_key_up = self._evt_handler(wx.EVT_KEY_UP, lambda event: [
                 event.GetKeyCode(), event.CmdDown(), event.ShiftDown(), self])
-        self.on_context = EventHandler(
-            self._native_widget, wx.EVT_CONTEXT_MENU, lambda event: [self])
+        self.on_context = self._evt_handler(wx.EVT_CONTEXT_MENU,
+                                            lambda event: [self])
 
     def lb_check_at_index(self, lb_selection_dex, do_check):
         self._native_widget.Check(lb_selection_dex, do_check)
@@ -825,8 +817,8 @@ class _Log(object):
         #--DialogWindow or WindowFrame
         if self.asDialog:
             window = DialogWindow(parent, title, sizes_dict=_settings,
-                                  icon_bundle=log_icons, sizesKey=key__size_,
-                                  posKey=key__pos_)
+                                  icon_bundle=log_icons, size_key=key__size_,
+                                  pos_key=key__pos_)
         else:
             style_ = wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU |  \
                      wx.CLOSE_BOX | wx.CLIP_CHILDREN
@@ -976,7 +968,7 @@ class ListEditor(DialogWindow):
         #--GUI
         super(ListEditor, self).__init__(parent, title, sizes_dict=sizes)
         # overrides DialogWindow.sizesKey
-        self.sizesKey = self._listEditorData.__class__.__name__
+        self._size_key = self._listEditorData.__class__.__name__
         #--List Box
         self.listBox = ListBox(self, choices=self._list_items)
         self.listBox.set_min_size(125, 150)
@@ -1016,9 +1008,9 @@ class ListEditor(DialogWindow):
                 buttons
              ]), LayoutOptions(weight=1, expand=True))])
         #--Done
-        if self.sizesKey in sizes:
+        if self._size_key in sizes:
             layout.apply_to(self)
-            self.component_position = sizes[self.sizesKey]
+            self.component_position = sizes[self._size_key]
         else:
             layout.apply_to(self, fit=True)
 
@@ -1083,12 +1075,12 @@ class ListEditor(DialogWindow):
     def DoSave(self):
         """Handle save button."""
         self._listEditorData.save()
-        sizes[self.sizesKey] = self.component_size
+        sizes[self._size_key] = self.component_size
         self.accept_modal()
 
     def DoCancel(self):
         """Handle cancel button."""
-        sizes[self.sizesKey] = self.component_size
+        sizes[self._size_key] = self.component_size
         self.cancel_modal()
 
 #------------------------------------------------------------------------------

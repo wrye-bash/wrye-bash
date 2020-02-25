@@ -27,6 +27,8 @@ utilize fully interactive webpages inside a GUI. The main reason this was split
 into its own file instead of remaining inside __init__ is the wx.html2 import,
 which is quite ugly and should ideally remain as contained as possible."""
 
+__author__ = u'Infernio'
+
 # Try to import html2 webview, may not be available everywhere
 try:
     import wx.html2 as _wx_html2
@@ -39,9 +41,6 @@ import webbrowser
 
 from .base_components import _AComponent
 from .buttons import BackwardButton, ForwardButton, ReloadButton
-from .events import EventHandler
-
-__author__ = u'Infernio'
 
 def web_viewer_available():
     """Checks if WebViewer and its wx backing are available, meaning that we
@@ -75,12 +74,10 @@ class WebViewer(_AComponent):
         self._reload_button = ReloadButton(buttons_parent)
         self._reload_button.on_clicked.subscribe(self.reload)
         # Events - internal use only for now, expose if needed
-        self._on_new_window = EventHandler(self._native_widget,
-                                           _wx_html2.EVT_WEBVIEW_NEWWINDOW,
-                                           lambda event: [event.GetURL()])
+        self._on_new_window = self._evt_handler(
+            _wx_html2.EVT_WEBVIEW_NEWWINDOW, lambda event: [event.GetURL()])
         self._on_new_window.subscribe(self._handle_new_window_opened)
-        self._on_page_loaded = EventHandler(self._native_widget,
-                                            _wx_html2.EVT_WEBVIEW_LOADED)
+        self._on_page_loaded = self._evt_handler(_wx_html2.EVT_WEBVIEW_LOADED)
         self._on_page_loaded.subscribe(self._handle_page_loaded)
 
     def _handle_page_loaded(self):

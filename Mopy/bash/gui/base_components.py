@@ -29,6 +29,7 @@ __author__ = u'nycz, Infernio'
 
 import textwrap
 import wx as _wx
+from .events import EventHandler, _null_processor
 
 # Utilities -------------------------------------------------------------------
 def wrapped_tooltip(tooltip_text, wrap_width=50):
@@ -82,6 +83,10 @@ class _AComponent(object):
         methods of _AComponent's subclasses."""
         self._native_widget = wx_window_type(self._resolve(parent), *args,
                                              **kwargs)
+
+    def _evt_handler(self, evt, arg_proc=_null_processor):
+        """Register an EventHandler on _native_widget"""
+        return EventHandler(self._native_widget, evt, arg_proc)
 
     @staticmethod
     def _resolve(obj):

@@ -30,7 +30,6 @@ __author__ = u'nycz, Infernio'
 import wx as _wx
 
 from .base_components import _AComponent
-from .events import EventHandler
 
 class CheckBox(_AComponent):
     """Represents a simple two-state checkbox.
@@ -54,8 +53,8 @@ class CheckBox(_AComponent):
             self.tooltip = chkbx_tooltip
         self.is_checked = checked
         # Events
-        self.on_checked = EventHandler(self._native_widget, _wx.EVT_CHECKBOX,
-                                       lambda event: [event.IsChecked()])
+        self.on_checked = self._evt_handler(_wx.EVT_CHECKBOX,
+                                            lambda event: [event.IsChecked()])
 
     @property
     def is_checked(self): # type: () -> bool
@@ -93,11 +92,11 @@ class DropDown(_AComponent):
                                        value=value, choices=choices,
                                        style=_wx.CB_READONLY)
         # Events
-        self.on_combo_select = EventHandler(self._native_widget,
-            _wx.EVT_COMBOBOX, lambda event: [event.GetString()])
+        self.on_combo_select = self._evt_handler(_wx.EVT_COMBOBOX,
+            lambda event: [event.GetString()])
         # Internal use only - used to set the tooltip
-        self._on_size_changed = EventHandler(self._native_widget, _wx.EVT_SIZE)
-        self._on_text_changed = EventHandler(self._native_widget, _wx.EVT_TEXT)
+        self._on_size_changed = self._evt_handler(_wx.EVT_SIZE)
+        self._on_text_changed = self._evt_handler(_wx.EVT_TEXT)
         self._on_size_changed.subscribe(self._set_tooltip)
         self._on_text_changed.subscribe(self._set_tooltip)
 
@@ -134,8 +133,8 @@ class ColorPicker(_AComponent):
         super(ColorPicker, self).__init__(_wx.ColourPickerCtrl, parent)
         if color is not None:
             self.set_color(color)
-        self.on_color_picker_evt = EventHandler(self._native_widget,
-                                                _wx.EVT_COLOURPICKER_CHANGED)
+        self.on_color_picker_evt = self._evt_handler(
+            _wx.EVT_COLOURPICKER_CHANGED)
 
     def get_color(self):
         return self._native_widget.GetColour()
@@ -152,8 +151,7 @@ class Spinner(_AComponent):
                                       style=_wx.SP_ARROW_KEYS, min=min_val,
                                       max=max_val, initial=initial, name=name)
         if onSpin:
-            self._on_spin_evt = EventHandler(self._native_widget,
-                                             _wx.EVT_SPINCTRL)
+            self._on_spin_evt = self._evt_handler(_wx.EVT_SPINCTRL)
             self._on_spin_evt.subscribe(onSpin)
         if spin_tip: self.tooltip = spin_tip
 
