@@ -303,14 +303,14 @@ def _main(opts, wx_locale):
     if opts.debug:
         if is_standalone:
             # Special case for py2exe version
-            app = basher.BashApp()
-            # Regain control of stdout/stderr from wxPython
+            app = basher.BashApp(False)
+            # Regain control of stdout/stderr from wxPython - TODO(inf) needed?
             sys.stdout = _bugdump_handle
             sys.stderr = _bugdump_handle
         else:
             app = basher.BashApp(False)
     else:
-        app = basher.BashApp()
+        app = basher.BashApp(True)
     # Need to reference the locale object somewhere, so let's do it on the App
     app.locale = wx_locale
     if not is_standalone and (
