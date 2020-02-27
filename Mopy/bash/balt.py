@@ -2461,18 +2461,25 @@ class MenuLink(Link):
         super(MenuLink, self).AppendToMenu(menu, window, selection)
         _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU_OPEN, MenuLink.OnMenuOpen)
         subMenu = wx.Menu()
-        testMenuItem = menu.AppendSubMenu(subMenu, self._text)
+        appended_menu = menu.AppendSubMenu(subMenu, self._text)
         if not self._enable():
-            testMenuItem.Enable(False)
-        else: # do not append sub links unless submenu enabled
-            for link in self.links: link.AppendToMenu(subMenu, window,
-                                                      selection)
+            appended_menu.Enable(False)
+        else: # If we know we're not enabled, we can skip adding child links
+            for link in self.links:
+                link.AppendToMenu(subMenu, window, selection)
+            appended_menu.Enable(self._should_enable())
         return subMenu
 
     @staticmethod
     def OnMenuOpen(event):
         """Hover over a submenu, clear the status bar text"""
         Link.Frame.set_status_info(u'')
+
+    def _should_enable(self):
+        """Disable ourselves if none of our children are enabled."""
+        ##: This hasattr call is reall ugly, needed to support nested menus
+        return any(not hasattr(
+            l, u'_enable') or l._enable() for l in self.links)
 
 class ChoiceLink(Link):
     """List of Choices with optional menu items to edit etc those choices."""
@@ -2501,6 +2508,13 @@ class ChoiceLink(Link):
             link.AppendToMenu(menu, window, selection)
             i += 1
         # returns None
+
+class ChoiceMenuLink(ChoiceLink, MenuLink):
+    """Combination of ChoiceLink and MenuLink. Turns off the 'disable if no
+    children are enabled' behavior of MenuLink since ChoiceLinks do not have
+    a static number of children."""
+    def _should_enable(self):
+        return True
 
 class TransLink(Link):
     """Transcendental link, can't quite make up its mind."""
