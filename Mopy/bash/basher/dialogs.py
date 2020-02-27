@@ -30,7 +30,8 @@ from ..balt import Link, colors, Image, bell, Resources
 from ..bosh import faces
 from ..gui import ApplyButton, BOTTOM, Button, CancelButton, CENTER, \
     CheckBox, GridLayout, HLayout, Label, LayoutOptions, OkButton, RIGHT, \
-    Stretch, TextArea, TextField, VLayout, DropDown, DialogWindow, ColorPicker
+    Stretch, TextArea, TextField, VLayout, DropDown, DialogWindow, \
+    ColorPicker, ListBox
 
 class ColorDialog(DialogWindow):
     """Color configuration dialog"""
@@ -272,8 +273,8 @@ class ImportFaceDialog(DialogWindow):
                                                sizes_dict=balt.sizes)
         self.set_min_size(550, 300)
         #--List Box
-        self.listBox = balt.ListBox(self, choices=self.list_items,
-                                    onSelect=self.EvtListBox)
+        self.listBox = ListBox(self, choices=self.list_items,
+                               onSelect=self.EvtListBox)
         self.listBox.set_min_size(175, 150)
         #--Name,Race,Gender Checkboxes
         fi_flgs = bosh.faces.PCFaces.pcf_flags(

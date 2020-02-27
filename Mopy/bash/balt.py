@@ -47,7 +47,8 @@ import wx.lib.newevent
 from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
     BackwardButton, ForwardButton, ReloadButton, web_viewer_available, \
-    WebViewer, DialogWindow, WindowFrame, EventResult
+    WebViewer, DialogWindow, WindowFrame, EventResult, ListBox, Font, \
+    CheckListBox
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -75,16 +76,6 @@ notFound = wx.NOT_FOUND
 
 # wx Types
 wxPoint = wx.Point
-
-class Font(wx.Font):
-
-    @staticmethod
-    def Style(font_, bold=False, slant=False, underline=False):
-        if bold: font_.SetWeight(wx.FONTWEIGHT_BOLD)
-        if slant: font_.SetStyle(wx.FONTSTYLE_SLANT)
-        else: font_.SetStyle(wx.FONTSTYLE_NORMAL)
-        font_.SetUnderlined(underline)
-        return font_
 
 # Settings --------------------------------------------------------------------
 __unset = bolt.Settings(dictFile=None) # type information
@@ -324,170 +315,6 @@ def ok_and_cancel_group(parent, on_ok=None):
     ok_button = OkButton(parent)
     ok_button.on_clicked.subscribe(on_ok)
     return HLayout(spacing=4, items=[ok_button, CancelButton(parent)])
-
-class ListBox(_AComponent):
-    """Wrap a ListBox control.
-
-    Events:
-      - on_list_box(index: int, item_text: unicode): Posted when user selects an
-      item from list. The default arg processor extracts the index of the event
-      and the list item label
-      - Mouse events. Default arg processor extracts the position of the event
-        - on_mouse_right_up(position: tuple[int]): right mouse button released.
-        - on_mouse_right_down(position: tuple[int]): right mouse button click.
-      - on_mouse_motion(WIP!): mouse moved
-     """
-    # PY3: typing!
-    # type _native_widget: wx.ListBox
-    _wx_class = wx.ListBox
-
-    def __init__(self, parent, choices=None, isSingle=True, isSort=False,
-                 isHScroll=False, isExtended=False, onSelect=None):
-        style = 0
-        if isSingle: style |= wx.LB_SINGLE
-        if isSort: style |= wx.LB_SORT
-        if isHScroll: style |= wx.LB_HSCROLL
-        if isExtended: style |= wx.LB_EXTENDED
-        kwargs_ = {u'style': style}
-        if choices: kwargs_[u'choices'] = choices
-        super(ListBox, self).__init__(self._wx_class, parent, **kwargs_)
-        if onSelect:
-            self.on_list_box = self._evt_handler(wx.EVT_LISTBOX,
-                lambda event: [event.GetSelection(), event.GetString()])
-            self.on_list_box.subscribe(onSelect)
-        self.on_mouse_right_up = self._evt_handler(wx.EVT_RIGHT_UP,
-            lambda event: [self._native_widget.HitTest(event.GetPosition())])
-        self.on_mouse_right_down = self._evt_handler(wx.EVT_RIGHT_DOWN,
-            lambda event: [event.GetPosition()])
-        self.on_mouse_motion = self._evt_handler(wx.EVT_MOTION, lambda event: [
-                event.GetPosition(), event.Dragging(), event.Moving(),
-                event.Moving() and self._native_widget.HitTest(
-                    event.GetPosition())])
-
-    def lb_select_index(self, lb_selection_dex):
-        self._native_widget.SetSelection(lb_selection_dex)
-
-    def lb_insert(self, str_item, lb_selection_dex):
-        self._native_widget.Insert(str_item, lb_selection_dex)
-
-    def lb_insert_items(self, items, pos):
-        self._native_widget.InsertItems(items, pos)
-
-    def lb_set_items(self, items):
-        """Replace all the items in the control"""
-        self._native_widget.Set(items)
-
-    def lb_set_label_at_index(self, lb_selection_dex, str_item):
-        """Set the label for the given item"""
-        self._native_widget.SetString(lb_selection_dex, str_item)
-
-    def lb_delete_at_index(self, lb_selection_dex):
-        """Delete the item at specified index."""
-        self._native_widget.Delete(lb_selection_dex)
-
-    def lb_scroll_lines(self, scroll): self._native_widget.ScrollLines(scroll)
-
-    def lb_append(self, str_item): self._native_widget.Append(str_item)
-
-    def lb_clear(self): self._native_widget.Clear()
-
-    def lb_bold_font_at_index(self, lb_selection_dex):
-        get_font = self._native_widget.GetFont()
-        self._native_widget.SetItemFont(lb_selection_dex,
-                                        Font.Style(get_font, bold=True))
-
-    # Getters - we should encapsulate index access
-    def lb_get_next_item(self, item, geometry=wx.LIST_NEXT_ALL,
-                         state=wx.LIST_STATE_SELECTED):
-        return self._native_widget.GetNextItem(item, geometry, state)
-
-    def lb_get_str_item_at_index(self, lb_selection_dex):
-        return self._native_widget.GetString(lb_selection_dex)
-
-    def lb_get_str_items(self):
-        return self._native_widget.GetStrings()
-
-    def lb_get_selections(self): return self._native_widget.GetSelections()
-
-
-    def lb_index_for_str_item(self, str_item):
-        return self._native_widget.FindString(str_item)
-
-    def lb_get_vertical_scroll_pos(self):
-        return self._native_widget.GetScrollPos(wx.VERTICAL)
-
-    def lb_get_items_count(self):
-        return self._native_widget.GetCount()
-
-class CheckListBox(ListBox):
-    """Wrap a CheckListBox control.
-
-    Events:
-      - on_check_list_box(index: int): Posted when user checks an item from
-      list. The default arg processor extracts the index of the event.
-      - on_context(evt_object: wx.Event): Posted when user checks an item
-      from list. The default arg processor extracts the index of the event.
-      - Mouse events. Default arg processor extracts the position of the event
-        - on_mouse_left_dclick(position: tuple[int]): left mouse doubleclick.
-      - on_mouse_leaving(): mouse is leaving the window
-      - on_key_pressed(WIP!): key pressed
-      - on_key_up(WIP!): key released"""
-    # PY3: typing!
-    # type _native_widget: wx.CheckListBox
-    _wx_class = wx.CheckListBox
-
-    def __init__(self, parent, choices=None, isSingle=False, isSort=False,
-                 isHScroll=False, isExtended=False, onSelect=None,
-                 onCheck=None): # note isSingle=False by default
-        super(CheckListBox, self).__init__(parent, choices, isSingle, isSort,
-                 isHScroll, isExtended, onSelect)
-        if onCheck:
-            self.on_check_list_box = self._evt_handler(
-                wx.EVT_CHECKLISTBOX, lambda event: [event.GetSelection()])
-            self.on_check_list_box.subscribe(onCheck)
-        self.on_mouse_left_dclick = self._evt_handler(wx.EVT_LEFT_DCLICK,
-            lambda event: [self._native_widget.HitTest(event.GetPosition())])
-        self.on_mouse_leaving = self._evt_handler(wx.EVT_LEAVE_WINDOW)
-        self.on_key_pressed = self._evt_handler(wx.EVT_CHAR, lambda event: [
-                event.GetKeyCode(), event.CmdDown(), event.ShiftDown()])
-        self.on_key_up = self._evt_handler(wx.EVT_KEY_UP, lambda event: [
-                event.GetKeyCode(), event.CmdDown(), event.ShiftDown(), self])
-        self.on_context = self._evt_handler(wx.EVT_CONTEXT_MENU,
-                                            lambda event: [self])
-
-    def lb_check_at_index(self, lb_selection_dex, do_check):
-        self._native_widget.Check(lb_selection_dex, do_check)
-
-    def toggle_checked_at_index(self, lb_selection_dex):
-        do_check = not self._native_widget.IsChecked(lb_selection_dex)
-        self._native_widget.Check(lb_selection_dex, do_check)
-
-    def lb_check_indexes(self, indexes):
-        self._native_widget.SetChecked(indexes)
-
-    def lb_is_checked_at_index(self, lb_selection_dex):
-        return self._native_widget.IsChecked(lb_selection_dex)
-
-    def setCheckListItems(self, names, values):
-        """Convenience method for setting a bunch of wxCheckListBox items. The
-        main advantage of this is that it doesn't clear the list unless it
-        needs to. Which is good if you want to preserve the scroll position
-        of the list. """
-        if not names:
-            self.lb_clear()
-        else:
-            for index, (name, value) in enumerate(zip(names, values)):
-                if index >= self.lb_get_items_count():
-                    self.lb_append(name)
-                else:
-                    if index == -1:
-                        deprint(u"index = -1, name = %s, value = %s" % (
-                            name, value))
-                        continue
-                    self.lb_set_label_at_index(index, name)
-                self.lb_check_at_index(index, value)
-            for index in range(self.lb_get_items_count(), len(names), -1):
-                self.lb_delete_at_index(index - 1)
 
 def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
     """Tailored to current usages - IAW: do not use."""

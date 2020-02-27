@@ -30,7 +30,8 @@ from .. import bass, bosh, bush, balt, load_order, bolt, exception
 from ..balt import text_wrap, Links, SeparatorLink, CheckLink
 from ..bolt import GPath
 from ..gui import Button, CheckBox, HBoxedLayout, Label, LayoutOptions, \
-    Spacer, TextArea, TOP, VLayout, EventResult, PanelWin
+    Spacer, TextArea, TOP, VLayout, EventResult, PanelWin, ListBox, \
+    CheckListBox
 from ..patcher import patch_files
 
 reCsvExt = re.compile(u'' r'\.csv$', re.I | re.U)
@@ -226,10 +227,9 @@ class _ListPatcherPanel(_PatcherPanel):
         self.forceItemCheck = self.__class__.forceItemCheck
         self.selectCommands = self.__class__.selectCommands
         if self.forceItemCheck:
-            self.gList = balt.ListBox(gConfigPanel, isSingle=False)
+            self.gList = ListBox(gConfigPanel, isSingle=False)
         else:
-            self.gList = balt.CheckListBox(gConfigPanel,
-                                           onCheck=self.OnListCheck)
+            self.gList = CheckListBox(gConfigPanel, onCheck=self.OnListCheck)
         #--Manual controls
         if self.forceAuto:
             side_button_layout = None
@@ -460,7 +460,7 @@ class _ListPatcherPanel(_PatcherPanel):
 class _ChoiceMenuMixin(object):
 
     def _bind_mouse_events(self, right_click_list):
-        # type: (balt.CheckListBox | balt.ListBox) -> None
+        # type: (CheckListBox | ListBox) -> None
         right_click_list.on_mouse_motion.subscribe(self.OnMouse)
         right_click_list.on_mouse_right_down.subscribe(self._right_mouse_click)
         right_click_list.on_mouse_right_up.subscribe(self._right_mouse_up)
@@ -496,8 +496,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         if self.gConfigPanel: return self.gConfigPanel
         gConfigPanel = super(_TweakPatcherPanel, self).GetConfigPanel(
             parent, config_layout, gTipText)
-        self.gTweakList = balt.CheckListBox(self.gConfigPanel,
-                                            onCheck=self.TweakOnListCheck)
+        self.gTweakList = CheckListBox(self.gConfigPanel,
+                                       onCheck=self.TweakOnListCheck)
         #--Events
         self._bind_mouse_events(self.gTweakList)
         self.gTweakList.on_mouse_leaving.subscribe(self._mouse_leaving)

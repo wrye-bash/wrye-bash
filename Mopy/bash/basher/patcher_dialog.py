@@ -37,7 +37,7 @@ from ..exception import BoltError, CancelError, FileEditError, \
     PluginsFullError, SkipError
 from ..gui import CancelButton, DeselectAllButton, HLayout, Label, \
     LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
-    SaveAsButton, SelectAllButton, Stretch, VLayout, DialogWindow
+    SaveAsButton, SelectAllButton, Stretch, VLayout, DialogWindow, CheckListBox
 from ..patcher import configIsCBash, exportConfig
 from ..patcher.base import AListPatcher
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
@@ -102,10 +102,9 @@ class PatchDialog(DialogWindow):
         self.gDeselectAll = DeselectAllButton(self)
         self.gDeselectAll.on_clicked.subscribe(self.DeselectAll)
         cancelButton = CancelButton(self)
-        self.gPatchers = balt.CheckListBox(self, choices=patcherNames,
-                                           isSingle=True,
-                                           onSelect=self.OnSelect,
-                                           onCheck=self.OnCheck)
+        self.gPatchers = CheckListBox(self, choices=patcherNames,
+                                      isSingle=True, onSelect=self.OnSelect,
+                                      onCheck=self.OnCheck)
         self.gExportConfig = SaveAsButton(self, label=_(u'Export'))
         self.gExportConfig.on_clicked.subscribe(self.ExportConfig)
         self.gImportConfig = OpenButton(self, label=_(u'Import'))

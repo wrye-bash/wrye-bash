@@ -32,7 +32,7 @@ from ..bolt import GPath
 from ..bosh import omods
 from ..gui import Button, CancelButton, CENTER, CheckBox, GridLayout, \
     HLayout, Label, LayoutOptions, SaveButton, Spacer, Stretch, TextArea, \
-    TextField, VLayout, web_viewer_available, Splitter, WindowFrame
+    TextField, VLayout, web_viewer_available, Splitter, WindowFrame, ListBox
 
 class DocBrowser(WindowFrame):
     """Doc Browser frame."""
@@ -61,9 +61,9 @@ class DocBrowser(WindowFrame):
                                                               vertically=True)
         # Mod Name
         self._mod_name_box = TextField(mod_list_window, editable=False)
-        self._mod_list = balt.ListBox(mod_list_window,
-            choices=sorted(x.s for x in self._db_doc_paths.keys()),
-            isSort=True, onSelect=self._do_select_mod)
+        self._mod_list = ListBox(mod_list_window,
+             choices=sorted(x.s for x in self._db_doc_paths.keys()),
+             isSort=True, onSelect=self._do_select_mod)
         # Buttons
         self._set_btn = Button(main_window, _(u'Set Doc...'),
                                btn_tooltip=u'Associates this plugin file with '

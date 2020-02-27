@@ -86,7 +86,7 @@ from ..balt import Links, ItemLink
 from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
     TOP, VLayout, EventResult, DropDown, DialogWindow, WindowFrame, Spinner, \
-    Splitter, NotebookCtrl, PanelWin
+    Splitter, NotebookCtrl, PanelWin, CheckListBox
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons
@@ -2585,13 +2585,13 @@ class InstallersDetails(_DetailsMixin, SashPanel):
             vertically=True)
         #--Sub-Installers
         subPackagesLabel = Label(subPackagesPanel, _(u'Sub-Packages'))
-        self.gSubList = balt.CheckListBox(subPackagesPanel, isExtended=True,
-                                          onCheck=self._check_subitem)
+        self.gSubList = CheckListBox(subPackagesPanel, isExtended=True,
+                                     onCheck=self._check_subitem)
         self.gSubList.on_mouse_right_up.subscribe(self._sub_selection_menu)
         #--Espms
         self.espms = []
-        self.gEspmList = balt.CheckListBox(espmsPanel, isExtended=True,
-                                           onCheck=self._on_check_plugin)
+        self.gEspmList = CheckListBox(espmsPanel, isExtended=True,
+                                      onCheck=self._on_check_plugin)
         self.gEspmList.on_mouse_left_dclick.subscribe(
             self._on_plugin_filter_dclick)
         self.gEspmList.on_mouse_right_up.subscribe(self._selection_menu)

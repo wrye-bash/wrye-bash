@@ -37,7 +37,7 @@ import bosh, balt, bolt, bush
 from balt import Image, set_event_hook, Events
 from .gui import BOTTOM, CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
-    WizardDialog, EventResult
+    WizardDialog, EventResult, ListBox, CheckListBox
 from env import get_file_version
 
 #Translateable strings
@@ -205,11 +205,11 @@ class PageSelect(PageInstaller):
         kwargs = dict(choices=listItems, isHScroll=True,
                       onSelect=self.OnSelect)
         if bMany:
-            self.listOptions = balt.CheckListBox(self, **kwargs)
+            self.listOptions = CheckListBox(self, **kwargs)
             for index, default in enumerate(defaultMap):
                 self.listOptions.lb_check_at_index(index, default)
         else:
-            self.listOptions = balt.ListBox(self, **kwargs)
+            self.listOptions = ListBox(self, **kwargs)
             self._enableForward(False)
             for index, default in enumerate(defaultMap):
                 if default:
@@ -336,24 +336,24 @@ class PageFinish(PageInstaller):
                                   u'will apply the following settings:'))
         textTitle.wrap(parent._native_widget.GetPageSize()[0] - 10)
         # Sub-packages
-        self.listSubs = balt.CheckListBox(self, choices=subs,
-                                          onCheck=self._on_select_subs)
+        self.listSubs = CheckListBox(self, choices=subs,
+                                     onCheck=self._on_select_subs)
         for index,key in enumerate(subs):
             key = key.replace(u'&&',u'&')
             if subsList[key]:
                 self.listSubs.lb_check_at_index(index, True)
                 self._wiz_parent.ret.select_sub_packages.append(key)
-        self.plugin_selection = balt.CheckListBox(
-            self, choices=displayed_plugins, onCheck=self._on_select_plugin)
+        self.plugin_selection = CheckListBox(self, choices=displayed_plugins,
+            onCheck=self._on_select_plugin)
         for index,key in enumerate(plugins):
             if plugin_list[key]:
                 self.plugin_selection.lb_check_at_index(index, True)
                 self._wiz_parent.ret.select_plugins.append(key)
         self._wiz_parent.ret.rename_plugins = plugin_renames
         # Ini tweaks
-        self.listInis = balt.ListBox(self, onSelect=self._on_select_ini,
-                                     choices=[x.s for x in iniedits.keys()])
-        self.listTweaks = balt.ListBox(self)
+        self.listInis = ListBox(self, onSelect=self._on_select_ini,
+                                choices=[x.s for x in iniedits.keys()])
+        self.listTweaks = ListBox(self)
         self._wiz_parent.ret.ini_edits = iniedits
         # Apply/install checkboxes
         self.checkApply = CheckBox(self, _(u'Apply these selections'),
