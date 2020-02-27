@@ -112,6 +112,10 @@ class WindowFrame(_TopLevelWin):
 
     def show_frame(self): self._native_widget.Show()
 
+    # TODO(inf) de-wx! Menu should become a wrapped component as well
+    def popup_menu(self, menu):
+        self._native_widget.PopupMenu(menu)
+
 class DialogWindow(_TopLevelWin):
     """Wrap a dialog control."""
     title = u'OVERRIDE'

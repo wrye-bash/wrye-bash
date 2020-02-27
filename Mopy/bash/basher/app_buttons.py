@@ -95,7 +95,7 @@ class StatusBar_Button(ItemLink):
                     self.mainMenu.append(SeparatorLink())
                 self.mainMenu.append(_StatusBar_Hide())
         if len(self.mainMenu) > 0:
-            self.mainMenu.PopupMenu(self.gButton,Link.Frame,0)
+            self.mainMenu.new_menu(self.gButton, 0)
             return EventResult.FINISH ##: Kept it as such, test if needed
 
     # Helper function to get OBSE version
@@ -663,8 +663,7 @@ class App_Settings(StatusBar_Button):
             window, image, lambda: self.Execute())
 
     def Execute(self):
-        BashStatusBar.SettingsMenu.PopupMenu(Link.Frame.statusBar, Link.Frame,
-                                             None)
+        BashStatusBar.SettingsMenu.new_menu(Link.Frame.statusBar, None)
 
 #------------------------------------------------------------------------------
 class App_Restart(StatusBar_Button):

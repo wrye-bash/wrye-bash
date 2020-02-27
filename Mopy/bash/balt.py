@@ -1824,7 +1824,7 @@ class UIList(wx.Panel):
         """Show column menu."""
         if not self.mainMenu: return
         if column is None: column = event.GetColumn()
-        self.mainMenu.PopupMenu(self, _AComponent._resolve(Link.Frame), column)
+        self.mainMenu.new_menu(self, column)
 
     #--Item Menu
     def DoItemMenu(self,event):
@@ -1834,7 +1834,7 @@ class UIList(wx.Panel):
             self.DoColumnMenu(event,0)
             return
         if not self.itemMenu: return
-        self.itemMenu.PopupMenu(self,_AComponent._resolve(Link.Frame),selected)
+        self.itemMenu.new_menu(self, selected)
 
     #--Callbacks --------------------------------------------------------------
     def OnMouse(self,event):
@@ -2281,14 +2281,13 @@ class Links(list):
     """List of menu or button links."""
 
     #--Popup a menu from the links
-    def PopupMenu(self, parent=None, eventWindow=None, *args):
-        parent = _AComponent._resolve(parent or Link.Frame)
-        eventWindow = _AComponent._resolve(eventWindow) or parent
-        menu = wx.Menu()
+    def new_menu(self, parent, selection):
+        parent = parent or Link.Frame
+        menu = wx.Menu() # TODO(inf) de-wx!
         Link.Popup = menu
         for link in self:
-            link.AppendToMenu(menu,parent,*args)
-        eventWindow.PopupMenu(menu)
+            link.AppendToMenu(menu, parent, selection)
+        Link.Frame.popup_menu(menu)
         menu.Destroy()
         Link.Popup = None # do not leak the menu reference
 
@@ -2311,7 +2310,7 @@ class Link(object):
       singleton. Use (sparingly) as the 'link' between menus and data layer.
     """
     Frame = None   # BashFrame singleton, set once and for all in BashFrame()
-    Popup = None   # Current popup menu, set in Links.PopupMenu()
+    Popup = None   # Current popup menu, set in Links.new_menu()
     _text = u''    # Menu label (may depend on UI state when the menu is shown)
 
     def __init__(self, _text=None):
@@ -2336,7 +2335,7 @@ class Link(object):
         :param selection: the selected items when the menu is appended or None.
         In modlist/installers it's a list<Path> while in subpackage it's the
         index of the right-clicked item. In main (column header) menus it's
-        the column clicked on or the first column. Set in Links.PopupMenu().
+        the column clicked on or the first column. Set in Links.new_menu().
         :type window: UIList | wx.Panel | gui.buttons.Button | DnDStatusBar |
             wx.CheckListBox
         :type selection: list[Path | unicode | int] | int | None
@@ -2826,8 +2825,7 @@ class ListBoxes(DialogWindow):
 
     def _on_context(self, lb_instance):
         """Context Menu"""
-        self.itemMenu.PopupMenu(lb_instance._native_widget, _AComponent._resolve(Link.Frame),
-                                lb_instance.lb_get_selections())
+        self.itemMenu.new_menu(lb_instance, lb_instance.lb_get_selections())
 
     def getChecked(self, key, items, checked=True):
         """Return a sublist of 'items' containing (un)checked items.

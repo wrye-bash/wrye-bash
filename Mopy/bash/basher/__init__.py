@@ -82,7 +82,7 @@ from ..balt import CheckLink, EnabledLink, SeparatorLink, Link, \
     INIListCtrl, DnDStatusBar, NotebookPanel, set_event_hook, Events
 from ..balt import spinCtrl
 from ..balt import colors, images, Image, Resources
-from ..balt import Links, ItemLink, _AComponent
+from ..balt import Links, ItemLink
 
 from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
@@ -1616,7 +1616,7 @@ class ModDetails(_SashDetailsPanel):
         ##: Popup the menu - ChoiceLink should really be a Links subclass
         tagLinks = Links()
         tagLinks.append(_TagLinks())
-        tagLinks.PopupMenu(self.gTags, Link.Frame, None)
+        tagLinks.new_menu(self.gTags, None)
         return EventResult.FINISH
 
 #------------------------------------------------------------------------------
@@ -2834,13 +2834,13 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         """Handle right click in espm list."""
         self.gEspmList.lb_select_index(lb_selection_dex)
         #--Show/Destroy Menu
-        InstallersPanel.espmMenu.PopupMenu(self, Link.Frame, lb_selection_dex)
+        InstallersPanel.espmMenu.new_menu(self, lb_selection_dex)
 
     def _sub_selection_menu(self, lb_selection_dex):
         """Handle right click in espm list."""
         self.gSubList.lb_select_index(lb_selection_dex)
         #--Show/Destroy Menu
-        InstallersPanel.subsMenu.PopupMenu(self, Link.Frame, lb_selection_dex)
+        InstallersPanel.subsMenu.new_menu(self, lb_selection_dex)
 
     def _on_check_plugin(self, lb_selection_dex):
         """Handle check/uncheck of item."""
@@ -3531,7 +3531,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         tabId = self.HitTest(pos)
         if tabId != wx.NOT_FOUND and tabId[0] != wx.NOT_FOUND:
             menu = self.tabLinks(Links())
-            menu.PopupMenu(self, Link.Frame, None)
+            menu.new_menu(self, None)
         else:
             event.Skip()
 

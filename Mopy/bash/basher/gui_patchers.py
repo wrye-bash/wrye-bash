@@ -28,10 +28,10 @@ from operator import itemgetter
 import wx
 # Internal
 from .. import bass, bosh, bush, balt, load_order, bolt, exception
-from ..balt import text_wrap, Links, SeparatorLink, CheckLink, Link
+from ..balt import text_wrap, Links, SeparatorLink, CheckLink
 from ..bolt import GPath
-from ..gui import Button, CheckBox, HBoxedLayout, Label, LayoutOptions, Spacer, \
-    TextArea, TOP, VLayout, EventResult
+from ..gui import Button, CheckBox, HBoxedLayout, Label, LayoutOptions, \
+    Spacer, TextArea, TOP, VLayout, EventResult
 from ..gui.base_components import _AComponent
 from ..patcher import patch_files
 
@@ -614,7 +614,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             else:
                 links.append(_ValueLink(label, index))
         #--Show/Destroy Menu
-        links.PopupMenu(self.gTweakList, Link.Frame, None)
+        links.new_menu(self.gTweakList, None)
 
     def tweak_choice(self, index, tweakIndex):
         """Handle choice menu selection."""
@@ -867,7 +867,7 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
             else:
                 links.append(_OnItemChoice(label, index))
         #--Show/Destroy Menu
-        links.PopupMenu(self.gList, Link.Frame, None)
+        links.new_menu(self.gList, None)
 
     def _log_config(self, conf, config, clip, log):
         self.configChoices = conf.get('configChoices', {})
