@@ -2278,13 +2278,12 @@ class Link(object):
     _text = u''    # Menu label (may depend on UI state when the menu is shown)
 
     def __init__(self, _text=None):
-        """Assign a wx Id.
+        """Initialize a Link instance.
 
         Parameter _text underscored cause its use should be avoided - prefer to
         specify text as a class attribute (or set in it _initData()).
         """
         super(Link, self).__init__()
-        self._id = wx.NewId() # register wx callbacks in AppendToMenu overrides
         self._text = _text or self.__class__._text # menu label
 
     def _initData(self, window, selection):
@@ -2413,10 +2412,10 @@ class ItemLink(Link):
         """Append self as menu item and set callbacks to be executed when
         selected."""
         super(ItemLink, self).AppendToMenu(menu, window, selection)
-        _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU, self.__Execute, id=self._id)
-        _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
-        menuItem = wx.MenuItem(menu, self._id, self._text, self.menu_help,
+        menuItem = wx.MenuItem(menu, defId, self._text, self.menu_help,
                                self.__class__.kind)
+        _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU, self.__Execute, id=menuItem.GetId())
+        _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
         menu.AppendItem(menuItem)
         return menuItem
 
@@ -2462,9 +2461,9 @@ class MenuLink(Link):
         super(MenuLink, self).AppendToMenu(menu, window, selection)
         _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU_OPEN, MenuLink.OnMenuOpen)
         subMenu = wx.Menu()
-        menu.AppendMenu(self._id, self._text, subMenu)
+        testMenuItem = menu.AppendSubMenu(subMenu, self._text)
         if not self._enable():
-            menu.Enable(self._id, False)
+            testMenuItem.Enable(False)
         else: # do not append sub links unless submenu enabled
             for link in self.links: link.AppendToMenu(subMenu, window,
                                                       selection)
