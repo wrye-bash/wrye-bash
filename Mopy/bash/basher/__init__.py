@@ -34,7 +34,7 @@ initialization functions. Currently the package structure is:
 __init.py__       : this file, basher.py core, must be further split
 constants.py      : constants, will grow
 *_links.py        : menus and buttons (app_buttons.py)
-links.py          : the initialization functions for menus, defines menu order
+links_init.py     : the initialization functions for menus, defines menu order
 dialogs.py        : subclasses of DialogWindow (except patcher dialog)
 frames.py         : subclasses of wx.Frame (except BashFrame)
 gui_patchers.py   : the gui patcher classes used by the patcher dialog
@@ -4204,4 +4204,4 @@ def InitImages():
     Resources.bashMonkey = balt.ImageBundle()
     Resources.bashMonkey.Add(imgDirJn(u'wrye_monkey_87_sharp.ico'))
 
-from .links import InitLinks
+from .links_init import InitLinks

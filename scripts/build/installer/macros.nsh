@@ -597,6 +597,7 @@
         Delete "${Path}\Mopy\bash\images\readme\wryebash_docbrowser.png"
         Delete "${Path}\Mopy\bash\images\readme\wryebash_peopletab.png"
         Delete "${Path}\Mopy\bash\images\x.png"
+        Delete "${Path}\Mopy\bash\basher\links.p*"
         Delete "${Path}\Mopy\bash\basher\pm_tab.p*"
         Delete "${Path}\Mopy\bash\bosh.p*"
         Delete "${Path}\Mopy\bash\bosh\msgs.p*"
