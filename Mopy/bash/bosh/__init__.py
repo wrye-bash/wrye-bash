@@ -2608,6 +2608,7 @@ class ModInfos(FileInfos):
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
     def _setOblivionVersions(self):
         """Set current (and available) master game esm(s) - oblivion only."""
+        if bush.game.fsName != u'Oblivion': return
         self.voAvailable.clear()
         for name,info in self.iteritems():
             maOblivion = reOblivion.match(name.s)

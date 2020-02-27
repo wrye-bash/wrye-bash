@@ -141,9 +141,13 @@ class Mod_CreateDummyMasters(OneItemLink):
 class Mod_OrderByName(EnabledLink):
     """Sort the selected files."""
     _text = _(u'Order By Name')
-    _help = _(u'Reorder the selected mods to be in alphabetical order.')
+    _help = _(u'Reorder the selected plugins to be in alphabetical order. '
+              u'Only works if the selected plugins may be reordered.')
 
-    def _enable(self): return len(self.selected) > 1
+    def _enable(self):
+        # Can't be used if at least one of the selected mods is pinned
+        return (len(self.selected) > 1
+                and not load_order.filter_pinned(self.selected))
 
     @balt.conversation
     def Execute(self):
