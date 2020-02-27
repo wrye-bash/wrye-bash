@@ -121,7 +121,7 @@ class PatchDialog(DialogWindow):
         #--Events
         self.on_size_changed.subscribe(self.save_size) # save dialog size
         self.gPatchers.on_mouse_leaving.subscribe(self._mouse_leaving)
-        self.gPatchers.on_mouse_motion.subscribe(self.OnMouse)
+        self.gPatchers.on_mouse_motion.subscribe(self.handle_mouse_motion)
         self.gPatchers.on_key_pressed.subscribe(self._on_char)
         self.mouse_dex = -1
         #--Layout
@@ -470,9 +470,9 @@ class PatchDialog(DialogWindow):
 
     def _mouse_leaving(self): self._set_tip_text(-1)
 
-    def OnMouse(self, pos, is_dragging, is_moving, lb_dex):
+    def handle_mouse_motion(self, wrapped_evt, lb_dex):
         """Show tip text when changing item."""
-        if is_moving:
+        if wrapped_evt.is_moving:
             if lb_dex != self.mouse_dex:
                 self.mouse_dex = lb_dex
         self._set_tip_text(lb_dex)
@@ -486,12 +486,12 @@ class PatchDialog(DialogWindow):
         else:
             self.gTipText.label_text = self.defaultTipText
 
-    def _on_char(self, key_code, is_cmd_down, is_shift_down):
+    def _on_char(self, wrapped_evt):
         """Keyboard input to the patchers list box"""
-        if key_code == 1 and is_cmd_down: # Ctrl+'A'
+        if wrapped_evt.key_code == 1 and wrapped_evt.is_cmd_down: # Ctrl+'A'
             patcher = self.currentPatcher
             if patcher is not None:
-                if is_shift_down:
+                if wrapped_evt.is_shift_down:
                     patcher.DeselectAll()
                 else:
                     patcher.SelectAll()

@@ -250,3 +250,100 @@ class _AComponent(object):
     @property
     def wx_id_(self): # avoid, we do not want to program with gui ids
         return self._native_widget.GetId()
+
+# Events Mixins ---------------------------------------------------------------
+class WithMouseEvents(_AComponent):
+    """An _AComponent that handles mouse events.
+
+    Mouse events.
+      Clicks: Default arg processor returns the HitTest result on the position
+      of the event
+        - on_mouse_left_dclick(hit_test: tuple[int]): left mouse doubleclick.
+        - on_mouse_right_up(hit_test: tuple[int]): right mouse button released.
+        - on_mouse_right_down(position: tuple[int]): right mouse button click.
+      - on_mouse_motion(wrapped_evt: _WrapMouseEvt, lb_dex: int): mouse moved
+      - on_mouse_leaving(): mouse is leaving the window
+    """
+    bind_motion = True
+    bind_rclick_down = True
+    bind_rclick_up = True
+    bind_lclick_double = False
+    bind_lclick_down = False
+    bind_lclick_up = False
+    bind_mouse_leaving = False
+
+    class _WrapMouseEvt(object):
+        def __init__(self, mouse_evt):
+            self.__mouse_evt = mouse_evt # type: _wx.MouseEvent
+
+        @property
+        def is_moving(self):
+            return self.__mouse_evt.Moving()
+
+        @property
+        def is_dragging(self):
+            return self.__mouse_evt.Dragging()
+
+        @property
+        def evt_pos(self):
+            return self.__mouse_evt.GetPosition()
+
+        @property
+        def is_alt_down(self):
+            return self.__mouse_evt.AltDown()
+
+    def __init__(self, *args, **kwargs):
+        super(WithMouseEvents, self).__init__(*args, **kwargs)
+        lb_hit_test = lambda event: [ # HitTest may return an int or a tuple...
+            self._native_widget.HitTest(event.GetPosition())]
+        if self.__class__.bind_rclick_up:
+            self.on_mouse_right_up = self._evt_handler(_wx.EVT_RIGHT_UP,
+                                                       lb_hit_test)
+        if self.__class__.bind_rclick_down:
+            self.on_mouse_right_down = self._evt_handler(_wx.EVT_RIGHT_DOWN,
+                lambda event: [event.GetPosition()])
+        if self.__class__.bind_lclick_double:
+            self.on_mouse_left_dclick = self._evt_handler(_wx.EVT_LEFT_DCLICK,
+                                                          lb_hit_test)
+        if self.__class__.bind_motion:
+            self.on_mouse_motion = self._evt_handler(_wx.EVT_MOTION,
+                lambda event: [self._WrapMouseEvt(event),
+                               lb_hit_test(event)[0]])
+        if self.__class__.bind_mouse_leaving:
+            self.on_mouse_leaving = self._evt_handler(_wx.EVT_LEAVE_WINDOW)
+
+class WithCharEvents(_AComponent):
+    """An _AComponent that handles key presses events.
+
+    Key events.
+      - on_key_pressed(wrapped_evt: _WrapKeyEvt): key pressed
+      - on_key_up(wrapped_evt: _WrapKeyEvt, self: WithCharEvents): key
+        released
+    """
+    bind_char_evt = True
+    bind_key_up_evt = True
+
+    class _WrapKeyEvt(object):
+        def __init__(self, mouse_evt):
+            self.__key_evt = mouse_evt # type: _wx.KeyEvent
+
+        @property
+        def key_code(self):
+            return self.__key_evt.GetKeyCode()
+
+        @property
+        def is_cmd_down(self):
+            return self.__key_evt.CmdDown()
+
+        @property
+        def is_shift_down(self):
+            return self.__key_evt.ShiftDown()
+
+    def __init__(self, *args, **kwargs):
+        super(WithCharEvents, self).__init__(*args, **kwargs)
+        if self.__class__.bind_char_evt:
+            self.on_key_pressed = self._evt_handler(_wx.EVT_CHAR,
+                lambda event: [self._WrapKeyEvt(event)])
+        if self.__class__.bind_key_up_evt:
+            self.on_key_up = self._evt_handler(_wx.EVT_KEY_UP, lambda event: [
+                self._WrapKeyEvt(event), self])

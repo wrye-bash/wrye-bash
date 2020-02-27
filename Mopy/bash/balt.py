@@ -2626,11 +2626,11 @@ class ListBoxes(DialogWindow):
             self.text.wrap(self.component_size[0] - 64)
 
     @staticmethod
-    def _on_key_up(key_code, is_cmd_down, is_shift_down, lb_instance):
+    def _on_key_up(wrapped_evt, lb_instance):
         """Char events"""
         ##Ctrl-A - check all
-        if is_cmd_down and key_code == ord(u'A'):
-            check = not is_shift_down
+        if wrapped_evt.is_cmd_down and wrapped_evt.key_code == ord(u'A'):
+            check = not wrapped_evt.is_shift_down
             for i in xrange(len(lb_instance.lb_get_str_items())):
                     lb_instance.lb_check_at_index(i, check)
             return EventResult.FINISH ##: needed?

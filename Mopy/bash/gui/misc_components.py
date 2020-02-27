@@ -29,7 +29,7 @@ __author__ = u'nycz, Infernio, Utumno'
 
 import wx as _wx
 
-from .base_components import _AComponent
+from .base_components import _AComponent, WithMouseEvents, WithCharEvents
 from ..bolt import deprint
 
 class Font(_wx.Font):
@@ -170,17 +170,14 @@ class Spinner(_AComponent):
 
     def sp_get_value(self): return self._native_widget.GetValue()
 
-class ListBox(_AComponent):
+class ListBox(WithMouseEvents):
     """Wrap a ListBox control.
 
     Events:
-      - on_list_box(index: int, item_text: unicode): Posted when user selects an
-      item from list. The default arg processor extracts the index of the event
-      and the list item label
-      - Mouse events. Default arg processor extracts the position of the event
-        - on_mouse_right_up(position: tuple[int]): right mouse button released.
-        - on_mouse_right_down(position: tuple[int]): right mouse button click.
-      - on_mouse_motion(WIP!): mouse moved
+      - on_list_box(lb_dex: int, item_text: unicode): Posted when user selects
+      an item from list. The default arg processor extracts the index of the
+      event and the list item label
+      - Mouse events - see gui.base_components.WithMouseEvents
      """
     # PY3: typing!
     # type _native_widget: wx.ListBox
@@ -200,14 +197,6 @@ class ListBox(_AComponent):
             self.on_list_box = self._evt_handler(_wx.EVT_LISTBOX,
                 lambda event: [event.GetSelection(), event.GetString()])
             self.on_list_box.subscribe(onSelect)
-        self.on_mouse_right_up = self._evt_handler(_wx.EVT_RIGHT_UP,
-            lambda event: [self._native_widget.HitTest(event.GetPosition())])
-        self.on_mouse_right_down = self._evt_handler(_wx.EVT_RIGHT_DOWN,
-            lambda event: [event.GetPosition()])
-        self.on_mouse_motion = self._evt_handler(_wx.EVT_MOTION, lambda event: [
-                event.GetPosition(), event.Dragging(), event.Moving(),
-                event.Moving() and self._native_widget.HitTest(
-                    event.GetPosition())])
 
     def lb_select_index(self, lb_selection_dex):
         self._native_widget.SetSelection(lb_selection_dex)
@@ -264,7 +253,7 @@ class ListBox(_AComponent):
     def lb_get_items_count(self):
         return self._native_widget.GetCount()
 
-class CheckListBox(ListBox):
+class CheckListBox(ListBox, WithCharEvents):
     """Wrap a CheckListBox control.
 
     Events:
@@ -272,14 +261,14 @@ class CheckListBox(ListBox):
       list. The default arg processor extracts the index of the event.
       - on_context(evt_object: wx.Event): Posted when user checks an item
       from list. The default arg processor extracts the index of the event.
-      - Mouse events. Default arg processor extracts the position of the event
-        - on_mouse_left_dclick(position: tuple[int]): left mouse doubleclick.
-      - on_mouse_leaving(): mouse is leaving the window
-      - on_key_pressed(WIP!): key pressed
-      - on_key_up(WIP!): key released"""
+      - Mouse events see gui.base_components.WithMouseEvents.
+      - Key events see gui.base_components.WithCharEvents.
+      """
     # PY3: typing!
     # type _native_widget: wx.CheckListBox
     _wx_class = _wx.CheckListBox
+    bind_mouse_leaving = True
+    bind_lclick_double = True
 
     def __init__(self, parent, choices=None, isSingle=False, isSort=False,
                  isHScroll=False, isExtended=False, onSelect=None,
@@ -290,13 +279,6 @@ class CheckListBox(ListBox):
             self.on_check_list_box = self._evt_handler(
                 _wx.EVT_CHECKLISTBOX, lambda event: [event.GetSelection()])
             self.on_check_list_box.subscribe(onCheck)
-        self.on_mouse_left_dclick = self._evt_handler(_wx.EVT_LEFT_DCLICK,
-            lambda event: [self._native_widget.HitTest(event.GetPosition())])
-        self.on_mouse_leaving = self._evt_handler(_wx.EVT_LEAVE_WINDOW)
-        self.on_key_pressed = self._evt_handler(_wx.EVT_CHAR, lambda event: [
-                event.GetKeyCode(), event.CmdDown(), event.ShiftDown()])
-        self.on_key_up = self._evt_handler(_wx.EVT_KEY_UP, lambda event: [
-                event.GetKeyCode(), event.CmdDown(), event.ShiftDown(), self])
         self.on_context = self._evt_handler(_wx.EVT_CONTEXT_MENU,
                                             lambda event: [self])
 

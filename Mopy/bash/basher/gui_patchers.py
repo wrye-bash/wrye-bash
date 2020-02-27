@@ -461,7 +461,7 @@ class _ChoiceMenuMixin(object):
 
     def _bind_mouse_events(self, right_click_list):
         # type: (CheckListBox | ListBox) -> None
-        right_click_list.on_mouse_motion.subscribe(self.OnMouse)
+        right_click_list.on_mouse_motion.subscribe(self._handle_mouse_motion)
         right_click_list.on_mouse_right_down.subscribe(self._right_mouse_click)
         right_click_list.on_mouse_right_up.subscribe(self._right_mouse_up)
         self.mouse_pos = None
@@ -472,12 +472,12 @@ class _ChoiceMenuMixin(object):
         if self.mouse_pos: self.ShowChoiceMenu(lb_selection_dex)
         # return
 
-    def OnMouse(self, pos, is_dragging, is_moving, lb_dex):
+    def _handle_mouse_motion(self, wrapped_evt, lb_dex):
         """Check mouse motion to detect right click event."""
-        if is_dragging: # cancel right up if user drags mouse away of the item
+        if wrapped_evt.is_dragging: # cancel right up if user drags mouse away of the item
             if self.mouse_pos:
                 oldx, oldy = self.mouse_pos
-                x, y = pos
+                x, y = wrapped_evt.evt_pos
                 if max(abs(x - oldx), abs(y - oldy)) > 4:
                     self.mouse_pos = None
                 return EventResult.FINISH ##: needed?
@@ -566,23 +566,20 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             self.gTipText.label_text = u''
             self.mouse_pos = None
 
-    def OnMouse(self, pos, is_dragging, is_moving, lb_dex):
+    def _handle_mouse_motion(self, wrapped_evt, lb_dex):
         """Check mouse motion to detect right click event. If any mouse button
          is held pressed, is_moving is False and is_dragging is True."""
-        if is_moving:
+        if wrapped_evt.is_moving:
             self.mouse_pos = None
             if lb_dex != self.mouse_dex:
                 # Show tip text when changing item
                 self.mouse_dex = lb_dex
                 tip = 0 <= lb_dex < len(self.tweaks) and self.tweaks[
                     lb_dex].tweak_tip
-                if tip:
-                    self.gTipText.label_text = tip
-                else:
-                    self.gTipText.label_text = u''
+                self.gTipText.label_text = tip or u''
         else:
-            super(_TweakPatcherPanel, self).OnMouse(pos, is_dragging,
-                                                    is_moving, lb_dex)
+            super(_TweakPatcherPanel, self)._handle_mouse_motion(wrapped_evt,
+                                                                 lb_dex)
 
     def ShowChoiceMenu(self, tweakIndex):
         """Displays a popup choice menu if applicable."""
