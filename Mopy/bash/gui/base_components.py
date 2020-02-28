@@ -259,9 +259,11 @@ class WithMouseEvents(_AComponent):
       Clicks: Default arg processor returns the HitTest result on the position
       of the event
         - on_mouse_left_dclick(hit_test: tuple[int]): left mouse doubleclick.
+        - on_mouse_left_down(wrapped_evt: _WrapMouseEvt, lb_dex: int): left
+        mouse click.
         - on_mouse_right_up(hit_test: tuple[int]): right mouse button released.
         - on_mouse_right_down(position: tuple[int]): right mouse button click.
-      - on_mouse_motion(wrapped_evt: _WrapMouseEvt, lb_dex: int): mouse moved
+      - on_mouse_motion(wrapped_evt: _WrapMouseEvt, hit_test: int): mouse moved
       - on_mouse_leaving(): mouse is leaving the window
     """
     bind_motion = True
@@ -305,6 +307,10 @@ class WithMouseEvents(_AComponent):
         if self.__class__.bind_lclick_double:
             self.on_mouse_left_dclick = self._evt_handler(_wx.EVT_LEFT_DCLICK,
                                                           lb_hit_test)
+        if self.__class__.bind_lclick_down:
+            self.on_mouse_left_down = self._evt_handler(_wx.EVT_LEFT_DOWN,
+                lambda event: [self._WrapMouseEvt(event),
+                               lb_hit_test(event)[0]])
         if self.__class__.bind_motion:
             self.on_mouse_motion = self._evt_handler(_wx.EVT_MOTION,
                 lambda event: [self._WrapMouseEvt(event),
@@ -338,6 +344,10 @@ class WithCharEvents(_AComponent):
         @property
         def is_shift_down(self):
             return self.__key_evt.ShiftDown()
+
+        @property
+        def is_space(self):
+            return self.__key_evt.GetKeyCode() == _wx.WXK_SPACE
 
     def __init__(self, *args, **kwargs):
         super(WithCharEvents, self).__init__(*args, **kwargs)

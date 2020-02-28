@@ -348,11 +348,10 @@ class MasterList(_ModsUIList):
             self.SetFileInfo(self.fileInfo)
             self.detailsPanel.testChanges() # disable buttons if no other edits
 
-    def OnItemSelected(self, event): event.Skip()
-    def OnKeyUp(self, event): event.Skip()
+    def _handle_select(self, item_key): pass
+    def _handle_key_up(self, wrapped_evt, g_list): pass
 
-    def OnDClick(self, event):
-        event.Skip()
+    def OnDClick(self, lb_dex_and_flags):
         if self.mouse_index < 0: return # nothing was clicked
         mod_name = self.data_store[self.mouse_index].curr_name
         if not mod_name in bosh.modInfos: return
@@ -483,12 +482,12 @@ class MasterList(_ModsUIList):
         self.detailsPanel.SetEdited() # inform the details panel
 
     #--Column Menu
-    def DoColumnMenu(self, event, column=None):
-        if self.fileInfo: super(MasterList, self).DoColumnMenu(event, column)
+    def DoColumnMenu(self, evt_col):
+        if self.fileInfo: super(MasterList, self).DoColumnMenu(evt_col)
+        return EventResult.FINISH
 
-    def OnLeftDown(self,event):
+    def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
         if self.allowEdit: self.InitEdit()
-        event.Skip()
 
     #--Events: Label Editing
     def OnBeginEditLabel(self, event):
@@ -618,10 +617,11 @@ class INIList(balt.UIList):
         if status < 0:
             item_format.back_key = 'ini.bkgd.invalid'
 
-    def OnLeftDown(self,event):
-        """Handle click on icon events"""
-        event.Skip()
-        hitItem = self._getItemClicked(event, on_icon=True)
+    def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
+        """Handle click on icon events
+        :param wrapped_evt:
+        """
+        hitItem = self._getItemClicked(lb_dex_and_flags, on_icon=True)
         if not hitItem: return
         if self.apply_tweaks((bosh.iniInfos[hitItem], )):
             self.panel.ShowPanel(refresh_target=True)
@@ -911,9 +911,9 @@ class ModList(_ModsUIList):
             Link.Frame.saveListRefresh(focus_list=False)
 
     #--Events ---------------------------------------------
-    def OnDClick(self,event):
+    def OnDClick(self, lb_dex_and_flags):
         """Handle doubleclicking a mod in the Mods List."""
-        hitItem = self._getItemClicked(event)
+        hitItem = self._getItemClicked(lb_dex_and_flags)
         if not hitItem: return
         modInfo = self.data_store[hitItem]
         if not Link.Frame.docBrowser:
@@ -923,10 +923,10 @@ class ModList(_ModsUIList):
         Link.Frame.docBrowser.SetMod(modInfo.name)
         Link.Frame.docBrowser.raise_frame()
 
-    def OnChar(self,event):
+    def OnChar(self, wrapped_evt):
         """Char event: Reorder (Ctrl+Up and Ctrl+Down)."""
-        code = event.GetKeyCode()
-        if event.CmdDown() and code in balt.wxArrows:
+        code = wrapped_evt.key_code
+        if wrapped_evt.is_cmd_down and code in balt.wxArrows:
             if not self.dndAllow(event=None): return
             # Calculate continuous chunks of indexes
             chunk, chunks, indexes = 0, [[]], self.GetSelectedIndexes()
@@ -947,19 +947,20 @@ class ModList(_ModsUIList):
             if moved: self._refreshOnDrop()
         # Ctrl+Z: Undo last load order or active plugins change
         # Can't use ord('Z') below - check wx._core.KeyEvent docs
-        elif event.CmdDown() and code == 26:
+        elif wrapped_evt.is_cmd_down and code == 26:
             if self.data_store.undo_load_order():
                 self.RefreshUI(refreshSaves=True)
-        elif event.CmdDown() and code == 25:
+        elif wrapped_evt.is_cmd_down and code == 25:
             if self.data_store.redo_load_order():
                 self.RefreshUI(refreshSaves=True)
-        else: event.Skip() # correctly update the highlight around selected mod
+        else: # correctly update the highlight around selected mod
+            return EventResult.CONTINUE
+        return EventResult.FINISH
 
-    def OnKeyUp(self,event):
+    def _handle_key_up(self, wrapped_evt, g_list):
         """Char event: Activate selected items, select all items"""
         ##Space
-        code = event.GetKeyCode()
-        if code == wx.WXK_SPACE:
+        if wrapped_evt.is_space:
             selected = self.GetSelected()
             toActivate = [item for item in selected if
                           not load_order.cached_is_active(item)]
@@ -970,26 +971,28 @@ class ModList(_ModsUIList):
                              else toActivate)
             self._toggle_active_state(*toggle_target)
         # Ctrl+C: Copy file(s) to clipboard
-        elif event.CmdDown() and code == ord('C'):
+        elif wrapped_evt.is_cmd_down and wrapped_evt.key_code == ord(u'C'):
             balt.copyListToClipboard([self.data_store[mod].getPath().s
                                       for mod in self.GetSelected()])
-        super(ModList, self).OnKeyUp(event)
+        super(ModList, self)._handle_key_up(wrapped_evt, g_list)
 
-    def OnLeftDown(self,event):
-        """Left Down: Check/uncheck mods."""
-        mod_clicked_on_icon = self._getItemClicked(event, on_icon=True)
+    def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
+        """Left Down: Check/uncheck mods.
+        :param wrapped_evt:
+        """
+        mod_clicked_on_icon = self._getItemClicked(lb_dex_and_flags, on_icon=True)
         if mod_clicked_on_icon:
             self._toggle_active_state(mod_clicked_on_icon)
             # select manually as OnSelectItem() will fire for the wrong
-            # index if list is sorted with selected first
+            # index if list is sorted with active mods first
             self.SelectAndShowItem(mod_clicked_on_icon, deselectOthers=True,
                                    focus=True)
+            return EventResult.FINISH
         else:
-            mod_clicked = self._getItemClicked(event)
-            if event.AltDown() and mod_clicked:
+            mod_clicked = self._getItemClicked(lb_dex_and_flags)
+            if wrapped_evt.is_alt_down and mod_clicked:
                 if self.jump_to_mods_installer(mod_clicked): return
             #--Pass Event onward to OnSelectItem
-            event.Skip()
 
     def _select(self, modName):
         super(ModList, self)._select(modName)
@@ -1891,19 +1894,18 @@ class SaveList(balt.UIList):
         item_format.icon_key = status, on
 
     #--Events ---------------------------------------------
-    def OnKeyUp(self,event):
-        code = event.GetKeyCode()
+    def _handle_key_up(self, wrapped_evt, g_list):
+        code = wrapped_evt.key_code
         # Ctrl+C: Copy file(s) to clipboard
-        if event.CmdDown() and code == ord('C'):
+        if wrapped_evt.is_cmd_down and code == ord(u'C'):
             sel = map(lambda save: self.data_store[save].getPath().s,
                       self.GetSelected())
             balt.copyListToClipboard(sel)
-        super(SaveList, self).OnKeyUp(event)
+        super(SaveList, self)._handle_key_up(wrapped_evt, g_list)
 
-    def OnLeftDown(self,event):
+    def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
         #--Pass Event onward
-        event.Skip()
-        hitItem = self._getItemClicked(event, on_icon=True)
+        hitItem = self._getItemClicked(lb_dex_and_flags, on_icon=True)
         if not hitItem: return
         msg = _(u"Clicking on a save icon will disable/enable the save "
                 u"by changing its extension to %(ess)s (enabled) or .esr "
@@ -2412,11 +2414,11 @@ class InstallersList(balt.UIList):
             return super(InstallersList, self).dndAllow(event) # disallow
         return True
 
-    def OnChar(self,event):
+    def OnChar(self, wrapped_evt):
         """Char event: Reorder."""
-        code = event.GetKeyCode()
+        code = wrapped_evt.key_code
         ##Ctrl+Up/Ctrl+Down - Move installer up/down install order
-        if event.CmdDown() and code in balt.wxArrows:
+        if wrapped_evt.is_cmd_down and code in balt.wxArrows:
             selected = self.GetSelected()
             if len(selected) < 1: return
             orderKey = partial(self._sort_keys['Order'], self)
@@ -2433,18 +2435,18 @@ class InstallersList(balt.UIList):
             self.RefreshUI()
             visibleIndex = sorted([visibleIndex, 0, maxPos])[1]
             self.EnsureVisibleIndex(visibleIndex)
-        elif event.CmdDown() and code == ord('V'):
+        elif wrapped_evt.is_cmd_down and code == ord('V'):
             ##Ctrl+V
             balt.clipboardDropFiles(10, self.OnDropFiles)
         # Enter: Open selected installers
         elif code in balt.wxReturn: self.OpenSelected()
         else:
-            event.Skip()
+            return EventResult.CONTINUE
+        return EventResult.FINISH
 
-    def OnDClick(self,event):
+    def OnDClick(self, lb_dex_and_flags):
         """Double click, open the installer."""
-        event.Skip()
-        item = self._getItemClicked(event)
+        item = self._getItemClicked(lb_dex_and_flags)
         if not item: return
         if isinstance(self.data_store[item], bosh.InstallerMarker):
             # Double click on a Marker, select all items below
@@ -2462,18 +2464,19 @@ class InstallersList(balt.UIList):
         else:
             self.OpenSelected(selected=[item])
 
-    def OnKeyUp(self,event):
+    def _handle_key_up(self, wrapped_evt, g_list):
         """Char events: Action depends on keys pressed"""
-        code = event.GetKeyCode()
+        code = wrapped_evt.key_code
         # Ctrl+Shift+N - Add a marker
-        if event.CmdDown() and event.ShiftDown() and code == ord('N'):
+        if wrapped_evt.is_cmd_down and wrapped_evt.is_shift_down and \
+                code == ord(u'N'):
             self.addMarker()
         # Ctrl+C: Copy file(s) to clipboard
-        elif event.CmdDown() and code == ord('C'):
+        elif wrapped_evt.is_cmd_down and code == ord(u'C'):
             sel = map(lambda x: bass.dirs['installers'].join(x).s,
                       self.GetSelected())
             balt.copyListToClipboard(sel)
-        super(InstallersList, self).OnKeyUp(event)
+        super(InstallersList, self)._handle_key_up(wrapped_evt, g_list)
 
     # Installer specific ------------------------------------------------------
     def addMarker(self):
@@ -3065,11 +3068,12 @@ class ScreensList(balt.UIList):
     _extra_sortings = [_order_by_number]
 
     #--Events ---------------------------------------------
-    def OnDClick(self,event):
+    def OnDClick(self, lb_dex_and_flags):
         """Double click a screenshot"""
-        hitItem = self._getItemClicked(event)
-        if not hitItem: return
-        self.OpenSelected(selected=[hitItem])
+        hitItem = self._getItemClicked(lb_dex_and_flags)
+        if hitItem:
+            self.OpenSelected(selected=[hitItem])
+        return EventResult.FINISH
     def OnLabelEdited(self, event):
         """Rename selected screenshots."""
         root, _newName, numStr = self.validate_filename(event, has_digits=True,
@@ -3098,21 +3102,20 @@ class ScreensList(balt.UIList):
                 self.SelectItemsNoCallback(to_select)
             event.Veto()
 
-    def OnChar(self,event):
+    def OnChar(self, wrapped_evt):
         # Enter: Open selected screens
-        code = event.GetKeyCode()
-        if code in balt.wxReturn: self.OpenSelected()
-        else: super(ScreensList, self).OnKeyUp(event)
+        if wrapped_evt.key_code in balt.wxReturn: self.OpenSelected()
+        else: super(ScreensList, self)._handle_key_up(wrapped_evt, None)
 
-    def OnKeyUp(self,event):
+    def _handle_key_up(self, wrapped_evt, g_list):
         """Char event: Activate selected items, select all items"""
-        code = event.GetKeyCode()
+        code = wrapped_evt.key_code
         # Ctrl+C: Copy file(s) to clipboard
-        if event.CmdDown() and code == ord('C'):
+        if wrapped_evt.is_cmd_down and code == ord('C'):
             sel = map(lambda x: bosh.screensData.store_dir.join(x).s,
                       self.GetSelected())
             balt.copyListToClipboard(sel)
-        super(ScreensList, self).OnKeyUp(event)
+        super(ScreensList, self)._handle_key_up(wrapped_evt, g_list)
 
 #------------------------------------------------------------------------------
 class ScreensDetails(_DetailsMixin, NotebookPanel):

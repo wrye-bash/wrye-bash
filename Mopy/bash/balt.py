@@ -32,7 +32,6 @@ from bolt import GPath, deprint
 from exception import AbstractError, AccessDeniedError, ArgumentError, \
     BoltError, CancelError, SkipError, StateError
 #--Python
-import cPickle
 import textwrap
 import time
 import threading
@@ -48,7 +47,7 @@ from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
     BackwardButton, ForwardButton, ReloadButton, web_viewer_available, \
     WebViewer, DialogWindow, WindowFrame, EventResult, ListBox, Font, \
-    CheckListBox
+    CheckListBox, UIListCtrl
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -1138,220 +1137,6 @@ class Progress(bolt.Progress):
             self.dialog = None
 
 #------------------------------------------------------------------------------
-class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
-    """List control extended with the wxPython auto-width mixin class.
-
-    ALWAYS add new items via InsertListCtrlItem() and delete them via
-    RemoveItemAt().
-    Also extended to support drag-and-drop.  To define custom drag-and-drop
-    functionality, you can provide callbacks for, or override the following functions:
-    OnDropFiles(self, x, y, filenames) - called when files are dropped in the list control
-    OnDropIndexes(self,indexes,newPos) - called to move the specified indexes to new starting position 'newPos'
-    You must provide a callback for fnDndAllow(self, event) - return true to
-    allow dnd, false otherwise
-
-    OnDropFiles callback:   fnDropFiles
-    OnDropIndexes callback: fnDropIndexes
-    """
-    class DropFileOrList(wx.DropTarget):
-
-        def __init__(self, window, dndFiles, dndList):
-            wx.PyDropTarget.__init__(self)
-            self.window = window
-
-            self.data_object = wx.DataObjectComposite()
-            self.dataFile = wx.FileDataObject()                 # Accept files
-            self.dataList = wx.CustomDataObject('ListIndexes')  # Accept indexes from a list
-            if dndFiles: self.data_object.Add(self.dataFile)
-            if dndList : self.data_object.Add(self.dataList)
-            self.SetDataObject(self.data_object)
-
-        def OnData(self, x, y, data):
-            if self.GetData():
-                dtype = self.data_object.GetReceivedFormat().GetType()
-                if dtype == wx.DF_FILENAME:
-                    # File(s) were dropped
-                    self.window.OnDropFiles(x, y, self.dataFile.GetFilenames())
-                elif dtype == self.dataList.GetFormat().GetType():
-                    # ListCtrl indexes
-                    data = cPickle.loads(self.dataList.GetData())
-                    self.window._OnDropList(x, y, data)
-
-        def OnDragOver(self, x, y, dragResult):
-            self.window.OnDragging(x,y,dragResult)
-            return wx.DropTarget.OnDragOver(self,x,y,dragResult)
-
-    def __init__(self, parent, fnDndAllow, pos=defPos, size=defSize, style=0,
-                 dndFiles=False, dndList=False, fnDropFiles=None,
-                 fnDropIndexes=None, dndOnlyMoveContinuousGroup=True):
-        wx.ListCtrl.__init__(self, parent, pos=pos, size=size, style=style)
-        ListCtrlAutoWidthMixin.__init__(self)
-        if dndFiles or dndList:
-            self.SetDropTarget(ListCtrl.DropFileOrList(self, dndFiles, dndList))
-            if dndList:
-                self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.OnBeginDrag)
-        self.dndOnlyCont = dndOnlyMoveContinuousGroup
-        self.fnDropFiles = fnDropFiles
-        self.fnDropIndexes = fnDropIndexes
-        self.fnDndAllow = fnDndAllow
-        #--Item/Id mapping
-        self._item_itemId = {}
-        """:type : dict[bolt.Path | basestring | int, long]"""
-        self._itemId_item = {}
-        """:type : dict[long, bolt.Path | basestring | int]"""
-
-    def OnDragging(self,x,y,dragResult):
-        # We're dragging, see if we need to scroll the list
-        index, _hit_flags = self.HitTest((x, y))
-        if index == wx.NOT_FOUND:   # Didn't drop it on an item
-            if self.GetItemCount() > 0:
-                if y <= self.GetItemRect(0).y:
-                    # Mouse is above the first item
-                    self.ScrollLines(-1)
-                elif y >= self.GetItemRect(self.GetItemCount() - 1).y:
-                    # Mouse is after the last item
-                    self.ScrollLines(1)
-        else:
-            # Screen position if item hovering over
-            pos = index - self.GetScrollPos(wx.VERTICAL)
-            if pos == 0:
-                # Over the first item, see if it's over the top half
-                rect = self.GetItemRect(index)
-                if y < rect.y + rect.height/2:
-                    self.ScrollLines(-1)
-            elif pos == self.GetCountPerPage():
-                # On last item/one that's not fully visible
-                self.ScrollLines(1)
-
-    def OnBeginDrag(self, event):
-        if not self.fnDndAllow(event): return
-
-        indexes = []
-        start = stop = -1
-        for index in range(self.GetItemCount()):
-            if self.GetItemState(index, wx.LIST_STATE_SELECTED):
-                if stop >= 0 and self.dndOnlyCont:
-                    # Only allow moving selections if they are in a
-                    # continuous block...they aren't
-                    return
-                if start < 0:
-                    start = index
-                indexes.append(index)
-            else:
-                if start >=0 > stop:
-                    stop = index - 1
-        if stop < 0: stop = self.GetItemCount()
-
-        selected = cPickle.dumps(indexes, 1)
-        ldata = wx.CustomDataObject('ListIndexes')
-        ldata.SetData(selected)
-
-        data = wx.DataObjectComposite()
-        data.Add(ldata)
-
-        source = wx.DropSource(self)
-        source.SetData(data)
-        source.DoDragDrop(flags=wx.Drag_DefaultMove)
-
-    def OnDropFiles(self, x, y, filenames):
-        if self.fnDropFiles:
-            wx.CallLater(10,self.fnDropFiles,x,y,filenames)
-            #self.fnDropFiles(x, y, filenames)
-            return
-        # To be implemented by sub-classes
-        raise AbstractError
-
-    def _OnDropList(self, x, y, indexes):
-        start = indexes[0]
-        stop = indexes[-1]
-        index, _hit_flags = self.HitTest((x, y))
-        if index == wx.NOT_FOUND:   # Didn't drop it on an item
-            if self.GetItemCount() > 0:
-                if y <= self.GetItemRect(0).y:
-                    # Dropped it before the first item
-                    index = 0
-                elif y >= self.GetItemRect(self.GetItemCount() - 1).y:
-                    # Dropped it after the last item
-                    index = self.GetItemCount()
-                else:
-                    # Dropped it on the edge of the list, but not above or below
-                    return
-            else:
-                # Empty list
-                index = 0
-        else:
-            # Dropped on top of an item
-            target = index
-            if start <= target <= stop:
-                # Trying to drop it back on itself
-                return
-            elif target < start:
-                # Trying to drop it furthur up in the list
-                pass
-            elif target > stop:
-                # Trying to drop it further down the list
-                index -= 1 + (stop-start)
-
-            # If dropping on the top half of the item, insert above it,
-            # otherwise insert below it
-            rect = self.GetItemRect(target)
-            if y > rect.y + rect.height/2:
-                index += 1
-
-        # Do the moving
-        self.OnDropIndexes(indexes, index)
-
-    def OnDropIndexes(self, indexes, newPos):
-        if self.fnDropIndexes:
-            wx.CallLater(10,self.fnDropIndexes,indexes,newPos)
-
-    # API (alpha) -------------------------------------------------------------
-
-    # Internal id <-> item mappings used in SortItems for now
-    # Ripped from Tank - _Monkey patch_ - we need a proper ListCtrl subclass
-
-    def __id(self, item):
-        i = int(wx.NewId())
-        self._item_itemId[item] = i
-        self._itemId_item[i] = item
-        return i
-
-    def InsertListCtrlItem(self, index, value, item):
-        """Insert an item to the list control giving it an internal id."""
-        i = self.__id(item)
-        some_long = self.InsertStringItem(index, value) # index ?
-        gItem = self.GetItem(index) # that's what Tank did
-        gItem.SetData(i)  # Associate our id with that row.
-        self.SetItem(gItem) # this is needed too - yak
-        return some_long
-
-    def RemoveItemAt(self, index):
-        """Remove item at specified list index."""
-        itemId = self.GetItemData(index)
-        item = self._itemId_item[itemId]
-        del self._item_itemId[item]
-        del self._itemId_item[itemId]
-        self.DeleteItem(index)
-
-    def DeleteAll(self):
-        self._item_itemId.clear()
-        self._itemId_item.clear()
-        self.DeleteAllItems()
-
-    def FindIndexOf(self, item):
-        """Return index of specified item."""
-        return self.FindItemData(-1, self._item_itemId[item])
-
-    def FindItemAt(self, index):
-        """Return item for specified list index."""
-        return self._itemId_item[self.GetItemData(index)]
-
-    def ReorderDisplayed(self, inorder):
-        """Reorder the list control displayed items to match inorder."""
-        sortDict = dict((self._item_itemId[y], x) for x, y in enumerate(inorder))
-        self.SortItems(lambda x, y: bolt.cmp_(sortDict[x], sortDict[y]))
-
-#------------------------------------------------------------------------------
 _depth = 0
 _lock = threading.Lock() # threading not needed (I just can't omit it)
 def conversation(func):
@@ -1412,44 +1197,41 @@ class UIList(wx.Panel):
         self.__class__.icons = ColorChecks() \
             if self.__class__.icons is self.__icons else self.__class__.icons
         #--gList
-        ctrlStyle = wx.LC_REPORT
-        if self.__class__._editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
-        if self.__class__._sunkenBorder: ctrlStyle |= wx.BORDER_SUNKEN
-        if self.__class__._singleCell: ctrlStyle |= wx.LC_SINGLE_SEL
-        self.__gList = ListCtrl(self, self.dndAllow,
-                                style=ctrlStyle,
-                                dndFiles=self.__class__._dndFiles,
-                                dndList=self.__class__._dndList,
-                                fnDropFiles=self.OnDropFiles,
-                                fnDropIndexes=self.OnDropIndexes)
+        self.__gList = UIListCtrl(self, self.__class__._editLabels,
+                                  self.__class__._sunkenBorder,
+                                  self.__class__._singleCell, self.dndAllow,
+                                  dndFiles=self.__class__._dndFiles,
+                                  dndList=self.__class__._dndList,
+                                  fnDropFiles=self.OnDropFiles,
+                                  fnDropIndexes=self.OnDropIndexes)
         if self.icons:
             # Image List: Column sorting order indicators
             # explorer style ^ == ascending
             checkboxesIL = self.icons.GetImageList()
             self.sm_up = checkboxesIL.Add(SmallUpArrow.GetBitmap())
             self.sm_dn = checkboxesIL.Add(SmallDnArrow.GetBitmap())
-            self.__gList.SetImageList(checkboxesIL, wx.IMAGE_LIST_SMALL)
+            self.__gList._native_widget.SetImageList(checkboxesIL, wx.IMAGE_LIST_SMALL)
         if self.__class__._editLabels:
-            self.__gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnLabelEdited)
-            self.__gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
+            self.__gList._native_widget.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnLabelEdited)
+            self.__gList._native_widget.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
         # gList callbacks
-        self.__gList.Bind(wx.EVT_LIST_COL_RIGHT_CLICK, self.DoColumnMenu)
-        self.__gList.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
-        self.__gList.Bind(wx.EVT_LIST_COL_CLICK, self.OnColumnClick)
-        self.__gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
-        self.__gList.Bind(wx.EVT_CHAR, self.OnChar)
+        self.__gList.on_lst_col_rclick.subscribe(self.DoColumnMenu)
+        self.__gList.on_context_menu.subscribe(self.DoItemMenu)
+        self.__gList.on_lst_col_click.subscribe(self.OnColumnClick)
+        self.__gList.on_key_up.subscribe(self._handle_key_up)
+        self.__gList.on_key_pressed.subscribe(self.OnChar)
         #--Events: Columns
-        self.__gList.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnColumnResize)
+        self.__gList.on_lst_col_end_drag.subscribe(self.OnColumnResize)
         #--Events: Items
-        self.__gList.Bind(wx.EVT_LEFT_DCLICK, self.OnDClick)
-        self.__gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
-        self.__gList.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
+        self.__gList.on_mouse_left_dclick.subscribe(self.OnDClick)
+        self.__gList.on_item_selected.subscribe(self._handle_select)
+        self.__gList.on_mouse_left_down.subscribe(self._handle_left_down)
         #--Mouse movement
         self.mouse_index = None
         self.mouseTexts = {} # dictionary item->mouse text
         self.mouseTextPrev = u''
-        self.__gList.Bind(wx.EVT_MOTION, self.OnMouse)
-        self.__gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
+        self.__gList.on_mouse_motion.subscribe(self._handle_mouse_motion)
+        self.__gList.on_mouse_leaving.subscribe(self._handle_mouse_leaving)
         #--Layout
         VLayout(item_expand=True, item_weight=1,
                 items=[self.__gList]).apply_to(self)
@@ -1484,16 +1266,15 @@ class UIList(wx.Panel):
     @sort_column.setter
     def sort_column(self, val): _settings[self.keyPrefix + '.sort'] = val
 
-    def OnItemSelected(self, event):
-        modName = self.GetItem(event.GetIndex())
-        self._select(modName)
+    def _handle_select(self, item_key):
+        self._select(item_key)
     def _select(self, item): self.panel.SetDetails(item)
 
     # properties to encapsulate access to the list control
     @property
-    def item_count(self): return self.__gList.GetItemCount()
+    def item_count(self): return self.__gList._native_widget.GetItemCount()
     @property
-    def edit_control(self): return self.__gList.GetEditControl() # todo type?
+    def edit_control(self): return self.__gList._native_widget.GetEditControl() # todo type?
 
     #--Items ----------------------------------------------
     def PopulateItem(self, itemDex=-1, item=None):
@@ -1509,18 +1290,17 @@ class UIList(wx.Panel):
             try:
                 itemDex = self.GetIndex(item)
             except KeyError: # item is not present, so inserting
-                itemDex = self.__gList.GetItemCount() # insert at the end
+                itemDex = self.item_count # insert at the end
                 insert = True
         else: # no way we're inserting with a None item
             item = self.GetItem(itemDex)
-        cols = self.cols
-        for colDex in range(len(cols)):
-            col = cols[colDex]
+        for colDex, col in enumerate(self.cols):
             labelTxt = self.labels[col](self, item)
             if insert and colDex == 0:
                 self.__gList.InsertListCtrlItem(itemDex, labelTxt, item)
             else:
-                self.__gList.SetStringItem(itemDex, colDex, labelTxt)
+                self.__gList._native_widget.SetStringItem(itemDex, colDex,
+                                                          labelTxt)
         self.__setUI(item, itemDex)
 
     class _ListItemFormat(object):
@@ -1541,7 +1321,7 @@ class UIList(wx.Panel):
 
     def __setUI(self, fileName, itemDex):
         """Set font, status icon, background text etc."""
-        gItem = self.__gList.GetItem(itemDex)
+        gItem = self.__gList._native_widget.GetItem(itemDex)
         df = self._ListItemFormat()
         self.set_item_format(fileName, df)
         if df.icon_key and self.icons:
@@ -1550,12 +1330,12 @@ class UIList(wx.Panel):
             else: img = self.icons[df.icon_key]
             gItem.SetImage(img)
         if df.text_key: gItem.SetTextColour(colors[df.text_key])
-        else: gItem.SetTextColour(self.__gList.GetTextColour())
+        else: gItem.SetTextColour(self.__gList._native_widget.GetTextColour())
         if df.back_key: gItem.SetBackgroundColour(colors[df.back_key])
         else: gItem.SetBackgroundColour(self._defaultTextBackground)
         gItem.SetFont(Font.Style(gItem.GetFont(), bold=df.strong,
                                  slant=df.italics, underline=df.underline))
-        self.__gList.SetItem(gItem)
+        self.__gList._native_widget.SetItem(gItem)
 
     def PopulateItems(self):
         """Sort items and populate entire list."""
@@ -1563,7 +1343,7 @@ class UIList(wx.Panel):
         items = set(self.data_store.keys())
         #--Update existing items.
         index = 0
-        while index < self.__gList.GetItemCount():
+        while index < self.item_count:
             item = self.GetItem(index)
             if item not in items: self.__gList.RemoveItemAt(index)
             else:
@@ -1608,30 +1388,29 @@ class UIList(wx.Panel):
                 self.panel.SetDetails()
 
     def Focus(self):
-        self.__gList.SetFocus()
+        self.__gList.set_focus()
 
     #--Column Menu
-    def DoColumnMenu(self, event, column=None):
+    def DoColumnMenu(self, evt_col):
         """Show column menu."""
-        if not self.mainMenu: return
-        if column is None: column = event.GetColumn()
-        self.mainMenu.new_menu(self, column)
+        if self.mainMenu: self.mainMenu.new_menu(self, evt_col)
+        return EventResult.FINISH
 
     #--Item Menu
-    def DoItemMenu(self,event):
+    def DoItemMenu(self):
         """Show item menu."""
         selected = self.GetSelected()
         if not selected:
-            self.DoColumnMenu(event,0)
-            return
-        if not self.itemMenu: return
-        self.itemMenu.new_menu(self, selected)
+            self.DoColumnMenu(0)
+        elif self.itemMenu:
+            self.itemMenu.new_menu(self, selected)
+        return EventResult.FINISH
 
     #--Callbacks --------------------------------------------------------------
-    def OnMouse(self,event):
+    def _handle_mouse_motion(self, wrapped_evt, lb_dex_and_flags):
         """Handle mouse entered item by showing tip or similar."""
-        if event.Moving():
-            (itemDex, mouseHitFlag) = self.__gList.HitTest(event.GetPosition())
+        if wrapped_evt.is_moving:
+            (itemDex, mouseHitFlag) = lb_dex_and_flags
             if itemDex != self.mouse_index:
                 self.mouse_index = itemDex
                 if itemDex >= 0:
@@ -1640,68 +1419,67 @@ class UIList(wx.Panel):
                     if text != self.mouseTextPrev:
                         Link.Frame.set_status_info(text)
                         self.mouseTextPrev = text
-        elif event.Leaving() and self.mouse_index is not None:
+    def _handle_mouse_leaving(self):
+        if self.mouse_index is not None:
             self.mouse_index = None
             Link.Frame.set_status_info(u'')
-        event.Skip()
 
-    def OnKeyUp(self, event):
+    def _handle_key_up(self, wrapped_evt, g_list):
         """Char event: select all items, delete selected items, rename."""
-        code = event.GetKeyCode()
-        if event.CmdDown() and code == ord('A'): # Ctrl+A
-            if event.ShiftDown(): # de-select all
+        code = wrapped_evt.key_code
+        if wrapped_evt.is_cmd_down and code == ord(u'A'): # Ctrl+A
+            if wrapped_evt.is_shift_down: # de-select all
                 self.ClearSelected(clear_details=True)
             else: # select all
                 try:
-                    self.__gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
+                    self.__gList.on_item_selected.unsubscribe(
+                        self._handle_select)
                     # omit below to leave displayed details
                     self.panel.ClearDetails()
                     self.SelectItemAtIndex(-1) # -1 indicates 'all items'
                 finally:
-                    self.__gList.Bind(wx.EVT_LIST_ITEM_SELECTED,
-                                      self.OnItemSelected)
+                    self.__gList.on_item_selected.subscribe(
+                        self._handle_select)
         elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
         elif code in wxDelete:
-            with BusyCursor(): self.DeleteItems(event=event)
-        elif event.CmdDown() and code == ord('O'): # Ctrl+O
+            with BusyCursor(): self.DeleteItems(wrapped_evt=wrapped_evt)
+        elif wrapped_evt.is_cmd_down and code == ord(u'O'): # Ctrl+O
             self.open_data_store()
-        event.Skip()
 
-    ##: Columns callbacks - belong to a ListCtrl mixin
-    def OnColumnClick(self, event):
+    # Columns callbacks
+    def OnColumnClick(self, evt_col):
         """Column header was left clicked on. Sort on that column."""
-        self.SortItems(self.cols[event.GetColumn()],'INVERT')
+        self.SortItems(self.cols[evt_col],'INVERT')
 
-    def OnColumnResize(self, event):
+    def OnColumnResize(self, evt_col):
         """Column resized: enforce minimal width and save column size info."""
-        colDex = event.GetColumn()
-        colName = self.cols[colDex]
-        width = self.__gList.GetColumnWidth(colDex)
+        colName = self.cols[evt_col]
+        width = self.__gList._native_widget.GetColumnWidth(evt_col)
         if width < self._min_column_width:
             width = self._min_column_width
-            self.__gList.SetColumnWidth(colDex, self._min_column_width)
-            event.Veto() # if we do not veto the column will be resized anyway!
-            self.__gList.resizeLastColumn(0) # resize last column to fill
-        else:
-            event.Skip()
+            self.__gList._native_widget.SetColumnWidth(evt_col, self._min_column_width)
+            # if we do not veto the column will be resized anyway!
+            self.__gList._native_widget.resizeLastColumn(0) # resize last column to fill
+            self.colWidths[colName] = width
+            return EventResult.CANCEL
         self.colWidths[colName] = width
 
     # gList columns autosize---------------------------------------------------
     def autosizeColumns(self):
         if self.autoColWidths:
-            colCount = xrange(self.__gList.GetColumnCount())
+            colCount = xrange(self.__gList._native_widget.GetColumnCount())
             for i in colCount:
-                self.__gList.SetColumnWidth(i, -self.autoColWidths)
+                self.__gList._native_widget.SetColumnWidth(i, -self.autoColWidths)
 
     #--Events skipped
-    def OnLeftDown(self,event): event.Skip()
-    def OnDClick(self,event): event.Skip()
-    def OnChar(self,event): event.Skip()
+    def _handle_left_down(self, wrapped_evt, lb_dex_and_flags): pass
+    def OnDClick(self, lb_dex_and_flags): pass
+    def OnChar(self, wrapped_evt): pass
     #--Edit labels - only registered if _editLabels != False
     def OnBeginEditLabel(self, event):
         """Start renaming: deselect the extension."""
         to = len(GPath(event.GetLabel()).sbody)
-        (self.__gList.GetEditControl()).SetSelection(0, to)
+        self.edit_control.SetSelection(0, to)
     def OnLabelEdited(self,event): event.Skip()
 
     def _try_rename(self, key, newFileName, to_select, item_edited=None):
@@ -1716,8 +1494,8 @@ class UIList(wx.Panel):
                 return False # break
         return True # continue
 
-    def _getItemClicked(self, event, on_icon=False):
-        (hitItem, hitFlag) = self.__gList.HitTest(event.GetPosition())
+    def _getItemClicked(self, lb_dex_and_flags, on_icon=False):
+        (hitItem, hitFlag) = lb_dex_and_flags
         if hitItem < 0 or (on_icon and hitFlag != wx.LIST_HITTEST_ONITEMICON):
             return None
         return self.GetItem(hitItem)
@@ -1726,10 +1504,10 @@ class UIList(wx.Panel):
     def _get_selected(self, lam=lambda i: i, __next_all=wx.LIST_NEXT_ALL,
                       __state_selected=wx.LIST_STATE_SELECTED):
         listCtrl, selected_list = self.__gList, []
-        i = listCtrl.GetNextItem(-1, __next_all, __state_selected)
+        i = listCtrl._native_widget.GetNextItem(-1, __next_all, __state_selected)
         while i != -1:
             selected_list.append(lam(i))
-            i = listCtrl.GetNextItem(i, __next_all, __state_selected)
+            i = listCtrl._native_widget.GetNextItem(i, __next_all, __state_selected)
         return selected_list
 
     def GetSelected(self):
@@ -1743,7 +1521,7 @@ class UIList(wx.Panel):
 
     def SelectItemAtIndex(self, index, select=True,
                           __select=wx.LIST_STATE_SELECTED):
-        self.__gList.SetItemState(index, select * __select, __select)
+        self.__gList._native_widget.SetItemState(index, select * __select, __select)
 
     def SelectItem(self, item, deselectOthers=False):
         dex = self.GetIndex(item)
@@ -1755,10 +1533,10 @@ class UIList(wx.Panel):
     def SelectItemsNoCallback(self, items, deselectOthers=False):
         if deselectOthers: self.ClearSelected()
         try:
-            self.__gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
+            self.__gList.on_item_selected.unsubscribe(self._handle_select)
             for item in items: self.SelectItem(item)
         finally:
-            self.__gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+            self.__gList.on_item_selected.subscribe(self._handle_select)
 
     def ClearSelected(self, clear_details=False):
         """Unselect all items."""
@@ -1766,7 +1544,7 @@ class UIList(wx.Panel):
         if clear_details: self.panel.ClearDetails()
 
     def SelectLast(self):
-        self.SelectItemAtIndex(self.__gList.GetItemCount() - 1)
+        self.SelectItemAtIndex(self.item_count - 1)
 
     def DeleteAll(self): self.__gList.DeleteAll()
 
@@ -1774,7 +1552,7 @@ class UIList(wx.Panel):
         self.EnsureVisibleIndex(self.GetIndex(name), focus=focus)
 
     def EnsureVisibleIndex(self, dex, focus=False):
-        self.__gList.Focus(dex) if focus else self.__gList.EnsureVisible(dex)
+        self.__gList._native_widget.Focus(dex) if focus else self.__gList._native_widget.EnsureVisible(dex)
         self.Focus()
 
     def SelectAndShowItem(self, item, deselectOthers=False, focus=True):
@@ -1861,11 +1639,11 @@ class UIList(wx.Panel):
         # set column sort image
         try:
             listCtrl = self.__gList
-            try: listCtrl.ClearColumnImage(self._colDict[oldcol])
+            try: listCtrl._native_widget.ClearColumnImage(self._colDict[oldcol])
             except KeyError:
                 pass # if old column no longer is active this will fail but
                 #  not a problem since it doesn't exist anyways.
-            listCtrl.SetColumnImage(self._colDict[col],
+            listCtrl._native_widget.SetColumnImage(self._colDict[col],
                                     self.sm_dn if reverse else self.sm_up)
         except KeyError: pass
 
@@ -1892,26 +1670,26 @@ class UIList(wx.Panel):
             colKey = cols[colDex]
             colName = _settings['bash.colNames'].get(colKey, colKey)
             colWidth = self.colWidths.get(colKey, 30)
-            if colDex >= listCtrl.GetColumnCount(): # Make a new column
-                listCtrl.InsertColumn(colDex, colName)
-                listCtrl.SetColumnWidth(colDex, colWidth)
+            if colDex >= listCtrl._native_widget.GetColumnCount(): # Make a new column
+                listCtrl._native_widget.InsertColumn(colDex, colName)
+                listCtrl._native_widget.SetColumnWidth(colDex, colWidth)
             else: # Update an existing column
-                column = listCtrl.GetColumn(colDex)
+                column = listCtrl._native_widget.GetColumn(colDex)
                 text = column.GetText()
                 if text == colName:
                     # Don't change it, just make sure the width is correct
-                    listCtrl.SetColumnWidth(colDex, colWidth)
+                    listCtrl._native_widget.SetColumnWidth(colDex, colWidth)
                 elif text not in names:
                     # Column that doesn't exist anymore
-                    listCtrl.DeleteColumn(colDex)
+                    listCtrl._native_widget.DeleteColumn(colDex)
                     continue # do not increment colDex or update colDict
                 else: # New column
-                    listCtrl.InsertColumn(colDex, colName)
-                    listCtrl.SetColumnWidth(colDex, colWidth)
+                    listCtrl._native_widget.InsertColumn(colDex, colName)
+                    listCtrl._native_widget.SetColumnWidth(colDex, colWidth)
             self._colDict[colKey] = colDex
             colDex += 1
-        while listCtrl.GetColumnCount() > numCols:
-            listCtrl.DeleteColumn(numCols)
+        while listCtrl._native_widget.GetColumnCount() > numCols:
+            listCtrl._native_widget.DeleteColumn(numCols)
 
     #--Drag and Drop-----------------------------------------------------------
     @conversation
@@ -1924,11 +1702,11 @@ class UIList(wx.Panel):
 
     # gList scroll position----------------------------------------------------
     def SaveScrollPosition(self, isVertical=True):
-        _settings[self.keyPrefix + '.scrollPos'] = self.__gList.GetScrollPos(
+        _settings[self.keyPrefix + '.scrollPos'] = self.__gList._native_widget.GetScrollPos(
             wx.VERTICAL if isVertical else wx.HORIZONTAL)
 
     def SetScrollPosition(self):
-        self.__gList.ScrollLines(
+        self.__gList._native_widget.ScrollLines(
             _settings.get(self.keyPrefix + '.scrollPos', 0))
 
     # Data commands (WIP)------------------------------------------------------
@@ -1937,7 +1715,7 @@ class UIList(wx.Panel):
         if selected:
             index = self.GetIndex(selected[0])
             if index != -1:
-                self.__gList.EditLabel(index)
+                self.__gList._native_widget.EditLabel(index)
 
     def validate_filename(self, event, name_new=None, has_digits=False,
                           ext=u'', is_filename=True):
@@ -1973,11 +1751,11 @@ class UIList(wx.Panel):
         return maPattern.groups()[0], GPath(newName), num_str
 
     @conversation
-    def DeleteItems(self, event=None, items=None,
+    def DeleteItems(self, wrapped_evt=None, items=None,
                     dialogTitle=_(u'Delete Items'), order=True):
         recycle = (self.__class__._recycle and
         # menu items fire 'CommandEvent' - I need a workaround to detect Shift
-            (True if event is None else not event.ShiftDown()))
+            (True if wrapped_evt is None else not wrapped_evt.is_shift_down))
         items = self._toDelete(items)
         if not self.__class__._shellUI:
             items = self._promptDelete(items, dialogTitle, order, recycle)
