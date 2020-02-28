@@ -231,9 +231,8 @@ class ColorDialog(DialogWindow):
                             continue # skip, identical to our current state
                         self.changes[key] = color
         except Exception as e:
-            balt.showError(Link.Frame, _(
-                u'An error occurred reading from ') + inPath.stail +
-                           u':\n\n%s' % e)
+            balt.showError(Link.Frame, _(u'An error occurred reading from ')
+                           + inPath.stail + u':\n\n%s' % e)
         self.UpdateUIButtons()
 
     def OnComboBox(self):

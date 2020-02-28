@@ -533,7 +533,7 @@ class Installer(object):
                 archiveRoot, size, crc] in goodDlls[fileLower]: return False
             message = Installer._dllMsg(fileLower, full, archiveRoot,
                                         desc, ext, badDlls, goodDlls)
-            if not balt.askYes(balt.Link.Frame,message, dialogTitle):
+            if not balt.askYes(balt.Link.Frame, message, dialogTitle):
                 badDlls[fileLower].append([archiveRoot,size,crc])
                 bass.settings['bash.installers.badDlls'] = Installer._badDlls
                 return True

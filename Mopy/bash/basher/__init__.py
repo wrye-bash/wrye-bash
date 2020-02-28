@@ -666,8 +666,9 @@ class INIList(balt.UIList):
             message = (_(u"Apply an ini tweak to %s?") % chosen + u'\n\n' + _(
                 u"WARNING: Incorrect tweaks can result in CTDs and even "
                 u"damage to your computer!"))
-            ask = balt.askContinue(balt.Link.Frame, message,
-                                   'bash.iniTweaks.continue', _(u"INI Tweaks"))
+            ask = balt.askContinue(
+                balt.Link.Frame, message, u'bash.iniTweaks.continue',
+                _(u'INI Tweaks'))
         return ask
 
 #------------------------------------------------------------------------------
@@ -1596,12 +1597,10 @@ class ModDetails(_ModsSavesDetails):
                 if mod_info.setBashTagsDesc(mod_tags):
                     _refreshUI()
                 else:
-                    thinSplitterWin = self.window.GetParent().GetParent(
-                        ).GetParent().GetParent()
-                    balt.showError(thinSplitterWin,
-                        _(u'Description field including the Bash Tags must be '
-                          u'at most 511 characters. Edit the description to '
-                          u'leave enough room.'))
+                    balt.showError(Link.Frame, _(
+                        u'Description field including the Bash Tags must be '
+                        u'at most 511 characters. Edit the description to '
+                        u'leave enough room.'))
         # Tags links
         class _TagLink(CheckLink):
             @property
