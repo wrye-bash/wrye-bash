@@ -548,7 +548,7 @@ class Mod_Groups(_Mod_Labels):
     def _doRefresh(self):
         """Add to the list of groups groups currently assigned to mods."""
         self.listEditor.SetItemsTo(list(set(bass.settings[
-            'bash.mods.groups']) | _ModGroups.assignedGroups()))
+            u'bash.mods.groups']) | _ModGroups.assignedGroups()))
 
     def _doSync(self):
         """Set the list of groups to groups currently assigned to mods."""
@@ -571,7 +571,7 @@ class Mod_Groups(_Mod_Labels):
         if not balt.askContinue(self.listEditor, msg,
                                 'bash.groups.reset.continue',
                                 _(u'Reset Groups')): return
-        self.listEditor.SetItemsTo(list(settingDefaults['bash.mods.groups']))
+        self.listEditor.SetItemsTo(list(settingDefaults[u'bash.mods.groups']))
 
 #--Ratings --------------------------------------------------------------------
 class Mod_Ratings(_Mod_Labels):
@@ -619,7 +619,7 @@ class Mod_ShowReadme(OneItemLink):
     def Execute(self):
         if not Link.Frame.docBrowser:
             DocBrowser().show_frame()
-            bass.settings['bash.modDocs.show'] = True
+            bass.settings[u'bash.modDocs.show'] = True
         Link.Frame.docBrowser.SetMod(self._selected_item)
         Link.Frame.docBrowser.raise_frame()
 
@@ -786,7 +786,7 @@ class Mod_JumpToInstaller(AppendableLink, OneItemLink):
             u'filename': self._selected_item}
 
     def _append(self, window): return balt.Link.Frame.iPanel and bass.settings[
-        'bash.installers.enabled']
+        u'bash.installers.enabled']
 
     def _enable(self):
         return (super(Mod_JumpToInstaller, self)._enable()
@@ -1947,17 +1947,17 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         defaultPath = bass.dirs[u'patches'].join(u'%s Exported Scripts' % fileName)
         def OnOk():
             dialog.accept_modal()
-            bass.settings['bash.mods.export.deprefix'] = gdeprefix.text_content.strip()
-            bass.settings['bash.mods.export.skip'] = gskip.text_content.strip()
-            bass.settings['bash.mods.export.skipcomments'] = gskipcomments.is_checked
+            bass.settings[u'bash.mods.export.deprefix'] = gdeprefix.text_content.strip()
+            bass.settings[u'bash.mods.export.skip'] = gskip.text_content.strip()
+            bass.settings[u'bash.mods.export.skipcomments'] = gskipcomments.is_checked
         dialog = DialogWindow(Link.Frame, _(u'Export Scripts Options'))
         gskip = TextField(dialog)
         gdeprefix = TextField(dialog)
         gskipcomments = CheckBox(dialog, _(u'Filter Out Comments'),
           chkbx_tooltip=_(u"If active doesn't export comments in the scripts"))
-        gskip.text_content = bass.settings['bash.mods.export.skip']
-        gdeprefix.text_content = bass.settings['bash.mods.export.deprefix']
-        gskipcomments.is_checked = bass.settings['bash.mods.export.skipcomments']
+        gskip.text_content = bass.settings[u'bash.mods.export.skip']
+        gdeprefix.text_content = bass.settings[u'bash.mods.export.deprefix']
+        gskipcomments.is_checked = bass.settings[u'bash.mods.export.skipcomments']
         msg = [_(u'Remove prefix from file names i.e. enter cob to save '
                  u'script cobDenockInit'),
                _(u'as DenockInit.ext rather than as cobDenockInit.ext'),
@@ -1991,9 +1991,9 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         scriptText = self._parser()
         scriptText.readFromMod(fileInfo, fileName)
         exportedScripts = scriptText.writeToText(
-            bass.settings['bash.mods.export.skip'], textDir,
-            bass.settings['bash.mods.export.deprefix'], fileName,
-            bass.settings['bash.mods.export.skipcomments'])
+            bass.settings[u'bash.mods.export.skip'], textDir,
+            bass.settings[u'bash.mods.export.deprefix'], fileName,
+            bass.settings[u'bash.mods.export.skipcomments'])
         #finally:
         self._showLog(exportedScripts, title=_(u'Export Scripts'),
                       asDialog=True)

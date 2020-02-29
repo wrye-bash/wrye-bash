@@ -51,7 +51,7 @@ class ImportFaceDialog(DialogWindow):
         self.listBox.set_min_size(175, 150)
         #--Name,Race,Gender Checkboxes
         fi_flgs = bosh.faces.PCFaces.pcf_flags(
-            bass.settings.get('bash.faceImport.flags', 0x4))
+            bass.settings.get(u'bash.faceImport.flags', 0x4))
         self.nameCheck = CheckBox(self, _(u'Name'), checked=fi_flgs.name)
         self.raceCheck = CheckBox(self, _(u'Race'), checked=fi_flgs.race)
         self.genderCheck = CheckBox(self, _(u'Gender'), checked=fi_flgs.gender)
@@ -113,8 +113,9 @@ class ImportFaceDialog(DialogWindow):
         pc_flags.stats = self.statsCheck.is_checked
         pc_flags.iclass = self.classCheck.is_checked
         #deprint(flags.getTrueAttrs())
-        bass.settings['bash.faceImport.flags'] = int(pc_flags)
-        bosh.faces.PCFaces.save_setFace(self.fileInfo, self.fdata[item], pc_flags)
+        bass.settings[u'bash.faceImport.flags'] = int(pc_flags)
+        bosh.faces.PCFaces.save_setFace(self.fileInfo, self.fdata[item],
+                                        pc_flags)
         balt.showOk(self, _(u'Face imported.'), self.fileInfo.name.s)
         self.accept_modal()
 

@@ -381,12 +381,12 @@ def _main(opts, wx_locale):
     # Backup the Bash settings - we need settings being initialized to get
     # the previous version - we should read this from a file so we can move
     # backup higher up in the boot sequence.
-    previous_bash_version = bass.settings['bash.version']
+    previous_bash_version = bass.settings[u'bash.version']
     # backup settings if app version has changed or on user request
     if opts.backup or barb.BackupSettings.new_bash_version_prompt_backup(
             balt, previous_bash_version):
         frame = None # balt.Link.Frame, not defined yet, no harm done
-        base_dir = bass.settings['bash.backupPath'] or bass.dirs[u'modsBash']
+        base_dir = bass.settings[u'bash.backupPath'] or bass.dirs[u'modsBash']
         settings_file = (opts.backup and opts.filename) or None
         if not settings_file:
             settings_file = balt.askSave(frame,

@@ -339,7 +339,7 @@ class PageFinish(PageInstaller):
         self.checkApply = CheckBox(self, _(u'Apply these selections'),
                                    checked=bAuto)
         self.checkApply.on_checked.subscribe(self._enableForward)
-        auto = bass.settings['bash.installers.autoWizard']
+        auto = bass.settings[u'bash.installers.autoWizard']
         self.checkInstall = CheckBox(self, _(u'Install this package'),
                                      checked=auto)
         self.checkInstall.on_checked.subscribe(self.OnCheckInstall)

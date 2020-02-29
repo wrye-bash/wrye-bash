@@ -225,7 +225,7 @@ class Installers_Refresh(AppendableLink, Installers_Link):
             u"CRCs.  This can take 5-15 minutes.") if self.full_refresh else _(
             u"Rescan the Data directory and all project directories.")
 
-    def _append(self, window): return bass.settings['bash.installers.enabled']
+    def _append(self, window): return bass.settings[u'bash.installers.enabled']
 
     @balt.conversation
     def Execute(self):
