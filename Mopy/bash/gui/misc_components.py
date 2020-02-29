@@ -285,13 +285,6 @@ class CheckListBox(ListBox, WithCharEvents):
     def lb_check_at_index(self, lb_selection_dex, do_check):
         self._native_widget.Check(lb_selection_dex, do_check)
 
-    def toggle_checked_at_index(self, lb_selection_dex):
-        do_check = not self._native_widget.IsChecked(lb_selection_dex)
-        self._native_widget.Check(lb_selection_dex, do_check)
-
-    def lb_check_indexes(self, indexes):
-        self._native_widget.SetChecked(indexes)
-
     def lb_is_checked_at_index(self, lb_selection_dex):
         return self._native_widget.IsChecked(lb_selection_dex)
 
@@ -315,3 +308,13 @@ class CheckListBox(ListBox, WithCharEvents):
                 self.lb_check_at_index(index, value)
             for index in range(self.lb_get_items_count(), len(names), -1):
                 self.lb_delete_at_index(index - 1)
+
+    def toggle_checked_at_index(self, lb_selection_dex):
+        do_check = not self.lb_is_checked_at_index(lb_selection_dex)
+        self.lb_check_at_index(lb_selection_dex, do_check)
+
+    def set_all_checkmarks(self, checked):
+        """Sets all checkmarks to the specified state - checked if True,
+        unchecked if False."""
+        for i in xrange(self.lb_get_items_count()):
+            self.lb_check_at_index(i, checked)

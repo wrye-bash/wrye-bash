@@ -1901,7 +1901,7 @@ class Link(object):
         index of the right-clicked item. In main (column header) menus it's
         the column clicked on or the first column. Set in Links.new_menu().
         :type window: UIList | wx.Panel | gui.buttons.Button | DnDStatusBar |
-            wx.CheckListBox
+            gui.misc_components.CheckListBox
         :type selection: list[Path | unicode | int] | int | None
         """
         self.window = window
@@ -2311,10 +2311,7 @@ class _CheckList_SelectAll(ItemLink):
         self._text = _(u'Select All') if select else _(u'Select None')
 
     def Execute(self):
-        # TODO(inf) de-wx! window currently leaks the wx object - while we're
-        #  at it, add a check_all method to the wrapper, make this a one-liner
-        for i in xrange(self.window.GetCount()):
-            self.window.Check(i, self.select)
+        self.window.set_all_checkmarks(checked=self.select)
 
 # TODO(inf) Needs renaming, also need to make a virtual version eventually...
 class TreeCtrl(_AComponent):
@@ -2374,8 +2371,7 @@ class ListBoxes(DialogWindow):
                                           isHScroll=True)
                 checksCtrl.on_key_up.subscribe(self._on_key_up)
                 checksCtrl.on_context.subscribe(self._on_context)
-                # check all - for range and set see wx._controls.CheckListBox
-                checksCtrl.lb_check_indexes(set(range(len(strings))))
+                checksCtrl.set_all_checkmarks(checked=True)
             elif liststyle == u'list':
                 checksCtrl = ListBox(self, choices=strings, isHScroll=True)
             else: # u'tree'
@@ -2404,9 +2400,8 @@ class ListBoxes(DialogWindow):
         """Char events"""
         ##Ctrl-A - check all
         if wrapped_evt.is_cmd_down and wrapped_evt.key_code == ord(u'A'):
-            check = not wrapped_evt.is_shift_down
-            for i in xrange(len(lb_instance.lb_get_str_items())):
-                    lb_instance.lb_check_at_index(i, check)
+            lb_instance.set_all_checkmarks(
+                checked=not wrapped_evt.is_shift_down)
             return EventResult.FINISH ##: needed?
 
     def _on_context(self, lb_instance):

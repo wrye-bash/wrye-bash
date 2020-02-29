@@ -779,8 +779,7 @@ class Installer_Espm_SelectAll(_Installer_Details_Link):
 
     def Execute(self):
         self._installer.espmNots = set()
-        for i in range(len(self.window.espms)):
-            self.window.gEspmList.lb_check_at_index(i, True)
+        self.window.gEspmList.set_all_checkmarks(checked=True)
         self.window.refreshCurrent(self._installer)
 
 class Installer_Espm_DeselectAll(_Installer_Details_Link):
@@ -789,11 +788,8 @@ class Installer_Espm_DeselectAll(_Installer_Details_Link):
     _help = _(u'Deselects all plugin files in the selected sub-packages.')
 
     def Execute(self):
-        espmNots = self._installer.espmNots = set()
-        for i in range(len(self.window.espms)):
-            self.window.gEspmList.lb_check_at_index(i, False)
-            espm =GPath(self.window.gEspmList.lb_get_str_item_at_index(i).replace(u'&&', u'&'))
-            espmNots.add(espm)
+        self._installer.espmNots = set(self.window.espms)
+        self.window.gEspmList.set_all_checkmarks(checked=False)
         self.window.refreshCurrent(self._installer)
 
 class Installer_Espm_Rename(_Installer_Details_Link):

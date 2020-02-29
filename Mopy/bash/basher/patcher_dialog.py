@@ -98,9 +98,11 @@ class PatchDialog(DialogWindow):
         # TODO(nycz): DEWX - Button.GetHandle
         env.setUAC(self.gExecute._native_widget.GetHandle(), True)
         self.gSelectAll = SelectAllButton(self)
-        self.gSelectAll.on_clicked.subscribe(self.SelectAll)
+        self.gSelectAll.on_clicked.subscribe(
+            lambda: self.mass_select_recursive(True))
         self.gDeselectAll = DeselectAllButton(self)
-        self.gDeselectAll.on_clicked.subscribe(self.DeselectAll)
+        self.gDeselectAll.on_clicked.subscribe(
+            lambda: self.mass_select_recursive(False))
         cancelButton = CancelButton(self)
         self.gPatchers = CheckListBox(self, choices=patcherNames,
                                       isSingle=True, onSelect=self.OnSelect,
@@ -428,19 +430,13 @@ class PatchDialog(DialogWindow):
         """Revert configuration back to default"""
         self._load_config({}, set_first_load=True, default=True)
 
-    def SelectAll(self):
-        """Select all patchers and entries in patchers with child entries."""
-        for index,patcher in enumerate(self.patchers):
-            self.gPatchers.lb_check_at_index(index, True)
-            patcher.mass_select()
-        self.gExecute.enabled = True
-
-    def DeselectAll(self):
-        """Deselect all patchers and entries in patchers with child entries."""
-        for index,patcher in enumerate(self.patchers):
-            self.gPatchers.lb_check_at_index(index, False)
-            patcher.mass_select(select=False)
-        self.gExecute.enabled = False
+    def mass_select_recursive(self, select=True):
+        """Select or deselect all patchers and entries in patchers with child
+        entries."""
+        self.gPatchers.set_all_checkmarks(checked=select)
+        for patcher in self.patchers:
+            patcher.mass_select(select=select)
+        self.gExecute.enabled = select
 
     #--GUI --------------------------------
     def OnSelect(self, lb_selection_dex, lb_selection_str):
@@ -491,10 +487,7 @@ class PatchDialog(DialogWindow):
         if wrapped_evt.key_code == 1 and wrapped_evt.is_cmd_down: # Ctrl+'A'
             patcher = self.currentPatcher
             if patcher is not None:
-                if wrapped_evt.is_shift_down:
-                    patcher.DeselectAll()
-                else:
-                    patcher.SelectAll()
+                patcher.mass_select(select=not wrapped_evt.is_shift_down)
                 return
 
 # Used in ConvertConfig to convert between C and P *gui* patchers config - so

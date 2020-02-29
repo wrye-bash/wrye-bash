@@ -270,9 +270,9 @@ class _ListPatcherPanel(_PatcherPanel):
     def _get_select_layout(self):
         if not self.selectCommands: return None
         self.gSelectAll = Button(self.gConfigPanel, _(u'Select All'))
-        self.gSelectAll.on_clicked.subscribe(self.SelectAll)
+        self.gSelectAll.on_clicked.subscribe(lambda: self.mass_select(True))
         self.gDeselectAll = Button(self.gConfigPanel, _(u'Deselect All'))
-        self.gDeselectAll.on_clicked.subscribe(self.DeselectAll)
+        self.gDeselectAll.on_clicked.subscribe(lambda: self.mass_select(False))
         return VLayout(spacing=4, items=[self.gSelectAll, self.gDeselectAll])
 
     def SetItems(self,items):
@@ -358,27 +358,13 @@ class _ListPatcherPanel(_PatcherPanel):
         order."""
         return load_order.get_ordered(items)
 
-    def SelectAll(self):
-        """'Select All' Button was pressed, update all configChecks states."""
-        try:
-            for index, item in enumerate(self.items):
-                self.gList.lb_check_at_index(index, True)
-            self.OnListCheck()
-        except AttributeError:
-            pass #ListBox instead of CheckListBox
-        self._set_focus()
-
-    def DeselectAll(self):
-        """'Deselect All' Button was pressed, update all configChecks states."""
-        try:
-            self.gList.lb_check_indexes([])
-            self.OnListCheck()
-        except AttributeError:
-            pass #ListBox instead of CheckListBox
-        self._set_focus()
-
     def mass_select(self, select=True):
-        self.SelectAll() if select else self.DeselectAll()
+        try:
+            self.gList.set_all_checkmarks(checked=select)
+            self.OnListCheck()
+        except AttributeError:
+            pass #ListBox instead of CheckListBox
+        self._set_focus()
 
     #--Config Phase -----------------------------------------------------------
     def getConfig(self, configs):
@@ -511,13 +497,15 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
              LayoutOptions(expand=True, weight=1)))
         return gConfigPanel
 
-    def _get_tweak_select_layout(self, ):
+    def _get_tweak_select_layout(self):
         if self.selectCommands:
             self.gTweakSelectAll = Button(self.gConfigPanel, _(u'Select All'))
-            self.gTweakSelectAll.on_clicked.subscribe(self.TweakSelectAll)
+            self.gTweakSelectAll.on_clicked.subscribe(
+                lambda: self.mass_select(True))
             self.gTweakDeselectAll = Button(self.gConfigPanel,
                                             _(u'Deselect All'))
-            self.gTweakDeselectAll.on_clicked.subscribe(self.TweakDeselectAll)
+            self.gTweakDeselectAll.on_clicked.subscribe(
+                lambda: self.mass_select(False))
             tweak_select_layout = VLayout(spacing=4, items=[
                 self.gTweakSelectAll, self.gTweakDeselectAll])
         else: tweak_select_layout = None
@@ -667,29 +655,16 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         self.gTweakList.lb_check_at_index(tweakIndex, True) # wx.EVT_CHECKLISTBOX is NOT
         self.TweakOnListCheck() # fired so this line is needed (?)
 
-    def TweakSelectAll(self):
-        """'Select All' Button was pressed, update all configChecks states."""
-        try:
-            for index, item in enumerate(self.tweaks):
-                self.gTweakList.lb_check_at_index(index, True)
-            self.TweakOnListCheck()
-        except AttributeError:
-            pass #ListBox instead of CheckListBox
-        self._set_focus()
-
-    def TweakDeselectAll(self):
-        """'Deselect All' Button was pressed, update all configChecks
-        states."""
-        try:
-            self.gTweakList.lb_check_indexes([])
-            self.TweakOnListCheck()
-        except AttributeError:
-            pass #ListBox instead of CheckListBox
-        self._set_focus()
-
     def mass_select(self, select=True):
+        """'Select All' or 'Deselect All' button was pressed, update all
+        configChecks states."""
         super(_TweakPatcherPanel, self).mass_select(select)
-        self.TweakSelectAll() if select else self.TweakDeselectAll()
+        try:
+            self.gTweakList.set_all_checkmarks(checked=select)
+            self.TweakOnListCheck()
+        except AttributeError:
+            pass #ListBox instead of CheckListBox
+        self._set_focus()
 
     #--Config Phase -----------------------------------------------------------
     def getConfig(self, configs):
