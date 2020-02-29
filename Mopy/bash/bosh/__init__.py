@@ -60,8 +60,12 @@ from ..parsers import ModFile
 
 # Singletons, Constants -------------------------------------------------------
 #--Constants
-oldTags = sorted((u'Merge',))
-oldTagsSet = set(oldTags)
+# Tags that have been removed from Wrye Bash and should be dropped from pickle
+# files. Explanations:
+#  - C.GridFlags: Renamed to C.ForceHideLand, a few mods had already used it
+#  - Merge: Obsoleted due to reworking of the patch merger
+#  - ScriptContents: Dangerous tag, never worked correctly
+removed_tags = {u'C.GridFlags', u'Merge', u'ScriptContents'}
 reOblivion = re.compile(
     u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|_GOTY non-SI).esm$', re.U)
 # quick or auto save.bak(.bak...)
@@ -509,19 +513,27 @@ class ModInfo(FileInfo):
         return True
 
     def getBashTags(self):
-        """Returns any Bash flag keys."""
-        return modInfos.table.getItem(self.name, 'bashTags', set())
+        """Returns any Bash flag keys. Drops obsolete tags."""
+        ret_tags = modInfos.table.getItem(self.name, u'bashTags', set())
+        fixed_tags = ret_tags - removed_tags
+        if fixed_tags != ret_tags:
+            self.setBashTags(fixed_tags)
+        return fixed_tags & bush.game.allTags
 
-    def getBashTagsDesc(self):
-        """Returns any Bash flag keys."""
+    def getBashTagsDesc(self, filter_unknown=True):
+        """Returns any Bash flag keys. If filter_unknown is True, filter out
+        any obsolete and unknown tags."""
         description = self.header.description or u''
-        maBashKeys = re.search(u'{{ *BASH *:([^}]+)}}',description,flags=re.U|re.I)
+        maBashKeys = re.search(u'{{ *BASH *:([^}]+)}}', description,
+                               flags=re.U | re.I)
         if not maBashKeys:
             return set()
         else:
             bashTags = maBashKeys.group(1).split(u',')
-            return set([tag.strip() for tag in
-                        bashTags]) & bush.game.allTags - oldTagsSet
+            tags_set = set([tag.strip() for tag in bashTags])
+            # If we should filter out, remove obsolete and unknown tags
+            if filter_unknown: tags_set &= bush.game.allTags - removed_tags
+            return tags_set
 
     def reloadBashTags(self):
         """Reloads bash tags from mod description, LOOT and Data/BashTags."""
@@ -536,11 +548,8 @@ class ModInfo(FileInfo):
         added, removed = configHelpers.get_tags_from_dir(self.name)
         tags |= added
         tags -= removed
-        # Filter and remove old tags
+        # Filter out unknown tags and store the result
         tags &= bush.game.allTags
-        if tags & oldTagsSet:
-            tags -= oldTagsSet
-            self.setBashTagsDesc(tags)
         self.setBashTags(tags)
 
     #--Header Editing ---------------------------------------------------------
