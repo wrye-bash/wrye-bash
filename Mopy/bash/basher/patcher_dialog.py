@@ -126,9 +126,9 @@ class PatchDialog(DialogWindow):
         self.gPatchers.on_key_pressed.subscribe(self._on_char)
         self.mouse_dex = -1
         #--Layout
-        self.config_layout = VLayout(default_fill=True, default_weight=1)
-        VLayout(border=4, spacing=4, default_fill=True, items=[
-            (HLayout(spacing=8, default_fill=True, items=[
+        self.config_layout = VLayout(item_expand=True, item_weight=1)
+        VLayout(border=4, spacing=4, item_expand=True, items=[
+            (HLayout(spacing=8, item_expand=True, items=[
                 self.gPatchers,
                 (self.config_layout, LayoutOptions(weight=1))
              ]), LayoutOptions(weight=1)),

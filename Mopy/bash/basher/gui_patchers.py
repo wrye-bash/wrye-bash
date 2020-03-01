@@ -66,7 +66,7 @@ class _PatcherPanel(object):
         self.gTipText = gTipText
         self.gConfigPanel = PanelWin(parent, no_border=False)
         self.main_layout = VLayout(
-            default_fill=True, default_weight=1, spacing=4, items=[
+            item_expand=True, item_weight=1, spacing=4, items=[
                 (Label(self.gConfigPanel, text_wrap(self.text, 70)),
                  LayoutOptions(weight=0))])
         self.main_layout.apply_to(self.gConfigPanel)
@@ -505,7 +505,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         #--Layout
         self.main_layout.add(
             (HBoxedLayout(gConfigPanel, title=self.__class__.tweak_label,
-                          default_fill=True, spacing=4, items=[
+                          item_expand=True, spacing=4, items=[
                     (self.gTweakList, LayoutOptions(weight=1)),
                     self._get_tweak_select_layout()]),
              LayoutOptions(expand=True, weight=1)))

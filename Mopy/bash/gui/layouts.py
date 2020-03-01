@@ -115,8 +115,15 @@ class LayoutOptions(object):
 class _ALayout(object):
     """Abstract base class for all layouts."""
 
-    def __init__(self, sizer, border=0, default_border=0, default_fill=False,
-                 default_h_align=None, default_v_align=None):
+    def __init__(self, sizer, border=0, item_border=0, item_expand=False,
+                 item_h_align=None, item_v_align=None): # PY3: require kwargs (,*,)
+        """Initiate the layout.
+        The item_* arguments are for when those options are not provided
+        when adding an item. See LayoutOptions for more information.
+        :param sizer: The sizer this layout will wrap around.
+        :param border: Size in pixels of an empty border around the layout.
+                       NOTE: this is around the layout, not individual items.
+        """
         self._sizer = sizer
         if border > 0:
             self._border_wrapper = _wx.BoxSizer(_wx.VERTICAL)
@@ -125,9 +132,9 @@ class _ALayout(object):
                                           border=border)
         else:
             self._border_wrapper = None
-        self._loptions = LayoutOptions(default_border, default_fill,
-                                       h_align=default_h_align,
-                                       v_align=default_v_align)
+        self._default_item_loptions = LayoutOptions(item_border, item_expand,
+                                                    h_align=item_h_align,
+                                                    v_align=item_v_align)
 
     def apply_to(self, parent, fit=False):
         """Apply this layout to the parent."""
@@ -148,36 +155,30 @@ class _ALayout(object):
             item = item._sizer
         else:
             item = _res_parent(item)
-        loptions = self._loptions.from_other(options) if options \
-            else self._loptions
+        loptions = self._default_item_loptions.from_other(options) if options \
+            else self._default_item_loptions
         return item, loptions
 
 class _ALineLayout(_ALayout):
     """Abstract base class for one-dimensional layouts."""
-    def __init__(self, sizer, border=0, default_border=0, default_fill=False,
-                 default_weight=0, default_h_align=None, default_v_align=None,
-                 spacing=0, items=()):
-        """Initiate the layout.
-        The default_* arguments are for when those options are not provided
-        when adding an item. See LayoutOptions for more information.
-        :param sizer: The sizer this layout will wrap around.
-        :param border: Size in pixels of an empty border around the layout.
-                       NOTE: this is around the layout, not individual items.
+
+    def __init__(self, sizer, spacing=0, item_weight=0, items=(), **kwargs):
+        """Initiate the layout - in addition to _ALayout arguments, that you
+        must pass as part of the kwargs, _ALineLayout accepts the following:
         :param spacing: Size in pixels of spacing between each item.
+        :param item_weight: the default relative weight (proportion) of each
+                            item
         :param items: Items or (item, options) pairs to add directly.
         """
         self.spacing = spacing
-        super(_ALineLayout, self).__init__(sizer, border=border,
-                                           default_border=default_border,
-                                           default_fill=default_fill,
-                                           default_h_align=default_h_align,
-                                           default_v_align=default_v_align)
-        self._loptions.weight = default_weight
-        if items: self._add_many(*items)
+        super(_ALineLayout, self).__init__(sizer, **kwargs)
+        self._default_item_loptions.weight = item_weight
+        for item in items:
+            self.add(item)
 
     def add(self, item):
-        """Add one item to the layout.
-        The argument may be a (item, options) pair."""
+        """Add one item to the layout. The item may be an (item, options) pair,
+        a Stretch, or a Spacer instance."""
         if isinstance(item, Stretch):
             self._add_stretch(item.weight)
         elif isinstance(item, Spacer):
@@ -190,12 +191,6 @@ class _ALineLayout(_ALayout):
             self._sizer.Add(item, proportion=options.weight,
                             flag=options.layout_flags(), border=options.border)
             self._sizer.SetItemMinSize(item, -1, -1)
-
-    def _add_many(self, *items):
-        """Add multiple items to the layout.
-        The items may be (item, options) pairs, Stretch- or Spacer objects."""
-        for item in items:
-            self.add(item)
 
     def _add_spacer(self, length=4):
         """Add a fixed space to the layout."""
@@ -215,14 +210,14 @@ class HBoxedLayout(_ALineLayout):
 class HLayout(_ALineLayout):
     """A simple horizontal layout."""
     def __init__(self, *args, **kwargs):
-        super(HLayout, self).__init__(_wx.BoxSizer(_wx.HORIZONTAL),
-                                      *args, **kwargs)
+        super(HLayout, self).__init__(_wx.BoxSizer(_wx.HORIZONTAL), *args,
+                                      **kwargs)
 
 class VLayout(_ALineLayout):
     """A simple vertical layout."""
     def __init__(self, *args, **kwargs):
-        super(VLayout, self).__init__(_wx.BoxSizer(_wx.VERTICAL),
-                                      *args, **kwargs)
+        super(VLayout, self).__init__(_wx.BoxSizer(_wx.VERTICAL), *args,
+                                      **kwargs)
 
 class GridLayout(_ALayout):
     """A flexible grid layout.
@@ -230,10 +225,8 @@ class GridLayout(_ALayout):
     fit its content. The weight of items are handled on a per-row and -col
     basis, specified with stretch_cols/stretch_rows or set_stretch()."""
 
-    def __init__(self, border=0, h_spacing=0, v_spacing=0,
-                 stretch_cols=(), stretch_rows=(),
-                 default_fill=False, default_border=0,
-                 default_h_align=None, default_v_align=None, items=()):
+    def __init__(self, h_spacing=0, v_spacing=0, stretch_cols=(),
+                 stretch_rows=(), items=(), **kwargs):
         """
         Initiate the grid layout.
 
@@ -245,15 +238,10 @@ class GridLayout(_ALayout):
             grow and fill available space
         :param items: Items or (item, options) pairs to add directly.
         """
-        super(GridLayout, self).__init__(_wx.GridBagSizer(hgap=h_spacing,
-                                                          vgap=v_spacing),
-                                         border=border,
-                                         default_border=default_border,
-                                         default_fill=default_fill,
-                                         default_h_align=default_h_align,
-                                         default_v_align=default_v_align)
-        self._loptions.row_span = 1
-        self._loptions.col_span = 1
+        super(GridLayout, self).__init__(
+            _wx.GridBagSizer(hgap=h_spacing, vgap=v_spacing), **kwargs)
+        self._default_item_loptions.row_span = 1
+        self._default_item_loptions.col_span = 1
         if items:
             self.append_rows(items)
         for col in stretch_cols:

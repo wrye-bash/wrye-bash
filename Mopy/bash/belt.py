@@ -216,10 +216,10 @@ class PageSelect(PageInstaller):
                     self.listOptions.lb_select_index(index)
                     self.Selection(index)
                     break
-        VLayout(default_fill=True, spacing=5, items=[
+        VLayout(item_expand=True, spacing=5, items=[
             HBoxedLayout(self, items=[self.TitleDesc]),
             Label(self, _(u'Options:')),
-            (HLayout(default_fill=True, default_weight=1,
+            (HLayout(item_expand=True, item_weight=1,
                      items=[self.listOptions, self.bmpItem]),
              LayoutOptions(weight=1)),
             Label(self, _(u'Description:')),
@@ -365,19 +365,19 @@ class PageFinish(PageInstaller):
         self.checkInstall.on_checked.subscribe(self.OnCheckInstall)
         self._wiz_parent.ret.should_install = auto
         # Layout
-        layout = VLayout(default_fill=True, spacing=4, items=[
+        layout = VLayout(item_expand=True, spacing=4, items=[
             HBoxedLayout(self, items=[textTitle]),
-            (HLayout(default_fill=True, default_weight=1, spacing=5, items=[
-                VLayout(default_fill=True,
+            (HLayout(item_expand=True, item_weight=1, spacing=5, items=[
+                VLayout(item_expand=True,
                         items=[Label(self, _(u'Sub-Packages')),
                                (self.listSubs, LayoutOptions(weight=1))]),
-                VLayout(default_fill=True,
+                VLayout(item_expand=True,
                         items=[Label(self, _(u'Plugins')),
                                (self.plugin_selection,
                                 LayoutOptions(weight=1))]),
              ]), LayoutOptions(weight=1)),
             Label(self, _(u'Ini Tweaks:')),
-            (HLayout(default_fill=True, default_weight=1, spacing=5,
+            (HLayout(item_expand=True, item_weight=1, spacing=5,
                      items=[self.listInis, self.listTweaks]),
              LayoutOptions(weight=1)),
             Label(self, _(u'Notes:')),
@@ -455,7 +455,7 @@ class PageVersions(PageInstaller):
                   url=u'https://www.nexusmods.com/oblivion/mods/22368',
                   tooltip_=u'https://www.nexusmods.com/oblivion')
         versions_box = HBoxedLayout(self, _(u'Version Requirements'),
-                                    default_fill=True, default_weight=1,
+                                    item_expand=True, item_weight=1,
                                     items=[versions_layout])
         text_warning = Label(self, _(u'WARNING: The following version '
                                      u'requirements are not met for using '

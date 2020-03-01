@@ -94,16 +94,16 @@ class DocBrowser(WindowFrame):
                          self._rename_btn, self._open_btn, self._prev_btn,
                          self._next_btn, self._reload_btn]
         #--Mod list
-        VLayout(spacing=4, default_fill=True, items=[
+        VLayout(spacing=4, item_expand=True, items=[
             self._mod_name_box, (self._mod_list, LayoutOptions(weight=1))
         ]).apply_to(mod_list_window)
         #--Text field and buttons
-        VLayout(spacing=4, default_fill=True, items=[
-            HLayout(default_fill=True, items=self._buttons),
+        VLayout(spacing=4, item_expand=True, items=[
+            HLayout(item_expand=True, items=self._buttons),
             self._doc_name_box,
             (self._doc_ctrl.web_viewer, LayoutOptions(weight=3))
         ]).apply_to(main_window)
-        VLayout(default_fill=1, default_border=4, default_weight=1,
+        VLayout(item_expand=1, item_border=4, item_weight=1,
                 items=[root_window])
         for btn in self._buttons:
             btn.enabled = False
@@ -352,7 +352,7 @@ class ModChecker(WindowFrame):
         _f(_UPDATE,     False, _(u'Update'))
         #--Events
         self.on_activate.subscribe(self.on_activation)
-        VLayout(border=4, spacing=4, default_fill=True, items=[
+        VLayout(border=4, spacing=4, item_expand=True, items=[
             (self._html_ctrl.web_viewer, LayoutOptions(weight=1)),
             HLayout(spacing=4, items=[
                 self._controls[_MOD_LIST], self._controls[_CRC],
@@ -456,9 +456,9 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
         save_button.on_clicked.subscribe(self.DoSave)
         cancel_button = CancelButton(self)
         cancel_button.on_clicked.subscribe(self.on_closing)
-        VLayout(default_fill=True, spacing=4, border=4, items=[
-            GridLayout(h_spacing=4, v_spacing=4, default_v_align=CENTER,
-                       stretch_cols=[1], default_fill=True, items=[
+        VLayout(item_expand=True, spacing=4, border=4, items=[
+            GridLayout(h_spacing=4, v_spacing=4, item_v_align=CENTER,
+                       stretch_cols=[1], item_expand=True, items=[
                 (_no_fill_text(_(u'Name:')), self.gName),
                 (_no_fill_text(_(u'Version:')), self.gVersion),
                 (_no_fill_text(_(u'Website:')), self.gWebsite),

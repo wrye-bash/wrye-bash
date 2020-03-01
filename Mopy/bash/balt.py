@@ -547,7 +547,7 @@ class _ContinueDialog(DialogWindow):
         super(_ContinueDialog, parent).__init__(parent, title, sizes_dict=sizes, size=(350, -1))
         self.gCheckBox = CheckBox(self, checkBoxText)
         #--Layout
-        VLayout(border=6, spacing=6, default_fill=True, items=[
+        VLayout(border=6, spacing=6, item_expand=True, items=[
             (HLayout(spacing=6, items=[
                 (staticBitmap(self), LayoutOptions(border=6, v_align=TOP)),
                 (Label(self, message), LayoutOptions(expand=True, weight=1))]),
@@ -743,8 +743,7 @@ class HtmlCtrl(object):
             self._prev_button = BackwardButton(parent)
             self._next_button = ForwardButton(parent)
             self._reload_button = ReloadButton(parent)
-        VLayout(default_weight=4, default_fill=True,
-                items=items).apply_to(ctrl)
+        VLayout(item_weight=4, item_expand=True, items=items).apply_to(ctrl)
         self.switch_to_text() # default to text
 
     def _update_views(self, enable_html):
@@ -875,7 +874,7 @@ class WryeLog(_Log):
         if not asDialog:
             self.window.background_color = gOkButton.background_color
         #--Layout
-        VLayout(border=2, default_fill=True, items=[
+        VLayout(border=2, item_expand=True, items=[
             (self._html_ctrl.web_viewer, LayoutOptions(weight=1)),
             (HLayout(items=(self._html_ctrl.get_buttons()
                             + (Stretch(), gOkButton))),
@@ -995,7 +994,7 @@ class ListEditor(DialogWindow):
             buttons = None
         #--Layout
         layout = VLayout(border=4, spacing=4, items=[
-            (HLayout(spacing=4, default_fill=True, items=[
+            (HLayout(spacing=4, item_expand=True, items=[
                 (self.listBox, LayoutOptions(weight=1)),
                 (self.gInfoBox, LayoutOptions(weight=self._listEditorData.infoWeight)),
                 buttons
@@ -1625,7 +1624,7 @@ class UIList(wx.Panel):
         self.__gList.Bind(wx.EVT_MOTION, self.OnMouse)
         self.__gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
         #--Layout
-        VLayout(default_fill=True, default_weight=1,
+        VLayout(item_expand=True, item_weight=1,
                 items=[self.__gList]).apply_to(self)
         # Columns
         self.PopulateColumns()
@@ -2769,8 +2768,8 @@ class ListBoxes(DialogWindow):
                 checksCtrl = TreeCtrl(self, title, item_group[2])
             self._ctrls[title] = checksCtrl
             checksCtrl.tooltip = item_tip
-            layout.add((HBoxedLayout(self, default_fill=True, title=title,
-                                     default_weight=1, items=[checksCtrl]),
+            layout.add((HBoxedLayout(self, item_expand=True, title=title,
+                                     item_weight=1, items=[checksCtrl]),
                         LayoutOptions(expand=True, weight=1)))
         btns = [OkButton(self, label=bOk, default=True),
                 CancelButton(self, label=bCancel) if canCancel else None]

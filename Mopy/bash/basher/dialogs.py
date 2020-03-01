@@ -82,12 +82,12 @@ class ColorDialog(DialogWindow):
         #--Events
         self.picker.on_color_picker_evt.subscribe(self.OnColorPicker)
         #--Layout
-        VLayout(border=5, default_fill=True, spacing=5, items=[
+        VLayout(border=5, item_expand=True, spacing=5, items=[
             HLayout(items=[
                 (self.comboBox, LayoutOptions(expand=True, weight=1)),
                 self.picker]),
             (self.textCtrl, LayoutOptions(weight=1)),
-            GridLayout(h_spacing=5, v_spacing=5, default_fill=True,
+            GridLayout(h_spacing=5, v_spacing=5, item_expand=True,
                        stretch_cols=[3], items=[
                 (self.defaultAll, self.applyAll, self.export_config),
                 (self.default, self.apply, self.importConfig, None, self.ok)

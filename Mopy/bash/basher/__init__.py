@@ -178,7 +178,7 @@ class SashPanel(NotebookPanel):
         self.left, self.right = self.splitter.make_panes(vertically=isVertical)
         self.isVertical = isVertical
         self.sashPosKey = self.__class__.keyPrefix + '.sashPos'
-        VLayout(default_weight=1, default_fill=True,
+        VLayout(item_weight=1, item_expand=True,
                 items=[self.splitter]).apply_to(self)
 
     def ShowPanel(self, **kwargs):
@@ -243,9 +243,9 @@ class BashTab(_DetailsViewMixin, SashUIListPanel):
         super(BashTab, self).__init__(parent, isVertical)
         self.detailsPanel = self._details_panel_type(self.right._native_widget)
         #--Layout
-        HLayout(default_fill=True, default_weight=1,
+        HLayout(item_expand=True, item_weight=1,
                 items=[self.detailsPanel]).apply_to(self.right)
-        HLayout(default_fill=True, default_weight=2,
+        HLayout(item_expand=True, item_weight=2,
                 items=[self.uiList]).apply_to(self.left)
 
 #------------------------------------------------------------------------------
@@ -1326,7 +1326,7 @@ class ModDetails(_SashDetailsPanel):
                                 # size=(textWidth, 64))
         self.gTags.on_right_clicked.subscribe(self.ShowBashTagsMenu)
         #--Layout
-        VLayout(spacing=4, default_fill=True, items=[
+        VLayout(spacing=4, item_expand=True, items=[
             HLayout(items=[Label(top, _(u'File:')), Stretch(), self.version]),
             self.file,
             Label(top, _(u'Author:')), self.gAuthor,
@@ -1338,7 +1338,7 @@ class ModDetails(_SashDetailsPanel):
             Label(self._bottom_low_panel, _(u'Bash Tags:')),
             (self.gTags, LayoutOptions(expand=True, weight=1))
         ]).apply_to(self._bottom_low_panel)
-        VLayout(default_weight=1, default_fill=True,
+        VLayout(item_weight=1, item_expand=True,
                 items=[self.subSplitter]).apply_to(bottom)
 
     def _resetDetails(self):
@@ -1643,13 +1643,13 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         #--Events
         self._inis_combo_box.on_combo_select.subscribe(self._on_select_drop_down)
         #--Layout
-        VLayout(default_fill=True, spacing=4, items=[
+        VLayout(item_expand=True, spacing=4, items=[
             HLayout(spacing=4, items=[
                 (self._inis_combo_box, LayoutOptions(expand=True, weight=1)),
                 self.removeButton, self.editButton]),
             (self.iniContents, LayoutOptions(weight=1))
         ]).apply_to(right)
-        VLayout(default_fill=True, items=[
+        VLayout(item_expand=True, items=[
             self.tweakName,
             (self.tweakContents, LayoutOptions(weight=1))
         ]).apply_to(left)
@@ -1947,18 +1947,16 @@ class SaveDetails(_SashDetailsPanel):
         self.gInfo.on_text_changed.subscribe(self.OnInfoEdit)
         # TODO(nycz): GUI set_size size=(textWidth, 64)
         #--Layouts
-        VLayout(default_fill=True, items=[
+        VLayout(item_expand=True, items=[
             self.file,
-            HLayout(default_fill=True, items=[
-                (self.playerInfo, LayoutOptions(weight=1)),
-                self.gCoSaves]),
+            HLayout(item_expand=True, items=[
+                (self.playerInfo, LayoutOptions(weight=1)), self.gCoSaves]),
             (self.picture, LayoutOptions(weight=1))
         ]).apply_to(top)
-        VLayout(items=[
-            Label(self._bottom_low_panel, _(u"Save Notes:")),
-            (self.gInfo, LayoutOptions(expand=True, weight=1))
-        ]).apply_to(self._bottom_low_panel)
-        VLayout(default_fill=True, default_weight=1,
+        VLayout(items=[Label(self._bottom_low_panel, _(u"Save Notes:")),
+            (self.gInfo, LayoutOptions(expand=True, weight=1))]
+                ).apply_to(self._bottom_low_panel)
+        VLayout(item_expand=True, item_weight=1,
                 items=[self.subSplitter]).apply_to(bottom)
 
     def _resetDetails(self):
@@ -2355,7 +2353,7 @@ class InstallersList(balt.UIList):
                 copy_button = Button(dialog, label=_(u'Copy'))
                 copy_button.on_clicked.subscribe(lambda: dialog.exit_modal(2))
                 VLayout(border=6, spacing=6, items=[
-                    HLayout(spacing=6, default_border=6, items=[
+                    HLayout(spacing=6, item_border=6, items=[
                         (staticBitmap(dialog), LayoutOptions(v_align=TOP)),
                         (Label(dialog, message), LayoutOptions(expand=True))
                     ]),
@@ -2609,12 +2607,12 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         VLayout(items=[Label(espmsPanel, _(u'Plugin Filter')),
                        (self.gEspmList, LayoutOptions(expand=True, weight=1))]
                 ).apply_to(espmsPanel)
-        VLayout(default_fill=True, items=[self.gPackage, (
+        VLayout(item_expand=True, items=[self.gPackage, (
             self.subSplitter, LayoutOptions(weight=1))]).apply_to(top)
         VLayout(items=[Label(commentsPanel, _(u'Comments')),
                        (self.gComments, LayoutOptions(expand=True, weight=1))]
                 ).apply_to(commentsPanel)
-        VLayout(default_fill=True, default_weight=1, items=[commentsPanel]
+        VLayout(item_expand=True, item_weight=1, items=[commentsPanel]
                 ).apply_to(bottom)
 
     def OnShowInfoPage(self, wx_id, selected_index):
@@ -3123,7 +3121,7 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
         super(ScreensDetails, self).__init__(parent)
         self.screenshot_control = balt.Picture(parent, 256, 192, background=colors['screens.bkgd.image'])
         self.displayed_screen = None # type: bolt.Path
-        HLayout(default_fill=True, default_weight=True,
+        HLayout(item_expand=True, item_weight=True,
                 items=[self.screenshot_control]).apply_to(self)
 
     @property
@@ -3202,8 +3200,8 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         self.gInfo = TextArea(self.bottom)
         self.gInfo.on_text_changed.subscribe(self.OnInfoEdit)
         #--Layout
-        VLayout(default_fill=True, items=[Label(self.top, _(u'File:')),
-                                          self.file]).apply_to(self.top)
+        VLayout(item_expand=True, items=[Label(self.top, _(u'File:')),
+                                         self.file]).apply_to(self.top)
         VLayout(spacing=4, items=[
             (self.gInfo, LayoutOptions(expand=True)),
             HLayout(spacing=4, items=[self.save, self.cancel])
@@ -3303,8 +3301,8 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
         self.gKarma = Spinner(self, min_val=-5, max_val=5, onSpin=self.OnSpin)
         self.gKarma.set_min_size(40,-1)
         #--Layout
-        VLayout(spacing=4, default_fill=True, items=[
-            HLayout(default_fill=True, items=[
+        VLayout(spacing=4, item_expand=True, items=[
+            HLayout(item_expand=True, items=[
                 (self.gName, LayoutOptions(weight=1)), self.gKarma]),
             (self.gText, LayoutOptions(weight=1))
         ]).apply_to(self)
