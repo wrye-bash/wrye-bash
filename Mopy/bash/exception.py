@@ -152,8 +152,6 @@ class NonExistentDriveError(FileOperationError):
 # BSA exceptions --------------------------------------------------------------
 class BSAError(Exception): pass
 
-class BSANotImplemented(BSAError): pass
-
 class BSAVersionError(BSAError):
     def __init__(self, version, expected_version):
         super(BSAVersionError, self).__init__(
@@ -169,6 +167,9 @@ class BSADecodingError(BSAError):
     def __init__(self, string):  # type: (basestring) -> None
         super(BSADecodingError, self).__init__(
             u'Undecodable string {!r}'.format(string))
+
+# DDS exceptions --------------------------------------------------------------
+class DDSError(Exception): pass
 
 # Misc exceptions -------------------------------------------------------------
 class StateError(BoltError):

@@ -54,8 +54,8 @@ from ..bolt import GPath, DataDict, deprint, sio, Path, decode, struct_pack, \
 from ..brec import MreRecord, ModReader, RecordHeader
 from ..cint import CBashApi
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
-    CancelError, FileError, ModError, PluginsFullError, SaveFileError, \
-    SaveHeaderError, SkipError, StateError
+    CancelError, DDSError, FileError, ModError, PluginsFullError, \
+    SaveFileError, SaveHeaderError, SkipError, StateError
 from ..parsers import ModFile
 
 # Singletons, Constants -------------------------------------------------------
@@ -2879,7 +2879,7 @@ class BSAInfos(FileInfos):
                 try:  # Never load_cache for memory reasons - let it be
                     # loaded as needed
                     super(BSAInfo, self).__init__(fullpath, load_cache=False)
-                except BSAError as e:
+                except (BSAError, DDSError) as e:
                     raise FileError, (GPath(fullpath).tail,
                                       e.__class__.__name__ + u' ' +
                                       e.message), \
