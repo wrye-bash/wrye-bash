@@ -1945,7 +1945,7 @@ class SaveDetails(_SashDetailsPanel):
     @property
     def file_infos(self): return bosh.saveInfos
     @property
-    def allowDetailsEdit(self): return self.file_info.header.canEditMasters
+    def allowDetailsEdit(self): return bush.game.ess.canReadBasic
 
     def __init__(self,parent):
         super(SaveDetails, self).__init__(parent)

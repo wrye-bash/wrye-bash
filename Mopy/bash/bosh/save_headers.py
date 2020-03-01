@@ -32,6 +32,7 @@ __author__ = 'Utumno'
 
 import copy
 import itertools
+import lz4.block
 import StringIO
 import struct
 import zlib
@@ -40,9 +41,12 @@ from functools import partial
 from .. import bolt
 from ..bolt import decode, cstrip, unpack_string, unpack_int, unpack_str8, \
     unpack_short, unpack_float, unpack_str16, unpack_byte, struct_pack, \
-    struct_unpack, unpack_int_delim, unpack_str16_delim, unpack_byte_delim, \
-    unpack_many
+    unpack_int_delim, unpack_str16_delim, unpack_byte_delim, unpack_many, \
+    encode
 from ..exception import SaveHeaderError, raise_bolt_error
+
+# Utilities -------------------------------------------------------------------
+def _pack(out, fmt, pack_arg): out.write(struct_pack(fmt, pack_arg))
 
 class SaveFileHeader(object):
     save_magic = 'OVERRIDE'
@@ -54,7 +58,6 @@ class SaveFileHeader(object):
     # map slots to (seek position, unpacker) - seek position negative means
     # seek relative to ins.tell(), otherwise to the beginning of the file
     unpackers = OrderedDict()
-    canEditMasters = True
 
     def __init__(self, save_path):
         try:
@@ -118,12 +121,11 @@ class SaveFileHeader(object):
         return oldMasters
 
     def _write_masters(self, ins, out):
-        def _pack(fmt, *args): out.write(struct_pack(fmt, *args))
-        unpack_int(ins) # Discard oldSize
-        _pack('I', self._master_block_size())
+        ins.seek(4, 1) # Discard oldSize
+        _pack(out, '=I', self._master_block_size())
         #--Skip old masters
         numMasters = unpack_byte(ins)
-        oldMasters = self._dump_masters(ins, numMasters, out, _pack)
+        oldMasters = self._dump_masters(ins, numMasters, out)
         #--Offsets
         offset = out.tell() - ins.tell()
         #--File Location Table
@@ -132,17 +134,17 @@ class SaveFileHeader(object):
             # globalDataTable1Offset, globalDataTable2Offset,
             # changeFormsOffset, globalDataTable3Offset
             oldOffset = unpack_int(ins)
-            _pack('I', oldOffset + offset)
+            _pack(out, '=I', oldOffset + offset)
         return oldMasters
 
-    def _dump_masters(self, ins, numMasters, out, _pack):
+    def _dump_masters(self, ins, numMasters, out):
         oldMasters = []
         for x in xrange(numMasters):
             oldMasters.append(unpack_str16(ins))
         #--Write new masters
-        _pack('B', len(self.masters))
+        _pack(out, '=B', len(self.masters))
         for master in self.masters:
-            _pack('H', len(master))
+            _pack(out, '=H', len(master))
             out.write(master.s)
         return oldMasters
 
@@ -166,21 +168,20 @@ class OblivionSaveHeader(SaveFileHeader):
     ])
 
     def _write_masters(self, ins, out):
-        def _pack(fmt, *args): out.write(struct_pack(fmt, *args))
         #--Skip old masters
         numMasters = unpack_byte(ins)
         oldMasters = []
         for x in xrange(numMasters):
             oldMasters.append(unpack_str8(ins))
         #--Write new masters
-        _pack('B', len(self.masters))
+        _pack(out, '=B', len(self.masters))
         for master in self.masters:
-            _pack('B', len(master))
+            _pack(out, '=B', len(master))
             out.write(master.s)
         #--Fids Address
         offset = out.tell() - ins.tell()
         fidsAddress = unpack_int(ins)
-        _pack('I', fidsAddress + offset)
+        _pack(out, '=I', fidsAddress + offset)
         return oldMasters
 
 class SkyrimSaveHeader(SaveFileHeader):
@@ -188,10 +189,10 @@ class SkyrimSaveHeader(SaveFileHeader):
     save_magic = 'TESV_SAVEGAME'
     # extra slots - only version is really used, gameDate used once (calc_time)
     # _formVersion distinguish between old and new save formats
-    # _compressType of Skyrim SE saves - currently unused
+    # _compressType of Skyrim SE saves - used to decide how to read/write them
     __slots__ = ('gameDate', 'saveNumber', 'version', 'raceEid', 'pcSex',
                  'pcExp', 'pcLvlExp', 'filetime', '_formVersion',
-                 '_compressType')
+                 '_compressType', '_sse_start')
 
     unpackers = OrderedDict([
         ('header_size', (00, unpack_int)),
@@ -210,9 +211,6 @@ class SkyrimSaveHeader(SaveFileHeader):
         ('ssHeight',    (00, unpack_int)),
     ])
 
-    @property
-    def canEditMasters(self): return not self.__is_sse()
-
     def __is_sse(self): return self.version == 12
 
     def _esl_block(self): return self.__is_sse() and self._formVersion >= 78
@@ -230,17 +228,18 @@ class SkyrimSaveHeader(SaveFileHeader):
             super(SkyrimSaveHeader, self).load_image_data(ins)
 
     def load_masters(self, ins):
-        sse_offset = 0
         # If on SSE, check _compressType and respond accordingly:
         #  0 means uncompressed
         #  1 means zlib
         #  2 means lz4
         if self.__is_sse() and self._compressType in (1, 2):
-            sse_offset = ins.tell() + 8 # decompressed/compressed size
-            decompressor = (self._decompress_masters_sse_lz4
-                           if self._compressType == 2
-                           else self._decompress_masters_sse_zlib)
-            ins = decompressor(ins)
+            self._sse_start = ins.tell()
+            decompressed_size = unpack_int(ins)
+            compressed_size = unpack_int(ins)
+            sse_offset = ins.tell()
+            ins = self._sse_decompress(ins, compressed_size, decompressed_size)
+        else:
+            sse_offset = 0
         self._formVersion = unpack_byte(ins)
         self._mastersStart = ins.tell() + sse_offset
         #--Masters
@@ -264,76 +263,55 @@ class SkyrimSaveHeader(SaveFileHeader):
                     ins.tell() + sse_offset - self._mastersStart - 4,
                     mastersSize))
 
+    def _sse_compress(self, to_compress):
+        """Compresses the specified data using either LZ4 or zlib, depending on
+        self._compressType. Do not call for uncompressed files!"""
+        try:
+            if self._compressType == 2:
+                # SSE uses default lz4 settings; store_size is not in docs, so:
+                # noinspection PyArgumentList
+                return lz4.block.compress(to_compress.getvalue(),
+                                          store_size=False)
+            else:
+                # SSE uses zlib level 1
+                return zlib.compress(to_compress.getvalue(), 1)
+        except (zlib.error, lz4.block.LZ4BlockError) as e:
+            raise SaveHeaderError(u'Failed to compress header: %r' % e)
+
+    def _sse_decompress(self, ins, compressed_size, decompressed_size):
+        """Decompresses the specified data using either LZ4 or zlib, depending
+        on self._compressType. Do not call for uncompressed files!"""
+        decompressor = (self._sse_decompress_lz4
+                       if self._compressType == 2
+                       else self._sse_decompress_zlib)
+        return decompressor(ins, compressed_size, decompressed_size)
+
     @staticmethod
-    def _decompress_masters_sse_zlib(ins):
-        decompressed_size = unpack_int(ins)
-        compressed_size = unpack_int(ins)
-        decompressed_data = zlib.decompress(ins.read(compressed_size))
+    def _sse_decompress_zlib(ins, compressed_size, decompressed_size):
+        try:
+            decompressed_data = zlib.decompress(ins.read(compressed_size))
+        except zlib.error as e:
+            raise SaveHeaderError(u'zlib error while decompressing '
+                                  u'zlib-compressed header: %r' % e)
         if len(decompressed_data) != decompressed_size:
-            raise SaveHeaderError(_(u'zlib-decompressed header size incorrect '
-                                    u'- expected %u, but got %u.') %
-                                  (decompressed_size, len(decompressed_data)))
+            raise SaveHeaderError(u'zlib-decompressed header size incorrect - '
+                                  u'expected %u, but got %u.' % (
+                decompressed_size, len(decompressed_data)))
         return StringIO.StringIO(decompressed_data)
 
     @staticmethod
-    def _decompress_masters_sse_lz4(ins):
-        """Read the start of the LZ4 compressed data in the SSE savefile and
-        stop when the whole master table is found.
-        Return a file-like object that can be read by _load_masters_16
-        containing the now decompressed master table.
-        See https://fastcompression.blogspot.se/2011/05/lz4-explained.html
-        for an LZ4 explanation/specification."""
-        def _read_lsic_int():
-            # type: () -> int
-            """Read a compressed int from the stream.
-            In short, add every byte to the output until a byte lower than
-            255 is found, then add that as well and return the total sum.
-            LSIC stands for linear small-integer code, taken from
-            https://ticki.github.io/blog/how-lz4-works."""
-            result = 0
-            while True:  # there is no size limit to LSIC values
-                num = unpack_byte(ins)
-                result += num
-                if num != 255:
-                    return result
-        # Skip decompressed/compressed size, we only want the masters table
-        ins.seek(8, 1)
-        uncompressed = ''
-        masters_size = None  # type: int
-        while True:  # parse and decompress each block here
-            token = unpack_byte(ins)
-            # How many bytes long is the literals-field?
-            literal_length = token >> 4
-            if literal_length == 15:  # add more if we hit max value
-                literal_length += _read_lsic_int()
-            # Read all the literals (which are good ol' uncompressed bytes)
-            uncompressed += ins.read(literal_length)
-            # The offset is how many bytes back in the uncompressed string the
-            # start of the match-field (copied bytes) is
-            offset = unpack_short(ins)
-            # How many bytes long is the match-field?
-            match_length = token & 0b1111
-            if match_length == 15:
-                match_length += _read_lsic_int()
-            match_length += 4  # the match-field always gets an extra 4 bytes
-            # The boundary of the match-field
-            start_pos = len(uncompressed) - offset
-            end_pos = start_pos + match_length
-            # Matches can be overlapping (aka including not yet decompressed
-            # data) so we can't jump the whole match_length directly
-            while start_pos < end_pos:
-                uncompressed += uncompressed[start_pos:min(start_pos + offset,
-                                                           end_pos)]
-                start_pos += offset
-            # The masters table's size is found in bytes 1-5
-            if masters_size is None and len(uncompressed) >= 5:
-                masters_size = struct_unpack('I', uncompressed[1:5])[0]
-            # Stop when we have the whole masters table
-            if masters_size is not None:
-                if len(uncompressed) >= masters_size + 5:
-                    break
-        # Wrap the decompressed data in a file-like object and return it
-        return StringIO.StringIO(uncompressed)
+    def _sse_decompress_lz4(ins, compressed_size, decompressed_size):
+        try:
+            decompressed_data = lz4.block.decompress(
+                ins.read(compressed_size), uncompressed_size=decompressed_size * 2)
+        except lz4.block.LZ4BlockError as e:
+            raise SaveHeaderError(u'LZ4 error while decompressing '
+                                  u'lz4-compressed header: %r' % e)
+        if len(decompressed_data) != decompressed_size:
+            raise SaveHeaderError(u'lz4-decompressed header size incorrect - '
+                                  u'expected %u, but got %u.' % (
+                decompressed_size, len(decompressed_data)))
+        return StringIO.StringIO(decompressed_data)
 
     def calc_time(self):
         # gameDate format: hours.minutes.seconds
@@ -342,14 +320,68 @@ class SkyrimSaveHeader(SaveFileHeader):
         self.gameDays = float(playSeconds) / (24 * 60 * 60)
         self.gameTicks = playSeconds * 1000
 
+    def writeMasters(self, ins, out):
+        if not self.__is_sse() or self._compressType == 0:
+            # Skyrim LE or uncompressed - can use the default implementation
+            return super(SkyrimSaveHeader, self).writeMasters(ins, out)
+        # Write out everything up until the compressed portion
+        out.write(ins.read(self._sse_start))
+        # Now we need to decompress the portion again
+        decompressed_size = unpack_int(ins)
+        compressed_size = unpack_int(ins)
+        ins = self._sse_decompress(ins, compressed_size, decompressed_size)
+        # Gather the data that will be compressed
+        to_compress = StringIO.StringIO()
+        to_compress.write(struct_pack(u'=B', self._formVersion))
+        ins.seek(1, 1) # skip the form version
+        old_masters = self._write_masters(ins, to_compress)
+        for block in iter(partial(ins.read, 0x5000000), b''):
+            to_compress.write(block)
+        # Compress the gathered data, write out the sizes and finally write out
+        # the actual compressed data
+        compressed_data = self._sse_compress(to_compress)
+        _pack(out, u'=I', to_compress.tell())   # decompressed_size
+        _pack(out, u'=I', len(compressed_data)) # compressed_size
+        out.write(compressed_data)
+        return old_masters
+
+    def _dump_masters(self, ins, numMasters, out):
+        # Store these two blocks distinctly, *never* combine them - that
+        # destroys critical information since there is no way to tell ESL
+        # status just from the name
+        regular_masters = []
+        esl_masters = []
+        for x in xrange(numMasters):
+            regular_masters.append(unpack_str16(ins))
+        # SSE/FO4 format has separate ESL block
+        has_esl_block = self._esl_block()
+        if has_esl_block:
+            _num_esl_masters = unpack_short(ins)
+            for count in xrange(_num_esl_masters):
+                esl_masters.append(unpack_str16(ins))
+        # Write out the (potentially altered) masters - note that we have to
+        # encode here, since we may be writing to StringIO instead of a file
+        num_regulars = len(regular_masters)
+        _pack(out, '=B', num_regulars)
+        for master in self.masters[:num_regulars]:
+            _pack(out, '=H', len(master))
+            out.write(encode(master.s))
+        if has_esl_block:
+            _pack(out, '=H', len(esl_masters))
+            for master in self.masters[num_regulars:]:
+                _pack(out, '=H', len(master))
+                out.write(encode(master.s))
+        return regular_masters + esl_masters
+
+    def _master_block_size(self):
+        return (3 if self._esl_block() else 1) + sum(
+            len(x) + 2 for x in self.masters)
+
 class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
     """Valid Save Game Versions 11, 12, 13, 15 (?)"""
     save_magic = 'FO4_SAVEGAME'
 
     __slots__ = ()
-
-    @property
-    def canEditMasters(self): return True
 
     def _esl_block(self): return self.version == 15 and self._formVersion >= 68
 
@@ -367,35 +399,6 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
         #--Masters
         self._load_masters_16(ins)
 
-    def _master_block_size(self):
-        return (3 if self._esl_block() else 1) + sum(
-            len(x) + 2 for x in self.masters)
-
-    def _dump_masters(self, ins, numMasters, out, _pack):
-        oldMasters = []
-        self.masters.sort(key=lambda m: m.cext == u'.esl')
-        for x in xrange(numMasters):
-            oldMasters.append(unpack_str16(ins))
-        if self._esl_block(): # new FO4 save format
-            _num_esl_masters = unpack_short(ins)
-            for count in xrange(_num_esl_masters):
-                oldMasters.append(unpack_str16(ins))
-        #--Write new masters
-        esl_count = sum(1 for m in self.masters if m.cext == u'.esl')
-        _pack('B', len(self.masters) - esl_count)
-        for master in self.masters:
-            if master.cext == u'.esl':
-                break
-            _pack('H', len(master))
-            out.write(master.s)
-        if self._esl_block(): # new FO4 save format
-            _pack('H', esl_count)
-            if esl_count:
-                for master in self.masters[-esl_count:]:
-                    _pack('H', len(master))
-                    out.write(master.s)
-        return oldMasters
-
     def calc_time(self):
         # gameDate format: Xd.Xh.Xm.X days.X hours.X minutes
         # russian game format: '0д.0ч.9м.0 д.0 ч.9 мин'
@@ -410,6 +413,10 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
         # Assuming still 1000 ticks per second
         self.gameTicks = (days * 24 * 60 * 60 + hours * 60 * 60 + minutes
                              * 60) * 1000
+
+    def writeMasters(self, ins, out):
+        # Call the SaveFileHeader version - *not* the Skyrim one
+        super(SkyrimSaveHeader, self).writeMasters(ins, out)
 
 class FalloutNVSaveHeader(SaveFileHeader):
     save_magic = 'FO3SAVEGAME'
@@ -445,31 +452,33 @@ class FalloutNVSaveHeader(SaveFileHeader):
         return masterListSize
 
     def _write_masters(self, ins, out):
-        def _pack(fmt, *args): out.write(struct_pack(fmt, *args))
         self._master_list_size(ins) # discard old size
-        _pack('=BI', self._masters_unknown_byte, self._master_block_size())
+        _pack(out, '=B', self._masters_unknown_byte)
+        _pack(out, '=I', self._master_block_size())
         #--Skip old masters
         numMasters = unpack_byte_delim(ins) # get me the Byte
-        oldMasters = self._dump_masters(ins, numMasters, out, _pack)
+        oldMasters = self._dump_masters(ins, numMasters, out)
         #--Offsets
         offset = out.tell() - ins.tell()
         #--File Location Table
         for i in xrange(5):
             # formIdArrayCount offset and 5 others
             oldOffset = unpack_int(ins)
-            _pack('I', oldOffset + offset)
+            _pack(out, '=I', oldOffset + offset)
         return oldMasters
 
-    def _dump_masters(self, ins, numMasters, out, _pack):
+    def _dump_masters(self, ins, numMasters, out):
         oldMasters = []
         for count in xrange(numMasters):
             oldMasters.append(unpack_str16_delim(ins))
-        #--Write new masters
-        _pack('Bc', len(self.masters), '|')
+        # Write new masters - note the silly delimiters
+        _pack(out, '=B', len(self.masters))
+        _pack(out, '=c', '|')
         for master in self.masters:
-            _pack('Hc', len(master), '|')
+            _pack(out, '=H', len(master))
+            _pack(out, '=c', '|')
             out.write(master.s)
-            _pack('c', '|')
+            _pack(out, '=c', '|')
         return oldMasters
 
     def _master_block_size(self):
