@@ -1372,9 +1372,10 @@ class ModDetails(_SashDetailsPanel):
         self.uilist.SetFileInfo(self.modInfo)
         self.gTags.text_content = tagsStr
         if fileName and not bosh.modInfos.table.getItem(fileName,'autoBashTags', True):
-            self.gTags.background_color = self.gAuthor.background_color
+            self.gTags.set_background_color(
+                self.gAuthor.get_background_color())
         else:
-            self.gTags.background_color = self.GetBackgroundColour()
+            self.gTags.set_background_color(self.GetBackgroundColour())
         # TODO(inf) de-wx! - or investigate why it's needed
         self.gTags._native_widget.Refresh()
 

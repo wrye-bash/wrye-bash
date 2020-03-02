@@ -394,10 +394,11 @@ class CreateNewProject(DialogWindow):
     def OnCheckProjectsColorTextCtrl(self, new_text):
         projectName = bolt.GPath(new_text)
         if projectName in self.existingProjects: #Fill this in. Compare this with the self.existingprojects list
-            self.textName.background_color = '#FF0000'
+            # PY3: See note in basher/constants.py
+            self.textName.set_background_color(b'#FF0000')
             self.textName.tooltip = _(u'There is already a project with that name!')
         else:
-            self.textName.background_color = '#FFFFFF'
+            self.textName.set_background_color(b'#FFFFFF')
             self.textName.tooltip = None
 
     def OnCheckBoxChange(self, is_checked=None):

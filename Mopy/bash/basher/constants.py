@@ -160,6 +160,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.pluginEncoding': 'cp1252',    # Western European
     #--Colors
     'bash.colors': {
+        # PY3: These colors have to be bytes, at least in py2 - verify in py3
         #--Common Colors
         'default.text':                 'BLACK',
         'default.bkgd':                 'WHITE',

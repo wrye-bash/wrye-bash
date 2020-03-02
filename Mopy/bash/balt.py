@@ -656,7 +656,9 @@ class Log(_Log):
                  fixedFont=False, log_icons=None):
         """Display text in a log window"""
         super(Log, self).__init__(parent, title, asDialog, log_icons)
-        self.window.background_color = wx.NullColour  #--Bug workaround to ensure that default colour is being used.
+        #--Bug workaround to ensure that default colour is being used - if not
+        # called we get white borders instead of grey todo PY3: test if needed
+        self.window.set_background_color(wx.NullColour)
         #--Text
         txtCtrl = TextArea(self.window, init_text=logText, auto_tooltip=False)
                           # special=True) SUNKEN_BORDER and TE_RICH2
@@ -698,7 +700,7 @@ class WryeLog(_Log):
         gOkButton = OkButton(self.window, default=True)
         gOkButton.on_clicked.subscribe(self.window.close_win)
         if not asDialog:
-            self.window.background_color = gOkButton.background_color
+            self.window.set_background_color(gOkButton.get_background_color())
         #--Layout
         VLayout(border=2, item_expand=True, items=[
             (self._html_ctrl.web_viewer, LayoutOptions(weight=1)),

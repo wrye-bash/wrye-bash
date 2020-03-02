@@ -173,19 +173,16 @@ class _AComponent(object):
         else:
             self._native_widget.SetToolTip(wrapped_tooltip(new_tooltip))
 
-    # TODO: use a custom color class here
-    @property
-    def background_color(self): # type: () -> _wx.Colour
-        """Returns the background color of this component as a wx.Colour
-        object.
+    def get_background_color(self): # type: () -> tuple
+        """Returns the background color of this component as a tuple.
 
         :return: The background color of this component."""
-        return self._native_widget.GetBackgroundColour()
+        return self._native_widget.GetBackgroundColour().Get()
 
-    @background_color.setter
-    def background_color(self, new_color): # type: (_wx.Colour) -> None
+    def set_background_color(self, new_color):
+        # type: (tuple | str | int | _wx.Colour) -> None
         """Changes the background color of this component to the color
-        represented by the specified wx.Colour object.
+        represented by the specified representation - see wx.Colour.Set.
 
         :param new_color: The color to change the background color to."""
         self._native_widget.SetBackgroundColour(new_color)

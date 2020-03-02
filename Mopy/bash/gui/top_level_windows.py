@@ -123,7 +123,7 @@ class WindowFrame(_TopLevelWin):
                                           style=style, **kwargs)
         self.on_activate = self._evt_handler(_wx.EVT_ACTIVATE,
                                              lambda event: [event.GetActive()])
-        self.background_color = _wx.NullColour
+        self.set_background_color(_wx.NullColour.Get())
         self.set_min_size(*self._min_size)
 
     def show_frame(self): self._native_widget.Show()
