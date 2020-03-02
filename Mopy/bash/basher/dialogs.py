@@ -354,8 +354,8 @@ class CreateNewProject(DialogWindow):
         super(CreateNewProject, self).__init__(parent)
         #--Build a list of existing directories
         #  The text control will use this to change background color when name collisions occur
-        self.existingProjects = [x for x in bass.dirs['installers'].list() if bass.dirs['installers'].join(x).isdir()]
-
+        self.existingProjects = set(x for x in bass.dirs['installers'].list()
+                                    if bass.dirs['installers'].join(x).isdir())
         #--Attributes
         self.textName = TextField(self, _(u'New Project Name-#####'))
         self.textName.on_text_changed.subscribe(
@@ -373,23 +373,21 @@ class CreateNewProject(DialogWindow):
             self.checkWizardImages.enabled = False
         self.checkDocs = CheckBox(self, _(u'Docs Directory'))
         # Panel Layout
-        ok_button = OkButton(self)
-        ok_button.on_clicked.subscribe(self.OnClose)
+        self.ok_button = OkButton(self)
+        self.ok_button.on_clicked.subscribe(self.OnClose)
         VLayout(border=5, spacing=5, items=[
             Label(self, _(u'What do you want to name the New Project?')),
             (self.textName, LayoutOptions(expand=True)),
             Label(self, _(u'What do you want to add to the New Project?')),
             self.checkEsp, self.checkEspMasterless, self.checkWizard,
-            self.checkWizardImages, self.checkDocs,
-            Stretch(),
-            (HLayout(spacing=5, items=[ok_button, CancelButton(self)]),
+            self.checkWizardImages, self.checkDocs, Stretch(),
+            (HLayout(spacing=5, items=[self.ok_button, CancelButton(self)]),
              LayoutOptions(h_align=CENTER))
-        ]).apply_to(self)
-        # TODO(inf) de-wx!
-        self._native_widget.SetInitialSize()
+        ]).apply_to(self, fit=True)
         # Dialog Icon Handlers
         self.set_icon(installercons.get_image('off.white.dir').GetIcon())
         self.OnCheckBoxChange()
+        self.OnCheckProjectsColorTextCtrl(self.textName.text_content)
 
     def OnCheckProjectsColorTextCtrl(self, new_text):
         projectName = bolt.GPath(new_text)
@@ -397,9 +395,11 @@ class CreateNewProject(DialogWindow):
             # PY3: See note in basher/constants.py
             self.textName.set_background_color(b'#FF0000')
             self.textName.tooltip = _(u'There is already a project with that name!')
+            self.ok_button.enabled = False
         else:
             self.textName.set_background_color(b'#FFFFFF')
             self.textName.tooltip = None
+            self.ok_button.enabled = True
 
     def OnCheckBoxChange(self, is_checked=None):
         """ Change the DialogWindow Icon to represent what the project status will

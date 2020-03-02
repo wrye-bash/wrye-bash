@@ -2068,21 +2068,24 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         ]).apply_to(dialog, fit=True)
         with dialog: questions = dialog.show_modal()
         if not questions: return
-        if not defaultPath.exists():
+        def_exists = defaultPath.exists()
+        if not def_exists:
             defaultPath.makedirs()
         textDir = self._askDirectory(
             message=_(u'Choose directory to export scripts to'),
             defaultPath=defaultPath)
-        if textDir != defaultPath:
-            for asDir,sDirs,sFiles in bolt.walkdir(defaultPath.s):
-                if not (sDirs or sFiles):
-                    defaultPath.removedirs()
+        if not def_exists and textDir != defaultPath and not \
+                defaultPath.list():
+            defaultPath.removedirs()
         if not textDir: return
         #--Export
         #try:
         scriptText = self._parser()
         scriptText.readFromMod(fileInfo,fileName.s)
-        exportedScripts = scriptText.writeToText(fileInfo,bass.settings['bash.mods.export.skip'],textDir,bass.settings['bash.mods.export.deprefix'],fileName.s,bass.settings['bash.mods.export.skipcomments'])
+        exportedScripts = scriptText.writeToText(fileInfo,
+            bass.settings['bash.mods.export.skip'], textDir,
+            bass.settings['bash.mods.export.deprefix'], fileName.s,
+            bass.settings['bash.mods.export.skipcomments'])
         #finally:
         self._showLog(exportedScripts, title=_(u'Export Scripts'),
                       asDialog=True)
