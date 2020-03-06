@@ -58,7 +58,7 @@ import os
 import re
 import sys
 import time
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 from functools import partial
 from operator import itemgetter
 #--wxPython
@@ -167,9 +167,13 @@ class _DetailsViewMixin(NotebookPanel):
         super(_DetailsViewMixin, self).ShowPanel()
         self.detailsPanel.ShowPanel(**kwargs)
 
+_UIsetting = namedtuple(u'UIsetting', u'default_ get_ set_')
 class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
     defaultSashPos = minimumSize = 256
+    _ui_settings = {u'.sashPos' : _UIsetting(lambda self: self.defaultSashPos,
+        lambda self: self.splitter.get_sash_pos(),
+        lambda self, sashPos: self.splitter.set_sash_pos(sashPos))}
 
     def __init__(self, parent, isVertical=True):
         super(SashPanel, self).__init__(parent)
@@ -177,20 +181,21 @@ class SashPanel(NotebookPanel):
                                  min_pane_size=self.__class__.minimumSize)
         self.left, self.right = self.splitter.make_panes(vertically=isVertical)
         self.isVertical = isVertical
-        self.sashPosKey = self.__class__.keyPrefix + '.sashPos'
         VLayout(item_weight=1, item_expand=True,
                 items=[self.splitter]).apply_to(self)
 
     def ShowPanel(self, **kwargs):
         if self._firstShow:
-            sashPos = settings.get(self.sashPosKey,
-                                   self.__class__.defaultSashPos)
-            self.splitter.set_sash_pos(sashPos)
+            for key, ui_set in self._ui_settings.items():
+                sashPos = settings.get(self.__class__.keyPrefix + key,
+                                       ui_set.default_(self))
+                ui_set.set_(self, sashPos)
             self._firstShow = False
 
     def ClosePanel(self, destroy=False):
         if not self._firstShow and destroy: # if the panel was shown
-            settings[self.sashPosKey] = self.splitter.get_sash_pos()
+            for key, ui_set in self._ui_settings.items():
+                settings[self.__class__.keyPrefix + key] = ui_set.get_(self)
 
 class SashUIListPanel(SashPanel):
     """SashPanel featuring a UIList and a corresponding listData datasource."""
@@ -1246,7 +1251,10 @@ class _EditableMixinOnFileInfos(_EditableMixin):
 
 class _SashDetailsPanel(_DetailsMixin, SashPanel):
     """Details panel with two splitters"""
-    defaultSubSashPos = 0 # that was the default for mods (for saves 500)
+    _ui_settings = {u'.subSplitterSashPos' : _UIsetting(lambda self: 0,
+        lambda self: self.subSplitter.get_sash_pos(),
+        lambda self, sashPos: self.subSplitter.set_sash_pos(sashPos))}
+    _ui_settings.update(SashPanel._ui_settings)
 
     def __init__(self, parent):
         # call the init of SashPanel - _DetailsMixin hasn't any init
@@ -1256,19 +1264,6 @@ class _SashDetailsPanel(_DetailsMixin, SashPanel):
 
     def _get_sub_splitter(self):
         return Splitter(self.right, min_pane_size=64)
-
-    def ShowPanel(self, **kwargs):
-        if self._firstShow:
-            super(_SashDetailsPanel, self).ShowPanel() # set sashPosition
-            sashPos = settings.get(self.keyPrefix + '.subSplitterSashPos',
-                                   self.__class__.defaultSubSashPos)
-            self.subSplitter.set_sash_pos(sashPos)
-
-    def ClosePanel(self, destroy=False):
-        if not self._firstShow and destroy:
-            super(_SashDetailsPanel, self).ClosePanel(destroy)
-            settings[self.keyPrefix + '.subSplitterSashPos'] = \
-                self.subSplitter.get_sash_pos()
 
 class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
     """Mod and Saves details panel, feature a master's list.
@@ -2546,8 +2541,11 @@ class InstallersList(balt.UIList):
 class InstallersDetails(_SashDetailsPanel):
     keyPrefix = 'bash.installers.details'
     defaultSashPos = - 32 # negative so it sets bottom panel's (comments) size
-    defaultSubSashPos = 0
     minimumSize = 32 # so comments dont take too much space
+    _ui_settings = {u'.checkListSplitterSashPos' : _UIsetting(lambda self: 0,
+        lambda self: self.checkListSplitter.get_sash_pos(),
+        lambda self, sashPos: self.checkListSplitter.set_sash_pos(sashPos))}
+    _ui_settings.update(_SashDetailsPanel._ui_settings)
 
     @property
     def displayed_item(self): return self._displayed_installer
@@ -2640,8 +2638,6 @@ class InstallersDetails(_SashDetailsPanel):
         """Saves details if they need saving."""
         if not self._firstShow and destroy: # save subsplitters
             super(InstallersDetails, self).ClosePanel(destroy)
-            settings[self.__class__.keyPrefix + '.checkListSplitterSashPos'] = \
-                self.checkListSplitter.get_sash_pos()
             settings['bash.installers.page'] = \
                 self.gNotebook.nb_get_selected_index()
         self._save_comments()
@@ -2699,14 +2695,6 @@ class InstallersDetails(_SashDetailsPanel):
         self.gSubList.lb_clear()
         self.gEspmList.lb_clear()
         self.gComments.text_content = u''
-
-    def ShowPanel(self, **kwargs):
-        if self._firstShow:
-            super(InstallersDetails, self).ShowPanel() # set sash position
-            sashPos = settings.get(
-                self.keyPrefix + '.checkListSplitterSashPos',
-                self.__class__.defaultSubSashPos)
-            self.checkListSplitter.set_sash_pos(sashPos)
 
     def RefreshInfoPage(self,index,installer):
         """Refreshes notebook page."""
@@ -3410,8 +3398,7 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
                     # the 'Installers' tab.  Change to the
                     # 'Mods' tab instead.
                     Link.Frame.notebook.SetSelection(iMods)
-            # TODO(ut): we should call ClosePanel and make sure there are no leaks
-            tabInfo[self.tabKey][2].ClosePanel()
+            tabInfo[self.tabKey][2].ClosePanel() ##: note the panel remains in memory
             page = Link.Frame.notebook.GetPage(iDelete)
             Link.Frame.notebook.RemovePage(iDelete)
             page.Show(False)

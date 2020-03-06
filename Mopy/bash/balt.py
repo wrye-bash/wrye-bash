@@ -2636,14 +2636,15 @@ class NotebookPanel(wx.Panel):
 
     def __init__(self, *args, **kwargs):
         super(NotebookPanel, self).__init__(*args, **kwargs)
+        # needed as some of the initialization must run after RefreshUI
         self._firstShow = True
 
     def RefreshUIColors(self):
         """Called to signal that UI color settings have changed."""
 
     def ShowPanel(self, **kwargs):
-        """To be called when particular panel is changed to and/or shown for
-        first time."""
+        """To be manually called when particular panel is changed to and/or
+        shown for first time."""
 
     def ClosePanel(self, destroy=False):
         """To be manually called when containing frame is closing. Use for
