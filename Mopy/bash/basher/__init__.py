@@ -79,7 +79,7 @@ startupinfo = bolt.startupinfo
 from .. import balt
 from ..balt import CheckLink, EnabledLink, SeparatorLink, Link, \
     ChoiceLink, staticBitmap, AppendableLink, ListBoxes, \
-    INIListCtrl, DnDStatusBar, NotebookPanel, set_event_hook, Events
+    INIListCtrl, DnDStatusBar, NotebookPanel
 from ..balt import colors, images, Image, Resources
 from ..balt import Links, ItemLink
 
@@ -490,29 +490,28 @@ class MasterList(_ModsUIList):
         if self.allowEdit: self.InitEdit()
 
     #--Events: Label Editing
-    def OnBeginEditLabel(self, event):
-        if not self.allowEdit:
-            event.Veto()
-        else: # pass event on (for label editing)
-            super(MasterList, self).OnBeginEditLabel(event)
+    def OnBeginEditLabel(self, evt_label, uilist_ctrl):
+        if not self.allowEdit: return EventResult.CANCEL
+        # pass event on (for label editing)
+        return super(MasterList, self).OnBeginEditLabel(evt_label, uilist_ctrl)
 
-    def OnLabelEdited(self,event):
-        itemDex = event.GetIndex()
-        newName = GPath(event.GetText())
+    def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
+        newName = GPath(evt_label)
         #--No change?
         if newName in bosh.modInfos:
-            masterInfo = self.data_store[self.GetItem(itemDex)]
+            masterInfo = self.data_store[evt_item]
             masterInfo.set_name(newName)
             self.SetMasterlistEdited()
             settings.getChanged('bash.mods.renames')[
                 masterInfo.old_name] = newName
             # populate, refresh must be called last
-            self.PopulateItem(itemDex=itemDex)
+            self.PopulateItem(itemDex=evt_index)
+            return EventResult.FINISH ##: needed?
         elif newName == u'':
-            event.Veto()
+            return EventResult.CANCEL
         else:
             balt.showError(self,_(u'File %s does not exist.') % newName.s)
-            event.Veto()
+            return EventResult.CANCEL
 
     #--GetMasters
     def GetNewMasters(self):
@@ -1221,7 +1220,7 @@ class _EditableMixinOnFileInfos(_EditableMixin):
             self.SetEdited()
 
     def _validate_filename(self, fileStr):
-        return self.panel_uilist.validate_filename(None, fileStr)[0]
+        return self.panel_uilist.validate_filename(fileStr)[0]
 
     def OnFileEdit(self, new_text):
         """Event: Editing filename."""
@@ -1849,19 +1848,20 @@ class SaveList(balt.UIList):
 
     __ext_group = u'(\.(' + bush.game.ess.ext[1:] + u'|' + \
                   bush.game.ess.ext[1:-1] + u'r' + u'))' # add bak !!!
-    def validate_filename(self, event, name_new=None, has_digits=False,
-                          ext=u'', is_filename=True, _old_path=None):
+    def validate_filename(self, name_new, has_digits=False, ext=u'',
+            is_filename=True, _old_path=None):
         if _old_path and bosh.bak_file_pattern.match(_old_path.s): ##: YAK add cosave support for bak
             balt.showError(self, _(u'Renaming bak files is not supported.'))
-            return None, None, None
-        return super(SaveList, self).validate_filename(event, name_new,
+            return None, None, None ##: this used to not-Skip now it Vetoes
+        return super(SaveList, self).validate_filename(name_new,
             has_digits=has_digits, ext=self.__ext_group,
             is_filename=is_filename)
 
-    def OnLabelEdited(self, event):
+    def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Savegame renamed."""
-        root, newName, _numStr = self.validate_filename(event)
-        if not root: return
+        if is_edit_cancelled: return EventResult.FINISH # todo CANCEL?
+        root, newName, _numStr = self.validate_filename(evt_label)
+        if not root: return EventResult.CANCEL # validate_filename would Veto
         item_edited = [self.panel.detailsPanel.displayed_item]
         selected = [s for s in self.GetSelected() if
                     not bosh.bak_file_pattern.match(s.s)] # YAK !
@@ -1877,7 +1877,7 @@ class SaveList(balt.UIList):
                            detail_item=item_edited[0])
             #--Reselect the renamed items
             self.SelectItemsNoCallback(to_select)
-        event.Veto() # needed ! clears new name from label on exception
+        return EventResult.CANCEL # needed ! clears new name from label on exception
 
     @staticmethod
     def _unhide_wildcard():
@@ -2014,8 +2014,8 @@ class SaveDetails(_SashDetailsPanel):
             bosh.saveInfos.table.setItem(self.saveInfo.name, 'info', new_text)
 
     def _validate_filename(self, fileStr):
-        return self.panel_uilist.validate_filename(
-            None, fileStr, _old_path=self.saveInfo.name)[0]
+        return self.panel_uilist.validate_filename(fileStr,
+            _old_path=self.saveInfo.name)[0]
 
     def testChanges(self): # used by the master list when editing is disabled
         saveInfo = self.saveInfo
@@ -2153,7 +2153,7 @@ class InstallersList(balt.UIList):
         #--TODO: add mouse  mouse tips
         self.mouseTexts[item] = mouse_text
 
-    def OnBeginEditLabel(self,event):
+    def OnBeginEditLabel(self, evt_label, uilist_ctrl):
         """Start renaming installers"""
         to_rename = self.GetSelected()
         #--Only rename multiple items of the same type
@@ -2163,35 +2163,32 @@ class InstallersList(balt.UIList):
             if not isinstance(self.data_store[item], renaming_type):
                 balt.showError(self, _(
                     u"Bash can't rename mixed installers types"))
-                event.Veto()
-                return
+                return EventResult.CANCEL
             #--Also, don't allow renaming the 'Last' marker
             elif item == last_marker:
-                event.Veto()
-                return
-        set_event_hook(self.edit_control, Events.CHAR_KEY_PRESSED,
-                       self._OnEditLabelChar)
+                return EventResult.CANCEL
+        uilist_ctrl.ec_set_on_char_handler(self._OnEditLabelChar)
         #--Markers, change the selection to not include the '=='
         if renaming_type is bosh.InstallerMarker:
-            to = len(event.GetLabel()) - 2
-            self.edit_control.SetSelection(2, to)
+            to = len(evt_label) - 2
+            uilist_ctrl.ec_set_selection(2, to)
         #--Archives, change the selection to not include the extension
         elif renaming_type is bosh.InstallerArchive:
-            super(InstallersList, self).OnBeginEditLabel(event)
+            return super(InstallersList, self).OnBeginEditLabel(evt_label,
+                                                                uilist_ctrl)
+        return EventResult.FINISH  ##: needed?
 
-    def _OnEditLabelChar(self, event):
+    def _OnEditLabelChar(self, is_f2_down, ec_value, uilist_ctrl):
         """For pressing F2 on the edit box for renaming"""
-        if event.GetKeyCode() == wx.WXK_F2:
+        if is_f2_down:
             to_rename = self.GetSelected()
             renaming_type = type(self.data_store[to_rename[0]])
-            editbox = self.edit_control
             # (start, stop), if start==stop there is no selection
-            selection_span = editbox.GetSelection()
-            edittext = editbox.GetValue()
-            lenWithExt = len(edittext)
+            selection_span = uilist_ctrl.ec_get_selection()
+            lenWithExt = len(ec_value)
             if selection_span[0] != 0:
                 selection_span = (0,lenWithExt)
-            selectedText = GPath(edittext[selection_span[0]:selection_span[1]])
+            selectedText = GPath(ec_value[selection_span[0]:selection_span[1]])
             textNextLower = selectedText.body
             if textNextLower == selectedText:
                 lenNextLower = lenWithExt
@@ -2203,24 +2200,24 @@ class InstallersList(balt.UIList):
                 selection_span = (2, lenWithExt - 2)
             else:
                 selection_span = (0, lenWithExt)
-            editbox.SetSelection(*selection_span)
-        else:
-            event.Skip()
+            uilist_ctrl.ec_set_selection(*selection_span)
+            return EventResult.FINISH  ##: needed?
 
     __ext_group = \
         r'(\.(' + u'|'.join(ext[1:] for ext in archives.readExts) + u')+)'
-    def OnLabelEdited(self, event):
+    def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Renamed some installers"""
+        if is_edit_cancelled: return EventResult.FINISH ##: previous behavior todo TTT
         selected = self.GetSelected()
         renaming_type = type(self.data_store[selected[0]])
         installables = self.data_store.filterInstallables(selected)
-        validate = partial(self.validate_filename, event,
+        validate = partial(self.validate_filename, evt_label,
                            is_filename=bool(installables))
         if renaming_type is bosh.InstallerArchive:
             root, newName, _numStr = validate(ext=self.__ext_group)
         else:
             root, newName, _numStr = validate()
-        if not root: return
+        if not root: return EventResult.CANCEL
         #--Rename each installer, keeping the old extension (for archives)
         with balt.BusyCursor():
             refreshes, ex = [(False, False, False)], None
@@ -2249,7 +2246,7 @@ class InstallersList(balt.UIList):
                 self.RefreshUI()
                 #--Reselected the renamed items
                 self.SelectItemsNoCallback(newselected)
-            event.Veto()
+            return EventResult.CANCEL
 
     def new_name(self, new_name):
         new_name = GPath(new_name)
@@ -3074,9 +3071,10 @@ class ScreensList(balt.UIList):
         if hitItem:
             self.OpenSelected(selected=[hitItem])
         return EventResult.FINISH
-    def OnLabelEdited(self, event):
+    def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Rename selected screenshots."""
-        root, _newName, numStr = self.validate_filename(event, has_digits=True,
+        if is_edit_cancelled: return EventResult.CANCEL
+        root, _newName, numStr = self.validate_filename(evt_label, has_digits=True,
                                                         ext=self.__ext_group)
         if not (root or numStr): return # allow for number only names
         selected = self.GetSelected()
@@ -3100,7 +3098,7 @@ class ScreensList(balt.UIList):
                                detail_item=item_edited[0])
                 #--Reselected the renamed items
                 self.SelectItemsNoCallback(to_select)
-            event.Veto()
+            return EventResult.CANCEL
 
     def OnChar(self, wrapped_evt):
         # Enter: Open selected screens

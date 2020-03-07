@@ -31,6 +31,7 @@ import cPickle
 import wx as _wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
+from . import EventHandler
 from .base_components import WithMouseEvents, WithCharEvents
 from .. import bolt
 
@@ -212,6 +213,13 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
                                                      evt_col)
         self.on_item_selected = self._evt_handler(_wx.EVT_LIST_ITEM_SELECTED,
             lambda event: [self.FindItemAt(event.GetIndex())])
+        if allow_edit:
+            self.on_edit_label_begin = self._evt_handler(_wx.EVT_LIST_BEGIN_LABEL_EDIT,
+                lambda event: [event.GetLabel(), self])
+            self.on_edit_label_end = self._evt_handler(
+                _wx.EVT_LIST_END_LABEL_EDIT,
+                lambda event: [event.IsEditCancelled(), event.GetLabel(),
+                    event.GetIndex(), self.FindItemAt(event.GetIndex())])
         #--Item/Id mapping
         self._item_itemId = {} # :type : dict[bolt.Path | basestring | int, int]
         self._itemId_item = {} # :type : dict[int, bolt.Path | basestring | int]
@@ -259,3 +267,17 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         """Reorder the list control displayed items to match inorder."""
         sortDict = dict((self._item_itemId[y], x) for x, y in enumerate(inorder))
         self._native_widget.SortItems(lambda x, y: bolt.cmp_(sortDict[x], sortDict[y]))
+
+    # native edit control wrappers
+    def ec_set_selection(self, start, stop):
+        return self._native_widget.GetEditControl().SetSelection(start, stop)
+
+    def ec_get_selection(self):
+        return self._native_widget.GetEditControl().GetSelection()
+
+    def ec_set_on_char_handler(self, on_char_handler):
+        on_char = EventHandler(self._native_widget.GetEditControl(),
+            _wx.EVT_CHAR, lambda event: [
+                event.GetKeyCode() == _wx.WXK_F2,
+                self._native_widget.GetEditControl().GetValue(), self])
+        on_char.subscribe(on_char_handler)

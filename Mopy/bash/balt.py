@@ -1212,8 +1212,8 @@ class UIList(wx.Panel):
             self.sm_dn = checkboxesIL.Add(SmallDnArrow.GetBitmap())
             self.__gList._native_widget.SetImageList(checkboxesIL, wx.IMAGE_LIST_SMALL)
         if self.__class__._editLabels:
-            self.__gList._native_widget.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnLabelEdited)
-            self.__gList._native_widget.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
+            self.__gList.on_edit_label_begin.subscribe(self.OnBeginEditLabel)
+            self.__gList.on_edit_label_end.subscribe(self.OnLabelEdited)
         # gList callbacks
         self.__gList.on_lst_col_rclick.subscribe(self.DoColumnMenu)
         self.__gList.on_context_menu.subscribe(self.DoItemMenu)
@@ -1273,8 +1273,6 @@ class UIList(wx.Panel):
     # properties to encapsulate access to the list control
     @property
     def item_count(self): return self.__gList._native_widget.GetItemCount()
-    @property
-    def edit_control(self): return self.__gList._native_widget.GetEditControl() # todo type?
 
     #--Items ----------------------------------------------
     def PopulateItem(self, itemDex=-1, item=None):
@@ -1476,11 +1474,13 @@ class UIList(wx.Panel):
     def OnDClick(self, lb_dex_and_flags): pass
     def OnChar(self, wrapped_evt): pass
     #--Edit labels - only registered if _editLabels != False
-    def OnBeginEditLabel(self, event):
+    def OnBeginEditLabel(self, evt_label, uilist_ctrl):
         """Start renaming: deselect the extension."""
-        to = len(GPath(event.GetLabel()).sbody)
-        self.edit_control.SetSelection(0, to)
-    def OnLabelEdited(self,event): event.Skip()
+        to = len(GPath(evt_label).sbody)
+        uilist_ctrl.ec_set_selection(0, to)
+    def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
+        # should only be subscribed if _editLabels==True and overridden
+        raise AbstractError
 
     def _try_rename(self, key, newFileName, to_select, item_edited=None):
         newPath = self.data_store.store_dir.join(newFileName)
@@ -1717,12 +1717,9 @@ class UIList(wx.Panel):
             if index != -1:
                 self.__gList._native_widget.EditLabel(index)
 
-    def validate_filename(self, event, name_new=None, has_digits=False,
-                          ext=u'', is_filename=True):
-        if name_new is None:
-            if event.IsEditCancelled(): return None, None, None
-            newName = event.GetLabel()
-        else: newName = name_new
+    def validate_filename(self, name_new, has_digits=False, ext=u'',
+            is_filename=True):
+        newName = name_new
         if not newName:
             msg = _(u'Empty name !')
             maPattern = None
@@ -1746,7 +1743,6 @@ class UIList(wx.Panel):
             num_str = maPattern.groups()[1] if has_digits else None
         if not maPattern or not (maPattern.groups()[0] or num_str):
             showError(self, msg)
-            if event: event.Veto()
             return None, None, None
         return maPattern.groups()[0], GPath(newName), num_str
 
@@ -2660,12 +2656,10 @@ class NotebookPanel(wx.Panel):
 # TODO(inf) replace and remove, need to come up with a better system
 # Event bindings --------------------------------------------------------------
 class Events(object):
-    CHAR_KEY_PRESSED = 'char_key_pressed'
     MOUSE_LEFT_DOUBLECLICK = 'mouse_left_doubleclick'
     MOUSE_MIDDLE_UP = 'mouse_middle_up'
 
-_WX_EVENTS = {Events.CHAR_KEY_PRESSED:      wx.EVT_CHAR,
-              Events.MOUSE_LEFT_DOUBLECLICK:wx.EVT_LEFT_DCLICK,
+_WX_EVENTS = {Events.MOUSE_LEFT_DOUBLECLICK:wx.EVT_LEFT_DCLICK,
               Events.MOUSE_MIDDLE_UP:       wx.EVT_MIDDLE_UP,
 }
 
