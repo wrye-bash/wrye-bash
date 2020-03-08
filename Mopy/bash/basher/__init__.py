@@ -169,7 +169,8 @@ class _DetailsViewMixin(NotebookPanel):
 
 _UIsetting = namedtuple(u'UIsetting', u'default_ get_ set_')
 class SashPanel(NotebookPanel):
-    """Subclass of Notebook Panel, designed for two pane panel."""
+    """Subclass of Notebook Panel, designed for two pane panel. Overrides
+    ShowPanel to do some first show initialization."""
     defaultSashPos = minimumSize = 256
     _ui_settings = {u'.sashPos' : _UIsetting(lambda self: self.defaultSashPos,
         lambda self: self.splitter.get_sash_pos(),
@@ -185,6 +186,8 @@ class SashPanel(NotebookPanel):
                 items=[self.splitter]).apply_to(self)
 
     def ShowPanel(self, **kwargs):
+        """Unfortunately can't use EVT_SHOW, as the panel needs to be
+        populated for position to be set correctly."""
         if self._firstShow:
             for key, ui_set in self._ui_settings.items():
                 sashPos = settings.get(self.__class__.keyPrefix + key,
@@ -246,7 +249,7 @@ class BashTab(_DetailsViewMixin, SashUIListPanel):
 
     def __init__(self, parent, isVertical=True):
         super(BashTab, self).__init__(parent, isVertical)
-        self.detailsPanel = self._details_panel_type(self.right._native_widget)
+        self.detailsPanel = self._details_panel_type(self.right, self)
         #--Layout
         HLayout(item_expand=True, item_weight=1,
                 items=[self.detailsPanel]).apply_to(self.right)
@@ -1149,7 +1152,7 @@ class _DetailsMixin(object):
 class _EditableMixin(_DetailsMixin):
     """Mixin for detail panels that allow editing the info they display."""
 
-    def __init__(self, buttonsParent):
+    def __init__(self, buttonsParent, ui_list_panel):
         self.edited = False
         #--Save/Cancel
         self.save = SaveButton(buttonsParent)
@@ -1194,7 +1197,7 @@ class _EditableMixinOnFileInfos(_EditableMixin):
 
     def __init__(self, masterPanel, ui_list_panel):
         # super(_EditableMixinOnFileInfos, self).__init__(masterPanel)
-        _EditableMixin.__init__(self, masterPanel)
+        _EditableMixin.__init__(self, masterPanel, ui_list_panel)
         #--File Name
         self.file = TextField(self.left, max_length=self._max_filename_chars)
         self.file.on_focus_lost.subscribe(self.OnFileEdited)
@@ -1269,20 +1272,19 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
     """Mod and Saves details panel, feature a master's list.
 
     I named the master list attribute 'uilist' to stand apart from the
-    uiList of SashUIListPanel.
+    uiList of SashUIListPanel. ui_list_panel is mods or saves panel
     :type uilist: MasterList"""
 
-    def __init__(self, parent):
+    def __init__(self, parent, ui_list_panel):
         _SashDetailsPanel.__init__(self, parent)
-        mod_or_save_panel = parent.GetParent().GetParent()
         # min_pane_size split the bottom panel into the master uilist and mod tags/save notes
         self.masterPanel, self._bottom_low_panel = \
             self.subSplitter.make_panes()
         _EditableMixinOnFileInfos.__init__(self, self.masterPanel,
-                                           mod_or_save_panel)
+                                           ui_list_panel)
         #--Masters
         self.uilist = MasterList(self.masterPanel, keyPrefix=self.keyPrefix,
-                                 panel=mod_or_save_panel, detailsPanel=self)
+                                 panel=ui_list_panel, detailsPanel=self)
         VLayout(spacing=4, items=[
             Label(self.masterPanel, _(u"Masters:")),
             (self.uilist, LayoutOptions(weight=1, expand=True)),
@@ -1308,8 +1310,8 @@ class ModDetails(_ModsSavesDetails):
     @property
     def allowDetailsEdit(self): return bush.game.esp.canEditHeader
 
-    def __init__(self, parent):
-        super(ModDetails, self).__init__(parent)
+    def __init__(self, parent, ui_list_panel):
+        super(ModDetails, self).__init__(parent, ui_list_panel)
         top, bottom = self.left, self.right
         #--Data
         self.modInfo = None
@@ -1382,7 +1384,7 @@ class ModDetails(_ModsSavesDetails):
             self.gTags.set_background_color(
                 self.gAuthor.get_background_color())
         else:
-            self.gTags.set_background_color(self.GetBackgroundColour())
+            self.gTags.set_background_color(self.get_background_color())
         # TODO(inf) de-wx! - or investigate why it's needed
         self.gTags._native_widget.Refresh()
 
@@ -1628,9 +1630,9 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
     @property
     def file_infos(self): return bosh.iniInfos
 
-    def __init__(self, parent):
+    def __init__(self, parent, ui_list_panel):
         super(INIDetailsPanel, self).__init__(parent, isVertical=True)
-        self._ini_panel = parent.GetParent().GetParent()
+        self._ini_panel = ui_list_panel
         self._ini_detail = None
         left,right = self.left, self.right
         #--Remove from list button
@@ -1938,8 +1940,8 @@ class SaveDetails(_ModsSavesDetails):
     @property
     def allowDetailsEdit(self): return bush.game.ess.canReadBasic
 
-    def __init__(self,parent):
-        super(SaveDetails, self).__init__(parent)
+    def __init__(self, parent, ui_list_panel):
+        super(SaveDetails, self).__init__(parent, ui_list_panel)
         top, bottom = self.left, self.right
         #--Data
         self.saveInfo = None
@@ -2552,10 +2554,10 @@ class InstallersDetails(_SashDetailsPanel):
     @property
     def file_infos(self): return self._idata
 
-    def __init__(self,parent):
+    def __init__(self, parent, ui_list_panel):
         """Initialize."""
         super(InstallersDetails, self).__init__(parent)
-        self.installersPanel = parent.GetParent().GetParent()
+        self.installersPanel = ui_list_panel
         self._idata = self.installersPanel.listData
         self._displayed_installer = None
         top, bottom = self.left, self.right
@@ -3117,9 +3119,9 @@ class ScreensList(balt.UIList):
 #------------------------------------------------------------------------------
 class ScreensDetails(_DetailsMixin, NotebookPanel):
 
-    def __init__(self, parent):
+    def __init__(self, parent, ui_list_panel):
         super(ScreensDetails, self).__init__(parent)
-        self.screenshot_control = balt.Picture(parent, 256, 192, background=colors['screens.bkgd.image'])
+        self.screenshot_control = balt.Picture(parent._native_widget, 256, 192, background=colors['screens.bkgd.image'])
         self.displayed_screen = None # type: bolt.Path
         HLayout(item_expand=True, item_weight=True,
                 items=[self.screenshot_control]).apply_to(self)
@@ -3189,11 +3191,10 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
     @property
     def allowDetailsEdit(self): return True
 
-    def __init__(self, parent):
+    def __init__(self, parent, ui_list_panel):
         SashPanel.__init__(self, parent, isVertical=False)
         top, bottom = self.left, self.right
-        bsa_panel = self.GetParent().GetParent().GetParent()
-        _EditableMixinOnFileInfos.__init__(self, bottom._native_widget, bsa_panel)
+        _EditableMixinOnFileInfos.__init__(self, bottom, ui_list_panel)
         #--Data
         self._bsa_info = None
         #--BSA Info
@@ -3292,10 +3293,10 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
     @property
     def file_infos(self): return self.peoplePanel.listData
 
-    def __init__(self, parent):
+    def __init__(self, parent, ui_list_panel):
         super(PeopleDetails, self).__init__(parent)
         self._people_detail = None # type: unicode
-        self.peoplePanel = parent.GetParent().GetParent()
+        self.peoplePanel = ui_list_panel
         self.gName = TextField(self, editable=False)
         self.gText = TextArea(self)
         self.gKarma = Spinner(self, min_val=-5, max_val=5, onSpin=self.OnSpin)
@@ -3360,6 +3361,7 @@ class PeoplePanel(BashTab):
 
 #------------------------------------------------------------------------------
 #--Tabs menu
+_widget_to_panel = {}
 class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
     """Handle hiding/unhiding tabs."""
     def __init__(self,tabKey,canDisable=True):
@@ -3412,10 +3414,11 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
             if not panel:
                 panel = globals()[className](Link.Frame.notebook)
                 tabInfo[self.tabKey][2] = panel
+                _widget_to_panel[panel.wx_id_] = panel
             if insertAt > Link.Frame.notebook.GetPageCount():
-                Link.Frame.notebook.AddPage(panel,title)
+                Link.Frame.notebook.AddPage(panel._native_widget,title)
             else:
-                Link.Frame.notebook.InsertPage(insertAt,panel,title)
+                Link.Frame.notebook.InsertPage(insertAt,panel._native_widget,title)
         bass.settings['bash.tabs.order'][self.tabKey] ^= True
 
 class BashNotebook(wx.Notebook, balt.TabDragMixin):
@@ -3469,8 +3472,9 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             # Add the page
             try:
                 item = panel(self)
-                self.AddPage(item,title)
+                self.AddPage(item._native_widget, title)
                 tabInfo[page][2] = item
+                _widget_to_panel[item.wx_id_] = item
             except:
                 if page == 'Mods':
                     deprint(_(u"Fatal error constructing '%s' panel.") % title)
@@ -3482,7 +3486,8 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         if settings['bash.installers.fastStart'] and pageIndex == iInstallers:
             pageIndex = iMods
         self.SetSelection(pageIndex)
-        self.currentPage = self.GetPage(self.GetSelection())
+        self.currentPage = _widget_to_panel[
+            self.GetPage(self.GetSelection()).GetId()]
         #--Dragging
         self.Bind(balt.EVT_NOTEBOOK_DRAGGED, self.OnTabDragged)
         #--Setup Popup menu for Right Click on a Tab
@@ -3545,7 +3550,8 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         """Call panel's ShowPanel() and set the current panel."""
         if event.GetId() == self.GetId(): ##: why ?
             bolt.GPathPurge()
-            self.currentPage = self.GetPage(event.GetSelection())
+            self.currentPage = _widget_to_panel[
+                self.GetPage(event.GetSelection()).GetId()]
             self.currentPage.ShowPanel()
             event.Skip() ##: shouldn't this always be called ?
 
