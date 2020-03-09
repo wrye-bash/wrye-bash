@@ -514,25 +514,25 @@ def _wxSelectGame(ret, game_icons, msgtext):
             self.SetSize((420, min(600, 200 + len(game_names) * 42)))
             # Construct the window and add the static text, setup the
             # scrollbars if needed
-            panel = _wx.ScrolledWindow(self, style=_wx.TAB_TRAVERSAL)
-            panel.SetScrollbars(0, 20, 0, 50)
+            scrl_win = _wx.ScrolledWindow(self, style=_wx.TAB_TRAVERSAL)
+            scrl_win.SetScrollbars(0, 20, 0, 50)
             sizer = _wx.BoxSizer(_wx.VERTICAL)
-            sizer.Add(_wx.StaticText(panel, label=msgtext,
+            sizer.Add(_wx.StaticText(scrl_win, label=msgtext,
                                      style=_wx.ALIGN_CENTER_HORIZONTAL),
                       0, _wx.EXPAND | _wx.ALL, 5)
             # Add the game buttons to the window
             for game_name in game_names:
-                game_btn = _wx.Button(panel, label=game_name)
+                game_btn = _wx.Button(scrl_win, label=game_name)
                 game_btn.SetBitmap(_wx.Bitmap(game_icons[game_name]))
                 sizer.Add(game_btn, 0, _wx.EXPAND | _wx.ALL ^ _wx.BOTTOM, 5)
             # Finally, append the 'Quit' button
-            quit_button = _wx.Button(panel, _wx.ID_CANCEL, _(u'Quit'))
+            quit_button = _wx.Button(scrl_win, _wx.ID_CANCEL, _(u'Quit'))
             quit_button.SetBitmap(_wx.ArtProvider.GetBitmap(
                 _wx.ART_ERROR, _wx.ART_HELP_BROWSER, (32, 32)))
             quit_button.SetDefault()
             sizer.Add(quit_button, 0, _wx.EXPAND | _wx.ALL ^ _wx.BOTTOM, 5)
             self.Bind(_wx.EVT_BUTTON, self.OnButton)
-            panel.SetSizer(sizer)
+            scrl_win.SetSizer(sizer)
 
         def OnButton(self, event):
             if event.GetId() != _wx.ID_CANCEL:

@@ -3208,7 +3208,8 @@ class DnDStatusBar(wx.StatusBar):
             try:
                 button.ReleaseMouse()
             except:
-                pass
+                deprint(u'Exception while handling mouse up on button',
+                        traceback=True)
             # -*- Hacky code! -*-
             # Since we've got to CaptureMouse to do DnD properly,
             # The button will never get a EVT_BUTTON event if you

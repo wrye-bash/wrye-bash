@@ -970,9 +970,13 @@ from . import cosaves
 class SaveInfo(FileInfo):
     cosave_types = () # cosave types for this game - set once in SaveInfos
     _cosave_ui_string = {PluggyCosave: 'XP', xSECosave: 'XO'} # ui strings
-    __empty = {} # sentinel for _co_saves cache
-    # Dict of cosaves that may come with this save file. Lazily initialized.
-    _co_saves = __empty
+
+    def __init__(self, fullpath, load_cache=False):
+        # Dict of cosaves that may come with this save file. Need to get this
+        # first, since readHeader calls get_masters, which relies on the cosave
+        # for SSE and FO4
+        self._co_saves = self.get_cosaves_for_path(fullpath)
+        super(SaveInfo, self).__init__(fullpath, load_cache)
 
     def getFileInfos(self): return saveInfos
 
@@ -1040,7 +1044,7 @@ class SaveInfo(FileInfo):
         master_map = {x.s: y.s for x, y in zip(oldMasters, self.header.masters)
                       if x != y}
         if master_map:
-            for co_file in self.get_cosave_instances().values():
+            for co_file in self._co_saves.values():
                 co_file.remap_plugins(master_map)
                 co_file.write_cosave_safe()
 
@@ -1048,7 +1052,7 @@ class SaveInfo(FileInfo):
         """Return strings expressing whether cosaves exist and are correct.
         Correct means not in more that 10 seconds difference from the save."""
         co_ui_strings = [u'', u'']
-        instances = self.get_cosave_instances()
+        instances = self._co_saves
         # last string corresponds to xse plugin so used reversed
         for j, co_typ in enumerate(reversed(self.cosave_types)):
             inst = instances.get(co_typ, None)
@@ -1066,13 +1070,6 @@ class SaveInfo(FileInfo):
             co_paths = tuple(map(co_type.get_cosave_path, back_to_dest[0]))
             back_to_dest.append(co_paths)
         return back_to_dest
-
-    def get_cosave_instances(self):
-        """As bosh.SaveInfo#get_cosaves_for_path - also populate self._co_saves
-        """
-        if self._co_saves is self.__empty:
-            self._co_saves = self.get_cosaves_for_path(self.abs_path)
-        return self._co_saves
 
     @staticmethod
     def make_cosave(co_type, co_path):
@@ -1103,11 +1100,11 @@ class SaveInfo(FileInfo):
 
     def get_xse_cosave(self):
         """:rtype: xSECosave | None"""
-        return self.get_cosave_instances().get(xSECosave, None)
+        return self._co_saves.get(xSECosave, None)
 
     def get_pluggy_cosave(self):
         """:rtype: PluggyCosave | None"""
-        return self.get_cosave_instances().get(PluggyCosave, None)
+        return self._co_saves.get(PluggyCosave, None)
 
     def get_masters(self):
         if bush.game.has_esl:
@@ -2759,13 +2756,13 @@ class SaveInfos(FileInfos):
         """Renames member file from oldName to newName, update also cosave
         instance names."""
         super(SaveInfos, self)._rename_operation(oldName, newName)
-        for co_type, co_file in self[newName].get_cosave_instances().items():
+        for co_type, co_file in self[newName]._co_saves.items():
             co_file.abs_path = co_type.get_cosave_path(self[newName].abs_path)
 
     def _additional_deletes(self, fileInfo, toDelete):
         # type: (SaveInfo, list) -> None
         toDelete.extend(
-            x.abs_path for x in fileInfo.get_cosave_instances().values())
+            x.abs_path for x in fileInfo._co_saves.values())
         # now add backups and cosaves backups
         super(SaveInfos, self)._additional_deletes(fileInfo, toDelete)
 
@@ -2774,7 +2771,7 @@ class SaveInfos(FileInfos):
         # super call added the backup paths but not the actual rename cosave
         # paths inside the store_dir - add those only if they exist
         old, new = renames[0] # HACK: (oldName.ess, newName.ess) abs paths
-        for co_type, co_file in self[oldName].get_cosave_instances().items():
+        for co_type, co_file in self[oldName]._co_saves.items():
             renames.append((co_file.abs_path, co_type.get_cosave_path(new)))
         return renames
 
@@ -2787,7 +2784,7 @@ class SaveInfos(FileInfos):
                          pathFunc=Path.copyTo):
         dest_path = destDir.join(destName) if destName else destDir
         try:
-            co_instances = self[fileName].get_cosave_instances()
+            co_instances = self[fileName]._co_saves
         except KeyError: # fileName is outside self.store_dir
             co_instances = SaveInfo.get_cosaves_for_path(fileName)
         for co_type, co_file in co_instances.items():

@@ -3461,10 +3461,9 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
         else:
             # It was disabled, enable it
             insertAt = 0
-            for i,key in enumerate(bass.settings['bash.tabs.order']):
+            for key, is_enabled in bass.settings['bash.tabs.order'].items():
                 if key == self.tabKey: break
-                if bass.settings['bash.tabs.order'][key]:
-                    insertAt = i+1
+                insertAt += is_enabled
             className,title,panel = tabInfo[self.tabKey]
             if not panel:
                 panel = globals()[className](Link.Frame.notebook)

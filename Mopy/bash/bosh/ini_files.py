@@ -353,7 +353,7 @@ class DefaultIniFile(IniFile):
     """A default ini tweak - hardcoded."""
     __empty = _LowerOrderedDict()
 
-    def __init__(self, default_ini_name, settings_dict=__empty):
+    def __init__(self, default_ini_name, settings_dict):
         # we don't call AFile#__init__ to avoid stat'ing the non existing file
         self.abs_path = GPath(default_ini_name)
         self._file_size, self._file_mod_time = self._null_stat

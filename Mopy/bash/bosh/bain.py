@@ -1303,7 +1303,7 @@ class InstallerArchive(Installer):
                            p.lower().endswith(u'.png')]
             unpack_dir = self.unpackToTemp(files_to_extract,
                 bolt.SubProgress(progress,0,0.7), recurse=True)
-            self._fix_pngs(pngs_to_fix, bolt.SubProgress(progress, 0.7, 0.9))
+            self._fix_pngs(pngs_to_fix, bolt.SubProgress(progress, 0.7, 1.0))
         return unpack_dir.join(self.hasWizard)
 
 #------------------------------------------------------------------------------

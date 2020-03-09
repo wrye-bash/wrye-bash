@@ -1696,6 +1696,7 @@ class _ScriptText(object):
     def writeToText(self,textPath,skip,folder,deprefix,esp,skipcomments):
         """Writes stats to specified text file."""
         eid_data = self.eid_data
+        skip, deprefix = skip.lower(), deprefix.lower()
         x = len(skip)
         exportedScripts = []
         y = len(eid_data)
@@ -1720,9 +1721,9 @@ class _ScriptText(object):
                     text = tmp
                 z += 1
                 progress((0.5 + 0.5 / y * z),_(u"Exporting script %s.") % eid)
-                if x == 0 or skip.lower() != eid[:x].lower():
+                if x == 0 or skip != eid[:x].lower():
                     fileName = eid
-                    if r >= 1 and deprefix == fileName[:r]:
+                    if r >= 1 and deprefix == fileName[:r].lower():
                         fileName = fileName[r:]
                     num += 1
                     outpath = dirs['patches'].join(folder).join(
