@@ -30,6 +30,7 @@ __author__ = u'nycz, Infernio'
 import textwrap
 import wx as _wx
 from .events import EventHandler, _null_processor
+from ..exception import AbstractError
 
 # Utilities -------------------------------------------------------------------
 def wrapped_tooltip(tooltip_text, wrap_width=50):
@@ -354,3 +355,21 @@ class WithCharEvents(_AComponent):
         if self.__class__.bind_key_up_evt:
             self.on_key_up = self._evt_handler(_wx.EVT_KEY_UP, lambda event: [
                 self._WrapKeyEvt(event), self])
+
+class WithFirstShow(_AComponent):
+    """An _AComponent that does some initialization on first shown.
+    You must override _handle_first_show, the event will be unregistered once
+    this runs once."""
+
+    def __init__(self, *args, **kwargs):
+        super(WithFirstShow, self).__init__(*args, **kwargs)
+        self._on_first_show = self._evt_handler(_wx.EVT_SHOW)
+        self._on_first_show.subscribe(self.__handle_first_show)
+
+    def __handle_first_show(self):
+        self._handle_first_show()
+        self._on_first_show.unsubscribe(self.__handle_first_show)
+
+    def _handle_first_show(self):
+        """Perform some one time initialization on show"""
+        raise AbstractError

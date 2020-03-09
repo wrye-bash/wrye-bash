@@ -31,7 +31,7 @@ import wx.wizard as _wiz     # wxPython wizard class
 defPos = _wx.DefaultPosition
 defSize = _wx.DefaultSize
 
-from .base_components import _AComponent
+from .base_components import _AComponent, WithFirstShow
 
 class _TopLevelWin(_AComponent):
     """Methods mixin for top level windows
@@ -194,7 +194,7 @@ class DialogWindow(_TopLevelWin):
         """Closes the modal dialog with a custom exit code."""
         self._native_widget.EndModal(custom_code)
 
-class WizardDialog(DialogWindow):
+class WizardDialog(DialogWindow, WithFirstShow):
     """Wrap a wx wizard control.
 
     Events:
@@ -218,22 +218,17 @@ class WizardDialog(DialogWindow):
         self._on_wiz_cancel.subscribe(self.save_size)
         self._on_wiz_finished = self._evt_handler(_wiz.EVT_WIZARD_FINISHED)
         self._on_wiz_finished.subscribe(self.save_size)
-        # we have to set initial size here, see WizardDialog._set_pos_size
-        self._on_show = self._evt_handler(_wx.EVT_SHOW)
-        self._on_show.subscribe(self._on_show_handler)
-        # perform some one time init on show - basically set the size
-        self.__first_shown = True
 
-    def _on_show_handler(self):
-        if self.__first_shown: # EVT_SHOW is also posted on hiding the window
-            self.__first_shown = False
-            saved_size = self._sizes_dict[self._size_key]
-            # enforce min size
-            self.component_size = (max(saved_size[0], self._def_size[0]),
-                                   max(saved_size[1], self._def_size[1]))
-            # avoid strange size events on window creation - we used to set the
-            # size but then a size event from the system would unset it
-            self.on_size_changed.subscribe(self.save_size) # needed for correctly saving the size
+    def _handle_first_show(self):
+        # we have to set initial size here, see WizardDialog._set_pos_size
+        saved_size = self._sizes_dict[self._size_key]
+        # enforce min size
+        self.component_size = (max(saved_size[0], self._def_size[0]),
+                               max(saved_size[1], self._def_size[1]))
+        # avoid strange size events on window creation - we used to set the
+        # size but then a size event from the system would unset it
+        self.on_size_changed.subscribe(
+            self.save_size)  # needed for correctly saving the size
 
     def _set_pos_size(self, kwargs, sizes_dict):
         # default keys for wizard should exist and return settingDefaults
