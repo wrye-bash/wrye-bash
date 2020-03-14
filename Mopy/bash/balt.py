@@ -2905,7 +2905,8 @@ class DnDStatusBar(wx.StatusBar):
     def GetLink(self,uid=None,index=None,button=None): raise AbstractError
 
     @property
-    def iconsSize(self): return _settings['bash.statusbar.iconSize'] + 8
+    def iconsSize(self): # +8 as each button has 4 px border on left and right
+        return _settings['bash.statusbar.iconSize'] + 8
 
     def _addButton(self, link):
         gButton = link.GetBitmapButton(self)
@@ -2925,12 +2926,12 @@ class DnDStatusBar(wx.StatusBar):
         for i, button in enumerate(self.buttons):
             if button._native_widget.GetId() == id_:
                 x = mouseEvent.GetPosition()[0]
-                delta = x / self.iconsSize
-                if abs(x) % self.iconsSize > self.iconsSize:
-                    delta += x / abs(x)
-                i += delta
-                if i < 0: i = 0
-                elif i >= len(self.buttons): i = len(self.buttons) - 1
+                # position is 0 at the beginning of the button's _icon_
+                # negative beyond that (on the left) and positive after
+                if x < -4:
+                    return max(i - 1, 0)
+                elif x > self.iconsSize - 4:
+                    return min(i + 1, len(self.buttons) - 1)
                 return i
         return wx.NOT_FOUND
 
@@ -2954,12 +2955,16 @@ class DnDStatusBar(wx.StatusBar):
 
     def OnDragEnd(self, event):
         if self.dragging != wx.NOT_FOUND:
-            button = self.buttons[self.dragging]
             try:
-                button.ReleaseMouse()
+                if self.moved:
+                    for button in self.buttons:
+                        if button._native_widget.HasCapture():
+                            button._native_widget.ReleaseMouse()
+                            break
             except:
-                deprint(u'Exception while handling mouse up on button',
-                        traceback=True)
+                # deprint(u'Exception while handling mouse up on button',
+                #         traceback=True)
+                pass
             self.dragging = wx.NOT_FOUND
             self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
             if self.moved:
@@ -2972,15 +2977,14 @@ class DnDStatusBar(wx.StatusBar):
             if abs(event.GetPosition()[0] - self.dragStart) > 4:
                 self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
             over = self._getButtonIndex(event)
-            if over >= len(self.buttons): over -= 1
             if over not in (wx.NOT_FOUND, self.dragging):
                 self.moved = True
                 button = self.buttons[self.dragging]
                 # update settings
                 uid = self.GetLink(button=button).uid
                 overUid = self.GetLink(index=over).uid
-                _settings['bash.statusbar.order'].remove(uid)
                 overIndex = _settings['bash.statusbar.order'].index(overUid)
+                _settings['bash.statusbar.order'].remove(uid)
                 _settings['bash.statusbar.order'].insert(overIndex, uid)
                 _settings.setChanged('bash.statusbar.order')
                 # update self.buttons
