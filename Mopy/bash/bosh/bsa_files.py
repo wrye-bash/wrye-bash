@@ -424,6 +424,12 @@ class ABsa(AFile):
         self.total_names_length = 0 # reported wrongly at times - calculate it
         if load_cache: self.__load(names_only)
 
+    def inspect_version(self):
+        """Returns the version of this BSA."""
+        with self.abs_path.open(u'rb') as ins:
+            self.bsa_header.load_header(ins)
+            return self.bsa_header.version
+
     def __load(self, names_only):
         try:
             if not names_only:

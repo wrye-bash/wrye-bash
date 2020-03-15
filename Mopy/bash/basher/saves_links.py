@@ -186,7 +186,7 @@ class Saves_Profiles(ChoiceLink):
                 self.window.DeleteAll() # let call below repopulate
                 self.window.RefreshUI(detail_item=None)
                 self.window.panel.ShowPanel()
-                Link.Frame.warn_corrupted(warn_mods=False, warn_strings=False)
+                Link.Frame.warn_corrupted(warn_saves=True)
 
     choiceLinkType = _ProfileLink
 
