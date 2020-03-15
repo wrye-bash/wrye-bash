@@ -31,7 +31,7 @@ from ..bosh import faces
 from ..gui import ApplyButton, BOTTOM, Button, CancelButton, CENTER, \
     CheckBox, GridLayout, HLayout, Label, LayoutOptions, OkButton, RIGHT, \
     Stretch, TextArea, TextField, VLayout, DropDown, DialogWindow, \
-    ColorPicker, ListBox
+    ColorPicker, ListBox, Color
 
 class ColorDialog(DialogWindow):
     """Color configuration dialog"""
@@ -121,7 +121,7 @@ class ColorDialog(DialogWindow):
                 color = self.changes[key]
             else:
                 color = colors[key]
-            default = bool(color == settingDefaults['bash.colors'][key])
+            default = color == Color(*settingDefaults['bash.colors'][key])
             if not default:
                 allDefault = False
                 break
@@ -132,7 +132,7 @@ class ColorDialog(DialogWindow):
             color = self.changes[color_key]
         else:
             color = colors[color_key]
-        default = bool(color == settingDefaults['bash.colors'][color_key])
+        default = color == Color(*settingDefaults['bash.colors'][color_key])
         # Update the Buttons, DropDown, and ColorPicker
         self.apply.enabled = changed
         self.applyAll.enabled = anyChanged
@@ -143,13 +143,13 @@ class ColorDialog(DialogWindow):
 
     def OnDefault(self):
         color_key = self.GetColorKey()
-        newColor = settingDefaults['bash.colors'][color_key]
+        newColor = Color(*settingDefaults['bash.colors'][color_key])
         self.changes[color_key] = newColor
         self.UpdateUIButtons()
 
     def OnDefaultAll(self):
         for key in colors:
-            default = settingDefaults['bash.colors'][key]
+            default = Color(*settingDefaults['bash.colors'][key])
             if colors[key] != default:
                 self.changes[key] = default
         self.UpdateUIButtons()
@@ -158,7 +158,7 @@ class ColorDialog(DialogWindow):
         color_key = self.GetColorKey()
         newColor = self.changes[color_key]
         #--Update settings and colors
-        bass.settings['bash.colors'][color_key] = newColor
+        bass.settings['bash.colors'][color_key] = newColor.to_rgb_tuple()
         bass.settings.setChanged('bash.colors')
         colors[color_key] = newColor
         self.UpdateUIButtons()
@@ -166,7 +166,7 @@ class ColorDialog(DialogWindow):
 
     def OnApplyAll(self):
         for key,newColor in self.changes.iteritems():
-            bass.settings['bash.colors'][key] = newColor
+            bass.settings['bash.colors'][key] = newColor.to_rgb_tuple()
             colors[key] = newColor
         bass.settings.setChanged('bash.colors')
         self.UpdateUIButtons()
@@ -186,12 +186,12 @@ class ColorDialog(DialogWindow):
         if not outPath: return
         try:
             with outPath.open('w') as file:
-                for key in colors:
+                for key in sorted(colors):
                     if key in self.changes:
                         color = self.changes[key]
                     else:
                         color = colors[key]
-                    file.write(key+u': '+color+u'\n')
+                    file.write(u'%s: %s\n' % (key, color.to_rgb_tuple()))
         except Exception as e:
             balt.showError(self, _(u'An error occurred writing to ') +
                            outPath.stail + u':\n\n%s' % e)
@@ -217,23 +217,20 @@ class ColorDialog(DialogWindow):
                     # Verify color exists
                     if key not in colors:
                         continue
-                    # Color format verification
-                    color = eval(split[1])
-                    if not isinstance(color, tuple) or len(color) not in (3,4):
+                    # Parse the color, verify that it's actually valid
+                    color_tup = tuple([int(c.strip()) for c
+                                       in split[1].strip()[1:-1].split(u',')])
+                    if len(color_tup) not in (3, 4):
                         continue
-                    ok = True
-                    for value in color:
-                        if not isinstance(value,int):
-                            ok = False
+                    for value in color_tup:
+                        if value < 0 or value > 255:
                             break
-                        if value < 0x00 or value > 0xFF:
-                            ok = False
-                            break
-                    if not ok:
-                        continue
-                    # Save it
-                    if color == colors[key]: continue
-                    self.changes[key] = color
+                    else:
+                        # All checks passed, save it
+                        color = Color(*color_tup)
+                        if color == colors[key] and key not in self.changes:
+                            continue # skip, identical to our current state
+                        self.changes[key] = color
         except Exception as e:
             balt.showError(Link.Frame, _(
                 u'An error occurred reading from ') + inPath.stail +
@@ -393,11 +390,11 @@ class CreateNewProject(DialogWindow):
         projectName = bolt.GPath(new_text)
         if projectName in self.existingProjects: #Fill this in. Compare this with the self.existingprojects list
             # PY3: See note in basher/constants.py
-            self.textName.set_background_color(b'#FF0000')
+            self.textName.set_background_color(colors.RED)
             self.textName.tooltip = _(u'There is already a project with that name!')
             self.ok_button.enabled = False
         else:
-            self.textName.set_background_color(b'#FFFFFF')
+            self.textName.set_background_color(colors.WHITE)
             self.textName.tooltip = None
             self.ok_button.enabled = True
 

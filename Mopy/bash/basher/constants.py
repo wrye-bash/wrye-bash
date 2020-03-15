@@ -160,36 +160,35 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.pluginEncoding': 'cp1252',    # Western European
     #--Colors
     'bash.colors': {
-        # PY3: These colors have to be bytes, at least in py2 - verify in py3
         #--Common Colors
-        'default.text':                 'BLACK',
-        'default.bkgd':                 'WHITE',
+        u'default.text':                 (0,   0,   0),   # 'BLACK'
+        u'default.bkgd':                 (255, 255, 255), # 'WHITE'
         #--Mods Tab
-        'mods.text.esm':                'BLUE',
-        'mods.text.mergeable':          (0x00, 0x99, 0x00),
-        'mods.text.noMerge':            (150, 130, 0),
-        'mods.bkgd.doubleTime.exists':  (0xFF, 0xDC, 0xDC),
-        'mods.bkgd.doubleTime.load':    (0xFF, 0x64, 0x64),
-        'mods.bkgd.deactivate':         (0xFF, 0x64, 0x64),
-        'mods.bkgd.ghosted':            (0xE8, 0xE8, 0xE8),
-        'mods.text.eslm':               (123, 29, 223),
-        'mods.text.esl':                (226, 54, 197),
-        'mods.text.bashedPatch':        (30, 157, 251),
+        u'mods.text.esm':                (0,   0,   255), # 'BLUE'
+        u'mods.text.mergeable':          (0,   153, 0),
+        u'mods.text.noMerge':            (150, 130, 0),
+        u'mods.bkgd.doubleTime.exists':  (255, 220, 220),
+        u'mods.bkgd.doubleTime.load':    (255, 100, 100),
+        u'mods.bkgd.deactivate':         (255, 100, 100),
+        u'mods.bkgd.ghosted':            (232, 232, 232),
+        u'mods.text.eslm':               (123, 29,  223),
+        u'mods.text.esl':                (226, 54,  197),
+        u'mods.text.bashedPatch':        (30,  157, 251),
         #--INI Edits Tab
-        'ini.bkgd.invalid':             (0xDF, 0xDF, 0xDF),
-        'tweak.bkgd.invalid':           (0xFF, 0xD5, 0xAA),
-        'tweak.bkgd.mismatched':        (0xFF, 0xFF, 0xBF),
-        'tweak.bkgd.matched':           (0xC1, 0xFF, 0xC1),
+        u'ini.bkgd.invalid':             (223, 223, 223),
+        u'tweak.bkgd.invalid':           (255, 213, 170),
+        u'tweak.bkgd.mismatched':        (255, 255, 191),
+        u'tweak.bkgd.matched':           (193, 255, 193),
         #--Installers Tab
-        'installers.text.complex':      'NAVY',
-        'installers.text.invalid':      'GREY',
-        'installers.text.marker':       (230, 97, 89),
-        'installers.bkgd.skipped':      (0xE0, 0xE0, 0xE0),
-        'installers.bkgd.outOfOrder':   (0xFF, 0xFF, 0x00),
-        'installers.bkgd.dirty':        (0xFF, 0xBB, 0x33),
+        u'installers.text.complex':      (35,  35,  142), # 'NAVY'
+        u'installers.text.invalid':      (128, 128, 128), # 'GREY'
+        u'installers.text.marker':       (230, 97,  89),
+        u'installers.bkgd.skipped':      (224, 224, 224),
+        u'installers.bkgd.outOfOrder':   (255, 255, 0),
+        u'installers.bkgd.dirty':        (255, 187, 51),
         #--Screens Tab
-        'screens.bkgd.image':           (0x64, 0x64, 0x64),
-        },
+        u'screens.bkgd.image':           (100, 100, 100),
+    },
     #--BSA Redirection
     'bash.bsaRedirection':True,
     #--Wrye Bash: Load Lists

@@ -86,7 +86,7 @@ from ..balt import Links, ItemLink
 from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
     TOP, VLayout, EventResult, DropDown, DialogWindow, WindowFrame, Spinner, \
-    Splitter, NotebookCtrl, PanelWin, CheckListBox
+    Splitter, NotebookCtrl, PanelWin, CheckListBox, Color
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons
@@ -693,7 +693,8 @@ class INITweakLineCtrl(INIListCtrl):
             elif status == 10: color = colors['tweak.bkgd.mismatched']
             elif status == 20: color = colors['tweak.bkgd.matched']
             elif deleted: color = colors['tweak.bkgd.mismatched']
-            else: color = self.GetBackgroundColour()
+            else: color = Color.from_wx(self.GetBackgroundColour())
+            color = color.to_rgba_tuple()
             self.SetItemBackgroundColour(i, color)
             #--Set iniContents color
             lineNo = line[5]
@@ -4149,8 +4150,20 @@ def InitSettings(): # this must run first !
 
 def InitImages():
     """Initialize color and image collections."""
-    #--Colors
-    for key,value in settings['bash.colors'].iteritems(): colors[key] = value
+    # TODO(inf) backwards compat - remove on settings update
+    _conv_dict = {
+        b'BLACK': (0,   0,   0),
+        b'BLUE':  (0,   0,   255),
+        b'NAVY':  (35,  35,  142),
+        b'GREY':  (128, 128, 128),
+        b'WHITE': (255, 255, 255),
+    }
+    # Setup the colors dictionary
+    for key, value in settings['bash.colors'].iteritems():
+        # Convert any colors that were stored as bytestrings into tuples
+        if isinstance(value, str):
+            value = settings['bash.colors'][key] = _conv_dict[value]
+        colors[key] = value
     #--Images
     imgDirJn = bass.dirs['images'].join
     def _png(fname): return Image(imgDirJn(fname))

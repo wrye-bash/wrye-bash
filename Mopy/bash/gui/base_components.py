@@ -57,20 +57,55 @@ class Color(object):
                                    u'0-255.')
         self.red, self.green, self.blue, self.alpha = red, green, blue, alpha
 
-    def _to_wx(self): # type: () -> _wx.Colour
-        """Converts this Color object back into a wx.Colour object.
+    def to_rgba_tuple(self): # type: () -> (int, int, int, int)
+        """Converts this Color object into a four-int RGBA tuple."""
+        return self.red, self.green, self.blue, self.alpha
 
-        :return: A wx.Colour object representing the same color as this one."""
-        return _wx.Colour(self.red, self.green, self.blue, self.alpha)
+    def to_rgb_tuple(self): # type: () -> (int, int, int)
+        """Converts this Color object into a three-int RGB tuple."""
+        return self.red, self.green, self.blue
 
-    @staticmethod
-    def _from_wx(color): # type: (_wx.Colour) -> Color
+    def __eq__(self, other):
+        return (isinstance(other, Color) and other.red == self.red
+                and self.green == other.green and self.blue == other.blue
+                and self.alpha == other.alpha)
+
+    def __repr__(self):
+        return u'Color(%s, %s, %s, %s)' % (
+            self.red, self.green, self.blue, self.alpha)
+
+    @classmethod
+    def from_wx(cls, color): # type: (_wx.Colour) -> Color
         """Creates a new Color object by copying the color properties from the
         specified wx.Colour object.
 
         :param color: The wx.Colour object to copy.
         :return: A Color object representing the same color."""
-        return Color(color.red, color.green, color.blue, color.alpha)
+        return cls(color.red, color.green, color.blue, color.alpha)
+
+class Colors(object):
+    """Color collection and wrapper for wx.ColourDatabase. Provides
+    dictionary syntax access (colors[key]) and predefined colors."""
+    WHITE = Color(255, 255, 255)
+    RED = Color(255, 0, 0)
+
+    def __init__(self):
+        self._colors = {}
+
+    def __setitem__(self,key,value):
+        """Add a color to the database."""
+        if isinstance(value, Color):
+            self._colors[key] = value
+        else:
+            self._colors[key] = Color(*value)
+
+    def __getitem__(self,key):
+        """Dictionary syntax: color = colors[key]."""
+        return self._colors[key]
+
+    def __iter__(self):
+        for key in self._colors:
+            yield key
 
 # Base Elements ---------------------------------------------------------------
 class _AComponent(object):
@@ -174,19 +209,23 @@ class _AComponent(object):
         else:
             self._native_widget.SetToolTip(wrapped_tooltip(new_tooltip))
 
-    def get_background_color(self): # type: () -> tuple
+    def get_background_color(self): # type: () -> Color
         """Returns the background color of this component as a tuple.
 
         :return: The background color of this component."""
-        return self._native_widget.GetBackgroundColour().Get()
+        return Color.from_wx(self._native_widget.GetBackgroundColour())
 
-    def set_background_color(self, new_color):
-        # type: (tuple | str | int | _wx.Colour) -> None
+    def set_background_color(self, new_color): # type: (Color) -> None
         """Changes the background color of this component to the color
         represented by the specified representation - see wx.Colour.Set.
 
         :param new_color: The color to change the background color to."""
-        self._native_widget.SetBackgroundColour(new_color)
+        self._native_widget.SetBackgroundColour(new_color.to_rgba_tuple())
+        self._native_widget.Refresh()
+
+    def reset_background_color(self):
+        """Resets the background color of this component to the default one."""
+        self._native_widget.SetBackgroundColour(_wx.NullColour)
         self._native_widget.Refresh()
 
     @property

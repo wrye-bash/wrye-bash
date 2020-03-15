@@ -47,7 +47,7 @@ from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
     BackwardButton, ForwardButton, ReloadButton, web_viewer_available, \
     WebViewer, DialogWindow, WindowFrame, EventResult, ListBox, Font, \
-    CheckListBox, UIListCtrl, PanelWin
+    CheckListBox, UIListCtrl, PanelWin, Color, Colors
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -82,32 +82,6 @@ _settings = __unset # must be bound to bosh.settings - smelly, see #174
 sizes = {} #--Using applications should override this.
 
 # Colors ----------------------------------------------------------------------
-class Colors(object):
-    """Colour collection and wrapper for wx.ColourDatabase.
-    Provides dictionary syntax access (colors[key]) and predefined colours."""
-    def __init__(self):
-        self._colors = {}
-
-    def __setitem__(self,key,value):
-        """Add a color to the database."""
-        if not isinstance(value,str):
-            self._colors[key] = wx.Colour(*value)
-        else:
-            self._colors[key] = value
-
-    def __getitem__(self,key):
-        """Dictionary syntax: color = colours[key]."""
-        if key in self._colors:
-            key = self._colors[key]
-            if not isinstance(key,str):
-                return key
-        return wx.TheColourDatabase.Find(key)
-
-    def __iter__(self):
-        for key in self._colors:
-            yield key
-
-#--Singleton
 colors = Colors()
 
 # Images ----------------------------------------------------------------------
@@ -658,7 +632,7 @@ class Log(_Log):
         super(Log, self).__init__(parent, title, asDialog, log_icons)
         #--Bug workaround to ensure that default colour is being used - if not
         # called we get white borders instead of grey todo PY3: test if needed
-        self.window.set_background_color(wx.NullColour)
+        self.window.reset_background_color()
         #--Text
         txtCtrl = TextArea(self.window, init_text=logText, auto_tooltip=False)
                           # special=True) SUNKEN_BORDER and TE_RICH2
@@ -1000,8 +974,10 @@ class Picture(wx.Window):
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.bitmap = None
         if background is not None:
+            if isinstance(background, Color):
+                background = background.to_rgba_tuple()
             if isinstance(background, tuple):
-                background = wx.Colour(background)
+                background = wx.Colour(*background)
             if isinstance(background, wx.Colour):
                 background = wx.Brush(background)
             self.background = background
@@ -1014,9 +990,11 @@ class Picture(wx.Window):
         self.OnSize()
 
     def SetBackground(self,background):
-        if isinstance(background,tuple):
-            background = wx.Colour(background)
-        if isinstance(background,wx.Colour):
+        if isinstance(background, Color):
+            background = background.to_rgba_tuple()
+        if isinstance(background, tuple):
+            background = wx.Colour(*background)
+        if isinstance(background, wx.Colour):
             background = wx.Brush(background)
         self.background = background
         self.OnSize()
@@ -1329,9 +1307,12 @@ class UIList(wx.Panel):
                 img = self.icons.Get(*df.icon_key)
             else: img = self.icons[df.icon_key]
             gItem.SetImage(img)
-        if df.text_key: gItem.SetTextColour(colors[df.text_key])
-        else: gItem.SetTextColour(self.__gList._native_widget.GetTextColour())
-        if df.back_key: gItem.SetBackgroundColour(colors[df.back_key])
+        if df.text_key:
+            gItem.SetTextColour(colors[df.text_key].to_rgba_tuple())
+        else:
+            gItem.SetTextColour(self.__gList._native_widget.GetTextColour())
+        if df.back_key:
+            gItem.SetBackgroundColour(colors[df.back_key].to_rgba_tuple())
         else: gItem.SetBackgroundColour(self._defaultTextBackground)
         gItem.SetFont(Font.Style(gItem.GetFont(), bold=df.strong,
                                  slant=df.italics, underline=df.underline))

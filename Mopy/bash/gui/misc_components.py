@@ -29,7 +29,8 @@ __author__ = u'nycz, Infernio, Utumno'
 
 import wx as _wx
 
-from .base_components import _AComponent, WithMouseEvents, WithCharEvents
+from .base_components import _AComponent, Color, WithMouseEvents, \
+    WithCharEvents
 from ..bolt import deprint
 
 class Font(_wx.Font):
@@ -147,11 +148,11 @@ class ColorPicker(_AComponent):
         self.on_color_picker_evt = self._evt_handler(
             _wx.EVT_COLOURPICKER_CHANGED)
 
-    def get_color(self):
-        return self._native_widget.GetColour()
+    def get_color(self): # type: () -> Color
+        return Color.from_wx(self._native_widget.GetColour())
 
-    def set_color(self, color):
-        self._native_widget.SetColour(color)
+    def set_color(self, color): # type: (Color) -> None
+        self._native_widget.SetColour(color.to_rgba_tuple())
 
 class Spinner(_AComponent):
     """Spin control with event and tip setting."""
