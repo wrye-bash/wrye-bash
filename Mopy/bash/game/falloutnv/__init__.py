@@ -67,7 +67,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     }
     ignoreDataDirs = {u'LSData'} #    u'NVSE\\Plugins\\ComponentDLLs\\CSE',
 
-    class esp(Fallout3GameInfo.esp):
+    class Esp(Fallout3GameInfo.Esp):
         canCBash = False # True?
         validHeaderVersions = (0.94, 1.32, 1.33, 1.34)
 

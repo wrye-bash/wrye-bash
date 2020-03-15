@@ -45,9 +45,6 @@ class MorrowindGameInfo(GameInfo):
     nexusName = u'Morrowind Nexus'
     nexusKey = u'bash.installers.openMorrowindNexus.continue'
 
-    allow_reset_bsa_timestamps = True
-    supports_mod_inis = False
-
     using_txt_file = False
 
     class ck(GameInfo.ck):
@@ -59,8 +56,15 @@ class MorrowindGameInfo(GameInfo):
 
     # TODO(inf) MWSE and MGE are vastly different from the later game versions
 
-    class ini(GameInfo.ini): # No BSA Redirection, TODO need BSA Invalidation
-        bsaRedirection = (u'', u'')
+    class Ini(GameInfo.Ini): # No BSA Redirection, TODO need BSA Invalidation
+        screenshot_enabled_key = (u'General', u'Screen Shot Enable', u'1')
+        screenshot_base_key = (u'General', u'Screen Shot Base Name',
+                               u'ScreenShot')
+        screenshot_index_key = (u'General', u'Screen Shot Index', u'0')
+        supports_mod_inis = False
+
+    class Bsa(GameInfo.Bsa):
+        allow_reset_timestamps = True
 
     class pnd(GameInfo.pnd): # Morrowind seems to have no such directories
         voice_dir = []
@@ -68,10 +72,6 @@ class MorrowindGameInfo(GameInfo):
     class xe(GameInfo.xe):
         full_name = u'TES3Edit'
         expert_key = u'tes3View.iKnowWhatImDoing'
-
-    screenshot_enabled_key = (u'General', u'Screen Shot Enable', u'1')
-    screenshot_base_key = (u'General', u'Screen Shot Base Name', u'ScreenShot')
-    screenshot_index_key = (u'General', u'Screen Shot Index', u'0')
 
     # BAIN:
     dataDirs = GameInfo.dataDirs | {
@@ -85,7 +85,7 @@ class MorrowindGameInfo(GameInfo):
         u'tes3edit cache',
     }
 
-    class esp(GameInfo.esp):
+    class Esp(GameInfo.Esp):
         validHeaderVersions = (1.2, 1.3)
         stringsFiles = []
         plugin_header_sig = b'TES3'

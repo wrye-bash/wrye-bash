@@ -89,7 +89,7 @@ class Installer(object):
     # even ones we'll end up skipping, since this is for the detection of
     # archive 'types' - not actually deciding which get installed
     _top_files_extensions = bush.game.espm_extensions | {
-        bush.game.bsa_extension, u'.ini', u'.modgroups', u'.bsl', u'.ckm'}
+        bush.game.Bsa.bsa_extension, u'.ini', u'.modgroups', u'.bsl', u'.ckm'}
     _re_top_extensions = re.compile(u'(?:' + u'|'.join(
         re.escape(ext) for ext in _top_files_extensions) + u')$', re.I)
 
@@ -622,7 +622,7 @@ class Installer(object):
             bethFilesSkip = False
         else:
             renameStrings = bass.settings['bash.installers.renameStrings'] \
-                if bush.game.esp.stringsFiles else False
+                if bush.game.Esp.stringsFiles else False
             bethFilesSkip = not bass.settings[
                 'bash.installers.autoRefreshBethsoft']
         if renameStrings:
@@ -1024,7 +1024,7 @@ class Installer(object):
         installer_plugins = self.espms
         is_ini_tweak = InstallersData._is_ini_tweak
         join_data_dir = bass.dirs['mods'].join
-        bsa_ext = bush.game.bsa_extension
+        bsa_ext = bush.game.Bsa.bsa_extension
         for dest, src in dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
             # Check the destination, since plugins may have been renamed
@@ -2219,10 +2219,10 @@ class InstallersData(DataStore):
                 tweakPath.remove()
                 continue
             # Re-write the tweak
-            with tweakPath.open('w') as ini:
-                ini.write(u'; INI Tweak created by Wrye Bash, using settings '
+            with tweakPath.open('w') as ini_:
+                ini_.write(u'; INI Tweak created by Wrye Bash, using settings '
                           u'from old file.\n\n')
-                ini.writelines(lines)
+                ini_.writelines(lines)
             # we notify BAIN below, although highly improbable the created ini
             # is included to a package
             iniInfos.new_info(tweakPath.tail, notify_bain=True)
@@ -2296,8 +2296,8 @@ class InstallersData(DataStore):
         self.data_sizeCrcDate.update((dest, (
             s, c, (d != -1 and d) or bass.dirs['mods'].join(dest).mtime)) for
             dest, (s, c, d) in data_sizeCrcDate_update.iteritems())
-        for ini in inis:
-            iniInfos.new_info(ini, owner=installer.archive)
+        for ini_path in inis:
+            iniInfos.new_info(ini_path, owner=installer.archive)
 
     def sorted_pairs(self, package_keys=None, reverse=False):
         """Return pairs of key, installer for package_keys in self, sorted by

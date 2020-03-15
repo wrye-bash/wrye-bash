@@ -90,14 +90,14 @@ class File_Duplicate(ItemLink):
         self._help = _(u"Make a copy of '%s'") % (selection[0])
 
     _bsaAndBlocking = _(u"This mod has an associated archive (%s" +
-                        bush.game.bsa_extension + u") and an "
+                        bush.game.Bsa.bsa_extension + u") and an "
         u"associated plugin-name-specific directory (e.g. Sound\\Voice\\%s), "
         u"which will not be attached to the duplicate mod.") + u'\n\n' + \
         _(u'Note that the BSA archive may also contain a plugin-name-specific '
         u'directory, which would remain detached even if a duplicate archive '
         u'were also created.')
     _bsa = _(u'This mod has an associated archive (%s' +
-                    bush.game.bsa_extension + u'), which will not be '
+             bush.game.Bsa.bsa_extension + u'), which will not be '
         u'attached to the duplicate mod.') + u'\n\n' + _(u'Note that this BSA '
         u'archive may contain a plugin-name-specific directory'
         u' (e.g. Sound\\Voice\\%s), which would remain detached even if a '

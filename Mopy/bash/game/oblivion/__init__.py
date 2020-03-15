@@ -47,9 +47,6 @@ class OblivionGameInfo(GameInfo):
     patchURL = u'http://www.elderscrolls.com/downloads/updates_patches.htm'
     patchTip = u'http://www.elderscrolls.com/'
 
-    allow_reset_bsa_timestamps = True
-    supports_mod_inis = False
-
     using_txt_file = False
     has_standalone_pluggy = True
 
@@ -83,8 +80,17 @@ class OblivionGameInfo(GameInfo):
         url = u'https://www.nexusmods.com/oblivion/mods/30054'
         url_tip = u'https://www.nexusmods.com/oblivion'
 
-    class ess(GameInfo.ess):
+    class Ini(GameInfo.Ini):
+        allow_new_lines = False
+        bsa_redirection_key = (u'Archive', u'sArchiveList')
+        supports_mod_inis = False
+
+    class Ess(GameInfo.Ess):
         canEditMore = True
+
+    class Bsa(GameInfo.Bsa):
+        allow_reset_timestamps = True
+        valid_versions = {0x67}
 
     class xe(GameInfo.xe):
         full_name = u'TES4Edit'
@@ -124,7 +130,7 @@ class OblivionGameInfo(GameInfo):
         u'LSData'
     }
 
-    class esp(GameInfo.esp):
+    class Esp(GameInfo.Esp):
         canBash = True
         canCBash = True
         canEditHeader = True

@@ -45,14 +45,6 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     nexusName = u'Skyrim SE Nexus'
     nexusKey = 'bash.installers.openSkyrimSeNexus.continue'
 
-    vanilla_string_bsas = {
-        u'skyrim.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
-        u'update.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
-        u'dawnguard.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
-        u'hearthfires.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
-        u'dragonborn.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
-    }
-
     espm_extensions = SkyrimGameInfo.espm_extensions | {u'.esl'}
     has_achlist = True
     check_esl = True
@@ -82,6 +74,19 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         sd_abbrev = u''
         long_name = u''
         install_dir = u''
+
+    class Bsa(SkyrimGameInfo.Bsa):
+        valid_versions = {0x69}
+        vanilla_string_bsas = {
+            u'skyrim.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
+            u'update.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
+            u'dawnguard.esm': [u'Skyrim - Patch.bsa',
+                               u'Skyrim - Interface.bsa'],
+            u'hearthfires.esm': [u'Skyrim - Patch.bsa',
+                                 u'Skyrim - Interface.bsa'],
+            u'dragonborn.esm': [u'Skyrim - Patch.bsa',
+                                u'Skyrim - Interface.bsa'],
+        }
 
     class xe(SkyrimGameInfo.xe):
         full_name = u'SSEEdit'

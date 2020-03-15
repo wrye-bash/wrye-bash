@@ -254,7 +254,7 @@ class PatchFile(_PFile, ModFile):
                     progress(pstate,u'%s\n%s' % (modName.s,patcher.name))
                     patcher.scanModFile(modFile,nullProgress)
                 # Clip max version at 1.0.  See explanation in the CBash version as to why.
-                self.tes4.version = min(max(modFile.tes4.version, self.tes4.version),max(bush.game.esp.validHeaderVersions))
+                self.tes4.version = min(max(modFile.tes4.version, self.tes4.version), max(bush.game.Esp.validHeaderVersions))
             except CancelError:
                 raise
             except:
@@ -626,7 +626,7 @@ class CBash_PatchFile(_PFile, ObModFile):
         # and if they do come about, we can always change this.  Plus this will solve issues where
         # Mod files mistakenly have the header version set > 1.0
         self.Current.ClearReferenceLog()
-        self.TES4.version = min(maxVersion,max(bush.game.esp.validHeaderVersions))
+        self.TES4.version = min(maxVersion, max(bush.game.Esp.validHeaderVersions))
         #Finish the patch
         progress(len(groupOrder))
         subProgress = SubProgress(progress,len(groupOrder))

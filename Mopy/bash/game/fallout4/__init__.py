@@ -43,22 +43,6 @@ class Fallout4GameInfo(GameInfo):
     nexusName = u'Fallout 4 Nexus'
     nexusKey = 'bash.installers.openFallout4Nexus.continue'
 
-    bsa_extension = u'.ba2'
-    vanilla_string_bsas = {
-        u'fallout4.esm': [u'Fallout4 - Interface.ba2'],
-        u'dlcrobot.esm': [u'DLCRobot - Main.ba2'],
-        u'dlcworkshop01.esm': [u'DLCworkshop01 - Main.ba2'],
-        u'dlcworkshop02.esm': [u'DLCworkshop02 - Main.ba2'],
-        u'dlcworkshop03.esm': [u'DLCworkshop03 - Main.ba2'],
-        u'dlccoast.esm': [u'DLCCoast - Main.ba2'],
-        u'dlcnukaworld.esm':  [u'DLCNukaWorld - Main.ba2'],
-    }
-    resource_archives_keys = (
-        u'sResourceIndexFileList', u'sResourceStartUpArchiveList',
-        u'sResourceArchiveList', u'sResourceArchiveList2',
-        u'sResourceArchiveListBeta'
-    )
-
     espm_extensions = GameInfo.espm_extensions | {u'.esl'}
     script_extensions = {u'.psc'}
     has_achlist = True
@@ -84,12 +68,28 @@ class Fallout4GameInfo(GameInfo):
         url = u'http://f4se.silverlock.org/'
         url_tip = u'http://f4se.silverlock.org/'
 
-    class ini(GameInfo.ini):
-        allowNewLines = True
-        bsaRedirection = (u'',u'')
+    class Ini(GameInfo.Ini):
+        resource_archives_keys = (
+            u'sResourceIndexFileList', u'sResourceStartUpArchiveList',
+            u'sResourceArchiveList', u'sResourceArchiveList2',
+            u'sResourceArchiveListBeta'
+        )
 
-    class ess(GameInfo.ess):
+    class Ess(GameInfo.Ess):
         ext = u'.fos'
+
+    class Bsa(GameInfo.Bsa):
+        bsa_extension = u'.ba2'
+        valid_versions = {0x01}
+        vanilla_string_bsas = {
+            u'fallout4.esm': [u'Fallout4 - Interface.ba2'],
+            u'dlcrobot.esm': [u'DLCRobot - Main.ba2'],
+            u'dlcworkshop01.esm': [u'DLCworkshop01 - Main.ba2'],
+            u'dlcworkshop02.esm': [u'DLCworkshop02 - Main.ba2'],
+            u'dlcworkshop03.esm': [u'DLCworkshop03 - Main.ba2'],
+            u'dlccoast.esm': [u'DLCCoast - Main.ba2'],
+            u'dlcnukaworld.esm':  [u'DLCNukaWorld - Main.ba2'],
+        }
 
     class pnd(GameInfo.pnd):
         facegen_dir_1 = [u'meshes', u'actors', u'character', u'facegendata',
@@ -123,7 +123,7 @@ class Fallout4GameInfo(GameInfo):
     }
     SkipBAINRefresh = {u'fo4edit backups', u'fo4edit cache'}
 
-    class esp(GameInfo.esp):
+    class Esp(GameInfo.Esp):
         canBash = True
         canEditHeader = True
         validHeaderVersions = (0.95, 1.0)

@@ -1065,7 +1065,7 @@ class SaveDecider(ADecider):
     """Decider that returns True if the input file is a save."""
     def __init__(self):
         from . import bush
-        self._save_ext = bush.game.ess.ext
+        self._save_ext = bush.game.Ess.ext
 
     def decide_load(self, record, ins, sub_type, rec_size):
         return ins.inName.cext == self._save_ext

@@ -88,15 +88,6 @@ class GameInfo(object):
     patchURL = u''
     # Tooltip to display over the URL when displayed
     patchTip = u'Update via Steam'
-    # Bsa info
-    allow_reset_bsa_timestamps = False
-    bsa_extension = u'.bsa'
-    # Whether or not the Archive.exe tool for this game creates BSL files
-    has_bsl = False
-    supports_mod_inis = True  # this game supports mod ini files aka ini
-                              # fragments
-    vanilla_string_bsas = {}
-    resource_archives_keys = ()
     # plugin extensions
     espm_extensions = {u'.esm', u'.esp', u'.esu'}
     # Extensions for external script files. Empty if this game doesn't have any
@@ -186,20 +177,57 @@ class GameInfo(object):
         launchesSE = False  # Whether the launcher will automatically launch
                             # the SE
 
-    class ini(object):
+    class Ini(object):
         """Information about this game's INI handling."""
         # True means new lines are allowed to be added via INI tweaks
-        #  (by default)
-        allowNewLines = False
-        # INI Entry to enable BSA Redirection
-        bsaRedirection = (u'Archive', u'sArchiveList')
+        # (by default)
+        allow_new_lines = True
+        # INI Entry to enable BSA Redirection - two empty strings if this game
+        # does not need BSA redirection
+        bsa_redirection_key = (u'', u'')
+        # INI setting used to setup Save Profiles
+        #  (section,key)
+        save_profiles_key = (u'General', u'SLocalSavePath')
+        # Base dir for the save_profiles_key setting above
+        save_prefix = u'Saves'
+        # INI setting used to enable or disable screenshots
+        #  (section, key, default value)
+        screenshot_enabled_key = (u'Display', u'bAllowScreenShot', u'1')
+        # INI setting used to set base screenshot name
+        #  (section, key, default value)
+        screenshot_base_key = (u'Display', u'sScreenShotBaseName',
+                               u'ScreenShot')
+        # INI setting used to set screenshot index
+        #  (section, key, default value)
+        screenshot_index_key = (u'Display', u'iScreenShotIndex', u'0')
+        # The INI entries listing vanilla BSAs to load
+        resource_archives_keys = ()
+        # Whether this game supports mod ini files aka ini fragments
+        supports_mod_inis = True
 
-    class ess(object):
+    class Ess(object):
         """Information about WB's capabilities with regards to save file
         viewing and editing for this game."""
         canReadBasic = True # Can read the info needed for the Save Tab display
         canEditMore = False # Advanced editing
         ext = u'.ess'       # Save file extension
+
+    class Bsa(object):
+        """Information about the BSAs (Bethesda Archives) used by this game."""
+        # Whether or not the INI setting ResetBSATimestamps should have any
+        # effect on this game
+        allow_reset_timestamps = False
+        # The extension used for BSA files
+        bsa_extension = u'.bsa'
+        # Whether or not the Archive.exe tool for this game creates BSL files
+        has_bsl = False
+        # All BSA versions accepted by this game. If empty, indicates that this
+        # game does not use BSA versions and so BSA version checks will be
+        # skipped entirely.
+        valid_versions = set()
+        # Maps vanilla plugin names to the BSA that contain their localization
+        # strings
+        vanilla_string_bsas = {}
 
     class pnd(object):
         """Information about Plugin-Name-specific Directories supported by this
@@ -225,21 +253,6 @@ class GameInfo(object):
         # A settings key used to store whether or not 'expert' mode for xEdit
         # has been activated (the -IKnowWhatImDoing CLI switch)
         expert_key = ''
-
-    # INI setting used to setup Save Profiles
-    #  (section,key)
-    saveProfilesKey = (u'General', u'SLocalSavePath')
-    save_prefix = u'Saves' # base dir for save files
-
-    # INI setting used to enable or disable screenshots
-    #  (section, key, default value)
-    screenshot_enabled_key = (u'Display', u'bAllowScreenShot', u'1')
-    # INI setting used to set base screenshot name
-    #  (section, key, default value)
-    screenshot_base_key = (u'Display', u'sScreenShotBaseName', u'ScreenShot')
-    # INI setting used to set screenshot index
-    #  (section, key, default value)
-    screenshot_index_key = (u'Display', u'iScreenShotIndex', u'0')
 
     # BAIN:
     #  These are the allowed default data directories that BAIN can install to
@@ -269,7 +282,7 @@ class GameInfo(object):
     ignoreDataDirs = set()
 
     # Plugin format stuff
-    class esp(object):
+    class Esp(object):
         # Wrye Bash capabilities
         canBash = False         # Can create Bashed Patches
         canCBash = False        # CBash can handle this game's records
@@ -533,7 +546,7 @@ class GameInfo(object):
 
     @property
     def plugin_header_class(self):
-        return brec.MreRecord.type_class[self.esp.plugin_header_sig]
+        return brec.MreRecord.type_class[self.Esp.plugin_header_sig]
 
     @classmethod
     def init(cls):

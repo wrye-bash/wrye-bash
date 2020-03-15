@@ -380,7 +380,7 @@ class MasterList(_ModsUIList):
         if not fileInfo:
             return
         #--Fill data and populate
-        has_sizes = bush.game.esp.check_master_sizes and isinstance(
+        has_sizes = bush.game.Esp.check_master_sizes and isinstance(
             fileInfo, bosh.ModInfo) # only mods have master sizes
         for mi, masters_name in enumerate(fileInfo.get_masters()):
             masters_size = fileInfo.header.master_sizes[mi] if has_sizes else 0
@@ -950,7 +950,7 @@ class ModList(_ModsUIList):
         elif mod_info.isGhost:
             item_format.back_key = 'mods.bkgd.ghosted'
             mouseText += _(u"File is ghosted.  ")
-        elif (bush.game.esp.check_master_sizes
+        elif (bush.game.Esp.check_master_sizes
               and mod_info.has_master_size_mismatch()):
             item_format.back_key = u'mods.bkgd.size_mismatch'
             mouseText += _(u'Has one or more size-mismatched masters. ')
@@ -1353,7 +1353,7 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
 
 class _ModMasterList(MasterList):
     """Override to avoid doing size checks on save master lists."""
-    _do_size_checks = bush.game.esp.check_master_sizes
+    _do_size_checks = bush.game.Esp.check_master_sizes
 
 class ModDetails(_ModsSavesDetails):
     """Details panel for mod tab."""
@@ -1365,7 +1365,7 @@ class ModDetails(_ModsSavesDetails):
     @property
     def file_infos(self): return bosh.modInfos
     @property
-    def allowDetailsEdit(self): return bush.game.esp.canEditHeader
+    def allowDetailsEdit(self): return bush.game.Esp.canEditHeader
 
     def __init__(self, parent, ui_list_panel):
         super(ModDetails, self).__init__(parent, ui_list_panel)
@@ -1489,14 +1489,14 @@ class ModDetails(_ModsSavesDetails):
             self.SetEdited()
 
     bsaAndBlocking = _(u'This mod has an associated archive (%s' +
-                       bush.game.bsa_extension + u') and an '
+                       bush.game.Bsa.bsa_extension + u') and an '
         u'associated plugin-name-specific directory (e.g. Sound\\Voice\\%s),'
         u' which will become detached when the mod is renamed.') + u'\n\n' + \
         _(u'Note that the BSA archive may also contain a plugin-name-specific '
         u'directory, which would remain detached even if the archive name is '
         u'adjusted.')
     bsa = _(u'This mod has an associated archive (%s' +
-                    bush.game.bsa_extension + u'), which will become '
+            bush.game.Bsa.bsa_extension + u'), which will become '
         u'detached when the mod is renamed.') + u'\n\n' + _(u'Note that this '
         u'BSA archive may contain a plugin-name-specific directory (e.g. '
         u'Sound\\Voice\\%s), which would remain detached even if the archive '
@@ -1913,8 +1913,8 @@ class SaveList(balt.UIList):
                                                     'pcLocation')),
     ])
 
-    __ext_group = u'(\.(' + bush.game.ess.ext[1:] + u'|' + \
-                  bush.game.ess.ext[1:-1] + u'r' + u'))' # add bak !!!
+    __ext_group = u'(\.(' + bush.game.Ess.ext[1:] + u'|' + \
+                  bush.game.Ess.ext[1:-1] + u'r' + u'))' # add bak !!!
     def validate_filename(self, name_new, has_digits=False, ext=u'',
             is_filename=True, _old_path=None):
         if _old_path and bosh.bak_file_pattern.match(_old_path.s): ##: YAK add cosave support for bak
@@ -1948,7 +1948,7 @@ class SaveList(balt.UIList):
 
     @staticmethod
     def _unhide_wildcard():
-        starred = u'*' + bush.game.ess.ext
+        starred = u'*' + bush.game.Ess.ext
         return bush.game.displayName + u' ' + _(
             u'Save files') + u' (' + starred + u')|' + starred
 
@@ -1977,7 +1977,7 @@ class SaveList(balt.UIList):
         msg = _(u"Clicking on a save icon will disable/enable the save "
                 u"by changing its extension to %(ess)s (enabled) or .esr "
                 u"(disabled). Autosaves and quicksaves will be left alone."
-                 % {'ess': bush.game.ess.ext})
+                % {'ess': bush.game.Ess.ext})
         if not balt.askContinue(self, msg, 'bash.saves.askDisable.continue'):
             return
         newEnabled = not bosh.SaveInfos.is_save_enabled(hitItem)
@@ -2135,7 +2135,7 @@ class SavePanel(BashTab):
     _details_panel_type = SaveDetails
 
     def __init__(self,parent):
-        if not bush.game.ess.canReadBasic:
+        if not bush.game.Ess.canReadBasic:
             raise BoltError(u'Wrye Bash cannot read save games for %s.' %
                 bush.game.displayName)
         self.listData = bosh.saveInfos
@@ -3829,7 +3829,8 @@ class BashFrame(WindowFrame):
         else:
             title += u': '
         # chop off save prefix - +1 for the path separator
-        maProfile = bosh.saveInfos.localSave[len(bush.game.save_prefix) + 1:]
+        maProfile = bosh.saveInfos.localSave[len(
+            bush.game.Ini.save_prefix) + 1:]
         if maProfile:
             title += maProfile
         else:
@@ -3949,7 +3950,7 @@ class BashFrame(WindowFrame):
             message.append(m)
             self.knownCorrupted |= corruptSaves
         invalidVersions = set([x.name for x in bosh.modInfos.values() if round(
-            x.header.version, 6) not in bush.game.esp.validHeaderVersions])
+            x.header.version, 6) not in bush.game.Esp.validHeaderVersions])
         if warn_mods and not invalidVersions <= self.knownInvalidVerions:
             m = [_(u'Unrecognized Versions'),
                  _(u'The following mods have unrecognized header versions: ')]
@@ -4145,7 +4146,7 @@ class BashApp(wx.App):
         bosh.iniInfos.refresh(refresh_target=False)
         # screens/people/installers data are refreshed upon showing the panel
         #--Patch check
-        if bush.game.esp.canBash:
+        if bush.game.Esp.canBash:
             if not bosh.modInfos.bashed_patches and bass.inisettings['EnsurePatchExists']:
                 progress(0.68, _(u'Generating Blank Bashed Patch'))
                 try:

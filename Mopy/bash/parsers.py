@@ -4088,7 +4088,7 @@ class ModFile(object):
         masters = self.tes4.masters + [self.fileInfo.name]
         indices = {name: index for index, name in enumerate(masters)}
         gLong = self.getLongMapper()
-        has_expanded_range = bush.game.esp.expanded_plugin_range
+        has_expanded_range = bush.game.Esp.expanded_plugin_range
         if has_expanded_range and len(masters) > 1:
             # Plugin has at least one master, it may freely use the
             # expanded (0x000-0x800) range

@@ -336,7 +336,7 @@ class IniFile(AFile):
         self.abs_path.untemp()
 
     def applyTweakFile(self, tweak_lines):
-        """Read Ini tweak file and apply its settings to self (the target ini).
+        """Read ini tweak file and apply its settings to self (the target ini).
         """
         reDeleted = self.reDeletedSetting
         reComment = self.reComment
@@ -650,7 +650,7 @@ class GameIni(IniFile):
         return self._ini_language
 
     def target_ini_exists(self, msg=None):
-        """Attempt to create the game Ini in some scenarios"""
+        """Attempt to create the game ini in some scenarios"""
         if msg is None:
             msg = _(u'The game INI must exist to apply a tweak to it.')
         target_exists = super(GameIni, self).target_ini_exists()
@@ -663,7 +663,7 @@ class GameIni(IniFile):
     def setBsaRedirection(self,doRedirect=True):
         """Activate or deactivate BSA redirection - game ini must exist!"""
         if self.isCorrupted: return
-        section,key = bush.game.ini.bsaRedirection
+        section, key = bush.game.Ini.bsa_redirection_key
         if not section or not key: return
         aiBsa = dirs['mods'].join(u'ArchiveInvalidationInvalidated!.bsa')
         aiBsaMTime = time.mktime((2006, 1, 2, 0, 0, 0, 0, 2, 0))

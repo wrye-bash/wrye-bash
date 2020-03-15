@@ -99,7 +99,7 @@ def _detectGames(cli_path=u'', bash_ini_=None):
     - For each game supported by Bash check for a supported game executable
     in the following dirs, in decreasing precedence:
        - the path provided by the -o cli argument if any
-       - the sOblivionPath Bash Ini entry if present
+       - the sOblivionPath bash ini entry if present
        - one directory up from Mopy
     If a game exe is found update the path to this game and return immediately.
     Return (foundGames, gamename)

@@ -58,9 +58,9 @@ class Screens_NextScreenShot(EnabledLink):
         else: return self._help
 
     def Execute(self):
-        base_key = bush.game.screenshot_base_key
-        index_key = bush.game.screenshot_index_key
-        enabled_key = bush.game.screenshot_enabled_key
+        base_key = bush.game.Ini.screenshot_base_key
+        index_key = bush.game.Ini.screenshot_index_key
+        enabled_key = bush.game.Ini.screenshot_enabled_key
         base = bosh.oblivionIni.getSetting(*base_key)
         index = bosh.oblivionIni.getSetting(*index_key)
         pattern = self._askText(

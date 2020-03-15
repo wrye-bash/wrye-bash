@@ -46,21 +46,24 @@ class EnderalGameInfo(SkyrimGameInfo):
         u'Install_Path'
     )
 
+    class Ini(SkyrimGameInfo.Ini):
+        save_prefix = u'..\\Enderal\\Saves'
+
+    class Bsa(SkyrimGameInfo.Bsa):
+        vanilla_string_bsas = {
+            u'skyrim.esm': [u'Skyrim - Interface.bsa'],
+            u'update.esm': [u'Skyrim - Interface.bsa'],
+            u'enderal - forgotten stories.esm': [u'Skyrim - Interface.bsa'],
+        }
+
     class xe(SkyrimGameInfo.xe):
         full_name = u'EnderalEdit'
         expert_key = 'enderalView.iKnowWhatImDoing'
-
-    save_prefix = u'..\\Enderal\\Saves'
 
     nexusUrl = u'https://www.nexusmods.com/enderal/'
     nexusName = u'Enderal Nexus'
     nexusKey = u'bash.installers.openEnderalNexus.continue'
 
-    vanilla_string_bsas = {
-        u'skyrim.esm': [u'Skyrim - Interface.bsa'],
-        u'update.esm': [u'Skyrim - Interface.bsa'],
-        u'enderal - forgotten stories.esm': [u'Skyrim - Interface.bsa'],
-    }
     SkipBAINRefresh = {u'enderaledit backups', u'enderaledit cache'}
 
     raceNames = {

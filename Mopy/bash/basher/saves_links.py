@@ -55,7 +55,7 @@ def _win_join(saves_subdir):
     """Join base (default) save dir with subdir using the windows path
     separator. Needed as we want to write this separator to the game ini
     file."""
-    return u'\\'.join([bush.game.save_prefix, saves_subdir])
+    return u'\\'.join([bush.game.Ini.save_prefix, saves_subdir])
 
 class Saves_ProfilesData(balt.ListEditorData):
     """Data capsule for save profiles editing dialog."""
@@ -195,11 +195,12 @@ class Saves_Profiles(ChoiceLink):
 
         @property
         def menu_help(self):
-            profile_dir = Saves_Profiles._my_games.join(bush.game.save_prefix)
+            profile_dir = Saves_Profiles._my_games.join(
+                bush.game.Ini.save_prefix)
             return _(u'Set profile to the default (%s)' % profile_dir)
 
         @property
-        def relativePath(self): return bush.game.save_prefix
+        def relativePath(self): return bush.game.Ini.save_prefix
 
     class _Edit(ItemLink):
         _text = _(u"Edit Profiles...")
@@ -241,7 +242,7 @@ class Save_ImportFace(OneItemLink):
         #--Select source face file
         srcDir = self._selected_info.dir
         exts = u';*'.join(bush.game.espm_extensions | {
-            bush.game.ess.ext, bush.game.ess.ext[-1] + u'r'})
+            bush.game.Ess.ext, bush.game.Ess.ext[-1] + u'r'})
         wildcard = _(u'%s Files') % bush.game.displayName + \
                    u' (*' + exts + u')|*' + exts
         #--File dialog
@@ -612,15 +613,15 @@ class Save_Move(ChoiceLink):
         class _Default(EnabledLink):
             _text = _(u'Default')
             _help = _self._help_str % bass.dirs['saveBase'].join(
-                bush.game.save_prefix)
+                bush.game.Ini.save_prefix)
             def _enable(self):
-                return Save_Move.local != bush.game.save_prefix
+                return Save_Move.local != bush.game.Ini.save_prefix
             def Execute(self): _self.MoveFiles(_(u'Default'))
         class _SaveProfileLink(EnabledLink):
             @property
             def menu_help(self):
                 return _self._help_str % bass.dirs['saveBase'].join(
-                    bush.game.save_prefix, self._text)
+                    bush.game.Ini.save_prefix, self._text)
             def _enable(self):
                 return Save_Move.local != _win_join(self._text)
             def Execute(self): _self.MoveFiles(self._text)

@@ -149,7 +149,7 @@ else:
             _(u'This is the text color used for mergeable plugins.'),
         )
 
-if bush.game.esp.check_master_sizes:
+if bush.game.Esp.check_master_sizes:
     colorInfo[u'mods.bkgd.size_mismatch'] = (_(u'Size Mismatch'),
         _(u'Tabs: Mods') + u'\n\n' +
         _(u'This is the background color used for plugin masters that have a '
@@ -323,7 +323,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         },
     'bash.ini.choices': {},
     'bash.ini.choice': 0,
-    'bash.ini.allowNewLines': bush.game.ini.allowNewLines,
+    'bash.ini.allowNewLines': bush.game.Ini.allow_new_lines,
     #--Wrye Bash: Mods
     'bash.mods.autoGhost': False,
     'bash.mods.auto_flag_esl': True,
@@ -413,7 +413,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'BOSS.UseGUI':False,
 }
 
-if bush.game.esp.check_master_sizes:
+if bush.game.Esp.check_master_sizes:
     settingDefaults[u'bash.colors'][u'mods.bkgd.size_mismatch'] = (255, 238,
                                                                    217)
 

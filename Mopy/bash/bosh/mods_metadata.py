@@ -199,7 +199,7 @@ class ConfigHelpers(object):
             shouldActivateA = [x for x in imported_ if x not in active and
                         u'MustBeActiveIfImported' in modInfos[x].getBashTags()]
             #--Mods with invalid TES4 version
-            invalidVersion = [(x,unicode(round(modInfos[x].header.version,6))) for x in active if round(modInfos[x].header.version,6) not in bush.game.esp.validHeaderVersions]
+            invalidVersion = [(x,unicode(round(modInfos[x].header.version,6))) for x in active if round(modInfos[x].header.version,6) not in bush.game.Esp.validHeaderVersions]
             #--Look for dirty edits
             shouldClean = {}
             scan = []
@@ -302,7 +302,7 @@ class ConfigHelpers(object):
                     bush.game_mod.records.MreHeader.classType,
                     encoding='ascii')
                 ver_list = u', '.join(sorted([
-                    unicode(v) for v in bush.game.esp.validHeaderVersions]))
+                    unicode(v) for v in bush.game.Esp.validHeaderVersions]))
                 log.setHeader(
                     u'=== ' + _(u'Mods with non-standard %s versions') %
                     header_sig)
@@ -893,7 +893,7 @@ class ModDetails(object):
                 return reader,sizeCheck
         progress = progress or bolt.Progress()
         group_records = self.group_records = {}
-        records = group_records[bush.game.esp.plugin_header_sig] = []
+        records = group_records[bush.game.Esp.plugin_header_sig] = []
         with ModReader(modInfo.name,modInfo.getPath().open('rb')) as ins:
             while not ins.atEnd():
                 header = ins.unpackRecHeader()
@@ -920,4 +920,4 @@ class ModDetails(object):
                         recs.seek(rec_siz, 1)
                     records.append((header.fid,eid))
                     ins.seek(nextRecord)
-        del group_records[bush.game.esp.plugin_header_sig]
+        del group_records[bush.game.Esp.plugin_header_sig]

@@ -45,15 +45,6 @@ class SkyrimGameInfo(GameInfo):
     nexusName = u'Skyrim Nexus'
     nexusKey = 'bash.installers.openSkyrimNexus.continue'
 
-    has_bsl = True
-    vanilla_string_bsas = {
-        u'skyrim.esm': [u'Skyrim - Interface.bsa'],
-        u'update.esm': [u'Skyrim - Interface.bsa'],
-        u'dawnguard.esm': [u'Dawnguard.bsa'],
-        u'hearthfires.esm': [u'Hearthfires.bsa'],
-        u'dragonborn.esm': [u'Dragonborn.bsa'],
-    }
-    resource_archives_keys = (u'sResourceArchiveList', u'sResourceArchiveList2')
     script_extensions = {u'.psc'}
 
     class ck(GameInfo.ck):
@@ -84,9 +75,20 @@ class SkyrimGameInfo(GameInfo):
         long_name = u'SkyProc'
         install_dir = u'SkyProc Patchers'
 
-    class ini(GameInfo.ini):
-        allowNewLines = True
-        bsaRedirection = (u'', u'')
+    class Ini(GameInfo.Ini):
+        resource_archives_keys = (u'sResourceArchiveList',
+                                  u'sResourceArchiveList2')
+
+    class Bsa(GameInfo.Bsa):
+        has_bsl = True
+        valid_versions = {0x68}
+        vanilla_string_bsas = {
+            u'skyrim.esm': [u'Skyrim - Interface.bsa'],
+            u'update.esm': [u'Skyrim - Interface.bsa'],
+            u'dawnguard.esm': [u'Dawnguard.bsa'],
+            u'hearthfires.esm': [u'Hearthfires.bsa'],
+            u'dragonborn.esm': [u'Dragonborn.bsa'],
+        }
 
     class pnd(GameInfo.pnd):
         facegen_dir_1 = [u'meshes', u'actors', u'character', u'facegendata',
@@ -139,7 +141,7 @@ class SkyrimGameInfo(GameInfo):
     SkipBAINRefresh = {u'tes5edit backups', u'tes5edit cache'}
     ignoreDataDirs = {u'LSData'}
 
-    class esp(GameInfo.esp):
+    class Esp(GameInfo.Esp):
         canBash = True
         canEditHeader = True
         validHeaderVersions = (0.94, 1.70,)

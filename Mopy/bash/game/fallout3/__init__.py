@@ -43,9 +43,6 @@ class Fallout3GameInfo(GameInfo):
     nexusName = u'Fallout 3 Nexus'
     nexusKey = u'bash.installers.openFallout3Nexus'
 
-    allow_reset_bsa_timestamps = True
-    supports_mod_inis = False
-
     using_txt_file = False
 
     class ck(GameInfo.ck):
@@ -71,8 +68,20 @@ class Fallout3GameInfo(GameInfo):
         url = u'http://fose.silverlock.org/'
         url_tip = u'http://fose.silverlock.org/'
 
-    class ess(GameInfo.ess):
+    class Ini(GameInfo.Ini):
+        allow_new_lines = False
+        bsa_redirection_key = (u'Archive', u'sArchiveList')
+        supports_mod_inis = False
+
+    class Ess(GameInfo.Ess):
         ext = u'.fos'
+
+    class Bsa(GameInfo.Bsa):
+        allow_reset_timestamps = True
+        # ArchiveInvalidation Invalidated, which we shipped unmodified for a
+        # long time, uses an Oblivion BSA with version 0x67, so we have to
+        # accept those here as well
+        valid_versions = {0x67, 0x68}
 
     class pnd(GameInfo.pnd):
         facegen_dir_1 = [u'textures', u'characters', u'BodyMods']
@@ -107,7 +116,7 @@ class Fallout3GameInfo(GameInfo):
     }
     ignoreDataDirs = {u'LSData'} # u'FOSE\\Plugins\\ComponentDLLs\\CSE',
 
-    class esp(GameInfo.esp):
+    class Esp(GameInfo.Esp):
         canBash = True
         canEditHeader = True
         validHeaderVersions = (0.85, 0.94)
