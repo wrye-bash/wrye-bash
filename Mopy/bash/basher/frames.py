@@ -27,12 +27,13 @@ import string
 from collections import OrderedDict
 
 from .. import bass, balt, bosh, bolt, load_order
-from ..balt import bell, Link, Resources, HtmlCtrl
+from ..balt import bell, Link, Resources
 from ..bolt import GPath
 from ..bosh import omods
 from ..gui import Button, CancelButton, CENTER, CheckBox, GridLayout, \
     HLayout, Label, LayoutOptions, SaveButton, Spacer, Stretch, TextArea, \
-    TextField, VLayout, web_viewer_available, Splitter, WindowFrame, ListBox
+    TextField, VLayout, web_viewer_available, Splitter, WindowFrame, ListBox, \
+    HtmlDisplay
 
 class DocBrowser(WindowFrame):
     """Doc Browser frame."""
@@ -87,7 +88,7 @@ class DocBrowser(WindowFrame):
                                               u'default viewer/editor.'))
         self._open_btn.on_clicked.subscribe(self._do_open)
         self._doc_name_box = TextField(main_window, editable=False)
-        self._doc_ctrl = HtmlCtrl(main_window._native_widget)
+        self._doc_ctrl = HtmlDisplay(main_window)
         self._prev_btn, self._next_btn, self._reload_btn = \
             self._doc_ctrl.get_buttons()
         self._buttons = [self._edit_box, self._set_btn, self._forget_btn,
@@ -100,8 +101,7 @@ class DocBrowser(WindowFrame):
         #--Text field and buttons
         VLayout(spacing=4, item_expand=True, items=[
             HLayout(item_expand=True, items=self._buttons),
-            self._doc_name_box,
-            (self._doc_ctrl.web_viewer, LayoutOptions(weight=3))
+            self._doc_name_box, (self._doc_ctrl, LayoutOptions(weight=3))
         ]).apply_to(main_window)
         VLayout(item_expand=1, item_border=4, item_weight=1,
                 items=[root_window])
@@ -319,7 +319,7 @@ class ModChecker(WindowFrame):
         self.__imported = None
         #--Text
         self.check_mods_text = None
-        self._html_ctrl = HtmlCtrl(self._native_widget)
+        self._html_ctrl = HtmlDisplay(self)
         back_btn, forward_btn, reload_btn = self._html_ctrl.get_buttons()
         self._controls = OrderedDict()
         self._setting_names = {}
@@ -353,7 +353,7 @@ class ModChecker(WindowFrame):
         #--Events
         self.on_activate.subscribe(self.on_activation)
         VLayout(border=4, spacing=4, item_expand=True, items=[
-            (self._html_ctrl.web_viewer, LayoutOptions(weight=1)),
+            (self._html_ctrl, LayoutOptions(weight=1)),
             HLayout(spacing=4, items=[
                 self._controls[_MOD_LIST], self._controls[_CRC],
                 self._controls[_VERSION]

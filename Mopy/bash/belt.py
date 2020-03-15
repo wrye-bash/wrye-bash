@@ -34,7 +34,6 @@ from ScriptParser import error
 import wx
 import wx.wizard as wiz     # wxPython wizard class
 import bosh, balt, bolt, bush
-from balt import Image, set_event_hook, Events
 from .gui import BOTTOM, CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
     WizardDialog, EventResult, ListBox, CheckListBox
@@ -226,10 +225,8 @@ class PageSelect(PageInstaller):
             (self.textItem, LayoutOptions(weight=1))
         ]).apply_to(self)
         self.Layout()
-        set_event_hook(self.bmpItem, Events.MOUSE_LEFT_DOUBLECLICK,
-                       self.OnDoubleClick)
-        set_event_hook(self.bmpItem, Events.MOUSE_MIDDLE_UP,
-                       self.OnDoubleClick)
+        self.bmpItem.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
+        self.bmpItem.Bind(wx.EVT_MIDDLE_UP, self.OnDoubleClick)
 
     def OnSelect(self, lb_selection_dex, lb_selection_str):
         self.listOptions.lb_select_index(lb_selection_dex) # event.Skip() won't do
@@ -418,9 +415,9 @@ class PageVersions(PageInstaller):
     def __init__(self, parent, bGameOk, gameHave, gameNeed, bSEOk, seHave,
                  seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
-        bmp = [Image(bass.dirs['images'].join(u'error_cross_24.png').s)
+        bmp = [balt.Image(bass.dirs['images'].join(u'error_cross_24.png').s)
                    .GetBitmap(),
-               Image(bass.dirs['images'].join(u'checkmark_24.png').s)
+               balt.Image(bass.dirs['images'].join(u'checkmark_24.png').s)
                    .GetBitmap()]
         versions_layout = GridLayout(h_spacing=5, v_spacing=5,
                                      stretch_cols=[0, 1, 2, 3])

@@ -34,6 +34,7 @@ try:
     import wx.html2 as _wx_html2
 except ImportError:
     _wx_html2 = None
+import wx as _wx
 
 import urllib
 import urlparse
@@ -41,6 +42,8 @@ import webbrowser
 
 from .base_components import _AComponent
 from .buttons import BackwardButton, ForwardButton, ReloadButton
+from .text_components import TextArea
+from .layouts import VLayout
 
 def web_viewer_available():
     """Checks if WebViewer and its wx backing are available, meaning that we
@@ -166,3 +169,105 @@ class WebViewer(_AComponent):
         self._forward_button.enabled = can_enable and \
                                        self._native_widget.CanGoForward()
         self._reload_button.enabled = can_enable
+
+class HtmlDisplay(_AComponent):
+    """A wrapper around WebViewer that implements a fallback raw text display
+    of the HTML code, as well as permanently disabled fallback versions of
+    WebViewer's navigation buttons."""
+    def __init__(self, parent):
+        """Creates a new HtmlDisplay with the specified parent.
+
+        :param parent: The object that this HTML display belongs to. May be a
+                       wx object or a component."""
+        super(HtmlDisplay, self).__init__(_wx.Window, parent)
+        # init the fallback/plaintext widget
+        self._text_ctrl = TextArea(self, editable=False, auto_tooltip=False)
+        items = [self._text_ctrl]
+        if web_viewer_available():
+            # We can render HTML, create the WebViewer and use its buttons
+            self._html_ctrl = WebViewer(self, buttons_parent=parent)
+            self._prev_button, self._next_button, self._reload_button = \
+                self._html_ctrl.get_navigation_buttons()
+            items.append(self._html_ctrl)
+            self._text_ctrl.enabled = False
+        else:
+            # Emulate the buttons WebViewer would normally provide
+            self._prev_button = BackwardButton(parent)
+            self._next_button = ForwardButton(parent)
+            self._reload_button = ReloadButton(parent)
+        VLayout(item_weight=4, item_expand=True, items=items).apply_to(self)
+        self.switch_to_text() # default to text
+
+    def _update_views(self, enable_html):
+        """Internal method to switch between HTML and text display, as well as
+        update the state of the WebViewer buttons.
+
+        :param enable_html: If set to True, use the HTML display if
+                            available."""
+        if web_viewer_available():
+            self._html_ctrl.enabled = enable_html
+            self._html_ctrl.visible = enable_html
+            self._html_ctrl.update_buttons()
+        self._text_ctrl.enabled = not enable_html
+        self._text_ctrl.visible = not enable_html
+
+    @property
+    def fallback_text(self):
+        """Returns the fallback text displayed by the text display."""
+        return self._text_ctrl.text_content
+
+    @fallback_text.setter
+    def fallback_text(self, new_fallback):
+        """Changes the fallback text that will be displayed by the text
+        display, but does not switch to text mode - see switch_to_text()."""
+        self._text_ctrl.text_content = new_fallback
+
+    def load_text(self, target_text):
+        """Switches to text mode (see switch_to_text()) and sets the
+        specified text as the unmodified contents of the text display."""
+        self._text_ctrl.text_content = target_text
+        self._text_ctrl.modified = False
+        self.switch_to_text()
+
+    def is_text_modified(self):
+        """Returns True if the text display has been marked as modified,
+        either by the user editing it or by calling set_text_modified(True)."""
+        return self._text_ctrl.modified
+
+    def set_text_modified(self, text_modified):
+        """Changes whether the text display is marked as modified or not."""
+        self._text_ctrl.modified = text_modified
+
+    def set_text_editable(self, text_editable):
+        # type: (bool) -> None
+        """Changes whether or not the text display is editable."""
+        self._text_ctrl.editable = text_editable
+
+    def switch_to_html(self):
+        """Disables the text viewer and switches to HTML mode, if WebViewer is
+        available."""
+        if not web_viewer_available(): return
+        self._update_views(enable_html=True)
+        self._native_widget.Layout()
+
+    def switch_to_text(self):
+        """Disables the HTML viewer and switches to raw text mode."""
+        self._update_views(enable_html=False)
+        self._native_widget.Layout()
+
+    def get_buttons(self):
+        """Returns the three navigation buttons as a tuple."""
+        return self._prev_button, self._next_button, self._reload_button
+
+    def try_load_html(self, file_path, file_text=u''):
+        """Load a HTML file if WebViewer is available, or load the text.
+
+        :param file_path: A bolt.Path instance or a unicode string.
+        :Param file_text: If the HTML viewer is unavailable, use this as the
+                          fallback text."""
+        if web_viewer_available():
+            self._html_ctrl.clear_history()
+            self._html_ctrl.open_file(u'%s' % file_path)
+            self.switch_to_html()
+        else:
+            self.load_text(file_text)

@@ -45,9 +45,8 @@ import wx.lib.newevent
 #--gui
 from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
-    BackwardButton, ForwardButton, ReloadButton, web_viewer_available, \
-    WebViewer, DialogWindow, WindowFrame, EventResult, ListBox, Font, \
-    CheckListBox, UIListCtrl, PanelWin, Color, Colors
+    web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
+    Font, CheckListBox, UIListCtrl, PanelWin, Color, Colors, HtmlDisplay
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -64,17 +63,12 @@ class Resources(object):
 
 # Constants -------------------------------------------------------------------
 defId = wx.ID_ANY
-defVal = wx.DefaultValidator
 defPos = wx.DefaultPosition
-defSize = wx.DefaultSize
 
 splitterStyle = wx.SP_LIVE_UPDATE # | wx.SP_3DSASH # ugly but
 # makes borders stand out - we need something to that effect
 
 notFound = wx.NOT_FOUND
-
-# wx Types
-wxPoint = wx.Point
 
 # Settings --------------------------------------------------------------------
 __unset = bolt.Settings(dictFile=None) # type information
@@ -523,82 +517,6 @@ def showInfo(parent,message,title=_(u'Information'),**kwdargs):
     return askStyled(parent,message,title,wx.OK|wx.ICON_INFORMATION,**kwdargs)
 
 #------------------------------------------------------------------------------
-# TODO(inf) de-wx! Pretty much ready to be moved to webview.py, which really
-#  needs a better name - web_components.py?
-class HtmlCtrl(object):
-    def __init__(self, parent):
-        ctrl = self.web_viewer = wx.Window(parent)
-        # init the fallback/plaintext widget
-        self._text_ctrl = TextArea(ctrl, editable=False, auto_tooltip=False)
-        items = [self._text_ctrl]
-        if web_viewer_available():
-            # We can render HTML, create the WebViewer and use its buttons
-            self._html_ctrl = WebViewer(ctrl, buttons_parent=parent)
-            self._prev_button, self._next_button, self._reload_button = \
-                self._html_ctrl.get_navigation_buttons()
-            items.append(self._html_ctrl)
-            self._text_ctrl.enabled = False
-        else:
-            # Emulate the buttons WebViewer would normally provide
-            self._prev_button = BackwardButton(parent)
-            self._next_button = ForwardButton(parent)
-            self._reload_button = ReloadButton(parent)
-        VLayout(item_weight=4, item_expand=True, items=items).apply_to(ctrl)
-        self.switch_to_text() # default to text
-
-    def _update_views(self, enable_html):
-        if web_viewer_available():
-            self._html_ctrl.enabled = enable_html
-            self._html_ctrl.visible = enable_html
-            self._html_ctrl.update_buttons()
-        self._text_ctrl.enabled = not enable_html
-        self._text_ctrl.visible = not enable_html
-
-    @property
-    def fallback_text(self):
-        return self._text_ctrl.text_content
-
-    @fallback_text.setter
-    def fallback_text(self, text_):
-        self._text_ctrl.text_content = text_
-
-    def load_text(self, text_):
-        self._text_ctrl.text_content = text_
-        self._text_ctrl.modified = False
-        self.switch_to_text()
-
-    def is_text_modified(self):
-        return self._text_ctrl.modified
-
-    def set_text_modified(self, modified):
-        self._text_ctrl.modified = modified
-
-    def set_text_editable(self, editable):
-        # type: (bool) -> None
-        self._text_ctrl.editable = editable
-
-    def switch_to_html(self):
-        if not web_viewer_available(): return
-        self._update_views(enable_html=True)
-        self.web_viewer.Layout()
-
-    def switch_to_text(self):
-        self._update_views(enable_html=False)
-        self.web_viewer.Layout()
-
-    def get_buttons(self):
-        return self._prev_button, self._next_button, self._reload_button
-
-    def try_load_html(self, file_path, file_text=u''):
-        # type: (bolt.Path) -> None
-        """Load a HTML file if WebViewer is available, or load the text."""
-        if web_viewer_available():
-            self._html_ctrl.clear_history()
-            self._html_ctrl.open_file(file_path.s)
-            self.switch_to_html()
-        else:
-            self.load_text(file_text)
-
 class _Log(object):
     _settings_key = 'balt.LogMessage'
     def __init__(self, parent, title=u'', asDialog=True, log_icons=None):
@@ -668,7 +586,7 @@ class WryeLog(_Log):
             convert_wtext_to_html(logPath, logText)
         super(WryeLog, self).__init__(parent, title, asDialog, log_icons)
         #--Text
-        self._html_ctrl = HtmlCtrl(_AComponent._resolve(self.window))
+        self._html_ctrl = HtmlDisplay(self.window)
         self._html_ctrl.try_load_html(file_path=logPath)
         #--Buttons
         gOkButton = OkButton(self.window, default=True)
@@ -677,7 +595,7 @@ class WryeLog(_Log):
             self.window.set_background_color(gOkButton.get_background_color())
         #--Layout
         VLayout(border=2, item_expand=True, items=[
-            (self._html_ctrl.web_viewer, LayoutOptions(weight=1)),
+            (self._html_ctrl, LayoutOptions(weight=1)),
             (HLayout(items=(self._html_ctrl.get_buttons()
                             + (Stretch(), gOkButton))),
              LayoutOptions(border=2))
@@ -2630,17 +2548,3 @@ class NotebookPanel(PanelWin):
     def ClosePanel(self, destroy=False):
         """To be manually called when containing frame is closing. Use for
         saving data, scrollpos, etc - also used in BashFrame#SaveSettings."""
-
-#------------------------------------------------------------------------------
-# TODO(inf) replace and remove, need to come up with a better system
-# Event bindings --------------------------------------------------------------
-class Events(object):
-    MOUSE_LEFT_DOUBLECLICK = 'mouse_left_doubleclick'
-    MOUSE_MIDDLE_UP = 'mouse_middle_up'
-
-_WX_EVENTS = {Events.MOUSE_LEFT_DOUBLECLICK:wx.EVT_LEFT_DCLICK,
-              Events.MOUSE_MIDDLE_UP:       wx.EVT_MIDDLE_UP,
-}
-
-def set_event_hook(obj, event, callback):
-    obj.Bind(_WX_EVENTS[event], callback)
