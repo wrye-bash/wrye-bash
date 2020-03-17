@@ -2893,7 +2893,7 @@ class BSAInfos(FileInfos):
                 try:  # Never load_cache for memory reasons - let it be
                     # loaded as needed
                     super(BSAInfo, self).__init__(fullpath, load_cache=False)
-                except (BSAError, DDSError) as e:
+                except BSAError as e:
                     raise FileError, (GPath(fullpath).tail,
                                       e.__class__.__name__ + u' ' +
                                       e.message), \

@@ -306,7 +306,7 @@ class Game(object):
     def has_load_order_conflict_active(self, mod_name, active): return False
     # force installation last - only for timestamp games
     def get_free_time(self, start_time, default_time='+1', end_time=None):
-        raise NotImplementedError
+        raise exception.AbstractError
 
     @classmethod
     def _must_update_active(cls, deleted, reordered):

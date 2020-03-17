@@ -1861,7 +1861,8 @@ class ChoiceLink(Link):
         # After every 30 added items, add a break in the menu to avoid having
         # to use the annoying wx scrolling feature (mostly affects the Bash
         # Tags menu, since there are so many tags)
-        i = 1
+        i = 1 + len([x for x in self.extraItems
+                     if not isinstance(x, SeparatorLink)])
         for link in (self.choiceLinkType(_text=txt) for txt in self._choices):
             if i % 30 == 0:
                 menu.Break()

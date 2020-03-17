@@ -150,23 +150,39 @@ class NonExistentDriveError(FileOperationError):
         super(NonExistentDriveError, self).__init__(-1, u'non existent drive')
 
 # BSA exceptions --------------------------------------------------------------
-class BSAError(Exception): pass
+class BSAError(FileError): pass
 
-class BSAVersionError(BSAError):
-    def __init__(self, version, expected_version):
-        super(BSAVersionError, self).__init__(
-            u'Unexpected version {!r} - expected {!r}'.format(
-                version, expected_version))
-
-class BSAFlagError(BSAError):
-    def __init__(self, message, flag):  # type: (unicode, int) -> None
-        super(BSAFlagError, self).__init__(
-            u'{} (flag {}) unset'.format(message, flag))
+class BSACompressionError(BSAError):
+    def __init__(self, in_name, compression_type, orig_error):
+        # type: (unicode, unicode, Exception) -> None
+        super(BSACompressionError, self).__init__(
+            in_name, u'{} error while compressing record: {}'.format(
+                compression_type, repr(orig_error)))
 
 class BSADecodingError(BSAError):
-    def __init__(self, string):  # type: (basestring) -> None
+    def __init__(self, in_name, message): # type: (unicode, unicode) -> None
         super(BSADecodingError, self).__init__(
-            u'Undecodable string {!r}'.format(string))
+            in_name, u'Undecodable string {!r}'.format(message))
+
+class BSADecompressionError(BSAError):
+    def __init__(self, in_name, compression_type, orig_error):
+        # type: (unicode, unicode, Exception) -> None
+        super(BSADecompressionError, self).__init__(
+            in_name, u'{0} error while decompressing {0}-compressed record: '
+                     u'{1}'.format(compression_type, repr(orig_error)))
+
+class BSADecompressionSizeError(BSAError):
+    def __init__(self, in_name, compression_type, expected_size, actual_size):
+        super(BSADecompressionSizeError, self).__init__(
+            in_name, u'{}-decompressed record size incorrect - expected {}, '
+                     u'but got {}'.format(
+                compression_type, expected_size, actual_size))
+
+class BSAFlagError(BSAError):
+    def __init__(self, in_name, message, flag):
+        # type: (unicode, unicode, int) -> None
+        super(BSAFlagError, self).__init__(
+            in_name, u'{} (flag {}) unset'.format(message, flag))
 
 # DDS exceptions --------------------------------------------------------------
 class DDSError(Exception): pass
