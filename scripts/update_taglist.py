@@ -37,24 +37,18 @@ import shutil
 import sys
 import tempfile
 
-import install_loot_api
+import loot_api
+
 import utils
 
 LOGGER = logging.getLogger(__name__)
 
-MASTERLIST_VERSION = "0.13"
+MASTERLIST_VERSION = "0.14"
 
 SCRIPTS_PATH = os.path.dirname(os.path.abspath(__file__))
 LOGFILE = os.path.join(SCRIPTS_PATH, "taglist.log")
 MOPY_PATH = os.path.abspath(os.path.join(SCRIPTS_PATH, u"..", u"Mopy"))
 sys.path.append(MOPY_PATH)
-
-try:
-    import loot_api
-
-    loot_api_installed = True
-except ImportError:
-    loot_api_installed = False
 
 
 def setup_parser(parser):
@@ -91,8 +85,6 @@ def download_masterlist(repository, version, dl_path):
 
 
 def main(args):
-    import loot_api
-
     utils.setup_log(LOGGER, verbosity=args.verbosity, logfile=args.logfile)
     LOGGER.debug(
         u"Loaded the LOOT API v{} using wrapper version {}".format(
@@ -134,15 +126,6 @@ if __name__ == "__main__":
     )
     utils.setup_common_parser(argparser)
     setup_parser(argparser)
-    if not loot_api_installed:
-        loot_group = argparser.add_argument_group(
-            title="loot api arguments",
-            description="LOOT API could not be found and will be installed.",
-        )
-        install_loot_api.setup_parser(loot_group)
     parsed_args = argparser.parse_args()
     open(parsed_args.logfile, "w").close()
-    if not loot_api_installed:
-        install_loot_api.main(parsed_args)
-        print
     main(parsed_args)
