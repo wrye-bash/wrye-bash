@@ -79,66 +79,6 @@ Unicode true
     Var CheckState_Enderal
     Var CheckState_Ex1
     Var CheckState_Ex2
-    Var Check_OB_Py
-    Var Check_Nehrim_Py
-    Var Check_Skyrim_Py
-    Var Check_Fallout4_Py
-    Var Check_SkyrimSE_Py
-    Var Check_Fallout3_Py
-    Var Check_FalloutNV_Py
-    Var Check_Enderal_Py
-    Var Check_Ex1_Py
-    Var Check_Ex2_Py
-    Var CheckState_OB_Py
-    Var CheckState_Nehrim_Py
-    Var CheckState_Skyrim_Py
-    Var CheckState_Fallout4_Py
-    Var CheckState_SkyrimSE_Py
-    Var CheckState_Fallout3_Py
-    Var CheckState_FalloutNV_Py
-    Var CheckState_Enderal_Py
-    Var CheckState_Ex1_Py
-    Var CheckState_Ex2_Py
-    Var Check_OB_Exe
-    Var Check_Nehrim_Exe
-    Var Check_Skyrim_Exe
-    Var Check_Fallout4_Exe
-    Var Check_SkyrimSE_Exe
-    Var Check_Fallout3_Exe
-    Var Check_FalloutNV_Exe
-    Var Check_Enderal_Exe
-    Var Check_Ex1_Exe
-    Var Check_Ex2_Exe
-    Var CheckState_OB_Exe
-    Var CheckState_Nehrim_Exe
-    Var CheckState_Skyrim_Exe
-    Var CheckState_Fallout4_Exe
-    Var CheckState_SkyrimSE_Exe
-    Var CheckState_Fallout3_Exe
-    Var CheckState_FalloutNV_Exe
-    Var CheckState_Enderal_Exe
-    Var CheckState_Ex1_Exe
-    Var CheckState_Ex2_Exe
-    Var Reg_Value_OB_Py
-    Var Reg_Value_Nehrim_Py
-    Var Reg_Value_Skyrim_Py
-    Var Reg_Value_Fallout4_Py
-    Var Reg_Value_SkyrimSE_Py
-    Var Reg_Value_Fallout3_Py
-    Var Reg_Value_FalloutNV_Py
-    Var Reg_Value_Enderal_Py
-    Var Reg_Value_Ex1_Py
-    Var Reg_Value_Ex2_Py
-    Var Reg_Value_OB_Exe
-    Var Reg_Value_Nehrim_Exe
-    Var Reg_Value_Skyrim_Exe
-    Var Reg_Value_Fallout4_Exe
-    Var Reg_Value_SkyrimSE_Exe
-    Var Reg_Value_Fallout3_Exe
-    Var Reg_Value_FalloutNV_Exe
-    Var Reg_Value_Enderal_Exe
-    Var Reg_Value_Ex1_Exe
-    Var Reg_Value_Ex2_Exe
     Var PathDialogue_OB
     Var PathDialogue_Nehrim
     Var PathDialogue_Skyrim
@@ -165,11 +105,6 @@ Unicode true
     Var Function_Extra
     Var Function_DirPrompt
     Var unFunction_Browse
-    Var Python_Path
-    Var Python_pywin32
-    Var PythonVersionInstall
-    Var ExeVersionInstall
-    Var MinVersion_pywin32
 
 
 ;-------------------------------- Page List:
@@ -207,9 +142,6 @@ Unicode true
         StrCpy $True "True"
 
         !insertmacro InitializeRegistryPaths
-
-        StrCpy $MinVersion_pywin32 '220'
-        StrCpy $Python_pywin32 "1"
 
         ${If} $Path_OB == $Empty
             ReadRegStr $Path_OB HKLM "SOFTWARE\Bethesda Softworks\Oblivion" "Installed Path"
@@ -294,86 +226,6 @@ Unicode true
             StrCpy $CheckState_Extra ${BST_CHECKED}
             StrCpy $CheckState_Ex2 ${BST_CHECKED}
         ${EndIf}
-
-        ${If} $Reg_Value_OB_Exe == $True
-        ${OrIf} $Reg_Value_OB_Py != $True
-            StrCpy $CheckState_OB_Exe ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_OB_Py == $True
-            StrCpy $CheckState_OB_Py ${BST_CHECKED}
-        ${EndIf}
-
-        ${If} $Reg_Value_Nehrim_Exe == $True
-        ${OrIf} $Reg_Value_Nehrim_Py != $True
-            StrCpy $CheckState_Nehrim_Exe ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_Nehrim_Py == $True
-            StrCpy $CheckState_Nehrim_Py ${BST_CHECKED}
-        ${EndIf}
-
-        ${If} $Reg_Value_Skyrim_Exe == $True
-        ${OrIf} $Reg_Value_Skyrim_Py != $True
-            StrCpy $CheckState_Skyrim_Exe ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_Skyrim_Py == $True
-            StrCpy $CheckState_Skyrim_Py ${BST_CHECKED}
-        ${EndIf}
-
-        ${If} $Reg_Value_Fallout4_Exe == $True
-        ${OrIf} $Reg_Value_Fallout4_Py != $True
-            StrCpy $CheckState_Fallout4_Exe ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_Fallout4_Py == $True
-            StrCpy $CheckState_Fallout4_Py ${BST_CHECKED}
-        ${EndIf}
-
-        ${If} $Reg_Value_SkyrimSE_Exe == $True
-        ${OrIf} $Reg_Value_SkyrimSE_Py != $True
-            StrCpy $CheckState_SkyrimSE_Exe ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_SkyrimSE_Py == $True
-            StrCpy $CheckState_SkyrimSE_Py ${BST_CHECKED}
-        ${EndIf}
-
-        ${If} $Reg_Value_Fallout3_Exe == $True
-        ${OrIf} $Reg_Value_Fallout3_Py != $True
-            StrCpy $CheckState_Fallout3_Exe ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_Fallout3_Py == $True
-            StrCpy $CheckState_Fallout3_Py ${BST_CHECKED}
-        ${EndIf}
-
-        ${If} $Reg_Value_FalloutNV_Exe == $True
-        ${OrIf} $Reg_Value_FalloutNV_Py != $True
-            StrCpy $CheckState_FalloutNV_Exe ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_FalloutNV_Py == $True
-            StrCpy $CheckState_FalloutNV_Py ${BST_CHECKED}
-        ${EndIf}
-
-        ${If} $Reg_Value_Enderal_Exe == $True
-        ${OrIf} $Reg_Value_Enderal_Py != $True
-            StrCpy $CheckState_Enderal_Exe ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_Enderal_Py == $True
-            StrCpy $CheckState_Enderal_Py ${BST_CHECKED}
-        ${EndIf}
-
-        ${If} $Reg_Value_Ex1_Exe == $True
-        ${OrIf} $Reg_Value_Ex1_Py != $True
-            StrCpy $CheckState_Ex1_Exe ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_Ex1_Py == $True
-            StrCpy $CheckState_Ex1_Py ${BST_CHECKED}
-        ${EndIf}
-
-        ${If} $Reg_Value_Ex2_Exe == $True
-        ${OrIf} $Reg_Value_Ex2_Py != $True
-            StrCpy $CheckState_Ex2_Exe ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_Ex2_Py == $True
-            StrCpy $CheckState_Ex2_Py ${BST_CHECKED}
-        ${EndIf}
     FunctionEnd
 
 
@@ -417,24 +269,16 @@ Unicode true
         ${NSD_GetState} $0 $CheckState_Extra
         ${If} $CheckState_Extra == ${BST_UNCHECKED}
             ShowWindow $Check_Ex1 ${SW_HIDE}
-            ShowWindow $Check_Ex1_Py ${SW_HIDE}
-            ShowWindow $Check_Ex1_Exe ${SW_HIDE}
             ShowWindow $PathDialogue_Ex1 ${SW_HIDE}
             ShowWindow $Browse_Ex1 ${SW_HIDE}
             ShowWindow $Check_Ex2 ${SW_HIDE}
-            ShowWindow $Check_Ex2_Py ${SW_HIDE}
-            ShowWindow $Check_Ex2_Exe ${SW_HIDE}
             ShowWindow $PathDialogue_Ex2 ${SW_HIDE}
             ShowWindow $Browse_Ex2 ${SW_HIDE}
         ${Else}
             ShowWindow $Check_Ex1 ${SW_SHOW}
-            ShowWindow $Check_Ex1_Py ${SW_SHOW}
-            ShowWindow $Check_Ex1_Exe ${SW_SHOW}
             ShowWindow $PathDialogue_Ex1 ${SW_SHOW}
             ShowWindow $Browse_Ex1 ${SW_SHOW}
             ShowWindow $Check_Ex2 ${SW_SHOW}
-            ShowWindow $Check_Ex2_Py ${SW_SHOW}
-            ShowWindow $Check_Ex2_Exe ${SW_SHOW}
             ShowWindow $PathDialogue_Ex2 ${SW_SHOW}
             ShowWindow $Browse_Ex2 ${SW_SHOW}
         ${EndIf}
@@ -510,5 +354,4 @@ Unicode true
   !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
         !insertmacro MUI_DESCRIPTION_TEXT ${Main} $(DESC_Main)
         !insertmacro MUI_DESCRIPTION_TEXT ${Shortcuts_SM} $(DESC_Shortcuts_SM)
-        !insertmacro MUI_DESCRIPTION_TEXT ${Prereq} $(DESC_Prereq)
   !insertmacro MUI_FUNCTION_DESCRIPTION_END

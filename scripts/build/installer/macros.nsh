@@ -4,18 +4,12 @@
 
 ; Prevent redefining the macro if included multiple times
 !ifmacrondef InstallBashFiles
-    !macro InstallBashFiles GameName GameTemplate GameDir RegValuePy RegValueExe RegPath DoPython DoExe DoAII
+    !macro InstallBashFiles GameName GameTemplate GameDir RegPath
         ; Parameters:
         ;  GameName - name of the game files are being installed for.  This is used for registry entries
         ;  GameTemplate - name of the game that the template files are coming from (for example, Nehrim uses Oblivion files for templates)
         ;  GameDir - base directory for the game (one folder up from the Data directory)
-        ;  RegValuePy - Registry value for the python version (Usually of the form $Reg_Value_OB_Py)
-        ;  RegValueExe - Registry value for the standalone version
         ;  RegPath - Name of the registry string that will hold the path installing to
-        ;  DoPython - Install python version of Wrye Bash (should be {BST_CHECKED} for true - this allows you to simple pass the state of the checkbox)
-        ;  DoExe - Install the standalone version of Wrye Bash (should be {BST_CHECKED} for true)
-        ;  IsExtra - true or false: if false, template files are not installed (since we don't know which type of game it is)
-        ;  DoAII - true or false: if true, installs the ArchiveInvalidationInvalidated files (Oblivion based games)
 
         ; Install common files
         SetOutPath "${GameDir}\Mopy"
@@ -26,32 +20,10 @@
                         /x "game" \
                         /x "patcher" \
                         "${WB_CLEAN_MOPY}\*.*"
-        ${If} ${DoAII} == true
-            ; Some games don't use ArchiveInvalidationInvalidated
-            SetOutPath "${GameDir}\Data"
-            File /r "${WB_CLEAN_MOPY}\templates\Oblivion\ArchiveInvalidationInvalidated!.bsa"
-        ${EndIf}
         WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${RegPath}" "${GameDir}"
-        ${If} ${DoPython} == ${BST_CHECKED}
-            ; Install Python only files
-            SetOutPath "${GameDir}\Mopy"
-            File /r "${WB_CLEAN_MOPY}\*.py" "${WB_CLEAN_MOPY}\*.pyw" "${WB_CLEAN_MOPY}\*.bat"
-            ; Write the installation path into the registry
-            WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${GameName} Python Version" "True"
-        ${ElseIf} ${RegValuePy} == $Empty
-            ; Only write this entry if it's never been installed before
-            WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${GameName} Python Version" ""
-        ${EndIf}
-        ${If} ${DoExe} == ${BST_CHECKED}
-            ; Install the standalone only files
-            SetOutPath "${GameDir}\Mopy"
-            File "${WB_CLEAN_MOPY}\Wrye Bash.exe"
-            ; Write the installation path into the registry
-            WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${GameName} Standalone Version" "True"
-        ${ElseIf} ${RegValueExe} == $Empty
-            ; Only write this entry if it's never been installed before
-            WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${GameName} Standalone Version" ""
-        ${EndIf}
+        ; Install the standalone only files
+        SetOutPath "${GameDir}\Mopy"
+        File "${WB_CLEAN_MOPY}\Wrye Bash.exe"
     !macroend
 
 
@@ -490,20 +462,15 @@
         RMDir /r "${Path}\Mopy\macro"
         Delete "${Path}\Mopy\bash\installerstabtips.txt"
         Delete "${Path}\Mopy\bash\wizSTCo"
-        Delete "${Path}\Mopy\bash\wizSTC.p*"
         Delete "${Path}\Mopy\bash\keywordWIZBAINo"
-        Delete "${Path}\Mopy\bash\keywordWIZBAIN.p*"
         Delete "${Path}\Mopy\bash\keywordWIZBAIN2o"
-        Delete "${Path}\Mopy\bash\keywordWIZBAIN2.p*"
         Delete "${Path}\Mopy\bash\settingsModuleo"
-        Delete "${Path}\Mopy\bash\settingsModule.p*"
         RMDir /r "${Path}\Mopy\bash\images\stc"
         ; As of 303 the following are obsolete:
         Delete "${Path}\Mopy\templates\*.esp"
         ; As of 304.4 the following are obsolete
         Delete "${Path}\Mopy\bash\compiled\libloadorder32.dll"
         Delete "${Path}\Mopy\bash\compiled\boss32.dll"
-        Delete "${Path}\Mopy\bash\bapi.p*"
         Delete "${Path}\Mopy\bash\compiled\boss64.dll"
         Delete "${Path}\Mopy\bash\compiled\libloadorder64.dll"
         ; As of 305, the following are obsolete:
@@ -518,30 +485,6 @@
             # over from a previous install
             Delete "${Path}\Mopy\w9xpopen.exe"
         ${EndIf}
-        ; As of 306, the following are obsolete and the 306 installer did not remove them (bug)
-        ; Some of them appeared on dev only:
-        Delete "${Path}\Mopy\bash\basher.p*"
-        Delete "${Path}\Mopy\bash\game\oblivion.p*"
-        Delete "${Path}\Mopy\bash\game\oblivion_const.p*"
-        Delete "${Path}\Mopy\bash\game\skyrim.p*"
-        Delete "${Path}\Mopy\bash\game\skyrim_const.p*"
-        Delete "${Path}\Mopy\bash\game\oblivion\oblivion_const.p*"
-        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\base.p*"
-        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\importers.p*"
-        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\multitweak_actors.p*"
-        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\multitweak_assorted.p*"
-        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\multitweak_clothes.p*"
-        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\multitweak_names.p*"
-        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\multitweak_settings.p*"
-        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\races_multitweaks.p*"
-        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\special.p*"
-        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\__init__.p*"
-        Delete "${Path}\Mopy\bash\patcher\oblivion\record_groups.p*"
-        Delete "${Path}\Mopy\bash\patcher\oblivion\utilities.p*"
-        Delete "${Path}\Mopy\bash\patcher\oblivion\__init__.p*"
-        Delete "${Path}\Mopy\bash\patcher\RecordGroups.p*"
-        Delete "${Path}\Mopy\bash\patcher\record_groups.p*"
-        Delete "${Path}\Mopy\bash\patcher\utilities.p*"
         ; As of 307, the following are obsolete:
         Delete "${Path}\Mopy\bash\compiled\loot32.dll"
         Delete "${Path}\Mopy\bash\images\tools\gimpshop16.png"
@@ -596,13 +539,6 @@
         Delete "${Path}\Mopy\bash\images\readme\wryebash_docbrowser.png"
         Delete "${Path}\Mopy\bash\images\readme\wryebash_peopletab.png"
         Delete "${Path}\Mopy\bash\images\x.png"
-        Delete "${Path}\Mopy\bash\basher\links.p*"
-        Delete "${Path}\Mopy\bash\basher\pm_tab.p*"
-        Delete "${Path}\Mopy\bash\bosh.p*"
-        Delete "${Path}\Mopy\bash\bosh\msgs.p*"
-        Delete "${Path}\Mopy\bash\bweb.p*"
-        RMDir /r "${Path}\Mopy\bash\chardet"
-        Delete "${Path}\Mopy\bash\games.p*"
         ; As of 307, LOOT integration is handled through a hand-written parser
         Delete "${Path}\Mopy\loot.*"
         Delete "${Path}\Mopy\loot_api.*"
@@ -693,17 +629,28 @@
         Delete "${Path}\Mopy\INI Tweaks\Fallout4\Modding, Enabled [Fallout4Prefs].ini"
         Delete "${Path}\Mopy\INI Tweaks\Fallout4\Modding, Enabled [Fallout4].ini"
         Delete "${Path}\Mopy\INI Tweaks\Fallout4\Modding, ~Default [Fallout4].ini"
+        ; As of 307, the installer can no longer install python versions
+        Delete "${Path}\Mopy\*.bat"
+        Delete "${Path}\Mopy\*.pyw"
+        Delete "${Path}\Mopy\bash\*.p*"
+        RMDir /r "${Path}\Mopy\bash\basher"
+        RMDir /r "${Path}\Mopy\bash\bosh"
+        RMDir /r "${Path}\Mopy\bash\chardet"
+        RMDir /r "${Path}\Mopy\bash\game"
+        RMDir /r "${Path}\Mopy\bash\gui"
+        RMDir /r "${Path}\Mopy\bash\patcher"
     !macroend
 
 
     !macro RemoveCurrentFiles Path
         ; Remove files belonging to current build
         RMDir /r "${Path}\Mopy"
-        ; Do not remove ArchiveInvalidationInvalidated!, because if it's registeredDelete
+        ; Do not remove ArchiveInvalidationInvalidated!, because if it's registered
         ; in the users INI file, this will cause problems
         ;;Delete "${Path}\Data\ArchiveInvalidationInvalidated!.bsa"
         RMDir "${Path}\Data\INI Tweaks"
         RMDir "${Path}\Data\Docs"
+        RMDir "${Path}\Data\BashTags"
         RMDir "${Path}\Data\Bash Patches"
         Delete "$SMPROGRAMS\Wrye Bash\*oblivion*"
     !macroend
@@ -763,106 +710,6 @@
         ReadRegStr $Path_Ex2 HKLM "SOFTWARE\Wrye Bash" "Extra Path 2"
         ${If} $Path_Ex2 == $Empty
             ReadRegStr $Path_Ex2 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 2"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_OB_Py HKLM "SOFTWARE\Wrye Bash" "Oblivion Python Version"
-        ${If} $Reg_Value_OB_Py == $Empty
-            ReadRegStr $Reg_Value_OB_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Oblivion Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Nehrim_Py HKLM "SOFTWARE\Wrye Bash" "Nehrim Python Version"
-        ${If} $Reg_Value_Nehrim_Py == $Empty
-            ReadRegStr $Reg_Value_Nehrim_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Nehrim Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Skyrim_Py HKLM "SOFTWARE\Wrye Bash" "Skyrim Python Version"
-        ${If} $Reg_Value_Skyrim_Py == $Empty
-            ReadRegStr $Reg_Value_Skyrim_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Skyrim Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Fallout4_Py HKLM "SOFTWARE\Wrye Bash" "Fallout4 Python Version"
-        ${If} $Reg_Value_Fallout4_Py == $Empty
-            ReadRegStr $Reg_Value_Fallout4_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout4 Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_SkyrimSE_Py HKLM "SOFTWARE\Wrye Bash" "SkyrimSE Python Version"
-        ${If} $Reg_Value_SkyrimSE_Py == $Empty
-            ReadRegStr $Reg_Value_SkyrimSE_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Fallout3_Py HKLM "SOFTWARE\Wrye Bash" "Fallout3 Python Version"
-        ${If} $Reg_Value_Fallout3_Py == $Empty
-            ReadRegStr $Reg_Value_Fallout3_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout3 Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_FalloutNV_Py HKLM "SOFTWARE\Wrye Bash" "FalloutNV Python Version"
-        ${If} $Reg_Value_FalloutNV_Py == $Empty
-            ReadRegStr $Reg_Value_FalloutNV_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "FalloutNV Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Enderal_Py HKLM "SOFTWARE\Wrye Bash" "Enderal Python Version"
-        ${If} $Reg_Value_Enderal_Py == $Empty
-            ReadRegStr $Reg_Value_Enderal_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Enderal Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Ex1_Py HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Python Version"
-        ${If} $Reg_Value_Ex1_Py == $Empty
-            ReadRegStr $Reg_Value_Ex1_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 1 Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Ex2_Py HKLM "SOFTWARE\Wrye Bash" "Extra Path 2 Python Version"
-        ${If} $Reg_Value_Ex2_Py == $Empty
-            ReadRegStr $Reg_Value_Ex2_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 2 Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_OB_Exe HKLM "SOFTWARE\Wrye Bash" "Oblivion Standalone Version"
-        ${If} $Reg_Value_OB_Exe == $Empty
-            ReadRegStr $Reg_Value_OB_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Oblivion Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Nehrim_Exe HKLM "SOFTWARE\Wrye Bash" "Nehrim Standalone Version"
-        ${If} $Reg_Value_Nehrim_Exe == $Empty
-            ReadRegStr $Reg_Value_Nehrim_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Nehrim Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Skyrim_Exe HKLM "SOFTWARE\Wrye Bash" "Skyrim Standalone Version"
-        ${If} $Reg_Value_Skyrim_Exe == $Empty
-            ReadRegStr $Reg_Value_Skyrim_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Skyrim Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Fallout4_Exe HKLM "SOFTWARE\Wrye Bash" "Fallout4 Standalone Version"
-        ${If} $Reg_Value_Fallout4_Exe == $Empty
-            ReadRegStr $Reg_Value_Fallout4_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout4 Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_SkyrimSE_Exe HKLM "SOFTWARE\Wrye Bash" "SkyrimSE Standalone Version"
-        ${If} $Reg_Value_SkyrimSE_Exe == $Empty
-            ReadRegStr $Reg_Value_SkyrimSE_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Fallout3_Exe HKLM "SOFTWARE\Wrye Bash" "Fallout3 Standalone Version"
-        ${If} $Reg_Value_Fallout3_Exe == $Empty
-            ReadRegStr $Reg_Value_Fallout3_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout3 Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_FalloutNV_Exe HKLM "SOFTWARE\Wrye Bash" "FalloutNV Standalone Version"
-        ${If} $Reg_Value_FalloutNV_Exe == $Empty
-            ReadRegStr $Reg_Value_FalloutNV_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "FalloutNV Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Enderal_Exe HKLM "SOFTWARE\Wrye Bash" "Enderal Standalone Version"
-        ${If} $Reg_Value_Enderal_Exe == $Empty
-            ReadRegStr $Reg_Value_Enderal_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Enderal Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Ex1_Exe HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Standalone Version"
-        ${If} $Reg_Value_Ex1_Exe == $Empty
-            ReadRegStr $Reg_Value_Ex1_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 1 Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Ex2_Exe HKLM "SOFTWARE\Wrye Bash" "Extra Path 2 Standalone Version"
-        ${If} $Reg_Value_Ex2_Exe == $Empty
-            ReadRegStr $Reg_Value_Ex2_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 2 Standalone Version"
         ${EndIf}
     !macroend
 

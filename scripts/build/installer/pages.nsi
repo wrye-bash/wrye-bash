@@ -23,13 +23,6 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for Oblivion"
                 Pop $Check_OB
                 ${NSD_SetState} $Check_OB $CheckState_OB
-            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
-                Pop $Check_OB_Exe
-                ${NSD_AddStyle} $Check_OB_Exe ${WS_GROUP}
-                ${NSD_SetState} $Check_OB_Exe  $CheckState_OB_Exe
-            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
-                Pop $Check_OB_Py
-;                ${NSD_SetState} $Check_OB_Py  $CheckState_OB_Py
             IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_OB"
                 Pop $PathDialogue_OB
@@ -43,13 +36,6 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for Nehrim"
                 Pop $Check_Nehrim
                 ${NSD_SetState} $Check_Nehrim $CheckState_Nehrim
-            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
-                Pop $Check_Nehrim_Exe
-                ${NSD_AddStyle} $Check_Nehrim_Exe ${WS_GROUP}
-                ${NSD_SetState} $Check_Nehrim_Exe  $CheckState_Nehrim_Exe
-            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
-                Pop $Check_Nehrim_Py
-;                ${NSD_SetState} $Check_Nehrim_Py  $CheckState_Nehrim_Py
             IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Nehrim"
                 Pop $PathDialogue_Nehrim
@@ -63,13 +49,6 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for Skyrim"
                 Pop $Check_Skyrim
                 ${NSD_SetState} $Check_Skyrim $CheckState_Skyrim
-            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
-                Pop $Check_Skyrim_Exe
-                ${NSD_AddStyle} $Check_Skyrim_Exe ${WS_GROUP}
-                ${NSD_SetState} $Check_Skyrim_Exe $CheckState_Skyrim_Exe
-            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
-                Pop $Check_Skyrim_Py
-;                ${NSD_SetState} $Check_Skyrim_Py $CheckState_Skyrim_Py
             IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Skyrim"
                 Pop $PathDialogue_Skyrim
@@ -83,13 +62,6 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for SkyrimSE"
                 Pop $Check_SkyrimSE
                 ${NSD_SetState} $Check_SkyrimSE $CheckState_SkyrimSE
-            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
-                Pop $Check_SkyrimSE_Exe
-                ${NSD_AddStyle} $Check_SkyrimSE_Exe ${WS_GROUP}
-                ${NSD_SetState} $Check_SkyrimSE_Exe $CheckState_SkyrimSE_Exe
-            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
-                Pop $Check_SkyrimSE_Py
-;                ${NSD_SetState} $Check_SkyrimSE_Py $CheckState_SkyrimSE_Py
             IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_SkyrimSE"
                 Pop $PathDialogue_SkyrimSE
@@ -103,13 +75,6 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for Enderal"
                 Pop $Check_Enderal
                 ${NSD_SetState} $Check_Enderal $CheckState_Enderal
-            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
-                Pop $Check_Enderal_Exe
-                ${NSD_AddStyle} $Check_Enderal_Exe ${WS_GROUP}
-                ${NSD_SetState} $Check_Enderal_Exe $CheckState_Enderal_Exe
-            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
-                Pop $Check_Enderal_Py
-;                ${NSD_SetState} $Check_Enderal_Py $CheckState_Enderal_Py
             IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Enderal"
                 Pop $PathDialogue_Enderal
@@ -123,10 +88,6 @@
     FunctionEnd
 
     Function PAGE_INSTALLLOCATIONS_ES_Leave
-        # in case the user goes back to this page and changes selections
-        StrCpy $PythonVersionInstall $Empty
-        StrCpy $ExeVersionInstall $Empty
-
         ; Game paths
         ${NSD_GetText} $PathDialogue_OB $Path_OB
         ${NSD_GetText} $PathDialogue_Nehrim $Path_Nehrim
@@ -140,71 +101,6 @@
         ${NSD_GetState} $Check_Skyrim $CheckState_Skyrim
         ${NSD_GetState} $Check_SkyrimSE $CheckState_SkyrimSE
         ${NSD_GetState} $Check_Enderal $CheckState_Enderal
-
-        ; Python states
-        ${NSD_GetState} $Check_OB_Py $CheckState_OB_Py
-        ${NSD_GetState} $Check_Nehrim_Py $CheckState_Nehrim_Py
-        ${NSD_GetState} $Check_Skyrim_Py $CheckState_Skyrim_Py
-        ${NSD_GetState} $Check_SkyrimSE_Py $CheckState_SkyrimSE_Py
-        ${NSD_GetState} $Check_Enderal_Py $CheckState_Enderal_Py
-
-        ${If} $CheckState_OB_Py == ${BST_CHECKED}
-        ${AndIf} $CheckState_OB == ${BST_CHECKED}
-            StrCpy $PythonVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_Nehrim_Py == ${BST_CHECKED}
-        ${AndIf} $CheckState_Nehrim == ${BST_CHECKED}
-            StrCpy $PythonVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_Skyrim_Py == ${BST_CHECKED}
-        ${AndIf} $CheckState_Skyrim == ${BST_CHECKED}
-            StrCpy $PythonVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_SkyrimSE_Py == ${BST_CHECKED}
-        ${AndIf} $CheckState_SkyrimSE == ${BST_CHECKED}
-            StrCpy $PythonVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_Enderal_Py == ${BST_CHECKED}
-        ${AndIf} $CheckState_Enderal == ${BST_CHECKED}
-            StrCpy $PythonVersionInstall $True
-        ${EndIf}
-
-        ; Standalone states
-        ${NSD_GetState} $Check_OB_Exe $CheckState_OB_Exe
-        ${NSD_GetState} $Check_Nehrim_Exe $CheckState_Nehrim_Exe
-        ${NSD_GetState} $Check_Skyrim_Exe $CheckState_Skyrim_Exe
-        ${NSD_GetState} $Check_SkyrimSE_Exe $CheckState_SkyrimSE_Exe
-        ${NSD_GetState} $Check_Enderal_Exe $CheckState_Enderal_Exe
-
-        ${If} $CheckState_OB_Exe == ${BST_CHECKED}
-        ${AndIf} $CheckState_OB == ${BST_CHECKED}
-            StrCpy $ExeVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_Nehrim_Exe == ${BST_CHECKED}
-        ${AndIf} $CheckState_Nehrim == ${BST_CHECKED}
-            StrCpy $ExeVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_Skyrim_Exe == ${BST_CHECKED}
-        ${AndIf} $CheckState_Skyrim == ${BST_CHECKED}
-            StrCpy $ExeVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_SkyrimSE_Exe == ${BST_CHECKED}
-        ${AndIf} $CheckState_SkyrimSE == ${BST_CHECKED}
-            StrCpy $ExeVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_Enderal_Exe == ${BST_CHECKED}
-        ${AndIf} $CheckState_Enderal == ${BST_CHECKED}
-            StrCpy $ExeVersionInstall $True
-        ${EndIf}
-
     FunctionEnd
 
     Function PAGE_INSTALLLOCATIONS_FALLOUT
@@ -226,13 +122,6 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for Fallout3"
                 Pop $Check_Fallout3
                 ${NSD_SetState} $Check_Fallout3 $CheckState_Fallout3
-            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
-                Pop $Check_Fallout3_Exe
-                ${NSD_AddStyle} $Check_Fallout3_Exe ${WS_GROUP}
-                ${NSD_SetState} $Check_Fallout3_Exe $CheckState_Fallout3_Exe
-            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
-                Pop $Check_Fallout3_Py
-;                ${NSD_SetState} $Check_Fallout3_Py $CheckState_Fallout3_Py
             IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Fallout3"
                 Pop $PathDialogue_Fallout3
@@ -246,13 +135,6 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for FalloutNV"
                 Pop $Check_FalloutNV
                 ${NSD_SetState} $Check_FalloutNV $CheckState_FalloutNV
-            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
-                Pop $Check_FalloutNV_Exe
-                ${NSD_AddStyle} $Check_FalloutNV_Exe ${WS_GROUP}
-                ${NSD_SetState} $Check_FalloutNV_Exe $CheckState_FalloutNV_Exe
-            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
-                Pop $Check_FalloutNV_Py
-;                ${NSD_SetState} $Check_FalloutNV_Py $CheckState_FalloutNV_Py
             IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_FalloutNV"
                 Pop $PathDialogue_FalloutNV
@@ -266,13 +148,6 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for Fallout4"
                 Pop $Check_Fallout4
                 ${NSD_SetState} $Check_Fallout4 $CheckState_Fallout4
-            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
-                Pop $Check_Fallout4_Exe
-                ${NSD_AddStyle} $Check_Fallout4_Exe ${WS_GROUP}
-                ${NSD_SetState} $Check_Fallout4_Exe $CheckState_Fallout4_Exe
-            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
-                Pop $Check_Fallout4_Py
-;                ${NSD_SetState} $Check_Fallout4_Py $CheckState_Fallout4_Py
             IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Fallout4"
                 Pop $PathDialogue_Fallout4
@@ -286,10 +161,6 @@
     FunctionEnd
 
     Function PAGE_INSTALLLOCATIONS_FALLOUT_Leave
-        # in case the user goes back to this page and changes selections
-        StrCpy $PythonVersionInstall $Empty
-        StrCpy $ExeVersionInstall $Empty
-
         ; Game paths
         ${NSD_GetText} $PathDialogue_Fallout3 $Path_Fallout3
         ${NSD_GetText} $PathDialogue_FalloutNV $Path_FalloutNV
@@ -300,50 +171,10 @@
         ${NSD_GetState} $Check_FalloutNV $CheckState_FalloutNV
         ${NSD_GetState} $Check_Fallout4 $CheckState_Fallout4
         ${NSD_GetState} $Check_Extra $CheckState_Extra
-
-        ; Python states
-        ${NSD_GetState} $Check_Fallout3_Py $CheckState_Fallout3_Py
-        ${NSD_GetState} $Check_FalloutNV_Py $CheckState_FalloutNV_Py
-        ${NSD_GetState} $Check_Fallout4_Py $CheckState_Fallout4_Py
-
-        ${If} $CheckState_Fallout3_Py == ${BST_CHECKED}
-        ${AndIf} $CheckState_Fallout3 == ${BST_CHECKED}
-            StrCpy $PythonVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_FalloutNV_Py == ${BST_CHECKED}
-        ${AndIf} $CheckState_FalloutNV == ${BST_CHECKED}
-            StrCpy $PythonVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_Fallout4_Py == ${BST_CHECKED}
-        ${AndIf} $CheckState_Fallout4 == ${BST_CHECKED}
-            StrCpy $PythonVersionInstall $True
-        ${EndIf}
-
-        ; Standalone states
-        ${NSD_GetState} $Check_Fallout3_Exe $CheckState_Fallout3_Exe
-        ${NSD_GetState} $Check_FalloutNV_Exe $CheckState_FalloutNV_Exe
-        ${NSD_GetState} $Check_Fallout4_Exe $CheckState_Fallout4_Exe
-
-        ${If} $CheckState_Fallout3_Exe == ${BST_CHECKED}
-        ${AndIf} $CheckState_Fallout3 == ${BST_CHECKED}
-            StrCpy $ExeVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_FalloutNV_Exe == ${BST_CHECKED}
-        ${AndIf} $CheckState_FalloutNV == ${BST_CHECKED}
-            StrCpy $ExeVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_Fallout4_Exe == ${BST_CHECKED}
-        ${AndIf} $CheckState_Fallout4 == ${BST_CHECKED}
-            StrCpy $ExeVersionInstall $True
-        ${EndIf}
     FunctionEnd
 
     Function PAGE_INSTALLLOCATIONS_EXTRA
-        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_FALLOUT_TITLE) $(PAGE_INSTALLLOCATIONS_FALLOUT_SUBTITLE)
+        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_EXTRA_TITLE) $(PAGE_INSTALLLOCATIONS_EXTRA_SUBTITLE)
         GetFunctionAddress $Function_Browse OnClick_Browse
         GetFunctionAddress $Function_Extra OnClick_Extra
 
@@ -366,13 +197,6 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Extra Location #1:"
                 Pop $Check_Ex1
                 ${NSD_SetState} $Check_Ex1 $CheckState_Ex1
-                ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
-                    Pop $Check_Ex1_Exe
-                    ${NSD_AddStyle} $Check_Ex1_Exe ${WS_GROUP}
-                    ${NSD_SetState} $Check_Ex1_Exe  $CheckState_Ex1_Exe
-                ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
-                    Pop $Check_Ex1_Py
-;                    ${NSD_SetState} $Check_Ex1_Py  $CheckState_Ex1_Py
                 IntOp $0 $0 + 13
                 ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Ex1"
                     Pop $PathDialogue_Ex1
@@ -383,13 +207,6 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Extra Location #2:"
                 Pop $Check_Ex2
                 ${NSD_SetState} $Check_Ex2 $CheckState_Ex2
-                ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
-                    Pop $Check_Ex2_Exe
-                    ${NSD_AddStyle} $Check_Ex2_Exe ${WS_GROUP}
-                    ${NSD_SetState} $Check_Ex2_Exe  $CheckState_Ex2_Exe
-                ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
-                    Pop $Check_Ex2_Py
-;                    ${NSD_SetState} $Check_Ex2_Py  $CheckState_Ex2_Py
                 IntOp $0 $0 + 13
                 ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Ex2"
                     Pop $PathDialogue_Ex2
@@ -399,13 +216,9 @@
 
         ${If} $CheckState_Extra != ${BST_CHECKED}
             ShowWindow $Check_Ex1 ${SW_HIDE}
-            ShowWindow $Check_Ex1_Py ${SW_HIDE}
-            ShowWindow $Check_Ex1_Exe ${SW_HIDE}
             ShowWindow $PathDialogue_Ex1 ${SW_HIDE}
             ShowWindow $Browse_Ex1 ${SW_HIDE}
             ShowWindow $Check_Ex2 ${SW_HIDE}
-            ShowWindow $Check_Ex2_Py ${SW_HIDE}
-            ShowWindow $Check_Ex2_Exe ${SW_HIDE}
             ShowWindow $PathDialogue_Ex2 ${SW_HIDE}
             ShowWindow $Browse_Ex2 ${SW_HIDE}
         ${EndIf}
@@ -414,10 +227,6 @@
     FunctionEnd
 
     Function PAGE_INSTALLLOCATIONS_EXTRA_Leave
-        # in case the user goes back to this page and changes selections
-        StrCpy $PythonVersionInstall $Empty
-        StrCpy $ExeVersionInstall $Empty
-
         ; Game paths
         ${NSD_GetText} $PathDialogue_Ex1 $Path_Ex1
         ${NSD_GetText} $PathDialogue_Ex2 $Path_Ex2
@@ -426,38 +235,6 @@
         ${NSD_GetState} $Check_Extra $CheckState_Extra
         ${NSD_GetState} $Check_Ex1 $CheckState_Ex1
         ${NSD_GetState} $Check_Ex2 $CheckState_Ex2
-
-        ; Python states
-        ${NSD_GetState} $Check_Ex1_Py $CheckState_Ex1_Py
-        ${NSD_GetState} $Check_Ex2_Py $CheckState_Ex2_Py
-
-        ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
-        ${AndIf} $CheckState_Extra == ${BST_CHECKED}
-        ${AndIf} $CheckState_Ex1 == ${BST_CHECKED}
-            StrCpy $PythonVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_Ex2_Py == ${BST_CHECKED}
-        ${AndIf} $CheckState_Extra == ${BST_CHECKED}
-        ${AndIf} $CheckState_Ex2 == ${BST_CHECKED}
-            StrCpy $PythonVersionInstall $True
-        ${EndIf}
-
-        ; Standalone states
-        ${NSD_GetState} $Check_Ex1_Exe $CheckState_Ex1_Exe
-        ${NSD_GetState} $Check_Ex2_Exe $CheckState_Ex2_Exe
-
-        ${If} $CheckState_Ex1_Exe == ${BST_CHECKED}
-        ${AndIf} $CheckState_Extra == ${BST_CHECKED}
-        ${AndIf} $CheckState_Ex1 == ${BST_CHECKED}
-            StrCpy $ExeVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_Ex2_Exe == ${BST_CHECKED}
-        ${AndIf} $CheckState_Extra == ${BST_CHECKED}
-        ${AndIf} $CheckState_Ex2 == ${BST_CHECKED}
-            StrCpy $ExeVersionInstall $True
-        ${EndIf}
     FunctionEnd
 
 
@@ -670,92 +447,52 @@
 
         ${If} $CheckState_OB == ${BST_CHECKED}
             SetOutPath "$Path_OB\Mopy"
-            ${If} $CheckState_OB_Py == ${BST_CHECKED}
-                ExecShell "open" '"$Path_OB\Mopy\Wrye Bash Launcher.pyw"'
-            ${ElseIf} $CheckState_OB_Exe == ${BST_CHECKED}
-                ExecShell "open" "$Path_OB\Mopy\Wrye Bash.exe"
-            ${EndIf}
+            ExecShell "open" "$Path_OB\Mopy\Wrye Bash.exe"
         ${EndIf}
 
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
             SetOutPath "$Path_Nehrim\Mopy"
-            ${If} $CheckState_Nehrim_Py == ${BST_CHECKED}
-                ExecShell "open" '"$Path_Nehrim\Mopy\Wrye Bash Launcher.pyw"'
-            ${ElseIf} $CheckState_Nehrim_Exe == ${BST_CHECKED}
-                ExecShell "open" "$Path_Nehrim\Mopy\Wrye Bash.exe"
-            ${EndIf}
+            ExecShell "open" "$Path_Nehrim\Mopy\Wrye Bash.exe"
         ${EndIf}
 
         ${If} $CheckState_Skyrim == ${BST_CHECKED}
             SetOutPath "$Path_Skyrim\Mopy"
-            ${If} $CheckState_Skyrim_Py == ${BST_CHECKED}
-                ExecShell "open" '"$Path_Skyrim\Mopy\Wrye Bash Launcher.pyw"'
-            ${ElseIf} $CheckState_Skyrim_Exe == ${BST_CHECKED}
-                ExecShell "open" "$Path_Skyrim\Mopy\Wrye Bash.exe"
-            ${EndIf}
+            ExecShell "open" "$Path_Skyrim\Mopy\Wrye Bash.exe"
         ${EndIf}
 
         ${If} $CheckState_Fallout4 == ${BST_CHECKED}
             SetOutPath "$Path_Fallout4\Mopy"
-            ${If} $CheckState_Fallout4_Py == ${BST_CHECKED}
-                ExecShell "open" '"$Path_Fallout4\Mopy\Wrye Bash Launcher.pyw"'
-            ${ElseIf} $CheckState_Fallout4_Exe == ${BST_CHECKED}
-                ExecShell "open" "$Path_Fallout4\Mopy\Wrye Bash.exe"
-            ${EndIf}
+            ExecShell "open" "$Path_Fallout4\Mopy\Wrye Bash.exe"
         ${EndIf}
 
         ${If} $CheckState_SkyrimSE == ${BST_CHECKED}
             SetOutPath "$Path_SkyrimSE\Mopy"
-            ${If} $CheckState_SkyrimSE_Py == ${BST_CHECKED}
-                ExecShell "open" '"$Path_SkyrimSE\Mopy\Wrye Bash Launcher.pyw"'
-            ${ElseIf} $CheckState_SkyrimSE_Exe == ${BST_CHECKED}
-                ExecShell "open" "$Path_SkyrimSE\Mopy\Wrye Bash.exe"
-            ${EndIf}
+            ExecShell "open" "$Path_SkyrimSE\Mopy\Wrye Bash.exe"
         ${EndIf}
 
         ${If} $CheckState_Enderal == ${BST_CHECKED}
             SetOutPath "$Path_Enderal\Mopy"
-            ${If} $CheckState_Enderal_Py == ${BST_CHECKED}
-                ExecShell "open" '"$Path_Enderal\Mopy\Wrye Bash Launcher.pyw"'
-            ${ElseIf} $CheckState_Enderal_Exe == ${BST_CHECKED}
-                ExecShell "open" "$Path_Enderal\Mopy\Wrye Bash.exe"
-            ${EndIf}
+            ExecShell "open" "$Path_Enderal\Mopy\Wrye Bash.exe"
         ${EndIf}
 
         ${If} $CheckState_Fallout3 == ${BST_CHECKED}
             SetOutPath "$Path_Fallout3\Mopy"
-            ${If} $CheckState_Fallout3_Py == ${BST_CHECKED}
-                ExecShell "open" '"$Path_Fallout3\Mopy\Wrye Bash Launcher.pyw"'
-            ${ElseIf} $CheckState_Fallout3_Exe == ${BST_CHECKED}
-                ExecShell "open" "$Path_Fallout3\Mopy\Wrye Bash.exe"
-            ${EndIf}
+            ExecShell "open" "$Path_Fallout3\Mopy\Wrye Bash.exe"
         ${EndIf}
 
         ${If} $CheckState_FalloutNV == ${BST_CHECKED}
             SetOutPath "$Path_FalloutNV\Mopy"
-            ${If} $CheckState_FalloutNV_Py == ${BST_CHECKED}
-                ExecShell "open" '"$Path_FalloutNV\Mopy\Wrye Bash Launcher.pyw"'
-            ${ElseIf} $CheckState_FalloutNV_Exe == ${BST_CHECKED}
-                ExecShell "open" "$Path_FalloutNV\Mopy\Wrye Bash.exe"
-            ${EndIf}
+            ExecShell "open" "$Path_FalloutNV\Mopy\Wrye Bash.exe"
         ${EndIf}
 
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             SetOutPath "$Path_Ex1\Mopy"
-            ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
-                ExecShell "open" '"$Path_Ex1\Mopy\Wrye Bash Launcher.pyw"'
-            ${ElseIf} $CheckState_Ex1_Exe == ${BST_CHECKED}
-                ExecShell "open" "$Path_Ex1\Mopy\Wrye Bash.exe"
-            ${EndIf}
+            ExecShell "open" "$Path_Ex1\Mopy\Wrye Bash.exe"
         ${EndIf}
 
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
             SetOutPath "$Path_Ex2\Mopy"
-            ${If} $CheckState_Ex2_Py == ${BST_CHECKED}
-                ExecShell "open" '"$Path_Ex2\Mopy\Wrye Bash Launcher.pyw"'
-            ${ElseIf} $CheckState_Ex2_Exe == ${BST_CHECKED}
-                ExecShell "open" "$Path_Ex2\Mopy\Wrye Bash.exe"
-            ${EndIf}
+            ExecShell "open" "$Path_Ex2\Mopy\Wrye Bash.exe"
         ${EndIf}
 
         ${NSD_GetState} $Check_Readme $0
@@ -823,7 +560,7 @@
 
 ;----------------------------- Custom Uninstallation Pages and their Functions:
     Function un.PAGE_SELECT_GAMES_ES
-        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_ES_TITLE) $(unPAGE_SELECT_GAMES_SUBTITLE)
+        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_ES_TITLE) $(unPAGE_SELECT_GAMES_ES_SUBTITLE)
         GetFunctionAddress $unFunction_Browse un.OnClick_Browse
 
         nsDialogs::Create 1018
@@ -922,7 +659,7 @@
     FunctionEnd
 
     Function un.PAGE_SELECT_GAMES_FALLOUT
-        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_FALLOUT_TITLE) $(unPAGE_SELECT_GAMES_SUBTITLE)
+        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_FALLOUT_TITLE) $(unPAGE_SELECT_GAMES_FALLOUT_SUBTITLE)
         GetFunctionAddress $unFunction_Browse un.OnClick_Browse
 
         nsDialogs::Create 1018
@@ -990,7 +727,7 @@
     FunctionEnd
 
     Function un.PAGE_SELECT_GAMES_EXTRA
-        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_EXTRA_TITLE) $(unPAGE_SELECT_GAMES_SUBTITLE)
+        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_EXTRA_TITLE) $(unPAGE_SELECT_GAMES_EXTRA_SUBTITLE)
         GetFunctionAddress $unFunction_Browse un.OnClick_Browse
 
         nsDialogs::Create 1018
