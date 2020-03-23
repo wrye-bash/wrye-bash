@@ -37,7 +37,7 @@ the settings were created with
 the backup
 """
 
-import cPickle
+import cPickle as pickle  # PY3
 import os
 from os.path import join as jo
 
@@ -165,10 +165,10 @@ class BackupSettings(object):
         with temp_dir.join(u'backup.dat').open('wb') as out:
             # Bash version the settings were saved with, if this is newer
             # than the installed settings version, do not allow restore
-            cPickle.dump(bass.settings['bash.version'], out, -1)
+            pickle.dump(bass.settings['bash.version'], out, -1)
             # app version, if this doesn't match the installed settings
             # version, warn the user on restore
-            cPickle.dump(AppVersion, out, -1)
+            pickle.dump(AppVersion, out, -1)
         # create the backup archive in 7z format WITH solid compression
         # may raise StateError
         backup_dir, dest7z = self._backup_dest_file.head, self._backup_dest_file.tail
@@ -329,10 +329,10 @@ class RestoreSettings(object):
             try:
                 with backup_dat.open('rb') as ins:
                     # version of Bash that created the backed up settings
-                    self._saved_settings_version = cPickle.load(ins)
+                    self._saved_settings_version = pickle.load(ins)
                     # version of Bash that created the backup
-                    self._settings_saved_with = cPickle.load(ins)
-            except (OSError, IOError, cPickle.UnpicklingError, EOFError):
+                    self._settings_saved_with = pickle.load(ins)
+            except (OSError, IOError, pickle.UnpicklingError, EOFError):
                 raise_bolt_error(u'Failed to read %s' % backup_dat)
         return self._saved_settings_version, self._settings_saved_with
 

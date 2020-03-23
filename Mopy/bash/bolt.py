@@ -24,8 +24,10 @@
 
 # Imports ---------------------------------------------------------------------
 #--Standard
+from __future__ import division, print_function
 import StringIO
-import cPickle
+import cPickle as pickle  # PY3
+import chardet
 import codecs
 import collections
 import copy
@@ -36,6 +38,7 @@ import os
 import re
 import shutil
 import stat
+import string
 import struct
 import subprocess
 import sys
@@ -46,8 +49,13 @@ from binascii import crc32
 from functools import partial
 from itertools import chain
 # Internal
-import chardet
-import exception
+from . import exception
+
+# PY3
+try:
+    from urllib.parse import quote
+except ImportError:
+    from urllib import quote
 
 # structure aliases, mainly introduced to reduce uses of 'pack' and 'unpack'
 struct_pack = struct.pack
@@ -175,7 +183,7 @@ def timestamp(): return datetime.datetime.now().strftime(u'%Y-%m-%d %H.%M.%S')
 
 def round_size(kbytes):
     """Round non zero sizes to 1 KB."""
-    return u'%u KB' % (0 if kbytes == 0 else max(kbytes, 1024) / 1024)
+    return u'%u KB' % (0 if kbytes == 0 else max(kbytes, 1024) // 1024)
 
 # Helpers ---------------------------------------------------------------------
 def sortFiles(files, __split=os.path.split):
@@ -528,20 +536,20 @@ class Path(object):
         except UnicodeDecodeError:
             try:
                 traceback.print_exc()
-                print 'Trying to pass temp dir in...'
+                print('Trying to pass temp dir in...')
                 tempdir = unicode(tempfile.gettempdir(), Path.sys_fs_enc)
                 return GPath(tempfile.mkdtemp(prefix=prefix, dir=tempdir))
             except UnicodeDecodeError:
                 try:
                     traceback.print_exc()
-                    print 'Trying to encode temp dir prefix...'
+                    print('Trying to encode temp dir prefix...')
                     return GPath(tempfile.mkdtemp(
                         prefix=prefix.encode(Path.sys_fs_enc)).decode(
                         Path.sys_fs_enc))
                 except:
                     traceback.print_exc()
-                    print 'Failed to create tmp dir, Bash will not function ' \
-                          'correctly.'
+                    print('Failed to create tmp dir, Bash will not function ' \
+                          'correctly.')
 
     @staticmethod
     def baseTempDir():
@@ -597,7 +605,7 @@ class Path(object):
     @property
     def version(self):
         """File version (exe/dll) embedded in the file properties."""
-        from env import get_file_version
+        from .env import get_file_version
         return get_file_version(self._s)
 
     @property
@@ -1059,8 +1067,6 @@ class DataDict(object):
         return self.data.values()
     def items(self):
         return self.data.items()
-    def has_key(self,key):
-        return self.data.has_key(key)
     def get(self,key,default=None):
         return self.data.get(key,default)
     def pop(self,key,default=None):
@@ -1226,8 +1232,8 @@ class MainFunctions(object):
         func = self.funcs.get(key)
         if not func:
             msg = _(u"Unknown function/object: %s") % key
-            try: print msg
-            except UnicodeError: print msg.encode('mbcs')
+            try: print(msg)
+            except UnicodeError: print(msg.encode('mbcs'))
             return
         for attr in attrs:
             func = getattr(func,attr)
@@ -1308,7 +1314,7 @@ class PickleDict(object):
                 try:
                     with path.open('rb') as ins:
                         try:
-                            firstPickle = cPickle.load(ins)
+                            firstPickle = pickle.load(ins)
                         except ValueError:
                             cor = path
                             cor_name = GPath(path.s + u' (%s)' % timestamp() +
@@ -1317,8 +1323,8 @@ class PickleDict(object):
                                 path, cor_name.tail), traceback=True)
                             continue # file corrupt - try next file
                         if firstPickle == 'VDATA2':
-                            self.vdata.update(cPickle.load(ins))
-                            self.data.update(cPickle.load(ins))
+                            self.vdata.update(pickle.load(ins))
+                            self.data.update(pickle.load(ins))
                         else:
                             raise PickleDict.Mold(path)
                     return 1 + (path == self.backup)
@@ -1338,7 +1344,7 @@ class PickleDict(object):
         self.vdata['boltPaths'] = True # needed so pre 307 versions don't blow
         with self.path.temp.open('wb') as out:
             for data in ('VDATA2',self.vdata,self.data):
-                cPickle.dump(data,out,-1)
+                pickle.dump(data,out,-1)
         self.path.untemp(doBackup=True)
         return True
 
@@ -1478,9 +1484,6 @@ class TableColumn(object):
         tableData = self.table.data
         column = self.column
         return [(key,tableData[key][column]) for key in self]
-    def has_key(self,key):
-        """Dictionary emulation."""
-        return self.__contains__(key)
     def clear(self):
         """Dictionary emulation."""
         self.table.delColumn(self.column)
@@ -1491,7 +1494,7 @@ class TableColumn(object):
     def __contains__(self,key):
         """Dictionary emulation."""
         tableData = self.table.data
-        return tableData.has_key(key) and tableData[key].has_key(self.column)
+        return key in tableData and self.column in tableData[key]
     def __getitem__(self,key):
         """Dictionary emulation."""
         return self.table.data[key][self.column]
@@ -1682,10 +1685,10 @@ def deprint(*args,**keyargs):
         o.close()
     try:
         # Should work if stdout/stderr is going to wxPython output
-        print msg
+        print(msg)
     except UnicodeError:
         # Nope, it's going somewhere else
-        print msg.encode(Path.sys_fs_enc)
+        print(msg.encode(Path.sys_fs_enc))
 
 def getMatch(reMatch,group=0):
     """Returns the match or an empty string."""
@@ -2012,7 +2015,6 @@ class WryeText(object):
     @staticmethod
     def genHtml(ins,out=None,*cssDirs):
         """Reads a wtxt input stream and writes an html output stream."""
-        import string, urllib
         # Path or Stream? -----------------------------------------------
         if isinstance(ins,(Path,str,unicode)):
             srcPath = GPath(ins)
@@ -2060,7 +2062,7 @@ class WryeText(object):
             # urllib will automatically take any unicode characters and escape them, so to
             # convert back to unicode for purposes of storing the string, everything will
             # be in cp1252, due to the escapings.
-            anchor = unicode(urllib.quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
+            anchor = unicode(quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
             count = 0
             if re.match(u'' r'\d', anchor):
                 anchor = u'_' + anchor
@@ -2104,7 +2106,7 @@ class WryeText(object):
             address = text = match.group(1).strip()
             if u'|' in text:
                 (address,text) = [chunk.strip() for chunk in text.split(u'|',1)]
-                if address == u'#': address += unicode(urllib.quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
+                if address == u'#': address += unicode(quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
             if address.startswith(u'!'):
                 newWindow = u' target="_blank"'
                 if address == text:
@@ -2225,7 +2227,7 @@ class WryeText(object):
             elif maHead:
                 lead,text = maHead.group(1,2)
                 text = re.sub(u' *=*#?$','',text.strip())
-                anchor = unicode(urllib.quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
+                anchor = unicode(quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
                 level = len(lead)
                 if anchorHeaders:
                     if re.match(u'' r'\d', anchor):
@@ -2254,7 +2256,7 @@ class WryeText(object):
                 text = maList.group(3)
                 if bullet == u'.': bullet = u'&nbsp;'
                 elif bullet == u'*': bullet = u'&bull;'
-                level = len(spaces)/2 + 1
+                level = len(spaces)//2 + 1
                 line = spaces+u'<p class="list-%i">'%level+bullet+u'&nbsp; '
                 line = line + text + u'</p>\n'
             #--Empty line

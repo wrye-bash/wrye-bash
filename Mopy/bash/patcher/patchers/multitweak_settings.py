@@ -24,6 +24,7 @@
 """This module contains oblivion multitweak item patcher classes that belong
 to the Gmst Multitweaker - as well as the GmstTweaker itself. Gmst stands
 for game settings."""
+from __future__ import print_function
 from ... import bush # for game
 from ...bolt import SubProgress, deprint
 from ...brec import MreRecord, RecordHeader
@@ -163,10 +164,10 @@ class CBash_GmstTweak(DynamicNamedTweak, CBash_MultiTweakItem):
                 self.eid_count[eid] = 1
                 record = patchFile.create_GMST(eid)
                 if not record:
-                    print eid
-                    print patchFile.Current.Debug_DumpModFiles()
+                    print(eid)
+                    print(patchFile.Current.Debug_DumpModFiles())
                     for conflict in patchFile.Current.LookupRecords(eid,False):
-                        print conflict.GetParentMod().ModName
+                        print(conflict.GetParentMod().ModName)
                     raise StateError(u"Tweak Settings: Unable to create GMST!")
                 if eid.startswith("f") and type(value) != float:
                     deprint(_(u"converting custom value to float for GMST"

@@ -28,12 +28,12 @@ stores. bush.game must be set, to properly instantiate the data stores."""
 
 # Imports ---------------------------------------------------------------------
 #--Python
-import cPickle
+from __future__ import print_function
+import cPickle as pickle  # PY3
 import collections
 import errno
 import os
 import re
-import string
 import struct
 import sys
 import time
@@ -784,8 +784,8 @@ class ModInfo(FileInfo):
                     if bsa_info.has_assets({assetPath}):
                         break # found
                 except (BSAError, OverflowError):
-                    print u'Failed to parse %s:\n%s' % (
-                        bsa_info.name, traceback.format_exc())
+                    print(u'Failed to parse %s:\n%s' % (
+                        bsa_info.name, traceback.format_exc()))
                     continue
                 if __debug == 2:
                     deprint(u'Asset %s not in %s' % (assetPath, bsa_info.name))
@@ -2987,7 +2987,7 @@ class PeopleData(DataStore):
     def dumpText(self,path,names):
         """Dump to text file."""
         with path.open('w',encoding='utf-8-sig') as out:
-            for name in sorted(names,key=string.lower):
+            for name in sorted(names,key=unicode.lower):
                 out.write(u'== %s %s\n' % (name,u'='*(75-len(name))))
                 out.write(self[name][2].strip())
                 out.write(u'\n\n')
@@ -3272,7 +3272,7 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
     #--Set bass.settings ------------------------------------------------------
     try:
         bass.settings = _load()
-    except cPickle.UnpicklingError as err:
+    except pickle.UnpicklingError as err:
         msg = _(
             u"Error reading the Bash Settings database (the error is: '%s'). "
             u"This is probably not recoverable with the current file. Do you "
@@ -3282,7 +3282,7 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
         if usebck:
             try:
                 bass.settings = _loadBakOrEmpty()
-            except cPickle.UnpicklingError as err:
+            except pickle.UnpicklingError as err:
                 msg = _(
                     u"Error reading the BackupBash Settings database (the "
                     u"error is: '%s'). This is probably not recoverable with "

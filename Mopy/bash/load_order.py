@@ -38,19 +38,22 @@ lo/active from inside Bash.
 delegate to the game_handle.
 """
 
-__author__ = 'Utumno'
+from __future__ import division
+
+__author__ = u'Utumno'
 
 import sys
 import math
 import collections
 import time
 # Internal
-import bass
-import bolt
-import bush
-import exception
+from . import bass
+from . import bolt
+from . import bush
+from . import exception
 # Game instance providing load order operations API
-import _games_lo
+from . import _games_lo
+
 _game_handle = None # type: _games_lo.Game
 _plugins_txt_path = _loadorder_txt_path = _lord_pickle_path = None
 # Load order locking
@@ -179,7 +182,7 @@ def persist_orders(__keep_max=256):
     _lords_pickle.save()
 
 def _keep_max(max_to_keep, length):
-    max_2 = max_to_keep / 2
+    max_2 = max_to_keep // 2
     y = length - _current_list_index
     if y <= max_2:
         x = max_to_keep - y

@@ -25,7 +25,7 @@
 detecting and setting locale as well as code for creating Wrye Bash translation
 files."""
 
-__author__ = 'Infernio'
+__author__ = u'Infernio'
 
 import gettext
 import locale
@@ -39,8 +39,8 @@ import time
 import traceback
 
 # Minimal local imports - needs to be imported statically in bash
-import bass
-import bolt
+from . import bass
+from . import bolt
 
 #------------------------------------------------------------------------------
 # Locale Detection & Setup

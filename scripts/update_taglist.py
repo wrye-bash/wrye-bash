@@ -30,6 +30,7 @@ generating taglists for any games that do not have a folder in
 'Mopy/Bashed Patches'
 """
 
+from __future__ import absolute_import
 import argparse
 import logging
 import os

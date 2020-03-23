@@ -25,6 +25,7 @@
 """This module contains oblivion multitweak item patcher classes that belong
 to the Names Multitweaker - as well as the NamesTweaker itself."""
 
+from __future__ import division
 import re
 from collections import Counter
 # Internal

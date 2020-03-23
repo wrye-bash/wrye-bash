@@ -28,7 +28,9 @@
 - use the alpha data from the image
 """
 
-__author__ = 'Utumno'
+from __future__ import division
+
+__author__ = u'Utumno'
 
 import copy
 import itertools

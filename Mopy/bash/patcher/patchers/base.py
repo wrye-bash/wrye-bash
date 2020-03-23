@@ -23,6 +23,7 @@
 # =============================================================================
 
 """This module contains base patcher classes."""
+from __future__ import print_function
 from collections import Counter
 from operator import itemgetter
 # Internal
@@ -502,7 +503,7 @@ class ImportPatcher(AImportPatcher, ListPatcher):
                 try:
                     fullNames.readFromText(getPatchesPath(srcFile))
                 except UnicodeError as e: # originally in NamesPatcher, keep ?
-                    print srcPath.stail, u'is not saved in UTF-8 format:', e
+                    print(srcPath.stail, u'is not saved in UTF-8 format:', e)
             progress.plus()
         return fullNames
 

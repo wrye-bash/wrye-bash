@@ -23,24 +23,25 @@
 # =============================================================================
 
 """Specific parser for Wrye Bash."""
+
+from __future__ import division
+
 import os
 import traceback
-from collections import OrderedDict
-
-import ScriptParser         # generic parser class
-import bass
-import load_order
-from ScriptParser import error
 import wx
 import wx.wizard as wiz     # wxPython wizard class
-import bosh, balt, bolt, bush
+from collections import OrderedDict
+
+from . import ScriptParser         # generic parser class
+from . import balt, bass, bolt, bosh, bush, load_order
+from .env import get_file_version
 from .gui import BOTTOM, CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
     WizardDialog, EventResult, ListBox, CheckListBox
-from env import get_file_version
+from .ScriptParser import error
 
 #Translateable strings
-from bosh import OBSEIniFile
+from .bosh import OBSEIniFile
 
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")
 MISSING_ARGS = _(u"Missing arguments to '%s'.")

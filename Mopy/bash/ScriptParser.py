@@ -60,6 +60,7 @@
 #  TokensToRPN
 #  ExecuteRPN
 #==================================================
+from __future__ import division
 from string import digits, whitespace
 import types
 #--------------------------------------------------
@@ -213,9 +214,9 @@ class ParserError(SyntaxError): pass
 gParser = None
 def error(msg):
     if gParser:
-        raise ParserError, u'(Line %s, Column %s): %s' % (gParser.cLine, gParser.cCol, msg)
+        raise ParserError(u'(Line %s, Column %s): %s' % (gParser.cLine, gParser.cCol, msg))
     else:
-        raise ParserError, msg
+        raise ParserError(msg)
 
 # Parser ------------------------------------------
 #  This is where the magic happens
@@ -383,7 +384,6 @@ class Parser(object):
         def __add__(self, other): return Parser.Token(self.tkn + other.tkn)
         def __sub__(self, other): return Parser.Token(self.tkn - other.tkn)
         def __mul__(self, other): return Parser.Token(self.tkn * other.tkn)
-        def __div__(self, other): return Parser.Token(self.tkn / other.tkn)
         def __mod__(self, other): return Parser.Token(self.tkn % other.tkn)
         def __truediv__(self, other): return Parser.Token(self.tkn / other.tkn)
         def __floordiv__(self, other): return Parser.Token(self.tkn // other.tkn)
@@ -394,7 +394,7 @@ class Parser(object):
         def __and__(self, other): return Parser.Token(self.tkn & other.tkn)
         def __xor__(self, other): return Parser.Token(self.tkn ^ other.tkn)
         def __or__(self, other): return Parser.Token(self.tkn | other.tkn)
-        def __nonzero__(self): return bool(self.tkn)
+        def __bool__(self): return bool(self.tkn)
         def __neg__(self): return Parser.Token(-self.tkn)
         def __pos__(self): return Parser.Token(+self.tkn)
         def __abs__(self): return abs(self.tkn)
@@ -406,6 +406,9 @@ class Parser(object):
 
         # Fall through to function/keyword
         def __call__(self, *args, **kwdargs): return self.tkn(*args, **kwdargs)
+
+        # PY3 get rid of this once we port
+        __nonzero__ = __bool__
 
 
     # Now for the Parser class
@@ -752,7 +755,7 @@ class Parser(object):
         error(_(u'Too many values left at the end of evaluation.'))
 
     def error(self, msg):
-        raise ParserError, u'(Line %s, Column %s): %s' % (self.cLine, self.cCol, msg)
+        raise ParserError(u'(Line %s, Column %s): %s' % (self.cLine, self.cCol, msg))
 
     #Functions for parsing a line into tokens
     def _grow(self, c):

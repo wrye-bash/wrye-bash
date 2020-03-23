@@ -24,6 +24,7 @@
 
 """WIP module to encapsulate environment access - currently OS dependent stuff.
 """
+from __future__ import print_function
 import errno
 import os as _os
 import re as _re
@@ -33,12 +34,12 @@ from ctypes import byref, c_wchar_p, c_void_p, POINTER, Structure, windll, \
     wintypes
 from uuid import UUID
 
-from bolt import GPath, deprint, Path, decode, struct_unpack
-from exception import BoltError, CancelError, SkipError, AccessDeniedError, \
+from .bolt import GPath, deprint, Path, decode, struct_unpack
+from .exception import BoltError, CancelError, SkipError, AccessDeniedError, \
     DirectoryFileCollisionError, FileOperationError, NonExistentDriveError
 
 try:
-    import _winreg as winreg
+    import _winreg as winreg  # PY3
 except ImportError: # we're on linux
     winreg = None
 try:
@@ -609,7 +610,7 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
                                       parent, __shell=False)
             raise FileOperationErrorMap.get(result, FileOperationError(result))
     else: # Use custom dialogs and such
-        import balt # TODO(ut): local import, env should be above balt...
+        from . import balt # TODO(ut): local import, env should be above balt...
         source = map(GPath, source)
         target = map(GPath, target)
         if operation == FO_DELETE:
@@ -722,7 +723,7 @@ def setUAC(handle, uac=True):
 def testUAC(gameDataPath):
     if _os.name != 'nt': # skip this when not in Windows
         return False
-    print 'testing UAC'
+    print('testing UAC')
     tmpDir = Path.tempDir()
     tempFile = tmpDir.join(u'_tempfile.tmp')
     dest = gameDataPath.join(u'_tempfile.tmp')

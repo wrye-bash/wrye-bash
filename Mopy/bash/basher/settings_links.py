@@ -22,6 +22,7 @@
 #
 # =============================================================================
 
+from __future__ import print_function
 import sys
 
 from . import BashStatusBar
@@ -212,7 +213,7 @@ class Settings_ImportDllInfo(AppendableLink, ItemLink):
                         ver = line.split(u':',1)[1]
                         ver = eval(ver)
                         current[dll].append(ver)
-                        print dll,':',ver
+                        print(dll,':',ver)
             if not replace:
                 bass.settings['bash.installers.goodDlls'].update(Dlls['goodDlls'])
                 bass.settings['bash.installers.badDlls'].update(Dlls['badDlls'])

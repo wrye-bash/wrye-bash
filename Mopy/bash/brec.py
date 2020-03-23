@@ -24,7 +24,8 @@
 
 """This module contains all of the basic types used to read ESP/ESM mod files.
 """
-import cPickle
+from __future__ import division, print_function
+import cPickle as pickle  # PY3
 import copy
 import os
 import re
@@ -32,9 +33,9 @@ import struct
 import zlib
 from operator import attrgetter
 
-import bolt
-import exception
-from bolt import decode, encode, sio, GPath, struct_pack, struct_unpack
+from . import bolt
+from . import exception
+from .bolt import decode, encode, sio, GPath, struct_pack, struct_unpack
 
 # Util Functions --------------------------------------------------------------
 #--Type coercion
@@ -743,13 +744,13 @@ class MelFidList(MelFids):
 
     def loadData(self, record, ins, sub_type, size_, readId):
         if not size_: return
-        fids = ins.unpack(`size_ / 4` + 'I', size_, readId)
+        fids = ins.unpack(repr(size_ // 4) + 'I', size_, readId)
         record.__setattr__(self.attr,list(fids))
 
     def dumpData(self,record,out):
         fids = record.__getattribute__(self.attr)
         if not fids: return
-        out.packSub(self.subType,`len(fids)`+'I',*fids)
+        out.packSub(self.subType,repr(len(fids))+'I',*fids)
 
 #------------------------------------------------------------------------------
 class MelSortedFidList(MelFidList):
@@ -770,7 +771,7 @@ class MelSortedFidList(MelFidList):
         # NOTE: fids.sort sorts from lowest to highest, so lowest values FormID will sort first
         #       if it should be opposite, use this instead:
         #  fids.sort(key=self.sortKeyFn, reverse=True)
-        out.packSub(self.subType, `len(fids)` + 'I', *fids)
+        out.packSub(self.subType, repr(len(fids)) + 'I', *fids)
 
 #------------------------------------------------------------------------------
 class MelSequential(MelBase):
@@ -1379,7 +1380,7 @@ class MelStruct(MelBase):
             valuesAppend(value)
         if self.formatLen >= 0:
             extraLen = len(values[-1])
-            format = self.format + `extraLen` + 's'
+            format = self.format + repr(extraLen) + 's'
         else:
             format = self.format
         try:
@@ -1468,7 +1469,7 @@ class MelArray(MelBase):
         entry_slots = self._element_attrs
         entry_size = self._element_size
         load_entry = self._element.loadData
-        for x in xrange(size_ / entry_size):
+        for x in xrange(size_ // entry_size):
             arr_entry = MelObject()
             append_entry(arr_entry)
             arr_entry.__slots__ = entry_slots
@@ -2648,13 +2649,13 @@ class MreGmstBase(MelRecord):
         """Returns <Oblivion/Skyrim/etc>.esm fid in long format for specified
            eid."""
         cls = self.__class__
-        import bosh # Late import to avoid circular imports
+        from . import bosh # Late import to avoid circular imports
         if not cls.Ids:
-            import bush
+            from . import bush
             fname = bush.game.pklfile
             try:
                 with open(fname) as pkl_file:
-                    cls.Ids = cPickle.load(pkl_file)[cls.classType]
+                    cls.Ids = pickle.load(pkl_file)[cls.classType]
             except:
                 old = bolt.deprintOn
                 bolt.deprintOn = True
@@ -3025,7 +3026,7 @@ class MreHasEffects(object):
 
     def getEffects(self):
         """Returns a summary of effects. Useful for alchemical catalog."""
-        import bush
+        from . import bush
         effects = []
         effectsAppend = effects.append
         for effect in self.effects:
@@ -3037,7 +3038,7 @@ class MreHasEffects(object):
 
     def getSpellSchool(self):
         """Returns the school based on the highest cost spell effect."""
-        import bush
+        from . import bush
         spellSchool = [0,0]
         for effect in self.effects:
             school = bush.game.mgef_school[effect.name]
@@ -3045,7 +3046,7 @@ class MreHasEffects(object):
             if effect.magnitude:
                 effectValue *=  effect.magnitude
             if effect.area:
-                effectValue *=  (effect.area/10)
+                effectValue *=  (effect.area//10)
             if effect.duration:
                 effectValue *=  effect.duration
             if spellSchool[0] < effectValue:
@@ -3054,7 +3055,7 @@ class MreHasEffects(object):
 
     def getEffectsSummary(self):
         """Return a text description of magic effects."""
-        import bush
+        from . import bush
         with sio() as buff:
             avEffects = bush.game.generic_av_effects
             aValues = bush.game.actor_values

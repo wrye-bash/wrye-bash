@@ -29,6 +29,7 @@ is a SpecialPatcher. Notice the PBash ones do not log in buildPatch - the
 RacesTweaker patcher was calling their "log" method - now super's _patchLog()
 """
 
+from __future__ import print_function
 import random
 import re
 from collections import defaultdict, Counter
@@ -934,14 +935,14 @@ class RacePatcher(_ARacePatcher, ListPatcher):
         try:
             blueEyeMesh = eye_mesh[(GPath(u'Oblivion.esm'),0x27308)]
         except KeyError:
-            print u'error getting blue eye mesh:'
-            print u'eye meshes:', eye_mesh
+            print(u'error getting blue eye mesh:')
+            print(u'eye meshes:', eye_mesh)
             raise
         argonianEyeMesh = eye_mesh[(GPath(u'Oblivion.esm'),0x3e91e)]
         if debug:
-            print u'== Eye Mesh Filtering'
-            print u'blueEyeMesh',blueEyeMesh
-            print u'argonianEyeMesh',argonianEyeMesh
+            print(u'== Eye Mesh Filtering')
+            print(u'blueEyeMesh',blueEyeMesh)
+            print(u'argonianEyeMesh',argonianEyeMesh)
         for eye in (
             (GPath(u'Oblivion.esm'),0x1a), #--Reanimate
             (GPath(u'Oblivion.esm'),0x54bb9), #--Dark Seducer
@@ -953,7 +954,7 @@ class RacePatcher(_ARacePatcher, ListPatcher):
             race.rightEye.modPath = rightPath
             race.leftEye.modPath = leftPath
         for race in patchFile.RACE.records:
-            if debug: print u'===', race.eid
+            if debug: print(u'===', race.eid)
             if not race.eyes: continue  #--Sheogorath. Assume is handled
             # correctly.
             if not race.rightEye or not race.leftEye: continue #--WIPZ race?
@@ -987,8 +988,8 @@ class RacePatcher(_ARacePatcher, ListPatcher):
             #--Multiple eye meshes (and playable)?
             if debug:
                 for mesh,eyes in mesh_eye.iteritems():
-                    print mesh
-                    for eye in eyes: print ' ',strFid(eye)
+                    print(mesh)
+                    for eye in eyes: print(' ',strFid(eye))
             if len(mesh_eye) > 1 and (race.flags.playable or race.fid == (
                     GPath('Oblivion.esm'), 0x038010)):
                 #--If blueEyeMesh (mesh used for vanilla eyes) is present,
@@ -1453,24 +1454,24 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         try:
             blueEyeMeshes = eye_meshes[self.blueEye]
         except KeyError:
-            print _(
+            print(_(
                 u"Wrye Bash is low on memory and cannot complete building "
                 u"the patch. This will likely succeed if you restart Wrye "
                 u"Bash and try again. If it fails repeatedly, please report "
                 u"it at the current official Wrye Bash thread at "
                 u"https://www.afkmods.com/index.php?/topic/4966-wrye-bash-all-games/. "
-                u"We apologize for the inconvenience.")
+                u"We apologize for the inconvenience."))
             return
         try:
             argonianEyeMeshes = eye_meshes[self.argonianEye]
         except KeyError:
-            print _(
+            print(_(
                 u"Wrye Bash is low on memory and cannot complete building "
                 u"the patch. This will likely succeed if you restart Wrye "
                 u"Bash and try again. If it fails repeatedly, please report "
                 u"it at the current official Wrye Bash thread at "
                 u"https://www.afkmods.com/index.php?/topic/4966-wrye-bash-all-games/. "
-                u"We apologize for the inconvenience.")
+                u"We apologize for the inconvenience."))
             return
         fixedRaces = set()
         fixedNPCs = {
