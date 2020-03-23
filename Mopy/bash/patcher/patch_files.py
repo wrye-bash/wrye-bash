@@ -129,9 +129,9 @@ class PatchFile(ModFile):
             for alias_target, alias_repl in dict_sort(self.pfile_aliases):
                 log(u'* %s >> %s' % (alias_target, alias_repl))
 
-    def init_patchers_data(self, patchers, progress):
+    def init_patchers_data(self, patcher_instances, progress):
         """Gives each patcher a chance to get its source data."""
-        self._patcher_instances = [p for p in patchers if p.isActive]
+        self._patcher_instances = [p for p in patcher_instances if p.isActive]
         if not self._patcher_instances: return
         progress = progress.setFull(len(self._patcher_instances))
         for index, patcher in enumerate(self._patcher_instances):
@@ -139,7 +139,7 @@ class PatchFile(ModFile):
             patcher.initData(SubProgress(progress, index))
         progress(progress.full, _(u'Patchers prepared.'))
         # initData may set isActive to zero - TODO(ut) track down
-        self._patcher_instances = [p for p in patchers if p.isActive]
+        self._patcher_instances = [p for p in patcher_instances if p.isActive]
 
     #--Instance
     def __init__(self, modInfo, p_file_minfos):

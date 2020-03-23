@@ -27,7 +27,7 @@ to eventually absorb all of them under the _AMerger base class."""
 from collections import defaultdict, Counter
 from itertools import chain
 # Internal
-from .base import ImportPatcher
+from ..base import ImportPatcher
 from ... import bush
 from ...exception import ModSigMismatchError
 
@@ -266,12 +266,12 @@ class ImportRelationsPatcher(_AMerger):
 #------------------------------------------------------------------------------
 class ImportActorsAIPackagesPatcher(ImportPatcher):
     logMsg = u'\n=== ' + _(u'AI Package Lists Changed') + u': %d'
+    _read_sigs = bush.game.actor_types
 
     def __init__(self, p_name, p_file, p_sources):
         super(ImportActorsAIPackagesPatcher, self).__init__(p_name, p_file, p_sources)
         # long_fid -> {'merged':list[long_fid], 'deleted':list[long_fid]}
         self.id_merged_deleted = {}
-        self._read_sigs = bush.game.actor_types
 
     def _insertPackage(self, id_merged_deleted, fi, index, pkg, recordData):
         fi_merged = id_merged_deleted[fi]['merged']
@@ -417,12 +417,12 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
 #------------------------------------------------------------------------------
 class ImportActorsSpellsPatcher(ImportPatcher):
     logMsg = u'\n=== ' + _(u'Spell Lists Changed') + u': %d'
+    _read_sigs = bush.game.actor_types
 
     def __init__(self, p_name, p_file, p_sources):
         super(ImportActorsSpellsPatcher, self).__init__(p_name, p_file, p_sources)
         # long_fid -> {'merged':list[long_fid], 'deleted':list[long_fid]}
         self.id_merged_deleted = {}
-        self._read_sigs = bush.game.actor_types
 
     def initData(self,progress):
         """Get data from source files."""

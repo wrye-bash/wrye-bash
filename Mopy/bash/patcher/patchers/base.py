@@ -29,7 +29,7 @@ from itertools import chain
 from .. import getPatchesPath
 from ..base import AMultiTweakItem, AMultiTweaker, Patcher, ListPatcher
 from ... import load_order, bush
-from ...bolt import GPath, deprint, dict_sort
+from ...bolt import GPath, deprint
 from ...brec import MreRecord
 from ...exception import AbstractError
 from ...mod_files import LoadFactory, ModFile
@@ -195,11 +195,12 @@ class MergePatchesPatcher(ListPatcher):
         # first - ensured through its group of 'General'
         p_file.set_mergeable_mods(self.srcs)
 
-# TODO move this to a file it's imported after MreRecord.simpleTypes is set
 class ReplaceFormIDsPatcher(_HandleAliases, ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
     patcher_group = u'General'
     patcher_order = 15
+    _read_sigs = MreRecord.simpleTypes | (
+        {b'CELL', b'WRLD', b'REFR', b'ACHR', b'ACRE'})
 
     def __init__(self, p_name, p_file, p_sources):
         super(ReplaceFormIDsPatcher, self).__init__(p_file.pfile_aliases)
@@ -226,11 +227,6 @@ class ReplaceFormIDsPatcher(_HandleAliases, ListPatcher):
             except OSError: deprint(
                 u'%s is no longer in patches set' % srcPath, traceback=True)
             progress.plus()
-
-    @property
-    def active_read_sigs(self):
-        return tuple(MreRecord.simpleTypes | (
-            {b'CELL', b'WRLD', b'REFR', b'ACHR', b'ACRE'}))
 
     def scanModFile(self,modFile,progress):
         """Scans specified mod file to extract info. May add record to patch mod,
@@ -373,50 +369,3 @@ class ReplaceFormIDsPatcher(_HandleAliases, ListPatcher):
         log(u'\n=== '+_(u'Records Patched'))
         for srcMod in load_order.get_ordered(count):
             log(u'* %s: %d' % (srcMod,count[srcMod]))
-
-# Patchers: 20 ----------------------------------------------------------------
-class ModLoader(Patcher):
-    """Mixin for patchers loading mods"""
-    loadFactory = None
-
-    def _patcher_read_fact(self, by_sig=None): # read can have keepAll=False
-        return LoadFactory(keepAll=False, by_sig=by_sig or self._read_sigs)
-
-    def _mod_file_read(self, modInfo):
-        modFile = ModFile(modInfo,
-                          self.loadFactory or self._patcher_read_fact())
-        modFile.load(True)
-        return modFile
-
-class ImportPatcher(ListPatcher, ModLoader):
-    """Subclass for patchers in group Importer."""
-    patcher_group = u'Importers'
-    patcher_order = 20
-    # Override in subclasses as needed
-    logMsg = u'\n=== ' + _(u'Modified Records')
-
-    def _patchLog(self,log,type_count):
-        log.setHeader(u'= %s' % self._patcher_name)
-        self._srcMods(log)
-        self._plog(log,type_count)
-
-    def _plog(self,log,type_count):
-        """Most common logging pattern - override as needed."""
-        log(self.__class__.logMsg)
-        for top_grup_sig, count in dict_sort(type_count):
-            if count: log(u'* ' + _(u'Modified %(type)s Records: %(count)d')
-                % {u'type': top_grup_sig.decode(u'ascii'), u'count': count})
-
-    def _plog1(self,log,mod_count): # common logging variation
-        log(self.__class__.logMsg % sum(mod_count.values()))
-        for mod in load_order.get_ordered(mod_count):
-            log(u'* %s: %3d' % (mod, mod_count[mod]))
-
-    def _plog2(self,log,allCounts):
-        log(self.__class__.logMsg)
-        for top_rec_type, count, counts in allCounts:
-            if not count: continue
-            typeName = bush.game.record_type_name[top_rec_type]
-            log(u'* %s: %d' % (typeName, count))
-            for modName, type_counts in dict_sort(counts):
-                log(u'  * %s: %d' % (modName, type_counts))

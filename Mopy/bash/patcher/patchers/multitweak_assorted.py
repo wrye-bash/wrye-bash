@@ -27,10 +27,9 @@ from __future__ import division
 import random
 import re
 # Internal
+from .base import MultiTweakItem, MultiTweaker, CustomChoiceTweak, IndexingTweak
 from ... import bush, load_order
 from ...bolt import GPath, deprint, floats_equal
-from ...patcher.patchers.base import MultiTweakItem, MultiTweaker, \
-    CustomChoiceTweak, IndexingTweak
 
 #------------------------------------------------------------------------------
 class _AShowsTweak(MultiTweakItem):

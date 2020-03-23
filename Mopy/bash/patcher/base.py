@@ -29,8 +29,10 @@ from this module outside of the patcher package."""
 # unhelpful) docs from overriding methods to save some (100s) lines. We must
 # also document which methods MUST be overridden by raising AbstractError. For
 # instance Patcher.buildPatch() apparently is NOT always overridden
-from .. import load_order
+from .. import load_order, bush
+from ..bolt import dict_sort
 from ..exception import AbstractError
+from ..mod_files import LoadFactory, ModFile
 
 #------------------------------------------------------------------------------
 # Abstract_Patcher and subclasses ---------------------------------------------
@@ -313,3 +315,50 @@ class AMultiTweakItem(object):
         ITPOs through! Must be implemented by every PBash tweak that supports
         pooling (see MultiTweakItem.supports_pooling)."""
         raise AbstractError(u'tweak_record not implemented')
+
+class ModLoader(Patcher):
+    """Mixin for patchers loading mods"""
+    loadFactory = None
+
+    def _patcher_read_fact(self, by_sig=None): # read can have keepAll=False
+        return LoadFactory(keepAll=False, by_sig=by_sig or self._read_sigs)
+
+    def _mod_file_read(self, modInfo):
+        modFile = ModFile(modInfo,
+                          self.loadFactory or self._patcher_read_fact())
+        modFile.load(True)
+        return modFile
+
+# Patchers: 20 ----------------------------------------------------------------
+class ImportPatcher(ListPatcher, ModLoader):
+    """Subclass for patchers in group Importer."""
+    patcher_group = u'Importers'
+    patcher_order = 20
+    # Override in subclasses as needed
+    logMsg = u'\n=== ' + _(u'Modified Records')
+
+    def _patchLog(self,log,type_count):
+        log.setHeader(u'= %s' % self._patcher_name)
+        self._srcMods(log)
+        self._plog(log,type_count)
+
+    def _plog(self,log,type_count):
+        """Most common logging pattern - override as needed."""
+        log(self.__class__.logMsg)
+        for top_grup_sig, count in dict_sort(type_count):
+            if count: log(u'* ' + _(u'Modified %(type)s Records: %(count)d')
+                % {u'type': top_grup_sig.decode(u'ascii'), u'count': count})
+
+    def _plog1(self,log,mod_count): # common logging variation
+        log(self.__class__.logMsg % sum(mod_count.values()))
+        for mod in load_order.get_ordered(mod_count):
+            log(u'* %s: %3d' % (mod, mod_count[mod]))
+
+    def _plog2(self,log,allCounts):
+        log(self.__class__.logMsg)
+        for top_rec_type, count, counts in allCounts:
+            if not count: continue
+            typeName = bush.game.record_type_name[top_rec_type]
+            log(u'* %s: %d' % (typeName, count))
+            for modName, type_counts in dict_sort(counts):
+                log(u'  * %s: %d' % (modName, type_counts))

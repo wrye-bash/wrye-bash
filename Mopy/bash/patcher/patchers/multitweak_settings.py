@@ -25,10 +25,9 @@ to the Settings Multitweaker - as well as the tweaker itself."""
 
 from itertools import izip
 
+from .base import MultiTweakItem, MultiTweaker, CustomChoiceTweak
 from ... import bush  # for game
 from ...bolt import floats_equal
-from ...patcher.patchers.base import MultiTweakItem, MultiTweaker, \
-    CustomChoiceTweak
 
 class _AGlobalsTweak(CustomChoiceTweak):
     """Sets a global to specified value."""

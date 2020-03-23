@@ -28,7 +28,7 @@ from collections import defaultdict, Counter
 from itertools import chain, izip
 
 # Internal
-from .base import ImportPatcher
+from ..base import ImportPatcher
 from .. import getPatchesPath
 from ... import bush, load_order, parsers
 from ...bolt import attrgetter_cache, deprint, floats_equal, setattr_deep

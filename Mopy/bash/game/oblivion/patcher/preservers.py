@@ -21,7 +21,7 @@
 #
 # =============================================================================
 from .special import _ExSpecial ##: ugh
-from ....patcher.patchers.base import ImportPatcher
+from ....patcher.base import ImportPatcher
 
 __all__ = [u'ImportRoadsPatcher']
 

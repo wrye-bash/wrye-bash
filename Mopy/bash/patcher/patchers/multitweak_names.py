@@ -32,8 +32,7 @@ from collections import OrderedDict
 # Internal
 from ...bolt import build_esub, RecPath
 from ...exception import AbstractError
-from ...patcher.patchers.base import MultiTweakItem, IndexingTweak
-from ...patcher.patchers.base import MultiTweaker
+from .base import MultiTweakItem, IndexingTweak, MultiTweaker
 
 _ignored_chars=frozenset(u'+-=.()[]')
 
