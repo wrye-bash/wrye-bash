@@ -120,8 +120,8 @@ class CBash_Patcher(_Abstract_Patcher):
         """Compiles material, i.e. reads source text, esp's, etc. as
         necessary."""
         if not self.isActive: return
-        for type_ in self.getTypes():
-            group_patchers.setdefault(type_,[]).append(self)
+        for top_group_sig in self.getTypes():
+            group_patchers[top_group_sig].append(self)
         if self.allowUnloaded:
             loadMods = set([mod for mod in self.srcs if bosh.ModInfos.rightFileType(
                 mod) and mod not in self.patchFile.allMods])

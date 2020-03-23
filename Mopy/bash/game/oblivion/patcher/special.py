@@ -28,7 +28,7 @@ from ....bolt import GPath, sio, SubProgress, CsvReader
 from ....patcher import getPatchesPath
 from ....parsers import LoadFactory, ModFile
 from ....brec import MreRecord, RecordHeader, null4
-from .... import brec, bosh, bush, load_order
+from .... import bush, load_order
 from ....cint import MGEFCode, FormID
 from ....exception import StateError
 from ....patcher.base import Patcher, CBash_Patcher
@@ -378,7 +378,7 @@ class CoblExhaustion(_ACoblExhaustion,ListPatcher):
         super(CoblExhaustion, self).initPatchFile(patchFile)
         self.cobl = GPath(u'Cobl Main.esm')
         self.isActive = bool(self.srcs) and (
-            self.cobl in patchFile.loadSet and bosh.modInfos.getVersionFloat(
+            self.cobl in patchFile.loadSet and self.patchFile.p_file_minfos.getVersionFloat(
                 self.cobl) > 1.65)
         self.id_exhaustion = {}
 
@@ -463,15 +463,15 @@ class CBash_CoblExhaustion(_ACoblExhaustion, _DefaultDictLog):
         if not self.isActive: return
         self.cobl = GPath(u'Cobl Main.esm')
         self.isActive = (self.cobl in patchFile.loadSet and
-                         bosh.modInfos.getVersionFloat(self.cobl) > 1.65)
+                         self.patchFile.p_file_minfos.getVersionFloat(self.cobl) > 1.65)
         self.id_exhaustion = {}
         self.SEFF = MGEFCode('SEFF')
         self.exhaustionId = FormID(self.cobl, 0x05139B)
 
     def initData(self,group_patchers,progress):
         if not self.isActive: return
-        for type in self.getTypes():
-            group_patchers.setdefault(type,[]).append(self)
+        for top_group_sig in self.getTypes():
+            group_patchers[top_group_sig].append(self)
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
@@ -652,15 +652,15 @@ class CBash_MFactMarker(_AMFactMarker, _DefaultDictLog):
         if not self.isActive: return
         self.cobl = GPath(u'Cobl Main.esm')
         self.isActive = self.cobl in patchFile.loadSet and \
-                        bosh.modInfos.getVersionFloat(self.cobl) > 1.27
+            self.patchFile.p_file_minfos.getVersionFloat(self.cobl) > 1.27
         self.id_info = {} #--Morphable factions keyed by fid
         self.mFactLong = FormID(self.cobl,0x33FB)
         self.mFactable = set()
 
     def initData(self,group_patchers,progress):
         if not self.isActive: return
-        for type in self.getTypes():
-            group_patchers.setdefault(type,[]).append(self)
+        for top_group_sig in self.getTypes():
+            group_patchers[top_group_sig].append(self)
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
@@ -765,7 +765,7 @@ class SEWorldEnforcer(_ASEWorldEnforcer,Patcher):
         self.cyrodiilQuests = set()
         if GPath(u'Oblivion.esm') in patchFile.loadSet:
             loadFactory = LoadFactory(False,MreRecord.type_class['QUST'])
-            modInfo = bosh.modInfos[GPath(u'Oblivion.esm')]
+            modInfo = self.patchFile.p_file_minfos[GPath(u'Oblivion.esm')]
             modFile = ModFile(modInfo,loadFactory)
             modFile.load(True)
             mapper = modFile.getLongMapper()

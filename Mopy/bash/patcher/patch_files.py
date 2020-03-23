@@ -75,6 +75,7 @@ class _PFile(object):
         self.loadMods = tuple(loadMods)
         self.loadSet = frozenset(self.loadMods)
         self.set_mergeable_mods([])
+        self.p_file_minfos = bosh.modInfos
         for patcher in self._patcher_instances:
             patcher.initPatchFile(self)
 
@@ -363,7 +364,7 @@ class CBash_PatchFile(_PFile, ObModFile):
     #--Instance
     def __init__(self, patch_name, patchers):
         """Initialization."""
-        self.group_patchers = {}
+        self.group_patchers = defaultdict(list)
         self.indexMGEFs = False
         self.mgef_school = bush.game.mgef_school.copy()
         self.mgef_name = bush.game.mgef_name.copy()

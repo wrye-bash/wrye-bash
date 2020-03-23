@@ -26,11 +26,10 @@ import re
 import time
 from collections import OrderedDict, Counter
 
-from . import AFile
 from .. import env, bush, balt
 from ..bass import dirs
 from ..bolt import LowerDict, CIstr, deprint, GPath, DefaultLowerDict, \
-    decode, getbestencoding
+    decode, getbestencoding, AFile
 from ..exception import AbstractError, CancelError, SkipError, BoltError
 
 def _to_lower(ini_settings): # transform dict of dict to LowerDict of LowerDict

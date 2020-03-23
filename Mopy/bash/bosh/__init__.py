@@ -23,7 +23,7 @@
 # =============================================================================
 
 """The data model, complete with initialization functions. Main hierarchies
-are the DataStore singletons and AFile subclasses populating the data
+are the DataStore singletons and bolt.AFile subclasses populating the data
 stores. bush.game must be set, to properly instantiate the data stores."""
 
 # Imports ---------------------------------------------------------------------
@@ -50,7 +50,7 @@ from .. import patcher # for configIsCBash()
 from ..archives import readExts
 from ..bass import dirs, inisettings, tooldirs
 from ..bolt import GPath, DataDict, deprint, sio, Path, decode, struct_pack, \
-    struct_unpack
+    struct_unpack, AFile
 from ..brec import MreRecord, ModReader, RecordHeader
 from ..cint import CBashApi
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
@@ -102,54 +102,6 @@ imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp', u'.tif'}
 
 #------------------------------------------------------------------------------
 # File System -----------------------------------------------------------------
-#------------------------------------------------------------------------------
-class AFile(object):
-    """Abstract file, supports caching - alpha."""
-    _null_stat = (-1, None)
-    __slots__ = ('_abs_path', '_file_size', '_file_mod_time')
-
-    def _stat_tuple(self): return self.abs_path.size_mtime()
-
-    def __init__(self, fullpath, load_cache=False, raise_on_error=False):
-        self._abs_path = GPath(fullpath)
-        #Set cache info (mtime, size[, ctime]) and reload if load_cache is True
-        try:
-            self._reset_cache(self._stat_tuple(), load_cache)
-        except OSError:
-            if raise_on_error: raise
-            self._reset_cache(self._null_stat, load_cache=False)
-
-    @property
-    def abs_path(self): return self._abs_path
-
-    @abs_path.setter
-    def abs_path(self, val): self._abs_path = val
-
-    def do_update(self):
-        """Check cache, reset it if needed. Return True if reset else False."""
-        try:
-            stat_tuple = self._stat_tuple()
-        except OSError:
-            self._reset_cache(self._null_stat, load_cache=False)
-            return False # we should not call do_update on deleted files
-        if self._file_changed(stat_tuple):
-            self._reset_cache(stat_tuple, load_cache=True)
-            return True
-        return False
-
-    def _file_changed(self, stat_tuple):
-        return (self._file_size, self._file_mod_time) != stat_tuple
-
-    def _reset_cache(self, stat_tuple, load_cache):
-        """Reset cache flags (size, mtime,...) and possibly reload the cache.
-        :param load_cache: if True either load the cache (header in Mod and
-        SaveInfo) or reset it so it gets reloaded later
-        """
-        self._file_size, self._file_mod_time = stat_tuple
-
-    def __repr__(self): return u'%s<%s>' % (self.__class__.__name__,
-                                            self.abs_path.stail)
-
 #------------------------------------------------------------------------------
 class MasterInfo(object):
     """Slight abstraction over ModInfo that allows us to represent masters that
@@ -496,8 +448,8 @@ class ModInfo(FileInfo):
 
     # Ghosting and ghosting related overrides ---------------------------------
     def do_update(self):
-        self.isGhost, old_ghost = not self._abs_path.exists() and (
-            self._abs_path + u'.ghost').exists(), self.isGhost
+        self.isGhost, old_ghost = not self._file_key.exists() and (
+                self._file_key + u'.ghost').exists(), self.isGhost
         # mark updated if ghost state changed but only reread header if needed
         changed = super(ModInfo, self).do_update()
         return changed or self.isGhost != old_ghost
@@ -505,7 +457,7 @@ class ModInfo(FileInfo):
     @FileInfo.abs_path.getter
     def abs_path(self):
         """Return joined dir and name, adding .ghost if the file is ghosted."""
-        return (self._abs_path + u'.ghost') if self.isGhost else self._abs_path
+        return (self._file_key + u'.ghost') if self.isGhost else self._file_key
 
     def setGhost(self,isGhost):
         """Sets file to/from ghost mode. Returns ghost status at end."""

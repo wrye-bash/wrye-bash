@@ -21,7 +21,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from .... import bosh
 from ....parsers import LoadFactory, ModFile
 from ....brec import MreRecord
 from ....patcher.patchers.base import AImportPatcher, CBash_ImportPatcher, \
@@ -52,8 +51,8 @@ class RoadImporter(ImportPatcher, _ARoadImporter):
                                         MreRecord.type_class['ROAD'])
         progress.setFull(len(self.srcs))
         for srcMod in self.srcs:
-            if srcMod not in bosh.modInfos: continue
-            srcInfo = bosh.modInfos[srcMod]
+            if srcMod not in self.patchFile.p_file_minfos: continue
+            srcInfo = self.patchFile.p_file_minfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
             srcFile.convertToLongFids(('WRLD','ROAD'))

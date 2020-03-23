@@ -21,9 +21,9 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""Functions for initializing Bash data structures on boot. For now export
-functions to init bass.dirs that need be initialized high up into the boot
-sequence to be able to backup/restore settings."""
+"""Functions for initializing Bash data structures on boot. For now exports
+functions to initialize bass.dirs that need be initialized high up into the
+boot sequence to be able to backup/restore settings."""
 from ConfigParser import ConfigParser, MissingSectionHeaderError
 # Local - don't import anything else
 from . import env

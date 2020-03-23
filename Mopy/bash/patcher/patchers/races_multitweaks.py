@@ -1127,8 +1127,8 @@ class CBash_RacePatcher_Relations(SpecialPatcher):
 
     def initData(self,group_patchers,progress):
         if not self.isActive: return
-        for type in self.getTypes():
-            group_patchers.setdefault(type,[]).append(self)
+        for top_group_sig in self.getTypes():
+            group_patchers[top_group_sig].append(self)
 
     def getTypes(self):
         return ['RACE']
@@ -1213,8 +1213,8 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
 
     def initData(self,group_patchers,progress):
         if not self.isActive: return
-        for type in self.getTypes():
-            group_patchers.setdefault(type,[]).append(self)
+        for top_group_sig in self.getTypes():
+            group_patchers[top_group_sig].append(self)
 
     def getTypes(self):
         return ['RACE']
@@ -1275,8 +1275,8 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
 
     def initData(self,group_patchers,progress):
         if not self.isActive: return
-        for type in self.getTypes():
-            group_patchers.setdefault(type,[]).append(self)
+        for top_group_sig in self.getTypes():
+            group_patchers[top_group_sig].append(self)
 
     def getTypes(self):
         return ['RACE']
@@ -1351,8 +1351,8 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
 
     def initData(self,group_patchers,progress):
         if not self.isActive: return
-        for type in self.getTypes():
-            group_patchers.setdefault(type,[]).append(self)
+        for top_group_sig in self.getTypes():
+            group_patchers[top_group_sig].append(self)
 
     def getTypes(self):
         return ['EYES','HAIR','RACE']
@@ -1677,8 +1677,8 @@ class CBash_RacePatcher(_ARacePatcher, CBash_ListPatcher):
         for tweak in self.tweakers:
             tweak.initData(group_patchers,progress)
         for tweak in self.enabledTweaks:
-            for type in tweak.getTypes():
-                group_patchers.setdefault(type,[]).append(tweak)
+            for top_group_sig in tweak.getTypes():
+                group_patchers[top_group_sig].append(tweak)
 
     #--Patch Phase ------------------------------------------------------------
     def buildPatchLog(self,log):

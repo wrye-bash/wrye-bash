@@ -978,8 +978,8 @@ class CBash_NamesTweaker(_ANamesTweaker,CBash_MultiTweaker):
     def initData(self,group_patchers,progress):
         if not self.isActive: return
         for tweak in self.enabledTweaks:
-            for type_ in tweak.getTypes():
-                group_patchers.setdefault(type_,[]).append(tweak)
+            for top_group_sig in tweak.getTypes():
+                group_patchers[top_group_sig].append(tweak)
             tweak.format = tweak.choiceValues[tweak.chosen][0]
             if isinstance(tweak, CBash_NamesTweak_Body):
                 tweak.showStat = u'%02d' in tweak.format

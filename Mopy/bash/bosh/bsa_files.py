@@ -41,10 +41,9 @@ import zlib
 from functools import partial
 from itertools import groupby, imap
 from operator import itemgetter
-from . import AFile
 from .dds_files import DDSFile, mk_dxgi_fmt
 from ..bolt import deprint, Progress, struct_pack, struct_unpack, \
-    unpack_byte, unpack_string, unpack_int
+    unpack_byte, unpack_string, unpack_int, AFile
 from ..exception import AbstractError, BSAError, BSADecodingError, \
     BSAFlagError
 

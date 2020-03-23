@@ -1709,10 +1709,10 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
     def _combo_reset(self): self._inis_combo_box.set_choices(self._ini_keys)
 
     def _clean_targets(self):
-        for name, ini_path in self.target_inis.iteritems():
+        for ini_fname, ini_path in self.target_inis.iteritems():
             if ini_path is not None and not ini_path.isfile():
                 if not bosh.get_game_ini(ini_path):
-                    self.__remove(name)
+                    self.__remove(ini_fname)
         self._combo_reset()
 
     def __remove(self, ini_str_name): # does NOT change sorting

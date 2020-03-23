@@ -36,15 +36,14 @@ from functools import partial, wraps
 from itertools import groupby, imap
 from operator import itemgetter, attrgetter
 
-from . import imageExts, DataStore, BestIniFile, InstallerConverter, AFile, \
-    ModInfos
+from . import imageExts, DataStore, BestIniFile, InstallerConverter, ModInfos
 from .ini_files import OBSEIniFile
 from .. import balt # YAK!
 from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
     extract7z, compressionSettings
 from ..bolt import Path, deprint, round_size, GPath, sio, SubProgress, CIstr, \
-    LowerDict
+    LowerDict, AFile
 from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError, FileError
 
@@ -599,7 +598,7 @@ class Installer(object):
          - in _RefreshingLink (override skips, HasExtraData, skip voices)
          - in Installer_CopyConflicts
         """
-        type_    = self.type
+        bain_type    = self.type
         #--Init to empty
         self.hasWizard = self.hasBCF = self.hasReadme = False
         self.packageDoc = self.packagePic = None # = self.extras_dict['readMe']
@@ -607,7 +606,7 @@ class Installer(object):
             object.__getattribute__(self,attr).clear()
         dest_src = bolt.LowerDict()
         #--Bad archive?
-        if type_ not in {1,2}: return dest_src
+        if bain_type not in {1,2}: return dest_src
         archiveRoot = GPath(self.archive).sroot if isinstance(self,
                 InstallerArchive) else self.archive
         docExts = self.docExts
@@ -635,7 +634,7 @@ class Installer(object):
         # exclude u'' from active subpackages
         activeSubs = (
             set(x for x, y in zip(self.subNames[1:], self.subActives[1:]) if y)
-            if type_ == 2 else set())
+            if bain_type == 2 else set())
         data_sizeCrc = bolt.LowerDict()
         skipDirFiles = self.skipDirFiles
         skipDirFilesAdd = skipDirFiles.add
@@ -657,7 +656,7 @@ class Installer(object):
                     Installer._silentSkipsStart) or fileLower.endswith(
                     Installer._silentSkipsEnd): continue
             sub = u''
-            if type_ == 2: #--Complex archive
+            if bain_type == 2: #--Complex archive
                 split = file_relative.split(os_sep, 1)
                 if len(split) > 1:
                     # redefine file, excluding the subpackage directory
@@ -856,7 +855,7 @@ class Installer(object):
         self._find_root_index()
         # fileRootIdex now points to the start in the file strings to ignore
         #--Type, subNames
-        type_ = 0
+        bain_type = 0
         subNameSet = {u''}
         valid_ext = self.__class__._re_top_extensions.search
         dataDirsPlus = self.dataDirsPlus
@@ -874,7 +873,7 @@ class Installer(object):
             #--Type 1 ? break ! data files/dirs are not allowed in type 2 top
             if (nfrags == 1 and valid_ext(f0_lower) or
                 nfrags > 1 and f0_lower in dataDirsPlus):
-                type_ = 1
+                bain_type = 1
                 break
             #--Else churn on to see if we have a Type 2 package
             elif not frags[0] in subNameSet and not \
@@ -882,13 +881,13 @@ class Installer(object):
                     (nfrags > 2 and frags[1].lower() in dataDirsPlus) or
                     (nfrags == 2 and valid_ext(frags[1]))):
                 subNameSet.add(frags[0])
-                type_ = 2
+                bain_type = 2
                 # keep looking for a type one package - having a loose file or
                 # a top directory with name in dataDirsPlus will turn this into
                 # a type one package
-        self.type = type_
+        self.type = bain_type
         #--SubNames, SubActives
-        if type_ == 2:
+        if bain_type == 2:
             self.subNames = sorted(subNameSet,key=unicode.lower)
             actives = set(x for x,y in zip(self.subNames,self.subActives) if (y or x == u''))
             if len(self.subNames) == 2: #--If only one subinstall, then make it active.

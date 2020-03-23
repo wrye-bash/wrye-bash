@@ -33,10 +33,11 @@ import binascii
 import re
 import string
 from itertools import imap
-from . import AFile, bak_file_pattern
+from . import bak_file_pattern
 from ..bolt import sio, decode, encode, struct_pack, struct_unpack, \
     unpack_string, unpack_int, unpack_short, unpack_4s, unpack_byte, \
-    unpack_str16, unpack_float, unpack_double, unpack_int_signed, unpack_str32
+    unpack_str16, unpack_float, unpack_double, unpack_int_signed, \
+    unpack_str32, AFile
 from ..exception import AbstractError, FileError, BoltError
 
 #------------------------------------------------------------------------------

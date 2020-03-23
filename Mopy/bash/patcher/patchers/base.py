@@ -124,8 +124,8 @@ class CBash_MultiTweaker(AMultiTweaker,CBash_Patcher):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         for tweak in self.enabledTweaks:
-            for type_ in tweak.getTypes():
-                group_patchers.setdefault(type_,[]).append(tweak)
+            for top_group_sig in tweak.getTypes():
+                group_patchers[top_group_sig].append(tweak)
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self, patchFile):
@@ -371,8 +371,8 @@ class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
         self.isActive = bool(self.old_new)
         if not self.isActive: return
 
-        for type_ in self.getTypes():
-            group_patchers.setdefault(type_,[]).append(self)
+        for top_group_sig in self.getTypes():
+            group_patchers[top_group_sig].append(self)
 
     def getTypes(self):
         return ['MOD','FACT','RACE','MGEF','SCPT','LTEX','ENCH',
