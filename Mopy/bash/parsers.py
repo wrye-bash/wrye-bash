@@ -73,10 +73,10 @@ class ActorFactions(object):
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
-        for type_ in (x.classType for x in types):
-            typeBlock = modFile.tops.get(type_,None)
+        for rsig in (x.rec_sig for x in types):
+            typeBlock = modFile.tops.get(rsig,None)
             if not typeBlock: continue
-            id_factions = type_id_factions[type_]
+            id_factions = type_id_factions[rsig]
             for record in typeBlock.getActiveRecords():
                 longid = mapper(record.fid)
                 if record.factions:
@@ -93,9 +93,9 @@ class ActorFactions(object):
         mapper = modFile.getLongMapper()
         shortMapper = modFile.getShortMapper()
         changed = Counter() # {'CREA':0,'NPC_':0}
-        for type_ in (x.classType for x in types):
-            id_factions = type_id_factions.get(type_,None)
-            typeBlock = modFile.tops.get(type_,None)
+        for rsig in (x.rec_sig for x in types):
+            id_factions = type_id_factions.get(rsig,None)
+            typeBlock = modFile.tops.get(rsig,None)
             if not id_factions or not typeBlock: continue
             for record in typeBlock.records:
                 longid = mapper(record.fid)
@@ -118,7 +118,7 @@ class ActorFactions(object):
                         entry.unused1 = 'ODB'
                         record.factions.append(entry)
                     record.setChanged()
-                changed[type_] += 1
+                changed[rsig] += 1
         #--Done
         if sum(changed.values()): modFile.safeSave()
         return changed

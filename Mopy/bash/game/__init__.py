@@ -574,8 +574,7 @@ class GameInfo(object):
         brec.RecordHeader.recordTypes = set(
             brec.RecordHeader.topTypes + ['GRUP', 'TES4'])
         # Record Types
-        brec.MreRecord.type_class = dict((x.classType,x) for x in  (
-                ))
+        brec.MreRecord.type_class = {x.rec_sig: x for x in ()}
         # Simple records
         brec.MreRecord.simpleTypes = (
                 set(brec.MreRecord.type_class) - {'TES4'})

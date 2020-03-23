@@ -31,7 +31,7 @@ from ..fallout4.records import _MelModel # HACK - needed for tests
 # than adding a game var just for this and dynamically importing it in FO4
 class MreTes4(MreHeaderBase):
     """TES4 Record. File header."""
-    classType = b'TES4'
+    rec_sig = b'TES4'
 
     melSet = MelSet(
         MelStruct(b'HEDR', u'f2I', (u'version', 0.95), u'numRecords',

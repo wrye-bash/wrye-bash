@@ -291,7 +291,7 @@ class OblivionGameInfo(GameInfo):
         __rec_type.recordTypes = set(
             __rec_type.topTypes + ['GRUP', 'TES4', 'ROAD', 'REFR', 'ACHR',
                                    'ACRE', 'PGRD', 'LAND', 'INFO'])
-        brec.MreRecord.type_class = dict((x.classType,x) for x in (
+        brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreAchr, MreAcre, MreActi, MreAlch, MreAmmo, MreAnio, MreAppa,
             MreArmo, MreBook, MreBsgn, MreCell, MreClas, MreClot, MreCont,
             MreCrea, MreDoor, MreEfsh, MreEnch, MreEyes, MreFact, MreFlor,
@@ -300,7 +300,7 @@ class OblivionGameInfo(GameInfo):
             MreNpc, MrePack, MreQust, MreRace, MreRefr, MreRoad, MreScpt,
             MreSgst, MreSkil, MreSlgm, MreSoun, MreSpel, MreStat, MreTree,
             MreTes4, MreWatr, MreWeap, MreWrld, MreWthr, MreClmt, MreCsty,
-            MreIdle, MreLtex, MreRegn, MreSbsp, MreDial, MreInfo,))
+            MreIdle, MreLtex, MreRegn, MreSbsp, MreDial, MreInfo,)}
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {'TES4', 'ACHR', 'ACRE', 'REFR',
                                               'CELL', 'PGRD', 'ROAD', 'LAND',

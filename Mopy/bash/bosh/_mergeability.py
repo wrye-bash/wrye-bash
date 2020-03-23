@@ -81,10 +81,10 @@ def _pbash_mergeable_no_load(modInfo, reasons):
 def isPBashMergeable(modInfo, minfos, reasons):
     """Returns True or error message indicating whether specified mod is mergeable."""
     verbose = reasons is not None
-    if not  _pbash_mergeable_no_load(modInfo, reasons) and not verbose:
+    if not _pbash_mergeable_no_load(modInfo, reasons) and not verbose:
         return False  # non verbose mode
     #--Load test
-    mergeTypes = set(recClass.classType for recClass in bush.game.mergeClasses)
+    mergeTypes = {recClass.rec_sig for recClass in bush.game.mergeClasses}
     modFile = ModFile(modInfo, LoadFactory(False, *mergeTypes))
     try:
         modFile.load(True,loadStrings=False)

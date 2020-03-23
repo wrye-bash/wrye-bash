@@ -180,14 +180,11 @@ class Fallout4GameInfo(GameInfo):
             {'GRUP', 'TES4', 'REFR', 'ACHR', 'PMIS', 'PARW', 'PGRE', 'PBEA',
              'PFLA', 'PCON', 'PBAR', 'PHZD', 'LAND', 'NAVM', 'DIAL', 'INFO'})
         brec.RecordHeader.plugin_form_version = 131
-        brec.MreRecord.type_class = dict((x.classType,x) for x in (
-            #--Always present
-            MreTes4,
-            # Imported from Skyrim or SkyrimSE
-            MreGmst,
-            # Added to records.py
-            MreLvli, MreLvln,
-            ))
+        brec.MreRecord.type_class = {x.rec_sig: x for x in (
+            MreTes4, #--Always present
+            MreGmst, # Imported from Skyrim or SkyrimSE
+            MreLvli, MreLvln, # Added to records.py
+            )}
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {'TES4',})
 

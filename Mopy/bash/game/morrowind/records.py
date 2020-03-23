@@ -53,7 +53,7 @@ class MelMWId(MelString):
 # Shared (plugins + saves) record classes
 class MreTes3(MreHeaderBase):
     """TES3 Record. File header."""
-    classType = b'TES3'
+    rec_sig = b'TES3'
 
     class MelTes3Hedr(MelStruct):
         """Wrapper around MelStruct to handle the author and description

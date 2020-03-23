@@ -336,10 +336,10 @@ class Fallout3GameInfo(GameInfo):
                                           'INFO', 'LAND', 'NAVM', 'PGRE',
                                           'PMIS', 'REFR'])
         brec.RecordHeader.plugin_form_version = 15
-        brec.MreRecord.type_class = dict(
-            (x.classType, x) for x in (cls.mergeClasses + # Not Mergeable
+        brec.MreRecord.type_class = {x.rec_sig: x for x in
+                (cls.mergeClasses + # Not Mergeable
                 (MreAchr, MreAcre, MreCell, MreDial, MreInfo, MreNavi,
-                 MreNavm, MrePgre, MrePmis, MreRefr, MreWrld, MreTes4)))
+                 MreNavm, MrePgre, MrePmis, MreRefr, MreWrld, MreTes4))}
         brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) - {
             # 'TES4','ACHR','ACRE','REFR','CELL','PGRD','ROAD','LAND',
             # 'WRLD','INFO','DIAL','PGRE','NAVM'

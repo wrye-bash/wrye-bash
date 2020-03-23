@@ -35,7 +35,7 @@ from ..skyrim.records import _MelModel # HACK - needed for tests
 #------------------------------------------------------------------------------
 class MreVoli(MelRecord):
     """Volumetric Lighting."""
-    classType = 'VOLI'
+    rec_sig = b'VOLI'
 
     melSet = MelSet(
         MelEdid(),
@@ -57,7 +57,7 @@ class MreVoli(MelRecord):
 #------------------------------------------------------------------------------
 class MreLens(MelRecord):
     """Lens Flare."""
-    classType = 'LENS'
+    rec_sig = b'LENS'
 
     LensFlareFlags = Flags(0,Flags.getNames(
             (0, 'rotates'),

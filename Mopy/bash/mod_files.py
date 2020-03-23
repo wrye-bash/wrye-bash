@@ -93,7 +93,7 @@ class LoadFactory(object):
             recType = recClass
             recClass = MreRecord
         else:
-            recType = recClass.classType
+            recType = recClass.rec_sig
         #--Don't replace complex class with default (MreRecord) class
         if recType in self.type_class and recClass == MreRecord:
             return

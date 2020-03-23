@@ -172,7 +172,7 @@ class EnderalGameInfo(SkyrimGameInfo):
                                           'ACRE', 'LAND', 'INFO', 'NAVM',
                                           'PHZD', 'PGRE'])
         brec.RecordHeader.plugin_form_version = 43
-        brec.MreRecord.type_class = dict((x.classType,x) for x in (
+        brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreAchr, MreDial, MreInfo, MreAact, MreActi, MreAddn, MreAlch,
             MreAmmo, MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc,
             MreAstp, MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClfm,
@@ -190,7 +190,7 @@ class EnderalGameInfo(SkyrimGameInfo):
             MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop,
             MreWthr, MreCell, MreWrld, MreQust, MreTes4, MrePack,
             # MreNavm, MreNavi
-        ))
+        )}
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {'TES4', 'ACHR', 'CELL', 'DIAL',
                                               'INFO', 'WRLD', })

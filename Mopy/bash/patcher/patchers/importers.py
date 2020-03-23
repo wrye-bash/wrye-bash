@@ -61,16 +61,16 @@ class _SimpleImporter(ImportPatcher):
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
         return tuple(
-            x.classType for x in self.srcClasses) if self.isActive else ()
+            x.rec_sig for x in self.srcClasses) if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
         return tuple(
-            x.classType for x in self.srcClasses) if self.isActive else ()
+            x.rec_sig for x in self.srcClasses) if self.isActive else ()
 
     def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data):
         recAttrs = self.recAttrs_class[recClass]
-        for record in srcFile.tops[recClass.classType].getActiveRecords():
+        for record in srcFile.tops[recClass.rec_sig].getActiveRecords():
             fid = mapper(record.fid)
             temp_id_data[fid] = dict(
                 (attr, record.__getattribute__(attr)) for attr in recAttrs)
@@ -84,8 +84,7 @@ class _SimpleImporter(ImportPatcher):
         if not self.isActive: return
         id_data = self.id_data
         loadFactory = LoadFactory(False, *self.recAttrs_class.keys())
-        longTypes = self.longTypes & set(
-            x.classType for x in self.recAttrs_class)
+        longTypes = self.longTypes & {x.rec_sig for x in self.recAttrs_class}
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         minfs = self.patchFile.p_file_minfos
@@ -99,7 +98,7 @@ class _SimpleImporter(ImportPatcher):
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
             for recClass in self.recAttrs_class:
-                if recClass.classType not in srcFile.tops: continue
+                if recClass.rec_sig not in srcFile.tops: continue
                 self.srcClasses.add(recClass)
                 self.classestemp.add(recClass)
                 self._init_data_loop(mapper, recClass, srcFile, srcMod,
@@ -116,10 +115,10 @@ class _SimpleImporter(ImportPatcher):
                     cachedMasters[master] = masterFile
                 mapper = masterFile.getLongMapper()
                 for recClass in self.recAttrs_class:
-                    if recClass.classType not in masterFile.tops: continue
+                    if recClass.rec_sig not in masterFile.tops: continue
                     if recClass not in self.classestemp: continue
                     for record in masterFile.tops[
-                        recClass.classType].getActiveRecords():
+                        recClass.rec_sig].getActiveRecords():
                         fid = mapper(record.fid)
                         if fid not in temp_id_data: continue
                         for attr, value in temp_id_data[fid].iteritems():
@@ -127,7 +126,7 @@ class _SimpleImporter(ImportPatcher):
                             else:
                                 id_data[fid][attr] = value
             progress.plus()
-        self.longTypes &= set(x.classType for x in self.srcClasses)
+        self.longTypes &= {x.rec_sig for x in self.srcClasses}
         self.isActive = bool(self.srcClasses)
 
     def scanModFile(self, modFile, progress):
@@ -141,9 +140,10 @@ class _SimpleImporter(ImportPatcher):
         if self.longTypes:
             modFile.convertToLongFids(self.longTypes)
         for recClass in self.srcClasses:
-            if recClass.classType not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile, recClass.classType)
-            for record in modFile.tops[recClass.classType].getActiveRecords():
+            if recClass.rec_sig not in modFile.tops: continue
+            patchBlock = getattr(self.patchFile,
+                recClass.rec_sig.decode(u'ascii'))
+            for record in modFile.tops[recClass.rec_sig].getActiveRecords():
                 fid = record.fid
                 if not record.longFids: fid = mapper(fid)
                 if fid not in id_data: continue
@@ -159,9 +159,9 @@ class _SimpleImporter(ImportPatcher):
         if self.longTypes:
             modFile.convertToLongFids(self.longTypes)
         for recClass in self.srcClasses:
-            if recClass.classType not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile, recClass.classType)
-            for record in modFile.tops[recClass.classType].getActiveRecords():
+            if recClass.rec_sig not in modFile.tops: continue
+            patchBlock = getattr(self.patchFile, recClass.rec_sig)
+            for record in modFile.tops[recClass.rec_sig].getActiveRecords():
                 fid = record.fid
                 if not record.longFids: fid = mapper(fid)
                 if fid not in id_data: continue
@@ -203,8 +203,8 @@ class _SimpleImporter(ImportPatcher):
         modFileTops = self.patchFile.tops
         keep = self.patchFile.getKeeper()
         type_count = Counter()
-        types = filter(modFileTops.__contains__, types if types else map(
-            attrgetter('classType'), self.srcClasses))
+        types = filter(modFileTops.__contains__,
+            types if types else (x.rec_sig for x in self.srcClasses))
         for top_mod_rec in types:
             records = modFileTops[top_mod_rec].records
             self._inner_loop(keep, records, top_mod_rec, type_count)
@@ -574,7 +574,7 @@ class GraphicsPatcher(_SimpleImporter):
     def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data):
         recAttrs = self.recAttrs_class[recClass]
         recFidAttrs = self.recFidAttrs_class.get(recClass, None)
-        for record in srcFile.tops[recClass.classType].getActiveRecords():
+        for record in srcFile.tops[recClass.rec_sig].getActiveRecords():
             fid = mapper(record.fid)
             if recFidAttrs:
                 attr_fidvalue = dict(
@@ -687,8 +687,7 @@ class ActorImporter(_SimpleImporter):
         if not self.isActive: return
         id_data = self.id_data
         loadFactory = LoadFactory(False, *self.recAttrs_class.keys())
-        longTypes = self.longTypes & set(
-            x.classType for x in self.recAttrs_class)
+        longTypes = self.longTypes & {x.rec_sig for x in self.recAttrs_class}
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         minfs = self.patchFile.p_file_minfos
@@ -702,7 +701,7 @@ class ActorImporter(_SimpleImporter):
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
             for recClass in self.recAttrs_class:
-                if recClass.classType not in srcFile.tops: continue
+                if recClass.rec_sig not in srcFile.tops: continue
                 self.srcClasses.add(recClass)
                 self.classestemp.add(recClass)
                 self._init_data_loop(mapper, recClass, srcFile, srcMod,
@@ -719,10 +718,10 @@ class ActorImporter(_SimpleImporter):
                     cachedMasters[master] = masterFile
                 mapper = masterFile.getLongMapper()
                 for recClass in self.recAttrs_class:
-                    if recClass.classType not in masterFile.tops: continue
+                    if recClass.rec_sig not in masterFile.tops: continue
                     if recClass not in self.classestemp: continue
                     for record in masterFile.tops[
-                        recClass.classType].getActiveRecords():
+                        recClass.rec_sig].getActiveRecords():
                         fid = mapper(record.fid)
                         if fid not in temp_id_data: continue
                         for attr, value in temp_id_data[fid].iteritems():
@@ -743,7 +742,7 @@ class ActorImporter(_SimpleImporter):
                                 if keep:
                                     id_data[fid].update(temp_values)
             progress.plus()
-        self.longTypes &= set(x.classType for x in self.srcClasses)
+        self.longTypes &= {x.rec_sig for x in self.srcClasses}
         self.isActive = bool(self.srcClasses)
 
     def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data):
@@ -751,7 +750,7 @@ class ActorImporter(_SimpleImporter):
         tags_to_attrs = self.recAttrs_class[recClass]
         attrs = set(chain.from_iterable(
             attrs for t, attrs in tags_to_attrs.iteritems() if t in mod_tags))
-        for record in srcFile.tops[recClass.classType].getActiveRecords():
+        for record in srcFile.tops[recClass.rec_sig].getActiveRecords():
             fid = mapper(record.fid)
             temp_id_data[fid] = dict()
             for attr in attrs:
@@ -945,9 +944,9 @@ class NPCAIPackagePatcher(ImportPatcher):
             srcFile.convertToLongFids(target_rec_types)
             mapper = srcFile.getLongMapper()
             for recClass in (MreRecord.type_class[x] for x in target_rec_types):
-                if recClass.classType not in srcFile.tops: continue
+                if recClass.rec_sig not in srcFile.tops: continue
                 for record in srcFile.tops[
-                    recClass.classType].getActiveRecords():
+                    recClass.rec_sig].getActiveRecords():
                     fid = mapper(record.fid)
                     tempData[fid] = list(record.aiPackages)
             for master in reversed(masters):
@@ -963,10 +962,10 @@ class NPCAIPackagePatcher(ImportPatcher):
                 mapper = masterFile.getLongMapper()
                 blocks = (MreRecord.type_class[x] for x in target_rec_types)
                 for block in blocks:
-                    if block.classType not in srcFile.tops: continue
-                    if block.classType not in masterFile.tops: continue
+                    if block.rec_sig not in srcFile.tops: continue
+                    if block.rec_sig not in masterFile.tops: continue
                     for record in masterFile.tops[
-                        block.classType].getActiveRecords():
+                        block.rec_sig].getActiveRecords():
                         fid = mapper(record.fid)
                         if fid not in tempData: continue
                         if record.aiPackages == tempData[fid] and not \
@@ -1202,10 +1201,11 @@ class ImportFactions(_SimpleImporter):
         id_factions = self.id_data
         mapper = modFile.getLongMapper()
         for recClass in self.srcClasses:
-            if recClass.classType not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile, recClass.classType)
+            if recClass.rec_sig not in modFile.tops: continue
+            patchBlock = getattr(self.patchFile,
+                recClass.rec_sig.decode(u'ascii'))
             id_records = patchBlock.id_records
-            for record in modFile.tops[recClass.classType].getActiveRecords():
+            for record in modFile.tops[recClass.rec_sig].getActiveRecords():
                 fid = record.fid
                 if not record.longFids: fid = mapper(fid)
                 if fid in id_records: continue
@@ -1744,8 +1744,8 @@ class ImportActorsSpells(ImportPatcher):
             srcFile.convertToLongFids(target_rec_types)
             mapper = srcFile.getLongMapper()
             for recClass in (MreRecord.type_class[x] for x in target_rec_types):
-                if recClass.classType not in srcFile.tops: continue
-                for record in srcFile.tops[recClass.classType].getActiveRecords():
+                if recClass.rec_sig not in srcFile.tops: continue
+                for record in srcFile.tops[recClass.rec_sig].getActiveRecords():
                     fid = mapper(record.fid)
                     tempData[fid] = list(record.spells)
             for master in reversed(masters):
@@ -1760,9 +1760,9 @@ class ImportActorsSpells(ImportPatcher):
                     cachedMasters[master] = masterFile
                 mapper = masterFile.getLongMapper()
                 for block in (MreRecord.type_class[x] for x in target_rec_types):
-                    if block.classType not in srcFile.tops: continue
-                    if block.classType not in masterFile.tops: continue
-                    for record in masterFile.tops[block.classType].getActiveRecords():
+                    if block.rec_sig not in srcFile.tops: continue
+                    if block.rec_sig not in masterFile.tops: continue
+                    for record in masterFile.tops[block.rec_sig].getActiveRecords():
                         fid = mapper(record.fid)
                         if fid not in tempData: continue
                         if record.spells == tempData[fid] and not u'Actors.SpellsForceAdd' in bashTags:
@@ -2565,8 +2565,7 @@ class WeaponModsPatcher(_SimpleImporter):
         if not self.isActive: return
         id_data = self.id_data
         loadFactory = LoadFactory(False, *self.recAttrs_class.keys())
-        longTypes = self.longTypes & set(
-            x.classType for x in self.recAttrs_class)
+        longTypes = self.longTypes & {x.rec_sig for x in self.recAttrs_class}
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         minfs = self.patchFile.p_file_minfos
@@ -2580,7 +2579,7 @@ class WeaponModsPatcher(_SimpleImporter):
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
             for recClass in self.recAttrs_class:
-                if recClass.classType not in srcFile.tops: continue
+                if recClass.rec_sig not in srcFile.tops: continue
                 self.srcClasses.add(recClass)
                 self.classestemp.add(recClass)
                 self._init_data_loop(mapper, recClass, srcFile, srcMod,
@@ -2597,10 +2596,10 @@ class WeaponModsPatcher(_SimpleImporter):
                     cachedMasters[master] = masterFile
                 mapper = masterFile.getLongMapper()
                 for recClass in self.recAttrs_class:
-                    if recClass.classType not in masterFile.tops: continue
+                    if recClass.rec_sig not in masterFile.tops: continue
                     if recClass not in self.classestemp: continue
                     for record in masterFile.tops[
-                        recClass.classType].getActiveRecords():
+                        recClass.rec_sig].getActiveRecords():
                         fid = mapper(record.fid)
                         if fid not in temp_id_data: continue
                         for attr, value in temp_id_data[fid].iteritems():
@@ -2609,12 +2608,12 @@ class WeaponModsPatcher(_SimpleImporter):
                             else:
                                 id_data[fid][attr] = value
             progress.plus()
-        self.longTypes &= set(x.classType for x in self.srcClasses)
+        self.longTypes &= {x.rec_sig for x in self.srcClasses}
         self.isActive = bool(self.srcClasses)
 
     def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data):
         recAttrs = self.recAttrs_class[recClass]
-        for record in srcFile.tops[recClass.classType].getActiveRecords():
+        for record in srcFile.tops[recClass.rec_sig].getActiveRecords():
             fid = mapper(record.fid)
             #temp_id_data[fid] = dict((attr,record.__getattribute__(attr))
             # for attr in recAttrs)
@@ -2632,7 +2631,7 @@ class WeaponModsPatcher(_SimpleImporter):
         id_data = self.id_data
         type_count = {}
         for recClass in self.srcClasses:
-            type = recClass.classType
+            type = recClass.rec_sig
             if type not in modFile.tops: continue
             type_count[type] = 0
             for record in modFile.tops[type].records:
