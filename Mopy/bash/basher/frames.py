@@ -26,17 +26,18 @@ import re
 import string
 from collections import OrderedDict
 
-import wx
 from .. import bass, balt, bosh, bolt, load_order
-from ..balt import TextCtrl, StaticText, Button, \
-    RoTextCtrl, bell, Link, toggleButton, SaveButton, CancelButton, \
-    BaltFrame, Resources, HtmlCtrl, HBox, VBox, GridBox, checkBox, set_event_hook
+from ..balt import bell, Link, Resources
 from ..bolt import GPath
 from ..bosh import omods
+from ..gui import Button, CancelButton, CENTER, CheckBox, GridLayout, \
+    HLayout, Label, LayoutOptions, SaveButton, Spacer, Stretch, TextArea, \
+    TextField, VLayout, web_viewer_available, Splitter, WindowFrame, ListBox, \
+    HtmlDisplay
 
-class DocBrowser(BaltFrame):
+class DocBrowser(WindowFrame):
     """Doc Browser frame."""
-    _frame_settings_key = 'bash.modDocs'
+    _frame_settings_key = u'bash.modDocs'
     _def_size = (300, 400)
 
     def __init__(self):
@@ -52,55 +53,60 @@ class DocBrowser(BaltFrame):
         # Singleton
         Link.Frame.docBrowser = self
         # Window
-        super(DocBrowser, self).__init__(Link.Frame, title=_(u'Doc Browser'))
+        super(DocBrowser, self).__init__(Link.Frame, title=_(u'Doc Browser'),
+                                         icon_bundle=Resources.bashDocBrowser,
+                                         sizes_dict=bass.settings)
         # Base UI components
-        root_window = balt.Splitter(self)
-        mod_list_window = wx.Panel(root_window)
-        main_window = wx.Panel(root_window)
+        root_window = Splitter(self)
+        mod_list_window, main_window = root_window.make_panes(250,
+                                                              vertically=True)
         # Mod Name
-        self._mod_name_box = RoTextCtrl(mod_list_window, multiline=False)
-        self._mod_list = balt.listBox(mod_list_window,
-                                      choices=sorted(x.s for x in self._db_doc_paths.keys()),
-                                      isSort=True,
-                                      onSelect=self._do_select_mod)
+        self._mod_name_box = TextField(mod_list_window, editable=False)
+        self._mod_list = ListBox(mod_list_window,
+             choices=sorted(x.s for x in self._db_doc_paths.keys()),
+             isSort=True, onSelect=self._do_select_mod)
         # Buttons
         self._set_btn = Button(main_window, _(u'Set Doc...'),
-                               onButClick=self._do_set)
-        self._forget_btn = Button(main_window, _(u'Forget Doc...'),
-                                  onButClick=self._do_forget)
+                               btn_tooltip=u'Associates this plugin file with '
+                                           u'a document.')
+        self._set_btn.on_clicked.subscribe(self._do_set)
+        self._forget_btn = Button(main_window, _(u'Forget Doc'),
+                                  btn_tooltip=_(u'Removes the link between '
+                                                u'this plugin file and the '
+                                                u'matching document.'))
+        self._forget_btn.on_clicked.subscribe(self._do_forget)
         self._rename_btn = Button(main_window, _(u'Rename Doc...'),
-                                  onButClick=self._do_rename)
-        self._edit_btn = toggleButton(main_window, label=_(u'Edit Doc...'),
-                                      onClickToggle=self._do_edit)
+                                  btn_tooltip=_(u'Renames the document.'))
+        self._rename_btn.on_clicked.subscribe(self._do_rename)
+        self._edit_box = CheckBox(main_window, _(u'Allow Editing'),
+                                  chkbx_tooltip=_(u'Enables or disables '
+                                                  u'editing in the text field '
+                                                  u'below.'))
+        self._edit_box.on_checked.subscribe(self._do_edit)
         self._open_btn = Button(main_window, _(u'Open Doc...'),
-                                onButClick=self._do_open,
-                                button_tip=_(u'Open doc in external editor.'))
-        self._doc_name_box = RoTextCtrl(main_window, multiline=False)
-        self._doc_ctrl = HtmlCtrl(main_window)
-        self._prev_btn, self._next_btn = self._doc_ctrl.get_buttons()
-        self._buttons = [self._set_btn, self._forget_btn, self._rename_btn,
-                         self._edit_btn, self._open_btn,
-                         self._prev_btn, self._next_btn]
-        #--New layout
-        mod_list_layout = VBox(mod_list_window, spacing=4, default_grow=True)
-        mod_list_layout.add(self._mod_name_box)
-        mod_list_layout.add(self._mod_list, weight=1)
-
-        button_row_sizer = HBox(default_grow=True)
-        button_row_sizer.add_many(*self._buttons)
-        main_layout = VBox(main_window, spacing=4, default_grow=True)
-        main_layout.add(button_row_sizer)
-        main_layout.add(self._doc_name_box)
-        main_layout.add(self._doc_ctrl.web_viewer, weight=3)
-
-        root_window.SplitVertically(mod_list_window, main_window, 250)
-        root_layout = VBox(self)
-        root_layout.add(root_window, weight=1, grow=True, border=4)
+                                btn_tooltip=_(u'Opens the document in your '
+                                              u'default viewer/editor.'))
+        self._open_btn.on_clicked.subscribe(self._do_open)
+        self._doc_name_box = TextField(main_window, editable=False)
+        self._doc_ctrl = HtmlDisplay(main_window)
+        self._prev_btn, self._next_btn, self._reload_btn = \
+            self._doc_ctrl.get_buttons()
+        self._buttons = [self._edit_box, self._set_btn, self._forget_btn,
+                         self._rename_btn, self._open_btn, self._prev_btn,
+                         self._next_btn, self._reload_btn]
+        #--Mod list
+        VLayout(spacing=4, item_expand=True, items=[
+            self._mod_name_box, (self._mod_list, LayoutOptions(weight=1))
+        ]).apply_to(mod_list_window)
+        #--Text field and buttons
+        VLayout(spacing=4, item_expand=True, items=[
+            HLayout(item_expand=True, items=self._buttons),
+            self._doc_name_box, (self._doc_ctrl, LayoutOptions(weight=3))
+        ]).apply_to(main_window)
+        VLayout(item_expand=1, item_border=4, item_weight=1,
+                items=[root_window])
         for btn in self._buttons:
-            btn.Disable()
-
-    @staticmethod
-    def _resources(): return Resources.bashDocBrowser
+            btn.enabled = False
 
     @staticmethod
     def _get_is_wtxt(path=None, data=None):
@@ -123,38 +129,37 @@ class DocBrowser(BaltFrame):
             return bell()
         if not doc_path.isfile():
             balt.showWarning(self, _(u'The assigned document is not present:')
-                             + '\n  ' + doc_path.s)
+                             + u'\n  ' + doc_path.s)
         else:
             doc_path.start()
 
-    def _do_edit(self):
+    def _do_edit(self, is_editing):
         """Handle "Edit Doc" button click."""
         self.DoSave()
-        editing = self._edit_btn.GetValue()
-        self._db_is_editing[self._mod_name] = editing
-        self._doc_ctrl.set_text_editable(editing)
+        self._db_is_editing[self._mod_name] = is_editing
+        self._doc_ctrl.set_text_editable(is_editing)
         self._load_data(path=self._db_doc_paths.get(self._mod_name),
-                        editing=editing)
+                        editing=is_editing)
 
     def _do_forget(self):
         """Handle "Forget Doc" button click.
         Sets help document for current mod name to None."""
         if self._mod_name not in self._db_doc_paths:
             return
-        index = self._mod_list.FindString(self._mod_name.s)
+        index = self._mod_list.lb_index_for_str_item(self._mod_name.s)
         if index != balt.notFound:
-            self._mod_list.Delete(index)
+            self._mod_list.lb_delete_at_index(index)
         del self._db_doc_paths[self._mod_name]
         self.DoSave()
-        for btn in (self._edit_btn, self._forget_btn, self._rename_btn,
+        for btn in (self._edit_box, self._forget_btn, self._rename_btn,
                     self._open_btn):
-            btn.Disable()
-        self._doc_name_box.Clear()
+            btn.enabled = False
+        self._doc_name_box.text_content = u''
         self._load_data(data=u'')
 
-    def _do_select_mod(self, event):
+    def _do_select_mod(self, lb_selection_dex, lb_selection_str):
         """Handle mod name combobox selection."""
-        self.SetMod(event.GetString())
+        self.SetMod(lb_selection_str)
 
     def _do_set(self):
         """Handle "Set Doc" button click."""
@@ -165,12 +170,12 @@ class DocBrowser(BaltFrame):
         else:
             docs_dir = bass.settings['bash.modDocs.dir'] or bass.dirs['mods']
             file_name = GPath(u'')
-        doc_path = balt.askOpen(self ,_(u'Select doc for %s:') % mod_name.s,
+        doc_path = balt.askOpen(self, _(u'Select doc for %s:') % mod_name.s,
                                 docs_dir, file_name, u'*.*')
         if not doc_path: return
         bass.settings['bash.modDocs.dir'] = doc_path.head
         if mod_name not in self._db_doc_paths:
-            self._mod_list.Append(mod_name.s)
+            self._mod_list.lb_append(mod_name.s)
         self._db_doc_paths[mod_name] = doc_path
         self.SetMod(mod_name)
 
@@ -191,7 +196,7 @@ class DocBrowser(BaltFrame):
             else: new_html.remove()
         #--Remember change
         self._db_doc_paths[self._mod_name] = dest_path
-        self._doc_name_box.SetValue(dest_path.stail)
+        self._doc_name_box.text_content = dest_path.stail
 
     def DoSave(self):
         """Saves doc, if necessary."""
@@ -207,12 +212,12 @@ class DocBrowser(BaltFrame):
 
     def _load_data(self, path=None, data=None, editing=False):
         if path and path.cext in (u'.htm',u'.html',u'.mht') and not editing \
-                and self._doc_ctrl.html_lib_available():
+                and web_viewer_available():
             self._doc_ctrl.try_load_html(path)
         else:
             # Oddly, wxPython's LoadFile function doesn't read unicode
             # correctly, even in unicode builds
-            if data is None:
+            if data is None and path:
                 try:
                     with path.open('r',encoding='utf-8-sig') as ins:
                         data = ins.read()
@@ -225,24 +230,24 @@ class DocBrowser(BaltFrame):
         """Sets the mod to show docs for."""
         self.DoSave()
         # defaults
-        self._edit_btn.SetValue(False)
+        self._edit_box.is_checked = False
         self._doc_ctrl.set_text_editable(False)
         mod_name = GPath(mod_name)
         self._mod_name = mod_name
-        self._mod_name_box.SetValue(mod_name.s)
+        self._mod_name_box.text_content = mod_name.s
         if not mod_name:
             self._load_data(data=u'')
             for btn in self._buttons:
-                btn.Disable()
+                btn.enabled = False
             return
-        self._set_btn.Enable()
-        self._mod_list.SetSelection(self._mod_list.FindString(mod_name.s))
+        self._set_btn.enabled = True
+        self._mod_list.lb_select_index(self._mod_list.lb_index_for_str_item(mod_name.s))
         # Doc path
         doc_path = self._db_doc_paths.get(mod_name, GPath(u''))
-        self._doc_name_box.SetValue(doc_path.stail)
-        for btn in (self._forget_btn, self._rename_btn, self._edit_btn,
+        self._doc_name_box.text_content = doc_path.stail
+        for btn in (self._forget_btn, self._rename_btn, self._edit_box,
                     self._open_btn):
-            btn.Enable(bool(doc_path))
+            btn.enabled = bool(doc_path)
         # Set empty and uneditable if there's no doc path:
         if not doc_path:
             self._load_data(data=u'')
@@ -260,7 +265,7 @@ class DocBrowser(BaltFrame):
             self._load_data(data=string.Template(template)
                                             .substitute(modName=mod_name.s))
             # Start edit mode
-            self._edit_btn.SetValue(True)
+            self._edit_box.is_checked = True
             self._doc_ctrl.set_text_editable(True)
             self._doc_ctrl.set_text_modified(True)
             # Save the new file
@@ -268,7 +273,7 @@ class DocBrowser(BaltFrame):
         else:  # Otherwise it exists
             editing = self._db_is_editing.get(mod_name, False)
             if editing:
-                self._edit_btn.SetValue(True)
+                self._edit_box.is_checked = True
                 self._doc_ctrl.set_text_editable(True)
             else:
                 is_wtxt = self._get_is_wtxt(doc_path)
@@ -279,89 +284,89 @@ class DocBrowser(BaltFrame):
                                               bosh.modInfos.store_dir.join(u'Docs'))
             self._load_data(path=doc_path, editing=editing)
 
-    def OnCloseWindow(self):
+    def on_closing(self, destroy=True):
         """Handle window close event.
         Remember window size, position, etc."""
         self.DoSave()
         bass.settings['bash.modDocs.show'] = False
         Link.Frame.docBrowser = None
-        super(DocBrowser, self).OnCloseWindow()
+        super(DocBrowser, self).on_closing(destroy)
 
 #------------------------------------------------------------------------------
 _BACK, _FORWARD, _MOD_LIST, _RULE_SETS, _NOTES, _CONFIG, _SUGGEST, \
 _CRC, _VERSION, _SCAN_DIRTY, _COPY_TEXT, _UPDATE = range(12)
 
 def _get_mod_checker_setting(key, default=None):
-    return bass.settings.get('bash.modChecker.show{}'.format(key), default)
+    return bass.settings.get(u'bash.modChecker.show%s' % key, default)
 
 def _set_mod_checker_setting(key, value):
-    bass.settings['bash.modChecker.show{}'.format(key)] = value
+    bass.settings[u'bash.modChecker.show%s' % key] = value
 
-class ModChecker(BaltFrame):
+class ModChecker(WindowFrame):
     """Mod Checker frame."""
-    _frame_settings_key = 'bash.modChecker'
+    _frame_settings_key = u'bash.modChecker'
     _def_size = (475, 500)
 
     def __init__(self):
         #--Singleton
         Link.Frame.modChecker = self
         #--Window
-        super(ModChecker, self).__init__(Link.Frame, title=_(u'Mod Checker'))
+        super(ModChecker, self).__init__(Link.Frame, title=_(u'Mod Checker'),
+            icon_bundle=Resources.bashBlue, sizes_dict=bass.settings)
         #--Data
         self.orderedActive = None
         self.__merged = None
         self.__imported = None
         #--Text
         self.check_mods_text = None
-        self._html_ctrl = HtmlCtrl(self)
-        back_button, forward_button = self._html_ctrl.get_buttons()
-        self._buttons = OrderedDict()
+        self._html_ctrl = HtmlDisplay(self)
+        back_btn, forward_btn, reload_btn = self._html_ctrl.get_buttons()
+        self._controls = OrderedDict()
         self._setting_names = {}
-        def _f(key, type_, caption, setting_key=None, setting_value=None,
-               callback=self.CheckMods):
-            if type_ == 'toggle':
-                btn = toggleButton(self, caption, onClickToggle=callback)
-            elif type_ == 'check':
-                btn = checkBox(self, caption, onCheck=callback)
-            else: # type_ == 'click':
-                btn = Button(self, caption, onButClick=callback)
+        def _f(key, make_checkbox, caption_, setting_key=None,
+               setting_value=None, callback=self.CheckMods):
+            if make_checkbox:
+                btn = CheckBox(self, caption_)
+                btn.on_checked.subscribe(callback)
+            else:
+                btn = Button(self, caption_)
+                btn.on_clicked.subscribe(callback)
             if setting_key is not None:
-                btn.SetValue(bass.settings.get(
-                    'bash.modChecker.show{}'.format(setting_key), setting_value))
+                new_value = bass.settings.get(
+                    'bash.modChecker.show{}'.format(setting_key), setting_value)
+                if make_checkbox:
+                    btn.is_checked = new_value
                 self._setting_names[key] = setting_key
-            self._buttons[key] = btn
-        _f(_MOD_LIST,   'toggle', _(u'Mod List'), 'ModList', False)
-        _f(_VERSION,    'check',  _(u'Version Numbers'), 'Version', True)
-        _f(_CRC,        'check',  _(u'CRCs'),            'CRC', False)
-        _f(_RULE_SETS,  'toggle', _(u'Rule Sets'),       'RuleSets', False)
-        _f(_NOTES,      'check',  _(u'Notes'),           'Notes', True)
-        _f(_CONFIG,     'check',  _(u'Configuration'),   'Config', True)
-        _f(_SUGGEST,    'check',  _(u'Suggestions'),     'Suggest', True)
-        _f(_SCAN_DIRTY, 'toggle', (_(u'Scan for Dirty Edits')
+            self._controls[key] = btn
+        _f(_MOD_LIST,   True,  _(u'Mod List'),        'ModList', False)
+        _f(_VERSION,    True,  _(u'Version Numbers'), 'Version', True)
+        _f(_CRC,        True,  _(u'CRCs'),            'CRC', False)
+        _f(_RULE_SETS,  True,  _(u'Rule Sets'),       'RuleSets', False)
+        _f(_NOTES,      True,  _(u'Notes'),           'Notes', True)
+        _f(_CONFIG,     True,  _(u'Configuration'),   'Config', True)
+        _f(_SUGGEST,    True,  _(u'Suggestions'),     'Suggest', True)
+        _f(_SCAN_DIRTY, True,  (_(u'Scan for Dirty Edits')
                                    if bass.settings['bash.CBashEnabled']
-                                   else _(u"Scan for UDR's")))
-        _f(_COPY_TEXT,  'click',  _(u'Copy Text'), callback=self.OnCopyText)
-        _f(_UPDATE,     'click',  _(u'Update'))
+                                   else _(u"Scan for UDRs")))
+        _f(_COPY_TEXT,  False, _(u'Copy Text'), callback=self.OnCopyText)
+        _f(_UPDATE,     False, _(u'Update'))
         #--Events
-        set_event_hook(self, balt.Events.ACTIVATE, self.OnActivate)
-        # Top row
-        top_row = HBox(spacing=4)
-        top_row.add_many(back_button, forward_button,
-                         self._buttons[_MOD_LIST], self._buttons[_CRC],
-                         self._buttons[_VERSION])
-        top_row.add_stretch()
-        top_row.add(self._buttons[_COPY_TEXT])
-        # Bottom row
-        bottom_row = HBox(spacing=4)
-        bottom_row.add_many(self._buttons[_SCAN_DIRTY],
-                            self._buttons[_RULE_SETS], self._buttons[_NOTES],
-                            self._buttons[_CONFIG], self._buttons[_SUGGEST])
-        bottom_row.add_stretch()
-        bottom_row.add(self._buttons[_UPDATE])
-        # Main layout
-        main_layout = VBox(self, default_grow=True, default_border=4)
-        main_layout.add(self._html_ctrl.web_viewer, weight=1)
-        main_layout.add_many(top_row, bottom_row)
+        self.on_activate.subscribe(self.on_activation)
+        VLayout(border=4, spacing=4, item_expand=True, items=[
+            (self._html_ctrl, LayoutOptions(weight=1)),
+            HLayout(spacing=4, items=[
+                self._controls[_MOD_LIST], self._controls[_CRC],
+                self._controls[_VERSION]
+            ]),
+            HLayout(spacing=4, items=[
+                self._controls[_RULE_SETS], self._controls[_NOTES],
+                self._controls[_CONFIG], self._controls[_SUGGEST]
+            ]),
+            HLayout(spacing=4, items=[
+                self._controls[_SCAN_DIRTY], Stretch(), self._controls[_UPDATE],
+                self._controls[_COPY_TEXT], back_btn, forward_btn, reload_btn
+            ])
+        ]).apply_to(self)
         self.CheckMods()
 
     def OnCopyText(self):
@@ -373,21 +378,21 @@ class ModChecker(BaltFrame):
         text_ = re.sub(u'<[^>]+>', u'', text_, re.U)
         balt.copyToClipboard(text_)
 
-    def CheckMods(self):
+    def CheckMods(self, _new_value=None):
         """Do mod check."""
-        for btn_id in [_MOD_LIST, _RULE_SETS]:
-            _set_mod_checker_setting(self._setting_names[btn_id],
-                                     self._buttons[btn_id].GetValue())
+        for ctrl_id in [_MOD_LIST, _RULE_SETS]:
+            _set_mod_checker_setting(self._setting_names[ctrl_id],
+                                     self._controls[ctrl_id].is_checked)
         # Enable or disable the children of ModList and RuleSets buttons
-        for parent, btn_ids in [(_MOD_LIST, (_CRC, _VERSION)),
+        for parent, ctrl_ids in [(_MOD_LIST, (_CRC, _VERSION)),
                                 (_RULE_SETS, (_NOTES, _CONFIG, _SUGGEST))]:
             key = self._setting_names[parent]
-            for btn_id in btn_ids:
-                self._buttons[btn_id].Enable(_get_mod_checker_setting(key))
+            for ctrl_id in ctrl_ids:
+                self._controls[ctrl_id].enabled = _get_mod_checker_setting(key)
         # Set settings from all the buttons' values
-        for btn_id in [_NOTES, _CONFIG, _SUGGEST, _CRC, _VERSION]:
-            _set_mod_checker_setting(self._setting_names[btn_id],
-                                     self._buttons[btn_id].GetValue())
+        for ctrl_id in [_NOTES, _CONFIG, _SUGGEST, _CRC, _VERSION]:
+            _set_mod_checker_setting(self._setting_names[ctrl_id],
+                                     self._controls[ctrl_id].is_checked)
         #--Cache info from modinfos to support auto-update.
         self.orderedActive = load_order.cached_active_tuple()
         self.__merged = bosh.modInfos.merged.copy()
@@ -397,31 +402,31 @@ class ModChecker(BaltFrame):
             *[_get_mod_checker_setting(self._setting_names[key])
               for key in [_MOD_LIST, _RULE_SETS, _NOTES, _CONFIG, _SUGGEST,
                           _CRC, _VERSION]],
-            mod_checker=(None, self)[self._buttons[_SCAN_DIRTY].GetValue()])
-        if HtmlCtrl.html_lib_available():
+            mod_checker=(None, self)[self._controls[_SCAN_DIRTY].is_checked])
+        if web_viewer_available():
             log_path = bass.dirs['saveBase'].join(u'ModChecker.html')
             balt.convert_wtext_to_html(log_path, self.check_mods_text)
             self._html_ctrl.try_load_html(log_path)
         else:
             self._html_ctrl.load_text(self.check_mods_text)
 
-    def OnActivate(self,event):
+    def on_activation(self, evt_active):
         """Handle window activate/deactivate. Use for auto-updating list."""
-        if (event.GetActive() and (
+        if (evt_active and (
                 self.orderedActive != load_order.cached_active_tuple() or
                 self.__merged != bosh.modInfos.merged or
                 self.__imported != bosh.modInfos.imported)
             ):
             self.CheckMods()
 
-    def OnCloseWindow(self):
+    def on_closing(self, destroy=True):
         # Need to unset Link.Frame.modChecker here to avoid accessing a deleted
         # object when clicking the mod checker button again.
         Link.Frame.modChecker = None
-        super(ModChecker, self).OnCloseWindow()
+        super(ModChecker, self).on_closing(destroy)
 
 #------------------------------------------------------------------------------
-class InstallerProject_OmodConfigDialog(BaltFrame):
+class InstallerProject_OmodConfigDialog(WindowFrame):
     """Dialog for editing omod configuration data."""
     _size_hints = (300, 300)
 
@@ -433,56 +438,55 @@ class InstallerProject_OmodConfigDialog(BaltFrame):
         #--GUI
         super(InstallerProject_OmodConfigDialog, self).__init__(parent,
             title=_(u'Omod Config: ') + project.s,
-            style=wx.RESIZE_BORDER | wx.CAPTION | wx.CLIP_CHILDREN |
-                  wx.TAB_TRAVERSAL)
+            icon_bundle=Resources.bashBlue, sizes_dict=bass.settings,
+            caption=True, clip_children=True, tab_traversal=True)
         #--Fields
-        self.gName = TextCtrl(self, config.name, maxChars=100)
-        self.gVersion = TextCtrl(self, u'%d.%02d' % (
-            config.vMajor, config.vMinor), maxChars=32)
-        self.gWebsite = TextCtrl(self, config.website, maxChars=512)
-        self.gAuthor = TextCtrl(self, config.author, maxChars=512)
-        self.gEmail = TextCtrl(self, config.email, maxChars=512)
-        self.gAbstract = TextCtrl(self, config.abstract, multiline=True,
-                                  maxChars=4 * 1024)
-        grid = GridBox(h_spacing=4, v_spacing=4)
-        for row, (text, widget) in enumerate([(_(u'Name:'), self.gName),
-                                              (_(u'Version:'), self.gVersion),
-                                              (_(u'Website:'), self.gWebsite),
-                                              (_(u'Author:'), self.gAuthor),
-                                              (_(u'Email:'), self.gEmail)]):
-            grid.add(0, row, StaticText(self, text))
-            grid.add(1, row, widget, grow=True)
-        grid.set_stretch(col=1, weight=1)
-
-        # Bottom row
-        bottom_row = HBox(spacing=4)
-        bottom_row.add_stretch()
-        bottom_row.add(SaveButton(self, onButClick=self.DoSave, default=True))
-        bottom_row.add(CancelButton(self, onButClick=self.OnCloseWindow))
-        # Main layout
-        main_layout = VBox(self, default_grow=True, default_border=4)
-        main_layout.add(grid)
-        main_layout.add(StaticText(self, _(u'Abstract')), grow=False)
-        main_layout.add(self.gAbstract, weight=1)
-        main_layout.add(bottom_row)
-        self.SetSize((350,400))
+        self.gName = TextField(self, init_text=config.name, max_length=100)
+        self.gVersion = TextField(self, u'{:d}.{:02d}'.format(
+            config.vMajor, config.vMinor), max_length=32)
+        self.gWebsite = TextField(self, config.website, max_length=512)
+        self.gAuthor = TextField(self, config.author, max_length=512)
+        self.gEmail = TextField(self, init_text=config.email, max_length=512)
+        self.gAbstract = TextArea(self, init_text=config.abstract,
+                                  max_length=4 * 1024)
+        #--Layout
+        def _no_fill_text(txt):
+            return Label(self, txt), LayoutOptions(expand=False)
+        save_button = SaveButton(self, default=True)
+        save_button.on_clicked.subscribe(self.DoSave)
+        cancel_button = CancelButton(self)
+        cancel_button.on_clicked.subscribe(self.on_closing)
+        VLayout(item_expand=True, spacing=4, border=4, items=[
+            GridLayout(h_spacing=4, v_spacing=4, item_v_align=CENTER,
+                       stretch_cols=[1], item_expand=True, items=[
+                (_no_fill_text(_(u'Name:')), self.gName),
+                (_no_fill_text(_(u'Version:')), self.gVersion),
+                (_no_fill_text(_(u'Website:')), self.gWebsite),
+                (_no_fill_text(_(u'Author:')), self.gAuthor),
+                (_no_fill_text(_(u'Email:')), self.gEmail)]),
+            Spacer(10),
+            _no_fill_text(_(u'Abstract')),
+            (self.gAbstract, LayoutOptions(weight=1)),
+            HLayout(spacing=4, items=[save_button, cancel_button])
+        ]).apply_to(self)
+        self.component_size = (350, 400)
 
     def DoSave(self):
         """Handle save button."""
         config = self.config
         #--Text fields
-        config.name = self.gName.GetValue().strip()
-        config.website = self.gWebsite.GetValue().strip()
-        config.author = self.gAuthor.GetValue().strip()
-        config.email = self.gEmail.GetValue().strip()
-        config.abstract = self.gAbstract.GetValue().strip()
+        config.name = self.gName.text_content.strip()
+        config.website = self.gWebsite.text_content.strip()
+        config.author = self.gAuthor.text_content.strip()
+        config.email = self.gEmail.text_content.strip()
+        config.abstract = self.gAbstract.text_content.strip()
         #--Version
         maVersion = re.match(u'' r'(\d+)\.(\d+)',
-                             self.gVersion.GetValue().strip(), flags=re.U)
+                             self.gVersion.text_content.strip(), flags=re.U)
         if maVersion:
             config.vMajor,config.vMinor = map(int,maVersion.groups())
         else:
             config.vMajor,config.vMinor = (0,0)
         #--Done
         omods.OmodConfig.writeOmodConfig(self.project, self.config)
-        self.OnCloseWindow()
+        self.on_closing()

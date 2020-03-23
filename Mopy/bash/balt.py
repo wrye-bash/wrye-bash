@@ -24,19 +24,14 @@
 
 # Imports ---------------------------------------------------------------------
 import re
-import urllib
-import urlparse
-
 import bass # for dirs - try to avoid
 #--Localization
 #..Handled by bolt, so import that.
 import bolt
 from bolt import GPath, deprint
-from windows import StartURL
 from exception import AbstractError, AccessDeniedError, ArgumentError, \
     BoltError, CancelError, SkipError, StateError
 #--Python
-import cPickle
 import textwrap
 import time
 import threading
@@ -47,15 +42,17 @@ import wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from wx.lib.embeddedimage import PyEmbeddedImage
 import wx.lib.newevent
-import wx.wizard as wiz
-#--wx webview, may not be present on all systems
-try:
-    # raise ImportError
-    import wx.html2 as _wx_html2
-except ImportError:
-    _wx_html2 = None
-    deprint(
-        _(u'wx.WebView is missing, features utilizing HTML will be disabled'))
+#--gui
+from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
+    Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
+    web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
+    Font, CheckListBox, UIListCtrl, PanelWin, Color, Colors, HtmlDisplay
+from .gui.base_components import _AComponent
+
+# Print a notice if wx.html2 is missing
+if not web_viewer_available():
+    deprint(_(u'wx.html2.WebView is missing, features utilizing HTML will be '
+              u'disabled'))
 
 class Resources(object):
     #--Icon Bundles
@@ -66,28 +63,12 @@ class Resources(object):
 
 # Constants -------------------------------------------------------------------
 defId = wx.ID_ANY
-defVal = wx.DefaultValidator
 defPos = wx.DefaultPosition
-defSize = wx.DefaultSize
 
 splitterStyle = wx.SP_LIVE_UPDATE # | wx.SP_3DSASH # ugly but
 # makes borders stand out - we need something to that effect
 
 notFound = wx.NOT_FOUND
-
-# wx Types
-wxPoint = wx.Point
-wxSize = wx.Size
-
-class Font(wx.Font):
-
-    @staticmethod
-    def Style(font_, bold=False, slant=False, underline=False):
-        if bold: font_.SetWeight(wx.FONTWEIGHT_BOLD)
-        if slant: font_.SetStyle(wx.FONTSTYLE_SLANT)
-        else: font_.SetStyle(wx.FONTSTYLE_NORMAL)
-        font_.SetUnderlined(underline)
-        return font_
 
 # Settings --------------------------------------------------------------------
 __unset = bolt.Settings(dictFile=None) # type information
@@ -95,32 +76,6 @@ _settings = __unset # must be bound to bosh.settings - smelly, see #174
 sizes = {} #--Using applications should override this.
 
 # Colors ----------------------------------------------------------------------
-class Colors(object):
-    """Colour collection and wrapper for wx.ColourDatabase.
-    Provides dictionary syntax access (colors[key]) and predefined colours."""
-    def __init__(self):
-        self._colors = {}
-
-    def __setitem__(self,key,value):
-        """Add a color to the database."""
-        if not isinstance(value,str):
-            self._colors[key] = wx.Colour(*value)
-        else:
-            self._colors[key] = value
-
-    def __getitem__(self,key):
-        """Dictionary syntax: color = colours[key]."""
-        if key in self._colors:
-            key = self._colors[key]
-            if not isinstance(key,str):
-                return key
-        return wx.TheColourDatabase.Find(key)
-
-    def __iter__(self):
-        for key in self._colors:
-            yield key
-
-#--Singleton
 colors = Colors()
 
 # Images ----------------------------------------------------------------------
@@ -308,37 +263,10 @@ class ColorChecks(ImageList):
         return self.indices[shortKey]
 
 # Functions -------------------------------------------------------------------
-def fill(text_to_wrap, width=60):
+def text_wrap(text_to_wrap, width=60):
     """Wraps paragraph to width characters."""
     pars = [textwrap.fill(line, width) for line in text_to_wrap.split(u'\n')]
     return u'\n'.join(pars)
-
-def ensureDisplayed(frame,x=100,y=100):
-    """Ensure that frame is displayed."""
-    if wx.Display.GetFromWindow(frame) == -1:
-        topLeft = wx.Display(0).GetGeometry().GetTopLeft()
-        frame.MoveXY(topLeft.x+x,topLeft.y+y)
-
-def setCheckListItems(checkListBox, names, values):
-    """Convenience method for setting a bunch of wxCheckListBox items. The
-    main advantage of this is that it doesn't clear the list unless it needs
-    to. Which is good if you want to preserve the scroll position of the list.
-    """
-    if not names:
-        checkListBox.Clear()
-    else:
-        for index, (name, value) in enumerate(zip(names, values)):
-            if index >= checkListBox.GetCount():
-                checkListBox.Append(name)
-            else:
-                if index == -1:
-                    deprint(
-                        u"index = -1, name = %s, value = %s" % (name, value))
-                    continue
-                checkListBox.SetString(index, name)
-            checkListBox.Check(index, value)
-        for index in range(checkListBox.GetCount(), len(names), -1):
-            checkListBox.Delete(index - 1)
 
 # Elements --------------------------------------------------------------------
 def bell(arg=None):
@@ -346,200 +274,14 @@ def bell(arg=None):
     wx.Bell()
     return arg
 
-def tooltip(tooltip_text, wrap=50):
-    """Returns tooltip with wrapped copy of text."""
-    tooltip_text = textwrap.fill(tooltip_text, wrap)
-    return wx.ToolTip(tooltip_text)
+def HorizontalLine(parent):
+    """Returns a simple horizontal graphical line."""
+    return wx.StaticLine(parent)
 
-class TextCtrl(wx.TextCtrl):
-    """wx.TextCtrl with automatic tooltip if text goes past the width of the
-    control."""
-
-    def __init__(self, parent, value=u'', size=defSize, style=0,
-                 multiline=False, autotooltip=True, name=wx.TextCtrlNameStr,
-                 maxChars=None, onKillFocus=None, onText=None):
-        if multiline: style |= wx.TE_MULTILINE ##: would it harm to have them all multiline ?
-        wx.TextCtrl.__init__(self, parent, defId, value, size=size, style=style,
-                             name=name)
-        if maxChars: self.SetMaxLength(maxChars)
-        if autotooltip:
-            self.Bind(wx.EVT_TEXT, self.OnTextChange)
-            self.Bind(wx.EVT_SIZE, self.OnSizeChange)
-        # event handlers must call event.Skip()
-        if onKillFocus:
-            # Wrapper to hide event, but still call Skip()
-            def handle_focus_lost(event):
-                onKillFocus()
-                event.Skip()
-            self.Bind(wx.EVT_KILL_FOCUS, handle_focus_lost)
-        if onText: self.Bind(wx.EVT_TEXT, onText)
-
-    def UpdateToolTip(self, text):
-        if self.GetClientSize()[0] < self.GetTextExtent(text)[0]:
-            self.SetToolTip(tooltip(text))
-        else:
-            self.SetToolTip(tooltip(u''))
-
-    def OnTextChange(self,event):
-        self.UpdateToolTip(event.GetString())
-        event.Skip()
-    def OnSizeChange(self, event):
-        self.UpdateToolTip(self.GetValue())
-        event.Skip()
-
-class RoTextCtrl(TextCtrl):
-    """Set some styles to a read only textCtrl.
-
-    Name intentionally ugly - tmp class to accommodate current code - do not
-    use - do not imitate my fishing in kwargs."""
-    def __init__(self, *args, **kwargs):
-        """"To accommodate for common text boxes in Bash code - borderline"""
-        # set some styles
-        style = kwargs.get('style', 0)
-        style |= wx.TE_READONLY
-        special = kwargs.pop('special', False) # used in places
-        if special: style |= wx.TE_RICH2 | wx.BORDER_SUNKEN
-        if kwargs.pop('noborder', False): style |= wx.NO_BORDER
-        if kwargs.pop('hscroll', False): style |= wx.HSCROLL
-        kwargs['style'] = style
-        # override default 'multiline' parameter value, 'False', with 'True'
-        kwargs['multiline'] = kwargs.pop('multiline', True)
-        super(RoTextCtrl, self).__init__(*args, **kwargs)
-
-class ComboBox(wx.ComboBox):
-    """wx.ComboBox with automatic tooltip if text is wider than width of control."""
-    def __init__(self, *args, **kwdargs):
-        autotooltip = kwdargs.pop('autotooltip', True)
-        if kwdargs.pop('readonly', True):
-            kwdargs['style'] = kwdargs.get('style', 0) | wx.CB_READONLY
-        wx.ComboBox.__init__(self, *args, **kwdargs)
-        if autotooltip:
-            self.Bind(wx.EVT_SIZE, self.OnChange)
-            self.Bind(wx.EVT_TEXT, self.OnChange)
-
-    def OnChange(self, event):
-        if self.GetClientSize()[0] < self.GetTextExtent(self.GetValue())[0]+30:
-            self.SetToolTip(tooltip(self.GetValue()))
-        else:
-            self.SetToolTip(tooltip(u''))
-        event.Skip()
-
-def bitmapButton(parent, bitmap, button_tip=None, pos=defPos, size=defSize,
-                 style=wx.BU_AUTODRAW, val=defVal, name=u'button',
-                 onBBClick=None, onRClick=None):
-    """Creates a button, binds click function, then returns bound button."""
-    gButton = wx.BitmapButton(parent,defId,bitmap,pos,size,style,val,name)
-    if onBBClick: gButton.Bind(wx.EVT_BUTTON, lambda __event: onBBClick())
-    if onRClick: gButton.Bind(wx.EVT_CONTEXT_MENU,onRClick)
-    if button_tip: gButton.SetToolTip(tooltip(button_tip))
-    return gButton
-
-class Button(wx.Button):
-    _id = defId
-    label = u''
-
-    def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
-                 val=defVal, name='button', onButClick=None,
-                 onButClickEventful=None, button_tip=None, default=False):
-        """Create a button and bind its click function.
-        :param onButClick: a no args function to execute on button click
-        :param onButClickEventful: a function accepting as parameter the
-        EVT_BUTTON - messing with events outside balt is discouraged
-        """
-        if  not label and self.__class__.label: label = self.__class__.label
-        wx.Button.__init__(self, parent, self.__class__._id,
-                           label, pos, size, style, val, name)
-        if onButClick and onButClickEventful:
-            raise BoltError('Both onButClick and onButClickEventful specified')
-        if onButClick: self.Bind(wx.EVT_BUTTON, lambda __event: onButClick())
-        if onButClickEventful: self.Bind(wx.EVT_BUTTON, onButClickEventful)
-        if button_tip: self.SetToolTip(tooltip(button_tip))
-        if default: self.SetDefault()
-
-class OkButton(Button): _id = wx.ID_OK
-class CancelButton(Button):
-    _id = wx.ID_CANCEL
-    label = _(u'Cancel')
-
-def ok_and_cancel_sizer(parent, okButton=None):
-    return (hSizer(hspacer, okButton or OkButton(parent), hspace(),
-                   CancelButton(parent)), 0, wx.EXPAND | wx.ALL ^ wx.TOP, 6)
-
-class SaveButton(Button):
-    _id = wx.ID_SAVE
-    label = _(u'Save')
-
-class SaveAsButton(Button): _id = wx.ID_SAVEAS
-class RevertButton(Button): _id = wx.ID_SAVE
-class RevertToSavedButton(Button): _id = wx.ID_REVERT_TO_SAVED
-class OpenButton(Button): _id = wx.ID_OPEN
-class SelectAllButton(Button): _id = wx.ID_SELECTALL
-class ApplyButton(Button): _id = wx.ID_APPLY
-
-def toggleButton(parent, label=u'', pos=defPos, size=defSize, style=0,
-                 val=defVal, name='button', onClickToggle=None,
-                 toggle_tip=None):
-    """Creates a toggle button, binds toggle function, then returns bound
-    button."""
-    gButton = wx.ToggleButton(parent, defId, label, pos, size, style, val,
-                              name)
-    if onClickToggle: gButton.Bind(wx.EVT_TOGGLEBUTTON,
-                                   lambda __event: onClickToggle())
-    if toggle_tip: gButton.SetToolTip(tooltip(toggle_tip))
-    return gButton
-
-def checkBox(parent, label=u'', pos=defPos, size=defSize, style=0, val=defVal,
-             name='checkBox', onCheck=None, checkbox_tip=None, checked=False):
-    """Creates a checkBox, binds check function, then returns bound button."""
-    gCheckBox = wx.CheckBox(parent, defId, label, pos, size, style, val, name)
-    if onCheck: gCheckBox.Bind(wx.EVT_CHECKBOX, lambda __event: onCheck())
-    if checkbox_tip: gCheckBox.SetToolTip(tooltip(checkbox_tip))
-    gCheckBox.SetValue(checked)
-    return gCheckBox
-
-class StaticText(wx.StaticText):
-    """Static text element."""
-
-    def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
-                 noAutoResize=False, name=u"staticText"):
-        if noAutoResize: style |= wx.ST_NO_AUTORESIZE
-        wx.StaticText.__init__(self, parent, defId, label, pos, size, style,
-                               name)
-        self._label = label # save the unwrapped text
-        self.Rewrap()
-
-    def Rewrap(self, width=None):
-        self.Freeze()
-        self.SetLabel(self._label)
-        self.Wrap(width or self.GetSize().width)
-        self.Thaw()
-
-def spinCtrl(parent, value=u'', pos=defPos, size=defSize,
-             style=wx.SP_ARROW_KEYS, min=0, max=100, initial=0,
-             name=u'wxSpinctrl', onSpin=None, spin_tip=None):
-    """Spin control with event and tip setting."""
-    gSpinCtrl = wx.SpinCtrl(parent, defId, value, pos, size, style, min, max,
-                            initial, name)
-    if onSpin: gSpinCtrl.Bind(wx.EVT_SPINCTRL, lambda __event: onSpin())
-    if spin_tip: gSpinCtrl.SetToolTip(tooltip(spin_tip))
-    return gSpinCtrl
-
-def listBox(parent, choices=None, **kwargs):
-    kind = kwargs.pop('kind', 'list')
-    # cater for existing CheckListBox and ListBox style variations
-    style = 0
-    if kwargs.pop('isSingle', kind == 'list'): style |= wx.LB_SINGLE
-    if kwargs.pop('isSort', False): style |= wx.LB_SORT
-    if kwargs.pop('isHScroll', False): style |= wx.LB_HSCROLL
-    if kwargs.pop('isExtended', False): style |= wx.LB_EXTENDED
-    cls = wx.ListBox if kind=='list' else wx.CheckListBox
-    gListBox = cls(parent, choices=choices, style=style) if choices else cls(
-        parent, style=style)
-    callback = kwargs.pop('onSelect', None)
-    if callback: gListBox.Bind(wx.EVT_LISTBOX, callback)
-    callback = kwargs.pop('onCheck', None)
-    if callback: gListBox.Bind(wx.EVT_CHECKLISTBOX, callback)
-    return gListBox
+def ok_and_cancel_group(parent, on_ok=None):
+    ok_button = OkButton(parent)
+    ok_button.on_clicked.subscribe(on_ok)
+    return HLayout(spacing=4, items=[ok_button, CancelButton(parent)])
 
 def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
     """Tailored to current usages - IAW: do not use."""
@@ -549,131 +291,9 @@ def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
             bitmap = bmp(wx.ART_WARNING,wx.ART_MESSAGE_BOX, size)
         elif special == 'undo':
             return bmp(wx.ART_UNDO,wx.ART_TOOLBAR,size)
-        else: raise ArgumentError(u'special must be either warn or undo: ' +
-                                  unicode(special, "utf-8") + u' given')
-    return wx.StaticBitmap(parent, defId, bitmap)
-
-# Sizers ----------------------------------------------------------------------
-hspacer = ((0, 0), 1) #--Used to space elements apart.
-def hspace(pixels=4):
-    return (pixels, 0),
-
-def vspace(pixels=4):
-    return (0, pixels),
-
-def _aSizer(sizer, *elements):
-    """Adds elements to a sizer."""
-    for element in elements:
-        if isinstance(element,tuple):
-            if element[0] is not None:
-                sizer.Add(*element)
-        elif element is not None:
-            sizer.Add(element)
-    return sizer
-
-def hSizer(*elements):
-    """Horizontal sizer."""
-    return _aSizer(wx.BoxSizer(wx.HORIZONTAL), *elements)
-
-def vSizer(*elements):
-    """Vertical sizer and elements."""
-    return _aSizer(wx.BoxSizer(wx.VERTICAL), *elements)
-
-class VSizer(wx.BoxSizer):
-    """Alpha sizer API attempt - don't use!"""
-
-    def __init__(self, *args):
-        super(VSizer, self).__init__(wx.VERTICAL)
-        _aSizer(self, *args)
-
-    def AddElements(self, *args):
-        _aSizer(self, *args)
-
-def hsbSizer(parent, box_label=u'', *elements):
-    """A horizontal box sizer, but surrounded by a static box."""
-    return _aSizer(wx.StaticBoxSizer(wx.StaticBox(parent, label=box_label),
-                                     wx.HORIZONTAL), *elements)
-class _SizerWrapper(object):
-    pass
-
-class Box(_SizerWrapper):
-    def __init__(self, vertical=False, parent=None, spacing=0,
-                 default_weight=0, default_grow=False, default_border=0):
-        self._spacing = spacing
-        self._sizer = wx.BoxSizer(wx.VERTICAL if vertical else wx.HORIZONTAL)
-        if parent is not None:
-            parent.SetSizer(self._sizer)
-        self.default_weight = default_weight
-        self.default_grow = default_grow
-        self.default_border = default_border
-
-    def add(self, element, weight=None, grow=None, border=None):
-        if isinstance(element, _SizerWrapper):
-            element = element._sizer
-        if weight is None:
-            weight = self.default_weight
-        if grow is None:
-            grow = self.default_grow
-        if border is None:
-            border = self.default_border
-        flags = wx.ALL | wx.ALIGN_CENTER_VERTICAL
-        if grow:
-            flags |= wx.EXPAND
-        if self._spacing > 0 and not self._sizer.IsEmpty():
-            self._sizer.AddSpacer(self._spacing)
-        self._sizer.Add(element, proportion=weight, flag=flags, border=border)
-
-    def add_many(self, *elements):
-        for element in elements:
-            self.add(element)
-
-    def add_spacer(self, height=4):
-        self._sizer.AddSpacer(height)
-
-    def add_stretch(self, weight=1):
-        self._sizer.AddStretchSpacer(prop=weight)
-
-
-class HBox(Box):
-    def __init__(self, *args, **kwargs):
-        super(HBox, self).__init__(False, *args, **kwargs)
-
-class VBox(Box):
-    def __init__(self, *args, **kwargs):
-        super(VBox, self).__init__(True, *args, **kwargs)
-
-class GridBox(_SizerWrapper):
-    def __init__(self, parent=None, h_spacing=0, v_spacing=0,
-                 default_grow=False, default_border=0):
-        self._sizer = wx.GridBagSizer(hgap=h_spacing, vgap=v_spacing)
-        if parent is not None:
-            parent.SetSizer(self._sizer)
-        self.default_grow = default_grow
-        self.default_border = default_border
-
-    def add(self, col, row, element, grow=None, border=None):
-        if isinstance(element, _SizerWrapper):
-            element = element._sizer
-        if grow is None:
-            grow = self.default_grow
-        if border is None:
-            border = self.default_border
-        flags = wx.ALL
-        if grow:
-            flags |= wx.EXPAND
-        self._sizer.Add(element, (row, col), flag=flags,
-                        border=border)
-
-    def set_stretch(self, col=None, row=None, weight=0):
-        if row is not None:
-            if self._sizer.IsRowGrowable(row):
-                self._sizer.RemoveGrowableRow(row)
-            self._sizer.AddGrowableRow(row, proportion=weight)
-        if col is not None:
-            if self._sizer.IsColGrowable(col):
-                self._sizer.RemoveGrowableCol(col)
-            self._sizer.AddGrowableCol(col, proportion=weight)
-
+        else: raise ArgumentError(
+            u'special must be either warn or undo: %r given' % special)
+    return wx.StaticBitmap(_AComponent._resolve(parent), defId, bitmap)
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -692,76 +312,67 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
     to true. continueKey must end in '.continue' - should be enforced
     """
     #--ContinueKey set?
-    if _settings.get(continueKey): return wx.ID_OK
+    if _settings.get(continueKey): return True
     #--Generate/show dialog
     checkBoxTxt = _(u"Don't show this in the future.")
-    if canVista:
-        result = vistaDialog(parent,
-                             title=title,
-                             message=message,
-                             buttons=[(wx.ID_OK, 'ok'),
-                                      (wx.ID_CANCEL, 'cancel')],
-                             checkBoxTxt=checkBoxTxt,
-                             icon='warning',
-                             heading=u'',
-                             )
-        check = result[1]
-        result = result[0]
-    else:
-        result, check = _continueDialog(parent, message, title, checkBoxTxt)
+    result, check = _ContinueDialog.display_dialog(
+        _AComponent._resolve(parent), title=title, message=message,
+        checkBoxTxt=checkBoxTxt)
     if check:
         _settings[continueKey] = 1
-    return result in (wx.ID_OK,wx.ID_YES)
+    return result
 
 def askContinueShortTerm(parent, message, title=_(u'Warning')):
     """Shows a modal continue query  Returns True to continue.
-    Also provides checkbox "Don't show this in for rest of operation."."""
+    Also provides checkbox "Don't show this for rest of operation."."""
     #--Generate/show dialog
     checkBoxTxt = _(u"Don't show this for the rest of operation.")
-    if canVista:
-        buttons=[(wx.ID_OK, 'ok'), (wx.ID_CANCEL, 'cancel')]
-        result = vistaDialog(parent,
-                             title=title,
-                             message=message,
-                             buttons=buttons,
-                             checkBoxTxt=checkBoxTxt,
-                             icon='warning',
-                             heading=u'',
-                             )
-        check = result[1]
-        result = result[0]
-    else:
-        result, check = _continueDialog(parent, message, title, checkBoxTxt)
-    if result in (wx.ID_OK, wx.ID_YES):
+    result, check = _ContinueDialog.display_dialog(
+        _AComponent._resolve(parent), title=title, message=message,
+        checkBoxTxt=checkBoxTxt)
+    if result:
         if check:
             return 2
         return True
     return False
 
-def _continueDialog(parent, message, title, checkBoxText):
-    with Dialog(parent, title, size=(350, 200)) as dialog:
-        icon = staticBitmap(dialog)
-        gCheckBox = checkBox(dialog, checkBoxText)
+class _ContinueDialog(DialogWindow):
+    def __init__(self, parent, message, title, checkBoxText):
+        super(_ContinueDialog, parent).__init__(parent, title, sizes_dict=sizes, size=(350, -1))
+        self.gCheckBox = CheckBox(self, checkBoxText)
         #--Layout
-        sizer = vSizer(
-            (hSizer((icon, 0, wx.ALL, 6), hspace(6),
-                    (StaticText(dialog, message, noAutoResize=True), 1,
-                     wx.EXPAND)
-                    ), 1, wx.EXPAND | wx.ALL, 6),
-            (gCheckBox, 0, wx.EXPAND | wx.ALL ^ wx.TOP, 6),
-            ok_and_cancel_sizer(dialog),
-            )
-        dialog.SetSizer(sizer)
+        VLayout(border=6, spacing=6, item_expand=True, items=[
+            (HLayout(spacing=6, items=[
+                (staticBitmap(self), LayoutOptions(border=6, v_align=TOP)),
+                (Label(self, message), LayoutOptions(expand=True, weight=1))]),
+             LayoutOptions(weight=1)),
+            self.gCheckBox,
+            ok_and_cancel_group(self)
+        ]).apply_to(self)
+
+    def show_modal(self):
         #--Get continue key setting and return
-        result = dialog.ShowModal()
-        check = gCheckBox.GetValue()
+        result = super(_ContinueDialog, self).show_modal()
+        check = self.gCheckBox.is_checked
+        return result, check
+
+    @classmethod
+    def display_dialog(cls, *args, **kwargs):
+        #--Get continue key setting and return
+        if canVista:
+            result, check = vistaDialog(*args, **kwargs)
+        else:
+            return super(_ContinueDialog, cls).display_dialog(*args, **kwargs)
         return result, check
 
 #------------------------------------------------------------------------------
+# TODO(inf) de-wx! move all the ask* methods to gui? Then we can easily
+#  resolve wrapped parents
 def askOpen(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=wx.FD_OPEN,mustExist=False):
     """Show as file dialog and return selected path(s)."""
     defaultDir,defaultFile = [GPath(x).s for x in (defaultDir,defaultFile)]
-    dialog = wx.FileDialog(parent,title,defaultDir,defaultFile,wildcard, style)
+    dialog = wx.FileDialog(_AComponent._resolve(parent), title, defaultDir,
+                           defaultFile, wildcard, style)
     if dialog.ShowModal() != wx.ID_OK:
         result = False
     elif style & wx.FD_MULTIPLE:
@@ -789,7 +400,8 @@ def askSave(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=w
 #------------------------------------------------------------------------------
 def askText(parent, message, title=u'', default=u'', strip=True):
     """Shows a text entry dialog and returns result or None if canceled."""
-    with wx.TextEntryDialog(parent, message, title, default) as dialog:
+    with wx.TextEntryDialog(_AComponent._resolve(parent), message, title,
+                            default) as dialog:
         if dialog.ShowModal() != wx.ID_OK: return None
         txt = dialog.GetValue()
         return txt.strip() if strip else txt
@@ -797,8 +409,8 @@ def askText(parent, message, title=u'', default=u'', strip=True):
 #------------------------------------------------------------------------------
 def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
     """Shows a text entry dialog and returns result or None if canceled."""
-    with wx.NumberEntryDialog(parent, message, prompt, title, value, min,
-                              max) as dialog:
+    with wx.NumberEntryDialog(_AComponent._resolve(parent), message, prompt,
+                              title, value, min, max) as dialog:
         if dialog.ShowModal() != wx.ID_OK: return None
         return dialog.GetValue()
 
@@ -811,9 +423,10 @@ except ImportError: # bare linux (in wine it's imported but malfunctions)
     _win = None
     canVista = False
 
-def vistaDialog(parent, message, title, buttons=[], checkBoxTxt=None,
-                icon=None, commandLinks=True, footer=u'', expander=[],
-                heading=u''):
+def vistaDialog(parent, message, title, checkBoxTxt=None,
+                buttons=((_win.BTN_OK, 'ok'), (_win.BTN_CANCEL, 'cancel')),
+                icon='warning', commandLinks=True, footer=u'',
+                expander=[], heading=u''):
     """Always guard with canVista == True"""
     heading = heading if heading is not None else title
     title = title if heading is not None else u'Wrye Bash'
@@ -835,16 +448,17 @@ def vistaDialog(parent, message, title, buttons=[], checkBoxTxt=None,
         if title.startswith(u'+'): title = title[1:]
         if title == button:
             if checkBoxTxt:
-                return id_,checkbox
+                return id_ in _win.GOOD_EXITS, checkbox
             else:
-                return id_
-    return None, checkbox
+                return id_ in _win.GOOD_EXITS, None
+    return False, checkbox
 
 def askStyled(parent,message,title,style,**kwdargs):
     """Shows a modal MessageDialog.
     Use ErrorMessage, WarningMessage or InfoMessage."""
+    parent = _AComponent._resolve(parent)
     if canVista:
-        buttons = []
+        vista_btn = []
         icon = None
         if style & wx.YES_NO:
             yes = 'yes'
@@ -853,26 +467,23 @@ def askStyled(parent,message,title,style,**kwdargs):
                 yes = 'Yes'
             elif style & wx.NO_DEFAULT:
                 no = 'No'
-            buttons.append((wx.ID_YES,yes))
-            buttons.append((wx.ID_NO,no))
+            vista_btn.append((_win.BTN_YES, yes))
+            vista_btn.append((_win.BTN_NO, no))
         if style & wx.OK:
-            buttons.append((wx.ID_OK,'ok'))
+            vista_btn.append((_win.BTN_OK, 'ok'))
         if style & wx.CANCEL:
-            buttons.append((wx.ID_CANCEL,'cancel'))
+            vista_btn.append((_win.BTN_CANCEL, 'cancel'))
         if style & (wx.ICON_EXCLAMATION|wx.ICON_INFORMATION):
             icon = 'warning'
         if style & wx.ICON_HAND:
             icon = 'error'
-        result = vistaDialog(parent,
-                             message=message,
-                             title=title,
-                             icon=icon,
-                             buttons=buttons)
+        result, _check = vistaDialog(parent, message=message, title=title,
+                                     icon=icon, buttons=vista_btn)
     else:
-        dialog = wx.MessageDialog(parent,message,title,style)
-        result = dialog.ShowModal()
+        dialog = wx.MessageDialog(parent,message,title,style) # TODO de-wx!
+        result = dialog.ShowModal() in (wx.ID_OK, wx.ID_YES)
         dialog.Destroy()
-    return result in (wx.ID_OK,wx.ID_YES)
+    return result
 
 def askOk(parent,message,title=u'',**kwdargs):
     """Shows a modal error message."""
@@ -906,176 +517,65 @@ def showInfo(parent,message,title=_(u'Information'),**kwdargs):
     return askStyled(parent,message,title,wx.OK|wx.ICON_INFORMATION,**kwdargs)
 
 #------------------------------------------------------------------------------
-
-class HtmlCtrl(object):
-    @staticmethod
-    def html_lib_available(): return bool(_wx_html2)
-
-    def __init__(self, parent):
-        ctrl = self.web_viewer = wx.Window(parent)
-        # init the fallback/plaintext widget
-        self._text_ctrl = RoTextCtrl(ctrl, autotooltip=False)
-        items = [self._text_ctrl]
-        def _make_button(bitmap_id, callback):
-            return bitmapButton(parent, wx.ArtProvider_GetBitmap(
-                bitmap_id, wx.ART_HELP_BROWSER, (16, 16)), onBBClick=callback)
-        self._prev_button = _make_button(wx.ART_GO_BACK, self.go_back)
-        self._next_button = _make_button(wx.ART_GO_FORWARD, self.go_forward)
-        if _wx_html2:
-            self._html_ctrl = _wx_html2.WebView.New(ctrl)
-            self._html_ctrl.Bind(
-                _wx_html2.EVT_WEBVIEW_LOADED,
-                lambda _event: self._update_buttons(enable_html=True))
-            self._html_ctrl.Bind(
-                _wx_html2.EVT_WEBVIEW_NEWWINDOW,
-                lambda event: self._open_in_external(event.GetURL()))
-            items.append(self._html_ctrl)
-            self._text_ctrl.Disable()
-        main_layout = VBox(ctrl, default_weight=4, default_grow=True)
-        main_layout.add_many(*items)
-        self.switch_to_text() # default to text
-
-    @staticmethod
-    def _open_in_external(target_url):
-        # We don't support tabs and windows, just open it in the user's browser
-        # TODO(inf) just webbrowser.open() instead?
-        StartURL(target_url)
-
-    def _update_buttons(self, enable_html):
-        if _wx_html2:
-            self._html_ctrl.Enable(enable_html)
-            self._html_ctrl.Show(enable_html)
-        self._text_ctrl.Enable(not enable_html)
-        self._text_ctrl.Show(not enable_html)
-        self._prev_button.Enable(enable_html and self._html_ctrl.CanGoBack())
-        self._next_button.Enable(enable_html and
-                                 self._html_ctrl.CanGoForward())
-
-    def go_back(self):
-        # Sanity check, shouldn't ever hit this
-        if self._html_ctrl.CanGoBack():
-            self._html_ctrl.GoBack()
-        # HTML must be enabled, otherwise the button wouldn't be enabled
-        self._update_buttons(enable_html=True)
-
-    def go_forward(self):
-        if self._html_ctrl.CanGoForward():
-            self._html_ctrl.GoForward()
-        self._update_buttons(enable_html=True)
-
-    @property
-    def fallback_text(self):
-        return self._text_ctrl.GetValue()
-
-    @fallback_text.setter
-    def fallback_text(self, text_):
-        self._text_ctrl.SetValue(text_)
-
-    def load_text(self, text_):
-        self._text_ctrl.SetValue(text_)
-        self._text_ctrl.SetModified(False)
-        self.switch_to_text()
-
-    def is_text_modified(self):
-        return self._text_ctrl.IsModified()
-
-    def set_text_modified(self, modified):
-        self._text_ctrl.SetModified(modified)
-
-    def set_text_editable(self, editable):
-        # type: (bool) -> None
-        self._text_ctrl.SetEditable(editable)
-
-    def switch_to_html(self):
-        if not _wx_html2: return
-        self._update_buttons(enable_html=True)
-        self.web_viewer.Layout()
-
-    def switch_to_text(self):
-        self._update_buttons(enable_html=False)
-        self.web_viewer.Layout()
-
-    def get_buttons(self):
-        return self._prev_button, self._next_button
-
-    def try_load_html(self, file_path, file_text=u''):
-        # type: (bolt.Path) -> None
-        """Load a HTML file if wx.WebView is available, or load the text."""
-        if _wx_html2:
-            self._html_ctrl.ClearHistory()
-            url = urlparse.urljoin(u'file:', urllib.pathname2url(file_path.s))
-            self._html_ctrl.LoadURL(url)
-            self.switch_to_html()
-        else:
-            self.load_text(file_text)
-
 class _Log(object):
     _settings_key = 'balt.LogMessage'
-    def __init__(self, parent, logText, title=u'', asDialog=True,
-                 fixedFont=False, log_icons=None):
+    def __init__(self, parent, title=u'', asDialog=True, log_icons=None):
         self.asDialog = asDialog
-        self.window = self._dialog_or_frame(log_icons, parent, title)
-
-    def _dialog_or_frame(self, log_icons, parent, title):
         #--Sizing
-        pos = _settings.get(self._settings_key + '.pos', defPos)
-        size = _settings.get(self._settings_key + '.size', (400, 400))
-        #--Dialog or Frame
+        key__pos_ = self._settings_key + u'.pos'
+        key__size_ = self._settings_key + u'.size'
+        #--DialogWindow or WindowFrame
         if self.asDialog:
-            window = Dialog(parent, title, pos=pos, size=size)
+            window = DialogWindow(parent, title, sizes_dict=_settings,
+                                  icon_bundle=log_icons, size_key=key__size_,
+                                  pos_key=key__pos_)
         else:
-            window = wx.Frame(parent, defId, title, pos=pos, size=size, style=(
-                wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU |
-                wx.CLOSE_BOX | wx.CLIP_CHILDREN))
-        if log_icons: window.SetIcons(log_icons)
-        window.SetSizeHints(200, 200)
-        window.Bind(wx.EVT_CLOSE, self._showLogClose) # Destroy the window!
-        return window
-
-    def _showLogClose(self, evt=None):
-        """Handle log message closing."""
-        window = evt.GetEventObject()
-        if not window.IsIconized() and not window.IsMaximized():
-            _settings[self._settings_key + '.pos'] = tuple(window.GetPosition())
-            _settings[self._settings_key + '.size'] = tuple(window.GetSize())
-        window.Destroy()
+            style_ = wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU |  \
+                     wx.CLOSE_BOX | wx.CLIP_CHILDREN
+            window = WindowFrame(parent, title, log_icons or Resources.bashBlue,
+                                 _base_key=self._settings_key,
+                                 sizes_dict=_settings, style=style_)
+        window.set_min_size(200, 200)
+        self.window = window
 
     def ShowLog(self):
         #--Show
-        if self.asDialog: self.window.ShowModal()
-        else: self.window.Show()
+        if self.asDialog: self.window.show_modal()
+        else: self.window.show_frame()
 
 class Log(_Log):
     def __init__(self, parent, logText, title=u'', asDialog=True,
                  fixedFont=False, log_icons=None):
         """Display text in a log window"""
-        super(Log, self).__init__(parent, logText, title, asDialog, fixedFont,
-                                  log_icons)
-        self.window.SetBackgroundColour(wx.NullColour) #--Bug workaround to ensure that default colour is being used.
+        super(Log, self).__init__(parent, title, asDialog, log_icons)
+        #--Bug workaround to ensure that default colour is being used - if not
+        # called we get white borders instead of grey todo PY3: test if needed
+        self.window.reset_background_color()
         #--Text
-        txtCtrl = RoTextCtrl(self.window, logText, special=True, autotooltip=False)
-        txtCtrl.SetValue(logText)
+        txtCtrl = TextArea(self.window, init_text=logText, auto_tooltip=False)
+                          # special=True) SUNKEN_BORDER and TE_RICH2
+        # TODO(nycz): GUI fixed width font
         if fixedFont:
             fixedFont = wx.SystemSettings.GetFont(wx.SYS_ANSI_FIXED_FONT)
             fixedFont.SetPointSize(8)
             fixedStyle = wx.TextAttr()
             #fixedStyle.SetFlags(0x4|0x80)
             fixedStyle.SetFont(fixedFont)
-            txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
-        #--Buttons
-        gOkButton = OkButton(self.window, onButClick=self.window.Close, default=True)
+            # txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
         #--Layout
-        self.window.SetSizer(
-            vSizer((txtCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
-                   (gOkButton,0,wx.ALIGN_RIGHT|wx.ALL,4),
-            ))
+        ok_button = OkButton(self.window, default=True)
+        ok_button.on_clicked.subscribe(self.window.close_win)
+        VLayout(border=2, items=[
+            (txtCtrl, LayoutOptions(expand=True, weight=1, border=2)),
+            (ok_button, LayoutOptions(h_align=RIGHT, border=2))
+        ]).apply_to(self.window)
         self.ShowLog()
 
 #------------------------------------------------------------------------------
 class WryeLog(_Log):
     _settings_key = 'balt.WryeLog'
     def __init__(self, parent, logText, title=u'', asDialog=True,
-                 fixedFont=False, log_icons=None):
+                 log_icons=None):
         """Convert logText from wtxt to html and display. Optionally,
         logText can be path to an html file."""
         if isinstance(logText, bolt.Path):
@@ -1084,26 +584,22 @@ class WryeLog(_Log):
             logPath = _settings.get('balt.WryeLog.temp',
                 bolt.Path.getcwd().join(u'WryeLogTemp.html'))
             convert_wtext_to_html(logPath, logText)
-        super(WryeLog, self).__init__(parent, logText, title, asDialog,
-                                      fixedFont, log_icons)
+        super(WryeLog, self).__init__(parent, title, asDialog, log_icons)
         #--Text
-        self._html_ctrl = HtmlCtrl(self.window)
+        self._html_ctrl = HtmlDisplay(self.window)
         self._html_ctrl.try_load_html(file_path=logPath)
         #--Buttons
-        gOkButton = OkButton(self.window, onButClick=self.window.Close, default=True)
+        gOkButton = OkButton(self.window, default=True)
+        gOkButton.on_clicked.subscribe(self.window.close_win)
         if not asDialog:
-            self.window.SetBackgroundColour(gOkButton.GetBackgroundColour())
+            self.window.set_background_color(gOkButton.get_background_color())
         #--Layout
-        prev_button, next_button = self._html_ctrl.get_buttons()
-        self.window.SetSizer(
-            vSizer(
-                (self._html_ctrl.web_viewer,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
-                (hSizer(prev_button, next_button,
-                    hspacer,
-                    gOkButton,
-                    ),0,wx.ALL|wx.EXPAND,4),
-                )
-            )
+        VLayout(border=2, item_expand=True, items=[
+            (self._html_ctrl, LayoutOptions(weight=1)),
+            (HLayout(items=(self._html_ctrl.get_buttons()
+                            + (Stretch(), gOkButton))),
+             LayoutOptions(border=2))
+        ]).apply_to(self.window)
         self.ShowLog()
 
 def convert_wtext_to_html(logPath, logText):
@@ -1132,7 +628,6 @@ class ListEditorData(object):
         self.showRemove = False
         self.showSave = False
         self.showCancel = False
-        self.caption = None
         #--Editable?
         self.showInfo = False
         self.infoWeight = 1 #--Controls width of info pane
@@ -1166,37 +661,7 @@ class ListEditorData(object):
         pass
 
 #------------------------------------------------------------------------------
-class Dialog(wx.Dialog):
-    title = u'OVERRIDE'
-
-    def __init__(self, parent=None, title=None, size=defSize, pos=defPos,
-                 style=0, resize=True, caption=False):
-        ##: drop parent/resize parameters(parent=Link.Frame (test),resize=True)
-        self.sizesKey = self.__class__.__name__
-        self.title = title or self.__class__.title
-        style |= wx.DEFAULT_DIALOG_STYLE
-        self.resizable = resize
-        if resize: style |= wx.RESIZE_BORDER
-        if caption: style |= wx.CAPTION
-        super(Dialog, self).__init__(parent, title=self.title, size=size,
-                                     pos=pos, style=style)
-        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow) # used in ImportFaceDialog and ListEditor
-
-    def OnCloseWindow(self, event):
-        """Handle window close event.
-        Remember window size, position, etc."""
-        if self.resizable: sizes[self.sizesKey] = tuple(self.GetSize())
-        event.Skip()
-
-    @classmethod
-    def Display(cls, *args, **kwargs):
-        """Instantiate a dialog, display it and return the ShowModal result."""
-        with cls(*args, **kwargs) as dialog:
-            return dialog.ShowModal()
-
-    def EndModalOK(self): self.EndModal(wx.ID_OK)
-
-class ListEditor(Dialog):
+class ListEditor(DialogWindow):
     """Dialog for editing lists."""
 
     def __init__(self, parent, title, data, orderedDict=None):
@@ -1213,27 +678,20 @@ class ListEditor(Dialog):
         self._listEditorData = data #--Should be subclass of ListEditorData
         self._list_items = data.getItemList()
         #--GUI
-        super(ListEditor, self).__init__(parent, title)
-        # overrides Dialog.sizesKey
-        self.sizesKey = self._listEditorData.__class__.__name__
-        #--Caption
-        if data.caption:
-            captionText = StaticText(self,data.caption)
-        else:
-            captionText = None
+        super(ListEditor, self).__init__(parent, title, sizes_dict=sizes)
+        # overrides DialogWindow.sizesKey
+        self._size_key = self._listEditorData.__class__.__name__
         #--List Box
-        self.listBox = listBox(self, choices=self._list_items)
-        self.listBox.SetSizeHints(125,150)
+        self.listBox = ListBox(self, choices=self._list_items)
+        self.listBox.set_min_size(125, 150)
         #--Infobox
+        self.gInfoBox = None # type: TextArea
         if data.showInfo:
-            self.gInfoBox = TextCtrl(self,size=(130,-1),
-                style=(self._listEditorData.infoReadOnly*wx.TE_READONLY) |
-                      wx.TE_MULTILINE | wx.BORDER_SUNKEN)
-            if not self._listEditorData.infoReadOnly:
-                self.gInfoBox.Bind(wx.EVT_TEXT,
-                                   lambda __event: self.OnInfoEdit())
-        else:
-            self.gInfoBox = None
+            editable = not self._listEditorData.infoReadOnly
+            self.gInfoBox = TextArea(self, editable=editable)
+            if editable:
+                self.gInfoBox.on_text_changed.subscribe(self.OnInfoEdit)
+            # TODO(nycz): GUI size=(130, -1), SUNKEN_BORDER
         #--Buttons
         buttonSet = [
             (data.showAdd,    _(u'Add'),    self.DoAdd),
@@ -1245,32 +703,30 @@ class ListEditor(Dialog):
         for k,v in (orderedDict or {}).items():
             buttonSet.append((True, k, v))
         if sum(bool(x[0]) for x in buttonSet):
-            buttons = vSizer()
-            for (flag,defLabel,func) in buttonSet:
-                if not flag: continue
-                label = (flag == True and defLabel) or flag
-                buttons.Add(Button(self, label, onButClick=func),
-                            0, wx.LEFT | wx.TOP, 4)
+            def _btn(btn_label, btn_callback):
+                new_button = Button(self, btn_label)
+                new_button.on_clicked.subscribe(btn_callback)
+                return new_button
+            new_buttons = [_btn(defLabel, func) for flag, defLabel, func
+                           in buttonSet if flag]
+            buttons = VLayout(spacing=4, items=new_buttons)
         else:
             buttons = None
         #--Layout
-        sizer = vSizer(
-            (captionText,0,wx.LEFT|wx.TOP,4),
-            (hSizer(
-                (self.listBox,1,wx.EXPAND|wx.TOP,4),
-                (self.gInfoBox,self._listEditorData.infoWeight,wx.EXPAND|wx.TOP,4),
-                (buttons,0,wx.EXPAND),
-                ),1,wx.EXPAND)
-            )
+        layout = VLayout(border=4, spacing=4, items=[
+            (HLayout(spacing=4, item_expand=True, items=[
+                (self.listBox, LayoutOptions(weight=1)),
+                (self.gInfoBox, LayoutOptions(weight=self._listEditorData.infoWeight)),
+                buttons
+             ]), LayoutOptions(weight=1, expand=True))])
         #--Done
-        if self.sizesKey in sizes:
-            self.SetSizer(sizer)
-            self.SetSize(sizes[self.sizesKey])
+        if self._size_key in sizes:
+            layout.apply_to(self)
+            self.component_position = sizes[self._size_key]
         else:
-            self.SetSizerAndFit(sizer)
+            layout.apply_to(self, fit=True)
 
-    def GetSelected(self):
-        return self.listBox.GetNextItem(-1,wx.LIST_NEXT_ALL,wx.LIST_STATE_SELECTED)
+    def GetSelected(self): return self.listBox.lb_get_next_item(-1)
 
     #--List Commands
     def DoAdd(self):
@@ -1279,20 +735,20 @@ class ListEditor(Dialog):
         if newItem and newItem not in self._list_items:
             self._list_items = self._listEditorData.getItemList()
             index = self._list_items.index(newItem)
-            self.listBox.InsertItems([newItem],index)
+            self.listBox.lb_insert_items([newItem], index)
 
     def SetItemsTo(self, items):
         if self._listEditorData.setTo(items):
             self._list_items = self._listEditorData.getItemList()
-            self.listBox.Set(self._list_items)
+            self.listBox.lb_set_items(self._list_items)
 
     def DoRename(self):
         """Renames selected item."""
-        selections = self.listBox.GetSelections()
+        selections = self.listBox.lb_get_selections()
         if not selections: return bell()
         #--Rename it
         itemDex = selections[0]
-        curName = self.listBox.GetString(itemDex)
+        curName = self.listBox.lb_get_str_item_at_index(itemDex)
         #--Dialog
         newName = askText(self, _(u'Rename to:'), _(u'Rename'), curName)
         if not newName or newName == curName:
@@ -1301,11 +757,11 @@ class ListEditor(Dialog):
             showError(self,_(u'Name must be unique.'))
         elif self._listEditorData.rename(curName,newName):
             self._list_items[itemDex] = newName
-            self.listBox.SetString(itemDex,newName)
+            self.listBox.lb_set_label_at_index(itemDex, newName)
 
     def DoRemove(self):
         """Removes selected item."""
-        selections = self.listBox.GetSelections()
+        selections = self.listBox.lb_get_selections()
         if not selections: return bell()
         #--Data
         itemDex = selections[0]
@@ -1313,31 +769,31 @@ class ListEditor(Dialog):
         if not self._listEditorData.remove(item): return
         #--GUI
         del self._list_items[itemDex]
-        self.listBox.Delete(itemDex)
+        self.listBox.lb_delete_at_index(itemDex)
         if self.gInfoBox:
-            self.gInfoBox.DiscardEdits()
-            self.gInfoBox.SetValue(u'')
+            self.gInfoBox.modified = False
+            self.gInfoBox.text_content = u''
 
     #--Show Info
-    def OnInfoEdit(self):
+    def OnInfoEdit(self, new_text):
         """Info box text has been edited."""
-        selections = self.listBox.GetSelections()
+        selections = self.listBox.lb_get_selections()
         if not selections: return bell()
         item = self._list_items[selections[0]]
-        if self.gInfoBox.IsModified():
-            self._listEditorData.setInfo(item,self.gInfoBox.GetValue())
+        if self.gInfoBox.modified:
+            self._listEditorData.setInfo(item, new_text)
 
     #--Save/Cancel
     def DoSave(self):
         """Handle save button."""
         self._listEditorData.save()
-        sizes[self.sizesKey] = tuple(self.GetSize())
-        self.EndModal(wx.ID_OK)
+        sizes[self._size_key] = self.component_size
+        self.accept_modal()
 
     def DoCancel(self):
         """Handle cancel button."""
-        sizes[self.sizesKey] = tuple(self.GetSize())
-        self.EndModal(wx.ID_CANCEL)
+        sizes[self._size_key] = self.component_size
+        self.cancel_modal()
 
 #------------------------------------------------------------------------------
 NoteBookDraggedEvent, EVT_NOTEBOOK_DRAGGED = wx.lib.newevent.NewEvent()
@@ -1356,6 +812,7 @@ class TabDragMixin(object):
         self.__dragX = 0
         self.__dragging = wx.NOT_FOUND
         self.__justSwapped = wx.NOT_FOUND
+        # TODO(inf) Test in wx3
         if wx.Platform == '__WXMSW__': # CaptureMouse() works badly in wxGTK
             self.Bind(wx.EVT_LEFT_DOWN, self.__OnDragStart)
             self.Bind(wx.EVT_LEFT_UP, self.__OnDragEnd)
@@ -1425,6 +882,7 @@ class TabDragMixin(object):
         event.Skip()
 
 #------------------------------------------------------------------------------
+# TODO(inf) de-wx! Image API!
 class Picture(wx.Window):
     """Picture panel."""
     def __init__(self, parent, width, height, scaling=1,
@@ -1434,8 +892,10 @@ class Picture(wx.Window):
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.bitmap = None
         if background is not None:
+            if isinstance(background, Color):
+                background = background.to_rgba_tuple()
             if isinstance(background, tuple):
-                background = wx.Colour(background)
+                background = wx.Colour(*background)
             if isinstance(background, wx.Colour):
                 background = wx.Brush(background)
             self.background = background
@@ -1448,9 +908,11 @@ class Picture(wx.Window):
         self.OnSize()
 
     def SetBackground(self,background):
-        if isinstance(background,tuple):
-            background = wx.Colour(background)
-        if isinstance(background,wx.Colour):
+        if isinstance(background, Color):
+            background = background.to_rgba_tuple()
+        if isinstance(background, tuple):
+            background = wx.Colour(*background)
+        if isinstance(background, wx.Colour):
             background = wx.Brush(background)
         self.background = background
         self.OnSize()
@@ -1505,6 +967,8 @@ class Progress(bolt.Progress):
                  abort=False, elapsed=True, __style=_style):
         if abort: __style |= wx.PD_CAN_ABORT
         if elapsed: __style |= wx.PD_ELAPSED_TIME
+        # TODO(inf) de-wx? Or maybe stop using None as parent for Progress?
+        parent = _AComponent._resolve(parent) if parent else None
         self.dialog = wx.ProgressDialog(title, message, 100, parent, __style)
         bolt.Progress.__init__(self)
         self.message = message
@@ -1571,220 +1035,6 @@ class Progress(bolt.Progress):
             self.dialog = None
 
 #------------------------------------------------------------------------------
-class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
-    """List control extended with the wxPython auto-width mixin class.
-
-    ALWAYS add new items via InsertListCtrlItem() and delete them via
-    RemoveItemAt().
-    Also extended to support drag-and-drop.  To define custom drag-and-drop
-    functionality, you can provide callbacks for, or override the following functions:
-    OnDropFiles(self, x, y, filenames) - called when files are dropped in the list control
-    OnDropIndexes(self,indexes,newPos) - called to move the specified indexes to new starting position 'newPos'
-    You must provide a callback for fnDndAllow(self, event) - return true to
-    allow dnd, false otherwise
-
-    OnDropFiles callback:   fnDropFiles
-    OnDropIndexes callback: fnDropIndexes
-    """
-    class DropFileOrList(wx.DropTarget):
-
-        def __init__(self, window, dndFiles, dndList):
-            wx.PyDropTarget.__init__(self)
-            self.window = window
-
-            self.data_object = wx.DataObjectComposite()
-            self.dataFile = wx.FileDataObject()                 # Accept files
-            self.dataList = wx.CustomDataObject('ListIndexes')  # Accept indexes from a list
-            if dndFiles: self.data_object.Add(self.dataFile)
-            if dndList : self.data_object.Add(self.dataList)
-            self.SetDataObject(self.data_object)
-
-        def OnData(self, x, y, data):
-            if self.GetData():
-                dtype = self.data_object.GetReceivedFormat().GetType()
-                if dtype == wx.DF_FILENAME:
-                    # File(s) were dropped
-                    self.window.OnDropFiles(x, y, self.dataFile.GetFilenames())
-                elif dtype == self.dataList.GetFormat().GetType():
-                    # ListCtrl indexes
-                    data = cPickle.loads(self.dataList.GetData())
-                    self.window._OnDropList(x, y, data)
-
-        def OnDragOver(self, x, y, dragResult):
-            self.window.OnDragging(x,y,dragResult)
-            return wx.DropTarget.OnDragOver(self,x,y,dragResult)
-
-    def __init__(self, parent, fnDndAllow, pos=defPos, size=defSize, style=0,
-                 dndFiles=False, dndList=False, fnDropFiles=None,
-                 fnDropIndexes=None, dndOnlyMoveContinuousGroup=True):
-        wx.ListCtrl.__init__(self, parent, pos=pos, size=size, style=style)
-        ListCtrlAutoWidthMixin.__init__(self)
-        if dndFiles or dndList:
-            self.SetDropTarget(ListCtrl.DropFileOrList(self, dndFiles, dndList))
-            if dndList:
-                self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.OnBeginDrag)
-        self.dndOnlyCont = dndOnlyMoveContinuousGroup
-        self.fnDropFiles = fnDropFiles
-        self.fnDropIndexes = fnDropIndexes
-        self.fnDndAllow = fnDndAllow
-        #--Item/Id mapping
-        self._item_itemId = {}
-        """:type : dict[bolt.Path | basestring | int, long]"""
-        self._itemId_item = {}
-        """:type : dict[long, bolt.Path | basestring | int]"""
-
-    def OnDragging(self,x,y,dragResult):
-        # We're dragging, see if we need to scroll the list
-        index, _hit_flags = self.HitTest((x, y))
-        if index == wx.NOT_FOUND:   # Didn't drop it on an item
-            if self.GetItemCount() > 0:
-                if y <= self.GetItemRect(0).y:
-                    # Mouse is above the first item
-                    self.ScrollLines(-1)
-                elif y >= self.GetItemRect(self.GetItemCount() - 1).y:
-                    # Mouse is after the last item
-                    self.ScrollLines(1)
-        else:
-            # Screen position if item hovering over
-            pos = index - self.GetScrollPos(wx.VERTICAL)
-            if pos == 0:
-                # Over the first item, see if it's over the top half
-                rect = self.GetItemRect(index)
-                if y < rect.y + rect.height/2:
-                    self.ScrollLines(-1)
-            elif pos == self.GetCountPerPage():
-                # On last item/one that's not fully visible
-                self.ScrollLines(1)
-
-    def OnBeginDrag(self, event):
-        if not self.fnDndAllow(event): return
-
-        indexes = []
-        start = stop = -1
-        for index in range(self.GetItemCount()):
-            if self.GetItemState(index, wx.LIST_STATE_SELECTED):
-                if stop >= 0 and self.dndOnlyCont:
-                    # Only allow moving selections if they are in a
-                    # continuous block...they aren't
-                    return
-                if start < 0:
-                    start = index
-                indexes.append(index)
-            else:
-                if start >=0 > stop:
-                    stop = index - 1
-        if stop < 0: stop = self.GetItemCount()
-
-        selected = cPickle.dumps(indexes, 1)
-        ldata = wx.CustomDataObject('ListIndexes')
-        ldata.SetData(selected)
-
-        data = wx.DataObjectComposite()
-        data.Add(ldata)
-
-        source = wx.DropSource(self)
-        source.SetData(data)
-        source.DoDragDrop(flags=wx.Drag_DefaultMove)
-
-    def OnDropFiles(self, x, y, filenames):
-        if self.fnDropFiles:
-            wx.CallLater(10,self.fnDropFiles,x,y,filenames)
-            #self.fnDropFiles(x, y, filenames)
-            return
-        # To be implemented by sub-classes
-        raise AbstractError
-
-    def _OnDropList(self, x, y, indexes):
-        start = indexes[0]
-        stop = indexes[-1]
-        index, _hit_flags = self.HitTest((x, y))
-        if index == wx.NOT_FOUND:   # Didn't drop it on an item
-            if self.GetItemCount() > 0:
-                if y <= self.GetItemRect(0).y:
-                    # Dropped it before the first item
-                    index = 0
-                elif y >= self.GetItemRect(self.GetItemCount() - 1).y:
-                    # Dropped it after the last item
-                    index = self.GetItemCount()
-                else:
-                    # Dropped it on the edge of the list, but not above or below
-                    return
-            else:
-                # Empty list
-                index = 0
-        else:
-            # Dropped on top of an item
-            target = index
-            if start <= target <= stop:
-                # Trying to drop it back on itself
-                return
-            elif target < start:
-                # Trying to drop it furthur up in the list
-                pass
-            elif target > stop:
-                # Trying to drop it further down the list
-                index -= 1 + (stop-start)
-
-            # If dropping on the top half of the item, insert above it,
-            # otherwise insert below it
-            rect = self.GetItemRect(target)
-            if y > rect.y + rect.height/2:
-                index += 1
-
-        # Do the moving
-        self.OnDropIndexes(indexes, index)
-
-    def OnDropIndexes(self, indexes, newPos):
-        if self.fnDropIndexes:
-            wx.CallLater(10,self.fnDropIndexes,indexes,newPos)
-
-    # API (alpha) -------------------------------------------------------------
-
-    # Internal id <-> item mappings used in SortItems for now
-    # Ripped from Tank - _Monkey patch_ - we need a proper ListCtrl subclass
-
-    def __id(self, item):
-        i = int(wx.NewId())
-        self._item_itemId[item] = i
-        self._itemId_item[i] = item
-        return i
-
-    def InsertListCtrlItem(self, index, value, item):
-        """Insert an item to the list control giving it an internal id."""
-        i = self.__id(item)
-        some_long = self.InsertStringItem(index, value) # index ?
-        gItem = self.GetItem(index) # that's what Tank did
-        gItem.SetData(i)  # Associate our id with that row.
-        self.SetItem(gItem) # this is needed too - yak
-        return some_long
-
-    def RemoveItemAt(self, index):
-        """Remove item at specified list index."""
-        itemId = self.GetItemData(index)
-        item = self._itemId_item[itemId]
-        del self._item_itemId[item]
-        del self._itemId_item[itemId]
-        self.DeleteItem(index)
-
-    def DeleteAll(self):
-        self._item_itemId.clear()
-        self._itemId_item.clear()
-        self.DeleteAllItems()
-
-    def FindIndexOf(self, item):
-        """Return index of specified item."""
-        return self.FindItemData(-1, self._item_itemId[item])
-
-    def FindItemAt(self, index):
-        """Return item for specified list index."""
-        return self._itemId_item[self.GetItemData(index)]
-
-    def ReorderDisplayed(self, inorder):
-        """Reorder the list control displayed items to match inorder."""
-        sortDict = dict((self._item_itemId[y], x) for x, y in enumerate(inorder))
-        self.SortItems(lambda x, y: bolt.cmp_(sortDict[x], sortDict[y]))
-
-#------------------------------------------------------------------------------
 _depth = 0
 _lock = threading.Lock() # threading not needed (I just can't omit it)
 def conversation(func):
@@ -1794,12 +1044,13 @@ def conversation(func):
         global _depth
         try:
             with _lock: _depth += 1 # hack: allow sequences of conversations
-            Link.Frame.BindRefresh(bind=False)
+            refresh_bound = Link.Frame.bind_refresh(bind=False)
             return func(*args, **kwargs)
         finally:
             with _lock: # atomic
                 _depth -= 1
-                if not _depth: Link.Frame.BindRefresh(bind=True)
+                if not _depth and refresh_bound:
+                    Link.Frame.bind_refresh(bind=True)
     return _conversation_wrapper
 
 class UIList(wx.Panel):
@@ -1832,12 +1083,9 @@ class UIList(wx.Panel):
     _dndColumns = ()
 
     def __init__(self, parent, keyPrefix, listData=None, panel=None):
-        wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
+        wx.Panel.__init__(self, _AComponent._resolve(parent), style=wx.WANTS_CHARS)
         self.data_store = listData # never use as local variable name !
         self.panel = panel
-        #--Layout
-        sizer = vSizer()
-        self.SetSizer(sizer)
         #--Settings key
         self.keyPrefix = keyPrefix
         #--Columns
@@ -1847,46 +1095,44 @@ class UIList(wx.Panel):
         self.__class__.icons = ColorChecks() \
             if self.__class__.icons is self.__icons else self.__class__.icons
         #--gList
-        ctrlStyle = wx.LC_REPORT
-        if self.__class__._editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
-        if self.__class__._sunkenBorder: ctrlStyle |= wx.BORDER_SUNKEN
-        if self.__class__._singleCell: ctrlStyle |= wx.LC_SINGLE_SEL
-        self.__gList = ListCtrl(self, self.dndAllow,
-                                style=ctrlStyle,
-                                dndFiles=self.__class__._dndFiles,
-                                dndList=self.__class__._dndList,
-                                fnDropFiles=self.OnDropFiles,
-                                fnDropIndexes=self.OnDropIndexes)
+        self.__gList = UIListCtrl(self, self.__class__._editLabels,
+                                  self.__class__._sunkenBorder,
+                                  self.__class__._singleCell, self.dndAllow,
+                                  dndFiles=self.__class__._dndFiles,
+                                  dndList=self.__class__._dndList,
+                                  fnDropFiles=self.OnDropFiles,
+                                  fnDropIndexes=self.OnDropIndexes)
         if self.icons:
             # Image List: Column sorting order indicators
             # explorer style ^ == ascending
             checkboxesIL = self.icons.GetImageList()
             self.sm_up = checkboxesIL.Add(SmallUpArrow.GetBitmap())
             self.sm_dn = checkboxesIL.Add(SmallDnArrow.GetBitmap())
-            self.__gList.SetImageList(checkboxesIL, wx.IMAGE_LIST_SMALL)
+            self.__gList._native_widget.SetImageList(checkboxesIL, wx.IMAGE_LIST_SMALL)
         if self.__class__._editLabels:
-            self.__gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnLabelEdited)
-            self.__gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
+            self.__gList.on_edit_label_begin.subscribe(self.OnBeginEditLabel)
+            self.__gList.on_edit_label_end.subscribe(self.OnLabelEdited)
         # gList callbacks
-        self.__gList.Bind(wx.EVT_LIST_COL_RIGHT_CLICK, self.DoColumnMenu)
-        self.__gList.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
-        self.__gList.Bind(wx.EVT_LIST_COL_CLICK, self.OnColumnClick)
-        self.__gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
-        self.__gList.Bind(wx.EVT_CHAR, self.OnChar)
+        self.__gList.on_lst_col_rclick.subscribe(self.DoColumnMenu)
+        self.__gList.on_context_menu.subscribe(self.DoItemMenu)
+        self.__gList.on_lst_col_click.subscribe(self.OnColumnClick)
+        self.__gList.on_key_up.subscribe(self._handle_key_up)
+        self.__gList.on_key_pressed.subscribe(self.OnChar)
         #--Events: Columns
-        self.__gList.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnColumnResize)
+        self.__gList.on_lst_col_end_drag.subscribe(self.OnColumnResize)
         #--Events: Items
-        self.__gList.Bind(wx.EVT_LEFT_DCLICK, self.OnDClick)
-        self.__gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
-        self.__gList.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
+        self.__gList.on_mouse_left_dclick.subscribe(self.OnDClick)
+        self.__gList.on_item_selected.subscribe(self._handle_select)
+        self.__gList.on_mouse_left_down.subscribe(self._handle_left_down)
         #--Mouse movement
         self.mouse_index = None
         self.mouseTexts = {} # dictionary item->mouse text
         self.mouseTextPrev = u''
-        self.__gList.Bind(wx.EVT_MOTION, self.OnMouse)
-        self.__gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
-        # Sizer
-        self.SetSizer(vSizer((self.__gList, 1, wx.EXPAND)))
+        self.__gList.on_mouse_motion.subscribe(self._handle_mouse_motion)
+        self.__gList.on_mouse_leaving.subscribe(self._handle_mouse_leaving)
+        #--Layout
+        VLayout(item_expand=True, item_weight=1,
+                items=[self.__gList]).apply_to(self)
         # Columns
         self.PopulateColumns()
         #--Items
@@ -1918,16 +1164,13 @@ class UIList(wx.Panel):
     @sort_column.setter
     def sort_column(self, val): _settings[self.keyPrefix + '.sort'] = val
 
-    def OnItemSelected(self, event):
-        modName = self.GetItem(event.GetIndex())
-        self._select(modName)
+    def _handle_select(self, item_key):
+        self._select(item_key)
     def _select(self, item): self.panel.SetDetails(item)
 
     # properties to encapsulate access to the list control
     @property
-    def item_count(self): return self.__gList.GetItemCount()
-    @property
-    def edit_control(self): return self.__gList.GetEditControl()
+    def item_count(self): return self.__gList._native_widget.GetItemCount()
 
     #--Items ----------------------------------------------
     def PopulateItem(self, itemDex=-1, item=None):
@@ -1943,18 +1186,17 @@ class UIList(wx.Panel):
             try:
                 itemDex = self.GetIndex(item)
             except KeyError: # item is not present, so inserting
-                itemDex = self.__gList.GetItemCount() # insert at the end
+                itemDex = self.item_count # insert at the end
                 insert = True
         else: # no way we're inserting with a None item
             item = self.GetItem(itemDex)
-        cols = self.cols
-        for colDex in range(len(cols)):
-            col = cols[colDex]
+        for colDex, col in enumerate(self.cols):
             labelTxt = self.labels[col](self, item)
             if insert and colDex == 0:
                 self.__gList.InsertListCtrlItem(itemDex, labelTxt, item)
             else:
-                self.__gList.SetStringItem(itemDex, colDex, labelTxt)
+                self.__gList._native_widget.SetStringItem(itemDex, colDex,
+                                                          labelTxt)
         self.__setUI(item, itemDex)
 
     class _ListItemFormat(object):
@@ -1975,7 +1217,7 @@ class UIList(wx.Panel):
 
     def __setUI(self, fileName, itemDex):
         """Set font, status icon, background text etc."""
-        gItem = self.__gList.GetItem(itemDex)
+        gItem = self.__gList._native_widget.GetItem(itemDex)
         df = self._ListItemFormat()
         self.set_item_format(fileName, df)
         if df.icon_key and self.icons:
@@ -1983,13 +1225,16 @@ class UIList(wx.Panel):
                 img = self.icons.Get(*df.icon_key)
             else: img = self.icons[df.icon_key]
             gItem.SetImage(img)
-        if df.text_key: gItem.SetTextColour(colors[df.text_key])
-        else: gItem.SetTextColour(self.__gList.GetTextColour())
-        if df.back_key: gItem.SetBackgroundColour(colors[df.back_key])
+        if df.text_key:
+            gItem.SetTextColour(colors[df.text_key].to_rgba_tuple())
+        else:
+            gItem.SetTextColour(self.__gList._native_widget.GetTextColour())
+        if df.back_key:
+            gItem.SetBackgroundColour(colors[df.back_key].to_rgba_tuple())
         else: gItem.SetBackgroundColour(self._defaultTextBackground)
         gItem.SetFont(Font.Style(gItem.GetFont(), bold=df.strong,
                                  slant=df.italics, underline=df.underline))
-        self.__gList.SetItem(gItem)
+        self.__gList._native_widget.SetItem(gItem)
 
     def PopulateItems(self):
         """Sort items and populate entire list."""
@@ -1997,7 +1242,7 @@ class UIList(wx.Panel):
         items = set(self.data_store.keys())
         #--Update existing items.
         index = 0
-        while index < self.__gList.GetItemCount():
+        while index < self.item_count:
             item = self.GetItem(index)
             if item not in items: self.__gList.RemoveItemAt(index)
             else:
@@ -2042,101 +1287,101 @@ class UIList(wx.Panel):
                 self.panel.SetDetails()
 
     def Focus(self):
-        self.__gList.SetFocus()
+        self.__gList.set_focus()
 
     #--Column Menu
-    def DoColumnMenu(self, event, column=None):
+    def DoColumnMenu(self, evt_col):
         """Show column menu."""
-        if not self.mainMenu: return
-        if column is None: column = event.GetColumn()
-        self.mainMenu.PopupMenu(self, Link.Frame, column)
+        if self.mainMenu: self.mainMenu.new_menu(self, evt_col)
+        return EventResult.FINISH
 
     #--Item Menu
-    def DoItemMenu(self,event):
+    def DoItemMenu(self):
         """Show item menu."""
         selected = self.GetSelected()
         if not selected:
-            self.DoColumnMenu(event,0)
-            return
-        if not self.itemMenu: return
-        self.itemMenu.PopupMenu(self,Link.Frame,selected)
+            self.DoColumnMenu(0)
+        elif self.itemMenu:
+            self.itemMenu.new_menu(self, selected)
+        return EventResult.FINISH
 
     #--Callbacks --------------------------------------------------------------
-    def OnMouse(self,event):
+    def _handle_mouse_motion(self, wrapped_evt, lb_dex_and_flags):
         """Handle mouse entered item by showing tip or similar."""
-        if event.Moving():
-            (itemDex, mouseHitFlag) = self.__gList.HitTest(event.GetPosition())
+        if wrapped_evt.is_moving:
+            (itemDex, mouseHitFlag) = lb_dex_and_flags
             if itemDex != self.mouse_index:
                 self.mouse_index = itemDex
                 if itemDex >= 0:
                     item = self.GetItem(itemDex) # get the item for this index
                     text = self.mouseTexts.get(item, u'')
                     if text != self.mouseTextPrev:
-                        Link.Frame.SetStatusInfo(text)
+                        Link.Frame.set_status_info(text)
                         self.mouseTextPrev = text
-        elif event.Leaving() and self.mouse_index is not None:
+    def _handle_mouse_leaving(self):
+        if self.mouse_index is not None:
             self.mouse_index = None
-            Link.Frame.SetStatusInfo(u'')
-        event.Skip()
+            Link.Frame.set_status_info(u'')
 
-    def OnKeyUp(self, event):
+    def _handle_key_up(self, wrapped_evt, g_list):
         """Char event: select all items, delete selected items, rename."""
-        code = event.GetKeyCode()
-        if event.CmdDown() and code == ord('A'): # Ctrl+A
-            if event.ShiftDown(): # de-select all
+        code = wrapped_evt.key_code
+        if wrapped_evt.is_cmd_down and code == ord(u'A'): # Ctrl+A
+            if wrapped_evt.is_shift_down: # de-select all
                 self.ClearSelected(clear_details=True)
             else: # select all
                 try:
-                    self.__gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
+                    self.__gList.on_item_selected.unsubscribe(
+                        self._handle_select)
                     # omit below to leave displayed details
                     self.panel.ClearDetails()
                     self.SelectItemAtIndex(-1) # -1 indicates 'all items'
                 finally:
-                    self.__gList.Bind(wx.EVT_LIST_ITEM_SELECTED,
-                                      self.OnItemSelected)
+                    self.__gList.on_item_selected.subscribe(
+                        self._handle_select)
         elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
         elif code in wxDelete:
-            with BusyCursor(): self.DeleteItems(event=event)
-        elif event.CmdDown() and code == ord('O'): # Ctrl+O
+            with BusyCursor(): self.DeleteItems(wrapped_evt=wrapped_evt)
+        elif wrapped_evt.is_cmd_down and code == ord(u'O'): # Ctrl+O
             self.open_data_store()
-        event.Skip()
 
-    ##: Columns callbacks - belong to a ListCtrl mixin
-    def OnColumnClick(self, event):
+    # Columns callbacks
+    def OnColumnClick(self, evt_col):
         """Column header was left clicked on. Sort on that column."""
-        self.SortItems(self.cols[event.GetColumn()],'INVERT')
+        self.SortItems(self.cols[evt_col],'INVERT')
 
-    def OnColumnResize(self, event):
+    def OnColumnResize(self, evt_col):
         """Column resized: enforce minimal width and save column size info."""
-        colDex = event.GetColumn()
-        colName = self.cols[colDex]
-        width = self.__gList.GetColumnWidth(colDex)
+        colName = self.cols[evt_col]
+        width = self.__gList._native_widget.GetColumnWidth(evt_col)
         if width < self._min_column_width:
             width = self._min_column_width
-            self.__gList.SetColumnWidth(colDex, self._min_column_width)
-            event.Veto() # if we do not veto the column will be resized anyway!
-            self.__gList.resizeLastColumn(0) # resize last column to fill
-        else:
-            event.Skip()
+            self.__gList._native_widget.SetColumnWidth(evt_col, self._min_column_width)
+            # if we do not veto the column will be resized anyway!
+            self.__gList._native_widget.resizeLastColumn(0) # resize last column to fill
+            self.colWidths[colName] = width
+            return EventResult.CANCEL
         self.colWidths[colName] = width
 
     # gList columns autosize---------------------------------------------------
     def autosizeColumns(self):
         if self.autoColWidths:
-            colCount = xrange(self.__gList.GetColumnCount())
+            colCount = xrange(self.__gList._native_widget.GetColumnCount())
             for i in colCount:
-                self.__gList.SetColumnWidth(i, -self.autoColWidths)
+                self.__gList._native_widget.SetColumnWidth(i, -self.autoColWidths)
 
     #--Events skipped
-    def OnLeftDown(self,event): event.Skip()
-    def OnDClick(self,event): event.Skip()
-    def OnChar(self,event): event.Skip()
+    def _handle_left_down(self, wrapped_evt, lb_dex_and_flags): pass
+    def OnDClick(self, lb_dex_and_flags): pass
+    def OnChar(self, wrapped_evt): pass
     #--Edit labels - only registered if _editLabels != False
-    def OnBeginEditLabel(self, event):
+    def OnBeginEditLabel(self, evt_label, uilist_ctrl):
         """Start renaming: deselect the extension."""
-        to = len(GPath(event.GetLabel()).sbody)
-        (self.__gList.GetEditControl()).SetSelection(0, to)
-    def OnLabelEdited(self,event): event.Skip()
+        to = len(GPath(evt_label).sbody)
+        uilist_ctrl.ec_set_selection(0, to)
+    def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
+        # should only be subscribed if _editLabels==True and overridden
+        raise AbstractError
 
     def _try_rename(self, key, newFileName, to_select, item_edited=None):
         newPath = self.data_store.store_dir.join(newFileName)
@@ -2150,8 +1395,8 @@ class UIList(wx.Panel):
                 return False # break
         return True # continue
 
-    def _getItemClicked(self, event, on_icon=False):
-        (hitItem, hitFlag) = self.__gList.HitTest(event.GetPosition())
+    def _getItemClicked(self, lb_dex_and_flags, on_icon=False):
+        (hitItem, hitFlag) = lb_dex_and_flags
         if hitItem < 0 or (on_icon and hitFlag != wx.LIST_HITTEST_ONITEMICON):
             return None
         return self.GetItem(hitItem)
@@ -2160,10 +1405,10 @@ class UIList(wx.Panel):
     def _get_selected(self, lam=lambda i: i, __next_all=wx.LIST_NEXT_ALL,
                       __state_selected=wx.LIST_STATE_SELECTED):
         listCtrl, selected_list = self.__gList, []
-        i = listCtrl.GetNextItem(-1, __next_all, __state_selected)
+        i = listCtrl._native_widget.GetNextItem(-1, __next_all, __state_selected)
         while i != -1:
             selected_list.append(lam(i))
-            i = listCtrl.GetNextItem(i, __next_all, __state_selected)
+            i = listCtrl._native_widget.GetNextItem(i, __next_all, __state_selected)
         return selected_list
 
     def GetSelected(self):
@@ -2177,7 +1422,7 @@ class UIList(wx.Panel):
 
     def SelectItemAtIndex(self, index, select=True,
                           __select=wx.LIST_STATE_SELECTED):
-        self.__gList.SetItemState(index, select * __select, __select)
+        self.__gList._native_widget.SetItemState(index, select * __select, __select)
 
     def SelectItem(self, item, deselectOthers=False):
         dex = self.GetIndex(item)
@@ -2189,10 +1434,10 @@ class UIList(wx.Panel):
     def SelectItemsNoCallback(self, items, deselectOthers=False):
         if deselectOthers: self.ClearSelected()
         try:
-            self.__gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
+            self.__gList.on_item_selected.unsubscribe(self._handle_select)
             for item in items: self.SelectItem(item)
         finally:
-            self.__gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+            self.__gList.on_item_selected.subscribe(self._handle_select)
 
     def ClearSelected(self, clear_details=False):
         """Unselect all items."""
@@ -2200,7 +1445,7 @@ class UIList(wx.Panel):
         if clear_details: self.panel.ClearDetails()
 
     def SelectLast(self):
-        self.SelectItemAtIndex(self.__gList.GetItemCount() - 1)
+        self.SelectItemAtIndex(self.item_count - 1)
 
     def DeleteAll(self): self.__gList.DeleteAll()
 
@@ -2208,7 +1453,7 @@ class UIList(wx.Panel):
         self.EnsureVisibleIndex(self.GetIndex(name), focus=focus)
 
     def EnsureVisibleIndex(self, dex, focus=False):
-        self.__gList.Focus(dex) if focus else self.__gList.EnsureVisible(dex)
+        self.__gList._native_widget.Focus(dex) if focus else self.__gList._native_widget.EnsureVisible(dex)
         self.Focus()
 
     def SelectAndShowItem(self, item, deselectOthers=False, focus=True):
@@ -2295,11 +1540,11 @@ class UIList(wx.Panel):
         # set column sort image
         try:
             listCtrl = self.__gList
-            try: listCtrl.ClearColumnImage(self._colDict[oldcol])
+            try: listCtrl._native_widget.ClearColumnImage(self._colDict[oldcol])
             except KeyError:
                 pass # if old column no longer is active this will fail but
                 #  not a problem since it doesn't exist anyways.
-            listCtrl.SetColumnImage(self._colDict[col],
+            listCtrl._native_widget.SetColumnImage(self._colDict[col],
                                     self.sm_dn if reverse else self.sm_up)
         except KeyError: pass
 
@@ -2326,26 +1571,26 @@ class UIList(wx.Panel):
             colKey = cols[colDex]
             colName = _settings['bash.colNames'].get(colKey, colKey)
             colWidth = self.colWidths.get(colKey, 30)
-            if colDex >= listCtrl.GetColumnCount(): # Make a new column
-                listCtrl.InsertColumn(colDex, colName)
-                listCtrl.SetColumnWidth(colDex, colWidth)
+            if colDex >= listCtrl._native_widget.GetColumnCount(): # Make a new column
+                listCtrl._native_widget.InsertColumn(colDex, colName)
+                listCtrl._native_widget.SetColumnWidth(colDex, colWidth)
             else: # Update an existing column
-                column = listCtrl.GetColumn(colDex)
+                column = listCtrl._native_widget.GetColumn(colDex)
                 text = column.GetText()
                 if text == colName:
                     # Don't change it, just make sure the width is correct
-                    listCtrl.SetColumnWidth(colDex, colWidth)
+                    listCtrl._native_widget.SetColumnWidth(colDex, colWidth)
                 elif text not in names:
                     # Column that doesn't exist anymore
-                    listCtrl.DeleteColumn(colDex)
+                    listCtrl._native_widget.DeleteColumn(colDex)
                     continue # do not increment colDex or update colDict
                 else: # New column
-                    listCtrl.InsertColumn(colDex, colName)
-                    listCtrl.SetColumnWidth(colDex, colWidth)
+                    listCtrl._native_widget.InsertColumn(colDex, colName)
+                    listCtrl._native_widget.SetColumnWidth(colDex, colWidth)
             self._colDict[colKey] = colDex
             colDex += 1
-        while listCtrl.GetColumnCount() > numCols:
-            listCtrl.DeleteColumn(numCols)
+        while listCtrl._native_widget.GetColumnCount() > numCols:
+            listCtrl._native_widget.DeleteColumn(numCols)
 
     #--Drag and Drop-----------------------------------------------------------
     @conversation
@@ -2358,11 +1603,11 @@ class UIList(wx.Panel):
 
     # gList scroll position----------------------------------------------------
     def SaveScrollPosition(self, isVertical=True):
-        _settings[self.keyPrefix + '.scrollPos'] = self.__gList.GetScrollPos(
+        _settings[self.keyPrefix + '.scrollPos'] = self.__gList._native_widget.GetScrollPos(
             wx.VERTICAL if isVertical else wx.HORIZONTAL)
 
     def SetScrollPosition(self):
-        self.__gList.ScrollLines(
+        self.__gList._native_widget.ScrollLines(
             _settings.get(self.keyPrefix + '.scrollPos', 0))
 
     # Data commands (WIP)------------------------------------------------------
@@ -2371,14 +1616,11 @@ class UIList(wx.Panel):
         if selected:
             index = self.GetIndex(selected[0])
             if index != -1:
-                self.__gList.EditLabel(index)
+                self.__gList._native_widget.EditLabel(index)
 
-    def validate_filename(self, event, name_new=None, has_digits=False,
-                          ext=u'', is_filename=True):
-        if name_new is None:
-            if event.IsEditCancelled(): return None, None, None
-            newName = event.GetLabel()
-        else: newName = name_new
+    def validate_filename(self, name_new, has_digits=False, ext=u'',
+            is_filename=True):
+        newName = name_new
         if not newName:
             msg = _(u'Empty name !')
             maPattern = None
@@ -2402,16 +1644,15 @@ class UIList(wx.Panel):
             num_str = maPattern.groups()[1] if has_digits else None
         if not maPattern or not (maPattern.groups()[0] or num_str):
             showError(self, msg)
-            if event: event.Veto()
             return None, None, None
         return maPattern.groups()[0], GPath(newName), num_str
 
     @conversation
-    def DeleteItems(self, event=None, items=None,
+    def DeleteItems(self, wrapped_evt=None, items=None,
                     dialogTitle=_(u'Delete Items'), order=True):
         recycle = (self.__class__._recycle and
         # menu items fire 'CommandEvent' - I need a workaround to detect Shift
-            (True if event is None else not event.ShiftDown()))
+            (True if wrapped_evt is None else not wrapped_evt.is_shift_down))
         items = self._toDelete(items)
         if not self.__class__._shellUI:
             items = self._promptDelete(items, dialogTitle, order, recycle)
@@ -2445,7 +1686,7 @@ class UIList(wx.Panel):
         msg = _(u'Delete these items to the recycling bin ?') if recycle else \
             _(u'Delete these items?  This operation cannot be undone.')
         with ListBoxes(self, dialogTitle, msg, [message]) as dialog:
-            if not dialog.askOkModal(): return []
+            if not dialog.show_modal(): return []
             return dialog.getChecked(message[0], items)
 
     def open_data_store(self):
@@ -2506,14 +1747,13 @@ class Links(list):
     """List of menu or button links."""
 
     #--Popup a menu from the links
-    def PopupMenu(self, parent=None, eventWindow=None, *args):
+    def new_menu(self, parent, selection):
         parent = parent or Link.Frame
-        eventWindow = eventWindow or parent
-        menu = wx.Menu()
+        menu = wx.Menu() # TODO(inf) de-wx!
         Link.Popup = menu
         for link in self:
-            link.AppendToMenu(menu,parent,*args)
-        eventWindow.PopupMenu(menu)
+            link.AppendToMenu(menu, parent, selection)
+        Link.Frame.popup_menu(menu)
         menu.Destroy()
         Link.Popup = None # do not leak the menu reference
 
@@ -2536,17 +1776,16 @@ class Link(object):
       singleton. Use (sparingly) as the 'link' between menus and data layer.
     """
     Frame = None   # BashFrame singleton, set once and for all in BashFrame()
-    Popup = None   # Current popup menu, set in Links.PopupMenu()
+    Popup = None   # Current popup menu, set in Links.new_menu()
     _text = u''    # Menu label (may depend on UI state when the menu is shown)
 
     def __init__(self, _text=None):
-        """Assign a wx Id.
+        """Initialize a Link instance.
 
         Parameter _text underscored cause its use should be avoided - prefer to
         specify text as a class attribute (or set in it _initData()).
         """
         super(Link, self).__init__()
-        self._id = wx.NewId() # register wx callbacks in AppendToMenu overrides
         self._text = _text or self.__class__._text # menu label
 
     def _initData(self, window, selection):
@@ -2561,8 +1800,9 @@ class Link(object):
         :param selection: the selected items when the menu is appended or None.
         In modlist/installers it's a list<Path> while in subpackage it's the
         index of the right-clicked item. In main (column header) menus it's
-        the column clicked on or the first column. Set in Links.PopupMenu().
-        :type window: UIList | wx.Panel | wx.Button | DnDStatusBar
+        the column clicked on or the first column. Set in Links.new_menu().
+        :type window: UIList | wx.Panel | gui.buttons.Button | DnDStatusBar |
+            gui.misc_components.CheckListBox
         :type selection: list[Path | unicode | int] | int | None
         """
         self.window = window
@@ -2674,10 +1914,10 @@ class ItemLink(Link):
         """Append self as menu item and set callbacks to be executed when
         selected."""
         super(ItemLink, self).AppendToMenu(menu, window, selection)
-        Link.Frame.Bind(wx.EVT_MENU, self.__Execute, id=self._id)
-        Link.Frame.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
-        menuItem = wx.MenuItem(menu, self._id, self._text, self.menu_help,
+        menuItem = wx.MenuItem(menu, defId, self._text, self.menu_help,
                                self.__class__.kind)
+        _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU, self.__Execute, id=menuItem.GetId())
+        _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
         menu.AppendItem(menuItem)
         return menuItem
 
@@ -2702,7 +1942,7 @@ class ItemLink(Link):
         """Hover over an item, set the statusbar text"""
         if Link.Popup:
             item = Link.Popup.FindItemById(event.GetId()) # <wx._core.MenuItem>
-            Link.Frame.SetStatusInfo(item.GetHelp() if item else u'')
+            Link.Frame.set_status_info(item.GetHelp() if item else u'')
 
 class MenuLink(Link):
     """Defines a submenu. Generally used for submenus of large menus."""
@@ -2721,20 +1961,27 @@ class MenuLink(Link):
     def AppendToMenu(self, menu, window, selection):
         """Append self as submenu (along with submenu items) to menu."""
         super(MenuLink, self).AppendToMenu(menu, window, selection)
-        Link.Frame.Bind(wx.EVT_MENU_OPEN, MenuLink.OnMenuOpen)
+        _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU_OPEN, MenuLink.OnMenuOpen)
         subMenu = wx.Menu()
-        menu.AppendMenu(self._id, self._text, subMenu)
+        appended_menu = menu.AppendSubMenu(subMenu, self._text)
         if not self._enable():
-            menu.Enable(self._id, False)
-        else: # do not append sub links unless submenu enabled
-            for link in self.links: link.AppendToMenu(subMenu, window,
-                                                      selection)
+            appended_menu.Enable(False)
+        else: # If we know we're not enabled, we can skip adding child links
+            for link in self.links:
+                link.AppendToMenu(subMenu, window, selection)
+            appended_menu.Enable(self._should_enable())
         return subMenu
 
     @staticmethod
     def OnMenuOpen(event):
         """Hover over a submenu, clear the status bar text"""
-        Link.Frame.SetStatusInfo(u'')
+        Link.Frame.set_status_info(u'')
+
+    def _should_enable(self):
+        """Disable ourselves if none of our children are enabled."""
+        ##: This hasattr call is reall ugly, needed to support nested menus
+        return any(not hasattr(
+            l, u'_enable') or l._enable() for l in self.links)
 
 class ChoiceLink(Link):
     """List of Choices with optional menu items to edit etc those choices."""
@@ -2763,6 +2010,13 @@ class ChoiceLink(Link):
             link.AppendToMenu(menu, window, selection)
             i += 1
         # returns None
+
+class ChoiceMenuLink(ChoiceLink, MenuLink):
+    """Combination of ChoiceLink and MenuLink. Turns off the 'disable if no
+    children are enabled' behavior of MenuLink since ChoiceLinks do not have
+    a static number of children."""
+    def _should_enable(self):
+        return True
 
 class TransLink(Link):
     """Transcendental link, can't quite make up its mind."""
@@ -2958,133 +2212,121 @@ class _CheckList_SelectAll(ItemLink):
         self._text = _(u'Select All') if select else _(u'Select None')
 
     def Execute(self):
-        for i in xrange(self.window.GetCount()):
-            self.window.Check(i,self.select)
+        self.window.set_all_checkmarks(checked=self.select)
 
-class ListBoxes(Dialog):
-    """A window with 1 or more lists."""
-
-    def __init__(self, parent, title, message, lists, liststyle='check',
-                 style=0, bOk=_(u'OK'), bCancel=_(u'Cancel'), canCancel=True):
-        """lists is in this format:
-        if liststyle == 'check' or 'list'
-        [title,tooltip,item1,item2,itemn],
-        [title,tooltip,....],
-        elif liststyle == 'tree'
-        [title,tooltip,{item1:[subitem1,subitemn],item2:[subitem1,subitemn],itemn:[subitem1,subitemn]}],
-        [title,tooltip,....],
-        """
-        super(ListBoxes, self).__init__(parent, title=title, style=style,
-                                        resize=True)
-        self.itemMenu = Links()
-        self.itemMenu.append(_CheckList_SelectAll())
-        self.itemMenu.append(_CheckList_SelectAll(False))
-        self.SetIcons(Resources.bashBlue)
-        minWidth = self.GetTextExtent(title)[0] * 1.2 + 64
-        sizer = wx.FlexGridSizer(len(lists) + 2, 1, 0, 0)
-        self.text = StaticText(self, message)
-        self.text.Rewrap(minWidth) # otherwise self.text expands to max width
-        sizer.AddGrowableRow(0) # needed so text fits - glitch on resize
-        sizer.Add(self.text, 0, wx.EXPAND)
-        self._ids = {}
-        labels = {wx.ID_CANCEL: bCancel, wx.ID_OK: bOk}
-        self.SetSize(wxSize(minWidth, -1))
-        for i,item_group in enumerate(lists):
-            title = item_group[0] # also serves as key in self._ids dict
-            item_tip = item_group[1]
-            strings = [u'%s' % x for x in item_group[2:]] # works for Path & strings
-            if len(strings) == 0: continue
-            subsizer = hsbSizer(self, title)
-            if liststyle == 'check':
-                checksCtrl = listBox(self, choices=strings, isSingle=True,
-                                     isHScroll=True, kind='checklist')
-                checksCtrl.Bind(wx.EVT_KEY_UP,self.OnKeyUp)
-                checksCtrl.Bind(wx.EVT_CONTEXT_MENU,self.OnContext)
-                # check all - for range and set see wx._controls.CheckListBox
-                checksCtrl.SetChecked(set(range(len(strings))))
-            elif liststyle == 'list':
-                checksCtrl = listBox(self, choices=strings, isHScroll=True)
-            else:
-                checksCtrl = wx.TreeCtrl(self, size=(150, 200),
-                                         style=wx.TR_DEFAULT_STYLE |
-                                               wx.TR_FULL_ROW_HIGHLIGHT |
-                                               wx.TR_HIDE_ROOT)
-                root = checksCtrl.AddRoot(title)
-                checksCtrl.Bind(wx.EVT_MOTION, self.OnMotion)
-                for item, subitems in item_group[2].iteritems():
-                    child = checksCtrl.AppendItem(root,item.s)
-                    for subitem in subitems:
-                        checksCtrl.AppendItem(child,subitem.s)
-            self._ids[title] = checksCtrl.GetId()
-            checksCtrl.SetToolTip(tooltip(item_tip))
-            subsizer.Add(checksCtrl,1,wx.EXPAND|wx.ALL,2)
-            sizer.Add(subsizer,0,wx.EXPAND|wx.ALL,5)
-            sizer.AddGrowableRow(i + 1)
-        okButton = OkButton(self, label=labels[wx.ID_OK], default=True)
-        buttonSizer = hSizer(hspacer,
-                             (okButton,0,wx.ALIGN_RIGHT),
-                             )
-        if canCancel:
-            buttonSizer.Add(CancelButton(self, label=labels[wx.ID_CANCEL]),0,wx.ALIGN_RIGHT|wx.LEFT,2)
-        sizer.Add(buttonSizer, 1, wx.EXPAND | wx.ALL ^ wx.TOP, 5)
-        sizer.AddGrowableCol(0)
-        sizer.SetSizeHints(self)
-        self.SetSizer(sizer)
-        #make sure that minimum size is at least the size of title
-        if self.GetSize()[0] < minWidth:
-            self.SetSize(wxSize(minWidth,-1))
-        self.text.Rewrap(self.GetSize().width)
-        self.Bind(wx.EVT_SIZE, self.OnSize)
+# TODO(inf) Needs renaming, also need to make a virtual version eventually...
+class TreeCtrl(_AComponent):
+    def __init__(self, parent, title, items_dict):
+        super(TreeCtrl, self).__init__(wx.TreeCtrl, parent, size=(150, 200),
+            style=wx.TR_DEFAULT_STYLE | wx.TR_FULL_ROW_HIGHLIGHT |
+                  wx.TR_HIDE_ROOT)
+        root = self._native_widget.AddRoot(title)
+        self._native_widget.Bind(wx.EVT_MOTION, self.OnMotion)
+        for item, subitems in items_dict.iteritems():
+            child = self._native_widget.AppendItem(root, item.s)
+            for subitem in subitems:
+                self._native_widget.AppendItem(child, subitem.s)
+            self._native_widget.Expand(child)
 
     def OnMotion(self, event): return
 
-    def OnSize(self, event):
-        self.text.Rewrap(self.GetSize().width)
-        event.Skip()
+class ListBoxes(DialogWindow):
+    """A window with 1 or more lists."""
 
-    def OnKeyUp(self,event):
+    def __init__(self, parent, title, message, lists, liststyle=u'check',
+                 style=0, bOk=_(u'OK'), bCancel=_(u'Cancel'), canCancel=True):
+        """lists is in this format:
+        if liststyle == u'check' or u'list'
+        [title,tooltip,item1,item2,itemn],
+        [title,tooltip,....],
+        elif liststyle == u'tree'
+        [title,tooltip,{item1:[subitem1,subitemn],item2:[subitem1,subitemn],itemn:[subitem1,subitemn]}],
+        [title,tooltip,....],
+        """
+        super(ListBoxes, self).__init__(parent, title=title,
+                                        icon_bundle=Resources.bashBlue,
+                                        sizes_dict=sizes, style=style)
+        self.itemMenu = Links()
+        self.itemMenu.append(_CheckList_SelectAll())
+        self.itemMenu.append(_CheckList_SelectAll(False))
+        minWidth = self._native_widget.GetTextExtent(title)[0] * 1.2 + 64
+        self.text = Label(self, message)
+        self.text.wrap(minWidth) # otherwise self.text expands to max width
+        layout = VLayout(border=5, spacing=5, items=[self.text])
+        self._ctrls = {}
+        # Size ourselves slightly larger than the wrapped text, otherwise some
+        # of it may be cut off and the buttons may become too small to read
+        # TODO(ut) we should set ourselves to min(minWidth, size(btns)) - how?
+        self.component_size = (minWidth + 64, -1)
+        min_height = 128 + 128 * len(lists) #arbitrary just fits well currently
+        if self.component_size[1] < min_height:
+            self.component_size = (minWidth + 64, min_height)
+        self.set_min_size(minWidth + 64, min_height)
+        for item_group in lists:
+            title = item_group[0] # also serves as key in self._ctrls dict
+            item_tip = item_group[1]
+            strings = [u'%s' % x for x in item_group[2:]] # works for Path & strings
+            if len(strings) == 0: continue
+            if liststyle == u'check':
+                checksCtrl = CheckListBox(self, choices=strings, isSingle=True,
+                                          isHScroll=True)
+                checksCtrl.on_key_up.subscribe(self._on_key_up)
+                checksCtrl.on_context.subscribe(self._on_context)
+                checksCtrl.set_all_checkmarks(checked=True)
+            elif liststyle == u'list':
+                checksCtrl = ListBox(self, choices=strings, isHScroll=True)
+            else: # u'tree'
+                checksCtrl = TreeCtrl(self, title, item_group[2])
+            self._ctrls[title] = checksCtrl
+            checksCtrl.tooltip = item_tip
+            layout.add((HBoxedLayout(self, item_expand=True, title=title,
+                                     item_weight=1, items=[checksCtrl]),
+                        LayoutOptions(expand=True, weight=1)))
+        btns = [OkButton(self, label=bOk, default=True),
+                CancelButton(self, label=bCancel) if canCancel else None]
+        layout.add((HLayout(spacing=5, items=btns),
+                    LayoutOptions(h_align=RIGHT)))
+        layout.apply_to(self)
+        self.on_size_changed.subscribe(self._wrap_text)
+        self._width = self.component_size[0]
+
+    def _wrap_text(self):
+        # Account for the window being larger than the wrapped text
+        if self._width != self.component_size[0]:
+            self._width = self.component_size[0]
+            self.text.wrap(self.component_size[0] - 64)
+
+    @staticmethod
+    def _on_key_up(wrapped_evt, lb_instance):
         """Char events"""
         ##Ctrl-A - check all
-        obj = event.GetEventObject()
-        if event.CmdDown() and event.GetKeyCode() == ord('A'):
-            check = not event.ShiftDown()
-            for i in xrange(len(obj.GetStrings())):
-                    obj.Check(i,check)
-        else:
-            event.Skip()
+        if wrapped_evt.is_cmd_down and wrapped_evt.key_code == ord(u'A'):
+            lb_instance.set_all_checkmarks(
+                checked=not wrapped_evt.is_shift_down)
+            return EventResult.FINISH ##: needed?
 
-    def OnContext(self,event):
+    def _on_context(self, lb_instance):
         """Context Menu"""
-        self.itemMenu.PopupMenu(event.GetEventObject(), Link.Frame,
-                                event.GetEventObject().GetSelections())
-        event.Skip()
-
-    def OnClick(self,event):
-        id_ = event.GetId()
-        if id_ not in (wx.ID_OK,wx.ID_CANCEL):
-            self.EndModal(id_)
-        else:
-            event.Skip()
-
-    def askOkModal(self): return self.ShowModal() != wx.ID_CANCEL
+        self.itemMenu.new_menu(lb_instance, lb_instance.lb_get_selections())
 
     def getChecked(self, key, items, checked=True):
         """Return a sublist of 'items' containing (un)checked items.
 
         The control only displays the string names of items, that is why items
         needs to be passed in. If items is empty it will return an empty list.
-        :param key: a key for the private _ids dictionary
-        :param items: the items that correspond to the _ids[key] checksCtrl
+        :param key: a key for the private _ctrls dictionary
+        :param items: the items that correspond to the _ctrls[key] checksCtrl
         :param checked: keep checked items if True (default) else unchecked
         :rtype : list
-        :return: the items in 'items' for (un)checked checkboxes in _ids[key]
+        :return: the items in 'items' for (un)checked checkboxes in _ctrls[key]
         """
         if not items: return []
         select = []
-        checkList = self.FindWindowById(self._ids[key])
+        checkList = self._ctrls[key]
         if checkList:
             for i, mod in enumerate(items):
-                if checkList.IsChecked(i) ^ (not checked): select.append(mod)
+                if checkList.lb_is_checked_at_index(i) ^ (not checked):
+                    select.append(mod)
         return select
 
 # Some UAC stuff --------------------------------------------------------------
@@ -3103,7 +2345,7 @@ def ask_uac_restart(message, title, mopy):
             u'\n\n' + _(u'--no-uac: always run normally') +
             u'\n' + _(u'--uac: always run with Admin Privileges') +
             u'\n\n' + _(u'See the <A href="%(readmePath)s">readme</A> '
-                u'for more information.') % {'readmePath': readme}])
+                u'for more information.') % {'readmePath': readme}])[0]
 
 def readme_url(mopy, advanced=False):
     readme = mopy.join(u'Docs',
@@ -3136,9 +2378,15 @@ class INIListCtrl(wx.ListCtrl):
             self._contents.ScrollLines(scroll)
         event.Skip()
 
+    def fit_column_to_header(self, column):
+        self.SetColumnWidth(column, wx.LIST_AUTOSIZE_USEHEADER)
+
     def _get_selected_line(self, index): raise AbstractError
 
 # Status bar ------------------------------------------------------------------
+# TODO(inf) de_wx! Wrap wx.StatusBar
+# It's currently full of _native_widget hacks to keep it functional, this one
+# is the next big step
 class DnDStatusBar(wx.StatusBar):
     buttons = Links()
 
@@ -3157,30 +2405,33 @@ class DnDStatusBar(wx.StatusBar):
     def GetLink(self,uid=None,index=None,button=None): raise AbstractError
 
     @property
-    def iconsSize(self): return _settings['bash.statusbar.iconSize'] + 8
+    def iconsSize(self): # +8 as each button has 4 px border on left and right
+        return _settings['bash.statusbar.iconSize'] + 8
 
     def _addButton(self, link):
-        gButton = link.GetBitmapButton(self, style=wx.NO_BORDER)
+        gButton = link.GetBitmapButton(self)
         if gButton:
             self.buttons.append(gButton)
+            # TODO(inf) Test in wx3
             # DnD events (only on windows, CaptureMouse works badly in wxGTK)
             if wx.Platform == '__WXMSW__':
-                gButton.Bind(wx.EVT_LEFT_DOWN, self.OnDragStart)
-                gButton.Bind(wx.EVT_LEFT_UP, self.OnDragEnd)
-                gButton.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.OnDragEndForced)
-                gButton.Bind(wx.EVT_MOTION, self.OnDrag)
+                gButton._native_widget.Bind(wx.EVT_LEFT_DOWN, self.OnDragStart)
+                gButton._native_widget.Bind(wx.EVT_LEFT_UP, self.OnDragEnd)
+                gButton._native_widget.Bind(wx.EVT_MOUSE_CAPTURE_LOST,
+                                            self.OnDragEndForced)
+                gButton._native_widget.Bind(wx.EVT_MOTION, self.OnDrag)
 
     def _getButtonIndex(self, mouseEvent):
         id_ = mouseEvent.GetId()
         for i, button in enumerate(self.buttons):
-            if button.GetId() == id_:
+            if button.wx_id_ == id_:
                 x = mouseEvent.GetPosition()[0]
-                delta = x / self.iconsSize
-                if abs(x) % self.iconsSize > self.iconsSize:
-                    delta += x / abs(x)
-                i += delta
-                if i < 0: i = 0
-                elif i > len(self.buttons): i = len(self.buttons)
+                # position is 0 at the beginning of the button's _icon_
+                # negative beyond that (on the left) and positive after
+                if x < -4:
+                    return max(i - 1, 0)
+                elif x > self.iconsSize - 4:
+                    return min(i + 1, len(self.buttons) - 1)
                 return i
         return wx.NOT_FOUND
 
@@ -3189,7 +2440,7 @@ class DnDStatusBar(wx.StatusBar):
         if self.dragging != wx.NOT_FOUND:
             self.dragStart = event.GetPosition()[0]
             button = self.buttons[self.dragging]
-            button.CaptureMouse()
+            button._native_widget.CaptureMouse()
         event.Skip()
 
     def OnDragEndForced(self, event):
@@ -3204,29 +2455,21 @@ class DnDStatusBar(wx.StatusBar):
 
     def OnDragEnd(self, event):
         if self.dragging != wx.NOT_FOUND:
-            button = self.buttons[self.dragging]
             try:
-                button.ReleaseMouse()
+                if self.moved:
+                    for button in self.buttons:
+                        if button._native_widget.HasCapture():
+                            button._native_widget.ReleaseMouse()
+                            break
             except:
-                deprint(u'Exception while handling mouse up on button',
-                        traceback=True)
-            # -*- Hacky code! -*-
-            # Since we've got to CaptureMouse to do DnD properly,
-            # The button will never get a EVT_BUTTON event if you
-            # just click it.  Can't figure out a good way for the
-            # two to play nicely, so we'll just simulate it for now
-            released = self._getButtonIndex(event)
-            if released != self.dragging: released = wx.NOT_FOUND
+                # deprint(u'Exception while handling mouse up on button',
+                #         traceback=True)
+                pass
             self.dragging = wx.NOT_FOUND
             self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
             if self.moved:
                 self.moved = False
                 return
-            # -*- Rest of hacky code -*-
-            if released != wx.NOT_FOUND:
-                evt = wx.CommandEvent(wx.wxEVT_COMMAND_BUTTON_CLICKED,
-                                      button.GetId())
-                wx.PostEvent(button, evt)
         event.Skip()
 
     def OnDrag(self, event):
@@ -3234,15 +2477,14 @@ class DnDStatusBar(wx.StatusBar):
             if abs(event.GetPosition()[0] - self.dragStart) > 4:
                 self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
             over = self._getButtonIndex(event)
-            if over >= len(self.buttons): over -= 1
             if over not in (wx.NOT_FOUND, self.dragging):
                 self.moved = True
                 button = self.buttons[self.dragging]
                 # update settings
                 uid = self.GetLink(button=button).uid
                 overUid = self.GetLink(index=over).uid
-                _settings['bash.statusbar.order'].remove(uid)
                 overIndex = _settings['bash.statusbar.order'].index(overUid)
+                _settings['bash.statusbar.order'].remove(uid)
                 _settings['bash.statusbar.order'].insert(overIndex, uid)
                 _settings.setChanged('bash.statusbar.order')
                 # update self.buttons
@@ -3257,7 +2499,7 @@ class DnDStatusBar(wx.StatusBar):
         rect = self.GetFieldRect(0)
         (xPos, yPos) = (rect.x + 4, rect.y + 2)
         for button in self.buttons:
-            button.SetPosition((xPos, yPos))
+            button.component_position = (xPos, yPos)
             xPos += self.iconsSize
         if event: event.Skip()
 
@@ -3285,111 +2527,24 @@ class WryeBashSplashScreen(wx.SplashScreen):
         # The program might/will freeze without this line.
         event.Skip() # Make sure the default handler runs too...
 
-class Splitter(wx.SplitterWindow):
-
-    def __init__(self, *args, **kwargs):
-        kwargs['style'] = kwargs.pop('style', splitterStyle)
-        super(Splitter, self).__init__(*args, **kwargs)
-
 #------------------------------------------------------------------------------
-class NotebookPanel(wx.Panel):
+class NotebookPanel(PanelWin):
     """Parent class for notebook panels."""
     # UI settings keys prefix - used for sashPos and uiList gui settings
     keyPrefix = 'OVERRIDE'
 
     def __init__(self, *args, **kwargs):
         super(NotebookPanel, self).__init__(*args, **kwargs)
+        # needed as some of the initialization must run after RefreshUI
         self._firstShow = True
 
     def RefreshUIColors(self):
         """Called to signal that UI color settings have changed."""
 
     def ShowPanel(self, **kwargs):
-        """To be called when particular panel is changed to and/or shown for
-        first time."""
+        """To be manually called when particular panel is changed to and/or
+        shown for first time."""
 
     def ClosePanel(self, destroy=False):
         """To be manually called when containing frame is closing. Use for
         saving data, scrollpos, etc - also used in BashFrame#SaveSettings."""
-
-#------------------------------------------------------------------------------
-class BaltFrame(wx.Frame):
-    """Frame subclass saving size/position on closing."""
-    _frame_settings_key = None
-    _size_hints = _def_size = (250, 250)
-
-    def __init__(self, *args, **kwargs):
-        _key = self.__class__._frame_settings_key
-        if _key is not None:
-            kwargs['pos'] = _settings.get(_key + '.pos', defPos)
-            kwargs['size'] = _settings.get(_key + '.size', self._def_size)
-        super(BaltFrame, self).__init__(*args, **kwargs)
-        self.SetBackgroundColour(wx.NullColour)
-        self.SetSizeHints(*self._size_hints)
-        #--Application Icons
-        self.SetIcons(self._resources())
-        #--Events
-        if _key: self.Bind(wx.EVT_CLOSE, lambda __event: self.OnCloseWindow())
-
-    @staticmethod
-    def _resources(): return Resources.bashBlue
-
-    #--Window Closing
-    def OnCloseWindow(self):
-        """Handle window close event.
-        Remember window size, position, etc."""
-        _key = self.__class__._frame_settings_key
-        if _key and not self.IsIconized() and not self.IsMaximized():
-            _settings[_key + '.pos'] = tuple(self.GetPosition())
-            _settings[_key + '.size'] = tuple(self.GetSize())
-        self.Destroy()
-
-# Event bindings --------------------------------------------------------------
-class Events(object):
-    RESIZE = 'resize'
-    ACTIVATE = 'activate'
-    CLOSE = 'close'
-    TEXT_CHANGED = 'text_changed'
-    CONTEXT_MENU = 'context_menu'
-    CHAR_KEY_PRESSED = 'char_key_pressed'
-    MOUSE_MOTION = 'mouse_motion'
-    MOUSE_LEAVE_WINDOW = 'mouse_leave_window'
-    MOUSE_LEFT_UP = 'mouse_left_up'
-    MOUSE_LEFT_DOWN = 'mouse_left_down'
-    MOUSE_LEFT_DOUBLECLICK = 'mouse_left_doubleclick'
-    MOUSE_RIGHT_UP = 'mouse_right_up'
-    MOUSE_RIGHT_DOWN = 'mouse_right_down'
-    MOUSE_MIDDLE_UP = 'mouse_middle_up'
-    MOUSE_MIDDLE_DOWN = 'mouse_middle_down'
-    WIZARD_CANCEL = 'wizard_cancel'
-    WIZARD_FINISHED = 'wizard_finished'
-    WIZARD_PAGE_CHANGING = 'wizard_page_changing'
-    # TODO(nycz): possibly too specific stuff here, what do?
-    # also the names here... ugh. needless to say its very wip
-    COMBOBOX_CHOICE = 'combobox_choice'
-    COLORPICKER_CHANGED = 'colorpicker_changed'
-
-_WX_EVENTS = {Events.RESIZE:                wx.EVT_SIZE,
-              Events.ACTIVATE:              wx.EVT_ACTIVATE,
-              Events.CLOSE:                 wx.EVT_CLOSE,
-              Events.TEXT_CHANGED:          wx.EVT_TEXT,
-              Events.CONTEXT_MENU:          wx.EVT_CONTEXT_MENU,
-              Events.CHAR_KEY_PRESSED:      wx.EVT_CHAR,
-              Events.MOUSE_MOTION:          wx.EVT_MOTION,
-              Events.MOUSE_LEAVE_WINDOW:    wx.EVT_LEAVE_WINDOW,
-              Events.MOUSE_LEFT_UP:         wx.EVT_LEFT_UP,
-              Events.MOUSE_LEFT_DOWN:       wx.EVT_LEFT_DOWN,
-              Events.MOUSE_LEFT_DOUBLECLICK:wx.EVT_LEFT_DCLICK,
-              Events.MOUSE_RIGHT_UP:        wx.EVT_RIGHT_UP,
-              Events.MOUSE_RIGHT_DOWN:      wx.EVT_RIGHT_DOWN,
-              Events.MOUSE_MIDDLE_UP:       wx.EVT_MIDDLE_UP,
-              Events.MOUSE_MIDDLE_DOWN:     wx.EVT_MIDDLE_DOWN,
-              Events.WIZARD_CANCEL:         wiz.EVT_WIZARD_CANCEL,
-              Events.WIZARD_FINISHED:       wiz.EVT_WIZARD_FINISHED,
-              Events.WIZARD_PAGE_CHANGING:  wiz.EVT_WIZARD_PAGE_CHANGING,
-              Events.COMBOBOX_CHOICE:       wx.EVT_COMBOBOX,
-              Events.COLORPICKER_CHANGED:   wx.EVT_COLOURPICKER_CHANGED,
-}
-
-def set_event_hook(obj, event, callback):
-    obj.Bind(_WX_EVENTS[event], callback)

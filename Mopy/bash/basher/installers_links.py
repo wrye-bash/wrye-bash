@@ -139,7 +139,7 @@ class Installers_MonitorInstall(Installers_Link):
         with ListBoxes(self.window, _(u'External Installation'),
             _(u'The following changes were detected in the Data directory'),
             checklists, bOk=_(u'Create Project')) as dialog:
-            if not dialog.askOkModal(): return
+            if not dialog.show_modal(): return
             include = set()
             for (lst, key) in [(newFiles, newFilesKey),
                                (changedFiles, changedFilesKey),
@@ -569,4 +569,4 @@ class Installers_CreateNewProject(ItemLink):
     _help = _(u'Create a new project...')
 
     @balt.conversation
-    def Execute(self): CreateNewProject.Display()
+    def Execute(self): CreateNewProject.display_dialog(self.window)

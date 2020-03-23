@@ -36,9 +36,11 @@ from .constants import settingDefaults
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, CBash_gui_patchers, PBash_gui_patchers
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order
-from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, hspacer, \
-    StaticText, CheckLink, EnabledLink, AppendableLink, TransLink, RadioLink, \
-    SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes, OkButton
+from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink,\
+    TransLink, RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, \
+    ListBoxes
+from ..gui import CancelButton, CheckBox, HLayout, Label, LayoutOptions, \
+    OkButton, RIGHT, Spacer, Stretch, TextField, VLayout, DialogWindow
 from ..bolt import GPath, SubProgress
 from ..bosh import faces
 from ..cint import CBashApi, FormID
@@ -334,7 +336,7 @@ class _Mod_Labels(ChoiceLink):
                 data = _Mod_LabelsData(self.window, _self)  # ListEditorData
                 with balt.ListEditor(self.window, _self.edit_window_title, data,
                                      _self.extraButtons) as _self.listEditor:
-                    _self.listEditor.ShowModal()  ##: consider only refreshing
+                    _self.listEditor.show_modal()  ##: consider only refreshing
                     # the mod list if this returns true
                 del _self.listEditor  ##: used by the buttons code - should be
                 # encapsulated
@@ -568,11 +570,10 @@ class Mod_ShowReadme(OneItemLink):
 
     def Execute(self):
         if not Link.Frame.docBrowser:
-            DocBrowser().Show()
+            DocBrowser().show_frame()
             bass.settings['bash.modDocs.show'] = True
-        #balt.ensureDisplayed(docBrowser)
         Link.Frame.docBrowser.SetMod(self._selected_item)
-        Link.Frame.docBrowser.Raise()
+        Link.Frame.docBrowser.raise_frame()
 
 class Mod_ListBashTags(ItemLink):
     """Copies list of bash tags to clipboard."""
@@ -1010,11 +1011,11 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             with ListBoxes(Link.Frame, _(u'Master Errors'), proceed_,[
                 [_(u'Missing Master Errors'), missingMsg, missing],
                 [_(u'Delinquent Master Errors'), delinquentMsg, delinquent]],
-                liststyle='tree',bOk=_(u'Continue Despite Errors')) as warning:
-                   if not warning.askOkModal(): return
+                liststyle=u'tree',bOk=_(u'Continue Despite Errors')) as dialog:
+                   if not dialog.show_modal(): return
         with PatchDialog(self.window, self._selected_info, self.doCBash,
                          importConfig) as patchDialog:
-            patchDialog.ShowModal()
+            patchDialog.show_modal()
         return self._selected_item
 
     def _ask_deactivate_mergeable(self, active_prior_to_patch):
@@ -1064,7 +1065,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             _(u"Deactivate these mods prior to patching"),
             _(u"The following mods should be deactivated prior to building "
               u"the patch."), checklists, bCancel=_(u'Skip')) as dialog:
-            if not dialog.askOkModal(): return
+            if not dialog.show_modal(): return
             deselect = set()
             for (lst, key) in [(unfiltered, unfilteredKey),
                                (merge, mergeKey),
@@ -2037,53 +2038,54 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         fileName, fileInfo = next(self.iselected_pairs()) # first selected pair
         defaultPath = bass.dirs['patches'].join(fileName.s + u' Exported Scripts')
         def OnOk():
-            dialog.EndModal(1)
-            bass.settings['bash.mods.export.deprefix'] = gdeprefix.GetValue().strip()
-            bass.settings['bash.mods.export.skip'] = gskip.GetValue().strip()
-            bass.settings['bash.mods.export.skipcomments'] = gskipcomments.GetValue()
-        dialog = balt.Dialog(Link.Frame, _(u'Export Scripts Options'),
-                             size=(400, 180), resize=False)
-        okButton = OkButton(dialog, onButClick=OnOk)
-        gskip = TextCtrl(dialog)
-        gdeprefix = TextCtrl(dialog)
-        gskipcomments = toggleButton(dialog, _(u'Filter Out Comments'),
-            toggle_tip=_(u"If active doesn't export comments in the scripts"))
-        gskip.SetValue(bass.settings['bash.mods.export.skip'])
-        gdeprefix.SetValue(bass.settings['bash.mods.export.deprefix'])
-        gskipcomments.SetValue(bass.settings['bash.mods.export.skipcomments'])
-        sizer = vSizer(
-            StaticText(dialog,_(u"Skip prefix (leave blank to not skip any), non-case sensitive):"),noAutoResize=True),
-            gskip,
-            hspacer,
-            StaticText(dialog,(_(u'Remove prefix from file names i.e. enter cob to save script cobDenockInit')
-                               + u'\n' +
-                               _(u'as DenockInit.ext rather than as cobDenockInit.ext')
-                               + u'\n' +
-                               _(u'(Leave blank to not cut any prefix, non-case sensitive):')
-                               ),noAutoResize=True),
-            gdeprefix,
-            hspacer,
-            gskipcomments,
-            balt.ok_and_cancel_sizer(dialog, okButton=okButton),
-            )
-        dialog.SetSizer(sizer)
-        with dialog: questions = dialog.ShowModal()
-        if questions != 1: return #because for some reason cancel/close dialogue is returning 5101!
-        if not defaultPath.exists():
+            dialog.accept_modal()
+            bass.settings['bash.mods.export.deprefix'] = gdeprefix.text_content.strip()
+            bass.settings['bash.mods.export.skip'] = gskip.text_content.strip()
+            bass.settings['bash.mods.export.skipcomments'] = gskipcomments.is_checked
+        dialog = DialogWindow(Link.Frame, _(u'Export Scripts Options'))
+        gskip = TextField(dialog)
+        gdeprefix = TextField(dialog)
+        gskipcomments = CheckBox(dialog, _(u'Filter Out Comments'),
+          chkbx_tooltip=_(u"If active doesn't export comments in the scripts"))
+        gskip.text_content = bass.settings['bash.mods.export.skip']
+        gdeprefix.text_content = bass.settings['bash.mods.export.deprefix']
+        gskipcomments.is_checked = bass.settings['bash.mods.export.skipcomments']
+        msg = [_(u'Remove prefix from file names i.e. enter cob to save '
+                 u'script cobDenockInit'),
+               _(u'as DenockInit.ext rather than as cobDenockInit.ext'),
+               _(u'(Leave blank to not cut any prefix, non-case sensitive):')]
+        ok_button = OkButton(dialog)
+        ok_button.on_clicked.subscribe(OnOk)
+        VLayout(border=6, spacing=4, items=[
+            Label(dialog, _(u'Skip prefix (leave blank to not skip any), '
+                            u'non-case sensitive):')),
+            (gskip, LayoutOptions(expand=True)), Spacer(10),
+            Label(dialog, u'\n'.join(msg)),
+            (gdeprefix, LayoutOptions(expand=True)), Spacer(10),
+            gskipcomments, Stretch(),
+            (HLayout(spacing=4, items=[ok_button, CancelButton(dialog)]),
+             LayoutOptions(h_align=RIGHT))
+        ]).apply_to(dialog, fit=True)
+        with dialog: questions = dialog.show_modal()
+        if not questions: return
+        def_exists = defaultPath.exists()
+        if not def_exists:
             defaultPath.makedirs()
         textDir = self._askDirectory(
             message=_(u'Choose directory to export scripts to'),
             defaultPath=defaultPath)
-        if textDir != defaultPath:
-            for asDir,sDirs,sFiles in bolt.walkdir(defaultPath.s):
-                if not (sDirs or sFiles):
-                    defaultPath.removedirs()
+        if not def_exists and textDir != defaultPath and not \
+                defaultPath.list():
+            defaultPath.removedirs()
         if not textDir: return
         #--Export
         #try:
         scriptText = self._parser()
         scriptText.readFromMod(fileInfo,fileName.s)
-        exportedScripts = scriptText.writeToText(fileInfo,bass.settings['bash.mods.export.skip'],textDir,bass.settings['bash.mods.export.deprefix'],fileName.s,bass.settings['bash.mods.export.skipcomments'])
+        exportedScripts = scriptText.writeToText(fileInfo,
+            bass.settings['bash.mods.export.skip'], textDir,
+            bass.settings['bash.mods.export.deprefix'], fileName.s,
+            bass.settings['bash.mods.export.skipcomments'])
         #finally:
         self._showLog(exportedScripts, title=_(u'Export Scripts'),
                       asDialog=True)
@@ -2666,7 +2668,7 @@ class MasterList_CleanMasters(AppendableLink, ItemLink): # CRUFT
                 with ListBoxes(Link.Frame, _(u'Remove these masters?'), _(
                         u'The following master files can be safely removed.'),
                         checklists) as dialog:
-                    if not dialog.askOkModal(): return
+                    if not dialog.show_modal(): return
                     newMasters.extend(
                         dialog.getChecked(removeKey, removed, checked=False))
                     modFile.TES4.masters = newMasters

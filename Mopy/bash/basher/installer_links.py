@@ -202,36 +202,34 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             subs = []
             idetails = self.iPanel.detailsPanel
             idetails.refreshCurrent(installer)
-            for index in xrange(idetails.gSubList.GetCount()):
-                subs.append(idetails.gSubList.GetString(index))
-            default, pageSize, pos = self._get_size_and_pos()
+            for index in xrange(idetails.gSubList.lb_get_items_count()):
+                subs.append(idetails.gSubList.lb_get_str_item_at_index(index))
             try:
                 wizard = InstallerWizard(self.window, self._selected_info,
-                                         self.bAuto, subs, pageSize, pos)
+                                         self.bAuto, subs)
             except CancelError:
                 return
-            balt.ensureDisplayed(wizard)
+            wizard.ensureDisplayed()
         ret = wizard.Run()
-        self._save_size_pos(default, ret)
         if ret.canceled:
             idetails.refreshCurrent(installer)
             return
         #Check the sub-packages that were selected by the wizard
         installer.resetAllEspmNames()
-        for index in xrange(idetails.gSubList.GetCount()):
+        for index in xrange(idetails.gSubList.lb_get_items_count()):
             select = installer.subNames[index + 1] in ret.select_sub_packages
-            idetails.gSubList.Check(index, select)
+            idetails.gSubList.lb_check_at_index(index, select)
             installer.subActives[index + 1] = select
         idetails.refreshCurrent(installer)
         #Check the espms that were selected by the wizard
-        espms = idetails.gEspmList.GetStrings()
+        espms = idetails.gEspmList.lb_get_str_items()
         espms = [x.replace(u'&&',u'&') for x in espms]
         installer.espmNots = set()
         for index, espm in enumerate(idetails.espms):
             if espms[index] in ret.select_plugins:
-                idetails.gEspmList.Check(index, True)
+                idetails.gEspmList.lb_check_at_index(index, True)
             else:
-                idetails.gEspmList.Check(index, False)
+                idetails.gEspmList.lb_check_at_index(index, False)
                 installer.espmNots.add(espm)
         idetails.refreshCurrent(installer)
         #Rename the espms that need renaming
@@ -297,50 +295,13 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                     focus_list=False, detail_item=lastApplied)
             ui_refresh[1] = False
         if len(manuallyApply) > 0:
-            message = balt.fill(_(
+            message = balt.text_wrap(_(
                 u'The following INI Tweaks were not automatically applied.  '
                 u'Be sure to apply them after installing the package.'))
             message += u'\n\n'
             message += u'\n'.join([u' * ' + x[0].stail + u'\n   TO: ' + x[1].s
                                    for x in manuallyApply])
             self._showInfo(message)
-
-    @staticmethod
-    def _save_size_pos(default, ret):
-        # Sanity checks on returned size/position
-        if not isinstance(ret.wizard_pos, balt.wxPoint):
-            deprint(_(
-                u'Returned Wizard position (%s) was not a wx.Point (%s), '
-                u'reverting to default position.') % (ret.wizard_pos,
-                                                      type(ret.wizard_pos)))
-            ret.wizard_pos = balt.defPos
-        if not isinstance(ret.wizard_size, balt.wxSize):
-            deprint(_(u'Returned Wizard size (%s) was not a wx.Size (%s), '
-                      u'reverting to default size.') % (
-                        ret.wizard_size, type(ret.wizard_size)))
-            ret.wizard_size = tuple(default)
-        bass.settings['bash.wizard.size'] = (ret.wizard_size[0],
-                                             ret.wizard_size[1])
-        bass.settings['bash.wizard.pos'] = (ret.wizard_pos[0],
-                                            ret.wizard_pos[1])
-
-    @staticmethod
-    def _get_size_and_pos():
-        saved = bass.settings['bash.wizard.size']
-        default = settingDefaults['bash.wizard.size']
-        pos = bass.settings['bash.wizard.pos']
-        # Sanity checks on saved size/position
-        if not isinstance(pos, tuple) or len(pos) != 2:
-            deprint(_(u'Saved Wizard position (%s) was not a tuple (%s), '
-                      u'reverting to default position.') % (pos, type(pos)))
-            pos = tuple(balt.defPos)
-        if not isinstance(saved, tuple) or len(saved) != 2:
-            deprint(_(u'Saved Wizard size (%s) was not a tuple (%s), '
-                      u'reverting to default size.') % (saved, type(saved)))
-            pageSize = tuple(default)
-        else:
-            pageSize = (max(saved[0], default[0]), max(saved[1], default[1]))
-        return default, pageSize, pos
 
 class Installer_OpenReadme(OneItemLink, _InstallerLink):
     """Opens the installer's readme if BAIN can find one."""
@@ -818,8 +779,7 @@ class Installer_Espm_SelectAll(_Installer_Details_Link):
 
     def Execute(self):
         self._installer.espmNots = set()
-        for i in range(len(self.window.espms)):
-            self.window.gEspmList.Check(i, True)
+        self.window.gEspmList.set_all_checkmarks(checked=True)
         self.window.refreshCurrent(self._installer)
 
 class Installer_Espm_DeselectAll(_Installer_Details_Link):
@@ -828,11 +788,8 @@ class Installer_Espm_DeselectAll(_Installer_Details_Link):
     _help = _(u'Deselects all plugin files in the selected sub-packages.')
 
     def Execute(self):
-        espmNots = self._installer.espmNots = set()
-        for i in range(len(self.window.espms)):
-            self.window.gEspmList.Check(i, False)
-            espm =GPath(self.window.gEspmList.GetString(i).replace(u'&&',u'&'))
-            espmNots.add(espm)
+        self._installer.espmNots = set(self.window.espms)
+        self.window.gEspmList.set_all_checkmarks(checked=False)
         self.window.refreshCurrent(self._installer)
 
 class Installer_Espm_Rename(_Installer_Details_Link):
@@ -843,7 +800,7 @@ class Installer_Espm_Rename(_Installer_Details_Link):
     def _enable(self): return self.selected != -1
 
     def Execute(self):
-        curName = self.window.gEspmList.GetString(self.selected).replace(u'&&',
+        curName = self.window.gEspmList.lb_get_str_item_at_index(self.selected).replace(u'&&',
                                                                          u'&')
         if curName[0] == u'*':
             curName = curName[1:]
@@ -863,7 +820,7 @@ class Installer_Espm_Reset(_Installer_Details_Link):
 
     def _enable(self):
         if self.selected == -1: return False
-        curName = self.window.gEspmList.GetString(self.selected).replace(u'&&',
+        curName = self.window.gEspmList.lb_get_str_item_at_index(self.selected).replace(u'&&',
                                                                          u'&')
         if curName[0] == u'*': curName = curName[1:]
         self.curName = curName
@@ -893,9 +850,9 @@ class Installer_Espm_List(_Installer_Details_Link):
         subs = (_(u'Plugin List for %s:') % self._installer.archive +
                 u'\n[spoiler]\n')
         espm_list = self.window.gEspmList
-        for index in range(espm_list.GetCount()):
-            subs += [u'   ',u'** '][espm_list.IsChecked(index)] + \
-                    espm_list.GetString(index) + '\n'
+        for index in range(espm_list.lb_get_items_count()):
+            subs += [u'   ',u'** '][espm_list.lb_is_checked_at_index(index)] + \
+                    espm_list.lb_get_str_item_at_index(index) + '\n'
         subs += u'[/spoiler]'
         balt.copyToClipboard(subs)
         self._showLog(subs, title=_(u'Plugin List'), fixedFont=False)
@@ -910,7 +867,7 @@ class Installer_Espm_JumpToMod(_Installer_Details_Link):
         if self.selected == -1: return False
         ##: Maybe refactor all this plugin logic (especially the renamed plugin
         # (asterisk) handling) to a property inside a base class?
-        selected_plugin = self.window.gEspmList.GetString(
+        selected_plugin = self.window.gEspmList.lb_get_str_item_at_index(
             self.selected).replace(u'&&', u'&')
         if selected_plugin[0] == u'*': selected_plugin = selected_plugin[1:]
         self.target_plugin = GPath(selected_plugin)
@@ -923,7 +880,7 @@ class Installer_Espm_JumpToMod(_Installer_Details_Link):
 # InstallerDetails Subpackage Links -------------------------------------------
 #------------------------------------------------------------------------------
 class _Installer_Subs(_Installer_Details_Link):
-    def _enable(self): return self.window.gSubList.GetCount() > 1
+    def _enable(self): return self.window.gSubList.lb_get_items_count() > 1
 
 class Installer_Subs_SelectAll(_Installer_Subs):
     """Select All sub-packages in installer for installation."""
@@ -931,8 +888,8 @@ class Installer_Subs_SelectAll(_Installer_Subs):
     _help = _(u'Selects all sub-packages in this installer.')
 
     def Execute(self):
-        for index in xrange(self.window.gSubList.GetCount()):
-            self.window.gSubList.Check(index, True)
+        for index in xrange(self.window.gSubList.lb_get_items_count()):
+            self.window.gSubList.lb_check_at_index(index, True)
             self._installer.subActives[index + 1] = True
         self.window.refreshCurrent(self._installer)
 
@@ -942,8 +899,8 @@ class Installer_Subs_DeselectAll(_Installer_Subs):
     _help = _(u'Deselects all sub-packages in this installer.')
 
     def Execute(self):
-        for index in xrange(self.window.gSubList.GetCount()):
-            self.window.gSubList.Check(index, False)
+        for index in xrange(self.window.gSubList.lb_get_items_count()):
+            self.window.gSubList.lb_check_at_index(index, False)
             self._installer.subActives[index + 1] = False
         self.window.refreshCurrent(self._installer)
 
@@ -954,9 +911,9 @@ class Installer_Subs_ToggleSelection(_Installer_Subs):
     _help = _(u'Deselects all selected sub-packages and vice versa.')
 
     def Execute(self):
-        for index in xrange(self.window.gSubList.GetCount()):
+        for index in xrange(self.window.gSubList.lb_get_items_count()):
             check = not self._installer.subActives[index+1]
-            self.window.gSubList.Check(index, check)
+            self.window.gSubList.lb_check_at_index(index, check)
             self._installer.subActives[index + 1] = check
         self.window.refreshCurrent(self._installer)
 
@@ -969,9 +926,9 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
     def Execute(self):
         subs = _(u'Sub-Packages List for %s:') % self._installer.archive
         subs += u'\n[spoiler]\n'
-        for index in xrange(self.window.gSubList.GetCount()):
-            subs += [u'   ', u'** '][self.window.gSubList.IsChecked(
-                index)] + self.window.gSubList.GetString(index) + u'\n'
+        for index in xrange(self.window.gSubList.lb_get_items_count()):
+            subs += [u'   ', u'** '][self.window.gSubList.lb_is_checked_at_index(
+                index)] + self.window.gSubList.lb_get_str_item_at_index(index) + u'\n'
         subs += u'[/spoiler]'
         balt.copyToClipboard(subs)
         self._showLog(subs, title=_(u'Sub-Package Lists'), fixedFont=False)
@@ -1040,8 +997,8 @@ class InstallerProject_OmodConfig(_SingleProject):
     _help = _(u'Projects only. Allows you to read/write omod configuration info')
 
     def Execute(self):
-        (InstallerProject_OmodConfigDialog(self.window, self.idata,
-                                           self._selected_item)).Show()
+        InstallerProject_OmodConfigDialog(self.window, self.idata,
+                                          self._selected_item).show_frame()
 
 #------------------------------------------------------------------------------
 class InstallerProject_Sync(_SingleProject):

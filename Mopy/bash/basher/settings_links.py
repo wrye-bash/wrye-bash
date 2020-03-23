@@ -24,12 +24,11 @@
 
 import sys
 
-from . import BashFrame, BashStatusBar
-from .app_buttons import App_Button  # TODO(ut): ugly
+from . import BashStatusBar
 from .dialogs import ColorDialog
 from .. import barb, bush, balt, bass, bolt, env, exception
 from ..balt import ItemLink, AppendableLink, RadioLink, CheckLink, MenuLink, \
-    TransLink, EnabledLink, BoolLink, tooltip, Link
+    TransLink, EnabledLink, BoolLink, Link
 from ..bolt import deprint, GPath
 from ..exception import BoltError
 from ..localize import dump_translator
@@ -55,7 +54,7 @@ class Settings_BackupSettings(ItemLink):
     def Execute(self):
         msg = _(u'Do you want to backup your Bash settings now?')
         if not balt.askYes(Link.Frame, msg,_(u'Backup Bash Settings?')): return
-        with balt.BusyCursor(): BashFrame.SaveSettings(Link.Frame)
+        with balt.BusyCursor(): Link.Frame.SaveSettings()
         base_dir = bass.settings['bash.backupPath'] or bass.dirs['modsBash']
         settings_file = balt.askSave(Link.Frame,
                                      title=_(u'Backup Bash Settings'),
@@ -107,7 +106,7 @@ class Settings_RestoreSettings(ItemLink):
                                                  error_title):
                 return
             restarting = True
-            balt.showInfo(balt.Link.Frame, '\n'.join([
+            balt.showInfo(Link.Frame, '\n'.join([
                 _(u'Your Bash settings have been successfully extracted.'),
                 _(u'Backup Path: ') + settings_file.s, u'', _(u'Before the '
                   u'settings can take effect, Wrye Bash must restart.'), _(
@@ -131,7 +130,7 @@ class Settings_SaveSettings(ItemLink):
     _help = _(u"Save all of Wrye Bash's settings/data now.")
 
     def Execute(self):
-        BashFrame.SaveSettings(Link.Frame)
+        Link.Frame.SaveSettings()
 
 #------------------------------------------------------------------------------
 class Settings_ExportDllInfo(AppendableLink, ItemLink):
@@ -235,7 +234,7 @@ class Settings_Colors(ItemLink):
     _text = _(u'Colors...')
     _help = _(u"Configure the custom colors used in the UI.")
 
-    def Execute(self): ColorDialog.Display()
+    def Execute(self): ColorDialog.display_dialog()
 
 #------------------------------------------------------------------------------
 class Settings_IconSize(RadioLink):
@@ -264,12 +263,9 @@ class Settings_StatusBar_ShowVersions(CheckLink):
     def Execute(self):
         bass.settings['bash.statusbar.showversion'] ^= True
         for button in BashStatusBar.buttons:
-            if isinstance(button, App_Button):
-                if button.gButton:
-                    button.gButton.SetToolTip(tooltip(button.sb_button_tip))
+            button.set_sb_button_tooltip()
         if BashStatusBar.obseButton.button_state:
-            for button in App_Button.obseButtons:
-                button.gButton.SetToolTip(tooltip(getattr(button,'obseTip',u'')))
+            BashStatusBar.obseButton.UpdateToolTips()
 
 #------------------------------------------------------------------------------
 class Settings_Languages(TransLink):
@@ -416,7 +412,7 @@ class Settings_UnHideButtons(TransLink):
         else:
             class _NoButtons(EnabledLink):
                 _text = _(u'Unhide Buttons')
-                _help = _(u"No hidden buttons available to unhide.")
+                _help = _(u'No hidden buttons available to unhide.')
                 def _enable(self): return False
             return _NoButtons()
 
@@ -431,9 +427,9 @@ class Settings_UnHideButton(ItemLink):
         if button:
             # If the wx.Button object exists (it was hidden this session),
             # Use the tooltip from it
-            tip_ = button.GetToolTip().GetTip()
+            tip_ = button.tooltip
         else:
-            # If the link is an App_Button, it will have a 'sb_button_tip' attribute
+            # If the link is an _App_Button, it will have a 'sb_button_tip' attribute
             tip_ = getattr(self.link,'sb_button_tip',None) # YAK YAK YAK
         if tip_ is None:
             # No good, use its uid as a last resort
@@ -451,7 +447,7 @@ class Settings_UseAltName(BoolLink):
 
     def Execute(self):
         super(Settings_UseAltName, self).Execute()
-        Link.Frame.SetTitle()
+        Link.Frame.set_bash_frame_title()
 
 #------------------------------------------------------------------------------
 class Settings_UAC(AppendableLink, ItemLink):

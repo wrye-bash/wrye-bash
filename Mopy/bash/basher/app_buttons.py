@@ -26,16 +26,16 @@ import webbrowser
 from . import BashStatusBar, BashFrame
 from .frames import ModChecker, DocBrowser
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order
-from ..balt import ItemLink, Link, Links, bitmapButton, \
-    SeparatorLink, tooltip, BoolLink, staticBitmap
+from ..balt import ItemLink, Link, Links, SeparatorLink, BoolLink, staticBitmap
 from ..bolt import GPath
-from ..exception import AbstractError
 from ..env import getJava
+from ..exception import AbstractError
+from ..gui import ClickableImage, EventResult
 
-__all__ = ['Obse_Button', 'LAA_Button', 'AutoQuit_Button', 'Game_Button',
-           'TESCS_Button', 'App_Button', 'Tooldir_Button', 'App_Tes4View',
-           'App_BOSS', 'App_DocBrowser', 'App_ModChecker', 'App_Settings',
-           'App_Help', 'App_Restart', 'App_GenPickle']
+__all__ = [u'Obse_Button', u'LAA_Button', u'AutoQuit_Button', u'Game_Button',
+           u'TESCS_Button', u'App_Tes4View', u'App_BOSS',
+           u'App_DocBrowser', u'App_ModChecker', u'App_Settings', u'App_Help',
+           u'App_Restart', u'App_GenPickle', u'app_button_factory']
 
 #------------------------------------------------------------------------------
 # StatusBar Links--------------------------------------------------------------
@@ -44,7 +44,7 @@ class _StatusBar_Hide(ItemLink):
     """The (single) link on the button's menu - hides the button."""
     def _initData(self, window, selection):
         super(_StatusBar_Hide, self)._initData(window, selection)
-        tip_ = window.GetToolTip().GetTip()
+        tip_ = window.tooltip
         self._text = _(u"Hide '%s'") % tip_
         self._help = _(u"Hides %(buttonname)s's status bar button (can be"
             u" restored through the settings menu).") % ({'buttonname': tip_})
@@ -75,19 +75,19 @@ class StatusBar_Button(ItemLink):
         existent buttons."""
         return True
 
-    def GetBitmapButton(self, window, style, **kwdargs):
+    def GetBitmapButton(self, window, image=None, onRClick=None):
         """Create and return gui button - you must define imageKey - WIP overrides"""
-        btn_image = kwdargs.pop('image', None) or balt.images[self.imageKey %
+        btn_image = image or balt.images[self.imageKey %
                         bass.settings['bash.statusbar.iconSize']].GetBitmap()
-        kwdargs['onRClick'] = kwdargs.pop('onRClick', None) or self.DoPopupMenu
-        kwdargs['onBBClick'] = self.Execute
         if self.gButton is not None:
-            self.gButton.Destroy()
-        self.gButton = bitmapButton(window, btn_image, style=style,
-                                    button_tip=self.sb_button_tip, **kwdargs)
+            self.gButton.destroy_component()
+        self.gButton = ClickableImage(window, btn_image,
+                                      btn_tooltip=self.sb_button_tip)
+        self.gButton.on_clicked.subscribe(self.Execute)
+        self.gButton.on_right_clicked.subscribe(onRClick or self.DoPopupMenu)
         return self.gButton
 
-    def DoPopupMenu(self,event):
+    def DoPopupMenu(self):
         if self.canHide:
             if len(self.mainMenu) == 0 or not isinstance(self.mainMenu[-1],
                                                          _StatusBar_Hide):
@@ -95,9 +95,8 @@ class StatusBar_Button(ItemLink):
                     self.mainMenu.append(SeparatorLink())
                 self.mainMenu.append(_StatusBar_Hide())
         if len(self.mainMenu) > 0:
-            self.mainMenu.PopupMenu(self.gButton,Link.Frame,0)
-        else:
-            event.Skip()
+            self.mainMenu.new_menu(self.gButton, 0)
+            return EventResult.FINISH ##: Kept it as such, test if needed
 
     # Helper function to get OBSE version
     @property
@@ -111,22 +110,27 @@ class StatusBar_Button(ItemLink):
         else:
             return u''
 
+    def set_sb_button_tooltip(self): pass
+
 #------------------------------------------------------------------------------
 # App Links -------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class App_Button(StatusBar_Button):
+class _App_Button(StatusBar_Button):
     """Launch an application."""
     obseButtons = []
 
     @property
     def version(self):
         if not bass.settings['bash.statusbar.showversion']: return u''
-        if not self.isJava and self.IsPresent():
+        if self.IsPresent():
             version = self.exePath.strippedVersion
             if version != (0,):
                 version = u'.'.join([u'%s'%x for x in version])
                 return version
         return u''
+
+    def set_sb_button_tooltip(self):
+        if self.gButton: self.gButton.tooltip = self.sb_button_tip
 
     @property
     def sb_button_tip(self):
@@ -139,72 +143,33 @@ class App_Button(StatusBar_Button):
         if self._obseTip is None: return None
         return self._obseTip % (dict(version=self.version))
 
-    def __init__(self, exePathArgs, images, tip, obseTip=None, obseArg=None,
-                 workingDir=None, uid=None, canHide=True):
-        """Initialize
-        exePathArgs (string): exePath
-        exePathArgs (tuple): (exePath,*exeArgs)
-        exePathArgs (list):  [exePathArgs,altExePathArgs,...]
-        images: [16x16,24x24,32x32] images
-        """
-        super(App_Button, self).__init__(uid, canHide, tip)
-        if isinstance(exePathArgs, list):
-            use = exePathArgs[0]
-            for item in exePathArgs:
-                if isinstance(item, tuple):
-                    exePath = item[0]
-                else:
-                    exePath = item
-                if exePath.exists():
-                    # Use this one
-                    use = item
-                    break
-            exePathArgs = use
-        if isinstance(exePathArgs,tuple):
-            self.exePath = exePathArgs[0]
-            self.exeArgs = exePathArgs[1:]
-        else:
-            self.exePath = exePathArgs
-            self.exeArgs = tuple()
+    def __init__(self, exePath, exeArgs, images, tip, obseTip=None, uid=None,
+                 canHide=True):
+        """images: [16x16,24x24,32x32] images"""
+        super(_App_Button, self).__init__(uid, canHide, tip)
+        self.exeArgs = exeArgs
+        self.exePath = exePath
         self.images = images
-        self.workingDir = GPath(workingDir) if workingDir else None
-        #--Exe stuff, note that sometimes exePath is None
-        self.isExe = self.exePath and self.exePath.cext == u'.exe'
-        #--Java stuff
-        self.isJava = self.exePath and self.exePath.cext == u'.jar'
-        if self.isJava:
-            self.java = getJava()
-            self.jar = self.exePath
-            self.appArgs = u''.join(self.exeArgs)
-        #--shortcut
-        self.isShortcut = self.exePath and self.exePath.cext == u'.lnk'
-        #--Folder
-        self.isFolder = self.exePath and self.exePath.isdir()
         #--**SE stuff
         self._obseTip = obseTip
-        self.obseArg = obseArg
-        # used by App_Button.Execute(): be sure to set them _before_ calling it
+        # used by _App_Button.Execute(): be sure to set them _before_ calling it
         self.extraArgs = ()
         self.wait = False
 
     def IsPresent(self):
-        if self.isJava:
-            return self.java.exists() and self.jar.exists()
-        else:
-            if self.exePath in bosh.undefinedPaths:
-                return False
-            return self.exePath.exists()
+        return self.exePath not in bosh.undefinedPaths and \
+               self.exePath.exists()
 
-    def GetBitmapButton(self, window, style, **kwdargs):
+    def GetBitmapButton(self, window, image=None, onRClick=None):
         if not self.IsPresent(): return None
         size = bass.settings['bash.statusbar.iconSize'] # 16, 24, 32
         idex = (size / 8) - 2 # 0, 1, 2, duh
-        super(App_Button, self).GetBitmapButton(window, style=style,
-              image=self.images[idex].GetBitmap())
+        super(_App_Button, self).GetBitmapButton(
+            window, self.images[idex].GetBitmap(), onRClick)
         if self.obseTip is not None:
-            App_Button.obseButtons.append(self)
+            _App_Button.obseButtons.append(self)
             if BashStatusBar.obseButton.button_state:
-                self.gButton.SetToolTip(tooltip(self.obseTip))
+                self.gButton.tooltip = self.obseTip
         return self.gButton
 
     def ShowError(self,error):
@@ -227,112 +192,137 @@ class App_Button(StatusBar_Button):
                            _(u"Could not launch '%s'" % self.exePath.stail)
                            )
             return
-        if self.isShortcut or self.isFolder:
-            webbrowser.open(self.exePath.s)
-        elif self.isJava:
-            cwd = bolt.Path.getcwd()
-            if self.workingDir:
-                self.workingDir.setcwd()
-            else:
-                self.jar.head.setcwd()
-            try:
-                subprocess.Popen(
-                    (self.java.stail, u'-jar', self.jar.stail, self.appArgs),
-                     executable=self.java.s, close_fds=True)
-            except UnicodeError:
-                self._showUnicodeError()
-            except Exception as error:
-                self.ShowError(error)
-            finally:
-                cwd.setcwd()
-        elif self.isExe:
-            exeObse = bass.dirs['app'].join(bush.game.se.exe)
-            exeLaa = bass.dirs['app'].join(bush.game.laa.exe)
-            if BashStatusBar.laaButton.button_state and \
-                            self.exePath.tail == bush.game.launch_exe:
-                # Should use the LAA Launcher
-                exePath = exeLaa
-                args = [exePath.s]
-            elif self.obseArg is not None and \
-                    BashStatusBar.obseButton.button_state:
-                exePath = (self.exePath if not exeObse.exists() and
-                           self.exePath.tail == u'Oblivion.exe'
-                           else exeObse)
-                args = [exePath.s]
-                if self.obseArg != u'':
-                    args.append(u'%s' % self.obseArg)
-            else:
-                exePath = self.exePath
-                args = [exePath.s]
-            args.extend(self.exeArgs)
-            if self.extraArgs: args.extend(self.extraArgs)
-            Link.Frame.SetStatusInfo(u' '.join(args[1:]))
-            cwd = bolt.Path.getcwd()
-            if self.workingDir:
-                self.workingDir.setcwd()
-            else:
-                exePath.head.setcwd()
-            try:
-                popen = subprocess.Popen(args, close_fds=True)
-                if self.wait:
-                    popen.wait()
-            except UnicodeError:
-                self._showUnicodeError()
-            except WindowsError as werr:
-                if werr.winerror != 740:
-                    self.ShowError(werr)
+        self._app_button_execute()
+
+    def _app_button_execute(self):
+        dir_ = bolt.Path.getcwd().s
+        args = u'"%s"' % self.exePath.s
+        args += u' '.join([u'%s' % arg for arg in self.exeArgs])
+        try:
+            import win32api
+            r, executable = win32api.FindExecutable(self.exePath.s)
+            executable = win32api.GetLongPathName(executable)
+            win32api.ShellExecute(0,u"open",executable,args,dir_,1)
+        except Exception as error:
+            if isinstance(error,WindowsError) and error.winerror == 740:
+                # Requires elevated permissions
                 try:
                     import win32api
-                    win32api.ShellExecute(0,'runas', exePath.s,
-                                          u'%s' % self.exeArgs,
-                                          bass.dirs['app'].s, 1)
-                except:
-                    self.ShowError(werr)
-            except Exception as error:
-                self.ShowError(error)
-            finally:
-                cwd.setcwd()
-        else:
-            dir_ = self.workingDir.s if self.workingDir else bolt.Path.getcwd().s
-            args = u'"%s"' % self.exePath.s
-            args += u' '.join([u'%s' % arg for arg in self.exeArgs])
+                    win32api.ShellExecute(0,'runas',executable,args,dir_,1)
+                except Exception as error:
+                    self.ShowError(error)
+            else:
+                # Most likely we're here because FindExecutable failed (no file association)
+                # Or because win32api import failed.  Try doing it using os.startfile
+                # ...Changed to webbrowser.open because os.startfile is windows specific and is not cross platform compatible
+                cwd = bolt.Path.getcwd()
+                self.exePath.head.setcwd()
+                try:
+                    webbrowser.open(self.exePath.s)
+                except UnicodeError:
+                    self._showUnicodeError()
+                except Exception as error:
+                    self.ShowError(error)
+                finally:
+                    cwd.setcwd()
+
+class _ExeButton(_App_Button):
+
+    def _app_button_execute(self):
+        self._run_exe(self.exePath, [self.exePath.s])
+
+    def _run_exe(self, exe_path, exe_args):
+        exe_args.extend(self.exeArgs)
+        if self.extraArgs: exe_args.extend(self.extraArgs)
+        Link.Frame.set_status_info(u' '.join(exe_args[1:]))
+        cwd = bolt.Path.getcwd()
+        exe_path.head.setcwd()
+        try:
+            popen = subprocess.Popen(exe_args, close_fds=True)
+            if self.wait:
+                popen.wait()
+        except UnicodeError:
+            self._showUnicodeError()
+        except WindowsError as werr:
+            if werr.winerror != 740:
+                self.ShowError(werr)
             try:
                 import win32api
-                r, executable = win32api.FindExecutable(self.exePath.s)
-                executable = win32api.GetLongPathName(executable)
-                win32api.ShellExecute(0,u"open",executable,args,dir_,1)
-            except Exception as error:
-                if isinstance(error,WindowsError) and error.winerror == 740:
-                    # Requires elevated permissions
-                    try:
-                        import win32api
-                        win32api.ShellExecute(0,'runas',executable,args,dir_,1)
-                    except Exception as error:
-                        self.ShowError(error)
-                else:
-                    # Most likely we're here because FindExecutable failed (no file association)
-                    # Or because win32api import failed.  Try doing it using os.startfile
-                    # ...Changed to webbrowser.open because os.startfile is windows specific and is not cross platform compatible
-                    cwd = bolt.Path.getcwd()
-                    if self.workingDir:
-                        self.workingDir.setcwd()
-                    else:
-                        self.exePath.head.setcwd()
-                    try:
-                        webbrowser.open(self.exePath.s)
-                    except UnicodeError:
-                        self._showUnicodeError()
-                    except Exception as error:
-                        self.ShowError(error)
-                    finally:
-                        cwd.setcwd()
+                win32api.ShellExecute(0, 'runas', exe_path.s,
+                    u'%s' % self.exeArgs, bass.dirs['app'].s, 1)
+            except:
+                self.ShowError(werr)
+        except Exception as error:
+            self.ShowError(error)
+        finally:
+            cwd.setcwd()
 
-#------------------------------------------------------------------------------
-class Tooldir_Button(App_Button):
-    """Just an App_Button that's path is in bosh.tooldirs
-       Use this to automatically set the uid for the App_Button."""
-    def __init__(self,toolKey,images,tip,obseTip=None,obseArg=None,workingDir=None,canHide=True):
-        App_Button.__init__(self, bass.tooldirs[toolKey], images, tip, obseTip, obseArg, workingDir, toolKey, canHide)
+class _JavaButton(_App_Button):
+    """_App_Button pointing to a .jar file."""
+
+    @property
+    def version(self): return u''
+
+    def __init__(self, exePath, exeArgs, *args, **kwargs):
+        super(_JavaButton, self).__init__(exePath, exeArgs, *args, **kwargs)
+        self.java = getJava()
+        self.appArgs = u''.join(self.exeArgs)
+
+    def IsPresent(self):
+        return self.java.exists() and self.exePath.exists()
+
+    def _app_button_execute(self):
+        cwd = bolt.Path.getcwd()
+        self.exePath.head.setcwd()
+        try:
+            subprocess.Popen(
+                (self.java.stail, u'-jar', self.exePath.stail, self.appArgs),
+                executable=self.java.s, close_fds=True)
+        except UnicodeError:
+            self._showUnicodeError()
+        except Exception as error:
+            self.ShowError(error)
+        finally:
+            cwd.setcwd()
+
+class _LnkOrDirButton(_App_Button):
+
+    def _app_button_execute(self): webbrowser.open(self.exePath.s)
+
+def _parse_button_arguments(exePathArgs):
+    """Expected formats:
+        exePathArgs (string): exePath
+        exePathArgs (tuple): (exePath,*exeArgs)
+        exePathArgs (list):  [exePathArgs,altExePathArgs,...]"""
+    if isinstance(exePathArgs, list):
+        use = exePathArgs[0]
+        for item in exePathArgs:
+            if isinstance(item, tuple):
+                exePath = item[0]
+            else:
+                exePath = item
+            if exePath.exists():
+                # Use this one
+                use = item
+                break
+        exePathArgs = use
+    if isinstance(exePathArgs, tuple):
+        exePath = exePathArgs[0]
+        exeArgs = exePathArgs[1:]
+    else:
+        exePath = exePathArgs
+        exeArgs = tuple()
+    return exePath, exeArgs
+
+def app_button_factory(exePathArgs, *args, **kwargs):
+    exePath, exeArgs = _parse_button_arguments(exePathArgs)
+    if exePath and exePath.cext == u'.exe': # note: sometimes exePath is None
+        return _ExeButton(exePath, exeArgs, *args, **kwargs)
+    if exePath and exePath.cext == u'.jar':
+        return _JavaButton(exePath, exeArgs, *args, **kwargs)
+    if exePath and( exePath.cext == u'.lnk' or exePath.isdir()):
+        return _LnkOrDirButton(exePath, exeArgs, *args, **kwargs)
+    return _App_Button(exePath, exeArgs, *args, **kwargs)
 
 #------------------------------------------------------------------------------
 class _Mods_xEditExpert(BoolLink):
@@ -342,7 +332,7 @@ class _Mods_xEditExpert(BoolLink):
         super(_Mods_xEditExpert, self).__init__()
         self._text, self.key = bush.game.xEdit_expert
 
-class App_Tes4View(App_Button):
+class App_Tes4View(_ExeButton):
     """Allow some extra args for Tes4View."""
 
 # arguments
@@ -378,12 +368,13 @@ class App_Tes4View(App_Button):
 #  or name ends with Edit.exe
 # -translate
 #  or name ends with Trans.exe
-    def __init__(self,*args,**kwdargs):
-        App_Button.__init__(self,*args,**kwdargs)
+    def __init__(self, *args, **kwdargs):
+        exePath, exeArgs = _parse_button_arguments(args[0])
+        super(App_Tes4View, self).__init__(exePath, exeArgs, *args[1:], **kwdargs)
         if bush.game.xEdit_expert:
             self.mainMenu.append(_Mods_xEditExpert())
 
-    def IsPresent(self):
+    def IsPresent(self): # FIXME(inf) What on earth is this? What's the point??
         if self.exePath in bosh.undefinedPaths or not self.exePath.exists():
             testPath = bass.tooldirs['Tes4ViewPath']
             if testPath not in bosh.undefinedPaths and testPath.exists():
@@ -411,8 +402,8 @@ class _Mods_BOSSDisableLockTimes(BoolLink):
     """Toggle Lock Load Order disabling when launching BOSS through Bash."""
     _text = _(u'BOSS Disable Lock Load Order')
     key = 'BOSS.ClearLockTimes'
-    _help = _(u"If selected, will temporarily disable Bash's Lock Load Order"
-             u" when running BOSS through Bash.")
+    _help = _(u"If selected, will temporarily disable Bash's Lock Load Order "
+              u'when running BOSS through Bash.')
 
 #------------------------------------------------------------------------------
 class _Mods_BOSSLaunchGUI(BoolLink):
@@ -420,10 +411,11 @@ class _Mods_BOSSLaunchGUI(BoolLink):
     _text, key, _help = _(u'Launch using GUI'), 'BOSS.UseGUI', \
                         _(u"If selected, Bash will run BOSS's GUI.")
 
-class App_BOSS(App_Button):
+class App_BOSS(_ExeButton):
     """loads BOSS"""
     def __init__(self, *args, **kwdargs):
-        App_Button.__init__(self, *args, **kwdargs)
+        exePath, exeArgs = _parse_button_arguments(args[0])
+        super(App_BOSS, self).__init__(exePath, exeArgs, *args[1:], **kwdargs)
         self.boss_path = self.exePath
         self.mainMenu.append(_Mods_BOSSLaunchGUI())
         self.mainMenu.append(_Mods_BOSSDisableLockTimes())
@@ -460,12 +452,12 @@ class App_BOSS(App_Button):
             BashFrame.modList.RefreshUI(refreshSaves=True, focus_list=False)
 
 #------------------------------------------------------------------------------
-class Game_Button(App_Button):
+class Game_Button(_ExeButton):
     """Will close app on execute if autoquit is on."""
     def __init__(self, exe_path_args, version_path, images, tip, obse_tip):
-        super(Game_Button, self).__init__(
-            exePathArgs=exe_path_args, images=images, tip=tip,
-            obseTip=obse_tip, obseArg=u'', uid=u'Oblivion')
+        exePath, exeArgs = _parse_button_arguments(exe_path_args)
+        super(Game_Button, self).__init__(exePath, exeArgs, images=images,
+            tip=tip, obseTip=obse_tip, uid=u'Oblivion')
         self._version_path = version_path
 
     @property
@@ -486,10 +478,19 @@ class Game_Button(App_Button):
             tip_ += u' + ' + bush.game.laa.laa_name
         return tip_
 
-    def Execute(self):
-        super(Game_Button, self).Execute()
-        if bass.settings.get('bash.autoQuit.on',False):
-            Link.Frame.Close(True)
+    def _app_button_execute(self):
+        exe_xse = bass.dirs['app'].join(bush.game.se.exe)
+        exe_laa = bass.dirs['app'].join(bush.game.laa.exe)
+        exe_path = self.exePath # Default to the regular launcher
+        if BashStatusBar.laaButton.button_state:
+            # Should use the LAA Launcher if it's present
+            exe_path = (exe_laa if exe_laa.isfile() else exe_path)
+        elif BashStatusBar.obseButton.button_state:
+            # Should use the xSE launcher if it's present
+            exe_path = (exe_xse if exe_xse.isfile() else exe_path)
+        self._run_exe(exe_path, [exe_path.s])
+        if bass.settings.get(u'bash.autoQuit.on', False):
+            Link.Frame.close_win(True)
 
     @property
     def version(self):
@@ -501,13 +502,20 @@ class Game_Button(App_Button):
         return u''
 
 #------------------------------------------------------------------------------
-class TESCS_Button(App_Button):
-    """CS button.  Needs a special Tooltip when OBSE is enabled."""
+class TESCS_Button(_ExeButton):
+    """CS/CK button. Needs a special tooltip when OBSE is enabled."""
+    def __init__(self, ck_path, ck_images, ck_tip, ck_xse_tip, ck_xse_arg,
+                 ck_uid=u'TESCS'):
+        super(TESCS_Button, self).__init__(
+            exePath=ck_path, exeArgs=(), images=ck_images, tip=ck_tip,
+            obseTip=ck_xse_tip, uid=ck_uid)
+        self.extraArgs = (ck_xse_arg,) if ck_xse_arg else ()
+
     @property
     def obseTip(self):
-        # TESCS (version)
-        tip_ = self._obseTip % (dict(version=self.version))
-        if not self.obseArg: return tip_
+        # CS/CK (version)
+        tip_ = self._obseTip % {u'version': self.version}
+        if not self.extraArgs: return tip_
         # + OBSE
         tip_ += u' + %s%s' % (bush.game.se.se_abbrev, self.obseVersion)
         # + CSE
@@ -539,9 +547,9 @@ class _StatefulButton(StatusBar_Button):
         elif state == -1: #--Invert
             self.button_state = True ^ self.button_state
         if self.gButton:
-            self.gButton.SetBitmapLabel(balt.images[self.imageKey %
-                        bass.settings['bash.statusbar.iconSize']].GetBitmap())
-            self.gButton.SetToolTip(tooltip(self.sb_button_tip))
+            self.gButton.image = balt.images[self.imageKey %
+                        bass.settings['bash.statusbar.iconSize']].GetBitmap()
+            self.gButton.tooltip = self.sb_button_tip
 
     @property
     def button_state(self): return self._present and bass.settings.get(
@@ -557,11 +565,11 @@ class _StatefulButton(StatusBar_Button):
     @property
     def _present(self): return True
 
-    def GetBitmapButton(self, window, style, **kwdargs):
+    def GetBitmapButton(self, window, image=None, onRClick=None):
         if not self._present: return None
         self.SetState()
-        return super(_StatefulButton, self).GetBitmapButton(window, style,
-                                                            **kwdargs)
+        return super(_StatefulButton, self).GetBitmapButton(window, image,
+                                                            onRClick)
 
     def Execute(self):
         """Invert state."""
@@ -589,8 +597,8 @@ class Obse_Button(_StatefulButton):
 
     def UpdateToolTips(self):
         tipAttr = ('sb_button_tip', 'obseTip')[self.button_state]
-        for button in App_Button.obseButtons:
-            button.gButton.SetToolTip(tooltip(getattr(button,tipAttr,u'')))
+        for button in _App_Button.obseButtons:
+            button.gButton.tooltip = getattr(button, tipAttr, u'')
 
 class LAA_Button(_StatefulButton):
     """4GB Launcher on/off state button."""
@@ -649,33 +657,32 @@ class App_DocBrowser(StatusBar_Button):
 
     def Execute(self):
         if not Link.Frame.docBrowser:
-            DocBrowser().Show()
+            DocBrowser().show_frame()
             bass.settings['bash.modDocs.show'] = True
-        #balt.ensureDisplayed(docBrowser)
-        Link.Frame.docBrowser.Raise()
+        Link.Frame.docBrowser.raise_frame()
 
 #------------------------------------------------------------------------------
 class App_Settings(StatusBar_Button):
     """Show settings dialog."""
     imageKey, _tip = 'settingsbutton.%s', _(u'Settings')
 
-    def GetBitmapButton(self, window, style, **kwdargs):
+    def GetBitmapButton(self, window, image=None, onRClick=None):
         return super(App_Settings, self).GetBitmapButton(
-            window, style, onRClick=lambda __event: self.Execute())
+            window, image, lambda: self.Execute())
 
     def Execute(self):
-        BashStatusBar.SettingsMenu.PopupMenu(Link.Frame.statusBar, Link.Frame,
-                                             None)
+        BashStatusBar.SettingsMenu.new_menu(Link.Frame.statusBar, None)
 
 #------------------------------------------------------------------------------
 class App_Restart(StatusBar_Button):
     """Restart Wrye Bash"""
     _tip = _(u"Restart")
 
-    def GetBitmapButton(self, window, style, **kwdargs):
+    def GetBitmapButton(self, window, image=None, onRClick=None):
         size = bass.settings['bash.statusbar.iconSize']
-        return super(App_Restart, self).GetBitmapButton(window, style,
-            image=staticBitmap(window, special='undo', size=(size,size)))
+        return super(App_Restart, self).GetBitmapButton(
+            window, staticBitmap(window, special='undo', size=(size,size)),
+            onRClick)
 
     def Execute(self): Link.Frame.Restart()
 
@@ -742,6 +749,5 @@ class App_ModChecker(StatusBar_Button):
 
     def Execute(self):
         if not Link.Frame.modChecker:
-            ModChecker().Show()
-        #balt.ensureDisplayed(modChecker)
-        Link.Frame.modChecker.Raise()
+            ModChecker().show_frame()
+        Link.Frame.modChecker.raise_frame()

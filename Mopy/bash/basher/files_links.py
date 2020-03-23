@@ -84,7 +84,7 @@ class Files_Unhide(ItemLink):
         if not srcFiles:
             return
         moved = self.window.data_store.move_infos(srcFiles, destFiles,
-                                                  self.window, balt.Link.Frame)
+            self.window, balt.Link.Frame)
         if moved:
             self.window.RefreshUI( # pick one at random to show details for
                 detail_item=next(iter(moved)), refreshSaves=True)

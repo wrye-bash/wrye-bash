@@ -113,8 +113,8 @@ class Mods_LoadList(ChoiceLink):
             _help = _(u'Display a dialog to rename/remove active mods lists')
             def Execute(self):
                 editorData = _Mods_LoadListData(self.window, _self.load_lists)
-                balt.ListEditor.Display(self.window, _(u'Active Mods Lists'),
-                                        editorData)
+                balt.ListEditor.display_dialog(
+                    self.window, _(u'Active Mods Lists'), editorData)
         class _SaveLink(EnabledLink):
             _text = _(u'Save Active Mods List')
             _help = _(u'Save the currently active mods to a new active mods list')
@@ -208,7 +208,7 @@ class Mods_OblivionVersion(CheckLink, EnabledLink):
         self.window.RefreshUI(refreshSaves=True) # True: refresh save's masters
         if self.setProfile:
             bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,'vOblivion',self.key)
-        Link.Frame.SetTitle()
+        Link.Frame.set_bash_frame_title()
 
 # "File" submenu --------------------------------------------------------------
 class Mods_CreateBlankBashedPatch(ItemLink):

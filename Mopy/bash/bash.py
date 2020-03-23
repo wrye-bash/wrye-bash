@@ -362,8 +362,9 @@ def _main(opts, wx_locale):
                     _(u'Do you want to quit Wrye Bash now?')]),
                                  title=_(u'Unable to create backup!')):
                     return  # Quit
-
-    app.Init() # Link.Frame is set here !
+    frame = app.Init() # Link.Frame is set here !
+    frame.ensureDisplayed()
+    frame.bind_refresh()
     app.MainLoop()
 
 def _detect_game(opts, backup_bash_ini):

@@ -25,7 +25,7 @@
 import re
 import time
 from ..balt import EnabledLink, AppendableLink, ItemLink, RadioLink, \
-    ChoiceLink, MenuLink, CheckLink, Image, UIList_Rename, OneItemLink
+    ChoiceMenuLink, CheckLink, Image, UIList_Rename, OneItemLink
 from .. import bass, balt, bosh, bush
 from .import People_Link, SaveDetails
 from ..bolt import GPath
@@ -211,7 +211,7 @@ class People_Import(ItemLink, People_Link):
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
-class People_Karma(ChoiceLink, balt.MenuLink, People_Link):
+class People_Karma(ChoiceMenuLink, People_Link):
     """Add Karma setting links."""
     _text = _(u'Karma')
     karma_labels = [u'%+d' % x for x in xrange(5, -6, -1)]
@@ -331,7 +331,7 @@ class _Column(CheckLink, EnabledLink):
         self.window.PopulateColumns()
         self.window.RefreshUI()
 
-class ColumnsMenu(ChoiceLink, MenuLink):
+class ColumnsMenu(ChoiceMenuLink):
     """Customize visible columns."""
     _text = _(u"Columns")
     # extraItems
