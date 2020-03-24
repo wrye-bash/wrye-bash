@@ -511,13 +511,13 @@ class TESCS_Button(_ExeButton):
         super(TESCS_Button, self).__init__(
             exePath=ck_path, exeArgs=(), images=ck_images, tip=ck_tip,
             obseTip=ck_xse_tip, uid=ck_uid)
-        self.extraArgs = (ck_xse_arg,) if ck_xse_arg else ()
+        self.xse_args = (ck_xse_arg,) if ck_xse_arg else ()
 
     @property
     def obseTip(self):
         # CS/CK (version)
         tip_ = self._obseTip % {u'version': self.version}
-        if not self.extraArgs: return tip_
+        if not self.xse_args: return tip_
         # + OBSE
         tip_ += u' + %s%s' % (bush.game.se.se_abbrev, self.obseVersion)
         # + CSE
@@ -531,6 +531,18 @@ class TESCS_Button(_ExeButton):
                 version = u''
             tip_ += u' + CSE %s' % version
         return tip_
+
+    def _app_button_execute(self):
+        exe_xse = bass.dirs['app'].join(bush.game.se.exe)
+        if (self.xse_args and BashStatusBar.obseButton.button_state
+                and exe_xse.isfile()):
+            # If the script extender for this game has CK support, the xSE
+            # loader is present and xSE is enabled, use that executable and
+            # pass the editor argument to it
+            self._run_exe(exe_xse, [exe_xse.s] + list(self.xse_args))
+        else:
+            # Fall back to the standard CK executable, with no arguments
+            super(TESCS_Button, self)._app_button_execute()
 
 #------------------------------------------------------------------------------
 class _StatefulButton(StatusBar_Button):
