@@ -81,13 +81,13 @@ from .. import balt
 from ..balt import CheckLink, EnabledLink, SeparatorLink, Link, \
     ChoiceLink, staticBitmap, AppendableLink, ListBoxes, \
     INIListCtrl, DnDStatusBar, NotebookPanel
-from ..balt import colors, images, Image, Resources
+from ..balt import colors, images, Resources
 from ..balt import Links, ItemLink
 
 from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
     TOP, VLayout, EventResult, DropDown, DialogWindow, WindowFrame, Spinner, \
-    Splitter, NotebookCtrl, PanelWin, CheckListBox, Color
+    Splitter, NotebookCtrl, PanelWin, CheckListBox, Color, Picture, Image
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons
@@ -1201,9 +1201,10 @@ class _EditableMixinOnFileInfos(_EditableMixin):
         # super(_EditableMixinOnFileInfos, self).__init__(masterPanel)
         _EditableMixin.__init__(self, masterPanel, ui_list_panel)
         #--File Name
-        self.file = TextField(self.left, max_length=self._max_filename_chars)
-        self.file.on_focus_lost.subscribe(self.OnFileEdited)
-        self.file.on_text_changed.subscribe(self.OnFileEdit)
+        self._fname_ctrl = TextField(self.left,
+                                     max_length=self._max_filename_chars)
+        self._fname_ctrl.on_focus_lost.subscribe(self.OnFileEdited)
+        self._fname_ctrl.on_text_changed.subscribe(self.OnFileEdit)
         # TODO(nycz): GUI set_size
         #                       size=(self._min_controls_width, -1))
         self.panel_uilist = ui_list_panel.uiList
@@ -1212,19 +1213,19 @@ class _EditableMixinOnFileInfos(_EditableMixin):
         """Event: Finished editing file name."""
         if not self.file_info: return
         #--Changed?
-        fileStr = self.file.text_content
+        fileStr = self._fname_ctrl.text_content
         if fileStr == self.fileStr: return
         #--Extension Changed?
         if fileStr[-4:].lower() != self.fileStr[-4:].lower():
             balt.showError(self,_(u"Incorrect file extension: ")+fileStr[-3:])
-            self.file.text_content = self.fileStr
+            self._fname_ctrl.text_content = self.fileStr
         #--Validate the filename - no need to check for extension again
         elif not self._validate_filename(fileStr):
-            self.file.text_content = self.fileStr
+            self._fname_ctrl.text_content = self.fileStr
         #--Else file exists?
         elif self.file_info.dir.join(fileStr).exists():
             balt.showError(self,_(u"File %s already exists.") % fileStr)
-            self.file.text_content = self.fileStr
+            self._fname_ctrl.text_content = self.fileStr
         #--Okay?
         else:
             self.fileStr = fileStr
@@ -1343,7 +1344,7 @@ class ModDetails(_ModsSavesDetails):
         #--Layout
         VLayout(spacing=4, item_expand=True, items=[
             HLayout(items=[Label(top, _(u'File:')), Stretch(), self.version]),
-            self.file,
+            self._fname_ctrl,
             Label(top, _(u'Author:')), self.gAuthor,
             Label(top, _(u'Modified:')), self.modified,
             Label(top, _(u'Description:')),
@@ -1375,7 +1376,7 @@ class ModDetails(_ModsSavesDetails):
             tagsStr = u'\n'.join(sorted(modInfo.getBashTags()))
         else: tagsStr = u''
         #--Set fields
-        self.file.text_content = self.fileStr
+        self._fname_ctrl.text_content = self.fileStr
         self.gAuthor.text_content = self.authorStr
         self.modified.text_content = self.modifiedStr
         self.description.text_content = self.descriptionStr
@@ -1954,8 +1955,7 @@ class SaveDetails(_ModsSavesDetails):
         self._set_player_info_label()
         self.gCoSaves = Label(top, u'--\n--')
         #--Picture
-        self.picture = balt.Picture(
-            top._native_widget, textWidth, 192 * textWidth // 256,
+        self.picture = Picture(top, textWidth, 192 * textWidth // 256,
             background=colors['screens.bkgd.image']) #--Native: 256x192
         #--Save Info
         self.gInfo = TextArea(self._bottom_low_panel, max_length=2048)
@@ -1963,7 +1963,7 @@ class SaveDetails(_ModsSavesDetails):
         # TODO(nycz): GUI set_size size=(textWidth, 64)
         #--Layouts
         VLayout(item_expand=True, items=[
-            self.file,
+            self._fname_ctrl,
             HLayout(item_expand=True, items=[
                 (self.playerInfo, LayoutOptions(weight=1)), self.gCoSaves]),
             (self.picture, LayoutOptions(weight=1))
@@ -1995,17 +1995,13 @@ class SaveDetails(_ModsSavesDetails):
             self.playerLevel = saveInfo.header.pcLevel
             self.coSaves = saveInfo.get_cosave_tags()
         #--Set Fields
-        self.file.text_content = self.fileStr
+        self._fname_ctrl.text_content = self.fileStr
         self._set_player_info_label()
         self.gCoSaves.label_text = self.coSaves
         self.uilist.SetFileInfo(self.saveInfo)
         #--Picture
-        if not self.saveInfo:
-            self.picture.SetBitmap(None)
-        else:
-            width,height,data = self.saveInfo.header.image
-            image = Image.GetImage(data, height, width)
-            self.picture.SetBitmap(image.ConvertToBitmap())
+        image_tuple = self.saveInfo.header.image if self.saveInfo else None
+        self.picture.set_bitmap(image_tuple)
         #--Info Box
         self.gInfo.modified = False
         note_text = bosh.saveInfos.table.getItem(fileName, 'info',
@@ -3115,8 +3111,7 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
 
     def __init__(self, parent, ui_list_panel):
         super(ScreensDetails, self).__init__(parent)
-        self.screenshot_control = balt.Picture(
-            parent._native_widget, 256, 192,
+        self.screenshot_control = Picture(parent, 256, 192,
             background=colors[u'screens.bkgd.image'])
         self.displayed_screen = None # type: bolt.Path
         HLayout(item_expand=True, item_weight=1,
@@ -3129,14 +3124,19 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
     def file_infos(self): return bosh.screen_infos
 
     def _resetDetails(self):
-        self.screenshot_control.SetBitmap(None)
+        self.screenshot_control.set_bitmap(None)
 
     def SetFile(self, fileName=u'SAME'):
         """Set file to be viewed."""
         #--Reset?
         self.displayed_screen = super(ScreensDetails, self).SetFile(fileName)
         if not self.displayed_screen: return
-        self.screenshot_control.SetBitmap(self.file_info.as_bitmap())
+        if self.file_info.cached_bitmap is None:
+            self.file_info.cached_bitmap = self.screenshot_control.set_bitmap(
+                self.file_info.abs_path)
+        else:
+            self.screenshot_control.set_bitmap(self.file_info.cached_bitmap)
+
 
     def RefreshUIColors(self):
         self.screenshot_control.SetBackground(colors[u'screens.bkgd.image'])
@@ -3198,7 +3198,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         self.gInfo.on_text_changed.subscribe(self.OnInfoEdit)
         #--Layout
         VLayout(item_expand=True, items=[
-            Label(top, _(u'File:')), self.file]).apply_to(top)
+            Label(top, _(u'File:')), self._fname_ctrl]).apply_to(top)
         VLayout(spacing=4, items=[
             (self.gInfo, LayoutOptions(expand=True)),
             HLayout(spacing=4, items=[self.save, self.cancel])
@@ -3216,7 +3216,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
             #--Remember values for edit checks
             self.fileStr = self._bsa_info.name.s
         #--Set Fields
-        self.file.text_content = self.fileStr
+        self._fname_ctrl.text_content = self.fileStr
         #--Info Box
         self.gInfo.modified = False
         if fileName:

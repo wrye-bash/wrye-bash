@@ -25,8 +25,8 @@
 import re
 import time
 from ..balt import EnabledLink, AppendableLink, ItemLink, RadioLink, \
-    ChoiceMenuLink, CheckLink, Image, UIList_Rename, OneItemLink, \
-    SeparatorLink
+    ChoiceMenuLink, CheckLink, UIList_Rename, OneItemLink, SeparatorLink
+from ..gui import Image
 from .. import bass, balt, bosh, bush
 from .import People_Link, SaveDetails
 from ..bolt import GPath

@@ -30,9 +30,10 @@ from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
     BashStatusBar, BashNotebook
 from .. import bass, balt, bush
 from ..cint import CBashApi
-from ..balt import Image, MenuLink, SeparatorLink, UIList_OpenItems, \
+from ..balt import MenuLink, SeparatorLink, UIList_OpenItems, \
     UIList_OpenStore, UIList_Hide
 from ..env import init_app_links
+from ..gui import Image
 # modules below define the __all__ directive
 from .app_buttons import *
 from .mods_links import *
@@ -183,7 +184,7 @@ def InitStatusBar():
     dirApps = bass.dirs['mopy'].join(u'Apps')
     badIcons = [Image(bass.dirs['images'].join(u'error_cross_16.png'))] * 3
     def iconList(fileName):
-        return [Image(fileName, Image.typesDict['ico'], x) for x in
+        return [Image(fileName, Image.typesDict[u'ico'], x) for x in
                 (16, 24, 32)]
     for pth, icon, description in init_app_links(dirApps, badIcons, iconList):
             BashStatusBar.buttons.append(

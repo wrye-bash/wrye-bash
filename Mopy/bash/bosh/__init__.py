@@ -1089,24 +1089,15 @@ class ScreenInfo(FileInfo):
     """Cached screenshot, stores a bitmap and refreshes it when its cache is
     invalidated."""
     def __init__(self, fullpath, load_cache=False):
-        self._cached_bitmap = None
+        self.cached_bitmap = None
         super(ScreenInfo, self).__init__(fullpath, load_cache)
 
     def _reset_cache(self, stat_tuple, load_cache):
-        self._cached_bitmap = None # Lazily reloaded in as_bitmap
+        self.cached_bitmap = None # Lazily reloaded
         super(ScreenInfo, self)._reset_cache(stat_tuple, load_cache)
 
     def getFileInfos(self):
         return screen_infos
-
-    def as_bitmap(self):
-        """Returns the wx.Bitmap version of this screenshot."""
-        # TODO(inf) I don't like having this here because balt shouldn't be
-        #  coupled to bosh in the first place - but this seems the only way to
-        #  efficiently cache and invalidate the bitmaps
-        if not self._cached_bitmap:
-            self._cached_bitmap = balt.Image(self.abs_path.s).GetBitmap()
-        return self._cached_bitmap
 
 #------------------------------------------------------------------------------
 class DataStore(DataDict):

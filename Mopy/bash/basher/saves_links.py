@@ -34,7 +34,8 @@ from .dialogs import ImportFaceDialog
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order, \
     initialization
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
-    ItemLink, SeparatorLink, OneItemLink, Image, UIList_Rename
+    ItemLink, SeparatorLink, OneItemLink, UIList_Rename
+from ..gui import Image
 from ..bolt import GPath, SubProgress, struct_pack, struct_unpack
 from ..bosh import faces, SaveInfo
 from ..exception import ArgumentError, BoltError, CancelError, ModError
@@ -309,9 +310,8 @@ class Save_ExportScreenshot(OneItemLink):
             bass.dirs['patches'].s,
             _(u'Screenshot %s.jpg') % self._selected_item.s, u'*.jpg')
         if not imagePath: return
-        width, height, image_data = self._selected_info.header.image
-        image = Image.GetImage(image_data, height, width)
-        image.SaveFile(imagePath.s, Image.typesDict['jpg'])
+        image = Image.GetImage(*self._selected_info.header.image)
+        image.SaveFile(imagePath.s, Image.typesDict[u'jpg'])
 
 #------------------------------------------------------------------------------
 class Save_DiffMasters(EnabledLink):

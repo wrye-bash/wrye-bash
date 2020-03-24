@@ -31,6 +31,8 @@ import textwrap
 import wx as _wx
 from .events import EventHandler, _null_processor
 from ..exception import AbstractError
+from ..bolt import GPath, deprint
+from ..exception import ArgumentError
 
 # Utilities -------------------------------------------------------------------
 def wrapped_tooltip(tooltip_text, wrap_width=50):
@@ -300,12 +302,14 @@ class WithMouseEvents(_AComponent):
         mouse click.
         - on_mouse_right_up(hit_test: tuple[int]): right mouse button released.
         - on_mouse_right_down(position: tuple[int]): right mouse button click.
+        - on_mouse_middle_up(): middle mouse button released.
       - on_mouse_motion(wrapped_evt: _WrapMouseEvt, hit_test: int): mouse moved
       - on_mouse_leaving(): mouse is leaving the window
     """
     bind_lclick_double = bind_lclick_up = bind_lclick_down = False
     bind_rclick_up = bind_rclick_down = False
     bind_motion = bind_mouse_leaving = False
+    bind_middle_up = False
 
     class _WrapMouseEvt(object):
         def __init__(self, mouse_evt):
@@ -350,6 +354,8 @@ class WithMouseEvents(_AComponent):
                                lb_hit_test(event)[0]])
         if self.__class__.bind_mouse_leaving:
             self.on_mouse_leaving = self._evt_handler(_wx.EVT_LEAVE_WINDOW)
+        if self.__class__.bind_middle_up:
+            self.on_mouse_middle_up = self._evt_handler(_wx.EVT_MIDDLE_UP)
 
 class WithCharEvents(_AComponent):
     """An _AComponent that handles key presses events.
@@ -407,3 +413,70 @@ class WithFirstShow(_AComponent):
     def _handle_first_show(self):
         """Perform some one time initialization on show"""
         raise AbstractError
+
+class Image(object):
+    """Wrapper for images, allowing access in various formats/classes.
+
+    Allows image to be specified before wx.App is initialized."""
+
+    typesDict = {u'png': _wx.BITMAP_TYPE_PNG, u'jpg': _wx.BITMAP_TYPE_JPEG,
+                 u'jpeg': _wx.BITMAP_TYPE_JPEG, u'ico': _wx.BITMAP_TYPE_ICO,
+                 u'bmp': _wx.BITMAP_TYPE_BMP, u'tif': _wx.BITMAP_TYPE_TIF}
+
+    def __init__(self, filename, imageType=None, iconSize=16):
+        self._img_path = GPath(filename)
+        try:
+            self._img_type = imageType or self.typesDict[self._img_path.cext[1:]]
+        except KeyError:
+            deprint(u'Unknown image extension %s' % self._img_path.cext)
+            self._img_type = _wx.BITMAP_TYPE_ANY
+        self.bitmap = None
+        self.icon = None
+        self.iconSize = iconSize
+        if not GPath(self._img_path.s.split(u';')[0]).exists():
+            raise ArgumentError(u'Missing resource file: %s.' % self._img_path)
+
+    def GetBitmap(self):
+        if not self.bitmap:
+            if self._img_type == _wx.BITMAP_TYPE_ICO:
+                self.GetIcon()
+                w, h = self.icon.GetWidth(), self.icon.GetHeight()
+                self.bitmap = _wx.Bitmap(w, h)
+                self.bitmap.CopyFromIcon(self.icon)
+                # Hack - when user scales windows display icon may need scaling
+                if w != self.iconSize or h != self.iconSize: # rescale !
+                    self.bitmap = _wx.Bitmap(
+                        _wx.ImageFromBitmap(self.bitmap).Scale(
+                          self.iconSize, self.iconSize, _wx.IMAGE_QUALITY_HIGH))
+            else:
+                self.bitmap = _wx.Bitmap(self._img_path.s, self._img_type)
+        return self.bitmap
+
+    def GetIcon(self):
+        if not self.icon:
+            if self._img_type == _wx.BITMAP_TYPE_ICO:
+                self.icon = _wx.Icon(self._img_path.s, _wx.BITMAP_TYPE_ICO,
+                                     self.iconSize, self.iconSize)
+                # we failed to get the icon? (when display resolution changes)
+                if not self.icon.GetWidth() or not self.icon.GetHeight():
+                    self.icon = _wx.Icon(self._img_path.s, _wx.BITMAP_TYPE_ICO)
+            else:
+                self.icon = _wx.Icon()
+                self.icon.CopyFromBitmap(self.GetBitmap())
+        return self.icon
+
+    @staticmethod
+    def GetImage(width, height, image_data):
+        """Hasty wrapper around wx.Image - absorb to GetBitmap."""
+        image = _wx.Image(width, height)
+        image.SetData(image_data)
+        return image
+
+    @staticmethod
+    def Load(srcPath, quality):
+        """Hasty wrapper around wx.Image - loads srcPath with specified
+        quality if a jpeg."""
+        bitmap = _wx.Image(srcPath.s)
+        # This only has an effect on jpegs, so it's ok to do it on every kind
+        bitmap.SetOption(_wx.IMAGE_OPTION_QUALITY, quality)
+        return bitmap

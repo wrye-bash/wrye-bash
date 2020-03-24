@@ -21,16 +21,15 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 from . import bEnableWizard, tabInfo, BashFrame
 from .constants import colorInfo, settingDefaults, installercons
 from .. import bass, balt, bosh, bolt, bush, env
-from ..balt import Link, colors, Image, bell, Resources
+from ..balt import Link, colors, bell, Resources
 from ..bosh import faces
 from ..gui import ApplyButton, BOTTOM, Button, CancelButton, CENTER, \
     CheckBox, GridLayout, HLayout, Label, LayoutOptions, OkButton, RIGHT, \
     Stretch, TextArea, TextField, VLayout, DropDown, DialogWindow, \
-    ColorPicker, ListBox, Color
+    ColorPicker, ListBox, Color, Picture
 
 class ColorDialog(DialogWindow):
     """Color configuration dialog"""
@@ -289,7 +288,7 @@ class ImportFaceDialog(DialogWindow):
         #--Other
         importButton = Button(self, label=_(u'Import'), default=True)
         importButton.on_clicked.subscribe(self.DoImport)
-        self.picture = balt.Picture(self._native_widget,350,210,scaling=2)
+        self.picture = Picture(self, 350, 210, scaling=2) ##: unused
         GridLayout(border=4, stretch_cols=[0, 1], stretch_rows=[0], items=[
             # Row 1
             ((self.listBox, LayoutOptions(row_span=2, expand=True)),
@@ -316,9 +315,7 @@ class ImportFaceDialog(DialogWindow):
         self.statsText.label_text = _(u'Health ') + unicode(face.health)
         itemImagePath = bass.dirs['mods'].join(u'Docs', u'Images', '%s.jpg' % item)
         # TODO(ut): any way to get the picture ? see mod_links.Mod_Face_Import
-        bitmap = itemImagePath.exists() and Image(
-            itemImagePath.s).GetBitmap() or None
-        self.picture.SetBitmap(bitmap)
+        self.picture.set_bitmap(itemImagePath)
         self.listBox.lb_select_index(lb_selection_dex)
 
     def DoImport(self):

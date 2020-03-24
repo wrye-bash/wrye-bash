@@ -24,7 +24,8 @@
 
 """This module contains some constants ripped out of basher.py"""
 from .. import bass, bush
-from ..balt import Image, ImageList, defPos
+from ..balt import ImageList, defPos
+from ..gui import Image
 
 # Color Descriptions ----------------------------------------------------------
 colorInfo = {

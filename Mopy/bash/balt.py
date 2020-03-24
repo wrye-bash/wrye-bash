@@ -49,7 +49,7 @@ import wx.lib.newevent
 from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
     web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
-    Font, CheckListBox, UIListCtrl, PanelWin, Color, Colors, HtmlDisplay
+    Font, CheckListBox, UIListCtrl, PanelWin, Colors, HtmlDisplay, Image
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -95,78 +95,6 @@ SmallDnArrow = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAEhJ"
     "REFUOI1jZGRiZqAEMFGke9QABgYGBgYWdIH///7+J6SJkYmZEacLkCUJacZqAD5DsInTLhDR"
     "bcPlKrwugGnCFy6Mo3mBAQChDgRlP4RC7wAAAABJRU5ErkJggg==")
-
-#------------------------------------------------------------------------------
-class Image(object):
-    """Wrapper for images, allowing access in various formats/classes.
-
-    Allows image to be specified before wx.App is initialized."""
-
-    typesDict = {'png': wx.BITMAP_TYPE_PNG,
-                 'jpg': wx.BITMAP_TYPE_JPEG,
-                 'jpeg': wx.BITMAP_TYPE_JPEG,
-                 'ico': wx.BITMAP_TYPE_ICO,
-                 'bmp': wx.BITMAP_TYPE_BMP,
-                 'tif': wx.BITMAP_TYPE_TIF,
-                }
-
-    def __init__(self, filename, imageType=None, iconSize=16):
-        self.file = GPath(filename)
-        try:
-            self._img_type = imageType or self.typesDict[self.file.cext[1:]]
-        except KeyError:
-            deprint(u'Unknown image extension %s' % self.file.cext)
-            self._img_type = wx.BITMAP_TYPE_ANY
-        self.bitmap = None
-        self.icon = None
-        self.iconSize = iconSize
-        if not GPath(self.file.s.split(u';')[0]).exists():
-            raise ArgumentError(u"Missing resource file: %s." % self.file)
-
-    def GetBitmap(self):
-        if not self.bitmap:
-            if self._img_type == wx.BITMAP_TYPE_ICO:
-                self.GetIcon()
-                w, h = self.icon.GetWidth(), self.icon.GetHeight()
-                self.bitmap = wx.Bitmap(w, h)
-                self.bitmap.CopyFromIcon(self.icon)
-                # Hack - when user scales windows display icon may need scaling
-                if w != self.iconSize or h != self.iconSize: # rescale !
-                    self.bitmap = wx.Bitmap(
-                        wx.ImageFromBitmap(self.bitmap).Scale(
-                          self.iconSize, self.iconSize, wx.IMAGE_QUALITY_HIGH))
-            else:
-                self.bitmap = wx.Bitmap(self.file.s, self._img_type)
-        return self.bitmap
-
-    def GetIcon(self):
-        if not self.icon:
-            if self._img_type == wx.BITMAP_TYPE_ICO:
-                self.icon = wx.Icon(self.file.s, wx.BITMAP_TYPE_ICO,
-                                    self.iconSize, self.iconSize)
-                # we failed to get the icon? (when display resolution changes)
-                if not self.icon.GetWidth() or not self.icon.GetHeight():
-                    self.icon = wx.Icon(self.file.s, wx.BITMAP_TYPE_ICO)
-            else:
-                self.icon = wx.Icon()
-                self.icon.CopyFromBitmap(self.GetBitmap())
-        return self.icon
-
-    @staticmethod
-    def GetImage(image_data, height, width):
-        """Hasty wrapper around wx.Image - absorb to GetBitmap."""
-        image = wx.Image(width, height)
-        image.SetData(image_data)
-        return image
-
-    @staticmethod
-    def Load(srcPath, quality):
-        """Hasty wrapper around wx.Image - loads srcPath with specified
-        quality if a jpeg."""
-        bitmap = wx.Image(srcPath.s)
-        # This only has an effect on jpegs, so it's ok to do it on every kind
-        bitmap.SetOption(wx.IMAGE_OPTION_QUALITY, quality)
-        return bitmap
 
 #------------------------------------------------------------------------------
 class ImageBundle(object):
@@ -230,7 +158,7 @@ class ColorChecks(ImageList):
                 image_key = u'checkbox.' + shortKey
                 img = GPath(bass.dirs['images'].join(
                     u'checkbox_' + status + u'_' + state + u'.png'))
-                image = images[image_key] = Image(img, Image.typesDict['png'])
+                image = images[image_key] = Image(img, Image.typesDict[u'png'])
                 self.Add(image, shortKey)
 
     def Get(self,status,on):
@@ -883,74 +811,6 @@ class TabDragMixin(object):
                 evt = NoteBookDraggedEvent(fromIndex=oldPos,toIndex=newPos)
                 wx.PostEvent(self,evt)
         event.Skip()
-
-#------------------------------------------------------------------------------
-# TODO(inf) de-wx! Image API!
-class Picture(wx.Window):
-    """Picture panel."""
-    def __init__(self, parent, width, height, scaling=1,
-                 style=wx.BORDER_SUNKEN, background=wx.MEDIUM_GREY_BRUSH):
-        """Initialize."""
-        wx.Window.__init__(self, parent, defId,size=(width,height),style=style)
-        self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
-        self.bitmap = None
-        if background is not None:
-            if isinstance(background, Color):
-                background = background.to_rgba_tuple()
-            if isinstance(background, tuple):
-                background = wx.Colour(*background)
-            if isinstance(background, wx.Colour):
-                background = wx.Brush(background)
-            self.background = background
-        else:
-            self.background = wx.Brush(self.GetBackgroundColour())
-        #self.SetSizeHints(width,height,width,height)
-        #--Events
-        self.Bind(wx.EVT_PAINT,self.OnPaint)
-        self.Bind(wx.EVT_SIZE, self.OnSize)
-        self.OnSize()
-
-    def SetBackground(self,background):
-        if isinstance(background, Color):
-            background = background.to_rgba_tuple()
-        if isinstance(background, tuple):
-            background = wx.Colour(*background)
-        if isinstance(background, wx.Colour):
-            background = wx.Brush(background)
-        self.background = background
-        self.OnSize()
-
-    def SetBitmap(self,bitmap):
-        """Set bitmap."""
-        self.bitmap = bitmap
-        self.OnSize()
-
-    def OnSize(self,event=None):
-        x, y = self.GetSize()
-        if x <= 0 or y <= 0: return
-        self.buffer = wx.Bitmap(x,y)
-        dc = wx.MemoryDC()
-        dc.SelectObject(self.buffer)
-        # Draw
-        dc.SetBackground(self.background)
-        dc.Clear()
-        if self.bitmap:
-            old_x,old_y = self.bitmap.GetSize()
-            scale = min(float(x)/old_x, float(y)/old_y)
-            new_x = old_x * scale
-            new_y = old_y * scale
-            pos_x = max(0,x-new_x)/2
-            pos_y = max(0,y-new_y)/2
-            image = self.bitmap.ConvertToImage()
-            image.Rescale(new_x, new_y, wx.IMAGE_QUALITY_HIGH)
-            dc.DrawBitmap(wx.Bitmap(image), pos_x, pos_y)
-        del dc
-        self.Refresh()
-        self.Update()
-        if event: event.Skip()
-
-    def OnPaint(self, event):
-        dc = wx.BufferedPaintDC(self, self.buffer)
 
 #------------------------------------------------------------------------------
 class BusyCursor(object):

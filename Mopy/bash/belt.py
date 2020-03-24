@@ -28,20 +28,18 @@ from __future__ import division
 
 import os
 import traceback
-import wx
-import wx.adv as wiz     # wxPython wizard class
 from collections import OrderedDict
 
+import wx.adv as wiz  # wxPython wizard class
 from . import ScriptParser         # generic parser class
 from . import balt, bass, bolt, bosh, bush, load_order
+#Translateable strings
+from .bosh import OBSEIniFile
 from .env import get_file_version
 from .gui import BOTTOM, CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
-    WizardDialog, EventResult, ListBox, CheckListBox
+    WizardDialog, EventResult, ListBox, CheckListBox, Image, PictureWithCursor
 from .ScriptParser import error
-
-#Translateable strings
-from .bosh import OBSEIniFile
 
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")
 MISSING_ARGS = _(u"Missing arguments to '%s'.")
@@ -202,7 +200,7 @@ class PageSelect(PageInstaller):
         self.TitleDesc = Label(self, desc)
         self.TitleDesc.wrap(parent._native_widget.GetPageSize()[0] - 10)
         self.textItem = TextArea(self, editable=False, auto_tooltip=False)
-        self.bmpItem = balt.Picture(self,0,0,background=None)
+        self.bmp_item = PictureWithCursor(self, 0, 0, background=None)
         kwargs = dict(choices=listItems, isHScroll=True,
                       onSelect=self.OnSelect)
         if bMany:
@@ -221,20 +219,21 @@ class PageSelect(PageInstaller):
             HBoxedLayout(self, items=[self.TitleDesc]),
             Label(self, _(u'Options:')),
             (HLayout(item_expand=True, item_weight=1,
-                     items=[self.listOptions, self.bmpItem]),
+                     items=[self.listOptions, self.bmp_item]),
              LayoutOptions(weight=1)),
             Label(self, _(u'Description:')),
             (self.textItem, LayoutOptions(weight=1))
         ]).apply_to(self)
         self.Layout()
-        self.bmpItem.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
-        self.bmpItem.Bind(wx.EVT_MIDDLE_UP, self.OnDoubleClick)
+        self.bmp_item.on_mouse_middle_up.subscribe(self._click_on_image)
+        self.bmp_item.on_mouse_left_dclick.subscribe(
+            lambda selected_index: self._click_on_image())
 
     def OnSelect(self, lb_selection_dex, lb_selection_str):
         self.listOptions.lb_select_index(lb_selection_dex) # event.Skip() won't do
         self.Selection(lb_selection_dex)
 
-    def OnDoubleClick(self, _event):
+    def _click_on_image(self):
         img = self.images[self.index]
         if img.isfile():
             try:
@@ -246,18 +245,8 @@ class PageSelect(PageInstaller):
         self._enableForward(True)
         self.index = index
         self.textItem.text_content = self.descs[index]
-        # Don't want the bitmap to resize until we call self.Layout()
-        self.bmpItem.Freeze()
-        img = self.images[index]
-        if img.isfile():
-            image = wx.Bitmap(img.s)
-            self.bmpItem.SetBitmap(image)
-            self.bmpItem.SetCursor(wx.Cursor(wx.CURSOR_MAGNIFIER))
-        else:
-            self.bmpItem.SetBitmap(None)
-            self.bmpItem.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
-        self.bmpItem.Thaw()
-        # self.Layout() # the bitmap would change size and sho blurred
+        self.bmp_item.set_bitmap(self.images[index])
+        # self.Layout() # the bitmap would change size and so blurred
 
     def OnNext(self):
         temp = []
@@ -417,10 +406,9 @@ class PageVersions(PageInstaller):
     def __init__(self, parent, bGameOk, gameHave, gameNeed, bSEOk, seHave,
                  seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
-        bmp = [balt.Image(bass.dirs['images'].join(u'error_cross_24.png').s)
-                   .GetBitmap(),
-               balt.Image(bass.dirs['images'].join(u'checkmark_24.png').s)
-                   .GetBitmap()]
+        bmp = [Image(
+            bass.dirs['images'].join(u'error_cross_24.png').s).GetBitmap(),
+            Image(bass.dirs['images'].join(u'checkmark_24.png').s).GetBitmap()]
         versions_layout = GridLayout(h_spacing=5, v_spacing=5,
                                      stretch_cols=[0, 1, 2, 3])
         versions_layout.append_row([None, Label(self, _(u'Need')),
@@ -768,7 +756,7 @@ class WryeParser(ScriptParser.Parser):
     @property
     def path(self): return self._path
 
-    def Begin(self, file):
+    def Begin(self, file_path):
         self.variables.clear()
         self.Flow = []
         self.notes = []
@@ -777,9 +765,9 @@ class WryeParser(ScriptParser.Parser):
         self.cLine = 0
         self.reversing = 0
         self.ExecCount = 0
-        if file.exists() and file.isfile():
+        if file_path.exists() and file_path.isfile():
             try:
-                with file.open(encoding='utf-8-sig') as script:
+                with file_path.open(encoding='utf-8-sig') as script:
                     # Ensure \n line endings for the script parser
                     self.lines = [x.replace(u'\r\n',u'\n') for x in script.readlines()]
                 return self.Continue()

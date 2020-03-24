@@ -37,10 +37,9 @@ from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, CBash_gui_patchers, PBash_gui_patchers
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order
 from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink,\
-    TransLink, RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, \
-    ListBoxes
+    TransLink, RadioLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes
 from ..gui import CancelButton, CheckBox, HLayout, Label, LayoutOptions, \
-    OkButton, RIGHT, Spacer, Stretch, TextField, VLayout, DialogWindow
+    OkButton, RIGHT, Spacer, Stretch, TextField, VLayout, DialogWindow, Image
 from ..bolt import GPath, SubProgress
 from ..bosh import faces
 from ..cint import CBashApi, FormID
@@ -1828,10 +1827,9 @@ class Mod_Face_Import(OneItemLink):
         imagePath = bosh.modInfos.store_dir.join(u'Docs', u'Images', npc.eid + u'.jpg')
         if not imagePath.exists():
             srcInfo.readHeader()
-            width,height,data = srcInfo.header.image
-            image = Image.GetImage(data, height, width)
+            image = Image.GetImage(*srcInfo.header.image)
             imagePath.head.makedirs()
-            image.SaveFile(imagePath.s, Image.typesDict['jpg'])
+            image.SaveFile(imagePath.s, Image.typesDict[u'jpg'])
         self.window.RefreshUI(refreshSaves=False) # import save to esp
         self._showOk(_(u'Imported face to: %s') % npc.eid,
                      self._selected_item.s)
