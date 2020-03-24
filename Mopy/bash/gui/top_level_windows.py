@@ -140,13 +140,13 @@ class DialogWindow(_TopLevelWin):
     _wx_dialog_type = _wx.Dialog
 
     def __init__(self, parent=None, title=None, icon_bundle=None,
-                 sizes_dict={}, caption=False, size_key=None, pos_key=None,
+                 sizes_dict=None, caption=False, size_key=None, pos_key=None,
                  style=0, **kwargs):
         self._size_key = size_key or self.__class__.__name__
         self._pos_key = pos_key
         self.title = title or self.__class__.title
         style |= _wx.DEFAULT_DIALOG_STYLE
-        if sizes_dict: style |= _wx.RESIZE_BORDER
+        if sizes_dict is not None: style |= _wx.RESIZE_BORDER
         if caption: style |= _wx.CAPTION
         super(DialogWindow, self).__init__(self._wx_dialog_type, parent,
             sizes_dict, icon_bundle, title=self.title, style=style, **kwargs)

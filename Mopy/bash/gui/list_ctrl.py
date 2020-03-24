@@ -193,7 +193,7 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
       - on_item_selected(uilist_item_key): on clicking on an item on the list -
       type of uilist_item_key varies, usually a Path
     """
-    bind_rclick_down = bind_rclick_up = False
+    bind_motion = True
     bind_mouse_leaving = bind_lclick_double = bind_lclick_down = True
 
     def __init__(self, parent, allow_edit, is_border_sunken, is_single_cell,
@@ -214,15 +214,16 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         self.on_item_selected = self._evt_handler(_wx.EVT_LIST_ITEM_SELECTED,
             lambda event: [self.FindItemAt(event.GetIndex())])
         if allow_edit:
-            self.on_edit_label_begin = self._evt_handler(_wx.EVT_LIST_BEGIN_LABEL_EDIT,
+            self.on_edit_label_begin = self._evt_handler(
+                _wx.EVT_LIST_BEGIN_LABEL_EDIT,
                 lambda event: [event.GetLabel(), self])
             self.on_edit_label_end = self._evt_handler(
                 _wx.EVT_LIST_END_LABEL_EDIT,
                 lambda event: [event.IsEditCancelled(), event.GetLabel(),
                     event.GetIndex(), self.FindItemAt(event.GetIndex())])
         #--Item/Id mapping
-        self._item_itemId = {} # :type : dict[bolt.Path | basestring | int, int]
-        self._itemId_item = {} # :type : dict[int, bolt.Path | basestring | int]
+        self._item_itemId = {} # :type: dict[bolt.Path | basestring | int, int]
+        self._itemId_item = {} # :type: dict[int, bolt.Path | basestring | int]
 
     # API (beta) -------------------------------------------------------------
     # Internal id <-> item mappings used in wx._controls.ListCtrl.SortItems
@@ -281,3 +282,29 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
                 event.GetKeyCode() == _wx.WXK_F2,
                 self._native_widget.GetEditControl().GetValue(), self])
         on_char.subscribe(on_char_handler)
+
+    ##: column wrappers - belong to a superclass that wraps ListCtrl
+    def lc_get_columns_count(self):
+        return self._native_widget.GetColumnCount()
+
+    def lc_get_column_width(self, evt_col):
+        return self._native_widget.GetColumnWidth(evt_col)
+
+    def lc_set_column_width(self, evt_col, column_width):
+        self._native_widget.SetColumnWidth(evt_col, column_width)
+
+    def lc_item_count(self):
+        return self._native_widget.GetItemCount()
+
+    def lc_get_column(self, colDex):
+        return self._native_widget.GetColumn(colDex)
+
+    def lc_insert_column(self, colDex, colName):
+        self._native_widget.InsertColumn(colDex, colName)
+
+    def lc_delete_column(self, colDex):
+        self._native_widget.DeleteColumn(colDex)
+
+    def lc_select_item_at_index(self, index, select=True,
+                          __select=_wx.LIST_STATE_SELECTED):
+        self._native_widget.SetItemState(index, select * __select, __select)

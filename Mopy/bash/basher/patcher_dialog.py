@@ -192,7 +192,7 @@ class PatchDialog(DialogWindow):
                 patchFile.buildPatchLog(log, SubProgress(progress, 0.95, 0.99))
                 #--Save
                 progress.setCancel(False, patch_name.s+u'\n'+_(u'Saving...'))
-                progress(1.0)
+                progress(0.99)
                 self._save_cbash(patchFile, patch_name)
             else:
                 patchFile.initFactories(SubProgress(progress,0.1,0.2)) #no speeding needed/really possible (less than 1/4 second even with large LO)

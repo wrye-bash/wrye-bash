@@ -183,6 +183,7 @@ class ListBox(WithMouseEvents):
     # PY3: typing!
     # type _native_widget: wx.ListBox
     _wx_class = _wx.ListBox
+    bind_motion = bind_rclick_down = bind_rclick_up = True
 
     def __init__(self, parent, choices=None, isSingle=True, isSort=False,
                  isHScroll=False, isExtended=False, onSelect=None):
@@ -268,8 +269,7 @@ class CheckListBox(ListBox, WithCharEvents):
     # PY3: typing!
     # type _native_widget: wx.CheckListBox
     _wx_class = _wx.CheckListBox
-    bind_mouse_leaving = True
-    bind_lclick_double = True
+    bind_mouse_leaving = bind_lclick_double = True
 
     def __init__(self, parent, choices=None, isSingle=False, isSort=False,
                  isHScroll=False, isExtended=False, onSelect=None,

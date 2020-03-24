@@ -1172,7 +1172,7 @@ class UIList(wx.Panel):
 
     # properties to encapsulate access to the list control
     @property
-    def item_count(self): return self.__gList._native_widget.GetItemCount()
+    def item_count(self): return self.__gList.lc_item_count()
 
     #--Items ----------------------------------------------
     def PopulateItem(self, itemDex=-1, item=None):
@@ -1337,7 +1337,7 @@ class UIList(wx.Panel):
                         self._handle_select)
                     # omit below to leave displayed details
                     self.panel.ClearDetails()
-                    self.SelectItemAtIndex(-1) # -1 indicates 'all items'
+                    self.__gList.lc_select_item_at_index(-1) # -1 indicates 'all items'
                 finally:
                     self.__gList.on_item_selected.subscribe(
                         self._handle_select)
@@ -1355,10 +1355,10 @@ class UIList(wx.Panel):
     def OnColumnResize(self, evt_col):
         """Column resized: enforce minimal width and save column size info."""
         colName = self.cols[evt_col]
-        width = self.__gList._native_widget.GetColumnWidth(evt_col)
+        width = self.__gList.lc_get_column_width(evt_col)
         if width < self._min_column_width:
             width = self._min_column_width
-            self.__gList._native_widget.SetColumnWidth(evt_col, self._min_column_width)
+            self.__gList.lc_set_column_width(evt_col, self._min_column_width)
             # if we do not veto the column will be resized anyway!
             self.__gList._native_widget.resizeLastColumn(0) # resize last column to fill
             self.colWidths[colName] = width
@@ -1368,9 +1368,9 @@ class UIList(wx.Panel):
     # gList columns autosize---------------------------------------------------
     def autosizeColumns(self):
         if self.autoColWidths:
-            colCount = xrange(self.__gList._native_widget.GetColumnCount())
+            colCount = xrange(self.__gList.lc_get_columns_count())
             for i in colCount:
-                self.__gList._native_widget.SetColumnWidth(i, -self.autoColWidths)
+                self.__gList.lc_set_column_width(i, -self.autoColWidths)
 
     #--Events skipped
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags): pass
@@ -1422,16 +1422,12 @@ class UIList(wx.Panel):
         order."""
         return self._get_selected()
 
-    def SelectItemAtIndex(self, index, select=True,
-                          __select=wx.LIST_STATE_SELECTED):
-        self.__gList._native_widget.SetItemState(index, select * __select, __select)
-
     def SelectItem(self, item, deselectOthers=False):
         dex = self.GetIndex(item)
         if deselectOthers: self.ClearSelected()
         else: #we must deselect the item and then reselect for callbacks to run
-            self.SelectItemAtIndex(dex, select=False)
-        self.SelectItemAtIndex(dex)
+            self.__gList.lc_select_item_at_index(dex, select=False)
+        self.__gList.lc_select_item_at_index(dex)
 
     def SelectItemsNoCallback(self, items, deselectOthers=False):
         if deselectOthers: self.ClearSelected()
@@ -1443,11 +1439,11 @@ class UIList(wx.Panel):
 
     def ClearSelected(self, clear_details=False):
         """Unselect all items."""
-        self.SelectItemAtIndex(-1, False) # -1 indicates 'all items'
+        self.__gList.lc_select_item_at_index(-1, False) # -1 indicates 'all items'
         if clear_details: self.panel.ClearDetails()
 
     def SelectLast(self):
-        self.SelectItemAtIndex(self.item_count - 1)
+        self.__gList.lc_select_item_at_index(self.item_count - 1)
 
     def DeleteAll(self): self.__gList.DeleteAll()
 
@@ -1573,26 +1569,26 @@ class UIList(wx.Panel):
             colKey = cols[colDex]
             colName = _settings['bash.colNames'].get(colKey, colKey)
             colWidth = self.colWidths.get(colKey, 30)
-            if colDex >= listCtrl._native_widget.GetColumnCount(): # Make a new column
-                listCtrl._native_widget.InsertColumn(colDex, colName)
-                listCtrl._native_widget.SetColumnWidth(colDex, colWidth)
+            if colDex >= listCtrl.lc_get_columns_count(): # Make a new column
+                listCtrl.lc_insert_column(colDex, colName)
+                listCtrl.lc_set_column_width(colDex, colWidth)
             else: # Update an existing column
-                column = listCtrl._native_widget.GetColumn(colDex)
+                column = listCtrl.lc_get_column(colDex)
                 text = column.GetText()
                 if text == colName:
                     # Don't change it, just make sure the width is correct
-                    listCtrl._native_widget.SetColumnWidth(colDex, colWidth)
+                    listCtrl.lc_set_column_width(colDex, colWidth)
                 elif text not in names:
                     # Column that doesn't exist anymore
-                    listCtrl._native_widget.DeleteColumn(colDex)
+                    listCtrl.lc_delete_column(colDex)
                     continue # do not increment colDex or update colDict
                 else: # New column
-                    listCtrl._native_widget.InsertColumn(colDex, colName)
-                    listCtrl._native_widget.SetColumnWidth(colDex, colWidth)
+                    listCtrl.lc_insert_column(colDex, colName)
+                    listCtrl.lc_set_column_width(colDex, colWidth)
             self._colDict[colKey] = colDex
             colDex += 1
-        while listCtrl._native_widget.GetColumnCount() > numCols:
-            listCtrl._native_widget.DeleteColumn(numCols)
+        while listCtrl.lc_get_columns_count() > numCols:
+            listCtrl.lc_delete_column(numCols)
 
     #--Drag and Drop-----------------------------------------------------------
     @conversation

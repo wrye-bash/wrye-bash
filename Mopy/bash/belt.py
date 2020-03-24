@@ -462,10 +462,8 @@ class PageVersions(PageInstaller):
         self.checkOk = CheckBox(self, _(u'Install anyway.'))
         self.checkOk.on_checked.subscribe(self._enableForward)
         VLayout(items=[
-            Stretch(1),
-            (text_warning, LayoutOptions(h_align=CENTER)),
-            Stretch(1),
-            (versions_box, LayoutOptions(expand=True, weight=1)),
+            Stretch(1), (text_warning, LayoutOptions(h_align=CENTER)),
+            Stretch(1), (versions_box, LayoutOptions(expand=True, weight=1)),
             Stretch(2),
             (self.checkOk, LayoutOptions(h_align=RIGHT, v_align=BOTTOM,
                                          border=5))

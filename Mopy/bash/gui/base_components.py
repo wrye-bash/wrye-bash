@@ -303,13 +303,9 @@ class WithMouseEvents(_AComponent):
       - on_mouse_motion(wrapped_evt: _WrapMouseEvt, hit_test: int): mouse moved
       - on_mouse_leaving(): mouse is leaving the window
     """
-    bind_motion = True
-    bind_rclick_down = True
-    bind_rclick_up = True
-    bind_lclick_double = False
-    bind_lclick_down = False
-    bind_lclick_up = False
-    bind_mouse_leaving = False
+    bind_lclick_double = bind_lclick_up = bind_lclick_down = False
+    bind_rclick_up = bind_rclick_down = False
+    bind_motion = bind_mouse_leaving = False
 
     class _WrapMouseEvt(object):
         def __init__(self, mouse_evt):
@@ -335,12 +331,6 @@ class WithMouseEvents(_AComponent):
         super(WithMouseEvents, self).__init__(*args, **kwargs)
         lb_hit_test = lambda event: [ # HitTest may return an int or a tuple...
             self._native_widget.HitTest(event.GetPosition())]
-        if self.__class__.bind_rclick_up:
-            self.on_mouse_right_up = self._evt_handler(_wx.EVT_RIGHT_UP,
-                                                       lb_hit_test)
-        if self.__class__.bind_rclick_down:
-            self.on_mouse_right_down = self._evt_handler(_wx.EVT_RIGHT_DOWN,
-                lambda event: [event.GetPosition()])
         if self.__class__.bind_lclick_double:
             self.on_mouse_left_dclick = self._evt_handler(_wx.EVT_LEFT_DCLICK,
                                                           lb_hit_test)
@@ -348,6 +338,12 @@ class WithMouseEvents(_AComponent):
             self.on_mouse_left_down = self._evt_handler(_wx.EVT_LEFT_DOWN,
                 lambda event: [self._WrapMouseEvt(event),
                                lb_hit_test(event)[0]])
+        if self.__class__.bind_rclick_up:
+            self.on_mouse_right_up = self._evt_handler(_wx.EVT_RIGHT_UP,
+                                                       lb_hit_test)
+        if self.__class__.bind_rclick_down:
+            self.on_mouse_right_down = self._evt_handler(_wx.EVT_RIGHT_DOWN,
+                lambda event: [event.GetPosition()])
         if self.__class__.bind_motion:
             self.on_mouse_motion = self._evt_handler(_wx.EVT_MOTION,
                 lambda event: [self._WrapMouseEvt(event),
@@ -363,8 +359,7 @@ class WithCharEvents(_AComponent):
       - on_key_up(wrapped_evt: _WrapKeyEvt, self: WithCharEvents): key
         released
     """
-    bind_char_evt = True
-    bind_key_up_evt = True
+    bind_char_evt = bind_key_up_evt = True
 
     class _WrapKeyEvt(object):
         def __init__(self, mouse_evt):

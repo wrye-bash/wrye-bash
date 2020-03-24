@@ -86,7 +86,7 @@ def _import_wx():
         from wx import _core
         sys.modules['wx._gdi'] = _core
     except:
-        but_kwargs = {'text': _(u"QUIT"),
+        but_kwargs = {'text': u"QUIT",
                       'fg': 'red'}  # foreground button color
         msg = u'\n'.join([dump_environment(), u'', u'Unable to load wx:',
                           traceback.format_exc(), u'Exiting.'])
