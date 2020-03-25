@@ -123,7 +123,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             MreAmmo, MreLtex, MreMato, MreStat, MreWatr, MreWeap, MreWthr, \
             MrePack
         cls.mergeClasses = (
-            # MreAchr, MreDial, MreInfo, MreFact,
+            # MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
             MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook,
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCobj, MreColl,
@@ -139,7 +139,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun,
             MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
             MreWatr, MreWeap, MreWoop, MreWthr, MreVoli, MreLens, MreQust,
-            MrePack,
+            MrePack, MreFact,
         )
         # Setting RecordHeader class variables --------------------------------
         brec.RecordHeader.topTypes = [

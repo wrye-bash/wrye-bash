@@ -128,9 +128,9 @@ class EnderalGameInfo(SkyrimGameInfo):
         # ---------------------------------------------------------------------
         # These need syntax revision but can be merged once that is corrected
         #
-        #       MreAchr, MreDial, MreLctn, MreInfo, MreFact,
+        #       MreAchr, MreDial, MreInfo,
         # ---------------------------------------------------------------------
-        cls.mergeClasses = (# MreAchr, MreDial, MreInfo, MreFact,
+        cls.mergeClasses = (# MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
             MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook,
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCobj, MreColl,
@@ -145,7 +145,8 @@ class EnderalGameInfo(SkyrimGameInfo):
             MreRegn, MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm,
             MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun,
             MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
-            MreWatr, MreWeap, MreWoop, MreWthr, MreQust, MrePack, )
+            MreWatr, MreWeap, MreWoop, MreWthr, MreQust, MrePack, MreFact,
+        )
 
         # MreScpt is Oblivion/FO3/FNV Only
         # MreMgef, has not been verified to be used here for Skyrim

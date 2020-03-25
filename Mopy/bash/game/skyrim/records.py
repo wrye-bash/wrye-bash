@@ -394,6 +394,41 @@ class MelKeywords(MelSequential):
             MelFidList('KWDA', 'keywords'),
         )
 
+class MelLocation(MelUnion):
+    """A PLDT/PLVD (Location) subrecord. Occurs in PACK and FACT."""
+    def __init__(self, sub_sig):
+        super(MelLocation, self).__init__({
+                0: MelOptStruct(sub_sig, u'iIi', u'location_type',
+                                (FID, u'location_value'), u'location_radius'),
+                1: MelOptStruct(sub_sig, u'iIi', u'location_type',
+                                (FID, u'location_value'), u'location_radius'),
+                2: MelOptStruct(sub_sig, u'i4si', u'location_type',
+                                u'location_value', u'location_radius'),
+                3: MelOptStruct(sub_sig, u'i4si', u'location_type',
+                                u'location_value', u'location_radius'),
+                4: MelOptStruct(sub_sig, u'iIi', u'location_type',
+                                (FID, u'location_value'), u'location_radius'),
+                5: MelOptStruct(sub_sig, u'iIi', u'location_type',
+                                u'location_value', u'location_radius'),
+                6: MelOptStruct(sub_sig, u'iIi', u'location_type',
+                                (FID, u'location_value'), u'location_radius'),
+                7: MelOptStruct(sub_sig, u'i4si', u'location_type',
+                                u'location_value', u'location_radius'),
+                8: MelOptStruct(sub_sig, u'3i', u'location_type',
+                                u'location_value', u'location_radius'),
+                9: MelOptStruct(sub_sig, u'3i', u'location_type',
+                                u'location_value', u'location_radius'),
+                10: MelOptStruct(sub_sig, u'i4si', u'location_type',
+                                 u'location_value', u'location_radius'),
+                11: MelOptStruct(sub_sig, u'i4si', u'location_type',
+                                 u'location_value', u'location_radius'),
+                12: MelOptStruct(sub_sig, u'i4si', u'location_type',
+                                 u'location_value', u'location_radius'),
+            }, decider=PartialLoadDecider(
+                loader=MelSInt32(sub_sig, u'location_type'),
+                decider=AttrValDecider(u'location_type'))
+        )
+
 #------------------------------------------------------------------------------
 class MelOwnership(MelGroup):
     """Handles XOWN, XRNK for cells and cell children."""
@@ -2418,76 +2453,57 @@ class MreFact(MelRecord):
     """Faction."""
     rec_sig = b'FACT'
 
-    FactGeneralTypeFlags = Flags(0, Flags.getNames(
-        (0, 'hiddenFromPC'),
-        (1, 'specialCombat'),
-        (2, 'unknown3'),
-        (3, 'unknown4'),
-        (4, 'unknown5'),
-        (5, 'unknown6'),
-        (6, 'trackCrime'),
-        (7, 'ignoreCrimesMurder'),
-        (8, 'ignoreCrimesAssult'),
-        (9, 'ignoreCrimesStealing'),
-        (10, 'ignoreCrimesTrespass'),
-        (11, 'doNotReportCrimesAgainstMembers'),
-        (12, 'crimeGold-UseDefaults'),
-        (13, 'ignoreCrimesPickpocket'),
-        (14, 'allowSell'), # vendor
-        (15, 'canBeOwner'),
-        (16, 'ignoreCrimesWerewolf'),
+    _general_flags = Flags(0, Flags.getNames(
+        ( 0, u'hidden_from_pc'),
+        ( 1, u'special_combat'),
+        ( 6, u'track_crime'),
+        ( 7, u'ignore_crimes_murder'),
+        ( 8, u'ignore_crimes_assault'),
+        ( 9, u'ignore_crimes_stealing'),
+        (10, u'ignore_crimes_trespass'),
+        (11, u'do_not_report_crimes_against_members'),
+        (12, u'crime_gold_use_defaults'),
+        (13, u'ignore_crimes_pickpocket'),
+        (14, u'allow_sell'), # vendor
+        (15, u'can_be_owner'),
+        (16, u'ignore_crimes_werewolf'),
     ))
-
-#   wbPLVD := wbStruct(PLVD, 'Location', [
-#     wbInteger('Type', itS32, wbLocationEnum),
-#     wbUnion('Location Value', wbTypeDecider, [
-#       {0} wbFormIDCkNoReach('Reference', [NULL, DOOR, PLYR, ACHR, REFR, PGRE, PHZD, PARW, PBAR, PBEA, PCON, PFLA]),
-#       {1} wbFormIDCkNoReach('Cell', [NULL, CELL]),
-#       {2} wbByteArray('Near Package Start Location', 4, cpIgnore),
-#       {3} wbByteArray('Near Editor Location', 4, cpIgnore),
-#       {4} wbFormIDCkNoReach('Object ID', [NULL, ACTI, DOOR, STAT, FURN, SPEL, SCRL, NPC_, CONT, ARMO, AMMO, MISC, WEAP, BOOK, KEYM, ALCH, INGR, LIGH, FACT, FLST, IDLM, SHOU]),
-#       {5} wbInteger('Object Type', itU32, wbObjectTypeEnum),
-#       {6} wbFormIDCk('Keyword', [NULL, KYWD]),
-#       {7} wbByteArray('Unknown', 4, cpIgnore),
-#       {8} wbInteger('Alias ID', itU32),
-#       {9} wbFormIDCkNoReach('Reference', [NULL, DOOR, PLYR, ACHR, REFR, PGRE, PHZD, PARW, PBAR, PBEA, PCON, PFLA]),
-#      {10} wbByteArray('Unknown', 4, cpIgnore),
-#      {11} wbByteArray('Unknown', 4, cpIgnore),
-#      {12} wbByteArray('Unknown', 4, cpIgnore)
-#     ]),
-#     wbInteger('Radius', itS32)
-#   ]);
 
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelGroups('relations',
-            MelStruct('XNAM', 'IiI', (FID, 'faction'), 'mod',
-                      'groupCombatReaction'),
+        MelGroups(u'relations',
+            MelStruct(b'XNAM', u'IiI', (FID, u'faction'), u'mod',
+                      u'group_combat_reaction'),
         ),
-        MelUInt32('DATA', (FactGeneralTypeFlags, 'flags', 0)),
-        MelFid('JAIL','exteriorJailMarker'),
-        MelFid('WAIT','followerWaitMarker'),
-        MelFid('STOL','stolenGoodsContainer'),
-        MelFid('PLCN','playerInventoryContainer'),
-        MelFid('CRGR','sharedCrimeFactionList'),
-        MelFid('JOUT','jailOutfit'),
-        # 'arrest' and 'attackOnSight' are actually bools
-        MelTruncatedStruct('CRVA', '2B5Hf2H', 'arrest', 'attackOnSight',
-                           'murder', 'assult', 'trespass', 'pickpocket',
-                           'unknown', 'stealMultiplier', 'escape', 'werewolf',
-                           old_versions={'2B5Hf', '2B5H'}),
-        MelGroups('ranks',
-            MelUInt32('RNAM', 'rank'),
-            MelLString('MNAM','maleTitle'),
-            MelLString('FNAM','femaleTitle'),
-            MelString('INAM','insigniaPath'),
+        MelUInt32(b'DATA', (_general_flags, u'general_flags')),
+        MelFid(b'JAIL', u'exterior_jail_marker'),
+        MelFid(b'WAIT', u'follower_wait_marker'),
+        MelFid(b'STOL', u'stolen_goods_container'),
+        MelFid(b'PLCN', u'player_inventory_container'),
+        MelFid(b'CRGR', u'shared_crime_faction_list'),
+        MelFid(b'JOUT', u'jail_outfit'),
+        # 'cv_arrest' and 'cv_attack_on_sight' are actually bools, cv means
+        # 'crime value' (which is what this struct is about)
+        MelTruncatedStruct(B'CRVA', u'2B5Hf2H', u'cv_arrest',
+                           u'cv_attack_on_sight', u'cv_murder', u'cv_assault',
+                           u'cv_trespass', u'cv_pickpocket',
+                           u'cv_unknown', u'cv_steal_multiplier', u'cv_escape',
+                           u'cv_werewolf', old_versions={u'2B5Hf', u'2B5H'}),
+        MelGroups(u'ranks',
+            MelUInt32(b'RNAM', u'rank_level'),
+            MelLString(b'MNAM', u'male_title'),
+            MelLString(b'FNAM', u'female_title'),
+            MelString(b'INAM', u'insignia_path'),
         ),
-        MelFid('VEND','vendorBuySellList'),
-        MelFid('VENC','merchantContainer'),
-        MelStruct('VENV','3H2s2B2s','startHour','endHour','radius','unknownOne',
-                  'onlyBuysStolenItems','notSellBuy','UnknownTwo'),
-        MelOptStruct('PLVD','iIi','type',(FID,'locationValue'),'radius',),
+        MelFid(b'VEND', u'vendor_buy_sell_list'),
+        MelFid(b'VENC', u'merchant_container'),
+        # 'vv_only_buys_stolen_items' and 'vv_not_sell_buy' are actually bools,
+        # vv means 'vendor value' (which is what this struct is about)
+        MelStruct(b'VENV', u'3H2s2B2s', u'vv_start_hour', u'vv_end_hour',
+                  u'vv_radius', u'vv_unknown1', u'vv_only_buys_stolen_items',
+                  u'vv_not_sell_buy', u'vv_unknown2'),
+        MelLocation(b'PLVD'),
         MelConditionCounter(),
         MelConditions(),
     )
@@ -4013,36 +4029,7 @@ class MrePack(MelRecord):
                 fallback=MelBase('CNAM', 'value_val')),
             MelBase('BNAM', 'unknown1'),
             MelTopicData('value_topic_data'),
-            MelUnion({
-                0: MelOptStruct('PLDT', 'iIi', 'location_type',
-                                (FID, 'location_value'), 'location_radius'),
-                1: MelOptStruct('PLDT', 'iIi', 'location_type',
-                                (FID, 'location_value'), 'location_radius'),
-                2: MelOptStruct('PLDT', 'i4si', 'location_type',
-                                'location_value', 'location_radius'),
-                3: MelOptStruct('PLDT', 'i4si', 'location_type',
-                                'location_value', 'location_radius'),
-                4: MelOptStruct('PLDT', 'iIi', 'location_type',
-                                (FID, 'location_value'), 'location_radius'),
-                5: MelOptStruct('PLDT', 'iIi', 'location_type',
-                                'location_value', 'location_radius'),
-                6: MelOptStruct('PLDT', 'iIi', 'location_type',
-                                (FID, 'location_value'), 'location_radius'),
-                7: MelOptStruct('PLDT', 'i4si', 'location_type',
-                                'location_value', 'location_radius'),
-                8: MelOptStruct('PLDT', '3i', 'location_type',
-                                'location_value', 'location_radius'),
-                9: MelOptStruct('PLDT', '3i', 'location_type',
-                                'location_value', 'location_radius'),
-                10: MelOptStruct('PLDT', 'i4si', 'location_type',
-                                 'location_value', 'location_radius'),
-                11: MelOptStruct('PLDT', 'i4si', 'location_type',
-                                 'location_value', 'location_radius'),
-                12: MelOptStruct('PLDT', 'i4si', 'location_type',
-                                 'location_value', 'location_radius'),
-            }, decider=PartialLoadDecider(
-                loader=MelSInt32('PLDT', 'location_type'),
-                decider=AttrValDecider('location_type'))),
+            MelLocation(b'PLDT'),
             MelUnion({
                 0: MelOptStruct('PTDA', 'iIi', 'target_type',
                                 (FID, 'target_value'), 'target_count'),

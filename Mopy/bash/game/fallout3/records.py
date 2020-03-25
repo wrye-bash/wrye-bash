@@ -1303,24 +1303,28 @@ class MreFact(MelRecord):
     """Faction."""
     rec_sig = b'FACT'
 
-    _flags = Flags(0, Flags.getNames('hiddenFromPC','evil','specialCombat'))
-    _flags2 = Flags(0, Flags.getNames('trackCrime','allowSell',))
+    _general_flags = Flags(0, Flags.getNames(u'hidden_from_pc', u'evil',
+                                     u'special_combat'))
+    _general_flags_2 = Flags(0, Flags.getNames(u'track_crime', u'allow_sell'))
 
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelGroups('relations',
-            MelStruct('XNAM', 'IiI', (FID, 'faction'), 'mod',
-                      'groupCombatReaction'),
+        MelGroups(u'relations',
+            MelStruct(b'XNAM', u'IiI', (FID, u'faction'), u'mod',
+                      u'group_combat_reaction'),
         ),
-        MelTruncatedStruct('DATA', '2B2s', (_flags, 'flags', 0), 'flagsFact',
-                           'unknown', old_versions={'2B', 'B'}),
-        MelOptFloat('CNAM', ('crimeGoldMultiplier', None)),
-        MelGroups('ranks',
-            MelSInt32('RNAM', 'rank'),
-            MelString('MNAM','male'),
-            MelString('FNAM','female'),
-            MelString('INAM','insigniaPath')
+        MelTruncatedStruct(b'DATA', u'2B2s',
+                           (_general_flags, u'general_flags'),
+                           (_general_flags_2, u'general_flags_2'),
+                           (u'unused1', null2), old_versions={u'2B', u'B'}),
+        # None here is on purpose! See AssortedTweak_FactioncrimeGoldMultiplier
+        MelOptFloat(b'CNAM', (u'crime_gold_multiplier', None)),
+        MelGroups(u'ranks',
+            MelSInt32(b'RNAM', u'rank_level'),
+            MelString(b'MNAM', u'male_title'),
+            MelString(b'FNAM', u'female_title'),
+            MelString(b'INAM', u'insignia_path')
         ),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -2665,7 +2669,7 @@ class MreRace(MelRecord):
         MelString('DESC','text'),
         MelGroups('relations',
             MelStruct('XNAM', 'I2i', (FID, 'faction'), 'mod',
-                      'groupCombatReaction'),
+                      'group_combat_reaction'),
         ),
         MelStruct('DATA','14b2s4fI','skill1','skill1Boost','skill2','skill2Boost',
                   'skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost',

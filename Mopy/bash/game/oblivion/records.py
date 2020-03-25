@@ -844,21 +844,23 @@ class MreFact(MelRecord):
     """Faction."""
     rec_sig = b'FACT'
 
-    _flags = Flags(0, Flags.getNames('hiddenFromPC','evil','specialCombat'))
+    _general_flags = Flags(0, Flags.getNames(u'hidden_from_pc', u'evil',
+                                             u'special_combat'))
 
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelGroups('relations',
-            MelStruct('XNAM', 'Ii', (FID, 'faction'), 'mod'),
+        MelGroups(u'relations',
+            MelStruct(b'XNAM', u'Ii', (FID, u'faction'), u'mod'),
         ),
-        MelUInt8('DATA', (_flags, 'flags', 0)),
-        MelOptFloat('CNAM', ('crimeGoldMultiplier', None)),
-        MelGroups('ranks',
-            MelSInt32('RNAM', 'rank'),
-            MelString('MNAM','male'),
-            MelString('FNAM','female'),
-            MelString('INAM','insigniaPath')),
+        MelUInt8(b'DATA', (_general_flags, u'general_flags')),
+        # None here is on purpose! See AssortedTweak_FactioncrimeGoldMultiplier
+        MelOptFloat(b'CNAM', (u'crime_gold_multiplier', None)),
+        MelGroups(u'ranks',
+            MelSInt32(b'RNAM', u'rank_level'),
+            MelString(b'MNAM', u'male_title'),
+            MelString(b'FNAM', u'female_title'),
+            MelString(b'INAM', u'insignia_path')),
     )
     __slots__ = melSet.getSlotsUsed()
 
