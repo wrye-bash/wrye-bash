@@ -176,13 +176,13 @@ class _AParser(object):
         :param mod_info: The ModInfo instance to read from."""
         self._current_mod = mod_info.name
         # Check if we need to read at all
-        all_types = set(self._fp_types) | set(self._sp_types)
-        if not all_types:
+        a_types = self.all_types
+        if not a_types:
             # We need to unset _current_mod since we're no longer loading a mod
             self._current_mod = None
             return
         # Load mod_info once and for all, then execute every needed pass
-        loaded_mod = self._load_plugin(mod_info, all_types)
+        loaded_mod = self._load_plugin(mod_info, a_types)
         if self._fp_types:
             self._read_plugin_fp(loaded_mod)
         if self._sp_types:
@@ -270,6 +270,12 @@ class _AParser(object):
                 rec_type, source_mod, fid_key, rec_info = \
                     cur_format.parse_line(csv_fields)
                 self.id_stored_info[rec_type][source_mod][fid_key] = rec_info
+
+    # Other API
+    @property
+    def all_types(self):
+        """Returns a set of all record types that this parser requires."""
+        return set(self._fp_types) | set(self._sp_types)
 
 # CSV Formats
 class _ACsvFormat(object):
