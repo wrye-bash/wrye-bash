@@ -115,6 +115,9 @@ class LoPanel(BashTab):
     keyPrefix = u'bash.mods.load_orders'
 
     def __init__(self, parent):
-        self.listData = {x: y for x, y in
-                         enumerate(load_order.get_saved_load_orders())}
+        class _LoListData(dict):
+            """Quick HACK for SashUIListPanel.ClosePanel"""
+            def save(self): pass
+        self.listData = _LoListData({x: y for x, y in enumerate(
+            load_order.get_saved_load_orders())})
         super(LoPanel, self).__init__(parent)

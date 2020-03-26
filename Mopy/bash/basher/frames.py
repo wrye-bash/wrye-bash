@@ -34,7 +34,7 @@ from ..bosh import omods
 from ..gui import Button, CancelButton, CENTER, CheckBox, GridLayout, \
     HLayout, Label, LayoutOptions, SaveButton, Spacer, Stretch, TextArea, \
     TextField, VLayout, web_viewer_available, Splitter, WindowFrame, ListBox, \
-    HtmlDisplay
+    HtmlDisplay, WithFirstShow
 
 class DocBrowser(WindowFrame):
     """Doc Browser frame."""
@@ -482,11 +482,18 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
         self.on_closing()
 
 #------------------------------------------------------------------------------
-class LoBrowser(WindowFrame):
+class LoBrowser(WindowFrame, WithFirstShow):
     _frame_settings_key = u'bash.lo_browser'
 
     def __init__(self):
         super(LoBrowser, self).__init__(
             balt.Link.Frame, title=_(u'Load Order Browser'),
             sizes_dict=bass.settings) # FIXME(inf) balt.sizes?
-        LoPanel(self)
+        self._lo_panel = LoPanel(self)
+
+    def _handle_first_show(self):
+        self._lo_panel.ShowPanel()
+
+    def on_closing(self, destroy=True):
+        self._lo_panel.ClosePanel(destroy)
+        super(LoBrowser, self).on_closing(destroy)
