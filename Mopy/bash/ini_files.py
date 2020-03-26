@@ -26,11 +26,11 @@ import re
 import time
 from collections import OrderedDict, Counter
 
-from .. import env, bush, balt
-from ..bass import dirs
-from ..bolt import LowerDict, CIstr, deprint, GPath, DefaultLowerDict, \
+from . import env, bush
+from .bass import dirs
+from .bolt import LowerDict, CIstr, deprint, GPath, DefaultLowerDict, \
     decode, getbestencoding, AFile
-from ..exception import AbstractError, CancelError, SkipError, BoltError
+from .exception import AbstractError, CancelError, SkipError, BoltError
 
 def _to_lower(ini_settings): # transform dict of dict to LowerDict of LowerDict
     return LowerDict((x, LowerDict(y)) for x, y in ini_settings.iteritems())
@@ -263,8 +263,8 @@ class IniFile(AFile):
         to out_encoding."""
         return codecs.getwriter(self.out_encoding)(open(filepath, 'w'))
 
-    def ask_create_target_ini(self, msg=_(
-            u'The target ini must exist to apply a tweak to it.')):
+    def target_ini_exist(self, msg=_(
+        u'The target ini must exist to apply a tweak to it.')):
         return self.abs_path.isfile()
 
     def saveSettings(self,ini_settings,deleted_settings={}):
@@ -554,8 +554,8 @@ class OBSEIniFile(IniFile):
         self.saveSettings(ini_settings,deleted_settings)
         return True
 
-class OblivionIni(IniFile):
-    """Oblivion.ini file."""
+class GameIni(IniFile):
+    """Main game ini file. Only use to instantiate bosh.oblivionIni"""
     bsaRedirectors = {u'archiveinvalidationinvalidated!.bsa',
                       u'..\\obmm\\bsaredirection.bsa'}
     _ini_language = None
@@ -571,37 +571,14 @@ class OblivionIni(IniFile):
                                                  u'English')
         return self._ini_language
 
-    @balt.conversation
-    def ask_create_target_ini(self, msg=_(
-            u'The game ini must exist to apply a tweak to it.')):
-        if super(OblivionIni, self).ask_create_target_ini(msg): return True
-        from . import oblivionIni, iniInfos # YAK
-        if self is not oblivionIni: return True
-        srcPath = dirs['app'].join(bush.game.defaultIniFile)
-        default_path_exists = srcPath.exists()
+    def target_ini_exist(self, msg=_(
+        u'The game ini must exist to apply a tweak to it.')):
+        """Attempt to create the game Ini in some scenarios"""
+        target_exists = super(GameIni, self).target_ini_exist()
+        if target_exists: return True
         msg = _(u'%(ini_path)s does not exist.' % {'ini_path': self.abs_path}) + \
               u'\n\n' + ((msg + u'\n\n') if msg else u'')
-        if default_path_exists:
-            msg += _(u'Do you want Bash to create it by copying '
-                     u'%(default_ini)s ?' % {'default_ini': srcPath})
-            if not balt.askYes(None, msg, _(u'Missing game Ini')):
-                return False
-        else:
-            msg += _(u'Please create it manually to continue.')
-            balt.showError(None, msg, _(u'Missing game Ini'))
-            return False
-        try:
-            srcPath.copyTo(self.abs_path)
-            if balt.Link.Frame.iniList:
-                balt.Link.Frame.iniList.panel.ShowPanel(refresh_target=True)
-            else:
-                iniInfos.refresh(refresh_infos=False)
-            return True
-        except (OSError, IOError):
-            error_msg = u'Failed to copy %s to %s' % (srcPath, self.abs_path)
-            deprint(error_msg, traceback=True)
-            balt.showError(None, error_msg, _(u'Missing game Ini'))
-        return False
+        return msg
 
     #--BSA Redirection --------------------------------------------------------
     def setBsaRedirection(self,doRedirect=True):

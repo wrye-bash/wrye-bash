@@ -37,7 +37,6 @@ from itertools import groupby, imap
 from operator import itemgetter, attrgetter
 
 from . import imageExts, DataStore, BestIniFile, InstallerConverter, ModInfos
-from .ini_files import OBSEIniFile
 from .. import balt # YAK!
 from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
@@ -46,6 +45,7 @@ from ..bolt import Path, deprint, round_size, GPath, sio, SubProgress, CIstr, \
     LowerDict, AFile
 from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError, FileError
+from ..ini_files import OBSEIniFile
 
 os_sep = unicode(os.path.sep)
 

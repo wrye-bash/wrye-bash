@@ -56,6 +56,8 @@ from ..cint import CBashApi
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
     CancelError, DDSError, FileError, ModError, PluginsFullError, \
     SaveFileError, SaveHeaderError, SkipError, StateError
+from ..ini_files import IniFile, OBSEIniFile, DefaultIniFile, GameIni, \
+    get_ini_type_and_encoding
 from ..parsers import ModFile
 
 # Singletons, Constants -------------------------------------------------------
@@ -79,8 +81,8 @@ undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
 oiMask = 0xFFFFFF
 
 #--Singletons
-gameInis = None    # type: tuple[OblivionIni]
-oblivionIni = None # type: OblivionIni
+gameInis = None    # type: tuple[GameIni | IniFile]
+oblivionIni = None # type: GameIni
 modInfos  = None   # type: ModInfos
 saveInfos = None   # type: SaveInfos
 iniInfos = None    # type: INIInfos
@@ -791,10 +793,8 @@ class ModInfo(FileInfo):
         return self.dir.join(*resource_path).join(self.name).exists()
 
 #------------------------------------------------------------------------------
-from .ini_files import IniFile, OBSEIniFile, DefaultIniFile, OblivionIni, \
-    get_ini_type_and_encoding
 def get_game_ini(ini_path, is_abs=True):
-    """:rtype: OblivionIni | None"""
+    """:rtype: GameIni | IniFile | None"""
     for game_ini in gameInis:
         game_ini_path = game_ini.abs_path
         if ini_path == ((is_abs and game_ini_path) or game_ini_path.stail):
@@ -810,7 +810,6 @@ def BestIniFile(abs_ini_path):
         abs_ini_path)
     return inferred_ini_type(abs_ini_path, detected_encoding)
 
-#------------------------------------------------------------------------------
 class INIInfo(IniFile):
     """Ini info, adding cached status and functionality to the ini files."""
     _status = None
@@ -2824,11 +2823,8 @@ class SaveInfos(FileInfos):
         self._initDB(dirs['saveBase'].join(self.localSave))
 
     def setLocalSave(self, localSave, refreshSaveInfos=True):
-        """Sets SLocalSavePath in Oblivion.ini."""
+        """Sets SLocalSavePath in Oblivion.ini. The latter must exist."""
         self.table.save()
-        if not oblivionIni.ask_create_target_ini(msg=_(
-                u'Setting the save profile is done by editing the game ini.')):
-            return
         self.localSave = localSave
         ##: not sure if appending the slash is needed for the game to parse
         # the setting correctly, kept previous behavior
@@ -3219,9 +3215,9 @@ def initBosh(bashIni, game_ini_path):
     # game ini files
     deprint(u'Found main game INI at %s' % game_ini_path)
     global oblivionIni, gameInis
-    oblivionIni = OblivionIni(game_ini_path, 'cp1252')
+    oblivionIni = GameIni(game_ini_path, 'cp1252')
     gameInis = [oblivionIni]
-    gameInis.extend(OblivionIni(dirs['saveBase'].join(x), 'cp1252') for x in
+    gameInis.extend(IniFile(dirs['saveBase'].join(x), 'cp1252') for x in
                     bush.game.iniFiles[1:])
     load_order.initialize_load_order_files()
     initOptions(bashIni)

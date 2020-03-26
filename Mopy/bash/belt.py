@@ -33,8 +33,7 @@ from collections import OrderedDict
 import wx.adv as wiz  # wxPython wizard class
 from . import ScriptParser         # generic parser class
 from . import balt, bass, bolt, bosh, bush, load_order
-#Translateable strings
-from .bosh import OBSEIniFile
+from .ini_files import OBSEIniFile
 from .env import get_file_version
 from .gui import BOTTOM, CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \

@@ -634,11 +634,11 @@ class INIList(balt.UIList):
         if self.apply_tweaks((bosh.iniInfos[hitItem], )):
             self.panel.ShowPanel(refresh_target=True)
 
-    @staticmethod
-    def apply_tweaks(tweak_infos, target_ini=None):
+    @classmethod
+    def apply_tweaks(cls, tweak_infos, target_ini=None):
         target_ini_file = target_ini or bosh.iniInfos.ini
-        if not target_ini_file.ask_create_target_ini() or not \
-                INIList._warn_tweak_game_ini(target_ini_file.abs_path.stail):
+        if not cls.ask_create_target_ini(target_ini) or not \
+                cls._warn_tweak_game_ini(target_ini_file.abs_path.stail):
             return False
         needsRefresh = False
         for ini_info in tweak_infos:
@@ -651,6 +651,39 @@ class INIList(balt.UIList):
             needsRefresh |= target_ini_file.applyTweakFile(
                 ini_info.read_ini_content())
         return needsRefresh
+
+    @staticmethod
+    @balt.conversation
+    def ask_create_target_ini(target_ini_file, msg):
+        """Check if target ini for operation exists - if not and the target is
+        the game ini ask if the user wants to create it by copying the default
+        ini"""
+        msg = target_ini_file.target_ini_exist(msg)
+        if msg in (True, False): return msg
+        # Game ini does not exist - try copying the default game ini
+        default_ini = bass.dirs[u'app'].join(bush.game.defaultIniFile)
+        if default_ini.exists():
+            msg += _(u'Do you want Bash to create it by copying '
+                     u'%(default_ini)s ?' % {u'default_ini': default_ini})
+            if not balt.askYes(None, msg, _(u'Missing game Ini')):
+                return False
+        else:
+            msg += _(u'Please create it manually to continue.')
+            balt.showError(None, msg, _(u'Missing game Ini'))
+            return False
+        try:
+            default_ini.copyTo(target_ini_file.abs_path)
+            if balt.Link.Frame.iniList:
+                balt.Link.Frame.iniList.panel.ShowPanel(refresh_target=True)
+            else:
+                bosh.iniInfos.refresh(refresh_infos=False)
+            return True
+        except (OSError, IOError):
+            error_msg = u'Failed to copy %s to %s' % (
+                default_ini, target_ini_file.abs_path)
+            deprint(error_msg, traceback=True)
+            balt.showError(None, error_msg, _(u'Missing game Ini'))
+        return False
 
     @staticmethod
     @balt.conversation
@@ -1930,6 +1963,14 @@ class SaveList(balt.UIList):
         newName = self.data_store.enable(hitItem, newEnabled)
         if newName != hitItem: self.RefreshUI(redraw=[newName],
                                               to_del=[hitItem])
+
+    # Save profiles
+    def set_local_save(self, new_saves, refreshSaveInfos):
+        if not INIList.ask_create_target_ini(bosh.oblivionIni, msg=_(
+            u'Setting the save profile is done by editing the game ini.')):
+            return
+        self.data_store.setLocalSave(new_saves, refreshSaveInfos)
+        balt.Link.Frame.set_bash_frame_title()
 
 #------------------------------------------------------------------------------
 class SaveDetails(_ModsSavesDetails):

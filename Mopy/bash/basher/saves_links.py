@@ -129,8 +129,7 @@ class Saves_ProfilesData(balt.ListEditorData):
         oldDir.moveTo(newDir)
         oldSaves, newSaves = (_win_join(name_) for name_ in (oldName, newName))
         if bosh.saveInfos.localSave == oldSaves:
-            bosh.saveInfos.setLocalSave(newSaves)
-            Link.Frame.set_bash_frame_title()
+            Link.Frame.iniList.set_local_save(newSaves)
         bosh.saveInfos.profiles.moveRow(oldSaves,newSaves)
         return newName
 
@@ -181,9 +180,8 @@ class Saves_Profiles(ChoiceLink):
             arcSaves = bosh.saveInfos.localSave
             newSaves = self.relativePath
             with balt.BusyCursor():
-                bosh.saveInfos.setLocalSave(newSaves, refreshSaveInfos=False)
+                Link.Frame.iniList.set_local_save(newSaves, refreshSaveInfos=False)
                 bosh.modInfos.swapPluginsAndMasterVersion(arcSaves, newSaves)
-                Link.Frame.set_bash_frame_title()
                 bosh.saveInfos.refresh()
                 self.window.DeleteAll() # let call below repopulate
                 self.window.RefreshUI(detail_item=None)

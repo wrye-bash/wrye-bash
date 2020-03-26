@@ -125,6 +125,11 @@ def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
         return oldPath, oldSrc
 
 def init_dirs(bashIni_, personal, localAppData, game_info):
+    """Initialize bass.dirs dictionary. We need the bash.ini and the game
+    being set, so this is called upon setting the game. Global structures
+    that need info on Bash / Game dirs should be initialized here and set
+    as globals in module scope. It may be called two times if restoring
+    settings fails."""
     if not mopy_dirs_initialized:
         raise BoltError(u'init_dirs: Mopy dirs uninitialized')
     # Any warnings found during this stage can be added here as strings
@@ -152,7 +157,7 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     game_ini_path = dirs['saveBase'].join(game_info.iniFiles[0])
     dirs['mods'] = dirs['app'].join(u'Data')
     if data_oblivion_ini.isfile():
-        oblivionIni = ConfigParser(allow_no_value=True)
+        oblivionIni = ConfigParser(allow_no_value=True) ##: use GameIni here
         try:
             try:
                 # Try UTF-8 first, will also work for ASCII-encoded files
