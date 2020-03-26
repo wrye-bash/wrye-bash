@@ -215,7 +215,7 @@ def main(opts):
             traceback.format_exc()
         ])
         _close_dialog_windows()
-        _show_wx_error(msg)
+        _show_wx_popup(msg)
         sys.exit(1)
 
 def _main(opts, wx_locale):
@@ -292,7 +292,7 @@ def _main(opts, wx_locale):
             u'Please ensure Wrye Bash is correctly installed.'), u'\n',
                           traceback.format_exc()])
         _close_dialog_windows()
-        _show_wx_error(msg)
+        _show_wx_popup(msg)
         return
 
     atexit.register(exit_cleanup)
@@ -389,8 +389,14 @@ def _detect_game(opts, backup_bash_ini):
         return None, None, None
     #--Initialize Directories to perform backup/restore operations
     #--They depend on setting the bash.ini and the game
-    game_ini_path = initialization.init_dirs(bashIni, opts.personalPath,
-                                             opts.localAppDataPath, bush_game)
+    game_ini_path, init_warnings = initialization.init_dirs(
+        bashIni, opts.personalPath, opts.localAppDataPath, bush_game)
+    if init_warnings:
+        warning_msg = _(u'The following (non-critical) warnings were found '
+                        u'during initialization:')
+        warning_msg += u'\n\n'
+        warning_msg += u'\n'.join(u'- %s' % w for w in init_warnings)
+        _show_wx_popup(warning_msg, is_critical=False)
     return bashIni, bush_game, game_ini_path
 
 def _import_bush_and_set_game(opts, bashIni):
@@ -422,12 +428,16 @@ def _import_bush_and_set_game(opts, bashIni):
     bolt.CBash = opts.mode if bush.game.esp.canCBash else 1 #1 = python mode...
     return bush.game
 
-def _show_wx_error(msg):
-    """Shows an error message in a wx window."""
+def _show_wx_popup(msg, is_critical=True):
+    """Shows an error message in a wx window. If is_critical, exit the
+    application afterwards."""
     try:
         class MessageBox(_wx.Dialog):
             def __init__(self, msg):
-                _wx.Dialog.__init__(self, None, -1, title=_('Wrye Bash Error'),
+                popup_title = (_(u'Wrye Bash Error') if is_critical else
+                               _(u'Wrye Bash Warning'))
+                btn_text = _(u'Quit') if is_critical else _(u'OK')
+                super(MessageBox, self).__init__(None, -1, title=popup_title,
                                     size=(400, 300),
                                     style=_wx.DEFAULT_DIALOG_STYLE |
                                           _wx.STAY_ON_TOP |
@@ -441,7 +451,7 @@ def _show_wx_error(msg):
                 text_ctrl.SetBackgroundColour(_wx.SystemSettings.GetColour(4))
                 sizer.Add(text_ctrl, proportion=1, flag=_wx.EXPAND | _wx.ALL,
                           border=5)
-                button = _wx.Button(self, _wx.ID_CANCEL, _(u'Quit'))
+                button = _wx.Button(self, _wx.ID_CANCEL, btn_text)
                 button.SetDefault()
                 sizer.Add(button, proportion=0,
                           flag=_wx.ALIGN_CENTER | _wx.ALL, border=5)
@@ -449,23 +459,21 @@ def _show_wx_error(msg):
                 # sizer.Fit(self)
                 self.ShowModal()
                 self.Destroy()
-
         print(msg) # Print msg into error log.
         app = _wx.GetApp() # wx.App is a singleton, get it if it exists.
         if app:
             MessageBox(msg)
-            _wx.Exit()
+            if is_critical: _wx.Exit()
         else:
-            app = _wx.App(False) # wx.App is not instantiated, do so now .
+            app = _wx.App(False) # wx.App is not instantiated, do so now.
             if app:
                 MessageBox(msg)
-                _wx.Exit()
+                if is_critical: _wx.Exit()
             else:
                 # Instantiating wx.App failed, fallback to tkinter.
-                but_kwargs = {'text': _(u"QUIT"),
-                              'fg': 'red'}  # foreground button color
+                but_kwargs = {u'text': u'QUIT' if is_critical else u'OK',
+                              u'fg': u'red'}  # foreground button color
                 _tkinter_error_dial(msg, but_kwargs)
-
     except:
         print(u'Wrye Bash encountered an error but could not display it.')
         print(u'The following is the error that occurred when displaying the '\

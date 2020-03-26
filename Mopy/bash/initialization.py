@@ -24,7 +24,7 @@
 """Functions for initializing Bash data structures on boot. For now export
 functions to init bass.dirs that need be initialized high up into the boot
 sequence to be able to backup/restore settings."""
-from ConfigParser import ConfigParser
+from ConfigParser import ConfigParser, MissingSectionHeaderError
 # Local - don't import anything else
 from . import env
 from .bass import dirs, get_ini_option
@@ -127,19 +127,18 @@ def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
 def init_dirs(bashIni_, personal, localAppData, game_info):
     if not mopy_dirs_initialized:
         raise BoltError(u'init_dirs: Mopy dirs uninitialized')
+    # Any warnings found during this stage can be added here as strings
+    init_warnings = []
     #--Oblivion (Application) Directories
     dirs['app'] = game_info.gamePath
     dirs['defaultPatches'] = dirs['mopy'].join(u'Bash Patches',
                                                game_info.masterlist_dir)
-
     #  Personal
     personal = getPersonalPath(bashIni_, personal)
     dirs['saveBase'] = personal.join(u'My Games', game_info.fsName)
-
     #  Local Application Data
     localAppData = getLocalAppDataPath(bashIni_, localAppData)
     dirs['userApp'] = localAppData.join(game_info.fsName)
-
     # Use local copy of the oblivion.ini if present
     # see: http://en.uesp.net/wiki/Oblivion:Ini_Settings
     # Oblivion reads the Oblivion.ini in the directory where it exists
@@ -155,15 +154,24 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     if data_oblivion_ini.isfile():
         oblivionIni = ConfigParser(allow_no_value=True)
         try:
-            # Try UTF-8 first, will also work for ASCII-encoded files
-            with data_oblivion_ini.open(u'r', encoding=u'utf8') as ins:
-                oblivionIni.readfp(ins)
-        except UnicodeDecodeError:
-            # No good, this is a nonstandard encoding
-            with open(data_oblivion_ini.s, u'rb') as ins:
-                ini_enc = getbestencoding(ins.read())[0]
-            with data_oblivion_ini.open(u'r', encoding=ini_enc) as ins:
-                oblivionIni.readfp(ins)
+            try:
+                # Try UTF-8 first, will also work for ASCII-encoded files
+                with data_oblivion_ini.open(u'r', encoding=u'utf8') as ins:
+                    oblivionIni.readfp(ins)
+            except UnicodeDecodeError:
+                # No good, this is a nonstandard encoding
+                with data_oblivion_ini.open(u'rb') as ins:
+                    ini_enc = getbestencoding(ins.read())[0]
+                with data_oblivion_ini.open(u'r', encoding=ini_enc) as ins:
+                    oblivionIni.readfp(ins)
+        except MissingSectionHeaderError:
+            # Probably not actually a game INI - might be reshade
+            init_warnings.append(
+                _(u'The global INI file in your game directory (%s) does not '
+                  u'appear to be a valid game INI. It might come from an '
+                  u'incorrectly installed third party tool. Consider '
+                  u'deleting it and validating your game files.') %
+                data_oblivion_ini.s)
         # is bUseMyGamesDirectory set to 0?
         if get_ini_option(oblivionIni, u'bUseMyGamesDirectory') == u'0':
             game_ini_path = data_oblivion_ini
@@ -182,19 +190,14 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     dirs['modsBash'], modsBashSrc = getLegacyPathWithSource(
         dirs['modsBash'], dirs['app'].join(u'Data', u'Bash'),
         modsBashSrc, u'Relative Path')
-
     dirs['installers'] = oblivionMods.join(u'Bash Installers')
     dirs['installers'] = getLegacyPath(dirs['installers'],
                                        dirs['app'].join(u'Installers'))
-
     dirs['bainData'], bainDataSrc = getBainDataPath(bashIni_)
-
     dirs['bsaCache'] = dirs['bainData'].join(u'BSA Cache')
-
     dirs['converters'] = dirs['installers'].join(u'Bain Converters')
     dirs['dupeBCFs'] = dirs['converters'].join(u'--Duplicates')
     dirs['corruptBCFs'] = dirs['converters'].join(u'--Corrupt')
-
     # create bash user folders, keep these in order
     keys = ('modsBash', 'installers', 'converters', 'dupeBCFs', 'corruptBCFs',
             'bainData', 'bsaCache')
@@ -247,7 +250,7 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
         raise BoltError(msg)
     global bash_dirs_initialized
     bash_dirs_initialized = True
-    return game_ini_path
+    return game_ini_path, init_warnings
 
 def init_dirs_mopy():
     dirs['mopy'] = Path.getcwd()
