@@ -51,7 +51,6 @@
                     <ol class="items">
                         <li><a href="#install-alternate">Alternative Install Locations</a>
                         <li><a href="#install-components">Python Components</a>
-                        <li><a href="#install-loot-api">LOOT API</a>
                     </ol>
                 <li class="list"><a href="#bain">Installers Tab</a>
                     <ol class="items">
@@ -209,17 +208,6 @@
     </ul>
   </ul>
 </ul>
-
-<h3 id="install-loot-api">LOOT API <a class="back2top" href="#contents">Back to top</a></h3>
-<p>Wrye Bash comes with the LOOT API Python Module v1.2.0 bundled, but Python users can update to a more recent compatible version if one is available. To do so:
-<ol>
-    <li>Check if a more recent v1.x release is available on <a href="https://github.com/loot/loot-api-python/releases">GitHub</a>. Releases with a different major version number (releases are major.minor.patch) than the version Wrye Bash bundles are incompatible and cannot be upgraded to.
-    <li>Download and extract the release's <code>*.7z</code> file.
-    <li>Make sure Wrye Bash is not running.
-    <li>Copy the <code>loot.dll</code> and <code>loot_api.pyd</code> files you extracted into your Wrye Bash's <code>Mopy</code> folder, replacing the existing files.
-    <li>Start Wrye Bash.
-</ol>
-<p>Standalone users cannot upgrade their bundled LOOT API because its <code>loot_api.pyd</code> file is compiled into the standalone executable.
 
 <h2 id="bain">Installers Tab <a class="back2top" href="#contents">Back to top</a></h2>
 <h3 id="bain-ui">The User Interface In Detail <a class="back2top" href="#contents">Back to top</a></h3>
@@ -984,10 +972,10 @@ tab. The directories skipped are:
                 then any built Bashed Patches will automatically be ESL-flagged, saving a load order slot.</td></tr>
             <tr><td colspan="2">Debug Mode<td>Activates debug output. Only a few commands will display any debug output, but it may be useful for troubleshooting.
             <tr><td colspan="2" id="modsRemoveDummyMasters">Remove Dummy Masters...<td>Removes all dummy master files created using <a href="#modsCreateDummyMasters">Create Dummy Masters...</a> on a plugin.
-            <tr><td colspan="2">Check mods against LOOT's dirty mod list<td>LOOT's masterlist contains information on dirty plugins that can be
-                used by Wrye Bash to highlight these plugins in the mod list. Checking this setting tells Wrye Bash to use this information if
-                bundled version of LOOT is functional for this game. Note that the detection is based on user's LOOT install masterlists, if
-                those are compatible with bundled LOOT, otherwise Bash falls back to the taglists it comes with.
+            <tr><td colspan="2">Check mods against LOOT's dirty mod list</td><td>LOOT's masterlist contains information on dirty plugins that
+                can be used by Wrye Bash to highlight these plugins in the mod list. Checking this setting tells Wrye Bash to use this
+                information. Note that the detection will try to use masterlists from the user's system-wide LOOT installation, if those
+                exist, otherwise Bash falls back to the taglists it comes bundled with.</td></tr>
             <tr><td colspan="2" id="refreshCRCs">Recalculate CRCs<td>Clean stale CRCs from cache. Workaround for buggy CRC updates in previous
                 versions of Bash. Use for instance when plugins show as mismatched in BAIN when they are not.
         </tbody>
@@ -1243,15 +1231,15 @@ In decreasing priority the Bash tags sources are:
     <li>Header of ESP or ESM file (also can be edited in bash)</li>
     <li>userlist.yaml (LOOT)</li>
     <li>masterlist.yaml (LOOT)</li>
-    <li>taglist.yaml (LOOT)</li>
+    <li>taglist.yaml (LOOT) - Only if no LOOT masterlist was found on the user's computer</li>
     <li><code>[GAME]\Data\BashTags\[PLUGIN NAME].txt</code></li>
     <li>Tags that were manually set in Wrye Bash</li>
 </ol>
 
-<p>Bash comes with the LOOT API Python Module bundled, currently version 1.2.0. It will try and parse the masterlist and userlist files, if it finds them in
-    <code>C:\Users\USER\AppData\Local\LOOT\GAME</code> directory. If that fails (the files are not there or come from a different LOOT version than
-    the one Bash bundles) it will fallback to the <code>Mopy\Bash Patches\GAME\taglist.yaml</code> file, also bundled, keep it there. For userlist
-and masterlist relative priority and role see the LOOT docs.
+<p>Bash includes a LOOT masterlist parser. It will try and parse the masterlist and userlist files, if it finds them in the
+    <code>%LOCALAPPDATA%\LOOT\GAME</code> directory. If that fails (e.g. if the files are not there) it will fallback to
+    a <code>Mopy\Bash Patches\GAME\taglist.yaml</code> file bundled with Bash, keep it there. For userlist and masterlist
+    relative priority and role see the LOOT docs.</p>
 
 <p>For each plugin, Wrye Bash will read the file <code>[GAME]\Data\BashTags\[PLUGIN NAME].txt</code>, if it exists.
     Tags specified in this file will override ones in the description and the LOOT masterlist.

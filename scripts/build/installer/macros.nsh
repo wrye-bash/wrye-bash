@@ -46,7 +46,6 @@
             ; Install the standalone only files
             SetOutPath "${GameDir}\Mopy"
             File "${WB_CLEAN_MOPY}\Wrye Bash.exe"
-            File "${WB_CLEAN_MOPY}\loot.dll"
             ; Write the installation path into the registry
             WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${GameName} Standalone Version" "True"
         ${ElseIf} ${RegValueExe} == $Empty
@@ -604,6 +603,9 @@
         Delete "${Path}\Mopy\bash\bweb.p*"
         RMDir /r "${Path}\Mopy\bash\chardet"
         Delete "${Path}\Mopy\bash\games.p*"
+        ; As of 307, LOOT integration is handled through a hand-written parser
+        Delete "${Path}\Mopy\loot.*"
+        Delete "${Path}\Mopy\loot_api.*"
         ; As of commit 3ade2c3 INI Tweaks are removed for Skyrim and Oblivion
         Delete "${Path}\Mopy\INI Tweaks\Oblivion\Autosave, Never [Oblivion].ini"
         Delete "${Path}\Mopy\INI Tweaks\Oblivion\Autosave, ~Always [Oblivion].ini"

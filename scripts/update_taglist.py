@@ -38,6 +38,8 @@ import shutil
 import sys
 import tempfile
 
+# The loot_api module is still required here to handle writing out minimal
+# lists
 import loot_api
 
 import utils

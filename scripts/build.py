@@ -45,12 +45,10 @@ import re
 import shutil
 import sys
 import tempfile
-import time
 import zipfile
 import _winreg as winreg  # PY3
 from contextlib import contextmanager
 
-import loot_api
 import pygit2
 
 import utils
@@ -257,8 +255,6 @@ def pack_manual(version):
 def build_executable(version, file_version):
     """ Builds the executable. """
     LOGGER.info("Building executable...")
-    loot_orig = os.path.join(loot_api.__path__[0], u"loot.dll")
-    loot_target = os.path.join(MOPY_PATH, u"loot.dll")
     build_folder = os.path.join(MOPY_PATH, u"build")
     dist_folder = os.path.join(MOPY_PATH, u"dist")
     setup_orig = os.path.join(WBSA_PATH, u"setup.py")
@@ -275,9 +271,6 @@ def build_executable(version, file_version):
         )
         # Copy the exe's to the Mopy folder
         cpy(exe_orig, exe_target)
-        # py2exe can't read the loot.dll if it's in the exe
-        # so we have to include it before and delete it after
-        cpy(loot_orig, loot_target)
     finally:
         # Clean up py2exe generated files/folders
         rm(setup_target)
@@ -287,7 +280,6 @@ def build_executable(version, file_version):
         yield
     finally:
         rm(exe_target)
-        rm(loot_target)
 
 
 def pack_standalone(version):

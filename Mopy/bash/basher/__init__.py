@@ -1571,8 +1571,8 @@ class ModDetails(_ModsSavesDetails):
                 # We need to grab both the ones from the description and from
                 # LOOT, since we need to save a diff
                 plugin_name = mod_info.name
-                added, removed, _userlist_modified = \
-                    bosh.configHelpers.getTagsInfoCache(plugin_name)
+                added, removed = bosh.configHelpers.getTagsInfoCache(
+                    plugin_name)
                 # Emulate the effects of applying the LOOT tags
                 old_tags = bashTagsDesc.copy()
                 old_tags |= added
