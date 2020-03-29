@@ -324,6 +324,10 @@ class Installer(object):
             # InstallersData#scan_installers_dir
             self.initDefault()
 
+    @property
+    def ipath(self): ##: aka abs_path
+        return bass.dirs[u'installers'].join(self.archive)
+
     def __setstate(self,values):
         self.initDefault() # runs on __init__ called by __reduce__
         map(self.__setattr__,self.persistent,values)
@@ -334,8 +338,7 @@ class Installer(object):
                 rescan = True
         elif self.fileRootIdex and not self.extras_dict.get('root_path', u''):
             rescan = True ##: for people that used my wip branch, drop on 307
-        package_path = bass.dirs['installers'].join(self.archive)
-        if not package_path.exists():  # pickled installer deleted outside bash
+        if not self.ipath.exists():  # pickled installer deleted outside bash
             return  # don't do anything should be deleted from our data soon
         if not isinstance(self.src_sizeCrcDate, bolt.LowerDict):
             self.src_sizeCrcDate = bolt.LowerDict(
@@ -1126,8 +1129,7 @@ class Installer(object):
             log = bolt.LogFile(out)
             log.setHeader(u'%s ' % self.archive + _(u'Package Structure:'))
             log(u'[spoiler]\n', False)
-            apath = bass.dirs['installers'].join(self.archive)
-            self._list_package(apath, log)
+            self._list_package(self.ipath, log)
             log(u'[/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
 
@@ -1210,8 +1212,7 @@ class InstallerArchive(Installer):
     def _refreshSource(self, progress, recalculate_project_crc):
         """Refresh fileSizeCrcs, size, modified, crc, isSolid from archive."""
         #--Basic file info
-        archive_path = bass.dirs['installers'].join(self.archive)
-        self.size, self.modified = archive_path.size_mtime()
+        self.size, self.modified = self.ipath.size_mtime() ##: aka _file_size _file_mod_time
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
         self.isSolid = False
@@ -1230,12 +1231,12 @@ class InstallerArchive(Installer):
                     fileSizeCrcs.append((_li.filepath, _li.size, _li.crc))
                     _li.cumCRC += _li.crc
                 _li.filepath = _li.size = _li.crc = _li.isdir = 0
-        with archive_path.unicodeSafe() as tempArch:
+        with self.ipath.unicodeSafe() as tempArch:
             try:
                 list_archive(tempArch, _parse_archive_line)
                 self.crc = _li.cumCRC & 0xFFFFFFFF
             except:
-                archive_msg = u"Unable to read archive '%s'." % archive_path.s
+                archive_msg = u"Unable to read archive '%s'." % self.ipath.s
                 deprint(archive_msg, traceback=True)
                 raise InstallerArchiveError(archive_msg)
 
@@ -1250,10 +1251,9 @@ class InstallerArchive(Installer):
         #--Dump file list
         with self.tempList.open('w',encoding='utf8') as out:
             out.write(u'\n'.join(fileNames))
-        apath = bass.dirs['installers'].join(self.archive)
         #--Ensure temp dir empty
         bass.rmTempDir()
-        with apath.unicodeSafe() as arch:
+        with self.ipath.unicodeSafe() as arch:
             if progress:
                 progress.state = 0
                 progress.setFull(len(fileNames))
@@ -1417,7 +1417,7 @@ class InstallerProject(Installer):
         :return: max modification time for files/folders in project directory
         :rtype: int"""
         #--Scan for changed files
-        apRoot = bass.dirs['installers'].join(self.archive)
+        apRoot = self.ipath
         rootName = apRoot.stail
         progress = progress if progress else bolt.Progress()
         progress_msg = rootName + u'\n' + _(u'Scanning...')
@@ -1431,10 +1431,10 @@ class InstallerProject(Installer):
         oldGet = self.src_sizeCrcDate.get
         walk = self._dir_dirs_files if self._dir_dirs_files is not None else bolt.walkdir(asRoot)
         for asDir, __sDirs, sFiles in walk:
-            progress(0.05, progress_msg + (u'\n%s' % asDir[relPos:]))
+            rsDir = asDir[relPos:]
+            progress(0.05, progress_msg + (u'\n%s' % rsDir))
             get_mtime = os.path.getmtime(asDir)
             max_mtime = max_mtime if max_mtime >= get_mtime else get_mtime
-            rsDir = asDir[relPos:]
             for sFile in sFiles:
                 asFile = os.path.join(asDir, sFile)
                 if len(asFile) > 255: continue # FIXME(inf) hacky workaround
@@ -1480,15 +1480,13 @@ class InstallerProject(Installer):
             mtime = 0
         return self.modified != mtime
 
-    @staticmethod
-    def removeEmpties(name):
+    def removeEmpties(self):
         """Removes empty directories from project directory."""
         empties = set()
-        projectDir = bass.dirs['installers'].join(name)
-        for asDir,sDirs,sFiles in bolt.walkdir(projectDir.s):
+        for asDir, sDirs, sFiles in bolt.walkdir(self.ipath.s):
             if not (sDirs or sFiles): empties.add(GPath(asDir))
         for empty in empties: empty.removedirs()
-        projectDir.makedirs() #--In case it just got wiped out.
+        self.ipath.makedirs() #--In case it just got wiped out.
 
     def _refreshSource(self, progress, recalculate_project_crc):
         """Refresh src_sizeCrcDate, fileSizeCrcs, size, modified, crc from
@@ -1513,8 +1511,7 @@ class InstallerProject(Installer):
         progress(0, self.archive + u'\n' + _(u'Moving files...'))
         progressPlus = progress.plus
         #--Copy Files
-        srcDir = bass.dirs['installers'].join(self.archive)
-        srcDirJoin = srcDir.join
+        srcDirJoin = self.ipath.join
         return self._fs_install(dest_src, srcDirJoin, progress, progressPlus,
                                 None)
 
@@ -1530,17 +1527,17 @@ class InstallerProject(Installer):
         #--Sync Files
         updated = removed = 0
         norm_ghost = Installer.getGhosted()
-        projDir = bass.dirs['installers'].join(self.archive)
+        projDirJoin = self.ipath.join
         for src,proj in srcProj:
             srcFull = srcDir.join(norm_ghost.get(src,src))
-            projFull = projDir.join(proj)
+            projFull = projDirJoin(proj)
             if not srcFull.exists():
                 projFull.remove()
                 removed += 1
             else:
                 srcFull.copyTo(projFull)
                 updated += 1
-        self.removeEmpties(self.archive)
+        self.removeEmpties()
         return updated,removed
 
     def packToArchive(self,project,archive,isSolid,blockSize,progress=None,release=False):
@@ -1599,14 +1596,11 @@ class InstallerProject(Installer):
     def renameInstaller(self, name_new, data):
         return self._installer_rename(data, name_new)
 
-    def _open_txt_file(self, rel_path):
-        bass.dirs['installers'].join(self.archive, rel_path).start()
+    def _open_txt_file(self, rel_path): self.ipath.join(rel_path).start()
 
-    def wizard_file(self):
-        return bass.dirs['installers'].join(self.archive, self.hasWizard)
+    def wizard_file(self): return self.ipath.join(self.hasWizard)
 
-    def fomod_file(self):
-        return bass.dirs['installers'].join(self.archive, self.has_fomod_conf)
+    def fomod_file(self): return self.ipath.join(self.has_fomod_conf)
 
 def projects_walk_cache(func): ##: HACK ! Profile
     """Decorator to make sure I dont leak self._dir_dirs_files project cache.
