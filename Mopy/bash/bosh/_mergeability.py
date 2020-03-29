@@ -164,7 +164,7 @@ def _modIsMergeableLoad(modInfo, minfos, reasons):
     allowMissingMasters = {u'Filter', u'IIM'}
     tags = modInfo.getBashTags()
     #--Load test
-    with ObCollection(ModsPath=bass.dirs['mods'].s) as Current:
+    with ObCollection(ModsPath=bass.dirs[u'mods'].s) as Current:
         #MinLoad, InLoadOrder, AddMasters, TrackNewTypes, SkipAllRecords
         modFile = Current.addMod(modInfo.getPath().stail, Flags=0x00002129)
         Current.load()

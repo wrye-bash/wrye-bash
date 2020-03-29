@@ -54,7 +54,7 @@ def getPersonalPath(bash_ini_, my_docs_path):
             my_docs_path, sErrorInfo = get_personal_path()
     #  If path is relative, make absolute
     if not my_docs_path.isabs():
-        my_docs_path = dirs['app'].join(my_docs_path)
+        my_docs_path = dirs[u'app'].join(my_docs_path)
     #  Error check
     if not my_docs_path.exists():
         raise BoltError(u"Personal folder does not exist.\n"
@@ -77,7 +77,7 @@ def getLocalAppDataPath(bash_ini_, app_data_local_path):
             app_data_local_path, sErrorInfo = get_local_app_data_path()
     #  If path is relative, make absolute
     if not app_data_local_path.isabs():
-        app_data_local_path = dirs['app'].join(app_data_local_path)
+        app_data_local_path = dirs[u'app'].join(app_data_local_path)
     #  Error check
     if not app_data_local_path.exists():
         raise BoltError(u"Local AppData folder does not exist.\nLocal AppData folder: %s\nAdditional info:\n%s"
@@ -92,16 +92,16 @@ def getOblivionModsPath(bash_ini_, game_info):
         ob_mods_path = GPath(GPath(u'..').join(u'%s Mods'
                                                % game_info.bash_root_prefix))
         src = u'Relative Path'
-    if not ob_mods_path.isabs(): ob_mods_path = dirs['app'].join(ob_mods_path)
+    if not ob_mods_path.isabs(): ob_mods_path = dirs[u'app'].join(ob_mods_path)
     return ob_mods_path, src
 
 def getBainDataPath(bash_ini_):
     idata_path = get_path_from_ini(bash_ini_, u'sInstallersData')
     if idata_path:
         src = [u'[General]', u'sInstallersData']
-        if not idata_path.isabs(): idata_path = dirs['app'].join(idata_path)
+        if not idata_path.isabs(): idata_path = dirs[u'app'].join(idata_path)
     else:
-        idata_path = dirs['installers'].join(u'Bash')
+        idata_path = dirs[u'installers'].join(u'Bash')
         src = u'Relative Path'
     return idata_path, src
 
@@ -109,7 +109,7 @@ def getBashModDataPath(bash_ini_, game_info):
     mod_data_path = get_path_from_ini(bash_ini_, u'sBashModData')
     if mod_data_path:
         if not mod_data_path.isabs():
-            mod_data_path = dirs['app'].join(mod_data_path)
+            mod_data_path = dirs[u'app'].join(mod_data_path)
         src = [u'[General]', u'sBashModData']
     else:
         mod_data_path, src = getOblivionModsPath(bash_ini_, game_info)
@@ -136,18 +136,18 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     # Any warnings found during this stage can be added here as strings
     init_warnings = []
     #--Oblivion (Application) Directories
-    dirs['app'] = game_info.gamePath
-    dirs['defaultPatches'] = dirs['mopy'].join(u'Bash Patches',
-                                               game_info.masterlist_dir)
+    dirs[u'app'] = game_info.gamePath
+    dirs[u'defaultPatches'] = dirs[u'mopy'].join(u'Bash Patches',
+                                                 game_info.masterlist_dir)
     #  Personal
     if game_info.uses_personal_folders:
         personal = getPersonalPath(bashIni_, personal)
-        dirs['saveBase'] = personal.join(u'My Games', game_info.fsName)
+        dirs[u'saveBase'] = personal.join(u'My Games', game_info.fsName)
     else:
-        dirs['saveBase'] = dirs['app']
+        dirs[u'saveBase'] = dirs[u'app']
     #  Local Application Data
     localAppData = getLocalAppDataPath(bashIni_, localAppData)
-    dirs['userApp'] = localAppData.join(game_info.fsName)
+    dirs[u'userApp'] = localAppData.join(game_info.fsName)
     # Use local copy of the oblivion.ini if present
     # see: http://en.uesp.net/wiki/Oblivion:Ini_Settings
     # Oblivion reads the Oblivion.ini in the directory where it exists
@@ -157,9 +157,9 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     # in the Oblivion.ini directory where Oblivion.exe is run from will
     # actually matter.
     # Utumno: not sure how/if this applies to other games
-    data_oblivion_ini = dirs['app'].join(game_info.iniFiles[0])
-    game_ini_path = dirs['saveBase'].join(game_info.iniFiles[0])
-    dirs['mods'] = dirs['app'].join(game_info.mods_dir)
+    data_oblivion_ini = dirs[u'app'].join(game_info.iniFiles[0])
+    game_ini_path = dirs[u'saveBase'].join(game_info.iniFiles[0])
+    dirs[u'mods'] = dirs[u'app'].join(game_info.mods_dir)
     if data_oblivion_ini.isfile():
         oblivionIni = ConfigParser(allow_no_value=True) ##: use GameIni here
         try:
@@ -185,31 +185,31 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
         if get_ini_option(oblivionIni, u'bUseMyGamesDirectory') == u'0':
             game_ini_path = data_oblivion_ini
             # Set the save game folder to the Oblivion directory
-            dirs['saveBase'] = dirs['app']
+            dirs[u'saveBase'] = dirs[u'app']
             # Set the data folder to sLocalMasterPath
-            dirs['mods'] = dirs['app'].join(get_ini_option(oblivionIni,
+            dirs[u'mods'] = dirs[u'app'].join(get_ini_option(oblivionIni,
                 u'SLocalMasterPath') or game_info.mods_dir)
     # these are relative to the mods path so they must be set here
-    dirs['patches'] = dirs['mods'].join(u'Bash Patches')
-    dirs['tag_files'] = dirs['mods'].join(u'BashTags')
-    dirs['ini_tweaks'] = dirs['mods'].join(u'INI Tweaks')
+    dirs[u'patches'] = dirs[u'mods'].join(u'Bash Patches')
+    dirs[u'tag_files'] = dirs[u'mods'].join(u'BashTags')
+    dirs[u'ini_tweaks'] = dirs[u'mods'].join(u'INI Tweaks')
     #--Mod Data, Installers
     oblivionMods, oblivionModsSrc = getOblivionModsPath(bashIni_, game_info)
-    dirs['modsBash'], modsBashSrc = getBashModDataPath(bashIni_, game_info)
-    dirs['modsBash'], modsBashSrc = getLegacyPathWithSource(
-        dirs['modsBash'], dirs['app'].join(game_info.mods_dir, u'Bash'),
+    dirs[u'modsBash'], modsBashSrc = getBashModDataPath(bashIni_, game_info)
+    dirs[u'modsBash'], modsBashSrc = getLegacyPathWithSource(
+        dirs[u'modsBash'], dirs[u'app'].join(game_info.mods_dir, u'Bash'),
         modsBashSrc, u'Relative Path')
-    dirs['installers'] = oblivionMods.join(u'Bash Installers')
-    dirs['installers'] = getLegacyPath(dirs['installers'],
-                                       dirs['app'].join(u'Installers'))
-    dirs['bainData'], bainDataSrc = getBainDataPath(bashIni_)
-    dirs['bsaCache'] = dirs['bainData'].join(u'BSA Cache')
-    dirs['converters'] = dirs['installers'].join(u'Bain Converters')
-    dirs['dupeBCFs'] = dirs['converters'].join(u'--Duplicates')
-    dirs['corruptBCFs'] = dirs['converters'].join(u'--Corrupt')
+    dirs[u'installers'] = oblivionMods.join(u'Bash Installers')
+    dirs[u'installers'] = getLegacyPath(dirs[u'installers'],
+                                        dirs[u'app'].join(u'Installers'))
+    dirs[u'bainData'], bainDataSrc = getBainDataPath(bashIni_)
+    dirs[u'bsaCache'] = dirs[u'bainData'].join(u'BSA Cache')
+    dirs[u'converters'] = dirs[u'installers'].join(u'Bain Converters')
+    dirs[u'dupeBCFs'] = dirs[u'converters'].join(u'--Duplicates')
+    dirs[u'corruptBCFs'] = dirs[u'converters'].join(u'--Corrupt')
     # create bash user folders, keep these in order
-    keys = ('modsBash', 'installers', 'converters', 'dupeBCFs', 'corruptBCFs',
-            'bainData', 'bsaCache')
+    keys = (u'modsBash', u'installers', u'converters', u'dupeBCFs',
+            u'corruptBCFs', u'bainData', u'bsaCache')
     try:
         env.shellMakeDirs([dirs[key] for key in keys])
     except NonExistentDriveError as e:
@@ -226,29 +226,29 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
             u'Please check the settings for the following paths in your '
             u'bash.ini, the drive does not exist') + u':\n\n'
         relativePathError = []
-        if 'modsBash' in badKeys:
+        if u'modsBash' in badKeys:
             if isinstance(modsBashSrc, list):
                 msg += (u' '.join(modsBashSrc) + u'\n    '
-                        + dirs['modsBash'].s + u'\n')
+                        + dirs[u'modsBash'].s + u'\n')
             else:
-                relativePathError.append(dirs['modsBash'])
-        if {'installers', 'converters', 'dupeBCFs', 'corruptBCFs'} & badKeys:
+                relativePathError.append(dirs[u'modsBash'])
+        if {u'installers', u'converters', u'dupeBCFs', u'corruptBCFs'} & badKeys:
             # All derived from oblivionMods -> getOblivionModsPath
             if isinstance(oblivionModsSrc, list):
                 msg += (u' '.join(oblivionModsSrc) + u'\n    '
                         + oblivionMods.s + u'\n')
             else:
                 relativePathError.append(oblivionMods)
-        if {'bainData', 'bsaCache'} & badKeys:
+        if {u'bainData', u'bsaCache'} & badKeys:
             # Both derived from 'bainData' -> getBainDataPath
             # Sometimes however, getBainDataPath falls back to oblivionMods,
             # So check to be sure we haven't already added a message about that
             if bainDataSrc != oblivionModsSrc:
                 if isinstance(bainDataSrc, list):
                     msg += (u' '.join(bainDataSrc) + u'\n    '
-                            + dirs['bainData'].s + u'\n')
+                            + dirs[u'bainData'].s + u'\n')
                 else:
-                    relativePathError.append(dirs['bainData'])
+                    relativePathError.append(dirs[u'bainData'])
         if relativePathError:
             msg += u'\n' + _(u'A path error was the result of relative paths.')
             msg += u'  ' + _(u'The following paths are causing the errors, '
@@ -262,20 +262,20 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     return game_ini_path, init_warnings
 
 def init_dirs_mopy():
-    dirs['mopy'] = Path.getcwd()
-    dirs['bash'] = dirs['mopy'].join(u'bash')
-    dirs['compiled'] = dirs['bash'].join(u'compiled')
-    dirs['l10n'] = dirs['bash'].join(u'l10n')
-    dirs['db'] = dirs['bash'].join(u'db')
-    dirs['templates'] = dirs['mopy'].join(u'templates')
-    dirs['images'] = dirs['bash'].join(u'images')
+    dirs[u'mopy'] = Path.getcwd()
+    dirs[u'bash'] = dirs[u'mopy'].join(u'bash')
+    dirs[u'compiled'] = dirs[u'bash'].join(u'compiled')
+    dirs[u'l10n'] = dirs[u'bash'].join(u'l10n')
+    dirs[u'db'] = dirs[u'bash'].join(u'db')
+    dirs[u'templates'] = dirs[u'mopy'].join(u'templates')
+    dirs[u'images'] = dirs[u'bash'].join(u'images')
     global mopy_dirs_initialized
     mopy_dirs_initialized = True
 
 def getLocalSaveDirs():
     """Return a list of possible local save directories, NOT including the
     base directory."""
-    baseSaves = dirs['saveBase'].join(u'Saves')
+    baseSaves = dirs[u'saveBase'].join(u'Saves')
     # Path.list returns [] for non existent dirs
     localSaveDirs = [x for x in baseSaves.list() if
                      x not in (u'Bash', u'Mash') and baseSaves.join(x).isdir()]

@@ -371,7 +371,7 @@ def _main(opts, wx_locale):
                           'gameName': bush_game.displayName}
             uacRestart = balt.ask_uac_restart(message,
                                               title=_(u'UAC Protection'),
-                                              mopy=bass.dirs['mopy'])
+                                              mopy=bass.dirs[u'mopy'])
             if uacRestart: bass.update_sys_argv(['--uac'])
         if uacRestart:
             bass.is_restarting = True
@@ -384,7 +384,7 @@ def _main(opts, wx_locale):
     if opts.backup or barb.BackupSettings.new_bash_version_prompt_backup(
             balt, previous_bash_version):
         frame = None # balt.Link.Frame, not defined yet, no harm done
-        base_dir = bass.settings['bash.backupPath'] or bass.dirs['modsBash']
+        base_dir = bass.settings['bash.backupPath'] or bass.dirs[u'modsBash']
         settings_file = (opts.backup and opts.filename) or None
         if not settings_file:
             settings_file = balt.askSave(frame,

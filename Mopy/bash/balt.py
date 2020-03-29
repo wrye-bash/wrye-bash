@@ -150,7 +150,7 @@ class ColorChecks(ImageList):
                            u'red'):
                 shortKey = status + u'.' + state
                 image_key = u'checkbox.' + shortKey
-                img = GPath(bass.dirs['images'].join(
+                img = GPath(bass.dirs[u'images'].join(
                     u'checkbox_' + status + u'_' + state + u'.png'))
                 image = images[image_key] = Image(img, Image.typesDict[u'png'])
                 self.Add(image, shortKey)

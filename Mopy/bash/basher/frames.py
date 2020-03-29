@@ -165,7 +165,7 @@ class DocBrowser(WindowFrame):
         if mod_name in self._db_doc_paths:
             (docs_dir, file_name) = self._db_doc_paths[mod_name].headTail
         else:
-            docs_dir = bass.settings['bash.modDocs.dir'] or bass.dirs['mods']
+            docs_dir = bass.settings['bash.modDocs.dir'] or bass.dirs[u'mods']
             file_name = GPath(u'')
         doc_path = balt.askOpen(self, _(u'Select doc for %s:') % mod_name.s,
                                 docs_dir, file_name, u'*.*')
@@ -388,7 +388,7 @@ class ModChecker(WindowFrame):
               for setting_key in (_MOD_LIST, _CRC, _VERSION)],
             mod_checker=(None, self)[self._controls[_SCAN_DIRTY].is_checked])
         if web_viewer_available():
-            log_path = bass.dirs['saveBase'].join(u'ModChecker.html')
+            log_path = bass.dirs[u'saveBase'].join(u'ModChecker.html')
             balt.convert_wtext_to_html(log_path, self.check_mods_text)
             self._html_ctrl.try_load_html(log_path)
         else:

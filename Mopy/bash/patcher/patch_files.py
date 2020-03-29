@@ -87,7 +87,7 @@ class _PFile(object):
         log(u'* ' + format_date(time.time()))
         log(u'* ' + _(u'Elapsed Time: ') + 'TIMEPLACEHOLDER')
         def _link(link_id):
-            return (readme_url(mopy=bass.dirs['mopy'], advanced=True),
+            return (readme_url(mopy=bass.dirs[u'mopy'], advanced=True),
                     u'#%s' % link_id)
         if self.patcher_mod_skipcount:
             log.setHeader(u'=== ' + _(u'Skipped Imports'))
@@ -405,7 +405,7 @@ class CBash_PatchFile(_PFile, ObModFile):
         IIMSet = {modName for modName in (self.allSet | self.scanSet)
                   if u'IIM' in infos[modName].getBashTags()}
 
-        self.Current = ObCollection(ModsPath=bass.dirs['mods'].s)
+        self.Current = ObCollection(ModsPath=bass.dirs[u'mods'].s)
 
         #add order reordered
         #mods can't be added more than once, and a mod could be in both the loadSet and mergeSet or loadSet and scanSet

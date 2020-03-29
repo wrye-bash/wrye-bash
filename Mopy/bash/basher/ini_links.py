@@ -167,7 +167,7 @@ class INI_CreateNew(OneItemLink):
         fileName = pathFrom.sbody + u' - Copy' + pathFrom.ext
         tweak_path = self._askSave(
             title=_(u'Copy Tweak with current settings...'),
-            defaultDir=bass.dirs['ini_tweaks'], defaultFile=fileName,
+            defaultDir=bass.dirs[u'ini_tweaks'], defaultFile=fileName,
             wildcard=_(u'INI Tweak File (*.ini)|*.ini'))
         if bosh.iniInfos.duplicate_ini(pathFrom, tweak_path):
             self.window.RefreshUI(redraw=[tweak_path.tail], # to_add

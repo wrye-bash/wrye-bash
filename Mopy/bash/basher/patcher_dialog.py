@@ -231,13 +231,13 @@ class PatchDialog(DialogWindow):
                 bolt.WryeText.genHtml(tempReadme,None,docsDir)
                 #--Try moving temp log/readme to Docs dir
                 try:
-                    env.shellMove(tempReadmeDir, bass.dirs['mods'],
+                    env.shellMove(tempReadmeDir, bass.dirs[u'mods'],
                                   parent=self._native_widget)
                 except (CancelError,SkipError):
                     # User didn't allow UAC, move to My Games directory instead
                     env.shellMove([tempReadme, tempReadme.root + u'.html'],
-                                  bass.dirs['saveBase'], parent=self)
-                    readme = bass.dirs['saveBase'].join(readme.tail)
+                                  bass.dirs[u'saveBase'], parent=self)
+                    readme = bass.dirs[u'saveBase'].join(readme.tail)
                 #finally:
                 #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
             readme = readme.root + u'.html'
@@ -373,14 +373,14 @@ class PatchDialog(DialogWindow):
         config = self.__config()
         exportConfig(patch_name=self.patchInfo.name, config=config,
                      isCBash=self.doCBash, win=self.parent,
-                     outDir=bass.dirs['patches'])
+                     outDir=bass.dirs[u'patches'])
 
     __old_key = GPath(u'Saved Bashed Patch Configuration')
     __new_key = u'Saved Bashed Patch Configuration (%s)'
     def ImportConfig(self):
         """Import the configuration from a user selected dat file."""
         config_dat = self.patchInfo.name + u'_Configuration.dat'
-        textDir = bass.dirs['patches']
+        textDir = bass.dirs[u'patches']
         textDir.makedirs()
         #--File dialog
         textPath = balt.askOpen(self.parent,

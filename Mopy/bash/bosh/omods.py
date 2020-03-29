@@ -275,7 +275,7 @@ class OmodFile(object):
 
         # Now decompress
         progress(0.3)
-        cmd = [bass.dirs['compiled'].join(u'lzma').s,u'd',outPath.join(dataPath.sbody+u'.tmp').s, outPath.join(dataPath.sbody+u'.uncomp').s]
+        cmd = [bass.dirs[u'compiled'].join(u'lzma').s,u'd',outPath.join(dataPath.sbody+u'.tmp').s, outPath.join(dataPath.sbody+u'.uncomp').s]
         subprocess.call(cmd,startupinfo=startupinfo)
         progress(0.8)
 
@@ -317,7 +317,7 @@ class OmodConfig(object):
     def getOmodConfig(name):
         """Get obmm config file for project."""
         config = OmodConfig(name)
-        configPath = bass.dirs['installers'].join(name,u'omod conversion data',u'config')
+        configPath = bass.dirs[u'installers'].join(name,u'omod conversion data',u'config')
         if configPath.exists():
             with open(configPath.s,u'rb') as ins:
                 ins.read(1) #--Skip first four bytes
@@ -335,7 +335,7 @@ class OmodConfig(object):
     @staticmethod
     def writeOmodConfig(name, config):
         """Write obmm config file for project."""
-        configPath = bass.dirs['installers'].join(name,u'omod conversion data',u'config')
+        configPath = bass.dirs[u'installers'].join(name,u'omod conversion data',u'config')
         configPath.head.makedirs()
         with open(configPath.temp.s,u'wb') as out:
             out.write(struct_pack(u'B', 4))

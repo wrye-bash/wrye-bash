@@ -1702,7 +1702,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
                                              self.current_ini_path.start())
         #--Ini file
         self.iniContents = TargetINILineCtrl(right._native_widget)
-        self.lastDir = settings.get('bash.ini.lastDir', bass.dirs['mods'].s)
+        self.lastDir = settings.get('bash.ini.lastDir', bass.dirs[u'mods'].s)
         #--Tweak file
         self.tweakContents = INITweakLineCtrl(left._native_widget, self.iniContents)
         self.iniContents.SetTweakLinesCtrl(self.tweakContents)
@@ -2379,7 +2379,7 @@ class InstallersList(balt.UIList):
         try:
             for i, omod in enumerate(omodnames):
                 progress(i, omod.stail)
-                outDir = bass.dirs['installers'].join(omod.body)
+                outDir = bass.dirs[u'installers'].join(omod.body)
                 if outDir.exists():
                     if balt.askYes(progress.dialog, _(
                         u"The project '%s' already exists.  Overwrite "
@@ -2478,8 +2478,8 @@ class InstallersList(balt.UIList):
         action = self._askCopyOrMove(filenames)
         if action not in ['COPY','MOVE']: return
         with BusyCursor():
-            installersJoin = bass.dirs['installers'].join
-            convertersJoin = bass.dirs['converters'].join
+            installersJoin = bass.dirs[u'installers'].join
+            convertersJoin = bass.dirs[u'converters'].join
             filesTo = [installersJoin(x.tail) for x in filenames]
             filesTo.extend(convertersJoin(x.tail) for x in converters)
             filenames.extend(converters)
@@ -2562,7 +2562,7 @@ class InstallersList(balt.UIList):
             self.addMarker()
         # Ctrl+C: Copy file(s) to clipboard
         elif wrapped_evt.is_cmd_down and code == ord(u'C'):
-            sel = map(lambda x: bass.dirs['installers'].join(x).s,
+            sel = map(lambda x: bass.dirs[u'installers'].join(x).s,
                       self.GetSelected())
             balt.copyListToClipboard(sel)
         super(InstallersList, self)._handle_key_up(wrapped_evt)
@@ -3113,7 +3113,7 @@ class InstallersPanel(BashTab):
     def __extractOmods(self):
         with balt.Progress(_(u'Extracting OMODs...'),
                            u'\n' + u' ' * 60) as progress:
-            dirInstallers = bass.dirs['installers']
+            dirInstallers = bass.dirs[u'installers']
             dirInstallersJoin = dirInstallers.join
             omods = [dirInstallersJoin(x) for x in dirInstallers.list() if
                      x.cext == u'.omod']
@@ -4114,7 +4114,7 @@ class BashFrame(WindowFrame):
 
     def _missingDocsDir(self):
         #--Missing docs directory?
-        testFile = bass.dirs['mopy'].join(u'Docs', u'wtxt_teal.css')
+        testFile = bass.dirs[u'mopy'].join(u'Docs', u'wtxt_teal.css')
         if self.incompleteInstallError or testFile.exists(): return
         self.incompleteInstallError = True
         msg = _(u'Installation appears incomplete.  Please re-unzip bash '
@@ -4338,8 +4338,8 @@ def InitSettings(): # this must run first !
     # Plugin encoding used to decode mod string fields
     bolt.pluginEncoding = bass.settings['bash.pluginEncoding']
     #--Wrye Balt
-    settings['balt.WryeLog.temp'] = bass.dirs['saveBase'].join(u'WryeLogTemp.html')
-    settings['balt.WryeLog.cssDir'] = bass.dirs['mopy'].join(u'Docs')
+    settings['balt.WryeLog.temp'] = bass.dirs[u'saveBase'].join(u'WryeLogTemp.html')
+    settings['balt.WryeLog.cssDir'] = bass.dirs[u'mopy'].join(u'Docs')
     initPatchers()
 
 def InitImages():
@@ -4359,13 +4359,13 @@ def InitImages():
             value = settings['bash.colors'][key] = _conv_dict[value]
         colors[key] = value
     #--Images
-    imgDirJn = bass.dirs['images'].join
+    imgDirJn = bass.dirs[u'images'].join
     def _png(fname): return Image(imgDirJn(fname))
     #--Standard
     images['save.on'] = _png(u'save_on.png')
     images['save.off'] = _png(u'save_off.png')
     #--Misc
-    #images['oblivion'] = Image(GPath(bass.dirs['images'].join(u'oblivion.png')),png)
+    #images['oblivion'] = Image(GPath(bass.dirs[u'images'].join(u'oblivion.png')),png)
     images['help.16'] = _png(u'help16.png')
     images['help.24'] = _png(u'help24.png')
     images['help.32'] = _png(u'help32.png')

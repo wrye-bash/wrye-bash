@@ -1113,7 +1113,7 @@ class AsteriskGame(Game):
     @classmethod
     def parse_ccc_file(cls):
         if not cls._ccc_filename: return # Abort if this game has no CC
-        _ccc_path = bass.dirs['app'].join(cls._ccc_filename)
+        _ccc_path = bass.dirs[u'app'].join(cls._ccc_filename)
         try:
             with open(_ccc_path.s, u'r') as ins:
                 cls.must_be_active_if_present += tuple(

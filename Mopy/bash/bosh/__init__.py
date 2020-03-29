@@ -742,7 +742,7 @@ class ModInfo(FileInfo):
                             u'settings')
                 raise ModError(self.name, msg)
             for bsa, assets in bsa_assets.iteritems():
-                out_path = dirs['bsaCache'].join(bsa.name)
+                out_path = dirs[u'bsaCache'].join(bsa.name)
                 try:
                     bsa.extract_assets(assets, out_path.s)
                 except BSAError as e:
@@ -1566,7 +1566,7 @@ class INIInfos(TableFileInfos):
         INIInfos._default_tweaks = dict(
             (GPath_no_norm(k), DefaultIniInfo(k, v)) for k, v in
             bush.game.default_tweaks.iteritems())
-        super(INIInfos, self).__init__(dirs['ini_tweaks'],
+        super(INIInfos, self).__init__(dirs[u'ini_tweaks'],
                                        factory=ini_info_factory)
         self._ini = None
         # Check the list of target INIs, remove any that don't exist
@@ -1705,7 +1705,7 @@ class INIInfos(TableFileInfos):
         return _added, _updated, _deleted, changed
 
     @property
-    def bash_dir(self): return dirs['modsBash'].join(u'INI Data')
+    def bash_dir(self): return dirs[u'modsBash'].join(u'INI Data')
 
     def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
                        _in_refresh=False):
@@ -1813,7 +1813,7 @@ class ModInfos(FileInfos):
         self.__class__.file_pattern = re.compile(u'(' + u'|'.join(
             map(re.escape, bush.game.espm_extensions)) + u'' r')(\.ghost)?$',
                                                  re.I | re.U)
-        FileInfos.__init__(self, dirs['mods'], factory=ModInfo)
+        FileInfos.__init__(self, dirs[u'mods'], factory=ModInfo)
         #--Info lists/sets
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
         game_master = bush.game.master_file
@@ -2000,7 +2000,7 @@ class ModInfos(FileInfos):
         return True
 
     @property
-    def bash_dir(self): return dirs['modsBash']
+    def bash_dir(self): return dirs[u'modsBash']
 
     #--Refresh-----------------------------------------------------------------
     def _names(self):
@@ -2817,7 +2817,7 @@ class ModInfos(FileInfos):
     # does not really belong here, but then where ?
         """Save current plugins into arcSaves directory, load plugins from
         newSaves directory and set oblivion version."""
-        arcPath, newPath = (dirs['saveBase'].join(saves) for saves in
+        arcPath, newPath = (dirs[u'saveBase'].join(saves) for saves in
                             (arcSaves, newSaves))
         load_order.swap(arcPath, newPath)
         # Swap Oblivion version to memorized version
@@ -2871,11 +2871,11 @@ class SaveInfos(FileInfos):
         self.__class__.file_pattern = re.compile(patt, re.I | re.U)
         self.localSave = bush.game.Ini.save_prefix
         self._setLocalSaveFromIni()
-        super(SaveInfos, self).__init__(dirs['saveBase'].join(self.localSave),
+        super(SaveInfos, self).__init__(dirs[u'saveBase'].join(self.localSave),
                                         factory=SaveInfo)
         # Save Profiles database
         self.profiles = bolt.DataTable(bolt.PickleDict(
-            dirs['saveBase'].join(u'BashProfiles.dat')))
+            dirs[u'saveBase'].join(u'BashProfiles.dat')))
         # save profiles used to have a trailing slash, remove it if present
         for row in self.profiles.keys():
             if row.endswith(u'\\'):
@@ -2969,7 +2969,7 @@ class SaveInfos(FileInfos):
         self._setLocalSaveFromIni()
         if localSave == self.localSave: return # no change
         self.table.save()
-        self._initDB(dirs['saveBase'].join(self.localSave))
+        self._initDB(dirs[u'saveBase'].join(self.localSave))
 
     def setLocalSave(self, localSave, refreshSaveInfos=True):
         """Sets SLocalSavePath in Oblivion.ini. The latter must exist."""
@@ -2979,7 +2979,7 @@ class SaveInfos(FileInfos):
         # the setting correctly, kept previous behavior
         oblivionIni.saveSetting(*bush.game.Ini.save_profiles_key,
                                 value=localSave + u'\\')
-        self._initDB(dirs['saveBase'].join(self.localSave))
+        self._initDB(dirs[u'saveBase'].join(self.localSave))
         if refreshSaveInfos: self.refresh()
 
     #--Enabled ----------------------------------------------------------------
@@ -3046,7 +3046,7 @@ class BSAInfos(FileInfos):
                     if self._file_mod_time != default_mtime:
                         self.setmtime(default_mtime)
 
-        super(BSAInfos, self).__init__(dirs['mods'], factory=BSAInfo)
+        super(BSAInfos, self).__init__(dirs[u'mods'], factory=BSAInfo)
 
     def new_info(self, fileName, _in_refresh=False, owner=None,
                  notify_bain=False):
@@ -3059,20 +3059,20 @@ class BSAInfos(FileInfos):
         return new_bsa
 
     @property
-    def bash_dir(self): return dirs['modsBash'].join(u'BSA Data')
+    def bash_dir(self): return dirs[u'modsBash'].join(u'BSA Data')
 
     @staticmethod
     def remove_invalidation_file():
         """Removes ArchiveInvalidation.txt, if it exists in the game folder.
         This is used when disabling other solutions to the Archive Invalidation
         problem prior to enabling WB's BSA Redirection."""
-        dirs['app'].join(u'ArchiveInvalidation.txt').remove()
+        dirs[u'app'].join(u'ArchiveInvalidation.txt').remove()
 
 #------------------------------------------------------------------------------
 class PeopleData(DataStore):
     """Data for a People UIList. Built on a PickleDict."""
     def __init__(self):
-        self.dictFile = bolt.PickleDict(dirs['saveBase'].join(u'People.dat'))
+        self.dictFile = bolt.PickleDict(dirs[u'saveBase'].join(u'People.dat'))
         self.data = self.dictFile.data
         self.hasChanged = False ##: move to bolt.PickleDict
         self.loaded = False
@@ -3138,7 +3138,7 @@ class ScreenInfos(FileInfos):
     _bain_notify = False # BAIN can't install to game dir
 
     def __init__(self):
-        self._orig_store_dir = dirs['app'] # type: bolt.Path
+        self._orig_store_dir = dirs[u'app'] # type: bolt.Path
         self.__class__.file_pattern = re.compile(
             r'\.(' + u'|'.join(ext[1:] for ext in imageExts) + u')$',
             re.I | re.U)
@@ -3155,7 +3155,7 @@ class ScreenInfos(FileInfos):
         return super(ScreenInfos, self).refresh(refresh_infos, booting)
 
     @property
-    def bash_dir(self): return dirs['modsBash'].join(u'Screenshot Data')
+    def bash_dir(self): return dirs[u'modsBash'].join(u'Screenshot Data')
 
 #------------------------------------------------------------------------------
 from . import converters
@@ -3183,100 +3183,100 @@ def initDefaultTools():
 
     # BOSS can be in any number of places.
     # Detect locally installed (into game folder) BOSS
-    if dirs['app'].join(u'BOSS', u'BOSS.exe').exists():
-        tooldirs['boss'] = dirs['app'].join(u'BOSS').join(u'BOSS.exe')
+    if dirs[u'app'].join(u'BOSS', u'BOSS.exe').exists():
+        tooldirs[u'boss'] = dirs[u'app'].join(u'BOSS').join(u'BOSS.exe')
     else:
-        tooldirs['boss'] = GPath(u'C:\\**DNE**')
+        tooldirs[u'boss'] = GPath(u'C:\\**DNE**')
         # Detect globally installed (into Program Files) BOSS
         path_in_registry = env.get_registry_path(u'Boss', u'Installed Path',
                                                  [u'BOSS.exe'])
         if path_in_registry:
             if path_in_registry.isdir():
                 path_in_registry = path_in_registry.join(u'BOSS.exe')
-            tooldirs['boss'] = path_in_registry
+            tooldirs[u'boss'] = path_in_registry
 
-    tooldirs['Tes4FilesPath'] = dirs['app'].join(u'Tools', u'TES4Files.exe')
-    tooldirs['Tes4EditPath'] = dirs['app'].join(u'TES4Edit.exe')
-    tooldirs['Tes5EditPath'] = dirs['app'].join(u'TES5Edit.exe')
-    tooldirs['EnderalEditPath'] = dirs['app'].join(u'EnderalEdit.exe')
-    tooldirs['SSEEditPath'] = dirs['app'].join(u'SSEEdit.exe')
-    tooldirs['Fo4EditPath'] = dirs['app'].join(u'FO4Edit.exe')
-    tooldirs['Fo3EditPath'] = dirs['app'].join(u'FO3Edit.exe')
-    tooldirs['FnvEditPath'] = dirs['app'].join(u'FNVEdit.exe')
-    tooldirs['Tes4LodGenPath'] = dirs['app'].join(u'TES4LodGen.exe')
-    tooldirs['Tes4GeckoPath'] = dirs['app'].join(u'Tes4Gecko.jar')
-    tooldirs['Tes5GeckoPath'] = pathlist(u'Dark Creations',u'TESVGecko',u'TESVGecko.exe')
-    tooldirs['OblivionBookCreatorPath'] = dirs['mods'].join(u'OblivionBookCreator.jar')
-    tooldirs['NifskopePath'] = pathlist(u'NifTools',u'NifSkope',u'Nifskope.exe')
-    tooldirs['BlenderPath'] = pathlist(u'Blender Foundation',u'Blender',u'blender.exe')
-    tooldirs['GmaxPath'] = GPath(u'C:\\GMAX').join(u'gmax.exe')
-    tooldirs['MaxPath'] = pathlist(u'Autodesk',u'3ds Max 2010',u'3dsmax.exe')
-    tooldirs['MayaPath'] = undefinedPath
-    tooldirs['PhotoshopPath'] = pathlist(u'Adobe',u'Adobe Photoshop CS3',u'Photoshop.exe')
-    tooldirs['GIMP'] = pathlist(u'GIMP-2.0',u'bin',u'gimp-2.6.exe')
-    tooldirs['ISOBL'] = dirs['app'].join(u'ISOBL.exe')
-    tooldirs['ISRMG'] = dirs['app'].join(u'Insanitys ReadMe Generator.exe')
-    tooldirs['ISRNG'] = dirs['app'].join(u'Random Name Generator.exe')
-    tooldirs['ISRNPCG'] = dirs['app'].join(u'Random NPC.exe')
-    tooldirs['NPP'] = pathlist(u'Notepad++',u'notepad++.exe')
-    tooldirs['Fraps'] = GPath(u'C:\\Fraps').join(u'Fraps.exe')
-    tooldirs['Audacity'] = pathlist(u'Audacity',u'Audacity.exe')
-    tooldirs['Artweaver'] = pathlist(u'Artweaver 1.0',u'Artweaver.exe')
-    tooldirs['DDSConverter'] = pathlist(u'DDS Converter 2',u'DDS Converter 2.exe')
-    tooldirs['PaintNET'] = pathlist(u'Paint.NET',u'PaintDotNet.exe')
-    tooldirs['Milkshape3D'] = pathlist(u'MilkShape 3D 1.8.4',u'ms3d.exe')
-    tooldirs['Wings3D'] = pathlist(u'wings3d_1.2',u'Wings3D.exe')
-    tooldirs['BSACMD'] = pathlist(u'BSACommander',u'bsacmd.exe')
-    tooldirs['MAP'] = dirs['app'].join(u'Modding Tools', u'Interactive Map of Cyrodiil and Shivering Isles 3.52', u'Mapa v 3.52.exe')
-    tooldirs['OBMLG'] = dirs['app'].join(u'Modding Tools', u'Oblivion Mod List Generator', u'Oblivion Mod List Generator.exe')
-    tooldirs['OBFEL'] = pathlist(u'Oblivion Face Exchange Lite',u'OblivionFaceExchangeLite.exe')
-    tooldirs['ArtOfIllusion'] = pathlist(u'ArtOfIllusion',u'Art of Illusion.exe')
-    tooldirs['ABCAmberAudioConverter'] = pathlist(u'ABC Amber Audio Converter',u'abcaudio.exe')
-    tooldirs['Krita'] = pathlist(u'Krita (x86)',u'bin',u'krita.exe')
-    tooldirs['PixelStudio'] = pathlist(u'Pixel',u'Pixel.exe')
-    tooldirs['TwistedBrush'] = pathlist(u'Pixarra',u'TwistedBrush Open Studio',u'tbrush_open_studio.exe')
-    tooldirs['PhotoScape'] = pathlist(u'PhotoScape',u'PhotoScape.exe')
-    tooldirs['Photobie'] = pathlist(u'Photobie',u'Photobie.exe')
-    tooldirs['PhotoFiltre'] = pathlist(u'PhotoFiltre',u'PhotoFiltre.exe')
-    tooldirs['PaintShopPhotoPro'] = pathlist(u'Corel',u'Corel PaintShop Photo Pro',u'X3',u'PSPClassic',u'Corel Paint Shop Pro Photo.exe')
-    tooldirs['Dogwaffle'] = pathlist(u'project dogwaffle',u'dogwaffle.exe')
-    tooldirs['GeneticaViewer'] = pathlist(u'Spiral Graphics',u'Genetica Viewer 3',u'Genetica Viewer 3.exe')
-    tooldirs['LogitechKeyboard'] = pathlist(u'Logitech',u'GamePanel Software',u'G-series Software',u'LGDCore.exe')
-    tooldirs['AutoCad'] = pathlist(u'Autodesk Architectural Desktop 3',u'acad.exe')
-    tooldirs['Genetica'] = pathlist(u'Spiral Graphics',u'Genetica 3.5',u'Genetica.exe')
-    tooldirs['IrfanView'] = pathlist(u'IrfanView',u'i_view32.exe')
-    tooldirs['XnView'] = pathlist(u'XnView',u'xnview.exe')
-    tooldirs['FastStone'] = pathlist(u'FastStone Image Viewer',u'FSViewer.exe')
-    tooldirs['Steam'] = pathlist(u'Steam',u'steam.exe')
-    tooldirs['EVGAPrecision'] = pathlist(u'EVGA Precision',u'EVGAPrecision.exe')
-    tooldirs['IcoFX'] = pathlist(u'IcoFX 1.6',u'IcoFX.exe')
-    tooldirs['AniFX'] = pathlist(u'AniFX 1.0',u'AniFX.exe')
-    tooldirs['WinMerge'] = pathlist(u'WinMerge',u'WinMergeU.exe')
-    tooldirs['FreeMind'] = pathlist(u'FreeMind',u'Freemind.exe')
-    tooldirs['MediaMonkey'] = pathlist(u'MediaMonkey',u'MediaMonkey.exe')
-    tooldirs['Inkscape'] = pathlist(u'Inkscape',u'inkscape.exe')
-    tooldirs['FileZilla'] = pathlist(u'FileZilla FTP Client',u'filezilla.exe')
-    tooldirs['RADVideo'] = pathlist(u'RADVideo',u'radvideo.exe')
-    tooldirs['EggTranslator'] = pathlist(u'Egg Translator',u'EggTranslator.exe')
-    tooldirs['Sculptris'] = pathlist(u'sculptris',u'Sculptris.exe')
-    tooldirs['Mudbox'] = pathlist(u'Autodesk',u'Mudbox2011',u'mudbox.exe')
-    tooldirs['Tabula'] = dirs['app'].join(u'Modding Tools', u'Tabula', u'Tabula.exe')
-    tooldirs['MyPaint'] = pathlist(u'MyPaint',u'mypaint.exe')
-    tooldirs['Pixia'] = pathlist(u'Pixia',u'pixia.exe')
-    tooldirs['DeepPaint'] = pathlist(u'Right Hemisphere',u'Deep Paint',u'DeepPaint.exe')
-    tooldirs['CrazyBump'] = pathlist(u'Crazybump',u'CrazyBump.exe')
-    tooldirs['xNormal'] = pathlist(u'Santiago Orgaz',u'xNormal',u'3.17.3',u'x86',u'xNormal.exe')
-    tooldirs['SoftimageModTool'] = GPath(u'C:\\Softimage').join(u'Softimage_Mod_Tool_7.5',u'Application',u'bin',u'XSI.bat')
-    tooldirs['SpeedTree'] = undefinedPath
-    tooldirs['Treed'] = pathlist(u'gile[s]',u'plugins',u'tree[d]',u'tree[d].exe')
-    tooldirs['WinSnap'] = pathlist(u'WinSnap',u'WinSnap.exe')
-    tooldirs['PhotoSEAM'] = pathlist(u'PhotoSEAM',u'PhotoSEAM.exe')
-    tooldirs['TextureMaker'] = pathlist(u'Texture Maker',u'texturemaker.exe')
-    tooldirs['MaPZone'] = pathlist(u'Allegorithmic',u'MaPZone 2.6',u'MaPZone2.exe')
-    tooldirs['NVIDIAMelody'] = pathlist(u'NVIDIA Corporation',u'Melody',u'Melody.exe')
-    tooldirs['WTV'] = pathlist(u'WindowsTextureViewer',u'WTV.exe')
-    tooldirs['Switch'] = pathlist(u'NCH Swift Sound',u'Switch',u'switch.exe')
-    tooldirs['Freeplane'] = pathlist(u'Freeplane',u'freeplane.exe')
+    tooldirs[u'Tes4FilesPath'] = dirs[u'app'].join(u'Tools', u'TES4Files.exe')
+    tooldirs[u'Tes4EditPath'] = dirs[u'app'].join(u'TES4Edit.exe')
+    tooldirs[u'Tes5EditPath'] = dirs[u'app'].join(u'TES5Edit.exe')
+    tooldirs[u'EnderalEditPath'] = dirs[u'app'].join(u'EnderalEdit.exe')
+    tooldirs[u'SSEEditPath'] = dirs[u'app'].join(u'SSEEdit.exe')
+    tooldirs[u'Fo4EditPath'] = dirs[u'app'].join(u'FO4Edit.exe')
+    tooldirs[u'Fo3EditPath'] = dirs[u'app'].join(u'FO3Edit.exe')
+    tooldirs[u'FnvEditPath'] = dirs[u'app'].join(u'FNVEdit.exe')
+    tooldirs[u'Tes4LodGenPath'] = dirs[u'app'].join(u'TES4LodGen.exe')
+    tooldirs[u'Tes4GeckoPath'] = dirs[u'app'].join(u'Tes4Gecko.jar')
+    tooldirs[u'Tes5GeckoPath'] = pathlist(u'Dark Creations',u'TESVGecko',u'TESVGecko.exe')
+    tooldirs[u'OblivionBookCreatorPath'] = dirs[u'mods'].join(u'OblivionBookCreator.jar')
+    tooldirs[u'NifskopePath'] = pathlist(u'NifTools',u'NifSkope',u'Nifskope.exe')
+    tooldirs[u'BlenderPath'] = pathlist(u'Blender Foundation',u'Blender',u'blender.exe')
+    tooldirs[u'GmaxPath'] = GPath(u'C:\\GMAX').join(u'gmax.exe')
+    tooldirs[u'MaxPath'] = pathlist(u'Autodesk',u'3ds Max 2010',u'3dsmax.exe')
+    tooldirs[u'MayaPath'] = undefinedPath
+    tooldirs[u'PhotoshopPath'] = pathlist(u'Adobe',u'Adobe Photoshop CS3',u'Photoshop.exe')
+    tooldirs[u'GIMP'] = pathlist(u'GIMP-2.0',u'bin',u'gimp-2.6.exe')
+    tooldirs[u'ISOBL'] = dirs[u'app'].join(u'ISOBL.exe')
+    tooldirs[u'ISRMG'] = dirs[u'app'].join(u'Insanitys ReadMe Generator.exe')
+    tooldirs[u'ISRNG'] = dirs[u'app'].join(u'Random Name Generator.exe')
+    tooldirs[u'ISRNPCG'] = dirs[u'app'].join(u'Random NPC.exe')
+    tooldirs[u'NPP'] = pathlist(u'Notepad++',u'notepad++.exe')
+    tooldirs[u'Fraps'] = GPath(u'C:\\Fraps').join(u'Fraps.exe')
+    tooldirs[u'Audacity'] = pathlist(u'Audacity',u'Audacity.exe')
+    tooldirs[u'Artweaver'] = pathlist(u'Artweaver 1.0',u'Artweaver.exe')
+    tooldirs[u'DDSConverter'] = pathlist(u'DDS Converter 2',u'DDS Converter 2.exe')
+    tooldirs[u'PaintNET'] = pathlist(u'Paint.NET',u'PaintDotNet.exe')
+    tooldirs[u'Milkshape3D'] = pathlist(u'MilkShape 3D 1.8.4',u'ms3d.exe')
+    tooldirs[u'Wings3D'] = pathlist(u'wings3d_1.2',u'Wings3D.exe')
+    tooldirs[u'BSACMD'] = pathlist(u'BSACommander',u'bsacmd.exe')
+    tooldirs[u'MAP'] = dirs[u'app'].join(u'Modding Tools', u'Interactive Map of Cyrodiil and Shivering Isles 3.52', u'Mapa v 3.52.exe')
+    tooldirs[u'OBMLG'] = dirs[u'app'].join(u'Modding Tools', u'Oblivion Mod List Generator', u'Oblivion Mod List Generator.exe')
+    tooldirs[u'OBFEL'] = pathlist(u'Oblivion Face Exchange Lite',u'OblivionFaceExchangeLite.exe')
+    tooldirs[u'ArtOfIllusion'] = pathlist(u'ArtOfIllusion',u'Art of Illusion.exe')
+    tooldirs[u'ABCAmberAudioConverter'] = pathlist(u'ABC Amber Audio Converter',u'abcaudio.exe')
+    tooldirs[u'Krita'] = pathlist(u'Krita (x86)',u'bin',u'krita.exe')
+    tooldirs[u'PixelStudio'] = pathlist(u'Pixel',u'Pixel.exe')
+    tooldirs[u'TwistedBrush'] = pathlist(u'Pixarra',u'TwistedBrush Open Studio',u'tbrush_open_studio.exe')
+    tooldirs[u'PhotoScape'] = pathlist(u'PhotoScape',u'PhotoScape.exe')
+    tooldirs[u'Photobie'] = pathlist(u'Photobie',u'Photobie.exe')
+    tooldirs[u'PhotoFiltre'] = pathlist(u'PhotoFiltre',u'PhotoFiltre.exe')
+    tooldirs[u'PaintShopPhotoPro'] = pathlist(u'Corel',u'Corel PaintShop Photo Pro',u'X3',u'PSPClassic',u'Corel Paint Shop Pro Photo.exe')
+    tooldirs[u'Dogwaffle'] = pathlist(u'project dogwaffle',u'dogwaffle.exe')
+    tooldirs[u'GeneticaViewer'] = pathlist(u'Spiral Graphics',u'Genetica Viewer 3',u'Genetica Viewer 3.exe')
+    tooldirs[u'LogitechKeyboard'] = pathlist(u'Logitech',u'GamePanel Software',u'G-series Software',u'LGDCore.exe')
+    tooldirs[u'AutoCad'] = pathlist(u'Autodesk Architectural Desktop 3',u'acad.exe')
+    tooldirs[u'Genetica'] = pathlist(u'Spiral Graphics',u'Genetica 3.5',u'Genetica.exe')
+    tooldirs[u'IrfanView'] = pathlist(u'IrfanView',u'i_view32.exe')
+    tooldirs[u'XnView'] = pathlist(u'XnView',u'xnview.exe')
+    tooldirs[u'FastStone'] = pathlist(u'FastStone Image Viewer',u'FSViewer.exe')
+    tooldirs[u'Steam'] = pathlist(u'Steam',u'steam.exe')
+    tooldirs[u'EVGAPrecision'] = pathlist(u'EVGA Precision',u'EVGAPrecision.exe')
+    tooldirs[u'IcoFX'] = pathlist(u'IcoFX 1.6',u'IcoFX.exe')
+    tooldirs[u'AniFX'] = pathlist(u'AniFX 1.0',u'AniFX.exe')
+    tooldirs[u'WinMerge'] = pathlist(u'WinMerge',u'WinMergeU.exe')
+    tooldirs[u'FreeMind'] = pathlist(u'FreeMind',u'Freemind.exe')
+    tooldirs[u'MediaMonkey'] = pathlist(u'MediaMonkey',u'MediaMonkey.exe')
+    tooldirs[u'Inkscape'] = pathlist(u'Inkscape',u'inkscape.exe')
+    tooldirs[u'FileZilla'] = pathlist(u'FileZilla FTP Client',u'filezilla.exe')
+    tooldirs[u'RADVideo'] = pathlist(u'RADVideo',u'radvideo.exe')
+    tooldirs[u'EggTranslator'] = pathlist(u'Egg Translator',u'EggTranslator.exe')
+    tooldirs[u'Sculptris'] = pathlist(u'sculptris',u'Sculptris.exe')
+    tooldirs[u'Mudbox'] = pathlist(u'Autodesk',u'Mudbox2011',u'mudbox.exe')
+    tooldirs[u'Tabula'] = dirs[u'app'].join(u'Modding Tools', u'Tabula', u'Tabula.exe')
+    tooldirs[u'MyPaint'] = pathlist(u'MyPaint',u'mypaint.exe')
+    tooldirs[u'Pixia'] = pathlist(u'Pixia',u'pixia.exe')
+    tooldirs[u'DeepPaint'] = pathlist(u'Right Hemisphere',u'Deep Paint',u'DeepPaint.exe')
+    tooldirs[u'CrazyBump'] = pathlist(u'Crazybump',u'CrazyBump.exe')
+    tooldirs[u'xNormal'] = pathlist(u'Santiago Orgaz',u'xNormal',u'3.17.3',u'x86',u'xNormal.exe')
+    tooldirs[u'SoftimageModTool'] = GPath(u'C:\\Softimage').join(u'Softimage_Mod_Tool_7.5',u'Application',u'bin',u'XSI.bat')
+    tooldirs[u'SpeedTree'] = undefinedPath
+    tooldirs[u'Treed'] = pathlist(u'gile[s]',u'plugins',u'tree[d]',u'tree[d].exe')
+    tooldirs[u'WinSnap'] = pathlist(u'WinSnap',u'WinSnap.exe')
+    tooldirs[u'PhotoSEAM'] = pathlist(u'PhotoSEAM',u'PhotoSEAM.exe')
+    tooldirs[u'TextureMaker'] = pathlist(u'Texture Maker',u'texturemaker.exe')
+    tooldirs[u'MaPZone'] = pathlist(u'Allegorithmic',u'MaPZone 2.6',u'MaPZone2.exe')
+    tooldirs[u'NVIDIAMelody'] = pathlist(u'NVIDIA Corporation',u'Melody',u'Melody.exe')
+    tooldirs[u'WTV'] = pathlist(u'WindowsTextureViewer',u'WTV.exe')
+    tooldirs[u'Switch'] = pathlist(u'NCH Swift Sound',u'Switch',u'switch.exe')
+    tooldirs[u'Freeplane'] = pathlist(u'Freeplane',u'freeplane.exe')
 
 def initDefaultSettings():
     #other settings from the INI:
@@ -3328,7 +3328,7 @@ def initOptions(bashIni):
                     if value == u'.': continue
                     value = GPath(value)
                     if not value.isabs():
-                        value = dirs['app'].join(value)
+                        value = dirs[u'app'].join(value)
                 elif settingType is bool:
                     if value == u'.': continue
                     value = bashIni.getboolean(section,key)
@@ -3345,8 +3345,8 @@ def initOptions(bashIni):
                     0] if settingType is list else compDefaultValue):
                     usedSettings[usedKey] = value
 
-    tooldirs['Tes4ViewPath'] = tooldirs['Tes4EditPath'].head.join(u'TES4View.exe')
-    tooldirs['Tes4TransPath'] = tooldirs['Tes4EditPath'].head.join(u'TES4Trans.exe')
+    tooldirs[u'Tes4ViewPath'] = tooldirs[u'Tes4EditPath'].head.join(u'TES4View.exe')
+    tooldirs[u'Tes4TransPath'] = tooldirs[u'Tes4EditPath'].head.join(u'TES4Trans.exe')
 
 def initBosh(bashIni, game_ini_path):
     # Setup loot_parser, needs to be done after the dirs are initialized
@@ -3359,15 +3359,15 @@ def initBosh(bashIni, game_ini_path):
     global oblivionIni, gameInis
     oblivionIni = GameIni(game_ini_path, 'cp1252')
     gameInis = [oblivionIni]
-    gameInis.extend(IniFile(dirs['saveBase'].join(x), 'cp1252') for x in
+    gameInis.extend(IniFile(dirs[u'saveBase'].join(x), 'cp1252') for x in
                     bush.game.iniFiles[1:])
     load_order.initialize_load_order_files()
     initOptions(bashIni)
     from .bain import Installer
     Installer.init_bain_dirs()
     if os.name == u'nt': # don't add local directory to binaries on linux
-        archives.exe7z = dirs['compiled'].join(archives.exe7z).s
-        archives.pngcrush = dirs['compiled'].join(archives.pngcrush).s
+        archives.exe7z = dirs[u'compiled'].join(archives.exe7z).s
+        archives.pngcrush = dirs[u'compiled'].join(archives.pngcrush).s
 
 def initSettings(readOnly=False, _dat=u'BashSettings.dat',
                  _bak=u'BashSettings.dat.bak'):
@@ -3376,10 +3376,10 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
     def _load(dat_file=_dat):
     # bolt.PickleDict.load() handles EOFError, ValueError falling back to bak
         return bolt.Settings( # calls PickleDict.load() and copies loaded data
-            bolt.PickleDict(dirs['saveBase'].join(dat_file), readOnly))
+            bolt.PickleDict(dirs[u'saveBase'].join(dat_file), readOnly))
 
-    _dat = dirs['saveBase'].join(_dat)
-    _bak = dirs['saveBase'].join(_bak)
+    _dat = dirs[u'saveBase'].join(_dat)
+    _bak = dirs[u'saveBase'].join(_bak)
     def _loadBakOrEmpty(delBackup=False, ignoreBackup=False):
         _dat.remove()
         if delBackup: _bak.remove()

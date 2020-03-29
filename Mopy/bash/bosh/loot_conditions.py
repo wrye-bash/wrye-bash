@@ -326,7 +326,7 @@ def _process_path(file_path):
             # Remember that we're done parsing any parent specifiers
             parents_done = True
             child_components.append(path_component)
-    relative_path = bass.dirs['mods']
+    relative_path = bass.dirs[u'mods']
     # Move up by the number of requested parents
     for x in xrange(parents):
         relative_path = relative_path.head

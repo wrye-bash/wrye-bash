@@ -247,7 +247,7 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
         u'This includes files that were installed manually or by another '
         u'program. Files will be moved to the "%s" directory instead of '
         u'being deleted so you can retrieve them later if necessary.') %
-                   bass.dirs['bainData'].join(u'Data Folder Contents <date>')
+                   bass.dirs[u'bainData'].join(u'Data Folder Contents <date>')
         + u'\n\n' + _(u'Note that you will first be shown a list of files '
                       u'that this operation would remove and will have a '
                       u'chance to change the selection.'))

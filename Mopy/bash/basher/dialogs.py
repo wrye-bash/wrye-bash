@@ -91,7 +91,7 @@ class ImportFaceDialog(DialogWindow):
         self.raceText.label_text = face.getRaceName()
         self.genderText.label_text = face.getGenderName()
         self.statsText.label_text = _(u'Health ') + unicode(face.health)
-        itemImagePath = bass.dirs['mods'].join(u'Docs', u'Images', '%s.jpg' % item)
+        itemImagePath = bass.dirs[u'mods'].join(u'Docs', u'Images', '%s.jpg' % item)
         # TODO(ut): any way to get the picture ? see mod_links.Mod_Face_Import
         self.picture.set_bitmap(itemImagePath)
         self.listBox.lb_select_index(lb_selection_dex)
@@ -125,8 +125,8 @@ class CreateNewProject(DialogWindow):
         super(CreateNewProject, self).__init__(parent)
         #--Build a list of existing directories
         #  The text control will use this to change background color when name collisions occur
-        self.existingProjects = set(x for x in bass.dirs['installers'].list()
-                                    if bass.dirs['installers'].join(x).isdir())
+        self.existingProjects = set(x for x in bass.dirs[u'installers'].list()
+            if bass.dirs[u'installers'].join(x).isdir())
         #--Attributes
         self.textName = TextField(self, _(u'New Project Name-#####'))
         self.textName.on_text_changed.subscribe(
@@ -188,7 +188,7 @@ class CreateNewProject(DialogWindow):
     def OnClose(self):
         """ Create the New Project and add user specified extras. """
         projectName = bolt.GPath(self.textName.text_content.strip())
-        projectDir = bass.dirs['installers'].join(projectName)
+        projectDir = bass.dirs[u'installers'].join(projectName)
 
         if projectDir.exists():
             balt.showError(self, _(

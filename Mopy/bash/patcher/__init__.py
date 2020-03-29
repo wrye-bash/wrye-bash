@@ -48,15 +48,15 @@ def exportConfig(patch_name, config, isCBash, win, outDir):
 
 def getPatchesPath(fileName):
     """Choose the correct Bash Patches path for the file."""
-    if bass.dirs['patches'].join(fileName).isfile():
-        return bass.dirs['patches'].join(fileName)
+    if bass.dirs[u'patches'].join(fileName).isfile():
+        return bass.dirs[u'patches'].join(fileName)
     else:
-        return bass.dirs['defaultPatches'].join(fileName)
+        return bass.dirs[u'defaultPatches'].join(fileName)
 
 def getPatchesList():
     """Get a basic list of potential Bash Patches."""
-    return set(bass.dirs['patches'].list()) | set(
-        bass.dirs['defaultPatches'].list())
+    return set(bass.dirs[u'patches'].list()) | set(
+        bass.dirs[u'defaultPatches'].list())
 
 # this is set once and stays the same for the patch execution session
 _patches_set = None

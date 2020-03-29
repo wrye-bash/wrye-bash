@@ -430,7 +430,7 @@ if bush.game.has_esl: # Enable Indices by default for ESL games
 
 # Images ----------------------------------------------------------------------
 #------------------------------------------------------------------------------
-imDirJn = bass.dirs['images'].join
+imDirJn = bass.dirs[u'images'].join
 def _png(fname): return Image(imDirJn(fname))
 
 #--Image lists

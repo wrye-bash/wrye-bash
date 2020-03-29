@@ -61,32 +61,32 @@ def _init_settings_files(fsName_, root_prefix, mods_folder):
     if not initialization.bash_dirs_initialized:
         raise BoltError(u'_init_settings_files: Bash dirs are not initialized')
     settings_info = {
-        (dirs['mopy'], jo(fsName_, u'Mopy')): {u'bash.ini', },
-        (dirs['mods'].join(u'Bash'), jo(fsName_, mods_folder, u'Bash')): {
+        (dirs[u'mopy'], jo(fsName_, u'Mopy')): {u'bash.ini', },
+        (dirs[u'mods'].join(u'Bash'), jo(fsName_, mods_folder, u'Bash')): {
             u'Table.dat', },
-        (dirs['mods'].join(u'Docs'), jo(fsName_, mods_folder, u'Docs')): {
+        (dirs[u'mods'].join(u'Docs'), jo(fsName_, mods_folder, u'Docs')): {
             u'Bash Readme Template.txt', u'Bash Readme Template.html',
             u'My Readme Template.txt', u'My Readme Template.html',
             u'wtxt_sand_small.css', u'wtxt_teal.css', },
-        (dirs['modsBash'], jo(root_prefix + u' Mods', u'Bash Mod Data')): {
+        (dirs[u'modsBash'], jo(root_prefix + u' Mods', u'Bash Mod Data')): {
             u'Table.dat', },
-        (dirs['modsBash'].join(u'INI Data'),
+        (dirs[u'modsBash'].join(u'INI Data'),
          jo(root_prefix + u' Mods', u'Bash Mod Data', u'INI Data')): {
            u'Table.dat', },
-        (dirs['bainData'],
+        (dirs[u'bainData'],
          jo(root_prefix + u' Mods', u'Bash Installers', u'Bash')): {
            u'Converters.dat', u'Installers.dat', },
-        (dirs['saveBase'], jo(u'My Games', fsName_)): {
+        (dirs[u'saveBase'], jo(u'My Games', fsName_)): {
             u'BashProfiles.dat', u'BashSettings.dat', u'BashLoadOrders.dat',
             u'People.dat', },
         # backup all files in Mopy\bash\l10n, Data\Bash Patches\,
         # Data\BashTags\ and Data\INI Tweaks\
-        (dirs['l10n'], jo(fsName_, u'Mopy', u'bash', u'l10n')): {},
-        (dirs['mods'].join(u'Bash Patches'),
+        (dirs[u'l10n'], jo(fsName_, u'Mopy', u'bash', u'l10n')): {},
+        (dirs[u'mods'].join(u'Bash Patches'),
          jo(fsName_, mods_folder, u'Bash Patches')): {},
-        (dirs['mods'].join(u'BashTags'),
+        (dirs[u'mods'].join(u'BashTags'),
          jo(fsName_, mods_folder, u'BashTags')): {},
-        (dirs['mods'].join(u'INI Tweaks'),
+        (dirs[u'mods'].join(u'INI Tweaks'),
          jo(fsName_, mods_folder, u'INI Tweaks')): {},
     }
     for setting_files in settings_info.itervalues():
@@ -122,11 +122,11 @@ class BackupSettings(object):
             loadorderTxt = (u'Saves', profile, u'loadorder.txt')
             for txt in (pluginsTxt, loadorderTxt):
                 tpath = savedir.join(*txt)
-                fpath = dirs['saveBase'].join(*txt)
+                fpath = dirs[u'saveBase'].join(*txt)
                 if fpath.exists(): self.files[tpath] = fpath
             table = (u'Saves', profile, u'Bash', u'Table.dat')
             tpath = savedir.join(*table)
-            fpath = dirs['saveBase'].join(*table)
+            fpath = dirs[u'saveBase'].join(*table)
             if fpath.exists(): self.files[tpath] = fpath
             if fpath.backup.exists(): self.files[tpath.backup] = fpath.backup
 
@@ -265,7 +265,7 @@ class RestoreSettings(object):
         deprint(u'')
         deprint(u'RESTORE BASH SETTINGS: %s' % self._settings_file)
         # backup previous Bash ini if it exists
-        old_bash_ini = dirs['mopy'].join(u'bash.ini')
+        old_bash_ini = dirs[u'mopy'].join(u'bash.ini')
         self._timestamped_old = u''.join(
             [old_bash_ini.root.s, u'(', bolt.timestamp(), u').ini'])
         try:
@@ -287,7 +287,7 @@ class RestoreSettings(object):
                     _restore_file(dest_dir, GPath(back_path), fname)
         # restore savegame profile settings
         back_path = GPath(u'My Games').join(fsName, u'Saves')
-        saves_dir = dirs['saveBase'].join(u'Saves')
+        saves_dir = dirs[u'saveBase'].join(u'Saves')
         full_back_path = self._extract_dir.join(back_path)
         if full_back_path.exists():
             for root_dir, folders, files_ in full_back_path.walk(True, None,

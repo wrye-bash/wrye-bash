@@ -183,7 +183,7 @@ class People_Export(ItemLink, People_Link):
     _help = _(u'Export people to text archive')
 
     def Execute(self):
-        textDir = bass.settings.get('bash.workDir', bass.dirs['app'])
+        textDir = bass.settings.get('bash.workDir', bass.dirs[u'app'])
         #--File dialog
         export_path = self._askSave(title=_(u'Export people to text file:'),
                              defaultDir=textDir, defaultFile=u'People.txt',
@@ -202,7 +202,7 @@ class People_Import(ItemLink, People_Link):
     _help = _(u'Import people from text archive')
 
     def Execute(self):
-        textDir = bass.settings.get('bash.workDir', bass.dirs['app'])
+        textDir = bass.settings.get('bash.workDir', bass.dirs[u'app'])
         #--File dialog
         import_path = self._askOpen(title=_(u'Import people from text file:'),
                                     defaultDir=textDir, wildcard=u'*.txt',

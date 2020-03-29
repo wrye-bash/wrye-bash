@@ -665,7 +665,7 @@ class GameIni(IniFile):
         if self.isCorrupted: return
         section, key = bush.game.Ini.bsa_redirection_key
         if not section or not key: return
-        aiBsa = dirs['mods'].join(u'ArchiveInvalidationInvalidated!.bsa')
+        aiBsa = dirs[u'mods'].join(u'ArchiveInvalidationInvalidated!.bsa')
         aiBsaMTime = time.mktime((2006, 1, 2, 0, 0, 0, 0, 2, 0))
         if aiBsa.exists() and aiBsa.mtime > aiBsaMTime:
             aiBsa.mtime = aiBsaMTime
@@ -677,7 +677,7 @@ class GameIni(IniFile):
             return
         # Skyrim does not have an Archive Invalidation File
         if doRedirect and not aiBsa.exists():
-            source = dirs['templates'].join(bush.game.fsName, u'ArchiveInvalidationInvalidated!.bsa')
+            source = dirs[u'templates'].join(bush.game.fsName, u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
             try:
                 env.shellCopy(source, aiBsa, allowUndo=True, autoRename=True)

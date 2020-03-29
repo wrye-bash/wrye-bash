@@ -165,7 +165,7 @@ def dump_translator(out_path, lang):
     mode, unless the source files are also installed.
 
     :param out_path: The directory containing localization files - typically
-        bass.dirs['l10n'].
+        bass.dirs[u'l10n'].
     :param lang: The language to dump a text file for.
     :return: The path to the file that the dump was written to."""
     new_txt = os.path.join(out_path, u'%sNEW.txt' % lang)

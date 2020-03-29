@@ -182,8 +182,8 @@ class AVORB_NPCSkeletonPatcher(AMultiTweakItem):
             skeletonSetSpecial gets files that match "skel_special_*.nif" """
         # Since bass.dirs hasn't been populated when __init__ executes,
         # we do this here
-        skeletonDir = bass.dirs['mods'].join(u'Meshes', u'Characters',
-                                                  u'_male')
+        skeletonDir = bass.dirs[u'mods'].join(u'Meshes', u'Characters',
+                                              u'_male')
         list_skel_dir = skeletonDir.list() # empty if dir does not exist
         skel_nifs = [x for x in list_skel_dir if
                      x.cs.startswith(u'skel_') and x.cext == u'.nif']

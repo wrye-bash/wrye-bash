@@ -400,8 +400,8 @@ class PageVersions(PageInstaller):
                  seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
         bmp = [Image(
-            bass.dirs['images'].join(u'error_cross_24.png').s).GetBitmap(),
-            Image(bass.dirs['images'].join(u'checkmark_24.png').s).GetBitmap()]
+            bass.dirs[u'images'].join(u'error_cross_24.png').s).GetBitmap(),
+            Image(bass.dirs[u'images'].join(u'checkmark_24.png').s).GetBitmap()]
         versions_layout = GridLayout(h_spacing=5, v_spacing=5,
                                      stretch_cols=[0, 1, 2, 3])
         versions_layout.append_row([None, Label(self, _(u'Need')),
@@ -947,14 +947,14 @@ class WryeParser(ScriptParser.Parser):
     def fnCompareGameVersion(self, obWant):
         ret = self._TestVersion(
             self._TestVersion_Want(obWant),
-            bass.dirs['app'].join(*bush.game.version_detect_file))
+            bass.dirs[u'app'].join(*bush.game.version_detect_file))
         return ret[0]
 
     def fnCompareSEVersion(self, seWant):
         if bush.game.Se.se_abbrev != u'':
             ver_path = None
             for ver_file in bush.game.Se.ver_files:
-                ver_path = bass.dirs['app'].join(ver_file)
+                ver_path = bass.dirs[u'app'].join(ver_file)
                 if ver_path.exists(): break
             return self._TestVersion(self._TestVersion_Want(seWant), ver_path)
         else:
@@ -975,7 +975,7 @@ class WryeParser(ScriptParser.Parser):
 
     def fnDataFileExists(self, *filenames):
         for filename in filenames:
-            if not bass.dirs['mods'].join(filename).exists():
+            if not bass.dirs[u'mods'].join(filename).exists():
                 # Check for ghosted mods
                 if bolt.GPath(filename) in bosh.modInfos:
                     return True # It's a ghosted mod
@@ -1243,7 +1243,7 @@ class WryeParser(ScriptParser.Parser):
                     error(_(u"SubPackage '%s' does not exist.") % name)
                 List = []
                 if self.installer.is_project():
-                    sub = bass.dirs['installers'].join(self.path, subpackage)
+                    sub = bass.dirs[u'installers'].join(self.path, subpackage)
                     for root_dir, dirs, files in sub.walk():
                         for file_ in files:
                             rel = root_dir.join(file_).relpath(sub)
@@ -1342,13 +1342,13 @@ class WryeParser(ScriptParser.Parser):
         if self.bArchive:
             imageJoin = bass.getTempDir().join
         else:
-            imageJoin = bass.dirs['installers'].join(self.path).join
+            imageJoin = bass.dirs[u'installers'].join(self.path).join
         for i in images:
             # Try looking inside the package first, then look if it's using one
             # of the images packaged with Wrye Bash (from Mopy/bash/images)
             wiz_img_path = imageJoin(i)
             if not wiz_img_path.isfile():
-                std_img_path = bass.dirs['images'].join(i)
+                std_img_path = bass.dirs[u'images'].join(i)
                 if std_img_path.isfile():
                     wiz_img_path = std_img_path
             image_paths.append(wiz_img_path)
@@ -1481,13 +1481,13 @@ class WryeParser(ScriptParser.Parser):
         if not wbWant: wbWant = u'0.0'
         wbHave = bass.AppVersion
         ret = self._TestVersion(
-            gameWant, bass.dirs['app'].join(*bush.game.version_detect_file))
+            gameWant, bass.dirs[u'app'].join(*bush.game.version_detect_file))
         bGameOk = ret[0] >= 0
         gameHave = ret[1]
         if bush.game.Se.se_abbrev != u'':
             ver_path = None
             for ver_file in bush.game.Se.ver_files:
-                ver_path = bass.dirs['app'].join(ver_file)
+                ver_path = bass.dirs[u'app'].join(ver_file)
                 if ver_path.exists(): break
             ret = self._TestVersion(seWant, ver_path)
             bSEOk = ret[0] >= 0
@@ -1514,9 +1514,9 @@ class WryeParser(ScriptParser.Parser):
 
     def _TestVersion_GE(self, want):
         if isinstance(bush.game.Ge.exe, str):
-            files = [bass.dirs['mods'].join(bush.game.Ge.exe)]
+            files = [bass.dirs[u'mods'].join(bush.game.Ge.exe)]
         else:
-            files = [bass.dirs['mods'].join(*x) for x in bush.game.Ge.exe]
+            files = [bass.dirs[u'mods'].join(*x) for x in bush.game.Ge.exe]
         ret = [-1, u'None']
         for file in reversed(files):
             ret = self._TestVersion(want, file)

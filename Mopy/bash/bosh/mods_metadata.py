@@ -47,13 +47,13 @@ class ConfigHelpers(object):
         deprint(u'Initialized loot_parser, compatible with libloot '
                 u'v%s' % libloot_version)
         # LOOT stores the masterlist/userlist in a %LOCALAPPDATA% subdirectory.
-        self.lootMasterPath = bass.dirs['userApp'].join(
+        self.lootMasterPath = bass.dirs[u'userApp'].join(
             os.pardir, u'LOOT', bush.game.fsName, u'masterlist.yaml')
-        self.lootUserPath = bass.dirs['userApp'].join(
+        self.lootUserPath = bass.dirs[u'userApp'].join(
             os.pardir, u'LOOT', bush.game.fsName, u'userlist.yaml')
         self.lootMasterTime = None
         self.lootUserTime = None
-        self.tagList = bass.dirs['defaultPatches'].join(u'taglist.yaml')
+        self.tagList = bass.dirs[u'defaultPatches'].join(u'taglist.yaml')
         self.tagListModTime = None
         #--Bash Tags
         self.tagCache = {}
@@ -115,7 +115,7 @@ class ConfigHelpers(object):
         :return: A tuple containing two sets of added and deleted tags."""
         from . import process_tags ##: yuck
         # Check if the file even exists first
-        tag_files_dir = bass.dirs['tag_files']
+        tag_files_dir = bass.dirs[u'tag_files']
         tag_file = tag_files_dir.join(plugin_name.body + u'.txt')
         if not tag_file.isfile(): return set(), set()
         removed, added = set(), set()
@@ -145,7 +145,7 @@ class ConfigHelpers(object):
             plugin in question.
         :param plugin_base_tags: A set of all Bash Tags applied to the plugin
             by its description and the LOOT masterlist / userlist."""
-        tag_files_dir = bass.dirs['tag_files']
+        tag_files_dir = bass.dirs[u'tag_files']
         tag_files_dir.makedirs()
         tag_file = tag_files_dir.join(plugin_name.body + u'.txt')
         # Calculate the diff and ignore the minus when sorting the result
@@ -450,7 +450,7 @@ class ModCleaner(object):
             #--Load
             progress(i,_(u'Loading...'))
             groupModInfos = modInfos[i*ModsPerGroup:(i+1)*ModsPerGroup]
-            with ObCollection(ModsPath=bass.dirs['mods'].s) as Current:
+            with ObCollection(ModsPath=bass.dirs[u'mods'].s) as Current:
                 for mod in groupModInfos:
                     if len(mod.masterNames) == 0: continue
                     path = mod.getPath()

@@ -62,7 +62,7 @@ class Saves_ProfilesData(balt.ListEditorData):
     """Data capsule for save profiles editing dialog."""
     def __init__(self,parent):
         """Initialize."""
-        self.baseSaves = bass.dirs['saveBase'].join(u'Saves')
+        self.baseSaves = bass.dirs[u'saveBase'].join(u'Saves')
         #--GUI
         balt.ListEditorData.__init__(self,parent)
         self.showAdd    = True
@@ -142,7 +142,7 @@ class Saves_ProfilesData(balt.ListEditorData):
             balt.showError(self.parent,_(u'Active profile cannot be removed.'))
             return False
         #--Get file count. If > zero, verify with user.
-        profileDir = bass.dirs['saveBase'].join(profileSaves)
+        profileDir = bass.dirs[u'saveBase'].join(profileSaves)
         files = [save for save in profileDir.list() if
                  bosh.SaveInfos.rightFileType(save)]
         if files:
@@ -161,8 +161,8 @@ class Saves_Profiles(ChoiceLink):
     """Select a save set profile -- i.e., the saves directory."""
     local = None
     # relative path to save base dir as in My Games/Oblivion
-    _my_games = bass.dirs['saveBase'].s[
-                bass.dirs['saveBase'].cs.find(u'my games'):]
+    _my_games = bass.dirs[u'saveBase'].s[
+                bass.dirs[u'saveBase'].cs.find(u'my games'):]
     _my_games = GPath(_my_games)
 
     @property
@@ -307,7 +307,7 @@ class Save_ExportScreenshot(OneItemLink):
 
     def Execute(self):
         imagePath = balt.askSave(Link.Frame, _(u'Save Screenshot as:'),
-            bass.dirs['patches'].s,
+            bass.dirs[u'patches'].s,
             _(u'Screenshot %s.jpg') % self._selected_item.s, u'*.jpg')
         if not imagePath: return
         # TODO(inf) de-wx! All the image stuff is still way too close to wx
@@ -616,7 +616,7 @@ class Save_Move(ChoiceLink):
         _self = self
         class _Default(EnabledLink):
             _text = _(u'Default')
-            _help = _self._help_str % bass.dirs['saveBase'].join(
+            _help = _self._help_str % bass.dirs[u'saveBase'].join(
                 bush.game.Ini.save_prefix)
             def _enable(self):
                 return Save_Move.local != bush.game.Ini.save_prefix
@@ -624,7 +624,7 @@ class Save_Move(ChoiceLink):
         class _SaveProfileLink(EnabledLink):
             @property
             def menu_help(self):
-                return _self._help_str % bass.dirs['saveBase'].join(
+                return _self._help_str % bass.dirs[u'saveBase'].join(
                     bush.game.Ini.save_prefix, self._text)
             def _enable(self):
                 return Save_Move.local != _win_join(self._text)
@@ -633,7 +633,7 @@ class Save_Move(ChoiceLink):
         self.extraItems = [_Default()]
 
     def MoveFiles(self,profile):
-        destDir = bass.dirs['saveBase'].join(u'Saves')
+        destDir = bass.dirs[u'saveBase'].join(u'Saves')
         if profile != _(u'Default'):
             destDir = destDir.join(profile)
         if destDir == bosh.saveInfos.store_dir:

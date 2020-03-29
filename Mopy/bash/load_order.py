@@ -75,15 +75,15 @@ def max_plugins():
     return _game_handle.max_espms, _game_handle.max_esls
 
 def initialize_load_order_files():
-    if bass.dirs['saveBase'] == bass.dirs['app']:
+    if bass.dirs[u'saveBase'] == bass.dirs[u'app']:
         #--If using the game directory as rather than the appdata dir.
-        _dir = bass.dirs['app']
+        _dir = bass.dirs[u'app']
     else:
-        _dir = bass.dirs['userApp']
+        _dir = bass.dirs[u'userApp']
     global _plugins_txt_path, _loadorder_txt_path, _lord_pickle_path
     _plugins_txt_path = _dir.join(u'plugins.txt')
     _loadorder_txt_path = _dir.join(u'loadorder.txt')
-    _lord_pickle_path = bass.dirs['saveBase'].join(u'BashLoadOrders.dat')
+    _lord_pickle_path = bass.dirs[u'saveBase'].join(u'BashLoadOrders.dat')
 
 def initialize_load_order_handle(mod_infos):
     global _game_handle
