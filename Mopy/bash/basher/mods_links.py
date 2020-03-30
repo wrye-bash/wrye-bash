@@ -37,7 +37,8 @@ __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
            'Mods_OblivionVersion', 'Mods_CreateBlankBashedPatch',
            'Mods_CreateBlank', 'Mods_ListMods', 'Mods_ListBashTags',
            'Mods_CleanDummyMasters', 'Mods_AutoGhost', 'Mods_LockLoadOrder',
-           'Mods_ScanDirty', 'Mods_CrcRefresh', 'Mods_AutoESLFlagBP']
+           'Mods_ScanDirty', 'Mods_CrcRefresh', 'Mods_AutoESLFlagBP',
+           u'Mods_LockActivePlugins']
 
 # "Load" submenu --------------------------------------------------------------
 class _Mods_LoadListData(balt.ListEditorData):
@@ -340,6 +341,15 @@ class Mods_LockLoadOrder(CheckLink):
             return self._askContinue(message, 'bash.load_order.lock_continue',
                                      title=_(u'Lock Load Order'))
         load_order.toggle_lock_load_order(_show_lo_lock_warning)
+
+class Mods_LockActivePlugins(BoolLink, EnabledLink):
+    """Turn on Lock Active Plugins, needs Lock Load Order to be on first."""
+    _text = _(u'Lock Active Plugins')
+    _help = _(u"Enhances 'Lock Load Order' to also detect when mods are "
+              u'enabled or disabled and to undo those changes too.')
+    key = u'bash.load_order.lock_active_plugins'
+
+    def _enable(self): return load_order.locked # needs Lock LO to be on
 
 #------------------------------------------------------------------------------
 class Mods_CrcRefresh(ItemLink):

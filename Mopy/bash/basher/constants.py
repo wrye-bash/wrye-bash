@@ -202,6 +202,8 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.bsaRedirection':True,
     #--Wrye Bash: Load Lists
     'bash.loadLists.data': {}, ##: to be removed
+    # Wrye Bash: Load Order
+    u'bash.load_order.lock_active_plugins': True,
     #--Wrye Bash: StatusBar
     'bash.statusbar.iconSize': 16,
     'bash.statusbar.hide': set(),
