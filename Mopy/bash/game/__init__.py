@@ -290,6 +290,11 @@ class GameInfo(object):
         # 0x000-0x800 range for their own records.
         # If False, that range is reserved for hardcoded engine records.
         expanded_plugin_range = False
+        # If True, check if the main header's DATA subrecords match the on-disk
+        # master sizes and highlight the corresponding masters with a light
+        # background color if that is the case. Needs meaningful information in
+        # the DATA subrecords.
+        check_master_sizes = False
 
     # Bash Tags supported by this game
     allTags = set()

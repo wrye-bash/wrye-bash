@@ -318,6 +318,9 @@ class MasterList(_ModsUIList):
         ('Current Order', lambda self, mi: bosh.modInfos.hexIndexString(
             self.data_store[mi].curr_name)),
     ])
+    # True if we should highlight masters whose stored size does not match the
+    # size of the plugin on disk
+    _do_size_checks = False
 
     @property
     def cols(self):
@@ -377,8 +380,11 @@ class MasterList(_ModsUIList):
         if not fileInfo:
             return
         #--Fill data and populate
+        has_sizes = bush.game.esp.check_master_sizes and isinstance(
+            fileInfo, bosh.ModInfo) # only mods have master sizes
         for mi, masters_name in enumerate(fileInfo.get_masters()):
-            self.data_store[mi] = bosh.MasterInfo(masters_name)
+            masters_size = fileInfo.header.master_sizes[mi] if has_sizes else 0
+            self.data_store[mi] = bosh.MasterInfo(masters_name, masters_size)
         self._reList()
         self.PopulateItems()
 
@@ -444,6 +450,10 @@ class MasterList(_ModsUIList):
             item_format.back_key = 'mods.bkgd.doubleTime.exists'
         elif masterInfo.is_ghost:
             item_format.back_key = 'mods.bkgd.ghosted'
+        elif self._do_size_checks and bosh.modInfos.size_mismatch(
+                masters_name, masterInfo.stored_size):
+            item_format.back_key = u'mods.bkgd.size_mismatch'
+            mouseText += _(u'Stored size does not match the one on disk. ')
         if self.allowEdit:
             if masterInfo.old_name in settings['bash.mods.renames']:
                 item_format.strong = True
@@ -940,6 +950,10 @@ class ModList(_ModsUIList):
         elif mod_info.isGhost:
             item_format.back_key = 'mods.bkgd.ghosted'
             mouseText += _(u"File is ghosted.  ")
+        elif (bush.game.esp.check_master_sizes
+              and mod_info.has_master_size_mismatch()):
+            item_format.back_key = u'mods.bkgd.size_mismatch'
+            mouseText += _(u'Has one or more size-mismatched masters. ')
         if settings['bash.mods.scanDirty']:
             message = bosh.modInfos.getDirtyMessage(mod_name)
             mouseText += message[1]
@@ -1310,6 +1324,7 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
     I named the master list attribute 'uilist' to stand apart from the
     uiList of SashUIListPanel. ui_list_panel is mods or saves panel
     :type uilist: MasterList"""
+    _master_list_type = MasterList
 
     def __init__(self, parent, ui_list_panel):
         _SashDetailsPanel.__init__(self, parent)
@@ -1319,8 +1334,9 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
         _EditableMixinOnFileInfos.__init__(self, self.masterPanel,
                                            ui_list_panel)
         #--Masters
-        self.uilist = MasterList(self.masterPanel, keyPrefix=self.keyPrefix,
-                                 panel=ui_list_panel, detailsPanel=self)
+        self.uilist = self._master_list_type(
+            self.masterPanel, keyPrefix=self.keyPrefix, panel=ui_list_panel,
+            detailsPanel=self)
         VLayout(spacing=4, items=[
             Label(self.masterPanel, _(u"Masters:")),
             (self.uilist, LayoutOptions(weight=1, expand=True)),
@@ -1335,9 +1351,14 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
 
     def testChanges(self): raise AbstractError
 
+class _ModMasterList(MasterList):
+    """Override to avoid doing size checks on save master lists."""
+    _do_size_checks = bush.game.esp.check_master_sizes
+
 class ModDetails(_ModsSavesDetails):
     """Details panel for mod tab."""
     keyPrefix = 'bash.mods.details' # used in sash/scroll position, sorting
+    _master_list_type = _ModMasterList
 
     @property
     def file_info(self): return self.modInfo

@@ -89,6 +89,7 @@ class MorrowindGameInfo(GameInfo):
         validHeaderVersions = (1.2, 1.3)
         stringsFiles = []
         plugin_header_sig = b'TES3'
+        check_master_sizes = True
 
     @classmethod
     def init(cls):
