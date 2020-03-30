@@ -292,8 +292,8 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             if BashFrame.iniList is not None:
                 BashFrame.iniList.panel.detailsPanel.set_choice(
                     target_path.stail, reset_choices=target_updated)
-                BashFrame.iniList.panel.ShowPanel(refresh_target=True,
-                    focus_list=False, detail_item=lastApplied)
+                BashFrame.iniList.panel.ShowPanel(focus_list=False,
+                                                  detail_item=lastApplied)
             ui_refresh[1] = False
         if len(manuallyApply) > 0:
             message = balt.text_wrap(_(

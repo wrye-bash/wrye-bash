@@ -632,7 +632,7 @@ class INIList(balt.UIList):
         hitItem = self._getItemClicked(lb_dex_and_flags, on_icon=True)
         if not hitItem: return
         if self.apply_tweaks((bosh.iniInfos[hitItem], )):
-            self.panel.ShowPanel(refresh_target=True)
+            self.panel.ShowPanel()
 
     @classmethod
     def apply_tweaks(cls, tweak_infos, target_ini=None):
@@ -674,7 +674,7 @@ class INIList(balt.UIList):
         try:
             default_ini.copyTo(target_ini_file.abs_path)
             if balt.Link.Frame.iniList:
-                balt.Link.Frame.iniList.panel.ShowPanel(refresh_target=True)
+                balt.Link.Frame.iniList.panel.ShowPanel()
             else:
                 bosh.iniInfos.refresh(refresh_infos=False)
             return True
@@ -1814,7 +1814,7 @@ class INIPanel(BashTab):
         self.uiList.RefreshUI(focus_list=False)
         self.detailsPanel.ShowPanel(target_changed=True)
 
-    def ShowPanel(self, refresh_infos=False, refresh_target=False,
+    def ShowPanel(self, refresh_infos=False, refresh_target=True,
                   clean_targets=False, focus_list=True, detail_item='SAME',
                   **kwargs):
         changes = bosh.iniInfos.refresh(refresh_infos=refresh_infos,
@@ -3589,7 +3589,8 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             bolt.GPathPurge()
             self.currentPage = _widget_to_panel[
                 self.GetPage(event.GetSelection()).GetId()]
-            self.currentPage.ShowPanel()
+            self.currentPage.ShowPanel(
+                refresh_target=load_order.using_ini_file())
             event.Skip() ##: shouldn't this always be called ?
 
 #------------------------------------------------------------------------------
@@ -3861,8 +3862,7 @@ class BashFrame(WindowFrame):
         #--Show current notebook panel
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel(refresh_infos=not booting,
-                                            clean_targets=not booting,
-                                            refresh_target=True)
+                                            clean_targets=not booting)
         #--WARNINGS----------------------------------------
         if booting: self.warnTooManyModsBsas()
         self.warn_load_order()
