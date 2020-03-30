@@ -146,6 +146,7 @@ class DialogWindow(_TopLevelWin):
         self.title = title or self.__class__.title
         style |= _wx.DEFAULT_DIALOG_STYLE
         if sizes_dict is not None: style |= _wx.RESIZE_BORDER
+        else: sizes_dict = {}
         if caption: style |= _wx.CAPTION
         super(DialogWindow, self).__init__(self._wx_dialog_type, parent,
             sizes_dict, icon_bundle, title=self.title, style=style, **kwargs)

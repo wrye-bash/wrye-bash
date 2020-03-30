@@ -446,7 +446,8 @@ class Parser(object):
         if dotOperator:
             self.SetOperator(dotOperator, self.opDotOperator, OP.PAR)
         # Special function
-        self.functions[u']index['] = Parser.Function(self.fnIndex, 2, 4)
+        self.functions[u']index['] = Parser.Function(u'<index>', self.fnIndex,
+                                                     2, 4)
 
         global gParser
         gParser = self

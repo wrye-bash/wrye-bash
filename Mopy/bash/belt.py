@@ -197,8 +197,7 @@ class PageSelect(PageInstaller):
         self.descs = listDescs
         self.bMany = bMany
         self.index = None
-        self.TitleDesc = Label(self, desc)
-        self.TitleDesc.wrap(parent._native_widget.GetPageSize()[0] - 10)
+        self.title_desc = Label(self, desc)
         self.textItem = TextArea(self, editable=False, auto_tooltip=False)
         self.bmp_item = PictureWithCursor(self, 0, 0, background=None)
         kwargs = dict(choices=listItems, isHScroll=True,
@@ -216,7 +215,7 @@ class PageSelect(PageInstaller):
                     self.Selection(index)
                     break
         VLayout(item_expand=True, spacing=5, items=[
-            HBoxedLayout(self, items=[self.TitleDesc]),
+            HBoxedLayout(self, items=[self.title_desc]),
             Label(self, _(u'Options:')),
             (HLayout(item_expand=True, item_weight=1,
                      items=[self.listOptions, self.bmp_item]),
@@ -784,11 +783,13 @@ class WryeParser(ScriptParser.Parser):
             try:
                 self.RunLine(newline)
             except ScriptParser.ParserError as e:
+                bolt.deprint(u'Error in wizard script', traceback=True)
                 return PageError(self._wiz_parent, _(u'Installer Wizard'),
                                  _(u'An error occurred in the wizard script:') + '\n'
                                  + _(u'Line %s:\t%s') % (self.cLine, newline.strip(u'\n')) + '\n'
                                  + _(u'Error:\t%s') % e)
             except Exception:
+                bolt.deprint(u'Error while running wizard', traceback=True)
                 msg = u'\n'.join([_(u'An unhandled error occurred while '
                     u'parsing the wizard:'), _(u'Line %s:\t%s') % (self.cLine,
                     newline.strip(u'\n')), u'', traceback.format_exc()])
