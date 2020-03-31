@@ -90,7 +90,7 @@ class NamesTweak_Body(DynamicNamedTweak, _AMultiTweakItem_Names):
         format_ = self.choiceValues[self.chosen][0]
         showStat = u'%02d' in format_
         keep = patchFile.getKeeper()
-        codes = getattr(patchFile,'bodyTags','ARGHTCCPBS')
+        codes = patchFile.bodyTags
         amulet,ring,gloves,head,tail,robe,chest,pants,shoes,shield = [
             x for x in codes]
         for record in getattr(patchFile,self.key).records:
@@ -957,7 +957,7 @@ class CBash_NamesTweaker(_ANamesTweaker,CBash_MultiTweaker):
             tweak.format = tweak.choiceValues[tweak.chosen][0]
             if isinstance(tweak, CBash_NamesTweak_Body):
                 tweak.showStat = u'%02d' in tweak.format
-                tweak.codes = getattr(self.patchFile,'bodyTags',u'ARGHTCCPBS')
+                tweak.codes = self.patchFile.bodyTags
                 tweak.amulet, tweak.ring, tweak.gloves, tweak.head, \
                 tweak.tail, tweak.robe, tweak.chest, tweak.pants, \
                 tweak.shoes, tweak.shield = [

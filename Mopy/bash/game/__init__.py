@@ -496,6 +496,11 @@ class GameInfo(object):
     actor_tweaks = set()
 
     #--------------------------------------------------------------------------
+    # Names Tweaker
+    #--------------------------------------------------------------------------
+    body_tags = u''
+
+    #--------------------------------------------------------------------------
     # Magic Effects - Oblivion-specific
     #--------------------------------------------------------------------------
     # Doesn't list MGEFs that use actor values, but rather MGEFs that have a
@@ -546,8 +551,8 @@ class GameInfo(object):
     _constants_members = {
         'GlobalsTweaks', 'GmstTweaks', 'actor_importer_attrs',
         'actor_importer_auto_key', 'actor_tweaks', 'actor_types',
-        'actor_values', 'bethDataFiles', 'cc_valid_types', 'cc_passes',
-        'cellAutoKeys', 'cellRecAttrs', 'cellRecFlags',
+        'actor_values', 'bethDataFiles', 'body_tags', 'cc_valid_types',
+        'cc_passes', 'cellAutoKeys', 'cellRecAttrs', 'cellRecFlags',
         'condition_function_data', 'default_eyes', 'destructible_types',
         'generic_av_effects', 'gmstEids', 'graphicsFidTypes',
         'graphicsLongsTypes', 'graphicsModelAttrs', 'graphicsTypes',

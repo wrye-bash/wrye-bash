@@ -60,10 +60,7 @@ class _PFile(object):
         self.compiledAllMods = []
         self.patcher_mod_skipcount = defaultdict(Counter)
         #--Config
-        if bush.game.fsName in (u'FalloutNV', u'Fallout3',):
-            self.bodyTags = 'HAGPBFE' #--Default bodytags
-        else: #--Default bodytags
-            self.bodyTags = 'ARGHTCCPBS'
+        self.bodyTags = bush.game.body_tags
         #--Mods
         # checking for files to include in patch, investigate
         loadMods = [m for m in load_order.cached_lower_loading_espms(

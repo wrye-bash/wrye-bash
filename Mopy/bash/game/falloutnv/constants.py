@@ -1209,6 +1209,11 @@ actor_tweaks = {
     u'IrresponsibleCreaturesPatcher',
 }
 
+#------------------------------------------------------------------------------
+# Names Tweaker
+#------------------------------------------------------------------------------
+body_tags = u'HAGPBFE'
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH':_(u'Potions'),
