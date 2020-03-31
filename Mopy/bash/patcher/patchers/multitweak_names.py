@@ -944,7 +944,10 @@ class CBash_NamesTweaker(_ANamesTweaker,CBash_MultiTweaker):
     def __init__(self, p_name, p_file, enabled_tweaks):
         super(CBash_NamesTweaker, self).__init__(p_name, p_file,
                                                  enabled_tweaks)
-        p_file.indexMGEFs = True # FIXME what is this? needed if body tags are set?
+        # Potions, scrolls and spells names tweaks need MGEFs to be indexed -
+        # PBash does this JIT, CBash needs this to be specified when
+        # constructing patchers
+        p_file.indexMGEFs = True
 
     def initData(self, progress):
         if not self.isActive: return

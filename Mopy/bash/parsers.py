@@ -26,11 +26,10 @@
 and the Mod_Import/Export Mods menu."""
 from __future__ import division, print_function
 import ctypes
-from _ctypes import POINTER
-from ctypes import cast, c_ulong
-from operator import attrgetter, itemgetter
-from collections import defaultdict, Counter
 import re
+from collections import defaultdict, Counter
+from operator import attrgetter, itemgetter
+from struct import Struct
 # Internal
 from . import bolt
 from . import bush # for game
@@ -45,8 +44,7 @@ from .brec import MreRecord, MelObject, _coerce, genFid, ModReader, ModWriter, \
 from .cint import ObCollection, FormID, aggregateTypes, validTypes, \
     MGEFCode, ActorValue, ValidateList, pickupables, ExtractExportList, \
     ValidateDict, IUNICODE, getattr_deep, setattr_deep
-from .exception import ArgumentError, CancelError, MasterMapError, ModError, \
-    StateError
+from .exception import ArgumentError, MasterMapError, ModError, StateError
 from .record_groups import MobDials, MobICells, MobWorlds, MobObjects, MobBase
 
 class ActorFactions(object):
@@ -3940,10 +3938,6 @@ class ModFile(object):
         self.tops = {} #--Top groups.
         self.topsSkipped = set() #--Types skipped
         self.longFids = False
-        #--Cached data
-        self.mgef_school = None
-        self.mgef_name = None
-        self.hostileEffects = None
 
     def __getattr__(self,topType):
         """Returns top block of specified topType, creating it, if necessary."""
@@ -3961,7 +3955,7 @@ class ModFile(object):
                     u'%r' % (topType, self.loadFactory))
             self.tops[topType].setChanged()
             return self.tops[topType]
-        elif topType == '__repr__':
+        elif topType == u'__repr__' or topType.startswith(u'cached_'):
             raise AttributeError
         else:
             raise ArgumentError(u'Invalid top group type: '+topType)
@@ -4141,53 +4135,61 @@ class ModFile(object):
             block.updateMasters(masters)
         return masters.getOrdered()
 
-    def getMgefSchool(self):
-        """Return a dictionary mapping magic effect code to magic effect school.
-        This is intended for use with the patch file when it records for all magic effects.
-        If magic effects are not available, it will revert to bush.py version."""
-        if self.mgef_school: return self.mgef_school
-        mgef_school = self.mgef_school = bush.game.mgef_school.copy()
-        if 'MGEF' in self.tops:
+    def _index_mgefs(self):
+        """Indexes and cache all MGEF properties and stores them for retrieval
+        by the patchers. We do this once at all so we only have to iterate over
+        the MGEFs once."""
+        m_school = bush.game.mgef_school.copy()
+        m_hostiles = bush.game.hostile_effects.copy()
+        m_names = bush.game.mgef_name.copy()
+        hostile_recs = set()
+        nonhostile_recs = set()
+        unpack_eid = Struct(u'I').unpack
+        if b'MGEF' in self.tops:
             for record in self.MGEF.getActiveRecords():
-                ##: How on earth would this ever be false?
-                if isinstance(record, MreRecord.type_class['MGEF']):
-                    mgef_school[record.eid] = record.school
-        return mgef_school
+                m_school[record.eid] = record.school
+                target_set = (hostile_recs if record.flags.hostile
+                              else nonhostile_recs)
+                target_set.add(record.eid)
+                target_set.add(unpack_eid(record.eid.encode(u'ascii'))[0])
+                m_names[record.eid] = record.full
+        self.cached_mgef_school = m_school
+        self.cached_mgef_hostiles = m_hostiles - nonhostile_recs | hostile_recs
+        self.cached_mgef_names = m_names
+
+    def getMgefSchool(self):
+        """Return a dictionary mapping magic effect code to magic effect
+        school. This is intended for use with the patch file when it records
+        for all magic effects. If magic effects are not available, it will
+        revert to constants.py version."""
+        try:
+            # Try to just return the cached version
+            return self.cached_mgef_school
+        except AttributeError:
+            self._index_mgefs()
+            return self.cached_mgef_school
 
     def getMgefHostiles(self):
-        """Return a set of hostile magic effect codes.
+        """Return a set of hostile magic effect codes. This is intended for use
+        with the patch file when it records for all magic effects. If magic
+        effects are not available, it will revert to constants.py version."""
+        try:
+             # Try to just return the cached version
+            return self.cached_mgef_hostiles
+        except AttributeError:
+            self._index_mgefs()
+            return self.cached_mgef_hostiles
+
+    def getMgefName(self):
+        """Return a dictionary mapping magic effect code to magic effect name.
         This is intended for use with the patch file when it records for all
         magic effects. If magic effects are not available, it will revert to
         constants.py version."""
-        if self.hostileEffects: return self.hostileEffects
-        hostileEffects = self.hostileEffects = bush.game.hostile_effects.copy()
-        if 'MGEF' in self.tops:
-            hostile = set()
-            nonhostile = set()
-            for record in self.MGEF.getActiveRecords():
-                ##: How on earth would this ever be false?
-                if isinstance(record,MreRecord.type_class['MGEF']):
-                    if record.flags.hostile:
-                        hostile.add(record.eid)
-                        hostile.add(cast(record.eid, POINTER(c_ulong)).contents.value)
-                    else:
-                        nonhostile.add(record.eid)
-                        nonhostile.add(cast(record.eid, POINTER(c_ulong)).contents.value)
-            hostileEffects = (hostileEffects - nonhostile) | hostile
-        return hostileEffects
-
-    def getMgefName(self, _reload=False): # _reload param never used
-        """Return a dictionary mapping magic effect code to magic effect name.
-        This is intended for use with the patch file when it records for all magic effects.
-        If magic effects are not available, it will revert to bush.py version."""
-        if self.mgef_name and not _reload:
-            return self.mgef_name
-        mgef_name = self.mgef_name = bush.game.mgef_name.copy()
-        if 'MGEF' in self.tops:
-            for record in self.MGEF.getActiveRecords():
-                if isinstance(record,MreRecord.type_class['MGEF']):
-                    mgef_name[record.eid] = record.full
-        return mgef_name
+        try:
+            return self.cached_mgef_names
+        except AttributeError:
+            self._index_mgefs()
+            return self.cached_mgef_names
 
     def __repr__(self):
         return u'ModFile<%s>' % self.fileInfo.name.s
