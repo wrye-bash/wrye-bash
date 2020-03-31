@@ -2482,12 +2482,12 @@ text_types = {
 #------------------------------------------------------------------------------
 # Object Bounds Patcher
 #------------------------------------------------------------------------------
-object_bounds_types = ('ACTI', 'ADDN', 'ALCH', 'AMMO', 'APPA', 'ARMO', 'ARTO',
+object_bounds_types = {'ACTI', 'ADDN', 'ALCH', 'AMMO', 'APPA', 'ARMO', 'ARTO',
                        'ASPC', 'BOOK', 'CONT', 'DOOR', 'DUAL', 'ENCH', 'EXPL',
                        'FLOR', 'FURN', 'GRAS', 'HAZD', 'IDLM', 'INGR', 'KEYM',
                        'LIGH', 'LVLI', 'LVLN', 'LVSP', 'MISC', 'MSTT', 'NPC_',
                        'PROJ', 'SCRL', 'SLGM', 'SOUN', 'SPEL', 'STAT', 'TACT',
-                       'TREE', 'TXST', 'WEAP')
+                       'TREE', 'TXST', 'WEAP'}
 
 #------------------------------------------------------------------------------
 # Contents Checker
@@ -2513,9 +2513,9 @@ cc_passes = (
 #------------------------------------------------------------------------------
 # Destructible Patcher
 #------------------------------------------------------------------------------
-destructible_types = ('ACTI', 'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'CONT',
+destructible_types = {'ACTI', 'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'CONT',
                       'DOOR', 'FLOR', 'FURN', 'KEYM', 'LIGH', 'MISC', 'MSTT',
-                      'NPC_', 'PROJ', 'SCRL', 'SLGM', 'TACT', 'WEAP')
+                      'NPC_', 'PROJ', 'SCRL', 'SLGM', 'TACT', 'WEAP'}
 
 #------------------------------------------------------------------------------
 # Actor Patchers
