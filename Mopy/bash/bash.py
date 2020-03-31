@@ -86,7 +86,7 @@ def _import_wx():
         # moved/deleted wx modules
         from wx import _core
         sys.modules['wx._gdi'] = _core
-    except:
+    except Exception:
         but_kwargs = {'text': u"QUIT",
                       'fg': 'red'}  # foreground button color
         msg = u'\n'.join([dump_environment(), u'', u'Unable to load wx:',
@@ -204,7 +204,7 @@ def main(opts):
     wx_locale = localize.setup_locale(opts.language, _wx)
     try:
         _main(opts, wx_locale)
-    except:
+    except Exception:
         msg = u'\n'.join([
             _(u'Wrye Bash encountered an error.'),
             _(u'Please post the information below to the official thread at'),
@@ -474,13 +474,13 @@ def _show_wx_popup(msg, is_critical=True):
                 but_kwargs = {u'text': u'QUIT' if is_critical else u'OK',
                               u'fg': u'red'}  # foreground button color
                 _tkinter_error_dial(msg, but_kwargs)
-    except:
+    except Exception:
         print(u'Wrye Bash encountered an error but could not display it.')
         print(u'The following is the error that occurred when displaying the '\
               u'first error:')
         try:
             print(traceback.format_exc())
-        except:
+        except Exception:
             print(u'   An error occurred while displaying the second error.')
 
 def _tkinter_error_dial(msg, but_kwargs):
