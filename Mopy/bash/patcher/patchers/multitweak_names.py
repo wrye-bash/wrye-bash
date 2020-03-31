@@ -47,27 +47,21 @@ class _AMultiTweakItem_Names(MultiTweakItem):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 # Patchers: 30 ----------------------------------------------------------------
-class ANamesTweak_BodyTags(AMultiTweakItem):
+class _ANamesTweak_BodyTags(AMultiTweakItem):
+    """Only exists to change _PFile.bodyTags - see _ANamesTweaker.__init__ for
+    the implementation."""
     tweak_name = _(u'Body Part Codes')
     tweak_tip = _(u'Sets body part codes used by Armor/Clothes name tweaks. '
                   u'A: Amulet, R: Ring, etc.')
-    # FIXME tweak_read_classes?
 
     def __init__(self):
-        super(ANamesTweak_BodyTags, self).__init__(u'bodyTags', (
+        super(_ANamesTweak_BodyTags, self).__init__(u'bodyTags', (
             u'ARGHTCCPBS', u'ARGHTCCPBS'), (u'ABGHINOPSL', u'ABGHINOPSL'))
 
-class NamesTweak_BodyTags(ANamesTweak_BodyTags,MultiTweakItem):
+class NamesTweak_BodyTags(_ANamesTweak_BodyTags, MultiTweakItem): pass
 
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        patchFile.bodyTags = self.choiceValues[self.chosen][0]
-
-class CBash_NamesTweak_BodyTags(ANamesTweak_BodyTags,CBash_MultiTweakItem):
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        pass
+class CBash_NamesTweak_BodyTags(_ANamesTweak_BodyTags, CBash_MultiTweakItem):
+    def buildPatchLog(self, log): pass
 
 #------------------------------------------------------------------------------
 class NamesTweak_Body(DynamicNamedTweak, _AMultiTweakItem_Names):
@@ -169,7 +163,7 @@ class CBash_NamesTweak_Body(DynamicNamedTweak, CBash_MultiTweakItem):
                     record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class ANamesTweak_Potions(AMultiTweakItem):
+class _ANamesTweak_Potions(AMultiTweakItem):
     """Names tweaker for potions."""
     reOldLabel = re.compile(u'^(-|X) ',re.U)
     reOldEnd = re.compile(u' -$',re.U)
@@ -178,13 +172,13 @@ class ANamesTweak_Potions(AMultiTweakItem):
     tweak_tip = _(u'Label potions to sort by type and effect.')
 
     def __init__(self):
-        super(ANamesTweak_Potions, self).__init__('ALCH',
+        super(_ANamesTweak_Potions, self).__init__(u'ALCH', # key, not sig!
             (_(u'XD Illness'), u'%s '), (_(u'XD. Illness'), u'%s. '),
             (_(u'XD - Illness'), u'%s - '), (_(u'(XD) Illness'), u'(%s) '))
         self.logMsg = u'* ' + _(u'%(record_type)s Renamed') % {
             'record_type': (u'%s ' % self.key)} + u': %d'
 
-class NamesTweak_Potions(ANamesTweak_Potions, _AMultiTweakItem_Names):
+class NamesTweak_Potions(_ANamesTweak_Potions, _AMultiTweakItem_Names):
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -235,7 +229,7 @@ class NamesTweak_Potions(ANamesTweak_Potions, _AMultiTweakItem_Names):
             count[record.fid[0]] += 1
         self._patchLog(log, count)
 
-class CBash_NamesTweak_Potions(ANamesTweak_Potions, CBash_MultiTweakItem):
+class CBash_NamesTweak_Potions(_ANamesTweak_Potions, CBash_MultiTweakItem):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
@@ -279,13 +273,13 @@ class CBash_NamesTweak_Potions(ANamesTweak_Potions, CBash_MultiTweakItem):
 #------------------------------------------------------------------------------
 reSpell = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ',re.U) # compile once
 
-class ANamesTweak_Scrolls(AMultiTweakItem):
+class _ANamesTweak_Scrolls(AMultiTweakItem):
     reOldLabel = reSpell
     tweak_name = _(u'Notes and Scrolls')
     tweak_tip = _(u'Mark notes and scrolls to sort separately from books')
 
     def __init__(self):
-        super(ANamesTweak_Scrolls, self).__init__(u'scrolls',
+        super(_ANamesTweak_Scrolls, self).__init__(u'scrolls',
             (_(u'~Fire Ball'), u'~'), (_(u'~D Fire Ball'), u'~%s '),
             (_(u'~D. Fire Ball'), u'~%s. '), (_(u'~D - Fire Ball'), u'~%s - '),
             (_(u'~(D) Fire Ball'), u'~(%s) '), (u'----', u'----'),
@@ -296,12 +290,12 @@ class ANamesTweak_Scrolls(AMultiTweakItem):
 
     def save_tweak_config(self, configs):
         """Save config to configs dictionary."""
-        super(ANamesTweak_Scrolls,self).save_tweak_config(configs)
+        super(_ANamesTweak_Scrolls, self).save_tweak_config(configs)
         rawFormat = self.choiceValues[self.chosen][0]
         self.orderFormat = (u'~.',u'.~')[rawFormat[0] == u'~']
         self.magicFormat = rawFormat[1:]
 
-class NamesTweak_Scrolls(ANamesTweak_Scrolls,_AMultiTweakItem_Names):
+class NamesTweak_Scrolls(_ANamesTweak_Scrolls, _AMultiTweakItem_Names):
     tweak_read_classes = 'BOOK','ENCH',
 
     def scanModFile(self,modFile,progress,patchFile):
@@ -356,7 +350,7 @@ class NamesTweak_Scrolls(ANamesTweak_Scrolls,_AMultiTweakItem_Names):
             count[record.fid[0]] += 1
         self._patchLog(log, count)
 
-class CBash_NamesTweak_Scrolls(ANamesTweak_Scrolls,CBash_MultiTweakItem):
+class CBash_NamesTweak_Scrolls(_ANamesTweak_Scrolls, CBash_MultiTweakItem):
     """Names tweaker for scrolls."""
     tweak_read_classes = 'BOOK',
 
@@ -400,7 +394,7 @@ class CBash_NamesTweak_Scrolls(ANamesTweak_Scrolls,CBash_MultiTweakItem):
                     record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class ANamesTweak_Spells(AMultiTweakItem):
+class _ANamesTweak_Spells(AMultiTweakItem):
     """Names tweaker for spells."""
     tweak_read_classes = 'SPEL',
     tweak_name = _(u'Spells')
@@ -408,8 +402,8 @@ class ANamesTweak_Spells(AMultiTweakItem):
 
     reOldLabel = reSpell
     def __init__(self):
-        super(ANamesTweak_Spells, self).__init__(
-            'SPEL',
+        super(_ANamesTweak_Spells, self).__init__(
+            u'SPEL', # key, not sig!
             (_(u'Fire Ball'),  u'NOTAGS'),
             (u'----',u'----'),
             (_(u'D Fire Ball'),  u'%s '),
@@ -424,7 +418,7 @@ class ANamesTweak_Spells(AMultiTweakItem):
             )
         self.logMsg = u'* '+_(u'Spells Renamed') + u': %d'
 
-class NamesTweak_Spells(ANamesTweak_Spells,_AMultiTweakItem_Names):
+class NamesTweak_Spells(_ANamesTweak_Spells, _AMultiTweakItem_Names):
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -468,7 +462,7 @@ class NamesTweak_Spells(ANamesTweak_Spells,_AMultiTweakItem_Names):
                 count[record.fid[0]] += 1
         self._patchLog(log, count)
 
-class CBash_NamesTweak_Spells(ANamesTweak_Spells,CBash_MultiTweakItem):
+class CBash_NamesTweak_Spells(_ANamesTweak_Spells, CBash_MultiTweakItem):
 
     def save_tweak_config(self, configs):
         """Save config to configs dictionary."""
@@ -508,15 +502,15 @@ class CBash_NamesTweak_Spells(ANamesTweak_Spells,CBash_MultiTweakItem):
                     record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class ANamesTweak_Weapons(AMultiTweakItem):
+class _ANamesTweak_Weapons(AMultiTweakItem):
     """Names tweaker for weapons and ammo."""
     tweak_read_classes = 'AMMO','WEAP',
     tweak_name = _(u'Weapons')
     tweak_tip = _(u'Label ammo and weapons to sort by type and damage.')
 
     def __init__(self):
-        super(ANamesTweak_Weapons, self).__init__(
-            u'WEAP',
+        super(_ANamesTweak_Weapons, self).__init__(
+            u'WEAP', # key, not sig!
             (_(u'B Iron Bow'),  u'%s '),
             (_(u'B. Iron Bow'), u'%s. '),
             (_(u'B - Iron Bow'),u'%s - '),
@@ -529,7 +523,7 @@ class ANamesTweak_Weapons(AMultiTweakItem):
             )
         self.logMsg = u'* '+_(u'Items Renamed') + u': %d'
 
-class NamesTweak_Weapons(ANamesTweak_Weapons,_AMultiTweakItem_Names):
+class NamesTweak_Weapons(_ANamesTweak_Weapons, _AMultiTweakItem_Names):
 
     #--Patch Phase ------------------------------------------------------------
     def scanModFile(self,modFile,progress,patchFile):
@@ -570,7 +564,7 @@ class NamesTweak_Weapons(ANamesTweak_Weapons,_AMultiTweakItem_Names):
             count[record.fid[0]] += 1
         self._patchLog(log, count)
 
-class CBash_NamesTweak_Weapons(ANamesTweak_Weapons,CBash_MultiTweakItem):
+class CBash_NamesTweak_Weapons(_ANamesTweak_Weapons, CBash_MultiTweakItem):
 
     def save_tweak_config(self, configs):
         """Save config to configs dictionary."""
@@ -601,21 +595,23 @@ class CBash_NamesTweak_Weapons(ANamesTweak_Weapons,CBash_MultiTweakItem):
                     record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class ATextReplacer(DynamicNamedTweak):
+class _ATextReplacer(DynamicNamedTweak):
     """Base class for replacing any text via regular expressions."""
+    tweak_read_classes = (
+        b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'BSGN', b'CLAS', b'CLOT',
+        b'CONT', b'CREA', b'DOOR', b'ENCH', b'EYES', b'FACT', b'FLOR', b'FURN',
+        b'GMST', b'HAIR', b'INGR', b'KEYM', b'LIGH', b'LSCR', b'MGEF', b'MISC',
+        b'NPC_', b'QUST', b'RACE', b'SCPT', b'SGST', b'SKIL', b'SLGM', b'SPEL',
+        b'WEAP'
+    )
 
     def __init__(self, reMatch, reReplace, label, tweak_tip, key, choices):
-        super(ATextReplacer, self).__init__(label, tweak_tip, key, choices)
+        super(_ATextReplacer, self).__init__(label, tweak_tip, key, choices)
         self.reMatch = reMatch
         self.reReplace = reReplace
         self.logMsg = u'* '+_(u'Items Renamed') + u': %d'
 
-class TextReplacer(ATextReplacer,_AMultiTweakItem_Names):
-    tweak_read_classes = (
-        'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT', 'CONT',
-        'CREA', 'DOOR', 'ENCH', 'EYES', 'FACT', 'FLOR', 'FURN', 'GMST', 'HAIR',
-        'INGR', 'KEYM', 'LIGH', 'LSCR', 'MGEF', 'MISC', 'NPC_', 'QUST', 'RACE',
-        'SCPT', 'SGST', 'SKIL', 'SLGM', 'SPEL', 'WEAP')
+class TextReplacer(_ATextReplacer, _AMultiTweakItem_Names):
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -730,13 +726,8 @@ class TextReplacer(ATextReplacer,_AMultiTweakItem_Names):
                     count[record.fid[0]] += 1
         self._patchLog(log, count)
 
-class CBash_TextReplacer(ATextReplacer,CBash_MultiTweakItem):
-    tweak_read_classes = ('CELLS',
-        'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT', 'CONT',
-        'CREA', 'DOOR', 'ENCH', 'EYES', 'FACT', 'FLOR', 'FURN', 'GMST', 'HAIR',
-        'INGR', 'KEYM', 'LIGH', 'LSCR', 'MGEF', 'MISC', 'NPC_', 'QUST', 'RACE',
-        'SCPT', 'SGST', 'SKIL', 'SLGM', 'SPEL', 'WEAP')
-        ##: note it differs only in 'CELLS' from TextReplacer.tweak_read_classes
+class CBash_TextReplacer(_ATextReplacer, CBash_MultiTweakItem):
+    tweak_read_classes = (b'CELLS',) + _ATextReplacer.tweak_read_classes
 
     def save_tweak_config(self, configs):
         """Save config to configs dictionary."""
@@ -917,6 +908,13 @@ class _ANamesTweaker(AMultiTweaker):
                      u'Staffs',
                     (u'Proper English Text: Staffs -> Staves', u'Staves'),),)
 
+    def __init__(self, p_name, p_file, enabled_tweaks):
+        super(_ANamesTweaker, self).__init__(p_name, p_file, enabled_tweaks)
+        body_tags_tweak = enabled_tweaks[0]
+        if isinstance(body_tags_tweak, _ANamesTweak_BodyTags):
+            p_file.bodyTags = \
+                body_tags_tweak.choiceValues[body_tags_tweak.chosen][0]
+
 class NamesTweaker(_ANamesTweaker,MultiTweaker):
 
     @classmethod
@@ -940,16 +938,12 @@ class CBash_NamesTweaker(_ANamesTweaker,CBash_MultiTweaker):
                 CBash_NamesTweak_Potions(), CBash_NamesTweak_Scrolls(),
                 CBash_NamesTweak_Spells(), CBash_NamesTweak_Weapons()],
             key=lambda a: a.tweak_name.lower())
-        instances.insert(0,CBash_NamesTweak_BodyTags())
+        instances.insert(0, CBash_NamesTweak_BodyTags())
         return instances
 
     def __init__(self, p_name, p_file, enabled_tweaks):
         super(CBash_NamesTweaker, self).__init__(p_name, p_file,
                                                  enabled_tweaks)
-        body_tags_tweak = enabled_tweaks[0] # FIXME test - was always enabled?
-        if isinstance(body_tags_tweak, CBash_NamesTweak_BodyTags):
-            p_file.bodyTags = \
-                body_tags_tweak.choiceValues[body_tags_tweak.chosen][0]
         p_file.indexMGEFs = True # FIXME what is this? needed if body tags are set?
 
     def initData(self, progress):
