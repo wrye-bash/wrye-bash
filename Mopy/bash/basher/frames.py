@@ -30,6 +30,7 @@ from .. import bass, balt, bosh, bolt, load_order
 from ..balt import bell, Link, Resources
 from ..bolt import GPath
 from ..bosh import omods
+from ..bosh import mods_metadata
 from ..gui import Button, CancelButton, CheckBox, GridLayout, HLayout, Label, \
     LayoutOptions, SaveButton, Spacer, Stretch, TextArea, TextField, VLayout, \
     web_viewer_available, Splitter, WindowFrame, ListBox, DocumentViewer, \
@@ -381,7 +382,7 @@ class ModChecker(WindowFrame):
         self.__merged = bosh.modInfos.merged.copy()
         self.__imported = bosh.modInfos.imported.copy()
         #--Do it
-        self.check_mods_text = bosh.configHelpers.checkMods(
+        self.check_mods_text = mods_metadata.checkMods(
             *[_get_mod_checker_setting(self._setting_names[setting_key])
               for setting_key in (_MOD_LIST, _CRC, _VERSION)],
             mod_checker=(None, self)[self._controls[_SCAN_DIRTY].is_checked])

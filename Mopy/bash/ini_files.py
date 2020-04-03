@@ -126,21 +126,19 @@ class IniFile(AFile):
             return self._ci_settings_cache_linenum, self._deleted_cache
         return self._ci_settings_cache_linenum
 
-    def do_update(self):
+    def do_update(self, raise_on_error=False): # raise_on_error is ignored
         try:
-            stat_tuple = self._stat_tuple()
+            update = super(IniFile, self).do_update(raise_on_error=True)
             if self._deleted:
                 self.updated = True # restored
                 self._deleted = False
         except OSError:
-            self._reset_cache(self._null_stat, load_cache=False)
             if not self._deleted:
                 # mark as deleted to avoid requesting updates on each refresh
                 self._deleted = self.updated = True
                 return True
             return False # we already know it's deleted (used for game inis)
-        if self._file_changed(stat_tuple):
-            self._reset_cache(stat_tuple, load_cache=True)
+        if update:
             self._ci_settings_cache_linenum = self.__empty
             self.updated = True
             return True
@@ -430,7 +428,7 @@ class DefaultIniFile(IniFile):
             self.lines) + '\r\n' # add a newline at the end of the ini
 
     # Abstract for DefaultIniFile, bit of a smell
-    def do_update(self): raise AbstractError
+    def do_update(self, raise_on_error=False): raise AbstractError
     @classmethod
     def _get_ci_settings(cls, tweakPath):
         """Do not call this on DefaultTweaks - settings are set in __init__"""

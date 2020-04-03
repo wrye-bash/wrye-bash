@@ -1637,13 +1637,12 @@ class ModDetails(_ModsSavesDetails):
                 # We need to grab both the ones from the description and from
                 # LOOT, since we need to save a diff
                 plugin_name = mod_info.name
-                added, removed = bosh.configHelpers.get_tags_from_loot(
-                    plugin_name)
+                added, removed = bosh.lootDb.get_tags_from_loot(plugin_name)
                 # Emulate the effects of applying the LOOT tags
                 old_tags = bashTagsDesc.copy()
                 old_tags |= added
                 old_tags -= removed
-                bosh.configHelpers.save_tags_to_dir(plugin_name, mod_tags,
+                bosh.mods_metadata.save_tags_to_dir(plugin_name, mod_tags,
                                                     old_tags)
                 _refreshUI()
         class _CopyDesc(EnabledLink):
@@ -3984,7 +3983,7 @@ class BashFrame(WindowFrame):
         self.inRefreshData = True
         popMods = popSaves = popBsas = None
         #--Config helpers
-        bosh.configHelpers.refreshBashTags()
+        bosh.lootDb.refreshBashTags()
         #--Check bsas, needed to detect string files in modInfos refresh...
         bosh.oblivionIni.get_ini_language(cached=False) # reread ini language
         if not booting and bosh.bsaInfos.refresh():

@@ -21,322 +21,246 @@
 #
 # =============================================================================
 from __future__ import division
-import os
 import struct
 from collections import defaultdict
 from functools import partial
 
 from ._mergeability import is_esl_capable
-from .loot_parser import libloot_version, LOOTParser
 from .. import balt, bolt, bush, bass, load_order
 from ..bolt import GPath, deprint, sio, struct_pack, struct_unpack
 from ..brec import ModReader, MreRecord, RecordHeader
 from ..exception import CancelError, ModError
 
-lootDb = None # type: LOOTParser
+# BashTags dir ----------------------------------------------------------------
+def get_tags_from_dir(plugin_name):
+    """Retrieves a tuple containing a set of added and a set of deleted
+    tags from the 'Data/BashTags/PLUGIN_NAME.txt' file, if it is
+    present.
 
-#------------------------------------------------------------------------------
-class ConfigHelpers(object):
-    """Encapsulates info from mod configuration helper files (LOOT masterlist, etc.)"""
-
-    def __init__(self):
-        """bass.dir must have been initialized"""
-        global lootDb
-        lootDb = LOOTParser()
-        deprint(u'Initialized loot_parser, compatible with libloot '
-                u'v%s' % libloot_version)
-        # LOOT stores the masterlist/userlist in a %LOCALAPPDATA% subdirectory.
-        self.lootMasterPath = bass.dirs[u'userApp'].join(
-            os.pardir, u'LOOT', bush.game.fsName, u'masterlist.yaml')
-        self.lootUserPath = bass.dirs[u'userApp'].join(
-            os.pardir, u'LOOT', bush.game.fsName, u'userlist.yaml')
-        self.lootMasterTime = None
-        self.lootUserTime = None
-        self.tagList = bass.dirs[u'taglists'].join(u'taglist.yaml')
-        self.tagListModTime = None
-        #--Bash Tags
-        self.tagCache = {}
-        #--Refresh
-        self.refreshBashTags()
-
-    def refreshBashTags(self):
-        """Reloads tag info if file dates have changed."""
-        path, userpath = self.lootMasterPath, self.lootUserPath
-        #--Masterlist is present, use it
-        if path.exists():
-            if (path.mtime != self.lootMasterTime or
-                (userpath.exists() and userpath.mtime != self.lootUserTime)):
-                self.tagCache = {}
-                self.lootMasterTime = path.mtime
-                if userpath.exists():
-                    self.lootUserTime = userpath.mtime
-                    lootDb.load_lists(path, userpath)
+    :param plugin_name: The name of the plugin to check the tag file for.
+    :return: A tuple containing two sets of added and deleted tags."""
+    from . import process_tags ##: yuck
+    # Check if the file even exists first
+    tag_files_dir = bass.dirs[u'tag_files']
+    tag_file = tag_files_dir.join(plugin_name.body + u'.txt')
+    if not tag_file.isfile(): return set(), set()
+    removed, added = set(), set()
+    with tag_file.open('r') as ins:
+        for tag_line in ins:
+            # Strip out comments and skip lines that are empty as a result
+            tag_line = tag_line.split(u'#')[0].strip()
+            if not tag_line: continue
+            for tag_entry in tag_line.split(u','):
+                # Guard against things (e.g. typos) like 'TagA,,TagB'
+                if not tag_entry: continue
+                tag_entry = tag_entry.strip()
+                # If it starts with a minus, it's removing a tag
+                if tag_entry[0] == u'-':
+                    # Guard against a typo like '- C.Water'
+                    removed.add(tag_entry[1:].strip())
                 else:
-                    lootDb.load_lists(path)
-            return # no changes or we parsed successfully
-        #--No masterlist or an error occurred while reading it, use the taglist
-        if not self.tagList.exists():
-            # Missing taglist is fine, happens if someone cloned without
-            # running update_taglist.py
-            return
-        if self.tagList.mtime == self.tagListModTime: return
-        self.tagListModTime = self.tagList.mtime
-        self.tagCache = {}
-        lootDb.load_lists(self.tagList)
+                    added.add(tag_entry)
+    return process_tags(added), process_tags(removed)
 
-    ##: move cache into loot_parser, then build more sophisticated invalidation
-    # mechanism to handle CRCs, active status, etc. - ref #353
-    def get_tags_from_loot(self, modName):
-        """Gets bash tag info from the cache, or from loot_parser if it is not
-        cached."""
-        from . import process_tags ##: yuck
-        if modName not in self.tagCache:
-            tags = lootDb.get_plugin_tags(modName)
-            tags = process_tags(tags[0]), process_tags(tags[1])
-            self.tagCache[modName] = tags
-            return tags
+def save_tags_to_dir(plugin_name, plugin_tags, plugin_old_tags):
+    """Compares plugin_tags to plugin_old_tags and saves the diff to
+    Data/BashTags/PLUGIN_NAME.txt.
+
+    :param plugin_name: The name of the plugin to modify the tag file for.
+    :param plugin_tags: A set of all Bash Tags currently applied to the
+        plugin in question.
+    :param plugin_old_tags: A set of all Bash Tags applied to the plugin
+        by its description and the LOOT masterlist / userlist."""
+    tag_files_dir = bass.dirs[u'tag_files']
+    tag_files_dir.makedirs()
+    tag_file = tag_files_dir.join(plugin_name.body + u'.txt')
+    # Calculate the diff and ignore the minus when sorting the result
+    diff_tags = sorted(plugin_tags - plugin_old_tags |
+                       {u'-' + t for t in plugin_old_tags - plugin_tags},
+                       key=lambda t: t[1:] if t[0] == u'-' else t)
+    with tag_file.open('w') as out:
+        # Stick a header in there to indicate that it's machine-generated
+        # Also print the version, which could be helpful
+        out.write(u'# Generated by Wrye Bash %s\n' % bass.AppVersion)
+        out.write(u', '.join(diff_tags) + u'\n')
+
+#--Mod Checker ----------------------------------------------------------------
+_cleaning_wiki_url = u'[[!https://tes5edit.github.io/docs/5-mod-cleaning' \
+                     u'-and-error-checking.html|Tome of xEdit]]'
+
+def checkMods(showModList=False, showCRC=False, showVersion=True,
+              mod_checker=None):
+    """Checks currently loaded mods for certain errors / warnings.
+    mod_checker should be the instance of ModChecker, to scan."""
+    from . import modInfos
+    active = set(load_order.cached_active_tuple())
+    imported_ = modInfos.imported
+    removeEslFlag = set()
+    warning = u'=== <font color=red>'+_(u'WARNING:')+u'</font> '
+    #--Header
+    with sio() as out:
+        log = bolt.LogFile(out)
+        log.setHeader(u'= '+_(u'Check Mods'),True)
+        if bush.game.check_esl:
+            log(_(u'This is a report on your currently installed or '
+                  u'active mods.'))
         else:
-            return self.tagCache[modName]
-
-    @staticmethod
-    def getDirtyMessage(modName, mod_infos):
-        ##: retrieve other messages (e.g. doNotClean, reqManualFix) here? or
-        # perhaps in a more general method (get_loot_messages)?
-        if lootDb.is_plugin_dirty(modName, mod_infos):
-            return True, _(u'Contains dirty edits, needs cleaning.')
+            log(_(u'This is a report on your currently installed, active, '
+                  u'or merged mods.'))
+        #--Mergeable/NoMerge/Deactivate tagged mods
+        if bush.game.check_esl:
+            shouldMerge = modInfos.mergeable
         else:
-            return False, u''
-
-    # BashTags dir ------------------------------------------------------------
-    def get_tags_from_dir(self, plugin_name):
-        """Retrieves a tuple containing a set of added and a set of deleted
-        tags from the 'Data/BashTags/PLUGIN_NAME.txt' file, if it is
-        present.
-
-        :param plugin_name: The name of the plugin to check the tag file for.
-        :return: A tuple containing two sets of added and deleted tags."""
-        from . import process_tags ##: yuck
-        # Check if the file even exists first
-        tag_files_dir = bass.dirs[u'tag_files']
-        tag_file = tag_files_dir.join(plugin_name.body + u'.txt')
-        if not tag_file.isfile(): return set(), set()
-        removed, added = set(), set()
-        with tag_file.open('r') as ins:
-            for tag_line in ins:
-                # Strip out comments and skip lines that are empty as a result
-                tag_line = tag_line.split(u'#')[0].strip()
-                if not tag_line: continue
-                for tag_entry in tag_line.split(u','):
-                    # Guard against things (e.g. typos) like 'TagA,,TagB'
-                    if not tag_entry: continue
-                    tag_entry = tag_entry.strip()
-                    # If it starts with a minus, it's removing a tag
-                    if tag_entry[0] == u'-':
-                        # Guard against a typo like '- C.Water'
-                        removed.add(tag_entry[1:].strip())
+            shouldMerge = active & modInfos.mergeable
+        if bush.game.check_esl:
+            for m, modinf in modInfos.items():
+                if not modinf.is_esl():
+                    continue # we check .esl extension and ESL flagged mods
+                if not is_esl_capable(modinf, modInfos, reasons=None):
+                    removeEslFlag.add(m)
+        shouldDeactivateA, shouldDeactivateB = [], []
+        for x in active:
+            tags = modInfos[x].getBashTags()
+            if u'Deactivate' in tags: shouldDeactivateA.append(x)
+            if u'NoMerge' in tags and x in modInfos.mergeable:
+                shouldDeactivateB.append(x)
+        shouldActivateA = [x for x in imported_ if x not in active and
+                    u'MustBeActiveIfImported' in modInfos[x].getBashTags()]
+        #--Mods with invalid TES4 version
+        invalidVersion = [(x,unicode(round(modInfos[x].header.version,6))) for x in active if round(modInfos[x].header.version,6) not in bush.game.Esp.validHeaderVersions]
+        #--Look for dirty edits
+        shouldClean = {}
+        scan = []
+        dirty_msgs = [(x, modInfos.getDirtyMessage(x)) for x in active]
+        for x, y in dirty_msgs:
+            if y[0]:
+                shouldClean[x] = y[1]
+            elif mod_checker:
+                scan.append(modInfos[x])
+        if mod_checker:
+            try:
+                with balt.Progress(_(u'Scanning for Dirty Edits...'),u'\n'+u' '*60, parent=mod_checker, abort=True) as progress:
+                    ret = ModCleaner.scan_Many(scan,ModCleaner.ITM|ModCleaner.UDR,progress)
+                    for i,mod in enumerate(scan):
+                        udrs,itms,fog = ret[i]
+                        if mod.name == GPath(u'Unofficial Oblivion Patch.esp'): itms.discard((GPath(u'Oblivion.esm'),0x00AA3C))
+                        if mod.isBP(): itms = set()
+                        if udrs or itms:
+                            cleanMsg = []
+                            if udrs:
+                                cleanMsg.append(u'UDR(%i)' % len(udrs))
+                            if itms:
+                                cleanMsg.append(u'ITM(%i)' % len(itms))
+                            cleanMsg = u', '.join(cleanMsg)
+                            shouldClean[mod.name] = cleanMsg
+            except CancelError:
+                pass
+        # below is always empty with current implementation
+        shouldCleanMaybe = [(x, y[1]) for x, y in dirty_msgs if
+                            not y[0] and y[1] != u'']
+        for mod in tuple(shouldMerge):
+            if u'NoMerge' in modInfos[mod].getBashTags():
+                shouldMerge.discard(mod)
+        if shouldMerge:
+            if bush.game.check_esl:
+                log.setHeader(u'=== '+_(u'ESL Capable'))
+                log(_(u'Following mods could be assigned an ESL flag but '
+                      u'are not ESL flagged.'))
+            else:
+                log.setHeader(u'=== ' + _(u'Mergeable'))
+                log(_(u'Following mods are active, but could be merged into '
+                      u'the bashed patch.'))
+            for mod in sorted(shouldMerge):
+                log(u'* __%s__' % mod)
+        if removeEslFlag:
+            log.setHeader(u'=== ' + _(u'Incorrect ESL Flag'))
+            log(_(u'Following mods have an ESL flag, but do not qualify. '
+                  u"Either remove the flag with 'Remove ESL Flag', or "
+                  u"change the extension to '.esp' if it is '.esl'."))
+            for mod in sorted(removeEslFlag):
+                log(u'* __%s__' % mod)
+        if shouldDeactivateB:
+            log.setHeader(u'=== '+_(u'NoMerge Tagged Mods'))
+            log(_(u'Following mods are tagged NoMerge and should be '
+                  u'deactivated and imported into the bashed patch but '
+                  u'are currently active.'))
+            for mod in sorted(shouldDeactivateB):
+                log(u'* __%s__' % mod)
+        if shouldDeactivateA:
+            log.setHeader(u'=== '+_(u'Deactivate Tagged Mods'))
+            log(_(u'Following mods are tagged Deactivate and should be '
+                  u'deactivated and imported into the bashed patch but '
+                  u'are currently active.'))
+            for mod in sorted(shouldDeactivateA):
+                log(u'* __%s__' % mod)
+        if shouldActivateA:
+            log.setHeader(u'=== '+_(u'MustBeActiveIfImported Tagged Mods'))
+            log(_(u'Following mods to work correctly have to be active as '
+                  u'well as imported into the bashed patch but are '
+                  u'currently only imported.'))
+            for mod in sorted(shouldActivateA):
+                log(u'* __%s__' % mod)
+        if shouldClean:
+            log.setHeader(
+                u'=== ' + _(u'Mods that need cleaning with %s') %
+                bush.game.Xe.full_name)
+            log(_(u'Following mods have identical to master (ITM) '
+                  u'records, deleted records (UDR), or other issues that '
+                  u'should be fixed with %(xedit_name)s. Visit the '
+                  u'%(cleaning_wiki_url)s for more information.') % {
+                u'cleaning_wiki_url': _cleaning_wiki_url,
+                u'xedit_name': bush.game.Xe.full_name})
+            for mod in sorted(shouldClean.keys()):
+                log(u'* __%s:__  %s' % (mod, shouldClean[mod]))
+        if shouldCleanMaybe:
+            log.setHeader(
+                u'=== ' + _(u'Mods with special cleaning instructions'))
+            log(_(u'Following mods have special instructions for cleaning '
+                  u'with %s') % bush.game.Xe.full_name)
+            for mod in sorted(shouldCleanMaybe):
+                log(u'* __%s:__  %s' % mod) # mod is a tuple here
+        elif mod_checker and not shouldClean:
+            log.setHeader(
+                u'=== ' + _(u'Mods that need cleaning with %s') %
+                bush.game.Xe.full_name)
+            log(_(u'Congratulations, all mods appear clean.'))
+        if invalidVersion:
+            # Always an ASCII byte string, so this is fine
+            header_sig_ = unicode(bush.game.Esp.plugin_header_sig,
+                                  encoding=u'ascii')
+            ver_list = u', '.join(
+                sorted(unicode(v) for v in bush.game.Esp.validHeaderVersions))
+            log.setHeader(
+                u'=== ' + _(u'Mods with non-standard %s versions') %
+                header_sig_)
+            log(_(u"The following mods have a %s version that isn't "
+                  u'recognized as one of the standard versions '
+                  u'(%s). It is untested what effects this can have on '
+                  u'%s.') % (header_sig_, ver_list, bush.game.displayName))
+            for mod in sorted(invalidVersion):
+                log(u'* __%s:__  %s' % mod) # mod is a tuple here
+        #--Missing/Delinquent Masters
+        if showModList:
+            log(u'\n'+modInfos.getModList(showCRC,showVersion,wtxt=True).strip())
+        else:
+            log.setHeader(warning+_(u'Missing/Delinquent Masters'))
+            previousMods = set()
+            for mod in load_order.cached_active_tuple():
+                loggedMod = False
+                for master in modInfos[mod].masterNames:
+                    if master not in active:
+                        label_ = _(u'MISSING')
+                    elif master not in previousMods:
+                        label_ = _(u'DELINQUENT')
                     else:
-                        added.add(tag_entry)
-        return process_tags(added), process_tags(removed)
-
-    def save_tags_to_dir(self, plugin_name, plugin_tags, plugin_old_tags):
-        """Compares plugin_tags to plugin_old_tags and saves the diff to
-        Data/BashTags/PLUGIN_NAME.txt.
-
-        :param plugin_name: The name of the plugin to modify the tag file for.
-        :param plugin_tags: A set of all Bash Tags currently applied to the
-            plugin in question.
-        :param plugin_base_tags: A set of all Bash Tags applied to the plugin
-            by its description and the LOOT masterlist / userlist."""
-        tag_files_dir = bass.dirs[u'tag_files']
-        tag_files_dir.makedirs()
-        tag_file = tag_files_dir.join(plugin_name.body + u'.txt')
-        # Calculate the diff and ignore the minus when sorting the result
-        diff_tags = sorted(plugin_tags - plugin_old_tags |
-                           {u'-' + t for t in plugin_old_tags - plugin_tags},
-                           key=lambda t: t[1:] if t[0] == u'-' else t)
-        with tag_file.open('w') as out:
-            # Stick a header in there to indicate that it's machine-generated
-            # Also print the version, which could be helpful
-            out.write(u'# Generated by Wrye Bash %s\n' % bass.AppVersion)
-            out.write(u', '.join(diff_tags) + u'\n')
-
-    #--Mod Checker ------------------------------------------------------------
-    _cleaning_wiki_url = u'[[!https://tes5edit.github.io/docs/5-mod-cleaning' \
-                         u'-and-error-checking.html|Tome of xEdit]]'
-
-    def checkMods(self, showModList=False, showCRC=False, showVersion=True,
-                  mod_checker=None):
-        """Checks currently loaded mods for certain errors / warnings.
-        mod_checker should be the instance of ModChecker, to scan."""
-        from . import modInfos
-        active = set(load_order.cached_active_tuple())
-        imported_ = modInfos.imported
-        removeEslFlag = set()
-        warning = u'=== <font color=red>'+_(u'WARNING:')+u'</font> '
-        #--Header
-        with sio() as out:
-            log = bolt.LogFile(out)
-            log.setHeader(u'= '+_(u'Check Mods'),True)
-            if bush.game.check_esl:
-                log(_(u'This is a report on your currently installed or '
-                      u'active mods.'))
-            else:
-                log(_(u'This is a report on your currently installed, active, '
-                      u'or merged mods.'))
-            #--Mergeable/NoMerge/Deactivate tagged mods
-            if bush.game.check_esl:
-                shouldMerge = modInfos.mergeable
-            else:
-                shouldMerge = active & modInfos.mergeable
-            if bush.game.check_esl:
-                for m, modinf in modInfos.items():
-                    if not modinf.is_esl():
-                        continue # we check .esl extension and ESL flagged mods
-                    if not is_esl_capable(modinf, modInfos, reasons=None):
-                        removeEslFlag.add(m)
-            shouldDeactivateA, shouldDeactivateB = [], []
-            for x in active:
-                tags = modInfos[x].getBashTags()
-                if u'Deactivate' in tags: shouldDeactivateA.append(x)
-                if u'NoMerge' in tags and x in modInfos.mergeable:
-                    shouldDeactivateB.append(x)
-            shouldActivateA = [x for x in imported_ if x not in active and
-                        u'MustBeActiveIfImported' in modInfos[x].getBashTags()]
-            #--Mods with invalid TES4 version
-            invalidVersion = [(x,unicode(round(modInfos[x].header.version,6))) for x in active if round(modInfos[x].header.version,6) not in bush.game.Esp.validHeaderVersions]
-            #--Look for dirty edits
-            shouldClean = {}
-            scan = []
-            dirty_msgs = [(x, modInfos.getDirtyMessage(x)) for x in active]
-            for x, y in dirty_msgs:
-                if y[0]:
-                    shouldClean[x] = y[1]
-                elif mod_checker:
-                    scan.append(modInfos[x])
-            if mod_checker:
-                try:
-                    with balt.Progress(_(u'Scanning for Dirty Edits...'),u'\n'+u' '*60, parent=mod_checker, abort=True) as progress:
-                        ret = ModCleaner.scan_Many(scan,ModCleaner.ITM|ModCleaner.UDR,progress)
-                        for i,mod in enumerate(scan):
-                            udrs,itms,fog = ret[i]
-                            if mod.name == GPath(u'Unofficial Oblivion Patch.esp'): itms.discard((GPath(u'Oblivion.esm'),0x00AA3C))
-                            if mod.isBP(): itms = set()
-                            if udrs or itms:
-                                cleanMsg = []
-                                if udrs:
-                                    cleanMsg.append(u'UDR(%i)' % len(udrs))
-                                if itms:
-                                    cleanMsg.append(u'ITM(%i)' % len(itms))
-                                cleanMsg = u', '.join(cleanMsg)
-                                shouldClean[mod.name] = cleanMsg
-                except CancelError:
-                    pass
-            # below is always empty with current implementation
-            shouldCleanMaybe = [(x, y[1]) for x, y in dirty_msgs if
-                                not y[0] and y[1] != u'']
-            for mod in tuple(shouldMerge):
-                if u'NoMerge' in modInfos[mod].getBashTags():
-                    shouldMerge.discard(mod)
-            if shouldMerge:
-                if bush.game.check_esl:
-                    log.setHeader(u'=== '+_(u'ESL Capable'))
-                    log(_(u'Following mods could be assigned an ESL flag but '
-                          u'are not ESL flagged.'))
-                else:
-                    log.setHeader(u'=== ' + _(u'Mergeable'))
-                    log(_(u'Following mods are active, but could be merged into '
-                          u'the bashed patch.'))
-                for mod in sorted(shouldMerge):
-                    log(u'* __'+mod.s+u'__')
-            if removeEslFlag:
-                log.setHeader(u'=== ' + _(u'Incorrect ESL Flag'))
-                log(_(u'Following mods have an ESL flag, but do not qualify. '
-                      u"Either remove the flag with 'Remove ESL Flag', or "
-                      u"change the extension to '.esp' if it is '.esl'."))
-                for mod in sorted(removeEslFlag):
-                    log(u'* __' + mod.s + u'__')
-            if shouldDeactivateB:
-                log.setHeader(u'=== '+_(u'NoMerge Tagged Mods'))
-                log(_(u'Following mods are tagged NoMerge and should be '
-                      u'deactivated and imported into the bashed patch but '
-                      u'are currently active.'))
-                for mod in sorted(shouldDeactivateB):
-                    log(u'* __'+mod.s+u'__')
-            if shouldDeactivateA:
-                log.setHeader(u'=== '+_(u'Deactivate Tagged Mods'))
-                log(_(u'Following mods are tagged Deactivate and should be '
-                      u'deactivated and imported into the bashed patch but '
-                      u'are currently active.'))
-                for mod in sorted(shouldDeactivateA):
-                    log(u'* __'+mod.s+u'__')
-            if shouldActivateA:
-                log.setHeader(u'=== '+_(u'MustBeActiveIfImported Tagged Mods'))
-                log(_(u'Following mods to work correctly have to be active as '
-                      u'well as imported into the bashed patch but are '
-                      u'currently only imported.'))
-                for mod in sorted(shouldActivateA):
-                    log(u'* __'+mod.s+u'__')
-            if shouldClean:
-                log.setHeader(
-                    u'=== ' + _(u'Mods that need cleaning with %s') %
-                    bush.game.Xe.full_name)
-                log(_(u'Following mods have identical to master (ITM) '
-                      u'records, deleted records (UDR), or other issues that '
-                      u'should be fixed with %(xedit_name)s. Visit the '
-                      u'%(cleaning_wiki_url)s for more information.') % {
-                    u'cleaning_wiki_url': self._cleaning_wiki_url,
-                    u'xedit_name': bush.game.Xe.full_name})
-                for mod in sorted(shouldClean.keys()):
-                    log(u'* __'+mod.s+u':__  %s' % shouldClean[mod])
-            if shouldCleanMaybe:
-                log.setHeader(
-                    u'=== ' + _(u'Mods with special cleaning instructions'))
-                log(_(u'Following mods have special instructions for cleaning '
-                      u'with %s') % bush.game.Xe.full_name)
-                for mod in sorted(shouldCleanMaybe):
-                    log(u'* __'+mod[0].s+u':__  '+mod[1])
-            elif mod_checker and not shouldClean:
-                log.setHeader(
-                    u'=== ' + _(u'Mods that need cleaning with %s') %
-                    bush.game.Xe.full_name)
-                log(_(u'Congratulations, all mods appear clean.'))
-            if invalidVersion:
-                # Always an ASCII byte string, so this is fine
-                header_sig_ = unicode(bush.game.Esp.plugin_header_sig,
-                                      encoding=u'ascii')
-                ver_list = u', '.join(sorted(
-                    unicode(v) for v in bush.game.Esp.validHeaderVersions))
-                log.setHeader(
-                    u'=== ' + _(u'Mods with non-standard %s versions') %
-                    header_sig_)
-                log(_(u"The following mods have a %s version that isn't "
-                      u'recognized as one of the standard versions '
-                      u'(%s). It is untested what effects this can have on '
-                      u'%s.') % (header_sig_, ver_list, bush.game.displayName))
-                for mod in sorted(invalidVersion):
-                    log(u'* __'+mod[0].s+u':__  '+mod[1])
-            #--Missing/Delinquent Masters
-            if showModList:
-                log(u'\n'+modInfos.getModList(showCRC,showVersion,wtxt=True).strip())
-            else:
-                log.setHeader(warning+_(u'Missing/Delinquent Masters'))
-                previousMods = set()
-                for mod in load_order.cached_active_tuple():
-                    loggedMod = False
-                    for master in modInfos[mod].masterNames:
-                        if master not in active:
-                            label_ = _(u'MISSING')
-                        elif master not in previousMods:
-                            label_ = _(u'DELINQUENT')
-                        else:
-                            label_ = u''
-                        if label_:
-                            if not loggedMod:
-                                log(u'* '+mod.s)
-                                loggedMod = True
-                            log(u'  * __%s__ %s' %(label_,master.s))
-                    previousMods.add(mod)
-            return log.out.getvalue()
+                        label_ = u''
+                    if label_:
+                        if not loggedMod:
+                            log(u'* %s' % mod)
+                            loggedMod = True
+                        log(u'  * __%s__ %s' %(label_,master))
+                previousMods.add(mod)
+        return log.out.getvalue()
 
 #------------------------------------------------------------------------------
 class ModCleaner(object):

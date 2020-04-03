@@ -42,7 +42,8 @@ from functools import wraps, partial
 from itertools import imap
 #--Local
 from ._mergeability import isPBashMergeable, is_esl_capable
-from .mods_metadata import ConfigHelpers
+from .loot_parser import LOOTParser, libloot_version
+from .mods_metadata import get_tags_from_dir
 from .. import bass, bolt, balt, bush, env, load_order, archives, \
     initialization
 from ..archives import readExts
@@ -77,7 +78,7 @@ iniInfos = None    # type: INIInfos
 bsaInfos = None    # type: BSAInfos
 screen_infos = None # type: ScreenInfos
 #--Config Helper files (LOOT Master List, etc.)
-configHelpers = None # type: mods_metadata.ConfigHelpers
+lootDb = None # type: LOOTParser
 
 #--Header tags
 reVersion = re.compile(
@@ -466,11 +467,11 @@ class ModInfo(FileInfo):
         return self.header.masters
 
     # Ghosting and ghosting related overrides ---------------------------------
-    def do_update(self):
+    def do_update(self, raise_on_error=False):
         self.isGhost, old_ghost = not self._file_key.exists() and (
                 self._file_key + u'.ghost').exists(), self.isGhost
         # mark updated if ghost state changed but only reread header if needed
-        changed = super(ModInfo, self).do_update()
+        changed = super(ModInfo, self).do_update(raise_on_error)
         return changed or self.isGhost != old_ghost
 
     @FileInfo.abs_path.getter
@@ -557,12 +558,12 @@ class ModInfo(FileInfo):
         tags = set()
         tags |= self.getBashTagsDesc()
         # Tags from LOOT take precendence over the description
-        added, removed = configHelpers.get_tags_from_loot(self.name)
+        added, removed = lootDb.get_tags_from_loot(self.name)
         tags |= added
         tags -= removed
         # Tags from Data/BashTags/{self.name}.txt take precedence over both
         # the description and LOOT
-        added, removed = configHelpers.get_tags_from_dir(self.name)
+        added, removed = get_tags_from_dir(self.name)
         tags |= added
         tags -= removed
         self.setBashTags(tags)
@@ -1070,7 +1071,7 @@ class SaveInfo(FileInfo):
             raise SaveFileError, (self.name, e.message), sys.exc_info()[2]
         self._reset_masters()
 
-    def do_update(self):
+    def do_update(self, raise_on_error=False):
         # Check for new and deleted cosaves and do_update old, surviving ones
         cosaves_changed = False
         for co_type in SaveInfo.cosave_types:
@@ -1093,7 +1094,8 @@ class SaveInfo(FileInfo):
         if cosaves_changed:
             self._reset_masters()
         # Delegate the call first, but also take the cosaves into account
-        return super(SaveInfo, self).do_update() or cosaves_changed
+        return super(SaveInfo, self).do_update(raise_on_error) or \
+               cosaves_changed
 
     def write_masters(self):
         """Rewrites masters of existing save file."""
@@ -2335,14 +2337,14 @@ class ModInfos(FileInfos):
         if tags_desc:
             tagList = _tags(_(u'From Plugin Description: '), sorted(tags_desc),
                             tagList)
-        tags, removed = configHelpers.get_tags_from_loot(mname)
+        tags, removed = lootDb.get_tags_from_loot(mname)
         if tags:
             tagList = _tags(_(u'From LOOT Masterlist and / or Userlist: '),
                             sorted(tags), tagList)
         if removed:
             tagList = _tags(_(u'Removed by LOOT Masterlist and / or '
                               u'Userlist: '), sorted(removed), tagList)
-        dir_added, dir_removed = configHelpers.get_tags_from_dir(mname)
+        dir_added, dir_removed = get_tags_from_dir(mname)
         tags_file = u"'Data/BashTags/%s'" % (mname.body + u'.txt')
         if dir_added:
             tagList = _tags(_(u'Added by %s: ') % tags_file, sorted(dir_added),
@@ -2539,7 +2541,9 @@ class ModInfos(FileInfos):
         """Returns a dirty message from LOOT."""
         if self.table.getItem(modname, u'ignoreDirty', False):
             return False, u''
-        return configHelpers.getDirtyMessage(modname, self)
+        if lootDb.is_plugin_dirty(modname, self):
+            return True, _(u'Contains dirty edits, needs cleaning.')
+        return False, u''
 
     def ini_files(self): ##: What about SkyrimCustom.ini etc?
         iniFiles = self._plugin_inis.values() # in active order
@@ -3082,8 +3086,8 @@ class BSAInfos(FileInfos):
             def getFileInfos(self):
                 return bsaInfos
 
-            def do_update(self):
-                changed = super(BSAInfo, self).do_update()
+            def do_update(self, raise_on_error=False):
+                changed = super(BSAInfo, self).do_update(raise_on_error)
                 self._reset_bsa_mtime()
                 return changed
 
@@ -3401,8 +3405,15 @@ def initBosh(bashIni, game_ini_path):
     # Setup loot_parser, needs to be done after the dirs are initialized
     if not initialization.bash_dirs_initialized:
         raise BoltError(u'initBosh: Bash dirs are not initialized')
-    global configHelpers
-    configHelpers = ConfigHelpers()
+    loot_path = bass.dirs[u'userApp'].join(os.pardir, u'LOOT',
+        bush.game.fsName)
+    lootMasterPath = loot_path.join(u'masterlist.yaml')
+    lootUserPath = loot_path.join(u'userlist.yaml')
+    tagList = bass.dirs[u'taglists'].join(u'taglist.yaml')
+    global lootDb
+    lootDb = LOOTParser(lootMasterPath, lootUserPath, tagList)
+    deprint(u'Initialized loot_parser, compatible with libloot '
+            u'v%s' % libloot_version)
     # game ini files
     deprint(u'Looking for main game INI at %s' % game_ini_path)
     global oblivionIni, gameInis

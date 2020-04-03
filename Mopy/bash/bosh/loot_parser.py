@@ -29,6 +29,8 @@ https://loot-api.readthedocs.io/en/latest/metadata/file_structure.html
 https://loot-api.readthedocs.io/en/latest/metadata/data_structures/index.html
 https://loot-api.readthedocs.io/en/latest/metadata/conditions.html."""
 
+__author__ = u'Infernio'
+
 import copy
 import re
 import yaml
@@ -36,8 +38,8 @@ from collections import deque
 
 from .loot_conditions import _ACondition, Comparison, ConditionAnd, \
     ConditionFunc, ConditionNot, ConditionOr, is_regex
-from ..bolt import deprint, LowerDict, Path
-from ..exception import LexerError, ParserError
+from ..bolt import deprint, LowerDict, Path, AFile
+from ..exception import LexerError, ParserError, BoltError
 
 # Try to use the C version (way faster), if that isn't possible fall back to
 # the pure Python version
@@ -49,8 +51,6 @@ except ImportError:
     deprint(u'Failed to import LibYAML-based parser, falling back to Python '
             u'version')
 
-__author__ = u'Infernio'
-
 # API
 libloot_version = u'0.16.x' # The libloot version with which this
                             # implementation is compatible
@@ -58,12 +58,60 @@ libloot_version = u'0.16.x' # The libloot version with which this
 class LOOTParser(object):
     """The main frontend for interacting with LOOT's masterlists. Provides
     methods to parse masterlists and to retrieve information from them."""
-    __slots__ = (u'_cached_masterlist', u'_cached_regexes', u'_cached_merges')
+    __slots__ = (u'_cached_masterlist', u'_cached_regexes', u'_cached_merges',
+                 u'_masterlist', u'_userlist', u'_taglist', u'_tagCache')
 
-    def __init__(self):
+    def __init__(self, masterlist_path, userlist_path, taglist_path):
+        """Initialize a LOOTParser instance with the three specified
+        masterlist paths. These will be cached via AFile and updated when
+        refreshBashTags is called. Note that the order in which we read them
+        is masterlist (+ userlist if present), then taglist if masterlist is
+        not present.
+        :param masterlist_path: The path to the LOOT masterlist that should be
+            parsed.
+        :type masterlist_path: Path
+        :param userlist_path: Optional, the path to the LOOT userlist that
+            should be parsed and merged with the masterlist.
+        :type userlist_path: Path
+        :param taglist_path: the path to Bash's own cached masterlists - those
+            must always exist.
+        :type taglist_path: Path
+        """
         self._cached_masterlist = {}
         self._cached_regexes = {}
         self._cached_merges = {}
+        self._masterlist  = AFile(masterlist_path)
+        self._userlist  = AFile(userlist_path)
+        self._taglist  = AFile(taglist_path)
+        self._refresh_tags_cache(_force=True)
+        # Old api
+        self._tagCache = {}
+
+    def _refresh_tags_cache(self, _force=False):
+        try:
+            # keep _force last to update AFile's caches
+            if self._masterlist.do_update(raise_on_error=True) or \
+                    self._userlist.do_update() or _force:
+                args = [self._masterlist.abs_path]
+                if self._userlist.abs_path.exists(): args.append(
+                    self._userlist.abs_path)
+                self.load_lists(*args)
+                return True
+        except (OSError, IOError, yaml.YAMLError):
+        #--No masterlist or an error occurred while reading it, use the taglist
+            try:
+                if self._taglist.do_update(raise_on_error=True) or _force:
+                    self.load_lists(self._taglist.abs_path)
+                return True
+            except OSError:
+                # Missing taglist is fine, happens if someone cloned without
+                # running update_taglist.py
+                pass
+            except yaml.YAMLError as e:
+                raise BoltError(
+                    u'%s could not be parsed (%r). Please ensure Wrye Bash is '
+                    u'installed correctly.' % (e, self._taglist.abs_path))
+        return False
 
     def get_plugin_tags(self, plugin_name, catch_errors=True):
         """Retrieves added and removed tags for the specified plugin. If the
@@ -160,6 +208,23 @@ class LOOTParser(object):
                 merged_entry.merge_with(plugin_entry)
         self._cached_merges[plugin_s] = merged_entry
         return merged_entry
+
+    # Old ConfigHelpers API -----------------------------
+    def refreshBashTags(self):
+        """Reloads tag info if file dates have changed."""
+        if self._refresh_tags_cache():
+            self._tagCache = {}
+
+    ##: move cache into loot_parser, then build more sophisticated invalidation
+    # mechanism to handle CRCs, active status, etc. - ref #353
+    def get_tags_from_loot(self, modName):
+        """Gets bash tag info from the cache, or from loot_parser if it is not
+        cached."""
+        try:
+            return self._tagCache[modName]
+        except KeyError:
+            self._tagCache[modName] = self.get_plugin_tags(modName)
+            return self._tagCache[modName]
 
 # Implementation
 def _loot_decode(raw_str): # PY3: drop entirely, pyyaml is fully unicode on py3

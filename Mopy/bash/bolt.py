@@ -1207,13 +1207,19 @@ class AFile(object):
     @abs_path.setter
     def abs_path(self, val): self._file_key = val
 
-    def do_update(self):
-        """Check cache, reset it if needed. Return True if reset else False."""
+    def do_update(self, raise_on_error=False):
+        """Check cache, reset it if needed. Return True if reset else False.
+        If the stat call fails and this instance was previously stat'ed we
+        consider the file deleted and return True except if raise_on_error is
+        True, whereupon raise the OSError we got in stat(). If raise_on_error
+        is False user must check if file exists."""
         try:
             stat_tuple = self._stat_tuple()
-        except OSError:
+        except (OSError, IOError): # PY3: FileNotFoundError case?
+            file_was_stated = self._file_changed(self._null_stat)
             self._reset_cache(self._null_stat, load_cache=False)
-            return False # we should not call do_update on deleted files
+            if raise_on_error: raise
+            return file_was_stated # file previously existed, we need to update
         if self._file_changed(stat_tuple):
             self._reset_cache(stat_tuple, load_cache=True)
             return True
