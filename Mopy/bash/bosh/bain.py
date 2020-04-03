@@ -2595,18 +2595,22 @@ class InstallersData(DataStore):
         self._remove_restore(removes, restores, refresh_ui, cede_ownership,
                              progress)
 
-    def clean_data_dir(self, refresh_ui):
+    def get_clean_data_dir_list(self):
         keepFiles = set()
         for installer in self.sorted_values(reverse=True):
             if installer.is_active:
                 keepFiles.update(installer.ci_dest_sizeCrc) # relative to Data/
         from . import modInfos
         keepFiles.update((bolt.CIstr(f) for f in bush.game.vanilla_files))
-        for f in modInfos.bashed_patches: # type: bolt.Path
-            keepFiles.add(bolt.CIstr(f.s))
-            bp_doc = modInfos.table.getItem(f, 'doc')
+        for bpatch in modInfos.bashed_patches: # type: bolt.Path
+            keepFiles.add(bolt.CIstr(bpatch.s))
+            bp_doc = modInfos.table.getItem(bpatch, 'doc')
             if bp_doc: # path is absolute, convert to relative to the Data/ dir
-                bp_doc = bp_doc.relpath(bass.dirs['mods'].s)
+                try:
+                    bp_doc = bp_doc.relpath(bass.dirs['mods'].s)
+                except ValueError: # https://bugs.python.org/issue7195
+                    # bp_doc on a different drive, will be skipped anyway
+                    continue
                 # Keep both versions of the BP doc (.txt and .html)
                 keepFiles.add((bolt.CIstr('%s' % bp_doc)))
                 keepFiles.add((bolt.CIstr(
@@ -2615,18 +2619,24 @@ class InstallersData(DataStore):
         keepFiles.update((bolt.CIstr(f) for f in bush.game.wryeBashDataFiles))
         keepFiles.update((bolt.CIstr(f) for f in bush.game.ignoreDataFiles))
         removes = set(self.data_sizeCrcDate) - keepFiles
-        destDir = bass.dirs['bainData'].join(u'Data Folder Contents (%s)' %
-            bolt.timestamp())
+        # don't remove files in Wrye Bash-related directories or Ini Tweaks
         skipPrefixes = [skipDir.lower() + os.sep for skipDir in
                         bush.game.wryeBashDataDirs | bush.game.ignoreDataDirs]
-        skipPrefixes.extend([skipPrefix.lower() for skipPrefix in bush.game.ignoreDataFilePrefixes])
+        skipPrefixes.extend([skipPrefix.lower()
+                        for skipPrefix in bush.game.ignoreDataFilePrefixes])
         skipPrefixes = tuple(skipPrefixes)
-        try: # NB: we do _not_ remove Ini Tweaks/*
+        filtered_removes = [f for f in removes
+                            if not f.lower().startswith(skipPrefixes)]
+        return filtered_removes
+
+    def clean_data_dir(self, removes,  refresh_ui):
+        destDir = bass.dirs['bainData'].join(u'Data Folder Contents (%s)' %
+            bolt.timestamp())
+        try:
+            from . import modInfos
             emptyDirs, mods = set(), set()
             norm_ghost = Installer.getGhosted()
             for filename in removes:
-                # don't remove files in Wrye Bash-related directories
-                if filename.lower().startswith(skipPrefixes): continue
                 full_path = bass.dirs['mods'].join(
                     norm_ghost.get(filename, filename))
                 try:

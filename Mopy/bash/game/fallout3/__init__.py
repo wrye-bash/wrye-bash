@@ -106,7 +106,7 @@ class Fallout3GameInfo(GameInfo):
     }
     SkipBAINRefresh = {u'fo3edit backups', u'fo3edit cache'}
     wryeBashDataFiles = GameInfo.wryeBashDataFiles | {
-        u'ArchiveInvalidationInvalidated!.bsa'
+        u'ArchiveInvalidationInvalidated!.bsa',
         u'Fallout - AI!.bsa'
     }
     ignoreDataFiles = {

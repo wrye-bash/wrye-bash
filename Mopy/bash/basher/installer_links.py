@@ -1080,17 +1080,29 @@ class InstallerProject_Sync(_SingleProject):
                     self._selected_info.mismatchedFiles)
 
     def Execute(self):
-        missing = self._selected_info.missingFiles
-        mismatched = self._selected_info.mismatchedFiles
-        message = (_(u'Update %s according to data directory?') + u'\n' + _(
-            u'Files to delete:') + u'%d\n' + _(
-            u'Files to update:') + u'%d') % (
-                      self._selected_item.s, len(missing), len(mismatched))
-        if not self._askWarning(message, title=self._text): return
+        missing = sorted(self._selected_info.missingFiles)
+        mismatched = sorted(self._selected_info.mismatchedFiles)
+        msg_del = [_(u'Files to delete (%u):') % len(missing),
+                   _(u'Uncheck files to keep them in the package.')]
+        msg_del.extend(missing)
+        msg_upd = [_(u'Files to update (%u):') % len(mismatched),
+                   _(u'Uncheck files to keep them unchanged in the package.')]
+        msg_upd.extend(mismatched)
+        sel_missing, sel_mismatched = [], []
+        with balt.ListBoxes(self.window, self._text,
+                            _(u'Update %s according to data directory?')
+                            % self._selected_item.s + u'\n' +
+                            _(u'Uncheck any files you want to keep '
+                              u'unchanged.'), [msg_del, msg_upd]) as dialog:
+            if dialog.show_modal():
+                sel_missing = set(dialog.getChecked(msg_del[0], missing))
+                sel_mismatched = set(dialog.getChecked(msg_upd[0], mismatched))
+        if not sel_missing and not sel_mismatched:
+            return # Nothing left to sync, cancel
         #--Sync it, baby!
         with balt.Progress(self._text, u'\n' + u' ' * 60) as progress:
             progress(0.1,_(u'Updating files.'))
-            self._selected_info.syncToData(missing | mismatched)
+            self._selected_info.syncToData(sel_missing | sel_mismatched)
             self._selected_info.refreshBasic(SubProgress(progress, 0.1, 0.99))
             self.idata.irefresh(what='NS')
             self.window.RefreshUI()
