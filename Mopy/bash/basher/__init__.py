@@ -637,7 +637,7 @@ class INIList(balt.UIList):
     @classmethod
     def apply_tweaks(cls, tweak_infos, target_ini=None):
         target_ini_file = target_ini or bosh.iniInfos.ini
-        if not cls.ask_create_target_ini(target_ini) or not \
+        if not cls.ask_create_target_ini(target_ini_file) or not \
                 cls._warn_tweak_game_ini(target_ini_file.abs_path.stail):
             return False
         needsRefresh = False
@@ -654,11 +654,11 @@ class INIList(balt.UIList):
 
     @staticmethod
     @balt.conversation
-    def ask_create_target_ini(target_ini_file, msg):
+    def ask_create_target_ini(target_ini_file, msg=None):
         """Check if target ini for operation exists - if not and the target is
         the game ini ask if the user wants to create it by copying the default
         ini"""
-        msg = target_ini_file.target_ini_exist(msg)
+        msg = target_ini_file.target_ini_exists(msg)
         if msg in (True, False): return msg
         # Game ini does not exist - try copying the default game ini
         default_ini = bass.dirs[u'app'].join(bush.game.defaultIniFile)

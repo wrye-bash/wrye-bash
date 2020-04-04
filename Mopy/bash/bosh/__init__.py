@@ -3213,7 +3213,7 @@ def initBosh(bashIni, game_ini_path):
     global configHelpers
     configHelpers = ConfigHelpers()
     # game ini files
-    deprint(u'Found main game INI at %s' % game_ini_path)
+    deprint(u'Looking for main game INI at %s' % game_ini_path)
     global oblivionIni, gameInis
     oblivionIni = GameIni(game_ini_path, 'cp1252')
     gameInis = [oblivionIni]

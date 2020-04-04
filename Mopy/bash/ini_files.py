@@ -263,7 +263,7 @@ class IniFile(AFile):
         to out_encoding."""
         return codecs.getwriter(self.out_encoding)(open(filepath, 'w'))
 
-    def target_ini_exist(self, msg=_(
+    def target_ini_exists(self, msg=_(
         u'The target ini must exist to apply a tweak to it.')):
         return self.abs_path.isfile()
 
@@ -571,13 +571,14 @@ class GameIni(IniFile):
                                                  u'English')
         return self._ini_language
 
-    def target_ini_exist(self, msg=_(
-        u'The game ini must exist to apply a tweak to it.')):
+    def target_ini_exists(self, msg=None):
         """Attempt to create the game Ini in some scenarios"""
-        target_exists = super(GameIni, self).target_ini_exist()
+        if msg is None:
+            msg = _(u'The game INI must exist to apply a tweak to it.')
+        target_exists = super(GameIni, self).target_ini_exists()
         if target_exists: return True
-        msg = _(u'%(ini_path)s does not exist.' % {'ini_path': self.abs_path}) + \
-              u'\n\n' + ((msg + u'\n\n') if msg else u'')
+        msg = _(u'%(ini_path)s does not exist.' % {
+            u'ini_path': self.abs_path}) + u'\n\n' + msg + u'\n\n'
         return msg
 
     #--BSA Redirection --------------------------------------------------------
