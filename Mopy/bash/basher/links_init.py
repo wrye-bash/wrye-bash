@@ -414,7 +414,7 @@ def InitModLinks():
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Mods_CrcRefresh())
     #--ModList: Item Links
-    if bass.inisettings['ShowDevTools']:
+    if bass.inisettings['ShowDevTools'] and bush.game.esp.canBash:
         ModList.itemMenu.append(Mod_FullLoad())
     if True: #--File
         file_menu = MenuLink(_(u'File..'))

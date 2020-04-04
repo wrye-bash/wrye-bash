@@ -28,12 +28,18 @@ from collections import OrderedDict, Counter
 
 from . import env, bush
 from .bass import dirs
-from .bolt import LowerDict, CIstr, deprint, GPath, DefaultLowerDict, \
-    decode, getbestencoding, AFile
+from .bolt import LowerDict, CIstr, deprint, GPath, DefaultLowerDict, decode, \
+    getbestencoding, AFile, OrderedLowerDict
 from .exception import AbstractError, CancelError, SkipError, BoltError
 
-def _to_lower(ini_settings): # transform dict of dict to LowerDict of LowerDict
-    return LowerDict((x, LowerDict(y)) for x, y in ini_settings.iteritems())
+def _to_lower(ini_settings):
+    """Transforms dict of dict to LowerDict of LowerDict, respecting
+    OrdererdDicts if they're used."""
+    def _mk_dict(input_dict):
+        ret_type = OrderedLowerDict if isinstance(input_dict,
+                                                  OrderedDict) else LowerDict
+        return ret_type(input_dict)
+    return LowerDict((x, _mk_dict(y)) for x, y in ini_settings.iteritems())
 
 def get_ini_type_and_encoding(abs_ini_path):
     """Return ini type (one of IniFile, OBSEIniFile) and inferred encoding
@@ -86,6 +92,15 @@ class IniFile(AFile):
         """Gets a single setting from the file."""
         try:
             return self.get_ci_settings()[section][key][0]
+        except KeyError:
+            return default
+
+    def get_setting_values(self, section, default):
+        """Returns a dictionary mapping keys to values for the specified
+        section, falling back to the specified default value if the section
+        does not exist."""
+        try:
+            return self.get_ci_settings()[section]
         except KeyError:
             return default
 
@@ -346,11 +361,39 @@ class IniFile(AFile):
         self.saveSettings(ini_settings,deleted_settings)
         return True
 
-class _LowerOrderedDict(LowerDict, OrderedDict): pass
+    def remove_section(self, target_section): # type: (unicode) -> None
+        """Removes a section and all its contents from the INI file. Note that
+        this will only remove the first matching section. If you want to remove
+        multiple, you will have to call this in a loop and check if the section
+        still exists after each iteration."""
+        re_comment = self.reComment
+        re_section = self.reSection
+        ini_lines = self.read_ini_content(as_unicode=True)
+        # Tri-State: If None, we haven't hit the section yet. If True, then
+        # we've hit it and are actively removing it. If False, then we've fully
+        # removed the section already and should ignore further occurences.
+        remove_current = None
+        with self._open_for_writing(self.abs_path.temp.s) as out:
+            for line in ini_lines:
+                stripped = re_comment.sub(u'', line).strip()
+                match_section = re_section.match(stripped)
+                if match_section:
+                    section = match_section.group(1)
+                    # Check if we need to remove this section
+                    if remove_current is None and section.lower() == \
+                            target_section.lower():
+                        # Yes, so start removing every read line
+                        remove_current = True
+                    elif remove_current:
+                        # We've removed the target section, remember that
+                        remove_current = False
+                if not remove_current:
+                    out.write(line + u'\n')
+        self.abs_path.untemp()
 
 class DefaultIniFile(IniFile):
     """A default ini tweak - hardcoded."""
-    __empty = _LowerOrderedDict()
+    __empty = OrderedLowerDict()
 
     def __init__(self, default_ini_name, settings_dict):
         # we don't call AFile#__init__ to avoid stat'ing the non existing file
@@ -358,10 +401,10 @@ class DefaultIniFile(IniFile):
         self._file_size, self._file_mod_time = self._null_stat
         #--Settings cache
         self.lines, current_line = [], 0
-        self._ci_settings_cache_linenum = _LowerOrderedDict()
+        self._ci_settings_cache_linenum = OrderedLowerDict()
         for sect, setts in settings_dict.iteritems():
             self.lines.append('[' + str(sect) + ']')
-            self._ci_settings_cache_linenum[sect] = _LowerOrderedDict()
+            self._ci_settings_cache_linenum[sect] = OrderedLowerDict()
             current_line += 1
             for sett, val in setts.iteritems():
                 self.lines.append(str(sett) + '=' + str(val))
@@ -409,6 +452,10 @@ class OBSEIniFile(IniFile):
     def getSetting(self, section, key, default):
         section = self.ci_pseudosections.get(section, section)
         return super(OBSEIniFile, self).getSetting(section, key, default)
+
+    def get_setting_values(self, section, default):
+        section = self.ci_pseudosections.get(section, section)
+        return super(OBSEIniFile, self).get_setting_values(section, default)
 
     _regex_tuples = ((reSet, u']set[', u'set %s to %s'),
       (reSetGS, u']setGS[', u'setGS %s %s'),
@@ -553,6 +600,37 @@ class OBSEIniFile(IniFile):
                 settings_[section_key][setting] = line
         self.saveSettings(ini_settings,deleted_settings)
         return True
+
+    def remove_section(self, target_section, do_backup=False):
+        # type: (unicode, bool) -> None
+        re_comment = self.reComment
+        re_section = self.reSection
+        ini_lines = self.read_ini_content(as_unicode=True)
+        # Tri-State: If None, we haven't hit the section yet. If True, then
+        # we've hit it and are actively removing it. If False, then we've fully
+        # removed the section already and should ignore further occurences.
+        remove_current = None
+        with self._open_for_writing(self.abs_path.temp.s) as out:
+            for line in ini_lines:
+                stripped = re_comment.sub(u'', line).strip()
+                # Try checking if it's an OBSE line first
+                _match, section, _fmt = self._parse_obse_line(stripped)
+                if not section:
+                    # It's not, assume it's a regular line
+                    match_section = re_section.match(stripped)
+                    section = match_section.group(1) if match_section else u''
+                if section:
+                    # Check if we need to remove this section
+                    if remove_current is None and section.lower() == \
+                            target_section.lower():
+                        # Yes, so start removing every read line
+                        remove_current = True
+                    elif remove_current:
+                        # We've removed the target section, remember that
+                        remove_current = False
+                if not remove_current:
+                    out.write(line + u'\n')
+        self.abs_path.untemp(do_backup)
 
 class GameIni(IniFile):
     """Main game ini file. Only use to instantiate bosh.oblivionIni"""

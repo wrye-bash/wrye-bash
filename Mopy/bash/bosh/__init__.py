@@ -112,10 +112,12 @@ imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp', u'.tif'}
 class MasterInfo(object):
     """Slight abstraction over ModInfo that allows us to represent masters that
     are missing an active mod counterpart."""
-    __slots__ = ('is_ghost', 'curr_name', 'mod_info', 'old_name')
+    __slots__ = (u'is_ghost', u'curr_name', u'mod_info', u'old_name',
+                 u'stored_size')
 
-    def __init__(self, name):
-        self.old_name = self.curr_name = GPath(name)
+    def __init__(self, master_name, master_size):
+        self.old_name = self.curr_name = GPath(master_name)
+        self.stored_size = master_size
         self.mod_info = modInfos.get(self.curr_name, None)
         self.is_ghost = self.mod_info and self.mod_info.isGhost
 
@@ -791,6 +793,15 @@ class ModInfo(FileInfo):
         if not resource_path:
             return False
         return self.dir.join(*resource_path).join(self.name).exists()
+
+    def has_master_size_mismatch(self):
+        """Checks if this plugin has at least one stored master size that does
+        not match that master's size on disk."""
+        m_sizes = self.header.master_sizes
+        for i, master_name in enumerate(self.get_masters()):
+            if modInfos.size_mismatch(master_name, m_sizes[i]):
+                return True
+        return False
 
 #------------------------------------------------------------------------------
 def get_game_ini(ini_path, is_abs=True):
@@ -2702,6 +2713,11 @@ class ModInfos(FileInfos):
         voNew = saveInfos.profiles.setItemDefault(newSaves, 'vOblivion',
                                                   self.voCurrent)
         if voNew in self.voAvailable: self.setOblivionVersion(voNew)
+
+    def size_mismatch(self, plugin_name, plugin_size):
+        """Checks if the specified plugin exists and, if so, if its size
+        does not match the specified value (in bytes)."""
+        return plugin_name in self and plugin_size != self[plugin_name].size
 
 #------------------------------------------------------------------------------
 class SaveInfos(FileInfos):

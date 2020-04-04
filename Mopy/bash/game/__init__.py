@@ -39,6 +39,9 @@ class GameInfo(object):
     altName = u'' ## Example: u'Wrye Smash'
     # Name of game's default ini file.
     defaultIniFile = u''
+    # True if the game uses the 'My Documents' folder, False to just use the
+    # game path
+    uses_personal_folders = True
     # The exe to use when launching the game (without xSE present)
     launch_exe = u'' ## Example: u'TESV.exe'
     # Path to a file to look for to see if this is the right game. Given as a
@@ -54,6 +57,9 @@ class GameInfo(object):
     version_detect_file = []
     # The main plugin Wrye Bash should look for
     masterFiles = []
+    # The directory in which mods and other data files reside. This is relative
+    # to the game directory.
+    mods_dir = u'Data'
     # INI files that should show up in the INI Edits tab
     #  Example: [u'Oblivion.ini']
     iniFiles = []
@@ -209,7 +215,7 @@ class GameInfo(object):
         # Always contains textures.
         facegen_dir_2 = []
         # The path to the plugin-name-specific directory for voice files
-        # This is the same for every game released thus far (sound\\voice\\%s)
+        # This is the same (sound/voice/%s) for every game but Morrowind
         voice_dir = [u'sound', u'voice']
 
     class xe(object):
@@ -224,6 +230,16 @@ class GameInfo(object):
     #  (section,key)
     saveProfilesKey = (u'General', u'SLocalSavePath')
     save_prefix = u'Saves' # base dir for save files
+
+    # INI setting used to enable or disable screenshots
+    #  (section, key, default value)
+    screenshot_enabled_key = (u'Display', u'bAllowScreenShot', u'1')
+    # INI setting used to set base screenshot name
+    #  (section, key, default value)
+    screenshot_base_key = (u'Display', u'sScreenShotBaseName', u'ScreenShot')
+    # INI setting used to set screenshot index
+    #  (section, key, default value)
+    screenshot_index_key = (u'Display', u'iScreenShotIndex', u'0')
 
     # BAIN:
     #  These are the allowed default data directories that BAIN can install to
@@ -274,6 +290,11 @@ class GameInfo(object):
         # 0x000-0x800 range for their own records.
         # If False, that range is reserved for hardcoded engine records.
         expanded_plugin_range = False
+        # If True, check if the main header's DATA subrecords match the on-disk
+        # master sizes and highlight the corresponding masters with a light
+        # background color if that is the case. Needs meaningful information in
+        # the DATA subrecords.
+        check_master_sizes = False
 
     # Bash Tags supported by this game
     allTags = set()

@@ -1279,8 +1279,7 @@ class MreTes4(MreHeaderBase):
                   ('nextObject', 0x800)),
         MelUnicode('CNAM','author',u'',512),
         MelUnicode('SNAM','description',u'',512),
-        MreHeaderBase.MelMasterName('MAST','masters'),
-        MelNull('DATA'), # 8 Bytes in Length
+        MreHeaderBase.MelMasterNames(),
         MelFidList('ONAM','overrides',),
         MelBase('SCRN', 'screenshot'),
         MelBase('INTV', 'unknownINTV'),

@@ -140,7 +140,7 @@ class INI_Apply(EnabledLink):
     def Execute(self):
         """Handle applying INI Tweaks."""
         if self.window.apply_tweaks(self.iselected_infos()):
-            self.window.panel.ShowPanel(refresh_target=True)
+            self.window.panel.ShowPanel()
 
 #------------------------------------------------------------------------------
 class INI_CreateNew(OneItemLink):

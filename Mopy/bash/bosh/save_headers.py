@@ -54,14 +54,15 @@ class SaveFileHeader(object):
     save_magic = 'OVERRIDE'
     # common slots Bash code expects from SaveHeader (added header_size and
     # turned image to a property)
-    __slots__ = ('header_size', 'pcName', 'pcLevel', 'pcLocation', 'gameDays',
-                 'gameTicks', 'ssWidth', 'ssHeight', 'ssData', 'masters',
-                 '_mastersStart') # helper attribute to simplify writeMasters
+    __slots__ = (u'header_size', u'pcName', u'pcLevel', u'pcLocation',
+                 u'gameDays', u'gameTicks', u'ssWidth', u'ssHeight', u'ssData',
+                 u'masters', u'_save_path', u'_mastersStart')
     # map slots to (seek position, unpacker) - seek position negative means
     # seek relative to ins.tell(), otherwise to the beginning of the file
     unpackers = OrderedDict()
 
     def __init__(self, save_path):
+        self._save_path = save_path
         try:
             with save_path.open('rb') as ins:
                 self.load_header(ins)
@@ -152,6 +153,12 @@ class SaveFileHeader(object):
 
     def _master_block_size(self):
         return 1 + sum(len(x) + 2 for x in self.masters)
+
+    @property
+    def can_edit_header(self):
+        """Whether or not this header can be edited - if False, it will still
+        be read and displayed, but the Save/Cancel buttons will be disabled."""
+        return True
 
 class OblivionSaveHeader(SaveFileHeader):
     save_magic = 'TES4SAVEGAME'
@@ -500,6 +507,41 @@ class Fallout3SaveHeader(FalloutNVSaveHeader):
     unpackers = copy.copy(FalloutNVSaveHeader.unpackers)
     del unpackers['language']
 
+class MorrowindSaveHeader(SaveFileHeader):
+    """Morrowind saves are identical in format to record definitions.
+    Accordingly, we delegate loading the header to our existing mod API."""
+    save_magic = 'TES3'
+    __slots__ = ('pc_curr_health', 'pc_max_health')
+
+    def load_header(self, ins):
+        # TODO(inf) A bit ugly, this is not a mod - maybe move readHeader out?
+        from . import ModInfo
+        save_info = ModInfo(self._save_path, load_cache=True)
+        ##: Figure out where some more of these are (e.g. level)
+        self.header_size = save_info.header.size
+        self.pcName = decode(cstrip(save_info.header.pc_name))
+        self.pcLevel = 0
+        self.pcLocation = decode(cstrip(save_info.header.curr_cell),
+                                 bolt.pluginEncoding,
+                                 avoidEncodings=(u'utf8', u'utf-8'))
+        self.gameDays = self.gameTicks = 0
+        self.masters = save_info.masterNames[:]
+        self.pc_curr_health = save_info.header.pc_curr_health
+        self.pc_max_health = save_info.header.pc_max_health
+        # Read the image data - note that it comes as BGRA, which we
+        # need to turn into RGB - ##: in the future: RGBA
+        out = StringIO.StringIO()
+        for pxl in save_info.header.screenshot_data:
+            out.write(struct_pack(u'3B', pxl.red, pxl.green, pxl.blue))
+        self.ssData = out.getvalue()
+        self.ssHeight = self.ssWidth = 128 # fixed size for Morrowind
+
+    @property
+    def can_edit_header(self):
+        # TODO(inf) Once we support writing Morrowind plugins, implement
+        #  writeMasters properly and drop this override
+        return False
+
 # Factory
 def get_save_header_type(game_fsName):
     """:rtype: type"""
@@ -513,3 +555,5 @@ def get_save_header_type(game_fsName):
         return FalloutNVSaveHeader
     elif game_fsName == u'Fallout3':
         return Fallout3SaveHeader
+    elif game_fsName == u'Morrowind':
+        return MorrowindSaveHeader

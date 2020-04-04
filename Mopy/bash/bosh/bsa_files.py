@@ -911,7 +911,9 @@ class SkyrimSeBsa(BSA):
 # Factory
 def get_bsa_type(game_fsName):
     """:rtype: type"""
-    if game_fsName == u'Oblivion':
+    if game_fsName == u'Morrowind':
+        return MorrowindBsa
+    elif game_fsName == u'Oblivion':
         return OblivionBsa
     elif game_fsName in (u'Enderal', u'Fallout3', u'FalloutNV', u'Skyrim'):
         return SkyrimBsa

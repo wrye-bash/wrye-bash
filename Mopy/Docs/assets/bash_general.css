@@ -104,6 +104,9 @@ img.monkeygod {
 .load-symbols-redkbg {
   background: rgba(255, 100, 100, 1);
 }
+.load-symbols-lorgbg {
+  background: rgba(255, 238, 217, 1);
+}
 .load-symbols-grybg {
   background: rgba(232, 232, 232, 1);
 }

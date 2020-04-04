@@ -49,18 +49,21 @@ from .bass import dirs, AppVersion
 from .bolt import GPath, deprint
 from .exception import BoltError, StateError, raise_bolt_error
 
-def _init_settings_files(fsName_):
+def _init_settings_files(fsName_, mods_folder):
     """Construct a dict mapping directory paths to setting files. Keys are
     tuples of absolute paths to directories, paired with the relative paths
     in the backup file. Values are sets of setting files in those paths,
-    or empty, meaning we have to list those paths and backup everything."""
+    or empty, meaning we have to list those paths and backup everything.
+
+    :param fsName_: bush.game.fsName
+    :param mods_folder: bush.game.mods_dir"""
     if not initialization.bash_dirs_initialized:
         raise BoltError(u'_init_settings_files: Bash dirs are not initialized')
     settings_info = {
         (dirs['mopy'], jo(fsName_, u'Mopy')): {u'bash.ini', },
-        (dirs['mods'].join(u'Bash'), jo(fsName_, u'Data', u'Bash')): {
+        (dirs['mods'].join(u'Bash'), jo(fsName_, mods_folder, u'Bash')): {
             u'Table.dat', },
-        (dirs['mods'].join(u'Docs'), jo(fsName_, u'Data', u'Docs')): {
+        (dirs['mods'].join(u'Docs'), jo(fsName_, mods_folder, u'Docs')): {
             u'Bash Readme Template.txt', u'Bash Readme Template.html',
             u'My Readme Template.txt', u'My Readme Template.html',
             u'wtxt_sand_small.css', u'wtxt_teal.css', },
@@ -79,11 +82,11 @@ def _init_settings_files(fsName_):
         # Data\BashTags\ and Data\INI Tweaks\
         (dirs['l10n'], jo(fsName_, u'Mopy', u'bash', u'l10n')): {},
         (dirs['mods'].join(u'Bash Patches'),
-         jo(fsName_, u'Data', u'Bash Patches')): {},
+         jo(fsName_, mods_folder, u'Bash Patches')): {},
         (dirs['mods'].join(u'BashTags'),
-         jo(fsName_, u'Data', u'BashTags')): {},
+         jo(fsName_, mods_folder, u'BashTags')): {},
         (dirs['mods'].join(u'INI Tweaks'),
-         jo(fsName_, u'Data', u'INI Tweaks')): {},
+         jo(fsName_, mods_folder, u'INI Tweaks')): {},
     }
     for setting_files in settings_info.itervalues():
         for settings_file in set(setting_files):
@@ -98,11 +101,11 @@ class BackupSettings(object):
     settings we backup (bass.settings['bash.version']). Creates a backup.dat
     file that stores those versions."""
 
-    def __init__(self, settings_file, fsName):
+    def __init__(self, settings_file, fsName, mods_folder):
         self._backup_dest_file = settings_file # absolute path to dest 7z file
         self.files = {}
         for (bash_dir, tmpdir), setting_files in \
-                _init_settings_files(fsName).iteritems():
+                _init_settings_files(fsName, mods_folder).iteritems():
             if not setting_files: # we have to backup everything in there
                 setting_files = bash_dir.list()
             tmp_dir = GPath(tmpdir)
@@ -239,17 +242,17 @@ class RestoreSettings(object):
         else: self.bash_ini_path = None
         return self._bash_ini_path
 
-    def restore_settings(self, fsName):
+    def restore_settings(self, fsName, mods_folder):
         if self._bash_ini_path is self.__unset: raise BoltError(
             u'restore_settings: you must handle bash ini first')
         if self._extract_dir is self.__unset: raise BoltError(
             u'restore_settings: you must extract the settings file first')
         try:
-            self._restore_settings(fsName)
+            self._restore_settings(fsName, mods_folder)
         finally:
             self.remove_extract_dir(self._extract_dir)
 
-    def _restore_settings(self, fsName):
+    def _restore_settings(self, fsName, mods_folder):
         deprint(u'')
         deprint(_(u'RESTORE BASH SETTINGS: ') + self._settings_file.s)
         # backup previous Bash ini if it exists
@@ -266,7 +269,7 @@ class RestoreSettings(object):
             deprint(back_path_.join(*end_path).s + u' --> ' + dest_dir_.join(
                 *end_path).s)
             full_back_path.join(*end_path).copyTo(dest_dir_.join(*end_path))
-        restore_paths = _init_settings_files(fsName).keys()
+        restore_paths = _init_settings_files(fsName, mods_folder).keys()
         for dest_dir, back_path in restore_paths:
             full_back_path = self._extract_dir.join(back_path)
             for fname in full_back_path.list():

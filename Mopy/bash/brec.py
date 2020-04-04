@@ -91,13 +91,17 @@ def getFormIndices(fid):
 #------------------------------------------------------------------------------
 class RecordHeader(object):
     """Pack or unpack the record's header."""
-    rec_header_size = 24 # Record header size, 20 (Oblivion), 24 (other games)
-    # Record pack format, 4sIIII (Oblivion), 4sIIIII (other games)
+    rec_header_size = 24 # Record header size, e.g. 20 for Oblivion
+    # Record pack format, e.g. 4sIIII for Oblivion
     # Given as a list here, where each string matches one subrecord in the
     # header. See rec_pack_format_str below as well.
     rec_pack_format = ['=4s', 'I', 'I', 'I', 'I', 'I']
     # rec_pack_format as a format string. Use for pack / unpack calls.
     rec_pack_format_str = ''.join(rec_pack_format)
+    # Format used by sub-record headers. Morrowind uses a different one.
+    sub_header_fmt = u'=4sH'
+    # Size of sub-record headers. Morrowind has a different one.
+    sub_header_size = 6
     # http://en.uesp.net/wiki/Tes5Mod:Mod_File_Format#Groups
     pack_formats = {0: '=4sI4s3I'} # Top Type
     pack_formats.update({x: '=4s5I' for x in {1, 6, 7, 8, 9, 10}}) # Children
@@ -144,9 +148,7 @@ class RecordHeader(object):
 
     @staticmethod
     def unpack(ins):
-        """Return a RecordHeader object by reading the input stream.
-        Format must be either '=4s4I' 20 bytes for Oblivion or '=4s5I' 24
-        bytes for rest of games."""
+        """Return a RecordHeader object by reading the input stream."""
         # args = rec_type, size, uint0, uint1, uint2[, uint3]
         args = ins.unpack(RecordHeader.rec_pack_format_str,
                           RecordHeader.rec_header_size, 'REC_HEADER')
@@ -321,11 +323,16 @@ class ModReader(object):
         """Unpack a subrecord header.  Optionally checks for match with expected
         type and size."""
         selfUnpack = self.unpack
-        (rec_type, size) = selfUnpack('4sH', 6, recType + '.SUB_HEAD')
+        (rec_type, size) = selfUnpack(RecordHeader.sub_header_fmt,
+                                      RecordHeader.sub_header_size,
+                                      recType + u'.SUB_HEAD')
         #--Extended storage?
         while rec_type == 'XXXX':
             size = selfUnpack('I',4,recType+'.XXXX.SIZE.')[0]
-            rec_type = selfUnpack('4sH', 6, recType + '.XXXX.TYPE')[0] #--Throw away size (always == 0)
+            # Throw away size here (always == 0)
+            rec_type = selfUnpack(RecordHeader.sub_header_fmt,
+                                  RecordHeader.sub_header_size,
+                                  recType + u'.XXXX.TYPE')[0]
         #--Match expected name?
         if expType and expType != rec_type:
             raise exception.ModError(self.inName, u'%s: Expected %s subrecord, but '
@@ -335,22 +342,6 @@ class ModReader(object):
             raise exception.ModSizeError(self.inName, recType + '.' + rec_type,
                                          (expSize,), size)
         return rec_type,size
-
-    #--Find data ------------------------------------------
-    def findSubRecord(self,subType,recType='----'):
-        """Finds subrecord with specified type."""
-        atEnd = self.atEnd
-        self_unpack = self.unpack
-        seek = self.seek
-        while not atEnd():
-            (sub_type_,sub_rec_size) = self_unpack('4sH',6,recType+'.SUB_HEAD')
-            if sub_type_ == subType:
-                return self.read(sub_rec_size,recType+'.'+subType)
-            else:
-                seek(sub_rec_size,1,recType+'.'+sub_type_)
-        #--Didn't find it?
-        else:
-            return None
 
 #------------------------------------------------------------------------------
 class ModWriter(object):
@@ -385,10 +376,12 @@ class ModWriter(object):
             outWrite = self.out.write
             lenData = len(data)
             if lenData <= 0xFFFF:
-                outWrite(struct_pack('=4sH', sub_rec_type, lenData))
+                outWrite(struct_pack(RecordHeader.sub_header_fmt, sub_rec_type,
+                                     lenData))
             else:
                 outWrite(struct_pack('=4sHI', 'XXXX', 4, lenData))
-                outWrite(struct_pack('=4sH', sub_rec_type, 0))
+                outWrite(struct_pack(RecordHeader.sub_header_fmt, sub_rec_type,
+                                     0))
             outWrite(data)
         except Exception:
             bolt.deprint(u'%r: Failed packing: %s, %s, %s' % (
@@ -403,10 +396,11 @@ class ModWriter(object):
         lenData = len(data) + 1
         outWrite = self.out.write
         if lenData < 0xFFFF:
-            outWrite(struct_pack('=4sH', sub_rec_type, lenData))
+            outWrite(struct_pack(RecordHeader.sub_header_fmt, sub_rec_type,
+                                 lenData))
         else:
             outWrite(struct_pack('=4sHI', 'XXXX', 4, lenData))
-            outWrite(struct_pack('=4sH', sub_rec_type, 0))
+            outWrite(struct_pack(RecordHeader.sub_header_fmt, sub_rec_type, 0))
         outWrite(data)
         outWrite('\x00')
 
@@ -423,32 +417,13 @@ class ModWriter(object):
         else:
             self.pack('=4s4I','GRUP',size,label,groupType,stamp)
 
-    def write_string(self, sub_type, string_val, max_size=0,
+    def write_string(self, sub_type, string_val, max_size=0, min_size=0,
                      preferred_encoding=None):
         """Writes out a string subrecord, properly encoding it beforehand and
-        respecting max_size and preferred_encoding if they are set."""
-        preferred_encoding = preferred_encoding or bolt.pluginEncoding
-        if max_size:
-            string_val = bolt.winNewLines(string_val.rstrip())
-            truncated_size = min(max_size, len(string_val))
-            test, tested_encoding = encode(string_val,
-                                           firstEncoding=preferred_encoding,
-                                           returnEncoding=True)
-            extra_encoded = len(test) - max_size
-            if extra_encoded > 0:
-                total = 0
-                i = -1
-                while total < extra_encoded:
-                    total += len(string_val[i].encode(tested_encoding))
-                    i -= 1
-                truncated_size += i + 1
-                string_val = string_val[:truncated_size]
-                string_val = encode(string_val, firstEncoding=tested_encoding)
-            else:
-                string_val = test
-        else:
-            string_val = encode(string_val, firstEncoding=preferred_encoding)
-        self.packSub0(sub_type, string_val)
+        respecting max_size, min_size and preferred_encoding if they are
+        set."""
+        self.packSub0(sub_type, bolt.encode_complex_string(
+            string_val, max_size, min_size, preferred_encoding))
 
 #------------------------------------------------------------------------------
 # Mod Record Elements ---------------------------------------------------------
@@ -1085,6 +1060,15 @@ class PartialLoadDecider(ADecider):
         # We can simply delegate here without doing anything else, since the
         # record has to have been loaded since then
         return self._decider.decide_dump(record)
+
+class SaveDecider(ADecider):
+    """Decider that returns True if the input file is a save."""
+    def __init__(self):
+        from . import bush
+        self._save_ext = bush.game.ess.ext
+
+    def decide_load(self, record, ins, sub_type, rec_size):
+        return ins.inName.cext == self._save_ext
 
 class SignatureDecider(ADecider):
     """Very simple decider that just returns the subrecord type (aka
@@ -2585,23 +2569,57 @@ class MelRecord(MreRecord):
 #------------------------------------------------------------------------------
 class MreHeaderBase(MelRecord):
     """File header.  Base class for all 'TES4' like records"""
-    #--Masters array element
-    class MelMasterName(MelBase):
-        def setDefault(self,record): record.masters = []
+    class MelMasterNames(MelBase):
+        """Handles both MAST and DATA, but turns them into two separate lists.
+        This is done to make updating the master list much easier."""
+        def __init__(self):
+            self._debug = False
+            self.subType = b'MAST' # just in case something is expecting this
+
+        def getLoaders(self, loaders):
+            loaders[b'MAST'] = loaders[b'DATA'] = self
+
+        def getSlotsUsed(self):
+            return (u'masters', u'master_sizes')
+
+        def setDefault(self, record):
+            record.masters = []
+            record.master_sizes = []
+
         def loadData(self, record, ins, sub_type, size_, readId):
-            # Don't use ins.readString, because it will try to use bolt.pluginEncoding
-            # for the filename.  This is one case where we want to use Automatic
-            # encoding detection
-            master_name = decode(bolt.cstrip(ins.read(size_, readId)),
-                                 avoidEncodings=('utf8', 'utf-8'))
-            master_name = GPath(master_name)
-            record.masters.append(master_name)
+            if sub_type == b'MAST':
+                # Don't use ins.readString, because it will try to use
+                # bolt.pluginEncoding for the filename. This is one case where
+                # we want to use automatic encoding detection
+                master_name = decode(bolt.cstrip(ins.read(size_, readId)),
+                                     avoidEncodings=(u'utf8', u'utf-8'))
+                record.masters.append(GPath(master_name))
+            else: # sub_type == 'DATA'
+                # DATA is the size for TES3, but unknown/unused for later games
+                record.master_sizes.append(ins.unpack(u'Q', size_, readId)[0])
+
         def dumpData(self,record,out):
             pack1 = out.packSub0
             pack2 = out.packSub
-            for master_name in record.masters:
-                pack1('MAST', encode(master_name.s, firstEncoding='cp1252'))
-                pack2('DATA','Q',0)
+            # Truncate or pad the sizes with zeroes as needed
+            # TODO(inf) For Morrowind, this will have to query the files for
+            #  their size and then store that
+            num_masters = len(record.masters)
+            num_sizes = len(record.master_sizes)
+            record.master_sizes = record.master_sizes[:num_masters] + [0] * (
+                    num_masters - num_sizes)
+            for master_name, master_size in zip(record.masters,
+                                                record.master_sizes):
+                pack1(b'MAST', encode(master_name.s, firstEncoding=u'cp1252'))
+                pack2(b'DATA', u'Q', master_size)
+
+    def loadData(self, ins, endPos):
+        super(MreHeaderBase, self).loadData(ins, endPos)
+        num_masters = len(self.masters)
+        num_sizes = len(self.master_sizes)
+        # Just in case, truncate or pad the sizes with zeroes as needed
+        self.master_sizes = self.master_sizes[:num_masters] + [0] * (
+                num_masters - num_sizes)
 
     def getNextObject(self):
         """Gets next object index and increments it for next time."""

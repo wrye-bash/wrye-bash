@@ -34,12 +34,10 @@ __author__ = u'Utumno'
 import errno
 import re
 import time
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 # Local
-from . import bass
-from . import bolt
-from . import env
-from . import exception
+from . import bass, bolt, env, exception
+from .ini_files import get_ini_type_and_encoding
 from .localize import format_date
 
 def _write_plugins_txt_(path, lord, active, _star):
@@ -194,6 +192,12 @@ class Game(object):
     must_be_active_if_present = ()
     max_espms = 255
     max_esls = 0
+    # If set to False, indicates that this game has no plugins.txt. Currently
+    # only allows swap() to be a sentinel method for multiple inheritance,
+    # everything else has to be handled through overrides
+    # TODO(inf) Refactor  Game to use this value and raise AbstractExceptions
+    #  when it's False
+    has_plugins_txt = True
     _star = False # whether plugins.txt uses a star to denote an active plugin
 
     def __init__(self, mod_infos, plugins_txt_path):
@@ -304,8 +308,9 @@ class Game(object):
     def get_free_time(self, start_time, default_time='+1', end_time=None):
         raise NotImplementedError
 
-    @staticmethod
-    def _must_update_active(deleted, reordered): raise exception.AbstractError
+    @classmethod
+    def _must_update_active(cls, deleted, reordered):
+        raise exception.AbstractError
 
     def active_changed(self): return self._plugins_txt_modified()
 
@@ -315,6 +320,8 @@ class Game(object):
     def swap(self, old_path, new_path):
         """Save current plugins into oldPath directory and load plugins from
         newPath directory (if present)."""
+        # If this game has no plugins.txt, don't try to swap it
+        if not self.__class__.has_plugins_txt: return
         # Save plugins.txt inside the old (saves) directory
         if self.plugins_txt_path.exists():
             self.plugins_txt_path.copyTo(old_path.join(u'plugins.txt'))
@@ -539,6 +546,191 @@ class Game(object):
     @classmethod
     def parse_ccc_file(cls): pass
 
+class INIGame(Game):
+    """Class for games which use an INI section to determine parts of the load
+    order. May be used in multiple inheritance with other Game types, just be
+    sure to put INIGame first.
+
+    To use an INI section to specify active plugins, change ini_key_actives.
+    To use an INI section to specify load order, change ini_key_lo. You can
+    also specify both if the game uses an INI for everything.
+    Format for them is (INI Name, section, entry format string).
+    The entry format string receives a format argument, %(lo_idx)s, which
+    corresponds to the load order position of the mod written as a value.
+    For example, (u'test.ini', u'Mods', u'Mod%(lo_idx)s') would result in
+    something like this:
+        [Mods]
+        Mod0=FirstMod.esp
+        Mod1=SecondMod.esp"""
+    # The INI keys, see class docstring for more info
+    ini_key_actives = (u'', u'', u'')
+    ini_key_lo = (u'', u'', u'')
+
+    def __init__(self, mod_infos, plugins_txt_path=u''):
+        """Creates a new INIGame instance. plugins_txt_path does not have to
+        be specified if INIGame will manage active plugins."""
+        super(INIGame, self).__init__(mod_infos, plugins_txt_path)
+        self._handles_actives = self.__class__.ini_key_actives != (
+            u'', u'', u'')
+        self._handles_lo = self.__class__.ini_key_lo != (u'', u'', u'')
+        if self._handles_actives:
+            self._cached_ini_actives = self._mk_ini(
+                self.ini_dir_actives.join(self.ini_key_actives[0]))
+        if self._handles_lo:
+            self._cached_ini_lo = self._mk_ini(
+                self.ini_dir_lo.join(self.ini_key_lo[0]))
+
+    # INI directories, override if needed
+    @property
+    def ini_dir_actives(self): # type: () -> bolt.Path
+        """Returns the directory containing the actives INI. Defaults to the
+        game path."""
+        return bass.dirs[u'app']
+
+    @property
+    def ini_dir_lo(self): # type: () -> bolt.Path
+        """Returns the directory containing the load order INI. Defaults to the
+        game path."""
+        return bass.dirs[u'app']
+
+    # Utilities
+    @staticmethod
+    def _mk_ini(ini_fpath):
+        """Creates a new IniFile from the specified bolt.Path object."""
+        ini_type, ini_encoding = get_ini_type_and_encoding(ini_fpath)
+        return ini_type(ini_fpath, ini_encoding)
+
+    @staticmethod
+    def _read_ini(cached_ini, ini_key):
+        """Reads a section specified INI using the specified key and returns
+        all its values, as bolt.Path objects. Handles missing INI file and an
+        absent section gracefully.
+
+        :type cached_ini: bosh.ini_files.IniFile
+        :type ini_key: tuple[unicode, unicode, unicode]
+        :rtype: list[bolt.Path]"""
+        # Returned format is dict[CIstr, tuple[unicode, int]], we want the
+        # unicode (i.e. the mod names)
+        section_mapping = cached_ini.get_setting_values(ini_key[1], {})
+        # Sort by line number, then convert the values to paths and return
+        section_vals = sorted(section_mapping.items(), key=lambda t: t[1][1])
+        return [bolt.GPath(x[1][0]) for x in section_vals]
+
+    @staticmethod
+    def _write_ini(cached_ini, ini_key, mod_list):
+        """Writes out the specified INI using the specified key and mod list.
+
+        :type cached_ini: bosh.ini_files.IniFile
+        :type ini_key: tuple[unicode, unicode, unicode]
+        :type mod_list: list[bolt.Path]"""
+        # Remove any existing section - also prevents duplicate sections with
+        # different case
+        cached_ini.remove_section(ini_key[1])
+        # Now, write out the changed values - no backup here
+        section_contents = OrderedDict()
+        for i, lo_mod in enumerate(mod_list):
+            section_contents[ini_key[2] % {u'lo_idx': i}] = lo_mod.s
+        cached_ini.saveSettings({ini_key[1]: section_contents})
+
+    # Backups
+    def _backup_active_plugins(self):
+        if self._handles_actives:
+            ini_path = self._cached_ini_actives.abs_path
+            ini_path.copyTo(ini_path.backup)
+        else: super(INIGame, self)._backup_active_plugins()
+
+    def _backup_load_order(self):
+        if self._handles_actives:
+            ini_path = self._cached_ini_lo.abs_path
+            ini_path.copyTo(ini_path.backup)
+        else: super(INIGame, self)._backup_load_order()
+
+    # Reading from INI
+    def _fetch_active_plugins(self):
+        if self._handles_actives:
+            actives = self._read_ini(self._cached_ini_actives,
+                                     self.__class__.ini_key_actives)
+            return actives
+        return super(INIGame, self)._fetch_active_plugins()
+
+    def _fetch_load_order(self, cached_load_order, cached_active):
+        if self._handles_lo:
+            lo = self._read_ini(self._cached_ini_lo,
+                                self.__class__.ini_key_lo)
+            return lo
+        return super(INIGame, self)._fetch_load_order(cached_load_order,
+                                                      cached_active)
+
+    # Writing changes to INI
+    def _persist_if_changed(self, active, lord, previous_active,
+                            previous_lord):
+        if self._handles_actives:
+            if previous_active is None or previous_active != active:
+                self._persist_active_plugins(active, lord)
+            # We've handled this, let the next one in line know
+            previous_active = active
+        if self._handles_lo:
+            if previous_lord is None or previous_lord != lord:
+                self._persist_load_order(lord, active)
+            # Same idea as above
+            previous_lord = lord
+        # If we handled both, don't do anything. Otherwise, delegate persisting
+        # to the next method in the MRO
+        if previous_lord != lord or previous_active != active:
+            super(INIGame, self)._persist_if_changed(
+                active, lord, previous_active, previous_lord)
+
+    def _persist_active_plugins(self, active, lord):
+        if self._handles_actives:
+            self._write_ini(self._cached_ini_actives,
+                            self.__class__.ini_key_actives, active)
+            self._cached_ini_actives.do_update()
+        else:
+            super(INIGame, self)._persist_active_plugins(active, lord)
+
+    def _persist_load_order(self, lord, active):
+        if self._handles_lo:
+            self._write_ini(self._cached_ini_lo,
+                            self.__class__.ini_key_lo, lord)
+            self._cached_ini_lo.do_update()
+        else:
+            super(INIGame, self)._persist_load_order(lord, active)
+
+    # Misc overrides
+    @classmethod
+    def _must_update_active(cls, deleted, reordered):
+        # Can't use _handles_active here, need to duplicate the logic
+        if cls.ini_key_actives != (u'', u'', u''):
+            return True # Assume order is important for the INI
+        return super(INIGame, cls)._must_update_active(deleted, reordered)
+
+    def active_changed(self):
+        if self._handles_actives:
+            return self._cached_ini_actives.needs_update()
+        return super(INIGame, self).active_changed()
+
+    def load_order_changed(self):
+        if self._handles_lo:
+            return self._cached_ini_lo.needs_update()
+        return super(INIGame, self).load_order_changed()
+
+    def swap(self, old_path, new_path):
+        def _do_swap(cached_ini, ini_key):
+            # If there's no INI inside the old (saves) directory, copy it
+            old_ini = old_path.join(ini_key[0])
+            if not old_ini.isfile():
+                cached_ini.abs_path.copyTo(old_ini)
+            # Read from the new INI if it exists and write to our main INI
+            move_ini = new_path.join(ini_key[0])
+            if move_ini.isfile():
+                self._write_ini(cached_ini, ini_key, self._read_ini(
+                    self._mk_ini(move_ini), ini_key))
+        if self._handles_actives:
+            _do_swap(self._cached_ini_actives, self.ini_key_actives)
+        if self._handles_lo:
+            _do_swap(self._cached_ini_lo, self.ini_key_lo)
+        super(INIGame, self).swap(old_path, new_path)
+
 class TimestampGame(Game):
     """Oblivion and other games where load order is set using modification
     times.
@@ -550,8 +742,8 @@ class TimestampGame(Game):
     _mtime_mods = defaultdict(set)
     _get_free_time_step = 1 # step by one second intervals
 
-    @staticmethod
-    def _must_update_active(deleted, reordered): return deleted
+    @classmethod
+    def _must_update_active(cls, deleted, reordered): return deleted
 
     def has_load_order_conflict(self, mod_name):
         mtime = self.mod_infos[mod_name].mtime
@@ -642,6 +834,17 @@ class TimestampGame(Game):
                 u'Missing: ' + u', '.join(x.s for x in fix_lo.lo_added))
             lord[:] = self.__calculate_mtime_order(mods=lord)
 
+# TimestampGame overrides
+class Morrowind(INIGame, TimestampGame):
+    """Morrowind uses timestamps for specifying load order, but stores active
+    plugins in Morrowind.ini."""
+    has_plugins_txt = False
+    ini_key_actives = (u'Morrowind.ini', u'Game Files', u'GameFile%(lo_idx)s')
+
+    def in_master_block(self, minf):
+        """For Morrowind, extension seems to be the only thing that matters."""
+        return minf.get_extension() == u'.esm'
+
 class TextfileGame(Game):
 
     def __init__(self, mod_infos, plugins_txt_path, loadorder_txt_path):
@@ -665,8 +868,9 @@ class TextfileGame(Game):
         self.size_loadorder_txt, self.mtime_loadorder_txt = \
             self.loadorder_txt_path.size_mtime()
 
-    @staticmethod
-    def _must_update_active(deleted, reordered): return deleted or reordered
+    @classmethod
+    def _must_update_active(cls, deleted, reordered):
+        return deleted or reordered
 
     def swap(self, old_path, new_path):
         super(TextfileGame, self).swap(old_path, new_path)
@@ -813,8 +1017,8 @@ class AsteriskGame(Game):
         # read the file once
         return self._fetch_load_order(cached_load_order, cached_active)
 
-    @staticmethod
-    def _must_update_active(deleted, reordered): return True
+    @classmethod
+    def _must_update_active(cls, deleted, reordered): return True
 
     # Abstract overrides ------------------------------------------------------
     def _backup_active_plugins(self):
@@ -1227,6 +1431,8 @@ def game_factory(game_fsName, mod_infos, plugins_txt_path,
         return SkyrimSE(mod_infos, plugins_txt_path)
     elif game_fsName == u'Fallout4':
         return Fallout4(mod_infos, plugins_txt_path)
+    elif game_fsName == u'Morrowind':
+        return Morrowind(mod_infos)
     else:
         return TimestampGame(mod_infos, plugins_txt_path)
 

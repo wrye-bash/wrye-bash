@@ -653,6 +653,10 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             Not a problem unless both plugins are active.</td></tr>
         <tr><td class="load-symbols-redkbg">Red Background</td><td>An active plugin that should remain deactivated (ie. tagged with <code>Deactivate</code>) or, <em>for Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only</em>,
             an active plugin that shares its modification date with another active plugin. This must be corrected so that they have different modification dates or else it may break your load order.</td></tr>
+        <tr><td class="load-symbols-lorgbg">Light Orange Background</td><td><em>Morrowind only.</em> In Morrowind, plugin files contain <code>DATA</code>
+            subrecords that store the size of the plugin's masters when it was created. If a stored size does not match the one on disk, Wrye Bash will
+            highlight the corresponding master in this color. Also used for plugins that have at least one such size-mismatched master. This is a
+            <em>very</em> low priority warning and can almost certainly be ignored.</td></tr>
         <tr><td class="load-symbols-grybg">Grey Background</td><td>A <a href="#modsAutoGhost">ghosted</a> plugin.</td></tr>
         <tr><td class="load-symbols-ittxt">Slanted Text</td><td>A plugin that is recommended to be imported and deactivated (ie. tagged with Deactivate).</td></tr>
         <tr><td class="load-symbols-ultxt">Underlined Text</td><td>A plugin identified as having dirty edits (Identical to Master, Deleted References, or otherwise necessary cleaning).</td></tr>
@@ -1387,9 +1391,11 @@ MemoryError</code>
     <ul>
       <li><img alt="dev_akm's Icon" src="../bash/images/people/dakmavi32.jpg"><span><a href="http://devakm.urikslargda.com">dev_akm:</a> Archive Invalidation, etc.</span></li>
       <li><img alt="ElminsterAU's Icon" src="../bash/images/people/elmsavi32.png"><span><a href="https://github.com/ElminsterAU">ElminsterEU:</a> <a href="https://tes5edit.github.io/">xEdit</a> etc. Crucial for adding/checking new record types.</span></li>
+      <li><img alt="Polemos' Icon" src="../bash/images/people/polemosavi32.png"><span><a href="https://github.com/polemion">Polemos:</a></span> <a href="https://github.com/polemion/Wrye-Mash-Polemos">Wrye Mash: Polemos' Fork</a></li>
       <li><img alt="Quarn's Icon" src="../bash/images/people/qurnavi32.png"><span><a href="https://www.nexusmods.com/users/75927">Quarn:</a> BSA-Redirection, Black Screen Fix</span></li>
       <li><img alt="Timeslip's Icon" src="../bash/images/people/tslpavi32.png"><span><a href="http://timeslip.chorrol.com">Timeslip:</a> BSA editing code, OBMM integration, etc.</span></li>
       <li><img alt="Veritas Secreto's Icon" src="../bash/images/bash_32_2.png"><span>Veritas_Secreto: <a href="https://www.nexusmods.com/oblivion/mods/39872">Tamriel NPCs Revamped</a></span></li>
+      <li><img alt="Yabocy's Icon" src="../bash/images/people/yacobyavi32.png"><span><a href="https://github.com/Yacoby">Yacoby:</a> <a href="https://github.com/Yacoby/Wrye-Mash">Wrye Mash: Yacoby's Fork</a></span></li>
     </ul>
   </li>
   <li>

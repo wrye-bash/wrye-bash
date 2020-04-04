@@ -375,6 +375,8 @@ def must_be_active_if_present():
 
 def using_txt_file(): return bush.game.using_txt_file
 
+def using_ini_file(): return isinstance(_game_handle, _games_lo.INIGame)
+
 # Timestamp games helpers
 def has_load_order_conflict(mod_name):
     return _game_handle.has_load_order_conflict(mod_name)

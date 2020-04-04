@@ -318,6 +318,9 @@ class MasterList(_ModsUIList):
         ('Current Order', lambda self, mi: bosh.modInfos.hexIndexString(
             self.data_store[mi].curr_name)),
     ])
+    # True if we should highlight masters whose stored size does not match the
+    # size of the plugin on disk
+    _do_size_checks = False
 
     @property
     def cols(self):
@@ -377,8 +380,11 @@ class MasterList(_ModsUIList):
         if not fileInfo:
             return
         #--Fill data and populate
+        has_sizes = bush.game.esp.check_master_sizes and isinstance(
+            fileInfo, bosh.ModInfo) # only mods have master sizes
         for mi, masters_name in enumerate(fileInfo.get_masters()):
-            self.data_store[mi] = bosh.MasterInfo(masters_name)
+            masters_size = fileInfo.header.master_sizes[mi] if has_sizes else 0
+            self.data_store[mi] = bosh.MasterInfo(masters_name, masters_size)
         self._reList()
         self.PopulateItems()
 
@@ -444,6 +450,10 @@ class MasterList(_ModsUIList):
             item_format.back_key = 'mods.bkgd.doubleTime.exists'
         elif masterInfo.is_ghost:
             item_format.back_key = 'mods.bkgd.ghosted'
+        elif self._do_size_checks and bosh.modInfos.size_mismatch(
+                masters_name, masterInfo.stored_size):
+            item_format.back_key = u'mods.bkgd.size_mismatch'
+            mouseText += _(u'Stored size does not match the one on disk. ')
         if self.allowEdit:
             if masterInfo.old_name in settings['bash.mods.renames']:
                 item_format.strong = True
@@ -632,7 +642,7 @@ class INIList(balt.UIList):
         hitItem = self._getItemClicked(lb_dex_and_flags, on_icon=True)
         if not hitItem: return
         if self.apply_tweaks((bosh.iniInfos[hitItem], )):
-            self.panel.ShowPanel(refresh_target=True)
+            self.panel.ShowPanel()
 
     @classmethod
     def apply_tweaks(cls, tweak_infos, target_ini=None):
@@ -674,7 +684,7 @@ class INIList(balt.UIList):
         try:
             default_ini.copyTo(target_ini_file.abs_path)
             if balt.Link.Frame.iniList:
-                balt.Link.Frame.iniList.panel.ShowPanel(refresh_target=True)
+                balt.Link.Frame.iniList.panel.ShowPanel()
             else:
                 bosh.iniInfos.refresh(refresh_infos=False)
             return True
@@ -940,6 +950,10 @@ class ModList(_ModsUIList):
         elif mod_info.isGhost:
             item_format.back_key = 'mods.bkgd.ghosted'
             mouseText += _(u"File is ghosted.  ")
+        elif (bush.game.esp.check_master_sizes
+              and mod_info.has_master_size_mismatch()):
+            item_format.back_key = u'mods.bkgd.size_mismatch'
+            mouseText += _(u'Has one or more size-mismatched masters. ')
         if settings['bash.mods.scanDirty']:
             message = bosh.modInfos.getDirtyMessage(mod_name)
             mouseText += message[1]
@@ -1310,6 +1324,7 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
     I named the master list attribute 'uilist' to stand apart from the
     uiList of SashUIListPanel. ui_list_panel is mods or saves panel
     :type uilist: MasterList"""
+    _master_list_type = MasterList
 
     def __init__(self, parent, ui_list_panel):
         _SashDetailsPanel.__init__(self, parent)
@@ -1319,8 +1334,9 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
         _EditableMixinOnFileInfos.__init__(self, self.masterPanel,
                                            ui_list_panel)
         #--Masters
-        self.uilist = MasterList(self.masterPanel, keyPrefix=self.keyPrefix,
-                                 panel=ui_list_panel, detailsPanel=self)
+        self.uilist = self._master_list_type(
+            self.masterPanel, keyPrefix=self.keyPrefix, panel=ui_list_panel,
+            detailsPanel=self)
         VLayout(spacing=4, items=[
             Label(self.masterPanel, _(u"Masters:")),
             (self.uilist, LayoutOptions(weight=1, expand=True)),
@@ -1335,9 +1351,14 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
 
     def testChanges(self): raise AbstractError
 
+class _ModMasterList(MasterList):
+    """Override to avoid doing size checks on save master lists."""
+    _do_size_checks = bush.game.esp.check_master_sizes
+
 class ModDetails(_ModsSavesDetails):
     """Details panel for mod tab."""
     keyPrefix = 'bash.mods.details' # used in sash/scroll position, sorting
+    _master_list_type = _ModMasterList
 
     @property
     def file_info(self): return self.modInfo
@@ -1814,7 +1835,7 @@ class INIPanel(BashTab):
         self.uiList.RefreshUI(focus_list=False)
         self.detailsPanel.ShowPanel(target_changed=True)
 
-    def ShowPanel(self, refresh_infos=False, refresh_target=False,
+    def ShowPanel(self, refresh_infos=False, refresh_target=True,
                   clean_targets=False, focus_list=True, detail_item='SAME',
                   **kwargs):
         changes = bosh.iniInfos.refresh(refresh_infos=refresh_infos,
@@ -1982,7 +2003,7 @@ class SaveDetails(_ModsSavesDetails):
     @property
     def file_infos(self): return bosh.saveInfos
     @property
-    def allowDetailsEdit(self): return bush.game.ess.canReadBasic
+    def allowDetailsEdit(self): return self.saveInfo.header.can_edit_header
 
     def __init__(self, parent, ui_list_panel):
         super(SaveDetails, self).__init__(parent, ui_list_panel)
@@ -3589,7 +3610,8 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             bolt.GPathPurge()
             self.currentPage = _widget_to_panel[
                 self.GetPage(event.GetSelection()).GetId()]
-            self.currentPage.ShowPanel()
+            self.currentPage.ShowPanel(
+                refresh_target=load_order.using_ini_file())
             event.Skip() ##: shouldn't this always be called ?
 
 #------------------------------------------------------------------------------
@@ -3861,8 +3883,7 @@ class BashFrame(WindowFrame):
         #--Show current notebook panel
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel(refresh_infos=not booting,
-                                            clean_targets=not booting,
-                                            refresh_target=True)
+                                            clean_targets=not booting)
         #--WARNINGS----------------------------------------
         if booting: self.warnTooManyModsBsas()
         self.warn_load_order()
