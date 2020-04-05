@@ -30,130 +30,185 @@ import re
 from collections import Counter
 # Internal
 from ... import bush, load_order
-from ...bolt import GPath, deprint
-from ...brec import MreRecord
+from ...bolt import GPath, deprint, floats_equal
 from ...cint import MGEFCode
-from ...patcher.base import AMultiTweakItem, DynamicNamedTweak
+from ...exception import AbstractError
+from ...patcher.base import AMultiTweakItem
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
-class AssortedTweak_ArmorShows(DynamicNamedTweak, MultiTweakItem):
-    """Fix armor to show amulets/rings."""
-    tweak_read_classes = 'ARMO',
+class _AAssortedTweak(AMultiTweakItem):
+    """Hasty abstraction over PBash/CBash records differences to allow moving
+    wants_record overrides into the abstract classes."""
+    @staticmethod
+    def _any_body_flag_set(record):
+        """Checks if any body flag but the right ring flag is set. If only the
+        right ring and no other body flags are set, then this is probably a
+        token that wasn't zeroed (which there are a lot of)."""
+        raise AbstractError(u'_any_body_flag_set not implemented')
 
-    def __init__(self, tweak_name, tweak_tip, key):
-        super(AssortedTweak_ArmorShows, self).__init__(tweak_name, tweak_tip,
-                                                       key)
-        self.hidesBit = {u'armorShowsRings':16,u'armorShowsAmulets':17}[key]
-        self.logMsg = u'* ' + _(u'Armor Pieces Tweaked: %d')
+    @staticmethod
+    def _is_nonplayable(record):
+        """Returns True if the specified record is marked as nonplayable."""
+        raise AbstractError(u'_is_nonplayable not implemented')
 
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.ARMO
-        hidesBit = self.hidesBit
-        for record in modFile.ARMO.getActiveRecords():
-            if record.flags[hidesBit] and not record.flags.notPlayable:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
+    @staticmethod
+    def _is_scroll(record):
+        """Returns True if this record has the 'is scroll' flag set."""
+        raise AbstractError(u'_is_scroll not implemented')
 
+class _AssortPTweak(_AAssortedTweak, MultiTweakItem):
+    """An assorted PBash tweak."""
+    @staticmethod
+    def _any_body_flag_set(record):
+        return (record.flags.leftRing or record.flags.foot or
+                record.flags.hand or record.flags.amulet or
+                record.flags.lowerBody or record.flags.upperBody or
+                record.flags.head or record.flags.hair or
+                record.flags.tail or record.flags.shield)
+
+    @staticmethod
+    def _is_nonplayable(record):
+        return record.flags.notPlayable
+
+    @staticmethod
+    def _is_scroll(record):
+        return record.flags.isScroll
+
+class _AssortCTweak(_AAssortedTweak, CBash_MultiTweakItem):
+    """An assorted CBash tweak."""
+    def __init__(self, key, *choices):
+        super(_AssortCTweak, self).__init__(key, *choices)
+        # see https://github.com/wrye-bash/wrye-bash/commit/3aa3c941b2de6d751f71e50613ba20ac14f477e8
+        # CBash only, PBash gets away with just knowing the FormID of SEFF
+        # and always assuming it exists, since it's from Oblivion.esm. CBash
+        # handles this by making sure the MGEF records are almost always
+        # read in, and always before patchers that will need them
+        self.SEFF = MGEFCode(b'SEFF')
+
+    @staticmethod
+    def _any_body_flag_set(record):
+        return (record.IsLeftRing or record.IsFoot or record.IsHand or
+                record.IsAmulet or record.IsLowerBody or record.IsUpperBody or
+                record.IsHead or record.IsHair or record.IsTail or
+                record.IsShield)
+
+    @staticmethod
+    def _is_nonplayable(record):
+        return record.IsNonPlayable
+
+    @staticmethod
+    def _is_scroll(record):
+        return record.IsScroll
+
+#------------------------------------------------------------------------------
+class _AShowsTweak(_AAssortedTweak):
+    """Shared parts of CBash/PBash show clothing/armor tweaks."""
+    _hides_bit = 0 # override in implementations
+
+    def wants_record(self, record):
+        return (int(record.flags) >> self._hides_bit & 1 # CBash/PBash-agnostic
+                and not self._is_nonplayable(record))
+
+class _PShowsTweak(_AShowsTweak, _AssortPTweak):
+    """Shared code of PBash armor/clothing shows tweaks."""
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
         keep = patchFile.getKeeper()
-        hidesBit = self.hidesBit
-        for record in patchFile.ARMO.records:
-            if record.flags[hidesBit] and not record.flags.notPlayable:
-                record.flags[hidesBit] = False
+        for record in getattr(patchFile, self.tweak_read_classes[0]).records:
+            if self.wants_record(record):
+                record.flags[self._hides_bit] = False
                 keep(record.fid)
                 count[record.fid[0]] += 1
         self._patchLog(log,count)
 
-class CBash_AssortedTweak_ArmorShows(DynamicNamedTweak, CBash_MultiTweakItem):
-    """Fix armor to show amulets/rings."""
-    tweak_read_classes = 'ARMO',
-
-    def __init__(self, tweak_name, tweak_tip, key):
-        super(CBash_AssortedTweak_ArmorShows, self).__init__(tweak_name,
-                                                             tweak_tip, key)
-        self.hideFlag = {u'armorShowsRings': 'IsHideRings',
-                         u'armorShowsAmulets': 'IsHideAmulets'}[key]
-        self.logMsg = u'* ' + _(u'Armor Pieces Tweaked: %d')
-
+class _CShowsTweak(_AShowsTweak, _AssortCTweak):
+    """Shared code of CBash armor/clothing shows tweaks."""
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if record.IsNonPlayable:
-            return
-        if getattr(record, self.hideFlag):
+        if self.wants_record(record):
             override = record.CopyAsOverride(self.patchFile)
             if override:
-                setattr(override, self.hideFlag, False)
+                override.flags &= ~(1 << self._hides_bit)
                 self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class AssortedTweak_ClothingShows(DynamicNamedTweak, MultiTweakItem):
-    """Fix robes, gloves and the like to show amulets/rings."""
-    tweak_read_classes = 'CLOT',
+class _AArmoShowsTweak(_AShowsTweak):
+    """Fix armor to show amulets/rings."""
+    tweak_read_classes = b'ARMO',
 
-    def __init__(self, tweak_name, tweak_tip, key):
-        super(AssortedTweak_ClothingShows, self).__init__(tweak_name,
-                                                          tweak_tip, key)
-        self.hidesBit = \
-            {u'ClothingShowsRings': 16, u'ClothingShowsAmulets': 17}[key]
-        self.logMsg = u'* ' + _(u'Clothing Pieces Tweaked: %d')
+    def __init__(self, key):
+        super(_AArmoShowsTweak, self).__init__(key)
+        self._hides_bit = {u'armorShowsRings': 16,
+                           u'armorShowsAmulets': 17}[key]
+        self.logMsg = u'* ' + _(u'Armor Pieces Tweaked: %d')
 
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.CLOT
-        hidesBit = self.hidesBit
-        for record in modFile.CLOT.getActiveRecords():
-            if record.flags[hidesBit] and not record.flags.notPlayable:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
+class _AArmoShowsAmuletsTweak(_AArmoShowsTweak):
+    tweak_name = _(u'Armor Shows Amulets')
+    tweak_tip = _(u'Prevents armor from hiding amulets.')
 
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        hidesBit = self.hidesBit
-        for record in patchFile.CLOT.records:
-            if record.flags[hidesBit] and not record.flags.notPlayable:
-                record.flags[hidesBit] = False
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        self._patchLog(log,count)
+    def __init__(self):
+        super(_AArmoShowsAmuletsTweak, self).__init__(u'armorShowsAmulets')
 
-class CBash_AssortedTweak_ClothingShows(DynamicNamedTweak,
-                                        CBash_MultiTweakItem):
-    """Fix robes, gloves and the like to show amulets/rings."""
-    tweak_read_classes = 'CLOT',
+class AssortedTweak_ArmorShows_Amulets(_AArmoShowsAmuletsTweak,
+                                       _PShowsTweak): pass
+class CBash_AssortedTweak_ArmorShows_Amulets(_AArmoShowsAmuletsTweak,
+                                             _CShowsTweak): pass
 
-    def __init__(self, tweak_name, tweak_tip, key):
-        super(CBash_AssortedTweak_ClothingShows, self).__init__(tweak_name,
-                                                                tweak_tip, key)
-        self.hideFlag = {u'ClothingShowsRings': 'IsHideRings',
-                         u'ClothingShowsAmulets': 'IsHideAmulets'}[key]
-        self.logMsg = u'* ' + _(u'Clothing Pieces Tweaked: %d')
+class _AArmoShowsRingsTweak(_AArmoShowsTweak):
+    tweak_name = _(u'Armor Shows Rings')
+    tweak_tip = _(u'Prevents armor from hiding rings.')
 
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired."""
-        if record.IsNonPlayable:
-            return
-        if getattr(record, self.hideFlag):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                setattr(override, self.hideFlag, False)
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
+    def __init__(self):
+        super(_AArmoShowsRingsTweak, self).__init__(u'armorShowsRings')
+
+class AssortedTweak_ArmorShows_Rings(_AArmoShowsRingsTweak, _PShowsTweak): pass
+class CBash_AssortedTweak_ArmorShows_Rings(_AArmoShowsRingsTweak,
+                                           _CShowsTweak): pass
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_BowReach(AMultiTweakItem):
+class _AClotShowsTweak(_AShowsTweak):
+    """Fix robes, gloves and the like to show amulets/rings."""
+    tweak_read_classes = b'CLOT',
+
+    def __init__(self, key):
+        super(_AClotShowsTweak, self).__init__(key)
+        self._hides_bit = {u'ClothingShowsRings': 16,
+                           u'ClothingShowsAmulets': 17}[key]
+        self.logMsg = u'* ' + _(u'Clothing Pieces Tweaked: %d')
+
+class _AClotShowsAmuletsTweak(_AClotShowsTweak):
+    tweak_name = _(u'Clothing Shows Amulets')
+    tweak_tip = _(u'Prevents Clothing from hiding amulets.')
+
+    def __init__(self):
+        super(_AClotShowsAmuletsTweak, self).__init__(u'ClothingShowsAmulets')
+
+class AssortedTweak_ClothingShows_Amulets(_AClotShowsAmuletsTweak,
+                                          _PShowsTweak): pass
+class CBash_AssortedTweak_ClothingShows_Amulets(_AClotShowsAmuletsTweak,
+                                                _CShowsTweak): pass
+
+class _AClotShowsRingsTweak(_AClotShowsTweak):
+    tweak_name = _(u'Clothing Shows Rings')
+    tweak_tip = _(u'Prevents Clothing from hiding rings.')
+
+    def __init__(self):
+        super(_AClotShowsRingsTweak, self).__init__(u'ClothingShowsRings')
+
+class AssortedTweak_ClothingShows_Rings(_AClotShowsRingsTweak,
+                                        _PShowsTweak): pass
+class CBash_AssortedTweak_ClothingShows_Rings(_AClotShowsRingsTweak,
+                                              _CShowsTweak): pass
+
+#------------------------------------------------------------------------------
+class AAssortedTweak_BowReach(_AAssortedTweak):
     """Fix bows to have reach = 1.0."""
-    tweak_read_classes = 'WEAP',
+    tweak_read_classes = b'WEAP',
     tweak_name = _(u'Bow Reach Fix')
     tweak_tip = _(u'Fix bows with zero reach (zero reach causes CTDs).')
 
@@ -163,33 +218,25 @@ class AAssortedTweak_BowReach(AMultiTweakItem):
         self.defaultEnabled = True
         self.logMsg = u'* ' + _(u'Bows Fixed: %d')
 
-class AssortedTweak_BowReach(AAssortedTweak_BowReach,MultiTweakItem):
+    def wants_record(self, record):
+        return record.weaponType == 5 and record.reach <= 0
 
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.WEAP
-        for record in modFile.WEAP.getActiveRecords():
-            if record.weaponType == 5 and record.reach <= 0:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
+class AssortedTweak_BowReach(AAssortedTweak_BowReach, _AssortPTweak):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.WEAP.records:
-            if record.weaponType == 5 and record.reach <= 0:
+            if self.wants_record(record):
                 record.reach = 1
                 keep(record.fid)
                 count[record.fid[0]] += 1
         self._patchLog(log,count)
 
-class CBash_AssortedTweak_BowReach(AAssortedTweak_BowReach,
-                                   CBash_MultiTweakItem):
-
+class CBash_AssortedTweak_BowReach(AAssortedTweak_BowReach, _AssortCTweak):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if record.IsBow and record.reach <= 0:
+        if self.wants_record(record):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.reach = 1.0
@@ -198,9 +245,9 @@ class CBash_AssortedTweak_BowReach(AAssortedTweak_BowReach,
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_SkyrimStyleWeapons(AMultiTweakItem):
+class AAssortedTweak_SkyrimStyleWeapons(_AAssortedTweak):
     """Sets all one handed weapons as blades, two handed weapons as blunt."""
-    tweak_read_classes = 'WEAP',
+    tweak_read_classes = b'WEAP',
     tweak_name = _(u'Skyrim-style Weapons')
     tweak_tip = _(u'Sets all one handed weapons as blades, two handed weapons '
                   u'as blunt.')
@@ -210,52 +257,38 @@ class AAssortedTweak_SkyrimStyleWeapons(AMultiTweakItem):
             u'skyrimweaponsstyle', (u'1.0', u'1.0'))
         self.logMsg = u'* ' + _(u'Weapons Adjusted: %d')
 
+    def wants_record(self, record):
+        return record.weaponType in (1, 2)
+
 class AssortedTweak_SkyrimStyleWeapons(AAssortedTweak_SkyrimStyleWeapons,
-                                       MultiTweakItem):
-
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.WEAP
-        for record in modFile.WEAP.getActiveRecords():
-            if record.weaponType in [1,2]:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
+                                       _AssortPTweak):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.WEAP.records:
-            if record.weaponType == 1:
-                record.weaponType = 3
-                keep(record.fid)
-                count[record.fid[0]] += 1
-            elif record.weaponType == 2:
-                record.weaponType = 0
+            if self.wants_record(record):
+                record.weaponType = (3 if record.weaponType == 1 else 0)
                 keep(record.fid)
                 count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_SkyrimStyleWeapons(AAssortedTweak_SkyrimStyleWeapons,
-                                             CBash_MultiTweakItem):
-
+                                             _AssortCTweak):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if record.IsBlade2Hand or record.IsBlunt1Hand:
+        if self.wants_record(record):
             override = record.CopyAsOverride(self.patchFile)
             if override:
-                if override.IsBlade2Hand:
-                    override.IsBlunt2Hand = True
-                else:
-                    override.IsBlade1Hand = True
+                override.weaponType = (3 if override.weaponType == 1 else 0)
                 self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_ConsistentRings(AMultiTweakItem):
+class AAssortedTweak_ConsistentRings(_AAssortedTweak):
     """Sets rings to all work on same finger."""
-    tweak_read_classes = 'CLOT',
+    tweak_read_classes = b'CLOT',
     tweak_name = _(u'Right Hand Rings')
     tweak_tip = _(u'Fixes rings to unequip consistently by making them '
                   u'prefer the right hand.')
@@ -267,22 +300,16 @@ class AAssortedTweak_ConsistentRings(AMultiTweakItem):
         self.logMsg = u'* ' + _(u'Rings Fixed: %d')
 
 class AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,
-                                    MultiTweakItem):
-
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.CLOT
-        for record in modFile.CLOT.getActiveRecords():
-            if record.flags.leftRing:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
+                                    _AssortPTweak):
+    def wants_record(self, record):
+        return record.flags.leftRing
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.CLOT.records:
-            if record.flags.leftRing:
+            if self.wants_record(record):
                 record.flags.leftRing = False
                 record.flags.rightRing = True
                 keep(record.fid)
@@ -290,11 +317,13 @@ class AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,
-                                          CBash_MultiTweakItem):
+                                          _AssortCTweak):
+    def wants_record(self, record):
+        return record.IsLeftRing
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if record.IsLeftRing:
+        if self.wants_record(record):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.IsLeftRing = False
@@ -302,15 +331,54 @@ class CBash_AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,
                 self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
+
 #------------------------------------------------------------------------------
 rePlayableSkips = re.compile(
     u'(?:skin)|(?:test)|(?:mark)|(?:token)|(?:willful)|(?:see.*me)|('
     u'?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|('
     u'?:ghostly immobility)|(?:corpse)', re.I)
 
-class AAssortedTweak_ClothingPlayable(AMultiTweakItem):
-    """Sets all clothes to playable"""
-    tweak_read_classes = 'CLOT',
+class _APlayableTweak(_AAssortedTweak):
+    """Shared code of PBash/CBash armor/clothing playable tweaks."""
+    def wants_record(self, record):
+        if (not self._is_nonplayable(record) or
+            not self._any_body_flag_set(record) or record.script): return False
+        clothing_name = record.full
+        return (clothing_name # probably truly shouldn't be playable
+                and not rePlayableSkips.search(clothing_name))
+
+class _PPlayableTweak(_APlayableTweak, _AssortPTweak):
+    """Shared code of PBash armor/clothing playable tweaks."""
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = Counter()
+        keep = patchFile.getKeeper()
+        for record in getattr(patchFile, self.tweak_read_classes[0]).records:
+            if self.wants_record(record):
+                record.flags.notPlayable = 0
+                keep(record.fid)
+                count[record.fid[0]] += 1
+        self._patchLog(log,count)
+
+class _CPlayableTweak(_APlayableTweak, _AssortCTweak):
+    """Shared code of CBash armor/clothing playable tweaks."""
+    scanOrder = 29 # Run before the show armor/clothing tweaks
+    editOrder = 29
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if self.wants_record(record):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.IsNonPlayable = False
+                self.mod_count[modFile.GName] += 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
+
+#------------------------------------------------------------------------------
+class AAssortedTweak_ClothingPlayable(_APlayableTweak):
+    """Sets all clothes to playable."""
+    tweak_read_classes = b'CLOT',
     tweak_name = _(u'All Clothing Playable')
     tweak_tip = _(u'Sets all clothing to be playable.')
 
@@ -321,70 +389,14 @@ class AAssortedTweak_ClothingPlayable(AMultiTweakItem):
         self.logMsg = u'* ' + _(u'Clothes Set As Playable: %d')
 
 class AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,
-                                     MultiTweakItem):
-
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.CLOT
-        for record in modFile.CLOT.getActiveRecords():
-            if record.flags.notPlayable:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in patchFile.CLOT.records:
-            if record.flags.notPlayable:
-                full = record.full
-                if not full: continue
-                if record.script: continue
-                if rePlayableSkips.search(full): continue  # probably truly
-                # shouldn't be playable
-                # If only the right ring and no other body flags probably a
-                # token that wasn't zeroed (which there are a lot of).
-                if record.flags.leftRing != 0 or record.flags.foot != 0 or \
-                                record.flags.hand != 0 or \
-                                record.flags.amulet != 0 or \
-                                record.flags.lowerBody != 0 or \
-                                record.flags.upperBody != 0 or \
-                                record.flags.head != 0 or record.flags.hair \
-                        != 0 or record.flags.tail != 0:
-                    record.flags.notPlayable = 0
-                    keep(record.fid)
-                    count[record.fid[0]] += 1
-        self._patchLog(log,count)
-
+                                     _PPlayableTweak): pass
 class CBash_AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,
-                                           CBash_MultiTweakItem):
-    scanOrder = 29 #Run before the show clothing tweaks
-    editOrder = 29
+                                           _CPlayableTweak): pass
 
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.IsNonPlayable:
-            full = record.full
-            if not full: return
-            if record.script: return
-            if rePlayableSkips.search(full): return  # probably truly
-            # shouldn't be playable
-            # If only the right ring and no other body flags probably a
-            # token that wasn't zeroed (which there are a lot of).
-            if record.IsLeftRing or record.IsFoot or record.IsHand or \
-                    record.IsAmulet or record.IsLowerBody or \
-                    record.IsUpperBody or record.IsHead or record.IsHair or \
-                    record.IsTail:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.IsNonPlayable = False
-                    self.mod_count[modFile.GName] += 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-class AAssortedTweak_ArmorPlayable(AMultiTweakItem):
-    """Sets all armors to be playable"""
-    tweak_read_classes = 'ARMO',
+#------------------------------------------------------------------------------
+class AAssortedTweak_ArmorPlayable(_APlayableTweak):
+    """Sets all armors to be playable."""
+    tweak_read_classes = b'ARMO',
     tweak_name = _(u'All Armor Playable')
     tweak_tip = _(u'Sets all armor to be playable.')
 
@@ -394,70 +406,14 @@ class AAssortedTweak_ArmorPlayable(AMultiTweakItem):
         self.logHeader = u'=== ' + _(u'Playable Armor')
         self.logMsg = u'* ' + _(u'Armor Pieces Set As Playable: %d')
 
-class AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,MultiTweakItem):
-
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.ARMO
-        for record in modFile.ARMO.getActiveRecords():
-            if record.flags.notPlayable:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in patchFile.ARMO.records:
-            if record.flags.notPlayable:
-                full = record.full
-                if not full: continue
-                if record.script: continue
-                if rePlayableSkips.search(full): continue  # probably truly
-                # shouldn't be playable
-                # We only want to set playable if the record has at least
-                # one body flag... otherwise most likely a token.
-                if record.flags.leftRing != 0 or record.flags.rightRing != 0\
-                        or record.flags.foot != 0 or record.flags.hand != 0 \
-                        or record.flags.amulet != 0 or \
-                                record.flags.lowerBody != 0 or \
-                                record.flags.upperBody != 0 or \
-                                record.flags.head != 0 or record.flags.hair \
-                        != 0 or record.flags.tail != 0 or \
-                                record.flags.shield != 0:
-                    record.flags.notPlayable = 0
-                    keep(record.fid)
-                    count[record.fid[0]] += 1
-        self._patchLog(log,count)
-
+class AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,
+                                  _PPlayableTweak): pass
 class CBash_AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,
-                                        CBash_MultiTweakItem):
-    scanOrder = 29 #Run before the show armor tweaks
-    editOrder = 29
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.IsNonPlayable:
-            full = record.full
-            if not full: return
-            if record.script: return
-            if rePlayableSkips.search(full): return  # probably truly
-            # shouldn't be playable
-            # If no body flags are set it is probably a token.
-            if record.IsLeftRing or record.IsRightRing or record.IsFoot or \
-                    record.IsHand or record.IsAmulet or record.IsLowerBody \
-                    or record.IsUpperBody or record.IsHead or record.IsHair \
-                    or record.IsTail or record.IsShield:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.IsNonPlayable = False
-                    self.mod_count[modFile.GName] += 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
+                                        _CPlayableTweak): pass
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_DarnBooks(AMultiTweakItem):
-    """DarNifies books.""" ##: C and P implementations have very similar code
+class AAssortedTweak_DarnBooks(_AAssortedTweak):
+    """DarNifies books."""
     reColor = re.compile(u'<font color="?([a-fA-F0-9]+)"?>', re.I + re.M)
     reTagInWord = re.compile(u'([a-z])<font face=1>', re.M)
     reFont1 = re.compile(u'(<?<font face=1( ?color=[0-9a-zA]+)?>)+', re.I|re.M)
@@ -467,7 +423,8 @@ class AAssortedTweak_DarnBooks(AMultiTweakItem):
     reHead3 = re.compile(u'' r'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n', re.M)
     reBold = re.compile(u'' r'(__|\*\*|~~)')
     reAlign = re.compile(u'' r'^(<<|\^\^|>>)', re.M)
-    tweak_read_classes = 'BOOK',
+    align_text = {u'^^':u'center',u'<<':u'left',u'>>':u'right'}
+    tweak_read_classes = b'BOOK',
     tweak_name = _(u'DarNified Books')
     tweak_tip = _(u'Books will be reformatted for DarN UI.')
 
@@ -476,141 +433,79 @@ class AAssortedTweak_DarnBooks(AMultiTweakItem):
             (u'default', u'default'))
         self.logMsg = u'* ' + _(u'Books DarNified: %d')
 
-class AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,MultiTweakItem):
+    def wants_record(self, record):
+        return (record.text and not record.enchantment and
+                record.text != self._darnify(record))
 
-    def scanModFile(self,modFile,progress,patchFile):
-        # maxWeight = self.choiceValues[self.chosen][0] # TODO: is this
-        # supposed to be used ?
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.BOOK
-        id_records = patchBlock.id_records
-        for record in modFile.BOOK.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if not record.enchantment:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
+    def _darnify(self, record):
+        """Darnifies the text of the specified record and returns it as a
+        string."""
+        self.inBold = False
+        # There are some FUNKY quotes that don't translate properly (they are
+        # in *latin* encoding, not even cp1252 or something normal but
+        # non-unicode). Get rid of those before we blow up.
+        rec_text = record.text.replace(u'\u201d', u'')
+        if self.reHead2.match(rec_text):
+            rec_text = self.reHead2.sub(
+                u'' r'\1<font face=1 color=220000>\2<font face=3 '
+                u'' r'color=444444>\r\n', rec_text)
+            rec_text = self.reHead3.sub(
+                u'' r'\1<font face=3 color=220000>\2<font face=3 '
+                u'' r'color=444444>\r\n', rec_text)
+            rec_text = self.reAlign.sub(self._replace_align, rec_text)
+            rec_text = self.reBold.sub(self._replace_bold, rec_text)
+            rec_text = re.sub(u'' r'\r\n', u'' r'<br>\r\n', rec_text)
+        else:
+            ma_color = self.reColor.search(rec_text)
+            if ma_color:
+                color = ma_color.group(1)
+            elif self._is_scroll(record):
+                color = u'000000'
+            else:
+                color = u'444444'
+            font_face = u'<font face=3 color='+color+u'>'
+            rec_text = self.reTagInWord.sub(u'' r'\1', rec_text)
+            if (self.reDiv.search(rec_text) and
+                    not self.reFont.search(rec_text)):
+                rec_text = font_face + rec_text
+            else:
+                rec_text = self.reFont1.sub(font_face, rec_text)
+        return rec_text
 
+    # Helper methods for _darnify
+    def _replace_bold(self, mo):
+        self.inBold = not self.inBold
+        return u'<font face=3 color=%s>' % (
+            u'440000' if self.inBold else u'444444')
+
+    def _replace_align(self, mo):
+        return u'<div align=%s>' % self.align_text[mo.group(1)]
+
+class AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks, _AssortPTweak):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
-        reColor = self.__class__.reColor
-        reTagInWord = self.__class__.reTagInWord
-        reFont1 = self.__class__.reFont1
-        reDiv = self.__class__.reDiv
-        reFont = self.__class__.reFont
-        reHead2 = self.__class__.reHead2
-        reHead3 = self.__class__.reHead3
-        reBold = self.__class__.reBold
-        reAlign = self.__class__.reAlign
         keep = patchFile.getKeeper()
-        align_text = {u'^^':u'center',u'<<':u'left',u'>>':u'right'}
-        self.inBold = False
-        def replaceBold(mo):
-            self.inBold = not self.inBold
-            return u'<font face=3 color=%s>' % (
-                u'440000' if self.inBold else u'444444')
-        def replaceAlign(mo):
-            return u'<div align=%s>' % align_text[mo.group(1)]
         for record in patchFile.BOOK.records:
-            if record.text and not record.enchantment:
-                rec_text = record.text
-                rec_text = rec_text.replace(u'\u201d', u'')  # there are some FUNKY
-                # quotes that don't translate properly. (they are in *latin*
-                # encoding not even cp1252 or something normal but non-unicode)
-                if reHead2.match(rec_text):
-                    self.inBold = False
-                    rec_text = reHead2.sub(
-                        u'' r'\1<font face=1 color=220000>\2<font face=3 '
-                        u'' r'color=444444>\r\n', rec_text)
-                    rec_text = reHead3.sub(
-                        u'' r'\1<font face=3 color=220000>\2<font face=3 '
-                        u'' r'color=444444>\r\n',
-                        rec_text)
-                    rec_text = reAlign.sub(replaceAlign,rec_text)
-                    rec_text = reBold.sub(replaceBold,rec_text)
-                    rec_text = re.sub(u'' r'\r\n', u'' r'<br>\r\n', rec_text)
-                else:
-                    maColor = reColor.search(rec_text)
-                    if maColor:
-                        color = maColor.group(1)
-                    elif record.flags.isScroll:
-                        color = u'000000'
-                    else:
-                        color = u'444444'
-                    fontFace = u'<font face=3 color='+color+u'>'
-                    rec_text = reTagInWord.sub(u'' r'\1', rec_text)
-                    if reDiv.search(rec_text) and not reFont.search(rec_text):
-                        rec_text = fontFace+rec_text
-                    else:
-                        rec_text = reFont1.sub(fontFace,rec_text)
-                if rec_text != record.text:
-                    record.text = rec_text
-                    keep(record.fid)
-                    count[record.fid[0]] += 1
+            if self.wants_record(record):
+                record.text = self._darnify(record)
+                keep(record.fid)
+                count[record.fid[0]] += 1
         self._patchLog(log,count)
 
-class CBash_AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,
-                                    CBash_MultiTweakItem):
-
+class CBash_AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks, _AssortCTweak):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        def replaceBold(mo):
-            self.inBold = not self.inBold
-            return u'<font face=3 color=%s>' % (
-                u'440000' if self.inBold else u'444444')
-        def replaceAlign(mo):
-            return u'<div align=%s>' % align_text[mo.group(1)]
-
-        if record.text and not record.enchantment:
-            rec_text = record.text
-            rec_text = rec_text.replace(u'\u201d', u'')  # there are some FUNKY
-            # quotes that don't translate properly. (they are in *latin*
-            # encoding not even cp1252 or something normal but non-unicode)
-            reColor = self.__class__.reColor
-            reTagInWord = self.__class__.reTagInWord
-            reFont1 = self.__class__.reFont1
-            reDiv = self.__class__.reDiv
-            reFont = self.__class__.reFont
-            reHead2 = self.__class__.reHead2
-            reHead3 = self.__class__.reHead3
-            reBold = self.__class__.reBold
-            reAlign = self.__class__.reAlign
-            align_text = {u'^^':u'center',u'<<':u'left',u'>>':u'right'}
-            self.inBold = False
-            if reHead2.match(rec_text):
-                rec_text = reHead2.sub(
-                    u'' r'\1<font face=1 color=220000>\2<font face=3 '
-                    u'' r'color=444444>\r\n', rec_text)
-                rec_text = reHead3.sub(
-                    u'' r'\1<font face=3 color=220000>\2<font face=3 '
-                    u'' r'color=444444>\r\n', rec_text)
-                rec_text = reAlign.sub(replaceAlign,rec_text)
-                rec_text = reBold.sub(replaceBold,rec_text)
-                rec_text = re.sub(u'' r'\r\n', r'<br>\r\n', rec_text)
-            else:
-                maColor = reColor.search(rec_text)
-                if maColor:
-                    color = maColor.group(1)
-                elif record.IsScroll:
-                    color = u'000000'
-                else:
-                    color = u'444444'
-                fontFace = u'<font face=3 color='+color+u'>'
-                rec_text = reTagInWord.sub(u'' r'\1', rec_text)
-                if reDiv.search(rec_text) and not reFont.search(rec_text):
-                    rec_text = fontFace+rec_text
-                else:
-                    rec_text = reFont1.sub(fontFace,rec_text)
-            if rec_text != record.text:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.text = rec_text
-                    self.mod_count[modFile.GName] += 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
+        if self.wants_record(record):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.text = self._darnify(record)
+                self.mod_count[modFile.GName] += 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_FogFix(AMultiTweakItem):
+class AAssortedTweak_FogFix(_AAssortedTweak):
     """Fix fog in cell to be non-zero."""
     tweak_name = _(u'Nvidia Fog Fix')
     tweak_tip = _(u'Fix fog related Nvidia black screen problems.')
@@ -621,17 +516,29 @@ class AAssortedTweak_FogFix(AMultiTweakItem):
         self.logMsg = u'* ' + _(u'Cells With Fog Tweaked To 0.0001: %d')
         self.defaultEnabled = True
 
-class AssortedTweak_FogFix(AAssortedTweak_FogFix,MultiTweakItem):
-    tweak_read_classes = 'CELL', 'WRLD',
+    def wants_record(self, record):
+        # All of these floats must be approximately equal to 0. They can be
+        # None in CBash as well, so guard against that.
+        for fog_attr in (u'fogNear', u'fogFar', u'fogClip'):
+            fog_val = getattr(record, fog_attr)
+            if fog_val is not None and not floats_equal(fog_val, 0.0):
+                return False
+        return True
 
-    def scanModFile(self, modFile, progress,patchFile):
-        """Add lists from modFile."""
-        if 'CELL' not in modFile.tops: return
-        patchCells = patchFile.CELL
-        for cellBlock in modFile.CELL.cellBlocks:
-            cell = cellBlock.cell
-            if not (cell.fogNear or cell.fogFar or cell.fogClip):
-                patchCells.setCell(cell)
+class AssortedTweak_FogFix(AAssortedTweak_FogFix, _AssortPTweak):
+    supports_pooling = False
+    tweak_read_classes = b'CELL', b'WRLD', # WRLD is useless, but we want this
+    # patcher to run in the same group as the CellImporter, so we'll have to
+    # skip worldspaces. It shouldn't be a problem in those CELLs.
+
+    def tweak_scan_file(self, mod_file, patch_file):
+        if b'CELL' not in mod_file.tops: return
+        should_add_cell = self.wants_record
+        add_cell = patch_file.CELL.setCell
+        for cell_block in mod_file.CELL.cellBlocks:
+            curr_cell = cell_block.cell
+            if should_add_cell(curr_cell):
+                add_cell(curr_cell)
 
     def buildPatch(self,log,progress,patchFile):
         """Adds merged lists to patchfile."""
@@ -639,23 +546,25 @@ class AssortedTweak_FogFix(AAssortedTweak_FogFix,MultiTweakItem):
         count = Counter()
         for cellBlock in patchFile.CELL.cellBlocks:
             cell = cellBlock.cell
-            if not (cell.fogNear or cell.fogFar or cell.fogClip):
+            if self.wants_record(cell):
                 cell.fogNear = 0.0001
                 keep(cell.fid)
                 count[cell.fid[0]] += 1
         self._patchLog(log, count)
 
-class CBash_AssortedTweak_FogFix(AAssortedTweak_FogFix,CBash_MultiTweakItem):
-    tweak_read_classes = 'CELLS',  # or 'CELL', but we want this patcher to
+class CBash_AssortedTweak_FogFix(AAssortedTweak_FogFix, _AssortCTweak):
+    tweak_read_classes = b'CELLS', # or CELL, but we want this patcher to
     # run in the same group as the CellImporter, so we'll have to skip
-    # worldspaces.  It shouldn't be a problem in those CELLs.
+    # worldspaces. It shouldn't be a problem in those CELLs.
+
+    def wants_record(self, record):
+        # It's a CELL that showed up because we said CELLS instead of CELL
+        return super(CBash_AssortedTweak_FogFix, self).wants_record(
+            record) and not record.Parent
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if record.Parent:  # It's a CELL that showed up because we said
-            # 'CELLS' instead of 'CELL'
-            return
-        if not (record.fogNear or record.fogFar or record.fogClip):
+        if self.wants_record(record):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.fogNear = 0.0001
@@ -664,86 +573,79 @@ class CBash_AssortedTweak_FogFix(AAssortedTweak_FogFix,CBash_MultiTweakItem):
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_NoLightFlicker(AMultiTweakItem):
+class AAssortedTweak_NoLightFlicker(_AAssortedTweak):
     """Remove light flickering for low end machines."""
-    tweak_read_classes = 'LIGH',
+    tweak_read_classes = b'LIGH',
     tweak_name = _(u'No Light Flicker')
     tweak_tip = _(u'Remove flickering from lights. For use on low-end '
                   u'machines.')
+    _flicker_flags = 0x000001C8 # (flickers, flickerSlow, pulse, pulseSlow)
 
     def __init__(self):
         super(AAssortedTweak_NoLightFlicker, self).__init__(u'NoLightFlicker',
             (u'1.0', u'1.0'))
         self.logMsg = u'* ' + _(u'Lights Unflickered: %d')
 
+    def wants_record(self, record):
+        return int(record.flags & self._flicker_flags)
+
 class AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,
-                                   MultiTweakItem):
-
-    def __init__(self):
-        super(AssortedTweak_NoLightFlicker, self).__init__()
-        self.flags = flags = MreRecord.type_class['LIGH']._flags()
-        flags.flickers = flags.flickerSlow = flags.pulse = flags.pulseSlow =\
-            True
-
-    def scanModFile(self,modFile,progress,patchFile):
-        flickerFlags = self.flags
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.LIGH
-        for record in modFile.LIGH.getActiveRecords():
-            if record.flags & flickerFlags:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
+                                   _AssortPTweak):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
-        flickerFlags = self.flags
-        notFlickerFlags = ~flickerFlags
         keep = patchFile.getKeeper()
         for record in patchFile.LIGH.records:
-            if int(record.flags & flickerFlags):
-                record.flags &= notFlickerFlags
+            if self.wants_record(record):
+                record.flags &= ~self._flicker_flags
                 keep(record.fid)
                 count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,
-                                         CBash_MultiTweakItem):
-
+                                         _AssortCTweak):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if record.IsFlickers or record.IsFlickerSlow or record.IsPulse or \
-                record.IsPulseSlow:
+        if self.wants_record(record):
             override = record.CopyAsOverride(self.patchFile)
             if override:
-                override.IsFlickers = False
-                override.IsFlickerSlow = False
-                override.IsPulse = False
-                override.IsPulseSlow = False
+                override.flags &= ~self._flicker_flags
                 self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class AMultiTweakItem_Weight(AMultiTweakItem):
+class AMultiTweakItem_Weight(_AAssortedTweak):
+    logWeightValue = logMsg = u'OVERRIDE' # avoid pycharm warnings
 
     @property
-    def weight(self): return self.choiceValues[self.chosen][0]
+    def chosen_weight(self): return self.choiceValues[self.chosen][0]
 
     def _patchLog(self, log, count):
         """Will write to log for a class that has a weight field"""
         log.setHeader(self.logHeader)
-        log(self.logWeightValue % self.weight)
+        log(self.logWeightValue % self.chosen_weight)
         log(self.logMsg % sum(count.values()))
         for srcMod in load_order.get_ordered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_MultiTweakItem_Weight(CBash_MultiTweakItem,
-                                  AMultiTweakItem_Weight): pass
+class _PSeffWeightTweak(AMultiTweakItem_Weight, _AssortPTweak):
+    """Mixin for PBash weight tweaks that need to ignore SEFF effects."""
+    def wants_record(self, record):
+        # Skip OBME records, at least for now
+        return (super(_PSeffWeightTweak, self).wants_record(record) and
+                record.obme_record_version is None and
+                not (b'SEFF', 0) in record.getEffects())
+
+class _CSeffWeightTweak(AMultiTweakItem_Weight, _AssortCTweak):
+    """Mixin for CBash weight tweaks that need to ignore SEFF effects."""
+    def wants_record(self, record):
+        return super(_CSeffWeightTweak, self).wants_record(
+            record) and not any(e.name == self.SEFF for e in record.effects)
 
 class AAssortedTweak_PotionWeight(AMultiTweakItem_Weight):
     """Reweighs standard potions down to 0.1."""
-    tweak_read_classes = 'ALCH',
+    tweak_read_classes = b'ALCH',
     tweak_name = _(u'Reweigh: Potions (Maximum)')
     tweak_tip = _(u'Potion weight will be capped.')
 
@@ -754,53 +656,29 @@ class AAssortedTweak_PotionWeight(AMultiTweakItem_Weight):
         self.logWeightValue = _(u'Potions set to maximum weight of %f.')
         self.logMsg = u'* ' + _(u'Potions Reweighed: %d')
 
-class AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,MultiTweakItem):
+    def wants_record(self, record):
+        return (self.chosen_weight < record.weight < 1.0 and
+                not floats_equal(record.weight, self.chosen_weight))
 
-    def scanModFile(self,modFile,progress,patchFile):
-        maxWeight = self.weight
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.ALCH
-        id_records = patchBlock.id_records
-        for record in modFile.ALCH.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if maxWeight < record.weight < 1:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
+class AssortedTweak_PotionWeight(_PSeffWeightTweak,
+                                 AAssortedTweak_PotionWeight):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        maxWeight = self.weight
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.ALCH.records:
-            ##: Skips OBME records - rework to support them
-            if (maxWeight < record.weight < 1 and
-                record.obme_record_version is None and
-                    ('SEFF', 0) not in record.getEffects()):
-                record.weight = maxWeight
+            if self.wants_record(record):
+                record.weight = self.chosen_weight
                 keep(record.fid)
                 count[record.fid[0]] += 1
         self._patchLog(log, count)
 
-class CBash_AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,
-                                       CBash_MultiTweakItem_Weight):
-
-    def __init__(self):
-        super(CBash_AssortedTweak_PotionWeight, self).__init__()
-        # see https://github.com/wrye-bash/wrye-bash/commit/3aa3c941b2de6d751f71e50613ba20ac14f477e8
-        # CBash only, PBash gets away with just knowing the FormID of SEFF
-        # and always assuming it exists, since it's from Oblivion.esm. CBash
-        #  handles this by making sure the MGEF records are almost always
-        # read in, and always before patchers that will need them
-        self.SEFF = MGEFCode('SEFF')
-
+class CBash_AssortedTweak_PotionWeight(_CSeffWeightTweak,
+                                       AAssortedTweak_PotionWeight):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        maxWeight = self.weight
-        if maxWeight < record.weight < 1.0:
-            for effect in record.effects:
-                if effect.name == self.SEFF:
-                    return
+        maxWeight = self.chosen_weight
+        if self.wants_record(record):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = maxWeight
@@ -811,7 +689,7 @@ class CBash_AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,
 #------------------------------------------------------------------------------
 class AAssortedTweak_IngredientWeight(AMultiTweakItem_Weight):
     """Reweighs standard ingredients down to 0.1."""
-    tweak_read_classes = 'INGR',
+    tweak_read_classes = b'INGR',
     tweak_name = _(u'Reweigh: Ingredients')
     tweak_tip = _(u'Ingredient weight will be capped.')
 
@@ -822,49 +700,31 @@ class AAssortedTweak_IngredientWeight(AMultiTweakItem_Weight):
         self.logWeightValue = _(u'Ingredients set to maximum weight of %f.')
         self.logMsg = u'* ' + _(u'Ingredients Reweighed: %d')
 
-class AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,
-                                     MultiTweakItem):
+    def wants_record(self, record):
+        return (record.weight > self.chosen_weight and
+                not floats_equal(record.weight, self.chosen_weight))
 
-    def scanModFile(self,modFile,progress,patchFile):
-        maxWeight = self.weight
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.INGR
-        id_records = patchBlock.id_records
-        for record in modFile.INGR.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.weight > maxWeight:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
+class AssortedTweak_IngredientWeight(_PSeffWeightTweak,
+                                     AAssortedTweak_IngredientWeight):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        maxWeight = self.weight
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.INGR.records:
-            if record.weight > maxWeight:
-                record.weight = maxWeight
+            if self.wants_record(record):
+                record.weight = self.chosen_weight
                 keep(record.fid)
                 count[record.fid[0]] += 1
         self._patchLog(log, count)
 
-class CBash_AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,
-                                           CBash_MultiTweakItem_Weight):
-
-    def __init__(self):
-        super(CBash_AssortedTweak_IngredientWeight, self).__init__()
-        self.SEFF = MGEFCode('SEFF')
-
+class CBash_AssortedTweak_IngredientWeight(_CSeffWeightTweak,
+                                           AAssortedTweak_IngredientWeight):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        maxWeight = self.weight
-        if record.weight > maxWeight:
-            for effect in record.effects:
-                if effect.name == self.SEFF:
-                    return
+        if self.wants_record(record):
             override = record.CopyAsOverride(self.patchFile)
             if override:
-                override.weight = maxWeight
+                override.weight = self.chosen_weight
                 self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
@@ -872,7 +732,7 @@ class CBash_AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,
 #------------------------------------------------------------------------------
 class AAssortedTweak_PotionWeightMinimum(AMultiTweakItem_Weight):
     """Reweighs any potions up to 4."""
-    tweak_read_classes = 'ALCH',
+    tweak_read_classes = b'ALCH',
     tweak_name = _(u'Reweigh: Potions (Minimum)')
     tweak_tip = _(u'Potion weight will be floored.')
 
@@ -883,44 +743,34 @@ class AAssortedTweak_PotionWeightMinimum(AMultiTweakItem_Weight):
         self.logWeightValue = _(u'Potions set to minimum weight of %f.')
         self.logMsg = u'* ' + _(u'Potions Reweighed: %d')
 
-class AssortedTweak_PotionWeightMinimum(AAssortedTweak_PotionWeightMinimum,
-                                        MultiTweakItem):
+    def wants_record(self, record): # note no SEFF condition
+        return (record.weight < self.chosen_weight and
+                not floats_equal(record.weight, self.chosen_weight))
 
-    def scanModFile(self,modFile,progress,patchFile):
-        minWeight = self.weight
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.ALCH
-        id_records = patchBlock.id_records
-        for record in modFile.ALCH.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.weight < minWeight:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
+class AssortedTweak_PotionWeightMinimum(_AssortPTweak,
+                                        AAssortedTweak_PotionWeightMinimum):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        minWeight = self.weight
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.ALCH.records:
-            if record.weight < minWeight:
-                record.weight = minWeight
+            if self.wants_record(record):
+                record.weight = self.chosen_weight
                 keep(record.fid)
                 count[record.fid[0]] += 1
         self._patchLog(log, count)
 
 class CBash_AssortedTweak_PotionWeightMinimum(
-    AAssortedTweak_PotionWeightMinimum, CBash_MultiTweakItem_Weight):
+    _AssortCTweak, AAssortedTweak_PotionWeightMinimum):
     scanOrder = 33 #Have it run after the max weight for consistent results
     editOrder = 33
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        minWeight = self.weight
-        if record.weight < minWeight:
+        if self.wants_record(record):
             override = record.CopyAsOverride(self.patchFile)
             if override:
-                override.weight = minWeight
+                override.weight = self.chosen_weight
                 self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
@@ -928,7 +778,7 @@ class CBash_AssortedTweak_PotionWeightMinimum(
 #------------------------------------------------------------------------------
 class AAssortedTweak_StaffWeight(AMultiTweakItem_Weight):
     """Reweighs staves."""
-    tweak_read_classes = 'WEAP',
+    tweak_read_classes = b'WEAP',
     tweak_name = _(u'Reweigh: Staves')
     tweak_tip =  _(u'Staff weight will be capped.')
 
@@ -939,48 +789,37 @@ class AAssortedTweak_StaffWeight(AMultiTweakItem_Weight):
         self.logWeightValue = _(u'Staves set to maximum weight of %f.')
         self.logMsg = u'* ' + _(u'Staves Reweighed: %d')
 
-class AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,MultiTweakItem):
+    def wants_record(self, record):
+        return (record.weaponType == 4 and record.weight > self.chosen_weight
+                and not floats_equal(record.weight, self.chosen_weight))
 
-    def scanModFile(self,modFile,progress,patchFile):
-        maxWeight = self.weight
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.WEAP
-        id_records = patchBlock.id_records
-        for record in modFile.WEAP.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.weaponType == 4 and record.weight > maxWeight:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
+class AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight, _AssortPTweak):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        maxWeight = self.weight
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.WEAP.records:
-            if record.weaponType == 4 and record.weight > maxWeight:
-                record.weight = maxWeight
+            if self.wants_record(record):
+                record.weight = self.chosen_weight
                 keep(record.fid)
                 count[record.fid[0]] += 1
         self._patchLog(log, count)
 
 class CBash_AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,
-                                      CBash_MultiTweakItem_Weight):
-
+                                      _AssortCTweak):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        maxWeight = self.weight
-        if record.IsStaff and record.weight > maxWeight:
+        if self.wants_record(record):
             override = record.CopyAsOverride(self.patchFile)
             if override:
-                override.weight = maxWeight
+                override.weight = self.chosen_weight
                 self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
 class AAssortedTweak_ArrowWeight(AMultiTweakItem_Weight):
-    tweak_read_classes = 'AMMO',
+    tweak_read_classes = b'AMMO',
     tweak_name = _(u'Reweigh: Arrows')
     tweak_tip = _(u'Arrow weights will be capped.')
 
@@ -991,131 +830,107 @@ class AAssortedTweak_ArrowWeight(AMultiTweakItem_Weight):
         self.logWeightValue = _(u'Arrows set to maximum weight of %f.')
         self.logMsg = u'* ' + _(u'Arrows Reweighed: %d')
 
-class AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,MultiTweakItem):
+    def wants_record(self, record):
+        return (record.weight > self.chosen_weight and
+                not floats_equal(record.weight, self.chosen_weight))
 
-    def scanModFile(self,modFile,progress,patchFile):
-        maxWeight = self.weight
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.AMMO
-        id_records = patchBlock.id_records
-        for record in modFile.AMMO.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.weight > maxWeight:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
+class AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight, _AssortPTweak):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        maxWeight = self.weight
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.AMMO.records:
-            if record.weight > maxWeight:
-                record.weight = maxWeight
+            if self.wants_record(record):
+                record.weight = self.chosen_weight
                 keep(record.fid)
                 count[record.fid[0]] += 1
         self._patchLog(log, count)
 
 class CBash_AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,
-                                      CBash_MultiTweakItem_Weight):
-
+                                      _AssortCTweak):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        maxWeight = self.weight
-        if record.weight > maxWeight:
+        if self.wants_record(record):
             override = record.CopyAsOverride(self.patchFile)
             if override:
-                override.weight = maxWeight
+                override.weight = self.chosen_weight
                 self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_ScriptEffectSilencer(AMultiTweakItem):
+class AAssortedTweak_ScriptEffectSilencer(_AAssortedTweak):
     """Silences the script magic effect and gives it an extremely high
     speed."""
-    tweak_read_classes = 'MGEF',
+    tweak_read_classes = b'MGEF',
     tweak_name = _(u'Magic: Script Effect Silencer')
     tweak_tip = _(u'Script Effect will be silenced and have no graphics.')
+    _silent_attrs = {} # override in implementations
 
     def __init__(self):
         super(AAssortedTweak_ScriptEffectSilencer, self).__init__(
             u'SilentScriptEffect', (u'0', 0))
         self.defaultEnabled = True
 
+    def wants_record(self, record):
+        # u'' here is on purpose! We're checking the EDID, which gets decoded
+        return record.eid == u'SEFF' and any(
+            getattr(record, a) != v for a, v in self._silent_attrs.iteritems())
+
     def _patchLog(self,log):
         log.setHeader(self.logHeader)
         log(_(u'Script Effect silenced.'))
 
 class AssortedTweak_ScriptEffectSilencer(AAssortedTweak_ScriptEffectSilencer,
-                                         MultiTweakItem):
-
-    def scanModFile(self,modFile,progress,patchFile):
-        patchBlock = patchFile.MGEF
-        id_records = patchBlock.id_records
-        for record in modFile.MGEF.getActiveRecords():
-            if record.fid in id_records: continue
-            if record.eid != 'SEFF': continue
-            patchBlock.setRecord(record.getTypeCopy())
+                                         _AssortPTweak):
+    _null_ref = (GPath(bush.game.master_file), 0)
+    _silent_attrs = {u'model': None, u'projectileSpeed': 9999,
+                     u'light': _null_ref, u'effectShader': _null_ref,
+                     u'enchantEffect': _null_ref, u'castingSound': _null_ref,
+                     u'boltSound': _null_ref, u'hitSound': _null_ref,
+                     u'areaSound': _null_ref}
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        nullRef = (GPath(bush.game.master_file), 0)
-        silentattrs = {
-            'model': None,
-            'projectileSpeed' : 9999,
-            'light' : nullRef,
-            'effectShader' : nullRef,
-            'enchantEffect' : nullRef,
-            'castingSound' : nullRef,
-            'boltSound' : nullRef,
-            'hitSound' : nullRef,
-            'areaSound' : nullRef}
         keep = patchFile.getKeeper()
+        s_attrs = self._silent_attrs
         for record in patchFile.MGEF.records:
-            if record.eid != 'SEFF' or not record.longFids: continue
-            record.flags.noHitEffect = True
-            for attr in silentattrs:
-                if getattr(record,attr) != silentattrs[attr]:
-                    setattr(record,attr,silentattrs[attr])
-                    keep(record.fid)
+            if self.wants_record(record):
+                record.flags.noHitEffect = True
+                for attr in s_attrs: setattr(record, attr, s_attrs[attr])
+                keep(record.fid)
         self._patchLog(log)
 
 class CBash_AssortedTweak_ScriptEffectSilencer(
-    AAssortedTweak_ScriptEffectSilencer, CBash_MultiTweakItem):
-
-    def __init__(self):
-        super(CBash_AssortedTweak_ScriptEffectSilencer, self).__init__()
-        self.attrs = ['modPath', 'modb', 'modt_p', 'projectileSpeed', 'light',
-                      'effectShader', 'enchantEffect', 'castingSound',
-                      'boltSound', 'hitSound', 'areaSound', 'IsNoHitEffect']
-        self.newValues = [None, None, None, 9999, None, None, None, None, None,
-                          None, None, True]
-        self.SEFF = MGEFCode('SEFF')
-        # TODO THIS IS ONE OF THE FEW THAT HAS no self.mod_count = {} - maybe
-        # should call the constructor directly instead of super() ?
-        self.buildPatchLog=self._patchLog # AAssortedTweak_ScriptEffectSilencer
+    AAssortedTweak_ScriptEffectSilencer, _AssortCTweak):
+    _silent_attrs = {
+        u'modPath': None, u'modb': None, u'modt_p': None,
+        u'projectileSpeed': 9999, u'light': None, u'effectShader': None,
+        u'enchantEffect': None, u'castingSound': None, u'boltSound': None,
+        u'hitSound': None, u'areaSound': None, u'IsNoHitEffect': True}
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if record.eid == self.SEFF[0]:
-            attrs = self.attrs
-            newValues = self.newValues
-            oldValues = map(record.__getattribute__, attrs)
-            if oldValues != newValues:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    map(override.__setattr__, attrs, newValues)
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
+        if self.wants_record(record):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                s_attrs = self._silent_attrs
+                for attr in s_attrs: setattr(override, attr, s_attrs[attr])
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
+
+    # Does not use mod_count because it would be pointless, this tweak can only
+    # ever change a single record (or its overrides)
+    buildPatchLog = AAssortedTweak_ScriptEffectSilencer._patchLog
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_HarvestChance(AMultiTweakItem):
+class AAssortedTweak_HarvestChance(_AAssortedTweak):
     """Adjust Harvest Chances."""
-    tweak_read_classes = 'FLOR',
+    tweak_read_classes = b'FLOR',
     tweak_name = _(u'Harvest Chance')
     tweak_tip = _(u'Harvest chances on all plants will be set to the chosen '
                   u'percentage.')
+    _season_attrs = (u'spring', u'summer', u'fall', u'winter')
 
     def __init__(self):
         super(AAssortedTweak_HarvestChance, self).__init__(u'HarvestChance',
@@ -1124,57 +939,45 @@ class AAssortedTweak_HarvestChance(AMultiTweakItem):
             (u'90%', 90), (u'100%', 100), (_(u'Custom'), 0))
         self.logMsg = u'* ' + _(u'Harvest Chances Changed: %d')
 
-class AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,MultiTweakItem):
+    @property
+    def chosen_chance(self):
+        return self.choiceValues[self.chosen][0]
 
-    def scanModFile(self,modFile,progress,patchFile):
-        chance = self.choiceValues[self.chosen][0]
-        patchBlock = patchFile.FLOR
-        id_records = patchBlock.id_records
-        for record in modFile.FLOR.getActiveRecords():
-            if record.fid not in id_records:
-                patchBlock.setRecord(record.getTypeCopy())
+    def wants_record(self, record):
+        return (u'nirnroot' not in record.eid.lower() # skip Nirnroots
+                and any(getattr(record, a) != self.chosen_chance for a
+                        in self._season_attrs))
 
+class AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance, _AssortPTweak):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        chance = self.choiceValues[self.chosen][0]
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.FLOR.records:
-            if record.eid.startswith(u'Nirnroot'): continue # skip Nirnroots
-            chances_changed = False
-            for attr in (u'spring', u'summer', u'fall', u'winter'):
-                if getattr(record, attr) != chance:
-                    setattr(record, attr, chance)
-                    chances_changed = True
-            if chances_changed:
+            if self.wants_record(record):
+                for attr in self._season_attrs:
+                    setattr(record, attr, self.chosen_chance)
                 keep(record.fid)
                 count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,
-                                        CBash_MultiTweakItem):
-
-    def __init__(self):
-        super(CBash_AssortedTweak_HarvestChance, self).__init__()
-        self.attrs = [u'spring', u'summer', u'fall', u'winter']
-
+                                        _AssortCTweak):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if record.eid.startswith(u'Nirnroot'): return # Skip Nirnroots
-        newValues = [self.choiceValues[self.chosen][0]] * 4
-        oldValues = map(record.__getattribute__, self.attrs)
-        if oldValues != newValues:
+        if self.wants_record(record):
             override = record.CopyAsOverride(self.patchFile)
             if override:
-                map(override.__setattr__, self.attrs, newValues)
+                for attr in self._season_attrs:
+                    setattr(override, attr, self.chosen_chance)
                 self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_WindSpeed(AMultiTweakItem):
+class AAssortedTweak_WindSpeed(_AAssortedTweak):
     """Disables Weather winds."""
-    tweak_read_classes = 'WTHR',
+    tweak_read_classes = b'WTHR',
     tweak_name = _(u'Disable Wind')
     tweak_tip = _(u'Disables the wind on all weathers.')
 
@@ -1183,35 +986,26 @@ class AAssortedTweak_WindSpeed(AMultiTweakItem):
             (_(u'Disable'), 0))
         self.logMsg = u'* ' + _(u'Winds Disabled: %d')
 
-class AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed,MultiTweakItem):
+    def wants_record(self, record):
+        return record.windSpeed != 0
 
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.WTHR
-        id_records = patchBlock.id_records
-        for record in modFile.WTHR.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.windSpeed != 0:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
+class AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed, _AssortPTweak):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.WTHR.records:
-            if record.windSpeed != 0:
+            if self.wants_record(record):
                 record.windSpeed = 0
                 keep(record.fid)
                 count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed,
-                                    CBash_MultiTweakItem):
-
+                                    _AssortCTweak):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if record.windSpeed != 0:
+        if self.wants_record(record):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.windSpeed = 0
@@ -1220,9 +1014,9 @@ class CBash_AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed,
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_UniformGroundcover(AMultiTweakItem):
+class AAssortedTweak_UniformGroundcover(_AAssortedTweak):
     """Eliminates random variation in groundcover."""
-    tweak_read_classes = 'GRAS',
+    tweak_read_classes = b'GRAS',
     tweak_name = _(u'Uniform Groundcover')
     tweak_tip = _(u'Eliminates random variation in groundcover (grasses, '
                   u'shrubs, etc.).')
@@ -1232,36 +1026,27 @@ class AAssortedTweak_UniformGroundcover(AMultiTweakItem):
             u'UniformGroundcover', (u'1.0', u'1.0'))
         self.logMsg = u'* ' + _(u'Grasses Normalized: %d')
 
+    def wants_record(self, record):
+        return record.heightRange != 0
+
 class AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,
-                                       MultiTweakItem):
-
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.GRAS
-        id_records = patchBlock.id_records
-        for record in modFile.GRAS.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.heightRange != 0:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
+                                       _AssortPTweak):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.GRAS.records:
-            if record.heightRange != 0:
+            if self.wants_record(record):
                 record.heightRange = 0
                 keep(record.fid)
                 count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,
-                                             CBash_MultiTweakItem):
-
+                                             _AssortCTweak):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if record.heightRange != 0:
+        if self.wants_record(record):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.heightRange = 0
@@ -1270,9 +1055,9 @@ class CBash_AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_SetCastWhenUsedEnchantmentCosts(AMultiTweakItem):
+class AAssortedTweak_SetCastWhenUsedEnchantmentCosts(_AAssortedTweak):
     """Sets Cast When Used Enchantment number of uses."""
-    tweak_read_classes = 'ENCH',
+    tweak_read_classes = b'ENCH',
     tweak_name = _(u'Number of uses for pre-enchanted weapons and staves')
     tweak_tip = _(u'The charge amount and cast cost will be edited so that '
                   u'all enchanted weapons and staves have the amount of uses '
@@ -1289,418 +1074,310 @@ class AAssortedTweak_SetCastWhenUsedEnchantmentCosts(AMultiTweakItem):
         self.logHeader = u'=== ' + _(u'Set Enchantment Number of Uses')
         self.logMsg = u'* ' + _(u'Enchantments Set: %d')
 
-class AssortedTweak_SetCastWhenUsedEnchantmentCosts(
-    AAssortedTweak_SetCastWhenUsedEnchantmentCosts, MultiTweakItem):
-    #info: 'itemType','chargeAmount','enchantCost'
+    def wants_record(self, record):
+        if record.itemType not in (1, 2): return False
+        new_cost, new_amount = self._calc_cost_and_amount(record)
+        return (record.enchantCost != new_cost or
+                record.chargeAmount != new_amount)
 
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.ENCH
-        id_records = patchBlock.id_records
-        for record in modFile.ENCH.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.itemType in [1,2]:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
+    def _calc_cost_and_amount(self, record):
+        """Calculates the new enchantment cost and charge amount for the
+        specified record based on the number of uses the user chose."""
+        chosen_uses = self.choiceValues[self.chosen][0]
+        final_cost = (max(record.chargeAmount // chosen_uses, 1)
+                      if chosen_uses != 0 else 0)
+        return final_cost, final_cost * chosen_uses
+
+class AssortedTweak_SetCastWhenUsedEnchantmentCosts(
+    AAssortedTweak_SetCastWhenUsedEnchantmentCosts, _AssortPTweak):
+    #info: 'itemType','chargeAmount','enchantCost'
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.ENCH.records:
-            if record.itemType in [1,2]:
-                uses = self.choiceValues[self.chosen][0]
-                cost = uses
-                if uses != 0:
-                    cost = max(record.chargeAmount/uses,1)
-                record.enchantCost = cost
-                record.chargeAmount = cost * uses
+            if self.wants_record(record):
+                new_cost, new_amount = self._calc_cost_and_amount(record)
+                record.enchantCost = new_cost
+                record.chargeAmount = new_amount
                 keep(record.fid)
                 count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(
-    AAssortedTweak_SetCastWhenUsedEnchantmentCosts, CBash_MultiTweakItem):
+    AAssortedTweak_SetCastWhenUsedEnchantmentCosts, _AssortCTweak):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if record.IsStaff or record.IsWeapon:
-            uses = self.choiceValues[self.chosen][0]
-            cost = uses
-            if uses != 0:
-                cost = max(record.chargeAmount//uses,1)
-            amount = cost * uses
-            if record.enchantCost != cost or record.chargeAmount != amount:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.enchantCost = cost
-                    override.chargeAmount = amount
-                    self.mod_count[modFile.GName] += 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
+        if self.wants_record(record):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                new_cost, new_amount = self._calc_cost_and_amount(record)
+                override.enchantCost = new_cost
+                override.chargeAmount = new_amount
+                self.mod_count[modFile.GName] += 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_DefaultIcons(AMultiTweakItem):
+##: It's possible to simplify this further, but will require some effort
+##: Also, will have to become more powerful in the process if we want it to
+# support FO3/FNV eventually
+class AAssortedTweak_DefaultIcons(_AAssortedTweak):
     """Sets a default icon for any records that don't have any icon
     assigned."""
     tweak_name = _(u'Default Icons')
     tweak_tip = _(u"Sets a default icon for any records that don't have any "
-                  u"icon assigned")
+                  u'icon assigned.')
+    _default_icons = {
+        b'ALCH': u'Clutter\\Potions\\IconPotion01.dds',
+        b'AMMO': u'Weapons\\IronArrow.dds',
+        b'APPA': u'Clutter\\IconMortarPestle.dds',
+        b'ARMO': ((u'Armor\\Iron\\M\\Cuirass.dds',
+                   u'Armor\\Iron\\F\\Cuirass.dds'),
+                 (u'Armor\\Iron\\M\\Greaves.dds',
+                  u'Armor\\Iron\\F\\Greaves.dds'),
+                 (u'Armor\\Iron\\M\\Helmet.dds',),
+                 (u'Armor\\Iron\\M\\Gauntlets.dds',
+                  u'Armor\\Iron\\F\\Gauntlets.dds'),
+                 (u'Armor\\Iron\\M\\Boots.dds',),
+                 (u'Armor\\Iron\\M\\Shield.dds',),
+                 (u'Armor\\Iron\\M\\Shield.dds',),), # Default Armor icon
+        b'BOOK': u'Clutter\\iconbook%d.dds',
+        b'BSGN': u'Clutter\\iconbook%d.dds',
+        b'CLAS': u'Clutter\\iconbook%d.dds',
+        b'CLOT': ((u'Clothes\\MiddleClass\\01\\M\\Shirt.dds',
+                   u'Clothes\\MiddleClass\\01\\F\\Shirt.dds'),
+                 (u'Clothes\\MiddleClass\\01\\M\\Pants.dds',
+                  u'Clothes\\MiddleClass\\01\\F\\Pants.dds'),
+                 (u'Clothes\\MythicDawnrobe\\hood.dds',),
+                 (u'Clothes\\LowerClass\\Jail\\M\\'
+                  u'JailShirtHandcuff.dds',),
+                 (u'Clothes\\MiddleClass\\01\\M\\Shoes.dds',
+                  u'Clothes\\MiddleClass\\01\\F\\Shoes.dds'),
+                 (u'Clothes\\Ring\\RingNovice.dds',),
+                 (u'Clothes\\Amulet\\AmuletSilver.dds',),),
+##                'FACT': u"", ToDo
+        b'INGR': u'Clutter\\IconSeeds.dds',
+        b'KEYM': (u'Clutter\\Key\\Key.dds', u'Clutter\\Key\\Key02.dds'),
+        b'LIGH': u'Lights\\IconTorch02.dds',
+        b'MISC': u'Clutter\\Soulgems\\AzurasStar.dds',
+        b'QUST': u'Quest\\icon_miscellaneous.dds',
+        b'SGST': u'IconSigilStone.dds',
+        b'SLGM': u'Clutter\\Soulgems\\AzurasStar.dds',
+        b'WEAP': (u'Weapons\\IronDagger.dds', u'Weapons\\IronClaymore.dds',
+                  u'Weapons\\IronMace.dds', u'Weapons\\IronBattleAxe.dds',
+                  u'Weapons\\Staff.dds', u'Weapons\\IronBow.dds',),
+    }
+    tweak_read_classes = tuple(_default_icons)
 
     def __init__(self):
         super(AAssortedTweak_DefaultIcons,self).__init__(u'icons', (u'1', 1))
         self.defaultEnabled = True
         self.logMsg = u'* ' + _(u'Default Icons Set: %d')
 
-class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,MultiTweakItem):
-    tweak_read_classes = (
-        'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT', 'FACT',
-        'INGR', 'KEYM', 'LIGH', 'MISC', 'QUST', 'SGST', 'SLGM', 'WEAP',)
+    def wants_record(self, record):
+        return (not getattr(record, u'iconPath', None) and
+                not getattr(record, u'maleIconPath', None) and
+                not getattr(record, u'femaleIconPath', None))
 
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        for blockType in self.tweak_read_classes:
-            if blockType not in modFile.tops: continue
-            modBlock = getattr(modFile,blockType)
-            patchBlock = getattr(patchFile,blockType)
-            id_records = patchBlock.id_records
-            for record in modBlock.getActiveRecords():
-                if mapper(record.fid) not in id_records:
-                    record = record.getTypeCopy(mapper)
-                    patchBlock.setRecord(record)
+    def _assign_icons(self, record, d_icons):
+        """Assigns the specified default icons to the specified record."""
+        try:
+            if isinstance(d_icons, tuple):
+                if len(d_icons) == 1:
+                    record.maleIconPath = d_icons[0]
+                else:
+                    record.maleIconPath, record.femaleIconPath = d_icons
+            else:
+                record.iconPath = d_icons
+        except ValueError:
+            deprint(u'Error while assigning default icons to %r' % record)
+            raise
+
+class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons, _AssortPTweak):
+    def wants_record(self, record):
+        rsig = record.recType
+        if (rsig == b'LIGH' and not record.flags.canTake or
+                rsig == b'QUST' and not record.stages or
+                rsig in (b'ARMO', b'CLOT') and
+                record.flags.notPlayable): return False
+        return super(AssortedTweak_DefaultIcons, self).wants_record(record)
 
     def buildPatch(self,log,progress,patchFile):
         count = Counter()
         keep = patchFile.getKeeper()
-        for type_ in self.tweak_read_classes:
-            if type_ not in patchFile.tops: continue
-            for record in patchFile.tops[type_].records:
-                if getattr(record, 'iconPath', None): continue
-                if getattr(record, 'maleIconPath', None): continue
-                if getattr(record, 'femaleIconPath', None): continue
-                changed = False
-                if type_ == 'ALCH':
-                    record.iconPath = u"Clutter\\Potions\\IconPotion01.dds"
-                    changed = True
-                elif type_ == 'AMMO':
-                    record.iconPath = u"Weapons\\IronArrow.dds"
-                    changed = True
-                elif type_ == 'APPA':
-                    record.iconPath = u"Clutter\\IconMortarPestle.dds"
-                    changed = True
-                elif type_ == 'AMMO':
-                    record.iconPath = u"Weapons\\IronArrow.dds"
-                    changed = True
-                elif type_ == 'ARMO':
-                    if record.flags.notPlayable: continue
-                    #choose based on body flags:
-                    if record.flags.upperBody != 0:
-                        record.maleIconPath = u"Armor\\Iron\\M\\Cuirass.dds"
-                        record.femaleIconPath = u"Armor\\Iron\\F\\Cuirass.dds"
-                        changed = True
-                    elif record.flags.lowerBody != 0:
-                        record.maleIconPath = u"Armor\\Iron\\M\\Greaves.dds"
-                        record.femaleIconPath = u"Armor\\Iron\\F\\Greaves.dds"
-                        changed = True
-                    elif record.flags.head != 0 or record.flags.hair != 0:
-                        record.maleIconPath = u"Armor\\Iron\\M\\Helmet.dds"
-                        changed = True
-                    elif record.flags.hand != 0:
-                        record.maleIconPath = u"Armor\\Iron\\M\\Gauntlets.dds"
-                        record.femaleIconPath =u"Armor\\Iron\\F\\Gauntlets.dds"
-                        changed = True
-                    elif record.flags.foot != 0:
-                        record.maleIconPath = u"Armor\\Iron\\M\\Boots.dds"
-                        changed = True
-                    elif record.flags.shield != 0:
-                        record.maleIconPath = u"Armor\\Iron\\M\\Shield.dds"
-                        changed = True
-                    else: #Default icon, probably a token or somesuch
-                        record.maleIconPath = u"Armor\\Iron\\M\\Shield.dds"
-                        changed = True
-                elif type_ in ['BOOK', 'BSGN', 'CLAS']:  # just a random book
-                    # icon for class/birthsign as well.
-                    record.iconPath = u"Clutter\\iconbook%d.dds" % (
-                        random.randint(1, 13))
-                    changed = True
-                elif type_ == 'CLOT':
-                    if record.flags.notPlayable: continue
-                    #choose based on body flags:
-                    if record.flags.upperBody != 0:
-                        record.maleIconPath = \
-                            u"Clothes\\MiddleClass\\01\\M\\Shirt.dds"
-                        record.femaleIconPath = \
-                            u"Clothes\\MiddleClass\\01\\F\\Shirt.dds"
-                        changed = True
-                    elif record.flags.lowerBody != 0:
-                        record.maleIconPath = \
-                            u"Clothes\\MiddleClass\\01\\M\\Pants.dds"
-                        record.femaleIconPath = \
-                            u"Clothes\\MiddleClass\\01\\F\\Pants.dds"
-                        changed = True
-                    elif record.flags.head or record.flags.hair:
-                        record.maleIconPath = \
-                            u"Clothes\\MythicDawnrobe\\hood.dds"
-                        changed = True
-                    elif record.flags.hand != 0:
-                        record.maleIconPath = \
-                         u"Clothes\\LowerClass\\Jail\\M\\JailShirtHandcuff.dds"
-                        changed = True
-                    elif record.flags.foot != 0:
-                        record.maleIconPath = \
-                            u"Clothes\\MiddleClass\\01\\M\\Shoes.dds"
-                        record.femaleIconPath = \
-                            u"Clothes\\MiddleClass\\01\\F\\Shoes.dds"
-                        changed = True
-                    elif record.flags.leftRing or record.flags.rightRing:
-                        record.maleIconPath = u"Clothes\\Ring\\RingNovice.dds"
-                        changed = True
-                    else: #amulet
-                        record.maleIconPath = \
-                            u"Clothes\\Amulet\\AmuletSilver.dds"
-                        changed = True
-                elif type_ == 'FACT':
-                    #todo
-                    #changed = True
-                    pass
-                elif type_ == 'INGR':
-                    record.iconPath = u"Clutter\\IconSeeds.dds"
-                    changed = True
-                elif type_ == 'KEYM':
-                    record.iconPath = \
-                        [u"Clutter\\Key\\Key.dds", u"Clutter\\Key\\Key02.dds"][
-                            random.randint(0, 1)]
-                    changed = True
-                elif type_ == 'LIGH':
-                    if not record.flags.canTake: continue
-                    record.iconPath = u"Lights\\IconTorch02.dds"
-                    changed = True
-                elif type_ == 'MISC':
-                    record.iconPath = u"Clutter\\Soulgems\\AzurasStar.dds"
-                    changed = True
-                elif type_ == 'QUST':
-                    if not record.stages: continue
-                    record.iconPath = u"Quest\\icon_miscellaneous.dds"
-                    changed = True
-                elif type_ == 'SGST':
-                    record.iconPath = u"IconSigilStone.dds"
-                    changed = True
-                elif type_ == 'SLGM':
-                    record.iconPath = u"Clutter\\Soulgems\\AzurasStar.dds"
-                    changed = True
-                elif type_ == 'WEAP':
-                    if record.weaponType == 0:
-                        record.iconPath = u"Weapons\\IronDagger.dds"
-                    elif record.weaponType == 1:
-                        record.iconPath = u"Weapons\\IronClaymore.dds"
-                    elif record.weaponType == 2:
-                        record.iconPath = u"Weapons\\IronMace.dds"
-                    elif record.weaponType == 3:
-                        record.iconPath = u"Weapons\\IronBattleAxe.dds"
-                    elif record.weaponType == 4:
-                        record.iconPath = u"Weapons\\Staff.dds"
-                    elif record.weaponType == 5:
-                        record.iconPath = u"Weapons\\IronBow.dds"
-                    else: #Should never reach this point
-                        record.iconPath = u"Weapons\\IronDagger.dds"
-                    changed = True
-                if changed:
+        for curr_sig in self.tweak_read_classes:
+            if curr_sig not in patchFile.tops: continue
+            for record in patchFile.tops[curr_sig].records:
+                if self.wants_record(record):
+                    d_icons = self._default_icons[curr_sig]
+                    if isinstance(d_icons, tuple):
+                        if curr_sig in (b'ARMO', b'CLOT'):
+                            # Choose based on body flags:
+                            body_flags = record.flags
+                            if body_flags.upperBody:
+                                d_icons = d_icons[0]
+                            elif body_flags.lowerBody:
+                                d_icons = d_icons[1]
+                            elif body_flags.head or body_flags.hair:
+                                d_icons = d_icons[2]
+                            elif body_flags.hand:
+                                d_icons = d_icons[3]
+                            elif body_flags.foot:
+                                d_icons = d_icons[4]
+                            elif (curr_sig == b'ARMO' and body_flags.shield or
+                                  curr_sig == b'CLOT' and (
+                                          body_flags.leftRing or
+                                          body_flags.rightRing)):
+                                d_icons = d_icons[5]
+                            else: # Default icon, probably a token or somesuch
+                                d_icons = d_icons[6]
+                        elif curr_sig == b'KEYM':
+                            d_icons = d_icons[random.randint(0, 1)]
+                        elif curr_sig == b'WEAP':
+                            # Choose based on weapon type:
+                            try:
+                                d_icons = d_icons[record.weaponType]
+                            except IndexError: # just in case
+                                d_icons = d_icons[0]
+                    elif curr_sig in (b'BOOK', b'BSGN', b'CLAS'):
+                        # Just a random book icon - for class/birthsign as well.
+                        d_icons = d_icons % (random.randint(1, 13))
+                    self._assign_icons(record, d_icons)
                     keep(record.fid)
                     count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,
-                                       CBash_MultiTweakItem):
+                                       _AssortCTweak):
     """Sets a default icon for any records that don't have any icon
     assigned."""
-    type_defaultIcon = {
-                'ALCH': u"Clutter\\Potions\\IconPotion01.dds",
-                'AMMO': u"Weapons\\IronArrow.dds",
-                'APPA': u"Clutter\\IconMortarPestle.dds",
-                'ARMO': ((u"Armor\\Iron\\M\\Cuirass.dds",
-                          u"Armor\\Iron\\F\\Cuirass.dds"),
-                         (u"Armor\\Iron\\M\\Greaves.dds",
-                          u"Armor\\Iron\\F\\Greaves.dds"),
-                         (u"Armor\\Iron\\M\\Helmet.dds",),
-                         (u"Armor\\Iron\\M\\Gauntlets.dds",
-                          u"Armor\\Iron\\F\\Gauntlets.dds"),
-                         (u"Armor\\Iron\\M\\Boots.dds",),
-                         (u"Armor\\Iron\\M\\Shield.dds",),
-                         (u"Armor\\Iron\\M\\Shield.dds",), #Default Armor icon
-                         ),
-                'BOOK': u"Clutter\\iconbook%d.dds",
-                'BSGN': u"Clutter\\iconbook%d.dds",
-                'CLAS': u"Clutter\\iconbook%d.dds",
-                'CLOT': ((u"Clothes\\MiddleClass\\01\\M\\Shirt.dds",
-                          u"Clothes\\MiddleClass\\01\\F\\Shirt.dds"),
-                         (u"Clothes\\MiddleClass\\01\\M\\Pants.dds",
-                          u"Clothes\\MiddleClass\\01\\F\\Pants.dds"),
-                         (u"Clothes\\MythicDawnrobe\\hood.dds",),
-                         (u"Clothes\\LowerClass\\Jail\\M\\"
-                          u"JailShirtHandcuff.dds",),
-                         (u"Clothes\\MiddleClass\\01\\M\\Shoes.dds",
-                          u"Clothes\\MiddleClass\\01\\F\\Shoes.dds"),
-                         (u"Clothes\\Ring\\RingNovice.dds",),
-                         (u"Clothes\\Amulet\\AmuletSilver.dds",),
-                         ),
-##                'FACT': u"", ToDo
-                'INGR': u"Clutter\\IconSeeds.dds",
-                'KEYM': (u"Clutter\\Key\\Key.dds",u"Clutter\\Key\\Key02.dds"),
-                'LIGH': u"Lights\\IconTorch02.dds",
-                'MISC': u"Clutter\\Soulgems\\AzurasStar.dds",
-                'QUST': u"Quest\\icon_miscellaneous.dds",
-                'SGST': u"IconSigilStone.dds",
-                'SLGM': u"Clutter\\Soulgems\\AzurasStar.dds",
-                'WEAP': (u"Weapons\\IronDagger.dds",
-                         u"Weapons\\IronClaymore.dds",
-                         u"Weapons\\IronMace.dds",
-                         u"Weapons\\IronBattleAxe.dds",
-                         u"Weapons\\Staff.dds",
-                         u"Weapons\\IronBow.dds",
-                         ),
-                }
-    tweak_read_classes = list(type_defaultIcon)
+    def wants_record(self, record):
+        if (record._Type == b'LIGH' and not record.IsCanTake or
+                record._Type == b'QUST' and not record.stages or
+                record._Type in (b'ARMO', b'CLOT') and record.IsNonPlayable):
+            return False
+        return super(CBash_AssortedTweak_DefaultIcons, self).wants_record(
+            record)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if getattr(record, 'iconPath', None): return
-        if getattr(record, 'maleIconPath', None): return
-        if getattr(record, 'femaleIconPath', None): return
-        if record._Type == 'LIGH' and not record.IsCanTake: return
-        if record._Type == 'QUST' and not record.stages: return
-        if record._Type in ['ARMO','CLOT'] and not record.IsPlayable: return
-        override = record.CopyAsOverride(self.patchFile)
-        if override:
-            icons = self.type_defaultIcon[override._Type]
-            if isinstance(icons, tuple):
-                if override._Type == 'ARMO':
-                    #choose based on body flags:
-                    if override.IsUpperBody:
-                        icons = icons[0]
-                    elif override.IsLowerBody:
-                        icons = icons[1]
-                    elif override.IsHead or record.IsHair:
-                        icons = icons[2]
-                    elif override.IsHand:
-                        icons = icons[3]
-                    elif override.IsFoot:
-                        icons = icons[4]
-                    elif override.IsShield:
-                        icons = icons[5]
-                    else: #default icon, probably a token or somesuch
-                        icons = icons[6]
-                elif override._Type == 'CLOT':
-                    #choose based on body flags:
-                    if override.IsUpperBody:
-                        icons = icons[0]
-                    elif override.IsLowerBody:
-                        icons = icons[1]
-                    elif override.IsHead or record.IsHair:
-                        icons = icons[2]
-                    elif override.IsHand:
-                        icons = icons[3]
-                    elif override.IsFoot:
-                        icons = icons[4]
-                    elif override.IsLeftRing or override.IsRightRing:
-                        icons = icons[5]
-                    else:
-                        icons = icons[6]
-                elif override._Type == 'KEYM':
-                    icons = icons[random.randint(0,1)]
-                elif override._Type == 'WEAP':
-                    #choose based on weapon type:
-                    try:
-                        icons = icons[override.weaponType]
-                    except IndexError: #just in case
-                        icons = icons[0]
-            else:
-                if override._Type in ['BOOK', 'BSGN', 'CLAS']:  # just a
-                    # random book icon for class/birthsign as well.
-                    icons = icons % (random.randint(1,13))
-            try:
-                if isinstance(icons, tuple):
-                    if len(icons) == 1:
-                        override.maleIconPath = icons[0]
-                    else:
-                        override.maleIconPath, override.femaleIconPath = icons
-                else:
-                    override.iconPath = icons
-            except ValueError as error:
-                error_msg = u'%s: %s\n' % (self.tweak_name, error)
-                error_msg += u'override._Type: %s\nicons: %s\n' % (
-                    override._Type, icons)
-                error_msg += self.patchFile.Current.Debug_DumpModFiles()
-                deprint(error_msg)
-                raise
-            self.mod_count[modFile.GName] += 1
-            record.UnloadRecord()
-            record._RecordID = override._RecordID
+        if self.wants_record(record):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                d_icons = self._default_icons[override._Type]
+                if isinstance(d_icons, tuple):
+                    if override._Type in (b'ARMO', b'CLOT'):
+                        #choose based on body flags:
+                        if override.IsUpperBody:
+                            d_icons = d_icons[0]
+                        elif override.IsLowerBody:
+                            d_icons = d_icons[1]
+                        elif override.IsHead or record.IsHair:
+                            d_icons = d_icons[2]
+                        elif override.IsHand:
+                            d_icons = d_icons[3]
+                        elif override.IsFoot:
+                            d_icons = d_icons[4]
+                        elif (override._Type == b'ARMO' and override.IsShield
+                              or override._Type == b'CLOT' and
+                              override.IsLeftRing or override.IsRightRing):
+                            d_icons = d_icons[5]
+                        else: # Default icon, probably a token or somesuch
+                            d_icons = d_icons[6]
+                    elif override._Type == b'KEYM':
+                        d_icons = d_icons[random.randint(0,1)]
+                    elif override._Type == b'WEAP':
+                        #choose based on weapon type:
+                        try:
+                            d_icons = d_icons[override.weaponType]
+                        except IndexError: #just in case
+                            d_icons = d_icons[0]
+                elif override._Type in (b'BOOK', b'BSGN', b'CLAS'):
+                    # just a random book icon - for class/birthsign as well.
+                    d_icons = d_icons % (random.randint(1,13))
+                self._assign_icons(override, d_icons)
+                self.mod_count[modFile.GName] += 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-# Will be refactored in inf-312-tweak-pooling
+class _AAttenuationTweak(_AAssortedTweak):
+    """Shared code of PBash/CBash sound attenuation tweaks."""
+    tweak_read_classes = b'SOUN',
+
+    def __init__(self, tweak_key):
+        super(_AAttenuationTweak, self).__init__(
+            tweak_key, (u'0%', 0), (u'5%', 5), (u'10%', 10), (u'20%', 20),
+            (u'50%', 50), (u'80%', 80), (_(u'Custom'), 0))
+        self.logMsg = u'* ' + _(u'Sounds Modified: %d')
+
+    @property
+    def chosen_atten(self): return self.choiceValues[self.chosen][0] / 100
+
+    def wants_record(self, record):
+        return record.staticAtten and self.chosen_atten != 1 # avoid ITPOs
+
+class _PAttenuationTweak(_AAttenuationTweak, _AssortPTweak):
+    """Shared code of PBash sound attenuation tweaks."""
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = Counter()
+        keep = patchFile.getKeeper()
+        for record in patchFile.SOUN.records:
+            if self.wants_record(record):
+                # Must be an int on py3, otherwise errors on dump
+                record.staticAtten = int(record.staticAtten *
+                                         self.chosen_atten)
+                keep(record.fid)
+                count[record.fid[0]] += 1
+        self._patchLog(log, count)
+
+class _CAttenuationTweak(_AAttenuationTweak, _AssortCTweak):
+    """Shared code of CBash sound attenuation tweaks."""
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if self.wants_record(record):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                # Must be an int, otherwise cint errors on dump
+                override.staticAtten = int(override.staticAtten *
+                                           self.chosen_atten)
+                self.mod_count[modFile.GName] += 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
+
+#------------------------------------------------------------------------------
 _nirnroot_words = {u'nirnroot', u'vynroot', u'vynwurz'}
 def _is_nirnroot(record):
     return any(x in record.eid.lower() for x in _nirnroot_words)
 
-class AAssortedTweak_SetSoundAttenuationLevels(AMultiTweakItem):
+class AAssortedTweak_SetSoundAttenuationLevels(_AAttenuationTweak):
     """Sets Sound Attenuation Levels for all records except Nirnroots."""
-    tweak_read_classes = 'SOUN',
     tweak_name = _(u'Set Sound Attenuation Levels')
     tweak_tip = _(u'Sets sound attenuation levels to tweak%*current level. '
                   u'Does not affect {}.').format(bush.game.nirnroots)
 
     def __init__(self):
         super(AAssortedTweak_SetSoundAttenuationLevels, self).__init__(
-            u'Attenuation%:', (u'0%', 0), (u'5%', 5), (u'10%', 10),
-            (u'20%', 20), (u'50%', 50), (u'80%', 80), (_(u'Custom'), 0))
-        self.logMsg = u'* ' + _(u'Sounds Modified: %d')
+            u'Attenuation%:')
+
+    def wants_record(self, record):
+        return super(AAssortedTweak_SetSoundAttenuationLevels,
+                     self).wants_record(
+            record) and not _is_nirnroot(record)
 
 class AssortedTweak_SetSoundAttenuationLevels(
-    AAssortedTweak_SetSoundAttenuationLevels, MultiTweakItem):
-
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.SOUN
-        id_records = patchBlock.id_records
-        for record in modFile.SOUN.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.staticAtten and not _is_nirnroot(record):
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in patchFile.SOUN.records:
-            if record.staticAtten and not _is_nirnroot(record):
-                record.staticAtten = record.staticAtten * \
-                                     self.choiceValues[self.chosen][0] / 100
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        self._patchLog(log,count)
-
+    AAssortedTweak_SetSoundAttenuationLevels, _PAttenuationTweak): pass
 class CBash_AssortedTweak_SetSoundAttenuationLevels(
-    AAssortedTweak_SetSoundAttenuationLevels, CBash_MultiTweakItem):
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        choice = self.choiceValues[self.chosen][0] // 100
-        if choice == 1:  # Prevent any pointless changes if a custom value
-            # of 100 is used.
-            return
-        if record.staticAtten and not _is_nirnroot(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.staticAtten *= choice
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
+    AAssortedTweak_SetSoundAttenuationLevels, _CAttenuationTweak): pass
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(AMultiTweakItem):
+class AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(
+    _AAttenuationTweak):
     """Sets Sound Attenuation Levels for Nirnroots."""
-    tweak_read_classes = 'SOUN',
     tweak_name = _(u'Set Sound Attenuation Levels: %s '
                    u'Only') % bush.game.nirnroots
     tweak_tip = _(u'Sets sound attenuation levels to tweak%*current level. '
@@ -1708,56 +1385,22 @@ class AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(AMultiTweakItem):
 
     def __init__(self):
         super(AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly,
-              self).__init__(u'Nirnroot Attenuation%:', (u'0%', 0), (u'5%', 5),
-            (u'10%', 10), (u'20%', 20), (u'50%', 50), (u'80%', 80),
-            (_(u'Custom'), 0))
-        self.logMsg = u'* ' + _(u'Sounds Modified: %d')
+              self).__init__(u'Nirnroot Attenuation%:')
+
+    def wants_record(self, record):
+        return super(AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly,
+                     self).wants_record(
+            record) and _is_nirnroot(record)
 
 class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(
-    AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly, MultiTweakItem):
-
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.SOUN
-        id_records = patchBlock.id_records
-        for record in modFile.SOUN.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if _is_nirnroot(record) and record.staticAtten:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in patchFile.SOUN.records:
-            if _is_nirnroot(record) and record.staticAtten:
-                record.staticAtten = record.staticAtten * \
-                                     self.choiceValues[self.chosen][0] / 100
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        self._patchLog(log,count)
-
+    AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly,
+    _PAttenuationTweak): pass
 class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(
     AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly,
-    CBash_MultiTweakItem):
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        choice = self.choiceValues[self.chosen][0] / 100
-        if choice == 1:  # Prevent any pointless changes if a custom value
-            # of 100 is used.
-            return
-        if _is_nirnroot(record) and record.staticAtten:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.staticAtten *= choice
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
+    _CAttenuationTweak): pass
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_FactioncrimeGoldMultiplier(AMultiTweakItem):
+class AAssortedTweak_FactioncrimeGoldMultiplier(_AAssortedTweak):
     """Fix factions with unset crime gold multiplier to have a
     crime gold multiplier of 1.0."""
     tweak_read_classes = b'FACT',
@@ -1771,32 +1414,29 @@ class AAssortedTweak_FactioncrimeGoldMultiplier(AMultiTweakItem):
         self.logMsg = u'* ' + _(u'Factions Fixed: %d')
 
 class AssortedTweak_FactioncrimeGoldMultiplier(
-    AAssortedTweak_FactioncrimeGoldMultiplier, MultiTweakItem):
-
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.FACT
-        for record in modFile.FACT.getActiveRecords():
-            if record.crime_gold_multiplier is None:
-                patchRecords.setRecord(record.getTypeCopy(mapper))
+    AAssortedTweak_FactioncrimeGoldMultiplier, _AssortPTweak):
+    def wants_record(self, record):
+        return record.crime_gold_multiplier is None
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.FACT.records:
-            if record.crime_gold_multiplier is None:
+            if self.wants_record(record):
                 record.crime_gold_multiplier = 1.0
                 keep(record.fid)
                 count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_FactioncrimeGoldMultiplier(
-    AAssortedTweak_FactioncrimeGoldMultiplier, CBash_MultiTweakItem):
+    AAssortedTweak_FactioncrimeGoldMultiplier, _AssortCTweak):
+    def wants_record(self, record):
+        return record.crimeGoldMultiplier is None
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if record.crimeGoldMultiplier is None:
+        if self.wants_record(record):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.crimeGoldMultiplier = 1.0
@@ -1805,45 +1445,38 @@ class CBash_AssortedTweak_FactioncrimeGoldMultiplier(
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_LightFadeValueFix(AMultiTweakItem):
+class AAssortedTweak_LightFadeValueFix(_AAssortedTweak):
     """Remove light flickering for low end machines."""
-    tweak_read_classes = 'LIGH',
+    tweak_read_classes = b'LIGH',
     tweak_name = _(u'No Light Fade Value Fix')
-    tweak_tip = _(u"Sets Light's Fade values to default of 1.0 if not set.")
+    tweak_tip = _(u'Sets Light Fade values to default of 1.0 if not set.')
 
     def __init__(self):
         super(AAssortedTweak_LightFadeValueFix, self).__init__(
             u'NoLightFadeValueFix', (u'1.0', u'1.0'))
         self.logMsg = u'* ' + _(u'Lights With Fade Values Added: %d')
 
+    def wants_record(self, record):
+        return record.fade is None
+
 class AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,
-                                      MultiTweakItem):
-
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.LIGH
-        for record in modFile.LIGH.getActiveRecords():
-            if not isinstance(record.fade,float):
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
+                                      _AssortPTweak):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.LIGH.records:
-            if not isinstance(record.fade,float):
+            if self.wants_record(record):
                 record.fade = 1.0
                 keep(record.fid)
                 count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,
-                                            CBash_MultiTweakItem):
-
+                                            _AssortCTweak):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if record.fade is None:
+        if self.wants_record(record):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.fade = 1.0
@@ -1852,9 +1485,9 @@ class CBash_AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_TextlessLSCRs(AMultiTweakItem):
+class AAssortedTweak_TextlessLSCRs(_AAssortedTweak):
     """Removes the description from loading screens."""
-    tweak_read_classes = 'LSCR',
+    tweak_read_classes = b'LSCR',
     tweak_name = _(u'No Description Loading Screens')
     tweak_tip = _(u'Removes the description from loading screens.')
 
@@ -1863,33 +1496,26 @@ class AAssortedTweak_TextlessLSCRs(AMultiTweakItem):
             (u'1.0', u'1.0'))
         self.logMsg = u'* ' + _(u'Loading Screens Tweaked: %d')
 
-class AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,MultiTweakItem):
+    def wants_record(self, record):
+        return record.text
 
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.LSCR
-        for record in modFile.LSCR.getActiveRecords():
-            if record.text:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
+class AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs, _AssortPTweak):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.LSCR.records:
-            if record.text:
+            if self.wants_record(record):
                 record.text = u''
                 keep(record.fid)
                 count[record.fid[0]] += 1
         self._patchLog(log,count)
 
 class CBash_AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,
-                                        CBash_MultiTweakItem):
-
+                                        _AssortCTweak):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if record.text:
+        if self.wants_record(record):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.text = u''
@@ -1905,22 +1531,10 @@ class AssortedTweaker(MultiTweaker):
     @classmethod
     def tweak_instances(cls):
         return sorted([
-            AssortedTweak_ArmorShows(_(u"Armor Shows Amulets"),
-                _(u"Prevents armor from hiding amulets."),
-                u'armorShowsAmulets',
-                ),
-            AssortedTweak_ArmorShows(_(u"Armor Shows Rings"),
-                _(u"Prevents armor from hiding rings."),
-                u'armorShowsRings',
-                ),
-            AssortedTweak_ClothingShows(_(u"Clothing Shows Amulets"),
-                _(u"Prevents Clothing from hiding amulets."),
-                u'ClothingShowsAmulets',
-                ),
-            AssortedTweak_ClothingShows(_(u"Clothing Shows Rings"),
-                _(u"Prevents Clothing from hiding rings."),
-                u'ClothingShowsRings',
-                ),
+            AssortedTweak_ArmorShows_Amulets(),
+            AssortedTweak_ArmorShows_Rings(),
+            AssortedTweak_ClothingShows_Amulets(),
+            AssortedTweak_ClothingShows_Rings(),
             AssortedTweak_ArmorPlayable(),
             AssortedTweak_ClothingPlayable(),
             AssortedTweak_BowReach(),
@@ -1955,44 +1569,32 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
     @classmethod
     def tweak_instances(cls):
         return sorted([
-        CBash_AssortedTweak_ArmorShows(_(u"Armor Shows Amulets"),
-            _(u"Prevents armor from hiding amulets."),
-            u'armorShowsAmulets',
-            ),
-        CBash_AssortedTweak_ArmorShows(_(u"Armor Shows Rings"),
-            _(u"Prevents armor from hiding rings."),
-            u'armorShowsRings',
-            ),
-        CBash_AssortedTweak_ClothingShows(_(u"Clothing Shows Amulets"),
-            _(u"Prevents Clothing from hiding amulets."),
-            u'ClothingShowsAmulets',
-            ),
-        CBash_AssortedTweak_ClothingShows(_(u"Clothing Shows Rings"),
-            _(u"Prevents Clothing from hiding rings."),
-            u'ClothingShowsRings',
-            ),
-        CBash_AssortedTweak_ArmorPlayable(),
-        CBash_AssortedTweak_ClothingPlayable(),
-        CBash_AssortedTweak_BowReach(),
-        CBash_AssortedTweak_ConsistentRings(),
-        CBash_AssortedTweak_DarnBooks(),
-        CBash_AssortedTweak_FogFix(),
-        CBash_AssortedTweak_NoLightFlicker(),
-        CBash_AssortedTweak_PotionWeight(),
-        CBash_AssortedTweak_PotionWeightMinimum(),
-        CBash_AssortedTweak_StaffWeight(),
-        CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
-        CBash_AssortedTweak_HarvestChance(),
-        CBash_AssortedTweak_WindSpeed(),
-        CBash_AssortedTweak_UniformGroundcover(),
-        CBash_AssortedTweak_IngredientWeight(),
-        CBash_AssortedTweak_ArrowWeight(),
-        CBash_AssortedTweak_ScriptEffectSilencer(),
-        CBash_AssortedTweak_DefaultIcons(),
-        CBash_AssortedTweak_SetSoundAttenuationLevels(),
-        CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(),
-        CBash_AssortedTweak_FactioncrimeGoldMultiplier(),
-        CBash_AssortedTweak_LightFadeValueFix(),
-        CBash_AssortedTweak_SkyrimStyleWeapons(),
-        CBash_AssortedTweak_TextlessLSCRs(),
-        ],key=lambda a: a.tweak_name.lower())
+            CBash_AssortedTweak_ArmorShows_Amulets(),
+            CBash_AssortedTweak_ArmorShows_Rings(),
+            CBash_AssortedTweak_ClothingShows_Amulets(),
+            CBash_AssortedTweak_ClothingShows_Rings(),
+            CBash_AssortedTweak_ArmorPlayable(),
+            CBash_AssortedTweak_ClothingPlayable(),
+            CBash_AssortedTweak_BowReach(),
+            CBash_AssortedTweak_ConsistentRings(),
+            CBash_AssortedTweak_DarnBooks(),
+            CBash_AssortedTweak_FogFix(),
+            CBash_AssortedTweak_NoLightFlicker(),
+            CBash_AssortedTweak_PotionWeight(),
+            CBash_AssortedTweak_PotionWeightMinimum(),
+            CBash_AssortedTweak_StaffWeight(),
+            CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
+            CBash_AssortedTweak_HarvestChance(),
+            CBash_AssortedTweak_WindSpeed(),
+            CBash_AssortedTweak_UniformGroundcover(),
+            CBash_AssortedTweak_IngredientWeight(),
+            CBash_AssortedTweak_ArrowWeight(),
+            CBash_AssortedTweak_ScriptEffectSilencer(),
+            CBash_AssortedTweak_DefaultIcons(),
+            CBash_AssortedTweak_SetSoundAttenuationLevels(),
+            CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(),
+            CBash_AssortedTweak_FactioncrimeGoldMultiplier(),
+            CBash_AssortedTweak_LightFadeValueFix(),
+            CBash_AssortedTweak_SkyrimStyleWeapons(),
+            CBash_AssortedTweak_TextlessLSCRs(),
+            ],key=lambda a: a.tweak_name.lower())

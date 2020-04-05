@@ -327,10 +327,6 @@ class CBash_PatchFile(_PFile, ObModFile):
         self.mgef_name = bush.game.mgef_name.copy()
         self.hostileEffects = bush.game.hostile_effects.copy()
         self.scanSet = set()
-        self.races_vanilla = ['argonian', 'breton', 'dremora', 'dark elf',
-                              'dark seducer', 'golden saint', 'high elf',
-                              'imperial', 'khajiit', 'nord', 'orc', 'redguard',
-                              'wood elf']
         self.races_data = {'EYES': [], 'HAIR': []}
         _PFile.__init__(self, patch_name)
 

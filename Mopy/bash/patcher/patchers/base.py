@@ -24,7 +24,7 @@
 
 """This module contains base patcher classes."""
 from __future__ import print_function
-from collections import Counter
+from collections import Counter, defaultdict
 from itertools import chain
 from operator import itemgetter
 # Internal
@@ -35,6 +35,7 @@ from ..base import AMultiTweakItem, AMultiTweaker, Patcher, CBash_Patcher, \
 from ... import load_order, bush
 from ...bolt import GPath, CsvReader, deprint
 from ...brec import MreRecord
+from ...exception import AbstractError
 
 # Patchers 1 ------------------------------------------------------------------
 class ListPatcher(AListPatcher,Patcher): pass
@@ -51,8 +52,13 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
         self.mod_count = Counter()
 
 class MultiTweakItem(AMultiTweakItem):
-    # Notice the differences from Patcher in scanModFile and buildPatch
-    # TODO: scanModFile() have VERY similar code - use getReadClasses here ?
+    # If True, do not call tweak_scan_file and pool the records this tweak
+    # wants together with other tweaks so that we can do one big record copy
+    # instead of a bunch of small ones. More elegant and *much* faster, but
+    # only works for tweaks that target 'simple' record types (basically
+    # anything but CELL, DIAL and WRLD). See the wiki page '[dev] Tweak
+    # Pooling' for a detailed overview of its implementation.
+    supports_pooling = True
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -62,11 +68,22 @@ class MultiTweakItem(AMultiTweakItem):
         """Returns load factory classes needed for writing."""
         return self.__class__.tweak_read_classes
 
-    def scanModFile(self,modFile,progress,patchFile): # extra param: patchFile
-        """Scans specified mod file to extract info. May add record to patch
-        mod, but won't alter it. If adds record, should first convert it to
-        long fids."""
-        pass
+    ##: Could we move this to AMultiTweakItem and apply it to CBash as well?
+    def prepare_for_tweaking(self, patch_file):
+        """Gives this tweak a chance to use prepare for the phase where it gets
+        its tweak_record calls using the specified patch file instance. At this
+        point, all relevant files have been scanned, wanted records have been
+        forwarded into the BP, MGEFs have been indexed, etc. Default
+        implementation does nothing."""
+        # FIXME(inf) Currently somewhat useless - its use will become evident
+        #  in the next few commits ;)
+
+    def tweak_scan_file(self, mod_file, patch_file):
+        """Gives this tweak a chance to implement completely custom behavior
+        for scanning the specified mod file, with the specified patch file as
+        context. *Must* be implemented if this tweak does not support pooling,
+        but never gets called if this tweak does support pooling."""
+        raise AbstractError(u'tweak_scan_file not implemented')
 
     def buildPatch(self,log,progress,patchFile): # extra param: patchFile
         """Edits patch file as desired. Should write to log."""
@@ -86,7 +103,6 @@ class CBash_MultiTweakItem(AMultiTweakItem):
         # extra CBash_MultiTweakItem attribute, mod -> num of tweaked records
         self.mod_count = Counter()
 
-    #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return list(self.__class__.tweak_read_classes)
@@ -101,6 +117,14 @@ class CBash_MultiTweakItem(AMultiTweakItem):
 
 class MultiTweaker(AMultiTweaker,Patcher):
 
+    def initData(self,progress):
+        # Build up a dict ordering tweaks by the record signatures they're
+        # interested in and whether or not they can be pooled
+        self._tweak_dict = t_dict = defaultdict(lambda: ([], []))
+        for tweak in self.enabled_tweaks: # type: MultiTweakItem
+            for read_sig in tweak.getReadClasses():
+                t_dict[read_sig][tweak.supports_pooling].append(tweak)
+
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
         return chain.from_iterable(tweak.getReadClasses()
@@ -112,14 +136,36 @@ class MultiTweaker(AMultiTweaker,Patcher):
             for tweak in self.enabled_tweaks) if self.isActive else ()
 
     def scanModFile(self,modFile,progress):
-        for tweak in self.enabled_tweaks:
-            tweak.scanModFile(modFile,progress,self.patchFile)
+        rec_pool = defaultdict(set)
+        common_tops = set(modFile.tops) & set(self._tweak_dict)
+        for curr_top in common_tops:
+            top_dict = self._tweak_dict[curr_top]
+            # Need to give other tweaks a chance to do work first
+            for o_tweak in top_dict[False]:
+                o_tweak.tweak_scan_file(modFile, self.patchFile)
+            # Now we can collect all records that poolable tweaks are
+            # interested in
+            pool_record = rec_pool[curr_top].add
+            poolable_tweaks = top_dict[True]
+            if not poolable_tweaks: continue # likely complex type, e.g. CELL
+            for record in modFile.tops[curr_top].getActiveRecords():
+                for p_tweak in poolable_tweaks: # type: MultiTweakItem
+                    if p_tweak.wants_record(record):
+                        pool_record(record)
+                        break # Exit as soon as a tweak is interested
+        # Finally, copy all pooled records in one fell swoop
+        for rsig, pooled_records in rec_pool.iteritems():
+            if pooled_records: # only copy if we could pool
+                getattr(self.patchFile, rsig.decode(u'ascii')).copy_records(
+                    pooled_records)
 
     def buildPatch(self,log,progress):
         """Applies individual tweaks."""
         if not self.isActive: return
         log.setHeader(u'= ' + self._patcher_name, True)
-        for tweak in self.enabled_tweaks:
+        for tweak in self.enabled_tweaks: # type: MultiTweakItem
+            tweak.prepare_for_tweaking(self.patchFile)
+        for tweak in self.enabled_tweaks: # type: MultiTweakItem
             tweak.buildPatch(log,progress,self.patchFile)
 
 class CBash_MultiTweaker(AMultiTweaker,CBash_Patcher):

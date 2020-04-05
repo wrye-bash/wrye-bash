@@ -31,6 +31,7 @@ from this module outside of the patcher package."""
 # also document which methods MUST be overridden by raising AbstractError. For
 # instance Patcher.buildPatch() apparently is NOT always overridden
 from .. import load_order, bolt
+from ..exception import AbstractError
 
 #------------------------------------------------------------------------------
 # Abstract_Patcher and subclasses ---------------------------------------------
@@ -227,6 +228,12 @@ class AMultiTweakItem(object):
         if len(self.choiceLabels) > 1:
             tweakname += u' [' + self.choiceLabels[self.chosen] + u']'
         return tweakname
+
+    def wants_record(self, record):
+        """Return a truthy value if you want to get a chance to change the
+        specified record. Must be implemented by every PBash tweak that
+        supports pooling (see MultiTweakItem.supports_pooling)."""
+        raise AbstractError(u'wants_record not implemented')
 
 class DynamicNamedTweak(AMultiTweakItem):
     """A tweak that has its name and tip passed in as init parameters."""

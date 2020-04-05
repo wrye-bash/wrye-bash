@@ -28,26 +28,113 @@ to the Names Multitweaker - as well as the NamesTweaker itself."""
 from __future__ import division
 import re
 from collections import Counter
+from functools import partial
 # Internal
-from ... import load_order
+from ...bolt import RecPath
+from ...exception import AbstractError
 from ...patcher.base import AMultiTweakItem, AMultiTweaker, DynamicNamedTweak
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
 
-class _AMultiTweakItem_Names(MultiTweakItem):
+class _ANamesTweak(AMultiTweakItem):
+    """Shared code of PBash/CBash names tweaks and hasty abstraction over
+    CBash/PBash differences to allow moving duplicate code into _A classes."""
+    def __init__(self, key, *choices):
+        super(_ANamesTweak, self).__init__(key, *choices)
+        self.logMsg = u'* '+_(u'Items Renamed: %d')
 
-    def _patchLog(self, log, count):
-        # --Log - Notice self.logMsg is not used - so (apart from
-        # NamesTweak_BodyTags and NamesTweak_Body where it is not defined in
-        # the ANamesTweak_XX common superclass) the
-        # CBash implementations which _do_ use it produce different logs. TODO:
-        # unify C/P logs by using self.logMsg (mind the classes mentioned)
-        log(u'* %s: %d' % (self.tweak_name,sum(count.values())))
-        for srcMod in load_order.get_ordered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+    @property
+    def chosen_format(self): return self.choiceValues[self.chosen][0]
+
+    def _do_exec_rename(self, *placeholder):
+        """Does the actual renaming, returning the new name as its reuslt.
+        Should be CBash/PBash-agnostic, and take any information it needs as
+        parameters - see overrides for examples."""
+        raise AbstractError(u'_do_exec_rename not implemented')
+
+    def _exec_rename(self, record):
+        """Convenience method that calls _do_exec_rename, passing the correct
+        CBash/PBash record attributes in."""
+        return self._do_exec_rename(*self._get_rename_params(record))
+
+    def _get_effect_school(self, magic_effect):
+        """Returns the school of the specified MGEF."""
+        raise AbstractError(u'_get_effect_school not implemented')
+
+    def _get_record_signature(self, record):
+        """Returns the record signature of the specified record."""
+        raise AbstractError(u'_get_record_signature not implemented')
+
+    def _get_rename_params(self, record):
+        """Returns the parameters that should be passed to _do_exec_rename.
+        Passes only the record itself by default."""
+        return (record,)
+
+    def _has_mgefs_indexed(self):
+        """Returns a truthy value if MGEFs have been indexed already. Different
+        implementations are necessary for CBash and PBash."""
+        raise AbstractError(u'_has_mgefs_indexed not implemented')
+
+    def _is_effect_hostile(self, magic_effect):
+        """Returns a truthy value if the specified MGEF is nonhostile."""
+        raise AbstractError(u'_is_effect_nonhostile not implemented')
+
+    def _try_renaming(self, record):
+        """Checks if renaming via _exec_rename would change the specified
+        record's name."""
+        return record.full != self._exec_rename(record)
+
+class _PNamesTweak(_ANamesTweak, MultiTweakItem):
+    """Shared code of PBash names tweaks."""
+    _tweak_mgef_hostiles = set()
+    _tweak_mgef_school = {}
+
+    def prepare_for_tweaking(self, patch_file):
+        # These are cached, so fine to call for all tweaks
+        self._tweak_mgef_hostiles = patch_file.getMgefHostiles()
+        self._tweak_mgef_school = patch_file.getMgefSchool()
+
+    def _get_effect_school(self, magic_effect):
+        return (magic_effect.scriptEffect.school if magic_effect.scriptEffect
+                else self._tweak_mgef_school.get(magic_effect.name, 6))
+
+    def _get_record_signature(self, record):
+        return record.recType
+
+    def _has_mgefs_indexed(self):
+        return self._tweak_mgef_hostiles
+
+    def _is_effect_hostile(self, magic_effect):
+        return (magic_effect.scriptEffect.flags.hostile
+                if magic_effect.scriptEffect
+                else magic_effect.name in self._tweak_mgef_hostiles)
+
+class _CNamesTweak(_ANamesTweak, CBash_MultiTweakItem):
+    """Shared code of CBash names tweaks."""
+    def _get_effect_school(self, magic_effect):
+         return (magic_effect.schoolType if magic_effect.script
+                 else self.patchFile.mgef_school.get(magic_effect.name, 6))
+
+    def _get_record_signature(self, record):
+        return record._Type
+
+    def _has_mgefs_indexed(self):
+        return self.patchFile.hostileEffects
+
+    def _is_effect_hostile(self, magic_effect):
+        return (magic_effect.IsHostile if magic_effect.script
+                else magic_effect.name in self.patchFile.hostileEffects)
+
+class _AMgefNamesTweak(_ANamesTweak):
+    """Shared code of a few names tweaks that handle MGEFs."""
+    def wants_record(self, record):
+        # Once we have MGEFs indexed, we can try renaming to check more
+        # thoroughly (i.e. during the buildPatch/apply phase)
+        return (record.full and not self._has_mgefs_indexed() or
+                self._try_renaming(record))
 
 # Patchers: 30 ----------------------------------------------------------------
-class _ANamesTweak_BodyTags(AMultiTweakItem):
+class _ANamesTweak_BodyTags(AMultiTweakItem): # not _ANamesTweak, no classes!
     """Only exists to change _PFile.bodyTags - see _ANamesTweaker.__init__ for
     the implementation."""
     tweak_name = _(u'Body Part Codes')
@@ -58,350 +145,305 @@ class _ANamesTweak_BodyTags(AMultiTweakItem):
         super(_ANamesTweak_BodyTags, self).__init__(u'bodyTags', (
             u'ARGHTCCPBS', u'ARGHTCCPBS'), (u'ABGHINOPSL', u'ABGHINOPSL'))
 
-class NamesTweak_BodyTags(_ANamesTweak_BodyTags, MultiTweakItem): pass
+# We can get away with not implementing any methods here because we have not
+# specified any record types to patch ##: decide if this is an OK API usage
+class NamesTweak_BodyTags(_ANamesTweak_BodyTags, _PNamesTweak): pass
 
 class CBash_NamesTweak_BodyTags(_ANamesTweak_BodyTags, CBash_MultiTweakItem):
     def buildPatchLog(self, log): pass
 
 #------------------------------------------------------------------------------
-class NamesTweak_Body(DynamicNamedTweak, _AMultiTweakItem_Names):
-    """Names tweaker for armor and clothes."""
+class _ANamesTweak_Body(_ANamesTweak):
+    """Shared code of CBash/PBash body names tweaks."""
+    _tweak_body_tags = u'' # set in _ANamesTweaker.__init__
 
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return self.key,
+    def wants_record(self, record):
+        old_full = record.full
+        return (old_full and old_full[0] not in u'+-=.()[]' and
+                self._try_renaming(record))
 
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return self.key,
+    def _do_exec_rename(self, record, heavy_armor_addition, is_head, is_ring,
+                        is_amulet, is_robe, is_chest, is_pants, is_gloves,
+                        is_shoes, is_tail, is_shield):
+        curr_name = record.full
+        amulet_tag, ring_tag, gloves_tag, head_tag, tail_tag, robe_tag, \
+        chest_tag, pants_tag, shoes_tag, shield_tag = self._tweak_body_tags
+        if is_head: equipment_tag = head_tag
+        elif is_ring: equipment_tag = ring_tag
+        elif is_amulet: equipment_tag = amulet_tag
+        elif is_robe: equipment_tag = robe_tag
+        elif is_chest: equipment_tag = chest_tag
+        elif is_pants: equipment_tag = pants_tag
+        elif is_gloves: equipment_tag = gloves_tag
+        elif is_shoes: equipment_tag = shoes_tag
+        elif is_tail: equipment_tag = tail_tag
+        elif is_shield: equipment_tag = shield_tag
+        else: return curr_name # Weird record, don't change anything
+        prefix_subs = (equipment_tag + heavy_armor_addition,)
+        prefix_format = self.chosen_format
+        if u'%02d' in prefix_format: # Whether or not to show stats
+            prefix_subs += (record.strength / 100,)
+        return prefix_format % prefix_subs + curr_name
 
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        patchBlock = getattr(patchFile,self.key)
-        id_records = patchBlock.id_records
-        for record in getattr(modFile,self.key).getActiveRecords():
-            if record.full and mapper(record.fid) not in id_records:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
+class _PNamesTweak_Body(_ANamesTweak_Body, _PNamesTweak):
+    """Shared code of PBash body names tweaks."""
+    def wants_record(self, record):
+        return not record.flags.notPlayable and super(
+            _PNamesTweak_Body, self).wants_record(record)
+
+    def _get_rename_params(self, record):
+        body_flags = record.flags
+        return (record, (u'LH'[record.flags.heavyArmor]
+                         if record.recType == b'ARMO' else u''),
+                body_flags.head or body_flags.hair,
+                body_flags.rightRing or body_flags.leftRing, body_flags.amulet,
+                body_flags.upperBody or body_flags.lowerBody,
+                body_flags.upperBody, body_flags.lowerBody, body_flags.hand,
+                body_flags.foot, body_flags.tail, body_flags.shield)
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
-        format_ = self.choiceValues[self.chosen][0]
-        showStat = u'%02d' in format_
         keep = patchFile.getKeeper()
-        codes = patchFile.bodyTags
-        amulet,ring,gloves,head,tail,robe,chest,pants,shoes,shield = [
-            x for x in codes]
-        for record in getattr(patchFile,self.key).records:
-            if not record.full: continue
-            if record.full[0] in u'+-=.()[]': continue
-            rec_flgs = record.flags
-            if rec_flgs.head or rec_flgs.hair: type_ = head
-            elif rec_flgs.rightRing or rec_flgs.leftRing: type_ = ring
-            elif rec_flgs.amulet: type_ = amulet
-            elif rec_flgs.upperBody and rec_flgs.lowerBody: type_ = robe
-            elif rec_flgs.upperBody: type_ = chest
-            elif rec_flgs.lowerBody: type_ = pants
-            elif rec_flgs.hand: type_ = gloves
-            elif rec_flgs.foot: type_ = shoes
-            elif rec_flgs.tail: type_ = tail
-            elif rec_flgs.shield: type_ = shield
-            else: continue
-            if record.recType == 'ARMO':
-                type_ += 'LH'[record.flags.heavyArmor]
-            if showStat:
-                record.full = format_ % (
-                    type_, record.strength / 100) + record.full
-            else:
-                record.full = format_ % type_ + record.full
-            keep(record.fid)
-            count[record.fid[0]] += 1
+        for record in getattr(patchFile, self.tweak_read_classes[0]).records:
+            if self.wants_record(record):
+                record.full = self._exec_rename(record)
+                keep(record.fid)
+                count[record.fid[0]] += 1
         self._patchLog(log, count)
 
-class CBash_NamesTweak_Body(DynamicNamedTweak, CBash_MultiTweakItem):
-    """Names tweaker for armor and clothes."""
+class _CNamesTweak_Body(_ANamesTweak_Body, CBash_MultiTweakItem):
+    """Shared code of CBash body names tweaks."""
+    def wants_record(self, record):
+        return record.IsPlayable and super(
+            _CNamesTweak_Body, self).wants_record(record)
 
-    def __init__(self, tweak_name, tweak_tip, key, *choices, **kwargs):
-        super(CBash_NamesTweak_Body, self).__init__(tweak_name, tweak_tip, key,
-                                                    *choices, **kwargs)
-        self.logMsg = u'* ' + _(u'{} Renamed: %d').format(self.key)
-
-    def getTypes(self):
-        return [self.key]
+    def _get_rename_params(self, record):
+        return (record, (u'LH'[record.IsHeavyArmor]
+                         if record._Type == b'ARMO' else u''),
+                record.IsHead or record.IsHair,
+                record.IsRightRing or record.IsLeftRing, record.IsAmulet,
+                record.IsUpperBody or record.IsLowerBody, record.IsUpperBody,
+                record.IsLowerBody, record.IsHand, record.IsFoot,
+                record.IsTail, record.IsShield)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if record.IsNonPlayable: return
-        newFull = record.full
-        if newFull:
-            if record.IsHead or record.IsHair: type_ = self.head
-            elif record.IsRightRing or record.IsLeftRing: type_ = self.ring
-            elif record.IsAmulet: type_ = self.amulet
-            elif record.IsUpperBody and record.IsLowerBody: type_ = self.robe
-            elif record.IsUpperBody: type_ = self.chest
-            elif record.IsLowerBody: type_ = self.pants
-            elif record.IsHand: type_ = self.gloves
-            elif record.IsFoot: type_ = self.shoes
-            elif record.IsTail: type_ = self.tail
-            elif record.IsShield: type_ = self.shield
-            else: return
-            if record._Type == 'ARMO':
-                type_ += 'LH'[record.IsHeavyArmor]
-            if self.showStat:
-                newFull = self.format % (
-                    type_, record.strength / 100) + newFull
-            else:
-                newFull = self.format % type_ + newFull
-            if record.full != newFull:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.full = newFull
-                    self.mod_count[modFile.GName] += 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
+        if self.wants_record(record):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.full = self._exec_rename(record)
+                self.mod_count[modFile.GName] += 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class _ANamesTweak_Potions(AMultiTweakItem):
+class _AArmoNamesTweak(_ANamesTweak_Body):
+    """Shared code of CBash/PBash armor names tweaks."""
+    tweak_read_classes = b'ARMO',
+    tweak_name = _(u'Armor')
+    tweak_tip = _(u'Rename armor to sort by type.')
+
+    def __init__(self):
+        super(_AArmoNamesTweak, self).__init__(u'ARMO',
+            (_(u'BL Leather Boots'),     u'%s '),
+            (_(u'BL. Leather Boots'),    u'%s. '),
+            (_(u'BL - Leather Boots'),   u'%s - '),
+            (_(u'(BL) Leather Boots'),   u'(%s) '),
+            (u'----', u'----'),
+            (_(u'BL02 Leather Boots'),   u'%s%02d '),
+            (_(u'BL02. Leather Boots'),  u'%s%02d. '),
+            (_(u'BL02 - Leather Boots'), u'%s%02d - '),
+            (_(u'(BL02) Leather Boots'), u'(%s%02d) '),)
+
+class NamesTweak_Body_Armor(_AArmoNamesTweak, _PNamesTweak_Body): pass
+class CBash_NamesTweak_Body_Armor(_AArmoNamesTweak, _CNamesTweak_Body): pass
+
+#------------------------------------------------------------------------------
+class _AClotNamesTweak(_ANamesTweak_Body):
+    """Shared code of CBash/PBash clothes names tweaks."""
+    tweak_read_classes = b'CLOT',
+    tweak_name = _(u'Clothes')
+    tweak_tip = _(u'Rename clothes to sort by type.')
+
+    def __init__(self):
+        super(_AClotNamesTweak, self).__init__(u'CLOT',
+            (_(u'P Grey Trousers'),   u'%s '),
+            (_(u'P. Grey Trousers'),  u'%s. '),
+            (_(u'P - Grey Trousers'), u'%s - '),
+            (_(u'(P) Grey Trousers'), u'(%s) '),)
+
+class NamesTweak_Body_Clothes(_AClotNamesTweak, _PNamesTweak_Body): pass
+class CBash_NamesTweak_Body_Clothes(_AClotNamesTweak, _CNamesTweak_Body): pass
+
+#------------------------------------------------------------------------------
+_re_old_potion_label = re.compile(u'^(-|X) ', re.U)
+_re_old_potion_end = re.compile(u' -$', re.U)
+
+class _ANamesTweak_Potions(_AMgefNamesTweak):
     """Names tweaker for potions."""
-    reOldLabel = re.compile(u'^(-|X) ',re.U)
-    reOldEnd = re.compile(u' -$',re.U)
-    tweak_read_classes = 'ALCH',
+    tweak_read_classes = b'ALCH',
     tweak_name = _(u'Potions')
     tweak_tip = _(u'Label potions to sort by type and effect.')
 
     def __init__(self):
-        super(_ANamesTweak_Potions, self).__init__(u'ALCH', # key, not sig!
-            (_(u'XD Illness'), u'%s '), (_(u'XD. Illness'), u'%s. '),
-            (_(u'XD - Illness'), u'%s - '), (_(u'(XD) Illness'), u'(%s) '))
-        self.logMsg = u'* ' + _(u'{} Renamed: %d').format(self.key)
+        super(_ANamesTweak_Potions, self).__init__(u'ALCH',
+            (_(u'XD Illness'), u'%s '),
+            (_(u'XD. Illness'), u'%s. '),
+            (_(u'XD - Illness'), u'%s - '),
+            (_(u'(XD) Illness'), u'(%s) '),)
 
-class NamesTweak_Potions(_ANamesTweak_Potions, _AMultiTweakItem_Names):
+    def _do_exec_rename(self, record, is_food):
+        school = 6 # Default to 6 (U: unknown)
+        for i, rec_effect in enumerate(record.effects):
+            if i == 0:
+                school = self._get_effect_school(rec_effect)
+            # Non-hostile effect?
+            if not self._is_effect_hostile(rec_effect):
+                is_poison = False
+                break
+        else:
+            is_poison = True
+        # Remove existing label and ending
+        wip_name = _re_old_potion_label.sub(u'', record.full)
+        wip_name = _re_old_potion_end.sub(u'', wip_name)
+        if is_food:
+            return u'.' + wip_name
+        else:
+            effect_label = (u'X' if is_poison else u'') + u'ACDIMRU'[school]
+            return self.chosen_format % effect_label + wip_name
 
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.ALCH
-        id_records = patchBlock.id_records
-        for record in modFile.ALCH.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            record = record.getTypeCopy(mapper)
-            patchBlock.setRecord(record)
+class NamesTweak_Potions(_ANamesTweak_Potions, _PNamesTweak):
+    def _get_rename_params(self, record):
+        return (record, record.flags.isFood)
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
-        format_ = self.choiceValues[self.chosen][0]
-        hostileEffects = patchFile.getMgefHostiles()
         keep = patchFile.getKeeper()
-        reOldLabel = self.__class__.reOldLabel
-        reOldEnd = self.__class__.reOldEnd
-        mgef_school = patchFile.getMgefSchool()
         for record in patchFile.ALCH.records:
-            if not record.full: continue
-            school = 6 #--Default to 6 (U: unknown)
-            for index,effect in enumerate(record.effects):
-                effectId = effect.name
-                if index == 0:
-                    if effect.scriptEffect:
-                        school = effect.scriptEffect.school
-                    else:
-                        school = mgef_school.get(effectId,6)
-                #--Non-hostile effect?
-                if effect.scriptEffect:
-                    if not effect.scriptEffect.flags.hostile:
-                        isPoison = False
-                        break
-                elif effectId not in hostileEffects:
-                    isPoison = False
-                    break
-            else:
-                isPoison = True
-            full = reOldLabel.sub(u'',record.full) #--Remove existing label
-            full = reOldEnd.sub(u'',full)
-            if record.flags.isFood:
-                record.full = u'.'+full
-            else:
-                label = (u'X' if isPoison else u'') + u'ACDIMRU'[school]
-                record.full = format_ % label + full
-            keep(record.fid)
-            count[record.fid[0]] += 1
+            if self.wants_record(record):
+                record.full = self._exec_rename(record)
+                keep(record.fid)
+                count[record.fid[0]] += 1
         self._patchLog(log, count)
 
-class CBash_NamesTweak_Potions(_ANamesTweak_Potions, CBash_MultiTweakItem):
+class CBash_NamesTweak_Potions(_ANamesTweak_Potions, _CNamesTweak):
+    def _get_rename_params(self, record):
+        return (record, record.IsFood)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        newFull = record.full
-        if newFull:
-            mgef_school = self.patchFile.mgef_school
-            hostileEffects = self.patchFile.hostileEffects
-            schoolType = 6 #--Default to 6 (U: unknown)
-            for index,effect in enumerate(record.effects):
-                effectId = effect.name
-                if index == 0:
-                    if effect.script:
-                        schoolType = effect.schoolType
-                    else:
-                        schoolType = mgef_school.get(effectId,6)
-                #--Non-hostile effect?
-                if effect.script:
-                    if not effect.IsHostile:
-                        isPoison = False
-                        break
-                elif effectId not in hostileEffects:
-                    isPoison = False
-                    break
-            else:
-                isPoison = True
-            newFull = self.reOldLabel.sub(u'',newFull) #--Remove existing label
-            newFull = self.reOldEnd.sub(u'',newFull)
-            if record.IsFood:
-                newFull = u'.' + newFull
-            else:
-                label = (u'X' if isPoison else u'') + u'ACDIMRU'[schoolType]
-                newFull = self.format % label + newFull
-            if record.full != newFull:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.full = newFull
-                    self.mod_count[modFile.GName] += 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
+        if self.wants_record(record):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.full = self._exec_rename(record)
+                self.mod_count[modFile.GName] += 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-reSpell = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ',re.U) # compile once
+_re_old_magic_label = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ', re.U)
 
-class _ANamesTweak_Scrolls(AMultiTweakItem):
-    reOldLabel = reSpell
+class _ANamesTweak_Scrolls(_AMgefNamesTweak):
     tweak_name = _(u'Notes and Scrolls')
-    tweak_tip = _(u'Mark notes and scrolls to sort separately from books')
+    tweak_tip = _(u'Mark notes and scrolls to sort separately from books.')
 
     def __init__(self):
         super(_ANamesTweak_Scrolls, self).__init__(u'scrolls',
-            (_(u'~Fire Ball'), u'~'), (_(u'~D Fire Ball'), u'~%s '),
-            (_(u'~D. Fire Ball'), u'~%s. '), (_(u'~D - Fire Ball'), u'~%s - '),
-            (_(u'~(D) Fire Ball'), u'~(%s) '), (u'----', u'----'),
-            (_(u'.Fire Ball'), u'.'), (_(u'.D Fire Ball'), u'.%s '),
-            (_(u'.D. Fire Ball'), u'.%s. '), (_(u'.D - Fire Ball'), u'.%s - '),
-            (_(u'.(D) Fire Ball'), u'.(%s) '))
-        self.logMsg = u'* ' + _(u'Items Renamed: %d')
+            (_(u'~Fire Ball'), u'~'),
+            (_(u'~D Fire Ball'), u'~%s '),
+            (_(u'~D. Fire Ball'), u'~%s. '),
+            (_(u'~D - Fire Ball'), u'~%s - '),
+            (_(u'~(D) Fire Ball'), u'~(%s) '),
+            (u'----', u'----'),
+            (_(u'.Fire Ball'), u'.'),
+            (_(u'.D Fire Ball'), u'.%s '),
+            (_(u'.D. Fire Ball'), u'.%s. '),
+            (_(u'.D - Fire Ball'), u'.%s - '),
+            (_(u'.(D) Fire Ball'), u'.(%s) '),)
 
-    def save_tweak_config(self, configs):
-        """Save config to configs dictionary."""
-        super(_ANamesTweak_Scrolls, self).save_tweak_config(configs)
-        rawFormat = self.choiceValues[self.chosen][0]
-        self.orderFormat = (u'~.',u'.~')[rawFormat[0] == u'~']
-        self.magicFormat = rawFormat[1:]
+    def _do_exec_rename(self, record, look_up_ench):
+        # Magic label
+        order_format = (u'~.', u'.~')[self.chosen_format[0] == u'~']
+        magic_format = self.chosen_format[1:]
+        wip_name = record.full
+        rec_ench = record.enchantment
+        is_enchanted = bool(rec_ench)
+        if magic_format and is_enchanted:
+            school = 6 # Default to 6 (U: unknown)
+            enchantment = look_up_ench(rec_ench)
+            if enchantment and enchantment.effects:
+                school = self._get_effect_school(enchantment.effects[0])
+            # Remove existing label
+            wip_name = _re_old_magic_label.sub(u'', wip_name)
+            wip_name = magic_format % u'ACDIMRU'[school] + wip_name
+        # Ordering
+        return order_format[is_enchanted] + wip_name
 
-class NamesTweak_Scrolls(_ANamesTweak_Scrolls, _AMultiTweakItem_Names):
-    tweak_read_classes = 'BOOK','ENCH',
+class NamesTweak_Scrolls(_ANamesTweak_Scrolls, _PNamesTweak):
+    tweak_read_classes = b'BOOK', b'ENCH',
+    _look_up_ench = None
 
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        #--Scroll Enchantments
-        if self.magicFormat:
-            patchBlock = patchFile.ENCH
-            id_records = patchBlock.id_records
-            for record in modFile.ENCH.getActiveRecords():
-                if mapper(record.fid) in id_records: continue
-                if record.itemType == 0:
-                    record = record.getTypeCopy(mapper)
-                    patchBlock.setRecord(record)
-        #--Books
-        patchBlock = patchFile.BOOK
-        id_records = patchBlock.id_records
-        for record in modFile.BOOK.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.flags.isScroll and not record.flags.isFixed:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
+    def wants_record(self, record):
+        if record.recType == b'BOOK':
+            return (record.flags.isScroll and not record.flags.isFixed and
+                    super(NamesTweak_Scrolls, self).wants_record(record))
+        else: # ENCH, the only other type we requested
+            return record.itemType == 0
+
+    def prepare_for_tweaking(self, patch_file):
+        super(NamesTweak_Scrolls, self).prepare_for_tweaking(patch_file)
+        self._look_up_ench = patch_file.ENCH.id_records
+
+    def _get_rename_params(self, record):
+        return (record, lambda e: self._look_up_ench.get(e, 6))
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
-        reOldLabel = self.__class__.reOldLabel
-        orderFormat, magicFormat = self.orderFormat, self.magicFormat
         keep = patchFile.getKeeper()
-        id_ench = patchFile.ENCH.id_records
-        mgef_school = patchFile.getMgefSchool()
         for record in patchFile.BOOK.records:
-            if not record.full or not record.flags.isScroll or \
-                    record.flags.isFixed: continue
-            #--Magic label
-            isEnchanted = bool(record.enchantment)
-            if magicFormat and isEnchanted:
-                school = 6 #--Default to 6 (U: unknown)
-                enchantment = id_ench.get(record.enchantment)
-                if enchantment and enchantment.effects:
-                    effect = enchantment.effects[0]
-                    effectId = effect.name
-                    if effect.scriptEffect:
-                        school = effect.scriptEffect.school
-                    else:
-                        school = mgef_school.get(effectId,6)
-                record.full = reOldLabel.sub(u'',record.full) #--Remove
-                # existing label
-                record.full = magicFormat % 'ACDIMRU'[school] + record.full
-            #--Ordering
-            record.full = orderFormat[isEnchanted] + record.full
-            keep(record.fid)
-            count[record.fid[0]] += 1
+            if self.wants_record(record):
+                record.full = self._exec_rename(record)
+                keep(record.fid)
+                count[record.fid[0]] += 1
         self._patchLog(log, count)
+        # Need to clean this up, part of PatchFile # FIXME(inf) general method
+        self._look_up_ench = None
 
-class CBash_NamesTweak_Scrolls(_ANamesTweak_Scrolls, CBash_MultiTweakItem):
+class CBash_NamesTweak_Scrolls(_ANamesTweak_Scrolls, _CNamesTweak):
     """Names tweaker for scrolls."""
-    tweak_read_classes = 'BOOK',
+    tweak_read_classes = b'BOOK',
+
+    def wants_record(self, record):
+        return (record.IsScroll and not record.IsFixed and super(
+            CBash_NamesTweak_Scrolls, self).wants_record(record))
+
+    def _get_rename_params(self, record):
+        return (record, lambda e: (
+                self.patchFile.Current.LookupRecords(e) or [None])[0])
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        newFull = record.full
-        if newFull and record.IsScroll and not record.IsFixed:
-            #--Magic label
-            isEnchanted = bool(record.enchantment)
-            magicFormat = self.magicFormat
-            if magicFormat and isEnchanted:
-                schoolType = 6 #--Default to 6 (U: unknown)
-                enchantment = record.enchantment
-                if enchantment:
-                    enchantment = self.patchFile.Current.LookupRecords(
-                        enchantment)
-                    if enchantment:
-                        #Get the winning record
-                        enchantment = enchantment[0]
-                        Effects = enchantment.effects
-                    else:
-                        Effects = None
-                    if Effects:
-                        effect = Effects[0]
-                        if effect.script:
-                            schoolType = effect.schoolType
-                        else:
-                            schoolType = self.patchFile.mgef_school.get(
-                                effect.name, 6)
-                newFull = self.__class__.reOldLabel.sub(u'',newFull) #--Remove
-                # existing label
-                newFull = magicFormat % u'ACDIMRU'[schoolType] + newFull
-            #--Ordering
-            newFull = self.orderFormat[isEnchanted] + newFull
-            if record.full != newFull:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.full = newFull
-                    self.mod_count[modFile.GName] += 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
+        if self.wants_record(record):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.full = self._exec_rename(record)
+                self.mod_count[modFile.GName] += 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class _ANamesTweak_Spells(AMultiTweakItem):
+class _ANamesTweak_Spells(_AMgefNamesTweak):
     """Names tweaker for spells."""
-    tweak_read_classes = 'SPEL',
+    tweak_read_classes = b'SPEL',
     tweak_name = _(u'Spells')
     tweak_tip = _(u'Label spells to sort by school and level.')
 
-    reOldLabel = reSpell
     def __init__(self):
         super(_ANamesTweak_Spells, self).__init__(
-            u'SPEL', # key, not sig!
+            u'SPEL',
             (_(u'Fire Ball'),  u'NOTAGS'),
             (u'----',u'----'),
             (_(u'D Fire Ball'),  u'%s '),
@@ -412,103 +454,60 @@ class _ANamesTweak_Spells(AMultiTweakItem):
             (_(u'D2 Fire Ball'),  u'%s%d '),
             (_(u'D2. Fire Ball'), u'%s%d. '),
             (_(u'D2 - Fire Ball'),u'%s%d - '),
-            (_(u'(D2) Fire Ball'),u'(%s%d) '),
-            )
+            (_(u'(D2) Fire Ball'),u'(%s%d) '),)
         self.logMsg = u'* '+_(u'Spells Renamed: %d')
 
-class NamesTweak_Spells(_ANamesTweak_Spells, _AMultiTweakItem_Names):
+    def wants_record(self, record):
+        return record.spellType == 0 and super(
+            _ANamesTweak_Spells, self).wants_record(record)
 
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.SPEL
-        id_records = patchBlock.id_records
-        for record in modFile.SPEL.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.spellType == 0:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
+    def _do_exec_rename(self, record):
+        school = 6 # Default to 6 (U: unknown)
+        if record.effects:
+            school = self._get_effect_school(record.effects[0])
+        # Remove existing label
+        wip_name = _re_old_magic_label.sub(u'', record.full or u'')
+        if u'%s' in self.chosen_format: # don't remove tags
+            if u'%d' in self.chosen_format: # show level
+                wip_name = self.chosen_format % (u'ACDIMRU'[school],
+                                            record.level) + wip_name
+            else:
+                wip_name = self.chosen_format % u'ACDIMRU'[school] + wip_name
+        return wip_name
 
+class NamesTweak_Spells(_ANamesTweak_Spells, _PNamesTweak):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
-        format_ = self.choiceValues[self.chosen][0]
-        removeTags = u'%s' not in format_
-        showLevel = u'%d' in format_
         keep = patchFile.getKeeper()
-        reOldLabel = self.__class__.reOldLabel
-        mgef_school = patchFile.getMgefSchool()
         for record in patchFile.SPEL.records:
-            if record.spellType != 0 or not record.full: continue
-            school = 6 #--Default to 6 (U: unknown)
-            if record.effects:
-                effect = record.effects[0]
-                effectId = effect.name
-                if effect.scriptEffect:
-                    school = effect.scriptEffect.school
-                else:
-                    school = mgef_school.get(effectId,6)
-            newFull = reOldLabel.sub(u'',record.full) #--Remove existing label
-            if not removeTags:
-                if showLevel:
-                    newFull = format_ % (
-                        u'ACDIMRU'[school], record.level) + newFull
-                else:
-                    newFull = format_ % u'ACDIMRU'[school] + newFull
-            if newFull != record.full:
-                record.full = newFull
+            if self.wants_record(record):
+                record.full = self._exec_rename(record)
                 keep(record.fid)
                 count[record.fid[0]] += 1
         self._patchLog(log, count)
 
-class CBash_NamesTweak_Spells(_ANamesTweak_Spells, CBash_MultiTweakItem):
-
-    def save_tweak_config(self, configs):
-        """Save config to configs dictionary."""
-        super(CBash_NamesTweak_Spells, self).save_tweak_config(configs)
-        self.format = self.choiceValues[self.chosen][0]
-        self.removeTags = u'%s' not in self.format
-        self.showLevel = u'%d' in self.format
-
+class CBash_NamesTweak_Spells(_ANamesTweak_Spells, _CNamesTweak):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        newFull = record.full
-        if newFull and record.IsSpell:
-            #--Magic label
-            schoolType = 6 #--Default to 6 (U: unknown)
-            Effects = record.effects
-            if Effects:
-                effect = Effects[0]
-                if effect.script:
-                    schoolType = effect.schoolType
-                else:
-                    schoolType = self.patchFile.mgef_school.get(effect.name,6)
-            newFull = self.__class__.reOldLabel.sub(u'',newFull) #--Remove
-            # existing label
-            if not self.removeTags:
-                if self.showLevel:
-                    newFull = self.format % (
-                        u'ACDIMRU'[schoolType], record.levelType) + newFull
-                else:
-                    newFull = self.format % u'ACDIMRU'[schoolType] + newFull
-
-            if record.full != newFull:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.full = newFull
-                    self.mod_count[modFile.GName] += 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
+        if self.wants_record(record):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.full = self._exec_rename(record)
+                self.mod_count[modFile.GName] += 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class _ANamesTweak_Weapons(AMultiTweakItem):
+class _ANamesTweak_Weapons(_ANamesTweak):
     """Names tweaker for weapons and ammo."""
-    tweak_read_classes = 'AMMO','WEAP',
+    tweak_read_classes = b'AMMO', b'WEAP',
     tweak_name = _(u'Weapons')
     tweak_tip = _(u'Label ammo and weapons to sort by type and damage.')
 
     def __init__(self):
         super(_ANamesTweak_Weapons, self).__init__(
-            u'WEAP', # key, not sig!
+            u'WEAP',
             (_(u'B Iron Bow'),  u'%s '),
             (_(u'B. Iron Bow'), u'%s. '),
             (_(u'B - Iron Bow'),u'%s - '),
@@ -517,348 +516,154 @@ class _ANamesTweak_Weapons(AMultiTweakItem):
             (_(u'B08 Iron Bow'),  u'%s%02d '),
             (_(u'B08. Iron Bow'), u'%s%02d. '),
             (_(u'B08 - Iron Bow'),u'%s%02d - '),
-            (_(u'(B08) Iron Bow'),u'(%s%02d) '),
-            )
-        self.logMsg = u'* '+_(u'Items Renamed: %d')
+            (_(u'(B08) Iron Bow'),u'(%s%02d) '),)
 
-class NamesTweak_Weapons(_ANamesTweak_Weapons, _AMultiTweakItem_Names):
+    def wants_record(self, record, _begin_chars=frozenset(u'+-=.()[]')):
+        return (record.full and (self._get_record_signature(record) != b'AMMO'
+                                 or record.full[0] not in _begin_chars)
+                and self._try_renaming(record))
 
-    #--Patch Phase ------------------------------------------------------------
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        for blockType in ('AMMO','WEAP'):
-            modBlock = getattr(modFile,blockType)
-            patchBlock = getattr(patchFile,blockType)
-            id_records = patchBlock.id_records
-            for record in modBlock.getActiveRecords():
-                if mapper(record.fid) not in id_records:
-                    record = record.getTypeCopy(mapper)
-                    patchBlock.setRecord(record)
+    def _do_exec_rename(self, record):
+        weapon_index = record.weaponType if self._get_record_signature(
+            record) == b'WEAP' else 6
+        format_subs = (u'CDEFGBA'[weapon_index],)
+        if u'%02d' in self.chosen_format:
+            format_subs += (record.damage,)
+        return self.chosen_format % format_subs + record.full
 
+class NamesTweak_Weapons(_ANamesTweak_Weapons, _PNamesTweak):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
-        format_ = self.choiceValues[self.chosen][0]
-        showStat = u'%02d' in format_
         keep = patchFile.getKeeper()
-        for record in patchFile.AMMO.records:
-            if not record.full: continue
-            if record.full[0] in u'+-=.()[]': continue
-            if showStat:
-                record.full = format_ % (u'A',record.damage) + record.full
-            else:
-                record.full = format_ % u'A' + record.full
-            keep(record.fid)
-            count[record.fid[0]] += 1
-        for record in patchFile.WEAP.records:
-            if not record.full: continue
-            if showStat:
-                record.full = format_ % (
-                    u'CDEFGB'[record.weaponType], record.damage) + record.full
-            else:
-                record.full = format_ % u'CDEFGB'[
-                    record.weaponType] + record.full
-            keep(record.fid)
-            count[record.fid[0]] += 1
-        self._patchLog(log, count)
-
-class CBash_NamesTweak_Weapons(_ANamesTweak_Weapons, CBash_MultiTweakItem):
-
-    def save_tweak_config(self, configs):
-        """Save config to configs dictionary."""
-        super(CBash_NamesTweak_Weapons, self).save_tweak_config(configs)
-        self.format = self.choiceValues[self.chosen][0]
-        self.showStat = u'%02d' in self.format
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        newFull = record.full
-        if newFull:
-            if record._Type == 'AMMO':
-                if newFull[0] in u'+-=.()[]': return
-                type_ = 6
-            else:
-                type_ = record.weaponType
-            if self.showStat:
-                newFull = self.format % (
-                    u'CDEFGBA'[type_], record.damage) + newFull
-            else:
-                newFull = self.format % u'CDEFGBA'[type_] + newFull
-            if record.full != newFull:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.full = newFull
-                    self.mod_count[modFile.GName] += 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class _ATextReplacer(DynamicNamedTweak):
-    """Base class for replacing any text via regular expressions."""
-    tweak_read_classes = (
-        b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'BSGN', b'CLAS', b'CLOT',
-        b'CONT', b'CREA', b'DOOR', b'ENCH', b'EYES', b'FACT', b'FLOR', b'FURN',
-        b'GMST', b'HAIR', b'INGR', b'KEYM', b'LIGH', b'LSCR', b'MGEF', b'MISC',
-        b'NPC_', b'QUST', b'RACE', b'SCPT', b'SGST', b'SKIL', b'SLGM', b'SPEL',
-        b'WEAP'
-    )
-
-    def __init__(self, reMatch, reReplace, label, tweak_tip, key, choices):
-        super(_ATextReplacer, self).__init__(label, tweak_tip, key, choices)
-        self.reMatch = reMatch
-        self.reReplace = reReplace
-        self.logMsg = u'* '+_(u'Items Renamed: %d')
-
-class TextReplacer(_ATextReplacer, _AMultiTweakItem_Names):
-
-    def scanModFile(self,modFile,progress,patchFile):
-        mapper = modFile.getLongMapper()
-        for blockType in self.tweak_read_classes:
-            if blockType not in modFile.tops: continue
-            modBlock = getattr(modFile,blockType)
-            patchBlock = getattr(patchFile,blockType)
-            id_records = patchBlock.id_records
-            for record in modBlock.getActiveRecords():
-                if mapper(record.fid) not in id_records:
-                    record = record.getTypeCopy(mapper)
-                    patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        count = Counter()
-        keep = patchFile.getKeeper()
-        reMatch = re.compile(self.reMatch)
-        reReplace = self.reReplace
-        for type_ in self.tweak_read_classes:
-            if type_ not in patchFile.tops: continue
-            for record in patchFile.tops[type_].records:
-                changed = False
-                if hasattr(record, 'full'):
-                    changed = reMatch.search(record.full or u'')
-                if not changed:
-                    if hasattr(record, 'effects'):
-                        Effects = record.effects
-                        for effect in Effects:
-                            try:
-                                changed = reMatch.search(
-                                    effect.scriptEffect.full or u'')
-                            except AttributeError:
-                                continue
-                            if changed: break
-                if not changed:
-                    if hasattr(record, 'text'):
-                        changed = reMatch.search(record.text or u'')
-                if not changed:
-                    if hasattr(record, 'description'):
-                        changed = reMatch.search(record.description or u'')
-                if not changed:
-                    if type_ == 'GMST' and record.eid[0] == u's':
-                        changed = reMatch.search(record.value or u'')
-                if not changed:
-                    if hasattr(record, 'stages'):
-                        Stages = record.stages
-                        for stage in Stages:
-                            for entry in stage.entries:
-                                changed = reMatch.search(entry.text or u'')
-                                if changed: break
-                if not changed:
-                    if type_ == 'SKIL':
-                        changed = reMatch.search(record.apprentice or u'')
-                        if not changed:
-                            changed = reMatch.search(record.journeyman or u'')
-                        if not changed:
-                            changed = reMatch.search(record.expert or u'')
-                        if not changed:
-                            changed = reMatch.search(record.master or u'')
-                if changed:
-                    if hasattr(record, 'full'):
-                        newString = record.full
-                        if record:
-                            record.full = reMatch.sub(reReplace, newString)
-                    if hasattr(record, 'effects'):
-                        Effects = record.effects
-                        for effect in Effects:
-                            try:
-                                newString = effect.scriptEffect.full
-                            except AttributeError:
-                                continue
-                            if newString:
-                                effect.scriptEffect.full = reMatch.sub(
-                                    reReplace, newString)
-                    if hasattr(record, 'text'):
-                        newString = record.text
-                        if newString:
-                            record.text = reMatch.sub(reReplace, newString)
-                    if hasattr(record, 'description'):
-                        newString = record.description
-                        if newString:
-                            record.description = reMatch.sub(reReplace,
-                                                             newString)
-                    if type_ == 'GMST' and record.eid[0] == u's':
-                        newString = record.value
-                        if newString:
-                            record.value = reMatch.sub(reReplace, newString)
-                    if hasattr(record, 'stages'):
-                        Stages = record.stages
-                        for stage in Stages:
-                            for entry in stage.entries:
-                                newString = entry.text
-                                if newString:
-                                    entry.text = reMatch.sub(reReplace,
-                                                             newString)
-                    if type_ == 'SKIL':
-                        newString = record.apprentice
-                        if newString:
-                            record.apprentice = reMatch.sub(reReplace,
-                                                            newString)
-                        newString = record.journeyman
-                        if newString:
-                            record.journeyman = reMatch.sub(reReplace,
-                                                            newString)
-                        newString = record.expert
-                        if newString:
-                            record.expert = reMatch.sub(reReplace, newString)
-                        newString = record.master
-                        if newString:
-                            record.master = reMatch.sub(reReplace, newString)
+        for rec_sig in self.tweak_read_classes:
+            for record in getattr(patchFile, unicode(
+                    rec_sig, u'ascii')).records:
+                if self.wants_record(record):
+                    record.full = self._exec_rename(record)
                     keep(record.fid)
                     count[record.fid[0]] += 1
         self._patchLog(log, count)
 
-class CBash_TextReplacer(_ATextReplacer, CBash_MultiTweakItem):
-    tweak_read_classes = (b'CELLS',) + _ATextReplacer.tweak_read_classes
+class CBash_NamesTweak_Weapons(_ANamesTweak_Weapons, _CNamesTweak):
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if self.wants_record(record):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.full = self._exec_rename(record)
+                self.mod_count[modFile.GName] += 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
 
-    def save_tweak_config(self, configs):
-        """Save config to configs dictionary."""
-        super(CBash_TextReplacer, self).save_tweak_config(configs)
-        self.format = self.choiceValues[self.chosen][0]
-        self.showStat = u'%02d' in self.format
+#------------------------------------------------------------------------------
+class _ATextReplacer(DynamicNamedTweak, _ANamesTweak):
+    """Base class for replacing any text via regular expressions."""
+    # FIXME(inf) Move to game/*/constants, and boom, we have a cross-game text
+    #  replacer!
+    _match_replace_rpaths = {
+        b'ALCH': (u'full', u'effects[i].scriptEffect?.full'),
+        b'AMMO': (u'full',),
+        b'APPA': (u'full',),
+        b'ARMO': (u'full',),
+        b'BOOK': (u'full', u'text'),
+        b'BSGN': (u'full', u'text'),
+        b'CLAS': (u'full', u'description'),
+        b'CLOT': (u'full',),
+        b'CONT': (u'full',),
+        b'CREA': (u'full',),
+        b'DOOR': (u'full',),
+        b'ENCH': (u'full', u'effects[i].scriptEffect?.full',),
+        b'EYES': (u'full',),
+        b'FACT': (u'full',), ##: maybe add male_title/female_title?
+        b'FLOR': (u'full',),
+        b'FURN': (u'full',),
+        b'HAIR': (u'full',),
+        b'INGR': (u'full', u'effects[i].scriptEffect?.full'),
+        b'KEYM': (u'full',),
+        b'LIGH': (u'full',),
+        b'LSCR': (u'full', u'text'),
+        b'MGEF': (u'full', u'text'),
+        b'MISC': (u'full',),
+        b'NPC_': (u'full',),
+        b'QUST': (u'full', u'stages[i].entries[i].text'),
+        b'RACE': (u'full', u'text'),
+#        b'SCPT': (), ##: doesn't have any text to replace
+        b'SGST': (u'full', u'effects[i].scriptEffect?.full'),
+        b'SKIL': (u'description', u'apprentice', u'journeyman', u'expert',
+                  u'master'),
+        b'SLGM': (u'full',),
+        b'SPEL': (u'full', u'effects[i].scriptEffect?.full'),
+        b'WEAP': (u'full',),
+    }
+    tweak_read_classes = tuple(_match_replace_rpaths) + (b'GMST',)
+
+    def __init__(self, reMatch, reReplace, label, tweak_tip, key, choices):
+        super(_ATextReplacer, self).__init__(label, tweak_tip, key, choices)
+        self.re_match = re.compile(reMatch)
+        self.re_replacement = reReplace
+        # Convert the match/replace strings to record paths
+        self._match_replace_rpaths = {
+            rsig: tuple([RecPath(r) for r in rpaths])
+            for rsig, rpaths in self._match_replace_rpaths.iteritems()
+        }
+
+    def wants_record(self, record):
+        can_change = self.re_match.search
+        record_sig = self._get_record_signature(record)
+        if record_sig == b'GMST':
+            # GMST can't be handled by RecPath (yet?), thankfully it's
+            # identical for all games
+            return record.eid[0] == u's' and can_change(record.value or u'')
+        else:
+            for rp in self._match_replace_rpaths[record_sig]: # type: RecPath
+                if not rp.rp_exists(record): continue
+                for val in rp.rp_eval(record):
+                    if can_change(val or u''): return True
+            return False
+
+    def _exec_rename(self, record):
+        sub_replacement, replacement = self.re_match.sub, self.re_replacement
+        exec_replacement = partial(sub_replacement, replacement)
+        record_sig = self._get_record_signature(record)
+        if record_sig == b'GMST':
+            record.value = exec_replacement(record.value)
+        else:
+            for rp in self._match_replace_rpaths[record_sig]: # type: RecPath
+                if rp.rp_exists(record):
+                    rp.rp_map(record, exec_replacement)
+
+class TextReplacer(_ATextReplacer, _PNamesTweak):
+    def buildPatch(self,log,progress,patchFile):
+        count = Counter()
+        keep = patchFile.getKeeper()
+        for rec_sig in self.tweak_read_classes:
+            if rec_sig not in patchFile.tops: continue
+            for record in patchFile.tops[rec_sig].records:
+                if self.wants_record(record):
+                    self._exec_rename(record)
+                    keep(record.fid)
+                    count[record.fid[0]] += 1
+        self._patchLog(log, count)
+
+class CBash_TextReplacer(_ATextReplacer, _CNamesTweak):
+    tweak_read_classes = (b'CELLS',) + _ATextReplacer.tweak_read_classes
+    _match_replace_rpaths = _ATextReplacer._match_replace_rpaths.copy()
+    _match_replace_rpaths.update({
+        b'ALCH': (u'full', u'effects[i].full'),
+        b'CELL': (u'full',),
+        b'ENCH': (u'full', u'effects[i].full'),
+        b'INGR': (u'full', u'effects[i].full'),
+        b'SGST': (u'full', u'effects[i].full'),
+        b'SPEL': (u'full', u'effects[i].full'),
+    })
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        reMatch = re.compile(self.reMatch)
-        changed = False
-        if hasattr(record, 'full'):
-            changed = reMatch.search(record.full or u'')
-        if not changed:
-            if hasattr(record, 'effects'):
-                Effects = record.effects
-                for effect in Effects:
-                    changed = reMatch.search(effect.full or u'')
-                    if changed: break
-        if not changed:
-            if hasattr(record, 'text'):
-                changed = reMatch.search(record.text or u'')
-        if not changed:
-            if hasattr(record, 'description'):
-                changed = reMatch.search(record.description or u'')
-        if not changed:
-            if record._Type == 'GMST' and record.eid[0] == u's':
-                changed = reMatch.search(record.value or u'')
-        if not changed:
-            if hasattr(record, 'stages'):
-                Stages = record.stages
-                for stage in Stages:
-                    for entry in stage.entries:
-                        changed = reMatch.search(entry.text or u'')
-                        if changed: break
-##### CRUFT: is this code needed ?
-##                        compiled = entry.compiled_p
-##                        if compiled:
-##                            changed = reMatch.search(struct.pack('B' * len(compiled), *compiled) or '')
-##                            if changed: break
-##                        changed = reMatch.search(entry.scriptText or '')
-##                        if changed: break
-##        if not changed:
-##            if hasattr(record, 'scriptText'):
-##                changed = reMatch.search(record.scriptText or '')
-##                if not changed:
-##                    compiled = record.compiled_p
-##                    changed = reMatch.search(struct.pack('B' * len(compiled), *compiled) or '')
-        if not changed:
-            if record._Type == 'SKIL':
-                changed = reMatch.search(record.apprentice or u'')
-                if not changed:
-                    changed = reMatch.search(record.journeyman or u'')
-                if not changed:
-                    changed = reMatch.search(record.expert or u'')
-                if not changed:
-                    changed = reMatch.search(record.master or u'')
-
-        # Could support DIAL/INFO as well, but skipping since they're often
-        # voiced as well
-        if changed:
+        if self.wants_record(record):
             override = record.CopyAsOverride(self.patchFile)
             if override:
-                if hasattr(override, 'full'):
-                    newString = override.full
-                    if newString:
-                        override.full = reMatch.sub(self.reReplace, newString)
-                if hasattr(override, 'effects'):
-                    Effects = override.effects
-                    for effect in Effects:
-                        newString = effect.full
-                        if newString:
-                            effect.full = reMatch.sub(self.reReplace, newString)
-                if hasattr(override, 'text'):
-                    newString = override.text
-                    if newString:
-                        override.text = reMatch.sub(self.reReplace, newString)
-                if hasattr(override, 'description'):
-                    newString = override.description
-                    if newString:
-                        override.description = reMatch.sub(self.reReplace,
-                                                           newString)
-                if override._Type == 'GMST' and override.eid[0] == u's':
-                    newString = override.value
-                    if newString:
-                        override.value = reMatch.sub(self.reReplace, newString)
-                if hasattr(override, 'stages'):
-                    Stages = override.stages
-                    for stage in Stages:
-                        for entry in stage.entries:
-                            newString = entry.text
-                            if newString:
-                                entry.text = reMatch.sub(self.reReplace, newString)
-##### CRUFT: is this code needed ?
-##                            newString = entry.compiled_p
-##                            if newString:
-##                                nSize = len(newString)
-##                                newString = reMatch.sub(self.reReplace, struct.pack('B' * nSize, *newString))
-##                                nSize = len(newString)
-##                                entry.compiled_p = struct.unpack('B' * nSize, newString)
-##                                entry.compiledSize = nSize
-##                            newString = entry.scriptText
-##                            if newString:
-##                                entry.scriptText = reMatch.sub(self.reReplace, newString)
-##
-##                if hasattr(override, 'scriptText'):
-##                    newString = override.compiled_p
-##                    if newString:
-##                        nSize = len(newString)
-##                        newString = reMatch.sub(self.reReplace, struct.pack('B' * nSize, *newString))
-##                        nSize = len(newString)
-##                        override.compiled_p = struct.unpack('B' * nSize, newString)
-##                        override.compiledSize = nSize
-##                    newString = override.scriptText
-##                    if newString:
-##                        override.scriptText = reMatch.sub(self.reReplace, newString)
-                if override._Type == 'SKIL':
-                    newString = override.apprentice
-                    if newString:
-                        override.apprentice = reMatch.sub(self.reReplace,
-                                                          newString)
-                    newString = override.journeyman
-                    if newString:
-                        override.journeyman = reMatch.sub(self.reReplace,
-                                                          newString)
-                    newString = override.expert
-                    if newString:
-                        override.expert = reMatch.sub(self.reReplace,
-                                                      newString)
-                    newString = override.master
-                    if newString:
-                        override.master = reMatch.sub(self.reReplace,
-                                                      newString)
+                self._exec_rename(override)
                 self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
@@ -868,25 +673,6 @@ class _ANamesTweaker(AMultiTweaker):
     """Tweaks record full names in various ways."""
     scanOrder = 32
     editOrder = 32
-    _namesTweaksBody = ((_(u"Armor"),
-                         _(u"Rename armor to sort by type."),
-                         'ARMO',
-                         (_(u'BL Leather Boots'), u'%s '),
-                         (_(u'BL. Leather Boots'), u'%s. '),
-                         (_(u'BL - Leather Boots'), u'%s - '),
-                         (_(u'(BL) Leather Boots'), u'(%s) '),
-                         (u'----', u'----'),
-                         (_(u'BL02 Leather Boots'), u'%s%02d '),
-                         (_(u'BL02. Leather Boots'), u'%s%02d. '),
-                         (_(u'BL02 - Leather Boots'), u'%s%02d - '),
-                         (_(u'(BL02) Leather Boots'), u'(%s%02d) '),),
-                        (_(u"Clothes"),
-                         _(u"Rename clothes to sort by type."),
-                         'CLOT',
-                         (_(u'P Grey Trousers'),  u'%s '),
-                         (_(u'P. Grey Trousers'), u'%s. '),
-                         (_(u'P - Grey Trousers'),u'%s - '),
-                         (_(u'(P) Grey Trousers'),u'(%s) '),),)
     _txtReplacer = ((u'' r'\b(d|D)(?:warven|warf)\b', u'' r'\1wemer',
                      _(u'Lore Friendly Text: Dwarven -> Dwemer'),
                      _(u'Replace any occurrences of the word "dwarf" or '
@@ -908,18 +694,20 @@ class _ANamesTweaker(AMultiTweaker):
 
     def __init__(self, p_name, p_file, enabled_tweaks):
         super(_ANamesTweaker, self).__init__(p_name, p_file, enabled_tweaks)
-        body_tags_tweak = enabled_tweaks[0]
-        if isinstance(body_tags_tweak, _ANamesTweak_BodyTags):
-            p_file.bodyTags = \
-                body_tags_tweak.choiceValues[body_tags_tweak.chosen][0]
+        for names_tweak in enabled_tweaks:
+            # Always the first one if it's enabled, so this is safe
+            if isinstance(names_tweak, _ANamesTweak_BodyTags):
+                p_file.bodyTags = names_tweak.choiceValues[
+                    names_tweak.chosen][0]
+            elif isinstance(names_tweak, _ANamesTweak_Body):
+                names_tweak._tweak_body_tags = p_file.bodyTags
 
 class NamesTweaker(_ANamesTweaker,MultiTweaker):
-
     @classmethod
     def tweak_instances(cls):
         instances = sorted(
-            [NamesTweak_Body(*x) for x in cls._namesTweaksBody] + [
-                TextReplacer(*x) for x in cls._txtReplacer] + [
+            [TextReplacer(*x) for x in cls._txtReplacer] + [
+                NamesTweak_Body_Armor(), NamesTweak_Body_Clothes(),
                 NamesTweak_Potions(), NamesTweak_Scrolls(),
                 NamesTweak_Spells(), NamesTweak_Weapons()],
             key=lambda a: a.tweak_name.lower())
@@ -927,12 +715,11 @@ class NamesTweaker(_ANamesTweaker,MultiTweaker):
         return instances
 
 class CBash_NamesTweaker(_ANamesTweaker,CBash_MultiTweaker):
-
     @classmethod
     def tweak_instances(cls):
         instances = sorted(
-            [CBash_NamesTweak_Body(*x) for x in cls._namesTweaksBody] + [
-                CBash_TextReplacer(*x) for x in cls._txtReplacer] + [
+            [CBash_TextReplacer(*x) for x in cls._txtReplacer] + [
+                CBash_NamesTweak_Body_Armor(), CBash_NamesTweak_Body_Clothes(),
                 CBash_NamesTweak_Potions(), CBash_NamesTweak_Scrolls(),
                 CBash_NamesTweak_Spells(), CBash_NamesTweak_Weapons()],
             key=lambda a: a.tweak_name.lower())
@@ -946,17 +733,3 @@ class CBash_NamesTweaker(_ANamesTweaker,CBash_MultiTweaker):
         # PBash does this JIT, CBash needs this to be specified when
         # constructing patchers
         p_file.indexMGEFs = True
-
-    def initData(self, progress):
-        if not self.isActive: return
-        for tweak in self.enabled_tweaks:
-            for top_group_sig in tweak.getTypes():
-                self.patchFile.group_patchers[top_group_sig].append(tweak)
-            tweak.format = tweak.choiceValues[tweak.chosen][0]
-            if isinstance(tweak, CBash_NamesTweak_Body):
-                tweak.showStat = u'%02d' in tweak.format
-                tweak.codes = self.patchFile.bodyTags
-                tweak.amulet, tweak.ring, tweak.gloves, tweak.head, \
-                tweak.tail, tweak.robe, tweak.chest, tweak.pants, \
-                tweak.shoes, tweak.shield = [
-                    x for x in tweak.codes]
