@@ -219,7 +219,11 @@ class MreGmstBase(MelRecord):
                 bolt.deprint(u'Error loading %s:' % fname, traceback=True)
                 bolt.deprintOn = old
                 raise
-        return bosh.modInfos.masterName,cls.Ids[self.eid]
+        try:
+            return bosh.modInfos.masterName,cls.Ids[self.eid]
+        except KeyError:
+            bolt.deprint(u'%s is missing from pickle file!' % self.eid)
+            return None
 
 #------------------------------------------------------------------------------
 class MreLand(MelRecord):

@@ -201,6 +201,8 @@ class MobObjects(MobBase):
     def __init__(self, header, loadFactory, ins=None, do_unpack=False):
         self.records = []
         self.id_records = {}
+        from .. import bosh
+        self._null_fid = (bosh.modInfos.masterName, 0)
         super(MobObjects, self).__init__(header, loadFactory, ins, do_unpack)
 
     def get_all_signatures(self):
@@ -284,26 +286,39 @@ class MobObjects(MobBase):
 
     def setRecord(self,record):
         """Adds record to record list and indexed."""
-        from .. import bosh
-        if self.records and not self.id_records:
+        self_recs = self.records
+        if self_recs and not self.id_records:
             self.indexRecords()
         record_id = record.fid
         if record.isKeyedByEid:
-            if record_id == (bosh.modInfos.masterName, 0):
+            if record_id == self._null_fid:
                 record_id = record.eid
-        if record_id in self.id_records:
-            oldRecord = self.id_records[record_id]
-            index = self.records.index(oldRecord)
-            self.records[index] = record
+        self_id_recs = self.id_records
+        # This check fails fairly often, so do this instead of try/except
+        if record_id in self_id_recs:
+            ##: Building a fid -> index mapping in indexRecords could make this
+            # O(1) instead of O(n) - see if that's worth it (memory!)
+            self_recs[self_recs.index(
+                self_id_recs[record_id])] = record
         else:
-            self.records.append(record)
-        self.id_records[record_id] = record
+            self_recs.append(record)
+        self_id_recs[record_id] = record
+
+    def copy_records(self, records):
+        """Copies the specified records into this block, overwriting existing
+        records. Note that the records *must* already be in long fid format!
+        If condition_func is given, it will be called on each record to decide
+        whether or not to copy it.
+
+        :type records: list[brec.MreRecord]"""
+        copy_record = self.setRecord
+        for record in records:
+            copy_record(record.getTypeCopy())
 
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
-        from .. import bosh
         self.records = [record for record in self.records if (record.fid == (
-            record.isKeyedByEid and bosh.modInfos.masterName,
+            record.isKeyedByEid and self._null_fid[0],
             0) and record.eid in p_keep_ids) or record.fid in p_keep_ids]
         self.id_records.clear()
         self.setChanged()
