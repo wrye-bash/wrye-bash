@@ -137,7 +137,7 @@ def decoder(byte_str, encoding=None, avoidEncodings=()):
         try: return unicode(byte_str, encoding)
         except UnicodeDecodeError: pass
     # Try to detect the encoding next
-    encoding,confidence = getbestencoding(byte_str)
+    encoding,confidence = getbestencoding(byte_str) # PY3: is encoding return value still bytes?
     if encoding and confidence >= 0.55 and (
             encoding not in avoidEncodings or confidence == 1.0) and (
             encoding not in _blocked_encodings):

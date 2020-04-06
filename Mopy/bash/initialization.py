@@ -37,7 +37,7 @@ mopy_dirs_initialized = bash_dirs_initialized = False
 def get_path_from_ini(bash_ini_, option_key, section_key=u'General'):
     get_value = get_ini_option(bash_ini_, option_key, section_key)
     get_value = (get_value and get_value.strip()) or u'.'
-    return GPath(get_value) if get_value != u'.' else None
+    return GPath(get_value) if get_value != u'.' else None # Py3: add decoding!
 
 def getPersonalPath(bash_ini_, my_docs_path):
     #--Determine User folders from Personal and Local Application Data directories
@@ -46,7 +46,7 @@ def getPersonalPath(bash_ini_, my_docs_path):
         my_docs_path = GPath(my_docs_path)
         sErrorInfo = _(u'Folder path specified on command line (-p)')
     else:
-        my_docs_path = get_path_from_ini(bash_ini_, 'sPersonalPath')
+        my_docs_path = get_path_from_ini(bash_ini_, u'sPersonalPath')
         if my_docs_path:
             sErrorInfo = _(
                 u'Folder path specified in bash.ini (%s)') % u'sPersonalPath'
