@@ -202,7 +202,7 @@ class DocBrowser(WindowFrame):
         doc_path = self._db_doc_paths.get(self._mod_name)
         if not doc_path: return  # nothing to save if no file is loaded
         self._doc_ctrl.set_text_modified(False)
-        with doc_path.open('w', encoding='utf-8-sig') as out:
+        with doc_path.open(u'w', encoding=u'utf-8-sig') as out:
             out.write(self._doc_ctrl.fallback_text)
         if self._doc_is_wtxt:
             bolt.WryeText.genHtml(doc_path, None,

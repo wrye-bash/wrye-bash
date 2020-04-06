@@ -591,7 +591,7 @@ class ModInfo(FileInfo):
 
     def readHeader(self):
         """Read header from file and set self.header attribute."""
-        with ModReader(self.name,self.getPath().open('rb')) as ins:
+        with ModReader(self.name,self.getPath().open(u'rb')) as ins:
             try:
                 tes4_rec_header = self._read_tes4_record(ins)
                 self.header = bush.game.plugin_header_class(tes4_rec_header,
@@ -607,8 +607,8 @@ class ModInfo(FileInfo):
     def writeHeader(self):
         """Write Header. Actually have to rewrite entire file."""
         filePath = self.getPath()
-        with filePath.open('rb') as ins:
-            with filePath.temp.open('wb') as out:
+        with filePath.open(u'rb') as ins:
+            with filePath.temp.open(u'wb') as out:
                 try:
                     #--Open original and skip over header
                     reader = ModReader(self.name,ins)
@@ -1113,8 +1113,8 @@ class SaveInfo(FileInfo):
         """Rewrites masters of existing save file."""
         if not self.abs_path.exists():
             raise SaveFileError(self.abs_path.head, u'File does not exist.')
-        with self.abs_path.open('rb') as ins:
-            with self.abs_path.temp.open('wb') as out:
+        with self.abs_path.open(u'rb') as ins:
+            with self.abs_path.temp.open(u'wb') as out:
                 oldMasters = self.header.writeMasters(ins, out)
         oldMasters = [GPath_no_norm(decoder(x)) for x in oldMasters]
         self.abs_path.untemp()

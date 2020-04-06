@@ -354,7 +354,7 @@ class ModCleaner(object):
                 parentFid = None
                 parentParentFid = None
                 # Location (Interior = #, Exteror = (X,Y)
-                with ModReader(modInfo.name,modInfo.getPath().open('rb')) as ins:
+                with ModReader(modInfo.name,modInfo.getPath().open(u'rb')) as ins:
                     try:
                         insAtEnd = ins.atEnd
                         insTell = ins.tell

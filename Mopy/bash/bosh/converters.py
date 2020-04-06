@@ -314,7 +314,7 @@ class InstallerConverter(object):
         def _dump(att, dat):
             pickle.dump(tuple(map(self.__getattribute__, att)), dat, -1)
         try:
-            with bass.getTempDir().join(u'BCF.dat').open('wb') as f:
+            with bass.getTempDir().join(u'BCF.dat').open(u'wb') as f:
                 _dump(self.persistBCF, f)
                 _dump(self._converter_settings + self.volatile + self.addedSettings, f)
         except Exception as e:
@@ -567,7 +567,7 @@ class InstallerConverter(object):
         tempList = bolt.Path.baseTempDir().join(u'WryeBash_listfile.txt')
         #--Dump file list
         try:
-            with tempList.open('w', encoding='utf-8-sig') as out:
+            with tempList.open(u'w', encoding=u'utf-8-sig') as out:
                 out.write(u'\n'.join(fileNames))
         except Exception as e:
             raise StateError, (u"Error creating file list for 7z:\nError: %s"

@@ -748,7 +748,7 @@ class WryeParser(ScriptParser.Parser):
         self.ExecCount = 0
         if file_path.exists() and file_path.isfile():
             try:
-                with file_path.open(encoding='utf-8-sig') as script:
+                with file_path.open(encoding=u'utf-8-sig') as script:
                     # Ensure \n line endings for the script parser
                     self.lines = [x.replace(u'\r\n',u'\n') for x in script.readlines()]
                 return self.Continue()

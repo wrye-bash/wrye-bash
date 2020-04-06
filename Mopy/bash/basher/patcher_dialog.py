@@ -198,7 +198,7 @@ class PatchDialog(DialogWindow):
             tempReadmeDir = Path.tempDir().join(u'Docs')
             tempReadme = tempReadmeDir.join(patch_name.sroot+u'.txt')
             #--Write log/readme to temp dir first
-            with tempReadme.open('w',encoding='utf-8-sig') as file:
+            with tempReadme.open(u'w', encoding=u'utf-8-sig') as file:
                 file.write(logValue)
             #--Convert log/readmeto wtxt
             bolt.WryeText.genHtml(tempReadme,None,docsDir)

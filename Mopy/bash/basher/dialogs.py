@@ -211,7 +211,7 @@ class CreateNewProject(DialogWindow):
         if self.checkWizard.is_checked:
             # Create empty wizard.txt
             wizardPath = tempProject.join(u'wizard.txt')
-            with wizardPath.open('w',encoding='utf-8') as out:
+            with wizardPath.open(u'w', encoding=u'utf-8') as out:
                 out.write(u'; %s BAIN Wizard Installation Script\n' % projectName)
         if self.checkWizardImages.is_checked:
             # Create 'Wizard Images' directory

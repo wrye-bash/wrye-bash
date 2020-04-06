@@ -504,7 +504,7 @@ class WryeLog(_Log):
 
 def convert_wtext_to_html(logPath, logText):
     cssDir = _settings.get(u'balt.WryeLog.cssDir', GPath(u''))
-    with logPath.open('w', encoding='utf-8-sig') as out, bolt.sio(
+    with logPath.open(u'w', encoding=u'utf-8-sig') as out, bolt.sio(
                     logText + u'\n{{CSS:wtxt_sand_small.css}}') as ins:
         bolt.WryeText.genHtml(ins, out, cssDir)
 

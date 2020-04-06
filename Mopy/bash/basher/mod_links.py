@@ -465,7 +465,7 @@ class _ModGroups(object):
         textPath = GPath(textPath)
         mod_group = self.mod_group
         rowFormat = u'"%s","%s"\n'
-        with textPath.open('w',encoding='utf-8-sig') as out:
+        with textPath.open(u'w', encoding=u'utf-8-sig') as out:
             out.write(rowFormat % (_(u"Mod"),_(u"Group")))
             for mod in sorted(mod_group):
                 out.write(rowFormat % (mod, mod_group[mod]))

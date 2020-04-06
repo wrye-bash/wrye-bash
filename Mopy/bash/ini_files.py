@@ -164,7 +164,7 @@ class IniFile(AFile):
         reDeleted = self.__class__.reDeletedSetting
         reSetting = self.__class__.reSetting
         #--Read ini file
-        with tweakPath.open('r') as iniFile:
+        with tweakPath.open(u'r') as iniFile:
             sectionSettings = None
             section = None
             for i,line in enumerate(iniFile.readlines()):
@@ -195,7 +195,7 @@ class IniFile(AFile):
         Note we strip line endings at the end of the line in unicode mode.
         :rtype: list[unicode]|str"""
         try:
-            with self.abs_path.open('rb') as f:
+            with self.abs_path.open(u'rb') as f:
                 content = f.read()
             if not as_unicode: return content
             decoded = unicode(content, self.ini_encoding)
@@ -486,7 +486,7 @@ class OBSEIniFile(IniFile):
         deleted_settings = DefaultLowerDict(LowerDict)
         reDeleted = cls.reDeleted
         reComment = cls.reComment
-        with tweakPath.open('r') as iniFile:
+        with tweakPath.open(u'r') as iniFile:
             for i,line in enumerate(iniFile.readlines()):
                 maDeleted = reDeleted.match(line)
                 if maDeleted:

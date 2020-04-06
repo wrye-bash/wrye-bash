@@ -170,7 +170,7 @@ class BackupSettings(object):
             deprint(u'%s <-- %s' % (tpath, fpath))
             fpath.copyTo(temp_dir.join(tpath))
         # dump the version info and file listing
-        with temp_dir.join(u'backup.dat').open('wb') as out:
+        with temp_dir.join(u'backup.dat').open(u'wb') as out:
             # Bash version the settings were saved with, if this is newer
             # than the installed settings version, do not allow restore
             pickle.dump(bass.settings[u'bash.version'], out, -1)
@@ -338,7 +338,7 @@ class RestoreSettings(object):
         if self._saved_settings_version is None:
             backup_dat = self._extract_dir.join(u'backup.dat')
             try:
-                with backup_dat.open('rb') as ins:
+                with backup_dat.open(u'rb') as ins:
                     # version of Bash that created the backed up settings
                     self._saved_settings_version = pickle.load(ins)
                     # version of Bash that created the backup
