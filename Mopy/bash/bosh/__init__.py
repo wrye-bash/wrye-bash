@@ -1554,8 +1554,6 @@ class FileInfos(TableFileInfos):
             self.new_info(destName, notify_bain=True)
             self.table.copyRow(fileName, destName)
             if set_mtime is not None:
-                if set_mtime == '+1':
-                    set_mtime = srcPath.mtime + 1.0
                 self[destName].setmtime(set_mtime) # correctly update table
         return set_mtime
 
@@ -3108,7 +3106,7 @@ class BSAInfos(FileInfos):
 
             def _reset_bsa_mtime(self):
                 if bush.game.Bsa.allow_reset_timestamps and inisettings[
-                    'ResetBSATimestamps']:
+                    u'ResetBSATimestamps']:
                     default_mtime = time.mktime(time.strptime(
                         bush.game.Bsa.redate_dict[self.name.s], '%Y-%m-%d'))
                     if self._file_mod_time != default_mtime:

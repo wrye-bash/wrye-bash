@@ -423,20 +423,6 @@ imDirJn = bass.dirs[u'images'].join
 def _png(fname): return ImageWrapper(imDirJn(fname))
 
 #--Image lists
-karmacons = ImageList(16,16)
-karmacons.images.extend({
-    'karma+5': _png(u'checkbox_purple_inc.png'),
-    'karma+4': _png(u'checkbox_blue_inc.png'),
-    'karma+3': _png(u'checkbox_blue_inc.png'),
-    'karma+2': _png(u'checkbox_green_inc.png'),
-    'karma+1': _png(u'checkbox_green_inc.png'),
-    'karma+0': _png(u'checkbox_white_off.png'),
-    'karma-1': _png(u'checkbox_yellow_off.png'),
-    'karma-2': _png(u'checkbox_yellow_off.png'),
-    'karma-3': _png(u'checkbox_orange_off.png'),
-    'karma-4': _png(u'checkbox_orange_off.png'),
-    'karma-5': _png(u'checkbox_red_off.png'),
-    }.items())
 installercons = ImageList(16,16)
 installercons.images.extend({
     #--Off/Archive

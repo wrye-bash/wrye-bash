@@ -1900,7 +1900,7 @@ class Progress(object):
 #------------------------------------------------------------------------------
 class SubProgress(Progress):
     """Sub progress goes from base to ceiling."""
-    def __init__(self,parent,baseFrom=0.0,baseTo='+1',full=1.0,silent=False):
+    def __init__(self,parent,baseFrom=0.0,baseTo=u'+1',full=1.0,silent=False):
         """For creating a subprogress of another progress meter.
         progress: parent (base) progress meter
         baseFrom: Base progress when this progress == 0.
@@ -1908,7 +1908,7 @@ class SubProgress(Progress):
           Usually a number. But string '+1' sets it to baseFrom + 1
         full: Full meter by this progress' scale."""
         Progress.__init__(self,full)
-        if baseTo == '+1': baseTo = baseFrom + 1
+        if baseTo == u'+1': baseTo = baseFrom + 1
         if baseFrom < 0 or baseFrom >= baseTo:
             raise exception.ArgumentError(u'BaseFrom must be >= 0 and BaseTo must be > BaseFrom')
         self.parent = parent

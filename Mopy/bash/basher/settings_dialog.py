@@ -23,7 +23,6 @@
 import os
 import subprocess
 import webbrowser
-from collections import defaultdict
 
 from . import BashStatusBar, tabInfo
 from .constants import colorInfo, settingDefaults
@@ -987,7 +986,7 @@ class BackupsPage(_AFixedPage):
             if error_msg and not balt.askWarning(self, error_msg, error_title):
                 return
             restarting = True
-            balt.showInfo(self, '\n'.join([
+            balt.showInfo(self, u'\n'.join([
                 _(u'Your Bash settings have been successfully extracted.'),
                 _(u'Backup Path: ') + settings_file.s, u'', _(u'Before the '
                   u'settings can take effect, Wrye Bash must restart.'), _(

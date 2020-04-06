@@ -387,8 +387,8 @@ def has_load_order_conflict_active(mod_name):
     return _game_handle.has_load_order_conflict_active(mod_name,
                                                        cached_lord.active)
 
-def get_free_time(start_time, default_time='+1', end_time=None):
-    return _game_handle.get_free_time(start_time, default_time, end_time)
+def get_free_time(start_time, end_time=None):
+    return _game_handle.get_free_time(start_time, end_time)
 
 # Lock load order -------------------------------------------------------------
 def toggle_lock_load_order(user_warning_callback):

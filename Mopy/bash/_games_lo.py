@@ -57,7 +57,7 @@ def __write_plugins(out, lord, active, _star):
         # plugins.txt.  Even activating through the SkyrimLauncher
         # doesn't work.
         try:
-            out.write(asterisk() + bolt.encode(mod.s, firstEncoding='cp1252'))
+            out.write(asterisk() + bolt.encode(mod.s, firstEncoding=u'cp1252'))
             out.write(b'\r\n')
         except UnicodeEncodeError:
             bolt.deprint(u'%s failed to properly encode and was not '
@@ -334,7 +334,7 @@ class Game(object):
     def has_load_order_conflict(self, mod_name): return False
     def has_load_order_conflict_active(self, mod_name, active): return False
     # force installation last - only for timestamp games
-    def get_free_time(self, start_time, default_time='+1', end_time=None):
+    def get_free_time(self, start_time, end_time=None):
         raise exception.AbstractError
 
     @classmethod
@@ -784,14 +784,14 @@ class TimestampGame(Game):
         return self.has_load_order_conflict(mod_name) and bool(
             (self._mtime_mods[mtime] - {mod_name}) & active)
 
-    def get_free_time(self, start_time, default_time='+1', end_time=None):
+    def get_free_time(self, start_time, end_time=None):
         all_mtimes = {x.mtime for x in self.mod_infos.itervalues()}
         end_time = end_time or (start_time + 1000) # 1000 (seconds) is an arbitrary limit
         while start_time < end_time:
             if not start_time in all_mtimes:
                 return start_time
             start_time += self._get_free_time_step
-        return default_time
+        return max(all_mtimes) + self._get_free_time_step
 
     # Abstract overrides ------------------------------------------------------
     def __calculate_mtime_order(self, mods=None): # excludes corrupt mods

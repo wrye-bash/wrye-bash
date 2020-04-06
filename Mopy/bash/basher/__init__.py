@@ -88,7 +88,7 @@ from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     CenteredSplash, BusyCursor, RadioButton, GlobalMenu
 
 # Constants -------------------------------------------------------------------
-from .constants import colorInfo, settingDefaults, karmacons, installercons
+from .constants import colorInfo, settingDefaults, installercons
 
 # BAIN wizard support, requires PyWin32, so import will fail if it's not installed
 try:
@@ -3095,7 +3095,7 @@ class InstallersPanel(BashTab):
             settings['bash.installers.updatedCRCs'] = False
             self._data_dir_scanned = False
         installers_paths = bass.dirs[
-            'installers'].list() if self.frameActivated else ()
+            u'installers'].list() if self.frameActivated else ()
         if self.frameActivated and omods.extractOmodsNeeded(installers_paths):
             self.__extractOmods()
         do_refresh = scan_data_dir = scan_data_dir or not self._data_dir_scanned
