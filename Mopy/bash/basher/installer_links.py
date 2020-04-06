@@ -512,7 +512,7 @@ class Installer_ExportAchlist(OneItemLink, _InstallerLink):
     _text = _(u'Export Achlist')
     _mode_info_dir = u'Mod Info Exports'
     _help = (_(u'Create achlist file for use by the %s.') %
-             bush.game.ck.long_name)
+             bush.game.Ck.long_name)
 
     def _enable(self):
         single_item = super(Installer_ExportAchlist, self)._enable()

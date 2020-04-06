@@ -46,8 +46,9 @@ class MorrowindGameInfo(GameInfo):
     nexusKey = u'bash.installers.openMorrowindNexus.continue'
 
     using_txt_file = False
+    plugin_name_specific_dirs = [] # Morrowind seems to have no such dirs
 
-    class ck(GameInfo.ck):
+    class Ck(GameInfo.Ck):
         ck_abbrev = u'TESCS'
         long_name = u'Construction Set'
         exe = u'TES Construction Set.exe'
@@ -66,10 +67,7 @@ class MorrowindGameInfo(GameInfo):
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True
 
-    class pnd(GameInfo.pnd): # Morrowind seems to have no such directories
-        voice_dir = []
-
-    class xe(GameInfo.xe):
+    class Xe(GameInfo.Xe):
         full_name = u'TES3Edit'
         expert_key = u'tes3View.iKnowWhatImDoing'
 

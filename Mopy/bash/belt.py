@@ -432,9 +432,9 @@ class PageVersions(PageInstaller):
                                             Label(self, have),
                                             balt.staticBitmap(self, bmp[ok])])
         # Script Extender
-        _link_row(bush.game.se, bush.game.se.se_abbrev, seNeed, seHave, bSEOk)
+        _link_row(bush.game.Se, bush.game.Se.se_abbrev, seNeed, seHave, bSEOk)
         # Graphics extender
-        _link_row(bush.game.ge, bush.game.ge.ge_abbrev, geNeed, geHave, bGEOk)
+        _link_row(bush.game.Ge, bush.game.Ge.ge_abbrev, geNeed, geHave, bGEOk)
         # Wrye Bash
         _link_row(None, u'', wbNeed, wbHave, bWBOk, title=u'Wrye Bash',
                   url=u'https://www.nexusmods.com/oblivion/mods/22368',
@@ -958,9 +958,9 @@ class WryeParser(ScriptParser.Parser):
         return ret[0]
 
     def fnCompareSEVersion(self, seWant):
-        if bush.game.se.se_abbrev != u'':
+        if bush.game.Se.se_abbrev != u'':
             ver_path = None
-            for ver_file in bush.game.se.ver_files:
+            for ver_file in bush.game.Se.ver_files:
                 ver_path = bass.dirs['app'].join(ver_file)
                 if ver_path.exists(): break
             return self._TestVersion(self._TestVersion_Want(seWant), ver_path)
@@ -969,7 +969,7 @@ class WryeParser(ScriptParser.Parser):
             return 1
 
     def fnCompareGEVersion(self, geWant):
-        if bush.game.ge.ge_abbrev != u'':
+        if bush.game.Ge.ge_abbrev != u'':
             ret = self._TestVersion_GE(self._TestVersion_Want(geWant))
             return ret[0]
         else:
@@ -1487,9 +1487,9 @@ class WryeParser(ScriptParser.Parser):
             gameWant, bass.dirs['app'].join(*bush.game.version_detect_file))
         bGameOk = ret[0] >= 0
         gameHave = ret[1]
-        if bush.game.se.se_abbrev != u'':
+        if bush.game.Se.se_abbrev != u'':
             ver_path = None
-            for ver_file in bush.game.se.ver_files:
+            for ver_file in bush.game.Se.ver_files:
                 ver_path = bass.dirs['app'].join(ver_file)
                 if ver_path.exists(): break
             ret = self._TestVersion(seWant, ver_path)
@@ -1498,7 +1498,7 @@ class WryeParser(ScriptParser.Parser):
         else:
             bSEOk = True
             seHave = u'None'
-        if bush.game.ge.ge_abbrev != u'':
+        if bush.game.Ge.ge_abbrev != u'':
             ret = self._TestVersion_GE(geWant)
             bGEOk = ret[0] >= 0
             geHave = ret[1]
@@ -1516,10 +1516,10 @@ class WryeParser(ScriptParser.Parser):
                                      bWBOk, wbHave, wbWant)
 
     def _TestVersion_GE(self, want):
-        if isinstance(bush.game.ge.exe,str):
-            files = [bass.dirs['mods'].join(bush.game.ge.exe)]
+        if isinstance(bush.game.Ge.exe, str):
+            files = [bass.dirs['mods'].join(bush.game.Ge.exe)]
         else:
-            files = [bass.dirs['mods'].join(*x) for x in bush.game.ge.exe]
+            files = [bass.dirs['mods'].join(*x) for x in bush.game.Ge.exe]
         ret = [-1, u'None']
         for file in reversed(files):
             ret = self._TestVersion(want, file)

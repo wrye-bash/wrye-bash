@@ -103,7 +103,7 @@ class StatusBar_Button(ItemLink):
     @property
     def obseVersion(self):
         if not bass.settings['bash.statusbar.showversion']: return u''
-        for ver_file in bush.game.se.ver_files:
+        for ver_file in bush.game.Se.ver_files:
             ver_path = bass.dirs['app'].join(ver_file)
             if ver_path.exists():
                 return u' ' + u'.'.join([u'%s' % x for x
@@ -331,8 +331,8 @@ class _Mods_xEditExpert(BoolLink):
 
     def __init__(self):
         super(_Mods_xEditExpert, self).__init__()
-        self._text = _(u'%s Expert') % bush.game.xe.full_name
-        self.key = bush.game.xe.expert_key
+        self._text = _(u'%s Expert') % bush.game.Xe.full_name
+        self.key = bush.game.Xe.expert_key
 
 class App_Tes4View(_ExeButton):
     """Allow some extra args for Tes4View."""
@@ -373,7 +373,7 @@ class App_Tes4View(_ExeButton):
     def __init__(self, *args, **kwdargs):
         exePath, exeArgs = _parse_button_arguments(args[0])
         super(App_Tes4View, self).__init__(exePath, exeArgs, *args[1:], **kwdargs)
-        if bush.game.xe.expert_key:
+        if bush.game.Xe.expert_key:
             self.mainMenu.append(_Mods_xEditExpert())
 
     def IsPresent(self): # FIXME(inf) What on earth is this? What's the point??
@@ -386,8 +386,8 @@ class App_Tes4View(_ExeButton):
         return True
 
     def Execute(self):
-        is_expert = bush.game.xe.expert_key and bass.settings[
-            bush.game.xe.expert_key]
+        is_expert = bush.game.Xe.expert_key and bass.settings[
+            bush.game.Xe.expert_key]
         extraArgs = bass.inisettings[
             'xEditCommandLineArguments'].split() if is_expert else []
         if balt.getKeyState_Control():
@@ -466,7 +466,7 @@ class Game_Button(_ExeButton):
     def sb_button_tip(self):
         tip_ = self._tip + u' ' + self.version if self.version else self._tip
         if BashStatusBar.laaButton.button_state:
-            tip_ += u' + ' + bush.game.laa.laa_name
+            tip_ += u' + ' + bush.game.Laa.laa_name
         return tip_
 
     @property
@@ -474,15 +474,15 @@ class Game_Button(_ExeButton):
         # Oblivion (version)
         tip_ = self._obseTip % (dict(version=self.version))
         # + OBSE
-        tip_ += u' + %s%s' % (bush.game.se.se_abbrev, self.obseVersion)
+        tip_ += u' + %s%s' % (bush.game.Se.se_abbrev, self.obseVersion)
         # + LAA
         if BashStatusBar.laaButton.button_state:
-            tip_ += u' + ' + bush.game.laa.laa_name
+            tip_ += u' + ' + bush.game.Laa.laa_name
         return tip_
 
     def _app_button_execute(self):
-        exe_xse = bass.dirs['app'].join(bush.game.se.exe)
-        exe_laa = bass.dirs['app'].join(bush.game.laa.exe)
+        exe_xse = bass.dirs['app'].join(bush.game.Se.exe)
+        exe_laa = bass.dirs['app'].join(bush.game.Laa.exe)
         exe_path = self.exePath # Default to the regular launcher
         if BashStatusBar.laaButton.button_state:
             # Should use the LAA Launcher if it's present
@@ -519,7 +519,7 @@ class TESCS_Button(_ExeButton):
         tip_ = self._obseTip % {u'version': self.version}
         if not self.xse_args: return tip_
         # + OBSE
-        tip_ += u' + %s%s' % (bush.game.se.se_abbrev, self.obseVersion)
+        tip_ += u' + %s%s' % (bush.game.Se.se_abbrev, self.obseVersion)
         # + CSE
         cse_path = bass.dirs['mods'].join(u'obse', u'plugins',
                                           u'Construction Set Extender.dll')
@@ -533,7 +533,7 @@ class TESCS_Button(_ExeButton):
         return tip_
 
     def _app_button_execute(self):
-        exe_xse = bass.dirs['app'].join(bush.game.se.exe)
+        exe_xse = bass.dirs['app'].join(bush.game.Se.exe)
         if (self.xse_args and BashStatusBar.obseButton.button_state
                 and exe_xse.isfile()):
             # If the script extender for this game has CK support, the xSE
@@ -595,12 +595,12 @@ class Obse_Button(_StatefulButton):
     _state_img_key = u'checkbox.green.%s.%s'
     @property
     def _present(self):
-        return (bool(bush.game.se.se_abbrev)
-                and bass.dirs['app'].join(bush.game.se.exe).exists())
+        return (bool(bush.game.Se.se_abbrev)
+                and bass.dirs['app'].join(bush.game.Se.exe).exists())
 
     def SetState(self,state=None):
         super(Obse_Button, self).SetState(state)
-        if bush.game.laa.launchesSE and not state and BashStatusBar.laaButton.gButton is not None:
+        if bush.game.Laa.launchesSE and not state and BashStatusBar.laaButton.gButton is not None:
             # 4GB Launcher automatically launches the SE, so turning of the SE
             # required turning off the 4GB Launcher as well
             BashStatusBar.laaButton.SetState(state)
@@ -609,7 +609,7 @@ class Obse_Button(_StatefulButton):
 
     @property
     def sb_button_tip(self): return ((_(u"%s%s Disabled"), _(u"%s%s Enabled"))[
-        self.button_state]) % (bush.game.se.se_abbrev, self.obseVersion)
+        self.button_state]) % (bush.game.Se.se_abbrev, self.obseVersion)
 
     def UpdateToolTips(self):
         tipAttr = ('sb_button_tip', 'obseTip')[self.button_state]
@@ -622,11 +622,11 @@ class LAA_Button(_StatefulButton):
     _state_img_key = u'checkbox.blue.%s.%s'
     @property
     def _present(self):
-        return bass.dirs['app'].join(bush.game.laa.exe).exists()
+        return bass.dirs['app'].join(bush.game.Laa.exe).exists()
 
     def SetState(self,state=None):
         super(LAA_Button, self).SetState(state)
-        if bush.game.laa.launchesSE and BashStatusBar.obseButton.gButton is not None:
+        if bush.game.Laa.launchesSE and BashStatusBar.obseButton.gButton is not None:
             if state:
                 # If the 4gb launcher launches the SE, enable the SE when enabling this
                 BashStatusBar.obseButton.SetState(state)
@@ -636,7 +636,7 @@ class LAA_Button(_StatefulButton):
         return state
 
     @property
-    def sb_button_tip(self): return bush.game.laa.laa_name + (
+    def sb_button_tip(self): return bush.game.Laa.laa_name + (
         _(u' Disabled'), _(u' Enabled'))[self.button_state]
 
 #------------------------------------------------------------------------------

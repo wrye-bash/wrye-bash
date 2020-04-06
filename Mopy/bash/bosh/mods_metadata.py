@@ -275,26 +275,26 @@ class ConfigHelpers(object):
             if shouldClean:
                 log.setHeader(
                     u'=== ' + _(u'Mods that need cleaning with %s') %
-                    bush.game.xe.full_name)
+                    bush.game.Xe.full_name)
                 log(_(u'Following mods have identical to master (ITM) '
                       u'records, deleted records (UDR), or other issues that '
                       u'should be fixed with %(xedit_name)s. Visit the '
                       u'%(cleaning_wiki_url)s for more information.') % {
                     u'cleaning_wiki_url': self._cleaning_wiki_url,
-                    u'xedit_name': bush.game.xe.full_name})
+                    u'xedit_name': bush.game.Xe.full_name})
                 for mod in sorted(shouldClean.keys()):
                     log(u'* __'+mod.s+u':__  %s' % shouldClean[mod])
             if shouldCleanMaybe:
                 log.setHeader(
                     u'=== ' + _(u'Mods with special cleaning instructions'))
                 log(_(u'Following mods have special instructions for cleaning '
-                      u'with %s') % bush.game.xe.full_name)
+                      u'with %s') % bush.game.Xe.full_name)
                 for mod in sorted(shouldCleanMaybe):
                     log(u'* __'+mod[0].s+u':__  '+mod[1])
             elif mod_checker and not shouldClean:
                 log.setHeader(
                     u'=== ' + _(u'Mods that need cleaning with %s') %
-                    bush.game.xe.full_name)
+                    bush.game.Xe.full_name)
                 log(_(u'Congratulations, all mods appear clean.'))
             if invalidVersion:
                 # Always an ASCII byte string, so this is fine
@@ -791,7 +791,7 @@ class ModCleaner(object):
                       u'\n\nThe file is in use by another process such as '
                       u'%(xedit_name)s.\nPlease close the other program that '
                       u'is accessing %(newpath)s.\n\nTry again?') % {
-                u'newpath': path.stail, u'xedit_name': bush.game.xe.full_name}
+                u'newpath': path.stail, u'xedit_name': bush.game.Xe.full_name}
             if changed:
                 cleaner.modInfo.makeBackup()
                 try:

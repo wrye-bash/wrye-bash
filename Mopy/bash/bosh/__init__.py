@@ -778,9 +778,8 @@ class ModInfo(FileInfo):
         """Returns (hasBsa, has_blocking_resources) booleans according to
         presence of corresponding resources (a BSA with a matching name and one
         or more plugin-name-specific folder, respectively)."""
-        return [self.hasBsa(),self._check_resources(bush.game.pnd.voice_dir) or
-                self._check_resources(bush.game.pnd.facegen_dir_1) or
-                self._check_resources(bush.game.pnd.facegen_dir_2)]
+        return (self.hasBsa(), any(self._check_resources(pnd) for pnd
+                                   in bush.game.plugin_name_specific_dirs))
 
     def _check_resources(self, resource_path):
         """Returns True if the directory created by joining self.dir, the
@@ -788,13 +787,11 @@ class ModInfo(FileInfo):
         of plugin-name-specific directories, which prevent merging.
 
         :param resource_path: The path to the plugin-name-specific directory,
-        as a list of path components.
-        """
+        as a list of path components."""
         # If resource_path is empty, then we would effectively query
         # self.dir.join(self.name), which always exists - that's the mod file!
-        if not resource_path:
-            return False
-        return self.dir.join(*resource_path).join(self.name).exists()
+        return resource_path and self.dir.join(*resource_path).join(
+            self.name).exists()
 
     def has_master_size_mismatch(self):
         """Checks if this plugin has at least one stored master size that does
@@ -2627,7 +2624,7 @@ class ModInfos(FileInfos):
                     u'%(new)s.\n\nThe file is in use by another process such '
                     u'as %(xedit_name)s.\nPlease close the other program that '
                     u'is accessing %(new)s.\n\nTry again?') % {
-                u'xedit_name': bush.game.xe.full_name, u'old': old.s,
+                u'xedit_name': bush.game.Xe.full_name, u'old': old.s,
                 u'new': new.s},
         _(u'File in use'))
 
@@ -2754,7 +2751,7 @@ class SaveInfos(FileInfos):
                 self.profiles.moveRow(row, row[:-1])
         SaveInfo.cosave_types = cosaves.get_cosave_types(
             bush.game.fsName, self.__class__.file_pattern,
-            bush.game.se.cosave_tag, bush.game.se.cosave_ext)
+            bush.game.Se.cosave_tag, bush.game.Se.cosave_ext)
 
     @classmethod
     def rightFileType(cls, fileName):

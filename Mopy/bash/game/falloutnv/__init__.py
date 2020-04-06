@@ -43,7 +43,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     nexusName = u'New Vegas Nexus'
     nexusKey = u'bash.installers.openNewVegasNexus'
 
-    class se(Fallout3GameInfo.se):
+    class Se(Fallout3GameInfo.Se):
         se_abbrev = u'NVSE'
         long_name = u'Fallout Script Extender'
         exe = u'nvse_loader.exe'
@@ -54,7 +54,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         url = u'http://nvse.silverlock.org/'
         url_tip = u'http://nvse.silverlock.org/'
 
-    class xe(Fallout3GameInfo.xe):
+    class Xe(Fallout3GameInfo.Xe):
         full_name = u'FNVEdit'
         expert_key = 'fnvView.iKnowWhatImDoing'
 

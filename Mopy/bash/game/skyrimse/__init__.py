@@ -63,14 +63,14 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     # MreScpt is Oblivion/FO3/FNV Only
     # MreMgef, has not been verified to be used here for Skyrim
 
-    class se(SkyrimGameInfo.se):
+    class Se(SkyrimGameInfo.Se):
         se_abbrev = u'SKSE64'
         long_name = u'Skyrim SE Script Extender'
         exe = u'skse64_loader.exe'
         ver_files = [u'skse64_loader.exe', u'skse64_steam_loader.dll']
 
     # ScriptDragon doesn't exist for SSE
-    class sd(SkyrimGameInfo.sd):
+    class Sd(SkyrimGameInfo.Sd):
         sd_abbrev = u''
         long_name = u''
         install_dir = u''
@@ -88,7 +88,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
                                 u'Skyrim - Interface.bsa'],
         }
 
-    class xe(SkyrimGameInfo.xe):
+    class Xe(SkyrimGameInfo.Xe):
         full_name = u'SSEEdit'
         expert_key = 'sseView.iKnowWhatImDoing'
 

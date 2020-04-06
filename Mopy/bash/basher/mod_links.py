@@ -98,7 +98,7 @@ class Mod_CreateDummyMasters(OneItemLink):
     _text = _(u'Create Dummy Masters...')
     _help = _(u'Creates empty plugins for each missing master of the selected '
               u'mod, allowing it to be loaded by tools like %s or the %s.') % (
-        bush.game.xe.full_name, bush.game.ck.long_name)
+        bush.game.Xe.full_name, bush.game.Ck.long_name)
 
     def _enable(self):
         return super(Mod_CreateDummyMasters, self)._enable() and \
@@ -110,7 +110,7 @@ class Mod_CreateDummyMasters(OneItemLink):
                 u"viewing and editing 'Filter' patches in %s. It will create "
                 u'empty plugins for each missing master. Are you sure you '
                 u'want to continue?\n\nTo remove these files later, use '
-                u"'Clean Dummy Masters...'") % bush.game.xe.full_name
+                u"'Clean Dummy Masters...'") % bush.game.Xe.full_name
         if not self._askYes(msg, title=_(u'Create Files')): return
         to_refresh = []
         # creates esp files - so place them correctly after the last esm
@@ -1706,7 +1706,7 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
     """Swaps masters between esp and esm versions."""
     _help = _(u'Flips the ESM flag on all masters of the selected plugin, '
               u'allowing you to load it in the %(ck_name)s.') % (
-              {u'ck_name': bush.game.ck.long_name})
+              {u'ck_name': bush.game.Ck.long_name})
 
     def _initData(self, window, selection,
                   __reEspExt=re.compile(u'' r'\.esp(.ghost)?$', re.I | re.U)):
@@ -1734,7 +1734,7 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
         message = _(u'WARNING! For advanced modders only! Flips the ESM flag '
                     u'of all ESP masters of the selected plugin. Useful for '
                     u'loading ESP-mastered mods in the %(ck_name)s.') % (
-                    {u'ck_name': bush.game.ck.long_name})
+                    {u'ck_name': bush.game.Ck.long_name})
         if not self._askContinue(message, 'bash.flipMasters.continue'): return
         updated = [self._selected_item]
         for masterPath in self.espMasters:
@@ -1754,7 +1754,7 @@ class Mod_SetVersion(OneItemLink):
                 u'to edit newer official mods in the %s by resetting the '
                 u'internal file version number back to 0.8. While this will '
                 u'make the mod editable, it may also break the mod in some '
-                u'way.' % bush.game.ck.long_name)
+                u'way.' % bush.game.Ck.long_name)
 
     def _enable(self):
         return (super(Mod_SetVersion, self)._enable() and

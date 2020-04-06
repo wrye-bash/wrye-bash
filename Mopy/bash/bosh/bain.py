@@ -412,7 +412,7 @@ class Installer(object):
         skipObse = not bass.settings['bash.installers.allowOBSEPlugins']
         if skipObse:
             Installer._global_start_skips.append(
-                bush.game.se.plugin_dir.lower() + os_sep)
+                bush.game.Se.plugin_dir.lower() + os_sep)
             Installer._global_skip_extensions |= Installer._executables_ext
         if bass.settings['bash.installers.skipImages']:
             Installer._global_skip_extensions |= imageExts
@@ -536,27 +536,27 @@ class Installer(object):
             goodDlls[fileLower].append([archiveRoot,size,crc])
             bass.settings['bash.installers.goodDlls'] = Installer._goodDlls
             return False
-        if bush.game.se.se_abbrev:
+        if bush.game.Se.se_abbrev:
             _obse = partial(__skipExecutable,
-                    desc=_(u'%s plugin DLL') % bush.game.se.se_abbrev,
+                    desc=_(u'%s plugin DLL') % bush.game.Se.se_abbrev,
                     ext=(_(u'a dll')),
-                    exeDir=(bush.game.se.plugin_dir.lower() + os_sep),
-                    dialogTitle=bush.game.se.se_abbrev + _(u' DLL Warning'))
+                    exeDir=(bush.game.Se.plugin_dir.lower() + os_sep),
+                    dialogTitle=bush.game.Se.se_abbrev + _(u' DLL Warning'))
             Installer._executables_process[u'.dll'] = \
             Installer._executables_process[u'.dlx'] = _obse
-        if bush.game.sd.sd_abbrev:
+        if bush.game.Sd.sd_abbrev:
             _asi = partial(__skipExecutable,
-                   desc=_(u'%s plugin ASI') % bush.game.sd.long_name,
+                   desc=_(u'%s plugin ASI') % bush.game.Sd.long_name,
                    ext=(_(u'an asi')),
-                   exeDir=(bush.game.sd.install_dir.lower() + os_sep),
-                   dialogTitle=bush.game.sd.long_name + _(u' ASI Warning'))
+                   exeDir=(bush.game.Sd.install_dir.lower() + os_sep),
+                   dialogTitle=bush.game.Sd.long_name + _(u' ASI Warning'))
             Installer._executables_process[u'.asi'] = _asi
-        if bush.game.sp.sp_abbrev:
+        if bush.game.Sp.sp_abbrev:
             _jar = partial(__skipExecutable,
-                   desc=_(u'%s patcher JAR') % bush.game.sp.long_name,
+                   desc=_(u'%s patcher JAR') % bush.game.Sp.long_name,
                    ext=(_(u'a jar')),
-                   exeDir=(bush.game.sp.install_dir.lower() + os_sep),
-                   dialogTitle=bush.game.sp.long_name + _(u' JAR Warning'))
+                   exeDir=(bush.game.Sp.install_dir.lower() + os_sep),
+                   dialogTitle=bush.game.Sp.long_name + _(u' JAR Warning'))
             Installer._executables_process[u'.jar'] = _jar
 
     @staticmethod
@@ -2050,10 +2050,10 @@ class InstallersData(DataStore):
                 u'textures', u'landscapelod', u'generated'))
         if setSkipOBSE:
             newSDirs = (x for x in newSDirs if
-                        x.lower() != bush.game.se.plugin_dir.lower())
-        if bush.game.sd.sd_abbrev and setSkipOBSE:
+                        x.lower() != bush.game.Se.plugin_dir.lower())
+        if bush.game.Sd.sd_abbrev and setSkipOBSE:
             newSDirs = (x for x in newSDirs if
-                        x.lower() != bush.game.sd.install_dir.lower())
+                        x.lower() != bush.game.Sd.install_dir.lower())
         if setSkipDocs and setSkipImages:
             newSDirs = (x for x in newSDirs if x.lower() != u'docs')
         newSDirs = (x for x in newSDirs if

@@ -333,7 +333,7 @@ class PatchDialog(DialogWindow):
                     u'accessing %(patch_name)s, and provide Administrator '
                     u'Privileges if prompted to do so.\n\nTry again?') % {
                 u'patch_name': patch_name.s,
-                u'xedit_name': bush.game.xe.full_name},
+                u'xedit_name': bush.game.Xe.full_name},
             _(u'Bashed Patch - Save Error'))
 
     def _cretry(self, patch_name):
@@ -344,7 +344,7 @@ class PatchDialog(DialogWindow):
                     u'close the other program that is accessing %s.\n\nTry '
                     u'again?') % {
                 u'temp_patch': patch_name.temp.s, u'patch_name': patch_name.s,
-                u'xedit_name': bush.game.xe.full_name},
+                u'xedit_name': bush.game.Xe.full_name},
             _(u'Bashed Patch - Save Error'))
 
     def __config(self):

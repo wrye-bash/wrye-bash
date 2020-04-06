@@ -1573,9 +1573,9 @@ def get_cosave_types(game_fsName, save_regex, cosave_tag, cosave_ext):
 
     :param game_fsName: bush.game.fsName, the name of the current game.
     :param save_regex: SaveInfos.file_pattern.
-    :param cosave_tag: bush.game.se.cosave_tag, the magic tag used to mark the
+    :param cosave_tag: bush.game.Se.cosave_tag, the magic tag used to mark the
         cosave. Empty string if this game doesn't have cosaves.
-    :param cosave_ext: bush.game.se.cosave_ext, the extension for cosaves.
+    :param cosave_ext: bush.game.Se.cosave_ext, the extension for cosaves.
     :return: A list of types of cosaves supported by this game.
     :rtype: list[type[ACosave]]"""
     # Check if the game even has a script extender

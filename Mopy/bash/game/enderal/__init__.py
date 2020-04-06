@@ -56,7 +56,7 @@ class EnderalGameInfo(SkyrimGameInfo):
             u'enderal - forgotten stories.esm': [u'Skyrim - Interface.bsa'],
         }
 
-    class xe(SkyrimGameInfo.xe):
+    class Xe(SkyrimGameInfo.Xe):
         full_name = u'EnderalEdit'
         expert_key = 'enderalView.iKnowWhatImDoing'
 

@@ -22,6 +22,7 @@
 #
 # =============================================================================
 """Tmp module to get mergeability stuff out of bosh.__init__.py."""
+import os
 from .. import bass, bush
 from ..bolt import GPath
 from ..cint import ObCollection
@@ -40,22 +41,20 @@ def _is_mergeable_no_load(modInfo, reasons):
         reasons.append(_(u'Is Bashed Patch.'))
     #--Bsa / blocking resources?
     has_resources = modInfo.hasResources()
-    if tuple(has_resources) != (False, False):
+    if has_resources != (False, False):
         if not verbose: return False
         hasBsa, has_blocking_resources = has_resources
         if hasBsa:
             reasons.append(_(u'Has BSA archive.'))
         if has_blocking_resources:
-            facegen_dir_1 = _format_blocking_dir(bush.game.pnd.facegen_dir_1)
-            facegen_dir_2 = _format_blocking_dir(bush.game.pnd.facegen_dir_2)
-            voice_dir = _format_blocking_dir(bush.game.pnd.voice_dir)
             dir_list = u''
-            for blocking_dir in (facegen_dir_1, facegen_dir_2, voice_dir):
+            for pnd in bush.game.plugin_name_specific_dirs:
+                blocking_dir = _format_blocking_dir(pnd)
                 if blocking_dir:
                     dir_list += u'\n  - ' + blocking_dir
             reasons.append(_(u'Has plugin-specific directory - one of the '
                              u'following:' + dir_list) %
-                           ({'plugin_name': modInfo.name.s}))
+                           ({u'plugin_name': modInfo.name.s}))
     # Client must make sure NoMerge tag not in tags - if in tags
     # don't show up as mergeable.
     return False if reasons else True
@@ -63,7 +62,7 @@ def _is_mergeable_no_load(modInfo, reasons):
 def _format_blocking_dir(blocking_dir):
     """Formats a path with path separators. Returns u'' for empty paths."""
     if blocking_dir:
-        return u'\\'.join(blocking_dir) + u'\\%(plugin_name)s'
+        return os.sep.join(blocking_dir) + os.sep + u'%(plugin_name)s'
     else:
         return u''
 

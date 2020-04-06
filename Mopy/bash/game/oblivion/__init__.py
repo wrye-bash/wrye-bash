@@ -50,14 +50,14 @@ class OblivionGameInfo(GameInfo):
     using_txt_file = False
     has_standalone_pluggy = True
 
-    class ck(GameInfo.ck):
+    class Ck(GameInfo.Ck):
         ck_abbrev = u'TESCS'
         long_name = u'Construction Set'
         exe = u'TESConstructionSet.exe'
         se_args = u'-editor'
         image_name = u'tescs%s.png'
 
-    class se(GameInfo.se):
+    class Se(GameInfo.Se):
         se_abbrev = u'OBSE'
         long_name = u'Oblivion Script Extender'
         exe = u'obse_loader.exe'
@@ -70,7 +70,7 @@ class OblivionGameInfo(GameInfo):
         url = u'http://obse.silverlock.org/'
         url_tip = u'http://obse.silverlock.org/'
 
-    class ge(GameInfo.ge):
+    class Ge(GameInfo.Ge):
         ge_abbrev = u'OBGE'
         long_name = u'Oblivion Graphics Extender'
         exe = [(u'obse', u'plugins', u'obge.dll'),
@@ -92,7 +92,7 @@ class OblivionGameInfo(GameInfo):
         allow_reset_timestamps = True
         valid_versions = {0x67}
 
-    class xe(GameInfo.xe):
+    class Xe(GameInfo.Xe):
         full_name = u'TES4Edit'
         expert_key = 'tes4View.iKnowWhatImDoing'
 

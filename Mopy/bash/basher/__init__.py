@@ -3977,7 +3977,7 @@ class BashFrame(WindowFrame):
                  _(u'The following BSAs have a version other than the one '
                    u'this game expects. This can lead to CTDs, please extract '
                    u'and repack them using the %s-provided tool: ') %
-                 bush.game.ck.long_name]
+                 bush.game.Ck.long_name]
             m.extend(sorted(bsa_mvers - self.known_mismatched_version_bsas))
             message.append(m)
             self.known_mismatched_version_bsas |= bsa_mvers

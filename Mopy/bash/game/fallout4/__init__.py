@@ -47,8 +47,11 @@ class Fallout4GameInfo(GameInfo):
     script_extensions = {u'.psc'}
     has_achlist = True
     check_esl = True
+    plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
+        [u'meshes', u'actors', u'character', u'facegendata', u'facegeom'],
+        [u'meshes', u'actors', u'character', u'facecustomization']]
 
-    class ck(GameInfo.ck):
+    class Ck(GameInfo.Ck):
         # TODO:  When the Fallout 4 Creation Kit is actually released,
         # double check that the filename is correct, and create an actual icon
         ck_abbrev = u'FO4CK'
@@ -57,7 +60,7 @@ class Fallout4GameInfo(GameInfo):
         se_args = None
         image_name = u'creationkit%s.png'
 
-    class se(GameInfo.se):
+    class Se(GameInfo.Se):
         se_abbrev = u'F4SE'
         long_name = u'Fallout 4 Script Extender'
         exe = u'f4se_loader.exe'
@@ -91,13 +94,7 @@ class Fallout4GameInfo(GameInfo):
             u'dlcnukaworld.esm':  [u'DLCNukaWorld - Main.ba2'],
         }
 
-    class pnd(GameInfo.pnd):
-        facegen_dir_1 = [u'meshes', u'actors', u'character', u'facegendata',
-                         u'facegeom']
-        facegen_dir_2 = [u'meshes', u'actors', u'character',
-                         u'facecustomization']
-
-    class xe(GameInfo.xe):
+    class Xe(GameInfo.Xe):
         full_name = u'FO4Edit'
         expert_key = 'fo4View.iKnowWhatImDoing'
 

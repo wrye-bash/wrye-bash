@@ -44,15 +44,18 @@ class Fallout3GameInfo(GameInfo):
     nexusKey = u'bash.installers.openFallout3Nexus'
 
     using_txt_file = False
+    plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
+        [u'textures', u'characters', u'BodyMods'],
+        [u'textures', u'characters', u'FaceMods']]
 
-    class ck(GameInfo.ck):
+    class Ck(GameInfo.Ck):
         ck_abbrev = u'GECK'
         long_name = u'Garden of Eden Creation Kit'
         exe = u'GECK.exe'
         se_args = u'-editor'
         image_name = u'geck%s.png'
 
-    class se(GameInfo.se):
+    class Se(GameInfo.Se):
         se_abbrev = u'FOSE'
         long_name = u'Fallout 3 Script Extender'
         exe = u'fose_loader.exe'
@@ -83,11 +86,7 @@ class Fallout3GameInfo(GameInfo):
         # accept those here as well
         valid_versions = {0x67, 0x68}
 
-    class pnd(GameInfo.pnd):
-        facegen_dir_1 = [u'textures', u'characters', u'BodyMods']
-        facegen_dir_2 = [u'textures', u'characters', u'FaceMods']
-
-    class xe(GameInfo.xe):
+    class Xe(GameInfo.Xe):
         full_name = u'FO3Edit'
         expert_key = 'fo3View.iKnowWhatImDoing'
 

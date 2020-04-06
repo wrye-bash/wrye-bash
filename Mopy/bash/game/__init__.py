@@ -101,12 +101,17 @@ class GameInfo(object):
     check_esl = False
     # Whether or not this game has standalone .pluggy cosaves
     has_standalone_pluggy = False
+    # Information about Plugin-Name-specific Directories supported by this
+    # game. Some examples are sound\voices\PLUGIN_NAME.esp, or the facegendata
+    # ones. All paths are given as lists for future cross-platform support. An
+    # empty list means that the game does not have any such directories.
+    plugin_name_specific_dirs = [[u'sound', u'voice']]
 
     def __init__(self, gamePath):
         self.gamePath = gamePath # absolute bolt Path to the game directory
         self.has_esl = u'.esl' in self.espm_extensions
 
-    class ck(object):
+    class Ck(object):
         """Information about the official plugin editor (generally called some
         variation of 'Creation Kit') for this game."""
         ck_abbrev = u''   # Abbreviated name
@@ -115,7 +120,7 @@ class GameInfo(object):
         se_args = u''     # Argument to pass to the SE to load the CK
         image_name = u''  # Image name template for the status bar
 
-    class se(object):
+    class Se(object):
         """Information about the Script Extender for this game."""
         se_abbrev = u''   # Abbreviated name. If this is empty, it signals that
                           # no xSE is available for this game. Note that this
@@ -137,7 +142,7 @@ class GameInfo(object):
         url = u''         # URL to download from
         url_tip = u''     # Tooltip for mouse over the URL
 
-    class sd(object):
+    class Sd(object):
         """Information about Script Dragon for this game."""
         sd_abbrev = u''   # Abbreviated name. If this is empty, it signals that
                           # no Script Dragon is available for this game.
@@ -145,7 +150,7 @@ class GameInfo(object):
         install_dir = u'' # The directory, relative to the Data folder, into
                           # which Script Dragon plugins will be installed.
 
-    class sp(object):
+    class Sp(object):
         """Information about SkyProc patchers for this game."""
         sp_abbrev = u''   # Abbreviated name. If this is empty, it signals that
                           # this game does not support SkyProc patchers.
@@ -153,7 +158,7 @@ class GameInfo(object):
         install_dir = u'' # The directory, relative to the Data folder, into
                           # which SkyProc patchers will be installed.
 
-    class ge(object):
+    class Ge(object):
         """Information about the Graphics Extender for this game."""
         ge_abbrev = u'' # Abbreviated name. If this is empty, it signals
                         # that no graphics extender is available for this game.
@@ -169,7 +174,7 @@ class GameInfo(object):
         url = u''       # URL to download from
         url_tip = u''   # Tooltip for mouse over the URL
 
-    class laa(object):
+    class Laa(object):
         """Information about the LAA (Large Address Aware) launcher for this
         game."""
         laa_name = u''      # Display name of the launcher
@@ -229,24 +234,7 @@ class GameInfo(object):
         # strings
         vanilla_string_bsas = {}
 
-    class pnd(object):
-        """Information about Plugin-Name-specific Directories supported by this
-        game.
-
-        Some examples are sound\voices\PLUGIN_NAME.esp, or the facegendata
-        ones. All paths are given as lists for future cross-platform support.
-        An empty list means that the game does not have such a directory."""
-        # The path to the first plugin-name-specific directory for facegen.
-        # Meshes in newer games, textures in older ones.
-        facegen_dir_1 = []
-        # The path to the second plugin-name-specific directory for facegen.
-        # Always contains textures.
-        facegen_dir_2 = []
-        # The path to the plugin-name-specific directory for voice files
-        # This is the same (sound/voice/%s) for every game but Morrowind
-        voice_dir = [u'sound', u'voice']
-
-    class xe(object):
+    class Xe(object):
         """Information about xEdit for this game."""
         # The name that xEdit has for this game, e.g. 'TES5Edit' for Skyrim
         full_name = u'xEdit'

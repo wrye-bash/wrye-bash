@@ -46,15 +46,18 @@ class SkyrimGameInfo(GameInfo):
     nexusKey = 'bash.installers.openSkyrimNexus.continue'
 
     script_extensions = {u'.psc'}
+    plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
+        [u'meshes', u'actors', u'character', u'facegendata', u'facegeom'],
+        [u'textures', u'actors', u'character', u'facegendata', u'facetint']]
 
-    class ck(GameInfo.ck):
+    class Ck(GameInfo.Ck):
         ck_abbrev = u'CK'
         long_name = u'Creation Kit'
         exe = u'CreationKit.exe'
         se_args = None  # u'-editor'
         image_name = u'creationkit%s.png'
 
-    class se(GameInfo.se):
+    class Se(GameInfo.Se):
         se_abbrev = u'SKSE'
         long_name = u'Skyrim Script Extender'
         exe = u'skse_loader.exe'
@@ -65,12 +68,12 @@ class SkyrimGameInfo(GameInfo):
         url = u'http://skse.silverlock.org/'
         url_tip = u'http://skse.silverlock.org/'
 
-    class sd(GameInfo.sd):
+    class Sd(GameInfo.Sd):
         sd_abbrev = u'SD'
         long_name = u'Script Dragon'
         install_dir = u'asi'
 
-    class sp(GameInfo.sp):
+    class Sp(GameInfo.Sp):
         sp_abbrev = u'SP'
         long_name = u'SkyProc'
         install_dir = u'SkyProc Patchers'
@@ -90,13 +93,7 @@ class SkyrimGameInfo(GameInfo):
             u'dragonborn.esm': [u'Dragonborn.bsa'],
         }
 
-    class pnd(GameInfo.pnd):
-        facegen_dir_1 = [u'meshes', u'actors', u'character', u'facegendata',
-                         u'facegeom']
-        facegen_dir_2 = [u'textures', u'actors', u'character', u'facegendata',
-                         u'facetint']
-
-    class xe(GameInfo.xe):
+    class Xe(GameInfo.Xe):
         full_name = u'TES5Edit'
         expert_key = 'tes5View.iKnowWhatImDoing'
 

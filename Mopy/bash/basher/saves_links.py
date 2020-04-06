@@ -796,11 +796,11 @@ class _Save_StatCosave(AppendableLink, OneItemLink):
 #------------------------------------------------------------------------------
 class Save_StatObse(_Save_StatCosave):
     """Dump .obse records."""
-    _text = _(u'Dump %s Contents') % bush.game.se.cosave_ext.lower()
+    _text = _(u'Dump %s Contents') % bush.game.Se.cosave_ext.lower()
     _help = _(u'Dumps contents of associated %s cosave into a log.') % \
-            bush.game.se.se_abbrev
+            bush.game.Se.se_abbrev
 
-    def _append(self, window): return bool(bush.game.se.se_abbrev)
+    def _append(self, window): return bool(bush.game.Se.se_abbrev)
 
 #------------------------------------------------------------------------------
 class Save_StatPluggy(_Save_StatCosave):
