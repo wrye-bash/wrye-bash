@@ -235,13 +235,12 @@ class AMultiTweakItem(object):
         supports pooling (see MultiTweakItem.supports_pooling)."""
         raise AbstractError(u'wants_record not implemented')
 
-class DynamicNamedTweak(AMultiTweakItem):
+class DynamicTweak(AMultiTweakItem):
     """A tweak that has its name and tip passed in as init parameters."""
-
     def __init__(self, tweak_name, tweak_tip, key, *choices, **kwargs):
         self.tweak_name = tweak_name
         self.tweak_tip = tweak_tip
-        super(DynamicNamedTweak, self).__init__(key, *choices, **kwargs)
+        super(DynamicTweak, self).__init__(key, *choices, **kwargs)
 
     def __repr__(self):  return u'%s(%s)' % (
         self.__class__.__name__, self.tweak_name)

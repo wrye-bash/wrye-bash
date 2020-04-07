@@ -26,12 +26,12 @@
 to the Clothes Multitweaker - as well as the ClothesTweaker itself."""
 import itertools
 from collections import Counter
-from ...patcher.base import AMultiTweaker, DynamicNamedTweak
+from ...patcher.base import AMultiTweaker, DynamicTweak
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
-class AClothesTweak(DynamicNamedTweak):
+class AClothesTweak(DynamicTweak):
     tweak_read_classes = b'CLOT',
     clothes_flags = {
         u'hoods':    0x00000002,

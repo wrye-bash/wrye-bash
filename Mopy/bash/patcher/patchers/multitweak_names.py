@@ -32,7 +32,7 @@ from functools import partial
 # Internal
 from ...bolt import RecPath
 from ...exception import AbstractError
-from ...patcher.base import AMultiTweakItem, AMultiTweaker, DynamicNamedTweak
+from ...patcher.base import AMultiTweakItem, AMultiTweaker, DynamicTweak
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
 
@@ -557,7 +557,7 @@ class CBash_NamesTweak_Weapons(_ANamesTweak_Weapons, _CNamesTweak):
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class _ATextReplacer(DynamicNamedTweak, _ANamesTweak):
+class _ATextReplacer(DynamicTweak, _ANamesTweak):
     """Base class for replacing any text via regular expressions."""
     # FIXME(inf) Move to game/*/constants, and boom, we have a cross-game text
     #  replacer!
