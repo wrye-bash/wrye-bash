@@ -1224,14 +1224,13 @@ tab. The directories skipped are:
 
 <h3 id="patch-tags">Bash Tags <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Wrye Bash uses a tagging system to determine what mods can and should have which records available for importing into the Bashed Patch. These Bash Tags are specified by mod authors in the header descriptions of their plugins, are applied using data from LOOT's masterlist and userlist files, and are read from text files in the <code>[GAME]\Data\BashTags</code> folder.
-In decreasing priority the Bash tags sources are:
+In increasing priority the Bash Tags sources are:
 
 <ol>
-    <li>Manual Bash tags set by user in the Bash mod list</li>
-    <li>Header of ESP or ESM file (also can be edited in bash)</li>
-    <li>userlist.yaml (LOOT)</li>
-    <li>masterlist.yaml (LOOT)</li>
+    <li>Description in the header of the plugin (can be edited in WB)</li>
     <li>taglist.yaml (LOOT) - Only if no LOOT masterlist was found on the user's computer</li>
+    <li>masterlist.yaml (LOOT)</li>
+    <li>userlist.yaml (LOOT)</li>
     <li><code>[GAME]\Data\BashTags\[PLUGIN NAME].txt</code></li>
     <li>Tags that were manually set in Wrye Bash</li>
 </ol>
