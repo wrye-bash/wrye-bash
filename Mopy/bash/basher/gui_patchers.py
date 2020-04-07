@@ -195,7 +195,8 @@ class _AliasesPatcherPanel(_PatcherPanel):
     def SetAliasText(self):
         """Sets alias text according to current aliases."""
         self.gAliases.text_content = u'\n'.join([
-            u'%s >> %s' % (key.s,value.s) for key,value in sorted(self.aliases.items())])
+            u'%s >> %s' % (alias_target.s, alias_repl.s)
+            for alias_target, alias_repl in sorted(self.aliases.items())])
 
     def OnEditAliases(self):
         aliases_text = self.gAliases.text_content
@@ -450,11 +451,10 @@ class _ListPatcherPanel(_PatcherPanel):
         config = super(_ListPatcherPanel, self).saveConfig(configs)
         listSet = set(self.configItems)
         self.configChecks = config['configChecks'] = dict(
-            [(key, value) for key, value in self.configChecks.iteritems() if
-             key in listSet])
+            [(k, v) for k, v in self.configChecks.iteritems() if k in listSet])
         self.configChoices = config['configChoices'] = dict(
-            [(key, value) for key, value in self.configChoices.iteritems() if
-             key in listSet])
+            [(k, v) for k, v in self.configChoices.iteritems()
+             if k in listSet])
         config['configItems'] = self.configItems
         config['autoIsChecked'] = self.autoIsChecked
         config['remove_empty_sublists'] = self.remove_empty_sublists
@@ -737,8 +737,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
     def _log_config(self, conf, config, clip, log):
         self.getConfig(config) # set self._all_tweaks and load their config
         for tweak in self._all_tweaks:
-            if tweak.key in conf:
-                enabled, value = conf.get(tweak.key, (False, u''))
+            if tweak.tweak_key in conf:
+                enabled, value = conf.get(tweak.tweak_key, (False, u''))
                 label = tweak.getListLabel().replace(u'[[', u'[').replace(
                     u']]', u']')
                 if enabled:

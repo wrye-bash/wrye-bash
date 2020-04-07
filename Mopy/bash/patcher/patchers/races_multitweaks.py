@@ -568,41 +568,41 @@ class RacePatcher(AMultiTweaker, ListPatcher):
                 if u'Voice-F' in bashTags:
                     tempRaceData['femaleVoice'] = race.femaleVoice
                 if u'Body-M' in bashTags:
-                    for key in ['male'+key for key in self.bodyKeys]:
-                        tempRaceData[key] = getattr(race,key)
+                    for body_key in ['male' + k for k in self.bodyKeys]:
+                        tempRaceData[body_key] = getattr(race, body_key)
                 if u'Body-F' in bashTags:
-                    for key in ['female'+key for key in self.bodyKeys]:
-                        tempRaceData[key] = getattr(race,key)
+                    for body_key in ['female' + k for k in self.bodyKeys]:
+                        tempRaceData[body_key] = getattr(race, body_key)
                 if u'Body-Size-M' in bashTags:
-                    for key in ['male'+key for key in self.sizeKeys]:
-                        tempRaceData[key] = getattr(race,key)
+                    for bsize_key in ['male' + k for k in self.sizeKeys]:
+                        tempRaceData[bsize_key] = getattr(race, bsize_key)
                 if u'Body-Size-F' in bashTags:
-                    for key in ['female'+key for key in self.sizeKeys]:
-                        tempRaceData[key] = getattr(race,key)
+                    for bsize_key in ['female' + k for k in self.sizeKeys]:
+                        tempRaceData[bsize_key] = getattr(race, bsize_key)
                 if u'R.Teeth' in bashTags:
-                    for key in ('teethLower','teethUpper'):
-                        tempRaceData[key] = getattr(race,key)
+                    for teeth_key in ('teethLower', 'teethUpper'):
+                        tempRaceData[teeth_key] = getattr(race, teeth_key)
                 if u'R.Mouth' in bashTags:
-                    for key in ('mouth','tongue'):
-                        tempRaceData[key] = getattr(race,key)
+                    for mouth_key in ('mouth', 'tongue'):
+                        tempRaceData[mouth_key] = getattr(race, mouth_key)
                 if u'R.Head' in bashTags:
                     tempRaceData['head'] = race.head
                 if u'R.Ears' in bashTags:
-                    for key in ('maleEars','femaleEars'):
-                        tempRaceData[key] = getattr(race,key)
+                    for ears_key in ('maleEars', 'femaleEars'):
+                        tempRaceData[ears_key] = getattr(race, ears_key)
                 if u'R.Relations' in bashTags:
                     relations = raceData.setdefault('relations',{})
                     for x in race.relations:
                         relations[x.faction] = x.mod
                 if u'R.Attributes-F' in bashTags:
-                    for key in ['female'+key for key in self.raceAttributes]:
-                        tempRaceData[key] = getattr(race,key)
+                    for af_key in ['female' + k for k in self.raceAttributes]:
+                        tempRaceData[af_key] = getattr(race, af_key)
                 if u'R.Attributes-M' in bashTags:
-                    for key in ['male'+key for key in self.raceAttributes]:
-                        tempRaceData[key] = getattr(race,key)
+                    for am_key in ['male' + k for k in self.raceAttributes]:
+                        tempRaceData[am_key] = getattr(race, am_key)
                 if u'R.Skills' in bashTags:
-                    for key in self.raceSkills:
-                        tempRaceData[key] = getattr(race,key)
+                    for skill_key in self.raceSkills:
+                        tempRaceData[skill_key] = getattr(race, skill_key)
                 if u'R.AddSpells' in bashTags:
                     tempRaceData['AddSpells'] = race.spells
                 if u'R.ChangeSpells' in bashTags:
@@ -631,9 +631,9 @@ class RacePatcher(AMultiTweaker, ListPatcher):
                                 if spell not in raceData['AddSpells']:
                                     raceData['AddSpells'].append(spell)
                         del tempRaceData['AddSpells']
-                    for key in tempRaceData:
-                        if not tempRaceData[key] == getattr(race,key):
-                            raceData[key] = tempRaceData[key]
+                    for race_key in tempRaceData:
+                        if tempRaceData[race_key] != getattr(race, race_key):
+                            raceData[race_key] = tempRaceData[race_key]
             progress.plus()
 
     def scanModFile(self, modFile, progress):
@@ -746,11 +746,11 @@ class RacePatcher(AMultiTweaker, ListPatcher):
                         race.leftEye.modPath = raceData['leftEye'].modPath
                         raceChanged = True
             #--Teeth/Mouth/head/ears/description
-            for key in ('teethLower', 'teethUpper', 'mouth', 'tongue', 'text',
-                    'head'):
-                if key in raceData:
-                    if getattr(race,key) != raceData[key]:
-                        setattr(race,key,raceData[key])
+            for basic_key in ('teethLower', 'teethUpper', 'mouth', 'tongue',
+                              'text', 'head'):
+                if basic_key in raceData:
+                    if getattr(race, basic_key) != raceData[basic_key]:
+                        setattr(race, basic_key, raceData[basic_key])
                         raceChanged = True
             #--spells
             if 'spellsOverride' in raceData:
@@ -761,20 +761,20 @@ class RacePatcher(AMultiTweaker, ListPatcher):
                     raceData['spells'].append(spell)
                 race.spells = raceData['spells']
             #--skills
-            for key in self.raceSkills:
-                if key in raceData:
-                    if getattr(race,key) != raceData[key]:
-                        setattr(race,key,raceData[key])
+            for skill_key in self.raceSkills:
+                if skill_key in raceData:
+                    if getattr(race, skill_key) != raceData[skill_key]:
+                        setattr(race, skill_key, raceData[skill_key])
                         raceChanged = True
             #--Gender info (voice, gender specific body data)
             for gender in ('male','female'):
                 bodyKeys = self.bodyKeys.union(self.raceAttributes.union(
                     {'Ears', 'Voice'}))
-                bodyKeys = [gender+key for key in bodyKeys]
-                for key in bodyKeys:
-                    if key in raceData:
-                        if getattr(race,key) != raceData[key]:
-                            setattr(race,key,raceData[key])
+                bodyKeys = [gender + k for k in bodyKeys]
+                for body_key in bodyKeys:
+                    if body_key in raceData:
+                        if getattr(race, body_key) != raceData[body_key]:
+                            setattr(race, body_key, raceData[body_key])
                             raceChanged = True
             #--Relations
             if 'relations' in raceData:
