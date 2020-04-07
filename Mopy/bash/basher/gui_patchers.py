@@ -671,7 +671,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         value = []
         for i, v in enumerate(tweak.choiceValues[index]):
             if isinstance(v,float):
-                label = self._msg + u'\n' + tweak.key[i]
+                label = self._msg + u'\n' + tweak.tweak_key[i]
                 new = balt.askNumber(
                     self.gConfigPanel, label, prompt=_(u'Value'),
                     title=tweak.tweak_name + _(u' ~ Custom Tweak Value'),
@@ -681,7 +681,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 value.append(float(new)/10)
             elif isinstance(v,int):
                 label = _(u'Enter the desired custom tweak value.') + u'\n' + \
-                        tweak.key[i]
+                        tweak.tweak_key[i]
                 new = balt.askNumber(
                     self.gConfigPanel, label, prompt=_(u'Value'),
                     title=tweak.tweak_name + _(u' ~ Custom Tweak Value'),
@@ -691,7 +691,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 value.append(new)
             elif isinstance(v,basestring):
                 label = _(u'Enter the desired custom tweak text.') + u'\n' + \
-                        tweak.key[i]
+                        tweak.tweak_key[i]
                 new = balt.askText(
                     self.gConfigPanel, label,
                     title=tweak.tweak_name + _(u' ~ Custom Tweak Text'),

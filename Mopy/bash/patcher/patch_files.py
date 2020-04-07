@@ -153,8 +153,8 @@ class _PFile(object):
         #--Load Mods and error mods
         if self.aliases:
             log.setHeader(u'= ' + _(u'Mod Aliases'))
-            for key, value in sorted(self.aliases.iteritems()):
-                log(u'* %s >> %s' % (key.s, value.s))
+            for alias_target, alias_repl in sorted(self.aliases.iteritems()):
+                log(u'* %s >> %s' % (alias_target.s, alias_repl.s))
 
     def init_patchers_data(self, patchers, progress):
         """Gives each patcher a chance to get its source data."""

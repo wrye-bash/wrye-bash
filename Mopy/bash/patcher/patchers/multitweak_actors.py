@@ -191,6 +191,7 @@ class AMAONPCSkeletonPatcher(_ASkeletonTweak):
     tweak_tip = _(u'Changes all (modded and vanilla) NPCs to use the MAO '
                   u'skeletons.  Not compatible with VORB.  Note: ONLY use if '
                   u'you have MAO installed.')
+    tweak_key = u'MAO Skeleton'
     _sheo_skeleton = u'characters\\_male\\skeletonsesheogorath.nif'
     _sheo_skeleton_mao = (u"Mayu's Projects[M]\\Animation Overhaul\\Vanilla\\"
                           u'SkeletonSESheogorath.nif')
@@ -198,8 +199,9 @@ class AMAONPCSkeletonPatcher(_ASkeletonTweak):
                      u'SkeletonBeast.nif')
 
     def __init__(self):
-        super(AMAONPCSkeletonPatcher, self).__init__(u'MAO Skeleton',
-            (_(u'All NPCs'), 0), (_(u'Only Female NPCs'), 1),
+        super(AMAONPCSkeletonPatcher, self).__init__(
+            (_(u'All NPCs'), 0),
+            (_(u'Only Female NPCs'), 1),
             (_(u'Only Male NPCs'), 2))
         self.logHeader = u'=== ' + _(u'MAO Skeleton Setter')
         self.logMsg = u'* ' + _(u'Skeletons Tweaked: %d')
@@ -222,11 +224,13 @@ class AVORB_NPCSkeletonPatcher(_ASkeletonTweak):
     tweak_tip = _(u"Changes all (modded and vanilla) NPCs to use diverse "
                   u"skeletons for different look.  Not compatible with MAO, "
                   u"Requires VadersApp's Oblivion Real Bodies.")
+    tweak_key = u'VORB'
     skeleton_dir = GPath(u'Characters').join(u'_male')
 
     def __init__(self):
-        super(AVORB_NPCSkeletonPatcher, self).__init__(u'VORB',
-            (_(u'All NPCs'), 0), (_(u'Only Female NPCs'), 1),
+        super(AVORB_NPCSkeletonPatcher, self).__init__(
+            (_(u'All NPCs'), 0),
+            (_(u'Only Female NPCs'), 1),
             (_(u'Only Male NPCs'), 2))
         self.logHeader = u'=== ' + _(u"VadersApp's Oblivion Real Bodies")
         self.logMsg = u'* ' + _(u'Skeletons Tweaked: %d')
@@ -279,12 +283,12 @@ class AVanillaNPCSkeletonPatcher(_AActorTweak):
     tweak_tip = _(u'Avoids visual glitches if an NPC is a beast race but has '
                   u'the regular skeleton.nif selected, but can cause '
                   u'performance issues.')
+    tweak_key = u'Vanilla Skeleton'
     _new_skeleton = u'Characters\\_Male\\SkeletonBeast.nif'
     _old_skeleton = u'characters\\_male\\skeleton.nif'
 
     def __init__(self):
-        super(AVanillaNPCSkeletonPatcher, self).__init__(u'Vanilla Skeleton',
-            (u'1.0', u'1.0'))
+        super(AVanillaNPCSkeletonPatcher, self).__init__((u'1.0', u'1.0'))
         self.logHeader = u'=== ' + _(u'Vanilla Beast Skeleton')
         self.logMsg = u'* ' + _(u'Skeletons Tweaked: %d')
 
@@ -325,11 +329,11 @@ class ARedguardNPCPatcher(_AActorTweak):
     tweak_name = _(u'Redguard FGTS Patcher')
     tweak_tip = _(u'Nulls FGTS of all Redguard NPCs - for compatibility with '
                   u'Better Redguards.')
+    tweak_key = u'RedguardFGTSPatcher'
     _redguard_fid = None # override in implementations
 
     def __init__(self):
-        super(ARedguardNPCPatcher, self).__init__(u'RedguardFGTSPatcher',
-            (u'1.0', u'1.0'))
+        super(ARedguardNPCPatcher, self).__init__((u'1.0', u'1.0'))
         self.logHeader = u'=== ' + _(u'Redguard FGTS Patcher')
         self.logMsg = u'* ' + _(u'Redguard NPCs Tweaked: %d')
 
@@ -374,10 +378,10 @@ class ANoBloodCreaturesPatcher(_AActorTweak):
     tweak_tip = _(u'Set all creatures to have no blood records, will have '
                   u'pretty much no effect when used with MMM since the MMM '
                   u'blood uses a different system.')
+    tweak_key = u'No bloody creatures'
 
     def __init__(self):
-        super(ANoBloodCreaturesPatcher, self).__init__(u'No bloody creatures',
-            (u'1.0', u'1.0'))
+        super(ANoBloodCreaturesPatcher, self).__init__((u'1.0', u'1.0'))
         self.logMsg = u'* ' + _(u'Creatures Tweaked: %d')
 
     def wants_record(self, record):
@@ -422,11 +426,13 @@ class AAsIntendedImpsPatcher(_AActorTweak):
     tweak_name = _(u'As Intended: Imps')
     tweak_tip = _(u'Set imps to have the unassigned Bethesda Imp Spells as '
                   u'discovered by the UOP team and made into a mod by Tejon.')
+    tweak_key = u'vicious imps!'
     _imp_spell = None # override in implementations
 
     def __init__(self):
-        super(AAsIntendedImpsPatcher, self).__init__(u'vicious imps!',
-            (_(u'All imps'), u'all'), (_(u'Only fullsize imps'), u'big'),
+        super(AAsIntendedImpsPatcher, self).__init__(
+            (_(u'All imps'), u'all'),
+            (_(u'Only fullsize imps'), u'big'),
             (_(u'Only implings'), u'small'))
         self.logMsg = u'* ' + _(u'Imps Tweaked: %d')
 
@@ -478,11 +484,11 @@ class AAsIntendedBoarsPatcher(_AActorTweak):
     tweak_name = _(u'As Intended: Boars')
     tweak_tip = _(u'Set boars to have the unassigned Bethesda Boar Spells as '
                   u'discovered by the UOP team and made into a mod by Tejon.')
+    tweak_key = u'vicious boars!'
     _boar_spell = None # override in implementations
 
     def __init__(self):
-        super(AAsIntendedBoarsPatcher, self).__init__(u'vicious boars!',
-            (u'1.0', u'1.0'))
+        super(AAsIntendedBoarsPatcher, self).__init__((u'1.0', u'1.0'))
         self.logMsg = u'* ' + _(u'Boars Tweaked: %d')
 
     def wants_record(self, record):
@@ -527,10 +533,10 @@ class ASWALKNPCAnimationPatcher(_AFemaleOnlyTweak):
     tweak_name = _(u'Sexy Walk for female NPCs')
     tweak_tip = _(u"Changes all female NPCs to use Mur Zuk's Sexy Walk - "
                   u"Requires Mur Zuk's Sexy Walk animation file.")
+    tweak_key = u'Mur Zuk SWalk'
 
     def __init__(self):
-        super(ASWALKNPCAnimationPatcher, self).__init__(u'Mur Zuk SWalk',
-            (u'1.0', u'1.0'))
+        super(ASWALKNPCAnimationPatcher, self).__init__((u'1.0', u'1.0'))
         self.logMsg = u'* ' + _(u'NPCs Tweaked: %d')
 
 class SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,BasalNPCTweaker):
@@ -562,10 +568,10 @@ class ARWALKNPCAnimationPatcher(_AFemaleOnlyTweak):
     tweak_name = _(u'Real Walk for female NPCs')
     tweak_tip = _(u"Changes all female NPCs to use Mur Zuk's Real Walk - "
                   u"Requires Mur Zuk's Real Walk animation file.")
+    tweak_key = u'Mur Zuk RWalk'
 
     def __init__(self):
-        super(ARWALKNPCAnimationPatcher, self).__init__(u'Mur Zuk RWalk',
-            (u'1.0', u'1.0'))
+        super(ARWALKNPCAnimationPatcher, self).__init__((u'1.0', u'1.0'))
         self.logMsg = u'* ' + _(u'NPCs Tweaked: %d')
 
 class RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,BasalNPCTweaker):
@@ -595,13 +601,14 @@ class AQuietFeetPatcher(_AActorTweak):
     """Removes 'foot' sounds from all/specified creatures - like the mod by
     the same name but works on all modded creatures."""
     tweak_name = _(u'Quiet Feet')
-    tweak_tip = _(u"Removes all/some 'foot' sounds from creatures; on some"
-                  u" computers can have a significant performance boost.")
+    tweak_tip = _(u"Removes all/some 'foot' sounds from creatures; on some "
+                  u'computers can have a significant performance boost.')
+    tweak_key = u'silent n sneaky!'
     # Sound Types: 0 = left foot, 1 = right foot, 2 = left back foot,
     # 3 = right back foot
 
     def __init__(self):
-        super(AQuietFeetPatcher, self).__init__(u'silent n sneaky!',
+        super(AQuietFeetPatcher, self).__init__(
             (_(u'All Creature Foot Sounds'), u'all'),
             (_(u'Only 4 Legged Creature Foot Sounds'), u'partial'),
             (_(u'Only Mount Foot Sounds'), u'mounts'))
@@ -652,12 +659,12 @@ class AIrresponsibleCreaturesPatcher(_AActorTweak):
     """Sets responsibility to 0 for all/specified creatures - like the mod
     by the name of Irresponsible Horses but works on all modded creatures."""
     tweak_name = _(u'Irresponsible Creatures')
-    tweak_tip = _(u"Sets responsibility to 0 for all/specified creatures - so "
+    tweak_tip = _(u'Sets responsibility to 0 for all/specified creatures - so '
                   u"they can't report you for crimes.")
+    tweak_key = u'whatbadguarddogs'
 
     def __init__(self):
         super(AIrresponsibleCreaturesPatcher, self).__init__(
-            u'whatbadguarddogs',
             (_(u'All Creatures'), u'all'),
             (_(u'Only Horses'), u'mounts'))
         self.logMsg = u'* ' + _(u'Creatures Tweaked: %d')
@@ -704,9 +711,8 @@ class _AOppositeGenderAnimsPatcher(BasalNPCTweaker):
     # Whether this patcher wants female or male NPCs
     targets_female_npcs = False
 
-    def __init__(self, tweak_key):
+    def __init__(self):
         super(_AOppositeGenderAnimsPatcher, self).__init__(
-            tweak_key,
             (_(u'Always Disable'), u'disable_all'),
             (_(u'Always Enable'), u'enable_all'),
         )
@@ -735,19 +741,13 @@ class OppositeGenderAnimsPatcher_Female(_AOppositeGenderAnimsPatcher):
     tweak_name = _(u'Opposite Gender Anims: Female')
     tweak_tip = _(u"Enables or disables the 'Opposite Gender Anims' for all "
                   u"female NPCs. Similar to the 'Feminine Females' mod.")
-
-    def __init__(self):
-        super(OppositeGenderAnimsPatcher_Female, self).__init__(
-            u'opposite_gender_anims_female')
+    tweak_key = u'opposite_gender_anims_female'
 
 class OppositeGenderAnimsPatcher_Male(_AOppositeGenderAnimsPatcher):
     tweak_name =  _(u'Opposite Gender Anims: Male')
     tweak_tip = _(u"Enables or disables the 'Opposite Gender Anims' for all "
                   u"male NPCs. Similar to the 'Feminine Females' mod.")
-
-    def __init__(self):
-        super(OppositeGenderAnimsPatcher_Male, self).__init__(
-            u'opposite_gender_anims_male')
+    tweak_key = u'opposite_gender_anims_male'
 
 #------------------------------------------------------------------------------
 class TweakActors(MultiTweaker):

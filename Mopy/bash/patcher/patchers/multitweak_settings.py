@@ -45,7 +45,7 @@ class _AGlobalsTweak(DynamicTweak):
 
     def wants_record(self, record):
         return (getattr(record, u'eid', None) and # skip missing and empty EDID
-                record.eid.lower() == self.key and
+                record.eid.lower() == self.tweak_key and
                 record.value != self.chosen_value)
 
     def _patchLog(self, log, count):
@@ -69,9 +69,9 @@ class CBash_GlobalsTweak(_AGlobalsTweak, CBash_MultiTweakItem):
     scanOrder = 29
     editOrder = 29
 
-    def __init__(self, tweak_name, tweak_tip, key, *choices):
-        super(CBash_GlobalsTweak, self).__init__(tweak_name, tweak_tip, key,
-                                                 *choices)
+    def __init__(self, tweak_name, tweak_tip, tweak_key, *choices):
+        super(CBash_GlobalsTweak, self).__init__(tweak_name, tweak_tip,
+                                                 tweak_key, *choices)
         self.count = 0 ##: I hate this, can't we find a nicer way? :/
 
     def apply(self,modFile,record,bashTags):
@@ -102,7 +102,8 @@ class _AGmstTweak(DynamicTweak):
 
     @property
     def chosen_eids(self):
-        return ((self.key,), self.key)[isinstance(self.key, tuple)]
+        return ((self.tweak_key,), self.tweak_key)[isinstance(self.tweak_key,
+                                                              tuple)]
 
     @property
     def chosen_values(self): return self.choiceValues[self.chosen]

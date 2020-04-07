@@ -164,13 +164,21 @@ class AAliasesPatcher(Abstract_Patcher):
 #------------------------------------------------------------------------------
 class AMultiTweakItem(object):
     """A tweak item, optionally with configuration choices."""
+    # The signatures of the record types this tweak wants to edit. Must be
+    # bytestrings.
     tweak_read_classes = ()
+    # The name of the tweak, shown in the GUI
     tweak_name = u'OVERRIDE'
+    # The tooltip to show when hovering over the tweak in the GUI
     tweak_tip = u'OVERRIDE'
+    # A string used to persist whether this tweak was enabled and which of
+    # the tweak's options the user chose in the settings files. Must be unique
+    # per tweaker, but prefer completely unique strings. Changing this for an
+    # already released tweak will of course reset it for every user.
+    tweak_key = u'OVERRIDE'
 
-    def __init__(self, key, *choices, **kwargs):
-        # TODO: docs for attributes !
-        self.key = key
+    def __init__(self, *choices, **kwargs):
+        # TODO: docs for attributes below! - done for static ones above
         self.choiceLabels = []
         self.choiceValues = []
         self.default = 0
@@ -196,9 +204,9 @@ class AMultiTweakItem(object):
     def init_tweak_config(self, configs):
         """Get config from configs dictionary and/or set to default."""
         self.isEnabled,self.chosen = self.defaultEnabled,0
-        self._isNew = not (self.key in configs)
+        self._isNew = not (self.tweak_key in configs)
         if not self._isNew:
-            self.isEnabled,value = configs[self.key]
+            self.isEnabled,value = configs[self.tweak_key]
             if value in self.choiceValues:
                 self.chosen = self.choiceValues.index(value)
             else:
@@ -214,7 +222,7 @@ class AMultiTweakItem(object):
         """Save config to configs dictionary."""
         if self.choiceValues: value = self.choiceValues[self.chosen]
         else: value = None
-        configs[self.key] = self.isEnabled,value
+        configs[self.tweak_key] = self.isEnabled,value
 
     # Methods particular to AMultiTweakItem
     def isNew(self):
@@ -236,11 +244,12 @@ class AMultiTweakItem(object):
         raise AbstractError(u'wants_record not implemented')
 
 class DynamicTweak(AMultiTweakItem):
-    """A tweak that has its name and tip passed in as init parameters."""
-    def __init__(self, tweak_name, tweak_tip, key, *choices, **kwargs):
+    """A tweak that has its name, tip and key passed in as init parameters."""
+    def __init__(self, tweak_name, tweak_tip, tweak_key, *choices, **kwargs):
         self.tweak_name = tweak_name
         self.tweak_tip = tweak_tip
-        super(DynamicTweak, self).__init__(key, *choices, **kwargs)
+        self.tweak_key = tweak_key
+        super(DynamicTweak, self).__init__(*choices, **kwargs)
 
     def __repr__(self):  return u'%s(%s)' % (
         self.__class__.__name__, self.tweak_name)

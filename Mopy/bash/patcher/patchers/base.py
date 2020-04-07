@@ -98,8 +98,8 @@ class CBash_MultiTweakItem(AMultiTweakItem):
     scanOrder = 32
     editOrder = 32
 
-    def __init__(self, key, *choices, **kwargs):
-        super(CBash_MultiTweakItem, self).__init__(key, *choices, **kwargs)
+    def __init__(self, *choices, **kwargs):
+        super(CBash_MultiTweakItem, self).__init__(*choices, **kwargs)
         # extra CBash_MultiTweakItem attribute, mod -> num of tweaked records
         self.mod_count = Counter()
 

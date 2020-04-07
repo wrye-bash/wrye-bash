@@ -39,8 +39,8 @@ from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
 class _ANamesTweak(AMultiTweakItem):
     """Shared code of PBash/CBash names tweaks and hasty abstraction over
     CBash/PBash differences to allow moving duplicate code into _A classes."""
-    def __init__(self, key, *choices):
-        super(_ANamesTweak, self).__init__(key, *choices)
+    def __init__(self, *choices):
+        super(_ANamesTweak, self).__init__(*choices)
         self.logMsg = u'* '+_(u'Items Renamed: %d')
 
     @property
@@ -140,10 +140,11 @@ class _ANamesTweak_BodyTags(AMultiTweakItem): # not _ANamesTweak, no classes!
     tweak_name = _(u'Body Part Codes')
     tweak_tip = _(u'Sets body part codes used by Armor/Clothes name tweaks. '
                   u'A: Amulet, R: Ring, etc.')
+    tweak_key = u'bodyTags'
 
     def __init__(self):
-        super(_ANamesTweak_BodyTags, self).__init__(u'bodyTags', (
-            u'ARGHTCCPBS', u'ARGHTCCPBS'), (u'ABGHINOPSL', u'ABGHINOPSL'))
+        super(_ANamesTweak_BodyTags, self).__init__(
+            (u'ARGHTCCPBS', u'ARGHTCCPBS'), (u'ABGHINOPSL', u'ABGHINOPSL'))
 
 # We can get away with not implementing any methods here because we have not
 # specified any record types to patch ##: decide if this is an OK API usage
@@ -243,9 +244,10 @@ class _AArmoNamesTweak(_ANamesTweak_Body):
     tweak_read_classes = b'ARMO',
     tweak_name = _(u'Armor')
     tweak_tip = _(u'Rename armor to sort by type.')
+    tweak_key = u'ARMO' # u'' is intended, not a record sig, ugh...
 
     def __init__(self):
-        super(_AArmoNamesTweak, self).__init__(u'ARMO',
+        super(_AArmoNamesTweak, self).__init__(
             (_(u'BL Leather Boots'),     u'%s '),
             (_(u'BL. Leather Boots'),    u'%s. '),
             (_(u'BL - Leather Boots'),   u'%s - '),
@@ -265,9 +267,10 @@ class _AClotNamesTweak(_ANamesTweak_Body):
     tweak_read_classes = b'CLOT',
     tweak_name = _(u'Clothes')
     tweak_tip = _(u'Rename clothes to sort by type.')
+    tweak_key = u'CLOT' # u'' is intended, not a record sig, ugh...
 
     def __init__(self):
-        super(_AClotNamesTweak, self).__init__(u'CLOT',
+        super(_AClotNamesTweak, self).__init__(
             (_(u'P Grey Trousers'),   u'%s '),
             (_(u'P. Grey Trousers'),  u'%s. '),
             (_(u'P - Grey Trousers'), u'%s - '),
@@ -285,9 +288,10 @@ class _ANamesTweak_Potions(_AMgefNamesTweak):
     tweak_read_classes = b'ALCH',
     tweak_name = _(u'Potions')
     tweak_tip = _(u'Label potions to sort by type and effect.')
+    tweak_key = u'ALCH' # u'' is intended, not a record sig, ugh...
 
     def __init__(self):
-        super(_ANamesTweak_Potions, self).__init__(u'ALCH',
+        super(_ANamesTweak_Potions, self).__init__(
             (_(u'XD Illness'), u'%s '),
             (_(u'XD. Illness'), u'%s. '),
             (_(u'XD - Illness'), u'%s - '),
@@ -348,9 +352,10 @@ _re_old_magic_label = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ', re.U)
 class _ANamesTweak_Scrolls(_AMgefNamesTweak):
     tweak_name = _(u'Notes and Scrolls')
     tweak_tip = _(u'Mark notes and scrolls to sort separately from books.')
+    tweak_key = u'scrolls'
 
     def __init__(self):
-        super(_ANamesTweak_Scrolls, self).__init__(u'scrolls',
+        super(_ANamesTweak_Scrolls, self).__init__(
             (_(u'~Fire Ball'), u'~'),
             (_(u'~D Fire Ball'), u'~%s '),
             (_(u'~D. Fire Ball'), u'~%s. '),
@@ -440,10 +445,10 @@ class _ANamesTweak_Spells(_AMgefNamesTweak):
     tweak_read_classes = b'SPEL',
     tweak_name = _(u'Spells')
     tweak_tip = _(u'Label spells to sort by school and level.')
+    tweak_key = u'SPEL' # u'' is intended, not a record sig, ugh...
 
     def __init__(self):
         super(_ANamesTweak_Spells, self).__init__(
-            u'SPEL',
             (_(u'Fire Ball'),  u'NOTAGS'),
             (u'----',u'----'),
             (_(u'D Fire Ball'),  u'%s '),
@@ -504,10 +509,10 @@ class _ANamesTweak_Weapons(_ANamesTweak):
     tweak_read_classes = b'AMMO', b'WEAP',
     tweak_name = _(u'Weapons')
     tweak_tip = _(u'Label ammo and weapons to sort by type and damage.')
+    tweak_key = u'WEAP' # u'' is intended, not a record sig, ugh...
 
     def __init__(self):
         super(_ANamesTweak_Weapons, self).__init__(
-            u'WEAP',
             (_(u'B Iron Bow'),  u'%s '),
             (_(u'B. Iron Bow'), u'%s. '),
             (_(u'B - Iron Bow'),u'%s - '),
@@ -598,8 +603,10 @@ class _ATextReplacer(DynamicTweak, _ANamesTweak):
     }
     tweak_read_classes = tuple(_match_replace_rpaths) + (b'GMST',)
 
-    def __init__(self, reMatch, reReplace, label, tweak_tip, key, choices):
-        super(_ATextReplacer, self).__init__(label, tweak_tip, key, choices)
+    def __init__(self, reMatch, reReplace, label, tweak_tip, tweak_key,
+                 *choices):
+        super(_ATextReplacer, self).__init__(label, tweak_tip, tweak_key,
+                                             *choices)
         self.re_match = re.compile(reMatch)
         self.re_replacement = reReplace
         # Convert the match/replace strings to record paths
