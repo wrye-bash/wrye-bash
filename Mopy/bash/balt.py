@@ -2001,14 +2001,14 @@ class RadioLink(CheckLink):
 
 class BoolLink(CheckLink):
     """Simple link that just toggles a setting."""
-    _text, key, _help = u'LINK TEXT', 'link.key', u'' # Override text and key !
+    _text, _bl_key, _help = u'LINK TEXT', u'link.key', u'' # Override!
     opposite = False
 
     def _check(self):
         # check if not the same as self.opposite (so usually check if True)
-        return _settings[self.key] ^ self.__class__.opposite
+        return _settings[self._bl_key] ^ self.__class__.opposite
 
-    def Execute(self): _settings[self.key] ^= True # toggle
+    def Execute(self): _settings[self._bl_key] ^= True # toggle
 
 # UIList Links ----------------------------------------------------------------
 class UIList_Delete(ItemLink):

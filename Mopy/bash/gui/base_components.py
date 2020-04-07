@@ -95,20 +95,20 @@ class Colors(object):
     def __init__(self):
         self._colors = {}
 
-    def __setitem__(self,key,value):
+    def __setitem__(self, key_, value):
         """Add a color to the database."""
         if isinstance(value, Color):
-            self._colors[key] = value
+            self._colors[key_] = value
         else:
-            self._colors[key] = Color(*value)
+            self._colors[key_] = Color(*value)
 
-    def __getitem__(self,key):
+    def __getitem__(self, key_):
         """Dictionary syntax: color = colors[key]."""
-        return self._colors[key]
+        return self._colors[key_]
 
     def __iter__(self):
-        for key in self._colors:
-            yield key
+        for key_ in self._colors:
+            yield key_
 
 # Base Elements ---------------------------------------------------------------
 class _AComponent(object):

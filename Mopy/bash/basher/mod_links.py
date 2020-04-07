@@ -602,7 +602,7 @@ class Mod_Details(OneItemLink):
                     buff.write(u'  '+_(u'(Details not provided for this record type.)')+u'\n\n')
                     continue
                 records = mod_details.group_records[group]
-                records.sort(key = lambda a: a[1].lower())
+                records.sort(key=lambda a: a[1].lower())
                 #if group != 'GMST': records.sort(key = lambda a: a[0] >> 24)
                 for fid,eid in records:
                     buff.write(u'  %08X %s\n' % (fid,eid))
@@ -1086,11 +1086,11 @@ class Mod_Patch_Update(_Mod_BP_Link):
               u"the patch."), checklists, bCancel=_(u'Skip')) as dialog:
             if not dialog.show_modal(): return
             deselect = set()
-            for (lst, key) in [(unfiltered, unfilteredKey),
+            for (lst, lst_key) in [(unfiltered, unfilteredKey),
                                (merge, mergeKey),
                                (noMerge, noMergeKey),
                                (deactivate, deactivateKey), ]:
-                deselect |= set(dialog.getChecked(key, lst))
+                deselect |= set(dialog.getChecked(lst_key, lst))
             if not deselect:
                 return
             else:

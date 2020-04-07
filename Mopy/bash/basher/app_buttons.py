@@ -338,7 +338,7 @@ class _Mods_xEditExpert(BoolLink):
     key = bush.game.Xe.xe_key_prefix + u'.iKnowWhatImDoing'
 
 class _Mods_xEditSkipBSAs(BoolLink):
-    """Toggle xEdit expert mode (when launched via Bash)."""
+    """Toggle xEdit skip bsa mode (when launched via Bash)."""
     _text = _(u'Skip BSAs')
     _help = _(u'Skip loading BSAs when opening %s. Will disable some of its '
               u'functions.') % bush.game.Xe.full_name
@@ -414,15 +414,15 @@ class App_Tes4View(_ExeButton):
 class _Mods_BOSSDisableLockTimes(BoolLink):
     """Toggle Lock Load Order disabling when launching BOSS through Bash."""
     _text = _(u'BOSS Disable Lock Load Order')
-    key = 'BOSS.ClearLockTimes'
+    _bl_key = u'BOSS.ClearLockTimes'
     _help = _(u"If selected, will temporarily disable Bash's Lock Load Order "
               u'when running BOSS through Bash.')
 
 #------------------------------------------------------------------------------
 class _Mods_BOSSLaunchGUI(BoolLink):
     """If BOSS.exe is available then boss_gui.exe should be too."""
-    _text, key, _help = _(u'Launch using GUI'), 'BOSS.UseGUI', \
-                        _(u"If selected, Bash will run BOSS's GUI.")
+    _text, _bl_key, _help = _(u'Launch using GUI'), u'BOSS.UseGUI', \
+                            _(u"If selected, Bash will run BOSS's GUI.")
 
 class App_BOSS(_ExeButton):
     """loads BOSS"""

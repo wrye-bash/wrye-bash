@@ -284,12 +284,12 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
 # Installers BoolLinks --------------------------------------------------------
 #------------------------------------------------------------------------------
 class Installers_AutoAnneal(BoolLink):
-    _text, key, _help = _(u'Auto-Anneal'), 'bash.installers.autoAnneal', _(
-        u"Enable/Disable automatic annealing of packages.")
+    _text, _bl_key = _(u'Auto-Anneal'), u'bash.installers.autoAnneal'
+    _help = _(u"Enable/Disable automatic annealing of packages.")
 
 class Installers_AutoWizard(BoolLink):
     _text = _(u'Auto-Anneal/Install Wizards')
-    key = 'bash.installers.autoWizard'
+    _bl_key = u'bash.installers.autoWizard'
     _help = _(u"Enable/Disable automatic installing or anneal (as applicable)"
              u" of packages after running its wizard.")
 
@@ -301,23 +301,22 @@ class _Installers_BoolLink_Refresh(BoolLink):
 class Installers_WizardOverlay(_Installers_BoolLink_Refresh):
     """Toggle using the wizard overlay icon"""
     _text  = _(u'Wizard Icon Overlay')
-    key = 'bash.installers.wizardOverlay'
+    _bl_key = u'bash.installers.wizardOverlay'
     _help =_(u"Enable/Disable the magic wand icon overlay for packages with"
             u" Wizards.")
 
 class Installers_AutoRefreshProjects(BoolLink):
     """Toggle autoRefreshProjects setting and update."""
     _text = _(u'Auto-Refresh Projects')
-    key = 'bash.installers.autoRefreshProjects'
+    _bl_key = u'bash.installers.autoRefreshProjects'
     _help = _(u'Toggles whether or not Wrye Bash will automatically detect '
               u'changes to projects in the installers directory.')
 
 class Installers_AutoApplyEmbeddedBCFs(ItemLink):
     """Automatically apply Embedded BCFs to archives that have one."""
     _text = _(u'Auto-Apply Embedded BCFs')
-    key = 'bash.installers.autoApplyEmbeddedBCFs'
-    _help = _(
-        u'Automatically apply Embedded BCFs to their containing archives.')
+    _help = _(u'Automatically apply Embedded BCFs to their containing '
+              u'archives.')
 
     @balt.conversation
     def Execute(self):
@@ -333,7 +332,7 @@ class Installers_AutoApplyEmbeddedBCFs(ItemLink):
 class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
     """Toggle refreshVanilla setting and update."""
     _text = _(u'Skip Bethsoft Content')
-    key = 'bash.installers.autoRefreshBethsoft'
+    _bl_key = u'bash.installers.autoRefreshBethsoft'
     _help = _(u'Skip installing Bethesda ESMs, ESPs, and BSAs')
     opposite = True
     message = _(u"Enable installation of Bethsoft Content?") + u'\n\n' + _(
@@ -344,10 +343,10 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
 
     @balt.conversation
     def Execute(self):
-        if not bass.settings[self.key] and not self._askYes(self.message):
+        if not bass.settings[self._bl_key] and not self._askYes(self.message):
             return
         super(Installers_AutoRefreshBethsoft, self).Execute()
-        if bass.settings[self.key]:
+        if bass.settings[self._bl_key]:
             # Refresh Data - only if we are now including Bethsoft files
             with balt.Progress(title=_(u'Refreshing Bethsoft Content'),
                                message=u'\n' + u' ' * 60) as progress:
@@ -361,7 +360,7 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
 
 class Installers_Enabled(BoolLink):
     """Flips installer state."""
-    _text, key, _help = _(u'Enabled'), 'bash.installers.enabled', _(
+    _text, _bl_key, _help = _(u'Enabled'), u'bash.installers.enabled', _(
         u'Enable/Disable the Installers tab.')
     dialogTitle = _(u'Enable Installers')
     message = _(u"Do you want to enable Installers?") + u'\n\n\t' + _(
@@ -371,10 +370,10 @@ class Installers_Enabled(BoolLink):
     @balt.conversation
     def Execute(self):
         """Enable/Disable the installers tab."""
-        enabled = bass.settings[self.key]
+        enabled = bass.settings[self._bl_key]
         if not enabled and not self._askYes(self.message,
                                             title=self.dialogTitle): return
-        enabled = bass.settings[self.key] = not enabled
+        enabled = bass.settings[self._bl_key] = not enabled
         if enabled:
             self.window.panel.ShowPanel(scan_data_dir=True)
         else:
@@ -383,7 +382,7 @@ class Installers_Enabled(BoolLink):
 
 class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
     """Toggle BSA Redirection."""
-    _text, key = _(u'BSA Redirection'), 'bash.bsaRedirection'
+    _text, _bl_key = _(u'BSA Redirection'), u'bash.bsaRedirection'
     _help = _(u"Use Quarn's BSA redirection technique.")
 
     @property
@@ -401,7 +400,7 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
 
     def Execute(self):
         super(Installers_BsaRedirection, self).Execute()
-        if bass.settings[self.key]:
+        if bass.settings[self._bl_key]:
             # Delete ArchiveInvalidation.txt, if it exists
             bosh.bsaInfos.remove_invalidation_file()
             if bush.game.displayName == u'Oblivion':
@@ -414,41 +413,41 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
                 with balt.Progress(_(u'Enabling BSA Redirection...'),
                                    message=u'\n' + u' ' * 60) as progress:
                     bsaFile.undo_alterations(progress)
-        bosh.oblivionIni.setBsaRedirection(bass.settings[self.key])
+        bosh.oblivionIni.setBsaRedirection(bass.settings[self._bl_key])
 
 class Installers_ConflictsReportShowsInactive(_Installers_BoolLink_Refresh):
     """Toggles option to show inactive on conflicts report."""
     _text = _(u'Show Inactive Conflicts')
     _help = _(u'In the conflicts tab also display conflicts with inactive '
               u'(not installed) installers')
-    key = 'bash.installers.conflictsReport.showInactive'
+    _bl_key = u'bash.installers.conflictsReport.showInactive'
 
 class Installers_ConflictsReportShowsLower(_Installers_BoolLink_Refresh):
     """Toggles option to show lower on conflicts report."""
     _text = _(u'Show Lower Conflicts')
     _help = _(u'In the conflicts tab also display conflicts with lower order '
              u'installers (or lower loading active bsas)')
-    key = 'bash.installers.conflictsReport.showLower'
+    _bl_key = u'bash.installers.conflictsReport.showLower'
 
 class Installers_ConflictsReportShowBSAConflicts(_Installers_BoolLink_Refresh):
     """Toggles option to show files inside BSAs on conflicts report."""
     _text = _(u'Show Active BSA Conflicts')
     _help = _(u'In the conflicts tab also display same-name resources inside '
              u'installed *and* active bsas')
-    key = 'bash.installers.conflictsReport.showBSAConflicts'
+    _bl_key = u'bash.installers.conflictsReport.showBSAConflicts'
 
 class Installers_AvoidOnStart(BoolLink):
     """Ensures faster bash startup by preventing Installers from being startup tab."""
-    _text, key, _help = _(u'Avoid at Startup'), 'bash.installers.fastStart', _(
-        u"Toggles Wrye Bash to avoid the Installers tab on startup,"
-        u" avoiding unnecessary data scanning.")
+    _text, _bl_key, = _(u'Avoid at Startup'), u'bash.installers.fastStart'
+    _help = _(u'Toggles Wrye Bash to avoid the Installers tab on startup, '
+              u'avoiding unnecessary data scanning.')
 
 class Installers_RemoveEmptyDirs(BoolLink):
     """Toggles option to remove empty directories on file scan."""
     _text = _(u'Remove Empty Directories')
     _help = _(u'Toggles whether or not Wrye Bash will remove empty '
               u'directories when scanning the Data folder.')
-    key = 'bash.installers.removeEmptyDirs'
+    _bl_key = u'bash.installers.removeEmptyDirs'
 
 # Sorting Links
 class _Installer_Sort(ItemLink):
@@ -458,18 +457,20 @@ class _Installer_Sort(ItemLink):
 
 class Installers_SortActive(_Installer_Sort, BoolLink):
     """Sort by type."""
-    _text, key, _help = _(u'Sort by Active'), 'bash.installers.sortActive', _(
-        u'If selected, active installers will be sorted to the top of the '
-        u'list.')
+    _text = _(u'Sort by Active')
+    _bl_key = u'bash.installers.sortActive'
+    _help = _(u'If selected, active installers will be sorted to the top of '
+              u'the list.')
 
 class Installers_SortProjects(_Installer_Sort, BoolLink):
     """Sort dirs to the top."""
-    _text, key, _help = _(u'Projects First'), 'bash.installers.sortProjects', \
-        _(u'If selected, projects will be sorted to the top of the list.')
+    _text = _(u'Projects First')
+    _bl_key = u'bash.installers.sortProjects'
+    _help = _(u'If selected, projects will be sorted to the top of the list.')
 
 class Installers_SortStructure(_Installer_Sort, BoolLink):
     """Sort by type."""
-    _text, key = _(u'Sort by Structure'), 'bash.installers.sortStructure'
+    _text, _bl_key = _(u'Sort by Structure'), u'bash.installers.sortStructure'
 
 #------------------------------------------------------------------------------
 # Installers_Skip Links -------------------------------------------------------
@@ -507,49 +508,49 @@ class _Installers_SkipOBSEPlugins(AppendableLink, _Installers_Skip):
     _se_sd = bush.game.Se.se_abbrev + (
             u'/' + bush.game.Sd.long_name) if bush.game.Sd.sd_abbrev else u''
     _text = _(u'Skip %s Plugins') % _se_sd
-    key = u'bash.installers.allowOBSEPlugins'
+    _bl_key = u'bash.installers.allowOBSEPlugins'
     def _append(self, window): return bool(self._se_sd)
-    def _check(self): return not bass.settings[self.key]
+    def _check(self): return not bass.settings[self._bl_key]
 
 class _Installers_SkipScreenshots(_Installers_Skip):
     """Toggle skipScreenshots setting and update."""
-    _text, key = _(u'Skip Screenshots'), 'bash.installers.skipScreenshots'
+    _text, _bl_key = _(u'Skip Screenshots'), u'bash.installers.skipScreenshots'
 
 class _Installers_SkipScriptSources(AppendableLink, _Installers_Skip):
     """Toggle skipScriptSources setting and update."""
-    _text, key = _(u'Skip Script Sources'), 'bash.installers.skipScriptSources'
+    _text, _bl_key = _(u'Skip Script Sources'), u'bash.installers.skipScriptSources'
     def _append(self, window): return bool(bush.game.Psc.source_extensions)
 
 class _Installers_SkipImages(_Installers_Skip):
     """Toggle skipImages setting and update."""
-    _text, key = _(u'Skip Images'), 'bash.installers.skipImages'
+    _text, _bl_key = _(u'Skip Images'), u'bash.installers.skipImages'
 
 class _Installers_SkipDocs(_Installers_Skip):
     """Toggle skipDocs setting and update."""
-    _text, key = _(u'Skip Docs'), u'bash.installers.skipDocs'
+    _text, _bl_key = _(u'Skip Docs'), u'bash.installers.skipDocs'
 
 class _Installers_SkipDistantLOD(_Installers_Skip):
     """Toggle skipDistantLOD setting and update."""
-    _text, key = _(u'Skip DistantLOD'), 'bash.installers.skipDistantLOD'
+    _text, _bl_key = _(u'Skip DistantLOD'), u'bash.installers.skipDistantLOD'
 
 class _Installers_SkipLandscapeLODMeshes(_Installers_Skip):
     """Toggle skipLandscapeLODMeshes setting and update."""
     _text = _(u'Skip LOD Meshes')
-    key = 'bash.installers.skipLandscapeLODMeshes'
+    _bl_key = u'bash.installers.skipLandscapeLODMeshes'
 
 class _Installers_SkipLandscapeLODTextures(_Installers_Skip):
     """Toggle skipLandscapeLODTextures setting and update."""
     _text = _(u'Skip LOD Textures')
-    key = 'bash.installers.skipLandscapeLODTextures'
+    _bl_key = u'bash.installers.skipLandscapeLODTextures'
 
 class _Installers_SkipLandscapeLODNormals(_Installers_Skip):
     """Toggle skipLandscapeLODNormals setting and update."""
     _text = _(u'Skip LOD Normals')
-    key = 'bash.installers.skipLandscapeLODNormals'
+    _bl_key = u'bash.installers.skipLandscapeLODNormals'
 
 class _Installers_SkipBsl(AppendableLink, _Installers_Skip):
     """Toggle skipTESVBsl setting and update."""
-    _text, key = _(u'Skip BSL Files'), 'bash.installers.skipTESVBsl'
+    _text, _bl_key = _(u'Skip BSL Files'), u'bash.installers.skipTESVBsl'
     def _append(self, window): return bush.game.Bsa.has_bsl
 
 class Installers_GlobalSkips(balt.MenuLink):
@@ -577,7 +578,7 @@ class _Installers_RenameStrings(AppendableLink, _Installers_RescanningLink):
     _text = _(u'Rename String Translation Files')
     _help = _(u'If checked, Wrye Bash will rename all installed string files '
               u'so they match your current language.')
-    key = 'bash.installers.renameStrings'
+    _bl_key = u'bash.installers.renameStrings'
     def _append(self, window): return bool(bush.game.Esp.stringsFiles)
 
 class _Installers_RedirectScriptSources(AppendableLink, EnabledLink,
@@ -588,7 +589,7 @@ class _Installers_RedirectScriptSources(AppendableLink, EnabledLink,
               u'installed to incorrect directories (%s) to the correct ones. '
               u"'Skip Script Sources' must be "
               u'off.') % u', '.join(bush.game.Psc.source_redirects)
-    key = u'bash.installers.redirect_scripts'
+    _bl_key = u'bash.installers.redirect_scripts'
 
     def _append(self, window): return bool(bush.game.Psc.source_redirects)
     def _enable(self): return not bass.settings[

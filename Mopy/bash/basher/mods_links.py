@@ -194,24 +194,24 @@ class Mods_OblivionVersion(CheckLink, EnabledLink):
     """Specify/set Oblivion version."""
     _help = _(u'Specify/set Oblivion version')
 
-    def __init__(self, key, setProfile=False):
+    def __init__(self, version_key, setProfile=False):
         super(Mods_OblivionVersion, self).__init__()
-        self.key = self._text = key
+        self._version_key = self._text = version_key
         self.setProfile = setProfile
 
-    def _check(self): return bosh.modInfos.voCurrent == self.key
+    def _check(self): return bosh.modInfos.voCurrent == self._version_key
 
     def _enable(self):
         return bosh.modInfos.voCurrent is not None \
-                          and self.key in bosh.modInfos.voAvailable
+               and self._version_key in bosh.modInfos.voAvailable
 
     def Execute(self):
         """Handle selection."""
-        if bosh.modInfos.voCurrent == self.key: return
-        bosh.modInfos.setOblivionVersion(self.key)
+        if bosh.modInfos.voCurrent == self._version_key: return
+        bosh.modInfos.setOblivionVersion(self._version_key)
         self.window.RefreshUI(refreshSaves=True) # True: refresh save's masters
         if self.setProfile:
-            bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,'vOblivion',self.key)
+            bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,'vOblivion', self._version_key)
         Link.Frame.set_bash_frame_title()
 
 # "File" submenu --------------------------------------------------------------
@@ -299,7 +299,7 @@ class Mods_CleanDummyMasters(EnabledLink):
 #------------------------------------------------------------------------------
 class Mods_AutoGhost(BoolLink):
     """Toggle Auto-ghosting."""
-    _text, key = _(u'Auto-Ghost'), 'bash.mods.autoGhost'
+    _text, _bl_key = _(u'Auto-Ghost'), u'bash.mods.autoGhost'
     _help = _(u'Toggles whether or not to automatically ghost all disabled '
               u'mods.')
 
@@ -314,13 +314,13 @@ class Mods_AutoESLFlagBP(BoolLink):
     _text = _(u'ESL-Flag Bashed Patches')
     _help = _(u'Automatically flags any built Bashed Patches as ESLs, freeing '
               u'up a load order slot.')
-    key = 'bash.mods.auto_flag_esl'
+    _bl_key = u'bash.mods.auto_flag_esl'
 
 class Mods_ScanDirty(BoolLink):
     """Read mod CRC's to check for dirty mods."""
     _text = _(u"Check mods against LOOT's dirty mod list")
     _help = _(u'Display a tooltip if mod is dirty and underline dirty mods.')
-    key = 'bash.mods.scanDirty'
+    _bl_key = u'bash.mods.scanDirty'
 
     def Execute(self):
         super(Mods_ScanDirty, self).Execute()
@@ -350,7 +350,7 @@ class Mods_LockActivePlugins(BoolLink, EnabledLink):
     _text = _(u'Lock Active Plugins')
     _help = _(u"Enhances 'Lock Load Order' to also detect when mods are "
               u'enabled or disabled and to undo those changes too.')
-    key = u'bash.load_order.lock_active_plugins'
+    _bl_key = u'bash.load_order.lock_active_plugins'
 
     def _enable(self): return load_order.locked # needs Lock LO to be on
 

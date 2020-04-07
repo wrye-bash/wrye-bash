@@ -543,8 +543,8 @@ class Parser(object):
 
         # If we have a keyword, just run it
         if self.tokens[0].type == KEYWORD:
-            key = self.tokens.pop(0)
-            key(*self.tokens)
+            kwrd = self.tokens.pop(0)
+            kwrd(*self.tokens)
         # It's just an expression, didnt start with a keyword
         else:
             # Convert to reverse-polish notation and execute

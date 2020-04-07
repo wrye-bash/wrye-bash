@@ -35,8 +35,8 @@ __all__ = ['INI_SortValid', 'INI_AllowNewLines', 'INI_ListINIs', 'INI_Apply',
 
 class INI_SortValid(BoolLink):
     """Sort valid INI Tweaks to the top."""
-    _text, key, _help = _(u'Valid Tweaks First'), 'bash.ini.sortValid', \
-                        _(u'Valid tweak files will be shown first.')
+    _text, _bl_key, _help = _(u'Valid Tweaks First'), u'bash.ini.sortValid', \
+                            _(u'Valid tweak files will be shown first.')
 
     def Execute(self):
         super(INI_SortValid, self).Execute()
@@ -46,7 +46,7 @@ class INI_SortValid(BoolLink):
 class INI_AllowNewLines(BoolLink):
     """Consider INI Tweaks with new lines valid."""
     _text = _(u'Allow Tweaks with New Settings')
-    key = 'bash.ini.allowNewLines'
+    _bl_key = u'bash.ini.allowNewLines'
     _help = _(u'Tweak files adding new sections/settings are considered valid')
 
     def Execute(self):
