@@ -1148,7 +1148,11 @@ class DataStore(DataDict):
 
     def refresh(self): raise AbstractError
     def save(self): pass # for Screenshots
-    # Renaming
+
+    # Renaming - note the @conversation, this needs to be atomic.
+    ##: Not really the right place for it though -> comes back to our core
+    # move/copy operations, which need rethinking
+    @balt.conversation
     def rename_info(self, oldName, newName):
         try:
             return self._rename_operation(oldName, newName)
