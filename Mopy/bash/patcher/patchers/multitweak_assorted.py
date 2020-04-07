@@ -78,15 +78,6 @@ class _AssortPTweak(_AAssortedTweak, MultiTweakItem):
 
 class _AssortCTweak(_AAssortedTweak, CBash_MultiTweakItem):
     """An assorted CBash tweak."""
-    def __init__(self, *choices):
-        super(_AssortCTweak, self).__init__(*choices)
-        # see https://github.com/wrye-bash/wrye-bash/commit/3aa3c941b2de6d751f71e50613ba20ac14f477e8
-        # CBash only, PBash gets away with just knowing the FormID of SEFF
-        # and always assuming it exists, since it's from Oblivion.esm. CBash
-        # handles this by making sure the MGEF records are almost always
-        # read in, and always before patchers that will need them
-        self.SEFF = MGEFCode(b'SEFF')
-
     @staticmethod
     def _any_body_flag_set(record):
         return (record.IsLeftRing or record.IsFoot or record.IsHand or
@@ -204,9 +195,10 @@ class AAssortedTweak_BowReach(_AAssortedTweak):
     tweak_name = _(u'Bow Reach Fix')
     tweak_tip = _(u'Fix bows with zero reach (zero reach causes CTDs).')
     tweak_key = u'BowReach'
+    tweak_choices = [(u'1.0', u'1.0')]
 
     def __init__(self):
-        super(AAssortedTweak_BowReach, self).__init__((u'1.0', u'1.0'))
+        super(AAssortedTweak_BowReach, self).__init__()
         self.defaultEnabled = True
         self.logMsg = u'* ' + _(u'Bows Fixed: %d')
 
@@ -244,10 +236,10 @@ class AAssortedTweak_SkyrimStyleWeapons(_AAssortedTweak):
     tweak_tip = _(u'Sets all one handed weapons as blades, two handed weapons '
                   u'as blunt.')
     tweak_key = u'skyrimweaponsstyle'
+    tweak_choices = [(u'1.0', u'1.0')]
 
     def __init__(self):
-        super(AAssortedTweak_SkyrimStyleWeapons, self).__init__(
-            (u'1.0', u'1.0'))
+        super(AAssortedTweak_SkyrimStyleWeapons, self).__init__()
         self.logMsg = u'* ' + _(u'Weapons Adjusted: %d')
 
     def wants_record(self, record):
@@ -286,9 +278,10 @@ class AAssortedTweak_ConsistentRings(_AAssortedTweak):
     tweak_tip = _(u'Fixes rings to unequip consistently by making them '
                   u'prefer the right hand.')
     tweak_key = u'ConsistentRings'
+    tweak_choices = [(u'1.0', u'1.0')]
 
     def __init__(self):
-        super(AAssortedTweak_ConsistentRings, self).__init__((u'1.0', u'1.0'))
+        super(AAssortedTweak_ConsistentRings, self).__init__()
         self.defaultEnabled = True
         self.logMsg = u'* ' + _(u'Rings Fixed: %d')
 
@@ -375,9 +368,10 @@ class AAssortedTweak_ClothingPlayable(_APlayableTweak):
     tweak_name = _(u'All Clothing Playable')
     tweak_tip = _(u'Sets all clothing to be playable.')
     tweak_key = u'PlayableClothing'
+    tweak_choices = [(u'1.0', u'1.0')]
 
     def __init__(self):
-        super(AAssortedTweak_ClothingPlayable, self).__init__((u'1.0', u'1.0'))
+        super(AAssortedTweak_ClothingPlayable, self).__init__()
         self.logHeader = u'=== ' + _(u'Playable Clothes')
         self.logMsg = u'* ' + _(u'Clothes Set As Playable: %d')
 
@@ -393,9 +387,10 @@ class AAssortedTweak_ArmorPlayable(_APlayableTweak):
     tweak_name = _(u'All Armor Playable')
     tweak_tip = _(u'Sets all armor to be playable.')
     tweak_key = u'PlayableArmor'
+    tweak_choices = [(u'1.0', u'1.0')]
 
     def __init__(self):
-        super(AAssortedTweak_ArmorPlayable, self).__init__((u'1.0', u'1.0'))
+        super(AAssortedTweak_ArmorPlayable, self).__init__()
         self.logHeader = u'=== ' + _(u'Playable Armor')
         self.logMsg = u'* ' + _(u'Armor Pieces Set As Playable: %d')
 
@@ -421,10 +416,10 @@ class AAssortedTweak_DarnBooks(_AAssortedTweak):
     tweak_name = _(u'DarNified Books')
     tweak_tip = _(u'Books will be reformatted for DarN UI.')
     tweak_key = u'DarnBooks'
+    tweak_choices = [(u'default', u'default')]
 
     def __init__(self):
-        super(AAssortedTweak_DarnBooks, self).__init__(
-            (u'default', u'default'))
+        super(AAssortedTweak_DarnBooks, self).__init__()
         self.logMsg = u'* ' + _(u'Books DarNified: %d')
 
     def wants_record(self, record):
@@ -504,9 +499,10 @@ class AAssortedTweak_FogFix(_AAssortedTweak):
     tweak_name = _(u'Nvidia Fog Fix')
     tweak_tip = _(u'Fix fog related Nvidia black screen problems.')
     tweak_key = u'FogFix'
+    tweak_choices = [(u'0.0001', u'0.0001')]
 
     def __init__(self):
-        super(AAssortedTweak_FogFix, self).__init__((u'0.0001', u'0.0001'))
+        super(AAssortedTweak_FogFix, self).__init__()
         self.logMsg = u'* ' + _(u'Cells With Fog Tweaked To 0.0001: %d')
         self.defaultEnabled = True
 
@@ -574,10 +570,11 @@ class AAssortedTweak_NoLightFlicker(_AAssortedTweak):
     tweak_tip = _(u'Remove flickering from lights. For use on low-end '
                   u'machines.')
     tweak_key = u'NoLightFlicker'
+    tweak_choices = [(u'1.0', u'1.0')]
     _flicker_flags = 0x000001C8 # (flickers, flickerSlow, pulse, pulseSlow)
 
     def __init__(self):
-        super(AAssortedTweak_NoLightFlicker, self).__init__((u'1.0', u'1.0'))
+        super(AAssortedTweak_NoLightFlicker, self).__init__()
         self.logMsg = u'* ' + _(u'Lights Unflickered: %d')
 
     def wants_record(self, record):
@@ -623,6 +620,13 @@ class AMultiTweakItem_Weight(_AAssortedTweak):
         for srcMod in load_order.get_ordered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
+# see https://github.com/wrye-bash/wrye-bash/commit/3aa3c941b2de6d751f71e50613ba20ac14f477e8
+# CBash only, PBash gets away with just knowing the FormID of SEFF and always
+# assuming it exists, since it's from Oblivion.esm. CBash handles this by
+# making sure the MGEF records are almost always read in, and always before
+# patchers that will need them.
+_SEFF = MGEFCode(b'SEFF')
+
 class _PSeffWeightTweak(AMultiTweakItem_Weight, _AssortPTweak):
     """Mixin for PBash weight tweaks that need to ignore SEFF effects."""
     def wants_record(self, record):
@@ -633,9 +637,10 @@ class _PSeffWeightTweak(AMultiTweakItem_Weight, _AssortPTweak):
 
 class _CSeffWeightTweak(AMultiTweakItem_Weight, _AssortCTweak):
     """Mixin for CBash weight tweaks that need to ignore SEFF effects."""
+
     def wants_record(self, record):
         return super(_CSeffWeightTweak, self).wants_record(
-            record) and not any(e.name == self.SEFF for e in record.effects)
+            record) and not any(e.name == _SEFF for e in record.effects)
 
 class AAssortedTweak_PotionWeight(AMultiTweakItem_Weight):
     """Reweighs standard potions down to 0.1."""
@@ -643,11 +648,11 @@ class AAssortedTweak_PotionWeight(AMultiTweakItem_Weight):
     tweak_name = _(u'Reweigh: Potions (Maximum)')
     tweak_tip = _(u'Potion weight will be capped.')
     tweak_key = u'MaximumPotionWeight'
+    tweak_choices = [(u'0.1', 0.1), (u'0.2', 0.2), (u'0.4', 0.4),
+                     (u'0.6', 0.6), (_(u'Custom'), 0.0)]
 
     def __init__(self):
-        super(AAssortedTweak_PotionWeight, self).__init__(
-            (u'0.1', 0.1), (u'0.2', 0.2), (u'0.4', 0.4), (u'0.6', 0.6),
-            (_(u'Custom'), 0.0))
+        super(AAssortedTweak_PotionWeight, self).__init__()
         self.logWeightValue = _(u'Potions set to maximum weight of %f.')
         self.logMsg = u'* ' + _(u'Potions Reweighed: %d')
 
@@ -688,11 +693,11 @@ class AAssortedTweak_IngredientWeight(AMultiTweakItem_Weight):
     tweak_name = _(u'Reweigh: Ingredients')
     tweak_tip = _(u'Ingredient weight will be capped.')
     tweak_key = u'MaximumIngredientWeight'
+    tweak_choices = [(u'0.1', 0.1), (u'0.2', 0.2), (u'0.4', 0.4),
+                     (u'0.6', 0.6), (_(u'Custom'), 0.0)]
 
     def __init__(self):
-        super(AAssortedTweak_IngredientWeight, self).__init__(
-            (u'0.1', 0.1), (u'0.2', 0.2), (u'0.4', 0.4), (u'0.6', 0.6),
-            (_(u'Custom'), 0.0))
+        super(AAssortedTweak_IngredientWeight, self).__init__()
         self.logWeightValue = _(u'Ingredients set to maximum weight of %f.')
         self.logMsg = u'* ' + _(u'Ingredients Reweighed: %d')
 
@@ -732,10 +737,11 @@ class AAssortedTweak_PotionWeightMinimum(AMultiTweakItem_Weight):
     tweak_name = _(u'Reweigh: Potions (Minimum)')
     tweak_tip = _(u'Potion weight will be floored.')
     tweak_key = u'MinimumPotionWeight'
+    tweak_choices = [(u'0.1', 0.1), (u'0.5', 0.5), (u'1.0', 1.0),
+                     (u'2.0', 2.0), (u'4.0', 4.0), (_(u'Custom'), 0.0)]
 
     def __init__(self):
-        super(AAssortedTweak_PotionWeightMinimum, self).__init__(
-            (u'1', 1), (u'2', 2), (u'3', 3), (u'4', 4), (_(u'Custom'), 0.0))
+        super(AAssortedTweak_PotionWeightMinimum, self).__init__()
         self.logWeightValue = _(u'Potions set to minimum weight of %f.')
         self.logMsg = u'* ' + _(u'Potions Reweighed: %d')
 
@@ -778,11 +784,12 @@ class AAssortedTweak_StaffWeight(AMultiTweakItem_Weight):
     tweak_name = _(u'Reweigh: Staves')
     tweak_tip =  _(u'Staff weight will be capped.')
     tweak_key = u'StaffWeight'
+    tweak_choices = [(u'1', 1.0), (u'2', 2.0), (u'3', 3.0), (u'4', 4.0),
+                     (u'5', 5.0), (u'6', 6.0), (u'7', 7.0), (u'8', 8.0),
+                     (_(u'Custom'), 0.0)]
 
     def __init__(self):
-        super(AAssortedTweak_StaffWeight, self).__init__(
-            (u'1', 1.0), (u'2', 2.0), (u'3', 3.0), (u'4', 4.0), (u'5', 5.0),
-            (u'6', 6.0), (u'7', 7.0), (u'8', 8.0), (_(u'Custom'), 0.0))
+        super(AAssortedTweak_StaffWeight, self).__init__()
         self.logWeightValue = _(u'Staves set to maximum weight of %f.')
         self.logMsg = u'* ' + _(u'Staves Reweighed: %d')
 
@@ -820,11 +827,11 @@ class AAssortedTweak_ArrowWeight(AMultiTweakItem_Weight):
     tweak_name = _(u'Reweigh: Arrows')
     tweak_tip = _(u'Arrow weights will be capped.')
     tweak_key = u'MaximumArrowWeight'
+    tweak_choices = [(u'0', 0.0), (u'0.1', 0.1), (u'0.2', 0.2), (u'0.4', 0.4),
+                     (u'0.6', 0.6), (_(u'Custom'), 0.0)]
 
     def __init__(self):
-        super(AAssortedTweak_ArrowWeight, self).__init__(
-            (u'0', 0.0), (u'0.1', 0.1), (u'0.2', 0.2), (u'0.4', 0.4),
-            (u'0.6', 0.6), (_(u'Custom'), 0.0))
+        super(AAssortedTweak_ArrowWeight, self).__init__()
         self.logWeightValue = _(u'Arrows set to maximum weight of %f.')
         self.logMsg = u'* ' + _(u'Arrows Reweighed: %d')
 
@@ -864,10 +871,11 @@ class AAssortedTweak_ScriptEffectSilencer(_AAssortedTweak):
     tweak_name = _(u'Magic: Script Effect Silencer')
     tweak_tip = _(u'Script Effect will be silenced and have no graphics.')
     tweak_key = u'SilentScriptEffect'
+    tweak_choices = [(u'0', 0)]
     _silent_attrs = {} # override in implementations
 
     def __init__(self):
-        super(AAssortedTweak_ScriptEffectSilencer, self).__init__((u'0', 0))
+        super(AAssortedTweak_ScriptEffectSilencer, self).__init__()
         self.defaultEnabled = True
 
     def wants_record(self, record):
@@ -929,13 +937,13 @@ class AAssortedTweak_HarvestChance(_AAssortedTweak):
     tweak_tip = _(u'Harvest chances on all plants will be set to the chosen '
                   u'percentage.')
     tweak_key = u'HarvestChance'
+    tweak_choices = [(u'10%', 10), (u'20%', 20), (u'30%', 30), (u'40%', 40),
+                     (u'50%', 50), (u'60%', 60), (u'70%', 70), (u'80%', 80),
+                     (u'90%', 90), (u'100%', 100), (_(u'Custom'), 0)]
     _season_attrs = (u'spring', u'summer', u'fall', u'winter')
 
     def __init__(self):
-        super(AAssortedTweak_HarvestChance, self).__init__(
-            (u'10%', 10), (u'20%', 20), (u'30%', 30), (u'40%', 40),
-            (u'50%', 50), (u'60%', 60), (u'70%', 70), (u'80%', 80),
-            (u'90%', 90), (u'100%', 100), (_(u'Custom'), 0))
+        super(AAssortedTweak_HarvestChance, self).__init__()
         self.logMsg = u'* ' + _(u'Harvest Chances Changed: %d')
 
     @property
@@ -980,9 +988,10 @@ class AAssortedTweak_WindSpeed(_AAssortedTweak):
     tweak_name = _(u'Disable Wind')
     tweak_tip = _(u'Disables the wind on all weathers.')
     tweak_key = u'windSpeed'
+    tweak_choices = [(u'Disable', 0)]
 
     def __init__(self):
-        super(AAssortedTweak_WindSpeed, self).__init__((u'Disable', 0))
+        super(AAssortedTweak_WindSpeed, self).__init__()
         self.logMsg = u'* ' + _(u'Winds Disabled: %d')
 
     def wants_record(self, record):
@@ -1020,10 +1029,10 @@ class AAssortedTweak_UniformGroundcover(_AAssortedTweak):
     tweak_tip = _(u'Eliminates random variation in groundcover (grasses, '
                   u'shrubs, etc.).')
     tweak_key = u'UniformGroundcover'
+    tweak_choices = [(u'1.0', u'1.0')]
 
     def __init__(self):
-        super(AAssortedTweak_UniformGroundcover, self).__init__(
-            (u'1.0', u'1.0'))
+        super(AAssortedTweak_UniformGroundcover, self).__init__()
         self.logMsg = u'* ' + _(u'Grasses Normalized: %d')
 
     def wants_record(self, record):
@@ -1065,13 +1074,13 @@ class AAssortedTweak_SetCastWhenUsedEnchantmentCosts(_AAssortedTweak):
                   u'unlimited) so number of uses may not exactly match for '
                   u'all weapons.')
     tweak_key = u'Number of uses:'
+    tweak_choices = [(u'1', 1), (u'5', 5), (u'10', 10), (u'20', 20),
+                     (u'30', 30), (u'40', 40), (u'50', 50), (u'80', 80),
+                     (u'100', 100), (u'250', 250), (u'500', 500),
+                     (_(u'Unlimited'), 0), (_(u'Custom'), 0)]
 
     def __init__(self):
-        super(AAssortedTweak_SetCastWhenUsedEnchantmentCosts, self).__init__(
-            (u'1', 1), (u'5', 5), (u'10', 10), (u'20', 20), (u'30', 30),
-            (u'40', 40), (u'50', 50), (u'80', 80), (u'100', 100),
-            (u'250', 250), (u'500', 500), (_(u'Unlimited'), 0),
-            (_(u'Custom'), 0))
+        super(AAssortedTweak_SetCastWhenUsedEnchantmentCosts, self).__init__()
         self.logHeader = u'=== ' + _(u'Set Enchantment Number of Uses')
         self.logMsg = u'* ' + _(u'Enchantments Set: %d')
 
@@ -1132,6 +1141,7 @@ class AAssortedTweak_DefaultIcons(_AAssortedTweak):
     tweak_tip = _(u"Sets a default icon for any records that don't have any "
                   u'icon assigned.')
     tweak_key = u'icons'
+    tweak_choices = [(u'1', 1)]
     _default_icons = {
         b'ALCH': u'Clutter\\Potions\\IconPotion01.dds',
         b'AMMO': u'Weapons\\IronArrow.dds',
@@ -1175,7 +1185,7 @@ class AAssortedTweak_DefaultIcons(_AAssortedTweak):
     tweak_read_classes = tuple(_default_icons)
 
     def __init__(self):
-        super(AAssortedTweak_DefaultIcons,self).__init__((u'1', 1))
+        super(AAssortedTweak_DefaultIcons,self).__init__()
         self.defaultEnabled = True
         self.logMsg = u'* ' + _(u'Default Icons Set: %d')
 
@@ -1309,11 +1319,11 @@ class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,
 class _AAttenuationTweak(_AAssortedTweak):
     """Shared code of PBash/CBash sound attenuation tweaks."""
     tweak_read_classes = b'SOUN',
+    tweak_choices = [(u'0%', 0), (u'5%', 5), (u'10%', 10), (u'20%', 20),
+                     (u'50%', 50), (u'80%', 80), (_(u'Custom'), 0)]
 
     def __init__(self):
-        super(_AAttenuationTweak, self).__init__(
-            (u'0%', 0), (u'5%', 5), (u'10%', 10), (u'20%', 20),
-            (u'50%', 50), (u'80%', 80), (_(u'Custom'), 0))
+        super(_AAttenuationTweak, self).__init__()
         self.logMsg = u'* ' + _(u'Sounds Modified: %d')
 
     @property
@@ -1404,10 +1414,10 @@ class AAssortedTweak_FactioncrimeGoldMultiplier(_AAssortedTweak):
     tweak_tip = _(u'Fix factions with unset Crime Gold Multiplier to have a '
                   u'Crime Gold Multiplier of 1.0.')
     tweak_key = u'FactioncrimeGoldMultiplier'
+    tweak_choices = [(u'1.0', u'1.0')]
 
     def __init__(self):
-        super(AAssortedTweak_FactioncrimeGoldMultiplier, self).__init__(
-            (u'1.0', u'1.0'))
+        super(AAssortedTweak_FactioncrimeGoldMultiplier, self).__init__()
         self.logMsg = u'* ' + _(u'Factions Fixed: %d')
 
 class AssortedTweak_FactioncrimeGoldMultiplier(
@@ -1448,10 +1458,10 @@ class AAssortedTweak_LightFadeValueFix(_AAssortedTweak):
     tweak_name = _(u'No Light Fade Value Fix')
     tweak_tip = _(u'Sets Light Fade values to default of 1.0 if not set.')
     tweak_key = u'NoLightFadeValueFix'
+    tweak_choices = [(u'1.0', u'1.0')]
 
     def __init__(self):
-        super(AAssortedTweak_LightFadeValueFix, self).__init__(
-            (u'1.0', u'1.0'))
+        super(AAssortedTweak_LightFadeValueFix, self).__init__()
         self.logMsg = u'* ' + _(u'Lights With Fade Values Added: %d')
 
     def wants_record(self, record):
@@ -1489,9 +1499,10 @@ class AAssortedTweak_TextlessLSCRs(_AAssortedTweak):
     tweak_name = _(u'No Description Loading Screens')
     tweak_tip = _(u'Removes the description from loading screens.')
     tweak_key = u'NoDescLSCR'
+    tweak_choices = [(u'1.0', u'1.0')]
 
     def __init__(self):
-        super(AAssortedTweak_TextlessLSCRs, self).__init__((u'1.0', u'1.0'))
+        super(AAssortedTweak_TextlessLSCRs, self).__init__()
         self.logMsg = u'* ' + _(u'Loading Screens Tweaked: %d')
 
     def wants_record(self, record):

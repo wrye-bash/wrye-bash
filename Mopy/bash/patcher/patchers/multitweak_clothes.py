@@ -46,9 +46,9 @@ class AClothesTweak(DynamicTweak):
         u'rings':    0x000000C0, # (1<<6) | (1<<7),
     }
 
-    def __init__(self, tweak_name, tweak_tip, tweak_key, *choices):
+    def __init__(self, tweak_name, tweak_tip, tweak_key, *tweak_choices):
         super(AClothesTweak, self).__init__(tweak_name, tweak_tip, tweak_key,
-                                            *choices)
+                                            *tweak_choices)
         type_key = tweak_key[:tweak_key.find(u'.')]
         self.or_type_flags = type_key in (u'robes', u'rings')
         self.type_flags = self.clothes_flags[type_key]
@@ -72,9 +72,9 @@ class CBash_ClothesTweak(AClothesTweak, CBash_MultiTweakItem):
 #------------------------------------------------------------------------------
 class _AMaxWeightTweak(AClothesTweak):
     """Shared code of PBash/CBash max weight tweaks."""
-    def __init__(self, tweak_name, tweak_tip, tweak_key, *choices):
+    def __init__(self, tweak_name, tweak_tip, tweak_key, *tweak_choices):
         super(_AMaxWeightTweak, self).__init__(tweak_name, tweak_tip, tweak_key,
-                                               *choices)
+                                               *tweak_choices)
         self.logMsg = u'* ' + _(u'Clothes Reweighed: %d')
 
     @property
@@ -119,9 +119,9 @@ class CBash_ClothesTweak_MaxWeight(_AMaxWeightTweak, CBash_ClothesTweak):
 
 #------------------------------------------------------------------------------
 class _AUnblockTweak(AClothesTweak):
-    def __init__(self, tweak_name, tweak_tip, tweak_key, *choices):
+    def __init__(self, tweak_name, tweak_tip, tweak_key, *tweak_choices):
         super(_AUnblockTweak, self).__init__(tweak_name, tweak_tip, tweak_key,
-                                             *choices)
+                                             *tweak_choices)
         self.logMsg = u'* ' + _(u'Clothes Tweaked: %d')
         self.unblock_flags = self.clothes_flags[
             tweak_key[tweak_key.rfind(u'.') + 1:]]

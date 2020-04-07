@@ -69,9 +69,9 @@ class CBash_GlobalsTweak(_AGlobalsTweak, CBash_MultiTweakItem):
     scanOrder = 29
     editOrder = 29
 
-    def __init__(self, tweak_name, tweak_tip, tweak_key, *choices):
+    def __init__(self, tweak_name, tweak_tip, tweak_key, *tweak_choices):
         super(CBash_GlobalsTweak, self).__init__(tweak_name, tweak_tip,
-                                                 tweak_key, *choices)
+                                                 tweak_key, *tweak_choices)
         self.count = 0 ##: I hate this, can't we find a nicer way? :/
 
     def apply(self,modFile,record,bashTags):
