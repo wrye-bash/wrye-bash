@@ -36,6 +36,8 @@ from ...patcher.base import AMultiTweakItem, AMultiTweaker, DynamicTweak
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
 
+_ignored_chars=frozenset(u'+-=.()[]')
+
 class _ANamesTweak(AMultiTweakItem):
     """Shared code of PBash/CBash names tweaks and hasty abstraction over
     CBash/PBash differences to allow moving duplicate code into _A classes."""
@@ -155,7 +157,7 @@ class _ANamesTweak_Body(_ANamesTweak):
 
     def wants_record(self, record):
         old_full = record.full
-        return (old_full and old_full[0] not in u'+-=.()[]' and
+        return (old_full and old_full[0] not in _ignored_chars and
                 self._try_renaming(record))
 
     def _do_exec_rename(self, record, heavy_armor_addition, is_head, is_ring,
@@ -500,9 +502,9 @@ class _ANamesTweak_Weapons(_ANamesTweak):
                      (_(u'B08 - Iron Bow'), u'%s%02d - '),
                      (_(u'(B08) Iron Bow'), u'(%s%02d) ')]
 
-    def wants_record(self, record, _begin_chars=frozenset(u'+-=.()[]')):
+    def wants_record(self, record):
         return (record.full and (self._get_record_signature(record) != b'AMMO'
-                                 or record.full[0] not in _begin_chars)
+                                 or record.full[0] not in _ignored_chars)
                 and self._try_renaming(record))
 
     def _do_exec_rename(self, record):

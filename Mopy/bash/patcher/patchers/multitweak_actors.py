@@ -267,7 +267,7 @@ class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,
                                     _CSkeletonTweak): pass
 
 #------------------------------------------------------------------------------
-class AVanillaNPCSkeletonPatcher(_AActorTweak):
+class AVanillaNPCSkeletonPatcher(_ASkeletonTweak):
     """Changes all NPCs to use the vanilla beast race skeleton."""
     tweak_name = _(u'Vanilla Beast Skeleton Tweaker')
     tweak_tip = _(u'Avoids visual glitches if an NPC is a beast race but has '
@@ -276,7 +276,6 @@ class AVanillaNPCSkeletonPatcher(_AActorTweak):
     tweak_key = u'Vanilla Skeleton'
     tweak_choices = [(u'1.0', u'1.0')]
     tweak_log_header = _(u'Vanilla Beast Skeleton')
-    tweak_log_msg = _(u'Skeletons Tweaked: %(total_changed)d')
     _new_skeleton = u'Characters\\_Male\\SkeletonBeast.nif'
     _old_skeleton = u'characters\\_male\\skeleton.nif'
 

@@ -121,8 +121,12 @@ class _AUnblockTweak(AClothesTweak):
 
     @property
     def unblock_flags(self):
-        return self.clothes_flags[
-            self.tweak_key[self.tweak_key.rfind(u'.') + 1:]]
+        try:
+            return self._unblock_flags
+        except AttributeError:
+            self._unblock_flags = self.clothes_flags[
+                self.tweak_key[self.tweak_key.rfind(u'.') + 1:]]
+        return self._unblock_flags
 
     def wants_record(self, record):
         return super(_AUnblockTweak, self).wants_record(
