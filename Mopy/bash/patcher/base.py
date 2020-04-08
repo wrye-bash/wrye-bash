@@ -214,6 +214,8 @@ class AMultiTweakItem(object):
     tweak_log_msg = u'OVERRIDE'
     # If True, this tweak will be checked by default
     default_enabled = False
+    # If True, tweak_key will be shown in the 'custom value' popup
+    show_key_for_custom = False
 
     def __init__(self):
         # Don't check tweak_log_msg, settings tweaks don't use it

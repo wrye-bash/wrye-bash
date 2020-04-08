@@ -26,7 +26,7 @@ to the Gmst Multitweaker - as well as the GmstTweaker itself. Gmst stands
 for game settings."""
 from __future__ import print_function
 from ... import bush # for game
-from ...bolt import SubProgress, deprint, floats_equal
+from ...bolt import SubProgress, floats_equal
 from ...brec import MreRecord, RecHeader
 from ...exception import StateError
 from ...patcher.base import AMultiTweaker, DynamicTweak
@@ -37,6 +37,7 @@ from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
 class _AGlobalsTweak(DynamicTweak):
     """Sets a global to specified value."""
     tweak_read_classes = b'GLOB',
+    show_key_for_custom = True
 
     @property
     def chosen_value(self):
@@ -64,6 +65,7 @@ class CBash_GlobalsTweak(_AGlobalsTweak, CBash_MultiTweakItem):
 class _AGmstTweak(DynamicTweak):
     """Sets a GMST to specified value."""
     tweak_read_classes = b'GMST',
+    show_key_for_custom = True
 
     @property
     def chosen_eids(self):

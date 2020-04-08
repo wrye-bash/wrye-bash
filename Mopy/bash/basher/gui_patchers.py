@@ -671,12 +671,20 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         value = []
         new = None
         for i, v in enumerate(tweak.choiceValues[index]):
+            if tweak.show_key_for_custom:
+                ##: Mirrors chosen_eids, but all this is hacky - we should
+                # enforce that keys for settings tweaks *must* be tuples and
+                # then get rid of this
+                key_display = u'\n\n' + tweak.tweak_key[i] if isinstance(
+                    tweak.tweak_key, tuple) else tweak.tweak_key
+            else:
+                key_display = u''
             if isinstance(v,float):
                 while new is None: # keep going until user entered valid float
                     label = (_(u'Enter the desired custom tweak value.')
                              + u'\n\n' +
                              _(u'Note: A floating point number is expected '
-                               u'here.') + tweak.tweak_key[i])
+                               u'here.') + key_display)
                     new = balt.askText(
                         self.gConfigPanel, label,
                         title=tweak.tweak_name + _(u' - Custom Tweak Value'),
@@ -693,7 +701,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                         new = None # invalid float, try again
             elif isinstance(v, int) or isinstance(v, long): # PY3: int only
                 label = (_(u'Enter the desired custom tweak value.')
-                         + u'\n\n' + tweak.tweak_key[i])
+                         + key_display)
                 new = balt.askNumber(
                     self.gConfigPanel, label, prompt=_(u'Value'),
                     title=tweak.tweak_name + _(u' - Custom Tweak Value'),
@@ -703,7 +711,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 value.append(new)
             elif isinstance(v,basestring):
                 label = (_(u'Enter the desired custom tweak text.')
-                         + u'\n\n' + tweak.tweak_key[i])
+                         + key_display)
                 new = balt.askText(
                     self.gConfigPanel, label,
                     title=tweak.tweak_name + _(u' - Custom Tweak Text'),
