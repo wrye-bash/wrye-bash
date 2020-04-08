@@ -75,9 +75,15 @@ class MultiTweakItem(AMultiTweakItem):
         point, all relevant files have been scanned, wanted records have been
         forwarded into the BP, MGEFs have been indexed, etc. Default
         implementation does nothing."""
-        # FIXME(inf) Currently somewhat useless - its use will become evident
-        #  in the next few commits ;)
 
+    def finish_tweaking(self, patch_file):
+        """Gives this tweak a chance to clean up and do any work after the
+        tweak_records phase is over using the specified patch file instance. At
+        this point, all tweak_record calls for all tweaks belonging to the
+        parent 'tweaker' have been executed. Default implementation does
+        nothing."""
+
+    ##: Rare APIs, rework MobCell etc. and drop?
     def tweak_scan_file(self, mod_file, patch_file):
         """Gives this tweak a chance to implement completely custom behavior
         for scanning the specified mod file, with the specified patch file as
@@ -85,9 +91,12 @@ class MultiTweakItem(AMultiTweakItem):
         but never gets called if this tweak does support pooling."""
         raise AbstractError(u'tweak_scan_file not implemented')
 
-    def buildPatch(self,log,progress,patchFile): # extra param: patchFile
-        """Edits patch file as desired. Should write to log."""
-        pass ##: raise AbstractError ?
+    def tweak_build_patch(self, log, count, patch_file):
+        """Gives this tweak a chance to implement completely custom behavior
+        for editing the patch file directly and logging its results. *Must* be
+        implemented if this tweak does not support pooling, but never gets
+        called if this tweak does support pooling."""
+        raise AbstractError(u'tweak_build_patch not implemented')
 
 class CBash_MultiTweakItem(AMultiTweakItem):
     # extra CBash_MultiTweakItem class variables
@@ -107,12 +116,20 @@ class CBash_MultiTweakItem(AMultiTweakItem):
         """Returns the group types that this patcher checks"""
         return list(self.__class__.tweak_read_classes)
 
-    # def apply(self,modFile,record): # TODO bashTags argument is unused in
-    # all subclasses
+    def apply(self, modFile, record, bashTags):
+        if self.wants_record(record):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                self.tweak_record(override)
+                ##: This causes log differences to PBash. Can we use
+                # record.fid[0] here instead and unify these logs?
+                self.mod_count[modFile.GName] += 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
 
     def buildPatchLog(self,log):
         """Will write to log."""
-        self._patchLog(log, self.mod_count)
+        self.tweak_log(log, self.mod_count)
         self.mod_count = Counter()
 
 class MultiTweaker(AMultiTweaker,Patcher):
@@ -165,8 +182,38 @@ class MultiTweaker(AMultiTweaker,Patcher):
         log.setHeader(u'= ' + self._patcher_name, True)
         for tweak in self.enabled_tweaks: # type: MultiTweakItem
             tweak.prepare_for_tweaking(self.patchFile)
-        for tweak in self.enabled_tweaks: # type: MultiTweakItem
-            tweak.buildPatch(log,progress,self.patchFile)
+        common_tops = set(self.patchFile.tops) & set(self._tweak_dict)
+        keep = self.patchFile.getKeeper()
+        tweak_counter = defaultdict(Counter)
+        for curr_top in common_tops:
+            top_dict = self._tweak_dict[curr_top]
+            # Need to give other tweaks a chance to do work first
+            for o_tweak in top_dict[False]:
+                o_tweak.tweak_build_patch(log, tweak_counter[o_tweak],
+                                          self.patchFile)
+            poolable_tweaks = top_dict[True]
+            if not poolable_tweaks: continue  # likely complex type, e.g. CELL
+            for record in self.patchFile.tops[curr_top].getActiveRecords():
+                for p_tweak in poolable_tweaks:  # type: MultiTweakItem
+                    # Check if this tweak can actually change the record - just
+                    # relying on the check in scanModFile is *not* enough.
+                    # After all, another tweak or patcher could have made a
+                    # copy of an entirely unrelated record that *it* was
+                    # interested in that just happened to have the same record
+                    # type
+                    if p_tweak.wants_record(record):
+                        # Give the tweak a chance to do its work, and remember
+                        # that we now want to keep the record. Note that we
+                        # can't break early here, because more than one tweak
+                        # may want to touch this record
+                        p_tweak.tweak_record(record)
+                        keep(record.fid)
+                        tweak_counter[p_tweak][record.fid[0]] += 1
+        # We're done with all tweaks, give them a chance to clean up and do any
+        # finishing touches (e.g. injecting records for GMST tweaks), then log
+        for tweak in self.enabled_tweaks:
+            tweak.finish_tweaking(self.patchFile)
+            tweak.tweak_log(log, tweak_counter[tweak])
 
 class CBash_MultiTweaker(AMultiTweaker,CBash_Patcher):
 

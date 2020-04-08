@@ -27,7 +27,6 @@ to the Actors Multitweaker - as well as the TweakActors itself."""
 
 import random
 import re
-from collections import Counter
 # Internal
 from ... import bass, bush
 from ...bolt import GPath
@@ -72,9 +71,6 @@ class _AActorTweak(AMultiTweakItem):
 
 class _BasalActorTweaker(MultiTweakItem, _AActorTweak):
     """Base for all PBash actor tweaks."""
-    def buildPatch(self,log,progress,patchFile):
-        raise AbstractError(u'buildPatch not implemented')
-
     @staticmethod
     def _get_skeleton_path(record):
         try:
@@ -164,28 +160,13 @@ class _ASkeletonTweak(_AActorTweak):
 
 class _PSkeletonTweak(_ASkeletonTweak, BasalNPCTweaker):
     """Shared code of PBash MAO/VORB skeleton tweaks."""
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in patchFile.NPC_.records:
-            if self.wants_record(record):
-                record.model.modPath = self._get_target_skeleton(record)
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        self._patchLog(log, count)
+    def tweak_record(self, record):
+        record.model.modPath = self._get_target_skeleton(record)
 
 class _CSkeletonTweak(_ASkeletonTweak, _NpcCTweak):
     """Shared code of CBash MAO/VORB skeleton tweaks."""
-    def apply(self, modFile, record, bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.modPath = self._get_target_skeleton(record)
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
+    def tweak_record(self, record):
+        record.modPath = self._get_target_skeleton(record)
 
 #------------------------------------------------------------------------------
 class AMAONPCSkeletonPatcher(_ASkeletonTweak):
@@ -283,31 +264,15 @@ class AVanillaNPCSkeletonPatcher(_ASkeletonTweak):
         old_mod_path = self._get_skeleton_path(record)
         return old_mod_path and old_mod_path.lower() == self._old_skeleton
 
-class VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,BasalNPCTweaker):
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in patchFile.NPC_.records:
-            if self.wants_record(record):
-                record.model.modPath = self._new_skeleton
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        self._patchLog(log,count)
+    def _get_target_skeleton(self, record):
+        return self._new_skeleton
 
-class CBash_VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher, _NpcCTweak):
+class VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,
+                                _PSkeletonTweak): pass
+class CBash_VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,
+                                      _CSkeletonTweak):
     scanOrder = 31 #Run before MAO
     editOrder = 31
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.modPath = self._new_skeleton
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
 class ARedguardNPCPatcher(_AActorTweak):
@@ -328,32 +293,22 @@ class ARedguardNPCPatcher(_AActorTweak):
 class RedguardNPCPatcher(ARedguardNPCPatcher,BasalNPCTweaker):
     _redguard_fid = (GPath(bush.game.master_file), 0x00000D43)
 
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in patchFile.NPC_.records:
-            if self.wants_record(record):
-                record.fgts_p = '\x00'*200
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        self._patchLog(log,count)
+    def wants_record(self, record):
+        return (super(RedguardNPCPatcher, self).wants_record(record) and
+                record.fgts_p != b'\x00' * 200)
+
+    def tweak_record(self, record):
+        record.fgts_p = b'\x00' * 200
 
 class CBash_RedguardNPCPatcher(ARedguardNPCPatcher, _NpcCTweak):
     _redguard_fid = FormID(GPath(bush.game.master_file), 0x00000D43)
 
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            oldFGTS_p = record.fgts_p
-            newFGTS_p = [0x00] * 200
-            if newFGTS_p != oldFGTS_p:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.fgts_p = newFGTS_p
-                    self.mod_count[modFile.GName] += 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
+    def wants_record(self, record):
+        return (super(CBash_RedguardNPCPatcher, self).wants_record(record) and
+                record.fgts_p != [0x00] * 200)
+
+    def tweak_record(self, record):
+        record.fgts_p = [0x00] * 200
 
 #------------------------------------------------------------------------------
 class ANoBloodCreaturesPatcher(_AActorTweak):
@@ -370,34 +325,18 @@ class ANoBloodCreaturesPatcher(_AActorTweak):
         return record.bloodDecalPath or record.bloodSprayPath
 
 class NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,BasalCreatureTweaker):
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in patchFile.CREA.records:
-            if self.wants_record(record):
-                record.bloodDecalPath = None
-                record.bloodSprayPath = None
-                record.flags.noBloodSpray = True
-                record.flags.noBloodDecal = True
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        #--Log
-        self._patchLog(log, count)
+    def tweak_record(self, record):
+        record.bloodDecalPath = None
+        record.bloodSprayPath = None
+        record.flags.noBloodSpray = True
+        record.flags.noBloodDecal = True
 
 class CBash_NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher, _CreaCTweak):
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.bloodDecalPath = None
-                override.bloodSprayPath = None
-                override.IsNoBloodSpray = True
-                override.IsNoBloodDecal = True
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
+    def tweak_record(self, record):
+        record.bloodDecalPath = None
+        record.bloodSprayPath = None
+        record.IsNoBloodSpray = True
+        record.IsNoBloodDecal = True
 
 #------------------------------------------------------------------------------
 class AAsIntendedImpsPatcher(_AActorTweak):
@@ -426,33 +365,15 @@ class AAsIntendedImpsPatcher(_AActorTweak):
         elif u'small' in self.choiceValues[self.chosen]: return False
         return self._imp_spell not in record.spells
 
+    def tweak_record(self, record):
+        # Can't use append because of cint __get__/__set__ nonsense
+        record.spells += [self._imp_spell]
+
 class AsIntendedImpsPatcher(AAsIntendedImpsPatcher,BasalCreatureTweaker):
     _imp_spell = (GPath(bush.game.master_file), 0x02B53F)
 
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in patchFile.CREA.records:
-            if self.wants_record(record):
-                record.spells.append(self._imp_spell)
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        self._patchLog(log,count)
-
 class CBash_AsIntendedImpsPatcher(AAsIntendedImpsPatcher, _CreaCTweak):
     _imp_spell = FormID(GPath(bush.game.master_file), 0x02B53F)
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                # Can't use append because of cint __get__/__set__ nonsense
-                override.spells += [self._imp_spell]
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
 class AAsIntendedBoarsPatcher(_AActorTweak):
@@ -476,33 +397,15 @@ class AAsIntendedBoarsPatcher(_AActorTweak):
             return False
         return self._boar_spell not in record.spells
 
+    def tweak_record(self, record):
+        # Can't use append because of cint __get__/__set__ nonsense
+        record.spells += [self._boar_spell]
+
 class AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,BasalCreatureTweaker):
     _boar_spell = (GPath(bush.game.master_file), 0x02B54E)
 
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in patchFile.CREA.records:
-            if self.wants_record(record):
-                record.spells.append(self._boar_spell)
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        self._patchLog(log,count)
-
 class CBash_AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher, _CreaCTweak):
     _boar_spell = FormID(GPath(bush.game.master_file), 0x02B54E)
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                # Can't use append because of cint __get__/__set__ nonsense
-                override.spells += [self._boar_spell]
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
 class ASWALKNPCAnimationPatcher(_AFemaleOnlyTweak):
@@ -514,28 +417,14 @@ class ASWALKNPCAnimationPatcher(_AFemaleOnlyTweak):
     tweak_choices = [(u'1.0', u'1.0')]
     tweak_log_msg = _(u'NPCs Tweaked: %(total_changed)d')
 
-class SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,BasalNPCTweaker):
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in patchFile.NPC_.records:
-            if self.wants_record(record):
-                record.animations += [u'0sexywalk01.kf']
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        self._patchLog(log,count)
+    def tweak_record(self, record):
+        # Can't use append because of cint __get__/__set__ nonsense
+        record.animations += [u'0sexywalk01.kf']
 
-class CBash_SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher, _NpcCTweak):
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.animations += [u'0sexywalk01.kf']
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
+class SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,
+                               BasalNPCTweaker): pass
+class CBash_SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,
+                                     _NpcCTweak): pass
 
 #------------------------------------------------------------------------------
 class ARWALKNPCAnimationPatcher(_AFemaleOnlyTweak):
@@ -547,27 +436,14 @@ class ARWALKNPCAnimationPatcher(_AFemaleOnlyTweak):
     tweak_choices = [(u'1.0', u'1.0')]
     tweak_log_msg = _(u'NPCs Tweaked: %(total_changed)d')
 
-class RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,BasalNPCTweaker):
-    def buildPatch(self,log,progress,patchFile):
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in patchFile.NPC_.records:
-            if self.wants_record(record):
-                record.animations += [u'0realwalk01.kf']
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        self._patchLog(log,count)
+    def tweak_record(self, record):
+        # Can't use append because of cint __get__/__set__ nonsense
+        record.animations += [u'0realwalk01.kf']
 
-class CBash_RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher, _NpcCTweak):
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.animations += [u'0realwalk01.kf']
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
+class RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,
+                               BasalNPCTweaker): pass
+class CBash_RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,
+                                     _NpcCTweak): pass
 
 #------------------------------------------------------------------------------
 class AQuietFeetPatcher(_AActorTweak):
@@ -601,28 +477,11 @@ class AQuietFeetPatcher(_AActorTweak):
             return False
         return record.sounds != self._get_silenced_sounds(record)
 
-class QuietFeetPatcher(AQuietFeetPatcher,BasalCreatureTweaker):
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in patchFile.CREA.records:
-            if self.wants_record(record):
-                record.sounds = self._get_silenced_sounds(record)
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        self._patchLog(log,count)
+    def tweak_record(self, record):
+        record.sounds = self._get_silenced_sounds(record)
 
-class CBash_QuietFeetPatcher(AQuietFeetPatcher, _CreaCTweak):
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.sounds = self._get_silenced_sounds(record)
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
+class QuietFeetPatcher(AQuietFeetPatcher, BasalCreatureTweaker): pass
+class CBash_QuietFeetPatcher(AQuietFeetPatcher, _CreaCTweak): pass
 
 #------------------------------------------------------------------------------
 class AIrresponsibleCreaturesPatcher(_AActorTweak):
@@ -645,30 +504,13 @@ class AIrresponsibleCreaturesPatcher(_AActorTweak):
                 and (self.choiceValues[self.chosen][0] == u'all'
                      or record.creatureType == 4))
 
-class IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,
-                                    BasalCreatureTweaker):
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in patchFile.CREA.records:
-            if self.wants_record(record):
-                record.responsibility = 0
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        self._patchLog(log,count)
+    def tweak_record(self, record):
+        record.responsibility = 0
 
+class IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,
+                                    BasalCreatureTweaker): pass
 class CBash_IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,
-                                          _CreaCTweak):
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.responsibility = 0
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
+                                          _CreaCTweak): pass
 
 #------------------------------------------------------------------------------
 class _AOppositeGenderAnimsPatcher(BasalNPCTweaker):
@@ -681,23 +523,17 @@ class _AOppositeGenderAnimsPatcher(BasalNPCTweaker):
     # Whether this patcher wants female or male NPCs
     _targets_female_npcs = False
 
+    @property
+    def oga_target(self):
+        return self.choiceValues[self.chosen][0] == u'enable_all'
+
     def wants_record(self, record):
         # Skip any NPCs that don't match this patcher's target gender
-        oga_target = self.choiceValues[self.chosen][0] == u'enable_all'
         return (record.flags.female == self._targets_female_npcs
-                and record.flags.oppositeGenderAnims != oga_target)
+                and record.flags.oppositeGenderAnims != self.oga_target)
 
-    def buildPatch(self, log, progress, patchFile):
-        count = Counter()
-        keep = patchFile.getKeeper()
-        # What we want to set the 'Opposite Gender Anims' flag to
-        oga_target = self.choiceValues[self.chosen][0] == u'enable_all'
-        for record in patchFile.NPC_.records:
-            if self.wants_record(record):
-                record.flags.oppositeGenderAnims = oga_target
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        self._patchLog(log, count)
+    def tweak_record(self, record):
+        record.flags.oppositeGenderAnims = self.oga_target
 
 class OppositeGenderAnimsPatcher_Female(_AOppositeGenderAnimsPatcher):
     tweak_name = _(u'Opposite Gender Anims: Female')

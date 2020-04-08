@@ -25,7 +25,6 @@
 """This module contains oblivion multitweak item patcher classes that belong
 to the Clothes Multitweaker - as well as the ClothesTweaker itself."""
 import itertools
-from collections import Counter
 from ...patcher.base import AMultiTweaker, DynamicTweak
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
@@ -84,35 +83,16 @@ class _AMaxWeightTweak(AClothesTweak):
         return super(_AMaxWeightTweak, self).wants_record(
             record) and max_weight < record.weight < super_weight
 
-    def _patchLog(self, log, count):
+    def tweak_record(self, record):
+        record.weight = self.chosen_weight
+
+    def tweak_log(self, log, count):
         self.tweak_log_header = (self.tweak_name +
                                  u' [%4.2f]' % self.chosen_weight)
-        super(_AMaxWeightTweak, self)._patchLog(log, count)
+        super(_AMaxWeightTweak, self).tweak_log(log, count)
 
-class ClothesTweak_MaxWeight(_AMaxWeightTweak, ClothesTweak):
-    """Enforce a max weight for specified clothes."""
-    def buildPatch(self, log, progress, patchFile):
-        """Build patch."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in patchFile.CLOT.records:
-            if self.wants_record(record):
-                record.weight = self.chosen_weight
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        self._patchLog(log, count)
-
-class CBash_ClothesTweak_MaxWeight(_AMaxWeightTweak, CBash_ClothesTweak):
-    """Enforce a max weight for specified clothes."""
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.weight = self.chosen_weight
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
+class ClothesTweak_MaxWeight(_AMaxWeightTweak, ClothesTweak): pass
+class CBash_ClothesTweak_MaxWeight(_AMaxWeightTweak, CBash_ClothesTweak): pass
 
 #------------------------------------------------------------------------------
 class _AUnblockTweak(AClothesTweak):
@@ -132,31 +112,13 @@ class _AUnblockTweak(AClothesTweak):
         return super(_AUnblockTweak, self).wants_record(
             record) and int(record.flags & self.unblock_flags)
 
-class ClothesTweak_Unblock(_AUnblockTweak, ClothesTweak):
-    def buildPatch(self, log, progress, patchFile):
-        """Build patch."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in patchFile.CLOT.records:
-            if self.wants_record(record):
-                record.flags &= ~self.unblock_flags
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        self._patchLog(log, count)
+    def tweak_record(self, record):
+        record.flags &= ~self.unblock_flags
 
+class ClothesTweak_Unblock(_AUnblockTweak, ClothesTweak): pass
 class CBash_ClothesTweak_Unblock(_AUnblockTweak, CBash_ClothesTweak):
     scanOrder = 31 ##: this causes silly changes to e.g. JailPants, investigate
     editOrder = 31
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.flags &= ~self.unblock_flags
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
 class _AClothesTweaker(AMultiTweaker):

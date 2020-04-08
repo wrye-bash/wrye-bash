@@ -258,7 +258,7 @@ class AMultiTweakItem(object):
         if self.tweak_log_header is None:
             self.tweak_log_header = self.tweak_name # default to tweak name
 
-    def _patchLog(self, log, count):
+    def tweak_log(self, log, count):
         """Logs the total changes and details for each plugin."""
         log.setHeader(u'=== ' + self.tweak_log_header)
         log(u'* ' + self.tweak_log_msg % {
@@ -318,9 +318,22 @@ class AMultiTweakItem(object):
 
     def wants_record(self, record):
         """Return a truthy value if you want to get a chance to change the
-        specified record. Must be implemented by every PBash tweak that
-        supports pooling (see MultiTweakItem.supports_pooling)."""
+        specified record. Must be implemented by every CBash tweak that does
+        not override apply, and every PBash tweak that supports pooling (see
+        MultiTweakItem.supports_pooling)."""
         raise AbstractError(u'wants_record not implemented')
+
+    def tweak_record(self, record):
+        """This is where each tweak gets a chance to change the specified
+        record, which is a copy of the winning override inside the BP. It is
+        guaranteed that wants_record has been called and returned True right
+        before this call. Note that there is no taking that back: right after
+        this call, keep() will be called and the record will be kept as an
+        override in the BP. So make sure wants_record *never* lets ITMs and
+        ITPOs through! Must be implemented by every CBash tweak that does
+        not override apply, and every PBash tweak that supports pooling (see
+        MultiTweakItem.supports_pooling)."""
+        raise AbstractError(u'tweak_record not implemented')
 
 class DynamicTweak(AMultiTweakItem):
     """A tweak that has its name, tip, key and choices passed in as init

@@ -35,7 +35,7 @@ from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
 class _AGlobalsTweak(DynamicTweak):
-    """Shared code of CBash/PBash globals tweaks."""
+    """Sets a global to specified value."""
     tweak_read_classes = b'GLOB',
 
     @property
@@ -48,45 +48,17 @@ class _AGlobalsTweak(DynamicTweak):
                 record.eid.lower() == self.tweak_key and
                 record.value != self.chosen_value)
 
-    def _patchLog(self, log, count):
+    def tweak_record(self, record):
+        record.value = self.chosen_value
+
+    def tweak_log(self, log, count):
         if count: log(u'* ' + _(u'%s set to: %4.2f') % (
             self.tweak_name, self.chosen_value))
 
-class GlobalsTweak(_AGlobalsTweak, MultiTweakItem):
-    """Sets a global to specified value."""
-    def buildPatch(self, log, progress, patchFile):
-        """Build patch."""
-        keep = patchFile.getKeeper()
-        for record in patchFile.GLOB.records:
-            if self.wants_record(record):
-                record.value = self.chosen_value
-                keep(record.fid)
-                self._patchLog(log, 1)
-                break
-
+class GlobalsTweak(_AGlobalsTweak, MultiTweakItem): pass
 class CBash_GlobalsTweak(_AGlobalsTweak, CBash_MultiTweakItem):
-    """Sets a global to specified value."""
     scanOrder = 29
     editOrder = 29
-
-    def __init__(self, tweak_name, tweak_tip, tweak_key, *tweak_choices):
-        super(CBash_GlobalsTweak, self).__init__(tweak_name, tweak_tip,
-                                                 tweak_key, *tweak_choices)
-        self.count = 0 ##: I hate this, can't we find a nicer way? :/
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                self.count = 1
-                override.value = self.chosen_value
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        self._patchLog(log, self.count)
 
 #------------------------------------------------------------------------------
 # FIXME(inf) I moved this code out, it *definitely* doesn't belong here. This
@@ -97,7 +69,7 @@ class CBash_GlobalsTweak(_AGlobalsTweak, CBash_MultiTweakItem):
 #             u'skipping setting GMST.' % target_value)
 #     return False
 class _AGmstTweak(DynamicTweak):
-    """Shared code of PBash/CBash GMST tweaks."""
+    """Sets a GMST to specified value."""
     tweak_read_classes = b'GMST',
 
     @property
@@ -150,7 +122,13 @@ class _AGmstTweak(DynamicTweak):
         self.eid_was_itpo[rec_eid] = not ret_val
         return ret_val
 
-    def _patchLog(self, log):
+    def tweak_record(self, record):
+        rec_eid = record.eid.lower()
+        # We don't need to inject a GMST for this EDID anymore
+        self.eid_was_itpo[rec_eid] = True
+        record.value = self._find_chosen_value(rec_eid)
+
+    def tweak_log(self, log, count): # count is ignored here
         if len(self.choiceLabels) > 1:
             if self.choiceLabels[self.chosen].startswith(_(u'Custom')):
                 if isinstance(self.chosen_values[0], basestring):
@@ -168,18 +146,9 @@ class _AGmstTweak(DynamicTweak):
             log(u'* ' + self.tweak_name)
 
 class GmstTweak(_AGmstTweak, MultiTweakItem):
-    """Sets a GMST to specified value."""
-    def buildPatch(self, log, progress, patchFile):
-        """Build patch."""
-        keep = patchFile.getKeeper()
-        for record in patchFile.GMST.records:
-            # Do case-insensitive comparisons
-            if self.wants_record(record):
-                rec_eid = record.eid.lower()
-                # We don't need to inject a GMST for this EDID anymore
-                self.eid_was_itpo[rec_eid] = True
-                record.value = self._find_chosen_value(rec_eid)
-                keep(record.fid)
+    def finish_tweaking(self, patch_file):
+        keep = patch_file.getKeeper()
+        add_gmst = patch_file.GMST.setRecord
         # Inject new records for any remaining EDIDs
         for remaining_eid, was_itpo in self.eid_was_itpo.iteritems():
             if not was_itpo:
@@ -188,30 +157,16 @@ class GmstTweak(_AGmstTweak, MultiTweakItem):
                 new_gmst.value = self._find_chosen_value(remaining_eid)
                 new_gmst.longFids = True
                 new_gmst.fid = new_gmst.getGMSTFid()
-                if new_gmst.fid is not None:
+                if new_gmst.fid is not None: # None if missing from pickle
                     keep(new_gmst.fid)
-                    patchFile.GMST.setRecord(new_gmst)
-        self._patchLog(log)
+                    add_gmst(new_gmst)
 
 class CBash_GmstTweak(_AGmstTweak, CBash_MultiTweakItem):
     """Sets a GMST to specified value."""
     scanOrder = 29
     editOrder = 29
 
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                rec_eid = record.eid.lower()
-                # We don't need to create a GMST for this EDID anymore
-                self.eid_was_itpo[rec_eid] = True
-                override.value = self._find_chosen_value(rec_eid)
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-    def finishPatch(self,patchFile,progress):
-        """Edits the bashed patch file directly."""
+    def finishPatch(self, patchFile, progress):
         subProgress = SubProgress(progress)
         subProgress.setFull(max(len(self.chosen_values), 1))
         pstate = 0
@@ -229,10 +184,6 @@ class CBash_GmstTweak(_AGmstTweak, CBash_MultiTweakItem):
                     raise StateError(u'Tweak Settings: Unable to create GMST!')
                 record.value = self._find_chosen_value(remaining_eid)
             pstate += 1
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        self._patchLog(log)
 
 #------------------------------------------------------------------------------
 class _AGmstTweaker(AMultiTweaker):

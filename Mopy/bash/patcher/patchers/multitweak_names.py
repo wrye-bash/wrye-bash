@@ -27,11 +27,12 @@ to the Names Multitweaker - as well as the NamesTweaker itself."""
 
 from __future__ import division
 import re
-from collections import Counter
 from functools import partial
 # Internal
 from ...bolt import RecPath
+from ...brec import MreRecord # yuck, see usage below
 from ...exception import AbstractError
+from ...parsers import LoadFactory, ModFile # yuck, see usage below
 from ...patcher.base import AMultiTweakItem, AMultiTweaker, DynamicTweak
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
@@ -45,6 +46,9 @@ class _ANamesTweak(AMultiTweakItem):
 
     @property
     def chosen_format(self): return self.choiceValues[self.chosen][0]
+
+    def tweak_record(self, record):
+        record.full = self._exec_rename(record)
 
     def _do_exec_rename(self, *placeholder):
         """Does the actual renaming, returning the new name as its reuslt.
@@ -199,17 +203,6 @@ class _PNamesTweak_Body(_ANamesTweak_Body, _PNamesTweak):
                 body_flags.upperBody, body_flags.lowerBody, body_flags.hand,
                 body_flags.foot, body_flags.tail, body_flags.shield)
 
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in getattr(patchFile, self.tweak_read_classes[0]).records:
-            if self.wants_record(record):
-                record.full = self._exec_rename(record)
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        self._patchLog(log, count)
-
 class _CNamesTweak_Body(_ANamesTweak_Body, CBash_MultiTweakItem):
     """Shared code of CBash body names tweaks."""
     def wants_record(self, record):
@@ -224,16 +217,6 @@ class _CNamesTweak_Body(_ANamesTweak_Body, CBash_MultiTweakItem):
                 record.IsUpperBody or record.IsLowerBody, record.IsUpperBody,
                 record.IsLowerBody, record.IsHand, record.IsFoot,
                 record.IsTail, record.IsShield)
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.full = self._exec_rename(record)
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
 class _AArmoNamesTweak(_ANamesTweak_Body):
@@ -309,36 +292,16 @@ class NamesTweak_Potions(_ANamesTweak_Potions, _PNamesTweak):
     def _get_rename_params(self, record):
         return (record, record.flags.isFood)
 
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in patchFile.ALCH.records:
-            if self.wants_record(record):
-                record.full = self._exec_rename(record)
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        self._patchLog(log, count)
-
 class CBash_NamesTweak_Potions(_ANamesTweak_Potions, _CNamesTweak):
     def _get_rename_params(self, record):
         return (record, record.IsFood)
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.full = self._exec_rename(record)
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
 _re_old_magic_label = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ', re.U)
 
 class _ANamesTweak_Scrolls(_AMgefNamesTweak):
     """Names tweaker for scrolls."""
+    tweak_read_classes = b'BOOK',
     tweak_name = _(u'Notes and Scrolls')
     tweak_tip = _(u'Mark notes and scrolls to sort separately from books.')
     tweak_key = u'scrolls'
@@ -373,39 +336,35 @@ class _ANamesTweak_Scrolls(_AMgefNamesTweak):
         return order_format[is_enchanted] + wip_name
 
 class NamesTweak_Scrolls(_ANamesTweak_Scrolls, _PNamesTweak):
-    tweak_read_classes = b'BOOK', b'ENCH',
     _look_up_ench = None
 
     def wants_record(self, record):
-        if record.recType == b'BOOK':
-            return (record.flags.isScroll and not record.flags.isFixed and
-                    super(NamesTweak_Scrolls, self).wants_record(record))
-        else: # ENCH, the only other type we requested
-            return record.itemType == 0
+        return (record.flags.isScroll and not record.flags.isFixed and
+                super(NamesTweak_Scrolls, self).wants_record(record))
 
     def prepare_for_tweaking(self, patch_file):
         super(NamesTweak_Scrolls, self).prepare_for_tweaking(patch_file)
-        self._look_up_ench = patch_file.ENCH.id_records
+        # HACK - and what an ugly one - we need a general API to express to the
+        # BP that a patcher/tweak wants it to index all records for certain
+        # record types in some central place (and NOT by forwarding all records
+        # into the BP!)
+        self._look_up_ench = id_ench = {}
+        ench_factory = LoadFactory(False, MreRecord.type_class[b'ENCH'])
+        for pl_path in patch_file.loadMods:
+            ench_plugin = ModFile(patch_file.p_file_minfos[pl_path],
+                                  ench_factory)
+            ench_plugin.load(do_unpack=True)
+            for record in ench_plugin.ENCH.getActiveRecords():
+                id_ench[record.fid] = record
+
+    def finish_tweaking(self, patch_file):
+        # Clean this up ##: not sure if actually needed?
+        self._look_up_ench = None
 
     def _get_rename_params(self, record):
         return (record, lambda e: self._look_up_ench.get(e, 6))
 
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in patchFile.BOOK.records:
-            if self.wants_record(record):
-                record.full = self._exec_rename(record)
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        self._patchLog(log, count)
-        # Need to clean this up, part of PatchFile # FIXME(inf) general method
-        self._look_up_ench = None
-
 class CBash_NamesTweak_Scrolls(_ANamesTweak_Scrolls, _CNamesTweak):
-    tweak_read_classes = b'BOOK',
-
     def wants_record(self, record):
         return (record.IsScroll and not record.IsFixed and super(
             CBash_NamesTweak_Scrolls, self).wants_record(record))
@@ -413,16 +372,6 @@ class CBash_NamesTweak_Scrolls(_ANamesTweak_Scrolls, _CNamesTweak):
     def _get_rename_params(self, record):
         return (record, lambda e: (
                 self.patchFile.Current.LookupRecords(e) or [None])[0])
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.full = self._exec_rename(record)
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
 class _ANamesTweak_Spells(_AMgefNamesTweak):
@@ -462,28 +411,8 @@ class _ANamesTweak_Spells(_AMgefNamesTweak):
                 wip_name = self.chosen_format % u'ACDIMRU'[school] + wip_name
         return wip_name
 
-class NamesTweak_Spells(_ANamesTweak_Spells, _PNamesTweak):
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for record in patchFile.SPEL.records:
-            if self.wants_record(record):
-                record.full = self._exec_rename(record)
-                keep(record.fid)
-                count[record.fid[0]] += 1
-        self._patchLog(log, count)
-
-class CBash_NamesTweak_Spells(_ANamesTweak_Spells, _CNamesTweak):
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.full = self._exec_rename(record)
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
+class NamesTweak_Spells(_ANamesTweak_Spells, _PNamesTweak): pass
+class CBash_NamesTweak_Spells(_ANamesTweak_Spells, _CNamesTweak): pass
 
 #------------------------------------------------------------------------------
 class _ANamesTweak_Weapons(_ANamesTweak):
@@ -515,30 +444,8 @@ class _ANamesTweak_Weapons(_ANamesTweak):
             format_subs += (record.damage,)
         return self.chosen_format % format_subs + record.full
 
-class NamesTweak_Weapons(_ANamesTweak_Weapons, _PNamesTweak):
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for rec_sig in self.tweak_read_classes:
-            for record in getattr(patchFile, unicode(
-                    rec_sig, u'ascii')).records:
-                if self.wants_record(record):
-                    record.full = self._exec_rename(record)
-                    keep(record.fid)
-                    count[record.fid[0]] += 1
-        self._patchLog(log, count)
-
-class CBash_NamesTweak_Weapons(_ANamesTweak_Weapons, _CNamesTweak):
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.full = self._exec_rename(record)
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
+class NamesTweak_Weapons(_ANamesTweak_Weapons, _PNamesTweak): pass
+class CBash_NamesTweak_Weapons(_ANamesTweak_Weapons, _CNamesTweak): pass
 
 #------------------------------------------------------------------------------
 class _ATextReplacer(DynamicTweak, _ANamesTweak):
@@ -608,6 +515,9 @@ class _ATextReplacer(DynamicTweak, _ANamesTweak):
                     if can_change(val or u''): return True
             return False
 
+    def tweak_record(self, record):
+        self._exec_rename(record) # Changes more than just FULL
+
     def _exec_rename(self, record):
         sub_replacement, replacement = self.re_match.sub, self.re_replacement
         exec_replacement = partial(sub_replacement, replacement)
@@ -619,19 +529,7 @@ class _ATextReplacer(DynamicTweak, _ANamesTweak):
                 if rp.rp_exists(record):
                     rp.rp_map(record, exec_replacement)
 
-class TextReplacer(_ATextReplacer, _PNamesTweak):
-    def buildPatch(self,log,progress,patchFile):
-        count = Counter()
-        keep = patchFile.getKeeper()
-        for rec_sig in self.tweak_read_classes:
-            if rec_sig not in patchFile.tops: continue
-            for record in patchFile.tops[rec_sig].records:
-                if self.wants_record(record):
-                    self._exec_rename(record)
-                    keep(record.fid)
-                    count[record.fid[0]] += 1
-        self._patchLog(log, count)
-
+class TextReplacer(_ATextReplacer, _PNamesTweak): pass
 class CBash_TextReplacer(_ATextReplacer, _CNamesTweak):
     tweak_read_classes = (b'CELLS',) + _ATextReplacer.tweak_read_classes
     _match_replace_rpaths = _ATextReplacer._match_replace_rpaths.copy()
@@ -643,16 +541,6 @@ class CBash_TextReplacer(_ATextReplacer, _CNamesTweak):
         b'SGST': (u'full', u'effects[i].full'),
         b'SPEL': (u'full', u'effects[i].full'),
     })
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                self._exec_rename(override)
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
 class _ANamesTweaker(AMultiTweaker):
