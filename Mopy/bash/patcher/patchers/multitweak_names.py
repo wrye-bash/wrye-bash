@@ -148,11 +148,10 @@ class _ANamesTweak_BodyTags(AMultiTweakItem): # not _ANamesTweak, no classes!
     tweak_choices = [(u'ARGHTCCPBS', u'ARGHTCCPBS'),
                      (u'ABGHINOPSL', u'ABGHINOPSL')]
 
-# We can get away with not implementing any methods here because we have not
-# specified any record types to patch ##: decide if this is an OK API usage
-class NamesTweak_BodyTags(_ANamesTweak_BodyTags, _PNamesTweak): pass
-class CBash_NamesTweak_BodyTags(_ANamesTweak_BodyTags, CBash_MultiTweakItem):
-    def buildPatchLog(self, log): pass
+class NamesTweak_BodyTags(_ANamesTweak_BodyTags, _PNamesTweak):
+    def tweak_log(self, log, count): pass # 'internal' tweak, log nothing
+class CBash_NamesTweak_BodyTags(_ANamesTweak_BodyTags,
+                                CBash_MultiTweakItem): pass
 
 #------------------------------------------------------------------------------
 class _ANamesTweak_Body(_ANamesTweak):
@@ -234,6 +233,7 @@ class _AArmoNamesTweak(_ANamesTweak_Body):
                      (_(u'BL02. Leather Boots'),  u'%s%02d. '),
                      (_(u'BL02 - Leather Boots'), u'%s%02d - '),
                      (_(u'(BL02) Leather Boots'), u'(%s%02d) ')]
+    tweak_log_msg = _(u'Armor Pieces Renamed: %(total_changed)d')
 
 class NamesTweak_Body_Armor(_AArmoNamesTweak, _PNamesTweak_Body): pass
 class CBash_NamesTweak_Body_Armor(_AArmoNamesTweak, _CNamesTweak_Body): pass
@@ -249,6 +249,7 @@ class _AClotNamesTweak(_ANamesTweak_Body):
                      (_(u'P. Grey Trousers'),  u'%s. '),
                      (_(u'P - Grey Trousers'), u'%s - '),
                      (_(u'(P) Grey Trousers'), u'(%s) ')]
+    tweak_log_msg = _(u'Clothes Renamed: %(total_changed)d')
 
 class NamesTweak_Body_Clothes(_AClotNamesTweak, _PNamesTweak_Body): pass
 class CBash_NamesTweak_Body_Clothes(_AClotNamesTweak, _CNamesTweak_Body): pass
@@ -267,6 +268,7 @@ class _ANamesTweak_Potions(_AMgefNamesTweak):
                      (_(u'XD. Illness'),  u'%s. '),
                      (_(u'XD - Illness'), u'%s - '),
                      (_(u'(XD) Illness'), u'(%s) ')]
+    tweak_log_msg = _(u'Potions Renamed: %(total_changed)d')
 
     def _do_exec_rename(self, record, is_food):
         school = 6 # Default to 6 (U: unknown)
@@ -316,6 +318,7 @@ class _ANamesTweak_Scrolls(_AMgefNamesTweak):
                      (_(u'.D. Fire Ball'),  u'.%s. '),
                      (_(u'.D - Fire Ball'), u'.%s - '),
                      (_(u'.(D) Fire Ball'), u'.(%s) ')]
+    tweak_log_msg = _(u'Notes and Scrolls Renamed: %(total_changed)d')
 
     def _do_exec_rename(self, record, look_up_ench):
         # Magic label

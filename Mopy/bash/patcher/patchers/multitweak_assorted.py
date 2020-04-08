@@ -114,7 +114,7 @@ class CBash_AssortedTweak_ArmorShows_Rings(_AArmoShowsRingsTweak,
 class _AClotShowsTweak(_AShowsTweak):
     """Fix robes, gloves and the like to show amulets/rings."""
     tweak_read_classes = b'CLOT',
-    tweak_log_msg = _(u'Clothing Pieces Tweaked: %(total_changed)d')
+    tweak_log_msg = _(u'Clothes Tweaked: %(total_changed)d')
 
 class _AClotShowsAmuletsTweak(_AClotShowsTweak):
     tweak_name = _(u'Clothing Shows Amulets')
@@ -635,10 +635,9 @@ class AssortedTweak_ScriptEffectSilencer(AAssortedTweak_ScriptEffectSilencer,
         super(AssortedTweak_ScriptEffectSilencer, self).tweak_record(record)
         record.flags.noHitEffect = True
 
-    # FIXME(inf) Commented out to see how it looks first
-    # def tweak_log(self, log, count):
-    #     # count would be pointless, always one record
-    #     super(AssortedTweak_ScriptEffectSilencer, self).tweak_log(log, {})
+    def tweak_log(self, log, count):
+        # count would be pointless, always one record
+        super(AssortedTweak_ScriptEffectSilencer, self).tweak_log(log, {})
 
 class CBash_AssortedTweak_ScriptEffectSilencer(
     AAssortedTweak_ScriptEffectSilencer, _AssortCTweak):
