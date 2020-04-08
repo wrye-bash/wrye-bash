@@ -257,7 +257,7 @@ class SaveFile(object):
         # TODO: This is Oblivion only code.  Needs to be refactored
         import array
         path = self.fileInfo.getPath()
-        with open(path.s,'rb') as ins:
+        with open(path.s,u'rb') as ins:
             #--Progress
             progress = progress or bolt.Progress()
             progress.setFull(self.fileInfo.size)

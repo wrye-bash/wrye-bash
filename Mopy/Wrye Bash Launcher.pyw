@@ -59,7 +59,7 @@ class UnicodeImporter(object):
             initfile = '__init__'
         try:
             if os.path.exists(filename+ext):
-                with open(filename+ext,'U') as fp:
+                with open(filename+ext,u'U') as fp:
                     mod = imp.load_source(fullname,filename+ext,fp)
                     sys.modules[fullname] = mod
                     mod.__loader__ = self
@@ -71,7 +71,7 @@ class UnicodeImporter(object):
                 #init file
                 initfile = os.path.join(filename,initfile+ext)
                 if os.path.exists(initfile):
-                    with open(initfile,'U') as fp:
+                    with open(initfile,u'U') as fp:
                         code = fp.read()
                     exec compile(code, initfile, 'exec') in mod.__dict__
             return mod

@@ -49,7 +49,7 @@ def get_ini_type_and_encoding(abs_ini_path):
     it would make sense to pass an encoding in, if we know that the ini file
     must have a specific encoding (for instance the game ini files that
     reportedly must be cp1252). More investigation needed."""
-    with open(u'%s' % abs_ini_path, 'rb') as ini_file:
+    with open(u'%s' % abs_ini_path, u'rb') as ini_file:
         content = ini_file.read()
     detected_encoding, _confidence = getbestencoding(content)
     decoded_content = decode(content, detected_encoding)
@@ -276,7 +276,7 @@ class IniFile(AFile):
         """Write to ourselves respecting windows newlines and out_encoding.
         Note content to be writen (if coming from ini tweaks) must be encodable
         to out_encoding."""
-        return codecs.getwriter(self.out_encoding)(open(filepath, 'w'))
+        return codecs.getwriter(self.out_encoding)(open(filepath, u'w'))
 
     def target_ini_exists(self, msg=_(
         u'The target ini must exist to apply a tweak to it.')):

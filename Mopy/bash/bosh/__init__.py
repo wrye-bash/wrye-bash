@@ -1629,7 +1629,7 @@ class INIInfos(TableFileInfos):
             return False
 
     def _copy_to_new_tweak(self, info, new_tweak):
-        with open(self.store_dir.join(new_tweak).s, 'wb') as ini_file:
+        with open(self.store_dir.join(new_tweak).s, u'wb') as ini_file:
             ini_file.write(info.read_ini_content(as_unicode=False)) # binary
         return self.new_info(new_tweak.tail, notify_bain=True)
 
@@ -2568,7 +2568,7 @@ class ModInfos(FileInfos):
         moved = super(ModInfos, self).move_infos(sources, destinations, window,
                                                  bash_frame)
         self.refresh() # yak, it should have an "added" parameter
-        bash_frame.warn_corrupted(warn_mods=True)
+        bash_frame.warn_corrupted(warn_mods=True, warn_strings=True)
         return moved
 
     def get_hide_dir(self, name):

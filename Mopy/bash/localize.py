@@ -120,7 +120,7 @@ def setup_locale(cli_lang, _wx):
                 # Clean up the temp file we created for compilation
                 os.remove(po)
             # We've succesfully compiled the translation, read it into memory
-            with open(mo,'rb') as trans_file:
+            with open(mo,u'rb') as trans_file:
                 trans = gettext.GNUTranslations(trans_file)
             bolt.deprint(u"Set Wrye Bash locale to '%s'" % target_name)
         # TODO(inf) Tighten this except
@@ -198,9 +198,9 @@ def dump_translator(out_path, lang):
         def sub_quote(regex_match):
             return regex_match.group(1) + r'\"'
         encoding = None
-        with open(tmp_txt, 'w') as out:
+        with open(tmp_txt, u'w') as out:
             # Copy old translation file header, and get encoding for strings
-            with open(old_txt, 'r') as ins:
+            with open(old_txt, u'r') as ins:
                 for line in ins:
                     if not encoding:
                         encoding_match = re_encoding.match(line.strip('\r\n'))
@@ -211,7 +211,7 @@ def dump_translator(out_path, lang):
                     out.write(line)
             # Read through the new translation file, fill in any already
             # translated strings
-            with open(full_txt, 'r') as ins:
+            with open(full_txt, u'r') as ins:
                 header = False
                 for line in ins:
                     # First, find the header

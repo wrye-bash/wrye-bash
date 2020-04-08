@@ -149,7 +149,7 @@ class Installer(object):
             sub.setFull(size + 1)
             crc = 0
             try:
-                with open(asFile, 'rb') as ins:
+                with open(asFile, u'rb') as ins:
                     insTell = ins.tell
                     for block in iter(partial(ins.read, 2097152), ''):
                         crc = crc32(block, crc) # 2MB at a time, probably ok

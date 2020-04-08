@@ -1114,8 +1114,8 @@ class AsteriskGame(Game):
         if not cls._ccc_filename: return # Abort if this game has no CC
         _ccc_path = bass.dirs['app'].join(cls._ccc_filename)
         try:
-            with open(_ccc_path.s, 'r') as ins:
-                lines = map(bolt.GPath, map(str.strip, ins.readlines()))
+            with open(_ccc_path.s, u'r') as ins:
+                lines = (bolt.GPath(line.strip()) for line in ins.readlines())
                 cls.must_be_active_if_present += tuple(lines)
         except (OSError, IOError) as e:
             if e.errno != errno.ENOENT:

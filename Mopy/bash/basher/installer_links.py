@@ -523,7 +523,7 @@ class Installer_ExportAchlist(OneItemLink, _InstallerLink):
         info_dir = bass.dirs['app'].join(self.__class__._mode_info_dir)
         info_dir.makedirs()
         achlist = info_dir.join(self._selected_info.archive + u'.achlist')
-        with balt.BusyCursor(), open(achlist.s, 'w') as out:
+        with balt.BusyCursor(), open(achlist.s, u'w') as out:
             out.write(u'[\n\t"')
             lines = u'",\n\t"'.join(
                 u'\\'.join((u'Data', d)).replace(u'\\', u'\\\\') for d in

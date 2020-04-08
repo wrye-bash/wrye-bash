@@ -70,7 +70,7 @@ class OmodFile(object):
 
     def readConfig(self, conf_path):
         """Read info about the omod from the 'config' file"""
-        with open(conf_path.s, 'rb') as omod_config:
+        with open(conf_path.s, u'rb') as omod_config:
             self.version = unpack_byte(omod_config) # OMOD version
             self.modName = decode(_readNetString(omod_config)) # Mod name
             # TODO(ut) original code unpacked signed int, maybe that's why "weird numbers" ?
@@ -91,25 +91,25 @@ class OmodFile(object):
                 self.build = -1
 
     def writeInfo(self, dest_path, filename, readme, script):
-        with dest_path.open('w') as file:
-            file.write(encode(filename))
-            file.write('\n\n[basic info]\n')
-            file.write('Name: ')
-            file.write(encode(filename[:-5]))
-            file.write('\nAuthor: ')
-            file.write(encode(self.author))
-            file.write('\nVersion:') # TODO, fix this?
-            file.write('\nContact: ')
-            file.write(encode(self.email))
-            file.write('\nWebsite: ')
-            file.write(encode(self.website))
-            file.write('\n\n')
-            file.write(encode(self.desc))
-            file.write('\n\n')
+        with dest_path.open(u'wb') as out:
+            out.write(encode(filename))
+            out.write(b'\n\n[basic info]\n')
+            out.write(b'Name: ')
+            out.write(encode(filename[:-5]))
+            out.write(b'\nAuthor: ')
+            out.write(encode(self.author))
+            out.write(b'\nVersion:') ##: add version?
+            out.write(b'\nContact: ')
+            out.write(encode(self.email))
+            out.write(b'\nWebsite: ')
+            out.write(encode(self.website))
+            out.write(b'\n\n')
+            out.write(encode(self.desc))
+            out.write(b'\n\n')
             #fTime = time.gmtime(self.ftime) #-error
-            #file.write('Date this omod was compiled: %s-%s-%s %s:%s:%s\n' % (fTime.tm_mon, fTime.tm_mday, fTime.tm_year, fTime.tm_hour, fTime.tm_min, fTime.tm_sec))
-            file.write('Contains readme: %s\n' % ('yes' if readme else 'no'))
-            file.write('Contains script: %s\n' % ('yes' if readme else 'no'))
+            #file.write(b'Date this omod was compiled: %s-%s-%s %s:%s:%s\n' % (fTime.tm_mon, fTime.tm_mday, fTime.tm_year, fTime.tm_hour, fTime.tm_min, fTime.tm_sec))
+            out.write(b'Contains readme: %s\n' % (b'yes' if readme else b'no'))
+            out.write(b'Contains script: %s\n' % (b'yes' if readme else b'no'))
             # Skip the reset that OBMM puts in
 
     def getOmodContents(self):
@@ -236,12 +236,12 @@ class OmodFile(object):
     def splitStream(self, streamPath, outDir, fileNames, sizes_, progress):
         # Split the uncompressed stream into files
         progress(0, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % streamPath.stail)
-        with streamPath.open('rb') as file:
+        with streamPath.open(u'rb') as bin_out:
             for i,name in enumerate(fileNames):
                 progress(i, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % streamPath.stail + u'\n' + name)
                 outFile = outDir.join(name)
-                with outFile.open('wb') as output:
-                    output.write(file.read(sizes_[i]))
+                with outFile.open(u'wb') as output:
+                    output.write(bin_out.read(sizes_[i]))
         progress(len(fileNames))
 
     def extractFiles7z(self, crcPath, dataPath, outPath, progress):
@@ -254,7 +254,7 @@ class OmodFile(object):
         subprogress(0, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % dataPath.stail)
         with dataPath.open('rb') as ins:
             done = 0
-            with open(outPath.join(dataPath.sbody+u'.tmp').s, 'wb') as output:
+            with open(outPath.join(dataPath.sbody+u'.tmp').s, u'wb') as output:
                 # Decoder properties
                 output.write(ins.read(5))
                 done += 5
@@ -294,7 +294,7 @@ class OmodFile(object):
         fileNames = list()
         crcs = list()
         sizes_ = list()
-        with open(crc_file_path.s, 'rb') as crc_file:
+        with open(crc_file_path.s, u'rb') as crc_file:
             while crc_file.tell() < crc_file_path.size:
                 fileNames.append(_readNetString(crc_file))
                 crcs.append(unpack_int_signed(crc_file))
@@ -319,7 +319,7 @@ class OmodConfig(object):
         config = OmodConfig(name)
         configPath = bass.dirs['installers'].join(name,u'omod conversion data',u'config')
         if configPath.exists():
-            with open(configPath.s,'rb') as ins:
+            with open(configPath.s,u'rb') as ins:
                 ins.read(1) #--Skip first four bytes
                 # OBMM can support UTF-8, so try that first, then fail back to
                 config.name = decode(_readNetString(ins), encoding='utf-8')
@@ -337,7 +337,7 @@ class OmodConfig(object):
         """Write obmm config file for project."""
         configPath = bass.dirs['installers'].join(name,u'omod conversion data',u'config')
         configPath.head.makedirs()
-        with open(configPath.temp.s,'wb') as out:
+        with open(configPath.temp.s,u'wb') as out:
             out.write(struct_pack('B', 4))
             _writeNetString(out, config.name.encode('utf8'))
             out.write(struct_pack('i', config.vMajor))

@@ -153,7 +153,7 @@ class DialogWindow(_TopLevelWin):
         self.on_size_changed = self._evt_handler(_wx.EVT_SIZE)
 
     def save_size(self):
-        if self._sizes_dict and self._size_key:
+        if self._sizes_dict is not None and self._size_key:
             self._sizes_dict[self._size_key] = self.component_size
 
     def __enter__(self): return self

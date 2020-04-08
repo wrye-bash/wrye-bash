@@ -1541,7 +1541,7 @@ class PluggyCosave(ACosave):
         prev_mtime = self.abs_path.mtime
         with out_path.open('wb') as out:
             out.write(final_data)
-            _pack(out, '=i', binascii.crc32(final_data))
+            _pack(out, u'=i', binascii.crc32(final_data))
         out_path.mtime = prev_mtime
 
     def get_master_list(self):

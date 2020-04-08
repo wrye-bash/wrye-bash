@@ -879,7 +879,7 @@ class Path(object):
         """Safely check whether a file is editable."""
         delete = not os.path.exists(self._s)
         try:
-            with open(self._s,'ab'):
+            with open(self._s,u'ab'):
                 return True
         except:
             return False
@@ -1987,7 +1987,7 @@ class StringTable(dict):
         formatted = path.cext != u'.strings'
         backupEncoding = self.encodings.get(lang.lower(), 'cp1252')
         try:
-            with open(path.s, 'rb') as ins:
+            with open(path.s, u'rb') as ins:
                 insSeek = ins.seek
                 insTell = ins.tell
 

@@ -259,7 +259,7 @@ def init_app_links(apps_dir, badIcons, iconList):
         init_params.append((path, icon, description))
     return init_params
 
-def test_permissions(path, permissions='rwcd'):
+def test_permissions(path, permissions=u'rwcd'):
     """Test file permissions for a path:
         r = read permission
         w = write permission
@@ -292,19 +292,19 @@ def test_permissions(path, permissions='rwcd'):
     try:
         smallestFile = None
         path_exists = path.exists()
-        if 'r' in permissions and path_exists:
+        if u'r' in permissions and path_exists:
             smallestFile = getSmallest()
             if smallestFile:
                 with smallestFile.open('rb'):
                     pass
         #--Test write permissions
-        if 'w' in permissions and path_exists:
+        if u'w' in permissions and path_exists:
             smallestFile = smallestFile or getSmallest()
             if smallestFile:
                 with smallestFile.open('ab'):
                     pass
         #--Test file creation permission (only for directories)
-        if 'c' in permissions:
+        if u'c' in permissions:
             if path.isdir() or not path_exists:
                 if not path_exists:
                     path.makedirs()
@@ -318,7 +318,7 @@ def test_permissions(path, permissions='rwcd'):
                 if removeAtEnd:
                     path.removedirs()
         #--Test file deletion permission
-        if 'd' in permissions and path_exists:
+        if u'd' in permissions and path_exists:
             smallestFile = smallestFile or getSmallest()
             if smallestFile:
                 temp = getTemp(smallestFile)
@@ -326,9 +326,9 @@ def test_permissions(path, permissions='rwcd'):
                 smallestFile.remove()
                 temp.moveTo(smallestFile)
     except Exception as e:
-        if getattr(e, 'errno', 0) == 13:
+        if getattr(e, u'errno', 0) == 13:
             return False # Access denied
-        elif getattr(e, 'winerror', 0) == 183:
+        elif getattr(e, u'winerror', 0) == 183:
             return False # Cannot create file if already exists
         else:
             raise
@@ -467,7 +467,7 @@ def _linux_get_file_version_info(filename):
                 return 0, result
         return _pad(offset), None
     version_pos = None
-    with open(filename, 'rb') as f:
+    with open(filename, u'rb') as f:
         f.seek(_read(_DWORD, f, offset=60))
         section_count = _read(_WORD, f, offset=6)
         optional_header_size = _read(_WORD, f, offset=12)
