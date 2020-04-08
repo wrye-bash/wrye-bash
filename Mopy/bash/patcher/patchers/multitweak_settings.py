@@ -53,7 +53,7 @@ class _AGlobalsTweak(DynamicTweak):
             self.tweak_name, self.chosen_value))
 
 class GlobalsTweak(_AGlobalsTweak, MultiTweakItem):
-    """set a global to specified value"""
+    """Sets a global to specified value."""
     def buildPatch(self, log, progress, patchFile):
         """Build patch."""
         keep = patchFile.getKeeper()
@@ -65,7 +65,7 @@ class GlobalsTweak(_AGlobalsTweak, MultiTweakItem):
                 break
 
 class CBash_GlobalsTweak(_AGlobalsTweak, CBash_MultiTweakItem):
-    """Sets a global to specified value"""
+    """Sets a global to specified value."""
     scanOrder = 29
     editOrder = 29
 
@@ -168,7 +168,7 @@ class _AGmstTweak(DynamicTweak):
             log(u'* ' + self.tweak_name)
 
 class GmstTweak(_AGmstTweak, MultiTweakItem):
-    """Sets a gmst to specified value"""
+    """Sets a GMST to specified value."""
     def buildPatch(self, log, progress, patchFile):
         """Build patch."""
         keep = patchFile.getKeeper()
@@ -194,7 +194,7 @@ class GmstTweak(_AGmstTweak, MultiTweakItem):
         self._patchLog(log)
 
 class CBash_GmstTweak(_AGmstTweak, CBash_MultiTweakItem):
-    """Sets a gmst to specified value"""
+    """Sets a GMST to specified value."""
     scanOrder = 29
     editOrder = 29
 
@@ -236,7 +236,7 @@ class CBash_GmstTweak(_AGmstTweak, CBash_MultiTweakItem):
 
 #------------------------------------------------------------------------------
 class _AGmstTweaker(AMultiTweaker):
-    """Tweaks miscellaneous gmsts in miscellaneous ways."""
+    """Tweaks GMST records in various ways."""
     _class_tweaks = [] # override in implemententations
 
     @classmethod
@@ -254,13 +254,11 @@ class _AGmstTweaker(AMultiTweaker):
         return instances
 
 class GmstTweaker(MultiTweaker, _AGmstTweaker):
-    """Tweaks miscellaneous gmsts in miscellaneous ways."""
     scanOrder = 29
     editOrder = 29
     _class_tweaks = [(GlobalsTweak, bush.game.GlobalsTweaks),
                     (GmstTweak, bush.game.GmstTweaks)]
 
 class CBash_GmstTweaker(CBash_MultiTweaker, _AGmstTweaker):
-    """Tweaks miscellaneous gmsts in miscellaneous ways."""
     _class_tweaks = [(CBash_GlobalsTweak, bush.game.GlobalsTweaks),
                      (CBash_GmstTweak, bush.game.GmstTweaks)]

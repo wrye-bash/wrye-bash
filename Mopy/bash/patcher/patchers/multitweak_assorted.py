@@ -319,7 +319,7 @@ class CBash_AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-rePlayableSkips = re.compile(
+_playable_skips = re.compile(
     u'(?:skin)|(?:test)|(?:mark)|(?:token)|(?:willful)|(?:see.*me)|('
     u'?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|('
     u'?:ghostly immobility)|(?:corpse)', re.I)
@@ -330,8 +330,8 @@ class _APlayableTweak(_AAssortedTweak):
         if (not self._is_nonplayable(record) or
             not self._any_body_flag_set(record) or record.script): return False
         clothing_name = record.full
-        return (clothing_name # probably truly shouldn't be playable
-                and not rePlayableSkips.search(clothing_name))
+        return (clothing_name  # probably truly shouldn't be playable
+                and not _playable_skips.search(clothing_name))
 
 class _PPlayableTweak(_APlayableTweak, _AssortPTweak):
     """Shared code of PBash armor/clothing playable tweaks."""
@@ -402,21 +402,23 @@ class CBash_AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,
 #------------------------------------------------------------------------------
 class AAssortedTweak_DarnBooks(_AAssortedTweak):
     """DarNifies books."""
-    reColor = re.compile(u'<font color="?([a-fA-F0-9]+)"?>', re.I + re.M)
-    reTagInWord = re.compile(u'([a-z])<font face=1>', re.M)
-    reFont1 = re.compile(u'(<?<font face=1( ?color=[0-9a-zA]+)?>)+', re.I|re.M)
-    reDiv = re.compile(u'<div', re.I + re.M)
-    reFont = re.compile(u'<font', re.I + re.M)
-    reHead2 = re.compile(u'' r'^(<<|\^\^|>>|)==\s*(\w[^=]+?)==\s*\r\n', re.M)
-    reHead3 = re.compile(u'' r'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n', re.M)
-    reBold = re.compile(u'' r'(__|\*\*|~~)')
-    reAlign = re.compile(u'' r'^(<<|\^\^|>>)', re.M)
-    align_text = {u'^^':u'center',u'<<':u'left',u'>>':u'right'}
     tweak_read_classes = b'BOOK',
     tweak_name = _(u'DarNified Books')
     tweak_tip = _(u'Books will be reformatted for DarN UI.')
     tweak_key = u'DarnBooks'
     tweak_choices = [(u'default', u'default')]
+    _align_text = {u'^^': u'center', u'<<': u'left', u'>>': u'right'}
+    _re_align = re.compile(u'' r'^(<<|\^\^|>>)', re.M)
+    _re_bold = re.compile(u'' r'(__|\*\*|~~)')
+    _re_color = re.compile(u'<font color="?([a-fA-F0-9]+)"?>', re.I + re.M)
+    _re_div = re.compile(u'<div', re.I + re.M)
+    _re_head_2 = re.compile(u'' r'^(<<|\^\^|>>|)==\s*(\w[^=]+?)==\s*\r\n',
+                            re.M)
+    _re_head_3 = re.compile(u'' r'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n', re.M)
+    _re_font = re.compile(u'<font', re.I + re.M)
+    _re_font_1 = re.compile(u'(<?<font face=1( ?color=[0-9a-zA]+)?>)+',
+                            re.I | re.M)
+    _re_tag_in_word = re.compile(u'([a-z])<font face=1>', re.M)
 
     def __init__(self):
         super(AAssortedTweak_DarnBooks, self).__init__()
@@ -434,18 +436,18 @@ class AAssortedTweak_DarnBooks(_AAssortedTweak):
         # in *latin* encoding, not even cp1252 or something normal but
         # non-unicode). Get rid of those before we blow up.
         rec_text = record.text.replace(u'\u201d', u'')
-        if self.reHead2.match(rec_text):
-            rec_text = self.reHead2.sub(
+        if self._re_head_2.match(rec_text):
+            rec_text = self._re_head_2.sub(
                 u'' r'\1<font face=1 color=220000>\2<font face=3 '
                 u'' r'color=444444>\r\n', rec_text)
-            rec_text = self.reHead3.sub(
+            rec_text = self._re_head_3.sub(
                 u'' r'\1<font face=3 color=220000>\2<font face=3 '
                 u'' r'color=444444>\r\n', rec_text)
-            rec_text = self.reAlign.sub(self._replace_align, rec_text)
-            rec_text = self.reBold.sub(self._replace_bold, rec_text)
+            rec_text = self._re_align.sub(self._replace_align, rec_text)
+            rec_text = self._re_bold.sub(self._replace_bold, rec_text)
             rec_text = re.sub(u'' r'\r\n', u'' r'<br>\r\n', rec_text)
         else:
-            ma_color = self.reColor.search(rec_text)
+            ma_color = self._re_color.search(rec_text)
             if ma_color:
                 color = ma_color.group(1)
             elif self._is_scroll(record):
@@ -453,12 +455,12 @@ class AAssortedTweak_DarnBooks(_AAssortedTweak):
             else:
                 color = u'444444'
             font_face = u'<font face=3 color='+color+u'>'
-            rec_text = self.reTagInWord.sub(u'' r'\1', rec_text)
-            if (self.reDiv.search(rec_text) and
-                    not self.reFont.search(rec_text)):
+            rec_text = self._re_tag_in_word.sub(u'' r'\1', rec_text)
+            if (self._re_div.search(rec_text) and
+                    not self._re_font.search(rec_text)):
                 rec_text = font_face + rec_text
             else:
-                rec_text = self.reFont1.sub(font_face, rec_text)
+                rec_text = self._re_font_1.sub(font_face, rec_text)
         return rec_text
 
     # Helper methods for _darnify
@@ -468,7 +470,7 @@ class AAssortedTweak_DarnBooks(_AAssortedTweak):
             u'440000' if self.inBold else u'444444')
 
     def _replace_align(self, mo):
-        return u'<div align=%s>' % self.align_text[mo.group(1)]
+        return u'<div align=%s>' % self._align_text[mo.group(1)]
 
 class AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks, _AssortPTweak):
     def buildPatch(self,log,progress,patchFile):
@@ -607,7 +609,7 @@ class CBash_AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,
 
 #------------------------------------------------------------------------------
 class AMultiTweakItem_Weight(_AAssortedTweak):
-    logWeightValue = logMsg = u'OVERRIDE' # avoid pycharm warnings
+    _log_weight_value = u'OVERRIDE' # avoid pycharm warning
 
     @property
     def chosen_weight(self): return self.choiceValues[self.chosen][0]
@@ -615,7 +617,7 @@ class AMultiTweakItem_Weight(_AAssortedTweak):
     def _patchLog(self, log, count):
         """Will write to log for a class that has a weight field"""
         log.setHeader(self.logHeader)
-        log(self.logWeightValue % self.chosen_weight)
+        log(self._log_weight_value % self.chosen_weight)
         log(self.logMsg % sum(count.values()))
         for srcMod in load_order.get_ordered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
@@ -637,7 +639,6 @@ class _PSeffWeightTweak(AMultiTweakItem_Weight, _AssortPTweak):
 
 class _CSeffWeightTweak(AMultiTweakItem_Weight, _AssortCTweak):
     """Mixin for CBash weight tweaks that need to ignore SEFF effects."""
-
     def wants_record(self, record):
         return super(_CSeffWeightTweak, self).wants_record(
             record) and not any(e.name == _SEFF for e in record.effects)
@@ -650,10 +651,10 @@ class AAssortedTweak_PotionWeight(AMultiTweakItem_Weight):
     tweak_key = u'MaximumPotionWeight'
     tweak_choices = [(u'0.1', 0.1), (u'0.2', 0.2), (u'0.4', 0.4),
                      (u'0.6', 0.6), (_(u'Custom'), 0.0)]
+    _log_weight_value = _(u'Potions set to maximum weight of %f.')
 
     def __init__(self):
         super(AAssortedTweak_PotionWeight, self).__init__()
-        self.logWeightValue = _(u'Potions set to maximum weight of %f.')
         self.logMsg = u'* ' + _(u'Potions Reweighed: %d')
 
     def wants_record(self, record):
@@ -695,10 +696,10 @@ class AAssortedTweak_IngredientWeight(AMultiTweakItem_Weight):
     tweak_key = u'MaximumIngredientWeight'
     tweak_choices = [(u'0.1', 0.1), (u'0.2', 0.2), (u'0.4', 0.4),
                      (u'0.6', 0.6), (_(u'Custom'), 0.0)]
+    _log_weight_value = _(u'Ingredients set to maximum weight of %f.')
 
     def __init__(self):
         super(AAssortedTweak_IngredientWeight, self).__init__()
-        self.logWeightValue = _(u'Ingredients set to maximum weight of %f.')
         self.logMsg = u'* ' + _(u'Ingredients Reweighed: %d')
 
     def wants_record(self, record):
@@ -739,10 +740,10 @@ class AAssortedTweak_PotionWeightMinimum(AMultiTweakItem_Weight):
     tweak_key = u'MinimumPotionWeight'
     tweak_choices = [(u'0.1', 0.1), (u'0.5', 0.5), (u'1.0', 1.0),
                      (u'2.0', 2.0), (u'4.0', 4.0), (_(u'Custom'), 0.0)]
+    _log_weight_value = _(u'Potions set to minimum weight of %f.')
 
     def __init__(self):
         super(AAssortedTweak_PotionWeightMinimum, self).__init__()
-        self.logWeightValue = _(u'Potions set to minimum weight of %f.')
         self.logMsg = u'* ' + _(u'Potions Reweighed: %d')
 
     def wants_record(self, record): # note no SEFF condition
@@ -787,10 +788,10 @@ class AAssortedTweak_StaffWeight(AMultiTweakItem_Weight):
     tweak_choices = [(u'1', 1.0), (u'2', 2.0), (u'3', 3.0), (u'4', 4.0),
                      (u'5', 5.0), (u'6', 6.0), (u'7', 7.0), (u'8', 8.0),
                      (_(u'Custom'), 0.0)]
+    _log_weight_value = _(u'Staves set to maximum weight of %f.')
 
     def __init__(self):
         super(AAssortedTweak_StaffWeight, self).__init__()
-        self.logWeightValue = _(u'Staves set to maximum weight of %f.')
         self.logMsg = u'* ' + _(u'Staves Reweighed: %d')
 
     def wants_record(self, record):
@@ -829,10 +830,10 @@ class AAssortedTweak_ArrowWeight(AMultiTweakItem_Weight):
     tweak_key = u'MaximumArrowWeight'
     tweak_choices = [(u'0', 0.0), (u'0.1', 0.1), (u'0.2', 0.2), (u'0.4', 0.4),
                      (u'0.6', 0.6), (_(u'Custom'), 0.0)]
+    _log_weight_value = _(u'Arrows set to maximum weight of %f.')
 
     def __init__(self):
         super(AAssortedTweak_ArrowWeight, self).__init__()
-        self.logWeightValue = _(u'Arrows set to maximum weight of %f.')
         self.logMsg = u'* ' + _(u'Arrows Reweighed: %d')
 
     def wants_record(self, record):
@@ -1100,8 +1101,6 @@ class AAssortedTweak_SetCastWhenUsedEnchantmentCosts(_AAssortedTweak):
 
 class AssortedTweak_SetCastWhenUsedEnchantmentCosts(
     AAssortedTweak_SetCastWhenUsedEnchantmentCosts, _AssortPTweak):
-    #info: 'itemType','chargeAmount','enchantCost'
-
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
@@ -1264,8 +1263,6 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons, _AssortPTweak):
 
 class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,
                                        _AssortCTweak):
-    """Sets a default icon for any records that don't have any icon
-    assigned."""
     def wants_record(self, record):
         if (record._Type == b'LIGH' and not record.IsCanTake or
                 record._Type == b'QUST' and not record.stages or

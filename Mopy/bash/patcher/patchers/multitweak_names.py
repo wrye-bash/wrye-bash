@@ -147,7 +147,6 @@ class _ANamesTweak_BodyTags(AMultiTweakItem): # not _ANamesTweak, no classes!
 # We can get away with not implementing any methods here because we have not
 # specified any record types to patch ##: decide if this is an OK API usage
 class NamesTweak_BodyTags(_ANamesTweak_BodyTags, _PNamesTweak): pass
-
 class CBash_NamesTweak_BodyTags(_ANamesTweak_BodyTags, CBash_MultiTweakItem):
     def buildPatchLog(self, log): pass
 
@@ -339,6 +338,7 @@ class CBash_NamesTweak_Potions(_ANamesTweak_Potions, _CNamesTweak):
 _re_old_magic_label = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ', re.U)
 
 class _ANamesTweak_Scrolls(_AMgefNamesTweak):
+    """Names tweaker for scrolls."""
     tweak_name = _(u'Notes and Scrolls')
     tweak_tip = _(u'Mark notes and scrolls to sort separately from books.')
     tweak_key = u'scrolls'
@@ -404,7 +404,6 @@ class NamesTweak_Scrolls(_ANamesTweak_Scrolls, _PNamesTweak):
         self._look_up_ench = None
 
 class CBash_NamesTweak_Scrolls(_ANamesTweak_Scrolls, _CNamesTweak):
-    """Names tweaker for scrolls."""
     tweak_read_classes = b'BOOK',
 
     def wants_record(self, record):

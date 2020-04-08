@@ -224,7 +224,7 @@ class AVORB_NPCSkeletonPatcher(_ASkeletonTweak):
                   u"skeletons for different look.  Not compatible with MAO, "
                   u"Requires VadersApp's Oblivion Real Bodies.")
     tweak_key = u'VORB'
-    skeleton_dir = GPath(u'Characters').join(u'_male')
+    _skeleton_dir = GPath(u'Characters').join(u'_male')
 
     def __init__(self):
         super(AVORB_NPCSkeletonPatcher, self).__init__()
@@ -262,11 +262,11 @@ class AVORB_NPCSkeletonPatcher(_ASkeletonTweak):
             return self._get_skeleton_path(record) # leave unchanged
         special_skel_mesh = u'skel_special_%X.nif' % record.fid[1]
         if special_skel_mesh in skeleton_specials:
-            return self.skeleton_dir.join(special_skel_mesh)
+            return self._skeleton_dir.join(special_skel_mesh)
         else:
             random.seed(record.fid) # make it deterministic ##: record.fid[1]?
             rand_index = random.randint(1, len(skeleton_list)) - 1
-            return self.skeleton_dir.join(skeleton_list[rand_index]).s
+            return self._skeleton_dir.join(skeleton_list[rand_index]).s
 
 class VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher, _PSkeletonTweak): pass
 class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,
@@ -420,8 +420,6 @@ class CBash_NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher, _CreaCTweak):
 class AAsIntendedImpsPatcher(_AActorTweak):
     """Set all imps to have the Bethesda imp spells that were never assigned
     (discovered by the UOP team, made into a mod by Tejon)."""
-    reImpModPath = re.compile(u'' r'(imp(?!erial)|gargoyle)\\.', re.I | re.U)
-    reImp  = re.compile(u'(imp(?!erial)|gargoyle)',re.I|re.U)
     tweak_name = _(u'As Intended: Imps')
     tweak_tip = _(u'Set imps to have the unassigned Bethesda Imp Spells as '
                   u'discovered by the UOP team and made into a mod by Tejon.')
@@ -429,6 +427,8 @@ class AAsIntendedImpsPatcher(_AActorTweak):
     tweak_choices = [(_(u'All imps'), u'all'),
                      (_(u'Only fullsize imps'), u'big'),
                      (_(u'Only implings'), u'small')]
+    _imp_mod_path = re.compile(u'' r'(imp(?!erial)|gargoyle)\\.', re.I | re.U)
+    _imp_part  = re.compile(u'(imp(?!erial)|gargoyle)', re.I | re.U)
     _imp_spell = None # override in implementations
 
     def __init__(self):
@@ -437,9 +437,9 @@ class AAsIntendedImpsPatcher(_AActorTweak):
 
     def wants_record(self, record):
         old_mod_path = self._get_skeleton_path(record)
-        if not old_mod_path or not self.reImpModPath.search(old_mod_path):
+        if not old_mod_path or not self._imp_mod_path.search(old_mod_path):
             return False
-        if not any(self.reImp.search(bp) for bp in record.bodyParts):
+        if not any(self._imp_part.search(bp) for bp in record.bodyParts):
             return False
         if record.baseScale < 0.4:
             if u'big' in self.choiceValues[self.chosen]: return False
@@ -478,13 +478,13 @@ class CBash_AsIntendedImpsPatcher(AAsIntendedImpsPatcher, _CreaCTweak):
 class AAsIntendedBoarsPatcher(_AActorTweak):
     """Set all boars to have the Bethesda boar spells that were never
     assigned (discovered by the UOP team, made into a mod by Tejon)."""
-    reBoarModPath = re.compile(u'' r'(boar)\\.', re.I | re.U)
-    reBoar  = re.compile(u'(boar)', re.I|re.U)
     tweak_name = _(u'As Intended: Boars')
     tweak_tip = _(u'Set boars to have the unassigned Bethesda Boar Spells as '
                   u'discovered by the UOP team and made into a mod by Tejon.')
     tweak_key = u'vicious boars!'
     tweak_choices = [(u'1.0', u'1.0')]
+    _boar_mod_path = re.compile(u'' r'(boar)\\.', re.I | re.U)
+    _boar_part  = re.compile(u'(boar)', re.I | re.U)
     _boar_spell = None # override in implementations
 
     def __init__(self):
@@ -493,9 +493,9 @@ class AAsIntendedBoarsPatcher(_AActorTweak):
 
     def wants_record(self, record):
         old_mod_path = self._get_skeleton_path(record)
-        if not old_mod_path or not self.reBoarModPath.search(old_mod_path):
+        if not old_mod_path or not self._boar_mod_path.search(old_mod_path):
             return False
-        if not any(self.reBoar.search(bp) for bp in record.bodyParts):
+        if not any(self._boar_part.search(bp) for bp in record.bodyParts):
             return False
         return self._boar_spell not in record.spells
 
@@ -713,7 +713,7 @@ class _AOppositeGenderAnimsPatcher(BasalNPCTweaker):
     tweak_choices = [(_(u'Always Disable'), u'disable_all'),
                      (_(u'Always Enable'), u'enable_all'),]
     # Whether this patcher wants female or male NPCs
-    targets_female_npcs = False
+    _targets_female_npcs = False
 
     def __init__(self):
         super(_AOppositeGenderAnimsPatcher, self).__init__()
@@ -722,7 +722,7 @@ class _AOppositeGenderAnimsPatcher(BasalNPCTweaker):
     def wants_record(self, record):
         # Skip any NPCs that don't match this patcher's target gender
         oga_target = self.choiceValues[self.chosen][0] == u'enable_all'
-        return (record.flags.female == self.targets_female_npcs
+        return (record.flags.female == self._targets_female_npcs
                 and record.flags.oppositeGenderAnims != oga_target)
 
     def buildPatch(self, log, progress, patchFile):
@@ -738,11 +738,11 @@ class _AOppositeGenderAnimsPatcher(BasalNPCTweaker):
         self._patchLog(log, count)
 
 class OppositeGenderAnimsPatcher_Female(_AOppositeGenderAnimsPatcher):
-    targets_female_npcs = True
     tweak_name = _(u'Opposite Gender Anims: Female')
     tweak_tip = _(u"Enables or disables the 'Opposite Gender Anims' for all "
                   u"female NPCs. Similar to the 'Feminine Females' mod.")
     tweak_key = u'opposite_gender_anims_female'
+    _targets_female_npcs = True
 
 class OppositeGenderAnimsPatcher_Male(_AOppositeGenderAnimsPatcher):
     tweak_name =  _(u'Opposite Gender Anims: Male')
