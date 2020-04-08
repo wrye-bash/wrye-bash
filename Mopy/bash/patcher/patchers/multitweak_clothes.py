@@ -72,10 +72,7 @@ class CBash_ClothesTweak(AClothesTweak, CBash_MultiTweakItem):
 #------------------------------------------------------------------------------
 class _AMaxWeightTweak(AClothesTweak):
     """Shared code of PBash/CBash max weight tweaks."""
-    def __init__(self, tweak_name, tweak_tip, tweak_key, *tweak_choices):
-        super(_AMaxWeightTweak, self).__init__(tweak_name, tweak_tip, tweak_key,
-                                               *tweak_choices)
-        self.logMsg = u'* ' + _(u'Clothes Reweighed: %d')
+    tweak_log_msg = _(u'Clothes Reweighed: %(total_changed)d')
 
     @property
     def chosen_weight(self): return self.choiceValues[self.chosen][0]
@@ -88,8 +85,8 @@ class _AMaxWeightTweak(AClothesTweak):
             record) and max_weight < record.weight < super_weight
 
     def _patchLog(self, log, count):
-        self.logHeader = (u'=== '+ self.tweak_name +
-                          u' [%4.2f]' % self.chosen_weight)
+        self.tweak_log_header = (self.tweak_name +
+                                 u' [%4.2f]' % self.chosen_weight)
         super(_AMaxWeightTweak, self)._patchLog(log, count)
 
 class ClothesTweak_MaxWeight(_AMaxWeightTweak, ClothesTweak):
@@ -119,10 +116,8 @@ class CBash_ClothesTweak_MaxWeight(_AMaxWeightTweak, CBash_ClothesTweak):
 
 #------------------------------------------------------------------------------
 class _AUnblockTweak(AClothesTweak):
-    def __init__(self, tweak_name, tweak_tip, tweak_key, *tweak_choices):
-        super(_AUnblockTweak, self).__init__(tweak_name, tweak_tip, tweak_key,
-                                             *tweak_choices)
-        self.logMsg = u'* ' + _(u'Clothes Tweaked: %d')
+    """Unlimited rings, amulets."""
+    tweak_log_msg = _(u'Clothes Tweaked: %(total_changed)d')
 
     @property
     def unblock_flags(self):
@@ -134,7 +129,6 @@ class _AUnblockTweak(AClothesTweak):
             record) and int(record.flags & self.unblock_flags)
 
 class ClothesTweak_Unblock(_AUnblockTweak, ClothesTweak):
-    """Unlimited rings, amulets."""
     def buildPatch(self, log, progress, patchFile):
         """Build patch."""
         count = Counter()
@@ -147,7 +141,6 @@ class ClothesTweak_Unblock(_AUnblockTweak, ClothesTweak):
         self._patchLog(log, count)
 
 class CBash_ClothesTweak_Unblock(_AUnblockTweak, CBash_ClothesTweak):
-    """Unlimited rings, amulets."""
     scanOrder = 31 ##: this causes silly changes to e.g. JailPants, investigate
     editOrder = 31
 

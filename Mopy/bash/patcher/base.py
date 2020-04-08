@@ -203,6 +203,15 @@ class AMultiTweakItem(object):
     # either 24 or 48 will be returned, which the tweak could use to e.g.
     # change a record attribute controlling how long a quest is delayed.
     tweak_choices = []
+    # The header to log before logging anything else about this tweak.
+    # If set to None, defaults to this tweak's name. Automatically gets wtxt
+    # formatting prepended.
+    tweak_log_header = None
+    # The message to log directly after the header (see above), listing the
+    # total number of changes made by the tweak. Receives a named formatting
+    # argument, total_changed, which contains the total number of changed
+    # records. Automatically gets wtxt formatting prepended.
+    tweak_log_msg = u'OVERRIDE'
     # If True, this tweak will be checked by default
     default_enabled = False
 
@@ -240,14 +249,16 @@ class AMultiTweakItem(object):
         self.isEnabled = False
         self.chosen = 0
         #--Log
-        self.logHeader = u'=== '+ self.tweak_name
+        if self.tweak_log_header is None:
+            self.tweak_log_header = self.tweak_name # default to tweak name
 
     def _patchLog(self, log, count):
-        """Log - must define self.logMsg in subclasses"""
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in load_order.get_ordered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
+        """Logs the total changes and details for each plugin."""
+        log.setHeader(u'=== ' + self.tweak_log_header)
+        log(u'* ' + self.tweak_log_msg % {
+            u'total_changed': sum(count.values())})
+        for src_plugin in load_order.get_ordered(count.keys()):
+            log(u'  * %s: %d' % (src_plugin.s, count[src_plugin]))
 
     def init_tweak_config(self, configs):
         """Get config from configs dictionary and/or set to default."""

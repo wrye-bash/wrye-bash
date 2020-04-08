@@ -147,6 +147,8 @@ class _ASkeletonTweak(_AActorTweak):
     """Shared code of CBash/PBash MAO/VORB skeleton tweaks."""
     tweak_choices = [(_(u'All NPCs'), 0), (_(u'Only Female NPCs'), 1),
                      (_(u'Only Male NPCs'), 2)]
+    tweak_log_msg = _(u'Skeletons Tweaked: %(total_changed)d')
+
     def _get_target_skeleton(self, record):
         """Returns the skeleton path that we want to change the skeleton of the
         specified record to."""
@@ -194,16 +196,12 @@ class AMAONPCSkeletonPatcher(_ASkeletonTweak):
                   u'skeletons.  Not compatible with VORB.  Note: ONLY use if '
                   u'you have MAO installed.')
     tweak_key = u'MAO Skeleton'
+    tweak_log_header = _(u'MAO Skeleton Setter')
     _sheo_skeleton = u'characters\\_male\\skeletonsesheogorath.nif'
     _sheo_skeleton_mao = (u"Mayu's Projects[M]\\Animation Overhaul\\Vanilla\\"
                           u'SkeletonSESheogorath.nif')
     _skeleton_mao = (u"Mayu's Projects[M]\\Animation Overhaul\\Vanilla\\"
                      u'SkeletonBeast.nif')
-
-    def __init__(self):
-        super(AMAONPCSkeletonPatcher, self).__init__()
-        self.logHeader = u'=== ' + _(u'MAO Skeleton Setter')
-        self.logMsg = u'* ' + _(u'Skeletons Tweaked: %d')
 
     def _get_target_skeleton(self, record):
         # Don't change Sheo's skeleton to a beast skeleton if it's already the
@@ -224,12 +222,8 @@ class AVORB_NPCSkeletonPatcher(_ASkeletonTweak):
                   u"skeletons for different look.  Not compatible with MAO, "
                   u"Requires VadersApp's Oblivion Real Bodies.")
     tweak_key = u'VORB'
+    tweak_log_header = _(u"VadersApp's Oblivion Real Bodies")
     _skeleton_dir = GPath(u'Characters').join(u'_male')
-
-    def __init__(self):
-        super(AVORB_NPCSkeletonPatcher, self).__init__()
-        self.logHeader = u'=== ' + _(u"VadersApp's Oblivion Real Bodies")
-        self.logMsg = u'* ' + _(u'Skeletons Tweaked: %d')
 
     def _get_skeleton_collections(self):
         """construct skeleton mesh collections. skeleton_list gets files that
@@ -281,13 +275,10 @@ class AVanillaNPCSkeletonPatcher(_AActorTweak):
                   u'performance issues.')
     tweak_key = u'Vanilla Skeleton'
     tweak_choices = [(u'1.0', u'1.0')]
+    tweak_log_header = _(u'Vanilla Beast Skeleton')
+    tweak_log_msg = _(u'Skeletons Tweaked: %(total_changed)d')
     _new_skeleton = u'Characters\\_Male\\SkeletonBeast.nif'
     _old_skeleton = u'characters\\_male\\skeleton.nif'
-
-    def __init__(self):
-        super(AVanillaNPCSkeletonPatcher, self).__init__()
-        self.logHeader = u'=== ' + _(u'Vanilla Beast Skeleton')
-        self.logMsg = u'* ' + _(u'Skeletons Tweaked: %d')
 
     def wants_record(self, record):
         old_mod_path = self._get_skeleton_path(record)
@@ -327,13 +318,9 @@ class ARedguardNPCPatcher(_AActorTweak):
     tweak_tip = _(u'Nulls FGTS of all Redguard NPCs - for compatibility with '
                   u'Better Redguards.')
     tweak_key = u'RedguardFGTSPatcher'
+    tweak_log_msg = _(u'Redguard NPCs Tweaked: %(total_changed)d')
     tweak_choices = [(u'1.0', u'1.0')]
     _redguard_fid = None # override in implementations
-
-    def __init__(self):
-        super(ARedguardNPCPatcher, self).__init__()
-        self.logHeader = u'=== ' + _(u'Redguard FGTS Patcher')
-        self.logMsg = u'* ' + _(u'Redguard NPCs Tweaked: %d')
 
     def wants_record(self, record):
         # Only affect NPCs with the redguard race
@@ -378,10 +365,7 @@ class ANoBloodCreaturesPatcher(_AActorTweak):
                   u'blood uses a different system.')
     tweak_key = u'No bloody creatures'
     tweak_choices = [(u'1.0', u'1.0')]
-
-    def __init__(self):
-        super(ANoBloodCreaturesPatcher, self).__init__()
-        self.logMsg = u'* ' + _(u'Creatures Tweaked: %d')
+    tweak_log_msg = _(u'Creatures Tweaked: %(total_changed)d')
 
     def wants_record(self, record):
         return record.bloodDecalPath or record.bloodSprayPath
@@ -427,13 +411,10 @@ class AAsIntendedImpsPatcher(_AActorTweak):
     tweak_choices = [(_(u'All imps'), u'all'),
                      (_(u'Only fullsize imps'), u'big'),
                      (_(u'Only implings'), u'small')]
+    tweak_log_msg = _(u'Imps Tweaked: %(total_changed)d')
     _imp_mod_path = re.compile(u'' r'(imp(?!erial)|gargoyle)\\.', re.I | re.U)
     _imp_part  = re.compile(u'(imp(?!erial)|gargoyle)', re.I | re.U)
     _imp_spell = None # override in implementations
-
-    def __init__(self):
-        super(AAsIntendedImpsPatcher, self).__init__()
-        self.logMsg = u'* ' + _(u'Imps Tweaked: %d')
 
     def wants_record(self, record):
         old_mod_path = self._get_skeleton_path(record)
@@ -483,13 +464,10 @@ class AAsIntendedBoarsPatcher(_AActorTweak):
                   u'discovered by the UOP team and made into a mod by Tejon.')
     tweak_key = u'vicious boars!'
     tweak_choices = [(u'1.0', u'1.0')]
+    tweak_log_msg = _(u'Boars Tweaked: %(total_changed)d')
     _boar_mod_path = re.compile(u'' r'(boar)\\.', re.I | re.U)
     _boar_part  = re.compile(u'(boar)', re.I | re.U)
     _boar_spell = None # override in implementations
-
-    def __init__(self):
-        super(AAsIntendedBoarsPatcher, self).__init__()
-        self.logMsg = u'* ' + _(u'Boars Tweaked: %d')
 
     def wants_record(self, record):
         old_mod_path = self._get_skeleton_path(record)
@@ -535,10 +513,7 @@ class ASWALKNPCAnimationPatcher(_AFemaleOnlyTweak):
                   u"Requires Mur Zuk's Sexy Walk animation file.")
     tweak_key = u'Mur Zuk SWalk'
     tweak_choices = [(u'1.0', u'1.0')]
-
-    def __init__(self):
-        super(ASWALKNPCAnimationPatcher, self).__init__()
-        self.logMsg = u'* ' + _(u'NPCs Tweaked: %d')
+    tweak_log_msg = _(u'NPCs Tweaked: %(total_changed)d')
 
 class SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,BasalNPCTweaker):
     def buildPatch(self,log,progress,patchFile):
@@ -571,10 +546,7 @@ class ARWALKNPCAnimationPatcher(_AFemaleOnlyTweak):
                   u"Requires Mur Zuk's Real Walk animation file.")
     tweak_key = u'Mur Zuk RWalk'
     tweak_choices = [(u'1.0', u'1.0')]
-
-    def __init__(self):
-        super(ARWALKNPCAnimationPatcher, self).__init__()
-        self.logMsg = u'* ' + _(u'NPCs Tweaked: %d')
+    tweak_log_msg = _(u'NPCs Tweaked: %(total_changed)d')
 
 class RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,BasalNPCTweaker):
     def buildPatch(self,log,progress,patchFile):
@@ -609,12 +581,9 @@ class AQuietFeetPatcher(_AActorTweak):
     tweak_choices = [(_(u'All Creature Foot Sounds'), u'all'),
                      (_(u'Only 4 Legged Creature Foot Sounds'), u'partial'),
                      (_(u'Only Mount Foot Sounds'), u'mounts')]
+    tweak_log_msg = _(u'Creatures Tweaked: %(total_changed)d')
     # Sound Types: 0 = left foot, 1 = right foot, 2 = left back foot,
     # 3 = right back foot
-
-    def __init__(self):
-        super(AQuietFeetPatcher, self).__init__()
-        self.logMsg = u'* ' + _(u'Creatures Tweaked: %d')
 
     def _get_silenced_sounds(self, record):
         """Returns the sounds of the specified record, with all footstep sound
@@ -666,10 +635,7 @@ class AIrresponsibleCreaturesPatcher(_AActorTweak):
     tweak_key = u'whatbadguarddogs'
     tweak_choices = [(_(u'All Creatures'), u'all'),
                      (_(u'Only Horses'), u'mounts')]
-
-    def __init__(self):
-        super(AIrresponsibleCreaturesPatcher, self).__init__()
-        self.logMsg = u'* ' + _(u'Creatures Tweaked: %d')
+    tweak_log_msg = _(u'Creatures Tweaked: %(total_changed)d')
 
     def wants_record(self, record):
         # Must not be templated (FO3/FNV only), the creature must not be
@@ -712,12 +678,9 @@ class _AOppositeGenderAnimsPatcher(BasalNPCTweaker):
     whole load order."""
     tweak_choices = [(_(u'Always Disable'), u'disable_all'),
                      (_(u'Always Enable'), u'enable_all'),]
+    tweak_log_msg = _(u'NPCs Tweaked: %(total_changed)d')
     # Whether this patcher wants female or male NPCs
     _targets_female_npcs = False
-
-    def __init__(self):
-        super(_AOppositeGenderAnimsPatcher, self).__init__()
-        self.logMsg = u'* ' + _(u'NPCs Tweaked: %d')
 
     def wants_record(self, record):
         # Skip any NPCs that don't match this patcher's target gender
