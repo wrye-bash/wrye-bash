@@ -61,13 +61,6 @@ class CBash_GlobalsTweak(_AGlobalsTweak, CBash_MultiTweakItem):
     editOrder = 29
 
 #------------------------------------------------------------------------------
-# FIXME(inf) I moved this code out, it *definitely* doesn't belong here. This
-#  is patcher config validation, it should be a popup for the user!
-# is_oblivion = bush.game.fsName.lower() == u'oblivion'
-# if is_oblivion and target_value < 0:
-#     deprint(u"GMST values can't be negative - currently %s - "
-#             u'skipping setting GMST.' % target_value)
-#     return False
 class _AGmstTweak(DynamicTweak):
     """Sets a GMST to specified value."""
     tweak_read_classes = b'GMST',
@@ -93,12 +86,6 @@ class _AGmstTweak(DynamicTweak):
         specified editor ID. Note that wanted_eid must be lower-case!"""
         for test_eid, test_val in zip(self.chosen_eids, self.chosen_values):
             if wanted_eid == test_eid.lower():
-                # FIXME(inf) Same for this too, just tell the user that they
-                #  have to enter a float if the GMST starts with 'f'!
-                if wanted_eid.startswith(u'f') and type(test_val) != float:
-                    deprint(u'converting custom value to float for GMST %s: %s'
-                            % (wanted_eid, test_val))
-                    test_val = float(test_val)
                 return test_val
         return None
 
@@ -109,6 +96,18 @@ class _AGmstTweak(DynamicTweak):
             if lower_eid == orig_eid.lower():
                 return orig_eid
         return lower_eid # fallback, should never happen
+
+    def validate_values(self, chosen_values):
+        if bush.game.fsName == u'Oblivion': ##: add a comment why TES4 only!
+            for target_value in chosen_values:
+                if target_value < 0:
+                    return _(u"Oblivion GMST values can't be negative")
+        for target_eid, target_value in zip(self.chosen_eids, chosen_values):
+            if target_eid.startswith(u'f') and type(target_value) != float:
+                    return _(u"The value chosen for GMST '%s' must be a "
+                             u'float, but is currently of type %s (%s).') % (
+                        target_eid, type(target_value).__name__, target_value)
+        return None
 
     def wants_record(self, record):
         rec_eid = record.eid.lower()

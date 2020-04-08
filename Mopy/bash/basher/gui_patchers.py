@@ -604,8 +604,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             self._EnsurePatcherEnabled()
 
     def _mouse_leaving(self):
-            self.gTipText.label_text = u''
-            self.mouse_pos = None
+        self.gTipText.label_text = u''
+        self.mouse_pos = None
 
     def _handle_mouse_motion(self, wrapped_evt, lb_dex):
         """Check mouse motion to detect right click event. If any mouse button
@@ -667,7 +667,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
 
     def tweak_custom_choice(self, index, tweakIndex):
         """Handle choice menu selection."""
-        tweak = self._all_tweaks[tweakIndex]
+        tweak = self._all_tweaks[tweakIndex] # type: base.AMultiTweakItem
         value = []
         for i, v in enumerate(tweak.choiceValues[index]):
             if isinstance(v,float):
@@ -699,13 +699,28 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 if new is None: #user hit cancel
                     return
                 value.append(new)
-        if not value: value = tweak.choiceValues[index]
-        tweak.choiceValues[index] = tuple(value)
-        tweak.chosen = index
-        label = self._label(tweak.getListLabel(), tweak.choiceValues[index][0])
-        self.gTweakList.lb_set_label_at_index(tweakIndex, label)
-        self.gTweakList.lb_check_at_index(tweakIndex, True) # wx.EVT_CHECKLISTBOX is NOT
-        self.TweakOnListCheck() # fired so this line is needed (?)
+        if not value:
+            value = tweak.choiceValues[index]
+        value = tuple(value)
+        validation_error = tweak.validate_values(value)
+        if not validation_error: # no error, we're good to go
+            tweak.choiceValues[index] = value
+            tweak.chosen = index
+            label = self._label(tweak.getListLabel(), value[0])
+            self.gTweakList.lb_set_label_at_index(tweakIndex, label)
+            self.gTweakList.lb_check_at_index(tweakIndex, True)
+            self.TweakOnListCheck() # fired so this line is needed (?)
+        else:
+            # The tweak doesn't like the values the user chose, let them know
+            error_header = (_(u'The value you entered (%s) is not valid '
+                              u'for this tweak.') % value[0]
+                            if len(value) == 1 else
+                            _(u'The values you entered (%s) are not valid '
+                              u'for this tweak.') % u', '.join(
+                                unicode(s) for s in value))
+            balt.showError(self.gConfigPanel, error_header + u'\n\n' +
+                           _(u'Reason: %s') % validation_error,
+                           title=tweak.tweak_name + _(u' - Error'))
 
     def mass_select(self, select=True):
         """'Select All' or 'Deselect All' button was pressed, update all

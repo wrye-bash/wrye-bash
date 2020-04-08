@@ -316,6 +316,15 @@ class AMultiTweakItem(object):
             tweakname += u' [' + self.choiceLabels[self.chosen] + u']'
         return tweakname
 
+    def validate_values(self, chosen_values):
+        """Gives this tweak a chance to check if the specified values (given
+        as a tuple, as if they were retrieved via
+        self.choiceValues[self.chosen][0]) are valid for this tweak. Return a
+        string if the values are invalid. It will then be shown as an error
+        message to the user. Return None if the values are valid, the values
+        will then be accepted and the tweak will be activated."""
+        return None
+
     def wants_record(self, record):
         """Return a truthy value if you want to get a chance to change the
         specified record. Must be implemented by every CBash tweak that does
