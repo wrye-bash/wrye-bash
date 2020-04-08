@@ -669,32 +669,44 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         """Handle choice menu selection."""
         tweak = self._all_tweaks[tweakIndex] # type: base.AMultiTweakItem
         value = []
+        new = None
         for i, v in enumerate(tweak.choiceValues[index]):
             if isinstance(v,float):
-                label = self._msg + u'\n' + tweak.tweak_key[i]
-                new = balt.askNumber(
-                    self.gConfigPanel, label, prompt=_(u'Value'),
-                    title=tweak.tweak_name + _(u' ~ Custom Tweak Value'),
-                    value=tweak.choiceValues[index][i], min=-10000, max=10000)
-                if new is None: #user hit cancel
-                    return
-                value.append(float(new)/10)
+                while new is None: # keep going until user entered valid float
+                    label = (_(u'Enter the desired custom tweak value.')
+                             + u'\n\n' +
+                             _(u'Note: A floating point number is expected '
+                               u'here.') + tweak.tweak_key[i])
+                    new = balt.askText(
+                        self.gConfigPanel, label,
+                        title=tweak.tweak_name + _(u' - Custom Tweak Value'),
+                        default=unicode(tweak.choiceValues[index][i]))
+                    if new is None: #user hit cancel
+                        return
+                    try:
+                        value.append(float(new))
+                    except ValueError:
+                        balt.showError(self.gConfigPanel,
+                                       _(u"'%s' is not a valid floating point "
+                                         u"number.") % new,
+                                       title=tweak.tweak_name + _(u' - Error'))
+                        new = None # invalid float, try again
             elif isinstance(v, int) or isinstance(v, long): # PY3: int only
-                label = _(u'Enter the desired custom tweak value.') + u'\n' + \
-                        tweak.tweak_key[i]
+                label = (_(u'Enter the desired custom tweak value.')
+                         + u'\n\n' + tweak.tweak_key[i])
                 new = balt.askNumber(
                     self.gConfigPanel, label, prompt=_(u'Value'),
-                    title=tweak.tweak_name + _(u' ~ Custom Tweak Value'),
+                    title=tweak.tweak_name + _(u' - Custom Tweak Value'),
                     value=tweak.choiceValues[index][i], min=-10000, max=10000)
                 if new is None: #user hit cancel
                     return
                 value.append(new)
             elif isinstance(v,basestring):
-                label = _(u'Enter the desired custom tweak text.') + u'\n' + \
-                        tweak.tweak_key[i]
+                label = (_(u'Enter the desired custom tweak text.')
+                         + u'\n\n' + tweak.tweak_key[i])
                 new = balt.askText(
                     self.gConfigPanel, label,
-                    title=tweak.tweak_name + _(u' ~ Custom Tweak Text'),
+                    title=tweak.tweak_name + _(u' - Custom Tweak Text'),
                     default=tweak.choiceValues[index][i], strip=False) ##: strip ?
                 if new is None: #user hit cancel
                     return
