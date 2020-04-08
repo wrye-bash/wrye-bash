@@ -679,7 +679,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 if new is None: #user hit cancel
                     return
                 value.append(float(new)/10)
-            elif isinstance(v,int):
+            elif isinstance(v, int) or isinstance(v, long): # PY3: int only
                 label = _(u'Enter the desired custom tweak value.') + u'\n' + \
                         tweak.tweak_key[i]
                 new = balt.askNumber(
