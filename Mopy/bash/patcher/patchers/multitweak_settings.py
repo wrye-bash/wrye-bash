@@ -245,11 +245,15 @@ class _AGmstTweaker(AMultiTweaker):
         for clazz, game_tweaks in cls._class_tweaks:
             for tweak in game_tweaks:
                 if isinstance(tweak, tuple):
-                    instances.append(clazz(*tweak))
+                    new_tweak = clazz(*tweak)
                 elif isinstance(tweak, list):
-                    args = tweak[0]
-                    kwdargs = tweak[1]
-                    instances.append(clazz(*args, **kwdargs))
+                    new_tweak = clazz(*tweak[0])
+                    new_tweak.default_enabled = tweak[1].get(
+                        u'default_enabled', False)
+                else:
+                    raise SyntaxError(u'Invalid GMST tweak syntax: tuple or '
+                                      u'list expected, got %r' % type(tweak))
+                instances.append(new_tweak)
         instances.sort(key=lambda a: a.tweak_name.lower())
         return instances
 

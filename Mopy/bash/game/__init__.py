@@ -405,7 +405,7 @@ class GameInfo(object):
 
     To make a tweak Enabled by Default, enclose the tuple entry for the
     tweak in a list, and make a dictionary as the second list item with {
-    'defaultEnabled ':True}. See the UOP Vampire face fix for an example of
+    u'default_enabled': True}. See the UOP Vampire face fix for an example of
     this (in the GMST Tweaks)
     """
     GlobalsTweaks = []
@@ -428,7 +428,7 @@ class GameInfo(object):
 
     To make a tweak Enabled by Default, enclose the tuple entry for the
     tweak in a list, and make a dictionary as the second list item with {
-    'defaultEnabled ':True}. See the UOP Vampire facefix for an example of
+    u'default_enabled': True}. See the UOP Vampire facefix for an example of
     this (in the GMST Tweaks)
     """
     GmstTweaks = []

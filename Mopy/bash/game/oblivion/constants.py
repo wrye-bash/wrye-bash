@@ -1251,7 +1251,7 @@ GmstTweaks = [
         (u'iVampirismAgeOffset',),
         (u'Fix it!', 0),
         ),
-     {u'defaultEnabled': True}],
+     {u'default_enabled': True}],
     (_(u'AI: Max Dead Actors'),
      _(u"Maximum number of dead actors allowed before they're removed."),
         (u'iRemoveExcessDeadCount', u'iRemoveExcessDeadTotalActorCount',u'iRemoveExcessDeadComplexTotalActorCount',

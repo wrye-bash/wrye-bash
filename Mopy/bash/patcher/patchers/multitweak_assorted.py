@@ -196,10 +196,10 @@ class AAssortedTweak_BowReach(_AAssortedTweak):
     tweak_tip = _(u'Fix bows with zero reach (zero reach causes CTDs).')
     tweak_key = u'BowReach'
     tweak_choices = [(u'1.0', u'1.0')]
+    default_enabled = True
 
     def __init__(self):
         super(AAssortedTweak_BowReach, self).__init__()
-        self.defaultEnabled = True
         self.logMsg = u'* ' + _(u'Bows Fixed: %d')
 
     def wants_record(self, record):
@@ -279,10 +279,10 @@ class AAssortedTweak_ConsistentRings(_AAssortedTweak):
                   u'prefer the right hand.')
     tweak_key = u'ConsistentRings'
     tweak_choices = [(u'1.0', u'1.0')]
+    default_enabled = True
 
     def __init__(self):
         super(AAssortedTweak_ConsistentRings, self).__init__()
-        self.defaultEnabled = True
         self.logMsg = u'* ' + _(u'Rings Fixed: %d')
 
 class AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,
@@ -502,11 +502,11 @@ class AAssortedTweak_FogFix(_AAssortedTweak):
     tweak_tip = _(u'Fix fog related Nvidia black screen problems.')
     tweak_key = u'FogFix'
     tweak_choices = [(u'0.0001', u'0.0001')]
+    default_enabled = True
 
     def __init__(self):
         super(AAssortedTweak_FogFix, self).__init__()
         self.logMsg = u'* ' + _(u'Cells With Fog Tweaked To 0.0001: %d')
-        self.defaultEnabled = True
 
     def wants_record(self, record):
         # All of these floats must be approximately equal to 0. They can be
@@ -873,11 +873,11 @@ class AAssortedTweak_ScriptEffectSilencer(_AAssortedTweak):
     tweak_tip = _(u'Script Effect will be silenced and have no graphics.')
     tweak_key = u'SilentScriptEffect'
     tweak_choices = [(u'0', 0)]
+    default_enabled = True
     _silent_attrs = {} # override in implementations
 
     def __init__(self):
         super(AAssortedTweak_ScriptEffectSilencer, self).__init__()
-        self.defaultEnabled = True
 
     def wants_record(self, record):
         # u'' here is on purpose! We're checking the EDID, which gets decoded
@@ -1182,10 +1182,10 @@ class AAssortedTweak_DefaultIcons(_AAssortedTweak):
                   u'Weapons\\Staff.dds', u'Weapons\\IronBow.dds',),
     }
     tweak_read_classes = tuple(_default_icons)
+    default_enabled = True
 
     def __init__(self):
         super(AAssortedTweak_DefaultIcons,self).__init__()
-        self.defaultEnabled = True
         self.logMsg = u'* ' + _(u'Default Icons Set: %d')
 
     def wants_record(self, record):

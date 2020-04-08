@@ -1816,7 +1816,7 @@ GmstTweaks = [
         (u'fCombatDodgeChanceMax',),
         (_(u'Enabled'), 0.0),
         ),
-     {u'defaultEnabled': True}],
+     {u'default_enabled': True}],
     (_(u'Combat: Max Ally Hits'),
      _(u'Number of hits allowed by allies out of combat before attacking the '
        u'player.'),
@@ -1999,7 +1999,7 @@ GmstTweaks = [
         (u'sCantEquipGeneric',),
         (_(u'Enabled'), u''),
         ),
-     {u'defaultEnabled': True}],
+     {u'default_enabled': True}],
     (_(u'Msg: Auto Saving'),
      _(u'Message upon auto saving.'),
         (u'sAutoSaving',),
