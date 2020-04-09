@@ -25,6 +25,7 @@
 """This module contains oblivion multitweak item patcher classes that belong
 to the Clothes Multitweaker - as well as the ClothesTweaker itself."""
 import itertools
+from ...exception import AbstractError
 from ...patcher.base import AMultiTweaker, DynamicTweak
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
@@ -52,18 +53,31 @@ class AClothesTweak(DynamicTweak):
         self.or_type_flags = type_key in (u'robes', u'rings')
         self.type_flags = self.clothes_flags[type_key]
 
+    @staticmethod
+    def _get_biped_flags(record):
+        """Returns the biped flags of the specified record as an integer."""
+        raise AbstractError(u'_get_biped_flags not implemented')
+
     def wants_record(self, record):
-        rec_type_flags = int(record.flags) & 0xFFFF
+        rec_type_flags = self._get_biped_flags(record)
         my_type_flags = self.type_flags
         return ((rec_type_flags == my_type_flags) or (self.or_type_flags and (
                 rec_type_flags & my_type_flags == rec_type_flags)))
 
 class ClothesTweak(AClothesTweak, MultiTweakItem):
+    @staticmethod
+    def _get_biped_flags(record):
+        return int(record.biped_flags) & 0xFFFF
+
     def wants_record(self, record):
         return super(ClothesTweak, self).wants_record(
-            record) and not record.flags.notPlayable
+            record) and not record.biped_flags.notPlayable
 
 class CBash_ClothesTweak(AClothesTweak, CBash_MultiTweakItem):
+    @staticmethod
+    def _get_biped_flags(record):
+        return record.flags & 0xFFFF
+
     def wants_record(self, record):
         return super(CBash_ClothesTweak, self).wants_record(
             record) and record.IsPlayable
@@ -110,15 +124,18 @@ class _AUnblockTweak(AClothesTweak):
 
     def wants_record(self, record):
         return super(_AUnblockTweak, self).wants_record(
-            record) and int(record.flags & self.unblock_flags)
+            record) and int(self._get_biped_flags(record) & self.unblock_flags)
 
+class ClothesTweak_Unblock(_AUnblockTweak, ClothesTweak):
     def tweak_record(self, record):
-        record.flags &= ~self.unblock_flags
+        record.biped_flags &= ~self.unblock_flags
 
-class ClothesTweak_Unblock(_AUnblockTweak, ClothesTweak): pass
 class CBash_ClothesTweak_Unblock(_AUnblockTweak, CBash_ClothesTweak):
     scanOrder = 31 ##: this causes silly changes to e.g. JailPants, investigate
     editOrder = 31
+
+    def tweak_record(self, record):
+        record.flags &= ~self.unblock_flags
 
 #------------------------------------------------------------------------------
 class _AClothesTweaker(AMultiTweaker):

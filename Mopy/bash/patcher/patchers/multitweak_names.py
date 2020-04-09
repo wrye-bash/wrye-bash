@@ -189,12 +189,12 @@ class _ANamesTweak_Body(_ANamesTweak):
 class _PNamesTweak_Body(_ANamesTweak_Body, _PNamesTweak):
     """Shared code of PBash body names tweaks."""
     def wants_record(self, record):
-        return not record.flags.notPlayable and super(
+        return not record.biped_flags.notPlayable and super(
             _PNamesTweak_Body, self).wants_record(record)
 
     def _get_rename_params(self, record):
-        body_flags = record.flags
-        return (record, (u'LH'[record.flags.heavyArmor]
+        body_flags = record.biped_flags
+        return (record, (u'LH'[body_flags.heavyArmor]
                          if record.recType == b'ARMO' else u''),
                 body_flags.head or body_flags.hair,
                 body_flags.rightRing or body_flags.leftRing, body_flags.amulet,

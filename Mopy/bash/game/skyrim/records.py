@@ -101,7 +101,7 @@ class MelBipedObjectData(MelStruct):
 
     def __init__(self):
         super(MelBipedObjectData, self).__init__(b'BOD2', u'2I',
-            (MelBipedObjectData._bp_flags, u'bipedFlags'),
+            (MelBipedObjectData._bp_flags, u'biped_flags'),
             (MelBipedObjectData.ArmorTypeFlags, u'armorFlags'))
 
     def getLoaders(self,loaders):
@@ -126,7 +126,7 @@ class MelBipedObjectData(MelStruct):
                 bp_flags, legacyFlags, _bp_unused, armorFlags = ins.unpack(
                     __unpacker3, size_, readId)
             # legacyData is discarded except for non-playable status
-            record.bipedFlags = MelBipedObjectData._bp_flags(bp_flags)
+            record.biped_flags = MelBipedObjectData._bp_flags(bp_flags)
             record.flags1.isNotPlayable = MelBipedObjectData.LegacyFlags(
                 legacyFlags)[4]
             record.armorFlags = MelBipedObjectData.ArmorTypeFlags(armorFlags)

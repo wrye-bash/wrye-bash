@@ -54,7 +54,7 @@ class _AssortPTweak(_AAssortedTweak, MultiTweakItem):
     """An assorted PBash tweak."""
     @staticmethod
     def _is_nonplayable(record):
-        return record.flags.notPlayable
+        return record.biped_flags.notPlayable
 
     @staticmethod
     def _is_scroll(record):
@@ -75,15 +75,26 @@ class _AShowsTweak(_AAssortedTweak):
     """Shared parts of CBash/PBash show clothing/armor tweaks."""
     _hides_bit = None # override in implementations
 
+class _PShowsTweak(_AShowsTweak, _AssortPTweak):
+    """Shared code of PBash show clothing/armor tweaks."""
     def wants_record(self, record):
-        return (int(record.flags) >> self._hides_bit & 1 # CBash/PBash-agnostic
-                and not self._is_nonplayable(record))
+        return (record.biped_flags[self._hides_bit] and
+                not self._is_nonplayable(record))
 
     def tweak_record(self, record):
-        record.flags &= ~(1 << self._hides_bit) # CBash/PBash-agnostic
+        record.biped_flags[self._hides_bit] = False
+
+class _CShowsTweak(_AShowsTweak, _AssortCTweak):
+    """Shared code of CBash show clothing/armor tweaks."""
+    def wants_record(self, record):
+        return (record.flags >> self._hides_bit & 1 and
+                not self._is_nonplayable(record))
+
+    def tweak_record(self, record):
+        record.flags &= ~(1 << self._hides_bit)
 
 #------------------------------------------------------------------------------
-class _AArmoShowsTweak(_AShowsTweak):
+class _AArmoShowsTweak(_AAssortedTweak):
     """Fix armor to show amulets/rings."""
     tweak_read_classes = b'ARMO',
     tweak_log_msg = _(u'Armor Pieces Tweaked: %(total_changed)d')
@@ -95,9 +106,9 @@ class _AArmoShowsAmuletsTweak(_AArmoShowsTweak):
     _hides_bit = 17
 
 class AssortedTweak_ArmorShows_Amulets(_AArmoShowsAmuletsTweak,
-                                       _AssortPTweak): pass
+                                       _PShowsTweak): pass
 class CBash_AssortedTweak_ArmorShows_Amulets(_AArmoShowsAmuletsTweak,
-                                             _AssortCTweak): pass
+                                             _CShowsTweak): pass
 
 class _AArmoShowsRingsTweak(_AArmoShowsTweak):
     tweak_name = _(u'Armor Shows Rings')
@@ -106,9 +117,9 @@ class _AArmoShowsRingsTweak(_AArmoShowsTweak):
     _hides_bit = 16
 
 class AssortedTweak_ArmorShows_Rings(_AArmoShowsRingsTweak,
-                                     _AssortPTweak): pass
+                                     _PShowsTweak): pass
 class CBash_AssortedTweak_ArmorShows_Rings(_AArmoShowsRingsTweak,
-                                           _AssortCTweak): pass
+                                           _CShowsTweak): pass
 
 #------------------------------------------------------------------------------
 class _AClotShowsTweak(_AShowsTweak):
@@ -123,9 +134,9 @@ class _AClotShowsAmuletsTweak(_AClotShowsTweak):
     _hides_bit = 17
 
 class AssortedTweak_ClothingShows_Amulets(_AClotShowsAmuletsTweak,
-                                          _AssortPTweak): pass
+                                          _PShowsTweak): pass
 class CBash_AssortedTweak_ClothingShows_Amulets(_AClotShowsAmuletsTweak,
-                                                _AssortCTweak): pass
+                                                _CShowsTweak): pass
 
 class _AClotShowsRingsTweak(_AClotShowsTweak):
     tweak_name = _(u'Clothing Shows Rings')
@@ -134,9 +145,9 @@ class _AClotShowsRingsTweak(_AClotShowsTweak):
     _hides_bit = 16
 
 class AssortedTweak_ClothingShows_Rings(_AClotShowsRingsTweak,
-                                        _AssortPTweak): pass
+                                        _PShowsTweak): pass
 class CBash_AssortedTweak_ClothingShows_Rings(_AClotShowsRingsTweak,
-                                              _AssortCTweak): pass
+                                              _CShowsTweak): pass
 
 #------------------------------------------------------------------------------
 class AAssortedTweak_BowReach(_AAssortedTweak):
@@ -196,11 +207,11 @@ class AAssortedTweak_ConsistentRings(_AAssortedTweak):
 class AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,
                                     _AssortPTweak):
     def wants_record(self, record):
-        return record.flags.leftRing
+        return record.biped_flags.leftRing
 
     def tweak_record(self, record):
-        record.flags.leftRing = False
-        record.flags.rightRing = True
+        record.biped_flags.leftRing = False
+        record.biped_flags.rightRing = True
 
 class CBash_AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,
                                           _AssortCTweak):
@@ -235,17 +246,16 @@ class _APlayableTweak(_AAssortedTweak):
 
 class _PPlayableTweak(_APlayableTweak, _AssortPTweak):
     """Shared code of PBash armor/clothing playable tweaks."""
-
     @staticmethod
     def _any_body_flag_set(record):
-        return (record.flags.leftRing or record.flags.foot or
-                record.flags.hand or record.flags.amulet or
-                record.flags.lowerBody or record.flags.upperBody or
-                record.flags.head or record.flags.hair or
-                record.flags.tail or record.flags.shield)
+        body_flags = record.biped_flags
+        return (body_flags.leftRing or body_flags.foot or body_flags.hand or
+                body_flags.amulet or body_flags.lowerBody or
+                body_flags.upperBody or body_flags.head or body_flags.hair or
+                body_flags.tail or body_flags.shield)
 
     def tweak_record(self, record):
-        record.flags.notPlayable = 0
+        record.biped_flags.notPlayable = 0
 
 class _CPlayableTweak(_APlayableTweak, _AssortCTweak):
     """Shared code of CBash armor/clothing playable tweaks."""
@@ -845,7 +855,7 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons, _AssortPTweak):
         if (rsig == b'LIGH' and not record.flags.canTake or
                 rsig == b'QUST' and not record.stages or
                 rsig in (b'ARMO', b'CLOT') and
-                record.flags.notPlayable): return False
+                self._is_nonplayable(record)): return False
         return super(AssortedTweak_DefaultIcons, self).wants_record(record)
 
     def tweak_record(self, record):
@@ -854,7 +864,7 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons, _AssortPTweak):
         if isinstance(d_icons, tuple):
             if curr_sig in (b'ARMO', b'CLOT'):
                 # Choose based on body flags:
-                body_flags = record.flags
+                body_flags = record.biped_flags
                 if body_flags.upperBody:
                     d_icons = d_icons[0]
                 elif body_flags.lowerBody:

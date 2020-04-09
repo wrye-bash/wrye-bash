@@ -117,7 +117,7 @@ class MelBipedData(MelStruct):
 
     def __init__(self):
         super(MelBipedData, self).__init__(b'BMDT', u'IB3s',
-            (self._biped_flags, u'bipedFlags'),
+            (self._biped_flags, u'biped_flags'),
             (self._general_flags, u'generalFlags'), u'biped_unused')
 
 #------------------------------------------------------------------------------
