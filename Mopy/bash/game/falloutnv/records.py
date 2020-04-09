@@ -941,7 +941,7 @@ class MreLscr(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelIcon(),
-        MelDescription(u'text'),
+        MelDescription(),
         MelGroups('locations',
             MelStruct('LNAM', '2I2h', (FID, 'direct'), (FID, 'indirect'),
                       'gridy', 'gridx'),
@@ -1614,10 +1614,10 @@ class MreWeap(MelRecord):
         MelOptStruct('CRDT','H2sfB3sI',('criticalDamage', 0),('weapCrdt1', null2),
                      ('criticalMultiplier', 0.0),(_cflags,'criticalFlags', 0),
                      ('weapCrdt2', null3),(FID,'criticalEffect', 0),),
-        MelTruncatedStruct('VATS', 'I3f2B2s', 'vatsEffect', 'vatsSkill',
-                           'vatsDamMult', 'vatsAp', 'vatsSilent',
-                           'vatsModReqiured', ('weapVats1', null2),
-                           old_versions={'I3f'}),
+        MelTruncatedStruct(b'VATS', u'I3f2B2s', (FID, u'vatsEffect'),
+            u'vatsSkill', u'vatsDamMult', u'vatsAp', u'vatsSilent',
+            u'vatsModReqiured', (u'weapVats1', null2), old_versions={u'I3f'},
+            is_optional=True),
         MelBase('VNAM','soundLevel'),
     )
     __slots__ = melSet.getSlotsUsed()

@@ -4736,8 +4736,9 @@ class MreSndr(MelRecord):
         MelConditions(),
         MelStruct('LNAM','sBsB',('unkSndr1',null1),'looping',
                   ('unkSndr2',null1),'rumbleSendValue',),
-        MelStruct('BNAM','2b2BH','pctFrequencyShift','pctFrequencyVariance','priority',
-                  'dbVariance','staticAttenuation',),
+        MelStruct(b'BNAM', u'2b2BH', u'pctFrequencyShift',
+            u'pctFrequencyVariance', u'priority', u'dbVariance',
+            u'staticAtten'),
     )
     __slots__ = melSet.getSlotsUsed()
 

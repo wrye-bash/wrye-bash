@@ -423,3 +423,8 @@ actor_importer_attrs[b'NPC_'][u'Actors.ACBS'] = ( # FO3 + flags.autocalcService
     u'flags.noVATSMelee', u'flags.pcLevelOffset', u'flags.respawn',
     u'flags.useTemplate', u'karma', u'level', u'speedMultiplier',
     u'templateFlags')
+
+#------------------------------------------------------------------------------
+# Assorted Tweaker
+#------------------------------------------------------------------------------
+assorted_tweaks |= {u'AssortedTweak_ArrowWeight'}

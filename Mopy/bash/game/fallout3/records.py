@@ -1710,7 +1710,7 @@ class MreLscr(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelIcon(),
-        MelDescription(u'text'),
+        MelDescription(),
         MelGroups('locations',
             MelStruct('LNAM', 'I8s', (FID, 'cell'),
                       ('unused1', null4 + null4)),

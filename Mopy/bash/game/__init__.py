@@ -564,6 +564,23 @@ class GameInfo(object):
     mgef_stats_attrs = ()
 
     #--------------------------------------------------------------------------
+    # Assorted Tweaker
+    #--------------------------------------------------------------------------
+    assorted_tweaks = set()
+    # Only allow the 'mark playable' tweaks to mark a piece of armor/clothing
+    # as playable if it has at least one biped flag that is not in this set.
+    nonplayable_biped_flags = set()
+    # The record attribute and flag name needed to find out if a piece of armor
+    # is non-playable. Locations differ in TES4, FO3/FNV and TES5.
+    not_playable_flag = (u'flags1', u'isNotPlayable')
+    # Tuple containing the name of the attribute and the value it has to be set
+    # to in order for a weapon to count as a staff for reweighing purposes
+    staff_condition = ()
+    # The record type that contains the static attenuation field tweaked by the
+    # static attenuation tweaks. SNDR on newer games, SOUN on older games.
+    static_attenuation_rec_type = b'SNDR'
+
+    #--------------------------------------------------------------------------
     # Magic Effects - Oblivion-specific
     #--------------------------------------------------------------------------
     # Doesn't list MGEFs that use actor values, but rather MGEFs that have a
@@ -627,6 +644,9 @@ class GameInfo(object):
         u'relations_csv_row_format', u'save_rec_types', u'scripts_types',
         u'soundsLongsTypes', u'soundsTypes', u'spell_stats_attrs',
         u'statsHeaders', u'statsTypes', u'text_types',
+        u'assorted_tweaks', u'staff_condition', u'static_attenuation_rec_type',
+        u'nonplayable_biped_flags', u'not_playable_flag',
+        # FIXME(inf) format right before merge!
     }
 
     @classmethod
@@ -651,20 +671,22 @@ class GameInfo(object):
         Currently populates the GameInfo namespace with the members defined in
         the relevant constants.py and imports default_tweaks.py and
         vanilla_files.py."""
-        constants = importlib.import_module('.constants', package=package_name)
+        constants = importlib.import_module(u'.constants',
+            package=package_name)
         for k in dir(constants):
-            if k.startswith('_'): continue
+            if k.startswith(u'_'): continue
             if k not in cls._constants_members:
-                raise RuntimeError(u'Unexpected game constant %s' % k)
+                raise SyntaxError(u"Unexpected game constant '%s', check for "
+                                  u'typos or update _constants_members' % k)
             setattr(cls, k, getattr(constants, k))
-        tweaks_module = importlib.import_module('.default_tweaks',
-                                                package=package_name)
+        tweaks_module = importlib.import_module(u'.default_tweaks',
+            package=package_name)
         cls.default_tweaks = tweaks_module.default_tweaks
-        vf_module = importlib.import_module('.vanilla_files',
-                                            package=package_name)
+        vf_module = importlib.import_module(u'.vanilla_files',
+            package=package_name)
         cls.vanilla_files = vf_module.vanilla_files
-        patchers_module = importlib.import_module('.patcher',
-                                                  package=package_name)
+        patchers_module = importlib.import_module(u'.patcher',
+            package=package_name)
         cls.gameSpecificPatchers = patchers_module.gameSpecificPatchers
         cls.gameSpecificListPatchers = patchers_module.gameSpecificListPatchers
         cls.game_specific_import_patchers = \

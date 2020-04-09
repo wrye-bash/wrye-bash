@@ -1202,7 +1202,7 @@ class MreLscr(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelIcon(),
-        MelDescription(u'text'),
+        MelDescription(),
         MelGroups('locations',
             MelStruct('LNAM', '2I2h', (FID, 'direct'), (FID, 'indirect'),
                       'gridy', 'gridx'),

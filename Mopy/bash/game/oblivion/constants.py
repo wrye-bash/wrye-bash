@@ -1699,7 +1699,7 @@ text_types = {
     b'BOOK': (u'text',),
     b'BSGN': (u'text',),
     b'CLAS': (u'description',),
-    b'LSCR': (u'text',),
+    b'LSCR': (u'description',),
     b'MGEF': (u'text',),
     # omit RACE - covered by R.Description
     b'SKIL': (u'description',),
@@ -1831,6 +1831,45 @@ ench_stats_attrs = (u'itemType', u'chargeAmount', u'enchantCost', u'flags')
 mgef_stats_attrs = (u'flags', u'base_cost', u'associated_item', u'school',
                     u'resist_value', u'projectileSpeed', u'cef_enchantment',
                     u'cef_barter')
+
+#--------------------------------------------------------------------------
+# Assorted Tweaker
+#------------------------------------------------------------------------------
+assorted_tweaks = {
+    u'AssortedTweak_ArmorShows_Amulets',
+    u'AssortedTweak_ArmorShows_Rings',
+    u'AssortedTweak_ClothingShows_Amulets',
+    u'AssortedTweak_ClothingShows_Rings',
+    u'AssortedTweak_ArmorPlayable',
+    u'AssortedTweak_ClothingPlayable',
+    u'AssortedTweak_BowReach',
+    u'AssortedTweak_ConsistentRings',
+    u'AssortedTweak_DarnBooks',
+    u'AssortedTweak_FogFix',
+    u'AssortedTweak_NoLightFlicker',
+    u'AssortedTweak_PotionWeight',
+    u'AssortedTweak_PotionWeightMinimum',
+    u'AssortedTweak_StaffWeight',
+    u'AssortedTweak_SetCastWhenUsedEnchantmentCosts',
+    u'AssortedTweak_WindSpeed',
+    u'AssortedTweak_UniformGroundcover',
+    u'AssortedTweak_HarvestChance',
+    u'AssortedTweak_IngredientWeight',
+    u'AssortedTweak_ArrowWeight',
+    u'AssortedTweak_ScriptEffectSilencer',
+    u'AssortedTweak_DefaultIcons',
+    u'AssortedTweak_SetSoundAttenuationLevels',
+    u'AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly',
+    u'AssortedTweak_FactioncrimeGoldMultiplier',
+    u'AssortedTweak_LightFadeValueFix',
+    u'AssortedTweak_SkyrimStyleWeapons',
+    u'AssortedTweak_TextlessLSCRs',
+}
+nonplayable_biped_flags = {u'backWeapon', u'quiver', u'weapon', u'torch',
+                           u'rightRing', u'sideWeapon'}
+not_playable_flag = (u'biped_flags', u'notPlayable')
+staff_condition = (u'weaponType', 4)
+static_attenuation_rec_type = b'SOUN'
 
 #------------------------------------------------------------------------------
 # Magic Effects
@@ -2152,18 +2191,18 @@ actor_values = [
 
 # Record type to name dictionary
 record_type_name = {
-    'ALCH': _(u'Potions'),
-    'AMMO': _(u'Ammo'),
-    'APPA': _(u'Apparatuses'),
-    'ARMO': _(u'Armors'),
-    'BOOK': _(u'Books'),
-    'CLOT': _(u'Clothes'),
-    'INGR': _(u'Ingredients'),
-    'KEYM': _(u'Keys'),
-    'LIGH': _(u'Lights'),
-    'MISC': _(u'Misc'),
-    'SGST': _(u'Sigil Stones'),
-    'SLGM': _(u'Soulgems'),
-    'SPEL': _(u'Spells'),
-    'WEAP': _(u'Weapons'),
+    b'ALCH': _(u'Potions'),
+    b'AMMO': _(u'Ammo'),
+    b'APPA': _(u'Apparatuses'),
+    b'ARMO': _(u'Armors'),
+    b'BOOK': _(u'Books'),
+    b'CLOT': _(u'Clothes'),
+    b'INGR': _(u'Ingredients'),
+    b'KEYM': _(u'Keys'),
+    b'LIGH': _(u'Lights'),
+    b'MISC': _(u'Misc'),
+    b'SGST': _(u'Sigil Stones'),
+    b'SLGM': _(u'Soulgems'),
+    b'SPEL': _(u'Spells'),
+    b'WEAP': _(u'Weapons'),
 }

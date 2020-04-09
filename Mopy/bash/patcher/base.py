@@ -141,6 +141,7 @@ class AMultiTweaker(Abstract_Patcher):
     group = _(u'Tweakers')
     scanOrder = 20
     editOrder = 20
+    _tweak_classes = [] # override in implementations
 
     def __init__(self, p_name, p_file, enabled_tweaks):
         super(AMultiTweaker, self).__init__(p_name, p_file)
@@ -149,7 +150,7 @@ class AMultiTweaker(Abstract_Patcher):
 
     @classmethod
     def tweak_instances(cls):
-        return sorted([cls() for cls in cls._tweak_classes],
+        return sorted([tc() for tc in cls._tweak_classes],
                       key=lambda a: a.tweak_name.lower())
 
 
@@ -345,6 +346,11 @@ class AMultiTweakItem(object):
         not override apply, and every PBash tweak that supports pooling (see
         MultiTweakItem.supports_pooling)."""
         raise AbstractError(u'tweak_record not implemented')
+
+    @staticmethod
+    def _is_nonplayable(record): ##: ugh, very hasty abstraction
+        """Returns True if the specified record is marked as nonplayable."""
+        raise AbstractError(u'_is_nonplayable not implemented')
 
 class DynamicTweak(AMultiTweakItem):
     """A tweak that has its name, tip, key and choices passed in as init

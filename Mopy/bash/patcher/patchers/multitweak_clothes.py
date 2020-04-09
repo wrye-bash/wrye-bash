@@ -25,6 +25,7 @@
 """This module contains oblivion multitweak item patcher classes that belong
 to the Clothes Multitweaker - as well as the ClothesTweaker itself."""
 import itertools
+from ... import bush
 from ...exception import AbstractError
 from ...patcher.base import AMultiTweaker, DynamicTweak
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
@@ -71,7 +72,7 @@ class ClothesTweak(AClothesTweak, MultiTweakItem):
 
     def wants_record(self, record):
         return super(ClothesTweak, self).wants_record(
-            record) and not record.biped_flags.notPlayable
+            record) and not self._is_nonplayable(record)
 
 class CBash_ClothesTweak(AClothesTweak, CBash_MultiTweakItem):
     @staticmethod

@@ -98,6 +98,11 @@ class MultiTweakItem(AMultiTweakItem):
         called if this tweak does support pooling."""
         raise AbstractError(u'tweak_build_patch not implemented')
 
+    @staticmethod
+    def _is_nonplayable(record):
+        np_flag_attr, np_flag_name = bush.game.not_playable_flag
+        return getattr(getattr(record, np_flag_attr), np_flag_name) # yuck
+
 class CBash_MultiTweakItem(AMultiTweakItem):
     # extra CBash_MultiTweakItem class variables
     iiMode = False
@@ -131,6 +136,10 @@ class CBash_MultiTweakItem(AMultiTweakItem):
         """Will write to log."""
         self.tweak_log(log, self.mod_count)
         self.mod_count = Counter()
+
+    @staticmethod
+    def _is_nonplayable(record):
+        return record.IsNonPlayable
 
 class MultiTweaker(AMultiTweaker,Patcher):
 
