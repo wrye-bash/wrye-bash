@@ -1077,6 +1077,38 @@ class AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,
 class CBash_AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,
                                         _AssortCTweak): pass
 
+#------------------------------------------------------------------------------
+class _AAssortedTweak_SEFFIcon(_AAssortedTweak):
+    """Changes the icon for the SEFF (Script Effect) magic effect."""
+    tweak_read_classes = b'MGEF',
+    tweak_name = _(u'Magic: Script Effect Icon Changer')
+    tweak_tip = _(u'Changes the Script Effect icon to one of several choices, '
+                  u'or to a custom icon.')
+    tweak_key = u'seff_icon_changer'
+    tweak_choices = [(_(u'Unused Magic Icon'), u'magic\\magic_all_icon.dds'),
+                     (_(u'Unused Darkness Icon'),
+                      u'magic\\illusion_icons\\darkness_illusion.dds'),
+                     (_(u'Default (Burden)'),
+                      u'magic\\alteration_icons\\burden_alteration.dds'),
+                     (_(u'Custom'), u'path\\to\\icon.dds')]
+    tweak_log_msg = _(u'Script Effect icon changed.')
+
+    @property
+    def chosen_icon(self): return self.choiceValues[self.chosen][0].lower()
+
+    def wants_record(self, record):
+        # u'' here is on purpose! We're checking the EDID, which gets decoded
+        return (record.eid == u'SEFF' and
+                record.iconPath.lower() != self.chosen_icon)
+
+    def tweak_record(self, record):
+        record.iconPath = self.chosen_icon
+
+class AssortedTweak_SEFFIcon(_AAssortedTweak_SEFFIcon, _AssortPTweak): pass
+class CBash_AssortedTweak_SEFFIcon(_AAssortedTweak_SEFFIcon,
+                                   _AssortCTweak): pass
+
+#------------------------------------------------------------------------------
 class AssortedTweaker(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     scanOrder = 32

@@ -1864,6 +1864,7 @@ assorted_tweaks = {
     u'AssortedTweak_LightFadeValueFix',
     u'AssortedTweak_SkyrimStyleWeapons',
     u'AssortedTweak_TextlessLSCRs',
+    u'AssortedTweak_SEFFIcon',
 }
 nonplayable_biped_flags = {u'backWeapon', u'quiver', u'weapon', u'torch',
                            u'rightRing', u'sideWeapon'}
