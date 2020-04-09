@@ -38,7 +38,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelArray, MelWthrColors, MelObject, MreActorBase, MreWithItems, \
     MelReadOnly, MelCtda, MelRef3D, MelXlod, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript, \
-    MelDescription
+    MelDescription, BipedFlags
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
 
@@ -65,18 +65,6 @@ from ...brec import MelModel, MelLists
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
-#------------------------------------------------------------------------------
-class MelBipedFlags(Flags):
-    """Biped flags element. Includes biped flag set by default."""
-    mask = 0xFFFF
-    def __init__(self,default=0,newNames=None):
-        names = Flags.getNames('head', 'hair', 'upperBody', 'lowerBody',
-                               'hand', 'foot', 'rightRing', 'leftRing',
-                               'amulet', 'weapon', 'backWeapon', 'sideWeapon',
-                               'quiver', 'shield', 'torch', 'tail')
-        if newNames: names.update(newNames)
-        super(MelBipedFlags, self).__init__(default, names)
-
 #------------------------------------------------------------------------------
 class MelConditions(MelGroups):
     """A list of conditions. Can contain the old CTDT format as well, which
@@ -529,10 +517,10 @@ class MreArmo(MelRecord):
     """Armor."""
     rec_sig = b'ARMO'
 
-    _flags = MelBipedFlags(0, Flags.getNames((16, 'hideRings'),
-                                             (17, 'hideAmulet'),
-                                             (22, 'notPlayable'),
-                                             (23, 'heavyArmor')))
+    _flags = BipedFlags(0, Flags.getNames((16, u'hideRings'),
+                                          (17, u'hideAmulet'),
+                                          (22, u'notPlayable'),
+                                          (23, u'heavyArmor')))
 
     melSet = MelSet(
         MelEdid(),
@@ -683,9 +671,9 @@ class MreClot(MelRecord):
     """Clothing."""
     rec_sig = b'CLOT'
 
-    _flags = MelBipedFlags(0, Flags.getNames((16, 'hideRings'),
-                                              (17, 'hideAmulet'),
-                                              (22, 'notPlayable')))
+    _flags = BipedFlags(0, Flags.getNames((16, u'hideRings'),
+                                          (17, u'hideAmulet'),
+                                          (22, u'notPlayable')))
 
     melSet = MelSet(
         MelEdid(),

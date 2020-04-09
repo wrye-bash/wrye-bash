@@ -41,7 +41,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MreActorBase, MreWithItems, MelCtdaFo3, MelRef3D, MelXlod, \
     MelWorldBounds, MelEnableParent, MelRefScale, MelMapMarker, MelMdob, \
     MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
-    MelPickupSound, MelDropSound, MelActivateParents
+    MelPickupSound, MelDropSound, MelActivateParents, BipedFlags
 from ...exception import ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -79,40 +79,7 @@ from ...brec import MelModel
 ##: See what we can do with MelUnion & MelTruncatedStruct here
 class MelBipedObjectData(MelStruct):
     """Handler for BODT/BOD2 subrecords.  Reads both types, writes only BOD2"""
-    BipedFlags = Flags(0, Flags.getNames(
-        (0,  u'head'),
-        (1,  u'hair'),
-        (2,  u'body'),
-        (3,  u'hands'),
-        (4,  u'forearms'),
-        (5,  u'amulet'),
-        (6,  u'ring'),
-        (7,  u'feet'),
-        (8,  u'calves'),
-        (9,  u'shield'),
-        (10, u'bodyaddon1_tail'),
-        (11, u'long_hair'),
-        (12, u'circlet'),
-        (13, u'bodyaddon2_ears'),
-        (14, u'dragon_head'),
-        (15, u'dragon_lwing'),
-        (16, u'dragon_rwing'),
-        (17, u'dragon_body'),
-        (18, u'bodyaddon7'),
-        (19, u'bodyaddon8'),
-        (20, u'decapitate_head'),
-        (21, u'decapitate'),
-        (22, u'bodyaddon9'),
-        (23, u'bodyaddon10'),
-        (24, u'bodyaddon11'),
-        (25, u'bodyaddon12'),
-        (26, u'bodyaddon13'),
-        (27, u'bodyaddon14'),
-        (28, u'bodyaddon15'),
-        (29, u'bodyaddon16'),
-        (30, u'bodyaddon17'),
-        (31, u'fx01'),
-    ), unknown_is_unused=True) # mirrors xEdit, though it doesn't make sense
+    _bp_flags = BipedFlags()
 
     # Legacy Flags, (For BODT subrecords) - #4 is the only one not discarded.
     LegacyFlags = Flags(0, Flags.getNames(
@@ -127,14 +94,14 @@ class MelBipedObjectData(MelStruct):
     ), unknown_is_unused=True) # mirrors xEdit, though it doesn't make sense
 
     ArmorTypeFlags = Flags(0, Flags.getNames(
-        (0, u'light_armor'),
-        (1, u'heavy_armor'),
-        (2, u'clothing'),
+        u'light_armor',
+        u'heavy_armor',
+        u'clothing',
     ))
 
     def __init__(self):
         super(MelBipedObjectData, self).__init__(b'BOD2', u'2I',
-            (MelBipedObjectData.BipedFlags, u'bipedFlags'),
+            (MelBipedObjectData._bp_flags, u'bipedFlags'),
             (MelBipedObjectData.ArmorTypeFlags, u'armorFlags'))
 
     def getLoaders(self,loaders):
@@ -150,17 +117,18 @@ class MelBipedObjectData(MelStruct):
             if size_ == 8:
                 # Version 20 of this subrecord is only 8 bytes (armorType
                 # omitted)
-                bipedFlags, legacyFlags, _unused = ins.unpack(
+                bp_flags, legacyFlags, _bp_unused = ins.unpack(
                     __unpacker2, size_, readId)
                 armorFlags = 0
             elif size_ != 12:
                 raise ModSizeError(ins.inName, readId, (12, 8), size_)
             else:
-                bipedFlags, legacyFlags, _unused, armorFlags = ins.unpack(
+                bp_flags, legacyFlags, _bp_unused, armorFlags = ins.unpack(
                     __unpacker3, size_, readId)
             # legacyData is discarded except for non-playable status
-            record.bipedFlags = MelBipedObjectData.BipedFlags(bipedFlags)
-            record.flags1[2] = MelBipedObjectData.LegacyFlags(legacyFlags)[4]
+            record.bipedFlags = MelBipedObjectData._bp_flags(bp_flags)
+            record.flags1.isNotPlayable = MelBipedObjectData.LegacyFlags(
+                legacyFlags)[4]
             record.armorFlags = MelBipedObjectData.ArmorTypeFlags(armorFlags)
         else:
             # BOD2 - new style, MelStruct can handle it

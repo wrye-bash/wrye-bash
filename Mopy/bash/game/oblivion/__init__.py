@@ -142,6 +142,10 @@ class OblivionGameInfo(GameInfo):
         canEditHeader = True
         validHeaderVersions = (0.8,1.0)
         stringsFiles = []
+        biped_flag_names = (u'head', u'hair', u'upperBody', u'lowerBody',
+                            u'hand', u'foot', u'rightRing', u'leftRing',
+                            u'amulet', u'weapon', u'backWeapon', u'sideWeapon',
+                            u'quiver', u'shield', u'torch', u'tail')
 
     allTags = {
         u'Actors.ACBS', u'Actors.AIData', u'Actors.AIPackages',

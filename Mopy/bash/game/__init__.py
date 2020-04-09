@@ -332,6 +332,8 @@ class GameInfo(object):
         # The maximum number of entries inside a leveled list for this game.
         # Zero means no limit.
         max_lvl_list_size = 0
+        # A tuple containing all biped flag names (in order) for this game
+        biped_flag_names = ()
 
     # Bash Tags supported by this game
     allTags = set()
