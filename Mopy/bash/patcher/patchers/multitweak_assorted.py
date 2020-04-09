@@ -1109,6 +1109,26 @@ class CBash_AssortedTweak_SEFFIcon(_AAssortedTweak_SEFFIcon,
                                    _AssortCTweak): pass
 
 #------------------------------------------------------------------------------
+class AssortedTweak_GunsUseISAnimation(MultiTweakItem):
+    """Set all guns to use ironsight animations."""
+    tweak_read_classes = b'WEAP',
+    tweak_name = _(u'All Guns Use Iron Sights Animation')
+    tweak_tip = _(u'Makes all guns use the iron sights animation.')
+    tweak_key = u'GunsUseIronSights'
+    tweak_log_msg = _(u'Guns set to use iron sights: %(total_changed)d')
+    tweak_choices = [(_(u'All Guns'), {1, 2}),
+                     (_(u'Energy Weapons Only'), {1}),
+                     (_(u'Conventional Weapons Only'), {2})]
+
+    def wants_record(self, record):
+        return (record.equipment_type in self.choiceValues[self.chosen][0] and
+                not record.dnamFlags1.hasScope and
+                record.dnamFlags1.dontUse1stPersonISAnimations)
+
+    def tweak_record(self, record):
+        record.dnamFlags1.dontUse1stPersonISAnimations = False
+
+#------------------------------------------------------------------------------
 class AssortedTweaker(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     scanOrder = 32
