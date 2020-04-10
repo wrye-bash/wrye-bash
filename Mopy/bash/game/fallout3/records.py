@@ -32,7 +32,7 @@ from ...bolt import Flags, struct_unpack, struct_pack
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MelSet, MelFid, MelOptStruct, MelFids, MreHeaderBase, \
     MelBase, MelUnicode, MelFidList, MreGmstBase, MelStrings, MelMODS, \
-    MreHasEffects, MelReferences, MelColorInterpolator, MelValueInterpolator, \
+    MelReferences, MelColorInterpolator, MelValueInterpolator, \
     MelUnion, AttrValDecider, MelRegnEntrySubrecord, SizeDecider, MelFloat, \
     MelSInt8, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
     MelOptFid, MelOptFloat, MelOptSInt16, MelOptSInt32, MelOptUInt8, \
@@ -428,7 +428,7 @@ class MreAddn(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreAlch(MelRecord,MreHasEffects):
+class MreAlch(MelRecord):
     """Ingestible."""
     rec_sig = b'ALCH'
 
@@ -1190,7 +1190,7 @@ class MreEfsh(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreEnch(MelRecord,MreHasEffects):
+class MreEnch(MelRecord):
     """Object Effect."""
     rec_sig = b'ENCH'
 
@@ -1588,7 +1588,7 @@ class MreInfo(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreIngr(MelRecord,MreHasEffects):
+class MreIngr(MelRecord):
     """Ingredient."""
     rec_sig = b'INGR'
 
@@ -2874,7 +2874,7 @@ class MreSoun(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreSpel(MelRecord,MreHasEffects):
+class MreSpel(MelRecord):
     """Actor Effect"""
     rec_sig = b'SPEL'
 

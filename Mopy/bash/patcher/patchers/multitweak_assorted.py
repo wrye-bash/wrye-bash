@@ -486,8 +486,9 @@ class _PSeffWeightTweak(AMultiTweakItem_Weight, _AssortPTweak):
     def wants_record(self, record):
         # Skip OBME records, at least for now
         return (super(_PSeffWeightTweak, self).wants_record(record) and
-                record.obme_record_version is None and
-                not (b'SEFF', 0) in record.getEffects())
+                (bush.game.fsName != u'Oblivion' or
+                 (record.obme_record_version is None and
+                  (b'SEFF', 0) not in record.getEffects())))
 
 class _CSeffWeightTweak(AMultiTweakItem_Weight, _AssortCTweak):
     """Mixin for CBash weight tweaks that need to ignore SEFF effects."""

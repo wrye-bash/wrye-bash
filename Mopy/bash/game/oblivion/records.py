@@ -22,14 +22,15 @@
 #
 # =============================================================================
 """This module contains the oblivion record classes."""
+import re
 from collections import OrderedDict
 
 from ... import brec
-from ...bolt import Flags
+from ...bolt import Flags, sio
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, \
     MelFids, MreHeaderBase, MelBase, MelUnicode, MelFidList, MelStrings, \
-    MreGmstBase, MreHasEffects, MelReferences, MelRegnEntrySubrecord, \
+    MreGmstBase, MelReferences, MelRegnEntrySubrecord, \
     MelFloat, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
     MelOptFloat, MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, \
     MelRaceParts, MelRaceVoices, null1, null2, null3, null4, MelScriptVars, \
@@ -381,6 +382,65 @@ class MelOwnership(MelGroup):
     def dumpData(self,record,out):
         if record.ownership and record.ownership.owner:
             super(MelOwnership, self).dumpData(record, out)
+
+##: Could technically be reworked for non-Oblivion games, but is broken and
+# unused outside of Oblivion right now
+class MreHasEffects(object):
+    """Mixin class for magic items."""
+    __slots__ = []
+
+    def getEffects(self):
+        """Returns a summary of effects. Useful for alchemical catalog."""
+        from ... import bush
+        effects = []
+        effectsAppend = effects.append
+        for effect in self.effects:
+            mgef, actorValue = effect.name, effect.actorValue
+            if mgef not in bush.game.generic_av_effects:
+                actorValue = 0
+            effectsAppend((mgef,actorValue))
+        return effects
+
+    def getSpellSchool(self):
+        """Returns the school based on the highest cost spell effect."""
+        from ... import bush
+        spellSchool = [0,0]
+        for effect in self.effects:
+            school = bush.game.mgef_school[effect.name]
+            effectValue = bush.game.mgef_basevalue[effect.name]
+            if effect.magnitude:
+                effectValue *= effect.magnitude
+            if effect.area:
+                effectValue *= (effect.area // 10)
+            if effect.duration:
+                effectValue *= effect.duration
+            if spellSchool[0] < effectValue:
+                spellSchool = [effectValue,school]
+        return spellSchool[1]
+
+    def getEffectsSummary(self):
+        """Return a text description of magic effects."""
+        from ... import bush
+        with sio() as buff:
+            avEffects = bush.game.generic_av_effects
+            aValues = bush.game.actor_values
+            buffWrite = buff.write
+            if self.effects:
+                school = self.getSpellSchool()
+                buffWrite(aValues[20+school] + u'\n')
+            for index,effect in enumerate(self.effects):
+                if effect.scriptEffect:
+                    effectName = effect.scriptEffect.full or u'Script Effect'
+                else:
+                    effectName = bush.game.mgef_name[effect.name]
+                    if effect.name in avEffects:
+                        effectName = re.sub(_(u'(Attribute|Skill)'),aValues[effect.actorValue],effectName)
+                buffWrite(u'o+*'[effect.recipient]+u' '+effectName)
+                if effect.magnitude: buffWrite(u' %sm'%effect.magnitude)
+                if effect.area: buffWrite(u' %sa'%effect.area)
+                if effect.duration > 1: buffWrite(u' %sd'%effect.duration)
+                buffWrite(u'\n')
+            return buff.getvalue()
 
 #------------------------------------------------------------------------------
 # Oblivion Records ------------------------------------------------------------
