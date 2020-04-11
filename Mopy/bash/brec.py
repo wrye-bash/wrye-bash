@@ -1144,6 +1144,8 @@ class MelUnion(MelBase):
         self._possible_sigs = {s for element
                                in self.element_mapping.itervalues()
                                for s in element.signatures}
+        if self.fallback:
+            self._possible_sigs.update(self.fallback.signatures)
 
     def _get_element(self, decider_ret):
         """Retrieves the fitting element from element_mapping for the
@@ -1184,6 +1186,7 @@ class MelUnion(MelBase):
         slots_ret = {self.decider_result_attr}
         for element in self.element_mapping.itervalues():
             slots_ret.update(element.getSlotsUsed())
+        if self.fallback: slots_ret.update(self.fallback.getSlotsUsed())
         return tuple(slots_ret)
 
     def getLoaders(self, loaders):
@@ -1192,6 +1195,7 @@ class MelUnion(MelBase):
         temp_loaders = {}
         for element in self.element_mapping.itervalues():
             element.getLoaders(temp_loaders)
+        if self.fallback: self.fallback.getLoaders(temp_loaders)
         for signature in temp_loaders.keys():
             loaders[signature] = self
 
@@ -1204,6 +1208,11 @@ class MelUnion(MelBase):
             element.hasFids(temp_elements)
             if temp_elements:
                 self.fid_elements.add(element)
+        if self.fallback:
+            temp_elements = set()
+            self.fallback.hasFids(temp_elements)
+            if temp_elements:
+                self.fid_elements.add(self.fallback)
         if self.fid_elements: formElements.add(self)
 
     def setDefault(self, record):
@@ -1212,6 +1221,7 @@ class MelUnion(MelBase):
         # between a loaded and a freshly constructed record.
         for element in self.element_mapping.itervalues():
             element.setDefault(record)
+        if self.fallback: self.fallback.setDefault(record)
 
     def mapFids(self, record, function, save=False):
         element = self._get_element_from_record(record)
@@ -1236,11 +1246,12 @@ class MelUnion(MelBase):
 
     @property
     def static_size(self):
-        stat_size = next(self.element_mapping.itervalues()).static_size
-        if any(element.static_size != stat_size for element
-               in self.element_mapping.itervalues()):
+        all_elements = self.element_mapping.values() + (
+            [self.fallback] if self.fallback else [])
+        first_size = all_elements[0].static_size # pick arbitrary element size
+        if any(element.static_size != first_size for element in all_elements):
             raise exception.AbstractError() # The sizes are not all identical
-        return stat_size
+        return first_size
 
 #------------------------------------------------------------------------------
 class MelReferences(MelGroups):
@@ -1780,7 +1791,6 @@ class MelSet(object):
         self.defaulters = {}
         self.loaders = {}
         self.formElements = set()
-        self.firstFull = None
         for element in self.elements:
             element.getDefaulters(self.defaulters,'')
             element.getLoaders(self.loaders)
@@ -1920,6 +1930,8 @@ class _MelDistributor(MelNull):
     def _raise_syntax_error(self, error_msg):
         raise SyntaxError(u'Invalid distributor syntax: %s' % error_msg)
 
+    ##: Needs to change to only accept unicode strings as attributes, but keep
+    # accepting only bytestrings as signatures
     def _pre_process(self):
         """Ensures that the distributor config defined above has correct syntax
         and resolves shortcuts (e.g. A|B syntax)."""
