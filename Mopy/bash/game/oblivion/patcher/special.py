@@ -96,6 +96,8 @@ class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
         mapper = modFile.getLongMapper()
         for record in modFile.INGR.getActiveRecords():
             if not record.full: continue #--Ingredient must have name!
+            if record.obme_record_version is not None:
+                continue ##: Skips OBME records - rework to support them
             effects = record.getEffects()
             if not ('SEFF',0) in effects:
                 id_ingred[mapper(record.fid)] = (
@@ -436,6 +438,8 @@ class CoblExhaustion(_ACoblExhaustion,ListPatcher):
         exhaustId = (_cobl_main, 0x05139B)
         keep = self.patchFile.getKeeper()
         for record in self.patchFile.SPEL.records:
+            ##: Skips OBME records - rework to support them
+            if record.obme_record_version is not None: continue
             #--Skip this one?
             duration = self.id_exhaustion.get(record.fid,0)
             if not (duration and record.spellType == 2): continue

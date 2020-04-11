@@ -775,8 +775,10 @@ class AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,MultiTweakItem):
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.ALCH.records:
-            if maxWeight < record.weight < 1 and not (
-                    'SEFF', 0) in record.getEffects():
+            ##: Skips OBME records - rework to support them
+            if (maxWeight < record.weight < 1 and
+                record.obme_record_version is None and
+                    ('SEFF', 0) not in record.getEffects()):
                 record.weight = maxWeight
                 keep(record.fid)
                 count[record.fid[0]] += 1
