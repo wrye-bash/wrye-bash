@@ -45,10 +45,12 @@ from .base import MultiTweakItem, CBash_MultiTweakItem, SpecialPatcher, \
     ListPatcher, CBash_ListPatcher, CBash_MultiTweaker
 
 # Utilities & Constants -------------------------------------------------------
-def _find_vanilla_eyes():
+def _find_vanilla_eyes(is_cbash=False):
     """Converts vanilla default_eyes to use long FormIDs and returns the
     result."""
-    def _conv_fid(race_fid): return GPath(race_fid[0]), race_fid[1]
+    def _conv_fid_p(race_fid): return GPath(race_fid[0]), race_fid[1]
+    def _conv_fid_c(race_fid): return FormID(race_fid[0], race_fid[1])
+    _conv_fid = _conv_fid_c if is_cbash else _conv_fid_p
     ret = {}
     for race_fid, race_eyes in bush.game.default_eyes.iteritems():
         new_key = _conv_fid(race_fid)
@@ -586,7 +588,7 @@ class RacePatcher(AMultiTweaker, ListPatcher):
         racesPatched = []
         racesSorted = []
         racesFiltered = []
-        mod_npcsFixed = {}
+        mod_npcsFixed = defaultdict(set)
         reProcess = re.compile(
             u'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',
             re.I | re.U)
@@ -831,27 +833,19 @@ class RacePatcher(AMultiTweaker, ListPatcher):
             random.seed(npc.fid[1]) # make it deterministic
             if not npc.eye and raceEyes:
                 npc.eye = random.choice(raceEyes)
-                srcMod = npc.fid[0]
-                if srcMod not in mod_npcsFixed: mod_npcsFixed[srcMod] = set()
-                mod_npcsFixed[srcMod].add(npc.fid)
+                mod_npcsFixed[npc.fid[0]].add(npc.fid)
                 keep(npc.fid)
             raceHair = (
                 (defaultMaleHair, defaultFemaleHair)[npc.flags.female]).get(
                 npc.race)
             if not npc.hair and raceHair:
                 npc.hair = random.choice(raceHair)
-                srcMod = npc.fid[0]
-                if srcMod not in mod_npcsFixed: mod_npcsFixed[srcMod] = set()
-                mod_npcsFixed[srcMod].add(npc.fid)
+                mod_npcsFixed[npc.fid[0]].add(npc.fid)
                 keep(npc.fid)
             if not npc.hairLength:
                 npc.hairLength = random.random()
-                srcMod = npc.fid[0]
-                if srcMod not in mod_npcsFixed: mod_npcsFixed[srcMod] = set()
+                mod_npcsFixed[npc.fid[0]].add(npc.fid)
                 keep(npc.fid)
-                if npc.fid in mod_npcsFixed[srcMod]: continue
-                mod_npcsFixed[srcMod].add(npc.fid)
-
         #--Done
         log.setHeader(u'= ' + self._patcher_name)
         self._srcMods(log)
@@ -1081,7 +1075,7 @@ class CBash_RacePatcher_Eyes(_CBashOnlyRacePatchers):
         self.srcEyes = {}
         self.eye_meshes = {}
         self.finishedOnce = False
-        self.vanilla_eyes = _find_vanilla_eyes()
+        self.vanilla_eyes = _find_vanilla_eyes(is_cbash=True)
 
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
@@ -1347,14 +1341,18 @@ class CBash_RacePatcher_Eyes(_CBashOnlyRacePatchers):
                     random.seed(recordId[1]) # make it deterministic
                     raceEyes = final_eyes.get(raceId)
                     eye = npc.eye
-                    if eye is None and raceEyes:
+                    if not eye and raceEyes:
                         eye = random.choice(raceEyes)
                         npcChanged = True
                     raceHair = ((defaultMaleHair, defaultFemaleHair)[
                             npc.IsFemale]).get(raceId)
                     hair = npc.hair
-                    if hair is None and raceHair:
+                    if not hair and raceHair:
                         hair = random.choice(raceHair)
+                        npcChanged = True
+                    hair_l = npc.hairLength
+                    if not hair_l:
+                        hair_l = random.random()
                         npcChanged = True
                     if npcChanged:
                         fixedNPCs.add(recordId)
@@ -1362,8 +1360,7 @@ class CBash_RacePatcher_Eyes(_CBashOnlyRacePatchers):
                         if override:
                             override.eye = eye
                             override.hair = hair
-                            if not override.hairLength:
-                                override.hairLength = random.random()
+                            override.hairLength = hair_l
                             mod_npcsFixed.setdefault(modFile.GName, set()).add(
                                 recordId)
                 npc.UnloadRecord()
