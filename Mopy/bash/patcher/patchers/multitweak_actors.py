@@ -239,7 +239,7 @@ class AVORB_NPCSkeletonPatcher(_ASkeletonTweak):
         if special_skel_mesh in skeleton_specials:
             return self._skeleton_dir.join(special_skel_mesh)
         else:
-            random.seed(record.fid) # make it deterministic ##: record.fid[1]?
+            random.seed(record.fid[1]) # make it deterministic
             rand_index = random.randint(1, len(skeleton_list)) - 1
             return self._skeleton_dir.join(skeleton_list[rand_index]).s
 

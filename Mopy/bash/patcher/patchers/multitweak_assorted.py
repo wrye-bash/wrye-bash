@@ -889,6 +889,7 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons, _AssortPTweak):
                 else: # Default icon, probably a token or somesuch
                     d_icons = d_icons[6]
             elif curr_sig == b'KEYM':
+                random.seed(record.fid[1]) # make it deterministic
                 d_icons = d_icons[random.randint(0, 1)]
             elif curr_sig == b'WEAP':
                 # Choose based on weapon type:
@@ -898,6 +899,7 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons, _AssortPTweak):
                     d_icons = d_icons[0]
         elif curr_sig in (b'BOOK', b'BSGN', b'CLAS'):
             # Just a random book icon - for class/birthsign as well.
+            random.seed(record.fid[1]) # make it deterministic
             d_icons = d_icons % (random.randint(1, 13))
         self._assign_icons(record, d_icons)
 
@@ -933,6 +935,7 @@ class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,
                 else: # Default icon, probably a token or somesuch
                     d_icons = d_icons[6]
             elif record._Type == b'KEYM':
+                random.seed(record.fid[1]) # make it deterministic
                 d_icons = d_icons[random.randint(0,1)]
             elif record._Type == b'WEAP':
                 #choose based on weapon type:
@@ -942,6 +945,7 @@ class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,
                     d_icons = d_icons[0]
         elif record._Type in (b'BOOK', b'BSGN', b'CLAS'):
             # just a random book icon - for class/birthsign as well.
+            random.seed(record.fid[1]) # make it deterministic
             d_icons = d_icons % (random.randint(1,13))
         self._assign_icons(record, d_icons)
 
