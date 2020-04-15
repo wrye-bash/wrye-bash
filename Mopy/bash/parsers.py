@@ -565,8 +565,6 @@ class EditorIds(object):
         type_id_eid,types = self.type_id_eid,self.types
         classes = [MreRecord.type_class[x] for x in types]
         loadFactory = LoadFactory(True,*classes)
-        loadFactory.addClass(MreRecord.type_class['SCPT'])
-        loadFactory.addClass(MreRecord.type_class['QUST'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()

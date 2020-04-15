@@ -2548,7 +2548,7 @@ class InstallersData(DataStore):
                 # Keep both versions of the BP doc (.txt and .html)
                 keepFiles.add((bolt.CIstr('%s' % bp_doc)))
                 keepFiles.add((bolt.CIstr(
-                    bp_doc.root.s + (u'.txt' if bp_doc.cext == u'.txt'
+                    bp_doc.root.s + (u'.txt' if bp_doc.cext == u'.html'
                                      else u'.html'))))
         keepFiles.update((bolt.CIstr(f) for f in bush.game.wryeBashDataFiles))
         keepFiles.update((bolt.CIstr(f) for f in bush.game.ignoreDataFiles))

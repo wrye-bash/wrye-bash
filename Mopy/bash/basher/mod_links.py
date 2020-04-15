@@ -608,7 +608,7 @@ def _getUrl(fileName, installer, log_txt):
     url = None
     ma = bosh.reTesNexus.search(installer)
     if ma and ma.group(2):
-        url = bush.game.nexusUrl + u'downloads/file.php?id=' + ma.group(2)
+        url = bush.game.nexusUrl + u'mods/' + ma.group(2)
     if not url:
         ma = bosh.reTESA.search(installer)
         if ma and ma.group(2):
@@ -993,9 +993,13 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         patch_files.executing_patch = self._selected_item
         mods_prior_to_patch = load_order.cached_lower_loading_espms(
             self._selected_item)
-        if self.doCBash or bass.settings['bash.CBashEnabled']:
-            # if doing a python patch but CBash is enabled, it's very likely
-            # that the merge info currently is from a CBash mode scan, rescan
+        if bush.game.Esp.canCBash:
+            # If the game has CBash capabilities we *have* to rescan each time
+            # or we may end up in a situation where a user decides to use the
+            # '-P' CLI parameter to disable CBash and build a PBash patch using
+            # the cached mergeability information - which now contains
+            # mergeable mods that PBash can't handle!
+            ##: We can drop this once PBash and CBash are equally capable
             bosh.modInfos.rescanMergeable(mods_prior_to_patch,
                                           doCBash=self.doCBash)
             self.window.RefreshUI(refreshSaves=False) # rescanned mergeable
