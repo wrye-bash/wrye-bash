@@ -342,7 +342,7 @@ class ImportFaceDialog(DialogWindow):
 
 #------------------------------------------------------------------------------
 class CreateNewProject(DialogWindow):
-    title = _(u'Create New Project')
+    title = _(u'New Project')
     def __init__(self,parent=None):
         super(CreateNewProject, self).__init__(parent)
         #--Build a list of existing directories
@@ -369,9 +369,9 @@ class CreateNewProject(DialogWindow):
         self.ok_button = OkButton(self)
         self.ok_button.on_clicked.subscribe(self.OnClose)
         VLayout(border=5, spacing=5, items=[
-            Label(self, _(u'What do you want to name the New Project?')),
+            Label(self, _(u'What do you want to name the new project?')),
             (self.textName, LayoutOptions(expand=True)),
-            Label(self, _(u'What do you want to add to the New Project?')),
+            Label(self, _(u'What do you want to add to the new project?')),
             self.checkEsp, self.checkEspMasterless, self.checkWizard,
             self.checkWizardImages, self.checkDocs, Stretch(),
             (HLayout(spacing=5, items=[self.ok_button, CancelButton(self)]),
@@ -395,9 +395,9 @@ class CreateNewProject(DialogWindow):
             self.ok_button.enabled = True
 
     def OnCheckBoxChange(self, is_checked=None):
-        """ Change the DialogWindow Icon to represent what the project status will
-        be when created. """
-        if self.checkEsp.is_checked:
+        """Change the DialogWindow icon to represent what the project status
+        will be when created. """
+        if self.checkEsp.is_checked or self.checkEspMasterless.is_checked:
             if self.checkWizard.is_checked:
                 self.set_icon(
                     installercons.get_image('off.white.dir.wiz').GetIcon())

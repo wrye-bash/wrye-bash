@@ -565,9 +565,9 @@ class Installers_RenameStrings(AppendableLink, _Installers_Process_Skip):
 
 #--New project dialog ---------------------------------------------------------
 class Installers_CreateNewProject(ItemLink):
-    """Open the Create New Project Dialog"""
-    _text = _(u'Create New Project...')
-    _help = _(u'Create a new project...')
+    """Open the New Project Dialog"""
+    _text = _(u'New Project...')
+    _help = _(u'Create a new project.')
 
     @balt.conversation
     def Execute(self): CreateNewProject.display_dialog(self.window)
