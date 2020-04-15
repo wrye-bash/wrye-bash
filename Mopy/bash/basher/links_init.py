@@ -389,7 +389,7 @@ def InitModLinks():
         ModList.mainMenu.append(files_menu)
     ModList.mainMenu.append(SeparatorLink())
     if True: #--Load
-        loadMenu = MenuLink(_(u'Load Order'))
+        loadMenu = MenuLink(_(u'Active Mods'))
         loadMenu.links.append(Mods_LoadList())
         ModList.mainMenu.append(loadMenu)
     ModList.mainMenu.append(SeparatorLink())
