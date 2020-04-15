@@ -623,7 +623,7 @@ tab. The directories skipped are:
     </thead>
     <tbody>
         <tr>
-            <td colspan="2" rowspan="6" id="bainFileMenu">File...</td>
+            <td colspan="2" rowspan="5" id="bainFileMenu">File...</td>
             <td id="bainOpenFile">Open...</td>
             <td>Opens the selected package(s) in the file system.</td>
         </tr>
@@ -641,14 +641,9 @@ tab. The directories skipped are:
                 <code>[Game] Mods/Bash Mod Data/Hidden</code> folder.</td>
         </tr>
         <tr>
-            <td id="bainRedate">Redate...</td>
-            <td>Change the modification time of the selected package. If more than one package is selected, then all the packages
-                will have their modification times altered, with the first in the list being set to the specified time and the
-                rest at one minute intervals from that time.</td></tr>
-        <tr>
             <td id="bainDelete">Delete</td>
-            <td>Deletes the selected package(s). Deleted packages are
-                <strong>not</strong> sent to the Recycling Bin, they are permanently deleted.</td>
+            <td>Deletes the selected package(s). Deleted packages are sent to
+                the Recycling Bin.</td>
         </tr>
         <tr>
             <td colspan="2" rowspan="4" id="bainOpenAt">Open at</td>
@@ -1006,7 +1001,12 @@ tab. The directories skipped are:
                 <tr><td>Redate...</td><td>Change the modification time of the selected plugin. If more than one plugin is selected, then all the plugins will
                     have their modification times altered, with the first in the list being set to the specified time and the rest at one minute intervals
                     from that time.</td></tr>
-                <tr><td>Delete</td><td><strong>Permanently</strong> deletes the selected plugin, and any backups of it, but not snapshots.</td></tr>
+                <tr>
+                    <td>Delete</td>
+                    <td>Deletes the selected plugin(s) and any backups of them,
+                        but not snapshots. Deleted plugins are sent to the
+                        Recycling Bin.</td>
+                </tr>
                 <tr><td id="modsBackup">Backup</td><td>Creates a backup of the selected plugin in <code>[Game] Mods\Bash Mod Data\Backups</code>.
                     On first run, the backed-up plugin has <code>f</code> appended to its file extension, giving e.g. <code>.espf</code>.</td></tr>
                 <tr><td>Revert To Backup...</td><td>Reverts the selected plugin to the last backup made of it.</td></tr>
@@ -5862,7 +5862,7 @@ C.Location, -C.LockList
             <tr><th colspan="2">Command</th><th>Description</th></tr>
         </thead>
         <tbody>
-            <tr><td rowspan="10">File..</td>
+            <tr><td rowspan="7">File..</td>
                 <td>Rename...</td><td>Rename the selected save file. <code>.bak</code> files
                     are not supported and you can't change the extension (specifying another
                     extension will make the rename fail).</td></tr>
@@ -5871,13 +5871,11 @@ C.Location, -C.LockList
                 <tr><td>Hide...</td><td>Moves the selected save file to the
                     <code>My Games\[Game]\Saves\[optional profile dir\]Bash\Hidden</code>
                     directory.</td></tr>
-                <tr><td>Redate...</td><td>Change the modification time of the selected save.
-                    If more than one save is selected, then all the save will have their
-                    modification times altered, with the first in the list being set to the
-                    specified time and the rest at one minute intervals from that
-                    time.</td></tr>
-                <tr><td>Delete</td><td>Permanently deletes the selected save file and any
-                    backups of it.</td></tr>
+                <tr>
+                    <td>Delete</td>
+                    <td>Deletes the selected save(s) and any backups of them.
+                        Deleted saves are sent to the Recycling Bin.</td>
+                </tr>
                 <tr><td>Backup</td><td>Creates a backup of the selected save file in
                     <code>[Game] Mods\Bash Mod Data\Backups</code>. On first run, the backed-up
                     save file has <code>f</code> appended to its file extension, giving
@@ -5886,13 +5884,6 @@ C.Location, -C.LockList
                     backup made of it.</td></tr>
                 <tr><td>Revert to First Backup...</td><td>Reverts the selected save file to the
                     first backup made of it.</td></tr>
-                <tr><td>Snapshot...</td><td>Creates a snapshot copy of the selected save in
-                    <code>Bash\Snapshots</code>. Snapshot filenames are appended with
-                    <code>-n</code> where n is a number between 01 and 99. Eg. the first
-                    snapshot of <code>MySave.ess</code> is <code>MySave-01.ess</code>. The
-                    number is incremented each time the save has a snapshot taken.</td></tr>
-                <tr><td>Revert To Snapshot...</td><td>Reverts the selected save to a selected
-                    snapshot.</td></tr>
             <tr><td colspan="2" id="savesMoveTo">Move To</td><td>This submenu allows you to
                 specify a save profile to move the selected save(s) to from the active save
                 profile.</td></tr>
@@ -6141,7 +6132,11 @@ C.Location, -C.LockList
                     will remain the same and specifying a non-image extension will make the rename
                     operation fail - in short, leave the extension alone. Empty filenames will also
                     abort the rename.</td></tr>
-                <tr><td>Delete</td><td>Deletes the selected file(s).</td></tr>
+                <tr>
+                    <td>Delete</td>
+                    <td>Deletes the selected screenshot(s). Deleted screenshots
+                        are sent to the Recycling Bin.</td>
+                </tr>
             <tr><td colspan="2">Convert</td><td>Converts the selected files to one of the following
                 formats: JPEG, PNG, BMP, TIFF. If a file of the conversion format already exists with
                 the same name as a file to be converted, the conversion will not take place for that

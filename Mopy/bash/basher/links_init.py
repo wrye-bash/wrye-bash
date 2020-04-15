@@ -269,7 +269,6 @@ def InitInstallerLinks():
         file_menu.links.append(Installer_Rename())
         file_menu.links.append(Installer_Duplicate())
         file_menu.links.append(Installer_Hide())
-        file_menu.links.append(File_Redate())
         file_menu.links.append(balt.UIList_Delete())
         InstallersList.itemMenu.append(file_menu)
     if True: #--Open At...
