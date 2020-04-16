@@ -471,7 +471,6 @@ def InitModLinks():
             if CBashApi.Enabled:
                 exportMenu.links.append(CBash_Mod_CellBlockInfo_Export())
             exportMenu.links.append(Mod_EditorIds_Export())
-            ## exportMenu.links.append(Mod_ItemData_Export())
             if bush.game.fsName in (u'Enderal', u'Skyrim'):
                 exportMenu.links.append(Mod_FullNames_Export())
                 exportMenu.links.append(Mod_Prices_Export())
@@ -505,7 +504,6 @@ def InitModLinks():
         if True: #--Import
             importMenu = MenuLink(_(u"Import"))
             importMenu.links.append(Mod_EditorIds_Import())
-            ## importMenu.links.append(Mod_ItemData_Import())
             if bush.game.fsName in (u'Enderal', u'Skyrim'):
                 importMenu.links.append(Mod_FullNames_Import())
                 importMenu.links.append(Mod_Prices_Import())
@@ -547,11 +545,7 @@ def InitModLinks():
             cleanMenu.links.append(Mod_ScanDirty())
             cleanMenu.links.append(Mod_RemoveWorldOrphans())
             cleanMenu.links.append(Mod_FogFixer())
-            cleanMenu.links.append(Mod_UndeleteRefs())
             ModList.itemMenu.append(cleanMenu)
-        # Disabled since it's dangerous - it doesn't update FormIDs, breaking
-        # every record in the file.
-        # ModList.itemMenu.append(Mod_AddMaster())
         ModList.itemMenu.append(Mod_CopyToEsmp())
         if bush.game.fsName == u'Oblivion':
             ModList.itemMenu.append(Mod_DecompileAll())
@@ -563,10 +557,6 @@ def InitModLinks():
             ModList.itemMenu.append(Mod_CreateDummyMasters())
         if bush.game.fsName == u'Oblivion':
             ModList.itemMenu.append(Mod_SetVersion())
-#    if bosh.inisettings['showadvanced'] == 1:
-#        advmenu = MenuLink(_(u"Advanced Scripts"))
-#        advmenu.links.append(Mod_DiffScripts())
-        #advmenu.links.append(())
 
 #------------------------------------------------------------------------------
 def InitSaveLinks():

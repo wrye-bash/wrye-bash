@@ -22,7 +22,6 @@
 #
 # =============================================================================
 from __future__ import division
-import errno
 import os
 
 from ._mergeability import is_esl_capable
@@ -421,38 +420,6 @@ class ModCleaner(object):
         else:
             return ModCleaner._scan_CBash(modInfos,what,progress)
 
-    def clean(self,what=UDR|FOG,progress=bolt.Progress(),reScan=False):
-        """reScan:
-             True: perform scans before cleaning
-             False: only perform scans if itm/udr is empty
-             """
-        ModCleaner.clean_Many([self],what,progress,reScan)
-
-    @staticmethod
-    def clean_Many(cleaners,what,progress=bolt.Progress(),reScan=False):
-        """Accepts either a list of ModInfo's or a list of ModCleaner's"""
-        from . import ModInfos
-        if isinstance(cleaners[0],ModInfos):
-            reScan = True
-            cleaners = [ModCleaner(x) for x in cleaners]
-        if bass.settings['bash.CBashEnabled']:
-            #--CBash
-            #--Scan?
-            if reScan:
-                ret = ModCleaner._scan_CBash([x.modInfo for x in cleaners],what,progress)
-                for i,cleaner in enumerate(cleaners):
-                    udr,itm,fog = ret[i]
-                    if what & ModCleaner.UDR:
-                        cleaner.udr = udr
-                    if what & ModCleaner.ITM:
-                        cleaner.itm = itm
-                    if what & ModCleaner.FOG:
-                        cleaner.fog = fog
-            #--Clean
-            ModCleaner._clean_CBash(cleaners,what,progress)
-        else:
-            ModCleaner._clean_Python(cleaners,what,progress)
-
     @staticmethod
     def _scan_CBash(modInfos,what,progress):
         """Scan multiple mods for problems"""
@@ -657,158 +624,6 @@ class ModCleaner(object):
                 #--Done
             ret.append((udr.values() if udr is not None else None,itm,fog))
         return ret
-
-    @staticmethod
-    def _clean_CBash(cleaners,what,progress):
-        if not (what & ModCleaner.ALL): return
-        # There are scans to do
-        doUDR = bool(what & ModCleaner.UDR)
-        doITM = bool(what & ModCleaner.ITM)
-        doFog = bool(what & ModCleaner.FOG)
-        # If there are more than 255 mods, we have to break it up into
-        # smaller groups.  We'll do groups of 200 for now, to allow for
-        # added files due to implicitly loading masters.
-        numMods = len(cleaners)
-        if numMods > 255:
-            ModsPerGroup = 200
-            numGroups = numMods // ModsPerGroup
-            if numMods % ModsPerGroup:
-                numGroups += 1
-        else:
-            ModsPerGroup = 255
-            numGroups = 1
-        progress.setFull(numGroups)
-        for i in range(numGroups):
-            #--Load
-            progress(i,_(u'Loading...'))
-            groupCleaners = cleaners[i*ModsPerGroup:(i+1)*ModsPerGroup]
-            with ObCollection(ModsPath=bass.dirs['mods'].s) as Current:
-                for cleaner in groupCleaners:
-                    if len(cleaner.modInfo.masterNames) == 0: continue
-                    path = cleaner.modInfo.getPath()
-                    Current.addMod(path.stail)
-                Current.load()
-                #--Clean
-                subprogress1 = bolt.SubProgress(progress,i,i+1)
-                subprogress1.setFull(max(len(groupCleaners),1))
-                for j,cleaner in enumerate(groupCleaners):
-                    subprogress1(j,_(u'Cleaning...') + u'\n' + cleaner.modInfo.name.s)
-                    path = cleaner.modInfo.getPath()
-                    modFile = Current.LookupModFile(path.stail)
-                    changed = False
-                    if modFile:
-                        total = sum([len(cleaner.udr)*doUDR,len(cleaner.fog)*doFog,len(cleaner.itm)*doITM])
-                        subprogress2 = bolt.SubProgress(subprogress1,j,j+1)
-                        subprogress2.setFull(max(total,1))
-                        if doUDR:
-                            for udr in cleaner.udr:
-                                fid = udr.fid
-                                subprogress2.plus()
-                                record = modFile.LookupRecord(fid)
-                                if record and record._Type in ('ACRE','ACHR','REFR') and record.IsDeleted:
-                                    changed = True
-                                    record.IsDeleted = False
-                                    record.IsIgnored = True
-                        if doFog:
-                            for fid in cleaner.fog:
-                                subprogress2.plus()
-                                record = modFile.LookupRecord(fid)
-                                if record and record._Type == 'CELL':
-                                    if not (record.fogNear or record.fogFar or record.fogClip):
-                                        record.fogNear = 0.0001
-                                        changed = True
-                        if doITM:
-                            for fid in cleaner.itm:
-                                subprogress2.plus()
-                                record = modFile.LookupRecord(fid)
-                                if record:
-                                    record.DeleteRecord()
-                                    changed = True
-                        #--Save
-                        if changed:
-                            modFile.save(False)
-
-    @staticmethod
-    def _clean_Python(cleaners,what,progress):
-        if not (what & (ModCleaner.UDR|ModCleaner.FOG)): return
-        doUDR = what & ModCleaner.UDR
-        doFog = what & ModCleaner.FOG
-        progress.setFull(max(len(cleaners),1))
-        #--Clean
-        for i,cleaner in enumerate(cleaners):
-            progress(i,_(u'Cleaning...')+u'\n'+cleaner.modInfo.name.s)
-            subprogress = bolt.SubProgress(progress,i,i+1)
-            subprogress.setFull(max(cleaner.modInfo.size,1))
-            #--File stream
-            path = cleaner.modInfo.getPath()
-            #--Scan & clean
-            with ModReader(cleaner.modInfo.name,path.open('rb')) as ins:
-                with path.temp.open('wb') as out:
-                    def copy(size):
-                        out.write(ins.read(size))
-                    def copyPrev(size):
-                        ins.seek(-size,1)
-                        out.write(ins.read(size))
-                    changed = False
-                    while not ins.atEnd():
-                        subprogress(ins.tell())
-                        header = ins.unpackRecHeader()
-                        rec_type,rec_size = header.recType,header.size
-                        #(rec_type,rec_size,flags,fid,uint2) = ins.unpackRecHeader()
-                        if rec_type == 'GRUP':
-                            if header.groupType != 0:
-                                pass
-                            elif header.label not in ('CELL','WRLD'):
-                                copy(rec_size-header.__class__.rec_header_size)
-                        else:
-                            if doUDR and header.flags1 & 0x20 and rec_type in {
-                                'ACRE',               #--Oblivion only
-                                'ACHR','REFR',        #--Both
-                                'NAVM','PGRE','PHZD', #--Skyrim only
-                                }:
-                                header.flags1 = (header.flags1 & ~0x20) | 0x1000
-                                out.seek(-header.__class__.rec_header_size,1)
-                                out.write(header.pack())
-                                changed = True
-                            if doFog and rec_type == 'CELL':
-                                nextRecord = ins.tell() + rec_size
-                                while ins.tell() < nextRecord:
-                                    subprogress(ins.tell())
-                                    (nextType,nextSize) = ins.unpackSubHeader()
-                                    copyPrev(6)
-                                    if nextType != 'XCLL':
-                                        copy(nextSize)
-                                    else:
-                                        color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',rec_size,'CELL.XCLL')
-                                        if not (near or far or clip):
-                                            near = 0.0001
-                                            changed = True
-                                        out.write(struct_pack('=12s2f2l2f', color, near, far, rotXY, rotZ, fade, clip))
-                            else:
-                                copy(rec_size)
-            #--Save
-            retry = _(u'Bash encountered an error when saving %(newpath)s.'
-                      u'\n\nThe file is in use by another process such as '
-                      u'%(xedit_name)s.\nPlease close the other program that '
-                      u'is accessing %(newpath)s.\n\nTry again?') % {
-                u'newpath': path.stail, u'xedit_name': bush.game.Xe.full_name}
-            if changed:
-                cleaner.modInfo.makeBackup()
-                try:
-                    path.untemp()
-                except OSError as werr:
-                    while werr.errno == errno.EACCES and balt.askYes(
-                            None, retry, _(u'%s - Save Error') % path.stail):
-                        try:
-                            path.untemp()
-                            break
-                        except OSError as werr:
-                            continue
-                    else:
-                        raise
-                cleaner.modInfo.setmtime(crc_changed=True) # cleaned mod
-            else:
-                path.temp.remove()
 
 #------------------------------------------------------------------------------
 class NvidiaFogFixer(object):
