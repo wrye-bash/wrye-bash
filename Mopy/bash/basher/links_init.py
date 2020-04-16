@@ -544,7 +544,8 @@ def InitModLinks():
             cleanMenu.links.append(SeparatorLink())
             cleanMenu.links.append(Mod_ScanDirty())
             cleanMenu.links.append(Mod_RemoveWorldOrphans())
-            cleanMenu.links.append(Mod_FogFixer())
+            if bush.game.fsName == u'Oblivion':
+                cleanMenu.links.append(Mod_FogFixer())
             ModList.itemMenu.append(cleanMenu)
         ModList.itemMenu.append(Mod_CopyToEsmp())
         if bush.game.fsName == u'Oblivion':

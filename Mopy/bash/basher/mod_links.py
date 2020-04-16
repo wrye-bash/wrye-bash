@@ -124,6 +124,13 @@ class Mod_CreateDummyMasters(OneItemLink):
             previous_master = master
             newFile = mod_files.ModFile(newInfo, mod_files.LoadFactory(True))
             newFile.tes4.author = u'BASHED DUMMY'
+            # Add the appropriate flags based on extension. This is obviously
+            # just a guess - you can have a .esm file without an ESM flag in
+            # Skyrim LE - but these are also just dummy masters.
+            if newInfo.name.cext in (u'.esm', u'.esl'):
+                newFile.tes4.flags1.esm = True
+            if newInfo.name.cext == u'.esl':
+                newFile.tes4.flags1.eslFile = True
             newFile.safeSave()
         to_select = []
         for mod, info, previous in to_refresh:

@@ -1156,7 +1156,15 @@ tab. The directories skipped are:
             <tr><td id="modsScanForDirtyEdits">Scan for Dirty Edits<td><em>Oblivion only.</em> Scans the selected plugin for Identical To Master records and deleted references, outputting counts of the dirty edits found. The dirty edit counts may differ from the output provided by TES4Edit as that includes other "junk" records in the <abbr title="Identical To Master record">ITM</abbr> count. Wrye Bash does not count these junk records as they are non-harmful.
             <tr><td>Scan for <abbr title="Undeleted and Disabled Reference">UDR</abbr>'s</td><td><em>All but Oblivion.</em> Behaves as the above <a href="#modsScanForDirtyEdits">Scan for Dirty Edits</a>, but only for deleted references.</td></tr>
             <tr><td id="modsRemoveWorldOrphans">Remove World Orphans<td>Some plugins have a mild form of corruption where exterior cells of new worldspaces in an esp master of the plugin are included in the plugin even if they are not edited, but the parent worldspace is not included, creating "orphaned" cells. This command removes these "orphans".
-            <tr><td id="modsNvidiaFogFix">Nvidia Fog Fix<td>Systems with Nvidia graphics cards can suffer a black screen bug when interior cell fog distances are set to 0. This command scans the selected plugin(s) and sets any zero-valued fog distances to 0.001.<br><br><strong>It is advised that mod authors use this on their mods before release.</strong>
+            <tr>
+                <td id="modsNvidiaFogFix">Nvidia Fog Fix</td>
+                <td><em>Oblivion only.</em> Systems with Nvidia graphics cards
+                    can suffer a black screen bug when interior cell fog
+                    distances are set to 0. This command scans the selected
+                    plugin(s) and sets any zero-valued fog distances to 0.001.
+                    <br><br><strong>It is advised that mod authors use this on
+                        their mods before release.</strong></td>
+            </tr>
             <tr><td id="modsUndeleteRefs">Undelete Refs<td><strong>Removed.</strong> Use xEdit for cleaning.</td></tr>
             <tr><td colspan="2">Add Master...<td><strong>Removed.</strong> Use xEdit for such low-level editing.</td></tr>
             <tr><td colspan="2" id="modsCopyToEsm">Copy To Esm/Esp<td>Creates a .esp copy of a .esm or vice versa.
