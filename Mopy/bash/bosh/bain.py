@@ -2107,9 +2107,27 @@ class InstallersData(DataStore):
         InstallersData._miscTrackedFiles[abspath] = AFile(abspath)
 
     @staticmethod
-    def notify_external(changed=frozenset(), deleted=frozenset()):
-        InstallersData._externally_updated.update(changed)
-        InstallersData._externally_deleted.update(deleted)
+    def notify_external(changed=frozenset(), deleted=frozenset(), renamed={}):
+        """Notifies BAIN of changes in the Data folder done by something other
+        than BAIN.
+
+        :param changed: A set of file paths that have changed.
+        :type deleted: set[bolt.Path]
+        :param deleted: A set of file paths that have been deleted.
+        :type changed: set[bolt.Path]
+        :param renamed: A dict of file paths that were renamed. Maps old file
+            paths to new ones. Currently only updates tracked changed/deleted
+            paths.
+        :type renamed: dict[Path, Path]"""
+        ext_updated = InstallersData._externally_updated
+        ext_deleted = InstallersData._externally_deleted
+        ext_updated.update(changed)
+        ext_deleted.update(deleted)
+        for renamed_old, renamed_new in renamed.iteritems():
+            for ext_tracker in (ext_updated, ext_deleted):
+                if renamed_old in ext_tracker:
+                    ext_tracker.discard(renamed_old)
+                    ext_tracker.add(renamed_new)
 
     def refreshTracked(self):
         deleted, changed = set(InstallersData._externally_deleted), set(

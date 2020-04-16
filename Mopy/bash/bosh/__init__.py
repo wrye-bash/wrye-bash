@@ -484,11 +484,16 @@ class ModInfo(FileInfo):
         try:
             if not normal.editable() or not ghost.editable():
                 return self.isGhost
-            if isGhost: normal.moveTo(ghost)
-            else: ghost.moveTo(normal)
+            # Determine source and target, then perform the move
+            ghost_source = normal if isGhost else ghost
+            ghost_target = ghost if isGhost else normal
+            ghost_source.moveTo(ghost_target)
             self.isGhost = isGhost
-            # reset cache info as un/ghosting should not make do_update return True
+            # reset cache info as un/ghosting should not make do_update return
+            # True
             self.mark_unchanged()
+            # Notify BAIN, as this is basically a rename operation
+            modInfos._notify_bain(renamed={ghost_source: ghost_target})
         except:
             deprint(u'Failed to %sghost file %s' % ((u'un', u'')[isGhost],
                 (ghost.s, normal.s)[isGhost]), traceback=True)
@@ -1285,13 +1290,17 @@ class TableFileInfos(DataStore):
         self._notify_bain(deleted=paths_to_keys)
         return paths_to_keys.values()
 
-    def _notify_bain(self, deleted=frozenset(), changed=frozenset()):
-        """We need absolute paths for deleted and changed!
+    def _notify_bain(self, deleted=frozenset(), changed=frozenset(),
+                     renamed={}):
+        """Note that all of these parameters need to be absolute paths!
+
         :type deleted: set[bolt.Path]
-        :type changed: set[bolt.Path]"""
+        :type changed: set[bolt.Path]
+        :type renamed: dict[Path, Path]"""
         if self.__class__._bain_notify:
             from .bain import InstallersData
-            InstallersData.notify_external(deleted=deleted, changed=changed)
+            InstallersData.notify_external(deleted=deleted, changed=changed,
+                                           renamed=renamed)
 
     def _additional_deletes(self, fileInfo, toDelete): pass
 
@@ -1300,6 +1309,12 @@ class TableFileInfos(DataStore):
         for deleted in set(self.table.keys()) - set(self.keys()):
             del self.table[deleted]
         self.table.save()
+
+    def _rename_operation(self, oldName, newName):
+        # Override to allow us to notify BAIN if necessary
+        self._notify_bain(renamed=dict(
+            self._get_rename_paths(oldName, newName)))
+        return super(TableFileInfos, self)._rename_operation(oldName, newName)
 
 class FileInfos(TableFileInfos):
     """Common superclass for mod, saves and bsa infos."""
@@ -1370,7 +1385,8 @@ class FileInfos(TableFileInfos):
         return deleted
 
     def _get_rename_paths(self, oldName, newName):
-        old_new_paths = super(FileInfos, self)._get_rename_paths(oldName, newName)
+        old_new_paths = super(
+            FileInfos, self)._get_rename_paths(oldName, newName)
         info_backup_paths = self[oldName].all_backup_paths
         # all_backup_paths will return the backup paths for this file and its
         # satellites (like cosaves). Passing newName in it returns the rename
@@ -2523,10 +2539,12 @@ class ModInfos(FileInfos):
         self.cached_lo_save_all()
 
     def _get_rename_paths(self, oldName, newName):
-        renames = super(ModInfos, self)._get_rename_paths(oldName, newName)
+        old_new_paths = super(
+            ModInfos, self)._get_rename_paths(oldName, newName)
         if self[oldName].isGhost:
-            renames[0] = (self[oldName].abs_path, renames[0][1] + u'.ghost')
-        return renames
+            old_new_paths[0] = (self[oldName].abs_path,
+                                old_new_paths[0][1] + u'.ghost')
+        return old_new_paths
 
     #--Delete
     def files_to_delete(self, filenames, **kwargs):
@@ -2786,13 +2804,15 @@ class SaveInfos(FileInfos):
         super(SaveInfos, self)._additional_deletes(fileInfo, toDelete)
 
     def _get_rename_paths(self, oldName, newName):
-        renames = super(SaveInfos, self)._get_rename_paths(oldName, newName)
+        old_new_paths = super(
+            SaveInfos, self)._get_rename_paths(oldName, newName)
         # super call added the backup paths but not the actual rename cosave
         # paths inside the store_dir - add those only if they exist
-        old, new = renames[0] # HACK: (oldName.ess, newName.ess) abs paths
+        old, new = old_new_paths[0] # HACK: (oldName.ess, newName.ess) abspaths
         for co_type, co_file in self[oldName]._co_saves.items():
-            renames.append((co_file.abs_path, co_type.get_cosave_path(new)))
-        return renames
+            old_new_paths.append((co_file.abs_path,
+                                  co_type.get_cosave_path(new)))
+        return old_new_paths
 
     def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None):
         """Copies savefile and associated cosaves file(s)."""

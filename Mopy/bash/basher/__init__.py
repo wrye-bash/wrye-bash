@@ -2225,6 +2225,9 @@ class InstallersList(balt.UIList):
     def OnBeginEditLabel(self, evt_label, uilist_ctrl):
         """Start renaming installers"""
         to_rename = self.GetSelected()
+        if not to_rename:
+            # We somehow got here but have nothing selected, abort
+            return EventResult.CANCEL
         #--Only rename multiple items of the same type
         renaming_type = type(self.data_store[to_rename[0]])
         last_marker = GPath(u'==Last==')
