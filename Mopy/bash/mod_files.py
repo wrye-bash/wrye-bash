@@ -243,20 +243,6 @@ class ModFile(object):
                 subProgress(insTell())
         #--Done Reading
 
-    def load_unpack(self):
-        """Unpacks blocks."""
-        factoryTops = self.loadFactory.topTypes
-        selfTops = self.tops
-        for rec_type in RecordHeader.topTypes:
-            if rec_type in selfTops and rec_type in factoryTops:
-                selfTops[rec_type].load(None,True)
-
-    def load_UI(self):
-        """Convenience function. Loads, then unpacks, then indexes."""
-        self.load()
-        self.load_unpack()
-        #self.load_index()
-
     def askSave(self,hasChanged=True):
         """CLI command. If hasSaved, will ask if user wants to save the file,
         and then save if the answer is yes. If hasSaved == False, then does nothing."""
@@ -346,6 +332,7 @@ class ModFile(object):
         #--Done
         self.longFids = True
 
+    ##: Ideally we'd encapsulate all the long/short fid handling in load/save
     def convertToShortFids(self):
         """Convert fids to short (numeric) format."""
         mapper = self.getShortMapper()

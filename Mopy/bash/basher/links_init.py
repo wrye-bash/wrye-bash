@@ -475,7 +475,6 @@ def InitModLinks():
             if bush.game.fsName in (u'Enderal', u'Skyrim'):
                 exportMenu.links.append(Mod_FullNames_Export())
                 exportMenu.links.append(Mod_Prices_Export())
-                exportMenu.links.append(Mod_Stats_Export())
             elif bush.game.fsName == u'FalloutNV':
                 # exportMenu.links.append(Mod_Factions_Export())
                 exportMenu.links.append(Mod_FullNames_Export())
@@ -510,7 +509,6 @@ def InitModLinks():
             if bush.game.fsName in (u'Enderal', u'Skyrim'):
                 importMenu.links.append(Mod_FullNames_Import())
                 importMenu.links.append(Mod_Prices_Import())
-                importMenu.links.append(Mod_Stats_Import())
             elif bush.game.fsName == u'FalloutNV':
                 importMenu.links.append(Mod_FullNames_Import())
                 importMenu.links.append(Mod_Prices_Import())

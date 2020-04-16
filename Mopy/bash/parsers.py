@@ -33,7 +33,7 @@ from operator import attrgetter, itemgetter
 from . import bush # for game
 from .balt import Progress
 from .bolt import GPath, decode, deprint, CsvReader, csvFormat, struct_pack, \
-    struct_unpack
+    struct_unpack, floats_equal
 from .bass import dirs, inisettings
 from .brec import MreRecord, MelObject, _coerce, genFid, RecordHeader
 from .cint import ObCollection, FormID, aggregateTypes, validTypes, \
@@ -1466,7 +1466,7 @@ class ItemStats(object):
         loadFactory = LoadFactory(False,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        modFile.convertToLongFids()
+        modFile.convertToLongFids(list(self.class_attrs))
         for group, attrs in self.class_attrs.iteritems():
             for record in getattr(modFile,group).getActiveRecords():
                 self.class_fid_attr_value[group][record.fid].update(
@@ -1478,7 +1478,6 @@ class ItemStats(object):
         loadFactory = LoadFactory(True,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        modFile.convertToLongFids()
         changed = Counter() #--changed[modName] = numChanged
         for group, fid_attr_value in self.class_fid_attr_value.iteritems():
             attrs = self.class_attrs[group]
@@ -1487,11 +1486,20 @@ class ItemStats(object):
                 itemStats = fid_attr_value.get(longid,None)
                 if not itemStats: continue
                 oldValues = dict(zip(attrs,map(record.__getattribute__,attrs)))
-                if oldValues != itemStats:
-                    for attr, value in itemStats.iteritems():
-                        setattr(record,attr,value)
-                    record.setChanged()
-                    changed[longid[0]] += 1
+                for stat_key, n_stat in itemStats.iteritems():
+                    o_stat = oldValues[stat_key]
+                    if isinstance(o_stat, float) or isinstance(n_stat, float):
+                        # These are floats, we have to do inexact comparison
+                        if not floats_equal(o_stat, n_stat):
+                            break
+                    elif o_stat != n_stat:
+                        break
+                else:
+                    continue # attrs are equal, move on to next record
+                for attr, value in itemStats.iteritems():
+                    setattr(record,attr,value)
+                record.setChanged()
+                changed[longid[0]] += 1
         if changed: modFile.safeSave()
         return changed
 
