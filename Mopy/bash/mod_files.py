@@ -86,9 +86,9 @@ class LoadFactory(object):
         for recClass in recClasses:
             addClass(recClass)
 
-    def addClass(self,recClass):
+    def addClass(self, recClass, __cell_rec_sigs=frozenset([b'WRLD', b'ROAD',
+            b'CELL', b'REFR', b'ACHR', b'ACRE', b'PGRD', b'LAND'])):
         """Adds specified class."""
-        cellTypes = (b'WRLD',b'ROAD',b'CELL',b'REFR',b'ACHR',b'ACRE',b'PGRD',b'LAND')
         if isinstance(recClass,basestring):
             recType = recClass
             recClass = MreRecord
@@ -100,15 +100,13 @@ class LoadFactory(object):
         self.recTypes.add(recType)
         self.type_class[recType] = recClass
         #--Top type
-        if recType in cellTypes:
-            topAdd = self.topTypes.add
-            topAdd(b'CELL')
-            topAdd(b'WRLD')
+        if recType in __cell_rec_sigs:
+            self.topTypes.add(b'CELL')
+            self.topTypes.add(b'WRLD')
             if self.keepAll:
-                setterDefault = self.type_class.setdefault
-                for type in cellTypes:
-                    setterDefault(type,MreRecord)
-        elif recType == b'INFO':
+                for cell_rec_sig in __cell_rec_sigs:
+                    self.type_class.setdefault(cell_rec_sig, MreRecord)
+        elif recType == b'INFO': ##: apart from this set(type_class) == topTypes
             self.topTypes.add(b'DIAL')
         else:
             self.topTypes.add(recType)

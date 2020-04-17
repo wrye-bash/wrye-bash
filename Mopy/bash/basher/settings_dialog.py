@@ -391,8 +391,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
     def OnComboBox(self):
         self.UpdateUIButtons()
         color_key = self.GetColorKey()
-        description = colorInfo[color_key][1]
-        self.textCtrl.text_content = description
+        self.textCtrl.text_content = colorInfo[color_key][1]
 
     def OnColorPicker(self):
         color_key = self.GetColorKey()

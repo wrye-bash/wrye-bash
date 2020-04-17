@@ -1389,10 +1389,10 @@ class ModDetails(_ModsSavesDetails):
         self.modified.on_text_changed.subscribe(self.OnModifiedEdit)
         # size=(textWidth, -1),
         #--Description
-        self.description = TextArea(top, auto_tooltip=False, max_length=511)
+        self._desc_area = TextArea(top, auto_tooltip=False, max_length=511)
             # size=(textWidth, 128),
-        self.description.on_focus_lost.subscribe(self.OnEditDescription)
-        self.description.on_text_changed.subscribe(self.OnDescrEdit)
+        self._desc_area.on_focus_lost.subscribe(self.OnEditDescription)
+        self._desc_area.on_text_changed.subscribe(self.OnDescrEdit)
         #--Bash tags
         self.gTags = TextArea(self._bottom_low_panel, auto_tooltip=False,
                               editable=False)
@@ -1405,7 +1405,7 @@ class ModDetails(_ModsSavesDetails):
             Label(top, _(u'Author:')), self.gAuthor,
             Label(top, _(u'Modified:')), self.modified,
             Label(top, _(u'Description:')),
-            (self.description, LayoutOptions(expand=True, weight=1))
+            (self._desc_area, LayoutOptions(expand=True, weight=1))
         ]).apply_to(top)
         VLayout(spacing=4, items=[
             Label(self._bottom_low_panel, _(u'Bash Tags:')),
@@ -1436,7 +1436,7 @@ class ModDetails(_ModsSavesDetails):
         self._fname_ctrl.text_content = self.fileStr
         self.gAuthor.text_content = self.authorStr
         self.modified.text_content = self.modifiedStr
-        self.description.text_content = self.descriptionStr
+        self._desc_area.text_content = self.descriptionStr
         self.version.label_text = self.versionStr
         self.uilist.SetFileInfo(self.modInfo)
         self.gTags.text_content = tagsStr
@@ -1486,9 +1486,9 @@ class ModDetails(_ModsSavesDetails):
 
     def OnEditDescription(self):
         if not self.modInfo: return
-        if self.description.text_content != self.descriptionStr.replace('\r\n',
+        if self._desc_area.text_content != self.descriptionStr.replace('\r\n',
                 '\n').replace('\r', '\n'):
-            self.descriptionStr = self.description.text_content ##: .replace('\n', 'r\n')
+            self.descriptionStr = self._desc_area.text_content ##: .replace('\n', 'r\n')
             self.SetEdited()
 
     bsaAndBlocking = _(u'This mod has an associated archive (%s' +
@@ -1912,9 +1912,9 @@ class SaveList(balt.UIList):
         ('Size',     lambda self, p: round_size(self.data_store[p].size)),
         ('PlayTime', lambda self, p: self._playTime(self.data_store[p])),
         ('Player',   lambda self, p: self._headInfo(self.data_store[p],
-                                                    'pcName')),
+                                                    u'pcName')),
         ('Cell',     lambda self, p: self._headInfo(self.data_store[p],
-                                                    'pcLocation')),
+                                                    u'pcLocation')),
     ])
 
     __ext_group = u'(\.(' + bush.game.Ess.ext[1:] + u'|' + \

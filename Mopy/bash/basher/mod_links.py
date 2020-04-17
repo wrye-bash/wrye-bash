@@ -384,8 +384,8 @@ class _Mod_Labels(ChoiceLink):
             _text = _help = _self.edit_menu_text
             def Execute(self):
                 """Show label editing dialog."""
-                data = _Mod_LabelsData(self.window, _self)  # ListEditorData
-                with balt.ListEditor(self.window, _self.edit_window_title, data,
+                lid = _Mod_LabelsData(self.window, _self)  # ListEditorData
+                with balt.ListEditor(self.window, _self.edit_window_title, lid,
                                      _self.extraButtons) as _self.listEditor:
                     _self.listEditor.show_modal()  ##: consider only refreshing
                     # the mod list if this returns true

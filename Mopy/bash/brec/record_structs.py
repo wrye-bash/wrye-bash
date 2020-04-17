@@ -29,9 +29,9 @@ import copy
 import zlib
 
 from .mod_io import ModReader, ModWriter
-from .utils_constants import strFid
+from .utils_constants import strFid, _int_unpacker
 from .. import bolt, exception
-from ..bolt import decode, sio, struct_pack, struct_unpack
+from ..bolt import decode, sio, struct_pack
 
 #------------------------------------------------------------------------------
 # Mod Element Sets ------------------------------------------------------------
@@ -334,21 +334,12 @@ class MreRecord(object):
                                      and self.eid is not None else u''),
         }
 
-    def getHeader(self):
-        """Returns header tuple."""
-        return self.header
-
-    def getBaseCopy(self):
-        """Returns an MreRecord version of self."""
-        baseCopy = MreRecord(self.getHeader())
-        baseCopy.data = self.data
-        return baseCopy
-
     def getTypeCopy(self,mapper=None):
-        """Returns a type class copy of self, optionaly mapping fids to long."""
+        """Returns a type class copy of self, optionally mapping fids to long.
+        """
         if self.__class__ == MreRecord:
             fullClass = MreRecord.type_class[self.recType]
-            myCopy = fullClass(self.getHeader())
+            myCopy = fullClass(self.header)
             myCopy.data = self.data
             myCopy.load(do_unpack=True)
         else:
@@ -366,15 +357,15 @@ class MreRecord(object):
         removed from the list."""
         pass
 
-    def getDecompressed(self):
+    def getDecompressed(self, __unpacker=_int_unpacker):
         """Return self.data, first decompressing it if necessary."""
         if not self.flags1.compressed: return self.data
-        size, = struct_unpack('I', self.data[:4])
+        decompressed_size, = __unpacker(self.data[:4])
         decomp = zlib.decompress(self.data[4:])
-        if len(decomp) != size:
+        if len(decomp) != decompressed_size:
             raise exception.ModError(self.inName,
                 u'Mis-sized compressed data. Expected %d, got %d.'
-                                     % (size,len(decomp)))
+                                     % (decompressed_size,len(decomp)))
         return decomp
 
     def load(self, ins=None, do_unpack=False):

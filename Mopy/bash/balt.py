@@ -583,7 +583,7 @@ class ListEditorData(object):
 class ListEditor(DialogWindow):
     """Dialog for editing lists."""
 
-    def __init__(self, parent, title, data, orderedDict=None):
+    def __init__(self, parent, title, lid_data, orderedDict=None):
         """A gui list, with buttons that act on the list items.
 
         Added kwargs to provide extra buttons - this class is built around a
@@ -594,8 +594,8 @@ class ListEditor(DialogWindow):
         :param orderedDict: orderedDict['ButtonLabel']=buttonAction
         """
         #--Data
-        self._listEditorData = data #--Should be subclass of ListEditorData
-        self._list_items = data.getItemList()
+        self._listEditorData = lid_data #--Should be subclass of ListEditorData
+        self._list_items = lid_data.getItemList()
         #--GUI
         super(ListEditor, self).__init__(parent, title, sizes_dict=sizes)
         # overrides DialogWindow.sizesKey
@@ -605,7 +605,7 @@ class ListEditor(DialogWindow):
         self.listBox.set_min_size(125, 150)
         #--Infobox
         self.gInfoBox = None # type: TextArea
-        if data.showInfo:
+        if lid_data.showInfo:
             editable = not self._listEditorData.infoReadOnly
             self.gInfoBox = TextArea(self, editable=editable)
             if editable:
@@ -613,11 +613,11 @@ class ListEditor(DialogWindow):
             # TODO(nycz): GUI size=(130, -1), SUNKEN_BORDER
         #--Buttons
         buttonSet = [
-            (data.showAdd,    _(u'Add'),    self.DoAdd),
-            (data.showRename, _(u'Rename'), self.DoRename),
-            (data.showRemove, _(u'Remove'), self.DoRemove),
-            (data.showSave,   _(u'Save'),   self.DoSave),
-            (data.showCancel, _(u'Cancel'), self.DoCancel),
+            (lid_data.showAdd, _(u'Add'), self.DoAdd),
+            (lid_data.showRename, _(u'Rename'), self.DoRename),
+            (lid_data.showRemove, _(u'Remove'), self.DoRemove),
+            (lid_data.showSave, _(u'Save'), self.DoSave),
+            (lid_data.showCancel, _(u'Cancel'), self.DoCancel),
             ]
         for k,v in (orderedDict or {}).items():
             buttonSet.append((True, k, v))

@@ -76,7 +76,7 @@ class OmodFile(object):
             # TODO(ut) original code unpacked signed int, maybe that's why "weird numbers" ?
             self.major = unpack_int_signed(omod_config) # Mod major version - getting weird numbers here though
             self.minor = unpack_int_signed(omod_config) # Mod minor version
-            self.author = decode(_readNetString(omod_config)) # author
+            self.omod_author = decode(_readNetString(omod_config)) # om_author
             self.email = decode(_readNetString(omod_config)) # email
             self.website = decode(_readNetString(omod_config)) # website
             self.desc = decode(_readNetString(omod_config)) # description
@@ -97,7 +97,7 @@ class OmodFile(object):
             out.write(b'Name: ')
             out.write(encode(filename[:-5]))
             out.write(b'\nAuthor: ')
-            out.write(encode(self.author))
+            out.write(encode(self.omod_author))
             out.write(b'\nVersion:') ##: add version?
             out.write(b'\nContact: ')
             out.write(encode(self.email))
@@ -308,7 +308,7 @@ class OmodConfig(object):
         self.vMajor = 0
         self.vMinor = 1
         self.vBuild = 0
-        self.author = u''
+        self.omod_author = u''
         self.email = u''
         self.website = u''
         self.abstract = u''
@@ -322,11 +322,11 @@ class OmodConfig(object):
             with open(configPath.s,u'rb') as ins:
                 ins.read(1) #--Skip first four bytes
                 # OBMM can support UTF-8, so try that first, then fail back to
-                config.name = decode(_readNetString(ins), encoding='utf-8')
+                config.name = decode(_readNetString(ins), encoding=u'utf-8')
                 config.vMajor = unpack_int_signed(ins)
                 config.vMinor = unpack_int_signed(ins)
-                for attr in ('author','email','website','abstract'):
-                    setattr(config, attr, decode(_readNetString(ins), encoding='utf-8'))
+                for attr in (u'omod_author',u'email',u'website',u'abstract'):
+                    setattr(config, attr, decode(_readNetString(ins), encoding=u'utf-8'))
                 ins.read(8) #--Skip date-time
                 ins.read(1) #--Skip zip-compression
                 #config['vBuild'], = ins.unpack('I',4)
@@ -338,14 +338,14 @@ class OmodConfig(object):
         configPath = bass.dirs['installers'].join(name,u'omod conversion data',u'config')
         configPath.head.makedirs()
         with open(configPath.temp.s,u'wb') as out:
-            out.write(struct_pack('B', 4))
-            _writeNetString(out, config.name.encode('utf8'))
-            out.write(struct_pack('i', config.vMajor))
-            out.write(struct_pack('i', config.vMinor))
-            for attr in ('author','email','website','abstract'):
+            out.write(struct_pack(u'B', 4))
+            _writeNetString(out, config.name.encode(u'utf8'))
+            out.write(struct_pack(u'i', config.vMajor))
+            out.write(struct_pack(u'i', config.vMinor))
+            for attr in (u'omod_author', u'email', u'website', u'abstract'):
                 # OBMM reads it fine if in UTF-8, so we'll do that.
-                _writeNetString(out, getattr(config, attr).encode('utf-8'))
+                _writeNetString(out, getattr(config, attr).encode(u'utf-8'))
             out.write('\x74\x1a\x74\x67\xf2\x7a\xca\x88') #--Random date time
-            out.write(struct_pack('b', 0)) #--zip compression (will be ignored)
+            out.write(struct_pack(u'b', 0)) #--zip compression (will be ignored)
             out.write('\xFF\xFF\xFF\xFF')
         configPath.untemp()

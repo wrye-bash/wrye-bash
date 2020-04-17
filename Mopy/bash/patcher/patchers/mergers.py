@@ -442,27 +442,28 @@ class NPCAIPackagePatcher(ImportPatcher):
         self.id_merged_deleted = {}
         self.target_rec_types = bush.game.actor_types
 
-    def _insertPackage(self, data, fi, index, pkg, recordData):
-        if index == 0: data[fi]['merged'].insert(0, pkg)# insert as first item
+    def _insertPackage(self, id_merged_deleted, fi, index, pkg, recordData):
+        fi_merged = id_merged_deleted[fi]['merged']
+        if index == 0: fi_merged.insert(0, pkg)# insert as first item
         elif index == (len(recordData['merged']) - 1):
-            data[fi]['merged'].append(pkg)  # insert as last item
+            fi_merged.append(pkg)  # insert as last item
         else:  # figure out a good spot to insert it based on next or last
             # recognized item (ugly ugly ugly)
             i = index - 1
             while i >= 0:
-                if recordData['merged'][i] in data[fi]['merged']:
-                    slot = data[fi]['merged'].index(
+                if recordData['merged'][i] in fi_merged:
+                    slot = fi_merged.index(
                         recordData['merged'][i]) + 1
-                    data[fi]['merged'].insert(slot, pkg)
+                    fi_merged.insert(slot, pkg)
                     break
                 i -= 1
             else:
                 i = index + 1
                 while i != len(recordData['merged']):
-                    if recordData['merged'][i] in data[fi]['merged']:
-                        slot = data[fi]['merged'].index(
+                    if recordData['merged'][i] in fi_merged:
+                        slot = fi_merged.index(
                             recordData['merged'][i])
-                        data[fi]['merged'].insert(slot, pkg)
+                        fi_merged.insert(slot, pkg)
                         break
                     i += 1
 

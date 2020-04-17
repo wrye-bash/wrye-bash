@@ -595,18 +595,18 @@ class CBash_ImportInventory(_AImportInventory, _RecTypeModLogging):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         #--Source mod?
-        masters = record.History()
-        if not masters: return
+        masters_ = record.History()
+        if not masters_: return
         entries = record.items_list
         modItems = set((item, count) for item, count in entries if
                        item.ValidateFormID(self.patchFile))
         masterEntries = []
         id_deltas = self.id_deltas
         fid = record.fid
-        for masterEntry in masters:
-            masterItems = set(
+        for masterEntry in masters_:
+            masterItems = {
                 (item, count) for item, count in masterEntry.items_list if
-                item.ValidateFormID(self.patchFile))
+                item.ValidateFormID(self.patchFile)}
             removeItems = (masterItems - modItems
                            if u'Invent.Remove' in bashTags else set())
             addItems = (modItems - masterItems

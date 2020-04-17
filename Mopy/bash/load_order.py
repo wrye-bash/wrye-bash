@@ -218,19 +218,19 @@ def cached_active_index(mod): return cached_lord.activeIndex(mod)
 def cached_lower_loading(mod):
     return cached_lord.loadOrder[:cached_lo_index(mod)]
 
-def get_ordered(mod_names):
-    """Return a list containing modNames' elements sorted into load order.
+def get_ordered(mod_paths):
+    """Return a list containing mod_paths' elements sorted into load order.
 
     If some elements do not have a load order they are appended to the list
     in alphabetical, case insensitive order (used also to resolve
     modification time conflicts).
-    :type mod_names: collections.Iterable[bolt.Path]
+    :type mod_paths: collections.Iterable[bolt.Path]
     :rtype : list[bolt.Path]
     """
-    mod_names = list(mod_names)
-    mod_names.sort() # resolve time conflicts or no load order
-    mod_names.sort(key=cached_lo_index_or_max)
-    return mod_names
+    mod_paths = list(mod_paths)
+    mod_paths.sort() # resolve time conflicts or no load order
+    mod_paths.sort(key=cached_lo_index_or_max)
+    return mod_paths
 
 def filter_pinned(imods):
     return filter(_game_handle.pinned_mods.__contains__, imods)

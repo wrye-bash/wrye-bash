@@ -1098,16 +1098,16 @@ class Installer(object):
     def size_or_mtime_changed(self, apath):
         return (self.size, self.modified) != apath.size_mtime()
 
-    def _installer_rename(self, data, newName):
+    def _installer_rename(self, idata_, newName):
         """Rename package or project."""
         g_path = GPath(self.archive)
         if newName != g_path:
             newPath = bass.dirs['installers'].join(newName)
             if not newPath.exists():
-                DataStore._rename_operation(data, g_path, newName)
+                DataStore._rename_operation(idata_, g_path, newName)
                 #--Add the new archive to Bash and remove old one
-                data[newName] = self
-                del data[g_path]
+                idata_[newName] = self
+                del idata_[g_path]
                 #--Update the iniInfos & modInfos for 'installer'
                 from . import modInfos, iniInfos
                 mfiles = [x for x in modInfos.table.getColumn('installer') if

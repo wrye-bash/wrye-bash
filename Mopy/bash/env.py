@@ -211,26 +211,26 @@ def _get_app_links(apps_dir):
             lnk = apps_dir.join(lnk)
             if lnk.cext == u'.lnk' and lnk.isfile():
                 shortcut = sh.CreateShortCut(lnk.s)
-                description = shortcut.Description
-                if not description:
-                    description = u' '.join((_(u'Launch'), lnk.sbody))
+                shortcut_descr = shortcut.Description
+                if not shortcut_descr:
+                    shortcut_descr = u' '.join((_(u'Launch'), lnk.sbody))
                 links[lnk] = (shortcut.TargetPath, shortcut.IconLocation,
                               # shortcut.WorkingDirectory, shortcut.Arguments,
-                              description)
+                              shortcut_descr)
     except:
         deprint(u'Error initializing links:', traceback=True)
     return links
 
 def init_app_links(apps_dir, badIcons, iconList):
     init_params = []
-    for path, (target, icon, description) in _get_app_links(
+    for path, (target, icon, shortcut_descr) in _get_app_links(
             apps_dir).iteritems():
         if target.lower().find(u'' r'installer\{') != -1: # msi shortcuts: dc0c8de
             target = path
         else:
             target = GPath(target)
         if not target.exists(): continue
-        # Target exists - extract path, icon and description
+        # Target exists - extract path, icon and shortcut_descr
         # First try a custom icon #TODO(ut) docs - also comments methods here!
         fileName = u'%s%%i.png' % path.sbody
         customIcons = [apps_dir.join(fileName % x) for x in (16, 24, 32)]
@@ -256,7 +256,7 @@ def init_app_links(apps_dir, badIcons, iconList):
                 # Last, use the 'x' icon
             else:
                 icon = badIcons
-        init_params.append((path, icon, description))
+        init_params.append((path, icon, shortcut_descr))
     return init_params
 
 def test_permissions(path, permissions=u'rwcd'):

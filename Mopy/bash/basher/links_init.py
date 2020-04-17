@@ -185,9 +185,9 @@ def InitStatusBar():
     def iconList(fileName):
         return [Image(fileName, Image.typesDict[u'ico'], x) for x in
                 (16, 24, 32)]
-    for pth, icon, description in init_app_links(dirApps, badIcons, iconList):
+    for pth, icon, shortcut_descr in init_app_links(dirApps, badIcons, iconList):
             BashStatusBar.buttons.append(
-                app_button_factory((pth,()), icon, description, canHide=False))
+                app_button_factory((pth,()), icon, shortcut_descr, canHide=False))
     #--Final couple
     BashStatusBar.buttons.append(App_DocBrowser(uid=u'DocBrowser'))
     BashStatusBar.buttons.append(App_ModChecker(uid=u'ModChecker'))

@@ -284,15 +284,6 @@ class MobObjects(MobBase):
         if not self.id_records: self.indexRecords()
         return self.id_records.get(fid,default)
 
-    def getRecordByEid(self,eid,default=None):
-        """Gets record by eid, or returns default."""
-        if not self.records: return default
-        for record in self.records:
-            if record.eid == eid:
-                return record
-        else:
-            return default
-
     def setRecord(self,record):
         """Adds record to record list and indexed."""
         from .. import bosh

@@ -109,18 +109,15 @@ class DocBrowser(WindowFrame):
             btn.enabled = False
 
     @staticmethod
-    def _get_is_wtxt(path=None, data=None):
+    def _get_is_wtxt(doc_path):
         """Determines whether specified path is a wtxt file."""
         rx = re.compile(u'' r'^=.+=#\s*$', re.U)
-        if path is not None:
-            try:
-                with path.open('r', encoding='utf-8-sig') as text_file:
-                    match_text = rx.match(text_file.readline())
-                return match_text is not None
-            except (OSError, UnicodeDecodeError):
-                return False
-        else:
-            return rx.match(data) is not None
+        try:
+            with doc_path.open(u'r', encoding=u'utf-8-sig') as text_file:
+                match_text = rx.match(text_file.readline())
+            return match_text is not None
+        except (OSError, UnicodeDecodeError):
+            return False
 
     def _do_open(self):
         """Handle "Open Doc" button."""
@@ -138,7 +135,7 @@ class DocBrowser(WindowFrame):
         self.DoSave()
         self._db_is_editing[self._mod_name] = is_editing
         self._doc_ctrl.set_text_editable(is_editing)
-        self._load_data(path=self._db_doc_paths.get(self._mod_name),
+        self._load_data(doc_path=self._db_doc_paths.get(self._mod_name),
                         editing=is_editing)
 
     def _do_forget(self):
@@ -155,7 +152,7 @@ class DocBrowser(WindowFrame):
                     self._open_btn):
             btn.enabled = False
         self._doc_name_box.text_content = u''
-        self._load_data(data=u'')
+        self._load_data(uni_str=u'')
 
     def _do_select_mod(self, lb_selection_dex, lb_selection_str):
         """Handle mod name combobox selection."""
@@ -210,20 +207,21 @@ class DocBrowser(WindowFrame):
             bolt.WryeText.genHtml(doc_path, None,
                                   bosh.modInfos.store_dir.join(u'Docs'))
 
-    def _load_data(self, path=None, data=None, editing=False):
-        if path and path.cext in (u'.htm',u'.html',u'.mht') and not editing \
+    def _load_data(self, doc_path=None, uni_str=None, editing=False,
+                   __html_extensions=frozenset((u'.htm', u'.html', u'.mht'))):
+        if doc_path and doc_path.cext in __html_extensions and not editing \
                 and web_viewer_available():
-            self._doc_ctrl.try_load_html(path)
+            self._doc_ctrl.try_load_html(doc_path)
         else:
             # Oddly, wxPython's LoadFile function doesn't read unicode
             # correctly, even in unicode builds
-            if data is None and path:
+            if uni_str is None and doc_path:
                 # We can't assume that this is UTF-8 - e.g. some official Beth
                 # docs in Morrowind are cp1252. However, it most likely is
                 # UTF-8 or UTF-8-compatible (ASCII), so try that first.
-                with path.open(u'rb') as ins:
-                    data = decode(ins.read(), u'utf-8')
-            self._doc_ctrl.load_text(data)
+                with doc_path.open(u'rb') as ins:
+                    uni_str = decode(ins.read(), u'utf-8')
+            self._doc_ctrl.load_text(uni_str)
 
     def SetMod(self, mod_name):
         """Sets the mod to show docs for."""
@@ -235,7 +233,7 @@ class DocBrowser(WindowFrame):
         self._mod_name = mod_name
         self._mod_name_box.text_content = mod_name.s
         if not mod_name:
-            self._load_data(data=u'')
+            self._load_data(uni_str=u'')
             for btn in self._buttons:
                 btn.enabled = False
             return
@@ -249,7 +247,7 @@ class DocBrowser(WindowFrame):
             btn.enabled = bool(doc_path)
         # Set empty and uneditable if there's no doc path:
         if not doc_path:
-            self._load_data(data=u'')
+            self._load_data(uni_str=u'')
         # Create new file if none exists
         elif not doc_path.exists():
             for template_file in (bosh.modInfos.store_dir.join(
@@ -261,8 +259,8 @@ class DocBrowser(WindowFrame):
             else:
                 template = u'= $modName {}#\n{}'.format(u'=' * (74-len(mod_name)),
                                                         doc_path.s)
-            self._load_data(data=string.Template(template)
-                                            .substitute(modName=mod_name.s))
+            self._load_data(uni_str=string.Template(template).substitute(
+                modName=mod_name.s))
             # Start edit mode
             self._edit_box.is_checked = True
             self._doc_ctrl.set_text_editable(True)
@@ -281,7 +279,7 @@ class DocBrowser(WindowFrame):
                     if not html_path.exists() or (doc_path.mtime > html_path.mtime):
                         bolt.WryeText.genHtml(doc_path, None,
                                               bosh.modInfos.store_dir.join(u'Docs'))
-            self._load_data(path=doc_path, editing=editing)
+            self._load_data(doc_path=doc_path, editing=editing)
 
     def on_closing(self, destroy=True):
         """Handle window close event.
@@ -426,9 +424,8 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
     """Dialog for editing omod configuration data."""
     _size_hints = (300, 300)
 
-    def __init__(self,parent,data,project):
+    def __init__(self, parent, project):
         #--Data
-        self.data = data
         self.project = project
         self.config = config = omods.OmodConfig.getOmodConfig(project)
         #--GUI
@@ -441,7 +438,7 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
         self.gVersion = TextField(self, u'{:d}.{:02d}'.format(
             config.vMajor, config.vMinor), max_length=32)
         self.gWebsite = TextField(self, config.website, max_length=512)
-        self.gAuthor = TextField(self, config.author, max_length=512)
+        self.gAuthor = TextField(self, config.omod_author, max_length=512)
         self.gEmail = TextField(self, init_text=config.email, max_length=512)
         self.gAbstract = TextArea(self, init_text=config.abstract,
                                   max_length=4 * 1024)
@@ -473,7 +470,7 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
         #--Text fields
         config.name = self.gName.text_content.strip()
         config.website = self.gWebsite.text_content.strip()
-        config.author = self.gAuthor.text_content.strip()
+        config.omod_author = self.gAuthor.text_content.strip()
         config.email = self.gEmail.text_content.strip()
         config.abstract = self.gAbstract.text_content.strip()
         #--Version

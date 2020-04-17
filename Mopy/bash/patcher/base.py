@@ -247,7 +247,6 @@ class AImportPatcher(AListPatcher):
     group = _(u'Importers')
     scanOrder = 20
     editOrder = 20
-    masters = {}
 
 class APatchMerger(AListPatcher):
     """Merges specified patches into Bashed Patch."""

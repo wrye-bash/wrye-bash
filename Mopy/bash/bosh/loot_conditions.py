@@ -260,7 +260,7 @@ def _fn_version(file_path, expected_ver, comparison):
             # Read version from the description
             from . import modInfos
             ver_match = _VERSION_REGEX.search(
-                modInfos[GPath(file_path.tail)].header.description)
+                modInfos[file_path.tail].header.description)
             if ver_match:
                 actual_ver = [int(x) for x in ver_match.group(1).split(u'.')]
         elif file_path.cext in (u'.exe', u'.dll'):
