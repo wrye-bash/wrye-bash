@@ -572,13 +572,13 @@ class Parser(object):
             elif tok.type == CLOSE_PARENS:
                 parenDepth -= 1
                 if parenDepth < 0:
-                    error(_(u"Missmatched parenthesis."))
+                    error(_(u'Mismatched parenthesis.'))
             elif tok.type == OPEN_BRACKET:
                 bracketDepth += 1
             elif tok.type == CLOSE_BRACKET:
                 bracketDepth -= 1
                 if bracketDepth < 0:
-                    error(_(u"Mismatched brackets."))
+                    error(_(u'Mismatched brackets.'))
             if tok.type == COMMA and parenDepth == 0 and bracketDepth == 0:
                     ret.append([])
             else:

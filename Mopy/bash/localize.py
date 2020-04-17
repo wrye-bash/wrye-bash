@@ -123,8 +123,7 @@ def setup_locale(cli_lang, _wx):
             with open(mo,u'rb') as trans_file:
                 trans = gettext.GNUTranslations(trans_file)
             bolt.deprint(u"Set Wrye Bash locale to '%s'" % target_name)
-        # TODO(inf) Tighten this except
-        except:
+        except (UnicodeError, OSError):
             bolt.deprint(u'Error loading translation file:')
             traceback.print_exc()
             trans = gettext.NullTranslations()
@@ -145,9 +144,9 @@ def _find_all_bash_modules(bash_path=None, cur_dir=None, _files=None):
     :param bash_path: The relative path from Mopy.
     :param cur_dir: The directory to look for modules in. Defaults to cwd.
     :param _files: Internal parameter used to collect file recursively."""
-    _files = _files or []
-    cur_dir = cur_dir or os.getcwdu()
-    bash_path = bash_path or bolt.Path(u'')
+    if bash_path is None: bash_path = bolt.Path(u'')
+    if cur_dir is None: cur_dir = os.getcwdu()
+    if _files is None: _files = []
     _files.extend([bash_path.join(m).s for m in os.listdir(cur_dir)
                    if m.lower().endswith((u'.py', u'.pyw'))])
     # Find subpackages - returned format is (module_loader, name, is_pkg)
@@ -157,8 +156,8 @@ def _find_all_bash_modules(bash_path=None, cur_dir=None, _files=None):
             continue
         # Recurse into the subpackage we just found
         _find_all_bash_modules(
-            _files, bash_path.join(p[1]) if bash_path else bolt.GPath(u'bash'),
-            os.path.join(cur_dir, p[1]))
+            bash_path.join(p[1]) if bash_path else bolt.GPath(u'bash'),
+            os.path.join(cur_dir, p[1]), _files)
     return _files
 
 def dump_translator(out_path, lang):
@@ -170,25 +169,25 @@ def dump_translator(out_path, lang):
         bass.dirs['l10n'].
     :param lang: The language to dump a text file for.
     :return: The path to the file that the dump was written to."""
-    full_txt = os.path.join(out_path, u'%sNEW.txt' % lang)
+    new_txt = os.path.join(out_path, u'%sNEW.txt' % lang)
     tmp_txt = os.path.join(out_path, u'%sNEW.tmp' % lang)
     old_txt = os.path.join(out_path, u'%s.txt' % lang)
-    args = [u'p', u'-a', u'-o', full_txt]
-    args.extend(_find_all_bash_modules())
+    gt_args = [u'p', u'-a', u'-o', new_txt]
+    gt_args.extend(_find_all_bash_modules())
     # Need to do this differently on standalone
     if hasattr(sys, 'frozen'):
         # Delayed import, since it's only present on standalone
         import pygettext
         old_argv = sys.argv[:]
-        sys.argv = args
+        sys.argv = gt_args
         pygettext.main()
         sys.argv = old_argv
     else:
         # pygettext is only in Tools, so call it explicitly
-        args[0] = sys.executable
-        args.insert(0, os.path.join(sys.prefix, u'Tools', u'i18n',
-                                    u'pygettext.py'))
-        subprocess.call(args, shell=True)
+        gt_args[0] = sys.executable
+        gt_args.insert(1, os.path.join(sys.prefix, u'Tools', u'i18n',
+                                       u'pygettext.py'))
+        subprocess.call(gt_args, shell=True)
     # Fill in any already translated stuff...?
     try:
         re_msg_ids_start = re.compile(u'#:')
@@ -197,74 +196,85 @@ def dump_translator(out_path, lang):
         re_non_escaped_quote = re.compile(u'' r'([^\\])"')
         def sub_quote(regex_match):
             return regex_match.group(1) + r'\"'
-        encoding = None
-        with open(tmp_txt, u'w') as out:
+        target_enc = None
+        # Do all this in binary mode and carefully handle encodings
+        with open(tmp_txt, u'wb') as out:
             # Copy old translation file header, and get encoding for strings
-            with open(old_txt, u'r') as ins:
-                for line in ins:
-                    if not encoding:
-                        encoding_match = re_encoding.match(line.strip('\r\n'))
+            with open(old_txt, u'rb') as ins:
+                for old_line in ins:
+                    if not target_enc:
+                        # Chop off the terminating newline
+                        encoding_match = re_encoding.match(
+                            old_line.rstrip(b'\r\n'))
                         if encoding_match:
-                            encoding = encoding_match.group(1)
-                    msg_ids_match = re_msg_ids_start.match(line)
-                    if msg_ids_match: break
-                    out.write(line)
+                            # Encoding names are all ASCII, so this is safe
+                            target_enc = unicode(encoding_match.group(1),
+                                                 u'ascii')
+                    if re_msg_ids_start.match(old_line):
+                        break # Break once we hit the first translatable string
+                    out.write(old_line)
             # Read through the new translation file, fill in any already
             # translated strings
-            with open(full_txt, u'r') as ins:
-                header = False
-                for line in ins:
-                    # First, find the header
-                    if not header:
-                        msg_ids_match = re_msg_ids_start.match(line)
+            with open(new_txt, u'rb') as ins:
+                skipped_header = False
+                for new_line in ins:
+                    # First, skip the header - we already copied it above
+                    if not skipped_header:
+                        msg_ids_match = re_msg_ids_start.match(new_line)
                         if msg_ids_match:
-                            header = True
-                            out.write(line)
+                            skipped_header = True
+                            out.write(new_line)
                         continue
-                    elif line[0:7] == 'msgid "':
-                        stripped = line.strip('\r\n')[7:-1]
-                        # Replace escape sequences
-                        stripped = stripped.replace('\\"','"')      # Quote
-                        stripped = stripped.replace('\\t','\t')     # Tab
-                        stripped = stripped.replace('\\\\', '\\')   # Backslash
+                    elif new_line.startswith(b'msgid "'):
+                        # Decode the line and retrieve only the msgid contents
+                        stripped_line = unicode(new_line, target_enc)
+                        stripped_line = stripped_line.strip(u'\r\n')[7:-1]
+                        # Replace escape sequences - Quote, Tab, Backslash
+                        stripped_line = stripped_line.replace(u'\\"', u'"')
+                        stripped_line = stripped_line.replace(u'\\t', u'\t')
+                        stripped_line = stripped_line.replace(u'\\\\', u'\\')
                         # Try translating, check if that changes the string
-                        # TODO(inf) Won't this break if we try dumping a
-                        #  translation file for a language other than the
-                        #  active one?
-                        translated = _(stripped)
-                        if stripped != translated:
-                            # Already translated
-                            out.write(line)
-                            out.write('msgstr "')
-                            translated = translated.encode(encoding)
-                            # Re-escape the escape sequences
-                            translated = translated.replace('\\', '\\\\')
-                            translated = translated.replace('\t', '\\t')
-                            translated = re_non_escaped_quote.sub(sub_quote,
-                                                                  translated)
-                            out.write(translated)
-                            out.write('"\n')
+                        ##: This is a neat, pragmatic implementation - but of
+                        # course limits us to only ever dumping translations
+                        # for the current language
+                        translated_line = _(stripped_line)
+                        # We're going to need the msgid either way
+                        out.write(new_line)
+                        if translated_line != stripped_line:
+                            # This has a translation, so write that one out
+                            out.write(b'msgstr "')
+                            # Escape any characters used in escape sequences
+                            # and encode the resulting 'final' translation
+                            final_ln = translated_line.replace(u'\\', u'\\\\')
+                            final_ln = final_ln.replace(u'\t', u'\\t')
+                            final_ln = re_non_escaped_quote.sub(
+                                sub_quote, final_ln)
+                            final_ln = final_ln.encode(target_enc)
+                            out.write(final_ln)
+                            out.write(b'"\n')
                         else:
-                            # Not translated
-                            out.write(line)
-                            out.write('msgstr ""\n')
-                    elif line[0:8] == 'msgstr "':
+                            # Not translated, write out an empty msgstr
+                            out.write(b'msgstr ""\n')
+                    elif new_line.startswith(b'msgstr "'):
+                        # Skip all msgstr lines from new_txt (handled above)
                         continue
                     else:
-                        out.write(line)
-    # TODO(inf) Tighten this except
-    except:
+                        out.write(new_line)
+    except (UnicodeError, OSError):
+        bolt.deprint(u'Error while dumping translation file:', traceback=True)
         try: os.remove(tmp_txt)
         except OSError: pass
     else:
+        # Replace the empty translation file generated by pygettext with the
+        # temp one we just created
         try:
-            os.remove(full_txt)
-            os.rename(tmp_txt,full_txt)
+            os.remove(new_txt)
+            os.rename(tmp_txt, new_txt)
         except OSError:
-            if os.path.exists(full_txt):
+            if os.path.exists(new_txt):
                 try: os.remove(tmp_txt)
                 except OSError: pass
-    return full_txt
+    return new_txt
 
 #------------------------------------------------------------------------------
 # Formatting
