@@ -21,8 +21,8 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from ....parsers import LoadFactory, ModFile
 from ....brec import MreRecord
+from ....mod_files import ModFile, LoadFactory
 from ....patcher.patchers.base import AImportPatcher, CBash_ImportPatcher, \
     ImportPatcher
 
@@ -30,26 +30,23 @@ __all__ = ['RoadImporter', 'CBash_RoadImporter']
 
 class _ARoadImporter(AImportPatcher):
     """Imports roads."""
-    name = _(u'Import Roads')
-    text = _(u"Import roads from source mods.")
-    tip = text
+    patcher_name = _(u'Import Roads')
+    patcher_text = _(u"Import roads from source mods.")
     autoKey = {u'Roads'}
 
 class RoadImporter(ImportPatcher, _ARoadImporter):
     logMsg = u'\n=== ' + _(u'Worlds Patched')
+    _read_write_records = (b'CELL', b'WRLD', b'ROAD')
 
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self, patchFile):
-        super(RoadImporter, self).initPatchFile(patchFile)
+    def __init__(self, p_name, p_file, p_sources):
+        super(RoadImporter, self).__init__(p_name, p_file, p_sources)
         self.world_road = {}
 
     def initData(self,progress):
         """Get cells from source files."""
         if not self.isActive: return
-        loadFactory = LoadFactory(False,MreRecord.type_class['CELL'],
-                                        MreRecord.type_class['WRLD'],
-                                        MreRecord.type_class['ROAD'])
-        progress.setFull(len(self.srcs))
+        loadFactory = LoadFactory(False, *[MreRecord.type_class[x] for x in
+                                           self._read_write_records])
         for srcMod in self.srcs:
             if srcMod not in self.patchFile.p_file_minfos: continue
             srcInfo = self.patchFile.p_file_minfos[srcMod]
@@ -62,14 +59,6 @@ class RoadImporter(ImportPatcher, _ARoadImporter):
                     road = worldBlock.road.getTypeCopy()
                     self.world_road[worldId] = road
         self.isActive = bool(self.world_road)
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('CELL','WRLD','ROAD',) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('CELL','WRLD','ROAD',) if self.isActive else ()
 
     def scanModFile(self, modFile, progress): # scanModFile3 ?
         """Add lists from modFile."""
@@ -108,25 +97,19 @@ class RoadImporter(ImportPatcher, _ARoadImporter):
             log(u'* %s: %s' % modWorld)
 
 class CBash_RoadImporter(CBash_ImportPatcher, _ARoadImporter):
+    _read_write_records = ('ROADS',)
     logMsg = u'* ' + _(u'Roads Imported') + u': %d'
     #The regular patch routine doesn't allow merging of world records. The CBash patch routine does.
     #So, allowUnloaded isn't needed for this patcher to work. The same functionality could be gained by merging the tagged record.
     #It is needed however so that the regular patcher and the CBash patcher have the same behavior.
     #The regular patcher has to allow unloaded mods because it can't otherwise force the road record to be merged
     #This isn't standard behavior for import patchers, but consistency between patchers is more important.
-
-    #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self, patchFile):
+    def __init__(self, p_name, p_file, p_sources):
         """Prepare to handle specified patch mod. All functions are called
         after this."""
-        super(CBash_RoadImporter, self).initPatchFile(patchFile)
-        if not self.isActive: return
+        super(CBash_RoadImporter, self).__init__(p_name, p_file, p_sources)
         self.id_ROAD = {}
 
-    def getTypes(self):
-        """Returns the group types that this patcher checks"""
-        return ['ROADS']
-    #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         self.id_ROAD[record.fid] = record
@@ -152,7 +135,7 @@ class CBash_RoadImporter(CBash_ImportPatcher, _ARoadImporter):
                 copyRoad = curRoad #Copy the current road over (its formID is acceptable)
             else:
                 #Ignore the record.
-                self.patchFile.patcher_mod_skipcount[self.name][
+                self.patchFile.patcher_mod_skipcount[self.patcher_name][
                     modFile.GName] += 1
                 return
 

@@ -458,7 +458,7 @@ class GameInfo(object):
     #--------------------------------------------------------------------------
     # Object Bounds Patcher
     #--------------------------------------------------------------------------
-    object_bounds_types = ()
+    object_bounds_types = set()
 
     #--------------------------------------------------------------------------
     # Contents Checker
@@ -471,12 +471,12 @@ class GameInfo(object):
     #--------------------------------------------------------------------------
     # Scripts Patcher
     #--------------------------------------------------------------------------
-    scripts_types = ()
+    scripts_types = set()
 
     #--------------------------------------------------------------------------
     # Destructible Patcher
     #--------------------------------------------------------------------------
-    destructible_types = ()
+    destructible_types = set()
 
     #--------------------------------------------------------------------------
     # Actor Patchers
@@ -494,6 +494,11 @@ class GameInfo(object):
     # Actor Tweaker
     #--------------------------------------------------------------------------
     actor_tweaks = set()
+
+    #--------------------------------------------------------------------------
+    # Names Tweaker
+    #--------------------------------------------------------------------------
+    body_tags = u''
 
     #--------------------------------------------------------------------------
     # Magic Effects - Oblivion-specific
@@ -536,6 +541,29 @@ class GameInfo(object):
     def plugin_header_class(self):
         return brec.MreRecord.type_class[self.Esp.plugin_header_sig]
 
+    # Set in game/*/patcher.py used in Mopy/bash/basher/gui_patchers.py
+    gameSpecificPatchers = {}
+    gameSpecificListPatchers = {}
+    game_specific_import_patchers = {}
+
+    # Import from the constants module ----------------------------------------
+    # Class attributes moved to constants module, set dynamically at init
+    _constants_members = {
+        'GlobalsTweaks', 'GmstTweaks', 'actor_importer_attrs',
+        'actor_importer_auto_key', 'actor_tweaks', 'actor_types',
+        'actor_values', 'bethDataFiles', 'body_tags', 'cc_valid_types',
+        'cc_passes', 'cellAutoKeys', 'cellRecAttrs', 'cellRecFlags',
+        'condition_function_data', 'default_eyes', 'destructible_types',
+        'generic_av_effects', 'gmstEids', 'graphicsFidTypes',
+        'graphicsLongsTypes', 'graphicsModelAttrs', 'graphicsTypes',
+        'hostile_effects', 'inventoryTypes', 'keywords_types', 'listTypes',
+        'mgef_basevalue', 'mgef_name', 'mgef_school', 'namesTypes',
+        'object_bounds_types', 'pricesTypes', 'record_type_name',
+        'save_rec_types', 'scripts_types', 'soundsLongsTypes', 'soundsTypes',
+        'spell_stats_attrs', 'statsHeaders', 'statsTypes', 'text_long_types',
+        'text_types',
+    }
+
     @classmethod
     def init(cls):
         # Setting RecordHeader class variables --------------------------------
@@ -549,24 +577,6 @@ class GameInfo(object):
         # Simple records
         brec.MreRecord.simpleTypes = (
                 set(brec.MreRecord.type_class) - {'TES4'})
-
-    # Import from the constants module ----------------------------------------
-    # Class attributes moved to constants module, set dynamically at init
-    _constants_members = {
-        'GlobalsTweaks', 'GmstTweaks', 'actor_importer_attrs',
-        'actor_importer_auto_key', 'actor_tweaks', 'actor_types',
-        'actor_values', 'bethDataFiles', 'cc_valid_types', 'cc_passes',
-        'cellAutoKeys', 'cellRecAttrs', 'cellRecFlags',
-        'condition_function_data', 'default_eyes', 'destructible_types',
-        'generic_av_effects', 'gmstEids', 'graphicsFidTypes',
-        'graphicsLongsTypes', 'graphicsModelAttrs', 'graphicsTypes',
-        'hostile_effects', 'inventoryTypes', 'keywords_types', 'listTypes',
-        'mgef_basevalue', 'mgef_name', 'mgef_school', 'namesTypes',
-        'object_bounds_types', 'pricesTypes', 'record_type_name',
-        'save_rec_types', 'scripts_types', 'soundsLongsTypes', 'soundsTypes',
-        'spell_stats_attrs', 'statsHeaders', 'statsTypes', 'text_long_types',
-        'text_types',
-    }
 
     @classmethod
     def _dynamic_import_modules(cls, package_name):
@@ -587,5 +597,11 @@ class GameInfo(object):
         vf_module = importlib.import_module('.vanilla_files',
                                             package=package_name)
         cls.vanilla_files = vf_module.vanilla_files
+        patchers_module = importlib.import_module('.patcher',
+                                                  package=package_name)
+        cls.gameSpecificPatchers = patchers_module.gameSpecificPatchers
+        cls.gameSpecificListPatchers = patchers_module.gameSpecificListPatchers
+        cls.game_specific_import_patchers = \
+            patchers_module.game_specific_import_patchers
 
 GAME_TYPE = None

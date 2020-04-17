@@ -24,7 +24,7 @@
 from collections import namedtuple
 from .. import balt, bolt, bass
 
-PatcherInfo = namedtuple('PatcherInfo', ['clazz', 'twinPatcher'])
+PatcherInfo = namedtuple('PatcherInfo', ['clazz', 'twin_patcher', 'cls_vars'])
 
 def configIsCBash(patchConfigs): ##: belongs to basher but used also in bosh
     for key in patchConfigs:
@@ -57,3 +57,14 @@ def getPatchesList():
     """Get a basic list of potential Bash Patches."""
     return set(bass.dirs['patches'].list()) | set(
         bass.dirs['defaultPatches'].list())
+
+# this is set once and stays the same for the patch execution session
+_patches_set = None
+
+def list_patches_dir():
+    global _patches_set
+    _patches_set = getPatchesList()
+
+def patches_set():
+    if _patches_set is None: list_patches_dir()
+    return _patches_set

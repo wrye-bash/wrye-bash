@@ -836,44 +836,16 @@ class OppositeGenderAnimsPatcher_Male(_AOppositeGenderAnimsPatcher):
 class TweakActors(MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to
     better work with mods or avoid bugs."""
-    name = _(u'Tweak Actors')
-    text = _(u"Tweak NPC and Creatures records in specified ways.")
-    tweaks = sorted([globals()[tweak_name]() for tweak_name
-                     in bush.game.actor_tweaks], key=lambda a: a.tweak_name.lower())
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return tuple()
-        classTuples = [tweak.getReadClasses() for tweak in self.enabledTweaks]
-        return sum(classTuples,tuple())
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return tuple()
-        classTuples = [tweak.getWriteClasses() for tweak in self.enabledTweaks]
-        return sum(classTuples,tuple())
-
-    def scanModFile(self,modFile,progress):
-        if not self.isActive: return
-        for tweak in self.enabledTweaks:
-            tweak.scanModFile(modFile,progress,self.patchFile)
+    _tweak_classes = sorted(
+        [globals()[tweak_name] for tweak_name in bush.game.actor_tweaks],
+        key=lambda a: a.tweak_name.lower())
 
 class CBash_TweakActors(CBash_MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to
     better work with mods or avoid bugs."""
-    name = _(u'Tweak Actors')
-    text = _(u"Tweak NPC and Creatures records in specified ways.")
-    tweaks = sorted([
-        CBash_VORB_NPCSkeletonPatcher(),
-        CBash_MAONPCSkeletonPatcher(),
-        CBash_VanillaNPCSkeletonPatcher(),
-        CBash_RedguardNPCPatcher(),
-        CBash_NoBloodCreaturesPatcher(),
-        CBash_AsIntendedImpsPatcher(),
-        CBash_AsIntendedBoarsPatcher(),
-        CBash_QuietFeetPatcher(),
-        CBash_IrresponsibleCreaturesPatcher(),
-        CBash_RWALKNPCAnimationPatcher(),
-        CBash_SWALKNPCAnimationPatcher(),
-        ],key=lambda a: a.tweak_name.lower())
+    _tweak_classes = [CBash_VORB_NPCSkeletonPatcher,
+        CBash_MAONPCSkeletonPatcher, CBash_VanillaNPCSkeletonPatcher,
+        CBash_RedguardNPCPatcher, CBash_NoBloodCreaturesPatcher,
+        CBash_AsIntendedImpsPatcher, CBash_AsIntendedBoarsPatcher,
+        CBash_QuietFeetPatcher, CBash_IrresponsibleCreaturesPatcher,
+        CBash_RWALKNPCAnimationPatcher, CBash_SWALKNPCAnimationPatcher]

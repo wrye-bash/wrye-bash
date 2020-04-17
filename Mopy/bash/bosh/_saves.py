@@ -37,7 +37,7 @@ from ..bolt import Flags, sio, GPath, decode, deprint, encode, cstrip, \
 from ..brec import ModReader, MreRecord, ModWriter, getObjectIndex, \
     getFormIndices, RecordHeader
 from ..exception import ModError, StateError
-from ..parsers import LoadFactory, ModFile
+from ..mod_files import ModFile, LoadFactory
 
 #------------------------------------------------------------------------------
 # Save I/O --------------------------------------------------------------------

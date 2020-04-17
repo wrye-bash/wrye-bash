@@ -833,7 +833,7 @@ GmstTweaks = [
         (_(u'5 Minutes'),         5*60.0),
         (_(u'Custom (in seconds)'), 10.0),
         ),
-    (_(u'Fatigue from Running/Encumbrance'),
+    (_(u'Movement: Fatigue from Running/Encumbrance'),
      _(u'Fatigue cost of running and encumbrance.'),
         (u'fFatigueRunBase',u'fFatigueRunMult'),
         (u'x 1.5',    12.0,  6.0),
@@ -1696,9 +1696,9 @@ cc_passes = (
 #------------------------------------------------------------------------------
 # Scripts Patcher
 #------------------------------------------------------------------------------
-scripts_types = ('ACTI', 'ALCH', 'APPA', 'ARMO', 'BOOK', 'CLOT', 'CONT',
+scripts_types = {'ACTI', 'ALCH', 'APPA', 'ARMO', 'BOOK', 'CLOT', 'CONT',
                  'CREA', 'DOOR', 'FLOR', 'FURN', 'INGR', 'KEYM', 'LIGH',
-                 'MISC', 'NPC_', 'QUST', 'SGST', 'SLGM', 'WEAP')
+                 'MISC', 'NPC_', 'QUST', 'SGST', 'SLGM', 'WEAP'}
 
 #------------------------------------------------------------------------------
 # Actor Patchers
@@ -1776,6 +1776,11 @@ actor_tweaks = {
     u'RWALKNPCAnimationPatcher',
     u'SWALKNPCAnimationPatcher',
 }
+
+#------------------------------------------------------------------------------
+# Names Tweaker
+#------------------------------------------------------------------------------
+body_tags = u'ARGHTCCPBS'
 
 #------------------------------------------------------------------------------
 # Magic Effects

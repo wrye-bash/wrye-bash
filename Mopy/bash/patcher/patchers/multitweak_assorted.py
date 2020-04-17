@@ -32,7 +32,6 @@ from collections import Counter
 from ...bolt import GPath, deprint
 from ...brec import MreRecord
 from ... import load_order
-from ... import bush # from ....bush import game ? # should be set by now !
 from ...cint import MGEFCode
 from ...patcher.base import AMultiTweakItem, DynamicNamedTweak
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
@@ -1366,15 +1365,9 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,MultiTweakItem):
         'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT', 'FACT',
         'INGR', 'KEYM', 'LIGH', 'MISC', 'QUST', 'SGST', 'SLGM', 'WEAP',)
 
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        self.activeTypes = list(self.__class__.tweak_read_classes)
-        super(AssortedTweak_DefaultIcons,self).__init__()
-
-    #--Patch Phase ------------------------------------------------------------
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
-        for blockType in self.activeTypes:
+        for blockType in self.tweak_read_classes:
             if blockType not in modFile.tops: continue
             modBlock = getattr(modFile,blockType)
             patchBlock = getattr(patchFile,blockType)
@@ -1387,7 +1380,7 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,MultiTweakItem):
     def buildPatch(self,log,progress,patchFile):
         count = Counter()
         keep = patchFile.getKeeper()
-        for type_ in self.activeTypes:
+        for type_ in self.tweak_read_classes:
             if type_ not in patchFile.tops: continue
             for record in patchFile.tops[type_].records:
                 if getattr(record, 'iconPath', None): continue
@@ -1913,11 +1906,10 @@ class AssortedTweaker(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     scanOrder = 32
     editOrder = 32
-    name = _(u'Tweak Assorted')
-    text = _(u"Tweak various records in miscellaneous ways.")
 
-    if bush.game.fsName == u'Oblivion':
-        tweaks = sorted([
+    @classmethod
+    def tweak_instances(cls):
+        return sorted([
             AssortedTweak_ArmorShows(_(u"Armor Shows Amulets"),
                 _(u"Prevents armor from hiding amulets."),
                 u'armorShowsAmulets',
@@ -1960,32 +1952,14 @@ class AssortedTweaker(MultiTweaker):
             AssortedTweak_TextlessLSCRs(),
             ],key=lambda a: a.tweak_name.lower())
 
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return tuple()
-        classNames = [tweak.getReadClasses() for tweak in self.enabledTweaks]
-        return sum(classNames,tuple())
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return tuple()
-        classTuples = [tweak.getWriteClasses() for tweak in self.enabledTweaks]
-        return sum(classTuples,tuple())
-
-    def scanModFile(self,modFile,progress):
-        if not self.isActive: return
-        for tweak in self.enabledTweaks:
-            tweak.scanModFile(modFile,progress,self.patchFile)
-
 class CBash_AssortedTweaker(CBash_MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     scanOrder = 32
     editOrder = 32
-    name = _(u'Tweak Assorted')
-    text = _(u"Tweak various records in miscellaneous ways.")
 
-    tweaks = sorted([
+    @classmethod
+    def tweak_instances(cls):
+        return sorted([
         CBash_AssortedTweak_ArmorShows(_(u"Armor Shows Amulets"),
             _(u"Prevents armor from hiding amulets."),
             u'armorShowsAmulets',

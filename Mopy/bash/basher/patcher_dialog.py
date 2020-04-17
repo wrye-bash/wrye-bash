@@ -38,8 +38,7 @@ from ..exception import BoltError, CancelError, FileEditError, \
 from ..gui import CancelButton, DeselectAllButton, HLayout, Label, \
     LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
     SaveAsButton, SelectAllButton, Stretch, VLayout, DialogWindow, CheckListBox
-from ..patcher import configIsCBash, exportConfig
-from ..patcher.base import AListPatcher
+from ..patcher import configIsCBash, exportConfig, list_patches_dir
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
 
 # Final lists of gui patcher classes instances, initialized in
@@ -68,7 +67,7 @@ class PatchDialog(DialogWindow):
             icon_bundle=Resources.bashMonkey, sizes_dict=balt.sizes, size=size)
         self.set_min_size(400, 300)
         #--Data
-        AListPatcher.list_patches_dir()
+        list_patches_dir() # refresh cached dir
         groupOrder = dict([(group,index) for index,group in
             enumerate((_(u'General'),_(u'Importers'),_(u'Tweakers'),_(u'Special')))])
         patchConfigs = bosh.modInfos.table.getItem(patchInfo.name,'bash.patch.configs',{})
@@ -83,13 +82,13 @@ class PatchDialog(DialogWindow):
         self.patchInfo = patchInfo
         self._gui_patchers = [copy.deepcopy(p) for p in (
             CBash_gui_patchers if doCBash else PBash_gui_patchers)]
-        self._gui_patchers.sort(key=lambda a: a.__class__.name)
-        self._gui_patchers.sort(key=lambda a: groupOrder[a.__class__.group])
+        self._gui_patchers.sort(key=lambda a: a.__class__.patcher_name)
+        self._gui_patchers.sort(key=lambda a: groupOrder[a.patcher_type.group]) ##: what does this ordering do??
         for patcher in self._gui_patchers:
             patcher.getConfig(patchConfigs) #--Will set patcher.isEnabled
             patcher.SetIsFirstLoad(isFirstLoad)
         self.currentPatcher = None
-        patcherNames = [patcher.getName() for patcher in self._gui_patchers]
+        patcherNames = [patcher.patcher_name for patcher in self._gui_patchers]
         #--GUI elements
         self.gExecute = OkButton(self, label=_(u'Build Patch'))
         self.gExecute.on_clicked.subscribe(self.PatchExecute)
@@ -183,10 +182,11 @@ class PatchDialog(DialogWindow):
             self._saveConfig(patch_name)
             #--Do it
             log = bolt.LogFile(StringIO.StringIO())
-            patchers = [p for p in self._gui_patchers if p.isEnabled]
-            patchFile = CBash_PatchFile(patch_name, patchers) if self.doCBash \
-                   else PatchFile(self.patchInfo, patchers)
-            patchFile.init_patchers_data(SubProgress(progress, 0, 0.1)) #try to speed this up!
+            patchFile = CBash_PatchFile(patch_name) if self.doCBash else \
+                PatchFile(self.patchInfo)
+            enabled_patchers = [p.get_patcher_instance(patchFile) for p in
+                                self._gui_patchers if p.isEnabled] ##: what happens if empty
+            patchFile.init_patchers_data(enabled_patchers, SubProgress(progress, 0, 0.1)) #try to speed this up!
             if self.doCBash:
                 #try to speed this up!
                 patchFile.buildPatch(SubProgress(progress,0.1,0.9))
@@ -485,10 +485,8 @@ class PatchDialog(DialogWindow):
 
     def _set_tip_text(self, mouseItem):
         if 0 <= mouseItem < len(self._gui_patchers):
-            patcherClass = self._gui_patchers[mouseItem].__class__
-            tip = patcherClass.tip or re.sub(u'' r'\..*', u'.',
-                            patcherClass.text.split(u'\n')[0], flags=re.U)
-            self.gTipText.label_text = tip
+            gui_patcher = self._gui_patchers[mouseItem]
+            self.gTipText.label_text = gui_patcher.patcher_tip
         else:
             self.gTipText.label_text = self.defaultTipText
 

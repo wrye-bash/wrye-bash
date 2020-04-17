@@ -26,25 +26,19 @@ from collections import Counter, defaultdict
 from itertools import chain
 from operator import itemgetter, attrgetter
 # Internal
-from .base import Patcher, CBash_Patcher, SpecialPatcher, ListPatcher, \
-    CBash_ListPatcher, AListPatcher
-from ... import bosh, bush, load_order  # for modInfos
+from .base import Patcher, CBash_Patcher, ListPatcher, CBash_ListPatcher
+from ..base import Abstract_Patcher, AListPatcher
+from ... import bush, load_order
 from ...bolt import GPath, SubProgress
 from ...cint import FormID
+from ...exception import AbstractError
 
 # Patchers: 40 ----------------------------------------------------------------
-class _AListsMerger(SpecialPatcher, AListPatcher):
-    """Merged leveled lists mod file."""
+class _AListsMerger(AListPatcher):
+    """Merges lists of objects, e.g. leveled lists or FormID lists."""
+    group = _(u'Special')
     scanOrder = 45
     editOrder = 45
-    name = _(u'Leveled Lists')
-    text = (_(
-        u"Merges changes to leveled lists from ACTIVE/MERGED MODS ONLY.") +
-            u'\n\n' + _(
-        u'Advanced users may override Relev/Delev tags for any mod (active '
-        u'or inactive) using the list below.'))
-    tip = _(u"Merges changes to leveled lists from all active mods.")
-    autoKey = {u'Delev', u'Relev'}
     iiMode = True
 
     def _overhaul_compat(self, mods, _skip_id):
@@ -90,190 +84,246 @@ class _AListsMerger(SpecialPatcher, AListPatcher):
         else:
             self.OverhaulUOPSkips = set()
 
-class ListsMerger(_AListsMerger, ListPatcher):
-    _read_write_records = bush.game.listTypes
+    def __init__(self, p_name, p_file, p_sources, remove_empty, tag_choices):
+        """In addition to default parameters, accepts a boolean remove_empty,
+        which determines whether or not the 'empty sublist removal' logic
+        should run, and a defaultdict tag_choices, which maps each tagged
+        plugin (represented as paths) to a set of the applied tags (as unicode
+        strings, e.g. u'Delev'), defaulting to an empty set.
 
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self, patchFile):
-        super(ListsMerger, self).initPatchFile(patchFile)
-        self.isActive = True # Can do meaningful work even without sources
-        self.srcs_ordered = self.srcs
-        self.srcs = set(self.srcs) & patchFile.loadSet
+        :type remove_empty: bool
+        :type tag_choices: defaultdict[bolt.Path, set[unicode]]"""
+        super(_AListsMerger, self).__init__(p_name, p_file, p_sources)
+        self.isActive |= bool(p_file.loadSet) # Can do meaningful work even without sources
         self.type_list = dict([(rec, {}) for rec in self._read_write_records])
-        self.masterItems = {}
-        self.mastersScanned = set()
-        self.levelers = None #--Will initialize later
+        self.masterItems = defaultdict(dict)
+        # Calculate levelers/de_masters first, using unmodified self.srcs
+        self.levelers = [leveler for leveler in self.srcs if
+                         leveler in self.patchFile.allSet]
+        # de_masters is a set of all the masters of each leveler, i.e. each
+        # tagged plugin. These are the masters we have to consider records from
+        # when determining whether or not to carry forward removals done by a
+        # 'De'-tagged plugin
+        self.de_masters = set()
+        for leveler in self.levelers:
+            self.de_masters.update(p_file.p_file_minfos[leveler].get_masters())
+        self.srcs = set(self.srcs) & p_file.loadSet
+        self.remove_empty_sublists = remove_empty
+        self.tag_choices = tag_choices
+
+class _PListsMerger(_AListsMerger, ListPatcher):
+    """Common code from PBash _AListsMerger subclasses."""
+    # De/Re Tags - None means the patcher does not have such a tag
+    _de_tag = None
+    _re_tag = None
+    # Maps record type (str) to translated label (unicode)
+    _type_to_label = {}
+    _de_re_header = None
+
+    def annotate_plugin(self, ann_plugin):
+        """Returns the name of the specified plugin, with any Relev/Delev tags
+        appended as [ADR], similar to how the patcher GUI displays it.
+
+        :param ann_plugin: The plugin to return the name for, as a path.
+        :type ann_plugin: bolt.Path"""
+        applied_tags = [t[0] for t in self.tag_choices[ann_plugin]]
+        return ann_plugin.s + (u' [%s]' % u''.join(sorted(applied_tags))
+                               if applied_tags else u'')
+
+    def scanModFile(self, modFile, progress):
+        #--Begin regular scan
+        sc_name = modFile.fileInfo.name
+        modFile.convertToLongFids(self._read_write_records)
+        #--PreScan for later Relevs/Delevs?
+        if sc_name in self.de_masters:
+            for list_type in self._read_write_records:
+                for de_list in getattr(modFile, list_type).getActiveRecords():
+                    self.masterItems[de_list.fid][sc_name] = set(
+                        self._get_entries(de_list))
+        #--Relev/Delev setup
+        applied_tags = self.tag_choices[sc_name]
+        is_relev = self._re_tag in applied_tags
+        is_delev = self._de_tag in applied_tags
+        #--Scan
+        for list_type in self._read_write_records:
+            stored_lists = self.type_list[list_type]
+            new_lists = getattr(modFile, list_type)
+            for new_list in new_lists.getActiveRecords():
+                list_fid = new_list.fid
+                # FIXME(inf) This is hideous and slows everything down
+                if (sc_name == u'Unofficial Oblivion Patch.esp' and
+                        list_fid in self.OverhaulUOPSkips):
+                    stored_lists[list_fid].mergeOverLast = True
+                    continue
+                is_list_owner = (list_fid[0] == sc_name)
+                #--Items, delevs and relevs sets
+                new_list.items = items = set(self._get_entries(new_list))
+                if not is_list_owner:
+                    #--Relevs
+                    new_list.re_records = items.copy() if is_relev else set()
+                    #--Delevs: all items in masters minus current items
+                    new_list.de_records = delevs = set()
+                    if is_delev:
+                        id_master_items = self.masterItems.get(list_fid)
+                        if id_master_items:
+                            for de_master in modFile.tes4.masters:
+                                if de_master in id_master_items:
+                                    delevs |= id_master_items[de_master]
+                            # TODO(inf) Double-check that this works correctly,
+                            #  this line (delevs -= items) seems a noop here
+                            delevs -= items
+                            new_list.items |= delevs
+                #--Cache/Merge
+                if is_list_owner:
+                    de_list = copy.deepcopy(new_list)
+                    de_list.mergeSources = []
+                    stored_lists[list_fid] = de_list
+                elif list_fid not in stored_lists:
+                    de_list = copy.deepcopy(new_list)
+                    de_list.mergeSources = [sc_name]
+                    stored_lists[list_fid] = de_list
+                else:
+                    stored_lists[list_fid].mergeWith(new_list, sc_name)
+
+    def buildPatch(self, log, progress):
+        keep = self.patchFile.getKeeper()
+        # Relevs/Delevs List
+        log.setHeader(u'= ' + self._patcher_name, True)
+        log.setHeader(u'=== ' + self._de_re_header)
+        for leveler in self.levelers:
+            log(u'* ' + self.annotate_plugin(leveler))
+        # Save to patch file
+        for list_type, list_label in self._type_to_label.iteritems():
+            if list_type not in self._read_write_records: continue
+            log.setHeader(u'=== ' + _(u'Merged %s Lists') % list_label)
+            patch_block = getattr(self.patchFile, list_type)
+            stored_lists = self.type_list[list_type]
+            for stored_list in sorted(stored_lists.values(),
+                                      key=attrgetter('eid')):
+                if not stored_list.mergeOverLast: continue
+                list_fid = keep(stored_list.fid)
+                patch_block.setRecord(stored_lists[list_fid])
+                log(u'* ' + stored_list.eid)
+                for merge_source in stored_list.mergeSources:
+                    log(u'  * ' + self.annotate_plugin(merge_source))
+                self._check_list(stored_list, log)
+        #--Discard empty sublists
+        if not self.remove_empty_sublists: return
+        for list_type, list_label in self._type_to_label.iteritems():
+            if list_type not in self._read_write_records: continue
+            patch_block = getattr(self.patchFile, list_type)
+            stored_lists = self.type_list[list_type]
+            empty_lists = []
+            # Build a dict mapping leveled lists to other leveled lists that
+            # they are sublists in
+            sub_supers = dict((x, []) for x in stored_lists.keys())
+            for stored_list in sorted(stored_lists.values()):
+                list_fid = stored_list.fid
+                if not stored_list.items:
+                    empty_lists.append(list_fid)
+                else:
+                    sub_lists = [x for x in stored_list.items
+                                if x in sub_supers]
+                    for sub_list in sub_lists:
+                        sub_supers[sub_list].append(list_fid)
+            #--Clear empties
+            removed_empty_sublists = set()
+            cleaned_lists = set()
+            while empty_lists:
+                empty_list = empty_lists.pop()
+                if empty_list not in sub_supers: continue
+                # We have an empty list, look if it's a sublist in any other
+                # list
+                for sub_super in sub_supers[empty_list]:
+                    stored_list = stored_lists[sub_super]
+                    # Remove the emtpy list from this sublist
+                    old_entries = stored_list.entries
+                    stored_list.entries = [x for x in stored_list.entries
+                                           if x.listId != empty_list]
+                    stored_list.items.remove(empty_list)
+                    patch_block.setRecord(stored_list)
+                    # If removing the empty list made this list empty too, then
+                    # we should investigate it as well - could clean up even
+                    # more lists
+                    if not stored_list.items:
+                        empty_lists.append(sub_super)
+                    removed_empty_sublists.add(stored_lists[empty_list].eid)
+                    # We don't need to write out records where another mod has
+                    # already removed the empty sublist - that would just make
+                    # an ITPO
+                    if old_entries != stored_list.entries:
+                        cleaned_lists.add(stored_list.eid)
+                        keep(sub_super)
+            log.setHeader(u'=== ' + _(u'Empty %s Sublists') % list_label)
+            for list_eid in sorted(removed_empty_sublists, key=unicode.lower):
+                log(u'* ' + list_eid)
+            log.setHeader(u'=== ' + _(u'Empty %s Sublists Removed') %
+                          list_label)
+            for list_eid in sorted(cleaned_lists, key=unicode.lower):
+                log(u'* ' + list_eid)
+
+    # Methods for patchers to override
+    def _check_list(self, record, log):
+        """Checks if any warnings for the specified list have to be logged.
+        Default implementation does nothing."""
+
+    def _get_entries(self, target_list):
+        """Retrieves a list of the items in the specified list. No default
+        implementation, every patcher needs to override this."""
+        raise AbstractError()
+
+class ListsMerger(_PListsMerger):
+    """Merges leveled lists."""
+    _read_write_records = bush.game.listTypes # bush.game must be set!
+    _de_tag = u'Delev'
+    _re_tag = u'Relev'
+    _type_to_label = {
+        'LVLC': _(u'Creature'),
+        'LVLN': _(u'Actor'),
+        'LVLI': _(u'Item'),
+        'LVSP': _(u'Spell'),
+    }
+    _de_re_header = _(u'Delevelers/Relevelers')
+
+    def __init__(self, p_name, p_file, p_sources, remove_empty, tag_choices):
+        super(ListsMerger, self).__init__(p_name, p_file, p_sources,
+                                          remove_empty, tag_choices)
         self.empties = set()
         _skip_id = lambda x: (GPath(u'Oblivion.esm'), x)
         self._overhaul_compat(self.srcs, _skip_id)
 
-    def scanModFile(self, modFile, progress):
-        """Add lists from modFile."""
-        #--Level Masters (complete initialization)
-        if self.levelers is None:
-            self.levelers = [leveler for leveler in self.srcs_ordered if
-                             leveler in self.patchFile.allSet]
-            self.delevMasters = set()
-            for leveler in self.levelers:
-                self.delevMasters.update(bosh.modInfos[leveler].get_masters())
-        #--Begin regular scan
-        modName = modFile.fileInfo.name
-        modFile.convertToLongFids(self._read_write_records)
-        #--PreScan for later Relevs/Delevs?
-        if modName in self.delevMasters:
-            for list_type in self._read_write_records:
-                for levList in getattr(modFile,list_type).getActiveRecords():
-                    masterItems = self.masterItems.setdefault(levList.fid,{})
-                    masterItems[modName] = set(
-                        [entry.listId for entry in levList.entries])
-            self.mastersScanned.add(modName)
-        #--Relev/Delev setup
-        configChoice = self.configChoices.get(modName,tuple())
-        isRelev = (u'Relev' in configChoice)
-        isDelev = (u'Delev' in configChoice)
-        #--Scan
-        for list_type in self._read_write_records:
-            levLists = self.type_list[list_type]
-            newLevLists = getattr(modFile,list_type)
-            for newLevList in newLevLists.getActiveRecords():
-                listId = newLevList.fid
-                if listId in self.OverhaulUOPSkips and modName == \
-                        u'Unofficial Oblivion Patch.esp':
-                    levLists[listId].mergeOverLast = True
-                    continue
-                isListOwner = (listId[0] == modName)
-                #--Items, delevs and relevs sets
-                newLevList.items = items = set(
-                    [entry.listId for entry in newLevList.entries])
-                if not isListOwner:
-                    #--Relevs
-                    newLevList.relevs = items.copy() if isRelev else set()
-                    #--Delevs: all items in masters minus current items
-                    newLevList.delevs = delevs = set()
-                    if isDelev:
-                        id_masterItems = self.masterItems.get(listId)
-                        if id_masterItems:
-                            for mastername in modFile.tes4.masters:
-                                if mastername in id_masterItems:
-                                    delevs |= id_masterItems[mastername]
-                            delevs -= items
-                            newLevList.items |= delevs
-                #--Cache/Merge
-                if isListOwner:
-                    levList = copy.deepcopy(newLevList)
-                    levList.mergeSources = []
-                    levLists[listId] = levList
-                elif listId not in levLists:
-                    levList = copy.deepcopy(newLevList)
-                    levList.mergeSources = [modName]
-                    levLists[listId] = levList
-                else:
-                    levLists[listId].mergeWith(newLevList,modName)
+    def _check_list(self, record, log):
+        # Emit a warning for lists that may have exceeded 255
+        if len(record.entries) == 255:
+            log(u'  * __%s__' % _(u'Warning: Now has 255 entries, may '
+                                  u'have been truncated - check and '
+                                  u'fix manually!'))
 
-    def buildPatch(self,log,progress):
-        """Adds merged lists to patchfile."""
-        keep = self.patchFile.getKeeper()
-        #--Relevs/Delevs List
-        log.setHeader(u'= '+self.__class__.name,True)
-        log.setHeader(u'=== '+_(u'Delevelers/Relevelers'))
-        for leveler in (self.levelers or []):
-            log(u'* '+self.getItemLabel(leveler))
-        #--Save to patch file
-        for label, type in ((_(u'Creature'), 'LVLC'), (_(u'Actor'), 'LVLN'),
-                (_(u'Item'), 'LVLI'), (_(u'Spell'), 'LVSP')):
-            if type not in self._read_write_records: continue
-            log.setHeader(u'=== '+_(u'Merged %s Lists') % label)
-            patchBlock = getattr(self.patchFile,type)
-            levLists = self.type_list[type]
-            for record in sorted(levLists.values(),key=attrgetter('eid')):
-                if not record.mergeOverLast: continue
-                fid = keep(record.fid)
-                patchBlock.setRecord(levLists[fid])
-                log(u'* '+record.eid)
-                for mod in record.mergeSources:
-                    log(u'  * ' + self.getItemLabel(mod))
-                # Emit a warning for lists that may have exceeded 255
-                if len(record.entries) == 255:
-                    log(u'  * __%s__' % _(u'Warning: Now has 255 entries, may '
-                                          u'have been truncated - check and '
-                                          u'fix manually!'))
-        #--Discard empty sublists
-        if not self.remove_empty_sublists: return
-        for label, type in ((_(u'Creature'), 'LVLC'), (_(u'Actor'), 'LVLN'),
-                (_(u'Item'), 'LVLI'), (_(u'Spell'), 'LVSP')):
-            if type not in self._read_write_records: continue
-            patchBlock = getattr(self.patchFile,type)
-            levLists = self.type_list[type]
-            #--Empty lists
-            empties = []
-            # Build a dict mapping leveled lists to other leveled lists that
-            # they are sublists in
-            sub_supers = dict((x,[]) for x in levLists.keys())
-            for record in sorted(levLists.values()):
-                listId = record.fid
-                if not record.items:
-                    empties.append(listId)
-                else:
-                    subLists = [x for x in record.items if x in sub_supers]
-                    for subList in subLists:
-                        sub_supers[subList].append(listId)
-            #--Clear empties
-            removed = set()
-            cleaned = set()
-            while empties:
-                empty = empties.pop()
-                if empty not in sub_supers: continue
-                # We have an empty list, look if it's a sublist in any other
-                # list
-                for super in sub_supers[empty]:
-                    record = levLists[super]
-                    # Remove the emtpy list from this sublist
-                    old_entries = record.entries
-                    record.entries = [x for x in record.entries if
-                                      x.listId != empty]
-                    record.items.remove(empty)
-                    patchBlock.setRecord(record)
-                    # If removing the empty list made this list empty too, then
-                    # we should investigate it as well - could clean up even
-                    # more lists
-                    if not record.items:
-                        empties.append(super)
-                    removed.add(levLists[empty].eid)
-                    # We don't need to write out records where another mod has
-                    # already removed the empty sublist - that would just make
-                    # an ITPO
-                    if old_entries != record.entries:
-                        cleaned.add(record.eid)
-                        keep(super)
-            log.setHeader(u'=== '+_(u'Empty %s Sublists') % label)
-            for eid in sorted(removed,key=unicode.lower):
-                log(u'* '+eid)
-            log.setHeader(u'=== '+_(u'Empty %s Sublists Removed') % label)
-            for eid in sorted(cleaned,key=unicode.lower):
-                log(u'* '+eid)
+    def _get_entries(self, target_list):
+        return [list_entry.listId for list_entry in target_list.entries]
 
 class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
     allowUnloaded = False
     scanRequiresChecked = False # same as CBash_Patcher.scanRequiresChecked
     applyRequiresChecked = False # same as CBash_Patcher.applyRequiresChecked
 
-    #--Patch Phase -----------------------------------------------------------
-    def initPatchFile(self, patchFile):
-        super(CBash_ListsMerger, self).initPatchFile(patchFile)
+    def __init__(self, p_name, p_file, p_sources, remove_empty, tag_choices):
+        super(_AListsMerger, self).__init__(p_name, p_file, p_sources)
         self.isActive = True
         self.id_delevs = {}
         self.id_list = {}
         self.id_attrs = {}
         self.empties = set()
-        importMods = set(self.srcs) & patchFile.loadSet
+        self.remove_empty_sublists = remove_empty
+        self.tag_choices = tag_choices
+        importMods = set(self.srcs) & p_file.loadSet
         _skip_id = lambda x: FormID(GPath(u'Oblivion.esm'),x)
         self._overhaul_compat(importMods, _skip_id)
 
     def getTypes(self):
         return ['LVLC','LVLI','LVSP']
 
-    #--Patch Phase ------------------------------------------------------------
-    def scan(self,modFile,record,bashTags):
+    def scan(self, modFile, record, bashTags, __empty=frozenset()):
         """Records information needed to apply the patch."""
         recordId = record.fid
         if recordId in self.OverhaulUOPSkips and modFile.GName == GPath(
@@ -295,10 +345,10 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
                                        (record.flags or 0)]
         else:
             mergedList = self.id_list[recordId]
-            configChoice = self.configChoices.get(modFile.GName,tuple())
-            isRelev = u'Relev' in configChoice
-            isDelev = u'Delev' in configChoice
-            delevs = self.id_delevs.setdefault(recordId, set())
+            applied_tags = self.tag_choices[modFile.GName]
+            isRelev = u'Relev' in applied_tags
+            isDelev = u'Delev' in applied_tags
+            delevs = self.id_delevs.setdefault(recordId, __empty)
             curItems = set([listId for level, listId, count in curList])
             if isRelev:
                 # Can add and set the level/count of items, but not delete
@@ -335,7 +385,6 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
                                     if listId.ValidateFormID(
                         self.patchFile)]) - curItems
                 delevs |= deletedItems
-
             #Remove any items that were deleveled
             mergedList = [entry for entry in mergedList if
                           entry[1] not in delevs]  # entry[1] = listId
@@ -381,41 +430,46 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
         """Edits the bashed patch file directly."""
         if self.empties is None: return
         subProgress = SubProgress(progress)
-        subProgress.setFull(len(self.getTypes()))
+        subProgress.setFull(len(self.getTypes()) * 2)
         pstate = 0
         #Clean up any empty sublists
         empties = self.empties
         emptiesAdd = empties.add
         emptiesDiscard = empties.discard
-        for type in self.getTypes():
-            subProgress(pstate,
-                        _(u'Looking for empty %s sublists...') % type + u'\n')
-            #Remove any empty sublists
-            madeChanges = True
-            while madeChanges:
-                madeChanges = False
-                oldEmpties = empties.copy()
-                for record in getattr(patchFile,type):
-                    recordId = record.fid
-                    items = set([entry.listId for entry in record.entries])
-                    if items:
-                        emptiesDiscard(recordId)
-                    else:
-                        emptiesAdd(recordId)
-                    toRemove = empties & items
-                    if toRemove:
-                        madeChanges = True
-                        cleanedEntries = [entry for entry in record.entries if
-                                          entry.listId not in toRemove]
-                        record.entries = cleanedEntries
-                        if cleanedEntries:
+        # Only do this if 'Remove Empty Sublists' is checked
+        if self.remove_empty_sublists:
+            for type in self.getTypes():
+                subProgress(pstate, _(u'Looking for empty %s sublists...') %
+                            type + u'\n')
+                #Remove any empty sublists
+                madeChanges = True
+                while madeChanges:
+                    madeChanges = False
+                    oldEmpties = empties.copy()
+                    for record in getattr(patchFile,type):
+                        recordId = record.fid
+                        items = set([entry.listId for entry in record.entries])
+                        if items:
                             emptiesDiscard(recordId)
                         else:
                             emptiesAdd(recordId)
-                if oldEmpties != empties:
-                    oldEmpties = empties.copy()
-                    madeChanges = True
-
+                        toRemove = empties & items
+                        if toRemove:
+                            madeChanges = True
+                            cleanedEntries = [entry for entry in record.entries
+                                              if entry.listId not in toRemove]
+                            record.entries = cleanedEntries
+                            if cleanedEntries:
+                                emptiesDiscard(recordId)
+                            else:
+                                emptiesAdd(recordId)
+                    madeChanges |= oldEmpties != empties
+                    pstate += 1
+        # Still need to clean this, even if 'Remove Empty Sublists' is off
+        # TODO(inf) We could avoid this if we rewrote apply() above
+        for type in self.getTypes():
+            subProgress(pstate,
+                        _(u'Cleaning %s ITPOs...') % type + u'\n')
             # Remove any identical to winning lists, except those that were
             # merged into the patch
             for record in getattr(patchFile,type):
@@ -451,132 +505,40 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'= ' +self.__class__.name)
+        log.setHeader(u'= ' + self._patcher_name)
         log(u'* '+_(u'Modified LVL') + u': %d' % (sum(mod_count.values()),))
         for srcMod in load_order.get_ordered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = Counter()
 
 #------------------------------------------------------------------------------
-class FidListsMerger(_AListsMerger,ListPatcher):
-    """Merged FormID lists mod file."""
+class FidListsMerger(_PListsMerger):
+    """Merges FormID lists."""
     scanOrder = 46
     editOrder = 46
-    name = _(u'FormID Lists')
-    text = (_(u'Merges changes to formid lists from ACTIVE/MERGED MODS ONLY.') +
-            u"\n\n" +
-            _(u'Advanced users may override Deflst tags for any mod (active or inactive) using the list below.'))
-    tip = _(u"Merges changes to formid lists from all active mods.")
-    autoKey = {u'Deflst'}
-    iiMode = True
     _read_write_records = ('FLST',)
+    _de_tag = u'Deflst'
+    _type_to_label = {'FLST': _(u'FormID')}
+    _de_re_header = _(u'Deflsters')
 
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self, patchFile):
-        """Prepare to handle specified patch mod. All functions are called
-        after this."""
-        super(FidListsMerger, self).initPatchFile(patchFile)
-        self.srcMods = set(self.getConfigChecked()) & patchFile.loadSet
-        self.type_list = dict([(rec, {}) for rec in self._read_write_records])
-        self.masterItems = {}
-        self.mastersScanned = set()
-        self.levelers = None #--Will initialize later
-
-    def scanModFile(self, modFile, progress):
-        """Add lists from modFile."""
-        #--Level Masters (complete initialization)
-        if self.levelers is None:
-            self.levelers = [leveler for leveler in self.getConfigChecked() if
-                             leveler in self.patchFile.allSet]
-            self.deflstMasters = set()
-            for leveler in self.levelers:
-                self.deflstMasters.update(bosh.modInfos[leveler].get_masters())
-        #--Begin regular scan
-        modName = modFile.fileInfo.name
-        modFile.convertToLongFids(self._read_write_records)
-        #--PreScan for later Deflsts?
-        if modName in self.deflstMasters:
-            for list_type in self._read_write_records:
-                for levList in getattr(modFile,list_type).getActiveRecords():
-                    masterItems = self.masterItems.setdefault(levList.fid,{})
-                    # masterItems[modName] = set([entry.listId for entry in levList.entries])
-                    masterItems[modName] = set(levList.formIDInList)
-            self.mastersScanned.add(modName)
-        #--Deflst setup
-        configChoice = self.configChoices.get(modName,tuple())
-        isDeflst = (u'Deflst' in configChoice)
-        #--Scan
-        for list_type in self._read_write_records:
-            levLists = self.type_list[list_type]
-            newLevLists = getattr(modFile,list_type)
-            for newLevList in newLevLists.getActiveRecords():
-                listId = newLevList.fid
-                isListOwner = (listId[0] == modName)
-                #--Items, deflsts sets
-                # newLevList.items = items = set([entry.listId for entry in newLevList.entries])
-                newLevList.items = items = set(newLevList.formIDInList)
-                if not isListOwner:
-                    #--Deflsts: all items in masters minus current items
-                    newLevList.deflsts = deflsts = set()
-                    if isDeflst:
-                        id_masterItems = self.masterItems.get(listId)
-                        if id_masterItems:
-                            for mastername in modFile.tes4.masters:
-                                if mastername in id_masterItems:
-                                    deflsts |= id_masterItems[mastername]
-                            deflsts -= items
-                            newLevList.items |= deflsts
-                #--Cache/Merge
-                if isListOwner:
-                    levList = copy.deepcopy(newLevList)
-                    levList.mergeSources = []
-                    levLists[listId] = levList
-                elif listId not in levLists:
-                    levList = copy.deepcopy(newLevList)
-                    levList.mergeSources = [modName]
-                    levLists[listId] = levList
-                else:
-                    levLists[listId].mergeWith(newLevList,modName)
-
-    def buildPatch(self,log,progress):
-        """Adds merged lists to patchfile."""
-        keep = self.patchFile.getKeeper()
-        #--Deflsts List
-        log.setHeader(u'= '+self.__class__.name,True)
-        log.setHeader(u'=== '+_(u'Deflsters'))
-        for leveler in (self.levelers or []):
-            log(u'* '+self.getItemLabel(leveler))
-        #--Save to patch file
-        type = u'FLST'
-        log.setHeader(u'=== '+_(u'Merged %s Lists') % u'FormID')
-        patchBlock = getattr(self.patchFile,type)
-        levLists = self.type_list[type]
-        for record in sorted(levLists.values(),key=attrgetter('eid')):
-            if not record.mergeOverLast: continue
-            fid = keep(record.fid)
-            patchBlock.setRecord(levLists[fid])
-            log(u'* '+record.eid)
-            for mod in record.mergeSources:
-                log(u'  * ' + self.getItemLabel(mod))
+    def _get_entries(self, target_list):
+        return target_list.formIDInList
 
 #------------------------------------------------------------------------------
-class _AContentsChecker(SpecialPatcher):
+class _AContentsChecker(Abstract_Patcher):
     """Checks contents of leveled lists, inventories and containers for
     correct content types."""
+    group = _(u'Special')
     scanOrder = 50
     editOrder = 50
-    name = _(u'Contents Checker')
-    text = _(u'Checks contents of leveled lists, inventories and containers '
-             u'for correct types.')
     contType_entryTypes = bush.game.cc_valid_types
     contTypes = set(contType_entryTypes)
     entryTypes = set(chain.from_iterable(contType_entryTypes.itervalues()))
 
 class ContentsChecker(_AContentsChecker,Patcher):
 
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self, patchFile):
-        super(ContentsChecker, self).initPatchFile(patchFile)
+    def __init__(self, p_name, p_file):
+        super(ContentsChecker, self).__init__(p_name, p_file)
         self.fid_to_type = {}
         self.id_eid = {}
 
@@ -590,7 +552,6 @@ class ContentsChecker(_AContentsChecker,Patcher):
 
     def scanModFile(self, modFile, progress):
         """Scan modFile."""
-        if not self.isActive: return
         modFile.convertToLongFids(self.contTypes | self.entryTypes)
         # First, map fids to record type for all records for the valid record
         # types. We need to know if a given fid belongs to one of the valid
@@ -620,7 +581,7 @@ class ContentsChecker(_AContentsChecker,Patcher):
         keep = self.patchFile.getKeeper()
         fid_to_type = self.fid_to_type
         id_eid = self.id_eid
-        log.setHeader(u'= ' + self.__class__.name)
+        log.setHeader(u'= ' + self._patcher_name)
         # Execute each pass - one pass is needed for every distinct record
         # class layout, e.g. leveled list classes generally share the same
         # layout (LVLI.entries[i].listId, LVLN.entries[i].listId, etc.)
@@ -684,13 +645,10 @@ class ContentsChecker(_AContentsChecker,Patcher):
                                                    removedId[1]))
 
 class CBash_ContentsChecker(_AContentsChecker,CBash_Patcher):
-    srcs = []  # so as not to fail screaming when determining load mods - but
-    # with the least processing required.
+    allowUnloaded = False # avoid the srcs check in CBash_Patcher.initData
 
-    #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self, patchFile):
-        super(CBash_ContentsChecker, self).initPatchFile(patchFile)
-        self.isActive = True
+    def __init__(self, p_name, p_file):
+        super(CBash_ContentsChecker, self).__init__(p_name, p_file)
         self.listTypes = {'LVSP', 'LVLC', 'LVLI'}
         self.containerTypes = {'CONT', 'CREA', 'NPC_'}
         self.mod_type_id_badEntries = {}
@@ -700,7 +658,6 @@ class CBash_ContentsChecker(_AContentsChecker,CBash_Patcher):
         """Returns the group types that this patcher checks"""
         return ['CONT','CREA','NPC_','LVLI','LVLC','LVSP']
 
-    #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         rec_type = record._Type
@@ -756,7 +713,7 @@ class CBash_ContentsChecker(_AContentsChecker,CBash_Patcher):
         if not self.isActive: return
         #--Log
         mod_type_id_badEntries = self.mod_type_id_badEntries
-        log.setHeader(u'= ' +self.__class__.name)
+        log.setHeader(u'= ' + self._patcher_name)
         for mod, type_id_badEntries in mod_type_id_badEntries.iteritems():
             log(u'\n=== %s' % mod.s)
             for type,id_badEntries in type_id_badEntries.iteritems():

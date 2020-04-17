@@ -35,13 +35,14 @@ from .constants import settingDefaults
 from .files_links import File_Redate
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, CBash_gui_patchers, PBash_gui_patchers
-from .. import bass, bosh, bolt, balt, bush, parsers, load_order
+from .. import bass, bosh, bolt, balt, bush, mod_files, load_order
 from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink,\
     TransLink, RadioLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes
 from ..gui import CancelButton, CheckBox, HLayout, Label, LayoutOptions, \
     OkButton, RIGHT, Spacer, Stretch, TextField, VLayout, DialogWindow, Image
 from ..bolt import GPath, SubProgress
 from ..bosh import faces
+from ..brec import MreRecord
 from ..cint import CBashApi, FormID
 from ..exception import AbstractError, BoltError, CancelError
 from ..patcher import configIsCBash, exportConfig, patch_files
@@ -80,11 +81,11 @@ class Mod_FullLoad(OneItemLink):
     def Execute(self):
         with balt.Progress(_(u'Loading:') + u'\n%s'
                 % self._selected_item.stail) as progress:
-            print(bosh.MreRecord.type_class)
-            readClasses = bosh.MreRecord.type_class
+            print(MreRecord.type_class)
+            readClasses = MreRecord.type_class
             print(readClasses.values())
-            loadFactory = parsers.LoadFactory(False, *readClasses.values())
-            modFile = parsers.ModFile(self._selected_info, loadFactory)
+            loadFactory = mod_files.LoadFactory(False, *readClasses.values())
+            modFile = mod_files.ModFile(self._selected_info, loadFactory)
             try:
                 modFile.load(True, progress)
             except:
@@ -122,7 +123,7 @@ class Mod_CreateDummyMasters(OneItemLink):
             newInfo = bosh.ModInfo(self._selected_info.dir.join(master))
             to_refresh.append((master, newInfo, previous_master))
             previous_master = master
-            newFile = parsers.ModFile(newInfo, parsers.LoadFactory(True))
+            newFile = mod_files.ModFile(newInfo, mod_files.LoadFactory(True))
             newFile.tes4.author = u'BASHED DUMMY'
             newFile.safeSave()
         to_select = []
@@ -1130,10 +1131,10 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
                                              'bash.patch.configs', {})
         # Detect CBash/Python mode patch
         doCBash = configIsCBash(config)
-        patchers = [copy.deepcopy(x) for x in
+        _gui_patchers = [copy.deepcopy(x) for x in
                     (CBash_gui_patchers if doCBash else PBash_gui_patchers)]
-        patchers.sort(key=lambda a: a.__class__.name)
-        patchers.sort(key=lambda a: groupOrder[a.__class__.group])
+        _gui_patchers.sort(key=lambda a: a.__class__.patcher_name)
+        _gui_patchers.sort(key=lambda a: groupOrder[a.patcher_type.group])
         #--Log & Clipboard text
         log = bolt.LogFile(StringIO.StringIO())
         log.setHeader(u'= %s %s' % (self._selected_item, _(u'Config')))
@@ -1155,7 +1156,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         else:
             log(u'Python')
             clip.write(u' ** Python\n')
-        for patcher in patchers:
+        for patcher in _gui_patchers:
             patcher.log_config(config, clip, log)
         #-- Show log
         clip.write(u'[/xml][/spoiler]')
@@ -1359,10 +1360,9 @@ class Mod_RemoveWorldOrphans(EnabledLink):
                 continue
             #--Export
             with balt.Progress(_(u"Remove World Orphans")) as progress:
-                loadFactory = parsers.LoadFactory(True,
-                        bosh.MreRecord.type_class['CELL'],
-                        bosh.MreRecord.type_class['WRLD'])
-                modFile = parsers.ModFile(fileInfo, loadFactory)
+                loadFactory = mod_files.LoadFactory(True, MreRecord.type_class[
+                    'CELL'], MreRecord.type_class['WRLD'])
+                modFile = mod_files.ModFile(fileInfo, loadFactory)
                 progress(0,_(u'Reading') + u' ' + fileName.s + u'.')
                 modFile.load(True,SubProgress(progress,0,0.7))
                 orphans = ('WRLD' in modFile.tops) and modFile.WRLD.orphansSkipped
@@ -1563,16 +1563,16 @@ class Mod_DecompileAll(EnabledLink):
                 self._showWarning(_(u"Skipping %s") % fileName.s,
                                   _(u'Decompile All'))
                 continue
-            loadFactory = parsers.LoadFactory(True, bosh.MreRecord.type_class['SCPT'])
-            modFile = parsers.ModFile(fileInfo, loadFactory)
+            loadFactory = mod_files.LoadFactory(True, MreRecord.type_class['SCPT'])
+            modFile = mod_files.ModFile(fileInfo, loadFactory)
             modFile.load(True)
             badGenericLore = False
             removed = []
             id_text = {}
             if modFile.SCPT.getNumRecords(False):
-                loadFactory = parsers.LoadFactory(False, bosh.MreRecord.type_class['SCPT'])
+                loadFactory = mod_files.LoadFactory(False, MreRecord.type_class['SCPT'])
                 for master in modFile.tes4.masters:
-                    masterFile = parsers.ModFile(bosh.modInfos[master], loadFactory)
+                    masterFile = mod_files.ModFile(bosh.modInfos[master], loadFactory)
                     masterFile.load(True)
                     mapper = masterFile.getLongMapper()
                     for record in masterFile.SCPT.getActiveRecords():

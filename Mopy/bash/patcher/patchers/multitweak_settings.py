@@ -36,7 +36,8 @@ from ...patcher.base import AMultiTweaker, DynamicNamedTweak
 # Patchers: 30 ----------------------------------------------------------------
 class GlobalsTweak(DynamicNamedTweak, MultiTweakItem):
     """set a global to specified value"""
-    #--Patch Phase ------------------------------------------------------------
+    tweak_read_classes = 'GLOB',
+
     def buildPatch(self,patchFile,keep,log):
         """Build patch."""
         value = self.choiceValues[self.chosen][0]
@@ -125,7 +126,6 @@ class CBash_GmstTweak(DynamicNamedTweak, CBash_MultiTweakItem):
     editOrder = 29
     tweak_read_classes = 'GMST',
 
-    #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         values = self.values = self.choiceValues[self.chosen]
@@ -198,20 +198,30 @@ class CBash_GmstTweak(DynamicNamedTweak, CBash_MultiTweakItem):
 #------------------------------------------------------------------------------
 class _AGmstTweaker(AMultiTweaker):
     """Tweaks miscellaneous gmsts in miscellaneous ways."""
-    name = _(u'Tweak Settings')
-    text = _(u"Tweak game settings.")
-    tweaks = []
+
+    @classmethod
+    def tweak_instances(cls):
+        instances = []
+        for clazz, game_tweaks in cls._class_tweaks:
+            for tweak in game_tweaks:
+                if isinstance(tweak, tuple):
+                    instances.append(clazz(*tweak))
+                elif isinstance(tweak, list):
+                    args = tweak[0]
+                    kwdargs = tweak[1]
+                    instances.append(clazz(*args, **kwdargs))
+        instances.sort(key=lambda a: a.tweak_name.lower())
+        return instances
 
 class GmstTweaker(MultiTweaker, _AGmstTweaker):
     """Tweaks miscellaneous gmsts in miscellaneous ways."""
     scanOrder = 29
     editOrder = 29
-    class_tweaks = [(GlobalsTweak, bush.game.GlobalsTweaks),
+    _class_tweaks = [(GlobalsTweak, bush.game.GlobalsTweaks),
                     (GmstTweak, bush.game.GmstTweaks)]
     _read_write_records = ('GMST', 'GLOB')
 
     def scanModFile(self,modFile,progress):
-        if not self.isActive: return
         mapper = modFile.getLongMapper()
         for blockType in self._read_write_records:
             if blockType not in modFile.tops: continue
@@ -227,20 +237,18 @@ class GmstTweaker(MultiTweaker, _AGmstTweaker):
         """Edits patch file as desired. Will write to log."""
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
-        log.setHeader(u'= '+self.__class__.name)
-        for tweak in self.enabledTweaks:
+        log.setHeader(u'= '+self._patcher_name)
+        for tweak in self.enabled_tweaks:
             tweak.buildPatch(self.patchFile,keep,log)
 
 class CBash_GmstTweaker(CBash_MultiTweaker, _AGmstTweaker):
     """Tweaks miscellaneous gmsts in miscellaneous ways."""
-    class_tweaks = [(CBash_GlobalsTweak, bush.game.GlobalsTweaks),
-                    (CBash_GmstTweak, bush.game.GmstTweaks)]
+    _class_tweaks = [(CBash_GlobalsTweak, bush.game.GlobalsTweaks),
+                     (CBash_GmstTweak, bush.game.GmstTweaks)]
 
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self, patchFile):
-        self.patchFile = patchFile
-        for tweak in self.tweaks:
-            tweak.patchFile = patchFile
+    def __init__(self, p_name, p_file, enabled_tweaks):
+        super(CBash_GmstTweaker, self).__init__(p_name, p_file, enabled_tweaks)
+        for tweak in self.enabled_tweaks:
             if isinstance(tweak,CBash_GlobalsTweak):
                 tweak.count = 0
             else:

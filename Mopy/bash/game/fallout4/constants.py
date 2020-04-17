@@ -579,4 +579,4 @@ inventoryTypes = ('NPC_','CONT',)
 #------------------------------------------------------------------------------
 # Object Bounds Patcher
 #------------------------------------------------------------------------------
-object_bounds_types = ('LVLI', 'LVLN')
+object_bounds_types = {'LVLI', 'LVLN'}

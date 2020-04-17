@@ -25,45 +25,35 @@
 """This module contains base patcher classes."""
 from __future__ import print_function
 from collections import Counter
+from itertools import chain
 from operator import itemgetter
 # Internal
 from .. import getPatchesPath
 from ..base import AMultiTweakItem, AMultiTweaker, Patcher, CBash_Patcher, \
     AAliasesPatcher, AListPatcher, AImportPatcher, APatchMerger, \
     AUpdateReferences
-from ... import bosh, load_order, bush  # for bosh.modInfos
-from ...bolt import GPath, CsvReader
+from ... import load_order, bush
+from ...bolt import GPath, CsvReader, deprint
 from ...brec import MreRecord
 
 # Patchers 1 ------------------------------------------------------------------
 class ListPatcher(AListPatcher,Patcher): pass
 
 class CBash_ListPatcher(AListPatcher,CBash_Patcher):
-    unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods in the'
-                             u' following list will be IGNORED.')
 
-    def initPatchFile(self, patchFile):
-        super(CBash_ListPatcher, self).initPatchFile(patchFile)
+    def __init__(self, p_name, p_file, p_sources):
+        if not self.allowUnloaded:
+            p_sources = [s for s in p_sources if s in p_file.allSet or
+                         not p_file.p_file_minfos.rightFileType(s.s)]
+        super(CBash_ListPatcher, self).__init__(p_name, p_file, p_sources)
         # used in all subclasses except CBash_RacePatcher,
         # CBash_PatchMerger, CBash_UpdateReferences
         self.mod_count = Counter()
 
-    #--Patch Phase ------------------------------------------------------------
-    def getConfigChecked(self):
-        """Returns checked config items in list order."""
-        if self.allowUnloaded:
-            return [item for item in self.configItems if
-                    self.configChecks[item]]
-        else:
-            return [item for item in self.configItems if
-                    self.configChecks[item] and (
-                        item in self.patchFile.allSet or
-                        not bosh.ModInfos.rightFileType(item.s))]
-
 class MultiTweakItem(AMultiTweakItem):
     # Notice the differences from Patcher in scanModFile and buildPatch
     # TODO: scanModFile() have VERY similar code - use getReadClasses here ?
-    #--Patch Phase ------------------------------------------------------------
+
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
         return self.__class__.tweak_read_classes
@@ -111,53 +101,66 @@ class CBash_MultiTweakItem(AMultiTweakItem):
 
 class MultiTweaker(AMultiTweaker,Patcher):
 
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return chain.from_iterable(tweak.getReadClasses()
+            for tweak in self.enabled_tweaks) if self.isActive else ()
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return chain.from_iterable(tweak.getWriteClasses()
+            for tweak in self.enabled_tweaks) if self.isActive else ()
+
+    def scanModFile(self,modFile,progress):
+        for tweak in self.enabled_tweaks:
+            tweak.scanModFile(modFile,progress,self.patchFile)
+
     def buildPatch(self,log,progress):
         """Applies individual tweaks."""
         if not self.isActive: return
-        log.setHeader(u'= '+self.__class__.name,True)
-        for tweak in self.enabledTweaks:
+        log.setHeader(u'= ' + self._patcher_name, True)
+        for tweak in self.enabled_tweaks:
             tweak.buildPatch(log,progress,self.patchFile)
 
 class CBash_MultiTweaker(AMultiTweaker,CBash_Patcher):
-    #--Config Phase -----------------------------------------------------------
-    def initData(self,group_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        if not self.isActive: return
-        for tweak in self.enabledTweaks:
-            for top_group_sig in tweak.getTypes():
-                group_patchers[top_group_sig].append(tweak)
 
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self, patchFile):
-        super(CBash_MultiTweaker, self).initPatchFile(patchFile)
-        for tweak in self.tweaks:
-            tweak.patchFile = patchFile
+    def __init__(self, p_name, p_file, enabled_tweaks):
+        super(CBash_MultiTweaker, self).__init__(p_name, p_file,
+                                                 enabled_tweaks)
+        for tweak in self.enabled_tweaks:
+            tweak.patchFile = p_file
+
+    def initData(self, progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as
+        necessary."""
+        if not self.isActive: return
+        for tweak in self.enabled_tweaks: ##: FIXME allowUnloaded (use or not base class method)
+            for top_group_sig in tweak.getTypes():
+                self.patchFile.group_patchers[top_group_sig].append(tweak)
 
     def buildPatchLog(self,log):
         """Will write to log."""
         if not self.isActive: return
-        log.setHeader(u'= '+self.__class__.name,True)
-        for tweak in self.enabledTweaks:
+        log.setHeader(u'= ' + self._patcher_name, True)
+        for tweak in self.enabled_tweaks:
             tweak.buildPatchLog(log)
 
 # Patchers: 10 ----------------------------------------------------------------
 class AliasesPatcher(AAliasesPatcher,Patcher): pass
 
-class CBash_AliasesPatcher(AAliasesPatcher,CBash_Patcher): pass
+class CBash_AliasesPatcher(AAliasesPatcher,CBash_Patcher):
+    allowUnloaded = False # avoid the srcs check in CBash_Patcher.initData
 
 class PatchMerger(APatchMerger, ListPatcher): pass
 
-class CBash_PatchMerger(APatchMerger, CBash_ListPatcher):
-    unloadedText = "" # Cbash only
+class CBash_PatchMerger(APatchMerger, CBash_ListPatcher): pass
 
 class UpdateReferences(AUpdateReferences,ListPatcher):
+    # TODO move this to a file it's imported after MreRecord.simpleTypes is set
 
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self, patchFile):
-        super(UpdateReferences, self).initPatchFile(patchFile)
-        self.types = MreRecord.simpleTypes
-        self.classes = self.types.union(
-            {'CELL', 'WRLD', 'REFR', 'ACHR', 'ACRE'})
+    def __init__(self, p_name, p_file, p_sources):
+        super(UpdateReferences, self).__init__(p_name, p_file,
+                                               p_sources)
         self.old_new = {} #--Maps old fid to new fid
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id
@@ -183,28 +186,27 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
-            if srcPath not in self.patches_set: continue
-            if getPatchesPath(srcFile).isfile():
-                self.readFromText(getPatchesPath(srcFile))
+            try: self.readFromText(getPatchesPath(srcFile))
+            except OSError: deprint(
+                u'%s is no longer in patches set' % srcPath, traceback=True)
             progress.plus()
 
     def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return tuple(self.classes) if self.isActive else ()
+        return tuple(
+            MreRecord.simpleTypes | ({'CELL', 'WRLD', 'REFR', 'ACHR', 'ACRE'}))
 
     def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return tuple(self.classes) if self.isActive else ()
+        return tuple(
+            MreRecord.simpleTypes | ({'CELL', 'WRLD', 'REFR', 'ACHR', 'ACRE'}))
 
     def scanModFile(self,modFile,progress):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
-        if not self.isActive: return
         mapper = modFile.getLongMapper()
         patchCells = self.patchFile.CELL
         patchWorlds = self.patchFile.WRLD
         modFile.convertToLongFids(('CELL','WRLD','REFR','ACRE','ACHR'))
-##        for type in self.types:
+##        for type in MreRecord.simpleTypes:
 ##            for record in getattr(modFile,type).getActiveRecords():
 ##                record = record.getTypeCopy(mapper)
 ##                if record.fid in self.old_new:
@@ -290,7 +292,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
         def swapper(oldId):
             newId = old_new.get(oldId,None)
             return newId if newId else oldId
-##        for type in self.types:
+##        for type in MreRecord.simpleTypes:
 ##            for record in getattr(self.patchFile,type).getActiveRecords():
 ##                if record.fid in self.old_new:
 ##                    record.fid = swapper(record.fid)
@@ -335,34 +337,38 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
             if keepWorld:
                 keep(worldBlock.world.fid)
 
-        log.setHeader(u'= '+self.__class__.name)
+        log.setHeader(u'= ' + self._patcher_name)
         self._srcMods(log)
         log(u'\n=== '+_(u'Records Patched'))
         for srcMod in load_order.get_ordered(count.keys()):
             log(u'* %s: %d' % (srcMod.s,count[srcMod]))
 
-from ...parsers import CBash_FidReplacer
-
 class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
+    _read_write_records = (
+        'MOD', 'FACT', 'RACE', 'MGEF', 'SCPT', 'LTEX', 'ENCH', 'SPEL', 'BSGN',
+        'ACTI', 'APPA', 'ARMO', 'BOOK', 'CLOT', 'CONT', 'DOOR', 'INGR', 'LIGH',
+        'MISC', 'FLOR', 'FURN', 'WEAP', 'AMMO', 'NPC_', 'CREA', 'LVLC', 'SLGM',
+        'KEYM', 'ALCH', 'SGST', 'LVLI', 'WTHR', 'CLMT', 'REGN', 'CELLS',
+        'WRLD', 'ACHRS', 'ACRES', 'REFRS', 'DIAL', 'INFOS', 'QUST', 'IDLE',
+        'PACK', 'LSCR', 'LVSP', 'ANIO', 'WATR')
 
-    #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self, patchFile):
-        super(CBash_UpdateReferences, self).initPatchFile(patchFile)
-        if not self.isActive: return
+    def __init__(self, p_name, p_file, p_sources):
+        super(CBash_UpdateReferences, self).__init__(p_name, p_file, p_sources)
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id
         self.mod_count_old_new = {}
 
-    def initData(self,group_patchers,progress):
+    def initData(self, progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
+        from ...parsers import CBash_FidReplacer
         fidReplacer = CBash_FidReplacer(aliases=self.patchFile.aliases)
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
-            if not bosh.ModInfos.rightFileType(srcFile):
-                if srcFile not in self.patches_set: continue
-                if getPatchesPath(srcFile).isfile():
-                    fidReplacer.readFromText(getPatchesPath(srcFile))
+            if not self.patchFile.p_file_minfos.rightFileType(srcFile):
+                try: fidReplacer.readFromText(getPatchesPath(srcFile))
+                except OSError: deprint(
+                    u'%s is no longer in patches set' % srcFile, traceback=True)
             progress.plus()
         #--Finish
         self.old_new = fidReplacer.old_new
@@ -370,21 +376,10 @@ class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
         self.new_eid.update(fidReplacer.new_eid)
         self.isActive = bool(self.old_new)
         if not self.isActive: return
-
+        # resets isActive !!
         for top_group_sig in self.getTypes():
-            group_patchers[top_group_sig].append(self)
+            self.patchFile.group_patchers[top_group_sig].append(self)
 
-    def getTypes(self):
-        return ['MOD','FACT','RACE','MGEF','SCPT','LTEX','ENCH',
-                'SPEL','BSGN','ACTI','APPA','ARMO','BOOK',
-                'CLOT','CONT','DOOR','INGR','LIGH','MISC',
-                'FLOR','FURN','WEAP','AMMO','NPC_','CREA',
-                'LVLC','SLGM','KEYM','ALCH','SGST','LVLI',
-                'WTHR','CLMT','REGN','CELLS','WRLD','ACHRS',
-                'ACRES','REFRS','DIAL','INFOS','QUST','IDLE',
-                'PACK','LSCR','LVSP','ANIO','WATR']
-
-    #--Patch Phase ------------------------------------------------------------
     def mod_apply(self, modFile):
         """Changes the mod in place without copying any records."""
         counts = modFile.UpdateReferences(self.old_new)
@@ -405,7 +400,7 @@ class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
         #--Log
         mod_count_old_new = self.mod_count_old_new
 
-        log.setHeader(u'= ' +self.__class__.name)
+        log.setHeader(u'= ' + self._patcher_name)
         self._srcMods(log)
         log(u'\n')
         for mod in load_order.get_ordered(mod_count_old_new.keys()):
@@ -421,7 +416,7 @@ class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
         self.mod_count_old_new = {}
 
 # Patchers: 40 ----------------------------------------------------------------
-class SpecialPatcher(object):
+class SpecialPatcher(CBash_Patcher):
     """Provides scan_more method only used in CBash importers (17) and CBash
     race patchers (3/4 except CBash_RacePatcher_Eyes)."""
     group = _(u'Special')
@@ -433,11 +428,12 @@ class SpecialPatcher(object):
             self.scan(modFile,record,bashTags)
         #Must check for "unloaded" conflicts that occur past the winning record
         #If any exist, they have to be scanned
+        minfs = self.patchFile.p_file_minfos
         for conflict in record.Conflicts(True):
             if conflict != record:
                 mod = conflict.GetParentMod()
                 if mod.GName in self.srcs:
-                    tags = bosh.modInfos[mod.GName].getBashTags()
+                    tags = minfs[mod.GName].getBashTags()
                     self.scan(mod,conflict,tags)
             else: return
 
@@ -446,18 +442,8 @@ class ImportPatcher(AImportPatcher, ListPatcher):
     # Override in subclasses as needed
     logMsg = u'\n=== ' + _(u'Modified Records')
 
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return tuple(
-            x.classType for x in self.srcClasses) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return tuple(
-            x.classType for x in self.srcClasses) if self.isActive else ()
-
     def _patchLog(self,log,type_count):
-        log.setHeader(u'= ' + self.__class__.name)
+        log.setHeader(u'= ' + self._patcher_name)
         self._srcMods(log)
         self._plog(log,type_count)
 
@@ -494,14 +480,17 @@ class ImportPatcher(AImportPatcher, ListPatcher):
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
-            if bosh.ModInfos.rightFileType(srcPath):
-                if srcPath not in bosh.modInfos: continue
-                srcInfo = bosh.modInfos[srcPath]
+            minfs = self.patchFile.p_file_minfos
+            if minfs.rightFileType(srcPath):
+                if srcPath not in minfs: continue
+                srcInfo = minfs[srcPath]
                 fullNames.readFromMod(srcInfo)
             else:
-                if srcPath not in self.patches_set: continue
                 try:
                     fullNames.readFromText(getPatchesPath(srcFile))
+                except OSError:
+                    deprint(u'%s is no longer in patches set' % srcPath,
+                        traceback=True)
                 except UnicodeError as e: # originally in NamesPatcher, keep ?
                     print(srcPath.stail, u'is not saved in UTF-8 format:', e)
             progress.plus()
@@ -515,7 +504,7 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher, SpecialPatcher):
         """Will write to log."""
         if not self.isActive: return
         #--Log
-        log.setHeader(u'= ' +self.__class__.name)
+        log.setHeader(u'= ' + self._patcher_name)
         self._clog(log)
 
     def _clog(self,log):
@@ -536,11 +525,12 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher, SpecialPatcher):
     # helpers WIP
     def _parse_texts(self, parser_class, progress):
         actorFactions = parser_class(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs)) ##: make sure self.srcs are paths, drop GPath call below
+        progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            if not bosh.ModInfos.rightFileType(srcFile):
-                if srcPath not in self.patches_set: continue
-                actorFactions.readFromText(getPatchesPath(srcFile))
+            if not self.patchFile.p_file_minfos.rightFileType(srcFile):
+                try: actorFactions.readFromText(getPatchesPath(srcFile))
+                except OSError:
+                    deprint(u'%s is no longer in patches set' % srcFile,
+                            traceback=True)
             progress.plus()
         return actorFactions
