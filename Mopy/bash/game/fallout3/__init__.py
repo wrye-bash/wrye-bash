@@ -121,6 +121,7 @@ class Fallout3GameInfo(GameInfo):
         canEditHeader = True
         validHeaderVersions = (0.85, 0.94)
         stringsFiles = []
+        generate_temp_child_onam = True
 
     #--Tags supported by this game
     # 'Body-F', 'Body-M', 'Body-Size-M', 'Body-Size-F', 'C.Climate', 'C.Light',

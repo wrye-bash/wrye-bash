@@ -58,7 +58,7 @@ from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
     SaveHeaderError, SkipError, StateError
 from ..ini_files import IniFile, OBSEIniFile, DefaultIniFile, GameIni, \
     get_ini_type_and_encoding
-from ..mod_files import ModFile
+from ..mod_files import ModFile, ModHeaderReader
 
 # Singletons, Constants -------------------------------------------------------
 #--Constants
@@ -386,7 +386,14 @@ class ModInfo(FileInfo):
     def has_esm_flag(self):
         """Check if the mod info is a master file based on master flag -
         header must be set"""
-        return int(self.header.flags1) & 1 == 1
+        return self.header.flags1.esm
+
+    def set_esm_flag(self, new_esm_flag):
+        """Changes this file's ESM flag to the specified value. Recalculates
+        ONAM info if necessary."""
+        self.header.flags1.esm = new_esm_flag
+        self.update_onam()
+        self.writeHeader()
 
     def is_esl(self):
         """Check if this is a light plugin - .esl files are automatically
@@ -402,20 +409,6 @@ class ModInfo(FileInfo):
                 u'isInvertedMod: %s - only esm/esp allowed' % mod_ext)
         return (self.header and
                 mod_ext != (u'.esp', u'.esm')[int(self.header.flags1) & 1])
-
-    def setType(self, esm_or_esp):
-        """Sets the file's internal type."""
-        if esm_or_esp not in (u'esm', u'esp'): # don't use for esls
-            raise ArgumentError(
-                u'setType: %s - only esm/esp allowed' % esm_or_esp)
-        with self.getPath().open('r+b') as modFile:
-            modFile.seek(8)
-            flags1 = MreRecord.flags1_(struct_unpack('I', modFile.read(4))[0])
-            flags1.esm = (esm_or_esp == u'esm')
-            modFile.seek(8)
-            modFile.write(struct_pack('=I', int(flags1)))
-        self.header.flags1 = flags1
-        self.setmtime(crc_changed=True)
 
     def calculate_crc(self, recalculate=False):
         cached_crc = modInfos.table.getItem(self.name, 'crc')
@@ -808,6 +801,29 @@ class ModInfo(FileInfo):
             if modInfos.size_mismatch(master_name, m_sizes[i]):
                 return True
         return False
+
+    def update_onam(self):
+        """Checks if this plugin needs ONAM data and either adds or removes it
+        based on that."""
+        # Skip for games that don't need the ONAM generation
+        if bush.game.Esp.generate_temp_child_onam:
+            if load_order.in_master_block(self):
+                # We're a master now, so calculate the ONAM
+                temp_headers = ModHeaderReader.read_temp_child_headers(self)
+                num_masters = len(self.get_masters())
+                # Note that the only thing that matters is the first two bytes
+                # of the fid, since both overrides and injected records need
+                # ONAM. We sort because xEdit does as well.
+                new_onam = sorted(h.fid for h in temp_headers
+                                  if (h.fid >> 24) < num_masters)
+            else:
+                # We're no longer a master now, so discard all ONAM
+                new_onam = []
+            if new_onam != self.header.overrides:
+                self.header.overrides = new_onam
+                self.header.setChanged()
+        # TODO(inf) On FO4, ONAM is based on all overrides in complex records.
+        #  That will have to go somewhere like ModFile.save though.
 
 #------------------------------------------------------------------------------
 def get_game_ini(ini_path, is_abs=True):

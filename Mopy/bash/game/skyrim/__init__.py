@@ -144,6 +144,7 @@ class SkyrimGameInfo(GameInfo):
         canBash = True
         canEditHeader = True
         validHeaderVersions = (0.94, 1.70,)
+        generate_temp_child_onam = True
 
     allTags = {
         u'Actors.ACBS', u'Actors.AIData', u'Actors.AIPackages',

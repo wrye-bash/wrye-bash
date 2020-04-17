@@ -31,23 +31,9 @@ from itertools import chain
 from operator import itemgetter
 # Wrye Bash imports
 from .mod_io import GrupHeader, ModReader, RecordHeader, TopGrupHeader
+from .utils_constants import group_types
 from ..bolt import GPath, sio
 from ..exception import AbstractError, ModError, ModFidMismatchError
-
-# TES4 Group/Top Types --------------------------------------------------------
-groupTypes = [
-    _(u'Top (Type)'),
-    _(u'World Children'),
-    _(u'Int Cell Block'),
-    _(u'Int Cell Sub-Block'),
-    _(u'Ext Cell Block'),
-    _(u'Ext Cell Sub-Block'),
-    _(u'Cell Children'),
-    _(u'Topic Children'),
-    _(u'Cell Persistent Children'),
-    _(u'Cell Temporary Children'),
-    _(u'Cell Visible Distant Children'),
-]
 
 class MobBase(object):
     """Group of records and/or subgroups. This basic implementation does not
@@ -116,7 +102,7 @@ class MobBase(object):
         else:
             numSubRecords = 0
             reader = self.getReader()
-            errLabel = groupTypes[self.groupType]
+            errLabel = group_types[self.groupType]
             readerAtEnd = reader.atEnd
             readerRecHeader = reader.unpackRecHeader
             readerSeek = reader.seek

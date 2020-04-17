@@ -310,6 +310,9 @@ class GameInfo(object):
         # background color if that is the case. Needs meaningful information in
         # the DATA subrecords.
         check_master_sizes = False
+        # If True, generate ONAM by reading each temp CELL child when adding
+        # the ESM flag to plugins and discard it when removing the ESM flag.
+        generate_temp_child_onam = False
 
     # Bash Tags supported by this game
     allTags = set()

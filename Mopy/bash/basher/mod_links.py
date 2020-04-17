@@ -1490,29 +1490,31 @@ class Mod_CopyToEsmp(EnabledLink):
     def Execute(self):
         modInfos, added = bosh.modInfos, []
         save_lo = False
-        for curName, minfo in self.iselected_pairs():
-            newType = (minfo.has_esm_flag() and u'esp') or u'esm'
-            newName = curName.root + u'.' + newType # calls GPath internally
-            #--Replace existing file?
-            timeSource = None
-            if newName in modInfos:
-                existing = modInfos[newName]
-                if not self._askYes(_( # getPath() as existing may be ghosted
-                        u'Replace existing %s?') % existing.getPath()):
-                    continue
-                existing.makeBackup()
-                timeSource = newName
-            #--New Time
-            newTime = modInfos[timeSource].mtime if timeSource else None
-            #--Copy, set type, update mtime - will use ghosted path if needed
-            modInfos.copy_info(curName, minfo.dir, newName, set_mtime=newTime)
-            added.append(newName)
-            newInfo = modInfos[newName]
-            newInfo.setType(newType)
-            if timeSource is None: # otherwise it has a load order already !
-                modInfos.cached_lo_insert_after(modInfos.cached_lo_last_esm(),
-                                                newName)
-                save_lo = True
+        with balt.BusyCursor(): # ONAM generation can take a bit
+            for curName, minfo in self.iselected_pairs():
+                newType = (minfo.has_esm_flag() and u'esp') or u'esm'
+                newName = curName.root + u'.' + newType
+                #--Replace existing file?
+                timeSource = None
+                if newName in modInfos:
+                    existing = modInfos[newName]
+                    # getPath() as existing may be ghosted
+                    if not self._askYes(_(u'Replace existing %s?') %
+                                        existing.getPath()):
+                        continue
+                    existing.makeBackup()
+                    timeSource = newName
+                newTime = modInfos[timeSource].mtime if timeSource else None
+                # Copy and set flag - will use ghosted path if needed
+                modInfos.copy_info(curName, minfo.dir, newName,
+                                   set_mtime=newTime)
+                added.append(newName)
+                newInfo = modInfos[newName]
+                newInfo.set_esm_flag(newType == u'esm')
+                if timeSource is None: # otherwise it has a load order already!
+                    modInfos.cached_lo_insert_after(
+                        modInfos.cached_lo_last_esm(), newName)
+                    save_lo = True
         #--Repopulate
         if added:
             if save_lo: modInfos.cached_lo_save_lo()
@@ -1633,10 +1635,9 @@ class Mod_FlipEsm(_Esm_Esl_Flip):
               u'plugins for ESP/ESM conversion on newer games.'))
         if not self._askContinue(message, 'bash.flipToEsmp.continue',
                                  _(u'Flip to ESM')): return
-        for modInfo in self.iselected_infos():
-            header = modInfo.header
-            header.flags1.esm = not header.flags1.esm
-            modInfo.writeHeader()
+        with balt.BusyCursor(): # ONAM generation can take a bit
+            for modInfo in self.iselected_infos():
+                modInfo.set_esm_flag(not modInfo.has_esm_flag())
         self._esm_esl_flip_refresh(self.selected)
 
 class Mod_FlipEsl(_Esm_Esl_Flip):
@@ -1714,12 +1715,12 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
                     {u'ck_name': bush.game.Ck.long_name})
         if not self._askContinue(message, 'bash.flipMasters.continue'): return
         updated = [self._selected_item]
-        for masterPath in self.espMasters:
-            master_mod_info = bosh.modInfos.get(masterPath,None)
-            if master_mod_info:
-                master_mod_info.header.flags1.esm = self.toEsm
-                master_mod_info.writeHeader()
-                updated.append(masterPath)
+        with balt.BusyCursor(): # ONAM generation can take a bit
+            for masterPath in self.espMasters:
+                master_mod_info = bosh.modInfos.get(masterPath,None)
+                if master_mod_info:
+                    master_mod_info.set_esm_flag(self.toEsm)
+                    updated.append(masterPath)
         self._esm_esl_flip_refresh(updated)
 
 #------------------------------------------------------------------------------

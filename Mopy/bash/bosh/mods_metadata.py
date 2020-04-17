@@ -552,7 +552,7 @@ class ModCleaner(object):
                                         parentType = 0 # Interior Cell
                                         parentParentFid = parentFid = None
                                     elif groupType in {6,8,9,10}:
-                                        # Cell Children, Cell Persisten Children,
+                                        # Cell Children, Cell Persistent Children,
                                         # Cell Temporary Children, Cell VWD Children
                                         parentFid = header.label
                                     else: # 3,4,5,7 - Topic Children

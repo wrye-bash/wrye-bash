@@ -25,8 +25,8 @@
 through PBash (LoadFactory + ModFile) as well as some related classes."""
 
 import re
+import struct
 from collections import defaultdict
-from struct import Struct
 
 from . import bolt, bush, env, load_order
 from .bass import dirs
@@ -363,7 +363,7 @@ class ModFile(object):
         m_names = bush.game.mgef_name.copy()
         hostile_recs = set()
         nonhostile_recs = set()
-        unpack_eid = Struct(u'I').unpack
+        unpack_eid = struct.Struct(u'I').unpack
         if b'MGEF' in self.tops:
             for record in self.MGEF.getActiveRecords():
                 m_school[record.eid] = record.school
@@ -427,18 +427,64 @@ class ModHeaderReader(object):
         :rtype: defaultdict[str, list[RecordHeader]]"""
         ret_headers = defaultdict(list)
         with ModReader(mod_info.name, mod_info.abs_path.open(u'rb')) as ins:
+            ins_at_end = ins.atEnd
+            ins_unpack_rec_header = ins.unpackRecHeader
+            ins_seek = ins.seek
             try:
-                ins_at_end = ins.atEnd
-                ins_unpack_rec_header = ins.unpackRecHeader
-                ins_seek = ins.seek
                 while not ins_at_end():
                     header = ins_unpack_rec_header()
                     # Skip GRUPs themselves, only process their records
-                    header_rec_type = header.recType
-                    if header_rec_type != b'GRUP':
-                        ret_headers[header_rec_type].append(header)
+                    header_rec_sig = header.recType
+                    if header_rec_sig != b'GRUP':
+                        ret_headers[header_rec_sig].append(header)
                         ins_seek(header.size, 1)
-            except OSError as e:
+            except (OSError, struct.error) as e:
+                raise ModError(ins.inName, u'Error scanning %s, file read '
+                                           u"pos: %i\nCaused by: '%r'" % (
+                    mod_info.name.s, ins.tell(), e))
+        return ret_headers
+
+    ##: The method above has to be very fast, but this one can afford to be
+    # much slower. Should eventually be absorbed by refactored ModFile API.
+    @staticmethod
+    def read_temp_child_headers(mod_info):
+        """Reads the headers of all temporary CELL chilren in the specified mod
+        and returns them as a list. Used for determining FO3/FNV/TES5 ONAM.
+
+        :rtype: list[RecordHeader]"""
+        ret_headers = []
+        # We want to read only the children of these, so skip their tops
+        interested_sigs = {b'CELL', b'WRLD'}
+        tops_to_skip = interested_sigs | {bush.game.Esp.plugin_header_sig}
+        grup_header_size = RecordHeader.rec_header_size
+        with ModReader(mod_info.name, mod_info.abs_path.open(u'rb')) as ins:
+            ins_at_end = ins.atEnd
+            ins_unpack_rec_header = ins.unpackRecHeader
+            ins_seek = ins.seek
+            try:
+                while not ins_at_end():
+                    header = ins_unpack_rec_header()
+                    header_rec_sig = header.recType
+                    if header_rec_sig == b'GRUP':
+                        header_group_type = header.groupType
+                        # Skip all top-level GRUPs we're not interested in
+                        # (group type == 0) and all persistent children and
+                        # dialog topics (group type == 7 or 8, respectively).
+                        if ((header_group_type == 0 and
+                             header.label not in interested_sigs)
+                                or header_group_type in (7, 8)):
+                            # Note that GRUP sizes include their own header
+                            # size, so we need to subtract that
+                            ins_seek(header.size - grup_header_size, 1)
+                    elif header_rec_sig in tops_to_skip:
+                        # Skip TES4, CELL and WRLD to get to their contents
+                        ins_seek(header.size, 1)
+                    else:
+                        # We must be in a temp CELL children group, store the
+                        # header and skip the record body
+                        ret_headers.append(header)
+                        ins_seek(header.size, 1)
+            except (OSError, struct.error) as e:
                 raise ModError(ins.inName, u'Error scanning %s, file read '
                                            u"pos: %i\nCaused by: '%r'" % (
                     mod_info.name.s, ins.tell(), e))

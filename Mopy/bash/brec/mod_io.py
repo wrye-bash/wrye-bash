@@ -29,7 +29,7 @@ import os
 import struct
 
 # no local imports beyond this, imported everywhere in brec
-from .utils_constants import _int_unpacker, null1, strFid
+from .utils_constants import _int_unpacker, group_types, null1, strFid
 from .. import bolt, exception
 from ..bolt import decode, encode, struct_pack, struct_unpack
 
@@ -108,8 +108,8 @@ class RecHeader(RecordHeader):
         return struct_pack(*pack_args)
 
     def __repr__(self):
-        return u'<Record Header: %s v%u>' % (
-            strFid(self.fid), self.form_version)
+        return u'<Record Header: [%s:%s] v%u>' % (
+            self.recType, strFid(self.fid), self.form_version)
 
 class GrupHeader(RecordHeader):
     """Fixed size structure serving as a fencepost in the plugin file,
@@ -158,7 +158,8 @@ class GrupHeader(RecordHeader):
                  b'GRUP.%s' % self.label) # label could be an int
 
     def __repr__(self):
-        return u'<GRUP Header: %s v%u>' % (self.label, self.form_version)
+        return u'<GRUP Header: %s, %s>' % (
+            group_types[self.groupType], self.label)
 
 class TopGrupHeader(GrupHeader):
     """Fixed size structure signaling a top level group of records."""
