@@ -2171,8 +2171,7 @@ class InstallersList(balt.UIList):
             items.sort(key=lambda x: not self.data_store[x].is_active)
     def _sortProjects(self, items):
         if settings['bash.installers.sortProjects']:
-            items.sort(key=lambda x: not isinstance(self.data_store[x],
-                                                    bosh.InstallerProject))
+            items.sort(key=lambda x: not self.data_store[x].is_project())
     _extra_sortings = [_sortStructure, _sortActive, _sortProjects]
     #--Labels
     labels = OrderedDict([
@@ -2192,11 +2191,11 @@ class InstallersList(balt.UIList):
 
     #--Item Info
     def set_item_format(self, item, item_format):
-        installer = self.data_store[item]
+        installer = self.data_store[item] # type: bosh.bain.Installer
         #--Text
         if installer.type == 2 and len(installer.subNames) == 2:
             item_format.text_key = self._type_textKey[1]
-        elif isinstance(installer, bosh.InstallerMarker):
+        elif installer.is_marker():
             item_format.text_key = 'installers.text.marker'
         else: item_format.text_key = self._type_textKey.get(installer.type,
                                              'installers.text.invalid')
@@ -2214,7 +2213,7 @@ class InstallersList(balt.UIList):
         item_format.icon_key = 'on' if installer.is_active else 'off'
         item_format.icon_key += '.' + self._status_color[installer.status]
         if installer.type < 0: item_format.icon_key = 'corrupt'
-        elif isinstance(installer, bosh.InstallerProject): item_format.icon_key += '.dir'
+        elif installer.is_project(): item_format.icon_key += '.dir'
         if settings['bash.installers.wizardOverlay'] and installer.hasWizard:
             item_format.icon_key += '.wiz'
         #if textKey == 'installers.text.invalid': # I need a 'text.markers'
@@ -2241,11 +2240,11 @@ class InstallersList(balt.UIList):
                 return EventResult.CANCEL
         uilist_ctrl.ec_set_on_char_handler(self._OnEditLabelChar)
         #--Markers, change the selection to not include the '=='
-        if renaming_type is bosh.InstallerMarker:
+        if renaming_type.is_marker():
             to = len(evt_label) - 2
             uilist_ctrl.ec_set_selection(2, to)
         #--Archives, change the selection to not include the extension
-        elif renaming_type is bosh.InstallerArchive:
+        elif renaming_type.is_arhive():
             return super(InstallersList, self).OnBeginEditLabel(evt_label,
                                                                 uilist_ctrl)
         return EventResult.FINISH  ##: needed?
@@ -2266,9 +2265,9 @@ class InstallersList(balt.UIList):
                 lenNextLower = lenWithExt
             else:
                 lenNextLower = len(textNextLower.s)
-            if renaming_type is bosh.InstallerArchive:
+            if renaming_type.is_arhive():
                 selection_span = (0, lenNextLower)
-            elif renaming_type is bosh.InstallerMarker:
+            elif renaming_type.is_marker():
                 selection_span = (2, lenWithExt - 2)
             else:
                 selection_span = (0, lenWithExt)
@@ -2285,7 +2284,7 @@ class InstallersList(balt.UIList):
         installables = self.data_store.filterInstallables(selected)
         validate = partial(self.validate_filename, evt_label,
                            is_filename=bool(installables))
-        if renaming_type is bosh.InstallerArchive:
+        if renaming_type.is_arhive():
             root, newName, _numStr = validate(ext=self.__ext_group)
         else:
             root, newName, _numStr = validate()
@@ -2324,7 +2323,7 @@ class InstallersList(balt.UIList):
         new_name = GPath(new_name)
         to_rename = self.GetSelected()
         renaming_type = to_rename and type(self.data_store[to_rename[0]])
-        if renaming_type is bosh.InstallerMarker:
+        if renaming_type.is_marker():
             new_name, count = GPath(u'==' + new_name.s.strip(u'=') + u'=='), 0
             while new_name in self.data_store:
                 count += 1
@@ -2517,14 +2516,14 @@ class InstallersList(balt.UIList):
         """Double click, open the installer."""
         item = self._getItemClicked(lb_dex_and_flags)
         if not item: return
-        if isinstance(self.data_store[item], bosh.InstallerMarker):
+        if self.data_store[item].is_marker():
             # Double click on a Marker, select all items below
             # it in install order, up to the next Marker
             sorted_ = self._SortItems(col='Order', sortSpecial=False)
             new = []
             for nextItem in sorted_[self.data_store[item].order + 1:]:
                 installer = self.data_store[nextItem]
-                if isinstance(installer,bosh.InstallerMarker):
+                if installer.is_marker():
                     break
                 new.append(nextItem)
             if new:
@@ -2792,11 +2791,11 @@ class InstallersDetails(_SashDetailsPanel):
             nConfigured = len(installer.ci_dest_sizeCrc)
             nMissing = len(installer.missingFiles)
             nMismatched = len(installer.mismatchedFiles)
-            if isinstance(installer,bosh.InstallerProject):
+            if installer.is_project():
                 info += _(u'Size:') + u' %s\n' % round_size(installer.size)
-            elif isinstance(installer,bosh.InstallerMarker):
+            elif installer.is_marker():
                 info += _(u'Size:')+u' N/A\n'
-            elif isinstance(installer,bosh.InstallerArchive):
+            elif installer.is_archive():
                 if installer.isSolid:
                     if installer.blockSize:
                         sSolid = _(u'Solid, Block Size: %d MB') % installer.blockSize
@@ -2811,14 +2810,14 @@ class InstallersDetails(_SashDetailsPanel):
             else:
                 info += _(u'Size: Unrecognized')+u'\n'
             info += (_(u'Modified:') +u' %s\n' % format_date(installer.modified),
-                     _(u'Modified:') +u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
+                     _(u'Modified:') +u' N/A\n',)[installer.is_marker()]
             info += (_(u'Data CRC:')+u' %08X\n' % installer.crc,
-                     _(u'Data CRC:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
+                     _(u'Data CRC:')+u' N/A\n',)[installer.is_marker()]
             info += (_(u'Files:') + u' %s\n' % installer.number_string(
                 installer.num_of_files, marker_string=u'N/A'))
             info += (_(u'Configured:')+u' %u (%s)\n' % (
                 nConfigured, round_size(installer.unSize)),
-                     _(u'Configured:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
+                     _(u'Configured:')+u' N/A\n',)[installer.is_marker()]
             info += (_(u'  Matched:') + u' %s\n' % installer.number_string(
                 nConfigured - nMissing - nMismatched, marker_string=u'N/A'))
             info += (_(u'  Missing:')+u' %s\n' % installer.number_string(

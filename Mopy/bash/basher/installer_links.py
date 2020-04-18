@@ -37,13 +37,13 @@ import re
 import webbrowser
 from collections import defaultdict
 
-from . import settingDefaults, Installers_Link, BashFrame, INIList
+from . import Installers_Link, BashFrame, INIList
 from .frames import InstallerProject_OmodConfigDialog
 from .. import bass, bolt, bosh, bush, balt, archives
 from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
     UIList_Rename, UIList_Hide
 from ..belt import InstallerWizard, generateTweakLines
-from ..bolt import GPath, deprint, SubProgress, LogFile, round_size
+from ..bolt import GPath, SubProgress, LogFile, round_size
 from ..exception import CancelError, SkipError, StateError
 
 __all__ = ['Installer_Open', 'Installer_Duplicate', 'InstallerOpenAt_MainMenu',
@@ -75,8 +75,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
     def isSingleArchive(self):
         """Indicates whether or not is single archive."""
         if len(self.selected) != 1: return False
-        else: return isinstance(next(self.iselected_infos()),
-                                bosh.InstallerArchive)
+        else: return next(self.iselected_infos()).is_archive()
 
     ##: Methods below should be in an "archives.py"
     def _promptSolidBlockSize(self, title, value=0):
@@ -143,8 +142,8 @@ class _SingleInstallable(OneItemLink, _InstallerLink):
 class _SingleProject(OneItemLink, _InstallerLink):
 
     def _enable(self):
-        return super(_SingleProject, self)._enable() and isinstance(
-            self._selected_info, bosh.InstallerProject)
+        return super(_SingleProject, self)._enable() and \
+               self._selected_info.is_project()
 
 class _RefreshingLink(_SingleInstallable):
     _overrides_skips = False
@@ -343,8 +342,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
 
     def _enable(self):
         single_item = super(Installer_Duplicate, self)._enable()
-        return single_item and not isinstance(self._selected_info,
-                                              bosh.InstallerMarker)
+        return single_item and not self._selected_info.is_marker()
 
     @balt.conversation
     def Execute(self):
@@ -381,8 +379,7 @@ class Installer_Hide(_InstallerLink, UIList_Hide):
                                   u'selected.')
 
     def _enable(self):
-        return not any(map(lambda inf: isinstance(inf, bosh.InstallerMarker),
-                       self.iselected_infos()))
+        return not any(inf.is_marker() for inf in self.iselected_infos())
 
 class Installer_Rename(UIList_Rename, _InstallerLink):
     """Renames files by pattern."""
@@ -399,6 +396,9 @@ class Installer_HasExtraData(CheckLink, _RefreshingLink):
     """Toggle hasExtraData flag on installer."""
     _text = _(u'Has Extra Directories')
     _help = _(u"Allow installation of files in non-standard directories.")
+
+    def _enable(self):
+        return len(self.selected) == 1 and not self._selected_info.is_marker()
 
     def _check(self):
         return self._enable() and self._selected_info.hasExtraData
@@ -495,8 +495,7 @@ class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Warudd
 
     def _enable(self):
         single_item = super(Installer_ListStructure, self)._enable()
-        return single_item and not isinstance(self._selected_info,
-                                              bosh.InstallerMarker)
+        return single_item and not self._selected_info.is_marker()
 
     @balt.conversation ##: no use ! _showLog returns immediately
     def Execute(self):
@@ -516,8 +515,7 @@ class Installer_ExportAchlist(OneItemLink, _InstallerLink):
 
     def _enable(self):
         single_item = super(Installer_ExportAchlist, self)._enable()
-        return single_item and not isinstance(self._selected_info,
-                                              bosh.InstallerMarker)
+        return single_item and not self._selected_info.is_marker()
 
     def Execute(self):
         info_dir = bass.dirs['app'].join(self.__class__._mode_info_dir)
@@ -566,7 +564,7 @@ class Installer_Open(balt.UIList_OpenItems, _InstallerLink):
     def _initData(self, window, selection):
         super(Installer_Open, self)._initData(window, selection)
         self.selected = [k for k, v in self.iselected_pairs() if
-                         not isinstance(v, bosh.InstallerMarker)]
+                         not v.is_marker()]
 
     def _enable(self): return bool(self.selected)
 
@@ -728,7 +726,7 @@ class Installer_CopyConflicts(_SingleInstallable):
         ijoin = self.idata.store_dir.join
         def _copy_conflicts(curFile):
             inst = self.idata[package]
-            if isinstance(inst, bosh.InstallerProject):
+            if inst.is_project():
                 for src in curConflicts:
                     srcFull = ijoin(package, src)
                     destFull = ijoin(destDir, g_path, src)
@@ -945,8 +943,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
     def _append(self, window):
         self.selected = window.GetSelected() # append runs before _initData
         self.window = window # and the idata access is via self.window
-        return all(map(lambda inf: isinstance(inf, bosh.InstallerArchive),
-                       self.iselected_infos()))
+        return all(map(lambda inf: inf.is_archive(), self.iselected_infos()))
 
     @balt.conversation
     def Execute(self):
@@ -1255,8 +1252,8 @@ class InstallerOpenAt_MainMenu(balt.MenuLink):
     """Main Open At Menu"""
     _text = _(u"Open at")
     def _enable(self):
-        return super(InstallerOpenAt_MainMenu, self)._enable() and isinstance(
-            self.window.data_store[self.selected[0]], bosh.InstallerArchive)
+        return super(InstallerOpenAt_MainMenu, self)._enable() and (
+            self.window.data_store[self.selected[0]].is_archive())
 
 class InstallerConverter_ConvertMenu(balt.MenuLink):
     """Apply BCF SubMenu."""
@@ -1301,6 +1298,6 @@ class InstallerConverter_MainMenu(balt.MenuLink):
     _text = _(u"BAIN Conversions")
     def _enable(self):
         for item in self.selected:
-            if not isinstance(self.window.data_store[item], bosh.InstallerArchive):
+            if not self.window.data_store[item].is_archive():
                 return False
         return True

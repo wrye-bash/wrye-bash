@@ -93,6 +93,13 @@ class Installer(object):
     _re_top_extensions = re.compile(u'(?:' + u'|'.join(
         re.escape(ext) for ext in _top_files_extensions) + u')$', re.I)
 
+    @classmethod
+    def is_archive(cls): return False
+    @classmethod
+    def is_project(cls): return False
+    @classmethod
+    def is_marker(cls): return False
+
     @staticmethod
     def init_bain_dirs():
         """Initialize BAIN data directories on a per game basis."""
@@ -442,8 +449,8 @@ class Installer(object):
                 return None # skip
             dest = file_relative
             if not parentDir:
-                archiveRoot = GPath(self.archive).sroot if isinstance(self,
-                        InstallerArchive) else self.archive
+                archiveRoot = GPath(
+                    self.archive).sroot if self.is_archive() else self.archive
                 if fileLower in {u'masterlist.txt', u'dlclist.txt'}:
                     self.skipDirFiles.add(full)
                     return None # we dont want to install those files
@@ -607,8 +614,8 @@ class Installer(object):
         dest_src = bolt.LowerDict()
         #--Bad archive?
         if bain_type not in {1,2}: return dest_src
-        archiveRoot = GPath(self.archive).sroot if isinstance(self,
-                InstallerArchive) else self.archive
+        archiveRoot = GPath(
+            self.archive).sroot if self.is_archive() else self.archive
         docExts = self.docExts
         docDirs = self.docDirs
         dataDirsPlus = self.dataDirsPlus
@@ -1078,6 +1085,9 @@ class InstallerMarker(Installer):
     __slots__ = tuple() #--No new slots
     type_string = _(u'Marker')
 
+    @classmethod
+    def is_marker(cls): return True
+
     def __init__(self,archive):
         Installer.__init__(self,archive)
         self.modified = time.time()
@@ -1124,6 +1134,9 @@ class InstallerArchive(Installer):
     """Represents an archive installer entry."""
     __slots__ = tuple() #--No new slots
     type_string = _(u'Archive')
+
+    @classmethod
+    def is_archive(cls): return True
 
     def __reduce__(self):
         from . import InstallerArchive as boshInstallerArchive
@@ -1312,6 +1325,9 @@ class InstallerProject(Installer):
     """Represents a directory/build installer entry."""
     __slots__ = tuple() #--No new slots
     type_string = _(u'Project')
+
+    @classmethod
+    def is_project(cls): return True
 
     def __reduce__(self):
         from . import InstallerProject as boshInstallerProject
@@ -1524,7 +1540,7 @@ def projects_walk_cache(func): ##: HACK ! Profile
             it = self.itervalues() if isinstance(self, InstallersData) else \
                 self.listData.itervalues()
             for project in it:
-                if isinstance(project, InstallerProject):
+                if project.is_project():
                     project._dir_dirs_files = None
     return _projects_walk_cache_wrapper
 
@@ -1627,7 +1643,7 @@ class InstallersData(DataStore):
             pickle, bolt.LowerDict) else pickle
         # fixup: all markers had their archive attribute set to u'===='
         for key, value in self.iteritems():
-            if isinstance(value, InstallerMarker):
+            if value.is_marker():
                 value.archive = key.s
         self.loaded = True
         return True
@@ -1640,8 +1656,7 @@ class InstallersData(DataStore):
                 (GPath(x), y) for x, y in self.data_sizeCrcDate.iteritems())
             # for backwards compatibility, drop
             self.dictFile.data['crc_installer'] = dict(
-                (x.crc, x) for x in self.itervalues() if
-                isinstance(x, InstallerArchive))
+                (x.crc, x) for x in self.itervalues() if x.is_archive())
             self.dictFile.vdata['version'] = 1
             self.dictFile.save()
             self.converters_data.save()
@@ -1656,7 +1671,7 @@ class InstallersData(DataStore):
         markers = []
         for item in filenames:
             if item == self.lastKey: continue
-            if isinstance(self[item], InstallerMarker): markers.append(item)
+            if self[item].is_marker(): markers.append(item)
             else: toDelete.append(self.store_dir.join(item))
         return toDelete, markers
 
@@ -1767,7 +1782,7 @@ class InstallersData(DataStore):
                           progress=bolt.Progress()):
         if installers is None:
             installers = [x for x in self.itervalues() if
-                          isinstance(x, InstallerArchive) and x.hasBCF]
+                          x.is_archive() and x.hasBCF]
         if not installers: return [], []
         if not destArchives:
             destArchives = [GPath(u'[Auto applied BCF] %s' % x.archive) for x
@@ -1862,8 +1877,8 @@ class InstallersData(DataStore):
                     apath):
                 pending.add(item)
             else: installers.add(item)
-        deleted = set(x for x, y in self.iteritems() if not isinstance(
-            y, InstallerMarker)) - installers - pending
+        deleted = set(x for x, y in self.iteritems() if
+                      not y.is_marker()) - installers - pending
         refresh_info = self._RefreshInfo(deleted, pending, projects)
         return refresh_info
 
@@ -2025,7 +2040,7 @@ class InstallersData(DataStore):
 
     def reset_refresh_flag_on_projects(self):
         for installer in self.itervalues():
-            if isinstance(installer, InstallerProject):
+            if installer.is_project():
                 installer.project_refreshed = False
 
     @staticmethod
@@ -2789,7 +2804,7 @@ class InstallersData(DataStore):
             log(u'[spoiler][xml]\n',False)
             for package, installer in self.sorted_pairs():
                 prefix = u'%03d' % installer.order
-                if isinstance(installer, InstallerMarker):
+                if installer.is_marker():
                     log(u'%s - %s' % (prefix, package.s))
                 elif installer.is_active:
                     log(u'++ %s - %s (%08X) (Installed)' % (
@@ -2807,8 +2822,8 @@ class InstallersData(DataStore):
         :return: a list of installable packages/projects bolt.Path
         """
         def installable(x): # type -> 0: unset/invalid; 1: simple; 2: complex
-            return self[x].type in (1, 2) and isinstance(self[x],
-                (InstallerArchive, InstallerProject))
+            return self[x].type in (1, 2) and (
+                        self[x].is_archive() or self[x].is_project())
         return filter(installable, installerKeys)
 
     def filterPackages(self, installerKeys):
@@ -2817,7 +2832,7 @@ class InstallersData(DataStore):
         :rtype: list[bolt.Path]
         """
         def _package(x):
-            return isinstance(self[x], (InstallerArchive, InstallerProject))
+            return self[x].is_archive() or self[x].is_project()
         return filter(_package, installerKeys)
 
     def createFromData(self, projectPath, ci_files, progress):

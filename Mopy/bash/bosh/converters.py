@@ -573,8 +573,7 @@ class InstallerConverter(object):
                                % e), sys.exc_info()[2]
         #--Determine settings for 7z
         installerCRC = srcInstaller.crc
-        from . import InstallerArchive
-        if isinstance(srcInstaller, InstallerArchive):
+        if srcInstaller.is_archive():
             srcInstaller = GPath(srcInstaller.archive)
             apath = installers_dir.join(srcInstaller)
         else:
