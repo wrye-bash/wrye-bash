@@ -16,6 +16,7 @@
         File /r /x "*.bat" /x "*.py*" /x "Wrye Bash.exe" \
                         /x "basher" \
                         /x "bosh" \
+                        /x "brec" \
                         /x "gui" \
                         /x "game" \
                         /x "patcher" \
@@ -634,6 +635,7 @@
         Delete "${Path}\Mopy\bash\*.p*"
         RMDir /r "${Path}\Mopy\bash\basher"
         RMDir /r "${Path}\Mopy\bash\bosh"
+        RMDir /r "${Path}\Mopy\bash\brec"
         RMDir /r "${Path}\Mopy\bash\chardet"
         RMDir /r "${Path}\Mopy\bash\game"
         RMDir /r "${Path}\Mopy\bash\gui"
