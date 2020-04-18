@@ -198,14 +198,14 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
     """
     bind_motion = True
     bind_mouse_leaving = bind_lclick_double = bind_lclick_down = True
+    _wx_widget_type = _DragListCtrl
 
     def __init__(self, parent, allow_edit, is_border_sunken, is_single_cell,
             *args, **kwargs):
         kwargs['style'] = _wx.LC_REPORT | (allow_edit and _wx.LC_EDIT_LABELS
             ) | (is_border_sunken and _wx.BORDER_SUNKEN) | (
                 is_single_cell and _wx.LC_SINGLE_SEL)
-        super(UIListCtrl, self).__init__(_DragListCtrl, parent, *args,
-                                         **kwargs)
+        super(UIListCtrl, self).__init__(parent, *args, **kwargs)
         evt_col = lambda event: [event.GetColumn()]
         self.on_lst_col_rclick = self._evt_handler(
             _wx.EVT_LIST_COL_RIGHT_CLICK, evt_col)

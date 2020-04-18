@@ -29,7 +29,7 @@ __author__ = u'nycz, Infernio'
 
 import textwrap
 import wx as _wx
-from .events import EventHandler, _null_processor
+from .events import EventHandler, null_processor
 from ..exception import AbstractError
 from ..bolt import GPath, deprint
 from ..exception import ArgumentError
@@ -113,16 +113,17 @@ class Colors(object):
 class _AComponent(object):
     """Abstract base class for all GUI items. Holds a reference to the native
     wx widget that we abstract over.
-    # :type _native_widget: _wx.Window FIXME(ut) PY3: add type info
-    """
-    def __init__(self, wx_window_type, parent, *args, **kwargs):
+    # :type _native_widget: _wx.Window FIXME(ut) PY3: add type info"""
+    _wx_widget_type = None # type: type
+
+    def __init__(self, parent, *args, **kwargs):
         """Creates a new _AComponent instance. This initializes _native_widget
         to None, which will later receive a proper value inside the __init__
         methods of _AComponent's subclasses."""
-        self._native_widget = wx_window_type(self._resolve(parent), *args,
-                                             **kwargs)
+        self._native_widget = self._wx_widget_type(self._resolve(parent),
+                                                   *args, **kwargs)
 
-    def _evt_handler(self, evt, arg_proc=_null_processor):
+    def _evt_handler(self, evt, arg_proc=null_processor):
         """Register an EventHandler on _native_widget"""
         return EventHandler(self._native_widget, evt, arg_proc)
 

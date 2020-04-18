@@ -51,6 +51,8 @@ class CheckBox(_AComponent):
      - on_checked(checked: bool): Posted when this checkbox's state is changed
        by checking or unchecking it. The parameter is True if the checkbox is
        now checked and False if it is now unchecked."""
+    _wx_widget_type = _wx.CheckBox
+
     def __init__(self, parent, label=u'', chkbx_tooltip=None, checked=False):
         """Creates a new CheckBox with the specified properties.
 
@@ -60,7 +62,7 @@ class CheckBox(_AComponent):
         :param chkbx_tooltip: A tooltip to show when the user hovers over this
                               checkbox.
         :param checked: The initial state of the checkbox."""
-        super(CheckBox, self).__init__(_wx.CheckBox, parent, label=label)
+        super(CheckBox, self).__init__(parent, label=label)
         if chkbx_tooltip:
             self.tooltip = chkbx_tooltip
         self.is_checked = checked
@@ -83,7 +85,6 @@ class CheckBox(_AComponent):
         :param new_state: True if this checkbox should be checked, False if it
                           should be unchecked."""
         self._native_widget.SetValue(new_state)
-
 class DropDown(_AComponent):
     """Wraps a DropDown with automatic tooltip if text is wider than width of
     control.
@@ -91,6 +92,8 @@ class DropDown(_AComponent):
     Events:
      - on_combo_select(selected_label: str): Posted when an item on the list is
      selected. The parameter is the new value of selection."""
+    _wx_widget_type = _wx.ComboBox
+
     def __init__(self, parent, value, choices, __autotooltip=True,
                  __readonly=True):
         """Creates a new DropDown with the specified properties.
@@ -100,8 +103,8 @@ class DropDown(_AComponent):
         :param value: The selected choice, also the text shown on this
                       combobox.
         :param choices: The combobox choices."""
-        super(DropDown, self).__init__(_wx.ComboBox, parent, value=value,
-                                       choices=choices, style=_wx.CB_READONLY)
+        super(DropDown, self).__init__(parent, value=value, choices=choices,
+                                       style=_wx.CB_READONLY)
         # Events
         self.on_combo_select = self._evt_handler(_wx.EVT_COMBOBOX,
             lambda event: [event.GetString()])
@@ -140,8 +143,10 @@ class ColorPicker(_AComponent):
     Events:
      - on_color_picker_evt(selected_label: str): Posted when the button is
      clicked."""
+    _wx_widget_type = _wx.ColourPickerCtrl
+
     def __init__(self, parent, color=None):
-        super(ColorPicker, self).__init__(_wx.ColourPickerCtrl, parent)
+        super(ColorPicker, self).__init__(parent)
         if color is not None:
             self.set_color(color)
         self.on_color_picker_evt = self._evt_handler(
@@ -155,10 +160,11 @@ class ColorPicker(_AComponent):
 
 class Spinner(_AComponent):
     """Spin control with event and tip setting."""
+    _wx_widget_type = _wx.SpinCtrl
 
     def __init__(self, parent, value=u'', min_val=0, max_val=100, initial=0,
                  name=u'wxSpinctrl', onSpin=None, spin_tip=None):
-        super(Spinner, self).__init__(_wx.SpinCtrl, parent, value=value,
+        super(Spinner, self).__init__(parent, value=value,
                                       style=_wx.SP_ARROW_KEYS, min=min_val,
                                       max=max_val, initial=initial, name=name)
         if onSpin:
@@ -177,12 +183,11 @@ class ListBox(WithMouseEvents):
       - on_list_box(lb_dex: int, item_text: unicode): Posted when user selects
       an item from list. The default arg processor extracts the index of the
       event and the list item label
-      - Mouse events - see gui.base_components.WithMouseEvents
-     """
+      - Mouse events - see gui.base_components.WithMouseEvents"""
     # PY3: typing!
     # type _native_widget: wx.ListBox
-    _wx_class = _wx.ListBox
     bind_motion = bind_rclick_down = bind_rclick_up = True
+    _wx_widget_type = _wx.ListBox
 
     def __init__(self, parent, choices=None, isSingle=True, isSort=False,
                  isHScroll=False, isExtended=False, onSelect=None):
@@ -193,7 +198,7 @@ class ListBox(WithMouseEvents):
         if isExtended: style |= _wx.LB_EXTENDED
         kwargs_ = {u'style': style}
         if choices: kwargs_[u'choices'] = choices
-        super(ListBox, self).__init__(self._wx_class, parent, **kwargs_)
+        super(ListBox, self).__init__(parent, **kwargs_)
         if onSelect:
             self.on_list_box = self._evt_handler(_wx.EVT_LISTBOX,
                 lambda event: [event.GetSelection(), event.GetString()])
@@ -263,18 +268,17 @@ class CheckListBox(ListBox, WithCharEvents):
       - on_context(evt_object: wx.Event): Posted when user checks an item
       from list. The default arg processor extracts the index of the event.
       - Mouse events see gui.base_components.WithMouseEvents.
-      - Key events see gui.base_components.WithCharEvents.
-      """
+      - Key events see gui.base_components.WithCharEvents."""
     # PY3: typing!
     # type _native_widget: wx.CheckListBox
-    _wx_class = _wx.CheckListBox
     bind_mouse_leaving = bind_lclick_double = True
+    _wx_widget_type = _wx.CheckListBox
 
     def __init__(self, parent, choices=None, isSingle=False, isSort=False,
                  isHScroll=False, isExtended=False, onSelect=None,
                  onCheck=None): # note isSingle=False by default
         super(CheckListBox, self).__init__(parent, choices, isSingle, isSort,
-                 isHScroll, isExtended, onSelect)
+                                           isHScroll, isExtended, onSelect)
         if onCheck:
             self.on_check_list_box = self._evt_handler(
                 _wx.EVT_CHECKLISTBOX, lambda event: [event.GetSelection()])
@@ -321,9 +325,11 @@ class CheckListBox(ListBox, WithCharEvents):
 
 class Picture(_AComponent):
     """Picture panel."""
+    _wx_widget_type = _wx.Window
+
     def __init__(self, parent, width, height, scaling=1,  ##: scaling unused
                  style=_wx.BORDER_SUNKEN, background=_wx.MEDIUM_GREY_BRUSH):
-        super(Picture, self).__init__(_wx.Window, parent, size=(width, height),
+        super(Picture, self).__init__(parent, size=(width, height),
                                       style=style)
         self._native_widget.SetBackgroundStyle(_wx.BG_STYLE_CUSTOM)
         self.bitmap = None
@@ -404,10 +410,10 @@ class PictureWithCursor(Picture, WithMouseEvents):
 class _ALine(_AComponent):
     """Abstract base class for simple graphical lines."""
     _line_style = None # override in subclasses
+    _wx_widget_type = _wx.StaticLine
 
     def __init__(self, parent):
-        super(_ALine, self).__init__(_wx.StaticLine, parent,
-                                     style=self._line_style)
+        super(_ALine, self).__init__(parent, style=self._line_style)
 
 class HorizontalLine(_ALine):
     """A simple horizontal line."""

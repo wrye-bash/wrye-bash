@@ -2064,8 +2064,10 @@ class _CheckList_SelectAll(ItemLink):
 
 # TODO(inf) Needs renaming, also need to make a virtual version eventually...
 class TreeCtrl(_AComponent):
+    _wx_widget_type = wx.TreeCtrl
+
     def __init__(self, parent, title, items_dict):
-        super(TreeCtrl, self).__init__(wx.TreeCtrl, parent, size=(150, 200),
+        super(TreeCtrl, self).__init__(parent, size=(150, 200),
             style=wx.TR_DEFAULT_STYLE | wx.TR_FULL_ROW_HIGHLIGHT |
                   wx.TR_HIDE_ROOT)
         root = self._native_widget.AddRoot(title)

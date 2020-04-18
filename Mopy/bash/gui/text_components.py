@@ -45,9 +45,10 @@ class _ATextInput(_AComponent):
        input changes. Be warned that changing it via _ATextInput.text_content
        also posts this event, so if you have to change text in response to this
        event, use _ATextInput.modified to check if it was a user modification;
-       otherwise, you risk getting into an infinite loop.
+       otherwise, you risk getting into an infinite loop."""
+    # PY3: typing # type _native_widget: _wx.TextCtrl
+    _wx_widget_type = _wx.TextCtrl
 
-    :type _native_widget: _wx.TextCtrl"""
     # TODO: (fixed) font(s)
     def __init__(self, parent, init_text=None, multiline=True, editable=True,
                  auto_tooltip=True, max_length=None, no_border=False, style=0):
@@ -72,7 +73,7 @@ class _ATextInput(_AComponent):
         if multiline: style |= _wx.TE_MULTILINE
         if not editable: style |= _wx.TE_READONLY
         if no_border: style |= _wx.BORDER_NONE
-        super(_ATextInput, self).__init__(_wx.TextCtrl, parent, style=style)
+        super(_ATextInput, self).__init__(parent, style=style)
         if init_text: self._native_widget.SetValue(init_text)
         if max_length:
             self._native_widget.SetMaxLength(max_length)
@@ -223,12 +224,14 @@ class Label(_ALabel):
     """A static text element. Doesn't have a border and the text can't be
     interacted with by the user."""
     # _native_widget: type: _wx.StaticText
+    _wx_widget_type = _wx.StaticText
+
     def __init__(self, parent, init_text):
         """Creates a new Label with the specified parent and text.
 
         :param parent: The object that this label belongs to.
         :param init_text: The initial text of this label."""
-        super(Label, self).__init__(_wx.StaticText, parent, label=init_text)
+        super(Label, self).__init__(parent, label=init_text)
         self._init_text = init_text
 
     def wrap(self, max_length): # type: (int) -> None
@@ -244,6 +247,8 @@ class Label(_ALabel):
 class HyperlinkLabel(_ALabel):
     """A label that opens a URL when clicked, imitating a hyperlink in a
     browser. Typically styled blue."""
+    _wx_widget_type = _adv.HyperlinkCtrl
+
     def __init__(self, parent, init_text, url, always_unvisited=False):
         """Creates a new HyperlinkLabel with the specified parent, text and
         URL.
@@ -255,8 +260,7 @@ class HyperlinkLabel(_ALabel):
         :param always_unvisited: If set to True, this link will always appear
                                  as if it hasn't been clicked on (i.e. blue -
                                  it will never turn purple)."""
-        super(HyperlinkLabel, self).__init__(_adv.HyperlinkCtrl, parent,
-                                             label=init_text, url=url)
+        super(HyperlinkLabel, self).__init__(parent, label=init_text, url=url)
         if always_unvisited:
             self._native_widget.SetVisitedColour(
                 self._native_widget.GetNormalColour())

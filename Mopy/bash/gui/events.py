@@ -72,8 +72,8 @@ Creating Event Handlers:
        consistency in the codebase and to make using event handlers easier:
          from gui import EventHandler
          # ...
-         self.on_resized = EventHandler(self._native_widget, _wx.EVT_SIZE)
-    2. Decide what processor is needed. By default, _null_processor is used,
+         self.on_resized = self._evt_handler(_wx.EVT_SIZE)
+    2. Decide what processor is needed. By default, null_processor is used,
        which will simply discard the event object. In this case, we can come up
        with a useful processor:
          def size_processor(event):
@@ -85,8 +85,7 @@ Creating Event Handlers:
        Note that processors must always return a list. The list is then
        unpacked via Python's * operator and fed to the listeners.
     3. Pass the processor to the event handler (in your __init__):
-         self.on_resized = EventHandler(self._native_widget, _wx.EVT_SIZE,
-                                        size_processor)
+         self.on_resized = self._evt_handler(_wx.EVT_SIZE, size_processor)
     4. You should place some documentation in the docstring of your GUI
        component's class indicating what events it offers and with what
        signatures to subscribe to them (note that I'm using # here, but these
@@ -115,7 +114,7 @@ __author__ = u'Infernio'
 from ..exception import UnknownListener, ListenerBound
 # no other imports, everything else needs to be able to import this
 
-def _null_processor(_event):
+def null_processor(_event):
     """Argument processor that simply discards the event."""
     return []
 
@@ -140,7 +139,7 @@ class EventHandler(object):
     """This class implements the actual event processing, catching native wx
     events, applying processors to them and posting the results to all relevant
     listeners."""
-    def __init__(self, wx_owner, wx_event_id, arg_processor=_null_processor):
+    def __init__(self, wx_owner, wx_event_id, arg_processor):
         """Creates a new EventHandler wrapping the specified wx event.
 
         :param wx_owner: The wx object that the event is based on. This is what
