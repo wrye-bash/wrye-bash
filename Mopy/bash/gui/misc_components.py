@@ -30,7 +30,7 @@ __author__ = u'nycz, Infernio, Utumno'
 import wx as _wx
 
 from .base_components import _AComponent, Color, WithMouseEvents, \
-    WithCharEvents, Image
+    WithCharEvents, Image, _ACheckable
 from .events import EventResult
 from ..bolt import deprint, Path
 
@@ -44,13 +44,9 @@ class Font(_wx.Font):
         font_.SetUnderlined(underline)
         return font_
 
-class CheckBox(_AComponent):
-    """Represents a simple two-state checkbox.
-
-    Events:
-     - on_checked(checked: bool): Posted when this checkbox's state is changed
-       by checking or unchecking it. The parameter is True if the checkbox is
-       now checked and False if it is now unchecked."""
+class CheckBox(_ACheckable):
+    """Represents a simple two-state checkbox. See _ACheckable for event
+    docstrings."""
     _wx_widget_type = _wx.CheckBox
 
     def __init__(self, parent, label=u'', chkbx_tooltip=None, checked=False):
@@ -62,29 +58,22 @@ class CheckBox(_AComponent):
         :param chkbx_tooltip: A tooltip to show when the user hovers over this
                               checkbox.
         :param checked: The initial state of the checkbox."""
-        super(CheckBox, self).__init__(parent, label=label)
+        super(CheckBox, self).__init__(parent, label=label, checked=checked)
         if chkbx_tooltip:
             self.tooltip = chkbx_tooltip
-        self.is_checked = checked
-        # Events
         self.on_checked = self._evt_handler(_wx.EVT_CHECKBOX,
                                             lambda event: [event.IsChecked()])
 
-    @property
-    def is_checked(self): # type: () -> bool
-        """Returns True if this checkbox is checked.
+    def block_user(self, block_user_func):
+        super(CheckBox, self).block_user(block_user_func)
+        self.on_checked.subscribe(self._do_block_user)
 
-        :return: True if this checkbox is checked."""
-        return self._native_widget.GetValue()
+    def _do_block_user(self, checked):
+        """Internal event handler to implement the block_user parameter."""
+        # Undo the change, then call the function if it was set.
+        self.is_checked = not checked
+        self._block_user_func(self)
 
-    @is_checked.setter
-    def is_checked(self, new_state): # type: (bool) -> None
-        """Marks this checkbox as either checked or unchecked, depending on the
-        value of new_state.
-
-        :param new_state: True if this checkbox should be checked, False if it
-                          should be unchecked."""
-        self._native_widget.SetValue(new_state)
 class DropDown(_AComponent):
     """Wraps a DropDown with automatic tooltip if text is wider than width of
     control.
@@ -264,9 +253,9 @@ class CheckListBox(ListBox, WithCharEvents):
 
     Events:
       - on_check_list_box(index: int): Posted when user checks an item from
-      list. The default arg processor extracts the index of the event.
-      - on_context(evt_object: wx.Event): Posted when user checks an item
-      from list. The default arg processor extracts the index of the event.
+        list. The default arg processor extracts the index of the event.
+      - on_context(lb_instance: CheckListBox): Posted when this CheckListBox is
+        right-clicked.
       - Mouse events see gui.base_components.WithMouseEvents.
       - Key events see gui.base_components.WithCharEvents."""
     # PY3: typing!
@@ -422,3 +411,25 @@ class HorizontalLine(_ALine):
 class VerticalLine(_ALine):
     """A simple vertical line."""
     _line_style = _wx.LI_VERTICAL
+
+class RadioButton(_ACheckable):
+    """A radio button. Once checked, can only be unchecked by checking another
+    radio button in the same group. See _ACheckable for event docstrings. Note
+    that block_user will only 'freeze' the state of *this* particular radio
+    button. You will have to implement some custom logic to freeze an entire
+    group of radio buttons."""
+    _wx_widget_type = _wx.RadioButton
+
+    def __init__(self, parent, label, is_group=False):
+        super(RadioButton, self).__init__(parent, label=label,
+                                          style=is_group and _wx.RB_GROUP)
+        self.on_checked = self._evt_handler(_wx.EVT_RADIOBUTTON,
+                                            lambda event: [event.IsChecked()])
+
+    def block_user(self, block_user_func):
+        super(RadioButton, self).block_user(block_user_func)
+        self.on_checked.subscribe(self._do_block_user)
+
+    def _do_block_user(self, checked):
+        self.is_checked = not checked
+        self._block_user_func(self)

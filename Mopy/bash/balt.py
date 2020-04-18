@@ -1786,7 +1786,7 @@ class ItemLink(Link):
 
     def Execute(self):
         """Event: link execution."""
-        raise AbstractError
+        raise AbstractError(u'Execute not implemented')
 
     @staticmethod
     def ShowHelp(event): # <wx._core.MenuEvent>
