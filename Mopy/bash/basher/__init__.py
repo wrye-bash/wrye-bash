@@ -56,7 +56,6 @@ from __future__ import division
 import StringIO
 import collections
 import os
-import re
 import sys
 import time
 from collections import OrderedDict, namedtuple

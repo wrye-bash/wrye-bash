@@ -250,13 +250,12 @@ class PanelWin(_AComponent):
     def pnl_hide(self): self._native_widget.Hide()
 
 class Splitter(_AComponent):
-
-    splitterStyle = _wx.SP_LIVE_UPDATE # | wx.SP_3DSASH # ugly but
-    # makes borders stand out - we need something to that effect
     def __init__(self, parent, allow_split=True, min_pane_size=0,
                  sash_gravity=0):
+        # wx.SplitterWindow is native and does not respect any of the border
+        # flags on Windows :/
         super(Splitter, self).__init__(_wx.SplitterWindow, parent,
-                                       style = self.splitterStyle)
+                                       style=_wx.SP_LIVE_UPDATE)
         if not allow_split: # Don't allow unsplitting
             self._native_widget.Bind(_wx.EVT_SPLITTER_DCLICK,
                                      lambda event: event.Veto())

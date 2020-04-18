@@ -65,11 +65,7 @@ class Resources(object):
     bashMonkey = None
 
 # Constants -------------------------------------------------------------------
-defId = wx.ID_ANY
 defPos = wx.DefaultPosition
-
-splitterStyle = wx.SP_LIVE_UPDATE # | wx.SP_3DSASH # ugly but
-# makes borders stand out - we need something to that effect
 
 notFound = wx.NOT_FOUND
 
@@ -205,10 +201,6 @@ def bell(arg=None):
     wx.Bell()
     return arg
 
-def HorizontalLine(parent):
-    """Returns a simple horizontal graphical line."""
-    return wx.StaticLine(parent)
-
 def ok_and_cancel_group(parent, on_ok=None):
     ok_button = OkButton(parent)
     ok_button.on_clicked.subscribe(on_ok)
@@ -224,7 +216,7 @@ def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
             return bmp(wx.ART_UNDO,wx.ART_TOOLBAR,size)
         else: raise ArgumentError(
             u'special must be either warn or undo: %r given' % special)
-    return wx.StaticBitmap(_AComponent._resolve(parent), defId, bitmap)
+    return wx.StaticBitmap(_AComponent._resolve(parent), bitmap=bitmap)
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -1772,10 +1764,11 @@ class ItemLink(Link):
         """Append self as menu item and set callbacks to be executed when
         selected."""
         super(ItemLink, self).AppendToMenu(menu, window, selection)
-        menuItem = wx.MenuItem(menu, defId, self._text, self.menu_help,
+        # Note default id here is *not* ID_ANY but the special ID_SEPARATOR!
+        menuItem = wx.MenuItem(menu, wx.ID_ANY, self._text, self.menu_help,
                                self.__class__.kind)
-        _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU, self.__Execute, id=menuItem.GetId())
-        _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
+        Link.Frame._native_widget.Bind(wx.EVT_MENU, self.__Execute, id=menuItem.GetId())
+        Link.Frame._native_widget.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
         menu.Append(menuItem)
         return menuItem
 
@@ -1819,7 +1812,7 @@ class MenuLink(Link):
     def AppendToMenu(self, menu, window, selection):
         """Append self as submenu (along with submenu items) to menu."""
         super(MenuLink, self).AppendToMenu(menu, window, selection)
-        _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU_OPEN, MenuLink.OnMenuOpen)
+        Link.Frame._native_widget.Bind(wx.EVT_MENU_OPEN, MenuLink.OnMenuOpen)
         subMenu = wx.Menu()
         appended_menu = menu.AppendSubMenu(subMenu, self._text)
         if not self._enable():

@@ -228,8 +228,7 @@ class Label(_ALabel):
 
         :param parent: The object that this label belongs to.
         :param init_text: The initial text of this label."""
-        super(Label, self).__init__(_wx.StaticText, parent, _wx.ID_ANY,
-                                    init_text)
+        super(Label, self).__init__(_wx.StaticText, parent, label=init_text)
         self._init_text = init_text
 
     def wrap(self, max_length): # type: (int) -> None
@@ -257,7 +256,7 @@ class HyperlinkLabel(_ALabel):
                                  as if it hasn't been clicked on (i.e. blue -
                                  it will never turn purple)."""
         super(HyperlinkLabel, self).__init__(_adv.HyperlinkCtrl, parent,
-                                             _wx.ID_ANY, init_text, url)
+                                             label=init_text, url=url)
         if always_unvisited:
             self._native_widget.SetVisitedColour(
                 self._native_widget.GetNormalColour())

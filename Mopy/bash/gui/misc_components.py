@@ -60,8 +60,7 @@ class CheckBox(_AComponent):
         :param chkbx_tooltip: A tooltip to show when the user hovers over this
                               checkbox.
         :param checked: The initial state of the checkbox."""
-        super(CheckBox, self).__init__(_wx.CheckBox, parent, _wx.ID_ANY,
-                                       label=label)
+        super(CheckBox, self).__init__(_wx.CheckBox, parent, label=label)
         if chkbx_tooltip:
             self.tooltip = chkbx_tooltip
         self.is_checked = checked
@@ -101,9 +100,8 @@ class DropDown(_AComponent):
         :param value: The selected choice, also the text shown on this
                       combobox.
         :param choices: The combobox choices."""
-        super(DropDown, self).__init__(_wx.ComboBox, parent, _wx.ID_ANY,
-                                       value=value, choices=choices,
-                                       style=_wx.CB_READONLY)
+        super(DropDown, self).__init__(_wx.ComboBox, parent, value=value,
+                                       choices=choices, style=_wx.CB_READONLY)
         # Events
         self.on_combo_select = self._evt_handler(_wx.EVT_COMBOBOX,
             lambda event: [event.GetString()])
@@ -402,3 +400,19 @@ class PictureWithCursor(Picture, WithMouseEvents):
             _wx.Cursor(_wx.CURSOR_MAGNIFIER if img else _wx.CURSOR_ARROW))
         self._native_widget.Thaw()
         return img
+
+class _ALine(_AComponent):
+    """Abstract base class for simple graphical lines."""
+    _line_style = None # override in subclasses
+
+    def __init__(self, parent):
+        super(_ALine, self).__init__(_wx.StaticLine, parent,
+                                     style=self._line_style)
+
+class HorizontalLine(_ALine):
+    """A simple horizontal line."""
+    _line_style = _wx.LI_HORIZONTAL
+
+class VerticalLine(_ALine):
+    """A simple vertical line."""
+    _line_style = _wx.LI_VERTICAL
