@@ -708,6 +708,8 @@ class MelNull(MelBase):
         pass
 
 #------------------------------------------------------------------------------
+# TODO(inf) DEPRECATED! - don't use for new usages -> MelArray(MelFid) instead.
+#  Not backwards-compatible (runtime interface differs), hence deprecation.
 class MelFidList(MelFids):
     """Represents a listmod record fid elements. The only difference from
     MelFids is how the data is stored. For MelFidList, the data is stored
@@ -722,27 +724,6 @@ class MelFidList(MelFids):
         fids = record.__getattribute__(self.attr)
         if not fids: return
         out.packSub(self.subType,repr(len(fids))+'I',*fids)
-
-#------------------------------------------------------------------------------
-class MelSortedFidList(MelFidList):
-    """MelFidList that sorts the order of the Fids before writing them. They
-    are not sorted after modification, only just prior to writing."""
-
-    def __init__(self, subType, attr, sortKeyFn=lambda x: x, default=None):
-        """sortKeyFn - function to pass to list.sort(key = ____) to sort the FidList
-           just prior to writing.  Since the FidList will already be converted to short Fids
-           at this point we're sorting 4-byte values,  not (FileName, 3-Byte) tuples."""
-        MelFidList.__init__(self, subType, attr, default)
-        self.sortKeyFn = sortKeyFn
-
-    def dumpData(self, record, out):
-        fids = record.__getattribute__(self.attr)
-        if not fids: return
-        fids.sort(key=self.sortKeyFn)
-        # NOTE: fids.sort sorts from lowest to highest, so lowest values FormID will sort first
-        #       if it should be opposite, use this instead:
-        #  fids.sort(key=self.sortKeyFn, reverse=True)
-        out.packSub(self.subType, repr(len(fids)) + 'I', *fids)
 
 #------------------------------------------------------------------------------
 class MelSequential(MelBase):
@@ -1378,8 +1359,6 @@ class MelArray(MelBase):
     components. Note that only elements that properly implement static_size
     and fulfill len(self.signatures) == 1, i.e. ones that have a static size
     and resolve to only a single signature, can be used."""
-    ##: MelFidList could be replaced with MelArray(MelFid), but that changes
-    # the format of the generated attribute - rewriting usages is likely tough
     def __init__(self, array_attr, element, prelude=None):
         """Creates a new MelArray with the specified attribute and element.
 

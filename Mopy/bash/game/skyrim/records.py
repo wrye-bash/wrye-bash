@@ -30,15 +30,14 @@ from ...bolt import Flags, encode, struct_pack, struct_unpack
 from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelFidList, \
-    MreGmstBase, MelLString, MelSortedFidList, MelMODS, MreHasEffects, \
-    MelColorInterpolator, MelValueInterpolator, MelUnion, AttrValDecider, \
-    MelRegnEntrySubrecord, PartialLoadDecider, FlagDecider, MelFloat, \
-    MelSInt8, MelSInt32, MelUInt8, MelUInt16, MelUInt32, MelOptFloat, \
-    MelOptSInt16, MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, \
-    MelOptFid, MelCounter, MelPartialCounter, MelBounds, null1, null2, null3, \
-    null4, MelSequential, MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, \
-    MelIco2, MelEdid, MelFull, MelArray, MelWthrColors, GameDecider, \
-    MelReadOnly
+    MreGmstBase, MelLString, MelMODS, MreHasEffects, MelColorInterpolator, \
+    MelValueInterpolator, MelUnion, AttrValDecider, MelRegnEntrySubrecord, \
+    PartialLoadDecider, FlagDecider, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
+    MelUInt16, MelUInt32, MelOptFloat, MelOptSInt16, MelOptSInt32, \
+    MelOptUInt8, MelOptUInt16, MelOptUInt32, MelOptFid, MelCounter, \
+    MelPartialCounter, MelBounds, null1, null2, null3, null4, MelSequential, \
+    MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, \
+    MelFull, MelArray, MelWthrColors, GameDecider, MelReadOnly
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -433,10 +432,10 @@ class MelLocation(MelUnion):
 class MelOwnership(MelGroup):
     """Handles XOWN, XRNK for cells and cell children."""
 
-    def __init__(self,attr='ownership'):
-        MelGroup.__init__(self,attr,
-            MelFid('XOWN','owner'),
-            MelOptSInt32('XRNK', ('rank', None)),
+    def __init__(self, attr=u'ownership'):
+        MelGroup.__init__(self, attr,
+            MelFid(b'XOWN', u'owner'),
+            MelOptSInt32(b'XRNK', (u'rank', None)),
         )
 
     def dumpData(self,record,out):
@@ -1338,64 +1337,62 @@ class MreAact(MelRecord):
 class MreAchr(MelRecord):
     """Placed NPC."""
     rec_sig = b'ACHR'
-    _flags = Flags(0,Flags.getNames('oppositeParent','popIn'))
 
-    ActivateParentsFlags = Flags(0, Flags.getNames(
-            (0, 'parentActivateOnly'),
-        ))
+    _activate_parent_flags = Flags(0, Flags.getNames(u'parent_activate_only'))
+    _enable_parent_flags = Flags(0, Flags.getNames(u'opposite_parent',
+                                                   u'pop_in'))
 
     melSet = MelSet(
         MelEdid(),
         MelVmad(),
-        MelFid('NAME','base'),
-        MelFid('XEZN','encounterZone'),
-        MelBase('XRGD','ragdollData'),
-        MelBase('XRGB','ragdollBipedData'),
-        MelGroup('patrolData',
-            MelFloat('XPRD', 'idleTime',),
-            MelNull('XPPA'),
-            MelFid('INAM','idle'),
-            MelGroup('patrolData',
-                MelBase('SCHR','schr_p'),
-                MelBase('SCDA','scda_p'),
-                MelBase('SCTX','sctx_p'),
-                MelBase('QNAM','qnam_p'),
-                MelBase('SCRO','scro_p'),
-            ),
-            MelTopicData('topic_data'),
-            MelFid('TNAM','topic'),
+        MelFid(b'NAME', u'ref_base'),
+        MelFid(b'XEZN', u'encounter_zone'),
+        MelBase(b'XRGD', u'ragdoll_data'),
+        MelBase(b'XRGB', u'ragdoll_biped_data'),
+        MelFloat(b'XPRD', u'idle_time'),
+        MelBase(b'XPPA', u'patrol_script_marker'),
+        MelFid(b'INAM', u'ref_idle'),
+        MelBase(b'SCHR', u'unused_schr'),
+        MelBase(b'SCDA', u'unused_scda'),
+        MelBase(b'SCTX', u'unused_sctx'),
+        MelBase(b'QNAM', u'unused_qnam'),
+        MelBase(b'SCRO', u'unused_scro'),
+        MelTopicData(u'topic_data'),
+        MelFid(b'TNAM', u'ref_topic'),
+        MelSInt32(b'XLCM', u'level_modifier'),
+        MelFid(b'XMRC', u'merchant_container'),
+        MelSInt32(b'XCNT', u'ref_count'),
+        MelFloat(b'XRDS', u'ref_radius'),
+        MelFloat(b'XHLP', u'ref_health'),
+        MelGroups(u'linked_references',
+            MelStruct(b'XLKR', '2I', (FID, u'keyword_ref'),
+                      (FID, u'linked_ref')),
         ),
-        MelSInt32('XLCM', 'levelModifier'),
-        MelFid('XMRC','merchantContainer',),
-        MelSInt32('XCNT', 'count'),
-        MelFloat('XRDS', 'radius',),
-        MelFloat('XHLP', 'health',),
-        MelGroup('linkedReferences',
-            MelSortedFidList('XLKR', 'fids'),
+        MelUInt8(b'XAPD', (_activate_parent_flags, u'activate_parent_flags')),
+        MelGroups(u'activate_parent_refs',
+            MelStruct(b'XAPR', u'If', (FID, u'ap_reference'), u'ap_delay'),
         ),
-        MelGroup('activateParents',
-            MelUInt32('XAPD', (ActivateParentsFlags, 'flags', 0)),
-            MelGroups('activateParentRefs',
-                MelStruct('XAPR','If',(FID,'reference'),'delay',),
-            ),
+        MelStruct(b'XCLP', u'3Bs3Bs', u'start_color_red', u'start_color_green',
+                  u'start_color_blue', u'start_color_unused', u'end_color_red',
+                  u'end_color_green', u'end_color_blue', u'end_color_unused'),
+        MelFid(b'XLCN', u'persistent_location'),
+        MelFid(b'XLRL', u'location_reference'),
+        MelBase(b'XIS2', u'ignored_by_sandbox_2'),
+        MelArray(u'location_ref_type',
+            MelFid(b'XLRT', u'location_ref')
         ),
-        MelStruct('XCLP','3Bs3Bs','startColorRed','startColorGreen','startColorBlue',
-                  'startColorUnknown','endColorRed','endColorGreen','endColorBlue',
-                  'endColorUnknown',),
-        MelFid('XLCN','persistentLocation',),
-        MelFid('XLRL','locationReference',),
-        MelNull('XIS2'),
-        MelFidList('XLRT','locationRefType',),
-        MelFid('XHOR','horse',),
-        MelFloat('XHTW', 'headTrackingWeight',),
-        MelFloat('XFVC', 'favorCost',),
-        MelOptStruct('XESP','IB3s',(FID,'parent'),(_flags,'parentFlags'),'unused',),
+        MelFid(b'XHOR', u'ref_horse'),
+        MelFloat(b'XHTW', u'head_tracking_weight'),
+        MelFloat(b'XFVC', u'favor_cost'),
+        MelOptStruct(b'XESP', u'IB3s', (FID, u'ep_reference'),
+                     (_enable_parent_flags, u'parent_flags'), u'xesp_unused'),
         MelOwnership(),
-        MelOptFid('XEMI', 'emittance'),
-        MelFid('XMBR','multiBoundReference',),
-        MelNull('XIBS'),
-        MelOptFloat('XSCL', ('scale', 1.0)),
-        MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
+        MelOptFid(b'XEMI', u'ref_emittance'),
+        MelFid(b'XMBR', u'multi_bound_reference'),
+        MelBase(b'XIBS', u'ignored_by_sandbox_1'),
+        MelOptFloat(b'XSCL', (u'ref_scale', 1.0)),
+        MelOptStruct(b'DATA', u'=6f', u'ref_pos_x', u'ref_pos_y', u'ref_pos_z',
+                     u'ref_rot_x', u'ref_rot_y', u'ref_rot_z'),
     )
     __slots__ = melSet.getSlotsUsed()
 
