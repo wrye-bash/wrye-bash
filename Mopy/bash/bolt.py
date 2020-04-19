@@ -1585,8 +1585,8 @@ def unpack_many(ins, fmt):
     return struct_unpack(fmt, ins.read(struct.calcsize(fmt)))
 
 #------------------------------------------------------------------------------
-class TableColumn(object):
-    """Table accessor that presents table column as a dictionary."""
+class DataTableColumn(object):
+    """DataTable accessor that presents table column as a dictionary."""
     def __init__(self,table,column):
         self.table = table
         self.column = column
@@ -1625,7 +1625,7 @@ class TableColumn(object):
         self.table.delItem(key,self.column)
 
 #------------------------------------------------------------------------------
-class Table(DataDict):
+class DataTable(DataDict):
     """Simple data table of rows and columns, saved in a pickle file. It is
     currently used by modInfos to represent properties associated with modfiles,
     where each modfile is a row, and each property (e.g. modified date or
@@ -1660,7 +1660,7 @@ class Table(DataDict):
 
     def getColumn(self,column):
         """Returns a data accessor for column."""
-        return TableColumn(self,column)
+        return DataTableColumn(self, column)
 
     def setItem(self,row,column,value):
         """Set value for row, column."""

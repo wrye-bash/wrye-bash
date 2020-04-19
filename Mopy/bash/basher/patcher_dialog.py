@@ -377,7 +377,7 @@ class PatchDialog(DialogWindow):
                                 _(u'Import Bashed Patch configuration from:'),
                                 textDir, config_dat, u'*.dat', mustExist=True)
         if not textPath: return
-        table = bolt.Table(bolt.PickleDict(textPath))
+        table = bolt.DataTable(bolt.PickleDict(textPath))
         # try the current Bashed Patch mode.
         patchConfigs = table.getItem(
             GPath(self.__new_key % ([u'Python', u'CBash'][self.doCBash])),
