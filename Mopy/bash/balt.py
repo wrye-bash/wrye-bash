@@ -1177,7 +1177,7 @@ class UIList(wx.Panel):
             self.mouse_index = None
             Link.Frame.set_status_info(u'')
 
-    def _handle_key_up(self, wrapped_evt, g_list):
+    def _handle_key_up(self, wrapped_evt):
         """Char event: select all items, delete selected items, rename."""
         code = wrapped_evt.key_code
         if wrapped_evt.is_cmd_down and code == ord(u'A'): # Ctrl+A

@@ -360,7 +360,7 @@ class MasterList(_ModsUIList):
             self.detailsPanel.testChanges() # disable buttons if no other edits
 
     def _handle_select(self, item_key): pass
-    def _handle_key_up(self, wrapped_evt, g_list): pass
+    def _handle_key_up(self, wrapped_evt): pass
 
     def OnDClick(self, lb_dex_and_flags):
         if self.mouse_index < 0: return # nothing was clicked
@@ -1012,7 +1012,7 @@ class ModList(_ModsUIList):
             return EventResult.CONTINUE
         return EventResult.FINISH
 
-    def _handle_key_up(self, wrapped_evt, g_list):
+    def _handle_key_up(self, wrapped_evt):
         """Char event: Activate selected items, select all items"""
         ##Space
         if wrapped_evt.is_space:
@@ -1029,7 +1029,7 @@ class ModList(_ModsUIList):
         elif wrapped_evt.is_cmd_down and wrapped_evt.key_code == ord(u'C'):
             balt.copyListToClipboard([self.data_store[mod].getPath().s
                                       for mod in self.GetSelected()])
-        super(ModList, self)._handle_key_up(wrapped_evt, g_list)
+        super(ModList, self)._handle_key_up(wrapped_evt)
 
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
         """Left Down: Check/uncheck mods.
@@ -1960,14 +1960,14 @@ class SaveList(balt.UIList):
         item_format.icon_key = status, on
 
     #--Events ---------------------------------------------
-    def _handle_key_up(self, wrapped_evt, g_list):
+    def _handle_key_up(self, wrapped_evt):
         code = wrapped_evt.key_code
         # Ctrl+C: Copy file(s) to clipboard
         if wrapped_evt.is_cmd_down and code == ord(u'C'):
             sel = map(lambda save: self.data_store[save].getPath().s,
                       self.GetSelected())
             balt.copyListToClipboard(sel)
-        super(SaveList, self)._handle_key_up(wrapped_evt, g_list)
+        super(SaveList, self)._handle_key_up(wrapped_evt)
 
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
         #--Pass Event onward
@@ -2531,7 +2531,7 @@ class InstallersList(balt.UIList):
         else:
             self.OpenSelected(selected=[item])
 
-    def _handle_key_up(self, wrapped_evt, g_list):
+    def _handle_key_up(self, wrapped_evt):
         """Char events: Action depends on keys pressed"""
         code = wrapped_evt.key_code
         # Ctrl+Shift+N - Add a marker
@@ -2543,7 +2543,7 @@ class InstallersList(balt.UIList):
             sel = map(lambda x: bass.dirs['installers'].join(x).s,
                       self.GetSelected())
             balt.copyListToClipboard(sel)
-        super(InstallersList, self)._handle_key_up(wrapped_evt, g_list)
+        super(InstallersList, self)._handle_key_up(wrapped_evt)
 
     # Installer specific ------------------------------------------------------
     def addMarker(self):
@@ -3157,9 +3157,9 @@ class ScreensList(balt.UIList):
     def OnChar(self, wrapped_evt):
         # Enter: Open selected screens
         if wrapped_evt.key_code in balt.wxReturn: self.OpenSelected()
-        else: super(ScreensList, self)._handle_key_up(wrapped_evt, None)
+        else: super(ScreensList, self)._handle_key_up(wrapped_evt)
 
-    def _handle_key_up(self, wrapped_evt, g_list):
+    def _handle_key_up(self, wrapped_evt):
         """Char event: Activate selected items, select all items"""
         code = wrapped_evt.key_code
         # Ctrl+C: Copy file(s) to clipboard
@@ -3167,7 +3167,7 @@ class ScreensList(balt.UIList):
             sel = map(lambda x: bosh.screen_infos.store_dir.join(x).s,
                       self.GetSelected())
             balt.copyListToClipboard(sel)
-        super(ScreensList, self)._handle_key_up(wrapped_evt, g_list)
+        super(ScreensList, self)._handle_key_up(wrapped_evt)
 
 #------------------------------------------------------------------------------
 class ScreensDetails(_DetailsMixin, NotebookPanel):
