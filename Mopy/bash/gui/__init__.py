@@ -21,7 +21,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module acts as the central import point for all GUI classes. Any code
 outside the gui package should import from here, so that classes may be moved
 around without breaking third-party code."""
@@ -30,10 +29,12 @@ __author__ = u'Infernio'
 
 from .base_components import *
 from .buttons import *
+from .checkables import *
 from .events import *
 from .layouts import *
 from .list_ctrl import *
 from .misc_components import *
+from .multi_choices import *
 from .text_components import *
 from .top_level_windows import *
 from .web_components import *

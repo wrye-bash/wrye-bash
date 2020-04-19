@@ -21,7 +21,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module houses parts of the GUI code that form the basis for the
 more specialized parts (e.g. _AComponent)."""
 
@@ -481,53 +480,3 @@ class Image(object):
         # This only has an effect on jpegs, so it's ok to do it on every kind
         bitmap.SetOption(_wx.IMAGE_OPTION_QUALITY, quality)
         return bitmap
-
-class _ACheckable(_AComponent):
-    """A component that can be checked by the user.
-
-    Events:
-      - on_checked(checked: bool): Posted when this component's state is
-        changed by checking or unchecking it. The parameter is True if this
-        component is now checked and False if it is now unchecked.
-      - on_context(checkable: _ACheckable): Posted when the user right-clicks
-        on this component. The parameter is the instance of _ACheckable that
-        was hovered over.
-      - on_hovered(hovered: _ACheckable): Posted when the user hovers over this
-        component. The parameter is the instance of _ACheckable that was
-        hovered over."""
-    def __init__(self, *args, **kwargs):
-        checked = kwargs.pop(u'checked', False)
-        super(_ACheckable, self).__init__(*args, **kwargs)
-        self.is_checked = checked
-        self._block_user_func = None
-        self_proc = lambda _evt: [self]
-        self.on_hovered = self._evt_handler(_wx.EVT_ENTER_WINDOW, self_proc)
-        self.on_context = self._evt_handler(_wx.EVT_CONTEXT_MENU, self_proc)
-        # on_checked needs to be done by subclasses, since the wx event differs
-
-    @property
-    def is_checked(self): # type: () -> bool
-        """Return True if this component is checked.
-
-        :return: True if this checkbox is checked."""
-        return self._native_widget.GetValue()
-
-    @is_checked.setter
-    def is_checked(self, new_state): # type: (bool) -> None
-        """Mark this component as either checked or unchecked, depending on the
-        value of new_state.
-
-        :param new_state: True if this component should be checked, False if it
-                          should be unchecked."""
-        self._native_widget.SetValue(new_state)
-
-    def block_user(self, block_user_func):
-        """Denies all attempts by the user to interact with this checkable and
-        runs the specified function when the user does attempt to do so. The
-        function will be given a single parameter, the instance of _ACheckable
-        that was interacted with."""
-        self._block_user_func = block_user_func
-
-    def is_blocked(self):
-        """Returns True if user interaction for this component is blocked."""
-        return bool(self._block_user_func)

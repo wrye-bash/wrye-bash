@@ -3358,7 +3358,8 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
         self.peoplePanel = ui_list_panel
         self.gName = TextField(self, editable=False)
         self.gText = TextArea(self)
-        self.gKarma = Spinner(self, min_val=-5, max_val=5, onSpin=self.OnSpin)
+        self.gKarma = Spinner(self, min_val=-5, max_val=5)
+        self.gKarma.on_spun.subscribe(self.OnSpin)
         self.gKarma.set_min_size(40,-1)
         #--Layout
         VLayout(spacing=4, item_expand=True, items=[
@@ -3370,7 +3371,7 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
     def OnSpin(self):
         """Karma spin."""
         if not self._people_detail: return
-        karma = int(self.gKarma.sp_get_value())
+        karma = self.gKarma.spinner_value
         details = self.file_infos[self._people_detail][2]
         self.file_infos[self._people_detail] = (time.time(), karma, details)
         self.peoplePanel.uiList.PopulateItem(item=self._people_detail)
@@ -3394,11 +3395,11 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
         if not item: return
         karma, details = self.peoplePanel.listData[item][1:3]
         self.gName.text_content = item
-        self.gKarma.sp_set_value(karma)
+        self.gKarma.spinner_value = karma
         self.gText.text_content = details
 
     def _resetDetails(self):
-        self.gKarma.sp_set_value(0)
+        self.gKarma.spinner_value = 0
         self.gName.text_content = u''
         self.gText.text_content = u''
 

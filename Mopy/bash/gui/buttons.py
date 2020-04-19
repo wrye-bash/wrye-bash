@@ -21,7 +21,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module defines buttons, offering several predefined templates (e.g. OK
 buttons, Cancel buttons, Save As... buttons, etc.)."""
 

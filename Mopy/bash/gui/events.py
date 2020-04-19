@@ -21,7 +21,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module implements an event propagation framework on top of wx's
 framework. The point here is that doing this allows us to build in some
 convenience features to save a lot of code.

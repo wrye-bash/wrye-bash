@@ -21,7 +21,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module contains all text-related GUI components. For example, text
 input components like TextArea and TextField, but also static components like
 Label reside here."""
@@ -264,3 +263,27 @@ class HyperlinkLabel(_ALabel):
         if always_unvisited:
             self._native_widget.SetVisitedColour(
                 self._native_widget.GetNormalColour())
+
+# Spinner - technically text, just limited to digits --------------------------
+class Spinner(_AComponent):
+    """A field for entering integers. Features small arrow buttons on the right
+    to decrement and increment the value.
+
+    Events:
+      - on_spun(): Posted when a new value is entered into the spinner (whether
+        manually or through the buttons)."""
+    _wx_widget_type = _wx.SpinCtrl
+
+    def __init__(self, parent, min_val=0, max_val=100, spin_tip=None):
+        super(Spinner, self).__init__(parent, style=_wx.SP_ARROW_KEYS,
+                                      min=min_val, max=max_val)
+        self.on_spun = self._evt_handler(_wx.EVT_SPINCTRL)
+        if spin_tip: self.tooltip = spin_tip
+
+    @property
+    def spinner_value(self):
+        return int(self._native_widget.GetValue())
+
+    @spinner_value.setter
+    def spinner_value(self, sp_value):
+        self._native_widget.SetValue(int(sp_value))

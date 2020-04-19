@@ -21,7 +21,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module houses abstractions over wx.html2.WebView, allowing us to
 utilize fully interactive webpages inside a GUI. The main reason this was split
 into its own file instead of remaining inside __init__ is the wx.html2 import,
