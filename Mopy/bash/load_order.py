@@ -178,8 +178,6 @@ def persist_orders(__keep_max=256):
         _lords_pickle.pickled_data[u'_saved_load_orders'] = _saved_load_orders
         _lords_pickle.pickled_data[u'_current_list_index'] = _current_list_index
     _lords_pickle.pickled_data[u'_active_mods_lists'] = _active_mods_lists
-    ##: save them also in BashSettings.dat in case someone downgrades - drop !
-    bass.settings[u'bash.loadLists.data'] = _active_mods_lists
     _lords_pickle.save()
 
 def _keep_max(max_to_keep, length):
@@ -397,8 +395,6 @@ def get_active_mods_lists():
     if _active_mods_lists is __active_mods_sentinel:
         settings_mods_list = bass.settings.get(u'bash.loadLists.data',
                                                __active_mods_sentinel)
-        # if settings_mods_list is not __active_mods_sentinel:
-        #     del bass.settings[u'bash.loadLists.data']
         _active_mods_lists = settings_mods_list
     return _active_mods_lists
 

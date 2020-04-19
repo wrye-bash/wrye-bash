@@ -209,8 +209,6 @@ settingDefaults = { # keep current naming format till refactored
     # Wrye Bash: Localization
     u'bash.l10n.editor.param_fmt': u'%s',
     u'bash.l10n.editor.path': u'',
-    #--Wrye Bash: Load Lists
-    u'bash.loadLists.data': {}, ##: to be removed
     # Wrye Bash: Load Order
     u'bash.load_order.lock_active_plugins': True,
     #--Wrye Bash: StatusBar

@@ -34,7 +34,7 @@ import sys
 import time
 from binascii import crc32
 from functools import partial, wraps
-from itertools import groupby, imap, izip
+from itertools import groupby, izip
 from operator import itemgetter, attrgetter
 
 from . import imageExts, DataStore, BestIniFile, InstallerConverter, \
@@ -308,18 +308,9 @@ class Installer(ListInfo):
         self.initDefault()
         self.archive = archive.stail
 
-    def __getstate__(self):
-        """Used by pickler to save object state.""" ##: __reduce__ is called instead
-        getter = object.__getattribute__
-        return tuple(getter(self,x) for x in self.persistent)
-
-    def _fixme_drop__for_loading_in_previous_versions(self):
-        self.src_sizeCrcDate = {GPath(x): y for x, y # FIXME: backwards compat!
-                                in self.src_sizeCrcDate.iteritems()}
-        self.dirty_sizeCrc = {GPath(x): y for x, y
-                              in self.dirty_sizeCrc.iteritems()}
-        self.fileSizeCrcs = [(unicode(x), y, z) for x, y, z in
-                             self.fileSizeCrcs]
+    def __reduce__(self):
+        """Used by pickler to save object state."""
+        raise AbstractError(u'%s must define __reduce__' % type(self))
 
     def _fixme_drop__fomod_backwards_compat(self):
         # Keys and values in the fomod dict got inverted, name changed to
@@ -333,9 +324,8 @@ class Installer(ListInfo):
         """Used by unpickler to recreate object."""
         try:
             self.__setstate(values)
-        except Exception as e:
-            print(('Failed loading %s' % values[0]) + ' due to %s' % e)
-            deprint('Failed loading %s' % values[0], traceback=True)
+        except:
+            deprint(u'Failed loading %s' % values[0], traceback=True)
             # init to default values and let it be picked for refresh in
             # InstallersData#scan_installers_dir
             self.initDefault()
@@ -356,17 +346,15 @@ class Installer(ListInfo):
             self.extras_dict = {}
             if self.fileRootIdex: # need to add 'root_path' key to extras_dict
                 rescan = True
-        elif self.fileRootIdex and not self.extras_dict.get('root_path', u''):
-            rescan = True ##: for people that used my wip branch, drop on 307
         self.extras_dict = {unicode(k): v for k, v in self.extras_dict.iteritems()}
         if not self.abs_path.exists(): # pickled installer deleted outside bash
             return  # don't do anything should be deleted from our data soon
         if not isinstance(self.src_sizeCrcDate, bolt.LowerDict):
             self.src_sizeCrcDate = bolt.LowerDict(
-                ('%s' % x, y) for x, y in self.src_sizeCrcDate.iteritems())
+                (u'%s' % x, y) for x, y in self.src_sizeCrcDate.iteritems())
         if not isinstance(self.dirty_sizeCrc, bolt.LowerDict):
             self.dirty_sizeCrc = bolt.LowerDict(
-                ('%s' % x, y) for x, y in self.dirty_sizeCrc.iteritems())
+                (u'%s' % x, y) for x, y in self.dirty_sizeCrc.iteritems())
         if rescan:
             dest_scr = self.refreshBasic(bolt.Progress(),
                                          recalculate_project_crc=False)
@@ -1272,9 +1260,8 @@ class InstallerMarker(Installer):
 
     def __reduce__(self):
         from . import InstallerMarker as boshInstallerMarker
-        self._fixme_drop__for_loading_in_previous_versions()
         return boshInstallerMarker, (GPath(self.archive),), tuple(
-            imap(self.__getattribute__, self.persistent))
+            getattr(self, a) for a in self.persistent)
 
     @property
     def num_of_files(self): return -1
@@ -1333,9 +1320,8 @@ class InstallerArchive(Installer):
 
     def __reduce__(self):
         from . import InstallerArchive as boshInstallerArchive
-        self._fixme_drop__for_loading_in_previous_versions()
         return boshInstallerArchive, (GPath(self.archive),), tuple(
-            imap(self.__getattribute__, self.persistent))
+            getattr(self, a) for a in self.persistent)
 
     #--File Operations --------------------------------------------------------
     def _refreshSource(self, progress, recalculate_project_crc):
@@ -1350,7 +1336,7 @@ class InstallerArchive(Installer):
             __slots__ = ()
         def _parse_archive_line(key, value):
             if   key == u'Solid': self.isSolid = (value[0] == u'+')
-            elif key == u'Path': _li.filepath = value.decode('utf8')
+            elif key == u'Path': _li.filepath = value.decode(u'utf8')
             elif key == u'Size': _li.size = int(value)
             elif key == u'Attributes': _li.isdir = value and (u'D' in value)
             elif key == u'CRC' and value: _li.crc = int(value,16)
@@ -1529,9 +1515,8 @@ class InstallerProject(Installer):
 
     def __reduce__(self):
         from . import InstallerProject as boshInstallerProject
-        self._fixme_drop__for_loading_in_previous_versions()
         return boshInstallerProject, (GPath(self.archive),), tuple(
-            imap(self.__getattribute__, self.persistent))
+            getattr(self, a) for a in self.persistent)
 
     def _refresh_from_project_dir(self, progress=None,
                                   recalculate_all_crcs=False):
@@ -1782,12 +1767,8 @@ class InstallersData(DataStore):
         """Saves to pickle file."""
         if self.hasChanged:
             self.dictFile.pickled_data[u'installers'] = self._data
-            self.dictFile.pickled_data[u'sizeCrcDate'] = { # FIXME: backwards compat
-                GPath(x): y for x, y in self.data_sizeCrcDate.iteritems()}
-            # for backwards compatibility, drop
-            self.dictFile.pickled_data['crc_installer'] = {
-                x.crc: x for x in self.itervalues() if x.is_archive()}
-            self.dictFile.vdata['version'] = 1
+            self.dictFile.pickled_data[u'sizeCrcDate'] = self.data_sizeCrcDate
+            self.dictFile.vdata[u'version'] = 2
             self.dictFile.save()
             self.converters_data.save()
             self.hasChanged = False

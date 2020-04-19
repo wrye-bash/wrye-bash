@@ -1357,7 +1357,6 @@ class PickleDict(object):
         VDATA2."""
         if self.readOnly: return False
         #--Pickle it
-        self.vdata['boltPaths'] = True # needed so pre 307 versions don't blow
         with self._pkl_path.temp.open(u'wb') as out:
             for pkl in (b'VDATA2', self.vdata, self.pickled_data):
                 pickle.dump(pkl, out, -1)
