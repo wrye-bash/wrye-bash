@@ -43,6 +43,7 @@ from .base_components import _AComponent
 from .buttons import BackwardButton, ForwardButton, ReloadButton
 from .text_components import TextArea
 from .layouts import VLayout
+from ..exception import StateError
 
 def web_viewer_available():
     """Checks if WebViewer and its wx backing are available, meaning that we
@@ -228,6 +229,8 @@ class HtmlDisplay(_AComponent):
     def load_text(self, target_text):
         """Switches to text mode (see switch_to_text()) and sets the
         specified text as the unmodified contents of the text display."""
+        if not isinstance(target_text, unicode): # needs to be unicode by now
+            raise StateError(u'HtmlDisplay can only load unicode text.')
         self._text_ctrl.text_content = target_text
         self._text_ctrl.modified = False
         self.switch_to_text()
