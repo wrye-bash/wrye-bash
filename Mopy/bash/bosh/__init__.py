@@ -1218,12 +1218,16 @@ class TableFileInfos(DataStore):
 
     def _initDB(self, dir_):
         self.store_dir = dir_ #--Path
+        deprint(u'Initializing %s' % self.__class__.__name__)
+        deprint(u' store_dir: %s' % self.store_dir)
+        deprint(u' bash_dir: %s' % self.bash_dir)
         self.store_dir.makedirs()
         self.bash_dir.makedirs() # self.store_dir may need be set
         self.data = {} # populated in refresh ()
         # the type of the table keys is always bolt.Path
         self.table = bolt.Table(
             bolt.PickleDict(self.bash_dir.join(u'Table.dat')))
+        deprint(u' Successfully initialized %s' % self.__class__.__name__)
 
     def __init__(self, dir_, factory=AFile):
         """Init with specified directory and specified factory type."""

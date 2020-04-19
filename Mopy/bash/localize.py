@@ -260,7 +260,7 @@ def dump_translator(out_path, lang):
                         continue
                     else:
                         out.write(new_line)
-    except (UnicodeError, OSError):
+    except (IOError, UnicodeError, OSError):
         bolt.deprint(u'Error while dumping translation file:', traceback=True)
         try: os.remove(tmp_txt)
         except OSError: pass
