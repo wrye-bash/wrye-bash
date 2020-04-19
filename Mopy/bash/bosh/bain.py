@@ -32,7 +32,7 @@ import sys
 import time
 from binascii import crc32
 from functools import partial, wraps
-from itertools import groupby, imap
+from itertools import groupby
 from operator import itemgetter, attrgetter
 
 from . import imageExts, DataStore, BestIniFile, InstallerConverter, ModInfos
@@ -291,18 +291,9 @@ class Installer(object):
         self.initDefault()
         self.archive = archive.stail
 
-    def __getstate__(self):
-        """Used by pickler to save object state.""" ##: __reduce__ is called instead
-        getter = object.__getattribute__
-        return tuple(getter(self,x) for x in self.persistent)
-
-    def _fixme_drop__for_loading_in_previous_versions(self):
-        self.src_sizeCrcDate = {GPath(x): y for x, y # FIXME: backwards compat!
-                                in self.src_sizeCrcDate.iteritems()}
-        self.dirty_sizeCrc = {GPath(x): y for x, y
-                              in self.dirty_sizeCrc.iteritems()}
-        self.fileSizeCrcs = [(unicode(x), y, z) for x, y, z in
-                             self.fileSizeCrcs]
+    def __reduce__(self):
+        """Used by pickler to save object state."""
+        raise AbstractError(u'%s should define __reduce__' % type(self))
 
     def _fixme_drop__fomod_backwards_compat(self):
         # Keys and values in the fomod dict got inverted, name changed to
@@ -329,22 +320,21 @@ class Installer(object):
 
     def __setstate(self,values):
         self.initDefault() # runs on __init__ called by __reduce__
-        map(self.__setattr__,self.persistent,values)
+        for a, v in zip(self.persistent, values):
+            setattr(self, a, v)
         rescan = False
         if not isinstance(self.extras_dict, dict):
             self.extras_dict = {}
             if self.fileRootIdex: # need to add 'root_path' key to extras_dict
                 rescan = True
-        elif self.fileRootIdex and not self.extras_dict.get('root_path', u''):
-            rescan = True ##: for people that used my wip branch, drop on 307
         if not self.ipath.exists():  # pickled installer deleted outside bash
             return  # don't do anything should be deleted from our data soon
         if not isinstance(self.src_sizeCrcDate, bolt.LowerDict):
             self.src_sizeCrcDate = bolt.LowerDict(
-                ('%s' % x, y) for x, y in self.src_sizeCrcDate.iteritems())
+                (u'%s' % x, y) for x, y in self.src_sizeCrcDate.iteritems())
         if not isinstance(self.dirty_sizeCrc, bolt.LowerDict):
             self.dirty_sizeCrc = bolt.LowerDict(
-                ('%s' % x, y) for x, y in self.dirty_sizeCrc.iteritems())
+                (u'%s' % x, y) for x, y in self.dirty_sizeCrc.iteritems())
         if rescan:
             dest_scr = self.refreshBasic(bolt.Progress(),
                                          recalculate_project_crc=False)
@@ -1235,9 +1225,8 @@ class InstallerMarker(Installer):
 
     def __reduce__(self):
         from . import InstallerMarker as boshInstallerMarker
-        self._fixme_drop__for_loading_in_previous_versions()
         return boshInstallerMarker, (GPath(self.archive),), tuple(
-            imap(self.__getattribute__, self.persistent))
+            getattr(self, a) for a in self.persistent)
 
     @property
     def num_of_files(self): return -1
@@ -1281,9 +1270,8 @@ class InstallerArchive(Installer):
 
     def __reduce__(self):
         from . import InstallerArchive as boshInstallerArchive
-        self._fixme_drop__for_loading_in_previous_versions()
         return boshInstallerArchive, (GPath(self.archive),), tuple(
-            imap(self.__getattribute__, self.persistent))
+            getattr(self, a) for a in self.persistent)
 
     #--File Operations --------------------------------------------------------
     def _refreshSource(self, progress, recalculate_project_crc):
@@ -1298,7 +1286,7 @@ class InstallerArchive(Installer):
             __slots__ = ()
         def _parse_archive_line(key, value):
             if   key == u'Solid': self.isSolid = (value[0] == u'+')
-            elif key == u'Path': _li.filepath = value.decode('utf8')
+            elif key == u'Path': _li.filepath = value.decode(u'utf8')
             elif key == u'Size': _li.size = int(value)
             elif key == u'Attributes': _li.isdir = value and (u'D' in value)
             elif key == u'CRC' and value: _li.crc = int(value,16)
@@ -1469,9 +1457,8 @@ class InstallerProject(Installer):
 
     def __reduce__(self):
         from . import InstallerProject as boshInstallerProject
-        self._fixme_drop__for_loading_in_previous_versions()
         return boshInstallerProject, (GPath(self.archive),), tuple(
-            imap(self.__getattribute__, self.persistent))
+            getattr(self, a) for a in self.persistent)
 
     def _refresh_from_project_dir(self, progress=None,
                                   recalculate_all_crcs=False):
@@ -1710,8 +1697,8 @@ class InstallersData(DataStore):
         self.dictFile.load()
         self.converters_data.load()
         data = self.dictFile.data
-        self.data = data.get('installers', {})
-        pickle = data.get('sizeCrcDate', {})
+        self.data = data.get(u'installers', {}) or data.get(b'installers', {})
+        pickle = data.get(u'sizeCrcDate', {}) or data.get(b'sizeCrcDate', {})
         self.data_sizeCrcDate = bolt.LowerDict(pickle) if not isinstance(
             pickle, bolt.LowerDict) else pickle
         # fixup: all markers had their archive attribute set to u'===='
@@ -1724,13 +1711,9 @@ class InstallersData(DataStore):
     def save(self):
         """Saves to pickle file."""
         if self.hasChanged:
-            self.dictFile.data['installers'] = self.data
-            self.dictFile.data['sizeCrcDate'] = { # FIXME: backwards compat
-                GPath(x): y for x, y in self.data_sizeCrcDate.iteritems()}
-            # for backwards compatibility, drop
-            self.dictFile.data['crc_installer'] = {
-                x.crc: x for x in self.itervalues() if x.is_archive()}
-            self.dictFile.vdata['version'] = 1
+            self.dictFile.data[u'installers'] = self.data
+            self.dictFile.data[u'sizeCrcDate'] = self.data_sizeCrcDate
+            self.dictFile.vdata[u'version'] = 2
             self.dictFile.save()
             self.converters_data.save()
             self.hasChanged = False
