@@ -2041,6 +2041,16 @@ def clipboardDropFiles(millis, callable_):
             wx.CallLater(millis, callable_, 0, 0, obj.GetFilenames())
         wx.TheClipboard.Close()
 
+def read_from_clipboard():
+    """Returns any text data that is currently in the system clipboard, or an
+    empty string if none is stored."""
+    text_data = wx.TextDataObject()
+    was_sucessful = False
+    if wx.TheClipboard.Open():
+        was_sucessful = wx.TheClipboard.GetData(text_data)
+        wx.TheClipboard.Close()
+    return text_data.GetText() if was_sucessful else u''
+
 def getKeyState(key): return wx.GetKeyState(key)
 def getKeyState_Shift(): return wx.GetKeyState(wx.WXK_SHIFT)
 def getKeyState_Control(): return wx.GetKeyState(wx.WXK_CONTROL)

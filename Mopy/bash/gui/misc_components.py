@@ -26,10 +26,14 @@ classes accumulate in here, feel free to break them out into a module."""
 
 __author__ = u'nycz, Infernio, Utumno'
 
+import re
 import wx as _wx
+from wx.grid import Grid
+from collections import defaultdict
+from itertools import chain, imap
 
 from .base_components import _AComponent, Color, WithMouseEvents, \
-    Image
+    Image, WithCharEvents
 from .events import EventResult
 from ..bolt import Path
 
@@ -42,6 +46,7 @@ class Font(_wx.Font):
         font_.SetUnderlined(underline)
         return font_
 
+# Pictures --------------------------------------------------------------------
 class Picture(_AComponent):
     """Picture panel."""
     _wx_widget_type = _wx.Window
@@ -126,6 +131,7 @@ class PictureWithCursor(Picture, WithMouseEvents):
         self._native_widget.Thaw()
         return img
 
+# Lines -----------------------------------------------------------------------
 class _ALine(_AComponent):
     """Abstract base class for simple graphical lines."""
     _line_style = None # override in subclasses
@@ -141,3 +147,201 @@ class HorizontalLine(_ALine):
 class VerticalLine(_ALine):
     """A simple vertical line."""
     _line_style = _wx.LI_VERTICAL
+
+# Tables ----------------------------------------------------------------------
+class Table(WithCharEvents):
+    """A component that displays data in a tabular manner, with useful
+    extensions like Ctrl+C/Ctrl+V support built in. Note that it was not built
+    to allow customizing the row labels, one of its central assumptions is that
+    they are always ints."""
+    _wx_widget_type = Grid
+
+    def __init__(self, parent, table_data, editable=True):
+        """Creates a new Table with the specified parent and table data.
+
+        :param parent: The object that this table belongs to. May be a wx
+            object or a component.
+        :param table_data: The data to show in the table. Maps column names to
+            the data displayed in the column.
+        :type table_data: dict[unicode, list[unicode]]
+        :param editable: True if the user may edit the contents of the
+            table."""
+        super(Table, self).__init__(parent)
+        # Verify that all columns are identically sized
+        column_len = len(next(table_data.itervalues()))
+        if any(len(column_data) != column_len for column_data
+               in table_data.itervalues()):
+            raise SyntaxError(u'Table columns must all have the same size')
+        if not all(table_data):
+            raise SyntaxError(u'Table rows must be nonempty strings')
+        # Create the Grid, then populate it from table_data
+        # Note order here and below - row, col is correct for wx
+        self._native_widget.CreateGrid(column_len, len(table_data))
+        self._native_widget.EnableEditing(editable)
+        self._label_to_col_index = {}
+        for c, column_label in enumerate(table_data):
+            self._label_to_col_index[column_label] = c
+            self._native_widget.SetColLabelValue(c, column_label)
+            for r, cell_label in enumerate(table_data[column_label]):
+                self._native_widget.SetCellValue(r, c, cell_label)
+        self._native_widget.AutoSize()
+        self.on_key_up.subscribe(self._handle_key_up)
+
+    def _handle_key_up(self, wrapped_evt):
+        """Internal handler, implements copy and paste, select all, etc."""
+        kcode = wrapped_evt.key_code
+        if wrapped_evt.is_cmd_down:
+            if kcode == ord(u'A'):
+                if wrapped_evt.is_shift_down:
+                    # Ctrl+Shift+A - unselect all cells
+                    self._native_widget.ClearSelection()
+                else:
+                    # Ctrl+A - select all cells
+                    for c in xrange(self._native_widget.GetNumberCols()):
+                        self._native_widget.SelectCol(c, True)
+            elif kcode == ord(u'C'):
+                # Ctrl+C - copy contents of selected cells
+                from .. import balt # TODO(inf) de-wx! move this to gui
+                balt.copyToClipboard(self._format_selected_cells(
+                    self.get_selected_cells()))
+            elif kcode == ord(u'V'):
+                # Ctrl+V - paste contents of selected cells
+                if not self._native_widget.IsEditable(): return
+                from .. import balt # TODO(inf) de-wx! move these to gui
+                parsed_clipboard = self._parse_clipboard_contents(
+                    balt.read_from_clipboard())
+                if not parsed_clipboard:
+                    balt.showWarning(self, _(u'Could not parse the pasted '
+                                             u'contents as a valid table.'))
+                    return
+                self.edit_cells(parsed_clipboard)
+                self._native_widget.AutoSize()
+
+    def _format_selected_cells(self, sel_cells):
+        """Formats the output of get_selected_cells into a human-readable
+        format."""
+        if not sel_cells:
+            # None selected, just return the currently focused cell's value
+            return self.get_focused_cell()
+        elif len(sel_cells) == 1:
+            # Selection is limited to a single column, format as a
+            # newline-separated list
+            sorted_cells = sorted(next(sel_cells.itervalues()).iteritems(),
+                                  key=lambda t: int(t[0]))
+            return u'\n'.join(t[1] for t in sorted_cells)
+        else:
+            # Here is where it gets ugly - we need to format a full table with
+            # row/column separators, proper spacing and labels
+            clip_text = []
+            row_labels = set(chain.from_iterable(
+                r.iterkeys() for r in sel_cells.itervalues()))
+            col_labels = sel_cells.keys()
+            # First calculate the maximum label lengths we'll have to pad to
+            max_row_length = max(imap(len, row_labels))
+            max_col_lengths = {}
+            for col_label, col_cells in sel_cells.iteritems():
+                max_col_lengths[col_label] = max(
+                    imap(len, col_cells.itervalues()))
+            # We now have enough info to format the header, so do that
+            first_header_line = u' ' * max_row_length + u' | '
+            first_header_line += u' | '.join(l.ljust(max_col_lengths[l])
+                                             for l in col_labels)
+            second_header_line = u'-' * (max_row_length + 1) + u'+'
+            second_header_line += u'+'.join(u'-' * (max_col_lengths[l] + 2)
+                                            for l in col_labels)
+            # Bit hacky - the last one doesn't have a trailing space
+            second_header_line = second_header_line[:-1]
+            clip_text.append(first_header_line)
+            clip_text.append(second_header_line)
+            # Finish off by formatting each row
+            for row_label in sorted(row_labels, key=int):
+                curr_line = row_label.ljust(max_row_length) + u' | '
+                cell_vals = []
+                for col_label, col_cells in sel_cells.iteritems():
+                    cell_vals.append(col_cells.get(row_label, u'').ljust(
+                        max_col_lengths[col_label]))
+                curr_line += u' | '.join(cell_vals)
+                clip_text.append(curr_line)
+            return u'\n'.join(l.rstrip() for l in clip_text)
+
+    _complex_start = re.compile(u'' r' +\|')
+    def _parse_clipboard_contents(self, clipboard_contents):
+        """Parses the specified clipboard contents into a dictionary
+        containing instructions for how to edit the table."""
+        # Note that we'll return {} whenever we detect a format error
+        if not clipboard_contents: return {}
+        ret_dict = defaultdict(dict)
+        all_lines = clipboard_contents.splitlines()
+        if self._complex_start.match(all_lines[0]):
+            if len(all_lines) < 3: return {}
+            # Still the most complex case, but much simpler than copying. We
+            # need to parse the ASCII table, which will give us absolute
+            # instructions on how to edit the real table
+            col_labels = [x.strip() for x in all_lines[0].split(u'|')][1:]
+            # Iterate over all rows, but skip the second line - only there for
+            # human readability
+            for row_line in all_lines[2:]:
+                line_contents = [x.strip() for x in row_line.split(u'|')]
+                if len(line_contents) < len(col_labels) + 1: return {}
+                row_label = line_contents[0]
+                # Iterate over each cell in the current row, but check if
+                # there's a value in the cell before storing it (we don't want
+                # to override cells the user didn't originally select)
+                for i, cell_value in enumerate(line_contents[1:]):
+                    cell_value = cell_value
+                    if cell_value:
+                        ret_dict[col_labels[i]][row_label] = cell_value
+        else:
+            # Pasting a list is always relative to the focused cell
+            ##: As a 'fun' project: take the current selection into account
+            focused_col = self.get_focused_column()
+            focused_row = self._native_widget.GetGridCursorRow() + 1
+            for r, cell_value in enumerate(all_lines):
+                ret_dict[focused_col][unicode(focused_row + r)] = cell_value
+        return ret_dict
+
+    def get_cell_value(self, col_label, row_label):
+        """Returns the value of the cell at the specified row and column."""
+        return self._native_widget.GetCellValue(
+            int(row_label) - 1, self._label_to_col_index[col_label])
+
+    def set_cell_value(self, col_label, row_label, cell_value):
+        """Sets the value of the cell at the specified row and column to the
+        specified value."""
+        self._native_widget.SetCellValue(
+            int(row_label) - 1, self._label_to_col_index[col_label],
+            cell_value)
+
+    def get_focused_cell(self):
+        """Returns the value of the focused cell."""
+        return self._native_widget.GetCellValue(
+            self._native_widget.GetGridCursorRow(),
+            self._native_widget.GetGridCursorCol())
+
+    def get_focused_column(self):
+        """Returns the label of the focused column."""
+        return self._native_widget.GetColLabelValue(
+            self._native_widget.GetGridCursorCol())
+
+    def get_selected_cells(self):
+        """Returns a dict of dicts, mapping column labels to row labels to cell
+        values for all cells that have been selected by the user."""
+        # May seem inefficient, but the alternative is incredibly complex; plus
+        # this takes < 1/2s for a table with several thousand entries
+        sel_dict = defaultdict(dict)
+        for c in xrange(self._native_widget.GetNumberCols()):
+            col_label = self._native_widget.GetColLabelValue(c)
+            for r in xrange(self._native_widget.GetNumberRows()):
+                if self._native_widget.IsInSelection(r, c):
+                    sel_dict[col_label][unicode(r + 1)] = (
+                        self._native_widget.GetCellValue(r, c))
+        return sel_dict
+
+    def edit_cells(self, cell_edits):
+        """Applies a series of as described by the specified dict mapping
+        column labels to row labels to cell values."""
+        for col_label, target_cells in cell_edits.iteritems():
+            for row_label, target_val in target_cells.iteritems():
+                # Skip any that would go out of bounds
+                if int(row_label) - 1 < self._native_widget.GetNumberRows():
+                    self.set_cell_value(col_label, row_label, target_val)
