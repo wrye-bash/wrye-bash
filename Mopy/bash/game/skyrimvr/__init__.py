@@ -108,7 +108,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
         )
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
-        header_type.topTypes = [
+        header_type.top_grup_sigs = [
             b'GMST', b'KYWD', b'LCRT', b'AACT', b'TXST', b'GLOB', b'CLAS',
             b'FACT', b'HDPT', b'HAIR', b'EYES', b'RACE', b'SOUN', b'ASPC',
             b'MGEF', b'SCPT', b'LTEX', b'ENCH', b'SPEL', b'SCRL', b'ACTI',
@@ -128,10 +128,10 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
             b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB', b'LENS', b'VOLI',
         ]
         #-> this needs updating for Skyrim
-        header_type.recordTypes = set(
-            header_type.topTypes + [b'GRUP', b'TES4', b'REFR', b'ACHR',
-                                    b'ACRE', b'LAND', b'INFO', b'NAVM',
-                                    b'PHZD', b'PGRE'])
+        header_type.valid_header_sigs = set(
+            header_type.top_grup_sigs + [b'GRUP', b'TES4', b'REFR', b'ACHR',
+                                         b'ACRE', b'LAND', b'INFO', b'NAVM',
+                                         b'PHZD', b'PGRE'])
         header_type.plugin_form_version = 44
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreAchr, MreDial, MreInfo, MreAact, MreActi, MreAddn, MreAlch,

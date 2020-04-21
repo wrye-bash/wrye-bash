@@ -173,7 +173,7 @@ class ModFile(object):
         """Returns top block of specified topType, creating it, if necessary."""
         if topType in self.tops:
             return self.tops[topType]
-        elif topType in __rh.topTypes:
+        elif topType in __rh.top_grup_sigs:
             topClass = self.loadFactory.getTopClass(topType)
             try:
                 self.tops[topType] = topClass(
@@ -286,7 +286,7 @@ class ModFile(object):
             self.tes4.dump(out)
             #--Blocks
             selfTops = self.tops
-            for rec_type in RecordHeader.topTypes:
+            for rec_type in RecordHeader.top_grup_sigs:
                 if rec_type in selfTops:
                     selfTops[rec_type].dump(out)
 

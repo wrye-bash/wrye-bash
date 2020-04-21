@@ -102,7 +102,7 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
         )
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
-        header_type.topTypes = [
+        header_type.top_grup_sigs = [
             b'GMST', b'KYWD', b'LCRT', b'AACT', b'TRNS', b'CMPO', b'TXST',
             b'GLOB', b'DMGT', b'CLAS', b'FACT', b'HDPT', b'RACE', b'SOUN',
             b'ASPC', b'MGEF', b'LTEX', b'ENCH', b'SPEL', b'ACTI', b'TACT',
@@ -123,7 +123,7 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
             b'INNR', b'KSSM', b'AECH', b'SCCO', b'AORU', b'SCSN', b'STAG',
             b'NOCM', b'LENS', b'GDRY', b'OVIS',
         ]
-        header_type.recordTypes = (set(header_type.topTypes) | {
+        header_type.valid_header_sigs = (set(header_type.top_grup_sigs) | {
             b'GRUP', b'TES4', b'REFR', b'ACHR', b'PMIS', b'PARW', b'PGRE',
             b'PBEA', b'PFLA', b'PCON', b'PBAR', b'PHZD', b'LAND', b'NAVM',
             b'DIAL', b'INFO'})

@@ -106,7 +106,7 @@ class MorrowindGameInfo(GameInfo):
         header_type.sub_header_unpack = struct.Struct(
             header_type.sub_header_fmt).unpack
         header_type.sub_header_size = 8
-        header_type.topTypes = [
+        header_type.top_grup_sigs = [
             b'GMST', b'GLOB', b'CLAS', b'FACT', b'RACE', b'SOUN', b'SKIL',
             b'MGEF', b'SCPT', b'REGN', b'SSCR', b'BSGN', b'LTEX', b'STAT',
             b'DOOR', b'MISC', b'WEAP', b'CONT', b'SPEL', b'CREA', b'BODY',
@@ -120,7 +120,8 @@ class MorrowindGameInfo(GameInfo):
             {x: u'=4s4I' for x in {1, 6, 7, 8, 9, 10}})
         header_type.pack_formats.update({x: u'=4sIi2I' for x in {2, 3}})
         header_type.pack_formats.update({x: u'=4sIhh2I' for x in {4, 5}})
-        header_type.recordTypes = set(header_type.topTypes + [b'TES3'])
+        header_type.valid_header_sigs = set(
+            header_type.top_grup_sigs + [b'TES3'])
         brec.MreRecord.type_class = {x.rec_sig: x for x in (MreTes3,)}
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {b'TES3'})

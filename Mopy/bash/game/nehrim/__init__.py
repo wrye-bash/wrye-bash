@@ -106,7 +106,7 @@ class NehrimGameInfo(OblivionGameInfo):
         header_type.pack_formats.update({x: u'=4sIi2I' for x in {2, 3}})
         header_type.pack_formats.update({x: u'=4sIhh2I' for x in {4, 5}})
         # Similar to other games
-        header_type.topTypes = [
+        header_type.top_grup_sigs = [
             b'GMST', b'GLOB', b'CLAS', b'FACT', b'HAIR', b'EYES', b'RACE',
             b'SOUN', b'SKIL', b'MGEF', b'SCPT', b'LTEX', b'ENCH', b'SPEL',
             b'BSGN', b'ACTI', b'APPA', b'ARMO', b'BOOK', b'CLOT', b'CONT',
@@ -116,10 +116,10 @@ class NehrimGameInfo(OblivionGameInfo):
             b'CLMT', b'REGN', b'CELL', b'WRLD', b'DIAL', b'QUST', b'IDLE',
             b'PACK', b'CSTY', b'LSCR', b'LVSP', b'ANIO', b'WATR', b'EFSH',
         ]
-        header_type.recordTypes = set(
-            header_type.topTypes + [b'GRUP', b'TES4', b'ROAD', b'REFR',
-                                    b'ACHR', b'ACRE', b'PGRD', b'LAND',
-                                    b'INFO'])
+        header_type.valid_header_sigs = set(
+            header_type.top_grup_sigs + [b'GRUP', b'TES4', b'ROAD', b'REFR',
+                                         b'ACHR', b'ACRE', b'PGRD', b'LAND',
+                                         b'INFO'])
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreAchr, MreAcre, MreActi, MreAlch, MreAmmo, MreAnio, MreAppa,
             MreArmo, MreBook, MreBsgn, MreCell, MreClas, MreClot, MreCont,

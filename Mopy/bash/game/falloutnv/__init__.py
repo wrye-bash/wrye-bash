@@ -168,7 +168,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
             )
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
-        header_type.topTypes = [
+        header_type.top_grup_sigs = [
             b'GMST', b'TXST', b'MICN', b'GLOB', b'CLAS', b'FACT', b'HDPT',
             b'HAIR', b'EYES', b'RACE', b'SOUN', b'ASPC', b'MGEF', b'SCPT',
             b'LTEX', b'ENCH', b'SPEL', b'ACTI', b'TACT', b'TERM', b'ARMO',
@@ -185,10 +185,10 @@ class FalloutNVGameInfo(Fallout3GameInfo):
             b'CHAL', b'AMEF', b'CCRD', b'CMNY', b'CDCK', b'DEHY', b'HUNG',
             b'SLPD', b'CELL', b'WRLD',
         ]
-        header_type.recordTypes = set(
-            header_type.topTypes + [b'GRUP', b'TES4', b'ACHR', b'ACRE',
-                                    b'INFO', b'LAND', b'NAVM', b'PGRE',
-                                    b'PMIS', b'REFR'])
+        header_type.valid_header_sigs = set(
+            header_type.top_grup_sigs + [b'GRUP', b'TES4', b'ACHR', b'ACRE',
+                                         b'INFO', b'LAND', b'NAVM', b'PGRE',
+                                         b'PMIS', b'REFR'])
         header_type.plugin_form_version = 15
         brec.MreRecord.type_class = {
             x.rec_sig: x for x in (cls.mergeClasses +  # Not Mergeable

@@ -143,7 +143,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         )
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
-        header_type.topTypes = [
+        header_type.top_grup_sigs = [
             'GMST', 'KYWD', 'LCRT', 'AACT', 'TXST', 'GLOB', 'CLAS', 'FACT',
             'HDPT', 'HAIR', 'EYES', 'RACE', 'SOUN', 'ASPC', 'MGEF', 'SCPT',
             'LTEX', 'ENCH', 'SPEL', 'SCRL', 'ACTI', 'TACT', 'ARMO', 'BOOK',
@@ -160,8 +160,8 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             'SCEN', 'ASTP', 'OTFT', 'ARTO', 'MATO', 'MOVT', 'SNDR', 'DUAL',
             'SNCT', 'SOPM', 'COLL', 'CLFM', 'REVB', 'LENS', 'VOLI']
         #-> this needs updating for Skyrim
-        header_type.recordTypes = set(
-            header_type.topTypes + ['GRUP', 'TES4', 'REFR', 'ACHR', 'ACRE',
+        header_type.valid_header_sigs = set(
+            header_type.top_grup_sigs + ['GRUP', 'TES4', 'REFR', 'ACHR', 'ACRE',
                                     'LAND', 'INFO', 'NAVM', 'PHZD', 'PGRE'])
         header_type.plugin_form_version = 44
         brec.MreRecord.type_class = {x.rec_sig: x for x in (

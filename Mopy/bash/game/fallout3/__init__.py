@@ -321,7 +321,7 @@ class Fallout3GameInfo(GameInfo):
             )
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
-        header_type.topTypes = [
+        header_type.top_grup_sigs = [
             b'GMST', b'TXST', b'MICN', b'GLOB', b'CLAS', b'FACT', b'HDPT',
             b'HAIR', b'EYES', b'RACE', b'SOUN', b'ASPC', b'MGEF', b'SCPT',
             b'LTEX', b'ENCH', b'SPEL', b'ACTI', b'TACT', b'TERM', b'ARMO',
@@ -335,10 +335,10 @@ class Fallout3GameInfo(GameInfo):
             b'AVIF', b'RADS', b'CAMS', b'CPTH', b'VTYP', b'IPCT', b'IPDS',
             b'ARMA', b'ECZN', b'MESG', b'RGDL', b'DOBJ', b'LGTM', b'MUSC',
         ]
-        header_type.recordTypes = set(
-            header_type.topTypes + [b'GRUP', b'TES4', b'ACHR', b'ACRE',
-                                    b'INFO', b'LAND', b'NAVM', b'PGRE',
-                                    b'PMIS', b'REFR'])
+        header_type.valid_header_sigs = set(
+            header_type.top_grup_sigs + [b'GRUP', b'TES4', b'ACHR', b'ACRE',
+                                         b'INFO', b'LAND', b'NAVM', b'PGRE',
+                                         b'PMIS', b'REFR'])
         header_type.plugin_form_version = 15
         brec.MreRecord.type_class = {x.rec_sig: x for x in
                 (cls.mergeClasses + # Not Mergeable
