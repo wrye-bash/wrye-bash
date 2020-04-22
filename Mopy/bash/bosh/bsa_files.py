@@ -434,7 +434,11 @@ class ABsa(AFile):
     def inspect_version(self):
         """Returns the version of this BSA."""
         with self.abs_path.open(u'rb') as ins:
-            self.bsa_header.load_header(ins, self.bsa_name)
+            try:
+                self.bsa_header.load_header(ins, self.bsa_name)
+            except struct.error as e:
+                raise BSAError(self.bsa_name, u'Error while unpacking header: '
+                                              u'%r' % e)
             return self.bsa_header.version
 
     def __load(self, names_only):

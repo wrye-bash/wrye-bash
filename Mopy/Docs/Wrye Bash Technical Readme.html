@@ -90,7 +90,7 @@
     <p>You may use a number of different dialogues in a wizard. The available dialogs are described in this section.</p>
     <ul>
         <li>
-            <p><dfn>SelectOne</dfn> - This dialog displays a list of options, but only one can be selected. It will be shown when a <a href="#wizardsSelectOne">SelectOne</a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify a default answer, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default option.</p>
+            <p><dfn>SelectOne</dfn> - This dialog displays a list of options, but only one can be selected. It will be shown when a <a href="#wizardsSelectOne">SelectOne</a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either double click or middle click on the image.  The wizard can specify a default answer, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default option.</p>
             <img alt="SelectOne Dialog" src="../bash/images/readme/selectone.png"/>
         </li>
         <li>
@@ -552,8 +552,12 @@ EndSelect</code>
 		<li><var>description</var> - The text that will be displayed at the top of the dialog.
 		<li><var>option n</var> - The text of the specific option. If the text begins with a "|", this is considered the default option and will be selected by default.
 		<li><var>description n</var> - The description to display when <var>option n</var> is selected.
-		<li><var>image n</var> - The image to display when <var>option n</var> is selected. An empty string will make no image display.
+		<li><var>image n</var> - The image to display when <var>option n</var> is selected. An empty string will make no image display.</li>
 	</ul>
+		Note that you can also use one of the images that come bundled with Wrye Bash in the <code>Mopy/bash/images</code> folder.
+		Simply specify the path relative to that folder, and Wrye Bash will look there if it doesn't find a matching image in your
+		package. For example, specifying <code>wryesplash.png</code> would allow you to use the Wrye Bash splash screen as an image
+		in your wizard.</li>
 	<li><code>Case <var>option</var></code> - The lines following the <code>Case</code> will be run if the user selected its corresponding option on the dialog, until a <code>Break</code> or <code>EndSelect</code> is met.
 	<ul>
 		<li><var>option</var> - The option that the <code>Case</code> corresponds to.

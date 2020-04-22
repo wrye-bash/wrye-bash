@@ -1347,10 +1347,14 @@ class WryeParser(ScriptParser.Parser):
         else:
             imageJoin = bass.dirs['installers'].join(self.path).join
         for i in images:
-            path = imageJoin(i)
-            if not path.exists() and bass.dirs['mopy'].join(i).exists():
-                path = bass.dirs['mopy'].join(i)
-            image_paths.append(path)
+            # Try looking inside the package first, then look if it's using one
+            # of the images packaged with Wrye Bash (from Mopy/bash/images)
+            wiz_img_path = imageJoin(i)
+            if not wiz_img_path.isfile():
+                std_img_path = bass.dirs['images'].join(i)
+                if std_img_path.isfile():
+                    wiz_img_path = std_img_path
+            image_paths.append(wiz_img_path)
         self.page = PageSelect(self._wiz_parent, bMany, _(u'Installer Wizard'),
                                main_desc, titles.keys(), descs, image_paths,
                                titles.values())

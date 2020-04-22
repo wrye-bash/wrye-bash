@@ -51,7 +51,6 @@
         ; Old old files to delete (from before 294, the directory restructure)
         Delete "${Path}\Mopy\DebugLog(Python2.7).bat"
         Delete "${Path}\Mopy\7zUnicode.exe"
-        Delete "${Path}\Mopy\Wizard Images\Thumbs.db"
         Delete "${Path}\Mopy\uninstall.exe"
         Delete "${Path}\Mopy\Wrye Bash General Readme.html"
         Delete "${Path}\Mopy\Wrye Bash Advanced Readme.html"
@@ -639,6 +638,8 @@
         RMDir /r "${Path}\Mopy\bash\game"
         RMDir /r "${Path}\Mopy\bash\gui"
         RMDir /r "${Path}\Mopy\bash\patcher"
+        ; As of 307, Wizard Images have been moved to bash/images/Wizard Images
+        RMDir /r "${Path}\Mopy\Wizard Images"
     !macroend
 
 
