@@ -4791,8 +4791,112 @@ C.Location, -C.LockList
     <li>The plugin must not be active at the time the patch is built. Note that if the user doesn't have all the plugin's masters installed, it will have to remain deactivated at all times.
     <li>Filtering is done according to the currently active plugins: it is therefore very important that all the desired plugins are active when the Bashed Patch is built.
     <li>Filtering is mostly limited to the top level, ie. if the plugin a record is from is missing, the record will be skipped. However, if a record references another record, and the latter's plugin is missing, the former will not be skipped, and the Bashed Patch will end up dependent on the latter's plugin being installed.
-    <li>There are a few exceptions to the above limitation: entries in leveled lists will be filtered, as will spells, factions and items referenced in Creature and NPC records.
+    <li>There are a few exceptions to the above limitation. The following table
+        lists subrecords that contain lists of FormIDs. Any entries in such
+        lists that do not map back to a loaded mods are simply filtered out by
+        the Bashed Patch when performing merge filtering:</li>
 </ul>
+<table>
+    <thead>
+        <tr>
+            <th colspan="3">Filtered Subrecords</th>
+        </tr>
+        <tr>
+            <th>Record Type</th>
+            <th>Subrecords</th>
+            <th>Available For</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>(COBJ) Constructible Object</td>
+            <td>
+                <ul>
+                    <li>(INAM) Items</li>
+                </ul>
+            </td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                Special Edition</td>
+        </tr>
+        <tr>
+            <td>(CONT) Container</td>
+            <td>
+                <ul>
+                    <li>(INAM) Items</li>
+                </ul>
+            </td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>(CREA) Creature</td>
+            <td>
+                <ul>
+                    <li>(CNTO) Items</li>
+                    <li>(SNAM) Factions</li>
+                    <li>(SPLO) Spells</li>
+                </ul>
+            </td>
+            <td>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>(LVLC) Leveled Creature</td>
+            <td>
+                <ul>
+                    <li>(LVLO) Entries</li>
+                </ul>
+            </td>
+            <td>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>(LVLI) Leveled Item</td>
+            <td>
+                <ul>
+                    <li>(LVLO) Entries</li>
+                </ul>
+            </td>
+            <td>All games</td>
+        </tr>
+        <tr>
+            <td>(LVLN) Leveled Non-Player Character</td>
+            <td>
+                <ul>
+                    <li>(LVLO) Entries</li>
+                </ul>
+            </td>
+            <td>All but Oblivion</td>
+        </tr>
+        <tr>
+            <td>(LVSP) Leveled Spell</td>
+            <td>
+                <ul>
+                    <li>(LVLO) Entries</li>
+                </ul>
+            </td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas &amp; Fallout 4</td>
+        </tr>
+        <tr>
+            <td>(NPC_) Non-Player Character</td>
+            <td>
+                <ul>
+                    <li>(CNTO) Items</li>
+                    <li>(SNAM) Factions</li>
+                    <li>(SPLO) Spells</li>
+                </ul>
+            </td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>(OTFT) Outfit</td>
+            <td>
+                <ul>
+                    <li>(INAM) Items</li>
+                </ul>
+            </td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                Special Edition</td>
+        </tr>
+    </tbody>
+</table>
 
 
 <h3 id="patch-iim">Item Interchange Mode <a class="back2top" href="#contents">Back to top</a></h3>

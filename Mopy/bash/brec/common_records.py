@@ -32,14 +32,15 @@ from operator import attrgetter
 
 from .advanced_elements import AttrExistsDecider, AttrValDecider, MelArray, \
     MelUnion
-from .basic_elements import MelBase, MelFid, MelFloat, MelGroups, MelLString, \
-    MelNull, MelStruct, MelUInt32, MelSInt32
+from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroups, \
+    MelLString, MelNull, MelStruct, MelUInt32, MelSInt32
 from .common_subrecords import MelEdid
 from .mod_io import RecordHeader, GrupHeader
 from .record_structs import MelRecord, MelSet, MreRecord
 from .utils_constants import FID
 from .. import bolt, exception
 from ..bolt import decode, encode, GPath, sio
+from ..exception import StateError
 
 #------------------------------------------------------------------------------
 class MreHeaderBase(MelRecord):
@@ -105,6 +106,69 @@ class MreHeaderBase(MelRecord):
         return self.nextObject -1
 
     __slots__ = []
+
+#------------------------------------------------------------------------------
+class MreFlst(MelRecord):
+    """FormID List."""
+    rec_sig = b'FLST'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFids(b'LNAM', u'formIDInList'),
+    )
+
+    __slots__ = melSet.getSlotsUsed() + [u'mergeOverLast', u'mergeSources',
+                                         u'items', u'de_records',
+                                         u're_records']
+
+    def __init__(self, header, ins=None, do_unpack=False):
+        MelRecord.__init__(self, header, ins, do_unpack)
+        self.mergeOverLast = False #--Merge overrides last mod merged
+        self.mergeSources = None #--Set to list by other functions
+        self.items  = None #--Set of items included in list
+        #--Set of items deleted by list (Deflst mods) unused for Skyrim
+        self.de_records = None #--Set of items deleted by list (Deflst mods)
+        self.re_records = None # unused, needed by patcher
+
+    def mergeFilter(self, modSet):
+        if not self.longFids: raise StateError(u'Fids not in long format')
+        self.formIDInList = [f for f in self.formIDInList if f[0] in modSet]
+
+    def mergeWith(self,other,otherMod):
+        """Merges newLevl settings and entries with self.
+        Requires that: self.items, other.de_records be defined."""
+        if not self.longFids or not other.longFids:
+            raise StateError(u'Fids not in long format')
+        #--Remove items based on other.removes
+        if other.de_records:
+            removeItems = self.items & other.de_records
+            self.formIDInList = [fi for fi in self.formIDInList if fi not in removeItems]
+            self.items = (self.items | other.de_records)
+        #--Add new items from other
+        newItems = set()
+        formIDInListAppend = self.formIDInList.append
+        newItemsAdd = newItems.add
+        for fi in other.formIDInList:
+            if fi not in self.items:
+                formIDInListAppend(fi)
+                newItemsAdd(fi)
+        if newItems:
+            self.items |= newItems
+        #--Is merged list different from other? (And thus written to patch.)
+        if len(self.formIDInList) != len(other.formIDInList):
+            self.mergeOverLast = True
+        else:
+            for selfEntry,otherEntry in zip(self.formIDInList,other.formIDInList):
+                if selfEntry != otherEntry:
+                    self.mergeOverLast = True
+                    break
+            else:
+                self.mergeOverLast = False
+        if self.mergeOverLast:
+            self.mergeSources.append(otherMod)
+        else:
+            self.mergeSources = [otherMod]
+        self.setChanged()
 
 #------------------------------------------------------------------------------
 class MreGlob(MelRecord):
@@ -230,8 +294,7 @@ class MreLeveledListBase(MelRecord):
         self.re_records = None #--Set of items relevelled by list (Relev mods)
 
     def mergeFilter(self,modSet):
-        """Filter out items that don't come from specified modSet."""
-        if not self.longFids: raise exception.StateError(u'Fids not in long format')
+        if not self.longFids: raise StateError(u'Fids not in long format')
         self.entries = [entry for entry in self.entries if entry.listId[0] in modSet]
 
     def mergeWith(self,other,otherMod):
@@ -420,3 +483,22 @@ class MreHasEffects(object):
                 if effect.duration > 1: buffWrite(u' %sd'%effect.duration)
                 buffWrite(u'\n')
             return buff.getvalue()
+
+#------------------------------------------------------------------------------
+class MreWithItems(MelRecord):
+    """Base class for record types that contain a list of items (MelItems)."""
+    __slots__ = []
+
+    def mergeFilter(self, modSet):
+        if not self.longFids: raise StateError(u'Fids not in long format')
+        self.items = [i for i in self.items if i.item[0] in modSet]
+
+#------------------------------------------------------------------------------
+class MreActorBase(MreWithItems):
+    """Base class for Creatures and NPCs."""
+    __slots__ = []
+
+    def mergeFilter(self, modSet):
+        super(MreActorBase, self).mergeFilter(modSet)
+        self.spells = [x for x in self.spells if x[0] in modSet]
+        self.factions = [x for x in self.factions if x.faction[0] in modSet]

@@ -41,8 +41,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelSequential, MelTruncatedStruct, PartialLoadDecider, MelReadOnly, \
     MelCoordinates, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, \
     MelArray, MelWthrColors, MreLeveledListBase, mel_cdta_unpackers, \
-    MreDialBase
-from ...exception import BoltError, ModError, ModSizeError, StateError
+    MreDialBase, MreActorBase, MreWithItems
+from ...exception import BoltError, ModError, ModSizeError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
 
@@ -84,7 +84,7 @@ from ...brec import MelModel
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
 #------------------------------------------------------------------------------
-class MreActor(MelRecord):
+class MreActor(MreActorBase):
     """Creatures and NPCs."""
     TemplateFlags = Flags(0, Flags.getNames(
         'useTraits',
@@ -98,14 +98,7 @@ class MreActor(MelRecord):
         'useInventory',
         'useScript',
     ))
-
-    def mergeFilter(self,modSet):
-        """Filter out items that don't come from specified modSet.
-        Filters spells, factions and items."""
-        if not self.longFids: raise StateError(_("Fids not in long format"))
-        self.spells = [x for x in self.spells if x[0] in modSet]
-        self.factions = [x for x in self.factions if x.faction[0] in modSet]
-        self.items = [x for x in self.items if x.item[0] in modSet]
+    __slots__ = []
 
 #------------------------------------------------------------------------------
 class MelBipedFlags(Flags):
@@ -239,6 +232,16 @@ class MelEmbeddedScript(MelSequential):
             MelString('SCTX', 'script_source'),
             MelScriptVars(),
             MelReferences(),
+        )
+
+#------------------------------------------------------------------------------
+class MelItems(MelGroups):
+    """Wraps MelGroups for the common task of defining a list of items."""
+    def __init__(self):
+        super(MelItems, self).__init__(u'items',
+            MelStruct(b'CNTO', u'Ii', (FID, u'item'), (u'count', 1)),
+            MelOptStruct(b'COED', u'2If', (FID, u'owner'), (FID, u'glob'),
+                         (u'condition', 1.0)),
         )
 
 #------------------------------------------------------------------------------
@@ -873,7 +876,7 @@ class MreCobj(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreCont(MelRecord):
+class MreCont(MreWithItems):
     """Container."""
     rec_sig = b'CONT'
 
@@ -885,10 +888,7 @@ class MreCont(MelRecord):
         MelFull(),
         MelModel(),
         MelFid('SCRI','script'),
-        MelGroups('items',
-            MelStruct('CNTO','Ii',(FID,'item',None),('count',1)),
-            MelOptStruct('COED','IIf',(FID,'owner',None),(FID,'glob',None),('condition',1.0)),
-        ),
+        MelItems(),
         MelDestructible(),
         MelStruct('DATA','=Bf',(_flags,'flags',0),'weight'),
         MelFid('SNAM','soundOpen'),
@@ -983,11 +983,7 @@ class MreCrea(MreActor):
         MelFid('TPLT','template'),
         MelDestructible(),
         MelFid('SCRI','script'),
-        MelGroups('items',
-            MelStruct('CNTO','Ii',(FID,'item',None),('count',1)),
-            MelOptStruct('COED','IIf',(FID,'owner',None),(FID,'glob',None),
-                ('condition',1.0)),
-        ),
+        MelItems(),
         MelStruct('AIDT','=5B3sIbBbBi', ('aggression', 0), ('confidence', 2),
                   ('energyLevel', 50), ('responsibility', 50), ('mood', 0),
                   ('unused_aidt', null3), (aiService, 'services', 0),
@@ -1322,69 +1318,6 @@ class MreFact(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreFlst(MelRecord):
-    """FormID List."""
-    rec_sig = b'FLST'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelFids('LNAM','formIDInList'),
-    )
-    __slots__ = melSet.getSlotsUsed() + ['mergeOverLast', 'mergeSources',
-                                         'items', 'de_records', 're_records']
-
-    def __init__(self, header, ins=None, do_unpack=False):
-        MelRecord.__init__(self, header, ins, do_unpack)
-        self.mergeOverLast = False #--Merge overrides last mod merged
-        self.mergeSources = None #--Set to list by other functions
-        self.items  = None #--Set of items included in list
-        #--Set of items deleted by list (Deflst mods) unused for Skyrim
-        self.de_records = None #--Set of items deleted by list (Deflst mods)
-        self.re_records = None # unused, needed by patcher - TODO base class
-
-    def mergeFilter(self,modSet):
-        """Filter out items that don't come from specified modSet."""
-        if not self.longFids: raise StateError(_("Fids not in long format"))
-        self.formIDInList = [fi for fi in self.formIDInList if fi[0] in modSet]
-
-    def mergeWith(self,other,otherMod):
-        """Merges newLevl settings and entries with self.
-        Requires that: self.items, other.de_records be defined."""
-        if not self.longFids or not other.longFids:
-            raise StateError(_(u'Fids not in long format'))
-        #--Remove items based on other.removes
-        if other.de_records:
-            removeItems = self.items & other.de_records
-            #self.entries = [entry for entry in self.entries if entry.listId not in removeItems]
-            self.formIDInList = [fi for fi in self.formIDInList if fi not in removeItems]
-            self.items = (self.items | other.de_records)
-        #--Add new items from other
-        newItems = set()
-        formIDInListAppend = self.formIDInList.append
-        newItemsAdd = newItems.add
-        for fi in other.formIDInList:
-            if fi not in self.items:
-                formIDInListAppend(fi)
-                newItemsAdd(fi)
-        if newItems:
-            self.items |= newItems
-        #--Is merged list different from other? (And thus written to patch.)
-        if len(self.formIDInList) != len(other.formIDInList):
-            self.mergeOverLast = True
-        else:
-            for selfEntry,otherEntry in zip(self.formIDInList,other.formIDInList):
-                if selfEntry != otherEntry:
-                    self.mergeOverLast = True
-                    break
-            else:
-                self.mergeOverLast = False
-        if self.mergeOverLast:
-            self.mergeSources.append(otherMod)
-        else:
-            self.mergeSources = [otherMod]
-        self.setChanged()
-
-#------------------------------------------------------------------------------
 class MreFurn(MelRecord):
     """Furniture."""
     rec_sig = b'FURN'
@@ -1403,10 +1336,6 @@ class MreFurn(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
-#------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# GLOB ------------------------------------------------------------------------
-# Defined in brec.py as class MreGlob(MelRecord) ------------------------------
 #------------------------------------------------------------------------------
 class MreGmst(MreGmstBase):
     """Game Setting."""
@@ -2168,10 +2097,7 @@ class MreNpc(MreActor):
         MelDestructible(),
         MelFids('SPLO','spells'),
         MelFid('SCRI','script'),
-        MelGroups('items',
-            MelStruct('CNTO','Ii',(FID,'item',None),('count',1)),
-            MelOptStruct('COED','IIf',(FID,'owner',None),(FID,'glob',None),('condition',1.0)),
-        ),
+        MelItems(),
         MelStruct('AIDT','=5B3sIbBbBi', ('aggression', 0), ('confidence',2),
                   ('energyLevel', 50),('responsibility', 50), ('mood', 0),
                   ('unused_aidt', null3),(aiService, 'services', 0),

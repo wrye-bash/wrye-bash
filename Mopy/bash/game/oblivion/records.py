@@ -36,8 +36,9 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelRaceParts, MelRaceVoices, null1, null2, null3, null4, MelScriptVars, \
     MelSequential, MelUnion, FlagDecider, AttrValDecider, PartialLoadDecider, \
     MelTruncatedStruct, MelCoordinates, MelIcon, MelIco2, MelEdid, MelFull, \
-    MelArray, MelWthrColors, MelObject, mel_cdta_unpackers, MreDialBase
-from ...exception import BoltError, ModSizeError, StateError
+    MelArray, MelWthrColors, MelObject, mel_cdta_unpackers, MreDialBase, \
+    MreActorBase, MreWithItems
+from ...exception import BoltError, ModSizeError
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
 
@@ -64,18 +65,6 @@ from ...brec import MelModel
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
-#------------------------------------------------------------------------------
-class MreActor(MelRecord):
-    """Creatures and NPCs."""
-
-    def mergeFilter(self,modSet):
-        """Filter out items that don't come from specified modSet.
-        Filters spells, factions and items."""
-        if not self.longFids: raise StateError(u"Fids not in long format")
-        self.spells = [x for x in self.spells if x[0] in modSet]
-        self.factions = [x for x in self.factions if x.faction[0] in modSet]
-        self.items = [x for x in self.items if x.item[0] in modSet]
-
 #------------------------------------------------------------------------------
 class MelBipedFlags(Flags):
     """Biped flags element. Includes biped flag set by default."""
@@ -767,7 +756,7 @@ class MreClot(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
-class MreCont(MelRecord):
+class MreCont(MreWithItems):
     """Container."""
     rec_sig = b'CONT'
 
@@ -785,7 +774,7 @@ class MreCont(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
-class MreCrea(MreActor):
+class MreCrea(MreActorBase):
     """Creature."""
     rec_sig = b'CREA'
 
@@ -1353,7 +1342,7 @@ class MreMisc(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
-class MreNpc(MreActor):
+class MreNpc(MreActorBase):
     """Non-Player Character."""
     rec_sig = b'NPC_'
 

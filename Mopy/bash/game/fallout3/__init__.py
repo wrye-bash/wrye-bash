@@ -24,7 +24,7 @@
 """GameInfo override for Fallout 3."""
 from .. import GameInfo
 from ... import brec
-from ...brec import MreGlob
+from ...brec import MreFlst, MreGlob
 
 class Fallout3GameInfo(GameInfo):
     displayName = u'Fallout 3'
@@ -295,7 +295,7 @@ class Fallout3GameInfo(GameInfo):
             MreArma, MreArmo, MreAspc, MreAvif, MreBook, MreBptd, MreCams, \
             MreClas, MreClmt, MreCobj, MreCont, MreCpth, MreCrea, MreCsty, \
             MreDebr, MreDobj, MreDoor, MreEczn, MreEfsh, MreEnch, MreExpl, \
-            MreEyes, MreFact, MreFlst, MreFurn, MreGras, MreHair, MreHdpt, \
+            MreEyes, MreFact, MreFurn, MreGras, MreHair, MreHdpt, MreTes4, \
             MreIdle, MreIdlm, MreImad, MreImgs, MreIngr, MreIpct, MreIpds, \
             MreKeym, MreLgtm, MreLigh, MreLscr, MreLtex, MreLvlc, MreLvli, \
             MreLvln, MreMesg, MreMgef, MreMicn, MreMisc, MreMstt, MreMusc, \
@@ -304,7 +304,7 @@ class Fallout3GameInfo(GameInfo):
             MreSpel, MreStat, MreTact, MreTerm, MreTree, MreTxst, MreVtyp, \
             MreWatr, MreWeap, MreWthr, MreAchr, MreAcre, MreCell, MreDial, \
             MreGmst, MreInfo, MreNavi, MreNavm, MrePgre, MrePmis, MreRefr, \
-            MreWrld, MreTes4
+            MreWrld
         cls.mergeClasses = (
             MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreArma, MreArmo,
             MreAspc, MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClmt,

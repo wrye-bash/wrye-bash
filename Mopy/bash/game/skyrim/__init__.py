@@ -25,7 +25,7 @@
 
 from .. import GameInfo
 from ... import brec
-from ...brec import MreGlob
+from ...brec import MreFlst, MreGlob
 
 class SkyrimGameInfo(GameInfo):
     displayName = u'Skyrim'
@@ -233,7 +233,7 @@ class SkyrimGameInfo(GameInfo):
             MreInfo, MreCams, MreWthr, MreDual, MreMato, MreVtyp, MreMatt, \
             MreLvsp, MreEnch, MreProj, MreDlbr, MreRfct, MreMisc, MreActi, \
             MreEqup, MreCpth, MreDoor, MreAnio, MreHazd, MreIdlm, MreEczn, \
-            MreIdle, MreLtex, MreQust, MreMstt, MreNpc, MreFlst, MreIpds, \
+            MreIdle, MreLtex, MreQust, MreMstt, MreNpc, MreIpds, MrePack, \
             MreGmst, MreRevb, MreClmt, MreDebr, MreSmbn, MreLvli, MreSpel, \
             MreKywd, MreLvln, MreAact, MreSlgm, MreRegn, MreFurn, MreGras, \
             MreAstp, MreWoop, MreMovt, MreCobj, MreShou, MreSmen, MreColl, \
@@ -244,7 +244,7 @@ class SkyrimGameInfo(GameInfo):
             MreLscr, MreDlvw, MreTree, MreWatr, MreFlor, MreEyes, MreWeap, \
             MreIngr, MreClfm, MreMesg, MreLigh, MreExpl, MreLcrt, MreStat, \
             MreAmmo, MreSmqn, MreImad, MreSoun, MreAvif, MreCont, MreIpct, \
-            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk, MrePack
+            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk
         # ---------------------------------------------------------------------
         # Unused records, they have empty GRUP in skyrim.esm-------------------
         # CLDC HAIR PWAT RGDL SCOL SCPT

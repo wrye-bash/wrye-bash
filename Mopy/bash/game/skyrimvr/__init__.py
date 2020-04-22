@@ -26,7 +26,7 @@
 
 from ..skyrimse import SkyrimSEGameInfo
 from ... import brec
-from ...brec import MreGlob
+from ...brec import MreFlst, MreGlob
 
 class SkyrimVRGameInfo(SkyrimSEGameInfo):
     displayName = u'Skyrim VR'
@@ -76,7 +76,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
             MreClfm, MreClmt, MreCobj, MreColl, MreCont, MreCpth, MreCsty, \
             MreDebr, MreDial, MreDlbr, MreDlvw, MreDobj, MreDoor, MreDual, \
             MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFact, \
-            MreFlor, MreFlst, MreFstp, MreFsts, MreFurn, MreGmst, MreGras, \
+            MreFlor, MreFstp, MreFsts, MreFurn, MreGmst, MreGras, MrePack, \
             MreHazd, MreHdpt, MreTes4, MreIdle, MreIdlm, MreImad, MreImgs, \
             MreInfo, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt, \
             MreLctn, MreLgtm, MreLigh, MreLscr, MreLvli, MreLvln, MreLvsp, \
@@ -85,8 +85,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
             MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, \
             MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, \
             MreSpgd, MreTact, MreTree, MreTxst, MreVtyp, MreWoop, MreWrld, \
-            MreAmmo, MreLtex, MreMato, MreStat, MreWatr, MreWeap, MreWthr, \
-            MrePack
+            MreAmmo, MreLtex, MreMato, MreStat, MreWatr, MreWeap, MreWthr
         cls.mergeClasses = (
             # MreAchr, MreDial, MreInfo, MreFact,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,

@@ -26,7 +26,7 @@ from __future__ import division
 import struct
 # Set MelModel in brec, in this case it's identical to the fallout 3 one
 from ..fallout3.records import MelOwnership, MelDestructible, MelBipedFlags, \
-    MelEffects, MelConditions, MreHasEffects, MelEmbeddedScript
+    MelEffects, MelConditions, MreHasEffects, MelEmbeddedScript, MelItems
 from ..fallout3.records import _MelModel # HACK - needed for tests
 from ...bolt import Flags
 from ...brec import MelModel # set in Mopy/bash/game/fallout3/records.py
@@ -38,7 +38,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, MelBounds, null1, \
     null2, null3, null4, MelTruncatedStruct, MelReadOnly, MelCoordinates, \
     MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, MelArray, \
-    MelObject, MreDialBase
+    MelObject, MreDialBase, MreWithItems
 from ...exception import ModSizeError
 
 #------------------------------------------------------------------------------
@@ -508,7 +508,7 @@ class MreCmny(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreCont(MelRecord):
+class MreCont(MreWithItems):
     """Container."""
     rec_sig = b'CONT'
 
@@ -520,10 +520,7 @@ class MreCont(MelRecord):
         MelFull(),
         MelModel(),
         MelFid('SCRI','script'),
-        MelGroups('items',
-            MelStruct('CNTO','Ii',(FID,'item',None),('count',1)),
-            MelOptStruct('COED','IIf',(FID,'owner',None),(FID,'glob',None),('condition',1.0)),
-        ),
+        MelItems(),
         MelDestructible(),
         MelStruct('DATA','=Bf',(_flags,'flags',0),'weight'),
         MelFid('SNAM','soundOpen'),
@@ -709,10 +706,6 @@ class MreFact(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
-#------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# GLOB ------------------------------------------------------------------------
-# Defined in brec.py as class MreGlob(MelRecord) ------------------------------
 #------------------------------------------------------------------------------
 class MreGmst(MreGmstBase):
     """Game Setting."""

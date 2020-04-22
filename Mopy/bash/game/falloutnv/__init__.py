@@ -24,7 +24,7 @@
 """GameInfo override for Fallout NV."""
 from ..fallout3 import Fallout3GameInfo
 from ... import brec
-from ...brec import MreGlob
+from ...brec import MreFlst, MreGlob
 
 class FalloutNVGameInfo(Fallout3GameInfo):
     displayName = u'Fallout New Vegas'
@@ -130,11 +130,11 @@ class FalloutNVGameInfo(Fallout3GameInfo):
             MrePerk, MreQust, MreSpel, MreTerm, MreNpc, MreAddn, MreAnio, \
             MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClmt, MreCobj, \
             MreCrea, MreDebr, MreDoor, MreEczn, MreEfsh, MreExpl, MreEyes, \
-            MreFlst, MreFurn, MreGras, MreHair, MreIdlm, MreImgs, MreIngr, \
+            MreFurn, MreGras, MreHair, MreIdlm, MreImgs, MreIngr, MreRace, \
             MreIpds, MreLgtm, MreLtex, MreLvlc, MreLvli, MreLvln, MreMgef, \
             MreMicn, MreMstt, MreNavi, MreNavm, MreNote, MrePwat, MreRads, \
             MreRgdl, MreScol, MreScpt, MreTree, MreTxst, MreVtyp, MreWatr, \
-            MreWrld, MreAlch, MreRace
+            MreWrld, MreAlch
         # Old Mergeable from Valda's version
         # MreActi, MreAlch, MreAloc, MreAmef, MreAmmo, MreAnio, MreAppa,
         # MreArma, MreArmo, MreAspc, MreAvif, MreBook, MreBptd, MreBsgn,

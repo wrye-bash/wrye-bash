@@ -39,7 +39,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelPartialCounter, MelBounds, null1, null2, null3, null4, MelSequential, \
     MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, \
     MelFull, MelArray, MelWthrColors, GameDecider, MelReadOnly, \
-    mel_cdta_unpackers, MreDialBase
+    mel_cdta_unpackers, MreDialBase, MreActorBase, MreWithItems
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -74,19 +74,6 @@ from ...brec import MelModel
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
-#------------------------------------------------------------------------------
-# TODO(inf) Unused - use or bin (not sure if this actually works though)
-class MreActor(MelRecord):
-    """Creatures and NPCs."""
-
-    def mergeFilter(self,modSet):
-        """Filter out items that don't come from specified modSet.
-        Filters spells, factions and items."""
-        if not self.longFids: raise StateError(_("Fids not in long format"))
-        self.spells = [x for x in self.spells if x[0] in modSet]
-        self.factions = [x for x in self.factions if x.faction[0] in modSet]
-        self.items = [x for x in self.items if x.item[0] in modSet]
-
 #------------------------------------------------------------------------------
 class MelBipedObjectData(MelStruct):
     """Handler for BODT/BOD2 subrecords.  Reads both types, writes only BOD2"""
@@ -1952,7 +1939,7 @@ class MreClmt(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreCobj(MelRecord):
+class MreCobj(MreWithItems):
     """Constructible Object (Recipes)."""
     rec_sig = b'COBJ'
     isKeyedByEid = True # NULL fids are acceptable
@@ -1992,7 +1979,7 @@ class MreColl(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreCont(MelRecord):
+class MreCont(MreWithItems):
     """Container."""
     rec_sig = b'CONT'
 
@@ -2516,83 +2503,6 @@ class MreFlor(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreFlst(MelRecord):
-    """FormID List."""
-    rec_sig = b'FLST'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelFids('LNAM','formIDInList'),
-    )
-    __slots__ = melSet.getSlotsUsed() + ['mergeOverLast', 'mergeSources',
-                                         'items', 'de_records', 're_records']
-
-    """ Skyrim's FLST can't always be merged if a mod depends on the order of
-    the LNAM records for the Papyrus scripts.
-
-    Solution: Create a Bash tag that indicates when a list cannot be merged.
-    If even one mod has this tag then the list is not merged into the
-    Bash Patch."""
-
-    # The same with Relev, Delev the 'NoFlstMerge' tag applies to the entire mod
-    # even if only one FLST requires it.  When parsing the FLSTs from other mods
-    # Wrye Bash should skip any FLST from a mod with the 'NoFlstMerge' tag.
-    # Example, ModA has 10 FLST, MODB has 11 FLST.  Ten of the lists are the same
-    # Between the two mods.  Since only one list is different, only one FLST is
-    # different then only one FLST would be mergable.
-
-    # New Bash Tag 'NoFlstMerge'
-    def __init__(self, header, ins=None, do_unpack=False):
-        MelRecord.__init__(self, header, ins, do_unpack)
-        self.mergeOverLast = False #--Merge overrides last mod merged
-        self.mergeSources = None #--Set to list by other functions
-        self.items  = None #--Set of items included in list
-        #--Set of items deleted by list (Deflst mods) unused for Skyrim
-        self.de_records = None
-        self.re_records = None # unused, needed by patcher - TODO base class
-
-    def mergeFilter(self,modSet):
-        """Filter out items that don't come from specified modSet."""
-        if not self.longFids: raise StateError(_("Fids not in long format"))
-        self.formIDInList = [fid for fid in self.formIDInList if fid[0] in modSet]
-
-    def mergeWith(self,other,otherMod):
-        """Merges newLevl settings and entries with self.
-        Requires that: self.items, other.de_records be defined."""
-        if not self.longFids: raise StateError(_("Fids not in long format"))
-        if not other.longFids: raise StateError(_("Fids not in long format"))
-        #--Remove items based on other.removes
-        if other.de_records:
-            removeItems = self.items & other.de_records
-            self.formIDInList = [fid for fid in self.formIDInList if fid not in removeItems]
-            self.items = (self.items | other.de_records)
-        #--Add new items from other
-        newItems = set()
-        formIDInListAppend = self.formIDInList.append
-        newItemsAdd = newItems.add
-        for fid in other.formIDInList:
-            if fid not in self.items:
-                formIDInListAppend(fid)
-                newItemsAdd(fid)
-        if newItems:
-            self.items |= newItems
-        #--Is merged list different from other? (And thus written to patch.)
-        if len(self.formIDInList) != len(other.formIDInList):
-            self.mergeOverLast = True
-        else:
-            for selfEntry,otherEntry in zip(self.formIDInList,other.formIDInList):
-                if selfEntry != otherEntry:
-                    self.mergeOverLast = True
-                    break
-            else:
-                self.mergeOverLast = False
-        if self.mergeOverLast:
-            self.mergeSources.append(otherMod)
-        else:
-            self.mergeSources = [otherMod]
-        self.setChanged()
-
-#------------------------------------------------------------------------------
 class MreFstp(MelRecord):
     """Footstep."""
     rec_sig = b'FSTP'
@@ -2696,10 +2606,6 @@ class MreFurn(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
-#------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# GLOB ------------------------------------------------------------------------
-# Defined in brec.py as class MreGlob(MelRecord) ------------------------------
 #------------------------------------------------------------------------------
 class MreGmst(MreGmstBase):
     """Game Setting."""
@@ -3734,7 +3640,7 @@ class MreNavm(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreNpc(MelRecord):
+class MreNpc(MreActorBase):
     """Non-Player Character."""
     rec_sig = b'NPC_'
 
@@ -3898,9 +3804,11 @@ class MreOtft(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
+    def mergeFilter(self, modSet):
+        if not self.longFids: raise StateError(u'Fids not in long format')
+        self.items = [i for i in self.items if i[0] in modSet]
+
 #------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# PACK ------------------------------------------------------------------------
 class MrePack(MelRecord):
     """Package."""
     rec_sig = b'PACK'
