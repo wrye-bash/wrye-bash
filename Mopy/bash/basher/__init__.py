@@ -2244,7 +2244,7 @@ class InstallersList(balt.UIList):
             to = len(evt_label) - 2
             uilist_ctrl.ec_set_selection(2, to)
         #--Archives, change the selection to not include the extension
-        elif renaming_type.is_arhive():
+        elif renaming_type.is_archive():
             return super(InstallersList, self).OnBeginEditLabel(evt_label,
                                                                 uilist_ctrl)
         return EventResult.FINISH  ##: needed?
@@ -2265,7 +2265,7 @@ class InstallersList(balt.UIList):
                 lenNextLower = lenWithExt
             else:
                 lenNextLower = len(textNextLower.s)
-            if renaming_type.is_arhive():
+            if renaming_type.is_archive():
                 selection_span = (0, lenNextLower)
             elif renaming_type.is_marker():
                 selection_span = (2, lenWithExt - 2)
@@ -2284,7 +2284,7 @@ class InstallersList(balt.UIList):
         installables = self.data_store.filterInstallables(selected)
         validate = partial(self.validate_filename, evt_label,
                            is_filename=bool(installables))
-        if renaming_type.is_arhive():
+        if renaming_type.is_archive():
             root, newName, _numStr = validate(ext=self.__ext_group)
         else:
             root, newName, _numStr = validate()

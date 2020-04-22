@@ -297,18 +297,17 @@ class ConfigHelpers(object):
                 log(_(u'Congratulations, all mods appear clean.'))
             if invalidVersion:
                 # Always an ASCII byte string, so this is fine
-                header_sig = unicode(
-                    bush.game_mod.records.MreHeader.classType,
-                    encoding='ascii')
+                header_sig_ = unicode(bush.game.Esp.plugin_header_sig,
+                                      encoding=u'ascii')
                 ver_list = u', '.join(sorted([
                     unicode(v) for v in bush.game.Esp.validHeaderVersions]))
                 log.setHeader(
                     u'=== ' + _(u'Mods with non-standard %s versions') %
-                    header_sig)
+                    header_sig_)
                 log(_(u"The following mods have a %s version that isn't "
                       u'recognized as one of the standard versions '
                       u'(%s). It is untested what effects this can have on '
-                      u'%s.') % (header_sig, ver_list, bush.game.displayName))
+                      u'%s.') % (header_sig_, ver_list, bush.game.displayName))
                 for mod in sorted(invalidVersion):
                     log(u'* __'+mod[0].s+u':__  '+mod[1])
             #--Missing/Delinquent Masters
@@ -321,16 +320,16 @@ class ConfigHelpers(object):
                     loggedMod = False
                     for master in modInfos[mod].get_masters():
                         if master not in active:
-                            label = _(u'MISSING')
+                            label_ = _(u'MISSING')
                         elif master not in previousMods:
-                            label = _(u'DELINQUENT')
+                            label_ = _(u'DELINQUENT')
                         else:
-                            label = u''
-                        if label:
+                            label_ = u''
+                        if label_:
                             if not loggedMod:
                                 log(u'* '+mod.s)
                                 loggedMod = True
-                            log(u'  * __%s__ %s' %(label,master.s))
+                            log(u'  * __%s__ %s' %(label_,master.s))
                     previousMods.add(mod)
             return log.out.getvalue()
 

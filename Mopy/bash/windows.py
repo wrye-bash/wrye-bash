@@ -435,9 +435,9 @@ class TaskDialog(object):
         self._progress_bar = {'func':callback, 'range': _range, 'pos':pos}
         return self
 
-    def set_check_box(self, label, checked=False):
+    def set_check_box(self, cbox_label, checked=False):
         """Set up a verification check box that appears on the task dialog."""
-        self._cbox_label = label
+        self._cbox_label = cbox_label
         self._cbox_checked = checked
         return self
 

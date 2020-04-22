@@ -81,7 +81,7 @@ class FileEditError(BoltError):
     """Unable to edit a file"""
     def __init__(self, file_path, message=None):
         ## type: (Path, basestring) -> None
-        message = message or (u'Unable to edit file {}.'.format(file_path.s))
+        message = message or (u'Unable to edit file %s.' % file_path.s)
         super(FileEditError, self).__init__(message)
         self.filePath = file_path
 
@@ -92,33 +92,31 @@ class ModError(FileError):
 
 class ModReadError(ModError):
     """Mod Error: Attempt to read outside of buffer."""
-    def __init__(self, in_name, rec_type, try_pos, max_pos):
+    def __init__(self, in_name, record_sig, try_pos, max_pos):
         ## type: (Path, basestring, int, int) -> None
-        self.rec_type = rec_type
         self.try_pos = try_pos
         self.max_pos = max_pos
         if try_pos < 0:
-            message = (u'{}: Attempted to read before ({}) beginning of '
-                       u'file/buffer.'.format(rec_type, try_pos))
+            message = (u'%s: Attempted to read before (%s) beginning of '
+                       u'file/buffer.' % (record_sig, try_pos))
         else:
-            message = (u'{}: Attempted to read past ({}) end ({}) of '
-                       u'file/buffer.'.format(rec_type, try_pos, max_pos))
+            message = (u'%s: Attempted to read past (%s) end (%s) of '
+                       u'file/buffer.' % (record_sig, try_pos, max_pos))
         super(ModReadError, self).__init__(in_name.s, message)
 
 class ModSizeError(ModError):
     """Mod Error: Record/subrecord has wrong size."""
-    def __init__(self, in_name, rec_type, expected_sizes, actual_size):
+    def __init__(self, in_name, record_sig, expected_sizes, actual_size):
         """Indicates that a record or subrecord has the wrong size.
 
         :type in_name: bolt.Path
-        :type rec_type: basestring
+        :type record_sig: basestring
         :type expected_sizes: tuple[int]
         :type actual_size: int"""
-        self.rec_type = rec_type
         self.expected_sizes = expected_sizes
         self.actual_size = actual_size
         message_form = (u'%s: Expected one of sizes [%s], but got %u' % (
-            rec_type, u', '.join([u'%s' % x for x in expected_sizes]),
+            record_sig, u', '.join([u'%s' % x for x in expected_sizes]),
             actual_size))
         super(ModSizeError, self).__init__(in_name.s, message_form)
 
@@ -127,8 +125,8 @@ class FileOperationError(OSError):
     def __init__(self, error_code, message=None):
         # type: (int, unicode) -> None
         self.errno = error_code
-        Exception.__init__(self, u'FileOperationError: {}'.format(
-                                    message or unicode(error_code)))
+        Exception.__init__(self, u'FileOperationError: %s' % (
+                message or unicode(error_code)))
 
 class AccessDeniedError(FileOperationError):
     def __init__(self):
@@ -142,7 +140,7 @@ class InvalidPathsError(FileOperationError):
 class DirectoryFileCollisionError(FileOperationError):
     def __init__(self, source, dest):  ## type: (Path, Path) -> None
         super(DirectoryFileCollisionError, self).__init__(
-            -1, u'collision: moving {} to {}'.format(source, dest))
+            -1, u'collision: moving %s to %s' % (source, dest))
 
 class NonExistentDriveError(FileOperationError):
     def __init__(self, failed_paths):  ## type: (List[Path]) -> None
@@ -156,13 +154,13 @@ class BSACompressionError(BSAError):
     def __init__(self, in_name, compression_type, orig_error):
         # type: (unicode, unicode, Exception) -> None
         super(BSACompressionError, self).__init__(
-            in_name, u'{} error while compressing record: {}'.format(
+            in_name, u'%s error while compressing record: %s' % (
                 compression_type, repr(orig_error)))
 
 class BSADecodingError(BSAError):
     def __init__(self, in_name, message): # type: (unicode, unicode) -> None
         super(BSADecodingError, self).__init__(
-            in_name, u'Undecodable string {!r}'.format(message))
+            in_name, u'Undecodable string %r' % message)
 
 class BSADecompressionError(BSAError):
     def __init__(self, in_name, compression_type, orig_error):
@@ -174,15 +172,15 @@ class BSADecompressionError(BSAError):
 class BSADecompressionSizeError(BSAError):
     def __init__(self, in_name, compression_type, expected_size, actual_size):
         super(BSADecompressionSizeError, self).__init__(
-            in_name, u'{}-decompressed record size incorrect - expected {}, '
-                     u'but got {}'.format(
+            in_name, u'%s-decompressed record size incorrect - expected %s, '
+                     u'but got %s' % (
                 compression_type, expected_size, actual_size))
 
 class BSAFlagError(BSAError):
     def __init__(self, in_name, message, flag):
         # type: (unicode, unicode, int) -> None
         super(BSAFlagError, self).__init__(
-            in_name, u'{} (flag {}) unset'.format(message, flag))
+            in_name, u'%s (flag %s) unset' % (message, flag))
 
 # DDS exceptions --------------------------------------------------------------
 class DDSError(Exception): pass
@@ -213,7 +211,7 @@ class _ALPError(Exception):
         # Build up the final error message
         final_msg = err_msg
         if target_str:
-            final_msg += u'\nOccurred here: {}'.format(target_str)
+            final_msg += u'\nOccurred here: %s' % target_str
         if start_pos >= 0:
             # Offset by -1 to account for the '^' part of the marker
             end_pos = start_pos if end_pos < 0 else end_pos - 1
@@ -221,10 +219,9 @@ class _ALPError(Exception):
             marker_offset = u' ' * (15 + start_pos)
             # The actual ^~~~~ marker itself
             line_marker = u'^' + u'~' * (end_pos - start_pos)
-            final_msg += u'\n{}{}'.format(marker_offset, line_marker)
+            final_msg += u'\n%s%s' % (marker_offset, line_marker)
         if line_num >= 0:
-            final_msg += u'\nLine Number: {}'.format(
-            line_num)
+            final_msg += u'\nLine Number: %s' % line_num
         super(_ALPError, self).__init__(final_msg)
 
 class LexerError(_ALPError):
@@ -248,7 +245,7 @@ class MasterMapError(BoltError):
     """Attempt to map a fid when mapping does not exist."""
     def __init__(self, modIndex):  # type: (int) -> None
         super(MasterMapError, self).__init__(
-            u'No valid mapping for mod index 0x{:02X}'.format(modIndex))
+            u'No valid mapping for mod index 0x%02X' % modIndex)
 
 class SaveHeaderError(Exception): pass
 

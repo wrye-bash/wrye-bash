@@ -331,8 +331,8 @@ class MobDials(MobObjects):
                         else:
                             ins.seek(ins.tell() + size - header.__class__.rec_header_size)
                     except AttributeError:
-                        ModError(self.inName, u'Malformed Plugin: Exterior '
-                                 u'CELL subblock before worldspace GRUP')
+                        raise ModError(self.inName, u'Malformed Plugin: '
+                            u'Exterior CELL subblock before worldspace GRUP')
                 else:
                     raise ModError(self.inName,
                                    u'Unexpected subgroup %d in DIAL group.'

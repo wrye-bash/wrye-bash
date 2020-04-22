@@ -236,11 +236,11 @@ class _RecTypeModLogging(CBash_ImportPatcher):
         if self.__class__.listSrcs:
             self._srcMods(log)
             log(self.__class__.logMsg)
-        for group_type in sorted(mod_count.keys()):
-            log(self.__class__.logModRecs % {'type': u'%s ' % group_type,
-                              'count': sum(mod_count[group_type].values())})
-            for srcMod in load_order.get_ordered(mod_count[group_type].keys()):
-                log(u'  * %s: %d' % (srcMod.s, mod_count[group_type][srcMod]))
+        for group_sig in sorted(mod_count.keys()):
+            log(self.__class__.logModRecs % {'type': u'%s ' % group_sig,
+                              'count': sum(mod_count[group_sig].values())})
+            for srcMod in load_order.get_ordered(mod_count[group_sig].keys()):
+                log(u'  * %s: %d' % (srcMod.s, mod_count[group_sig][srcMod]))
         self.mod_count = defaultdict(Counter)
 
     def scan(self,modFile,record,bashTags):

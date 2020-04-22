@@ -277,8 +277,7 @@ class CIstr(unicode):
         return NotImplemented
     #--repr
     def __repr__(self):
-        return '{0}({1})'.format(type(self).__name__,
-                                 super(CIstr, self).__repr__())
+        return u'%s(%s)' % (type(self).__name__, super(CIstr, self).__repr__())
 
 def _ci_str(maybe_str):
     """dict keys can be any hashable object - only call CIstr if str"""
@@ -337,8 +336,8 @@ class LowerDict(dict):
         return super(LowerDict, cls).fromkeys((_ci_str(k) for k in keys), v)
 
     def __repr__(self):
-        return '{0}({1})'.format(type(self).__name__,
-                                 super(LowerDict, self).__repr__())
+        return u'%s(%s)' % (
+            type(self).__name__, super(LowerDict, self).__repr__())
 
 class DefaultLowerDict(LowerDict, collections.defaultdict):
     """LowerDict that inherits from defaultdict."""
@@ -353,7 +352,7 @@ class DefaultLowerDict(LowerDict, collections.defaultdict):
         return type(self)(self.default_factory, self)
 
     def __repr__(self):
-        return '{0}({1},{2})'.format(type(self).__name__, self.default_factory,
+        return u'%s(%s, %s)' % (type(self).__name__, self.default_factory,
             super(collections.defaultdict, self).__repr__())
 
 class OrderedLowerDict(LowerDict, collections.OrderedDict):
