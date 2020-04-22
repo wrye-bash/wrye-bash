@@ -310,7 +310,7 @@ def InitInstallerLinks():
         packageMenu.links.append(InstallerProject_ReleasePack())
         packageMenu.links.append(SeparatorLink())
         packageMenu.links.append(Installer_ListStructure())
-        packageMenu.links.append(InstallerProject_Sync())
+        packageMenu.links.append(Installer_SyncFromData())
         packageMenu.links.append(InstallerArchive_Unpack())
         packageMenu.links.append(Installer_CopyConflicts())
         InstallersList.itemMenu.append(packageMenu)

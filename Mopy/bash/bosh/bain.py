@@ -615,7 +615,7 @@ class Installer(object):
          call graph from here should be the path that needs optimization (
          irefresh, ShowPanel ?)
          - in InstallersPanel.refreshCurrent()
-         - in 2 subclasses' install() and InstallerProject.syncToData()
+         - in 2 subclasses' install() and InstallerProject.sync_from_data()
          - in _Installers_Skip._do_installers_refresh()
          - in _RefreshingLink (override skips, HasExtraData, skip voices)
          - in Installer_CopyConflicts
@@ -1021,6 +1021,81 @@ class Installer(object):
         return self.status != oldStatus or self.underrides != oldUnderrides
 
     #--Utility methods --------------------------------------------------------
+    def packToArchive(self, project, archive, isSolid, blockSize,
+            progress=None, release=False):
+        """Packs project to build directory. Release filters out development
+        material from the archive. Needed for projects and to repack archives
+        when syncing from Data."""
+        length = len(self.fileSizeCrcs)
+        if not length: return
+        archive, archiveType, solid = compressionSettings(archive, blockSize,
+                                                          isSolid)
+        outDir = bass.dirs[u'installers']
+        realOutFile = outDir.join(archive)
+        outFile = outDir.join(u'bash_temp_nonunicode_name.tmp')
+        num = 0
+        while outFile.exists():
+            outFile += unicode(num)
+            num += 1
+        project = outDir.join(project)
+        with project.unicodeSafe() as projectDir:
+            #--Dump file list
+            with self.tempList.open('w',encoding='utf-8-sig') as out:
+                if release:
+                    out.write(u'*thumbs.db\n')
+                    out.write(u'*desktop.ini\n')
+                    out.write(u'*meta.ini\n')
+                    out.write(u'--*\\')
+            #--Compress
+            command = (u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" '
+                       u'-x@%s -scsUTF-8 -sccUTF-8' % (
+                archives.exe7z, outFile.temp.s, archiveType, solid,
+                outDir.s, projectDir.s, self.tempList.s))
+            try:
+                # Safe to call without unicodeSafe because the name we chose is
+                # static and therefore guaranteed ASCII. Note that we lie a bit
+                # here - the third argument will be shown to the user, so we
+                # show the final archive name instead of the temp one we're
+                # internally using.
+                compress7z(command, outFile, archive, projectDir, progress)
+            finally:
+                self.tempList.remove()
+            outFile.moveTo(realOutFile)
+
+    def removeEmpties(self, target_dir=None):
+        """Removes empty directories from project directory."""
+        if not target_dir:
+            if not self.is_project():
+                raise StateError(u'removeEmpties must be either given a path '
+                                 u'or used on a project.')
+            target_dir = self.ipath.s
+        empties = set()
+        for asDir, sDirs, sFiles in bolt.walkdir(target_dir):
+            if not (sDirs or sFiles): empties.add(GPath(asDir))
+        for empty in empties: empty.removedirs()
+        self.ipath.makedirs() #--In case it just got wiped out.
+
+    def _do_sync_data(self, proj_dir, delta_files):
+        """Performs a Sync from Data on the specified project directory with
+        the specified missing or mismatched files."""
+        data_dir_join = bass.dirs[u'mods'].join
+        norm_ghost_get = Installer.getGhosted().get
+        upt_numb = del_numb = 0
+        proj_dir_join = proj_dir.join
+        for rel_src, rel_dest in self.refreshDataSizeCrc().iteritems():
+            if rel_src not in delta_files: continue
+            full_src = data_dir_join(norm_ghost_get(rel_src, rel_src))
+            full_dest = proj_dir_join(rel_dest)
+            if not full_src.exists():
+                full_dest.remove()
+                del_numb += 1
+            else:
+                full_src.copyTo(full_dest)
+                upt_numb += 1
+        if upt_numb or del_numb:
+            self.removeEmpties(proj_dir.s)
+        return upt_numb, del_numb
+
     def size_or_mtime_changed(self, apath):
         return (self.size, self.modified) != apath.size_mtime()
 
@@ -1141,6 +1216,14 @@ class Installer(object):
         mods and ini lists is needed.
         :rtype: tuple
         """
+        raise AbstractError
+
+    def sync_from_data(self, delta_files):
+        """Updates this installer according to the specified files in the Data
+        directory.
+
+        :param delta_files: The missing or mismatched files to sync.
+        :type delta_files: set[bolt.CIstr]"""
         raise AbstractError
 
 #------------------------------------------------------------------------------
@@ -1310,7 +1393,7 @@ class InstallerArchive(Installer):
     @staticmethod
     def _list_package(apath, log):
         with apath.unicodeSafe() as tempArch:
-            filepath = [u'']
+            filepath = [u''] # PY3: nonlocal
             list_text = []
             def _parse_archive_line(key, value):
                 if key == u'Path':
@@ -1391,6 +1474,21 @@ class InstallerArchive(Installer):
     def fomod_file(self):
         return self._extract_wizard_files(self.has_fomod_conf,
                                           _(u'Extracting FOMOD files...'))
+
+    def sync_from_data(self, delta_files): ##: add a progress param?
+        # Extract to a temp project, then perform the sync as if it were a
+        # regular project and finally repack
+        unpack_dir = self.unpackToTemp([x[0] for x in self.fileSizeCrcs],
+            recurse=True)
+        upt_numb, del_numb = self._do_sync_data(unpack_dir, delta_files)
+        archive_name = GPath(self.archive)
+        new_archive = archive_name.root + (
+            archive_name.cext if archive_name.cext != u'.rar'
+            else archives.defaultExt)
+        self.packToArchive(unpack_dir, new_archive, isSolid=True,
+                           blockSize=None)
+        bass.rmTempDir()
+        return upt_numb, del_numb
 
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):
@@ -1480,14 +1578,6 @@ class InstallerProject(Installer):
             mtime = 0
         return self.modified != mtime
 
-    def removeEmpties(self):
-        """Removes empty directories from project directory."""
-        empties = set()
-        for asDir, sDirs, sFiles in bolt.walkdir(self.ipath.s):
-            if not (sDirs or sFiles): empties.add(GPath(asDir))
-        for empty in empties: empty.removedirs()
-        self.ipath.makedirs() #--In case it just got wiped out.
-
     def _refreshSource(self, progress, recalculate_project_crc):
         """Refresh src_sizeCrcDate, fileSizeCrcs, size, modified, crc from
         project directory, set project_refreshed to True."""
@@ -1515,69 +1605,8 @@ class InstallerProject(Installer):
         return self._fs_install(dest_src, srcDirJoin, progress, progressPlus,
                                 None)
 
-    def syncToData(self, projFiles):
-        """Copies specified projFiles from Oblivion\Data to project
-        directory.
-        :type projFiles: set[bolt.CIstr]"""
-        srcDir = bass.dirs['mods']
-        srcProj = tuple(
-            (x, y) for x, y in self.refreshDataSizeCrc().iteritems() if
-            x in projFiles)
-        if not srcProj: return 0,0
-        #--Sync Files
-        updated = removed = 0
-        norm_ghost = Installer.getGhosted()
-        projDirJoin = self.ipath.join
-        for src,proj in srcProj:
-            srcFull = srcDir.join(norm_ghost.get(src,src))
-            projFull = projDirJoin(proj)
-            if not srcFull.exists():
-                projFull.remove()
-                removed += 1
-            else:
-                srcFull.copyTo(projFull)
-                updated += 1
-        self.removeEmpties()
-        return updated,removed
-
-    def packToArchive(self,project,archive,isSolid,blockSize,progress=None,release=False):
-        """Packs project to build directory. Release filters out development
-        material from the archive"""
-        length = len(self.fileSizeCrcs)
-        if not length: return
-        archive, archiveType, solid = compressionSettings(archive, blockSize,
-                                                          isSolid)
-        outDir = bass.dirs['installers']
-        realOutFile = outDir.join(archive)
-        outFile = outDir.join(u'bash_temp_nonunicode_name.tmp')
-        num = 0
-        while outFile.exists():
-            outFile += unicode(num)
-            num += 1
-        project = outDir.join(project)
-        with project.unicodeSafe() as projectDir:
-            #--Dump file list
-            with self.tempList.open('w',encoding='utf-8-sig') as out:
-                if release:
-                    out.write(u'*thumbs.db\n')
-                    out.write(u'*desktop.ini\n')
-                    out.write(u'*meta.ini\n')
-                    out.write(u'--*\\')
-            #--Compress
-            command = (u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" '
-                       u'-x@%s -scsUTF-8 -sccUTF-8' % (
-                archives.exe7z, outFile.temp.s, archiveType, solid,
-                outDir.s, projectDir.s, self.tempList.s))
-            try:
-                # Safe to call without unicodeSafe because the name we chose is
-                # static and therefore guaranteed ASCII. Note that we lie a bit
-                # here - the third argument will be shown to the user, so we
-                # show the final archive name instead of the temp one we're
-                # internally using.
-                compress7z(command, outFile, archive, projectDir, progress)
-            finally:
-                self.tempList.remove()
-            outFile.moveTo(realOutFile)
+    def sync_from_data(self, delta_files):
+        return self._do_sync_data(self.ipath, delta_files)
 
     @staticmethod
     def _list_package(apath, log):

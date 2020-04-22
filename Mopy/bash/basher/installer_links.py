@@ -58,7 +58,7 @@ __all__ = ['Installer_Open', 'Installer_Duplicate', 'InstallerOpenAt_MainMenu',
            'Installer_Uninstall', 'InstallerConverter_MainMenu',
            'InstallerConverter_Create', 'InstallerConverter_ConvertMenu',
            'InstallerProject_Pack', 'InstallerArchive_Unpack',
-           'InstallerProject_ReleasePack', 'InstallerProject_Sync',
+           'InstallerProject_ReleasePack', 'Installer_SyncFromData',
            'Installer_CopyConflicts', 'InstallerProject_OmodConfig',
            'Installer_ListStructure', 'Installer_Espm_SelectAll',
            'Installer_Espm_DeselectAll', 'Installer_Espm_List',
@@ -1068,20 +1068,28 @@ class InstallerProject_OmodConfig(_SingleProject):
     def Execute(self):
         InstallerProject_OmodConfigDialog(self.window, self.idata,
                                           self._selected_item).show_frame()
-
 #------------------------------------------------------------------------------
-class InstallerProject_Sync(_SingleProject):
-    """Synchronize the project with files from the Data directory."""
+class Installer_SyncFromData(_SingleInstallable):
+    """Synchronize an archive or project with files from the Data directory."""
     _text = _(u'Sync from Data')
-    _help = _(u'Synchronize the project with files from the Data directory') + \
-        u'.  ' + _(u'Currently only for projects (not archives)')
+    _help = _(u'Synchronize an installer with files from the Data directory')
 
     def _enable(self):
-        if not super(InstallerProject_Sync, self)._enable(): return False
+        if not super(Installer_SyncFromData, self)._enable(): return False
         return bool(self._selected_info.missingFiles or
                     self._selected_info.mismatchedFiles)
 
     def Execute(self):
+        if self._selected_item.cext == u'.rar':
+            if not self._askYes(
+                    _(u'.rar files cannot be modified. Wrye Bash can however '
+                      u'repack them to .7z files, which can then be '
+                      u'modified.') + u'\n\n' +
+                    _(u'Note that doing this will leave the old .rar file '
+                      u'behind, so you may want to manually delete it '
+                      u'afterwards.') + u'\n\n' +
+                    _(u"Click 'Yes' to repack, or 'No' to abort the sync.")):
+                return # user clicked 'No'
         missing = sorted(self._selected_info.missingFiles)
         mismatched = sorted(self._selected_info.mismatchedFiles)
         msg_del = [_(u'Files to delete (%u):') % len(missing),
@@ -1104,7 +1112,18 @@ class InstallerProject_Sync(_SingleProject):
         #--Sync it, baby!
         with balt.Progress(self._text, u'\n' + u' ' * 60) as progress:
             progress(0.1,_(u'Updating files.'))
-            self._selected_info.syncToData(sel_missing | sel_mismatched)
+            actual_upd, actual_del = self._selected_info.sync_from_data(
+                sel_missing | sel_mismatched)
+            if (actual_del != len(sel_missing)
+                    or actual_upd != len(sel_mismatched)):
+                self._showWarning(
+                    _(u'Something went wrong when updating "%s" installer.') %
+                    self._selected_info.archive + u'\n' +
+                    _(u'Deleted %s. Expected to delete %s file(s).') % (
+                        actual_del, len(sel_missing)) + u'\n' +
+                    _(u'Updated %s. Expected to update %s file(s).') % (
+                        actual_upd, len(sel_mismatched))  + u'\n' +
+                    _(u'Check the integrity of the installer.'))
             self._selected_info.refreshBasic(SubProgress(progress, 0.1, 0.99))
             self.idata.irefresh(what='NS')
             self.window.RefreshUI()
