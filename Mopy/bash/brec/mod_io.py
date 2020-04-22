@@ -75,6 +75,7 @@ class RecordHeader(object):
 class RecHeader(RecordHeader):
     """Fixed size structure defining next record."""
     __slots__ = (u'flags1', u'fid', u'flags2')
+    is_top_group_header = False
 
     def __init__(self, recType=b'TES4', size=0, arg1=0, arg2=0, arg3=0, arg4=0):
         """Fixed size structure defining next record.
@@ -115,19 +116,20 @@ class GrupHeader(RecordHeader):
     signaling a block of same type records ahead."""
     __slots__ = (u'label', u'groupType', u'stamp')
 
-    def __init__(self, recType=b'GRUP', size=0, arg1=0, arg2=0, arg3=0, arg4=0):
+    def __init__(self, grup_size=0, grup_records_sig=b'', arg2=0, arg3=0,
+                 arg4=0):
         """Fixed size structure serving as a fencepost in the plugin file,
         signaling a block of same type records ahead.
 
-        :param recType: signature of record - for GRUP this is always GRUP
-        :param size: size of current record, not entire file
-        :param arg1: type of records to follow, GMST, KYWD, etc
+        :param grup_size: size of current GRUP in bytes, including the size of
+                          this header
+        :param grup_records_sig: type of records to follow, GMST, KYWD, etc
         :param arg2: Group Type 0 to 10 see UESP Wiki
         :param arg3: 2h, possible time stamp, unknown
         :param arg4: 0 for known mods (2h, form_version, unknown ?)"""
-        self.recType = recType
-        self.size = size
-        self.label = arg1
+        self.recType = b'GRUP'
+        self.size = grup_size
+        self.label = grup_records_sig
         self.groupType = arg2
         self.stamp = arg3
         self.extra = arg4
@@ -136,27 +138,44 @@ class GrupHeader(RecordHeader):
         """Return the record header packed into a bitstream to be written to
         file. We decide what kind of GRUP we have based on the type of
         label, hacky but to redo this we must revisit records code."""
-        if isinstance(self.label, str):
-            pack_args = [__rh.pack_formats[0], self.recType, self.size,
-                         self.label, self.groupType, self.stamp]
-        elif isinstance(self.label, tuple):
-            pack_args = [__rh.pack_formats[4], self.recType, self.size,
+        if isinstance(self.label, tuple):
+            pack_args = [__rh.pack_formats[4], b'GRUP', self.size,
                          self.label[0], self.label[1], self.groupType,
                          self.stamp]
         else:
-            pack_args = [__rh.pack_formats[1], self.recType, self.size,
+            pack_args = [__rh.pack_formats[1], b'GRUP', self.size,
                          self.label, self.groupType, self.stamp]
         if __rh.plugin_form_version:
             pack_args.append(self.extra)
         return struct_pack(*pack_args)
 
+    def skip_group(self, ins): # won't be called often, no need for inlines
+        # type: (ModReader) -> None
+        """Skip the group - ins must be positioned at the beginning of the
+        block of group records, ie call this immediately after unpacking self.
+        """
+        ins.seek(self.size - self.__class__.rec_header_size, 1,
+                 b'GRUP.' + self.label)
+
     def __repr__(self):
         return u'<GRUP Header: %s v%u>' % (self.label, self.form_version)
+
+class TopGrupHeader(GrupHeader):
+    """Fixed size structure signaling a top level group of records."""
+    __slots__ = ()
+    is_top_group_header = True
+
+    def pack_head(self, __rh=RecordHeader):
+        pack_args = [__rh.pack_formats[0], b'GRUP', self.size,
+                     self.label, self.groupType, self.stamp]
+        if __rh.plugin_form_version:
+            pack_args.append(self.extra)
+        return struct_pack(*pack_args)
 
 def unpack_header(ins, __rh=RecordHeader):
     """Header factory."""
     # args = header_sig, size, uint0, uint1, uint2[, uint3]
-    args = ins.unpack(__rh.header_unpack, __rh.rec_header_size, 'REC_HEADER')
+    args = ins.unpack(__rh.header_unpack, __rh.rec_header_size, 'REC_HEADER') # PY3: header_sig, *args = ...
     #--Bad type?
     header_sig = args[0]
     if header_sig not in __rh.valid_header_sigs:
@@ -167,14 +186,15 @@ def unpack_header(ins, __rh=RecordHeader):
         return RecHeader(*args)
     #--Top Group
     elif args[3] == 0: #groupType == 0 (Top Type)
-        str0 = struct_pack('I', args[2])
+        str0 = struct_pack(u'I', args[2])
         if str0 in __rh.top_grup_sigs:
             args = list(args)
             args[2] = str0
+            return TopGrupHeader(*args[1:])
         else:
             raise exception.ModError(ins.inName,
                                      u'Bad Top GRUP type: %r' % str0)
-    return GrupHeader(*args)
+    return GrupHeader(*args[1:])
 
 #------------------------------------------------------------------------------
 # Low-level reading/writing ---------------------------------------------------
@@ -376,15 +396,6 @@ class ModWriter(object):
         """Write subrecord header and fid reference."""
         if fid is not None:
             self.out.write(struct_pack('=4sHI', sub_rec_type, 4, fid))
-
-    def writeGroup(self,size,label,groupType,stamp): # TODO the format strings
-        # here are the Oblivion ones? use GrupHeader('GRUP',size,label,groupType,stamp).pack_head(self)?
-        if type(label) is str:
-            self.pack('=4sI4sII','GRUP',size,label,groupType,stamp)
-        elif type(label) is tuple:
-            self.pack('=4sIhhII','GRUP',size,label[1],label[0],groupType,stamp)
-        else:
-            self.pack('=4s4I','GRUP',size,label,groupType,stamp)
 
     def write_string(self, sub_type, string_val, max_size=0, min_size=0,
                      preferred_encoding=None):

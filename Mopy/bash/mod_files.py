@@ -32,7 +32,7 @@ from . import bolt, bush, env, load_order
 from .bass import dirs
 from .bolt import deprint, GPath, SubProgress
 from .brec import MreRecord, ModReader, ModWriter, RecordHeader, RecHeader, \
-    GrupHeader
+    TopGrupHeader
 from .exception import ArgumentError, MasterMapError, ModError, StateError
 from .record_groups import MobBase, MobDials, MobICells, MobObjects, MobWorlds
 
@@ -176,8 +176,8 @@ class ModFile(object):
         elif topType in __rh.top_grup_sigs:
             topClass = self.loadFactory.getTopClass(topType)
             try:
-                self.tops[topType] = topClass(
-                    GrupHeader(b'GRUP', 0, topType, 0, 0), self.loadFactory)
+                self.tops[topType] = topClass(TopGrupHeader(0, topType, 0, 0),
+                                              self.loadFactory)
             except TypeError:
                 raise ModError(
                     self.fileInfo.name,
@@ -225,8 +225,7 @@ class ModFile(object):
             while not insAtEnd():
                 #--Get record info and handle it
                 header = insRecHeader()
-                type = header.recType
-                if type != b'GRUP' or header.groupType != 0:
+                if not header.is_top_group_header:
                     raise ModError(self.fileInfo.name,u'Improperly grouped file.')
                 label,size = header.label,header.size
                 topClass = self.loadFactory.getTopClass(label)
@@ -236,8 +235,7 @@ class ModFile(object):
                         self.tops[label].load(ins, do_unpack and (topClass != MobBase))
                     else:
                         self.topsSkipped.add(label)
-                        insSeek(size - RecordHeader.rec_header_size, 1,
-                                u'%s.%s' % (type.decode(u'ascii'), label))
+                        header.skip_group(ins)
                 except:
                     if catch_errors:
                         deprint(u'Error in %s' % self.fileInfo.name.s,

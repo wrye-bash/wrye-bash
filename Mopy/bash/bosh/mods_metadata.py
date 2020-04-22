@@ -722,13 +722,13 @@ class ModDetails(object):
                     # FIXME(ut): monkey patch for fallout QUST GRUP
                     if bush.game.fsName in (u'Fallout4', u'Fallout4VR') and \
                             header.groupType == 10:
-                        ins.seek(rec_siz - RecordHeader.rec_header_size, 1)
+                        header.skip_group(ins)
                         continue
                     label = header.label
                     progress(1.0*ins.tell()/modInfo.size,_(u"Scanning: ")+label)
                     records = group_records.setdefault(label,[])
                     if label in ('CELL', 'WRLD', 'DIAL'): # skip these groups
-                        ins.seek(rec_siz - RecordHeader.rec_header_size, 1)
+                        header.skip_group(ins)
                 else:
                     eid = u''
                     nextRecord = ins.tell() + rec_siz

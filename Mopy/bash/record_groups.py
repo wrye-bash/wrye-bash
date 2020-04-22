@@ -28,7 +28,7 @@ from __future__ import division, print_function
 import struct
 from operator import itemgetter
 # Wrye Bash imports
-from .brec import ModReader, RecordHeader, GrupHeader
+from .brec import ModReader, RecordHeader, GrupHeader, TopGrupHeader
 from .bolt import sio
 from . import bush # for fallout3/nv fsName
 from .exception import AbstractError, ArgumentError, ModError
@@ -53,7 +53,7 @@ class MobBase(object):
     support unpacking, but can report its number of records and be written."""
 
     __slots__ = ['header','size','label','groupType','stamp','debug','data',
-                 'changed','numRecords','loadFactory','inName']
+                 'changed','numRecords','loadFactory','inName'] ##: nice collection of forbidden names, including header -> group_header
 
     def __init__(self, header, loadFactory, ins=None, do_unpack=False):
         self.header = header
@@ -61,7 +61,7 @@ class MobBase(object):
         if header.recType == b'GRUP':
             self.label, self.groupType, self.stamp = (
                 header.label, header.groupType, header.stamp)
-        else:
+        else: # TODO(ut) should MobBase used for *non* GRUP headers??
             # Yes it's weird, but this is how it needs to work
             self.label, self.groupType, self.stamp = (
                 header.flags1, header.fid, header.flags2)
@@ -211,14 +211,13 @@ class MobObjects(MobBase):
     def dump(self,out):
         """Dumps group header and then records."""
         if not self.changed:
-            out.write(GrupHeader(b'GRUP', self.size, self.label, 0,
-                                 self.stamp).pack_head())
+            out.write(TopGrupHeader(self.size, self.label, 0, ##: self.header.pack_head() ?
+                                    self.stamp).pack_head())
             out.write(self.data)
         else:
             size = self.getSize()
             if size == RecordHeader.rec_header_size: return
-            out.write(GrupHeader(b'GRUP', size, self.label, 0,
-                                 self.stamp).pack_head())
+            out.write(TopGrupHeader(size,self.label,0,self.stamp).pack_head())
             for record in self.records:
                 record.dump(out)
 
@@ -497,13 +496,13 @@ class MobCell(MobBase):
         self.cell.dump(out)
         childrenSize = self.getChildrenSize()
         if not childrenSize: return
-        out.writeGroup(childrenSize,self.cell.fid,6,self.stamp)
+        self._write_group_header(out, childrenSize, 6)
         if self.persistent:
-            out.writeGroup(self.getPersistentSize(),self.cell.fid,8,self.stamp)
+            self._write_group_header(out, self.getPersistentSize(), 8)
             for record in self.persistent:
                 record.dump(out)
         if self.temp or self.pgrd or self.land:
-            out.writeGroup(self.getTempSize(),self.cell.fid,9,self.stamp)
+            self._write_group_header(out, self.getTempSize(), 9)
             if self.pgrd:
                 self.pgrd.dump(out)
             if self.land:
@@ -511,9 +510,13 @@ class MobCell(MobBase):
             for record in self.temp:
                 record.dump(out)
         if self.distant:
-            out.writeGroup(self.getDistantSize(),self.cell.fid,10,self.stamp)
+            self._write_group_header(out, self.getDistantSize(), 10)
             for record in self.distant:
                 record.dump(out)
+
+    def _write_group_header(self, out, group_size, group_type):
+        out.write(GrupHeader(group_size, self.cell.fid, group_type,
+                             self.stamp).pack_head()) # FIXME was TESIV only - self.extra??
 
     #--Fid manipulation, record filtering ----------------------------------
     def convertFids(self,mapper,toLong):
@@ -615,7 +618,7 @@ class MobCells(MobBase):
         if fid in self.id_cellBlock:
             self.id_cellBlock[fid].cell = cell
         else:
-            cellBlock = MobCell(GrupHeader(b'GRUP', 0, 0, 6, self.stamp),
+            cellBlock = MobCell(GrupHeader(0, 0, 6, self.stamp), ##: Note label is 0 here - specialized GrupHeader subclass?
                                 self.loadFactory, cell)
             cellBlock.setChanged()
             self.cellBlocks.append(cellBlock)
@@ -664,12 +667,12 @@ class MobCells(MobBase):
             bsb0 = (block,None)
             if block != curBlock:
                 curBlock,curSubblock = bsb0
-                outWrite(GrupHeader(b'GRUP', bsb_size[bsb0], block,
-                                    blockGroupType, stamp).pack_head())
+                outWrite(GrupHeader(bsb_size[bsb0], block, blockGroupType, ##: Here come the tuples - specialized GrupHeader subclass?
+                                    stamp).pack_head())
             if subblock != curSubblock:
                 curSubblock = subblock
-                outWrite(GrupHeader(b'GRUP', bsb_size[bsb], subblock,
-                                    subBlockGroupType, stamp).pack_head())
+                outWrite(GrupHeader(bsb_size[bsb], subblock, subBlockGroupType, ##: Here come the tuples - specialized GrupHeader subclass?
+                                    stamp).pack_head())
             cellBlock.dump(out)
 
     def getNumRecords(self,includeGroups=1):
@@ -1085,7 +1088,7 @@ class MobWorlds(MobBase):
         else:
             if not self.worldBlocks: return
             worldHeaderPos = out.tell()
-            header = GrupHeader(b'GRUP', 0, self.label, 0, self.stamp)
+            header = TopGrupHeader(0, self.label, 0, self.stamp)
             out.write(header.pack_head())
             totalSize = RecordHeader.rec_header_size + sum(
                 x.dump(out) for x in self.worldBlocks)
@@ -1134,7 +1137,7 @@ class MobWorlds(MobBase):
             self.id_worldBlocks[fid].world = world
             self.id_worldBlocks[fid].worldCellBlock = worldcellblock
         else:
-            worldBlock = MobWorld(GrupHeader(b'GRUP', 0, 0, 1, self.stamp),
+            worldBlock = MobWorld(GrupHeader(0, 0, 1, self.stamp), ##: groupType = 1
                                   self.loadFactory, world)
             worldBlock.setChanged()
             self.worldBlocks.append(worldBlock)

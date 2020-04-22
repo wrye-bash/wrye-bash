@@ -35,7 +35,7 @@ from .advanced_elements import AttrExistsDecider, AttrValDecider, MelArray, \
 from .basic_elements import MelBase, MelFid, MelFloat, MelGroups, MelLString, \
     MelNull, MelStruct, MelUInt32, MelSInt32
 from .common_subrecords import MelEdid
-from .mod_io import RecordHeader
+from .mod_io import RecordHeader, GrupHeader
 from .record_structs import MelRecord, MelSet, MreRecord
 from .utils_constants import FID
 from .. import bolt, exception
@@ -348,12 +348,9 @@ class MreDialBase(MelRecord):
         if not self.infos: return
         hsize = __rh.rec_header_size
         dial_size = hsize + sum(hsize + info.getSize() for info in self.infos)
-        # Not all pack targets may be needed - limit the unpacked amount to the
-        # number of specified GRUP format entries
-        pack_targets = ['GRUP', dial_size, self.fid, 7, self.infoStamp,
-                        self.infoStamp2]
-        out.pack(__rh.rec_pack_format_str, # TODO use pack_head here?
-                 *pack_targets[:len(__rh.rec_pack_format)])
+        # pack the header for the group of infos records (?)
+        out.write(GrupHeader(dial_size, self.fid, 7, self.infoStamp,
+                             self.infoStamp2).pack_head())
         for info in self.infos: info.dump(out)
 
     def updateMasters(self,masters):
