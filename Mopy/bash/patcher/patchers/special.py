@@ -201,7 +201,8 @@ class _PListsMerger(_AListsMerger, ListPatcher):
             for stored_list in sorted(stored_lists.values(),
                                       key=attrgetter('eid')):
                 if not stored_list.mergeOverLast: continue
-                list_fid = keep(stored_list.fid)
+                list_fid = stored_list.fid
+                keep(list_fid)
                 patch_block.setRecord(stored_lists[list_fid])
                 log(u'* ' + stored_list.eid)
                 for merge_source in stored_list.mergeSources:

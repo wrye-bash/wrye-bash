@@ -307,8 +307,8 @@ class ModWriter(object):
     def close(self): self.out.close()
 
     #--Additional functions -------------------------------
-    def pack(self,format,*data):
-        self.out.write(struct_pack(format, *data))
+    def pack(self, *args):
+        self.out.write(struct_pack(*args))
 
     def packSub(self, sub_rec_type, data, *values):
         """Write subrecord header and data to output stream.
@@ -331,7 +331,8 @@ class ModWriter(object):
             outWrite(data)
         except Exception:
             bolt.deprint(u'%r: Failed packing: %s, %s, %s' % (
-                self, sub_rec_type, data, values), traceback=True)
+                self, sub_rec_type, data, values))
+            raise
 
     def packSub0(self, sub_rec_type, data):
         """Write subrecord header plus zero terminated string to output

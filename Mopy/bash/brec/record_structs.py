@@ -330,7 +330,7 @@ class MreRecord(object):
         return u'<%(eid)s[%(signature)s:%(fid)s]>' % {
             u'signature': self.recType,
             u'fid': strFid(self.fid),
-            u'eid': (self.eid + u' ' if hasattr(self, 'eid')
+            u'eid': (self.eid + u' ' if hasattr(self, u'eid')
                                      and self.eid is not None else u''),
         }
 
@@ -417,12 +417,12 @@ class MreRecord(object):
         self.subrecords = []
         if not self.data: return
         with self.getReader() as reader:
-            recType = self.recType
+            _rec_sig_ = self.recType
             readAtEnd = reader.atEnd
             readSubHeader = reader.unpackSubHeader
             subAppend = self.subrecords.append
-            while not readAtEnd(reader.size,recType):
-                (type,size) = readSubHeader(recType)
+            while not readAtEnd(reader.size,_rec_sig_):
+                (type,size) = readSubHeader(_rec_sig_)
                 subAppend(MreSubrecord(type,size,reader))
 
     def convertFids(self,mapper,toLong):
@@ -508,13 +508,13 @@ class MreRecord(object):
         # No subrecords, but we have data.
         elif self.data:
             with self.getReader() as reader:
-                recType = self.recType
+                _rec_sig_ = self.recType
                 readAtEnd = reader.atEnd
                 readSubHeader = reader.unpackSubHeader
                 readSeek = reader.seek
                 readRead = reader.read
-                while not readAtEnd(reader.size,recType):
-                    (type,size) = readSubHeader(recType)
+                while not readAtEnd(reader.size,_rec_sig_):
+                    (type,size) = readSubHeader(_rec_sig_)
                     if type != subType:
                         readSeek(size,1)
                     else:

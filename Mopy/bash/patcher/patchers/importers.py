@@ -177,10 +177,10 @@ class _SimpleImporter(ImportPatcher):
         In:
             KFFZPatcher, DeathItemPatcher, ImportScripts, SoundPatcher
         """
-        id_data, set_id_data = self.id_data, set(self.id_data)
+        id_data = self.id_data
         for record in records:
             rec_fid = record.fid
-            if rec_fid not in set_id_data: continue
+            if rec_fid not in id_data: continue
             for attr, value in id_data[rec_fid].iteritems():
                 if record.__getattribute__(attr) != value: break
             else: continue
@@ -408,7 +408,8 @@ class CellImporter(ImportPatcher):
             Modified cell Blocks are kept, the other are discarded.
             """
             modified=False
-            for attr,value in cellData[patchCellBlock.cell.fid].iteritems():
+            patch_cell_fid = patchCellBlock.cell.fid
+            for attr,value in cellData[patch_cell_fid].iteritems():
                 if attr == 'regions':
                     if set(value).difference(set(patchCellBlock.cell.__getattribute__(attr))):
                         patchCellBlock.cell.__setattr__(attr, value)
@@ -418,26 +419,27 @@ class CellImporter(ImportPatcher):
                         patchCellBlock.cell.__setattr__(attr, value)
                         modified=True
             for flag, value in cellData[
-                        patchCellBlock.cell.fid + ('flags',)].iteritems():
+                patch_cell_fid + ('flags',)].iteritems():
                 if patchCellBlock.cell.flags.__getattr__(flag) != value:
                     patchCellBlock.cell.flags.__setattr__(flag, value)
                     modified=True
             if modified:
                 patchCellBlock.cell.setChanged()
-                keep(patchCellBlock.cell.fid)
+                keep(patch_cell_fid)
             return modified
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         cellData, count = self.cellData, Counter()
         for cellBlock in self.patchFile.CELL.cellBlocks:
-            if cellBlock.cell.fid in cellData and handlePatchCellBlock(cellBlock):
-                count[cellBlock.cell.fid[0]] += 1
+            cell_fid = cellBlock.cell.fid
+            if cell_fid in cellData and handlePatchCellBlock(cellBlock):
+                count[cell_fid[0]] += 1
         for worldBlock in self.patchFile.WRLD.worldBlocks:
             keepWorld = False
             for cellBlock in worldBlock.cellBlocks:
-                if cellBlock.cell.fid in cellData and handlePatchCellBlock(
-                        cellBlock):
-                    count[cellBlock.cell.fid[0]] += 1
+                cell_fid = cellBlock.cell.fid
+                if cell_fid in cellData and handlePatchCellBlock(cellBlock):
+                    count[cell_fid[0]] += 1
                     keepWorld = True
             if worldBlock.worldCellBlock:
                 if worldBlock.worldCellBlock.cell.fid in cellData:

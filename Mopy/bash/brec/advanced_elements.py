@@ -336,8 +336,8 @@ class MelArray(MelBase):
         MelBase.__init__(self, next(iter(element.signatures)), array_attr)
         self._element = element
         # Underscore means internal usage only - e.g. distributor state
-        self._element_attrs = [s for s in element.getSlotsUsed()
-                              if not s.startswith('_')]
+        self._element_attrs = [s for s in element.getSlotsUsed() if
+                               not s.startswith(u'_')]
         if prelude and prelude.subType != element.subType:
             raise SyntaxError(u'MelArray preludes must have the same '
                               u'signature as the main element')

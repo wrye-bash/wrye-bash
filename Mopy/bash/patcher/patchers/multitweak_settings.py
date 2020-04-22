@@ -102,7 +102,9 @@ class GmstTweak(DynamicNamedTweak, MultiTweakItem):
                 gmst = MreRecord.type_class['GMST'](
                     RecordHeader('GMST', 0, 0, 0, 0))
                 gmst.eid,gmst.value,gmst.longFids = eid,value,True
-                fid = gmst.fid = keep(gmst.getGMSTFid())
+                gmst_fid = gmst.getGMSTFid()
+                gmst.fid = gmst_fid
+                keep(gmst_fid)
                 patchFile.GMST.setRecord(gmst)
         if len(self.choiceLabels) > 1:
             if self.choiceLabels[self.chosen].startswith(_(u'Custom')):

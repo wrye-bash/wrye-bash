@@ -80,18 +80,18 @@ class MobBase(object):
                                  type(self))
         #--Analyze ins.
         elif ins is not None:
-            self.loadData(ins, ins.tell() +
-                          self.size - RecordHeader.rec_header_size)
+            self.load_rec_group(ins,
+                ins.tell() + self.size - RecordHeader.rec_header_size)
         #--Analyze internal buffer.
         else:
             with self.getReader() as reader:
-                self.loadData(reader,reader.size)
+                self.load_rec_group(reader, reader.size)
         #--Discard raw data?
         if do_unpack:
             self.data = None
             self.setChanged()
 
-    def loadData(self,ins,endPos):
+    def load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         raise AbstractError
 
@@ -166,7 +166,7 @@ class MobObjects(MobBase):
         self.id_records = {}
         MobBase.__init__(self, header, loadFactory, ins, do_unpack)
 
-    def loadData(self,ins,endPos):
+    def load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         expType = self.label
         recClass = self.loadFactory.getRecClass(expType)
@@ -272,12 +272,12 @@ class MobObjects(MobBase):
             self.records.append(record)
         self.id_records[record_id] = record
 
-    def keepRecords(self,keepIds):
-        """Keeps records with fid in set keepIds. Discards the rest."""
+    def keepRecords(self, p_keep_ids):
+        """Keeps records with fid in set p_keep_ids. Discards the rest."""
         from . import bosh
         self.records = [record for record in self.records if (record.fid == (
             record.isKeyedByEid and bosh.modInfos.masterName,
-            0) and record.eid in keepIds) or record.fid in keepIds]
+            0) and record.eid in p_keep_ids) or record.fid in p_keep_ids]
         self.id_records.clear()
         self.setChanged()
 
@@ -298,7 +298,7 @@ class MobObjects(MobBase):
 class MobDials(MobObjects):
     """DIAL top block of mod file."""
 
-    def loadData(self,ins,endPos):
+    def load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         expType = self.label
         recClass = self.loadFactory.getRecClass(expType)
@@ -381,7 +381,7 @@ class MobCell(MobBase):
         self.pgrd = None
         MobBase.__init__(self, header, loadFactory, ins, do_unpack)
 
-    def loadData(self,ins,endPos):
+    def load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         cellType_class = self.loadFactory.getCellTypeClass()
         persistent,temp,distant = self.persistent,self.temp,self.distant
@@ -571,18 +571,18 @@ class MobCell(MobBase):
                     recordList[fids[record.fid]] = record
                     mergeDiscard(record.fid)
 
-    def keepRecords(self,keepIds):
-        """Keeps records with fid in set keepIds. Discards the rest."""
-        if self.pgrd and self.pgrd.fid not in keepIds:
+    def keepRecords(self, p_keep_ids):
+        """Keeps records with fid in set p_keep_ids. Discards the rest."""
+        if self.pgrd and self.pgrd.fid not in p_keep_ids:
             self.pgrd = None
-        if self.land and self.land.fid not in keepIds:
+        if self.land and self.land.fid not in p_keep_ids:
             self.land = None
-        self.temp       = [x for x in self.temp if x.fid in keepIds]
-        self.persistent = [x for x in self.persistent if x.fid in keepIds]
-        self.distant    = [x for x in self.distant if x.fid in keepIds]
+        self.temp       = [x for x in self.temp if x.fid in p_keep_ids]
+        self.persistent = [x for x in self.persistent if x.fid in p_keep_ids]
+        self.distant    = [x for x in self.distant if x.fid in p_keep_ids]
         if self.pgrd or self.land or self.persistent or self.temp or \
                 self.distant:
-            keepIds.add(self.cell.fid)
+            p_keep_ids.add(self.cell.fid)
         self.setChanged()
 
 #------------------------------------------------------------------------------
@@ -679,12 +679,12 @@ class MobCells(MobBase):
         return count
 
     #--Fid manipulation, record filtering ----------------------------------
-    def keepRecords(self,keepIds):
-        """Keeps records with fid in set keepIds. Discards the rest."""
-        #--Note: this call will add the cell to keepIds if any of its
+    def keepRecords(self, p_keep_ids):
+        """Keeps records with fid in set p_keep_ids. Discards the rest."""
+        #--Note: this call will add the cell to p_keep_ids if any of its
         # related records are kept.
-        for cellBlock in self.cellBlocks: cellBlock.keepRecords(keepIds)
-        self.cellBlocks = [x for x in self.cellBlocks if x.cell.fid in keepIds]
+        for cellBlock in self.cellBlocks: cellBlock.keepRecords(p_keep_ids)
+        self.cellBlocks = [x for x in self.cellBlocks if x.cell.fid in p_keep_ids]
         self.id_cellBlock.clear()
         self.setChanged()
 
@@ -716,7 +716,7 @@ class MobCells(MobBase):
 class MobICells(MobCells):
     """Tes4 top block for interior cell records."""
 
-    def loadData(self,ins,endPos):
+    def load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         expType = self.label
         recCellClass = self.loadFactory.getRecClass(expType)
@@ -800,7 +800,7 @@ class MobWorld(MobCells):
         self.road = None
         MobCells.__init__(self, header, loadFactory, ins, do_unpack)
 
-    def loadData(self,ins,endPos):
+    def load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         cellType_class = self.loadFactory.getCellTypeClass()
         errLabel = u'World Block'
@@ -998,17 +998,17 @@ class MobWorld(MobCells):
                                               mergeIds)
         MobCells.updateRecords(self,srcBlock,mapper,mergeIds)
 
-    def keepRecords(self,keepIds):
-        """Keeps records with fid in set keepIds. Discards the rest."""
-        if self.road and self.road.fid not in keepIds:
+    def keepRecords(self, p_keep_ids):
+        """Keeps records with fid in set p_keep_ids. Discards the rest."""
+        if self.road and self.road.fid not in p_keep_ids:
             self.road = None
         if self.worldCellBlock:
-            self.worldCellBlock.keepRecords(keepIds)
-            if self.worldCellBlock.cell.fid not in keepIds:
+            self.worldCellBlock.keepRecords(p_keep_ids)
+            if self.worldCellBlock.cell.fid not in p_keep_ids:
                 self.worldCellBlock = None
-        MobCells.keepRecords(self,keepIds)
+        MobCells.keepRecords(self, p_keep_ids)
         if self.road or self.worldCellBlock or self.cellBlocks:
-            keepIds.add(self.world.fid)
+            p_keep_ids.add(self.world.fid)
 
 #------------------------------------------------------------------------------
 class MobWorlds(MobBase):
@@ -1021,7 +1021,7 @@ class MobWorlds(MobBase):
         self.orphansSkipped = 0
         MobBase.__init__(self, header, loadFactory, ins, do_unpack)
 
-    def loadData(self,ins,endPos):
+    def load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         expType = self.label
         recWrldClass = self.loadFactory.getRecClass(expType)
@@ -1087,7 +1087,7 @@ class MobWorlds(MobBase):
             totalSize = RecordHeader.rec_header_size + sum(
                 x.dump(out) for x in self.worldBlocks)
             out.seek(worldHeaderPos + 4)
-            out.pack('I', totalSize)
+            out.pack(u'I', totalSize)
             out.seek(worldHeaderPos + totalSize)
 
     def getNumRecords(self,includeGroups=True):
@@ -1137,10 +1137,10 @@ class MobWorlds(MobBase):
             self.worldBlocks.append(worldBlock)
             self.id_worldBlocks[fid] = worldBlock
 
-    def keepRecords(self,keepIds):
-        """Keeps records with fid in set keepIds. Discards the rest."""
-        for worldBlock in self.worldBlocks: worldBlock.keepRecords(keepIds)
+    def keepRecords(self, p_keep_ids):
+        """Keeps records with fid in set p_keep_ids. Discards the rest."""
+        for worldBlock in self.worldBlocks: worldBlock.keepRecords(p_keep_ids)
         self.worldBlocks = [x for x in self.worldBlocks if
-                            x.world.fid in keepIds]
+                            x.world.fid in p_keep_ids]
         self.id_worldBlocks.clear()
         self.setChanged()
