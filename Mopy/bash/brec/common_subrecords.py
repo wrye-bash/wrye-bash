@@ -25,30 +25,14 @@
 definitions for some commonly needed subrecords."""
 
 from __future__ import division, print_function
-import struct
-from itertools import product
+from collections import defaultdict
 
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
-    MelUnion
+    MelUnion, PartialLoadDecider
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32
-from .utils_constants import _int_unpacker, null1, null3, null4
-from .. import bolt
-from ..bolt import encode, struct_pack
-
-#------------------------------------------------------------------------------
-def mel_cdta_unpackers(sizes_list, pad=u'I'): ##: see if MelUnion can't do this better
-    """Return compiled structure objects for each combination of size and
-    condition value (?).
-
-    :rtype: dict[unicode, struct.Struct]"""
-    sizes_list = sorted(sizes_list)
-    _formats = {u'11': u'II', u'10': u'Ii', u'01': u'iI', u'00': u'ii'}
-    _formats = {u'%s%d' % (k, s): u'%s%s' % (
-        f, u''.join([pad] * ((s - sizes_list[0]) // 4))) for (k, f), s in
-                product(_formats.items(), sizes_list)}
-    _formats = {k: struct.Struct(v) for (k, v) in _formats.items()}
-    return _formats
+from .utils_constants import _int_unpacker, FID, null1, null2, null3, null4
+from ..bolt import Flags, encode, struct_pack, struct_unpack
 
 #------------------------------------------------------------------------------
 class MelBounds(MelGroup):
@@ -59,6 +43,176 @@ class MelBounds(MelGroup):
             MelStruct('OBND', '=6h', 'boundX1', 'boundY1', 'boundZ1',
                       'boundX2', 'boundY2', 'boundZ2')
         )
+
+#------------------------------------------------------------------------------
+class MelCtda(MelUnion):
+    """Handles a condition. The difficulty here is that the type of its
+    parameters depends on its function index. We handle it by building what
+    amounts to a decision tree using MelUnions."""
+    # 0 = Unknown/Ignored, 1 = Int, 2 = FormID, 3 = Float
+    _param_types = {0: u'4s', 1: u'i', 2: u'I', 3: u'f'}
+    # This technically a lot more complex (the highest three bits also encode
+    # the comparison operator), but we only care about use_global, so we can
+    # treat the rest as unknown flags and just carry them forward
+    _ctda_type_flags = Flags(0, Flags.getNames(
+        u'do_or', u'use_aliases', u'use_global', u'use_packa_data',
+        u'swap_subject_and_target'))
+
+    def __init__(self, ctda_sub_sig=b'CTDA', suffix_fmt=u'',
+                 suffix_elements=[], old_suffix_fmts=set()):
+        """Creates a new MelCtda instance with the specified properties.
+
+        :param ctda_sub_sig: The signature of this subrecord. Probably
+            b'CTDA'.
+        :param suffix_fmt: The struct format string to use, starting after the
+            first two parameters.
+        :param suffix_elements: The struct elements to use, starting after the
+            first two parameters.
+        :param old_suffix_fmts: A set of old versions to pass to
+            MelTruncatedStruct. Must conform to the same syntax as suffix_fmt.
+            May be empty.
+        :type old_versions: set[unicode]"""
+        from .. import bush
+        super(MelCtda, self).__init__({
+            # Build a (potentially truncated) struct for each function index
+            func_index: self._build_struct(func_data, ctda_sub_sig, suffix_fmt,
+                                           suffix_elements, old_suffix_fmts)
+            for func_index, func_data
+            in bush.game.condition_function_data.iteritems()
+        }, decider=PartialLoadDecider(
+            # Skip everything up to the function index in one go, we'll be
+            # discarding this once we rewind anyways.
+            loader=MelStruct(ctda_sub_sig, u'8sH', u'ctda_ignored', u'ifunc'),
+            decider=AttrValDecider(u'ifunc'),
+        ))
+
+    # Helper methods - Note that we skip func_data[0]; the first element is
+    # the function name, which is only needed for puny human brains
+    def _build_struct(self, func_data, ctda_sub_sig, suffix_fmt,
+                      suffix_elements, old_suffix_fmts):
+        """Builds up a struct from the specified jungle of parameters. Mostly
+        inherited from __init__, see there for docs."""
+        # The '4s' here can actually be a float or a FormID. We do *not* want
+        # to handle this via MelUnion, because the deep nesting is going to
+        # cause exponential growth and bring PBash down to a crawl.
+        prefix_fmt = u'B3s4sH2s' + (u'%s' * len(func_data[1:]))
+        prefix_elements = [(self._ctda_type_flags, u'operFlag'),
+                           (u'unused1', null3), u'compValue',
+                           u'ifunc', (u'unused2', null2)]
+        # Builds an argument tuple to use for formatting the struct format
+        # string from above plus the suffix we got passed in
+        fmt_list = tuple([self._param_types[func_param]
+                          for func_param in func_data[1:]])
+        full_old_versions = {(prefix_fmt + f) % fmt_list
+                             for f in old_suffix_fmts}
+        shared_params = ([ctda_sub_sig, (prefix_fmt + suffix_fmt) % fmt_list] +
+                         self._build_params(func_data, prefix_elements,
+                                            suffix_elements))
+        # Only use MelTruncatedStruct if we have old versions, save the
+        # overhead otherwise
+        if old_suffix_fmts:
+            return MelTruncatedStruct(*shared_params,
+                                      old_versions=full_old_versions)
+        return MelStruct(*shared_params)
+
+    def _build_params(self, func_data, prefix_elements, suffix_elements):
+        """Builds a list of struct elements to pass to MelTruncatedStruct."""
+        # First, build up a list of the parameter elemnts to use
+        func_elements = [
+            (FID, u'param%u' % i) if func_param == 2 else u'param%u' % i
+            for i, func_param in enumerate(func_data[1:], start=1)]
+        # Then, combine the suffix, parameter and suffix elements
+        return prefix_elements + func_elements + suffix_elements
+
+    # Nesting workarounds -----------------------------------------------------
+    # To avoid having to test MelUnions too deply - hurts performance even
+    # further (see below) plus grows exponentially
+    def loadData(self, record, ins, sub_type, size_, readId):
+        super(MelCtda, self).loadData(record, ins, sub_type, size_, readId)
+        # See _build_struct comments above for an explanation of this
+        record.compValue = struct_unpack(u'fI'[record.operFlag.use_global],
+                                         record.compValue)[0]
+
+    def mapFids(self, record, function, save=False):
+        super(MelCtda, self).mapFids(record, function, save)
+        if record.operFlag.use_global:
+            new_comp_val = function(record.compValue)
+            if save: record.compValue = new_comp_val
+
+    def dumpData(self, record, out):
+        # See _build_struct comments above for an explanation of this
+        record.compValue = struct_pack(u'fI'[record.operFlag.use_global],
+                                       record.compValue)
+        super(MelCtda, self).dumpData(record, out)
+
+    # Some small speed hacks --------------------------------------------------
+    # To avoid having to ask 100s of unions to each set their defaults,
+    # declare they have fids, etc. Wastes a *lot* of time.
+    def hasFids(self, formElements):
+        self.fid_elements = self.element_mapping.values()
+        formElements.add(self)
+
+    def getLoaders(self, loaders):
+        loaders[next(self.element_mapping.itervalues()).subType] = self
+
+    def getSlotsUsed(self):
+        return (self.decider_result_attr,) + next(
+            self.element_mapping.itervalues()).getSlotsUsed()
+
+    def setDefault(self, record):
+        next(self.element_mapping.itervalues()).setDefault(record)
+
+class MelCtdaFo3(MelCtda):
+    """Version of MelCtda that handles the additional complexities that were
+    introduced in FO3 (and present in all games after that):
+
+    1. The 'reference' element is a FormID if runOn is 2, otherwise it is an
+    unused uint32. Except for the FNV functions IsFacingUp and IsLeftUp, where
+    it is never a FormID. Yup.
+    2. The 'GetVATSValue' function is horrible. The type of its second
+    parameter depends on the value of the first one. And of course it can be a
+    FormID."""
+    # Maps param #1 value to the struct format string to use for GetVATSValue's
+    # param #2 - missing means unknown/unused, aka 4s
+    # Note 18, 19 and 20 were introduced in Skyrim, but since they are not used
+    # in FO3 it's no problem to just keep them here
+    _vats_param2_fmt = defaultdict(lambda: u'4s', {
+        0: u'I', 1: u'I', 2: u'I', 3: u'I', 5: u'i', 6: u'I', 9: u'I',
+        10: u'I', 15: u'I', 18: u'I', 19: u'I', 20: u'I'})
+    # The param #1 values that indicate param #2 is a FormID
+    _vats_param2_fid = {0, 1, 2, 3, 9, 10}
+
+    def __init__(self, suffix_fmt=u'', suffix_elements=[],
+                 old_suffix_fmts=set()):
+        super(MelCtdaFo3, self).__init__(suffix_fmt=suffix_fmt,
+                                         suffix_elements=suffix_elements,
+                                         old_suffix_fmts=old_suffix_fmts)
+        from .. import bush
+        self._getvatsvalue_ifunc = bush.game.getvatsvalue_index
+        self._ignore_ifuncs = ({106, 285} if bush.game.fsName == u'FalloutNV'
+                               else set()) # 106 == IsFacingUp, 285 == IsLeftUp
+
+    def loadData(self, record, ins, sub_type, size_, readId):
+        super(MelCtdaFo3, self).loadData(record, ins, sub_type, size_, readId)
+        if record.ifunc == self._getvatsvalue_ifunc:
+            record.param2 = struct_unpack(self._vats_param2_fmt[record.param1],
+                                          record.param2)[0]
+
+    def mapFids(self, record, function, save=False):
+        super(MelCtdaFo3, self).mapFids(record, function, save)
+        if record.runOn == 2 and record.ifunc not in self._ignore_ifuncs:
+            new_reference = function(record.reference)
+            if save: record.reference = new_reference
+        if (record.ifunc == self._getvatsvalue_ifunc and
+                record.param1 in self._vats_param2_fid):
+            new_param2 = function(record.param2)
+            if save: record.param2 = new_param2
+
+    def dumpData(self, record, out):
+        if record.ifunc == self._getvatsvalue_ifunc:
+            record.param2 = struct_pack(self._vats_param2_fmt[record.param1],
+                                        record.param2)
+        super(MelCtdaFo3, self).dumpData(record, out)
 
 #------------------------------------------------------------------------------
 class MelReferences(MelGroups):
@@ -233,7 +387,7 @@ class MelRaceVoices(MelStruct):
 #------------------------------------------------------------------------------
 class MelScriptVars(MelGroups):
     """Handles SLSD and SCVR combos defining script variables."""
-    _var_flags = bolt.Flags(0, bolt.Flags.getNames('is_long_or_short'))
+    _var_flags = Flags(0, Flags.getNames('is_long_or_short'))
 
     def __init__(self):
         MelGroups.__init__(self, 'script_vars',

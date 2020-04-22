@@ -491,7 +491,10 @@ class MelTruncatedStruct(MelStruct):
 
     @property
     def static_size(self):
-        raise exception.AbstractError()
+        # We behave just like a regular struct if we don't have any old formats
+        if len(self._all_unpackers) != 1:
+            raise exception.AbstractError()
+        return super(MelTruncatedStruct, self).static_size
 
 #------------------------------------------------------------------------------
 # Unions and Deciders
@@ -626,8 +629,9 @@ class PartialLoadDecider(ADecider):
         """Constructs a new PartialLoadDecider with the specified loader and
         decider.
 
-        :param loader: The MelStruct instance to use for loading.
-        :type loader: MelStruct
+        :param loader: The MelBase instance to use for loading. Must have a
+            static size.
+        :type loader: MelBase
         :param decider: The decider to use after loading.
         :type decider: ADecider"""
         self._loader = loader
@@ -734,7 +738,7 @@ class MelUnion(MelBase):
         if not isinstance(decider, ADecider):
             raise exception.ArgumentError(u'decider must be an ADecider')
         self.decider = decider
-        self.decider_result_attr = '_union_type_%u' % MelUnion._union_index
+        self.decider_result_attr = u'_union_type_%u' % MelUnion._union_index
         MelUnion._union_index += 1
         self.fallback = fallback
         self._possible_sigs = {s for element

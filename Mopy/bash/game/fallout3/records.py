@@ -27,7 +27,7 @@ file must be imported till then."""
 import struct
 from collections import defaultdict
 
-from ... import brec, bush
+from ... import brec
 from ...bolt import Flags, struct_unpack, struct_pack
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MelSet, MelFid, MelOptStruct, MelFids, MreHeaderBase, \
@@ -40,9 +40,9 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelRaceVoices, MelBounds, null1, null2, null3, null4, MelScriptVars, \
     MelSequential, MelTruncatedStruct, PartialLoadDecider, MelReadOnly, \
     MelCoordinates, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, \
-    MelArray, MelWthrColors, MreLeveledListBase, mel_cdta_unpackers, \
-    MreDialBase, MreActorBase, MreWithItems
-from ...exception import BoltError, ModError, ModSizeError
+    MelArray, MelWthrColors, MreLeveledListBase, MreDialBase, MreActorBase, \
+    MreWithItems, MelCtdaFo3
+from ...exception import ModError, ModSizeError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
 
@@ -115,69 +115,13 @@ class MelBipedFlags(Flags):
 
 #------------------------------------------------------------------------------
 class MelConditions(MelGroups):
-    """Represents a set of quest/dialog conditions. Difficulty is that FID
-    state of parameters depends on function index."""
-    class MelCtda(MelStruct):
-        ctda_sizes_list = (20, 24, 28) # must be sorted
-        def setDefault(self, record):
-            MelStruct.setDefault(self, record)
-            record.form1234 = 'iiII'
-
-        def hasFids(self, formElements):
-            formElements.add(self)
-
-        def loadData(self, record, ins, sub_type, size_, readId,
-                     __unpacker=struct.Struct(u'B3sfH2s').unpack,
-                     __unpackers=mel_cdta_unpackers(ctda_sizes_list)):
-            if size_ not in self.ctda_sizes_list:
-                raise ModSizeError(ins.inName, readId, self.ctda_sizes_list, size_)
-            unpacked1 = ins.unpack(__unpacker, 12, readId)
-            (record.operFlag, record.unused1, record.compValue, ifunc,
-             record.unused2) = unpacked1
-            #--Get parameters
-            # using bush as CTDA differs between FO3 and FNV, but they use
-            # the same record definition
-            try:
-                form12 = u'%d%d%d' % ( # 2 means fid
-                    bush.game.condition_function_data[ifunc][1] == 2,
-                    bush.game.condition_function_data[ifunc][2] == 2, size_)
-            except KeyError:
-                raise BoltError(u'Unknown condition function: %d\nparam1: '
-                                u'%08X\nparam2: %08X' % (
-                                    ifunc, ins.unpackRef(), ins.unpackRef()))
-            form1234 = __unpackers[form12]
-            (record.param1, record.param2, record.runOn, record.reference) =\
-                ins.unpack(form1234.unpack, size_ - 12, readId) + (0,) * (
-                    (28 - size_) // 4)
-            record.ifunc, record.form1234 = ifunc, form1234.format
-
-        def dumpData(self,record,out):
-            out.packSub('CTDA', '=B3sfH2s' + record.form1234, ##: + ['I'] * ((28 - size_) // 4) to always write record with size 28??
-                *[record.operFlag, record.unused1, record.compValue,
-                record.ifunc, record.unused2, record.param1, record.param2,
-                record.runOn, record.reference][: 7 + (len(record.form1234) - 2)])
-
-        def mapFids(self,record,function,save=False):
-            form1234 = record.form1234
-            if form1234[0] == u'I':
-                result = function(record.param1)
-                if save: record.param1 = result
-            if form1234[1] == u'I':
-                result = function(record.param2)
-                if save: record.param2 = result
-            # runOn is uint32, never FID
-            #0:Subject,1:Target,2:Reference,3:Combat Target,4:Linked Reference
-            if len(form1234) > 3 and form1234[3] == u'I' and record.runOn == 2:
-                result = function(record.reference)
-                if save: record.reference = result
-
+    """A list of conditions."""
     def __init__(self):
-        MelGroups.__init__(self, 'conditions',
-            MelConditions.MelCtda(
-                'CTDA','B3sfH2siiII', 'operFlag', ('unused1', null3),
-                'compValue', 'ifunc', ('unused2', null2), 'param1', 'param2',
-                'runOn', 'reference'),
-        )
+        # Note that reference can be a fid - handled in MelCtdaFo3.mapFids
+        super(MelConditions, self).__init__(u'conditions',
+            MelCtdaFo3(suffix_fmt=u'2I',
+                       suffix_elements=[u'runOn', u'reference'],
+                       old_suffix_fmts={u'I', u''}))
 
 #------------------------------------------------------------------------------
 class MelDestructible(MelGroup):

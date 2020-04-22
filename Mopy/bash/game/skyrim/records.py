@@ -25,7 +25,6 @@
 import struct
 from collections import OrderedDict
 
-from .constants import condition_function_data
 from ... import brec
 from ...bolt import Flags, encode, struct_pack, struct_unpack
 from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
@@ -39,8 +38,8 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelPartialCounter, MelBounds, null1, null2, null3, null4, MelSequential, \
     MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, \
     MelFull, MelArray, MelWthrColors, GameDecider, MelReadOnly, \
-    mel_cdta_unpackers, MreDialBase, MreActorBase, MreWithItems
-from ...exception import BoltError, ModError, ModSizeError, StateError
+    MreDialBase, MreActorBase, MreWithItems, MelCtdaFo3
+from ...exception import ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
 if brec.MelModel is None:
@@ -205,75 +204,18 @@ class MelColorO(MelOptStruct):
 
 #------------------------------------------------------------------------------
 class MelConditions(MelGroups):
-    """Wraps MelGroups for the common task of defining an array of conditions.
-    See also MelConditionCounter, which is commonly combined with this class.
-    Difficulty is that FID state of parameters depends on function index."""
-    class MelCtda(MelStruct):
-        ctda_sizes_list = (20, 24, 28, 32) # must be sorted
-        def setDefault(self, record):
-            MelStruct.setDefault(self, record)
-            record.form12345 = 'iiIIi'
-
-        def hasFids(self, formElements):
-            formElements.add(self)
-
-        def loadData(self, record, ins, sub_type, size_, readId,
-                     __unpacker=struct.Struct(u'=B3sfH2s').unpack,
-                     __unpackers=mel_cdta_unpackers(ctda_sizes_list)):
-            if size_ not in self.ctda_sizes_list:
-                raise ModSizeError(ins.inName, readId, self.ctda_sizes_list, size_)
-            unpacked1 = ins.unpack(__unpacker, 12, readId)
-            (record.operFlag, record.unused1, record.compValue, ifunc,
-             record.unused2) = unpacked1
-            #--Get parameters
-            if ifunc not in condition_function_data:
-                raise BoltError(u'Unknown condition function: %d\nparam1: '
-                                u'%08X\nparam2: %08X' % (
-                    ifunc, ins.unpackRef(), ins.unpackRef()))
-            form12 = u'%d%d%d' % ( # 2 means fid
-                condition_function_data[ifunc][1] == 2,
-                condition_function_data[ifunc][2] == 2, size_)
-            form12345 = __unpackers[form12]
-            (record.param1, record.param2, record.runOn, record.reference,
-             record.param3) = \
-                ins.unpack(form12345.unpack, size_ - 12, readId) + (0,) * (
-                    (32 - size_) // 4)
-            record.ifunc, record.form12345 = ifunc, form12345.format
-
-        def dumpData(self,record,out):
-            out.packSub('CTDA', '=B3sfH2s' + record.form12345,
-                        *[record.operFlag, record.unused1, record.compValue,
-                         record.ifunc, record.unused2, record.param1,
-                         record.param2, record.runOn, record.reference,
-                         record.param3][: 7 + (len(record.form12345) - 2)])
-
-        def mapFids(self, record, function, save=False):
-                form12345 = record.form12345
-                if form12345[0] == 'I':
-                    result = function(record.param1)
-                    if save: record.param1 = result
-                if form12345[1] == 'I':
-                    result = function(record.param2)
-                    if save: record.param2 = result
-                # runOn is uint32, never FID
-                if (len(form12345) > 3 and form12345[3] == 'I'
-                        and record.runOn == 2):
-                    result = function(record.reference)
-                    if save: record.reference = result
-                if len(form12345) > 4 and form12345[4] == 'I':
-                    result = function(record.param3)
-                    if save: record.param3 = result
-
-    def __init__(self, attr='conditions'):
-        MelGroups.__init__(self, attr,
-            MelGroups('condition_list',
-                MelConditions.MelCtda(
-                    'CTDA', 'B3sfH2siiIIi', 'operFlag', ('unused1', null3),
-                    'compValue', 'ifunc', ('unused2', null2), 'param1',
-                    'param2', 'runOn', 'reference', 'param3'),
+    """A list of conditions. See also MelConditionCounter, which is commonly
+    combined with this class."""
+    def __init__(self, conditions_attr=u'conditions'):
+        super(MelConditions, self).__init__(conditions_attr,
+            MelGroups(u'condition_list',
+                MelCtdaFo3(
+                    suffix_fmt=u'2Ii',
+                    suffix_elements=[u'runOn', (FID, u'reference'), u'param3'],
+                    old_suffix_fmts={u'2I', u'I', u''}),
             ),
-            MelString('CIS1','param_cis1'),
-            MelString('CIS2','param_cis2'),
+            MelString(b'CIS1', u'param_cis1'),
+            MelString(b'CIS2', u'param_cis2'),
         )
 
 class MelConditionCounter(MelCounter):

@@ -24,7 +24,6 @@
 """This module contains the oblivion record classes."""
 import struct
 
-from .constants import condition_function_data
 from ... import brec
 from ...bolt import Flags
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
@@ -36,9 +35,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelRaceParts, MelRaceVoices, null1, null2, null3, null4, MelScriptVars, \
     MelSequential, MelUnion, FlagDecider, AttrValDecider, PartialLoadDecider, \
     MelTruncatedStruct, MelCoordinates, MelIcon, MelIco2, MelEdid, MelFull, \
-    MelArray, MelWthrColors, MelObject, mel_cdta_unpackers, MreDialBase, \
-    MreActorBase, MreWithItems
-from ...exception import BoltError, ModSizeError
+    MelArray, MelWthrColors, MelObject, MreDialBase, MreActorBase, \
+    MreWithItems, MelReadOnly, MelCtda
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
 
@@ -79,70 +77,16 @@ class MelBipedFlags(Flags):
 
 #------------------------------------------------------------------------------
 class MelConditions(MelGroups):
-    """Represents a set of quest/dialog conditions. Difficulty is that FID
-    state of parameters depends on function index."""
-    class MelCtda(MelStruct):
-        ctda_sizes_list = (20, 24) # must be sorted
-        def getLoaders(self,loaders):
-            # Older CTDT type for ai package records.
-            loaders[self.subType] = loaders['CTDT']= self
-
-        def setDefault(self, record):
-            MelStruct.setDefault(self, record)
-            record.form12 = 'ii'
-
-        def hasFids(self, formElements):
-            formElements.add(self)
-
-        def loadData(self, record, ins, sub_type, size_, readId,
-                     __unpacker=struct.Struct(u'B3sfI').unpack,
-                     __unpackers=mel_cdta_unpackers(ctda_sizes_list,
-                                                    pad=u'4s')):
-            if sub_type == 'CTDA' and size_ != 24:
-                raise ModSizeError(ins.inName, readId, (24,), size_)
-            if sub_type == 'CTDT' and size_ != 20:
-                raise ModSizeError(ins.inName, readId, (20,), size_)
-            unpacked1 = ins.unpack(__unpacker, 12, readId)
-            (record.operFlag, record.unused1, record.compValue,
-             ifunc) = unpacked1
-            #--Get parameters
-            try:
-                form12 = u'%d%d%d' % (
-                    condition_function_data[ifunc][1] == 2,
-                    condition_function_data[ifunc][2] == 2, size_)
-            except KeyError:
-                raise BoltError(u'Unknown condition function: %d\nparam1: '
-                                u'%08X\nparam2: %08X' % (
-                    ifunc, ins.unpackRef(), ins.unpackRef()))
-            form12 = __unpackers[form12]
-            record.param1, record.param2, record.unused2 = \
-                ins.unpack(form12.unpack, size_ - 12, readId) + (null4,) * (
-                    (24 - size_) // 4)
-            record.ifunc, record.form12 = ifunc, form12.format[:2]
-
-        def dumpData(self,record,out):
-            out.packSub('CTDA','B3sfI'+ record.form12 + '4s',
-                record.operFlag, record.unused1, record.compValue,
-                record.ifunc, record.param1, record.param2, record.unused2)
-
-        def mapFids(self,record,function,save=False):
-            form12 = record.form12
-            if form12[0] == 'I':
-                result = function(record.param1)
-                if save: record.param1 = result
-            if form12[1] == 'I':
-                result = function(record.param2)
-                if save: record.param2 = result
-
-        @property
-        def signatures(self):
-            return {'CTDA', 'CTDT'}
-
+    """A list of conditions. Can contain the old CTDT format as well, which
+    will be upgraded on dump."""
     def __init__(self):
-        MelGroups.__init__(self, 'conditions',
-            MelConditions.MelCtda(
-                'CTDA', 'B3sfIii4s', 'operFlag', ('unused1', null3),
-                'compValue', 'ifunc', 'param1', 'param2', ('unused2',null4)),
+        super(MelConditions, self).__init__(u'conditions',
+            MelUnion({
+                b'CTDA': MelCtda(suffix_fmt=u'4s',
+                                 suffix_elements=[(u'unused3', null4)]),
+                b'CTDT': MelReadOnly(MelCtda(b'CTDT', u'4s',
+                                             [(u'unused3', null4)], {u''})),
+            }),
         )
 
 #------------------------------------------------------------------------------
