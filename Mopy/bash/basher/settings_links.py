@@ -496,6 +496,5 @@ class Settings_DumpTranslator(AppendableLink, ItemLink):
         outPath = bass.dirs['l10n']
         with balt.BusyCursor():
             outFile = dump_translator(outPath.s, bass.active_locale)
-        self._showOk(_(
-            u'Translation keys written to ') + u'Mopy\\bash\\l10n\\' + outFile,
-                     _(u'Dump Translator') + u': ' + outPath.stail)
+        self._showOk(_(u'Translation keys written to %s') % outFile,
+                     self._text + u': ' + outPath.stail)

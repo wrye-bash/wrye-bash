@@ -25,3 +25,23 @@
 """This module contains the Fallout 4 record classes. Since they're identical
 to the Fallout 4 classes, we just import those."""
 from ..fallout4.records import *
+
+# Only difference from FO4 is the default version, but this seems less hacky
+# than adding a game var just for this and dynamically importing it in FO4
+class MreTes4(MreHeaderBase):
+    """TES4 Record. File header."""
+    classType = b'TES4'
+
+    melSet = MelSet(
+        MelStruct(b'HEDR', u'f2I', (u'version', 0.95), u'numRecords',
+                  (u'nextObject', 0x800)),
+        MelBase(b'TNAM', u'tnam_p'),
+        MelUnicode(b'CNAM', u'author', u'', 512),
+        MelUnicode(b'SNAM', u'description', u'', 512),
+        MreHeaderBase.MelMasterNames(),
+        MelFidList(b'ONAM', u'overrides',),
+        MelBase(b'SCRN', u'screenshot'),
+        MelBase(b'INTV', u'unknownINTV'),
+        MelBase(b'INCC', u'unknownINCC'),
+    )
+    __slots__ = melSet.getSlotsUsed()

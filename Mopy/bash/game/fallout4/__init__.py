@@ -52,12 +52,9 @@ class Fallout4GameInfo(GameInfo):
         [u'meshes', u'actors', u'character', u'facecustomization']]
 
     class Ck(GameInfo.Ck):
-        # TODO:  When the Fallout 4 Creation Kit is actually released,
-        # double check that the filename is correct, and create an actual icon
-        ck_abbrev = u'FO4CK'
+        ck_abbrev = u'CK'
         long_name = u'Creation Kit'
         exe = u'CreationKit.exe'
-        se_args = None
         image_name = u'creationkit%s.png'
 
     class Se(GameInfo.Se):
@@ -116,7 +113,7 @@ class Fallout4GameInfo(GameInfo):
     }
     dontSkipDirs = {
         # This rule is to allow mods with string translation enabled.
-        'interface\\translations':['.txt']
+        u'interface\\translations': [u'.txt']
     }
     SkipBAINRefresh = {u'fo4edit backups', u'fo4edit cache'}
 

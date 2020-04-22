@@ -117,7 +117,9 @@ class GameInfo(object):
         ck_abbrev = u''   # Abbreviated name
         long_name = u''   # Full name
         exe = u'*DNE*'    # Executable to run
-        se_args = u''     # Argument to pass to the SE to load the CK
+        # Argument to pass to the script extender to load the CK. If None,
+        # indicates that this game's script extender does not have this feature
+        se_args = None
         image_name = u''  # Image name template for the status bar
 
     class Se(object):

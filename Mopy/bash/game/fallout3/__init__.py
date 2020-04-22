@@ -156,7 +156,7 @@ class Fallout3GameInfo(GameInfo):
     # NamesTweaker, NPCAIPackagePatcher, NpcFacePatcher, PatchMerger, RacePatcher,
     # RoadImporter, SoundPatcher, StatsPatcher, UpdateReferences,
     #--Patcher available when building a Bashed Patch (referenced by class name)
-    patchers = (u'PatchMerger', # PatchMerger must come first !
+    patchers = (u'PatchMerger', # PatchMerger must come first!
         u'ActorImporter', u'AliasesPatcher', u'CellImporter',
         u'ContentsChecker', u'DeathItemPatcher', u'DestructiblePatcher',
         u'FidListsMerger', u'GmstTweaker', u'GraphicsPatcher',

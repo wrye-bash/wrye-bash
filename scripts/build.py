@@ -288,15 +288,17 @@ def pack_standalone(version):
         DIST_PATH, u"Wrye Bash {} - Standalone Executable.7z".format(version)
     )
     ignores = (
-        "*.py",
-        "*.pyw",
-        "*.pyd",
-        "*.bat",
-        "*.template",
-        "Mopy/bash/basher",
-        "Mopy/bash/bosh",
-        "Mopy/bash/game",
-        "Mopy/bash/patcher"
+        u'*.py',
+        u'*.pyw',
+        u'*.pyd',
+        u'*.bat',
+        u'*.template',
+        u'Mopy/bash/basher',
+        u'Mopy/bash/bosh',
+        u'Mopy/bash/brec',
+        u'Mopy/bash/game',
+        u'Mopy/bash/gui',
+        u'Mopy/bash/patcher',
     )
     pack_7z(archive, *["-xr!" + a for a in ignores])
 

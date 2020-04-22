@@ -66,7 +66,12 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
     SkipBAINRefresh = {u'fo4vredit backups', u'fo4vredit cache'}
 
     class Esp(Fallout4GameInfo.Esp):
+        validHeaderVersions = (0.95,)
         expanded_plugin_range = False
+
+    allTags = Fallout4GameInfo.allTags | {u'NoMerge'}
+    # PatchMerger must come first!
+    patchers = (u'PatchMerger',) + Fallout4GameInfo.patchers
 
     # ---------------------------------------------------------------------
     # --Imported - MreGlob is special import, not in records.py

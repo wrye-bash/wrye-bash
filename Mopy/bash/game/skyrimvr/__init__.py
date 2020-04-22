@@ -35,23 +35,10 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
     launch_exe = u'SkyrimVR.exe'
     game_detect_file = [u'SkyrimVR.exe']
     version_detect_file = [u'SkyrimVR.exe']
-    regInstallKeys = (
-        u'Bethesda Softworks\\Skyrim VR',
-        u'Installed Path'
-    )
+    regInstallKeys = (u'Bethesda Softworks\\Skyrim VR', u'Installed Path')
 
     espm_extensions = SkyrimSEGameInfo.espm_extensions - {u'.esl'}
     check_esl = False
-
-    allTags = SkyrimSEGameInfo.allTags | {u'NoMerge'}
-    patchers = (u'PatchMerger', # PatchMerger must come first !
-        u'ActorImporter', u'CellImporter', u'ContentsChecker',
-        u'DeathItemPatcher', u'DestructiblePatcher', u'GmstTweaker',
-        u'GraphicsPatcher', u'ImportActorsSpells', u'ImportInventory',
-        u'KeywordsImporter', u'ListsMerger', u'NamesPatcher',
-        u'NPCAIPackagePatcher', u'ObjectBoundsImporter', u'SoundPatcher',
-        u'SpellsPatcher', u'StatsPatcher', u'TextImporter', u'TweakActors',
-    )
 
     class Se(SkyrimSEGameInfo.Se):
         se_abbrev = u'SKSEVR'
@@ -71,6 +58,10 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
         expert_key = 'tes5vrview.iKnowWhatImDoing'
 
     SkipBAINRefresh = {u'tes5vredit backups', u'tes5vredit cache'}
+
+    allTags = SkyrimSEGameInfo.allTags | {u'NoMerge'}
+    # PatchMerger must come first!
+    patchers = (u'PatchMerger',) + SkyrimSEGameInfo.patchers
 
     @classmethod
     def init(cls):

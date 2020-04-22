@@ -54,7 +54,6 @@ class SkyrimGameInfo(GameInfo):
         ck_abbrev = u'CK'
         long_name = u'Creation Kit'
         exe = u'CreationKit.exe'
-        se_args = None  # u'-editor'
         image_name = u'creationkit%s.png'
 
     class Se(GameInfo.Se):
@@ -133,7 +132,7 @@ class SkyrimGameInfo(GameInfo):
     )
     dontSkipDirs = {
         # This rule is to allow mods with string translation enabled.
-        'interface\\translations':['.txt']
+        u'interface\\translations': [u'.txt']
     }
     SkipBAINRefresh = {u'tes5edit backups', u'tes5edit cache'}
     ignoreDataDirs = {u'LSData'}
@@ -157,7 +156,7 @@ class SkyrimGameInfo(GameInfo):
         u'Stats', u'Text',
     }
 
-    patchers = (u'PatchMerger', # PatchMerger must come first !
+    patchers = (u'PatchMerger', # PatchMerger must come first!
         u'ActorImporter', u'CellImporter', u'ContentsChecker',
         u'DeathItemPatcher', u'DestructiblePatcher', u'GmstTweaker',
         u'GraphicsPatcher', u'ImportActorsSpells', u'ImportInventory',

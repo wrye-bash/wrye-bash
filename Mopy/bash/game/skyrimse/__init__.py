@@ -36,10 +36,8 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     game_detect_file = [u'SkyrimSE.exe']
     version_detect_file = [u'SkyrimSE.exe']
     masterlist_dir = u'SkyrimSE'
-    regInstallKeys = (
-        u'Bethesda Softworks\\Skyrim Special Edition',
-        u'Installed Path'
-    )
+    regInstallKeys = (u'Bethesda Softworks\\Skyrim Special Edition',
+                      u'Installed Path')
 
     nexusUrl = u'https://www.nexusmods.com/skyrimspecialedition/'
     nexusName = u'Skyrim SE Nexus'
@@ -48,20 +46,6 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     espm_extensions = SkyrimGameInfo.espm_extensions | {u'.esl'}
     has_achlist = True
     check_esl = True
-
-    allTags = SkyrimGameInfo.allTags - {u'MustBeActiveIfImported', u'NoMerge',}
-
-    patchers = ( # PatchMerger must come first if enabled!
-        u'ActorImporter', u'CellImporter', u'ContentsChecker',
-        u'DeathItemPatcher', u'DestructiblePatcher', u'GmstTweaker',
-        u'GraphicsPatcher', u'ImportActorsSpells', u'ImportInventory',
-        u'KeywordsImporter', u'ListsMerger', u'NamesPatcher',
-        u'NPCAIPackagePatcher', u'ObjectBoundsImporter', u'SoundPatcher',
-        u'SpellsPatcher', u'StatsPatcher', u'TextImporter', u'TweakActors',
-    )
-
-    # MreScpt is Oblivion/FO3/FNV Only
-    # MreMgef, has not been verified to be used here for Skyrim
 
     class Se(SkyrimGameInfo.Se):
         se_abbrev = u'SKSE64'
@@ -93,6 +77,10 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         expert_key = 'sseView.iKnowWhatImDoing'
 
     SkipBAINRefresh = {u'sseedit backups', u'sseedit cache'}
+
+    allTags = SkyrimGameInfo.allTags - {u'NoMerge'}
+    # PatchMerger must come first if enabled - so skip it here
+    patchers = SkyrimGameInfo.patchers[1:]
 
     @classmethod
     def init(cls):

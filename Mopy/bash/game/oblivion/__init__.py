@@ -156,19 +156,20 @@ class OblivionGameInfo(GameInfo):
         u'Voice-F', u'Voice-M',
     }
 
-    patchers = (u'PatchMerger', # PatchMerger must come first !
+    patchers = (u'PatchMerger', # PatchMerger must come first!
         u'ActorImporter', u'AlchemicalCatalogs', u'AliasesPatcher',
-        u'AssortedTweaker', u'CellImporter', u'ClothesTweaker', u'CoblExhaustion',
-        u'ContentsChecker', u'DeathItemPatcher', u'GmstTweaker',
-        u'GraphicsPatcher', u'ImportActorsSpells', u'ImportFactions',
-        u'ImportInventory', u'ImportRelations', u'ImportScripts', u'KFFZPatcher',
-        u'ListsMerger', u'MFactMarker', u'NamesPatcher', u'NamesTweaker',
-        u'NPCAIPackagePatcher', u'NpcFacePatcher', u'RacePatcher',
-        u'RoadImporter', u'SEWorldEnforcer', u'SoundPatcher', u'SpellsPatcher',
-        u'StatsPatcher', u'TextImporter', u'TweakActors', u'UpdateReferences',
+        u'AssortedTweaker', u'CellImporter', u'ClothesTweaker',
+        u'CoblExhaustion', u'ContentsChecker', u'DeathItemPatcher',
+        u'GmstTweaker', u'GraphicsPatcher', u'ImportActorsSpells',
+        u'ImportFactions', u'ImportInventory', u'ImportRelations',
+        u'ImportScripts', u'KFFZPatcher', u'ListsMerger', u'MFactMarker',
+        u'NamesPatcher', u'NamesTweaker', u'NPCAIPackagePatcher',
+        u'NpcFacePatcher', u'RacePatcher', u'RoadImporter', u'SEWorldEnforcer',
+        u'SoundPatcher', u'SpellsPatcher', u'StatsPatcher', u'TextImporter',
+        u'TweakActors', u'UpdateReferences',
     )
 
-    CBash_patchers = (u'CBash_PatchMerger', # PatchMerger must come first !
+    CBash_patchers = (u'CBash_PatchMerger', # PatchMerger must come first!
         u'CBash_ActorImporter', u'CBash_AlchemicalCatalogs',
         u'CBash_AliasesPatcher', u'CBash_AssortedTweaker',
         u'CBash_CellImporter', u'CBash_ClothesTweaker',
