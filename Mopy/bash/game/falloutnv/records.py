@@ -38,7 +38,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, MelBounds, null1, \
     null2, null3, null4, MelTruncatedStruct, MelReadOnly, MelCoordinates, \
     MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, MelArray, \
-    MelObject, MreDialBase, MreWithItems
+    MelObject, MreDialBase, MreWithItems, MelRef3D, MelXlod
 from ...exception import ModSizeError
 
 #------------------------------------------------------------------------------
@@ -102,8 +102,8 @@ class MreAchr(MelRecord):
         MelOptFid('XEMI', 'emittance'),
         MelFid('XMBR','multiboundReference'),
         MelBase('XIBS','ignoredBySandbox'),
-        MelOptFloat('XSCL', ('scale', 1.0)),
-        MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
+        MelOptFloat(b'XSCL', (u'ref_scale', 1.0)),
+        MelRef3D(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -150,8 +150,8 @@ class MreAcre(MelRecord):
         MelOptFid('XEMI', 'emittance'),
         MelFid('XMBR','multiboundReference'),
         MelBase('XIBS','ignoredBySandbox'),
-        MelOptFloat('XSCL', ('scale', 1.0)),
-        MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
+        MelOptFloat(b'XSCL', (u'ref_scale', 1.0)),
+        MelRef3D(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -423,9 +423,9 @@ class MreCell(MelRecord):
         MelEdid(),
         MelFull(),
         MelUInt8('DATA', (cellFlags, 'flags', 0)),
-        MelCoordinates('XCLC', '2iI', ('posX', None), ('posY', None),
-                       (CellFHLFlags, 'fhlFlags', 0), is_optional=True,
-                       old_versions={'2i'}),
+        MelCoordinates(b'XCLC', u'2iI', u'posX', u'posY',
+                       (CellFHLFlags, u'fhlFlags'), is_optional=True,
+                       old_versions={u'2i'}),
         MelTruncatedStruct('XCLL', '=3Bs3Bs3Bs2f2i3f', 'ambientRed',
                            'ambientGreen', 'ambientBlue', ('unused1', null1),
                            'directionalRed', 'directionalGreen',
@@ -971,7 +971,8 @@ class MreLigh(MelRecord):
         MelStruct('DATA','iI3BsI2fIf','duration','radius','red','green','blue',
                   ('unused1',null1),(_flags,'flags',0),'falloff','fov','value',
                   'weight'),
-        MelOptFloat('FNAM', ('fade', None)),
+        # None here is on purpose! See AssortedTweak_LightFadeValueFix
+        MelOptFloat(b'FNAM', (u'fade', None)),
         MelFid('SNAM','sound'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1131,8 +1132,8 @@ class MrePgre(MelRecord):
         MelOptFid('XEMI', 'emittance'),
         MelFid('XMBR','multiboundReference'),
         MelBase('XIBS','ignoredBySandbox'),
-        MelOptFloat('XSCL', ('scale', 1.0)),
-        MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
+        MelOptFloat(b'XSCL', (u'ref_scale', 1.0)),
+        MelRef3D(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1181,8 +1182,8 @@ class MrePmis(MelRecord):
         MelOptFid('XEMI', 'emittance'),
         MelFid('XMBR','multiboundReference'),
         MelBase('XIBS','ignoredBySandbox'),
-        MelOptFloat('XSCL', ('scale', 1.0)),
-        MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
+        MelOptFloat(b'XSCL', (u'ref_scale', 1.0)),
+        MelRef3D(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1319,7 +1320,7 @@ class MreRefr(MelRecord):
         MelBase('XSRF','xsrf_p'),
         MelBase('XSRD','xsrd_p'),
         MelFid('XTRG','targetId'),
-        MelOptSInt32('XLCM', ('levelMod', None)),
+        MelOptSInt32(b'XLCM', u'levelMod'),
         MelGroup('patrolData',
             MelFloat('XPRD', 'idleTime'),
             MelBase('XPPA','patrolScriptMarker'),
@@ -1340,7 +1341,7 @@ class MreRefr(MelRecord):
         MelOptFloat('XRDS', 'radius'),
         MelOptFloat('XHLP', 'health'),
         MelOptFloat('XRAD', 'radiation'),
-        MelOptFloat('XCHG', ('charge', None)),
+        MelOptFloat(b'XCHG', u'charge'),
         MelGroup('ammo',
             MelFid('XAMT','type'),
             MelUInt32('XAMC', 'count'),
@@ -1383,9 +1384,9 @@ class MreRefr(MelRecord):
         MelOptStruct('XOCP','9f','occlusionPlaneWidth','occlusionPlaneHeight','occlusionPlanePosX','occlusionPlanePosY','occlusionPlanePosZ',
                      'occlusionPlaneRot1','occlusionPlaneRot2','occlusionPlaneRot3','occlusionPlaneRot4'),
         MelOptStruct('XORD','4I',(FID,'linkedOcclusionPlane0'),(FID,'linkedOcclusionPlane1'),(FID,'linkedOcclusionPlane2'),(FID,'linkedOcclusionPlane3')),
-        MelOptStruct('XLOD','3f',('lod1',None),('lod2',None),('lod3',None)),
-        MelOptFloat('XSCL', ('scale', 1.0)),
-        MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
+        MelXlod(),
+        MelOptFloat(b'XSCL', (u'ref_scale', 1.0)),
+        MelRef3D(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1447,8 +1448,8 @@ class MreRegn(MelRecord):
                           'chance'),
             )),
             MelRegnEntrySubrecord(3, MelArray('weatherTypes',
-                MelStruct('RDWT', '3I', (FID, 'weather', None), 'chance',
-                          (FID, 'global', None)),
+                MelStruct(b'RDWT', u'3I', (FID, u'weather'), u'chance',
+                          (FID, u'global')),
             )),
             MelRegnEntrySubrecord(8, MelFidList('RDID', 'imposters')),
         ),

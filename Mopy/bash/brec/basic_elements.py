@@ -674,13 +674,8 @@ class MelOptUInt32(MelUInt32, MelOptStruct):
 
 class MelOptFid(MelOptUInt32):
     """Optional FormID. Wrapper around MelOptUInt32 to avoid having to
-    constantly specify the format. Also supports specifying a default value."""
-    _default_sentinel = object()
-
-    def __init__(self, signature, attr, default_val=_default_sentinel):
+    constantly specify the format."""
+    def __init__(self, signature, attr):
         """:type signature: str
         :type attr: str"""
-        if default_val is self._default_sentinel:
-            MelOptUInt32.__init__(self, signature, (FID, attr))
-        else:
-            MelOptUInt32.__init__(self, signature, (FID, attr, default_val))
+        MelOptUInt32.__init__(self, signature, (FID, attr))

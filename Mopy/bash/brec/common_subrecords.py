@@ -30,7 +30,7 @@ from collections import defaultdict
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
     MelUnion, PartialLoadDecider
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
-    MelNull, MelSequential, MelString, MelStruct, MelUInt32
+    MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct
 from .utils_constants import _int_unpacker, FID, null1, null2, null3, null4
 from ..bolt import Flags, encode, struct_pack, struct_unpack
 
@@ -460,3 +460,19 @@ class MelRegnEntrySubrecord(MelUnion):
             entry_type_val: element,
         }, decider=AttrValDecider('entryType'),
             fallback=MelNull('NULL')) # ignore
+
+#------------------------------------------------------------------------------
+class MelRef3D(MelStruct):
+    """3D position and rotation for a reference record (REFR, ACHR, etc.)."""
+    def __init__(self):
+        super(MelRef3D, self).__init__(
+            b'DATA', u'6f', u'ref_pos_x', u'ref_pos_y', u'ref_pos_z',
+            u'ref_rot_x', u'ref_rot_y', u'ref_rot_z'),
+
+
+#------------------------------------------------------------------------------
+class MelXlod(MelOptStruct):
+    """Distant LOD Data."""
+    def __init__(self):
+        super(MelXlod, self).__init__(b'XLOD', u'3f', u'lod1', u'lod2',
+                                      u'lod3')

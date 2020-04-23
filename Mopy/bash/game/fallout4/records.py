@@ -102,7 +102,7 @@ class MreLvli(MreLeveledList):
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
         MelArray('filterKeywordChances',
-            MelStruct('LLKC', '2I', (FID, 'keyword', None), 'chance'),
+            MelStruct(b'LLKC', u'2I', (FID, u'keyword'), u'chance'),
         ),
         MelFid('LVSG', 'epicLootChance'),
         MelLString('ONAM', 'overrideName')
@@ -127,7 +127,7 @@ class MreLvln(MreLeveledList):
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
         MelArray('filterKeywordChances',
-            MelStruct('LLKC', '2I', (FID, 'keyword', None), 'chance'),
+            MelStruct(b'LLKC', u'2I', (FID, u'keyword'), u'chance'),
         ),
         MelString('MODL','model'),
         MelBase('MODT','modt_p'),

@@ -38,7 +38,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelPartialCounter, MelBounds, null1, null2, null3, null4, MelSequential, \
     MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, \
     MelFull, MelArray, MelWthrColors, GameDecider, MelReadOnly, \
-    MreDialBase, MreActorBase, MreWithItems, MelCtdaFo3
+    MreDialBase, MreActorBase, MreWithItems, MelCtdaFo3, MelRef3D, MelXlod
 from ...exception import ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -261,9 +261,11 @@ class MelDestructible(MelGroup):
         MelGroup.__init__(self,attr,
             MelStruct('DEST','i2B2s','health','count','vatsTargetable','dest_unused'),
             MelGroups('stages',
-                MelStruct('DSTD','=4Bi2Ii','health','index','damageStage',
-                         (MelDestructible.MelDestStageFlags,'flags',0),'selfDamagePerSecond',
-                         (FID,'explosion',None),(FID,'debris',None),'debrisCount'),
+                MelStruct(b'DSTD', u'4Bi2Ii', u'health', u'index',
+                          u'damageStage',
+                          (MelDestructible.MelDestStageFlags, u'flagsDest'),
+                          u'selfDamagePerSecond', (FID, u'explosion'),
+                          (FID, u'debris'), u'debrisCount'),
                 MelModel('model','DMDL'),
                 MelBase('DSTF','footer'),
             ),
@@ -285,7 +287,7 @@ class MelItems(MelGroups):
     """Wraps MelGroups for the common task of defining a list of items."""
     def __init__(self):
         MelGroups.__init__(self, 'items',
-            MelStruct('CNTO', 'Ii', (FID, 'item', None), 'count'),
+            MelStruct(b'CNTO', u'Ii', (FID, u'item'), u'count'),
             MelCoed(),
         )
 
@@ -349,6 +351,8 @@ class MelOwnership(MelGroup):
     def __init__(self, attr=u'ownership'):
         MelGroup.__init__(self, attr,
             MelFid(b'XOWN', u'owner'),
+            # None here is on purpose - rank == 0 is a valid value, but XRNK
+            # does not have to be present
             MelOptSInt32(b'XRNK', (u'rank', None)),
         )
 
@@ -1317,8 +1321,7 @@ class MreAchr(MelRecord):
         MelFid(b'XMBR', u'multi_bound_reference'),
         MelBase(b'XIBS', u'ignored_by_sandbox_1'),
         MelOptFloat(b'XSCL', (u'ref_scale', 1.0)),
-        MelOptStruct(b'DATA', u'=6f', u'ref_pos_x', u'ref_pos_y', u'ref_pos_z',
-                     u'ref_rot_x', u'ref_rot_y', u'ref_rot_z'),
+        MelRef3D(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1395,8 +1398,9 @@ class MreAlch(MelRecord,MreHasEffects):
         MelOptFid('ZNAM', 'dropSound'),
         MelOptFid('ETYP', 'equipType'),
         MelFloat('DATA', 'weight'),
-        MelStruct('ENIT','i2IfI','value',(IngestibleFlags,'flags',0),
-                  'addiction','addictionChance','soundConsume',),
+        MelStruct(b'ENIT', u'i2IfI', u'value', (IngestibleFlags, u'flags'),
+                  (FID, u'addiction'), u'addictionChance',
+                  (FID, u'soundConsume')),
         MelEffects(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1870,8 +1874,8 @@ class MreClmt(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelArray('weatherTypes',
-            MelStruct('WLST', 'IiI', (FID, 'weather', None), 'chance',
-                      (FID, 'global', None)),
+            MelStruct(b'WLST', u'IiI', (FID, u'weather'), u'chance',
+                      (FID, u'global')),
         ),
         MelString('FNAM','sunPath',),
         MelString('GNAM','glarePath',),
@@ -2182,8 +2186,8 @@ class MreEczn(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelTruncatedStruct('DATA', '2I2bBb', (FID, 'owner', None),
-                           (FID, 'location', None), ('rank', 0),
+        MelTruncatedStruct(b'DATA', u'2I2bBb', (FID, u'owner'),
+                           (FID, u'location'), u'rank',
                            ('minimumLevel', 0), (EcznTypeFlags, 'flags', 0),
                            ('maxLevel', 0), old_versions={'2I'}),
     )
@@ -2333,12 +2337,12 @@ class MreExpl(MelRecord):
         MelFid('EITM','objectEffect'),
         MelFid('MNAM','imageSpaceModifier'),
         MelTruncatedStruct(
-            'DATA', '6I5f2I', (FID, 'light', None), (FID, 'sound1', None),
-            (FID, 'sound2', None), (FID, 'impactDataset', None),
-            (FID, 'placedObject', None), (FID, 'spawnProjectile', None),
-            'force', 'damage', 'radius', 'isRadius', 'verticalOffsetMult',
-            (ExplTypeFlags, 'flags', 0), 'soundLevel',
-            old_versions={'6I5fI', '6I5f', '6I4f'}),
+            b'DATA', u'6I5f2I', (FID, u'light'), (FID, u'sound1'),
+            (FID, u'sound2'), (FID, u'impactDataset'),
+            (FID, u'placedObject'), (FID, u'spawnProjectile'),
+            u'force', u'damage', u'radius', u'isRadius', u'verticalOffsetMult',
+            (ExplTypeFlags, u'flags'), u'soundLevel',
+            old_versions={u'6I5fI', u'6I5f', u'6I4f'}),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2530,19 +2534,20 @@ class MreFurn(MelRecord):
         MelDestructible(),
         MelKeywords(),
         MelBase('PNAM','pnam_p'),
-        MelUInt16('FNAM', (FurnGeneralFlags, 'general_f', None)),
+        MelUInt16(b'FNAM', (FurnGeneralFlags, u'general_f')),
         MelFid('KNAM','interactionKeyword'),
-        MelUInt32('MNAM', (FurnActiveMarkerFlags, 'activeMarkers', None)),
+        MelUInt32(b'MNAM', (FurnActiveMarkerFlags, u'activeMarkers')),
         MelStruct('WBDT','Bb','benchType','usesSkill',),
         MelFid('NAM1','associatedSpell'),
         MelGroups('markers',
             MelUInt32('ENAM', 'markerIndex',),
-            MelStruct('NAM0','2sH','unknown',(MarkerEntryPointFlags,'disabledPoints_f',None),),
+            MelStruct(b'NAM0', u'2sH', u'unknown1',
+                      (MarkerEntryPointFlags, u'disabledPoints_f')),
             MelFid('FNMK','markerKeyword',),
         ),
         MelGroups('entryPoints',
-            MelStruct('FNPR', '2H', 'markerType',
-                      (MarkerEntryPointFlags, 'entryPointsFlags', None)),
+            MelStruct(b'FNPR', u'2H', u'markerType',
+                      (MarkerEntryPointFlags, u'entryPointsFlags')),
         ),
         MelString('XMRK','modelFilename'),
     )
@@ -2719,11 +2724,11 @@ class MreInfo(MelRecord):
         MelFids('TCLT','linkTo',),
         MelFid('DNAM','responseData',),
         MelGroups('responses',
-            MelStruct('TRDT', '2I4sB3sIB3s', 'emotionType', 'emotionValue',
-                      ('unused1', null4), 'responseNumber', ('unused2', null3),
-                      (FID, 'sound', None),
-                      (_InfoResponsesFlags, 'responseFlags', 0),
-                      ('unused3', null3),),
+            MelStruct(b'TRDT', u'2I4sB3sIB3s', u'emotionType', u'emotionValue',
+                      (u'unused1', null4), u'responseNumber',
+                      (u'unused2', null3), (FID, u'sound'),
+                      (_InfoResponsesFlags, u'responseFlags'),
+                      (u'unused3', null3)),
             MelLString('NAM1','responseText'),
             MelString('NAM2','scriptNotes'),
             MelString('NAM3','edits'),
@@ -3135,7 +3140,8 @@ class MreLigh(MelRecord):
                   'unknown',(LighTypeFlags,'flags',0),'falloffExponent','fov',
                   'nearClip','fePeriod','feIntensityAmplitude',
                   'feMovementAmplitude','value','weight',),
-        MelFloat('FNAM', 'fade'),
+        # None here is on purpose! See AssortedTweak_LightFadeValueFix
+        MelOptFloat(b'FNAM', (u'fade', None)),
         MelFid('SNAM','sound'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3188,13 +3194,14 @@ class MreLeveledList(MreLeveledListBase):
     class MelLlct(MelCounter):
         def __init__(self):
             MelCounter.__init__(
-                self, MelUInt8('LLCT', 'entry_count'), counts='entries')
+                self, MelUInt8(b'LLCT', u'entry_count'), counts=u'entries')
 
     class MelLvlo(MelGroups):
         def __init__(self):
-            MelGroups.__init__(self,'entries',
-                MelStruct('LVLO','=HHIHH','level',('unknown1',null2),
-                          (FID,'listId',None),('count',1),('unknown2',null2)),
+            MelGroups.__init__(self, u'entries',
+                MelStruct(b'LVLO', u'2HI2H', u'level', (u'unknown1', null2),
+                          (FID, u'listId'), (u'count', 1),
+                          (u'unknown2', null2)),
                 MelCoed(),
             )
 
@@ -3648,7 +3655,8 @@ class MreNpc(MreActorBase):
                   (_TemplateFlags, 'templateFlags', 0), 'healthOffset',
                   'bleedoutOverride',),
         MelGroups('factions',
-            MelStruct('SNAM', 'IB3s', (FID, 'faction'), 'rank', 'snamUnused'),
+            MelStruct(b'SNAM', u'IB3s', (FID, u'faction'), u'rank',
+                      (u'unused1', b'ODB')),
         ),
         MelOptFid('INAM', 'deathItem'),
         MelOptFid('VTCK', 'voice'),
@@ -4137,7 +4145,7 @@ class MreQust(MelRecord):
         MelFull(),
         MelStruct('DNAM', '=H2B4sI', (_questFlags, 'questFlags', 0),
                   'priority', 'formVersion', 'unknown', 'questType'),
-        MelOptStruct('ENAM','4s',('event',None)),
+        MelOptStruct(b'ENAM', u'4s', (u'event_name', null4)),
         MelFids('QTGL','textDisplayGlobals'),
         MelString('FLTR','objectWindowFilter'),
         MelConditions('dialogueConditions'),
@@ -4167,12 +4175,15 @@ class MreQust(MelRecord):
         MelBase('ANAM','aliasMarker'),
         MelGroups('aliases',
             MelUnion({
-                'ALST': MelOptUInt32('ALST', ('aliasId', None)),
-                'ALLS': MelOptUInt32('ALLS', ('aliasId', None)),
+                b'ALST': MelUInt32(b'ALST', u'aliasId'),
+                b'ALLS': MelUInt32(b'ALLS', u'aliasId'),
             }),
             MelString('ALID', 'aliasName'),
             MelUInt32('FNAM', (aliasFlags, 'flags', 0)),
-            MelOptSInt32('ALFI', ('forcedIntoAlias', None)),
+            # None here is on purpose - ALFI is an alias ID, and 0 is a
+            # perfectly valid alias ID. However, it does not have to be
+            # present, and so needs to be an optional element -> None.
+            MelOptSInt32(b'ALFI', (u'forcedIntoAlias', None)),
             MelFid('ALFL','specificLocation'),
             MelFid('ALFR','forcedReference'),
             MelFid('ALUA','uniqueActor'),
@@ -4339,7 +4350,7 @@ class MreRefr(MelRecord):
         MelOptFloat('XSCL', ('scale',1.0)),
         MelFid('XSPC','spawnContainer'),
         MelGroup('activateParents',
-            MelUInt8('XAPD', (_parentActivate, 'flags', None)),
+            MelUInt8(b'XAPD', (_parentActivate, u'flags')),
             MelGroups('activateParentRefs',
                 MelStruct('XAPR', 'If', (FID, 'reference'), 'delay'),
             ),
@@ -4359,7 +4370,7 @@ class MreRefr(MelRecord):
         MelNull('XIS2',),
         MelOwnership(),
         MelOptSInt32('XCNT', 'count'),
-        MelOptFloat('XCHG', ('charge', None)),
+        MelOptFloat(b'XCHG', u'charge'),
         MelFid('XLRL','locationReference'),
         MelOptStruct('XESP','IB3s',(FID,'parent'),(_parentFlags,'parentFlags'),('unused6',null3)),
         MelGroups('linkedReference',
@@ -4384,9 +4395,8 @@ class MreRefr(MelRecord):
             MelOptStruct('TNAM', 'Bs', 'marker_type', 'unused1'),
         ),
         MelFid('XATR', 'attachRef'),
-        MelOptStruct('XLOD','3f',('lod1',None),('lod2',None),('lod3',None)),
-        MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),
-                     ('rotX',None),('rotY',None),('rotZ',None)),
+        MelXlod(),
+        MelRef3D(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -4445,8 +4455,8 @@ class MreRegn(MelRecord):
                 MelStruct('RDGS', 'I4s', (FID, 'grass'), ('unknown', null4)),
             )),
             MelRegnEntrySubrecord(3, MelArray('weatherTypes',
-                MelStruct('RDWT', '3I', (FID, 'weather', None), 'chance',
-                          (FID, 'global', None)),
+                MelStruct(b'RDWT', u'3I', (FID, u'weather'), u'chance',
+                          (FID, u'global')),
             )),
         ),
     )
@@ -4688,7 +4698,8 @@ class MreShou(MelRecord):
         MelFid('MDOB','menuDisplayObject'),
         MelLString('DESC','description'),
         MelGroups('wordsOfPower',
-            MelStruct('SNAM','2If',(FID,'word',None),(FID,'spell',None),'recoveryTime',),
+            MelStruct(b'SNAM', u'2If', (FID, u'word'), (FID, u'spell'),
+                      u'recoveryTime'),
         ),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -4784,12 +4795,12 @@ class MreSmqn(MelRecord):
         MelStruct('DNAM', '2H', (SmqnNodeFlags, 'nodeFlags', 0),
                   (SmqnQuestFlags, 'questFlags', 0), ),
         MelUInt32('XNAM', 'maxConcurrentQuests'),
-        MelOptUInt32('MNAM', ('numQuestsToRun', None)),
+        MelOptUInt32(b'MNAM', u'numQuestsToRun'),
         MelCounter(MelUInt32('QNAM', 'quest_count'), counts='quests'),
         MelGroups('quests',
             MelFid('NNAM','quest',),
             MelBase('FNAM','fnam_p'),
-            MelOptFloat('RNAM', ('hoursUntilReset', None)),
+            MelOptFloat(b'RNAM', u'hoursUntilReset'),
         )
     )
     __slots__ = melSet.getSlotsUsed()
@@ -5222,27 +5233,29 @@ class MreWeap(MelRecord):
         MelFid('NAM9','equipSound',),
         MelFid('NAM8','unequipSound',),
         MelStruct('DATA','IfH','value','weight','damage',),
-        MelStruct('DNAM','B3s2fH2sf4s4B2f2I5f12si8si4sf','animationType',
-                  ('dnamUnk1',null3),'speed','reach',
-                  (WeapFlags1,'dnamFlags1',None),('dnamUnk2',null2),'sightFOV',
-                  ('dnamUnk3',null4),'baseVATSToHitChance','attackAnimation',
-                  'numProjectiles','embeddedWeaponAVunused','minRange',
-                  'maxRange','onHit',(WeapFlags2,'dnamFlags2',None),
-                  'animationAttackMultiplier',('dnamUnk4',0.0),
-                  'rumbleLeftMotorStrength','rumbleRightMotorStrength',
-                  'rumbleDuration',('dnamUnk5',null4+null4+null4),'skill',
-                  ('dnamUnk6',null4+null4),'resist',('dnamUnk7',null4),'stagger',),
+        MelStruct(b'DNAM', u'B3s2fH2sf4s4B2f2I5f12si8si4sf', u'animationType',
+                  (u'dnamUnk1', null3), u'speed', u'reach',
+                  (WeapFlags1, u'dnamFlags1'), (u'dnamUnk2', null2),
+                  u'sightFOV', (u'dnamUnk3', null4), u'baseVATSToHitChance',
+                  u'attackAnimation', u'numProjectiles',
+                  u'embeddedWeaponAVunused', u'minRange', u'maxRange',
+                  u'onHit', (WeapFlags2, u'dnamFlags2'),
+                  u'animationAttackMultiplier', u'dnamUnk4',
+                  u'rumbleLeftMotorStrength', u'rumbleRightMotorStrength',
+                  u'rumbleDuration', (u'dnamUnk5', null4 * 3), u'skill',
+                  (u'dnamUnk6', null4 * 2), u'resist', (u'dnamUnk7', null4),
+                  u'stagger'),
         MelIsSSE(
             le_version=MelStruct(
-                'CRDT', 'H2sfB3sI', 'critDamage', ('crdtUnk1', null2),
-                'criticalMultiplier', (WeapFlags3, 'criticalFlags'),
-                ('crdtUnk2', null3), (FID, 'criticalEffect', None)),
+                b'CRDT', u'H2sfB3sI', u'critDamage', (u'crdtUnk1', null2),
+                u'criticalMultiplier', (WeapFlags3, u'criticalFlags'),
+                (u'crdtUnk2', null3), (FID, u'criticalEffect')),
             se_version=MelWeapCrdt(
-                'CRDT', 'H2sfB3s4sI4s', 'critDamage', ('crdtUnk1', null2),
-                'criticalMultiplier', (WeapFlags3, 'criticalFlags'),
-                ('crdtUnk2', null3), ('crdtUnk3', null4),
-                (FID, 'criticalEffect', None), ('crdtUnk4', null4),
-                old_versions={'H2sfB3sI'}),
+                b'CRDT', u'H2sfB3s4sI4s', u'critDamage', (u'crdtUnk1', null2),
+                u'criticalMultiplier', (WeapFlags3, u'criticalFlags'),
+                (u'crdtUnk2', null3), (u'crdtUnk3', null4),
+                (FID, u'criticalEffect'), (u'crdtUnk4', null4),
+                old_versions={u'H2sfB3sI'}),
         ),
         MelUInt32('VNAM', 'detectionSoundLevel'),
         MelFid('CNAM','template',),
