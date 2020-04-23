@@ -26,9 +26,8 @@ Oblivion only . We need this split into cosaves and proper saves module and
 coded for rest of the games."""
 # TODO: Oblivion only - we need to support rest of games - help needed
 from __future__ import division, print_function
-from collections import Counter
+from collections import Counter, defaultdict
 from itertools import starmap, repeat
-from operator import attrgetter
 
 from .. import bolt, bush
 from ..bolt import Flags, sio, GPath, decode, deprint, encode, cstrip, \
@@ -167,9 +166,9 @@ class SreNPC(object):
             #--Done
             return out.getvalue()
 
-    def getTuple(self,fid,version):
+    def getTuple(self,rec_id,version):
         """Returns record as a change record tuple."""
-        return fid,35,self.getFlags(),version,self.getData()
+        return rec_id,35,self.getFlags(),version,self.getData()
 
     def dumpText(self,saveFile):
         """Returns informal string representation of data."""
@@ -245,7 +244,9 @@ class SaveFile(object):
         self.preCreated = None #--Pre-records, pre-created
         self.preRecords = None #--Pre-records, pre
         #--Records, temp effects, fids, worldspaces
-        self.records = [] #--(fid,recType,flags,version,data)
+        # (rec_id, rec_kind, flags, version, data)
+        # rec_kind is an int, rec_id the short formid of the record in the save
+        self.records = []
         self.fid_recNum = None
         self.tempEffects = None
         self.fids = None
@@ -313,9 +314,9 @@ class SaveFile(object):
             #--Records
             for count in xrange(recordsNum):
                 progress(ins.tell(),_(u'Reading records...'))
-                (fid, recType, flags, version, siz) = unpack_many(ins,'=IBIBH')
+                (rec_id, rec_kind, flags, version, siz) = unpack_many(ins,u'=IBIBH')
                 data = ins.read(siz)
-                self.records.append((fid,recType,flags,version,data))
+                self.records.append((rec_id,rec_kind,flags,version,data))
 
             #--Temp Effects, fids, worldids
             progress(ins.tell(),_(u'Reading fids, worldids...'))
@@ -340,9 +341,9 @@ class SaveFile(object):
         outPath -- Path of the output file to write to. Defaults to original file path."""
         if not self.canSave: raise StateError(u"Insufficient data to write file.")
         outPath = outPath or self.fileInfo.getPath()
-        with outPath.open('wb') as out:
-            def _pack(fmt, *data):
-                out.write(struct_pack(fmt, *data))
+        with outPath.open(u'wb') as out:
+            def _pack(*args):
+                out.write(struct_pack(*args))
             #--Progress
             progress = progress or bolt.Progress()
             progress.setFull(self.fileInfo.size)
@@ -384,8 +385,8 @@ class SaveFile(object):
             out.write(self.preRecords)
             #--Records, temp effects, fids, worldspaces
             progress(0.2,_(u'Writing records.'))
-            for fid,recType,flags,version,data in self.records:
-                _pack('=IBIBH',fid,recType,flags,version,len(data))
+            for rec_id,rec_kind,flags,version,data in self.records:
+                _pack(u'=IBIBH',rec_id,rec_kind,flags,version,len(data))
                 out.write(data)
             #--Temp Effects, fids, worldids
             _pack('I',len(self.tempEffects))
@@ -446,13 +447,13 @@ class SaveFile(object):
             return self.records[recNum]
 
     def setRecord(self,record):
-        """Sets records where record = (fid,recType,flags,version,data)."""
+        """Sets records where record = (rec_id,rec_kind,flags,version,data)."""
         if self.fid_recNum is None: self.indexRecords()
-        fid = record[0]
-        recNum = self.fid_recNum.get(fid,-1)
+        rec_id = record[0]
+        recNum = self.fid_recNum.get(rec_id,-1)
         if recNum == -1:
             self.records.append(record)
-            self.fid_recNum[fid] = len(self.records)-1
+            self.fid_recNum[rec_id] = len(self.records)-1
         else:
             self.records[recNum] = record
 
@@ -522,53 +523,51 @@ class SaveFile(object):
         log(u'  %d\t%s' % (len(self.fids),_(u'Fids')))
         #--Created Types
         log.setHeader(_(u'Created Items'))
-        createdHisto = {}
+        created_sizes = defaultdict(int)
+        created_counts = Counter()
         id_created = {}
         for citem in self.created:
-            count,size = createdHisto.get(citem.recType,(0,0))
-            createdHisto[citem.recType] =  (count + 1,size + citem.size)
+            created_sizes[citem.recType] += citem.size
+            created_counts[citem.recType] += 1
             id_created[citem.fid] = citem
-        for type in sorted(createdHisto.keys()):
-            count,size = createdHisto[type]
-            log(u'  %d\t%d kb\t%s' % (count,size//1024,type))
+        for rsig in sorted(created_sizes):
+            log(u'  %d\t%d kb\t%s' % (
+                created_counts[rsig], created_sizes[rsig] // 1024, rsig))
         #--Fids
         lostRefs = 0
         idHist = [0]*256
-        for fid in self.fids:
-            if fid == 0:
+        for rec_id in self.fids:
+            if rec_id == 0:
                 lostRefs += 1
             else:
-                idHist[fid >> 24] += 1
+                idHist[rec_id >> 24] += 1
         #--Change Records
         changeHisto = [0]*256
-        modHisto = [0]*256
-        typeModHisto = {}
+        typeModHisto = defaultdict(Counter)
         knownTypes = set(bush.game.save_rec_types.keys())
         lostChanges = {}
         objRefBases = {}
         objRefNullBases = 0
         fids = self.fids
         for record in self.records:
-            fid,type,rec_flgs,version,data = record
-            if fid ==0xFEFFFFFF: continue #--Ignore intentional(?) extra fid added by patch.
-            mod = fid >> 24
-            if type not in typeModHisto:
-                typeModHisto[type] = modHisto[:]
-            typeModHisto[type][mod] += 1
+            rec_id,rec_kind,rec_flgs,version,data = record
+            if rec_id ==0xFEFFFFFF: continue #--Ignore intentional(?) extra fid added by patch.
+            mod = rec_id >> 24
+            typeModHisto[rec_kind][mod] += 1
             changeHisto[mod] += 1
             #--Lost Change?
-            if doLostChanges and mod == 255 and not (48 <= type <= 51) and fid not in id_created:
-                lostChanges[fid] = record
+            if doLostChanges and mod == 255 and not (48 <= rec_kind <= 51) and rec_id not in id_created:
+                lostChanges[rec_id] = rec_kind
             #--Unknown type?
-            if doUnknownTypes and type not in knownTypes:
+            if doUnknownTypes and rec_kind not in knownTypes:
                 if mod < 255:
-                    print(type,hex(fid),getMaster(mod))
-                    knownTypes.add(type)
-                elif fid in id_created:
-                    print(type,hex(fid),id_created[fid].recType)
-                    knownTypes.add(type)
+                    print(rec_kind,hex(rec_id),getMaster(mod))
+                    knownTypes.add(rec_kind)
+                elif rec_id in id_created:
+                    print(rec_kind, hex(rec_id), id_created[rec_id].recType)
+                    knownTypes.add(rec_kind)
             #--Obj ref parents
-            if type == 49 and mod == 255 and (rec_flgs & 2):
+            if rec_kind == 49 and mod == 255 and (rec_flgs & 2):
                 iref, = struct_unpack('I', data[4:8])
                 count,cumSize = objRefBases.get(iref,(0,0))
                 count += 1
@@ -587,16 +586,17 @@ class SaveFile(object):
         #--Lost Changes
         if lostChanges:
             log.setHeader(_(u'LostChanges'))
-            for id in sorted(lostChanges.keys()):
-                type = lostChanges[id][1]
-                log(hex(id) + rec_type_map.get(type, unicode(type)))
-        for type in sorted(typeModHisto.keys()):
-            modHisto = typeModHisto[type]
+            for rec_id, rec_kind in sorted(lostChanges.iteritems(),
+                                           key=lambda t: t[0]):
+                log(hex(rec_id) + rec_type_map.get(rec_kind, u'%s' % rec_kind))
+        for rec_kind, modHisto in sorted(typeModHisto.iteritems(),
+                                         key=lambda t: t[0]):
             log.setHeader(u'%d %s' % (
-                type, rec_type_map.get(type, _(u'Unknown'))))
-            for modIndex,count in enumerate(modHisto):
-                if count: log(u'  %d\t%s' % (count,getMaster(modIndex)))
-            log(u'  %d\tTotal' % (sum(modHisto),))
+                rec_kind, rec_type_map.get(rec_kind, _(u'Unknown'))))
+            for modIndex,count in sorted(modHisto.iteritems(),
+                                         key=lambda t: t[0]):
+                log(u'  %d\t%s' % (count,getMaster(modIndex)))
+            log(u'  %d\tTotal' % (sum(modHisto.values()),))
         objRefBases = dict((key,value) for key,value in objRefBases.iteritems() if value[0] > 100)
         log.setHeader(_(u'New ObjectRef Bases'))
         if objRefNullBases:
@@ -636,8 +636,8 @@ class SaveFile(object):
         progress(len(self.created),_(u'Scanning change records.'))
         fids = self.fids
         for record in self.records:
-            fid,recType,rec_flgs,version,data = record
-            if recType == 49 and fid >> 24 == 0xFF and (rec_flgs & 2):
+            rec_id,rec_kind,rec_flgs,version,data = record
+            if rec_kind == 49 and rec_id >> 24 == 0xFF and (rec_flgs & 2):
                 iref, = struct_unpack('I', data[4:8])
                 if iref >> 24 != 0xFF and fids[iref] == 0:
                     nullRefCount += 1
@@ -671,10 +671,10 @@ class SaveFile(object):
         fids = self.fids
         kept = []
         for record in self.records:
-            fid,recType,rec_flgs,version,data = record
-            if fid in uncreated:
+            rec_id,rec_kind,rec_flgs,version,data = record
+            if rec_id in uncreated:
                 numUnCreChanged += 1
-            elif removeNullRefs and recType == 49 and fid >> 24 == 0xFF and (rec_flgs & 2):
+            elif removeNullRefs and rec_kind == 49 and rec_id >> 24 == 0xFF and (rec_flgs & 2):
                 iref, = struct_unpack('I', data[4:8])
                 if iref >> 24 != 0xFF and fids[iref] == 0:
                     numUnNulled += 1
@@ -685,14 +685,6 @@ class SaveFile(object):
             progress.plus()
         self.records = kept
         return numUncreated,numUnCreChanged,numUnNulled
-
-    def getCreated(self,*types):
-        """Return created items of specified type(s)."""
-        types = set(types)
-        created = [x for x in self.created if x.recType in types]
-        created.sort(key=attrgetter('fid'))
-        created.sort(key=attrgetter('recType'))
-        return created
 
     def getAbomb(self):
         """Gets animation slowing counter(?) value."""
@@ -739,7 +731,7 @@ class SaveSpells(object):
         saveName = self.saveInfo.name
         progress(progress.full-1,saveName.s)
         for record in saveFile.created:
-            if record.recType == 'SPEL':
+            if record.recType == b'SPEL':
                 allSpells[(saveName,getObjectIndex(record.fid))] = record.getTypeCopy()
 
     def importMod(self,modInfo):
@@ -766,7 +758,7 @@ class SaveSpells(object):
         #--Get masters and npc spell fids
         masters = saveFile.masters[:]
         maxMasters = len(masters) - 1
-        (fid,recType,recFlags,version,data) = saveFile.getRecord(7)
+        (rec_id,rec_kind,recFlags,version,data) = saveFile.getRecord(7)
         npc = SreNPC(recFlags,data)
         pcSpells = {} #--pcSpells[spellName] = iref
         #--NPC doesn't have any spells?
@@ -793,12 +785,12 @@ class SaveSpells(object):
 
     def removePlayerSpells(self,spellsToRemove):
         """Removes specified spells from players spell list."""
-        (fid,recType,recFlags,version,data) = self.saveFile.getRecord(7)
+        (rec_id,rec_kind,recFlags,version,data) = self.saveFile.getRecord(7)
         npc = SreNPC(recFlags,data)
         if npc.spells and spellsToRemove:
             #--Remove spells and save
             npc.spells = [iref for iref in npc.spells if iref not in spellsToRemove]
-            self.saveFile.setRecord(npc.getTuple(fid,version))
+            self.saveFile.setRecord(npc.getTuple(rec_id,version))
             self.saveFile.safeSave()
 
 #------------------------------------------------------------------------------
@@ -819,7 +811,7 @@ class SaveEnchantments(object):
         saveName = self.saveInfo.name
         progress(progress.full-1,saveName.s)
         for index,record in enumerate(saveFile.created):
-            if record.recType == 'ENCH':
+            if record.recType == b'ENCH':
                 record = record.getTypeCopy()
                 record.getSize() #--Since type copy makes it changed.
                 saveFile.created[index] = record
@@ -854,9 +846,9 @@ class Save_NPCEdits(object):
         self.saveInfo.header.pcName = newName
         saveFile = self.saveFile
         saveFile.load()
-        (fid,recType,recFlags,version,data) = saveFile.getRecord(7)
+        (rec_id,rec_kind,recFlags,version,data) = saveFile.getRecord(7)
         npc = SreNPC(recFlags,data)
         npc.full = encode(newName)
         saveFile.pcName = newName
-        saveFile.setRecord(npc.getTuple(fid,version))
+        saveFile.setRecord(npc.getTuple(rec_id,version))
         saveFile.safeSave()

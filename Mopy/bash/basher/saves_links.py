@@ -430,30 +430,31 @@ class Save_EditCreatedData(balt.ListEditorData):
         items.sort(key=lambda x: self.name_nameRecords[x][1][0].recType)
         return items
 
+    _attrs = {b'CLOT': (_(u'Clothing') + u'\n' + _(u'Flags: '), ()), b'ARMO': (
+        _(u'Armor') + u'\n' + _(u'Flags: '), (u'strength',u'value',u'weight')),
+              b'WEAP': (u'', (u'damage',u'value',u'speed',u'reach',u'weight'))}
     def getInfo(self,item):
         """Returns string info on specified item."""
         buff = StringIO.StringIO()
         name,records = self.name_nameRecords[item]
         record = records[0]
         #--Armor, clothing, weapons
-        if record.recType == 'ARMO':
-            buff.write(_(u'Armor')+u'\n'+_(u'Flags: '))
-            buff.write(u', '.join(record.flags.getTrueAttrs())+u'\n')
-            for attr in ('strength','value','weight'):
-                buff.write(u'%s: %s\n' % (attr,getattr(record,attr)))
-        elif record.recType == 'CLOT':
-            buff.write(_(u'Clothing')+u'\n'+_(u'Flags: '))
-            buff.write(u', '.join(record.flags.getTrueAttrs())+u'\n')
-        elif record.recType == 'WEAP':
-            buff.write(bush.game.weaponTypes[record.weaponType]+u'\n')
-            for attr in ('damage','value','speed','reach','weight'):
-                buff.write(u'%s: %s\n' % (attr,getattr(record,attr)))
+        rsig = record.recType
+        if rsig in self._attrs:
+            info_str, attrs = self._attrs[rsig]
+            if rsig == b'WEAP':
+                buff.write(bush.game.weaponTypes[record.weaponType] + u'\n')
+            else:
+                buff.write(info_str)
+                buff.write(u', '.join(record.flags.getTrueAttrs()) + u'\n')
+            for attr in attrs:
+                buff.write(u'%s: %s\n' % (attr, getattr(record, attr)))
         #--Enchanted? Switch record to enchantment.
-        if hasattr(record,'enchantment') and record.enchantment in self.enchantments:
+        if hasattr(record,u'enchantment') and record.enchantment in self.enchantments:
             buff.write(u'\n'+_(u'Enchantment:')+u'\n')
             record = self.enchantments[record.enchantment].getTypeCopy()
         #--Magic effects
-        if record.recType in ('ALCH','SPEL','ENCH'):
+        if record.recType in (b'ALCH', b'SPEL', b'ENCH'):
             buff.write(record.getEffectsSummary())
         #--Done
         ret = buff.getvalue()
