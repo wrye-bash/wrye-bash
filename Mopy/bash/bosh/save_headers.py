@@ -93,15 +93,8 @@ class SaveFileHeader(object):
             for x in self.masters]
 
     def load_image_data(self, ins):
-        self.ssData = ins.read(3 * self.ssWidth * self.ssHeight)
-
-    def _drop_alpha(self, ins): ## TODO: Setup Bash to use the alpha data
-        # Game is in 32bit RGB, Bash is expecting 24bit RGB
-        ssData = ins.read(4 * self.ssWidth * self.ssHeight)
-        # pick out only every 3 bytes, drop the 4th (alpha channel)
-        #ssAlpha = ''.join(itertools.islice(ssData, 0, None, 4))
-        self.ssData = ''.join(
-            itertools.compress(ssData, itertools.cycle(reversed(range(4)))))
+        bpp = (4 if self.has_alpha else 3)
+        self.ssData = bytearray(ins.read(bpp * self.ssWidth * self.ssHeight))
 
     def load_masters(self, ins):
         self._mastersStart = ins.tell()
@@ -113,8 +106,13 @@ class SaveFileHeader(object):
     def calc_time(self): pass
 
     @property
-    def image(self):
-        return self.ssWidth, self.ssHeight, self.ssData
+    def has_alpha(self):
+        """Whether or not this save file has alpha."""
+        return False
+
+    @property
+    def image_parameters(self):
+        return self.ssWidth, self.ssHeight, self.ssData, self.has_alpha
 
     def writeMasters(self, ins, out):
         """Rewrites masters of existing save file."""
@@ -226,17 +224,17 @@ class SkyrimSaveHeader(SaveFileHeader):
 
     def _esl_block(self): return self.__is_sse() and self._formVersion >= 78
 
+    @property
+    def has_alpha(self):
+        return self.__is_sse()
+
     def load_image_data(self, ins):
         if self.__is_sse():
             self._compressType = unpack_short(ins)
         if ins.tell() != self.header_size + 17: raise SaveHeaderError(
             u'New Save game header size (%s) not as expected (%s).' % (
                 ins.tell() - 17, self.header_size))
-        #--Image Data
-        if self.__is_sse():
-            self._drop_alpha(ins)
-        else:
-            super(SkyrimSaveHeader, self).load_image_data(ins)
+        super(SkyrimSaveHeader, self).load_image_data(ins)
 
     def load_masters(self, ins):
         # If on SSE, check _compressType and respond accordingly:
@@ -464,12 +462,15 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
 
     def _esl_block(self): return self.version == 15 and self._formVersion >= 68
 
+    @property
+    def has_alpha(self):
+        return True
+
     def load_image_data(self, ins):
         if ins.tell() != self.header_size + 16: raise SaveHeaderError(
             u'New Save game header size (%s) not as expected (%s).' % (
                 ins.tell() - 16, self.header_size))
-        #--Image Data
-        self._drop_alpha(ins)
+        super(SkyrimSaveHeader, self).load_image_data(ins)
 
     def load_masters(self, ins):
         self._formVersion = unpack_byte(ins)

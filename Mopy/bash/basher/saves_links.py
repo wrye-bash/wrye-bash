@@ -310,7 +310,9 @@ class Save_ExportScreenshot(OneItemLink):
             bass.dirs['patches'].s,
             _(u'Screenshot %s.jpg') % self._selected_item.s, u'*.jpg')
         if not imagePath: return
-        image = Image.GetImage(*self._selected_info.header.image)
+        # TODO(inf) de-wx! All the image stuff is still way too close to wx
+        image = Image.from_bitstream(
+            *self._selected_info.header.image_parameters).ConvertToImage()
         image.SaveFile(imagePath.s, Image.typesDict[u'jpg'])
 
 #------------------------------------------------------------------------------
