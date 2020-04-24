@@ -106,7 +106,7 @@ class _AListsMerger(AListPatcher):
         # 'De'-tagged plugin
         self.de_masters = set()
         for leveler in self.levelers:
-            self.de_masters.update(p_file.p_file_minfos[leveler].get_masters())
+            self.de_masters.update(p_file.p_file_minfos[leveler].masterNames)
         self.srcs = set(self.srcs) & p_file.loadSet
         self.remove_empty_sublists = remove_empty
         self.tag_choices = tag_choices

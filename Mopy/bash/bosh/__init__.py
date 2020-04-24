@@ -176,7 +176,7 @@ class FileInfo(AFile):
 
     def _reset_masters(self):
         #--Master Names/Order
-        self.masterNames = tuple(self.get_masters())
+        self.masterNames = tuple(self._get_masters())
         self.masterOrder = tuple() #--Reset to empty for now
 
     def _file_changed(self, stat_tuple):
@@ -241,16 +241,12 @@ class FileInfo(AFile):
         else:
             return status
 
-    def get_masters(self):
-        """
-        Returns the masters of this file as a list, if that operation makes any
-        sense. For example, the masters of a mod are its plugin masters, while
-        the masters of a save file are the plugins listed in its plugin list.
-        If this operation does not make sense (e.g. on an archive), an
-        AbstractError is raised.
+    def _get_masters(self):
+        """Return the masters of this file as a list, if this file has
+        'masters'. This is cached in the mastersNames attribute, as decoding
+        and G-pathing are expensive.
 
-        :return: A list of the masters of this file, as paths.
-        """
+        :return: A list of the masters of this file, as paths."""
         raise AbstractError()
 
     # Backup stuff - beta, see #292 -------------------------------------------
@@ -460,7 +456,8 @@ class ModInfo(FileInfo):
         else:
             self.calculate_crc(recalculate=True)
 
-    def get_masters(self):
+    def _get_masters(self):
+        """Return the plugin masters, in the order listed in its header."""
         return self.header.masters
 
     # Ghosting and ghosting related overrides ---------------------------------
@@ -653,10 +650,10 @@ class ModInfo(FileInfo):
         """True if has an active mtime conflict with another mod."""
         return load_order.has_load_order_conflict_active(self.name)
 
-    def hasBadMasterNames(self):
+    def hasBadMasterNames(self): # used in status calculation
         """True if has a master with un unencodable name in cp1252."""
         try:
-            for x in self.get_masters(): x.s.encode('cp1252')
+            for x in self.masterNames: x.s.encode('cp1252')
             return False
         except UnicodeEncodeError:
             return True
@@ -819,11 +816,11 @@ class ModInfo(FileInfo):
         return resource_path and self.dir.join(*resource_path).join(
             self.name).exists()
 
-    def has_master_size_mismatch(self):
+    def has_master_size_mismatch(self): # used in status calculation
         """Checks if this plugin has at least one stored master size that does
         not match that master's size on disk."""
         m_sizes = self.header.master_sizes
-        for i, master_name in enumerate(self.get_masters()):
+        for i, master_name in enumerate(self.masterNames):
             if modInfos.size_mismatch(master_name, m_sizes[i]):
                 return True
         return False
@@ -836,7 +833,7 @@ class ModInfo(FileInfo):
             if load_order.in_master_block(self):
                 # We're a master now, so calculate the ONAM
                 temp_headers = ModHeaderReader.read_temp_child_headers(self)
-                num_masters = len(self.get_masters())
+                num_masters = len(self.masterNames)
                 # Note that the only thing that matters is the first two bytes
                 # of the fid, since both overrides and injected records need
                 # ONAM. We sort because xEdit does as well.
@@ -1037,7 +1034,7 @@ class SaveInfo(FileInfo):
 
     def __init__(self, fullpath, load_cache=False):
         # Dict of cosaves that may come with this save file. Need to get this
-        # first, since readHeader calls get_masters, which relies on the cosave
+        # first, since readHeader calls _get_masters, which relies on the cosave
         # for SSE and FO4
         self._co_saves = self.get_cosaves_for_path(fullpath)
         super(SaveInfo, self).__init__(fullpath, load_cache)
@@ -1103,7 +1100,7 @@ class SaveInfo(FileInfo):
         oldMasters = [GPath_no_norm(decode(x)) for x in oldMasters]
         self.abs_path.untemp()
         # Cosaves - note that we have to use self.header.masters since in
-        # FO4/SSE get_masters() returns the correct interleaved order, but
+        # FO4/SSE _get_masters() returns the correct interleaved order, but
         # oldMasters has the 'regular first, then ESLs' order
         master_map = {x.s: y.s for x, y in zip(oldMasters, self.header.masters)
                       if x != y}
@@ -1170,7 +1167,11 @@ class SaveInfo(FileInfo):
         """:rtype: PluggyCosave | None"""
         return self._co_saves.get(PluggyCosave, None)
 
-    def get_masters(self):
+    def _get_masters(self):
+        """Return the save file masters, ie the plugins listed in its plugin
+        list. For esl games this order might not reflect the actual order the
+        masters are mapped to form ids, hence we try to return the correct
+        order if a suitable to this end cosave is present."""
         if bush.game.has_esl:
             xse_cosave = self.get_xse_cosave()
             if xse_cosave is not None: # the cached cosave should be valid
@@ -2242,15 +2243,15 @@ class ModInfos(FileInfos):
                                               notify_bain)
 
     #--Mod selection ----------------------------------------------------------
-    def getSemiActive(self,masters=None):
+    def getSemiActive(self, patches=None):
         """Return (merged,imported) mods made semi-active by Bashed Patch.
 
-        If no bashed patches are present in 'masters' then return empty sets.
+        If no bashed patches are present in 'patches' then return empty sets.
         Else for each bashed patch use its config (if present) to find mods
         it merges or imports."""
-        if masters is None: masters = set(load_order.cached_active_tuple())
+        if patches is None: patches = set(load_order.cached_active_tuple())
         merged_,imported_ = set(),set()
-        patches = masters & self.bashed_patches
+        patches &= self.bashed_patches
         for patch in patches:
             patchConfigs = self.table.getItem(patch, 'bash.patch.configs')
             if not patchConfigs: continue
@@ -2284,27 +2285,27 @@ class ModInfos(FileInfos):
                 _(u'----> Delinquent MASTER: '),
                 u'**')
             if fileInfo:
-                masters = set(fileInfo.get_masters())
-                missing = sorted([x for x in masters if x not in self])
+                masters_set = set(fileInfo.masterNames)
+                missing = sorted([x for x in masters_set if x not in self])
                 log.setHeader(head+_(u'Missing Masters for %s: ') % fileInfo.name.s)
                 for mod in missing:
                     log(bul+u'xx '+mod.s)
                 log.setHeader(head+_(u'Masters for %s: ') % fileInfo.name.s)
-                present = set(x for x in masters if x in self)
+                present = set(x for x in masters_set if x in self)
                 if fileInfo.name in self: #--In case is bashed patch (cf getSemiActive)
                     present.add(fileInfo.name)
                 merged,imported = self.getSemiActive(present)
             else:
                 log.setHeader(head+_(u'Active Mod Files:'))
-                masters = set(load_order.cached_active_tuple())
+                masters_set = set(load_order.cached_active_tuple())
                 merged,imported = self.merged,self.imported
-            all_mods = (masters | merged | imported) & set(self.keys())
+            all_mods = (masters_set | merged | imported) & set(self.keys())
             all_mods = load_order.get_ordered(all_mods)
             #--List
             modIndex = 0
             if not wtxt: log(u'[spoiler]\n', appendNewline=False)
             for mname in all_mods:
-                if mname in masters:
+                if mname in masters_set:
                     prefix = bul+u'%02X' % modIndex
                     modIndex += 1
                 elif mname in merged:
@@ -2318,8 +2319,8 @@ class ModInfos(FileInfos):
                 if showCRC:
                     log_str += _(u'  [CRC: %s]') % (self[mname].crc_string())
                 log(log_str)
-                if mname in masters:
-                    for master2 in self[mname].get_masters():
+                if mname in masters_set:
+                    for master2 in self[mname].masterNames:
                         if master2 not in self:
                             log(sMissing+master2.s)
                         elif load_order.get_ordered((mname, master2))[
@@ -2425,7 +2426,7 @@ class ModInfos(FileInfos):
             ##    return
             # Speed up lookups, since they occur for the plugin and all masters
             acti_set = set(self._active_wip)
-            for master in self[fileName].get_masters():
+            for master in self[fileName].masterNames:
                 # Check that the master is on disk and not already activated
                 if master in _modSet and master not in acti_set:
                     self.lo_activate(master, False, _modSet, _children,
@@ -2454,7 +2455,7 @@ class ModInfos(FileInfos):
         def _children(parent):
             for selFile in sel:
                 if selFile in children: continue # if no more => no more in sel
-                for master in self[selFile].get_masters():
+                for master in self[selFile].masterNames:
                     if master == parent:
                         children.add(selFile)
                         break

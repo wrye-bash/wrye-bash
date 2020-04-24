@@ -120,7 +120,7 @@ def _dependent(modInfo, minfos):
     """Get mods for which modInfo is a master mod (excluding BPs and
     mergeable)."""
     dependent = [mname.s for mname, info in minfos.iteritems() if
-                 not info.isBP() and modInfo.name in info.get_masters() and
+                 not info.isBP() and modInfo.name in info.masterNames and
                  mname not in minfos.mergeable]
     return dependent
 
@@ -170,8 +170,7 @@ def _modIsMergeableLoad(modInfo, minfos, reasons):
         Current.load()
         missingMasters = []
         nonActiveMasters = []
-        masters = modFile.TES4.masters
-        for master in masters:
+        for master in modFile.TES4.masters:
             master = GPath(master)
             if not tags & allowMissingMasters:
                 if master not in minfos:

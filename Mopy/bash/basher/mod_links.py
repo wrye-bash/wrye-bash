@@ -143,7 +143,7 @@ class Mod_CreateDummyMasters(OneItemLink):
         to_refresh = []
         # creates esp files - so place them correctly after the last esm
         previous_master = bosh.modInfos.cached_lo_last_esm()
-        for master in self._selected_info.get_masters():
+        for master in self._selected_info.masterNames:
             if master in bosh.modInfos:
                 continue
             # Missing master, create a dummy plugin for it
@@ -796,7 +796,7 @@ class Mod_ListDependent(OneItemLink):
             loOrder =  lambda tup: load_order.cached_lo_index_or_max(tup[0])
             text_list = u''
             for mod, info in sorted(modInfos.items(), key=loOrder):
-                if self._selected_item in info.get_masters():
+                if self._selected_item in info.masterNames:
                     hexIndex = modInfos.hexIndexString(mod)
                     if hexIndex:
                         prefix = bul + hexIndex
@@ -1071,7 +1071,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         delinquent = collections.defaultdict(list)
         for mod in load_order.cached_active_tuple():
             if mod == self._selected_item: break
-            for master in bosh.modInfos[mod].get_masters():
+            for master in bosh.modInfos[mod].masterNames:
                 if not load_order.cached_is_active(master):
                     missing[mod].append(master)
                 elif master not in previousMods:
@@ -1697,9 +1697,9 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
                   __reEspExt=re.compile(u'' r'\.esp(.ghost)?$', re.I | re.U)):
         super(Mod_FlipMasters, self)._initData(window, selection)
         self._text = _(u'Add ESM Flag To Masters')
-        masters = self._selected_info.get_masters()
-        enable = len(selection) == 1 and len(masters) > 1
-        self.espMasters = [master for master in masters
+        modinfo_masters = self._selected_info.masterNames
+        enable = len(selection) == 1 and len(modinfo_masters) > 1
+        self.espMasters = [master for master in modinfo_masters
             if __reEspExt.search(master.s)] if enable else []
         self.enable = enable and bool(self.espMasters)
         if not self.enable: return

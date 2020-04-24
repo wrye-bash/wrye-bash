@@ -385,7 +385,7 @@ class MasterList(_ModsUIList):
         self.is_inaccurate = fileInfo.has_inaccurate_masters
         has_sizes = bush.game.Esp.check_master_sizes and isinstance(
             fileInfo, bosh.ModInfo) # only mods have master sizes
-        for mi, masters_name in enumerate(fileInfo.get_masters()):
+        for mi, masters_name in enumerate(fileInfo.masterNames):
             masters_size = fileInfo.header.master_sizes[mi] if has_sizes else 0
             self.data_store[mi] = bosh.MasterInfo(masters_name, masters_size)
         self._reList()

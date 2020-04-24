@@ -235,7 +235,7 @@ class SaveFile(object):
         self.gameHeader = None
         self.pcName = None
         #--Masters
-        self.masters = []
+        self._masters = []
         #--Global
         self.globals = []
         self.created = []
@@ -273,10 +273,10 @@ class SaveFile(object):
             self.postNameHeader = ins.read(gameHeaderSize-5-pcNameSize)
 
             #--Masters
-            del self.masters[:]
+            del self._masters[:]
             numMasters = unpack_byte(ins)
             for count in range(numMasters):
-                self.masters.append(GPath(decode(unpack_str8(ins))))
+                self._masters.append(GPath(decode(unpack_str8(ins))))
 
             #--Pre-Records copy buffer
             def insCopy(buff,size,backSize=0):
@@ -357,8 +357,8 @@ class SaveFile(object):
             out.write('\x00')
             out.write(self.postNameHeader)
             #--Masters
-            _pack('B',len(self.masters))
-            for master in self.masters:
+            _pack('B', len(self._masters))
+            for master in self._masters:
                 enc_name = encode(master.s)
                 _pack('B', len(enc_name))
                 out.write(enc_name)
@@ -414,8 +414,8 @@ class SaveFile(object):
 
     def addMaster(self,master):
         """Adds master to masters list."""
-        if master not in self.masters:
-            self.masters.append(master)
+        if master not in self._masters:
+            self._masters.append(master)
 
     def indexCreated(self):
         """Fills out self.fid_recNum."""
@@ -470,7 +470,7 @@ class SaveFile(object):
     def getShortMapper(self):
         """Returns a mapping function to map long fids to short fids."""
         indices = dict(
-            [(mas_name, idx) for idx, mas_name in enumerate(self.masters)])
+            [(mas_name, idx) for idx, mas_name in enumerate(self._masters)])
         def mapper(fid):
             if fid is None: return None
             modName,object = fid
@@ -501,8 +501,8 @@ class SaveFile(object):
         doLostChanges = False
         doUnknownTypes = False
         def getMaster(modIndex):
-            if modIndex < len(self.masters):
-                return self.masters[modIndex].s
+            if modIndex < len(self._masters):
+                return self._masters[modIndex].s
             elif modIndex == 0xFF:
                 return self.fileInfo.name.s
             else:
@@ -719,9 +719,9 @@ class SaveSpells(object):
         progress = progress or bolt.Progress()
         saveFile = self.saveFile = SaveFile(self.saveInfo)
         saveFile.load(SubProgress(progress,0,0.4))
-        progress = SubProgress(progress,0.4,1.0,len(saveFile.masters)+1)
+        progress = SubProgress(progress, 0.4, 1.0, len(saveFile._masters) + 1)
         #--Extract spells from masters
-        for index,master in enumerate(saveFile.masters):
+        for index,master in enumerate(saveFile._masters):
             progress(index,master.s)
             if master in modInfos:
                 self.importMod(modInfos[master])
@@ -755,8 +755,8 @@ class SaveSpells(object):
         """Returns players spell list from savegame. (Returns ONLY spells. I.e., not abilities, etc.)"""
         saveFile = self.saveFile
         #--Get masters and npc spell fids
-        masters = saveFile.masters[:]
-        maxMasters = len(masters) - 1
+        masters_copy = saveFile._masters[:]
+        maxMasters = len(masters_copy) - 1
         (rec_id,rec_kind,recFlags,version,data) = saveFile.getRecord(7)
         npc = SreNPC(recFlags,data)
         pcSpells = {} #--pcSpells[spellName] = iref
@@ -773,7 +773,7 @@ class SaveSpells(object):
             if modIndex == 255:
                 master = self.saveInfo.name
             elif modIndex <= maxMasters:
-                master = masters[modIndex]
+                master = masters_copy[modIndex]
             else: #--Bad fid?
                 continue
             #--Get spell data

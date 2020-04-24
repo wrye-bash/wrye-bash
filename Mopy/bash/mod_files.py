@@ -368,7 +368,7 @@ class ModFile(object):
         if not self.longFids: raise StateError(u"ModFile fids not in long form.")
         masters_set = MasterSet([GPath(bush.game.master_file)])
         for block in self.tops.values():
-            block.updateMasters(masters_set)
+            block.updateMasters(masters_set.add)
         return masters_set.getOrdered()
 
     def _index_mgefs(self):

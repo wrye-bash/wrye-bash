@@ -902,7 +902,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                 saveFile = bosh._saves.SaveFile(saveInfo)
                 saveFile.load()
                 records = saveFile.records
-                mapToOrdered = MasterMap(saveFile.masters, ordered)
+                mapToOrdered = MasterMap(saveFile._masters, ordered)
                 releveledCount = 0
                 #--Loop over change records
                 for recNum in xrange(len(records)):

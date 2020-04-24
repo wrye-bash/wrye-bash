@@ -38,11 +38,11 @@ class PCFaces(object):
 
     class PCFace(object):
         """Represents a face."""
-        __slots__ = ('masters','eid','pcName','race','gender','eye','hair',
+        __slots__ = ('face_masters', 'eid', 'pcName', 'race', 'gender', 'eye', 'hair',
             'hairLength','hairRed','hairBlue','hairGreen','unused3','fggs_p','fgga_p','fgts_p','level','attributes',
             'skills','health','unused2','baseSpell','fatigue','iclass','factions','modifiers','spells')
         def __init__(self):
-            self.masters = []
+            self.face_masters = []
             self.eid = self.pcName = u'generic'
             self.fggs_p = self.fgts_p = '\x00'*4*50
             self.fgga_p = '\x00'*4*30
@@ -120,7 +120,7 @@ class PCFaces(object):
             if targetid and record.fid != targetid: continue
             npc = record.getTypeCopy()
             face = faces[npc.fid] = PCFaces.PCFace()
-            face.masters = saveFile.masters
+            face.face_masters = saveFile._masters
             for attr in ('eid','race','eye','hair','hairLength',
                          'hairRed','hairBlue','hairGreen','unused3',
                          'fggs_p','fgga_p','fgts_p','level','skills',
@@ -170,7 +170,7 @@ class PCFaces(object):
             saveFile.load()
         face = PCFaces.PCFace()
         face.pcName = saveFile.pcName
-        face.masters = saveFile.masters
+        face.face_masters = saveFile._masters
         #--Player ACHR
         record = saveFile.getRecord(0x14)
         data = record[-1]
@@ -218,12 +218,12 @@ class PCFaces(object):
         #--Update masters
         for fid in (face.race, face.eye, face.hair):
             if not fid: continue
-            maxMaster = len(face.masters)-1
+            maxMaster = len(face.face_masters) - 1
             mod = getModIndex(fid)
-            master = face.masters[min(mod,maxMaster)]
-            if master not in saveFile.masters:
-                saveFile.masters.append(master)
-        masterMap = MasterMap(face.masters,saveFile.masters)
+            master = face.face_masters[min(mod, maxMaster)]
+            if master not in saveFile._masters:
+                saveFile._masters.append(master)
+        masterMap = MasterMap(face.face_masters, saveFile._masters)
         #--Set face
         npc.full = face.pcName
         npc.flags.female = (face.gender & 0x1)
@@ -274,12 +274,12 @@ class PCFaces(object):
         #--Update masters
         for fid in (face.race, face.eye, face.hair, face.iclass):
             if not fid: continue
-            maxMaster = len(face.masters)-1
+            maxMaster = len(face.face_masters) - 1
             mod = getModIndex(fid)
-            master = face.masters[min(mod,maxMaster)]
-            if master not in saveFile.masters:
-                saveFile.masters.append(master)
-        masterMap = MasterMap(face.masters,saveFile.masters)
+            master = face.face_masters[min(mod, maxMaster)]
+            if master not in saveFile._masters:
+                saveFile._masters.append(master)
+        masterMap = MasterMap(face.face_masters, saveFile._masters)
 
         #--Player ACHR
         #--Buffer for modified record data
@@ -400,7 +400,7 @@ class PCFaces(object):
         faces = {}
         for npc in modFile.NPC_.getActiveRecords():
             face = PCFaces.PCFace()
-            face.masters = modFile.tes4.masters + [modInfo.name]
+            face.face_masters = modFile.tes4.masters + [modInfo.name]
             for field in ('eid','race','eye','hair','hairLength',
                           'hairRed','hairBlue','hairGreen','unused3',
                           'fggs_p','fgga_p','fgts_p','level','skills',
@@ -422,7 +422,7 @@ class PCFaces(object):
         faces = {}
         for race in modFile.RACE.getActiveRecords():
             face = PCFaces.PCFace()
-            face.masters = []
+            face.face_masters = []
             for field in ('eid','fggs_p','fgga_p','fgts_p'):
                 setattr(face,field,getattr(race,field))
             faces[face.eid] = face
@@ -445,7 +445,7 @@ class PCFaces(object):
         from . import modInfos ##: put it here so I know it's initialized...
         if modInfos.masterName not in tes4.masters:
             tes4.masters.append(modInfos.masterName)
-        masterMap = MasterMap(face.masters,tes4.masters+[modInfo.name])
+        masterMap = MasterMap(face.face_masters,tes4.masters+[modInfo.name])
         #--Eid
         npcEids = set([record.eid for record in modFile.NPC_.records])
         eidForm = u''.join((u"sg", bush.game.raceShortNames.get(face.race,u'Unk'),

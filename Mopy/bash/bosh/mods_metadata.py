@@ -321,7 +321,7 @@ class ConfigHelpers(object):
                 previousMods = set()
                 for mod in load_order.cached_active_tuple():
                     loggedMod = False
-                    for master in modInfos[mod].get_masters():
+                    for master in modInfos[mod].masterNames:
                         if master not in active:
                             label_ = _(u'MISSING')
                         elif master not in previousMods:

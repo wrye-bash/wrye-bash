@@ -131,14 +131,12 @@ class MelSet(object):
         record.longFids = toLong
         record.setChanged()
 
-    def updateMasters(self,record,masters):
+    def updateMasters(self, record, masterset_add):
         """Updates set of master names according to masters actually used."""
         if not record.longFids: raise exception.StateError("Fids not in long format")
-        def updater(fid):
-            masters.add(fid)
-        updater(record.fid)
+        masterset_add(record.fid)
         for element in self.formElements:
-            element.mapFids(record,updater)
+            element.mapFids(record, masterset_add)
 
     def with_distributor(self, distributor_config):
         # type: (dict) -> MelSet
@@ -422,7 +420,7 @@ class MreRecord(object):
         raise exception.AbstractError(u'convertFids called on skipped type '
                                       u'%s' % self.recType)
 
-    def updateMasters(self,masters):
+    def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
         raise exception.AbstractError(u'updateMasters called on skipped type '
                                       u'%s' % self.recType)
@@ -518,7 +516,8 @@ class MreRecord(object):
 #------------------------------------------------------------------------------
 class MelRecord(MreRecord):
     """Mod record built from mod record elements."""
-    melSet = None #--Subclasses must define as MelSet(*mels)
+    #--Subclasses must define as MelSet(*mels)
+    melSet = None # type: MelSet
     __slots__ = []
 
     def __init__(self, header, ins=None, do_unpack=False):
@@ -547,6 +546,6 @@ class MelRecord(MreRecord):
         toLong should be True if converting to long format or False if converting to short format."""
         self.__class__.melSet.convertFids(self,mapper,toLong)
 
-    def updateMasters(self,masters):
+    def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
-        self.__class__.melSet.updateMasters(self,masters)
+        self.__class__.melSet.updateMasters(self, masterset_add)

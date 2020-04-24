@@ -671,7 +671,6 @@ class RacePatcher(AMultiTweaker, ListPatcher):
             srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
-            masters = srcInfo.get_masters()
             bashTags = srcInfo.getBashTags()
             if 'RACE' not in srcFile.tops: continue
             srcFile.convertToLongFids(('RACE',))
@@ -740,7 +739,7 @@ class RacePatcher(AMultiTweaker, ListPatcher):
                     raceData['spellsOverride'] = race.spells
                 if u'R.Description' in bashTags:
                     tempRaceData['text'] = race.text
-            for master in masters:
+            for master in srcInfo.masterNames:
                 if not master in bosh.modInfos: continue  # or break
                 # filter mods
                 if master in cachedMasters:

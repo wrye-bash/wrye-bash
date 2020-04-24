@@ -55,7 +55,7 @@ class ActorFactions(object):
         """Extracts faction editor ids from modInfo and its masters."""
         from . import bosh
         loadFactory = LoadFactory(False,MreRecord.type_class['FACT'])
-        for modName in (modInfo.get_masters() + [modInfo.name]):
+        for modName in (modInfo.masterNames + (modInfo.name,)):
             if modName in self.gotFactions: continue
             modFile = ModFile(bosh.modInfos[modName],loadFactory)
             modFile.load(True)
@@ -296,7 +296,7 @@ class ActorLevels(object):
         from . import bosh
         mod_id_levels, gotLevels = self.mod_id_levels, self.gotLevels
         loadFactory = LoadFactory(False,MreRecord.type_class[b'NPC_'])
-        for modName in (modInfo.get_masters() + [modInfo.name]):
+        for modName in (modInfo.masterNames + (modInfo.name,)):
             if modName in gotLevels: continue
             modFile = ModFile(bosh.modInfos[modName],loadFactory)
             modFile.load(True)
@@ -815,7 +815,7 @@ class FactionRelations(object):
         """Extracts faction editor ids from modInfo and its masters."""
         from . import bosh
         loadFactory = LoadFactory(False,MreRecord.type_class['FACT'])
-        for modName in (modInfo.get_masters() + [modInfo.name]):
+        for modName in (modInfo.masterNames + (modInfo.name,)):
             if modName in self.gotFactions: continue
             modFile = ModFile(bosh.modInfos[modName],loadFactory)
             modFile.load(True)

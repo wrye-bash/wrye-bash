@@ -69,11 +69,11 @@ class _AMerger(ImportPatcher):
             {x for x in self.srcs if x in p_file.mergeSet and u'IIM' in
              p_file.p_file_minfos[x].getBashTags()} if self.iiMode else set())
 
-    ##: Move to ModInfo? get_recursive_masters()? get_masters(recursive=True)?
+    ##: Move to ModInfo? get_recursive_masters()?
     def _recurse_masters(self, srcMod, minfs):
         """Recursively collects all masters of srcMod."""
         ret_masters = set()
-        src_masters = minfs[srcMod].get_masters() if srcMod in minfs else []
+        src_masters = minfs[srcMod].masterNames if srcMod in minfs else []
         for src_master in src_masters:
             ret_masters.add(src_master)
             ret_masters.update(self._recurse_masters(src_master, minfs))
@@ -299,7 +299,6 @@ class ImportActorsSpells(ImportPatcher):
             if srcMod not in minfs: continue
             srcInfo = minfs[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
-            masters = srcInfo.get_masters()
             bashTags = srcInfo.getBashTags()
             srcFile.load(True)
             srcFile.convertToLongFids(target_rec_types)
@@ -309,7 +308,7 @@ class ImportActorsSpells(ImportPatcher):
                 for record in srcFile.tops[recClass.rec_sig].getActiveRecords():
                     fid = mapper(record.fid)
                     tempData[fid] = list(record.spells)
-            for master in reversed(masters):
+            for master in reversed(srcInfo.masterNames):
                 if master not in minfs: continue # or break filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
@@ -483,7 +482,6 @@ class NPCAIPackagePatcher(ImportPatcher):
             if srcMod not in minfs: continue
             srcInfo = minfs[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
-            masters = srcInfo.get_masters()
             bashTags = srcInfo.getBashTags()
             srcFile.load(True)
             srcFile.convertToLongFids(target_rec_types)
@@ -494,7 +492,7 @@ class NPCAIPackagePatcher(ImportPatcher):
                     recClass.rec_sig].getActiveRecords():
                     fi = mapper(record.fid)
                     tempData[fi] = list(record.aiPackages)
-            for master in reversed(masters):
+            for master in reversed(srcInfo.masterNames):
                 if master not in minfs: continue # or break filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
