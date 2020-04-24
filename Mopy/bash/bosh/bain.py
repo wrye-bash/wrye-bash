@@ -23,9 +23,11 @@
 """BAIN backbone classes."""
 from __future__ import annotations
 
+import cProfile
 import copy
 import io
 import os
+import pstats
 import re
 import shutil
 import sys
@@ -2074,6 +2076,8 @@ class InstallersData(DataStore):
             order_changed = self.refreshOrder()
             refresh_info.redraw.update(order_changed)
             changes |= bool(order_changed)
+        pr = cProfile.Profile()
+        pr.enable()
         # Update volatile attributes of the loaded infos using data_sizeCrcDate
         # and ci_underrides_sizeCrc caches (calculated from ci_dest_sizeCrc)
         if 'N' in what or changes:
@@ -2096,6 +2100,12 @@ class InstallersData(DataStore):
             st_changed = {k for k, v in self.items() if v.refreshStatus(self)}
             refresh_info.redraw.update(st_changed)
             changes |= bool(st_changed)
+        pr.disable()
+        s = io.StringIO()
+        sortby = 'cumulative'
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        deprint(s.getvalue())
         if 'C' in what or changes:
             self.converters_data.refreshConverters(progress, fullRefresh)
         #--Done
