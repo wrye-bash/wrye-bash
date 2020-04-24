@@ -88,7 +88,7 @@ class SaveFileHeader(object):
         self.pcName = decode(cstrip(self.pcName))
         self.pcLocation = decode(cstrip(self.pcLocation), bolt.pluginEncoding,
                                  avoidEncodings=(u'utf8', u'utf-8'))
-        self.masters = [bolt.GPath(decode(
+        self.masters = [bolt.GPath_no_norm(decode(
             x, bolt.pluginEncoding, avoidEncodings=(u'utf8', u'utf-8')))
             for x in self.masters]
 

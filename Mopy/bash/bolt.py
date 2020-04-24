@@ -375,12 +375,25 @@ _gpaths = {}
 
 def GPath(str_or_uni):
     """Path factory and cache.
-    :rtype: Path
-    """
+
+    :rtype: Path"""
     if isinstance(str_or_uni, Path) or str_or_uni is None: return str_or_uni
     if not str_or_uni: return Path(u'') # needed, os.path.normpath(u'') = u'.'!
     if str_or_uni in _gpaths: return _gpaths[str_or_uni]
     return _gpaths.setdefault(str_or_uni, Path(os.path.normpath(str_or_uni)))
+
+##: generally points at file names, masters etc. using Paths, which they should
+# not - hunt down and just use strings
+def GPath_no_norm(str_or_uni):
+    """Alternative to GPath that does not call normpath. It is up to the caller
+    to ensure that the invariant name == os.path.normpath(name) holds for all
+    values pased into this method.
+
+    :rtype: Path"""
+    if isinstance(str_or_uni, Path) or str_or_uni is None: return str_or_uni
+    if not str_or_uni: return Path(u'') # needed, os.path.normpath(u'') = u'.'!
+    if str_or_uni in _gpaths: return _gpaths[str_or_uni]
+    return _gpaths.setdefault(str_or_uni, Path(str_or_uni))
 
 def GPathPurge():
     """Cleans out the _gpaths dictionary of any unused bolt.Path objects.
@@ -534,11 +547,11 @@ class Path(object):
     @property
     def tail(self):
         """For alpha\beta.gamma, returns beta.gamma."""
-        return GPath(self.stail)
+        return GPath_no_norm(self.stail)
     @property
     def body(self):
         """For alpha\beta.gamma, returns beta."""
-        return GPath(self.sbody)
+        return GPath_no_norm(self.sbody)
 
     #--Root, ext
     @property
@@ -676,19 +689,25 @@ class Path(object):
     def join(*args):
         norms = [Path.getNorm(x) for x in args]
         return GPath(os.path.join(*norms))
+
     def list(self):
         """For directory: Returns list of files."""
         if not os.path.exists(self._s): return []
-        return [GPath(x) for x in os.listdir(self._s)]
+        return [GPath_no_norm(x) for x in os.listdir(self._s)]
+
     def walk(self,topdown=True,onerror=None,relative=False):
         """Like os.walk."""
         if relative:
             start = len(self._s)
-            for root_dir,dirs,files in _walk(self._s,topdown,onerror):
-                yield (GPath(root_dir[start:]),[GPath(x) for x in dirs],[GPath(x) for x in files])
+            for root_dir,dirs,files in _walk(self._s, topdown, onerror):
+                yield (GPath(root_dir[start:]),
+                       [GPath_no_norm(x) for x in dirs],
+                       [GPath_no_norm(x) for x in files])
         else:
-            for root_dir,dirs,files in _walk(self._s,topdown,onerror):
-                yield (GPath(root_dir),[GPath(x) for x in dirs],[GPath(x) for x in files])
+            for root_dir,dirs,files in _walk(self._s, topdown, onerror):
+                yield (GPath(root_dir),
+                       [GPath_no_norm(x) for x in dirs],
+                       [GPath_no_norm(x) for x in files])
 
     def split(self):
         """Splits the path into each of it's sub parts.  IE: C:\Program Files\Bethesda Softworks
