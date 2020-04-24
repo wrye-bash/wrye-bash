@@ -25,7 +25,7 @@
 __once__ only in game.fallout3.Fallout3GameInfo#init. No other game.records
 file must be imported till then."""
 import struct
-from collections import defaultdict
+from collections import OrderedDict
 
 from ... import brec
 from ...bolt import Flags, struct_unpack, struct_pack
@@ -79,7 +79,7 @@ if brec.MelModel is None:
             MelGroup.__init__(self, attr, *model_elements)
 
     brec.MelModel = _MelModel
-from ...brec import MelModel
+from ...brec import MelModel, MelLists
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -1017,12 +1017,12 @@ class MreDebr(MelRecord):
                                ('modPath', null1), ('flags', 0))
 
         def loadData(self, record, ins, sub_type, size_, readId):
-            data = ins.read(size_, readId)
-            (record.percentage,) = struct_unpack('B',data[0:1])
-            record.modPath = data[1:-2]
-            if data[-2] != null1:
+            byte_data = ins.read(size_, readId)
+            (record.percentage,) = struct_unpack(u'B',byte_data[0:1])
+            record.modPath = byte_data[1:-2]
+            if byte_data[-2] != null1:
                 raise ModError(ins.inName,u'Unexpected subrecord: %s' % readId)
-            (record.flags,) = struct_unpack('B',data[-1])
+            (record.flags,) = struct_unpack(u'B',byte_data[-1])
 
         def dumpData(self,record,out):
             data = ''
@@ -1954,6 +1954,15 @@ class MreNote(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class _MelNpcData(MelLists):
+    """Convert npc stats into health, attributes."""
+    _attr_indexes = OrderedDict(
+        [(u'health', 0), (u'attributes', slice(1, None))])
+
+    def __init__(self, struct_format):
+        super(_MelNpcData, self).__init__(b'DATA', struct_format, u'health',
+            (u'attributes', [0] * 21))
+
 class MreNpc(MreActor):
     """Non-Player Character."""
     rec_sig = b'NPC_'
@@ -1991,39 +2000,10 @@ class MreNpc(MreActor):
         (17,'repair'),))
     aggroflags = Flags(0, Flags.getNames('aggroRadiusBehavior',))
 
-    class MelNpcData(MelStruct):
-        """Convert npc stats into skills, health, attributes."""
-
-        def loadData(self, record, ins, sub_type, size_, readId,
-                     __unpackers=defaultdict(
-                         lambda: struct.Struct(u'=I21B').unpack,
-                         {11: struct.Struct(u'=I7B').unpack})):
-            unpacked = list(ins.unpack(__unpackers[size_], size_, readId))
-            recordSetAttr = record.__setattr__
-            recordSetAttr('health',unpacked[0])
-            recordSetAttr('attributes',unpacked[1:])
-
-        def dumpData(self,record,out):
-            recordGetAttr = record.__getattribute__
-            values = [recordGetAttr('health')]+recordGetAttr('attributes')
-            if len(recordGetAttr('attributes')) == 7:
-                out.packSub(self.subType,'=I7B',*values)
-            else:
-                out.packSub(self.subType,'=I21B',*values)
-
-    class MelNpcDnam(MelStruct):
+    class MelNpcDnam(MelLists):
         """Convert npc stats into skills."""
-        def loadData(self, record, ins, sub_type, size_, readId,
-                     __unpacker=struct.Struct(u'=28B').unpack):
-            unpacked = list(ins.unpack(__unpacker, size_, readId))
-            recordSetAttr = record.__setattr__
-            recordSetAttr('skillValues',unpacked[:14])
-            recordSetAttr('skillOffsets',unpacked[14:])
-
-        def dumpData(self,record,out):
-            recordGetAttr = record.__getattribute__
-            values = recordGetAttr('skillValues')+recordGetAttr('skillOffsets')
-            out.packSub(self.subType,'=28B',*values)
+        _attr_indexes = OrderedDict(
+            [(u'skillValues', slice(14)), (u'skillOffsets', slice(14, None))])
 
     melSet = MelSet(
         MelEdid(),
@@ -2056,9 +2036,13 @@ class MreNpc(MreActor):
         MelFids('PKID','aiPackages'),
         MelStrings('KFFZ','animations'),
         MelFid('CNAM','iclass'),
-        MelNpcData('DATA','','health',('attributes',[0]*21)),
+        MelUnion({
+            11: _MelNpcData(u'=I7B'),
+            25: _MelNpcData(u'=I21B')
+        }, decider=SizeDecider()),
         MelFids('PNAM','headParts'),
-        MelNpcDnam('DNAM','',('skillValues',[0]*14),('skillOffsets',[0]*14)),
+        MelNpcDnam(b'DNAM', u'=28B', (u'skillValues', [0] * 14),
+                   (u'skillOffsets', [0] * 14)),
         MelFid('HNAM','hair'),
         # None here is on purpose, for race patcher
         MelOptFloat(b'LNAM', (u'hairLength', None)),

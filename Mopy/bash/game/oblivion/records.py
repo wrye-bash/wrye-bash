@@ -23,6 +23,7 @@
 # =============================================================================
 """This module contains the oblivion record classes."""
 import struct
+from collections import OrderedDict
 
 from ... import brec
 from ...bolt import Flags
@@ -59,7 +60,7 @@ if brec.MelModel is None:
             )
 
     brec.MelModel = _MelModel
-from ...brec import MelModel
+from ...brec import MelModel, MelLists
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -1315,23 +1316,11 @@ class MreNpc(MreActorBase):
         (16,'recharge'),
         (17,'repair'),))
 
-    class MelNpcData(MelStruct):
+    class MelNpcData(MelLists):
         """Convert npc stats into skills, health, attributes."""
-
-        def loadData(self, record, ins, sub_type, size_, readId,
-                     __unpacker=struct.Struct(u'=21BH2s8B').unpack):
-            unpacked = list(ins.unpack(__unpacker, size_, readId))
-            recordSetAttr = record.__setattr__
-            recordSetAttr('skills',unpacked[:21])
-            recordSetAttr('health',unpacked[21])
-            recordSetAttr('unused1',unpacked[22])
-            recordSetAttr('attributes',unpacked[23:])
-
-        def dumpData(self,record,out):
-            recordGetAttr = record.__getattribute__
-            values = recordGetAttr('skills') + [recordGetAttr('health')] + [
-                recordGetAttr('unused1')] + recordGetAttr('attributes')
-            out.packSub(self.subType,'=21BH2s8B',*values)
+        _attr_indexes = OrderedDict( # 21 skills and 7 attributes
+            [(u'skills', slice(21)), (u'health', 21), (u'unused2', 22),
+             (u'attributes', slice(23, None))])
 
     melSet = MelSet(
         MelEdid(),
@@ -1356,8 +1345,9 @@ class MreNpc(MreActorBase):
         MelFids('PKID','aiPackages'),
         MelStrings('KFFZ','animations'),
         MelFid('CNAM','iclass'),
-        MelNpcData('DATA', '', ('skills', [0] * 21), 'health',
-                   ('unused2', null2), ('attributes', [0] * 8)),
+        MelNpcData(b'DATA', u'=21BH2s8B', (u'skills', [0 for __ in range(21)]),
+                   u'health', (u'unused2', null2),
+                   (u'attributes', [0 for __ in range(8)])),
         MelFid('HNAM','hair'),
         # None here is on purpose, for race patcher
         MelOptFloat(b'LNAM', (u'hairLength', None)),

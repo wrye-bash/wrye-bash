@@ -2007,20 +2007,18 @@ class MreDebr(MelRecord):
 
         def loadData(self, record, ins, sub_type, size_, readId):
             """Reads data from ins into record attribute."""
-            data = ins.read(size_, readId)
-            (record.percentage,) = struct_unpack('B',data[0:1])
-            record.modPath = data[1:-2]
-            if data[-2] != null1:
+            byte_data = ins.read(size_, readId)
+            (record.percentage,) = struct_unpack('B',byte_data[0:1])
+            record.modPath = byte_data[1:-2]
+            if byte_data[-2] != null1:
                 raise ModError(ins.inName,u'Unexpected subrecord: %s' % readId)
-            (record.flags,) = struct_unpack('B',data[-1])
+            (record.flags,) = struct_unpack('B',byte_data[-1])
 
         def dumpData(self,record,out):
             """Dumps data from record to outstream."""
-            data = ''
-            data += struct_pack('B',record.percentage)
-            data += record.modPath
-            data += null1
-            data += struct_pack('B',record.flags)
+            data = b''.join(
+                [struct_pack(u'B', record.percentage), record.modPath, null1,
+                 struct_pack(u'B', record.flags)])
             out.packSub('DATA',data)
 
     melSet = MelSet(

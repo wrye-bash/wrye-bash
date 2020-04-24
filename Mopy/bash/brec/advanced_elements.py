@@ -33,6 +33,7 @@ __author__ = u'Infernio'
 
 import copy
 import struct
+from collections import OrderedDict
 
 from .basic_elements import MelBase, MelNull, MelObject, MelStruct
 from .mod_io import ModWriter
@@ -495,6 +496,28 @@ class MelTruncatedStruct(MelStruct):
         if len(self._all_unpackers) != 1:
             raise exception.AbstractError()
         return super(MelTruncatedStruct, self).static_size
+
+#------------------------------------------------------------------------------
+class MelLists(MelStruct):
+    """Convenience subclass to collect unpacked attributes to lists.
+    'actions' is discarded"""
+    # map attribute names to slices/indexes of the tuple of unpacked elements
+    _attr_indexes = OrderedDict() # type: OrderedDict[basestring, slice | int]
+
+    def loadData(self, record, ins, sub_type, size_, readId):
+        unpacked = list(ins.unpack(self._unpacker, size_, readId))
+        setter = record.__setattr__
+        for attr, _slice in self.__class__._attr_indexes.iteritems():
+            setter(attr, unpacked[_slice])
+
+    def dumpData(self,record,out):
+        recordGetAttr = record.__getattribute__
+        values = []
+        for rattr, _slice in self.__class__._attr_indexes.iteritems():
+            attr_val = recordGetAttr(rattr)
+            values.append(attr_val) if isinstance(_slice, int) else \
+                values.extend(attr_val)
+        out.packSub(self.subType, self.struct_format, *values)
 
 #------------------------------------------------------------------------------
 # Unions and Deciders
