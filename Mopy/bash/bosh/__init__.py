@@ -3516,8 +3516,11 @@ def init_stores(progress):
     bsaInfos = BSAInfos()
     progress(0.3, _('Initializing plugins'))
     ModInfos() # modInfos global is set in __init__
+    from pympler.tracker import SummaryTracker
+    tracker = SummaryTracker()
     progress(0.5, _('Initializing saves'))
     saveInfos = SaveInfos()
+    tracker.print_diff()
     progress(0.6, _('Initializing INIs'))
     iniInfos = INIInfos()
     return modInfos
