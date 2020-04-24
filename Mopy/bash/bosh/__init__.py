@@ -25,9 +25,11 @@ are the DataStore singletons and bolt.AFile subclasses populating the data
 stores. bush.game must be set, to properly instantiate the data stores."""
 from __future__ import annotations
 
+import cProfile
 import io
 import os
 import pickle
+import pstats
 import re
 import sys
 import time
@@ -3512,15 +3514,20 @@ def init_stores(progress):
     and modInfos strings detection. Screens/installers data are refreshed
     upon showing the panel - we should probably do the same for saves."""
     global bsaInfos, saveInfos, iniInfos
+    pr = cProfile.Profile()
+    pr.enable()
     progress(0.2, _('Initializing BSAs'))
     bsaInfos = BSAInfos()
     progress(0.3, _('Initializing plugins'))
     ModInfos() # modInfos global is set in __init__
-    from pympler.tracker import SummaryTracker
-    tracker = SummaryTracker()
     progress(0.5, _('Initializing saves'))
     saveInfos = SaveInfos()
-    tracker.print_diff()
     progress(0.6, _('Initializing INIs'))
     iniInfos = INIInfos()
+    pr.disable()
+    s = io.StringIO()
+    sortby = 'cumulative'
+    ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+    ps.print_stats()
+    deprint(s.getvalue())
     return modInfos
