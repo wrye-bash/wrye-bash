@@ -61,13 +61,6 @@ from ..ini_files import IniFile, OBSEIniFile, DefaultIniFile, GameIni, \
 from ..mod_files import ModFile, ModHeaderReader
 
 # Singletons, Constants -------------------------------------------------------
-#--Constants
-# Tags that have been removed from Wrye Bash and should be dropped from pickle
-# files. Explanations:
-#  - C.GridFlags: Renamed to C.ForceHideLand, a few mods had already used it
-#  - Merge: Obsoleted due to reworking of the patch merger
-#  - ScriptContents: Dangerous tag, never worked correctly
-removed_tags = {u'C.GridFlags', u'Merge', u'ScriptContents'}
 reOblivion = re.compile(
     u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|_GOTY non-SI).esm$', re.U)
 # quick or auto save.bak(.bak...)
@@ -519,25 +512,22 @@ class ModInfo(FileInfo):
     def getBashTags(self):
         """Returns any Bash flag keys. Drops obsolete tags."""
         ret_tags = modInfos.table.getItem(self.name, u'bashTags', set())
-        fixed_tags = ret_tags - removed_tags
+        fixed_tags = process_tags(ret_tags, drop_unknown=False)
         if fixed_tags != ret_tags:
             self.setBashTags(fixed_tags)
         return fixed_tags & bush.game.allTags
 
-    def getBashTagsDesc(self, filter_unknown=True):
-        """Returns any Bash flag keys. If filter_unknown is True, filter out
-        any obsolete and unknown tags."""
+    def getBashTagsDesc(self):
+        """Returns any Bash flag keys."""
         description = self.header.description or u''
         maBashKeys = re.search(u'{{ *BASH *:([^}]+)}}', description,
                                flags=re.U | re.I)
         if not maBashKeys:
             return set()
         else:
-            bashTags = maBashKeys.group(1).split(u',')
-            tags_set = set([tag.strip() for tag in bashTags])
-            # If we should filter out, remove obsolete and unknown tags
-            if filter_unknown: tags_set &= bush.game.allTags - removed_tags
-            return tags_set
+            tags_set = {tag.strip() for tag in maBashKeys.group(1).split(u',')}
+            # Remove obsolete and unknown tags and resolve any tag aliases
+            return process_tags(tags_set)
 
     def reloadBashTags(self):
         """Reloads bash tags from mod description, LOOT and Data/BashTags."""
@@ -552,8 +542,6 @@ class ModInfo(FileInfo):
         added, removed = configHelpers.get_tags_from_dir(self.name)
         tags |= added
         tags -= removed
-        # Filter out unknown tags and store the result
-        tags &= bush.game.allTags
         self.setBashTags(tags)
 
     #--Header Editing ---------------------------------------------------------
@@ -824,6 +812,32 @@ class ModInfo(FileInfo):
                 self.header.setChanged()
         # TODO(inf) On FO4, ONAM is based on all overrides in complex records.
         #  That will have to go somewhere like ModFile.save though.
+
+# Deprecated/Obsolete Bash Tags -----------------------------------------------
+# Tags that have been removed from Wrye Bash and should be dropped from pickle
+# files
+removed_tags = {u'Merge', u'ScriptContents'}
+# Indefinite backwards-compatibility aliases for deprecated tags
+tag_aliases = {
+    u'C.GridFlags': {u'C.ForceHideLand'},
+    u'InventOnly': {u'IIM', u'Invent.Add', u'Invent.Remove'},
+    u'Invent': {u'Invent.Add', u'Invent.Remove'}
+}
+
+def process_tags(tag_set, drop_unknown=True):
+    """Removes obsolete tags from and resolves any tag aliases in the
+    specified set of tags. See the comments above for more information. If
+    drop_unknown is True, also removes any unknown tags (tags that are not
+    currently used, obsolete or aliases)."""
+    ret_tags = tag_set.copy()
+    ret_tags -= removed_tags
+    for old_tag, replacement_tags in tag_aliases.iteritems():
+        if old_tag in tag_set:
+            ret_tags.discard(old_tag)
+            ret_tags.update(replacement_tags)
+    if drop_unknown:
+        ret_tags &= bush.game.allTags
+    return ret_tags
 
 #------------------------------------------------------------------------------
 def get_game_ini(ini_path, is_abs=True):

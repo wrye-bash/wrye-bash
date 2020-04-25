@@ -1345,24 +1345,6 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
-            <td>InventOnly</td>
-            <td>
-                <em>Deprecated. Use Invent in conjunction with IIM instead.</em>
-            </td>
-            <td>
-                <em>N/A</em>
-            </td>
-        </tr>
-        <tr>
-            <td>Merge</td>
-            <td>
-                <em>Obsolete. This tag is ignored.</em>
-            </td>
-            <td>
-                <em>N/A</em>
-            </td>
-        </tr>
-        <tr>
             <td>MustBeActiveIfImported</td>
             <td>Must be active to function correctly even if it is imported into the Bashed Patch. Currently this tags only function is that Bash won't ask to deactivate the plugin.</td>
             <td>
@@ -1375,6 +1357,44 @@ C.Location, -C.LockList
             <td>
                 <em>N/A</em>
             </td>
+        </tr>
+    </tbody>
+</table>
+<table>
+    <thead>
+        <tr>
+            <th colspan="2">Removed &amp; Deprecated Bash Tags</th>
+        </tr>
+        <tr>
+            <th>Tag</th>
+            <th>Replacement/Notes</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>C.GridFlags</td>
+            <td>Use C.ForceHideLand instead.</td>
+        </tr>
+        <tr>
+            <td>Invent</td>
+            <td>Split into <code>Invent.Add</code>, <code>Invent.Change</code>
+                and <code>Invent.Remove</code>. The behavior of the old
+                <code>Invent</code> tag is equivalent to
+                <code>Invent.Add</code> combined with
+                <code>Invent.Remove</code>.</td>
+        </tr>
+        <tr>
+            <td>InventOnly</td>
+            <td>Use the Invent tags mentioned above in conjunction with
+                <code>IIM</code> instead.</td>
+        </tr>
+        <tr>
+            <td>Merge</td>
+            <td>Obsoleted due to Merge Patches rework.</td>
+        </tr>
+        <tr>
+            <td>ScriptContents</td>
+            <td>Dangerous tag that was never fully implemented.</td>
         </tr>
     </tbody>
 </table>
@@ -1912,9 +1932,47 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
-            <td>Invent</td>
-            <td>Changes inventories.</td>
-            <td>Addition, removal or change in count/number of an item in records:
+            <td>Invent.Add</td>
+            <td>Adds items to inventories.</td>
+            <td>Addition of items in the following records:
+                <ul>
+                    <li>(CONT) Container</li>
+                    <li>(CREA) Creature &mdash;
+                        <strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                    </li>
+                    <li>(NPC_) Non-Player Character</li>
+                </ul>
+                <em>Note that changing an item's FormID is indistinguishable
+                    from removing it and adding a new one with a different
+                    FormID, so in that case you will need to tag with both
+                    <code>Invent.Add</code> and
+                    <code>Invent.Remove</code>.</em>
+                <br>
+                <br>
+                <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Invent.Change</td>
+            <td>Changes other properties (like count and owner) of items in
+                inventories.</td>
+            <td>Change of item properties in the following records:
+                <ul>
+                    <li>(CONT) Container</li>
+                    <li>(CREA) Creature &mdash;
+                        <strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                    </li>
+                    <li>(NPC_) Non-Player Character</li>
+                </ul>
+                <br>
+                <br>
+                <strong>Not available for Fallout 4 &amp; not functional for CBash in Oblivion.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Invent.Remove</td>
+            <td>Removes items from inventories.</td>
+            <td>Removal of a items in the following records:
                 <ul>
                     <li>(CONT) Container</li>
                     <li>(CREA) Creature &mdash;
@@ -1922,6 +1980,11 @@ C.Location, -C.LockList
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
+                <em>Note that changing an item's FormID is indistinguishable
+                    from removing it and adding a new one with a different
+                    FormID, so in that case you will need to tag with both
+                    <code>Invent.Add</code> and
+                    <code>Invent.Remove</code>.</em>
                 <br>
                 <br>
                 <strong>Not available for Fallout 4.</strong>

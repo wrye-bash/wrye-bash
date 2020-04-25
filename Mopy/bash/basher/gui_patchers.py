@@ -1051,7 +1051,7 @@ class _AImportInventory(_ImporterPatcherPanel):
     patcher_name = _(u'Import Inventory')
     _patcher_txt = _(u'Merges changes to NPC, creature and container '
                      u'inventories.')
-    autoKey = {u'Invent', u'InventOnly'}
+    autoKey = {u'Invent.Add', u'Invent.Change', u'Invent.Remove'}
 
 class ImportInventory(_AImportInventory):
     patcher_type = importers.ImportInventory

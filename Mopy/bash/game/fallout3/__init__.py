@@ -145,10 +145,11 @@ class Fallout3GameInfo(GameInfo):
         u'C.Music', u'C.Name', u'C.Owner', u'C.RecordFlags', u'C.Regions',
         u'C.Water', u'Creatures.Blood', u'Creatures.Type', u'Deactivate',
         u'Deflst', u'Delev', u'Destructible', u'Factions', u'Filter',
-        u'Graphics', u'Invent', u'MustBeActiveIfImported', u'Names',
-        u'NoMerge', u'NPC.Class', u'Npc.EyesOnly', u'Npc.HairOnly',
-        u'NPC.Race', u'NpcFaces', u'NpcFacesForceFullImport', u'ObjectBounds',
-        u'Relev', u'Scripts', u'Sound', u'SpellStats', u'Stats', u'Text',
+        u'Graphics', u'Invent.Add', u'Invent.Change', u'Invent.Remove',
+        u'MustBeActiveIfImported', u'Names', u'NoMerge', u'NPC.Class',
+        u'Npc.EyesOnly', u'Npc.HairOnly', u'NPC.Race', u'NpcFaces',
+        u'NpcFacesForceFullImport', u'ObjectBounds', u'Relev', u'Scripts',
+        u'Sound', u'SpellStats', u'Stats', u'Text',
     }
 
     # ActorImporter, AliasesPatcher, AssortedTweaker, CellImporter, ContentsChecker,

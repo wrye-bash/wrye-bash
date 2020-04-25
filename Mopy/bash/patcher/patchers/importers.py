@@ -1518,13 +1518,12 @@ class _AImportInventory(AListPatcher):  # next class that has ___init__
 
     def __init__(self, p_name, p_file, p_sources):
         super(_AImportInventory, self).__init__(p_name, p_file, p_sources)
-        self.id_deltas = {}
+        self.id_deltas = defaultdict(list)
         #should be redundant since this patcher doesn't allow unloaded
         #self.srcs = [x for x in self.srcs if (x in modInfos and x in
         # patchFile.allMods)]
-        self.inventOnlyMods = set(x for x in self.srcs if (
-                x in p_file.mergeSet and {u'InventOnly', u'IIM'} &
-                p_file.p_file_minfos[x].getBashTags()))
+        self.inventOnlyMods = {x for x in self.srcs if x in p_file.mergeSet and
+                               u'IIM' in p_file.p_file_minfos[x].getBashTags()}
 
 class ImportInventory(_AImportInventory, ImportPatcher):
     logMsg = u'\n=== ' + _(u'Inventories Changed') + u': %d'
@@ -1534,11 +1533,21 @@ class ImportInventory(_AImportInventory, ImportPatcher):
                      x in p_file.p_file_minfos and x in p_file.allSet]
         super(ImportInventory, self).__init__(p_name, p_file, p_sources)
         self.masters = set(chain.from_iterable(
-            p_file.p_file_minfos[srcMod].get_masters()
+            self._recurse_masters(srcMod, p_file.p_file_minfos)
             for srcMod in self.srcs))
         self._masters_and_srcs = self.masters | set(self.srcs)
         self.mod_id_entries = {}
         self.touched = set()
+
+    ##: Move to ModInfo? get_recursive_masters()? get_masters(recursive=True)?
+    def _recurse_masters(self, srcMod, minfs):
+        """Recursively collects all masters of srcMod."""
+        ret_masters = set()
+        src_masters = minfs[srcMod].get_masters() if srcMod in minfs else []
+        for src_master in src_masters:
+            ret_masters.add(src_master)
+            ret_masters.update(self._recurse_masters(src_master, minfs))
+        return ret_masters
 
     def initData(self,progress):
         """Get data from source files."""
@@ -1582,6 +1591,11 @@ class ImportInventory(_AImportInventory, ImportPatcher):
                         id_entries[record.fid] = record.items[:]
         #--Source mod?
         if modName in self.srcs:
+            # The applied tags limit what data we're going to collect
+            applied_tags = modFile.fileInfo.getBashTags()
+            can_add = u'Invent.Add' in applied_tags
+            can_change = u'Invent.Change' in applied_tags
+            can_remove = u'Invent.Remove' in applied_tags
             id_entries = {}
             for master in modFile.tes4.masters:
                 if master in mod_id_entries:
@@ -1589,14 +1603,27 @@ class ImportInventory(_AImportInventory, ImportPatcher):
             for fid,entries in mod_id_entries[modName].iteritems():
                 masterEntries = id_entries.get(fid)
                 if masterEntries is None: continue
-                masterItems = set(x.item for x in masterEntries)
-                modItems = set(x.item for x in entries)
-                removeItems = masterItems - modItems
+                masterItems = {x.item for x in masterEntries}
+                modItems = {x.item for x in entries}
+                removeItems = masterItems - modItems if can_remove else set()
+                # Note that we need to calculate these whether or not we're
+                # Invent.Add-tagged, because Invent.Change needs them as well.
                 addItems = modItems - masterItems
                 addEntries = [x for x in entries if x.item in addItems]
-                deltas = self.id_deltas.get(fid)
-                if deltas is None: deltas = self.id_deltas[fid] = []
-                deltas.append((removeItems,addEntries))
+                # Changed entries are those entries that haven't been newly
+                # added but also differ from the master entries
+                if can_change:
+                    lookup_added = set(addEntries)
+                    lookup_masters = set(masterEntries)
+                    changed_entries = [x for x in entries
+                                       if x not in lookup_masters
+                                       and x not in lookup_added]
+                else:
+                    changed_entries = []
+                final_add_entries = addEntries if can_add else []
+                if removeItems or final_add_entries or changed_entries:
+                    id_deltas[fid].append((removeItems, final_add_entries,
+                                           changed_entries))
         #--Keep record?
         if modFile.fileInfo.name not in self.inventOnlyMods:
             for inv_type in bush.game.inventoryTypes:
@@ -1604,6 +1631,9 @@ class ImportInventory(_AImportInventory, ImportPatcher):
                 id_records = patchBlock.id_records
                 for record in getattr(modFile,inv_type).getActiveRecords():
                     fid = mapper(record.fid)
+                    # Copy the defining version of each record into the BP -
+                    # updating it is handled by
+                    # mergeModFile/update_patch_records_from_mod
                     if fid in touched and fid not in id_records:
                         patchBlock.setRecord(record.getTypeCopy(mapper))
 
@@ -1613,28 +1643,48 @@ class ImportInventory(_AImportInventory, ImportPatcher):
         keep = self.patchFile.getKeeper()
         id_deltas = self.id_deltas
         mod_count = Counter()
+        def item_fid_key(i):
+            return i.item
         for inv_type in bush.game.inventoryTypes:
             for record in getattr(self.patchFile,inv_type).records:
                 changed = False
-                deltas = id_deltas.get(record.fid)
+                deltas = id_deltas[record.fid]
                 if not deltas: continue
-                removable = set(x.item for x in record.items)
-                for removeItems,addEntries in reversed(deltas):
-                    if removeItems:
-                        #--Skip if some items to be removed have already
-                        # been removed
-                        if not removeItems.issubset(removable): continue
+                # Use sorted to preserve duplicates, but ignore order. This is
+                # safe because order does not matter for items.
+                old_items = sorted(record.items, key=item_fid_key)
+                for remove_items, add_entries, change_entries in deltas:
+                    # First execute removals, don't want to change something
+                    # we're going to remove
+                    if remove_items:
                         record.items = [x for x in record.items if
-                                        x.item not in removeItems]
-                        removable -= removeItems
-                        changed = True
-                    if addEntries:
-                        current = set(x.item for x in record.items)
-                        for entry in addEntries:
-                            if entry.item not in current:
+                                        x.item not in remove_items]
+                    # Then execute changes, don't want to modify our own
+                    # additions
+                    if change_entries:
+                        # In order to not modify the list while iterating
+                        final_remove = set()
+                        final_add = []
+                        for change_entry in change_entries:
+                            # Look for one with the same item - can't just use
+                            # a dict or change the items directly because we
+                            # have to respect duplicates
+                            for current_entry in record.items:
+                                if change_entry.item == current_entry.item:
+                                    # Remove the old entry, add the changed one
+                                    final_remove.add(current_entry)
+                                    final_add.append(change_entry)
+                                    break
+                        # No need to check both, see add/append above
+                        if final_remove:
+                            record.items = [i for i in record.items if i
+                                            not in final_remove] + final_add
+                    if add_entries:
+                        current_entries = {x.item for x in record.items}
+                        for entry in add_entries:
+                            if entry.item not in current_entries:
                                 record.items.append(entry)
-                                changed = True
-                if changed:
+                if old_items != sorted(record.items, key=item_fid_key):
                     keep(record.fid)
                     mod_count[record.fid[0]] += 1
         self.id_deltas.clear()
@@ -1663,18 +1713,18 @@ class CBash_ImportInventory(_AImportInventory, _RecTypeModLogging):
             masterItems = set(
                 (item, count) for item, count in masterEntry.items_list if
                 item.ValidateFormID(self.patchFile))
-            removeItems = masterItems - modItems
-            addItems = modItems - masterItems
-            if len(removeItems) or len(addItems):
-                deltas = id_deltas.get(fid)
-                if deltas is None: deltas = id_deltas[fid] = []
-                deltas.append(
-                    (set((item for item, count in removeItems)), addItems))
+            removeItems = (masterItems - modItems
+                           if u'Invent.Remove' in bashTags else set())
+            addItems = (modItems - masterItems
+                        if u'Invent.Add' in bashTags else set())
+            if removeItems or addItems:
+                id_deltas[fid].append(({item for item, count in removeItems},
+                                       addItems))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         self.scan_more(modFile,record,bashTags)
-        deltas = self.id_deltas.get(record.fid)
+        deltas = self.id_deltas[record.fid]
         if not deltas: return
         #If only the inventory is imported, the deltas have to be applied to
         #whatever record would otherwise be winning

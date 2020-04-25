@@ -27,7 +27,7 @@ higher-level building blocks can be found in common_subrecords.py."""
 from __future__ import division, print_function
 import struct
 
-from .utils_constants import FID, null1
+from .utils_constants import FID, null1, _make_hashable
 from .. import bolt, exception
 from ..bolt import decode, encode
 
@@ -42,10 +42,13 @@ class MelObject(object):
         """Operator: !="""
         return not isinstance(other,MelObject) or self.__dict__ != other.__dict__
 
+    def __hash__(self):
+        return hash(_make_hashable(self.__dict__))
+
     def __repr__(self):
         """Carefully try to show as much info about ourselves as possible."""
         to_show = []
-        if hasattr(self, '__slots__'):
+        if hasattr(self, u'__slots__'):
             for obj_attr in self.__slots__:
                 # attrs starting with _ are internal - union types,
                 # distributor states, etc.

@@ -57,6 +57,16 @@ def _coerce(value, newtype, base=None, AllowNone=False):
 
 _int_unpacker = struct.Struct(u'I').unpack
 
+def _make_hashable(target_obj):
+    """Bit of a HACK, but at least it fixes any code that just *assumed* set
+    lookups with MelObject worked."""
+    if isinstance(target_obj, dict):
+        return tuple([(k, _make_hashable(v))
+                      for k, v in target_obj.iteritems()])
+    elif isinstance(target_obj, (list, set, tuple)):
+        return tuple([_make_hashable(x) for x in target_obj])
+    return target_obj
+
 # Reference (fid) -------------------------------------------------------------
 def strFid(form_id):
     """Return a string representation of the fid."""

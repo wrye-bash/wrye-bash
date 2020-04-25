@@ -148,14 +148,14 @@ class OblivionGameInfo(GameInfo):
         u'C.Name', u'C.Owner', u'C.RecordFlags', u'C.Regions', u'C.Water',
         u'Creatures.Blood', u'Creatures.Type', u'Deactivate', u'Delev',
         u'Eyes', u'Factions', u'Filter', u'Graphics', u'Hair', u'IIM',
-        u'Invent', u'MustBeActiveIfImported', u'Names', u'NoMerge',
-        u'NPC.Class', u'Npc.EyesOnly', u'Npc.HairOnly', u'NPC.Race',
-        u'NpcFaces', u'NpcFacesForceFullImport', u'R.AddSpells',
-        u'R.Attributes-F', u'R.Attributes-M', u'R.ChangeSpells',
-        u'R.Description', u'R.Ears', u'R.Head', u'R.Mouth', u'R.Relations',
-        u'R.Skills', u'R.Teeth', u'Relations', u'Relev', u'Roads',
-        u'Scripts', u'Sound', u'SpellStats', u'Stats', u'Text',
-        u'Voice-F', u'Voice-M',
+        u'Invent.Add', u'Invent.Change', u'Invent.Remove',
+        u'MustBeActiveIfImported', u'Names', u'NoMerge', u'NPC.Class',
+        u'Npc.EyesOnly', u'Npc.HairOnly', u'NPC.Race', u'NpcFaces',
+        u'NpcFacesForceFullImport', u'R.AddSpells', u'R.Attributes-F',
+        u'R.Attributes-M', u'R.ChangeSpells', u'R.Description', u'R.Ears',
+        u'R.Head', u'R.Mouth', u'R.Relations', u'R.Skills', u'R.Teeth',
+        u'Relations', u'Relev', u'Roads', u'Scripts', u'Sound', u'SpellStats',
+        u'Stats', u'Text', u'Voice-F', u'Voice-M',
     }
 
     patchers = (u'PatchMerger', # PatchMerger must come first!

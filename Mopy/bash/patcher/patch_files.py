@@ -234,8 +234,8 @@ class PatchFile(_PFile, ModFile):
                 pstate = index+0.5
                 isMerged = modName in self.mergeSet
                 doFilter = isMerged and u'Filter' in bashTags
-                #--iiMode is a hack to support Item Interchange. Actual key used is InventOnly.
-                iiMode = isMerged and bool({u'InventOnly', u'IIM'} & bashTags)
+                #--iiMode is a hack to support Item Interchange. Actual key used is IIM.
+                iiMode = isMerged and u'IIM' in bashTags
                 if isMerged:
                     progress(pstate,modName.s+u'\n'+_(u'Merging...'))
                     self.mergeModFile(modFile, doFilter, iiMode)
@@ -399,12 +399,11 @@ class CBash_PatchFile(_PFile, ObModFile):
                       'ROADS','CELL','CELLS','PGRDS','LANDS','ACHRS',
                       'ACRES','REFRS']
 
-        iiModeSet = {u'InventOnly', u'IIM'}
         levelLists = bush.game.listTypes
 
         infos = bosh.modInfos
-        IIMSet = set([modName for modName in (self.allSet | self.scanSet) if
-                      bool(infos[modName].getBashTags() & iiModeSet)])
+        IIMSet = {modName for modName in (self.allSet | self.scanSet)
+                  if u'IIM' in infos[modName].getBashTags()}
 
         self.Current = ObCollection(ModsPath=bass.dirs['mods'].s)
 
@@ -511,8 +510,8 @@ class CBash_PatchFile(_PFile, ObModFile):
                 isScanned = modName in self.scanSet and modName not in self.loadSet and modName not in self.mergeSet
                 isMerged = modName in self.mergeSet
                 doFilter = isMerged and u'Filter' in bashTags
-                #--iiMode is a hack to support Item Interchange. Actual key used is InventOnly.
-                iiMode = isMerged and bool(iiModeSet & bashTags)
+                #--iiMode is a hack to support Item Interchange. Actual key used is IIM.
+                iiMode = isMerged and u'IIM' in bashTags
                 iiFilter = IIMSet and not (iiMode or group in levelLists)
                 modFile = self.Current.LookupModFile(modInfo.getPath().stail)
                 modGName = modFile.GName
@@ -560,7 +559,7 @@ class CBash_PatchFile(_PFile, ObModFile):
                             continue
 
                         if iiFilter:
-                            #InventOnly/IIM tags are a pain. They don't fit the normal patch model.
+                            #IIM tags are a pain. They don't fit the normal patch model.
                             #They're basically a mixture of scanned and merged.
                             #This effectively hides all non-level list records from the other patchers
                             conflicts = [conflict for conflict in record.Conflicts() if conflict.GetParentMod().GName not in IIMSet]

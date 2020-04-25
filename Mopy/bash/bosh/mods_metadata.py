@@ -91,8 +91,10 @@ class ConfigHelpers(object):
     def getTagsInfoCache(self, modName):
         """Gets bash tag info from the cache, or from loot_parser if it is not
         cached."""
+        from . import process_tags ##: yuck
         if modName not in self.tagCache:
             tags = lootDb.get_plugin_tags(modName)
+            tags = process_tags(tags[0]), process_tags(tags[1])
             self.tagCache[modName] = tags
             return tags
         else:
@@ -113,6 +115,7 @@ class ConfigHelpers(object):
 
         :param plugin_name: The name of the plugin to check the tag file for.
         :return: A tuple containing two sets of added and deleted tags."""
+        from . import process_tags ##: yuck
         # Check if the file even exists first
         tag_files_dir = bass.dirs['tag_files']
         tag_file = tag_files_dir.join(plugin_name.body + u'.txt')
@@ -133,7 +136,7 @@ class ConfigHelpers(object):
                         removed.add(tag_entry[1:].strip())
                     else:
                         added.add(tag_entry)
-        return added, removed
+        return process_tags(added), process_tags(removed)
 
     def save_tags_to_dir(self, plugin_name, plugin_tags, plugin_old_tags):
         """Compares plugin_tags to plugin_old_tags and saves the diff to

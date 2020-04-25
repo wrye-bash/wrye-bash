@@ -161,7 +161,7 @@ def _modIsMergeableLoad(modInfo, minfos, reasons):
     """Check if mod is mergeable, loading it and taking into account the
     rest of mods."""
     verbose = reasons is not None
-    allowMissingMasters = {u'Filter', u'IIM', u'InventOnly'}
+    allowMissingMasters = {u'Filter', u'IIM'}
     tags = modInfo.getBashTags()
     #--Load test
     with ObCollection(ModsPath=bass.dirs['mods'].s) as Current:
