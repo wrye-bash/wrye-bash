@@ -68,7 +68,7 @@ class MorrowindGameInfo(GameInfo):
 
     class Xe(GameInfo.Xe):
         full_name = u'TES3Edit'
-        expert_key = u'tes3View.iKnowWhatImDoing'
+        xe_key_prefix = u'tes3View'
 
     # BAIN:
     dataDirs = GameInfo.dataDirs | {

@@ -328,11 +328,16 @@ def app_button_factory(exePathArgs, *args, **kwargs):
 #------------------------------------------------------------------------------
 class _Mods_xEditExpert(BoolLink):
     """Toggle xEdit expert mode (when launched via Bash)."""
+    _text = _(u'Expert Mode')
+    _help = _(u'Launch %s in expert mode.') % bush.game.Xe.full_name
+    key = bush.game.Xe.xe_key_prefix + u'.iKnowWhatImDoing'
 
-    def __init__(self):
-        super(_Mods_xEditExpert, self).__init__()
-        self._text = _(u'%s Expert') % bush.game.Xe.full_name
-        self.key = bush.game.Xe.expert_key
+class _Mods_xEditSkipBSAs(BoolLink):
+    """Toggle xEdit expert mode (when launched via Bash)."""
+    _text = _(u'Skip BSAs')
+    _help = _(u'Skip loading BSAs when opening %s. Will disable some of its '
+              u'functions.') % bush.game.Xe.full_name
+    key = bush.game.Xe.xe_key_prefix + u'.skip_bsas'
 
 class App_Tes4View(_ExeButton):
     """Allow some extra args for Tes4View."""
@@ -373,8 +378,9 @@ class App_Tes4View(_ExeButton):
     def __init__(self, *args, **kwdargs):
         exePath, exeArgs = _parse_button_arguments(args[0])
         super(App_Tes4View, self).__init__(exePath, exeArgs, *args[1:], **kwdargs)
-        if bush.game.Xe.expert_key:
+        if bush.game.Xe.xe_key_prefix:
             self.mainMenu.append(_Mods_xEditExpert())
+            self.mainMenu.append(_Mods_xEditSkipBSAs())
 
     def IsPresent(self): # FIXME(inf) What on earth is this? What's the point??
         if self.exePath in bosh.undefinedPaths or not self.exePath.exists():
@@ -386,16 +392,16 @@ class App_Tes4View(_ExeButton):
         return True
 
     def Execute(self):
-        is_expert = bush.game.Xe.expert_key and bass.settings[
-            bush.game.Xe.expert_key]
+        is_expert = bush.game.Xe.xe_key_prefix and bass.settings[
+            bush.game.Xe.xe_key_prefix + u'.iKnowWhatImDoing']
+        skip_bsas = bush.game.Xe.xe_key_prefix and bass.settings[
+            bush.game.Xe.xe_key_prefix + u'.skip_bsas']
         extraArgs = bass.inisettings[
             'xEditCommandLineArguments'].split() if is_expert else []
-        if balt.getKeyState_Control():
-            extraArgs.append(u'-FixupPGRD')
-        if balt.getKeyState_Shift():
-            extraArgs.append(u'-skipbsa')
         if is_expert:
             extraArgs.append(u'-IKnowWhatImDoing')
+        if skip_bsas:
+            extraArgs.append(u'-skipbsa')
         self.extraArgs = tuple(extraArgs)
         super(App_Tes4View, self).Execute()
 

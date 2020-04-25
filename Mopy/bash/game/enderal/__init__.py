@@ -55,7 +55,7 @@ class EnderalGameInfo(SkyrimGameInfo):
 
     class Xe(SkyrimGameInfo.Xe):
         full_name = u'EnderalEdit'
-        expert_key = 'enderalView.iKnowWhatImDoing'
+        xe_key_prefix = u'enderalView'
 
     nexusUrl = u'https://www.nexusmods.com/enderal/'
     nexusName = u'Enderal Nexus'

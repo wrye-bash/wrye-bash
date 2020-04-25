@@ -61,7 +61,7 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
 
     class Xe(Fallout4GameInfo.Xe):
         full_name = u'FO4VREdit'
-        expert_key = 'fo4vrView.iKnowWhatImDoing'
+        xe_key_prefix = u'fo4vrView'
 
     SkipBAINRefresh = {u'fo4vredit backups', u'fo4vredit cache'}
 

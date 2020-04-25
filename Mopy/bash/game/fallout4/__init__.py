@@ -93,7 +93,7 @@ class Fallout4GameInfo(GameInfo):
 
     class Xe(GameInfo.Xe):
         full_name = u'FO4Edit'
-        expert_key = 'fo4View.iKnowWhatImDoing'
+        xe_key_prefix = u'fo4View'
 
     # BAIN:
     dataDirs = GameInfo.dataDirs | {
