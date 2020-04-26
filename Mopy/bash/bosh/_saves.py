@@ -32,8 +32,8 @@ from .. import bolt, bush
 from ..bolt import Flags, sio, deprint, encode, SubProgress, unpack_many, \
     unpack_int, unpack_short, struct_pack, struct_unpack, pack_int, \
     pack_short, pack_byte
-from ..brec import ModReader, MreRecord, ModWriter, getObjectIndex, \
-    getFormIndices, unpack_header
+from ..brec import ModReader, MreRecord, getObjectIndex, getFormIndices, \
+    unpack_header
 from ..exception import ModError, StateError
 from ..mod_files import ModFile, LoadFactory
 
@@ -350,10 +350,9 @@ class SaveFile(object):
             out.write(self.preCreated)
             #--Created
             progress(0.1,_(u'Writing created.'))
-            modWriter = ModWriter(out)
             _pack('I',len(self.created))
             for record in self.created:
-                record.dump(modWriter)
+                record.dump(out)
             #--Pre-records
             out.write(self.preRecords)
             #--Records, temp effects, fids, worldspaces

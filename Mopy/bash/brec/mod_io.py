@@ -30,7 +30,7 @@ import struct
 # no local imports beyond this, imported everywhere in brec
 from .utils_constants import _int_unpacker, group_types, null1, strFid
 from .. import bolt, exception
-from ..bolt import decoder, encode, struct_pack, struct_unpack
+from ..bolt import decoder, struct_pack, struct_unpack
 
 #------------------------------------------------------------------------------
 # Headers ---------------------------------------------------------------------
@@ -47,12 +47,6 @@ class RecordHeader(object):
     rec_pack_format_str = u''.join(rec_pack_format)
     # precompiled unpacker for record headers
     header_unpack = struct.Struct(rec_pack_format_str).unpack
-    # Format used by sub-record headers. Morrowind uses a different one.
-    sub_header_fmt = u'=4sH'
-    # precompiled unpacker for sub-record headers
-    sub_header_unpack = struct.Struct(sub_header_fmt).unpack
-    # Size of sub-record headers. Morrowind has a different one.
-    sub_header_size = 6
     # http://en.uesp.net/wiki/Tes5Mod:Mod_File_Format#Groups
     pack_formats = {0: u'=4sI4s3I'} # Top Type
     pack_formats.update({x: u'=4s5I' for x in {1, 6, 7, 8, 9, 10}}) # Children
@@ -305,102 +299,3 @@ class ModReader(object):
 
     def unpackRecHeader(self, __head_unpack=unpack_header):
         return __head_unpack(self)
-
-    def unpackSubHeader(self, recType='----', expType=None, expSize=0,
-                         __unpacker=_int_unpacker, __rh=RecordHeader):
-        """Unpack a subrecord header. Optionally checks for match with expected
-        type and size."""
-        selfUnpack = self.unpack
-        (rec_type, size) = selfUnpack(__rh.sub_header_unpack,
-                                      __rh.sub_header_size,
-                                      recType + '.SUB_HEAD')
-        #--Extended storage?
-        while rec_type == 'XXXX':
-            size = selfUnpack(__unpacker, 4, recType + '.XXXX.SIZE.')[0]
-            # Throw away size here (always == 0)
-            rec_type = selfUnpack(__rh.sub_header_unpack,
-                                  __rh.sub_header_size,
-                                  recType + '.XXXX.TYPE')[0]
-        #--Match expected name?
-        if expType and expType != rec_type:
-            raise exception.ModError(self.inName, u'%s: Expected %s subrecord, but '
-                           u'found %s instead.' % (recType, expType, rec_type))
-        #--Match expected size?
-        if expSize and expSize != size:
-            raise exception.ModSizeError(self.inName, recType + '.' + rec_type,
-                                         (expSize,), size)
-        return rec_type,size
-
-#------------------------------------------------------------------------------
-class ModWriter(object):
-    """Wrapper around a TES4 output stream.  Adds utility functions."""
-    def __init__(self,out):
-        self.out = out
-
-    # with statement
-    def __enter__(self): return self
-    def __exit__(self, exc_type, exc_value, exc_traceback): self.out.close()
-
-    #--Stream Wrapping ------------------------------------
-    def write(self,data): self.out.write(data)
-    def tell(self): return self.out.tell()
-    def seek(self,offset,whence=os.SEEK_SET): return self.out.seek(offset,whence)
-    def getvalue(self): return self.out.getvalue()
-    def close(self): self.out.close()
-
-    #--Additional functions -------------------------------
-    def pack(self, *args):
-        self.out.write(struct_pack(*args))
-
-    def packSub(self, sub_rec_type, data, *values):
-        """Write subrecord header and data to output stream.
-        Call using either packSub(sub_rec_type,data) or
-        packSub(sub_rec_type,format,values).
-        Will automatically add a prefacing XXXX size subrecord to handle data
-        with size > 0xFFFF."""
-        try:
-            if data is None: return
-            if values: data = struct_pack(data, *values)
-            outWrite = self.out.write
-            lenData = len(data)
-            if lenData <= 0xFFFF:
-                outWrite(struct_pack(RecordHeader.sub_header_fmt, sub_rec_type,
-                                     lenData))
-            else:
-                outWrite(struct_pack('=4sHI', 'XXXX', 4, lenData))
-                outWrite(struct_pack(RecordHeader.sub_header_fmt, sub_rec_type,
-                                     0))
-            outWrite(data)
-        except Exception:
-            bolt.deprint(u'%r: Failed packing: %s, %s, %s' % (
-                self, sub_rec_type, data, values))
-            raise
-
-    def packSub0(self, sub_rec_type, data, __rh=RecordHeader):
-        """Write subrecord header plus zero terminated string to output
-        stream."""
-        if data is None: return
-        elif isinstance(data,unicode):
-            data = encode(data,firstEncoding=bolt.pluginEncoding)
-        lenData = len(data) + 1
-        outWrite = self.out.write
-        if lenData < 0xFFFF:
-            outWrite(struct_pack(__rh.sub_header_fmt, sub_rec_type, lenData))
-        else:
-            outWrite(struct_pack('=4sHI', 'XXXX', 4, lenData))
-            outWrite(struct_pack(__rh.sub_header_fmt, sub_rec_type, 0))
-        outWrite(data)
-        outWrite('\x00')
-
-    def packRef(self, sub_rec_type, fid):
-        """Write subrecord header and fid reference."""
-        if fid is not None:
-            self.out.write(struct_pack('=4sHI', sub_rec_type, 4, fid))
-
-    def write_string(self, sub_type, string_val, max_size=0, min_size=0,
-                     preferred_encoding=None):
-        """Writes out a string subrecord, properly encoding it beforehand and
-        respecting max_size, min_size and preferred_encoding if they are
-        set."""
-        self.packSub0(sub_type, bolt.encode_complex_string(
-            string_val, max_size, min_size, preferred_encoding))

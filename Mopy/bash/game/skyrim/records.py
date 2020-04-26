@@ -1179,9 +1179,9 @@ class MelVmad(MelBase):
         else:
             vmad.special_data = None
 
-    def dumpData(self, record, out):
+    def pack_subrecord_data(self, record):
         vmad = record.__getattribute__(self.attr)
-        if vmad is None: return
+        if vmad is None: return None
         # Start by dumping out the VMAD header - we read all VMAD versions and
         # object formats, but only dump out VMAD v5 and object format v2
         out_data = struct_pack(u'=hh', 5, 2)
@@ -1196,7 +1196,7 @@ class MelVmad(MelBase):
             out_data += self._get_special_handler(record.recType).dump_frag(
                 vmad.special_data)
         # Finally, write out the subrecord header, followed by the dumped data
-        out.packSub(self.mel_sig, out_data)
+        return out_data
 
     def hasFids(self, formElements):
         # Unconditionally add ourselves - see comment above
@@ -1976,12 +1976,11 @@ class MreDebr(MelRecord):
                 raise ModError(ins.inName,u'Unexpected subrecord: %s' % readId)
             (record.flags,) = struct_unpack('B',byte_data[-1])
 
-        def dumpData(self,record,out):
+        def pack_subrecord_data(self, record):
             """Dumps data from record to outstream."""
-            data = b''.join(
+            return b''.join(
                 [struct_pack(u'B', record.percentage), record.modPath, null1,
                  struct_pack(u'B', record.flags)])
-            out.packSub('DATA',data)
 
     melSet = MelSet(
         MelEdid(),
@@ -2073,8 +2072,8 @@ class MreDobj(MelRecord):
             read_size = ins.tell() - start_pos
             record.unknownDNAM = ins.read(size_ - read_size)
 
-        def _collect_array_data(self, record):
-            return super(MreDobj.MelDobjDnam, self)._collect_array_data(
+        def pack_subrecord_data(self, record):
+            return super(MreDobj.MelDobjDnam, self).pack_subrecord_data(
                 record) + record.unknownDNAM
 
         def getSlotsUsed(self):

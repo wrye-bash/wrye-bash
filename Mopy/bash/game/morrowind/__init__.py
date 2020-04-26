@@ -118,10 +118,11 @@ class MorrowindGameInfo(GameInfo):
         header_type.rec_pack_format_str = u''.join(header_type.rec_pack_format)
         header_type.header_unpack = struct.Struct(
             header_type.rec_pack_format_str).unpack
-        header_type.sub_header_fmt = u'=4sI'
-        header_type.sub_header_unpack = struct.Struct(
-            header_type.sub_header_fmt).unpack
-        header_type.sub_header_size = 8
+        from ...brec import Subrecord
+        Subrecord.sub_header_fmt = u'=4sI'
+        Subrecord.sub_header_unpack = struct.Struct(
+            Subrecord.sub_header_fmt).unpack
+        Subrecord.sub_header_size = 8
         header_type.top_grup_sigs = [
             b'GMST', b'GLOB', b'CLAS', b'FACT', b'RACE', b'SOUN', b'SKIL',
             b'MGEF', b'SCPT', b'REGN', b'SSCR', b'BSGN', b'LTEX', b'STAT',

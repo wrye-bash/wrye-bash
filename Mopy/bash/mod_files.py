@@ -29,7 +29,7 @@ from collections import defaultdict
 
 from . import bolt, bush, env, load_order
 from .bolt import deprint, GPath, SubProgress
-from .brec import MreRecord, ModReader, ModWriter, RecordHeader, RecHeader, \
+from .brec import MreRecord, ModReader, RecordHeader, RecHeader, \
     TopGrupHeader, MobBase, MobDials, MobICells, MobObjects, MobWorlds
 from .exception import ArgumentError, MasterMapError, ModError, StateError
 
@@ -300,7 +300,7 @@ class ModFile(object):
             raise ModError(self.fileInfo.name,
                 u'Attempting to write a file with too many masters (>%u).'
                 % bush.game.Esp.master_limit)
-        with ModWriter(outPath.open(u'wb')) as out:
+        with outPath.open(u'wb') as out:
             #--Mod Record
             self.tes4.setChanged()
             self.tes4.numRecords = sum(block.getNumRecords() for block in self.tops.values())

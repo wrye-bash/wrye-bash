@@ -1019,13 +1019,10 @@ class MelDebrData(MelStruct):
             raise ModError(ins.inName,u'Unexpected subrecord: %s' % readId)
         (record.flags,) = struct_unpack(u'B',byte_data[-1])
 
-    def dumpData(self,record,out):
-        data = b''
-        data += struct_pack(u'B',record.percentage)
-        data += record.modPath
-        data += null1
-        data += struct_pack(u'B',record.flags)
-        out.packSub(b'DATA', data)
+    def pack_subrecord_data(self, record):
+        return b''.join(
+            [struct_pack(u'B', record.percentage), record.modPath, null1,
+             struct_pack(u'B', record.flags)])
 
 class MreDebr(MelRecord):
     """Debris."""
@@ -3029,8 +3026,8 @@ class MreWatr(MelRecord):
             else:
                 raise ModSizeError(ins.inName, readId, (186, 2), size_)
 
-        def dumpData(self,record,out):
-            out.packSub(self.mel_sig, 'H', record.damage)
+        def pack_subrecord_data(self, record):
+            return struct_pack(u'H', record.damage)
 
     class MelWatrDnam(MelTruncatedStruct):
         # TODO(inf) Why do we do this?

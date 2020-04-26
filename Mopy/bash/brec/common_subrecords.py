@@ -25,6 +25,7 @@ definitions for some commonly needed subrecords."""
 
 from __future__ import division, print_function
 from collections import defaultdict
+from itertools import chain
 
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
     MelUnion, PartialLoadDecider, FlagDecider
@@ -457,7 +458,7 @@ class MelRaceParts(MelNull):
     def dumpData(self, record, out):
         for part_indx, part_attr in self._indx_to_attr.iteritems():
             if hasattr(record, part_attr): # only dump present parts
-                out.packSub('INDX', '=I', part_indx)
+                MelUInt32('INDX', '').packSub(out, struct_pack(u'=I',  part_indx))
                 self._indx_to_loader[part_indx].dumpData(record, out)
 
     @property
@@ -468,11 +469,12 @@ class MelRaceParts(MelNull):
 class MelRaceVoices(MelStruct):
     """Set voices to zero, if equal race fid. If both are zero, then skip
     dumping."""
-    def dumpData(self, record, out):
+    def pack_subrecord_data(self, record):
         if record.maleVoice == record.fid: record.maleVoice = 0
         if record.femaleVoice == record.fid: record.femaleVoice = 0
         if (record.maleVoice, record.femaleVoice) != (0, 0):
-            super(MelRaceVoices, self).dumpData(record, out)
+            return super(MelRaceVoices, self).pack_subrecord_data(record)
+        return None
 
 #------------------------------------------------------------------------------
 class MelScript(MelFid):
@@ -548,16 +550,13 @@ class MelMODS(MelBase):
             dataAppend((string,fid,index))
         record.__setattr__(self.attr,data)
 
-    def dumpData(self,record,out):
+    def pack_subrecord_data(self,record):
         data = record.__getattribute__(self.attr)
         if data is not None:
-            data = record.__getattribute__(self.attr)
-            outData = struct_pack('I', len(data))
-            for (string,fid,index) in data:
-                outData += struct_pack('I', len(string))
-                outData += encode(string)
-                outData += struct_pack('=2I', fid, index)
-            out.packSub(self.mel_sig, outData)
+            return b''.join(chain([struct_pack(u'I', len(data))],
+                *([struct_pack(u'I', len(string)), encode(string),
+                   struct_pack(u'=2I', fid, index)]
+                  for (string, fid, index) in data)))
 
     def mapFids(self,record,function,save=False):
         attr = self.attr
@@ -637,5 +636,5 @@ class MelOwnership(MelGroup):
         )
 
     def dumpData(self,record,out):
-        if record.ownership and record.ownership.owner:
+        if record.ownership and record.ownership.owner: ##: use pack_subrecord_data ?
             MelGroup.dumpData(self,record,out)
