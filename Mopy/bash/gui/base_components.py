@@ -116,9 +116,8 @@ class _AComponent(object):
     _wx_widget_type = None # type: type
 
     def __init__(self, parent, *args, **kwargs):
-        """Creates a new _AComponent instance. This initializes _native_widget
-        to None, which will later receive a proper value inside the __init__
-        methods of _AComponent's subclasses."""
+        """Creates a new _AComponent instance by initializing the wx widget
+        with the specified parent, args and kwargs."""
         self._native_widget = self._wx_widget_type(self._resolve(parent),
                                                    *args, **kwargs)
 

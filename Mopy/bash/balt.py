@@ -2363,30 +2363,6 @@ class DnDStatusBar(wx.StatusBar):
         if event: event.Skip()
 
 #------------------------------------------------------------------------------
-class WryeBashSplashScreen(wx.adv.SplashScreen):
-    """This Creates the Splash Screen widget. (The first image you see when
-    starting the Application.)"""
-    def __init__(self, parent=None):
-        splashScreenBitmap = wx.Image(name=bass.dirs['images'].join(
-            u'wryesplash.png').s).ConvertToBitmap()
-        # Center image on the screen and image will stay until clicked by
-        # user or is explicitly destroyed when the main window is ready
-        # alternately wx.SPLASH_TIMEOUT and a duration can be used, but then
-        # you have to guess how long it should last
-        splashStyle = wx.adv.SPLASH_CENTER_ON_SCREEN | wx.adv.SPLASH_NO_TIMEOUT
-        splashDuration = 3500 # Duration in ms the splash screen will be
-        # visible (only used with the TIMEOUT option)
-        wx.adv.SplashScreen.__init__(self, splashScreenBitmap, splashStyle,
-                                 splashDuration, parent)
-        self.Bind(wx.EVT_CLOSE, self.OnExit)
-        wx.Yield()
-
-    def OnExit(self, event):
-        self.Hide()
-        # The program might/will freeze without this line.
-        event.Skip() # Make sure the default handler runs too...
-
-#------------------------------------------------------------------------------
 class NotebookPanel(PanelWin):
     """Parent class for notebook panels."""
     # UI settings keys prefix - used for sashPos and uiList gui settings

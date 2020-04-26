@@ -26,7 +26,7 @@ and the wx.wiz stuff."""
 __author__ = u'Utumno, Infernio'
 
 import wx as _wx
-import wx.adv as _wiz     # wxPython wizard class
+import wx.adv as _adv     # wxPython wizard class
 defPos = _wx.DefaultPosition
 defSize = _wx.DefaultSize
 
@@ -58,8 +58,13 @@ class _TopLevelWin(_AComponent):
 
     @property
     def is_maximized(self):
-        """IsMaximized(self) -> bool"""
+        """Returns True if this window has been maximized."""
         return self._native_widget.IsMaximized()
+
+    @is_maximized.setter
+    def is_maximized(self, new_maximized):
+        """Maximizes or restores this window."""
+        self._native_widget.Maximize(new_maximized)
 
     @property
     def is_iconized(self):
@@ -204,18 +209,18 @@ class WizardDialog(DialogWindow, WithFirstShow):
      - _on_wiz_finished(): Used internally to save size and position
      - _on_show(): used internally to set page size on first showing the wizard
      """
-    _wx_widget_type = _wiz.Wizard
+    _wx_widget_type = _adv.Wizard
 
     def __init__(self, parent, **kwargs):
         kwargs['style'] = _wx.MAXIMIZE_BOX
         super(WizardDialog, self).__init__(parent, **kwargs)
         self.on_wiz_page_change = self._evt_handler(
-            _wiz.EVT_WIZARD_PAGE_CHANGING,
+            _adv.EVT_WIZARD_PAGE_CHANGING,
             lambda event: [event.GetDirection(), event.GetPage()])
         # needed to correctly save size/pos, on_closing seems not enough
-        self._on_wiz_cancel = self._evt_handler(_wiz.EVT_WIZARD_CANCEL)
+        self._on_wiz_cancel = self._evt_handler(_adv.EVT_WIZARD_CANCEL)
         self._on_wiz_cancel.subscribe(self.save_size)
-        self._on_wiz_finished = self._evt_handler(_wiz.EVT_WIZARD_FINISHED)
+        self._on_wiz_finished = self._evt_handler(_adv.EVT_WIZARD_FINISHED)
         self._on_wiz_finished.subscribe(self.save_size)
 
     def _handle_first_show(self):
@@ -315,3 +320,29 @@ class ScrollableWindow(_AComponent):
         self._native_widget.SetScrollbars(
             20 if scroll_horizontal else 0, 20 if scroll_vertical else 0,
             50 if scroll_horizontal else 0, 50 if scroll_vertical else 0)
+
+class CenteredSplash(_AComponent):
+    """A centered splash screen without a timeout. Only disappears when either
+    the entire application terminates or stop_splash is called."""
+    _wx_widget_type = _adv.SplashScreen
+
+    def __init__(self, splash_path):
+        """Creates a new CenteredSplash with an image read from the specified
+        path."""
+        splash_bitmap = _wx.Image(name=splash_path).ConvertToBitmap()
+        # Center image on the screen and image will stay until clicked by
+        # user or is explicitly destroyed when the main window is ready
+        splash_style = _adv.SPLASH_CENTER_ON_SCREEN | _adv.SPLASH_NO_TIMEOUT
+        # Can't use _AComponent.__init__ here, because for some ungodly reason
+        # parent is the *third* parameter in SplashScreen
+        self._native_widget = self._wx_widget_type(splash_bitmap, splash_style,
+                                                   1, None) # Timeout - ignored
+        self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
+        self._on_close_evt.subscribe(self.stop_splash)
+        _wx.Yield()
+
+    def stop_splash(self):
+        """Hides and terminates the splash screen."""
+        self.destroy_component()
+        ##: Apparently won't be hidden if warnTooManyModsBsas warns(?)
+        self.visible = False

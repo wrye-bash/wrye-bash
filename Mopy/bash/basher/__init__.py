@@ -86,7 +86,8 @@ from ..balt import Links, ItemLink
 from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
     TOP, VLayout, EventResult, DropDown, DialogWindow, WindowFrame, Spinner, \
-    Splitter, NotebookCtrl, PanelWin, CheckListBox, Color, Picture, Image
+    Splitter, NotebookCtrl, PanelWin, CheckListBox, Color, Picture, Image, \
+    CenteredSplash
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons
@@ -104,7 +105,7 @@ if sys.prefix not in set(os.environ['PATH'].split(';')):
     os.environ['PATH'] += ';'+sys.prefix
 
 # Settings --------------------------------------------------------------------
-settings = None
+settings = None # type: bolt.Settings
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -4099,17 +4100,14 @@ class BashApp(wx.App):
         """Initialize the application data and create the BashFrame."""
         #--OnStartup SplashScreen and/or Progress
         #   Progress gets hidden behind splash by default, since it's not very informative anyway
-        splashScreen = None
+        splash_screen = None
         with balt.Progress(u'Wrye Bash', _(u'Initializing') + u' ' * 10,
                            elapsed=False) as progress:
             # Is splash enabled in ini ?
-            if bass.inisettings['EnableSplashScreen']:
-                if bass.dirs['images'].join(u'wryesplash.png').exists():
-                    try:
-                            splashScreen = balt.WryeBashSplashScreen()
-                            splashScreen.Show()
-                    except:
-                            pass
+            if bass.inisettings[u'EnableSplashScreen']:
+                if bass.dirs[u'images'].join(u'wryesplash.png').isfile():
+                    splash_screen = CenteredSplash(
+                        bass.dirs[u'images'].join(u'wryesplash.png').s)
             #--Constants
             self.InitResources()
             #--Init Data
@@ -4121,12 +4119,11 @@ class BashApp(wx.App):
             progress(0.8, _(u'Initializing Windows'))
             frame = BashFrame() # Link.Frame global set here
             progress(1.0, _(u'Done'))
-        if splashScreen:
-            splashScreen.Destroy()
-            splashScreen.Hide() # wont be hidden if warnTooManyModsBsas warns..
+        if splash_screen:
+            splash_screen.stop_splash()
         self.SetTopWindow(frame._native_widget)
         frame.show_frame()
-        frame._native_widget.Maximize(settings['bash.frameMax'])
+        frame.is_maximized = settings[u'bash.frameMax']
         frame.RefreshData(booting=True) # used to bind RefreshData
         # Moved notebook.Bind() callback here as OnShowPage() is explicitly
         # called in RefreshData
