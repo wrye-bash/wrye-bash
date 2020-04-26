@@ -87,7 +87,7 @@ from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
     TOP, VLayout, EventResult, DropDown, DialogWindow, WindowFrame, Spinner, \
     Splitter, NotebookCtrl, PanelWin, CheckListBox, Color, Picture, Image, \
-    CenteredSplash
+    CenteredSplash, BusyCursor
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons
@@ -2290,7 +2290,7 @@ class InstallersList(balt.UIList):
             root, newName, _numStr = validate()
         if not root: return EventResult.CANCEL
         #--Rename each installer, keeping the old extension (for archives)
-        with balt.BusyCursor():
+        with BusyCursor():
             refreshes, ex = [(False, False, False)], None
             newselected = []
             try:
@@ -2456,7 +2456,7 @@ class InstallersList(balt.UIList):
             return
         action = self._askCopyOrMove(filenames)
         if action not in ['COPY','MOVE']: return
-        with balt.BusyCursor():
+        with BusyCursor():
             installersJoin = bass.dirs['installers'].join
             convertersJoin = bass.dirs['converters'].join
             filesTo = [installersJoin(x.tail) for x in filenames]
@@ -3137,7 +3137,7 @@ class ScreensList(balt.UIList):
         num = int(numStr or  0)
         digits = len(str(num + len(selected)))
         if numStr: numStr.zfill(digits)
-        with balt.BusyCursor():
+        with BusyCursor():
             to_select = set()
             to_del = set()
             item_edited = [self.panel.detailsPanel.displayed_item]

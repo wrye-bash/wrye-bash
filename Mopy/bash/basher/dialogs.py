@@ -29,7 +29,7 @@ from ..bosh import faces
 from ..gui import ApplyButton, BOTTOM, Button, CancelButton, CENTER, \
     CheckBox, GridLayout, HLayout, Label, LayoutOptions, OkButton, RIGHT, \
     Stretch, TextArea, TextField, VLayout, DropDown, DialogWindow, \
-    ColorPicker, ListBox, Color, Picture
+    ColorPicker, ListBox, Color, Picture, BusyCursor
 
 class ColorDialog(DialogWindow):
     """Color configuration dialog"""
@@ -102,7 +102,7 @@ class ColorDialog(DialogWindow):
     @staticmethod
     def UpdateUIColors():
         """Update the Bash Frame with the new colors"""
-        with balt.BusyCursor():
+        with BusyCursor():
             for (className,title,panel) in tabInfo.itervalues():
                 if panel is not None:
                     panel.RefreshUIColors()

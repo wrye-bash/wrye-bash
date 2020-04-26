@@ -37,7 +37,7 @@ from itertools import groupby, imap
 from operator import itemgetter, attrgetter
 
 from . import imageExts, DataStore, BestIniFile, InstallerConverter, ModInfos
-from .. import balt # YAK!
+from .. import balt, gui # YAK!
 from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
     extract7z, compressionSettings
@@ -1270,7 +1270,7 @@ class InstallerArchive(Installer):
                                       name_new.root + GPath(self.archive).ext)
 
     def _open_txt_file(self, rel_path):
-        with balt.BusyCursor():
+        with gui.BusyCursor():
             # This is going to leave junk temp files behind...
             try:
                 unpack_dir = self.unpackToTemp([rel_path])
@@ -1617,7 +1617,7 @@ class InstallersData(DataStore):
         if self.lastKey not in self.data:
             self.data[self.lastKey] = InstallerMarker(self.lastKey)
         if fullRefresh: # BAIN uses modInfos crc cache
-            with balt.BusyCursor(): modInfos.refresh_crcs()
+            with gui.BusyCursor(): modInfos.refresh_crcs()
         #--Refresh Other - FIXME(ut): docs
         if 'D' in what:
             changed |= self._refresh_from_data_dir(progress, fullRefresh)

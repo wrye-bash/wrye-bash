@@ -345,3 +345,15 @@ class Table(WithCharEvents):
                 # Skip any that would go out of bounds
                 if int(row_label) - 1 < self._native_widget.GetNumberRows():
                     self.set_cell_value(col_label, row_label, target_val)
+
+# Other -----------------------------------------------------------------------
+class BusyCursor(object):
+    """To be used with 'with' statements - changes the user's cursor to the
+    system's 'busy' cursor style. Useful to signal that a running operation is
+    making progress, but won't take long enough to be worth a progress
+    dialog."""
+    def __enter__(self):
+        _wx.BeginBusyCursor()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        _wx.EndBusyCursor()

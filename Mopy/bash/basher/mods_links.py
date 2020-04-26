@@ -31,6 +31,7 @@ from .. import exception
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
     SeparatorLink, Link
 from ..bolt import GPath
+from ..gui import BusyCursor
 
 __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
            'Mods_OblivionVersion', 'Mods_CreateBlankBashedPatch',
@@ -349,7 +350,7 @@ class Mods_CrcRefresh(ItemLink):
     @balt.conversation
     def Execute(self):
         message = u'== %s' % _(u'Mismatched CRCs') + u'\n\n'
-        with balt.BusyCursor(): pairs = bosh.modInfos.refresh_crcs()
+        with BusyCursor(): pairs = bosh.modInfos.refresh_crcs()
         mismatched = dict((k, v) for k, v in pairs.iteritems() if v[0] != v[1])
         if mismatched:
             message += u'  * ' + u'\n  * '.join(

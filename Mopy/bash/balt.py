@@ -34,7 +34,6 @@ from .bolt import GPath, deprint
 from .exception import AbstractError, AccessDeniedError, ArgumentError, \
     BoltError, CancelError, SkipError, StateError
 #--Python
-import textwrap
 import time
 import threading
 from functools import partial, wraps
@@ -49,7 +48,8 @@ import wx.lib.newevent
 from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
     web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
-    Font, CheckListBox, UIListCtrl, PanelWin, Colors, HtmlDisplay, Image
+    Font, CheckListBox, UIListCtrl, PanelWin, Colors, HtmlDisplay, Image, \
+    BusyCursor
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -188,12 +188,6 @@ class ColorChecks(ImageList):
             elif status <=20: shortKey = 'orange.off'
             else: shortKey = 'red.off'
         return self.indices[shortKey]
-
-# Functions -------------------------------------------------------------------
-def text_wrap(text_to_wrap, width=60):
-    """Wraps paragraph to width characters."""
-    pars = [textwrap.fill(line, width) for line in text_to_wrap.split(u'\n')]
-    return u'\n'.join(pars)
 
 # Elements --------------------------------------------------------------------
 def bell(arg=None):
@@ -803,15 +797,6 @@ class TabDragMixin(object):
                 evt = NoteBookDraggedEvent(fromIndex=oldPos,toIndex=newPos)
                 wx.PostEvent(self,evt)
         event.Skip()
-
-#------------------------------------------------------------------------------
-class BusyCursor(object):
-    """Wrapper around wx.BeginBusyCursor and wx.EndBusyCursor, to be used with
-       Pythons 'with' semantics."""
-    def __enter__(self):
-        wx.BeginBusyCursor()
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        wx.EndBusyCursor()
 
 #------------------------------------------------------------------------------
 class Progress(bolt.Progress):

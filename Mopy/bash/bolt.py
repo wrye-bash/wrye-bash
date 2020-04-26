@@ -43,6 +43,7 @@ import struct
 import subprocess
 import sys
 import tempfile
+import textwrap
 import traceback
 from binascii import crc32
 from functools import partial
@@ -1757,6 +1758,11 @@ def cstrip(inString): # TODO(ut): hunt down and deprecate - it's O(n)+
         return inString
     else:
         return inString[:zeroDex]
+
+def text_wrap(text_to_wrap, width=60):
+    """Wraps paragraph to width characters."""
+    pars = [textwrap.fill(line, width) for line in text_to_wrap.split(u'\n')]
+    return u'\n'.join(pars)
 
 _formats = dict.fromkeys(u'bBhHiIlLqQ', u'%d')
 _formats.update({u'f': u'%f', u'd': u'%f', u's': u'"%s"'})
