@@ -27,7 +27,7 @@ from collections import OrderedDict, Counter
 
 from . import env, bush
 from .bass import dirs
-from .bolt import LowerDict, CIstr, deprint, GPath, DefaultLowerDict, decode, \
+from .bolt import LowerDict, CIstr, deprint, GPath, DefaultLowerDict, decoder, \
     getbestencoding, AFile, OrderedLowerDict
 from .exception import AbstractError, CancelError, SkipError, BoltError
 
@@ -51,7 +51,7 @@ def get_ini_type_and_encoding(abs_ini_path):
     with open(u'%s' % abs_ini_path, u'rb') as ini_file:
         content = ini_file.read()
     detected_encoding, _confidence = getbestencoding(content)
-    decoded_content = decode(content, detected_encoding)
+    decoded_content = decoder(content, detected_encoding)
     count = Counter()
     for line in decoded_content.splitlines():
         for ini_type in (IniFile, OBSEIniFile):

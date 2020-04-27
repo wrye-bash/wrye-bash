@@ -45,7 +45,7 @@ from .base_components import _AComponent
 from .buttons import BackwardButton, ForwardButton, ReloadButton
 from .text_components import TextArea
 from .layouts import VLayout
-from ..bolt import decode
+from ..bolt import decoder
 from ..exception import StateError
 
 def web_viewer_available():
@@ -336,4 +336,4 @@ class DocumentViewer(_AComponent):
         # Morrowind are cp1252. However, it most likely is UTF-8 or
         # UTF-8-compatible (ASCII), so try that first.
         with file_path.open(u'rb') as ins:
-            self.load_text(decode(ins.read(), u'utf-8'))
+            self.load_text(decoder(ins.read(), u'utf-8'))

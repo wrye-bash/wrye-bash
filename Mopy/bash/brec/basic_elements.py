@@ -28,7 +28,7 @@ import struct
 
 from .utils_constants import FID, null1, _make_hashable, FixedString
 from .. import bolt, exception
-from ..bolt import decode, encode
+from ..bolt import decoder, encode
 
 #------------------------------------------------------------------------------
 class MelObject(object):
@@ -511,7 +511,7 @@ class MelUnicode(MelString):
         self.encoding = encoding # None == automatic detection
 
     def loadData(self, record, ins, sub_type, size_, readId):
-        value = u'\n'.join(decode(x,self.encoding,avoidEncodings=('utf8','utf-8'))
+        value = u'\n'.join(decoder(x,self.encoding,avoidEncodings=('utf8','utf-8'))
                            for x in bolt.cstrip(ins.read(size_, readId)).split('\n'))
         record.__setattr__(self.attr,value)
 

@@ -29,7 +29,7 @@ from collections import Counter, defaultdict
 from itertools import starmap, repeat
 
 from .. import bolt, bush
-from ..bolt import Flags, sio, GPath, decode, deprint, encode, cstrip, \
+from ..bolt import Flags, sio, GPath, decoder, deprint, encode, cstrip, \
     SubProgress, unpack_byte, unpack_str8, unpack_many, unpack_int, \
     unpack_short, struct_pack, struct_unpack
 from ..brec import ModReader, MreRecord, ModWriter, getObjectIndex, \
@@ -268,14 +268,14 @@ class SaveFile(object):
             #--Save Header, pcName
             gameHeaderSize = unpack_int(ins)
             self.saveNum,pcNameSize = unpack_many(ins, '=IB')
-            self.pcName = decode(cstrip(ins.read(pcNameSize)))
+            self.pcName = decoder(cstrip(ins.read(pcNameSize)))
             self.postNameHeader = ins.read(gameHeaderSize-5-pcNameSize)
 
             #--Masters
             del self._masters[:]
             numMasters = unpack_byte(ins)
             for count in range(numMasters):
-                self._masters.append(GPath(decode(unpack_str8(ins))))
+                self._masters.append(GPath(decoder(unpack_str8(ins))))
 
             #--Pre-Records copy buffer
             def insCopy(buff,size,backSize=0):

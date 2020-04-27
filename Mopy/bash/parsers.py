@@ -38,7 +38,7 @@ from operator import attrgetter, itemgetter
 from . import bush, load_order
 from .balt import Progress
 from .bass import dirs, inisettings
-from .bolt import GPath, decode, deprint, CsvReader, csvFormat, floats_equal, \
+from .bolt import GPath, decoder, deprint, CsvReader, csvFormat, floats_equal, \
     setattr_deep, attrgetter_cache
 from .brec import MreRecord, MelObject, _coerce, genFid, RecHeader
 from .exception import AbstractError
@@ -1188,7 +1188,7 @@ class ScriptText(object):
         with Progress(_(u'Export Scripts')) as progress:
             for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
                 text, longid = eid_data[eid]
-                text = decode(text) # TODO(ut) was only present in PBash version - needed ?
+                text = decoder(text) # TODO(ut) was only present in PBash version - needed ?
                 if skipcomments:
                     tmp = u''
                     for line in text.split(u'\n'):

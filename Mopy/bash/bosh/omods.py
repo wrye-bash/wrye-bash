@@ -26,7 +26,7 @@ import re
 import subprocess
 from subprocess import PIPE
 from .. import env, bolt, bass, archives
-from ..bolt import decode, encode, Path, startupinfo, unpack_int_signed, \
+from ..bolt import decoder, encode, Path, startupinfo, unpack_int_signed, \
     unpack_byte, unpack_short, unpack_int64_signed, struct_pack
 
 def _readNetString(open_file):
@@ -71,18 +71,18 @@ class OmodFile(object):
         """Read info about the omod from the 'config' file"""
         with open(conf_path.s, u'rb') as omod_config:
             self.version = unpack_byte(omod_config) # OMOD version
-            self.modName = decode(_readNetString(omod_config)) # Mod name
+            self.modName = decoder(_readNetString(omod_config)) # Mod name
             # TODO(ut) original code unpacked signed int, maybe that's why "weird numbers" ?
             self.major = unpack_int_signed(omod_config) # Mod major version - getting weird numbers here though
             self.minor = unpack_int_signed(omod_config) # Mod minor version
-            self.omod_author = decode(_readNetString(omod_config)) # om_author
-            self.email = decode(_readNetString(omod_config)) # email
-            self.website = decode(_readNetString(omod_config)) # website
-            self.desc = decode(_readNetString(omod_config)) # description
+            self.omod_author = decoder(_readNetString(omod_config)) # om_author
+            self.email = decoder(_readNetString(omod_config)) # email
+            self.website = decoder(_readNetString(omod_config)) # website
+            self.desc = decoder(_readNetString(omod_config)) # description
             if self.version >= 2:
                 self.ftime = unpack_int64_signed(omod_config) # creation time
             else:
-                self.ftime = decode(_readNetString(omod_config))
+                self.ftime = decoder(_readNetString(omod_config))
             self.compType = unpack_byte(omod_config) # Compression type. 0 = lzma, 1 = zip
             if self.version >= 1:
                 self.build = unpack_int_signed(omod_config)
@@ -321,11 +321,11 @@ class OmodConfig(object):
             with open(configPath.s,u'rb') as ins:
                 ins.read(1) #--Skip first four bytes
                 # OBMM can support UTF-8, so try that first, then fail back to
-                config.name = decode(_readNetString(ins), encoding=u'utf-8')
+                config.name = decoder(_readNetString(ins), encoding=u'utf-8')
                 config.vMajor = unpack_int_signed(ins)
                 config.vMinor = unpack_int_signed(ins)
                 for attr in (u'omod_author',u'email',u'website',u'abstract'):
-                    setattr(config, attr, decode(_readNetString(ins), encoding=u'utf-8'))
+                    setattr(config, attr, decoder(_readNetString(ins), encoding=u'utf-8'))
                 ins.read(8) #--Skip date-time
                 ins.read(1) #--Skip zip-compression
                 #config['vBuild'], = ins.unpack('I',4)

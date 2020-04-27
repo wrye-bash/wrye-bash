@@ -34,7 +34,7 @@ import string
 import struct
 from itertools import imap
 from . import bak_file_pattern
-from ..bolt import sio, decode, encode, struct_pack, struct_unpack, \
+from ..bolt import sio, decoder, encode, struct_pack, struct_unpack, \
     unpack_string, unpack_int, unpack_short, unpack_4s, unpack_byte, \
     unpack_str16, unpack_float, unpack_double, unpack_int_signed, \
     unpack_str32, AFile, unpack_spaced_string
@@ -45,9 +45,9 @@ from ..exception import AbstractError, BoltError, CosaveError, \
 # Utilities
 def _pack(buff, fmt, *args): buff.write(struct_pack(fmt, *args))
 _cosave_encoding = u'cp1252' # TODO Do Pluggy files use this encoding as well?
-# decode() / encode() with _cosave_encoding as encoding
-def _cosave_decode(byte_str): return decode(byte_str,
-                                            encoding=_cosave_encoding)
+# decoder() / encode() with _cosave_encoding as encoding
+def _cosave_decode(byte_str): return decoder(byte_str,
+                                             encoding=_cosave_encoding)
 def _cosave_encode(uni_str): return encode(uni_str,
                                            firstEncoding=_cosave_encoding)
 # Convenient methods for reading and writing that use the methods from above

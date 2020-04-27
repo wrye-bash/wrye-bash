@@ -28,7 +28,7 @@ from collections import OrderedDict
 
 from .. import bass, balt, bosh, bolt, load_order
 from ..balt import bell, Link, Resources
-from ..bolt import decode, GPath
+from ..bolt import GPath
 from ..bosh import omods
 from ..gui import Button, CancelButton, CheckBox, GridLayout, HLayout, Label, \
     LayoutOptions, SaveButton, Spacer, Stretch, TextArea, TextField, VLayout, \

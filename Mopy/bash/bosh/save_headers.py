@@ -39,7 +39,7 @@ import zlib
 from collections import OrderedDict
 from functools import partial
 from .. import bolt
-from ..bolt import decode, cstrip, unpack_string, unpack_int, unpack_str8, \
+from ..bolt import decoder, cstrip, unpack_string, unpack_int, unpack_str8, \
     unpack_short, unpack_float, unpack_str16, unpack_byte, struct_pack, \
     unpack_str_int_delim, unpack_str16_delim_null, unpack_str_byte_delim, \
     unpack_many, encode, struct_unpack
@@ -91,10 +91,10 @@ class SaveFileHeader(object):
         self.load_masters(ins)
         # additional calculations - TODO(ut): rework decoding
         self.calc_time()
-        self.pcName = decode(cstrip(self.pcName))
-        self.pcLocation = decode(cstrip(self.pcLocation), bolt.pluginEncoding,
+        self.pcName = decoder(cstrip(self.pcName))
+        self.pcLocation = decoder(cstrip(self.pcLocation), bolt.pluginEncoding,
                                  avoidEncodings=(u'utf8', u'utf-8'))
-        self.masters = [bolt.GPath_no_norm(decode(
+        self.masters = [bolt.GPath_no_norm(decoder(
             x, bolt.pluginEncoding, avoidEncodings=(u'utf8', u'utf-8')))
             for x in self.masters]
 

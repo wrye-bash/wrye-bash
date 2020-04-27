@@ -509,7 +509,7 @@ class ModCleaner(object):
                                         eid = u''
                                         for subrec in record.subrecords:
                                             if subrec.subType == 'EDID':
-                                                eid = bolt.decode(subrec.data)
+                                                eid = bolt.decoder(subrec.data)
                                             elif subrec.subType == 'XCLC':
                                                 pos = struct_unpack(
                                                     '=2i', subrec.data[:8])

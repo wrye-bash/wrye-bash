@@ -47,7 +47,7 @@ from .. import bass, bolt, balt, bush, env, load_order, archives, \
     initialization
 from ..archives import readExts
 from ..bass import dirs, inisettings, tooldirs
-from ..bolt import GPath, DataDict, deprint, sio, Path, decode, AFile, \
+from ..bolt import GPath, DataDict, deprint, sio, Path, decoder, AFile, \
     GPath_no_norm
 from ..brec import ModReader, RecordHeader
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
@@ -1104,7 +1104,7 @@ class SaveInfo(FileInfo):
         with self.abs_path.open('rb') as ins:
             with self.abs_path.temp.open('wb') as out:
                 oldMasters = self.header.writeMasters(ins, out)
-        oldMasters = [GPath_no_norm(decode(x)) for x in oldMasters]
+        oldMasters = [GPath_no_norm(decoder(x)) for x in oldMasters]
         self.abs_path.untemp()
         # Cosaves - note that we have to use self.header.masters since in
         # FO4/SSE _get_masters() returns the correct interleaved order, but
@@ -2863,7 +2863,7 @@ class SaveInfos(FileInfos):
             default=bush.game.Ini.save_prefix)
         if self.localSave.endswith(u'\\'): self.localSave = self.localSave[:-1]
         # Hopefully will solve issues with unicode usernames # TODO(ut) test
-        self.localSave = decode(self.localSave) # encoding = 'cp1252' ?
+        self.localSave = decoder(self.localSave) # encoding = u'cp1252' ?
 
     def __init__(self):
         _ext = re.escape(bush.game.Ess.ext)

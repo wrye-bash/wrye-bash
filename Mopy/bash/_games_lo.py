@@ -90,7 +90,7 @@ def _parse_plugins_txt_(path, mod_infos, _star):
             is_active_ = not _star or modname.startswith('*')
             if _star and is_active_: modname = modname[1:]
             try:
-                test = bolt.decode(modname, encoding='cp1252')
+                test = bolt.decoder(modname, encoding=u'cp1252')
             except UnicodeError:
                 bolt.deprint(u'%r failed to properly decode' % modname)
                 continue

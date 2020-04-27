@@ -33,7 +33,7 @@ from ctypes import byref, c_wchar_p, c_void_p, POINTER, Structure, windll, \
     wintypes
 from uuid import UUID
 
-from .bolt import GPath, deprint, Path, decode, struct_unpack
+from .bolt import GPath, deprint, Path, decoder, struct_unpack
 from .exception import BoltError, CancelError, SkipError, AccessDeniedError, \
     DirectoryFileCollisionError, FileOperationError, NonExistentDriveError
 
@@ -149,7 +149,7 @@ def __get_error_info():
                                 for key in sorted(envDefs))
     except UnicodeDecodeError:
         deprint(u'Error decoding _os.environ', traceback=True)
-        sErrorInfo = u'\n'.join(u'  %s: %s' % (key, decode(envDefs[key]))
+        sErrorInfo = u'\n'.join(u'  %s: %s' % (key, decoder(envDefs[key]))
                                 for key in sorted(envDefs))
     return sErrorInfo
 

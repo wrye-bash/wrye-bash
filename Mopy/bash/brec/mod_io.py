@@ -30,7 +30,7 @@ import struct
 # no local imports beyond this, imported everywhere in brec
 from .utils_constants import _int_unpacker, group_types, null1, strFid
 from .. import bolt, exception
-from ..bolt import decode, encode, struct_pack, struct_unpack
+from ..bolt import decoder, encode, struct_pack, struct_unpack
 
 #------------------------------------------------------------------------------
 # Headers ---------------------------------------------------------------------
@@ -283,12 +283,12 @@ class ModReader(object):
 
     def readString(self,size,recType='----'):
         """Read string from file, stripping zero terminator."""
-        return u'\n'.join(decode(x,bolt.pluginEncoding,avoidEncodings=('utf8','utf-8')) for x in
+        return u'\n'.join(decoder(x,bolt.pluginEncoding,avoidEncodings=('utf8','utf-8')) for x in
                           bolt.cstrip(self.read(size,recType)).split('\n'))
 
     def readStrings(self,size,recType='----'):
         """Read strings from file, stripping zero terminator."""
-        return [decode(x,bolt.pluginEncoding,avoidEncodings=('utf8','utf-8')) for x in
+        return [decoder(x,bolt.pluginEncoding,avoidEncodings=('utf8','utf-8')) for x in
                 self.read(size,recType).rstrip(null1).split(null1)]
 
     def unpack(self, struct_unpacker, size, recType='----'):
