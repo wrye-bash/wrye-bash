@@ -102,7 +102,7 @@ class MelSet(object):
         while not ins_at_end(endPos, rec_type):
             sub_type, sub_size = load_sub_header(rec_type)
             try:
-                loaders[sub_type].loadData(record, ins, sub_type, sub_size,
+                loaders[sub_type].load_mel(record, ins, sub_type, sub_size,
                                            read_id_prefix + sub_type)
             except KeyError:
                 # Wrap this error to make it more understandable

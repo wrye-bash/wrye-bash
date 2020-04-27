@@ -209,9 +209,10 @@ class MreLeveledList(MreLeveledListBase):
 
     class MelLevListLvld(MelUInt8):
         """Subclass to support alternate format."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            super(MreLeveledList.MelLevListLvld, self).loadData(record, ins,
-                sub_type, size_, readId)
+        def load_mel(self, record, ins, sub_type, size_, readId):
+            super(MreLeveledList.MelLevListLvld, self).load_mel(record, ins,
+                                                                sub_type,
+                                                                size_, readId)
             if record.chanceNone > 127:
                 record.flags.calcFromAllLevels = True
                 record.chanceNone &= 127
@@ -617,7 +618,7 @@ class MelBptdParts(MelGroups):
     def getSlotsUsed(self):
         return (u'_had_bptn',) + super(MelBptdParts, self).getSlotsUsed()
 
-    def loadData(self, record, ins, sub_type, size_, readId):
+    def load_mel(self, record, ins, sub_type, size_, readId):
         if sub_type == b'BPTN':
             # We hit a BPTN, this is a new body part
             record._had_bptn = True
@@ -631,8 +632,8 @@ class MelBptdParts(MelGroups):
                 # starts a new unnamed body part
                 self._new_object(record)
         # Finally, delegate to the correct subrecord loader
-        super(MelBptdParts, self).loadData(record, ins, sub_type, size_,
-            readId)
+        super(MelBptdParts, self).load_mel(record, ins, sub_type, size_,
+                                           readId)
 
     def dumpData(self, record, out):
         for bp_target in getattr(record, self.attr):
@@ -1010,7 +1011,7 @@ class MelDebrData(MelStruct):
         super(MelDebrData, self).__init__(b'DATA', u'', u'percentage',
             (u'modPath', null1), u'flags')
 
-    def loadData(self, record, ins, sub_type, size_, readId):
+    def load_mel(self, record, ins, sub_type, size_, readId):
         byte_data = ins.read(size_, readId)
         (record.percentage,) = struct_unpack(u'B',byte_data[0:1])
         record.modPath = byte_data[1:-2]
@@ -3015,11 +3016,11 @@ class MreWatr(MelRecord):
         """Older subrecord consisting of a truncated DNAM with the damage short
         appended at the end. Read it in, but only dump out the damage - let
         DNAM handle the rest via duplicate attrs."""
-        def loadData(self, record, ins, sub_type, size_, readId,
+        def load_mel(self, record, ins, sub_type, size_, readId,
                      __unpacker=struct.Struct(u'H').unpack):
             if size_ == 186:
-                super(MreWatr.MelWatrData, self).loadData(record, ins,
-                    sub_type, size_, readId)
+                super(MreWatr.MelWatrData, self).load_mel(
+                    record, ins, sub_type, size_, readId)
             elif size_ == 2:
                 record.damage = ins.unpack(__unpacker, size_, readId)[0]
             else:

@@ -156,8 +156,8 @@ class MelCtda(MelUnion):
     # Nesting workarounds -----------------------------------------------------
     # To avoid having to nest MelUnions too deeply - hurts performance even
     # further (see below) plus grows exponentially
-    def loadData(self, record, ins, sub_type, size_, readId):
-        super(MelCtda, self).loadData(record, ins, sub_type, size_, readId)
+    def load_mel(self, record, ins, sub_type, size_, readId):
+        super(MelCtda, self).load_mel(record, ins, sub_type, size_, readId)
         # See _build_struct comments above for an explanation of this
         record.compValue = struct_unpack(u'fI'[record.operFlag.use_global],
                                          record.compValue)[0]
@@ -221,8 +221,8 @@ class MelCtdaFo3(MelCtda):
         self._ignore_ifuncs = ({106, 285} if bush.game.fsName == u'FalloutNV'
                                else set()) # 106 == IsFacingUp, 285 == IsLeftUp
 
-    def loadData(self, record, ins, sub_type, size_, readId):
-        super(MelCtdaFo3, self).loadData(record, ins, sub_type, size_, readId)
+    def load_mel(self, record, ins, sub_type, size_, readId):
+        super(MelCtdaFo3, self).load_mel(record, ins, sub_type, size_, readId)
         if record.ifunc == self._getvatsvalue_ifunc:
             record.param2 = struct_unpack(self._vats_param2_fmt[record.param1],
                                           record.param2)[0]
@@ -447,12 +447,12 @@ class MelRaceParts(MelNull):
         for element in self._indx_to_loader.itervalues():
             element.setDefault(record)
 
-    def loadData(self, record, ins, sub_type, size_, readId,
+    def load_mel(self, record, ins, sub_type, size_, readId,
                  __unpacker=_int_unpacker):
         if sub_type == 'INDX':
             self._last_indx, = ins.unpack(__unpacker, size_, readId)
         else:
-            self._indx_to_loader[self._last_indx].loadData(
+            self._indx_to_loader[self._last_indx].load_mel(
                 record, ins, sub_type, size_, readId)
 
     def dumpData(self, record, out):
@@ -536,7 +536,7 @@ class MelMODS(MelBase):
     def setDefault(self,record):
         record.__setattr__(self.attr,None)
 
-    def loadData(self, record, ins, sub_type, size_, readId,
+    def load_mel(self, record, ins, sub_type, size_, readId,
                  __unpacker=_int_unpacker):
         insUnpack = ins.unpack
         insRead32 = ins.readString32

@@ -1630,7 +1630,7 @@ class MelWthrColorsFnv(MelArray):
     as well. Can't simply use MelArray because MelTruncatedStruct does not
     have a static_size."""
     # TODO(inf) Rework MelArray - instead of static_size, have a
-    #  get_entry_size that receives the total size_ of loadData.
+    #  get_entry_size that receives the total size_ of load_mel.
     #  MelTruncatedStruct could override that and make a guess based on its
     #  sizes. If that guess doesn't work, a small override class can be
     #  created by hand
@@ -1654,17 +1654,17 @@ class MelWthrColorsFnv(MelArray):
             wthr_sub_sig, *struct_definition,
             old_versions={u'3Bs3Bs3Bs3Bs'})
 
-    def loadData(self, record, ins, sub_type, size_, readId):
+    def load_mel(self, record, ins, sub_type, size_, readId):
         if size_ == self._new_sizes[sub_type]:
-            super(MelWthrColorsFnv, self).loadData(record, ins, sub_type,
-                size_, readId)
+            super(MelWthrColorsFnv, self).load_mel(record, ins, sub_type,
+                                                   size_, readId)
         elif size_ == self._old_sizes[sub_type]:
             # Copied and adjusted from MelArray. Yuck. See comment below
             # docstring for some ideas for getting rid of this
             append_entry = getattr(record, self.attr).append
             entry_slots = self._element_old.attrs
             entry_size = struct.calcsize(u'3Bs3Bs3Bs3Bs')
-            load_entry = self._element_old.loadData
+            load_entry = self._element_old.load_mel
             for x in xrange(size_ // entry_size):
                 arr_entry = MelObject()
                 append_entry(arr_entry)
