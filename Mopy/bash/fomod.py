@@ -410,29 +410,29 @@ class FomodInstaller(object):
                     fm_flag_name, fm_flag_value, actual_flag_value))
 
     def _test_version_condition(self, condition):
-        version = condition.get(u'version')
-        game_version = LooseVersion(self.game_version)
-        version = LooseVersion(version)
-        if game_version < version:
+        target_ver = condition.get(u'version')
+        game_ver = LooseVersion(self.game_version)
+        target_ver = LooseVersion(target_ver)
+        if game_ver < target_ver:
             raise FailedCondition(
                 u'Game version is {} but {} is required.'.format(
-                    game_version, version))
+                    game_ver, target_ver))
 
     def test_conditions(self, conditions):
-        op = conditions.get(u'operator', u'And')
-        failed = []
-        condition_list = conditions.findall(u'*')
-        for condition in condition_list:
+        cond_op = conditions.get(u'operator', u'And')
+        failed_conditions = []
+        all_conditions = conditions.findall(u'*')
+        for condition in all_conditions:
             try:
                 test_func = self._condition_tests.get(condition.tag, None)
                 if test_func:
                     test_func(self, condition)
-            except FailedCondition as exc:
-                failed.extend([a for a in str(exc).splitlines()])
-                if op == u'And':
-                    raise FailedCondition(u'\n'.join(failed))
-        if op == u'Or' and len(failed) == len(condition_list):
-            raise FailedCondition(u'\n'.join(failed))
+            except FailedCondition as e:
+                failed_conditions.extend([a for a in unicode(e).splitlines()])
+                if cond_op == u'And':
+                    raise FailedCondition(u'\n'.join(failed_conditions))
+        if cond_op == u'Or' and len(failed_conditions) == len(all_conditions):
+            raise FailedCondition(u'\n'.join(failed_conditions))
 
     _condition_tests = {u'fileDependency': _test_file_condition,
                         u'flagDependency': _test_flag_condition,
@@ -440,12 +440,12 @@ class FomodInstaller(object):
                         u'dependencies': test_conditions, }
 
     @staticmethod
-    def order_list(unordered_list, order, _valid_values=frozenset(
+    def order_list(unordered_list, order_str, _valid_values=frozenset(
         (u'Explicit', u'Ascending', u'Descending'))):
-        if order == u'Explicit':
+        if order_str == u'Explicit':
             return unordered_list
-        if order not in _valid_values:
+        if order_str not in _valid_values:
             raise ValueError(u'Arguments are incorrect: {}, {}'.format(
-                unordered_list, order))
+                unordered_list, order_str))
         return sorted(unordered_list, key=lambda x: x.sort_key,
-                      reverse=order == u'Descending')
+                      reverse=order_str == u'Descending')
