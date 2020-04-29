@@ -88,7 +88,7 @@ class Fallout3GameInfo(GameInfo):
 
     class Xe(GameInfo.Xe):
         full_name = u'FO3Edit'
-        expert_key = 'fo3View.iKnowWhatImDoing'
+        xe_key_prefix = u'fo3View'
 
     # BAIN:
     dataDirs = GameInfo.dataDirs | {

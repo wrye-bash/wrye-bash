@@ -43,8 +43,9 @@ from .. import bass, bolt, bosh, bush, balt, archives
 from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
     UIList_Rename, UIList_Hide
 from ..belt import InstallerWizard, generateTweakLines
-from ..bolt import GPath, SubProgress, LogFile, round_size
+from ..bolt import GPath, SubProgress, LogFile, round_size, text_wrap
 from ..exception import CancelError, SkipError, StateError
+from ..gui import BusyCursor
 
 __all__ = ['Installer_Open', 'Installer_Duplicate', 'InstallerOpenAt_MainMenu',
            'Installer_OpenSearch', 'Installer_OpenTESA',
@@ -197,7 +198,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
 
     @balt.conversation
     def Execute(self):
-        with balt.BusyCursor():
+        with BusyCursor():
             installer = self._selected_info
             subs = []
             idetails = self.iPanel.detailsPanel
@@ -295,9 +296,9 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                                                   detail_item=lastApplied)
             ui_refresh[1] = False
         if len(manuallyApply) > 0:
-            message = balt.text_wrap(_(
-                u'The following INI Tweaks were not automatically applied.  '
-                u'Be sure to apply them after installing the package.'))
+            message = text_wrap(_(u'The following INI Tweaks were not '
+                                  u'automatically applied.  Be sure to apply '
+                                  u'them after installing the package.'))
             message += u'\n\n'
             message += u'\n'.join([u' * ' + x[0].stail + u'\n   TO: ' + x[1].s
                                    for x in manuallyApply])
@@ -368,7 +369,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
                               % (newName.s,curName.ext))
             return
         #--Duplicate
-        with balt.BusyCursor():
+        with BusyCursor():
             self.idata.copy_installer(curName,newName)
             self.idata.irefresh(what='N')
         self.window.RefreshUI(detail_item=newName)
@@ -521,7 +522,7 @@ class Installer_ExportAchlist(OneItemLink, _InstallerLink):
         info_dir = bass.dirs['app'].join(self.__class__._mode_info_dir)
         info_dir.makedirs()
         achlist = info_dir.join(self._selected_info.archive + u'.achlist')
-        with balt.BusyCursor(), open(achlist.s, u'w') as out:
+        with BusyCursor(), open(achlist.s, u'w') as out:
             out.write(u'[\n\t"')
             lines = u'",\n\t"'.join(
                 u'\\'.join((u'Data', d)).replace(u'\\', u'\\\\') for d in

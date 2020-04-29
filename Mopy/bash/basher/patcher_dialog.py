@@ -31,13 +31,14 @@ import time
 from datetime import timedelta
 from . import BashFrame ##: drop this - decouple !
 from .. import balt, bass, bolt, bosh, bush, env, load_order
-from ..balt import Link, Resources, HorizontalLine
+from ..balt import Link, Resources
 from ..bolt import SubProgress, GPath, Path
 from ..exception import BoltError, CancelError, FileEditError, \
     PluginsFullError, SkipError
 from ..gui import CancelButton, DeselectAllButton, HLayout, Label, \
     LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
-    SaveAsButton, SelectAllButton, Stretch, VLayout, DialogWindow, CheckListBox
+    SaveAsButton, SelectAllButton, Stretch, VLayout, DialogWindow, \
+    CheckListBox, HorizontalLine
 from ..patcher import configIsCBash, exportConfig, list_patches_dir
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
 
@@ -135,7 +136,7 @@ class PatchDialog(DialogWindow):
                 (self.config_layout, LayoutOptions(weight=1))
              ]), LayoutOptions(weight=1)),
             self.gTipText,
-            HorizontalLine(parent),
+            HorizontalLine(self),
             HLayout(spacing=4, items=[
                 Stretch(), self.gExportConfig, self.gImportConfig,
                 self.gRevertConfig, self.gRevertToDefault]),
@@ -376,7 +377,7 @@ class PatchDialog(DialogWindow):
                                 _(u'Import Bashed Patch configuration from:'),
                                 textDir, config_dat, u'*.dat', mustExist=True)
         if not textPath: return
-        table = bolt.Table(bolt.PickleDict(textPath))
+        table = bolt.DataTable(bolt.PickleDict(textPath))
         # try the current Bashed Patch mode.
         patchConfigs = table.getItem(
             GPath(self.__new_key % ([u'Python', u'CBash'][self.doCBash])),

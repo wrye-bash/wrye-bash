@@ -39,7 +39,7 @@ from ..bosh import faces, SaveInfo
 from ..brec import MreRecord
 from ..exception import ArgumentError, BoltError, CancelError, ModError
 from ..mod_files import LoadFactory, MasterMap, ModFile
-from ..gui import Image
+from ..gui import BusyCursor, Image
 
 __all__ = ['Saves_Profiles', 'Save_Rename', 'Save_Renumber', 'Save_Move',
            'Save_LoadMasters', 'Save_DiffMasters', 'Save_Stats',
@@ -180,7 +180,7 @@ class Saves_Profiles(ChoiceLink):
         def Execute(self):
             arcSaves = bosh.saveInfos.localSave
             newSaves = self.relativePath
-            with balt.BusyCursor():
+            with BusyCursor():
                 Link.Frame.saveList.set_local_save(newSaves, refreshSaveInfos=False)
                 bosh.modInfos.swapPluginsAndMasterVersion(arcSaves, newSaves)
                 bosh.saveInfos.refresh()
@@ -650,7 +650,8 @@ class Save_Move(ChoiceLink):
     def _move_saves(self, destDir, profile):
         savesTable = bosh.saveInfos.table
         #--bashDir
-        destTable = bolt.Table(bolt.PickleDict(destDir.join('Bash','Table.dat')))
+        destTable = bolt.DataTable(bolt.PickleDict(destDir.join(
+            u'Bash', u'Table.dat')))
         count = 0
         ask = True
         for fileName in self.selected:
@@ -787,7 +788,7 @@ class _Save_StatCosave(AppendableLink, OneItemLink):
         return bool(self._cosave)
 
     def Execute(self):
-        with balt.BusyCursor(), bolt.sio() as out:
+        with BusyCursor(), bolt.sio() as out:
             log = bolt.LogFile(out)
             self._cosave.dump_to_log(log, self._selected_info.header.masters)
             text = log.out.getvalue()

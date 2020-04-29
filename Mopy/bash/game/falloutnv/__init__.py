@@ -56,7 +56,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
 
     class Xe(Fallout3GameInfo.Xe):
         full_name = u'FNVEdit'
-        expert_key = 'fnvView.iKnowWhatImDoing'
+        xe_key_prefix = u'fnvView'
 
     # BAIN:
     dataDirs = (Fallout3GameInfo.dataDirs - {u'fose'}) | {u'nvse'}

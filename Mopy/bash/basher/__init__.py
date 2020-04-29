@@ -56,7 +56,6 @@ from __future__ import division
 import StringIO
 import collections
 import os
-import re
 import sys
 import time
 from collections import OrderedDict, namedtuple
@@ -87,7 +86,8 @@ from ..balt import Links, ItemLink
 from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
     TOP, VLayout, EventResult, DropDown, DialogWindow, WindowFrame, Spinner, \
-    Splitter, NotebookCtrl, PanelWin, CheckListBox, Color, Picture, Image
+    Splitter, NotebookCtrl, PanelWin, CheckListBox, Color, Picture, Image, \
+    CenteredSplash, BusyCursor
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons
@@ -105,7 +105,7 @@ if sys.prefix not in set(os.environ['PATH'].split(';')):
     os.environ['PATH'] += ';'+sys.prefix
 
 # Settings --------------------------------------------------------------------
-settings = None
+settings = None # type: bolt.Settings
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -361,7 +361,7 @@ class MasterList(_ModsUIList):
             self.detailsPanel.testChanges() # disable buttons if no other edits
 
     def _handle_select(self, item_key): pass
-    def _handle_key_up(self, wrapped_evt, g_list): pass
+    def _handle_key_up(self, wrapped_evt): pass
 
     def OnDClick(self, lb_dex_and_flags):
         if self.mouse_index < 0: return # nothing was clicked
@@ -1013,7 +1013,7 @@ class ModList(_ModsUIList):
             return EventResult.CONTINUE
         return EventResult.FINISH
 
-    def _handle_key_up(self, wrapped_evt, g_list):
+    def _handle_key_up(self, wrapped_evt):
         """Char event: Activate selected items, select all items"""
         ##Space
         if wrapped_evt.is_space:
@@ -1030,7 +1030,7 @@ class ModList(_ModsUIList):
         elif wrapped_evt.is_cmd_down and wrapped_evt.key_code == ord(u'C'):
             balt.copyListToClipboard([self.data_store[mod].getPath().s
                                       for mod in self.GetSelected()])
-        super(ModList, self)._handle_key_up(wrapped_evt, g_list)
+        super(ModList, self)._handle_key_up(wrapped_evt)
 
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
         """Left Down: Check/uncheck mods.
@@ -1961,14 +1961,14 @@ class SaveList(balt.UIList):
         item_format.icon_key = status, on
 
     #--Events ---------------------------------------------
-    def _handle_key_up(self, wrapped_evt, g_list):
+    def _handle_key_up(self, wrapped_evt):
         code = wrapped_evt.key_code
         # Ctrl+C: Copy file(s) to clipboard
         if wrapped_evt.is_cmd_down and code == ord(u'C'):
             sel = map(lambda save: self.data_store[save].getPath().s,
                       self.GetSelected())
             balt.copyListToClipboard(sel)
-        super(SaveList, self)._handle_key_up(wrapped_evt, g_list)
+        super(SaveList, self)._handle_key_up(wrapped_evt)
 
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
         #--Pass Event onward
@@ -2290,7 +2290,7 @@ class InstallersList(balt.UIList):
             root, newName, _numStr = validate()
         if not root: return EventResult.CANCEL
         #--Rename each installer, keeping the old extension (for archives)
-        with balt.BusyCursor():
+        with BusyCursor():
             refreshes, ex = [(False, False, False)], None
             newselected = []
             try:
@@ -2456,7 +2456,7 @@ class InstallersList(balt.UIList):
             return
         action = self._askCopyOrMove(filenames)
         if action not in ['COPY','MOVE']: return
-        with balt.BusyCursor():
+        with BusyCursor():
             installersJoin = bass.dirs['installers'].join
             convertersJoin = bass.dirs['converters'].join
             filesTo = [installersJoin(x.tail) for x in filenames]
@@ -2532,7 +2532,7 @@ class InstallersList(balt.UIList):
         else:
             self.OpenSelected(selected=[item])
 
-    def _handle_key_up(self, wrapped_evt, g_list):
+    def _handle_key_up(self, wrapped_evt):
         """Char events: Action depends on keys pressed"""
         code = wrapped_evt.key_code
         # Ctrl+Shift+N - Add a marker
@@ -2544,7 +2544,7 @@ class InstallersList(balt.UIList):
             sel = map(lambda x: bass.dirs['installers'].join(x).s,
                       self.GetSelected())
             balt.copyListToClipboard(sel)
-        super(InstallersList, self)._handle_key_up(wrapped_evt, g_list)
+        super(InstallersList, self)._handle_key_up(wrapped_evt)
 
     # Installer specific ------------------------------------------------------
     def addMarker(self):
@@ -3137,7 +3137,7 @@ class ScreensList(balt.UIList):
         num = int(numStr or  0)
         digits = len(str(num + len(selected)))
         if numStr: numStr.zfill(digits)
-        with balt.BusyCursor():
+        with BusyCursor():
             to_select = set()
             to_del = set()
             item_edited = [self.panel.detailsPanel.displayed_item]
@@ -3158,9 +3158,9 @@ class ScreensList(balt.UIList):
     def OnChar(self, wrapped_evt):
         # Enter: Open selected screens
         if wrapped_evt.key_code in balt.wxReturn: self.OpenSelected()
-        else: super(ScreensList, self)._handle_key_up(wrapped_evt, None)
+        else: super(ScreensList, self)._handle_key_up(wrapped_evt)
 
-    def _handle_key_up(self, wrapped_evt, g_list):
+    def _handle_key_up(self, wrapped_evt):
         """Char event: Activate selected items, select all items"""
         code = wrapped_evt.key_code
         # Ctrl+C: Copy file(s) to clipboard
@@ -3168,7 +3168,7 @@ class ScreensList(balt.UIList):
             sel = map(lambda x: bosh.screen_infos.store_dir.join(x).s,
                       self.GetSelected())
             balt.copyListToClipboard(sel)
-        super(ScreensList, self)._handle_key_up(wrapped_evt, g_list)
+        super(ScreensList, self)._handle_key_up(wrapped_evt)
 
 #------------------------------------------------------------------------------
 class ScreensDetails(_DetailsMixin, NotebookPanel):
@@ -3359,7 +3359,8 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
         self.peoplePanel = ui_list_panel
         self.gName = TextField(self, editable=False)
         self.gText = TextArea(self)
-        self.gKarma = Spinner(self, min_val=-5, max_val=5, onSpin=self.OnSpin)
+        self.gKarma = Spinner(self, min_val=-5, max_val=5)
+        self.gKarma.on_spun.subscribe(self.OnSpin)
         self.gKarma.set_min_size(40,-1)
         #--Layout
         VLayout(spacing=4, item_expand=True, items=[
@@ -3371,7 +3372,7 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
     def OnSpin(self):
         """Karma spin."""
         if not self._people_detail: return
-        karma = int(self.gKarma.sp_get_value())
+        karma = self.gKarma.spinner_value
         details = self.file_infos[self._people_detail][2]
         self.file_infos[self._people_detail] = (time.time(), karma, details)
         self.peoplePanel.uiList.PopulateItem(item=self._people_detail)
@@ -3395,11 +3396,11 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
         if not item: return
         karma, details = self.peoplePanel.listData[item][1:3]
         self.gName.text_content = item
-        self.gKarma.sp_set_value(karma)
+        self.gKarma.spinner_value = karma
         self.gText.text_content = details
 
     def _resetDetails(self):
-        self.gKarma.sp_set_value(0)
+        self.gKarma.spinner_value = 0
         self.gName.text_content = u''
         self.gText.text_content = u''
 
@@ -4099,17 +4100,14 @@ class BashApp(wx.App):
         """Initialize the application data and create the BashFrame."""
         #--OnStartup SplashScreen and/or Progress
         #   Progress gets hidden behind splash by default, since it's not very informative anyway
-        splashScreen = None
+        splash_screen = None
         with balt.Progress(u'Wrye Bash', _(u'Initializing') + u' ' * 10,
                            elapsed=False) as progress:
             # Is splash enabled in ini ?
-            if bass.inisettings['EnableSplashScreen']:
-                if bass.dirs['images'].join(u'wryesplash.png').exists():
-                    try:
-                            splashScreen = balt.WryeBashSplashScreen()
-                            splashScreen.Show()
-                    except:
-                            pass
+            if bass.inisettings[u'EnableSplashScreen']:
+                if bass.dirs[u'images'].join(u'wryesplash.png').isfile():
+                    splash_screen = CenteredSplash(
+                        bass.dirs[u'images'].join(u'wryesplash.png').s)
             #--Constants
             self.InitResources()
             #--Init Data
@@ -4121,12 +4119,11 @@ class BashApp(wx.App):
             progress(0.8, _(u'Initializing Windows'))
             frame = BashFrame() # Link.Frame global set here
             progress(1.0, _(u'Done'))
-        if splashScreen:
-            splashScreen.Destroy()
-            splashScreen.Hide() # wont be hidden if warnTooManyModsBsas warns..
+        if splash_screen:
+            splash_screen.stop_splash()
         self.SetTopWindow(frame._native_widget)
         frame.show_frame()
-        frame._native_widget.Maximize(settings['bash.frameMax'])
+        frame.is_maximized = settings[u'bash.frameMax']
         frame.RefreshData(booting=True) # used to bind RefreshData
         # Moved notebook.Bind() callback here as OnShowPage() is explicitly
         # called in RefreshData

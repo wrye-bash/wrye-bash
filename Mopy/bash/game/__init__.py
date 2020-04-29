@@ -240,9 +240,9 @@ class GameInfo(object):
         """Information about xEdit for this game."""
         # The name that xEdit has for this game, e.g. 'TES5Edit' for Skyrim
         full_name = u'xEdit'
-        # A settings key used to store whether or not 'expert' mode for xEdit
-        # has been activated (the -IKnowWhatImDoing CLI switch)
-        expert_key = ''
+        # A prefix for settings keys related to this version of xEdit (e.g.
+        # expert mode)
+        xe_key_prefix = u''
 
     # BAIN:
     #  These are the allowed default data directories that BAIN can install to

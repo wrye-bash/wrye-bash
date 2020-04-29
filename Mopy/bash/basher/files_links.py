@@ -27,6 +27,7 @@ import time
 from .. import balt, bosh, bush, bolt, exception
 from ..balt import ItemLink, ChoiceLink, OneItemLink
 from ..bolt import GPath
+from ..gui import BusyCursor
 from ..localize import format_date, unformat_date
 
 __all__ = ['Files_Unhide', 'File_Backup', 'File_Duplicate', 'File_Snapshot',
@@ -230,7 +231,7 @@ class File_RevertToSnapshot(OneItemLink):
         message = (_(u'Revert %s to snapshot %s dated %s?') % (
             fileName.s, snapName.s, format_date(snapPath.mtime)))
         if not self._askYes(message, _(u'Revert to Snapshot')): return
-        with balt.BusyCursor():
+        with BusyCursor():
             destPath = self._selected_info.abs_path
             current_mtime = destPath.mtime
             # Make a temp backup first in case reverting to snapshot fails
@@ -293,7 +294,7 @@ class _RevertBackup(OneItemLink):
         message = _(u'Revert %s to backup dated %s?') % (sel_file.s,
                                                          backup_date)
         if not self._askYes(message): return
-        with balt.BusyCursor():
+        with BusyCursor():
             # Make a temp backup first in case reverting to backup fails
             info_path = self._selected_info.abs_path
             info_path.copyTo(info_path.temp)

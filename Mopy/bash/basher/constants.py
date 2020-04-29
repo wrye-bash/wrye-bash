@@ -397,21 +397,15 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         'Karma': 25,
         'Header': 50,
         },
-    #--Tes4View/Edit/Trans
-    'tes4View.iKnowWhatImDoing':False,
-    'tes5View.iKnowWhatImDoing':False,
-    'sseView.iKnowWhatImDoing':False,
-    'fo4View.iKnowWhatImDoing':False,
-    'fo3View.iKnowWhatImDoing':False,
-    'fnvView.iKnowWhatImDoing':False,
-    'enderalView.iKnowWhatImDoing':False,
-    'tes5vrView.iKnowWhatImDoing':False,
-    'fo4vrView.iKnowWhatImDoing':False,
     #--BOSS:
     'BOSS.ClearLockTimes':True,
     'BOSS.AlwaysUpdate':True,
     'BOSS.UseGUI':False,
 }
+
+# No need to store defaults for all the xEdits for all games
+settingDefaults[bush.game.Xe.xe_key_prefix + u'.iKnowWhatImDoing'] = False
+settingDefaults[bush.game.Xe.xe_key_prefix + u'.skip_bsas'] = False
 
 if bush.game.Esp.check_master_sizes:
     settingDefaults[u'bash.colors'][u'mods.bkgd.size_mismatch'] = (255, 238,

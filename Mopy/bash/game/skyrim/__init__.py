@@ -94,7 +94,7 @@ class SkyrimGameInfo(GameInfo):
 
     class Xe(GameInfo.Xe):
         full_name = u'TES5Edit'
-        expert_key = 'tes5View.iKnowWhatImDoing'
+        xe_key_prefix = u'tes5View'
 
     # BAIN:
     dataDirs = GameInfo.dataDirs | {

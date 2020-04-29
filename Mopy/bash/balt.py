@@ -34,7 +34,6 @@ from .bolt import GPath, deprint
 from .exception import AbstractError, AccessDeniedError, ArgumentError, \
     BoltError, CancelError, SkipError, StateError
 #--Python
-import textwrap
 import time
 import threading
 from functools import partial, wraps
@@ -49,7 +48,8 @@ import wx.lib.newevent
 from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
     web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
-    Font, CheckListBox, UIListCtrl, PanelWin, Colors, HtmlDisplay, Image
+    Font, CheckListBox, UIListCtrl, PanelWin, Colors, HtmlDisplay, Image, \
+    BusyCursor
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -65,11 +65,7 @@ class Resources(object):
     bashMonkey = None
 
 # Constants -------------------------------------------------------------------
-defId = wx.ID_ANY
 defPos = wx.DefaultPosition
-
-splitterStyle = wx.SP_LIVE_UPDATE # | wx.SP_3DSASH # ugly but
-# makes borders stand out - we need something to that effect
 
 notFound = wx.NOT_FOUND
 
@@ -193,21 +189,11 @@ class ColorChecks(ImageList):
             else: shortKey = 'red.off'
         return self.indices[shortKey]
 
-# Functions -------------------------------------------------------------------
-def text_wrap(text_to_wrap, width=60):
-    """Wraps paragraph to width characters."""
-    pars = [textwrap.fill(line, width) for line in text_to_wrap.split(u'\n')]
-    return u'\n'.join(pars)
-
 # Elements --------------------------------------------------------------------
 def bell(arg=None):
     """"Rings the system bell and returns the input argument (useful for return bell(value))."""
     wx.Bell()
     return arg
-
-def HorizontalLine(parent):
-    """Returns a simple horizontal graphical line."""
-    return wx.StaticLine(parent)
 
 def ok_and_cancel_group(parent, on_ok=None):
     ok_button = OkButton(parent)
@@ -224,7 +210,7 @@ def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
             return bmp(wx.ART_UNDO,wx.ART_TOOLBAR,size)
         else: raise ArgumentError(
             u'special must be either warn or undo: %r given' % special)
-    return wx.StaticBitmap(_AComponent._resolve(parent), defId, bitmap)
+    return wx.StaticBitmap(_AComponent._resolve(parent), bitmap=bitmap)
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -813,15 +799,6 @@ class TabDragMixin(object):
         event.Skip()
 
 #------------------------------------------------------------------------------
-class BusyCursor(object):
-    """Wrapper around wx.BeginBusyCursor and wx.EndBusyCursor, to be used with
-       Pythons 'with' semantics."""
-    def __enter__(self):
-        wx.BeginBusyCursor()
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        wx.EndBusyCursor()
-
-#------------------------------------------------------------------------------
 class Progress(bolt.Progress):
     """Progress as progress dialog."""
     _style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE | wx.PD_SMOOTH
@@ -1185,7 +1162,7 @@ class UIList(wx.Panel):
             self.mouse_index = None
             Link.Frame.set_status_info(u'')
 
-    def _handle_key_up(self, wrapped_evt, g_list):
+    def _handle_key_up(self, wrapped_evt):
         """Char event: select all items, delete selected items, rename."""
         code = wrapped_evt.key_code
         if wrapped_evt.is_cmd_down and code == ord(u'A'): # Ctrl+A
@@ -1772,10 +1749,11 @@ class ItemLink(Link):
         """Append self as menu item and set callbacks to be executed when
         selected."""
         super(ItemLink, self).AppendToMenu(menu, window, selection)
-        menuItem = wx.MenuItem(menu, defId, self._text, self.menu_help,
+        # Note default id here is *not* ID_ANY but the special ID_SEPARATOR!
+        menuItem = wx.MenuItem(menu, wx.ID_ANY, self._text, self.menu_help,
                                self.__class__.kind)
-        _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU, self.__Execute, id=menuItem.GetId())
-        _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
+        Link.Frame._native_widget.Bind(wx.EVT_MENU, self.__Execute, id=menuItem.GetId())
+        Link.Frame._native_widget.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
         menu.Append(menuItem)
         return menuItem
 
@@ -1793,7 +1771,7 @@ class ItemLink(Link):
 
     def Execute(self):
         """Event: link execution."""
-        raise AbstractError
+        raise AbstractError(u'Execute not implemented')
 
     @staticmethod
     def ShowHelp(event): # <wx._core.MenuEvent>
@@ -1819,7 +1797,7 @@ class MenuLink(Link):
     def AppendToMenu(self, menu, window, selection):
         """Append self as submenu (along with submenu items) to menu."""
         super(MenuLink, self).AppendToMenu(menu, window, selection)
-        _AComponent._resolve(Link.Frame).Bind(wx.EVT_MENU_OPEN, MenuLink.OnMenuOpen)
+        Link.Frame._native_widget.Bind(wx.EVT_MENU_OPEN, MenuLink.OnMenuOpen)
         subMenu = wx.Menu()
         appended_menu = menu.AppendSubMenu(subMenu, self._text)
         if not self._enable():
@@ -2048,9 +2026,18 @@ def clipboardDropFiles(millis, callable_):
             wx.CallLater(millis, callable_, 0, 0, obj.GetFilenames())
         wx.TheClipboard.Close()
 
+def read_from_clipboard():
+    """Returns any text data that is currently in the system clipboard, or an
+    empty string if none is stored."""
+    text_data = wx.TextDataObject()
+    was_sucessful = False
+    if wx.TheClipboard.Open():
+        was_sucessful = wx.TheClipboard.GetData(text_data)
+        wx.TheClipboard.Close()
+    return text_data.GetText() if was_sucessful else u''
+
 def getKeyState(key): return wx.GetKeyState(key)
 def getKeyState_Shift(): return wx.GetKeyState(wx.WXK_SHIFT)
-def getKeyState_Control(): return wx.GetKeyState(wx.WXK_CONTROL)
 
 wxArrowUp = {wx.WXK_UP, wx.WXK_NUMPAD_UP}
 wxArrowDown = {wx.WXK_DOWN, wx.WXK_NUMPAD_DOWN}
@@ -2071,8 +2058,10 @@ class _CheckList_SelectAll(ItemLink):
 
 # TODO(inf) Needs renaming, also need to make a virtual version eventually...
 class TreeCtrl(_AComponent):
+    _wx_widget_type = wx.TreeCtrl
+
     def __init__(self, parent, title, items_dict):
-        super(TreeCtrl, self).__init__(wx.TreeCtrl, parent, size=(150, 200),
+        super(TreeCtrl, self).__init__(parent, size=(150, 200),
             style=wx.TR_DEFAULT_STYLE | wx.TR_FULL_ROW_HIGHLIGHT |
                   wx.TR_HIDE_ROOT)
         root = self._native_widget.AddRoot(title)
@@ -2357,30 +2346,6 @@ class DnDStatusBar(wx.StatusBar):
             button.component_position = (xPos, yPos)
             xPos += self.iconsSize
         if event: event.Skip()
-
-#------------------------------------------------------------------------------
-class WryeBashSplashScreen(wx.adv.SplashScreen):
-    """This Creates the Splash Screen widget. (The first image you see when
-    starting the Application.)"""
-    def __init__(self, parent=None):
-        splashScreenBitmap = wx.Image(name=bass.dirs['images'].join(
-            u'wryesplash.png').s).ConvertToBitmap()
-        # Center image on the screen and image will stay until clicked by
-        # user or is explicitly destroyed when the main window is ready
-        # alternately wx.SPLASH_TIMEOUT and a duration can be used, but then
-        # you have to guess how long it should last
-        splashStyle = wx.adv.SPLASH_CENTER_ON_SCREEN | wx.adv.SPLASH_NO_TIMEOUT
-        splashDuration = 3500 # Duration in ms the splash screen will be
-        # visible (only used with the TIMEOUT option)
-        wx.adv.SplashScreen.__init__(self, splashScreenBitmap, splashStyle,
-                                 splashDuration, parent)
-        self.Bind(wx.EVT_CLOSE, self.OnExit)
-        wx.Yield()
-
-    def OnExit(self, event):
-        self.Hide()
-        # The program might/will freeze without this line.
-        event.Skip() # Make sure the default handler runs too...
 
 #------------------------------------------------------------------------------
 class NotebookPanel(PanelWin):

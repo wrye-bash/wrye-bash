@@ -21,7 +21,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module defines layout components that define how components will fit
 together to create a GUI. In doing so, it is also responsible for making the
 rest of the gui modules work by chaining the _AComponent-based high-level

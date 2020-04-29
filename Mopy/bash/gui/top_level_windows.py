@@ -26,7 +26,7 @@ and the wx.wiz stuff."""
 __author__ = u'Utumno, Infernio'
 
 import wx as _wx
-import wx.adv as _wiz     # wxPython wizard class
+import wx.adv as _adv     # wxPython wizard class
 defPos = _wx.DefaultPosition
 defSize = _wx.DefaultSize
 
@@ -41,13 +41,11 @@ class _TopLevelWin(_AComponent):
     _def_size = defSize
     _size_key = _pos_key = None
 
-    def __init__(self, wx_window_type, parent, sizes_dict, icon_bundle, *args,
-                 **kwargs):
+    def __init__(self, parent, sizes_dict, icon_bundle, *args, **kwargs):
         # dict holding size/pos info ##: can be bass.settings or balt.sizes
         self._sizes_dict = sizes_dict
         self._set_pos_size(kwargs, sizes_dict)
-        super(_TopLevelWin, self).__init__(wx_window_type, parent, *args,
-                                           **kwargs)
+        super(_TopLevelWin, self).__init__(parent, *args, **kwargs)
         self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
         self._on_close_evt.subscribe(self.on_closing)
         if icon_bundle: self.set_icons(icon_bundle)
@@ -60,8 +58,13 @@ class _TopLevelWin(_AComponent):
 
     @property
     def is_maximized(self):
-        """IsMaximized(self) -> bool"""
+        """Returns True if this window has been maximized."""
         return self._native_widget.IsMaximized()
+
+    @is_maximized.setter
+    def is_maximized(self, new_maximized):
+        """Maximizes or restores this window."""
+        self._native_widget.Maximize(new_maximized)
 
     @property
     def is_iconized(self):
@@ -105,6 +108,7 @@ class WindowFrame(_TopLevelWin):
      """
     _frame_settings_key = None
     _min_size = _def_size = (250, 250)
+    _wx_widget_type = _wx.Frame
 
     def __init__(self, parent, title, icon_bundle=None, _base_key=None,
                  sizes_dict={}, caption=False, style=_wx.DEFAULT_FRAME_STYLE,
@@ -117,9 +121,8 @@ class WindowFrame(_TopLevelWin):
         if sizes_dict: style |= _wx.RESIZE_BORDER
         if kwargs.pop(u'clip_children', False): style |= _wx.CLIP_CHILDREN
         if kwargs.pop(u'tab_traversal', False): style |= _wx.TAB_TRAVERSAL
-        super(WindowFrame, self).__init__(_wx.Frame, parent, sizes_dict,
-                                          icon_bundle, title=title,
-                                          style=style, **kwargs)
+        super(WindowFrame, self).__init__(parent, sizes_dict, icon_bundle,
+                                          title=title, style=style, **kwargs)
         self.on_activate = self._evt_handler(_wx.EVT_ACTIVATE,
                                              lambda event: [event.GetActive()])
         self.reset_background_color()
@@ -136,7 +139,7 @@ class WindowFrame(_TopLevelWin):
 class DialogWindow(_TopLevelWin):
     """Wrap a dialog control."""
     title = u'OVERRIDE'
-    _wx_dialog_type = _wx.Dialog
+    _wx_widget_type = _wx.Dialog
 
     def __init__(self, parent=None, title=None, icon_bundle=None,
                  sizes_dict=None, caption=False, size_key=None, pos_key=None,
@@ -148,8 +151,9 @@ class DialogWindow(_TopLevelWin):
         if sizes_dict is not None: style |= _wx.RESIZE_BORDER
         else: sizes_dict = {}
         if caption: style |= _wx.CAPTION
-        super(DialogWindow, self).__init__(self._wx_dialog_type, parent,
-            sizes_dict, icon_bundle, title=self.title, style=style, **kwargs)
+        super(DialogWindow, self).__init__(parent, sizes_dict, icon_bundle,
+                                           title=self.title, style=style,
+                                           **kwargs)
         self.on_size_changed = self._evt_handler(_wx.EVT_SIZE)
 
     def save_size(self):
@@ -205,18 +209,18 @@ class WizardDialog(DialogWindow, WithFirstShow):
      - _on_wiz_finished(): Used internally to save size and position
      - _on_show(): used internally to set page size on first showing the wizard
      """
-    _wx_dialog_type = _wiz.Wizard
+    _wx_widget_type = _adv.Wizard
 
     def __init__(self, parent, **kwargs):
         kwargs['style'] = _wx.MAXIMIZE_BOX
         super(WizardDialog, self).__init__(parent, **kwargs)
         self.on_wiz_page_change = self._evt_handler(
-            _wiz.EVT_WIZARD_PAGE_CHANGING,
+            _adv.EVT_WIZARD_PAGE_CHANGING,
             lambda event: [event.GetDirection(), event.GetPage()])
         # needed to correctly save size/pos, on_closing seems not enough
-        self._on_wiz_cancel = self._evt_handler(_wiz.EVT_WIZARD_CANCEL)
+        self._on_wiz_cancel = self._evt_handler(_adv.EVT_WIZARD_CANCEL)
         self._on_wiz_cancel.subscribe(self.save_size)
-        self._on_wiz_finished = self._evt_handler(_wiz.EVT_WIZARD_FINISHED)
+        self._on_wiz_finished = self._evt_handler(_adv.EVT_WIZARD_FINISHED)
         self._on_wiz_finished.subscribe(self.save_size)
 
     def _handle_first_show(self):
@@ -242,21 +246,23 @@ class WizardDialog(DialogWindow, WithFirstShow):
 
 # Panels ----------------------------------------------------------------------
 class PanelWin(_AComponent):
+    _wx_widget_type = _wx.Panel
+
     def __init__(self, parent, no_border=True):
-        super(PanelWin, self).__init__(_wx.Panel, parent,
-            style=_wx.TAB_TRAVERSAL | (no_border and _wx.NO_BORDER))
+        super(PanelWin, self).__init__(
+            parent, style=_wx.TAB_TRAVERSAL | (no_border and _wx.NO_BORDER))
 
     def pnl_layout(self): self._native_widget.Layout()
     def pnl_hide(self): self._native_widget.Hide()
 
 class Splitter(_AComponent):
+    _wx_widget_type = _wx.SplitterWindow
 
-    splitterStyle = _wx.SP_LIVE_UPDATE # | wx.SP_3DSASH # ugly but
-    # makes borders stand out - we need something to that effect
     def __init__(self, parent, allow_split=True, min_pane_size=0,
                  sash_gravity=0):
-        super(Splitter, self).__init__(_wx.SplitterWindow, parent,
-                                       style = self.splitterStyle)
+        # wx.SplitterWindow is native and does not respect any of the border
+        # flags on Windows :/
+        super(Splitter, self).__init__(parent, style=_wx.SP_LIVE_UPDATE)
         if not allow_split: # Don't allow unsplitting
             self._native_widget.Bind(_wx.EVT_SPLITTER_DCLICK,
                                      lambda event: event.Veto())
@@ -288,10 +294,11 @@ class Splitter(_AComponent):
         self._native_widget.SetSashGravity(sash_gravity)
 
 class NotebookCtrl(_AComponent):
+    _wx_widget_type = _wx.Notebook
 
     def __init__(self, parent, multiline=False):
-        style = _wx.NB_MULTILINE if multiline else 0
-        super(NotebookCtrl, self).__init__(_wx.Notebook, parent, style=style)
+        super(NotebookCtrl, self).__init__(
+            parent, style=_wx.NB_MULTILINE if multiline else 0)
         self.on_nb_page_change = self._evt_handler(
             _wx.EVT_NOTEBOOK_PAGE_CHANGED,
             lambda event: [event.GetId(), event.GetSelection()])
@@ -303,3 +310,39 @@ class NotebookCtrl(_AComponent):
 
     def nb_set_selected_index(self, page_index):
         self._native_widget.SetSelection(page_index)
+
+class ScrollableWindow(_AComponent):
+    """A window with a scrollbar."""
+    _wx_widget_type = _wx.ScrolledWindow
+
+    def __init__(self, parent, scroll_horizontal=True, scroll_vertical=True):
+        super(ScrollableWindow, self).__init__(parent)
+        self._native_widget.SetScrollbars(
+            20 if scroll_horizontal else 0, 20 if scroll_vertical else 0,
+            50 if scroll_horizontal else 0, 50 if scroll_vertical else 0)
+
+class CenteredSplash(_AComponent):
+    """A centered splash screen without a timeout. Only disappears when either
+    the entire application terminates or stop_splash is called."""
+    _wx_widget_type = _adv.SplashScreen
+
+    def __init__(self, splash_path):
+        """Creates a new CenteredSplash with an image read from the specified
+        path."""
+        splash_bitmap = _wx.Image(name=splash_path).ConvertToBitmap()
+        # Center image on the screen and image will stay until clicked by
+        # user or is explicitly destroyed when the main window is ready
+        splash_style = _adv.SPLASH_CENTER_ON_SCREEN | _adv.SPLASH_NO_TIMEOUT
+        # Can't use _AComponent.__init__ here, because for some ungodly reason
+        # parent is the *third* parameter in SplashScreen
+        self._native_widget = self._wx_widget_type(splash_bitmap, splash_style,
+                                                   1, None) # Timeout - ignored
+        self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
+        self._on_close_evt.subscribe(self.stop_splash)
+        _wx.Yield()
+
+    def stop_splash(self):
+        """Hides and terminates the splash screen."""
+        self.destroy_component()
+        ##: Apparently won't be hidden if warnTooManyModsBsas warns(?)
+        self.visible = False

@@ -39,11 +39,7 @@ import traceback
 import yaml
 from ConfigParser import ConfigParser
 # Local
-from . import bass
-from . import bolt
-from . import env
-from . import exception
-from . import localize
+from . import bass, bolt, env, exception, localize
 # NO OTHER LOCAL IMPORTS HERE (apart from the ones above) !
 basher = balt = initialization = None
 _wx = None
@@ -287,7 +283,7 @@ def _main(opts, wx_locale):
         bosh.initBosh(bashIni, game_ini_path)
         env.isUAC = env.testUAC(bush_game.gamePath.join(bush_game.mods_dir))
         global basher, balt
-        from . import basher, balt
+        from . import basher, balt, gui
     except (exception.BoltError, ImportError, OSError, IOError):
         msg = u'\n'.join([_(u'Error! Unable to start Wrye Bash.'), u'\n', _(
             u'Please ensure Wrye Bash is correctly installed.'), u'\n',
@@ -351,11 +347,11 @@ def _main(opts, wx_locale):
                                          defaultFile=barb.BackupSettings.
                                          backup_filename(bush_game.fsName))
         if settings_file:
-            with balt.BusyCursor():
+            with gui.BusyCursor():
                 backup = barb.BackupSettings(settings_file, bush_game.fsName,
                                              bush_game.mods_dir)
             try:
-                with balt.BusyCursor():
+                with gui.BusyCursor():
                     backup.backup_settings(balt)
             except exception.StateError:
                 if balt.askYes(frame, u'\n'.join([

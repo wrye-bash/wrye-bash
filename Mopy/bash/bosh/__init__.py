@@ -1225,7 +1225,7 @@ class TableFileInfos(DataStore):
         self.bash_dir.makedirs() # self.store_dir may need be set
         self.data = {} # populated in refresh ()
         # the type of the table keys is always bolt.Path
-        self.table = bolt.Table(
+        self.table = bolt.DataTable(
             bolt.PickleDict(self.bash_dir.join(u'Table.dat')))
         deprint(u' Successfully initialized %s' % self.__class__.__name__)
 
@@ -2769,7 +2769,7 @@ class SaveInfos(FileInfos):
         super(SaveInfos, self).__init__(dirs['saveBase'].join(self.localSave),
                                         factory=SaveInfo)
         # Save Profiles database
-        self.profiles = bolt.Table(bolt.PickleDict(
+        self.profiles = bolt.DataTable(bolt.PickleDict(
             dirs['saveBase'].join(u'BashProfiles.dat')))
         # save profiles used to have a trailing slash, remove it if present
         for row in self.profiles.keys():

@@ -21,7 +21,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module houses parts of the GUI code that form the basis for the
 more specialized parts (e.g. _AComponent)."""
 
@@ -29,7 +28,7 @@ __author__ = u'nycz, Infernio'
 
 import textwrap
 import wx as _wx
-from .events import EventHandler, _null_processor
+from .events import EventHandler, null_processor
 from ..exception import AbstractError
 from ..bolt import GPath, deprint
 from ..exception import ArgumentError
@@ -113,16 +112,16 @@ class Colors(object):
 class _AComponent(object):
     """Abstract base class for all GUI items. Holds a reference to the native
     wx widget that we abstract over.
-    # :type _native_widget: _wx.Window FIXME(ut) PY3: add type info
-    """
-    def __init__(self, wx_window_type, parent, *args, **kwargs):
-        """Creates a new _AComponent instance. This initializes _native_widget
-        to None, which will later receive a proper value inside the __init__
-        methods of _AComponent's subclasses."""
-        self._native_widget = wx_window_type(self._resolve(parent), *args,
-                                             **kwargs)
+    # :type _native_widget: _wx.Window FIXME(ut) PY3: add type info"""
+    _wx_widget_type = None # type: type
 
-    def _evt_handler(self, evt, arg_proc=_null_processor):
+    def __init__(self, parent, *args, **kwargs):
+        """Creates a new _AComponent instance by initializing the wx widget
+        with the specified parent, args and kwargs."""
+        self._native_widget = self._wx_widget_type(self._resolve(parent),
+                                                   *args, **kwargs)
+
+    def _evt_handler(self, evt, arg_proc=null_processor):
         """Register an EventHandler on _native_widget"""
         return EventHandler(self._native_widget, evt, arg_proc)
 
@@ -363,10 +362,7 @@ class WithCharEvents(_AComponent):
     Key events.
       - on_key_pressed(wrapped_evt: _WrapKeyEvt): key pressed
       - on_key_up(wrapped_evt: _WrapKeyEvt, self: WithCharEvents): key
-        released
-    """
-    bind_char_evt = bind_key_up_evt = True
-
+        released"""
     class _WrapKeyEvt(object):
         def __init__(self, mouse_evt):
             self.__key_evt = mouse_evt # type: _wx.KeyEvent
@@ -385,16 +381,13 @@ class WithCharEvents(_AComponent):
 
         @property
         def is_space(self):
-            return self.__key_evt.GetKeyCode() == _wx.WXK_SPACE
+            return self.key_code == _wx.WXK_SPACE
 
     def __init__(self, *args, **kwargs):
         super(WithCharEvents, self).__init__(*args, **kwargs)
-        if self.__class__.bind_char_evt:
-            self.on_key_pressed = self._evt_handler(_wx.EVT_CHAR,
-                lambda event: [self._WrapKeyEvt(event)])
-        if self.__class__.bind_key_up_evt:
-            self.on_key_up = self._evt_handler(_wx.EVT_KEY_UP, lambda event: [
-                self._WrapKeyEvt(event), self])
+        wrap_processor = lambda event: [self._WrapKeyEvt(event)]
+        self.on_key_pressed = self._evt_handler(_wx.EVT_CHAR, wrap_processor)
+        self.on_key_up = self._evt_handler(_wx.EVT_KEY_UP, wrap_processor)
 
 class WithFirstShow(_AComponent):
     """An _AComponent that does some initialization on first shown.

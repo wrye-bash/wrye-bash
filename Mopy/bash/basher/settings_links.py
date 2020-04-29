@@ -32,6 +32,7 @@ from ..balt import ItemLink, AppendableLink, RadioLink, CheckLink, MenuLink, \
     TransLink, EnabledLink, BoolLink, Link
 from ..bolt import deprint, GPath
 from ..exception import BoltError
+from ..gui import BusyCursor
 from ..localize import dump_translator
 # TODO(ut): settings links do not seem to use Link.data attribute - it's None..
 
@@ -55,7 +56,7 @@ class Settings_BackupSettings(ItemLink):
     def Execute(self):
         msg = _(u'Do you want to backup your Bash settings now?')
         if not balt.askYes(Link.Frame, msg,_(u'Backup Bash Settings?')): return
-        with balt.BusyCursor(): Link.Frame.SaveSettings()
+        with BusyCursor(): Link.Frame.SaveSettings()
         base_dir = bass.settings['bash.backupPath'] or bass.dirs['modsBash']
         settings_file = balt.askSave(Link.Frame,
                                      title=_(u'Backup Bash Settings'),
@@ -63,11 +64,11 @@ class Settings_BackupSettings(ItemLink):
                                      defaultFile=barb.BackupSettings.
                                      backup_filename(bush.game.fsName))
         if not settings_file: return
-        with balt.BusyCursor():
+        with BusyCursor():
             backup = barb.BackupSettings(settings_file, bush.game.fsName,
                                          bush.game.mods_dir)
         try:
-            with balt.BusyCursor(): backup.backup_settings(balt)
+            with BusyCursor(): backup.backup_settings(balt)
         except exception.StateError:
             deprint(u'Backup settings failed', traceback=True)
             backup.warn_message(balt)
@@ -91,12 +92,12 @@ class Settings_RestoreSettings(ItemLink):
         settings_file = balt.askOpen(Link.Frame, _(u'Restore Bash Settings'),
                                      base_dir, u'', u'*.7z')
         if not settings_file: return
-        with balt.BusyCursor():
+        with BusyCursor():
             restore_ = barb.RestoreSettings(settings_file)
         backup_dir = None
         restarting = False
         try:
-            with balt.BusyCursor():
+            with BusyCursor():
                 backup_dir = restore_.extract_backup()
             error_msg, error_title = restore_.incompatible_backup_error(
                 bush.game.fsName)
@@ -494,7 +495,7 @@ class Settings_DumpTranslator(AppendableLink, ItemLink):
         if not self._askContinue(message, 'bash.dump_translator.continue',
                                 _(u'Dump Translator')): return
         outPath = bass.dirs['l10n']
-        with balt.BusyCursor():
+        with BusyCursor():
             outFile = dump_translator(outPath.s, bass.active_locale)
         self._showOk(_(u'Translation keys written to %s') % outFile,
                      self._text + u': ' + outPath.stail)

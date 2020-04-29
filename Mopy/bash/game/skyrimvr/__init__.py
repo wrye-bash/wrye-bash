@@ -55,7 +55,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
 
     class Xe(SkyrimSEGameInfo.Xe):
         full_name = u'TES5VREdit'
-        expert_key = 'tes5vrview.iKnowWhatImDoing'
+        xe_key_prefix = u'tes5vrview'
 
     SkipBAINRefresh = {u'tes5vredit backups', u'tes5vredit cache'}
 

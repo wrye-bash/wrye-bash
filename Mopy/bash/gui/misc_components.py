@@ -21,21 +21,23 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module houses GUI classes that did not fit anywhere else. Once similar
 classes accumulate in here, feel free to break them out into a module."""
 
 __author__ = u'nycz, Infernio, Utumno'
 
+import re
 import wx as _wx
+from wx.grid import Grid
+from collections import defaultdict
+from itertools import chain, imap
 
 from .base_components import _AComponent, Color, WithMouseEvents, \
-    WithCharEvents, Image
+    Image, WithCharEvents
 from .events import EventResult
-from ..bolt import deprint, Path
+from ..bolt import Path
 
 class Font(_wx.Font):
-
     @staticmethod
     def Style(font_, bold=False, slant=False, underline=False):
         if bold: font_.SetWeight(_wx.FONTWEIGHT_BOLD)
@@ -44,288 +46,14 @@ class Font(_wx.Font):
         font_.SetUnderlined(underline)
         return font_
 
-class CheckBox(_AComponent):
-    """Represents a simple two-state checkbox.
-
-    Events:
-     - on_checked(checked: bool): Posted when this checkbox's state is changed
-       by checking or unchecking it. The parameter is True if the checkbox is
-       now checked and False if it is now unchecked."""
-    def __init__(self, parent, label=u'', chkbx_tooltip=None, checked=False):
-        """Creates a new CheckBox with the specified properties.
-
-        :param parent: The object that this checkbox belongs to. May be a wx
-                       object or a component.
-        :param label: The text shown on this checkbox.
-        :param chkbx_tooltip: A tooltip to show when the user hovers over this
-                              checkbox.
-        :param checked: The initial state of the checkbox."""
-        super(CheckBox, self).__init__(_wx.CheckBox, parent, _wx.ID_ANY,
-                                       label=label)
-        if chkbx_tooltip:
-            self.tooltip = chkbx_tooltip
-        self.is_checked = checked
-        # Events
-        self.on_checked = self._evt_handler(_wx.EVT_CHECKBOX,
-                                            lambda event: [event.IsChecked()])
-
-    @property
-    def is_checked(self): # type: () -> bool
-        """Returns True if this checkbox is checked.
-
-        :return: True if this checkbox is checked."""
-        return self._native_widget.GetValue()
-
-    @is_checked.setter
-    def is_checked(self, new_state): # type: (bool) -> None
-        """Marks this checkbox as either checked or unchecked, depending on the
-        value of new_state.
-
-        :param new_state: True if this checkbox should be checked, False if it
-                          should be unchecked."""
-        self._native_widget.SetValue(new_state)
-
-class DropDown(_AComponent):
-    """Wraps a DropDown with automatic tooltip if text is wider than width of
-    control.
-
-    Events:
-     - on_combo_select(selected_label: str): Posted when an item on the list is
-     selected. The parameter is the new value of selection."""
-    def __init__(self, parent, value, choices, __autotooltip=True,
-                 __readonly=True):
-        """Creates a new DropDown with the specified properties.
-
-        :param parent: The object that this combobox belongs to. May be a wx
-                       object or a component.
-        :param value: The selected choice, also the text shown on this
-                      combobox.
-        :param choices: The combobox choices."""
-        super(DropDown, self).__init__(_wx.ComboBox, parent, _wx.ID_ANY,
-                                       value=value, choices=choices,
-                                       style=_wx.CB_READONLY)
-        # Events
-        self.on_combo_select = self._evt_handler(_wx.EVT_COMBOBOX,
-            lambda event: [event.GetString()])
-        # Internal use only - used to set the tooltip
-        self._on_size_changed = self._evt_handler(_wx.EVT_SIZE)
-        self._on_text_changed = self._evt_handler(_wx.EVT_TEXT)
-        self._on_size_changed.subscribe(self._set_tooltip)
-        self._on_text_changed.subscribe(self._set_tooltip)
-
-    def unsubscribe_handler_(self):
-        # PY3: TODO(inf) needed for wx3, check if needed in Phoenix
-        self._on_size_changed.unsubscribe(self._set_tooltip)
-
-    def _set_tooltip(self):
-        """Set the tooltip"""
-        cb = self._native_widget
-        if cb.GetClientSize()[0] < cb.GetTextExtent(cb.GetValue())[0] + 30:
-            tt = cb.GetValue()
-        else: tt = u''
-        self.tooltip = tt
-
-    def set_choices(self, combo_choices):
-        """Set the combobox items"""
-        self._native_widget.SetItems(combo_choices)
-
-    def set_selection(self, combo_choice):
-        """Set the combobox selected item"""
-        self._native_widget.SetSelection(combo_choice)
-
-    def get_value(self):
-        return self._native_widget.GetValue()
-
-class ColorPicker(_AComponent):
-    """A button with a color that launches a color picker dialog.
-
-    Events:
-     - on_color_picker_evt(selected_label: str): Posted when the button is
-     clicked."""
-    def __init__(self, parent, color=None):
-        super(ColorPicker, self).__init__(_wx.ColourPickerCtrl, parent)
-        if color is not None:
-            self.set_color(color)
-        self.on_color_picker_evt = self._evt_handler(
-            _wx.EVT_COLOURPICKER_CHANGED)
-
-    def get_color(self): # type: () -> Color
-        return Color.from_wx(self._native_widget.GetColour())
-
-    def set_color(self, color): # type: (Color) -> None
-        self._native_widget.SetColour(color.to_rgba_tuple())
-
-class Spinner(_AComponent):
-    """Spin control with event and tip setting."""
-
-    def __init__(self, parent, value=u'', min_val=0, max_val=100, initial=0,
-                 name=u'wxSpinctrl', onSpin=None, spin_tip=None):
-        super(Spinner, self).__init__(_wx.SpinCtrl, parent, value=value,
-                                      style=_wx.SP_ARROW_KEYS, min=min_val,
-                                      max=max_val, initial=initial, name=name)
-        if onSpin:
-            self._on_spin_evt = self._evt_handler(_wx.EVT_SPINCTRL)
-            self._on_spin_evt.subscribe(onSpin)
-        if spin_tip: self.tooltip = spin_tip
-
-    def sp_set_value(self, sp_value): self._native_widget.SetValue(sp_value)
-
-    def sp_get_value(self): return self._native_widget.GetValue()
-
-class ListBox(WithMouseEvents):
-    """Wrap a ListBox control.
-
-    Events:
-      - on_list_box(lb_dex: int, item_text: unicode): Posted when user selects
-      an item from list. The default arg processor extracts the index of the
-      event and the list item label
-      - Mouse events - see gui.base_components.WithMouseEvents
-     """
-    # PY3: typing!
-    # type _native_widget: wx.ListBox
-    _wx_class = _wx.ListBox
-    bind_motion = bind_rclick_down = bind_rclick_up = True
-
-    def __init__(self, parent, choices=None, isSingle=True, isSort=False,
-                 isHScroll=False, isExtended=False, onSelect=None):
-        style = 0
-        if isSingle: style |= _wx.LB_SINGLE
-        if isSort: style |= _wx.LB_SORT
-        if isHScroll: style |= _wx.LB_HSCROLL
-        if isExtended: style |= _wx.LB_EXTENDED
-        kwargs_ = {u'style': style}
-        if choices: kwargs_[u'choices'] = choices
-        super(ListBox, self).__init__(self._wx_class, parent, **kwargs_)
-        if onSelect:
-            self.on_list_box = self._evt_handler(_wx.EVT_LISTBOX,
-                lambda event: [event.GetSelection(), event.GetString()])
-            self.on_list_box.subscribe(onSelect)
-
-    def lb_select_index(self, lb_selection_dex):
-        self._native_widget.SetSelection(lb_selection_dex)
-
-    def lb_insert(self, str_item, lb_selection_dex):
-        self._native_widget.Insert(str_item, lb_selection_dex)
-
-    def lb_insert_items(self, items, pos):
-        self._native_widget.InsertItems(items, pos)
-
-    def lb_set_items(self, items):
-        """Replace all the items in the control"""
-        self._native_widget.Set(items)
-
-    def lb_set_label_at_index(self, lb_selection_dex, str_item):
-        """Set the label for the given item"""
-        self._native_widget.SetString(lb_selection_dex, str_item)
-
-    def lb_delete_at_index(self, lb_selection_dex):
-        """Delete the item at specified index."""
-        self._native_widget.Delete(lb_selection_dex)
-
-    def lb_scroll_lines(self, scroll): self._native_widget.ScrollLines(scroll)
-
-    def lb_append(self, str_item): self._native_widget.Append(str_item)
-
-    def lb_clear(self): self._native_widget.Clear()
-
-    def lb_bold_font_at_index(self, lb_selection_dex):
-        get_font = self._native_widget.GetFont()
-        self._native_widget.SetItemFont(lb_selection_dex,
-                                        Font.Style(get_font, bold=True))
-
-    # Getters - we should encapsulate index access
-    def lb_get_next_item(self, item, geometry=_wx.LIST_NEXT_ALL,
-                         state=_wx.LIST_STATE_SELECTED):
-        return self._native_widget.GetNextItem(item, geometry, state)
-
-    def lb_get_str_item_at_index(self, lb_selection_dex):
-        return self._native_widget.GetString(lb_selection_dex)
-
-    def lb_get_str_items(self):
-        return self._native_widget.GetStrings()
-
-    def lb_get_selections(self): return self._native_widget.GetSelections()
-
-
-    def lb_index_for_str_item(self, str_item):
-        return self._native_widget.FindString(str_item)
-
-    def lb_get_vertical_scroll_pos(self):
-        return self._native_widget.GetScrollPos(_wx.VERTICAL)
-
-    def lb_get_items_count(self):
-        return self._native_widget.GetCount()
-
-class CheckListBox(ListBox, WithCharEvents):
-    """Wrap a CheckListBox control.
-
-    Events:
-      - on_check_list_box(index: int): Posted when user checks an item from
-      list. The default arg processor extracts the index of the event.
-      - on_context(evt_object: wx.Event): Posted when user checks an item
-      from list. The default arg processor extracts the index of the event.
-      - Mouse events see gui.base_components.WithMouseEvents.
-      - Key events see gui.base_components.WithCharEvents.
-      """
-    # PY3: typing!
-    # type _native_widget: wx.CheckListBox
-    _wx_class = _wx.CheckListBox
-    bind_mouse_leaving = bind_lclick_double = True
-
-    def __init__(self, parent, choices=None, isSingle=False, isSort=False,
-                 isHScroll=False, isExtended=False, onSelect=None,
-                 onCheck=None): # note isSingle=False by default
-        super(CheckListBox, self).__init__(parent, choices, isSingle, isSort,
-                 isHScroll, isExtended, onSelect)
-        if onCheck:
-            self.on_check_list_box = self._evt_handler(
-                _wx.EVT_CHECKLISTBOX, lambda event: [event.GetSelection()])
-            self.on_check_list_box.subscribe(onCheck)
-        self.on_context = self._evt_handler(_wx.EVT_CONTEXT_MENU,
-                                            lambda event: [self])
-
-    def lb_check_at_index(self, lb_selection_dex, do_check):
-        self._native_widget.Check(lb_selection_dex, do_check)
-
-    def lb_is_checked_at_index(self, lb_selection_dex):
-        return self._native_widget.IsChecked(lb_selection_dex)
-
-    def setCheckListItems(self, names, values):
-        """Convenience method for setting a bunch of wxCheckListBox items. The
-        main advantage of this is that it doesn't clear the list unless it
-        needs to. Which is good if you want to preserve the scroll position
-        of the list. """
-        if not names:
-            self.lb_clear()
-        else:
-            for index, (name, value) in enumerate(zip(names, values)):
-                if index >= self.lb_get_items_count():
-                    self.lb_append(name)
-                else:
-                    if index == -1:
-                        deprint(u"index = -1, name = %s, value = %s" % (
-                            name, value))
-                        continue
-                    self.lb_set_label_at_index(index, name)
-                self.lb_check_at_index(index, value)
-            for index in range(self.lb_get_items_count(), len(names), -1):
-                self.lb_delete_at_index(index - 1)
-
-    def toggle_checked_at_index(self, lb_selection_dex):
-        do_check = not self.lb_is_checked_at_index(lb_selection_dex)
-        self.lb_check_at_index(lb_selection_dex, do_check)
-
-    def set_all_checkmarks(self, checked):
-        """Sets all checkmarks to the specified state - checked if True,
-        unchecked if False."""
-        for i in xrange(self.lb_get_items_count()):
-            self.lb_check_at_index(i, checked)
-
+# Pictures --------------------------------------------------------------------
 class Picture(_AComponent):
     """Picture panel."""
+    _wx_widget_type = _wx.Window
+
     def __init__(self, parent, width, height, scaling=1,  ##: scaling unused
                  style=_wx.BORDER_SUNKEN, background=_wx.MEDIUM_GREY_BRUSH):
-        super(Picture, self).__init__(_wx.Window, parent, size=(width, height),
+        super(Picture, self).__init__(parent, size=(width, height),
                                       style=style)
         self._native_widget.SetBackgroundStyle(_wx.BG_STYLE_CUSTOM)
         self.bitmap = None
@@ -402,3 +130,230 @@ class PictureWithCursor(Picture, WithMouseEvents):
             _wx.Cursor(_wx.CURSOR_MAGNIFIER if img else _wx.CURSOR_ARROW))
         self._native_widget.Thaw()
         return img
+
+# Lines -----------------------------------------------------------------------
+class _ALine(_AComponent):
+    """Abstract base class for simple graphical lines."""
+    _line_style = None # override in subclasses
+    _wx_widget_type = _wx.StaticLine
+
+    def __init__(self, parent):
+        super(_ALine, self).__init__(parent, style=self._line_style)
+
+class HorizontalLine(_ALine):
+    """A simple horizontal line."""
+    _line_style = _wx.LI_HORIZONTAL
+
+class VerticalLine(_ALine):
+    """A simple vertical line."""
+    _line_style = _wx.LI_VERTICAL
+
+# Tables ----------------------------------------------------------------------
+class Table(WithCharEvents):
+    """A component that displays data in a tabular manner, with useful
+    extensions like Ctrl+C/Ctrl+V support built in. Note that it was not built
+    to allow customizing the row labels, one of its central assumptions is that
+    they are always ints."""
+    _wx_widget_type = Grid
+
+    def __init__(self, parent, table_data, editable=True):
+        """Creates a new Table with the specified parent and table data.
+
+        :param parent: The object that this table belongs to. May be a wx
+            object or a component.
+        :param table_data: The data to show in the table. Maps column names to
+            the data displayed in the column.
+        :type table_data: dict[unicode, list[unicode]]
+        :param editable: True if the user may edit the contents of the
+            table."""
+        super(Table, self).__init__(parent)
+        # Verify that all columns are identically sized
+        column_len = len(next(table_data.itervalues()))
+        if any(len(column_data) != column_len for column_data
+               in table_data.itervalues()):
+            raise SyntaxError(u'Table columns must all have the same size')
+        if not all(table_data):
+            raise SyntaxError(u'Table rows must be nonempty strings')
+        # Create the Grid, then populate it from table_data
+        # Note order here and below - row, col is correct for wx
+        self._native_widget.CreateGrid(column_len, len(table_data))
+        self._native_widget.EnableEditing(editable)
+        self._label_to_col_index = {}
+        for c, column_label in enumerate(table_data):
+            self._label_to_col_index[column_label] = c
+            self._native_widget.SetColLabelValue(c, column_label)
+            for r, cell_label in enumerate(table_data[column_label]):
+                self._native_widget.SetCellValue(r, c, cell_label)
+        self._native_widget.AutoSize()
+        self.on_key_up.subscribe(self._handle_key_up)
+
+    def _handle_key_up(self, wrapped_evt):
+        """Internal handler, implements copy and paste, select all, etc."""
+        kcode = wrapped_evt.key_code
+        if wrapped_evt.is_cmd_down:
+            if kcode == ord(u'A'):
+                if wrapped_evt.is_shift_down:
+                    # Ctrl+Shift+A - unselect all cells
+                    self._native_widget.ClearSelection()
+                else:
+                    # Ctrl+A - select all cells
+                    for c in xrange(self._native_widget.GetNumberCols()):
+                        self._native_widget.SelectCol(c, True)
+            elif kcode == ord(u'C'):
+                # Ctrl+C - copy contents of selected cells
+                from .. import balt # TODO(inf) de-wx! move this to gui
+                balt.copyToClipboard(self._format_selected_cells(
+                    self.get_selected_cells()))
+            elif kcode == ord(u'V'):
+                # Ctrl+V - paste contents of selected cells
+                if not self._native_widget.IsEditable(): return
+                from .. import balt # TODO(inf) de-wx! move these to gui
+                parsed_clipboard = self._parse_clipboard_contents(
+                    balt.read_from_clipboard())
+                if not parsed_clipboard:
+                    balt.showWarning(self, _(u'Could not parse the pasted '
+                                             u'contents as a valid table.'))
+                    return
+                self.edit_cells(parsed_clipboard)
+                self._native_widget.AutoSize()
+
+    def _format_selected_cells(self, sel_cells):
+        """Formats the output of get_selected_cells into a human-readable
+        format."""
+        if not sel_cells:
+            # None selected, just return the currently focused cell's value
+            return self.get_focused_cell()
+        elif len(sel_cells) == 1:
+            # Selection is limited to a single column, format as a
+            # newline-separated list
+            sorted_cells = sorted(next(sel_cells.itervalues()).iteritems(),
+                                  key=lambda t: int(t[0]))
+            return u'\n'.join(t[1] for t in sorted_cells)
+        else:
+            # Here is where it gets ugly - we need to format a full table with
+            # row/column separators, proper spacing and labels
+            clip_text = []
+            row_labels = set(chain.from_iterable(
+                r.iterkeys() for r in sel_cells.itervalues()))
+            col_labels = sel_cells.keys()
+            # First calculate the maximum label lengths we'll have to pad to
+            max_row_length = max(imap(len, row_labels))
+            max_col_lengths = {}
+            for col_label, col_cells in sel_cells.iteritems():
+                max_col_lengths[col_label] = max(
+                    imap(len, col_cells.itervalues()))
+            # We now have enough info to format the header, so do that
+            first_header_line = u' ' * max_row_length + u' | '
+            first_header_line += u' | '.join(l.ljust(max_col_lengths[l])
+                                             for l in col_labels)
+            second_header_line = u'-' * (max_row_length + 1) + u'+'
+            second_header_line += u'+'.join(u'-' * (max_col_lengths[l] + 2)
+                                            for l in col_labels)
+            # Bit hacky - the last one doesn't have a trailing space
+            second_header_line = second_header_line[:-1]
+            clip_text.append(first_header_line)
+            clip_text.append(second_header_line)
+            # Finish off by formatting each row
+            for row_label in sorted(row_labels, key=int):
+                curr_line = row_label.ljust(max_row_length) + u' | '
+                cell_vals = []
+                for col_label, col_cells in sel_cells.iteritems():
+                    cell_vals.append(col_cells.get(row_label, u'').ljust(
+                        max_col_lengths[col_label]))
+                curr_line += u' | '.join(cell_vals)
+                clip_text.append(curr_line)
+            return u'\n'.join(l.rstrip() for l in clip_text)
+
+    _complex_start = re.compile(u'' r' +\|')
+    def _parse_clipboard_contents(self, clipboard_contents):
+        """Parses the specified clipboard contents into a dictionary
+        containing instructions for how to edit the table."""
+        # Note that we'll return {} whenever we detect a format error
+        if not clipboard_contents: return {}
+        ret_dict = defaultdict(dict)
+        all_lines = clipboard_contents.splitlines()
+        if self._complex_start.match(all_lines[0]):
+            if len(all_lines) < 3: return {}
+            # Still the most complex case, but much simpler than copying. We
+            # need to parse the ASCII table, which will give us absolute
+            # instructions on how to edit the real table
+            col_labels = [x.strip() for x in all_lines[0].split(u'|')][1:]
+            # Iterate over all rows, but skip the second line - only there for
+            # human readability
+            for row_line in all_lines[2:]:
+                line_contents = [x.strip() for x in row_line.split(u'|')]
+                if len(line_contents) < len(col_labels) + 1: return {}
+                row_label = line_contents[0]
+                # Iterate over each cell in the current row, but check if
+                # there's a value in the cell before storing it (we don't want
+                # to override cells the user didn't originally select)
+                for i, cell_value in enumerate(line_contents[1:]):
+                    cell_value = cell_value
+                    if cell_value:
+                        ret_dict[col_labels[i]][row_label] = cell_value
+        else:
+            # Pasting a list is always relative to the focused cell
+            ##: As a 'fun' project: take the current selection into account
+            focused_col = self.get_focused_column()
+            focused_row = self._native_widget.GetGridCursorRow() + 1
+            for r, cell_value in enumerate(all_lines):
+                ret_dict[focused_col][unicode(focused_row + r)] = cell_value
+        return ret_dict
+
+    def get_cell_value(self, col_label, row_label):
+        """Returns the value of the cell at the specified row and column."""
+        return self._native_widget.GetCellValue(
+            int(row_label) - 1, self._label_to_col_index[col_label])
+
+    def set_cell_value(self, col_label, row_label, cell_value):
+        """Sets the value of the cell at the specified row and column to the
+        specified value."""
+        self._native_widget.SetCellValue(
+            int(row_label) - 1, self._label_to_col_index[col_label],
+            cell_value)
+
+    def get_focused_cell(self):
+        """Returns the value of the focused cell."""
+        return self._native_widget.GetCellValue(
+            self._native_widget.GetGridCursorRow(),
+            self._native_widget.GetGridCursorCol())
+
+    def get_focused_column(self):
+        """Returns the label of the focused column."""
+        return self._native_widget.GetColLabelValue(
+            self._native_widget.GetGridCursorCol())
+
+    def get_selected_cells(self):
+        """Returns a dict of dicts, mapping column labels to row labels to cell
+        values for all cells that have been selected by the user."""
+        # May seem inefficient, but the alternative is incredibly complex; plus
+        # this takes < 1/2s for a table with several thousand entries
+        sel_dict = defaultdict(dict)
+        for c in xrange(self._native_widget.GetNumberCols()):
+            col_label = self._native_widget.GetColLabelValue(c)
+            for r in xrange(self._native_widget.GetNumberRows()):
+                if self._native_widget.IsInSelection(r, c):
+                    sel_dict[col_label][unicode(r + 1)] = (
+                        self._native_widget.GetCellValue(r, c))
+        return sel_dict
+
+    def edit_cells(self, cell_edits):
+        """Applies a series of as described by the specified dict mapping
+        column labels to row labels to cell values."""
+        for col_label, target_cells in cell_edits.iteritems():
+            for row_label, target_val in target_cells.iteritems():
+                # Skip any that would go out of bounds
+                if int(row_label) - 1 < self._native_widget.GetNumberRows():
+                    self.set_cell_value(col_label, row_label, target_val)
+
+# Other -----------------------------------------------------------------------
+class BusyCursor(object):
+    """To be used with 'with' statements - changes the user's cursor to the
+    system's 'busy' cursor style. Useful to signal that a running operation is
+    making progress, but won't take long enough to be worth a progress
+    dialog."""
+    def __enter__(self):
+        _wx.BeginBusyCursor()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        _wx.EndBusyCursor()

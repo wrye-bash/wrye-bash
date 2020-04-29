@@ -39,7 +39,8 @@ from .. import bass, bosh, bolt, balt, bush, mod_files, load_order
 from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink,\
     TransLink, RadioLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes
 from ..gui import CancelButton, CheckBox, HLayout, Label, LayoutOptions, \
-    OkButton, RIGHT, Spacer, Stretch, TextField, VLayout, DialogWindow, Image
+    OkButton, RIGHT, Spacer, Stretch, TextField, VLayout, DialogWindow, \
+    Image, BusyCursor
 from ..bolt import GPath, SubProgress
 from ..bosh import faces
 from ..brec import MreRecord
@@ -1108,7 +1109,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 return
             else:
                 self.mods_to_reselect = set(noMerge) & deselect
-        with balt.BusyCursor():
+        with BusyCursor():
             bosh.modInfos.lo_deactivate(deselect, doSave=True)
         self.window.RefreshUI(refreshSaves=True)
 
@@ -1539,7 +1540,7 @@ class Mod_DecompileAll(EnabledLink):
 class _Esm_Esl_Flip(EnabledLink):
 
     def _esm_esl_flip_refresh(self, updated):
-        with balt.BusyCursor():
+        with BusyCursor():
             ##: HACK: forcing active refresh cause mods may be reordered and
             # we then need to sync order in skyrim's plugins.txt
             bosh.modInfos.refreshLoadOrder()

@@ -21,7 +21,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module contains all text-related GUI components. For example, text
 input components like TextArea and TextField, but also static components like
 Label reside here."""
@@ -45,9 +44,10 @@ class _ATextInput(_AComponent):
        input changes. Be warned that changing it via _ATextInput.text_content
        also posts this event, so if you have to change text in response to this
        event, use _ATextInput.modified to check if it was a user modification;
-       otherwise, you risk getting into an infinite loop.
+       otherwise, you risk getting into an infinite loop."""
+    # PY3: typing # type _native_widget: _wx.TextCtrl
+    _wx_widget_type = _wx.TextCtrl
 
-    :type _native_widget: _wx.TextCtrl"""
     # TODO: (fixed) font(s)
     def __init__(self, parent, init_text=None, multiline=True, editable=True,
                  auto_tooltip=True, max_length=None, no_border=False, style=0):
@@ -72,7 +72,7 @@ class _ATextInput(_AComponent):
         if multiline: style |= _wx.TE_MULTILINE
         if not editable: style |= _wx.TE_READONLY
         if no_border: style |= _wx.BORDER_NONE
-        super(_ATextInput, self).__init__(_wx.TextCtrl, parent, style=style)
+        super(_ATextInput, self).__init__(parent, style=style)
         if init_text: self._native_widget.SetValue(init_text)
         if max_length:
             self._native_widget.SetMaxLength(max_length)
@@ -223,13 +223,14 @@ class Label(_ALabel):
     """A static text element. Doesn't have a border and the text can't be
     interacted with by the user."""
     # _native_widget: type: _wx.StaticText
+    _wx_widget_type = _wx.StaticText
+
     def __init__(self, parent, init_text):
         """Creates a new Label with the specified parent and text.
 
         :param parent: The object that this label belongs to.
         :param init_text: The initial text of this label."""
-        super(Label, self).__init__(_wx.StaticText, parent, _wx.ID_ANY,
-                                    init_text)
+        super(Label, self).__init__(parent, label=init_text)
         self._init_text = init_text
 
     def wrap(self, max_length): # type: (int) -> None
@@ -245,6 +246,8 @@ class Label(_ALabel):
 class HyperlinkLabel(_ALabel):
     """A label that opens a URL when clicked, imitating a hyperlink in a
     browser. Typically styled blue."""
+    _wx_widget_type = _adv.HyperlinkCtrl
+
     def __init__(self, parent, init_text, url, always_unvisited=False):
         """Creates a new HyperlinkLabel with the specified parent, text and
         URL.
@@ -256,8 +259,31 @@ class HyperlinkLabel(_ALabel):
         :param always_unvisited: If set to True, this link will always appear
                                  as if it hasn't been clicked on (i.e. blue -
                                  it will never turn purple)."""
-        super(HyperlinkLabel, self).__init__(_adv.HyperlinkCtrl, parent,
-                                             _wx.ID_ANY, init_text, url)
+        super(HyperlinkLabel, self).__init__(parent, label=init_text, url=url)
         if always_unvisited:
             self._native_widget.SetVisitedColour(
                 self._native_widget.GetNormalColour())
+
+# Spinner - technically text, just limited to digits --------------------------
+class Spinner(_AComponent):
+    """A field for entering integers. Features small arrow buttons on the right
+    to decrement and increment the value.
+
+    Events:
+      - on_spun(): Posted when a new value is entered into the spinner (whether
+        manually or through the buttons)."""
+    _wx_widget_type = _wx.SpinCtrl
+
+    def __init__(self, parent, min_val=0, max_val=100, spin_tip=None):
+        super(Spinner, self).__init__(parent, style=_wx.SP_ARROW_KEYS,
+                                      min=min_val, max=max_val)
+        self.on_spun = self._evt_handler(_wx.EVT_SPINCTRL)
+        if spin_tip: self.tooltip = spin_tip
+
+    @property
+    def spinner_value(self):
+        return int(self._native_widget.GetValue())
+
+    @spinner_value.setter
+    def spinner_value(self, sp_value):
+        self._native_widget.SetValue(int(sp_value))

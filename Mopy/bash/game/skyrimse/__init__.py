@@ -74,7 +74,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
 
     class Xe(SkyrimGameInfo.Xe):
         full_name = u'SSEEdit'
-        expert_key = 'sseView.iKnowWhatImDoing'
+        xe_key_prefix = u'sseView'
 
     SkipBAINRefresh = {u'sseedit backups', u'sseedit cache'}
 

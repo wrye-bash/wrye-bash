@@ -21,7 +21,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module defines buttons, offering several predefined templates (e.g. OK
 buttons, Cancel buttons, Save As... buttons, etc.)."""
 
@@ -31,11 +30,7 @@ import wx as _wx
 
 from .base_components import _AComponent
 
-class _AButton(_AComponent):
-    """Abstract base class for all buttons."""
-    # TODO(inf) This will be expanded, don't remove
-
-class Button(_AButton):
+class Button(_AComponent):
     """Represents a generic button that can be pressed, triggering an action.
     You probably want one of the more specialized versions of this class
     (e.g. OkButton or CancelButton).
@@ -43,6 +38,7 @@ class Button(_AButton):
     Events:
      - on_clicked(): Posted when the button is clicked.
      - on_right_clicked(): Posted when the button is right-clicked."""
+    _wx_widget_type = _wx.Button
     # The ID that will be passed to wx. Controls some OS-specific behavior,
     # e.g. when pressing Tab
     _id = _wx.ID_ANY
@@ -72,8 +68,8 @@ class Button(_AButton):
             btn_style |= _wx.BU_EXACTFIT
         if no_border:
             btn_style |= _wx.BORDER_NONE
-        super(Button, self).__init__(_wx.Button, parent, self.__class__._id,
-                                     label=label, style=btn_style)
+        super(Button, self).__init__(parent, self.__class__._id, label=label,
+                                     style=btn_style)
         if default:
             self._native_widget.SetDefault()
         if btn_tooltip:

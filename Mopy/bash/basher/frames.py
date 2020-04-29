@@ -28,7 +28,7 @@ from collections import OrderedDict
 
 from .. import bass, balt, bosh, bolt, load_order
 from ..balt import bell, Link, Resources
-from ..bolt import GPath
+from ..bolt import decode, GPath
 from ..bosh import omods
 from ..gui import Button, CancelButton, CENTER, CheckBox, GridLayout, \
     HLayout, Label, LayoutOptions, SaveButton, Spacer, Stretch, TextArea, \
@@ -218,12 +218,11 @@ class DocBrowser(WindowFrame):
             # Oddly, wxPython's LoadFile function doesn't read unicode
             # correctly, even in unicode builds
             if data is None and path:
-                try:
-                    with path.open('r',encoding='utf-8-sig') as ins:
-                        data = ins.read()
-                except UnicodeDecodeError:
-                    with path.open('r') as ins:
-                        data = ins.read()
+                # We can't assume that this is UTF-8 - e.g. some official Beth
+                # docs in Morrowind are cp1252. However, it most likely is
+                # UTF-8 or UTF-8-compatible (ASCII), so try that first.
+                with path.open(u'rb') as ins:
+                    data = decode(ins.read(), u'utf-8')
             self._doc_ctrl.load_text(data)
 
     def SetMod(self, mod_name):

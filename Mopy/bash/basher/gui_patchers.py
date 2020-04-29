@@ -28,8 +28,8 @@ from collections import defaultdict
 from operator import itemgetter
 # Internal
 from .. import bass, bosh, bush, balt, load_order, bolt, exception
-from ..balt import text_wrap, Links, SeparatorLink, CheckLink
-from ..bolt import GPath
+from ..balt import Links, SeparatorLink, CheckLink
+from ..bolt import GPath, text_wrap
 from ..gui import Button, CheckBox, HBoxedLayout, Label, LayoutOptions, \
     Spacer, TextArea, TOP, VLayout, EventResult, PanelWin, ListBox, \
     CheckListBox

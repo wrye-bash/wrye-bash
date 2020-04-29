@@ -21,7 +21,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module houses abstractions over wx.html2.WebView, allowing us to
 utilize fully interactive webpages inside a GUI. The main reason this was split
 into its own file instead of remaining inside __init__ is the wx.html2 import,
@@ -44,6 +43,7 @@ from .base_components import _AComponent
 from .buttons import BackwardButton, ForwardButton, ReloadButton
 from .text_components import TextArea
 from .layouts import VLayout
+from ..exception import StateError
 
 def web_viewer_available():
     """Checks if WebViewer and its wx backing are available, meaning that we
@@ -61,6 +61,8 @@ class WebViewer(_AComponent):
     Basic control from the Python side is offered through methods for
     navigating the history, clearing the history, navigating to a URL and
     reloading the current page."""
+    _wx_widget_type = _wx_html2.WebView.New # type: _wx_html2.WebView
+
     def __init__(self, parent, buttons_parent=None):
         """Creates a new WebViewer with the specified parent.
 
@@ -69,7 +71,7 @@ class WebViewer(_AComponent):
         :param buttons_parent: The object that the navigation buttons belong
                                to. If None, the same parent will be used."""
         if buttons_parent is None: buttons_parent = parent
-        super(WebViewer, self).__init__(_wx_html2.WebView.New, parent) # type: _wx_html2.WebView
+        super(WebViewer, self).__init__(parent)
         self._back_button = BackwardButton(buttons_parent)
         self._back_button.on_clicked.subscribe(self.go_back)
         self._forward_button = ForwardButton(buttons_parent)
@@ -174,12 +176,14 @@ class HtmlDisplay(_AComponent):
     """A wrapper around WebViewer that implements a fallback raw text display
     of the HTML code, as well as permanently disabled fallback versions of
     WebViewer's navigation buttons."""
+    _wx_widget_type = _wx.Window
+
     def __init__(self, parent):
         """Creates a new HtmlDisplay with the specified parent.
 
         :param parent: The object that this HTML display belongs to. May be a
                        wx object or a component."""
-        super(HtmlDisplay, self).__init__(_wx.Window, parent)
+        super(HtmlDisplay, self).__init__(parent)
         # init the fallback/plaintext widget
         self._text_ctrl = TextArea(self, editable=False, auto_tooltip=False)
         items = [self._text_ctrl]
@@ -225,6 +229,8 @@ class HtmlDisplay(_AComponent):
     def load_text(self, target_text):
         """Switches to text mode (see switch_to_text()) and sets the
         specified text as the unmodified contents of the text display."""
+        if not isinstance(target_text, unicode): # needs to be unicode by now
+            raise StateError(u'HtmlDisplay can only load unicode text.')
         self._text_ctrl.text_content = target_text
         self._text_ctrl.modified = False
         self.switch_to_text()

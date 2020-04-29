@@ -94,7 +94,7 @@ class OblivionGameInfo(GameInfo):
 
     class Xe(GameInfo.Xe):
         full_name = u'TES4Edit'
-        expert_key = 'tes4View.iKnowWhatImDoing'
+        xe_key_prefix = u'tes4View'
 
     # BAIN:
     dataDirs = GameInfo.dataDirs | {
