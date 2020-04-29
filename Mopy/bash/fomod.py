@@ -42,12 +42,12 @@ xml attributes/text are available via instance attributes."""
 
 __author__ = u'Ganda'
 
-from collections import OrderedDict, Sequence
+from collections import OrderedDict
 from distutils.version import LooseVersion
 from xml.etree import ElementTree as etree
 
 from . import bush
-from .bolt import GPath
+from .bolt import GPath, Path
 from .load_order import cached_is_active
 
 class FailedCondition(Exception):
@@ -151,33 +151,34 @@ class InstallerOption(_AFomodBase):
         if type_elem is not None:
             self.option_type = type_elem.get(u'name')
         else:
-            default = option_object.find(
+            default_type = option_object.find(
                 u'typeDescriptor/dependencyType/defaultType').get(u'name')
-            patterns = option_object.findall(
+            dep_patterns = option_object.findall(
                 u'typeDescriptor/dependencyType/patterns/*')
-            for pattern in patterns:
+            for dep_pattern in dep_patterns:
                 try:
-                    self._parent_installer.test_conditions(pattern.find(
+                    self._parent_installer.test_conditions(dep_pattern.find(
                         u'dependencies'))
                 except FailedCondition:
                     pass
                 else:
-                    self.option_type = pattern.find(u'type').get(u'name')
+                    self.option_type = dep_pattern.find(u'type').get(u'name')
                     break
             else:
-                self.option_type = default
+                self.option_type = default_type
 
 class _FomodFileInfo(object):
     """Stores information about a single file that is going to be installed."""
-    __slots__ = (u'source', u'destination', u'priority')
+    __slots__ = (u'file_source', u'destination', u'priority')
 
-    def __init__(self, source, destination, priority):
-        """Creates a new _FomodFileInfo with the specified properties-
+    def __init__(self, file_source, destination, priority):
+        # type: (Path, Path, int) -> None
+        """Creates a new _FomodFileInfo with the specified properties.
 
-        :param source: string source path
-        :param destination: string destination path
-        :param priority: file priority"""
-        self.source = source
+        :param file_source: The source path.
+        :param destination: The destination path.
+        :param priority: The relative file priority."""
+        self.file_source = file_source
         self.destination = destination
         self.priority = priority
 
@@ -199,24 +200,24 @@ class _FomodFileInfo(object):
         :param file_list: list of files in the mod being installed"""
         result = []
         for file_object in files_elem.findall(u'*'):
-            source = file_object.get(u'source')
-            if source.endswith((u'/', u'\\')):
-                source = source[:-1]
-            source = GPath(source)
+            file_src = file_object.get(u'source')
+            if file_src.endswith((u'/', u'\\')):
+                file_src = file_src[:-1]
+            file_src = GPath(file_src)
             destination = file_object.get(u'destination', None)
             if destination is None:  # omitted destination
-                destination = source
+                destination = file_src
             elif file_object.tag == u'file' and (
                 not destination or destination.endswith((u'/', u'\\'))):
                 # if empty or with a trailing slash then dest refers
                 # to a folder. Post-processing to add the filename to the
                 # end of the path.
-                destination = GPath(destination).join(GPath(source).tail)
+                destination = GPath(destination).join(file_src.tail)
             else:
                 # destination still needs normalizing
                 destination = GPath(destination)
             priority = int(file_object.get(u'priority', u'0'))
-            source_lower = source.s.lower()
+            source_lower = file_src.s.lower()
             # We need to include the path separators when checking, since
             # otherwise we may end up matching e.g. 'Foo - A/bar.esp' to the
             # source 'Foo', when the source 'Foo - A' exists.
@@ -224,11 +225,10 @@ class _FomodFileInfo(object):
             for fsrc in file_list:
                 fsrc_lower = fsrc.lower()
                 if fsrc_lower == source_lower:  # it's a file
-                    result.append(cls(source, destination, priority))
+                    result.append(cls(file_src, destination, priority))
                 elif fsrc_lower.startswith(source_starts):
                     # it's a folder
-                    source_len = len(source)
-                    fdest = destination.s + fsrc[source_len:]
+                    fdest = destination.s + fsrc[len(file_src):]
                     if fdest.startswith((u'/', u'\\')):
                         fdest = fdest[1:]
                     result.append(cls(GPath(fsrc), GPath(fdest), priority))
@@ -361,7 +361,7 @@ class FomodInstaller(object):
                 if priority_dict[info.destination] > info.priority:
                     continue
                 del file_dict[info.destination]
-            file_dict[info.destination] = info.source
+            file_dict[info.destination] = info.file_source
             priority_dict[info.destination] = info.priority
         # return everything in strings
         return {a.s: b.s for a, b in file_dict.iteritems()}
