@@ -198,7 +198,7 @@ class _FomodFileInfo(object):
 
         :param files_elem: list of ElementTree elements 'file' and 'folder'
         :param file_list: list of files in the mod being installed"""
-        result = []
+        fm_infos = []
         for file_object in files_elem.findall(u'*'):
             file_src = file_object.get(u'source')
             if file_src.endswith((u'/', u'\\')):
@@ -225,13 +225,13 @@ class _FomodFileInfo(object):
             for fsrc in file_list:
                 fsrc_lower = fsrc.lower()
                 if fsrc_lower == source_lower: # it's a file
-                    result.append(cls(file_src, file_dest, file_prty))
+                    fm_infos.append(cls(file_src, file_dest, file_prty))
                 elif fsrc_lower.startswith(source_starts): # it's a folder
                     fdest = file_dest.s + fsrc[len(file_src):]
                     if fdest.startswith((u'/', u'\\')):
                         fdest = fdest[1:]
-                    result.append(cls(GPath(fsrc), GPath(fdest), file_prty))
-        return result
+                    fm_infos.append(cls(GPath(fsrc), GPath(fdest), file_prty))
+        return fm_infos
 
 class FomodInstaller(object):
     """Represents the installer itself. Keeps parsing on instancing to a
@@ -256,20 +256,20 @@ class FomodInstaller(object):
     mapping of 'file source string' -> 'file destination string'. These are
     the files to be installed. This installer does not install or provide
     any way to do so, leaving that at your discretion."""
-    __slots__ = (u'tree', u'fomod_name', u'file_list', u'dst_dir',
+    __slots__ = (u'fomod_tree', u'fomod_name', u'file_list', u'dst_dir',
                  u'game_version', u'_current_page', u'_previous_pages',
                  u'_has_finished')
 
-    def __init__(self, root, file_list, dst_dir, game_version):
+    def __init__(self, mc_path, file_list, dst_dir, game_version):
         """Creates a new FomodInstaller with the specified properties.
 
-        :param root: string path to 'ModuleConfig.xml'
+        :param mc_path: string path to 'ModuleConfig.xml'
         :param file_list: the list of recognized files of the mod being
             installed
         :param dst_dir: the destination directory - <Game>/Data
         :param game_version: version of the game launch exe"""
-        self.tree = etree.parse(root)
-        self.fomod_name = self.tree.findtext(u'moduleName', u'').strip()
+        self.fomod_tree = etree.parse(mc_path)
+        self.fomod_name = self.fomod_tree.findtext(u'moduleName', u'').strip()
         self.file_list = file_list
         self.dst_dir = dst_dir
         self.game_version = game_version
@@ -278,10 +278,10 @@ class FomodInstaller(object):
         self._has_finished = False
 
     def start(self):
-        root_conditions = self.tree.find(u'moduleDependencies')
+        root_conditions = self.fomod_tree.find(u'moduleDependencies')
         if root_conditions is not None:
             self.test_conditions(root_conditions)
-        first_page = self.tree.find(u'installSteps/installStep')
+        first_page = self.fomod_tree.find(u'installSteps/installStep')
         if first_page is None:
             return None
         self._current_page = InstallerPage(self, first_page)
@@ -295,8 +295,8 @@ class FomodInstaller(object):
         sorted_selection = sorted(selection, key=sort_list.index)
         self._previous_pages[self._current_page] = sorted_selection
         ordered_pages = self.order_list(
-            self.tree.findall(u'installSteps/installStep'),
-            self.tree.find(u'installSteps').get(u'order', u'Ascending'))
+            self.fomod_tree.findall(u'installSteps/installStep'),
+            self.fomod_tree.find(u'installSteps').get(u'order', u'Ascending'))
         current_index = ordered_pages.index(self._current_page.page_object)
         for page in ordered_pages[current_index + 1:]:
             try:
@@ -328,7 +328,7 @@ class FomodInstaller(object):
 
     def files(self):
         required_files = []
-        required_files_elem = self.tree.find(u'requiredInstallFiles')
+        required_files_elem = self.fomod_tree.find(u'requiredInstallFiles')
         if required_files_elem is not None:
             required_files = _FomodFileInfo.process_files(
                 required_files_elem, self.file_list)
@@ -342,7 +342,7 @@ class FomodInstaller(object):
                 user_files.extend(_FomodFileInfo.process_files(
                     option_files, self.file_list))
         conditional_files = []
-        for pattern in self.tree.findall(
+        for pattern in self.fomod_tree.findall(
                 u'conditionalFileInstalls/patterns/pattern'):
             conditions = pattern.find(u'dependencies')
             files = pattern.find(u'files')
@@ -366,21 +366,21 @@ class FomodInstaller(object):
         # return everything in strings
         return {a.s: b.s for a, b in file_dict.iteritems()}
 
-    def _flags(self):
+    def _fomod_flags(self):
         """Returns a mapping of 'flag name' -> 'flag value'.
         Useful for either debugging or testing flag dependencies."""
-        flag_dict = {}
-        flags_list = [option.option_object.find(u'conditionFlags')
-                      for options in self._previous_pages.values()
-                      for option in options]
-        for flags in flags_list:
-            if flags is None:
+        fm_flag_dict = {}
+        fm_flags_list = [option.option_object.find(u'conditionFlags')
+                         for options in self._previous_pages.values()
+                         for option in options]
+        for fm_flags in fm_flags_list:
+            if fm_flags is None:
                 continue
-            for flag in flags.findall(u'flag'):
-                flag_name = flag.get(u'name')
-                flag_value = flag.text
-                flag_dict[flag_name] = flag_value
-        return flag_dict
+            for fm_flag in fm_flags.findall(u'flag'):
+                fm_flag_name = fm_flag.get(u'name')
+                fm_flag_value = fm_flag.text
+                fm_flag_dict[fm_flag_name] = fm_flag_value
+        return fm_flag_dict
 
     def _test_file_condition(self, condition):
         file_name = GPath(condition.get(u'file'))
@@ -400,13 +400,13 @@ class FomodInstaller(object):
                     file_name, file_type, actual_type))
 
     def _test_flag_condition(self, condition):
-        flag_name = condition.get(u'flag')
-        flag_value = condition.get(u'value')
-        actual_value = self._flags().get(flag_name, None)
-        if actual_value != flag_value:
+        fm_flag_name = condition.get(u'flag')
+        fm_flag_value = condition.get(u'value')
+        actual_flag_value = self._fomod_flags().get(fm_flag_name, None)
+        if actual_flag_value != fm_flag_value:
             raise FailedCondition(
                 u'Flag {} was expected to have {} but has {} instead.'.format(
-                    flag_name, flag_value, actual_value))
+                    fm_flag_name, fm_flag_value, actual_flag_value))
 
     def _test_version_condition(self, condition):
         version = condition.get(u'version')
