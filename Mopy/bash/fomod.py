@@ -298,15 +298,15 @@ class FomodInstaller(object):
             self.fomod_tree.findall(u'installSteps/installStep'),
             self.fomod_tree.find(u'installSteps').get(u'order', u'Ascending'))
         current_index = ordered_pages.index(self._current_page.page_object)
-        for page in ordered_pages[current_index + 1:]:
+        for next_page in ordered_pages[current_index + 1:]:
             try:
-                page_conditions = page.find(u'visible')
+                page_conditions = next_page.find(u'visible')
                 if page_conditions is not None:
                     self.test_conditions(page_conditions)
             except FailedCondition:
                 pass
             else:
-                self._current_page = InstallerPage(self, page)
+                self._current_page = InstallerPage(self, next_page)
                 return self._current_page
         else:
             self._has_finished = True
@@ -316,12 +316,12 @@ class FomodInstaller(object):
     def previous(self):
         self._has_finished = False
         try:
-            page, options = self._previous_pages.popitem(last=True)
-            self._current_page = page
-            return page, options
+            prev_page, prev_selected = self._previous_pages.popitem(last=True)
+            self._current_page = prev_page
+            return prev_page, prev_selected
         except KeyError:
             self._current_page = None
-            return None
+            return None, None
 
     def has_previous(self):
         return bool(self._previous_pages)

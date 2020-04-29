@@ -117,11 +117,10 @@ class InstallerFomod(WizardDialog):
             # and resume execution
             self.block_change = False
             self.finishing = False
-            payload = self.parser.previous()
-            if payload:  # at the start
-                page, previous_selection = payload
-                gui_page = PageSelect(self, page)
-                gui_page.select(previous_selection)
+            prev_page, prev_selected = self.parser.previous()
+            if prev_page: # at the start
+                gui_page = PageSelect(self, prev_page)
+                gui_page.select(prev_selected)
                 self._native_widget.ShowPage(gui_page)
             return EventResult.CANCEL
 
@@ -205,8 +204,8 @@ class PageSelect(PageInstaller):
     _option_type_info[u'NotUsable'] = (_(u'This option cannot be selected.'),
                                        colors.RED)
 
-    def __init__(self, parent, page):
-        """:type page: InstallerPage"""
+    def __init__(self, parent, inst_page):
+        """:type inst_page: InstallerPage"""
         super(PageSelect, self).__init__(parent)
         # For runtime retrieval of option/checkable info
         self._checkable_to_option = {}
@@ -229,7 +228,7 @@ class PageSelect(PageInstaller):
         self._group_links.append(_Group_ToggleAll())
         panel_groups = ScrollableWindow(self)
         groups_layout = VLayout(spacing=5, item_expand=True)
-        for group in page: # type: InstallerGroup
+        for group in inst_page: # type: InstallerGroup
             options_layout = VLayout(spacing=2)
             first_selectable = None
             any_selected = False
@@ -309,7 +308,7 @@ class PageSelect(PageInstaller):
         groups_layout.apply_to(panel_groups)
         VLayout(spacing=10, item_expand=True, items=[
             (HLayout(spacing=5, item_expand=True, item_weight=1, items=[
-                HBoxedLayout(self, title=page.page_name, item_expand=True,
+                HBoxedLayout(self, title=inst_page.page_name, item_expand=True,
                              item_weight=1, items=[panel_groups]),
                 VLayout(spacing=5, item_expand=True, item_weight=1, items=[
                     self._bmp_item,
