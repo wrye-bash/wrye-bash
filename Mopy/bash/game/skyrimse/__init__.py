@@ -23,6 +23,8 @@
 # =============================================================================
 """GameInfo override for TES V: Skyrim Special Edition."""
 
+import os
+
 from ..skyrim import SkyrimGameInfo
 from ... import brec
 from ...brec import MreGlob
@@ -76,6 +78,20 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         full_name = u'SSEEdit'
         xe_key_prefix = u'sseView'
 
+    class Psc(SkyrimGameInfo.Psc):
+        # In SSE Bethesda made the mistake of packaging the CK's script source
+        # as 'source/scripts' instead of 'scripts/source'. The CK even still
+        # expects the sources to be in 'scripts/source', so you'd have to edit
+        # its INI if you wanted to use 'source/scripts'. However, some modders
+        # have nonetheless adopted this convention, so to support this we
+        # redirect them to the correct path while scanning the package in BAIN.
+        source_redirects = {
+            os.path.join(u'source', u'scripts'): os.path.join(
+                u'scripts', u'source'),
+            u'source': os.path.join(u'scripts', u'source'),
+        }
+
+    dataDirs = SkyrimGameInfo.dataDirs | {u'source'} # see source_redirects
     SkipBAINRefresh = {u'sseedit backups', u'sseedit cache'}
 
     allTags = SkyrimGameInfo.allTags - {u'NoMerge'}

@@ -301,6 +301,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.installers.skipTESVBsl':True,
     'bash.installers.allowOBSEPlugins':True,
     'bash.installers.renameStrings':True,
+    u'bash.installers.redirect_scripts': True,
     'bash.installers.sortProjects':False,
     'bash.installers.sortActive':False,
     'bash.installers.sortStructure':False,

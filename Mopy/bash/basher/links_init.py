@@ -261,7 +261,7 @@ def InitInstallerLinks():
     InstallersList.mainMenu.append(Installers_WizardOverlay())
     InstallersList.mainMenu.append(SeparatorLink())
     InstallersList.mainMenu.append(Installers_GlobalSkips())
-    InstallersList.mainMenu.append(Installers_RenameStrings())
+    InstallersList.mainMenu.append(Installers_GlobalRedirects())
     #--Item links
     if True: #--File Menu
         file_menu = MenuLink(_(u'File..'))

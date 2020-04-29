@@ -44,7 +44,6 @@ class Fallout4GameInfo(GameInfo):
     nexusKey = 'bash.installers.openFallout4Nexus.continue'
 
     espm_extensions = GameInfo.espm_extensions | {u'.esl'}
-    script_extensions = {u'.psc'}
     has_achlist = True
     check_esl = True
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
@@ -90,6 +89,9 @@ class Fallout4GameInfo(GameInfo):
             u'dlccoast.esm': [u'DLCCoast - Main.ba2'],
             u'dlcnukaworld.esm':  [u'DLCNukaWorld - Main.ba2'],
         }
+
+    class Psc(GameInfo.Psc):
+        source_extensions = {u'.psc'}
 
     class Xe(GameInfo.Xe):
         full_name = u'FO4Edit'

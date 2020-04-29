@@ -45,7 +45,6 @@ class SkyrimGameInfo(GameInfo):
     nexusName = u'Skyrim Nexus'
     nexusKey = 'bash.installers.openSkyrimNexus.continue'
 
-    script_extensions = {u'.psc'}
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
         [u'meshes', u'actors', u'character', u'facegendata', u'facegeom'],
         [u'textures', u'actors', u'character', u'facegendata', u'facetint']]
@@ -91,6 +90,9 @@ class SkyrimGameInfo(GameInfo):
             u'hearthfires.esm': [u'Hearthfires.bsa'],
             u'dragonborn.esm': [u'Dragonborn.bsa'],
         }
+
+    class Psc(GameInfo.Psc):
+        source_extensions = {u'.psc'}
 
     class Xe(GameInfo.Xe):
         full_name = u'TES5Edit'

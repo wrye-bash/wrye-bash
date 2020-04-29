@@ -93,6 +93,9 @@ class Installer(object):
         bush.game.Bsa.bsa_extension, u'.ini', u'.modgroups', u'.bsl', u'.ckm'}
     _re_top_extensions = re.compile(u'(?:' + u'|'.join(
         re.escape(ext) for ext in _top_files_extensions) + u')$', re.I)
+    # Extensions of strings files - automatically built from game constants
+    _strings_extensions = {os.path.splitext(x[1].lower())[1]
+                           for x in bush.game.Esp.stringsFiles}
 
     @classmethod
     def is_archive(cls): return False
@@ -402,7 +405,7 @@ class Installer(object):
             Installer._global_skip_extensions.add('.bsl')
         if bass.settings['bash.installers.skipScriptSources']:
             Installer._global_skip_extensions.update(
-                bush.game.script_extensions)
+                bush.game.Psc.source_extensions)
         # skips files starting with...
         if bass.settings['bash.installers.skipDistantLOD']:
             Installer._global_start_skips.append(u'distantlod')
@@ -627,21 +630,28 @@ class Installer(object):
         archiveRoot = GPath(
             self.archive).sroot if self.is_archive() else self.archive
         docExts = self.docExts
-        docDirs = self.docDirs
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
         skipExts = self.skipExts
         unSize = 0
         bethFiles = bush.game.bethDataFiles
+        strings_exts = self._strings_extensions
         skips, global_skip_ext = self._init_skips()
         if self.overrideSkips:
+            ##: We should split this - Override Skips & Override Redirects
             renameStrings = False
             bethFilesSkip = False
+            redirect_scripts = False
         else:
-            renameStrings = bass.settings['bash.installers.renameStrings'] \
-                if bush.game.Esp.stringsFiles else False
+            renameStrings = bush.game.Esp.stringsFiles and bass.settings[
+                u'bash.installers.renameStrings']
             bethFilesSkip = not bass.settings[
-                'bash.installers.autoRefreshBethsoft']
+                u'bash.installers.autoRefreshBethsoft']
+            # No need to redirect if these get skipped anyways
+            redirect_scripts = (
+                    bush.game.Psc.source_redirects
+                    and not bass.settings[u'bash.installers.skipScriptSources']
+                    and bass.settings[u'bash.installers.redirect_scripts'])
         if renameStrings:
             from . import oblivionIni
             lang = oblivionIni.get_ini_language()
@@ -779,27 +789,10 @@ class Installer(object):
                 continue
             #--Remap docs, strings
             if dest is None: dest = file_relative
-            if rootLower in docDirs:
-                dest = os_sep.join((u'Docs', file_relative[len(rootLower) + 1:]))
-            elif (renameStrings and fileLower.startswith(u'strings' + os_sep)
-                  and fileExt in {u'.strings',u'.dlstrings',u'.ilstrings'}):
-                langSep = fileLower.rfind(u'_')
-                extSep = fileLower.rfind(u'.')
-                lang = fileLower[langSep+1:extSep]
-                if lang != languageLower:
-                    dest = u''.join((file_relative[:langSep],u'_',lang,file_relative[extSep:]))
-                    # Check to ensure not overriding an already provided
-                    # language file for that language
-                    if dest in data_sizeCrc:
-                        dest = file_relative
-            elif rootLower in dataDirsPlus:
-                pass
-            elif not rootLower:
-                if fileLower == u'package.jpg':
-                    dest = self.packagePic = u''.join(
-                        (u'Docs' + os_sep, archiveRoot, u'.package.jpg'))
-                elif fileExt in imageExts:
-                    dest = os_sep.join((u'Docs', file_relative))
+            dest = self._remap_files(
+                dest, fileLower, rootLower, fileExt, file_relative,
+                data_sizeCrc, archiveRoot, renameStrings, languageLower,
+                redirect_scripts)
             if fileExt in commonlyEditedExts: ##: will track all the txt files in Docs/
                 InstallersData.track(bass.dirs['mods'].join(dest))
             #--Save
@@ -875,6 +868,44 @@ class Installer(object):
                     break
             self.extras_dict['root_path'] = rootStr # keeps case
             self.fileRootIdex = len(rootStr)
+
+    def _remap_files(self, dest, fileLower, rootLower, fileExt, file_relative,
+                     data_sizeCrc, archiveRoot, renameStrings, languageLower,
+                     redirect_scripts):
+        """Renames and redirects files to other destinations in the Data
+        folder."""
+        # Redirect docs to the Docs folder
+        if rootLower in self.docDirs:
+            dest = os_sep.join((u'Docs', file_relative[len(rootLower) + 1:]))
+        # Rename strings files if the option is set
+        elif (renameStrings and fileExt in self._strings_extensions
+              and fileLower.startswith(u'strings' + os_sep)):
+            langSep = fileLower.rfind(u'_')
+            extSep = fileLower.rfind(u'.')
+            lang = fileLower[langSep + 1:extSep]
+            if lang != languageLower:
+                dest = u''.join((file_relative[:langSep], u'_', lang,
+                                 file_relative[extSep:]))
+                # Check to ensure not overriding an already provided language
+                # file for that language
+                if dest in data_sizeCrc:
+                    dest = file_relative
+        # Redirect script files that are in the wrong place
+        elif redirect_scripts and fileExt in bush.game.Psc.source_extensions:
+            for old_dir, new_dir in bush.game.Psc.source_redirects.iteritems():
+                if fileLower.startswith(old_dir + os_sep):
+                    # Note us keeping the path separator in via slicing
+                    dest = new_dir + fileLower[len(old_dir):]
+                    break
+        elif rootLower in self.dataDirsPlus: ##: needed?
+            pass
+        elif not rootLower:
+            if fileLower == u'package.jpg':
+                dest = self.packagePic = u''.join(
+                    (u'Docs' + os_sep, archiveRoot, u'.package.jpg'))
+            elif fileExt in imageExts:
+                dest = os_sep.join((u'Docs', file_relative))
+        return dest
 
     def refreshBasic(self, progress, recalculate_project_crc=True):
         return self._refreshBasic(progress, recalculate_project_crc)

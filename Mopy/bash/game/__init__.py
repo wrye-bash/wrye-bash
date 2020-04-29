@@ -90,8 +90,6 @@ class GameInfo(object):
     patchTip = u'Update via Steam'
     # plugin extensions
     espm_extensions = {u'.esm', u'.esp', u'.esu'}
-    # Extensions for external script files. Empty if this game doesn't have any
-    script_extensions = {}
     # Load order info
     using_txt_file = True
     # bethesda net export files
@@ -235,6 +233,17 @@ class GameInfo(object):
         # Maps vanilla plugin names to the BSA that contain their localization
         # strings
         vanilla_string_bsas = {}
+
+    class Psc(object):
+        """Information about script sources (only Papyrus right now) for this
+        game."""
+        # Extensions for external script sources. Empty if this game doesn't
+        # have any.
+        source_extensions = set()
+        # Maps directories from which BAIN should redirect script sources from
+        # to the directories that BAIN should redirect them to. Empty if this
+        # is not applicable to this game.
+        source_redirects = {}
 
     class Xe(object):
         """Information about xEdit for this game."""

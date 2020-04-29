@@ -45,8 +45,8 @@ __all__ = ['Installers_SortActive', 'Installers_SortProjects',
            'Installers_ConflictsReportShowsInactive',
            'Installers_ConflictsReportShowsLower',
            'Installers_ConflictsReportShowBSAConflicts',
-           'Installers_WizardOverlay', 'Installers_RenameStrings',
-           'Installers_GlobalSkips']
+           u'Installers_WizardOverlay', u'Installers_GlobalSkips',
+           u'Installers_GlobalRedirects']
 
 #------------------------------------------------------------------------------
 # Installers Links ------------------------------------------------------------
@@ -476,25 +476,42 @@ class Installers_SortStructure(_Installer_Sort, BoolLink):
 #------------------------------------------------------------------------------
 # Installers_Skip Links -------------------------------------------------------
 #------------------------------------------------------------------------------
-class _Installers_Skip(Installers_Link, BoolLink):
-    """Toggle global skip settings and update."""
-
-    @property
-    def menu_help(self):
-        # Slice off the starting 'Skip '
-        return _(u'Skips the installation of %(files)s.') % {
-            'files': self._text[5:]}
-
-    @balt.conversation
+class _Installers_RescanningLink(Installers_Link, BoolLink):
+    """An Installers link that rescans installers upon being toggled."""
     def Execute(self):
-        super(_Installers_Skip, self).Execute()
-        bosh.bain.Installer.init_global_skips()
-        self._do_installers_refresh()
+        super(_Installers_RescanningLink, self).Execute()
+        self._pre_rescan_action()
+        self._do_installers_rescan()
 
-    def _do_installers_refresh(self):
+    def _pre_rescan_action(self):
+        """A method to call after executing the link but before rescanning.
+        Does nothing by default."""
+
+    def _do_installers_rescan(self):
+        """Performs the rescan of installers after toggling the link."""
         self.window.rescanInstallers(self.idata.keys(), abort=False,
             update_from_data=False,##:update data too when turning skips off ??
             shallow=True)
+
+class _Installers_Skip(_Installers_RescanningLink):
+    """Toggle global skip settings and update."""
+    @property
+    def menu_help(self):
+        # Slice off the starting 'Skip '
+        return _(u'Skips the installation of %(skip_files)s.') % {
+            u'skip_files': self._text[5:].lower()}
+
+    def _pre_rescan_action(self):
+        bosh.bain.Installer.init_global_skips()
+
+class _Installers_SkipOBSEPlugins(AppendableLink, _Installers_Skip):
+    """Toggle allowOBSEPlugins setting and update."""
+    _se_sd = bush.game.Se.se_abbrev + (
+            u'/' + bush.game.Sd.long_name) if bush.game.Sd.sd_abbrev else u''
+    _text = _(u'Skip %s Plugins') % _se_sd
+    key = u'bash.installers.allowOBSEPlugins'
+    def _append(self, window): return bool(self._se_sd)
+    def _check(self): return not bass.settings[self.key]
 
 class _Installers_SkipScreenshots(_Installers_Skip):
     """Toggle skipScreenshots setting and update."""
@@ -503,11 +520,15 @@ class _Installers_SkipScreenshots(_Installers_Skip):
 class _Installers_SkipScriptSources(AppendableLink, _Installers_Skip):
     """Toggle skipScriptSources setting and update."""
     _text, key = _(u'Skip Script Sources'), 'bash.installers.skipScriptSources'
-    def _append(self, window): return bool(bush.game.script_extensions)
+    def _append(self, window): return bool(bush.game.Psc.source_extensions)
 
 class _Installers_SkipImages(_Installers_Skip):
     """Toggle skipImages setting and update."""
     _text, key = _(u'Skip Images'), 'bash.installers.skipImages'
+
+class _Installers_SkipDocs(_Installers_Skip):
+    """Toggle skipDocs setting and update."""
+    _text, key = _(u'Skip Docs'), u'bash.installers.skipDocs'
 
 class _Installers_SkipDistantLOD(_Installers_Skip):
     """Toggle skipDistantLOD setting and update."""
@@ -550,38 +571,43 @@ class Installers_GlobalSkips(balt.MenuLink):
         self.append(_Installers_SkipLandscapeLODNormals())
         self.append(_Installers_SkipBsl())
 
-# Complex skips
-class _Installers_Process_Skip(_Installers_Skip):
-    """Toggle global skip settings and update - those skips however have to
-    be processed before skipped and are not set in init_global_skips."""
-
-    def Execute(self):
-        super(Installers_Link, self).Execute() # note Installers_Link !
-        self._do_installers_refresh()
-
-class _Installers_SkipDocs(_Installers_Process_Skip):
-    """Toggle skipDocs setting and update."""
-    _text, key = _(u'Skip Docs'), 'bash.installers.skipDocs'
-
-class _Installers_SkipOBSEPlugins(AppendableLink, _Installers_Skip):
-    """Toggle allowOBSEPlugins setting and update."""
-    _se_sd = bush.game.Se.se_abbrev + (
-            u'/' + bush.game.Sd.long_name) if bush.game.Sd.sd_abbrev else u''
-    _text = _(u'Skip %s Plugins') % _se_sd
-    key = 'bash.installers.allowOBSEPlugins'
-    def _append(self, window): return bool(self._se_sd)
-    def _check(self): return not bass.settings[self.key]
-
-class Installers_RenameStrings(AppendableLink, _Installers_Process_Skip):
+#------------------------------------------------------------------------------
+# Redirection/Rename Links ----------------------------------------------------
+#------------------------------------------------------------------------------
+class _Installers_RenameStrings(AppendableLink, _Installers_RescanningLink):
     """Toggle auto-renaming of .STRINGS files"""
-    _text = _(u'Auto-name String Translation Files')
+    _text = _(u'Rename String Translation Files')
+    _help = _(u'If checked, Wrye Bash will rename all installed string files '
+              u'so they match your current language.')
     key = 'bash.installers.renameStrings'
     def _append(self, window): return bool(bush.game.Esp.stringsFiles)
 
-    @property
-    def menu_help(self):
-        return _(u'If checked, Wrye Bash will rename all installed string '
-                 u'files so they match your current language.')
+class _Installers_RedirectScriptSources(AppendableLink, EnabledLink,
+                                        _Installers_RescanningLink):
+    """Toggle auto-redirection of script sources."""
+    _text = _(u'Redirect Script Sources')
+    _help = _(u'If checked, Wrye Bash will move all script sources '
+              u'installed to incorrect directories (%s) to the correct ones. '
+              u"'Skip Script Sources' must be "
+              u'off.') % u', '.join(bush.game.Psc.source_redirects.iterkeys())
+    key = u'bash.installers.redirect_scripts'
+
+    def _append(self, window): return bool(bush.game.Psc.source_redirects)
+    def _enable(self): return not bass.settings[
+        u'bash.installers.skipScriptSources']
+
+class Installers_GlobalRedirects(AppendableLink, balt.MenuLink):
+    """Global Redirects menu."""
+    _text = _(u'Global Redirects')
+
+    def __init__(self):
+        super(Installers_GlobalRedirects, self).__init__()
+        self.append(_Installers_RenameStrings())
+        self.append(_Installers_RedirectScriptSources())
+
+    def _append(self, window):
+        # Otherwise this menu would be empty for e.g. Oblivion
+        return any(l._append(window) for l in self.links)
 
 #--New project dialog ---------------------------------------------------------
 class Installers_CreateNewProject(ItemLink):
