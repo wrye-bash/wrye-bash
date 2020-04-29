@@ -71,8 +71,8 @@ class InstallerFomod(WizardDialog):
             parent_window, sizes_dict=bass.settings,
             title=_(u'FOMOD Installer - %s') % self.parser.fomod_name,
             size_key=u'bash.fomod.size', pos_key=u'bash.fomod.pos')
-        self.is_archive = installer.is_archive()
-        if self.is_archive:
+        self.is_arch = installer.is_archive()
+        if self.is_arch:
             self.archive_path = bass.getTempDir()
         else:
             self.archive_path = bass.dirs[u'installers'].join(
@@ -128,13 +128,13 @@ class InstallerFomod(WizardDialog):
     def run(self):
         try:
             first_page = self.parser.start()
-        except FailedCondition as exc:
-            msg = _(u'This installer cannot start due to the following unmet '
-                    u'conditions:\n')
-            for line in str(exc).splitlines():
-                msg += u'  {}\n'.format(line)
-            balt.showWarning(self, msg, title=_(u'Cannot Run Installer'),
-                             do_center=True)
+        except FailedCondition as e:
+            fm_warning = _(u'This installer cannot start due to the following '
+                           u'unmet conditions:') + u'\n'
+            for l in str(e).splitlines():
+                fm_warning += u'  {}\n'.format(l)
+            balt.showWarning(self, fm_warning,
+                             title=_(u'Cannot Run Installer'), do_center=True)
             self.ret.canceled = True
         else:
             if first_page is not None:  # if installer has any gui pages
@@ -142,7 +142,7 @@ class InstallerFomod(WizardDialog):
                     PageSelect(self, first_page))
             self.ret.install_files = bolt.LowerDict(self.parser.files())
         # Clean up temp files
-        if self.is_archive:
+        if self.is_arch:
             bass.rmTempDir()
         return self.ret
 
@@ -371,36 +371,38 @@ class PageSelect(PageInstaller):
         self._text_item.text_content = option.option_desc
         self.Layout() # Otherwise the h_align won't work
 
-    def on_error(self, msg):
-        msg += _(u'\nPlease ensure the FOMOD files are correct and contact '
-                 u'the Wrye Bash Dev Team.')
-        balt.showWarning(self, msg, do_center=True)
+    def show_fomod_error(self, fm_error):
+        fm_error += u'\n' + _(u'Please ensure the FOMOD files are correct and '
+                              u'contact the Wrye Bash Dev Team.')
+        balt.showWarning(self, fm_error, do_center=True)
 
     def on_next(self):
-        selection = []
+        sel_options = []
         for group, option_chks in self.group_option_map.iteritems():
             opts_selected = [self._checkable_to_option[c] for c in option_chks
                              if c.is_checked]
             option_len = len(opts_selected)
             gtype = group.group_type
             if gtype == u'SelectExactlyOne' and option_len != 1:
-                msg = _(u'Group "{}" should have exactly 1 option selected '
-                        u'but has {}.').format(group.group_name, option_len)
-                self.on_error(msg)
+                fm_err = _(u'Group "{}" should have exactly 1 option selected '
+                           u'but has {}.').format(group.group_name, option_len)
+                self.show_fomod_error(fm_err)
             elif gtype == u'SelectAtMostOne' and option_len > 1:
-                msg = _(u'Group "{}" should have at most 1 option selected '
-                        u'but has {}.').format(group.group_name, option_len)
-                self.on_error(msg)
+                fm_err = _(u'Group "{}" should have at most 1 option selected '
+                           u'but has {}.').format(group.group_name, option_len)
+                self.show_fomod_error(fm_err)
             elif gtype == u'SelectAtLeast' and option_len < 1:
-                msg = _(u'Group "{}" should have at least 1 option selected '
-                        u'but has {}.').format(group.group_name, option_len)
-                self.on_error(msg)
+                fm_err = _(u'Group "{}" should have at least 1 option '
+                           u'selected but has {}.').format(group.group_name,
+                                                           option_len)
+                self.show_fomod_error(fm_err)
             elif gtype == u'SelectAll' and option_len != len(option_chks):
-                msg = _(u'Group "{}" should have all options selected but has '
-                        u'only {}.').format(group.group_name, option_len)
-                self.on_error(msg)
-            selection.extend(opts_selected)
-        return selection
+                fm_err = _(u'Group "{}" should have all options selected but '
+                           u'has only {}.').format(group.group_name,
+                                                   option_len)
+                self.show_fomod_error(fm_err)
+            sel_options.extend(opts_selected)
+        return sel_options
 
     def select(self, selection):
         for checkable_list in self.group_option_map.itervalues():

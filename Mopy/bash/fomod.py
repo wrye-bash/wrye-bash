@@ -383,21 +383,22 @@ class FomodInstaller(object):
         return fm_flag_dict
 
     def _test_file_condition(self, condition):
-        file_name = GPath(condition.get(u'file'))
-        file_type = condition.get(u'state')
+        test_file = GPath(condition.get(u'file'))
+        test_type = condition.get(u'state')
         # Check if it's missing, ghosted or (in)active
-        if not self.dst_dir.join(file_name).exists():
+        if not self.dst_dir.join(test_file).exists():
             actual_type = u'Missing'
-        elif (file_name.cext in bush.game.espm_extensions and
-              self.dst_dir.join(file_name + u'.ghost').exists()):
+        ##: Needed? Shouldn't this be handled by cached_is_active?
+        elif (test_file.cext in bush.game.espm_extensions and
+              self.dst_dir.join(test_file + u'.ghost').exists()):
             actual_type = u'Inactive'
         else:
-            actual_type = (u'Active' if cached_is_active(file_name)
+            actual_type = (u'Active' if cached_is_active(test_file)
                            else u'Inactive')
-        if actual_type != file_type:
+        if actual_type != test_type:
             raise FailedCondition(
                 u'File {} should be {} but is {} instead.'.format(
-                    file_name, file_type, actual_type))
+                    test_file, test_type, actual_type))
 
     def _test_flag_condition(self, condition):
         fm_flag_name = condition.get(u'flag')
