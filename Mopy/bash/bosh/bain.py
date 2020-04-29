@@ -809,8 +809,6 @@ class Installer(object):
             (x, os.path.split(x[0].lower())) for x in self.fileSizeCrcs)
         self.fileSizeCrcs.sort(key=sort_keys_dict.__getitem__)
         #--Find correct starting point to treat as BAIN package
-        # XXX: check this is fine
-        # self.extras_dict.clear() # if more keys are added be careful cleaning
         self.extras_dict.pop(u'root_path', None)
         self.fileRootIdex = 0
         dataDirsPlus = Installer.dataDirsPlus

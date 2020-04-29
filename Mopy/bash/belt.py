@@ -621,10 +621,8 @@ class WryeParser(ScriptParser.Parser):
             self.page = None
             self.choices = []
             self.choiceIdex = -1
-            # FIXME(inf) Yet more FOMOD hacks - the 'if s' part, specifically.
-            #  After deactivating the fomod, we're still left with a subpackage
-            #  with an empty string, so skip that. The other improvements (i.e.
-            #  the dict comprehensions) can stay.
+            ##: Figure out why BAIN insists on including an empty sub-package
+            # everywhere. Broke this part of the code, hence the 'if s' below.
             self.sublist = bolt.LowerDict({
                 s: False for s in installer.subNames if s})
             self.plugin_list = bolt.LowerDict({
