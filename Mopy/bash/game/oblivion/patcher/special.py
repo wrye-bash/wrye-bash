@@ -42,7 +42,7 @@ _cobl_main = GPath(u'COBL Main.esm')
 # Util Functions --------------------------------------------------------------
 def _PrintFormID(fid):
     # PBash short Fid
-    if isinstance(fid,int):  # PY3 ensure this can never be long
+    if isinstance(fid, (int, long)): # PY3: just int here
         fid = u'%08X' % fid
     # PBash long FId
     elif isinstance(fid, tuple):

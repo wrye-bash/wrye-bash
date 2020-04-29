@@ -312,7 +312,7 @@ class ModFile(object):
         def mapper(fid):
             if fid is None: return None
             ##: #312: drop this once convertToLongFids is auto-applied
-            if isinstance(fid, int):
+            if isinstance(fid, (int, long)): # PY3: just int here
                 fid = gLong(fid)
             modName, object_id = fid
             return (_master_index(modName, object_id) << 24) | object_id
