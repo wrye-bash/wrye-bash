@@ -50,7 +50,7 @@ class FomodInstallInfo(object):
 class InstallerFomod(WizardDialog):
     _def_size = (600, 500)
 
-    def __init__(self, parent_window, installer):
+    def __init__(self, parent_window, target_installer):
         # True prevents actually moving to the 'next' page.
         # We use this after the "Next" button is pressed,
         # while the parser is running to return the _actual_ next page
@@ -60,8 +60,8 @@ class InstallerFomod(WizardDialog):
         self.finishing = False
         # saving this list allows for faster processing of the files the fomod
         # installer will return.
-        self.files_list = [a[0] for a in installer.fileSizeCrcs]
-        fm_file = installer.fomod_file().s
+        self.files_list = [a[0] for a in target_installer.fileSizeCrcs]
+        fm_file = target_installer.fomod_file().s
         gver = env.get_file_version(bass.dirs[u'app'].join(
             *bush.game.version_detect_file).s)
         self.fomod_parser = FomodInstaller(
@@ -71,12 +71,12 @@ class InstallerFomod(WizardDialog):
             parent_window, sizes_dict=bass.settings,
             title=_(u'FOMOD Installer - %s') % self.fomod_parser.fomod_name,
             size_key=u'bash.fomod.size', pos_key=u'bash.fomod.pos')
-        self.is_arch = installer.is_archive()
+        self.is_arch = target_installer.is_archive()
         if self.is_arch:
             self.archive_path = bass.getTempDir()
         else:
             self.archive_path = bass.dirs[u'installers'].join(
-                installer.archive)
+                target_installer.archive)
         # 'dummy' page tricks the wizard into always showing the "Next" button
         class _PageDummy(wiz.WizardPage): pass
         self.fm_dummy = _PageDummy(self._native_widget)
@@ -98,9 +98,9 @@ class InstallerFomod(WizardDialog):
                     # So the parser can continue parsing,
                     # Then show the page that the parser returns,
                     # rather than the dummy page
-                    selection = evt_page.on_next()
+                    sel_opts = evt_page.on_next()
                     self.block_change = False
-                    next_page = self.fomod_parser.move_to_next(selection)
+                    next_page = self.fomod_parser.move_to_next(sel_opts)
                     if next_page is None:
                         self.finishing = True
                         self._native_widget.ShowPage(
@@ -150,9 +150,9 @@ class PageInstaller(wiz.WizardPage):
     """Base class for all the parser wizard pages, just to handle a couple
     simple things here."""
 
-    def __init__(self, parent):
-        super(PageInstaller, self).__init__(parent._native_widget)
-        self._page_parent = parent # type: InstallerFomod
+    def __init__(self, page_parent):
+        super(PageInstaller, self).__init__(page_parent._native_widget)
+        self._page_parent = page_parent # type: InstallerFomod
         self._enable_forward(True)
 
     def _enable_forward(self, do_enable):
@@ -174,12 +174,12 @@ class PageError(PageInstaller):
     """Page that shows an error message, has only a "Cancel" button enabled,
     and cancels any changes made."""
 
-    def __init__(self, parent, title, error_msg):
-        super(PageError, self).__init__(parent)
+    def __init__(self, page_parent, title, error_msg):
+        super(PageError, self).__init__(page_parent)
         # Disable the "Finish"/"Next" button
         self._enable_forward(False)
         VLayout(spacing=5, items=[
-            Label(parent, title),
+            Label(page_parent, title),
             (TextArea(self, init_text=error_msg, editable=False,
                 auto_tooltip=False), LayoutOptions(expand=True, weight=1)),
         ]).apply_to(self)
@@ -205,9 +205,9 @@ class PageSelect(PageInstaller):
     _option_type_info[u'NotUsable'] = (_(u'This option cannot be selected.'),
                                        colors.RED)
 
-    def __init__(self, parent, inst_page):
+    def __init__(self, page_parent, inst_page):
         """:type inst_page: InstallerPage"""
-        super(PageSelect, self).__init__(parent)
+        super(PageSelect, self).__init__(page_parent)
         # For runtime retrieval of option/checkable info
         self._checkable_to_option = {}
         self.checkable_to_group = {}
@@ -229,11 +229,11 @@ class PageSelect(PageInstaller):
         self._group_links.append(_Group_ToggleAll())
         panel_groups = ScrollableWindow(self)
         groups_layout = VLayout(spacing=5, item_expand=True)
-        for group in inst_page: # type: InstallerGroup
+        for grp in inst_page: # type: InstallerGroup
             options_layout = VLayout(spacing=2)
             first_selectable = None
             any_selected = False
-            gtype = group.group_type
+            gtype = grp.group_type
             group_force_selection = gtype in (u'SelectExactlyOne',
                                               u'SelectAtLeastOne')
             # A set of all option checkables to block in this group
@@ -243,12 +243,12 @@ class PageSelect(PageInstaller):
             # other options need to be blocked to ensure the required stays
             # selected.
             block_all_in_group = False
-            for option in group: # type: InstallerOption
+            for option in grp: # type: InstallerOption
                 otype = option.option_type
                 if gtype in (u'SelectExactlyOne', u'SelectAtMostOne'):
                     checkable = RadioButton(panel_groups,
                                             label=option.option_name,
-                                            is_group=option is group[0])
+                                            is_group=option is grp[0])
                 else:
                     checkable = CheckBox(panel_groups,
                                          label=option.option_name)
@@ -276,10 +276,10 @@ class PageSelect(PageInstaller):
                     checkable.is_checked = False
                     checkables_to_block.add(checkable)
                 self._checkable_to_option[checkable] = option
-                self.checkable_to_group[checkable] = group
+                self.checkable_to_group[checkable] = grp
                 options_layout.add(checkable)
                 checkable.on_hovered.subscribe(self._handle_hovered)
-                self.group_option_map[group].append(checkable)
+                self.group_option_map[grp].append(checkable)
             # Done adding all options, move on to any last minute tweaks before
             # finalizing the group
             if not any_selected and group_force_selection:
@@ -287,7 +287,7 @@ class PageSelect(PageInstaller):
                     first_selectable.is_checked = True
                     any_selected = True
             if block_all_in_group:
-                checkables_to_block |= set(self.group_option_map[group])
+                checkables_to_block |= set(self.group_option_map[grp])
                 # Store a copy of the frozen state for each button
                 frozen_state = {c: c.is_checked for c in checkables_to_block}
                 for block_chk in checkables_to_block:
@@ -304,7 +304,7 @@ class PageSelect(PageInstaller):
             for block_chk in checkables_to_block:
                 block_chk.block_user(self._handle_block_user)
             groups_layout.add(HBoxedLayout(
-                panel_groups, title=group.group_name, item_expand=True,
+                panel_groups, title=grp.group_name, item_expand=True,
                 item_weight=1, items=[options_layout]))
         groups_layout.apply_to(panel_groups)
         VLayout(spacing=10, item_expand=True, items=[
@@ -411,8 +411,8 @@ class PageSelect(PageInstaller):
                     checkable.is_checked = True
 
 class PageFinish(PageInstaller):
-    def __init__(self, parent):
-        super(PageFinish, self).__init__(parent)
+    def __init__(self, page_parent):
+        super(PageFinish, self).__init__(page_parent)
         check_install = CheckBox(
             self, _(u'Install this package'),
             checked=self._page_parent.fm_ret.should_install)
