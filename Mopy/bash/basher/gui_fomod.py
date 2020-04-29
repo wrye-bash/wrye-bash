@@ -28,7 +28,7 @@ from collections import defaultdict
 import wx.adv as wiz
 
 from .. import balt, bass, bolt, bush, env
-from ..balt import EnabledLink, Links
+from ..balt import EnabledLink, Links, colors
 from ..exception import AbstractError
 from ..fomod import FailedCondition, FomodInstaller
 from ..gui import CENTER, CheckBox, HBoxedLayout, HLayout, Label, \
@@ -195,15 +195,15 @@ class PageSelect(PageInstaller):
     (multi- or single- selection), with an optional associated image and
     description for each option, shown when that item is selected."""
 
-    _option_type_string = defaultdict(str)
-    _option_type_string[u'Required'] = _(u'=== This option is required '
-                                         u'===\n\n')
-    _option_type_string[u'Recommended'] = _(u'=== This option is recommended '
-                                            u'===\n\n')
-    _option_type_string[u'CouldBeUsable'] = _(u'=== This option could result '
-                                              u'in instability ===\n\n')
-    _option_type_string[u'NotUsable'] = _(u'=== This option cannot be '
-                                          u'selected ===\n\n')
+    _option_type_info = defaultdict(lambda: (u'', colors.BLACK))
+    _option_type_info[u'Required'] = (_(u'This option is required.'),
+                                      colors.BLACK)
+    _option_type_info[u'Recommended'] = (_(u'This option is recommended.'),
+                                         colors.BLACK)
+    _option_type_info[u'CouldBeUsable'] = (_(u'This option could result in '
+                                             u'instability.'), colors.RED)
+    _option_type_info[u'NotUsable'] = (_(u'This option cannot be selected.'),
+                                       colors.RED)
 
     def __init__(self, parent, page):
         super(PageSelect, self).__init__(parent)
@@ -218,6 +218,8 @@ class PageSelect(PageInstaller):
         self._bmp_item = PictureWithCursor(self, 0, 0, background=None)
         self._bmp_item.on_mouse_middle_up.subscribe(self._open_image)
         self._bmp_item.on_mouse_left_dclick.subscribe(self._open_image)
+        # Shows required/recommended/etc. status of hovered-over option
+        self._option_type_label = Label(self, u'')
         self._text_item = TextArea(self, editable=False, auto_tooltip=False)
         # Create links to facilitate mass (de)selection
         self._group_links = Links()
@@ -305,8 +307,12 @@ class PageSelect(PageInstaller):
             (HLayout(spacing=5, item_expand=True, item_weight=1, items=[
                 HBoxedLayout(self, title=page.name, item_expand=True,
                              item_weight=1, items=[panel_groups]),
-                VLayout(spacing=5, item_expand=True, item_weight=1,
-                        items=[self._bmp_item, self._text_item]),
+                VLayout(spacing=5, item_expand=True, item_weight=1, items=[
+                    self._bmp_item,
+                    (self._option_type_label,
+                     LayoutOptions(expand=False, h_align=CENTER, weight=0)),
+                    self._text_item,
+                ]),
             ]), LayoutOptions(weight=1)),
         ]).apply_to(self)
         self.Layout()
@@ -324,8 +330,16 @@ class PageSelect(PageInstaller):
             for block_checkable, chk_state in frozen_state.iteritems():
                 block_checkable.is_checked = chk_state
         if isinstance(block_checkable, CheckBox):
-            balt.showWarning(self, _(u'This option is required and cannot be '
-                                     u'disabled.'))
+            # Adjust the warning based on whether we can't check or can't
+            # uncheck this option
+            if self._checkable_to_option[block_checkable].type == u'NotUsable':
+                balt.showWarning(self, _(
+                    u'This option cannot be enabled. It is probably '
+                    u'informational and only here to show a description on '
+                    u'the right.'))
+            else:
+                balt.showWarning(self, _(u'This option is required and cannot '
+                                         u'be disabled.'))
         else: # RadioButton
             balt.showWarning(self, _(u'One of the options in this group is '
                                      u'required and cannot be unselected by '
@@ -346,8 +360,11 @@ class PageSelect(PageInstaller):
         except KeyError:
             image = img
         self._img_cache[img] = self._bmp_item.set_bitmap(image)
-        self._text_item.text_content = (self._option_type_string[option.type]
-                                        + option.description)
+        type_desc, type_color = self._option_type_info[option.type]
+        self._option_type_label.label_text = type_desc
+        self._option_type_label.set_foreground_color(type_color)
+        self._text_item.text_content = option.description
+        self.Layout() # Otherwise the h_align won't work
 
     def on_error(self, msg):
         msg += _(u'\nPlease ensure the FOMOD files are correct and contact '
