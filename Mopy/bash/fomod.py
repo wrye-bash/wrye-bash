@@ -42,7 +42,6 @@ xml attributes/text are available via instance attributes."""
 
 __author__ = u'Ganda'
 
-import os
 from collections import OrderedDict, Sequence
 from distutils.version import LooseVersion
 from xml.etree import ElementTree as etree
@@ -68,7 +67,7 @@ class InstallerPage(Sequence):
         :param page: the ElementTree element for an 'installStep'"""
         self._parent_installer = parent_installer
         self._object = page  # the original ElementTree element
-        self._group_list = parent_installer._order_list([
+        self._group_list = parent_installer.order_list([
             InstallerGroup(parent_installer, group)
             for group in page.findall(u'optionalFileGroups/*')
         ], page.get(u'order', u'Ascending'))
@@ -92,7 +91,7 @@ class InstallerGroup(Sequence):
         :param group: the ElementTree element for an 'group'"""
         self._parent_installer = parent_installer
         self._object = group
-        self._option_list = parent_installer._order_list([
+        self._option_list = parent_installer.order_list([
             InstallerOption(parent_installer, option)
             for option in group.findall(u'plugins/*')
         ], group.get(u'order', u'Ascending'))
@@ -133,7 +132,7 @@ class InstallerOption(object):
                 u'typeDescriptor/dependencyType/patterns/*')
             for pattern in patterns:
                 try:
-                    self._parent_installer._test_conditions(pattern.find(
+                    self._parent_installer.test_conditions(pattern.find(
                         u'dependencies'))
                 except FailedCondition:
                     pass
@@ -189,20 +188,22 @@ class _FomodFileInfo(object):
                 # destination still needs normalizing
                 destination = GPath(destination)
             priority = int(file_object.get(u'priority', u'0'))
+            source_lower = source.s.lower()
             # We need to include the path separators when checking, since
             # otherwise we may end up matching e.g. 'Foo - A/bar.esp' to the
             # source 'Foo', when the source 'Foo - A' exists.
-            source_starts = (source.s.lower() + u'/', source.s.lower() + u'\\')
-            for fname in file_list:
-                if fname.lower() == source.s.lower():  # it's a file
+            source_starts = (source_lower + u'/', source_lower + u'\\')
+            for fsrc in file_list:
+                fsrc_lower = fsrc.lower()
+                if fsrc_lower == source_lower:  # it's a file
                     result.append(cls(source, destination, priority))
-                elif fname.lower().startswith(source_starts):
+                elif fsrc_lower.startswith(source_starts):
                     # it's a folder
                     source_len = len(source)
-                    fdest = destination.s + fname[source_len:]
+                    fdest = destination.s + fsrc[source_len:]
                     if fdest.startswith((u'/', u'\\')):
                         fdest = fdest[1:]
-                    result.append(cls(GPath(fname), GPath(fdest), priority))
+                    result.append(cls(GPath(fsrc), GPath(fdest), priority))
         return result
 
 class FomodInstaller(object):
@@ -247,7 +248,7 @@ class FomodInstaller(object):
     def start(self):
         root_conditions = self.tree.find(u'moduleDependencies')
         if root_conditions is not None:
-            self._test_conditions(root_conditions)
+            self.test_conditions(root_conditions)
         first_page = self.tree.find(u'installSteps/installStep')
         if first_page is None:
             return None
@@ -261,16 +262,15 @@ class FomodInstaller(object):
                      in group]
         sorted_selection = sorted(selection, key=sort_list.index)
         self._previous_pages[self._current_page] = sorted_selection
-        ordered_pages = self._order_list(
+        ordered_pages = self.order_list(
             self.tree.findall(u'installSteps/installStep'),
-            self.tree.find(u'installSteps').get(u'order', u'Ascending'),
-        )
+            self.tree.find(u'installSteps').get(u'order', u'Ascending'))
         current_index = ordered_pages.index(self._current_page._object)
         for page in ordered_pages[current_index + 1 :]:
             try:
                 conditions = page.find(u'visible')
                 if conditions is not None:
-                    self._test_conditions(conditions)
+                    self.test_conditions(conditions)
             except FailedCondition:
                 pass
             else:
@@ -315,7 +315,7 @@ class FomodInstaller(object):
             conditions = pattern.find(u'dependencies')
             files = pattern.find(u'files')
             try:
-                self._test_conditions(conditions)
+                self.test_conditions(conditions)
             except FailedCondition:
                 pass
             else:
@@ -391,7 +391,7 @@ class FomodInstaller(object):
                     game_version, version)
             )
 
-    def _test_conditions(self, conditions):
+    def test_conditions(self, conditions):
         op = conditions.get(u'operator', u'And')
         failed = []
         condition_list = conditions.findall(u'*')
@@ -410,10 +410,10 @@ class FomodInstaller(object):
     _condition_tests = {u'fileDependency': _test_file_condition,
                         u'flagDependency': _test_flag_condition,
                         u'gameDependency': _test_version_condition,
-                        u'dependencies': _test_conditions, }
+                        u'dependencies': test_conditions, }
 
     @staticmethod
-    def _order_list(unordered_list, order, _valid_values=frozenset(
+    def order_list(unordered_list, order, _valid_values=frozenset(
         (u'Explicit', u'Ascending', u'Descending'))):
         if order == u'Explicit':
             return unordered_list
