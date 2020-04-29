@@ -762,14 +762,14 @@ class Mod_JumpToInstaller(AppendableLink, OneItemLink):
         self._help = _(u'Jump to the installer of %(filename)s if it exists. '
                        u'You can Alt-Click on the mod to the same '
                        u'effect.') % {'filename': selection[0]}
-        self._installer = self.window.get_installer(self._selected_item)
+        self._selected_inst = self.window.get_installer(self._selected_item)
 
     def _append(self, window): return balt.Link.Frame.iPanel and bass.settings[
         'bash.installers.enabled']
 
     def _enable(self):
-        return super(Mod_JumpToInstaller, self)._enable() and \
-               self._installer is not None # need a boolean here
+        return (super(Mod_JumpToInstaller, self)._enable()
+                and self._selected_inst is not None) # need a boolean here
 
     def Execute(self): self.window.jump_to_mods_installer(self._selected_item)
 

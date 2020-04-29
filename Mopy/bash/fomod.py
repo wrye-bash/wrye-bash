@@ -58,23 +58,20 @@ class FailedCondition(Exception):
     pass
 
 class InstallerPage(Sequence):
-    def __init__(self, installer, page):
+    def __init__(self, parent_installer, page):
         """Wrapper around the ElementTree element 'installStep'.
 
         Provides the page's name via the `name` instance attribute
         and the page's groups via Sequence API (this behaves like a list).
 
-        :param installer: the parent FomodInstaller
+        :param parent_installer: the parent FomodInstaller
         :param page: the ElementTree element for an 'installStep'"""
-        self._installer = installer
+        self._parent_installer = parent_installer
         self._object = page  # the original ElementTree element
-        self._group_list = installer._order_list(
-            [
-                InstallerGroup(installer, group)
-                for group in page.findall(u'optionalFileGroups/*')
-            ],
-            page.get(u'order', u'Ascending')
-        )
+        self._group_list = parent_installer._order_list([
+            InstallerGroup(parent_installer, group)
+            for group in page.findall(u'optionalFileGroups/*')
+        ], page.get(u'order', u'Ascending'))
         self.name = page.get(u'name')
 
     def __getitem__(self, key):
@@ -84,24 +81,21 @@ class InstallerPage(Sequence):
         return len(self._group_list)
 
 class InstallerGroup(Sequence):
-    def __init__(self, installer, group):
+    def __init__(self, parent_installer, group):
         """Wrapper around the ElementTree element 'group'.
 
         Provides the group's name and type via the `name` and `type` instance
         attributes, respectively, and the group's option via Sequence API
         (this behaves like a list).
 
-        :param installer: the parent FomodInstaller
+        :param parent_installer: the parent FomodInstaller
         :param group: the ElementTree element for an 'group'"""
-        self._installer = installer
+        self._parent_installer = parent_installer
         self._object = group
-        self._option_list = installer._order_list(
-            [
-                InstallerOption(installer, option)
-                for option in group.findall(u'plugins/*')
-            ],
-            group.get(u'order', u'Ascending')
-        )
+        self._option_list = parent_installer._order_list([
+            InstallerOption(parent_installer, option)
+            for option in group.findall(u'plugins/*')
+        ], group.get(u'order', u'Ascending'))
         self.name = group.get(u'name')
         self.type = group.get(u'type')
 
@@ -112,15 +106,15 @@ class InstallerGroup(Sequence):
         return len(self._option_list)
 
 class InstallerOption(object):
-    def __init__(self, installer, option):
+    def __init__(self, parent_installer, option):
         """Wrapper around the ElementTree element 'plugin'.
 
         Provides the option's name, description, image path and type
         via instance attributes with the same names.
 
-        :param installer: the parent FomodInstaller
+        :param parent_installer: the parent FomodInstaller
         :param option: the ElementTree element for an 'plugin'"""
-        self._installer = installer
+        self._parent_installer = parent_installer
         self._object = option
         self.name = option.get(u'name')
         self.description = option.findtext(u'description', u'').strip()
@@ -139,7 +133,7 @@ class InstallerOption(object):
                 u'typeDescriptor/dependencyType/patterns/*')
             for pattern in patterns:
                 try:
-                    self._installer._test_conditions(pattern.find(
+                    self._parent_installer._test_conditions(pattern.find(
                         u'dependencies'))
                 except FailedCondition:
                     pass
@@ -186,8 +180,7 @@ class _FomodFileInfo(object):
             if destination is None:  # omitted destination
                 destination = source
             elif file_object.tag == u'file' and (
-                not destination or destination.endswith((u'/', u'\\'))
-            ):
+                not destination or destination.endswith((u'/', u'\\'))):
                 # if empty or with a trailing slash then dest refers
                 # to a folder. Post-processing to add the filename to the
                 # end of the path.
