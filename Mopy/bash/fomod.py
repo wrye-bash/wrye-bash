@@ -73,8 +73,8 @@ class InstallerPage(Sequence):
         ], page_object.get(u'order', u'Ascending'))
         self.name = page_object.get(u'name')
 
-    def __getitem__(self, key):
-        return self._group_list[key]
+    def __getitem__(self, k):
+        return self._group_list[k]
 
     def __len__(self):
         return len(self._group_list)
@@ -98,8 +98,8 @@ class InstallerGroup(Sequence):
         self.name = group_object.get(u'name')
         self.type = group_object.get(u'type')
 
-    def __getitem__(self, key):
-        return self._option_list[key]
+    def __getitem__(self, k):
+        return self._option_list[k]
 
     def __len__(self):
         return len(self._option_list)
@@ -117,11 +117,11 @@ class InstallerOption(object):
         self.option_object = option_object
         self.name = option_object.get(u'name')
         self.description = option_object.findtext(u'description', u'').strip()
-        image = option_object.find(u'image')
-        if image is not None:
-            self.image = image.get(u'path')
+        xml_img_path = option_object.find(u'image')
+        if xml_img_path is not None:
+            self.option_image = xml_img_path.get(u'path')
         else:
-            self.image = u''
+            self.option_image = u''
         type_elem = option_object.find(u'typeDescriptor/type')
         if type_elem is not None:
             self.type = type_elem.get(u'name')

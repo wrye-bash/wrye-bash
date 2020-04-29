@@ -353,13 +353,13 @@ class PageSelect(PageInstaller):
     def _handle_hovered(self, checkable):
         option = self._checkable_to_option[checkable]
         self._enable_forward(True)
-        img = self._page_parent.archive_path.join(option.image)
-        self._current_image = img # To allow opening it via double click
+        opt_img = self._page_parent.archive_path.join(option.option_image)
+        self._current_image = opt_img # To allow opening it via double click
         try:
-            image = self._img_cache[img]
+            final_image = self._img_cache[opt_img]
         except KeyError:
-            image = img
-        self._img_cache[img] = self._bmp_item.set_bitmap(image)
+            final_image = opt_img
+        self._img_cache[opt_img] = self._bmp_item.set_bitmap(final_image)
         type_desc, type_color = self._option_type_info[option.type]
         self._option_type_label.label_text = type_desc
         self._option_type_label.set_foreground_color(type_color)
