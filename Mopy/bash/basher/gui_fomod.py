@@ -170,27 +170,6 @@ class PageInstaller(wiz.WizardPage):
         """Create flow control objects etc, implemented by sub-classes."""
         pass
 
-class PageError(PageInstaller):
-    """Page that shows an error message, has only a "Cancel" button enabled,
-    and cancels any changes made."""
-
-    def __init__(self, page_parent, title, error_msg):
-        super(PageError, self).__init__(page_parent)
-        # Disable the "Finish"/"Next" button
-        self._enable_forward(False)
-        VLayout(spacing=5, items=[
-            Label(page_parent, title),
-            (TextArea(self, init_text=error_msg, editable=False,
-                auto_tooltip=False), LayoutOptions(expand=True, weight=1)),
-        ]).apply_to(self)
-        self.Layout()
-
-    def GetNext(self):
-        return None
-
-    def GetPrev(self):
-        return None
-
 class PageSelect(PageInstaller):
     """A Page that shows a message up top, with a selection box on the left
     (multi- or single- selection), with an optional associated image and
