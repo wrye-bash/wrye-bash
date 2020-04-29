@@ -300,9 +300,9 @@ class FomodInstaller(object):
         current_index = ordered_pages.index(self._current_page.page_object)
         for page in ordered_pages[current_index + 1:]:
             try:
-                conditions = page.find(u'visible')
-                if conditions is not None:
-                    self.test_conditions(conditions)
+                page_conditions = page.find(u'visible')
+                if page_conditions is not None:
+                    self.test_conditions(page_conditions)
             except FailedCondition:
                 pass
             else:
@@ -342,17 +342,17 @@ class FomodInstaller(object):
                 user_files.extend(_FomodFileInfo.process_files(
                     option_files, self.file_list))
         conditional_files = []
-        for pattern in self.fomod_tree.findall(
+        for cond_pattern in self.fomod_tree.findall(
                 u'conditionalFileInstalls/patterns/pattern'):
-            conditions = pattern.find(u'dependencies')
-            files = pattern.find(u'files')
+            dep_conditions = cond_pattern.find(u'dependencies')
+            cond_files = cond_pattern.find(u'files')
             try:
-                self.test_conditions(conditions)
+                self.test_conditions(dep_conditions)
             except FailedCondition:
                 pass
             else:
                 conditional_files.extend(_FomodFileInfo.process_files(
-                    files, self.file_list))
+                    cond_files, self.file_list))
         file_dict = {}  # dst -> src
         priority_dict = {}  # dst -> priority
         for fm_info in required_files + user_files + conditional_files:
