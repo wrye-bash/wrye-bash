@@ -238,24 +238,24 @@ class FomodInstaller(object):
     minimum to reduce performance impact.
 
     To evaluate 'moduleDependencies' and receive the first page
-    (InstallerPage), call `start()`. If you receive `None` it's because the
-    installer had no visible pages and has finished.
+    (InstallerPage), call `start_fomod()`. If you receive `None` it's because
+    the installer had no visible pages and has finished.
 
     Once the user has performed their selections (a list of
-    InstallerOption), you can pass these to `next_(selections)` to receive
-    the next page. Keep in mind these selections are not validated at all -
-    this must be done by the callers of this method. If you receive `None`
-    it's because you have reached the end of the installer's pages.
+    InstallerOption), you can pass these to `move_to_next(selections)` to
+    receive the next page. Keep in mind these selections are not validated at
+    all - this must be done by the callers of this method. If you receive
+    `None` it's because you have reached the end of the installer's pages.
 
     If the user desires to go to a previous page, you can call
-    `previous()`. It will return a tuple of the previous InstallerPage and
-    a list of the selected InstallerOptions on that page. If you receive
-    `None` it's because you have reached the start of the installer.
+    `move_to_prev()`. It will return a tuple of the previous InstallerPage
+    and a list of the selected InstallerOptions on that page. If you receive
+    `(None, None)` it's because you have reached the start of the installer.
 
-    Once the installer has finished, you may call `files()` to receive a
-    mapping of 'file source string' -> 'file destination string'. These are
-    the files to be installed. This installer does not install or provide
-    any way to do so, leaving that at your discretion."""
+    Once the installer has finished, you may call `get_fomod_files()` to
+    receive a mapping of 'file source string' -> 'file destination string'.
+    These are the files to be installed. This installer does not install or
+    provide any way to do so, leaving that at your discretion."""
     __slots__ = (u'fomod_tree', u'fomod_name', u'file_list', u'dst_dir',
                  u'game_version', u'_current_page', u'_previous_pages',
                  u'_has_finished')
@@ -277,7 +277,7 @@ class FomodInstaller(object):
         self._previous_pages = OrderedDict()
         self._has_finished = False
 
-    def start(self):
+    def start_fomod(self):
         root_conditions = self.fomod_tree.find(u'moduleDependencies')
         if root_conditions is not None:
             self.test_conditions(root_conditions)
@@ -287,7 +287,7 @@ class FomodInstaller(object):
         self._current_page = InstallerPage(self, first_page)
         return self._current_page
 
-    def next_(self, selection):
+    def move_to_next(self, selection):
         if self._has_finished or self._current_page is None:
             return None
         sort_list = [option for group in self._current_page for option
@@ -313,7 +313,7 @@ class FomodInstaller(object):
             self._current_page = None
         return None
 
-    def previous(self):
+    def move_to_prev(self):
         self._has_finished = False
         try:
             prev_page, prev_selected = self._previous_pages.popitem(last=True)
@@ -323,10 +323,10 @@ class FomodInstaller(object):
             self._current_page = None
             return None, None
 
-    def has_previous(self):
+    def has_prev(self):
         return bool(self._previous_pages)
 
-    def files(self):
+    def get_fomod_files(self):
         required_files = []
         required_files_elem = self.fomod_tree.find(u'requiredInstallFiles')
         if required_files_elem is not None:

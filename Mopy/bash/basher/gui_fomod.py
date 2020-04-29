@@ -65,11 +65,12 @@ class InstallerFomod(WizardDialog):
         data_path = bass.dirs[u'mods']
         ver = env.get_file_version(bass.dirs[u'app'].join(
             *bush.game.version_detect_file).s)
-        self.parser = FomodInstaller(fomod_file, self.files_list, data_path,
-                                     u'.'.join([unicode(i) for i in ver]))
+        self.fomod_parser = FomodInstaller(
+            fomod_file, self.files_list, data_path,
+            u'.'.join([unicode(i) for i in ver]))
         super(InstallerFomod, self).__init__(
             parent_window, sizes_dict=bass.settings,
-            title=_(u'FOMOD Installer - %s') % self.parser.fomod_name,
+            title=_(u'FOMOD Installer - %s') % self.fomod_parser.fomod_name,
             size_key=u'bash.fomod.size', pos_key=u'bash.fomod.pos')
         self.is_arch = installer.is_archive()
         if self.is_arch:
@@ -100,7 +101,7 @@ class InstallerFomod(WizardDialog):
                     # rather than the dummy page
                     selection = evt_page.on_next()
                     self.block_change = False
-                    next_page = self.parser.next_(selection)
+                    next_page = self.fomod_parser.move_to_next(selection)
                     if next_page is None:
                         self.finishing = True
                         self._native_widget.ShowPage(
@@ -117,7 +118,7 @@ class InstallerFomod(WizardDialog):
             # and resume execution
             self.block_change = False
             self.finishing = False
-            prev_page, prev_selected = self.parser.previous()
+            prev_page, prev_selected = self.fomod_parser.move_to_prev()
             if prev_page: # at the start
                 gui_page = PageSelect(self, prev_page)
                 gui_page.select(prev_selected)
@@ -126,7 +127,7 @@ class InstallerFomod(WizardDialog):
 
     def run(self):
         try:
-            first_page = self.parser.start()
+            first_page = self.fomod_parser.start_fomod()
         except FailedCondition as e:
             fm_warning = _(u'This installer cannot start due to the following '
                            u'unmet conditions:') + u'\n'
@@ -139,7 +140,8 @@ class InstallerFomod(WizardDialog):
             if first_page is not None:  # if installer has any gui pages
                 self.ret.canceled = not self._native_widget.RunWizard(
                     PageSelect(self, first_page))
-            self.ret.install_files = bolt.LowerDict(self.parser.files())
+            self.ret.install_files = bolt.LowerDict(
+                self.fomod_parser.get_fomod_files())
         # Clean up temp files
         if self.is_arch:
             bass.rmTempDir()
@@ -151,7 +153,7 @@ class PageInstaller(wiz.WizardPage):
 
     def __init__(self, parent):
         super(PageInstaller, self).__init__(parent._native_widget)
-        self._page_parent = parent
+        self._page_parent = parent # type: InstallerFomod
         self._enable_forward(True)
 
     def _enable_forward(self, do_enable):
@@ -161,7 +163,7 @@ class PageInstaller(wiz.WizardPage):
         return self._page_parent.dummy
 
     def GetPrev(self):
-        if self._page_parent.parser.has_previous():
+        if self._page_parent.fomod_parser.has_prev():
             return self._page_parent.dummy
         return None
 
@@ -423,7 +425,7 @@ class PageFinish(PageInstaller):
         check_output.on_checked.subscribe(self._on_switch_output)
         # This can take a bit for very large FOMOD installs
         with balt.BusyCursor():
-            installer_output = self._page_parent.parser.files()
+            installer_output = self._page_parent.fomod_parser.get_fomod_files()
             # Create the two alternative output displays and fill them with
             # data from the FOMOD parser
             self._output_text = TextArea(
