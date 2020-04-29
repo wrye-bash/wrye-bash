@@ -57,21 +57,21 @@ class FailedCondition(Exception):
     pass
 
 class InstallerPage(Sequence):
-    def __init__(self, parent_installer, page):
+    def __init__(self, parent_installer, page_object):
         """Wrapper around the ElementTree element 'installStep'.
 
         Provides the page's name via the `name` instance attribute
         and the page's groups via Sequence API (this behaves like a list).
 
         :param parent_installer: the parent FomodInstaller
-        :param page: the ElementTree element for an 'installStep'"""
+        :param page_object: the ElementTree element for an 'installStep'"""
         self._parent_installer = parent_installer
-        self._object = page  # the original ElementTree element
+        self.page_object = page_object # the original ElementTree element
         self._group_list = parent_installer.order_list([
-            InstallerGroup(parent_installer, group)
-            for group in page.findall(u'optionalFileGroups/*')
-        ], page.get(u'order', u'Ascending'))
-        self.name = page.get(u'name')
+            InstallerGroup(parent_installer, xml_group_obj)
+            for xml_group_obj in page_object.findall(u'optionalFileGroups/*')
+        ], page_object.get(u'order', u'Ascending'))
+        self.name = page_object.get(u'name')
 
     def __getitem__(self, key):
         return self._group_list[key]
@@ -80,7 +80,7 @@ class InstallerPage(Sequence):
         return len(self._group_list)
 
 class InstallerGroup(Sequence):
-    def __init__(self, parent_installer, group):
+    def __init__(self, parent_installer, group_object):
         """Wrapper around the ElementTree element 'group'.
 
         Provides the group's name and type via the `name` and `type` instance
@@ -88,15 +88,15 @@ class InstallerGroup(Sequence):
         (this behaves like a list).
 
         :param parent_installer: the parent FomodInstaller
-        :param group: the ElementTree element for an 'group'"""
+        :param group_object: the ElementTree element for a 'group'"""
         self._parent_installer = parent_installer
-        self._object = group
+        self.group_object = group_object
         self._option_list = parent_installer.order_list([
-            InstallerOption(parent_installer, option)
-            for option in group.findall(u'plugins/*')
-        ], group.get(u'order', u'Ascending'))
-        self.name = group.get(u'name')
-        self.type = group.get(u'type')
+            InstallerOption(parent_installer, xml_option_object)
+            for xml_option_object in group_object.findall(u'plugins/*')
+        ], group_object.get(u'order', u'Ascending'))
+        self.name = group_object.get(u'name')
+        self.type = group_object.get(u'type')
 
     def __getitem__(self, key):
         return self._option_list[key]
@@ -105,30 +105,30 @@ class InstallerGroup(Sequence):
         return len(self._option_list)
 
 class InstallerOption(object):
-    def __init__(self, parent_installer, option):
+    def __init__(self, parent_installer, option_object):
         """Wrapper around the ElementTree element 'plugin'.
 
         Provides the option's name, description, image path and type
         via instance attributes with the same names.
 
         :param parent_installer: the parent FomodInstaller
-        :param option: the ElementTree element for an 'plugin'"""
+        :param option_object: the ElementTree element for a 'plugin'"""
         self._parent_installer = parent_installer
-        self._object = option
-        self.name = option.get(u'name')
-        self.description = option.findtext(u'description', u'').strip()
-        image = option.find(u'image')
+        self.option_object = option_object
+        self.name = option_object.get(u'name')
+        self.description = option_object.findtext(u'description', u'').strip()
+        image = option_object.find(u'image')
         if image is not None:
             self.image = image.get(u'path')
         else:
             self.image = u''
-        type_elem = option.find(u'typeDescriptor/type')
+        type_elem = option_object.find(u'typeDescriptor/type')
         if type_elem is not None:
             self.type = type_elem.get(u'name')
         else:
-            default = option.find(
+            default = option_object.find(
                 u'typeDescriptor/dependencyType/defaultType').get(u'name')
-            patterns = option.findall(
+            patterns = option_object.findall(
                 u'typeDescriptor/dependencyType/patterns/*')
             for pattern in patterns:
                 try:
@@ -265,8 +265,8 @@ class FomodInstaller(object):
         ordered_pages = self.order_list(
             self.tree.findall(u'installSteps/installStep'),
             self.tree.find(u'installSteps').get(u'order', u'Ascending'))
-        current_index = ordered_pages.index(self._current_page._object)
-        for page in ordered_pages[current_index + 1 :]:
+        current_index = ordered_pages.index(self._current_page.page_object)
+        for page in ordered_pages[current_index + 1:]:
             try:
                 conditions = page.find(u'visible')
                 if conditions is not None:
@@ -301,7 +301,7 @@ class FomodInstaller(object):
             required_files = _FomodFileInfo.process_files(
                 required_files_elem, self.file_list)
         user_files = []
-        selected_options = [option._object
+        selected_options = [option.option_object
                             for options in self._previous_pages.values()
                             for option in options]
         for option in selected_options:
@@ -337,11 +337,9 @@ class FomodInstaller(object):
         """Returns a mapping of 'flag name' -> 'flag value'.
         Useful for either debugging or testing flag dependencies."""
         flag_dict = {}
-        flags_list = [
-            option._object.find(u'conditionFlags')
-            for options in self._previous_pages.values()
-            for option in options
-        ]
+        flags_list = [option.option_object.find(u'conditionFlags')
+                      for options in self._previous_pages.values()
+                      for option in options]
         for flags in flags_list:
             if flags is None:
                 continue
@@ -366,9 +364,7 @@ class FomodInstaller(object):
         if actual_type != file_type:
             raise FailedCondition(
                 u'File {} should be {} but is {} instead.'.format(
-                    file_name, file_type, actual_type
-                )
-            )
+                    file_name, file_type, actual_type))
 
     def _test_flag_condition(self, condition):
         flag_name = condition.get(u'flag')
@@ -377,9 +373,7 @@ class FomodInstaller(object):
         if actual_value != flag_value:
             raise FailedCondition(
                 u'Flag {} was expected to have {} but has {} instead.'.format(
-                    flag_name, flag_value, actual_value
-                )
-            )
+                    flag_name, flag_value, actual_value))
 
     def _test_version_condition(self, condition):
         version = condition.get(u'version')
@@ -388,8 +382,7 @@ class FomodInstaller(object):
         if game_version < version:
             raise FailedCondition(
                 u'Game version is {} but {} is required.'.format(
-                    game_version, version)
-            )
+                    game_version, version))
 
     def test_conditions(self, conditions):
         op = conditions.get(u'operator', u'And')
@@ -418,9 +411,7 @@ class FomodInstaller(object):
         if order == u'Explicit':
             return unordered_list
         if order not in _valid_values:
-            raise ValueError(
-                u'Arguments are incorrect: {}, {}'.format(
-                    unordered_list, order)
-            )
+            raise ValueError(u'Arguments are incorrect: {}, {}'.format(
+                unordered_list, order))
         return sorted(unordered_list, key=lambda x: x.name,
                       reverse=order == u'Descending')
