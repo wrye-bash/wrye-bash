@@ -1973,8 +1973,8 @@ class Mod_Factions_Import(_Mod_Import_Link):
 
     def _log(self, changed, fileName):
         log_out = u'\n'.join(
-            (u'* %s : %03d  %s' % (group_name, v, fileName.s)) for
-            group_name, v in sorted(changed.iteritems()))
+            (u'* %s : %03d  %s' % (grp_name, v, fileName.s)) for
+            grp_name, v in sorted(changed.iteritems()))
         self._showLog(log_out)
 
 #------------------------------------------------------------------------------

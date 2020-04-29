@@ -56,22 +56,39 @@ class FailedCondition(Exception):
     understand."""
     pass
 
-class InstallerPage(Sequence):
-    def __init__(self, parent_installer, page_object):
-        """Wrapper around the ElementTree element 'installStep'.
+class _AFomodBase(object):
+    """Base class for FOMOD components. Defines a key to sort instances of this
+    class by."""
+    __slots__ = (u'_parent_installer', u'sort_key')
 
-        Provides the page's name via the `name` instance attribute
-        and the page's groups via Sequence API (this behaves like a list).
+    def __init__(self, parent_installer, sort_key):
+        """Creates a new _AFomodBase with the specified parent and sort key.
 
-        :param parent_installer: the parent FomodInstaller
-        :param page_object: the ElementTree element for an 'installStep'"""
+        :param parent_installer: The parent FomodInstaller.
+        :param sort_key: An object to use for sorting instances of this
+            class."""
         self._parent_installer = parent_installer
+        self.sort_key = sort_key
+
+class InstallerPage(_AFomodBase):
+    """Wrapper around the ElementTree element 'installStep'. Provides the
+    page's name via the `page_name` instance attribute and the page's groups
+    via list emulation."""
+    __slots__ = (u'page_name', u'page_object', u'_group_list')
+
+    def __init__(self, parent_installer, page_object):
+        """Creates a new InstallerPage with the specified parent and XML
+        object.
+
+        :param parent_installer: The parent FomodInstaller.
+        :param page_object: The ElementTree element for an 'installStep'."""
+        self.page_name = page_object.get(u'name')
+        super(InstallerPage, self).__init__(parent_installer, self.page_name)
         self.page_object = page_object # the original ElementTree element
         self._group_list = parent_installer.order_list([
             InstallerGroup(parent_installer, xml_group_obj)
             for xml_group_obj in page_object.findall(u'optionalFileGroups/*')
         ], page_object.get(u'order', u'Ascending'))
-        self.name = page_object.get(u'name')
 
     def __getitem__(self, k):
         return self._group_list[k]
@@ -79,24 +96,27 @@ class InstallerPage(Sequence):
     def __len__(self):
         return len(self._group_list)
 
-class InstallerGroup(Sequence):
+class InstallerGroup(_AFomodBase):
+    """Wrapper around the ElementTree element 'group'. Provides the group's
+    name and type via the `group_name` and `group_type` instance attributes,
+    respectively, and the group's options via list emulation."""
+    __slots__ = (u'group_name', u'group_object', u'_option_list',
+                 u'group_type')
+
     def __init__(self, parent_installer, group_object):
-        """Wrapper around the ElementTree element 'group'.
+        """Creates a new InstallerGroup with the specified parent and XML
+        object.
 
-        Provides the group's name and type via the `name` and `type` instance
-        attributes, respectively, and the group's option via Sequence API
-        (this behaves like a list).
-
-        :param parent_installer: the parent FomodInstaller
-        :param group_object: the ElementTree element for a 'group'"""
-        self._parent_installer = parent_installer
+        :param parent_installer: The parent FomodInstaller.
+        :param group_object: The ElementTree element for a 'group'."""
+        self.group_name = group_object.get(u'name')
+        super(InstallerGroup, self).__init__(parent_installer, self.group_name)
         self.group_object = group_object
         self._option_list = parent_installer.order_list([
             InstallerOption(parent_installer, xml_option_object)
             for xml_option_object in group_object.findall(u'plugins/*')
         ], group_object.get(u'order', u'Ascending'))
-        self.name = group_object.get(u'name')
-        self.type = group_object.get(u'type')
+        self.group_type = group_object.get(u'type')
 
     def __getitem__(self, k):
         return self._option_list[k]
@@ -104,19 +124,24 @@ class InstallerGroup(Sequence):
     def __len__(self):
         return len(self._option_list)
 
-class InstallerOption(object):
+class InstallerOption(_AFomodBase):
+    """Wrapper around the ElementTree element 'plugin'. Provides the option's
+    name, description, image path and type via the instance attributes
+    option_name, option_desc, option_image and option_type respectively."""
+    __slots__ = (u'option_name', u'option_object', u'option_desc',
+                 u'option_image', u'option_type')
+
     def __init__(self, parent_installer, option_object):
-        """Wrapper around the ElementTree element 'plugin'.
+        """Creates a new InstallerOption with the specified parent and XML
+        object.
 
-        Provides the option's name, description, image path and type
-        via instance attributes with the same names.
-
-        :param parent_installer: the parent FomodInstaller
-        :param option_object: the ElementTree element for a 'plugin'"""
-        self._parent_installer = parent_installer
+        :param parent_installer: The parent FomodInstaller.
+        :param option_object: The ElementTree element for a 'plugin'."""
+        self.option_name = option_object.get(u'name')
+        super(InstallerOption, self).__init__(parent_installer,
+                                              self.option_name)
         self.option_object = option_object
-        self.name = option_object.get(u'name')
-        self.description = option_object.findtext(u'description', u'').strip()
+        self.option_desc = option_object.findtext(u'description', u'').strip()
         xml_img_path = option_object.find(u'image')
         if xml_img_path is not None:
             self.option_image = xml_img_path.get(u'path')
@@ -124,7 +149,7 @@ class InstallerOption(object):
             self.option_image = u''
         type_elem = option_object.find(u'typeDescriptor/type')
         if type_elem is not None:
-            self.type = type_elem.get(u'name')
+            self.option_type = type_elem.get(u'name')
         else:
             default = option_object.find(
                 u'typeDescriptor/dependencyType/defaultType').get(u'name')
@@ -137,14 +162,17 @@ class InstallerOption(object):
                 except FailedCondition:
                     pass
                 else:
-                    self.type = pattern.find(u'type').get(u'name')
+                    self.option_type = pattern.find(u'type').get(u'name')
                     break
             else:
-                self.type = default
+                self.option_type = default
 
 class _FomodFileInfo(object):
+    """Stores information about a single file that is going to be installed."""
+    __slots__ = (u'source', u'destination', u'priority')
+
     def __init__(self, source, destination, priority):
-        """Stores file info.
+        """Creates a new _FomodFileInfo with the specified properties-
 
         :param source: string source path
         :param destination: string destination path
@@ -207,29 +235,34 @@ class _FomodFileInfo(object):
         return result
 
 class FomodInstaller(object):
+    """Represents the installer itself. Keeps parsing on instancing to a
+    minimum to reduce performance impact.
+
+    To evaluate 'moduleDependencies' and receive the first page
+    (InstallerPage), call `start()`. If you receive `None` it's because the
+    installer had no visible pages and has finished.
+
+    Once the user has performed their selections (a list of
+    InstallerOption), you can pass these to `next_(selections)` to receive
+    the next page. Keep in mind these selections are not validated at all -
+    this must be done by the callers of this method. If you receive `None`
+    it's because you have reached the end of the installer's pages.
+
+    If the user desires to go to a previous page, you can call
+    `previous()`. It will return a tuple of the previous InstallerPage and
+    a list of the selected InstallerOptions on that page. If you receive
+    `None` it's because you have reached the start of the installer.
+
+    Once the installer has finished, you may call `files()` to receive a
+    mapping of 'file source string' -> 'file destination string'. These are
+    the files to be installed. This installer does not install or provide
+    any way to do so, leaving that at your discretion."""
+    __slots__ = (u'tree', u'fomod_name', u'file_list', u'dst_dir',
+                 u'game_version', u'_current_page', u'_previous_pages',
+                 u'_has_finished')
+
     def __init__(self, root, file_list, dst_dir, game_version):
-        """Represents the installer itself. Keeps parsing on instancing to a
-        minimum to reduce performance impact.
-
-        To evaluate 'moduleDependencies' and receive the first page
-        (InstallerPage), call `start()`. If you receive `None` it's because the
-        installer had no visible pages and has finished.
-
-        Once the user has performed their selections (a list of
-        InstallerOption), you can pass these to `next_(selections)` to receive
-        the next page. Keep in mind these selections are not validated at all -
-        this must be done by the callers of this method. If you receive `None`
-        it's because you have reached the end of the installer's pages.
-
-        If the user desires to go to a previous page, you can call
-        `previous()`. It will return a tuple of the previous InstallerPage and
-        a list of the selected InstallerOptions on that page. If you receive
-        `None` it's because you have reached the start of the installer.
-
-        Once the installer has finished, you may call `files()` to receive a
-        mapping of 'file source string' -> 'file destination string'. These are
-        the files to be installed. This installer does not install or provide
-        any way to do so, leaving that at your discretion.
+        """Creates a new FomodInstaller with the specified properties.
 
         :param root: string path to 'ModuleConfig.xml'
         :param file_list: the list of recognized files of the mod being
@@ -413,5 +446,5 @@ class FomodInstaller(object):
         if order not in _valid_values:
             raise ValueError(u'Arguments are incorrect: {}, {}'.format(
                 unordered_list, order))
-        return sorted(unordered_list, key=lambda x: x.name,
+        return sorted(unordered_list, key=lambda x: x.sort_key,
                       reverse=order == u'Descending')
