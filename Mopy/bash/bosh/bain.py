@@ -658,10 +658,10 @@ class Installer(object):
         root_path = self.extras_dict.get('root_path', u'')
         rootIdex = len(root_path)
         for full,size,crc in self.fileSizeCrcs:
-            if full.lower() == "fomod" + os.sep + "moduleconfig.xml":
+            if full.lower() == os.path.join(u'fomod', u'moduleconfig.xml'):
                 self.has_fomod_conf = full
-            fomod_dict = self.extras_dict.get('fomod_files_dict', {})
-            if self.extras_dict.get('fomod_active', False) and full in fomod_dict.values():
+            fomod_dict = self.extras_dict.get(u'fomod_files_dict', {})
+            if self.extras_dict.get(u'fomod_active', False) and full in fomod_dict.values():
                 idx = fomod_dict.values().index(full)
                 dest = fomod_dict.keys()[idx]
                 data_sizeCrc[dest] = (size, crc)

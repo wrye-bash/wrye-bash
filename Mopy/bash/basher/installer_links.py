@@ -171,7 +171,7 @@ class Installer_Fomod(OneItemLink, _InstallerLink):
     """Runs the FOMOD installer"""
     parentWindow = ''
     _text = _(u'FOMOD Installer...')
-    help = _(u"Run the FOMOD installer.")
+    help = _(u'Run the FOMOD installer.')
 
     def _enable(self):
         is_single = super(Installer_Fomod, self)._enable()
@@ -180,9 +180,9 @@ class Installer_Fomod(OneItemLink, _InstallerLink):
     @balt.conversation
     def Execute(self):
         with balt.BusyCursor():
-            installer = self._selected_info
+            sel_installer = self._selected_info
             try:
-                fm_wizard = InstallerFomod(self.window, installer)
+                fm_wizard = InstallerFomod(self.window, sel_installer)
             except CancelError:
                 return
             fm_wizard.ensureDisplayed()
@@ -191,16 +191,16 @@ class Installer_Fomod(OneItemLink, _InstallerLink):
             return
         # Install
         ui_refresh = [False, False]
-        installer.extras_dict['fomod_active'] = True
-        installer.extras_dict['fomod_files_dict'] = ret.install_files
+        sel_installer.extras_dict[u'fomod_active'] = True
+        sel_installer.extras_dict[u'fomod_files_dict'] = ret.install_files
         idetails = self.iPanel.detailsPanel
         # FIXME(inf) And even more FOMOD hacks - deselect all subpackages, then
         #  call refresh, otherwise the result in the GUI will be confusing
         idetails.gSubList.set_all_checkmarks(checked=False)
-        for index in xrange(len(installer.subNames)):
-            installer.subActives[index] = False
+        for index in xrange(len(sel_installer.subNames)):
+            sel_installer.subActives[index] = False
         try:
-            idetails.refreshCurrent(installer)
+            idetails.refreshCurrent(sel_installer)
             if ret.should_install:
                 with balt.Progress(_(u'Installing...'), u'\n'+u' '*60) as progress:
                     self.idata.bain_install(self.selected, ui_refresh, progress)
@@ -940,7 +940,7 @@ class Installer_Subs_SelectAll(_Installer_Subs):
             self.window.gSubList.lb_check_at_index(index, True)
             if self._installer.has_fomod_conf:
                 if index == 0:
-                    self._installer.extras_dict["fomod_active"] = True
+                    self._installer.extras_dict[u'fomod_active'] = True
                 else:
                     self._installer.subActives[index] = True
             else:
@@ -957,7 +957,7 @@ class Installer_Subs_DeselectAll(_Installer_Subs):
             self.window.gSubList.lb_check_at_index(index, False)
             if self._installer.has_fomod_conf:
                 if index == 0:
-                    self._installer.extras_dict["fomod_active"] = False
+                    self._installer.extras_dict[u'fomod_active'] = False
                 else:
                     self._installer.subActives[index] = False
             else:
@@ -974,8 +974,8 @@ class Installer_Subs_ToggleSelection(_Installer_Subs):
         for index in xrange(self.window.gSubList.lb_get_items_count()):
             if self._installer.has_fomod_conf:
                 if index == 0:
-                    check = not self._installer.extras_dict.get("fomod_active", False)
-                    self._installer.extras_dict["fomod_active"] = check
+                    check = not self._installer.extras_dict.get(u'fomod_active', False)
+                    self._installer.extras_dict[u'fomod_active'] = check
                 else:
                     check = not self._installer.subActives[index]
                     self._installer.subActives[index] = check

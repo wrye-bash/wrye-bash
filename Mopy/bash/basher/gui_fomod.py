@@ -120,7 +120,7 @@ class InstallerFomod(WizardDialog):
             prev_page, prev_selected = self.fomod_parser.move_to_prev()
             if prev_page: # at the start
                 gui_page = PageSelect(self, prev_page)
-                gui_page.select(prev_selected)
+                gui_page.apply_selection(prev_selected)
                 self._native_widget.ShowPage(gui_page)
             return EventResult.CANCEL
 
@@ -383,10 +383,10 @@ class PageSelect(PageInstaller):
             sel_options.extend(opts_selected)
         return sel_options
 
-    def select(self, selection):
+    def apply_selection(self, opt_selection):
         for checkable_list in self.group_option_map.itervalues():
             for checkable in checkable_list:
-                if self._checkable_to_option[checkable] in selection:
+                if self._checkable_to_option[checkable] in opt_selection:
                     checkable.is_checked = True
 
 class PageFinish(PageInstaller):

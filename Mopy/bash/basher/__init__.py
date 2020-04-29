@@ -2761,8 +2761,8 @@ class InstallersDetails(_SashDetailsPanel):
                 vals = installer.subActives[1:]
                 self.gSubList.setCheckListItems(sub_names_, vals)
             if installer.has_fomod_conf:
-                self.gSubList.lb_insert("fomod", 0)
-                self.gSubList.lb_check_at_index(0, installer.extras_dict.get('fomod_active', False))
+                self.gSubList.lb_insert(u'fomod', 0)
+                self.gSubList.lb_check_at_index(0, installer.extras_dict.get(u'fomod_active', False))
             #--Espms
             if not installer.espms:
                 self.gEspmList.lb_clear()
@@ -2897,15 +2897,15 @@ class InstallersDetails(_SashDetailsPanel):
         installer = self.file_info
         self.gSubList.lb_select_index(lb_selection_dex)
         has_fomod = False
-        if self.gSubList.lb_get_str_item_at_index(0) == "fomod":
-            installer.extras_dict['fomod_active'] = self.gSubList.lb_is_checked_at_index(0)
+        if self.gSubList.lb_get_str_item_at_index(0) == u'fomod':
+            installer.extras_dict[u'fomod_active'] = self.gSubList.lb_is_checked_at_index(0)
             self.gSubList.lb_delete_at_index(0)
             has_fomod = True
         for lb_selection_dex in range(self.gSubList.lb_get_items_count()):
             installer.subActives[lb_selection_dex+1] = self.gSubList.lb_is_checked_at_index(lb_selection_dex)
         if has_fomod:
-            self.gSubList.lb_insert("fomod", 0)
-            self.gSubList.lb_check_at_index(0, installer.extras_dict.get('fomod_active', False))
+            self.gSubList.lb_insert(u'fomod', 0)
+            self.gSubList.lb_check_at_index(0, installer.extras_dict.get(u'fomod_active', False))
         if not balt.getKeyState_Shift():
             self.refreshCurrent(installer)
 

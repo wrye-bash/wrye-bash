@@ -287,11 +287,11 @@ class FomodInstaller(object):
         self._current_page = InstallerPage(self, first_page)
         return self._current_page
 
-    def move_to_next(self, selection):
+    def move_to_next(self, user_selection):
         if self._has_finished or self._current_page is None:
             return None
         sort_list = [option for grp in self._current_page for option in grp]
-        sorted_selection = sorted(selection, key=sort_list.index)
+        sorted_selection = sorted(user_selection, key=sort_list.index)
         self._previous_pages[self._current_page] = sorted_selection
         ordered_pages = self.order_list(
             self.fomod_tree.findall(u'installSteps/installStep'),
