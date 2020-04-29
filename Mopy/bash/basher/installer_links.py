@@ -182,11 +182,11 @@ class Installer_Fomod(OneItemLink, _InstallerLink):
         with balt.BusyCursor():
             installer = self._selected_info
             try:
-                wizard = InstallerFomod(self.window, installer)
+                fm_wizard = InstallerFomod(self.window, installer)
             except CancelError:
                 return
-            wizard.ensureDisplayed()
-        ret = wizard.run()
+            fm_wizard.ensureDisplayed()
+        ret = fm_wizard.run_fomod()
         if ret.canceled:
             return
         # Install

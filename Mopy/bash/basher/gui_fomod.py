@@ -61,13 +61,12 @@ class InstallerFomod(WizardDialog):
         # saving this list allows for faster processing of the files the fomod
         # installer will return.
         self.files_list = [a[0] for a in installer.fileSizeCrcs]
-        fomod_file = installer.fomod_file().s
-        data_path = bass.dirs[u'mods']
-        ver = env.get_file_version(bass.dirs[u'app'].join(
+        fm_file = installer.fomod_file().s
+        gver = env.get_file_version(bass.dirs[u'app'].join(
             *bush.game.version_detect_file).s)
         self.fomod_parser = FomodInstaller(
-            fomod_file, self.files_list, data_path,
-            u'.'.join([unicode(i) for i in ver]))
+            fm_file, self.files_list, bass.dirs[u'mods'],
+            u'.'.join([unicode(i) for i in gver]))
         super(InstallerFomod, self).__init__(
             parent_window, sizes_dict=bass.settings,
             title=_(u'FOMOD Installer - %s') % self.fomod_parser.fomod_name,
@@ -80,10 +79,10 @@ class InstallerFomod(WizardDialog):
                 installer.archive)
         # 'dummy' page tricks the wizard into always showing the "Next" button
         class _PageDummy(wiz.WizardPage): pass
-        self.dummy = _PageDummy(self._native_widget)
+        self.fm_dummy = _PageDummy(self._native_widget)
         # Intercept the changing event so we can implement 'block_change'
         self.on_wiz_page_change.subscribe(self.on_change)
-        self.ret = FomodInstallInfo()
+        self.fm_ret = FomodInstallInfo()
         self.first_page = True
 
     def save_size(self):
@@ -125,7 +124,7 @@ class InstallerFomod(WizardDialog):
                 self._native_widget.ShowPage(gui_page)
             return EventResult.CANCEL
 
-    def run(self):
+    def run_fomod(self):
         try:
             first_page = self.fomod_parser.start_fomod()
         except FailedCondition as e:
@@ -135,17 +134,17 @@ class InstallerFomod(WizardDialog):
                 fm_warning += u'  {}\n'.format(l)
             balt.showWarning(self, fm_warning,
                              title=_(u'Cannot Run Installer'), do_center=True)
-            self.ret.canceled = True
+            self.fm_ret.canceled = True
         else:
             if first_page is not None:  # if installer has any gui pages
-                self.ret.canceled = not self._native_widget.RunWizard(
+                self.fm_ret.canceled = not self._native_widget.RunWizard(
                     PageSelect(self, first_page))
-            self.ret.install_files = bolt.LowerDict(
+            self.fm_ret.install_files = bolt.LowerDict(
                 self.fomod_parser.get_fomod_files())
         # Clean up temp files
         if self.is_arch:
             bass.rmTempDir()
-        return self.ret
+        return self.fm_ret
 
 class PageInstaller(wiz.WizardPage):
     """Base class for all the parser wizard pages, just to handle a couple
@@ -160,11 +159,11 @@ class PageInstaller(wiz.WizardPage):
         self._page_parent.enable_forward_btn(do_enable)
 
     def GetNext(self):
-        return self._page_parent.dummy
+        return self._page_parent.fm_dummy
 
     def GetPrev(self):
         if self._page_parent.fomod_parser.has_prev():
-            return self._page_parent.dummy
+            return self._page_parent.fm_dummy
         return None
 
     def on_next(self):
@@ -414,8 +413,9 @@ class PageSelect(PageInstaller):
 class PageFinish(PageInstaller):
     def __init__(self, parent):
         super(PageFinish, self).__init__(parent)
-        check_install = CheckBox(self, _(u'Install this package'),
-                                 checked=self._page_parent.ret.should_install)
+        check_install = CheckBox(
+            self, _(u'Install this package'),
+            checked=self._page_parent.fm_ret.should_install)
         check_install.on_checked.subscribe(self._on_check_install)
         use_table = bass.settings[u'bash.fomod.use_table']
         check_output = CheckBox(self, _(u'Use Table View'), checked=use_table,
@@ -450,7 +450,7 @@ class PageFinish(PageInstaller):
         self.Layout()
 
     def _on_check_install(self, checked):
-        self._page_parent.ret.should_install = checked
+        self._page_parent.fm_ret.should_install = checked
 
     def _on_switch_output(self, checked):
         bass.settings[u'bash.fomod.use_table'] = checked
