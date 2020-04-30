@@ -748,9 +748,9 @@ class ActorImporter(_SimpleImporter):
 
     def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data):
         mod_tags = srcFile.fileInfo.getBashTags()
-        common_tags = set(self.recAttrs_class[recClass]) & mod_tags
+        tags_to_attrs = self.recAttrs_class[recClass]
         attrs = set(chain.from_iterable(
-            self.recAttrs_class[recClass][tag] for tag in common_tags))
+            attrs for t, attrs in tags_to_attrs.iteritems() if t in mod_tags))
         for record in srcFile.tops[recClass.classType].getActiveRecords():
             fid = mapper(record.fid)
             temp_id_data[fid] = dict()

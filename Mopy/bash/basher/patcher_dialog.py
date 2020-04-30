@@ -303,7 +303,7 @@ class PatchDialog(DialogWindow):
                 # shellMove, not sure if ever a Windows or Cancel are raised
                 patchFile.safeSave()
                 return
-            except (CancelError, SkipError, OSError) as werr:
+            except (CancelError, SkipError, OSError, IOError) as werr:
                 if isinstance(werr, OSError) and werr.errno != errno.EACCES:
                     raise
                 if self._pretry(patch_name):

@@ -313,10 +313,9 @@ def refresh_lo(cached=False, cached_active=True):
     else: active = lo = None
     _update_cache(lo, active)
     if locked and saved is not __empty:
-        if (cached_lord.loadOrder != saved.loadOrder or
-                ##: Is activeOrdered needed? Or just active here?
-                (cached_lord.active != saved.activeOrdered and
-                 bass.settings[u'bash.load_order.lock_active_plugins'])):
+        if cached_lord.loadOrder != saved.loadOrder or (
+           cached_lord.active != saved.active and # active order doesn't matter
+           bass.settings[u'bash.load_order.lock_active_plugins']):
             save_lo(saved.loadOrder, saved.activeOrdered)
             global warn_locked
             warn_locked = True

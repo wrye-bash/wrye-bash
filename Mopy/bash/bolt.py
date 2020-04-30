@@ -373,18 +373,14 @@ class sio(StringIO.StringIO):
 #------------------------------------------------------------------------------
 _gpaths = {}
 
-def GPath(name):
+def GPath(str_or_uni):
     """Path factory and cache.
     :rtype: Path
     """
-    if name is None: return None
-    elif isinstance(name,Path): norm = name._s
-    elif not name: norm = name # empty string - bin this if ?
-    elif isinstance(name,unicode): norm = os.path.normpath(name)
-    else: norm = os.path.normpath(decode(name))
-    path = _gpaths.get(norm)
-    if path is not None: return path
-    else: return _gpaths.setdefault(norm,Path(norm))
+    if isinstance(str_or_uni, Path) or str_or_uni is None: return str_or_uni
+    if not str_or_uni: return Path(u'') # needed, os.path.normpath(u'') = u'.'!
+    if str_or_uni in _gpaths: return _gpaths[str_or_uni]
+    return _gpaths.setdefault(str_or_uni, Path(os.path.normpath(str_or_uni)))
 
 def GPathPurge():
     """Cleans out the _gpaths dictionary of any unused bolt.Path objects.
