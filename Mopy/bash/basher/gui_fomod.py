@@ -139,8 +139,11 @@ class InstallerFomod(WizardDialog):
             if first_page is not None:  # if installer has any gui pages
                 self.fm_ret.canceled = not self._native_widget.RunWizard(
                     PageSelect(self, first_page))
-            self.fm_ret.install_files = bolt.LowerDict(
-                self.fomod_parser.get_fomod_files())
+            # Invert keys and values ahead of time here, so that BAIN doesn't
+            # have to do it just in time
+            self.fm_ret.install_files = bolt.LowerDict({
+                v: k for k, v
+                in self.fomod_parser.get_fomod_files().iteritems()})
         # Clean up temp files
         if self.is_arch:
             bass.rmTempDir()
@@ -188,7 +191,7 @@ class PageSelect(PageInstaller):
         """:type inst_page: InstallerPage"""
         super(PageSelect, self).__init__(page_parent)
         # For runtime retrieval of option/checkable info
-        self._checkable_to_option = {}
+        self.checkable_to_option = {}
         self.checkable_to_group = {}
         self.group_option_map = defaultdict(list)
         # To undo user changes to 'frozen' radio button groups
@@ -254,7 +257,7 @@ class PageSelect(PageInstaller):
                 elif otype == u'NotUsable':
                     checkable.is_checked = False
                     checkables_to_block.add(checkable)
-                self._checkable_to_option[checkable] = option
+                self.checkable_to_option[checkable] = option
                 self.checkable_to_group[checkable] = grp
                 options_layout.add(checkable)
                 checkable.on_hovered.subscribe(self._handle_hovered)
@@ -315,7 +318,7 @@ class PageSelect(PageInstaller):
         if isinstance(block_checkable, CheckBox):
             # Adjust the warning based on whether we can't check or can't
             # uncheck this option
-            block_option = self._checkable_to_option[block_checkable]
+            block_option = self.checkable_to_option[block_checkable]
             if block_option.option_type == u'NotUsable':
                 balt.showWarning(self, _(
                     u'This option cannot be enabled. It is probably '
@@ -335,7 +338,7 @@ class PageSelect(PageInstaller):
 
     # fixme XXX: types other than optional should be shown in some visual way (button colour?)
     def _handle_hovered(self, checkable):
-        option = self._checkable_to_option[checkable]
+        option = self.checkable_to_option[checkable]
         self._enable_forward(True)
         opt_img = self._page_parent.archive_path.join(option.option_image)
         self._current_image = opt_img # To allow opening it via double click
@@ -358,7 +361,7 @@ class PageSelect(PageInstaller):
     def on_next(self):
         sel_options = []
         for group, option_chks in self.group_option_map.iteritems():
-            opts_selected = [self._checkable_to_option[c] for c in option_chks
+            opts_selected = [self.checkable_to_option[c] for c in option_chks
                              if c.is_checked]
             option_len = len(opts_selected)
             gtype = group.group_type
@@ -386,7 +389,7 @@ class PageSelect(PageInstaller):
     def apply_selection(self, opt_selection):
         for checkable_list in self.group_option_map.itervalues():
             for checkable in checkable_list:
-                if self._checkable_to_option[checkable] in opt_selection:
+                if self.checkable_to_option[checkable] in opt_selection:
                     checkable.is_checked = True
 
 class PageFinish(PageInstaller):
@@ -478,7 +481,10 @@ class _Group_MassSelect(_GroupLink):
     """Base class for all three types of 'mass select' group links."""
     def Execute(self):
         for checkable in self.window.group_option_map[self.selected_group]:
-            checkable.is_checked = self._should_enable(checkable)
+            # NotUsable options can't ever be enabled, so skip those
+            otype = self.window.checkable_to_option[checkable].option_type
+            checkable.is_checked = (otype != u'NotUsable'
+                                    and self._should_enable(checkable))
 
     def _should_enable(self, checkable):
         """Returns True if the specified checkable should be enabled."""

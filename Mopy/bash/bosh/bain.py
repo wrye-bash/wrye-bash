@@ -302,6 +302,14 @@ class Installer(object):
         self.fileSizeCrcs = [(unicode(x), y, z) for x, y, z in
                              self.fileSizeCrcs]
 
+    def _fixme_drop__fomod_backwards_compat(self):
+        # Keys and values in the fomod dict got inverted, name changed to
+        # reflect this FIXME backwards compat
+        if u'fomod_files_dict' in self.extras_dict:
+            self.extras_dict[u'fomod_dict'] = LowerDict({
+                v: k for k, v
+                in self.extras_dict.pop(u'fomod_files_dict').iteritems()})
+
     def __setstate__(self,values):
         """Used by unpickler to recreate object."""
         try:
@@ -657,13 +665,16 @@ class Installer(object):
         #--Scan over fileSizeCrcs
         root_path = self.extras_dict.get('root_path', u'')
         rootIdex = len(root_path)
+        # For backwards compatibility - drop in 308
+        self._fixme_drop__fomod_backwards_compat()
+        fomod_active = self.extras_dict.get(u'fomod_active', False)
+        fomod_dict = self.extras_dict.get(u'fomod_dict', {})
+        module_config = os.path.join(u'fomod', u'moduleconfig.xml')
         for full,size,crc in self.fileSizeCrcs:
-            if full.lower() == os.path.join(u'fomod', u'moduleconfig.xml'):
+            if full.lower() == module_config:
                 self.has_fomod_conf = full
-            fomod_dict = self.extras_dict.get(u'fomod_files_dict', {})
-            if self.extras_dict.get(u'fomod_active', False) and full in fomod_dict.values():
-                idx = fomod_dict.values().index(full)
-                dest = fomod_dict.keys()[idx]
+            if fomod_active and full in fomod_dict:
+                dest = fomod_dict[full]
                 data_sizeCrc[dest] = (size, crc)
                 dest_src[dest] = full
                 unSize += size

@@ -202,7 +202,7 @@ class Installer_Fomod(_Installer_AWizardLink):
             return
         ui_refresh = [False, False]
         sel_installer.extras_dict[u'fomod_active'] = True
-        sel_installer.extras_dict[u'fomod_files_dict'] = ret.install_files
+        sel_installer.extras_dict[u'fomod_dict'] = ret.install_files
         idetails = self.iPanel.detailsPanel
         # Switch the GUI to FOMOD mode
         idetails.set_fomod_mode(fomod_enabled=True)
