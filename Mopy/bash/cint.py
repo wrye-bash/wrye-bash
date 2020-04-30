@@ -43,7 +43,7 @@ from ctypes import byref, cast, c_bool, c_byte, c_char, c_char_p, c_float, \
     POINTER, string_at
 import math
 import os
-from functools import reduce
+from operator import attrgetter
 from os.path import exists, join
 try:
     #See if cint is being used by Wrye Bash
@@ -1233,11 +1233,16 @@ def ValidateDict(Elements, target):
     return True
 
 def getattr_deep(obj, attr):
-    return reduce(getattr, attr.split('.'), obj)
+    return attrgetter(attr)(obj)
 
 def setattr_deep(obj, attr, value):
-    attrs = attr.split('.')
-    setattr(reduce(getattr, attrs[:-1], obj), attrs[-1], value)
+    dot_dex = attr.rfind(u'.')
+    if dot_dex > 0:
+        parent_attr = attr[:dot_dex]
+        leaf_attr = attr[dot_dex + 1:]
+        attrgetter(parent_attr)(obj).__setattr__(leaf_attr, value)
+    else:
+        obj.__setattr__(attr, value)
 
 def ExtractCopyList(Elements):
     return [tuple(getattr(listElement, attr) for attr in listElement.copyattrs) for listElement in Elements]
@@ -3017,24 +3022,24 @@ class FnvBaseRecord(object):
             for attr in attrs:
                 if isinstance(attr,basestring):
                     # Single attr
-                    conflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for parentRecord in parentRecords if reduce(getattr, attr.split('.'), self) != reduce(getattr, attr.split('.'), parentRecord)])
+                    conflicting.update([(attr,attrgetter(attr)(self)) for parentRecord in parentRecords if attrgetter(attr)(self) != attrgetter(attr)(parentRecord)])
                 elif isinstance(attr,(list,tuple,set)):
                     # Group of attrs that need to stay together
                     for parentRecord in parentRecords:
                         subconflicting = {}
                         conflict = False
                         for subattr in attr:
-                            self_value = reduce(getattr, subattr.split('.'), self)
-                            if not conflict and self_value != reduce(getattr, subattr.split('.'), parentRecord):
+                            self_value = attrgetter(subattr)(self)
+                            if not conflict and self_value != attrgetter(subattr)(parentRecord):
                                 conflict = True
                             subconflicting.update([(subattr,self_value)])
                         if conflict: conflicting.update(subconflicting)
         else: #is the first instance of the record
             for attr in attrs:
                 if isinstance(attr, basestring):
-                    conflicting.update([(attr,reduce(getattr, attr.split('.'), self))])
+                    conflicting.update([(attr,attrgetter(attr)(self))])
                 elif isinstance(attr,(list,tuple,set)):
-                    conflicting.update([(subattr,reduce(getattr, subattr.split('.'), self)) for subattr in attr])
+                    conflicting.update([(subattr,attrgetter(subattr)(self)) for subattr in attr])
 
         skipped_conflicting = [(attr, value) for attr, value in conflicting.iteritems() if isinstance(value, FormID) and not value.ValidateFormID(self)]
         for attr, value in skipped_conflicting:
@@ -10611,15 +10616,16 @@ class ObBaseRecord(object):
             for attr in attrs:
                 if isinstance(attr,basestring):
                     # Single attr
-                    conflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for parentRecord in parentRecords if reduce(getattr, attr.split('.'), self) != reduce(getattr, attr.split('.'), parentRecord)])
+                    attr_value = attrgetter(attr)(self)
+                    conflicting.update([(attr,attr_value) for parentRecord in parentRecords if attr_value != attrgetter(attr)(parentRecord)])
                 elif isinstance(attr,(list,tuple,set)):
                     # Group of attrs that need to stay together
                     for parentRecord in parentRecords:
                         subconflicting = {}
                         conflict = False
                         for subattr in attr:
-                            self_value = reduce(getattr, subattr.split('.'), self)
-                            if not conflict and self_value != reduce(getattr, subattr.split('.'), parentRecord):
+                            self_value = attrgetter(subattr)(self)
+                            if not conflict and self_value != attrgetter(subattr)(parentRecord):
                                 conflict = True
                             subconflicting.update([(subattr,self_value)])
                         if conflict:
@@ -10627,9 +10633,9 @@ class ObBaseRecord(object):
         else: #is the first instance of the record
             for attr in attrs:
                 if isinstance(attr, basestring):
-                    conflicting.update([(attr,reduce(getattr, attr.split('.'), self))])
+                    conflicting.update([(attr,attrgetter(attr)(self))])
                 elif isinstance(attr,(list,tuple,set)):
-                    conflicting.update([(subattr,reduce(getattr, subattr.split('.'), self)) for subattr in attr])
+                    conflicting.update([(subattr,attrgetter(subattr)(self)) for subattr in attr])
 
         skipped_conflicting = [(attr, value) for attr, value in conflicting.iteritems() if isinstance(value, FormID) and not value.ValidateFormID(self)]
         for attr, value in skipped_conflicting:
