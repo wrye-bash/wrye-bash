@@ -215,6 +215,7 @@ class PageSelect(PageInstaller):
         self._group_links.append(_Group_ToggleAll())
         panel_groups = ScrollableWindow(self)
         groups_layout = VLayout(spacing=5, item_expand=True)
+        first_checkable = None
         for grp in inst_page: # type: InstallerGroup
             options_layout = VLayout(spacing=2)
             first_selectable = None
@@ -244,6 +245,9 @@ class PageSelect(PageInstaller):
                         checkable.is_checked = True
                         any_selected = True
                         checkables_to_block.add(checkable)
+                # Remember the first checkable we created for later
+                if not first_checkable:
+                    first_checkable = checkable
                 if otype == u'Required':
                     checkable.is_checked =  True
                     any_selected = True
@@ -264,7 +268,7 @@ class PageSelect(PageInstaller):
                 self.checkable_to_option[checkable] = option
                 self.checkable_to_group[checkable] = grp
                 options_layout.add(checkable)
-                checkable.on_hovered.subscribe(self._handle_hovered)
+                checkable.on_hovered.subscribe(self._set_option_details)
                 self.group_option_map[grp].append(checkable)
             # Done adding all options, move on to any last minute tweaks before
             # finalizing the group
@@ -292,6 +296,9 @@ class PageSelect(PageInstaller):
             groups_layout.add(HBoxedLayout(
                 panel_groups, title=grp.group_name, item_expand=True,
                 item_weight=1, items=[options_layout]))
+        # Show details for the first option on this page by default
+        if first_checkable:
+            self._set_option_details(first_checkable)
         groups_layout.apply_to(panel_groups)
         VLayout(spacing=10, item_expand=True, items=[
             (HLayout(spacing=5, item_expand=True, item_weight=1, items=[
@@ -340,8 +347,9 @@ class PageSelect(PageInstaller):
         """Shows the right click menu with mass (de)select options."""
         self._group_links.new_menu(self, checkable)
 
-    # fixme XXX: types other than optional should be shown in some visual way (button colour?)
-    def _handle_hovered(self, checkable):
+    def _set_option_details(self, checkable):
+        """Sets the image and description on the right side based on the
+        specified checkable."""
         option = self.checkable_to_option[checkable]
         self._enable_forward(True)
         opt_img = self._page_parent.archive_path.join(
