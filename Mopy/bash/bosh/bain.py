@@ -362,8 +362,7 @@ class Installer(object):
     #--refreshDataSizeCrc, err, framework -------------------------------------
     # Those files/folders will be always skipped by refreshDataSizeCrc()
     _silentSkipsStart = (
-        u'--', u'omod conversion data%s' % os_sep, u'fomod%s' % os_sep,
-        u'wizard images%s' % os_sep)
+        u'--', u'omod conversion data' + os_sep, u'wizard images' + os_sep)
     _silentSkipsEnd = (u'thumbs.db', u'desktop.ini', u'meta.ini', u'config')
 
     # global skips that can be overridden en masse by the installer
@@ -671,30 +670,30 @@ class Installer(object):
         fomod_dict = self.extras_dict.get(u'fomod_dict', {})
         module_config = os.path.join(u'fomod', u'moduleconfig.xml')
         for full,size,crc in self.fileSizeCrcs:
-            if full.lower() == module_config:
-                self.has_fomod_conf = full
-            if fomod_active and full in fomod_dict:
-                dest = fomod_dict[full]
-                data_sizeCrc[dest] = (size, crc)
-                dest_src[dest] = full
-                unSize += size
-                continue
             if rootIdex: # exclude all files that are not under root_dir
                 if not full.startswith(root_path): continue
             file_relative = full[rootIdex:]
             fileLower = file_relative.lower()
-            if fileLower.startswith( # skip top level '--', 'fomod' etc
+            if fileLower.startswith( # skip top level '--', etc
                     Installer._silentSkipsStart) or fileLower.endswith(
                     Installer._silentSkipsEnd): continue
+            elif fileLower == module_config:
+                self.has_fomod_conf = full
+                skipDirFilesDiscard(file_relative)
+                continue
+            elif fomod_active and full in fomod_dict:
+                # Remap FOMOD files to usable paths
+                file_relative = fomod_dict[full]
+                fileLower = file_relative.lower()
             sub = u''
-            if bain_type == 2: #--Complex archive
+            if bain_type == 2 and not fomod_active: #--Complex archive
                 split = file_relative.split(os_sep, 1)
                 if len(split) > 1:
                     # redefine file, excluding the subpackage directory
                     sub,file_relative = split
                     fileLower = file_relative.lower()
                     if fileLower.startswith(Installer._silentSkipsStart):
-                        continue # skip subpackage level '--', 'fomod' etc
+                        continue # skip subpackage level '--', etc
                 if sub not in activeSubs:
                     if sub == u'':
                         skipDirFilesAdd(file_relative)

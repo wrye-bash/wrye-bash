@@ -61,11 +61,15 @@ class InstallerFomod(WizardDialog):
         # saving this list allows for faster processing of the files the fomod
         # installer will return.
         self.files_list = [a[0] for a in target_installer.fileSizeCrcs]
+        # All extracted files need to be specified relative to this root path
+        self.installer_root = (
+            target_installer.extras_dict.get(u'root_path', u'')
+            if target_installer.fileRootIdex else u'')
         fm_file = target_installer.fomod_file().s
         gver = env.get_file_version(bass.dirs[u'app'].join(
             *bush.game.version_detect_file).s)
         self.fomod_parser = FomodInstaller(
-            fm_file, self.files_list, bass.dirs[u'mods'],
+            fm_file, self.files_list, self.installer_root, bass.dirs[u'mods'],
             u'.'.join([unicode(i) for i in gver]))
         super(InstallerFomod, self).__init__(
             parent_window, sizes_dict=bass.settings,
@@ -340,7 +344,8 @@ class PageSelect(PageInstaller):
     def _handle_hovered(self, checkable):
         option = self.checkable_to_option[checkable]
         self._enable_forward(True)
-        opt_img = self._page_parent.archive_path.join(option.option_image)
+        opt_img = self._page_parent.archive_path.join(
+            self._page_parent.installer_root, option.option_image)
         self._current_image = opt_img # To allow opening it via double click
         try:
             final_image = self._img_cache[opt_img]

@@ -3003,6 +3003,8 @@ class InstallersDetails(_SashDetailsPanel):
                 self.file_info.subActives = prev_sub_actives[:]
                 # See set_subpackage_checkmarks for the off-by-one explanation
                 for i, sa_checked in enumerate(prev_sub_actives[1:]):
+                    if i >= self.gSubList.lb_get_items_count():
+                        break # Otherwise breaks for 'simple' packages w/ FOMOD
                     self.gSubList.lb_check_at_index(i, sa_checked)
         self._update_fomod_state()
 

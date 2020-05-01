@@ -188,7 +188,7 @@ class _FomodFileInfo(object):
             self.file_priority)
 
     @classmethod
-    def process_files(cls, files_elem, file_list):
+    def process_files(cls, files_elem, file_list, inst_root):
         """Processes the elements in *files_elem* into a list of
         _FomodFileInfo.
 
@@ -202,10 +202,11 @@ class _FomodFileInfo(object):
         hard time copying folders).
 
         :param files_elem: list of ElementTree elements 'file' and 'folder'
-        :param file_list: list of files in the mod being installed"""
+        :param file_list: list of files in the mod being installed
+        :param inst_root: The root path to retrieve sources relative to."""
         fm_infos = []
         for file_object in files_elem.findall(u'*'):
-            file_src = file_object.get(u'source')
+            file_src = inst_root + file_object.get(u'source')
             if file_src.endswith((u'/', u'\\')):
                 file_src = file_src[:-1]
             file_src = GPath(file_src)
@@ -263,19 +264,22 @@ class FomodInstaller(object):
     provide any way to do so, leaving that at your discretion."""
     __slots__ = (u'fomod_tree', u'fomod_name', u'file_list', u'dst_dir',
                  u'game_version', u'_current_page', u'_previous_pages',
-                 u'_has_finished')
+                 u'_has_finished', u'installer_root')
 
-    def __init__(self, mc_path, file_list, dst_dir, game_version):
+    def __init__(self, mc_path, file_list, inst_root, dst_dir, game_version):
         """Creates a new FomodInstaller with the specified properties.
 
         :param mc_path: string path to 'ModuleConfig.xml'
         :param file_list: the list of recognized files of the mod being
             installed
+        :param inst_root: The root path of the installer. All files are
+            specified relative to this by the FOMOD config.
         :param dst_dir: the destination directory - <Game>/Data
         :param game_version: version of the game launch exe"""
         self.fomod_tree = etree.parse(mc_path)
         self.fomod_name = self.fomod_tree.findtext(u'moduleName', u'').strip()
         self.file_list = file_list
+        self.installer_root = inst_root
         self.dst_dir = dst_dir
         self.game_version = game_version
         self._current_page = None
@@ -335,7 +339,7 @@ class FomodInstaller(object):
         required_files_elem = self.fomod_tree.find(u'requiredInstallFiles')
         if required_files_elem is not None:
             required_files = _FomodFileInfo.process_files(
-                required_files_elem, self.file_list)
+                required_files_elem, self.file_list, self.installer_root)
         user_files = []
         selected_options = [option.option_object
                             for options in self._previous_pages.values()
@@ -344,7 +348,7 @@ class FomodInstaller(object):
             option_files = option.find(u'files')
             if option_files is not None:
                 user_files.extend(_FomodFileInfo.process_files(
-                    option_files, self.file_list))
+                    option_files, self.file_list, self.installer_root))
         conditional_files = []
         for cond_pattern in self.fomod_tree.findall(
                 u'conditionalFileInstalls/patterns/pattern'):
@@ -356,7 +360,7 @@ class FomodInstaller(object):
                 pass
             else:
                 conditional_files.extend(_FomodFileInfo.process_files(
-                    cond_files, self.file_list))
+                    cond_files, self.file_list, self.installer_root))
         file_dict = {}  # dst -> src
         priority_dict = {}  # dst -> priority
         for fm_info in required_files + user_files + conditional_files:

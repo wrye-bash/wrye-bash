@@ -201,11 +201,10 @@ class Installer_Fomod(_Installer_AWizardLink):
         if ret.canceled:
             return
         ui_refresh = [False, False]
-        sel_installer.extras_dict[u'fomod_active'] = True
-        sel_installer.extras_dict[u'fomod_dict'] = ret.install_files
         idetails = self.iPanel.detailsPanel
-        # Switch the GUI to FOMOD mode
+        # Switch the GUI to FOMOD mode and pass the selected files to BAIN
         idetails.set_fomod_mode(fomod_enabled=True)
+        sel_installer.extras_dict[u'fomod_dict'] = ret.install_files
         try:
             idetails.refreshCurrent(sel_installer)
             if ret.should_install:
@@ -246,12 +245,11 @@ class Installer_Wizard(_Installer_AWizardLink):
 
     @balt.conversation
     def Execute(self):
+        ##: Investigate why we have so many refreshCurrents in here. At least
+        # the first one seems pointless?
         with BusyCursor():
             installer = self._selected_info
             idetails = self.iPanel.detailsPanel
-            # Toggle off FOMOD mode, otherwise installer.espms won't be
-            # populated ##: that last part is still a problem though
-            idetails.set_fomod_mode(fomod_enabled=False)
             idetails.refreshCurrent(installer)
             try:
                 wizard = InstallerWizard(self.window, self._selected_info,
@@ -264,7 +262,9 @@ class Installer_Wizard(_Installer_AWizardLink):
             idetails.refreshCurrent(installer)
             return
         installer.resetAllEspmNames()
-        # Check the sub-packages that were selected by the wizard
+        # Switch away from FOMOD mode, then check the sub-packages that were
+        # selected by the wizard
+        idetails.set_fomod_mode(fomod_enabled=False)
         for index in xrange(len(installer.subNames[1:])):
             select = installer.subNames[index + 1] in ret.select_sub_packages
             idetails.gSubList.lb_check_at_index(index, select)
