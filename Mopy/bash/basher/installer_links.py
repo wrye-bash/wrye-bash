@@ -67,7 +67,7 @@ __all__ = ['Installer_Open', 'Installer_Duplicate', 'InstallerOpenAt_MainMenu',
            'Installer_Subs_DeselectAll', 'Installer_Subs_ToggleSelection',
            'Installer_Subs_ListSubPackages', 'Installer_OpenNexus',
            'Installer_ExportAchlist', 'Installer_Espm_JumpToMod',
-           'Installer_Fomod']
+           u'Installer_Fomod', u'Installer_InstallSmart']
 
 #------------------------------------------------------------------------------
 # Installer Links -------------------------------------------------------------
@@ -164,7 +164,7 @@ class _InstallLink(_InstallerLink):
 
     def _enable(self):
         self._installables = self.idata.filterInstallables(self.selected)
-        return bool(self._installables)
+        return bool(self._installables) and super(_InstallLink, self)._enable()
 
 #------------------------------------------------------------------------------
 class _Installer_AWizardLink(OneItemLink, _InstallerLink):
@@ -491,13 +491,14 @@ class Installer_SkipRefresh(CheckLink, _SingleProject):
 
 class Installer_Install(_InstallLink):
     """Install selected packages."""
-    mode_title = {'DEFAULT': _(u'Install'), 'LAST': _(u'Install Last'),
+    mode_title = {'DEFAULT': _(u'Install Current'), 'LAST': _(u'Install Last'),
                   'MISSING': _(u'Install Missing Files')}
-    mode_help = {'DEFAULT': _(u'Install selected installer(s)'),
-                 'LAST': _(u'Install the selected installer(s) at the last '
-                           u'position'),
+    mode_help = {'DEFAULT': _(u'Install all configured files from selected '
+                              u'installer(s).'),
+                 'LAST': _(u'Install all configured files from selected '
+                           u'installer(s) at the last position.'),
                  'MISSING': _(u'Install all missing files from the selected '
-                              u'installer(s)')}
+                              u'installer(s).')}
 
     def __init__(self,mode='DEFAULT'):
         super(Installer_Install, self).__init__()
@@ -530,6 +531,34 @@ class Installer_Install(_InstallLink):
             u'existing INI was different than what BAIN installed:') + \
             u'\n' + u'\n'.join([u' * %s\n' % x.stail for (x, y) in new_tweaks])
         self._showInfo(msg, title=_(u'INI Tweaks'))
+
+class Installer_InstallSmart(_InstallLink, OneItemLink):
+    """A 'smart' installer for new users. Uses wizards and FOMODs if present,
+    then falls back to regular install if that isn't possible."""
+    _text = _(u'Install...')
+    _help = _(u'Installs selected installer(s), preferring a visual method if '
+              u'available.')
+
+    def _try_installer(self, inst_instance):
+        """Checks if the specified installer link is enabled and, if so, runs
+        it.
+
+        :type inst_instance: EnabledLink"""
+        inst_instance._initData(self.window, self.selected)
+        if inst_instance._enable():
+            inst_instance.Execute()
+            return True
+        return False
+
+    def Execute(self):
+        ##: Not the best implementation. It is pretty readable and obvious though
+        # Look for a BAIN wizard first, best integration with BAIN (duh)
+        if self._try_installer(Installer_Wizard(bAuto=False)): return
+        # Next, look for an FOMOD wizard - not quite as good, but at least it's
+        # visual
+        if self._try_installer(Installer_Fomod()): return
+        # Finally, fall back to the regular 'install' method
+        self._try_installer(Installer_Install())
 
 class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Waruddar
     """Copies folder structure of installer to clipboard."""
