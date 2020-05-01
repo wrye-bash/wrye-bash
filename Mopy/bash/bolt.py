@@ -620,9 +620,9 @@ class Path(object):
         """Size of file or directory."""
         if self.isdir():
             join = os.path.join
-            getSize = os.path.getsize
+            op_size = os.path.getsize
             try:
-                return sum([sum(map(getSize,map(lambda z: join(x,z),files))) for x,y,files in _walk(self._s)])
+                return sum([sum(map(op_size,map(lambda z: join(x,z),files))) for x,y,files in _walk(self._s)])
             except ValueError:
                 return 0
         else:
@@ -1484,12 +1484,12 @@ class Settings(DataDict):
         self.changed = set()
         self.deleted = set()
 
-    def loadDefaults(self,defaults):
+    def loadDefaults(self, default_settings):
         """Add default settings to dictionary. Will not replace values that are already set."""
-        self.defaults = defaults
-        for key in defaults.keys():
+        self.defaults = default_settings
+        for key in default_settings.keys():
             if key not in self.data:
-                self.data[key] = copy.deepcopy(defaults[key])
+                self.data[key] = copy.deepcopy(default_settings[key])
 
     def save(self):
         """Save to pickle file. Only key/values marked as changed are saved."""

@@ -61,7 +61,8 @@ class Installer(object):
     volatile = ('ci_dest_sizeCrc', 'skipExtFiles', 'skipDirFiles', 'status',
         'missingFiles', 'mismatchedFiles', 'project_refreshed',
         'mismatchedEspms', 'unSize', 'espms', 'underrides', 'hasWizard',
-        'espmMap', 'hasReadme', 'hasBCF', 'hasBethFiles', '_dir_dirs_files')
+        'espmMap', 'hasReadme', 'hasBCF', 'hasBethFiles', '_dir_dirs_files',
+        'has_fomod_conf')
     __slots__ = persistent + volatile
     #--Package analysis/porting.
     type_string = _(u'Unrecognized')

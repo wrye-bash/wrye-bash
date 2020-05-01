@@ -1327,12 +1327,12 @@ class WryeParser(ScriptParser.Parser):
         if self.bAuto:
             # auto wizard will resolve SelectOne/SelectMany only if default(s)
             # were specified.
-            defaults = [t for t, default in titles.items() if default]
-            if not bMany: defaults = defaults[:1]
-            if defaults:
+            defaults_ = [t for t, default in titles.items() if default]
+            if not bMany: defaults_ = defaults_[:1]
+            if defaults_:
                 self.PushFlow(u'Select', False,
                               [u'SelectOne', u'SelectMany', u'Case',
-                               u'Default', u'EndSelect'], values=defaults,
+                               u'Default', u'EndSelect'], values=defaults_,
                               hitCase=False)
                 return
         self.choiceIdex += 1

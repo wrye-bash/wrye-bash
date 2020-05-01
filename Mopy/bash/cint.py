@@ -15447,7 +15447,7 @@ class ObCollection(object):
         return _CGetRecordUpdatedReferences(self._CollectionID, 0)
 
     def Debug_DumpModFiles(self):
-        col = [_(u"Collection (%08X) contains the following modfiles:") % (self._CollectionID,)]
+        col = [_(u"Collection contains the following modfiles:")]
         lo_mods = [(_CGetModLoadOrderByID(mod._ModID), mod.ModName,
                     mod.FileName) for mod in self.AllMods]
         files = [_(u"Load Order (%s), Name(%s)") % (
@@ -15456,4 +15456,4 @@ class ObCollection(object):
             u'--' if lo == -1 else (u'%02X' % lo), mname, fname)
                  for lo, mname, fname in lo_mods]
         col.extend(files)
-        return u'\n'.join(col).encode('utf-8')
+        return u'\n'.join(col)

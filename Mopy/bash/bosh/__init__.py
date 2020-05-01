@@ -3266,10 +3266,8 @@ def initOptions(bashIni):
                     compValue = compValue.lower()
                     if compValue in (_(u'-option(s)'),_(u'tooltip text'),_(u'default')):
                         compValue = compDefaultValue
-                if settingType is list:
-                    if compValue != compDefaultValue[0]:
-                        usedSettings[usedKey] = value
-                elif compValue != compDefaultValue:
+                if compValue != (compDefaultValue[
+                    0] if settingType is list else compDefaultValue):
                     usedSettings[usedKey] = value
 
     tooldirs['Tes4ViewPath'] = tooldirs['Tes4EditPath'].head.join(u'TES4View.exe')

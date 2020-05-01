@@ -1185,18 +1185,18 @@ class MelVmad(MelBase):
         self._script_loader = self.Script()
         self._vmad_class = None
 
-    def _get_special_handler(self, rec_sig):
+    def _get_special_handler(self, record_sig):
         """Internal helper method for instantiating / retrieving a VMAD handler
         instance.
 
-        :param rec_sig: The signature of the record type in question.
-        :type rec_sig: str
+        :param record_sig: The signature of the record type in question.
+        :type record_sig: str
         :rtype: _AVmadComponent"""
-        special_handler = self._handler_map[rec_sig]
+        special_handler = self._handler_map[record_sig]
         if type(special_handler) == type:
             # These initializations need to be delayed, since they require
             # MelVmad to be fully initialized first, so do this JIT
-            self._handler_map[rec_sig] = special_handler = special_handler()
+            self._handler_map[record_sig] = special_handler = special_handler()
         return special_handler
 
     def loadData(self, record, ins, sub_type, size_, readId):

@@ -2343,7 +2343,7 @@ class InstallersList(balt.UIList):
         new_name = GPath(new_name)
         to_rename = self.GetSelected()
         renaming_type = to_rename and type(self.data_store[to_rename[0]])
-        if renaming_type.is_marker():
+        if renaming_type and renaming_type.is_marker():
             new_name, count = GPath(u'==' + new_name.s.strip(u'=') + u'=='), 0
             while new_name in self.data_store:
                 count += 1
