@@ -998,6 +998,7 @@ class ModList(_ModsUIList):
             moveMod = 1 if code in balt.wxArrowDown else -1
             moved = False
             for chunk in chunks:
+                if not chunk: continue # nothing to move, skip
                 newIndex = chunk[0] + moveMod
                 if chunk[-1] + moveMod == self.item_count:
                     continue # trying to move last plugin past the list
