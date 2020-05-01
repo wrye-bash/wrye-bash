@@ -306,7 +306,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.installers.sortStructure':False,
     'bash.installers.conflictsReport.showLower':True,
     'bash.installers.conflictsReport.showInactive':False,
-    'bash.installers.conflictsReport.showBSAConflicts':False,
+    u'bash.installers.conflictsReport.showBSAConflicts': True,
     'bash.installers.goodDlls':{},
     'bash.installers.badDlls':{},
     'bash.installers.onDropFiles.action':None,

@@ -1806,7 +1806,7 @@ class MenuLink(Link):
         else: # If we know we're not enabled, we can skip adding child links
             for link in self.links:
                 link.AppendToMenu(subMenu, window, selection)
-            appended_menu.Enable(self._should_enable())
+            appended_menu.Enable(self._enable_menu())
         return subMenu
 
     @staticmethod
@@ -1814,11 +1814,20 @@ class MenuLink(Link):
         """Hover over a submenu, clear the status bar text"""
         Link.Frame.set_status_info(u'')
 
-    def _should_enable(self):
+    def _enable_menu(self):
         """Disable ourselves if none of our children are enabled."""
-        ##: This hasattr call is reall ugly, needed to support nested menus
-        return any(not hasattr(
-            l, u'_enable') or l._enable() for l in self.links)
+        ##: This hasattr call is really ugly, needed to support nested menus
+        for l in self.links:
+            if hasattr(l, u'_enable_menu'):
+                # MenuLinks have an _enable method too, avoid calling that
+                if l._enable_menu(): return True
+            elif hasattr(l, u'_enable'):
+                # This is an EnabledLink, check if it's enabled
+                if l._enable(): return True
+            else:
+                # This is some other type of link that's always enabled
+                return True
+        return False
 
 class ChoiceLink(Link):
     """List of Choices with optional menu items to edit etc those choices."""
@@ -1853,7 +1862,7 @@ class ChoiceMenuLink(ChoiceLink, MenuLink):
     """Combination of ChoiceLink and MenuLink. Turns off the 'disable if no
     children are enabled' behavior of MenuLink since ChoiceLinks do not have
     a static number of children."""
-    def _should_enable(self):
+    def _enable_menu(self):
         return True
 
 class TransLink(Link):
