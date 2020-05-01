@@ -1050,18 +1050,20 @@ class Installer(object):
         bsa_ext = bush.game.Bsa.bsa_extension
         for dest, src in dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
-            # Check the destination, since plugins may have been renamed
-            destFull = join_data_dir(norm_ghostGet(dest, dest))
-            dest_tail = destFull.tail
-            if dest_tail in installer_plugins:
-                mods.add(dest_tail)
+            # Work with ghosts lopped off internally and check the destination,
+            # since plugins may have been renamed
+            dest_path = GPath(dest)
+            if dest in installer_plugins:
+                mods.add(dest_path)
             elif is_ini_tweak(dest):
-                inis.add(dest_tail)
-            elif dest_tail.cext == bsa_ext:
-                bsas.add(dest_tail)
+                inis.add(dest_path)
+            elif dest_path.cext == bsa_ext:
+                bsas.add(dest_path)
             data_sizeCrcDate_update[dest] = (size, crc, -1) ##: HACK we must try avoid stat'ing the mtime
             add_source(srcDirJoin(src))
-            add_dest(destFull)
+            # Append the ghost extension JIT since the FS operation below will
+            # need the exact path to copy to
+            add_dest(join_data_dir(norm_ghostGet(dest, dest)))
             subprogressPlus()
         #--Now Move
         try:
