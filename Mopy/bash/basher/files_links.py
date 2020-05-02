@@ -147,7 +147,9 @@ class File_Duplicate(ItemLink):
             dests.append(destName)
         if dests:
             if fileInfo.isMod(): fileInfos.cached_lo_save_lo()
-            fileInfos.refresh(refresh_infos=False)
+            ##: refresh_infos=True for saves - would love to specify something
+            # like refresh_only=dests - #353
+            fileInfos.refresh()
             self.window.RefreshUI(redraw=dests, detail_item=dests[-1],
                                   refreshSaves=False) #(dup) saves not affected
             self.window.SelectItemsNoCallback(dests)
