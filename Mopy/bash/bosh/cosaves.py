@@ -24,8 +24,8 @@
 """Script extender cosave files. They are composed of a header and script
 extender plugin chunks which, in turn are composed of chunks. We need to
 read them to log stats and write them to remap espm masters. We only handle
-renaming of the masters of the xSE plugin chunk itself and of the Pluggy chunk.
-"""
+renaming of the masters of the xSE plugin chunk itself and of the Pluggy
+chunk."""
 
 __author__ = u'Infernio'
 
@@ -37,7 +37,7 @@ from . import bak_file_pattern
 from ..bolt import sio, decode, encode, struct_pack, struct_unpack, \
     unpack_string, unpack_int, unpack_short, unpack_4s, unpack_byte, \
     unpack_str16, unpack_float, unpack_double, unpack_int_signed, \
-    unpack_str32, AFile
+    unpack_str32, AFile, unpack_spaced_string
 from ..exception import AbstractError, FileError, BoltError
 
 #------------------------------------------------------------------------------
@@ -58,6 +58,10 @@ def _unpack_cosave_str32(ins): return _cosave_decode(unpack_str32(ins))
 def _pack_cosave_str32(out, uni_str):
     _pack(out, '=I', len(uni_str))
     out.write(_cosave_encode(uni_str))
+def _unpack_cosave_space_str(ins):
+    return _cosave_decode(unpack_spaced_string(ins))
+def _pack_cosave_space_str(out, uni_str):
+    out.write(_cosave_encode(uni_str).replace(b' ', b'\x07') + b' ')
 
 class _Remappable(object):
     """Mixin for objects inside cosaves that have to be updated when the names
@@ -219,15 +223,15 @@ class _xSEChunk(_AChunk):
     # Whether or not we've fully decoded this chunk. If that is the case, the
     # fallback functionality is disabled.
     _fully_decoded = False
-    __slots__ = ('chunk_type', 'chunk_version', 'chunk_data')
+    __slots__ = (u'chunk_type', u'chunk_version', u'data_len', u'chunk_data')
 
     def __init__(self, ins, chunk_type):
         self.chunk_type = chunk_type
         self.chunk_version = unpack_int(ins)
-        data_len = unpack_int(ins)
+        self.data_len = unpack_int(ins)
         # If we haven't fully decoded this chunk, treat it as a binary blob
         if not self._fully_decoded:
-            self.chunk_data = ins.read(data_len)
+            self.chunk_data = ins.read(self.data_len)
 
     def write_chunk(self, out):
         # Don't forget to reverse signature when writing again
@@ -261,22 +265,18 @@ class _xSEModListChunk(_xSEChunk, _Dumpable, _Remappable):
         self.mod_names = []
 
     def read_mod_names(self, ins, mod_count):
-        """
-        Reads a list of mod names with length mod_count from the specified
+        """Reads a list of mod names with length mod_count from the specified
         input stream. The result is saved in the mod_names variable.
 
         :param ins: The input stream to read from.
-        :param mod_count: The number of mod names to read.
-        """
+        :param mod_count: The number of mod names to read."""
         for x in xrange(mod_count):
             self.mod_names.append(_unpack_cosave_str16(ins))
 
     def write_mod_names(self, out):
-        """
-        Writes the saved list of mod names to the specified output stream.
+        """Writes the saved list of mod names to the specified output stream.
 
-        :param out: The output stream to write to.
-        """
+        :param out: The output stream to write to."""
         for mod_name in self.mod_names:
             _pack_cosave_str16(out, mod_name)
 
@@ -462,12 +462,82 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
         for element in self.elements:
             element.dump_to_log(log, save_masters)
 
+class _xSEChunkDATA(_xSEModListChunk):
+    """A DATA chunk. Added by SOS for Skyrim LE and SE. We need to read/write
+    it because it contains a (terribly formatted) list of mod names. See
+    Storage.cpp in the SOS download for its creation (no specification
+    available)."""
+    _fully_decoded = True
+    __slots__ = (u'sos_version', u'remaining_data')
+
+    def __init__(self, ins, chunk_type):
+        super(_xSEChunkDATA, self).__init__(ins, chunk_type)
+        # Avoid read_mod_names, these strings are space-terminated. Yep, that's
+        # right. Not null-terminated or specified with a length, they are
+        # *space-terminated*. Spaces in the file name are escaped to \x07
+        # instead.
+        start_pos = ins.tell()
+        # The version is stored as a string of digits, e.g. '300004'
+        self.sos_version = _unpack_cosave_space_str(ins)
+        if self.chunk_version > 3:
+            # New format in SSE, no longer uses the 'nomod' nonsense. Once
+            # again, the number of mods is stored literally as a string of
+            # digits, e.g. '153'.
+            num_plugins = int(_unpack_cosave_space_str(ins))
+            for x in xrange(num_plugins):
+                self.mod_names.append(_unpack_cosave_space_str(ins))
+        else:
+            for x in xrange(256):
+                # This chunk always has 256 mods listed, any excess ones
+                # just get the string 'nomod' stored.
+                read_string = _unpack_cosave_space_str(ins)
+                if read_string.lower() != u'nomod':
+                    self.mod_names.append(read_string)
+        # Treat the remainder as a binary blob, no mod names in there
+        read_size = ins.tell() - start_pos
+        self.remaining_data = ins.read(self.data_len - read_size)
+
+    def chunk_length(self):
+        # stored_version & space separator between stored_version and either
+        # the mods or the mod count (depending on chunk_version)
+        total_len = len(self.sos_version) + 1
+        if self.chunk_version > 3:
+            total_len += len(self.mod_names) # space separators between mods
+            # the mod count as a string & space separator between it and mods
+            total_len += len(unicode(len(self.mod_names))) + 1
+        else:
+            total_len += 256 # space seperators between mods
+            total_len += len(u'nomod') * (256 - len(self.mod_names)) # 'nomod's
+        total_len += sum(imap(len, self.mod_names)) # all present mods
+        return total_len + len(self.remaining_data) # all other data
+
+    def write_chunk(self, out):
+        super(_xSEChunkDATA, self).write_chunk(out)
+        _pack_cosave_space_str(out, self.sos_version)
+        # Avoid write_mod_names, see reasoning above
+        if self.chunk_version > 3:
+            _pack_cosave_space_str(out, unicode(len(self.mod_names)))
+            for mod_name in self.mod_names:
+                _pack_cosave_space_str(out, mod_name)
+        else:
+            # Note that we need to append the 'nomod's we removed during
+            # loading here again
+            all_mod_names = self.mod_names + [u'nomod'] * (
+                    256 - len(self.mod_names))
+            for mod_name in all_mod_names:
+                _pack_cosave_space_str(out, mod_name)
+        out.write(self.remaining_data)
+
+    def dump_to_log(self, log, save_masters):
+        log(_(u'   %u loaded mods:') % len(self.mod_names))
+        super(_xSEChunkDATA, self).dump_to_log(log, save_masters)
+
 class _xSEChunkLIMD(_xSEModListChunk):
     """An LIMD (Light Mod Files) chunk. Available for SKSE64 and F4SE. This is
     the new version of the LMOD chunk. In contrast to LMOD, LIMD can store
-    more than 255 light mods (up to 65535). However, for SKSE64, this chunk has
-    now been deprecated, along with the MODS chunk, in favor of the PLGN chunk.
-    New versions of SKSE64 no longer generate it. See Core_Serialization.cpp or
+    more than 255 light mods (up to 65535). This chunk has now been deprecated,
+    along with the MODS chunk, in favor of the PLGN chunk. New versions of
+    SKSE64/F4Se no longer generate it. See Core_Serialization.cpp or
     InternalSerialization.cpp for its creation (no specification available)."""
     _fully_decoded = True
     __slots__ = ()
@@ -543,7 +613,7 @@ class _xSEChunkPLGN(_xSEChunk, _Dumpable, _Remappable):
     This is information that cannot be obtained from the normal save file,
     which stores two independent lists for regular mods and light mods. This
     chunk is used by Wrye Bash to display the correct save master order for
-    SSE. Only available for SKSE64. See InternalSerialization.cpp for its
+    SSE. Available for SKSE64 and F4SE. See InternalSerialization.cpp for its
     creation (no specification available)."""
     _fully_decoded = True
     __slots__ = ('mod_entries',)
@@ -637,6 +707,7 @@ class _xSEChunkSTVR(_xSEChunk, _Dumpable):
 # Maps all decoded xSE chunk types to the classes that implement them
 _xse_class_dict = {
     u'ARVR': _xSEChunkARVR,
+    u'DATA': _xSEChunkDATA,
     u'LIMD': _xSEChunkLIMD,
     u'LMOD': _xSEChunkLMOD,
     u'MODS': _xSEChunkMODS,
@@ -665,7 +736,7 @@ class _xSEPluginChunk(_AChunk, _Remappable):
     def __init__(self, ins, light=False):
         self.plugin_signature = unpack_int(ins) # aka opcodeBase on pre papyrus
         num_chunks = unpack_int(ins)
-        ins.read(4) # discard the size, we'll generate it when writing
+        ins.seek(4, 1) # discard the size, we'll generate it when writing
         self.chunks = []
         self.remappable_chunks = []
         if light:

@@ -1585,6 +1585,17 @@ def unpack_string(ins, string_len):
 def unpack_many(ins, fmt):
     return struct_unpack(fmt, ins.read(struct.calcsize(fmt)))
 
+def unpack_spaced_string(ins, replacement_char=b'\x07'):
+    """Unpacks a space-terminated string. Occurs if someone used
+    std::stringstream to convert struct data into strings. Obviously that means
+    a replacement character is needed for spaces, which is \x07 by default."""
+    wip_string = []
+    while True:
+        next_char = ins.read(1)
+        if next_char == b' ': break
+        wip_string.append(b' ' if next_char == replacement_char else next_char)
+    return b''.join(wip_string)
+
 #------------------------------------------------------------------------------
 class DataTableColumn(object):
     """DataTable accessor that presents table column as a dictionary."""
