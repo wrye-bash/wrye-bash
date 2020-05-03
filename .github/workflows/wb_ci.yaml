@@ -8,6 +8,8 @@ jobs:
     steps:
     - name: Checkout commit
       uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: Set up Python 2.7
       uses: actions/setup-python@v2
       with:

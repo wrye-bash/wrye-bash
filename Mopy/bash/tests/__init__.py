@@ -21,3 +21,106 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+"""Sets up the necessary environment to run Wrye Bash tests. This whole file is
+quite hacky, but running tests for WB is going to be a bit hacky no matter
+what."""
+
+import os
+import toml
+import traceback
+import wx
+from .. import bush, localize
+
+class FailedTest(Exception):
+    """Misc exception for when a test should fail for meta reasons."""
+
+_meta_cache = {}
+def get_meta_value(base_file_path, meta_key):
+    """Returns the value corresponding to the given meta key from the meta file
+    for the specified file. Gives helpful error messages if the file is
+    missing, malformed, is missing the specified key, etc."""
+    base_file_path = u'%s' % base_file_path # To support bolt.Path as well
+    meta_file = base_file_path + u'.meta'
+    try:
+        parsed_meta = _meta_cache[base_file_path]
+    except KeyError:
+        try:
+            parsed_meta = _meta_cache[base_file_path] = toml.load(meta_file)
+        except TypeError: # File is missing
+            raise FailedTest(u'%s is missing a .meta file.' % base_file_path)
+        except toml.TomlDecodeError: # File has incorrect syntax
+            traceback.print_exc()
+            raise FailedTest(u'%s has malformed TOML syntax. Check the log '
+                             u'for a traceback pointing to the '
+                             u'problem.' % meta_file)
+    try:
+        return parsed_meta[meta_key]
+    except KeyError:
+        raise FailedTest(u"%s is missing the key '%s'" % (meta_file, meta_key))
+
+def iter_games(resource_subfolder):
+    """Yields all games for which resources from the specified subfolder are
+    available."""
+    full_subfolder = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  u'test_resources', resource_subfolder)
+    for game_folder in os.listdir(full_subfolder):
+        # Don't return README.md as a game
+        if os.path.isdir(os.path.join(full_subfolder, game_folder)):
+            yield game_folder
+
+def iter_resources(resource_subfolder, filter_by_game=frozenset()):
+    """Yields all resources in the specified test_resources subfolder. Note
+    that absolute paths are returned, as the intended use case of this method
+    is for testing AFile-based classes.
+
+    :param filter_by_game: If nonempty, limits yielded resources to ones from
+        that game's subfolder only."""
+    full_subfolder = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  u'test_resources', resource_subfolder)
+    for game_folder in os.listdir(full_subfolder):
+        if filter_by_game and game_folder not in filter_by_game: continue
+        full_game_folder = os.path.join(full_subfolder, game_folder)
+        for resource_file in os.listdir(full_game_folder):
+            yield os.path.join(full_game_folder, resource_file)
+
+# Here be hacks ---------------------------------------------------------------
+# Maps the resource subfolder game names back to fsNames
+resource_to_fsName = {
+    u'enderal': u'Enderal',
+    u'fallout3': u'Fallout3',
+    u'fallout4': u'Fallout4',
+    u'fallout4vr': u'Fallout4VR',
+    u'falloutnv': u'FalloutNV',
+    u'morrowind': u'Morrowind',
+    u'oblivion': u'Oblivion',
+    u'skyrim': u'Skyrim',
+    u'skyrimse': u'Skyrim Special Edition',
+    u'skyrimvr': u'SkyrimVR',
+}
+# Cache for created and initialized GameInfos
+_game_cache = {}
+def set_game(game_fsName):
+    """Hotswitches bush.game to the game with the specified resource subfolder
+    name."""
+    # noinspection PyProtectedMember
+    try:
+        bush.game = _game_cache[game_fsName]
+    except KeyError:
+        bush.game = new_game = bush._allGames[game_fsName](u'')
+        from .. import brec
+        brec.MelModel = None
+        new_game.init()
+        _game_cache[game_fsName] = new_game
+    bush.game_mod = bush._allModules[game_fsName]
+    from .. import brec
+    brec.MelModel = bush.game_mod.records._MelModel
+
+def _emulate_startup():
+    """Emulates a normal Wrye Bash startup, but without launching basher
+    etc."""
+    localize.setup_locale(u'English', wx)
+    # noinspection PyProtectedMember
+    bush._supportedGames()
+    set_game(u'Oblivion') # just need to pick one to start
+
+_emulate_startup()

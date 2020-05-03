@@ -25,6 +25,7 @@
 """This module contains the Fallout 4 record classes. Since they're identical
 to the Fallout 4 classes, we just import those."""
 from ..fallout4.records import *
+from ..fallout4.records import _MelModel # HACK - needed for tests
 
 # Only difference from FO4 is the default version, but this seems less hacky
 # than adding a game var just for this and dynamically importing it in FO4
