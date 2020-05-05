@@ -40,3 +40,7 @@ Mopy/bash/l10n/*NEW.txt
 # if a symlink
 .idea
 .vscode
+
+# pytest-cov
+.coverage
+.cov_html/
