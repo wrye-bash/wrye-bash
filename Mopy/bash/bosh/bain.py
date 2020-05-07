@@ -1056,7 +1056,7 @@ class Installer(object):
             if dest in installer_plugins:
                 mods.add(dest_path)
             elif is_ini_tweak(dest):
-                inis.add(dest_path)
+                inis.add(dest_path.tail)
             elif dest_path.cext == bsa_ext:
                 bsas.add(dest_path)
             data_sizeCrcDate_update[dest] = (size, crc, -1) ##: HACK we must try avoid stat'ing the mtime
