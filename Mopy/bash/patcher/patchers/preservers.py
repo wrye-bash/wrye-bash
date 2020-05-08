@@ -531,20 +531,7 @@ class ImportGraphicsPatcher(APreserver):
             for attr, val in id_data_dict[rfid].items():
                 rec_attr = __attrgetters[attr](record)
                 if isinstance(rec_attr, str) and isinstance(val, str):
-                    if rec_attr.lower() != val.lower():
-                        break
-                    continue
-                elif attr in bush.game.graphicsModelAttrs:
-                    try:
-                        if rec_attr.modPath.lower() != val.modPath.lower():
-                            break
-                        continue
-                    except AttributeError:
-                        if rec_attr is val is None: continue
-                        if rec_attr is None or val is None: # not both
-                            break
-                        if rec_attr.modPath is val.modPath is None: continue
-                        break
+                    rec_attr, val = rec_attr.lower(), val.lower()
                 if rec_attr != val: break
             else: continue
             for attr, val in id_data_dict[rfid].items():

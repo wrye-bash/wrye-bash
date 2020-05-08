@@ -426,7 +426,7 @@ class _AParser(_HandleAliases):
     @classmethod
     def get_empty_object(cls, record, faction_fid):
         """Get an empty MelObject to add to the record array."""
-        target_entry = record.getDefault(cls._target_array)
+        target_entry = record.get_mel_object_for_group(cls._target_array)
         target_entry.faction = faction_fid
         return target_entry
 
@@ -500,16 +500,6 @@ class ActorFactions(_AParser):
         if self._called_from_patcher: # only used as a csv reader in patcher
             raise NotImplementedError
         return {f.faction: f.rank for f in record.factions} # last mod wins
-
-    @classmethod
-    def get_empty_object(cls, record, faction_fid):
-        """We also need to set the (by default None) unused1 MelStruct
-        element."""
-        target_entry = super().get_empty_object(record, faction_fid)
-        if hasattr(target_entry, 'unused1'): # Gone in FO4
-            ##: in Oblivion.esm I get {b'NL\x00', b'IFZ', None}
-            target_entry.unused1 = b'ODB'
-        return target_entry
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
         lfid = self._coerce_fid(csv_fields[5], csv_fields[6])

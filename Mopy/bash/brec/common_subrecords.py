@@ -114,13 +114,6 @@ class MelActionFlags(MelUInt32Flags):
     def __init__(self):
         super().__init__(b'XACT', 'action_flags', self._act_flags)
 
-    ##: HACK - right solution is having None as the default for flags combined
-    # with the ability to mark subrecords as required (e.g. for QSDT)
-    def pack_subrecord_data(self, record):
-        flag_val = getattr(record, self.attr)
-        return self.packer(
-            flag_val) if flag_val != self._flag_default else None
-
 #------------------------------------------------------------------------------
 class MelActivateParents(MelGroup):
     """XAPD/XAPR (Activate Parents) subrecords for REFR records."""
@@ -1104,7 +1097,8 @@ class _AMelLLFlags:
     _flags_sig: bytes
 
     def __init__(self):
-        super().__init__(self._flags_sig, 'flags', self._lvl_flags)
+        super().__init__(self._flags_sig, 'flags', self._lvl_flags,
+                         set_default=0)
 
 class MelLLFlags(_AMelLLFlags, MelUInt8Flags):
     """Handles the leveled list subrecord LVLF (Flags)."""
@@ -1300,9 +1294,6 @@ class MelMODS(MelBase):
 
     def hasFids(self,formElements):
         formElements.add(self)
-
-    def setDefault(self,record):
-        setattr(record, self.attr, None)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs,
                  __unpacker=int_unpacker, __load_fid=_fid_element.load_bytes):
@@ -1710,7 +1701,7 @@ class MelRaceData(MelTruncatedStruct):
         return self._packer(*values)
 
 #------------------------------------------------------------------------------
-class MelRaceParts(MelNull):
+class MelRaceParts(MelBase):
     """Handles a subrecord array, where each subrecord is introduced by an
     INDX subrecord, which determines the meaning of the subrecord. The
     resulting attributes are set directly on the record."""
@@ -1746,9 +1737,9 @@ class MelRaceParts(MelNull):
     def getSlotsUsed(self):
         return tuple(self._indx_to_attr.values())
 
-    def setDefault(self, record):
+    def getDefaulters(self, mel_set_instance):
         for element in self._indx_to_loader.values():
-            element.setDefault(record)
+            element.getDefaulters(mel_set_instance)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs,
                  __unpacker=int_unpacker):
@@ -1761,7 +1752,7 @@ class MelRaceParts(MelNull):
     def dumpData(self, record, out):
         # Note that we have to dump out the attributes sorted by the INDX value
         for part_indx, part_attr in dict_sort(self._indx_to_attr):
-            if hasattr(record, part_attr): # only dump present parts
+            if getattr(record, part_attr) is not None: #only dump present parts
                 MelUInt32(b'INDX', 'UNUSED').packSub(out,
                     struct_pack('=I', part_indx))
                 self._indx_to_loader[part_indx].dumpData(record, out)

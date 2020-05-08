@@ -35,6 +35,21 @@ from ..exception import StateError
 
 # no local imports, imported everywhere in brec
 
+# Metaclasses -----------------------------------------------------------------
+class SlottedType(type):
+    """Metaclass responsible for adding slots to its instances."""
+
+    def __new__(cls, name, bases, classdict):
+        slots = classdict.get('__slots__', ())
+        ms_slots = melSet.getSlotsUsed() if (
+                melSet := classdict.get('melSet')) else ()
+        if ms_slots and slots:
+            if dup_slots := set(slots) & set(ms_slots):
+                raise SyntaxError(f'{dup_slots} common in melSet ({ms_slots}) '
+                                  f'and provided __slots__ ({slots})')
+        classdict['__slots__'] = sorted({*slots, *ms_slots})
+        return super(SlottedType, cls).__new__(cls, name, bases, classdict)
+
 # Form ids --------------------------------------------------------------------
 class FormId:
     """Immutable class wrapping an (integer) plugin form ID. These must be
@@ -43,9 +58,7 @@ class FormId:
 
     def __init__(self, int_val):
         if not isinstance(int_val, int):
-            ##: re add : {int_val!r} when setDefault is gone - huge performance
-            # impact as it run for all _Tes4Fid and blows - repr is expensive!
-            raise TypeError('Only int accepted in FormId')
+            raise TypeError(f'Only int accepted in FormId - given {int_val!r}')
         self.short_fid = int_val
 
     # factories
@@ -281,8 +294,7 @@ short_mapper_no_engine: Callable | None = None
 FID = lambda x: FORM_ID(x)
 
 class _DummyFid(_Tes4Fid):
-    """Used by setDefault (yak) - will blow on dump, make sure you replace
-    it with a proper FormId."""
+    """Will blow on dump, make sure you replace it with a proper FormId."""
     def dump(self):
         raise NotImplementedError('Dumping a dummy fid')
 DUMMY_FID = _DummyFid(0)
@@ -587,3 +599,27 @@ perk_distributor = {
         b'CTDA|CIS1|CIS2|DATA': 'perk_effects',
     },
 }
+
+# GetAttrer -------------------------------------------------------------------
+class GetAttrer(metaclass=SlottedType):
+    """This ominous sounding class encapsulates the common handling of
+    attributes in MelRecord and MelObject subclasses. We used to setDefault
+    values for those in MelRecord so the code might expect to be able to do
+    record.attr without an attribute error. However, the goal is to obsolete
+    this behavior - so add debug code here to track these uses and replace
+    them - as it does not make sense to ask for an attribute to a record
+    that misses it. This is meant especially for defaultrs, as the
+    mel_providers_dict will be difficult to uproot and listers is somewhat
+    convenient."""
+
+    def __getattr__(self, missing_attr):
+        if missing_attr in self.__class__.melSet.defaulters:
+            target = self.__class__.melSet.defaulters[missing_attr]
+        elif missing_attr in self.__class__.melSet.listers:
+            target = []
+        elif missing_attr in self.__class__.melSet.mel_providers_dict:
+            target = self.__class__.melSet.mel_providers_dict[missing_attr]()
+        else:
+            raise AttributeError(missing_attr)
+        setattr(self, missing_attr, target)
+        return target

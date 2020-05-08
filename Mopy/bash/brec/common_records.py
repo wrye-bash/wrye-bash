@@ -31,9 +31,9 @@ from . import utils_constants
 from .advanced_elements import AttrValDecider, MelSimpleArray, MelSorted, \
     MelUnion
 from .basic_elements import MelBase, MelFid, MelSimpleGroups, MelFixedString, \
-    MelFloat, MelGroups, MelLString, MelNull, MelSInt32, MelString, \
-    MelStruct, MelUInt8Bool, MelUInt32, MelUInt32Flags, MelUnicode, \
-    unpackSubHeader, MelUInt32Bool
+    MelFloat, MelGroups, MelLString, MelNull, MelSInt32, MelString, MelStruct, \
+    MelUInt8Bool, MelUInt32, MelUInt32Flags, MelUnicode, unpackSubHeader, \
+    MelUInt32Bool, MelGroup, AttrsCompare
 from .common_subrecords import MelBounds, MelColor, MelColorInterpolator, \
     MelDebrData, MelDescription, MelEdid, MelImpactDataset, \
     MelValueInterpolator
@@ -211,10 +211,9 @@ class AMreHeader(MelRecord):
             return ('masters',) + (('master_sizes',)
                                    if self._has_sizes else ())
 
-        def setDefault(self, record):
-            record.masters = []
-            if self._has_sizes:
-                record.master_sizes = []
+        def getDefaulters(self, mel_set_instance):
+            mel_set_instance.listers.add('masters')
+            if self._has_sizes: mel_set_instance.listers.add('master_sizes')
 
         def load_mel(self, record, ins, sub_type, size_, *debug_strs):
             __unpacker=structs_cache[u'Q'].unpack
@@ -781,3 +780,12 @@ class MreRfct(MelRecord):
         MelStruct(b'DATA', ['3I'], (FID, 'rfct_effect_art'),
             (FID, 'rfct_shader'), (_RfctFlags, 'rfct_flags')),
     )
+
+#------------------------------------------------------------------------------
+class MelModelCompare(MelGroup):
+
+    class _CompareModPaths(AttrsCompare):
+        compare_actions = {'modPath': lambda x: x and x.lower()}
+        compare_attrs = tuple(compare_actions)
+
+    _mel_object_base_type = _CompareModPaths

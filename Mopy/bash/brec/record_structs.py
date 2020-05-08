@@ -29,10 +29,10 @@ import zlib
 from collections import defaultdict
 from typing import Self
 
-from . import utils_constants
+from . import utils_constants, SlottedType
 from .basic_elements import SubrecordBlob, unpackSubHeader
 from .mod_io import ModReader, RecordHeader
-from .utils_constants import int_unpacker
+from .utils_constants import int_unpacker, GetAttrer
 from .. import bolt, exception
 from ..bolt import decoder, flag, float_or_none, int_or_zero, sig_to_str, \
     str_or_none, struct_pack
@@ -149,12 +149,14 @@ class MelSet(object):
     def __init__(self,*elements):
         # Filter out None, produced by static deciders like fnv_only
         self.elements = [e for e in elements if e is not None]
-        self.defaulters = {}
+        self.defaulters = {} # map record attributes to default
+        self.listers = set() # collect list record attributes
         self.loaders = {}
         self.formElements = set()
         self.sort_elements = []
+        self.mel_providers_dict = {}
         for element in self.elements:
-            element.getDefaulters(self.defaulters,'')
+            element.getDefaulters(self)
             element.getLoaders(self.loaders)
             element.hasFids(self.formElements)
             if element.needs_sorting():
@@ -189,11 +191,6 @@ class MelSet(object):
                     f'most likely points at an attribute collision, '
                     f'make sure to choose unique attribute names!')
             all_slots.update(element_slots)
-
-    def getDefault(self,attr):
-        """Returns default instance of specified instance. Only useful for
-        MelGroup and MelGroups."""
-        return self.defaulters[attr].getDefault()
 
     def dumpData(self,record, out):
         """Dumps state into out. Called by getSize()."""
@@ -243,15 +240,16 @@ class MelSet(object):
         distributor = _MelDistributor(distributor_config.copy())
         self.elements += (distributor,)
         distributor.getLoaders(self.loaders)
+        distributor.getDefaulters(self)
         distributor.set_mel_set(self)
         return self
 
 #------------------------------------------------------------------------------
 # Records ---------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class RecordType(type):
-    """Metaclass responsible for adding slots in MreRecord type instances and
-    collecting signature and type information on class creation."""
+class RecordType(SlottedType):
+    """Metaclass responsible for collecting signature and type information on
+    class creation - meant for MreRecord type instances."""
     # record sigs to class implementing them - collected at class creation
     sig_to_class = {}
     # Record types that *don't* have a complex child structure (e.g. CELL), are
@@ -265,9 +263,6 @@ class RecordType(type):
     nested_to_top = defaultdict(set)
 
     def __new__(cls, name, bases, classdict):
-        slots = classdict.get('__slots__', ())
-        classdict['__slots__'] = (*slots, *melSet.getSlotsUsed()) if (
-            melSet := classdict.get('melSet', ())) else slots
         new = super(RecordType, cls).__new__(cls, name, bases, classdict)
         if rsig := getattr(new, 'rec_sig', None):
             cls.sig_to_class[rsig] = new
@@ -497,7 +492,7 @@ class MreRecord(metaclass=RecordType):
             return index_dict
 
 #------------------------------------------------------------------------------
-class MelRecord(MreRecord):
+class MelRecord(MreRecord, GetAttrer):
     """Mod record built from mod record elements."""
     #--Subclasses must define as MelSet(*mels)
     melSet: MelSet = None
@@ -513,8 +508,6 @@ class MelRecord(MreRecord):
         if self.__class__.rec_sig != header.recType:
             raise ValueError(f'Initialize {type(self)} with header.recType '
                              f'{header.recType}')
-        for element in self.__class__.melSet.elements:
-            element.setDefault(self)
         MreRecord.__init__(self, header, ins, do_unpack=do_unpack)
 
     def getTypeCopy(self):
@@ -531,10 +524,14 @@ class MelRecord(MreRecord):
             cls.melSet.check_duplicate_attrs(cls.rec_sig)
 
     @classmethod
-    def getDefault(cls, attr):
-        """Returns default instance of specified instance. Only useful for
-        MelGroup and MelGroups."""
-        return cls.melSet.getDefault(attr)
+    def get_mel_object_for_group(cls, att):
+        """Create a MelObject instance and set default values. Only useful
+        for MelGroup and MelGroups. Create records usecase - no new uses!"""
+        mel_obj = cls.melSet.mel_providers_dict[att]()
+        for el in mel_obj.melSet.elements:
+            if hasattr(el, 'defaults'):  # a MelStruct
+                el.set_mel_struct_defaults(mel_obj)
+        return mel_obj
 
     def loadData(self, ins, endPos, *, file_offset=0):
         """Loads data from input stream."""

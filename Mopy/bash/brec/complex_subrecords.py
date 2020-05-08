@@ -97,9 +97,9 @@ class _MelCs2kCs2d(MelGroups):
     def getSlotsUsed(self):
         return '_had_cs2k', *super().getSlotsUsed()
 
-    def setDefault(self, record):
-        super().setDefault(record)
-        record._had_cs2k = False
+    def getDefaulters(self, mel_set_instance, mel_key=''):
+        super().getDefaulters(mel_set_instance, mel_key)
+        mel_set_instance.defaultrs['_had_cs2k'] = False
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         if sub_type == b'CS2D':
@@ -294,10 +294,19 @@ class _MelCtda(MelUnion):
         loaders[self._ctda_mel.mel_sig] = self
 
     def getSlotsUsed(self):
-        return self.decider_result_attr, *self._ctda_mel.getSlotsUsed()
+        return 'ctda_skip', self.decider_result_attr, \
+            *self._ctda_mel.getSlotsUsed()
 
-    def setDefault(self, record):
-        next(iter(self.element_mapping.values())).setDefault(record)
+    def getDefaulters(self, mel_set_instance):
+        defaultrs = mel_set_instance.defaulters
+        if self.decider_result_attr in defaultrs: # and defaultrs[self.decider_result_attr] is not None:
+            raise SyntaxError(
+                f'{self} duplicate attr {self.decider_result_attr}')
+        defaultrs[self.decider_result_attr] = None
+        # yep this one too will be assigned to slotted MelObject
+        self.decider._loader.getDefaulters(mel_set_instance)
+        next(iter(self.element_mapping.values())).getDefaulters(mel_set_instance)
+        # no fallback
 
 class _MelCtdaFo3(_MelCtda):
     """Version of _MelCtda that handles the additional complexities that were
@@ -601,22 +610,10 @@ class _MelObmeScitGroup(MelGroup):
     for another part of the code that's suffering from this). And we can't
     simply not put this in a group, because a bunch of code relies on a group
     called 'scriptEffect' existing..."""
+
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         target = getattr(record, self.attr)
-        if target is None:
-            class _MelHackyObject(MelObject):
-                @property
-                def efix_param_info(self):
-                    return record.efix_param_info
-                @efix_param_info.setter
-                def efix_param_info(self, new_efix_info):
-                    record.efix_param_info = new_efix_info
-            target = _MelHackyObject()
-            for element in self.elements:
-                element.setDefault(target)
-            target.__slots__ = [s for element in self.elements for s in
-                                element.getSlotsUsed()]
-            setattr(record, self.attr, target)
+        target.efix_param_info = record.efix_param_info
         self.loaders[sub_type].load_mel(target, ins, sub_type, size_,
             *debug_strs)
 
@@ -669,6 +666,13 @@ class _MelMgefCode(MelStruct):
         self._mgef_int_attr = f'_{mgef_code_attr}_as_int'
         self._emulated_attr = emulated_attr
 
+    def getDefaulters(self, mel_set_instance):
+        super().getDefaulters(mel_set_instance)
+        req = self._is_required
+        if self._emulated_attr:
+            mel_set_instance.defaulters[self._emulated_attr] = req and ''
+        mel_set_instance.defaulters[self._mgef_int_attr] = req and 0
+
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         super().load_mel(record, ins, sub_type, size_, *debug_strs)
         mgef_code = getattr(record, self._mgef_code_attr)
@@ -708,7 +712,17 @@ class _MelMgefCode(MelStruct):
         ret_slots = super().getSlotsUsed()
         if self._emulated_attr is not None:
             ret_slots += (self._emulated_attr,)
-        return ret_slots + (self._mgef_int_attr,)
+        return *ret_slots, self._mgef_int_attr
+
+class _MelMgefCodeScit(_MelMgefCode):
+    # HACK see _MelObmeScitGroup - we need to add efix_param_info
+
+    def getDefaulters(self, mel_set_instance):
+        super().getDefaulters(mel_set_instance)
+        mel_set_instance.defaulters['efix_param_info']= self._is_required and 0
+
+    def getSlotsUsed(self):
+        return *super().getSlotsUsed(), 'efix_param_info'
 
 # API - TES3 ------------------------------------------------------------------
 class MelEffectsTes3(MelGroups):
@@ -735,21 +749,19 @@ class MelEffectsTes4(MelSequential):
     def __init__(self):
         # Vanilla Elements ----------------------------------------------------
         self._vanilla_elements = [
-            # Structs put to required as we create effects/scriptEffect -
-            # maybe rework to assign attributes on the spot
             MelGroups('effects',
-                # REHE is Restore target's Health - EFID.effect_sig
-                # must be the same as EFIT.effect_sig. No need for _MelMgefCode
-                # here because we know we don't have OBME on this record
-                MelStruct(b'EFID', ['4s'], ('effect_sig', b'REHE')),
-                MelStruct(b'EFIT', ['4s', '4I', 'i'], ('effect_sig', b'REHE'),
-                    'magnitude', 'area', 'duration', 'recipient',
-                    'actorValue', is_required=True),
+                # EFID.effect_sig must be the same as EFIT.effect_sig. No need
+                # for _MelMgefCode here because we know we don't have OBME on
+                # this record
+                MelStruct(b'EFID', ['4s'], 'effect_sig'),
+                MelStruct(b'EFIT', ['4s', '4I', 'i'], 'effect_sig',
+                          'magnitude', 'area', 'duration', 'recipient',
+                          'actorValue'),
                 MelGroup('scriptEffect',
                     _MelEffectsScit(b'SCIT', ['2I', '4s', 'B', '3s'],
                         (FID, 'script_fid'), 'school', 'visual',
                         (self.se_flags, 'flags'), 'unused1',
-                        old_versions={'2I4s', 'I'}, is_required=True),
+                        old_versions={'2I4s', 'I'}),
                     MelFull(),
                 ),
             ),
@@ -760,7 +772,7 @@ class MelEffectsTes4(MelSequential):
                 MelObme(b'EFME', extra_format=['2B'],
                     extra_contents=['efit_param_info', 'efix_param_info'],
                     reserved_byte_count=10),
-                _MelMgefCode(b'EFID', ['4s'], ('effect_sig', b'REHE'),
+                _MelMgefCode(b'EFID', ['4s'], 'effect_sig',
                     mgef_code_attr='effect_sig'),
                 MelUnion({
                     0: MelStruct(b'EFIT', ['4s', '4I', '4s'], 'unused_name',
@@ -772,7 +784,7 @@ class MelEffectsTes4(MelSequential):
                         (FID, 'efit_param')),
                     2: _MelMgefCode(b'EFIT', ['4s', '4I', '4s'], 'unused_name',
                         'magnitude', 'area', 'duration', 'recipient',
-                        ('efit_param', b'REHE'), mgef_code_attr='efit_param'),
+                        'efit_param', mgef_code_attr='efit_param'),
                 }, decider=AttrValDecider('efit_param_info')),
                 _MelObmeScitGroup('scriptEffect',
                     ##: Test! xEdit has all this in EFIX, but it also
@@ -786,8 +798,8 @@ class MelEffectsTes4(MelSequential):
                         (1, 3): MelStruct(b'SCIT', ['2I', '4s', 'B', '3s'],
                             (FID, 'efix_param'), 'school', 'visual', se_fl,
                             'unused1'),
-                        2: _MelMgefCode(b'SCIT', ['4s', 'I', '4s', 'B', '3s'],
-                            ('efix_param', b'REHE'), 'school', 'visual', se_fl,
+                        2: _MelMgefCodeScit(b'SCIT', ['4s','I','4s','B','3s'],
+                            'efix_param', 'school', 'visual', se_fl,
                             'unused1', mgef_code_attr='efix_param'),
                     }, decider=AttrValDecider('efix_param_info')),
                     MelFull(),
@@ -810,9 +822,9 @@ class MelEffectsTes4(MelSequential):
 
     # Note that we only support creating vanilla effects, as our records system
     # isn't expressive enough to pass more info along here
-    def getDefaulters(self, defaulters, base):
+    def getDefaulters(self, mel_set_instance):
         for element in self._vanilla_elements:
-            element.getDefaulters(defaulters, base)
+            element.getDefaulters(mel_set_instance)
 
     def getLoaders(self, loaders):
         # We need to collect all signatures and assign ourselves for them all
@@ -1501,11 +1513,6 @@ class _AVmadComponent(object):
 
     @bolt.fast_cached_property
     def _component_class(self):
-        # TODO(inf) This seems to work - what we're currently doing in
-        #  records code, namely reassigning __slots__, does *nothing*:
-        #  https://stackoverflow.com/questions/27907373/dynamically-change-slots-in-python-3
-        #  Fix that by refactoring class creation like this for
-        #  MelBase/MelSet etc.!
         class _MelComponentInstance(MelObject):
             __slots__ = self.used_slots
         return _MelComponentInstance
