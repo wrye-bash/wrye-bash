@@ -2124,7 +2124,6 @@ class ListBoxes(DialogWindow):
             if liststyle == u'check':
                 checksCtrl = CheckListBox(self, choices=strings, isSingle=True,
                                           isHScroll=True)
-                checksCtrl.on_key_up.subscribe(self._on_key_up)
                 checksCtrl.on_context.subscribe(self._on_context)
                 checksCtrl.set_all_checkmarks(checked=True)
             elif liststyle == u'list':
@@ -2149,15 +2148,6 @@ class ListBoxes(DialogWindow):
         if self._width != self.component_size[0]:
             self._width = self.component_size[0]
             self.text.wrap(self.component_size[0] - 64)
-
-    @staticmethod
-    def _on_key_up(wrapped_evt, lb_instance):
-        """Char events"""
-        ##Ctrl-A - check all
-        if wrapped_evt.is_cmd_down and wrapped_evt.key_code == ord(u'A'):
-            lb_instance.set_all_checkmarks(
-                checked=not wrapped_evt.is_shift_down)
-            return EventResult.FINISH ##: needed?
 
     def _on_context(self, lb_instance):
         """Context Menu"""

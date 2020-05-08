@@ -1331,7 +1331,9 @@ class InstallerArchive(Installer):
             if progress:
                 progress(pngs_processed,
                          u'\n%s\n%s' % (_(u'Fixing PNGs...'), target_png))
-            archives.fix_png(tmp_dir.join(target_png).s)
+            # Will pass through Popen, which tries to encode as ASCII
+            with tmp_dir.join(target_png).unicodeSafe() as ascii_png:
+                archives.fix_png(ascii_png.s)
 
     def _extract_wizard_files(self, wizard_file_name, wizard_prog_title):
         with balt.Progress(wizard_prog_title, u'\n' + u' ' * 60,
@@ -2164,7 +2166,8 @@ class InstallersData(DataStore):
         InstallersData._miscTrackedFiles[abspath] = AFile(abspath)
 
     @staticmethod
-    def notify_external(changed=frozenset(), deleted=frozenset(), renamed={}):
+    def notify_external(changed=frozenset(), deleted=frozenset(),
+            renamed=None):
         """Notifies BAIN of changes in the Data folder done by something other
         than BAIN.
 
@@ -2176,6 +2179,7 @@ class InstallersData(DataStore):
             paths to new ones. Currently only updates tracked changed/deleted
             paths.
         :type renamed: dict[Path, Path]"""
+        if renamed is None: renamed = {}
         ext_updated = InstallersData._externally_updated
         ext_deleted = InstallersData._externally_deleted
         ext_updated.update(changed)
