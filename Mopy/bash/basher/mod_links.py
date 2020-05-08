@@ -224,7 +224,7 @@ class Mod_CreateDummyMasters(OneItemLink):
             # just a guess - you can have a .esm file without an ESM flag in
             # Skyrim LE - but these are also just dummy masters.
             force_flags = bgame.guess_flags(master.fn_ext)
-            mods_ds.create_new_mod(master, author_str='BASHED DUMMY',
+            mods_ds.create_new_mod(master, author_str=b'BASHED DUMMY',
                 flags_dict=force_flags,
                 wanted_masters=[], # previous behavior - correct?
                 # pass dir_path explicitly so refresh is skipped

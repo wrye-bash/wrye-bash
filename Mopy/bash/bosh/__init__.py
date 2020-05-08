@@ -425,6 +425,8 @@ class _WithMastersInfo(FileInfo):
     def __init__(self, fullpath, **kwargs):
         self.header = None
         self.masterNames: tuple[FName, ...] = ()
+        # True if has a master with un unencodable name in cp1252
+        self.has_unicode_masters = False
         # True if the masters for this file are not reliable
         self.has_inaccurate_masters = False
         #--Ancillary storage
@@ -440,9 +442,20 @@ class _WithMastersInfo(FileInfo):
         """Read header from file and set self.header attribute."""
         self._reset_masters()
 
-    def _reset_masters(self):
+    def _reset_masters(self, good_encodings=frozenset(('ascii', 'cp1252'))): # TODO other "good" ones?
         #--Master Names/Order
-        self.masterNames = tuple(self._get_masters())
+        masters_bytestrings = self._get_masters() # type: list[bolt.PluginStr]
+        # decode the strings, setting their preferred_encoding to the one used
+        self.masterNames = tuple(FName('%s' % x) for x in masters_bytestrings)
+        try:
+            for x in masters_bytestrings:
+                if x.preferred_encoding not in good_encodings:
+                    # we fell back  to some other encoding to decode - check if
+                    # it's encodable in cp1252 # TODO: will mangle it probably
+                    x._decoded.encode('cp1252')
+            self.has_unicode_masters = False
+        except UnicodeEncodeError:
+            self.has_unicode_masters = True
 
     def _masters_order_status(self):
         raise NotImplementedError
@@ -875,14 +888,6 @@ class ModInfo(_WithMastersInfo):
     def hasActiveTimeConflict(self):
         """True if it has an active mtime conflict with another mod."""
         return self.fn_key in self._store().act_lo_conflicts
-
-    def hasBadMasterNames(self): # used in status calculation
-        """True if has a master with un unencodable name in cp1252."""
-        try:
-            for x in self.masterNames: x.encode('cp1252')
-            return False
-        except UnicodeEncodeError:
-            return True
 
     def hasBsa(self):
         """Returns True if plugin has an associated BSA."""
@@ -1463,7 +1468,7 @@ class SaveInfo(_WithMastersInfo):
             xse_cosave = self.get_xse_cosave()
             # Make sure the cosave's masters are actually useful
             if xse_cosave.has_accurate_master_list():
-                return [*map(FName, xse_cosave.get_master_list())]
+                return xse_cosave.get_master_list()
         except (AttributeError, NotImplementedError):
             pass
         # Fall back on the regular masters - either the cosave is unnecessary,
@@ -2723,7 +2728,7 @@ class ModInfos(_AFileInfos):
         _children.append(fileName)
         #--Check for bad masternames:
         #  Disabled for now
-        ##if self[fileName].hasBadMasterNames(): return
+        ##if self[fileName].has_unicode_masters: return
         #--Select masters
         for master in self[fileName].masterNames:
             # Check that the master is on disk and not already activated
@@ -2976,7 +2981,7 @@ class ModInfos(_AFileInfos):
     def create_new_mod(self, mod_fn: str | FName,
             selected: tuple[FName, ...] = (), *,
             wanted_masters: list[FName] | None = None, dir_path=None,
-            author_str='', flags_dict=None) -> ModInfo | None:
+            author_str=b'', flags_dict=None) -> ModInfo | None:
         """Create a new plugin.
 
         :param mod_fn: The name the created plugin will have.
@@ -3019,7 +3024,7 @@ class ModInfos(_AFileInfos):
             modName = f'Bashed Patch, {num}.esp'
             if modName not in self:
                 self.create_new_mod(modName, selected=selected_mods,
-                    wanted_masters=[], author_str='BASHED PATCH')
+                    wanted_masters=[], author_str=b'BASHED PATCH')
                 return FName(modName)
         return None
 
