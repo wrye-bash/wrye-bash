@@ -167,7 +167,7 @@ class VanillaNPCSkeletonPatcher(_ASkeletonTweak):
 
     def wants_record(self, record):
         old_mod_path = self._get_skeleton_path(record)
-        return old_mod_path and old_mod_path.lower() == self._old_skeleton
+        return old_mod_path and old_mod_path.lower() == self._old_skeleton ##: TODO drop lower()
 
     def _get_target_skeleton(self, record):
         return self._new_skeleton
