@@ -321,7 +321,7 @@ class ImportActorsFactionsPatcher(_APreserver):
         # Turn the faction lists into lists of MelObjects
         def make_obj(csv_rsig, csv_obj):
             obj_faction, obj_rank = csv_obj
-            ret_obj = MreRecord.type_class[csv_rsig].getDefault(u'factions')
+            ret_obj = MreRecord.type_class[csv_rsig].get_mel_object_for_group(u'factions')
             ret_obj.faction = obj_faction
             ret_obj.rank = obj_rank
             return ret_obj
@@ -641,12 +641,9 @@ class ImportGraphicsPatcher(_APreserver):
                         break
                     continue
                 elif attr in bush.game.graphicsModelAttrs:
-                    try:
-                        if rec_attr.modPath.lower() != value.modPath.lower():
-                            break
-                        continue
-                    except: break  # assume they are not equal (ie they
-                        # aren't __both__ NONE)
+                    if rec_attr != value:
+                        break
+                    continue
                 if rec_attr != value: break
             else: continue
             for attr, value in id_data[fid].iteritems():

@@ -39,11 +39,12 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelArray, MelWthrColors, MelObject, MreActorBase, MreWithItems, \
     MelReadOnly, MelCtda, MelRef3D, MelXlod, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript, \
-    MelDescription, BipedFlags, MelSpells, MelUInt8Flags, MelUInt32Flags
+    MelDescription, BipedFlags, MelSpells, MelUInt8Flags, MelUInt32Flags, \
+    MelModelCompare
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
 
-    class _MelModel(MelGroup):
+    class _MelModel(MelModelCompare):
         """Represents a model record."""
         typeSets = ((b'MODL', b'MODB', b'MODT'),
                     (b'MOD2', b'MO2B', b'MO2T'),
@@ -98,23 +99,14 @@ class MelObmeScitGroup(MelGroup):
     this group, since '../' syntax is not yet supported (see MrePerk in Skyrim
     for another part of the code that's suffering from this). And we can't
     simply not put this in a group, because a bunch of code relies on a group
-    called 'scriptEffect' existing..."""
+    called 'scriptEffect' existing...""" # TODO (480): rip off
+    class _MelHackyObject(MelObject):
+        __slots__ = (u'efix_param_info', )
+    _mel_object_base_type = _MelHackyObject
+
     def load_mel(self, record, ins, sub_type, size_, readId):
         target = getattr(record, self.attr)
-        if target is None:
-            class _MelHackyObject(MelObject):
-                @property
-                def efix_param_info(self):
-                    return record.efix_param_info
-                @efix_param_info.setter
-                def efix_param_info(self, new_efix_info):
-                    record.efix_param_info = new_efix_info
-            target = _MelHackyObject()
-            for element in self.elements:
-                element.setDefault(target)
-            target.__slots__ = [s for element in self.elements for s in
-                                element.getSlotsUsed()]
-            setattr(record, self.attr, target)
+        target.efix_param_info = record.efix_param_info
         self.loaders[sub_type].load_mel(target, ins, sub_type, size_, readId)
 
 # TODO(inf) Do we really need to do this? It's an unused test spell
@@ -224,9 +216,9 @@ class MelEffects(MelSequential):
 
     # Note that we only support creating vanilla effects, as our records system
     # isn't expressive enough to pass more info along here
-    def getDefaulters(self, defaulters, base):
+    def getDefaulters(self, defaulters_, mel_providers, mel_key):
         for element in self._vanilla_elements:
-            element.getDefaulters(defaulters, base)
+            element.getDefaulters(defaulters_, mel_providers, mel_key)
 
     def getLoaders(self, loaders):
         # We need to collect all signatures and assign ourselves for them all
@@ -1420,8 +1412,8 @@ class MreNpc(MreActorBase):
     def setRace(self,race):
         """Set additional race info."""
         self.race = race
-        if not self.model:
-            self.model = self.getDefault('model')
+        if not self.model: # TODO NEEDED?
+            self.model = self.get_mel_object_for_group(u'model')
         if race in (0x23fe9,0x223c7):
             self.model.modPath = u"Characters\\_Male\\SkeletonBeast.NIF"
         else:

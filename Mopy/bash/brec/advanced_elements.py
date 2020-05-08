@@ -181,9 +181,11 @@ class _MelDistributor(MelNull):
         # the index where we left off in the last load_mel
         return u'_loader_state', u'_seq_index'
 
-    def setDefault(self, record):
-        record._loader_state = []
-        record._seq_index = None
+    def getDefaulters(self, defaulters_, mel_providers, mel_key):
+        defaulters_[u'_loader_state'] = lambda : []
+        defaulters_[u'_seq_index'] = lambda : None
+        super(_MelDistributor, self).getDefaulters(defaulters_, mel_providers,
+                                                   mel_key)
 
     def set_mel_set(self, mel_set):
         """Sets parent MelSet. We use this to collect the attribute names
@@ -336,9 +338,11 @@ class MelArray(MelBase):
         super(MelArray, self).__init__(next(iter(element.signatures)),
             array_attr)
         self._element = element
-        # Underscore means internal usage only - e.g. distributor state
-        self._element_attrs = [s for s in element.getSlotsUsed() if
-                               not s.startswith(u'_')]
+        class _MelObject(MelObject):
+            # Underscore means internal usage only - e.g. distributor state
+            __slots__ = tuple(
+                s for s in element.getSlotsUsed() if not s.startswith(u'_'))
+        self._mel_object_type = _MelObject
         if prelude and prelude.mel_sig != element.mel_sig:
             raise SyntaxError(u'MelArray preludes must have the same '
                               u'signature as the main element')
@@ -359,10 +363,11 @@ class MelArray(MelBase):
         self._element.hasFids(temp_elements)
         if temp_elements: formElements.add(self)
 
-    def setDefault(self, record):
+    def getDefaulters(self, defaulters_, mel_providers, mel_key):
         if self._prelude:
-            self._prelude.setDefault(record)
-        setattr(record, self.attr, [])
+            self._prelude.getDefaulters(defaulters_, mel_providers, mel_key)
+        self._element.getDefaulters(defaulters_, mel_providers, mel_key)
+        defaulters_[self.attr] = lambda: []
 
     def mapFids(self,record,function,save=False):
         if self._prelude:
@@ -375,7 +380,6 @@ class MelArray(MelBase):
 
     def load_mel(self, record, ins, sub_type, size_, readId):
         append_entry = getattr(record, self.attr).append
-        entry_slots = self._element_attrs
         entry_size = self._element_size
         load_entry = self._element.load_mel
         if self._prelude:
@@ -383,9 +387,8 @@ class MelArray(MelBase):
                                    readId)
             size_ -= self._prelude_size
         for x in xrange(size_ // entry_size):
-            arr_entry = MelObject()
+            arr_entry = self._mel_object_type()
             append_entry(arr_entry)
-            arr_entry.__slots__ = entry_slots
             load_entry(arr_entry, ins, sub_type, entry_size, readId)
 
     def pack_subrecord_data(self, record):
@@ -649,7 +652,7 @@ class PartialLoadDecider(ADecider):
         starting_pos = ins.tell()
         # Make a deep copy so that no modifications from this decision will
         # make it to the actual record
-        target = copy.deepcopy(record)
+        target = copy.deepcopy(record) # FIXME avoid (or overwrite __deepcopy__)
         self._loader.load_mel(target, ins, sub_type, self._load_size,
                               'DECIDER.' + sub_type)
         ins.seek(starting_pos)
@@ -716,9 +719,7 @@ class MelUnion(MelBase):
     has been read. In the former case, it just picks an arbitrary element to
     dump out. In the latter case, it reuses the previous decider result to look
     up the mapping.
-
-    Note: This class does not (and likely won't ever be able to) support
-    getDefaulters / getDefault."""
+    """
     # Incremented every time we construct a MelUnion - ensures we always make
     # unique attributes on the records
     _union_index = 0
@@ -785,7 +786,7 @@ class MelUnion(MelBase):
         if self.decider.can_decide_at_dump:
             # If the decider can decide at dump-time, let it
             return self._get_element(self.decider.decide_dump(record))
-        elif not hasattr(record, self.decider_result_attr):
+        elif getattr(record, self.decider_result_attr) is None:
             # We're dealing with a record that was just created, but the
             # decider can't be used - default to some element
             return next(self.element_mapping.itervalues())
@@ -829,13 +830,21 @@ class MelUnion(MelBase):
                 self.fid_elements.add(self.fallback)
         if self.fid_elements: formElements.add(self)
 
-    def setDefault(self, record):
+    def getDefaulters(self, defaulters_, mel_providers, mel_key):
         # Ask each element - but we *don't* want to set our _union_type
         # attributes here! If we did, then we'd have no way to distinguish
         # between a loaded and a freshly constructed record.
+        # default makes no sense for decider_result_attr but needs be added
+        # (for slots of MelObject if we are in a MelGroup)
+        defaulters_[self.decider_result_attr] = lambda : None
+        if hasattr(self.decider, u'_loader'):
+            # yep this one two will be assigned to slotted MelObject
+            self.decider._loader.getDefaulters(defaulters_, mel_providers,
+                                               mel_key)
         for element in self.element_mapping.itervalues():
-            element.setDefault(record)
-        if self.fallback: self.fallback.setDefault(record)
+            element.getDefaulters(defaulters_, mel_providers, mel_key)
+        if self.fallback:
+            self.fallback.getDefaulters(defaulters_, mel_providers, mel_key)
 
     def mapFids(self, record, function, save=False):
         element = self._get_element_from_record(record)

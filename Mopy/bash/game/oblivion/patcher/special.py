@@ -84,7 +84,7 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
             if not (b'SEFF', 0) in effects:
                 id_ingred[record.fid] = (record.eid, record.full, effects)
 
-    def buildPatch(self,log,progress):
+    def buildPatch(self, log, progress):
         """Edits patch file as desired. Will write to log."""
         if not self.isActive: return
         #--Setup
@@ -96,7 +96,7 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
         actorNames = bush.game.actor_values
         keep = self.patchFile.getKeeper()
         #--Book generator
-        def getBook(objectId,eid,full,value,iconPath,modelPath,modb_p):
+        def getBook(objectId, eid, full, value, iconPath, modelPath):
             book = MreRecord.type_class[b'BOOK'](RecHeader(b'BOOK', 0, 0, 0, 0))
             book.longFids = True
             book.changed = True
@@ -107,9 +107,8 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
             book.book_text = u'<div align="left"><font face=3 color=4444>'
             book.book_text += (_(u"Salan's Catalog of %s") + u'\r\n\r\n') % full
             book.iconPath = iconPath
-            book.model = book.getDefault(u'model')
             book.model.modPath = modelPath
-            book.model.modb_p = modb_p
+            book.model.modb = 12.01513957977295
             book.modb = book
             ##: In Cobl Main.esm, the books have a script attached
             # (<cobGenDevalueOS [SCPT:01001DDD]>). This currently gets rid of
@@ -121,12 +120,11 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
             return book
         #--Ingredients Catalog
         id_ingred = self.id_ingred
-        iconPath, modPath, modb_p = (u'Clutter\\IconBook9.dds',
-                                     u'Clutter\\Books\\Octavo02.NIF',
-                                     b'\x03>@A')
+        iconPath, modPath = (u'Clutter\\IconBook9.dds',
+                             u'Clutter\\Books\\Octavo02.NIF')
         for (num,objectId,full,value) in _ingred_alchem:
             book = getBook(objectId, u'cobCatAlchemIngreds%s' % num, full,
-                           value, iconPath, modPath, modb_p)
+                           value, iconPath, modPath)
             with sio(book.book_text) as buff:
                 buff.seek(0,os.SEEK_END)
                 buffWrite = buff.write
@@ -148,12 +146,11 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
                 if mgef in actorEffects: effectName += actorNames[actorValue]
                 effect_ingred[effectName].append((index,full))
         #--Effect catalogs
-        iconPath, modPath, modb_p = (u'Clutter\\IconBook7.dds',
-                                     u'Clutter\\Books\\Octavo01.NIF',
-                                     b'\x03>@A')
+        iconPath, modPath = (u'Clutter\\IconBook7.dds',
+                             u'Clutter\\Books\\Octavo01.NIF')
         for (num, objectId, full, value) in _effect_alchem:
             book = getBook(objectId, u'cobCatAlchemEffects%s' % num, full,
-                           value, iconPath, modPath, modb_p)
+                           value, iconPath, modPath)
             with sio(book.book_text) as buff:
                 buff.seek(0,os.SEEK_END)
                 buffWrite = buff.write
@@ -261,10 +258,10 @@ class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
             #--Okay, do it
             record.full = u'+' + record.full
             record.spellType = 3 #--Lesser power
-            effect = record.getDefault(u'effects')
+            effect = record.get_mel_object_for_group(u'effects')
             effect.effect_id = b'SEFF'
             effect.duration = duration
-            scriptEffect = record.getDefault(u'effects.scriptEffect')
+            scriptEffect = record.get_mel_object_for_group(u'effects.scriptEffect')
             scriptEffect.full = u'Power Exhaustion'
             scriptEffect.script = exhaustId
             scriptEffect.school = 2
@@ -359,21 +356,21 @@ class MorphFactionsPatcher(ListPatcher, _ExSpecialList):
             if mFactLong not in [relation.faction for relation in
                                  record.relations]:
                 record.general_flags.hidden_from_pc = False
-                relation = record.getDefault(u'relations')
+                relation = record.get_mel_object_for_group(u'relations')
                 relation.faction = mFactLong
                 relation.mod = 10
                 record.relations.append(relation)
                 mname,rankName = id_info[rec_fid]
                 record.full = mname
                 if not record.ranks:
-                    record.ranks = [record.getDefault(u'ranks')]
+                    record.ranks = [record.get_mel_object_for_group(u'ranks')]
                 for rank in record.ranks:
                     if not rank.male_title: rank.male_title = rankName
                     if not rank.female_title: rank.female_title = rankName
                     if not rank.insignia_path:
                         rank.insignia_path = (
                                 u'Menus\\Stats\\Cobl\\generic%02d.dds' %
-                                rank.rank_level)
+                                (rank.rank_level or 0))
                 keep(rec_fid)
                 changed[rec_fid[0]] += 1
         #--MFact record
@@ -382,7 +379,7 @@ class MorphFactionsPatcher(ListPatcher, _ExSpecialList):
             relations = record.relations
             del relations[:]
             for faction in mFactable:
-                relation = record.getDefault(u'relations')
+                relation = record.get_mel_object_for_group(u'relations')
                 relation.faction = faction
                 relation.mod = 10
                 relations.append(relation)
@@ -444,7 +441,7 @@ class SEWorldTestsPatcher(_ExSpecial, Patcher):
             for condition in record.conditions:
                 if condition.ifunc == 365: break #--365: playerInSeWorld
             else:
-                condition = record.getDefault(u'conditions')
+                condition = record.get_mel_object_for_group(u'conditions')
                 condition.ifunc = 365
                 record.conditions.insert(0,condition)
                 keep(rec_fid)

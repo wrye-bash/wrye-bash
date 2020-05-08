@@ -434,7 +434,7 @@ class MobDial(MobObjects):
 
     def dump(self, out):
         # Update TIFC if needed (i.e. Skyrim+)
-        if hasattr(self.dial, u'info_count'):
+        if getattr(self.dial, u'info_count', None) is not None:
             self.dial.info_count = len(self.records)
         self.dial.getSize()
         self.dial.dump(out)

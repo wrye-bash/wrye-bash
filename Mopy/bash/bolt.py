@@ -2123,7 +2123,7 @@ class _RP_LeafSubpath(_ARP_Subpath):
         return [getattr(record, self._subpath_attr)]
 
     def rp_exists(self, record):
-        return hasattr(record, self._subpath_attr)
+        return getattr(record, self._subpath_attr, None) is not None
 
     def rp_map(self, record, func):
         s_attr = self._subpath_attr

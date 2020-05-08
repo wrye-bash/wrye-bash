@@ -33,13 +33,13 @@ import random
 import re
 from collections import defaultdict, Counter
 # Internal
+from .base import MultiTweakItem, ListPatcher
 from ... import bosh, bush
 from ...bolt import GPath, deprint
-from ...brec import MreRecord, MelObject, strFid
+from ...brec import MreRecord, strFid
 from ...exception import BoltError
 from ...mod_files import ModFile, LoadFactory
 from ...patcher.base import AMultiTweaker
-from .base import MultiTweakItem, ListPatcher
 
 # Utilities & Constants -------------------------------------------------------
 def _find_vanilla_eyes():
@@ -588,7 +588,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
                 if newRelations != oldRelations:
                     del race.relations[:]
                     for faction,mod in newRelations:
-                        entry = MelObject()
+                        entry = race.get_mel_object_for_group(u'relations')
                         entry.faction = faction
                         entry.mod = mod
                         race.relations.append(entry)

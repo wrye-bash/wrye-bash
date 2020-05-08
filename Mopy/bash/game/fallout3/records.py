@@ -44,12 +44,12 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelDecalData, MelDescription, MelLists, MelPickupSound, MelDropSound, \
     MelActivateParents, BipedFlags, MelSpells, MelUInt8Flags, MelUInt16Flags, \
     MelUInt32Flags, MelOptUInt32Flags, MelOptUInt8Flags, MelOwnership, \
-    MelDebrData
+    MelDebrData, MelModelCompare
 from ...exception import ModSizeError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
 
-    class _MelModel(MelGroup):
+    class _MelModel(MelModelCompare):
         """Represents a model record."""
         typeSets = ((b'MODL', b'MODB', b'MODT', b'MODS', b'MODD'),
                     (b'MOD2', b'MO2B', b'MO2T', b'MO2S'),
@@ -265,8 +265,9 @@ class MelRaceHeadPart(MelGroup):
             target_head_part = getattr(record, self.attr)
             # Special handling for ears: If ICON or MICO is present, don't
             # dump the model
-            has_icon = hasattr(target_head_part, u'iconPath')
-            has_mico = hasattr(target_head_part, u'smallIconPath')
+            has_icon = getattr(target_head_part, u'iconPath', None) is not None
+            has_mico = getattr(target_head_part, u'smallIconPath',
+                               None) is not None
             if not has_icon and not has_mico:
                 self._modl_loader.dumpData(target_head_part, out)
             else:
@@ -611,9 +612,10 @@ class MelBptdParts(MelGroups):
             MelBase(b'NAM5', u'texture_hashes'),
         )
 
-    def setDefault(self, record):
-        super(MelBptdParts, self).setDefault(record)
-        record._had_bptn = False
+    def getDefaulters(self, defaulters_, mel_providers, mel_key):
+        defaulters_[u'_had_bptn'] = lambda : False
+        super(MelBptdParts, self).getDefaulters(defaulters_, mel_providers,
+                                                mel_key)
 
     def getSlotsUsed(self):
         return (u'_had_bptn',) + super(MelBptdParts, self).getSlotsUsed()

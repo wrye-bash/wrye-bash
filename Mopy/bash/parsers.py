@@ -38,9 +38,9 @@ from operator import attrgetter, itemgetter
 from . import bush, load_order
 from .balt import Progress
 from .bass import dirs, inisettings
-from .bolt import GPath, decoder, deprint, CsvReader, csvFormat, floats_equal, \
-    setattr_deep, attrgetter_cache
-from .brec import MreRecord, MelObject, _coerce, genFid, RecHeader
+from .bolt import GPath, decoder, deprint, CsvReader, csvFormat, \
+    floats_equal, setattr_deep, attrgetter_cache
+from .brec import MreRecord, _coerce, genFid, RecHeader
 from .exception import AbstractError
 from .mod_files import ModFile, LoadFactory
 
@@ -400,7 +400,7 @@ class ActorFactions(_AParser):
                     break
             else:
                 # This is an addition, we need to create a new faction instance
-                target_entry = MelObject()
+                target_entry = record.get_mel_object_for_group(u'factions')
                 record.factions.append(target_entry)
             # Actually write out the attributes from new_info
             target_entry.faction = faction
@@ -740,7 +740,7 @@ class FactionRelations(_AParser):
                     break
             else:
                 # It's an addition, we need to make a new relation object
-                target_entry = MelObject()
+                target_entry = record.get_mel_object_for_group(u'relations')
                 record.relations.append(target_entry)
             # Actually write out the attributes from new_info
             for rel_attr, rel_val in zip(self.cls_rel_attrs, relation):
@@ -1449,12 +1449,12 @@ class SigilStoneDetails(_UsesEffectsMixin):
                 record.script = script
                 record.effects = []
                 for effect in effects:
-                    neweffect = record.getDefault(u'effects')
+                    neweffect = record.get_mel_object_for_group(u'effects')
                     neweffect.effect_id,neweffect.magnitude,neweffect.area,\
                     neweffect.duration,neweffect.recipient,\
                     neweffect.actorValue,scripteffect = effect
                     if len(scripteffect):
-                        scriptEffect = record.getDefault(
+                        scriptEffect = record.get_mel_object_for_group(
                             u'effects.scriptEffect')
                         script,scriptEffect.school,scriptEffect.visual,\
                         scriptEffect.flags.hostile,scriptEffect.full = \
@@ -1692,12 +1692,12 @@ class SpellRecords(_UsesEffectsMixin):
                     effects = newStats[-1]
                     record.effects = []
                     for effect in effects:
-                        neweffect = record.getDefault(u'effects')
+                        neweffect = record.get_mel_object_for_group(u'effects')
                         neweffect.effect_id,neweffect.magnitude,neweffect.area,\
                         neweffect.duration,neweffect.recipient,\
                         neweffect.actorValue,scripteffect = effect
                         if len(scripteffect):
-                            scriptEffect = record.getDefault(
+                            scriptEffect = record.get_mel_object_for_group(
                                 u'effects.scriptEffect')
                             script,scriptEffect.school,scriptEffect.visual,\
                             scriptEffect.flags.hostile,scriptEffect.full = \
@@ -1875,12 +1875,12 @@ class IngredientDetails(_UsesEffectsMixin):
                 record.script = script
                 record.effects = []
                 for effect in effects:
-                    neweffect = record.getDefault(u'effects')
+                    neweffect = record.get_mel_object_for_group(u'effects')
                     neweffect.effect_id,neweffect.magnitude,neweffect.area,\
                     neweffect.duration,neweffect.recipient,\
                     neweffect.actorValue,scripteffect = effect
                     if len(scripteffect):
-                        scriptEffect = record.getDefault(
+                        scriptEffect = record.get_mel_object_for_group(
                             u'effects.scriptEffect')
                         script,scriptEffect.school,scriptEffect.visual,\
                         scriptEffect.flags.hostile.hostile,scriptEffect.full\

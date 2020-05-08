@@ -34,28 +34,61 @@ from ..bolt import decoder, encode, structs_cache, struct_calcsize, \
 #------------------------------------------------------------------------------
 class MelObject(object):
     """An empty class used by group and structure elements for data storage."""
+    __slots__ = ()
+
     def __eq__(self,other):
         """Operator: =="""
-        return isinstance(other,MelObject) and self.__dict__ == other.__dict__
+        type_other = type(other)
+        type_self = type(self)
+        return type_self is type_other and type_self.__slots__ == \
+            type_other.__slots__ and all(
+            getattr(self, a) == getattr(other, a) for a in type_self.__slots__)
 
     def __ne__(self,other):
         """Operator: !="""
-        return not isinstance(other,MelObject) or self.__dict__ != other.__dict__
+        type_other = type(other)
+        type_self = type(self)
+        return type_self is not type_other or type_self.__slots__ != \
+            type_other.__slots__ or any(
+            getattr(self, a) != getattr(other, a) for a in type_self.__slots__)
 
-    def __hash__(self):
-        return hash(_make_hashable(self.__dict__))
+    def __hash__(self):  # FIXME: slow, cache?
+        return hash(_make_hashable(
+            {k: g for k, g in ((a, getattr(self, a)) for a in self.__slots__)
+             if g is not None}))
 
     def __repr__(self):
         """Carefully try to show as much info about ourselves as possible."""
         to_show = []
-        if hasattr(self, u'__slots__'):
-            for obj_attr in self.__slots__:
-                # attrs starting with _ are internal - union types,
-                # distributor states, etc.
-                if not obj_attr.startswith(u'_') and hasattr(self, obj_attr):
-                    to_show.append(
-                        u'%s: %r' % (obj_attr, getattr(self, obj_attr)))
+        for obj_attr in self.__slots__:
+            # attrs starting with _ are internal - union types,
+            # distributor states, etc.
+            if not obj_attr.startswith(u'_') and getattr(self,
+                                                         obj_attr) is not None:
+                to_show.append(u'%s: %r' % (obj_attr, getattr(self, obj_attr)))
         return u'<%s>' % u', '.join(sorted(to_show)) # is sorted() needed here?
+
+class AttrsCompare(MelObject):
+    """MelObject that compares equal based on a set of compare_attrs."""
+    compare_attrs = frozenset() # these attrs must resolve to str or None
+    __slots__ = ()
+
+    ## FIXME drop lower()
+    def __eq__(self, other, __g=getattr):
+        return all((s and s.lower()) == (o and o.lower())
+            for x in self.compare_attrs
+                for s, o in [[__g(self, x), __g(other, x)]]) \
+            if isinstance(other, type(self)) else NotImplemented
+
+    def __ne__(self, oth, __g=getattr):
+        return any((s and s.lower()) != (o and o.lower())
+            for x in self.compare_attrs
+                for s, o in [[__g(self, x), __g(oth, x)]]) \
+            if isinstance(oth, type(self)) else NotImplemented
+
+    def __hash__(self, __g=getattr):
+        return hash(_make_hashable({k: (v and v.lower()) for
+             k, v in ((k, (__g(self, k, None))) for k in self.compare_attrs)}))
 
 class Subrecord(object):
     """A subrecord. Base class defines the subrecord format and packing."""
@@ -154,13 +187,26 @@ class MelBase(Subrecord):
     def getSlotsUsed(self):
         return self.attr,
 
-    def getDefaulters(self,defaulters,base):
-        """Registers self as a getDefault(attr) provider."""
-        pass
+    def getDefaulters(self, defaulters_, mel_providers, mel_key):
+        """Register self as a default/mel_object provider.
+        :param defaulters_: default's factory dict used in __getattr__ clients
+        :param mel_providers: mel_object factory dict to be populated by
+            MelObject clients
+        :param mel_key: the key to the (possibly nested) mel_object factory
+            (may contain dots)
+        """
+        try:
+            defaulters_[self.attr] = self.mel_default_value
+        except AttributeError:
+            """Mel does not have a self.attr attribute so we won't be needing a
+            default value for it."""
+            print (type(self))# MelNull
 
-    def getDefault(self):
-        """Returns a default copy of object."""
-        raise exception.AbstractError()
+    def mel_default_value(self):
+        """Returns a default value for missing record attribute. Most of the
+        uses should go - we should only compare attributes actually loaded
+        by load_mel."""
+        return self.default
 
     def getLoaders(self,loaders):
         """Adds self as loader for type."""
@@ -169,10 +215,6 @@ class MelBase(Subrecord):
     def hasFids(self,formElements):
         """Include self if has fids."""
         pass
-
-    def setDefault(self,record):
-        """Sets default value for record instance."""
-        setattr(record, self.attr, self.default)
 
     def load_mel(self, record, ins, sub_type, size_, readId):
         """Read the actual data (not the headers) from ins into record
@@ -221,15 +263,25 @@ class _MelNum(MelBase):
     _unpacker, _packer, static_size = get_structs(u'I')
     __slots__ = ()
 
-    def __init__(self, mel_sig, attr, default=0): # set default to zero
-        super(_MelNum, self).__init__(mel_sig, attr, default)
-
     def load_mel(self, record, ins, sub_type, size_, readId):
         setattr(record, self.attr, ins.unpack(self._unpacker, size_,
                                               readId)[0])
-
+    _optionals = set()
     def pack_subrecord_data(self, record):
-        return self._packer(getattr(record, self.attr))
+        try:
+            return self._packer(getattr(record, self.attr))
+        except AttributeError:
+            print(u'%s AttributeError %s' % (record, self.attr))
+        except struct_error:
+            ##: struct.error raised when trying to pack None (so the default,
+            # meaning the subrecord was not present so the Num is optional we
+            # want to eventually use MelOpt*** for those
+            key = (record.recType if hasattr(record,  u'recType') else
+                   record.__slots__, self.attr)
+            if not key in self._optionals:
+                self._optionals.add(key)
+                print(u'Optional: %s.%s ?' % key)
+        return None
 
 #------------------------------------------------------------------------------
 class MelCounter(MelBase):
@@ -258,8 +310,8 @@ class MelCounter(MelBase):
     def getLoaders(self, loaders):
         loaders[self._counter_mel.mel_sig] = self
 
-    def setDefault(self, record):
-        self._counter_mel.setDefault(record)
+    def getDefaulters(self, defaulters_, mel_providers, mel_key):
+        self._counter_mel.getDefaulters(defaulters_, mel_providers, mel_key)
 
     def load_mel(self, record, ins, sub_type, size_, readId):
         self._counter_mel.load_mel(record, ins, sub_type, size_, readId)
@@ -313,8 +365,8 @@ class MelFids(MelBase):
     def hasFids(self,formElements):
         formElements.add(self)
 
-    def setDefault(self,record):
-        setattr(record, self.attr, [])
+    def getDefaulters(self, defaulters_, mel_providers={}, mel_key=u''):
+        defaulters_[self.attr] = lambda: []
 
     def load_mel(self, record, ins, sub_type, size_, readId):
         fid = ins.unpackRef()
@@ -341,7 +393,7 @@ class MelNull(MelBase):
     def getSlotsUsed(self):
         return ()
 
-    def setDefault(self,record):
+    def getDefaulters(self, defaulters_, mel_providers, mel_key):
         pass
 
     def load_mel(self, record, ins, sub_type, size_, readId):
@@ -381,9 +433,9 @@ class MelSequential(MelBase):
                                in element.signatures}
         self._sub_loaders = {}
 
-    def getDefaulters(self, defaulters, base):
+    def getDefaulters(self, defaulters_, mel_providers, mel_key):
         for element in self.elements:
-            element.getDefaulters(defaulters, base + '.')
+            element.getDefaulters(defaulters_, mel_providers, mel_key)
 
     def getLoaders(self, loaders):
         # We need a copy of the loaders in case we're used in a distributor
@@ -401,10 +453,6 @@ class MelSequential(MelBase):
         for element in self.elements:
             element.hasFids(self.form_elements)
         if self.form_elements: formElements.add(self)
-
-    def setDefault(self, record):
-        for element in self.elements:
-            element.setDefault(record)
 
     def load_mel(self, record, ins, sub_type, size_, readId):
         # This will only ever be called if we're used in a distributor, regular
@@ -437,15 +485,41 @@ class MelReadOnly(MelSequential):
 
 #------------------------------------------------------------------------------
 class MelGroup(MelSequential):
-    """Represents a group record."""
-    def __init__(self,attr,*elements):
+    """Represents a group of mod elements - complication is it calls its
+    load/dump methods on a custom MelObject that needs to be set as
+    default."""
+    _mel_object_base_type = MelObject
+
+    def __init__(self, attr, *elements):
         """:type attr: unicode"""
         super(MelGroup, self).__init__(*elements)
         self.attr, self.loaders = attr, {}
+        # set up the MelObject needed for this MelGroup
+        _mel_defaulters = {}
+        self.mel_providers = {}
+        for element in self.elements:
+            element.getDefaulters(_mel_defaulters, self.mel_providers,
+                                  self.attr)
+        class _MelObject(self.__class__._mel_object_base_type):
+            __slots__ = tuple(_mel_defaulters)
+            mel_defaulters = _mel_defaulters
+            def __getattr__(self, missing_attr):
+                try:
+                    target = self.__class__.mel_defaulters[missing_attr]()
+                    setattr(self, missing_attr, target)
+                    return target
+                except KeyError:
+                    raise AttributeError(missing_attr)
+        self._mel_object_type = _MelObject
 
-    def getDefaulters(self,defaulters,base):
-        defaulters[base+self.attr] = self
-        super(MelGroup, self).getDefaulters(defaulters, base + self.attr)
+    def getDefaulters(self, defaulters_, mel_providers, mel_key):
+        defaulters_[self.attr] = self.mel_default_value
+        defaulters_.update(self._mel_object_type.mel_defaulters)
+        def _attr(attr):
+            return u'%s.%s' % (mel_key, attr) if mel_key else attr
+        mel_providers[_attr(self.attr)] = self._mel_object_type
+        mel_providers.update(
+            (_attr(k), v) for k, v in self.mel_providers.iteritems())
 
     def getLoaders(self,loaders):
         super(MelGroup, self).getLoaders(self.loaders)
@@ -455,22 +529,11 @@ class MelGroup(MelSequential):
     def getSlotsUsed(self):
         return self.attr,
 
-    def setDefault(self,record):
-        setattr(record, self.attr, None)
-
-    def getDefault(self):
-        target = MelObject()
-        target.__slots__ = [s for element in self.elements for s in
-                            element.getSlotsUsed()]
-        for element in self.elements:
-            element.setDefault(target)
-        return target
+    def mel_default_value(self):
+        return self._mel_object_type()
 
     def load_mel(self, record, ins, sub_type, size_, readId):
         target = getattr(record, self.attr)
-        if target is None:
-            target = self.getDefault()
-            setattr(record, self.attr, target)
         self.loaders[sub_type].load_mel(target, ins, sub_type, size_, readId)
 
     def dumpData(self,record,out):
@@ -492,8 +555,8 @@ class MelGroups(MelGroup):
         super(MelGroups, self).__init__(attr, *elements)
         self._init_sigs = self.elements[0].signatures
 
-    def setDefault(self,record):
-        setattr(record, self.attr, [])
+    def mel_default_value(self):
+        return []
 
     def load_mel(self, record, ins, sub_type, size_, readId):
         if sub_type in self._init_sigs:
@@ -507,9 +570,7 @@ class MelGroups(MelGroup):
     def _new_object(self, record):
         """Creates a new MelObject, initializes it and appends it to this
         MelGroups' attribute."""
-        target = self.getDefault()
-        target.__slots__ = [s for element in self.elements for s in
-                            element.getSlotsUsed()]
+        target = self._mel_object_type()
         getattr(record, self.attr).append(target)
         return target
 
@@ -581,10 +642,7 @@ class MelLString(MelString):
 class MelStrings(MelString):
     """Represents array of strings."""
 
-    def setDefault(self,record):
-        setattr(record, self.attr, [])
-
-    def getDefault(self):
+    def mel_default_value(self):
         return []
 
     def load_mel(self, record, ins, sub_type, size_, readId):
@@ -638,10 +696,11 @@ class MelStruct(MelBase):
     def hasFids(self,formElements):
         if self.formAttrs: formElements.add(self)
 
-    def setDefault(self,record):
+    def getDefaulters(self, defaulters_, mel_providers, mel_key):
         for attr,value,action in zip(self.attrs, self.defaults, self.actions):
-            if action: value = action(value)
-            setattr(record, attr, value)
+            def _deflt(act=action, val=value): # yep, a simple lambda won't do
+                return act(val) if act else val
+            defaulters_[attr] = _deflt
 
     def load_mel(self, record, ins, sub_type, size_, readId):
         unpacked = ins.unpack(self._unpacker, size_, readId)
@@ -655,7 +714,10 @@ class MelStruct(MelBase):
         values = [
             action(value).dump() if action else value for value, action in
             zip([getattr(record, a) for a in self.attrs], self.actions)]
-        return self._packer(*values)
+        try:
+            return self._packer(*values)
+        except struct_error:
+            return None
 
     def mapFids(self,record,function,save=False):
         for attr in self.formAttrs:
@@ -745,9 +807,6 @@ class _MelFlags(_MelNum):
         super(_MelFlags, self).__init__(mel_sig, attr, default=flags_type(0))
         self._flag_type = flags_type
 
-    def setDefault(self, record):
-        setattr(record, self.attr, self._flag_type(self.default))
-
     def load_mel(self, record, ins, sub_type, size_, readId):
         setattr(record, self.attr, self._flag_type(ins.unpack(
             self._unpacker, size_, readId)[0]))
@@ -776,22 +835,9 @@ class MelXXXX(MelUInt32):
 #------------------------------------------------------------------------------
 class MelFid(MelUInt32):
     """Represents a mod record fid element."""
-    def __init__(self, mel_sig, attr):
-        super(MelFid, self).__init__(mel_sig, attr, None) ##: aaand reset default to None
 
     def hasFids(self,formElements):
         formElements.add(self)
-
-    def pack_subrecord_data(self,record):
-        try:
-            return super(MelFid, self).pack_subrecord_data( # pack an u'=I'
-                record)
-        except (AttributeError, struct_error):
-            ##: struct.error raised when trying to pack None (so the default,
-            # meaning the subrecord was not present) - AttributeError should
-            # never be raised due to brec.record_structs.MelSet.initRecord
-            # calling setDefault on the record
-            return None
 
     def mapFids(self,record,function,save=False):
         attr = self.attr

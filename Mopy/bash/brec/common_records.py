@@ -30,7 +30,7 @@ from .advanced_elements import FidNotNullDecider, AttrValDecider, MelArray, \
     MelUnion
 from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroups, \
     MelLString, MelNull, MelStruct, MelUInt32, MelSInt32, MelFixedString, \
-    MelUnicode
+    MelUnicode, MelGroup, AttrsCompare
 from .common_subrecords import MelEdid
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID
@@ -54,9 +54,9 @@ class MreHeaderBase(MelRecord):
         def getSlotsUsed(self):
             return (u'masters', u'master_sizes')
 
-        def setDefault(self, record):
-            record.masters = []
-            record.master_sizes = []
+        def getDefaulters(self, defaulters_, mel_providers, mel_key):
+            defaulters_[u'masters'] = lambda: []
+            defaulters_[u'master_sizes'] = lambda: []
 
         def load_mel(self, record, ins, sub_type, size_, readId,
                      __unpacker=structs_cache[u'Q'].unpack):
@@ -397,3 +397,11 @@ class MreActorBase(MreWithItems):
         super(MreActorBase, self).mergeFilter(modSet)
         self.spells = [x for x in self.spells if x[0] in modSet]
         self.factions = [x for x in self.factions if x.faction[0] in modSet]
+
+#------------------------------------------------------------------------------
+class MelModelCompare(MelGroup):
+
+    class _CompareModPaths(AttrsCompare):
+        compare_attrs = frozenset([u'modPath'])
+        __slots__ = ()
+    _mel_object_base_type = _CompareModPaths

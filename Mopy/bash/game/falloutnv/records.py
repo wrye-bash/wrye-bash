@@ -1652,6 +1652,9 @@ class MelWthrColorsFnv(MelArray):
         self._element_old = MelTruncatedStruct(
             wthr_sub_sig, *struct_definition,
             old_versions={u'3Bs3Bs3Bs3Bs'})
+        class _MelObject(MelObject):
+            __slots__ = self._element_old.attrs
+        self._mel_object_type = _MelObject
 
     def load_mel(self, record, ins, sub_type, size_, readId):
         if size_ == self._new_sizes[sub_type]:
@@ -1661,13 +1664,11 @@ class MelWthrColorsFnv(MelArray):
             # Copied and adjusted from MelArray. Yuck. See comment below
             # docstring for some ideas for getting rid of this
             append_entry = getattr(record, self.attr).append
-            entry_slots = self._element_old.attrs
             entry_size = struct_calcsize(u'3Bs3Bs3Bs3Bs')
             load_entry = self._element_old.load_mel
             for x in xrange(size_ // entry_size):
-                arr_entry = MelObject()
+                arr_entry = self._mel_object_type()
                 append_entry(arr_entry)
-                arr_entry.__slots__ = entry_slots
                 load_entry(arr_entry, ins, sub_type, entry_size, readId)
         else:
             _expected_sizes = (self._new_sizes[sub_type],

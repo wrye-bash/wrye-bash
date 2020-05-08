@@ -440,7 +440,8 @@ class Save_EditCreatedData(balt.ListEditorData):
             for attr in attrs:
                 buff.write(u'%s: %s\n' % (attr, getattr(record, attr)))
         #--Enchanted? Switch record to enchantment.
-        if hasattr(record,u'enchantment') and record.enchantment in self.enchantments:
+        if getattr(record, u'enchantment') is not None and \
+                record.enchantment in self.enchantments:
             buff.write(u'\n'+_(u'Enchantment:')+u'\n')
             record = self.enchantments[record.enchantment].getTypeCopy()
         #--Magic effects

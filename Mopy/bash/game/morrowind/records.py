@@ -666,7 +666,7 @@ class MelGmstUnion(MelUnion):
     }
 
     def _get_element_from_record(self, record):
-        if not hasattr(record, self.decider_result_attr):
+        if getattr(record, self.decider_result_attr) is None:
             format_char = record.mw_id[0] if record.mw_id else u'i'
             return self._get_element(self._fmt_mapping[format_char])
         return super(MelGmstUnion, self)._get_element_from_record(record)

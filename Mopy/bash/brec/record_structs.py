@@ -26,6 +26,7 @@ subrecords in memory."""
 from __future__ import division, print_function
 import copy
 import zlib
+from collections import Counter
 from functools import partial
 
 from .basic_elements import SubrecordBlob, unpackSubHeader
@@ -44,8 +45,9 @@ class MelSet(object):
         self.defaulters = {}
         self.loaders = {}
         self.formElements = set()
+        self._mel_providers = {}
         for element in self.elements:
-            element.getDefaulters(self.defaulters,'')
+            element.getDefaulters(self.defaulters, self._mel_providers, u'')
             element.getLoaders(self.loaders)
             element.hasFids(self.formElements)
         for sig_candidate in self.loaders:
@@ -79,17 +81,6 @@ class MelSet(object):
                     u'sure to choose unique attribute names!' % (
                         curr_rec_sig, repr(duplicate_slots)))
             all_slots.update(element_slots)
-
-    def initRecord(self, record, header, ins, do_unpack):
-        """Initialize record, setting its attributes based on its elements."""
-        for element in self.elements:
-            element.setDefault(record)
-        MreRecord.__init__(record, header, ins, do_unpack)
-
-    def getDefault(self,attr):
-        """Returns default instance of specified instance. Only useful for
-        MelGroup and MelGroups."""
-        return self.defaulters[attr].getDefault()
 
     def loadData(self,record,ins,endPos):
         """Loads data from input stream. Called by load()."""
@@ -140,8 +131,8 @@ class MelSet(object):
                              u'<%(eid)s[%(signature)s:%(fid)s]>' % {
                     u'signature': record.recType,
                     u'fid': strFid(record.fid),
-                    u'eid': (record.eid + u' ' if hasattr(record, 'eid')
-                             and record.eid is not None else u''),
+                    u'eid': (record.eid + u' ' if getattr(record, u'eid')
+                             is not None else u''),
                 })
                 for attr in record.__slots__:
                     attr1 = getattr(record, attr, None)
@@ -187,6 +178,7 @@ class MelSet(object):
         distributor = _MelDistributor(distributor_config.copy())
         self.elements += (distributor,)
         distributor.getLoaders(self.loaders)
+        distributor.getDefaulters(self.defaulters, self._mel_providers, u'')
         distributor.set_mel_set(self)
         return self
 
@@ -317,8 +309,8 @@ class MreRecord(object):
         return u'<%(eid)s[%(signature)s:%(fid)s]>' % {
             u'signature': self.recType,
             u'fid': strFid(self.fid),
-            u'eid': (self.eid + u' ' if hasattr(self, u'eid')
-                                     and self.eid is not None else u''),
+            u'eid': (self.eid + u' ' if getattr(self, u'eid') is not None
+                     else u''),
         }
 
     def getTypeCopy(self):
@@ -485,9 +477,6 @@ class MelRecord(MreRecord):
     _has_duplicate_attrs = False
     __slots__ = []
 
-    def __init__(self, header, ins=None, do_unpack=False):
-        self.__class__.melSet.initRecord(self, header, ins, do_unpack)
-
     @classmethod
     def validate_record_syntax(cls):
         """Performs validations on this record's definition."""
@@ -495,10 +484,10 @@ class MelRecord(MreRecord):
             cls.melSet.check_duplicate_attrs(cls.rec_sig)
 
     @classmethod
-    def getDefault(cls, attr):
+    def get_mel_object_for_group(cls, attr):
         """Returns default instance of specified instance. Only useful for
         MelGroup and MelGroups."""
-        return cls.melSet.getDefault(attr)
+        return cls.melSet._mel_providers[attr]()
 
     def loadData(self,ins,endPos):
         """Loads data from input stream. Called by load()."""
@@ -520,3 +509,12 @@ class MelRecord(MreRecord):
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
         self.__class__.melSet.updateMasters(self, masterset_add)
+
+    def __getattr__(self, missing_attr):
+        self.__class__._cache_misses[missing_attr] += 1
+        try:
+            target = self.melSet.defaulters[missing_attr]()
+            setattr(self, missing_attr, target)
+            return target
+        except KeyError:
+            raise AttributeError(missing_attr)
