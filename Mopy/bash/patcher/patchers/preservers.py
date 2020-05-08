@@ -523,22 +523,6 @@ class ImportGraphicsPatcher(APreserver):
     _fid_rec_attrs = bush.game.graphicsFidTypes
     patcher_tags = {'Graphics'}
 
-    def _inner_loop(self, keep, records, top_mod_rec, type_count,
-                    __attrgetters=attrgetter_cache):
-        id_data_dict = self.id_data
-        for rfid, record in records:
-            if rfid not in id_data_dict: continue
-            for attr, val in id_data_dict[rfid].items():
-                rec_attr = __attrgetters[attr](record)
-                if isinstance(rec_attr, str) and isinstance(val, str):
-                    rec_attr, val = rec_attr.lower(), val.lower()
-                if rec_attr != val: break
-            else: continue
-            for attr, val in id_data_dict[rfid].items():
-                setattr(record, attr, val)
-            keep(rfid, record)
-            type_count[top_mod_rec] += 1
-
 #------------------------------------------------------------------------------
 class ImportRacesPatcher(APreserver):
     rec_attrs = bush.game.import_races_attrs
@@ -548,7 +532,7 @@ class ImportRacesPatcher(APreserver):
                              chain.from_iterable(_fid_rec_attrs.values())))
 
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
-                    __attrgetters=attrgetter_cache):
+                    __attrgetters=attrgetter_cache): ##: could move the attr comparison logic to the record
         loop_setattr = setattr_deep if self._deep_attrs else setattr
         id_data_dict = self.id_data
         for rfid, record in records:

@@ -149,7 +149,8 @@ def getbestencoding(bitstream):
     encoding_ = _encodingSwap.get(encoding_,encoding_)
     return encoding_, confidence
 
-def decoder(byte_str, encoding=None, avoidEncodings=()) -> str:
+def decoder(byte_str, encoding=None, avoidEncodings=(),
+            returnEncoding=False) -> str:
     """Decode a byte string to unicode, using heuristics on encoding."""
     if isinstance(byte_str, str) or byte_str is None: return byte_str
     # Try the user specified encoding first
@@ -157,18 +158,26 @@ def decoder(byte_str, encoding=None, avoidEncodings=()) -> str:
         # TODO(ut) monkey patch
         if encoding == u'cp65001':
             encoding = u'utf-8'
-        try: return str(byte_str, encoding)
+        try:
+            return str(byte_str, encoding), encoding if returnEncoding \
+                else str(byte_str, encoding)
         except UnicodeDecodeError: pass
     # Try to detect the encoding next
     encoding, confidence = getbestencoding(byte_str)
     if encoding and confidence >= 0.55 and (
             encoding not in avoidEncodings or confidence == 1.0) and (
             encoding not in _blocked_encodings):
-        try: return str(byte_str, encoding)
+        try:
+            result1 = str(byte_str, encoding), encoding if returnEncoding \
+                else str(byte_str, encoding)
+            return result1
         except UnicodeDecodeError: pass
     # If even that fails, fall back to the old method, trial and error
     for encoding in encodingOrder:
-        try: return str(byte_str, encoding)
+        try:
+            result2 = str(byte_str, encoding), encoding if returnEncoding \
+                else str(byte_str, encoding)
+            return result2
         except UnicodeDecodeError: pass
     raise UnicodeDecodeError(u'Text could not be decoded using any method')
 
@@ -229,7 +238,7 @@ def encode_complex_string(string_val: str, max_size: int | None = None,
         bolt.pluginEncoding.
     :return: The encoded string."""
     preferred_encoding = preferred_encoding or pluginEncoding
-    bytes_val = encode(to_win_newlines(string_val.rstrip()),
+    bytes_val = encode(to_win_newlines(string_val.rstrip()), ##: todo needed??
         firstEncoding=preferred_encoding)
     if max_size is not None:
         bytes_val = bytes_val[:max_size]
@@ -634,6 +643,125 @@ class FName(str):
     #--repr
     def __repr__(self):
         return f'{type(self).__name__}({super().__repr__()})'
+
+class PluginStr(bytes):
+    """Plugin string - decode/rstrip when needed in comparisons. Base class
+    will use pluginEncoding for decoding."""
+    _preferred_encoding = None
+    # Nonempty __slots__ does not work for classes derived from
+    # "variable-length" built-in types such as long, str and tuple.
+    _avoid_encodings = {'utf8', 'utf-8'}
+    _ci_comparison = True
+
+    @property
+    def preferred_encoding(self):
+        return self._preferred_encoding or pluginEncoding
+
+    @property
+    def _decoded(self):
+        """Keep the encoding used by the decoder - if self.preferred_encoding
+        is None or decoder failed with it it will fallback to chardet."""
+        try:
+            return self._decoded_str
+        except AttributeError:
+            self._decode()
+            return self._decoded_str
+
+    def _decode(self):
+        # it may happen to have more than one null terminator
+        byte_str = self.rstrip(b'\x00')
+        self._decoded_str, self._preferred_encoding = decoder(byte_str,
+            self.preferred_encoding, avoidEncodings=self._avoid_encodings,
+            returnEncoding=True)
+
+    @property
+    def _cmp_key(self):
+        return self._decoded.lower() if self._ci_comparison else self._decoded
+
+    def reencode(self, target_encoding, maxSize=None, minSize=0):
+        """Decode then reencode the bytes if our preferred_encoding does not
+        match target_encoding. Note that if it *does* match, no decoding
+        operation will be performed to the string, caller is responsible for
+        making sure that self is *actually* a valid target-encoding encoded
+        byte string."""
+        # TODO self._preferred_encoding? would force reencoding in most cases
+        if self.preferred_encoding == target_encoding:
+            if not minSize and maxSize is None:
+                return self
+            to_encode = self # hopefully will not try to encode it
+        else: to_encode = self._decoded
+        return encode_complex_string(to_encode, maxSize, minSize,
+            target_encoding)
+
+    @classmethod
+    def from_basestring(cls, str_or_bytes):
+        return cls(encode(str_or_bytes, firstEncoding=cls.preferred_encoding or pluginEncoding))
+
+    #--Hash/Compare
+    def __hash__(self):
+        return hash(self._cmp_key)
+    def __eq__(self, other):
+        if isinstance(other, PluginStr):
+            return self._cmp_key == other._cmp_key
+        if isinstance(other, str):
+            return self._cmp_key == (other.lower() if self._ci_comparison else other)
+        return NotImplemented
+    def __ne__(self, other):
+        if isinstance(other, PluginStr):
+            return self._cmp_key != other._cmp_key
+        if isinstance(other, str):
+            return self._cmp_key != (other.lower() if self._ci_comparison else other)
+        return NotImplemented
+    def __lt__(self, other):
+        if isinstance(other, PluginStr):
+            return self._cmp_key < other._cmp_key
+        if isinstance(other, str):
+            return self._cmp_key != (other.lower() if self._ci_comparison else other)
+        return NotImplemented
+    def __ge__(self, other):
+        if isinstance(other, PluginStr):
+            return self._cmp_key >= other._cmp_key
+        if isinstance(other, str):
+            return self._cmp_key != (other.lower() if self._ci_comparison else other)
+        return NotImplemented
+    def __gt__(self, other):
+        if isinstance(other, PluginStr):
+            return self._cmp_key > other._cmp_key
+        if isinstance(other, str):
+            return self._cmp_key != (other.lower() if self._ci_comparison else other)
+        return NotImplemented
+    def __le__(self, other):
+        if isinstance(other, PluginStr):
+            return self._cmp_key <= other._cmp_key
+        if isinstance(other, str):
+            return self._cmp_key != (other.lower() if self._ci_comparison else other)
+        return NotImplemented
+    #--repr
+    def __repr__(self):
+        return u'%s(%s)' % (type(self).__name__, super(PluginStr, self).__repr__())
+    def __str__(self):
+        return self._decoded
+
+class ChardetStr(PluginStr):
+    """Use if you want automatic encoding detection - slow!"""
+
+    @property
+    def preferred_encoding(self):
+        return self._preferred_encoding # None == automatic detection
+
+    @classmethod
+    def from_basestring(cls, str_or_bytes):  # automatic detection
+        return cls(encode(str_or_bytes, firstEncoding=None))
+
+class StripNewlines(PluginStr):
+    """Removes all newlines (whether they are in LF, CR-LF or CR form) from
+    the decoded string."""
+
+    def _decode(self):
+        # in addition to super remove all newlines
+        super(StripNewlines, self)._decode()
+        # todo would (r)strip suffice??
+        self._decoded_str = remove_newlines(self._decoded_str)
 
 class LowerDict(dict):
     """Dictionary that transforms its keys to CIstr instances.

@@ -1002,7 +1002,7 @@ class ModList(_ModsUIList):
                                'activated.'))
         if miss_str := (mod_name in bosh.modInfos.missing_strings):
             mouseText.append(_('Plugin is missing string localization files.'))
-        if bad_master_names := (mod_info.hasBadMasterNames()):
+        if bad_master_names := (mod_info.has_unicode_masters):
             mouseText.append(_('Has master names that will not load.'))
         if miss_str or bad_master_names:
             item_format.back_key = 'mods.bkgd.doubleTime.load' if \

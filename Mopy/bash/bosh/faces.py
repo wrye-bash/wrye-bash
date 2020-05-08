@@ -416,7 +416,7 @@ class PCFaces(object):
         #--Tes4
         tes4 = modFile.tes4
         if not tes4.author:
-            tes4.author = u'[wb]'
+            tes4.author = b'[wb]'
         if not tes4.description:
             tes4.description = _(u'Face dump from save game.')
         if bush.game.master_file not in tes4.masters:

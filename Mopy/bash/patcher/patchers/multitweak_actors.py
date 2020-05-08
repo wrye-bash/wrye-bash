@@ -35,12 +35,8 @@ class _AActorTweak(MultiTweakItem):
     @staticmethod
     def _get_skeleton_path(record):
         """Retrieves an actor's skeleton model path from the specified record.
-        May return None if the path is not present."""
-        try:
-            return record.model.modPath
-        except AttributeError:
-            # Some weird plugins have NPCs with no skeleton assigned to them
-            return None
+        Some weird plugins have NPCs with no skeleton assigned to them ."""
+        return record.model.modPath
 
 class _ANpcTweak(_AActorTweak):
     """Base for all NPC_ tweaks."""
@@ -167,7 +163,7 @@ class VanillaNPCSkeletonPatcher(_ASkeletonTweak):
 
     def wants_record(self, record):
         old_mod_path = self._get_skeleton_path(record)
-        return old_mod_path and old_mod_path.lower() == self._old_skeleton ##: TODO drop lower()
+        return old_mod_path == self._old_skeleton # compares in lowercase
 
     def _get_target_skeleton(self, record):
         return self._new_skeleton

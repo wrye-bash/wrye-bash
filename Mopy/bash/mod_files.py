@@ -459,6 +459,7 @@ class ModHeaderReader(object):
                             # No need to worry about newlines, these are Editor
                             # IDs and so won't contain any
                             eid = decoder(fmr_read(mel_size).rstrip(null1),
+                                          ## FIXME u'%s' % PluginStr(subrec.mel_data.rstrip(null1))
                                           wanted_encoding, avoided_encodings)
                             break
                         else:

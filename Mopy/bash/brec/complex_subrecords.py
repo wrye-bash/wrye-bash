@@ -28,7 +28,6 @@ from collections import defaultdict
 from copy import deepcopy
 from io import BytesIO
 from itertools import chain
-from typing import BinaryIO
 
 from . import utils_constants
 from .advanced_elements import AttrValDecider, MelCounter, MelPartialCounter, \
@@ -1425,12 +1424,11 @@ class MelStagTnam(MelString):
         return (record.stag_sound_fid.dump(),
                 super().pack_subrecord_data(record))
 
-    def packSub(self, out: BinaryIO, stag_sr_data: tuple[int, str]):
-        byte_string = struct_pack('I', stag_sr_data[0])
-        byte_string += bolt.encode_complex_string(stag_sr_data[1],
-            self.maxSize, self.minSize, self.encoding)
-        # Skip MelString's packSub, we already encoded the string
-        super(MelString, self).packSub(out, byte_string)
+    def packSub(self, out, stag_sr_data: tuple[int, bolt.PluginStr],
+                force_encoding=None):
+        # Pack the int using base implementation
+        super(MelString, self).packSub(out, struct_pack('I', stag_sr_data[0]))
+        super().packSub(out, stag_sr_data[1], force_encoding)
 
 #------------------------------------------------------------------------------
 # VMAD - Virtual Machine Adapter

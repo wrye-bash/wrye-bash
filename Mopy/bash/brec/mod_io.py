@@ -22,16 +22,17 @@
 # =============================================================================
 """Houses very low-level classes for reading and writing bytes in plugin
 files."""
+from __future__ import annotations
+
 import os
 from io import BytesIO
 
 # no local imports beyond this, imported everywhere in brec
 from . import utils_constants
-from .utils_constants import FID, ZERO_FID, FormId, group_types, \
-    int_unpacker, null1
+from .utils_constants import FID, ZERO_FID, FormId, group_types, int_unpacker
 from .. import bolt, bush
-from ..bolt import decoder, sig_to_str, struct_pack, struct_unpack, \
-    structs_cache
+from ..bolt import sig_to_str, struct_pack, struct_unpack, structs_cache, \
+    PluginStr
 from ..exception import ModError, ModReadError, ModSizeError, StateError
 from ..game import ObjectIndexRange
 
@@ -330,6 +331,12 @@ class ModReader(object):
             raise ModSizeError(self.inName, debug_strs, (target_size,), size)
         return self.ins.read(size)
 
+    class _TranslatedPluginStr(PluginStr):
+
+        def __init__(self, decoded_string):
+            super(ModReader._TranslatedPluginStr, self).__init__()
+            self._decoded_str = decoded_string
+
     def readLString(self, size, *debug_strs, __unpacker=int_unpacker):
         """Read translatable string. If the mod has STRINGS files, this is a
         uint32 to lookup the string in the string table. Otherwise, this is a
@@ -339,25 +346,10 @@ class ModReader(object):
                 endPos = self.ins.tell() + size
                 raise ModReadError(self.inName, debug_strs, endPos, self.size)
             id_, = self.unpack(__unpacker, 4, *debug_strs)
-            if id_ == 0: return ''
-            return self.strings.get(id_, 'LOOKUP FAILED!') #--Same as Skyrim
+            return ModReader._TranslatedPluginStr(
+                self.strings.get(id_, 'LOOKUP FAILED!') if id_ else '')
         else:
-            return self.readString(size, *debug_strs)
-
-    def readString32(self, *debug_str, __unpacker=int_unpacker):
-        """Read wide pascal string: uint32 is used to indicate length."""
-        strLen, = self.unpack(__unpacker, 4, debug_str)
-        return self.readString(strLen, *debug_str)
-
-    def readString(self, size, *debug_strs):
-        """Read string from file, stripping zero terminator."""
-        return u'\n'.join(decoder(x,bolt.pluginEncoding,avoidEncodings=(u'utf8',u'utf-8')) for x in
-                          bolt.cstrip(self.read(size, *debug_strs)).split(b'\n'))
-
-    def readStrings(self, size, *debug_strs):
-        """Read strings from file, stripping zero terminator."""
-        return [decoder(x,bolt.pluginEncoding,avoidEncodings=(u'utf8',u'utf-8')) for x in
-                self.read(size, *debug_strs).rstrip(null1).split(null1)]
+            return PluginStr(self.read(size, *debug_strs))
 
     def unpack(self, struct_unpacker, size, *debug_strs):
         """Read size bytes from the file and unpack according to format of

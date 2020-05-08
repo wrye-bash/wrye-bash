@@ -37,7 +37,7 @@ from .utils_constants import FID, ZERO_FID, ambient_lighting_attrs, \
     PackGeneralFlags, PackInterruptFlags, position_attrs, rotation_attrs, \
     EnableParentFlags
 from ..bolt import Flags, TrimmedFlags, dict_sort, encode, flag, struct_pack, \
-    structs_cache
+    structs_cache, PluginStr
 from ..exception import ModError
 
 #------------------------------------------------------------------------------
@@ -1298,15 +1298,15 @@ class MelMODS(MelBase):
     def load_mel(self, record, ins, sub_type, size_, *debug_strs,
                  __unpacker=int_unpacker, __load_fid=_fid_element.load_bytes):
         insUnpack = ins.unpack
-        insRead32 = ins.readString32
         count, = insUnpack(__unpacker, 4, *debug_strs)
         mods_data = []
         dataAppend = mods_data.append
         for x in range(count):
-            string = insRead32(*debug_strs)
+            strLen, = insUnpack(__unpacker, 4, *debug_strs)
+            pl_str = PluginStr(ins.read(strLen, *debug_strs))
             int_fid = __load_fid(ins, 4)
             index, = insUnpack(__unpacker, 4, *debug_strs)
-            dataAppend((string, int_fid, index))
+            dataAppend((pl_str, int_fid, index))
         setattr(record, self.attr, mods_data)
 
     def pack_subrecord_data(self, record, *, __packer=structs_cache['I'].pack,
@@ -1316,16 +1316,16 @@ class MelMODS(MelBase):
             # Sort by 3D Name and 3D Index
             mods_data.sort(key=lambda e: (e[0], e[2]))
             return b''.join([__packer(len(mods_data)), *(chain(*(
-                [__packer(len(string)), encode(string), __fid_packer(int_fid),
-                 __packer(index)] for (string, int_fid, index) in
+                [__packer(len(pl_str)), encode(pl_str), __fid_packer(int_fid),
+                 __packer(index)] for (pl_str, int_fid, index) in
             mods_data)))])
 
     def mapFids(self, record, function, save_fids=False):
         attr = self.attr
         mods_data = getattr(record, attr)
         if mods_data is not None:
-            mods_data = [(string,function(fid),index) for (string,fid,index)
-                         in mods_data]
+            mods_data = [(pl_str, function(fid), index) for
+                         (pl_str, fid, index) in mods_data]
             if save_fids: setattr(record, attr, mods_data)
 
 #------------------------------------------------------------------------------

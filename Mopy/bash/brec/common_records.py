@@ -32,15 +32,15 @@ from .advanced_elements import AttrValDecider, MelSimpleArray, MelSorted, \
     MelUnion
 from .basic_elements import MelBase, MelFid, MelSimpleGroups, MelFixedString, \
     MelFloat, MelGroups, MelLString, MelNull, MelSInt32, MelString, MelStruct, \
-    MelUInt8Bool, MelUInt32, MelUInt32Flags, MelUnicode, unpackSubHeader, \
-    MelUInt32Bool, MelGroup, AttrsCompare
+    MelUInt8Bool, MelUInt32, MelUInt32Flags, MelUnicode, MelUInt32Bool, \
+    MelGroup, AttrsCompare
 from .common_subrecords import MelBounds, MelColor, MelColorInterpolator, \
     MelDebrData, MelDescription, MelEdid, MelImpactDataset, \
     MelValueInterpolator
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID, FormId, gen_coed_key
-from .. import bolt, bush, exception
-from ..bolt import Flags, FName, decoder, flag, remove_newlines, sig_to_str, \
+from .. import bolt, bush
+from ..bolt import Flags, FName, ChardetStr, StripNewlines, decoder, flag, \
     struct_pack, structs_cache, to_unix_newlines, to_win_newlines
 
 #------------------------------------------------------------------------------
@@ -69,6 +69,33 @@ class AMreActor(AMreWithItems):
         self.spells = [s for s in self.spells if s.mod_fn in keep_plugins]
         self.factions = [f for f in self.factions if
                          f.faction.mod_fn in keep_plugins]
+
+# PluginStr overrides
+class _CaseSensitiveStr(ChardetStr):
+    _ci_comparison = False
+
+    def _decode(self):
+        # in addition to super normalize all newlines
+        super()._decode()
+        self._decoded_str = to_unix_newlines(self._decoded_str)
+
+class _AuthorStr(_CaseSensitiveStr, StripNewlines):
+
+    def _decode(self):
+        # remove all newlines - bypass _CaseSensitiveStr._decode
+        super(_CaseSensitiveStr, self)._decode()
+
+class _DescrStr(_CaseSensitiveStr):
+
+    def _decode(self):
+        # in addition to super convert all newlines to CR-LF - description only
+        super()._decode()
+        self._decoded_str = to_win_newlines(self._decoded_str)
+
+class _MelChardet(MelString):
+    """Falls back to chardet to decode the string and compares case
+    sensitive. **Only** use for MelAuth and MelDesc."""
+    _wrapper_bytes_type = _CaseSensitiveStr
 
 #------------------------------------------------------------------------------
 # Base classes ----------------------------------------------------------------
@@ -235,36 +262,41 @@ class AMreHeader(MelRecord):
                 for master_name, master_size in zip(record.masters,
                                                     record.master_sizes):
                     MelUnicode(b'MAST', '', encoding=u'cp1252').packSub(
-                        out, master_name)
+                        out, ChardetStr(master_name.encode(u'cp1252')),
+                        force_encoding=u'cp1252')
                     MelBase(b'DATA', '').packSub(
                         out, struct_pack(u'Q', master_size))
             else:
                 for master_name in record.masters:
                     MelUnicode(b'MAST', '', encoding=u'cp1252').packSub(
-                        out, master_name)
+                        out, ChardetStr(master_name.encode(u'cp1252')),
+                        force_encoding=u'cp1252')
 
-    class MelAuthor(MelUnicode):
+    class MelAuthor(MelString):
+        _wrapper_bytes_type = _AuthorStr
         def __init__(self):
             super().__init__(b'CNAM', 'author_pstr',
                              maxSize=bush.game.Esp.max_author_length)
 
-    class MelDescription(MelUnicode):
+    class MelDescription(MelString):
+        _wrapper_bytes_type = _DescrStr
         def __init__(self):
             super().__init__(b'SNAM', 'description_pstr',
                              maxSize=bush.game.Esp.max_desc_length)
 
     @property
     def description(self):
-        return to_unix_newlines(self.description_pstr or '')
+        return self.description_pstr._decoded
     @description.setter
     def description(self, new_desc):
-        self.description_pstr = to_win_newlines(new_desc)
+        self.description_pstr = _DescrStr.from_basestring(new_desc)
+
     @property
     def author(self):
-        return remove_newlines(self.author_pstr or '')
+        return self.author_pstr._decoded
     @author.setter
     def author(self, new_author):
-        self.author_pstr = remove_newlines(new_author)
+        self.author_pstr = _AuthorStr.from_basestring(new_author)
 
     def loadData(self, ins, endPos, *, file_offset=0):
         """Loads data from input stream - we need to grab the masters as
