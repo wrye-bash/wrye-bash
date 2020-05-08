@@ -711,13 +711,6 @@ class _ANamesTweak_RenameF(CustomChoiceTweak):
             gold_rec = patch_file.create_record(b'MISC', self._gold_fid)
             self.tweak_record(gold_rec) # Sets the FULL
             for gold_attr, gold_value in self._gold_attrs.items():
-                if '.' in gold_attr:
-                    # Check if we have to set a MelObject for a MelGroup's attr
-                    ##: This should have a better solution (in records?)
-                    obj_attr = gold_attr.split('.', maxsplit=1)[0]
-                    if getattr(gold_rec, obj_attr) is None:
-                        setattr(gold_rec, obj_attr,
-                                gold_rec.getDefault(obj_attr))
                 setattr_deep(gold_rec, gold_attr, gold_value)
 
     def tweak_log(self, log, count):
