@@ -28,7 +28,7 @@ from itertools import chain
 
 from ._shared import ExSpecial, cobl_main
 from .... import bush
-from ....brec import FormId, RecordType, null4, null3, null2
+from ....brec import FormId, RecordType, null4
 
 # Cobl Catalogs ---------------------------------------------------------------
 _ingred_alchem = (
@@ -209,16 +209,12 @@ class SEWorldTestsPatcher(ExSpecial):
             for condition in record.conditions:
                 if condition.ifunc == 365: break #--365: playerInSeWorld
             else:
-                condition = record.getDefault(u'conditions')
+                condition = record.get_mel_object_for_group('conditions')
                 condition.ifunc = 365
                 # Set parameters etc. needed for this function (no parameters
                 # and a float comparison value)
-                condition.param2 = condition.param1 = condition.unused3 = null4
+                condition.param2 = condition.param1 = null4
                 condition.compValue = 0.0
-                # set the rest of the MelStruct fields ad hoc
-                condition.operFlag = 0 # converted to _CtdaTypeFlags on dump
-                condition.unused1 = null3
-                condition.unused2 = null2
                 record.conditions.insert(0, condition)
                 if keep(rid, record):
                     patched.append(record.eid)

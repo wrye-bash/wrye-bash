@@ -164,16 +164,15 @@ class CoblExhaustionPatcher(_ExSpecialList):
             #--Okay, do it
             record.full = f'+{record.full}'
             record.spell_type = 3 #--Lesser power
-            effect = record.getDefault(u'effects')
+            effect = record.get_mel_object_for_group('effects')
             effect.effect_sig = b'SEFF'
             effect.duration = duration
-            scriptEffect = record.getDefault(u'effects.scriptEffect')
-            scriptEffect.full = u'Power Exhaustion'
-            scriptEffect.script_fid = self._exhaust_fid
-            scriptEffect.school = 2
-            scriptEffect.visual = null4
-            scriptEffect.flags.hostile = False
-            effect.scriptEffect = scriptEffect
+            se = record.get_mel_object_for_group('effects.scriptEffect')
+            se.full = 'Power Exhaustion'
+            se.script_fid = self._exhaust_fid
+            se.school = 2
+            se.flags.hostile = False
+            effect.scriptEffect = se
             record.effects.append(effect)
             keep(rid, record)
             count[rid.mod_fn] += 1
@@ -242,21 +241,20 @@ class MorphFactionsPatcher(_ExSpecialList):
             if not any(mFactLong == relation.faction for relation in
                        record.relations):
                 record.fact_flags.hidden_from_pc = False
-                relation = record.getDefault(u'relations')
+                relation = record.get_mel_object_for_group('relations')
                 relation.faction = mFactLong
                 relation.mod = 10
                 record.relations.append(relation)
                 mname, rankName = id_info[rid]
                 record.full = mname
                 if not record.ranks:
-                    record.ranks = [record.getDefault(u'ranks')]
+                    record.ranks = [record.get_mel_object_for_group('ranks')]
                 for rank in record.ranks:
                     if rank.rank_level is None: rank.rank_level = 0
                     if not rank.male_title: rank.male_title = rankName
                     if not rank.female_title: rank.female_title = rankName
                     if not rank.insignia_path:
-                        # if rank_level was not present it will be None
-                        dds_ = f'generic{rank.rank_level or 0:02d}.dds'
+                        dds_ = f'generic{rank.rank_level:02d}.dds'
                         rank.insignia_path = rf'Menus\Stats\Cobl\{dds_}'
                 keep(rid, record)
                 changes_counts[rid.mod_fn] += 1
@@ -266,7 +264,7 @@ class MorphFactionsPatcher(_ExSpecialList):
             relations = record.relations
             del relations[:]
             for faction in mFactable:
-                relation = record.getDefault(u'relations')
+                relation = record.get_mel_object_for_group('relations')
                 relation.faction = faction
                 relation.mod = 10
                 relations.append(relation)
