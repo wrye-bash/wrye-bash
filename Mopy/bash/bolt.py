@@ -2625,12 +2625,12 @@ class _RP_LeafSubpath(_ARP_Subpath):
     and sets values. Those values must be str instances."""
 
     def rp_eval(self, record):
-        rec_val = getattr(record, self._subpath_attr, None)
+        rec_val = getattr(record, self._subpath_attr)
         return [rec_val] if rec_val is not None else []
 
     def rp_map(self, record, func, *args) -> None:
         s_attr = self._subpath_attr
-        rec_val = getattr(record, s_attr, None)
+        rec_val = getattr(record, s_attr)
         if rec_val is not None:
             setattr(record, s_attr, func(*args, rec_val))
 

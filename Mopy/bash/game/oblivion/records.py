@@ -26,7 +26,7 @@ import re
 
 from ...bolt import Flags, LowerDict, flag, int_or_none, int_or_zero, \
     sig_to_str, str_or_none, str_to_sig, structs_cache
-from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
+from ...brec import MelModelCompare, FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     AMreHeader, AMreLeveledList, AMreRace, AMreWithItems, AMreWrld, AMreWthr, \
     AttrValDecider, BipedFlags, FlagDecider, MelActionFlags, MelActorSounds, \
     MelAnimations, MelArray, MelBase, MelBaseR, MelBodyParts, MelBookText, \
@@ -34,7 +34,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelConditionsTes4, MelContData, MelDeathItem, MelDescription, AMreGlob, \
     MelDoorFlags, MelEdid, MelEffectsTes4, MelEffectsTes4ObmeFull, \
     MelEnableParent, MelEnchantment, MelFactions, MelFactRanks, MelFid, \
-    MelFloat, MelFull, MelGrasData, MelGroup, MelGroups, MelSimpleGroups, \
+    MelFloat, MelFull, MelGrasData, MelGroups, MelSimpleGroups, \
     MelHairFlags, MelIco2, MelIcon, MelIdleRelatedAnims, MelIngredient, \
     MelLandShared, MelLighFade, MelLists, MelLLChanceNone, MelLLFlags, \
     MelLscrLocations, MelLtexGrasses, MelLtexSnam, MelMapMarker, MelNull, \
@@ -57,7 +57,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
 #------------------------------------------------------------------------------
-class MelModel(MelGroup):
+class MelModel(MelModelCompare):
     """Represents a model subrecord."""
     typeSets = {
         b'MODL': (b'MODL', b'MODB', b'MODT'),
@@ -353,8 +353,8 @@ class MreHasEffects(MelRecord):
             school = self._get_spell_school()
             buffWrite(f'{aValues[20 + school]}\n')
         for index, effect in enumerate(self.effects):
-            if effect.scriptEffect: ##: #480 - setDefault commit - return None
-                effectName = effect.scriptEffect.full or 'Script Effect'
+            if se := effect.scriptEffect:  # should evaluate to False if empty
+                effectName = se.full or 'Script Effect'
             else:
                 effectName = MreMgef.mgef_name[effect.effect_sig]
                 if effect.effect_sig in avEffects:
@@ -393,7 +393,7 @@ class MreHasEffects(MelRecord):
                                                        int_or_zero(actorvalue))
             if None in (eff_name,magnitude,area,duration,range_,actorvalue):
                 continue
-            eff = cls.getDefault('effects')
+            eff = cls.get_mel_object_for_group('effects')
             effects_list.append(eff)
             eff.effect_sig = str_to_sig(eff_name)
             eff.magnitude = magnitude
@@ -412,12 +412,11 @@ class MreHasEffects(MelRecord):
             if seschool:
                 seschool = schoolTypeName_Number.get(seschool.lower(),
                                                      int_or_zero(seschool))
-            seflags = MelEffectsTes4.se_flags(0)
-            seflags.hostile = se_hostile.lower() == 'true'
             sename = str_or_none(sename)
             if None in (seschool, sename):
                 continue
-            eff.scriptEffect = se = cls.getDefault('effects.scriptEffect')
+            eff.scriptEffect = se = cls.get_mel_object_for_group(
+                'effects.scriptEffect')
             se.full = sename
             se.script_fid = _coerce_fid(semod, seobj)
             se.school = seschool
@@ -431,7 +430,7 @@ class MreHasEffects(MelRecord):
                 sevisuals = __packer(sevisuals)
             sevisual = sevisuals
             se.visual = sevisual
-            se.flags = seflags
+            se.flags.hostile = se_hostile.lower() == 'true'
         return effects_list
 
     @classmethod
@@ -448,8 +447,7 @@ class MreHasEffects(MelRecord):
             actorvalue = actorValueNumber_Name.get(actorvalue,actorvalue)
             output.append(f',,"{efname}","{magnitude:d}","{area:d}",'
                           f'"{duration:d}","{range_}","{actorvalue}"')
-            if effect.scriptEffect: ##: #480 - setDefault commit - return None
-                se = effect.scriptEffect
+            if se := effect.scriptEffect: # should evaluate to False if empty
                 longid, seschool, sevisual, seflags, sename = \
                     se.script_fid, se.school, se.visual, se.flags, se.full
                 sevisual = 'NONE' if sevisual == null4 else sig_to_str(
@@ -1760,12 +1758,11 @@ class MreNpc_(AMreActor):
     def setRace(self, race):
         """Set additional race info."""
         self.race = race
-        if not self.model:
-            self.model = self.getDefault('model')
         if race in (0x23fe9, 0x223c7): # Argonian & Khajiit
             self.model.modPath = r'Characters\_Male\SkeletonBeast.NIF'
         else:
             self.model.modPath = r'Characters\_Male\skeleton.nif'
+        self.model.modb = 0.0 ##: Correct? # TODO NEEDED?
         fnams = {
             0x23fe9: b'\xdc<',    # Argonian
             0x224fc: b'H\x1d',    # Breton
@@ -1864,7 +1861,7 @@ class MreQust(_ObIcon):
         MelSorted(MelGroups('stages',
             MelSInt16(b'INDX', 'stage'),
             MelGroups('entries',
-                MelUInt8Flags(b'QSDT', 'flags', _StageFlags),
+                MelUInt8Flags(b'QSDT', 'flags', _StageFlags, set_default=0),
                 MelConditionsTes4(),
                 MelString(b'CNAM','text'),
                 MelEmbeddedScript(),
@@ -1889,6 +1886,16 @@ class MreQust(_ObIcon):
 
     def can_set_icon(self):
         return self.stages and super().can_set_icon()
+
+    @classmethod
+    def get_mel_object_for_group(cls, att):
+        mel_obj = super().get_mel_object_for_group(att)
+        # Gentile or Jew, remember this, and *forget about* using
+        # get_mel_object_for_group
+        mel_struct = cls.melSet.elements[5].elements[0].element_mapping[
+            b'CTDA']._ctda_mel
+        mel_struct.set_mel_struct_defaults(mel_obj)
+        return mel_obj
 
 #------------------------------------------------------------------------------
 class MreRace(AMreRace):

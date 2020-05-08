@@ -26,7 +26,7 @@ file must be imported till then."""
 
 from ... import bush
 from ...bolt import Flags, TrimmedFlags, flag, struct_calcsize, structs_cache
-from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
+from ...brec import MelModelCompare, FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     AMreFlst, AMreHeader, AMreImad, AMreLeveledList, AMreRace, AMreWithItems, \
     AMreWrld, AMreWthr, AttrValDecider, BipedFlags, MelActionFlags, \
     MelActivateParents, MelActorSounds, MelAddnDnam, MelAnimations, MelArray, \
@@ -134,7 +134,7 @@ class _AMreReferenceFo3(MelRecord):
         multi_bound: bool = flag(31)
 
 #------------------------------------------------------------------------------
-class MelModel(MelGroup):
+class MelModel(MelModelCompare):
     """Represents a model subrecord."""
     typeSets = {
         b'MODL': (b'MODL', b'MODB', b'MODT', b'MODS', b'MODD'),
@@ -348,8 +348,8 @@ class MelRaceHeadPart(MelGroup):
             target_head_part = getattr(record, self.attr)
             # Special handling for ears: If ICON or MICO is present, don't
             # dump the model
-            has_icon = hasattr(target_head_part, 'iconPath')
-            has_mico = hasattr(target_head_part, 'smallIconPath')
+            has_icon = getattr(target_head_part, 'iconPath', None)
+            has_mico = getattr(target_head_part, 'smallIconPath', None)
             if not has_icon and not has_mico:
                 self._modl_loader.dumpData(target_head_part, out)
             else:
@@ -2435,7 +2435,7 @@ class MreQust(MelRecord):
         MelSorted(MelGroups('stages',
             MelSInt16(b'INDX', 'stage'),
             MelGroups('entries',
-                MelUInt8Flags(b'QSDT', u'flags', stageFlags),
+                MelUInt8Flags(b'QSDT', 'flags', stageFlags, set_default=0),
                 MelConditionsFo3(),
                 MelString(b'CNAM','text'),
                 MelEmbeddedScript(),
@@ -3314,6 +3314,9 @@ class MelWthrColorsFnv(MelArray):
         self._element_old = MelTruncatedStruct(
             wthr_sub_sig, *struct_definition,
             old_versions={u'3Bs3Bs3Bs3Bs'})
+        class _MelObject(MelObject):
+            __slots__ = self._element_old.attrs
+        self._mel_object_type = _MelObject
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         if size_ == self._new_sizes[sub_type]:
@@ -3323,13 +3326,11 @@ class MelWthrColorsFnv(MelArray):
             # Copied and adjusted from MelArray. Yuck. See comment below
             # docstring for some ideas for getting rid of this
             append_entry = getattr(record, self.attr).append
-            entry_slots = self._element_old.attrs
             entry_size = struct_calcsize(u'3Bs3Bs3Bs3Bs')
             load_entry = self._element_old.load_mel
             for x in range(size_ // entry_size):
-                arr_entry = MelObject()
+                arr_entry = self._mel_object_type()
                 append_entry(arr_entry)
-                arr_entry.__slots__ = entry_slots
                 load_entry(arr_entry, ins, sub_type, entry_size, *debug_strs)
         else:
             _expected_sizes = (self._new_sizes[sub_type],
