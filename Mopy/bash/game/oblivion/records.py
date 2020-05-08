@@ -22,7 +22,6 @@
 #
 # =============================================================================
 """This module contains the oblivion record classes."""
-import struct
 from collections import OrderedDict
 
 from ... import brec
@@ -37,7 +36,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelSequential, MelUnion, FlagDecider, AttrValDecider, PartialLoadDecider, \
     MelTruncatedStruct, MelCoordinates, MelIcon, MelIco2, MelEdid, MelFull, \
     MelArray, MelWthrColors, MelObject, MreDialBase, MreActorBase, \
-    MreWithItems, MelReadOnly, MelCtda, MelRef3D, MelXlod
+    MreWithItems, MelReadOnly, MelCtda, MelRef3D, MelXlod, MelWorldBounds, \
+    MelEnableParent, MelRefScale
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
 
@@ -392,7 +392,7 @@ class MreTes4(MreHeaderBase):
 
     melSet = MelSet(MelStruct('HEDR', 'f2I', ('version', 0.8), 'numRecords',
                               ('nextObject', 0x800)),
-        MelBase('OFST','ofst_p',),  #--Obsolete?
+        MelNull(b'OFST'), # Not even CK/xEdit can recalculate these right now
         MelBase('DELE','dele_p',),  #--Obsolete?
         MelUnicode('CNAM','author',u'',512),
         MelUnicode('SNAM','description',u'',512),
@@ -405,8 +405,6 @@ class MreAchr(MelRecord):
     """Placed NPC."""
     rec_sig = b'ACHR'
 
-    _flags = Flags(0, Flags.getNames('oppositeParent'))
-
     melSet = MelSet(
         MelEdid(),
         MelFid('NAME','base'),
@@ -414,12 +412,11 @@ class MreAchr(MelRecord):
         MelNull('XPCI'),
         MelNull('FULL'),
         MelXlod(),
-        MelOptStruct('XESP', 'IB3s', (FID, 'parent'), (_flags, 'parentFlags'),
-                     ('unused1', null3)),
+        MelEnableParent(),
         MelFid('XMRC','merchantContainer'),
         MelFid('XHRS','horse'),
         MelBase('XRGD','xrgd_p'),
-        MelOptFloat(b'XSCL', (u'ref_scale', 1.0)),
+        MelRefScale(),
         MelRef3D(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -428,17 +425,14 @@ class MreAcre(MelRecord):
     """Placed Creature."""
     rec_sig = b'ACRE'
 
-    _flags = Flags(0, Flags.getNames('oppositeParent'))
-
     melSet = MelSet(
         MelEdid(),
         MelFid('NAME','base'),
         MelOwnership(),
         MelXlod(),
-        MelOptStruct('XESP', 'IB3s', (FID, 'parent'), (_flags, 'parentFlags'),
-                     ('unused1', null3)),
+        MelEnableParent(),
         MelBase('XRGD','xrgd_p'), ###Ragdoll Data, ByteArray
-        MelOptFloat(b'XSCL', (u'ref_scale', 1.0)),
+        MelRefScale(),
         MelRef3D(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1619,7 +1613,6 @@ class MreRefr(MelRecord):
         'visible',
         'can_travel_to',
     ))
-    _parentFlags = Flags(0, Flags.getNames('oppositeParent'))
     _actFlags = Flags(0, Flags.getNames('useDefault', 'activate', 'open',
                                          'openByDefault'))
     _lockFlags = Flags(0, Flags.getNames(None, None, 'leveledLock'))
@@ -1644,8 +1637,7 @@ class MreRefr(MelRecord):
                     (_lockFlags, 'lockFlags'), ('unused3', null3),
                     is_optional=True, old_versions={'B3sIB3s'}),
         MelOwnership(),
-        MelOptStruct('XESP','IB3s',(FID,'parent'),
-                     (_parentFlags,'parentFlags'),('unused4',null3)),
+        MelEnableParent(),
         MelFid('XTRG','targetId'),
         MelBase('XSED','seed_p'),
         ####SpeedTree Seed, if it's a single byte then it's an offset into
@@ -1668,7 +1660,7 @@ class MreRefr(MelRecord):
         ),
         MelBase('ONAM','onam_p'),
         MelBase('XRGD','xrgd_p'),
-        MelOptFloat(b'XSCL', (u'ref_scale', 1.0)),
+        MelRefScale(),
         MelOptUInt8(b'XSOL', u'ref_soul'),
         MelRef3D(),
     )
@@ -1970,10 +1962,9 @@ class MreWrld(MelRecord):
         MelStruct(b'MNAM', u'2i4h', u'dimX', u'dimY', u'NWCellX', u'NWCellY',
                   u'SECellX', u'SECellY'),
         MelUInt8('DATA', (_flags, 'flags', 0)),
-        MelStruct('NAM0', '2f', 'object_bounds_min_x', 'object_bounds_min_y'),
-        MelStruct('NAM9', '2f', 'object_bounds_max_x', 'object_bounds_max_y'),
+        MelWorldBounds(),
         MelOptUInt32('SNAM', 'sound'),
-        MelBase('OFST','ofst_p'),
+        MelNull(b'OFST'), # Not even CK/xEdit can recalculate these right now
     )
     __slots__ = melSet.getSlotsUsed()
 

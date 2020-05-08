@@ -38,7 +38,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, MelBounds, null1, \
     null2, null3, null4, MelTruncatedStruct, MelReadOnly, MelCoordinates, \
     MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, MelArray, \
-    MelObject, MreDialBase, MreWithItems, MelRef3D, MelXlod
+    MelObject, MreDialBase, MreWithItems, MelRef3D, MelXlod, MelNull, \
+    MelEnableParent, MelRefScale
 from ...exception import ModSizeError
 
 #------------------------------------------------------------------------------
@@ -51,7 +52,7 @@ class MreTes4(MreHeaderBase):
     melSet = MelSet(
         MelStruct('HEDR', 'f2I', ('version', 1.34), 'numRecords',
                   ('nextObject', 0x800)),
-        MelBase('OFST','ofst_p',),  #--Obsolete?
+        MelNull(b'OFST'), # Not even CK/xEdit can recalculate these right now
         MelBase('DELE','dele_p',),  #--Obsolete?
         MelUnicode('CNAM','author',u'',512),
         MelUnicode('SNAM','description',u'',512),
@@ -64,8 +65,6 @@ class MreTes4(MreHeaderBase):
 class MreAchr(MelRecord):
     """Placed NPC."""
     rec_sig = b'ACHR'
-
-    _flags = Flags(0, Flags.getNames('oppositeParent','popIn'))
 
     melSet = MelSet(
         MelEdid(),
@@ -98,11 +97,11 @@ class MreAchr(MelRecord):
             ),
         ),
         MelString('XATO','activationPrompt'),
-        MelOptStruct('XESP','IB3s',(FID,'parent'),(_flags,'parentFlags'),('unused1',null3)),
+        MelEnableParent(),
         MelOptFid('XEMI', 'emittance'),
         MelFid('XMBR','multiboundReference'),
         MelBase('XIBS','ignoredBySandbox'),
-        MelOptFloat(b'XSCL', (u'ref_scale', 1.0)),
+        MelRefScale(),
         MelRef3D(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -111,8 +110,6 @@ class MreAchr(MelRecord):
 class MreAcre(MelRecord):
     """Placed Creature."""
     rec_sig = b'ACRE'
-
-    _flags = Flags(0, Flags.getNames('oppositeParent','popIn'))
 
     melSet = MelSet(
         MelEdid(),
@@ -146,11 +143,11 @@ class MreAcre(MelRecord):
             ),
         ),
         MelString('XATO','activationPrompt'),
-        MelOptStruct('XESP','IB3s',(FID,'parent'),(_flags,'parentFlags'),('unused1',null3)),
+        MelEnableParent(),
         MelOptFid('XEMI', 'emittance'),
         MelFid('XMBR','multiboundReference'),
         MelBase('XIBS','ignoredBySandbox'),
-        MelOptFloat(b'XSCL', (u'ref_scale', 1.0)),
+        MelRefScale(),
         MelRef3D(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1092,7 +1089,6 @@ class MrePgre(MelRecord):
     """Placed Grenade."""
     rec_sig = b'PGRE'
 
-    _flags = Flags(0, Flags.getNames('oppositeParent'))
     _watertypeFlags = Flags(0, Flags.getNames('reflection','refraction'))
 
     melSet = MelSet(
@@ -1128,11 +1124,11 @@ class MrePgre(MelRecord):
             ),
         ),
         MelString('XATO','activationPrompt'),
-        MelOptStruct('XESP','IB3s',(FID,'parent'),(_flags,'parentFlags'),('unused1',null3)),
+        MelEnableParent(),
         MelOptFid('XEMI', 'emittance'),
         MelFid('XMBR','multiboundReference'),
         MelBase('XIBS','ignoredBySandbox'),
-        MelOptFloat(b'XSCL', (u'ref_scale', 1.0)),
+        MelRefScale(),
         MelRef3D(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1142,7 +1138,6 @@ class MrePmis(MelRecord):
     """Placed Missile."""
     rec_sig = b'PMIS'
 
-    _flags = Flags(0, Flags.getNames('oppositeParent'))
     _watertypeFlags = Flags(0, Flags.getNames('reflection','refraction'))
 
     melSet = MelSet(
@@ -1178,11 +1173,11 @@ class MrePmis(MelRecord):
             ),
         ),
         MelString('XATO','activationPrompt'),
-        MelOptStruct('XESP','IB3s',(FID,'parent'),(_flags,'parentFlags'),('unused1',null3)),
+        MelEnableParent(),
         MelOptFid('XEMI', 'emittance'),
         MelFid('XMBR','multiboundReference'),
         MelBase('XIBS','ignoredBySandbox'),
-        MelOptFloat(b'XSCL', (u'ref_scale', 1.0)),
+        MelRefScale(),
         MelRef3D(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1281,7 +1276,6 @@ class MreRefr(MelRecord):
         'can_travel_to',
         'show_all_hidden',
     ))
-    _parentFlags = Flags(0, Flags.getNames('oppositeParent'))
     _actFlags = Flags(0, Flags.getNames('useDefault', 'activate','open','openByDefault'))
     _lockFlags = Flags(0, Flags.getNames(None, None, 'leveledLock'))
     _destinationFlags = Flags(0, Flags.getNames('noAlarm'))
@@ -1364,7 +1358,7 @@ class MreRefr(MelRecord):
             ),
         ),
         MelString('XATO','activationPrompt'),
-        MelOptStruct('XESP','IB3s',(FID,'parent'),(_parentFlags,'parentFlags'),('unused6',null3)),
+        MelEnableParent(),
         MelOptFid('XEMI', 'emittance'),
         MelFid('XMBR','multiboundReference'),
         MelOptUInt32('XACT', (_actFlags, 'actFlags', 0)),
@@ -1385,7 +1379,7 @@ class MreRefr(MelRecord):
                      'occlusionPlaneRot1','occlusionPlaneRot2','occlusionPlaneRot3','occlusionPlaneRot4'),
         MelOptStruct('XORD','4I',(FID,'linkedOcclusionPlane0'),(FID,'linkedOcclusionPlane1'),(FID,'linkedOcclusionPlane2'),(FID,'linkedOcclusionPlane3')),
         MelXlod(),
-        MelOptFloat(b'XSCL', (u'ref_scale', 1.0)),
+        MelRefScale(),
         MelRef3D(),
     )
     __slots__ = melSet.getSlotsUsed()

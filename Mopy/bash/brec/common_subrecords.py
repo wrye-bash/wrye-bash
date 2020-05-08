@@ -30,7 +30,8 @@ from collections import defaultdict
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
     MelUnion, PartialLoadDecider
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
-    MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct
+    MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
+    MelOptFloat
 from .utils_constants import _int_unpacker, FID, null1, null2, null3, null4
 from ..bolt import Flags, encode, struct_pack, struct_unpack
 
@@ -312,8 +313,6 @@ class MelWthrColors(MelStruct):
             ('unused4', null1))
 
 #------------------------------------------------------------------------------
-# Oblivion and Fallout --------------------------------------------------------
-#------------------------------------------------------------------------------
 class MelRaceParts(MelNull):
     """Handles a subrecord array, where each subrecord is introduced by an
     INDX subrecord, which determines the meaning of the subrecord. The
@@ -399,7 +398,17 @@ class MelScriptVars(MelGroups):
         )
 
 #------------------------------------------------------------------------------
-# Skyrim and Fallout ----------------------------------------------------------
+class MelEnableParent(MelOptStruct):
+    """Enable Parent struct for a reference record (REFR, ACHR, etc.)."""
+    # The pop_in flag doesn't technically exist for all XESP subrecords, but it
+    # will just be ignored for those where it doesn't exist, so no problem.
+    _parent_flags = Flags(0, Flags.getNames(u'opposite_parent', u'pop_in'))
+
+    def __init__(self):
+        super(MelEnableParent, self).__init__(
+            b'XESP', u'IB3s', (FID, u'ep_reference'),
+            (self._parent_flags, u'parent_flags'), (u'xesp_unused', null3)),
+
 #------------------------------------------------------------------------------
 class MelMODS(MelBase):
     """MODS/MO2S/etc/DMDS subrecord"""
@@ -469,6 +478,22 @@ class MelRef3D(MelStruct):
             b'DATA', u'6f', u'ref_pos_x', u'ref_pos_y', u'ref_pos_z',
             u'ref_rot_x', u'ref_rot_y', u'ref_rot_z'),
 
+#------------------------------------------------------------------------------
+class MelRefScale(MelOptFloat):
+    """Scale for a reference record (REFR, ACHR, etc.)."""
+    def __init__(self):
+        super(MelRefScale, self).__init__(b'XSCL', (u'ref_scale', 1.0))
+
+#------------------------------------------------------------------------------
+class MelWorldBounds(MelSequential):
+    """Worlspace (WRLD) bounds."""
+    def __init__(self):
+        super(MelWorldBounds, self).__init__(
+            MelStruct(b'NAM0', u'2f', u'object_bounds_min_x',
+                u'object_bounds_min_y'),
+            MelStruct(b'NAM9', u'2f', u'object_bounds_max_x',
+                u'object_bounds_max_y'),
+        )
 
 #------------------------------------------------------------------------------
 class MelXlod(MelOptStruct):

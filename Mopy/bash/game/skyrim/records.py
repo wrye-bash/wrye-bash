@@ -38,7 +38,8 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelPartialCounter, MelBounds, null1, null2, null3, null4, MelSequential, \
     MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, \
     MelFull, MelArray, MelWthrColors, GameDecider, MelReadOnly, \
-    MreDialBase, MreActorBase, MreWithItems, MelCtdaFo3, MelRef3D, MelXlod
+    MreDialBase, MreActorBase, MreWithItems, MelCtdaFo3, MelRef3D, MelXlod, \
+    MelWorldBounds, MelEnableParent, MelRefScale
 from ...exception import ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -1269,8 +1270,6 @@ class MreAchr(MelRecord):
     rec_sig = b'ACHR'
 
     _activate_parent_flags = Flags(0, Flags.getNames(u'parent_activate_only'))
-    _enable_parent_flags = Flags(0, Flags.getNames(u'opposite_parent',
-                                                   u'pop_in'))
 
     melSet = MelSet(
         MelEdid(),
@@ -1314,13 +1313,12 @@ class MreAchr(MelRecord):
         MelFid(b'XHOR', u'ref_horse'),
         MelFloat(b'XHTW', u'head_tracking_weight'),
         MelFloat(b'XFVC', u'favor_cost'),
-        MelOptStruct(b'XESP', u'IB3s', (FID, u'ep_reference'),
-                     (_enable_parent_flags, u'parent_flags'), u'xesp_unused'),
+        MelEnableParent(),
         MelOwnership(),
         MelOptFid(b'XEMI', u'ref_emittance'),
         MelFid(b'XMBR', u'multi_bound_reference'),
         MelBase(b'XIBS', u'ignored_by_sandbox_1'),
-        MelOptFloat(b'XSCL', (u'ref_scale', 1.0)),
+        MelRefScale(),
         MelRef3D(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -4282,7 +4280,6 @@ class MreRefr(MelRecord):
         'can_travel_to',
         'show_all_hidden',
     ))
-    _parentFlags = Flags(0, Flags.getNames('oppositeParent','popIn',))
     _actFlags = Flags(0, Flags.getNames('useDefault', 'activate','open','openByDefault'))
     _lockFlags = Flags(0, Flags.getNames(None, None, 'leveledLock'))
     _destinationFlags = Flags(0, Flags.getNames('noAlarm'))
@@ -4345,7 +4342,7 @@ class MreRefr(MelRecord):
         MelFid('XCZR','unknownRef'),
         MelBase('XCZA', 'xcza_p',),
         MelFid('XCZC','unknownRef2'),
-        MelOptFloat('XSCL', ('scale',1.0)),
+        MelRefScale(),
         MelFid('XSPC','spawnContainer'),
         MelGroup('activateParents',
             MelUInt8(b'XAPD', (_parentActivate, u'flags')),
@@ -4370,7 +4367,7 @@ class MreRefr(MelRecord):
         MelOptSInt32('XCNT', 'count'),
         MelOptFloat(b'XCHG', u'charge'),
         MelFid('XLRL','locationReference'),
-        MelOptStruct('XESP','IB3s',(FID,'parent'),(_parentFlags,'parentFlags'),('unused6',null3)),
+        MelEnableParent(),
         MelGroups('linkedReference',
             MelStruct('XLKR', '2I', (FID, 'keywordRef'), (FID, 'linkedRef')),
         ),
@@ -5332,16 +5329,14 @@ class MreWrld(MelRecord):
                   'cellZOffset',),
         MelFloat('NAMA', 'distantLODMultiplier'),
         MelUInt8('DATA', (WrldFlags2, 'dataFlags', 0)),
-        # {>>> Object Bounds doesn't show up in CK <<<}
-        MelStruct('NAM0','2f','minObjX','minObjY',),
-        MelStruct('NAM9','2f','maxObjX','maxObjY',),
+        MelWorldBounds(),
         MelFid('ZNAM','music',),
         MelString('NNAM','canopyShadowunused'),
         MelString('XNAM','waterNoiseTexture'),
         MelString('TNAM','hDLODDiffuseTexture'),
         MelString('UNAM','hDLODNormalTexture'),
         MelString('XWEM','waterEnvironmentMapunused'),
-        MelBase('OFST','unknown'),
+        MelNull(b'OFST'), # Not even CK/xEdit can recalculate these right now
     )
     __slots__ = melSet.getSlotsUsed()
 
