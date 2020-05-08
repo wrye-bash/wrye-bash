@@ -26,7 +26,7 @@ from itertools import repeat
 
 from ... import bush
 from ...bolt import Flags, TrimmedFlags, flag, sig_to_str
-from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
+from ...brec import MelModelCompare, FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     AMreActor, AMreCell, AMreFlst, AMreHeader, AMreImad, AMreLeveledList, \
     AMreRace, AMreWithItems, AMreWithKeywords, AMreWrld, AMreWthr, \
     ANvnmContext, AttrValDecider, AVmadContext, BipedFlags, FlagDecider, \
@@ -103,7 +103,7 @@ def sse_only(sse_obj):
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
 #------------------------------------------------------------------------------
-class MelModel(MelGroup):
+class MelModel(MelModelCompare):
     """Represents a model subrecord."""
     # MODB and MODD are no longer used by TES5Edit
     typeSets = {
@@ -2486,7 +2486,8 @@ class MreQust(MelRecord):
             MelStruct(b'INDX', ['H', '2B'], 'index', (_stageFlags, 'flags'),
                       'unknown'),
             MelGroups('log_entries',
-                MelUInt8Flags(b'QSDT', 'stage_entry_flags', _StageEntryFlags),
+                MelUInt8Flags(b'QSDT', 'stage_entry_flags', _StageEntryFlags,
+                              set_default=0),
                 MelConditionList(),
                 MelLString(b'CNAM', 'log_entry_text'),
                 MelFid(b'NAM0', 'nextQuest'),
