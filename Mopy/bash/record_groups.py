@@ -26,6 +26,7 @@
 # Python imports
 from __future__ import division, print_function
 import struct
+from itertools import chain
 from operator import itemgetter
 # Wrye Bash imports
 from .brec import ModReader, RecordHeader, GrupHeader, TopGrupHeader
@@ -152,6 +153,11 @@ class MobBase(object):
 
     def indexRecords(self):
         """Indexes records by fid."""
+        raise AbstractError
+
+    def iter_records(self):
+        """Flattens the structure of this record block into a linear sequence
+        of records. Works as an iterator for memory reasons."""
         raise AbstractError
 
     def keepRecords(self, p_keep_ids):
@@ -362,6 +368,9 @@ class MobObjects(MobBase):
         # filtered out here.
         block.records = filtered
         block.indexRecords()
+
+    def iter_records(self):
+        return iter(self.records)
 
     def __repr__(self):
         return u'<%s GRUP: %u record(s)>' % (self.label, len(self.records))
@@ -646,6 +655,10 @@ class MobCell(MobBase):
                     recordList[fids[record.fid]] = record
                     mergeDiscard(record.fid)
 
+    def iter_records(self):
+        single_recs = [x for x in (self.cell, self.pgrd, self.land) if x]
+        return chain(single_recs, self.persistent, self.distant, self.temp)
+
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
         if self.pgrd and self.pgrd.fid not in p_keep_ids:
@@ -754,6 +767,9 @@ class MobCells(MobBase):
         return count
 
     #--Fid manipulation, record filtering ----------------------------------
+    def iter_records(self):
+        return chain.from_iterable(c.iter_records() for c in self.cellBlocks)
+
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
         #--Note: this call will add the cell to p_keep_ids if any of its
@@ -1074,6 +1090,12 @@ class MobWorld(MobCells):
                                               mergeIds)
         MobCells.updateRecords(self,srcBlock,mapper,mergeIds)
 
+    def iter_records(self):
+        single_recs = [x for x in (self.world, self.road) if x]
+        c_recs = (self.worldCellBlock.iter_records() if self.worldCellBlock
+                  else [])
+        return chain(single_recs, c_recs, super(MobWorld, self).iter_records())
+
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
         if self.road and self.road.fid not in p_keep_ids:
@@ -1212,6 +1234,9 @@ class MobWorlds(MobBase):
             worldBlock.setChanged()
             self.worldBlocks.append(worldBlock)
             self.id_worldBlocks[fid] = worldBlock
+
+    def iter_records(self):
+        return chain.from_iterable(w.iter_records() for w in self.worldBlocks)
 
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
