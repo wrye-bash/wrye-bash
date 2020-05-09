@@ -29,11 +29,11 @@ import struct
 from operator import itemgetter
 # Wrye Bash imports
 from .brec import ModReader, RecordHeader, GrupHeader, TopGrupHeader
-from .bolt import sio
+from .bolt import GPath, sio
 from . import bush # for fallout3/nv fsName
 from .exception import AbstractError, ArgumentError, ModError
 
-# Tes3 Group/Top Types --------------------------------------------------------
+# TES4 Group/Top Types --------------------------------------------------------
 groupTypes = [
     _(u'Top (Type)'),
     _(u'World Children'),
@@ -93,10 +93,6 @@ class MobBase(object):
             self.data = None
             self.setChanged()
 
-    def load_rec_group(self, ins, endPos):
-        """Loads data from input stream. Called by load()."""
-        raise AbstractError
-
     def setChanged(self,value=True):
         """Sets changed attribute to value. [Default = True.]"""
         self.changed = value
@@ -147,10 +143,41 @@ class MobBase(object):
         """Returns a ModReader wrapped around self.data."""
         return ModReader(self.inName,sio(self.data))
 
+    # Abstract methods --------------------------------------------------------
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
         toLong should be True if converting to long format or False if
         converting to short format."""
+        raise AbstractError
+
+    def indexRecords(self):
+        """Indexes records by fid."""
+        raise AbstractError
+
+    def keepRecords(self, p_keep_ids):
+        """Keeps records with fid in set p_keep_ids. Discards the rest."""
+        raise AbstractError
+
+    def load_rec_group(self, ins, endPos):
+        """Loads data from input stream. Called by load()."""
+        raise AbstractError
+
+    ##: params here are not the prettiest
+    def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
+        """Merges records from the specified block into this block and performs
+        merge filtering if doFilter is True.
+
+        :param block: The block to merge records from.
+        :param loadSet: The set of currently loaded plugins.
+        :param mergeIds: A set into which the fids of all records that will be
+            merged by this operation will be added.
+        :param iiSkipMerge: If True, skip merging and only perform merge
+            filtering. Used by IIM mode.
+        :param doFilter: If True, perform merge filtering."""
+        raise AbstractError
+
+    def updateMasters(self, masters):
+        """Updates set of master names according to masters actually used."""
         raise AbstractError
 
     def updateRecords(self,block,mapper,toLong):
@@ -291,6 +318,50 @@ class MobObjects(MobBase):
                 record = record.getTypeCopy(mapper)
                 self.setRecord(record)
                 mergeIds.discard(record.fid)
+
+    def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
+        # YUCK, drop these local imports!
+        from .bosh import modInfos
+        from .mod_files import MasterSet
+        bad_form = (GPath(bush.game.master_file), 0xA31D) # DarkPCB record
+        is_oblivion = bush.game.fsName == u'Oblivion'
+        _null_fid = (modInfos.masterName, 0)
+        filtered = []
+        filteredAppend = filtered.append
+        loadSetIsSuperset = loadSet.issuperset
+        mergeIdsAdd = mergeIds.add
+        copy_to_self = self.setRecord
+        for record in block.getActiveRecords():
+            fid = record.fid
+            if is_oblivion and fid == bad_form: continue
+            #--Include this record?
+            if doFilter:
+                # If we're Filter-tagged, perform merge filtering. Then, check
+                # if the record has any FormIDs with masters that are on disk
+                # left. If it does not, skip the whole record (because all of
+                # its contents have been merge-filtered out).
+                record.mergeFilter(loadSet)
+                masters = MasterSet()
+                record.updateMasters(masters)
+                if not loadSetIsSuperset(masters):
+                    continue
+            # We're either not Filter-tagged or we want to keep this record
+            filteredAppend(record)
+            # If we're IIM-tagged and this is not one of the IIM-approved
+            # record types, skip merging
+            if iiSkipMerge: continue
+            # We're past all hurdles - stick a copy of this record into
+            # ourselves and mark it as merged
+            if record.isKeyedByEid and fid == _null_fid:
+                mergeIdsAdd(record.eid)
+            else:
+                mergeIdsAdd(fid)
+            copy_to_self(record.getTypeCopy())
+        # Apply any merge filtering we've done above to the record block in
+        # question. That way, patchers won't see the records that have been
+        # filtered out here.
+        block.records = filtered
+        block.indexRecords()
 
     def __repr__(self):
         return u'<%s GRUP: %u record(s)>' % (self.label, len(self.records))
@@ -568,8 +639,7 @@ class MobCell(MobBase):
                     mergeDiscard(record.fid)
         for attr in ('persistent','temp','distant'):
             recordList = selfGetter(attr)
-            fids = dict(
-                (record.fid,index) for index,record in enumerate(recordList))
+            fids = {record.fid: i for i, record in enumerate(recordList)}
             for record in srcGetter(attr):
                 if not record.flags1.ignored and mapper(record.fid) in fids:
                     record = record.getTypeCopy(mapper)
