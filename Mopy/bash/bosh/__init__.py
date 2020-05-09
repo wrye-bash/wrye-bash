@@ -524,13 +524,13 @@ class ModInfo(FileInfo):
             strKeys = u'{{BASH:'+(u','.join(sorted(keys)))+u'}}\n'
         else:
             strKeys = u''
-        description = self.header.description or ''
-        if reBashTags.search(description):
-            description = reBashTags.sub(strKeys,description)
+        desc_ = self.header.description
+        if reBashTags.search(desc_):
+            desc_ = reBashTags.sub(strKeys,desc_)
         else:
-            description = description + u'\n' + strKeys
-        if len(description) > 511: return False
-        self.writeDescription(description)
+            desc_ = desc_ + u'\n' + strKeys
+        if len(desc_) > 511: return False
+        self.writeDescription(desc_)
         return True
 
     def getBashTags(self):
@@ -543,9 +543,8 @@ class ModInfo(FileInfo):
 
     def getBashTagsDesc(self):
         """Returns any Bash flag keys."""
-        description = self.header.description or u''
-        maBashKeys = re.search(u'{{ *BASH *:([^}]+)}}', description,
-                               flags=re.U | re.I)
+        maBashKeys = re.search(u'{{ *BASH *:([^}]+)}}',
+                               self.header.description, flags=re.U | re.I)
         if not maBashKeys:
             return set()
         else:
@@ -631,10 +630,10 @@ class ModInfo(FileInfo):
         if size is not None:
             modInfos.table.setItem(self.name,u'mergeInfo',(filePath.size,canMerge))
 
-    def writeDescription(self,description):
+    def writeDescription(self, new_desc):
         """Sets description to specified text and then writes hedr."""
-        description = description[:min(511,len(description))] # 511 + 1 for null = 512
-        self.header.description = description
+        new_desc = new_desc[:min(511,len(new_desc))] # 511 + 1 for null = 512
+        self.header.description = new_desc
         self.header.setChanged()
         self.writeHeader()
 

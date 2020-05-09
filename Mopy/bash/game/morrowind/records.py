@@ -256,15 +256,15 @@ class MreTes3(MreHeaderBase):
 
     melSet = MelSet(
         MelStruct(b'HEDR', u'fI32s256sI', (u'version', 1.3), u'esp_flags',
-            (AutoFixedString(32), u'author'),
-            (AutoFixedString(256), u'description'), u'numRecords'),
+            (AutoFixedString(32), u'author_pstr'),
+            (AutoFixedString(256), u'description_pstr'), u'numRecords'),
         MreHeaderBase.MelMasterNames(),
         MelSavesOnly(
             # Wrye Mash calls unknown1 'day', but that seems incorrect?
             MelStruct(b'GMDT', u'6f64sf32s', u'pc_curr_health',
                 u'pc_max_health', u'unknown1', u'unknown2', u'unknown3',
-                u'unknown4', (FixedString(64), u'curr_cell'), u'unknown5',
-                (AutoFixedString(32), u'pc_name')),
+                u'unknown4', (FixedString(64), u'curr_cell'),
+                u'unknown5', (AutoFixedString(32), u'pc_name')),
             MelBase(b'SCRD', u'unknown_scrd'), # likely screenshot-related
             MelArray(u'screenshot_data',
                 # Yes, the correct order is bgra

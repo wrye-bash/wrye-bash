@@ -87,6 +87,29 @@ class MreHeaderBase(MelRecord):
                 MelBase(b'DATA', '').packSub(
                     out, struct_pack(u'Q', master_size))
 
+    class MelAuthor(MelUnicode):
+        def __init__(self):
+            super(MreHeaderBase.MelAuthor, self).__init__(b'CNAM',
+                u'author_pstr', u'', 511)
+
+    class MelDescription(MelUnicode):
+        def __init__(self):
+            super(MreHeaderBase.MelDescription, self).__init__(b'SNAM',
+                u'description_pstr', u'', 511)
+
+    @property
+    def description(self):
+        return self.description_pstr or u''
+    @description.setter
+    def description(self, new_desc):
+        self.description_pstr = new_desc
+    @property
+    def author(self):
+        return self.author_pstr
+    @author.setter
+    def author(self, val):
+        self.author_pstr = val
+
     def loadData(self, ins, endPos):
         super(MreHeaderBase, self).loadData(ins, endPos)
         num_masters = len(self.masters)
