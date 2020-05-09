@@ -39,7 +39,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, \
     MelFull, MelArray, MelWthrColors, GameDecider, MelReadOnly, \
     MreDialBase, MreActorBase, MreWithItems, MelCtdaFo3, MelRef3D, MelXlod, \
-    MelWorldBounds, MelEnableParent, MelRefScale
+    MelWorldBounds, MelEnableParent, MelRefScale, MelMapMarker
 from ...exception import ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -4275,11 +4275,7 @@ class MreRace(MelRecord):
 class MreRefr(MelRecord):
     """Placed Object."""
     rec_sig = b'REFR'
-    _marker_flags = Flags(0, Flags.getNames(
-        'visible',
-        'can_travel_to',
-        'show_all_hidden',
-    ))
+
     _actFlags = Flags(0, Flags.getNames('useDefault', 'activate','open','openByDefault'))
     _lockFlags = Flags(0, Flags.getNames(None, None, 'leveledLock'))
     _destinationFlags = Flags(0, Flags.getNames('noAlarm'))
@@ -4383,12 +4379,7 @@ class MreRefr(MelRecord):
         MelOptFloat('XHTW', 'headTrackingWeight'),
         MelOptFloat('XFVC', 'favorCost'),
         MelBase('ONAM','onam_p'),
-        MelGroup('map_marker',
-            MelBase('XMRK', 'marker_data'),
-            MelOptUInt8('FNAM', (_marker_flags, 'marker_flags')),
-            MelFull(),
-            MelOptStruct('TNAM', 'Bs', 'marker_type', 'unused1'),
-        ),
+        MelMapMarker(),
         MelFid('XATR', 'attachRef'),
         MelXlod(),
         MelRef3D(),

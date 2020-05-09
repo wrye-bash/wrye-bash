@@ -42,7 +42,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelCoordinates, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, \
     MelArray, MelWthrColors, MreLeveledListBase, MreDialBase, MreActorBase, \
     MreWithItems, MelCtdaFo3, MelRef3D, MelXlod, MelNull, MelWorldBounds, \
-    MelEnableParent, MelRefScale
+    MelEnableParent, MelRefScale, MelMapMarker, MelActionFlags
 from ...exception import ModError, ModSizeError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
@@ -2628,12 +2628,6 @@ class MreRefr(MelRecord):
     """Placed Object."""
     rec_sig = b'REFR'
 
-    _marker_flags = Flags(0, Flags.getNames(
-        'visible',
-        'can_travel_to',
-        'show_all_hidden',
-    ))
-    _actFlags = Flags(0, Flags.getNames('useDefault', 'activate','open','openByDefault'))
     _lockFlags = Flags(0, Flags.getNames(None, None, 'leveledLock'))
     _destinationFlags = Flags(0, Flags.getNames('noAlarm'))
     reflectFlags = Flags(0, Flags.getNames('reflection', 'refraction'))
@@ -2653,12 +2647,7 @@ class MreRefr(MelRecord):
         MelOptStruct('XMBO','3f','boundHalfExtentsX','boundHalfExtentsY','boundHalfExtentsZ'),
         MelOptStruct('XTEL','I6fI',(FID,'destinationFid'),'destinationPosX','destinationPosY',
             'destinationPosZ','destinationRotX','destinationRotY','destinationRotZ',(_destinationFlags,'destinationFlags')),
-        MelGroup('map_marker',
-            MelBase('XMRK', 'marker_data'),
-            MelOptUInt8('FNAM', (_marker_flags, 'marker_flags')),
-            MelFull(),
-            MelOptStruct('TNAM', 'Bs', 'marker_type', 'unused1'),
-        ),
+        MelMapMarker(),
         MelFid('XTRG','targetId'),
         MelOptSInt32(b'XLCM', u'levelMod'),
         MelGroup('patrolData',
@@ -2706,7 +2695,7 @@ class MreRefr(MelRecord):
         MelEnableParent(),
         MelOptFid('XEMI', 'emittance'),
         MelFid('XMBR','multiboundReference'),
-        MelOptUInt32('XACT', (_actFlags, 'actFlags', 0)),
+        MelActionFlags(),
         MelBase('ONAM','onam_p'),
         MelBase('XIBS','ignoredBySandbox'),
         MelOptStruct('XNDP','2I',(FID,'navMesh'),'unknown'),

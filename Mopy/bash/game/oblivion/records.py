@@ -37,7 +37,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelTruncatedStruct, MelCoordinates, MelIcon, MelIco2, MelEdid, MelFull, \
     MelArray, MelWthrColors, MelObject, MreDialBase, MreActorBase, \
     MreWithItems, MelReadOnly, MelCtda, MelRef3D, MelXlod, MelWorldBounds, \
-    MelEnableParent, MelRefScale
+    MelEnableParent, MelRefScale, MelMapMarker, MelActionFlags
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
 
@@ -1609,12 +1609,6 @@ class MreRefr(MelRecord):
     """Placed Object."""
     rec_sig = b'REFR'
 
-    _marker_flags = Flags(0, Flags.getNames(
-        'visible',
-        'can_travel_to',
-    ))
-    _actFlags = Flags(0, Flags.getNames('useDefault', 'activate', 'open',
-                                         'openByDefault'))
     _lockFlags = Flags(0, Flags.getNames(None, None, 'leveledLock'))
 
     class MelRefrXloc(MelTruncatedStruct):
@@ -1650,14 +1644,9 @@ class MreRefr(MelRecord):
         MelNull('FULL'),
         MelOptSInt32(b'XLCM', u'levelMod'),
         MelFid('XRTM','xrtm'),
-        MelOptUInt32('XACT', (_actFlags, 'actFlags', 0)),
+        MelActionFlags(),
         MelOptSInt32('XCNT', 'count'),
-        MelGroup('map_marker',
-            MelBase('XMRK', 'marker_data'),
-            MelOptUInt8('FNAM', (_marker_flags, 'marker_flags')),
-            MelFull(),
-            MelOptStruct('TNAM', 'Bs', 'marker_type', 'unused1'),
-        ),
+        MelMapMarker(),
         MelBase('ONAM','onam_p'),
         MelBase('XRGD','xrgd_p'),
         MelRefScale(),

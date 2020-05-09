@@ -31,9 +31,19 @@ from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
     MelUnion, PartialLoadDecider
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
-    MelOptFloat
+    MelOptFloat, MelOptUInt8, MelOptUInt32
 from .utils_constants import _int_unpacker, FID, null1, null2, null3, null4
 from ..bolt import Flags, encode, struct_pack, struct_unpack
+
+#------------------------------------------------------------------------------
+class MelActionFlags(MelOptUInt32):
+    """XACT (Action Flags) subrecord for REFR records."""
+    _act_flags = Flags(0, Flags.getNames(u'act_use_default', u'act_activate',
+        u'act_open', u'act_open_by_default'))
+
+    def __init__(self):
+        super(MelActionFlags, self).__init__(
+            b'XACT', (self._act_flags, u'action_flags'))
 
 #------------------------------------------------------------------------------
 class MelBounds(MelGroup):
@@ -72,7 +82,7 @@ class MelCtda(MelUnion):
         :param old_suffix_fmts: A set of old versions to pass to
             MelTruncatedStruct. Must conform to the same syntax as suffix_fmt.
             May be empty.
-        :type old_versions: set[unicode]"""
+        :type old_suffix_fmts: set[unicode]"""
         from .. import bush
         super(MelCtda, self).__init__({
             # Build a (potentially truncated) struct for each function index
@@ -408,6 +418,25 @@ class MelEnableParent(MelOptStruct):
         super(MelEnableParent, self).__init__(
             b'XESP', u'IB3s', (FID, u'ep_reference'),
             (self._parent_flags, u'parent_flags'), (u'xesp_unused', null3)),
+
+#------------------------------------------------------------------------------
+class MelMapMarker(MelGroup):
+    """Map marker struct for a reference record (REFR, ACHR, etc.). Also
+    supports the WMI1 subrecord from FNV."""
+    # Same idea as above - show_all_hidden is FO3+, but that's no problem.
+    _marker_flags = Flags(0, Flags.getNames(
+        u'visible', u'can_travel_to', u'show_all_hidden'))
+
+    def __init__(self, with_reputation=False):
+        group_elems = [
+            MelBase(b'XMRK', u'marker_data'),
+            MelOptUInt8(b'FNAM', (self._marker_flags, u'marker_flags')),
+            MelFull(),
+            MelOptStruct(b'TNAM', u'Bs', u'marker_type', u'unused1'),
+        ]
+        if with_reputation:
+            group_elems.append(MelFid(b'WMI1', u'marker_reputation'))
+        super(MelMapMarker, self).__init__(u'map_marker', *group_elems)
 
 #------------------------------------------------------------------------------
 class MelMODS(MelBase):
