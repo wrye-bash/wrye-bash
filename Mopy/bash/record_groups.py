@@ -29,7 +29,7 @@ import struct
 from itertools import chain
 from operator import itemgetter
 # Wrye Bash imports
-from .brec import ModReader, RecordHeader, GrupHeader, TopGrupHeader
+from .brec import ModReader, RecordHeader, GrupHeader, TopGrupHeader, MreRecord
 from .bolt import GPath, sio
 from . import bush # for fallout3/nv fsName
 from .exception import AbstractError, ArgumentError, ModError
@@ -382,7 +382,7 @@ class MobDials(MobObjects):
     def load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         expType = self.label
-        recClass = self.loadFactory.getRecClass(expType)
+        recClass = MreRecord.type_class[b'DIAL']
         errLabel = expType + u' Top Block'
         records = self.records
         insAtEnd = ins.atEnd
@@ -634,7 +634,6 @@ class MobCell(MobBase):
         mergeDiscard = mergeIds.discard
         selfGetter = self.__getattribute__
         srcGetter = srcBlock.__getattribute__
-        selfSetter = self.__setattr__
         for attr in ('cell','pgrd','land'):
             myRecord = selfGetter(attr)
             record = srcGetter(attr)
@@ -644,7 +643,7 @@ class MobCell(MobBase):
                         myRecord.fid,record.fid))
                 if not record.flags1.ignored:
                     record = record.getTypeCopy(mapper)
-                    selfSetter(attr,record)
+                    setattr(self, attr, record)
                     mergeDiscard(record.fid)
         for attr in ('persistent','temp','distant'):
             recordList = selfGetter(attr)
@@ -672,6 +671,69 @@ class MobCell(MobBase):
                 self.distant:
             p_keep_ids.add(self.cell.fid)
         self.setChanged()
+
+    def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
+        from .mod_files import MasterSet # YUCK
+        loadSetIsSuperset = loadSet.issuperset
+        mergeIdsAdd = mergeIds.add
+        for single_attr in (u'cell', u'pgrd', u'land'):
+            # Grab the version that we're trying to merge, and check if there's
+            # even one present
+            src_rec = getattr(block, single_attr)
+            if src_rec:
+                # If we're Filter-tagged, perform merge filtering first
+                if doFilter:
+                    src_rec.mergeFilter(loadSet)
+                    masters = MasterSet()
+                    src_rec.updateMasters(masters)
+                    if not loadSetIsSuperset(masters):
+                        # Filtered out, discard this record and skip to next
+                        setattr(block, single_attr, None)
+                        continue
+                # In IIM, skip all merging (duh)
+                if iiSkipMerge: continue
+                dest_rec = getattr(self, single_attr)
+                if dest_rec and dest_rec.fid != src_rec.fid:
+                    raise ArgumentError(u"Fids don't match! %08x, %08x" % (
+                        dest_rec.fid, src_rec.fid))
+                if not src_rec.flags1.ignored:
+                    # We're past all hurdles - stick a copy of this record into
+                    # ourselves and mark it as merged
+                    mergeIdsAdd(src_rec.fid)
+                    setattr(self, single_attr, src_rec.getTypeCopy())
+        for list_attr in (u'temp', u'persistent', u'distant'):
+            filtered_list = []
+            filtered_append = filtered_list.append
+            # Build a mapping from fids in the current list to the index at
+            # which they're stored ##: cache? see also updateRecords above
+            dest_list = getattr(self, list_attr)
+            append_to_dest = dest_list.append
+            id_fids = {record.fid: i for i, record
+                       in enumerate(dest_list)}
+            for src_rec in getattr(block, list_attr):
+                # If we're Filter-tagged, perform merge filtering first
+                if doFilter:
+                    src_rec.mergeFilter(loadSet)
+                    masters = MasterSet()
+                    src_rec.updateMasters(masters)
+                    if not loadSetIsSuperset(masters):
+                        continue
+                # We're either not Filter-tagged or we want to keep this record
+                filtered_append(src_rec)
+                # In IIM, skip all merging (duh)
+                if iiSkipMerge: continue
+                if not src_rec.flags1.ignored:
+                    # We're past all hurdles - stick a copy of this record into
+                    # ourselves and mark it as merged
+                    src_fid = src_rec.fid
+                    rec_copy = src_rec.getTypeCopy()
+                    mergeIdsAdd(src_fid)
+                    if rec_copy.fid in id_fids:
+                        dest_list[id_fids[src_fid]] = rec_copy
+                    else:
+                        append_to_dest(rec_copy)
+            # Apply any merge filtering we've done here
+            setattr(block, list_attr, filtered_list)
 
 #------------------------------------------------------------------------------
 class MobCells(MobBase):
@@ -706,6 +768,14 @@ class MobCells(MobBase):
             cellBlock.setChanged()
             self.cellBlocks.append(cellBlock)
             self.id_cellBlock[fid] = cellBlock
+
+    def remove_cell(self, cell):
+        """Removes the specified cell from this block. The exact cell object
+        must be present, otherwise a ValueError is raised."""
+        if self.cellBlocks and not self.id_cellBlock:
+            self.indexRecords()
+        self.cellBlocks.remove(cell)
+        del self.id_cellBlock[cell.fid]
 
     def getUsedBlocks(self):
         """Returns a set of blocks that exist in this group."""
@@ -778,6 +848,51 @@ class MobCells(MobBase):
         self.cellBlocks = [x for x in self.cellBlocks if x.cell.fid in p_keep_ids]
         self.id_cellBlock.clear()
         self.setChanged()
+
+    def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
+        from .mod_files import MasterSet # YUCK
+        if self.cellBlocks and not self.id_cellBlock:
+            self.indexRecords()
+        lookup_cell_block = self.id_cellBlock.get
+        filtered_cell_blocks = []
+        filtered_append = filtered_cell_blocks.append
+        loadSetIsSuperset = loadSet.issuperset
+        for src_cell_block in block.cellBlocks:
+            was_newly_added = False
+            src_fid = src_cell_block.cell.fid
+            # Check if we already have a cell with that FormID
+            dest_cell_block = lookup_cell_block(src_fid)
+            if not dest_cell_block:
+                # We do not, add it and then look up again
+                ##: Shouldn't all the setCell calls use getTypeCopy?
+                self.setCell(src_cell_block.cell)
+                dest_cell_block = lookup_cell_block(src_fid)
+                was_newly_added = True
+            # Delegate merging to the (potentially newly added) child cell
+            dest_cell_block.merge_records(src_cell_block, loadSet,
+                mergeIds, iiSkipMerge, doFilter)
+            # In IIM, skip all merging - note that we need to remove the child
+            # cell again if it was newly added in IIM mode.
+            if iiSkipMerge:
+                if was_newly_added:
+                    self.remove_cell(dest_cell_block.cell)
+                continue
+            # If we're Filter-tagged, check if the child cell got filtered out
+            if doFilter:
+                masters = MasterSet()
+                src_cell_block.updateMasters(masters)
+                if not loadSetIsSuperset(masters):
+                    # The child cell got filtered out. If it was newly added,
+                    # we need to remove it from this block again. Otherwise, we
+                    # can just skip forward to the next child cell.
+                    if was_newly_added:
+                        self.remove_cell(dest_cell_block.cell)
+                    continue
+            # We're either not Filter-tagged or we want to keep this cell
+            filtered_append(src_cell_block)
+        # Apply any merge filtering we've done above to the record block
+        block.cellBlocks = filtered_cell_blocks
+        block.indexRecords()
 
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
@@ -1070,21 +1185,17 @@ class MobWorld(MobCells):
 
     def updateRecords(self,srcBlock,mapper,mergeIds):
         """Updates any records in 'self' that exist in 'srcBlock'."""
-        selfGetter = self.__getattribute__
-        srcGetter = srcBlock.__getattribute__
-        selfSetter = self.__setattr__
-        mergeDiscard = mergeIds.discard
         for attr in ('world','road'):
-            myRecord = selfGetter(attr)
-            record = srcGetter(attr)
+            myRecord = getattr(self, attr)
+            record = getattr(srcBlock, attr)
             if myRecord and record:
                 if myRecord.fid != mapper(record.fid):
                     raise ArgumentError(u"Fids don't match! %08x, %08x" % (
                         myRecord.fid,record.fid))
                 if not record.flags1.ignored:
                     record = record.getTypeCopy(mapper)
-                    selfSetter(attr,record)
-                    mergeDiscard(record.fid)
+                    setattr(self, attr, record)
+                    mergeIds.discard(record.fid)
         if self.worldCellBlock and srcBlock.worldCellBlock:
             self.worldCellBlock.updateRecords(srcBlock.worldCellBlock,mapper,
                                               mergeIds)
@@ -1107,6 +1218,62 @@ class MobWorld(MobCells):
         MobCells.keepRecords(self, p_keep_ids)
         if self.road or self.worldCellBlock or self.cellBlocks:
             p_keep_ids.add(self.world.fid)
+
+    def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
+        from .mod_files import MasterSet # YUCK
+        mergeIdsAdd = mergeIds.add
+        loadSetIsSuperset = loadSet.issuperset
+        for single_attr in (u'world', u'road'):
+            src_rec = getattr(block, single_attr)
+            if src_rec:
+                # If we're Filter-tagged, perform merge filtering first
+                if doFilter:
+                    src_rec.mergeFilter(loadSet)
+                    masters = MasterSet()
+                    src_rec.updateMasters(masters)
+                    if not loadSetIsSuperset(masters):
+                        # Filtered out, discard this record and skip to next
+                        setattr(block, single_attr, None)
+                        continue
+                # In IIM, skip all merging (duh)
+                if iiSkipMerge: continue
+                dest_rec = getattr(self, single_attr)
+                if dest_rec and dest_rec.fid != src_rec.fid:
+                    raise ArgumentError(u"Fids don't match! %08x, %08x" % (
+                        dest_rec.fid, src_rec.fid))
+                if not src_rec.flags1.ignored:
+                    # We're past all hurdles - stick a copy of this record into
+                    # ourselves and mark it as merged
+                    mergeIdsAdd(src_rec.fid)
+                    setattr(self, single_attr, src_rec.getTypeCopy())
+        if block.worldCellBlock:
+            was_newly_added = False
+            # If we don't have a world cell block yet, make a new one to merge
+            # the source's world cell block into
+            if not self.worldCellBlock:
+                self.worldCellBlock = MobCell(GrupHeader(0, 0, 6, self.stamp),
+                    self.loadFactory, None) # cell will be set in merge_records
+                was_newly_added = True
+            # Delegate merging to the (potentially newly added) block
+            self.worldCellBlock.merge_records(block.worldCellBlock, loadSet,
+                mergeIds, iiSkipMerge, doFilter)
+            # In IIM, skip all merging - note that we need to remove the world
+            # cell block again if it was newly added in IIM mode.
+            if iiSkipMerge:
+                if was_newly_added:
+                    self.worldCellBlock = None
+            elif doFilter:
+                # If we're Filter-tagged, check if the world cell block got
+                # filtered out
+                masters = MasterSet()
+                self.worldCellBlock.updateMasters(masters)
+                if not loadSetIsSuperset(masters):
+                    # The cell block got filtered out. If it was newly added,
+                    # we need to remove it from this block again.
+                    if was_newly_added:
+                        self.worldCellBlock = None
+        super(MobWorld, self).merge_records(block, loadSet, mergeIds,
+            iiSkipMerge, doFilter)
 
 #------------------------------------------------------------------------------
 class MobWorlds(MobBase):
@@ -1235,6 +1402,14 @@ class MobWorlds(MobBase):
             self.worldBlocks.append(worldBlock)
             self.id_worldBlocks[fid] = worldBlock
 
+    def remove_world(self, world):
+        """Removes the specified world from this block. The exact world object
+        must be present, otherwise a ValueError is raised."""
+        if self.worldBlocks and not self.id_worldBlocks:
+            self.indexRecords()
+        self.worldBlocks.remove(world)
+        del self.id_worldBlocks[world.fid]
+
     def iter_records(self):
         return chain.from_iterable(w.iter_records() for w in self.worldBlocks)
 
@@ -1245,3 +1420,48 @@ class MobWorlds(MobBase):
                             x.world.fid in p_keep_ids]
         self.id_worldBlocks.clear()
         self.setChanged()
+
+    def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
+        from .mod_files import MasterSet # YUCK
+        if self.worldBlocks and not self.id_worldBlocks:
+            self.indexRecords()
+        lookup_world_block = self.id_worldBlocks.get
+        filtered_world_blocks = []
+        filtered_append = filtered_world_blocks.append
+        loadSetIsSuperset = loadSet.issuperset
+        for src_world_block in block.worldBlocks:
+            was_newly_added = False
+            src_fid = src_world_block.world.fid
+            # Check if we already have a world with that FormID
+            dest_world_block = lookup_world_block(src_fid)
+            if not dest_world_block:
+                # We do not, add it and then look up again
+                ##: Shouldn't all the setWorld calls use getTypeCopy?
+                self.setWorld(src_world_block.world)
+                dest_world_block = lookup_world_block(src_fid)
+                was_newly_added = True
+            # Delegate merging to the (potentially newly added) child world
+            dest_world_block.merge_records(src_world_block, loadSet,
+                mergeIds, iiSkipMerge, doFilter)
+            # In IIM, skip all merging - note that we need to remove the child
+            # world again if it was newly added in IIM mode.
+            if iiSkipMerge:
+                if was_newly_added:
+                    self.remove_world(dest_world_block.world)
+                continue
+            # If we're Filter-tagged, check if the child world got filtered out
+            if doFilter:
+                masters = MasterSet()
+                src_world_block.updateMasters(masters)
+                if not loadSetIsSuperset(masters):
+                    # The child world got filtered out. If it was newly added,
+                    # we need to remove it from this block again. Otherwise, we
+                    # can just skip forward to the next child world.
+                    if was_newly_added:
+                        self.remove_world(dest_world_block.world)
+                    continue
+            # We're either not Filter-tagged or we want to keep this world
+            filtered_append(src_world_block)
+        # Apply any merge filtering we've done above to the record block
+        block.worldBlocks = filtered_world_blocks
+        block.indexRecords()

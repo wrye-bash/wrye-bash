@@ -392,6 +392,7 @@ class MreDialBase(MelRecord):
         self.infos = []
 
     def loadInfos(self, ins, endPos, infoClass):
+        """Load infos from ins. Called from MobDials."""
         read_header = ins.unpackRecHeader
         ins_at_end = ins.atEnd
         append_info = self.infos.append
