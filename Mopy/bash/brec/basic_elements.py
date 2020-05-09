@@ -256,6 +256,8 @@ class MelFid(MelBase):
         return 4 # Always a uint32
 
 #------------------------------------------------------------------------------
+# TODO(inf) DEPRECATED! - don't use for new usages -> MelGroups(MelFid)
+#  instead. Same idea as with MelFidList.
 class MelFids(MelBase):
     """Represents a mod record fid elements."""
 

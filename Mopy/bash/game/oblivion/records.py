@@ -407,15 +407,15 @@ class MreAchr(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFid('NAME','base'),
+        MelFid(b'NAME', u'base'),
         # both unused
-        MelNull('XPCI'),
-        MelNull('FULL'),
+        MelNull(b'XPCI'),
+        MelNull(b'FULL'),
         MelXlod(),
         MelEnableParent(),
-        MelFid('XMRC','merchantContainer'),
-        MelFid('XHRS','horse'),
-        MelBase('XRGD','xrgd_p'),
+        MelFid(b'XMRC', u'merchantContainer'),
+        MelFid(b'XHRS', u'horse'),
+        MelBase(b'XRGD', u'xrgd_p'), # Ragdoll Data, bytearray
         MelRefScale(),
         MelRef3D(),
     )
@@ -427,11 +427,10 @@ class MreAcre(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFid('NAME','base'),
+        MelFid(b'NAME', u'base'),
         MelOwnership(),
-        MelXlod(),
         MelEnableParent(),
-        MelBase('XRGD','xrgd_p'), ###Ragdoll Data, ByteArray
+        MelBase(b'XRGD', u'xrgd_p'), # Ragdoll Data, bytearray
         MelRefScale(),
         MelRef3D(),
     )
@@ -577,36 +576,35 @@ class MreCell(MelRecord):
     rec_sig = b'CELL'
 
     cellFlags = Flags(0, Flags.getNames(
-        (0,'isInterior'),
-        (1,'hasWater'),
-        (2,'invertFastTravel'),
-        (3,'forceHideLand'),
-        (5,'publicPlace'),
-        (6,'handChanged'),
-        (7,'behaveLikeExterior')
-        ))
+        (0, u'isInterior'),
+        (1, u'hasWater'),
+        (2, u'invertFastTravel'),
+        (3, u'forceHideLand'),
+        (5, u'publicPlace'),
+        (6, u'handChanged'),
+        (7, u'behaveLikeExterior')
+    ))
 
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelUInt8('DATA', (cellFlags, 'flags', 0)),
+        MelUInt8(b'DATA', (cellFlags, u'flags')),
         MelCoordinates(b'XCLC', u'2i', u'posX', u'posY', is_optional=True,
                        old_versions=set()),
         MelOptStruct(b'XCLL', u'=3Bs3Bs3Bs2f2i2f', u'ambientRed',
-                     u'ambientGreen', u'ambientBlue', (u'unused1', null1),
-                     u'directionalRed', u'directionalGreen',
-                     u'directionalBlue', (u'unused2', null1), u'fogRed',
-                     u'fogGreen', u'fogBlue', (u'unused3', null1), u'fogNear',
-                     u'fogFar', u'directionalXY', u'directionalZ',
-                     (u'directionalFade', 1.0), u'fogClip'),
-        MelFidList('XCLR','regions'),
-        MelOptUInt8('XCMT', 'music'),
+            u'ambientGreen', u'ambientBlue', (u'unused1', null1),
+            u'directionalRed', u'directionalGreen', u'directionalBlue',
+            (u'unused2', null1), u'fogRed', u'fogGreen', u'fogBlue',
+            (u'unused3', null1), u'fogNear', u'fogFar', u'directionalXY',
+            u'directionalZ', (u'directionalFade', 1.0), u'fogClip'),
+        MelFidList(b'XCLR', u'regions'),
+        MelOptUInt8(b'XCMT', u'music'),
         # CS default for water is -2147483648, but by setting default here
         # to -2147483649, we force the bashed patch to retain the value of
         # the last mod.
-        MelOptFloat('XCLW', ('waterHeight', -2147483649)),
-        MelFid('XCCM','climate'),
-        MelFid('XCWT','water'),
+        MelOptFloat(b'XCLW', (u'waterHeight', -2147483649)),
+        MelFid(b'XCCM', u'climate'),
+        MelFid(b'XCWT', u'water'),
         MelOwnership(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -845,10 +843,10 @@ class MreDial(MreDialBase):
     """Dialogue."""
     melSet = MelSet(
         MelEdid(),
-        MelFids('QSTI','quests'),
-        MelFids('QSTR','quests2'), # xEdit calls it 'Quests?'
+        MelFids(b'QSTI', u'quests'),
+        MelFids(b'QSTR', u'quests2'), # xEdit calls it 'Quests?'
         MelFull(),
-        MelUInt8('DATA', 'dialType'),
+        MelUInt8(b'DATA', u'dialType'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1051,26 +1049,25 @@ class MreInfo(MelRecord):
     """Dialog Response."""
     rec_sig = b'INFO'
 
-    _flags = Flags(0, Flags.getNames('goodbye', 'random', 'sayOnce',
-                                     'runImmediately', 'infoRefusal',
-                                     'randomEnd', 'runForRumors'))
+    _flags = Flags(0, Flags.getNames(u'goodbye', u'random', u'sayOnce',
+        u'runImmediately', u'infoRefusal', u'randomEnd', u'runForRumors'))
 
     melSet = MelSet(
-        MelTruncatedStruct('DATA', '3B', 'dialType', 'nextSpeaker',
-                           (_flags, 'flags'), old_versions={'H'}),
-        MelFid('QSTI','quests'),
-        MelFid('TPIC','topic'),
-        MelFid('PNAM','prevInfo'),
-        MelFids('NAME','addTopics'),
-        MelGroups('responses',
-            MelStruct('TRDT', 'Ii4sB3s', 'emotionType', 'emotionValue',
-                      ('unused1', null4), 'responseNum', ('unused2', null3)),
-            MelString('NAM1','responseText'),
-            MelString('NAM2','actorNotes'),
+        MelTruncatedStruct(b'DATA', u'3B', u'dialType', u'nextSpeaker',
+                           (_flags, u'flags'), old_versions={u'H'}),
+        MelFid(b'QSTI', u'info_quest'),
+        MelFid(b'TPIC', u'info_topic'),
+        MelFid(b'PNAM', u'prevInfo'),
+        MelFids(b'NAME', u'addTopics'),
+        MelGroups(u'responses',
+            MelStruct(b'TRDT', u'Ii4sB3s', u'emotionType', u'emotionValue',
+                (u'unused1', null4), u'responseNum', (u'unused2', null3)),
+            MelString(b'NAM1', u'responseText'),
+            MelString(b'NAM2', u'actorNotes'),
         ),
         MelConditions(),
-        MelFids('TCLT','choices'),
-        MelFids('TCLF','linksFrom'),
+        MelFids(b'TCLT', u'choices'),
+        MelFids(b'TCLF', u'linksFrom'),
         MelEmbeddedScript(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1609,7 +1606,7 @@ class MreRefr(MelRecord):
     """Placed Object."""
     rec_sig = b'REFR'
 
-    _lockFlags = Flags(0, Flags.getNames(None, None, 'leveledLock'))
+    _lockFlags = Flags(0, Flags.getNames((2, u'leveledLock')))
 
     class MelRefrXloc(MelTruncatedStruct):
         """Skips unused2, in the middle of the struct."""
@@ -1622,37 +1619,41 @@ class MreRefr(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFid('NAME','base'),
-        MelOptStruct('XTEL', 'I6f', (FID, 'destinationFid'), 'destinationPosX',
-                     'destinationPosY', 'destinationPosZ', 'destinationRotX',
-                     'destinationRotY', 'destinationRotZ'),
-        MelRefrXloc('XLOC', 'B3sI4sB3s', 'lockLevel', ('unused1', null3),
-                    (FID, 'lockKey'), ('unused2', null4),
-                    (_lockFlags, 'lockFlags'), ('unused3', null3),
-                    is_optional=True, old_versions={'B3sIB3s'}),
+        MelFid(b'NAME', u'base'),
+        MelOptStruct(b'XTEL', u'I6f', (FID, u'destinationFid'),
+            u'destinationPosX', u'destinationPosY', u'destinationPosZ',
+            u'destinationRotX', u'destinationRotY', u'destinationRotZ'),
+        MelRefrXloc(b'XLOC', u'B3sI4sB3s', u'lockLevel', (u'unused1', null3),
+            (FID, u'lockKey'), (u'unused2', null4), (_lockFlags, u'lockFlags'),
+            (u'unused3', null3), is_optional=True, old_versions={u'B3sIB3s'}),
         MelOwnership(),
         MelEnableParent(),
-        MelFid('XTRG','targetId'),
-        MelBase('XSED','seed_p'),
+        MelFid(b'XTRG', u'targetId'),
+        MelBase(b'XSED', u'seed_p'),
         ####SpeedTree Seed, if it's a single byte then it's an offset into
         # the list of seed values in the TREE record
         ####if it's 4 byte it's the seed value directly.
         MelXlod(),
         MelOptFloat(b'XCHG', u'charge'),
         MelOptSInt32(b'XHLT', u'health'),
-        MelNull('XPCI'), # These two are unused
-        MelNull('FULL'),
+        MelNull(b'XPCI'), # These two are unused
+        MelNull(b'FULL'),
         MelOptSInt32(b'XLCM', u'levelMod'),
-        MelFid('XRTM','xrtm'),
+        MelFid(b'XRTM', u'teleport_ref'),
         MelActionFlags(),
-        MelOptSInt32('XCNT', 'count'),
+        MelOptSInt32(b'XCNT', u'count'),
         MelMapMarker(),
-        MelBase('ONAM','onam_p'),
-        MelBase('XRGD','xrgd_p'),
+        MelBase(b'ONAM', u'open_by_default'),
+        MelBase(b'XRGD', u'xrgd_p'), # Ragdoll Data, bytearray
         MelRefScale(),
         MelOptUInt8(b'XSOL', u'ref_soul'),
         MelRef3D(),
-    )
+    ).with_distributor({
+        b'FULL': 'full', # unused, but still need to distribute it
+        b'XMRK': {
+            b'FULL': 'map_marker',
+        },
+    })
     __slots__ = melSet.getSlotsUsed()
 
 class MreRegn(MelRecord):

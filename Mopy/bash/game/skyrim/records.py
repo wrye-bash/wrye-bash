@@ -34,7 +34,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelValueInterpolator, MelUnion, AttrValDecider, MelRegnEntrySubrecord, \
     PartialLoadDecider, FlagDecider, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
     MelUInt16, MelUInt32, MelOptFloat, MelOptSInt16, MelOptSInt32, \
-    MelOptUInt8, MelOptUInt16, MelOptUInt32, MelOptFid, MelCounter, \
+    MelActionFlags, MelOptUInt16, MelOptUInt32, MelOptFid, MelCounter, \
     MelPartialCounter, MelBounds, null1, null2, null3, null4, MelSequential, \
     MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, \
     MelFull, MelArray, MelWthrColors, GameDecider, MelReadOnly, \
@@ -2714,7 +2714,7 @@ class MreInfo(MelRecord):
         MelBase('DATA','unknownDATA'),
         MelStruct('ENAM','2H', (_EnamResponseFlags, 'flags', 0),
                   'resetHours',),
-        MelFid('TPIC','topic',),
+        MelFid(b'TPIC', u'info_topic'),
         MelFid('PNAM','prevInfo',),
         MelUInt8('CNAM', 'favorLevel'),
         MelFids('TCLT','linkTo',),
@@ -4276,7 +4276,6 @@ class MreRefr(MelRecord):
     """Placed Object."""
     rec_sig = b'REFR'
 
-    _actFlags = Flags(0, Flags.getNames('useDefault', 'activate','open','openByDefault'))
     _lockFlags = Flags(0, Flags.getNames(None, None, 'leveledLock'))
     _destinationFlags = Flags(0, Flags.getNames('noAlarm'))
     _parentActivate = Flags(0, Flags.getNames('parentActivateOnly'))
@@ -4375,7 +4374,7 @@ class MreRefr(MelRecord):
             MelBase('SCTX','sctx_p',),
             MelTopicData('topic_data'),
         ),
-        MelOptUInt32('XACT', (_actFlags, 'actFlags', 0)),
+        MelActionFlags(),
         MelOptFloat('XHTW', 'headTrackingWeight'),
         MelOptFloat('XFVC', 'favorCost'),
         MelBase('ONAM','onam_p'),
