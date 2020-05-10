@@ -2101,7 +2101,7 @@ class MreDial(brec.MreDial):
         MelStruct('DATA','2BH',(DialTopicFlags,'flags_dt',0),'category',
                   'subtype',),
         # SNAM is a 4 byte string no length byte - TODO(inf) MelFixedString?
-        MelStruct('SNAM', '4s', 'subtypeName',),
+        MelStruct('SNAM', '4s', ('subtypeName', null4)),
         ##: Check if this works - if not, move back to method
         MelCounter(MelUInt32('TIFC', 'infoCount'), counts='infos'),
     )

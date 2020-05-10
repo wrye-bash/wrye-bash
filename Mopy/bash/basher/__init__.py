@@ -3074,7 +3074,7 @@ class InstallersPanel(BashTab):
             # Cleanup
             dialog_title = _(u'OMOD Extraction - Cleanup Error')
             # Delete extracted omods
-            def _del(files): env.shellDelete(files, parent=self)
+            def _del(files): env.shellDelete(files, parent=self._native_widget)
             try:
                 _del(omodRemoves)
             except (CancelError, SkipError):
@@ -3098,7 +3098,7 @@ class InstallersPanel(BashTab):
             def _move_omods(failed):
                 dests = [dirInstallersJoin(u'Bash', u'Failed OMODs', omod.tail)
                          for omod in failed]
-                env.shellMove(failed, dests, parent=self)
+                env.shellMove(failed, dests, parent=self._native_widget)
             try:
                 omodMoves = list(omodMoves)
                 env.shellMakeDirs(dirInstallersJoin(u'Bash', u'Failed OMODs'))

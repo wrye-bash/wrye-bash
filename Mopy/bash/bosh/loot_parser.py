@@ -591,6 +591,10 @@ def _parse_list(list_path):
             list_contents = yaml.load(yaml_data, Loader=SafeLoader)
         else:
             list_contents = yaml.load(ins, Loader=SafeLoader)
+    # The list contents may be None if the list file exists, but is an entirely
+    # empty YAML file. Just return an empty dict in that case.
+    if not list_contents:
+        return LowerDict()
     ##: Are the decode calls here (and in _PluginEntry.__init__) needed?
     return LowerDict({decode(p['name']): _PluginEntry(p) for p
                       in list_contents.get('plugins', ())})
