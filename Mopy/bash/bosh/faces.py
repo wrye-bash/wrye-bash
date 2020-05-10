@@ -94,13 +94,13 @@ class PCFaces(object):
 
     # SAVES -------------------------------------------------------------------
     @staticmethod
-    def save_getNamePos(saveName,data,pcName):
+    def save_getNamePos(saveName, achr_data, pc_name_bytes):
         """Safely finds position of name within save ACHR data."""
-        namePos = data.find(pcName)
+        namePos = achr_data.find(pc_name_bytes)
         if namePos == -1:
             raise SaveFileError(saveName,
                 'Failed to find pcName in player ACHR record.')
-        namePos2 = data.find(pcName,namePos+1)
+        namePos2 = achr_data.find(pc_name_bytes, namePos + 1)
         if namePos2 != -1:
             raise SaveFileError(saveName,
                 'Uncertain about position of face data, probably because '
@@ -168,10 +168,10 @@ class PCFaces(object):
         record = saveFile.fid_recNum.get(0x14)
         data = record[-1]
         namePos = PCFaces.save_getNamePos(saveFile.fileInfo.fn_key, data,
-                                          encode(saveFile.header.pcName))
-        (face.fggs_p, face.fgga_p, face.fgts_p, face.race, face.hair,
-         face.eye, face.hairLength, face.hairRed, face.hairBlue,
-         face.hairGreen, face.unused3, face.gender) = __faceunpack(
+                                          saveFile.header.pc_name_pstr)
+        (face.fggs_p, face.fgga_p, face.fgts_p, face.race, face.hair, face.eye,
+         face.hairLength, face.hairRed, face.hairBlue, face.hairGreen,
+         face.unused3, face.gender) = __faceunpack(
             data[namePos - 542:namePos - 1])
         classPos = namePos + len(saveFile.header.pcName) + 1
         face.npc_class, = __unpacker(data[classPos:classPos+4])
@@ -275,7 +275,7 @@ class PCFaces(object):
         oldRecord = saveFile.fid_recNum.get(0x14)
         oldData = oldRecord[-1]
         namePos = PCFaces.save_getNamePos(saveFile.fileInfo.fn_key, oldData,
-                                          encode(saveFile.header.pcName))
+                                          saveFile.header.pc_name_pstr)
         buff.write(oldData)
         #--Modify buffer with face data.
         buff.seek(namePos-542)
@@ -299,7 +299,7 @@ class PCFaces(object):
             postName = buff.getvalue()[buff.tell() +
                                        len(saveFile.header.pcName) + 2:]
             pack_byte(buff,len(face.pcName)+1)
-            buff.write(encode(face.pcName, firstEncoding=Path.sys_fs_enc))
+            buff.write(encode(face.pcName, firstEncoding=Path.sys_fs_enc)) # TODO: firstEncoding=Path.sys_fs_enc?
             buff.write(b'\x00')
             buff.write(postName)
             buff.seek(-len(postName),1)
@@ -352,7 +352,7 @@ class PCFaces(object):
         record = saveFile.fid_recNum.get(0x14)
         data = record[-1]
         namePos = PCFaces.save_getNamePos(saveInfo.fn_key, data,
-                                          encode(saveFile.header.pcName))
+                                          saveFile.header.pc_name_pstr)
         raceRef,hairRef = struct_unpack(u'2I', data[namePos-22:namePos-14])
         if hairRef != 0: return False
         raceForm = raceRef and saveFile.fids[raceRef]

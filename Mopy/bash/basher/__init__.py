@@ -1944,14 +1944,14 @@ class SaveList(UIList):
     _sort_keys = {**_common_sort_keys,
         'PlayTime': _ask_info('header.gameTicks'),
         'Player'  : _ask_info('header.pcName'),
-        'Cell'    : _ask_info('header.pcLocation'),
+        'Cell'    : _ask_info('header.pcLocation', wrap=str),
         'Status'  : _ask_info('info_status', ()),
     }
     #--Labels
     labels = {**_common_labels,
         'PlayTime': _format_playtime(),
         'Player': _ask_info('header.pcName'),
-        'Cell': _ask_info('header.pcLocation'),
+        'Cell': _ask_info('header.pcLocation', wrap=str),
     }
 
     # Events ------------------------------------------------------------------
@@ -2052,7 +2052,6 @@ class SaveDetails(_ModsSavesDetails):
     def _resetDetails(self):
         super()._resetDetails()
         self.playerNameStr = u''
-        self.curCellStr = u''
         self.playerLevel = 0
         self.gameDays = 0
         self.playMinutes = 0
@@ -2062,7 +2061,6 @@ class SaveDetails(_ModsSavesDetails):
         if super().SetFile(fileName):
             #--Remember values for edit checks
             self.playerNameStr = (sinf := self.file_info).header.pcName
-            self.curCellStr = sinf.header.pcLocation
             self.gameDays = sinf.header.gameDays
             self.playMinutes = sinf.header.gameTicks//60000
             self.playerLevel = sinf.header.pcLevel
@@ -2096,7 +2094,7 @@ class SaveDetails(_ModsSavesDetails):
             'play_time': f'{self.playMinutes // 60}:'
                          f'{self.playMinutes % 60:02d}'}
         self.playerInfo.label_text = (f'{self.playerNameStr}\n{localized_info}'
-                                      f'\n{self.curCellStr}')
+                                      f'\n{self.saveInfo.header.pcLocation}')
 
     def _update_masters_warning(self):
         """Show or hide the 'inaccurate masters' warning."""

@@ -43,14 +43,16 @@ from typing import final
 import lz4.block
 
 from .. import bolt, load_order, plugin_types
-from ..bolt import FName, cstrip, decoder, deprint, encode, pack_byte, \
-    pack_bzstr8, pack_float, pack_int, pack_short, pack_str8, \
-    remove_newlines, struct_error, struct_unpack, structs_cache, unpack_byte, \
-    unpack_float, unpack_int, unpack_many, unpack_short, unpack_str8, \
-    unpack_str16, unpack_str16_delim, unpack_str_byte_delim, \
-    unpack_str_int_delim, unpack_int64
+from ..bolt import FName, decoder, deprint, encode, pack_byte, pack_bzstr8, \
+    pack_float, pack_int, pack_short, pack_str8, struct_error, struct_unpack, \
+    structs_cache, unpack_byte, unpack_float, unpack_int, unpack_many, \
+    unpack_short, unpack_str8, unpack_str16, unpack_str16_delim, \
+    unpack_str_byte_delim, unpack_str_int_delim, unpack_int64, ChardetStr, \
+    StripNewlines
 from ..exception import SaveHeaderError
 from ..plugin_types import PluginFlag
+
+class _PcNameStr(StripNewlines, ChardetStr): pass
 
 # Utilities -------------------------------------------------------------------
 def _unpack_fstr16(ins) -> bytes:
@@ -220,7 +222,7 @@ class SaveFileHeader(object):
     can_edit_header: bool = True
     # common slots Bash code expects from SaveHeader (added header_size and
     # turned image to a property)
-    __slots__ = (u'header_size', u'pcName', u'pcLevel', u'pcLocation',
+    __slots__ = (u'header_size', u'pc_name_pstr', u'pcLevel', u'pcLocation',
                  u'gameDays', u'gameTicks', u'ssWidth', u'ssHeight', u'ssData',
                  u'masters', u'_save_info', u'_mastersStart')
     # map slots to (seek position, unpacker) - seek position negative means
@@ -272,11 +274,17 @@ class SaveFileHeader(object):
         self._load_masters(ins)
         # additional calculations - TODO(ut): rework decoding
         self.calc_time()
-        self.pcName = remove_newlines(decoder(cstrip(self.pcName)))
-        self.pcLocation = remove_newlines(decoder(
-            cstrip(self.pcLocation), bolt.pluginEncoding,
-            avoidEncodings=(u'utf8', u'utf-8')))
+        self.pc_name_pstr = _PcNameStr(self.pc_name_pstr)
+        self.pcLocation = StripNewlines(self.pcLocation)
         self._decode_masters()
+
+    @property
+    def pcName(self):
+        return self.pc_name_pstr._decoded
+
+    @pcName.setter
+    def pcName(self, new_name):
+        self.pc_name_pstr = _PcNameStr.from_basestring(new_name)
 
     def dump_header(self, out):
         raise NotImplementedError
@@ -379,10 +387,10 @@ class OblivionSaveHeader(SaveFileHeader):
         'header_version': (pack_int, unpack_int),
         'header_size':    (pack_int, unpack_int),
         'saveNum':        (pack_int, unpack_int),
-        'pcName':         (lambda out, x: _pack_str8_1(
+        'pc_name_pstr':         (lambda out, x: _pack_str8_1(
            out, x.reencode(None)), unpack_str8),
         'pcLevel':        (pack_short, unpack_short),
-        'pcLocation':     (_pack_str8_1, unpack_str8),
+        'pcLocation':     (_pack_str8_1, unpack_str8), # don't reencode
         'gameDays':       (pack_float, unpack_float),
         'gameTicks':      (pack_int, unpack_int),
         'gameTime':       (_pack_string, _unpack_fstr16),
@@ -419,7 +427,7 @@ class OblivionSaveHeader(SaveFileHeader):
         # before saveNum do not count towards this
         # TODO(inf) We need a nicer way to do this (query size before dump) -
         #  ut: we need the binary string size here, header size must be
-        #  updated when var fields change (like pcName)
+        #  updated when var fields change (like pc_name_str)
         self.header_size = var_fields_size + 42 + len(self.ssData)
         self._mastersStart = out.tell()
         out.seek(34)
@@ -530,7 +538,7 @@ class SkyrimSaveHeader(_AEslSaveHeader):
         'header_size': (00, unpack_int),
         'version':     (00, unpack_int),
         'saveNumber':  (00, unpack_int),
-        'pcName':      (00, unpack_str16),
+        'pc_name_str':      (00, unpack_str16),
         'pcLevel':     (00, unpack_int),
         'pcLocation':  (00, unpack_str16),
         'gameDate':    (00, unpack_str16),
@@ -701,7 +709,7 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
         'engineVersion':    (00, unpack_int),
         'saveVersion':      (00, unpack_byte),
         'saveNumber':       (00, unpack_int),
-        'pcName':           (00, unpack_str16),
+        'pc_name_str':           (00, unpack_str16),
         'pcLevel':          (00, unpack_int),
         'pcLocation':       (00, unpack_str16),
         'gameDate':         (00, unpack_str16),
@@ -781,7 +789,7 @@ class FalloutNVSaveHeader(SaveFileHeader):
         'ssWidth':     (00, unpack_str_int_delim),
         'ssHeight':    (00, unpack_str_int_delim),
         'save_number': (00, unpack_str_int_delim),
-        'pcName':      (00, unpack_str16_delim),
+        'pc_name_pstr':(00, unpack_str16_delim),
         'pcNick':      (00, unpack_str16_delim),
         'pcLevel':     (00, unpack_str_int_delim),
         'pcLocation':  (00, unpack_str16_delim),
@@ -862,9 +870,9 @@ class MorrowindSaveHeader(SaveFileHeader):
         save_info = modInfos.get_update_info(self._save_info.abs_path)
         ##: Figure out where some more of these are (e.g. level)
         self.header_size = save_info.header.header.blob_size
-        self.pcName = remove_newlines(save_info.header.pc_name)
+        self.pc_name_pstr = save_info.header.pc_name_pstr # instance of ChardetStr
         self.pcLevel = 0
-        self.pcLocation = remove_newlines(save_info.header.curr_cell)
+        self.pcLocation = save_info.header.curr_cell # instance of FixedString
         self.gameDays = self.gameTicks = 0
         self.masters = save_info.masterNames[:]
         self.pc_curr_health = save_info.header.pc_curr_health
