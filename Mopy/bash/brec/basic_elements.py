@@ -28,11 +28,11 @@ from itertools import repeat
 from typing import BinaryIO
 
 from . import utils_constants
-from .utils_constants import FID, ZERO_FID, FixedString, get_structs, \
-    int_unpacker, null1, GetAttrer, SlottedType, FormId
+from .utils_constants import FID, ZERO_FID, get_structs, int_unpacker, null1, \
+    GetAttrer, SlottedType, FormId
 from .. import bolt, exception, bush
-from ..bolt import Rounder, attrgetter_cache, decoder, encode, sig_to_str, \
-    struct_calcsize, struct_error, structs_cache, PluginStr, ChardetStr
+from ..bolt import Rounder, attrgetter_cache, sig_to_str, struct_calcsize, \
+    struct_error, structs_cache, PluginStr
 
 #------------------------------------------------------------------------------
 class _MelObjectType(SlottedType):
@@ -414,7 +414,7 @@ class MelGroup(MelSequential):
     _mel_object_base_type = MelObject
 
     def __init__(self, attr: str, *elements):
-        super(MelGroup, self).__init__(*elements)
+        super().__init__(*elements)
         self.attr, self.loaders = attr, {}
         # set up the MelObject needed for this MelGroup
         from .record_structs import MelSet
@@ -597,12 +597,11 @@ class MelSimpleGroups(MelGroups):
             self.packSub(out, pack_el(target))
 
 #------------------------------------------------------------------------------
-class MelString(MelBase):
+class _MelString(MelBase):
     """Represents a mod record string element. Will use bolt.pluginEncoding."""
     encoding: str | None = None # None -> default to bolt.pluginEncoding
     _wrapper_bytes_type = PluginStr
 
-    ##: minSize seems unused
     def __init__(self, mel_sig: bytes, attr: str, *,
             maxSize: int | None = None, minSize: int | None = None,
             set_default=None):
@@ -622,26 +621,22 @@ class MelString(MelBase):
         # Null terminator is accounted for in _dump_bytes
         super().packSub(out, byte_string)
 
+#------------------------------------------------------------------------------
+class MelFixedString(_MelString):
+    """Subrecord that stores a string of a constant length."""
+    def __init__(self, mel_sig, attr, *, str_length: int = 1,
+                 set_default=None):
+        super().__init__(mel_sig, attr, maxSize=str_length, minSize=str_length,
+                         set_default=set_default)
+
+    # fixme null terminator? (no)
+
+class MelString(_MelString):
+    """Add a terminating null character."""
+
     def _dump_bytes(self, out, byte_string, lenData):
         # Add the null terminator to the encoded string
         super()._dump_bytes(out, byte_string + null1, lenData + 1)
-
-#------------------------------------------------------------------------------
-class MelUnicode(MelString):
-    """Like MelString, but instead of using bolt.pluginEncoding to read the
-       string, it tries the encoding specified in the constructor instead or
-       falls back to chardet. **Only** use for MreHeaderBase author and
-       description fields."""
-    _wrapper_bytes_type = ChardetStr
-
-    def __init__(self, mel_sig: bytes, attr: str, maxSize=None, *,
-            encoding=None, set_default=None):
-        super().__init__(mel_sig, attr, maxSize=maxSize,
-            set_default=set_default)
-        if encoding is not None: # None == automatic detection via ChardetStr
-            class _PluginStr(PluginStr): # fixme cache?
-                _preferred_encoding = encoding
-            self._wrapper_bytes_type = _PluginStr
 
 #------------------------------------------------------------------------------
 class MelLString(MelString):
@@ -837,14 +832,6 @@ class MelStruct(MelBase):
                               f'match elements ({elements})')
         return expanded_fmts
 
-#------------------------------------------------------------------------------
-class MelFixedString(MelStruct):
-    """Subrecord that stores a string of a constant length. Just a wrapper
-    around a struct with a single FixedString element.""" ##: MelAction really
-    def __init__(self, mel_sig, attr, str_length, *, set_default=None):
-        el = (FixedString(str_length, set_default or ''), attr)
-        super().__init__(mel_sig, [f'{str_length:d}s'], el)
-
 # Simple primitive type wrappers ----------------------------------------------
 class MelFloat(MelNum):
     """Float."""
@@ -923,6 +910,10 @@ class _MelBool(MelNum):
 class MelUInt8Bool(MelUInt8, _MelBool): pass
 class MelUInt16Bool(MelUInt16, _MelBool): pass
 class MelUInt32Bool(MelUInt32, _MelBool): pass
+
+class MelULong64(MelNum):
+    """Unsigned 64-bit long integer."""
+    _unpacker, packer, static_size = get_structs('=Q')
 
 #------------------------------------------------------------------------------
 class MelXXXX(MelUInt32):

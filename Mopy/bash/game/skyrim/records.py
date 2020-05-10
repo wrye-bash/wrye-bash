@@ -1118,7 +1118,7 @@ class MreDial(MelRecord):
         MelFid(b'QNAM','quest',),
         MelStruct(b'DATA', ['2B', 'H'], (DialTopicFlags, 'flags_dt'),
                   'category', 'subtype'),
-        MelFixedString(b'SNAM', 'subtypeName', 4),
+        MelFixedString(b'SNAM', 'subtypeName', str_length=4),
         MelUInt32(b'TIFC', u'info_count'), # Updated in MobDial.dump
     )
 
