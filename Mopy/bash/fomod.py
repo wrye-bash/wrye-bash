@@ -410,8 +410,8 @@ class FomodInstaller(object):
 
     def _test_flag_condition(self, condition):
         fm_flag_name = condition.get(u'flag')
-        fm_flag_value = condition.get(u'value')
-        actual_flag_value = self._fomod_flags().get(fm_flag_name, None)
+        fm_flag_value = condition.get(u'value', u'')
+        actual_flag_value = self._fomod_flags().get(fm_flag_name, u'')
         if actual_flag_value != fm_flag_value:
             raise FailedCondition(
                 u'Flag {} was expected to have {} but has {} instead.'.format(
