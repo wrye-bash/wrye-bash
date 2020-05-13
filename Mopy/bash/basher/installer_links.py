@@ -181,7 +181,7 @@ class Installer_Fomod(_Installer_AWizardLink):
     """Runs the FOMOD installer"""
     parentWindow = ''
     _text = _(u'FOMOD Installer...')
-    help = _(u'Run the FOMOD installer.')
+    _help = _(u'Run the FOMOD installer.')
 
     def _enable(self):
         is_single = super(Installer_Fomod, self)._enable()

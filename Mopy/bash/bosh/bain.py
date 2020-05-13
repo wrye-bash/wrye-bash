@@ -666,8 +666,8 @@ class Installer(object):
         rootIdex = len(root_path)
         # For backwards compatibility - drop in 308
         self._fixme_drop__fomod_backwards_compat()
-        fomod_active = self.extras_dict.get(u'fomod_active', False)
-        fomod_dict = self.extras_dict.get(u'fomod_dict', {})
+        fm_active = self.extras_dict.get(u'fomod_active', False)
+        fm_dict = self.extras_dict.get(u'fomod_dict', {})
         module_config = os.path.join(u'fomod', u'moduleconfig.xml')
         for full,size,crc in self.fileSizeCrcs:
             if rootIdex: # exclude all files that are not under root_dir
@@ -681,12 +681,17 @@ class Installer(object):
                 self.has_fomod_conf = full
                 skipDirFilesDiscard(file_relative)
                 continue
-            elif fomod_active and full in fomod_dict:
-                # Remap FOMOD files to usable paths
-                file_relative = fomod_dict[full]
+            elif fm_active:
+                if full not in fm_dict:
+                    continue # Pretend all unselected FOMOD files don't exist
+                # Remap selected FOMOD files to usable paths
+                file_relative = fm_dict[full]
                 fileLower = file_relative.lower()
             sub = u''
-            if bain_type == 2 and not fomod_active: #--Complex archive
+            # Complex archive; skip the logic if FOMOD mode is active (since
+            # subpackage selection doesn't (currently) work in FOMOD mode
+            # anyways)
+            if bain_type == 2 and not fm_active:
                 split = file_relative.split(os_sep, 1)
                 if len(split) > 1:
                     # redefine file, excluding the subpackage directory
