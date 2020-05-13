@@ -59,6 +59,7 @@ _plugins_txt_path = _loadorder_txt_path = _lord_pickle_path = None
 locked = False
 warn_locked = False
 _lords_pickle = None # type: bolt.PickleDict
+_LORDS_PICKLE_VERSION = 2
 # active mod lists were saved in BashSettings.dat - sentinel needed for moving
 # them to BashloadOrder.dat
 __active_mods_sentinel = {}
@@ -162,7 +163,7 @@ def _new_entry():
         lo_entry(time.time(), cached_lord)]
 
 def persist_orders(__keep_max=256):
-    _lords_pickle.vdata['_lords_pickle_version'] = 2
+    _lords_pickle.vdata['_lords_pickle_version'] = _LORDS_PICKLE_VERSION
     length = len(_saved_load_orders)
     if length > __keep_max:
         x, y = _keep_max(__keep_max, length)

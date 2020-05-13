@@ -21,7 +21,6 @@
 #  Mopy/bash/games.py copyright (C) 2016 Utumno: Original design
 #
 # =============================================================================
-
 """Game class implementing load order handling - **only** imported in
 load_order.py."""
 ##: multiple backups? fixes can happen in rapid succession, so preserving
@@ -42,16 +41,16 @@ from .localize import format_date
 
 def _write_plugins_txt_(path, lord, active, _star):
     try:
-        with path.open('wb') as out:
+        with path.open(u'wb') as out:
             __write_plugins(out, lord, active, _star)
     except IOError:
         env.clear_read_only(path)
-        with path.open('wb') as out:
+        with path.open(u'wb') as out:
             __write_plugins(out, lord, active, _star)
 
 def __write_plugins(out, lord, active, _star):
     def asterisk(active_set=frozenset(active)):
-        return '*' if _star and (mod in active_set) else ''
+        return b'*' if _star and (mod in active_set) else b''
     for mod in (_star and lord) or active:
         # Ok, this seems to work for Oblivion, but not Skyrim
         # Skyrim seems to refuse to have any non-cp1252 named file in
@@ -59,12 +58,12 @@ def __write_plugins(out, lord, active, _star):
         # doesn't work.
         try:
             out.write(asterisk() + bolt.encode(mod.s, firstEncoding='cp1252'))
-            out.write('\r\n')
+            out.write(b'\r\n')
         except UnicodeEncodeError:
-            bolt.deprint(mod.s + u' failed to properly encode and was not '
-                                 u'included in plugins.txt')
+            bolt.deprint(u'%s failed to properly encode and was not '
+                         u'included in plugins.txt' % mod)
 
-_re_plugins_txt_comment = re.compile(u'^#.*', re.U)
+_re_plugins_txt_comment = re.compile(b'^#.*')
 def _parse_plugins_txt_(path, mod_infos, _star):
     """Parse loadorder.txt and plugins.txt files with or without stars.
 
@@ -78,41 +77,38 @@ def _parse_plugins_txt_(path, mod_infos, _star):
     :type _star: bool
     :rtype: (list[bolt.Path], list[bolt.Path])
     """
-    with path.open('r') as ins:
+    with path.open(u'rb') as ins:
         #--Load Files
         active, modnames = [], []
         for line in ins:
             # Oblivion/Skyrim saves the plugins.txt file in cp1252 format
             # It wont accept filenames in any other encoding
-            modname = _re_plugins_txt_comment.sub('', line).strip()
+            modname = _re_plugins_txt_comment.sub(b'', line.strip())
             if not modname: continue
             # use raw strings below
-            is_active_ = not _star or modname.startswith('*')
+            is_active_ = not _star or modname.startswith(b'*')
             if _star and is_active_: modname = modname[1:]
             try:
                 test = bolt.decoder(modname, encoding=u'cp1252')
             except UnicodeError:
                 bolt.deprint(u'%r failed to properly decode' % modname)
                 continue
-            if GPath_no_norm(test) not in mod_infos:
+            mod_g_path = GPath_no_norm(test)
+            if mod_g_path not in mod_infos: # TODO(ut): is this really needed??
                 # The automatic encoding detector could have returned
                 # an encoding it actually wasn't.  Luckily, we
                 # have a way to double check: modInfos.data
                 for encoding in bolt.encodingOrder:
                     try:
                         test2 = unicode(modname, encoding)
-                        if GPath_no_norm(test2) not in mod_infos:
-                            continue
-                        modname = GPath_no_norm(test2)
-                        break
+                        mod_gpath_2 = GPath_no_norm(test2)
+                        if mod_gpath_2 in mod_infos:
+                            mod_g_path = mod_gpath_2
+                            break
                     except UnicodeError:
                         pass
-                else:
-                    modname = GPath_no_norm(test)
-            else:
-                modname = GPath_no_norm(test)
-            modnames.append(modname)
-            if is_active_: active.append(modname)
+            modnames.append(mod_g_path)
+            if is_active_: active.append(mod_g_path)
     return active, modnames
 
 class FixInfo(object):
@@ -187,7 +183,6 @@ class FixInfo(object):
         bolt.deprint(msg)
 
 class Game(object):
-
     allow_deactivate_master = False
     must_be_active_if_present = ()
     max_espms = 255

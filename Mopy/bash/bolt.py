@@ -1338,26 +1338,28 @@ class PickleDict(object):
             if cor is not None:
                 cor.moveTo(cor_name)
                 cor = None
-            if path.exists():
-                try:
-                    with path.open('rb') as ins:
-                        try:
-                            firstPickle = pickle.load(ins)
-                        except ValueError:
-                            cor = path
-                            cor_name = GPath(path.s + u' (%s)' % timestamp() +
-                                    u'.corrupted')
-                            deprint(u'Unable to load %s (moved to "%s")' % (
+            try:
+                with path.open('rb') as ins:
+                    try:
+                        firstPickle = pickle.load(ins)
+                    except ValueError:
+                        cor = path
+                        cor_name = GPath(
+                            u'%s (%s).corrupted' % (path, timestamp()))
+                        deprint(u'Unable to load %s (will be moved to "%s")' %(
                                 path, cor_name.tail), traceback=True)
-                            continue # file corrupt - try next file
-                        if firstPickle == 'VDATA2':
-                            self.vdata.update(pickle.load(ins))
-                            self.data.update(pickle.load(ins))
-                        else:
-                            raise PickleDict.Mold(path)
-                    return 1 + (path == self.backup)
-                except (EOFError, ValueError):
-                    pass
+                        continue  # file corrupt - try next file
+                    if firstPickle == 'VDATA2':
+                        self.vdata.update(pickle.load(ins))
+                        self.data.update(pickle.load(ins))
+                    else:
+                        raise PickleDict.Mold(path)
+                return 1 + (path == self.backup)
+            except (IOError, OSError, EOFError, ValueError): #PY3:FileNotFound
+                pass
+        else:
+            if cor is not None:
+                cor.moveTo(cor_name)
         #--No files and/or files are corrupt
         return 0
 
