@@ -1070,7 +1070,15 @@ tab. The directories skipped are:
             <tr><td colspan="2">List Masters...<td>Outputs a list of the selected plugin's masters.
             <tr><td colspan="2">Readme...<td>Attempts to open the selected plugin's associated readme in the <a href="#tools-docs">Doc Browser</a>.
             <tr><td colspan="2">List Bash Tags...<td>Outputs a BBCode-formatted list of all the Bash Tags applied to the selected plugin, and where/how the Bash Tags was specified. It can be useful for debugging a broken load order.
-            <tr><td colspan="2" id="modsCreateBOSSReport">Create BOSS Report...<td>Outputs the plugin filename, <abbr title="Cyclic Redundancy Check">CRC</abbr>, and <abbr title="Identical To Master record">ITM</abbr>/<abbr title="Undeleted and Disabled Reference">UDR</abbr> count for easy reporting of the plugin to an official LOOT thread.
+            <tr>
+                <td colspan="2" id="modsCreateLOOTEntry">Create LOOT Entry...</td>
+                <td>Creates LOOT masterlist entries based on the tags you have
+                    applied to the selected plugin(s). Also tries to figure out
+                    the URL that the plugin came from based on the BAIN package
+                    it was installed from. In <strong>Oblivion only</strong>,
+                    CBash will also be used to check for ITMs and deleted
+                    references.</td>
+            </tr>
             <tr><td colspan="2" id="modsCopyModInfo">Copy Mod Info...<td>Outputs a report on the selected plugins(s) with the info from the currently displayed columns.
             <tr><td colspan="2">List Dependencies<td>Displays and copies to the clipboard a list of mods that have the currently selected
                 mod as master. Active mods are prefixed with their load order while merged, imported and inactive mods are prefixed with

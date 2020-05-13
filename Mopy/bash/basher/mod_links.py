@@ -51,7 +51,7 @@ from ..patcher import configIsCBash, exportConfig, patch_files
 
 __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
            'Mod_Groups', 'Mod_Ratings', 'Mod_Details', 'Mod_ShowReadme',
-           'Mod_ListBashTags', 'Mod_CreateBOSSReport', 'Mod_CopyModInfo',
+           'Mod_ListBashTags', 'Mod_CreateLOOTReport', 'Mod_CopyModInfo',
            'Mod_AllowGhosting', 'Mod_Ghost', 'Mod_MarkMergeable',
            'Mod_Patch_Update', 'Mod_ListPatchConfig', 'Mod_ExportPatchConfig',
            'CBash_Mod_CellBlockInfo_Export', 'Mod_EditorIds_Export',
@@ -618,7 +618,7 @@ class Mod_ListBashTags(ItemLink):
         balt.copyToClipboard(tags_text)
         self._showLog(tags_text, title=_(u"Bash Tags"), fixedFont=False)
 
-def _getUrl(fileName, installer, log_txt):
+def _getUrl(fileName, installer):
     """"Try to get the url of the file (order of priority will be: TESNexus,
     TESAlliance)."""
     url = None
@@ -630,61 +630,92 @@ def _getUrl(fileName, installer, log_txt):
         if ma and ma.group(2):
             url = u'http://tesalliance.org/forums/index.php?app' \
                   u'=downloads&showfile=' + ma.group(2)
-    if url: log_txt += u'[url=' + url + u']' + fileName.s + u'[/url]'
-    else: log_txt += fileName.s
-    return log_txt
+    if url: return u"    url: [ '%s' ]\n" % url
+    return u''
 
-class Mod_CreateBOSSReport(EnabledLink):
-    """Copies appropriate information for making a report in the BOSS thread."""
-    _text = _(u"Create BOSS Report...")
-    _help = _(u'Gathers and displays information necessary for making a BOSS '
-              u'report.')
+class Mod_CreateLOOTReport(EnabledLink):
+    """Creates a basic LOOT masterlist entry with ."""
+    _text = _(u'Create LOOT Entry...')
 
     def _enable(self):
         return len(self.selected) != 1 or (
             not bosh.reOblivion.match(self.selected[0].s))
 
+    @property
+    def menu_help(self):
+        full_help = _(u'Creates LOOT masterlist entries based on the tags you '
+                      u'have applied to the selected plugin(s).')
+        if bass.settings[u'bash.CBashEnabled']:
+            full_help += u' ' + _(u'Also uses CBash to check for ITMs and '
+                                  u'deleted references.')
+        return full_help
+
     def Execute(self):
         log_txt = u''
-        if len(self.selected) > 5:
-            spoiler = True
-            log_txt += u'[spoiler]\n'
-        else:
-            spoiler = False
-        # Scan for ITM and UDR's
-        modInfos = [x for x in self.iselected_infos()]
-        try:
-            with balt.Progress(_(u"Dirty Edits"),u'\n'+u' '*60,abort=True) as progress:
-                udr_itm_fog = bosh.mods_metadata.ModCleaner.scan_Many(modInfos, progress=progress)
-        except CancelError:
-            return
-        # Create the report
+        # Scan for ITM and UDR's only in Oblivion with CBash, since all other
+        # results are not guaranteed to be accurate
+        udr_itm_fog = []
+        can_check_dirty = bass.settings[u'bash.CBashEnabled']
+        if can_check_dirty:
+            dirty_candidates = [x for x in self.iselected_infos()] ##: huh?
+            try:
+                with balt.Progress(_(u'Dirty Edits'), u'\n' + u' ' * 60,
+                        abort=True) as progress:
+                    udr_itm_fog = bosh.mods_metadata.ModCleaner.scan_Many(
+                        dirty_candidates, progress=progress)
+            except CancelError:
+                return
         for i, (fileName, fileInfo) in enumerate(self.iselected_pairs()):
-            if fileName == u'Oblivion.esm': continue
-            #-- Name of file, plus a link if we can figure it out
-            installer = bosh.modInfos.table.getItem(fileName,'installer',u'')
-            if not installer: log_txt += fileName.s
-            else: log_txt = _getUrl(fileName, installer, log_txt)
-            #-- Version, if it exists
-            version = bosh.modInfos.getVersion(fileName)
-            if version:
-                log_txt += u'\n'+_(u'Version')+u': %s' % version
-            #-- CRC
-            log_txt += u'\n'+_(u'CRC')+u': ' + fileInfo.crc_string()
-            #-- Dirty edits
-            if udr_itm_fog:
-                udrs,itms,fogs = udr_itm_fog[i]
-                if udrs or itms:
-                    if bass.settings['bash.CBashEnabled']:
-                        log_txt += (u'\nUDR: %i, ITM: %i '+_(u'(via Wrye Bash)')) % (len(udrs),len(itms))
-                    else:
-                        log_txt += (u'\nUDR: %i, ITM not scanned '+_(u'(via Wrye Bash)')) % len(udrs)
-            log_txt += u'\n\n'
-        if spoiler: log_txt += u'[/spoiler]'
-
-        # Show results + copy to clipboard
-        balt.copyToClipboard(log_txt)
-        self._showLog(log_txt, title=_(u'BOSS Report'), fixedFont=False)
+            if fileName in bush.game.masterFiles: continue
+            # Check if we found ITMs or deleted references
+            udrs, itms, fogs = udr_itm_fog[i] if can_check_dirty else (0, 0, 0)
+            # Gather all tags applied after the description (including existing
+            # LOOT tags - we'll want to replace the existing LOOT entry with
+            # this one after all)
+            desc_tags = fileInfo.getBashTagsDesc()
+            curr_tags = fileInfo.getBashTags()
+            added = curr_tags - desc_tags
+            removed = desc_tags - curr_tags
+            if not can_check_dirty and not added and not removed:
+                continue # Skip if it's going to be a useless entry
+            # Name of file, plus a link if we can figure it out
+            log_txt += u"  - name: '%s'\n" % fileName
+            installer = bosh.modInfos.table.getItem(
+                fileName, u'installer', u'')
+            if installer: log_txt += _getUrl(fileName, installer)
+            # Tags applied after the description
+            fmt_tags = sorted(added | {u'-%s' % t for t in removed})
+            if fmt_tags:
+                if len(fmt_tags) == 1:
+                    log_txt += u'    tag: [ %s ]\n' % fmt_tags[0]
+                else:
+                    log_txt += u'    tag:\n'
+                    for fmt_tag in fmt_tags:
+                        log_txt += u'      - %s\n' % fmt_tag
+            # Clean/dirty info (CBash only)
+            if can_check_dirty:
+                wb_ver = bass.AppVersion
+                if not udrs and not itms:
+                    log_txt += u'    clean:\n'
+                    log_txt += u'      - crc: 0x%s\n' % fileInfo.crc_string()
+                    log_txt += u"        util: 'Wrye Bash %s'\n" % wb_ver
+                else:
+                    log_txt += u'    dirty:\n'
+                    log_txt += u'      - <<: *quickClean\n'
+                    log_txt += u'        crc: 0x%s\n' % fileInfo.crc_string()
+                    log_txt += u"        util: 'Wrye Bash %s'\n" % wb_ver
+                    if itms:
+                        log_txt += u'        itm: %u\n' % len(itms)
+                    if udrs:
+                        log_txt += u'        udr: %u\n' % len(udrs)
+        if not log_txt:
+            self._showWarning(_(u'No tags applied that are not already in the '
+                                u'plugin description, entry would not be '
+                                u'useful.'))
+        else:
+            # Show results + copy to clipboard
+            balt.copyToClipboard(log_txt)
+            self._showLog(log_txt, title=_(u'LOOT Entry'), fixedFont=False)
 
 class Mod_CopyModInfo(ItemLink):
     """Copies the basic info about selected mod(s)."""

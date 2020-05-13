@@ -449,7 +449,7 @@ def InitModLinks():
     ModList.itemMenu.append(File_ListMasters())
     ModList.itemMenu.append(Mod_ShowReadme())
     ModList.itemMenu.append(Mod_ListBashTags())
-    ModList.itemMenu.append(Mod_CreateBOSSReport())
+    ModList.itemMenu.append(Mod_CreateLOOTReport())
     ModList.itemMenu.append(Mod_CopyModInfo())
     ModList.itemMenu.append(Mod_ListDependent())
     ModList.itemMenu.append(Mod_JumpToInstaller())
