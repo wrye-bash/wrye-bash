@@ -720,19 +720,16 @@ class INITweakLineCtrl(INIListCtrl):
     def _get_selected_line(self, index): return self.tweakLines[index][5]
 
     def RefreshTweakLineCtrl(self, tweakPath):
+        # Clear the list, then populate it with the new lines
+        self.DeleteAllItems()
         if tweakPath is None:
-            self.DeleteAllItems()
             return
         # TODO(ut) avoid if ini tweak did not change
         self.tweakLines = bosh.iniInfos.get_tweak_lines_infos(tweakPath)
-        num = self.GetItemCount()
         updated = set()
         for i,line in enumerate(self.tweakLines):
             #--Line
-            if i >= num:
-                self.InsertItem(i, line[0])
-            else:
-                self.SetItem(i, 0, line[0])
+            self.InsertItem(i, line[0])
             #--Line color
             status, deleted = line[4], line[6]
             if status == -10: color = colors['tweak.bkgd.invalid']
@@ -747,9 +744,6 @@ class INITweakLineCtrl(INIListCtrl):
             if lineNo != -1:
                 self.iniContents.SetItemBackgroundColour(lineNo,color)
                 updated.add(lineNo)
-        #--Delete extra lines
-        start = len(self.tweakLines)
-        for i in xrange(start, num): self.DeleteItem(start)
         #--Reset line color for other iniContents lines
         background_color = self.iniContents.GetBackgroundColour()
         for i in xrange(self.iniContents.GetItemCount()):
