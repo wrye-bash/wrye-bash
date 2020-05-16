@@ -54,10 +54,10 @@ class _AMerger(ImportPatcher):
                      x in p_file.p_file_minfos and x in p_file.allSet]
         super(_AMerger, self).__init__(p_name, p_file, p_sources)
         self.id_deltas = defaultdict(list)
-        self.masters = set(chain.from_iterable(
+        merger_masters = set(chain.from_iterable(
             self._recurse_masters(srcMod, p_file.p_file_minfos)
             for srcMod in self.srcs))
-        self._masters_and_srcs = self.masters | set(self.srcs)
+        self._masters_and_srcs = merger_masters | set(self.srcs)
         # Set of record signatures that are actually provided by sources
         self._present_sigs = set()
         self.mod_id_entries = {}

@@ -127,7 +127,7 @@ class TestDecoder(object):
         assert decoder(u'Attenzione') == u'Attenzione' # Italian
         assert decoder(u'Atenção') == u'Atenção' # Portuguese
         assert decoder(u'Внимание') == u'Внимание' # Russian
-        assert decoder(None) == None
+        assert decoder(None) is None
 
 class TestEncode(object):
     def test_encode_basics(self):

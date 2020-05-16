@@ -199,7 +199,7 @@ class ModFile(object):
             self.tes4 = bush.game.plugin_header_class(header,ins,True)
             # Check if we need to handle strings
             self.strings.clear()
-            if do_unpack and self.tes4.flags1.hasStrings and loadStrings:
+            if do_unpack and loadStrings and self.tes4.flags1.hasStrings:
                 stringsProgress = SubProgress(progress,0,0.1) # Use 10% of progress bar for strings
                 lang = bosh.oblivionIni.get_ini_language()
                 stringsPaths = self.fileInfo.getStringsPaths(lang)
@@ -221,13 +221,13 @@ class ModFile(object):
                 header = insRecHeader()
                 if not header.is_top_group_header:
                     raise ModError(self.fileInfo.name,u'Improperly grouped file.')
-                label,size = header.label,header.size
+                label = header.label
                 topClass = self.loadFactory.getTopClass(label)
                 try:
                     if topClass:
                         new_top = topClass(header, self.loadFactory)
                         load_fully = do_unpack and (topClass != MobBase)
-                        new_top.load(ins, load_fully)
+                        new_top.load_rec_group(ins, load_fully)
                         # Starting with FO4, some of Bethesda's official files
                         # have duplicate top-level groups
                         if label not in self.tops:
@@ -305,27 +305,27 @@ class ModFile(object):
             self.tes4.dump(out)
             #--Blocks
             selfTops = self.tops
-            for rec_type in RecordHeader.top_grup_sigs:
-                if rec_type in selfTops:
-                    selfTops[rec_type].dump(out)
+            for rsig in RecordHeader.top_grup_sigs:
+                if rsig in selfTops:
+                    selfTops[rsig].dump(out)
 
     def getLongMapper(self):
         """Returns a mapping function to map short fids to long fids."""
-        masters = self.tes4.masters+[self.fileInfo.name]
-        maxMaster = len(masters)-1
+        masters_list = self.tes4.masters+[self.fileInfo.name]
+        maxMaster = len(masters_list)-1
         def mapper(fid):
             if fid is None: return None
             if isinstance(fid, tuple): return fid
             mod,object = int(fid >> 24),int(fid & 0xFFFFFF)
-            return masters[min(mod, maxMaster)], object # clamp HITMEs
+            return masters_list[min(mod, maxMaster)], object # clamp HITMEs
         return mapper
 
     def getShortMapper(self):
         """Returns a mapping function to map long fids to short fids."""
-        masters = self.tes4.masters + [self.fileInfo.name]
-        indices = {name: index for index, name in enumerate(masters)}
+        masters_list = self.tes4.masters + [self.fileInfo.name]
+        indices = {name: index for index, name in enumerate(masters_list)}
         has_expanded_range = bush.game.Esp.expanded_plugin_range
-        if (has_expanded_range and len(masters) > 1
+        if (has_expanded_range and len(masters_list) > 1
                 and self.tes4.version >= 1.0):
             # Plugin has at least one master, it may freely use the
             # expanded (0x000-0x800) range

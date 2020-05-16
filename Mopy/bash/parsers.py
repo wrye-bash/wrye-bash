@@ -831,10 +831,11 @@ class FidReplacer(object):
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         # Create filtered versions of our mappings
-        masters = modFile.tes4.masters + [modFile.fileInfo.name]
-        filt_fids = {oldId for oldId in self.old_eid if oldId[0] in masters}
+        masters_list = set(modFile.tes4.masters + [modFile.fileInfo.name])
+        filt_fids = {oldId for oldId in self.old_eid if
+                     oldId[0] in masters_list}
         filt_fids.update(newId for newId in self.new_eid
-                         if newId[0] in masters)
+                         if newId[0] in masters_list)
         old_eid_filtered = {oldId: eid for oldId, eid
                             in self.old_eid.iteritems() if oldId in filt_fids}
         new_eid_filtered = {newId: eid for newId, eid

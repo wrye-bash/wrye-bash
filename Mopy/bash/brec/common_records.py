@@ -24,8 +24,6 @@
 some commonly needed records."""
 
 from __future__ import division, print_function
-import cPickle as pickle  # PY3
-import re
 import struct
 from operator import attrgetter
 

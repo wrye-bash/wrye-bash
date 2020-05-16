@@ -372,9 +372,9 @@ class MasterList(_ModsUIList):
 
     def OnDClick(self, lb_dex_and_flags):
         if self.mouse_index < 0: return # nothing was clicked
-        mod_name = self.data_store[self.mouse_index].curr_name
-        if not mod_name in bosh.modInfos: return
-        balt.Link.Frame.notebook.SelectPage('Mods', mod_name)
+        curr_name = self.data_store[self.mouse_index].curr_name
+        if not curr_name in bosh.modInfos: return
+        balt.Link.Frame.notebook.SelectPage('Mods', curr_name)
 
     #--Set ModInfo
     def SetFileInfo(self,fileInfo):

@@ -57,9 +57,9 @@ class MobBase(object):
         self.numRecords = -1
         self.loadFactory = loadFactory
         self.inName = ins and ins.inName
-        if ins: self.load(ins, do_unpack)
+        if ins: self.load_rec_group(ins, do_unpack)
 
-    def load(self, ins=None, do_unpack=False):
+    def load_rec_group(self, ins=None, do_unpack=False):
         """Load data from ins stream or internal data buffer."""
         if self.debug: print(u'GRUP load:',self.label)
         #--Read, but don't analyze.
@@ -68,12 +68,12 @@ class MobBase(object):
                                  type(self))
         #--Analyze ins.
         elif ins is not None:
-            self.load_rec_group(ins,
+            self._load_rec_group(ins,
                 ins.tell() + self.size - RecordHeader.rec_header_size)
         #--Analyze internal buffer.
         else:
             with self.getReader() as reader:
-                self.load_rec_group(reader, reader.size)
+                self._load_rec_group(reader, reader.size)
         #--Discard raw data?
         if do_unpack:
             self.data = None
@@ -162,9 +162,9 @@ class MobBase(object):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
         raise AbstractError(u'keepRecords not implemented')
 
-    def load_rec_group(self, ins, endPos):
-        """Loads data from input stream. Called by load()."""
-        raise AbstractError(u'load_rec_group not implemented')
+    def _load_rec_group(self, ins, endPos):
+        """Loads data from input stream. Called by load_rec_group()."""
+        raise AbstractError(u'_load_rec_group not implemented')
 
     ##: params here are not the prettiest
     def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
@@ -207,7 +207,7 @@ class MobObjects(MobBase):
     def get_all_signatures(self):
         return {self.label}
 
-    def load_rec_group(self, ins, endPos):
+    def _load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         expType = self.label
         recClass = self.loadFactory.getRecClass(expType)
@@ -397,7 +397,7 @@ class MobDial(MobObjects):
         self.stamp2 = 0
         super(MobDial, self).__init__(header, loadFactory, ins, do_unpack)
 
-    def load_rec_group(self, ins, endPos):
+    def _load_rec_group(self, ins, endPos):
         info_class = self.loadFactory.getRecClass(b'INFO')
         if not info_class:
             self.header.skip_group(ins) # DIAL already read, skip all INFOs
@@ -593,7 +593,7 @@ class MobDials(MobBase):
         self.id_dialogues = {}
         super(MobDials, self).__init__(header, loadFactory, ins, do_unpack)
 
-    def load_rec_group(self, ins, endPos):
+    def _load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         dial_class = self.loadFactory.getRecClass(b'DIAL')
         ins_seek = ins.seek
@@ -785,7 +785,7 @@ class MobCell(MobBase):
         self.pgrd = None
         super(MobCell, self).__init__(header, loadFactory, ins, do_unpack)
 
-    def load_rec_group(self, ins, endPos):
+    def _load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         cellType_class = self.loadFactory.getCellTypeClass()
         insAtEnd = ins.atEnd
@@ -1271,7 +1271,7 @@ class MobCells(MobBase):
 class MobICells(MobCells):
     """Tes4 top block for interior cell records."""
 
-    def load_rec_group(self, ins, endPos):
+    def _load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         expType = self.label
         recCellClass = self.loadFactory.getRecClass(expType)
@@ -1366,8 +1366,8 @@ class MobWorld(MobCells):
         self.road = None
         super(MobWorld, self).__init__(header, loadFactory, ins, do_unpack)
 
-    def load_rec_group(self, ins, endPos, __packer=struct.Struct(u'I').pack,
-                       __unpacker=struct.Struct(u'2h').unpack):
+    def _load_rec_group(self, ins, endPos, __packer=struct.Struct(u'I').pack,
+                        __unpacker=struct.Struct(u'2h').unpack):
         """Loads data from input stream. Called by load()."""
         cellType_class = self.loadFactory.getCellTypeClass()
         errLabel = u'World Block'
@@ -1645,7 +1645,7 @@ class MobWorlds(MobBase):
         self.orphansSkipped = 0
         super(MobWorlds, self).__init__(header, loadFactory, ins, do_unpack)
 
-    def load_rec_group(self, ins, endPos):
+    def _load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         expType = self.label
         recWrldClass = self.loadFactory.getRecClass(expType)

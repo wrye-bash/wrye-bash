@@ -64,7 +64,7 @@ if brec.MelModel is None:
 
         def __init__(self, attr=u'model', index=0, with_facegen_flags=True):
             """Initialize. Index is 0,2,3,4 for corresponding type id."""
-            types = self.__class__.typeSets[(0, index - 1)[index > 0]]
+            types = self.__class__.typeSets[index - 1 if index > 0 else 0]
             model_elements = [
                 MelString(types[0], u'modPath'),
                 MelBase(types[1], u'modb_p'),

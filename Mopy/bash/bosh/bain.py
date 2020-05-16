@@ -1208,7 +1208,7 @@ class Installer(object):
     @staticmethod
     def _list_package(apath, log): raise AbstractError
 
-    def renameInstaller(self, name_new, data):
+    def renameInstaller(self, name_new, idata_):
         """Rename installer and return a three tuple specifying if a refresh in
         mods and ini lists is needed.
         :rtype: tuple
@@ -1260,14 +1260,14 @@ class InstallerMarker(Installer):
         """Install specified files to Oblivion\Data directory."""
         pass
 
-    def renameInstaller(self, name_new, data):
+    def renameInstaller(self, name_new, idata_):
         archive = GPath(self.archive)
         if name_new == archive:
             return False, False, False
         #--Add the marker to Bash and remove old one
         self.archive = name_new.s
-        data[name_new] = self
-        del data[archive]
+        idata_[name_new] = self
+        del idata_[archive]
         return True, False, False
 
     def refreshBasic(self, progress, recalculate_project_crc=True):
@@ -1407,8 +1407,8 @@ class InstallerArchive(Installer):
             log(u'  ' * node.count(os.sep) + os.path.split(node)[1] + (
                 os.sep if isdir else u''))
 
-    def renameInstaller(self, name_new, data):
-        return self._installer_rename(data,
+    def renameInstaller(self, name_new, idata_):
+        return self._installer_rename(idata_,
                                       name_new.root + GPath(self.archive).ext)
 
     def _open_txt_file(self, rel_path):
@@ -1618,8 +1618,8 @@ class InstallerProject(Installer):
                     log(u' ' * depth + entry)
         walkPath(apath.s, 0)
 
-    def renameInstaller(self, name_new, data):
-        return self._installer_rename(data, name_new)
+    def renameInstaller(self, name_new, idata_):
+        return self._installer_rename(idata_, name_new)
 
     def _open_txt_file(self, rel_path): self.ipath.join(rel_path).start()
 

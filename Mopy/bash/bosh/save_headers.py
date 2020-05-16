@@ -24,20 +24,19 @@
 """Save files - beta - TODOs:
 - that's the headers code only - write save classes (per game)
 - rework encoding/decoding
-- use the alpha data from the image
 """
 
 from __future__ import division
 
 __author__ = u'Utumno'
 
-import copy
-import lz4.block
 import StringIO
+import copy
 import struct
 import zlib
 from collections import OrderedDict
 from functools import partial
+import lz4.block
 from .. import bolt
 from ..bolt import decoder, cstrip, unpack_string, unpack_int, unpack_str8, \
     unpack_short, unpack_float, unpack_str16, unpack_byte, struct_pack, \

@@ -454,12 +454,6 @@ class MreRecord(object):
         """Sets changed attribute to value. [Default = True.]"""
         self.changed = value
 
-    def setData(self,data):
-        """Sets data and size."""
-        self.data = data
-        self.size = len(data)
-        self.changed = False
-
     def getSize(self):
         """Return size of self.data, after, if necessary, packing it."""
         if not self.changed: return self.size

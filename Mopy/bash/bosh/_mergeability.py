@@ -140,7 +140,7 @@ def is_esl_capable(modInfo, _minfos, reasons):
         if not verbose: return False
         reasons.append(u'%s.' % e)
     # Check for new FormIDs greater then 0xFFF
-    num_masters = len(modInfo.header.masters)
+    num_masters = len(modInfo.masterNames)
     has_new_recs = False
     for _rec_type, rec_headers in record_headers.iteritems():
         for header in rec_headers:
