@@ -90,6 +90,7 @@ class Colors(object):
     WHITE = Color(255, 255, 255)
     RED = Color(255, 0, 0)
     BLACK = Color(0, 0, 0)
+    GRAY = Color(192, 192, 192)
 
     def __init__(self):
         self._colors = {}

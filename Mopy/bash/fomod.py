@@ -42,13 +42,12 @@ xml attributes/text are available via instance attributes."""
 
 __author__ = u'Ganda'
 
-import os
-from collections import OrderedDict, Sequence
+from collections import OrderedDict
 from distutils.version import LooseVersion
 from xml.etree import ElementTree as etree
 
 from . import bush
-from .bolt import GPath
+from .bolt import GPath, Path
 from .load_order import cached_is_active
 
 class FailedCondition(Exception):
@@ -57,111 +56,139 @@ class FailedCondition(Exception):
     understand."""
     pass
 
-class InstallerPage(Sequence):
-    def __init__(self, installer, page):
-        """Wrapper around the ElementTree element 'installStep'.
+class _AFomodBase(object):
+    """Base class for FOMOD components. Defines a key to sort instances of this
+    class by."""
+    __slots__ = (u'_parent_installer', u'sort_key')
 
-        Provides the page's name via the `name` instance attribute
-        and the page's groups via Sequence API (this behaves like a list).
+    def __init__(self, parent_installer, sort_key):
+        """Creates a new _AFomodBase with the specified parent and sort key.
 
-        :param installer: the parent FomodInstaller
-        :param page: the ElementTree element for an 'installStep'"""
-        self._installer = installer
-        self._object = page  # the original ElementTree element
-        self._group_list = installer._order_list(
-            [
-                InstallerGroup(installer, group)
-                for group in page.findall(u'optionalFileGroups/*')
-            ],
-            page.get(u'order', u'Ascending')
-        )
-        self.name = page.get(u'name')
+        :param parent_installer: The parent FomodInstaller.
+        :param sort_key: An object to use for sorting instances of this
+            class."""
+        self._parent_installer = parent_installer
+        self.sort_key = sort_key
 
-    def __getitem__(self, key):
-        return self._group_list[key]
+class InstallerPage(_AFomodBase):
+    """Wrapper around the ElementTree element 'installStep'. Provides the
+    page's name via the `page_name` instance attribute and the page's groups
+    via list emulation."""
+    __slots__ = (u'page_name', u'page_object', u'_group_list')
+
+    def __init__(self, parent_installer, page_object):
+        """Creates a new InstallerPage with the specified parent and XML
+        object.
+
+        :param parent_installer: The parent FomodInstaller.
+        :param page_object: The ElementTree element for an 'installStep'."""
+        self.page_name = page_object.get(u'name')
+        super(InstallerPage, self).__init__(parent_installer, self.page_name)
+        self.page_object = page_object # the original ElementTree element
+        self._group_list = parent_installer.order_list([
+            InstallerGroup(parent_installer, xml_group_obj)
+            for xml_group_obj in page_object.findall(u'optionalFileGroups/*')
+        ], page_object.get(u'order', u'Ascending'))
+
+    def __getitem__(self, k):
+        return self._group_list[k]
 
     def __len__(self):
         return len(self._group_list)
 
-class InstallerGroup(Sequence):
-    def __init__(self, installer, group):
-        """Wrapper around the ElementTree element 'group'.
+class InstallerGroup(_AFomodBase):
+    """Wrapper around the ElementTree element 'group'. Provides the group's
+    name and type via the `group_name` and `group_type` instance attributes,
+    respectively, and the group's options via list emulation."""
+    __slots__ = (u'group_name', u'group_object', u'_option_list',
+                 u'group_type')
 
-        Provides the group's name and type via the `name` and `type` instance
-        attributes, respectively, and the group's option via Sequence API
-        (this behaves like a list).
+    def __init__(self, parent_installer, group_object):
+        """Creates a new InstallerGroup with the specified parent and XML
+        object.
 
-        :param installer: the parent FomodInstaller
-        :param group: the ElementTree element for an 'group'"""
-        self._installer = installer
-        self._object = group
-        self._option_list = installer._order_list(
-            [
-                InstallerOption(installer, option)
-                for option in group.findall(u'plugins/*')
-            ],
-            group.get(u'order', u'Ascending')
-        )
-        self.name = group.get(u'name')
-        self.type = group.get(u'type')
+        :param parent_installer: The parent FomodInstaller.
+        :param group_object: The ElementTree element for a 'group'."""
+        self.group_name = group_object.get(u'name')
+        super(InstallerGroup, self).__init__(parent_installer, self.group_name)
+        self.group_object = group_object
+        self._option_list = parent_installer.order_list([
+            InstallerOption(parent_installer, xml_option_object)
+            for xml_option_object in group_object.findall(u'plugins/*')
+        ], group_object.get(u'order', u'Ascending'))
+        self.group_type = group_object.get(u'type')
 
-    def __getitem__(self, key):
-        return self._option_list[key]
+    def __getitem__(self, k):
+        return self._option_list[k]
 
     def __len__(self):
         return len(self._option_list)
 
-class InstallerOption(object):
-    def __init__(self, installer, option):
-        """Wrapper around the ElementTree element 'plugin'.
+class InstallerOption(_AFomodBase):
+    """Wrapper around the ElementTree element 'plugin'. Provides the option's
+    name, description, image path and type via the instance attributes
+    option_name, option_desc, option_image and option_type respectively."""
+    __slots__ = (u'option_name', u'option_object', u'option_desc',
+                 u'option_image', u'option_type')
 
-        Provides the option's name, description, image path and type
-        via instance attributes with the same names.
+    def __init__(self, parent_installer, option_object):
+        """Creates a new InstallerOption with the specified parent and XML
+        object.
 
-        :param installer: the parent FomodInstaller
-        :param option: the ElementTree element for an 'plugin'"""
-        self._installer = installer
-        self._object = option
-        self.name = option.get(u'name')
-        self.description = option.findtext(u'description', u'').strip()
-        image = option.find(u'image')
-        if image is not None:
-            self.image = image.get(u'path')
+        :param parent_installer: The parent FomodInstaller.
+        :param option_object: The ElementTree element for a 'plugin'."""
+        self.option_name = option_object.get(u'name')
+        super(InstallerOption, self).__init__(parent_installer,
+                                              self.option_name)
+        self.option_object = option_object
+        self.option_desc = option_object.findtext(u'description', u'').strip()
+        xml_img_path = option_object.find(u'image')
+        if xml_img_path is not None:
+            self.option_image = xml_img_path.get(u'path')
         else:
-            self.image = u''
-        type_elem = option.find(u'typeDescriptor/type')
+            self.option_image = u''
+        type_elem = option_object.find(u'typeDescriptor/type')
         if type_elem is not None:
-            self.type = type_elem.get(u'name')
+            self.option_type = type_elem.get(u'name')
         else:
-            default = option.find(
+            default_type = option_object.find(
                 u'typeDescriptor/dependencyType/defaultType').get(u'name')
-            patterns = option.findall(
+            dep_patterns = option_object.findall(
                 u'typeDescriptor/dependencyType/patterns/*')
-            for pattern in patterns:
+            for dep_pattern in dep_patterns:
                 try:
-                    self._installer._test_conditions(pattern.find(
+                    self._parent_installer.test_conditions(dep_pattern.find(
                         u'dependencies'))
                 except FailedCondition:
                     pass
                 else:
-                    self.type = pattern.find(u'type').get(u'name')
+                    self.option_type = dep_pattern.find(u'type').get(u'name')
                     break
             else:
-                self.type = default
+                self.option_type = default_type
 
 class _FomodFileInfo(object):
-    def __init__(self, source, destination, priority):
-        """Stores file info.
+    """Stores information about a single file that is going to be installed."""
+    __slots__ = (u'file_source', u'file_destination', u'file_priority')
 
-        :param source: string source path
-        :param destination: string destination path
-        :param priority: file priority"""
-        self.source = source
-        self.destination = destination
-        self.priority = priority
+    def __init__(self, file_source, file_destination, file_priority):
+        # type: (Path, Path, int) -> None
+        """Creates a new _FomodFileInfo with the specified properties.
+
+        :param file_source: The source path.
+        :param file_destination: The destination path.
+        :param file_priority: The relative file priority."""
+        self.file_source = file_source
+        self.file_destination = file_destination
+        self.file_priority = file_priority
+
+    def __repr__(self):
+        return u'%s<%s -> %s with priority %s>' % (
+            self.__class__.__name__, self.file_source, self.file_destination,
+            self.file_priority)
 
     @classmethod
-    def process_files(cls, files_elem, file_list):
+    def process_files(cls, files_elem, file_list, inst_root):
         """Processes the elements in *files_elem* into a list of
         _FomodFileInfo.
 
@@ -175,259 +202,258 @@ class _FomodFileInfo(object):
         hard time copying folders).
 
         :param files_elem: list of ElementTree elements 'file' and 'folder'
-        :param file_list: list of files in the mod being installed"""
-        result = []
+        :param file_list: list of files in the mod being installed
+        :param inst_root: The root path to retrieve sources relative to."""
+        fm_infos = []
         for file_object in files_elem.findall(u'*'):
-            source = file_object.get(u'source')
-            if source.endswith((u'/', u'\\')):
-                source = source[:-1]
-            source = GPath(source)
-            destination = file_object.get(u'destination', None)
-            if destination is None:  # omitted destination
-                destination = source
+            file_src = inst_root + file_object.get(u'source')
+            if file_src.endswith((u'/', u'\\')):
+                file_src = file_src[:-1]
+            file_src = GPath(file_src)
+            file_dest = file_object.get(u'destination', None)
+            if file_dest is None:  # omitted destination
+                file_dest = file_src
             elif file_object.tag == u'file' and (
-                not destination or destination.endswith((u'/', u'\\'))
-            ):
+                not file_dest or file_dest.endswith((u'/', u'\\'))):
                 # if empty or with a trailing slash then dest refers
                 # to a folder. Post-processing to add the filename to the
                 # end of the path.
-                destination = GPath(destination).join(GPath(source).tail)
+                file_dest = GPath(file_dest).join(file_src.tail)
             else:
                 # destination still needs normalizing
-                destination = GPath(destination)
-            priority = int(file_object.get(u'priority', u'0'))
+                file_dest = GPath(file_dest)
+            file_prty = int(file_object.get(u'priority', u'0'))
+            source_lower = file_src.s.lower()
             # We need to include the path separators when checking, since
             # otherwise we may end up matching e.g. 'Foo - A/bar.esp' to the
             # source 'Foo', when the source 'Foo - A' exists.
-            source_starts = (source.s.lower() + u'/', source.s.lower() + u'\\')
-            for fname in file_list:
-                if fname.lower() == source.s.lower():  # it's a file
-                    result.append(cls(source, destination, priority))
-                elif fname.lower().startswith(source_starts):
-                    # it's a folder
-                    source_len = len(source)
-                    fdest = destination.s + fname[source_len:]
+            source_starts = (source_lower + u'/', source_lower + u'\\')
+            for fsrc in file_list:
+                fsrc_lower = fsrc.lower()
+                if fsrc_lower == source_lower: # it's a file
+                    fm_infos.append(cls(file_src, file_dest, file_prty))
+                elif fsrc_lower.startswith(source_starts): # it's a folder
+                    fdest = file_dest.s + fsrc[len(file_src):]
                     if fdest.startswith((u'/', u'\\')):
                         fdest = fdest[1:]
-                    result.append(cls(GPath(fname), GPath(fdest), priority))
-        return result
+                    fm_infos.append(cls(GPath(fsrc), GPath(fdest), file_prty))
+        return fm_infos
 
 class FomodInstaller(object):
-    def __init__(self, root, file_list, dst_dir, game_version):
-        """Represents the installer itself. Keeps parsing on instancing to a
-        minimum to reduce performance impact.
+    """Represents the installer itself. Keeps parsing on instancing to a
+    minimum to reduce performance impact.
 
-        To evaluate 'moduleDependencies' and receive the first page
-        (InstallerPage), call `start()`. If you receive `None` it's because the
-        installer had no visible pages and has finished.
+    To evaluate 'moduleDependencies' and receive the first page
+    (InstallerPage), call `start_fomod()`. If you receive `None` it's because
+    the installer had no visible pages and has finished.
 
-        Once the user has performed their selections (a list of
-        InstallerOption), you can pass these to `next_(selections)` to receive
-        the next page. Keep in mind these selections are not validated at all -
-        this must be done by the callers of this method. If you receive `None`
-        it's because you have reached the end of the installer's pages.
+    Once the user has performed their selections (a list of
+    InstallerOption), you can pass these to `move_to_next(selections)` to
+    receive the next page. Keep in mind these selections are not validated at
+    all - this must be done by the callers of this method. If you receive
+    `None` it's because you have reached the end of the installer's pages.
 
-        If the user desires to go to a previous page, you can call
-        `previous()`. It will return a tuple of the previous InstallerPage and
-        a list of the selected InstallerOptions on that page. If you receive
-        `None` it's because you have reached the start of the installer.
+    If the user desires to go to a previous page, you can call
+    `move_to_prev()`. It will return a tuple of the previous InstallerPage
+    and a list of the selected InstallerOptions on that page. If you receive
+    `(None, None)` it's because you have reached the start of the installer.
 
-        Once the installer has finished, you may call `files()` to receive a
-        mapping of 'file source string' -> 'file destination string'. These are
-        the files to be installed. This installer does not install or provide
-        any way to do so, leaving that at your discretion.
+    Once the installer has finished, you may call `get_fomod_files()` to
+    receive a mapping of 'file source string' -> 'file destination string'.
+    These are the files to be installed. This installer does not install or
+    provide any way to do so, leaving that at your discretion."""
+    __slots__ = (u'fomod_tree', u'fomod_name', u'file_list', u'dst_dir',
+                 u'game_version', u'_current_page', u'_previous_pages',
+                 u'_has_finished', u'installer_root')
 
-        :param root: string path to 'ModuleConfig.xml'
+    def __init__(self, mc_path, file_list, inst_root, dst_dir, game_version):
+        """Creates a new FomodInstaller with the specified properties.
+
+        :param mc_path: string path to 'ModuleConfig.xml'
         :param file_list: the list of recognized files of the mod being
             installed
+        :param inst_root: The root path of the installer. All files are
+            specified relative to this by the FOMOD config.
         :param dst_dir: the destination directory - <Game>/Data
         :param game_version: version of the game launch exe"""
-        self.tree = etree.parse(root)
-        self.fomod_name = self.tree.findtext(u'moduleName', u'').strip()
+        self.fomod_tree = etree.parse(mc_path)
+        self.fomod_name = self.fomod_tree.findtext(u'moduleName', u'').strip()
         self.file_list = file_list
+        self.installer_root = inst_root
         self.dst_dir = dst_dir
         self.game_version = game_version
         self._current_page = None
         self._previous_pages = OrderedDict()
         self._has_finished = False
 
-    def start(self):
-        root_conditions = self.tree.find(u'moduleDependencies')
+    def start_fomod(self):
+        root_conditions = self.fomod_tree.find(u'moduleDependencies')
         if root_conditions is not None:
-            self._test_conditions(root_conditions)
-        first_page = self.tree.find(u'installSteps/installStep')
+            self.test_conditions(root_conditions)
+        first_page = self.fomod_tree.find(u'installSteps/installStep')
         if first_page is None:
             return None
         self._current_page = InstallerPage(self, first_page)
         return self._current_page
 
-    def next_(self, selection):
+    def move_to_next(self, user_selection):
         if self._has_finished or self._current_page is None:
             return None
-        sort_list = [option for group in self._current_page for option
-                     in group]
-        sorted_selection = sorted(selection, key=sort_list.index)
+        sort_list = [option for grp in self._current_page for option in grp]
+        sorted_selection = sorted(user_selection, key=sort_list.index)
         self._previous_pages[self._current_page] = sorted_selection
-        ordered_pages = self._order_list(
-            self.tree.findall(u'installSteps/installStep'),
-            self.tree.find(u'installSteps').get(u'order', u'Ascending'),
-        )
-        current_index = ordered_pages.index(self._current_page._object)
-        for page in ordered_pages[current_index + 1 :]:
+        ordered_pages = self.order_list(
+            self.fomod_tree.findall(u'installSteps/installStep'),
+            self.fomod_tree.find(u'installSteps').get(u'order', u'Ascending'))
+        current_index = ordered_pages.index(self._current_page.page_object)
+        for next_page in ordered_pages[current_index + 1:]:
             try:
-                conditions = page.find(u'visible')
-                if conditions is not None:
-                    self._test_conditions(conditions)
+                page_conditions = next_page.find(u'visible')
+                if page_conditions is not None:
+                    self.test_conditions(page_conditions)
             except FailedCondition:
                 pass
             else:
-                self._current_page = InstallerPage(self, page)
+                self._current_page = InstallerPage(self, next_page)
                 return self._current_page
         else:
             self._has_finished = True
             self._current_page = None
         return None
 
-    def previous(self):
+    def move_to_prev(self):
         self._has_finished = False
         try:
-            page, options = self._previous_pages.popitem(last=True)
-            self._current_page = page
-            return page, options
+            prev_page, prev_selected = self._previous_pages.popitem(last=True)
+            self._current_page = prev_page
+            return prev_page, prev_selected
         except KeyError:
             self._current_page = None
-            return None
+            return None, None
 
-    def has_previous(self):
+    def has_prev(self):
         return bool(self._previous_pages)
 
-    def files(self):
+    def get_fomod_files(self):
         required_files = []
-        required_files_elem = self.tree.find(u'requiredInstallFiles')
+        required_files_elem = self.fomod_tree.find(u'requiredInstallFiles')
         if required_files_elem is not None:
             required_files = _FomodFileInfo.process_files(
-                required_files_elem, self.file_list)
+                required_files_elem, self.file_list, self.installer_root)
         user_files = []
-        selected_options = [option._object
+        selected_options = [option.option_object
                             for options in self._previous_pages.values()
                             for option in options]
         for option in selected_options:
             option_files = option.find(u'files')
             if option_files is not None:
                 user_files.extend(_FomodFileInfo.process_files(
-                    option_files, self.file_list))
+                    option_files, self.file_list, self.installer_root))
         conditional_files = []
-        for pattern in self.tree.findall(
+        for cond_pattern in self.fomod_tree.findall(
                 u'conditionalFileInstalls/patterns/pattern'):
-            conditions = pattern.find(u'dependencies')
-            files = pattern.find(u'files')
+            dep_conditions = cond_pattern.find(u'dependencies')
+            cond_files = cond_pattern.find(u'files')
             try:
-                self._test_conditions(conditions)
+                self.test_conditions(dep_conditions)
             except FailedCondition:
                 pass
             else:
                 conditional_files.extend(_FomodFileInfo.process_files(
-                    files, self.file_list))
+                    cond_files, self.file_list, self.installer_root))
         file_dict = {}  # dst -> src
         priority_dict = {}  # dst -> priority
-        for info in required_files + user_files + conditional_files:
-            if info.destination in priority_dict:
-                if priority_dict[info.destination] > info.priority:
+        for fm_info in required_files + user_files + conditional_files:
+            fm_info_dest = fm_info.file_destination
+            if fm_info_dest in priority_dict:
+                if priority_dict[fm_info_dest] > fm_info.file_priority:
                     continue
-                del file_dict[info.destination]
-            file_dict[info.destination] = info.source
-            priority_dict[info.destination] = info.priority
+                del file_dict[fm_info_dest]
+            file_dict[fm_info_dest] = fm_info.file_source
+            priority_dict[fm_info_dest] = fm_info.file_priority
         # return everything in strings
         return {a.s: b.s for a, b in file_dict.iteritems()}
 
-    def _flags(self):
+    def _fomod_flags(self):
         """Returns a mapping of 'flag name' -> 'flag value'.
         Useful for either debugging or testing flag dependencies."""
-        flag_dict = {}
-        flags_list = [
-            option._object.find(u'conditionFlags')
-            for options in self._previous_pages.values()
-            for option in options
-        ]
-        for flags in flags_list:
-            if flags is None:
+        fm_flag_dict = {}
+        fm_flags_list = [option.option_object.find(u'conditionFlags')
+                         for options in self._previous_pages.values()
+                         for option in options]
+        for fm_flags in fm_flags_list:
+            if fm_flags is None:
                 continue
-            for flag in flags.findall(u'flag'):
-                flag_name = flag.get(u'name')
-                flag_value = flag.text
-                flag_dict[flag_name] = flag_value
-        return flag_dict
+            for fm_flag in fm_flags.findall(u'flag'):
+                fm_flag_name = fm_flag.get(u'name')
+                fm_flag_value = fm_flag.text
+                fm_flag_dict[fm_flag_name] = fm_flag_value
+        return fm_flag_dict
 
     def _test_file_condition(self, condition):
-        file_name = GPath(condition.get(u'file'))
-        file_type = condition.get(u'state')
+        test_file = GPath(condition.get(u'file'))
+        test_type = condition.get(u'state')
         # Check if it's missing, ghosted or (in)active
-        if not self.dst_dir.join(file_name).exists():
+        if not self.dst_dir.join(test_file).exists():
             actual_type = u'Missing'
-        elif (file_name.cext in bush.game.espm_extensions and
-              self.dst_dir.join(file_name + u'.ghost').exists()):
+        ##: Needed? Shouldn't this be handled by cached_is_active?
+        elif (test_file.cext in bush.game.espm_extensions and
+              self.dst_dir.join(test_file + u'.ghost').exists()):
             actual_type = u'Inactive'
         else:
-            actual_type = (u'Active' if cached_is_active(file_name)
+            actual_type = (u'Active' if cached_is_active(test_file)
                            else u'Inactive')
-        if actual_type != file_type:
+        if actual_type != test_type:
             raise FailedCondition(
                 u'File {} should be {} but is {} instead.'.format(
-                    file_name, file_type, actual_type
-                )
-            )
+                    test_file, test_type, actual_type))
 
     def _test_flag_condition(self, condition):
-        flag_name = condition.get(u'flag')
-        flag_value = condition.get(u'value')
-        actual_value = self._flags().get(flag_name, None)
-        if actual_value != flag_value:
+        fm_flag_name = condition.get(u'flag')
+        fm_flag_value = condition.get(u'value', u'')
+        actual_flag_value = self._fomod_flags().get(fm_flag_name, u'')
+        if actual_flag_value != fm_flag_value:
             raise FailedCondition(
                 u'Flag {} was expected to have {} but has {} instead.'.format(
-                    flag_name, flag_value, actual_value
-                )
-            )
+                    fm_flag_name, fm_flag_value, actual_flag_value))
 
     def _test_version_condition(self, condition):
-        version = condition.get(u'version')
-        game_version = LooseVersion(self.game_version)
-        version = LooseVersion(version)
-        if game_version < version:
+        target_ver = condition.get(u'version')
+        game_ver = LooseVersion(self.game_version)
+        target_ver = LooseVersion(target_ver)
+        if game_ver < target_ver:
             raise FailedCondition(
                 u'Game version is {} but {} is required.'.format(
-                    game_version, version)
-            )
+                    game_ver, target_ver))
 
-    def _test_conditions(self, conditions):
-        op = conditions.get(u'operator', u'And')
-        failed = []
-        condition_list = conditions.findall(u'*')
-        for condition in condition_list:
+    def test_conditions(self, conditions):
+        cond_op = conditions.get(u'operator', u'And')
+        failed_conditions = []
+        all_conditions = conditions.findall(u'*')
+        for condition in all_conditions:
             try:
                 test_func = self._condition_tests.get(condition.tag, None)
                 if test_func:
                     test_func(self, condition)
-            except FailedCondition as exc:
-                failed.extend([a for a in str(exc).splitlines()])
-                if op == u'And':
-                    raise FailedCondition(u'\n'.join(failed))
-        if op == u'Or' and len(failed) == len(condition_list):
-            raise FailedCondition(u'\n'.join(failed))
+            except FailedCondition as e:
+                failed_conditions.extend([a for a in unicode(e).splitlines()])
+                if cond_op == u'And':
+                    raise FailedCondition(u'\n'.join(failed_conditions))
+        if cond_op == u'Or' and len(failed_conditions) == len(all_conditions):
+            raise FailedCondition(u'\n'.join(failed_conditions))
 
     _condition_tests = {u'fileDependency': _test_file_condition,
                         u'flagDependency': _test_flag_condition,
                         u'gameDependency': _test_version_condition,
-                        u'dependencies': _test_conditions, }
+                        u'dependencies': test_conditions, }
 
     @staticmethod
-    def _order_list(unordered_list, order, _valid_values=frozenset(
+    def order_list(unordered_list, order_str, _valid_values=frozenset(
         (u'Explicit', u'Ascending', u'Descending'))):
-        if order == u'Explicit':
+        if order_str == u'Explicit':
             return unordered_list
-        if order not in _valid_values:
-            raise ValueError(
-                u'Arguments are incorrect: {}, {}'.format(
-                    unordered_list, order)
-            )
-        return sorted(unordered_list, key=lambda x: x.name,
-                      reverse=order == u'Descending')
+        if order_str not in _valid_values:
+            raise ValueError(u'Arguments are incorrect: {}, {}'.format(
+                unordered_list, order_str))
+        return sorted(unordered_list, key=lambda x: x.sort_key,
+                      reverse=order_str == u'Descending')

@@ -87,7 +87,7 @@ from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
     TOP, VLayout, EventResult, DropDown, DialogWindow, WindowFrame, Spinner, \
     Splitter, NotebookCtrl, PanelWin, CheckListBox, Color, Picture, Image, \
-    CenteredSplash, BusyCursor
+    CenteredSplash, BusyCursor, RadioButton
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons
@@ -2675,13 +2675,23 @@ class InstallersDetails(_SashDetailsPanel):
             self.infoPages.append([gPage,False])
         self.gNotebook.nb_set_selected_index(settings['bash.installers.page'])
         self.gNotebook.on_nb_page_change.subscribe(self.OnShowInfoPage)
-        subPackagesPanel, espmsPanel = self.checkListSplitter.make_panes(
+        self.sp_panel, espmsPanel = self.checkListSplitter.make_panes(
             vertically=True)
         #--Sub-Installers
-        subPackagesLabel = Label(subPackagesPanel, _(u'Sub-Packages'))
-        self.gSubList = CheckListBox(subPackagesPanel, isExtended=True,
+        self.gSubList = CheckListBox(self.sp_panel, isExtended=True,
                                      onCheck=self._check_subitem)
         self.gSubList.on_mouse_right_up.subscribe(self._sub_selection_menu)
+        # FOMOD/Sub-Packages radio buttons
+        self.fomod_btn = RadioButton(self.sp_panel, _(u'FOMOD'))
+        self.fomod_btn.tooltip = _(u'Disable the regular BAIN sub-packages '
+                                   u'and use the results of the last FOMOD '
+                                   u'installer run instead.')
+        self.sp_btn = RadioButton(self.sp_panel, _(u'Sub-Packages'))
+        self.sp_btn.tooltip = _(u'Use the regular BAIN sub-packages.')
+        for rb in (self.fomod_btn, self.sp_btn):
+            rb.on_checked.subscribe(self._on_fomod_checked)
+        self.sp_label = Label(self.sp_panel, _(u'Sub-Packages'))
+        self._update_fomod_state()
         #--Espms
         self.espms = []
         self.gEspmList = CheckListBox(espmsPanel, isExtended=True,
@@ -2695,19 +2705,24 @@ class InstallersDetails(_SashDetailsPanel):
         commentsSplitter.set_min_pane_size(-self.__class__.defaultSashPos)
         commentsSplitter.set_sash_gravity(1.0)
         #--Layout
-        VLayout(items=[subPackagesLabel,
-                       (self.gSubList, LayoutOptions(expand=True, weight=1))]
-                ).apply_to(subPackagesPanel)
-        VLayout(items=[Label(espmsPanel, _(u'Plugin Filter')),
-                       (self.gEspmList, LayoutOptions(expand=True, weight=1))]
-                ).apply_to(espmsPanel)
-        VLayout(item_expand=True, items=[self.gPackage, (
-            self.subSplitter, LayoutOptions(weight=1))]).apply_to(top)
-        VLayout(items=[Label(commentsPanel, _(u'Comments')),
-                       (self.gComments, LayoutOptions(expand=True, weight=1))]
-                ).apply_to(commentsPanel)
-        VLayout(item_expand=True, item_weight=1, items=[commentsPanel]
-                ).apply_to(bottom)
+        VLayout(items=[
+            self.fomod_btn, self.sp_btn, self.sp_label,
+            (self.gSubList, LayoutOptions(expand=True, weight=1)),
+        ]).apply_to(self.sp_panel)
+        VLayout(items=[
+            Label(espmsPanel, _(u'Plugin Filter')),
+            (self.gEspmList, LayoutOptions(expand=True, weight=1)),
+        ]).apply_to(espmsPanel)
+        VLayout(item_expand=True, items=[
+            self.gPackage, (self.subSplitter, LayoutOptions(weight=1)),
+        ]).apply_to(top)
+        VLayout(items=[
+            Label(commentsPanel, _(u'Comments')),
+            (self.gComments, LayoutOptions(expand=True, weight=1)),
+        ]).apply_to(commentsPanel)
+        VLayout(item_expand=True, item_weight=1, items=[
+            commentsPanel,
+        ]).apply_to(bottom)
 
     def _get_sub_splitter(self):
         return Splitter(self.left, min_pane_size=50, sash_gravity=0.5)
@@ -2760,9 +2775,7 @@ class InstallersDetails(_SashDetailsPanel):
                               installer.subNames[1:]]
                 vals = installer.subActives[1:]
                 self.gSubList.setCheckListItems(sub_names_, vals)
-            if installer.has_fomod_conf:
-                self.gSubList.lb_insert("fomod", 0)
-                self.gSubList.lb_check_at_index(0, installer.extras_dict.get('fomod_active', False))
+            self._update_fomod_state()
             #--Espms
             if not installer.espms:
                 self.gEspmList.lb_clear()
@@ -2896,16 +2909,8 @@ class InstallersDetails(_SashDetailsPanel):
         """Handle check/uncheck of item."""
         installer = self.file_info
         self.gSubList.lb_select_index(lb_selection_dex)
-        has_fomod = False
-        if self.gSubList.lb_get_str_item_at_index(0) == "fomod":
-            installer.extras_dict['fomod_active'] = self.gSubList.lb_is_checked_at_index(0)
-            self.gSubList.lb_delete_at_index(0)
-            has_fomod = True
         for lb_selection_dex in range(self.gSubList.lb_get_items_count()):
             installer.subActives[lb_selection_dex+1] = self.gSubList.lb_is_checked_at_index(lb_selection_dex)
-        if has_fomod:
-            self.gSubList.lb_insert("fomod", 0)
-            self.gSubList.lb_check_at_index(0, installer.extras_dict.get('fomod_active', False))
         if not balt.getKeyState_Shift():
             self.refreshCurrent(installer)
 
@@ -2916,7 +2921,7 @@ class InstallersDetails(_SashDetailsPanel):
         InstallersPanel.espmMenu.new_menu(self, lb_selection_dex)
 
     def _sub_selection_menu(self, lb_selection_dex):
-        """Handle right click in espm list."""
+        """Handle right click in sub-packages list."""
         self.gSubList.lb_select_index(lb_selection_dex)
         #--Show/Destroy Menu
         InstallersPanel.subsMenu.new_menu(self, lb_selection_dex)
@@ -2946,6 +2951,68 @@ class InstallersDetails(_SashDetailsPanel):
         selected_plugin = GPath(selected_name)
         if selected_plugin not in bosh.modInfos: return
         balt.Link.Frame.notebook.SelectPage('Mods', selected_plugin)
+
+    def set_subpackage_checkmarks(self, checked):
+        """Checks or unchecks all subpackage checkmarks and propagates that
+        information to BAIN."""
+        self.gSubList.set_all_checkmarks(checked=checked)
+        for index in xrange(self.gSubList.lb_get_items_count()):
+            # + 1 due to empty string included in subActives by BAIN
+            self.file_info.subActives[index + 1] = checked
+
+    # FOMOD Handling Implementation & API -------------------------------------
+    def _update_fomod_state(self):
+        """Shows or hides and enables or disables the FOMOD/Sub-Packages radio
+        buttons as well as the Sub-Packages list based on whether or not the
+        current installer has an active FOMOD config."""
+        inst_info = self.file_info
+        # Needs to be a bool for wx, otherwise it will assert
+        has_fomod = bool(inst_info and inst_info.has_fomod_conf)
+        self.fomod_btn.visible = has_fomod
+        self.sp_btn.visible = has_fomod
+        self.sp_label.visible = not has_fomod
+        # Same deal as above. Note that we need to do these always, otherwise
+        # the Sub-Packages list would stay disabled when switching installers
+        fomod_checked = has_fomod and inst_info.extras_dict.get(
+            u'fomod_active', False)
+        self.fomod_btn.is_checked = fomod_checked
+        self.sp_btn.is_checked = not fomod_checked
+        self.gSubList.enabled = not fomod_checked
+        self.sp_panel.pnl_layout()
+
+    def set_fomod_mode(self, fomod_enabled):
+        """Programatically enables or disables FOMOD mode and updates the GUI
+        as needed. Does not refresh, callers are responsible for that."""
+        self.file_info.extras_dict[u'fomod_active'] = fomod_enabled
+        # Uncheck all subpackages, otherwise the FOMOD files will get combined
+        # with the ones from the checked subpackages. Store the active
+        # sub-packages and restore them if we go back to regular sub-packages
+        # mode again. This is a big fat HACK: it shouldn't be necessary to do
+        # this - fix BAIN so it isn't.
+        if fomod_enabled:
+            self.file_info.extras_dict[
+                u'fomod_prev_sub_actives'] = self.file_info.subActives[:]
+            self.set_subpackage_checkmarks(checked=False)
+        else:
+            prev_sub_actives = self.file_info.extras_dict.get(
+                u'fomod_prev_sub_actives', [])
+            # Make sure we can actually apply the stored subActives - package
+            # could have changed since we saved these
+            if prev_sub_actives and len(prev_sub_actives) == len(
+                    self.file_info.subActives):
+                self.file_info.subActives = prev_sub_actives[:]
+                # See set_subpackage_checkmarks for the off-by-one explanation
+                for i, sa_checked in enumerate(prev_sub_actives[1:]):
+                    if i >= self.gSubList.lb_get_items_count():
+                        break # Otherwise breaks for 'simple' packages w/ FOMOD
+                    self.gSubList.lb_check_at_index(i, sa_checked)
+        self._update_fomod_state()
+
+    def _on_fomod_checked(self, _checked): # Ignore, could be either one
+        """Internal callback, called when one of the FOMOD/Sub-Packages radio
+        buttons has been checked."""
+        self.set_fomod_mode(self.fomod_btn.is_checked)
+        self.refreshCurrent(self.file_info)
 
 class InstallersPanel(BashTab):
     """Panel for InstallersTank."""

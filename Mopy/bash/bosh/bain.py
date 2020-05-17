@@ -302,6 +302,14 @@ class Installer(object):
         self.fileSizeCrcs = [(unicode(x), y, z) for x, y, z in
                              self.fileSizeCrcs]
 
+    def _fixme_drop__fomod_backwards_compat(self):
+        # Keys and values in the fomod dict got inverted, name changed to
+        # reflect this FIXME backwards compat
+        if u'fomod_files_dict' in self.extras_dict:
+            self.extras_dict[u'fomod_dict'] = LowerDict({
+                v: k for k, v
+                in self.extras_dict.pop(u'fomod_files_dict').iteritems()})
+
     def __setstate__(self,values):
         """Used by unpickler to recreate object."""
         try:
@@ -354,8 +362,7 @@ class Installer(object):
     #--refreshDataSizeCrc, err, framework -------------------------------------
     # Those files/folders will be always skipped by refreshDataSizeCrc()
     _silentSkipsStart = (
-        u'--', u'omod conversion data%s' % os_sep, u'fomod%s' % os_sep,
-        u'wizard images%s' % os_sep)
+        u'--', u'omod conversion data' + os_sep, u'wizard images' + os_sep)
     _silentSkipsEnd = (u'thumbs.db', u'desktop.ini', u'meta.ini', u'config')
 
     # global skips that can be overridden en masse by the installer
@@ -657,33 +664,41 @@ class Installer(object):
         #--Scan over fileSizeCrcs
         root_path = self.extras_dict.get('root_path', u'')
         rootIdex = len(root_path)
+        # For backwards compatibility - drop in 308
+        self._fixme_drop__fomod_backwards_compat()
+        fm_active = self.extras_dict.get(u'fomod_active', False)
+        fm_dict = self.extras_dict.get(u'fomod_dict', {})
+        module_config = os.path.join(u'fomod', u'moduleconfig.xml')
         for full,size,crc in self.fileSizeCrcs:
-            if full.lower() == "fomod" + os.sep + "moduleconfig.xml":
-                self.has_fomod_conf = full
-            fomod_dict = self.extras_dict.get('fomod_files_dict', {})
-            if self.extras_dict.get('fomod_active', False) and full in fomod_dict.values():
-                idx = fomod_dict.values().index(full)
-                dest = fomod_dict.keys()[idx]
-                data_sizeCrc[dest] = (size, crc)
-                dest_src[dest] = full
-                unSize += size
-                continue
             if rootIdex: # exclude all files that are not under root_dir
                 if not full.startswith(root_path): continue
             file_relative = full[rootIdex:]
             fileLower = file_relative.lower()
-            if fileLower.startswith( # skip top level '--', 'fomod' etc
+            if fileLower.startswith( # skip top level '--', etc
                     Installer._silentSkipsStart) or fileLower.endswith(
                     Installer._silentSkipsEnd): continue
+            elif fileLower == module_config:
+                self.has_fomod_conf = full
+                skipDirFilesDiscard(file_relative)
+                continue
+            elif fm_active:
+                if full not in fm_dict:
+                    continue # Pretend all unselected FOMOD files don't exist
+                # Remap selected FOMOD files to usable paths
+                file_relative = fm_dict[full]
+                fileLower = file_relative.lower()
             sub = u''
-            if bain_type == 2: #--Complex archive
+            # Complex archive; skip the logic if FOMOD mode is active (since
+            # subpackage selection doesn't (currently) work in FOMOD mode
+            # anyways)
+            if bain_type == 2 and not fm_active:
                 split = file_relative.split(os_sep, 1)
                 if len(split) > 1:
                     # redefine file, excluding the subpackage directory
                     sub,file_relative = split
                     fileLower = file_relative.lower()
                     if fileLower.startswith(Installer._silentSkipsStart):
-                        continue # skip subpackage level '--', 'fomod' etc
+                        continue # skip subpackage level '--', etc
                 if sub not in activeSubs:
                     if sub == u'':
                         skipDirFilesAdd(file_relative)
@@ -809,8 +824,6 @@ class Installer(object):
             (x, os.path.split(x[0].lower())) for x in self.fileSizeCrcs)
         self.fileSizeCrcs.sort(key=sort_keys_dict.__getitem__)
         #--Find correct starting point to treat as BAIN package
-        # XXX: check this is fine
-        # self.extras_dict.clear() # if more keys are added be careful cleaning
         self.extras_dict.pop(u'root_path', None)
         self.fileRootIdex = 0
         dataDirsPlus = Installer.dataDirsPlus

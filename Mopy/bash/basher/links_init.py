@@ -284,8 +284,9 @@ def InitInstallerLinks():
         Installer_Refresh(calculate_projects_crc=False))
     InstallersList.itemMenu.append(Installer_Move())
     InstallersList.itemMenu.append(SeparatorLink())
-    if True:  # Install Menu
-        installMenu = MenuLink(_(u'Install..'))
+    InstallersList.itemMenu.append(Installer_InstallSmart())
+    if True: # Advanced Installation Menu
+        installMenu = MenuLink(_(u'Advanced Installation..'))
         installMenu.links.append(Installer_Install())
         installMenu.links.append(Installer_Install('MISSING'))
         installMenu.links.append(Installer_Install('LAST'))

@@ -336,24 +336,34 @@ will be skipped (and their content listed in Skipped tab). There are also some d
 
 <h3 id="bain-install">Installing/Uninstalling Via BAIN <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Packages must first be placed in the <code>[Game] Mods\Bash Installers</code> directory. This can either be done via Windows Explorer, or by dragging and dropping the package into the Wrye Bash window when the Installers tab is open. If you drag and drop, you will be asked whether you want to copy the package or move it.
+<p>For the most part, you can simply right-click the package and select <a href="#bainInstall">Install...</a>,
+    which will automatically use wizards and FOMODs if they are present, and fall back to manual configuration
+    if they are not. If you want to learn more about each type of package and how to install and configure
+    their options manually, read on.</p>
 <p>If a package contains a Wizard (ie. there is <img alt="a wand icon" src="../bash/images/wizard.png"/> overlaid on its checkbox):
 <ol>
     <li>Right-click the package and select <a href="#bainWizard">Manual Wizard</a>. You can also choose to install using the Wizard's default options by selecting <a href="#bainAutoWizard">Auto Wizard</a>.
     <li>If you chose <a href="#bainWizard">Manual Wizard</a>, navigate through the steps of the Wizard to install the package. Otherwise, you will be skipped to the Wizard finish screen.
-    <li>At the Wizard's finish screen, click the <q>Apply</q> button to apply its selections. The Wizard window may need to be resized for the <q>Apply</q> button to become visible.
+    <li>At the Wizard's finish screen, click the <q>Finish</q> button to apply its selections.</li>
+</ol>
+<p>If a package has an FOMOD wizard (i.e. there is an FOMOD radio button):</p>
+<ol>
+    <li>Right-click the package and select <a href="bainFomod">FOMOD Installer...</a>.</li>
+    <li>Navigate through the steps and choose options.</li>
+    <li>At the wizard's finish screen, click the <q>Finish</q> button to apply its selections.</li>
 </ol>
 <p>If a package has a Simple or a Complex/Simple structure:
 <ol>
     <li>Select the package in the package list.
     <li>Choose which plugins to install from it using the <q>Plugin Filter</q> box to the far right of the package list. Checked plugins will be installed, while unchecked plugins will be skipped.
-    <li>Right-click the package and select <a href="#bainInstall">Install</a>.
+    <li>Right-click the package and select <a href="#bainInstall">Install...</a>.
 </ol>
 <p>If a package has a Complex structure:
 <ol>
     <li>Select the package in the package list.
     <li>Choose which sub-packages to install from the <q>Sub-Package</q> box to the right of the package list. Checked sub-packages will be installed, while unchecked sub-packages will be skipped.
     <li>Choose which plugins to install from it using the <q>Plugin Filter</q> box to the far right of the package list. Checked plugins will be installed, while unchecked plugins will be skipped.
-    <li>Right-click the package and select <a href="#bainInstall">Install</a>.
+    <li>Right-click the package and select <a href="#bainInstall">Install...</a>.
 </ol>
 <p>If you install a package then later change the sub-packages or plugin files selected, you can apply these changed by right-clicking the package in the list and selecting <a href="#bainAnneal">Anneal</a>. A Wizard provides a scripted installation method that can be useful for more complex mods with many options.
 <p>When a package is installed, BAIN installs any files that appear to be documentation into the <code>Data\Docs</code> folder. Any files that are simply named <q>readme</q> (eg. readme.txt, readme.html, readme.doc) will be renamed according to the package name to prevent packages overwriting each other's readmes.
@@ -373,11 +383,10 @@ with a text editor, then it may be desired to uninstall the Mismatched
  file along with the package that it came from. Such files could be
 deleted from the data folder manually, but there is an easy way to do
 this through BAIN. Before uninstalling the mod, first select the
-package and right click on it, then select <a href="#bainInstall">Install</a>.
-This will
-overwrite any Mismatched files with the version of the file contained
-in the package, making them Matched. Now select <a href="#bainUninstall">Uninstall</a>
-and BAIN
+package and right click on it, then select
+<a href="#bainInstallCurrent">Install Current</a>. This will overwrite any
+Mismatched files with the version of the file contained in the package, making
+them Matched. Now select <a href="#bainUninstall">Uninstall</a> and BAIN
 will uninstall all installed files associated with this package.
 You can also uninstall packages that BAIN hasn't installed, which will
  remove any installed files that match the ones in the package. This
@@ -510,8 +519,10 @@ from other packages previously overridden by the uninstalled package's
         <tr><td colspan="3">Open Readme</td><td>If BAIN detects a readme in the package, it will be opened.</td></tr>
         <tr><td colspan="3" id="bainAnneal">Anneal</td><td>Installs missing files and corrects install
             order errors according to the package configuration.</td></tr>
-        <tr><td rowspan="3">Install..</td>
-            <td colspan="2" id="bainInstall">Install</td> <td>Fully installs the package as configured
+        <tr><td colspan="3" id="bainInstall">Install...</td><td>Installs the selected package, preferring a
+            BAIN or FOMOD wizard if those are available (see options below).</td></tr>
+        <tr><td rowspan="3">Advanced Installation..</td>
+            <td colspan="2" id="bainInstallCurrent">Install Current</td> <td>Fully installs the package as configured
             except for files that would be overridden by later packages.</td></tr>
             <tr><td rowspan="2">Wizard Installer..</td>
                 <td id="bainWizard">Manual Wizard...</td><td>Runs the Wizard for the package, if it has
@@ -1350,7 +1361,7 @@ MemoryError</code>
   <li><img alt="CptMcSplody's Icon" src="../bash/images/people/cptmavi32.jpg"><span><a href="https://github.com/CptMcSplody">CptMcSplody:</a> Patcher refinement, updating LOOT integration, cell handling</span></li>
   <li><img alt="Daidalos' Icon" src="../bash/images/people/dlosavi32.png"><span><a href="https://github.com/D4id4los">Daidalos:</a> LOOT API updates, obscure crash and typo corrections</span></li>
   <li><img alt="FelesNoctis' Icon" src="../bash/images/people/flsnavi32.jpg"><span><a href="https://github.com/FelesNoctis">FelesNoctis:</a> Documentation editor for v307+, image updates</span></li>
-  <li><img alt="GandaG's Icon" src="../bash/images/people/gndaavi32.jpg"><span><a href="https://github.com/GandaG">GandaG:</a> Refactoring and data clean tuneups, build script reworks</span></li>
+  <li><img alt="GandaG's Icon" src="../bash/images/people/gndaavi32.jpg"><span><a href="https://github.com/GandaG">GandaG:</a> FOMOD support, Refactoring, build script reworks</span></li>
   <li><img alt="Haama's Icon" src="../bash/images/people/genravi32.png"><span><a href="https://github.com/Haama">Haama:</a> OBSE cofile definitions, various fixes, improvements etc</span></li>
   <li><img alt="Infernio's Icon" src="../bash/images/people/ifniavi32.png"><span><a href="https://github.com/Infernio">Infernio:</a> Extensive refactoring of cosaves, records, gui, etc.; Enderal support, Skyrim patcher porting</span></li>
   <li><img alt="Jfpelland's Icon" src="../bash/images/people/genbavi32.png"><span><a href="https://github.com/jfpelland">jfpelland:</a> Patcher updates, bug fixes, corrected GMST checks</span></li>
@@ -1364,7 +1375,7 @@ MemoryError</code>
   <li><img alt="Pacific Morrowind's Icon" src="../bash/images/people/pcmwavi32.jpg"><span><a href="https://github.com/NickWilde1990">Pacific Morrowind:</a> New imports, exports, tweaks, general maintenance, etc.</span></li>
   <li><img alt="Ralgor's Icon" src="../bash/images/people/genpavi32.png"><span><a href="https://github.com/Ralgor">Ralgor:</a> Cell support and Import Cells</span></li>
   <li><img alt="Raziel23x's Icon" src="../bash/images/people/raziavi32.png"><span><a href="https://github.com/Raziel23x">Raziel23x:</a> new tweaks etc.</span></li>
-  <li><img alt="Sharlikran's Icon" src="../bash/images/people/sharavi32.jpg"><span><a href="https://github.com/Sharlikran">Sharlikran:</a> Fallout 3/NVsupport, initial ESL support, save game/module header restructuring, form version recognition, patcher updates, heavyweight contender of the community</span></li>
+  <li><img alt="Sharlikran's Icon" src="../bash/images/people/sharavi32.jpg"><span><a href="https://github.com/Sharlikran">Sharlikran:</a> Fallout 3/NV support, initial ESL support, save game/module header restructuring, form version recognition, patcher updates, heavyweight contender of the community</span></li>
   <li><img alt="Waruddar's Icon" src="../bash/images/people/waruavi32.gif"><span><a href="https://www.nexusmods.com/users/456936">Waruddar:</a> Extensive additions/improvements/fixes, primary author of CBash</span></li>
   <li><img alt="Valda's Icon" src="../bash/images/people/vldaavi32.jpg"><span><a href="https://github.com/valda">Valda:</a> Assisted with Fallout 3/New Vegas support, including new patchers</span></li>
 </ul>

@@ -28,9 +28,10 @@ from collections import defaultdict
 import wx.adv as wiz
 
 from .. import balt, bass, bolt, bush, env
-from ..balt import EnabledLink, Links
+from ..balt import EnabledLink, Links, colors
 from ..exception import AbstractError
-from ..fomod import FailedCondition, FomodInstaller
+from ..fomod import FailedCondition, FomodInstaller, InstallerGroup, \
+    InstallerOption, InstallerPage
 from ..gui import CENTER, CheckBox, HBoxedLayout, HLayout, Label, \
     LayoutOptions, TextArea, VLayout, WizardDialog, EventResult, \
     PictureWithCursor, RadioButton, ScrollableWindow, Stretch, Table
@@ -49,7 +50,7 @@ class FomodInstallInfo(object):
 class InstallerFomod(WizardDialog):
     _def_size = (600, 500)
 
-    def __init__(self, parent_window, installer):
+    def __init__(self, parent_window, target_installer):
         # True prevents actually moving to the 'next' page.
         # We use this after the "Next" button is pressed,
         # while the parser is running to return the _actual_ next page
@@ -59,29 +60,33 @@ class InstallerFomod(WizardDialog):
         self.finishing = False
         # saving this list allows for faster processing of the files the fomod
         # installer will return.
-        self.files_list = [a[0] for a in installer.fileSizeCrcs]
-        fomod_file = installer.fomod_file().s
-        data_path = bass.dirs[u'mods']
-        ver = env.get_file_version(bass.dirs[u'app'].join(
+        self.files_list = [a[0] for a in target_installer.fileSizeCrcs]
+        # All extracted files need to be specified relative to this root path
+        self.installer_root = (
+            target_installer.extras_dict.get(u'root_path', u'')
+            if target_installer.fileRootIdex else u'')
+        fm_file = target_installer.fomod_file().s
+        gver = env.get_file_version(bass.dirs[u'app'].join(
             *bush.game.version_detect_file).s)
-        self.parser = FomodInstaller(fomod_file, self.files_list, data_path,
-                                     u'.'.join([unicode(i) for i in ver]))
+        self.fomod_parser = FomodInstaller(
+            fm_file, self.files_list, self.installer_root, bass.dirs[u'mods'],
+            u'.'.join([unicode(i) for i in gver]))
         super(InstallerFomod, self).__init__(
             parent_window, sizes_dict=bass.settings,
-            title=_(u'FOMOD Installer - %s') % self.parser.fomod_name,
+            title=_(u'FOMOD Installer - %s') % self.fomod_parser.fomod_name,
             size_key=u'bash.fomod.size', pos_key=u'bash.fomod.pos')
-        self.is_archive = installer.is_archive()
-        if self.is_archive:
+        self.is_arch = target_installer.is_archive()
+        if self.is_arch:
             self.archive_path = bass.getTempDir()
         else:
             self.archive_path = bass.dirs[u'installers'].join(
-                installer.archive)
+                target_installer.archive)
         # 'dummy' page tricks the wizard into always showing the "Next" button
         class _PageDummy(wiz.WizardPage): pass
-        self.dummy = _PageDummy(self._native_widget)
+        self.fm_dummy = _PageDummy(self._native_widget)
         # Intercept the changing event so we can implement 'block_change'
         self.on_wiz_page_change.subscribe(self.on_change)
-        self.ret = FomodInstallInfo()
+        self.fm_ret = FomodInstallInfo()
         self.first_page = True
 
     def save_size(self):
@@ -97,9 +102,9 @@ class InstallerFomod(WizardDialog):
                     # So the parser can continue parsing,
                     # Then show the page that the parser returns,
                     # rather than the dummy page
-                    selection = evt_page.on_next()
+                    sel_opts = evt_page.on_next()
                     self.block_change = False
-                    next_page = self.parser.next_(selection)
+                    next_page = self.fomod_parser.move_to_next(sel_opts)
                     if next_page is None:
                         self.finishing = True
                         self._native_widget.ShowPage(
@@ -116,99 +121,81 @@ class InstallerFomod(WizardDialog):
             # and resume execution
             self.block_change = False
             self.finishing = False
-            payload = self.parser.previous()
-            if payload:  # at the start
-                page, previous_selection = payload
-                gui_page = PageSelect(self, page)
-                gui_page.select(previous_selection)
+            prev_page, prev_selected = self.fomod_parser.move_to_prev()
+            if prev_page: # at the start
+                gui_page = PageSelect(self, prev_page)
+                gui_page.apply_selection(prev_selected)
                 self._native_widget.ShowPage(gui_page)
             return EventResult.CANCEL
 
-    def run(self):
+    def run_fomod(self):
         try:
-            first_page = self.parser.start()
-        except FailedCondition as exc:
-            msg = _(u'This installer cannot start due to the following unmet '
-                    u'conditions:\n')
-            for line in str(exc).splitlines():
-                msg += u'  {}\n'.format(line)
-            balt.showWarning(self, msg, title=_(u'Cannot Run Installer'),
-                             do_center=True)
-            self.ret.canceled = True
+            first_page = self.fomod_parser.start_fomod()
+        except FailedCondition as e:
+            fm_warning = _(u'This installer cannot start due to the following '
+                           u'unmet conditions:') + u'\n'
+            for l in str(e).splitlines():
+                fm_warning += u'  {}\n'.format(l)
+            balt.showWarning(self, fm_warning,
+                             title=_(u'Cannot Run Installer'), do_center=True)
+            self.fm_ret.canceled = True
         else:
             if first_page is not None:  # if installer has any gui pages
-                self.ret.canceled = not self._native_widget.RunWizard(
+                self.fm_ret.canceled = not self._native_widget.RunWizard(
                     PageSelect(self, first_page))
-            self.ret.install_files = bolt.LowerDict(self.parser.files())
+            # Invert keys and values ahead of time here, so that BAIN doesn't
+            # have to do it just in time
+            self.fm_ret.install_files = bolt.LowerDict({
+                v: k for k, v
+                in self.fomod_parser.get_fomod_files().iteritems()})
         # Clean up temp files
-        if self.is_archive:
+        if self.is_arch:
             bass.rmTempDir()
-        return self.ret
+        return self.fm_ret
 
 class PageInstaller(wiz.WizardPage):
     """Base class for all the parser wizard pages, just to handle a couple
     simple things here."""
 
-    def __init__(self, parent):
-        super(PageInstaller, self).__init__(parent._native_widget)
-        self._page_parent = parent
+    def __init__(self, page_parent):
+        super(PageInstaller, self).__init__(page_parent._native_widget)
+        self._page_parent = page_parent # type: InstallerFomod
         self._enable_forward(True)
 
     def _enable_forward(self, do_enable):
         self._page_parent.enable_forward_btn(do_enable)
 
     def GetNext(self):
-        return self._page_parent.dummy
+        return self._page_parent.fm_dummy
 
     def GetPrev(self):
-        if self._page_parent.parser.has_previous():
-            return self._page_parent.dummy
+        if self._page_parent.fomod_parser.has_prev():
+            return self._page_parent.fm_dummy
         return None
 
     def on_next(self):
         """Create flow control objects etc, implemented by sub-classes."""
         pass
 
-class PageError(PageInstaller):
-    """Page that shows an error message, has only a "Cancel" button enabled,
-    and cancels any changes made."""
-
-    def __init__(self, parent, title, error_msg):
-        super(PageError, self).__init__(parent)
-        # Disable the "Finish"/"Next" button
-        self._enable_forward(False)
-        VLayout(spacing=5, items=[
-            Label(parent, title),
-            (TextArea(self, init_text=error_msg, editable=False,
-                auto_tooltip=False), LayoutOptions(expand=True, weight=1)),
-        ]).apply_to(self)
-        self.Layout()
-
-    def GetNext(self):
-        return None
-
-    def GetPrev(self):
-        return None
-
 class PageSelect(PageInstaller):
     """A Page that shows a message up top, with a selection box on the left
     (multi- or single- selection), with an optional associated image and
     description for each option, shown when that item is selected."""
+    _option_type_info = defaultdict(lambda: (u'', colors.BLACK))
+    _option_type_info[u'Required'] = (_(u'This option is required.'),
+                                      colors.BLACK)
+    _option_type_info[u'Recommended'] = (_(u'This option is recommended.'),
+                                         colors.BLACK)
+    _option_type_info[u'CouldBeUsable'] = (_(u'This option could result in '
+                                             u'instability.'), colors.RED)
+    _option_type_info[u'NotUsable'] = (_(u'This option cannot be selected.'),
+                                       colors.RED)
 
-    _option_type_string = defaultdict(str)
-    _option_type_string[u'Required'] = _(u'=== This option is required '
-                                         u'===\n\n')
-    _option_type_string[u'Recommended'] = _(u'=== This option is recommended '
-                                            u'===\n\n')
-    _option_type_string[u'CouldBeUsable'] = _(u'=== This option could result '
-                                              u'in instability ===\n\n')
-    _option_type_string[u'NotUsable'] = _(u'=== This option cannot be '
-                                          u'selected ===\n\n')
-
-    def __init__(self, parent, page):
-        super(PageSelect, self).__init__(parent)
+    def __init__(self, page_parent, inst_page):
+        """:type inst_page: InstallerPage"""
+        super(PageSelect, self).__init__(page_parent)
         # For runtime retrieval of option/checkable info
-        self._checkable_to_option = {}
+        self.checkable_to_option = {}
         self.checkable_to_group = {}
         self.group_option_map = defaultdict(list)
         # To undo user changes to 'frozen' radio button groups
@@ -218,6 +205,8 @@ class PageSelect(PageInstaller):
         self._bmp_item = PictureWithCursor(self, 0, 0, background=None)
         self._bmp_item.on_mouse_middle_up.subscribe(self._open_image)
         self._bmp_item.on_mouse_left_dclick.subscribe(self._open_image)
+        # Shows required/recommended/etc. status of hovered-over option
+        self._option_type_label = Label(self, u'')
         self._text_item = TextArea(self, editable=False, auto_tooltip=False)
         # Create links to facilitate mass (de)selection
         self._group_links = Links()
@@ -226,13 +215,14 @@ class PageSelect(PageInstaller):
         self._group_links.append(_Group_ToggleAll())
         panel_groups = ScrollableWindow(self)
         groups_layout = VLayout(spacing=5, item_expand=True)
-        for group in page:
+        first_checkable = None
+        for grp in inst_page: # type: InstallerGroup
             options_layout = VLayout(spacing=2)
             first_selectable = None
             any_selected = False
-            group_type = group.type
-            group_force_selection = group_type in (u'SelectExactlyOne',
-                                                   u'SelectAtLeastOne')
+            gtype = grp.group_type
+            group_force_selection = gtype in (u'SelectExactlyOne',
+                                              u'SelectAtLeastOne')
             # A set of all option checkables to block in this group
             checkables_to_block = set()
             # Whether or not to block *all* checkables in this group. Whenever
@@ -240,40 +230,46 @@ class PageSelect(PageInstaller):
             # other options need to be blocked to ensure the required stays
             # selected.
             block_all_in_group = False
-            for option in group:
-                if group_type in (u'SelectExactlyOne', u'SelectAtMostOne'):
-                    checkable = RadioButton(panel_groups, label=option.name,
-                                            is_group=option is group[0])
+            for option in grp: # type: InstallerOption
+                otype = option.option_type
+                if gtype in (u'SelectExactlyOne', u'SelectAtMostOne'):
+                    checkable = RadioButton(panel_groups,
+                                            label=option.option_name,
+                                            is_group=option is grp[0])
                 else:
-                    checkable = CheckBox(panel_groups, label=option.name)
+                    checkable = CheckBox(panel_groups,
+                                         label=option.option_name)
                     # Mass selection makes no sense on radio buttons
                     checkable.on_context.subscribe(self._handle_context_menu)
-                    if group_type == u'SelectAll':
+                    if gtype == u'SelectAll':
                         checkable.is_checked = True
                         any_selected = True
                         checkables_to_block.add(checkable)
-                if option.type == u'Required':
+                # Remember the first checkable we created for later
+                if not first_checkable:
+                    first_checkable = checkable
+                if otype == u'Required':
                     checkable.is_checked =  True
                     any_selected = True
-                    if group_type in (u'SelectExactlyOne', u'SelectAtMostOne'):
+                    if gtype in (u'SelectExactlyOne', u'SelectAtMostOne'):
                         block_all_in_group = True
                     else:
                         checkables_to_block.add(checkable)
-                elif option.type == u'Recommended':
+                elif otype == u'Recommended':
                     if not any_selected or not group_force_selection:
                         checkable.is_checked = True
                         any_selected = True
-                elif option.type in (u'Optional', u'CouldBeUsable'):
+                elif otype in (u'Optional', u'CouldBeUsable'):
                     if first_selectable is None:
                         first_selectable = checkable
-                elif option.type == u'NotUsable':
+                elif otype == u'NotUsable':
                     checkable.is_checked = False
                     checkables_to_block.add(checkable)
-                self._checkable_to_option[checkable] = option
-                self.checkable_to_group[checkable] = group
+                self.checkable_to_option[checkable] = option
+                self.checkable_to_group[checkable] = grp
                 options_layout.add(checkable)
-                checkable.on_hovered.subscribe(self._handle_hovered)
-                self.group_option_map[group].append(checkable)
+                checkable.on_hovered.subscribe(self._set_option_details)
+                self.group_option_map[grp].append(checkable)
             # Done adding all options, move on to any last minute tweaks before
             # finalizing the group
             if not any_selected and group_force_selection:
@@ -281,12 +277,12 @@ class PageSelect(PageInstaller):
                     first_selectable.is_checked = True
                     any_selected = True
             if block_all_in_group:
-                checkables_to_block |= set(self.group_option_map[group])
+                checkables_to_block |= set(self.group_option_map[grp])
                 # Store a copy of the frozen state for each button
                 frozen_state = {c: c.is_checked for c in checkables_to_block}
                 for block_chk in checkables_to_block:
                     self._frozen_states[block_chk] = frozen_state
-            if group_type == u'SelectAtMostOne':
+            if gtype == u'SelectAtMostOne':
                 none_button = RadioButton(panel_groups, label=_(u'None'))
                 if not any_selected:
                     none_button.is_checked = True
@@ -298,15 +294,22 @@ class PageSelect(PageInstaller):
             for block_chk in checkables_to_block:
                 block_chk.block_user(self._handle_block_user)
             groups_layout.add(HBoxedLayout(
-                panel_groups, title=group.name, item_expand=True,
+                panel_groups, title=grp.group_name, item_expand=True,
                 item_weight=1, items=[options_layout]))
+        # Show details for the first option on this page by default
+        if first_checkable:
+            self._set_option_details(first_checkable)
         groups_layout.apply_to(panel_groups)
         VLayout(spacing=10, item_expand=True, items=[
             (HLayout(spacing=5, item_expand=True, item_weight=1, items=[
-                HBoxedLayout(self, title=page.name, item_expand=True,
+                HBoxedLayout(self, title=inst_page.page_name, item_expand=True,
                              item_weight=1, items=[panel_groups]),
-                VLayout(spacing=5, item_expand=True, item_weight=1,
-                        items=[self._bmp_item, self._text_item]),
+                VLayout(spacing=5, item_expand=True, item_weight=1, items=[
+                    self._bmp_item,
+                    (self._option_type_label,
+                     LayoutOptions(expand=False, h_align=CENTER, weight=0)),
+                    self._text_item,
+                ]),
             ]), LayoutOptions(weight=1)),
         ]).apply_to(self)
         self.Layout()
@@ -324,8 +327,17 @@ class PageSelect(PageInstaller):
             for block_checkable, chk_state in frozen_state.iteritems():
                 block_checkable.is_checked = chk_state
         if isinstance(block_checkable, CheckBox):
-            balt.showWarning(self, _(u'This option is required and cannot be '
-                                     u'disabled.'))
+            # Adjust the warning based on whether we can't check or can't
+            # uncheck this option
+            block_option = self.checkable_to_option[block_checkable]
+            if block_option.option_type == u'NotUsable':
+                balt.showWarning(self, _(
+                    u'This option cannot be enabled. It is probably '
+                    u'informational and only here to show a description on '
+                    u'the right.'))
+            else:
+                balt.showWarning(self, _(u'This option is required and cannot '
+                                         u'be disabled.'))
         else: # RadioButton
             balt.showWarning(self, _(u'One of the options in this group is '
                                      u'required and cannot be unselected by '
@@ -335,62 +347,70 @@ class PageSelect(PageInstaller):
         """Shows the right click menu with mass (de)select options."""
         self._group_links.new_menu(self, checkable)
 
-    # fixme XXX: types other than optional should be shown in some visual way (button colour?)
-    def _handle_hovered(self, checkable):
-        option = self._checkable_to_option[checkable]
+    def _set_option_details(self, checkable):
+        """Sets the image and description on the right side based on the
+        specified checkable."""
+        option = self.checkable_to_option[checkable]
         self._enable_forward(True)
-        img = self._page_parent.archive_path.join(option.image)
-        self._current_image = img # To allow opening it via double click
+        opt_img = self._page_parent.archive_path.join(
+            self._page_parent.installer_root, option.option_image)
+        self._current_image = opt_img # To allow opening it via double click
         try:
-            image = self._img_cache[img]
+            final_image = self._img_cache[opt_img]
         except KeyError:
-            image = img
-        self._img_cache[img] = self._bmp_item.set_bitmap(image)
-        self._text_item.text_content = (self._option_type_string[option.type]
-                                        + option.description)
+            final_image = opt_img
+        self._img_cache[opt_img] = self._bmp_item.set_bitmap(final_image)
+        type_desc, type_color = self._option_type_info[option.option_type]
+        self._option_type_label.label_text = type_desc
+        self._option_type_label.set_foreground_color(type_color)
+        self._text_item.text_content = option.option_desc
+        self.Layout() # Otherwise the h_align won't work
 
-    def on_error(self, msg):
-        msg += _(u'\nPlease ensure the FOMOD files are correct and contact '
-                 u'the Wrye Bash Dev Team.')
-        balt.showWarning(self, msg, do_center=True)
+    def show_fomod_error(self, fm_error):
+        fm_error += u'\n' + _(u'Please ensure the FOMOD files are correct and '
+                              u'contact the Wrye Bash Dev Team.')
+        balt.showWarning(self, fm_error, do_center=True)
 
     def on_next(self):
-        selection = []
+        sel_options = []
         for group, option_chks in self.group_option_map.iteritems():
-            opts_selected = [self._checkable_to_option[c] for c in option_chks
+            opts_selected = [self.checkable_to_option[c] for c in option_chks
                              if c.is_checked]
             option_len = len(opts_selected)
-            if group.type == u'SelectExactlyOne' and option_len != 1:
-                msg = _(u'Group "{}" should have exactly 1 option selected '
-                        u'but has {}.').format(group.name, option_len)
-                self.on_error(msg)
-            elif group.type == u'SelectAtMostOne' and option_len > 1:
-                msg = _(u'Group "{}" should have at most 1 option selected '
-                        u'but has {}.').format(group.name, option_len)
-                self.on_error(msg)
-            elif group.type == u'SelectAtLeast' and option_len < 1:
-                msg = _(u'Group "{}" should have at least 1 option selected '
-                        u'but has {}.').format(group.name, option_len)
-                self.on_error(msg)
-            elif (group.type == u'SelectAll'
-                  and option_len != len(option_chks)):
-                msg = _(u'Group "{}" should have all options selected but has '
-                        u'only {}.').format(group.name, option_len)
-                self.on_error(msg)
-            selection.extend(opts_selected)
-        return selection
+            gtype = group.group_type
+            if gtype == u'SelectExactlyOne' and option_len != 1:
+                fm_err = _(u'Group "{}" should have exactly 1 option selected '
+                           u'but has {}.').format(group.group_name, option_len)
+                self.show_fomod_error(fm_err)
+            elif gtype == u'SelectAtMostOne' and option_len > 1:
+                fm_err = _(u'Group "{}" should have at most 1 option selected '
+                           u'but has {}.').format(group.group_name, option_len)
+                self.show_fomod_error(fm_err)
+            elif gtype == u'SelectAtLeast' and option_len < 1:
+                fm_err = _(u'Group "{}" should have at least 1 option '
+                           u'selected but has {}.').format(group.group_name,
+                                                           option_len)
+                self.show_fomod_error(fm_err)
+            elif gtype == u'SelectAll' and option_len != len(option_chks):
+                fm_err = _(u'Group "{}" should have all options selected but '
+                           u'has only {}.').format(group.group_name,
+                                                   option_len)
+                self.show_fomod_error(fm_err)
+            sel_options.extend(opts_selected)
+        return sel_options
 
-    def select(self, selection):
+    def apply_selection(self, opt_selection):
         for checkable_list in self.group_option_map.itervalues():
             for checkable in checkable_list:
-                if self._checkable_to_option[checkable] in selection:
+                if self.checkable_to_option[checkable] in opt_selection:
                     checkable.is_checked = True
 
 class PageFinish(PageInstaller):
-    def __init__(self, parent):
-        super(PageFinish, self).__init__(parent)
-        check_install = CheckBox(self, _(u'Install this package'),
-                                 checked=self._page_parent.ret.should_install)
+    def __init__(self, page_parent):
+        super(PageFinish, self).__init__(page_parent)
+        check_install = CheckBox(
+            self, _(u'Install this package'),
+            checked=self._page_parent.fm_ret.should_install)
         check_install.on_checked.subscribe(self._on_check_install)
         use_table = bass.settings[u'bash.fomod.use_table']
         check_output = CheckBox(self, _(u'Use Table View'), checked=use_table,
@@ -400,7 +420,7 @@ class PageFinish(PageInstaller):
         check_output.on_checked.subscribe(self._on_switch_output)
         # This can take a bit for very large FOMOD installs
         with balt.BusyCursor():
-            installer_output = self._page_parent.parser.files()
+            installer_output = self._page_parent.fomod_parser.get_fomod_files()
             # Create the two alternative output displays and fill them with
             # data from the FOMOD parser
             self._output_text = TextArea(
@@ -425,7 +445,7 @@ class PageFinish(PageInstaller):
         self.Layout()
 
     def _on_check_install(self, checked):
-        self._page_parent.ret.should_install = checked
+        self._page_parent.fm_ret.should_install = checked
 
     def _on_switch_output(self, checked):
         bass.settings[u'bash.fomod.use_table'] = checked
@@ -463,10 +483,10 @@ class _GroupLink(EnabledLink):
 
     @property
     def menu_help(self):
-        return self._help % self.selected_group.name
+        return self._help % self.selected_group.group_name
 
     @property
-    def selected_group(self):
+    def selected_group(self): # type: () -> InstallerGroup
         """Returns the group that the clicked on option belongs to."""
         return self.window.checkable_to_group[self.selected]
 
@@ -474,7 +494,10 @@ class _Group_MassSelect(_GroupLink):
     """Base class for all three types of 'mass select' group links."""
     def Execute(self):
         for checkable in self.window.group_option_map[self.selected_group]:
-            checkable.is_checked = self._should_enable(checkable)
+            # NotUsable options can't ever be enabled, so skip those
+            otype = self.window.checkable_to_option[checkable].option_type
+            checkable.is_checked = (otype != u'NotUsable'
+                                    and self._should_enable(checkable))
 
     def _should_enable(self, checkable):
         """Returns True if the specified checkable should be enabled."""
