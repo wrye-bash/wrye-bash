@@ -1832,7 +1832,6 @@ class MenuLink(Link):
     def AppendToMenu(self, menu, window, selection):
         """Append self as submenu (along with submenu items) to menu."""
         super(MenuLink, self).AppendToMenu(menu, window, selection)
-        Link.Frame._native_widget.Bind(wx.EVT_MENU_OPEN, MenuLink.OnMenuOpen)
         subMenu = wx.Menu()
         appended_menu = menu.AppendSubMenu(subMenu, self._text)
         if not self._enable():
@@ -1842,11 +1841,6 @@ class MenuLink(Link):
                 link.AppendToMenu(subMenu, window, selection)
             appended_menu.Enable(self._enable_menu())
         return subMenu
-
-    @staticmethod
-    def OnMenuOpen(event):
-        """Hover over a submenu, clear the status bar text"""
-        Link.Frame.set_status_info(u'')
 
     def _enable_menu(self):
         """Disable ourselves if none of our children are visible."""

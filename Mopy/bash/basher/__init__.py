@@ -3861,6 +3861,9 @@ class BashFrame(WindowFrame):
         self.set_bash_frame_title()
         #--Status Bar
         self._native_widget.SetStatusBar(BashStatusBar(self._native_widget))
+        # We need to do this once and only once, because wxPython does not
+        # support binding multiple methods to one event source
+        self._native_widget.Bind(wx.EVT_MENU_OPEN, self._on_menu_opened)
         #--Notebook panel
         # attributes used when ini panel is created (warn for missing game ini)
         self.oblivionIniCorrupted = u''
@@ -3873,6 +3876,10 @@ class BashFrame(WindowFrame):
         self.known_sse_form43_mods = set()
         self.known_mismatched_version_bsas = set()
         self.incompleteInstallError = False
+
+    def _on_menu_opened(self, event):
+        self.set_status_info(u'')
+        event.Skip()
 
     @balt.conversation
     def warnTooManyModsBsas(self):
