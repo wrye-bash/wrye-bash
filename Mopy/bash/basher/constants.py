@@ -166,6 +166,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.frameMax': False, # True if maximized
     'bash.page':1,
     'bash.useAltName':True,
+    u'bash.show_global_menu': True,
     'bash.pluginEncoding': 'cp1252',    # Western European
     #--Colors
     'bash.colors': {

@@ -49,7 +49,7 @@ from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
     web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
     Font, CheckListBox, UIListCtrl, PanelWin, Colors, HtmlDisplay, Image, \
-    BusyCursor
+    BusyCursor, GlobalMenu
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -898,8 +898,12 @@ def conversation(func):
 class UIList(wx.Panel):
     """Offspring of basher.List and balt.Tank, ate its parents."""
     # optional menus
-    mainMenu = None
+    mainMenu = None ##: rename to main_links & context_links?
     itemMenu = None
+    # A dict mapping category names to a Links instance that will be displayed
+    # when the corresponding category is clicked on in the global menu. The
+    # order in which categories are added will also be the display order.
+    global_links = None
     #--gList image collection
     __icons = ImageList(16, 16) # sentinel value due to bass.dirs not being
     # yet initialized when balt is imported, so I can't use ColorChecks here
@@ -1603,6 +1607,31 @@ class UIList(wx.Panel):
         srcPaths = askOpenMulti(self, _(u'Unhide files:'), defaultDir=srcDir,
                                 wildcard=wildcard)
         return destDir, srcDir, srcPaths
+
+    # Global Menu -------------------------------------------------------------
+    def populate_category(self, cat_label, target_category):
+        for cat_link in self.global_links[cat_label]:
+            cat_link.AppendToMenu(target_category, self, 0)
+
+    def setup_global_menu(self):
+        """Changes the categories displayed by the global menu to the ones for
+        this tab."""
+        glb_menu = Link.Frame.global_menu
+        if not self.global_links:
+            # If we don't have a global link menu, reset and abort
+            glb_menu.set_categories([])
+            return
+        tab_categories = self.global_links.keys()
+        # Check if we have to change category names
+        if not glb_menu.categories_equal(tab_categories):
+            # Release and recreate the global menu to avoid GUI flicker
+            glb_menu.release_bindings()
+            glb_menu = GlobalMenu()
+            glb_menu.set_categories(tab_categories)
+            Link.Frame.set_global_menu(glb_menu)
+        for curr_cat in tab_categories:
+            Link.Frame.global_menu.register_category_handler(curr_cat, partial(
+                self.populate_category, curr_cat))
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------

@@ -357,3 +357,84 @@ class BusyCursor(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         _wx.EndBusyCursor()
+
+class GlobalMenu(_AComponent):
+    """A global menu bar that populates JIT by repopulating its contents right
+    before the menu is opened by the user. The menus are called 'categories' to
+    differentiate them from regular context menus."""
+    _wx_widget_type = _wx.MenuBar
+
+    class _GMCategory(_wx.Menu):
+        """wx-derived class used to differentiate between events on regular
+        menus and categories and to provide the category label at runtime."""
+        def __init__(self, cat_lbl):
+            super(GlobalMenu._GMCategory, self).__init__()
+            self.category_label = cat_lbl
+
+    def __init__(self):
+        self._native_widget = self._wx_widget_type() # no parent
+        self._category_handlers = {}
+        # We need to do this once and only once, because wxPython does not
+        # support binding multiple methods to one event source. Also, it *has*
+        # to be on Link.Frame, even if that looks weird.
+        from ..balt import Link ##: de-wx! move links to gui
+        menu_processor = lambda event: [event.GetMenu()]
+        self._on_menu_opened = Link.Frame._evt_handler(_wx.EVT_MENU_OPEN,
+            menu_processor)
+        self._on_menu_closed = Link.Frame._evt_handler(_wx.EVT_MENU_CLOSE,
+            menu_processor)
+        self._on_menu_opened.subscribe(self._handle_menu_opened)
+        self._on_menu_closed.subscribe(self._handle_menu_closed)
+
+    def categories_equal(self, new_categories):
+        """Checks if the categories currently shown in the GUI match the
+        specified ones."""
+        return new_categories == [x[1] for x in self._native_widget.GetMenus()]
+
+    def register_category_handler(self, cat_label, cat_handler):
+        """Registers the specified handler for the specified category. The
+        handler should be a callback that will be given a _GMCategory instance,
+        which it should populate with links."""
+        self._category_handlers[cat_label] = cat_handler
+
+    def release_bindings(self):
+        """Releases the 'on menu' bindings used by this class. You *must* call
+        this if you want to replace the global menu at runtime."""
+        self._on_menu_opened.unsubscribe(self._handle_menu_opened)
+        self._on_menu_closed.unsubscribe(self._handle_menu_closed)
+
+    def set_categories(self, all_categories):
+        """Creates dropdowns for all specified categories, discarding existing
+        ones in the process. It has to be done like this to avoid changing the
+        GUI's layout while categories are added to/removed from it."""
+        self._native_widget.SetMenus([(self._GMCategory(c), c)
+                                      for c in all_categories])
+
+    def _handle_menu_opened(self, wx_menu):
+        """Internal callback, does the heavy lifting. Also handles status bar
+        text resetting, because wxPython does not permit more than one event
+        handler."""
+        from ..balt import Link ##: de-wx! move links to gui
+        Link.Frame.set_status_info(u'')
+        if not isinstance(wx_menu, self._GMCategory):
+            return # skip all regular context menus that were opened
+        # Clear the menu and repopulate it. Have to do this JIT, since the
+        # checked/enabled/appended state of links will depend on the current
+        # state of WB itself.
+        for old_menu_item in wx_menu.GetMenuItems():
+            wx_menu.Remove(old_menu_item)
+            # Explicitly destroy, remove does not clean up the object otherwise
+            old_menu_item.Destroy()
+        # Need to set this, otherwise help text won't be shown
+        Link.Popup = wx_menu
+        try:
+            self._category_handlers[wx_menu.category_label](wx_menu)
+        except KeyError:
+            raise RuntimeError(u"A GlobalMenu handler is missing for category "
+                               u"'%s'." % wx_menu.category_label)
+
+    def _handle_menu_closed(self, wx_menu):
+        """Internal callback, needed to correctly handle help text."""
+        if isinstance(wx_menu, self._GMCategory):
+            from ..balt import Link ##: de-wx! move links to gui
+            Link.Popup = None

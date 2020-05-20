@@ -244,6 +244,12 @@ def sortFiles(files, __split=os.path.split):
 
 CBash = 0
 
+class OrderedDefaultDict(collections.OrderedDict, collections.defaultdict):
+    """A defaultdict that preserves order."""
+    def __init__(self, default_factory=None, *args, **kwargs):
+        super(OrderedDefaultDict, self).__init__(*args, **kwargs)
+        self.default_factory = default_factory
+
 # LowStrings ------------------------------------------------------------------
 class CIstr(unicode):
     """See: http://stackoverflow.com/q/43122096/281545"""

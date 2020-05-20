@@ -66,7 +66,7 @@ import wx
 
 #--Local
 from .. import bush, bosh, bolt, bass, env, load_order, archives
-from ..bolt import GPath, SubProgress, deprint, round_size
+from ..bolt import GPath, SubProgress, deprint, round_size, OrderedDefaultDict
 from ..bosh import omods
 from ..cint import CBashApi
 from ..exception import AbstractError, BoltError, CancelError, FileError, \
@@ -87,7 +87,7 @@ from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
     TOP, VLayout, EventResult, DropDown, DialogWindow, WindowFrame, Spinner, \
     Splitter, NotebookCtrl, PanelWin, CheckListBox, Color, Picture, Image, \
-    CenteredSplash, BusyCursor, RadioButton
+    CenteredSplash, BusyCursor, RadioButton, GlobalMenu
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons
@@ -235,6 +235,7 @@ class SashUIListPanel(SashPanel):
         self.uiList.autosizeColumns()
         self.uiList.Focus()
         self.SetStatusCount()
+        self.uiList.setup_global_menu()
 
     def ClosePanel(self, destroy=False):
         if not self._firstShow and destroy: # if the panel was shown
@@ -544,6 +545,7 @@ class MasterList(_ModsUIList):
 class INIList(balt.UIList):
     mainMenu = Links()  #--Column menu
     itemMenu = Links()  #--Single item menu
+    global_links = OrderedDefaultDict(lambda: Links()) # Global menu
     _shellUI = True
     _sort_keys = {'File'     : None,
                   'Installer': lambda self, a: bosh.iniInfos.table.getItem(
@@ -791,6 +793,7 @@ class ModList(_ModsUIList):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
+    global_links = OrderedDefaultDict(lambda: Links()) # Global menu
     def _get(self, mod): return partial(self.data_store.table.getItem, mod)
     _sort_keys = {
         'File'      : None,
@@ -1882,6 +1885,7 @@ class SaveList(balt.UIList):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
+    global_links = OrderedDefaultDict(lambda: Links()) # Global menu
     _editLabels = True
     _sort_keys = {
         'File'    : None, # just sort by name
@@ -2168,6 +2172,7 @@ class SavePanel(BashTab):
 class InstallersList(balt.UIList):
     mainMenu = Links()
     itemMenu = Links()
+    global_links = OrderedDefaultDict(lambda: Links()) # Global menu
     icons = installercons
     _sunkenBorder = False
     _shellUI = True
@@ -3200,6 +3205,7 @@ class InstallersPanel(BashTab):
 class ScreensList(balt.UIList):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
+    global_links = OrderedDefaultDict(lambda: Links()) # Global menu
     _shellUI = True
     _editLabels = True
     __ext_group = \
@@ -3327,6 +3333,7 @@ class BSAList(balt.UIList):
 
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
+    global_links = OrderedDefaultDict(lambda: Links()) # Global menu
     _sort_keys = {'File'    : None,
                   'Modified': lambda self, a: self.data_store[a].mtime,
                   'Size'    : lambda self, a: self.data_store[a].size,
@@ -3421,6 +3428,7 @@ class BSAPanel(BashTab):
 class PeopleList(balt.UIList):
     mainMenu = Links()
     itemMenu = Links()
+    global_links = OrderedDefaultDict(lambda: Links()) # Global menu
     icons = karmacons
     _sunkenBorder = False
     _recycle = False
@@ -3859,11 +3867,10 @@ class BashFrame(WindowFrame):
                                         icon_bundle=Resources.bashRed,
                                         sizes_dict=bass.settings)
         self.set_bash_frame_title()
-        #--Status Bar
+        # Status Bar & Global Menu
         self._native_widget.SetStatusBar(BashStatusBar(self._native_widget))
-        # We need to do this once and only once, because wxPython does not
-        # support binding multiple methods to one event source
-        self._native_widget.Bind(wx.EVT_MENU_OPEN, self._on_menu_opened)
+        self.global_menu = None
+        self.set_global_menu(GlobalMenu())
         #--Notebook panel
         # attributes used when ini panel is created (warn for missing game ini)
         self.oblivionIniCorrupted = u''
@@ -3876,10 +3883,6 @@ class BashFrame(WindowFrame):
         self.known_sse_form43_mods = set()
         self.known_mismatched_version_bsas = set()
         self.incompleteInstallError = False
-
-    def _on_menu_opened(self, event):
-        self.set_status_info(u'')
-        event.Skip()
 
     @balt.conversation
     def warnTooManyModsBsas(self):
@@ -4198,6 +4201,19 @@ class BashFrame(WindowFrame):
     def bsaListRefresh(focus_list):
         if BashFrame.bsaList:
             BashFrame.bsaList.RefreshUI(focus_list=focus_list)
+
+    # Global Menu API
+    def set_global_menu(self, new_global_menu):
+        """Changes the global menu to the specified one."""
+        self.global_menu = new_global_menu
+        self.refresh_global_menu_visibility()
+
+    def refresh_global_menu_visibility(self):
+        """Hides or shows the global menu, depending on the setting the user
+        chose."""
+        self._native_widget.SetMenuBar(
+            self.global_menu._native_widget if bass.settings[
+                u'bash.show_global_menu'] else None)
 
 #------------------------------------------------------------------------------
 class BashApp(wx.App):

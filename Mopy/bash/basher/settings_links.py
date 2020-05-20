@@ -42,7 +42,8 @@ __all__ = ['Settings_BackupSettings', 'Settings_RestoreSettings',
            'Settings_UnHideButtons', 'Settings_StatusBar_ShowVersions',
            'Settings_Languages', 'Settings_PluginEncodings', 'Settings_Games',
            'Settings_UseAltName', 'Settings_Deprint',
-           'Settings_DumpTranslator', 'Settings_UAC']
+           'Settings_DumpTranslator', 'Settings_UAC',
+           u'Settings_ShowGlobalMenu']
 
 #------------------------------------------------------------------------------
 # Settings Links --------------------------------------------------------------
@@ -499,3 +500,15 @@ class Settings_DumpTranslator(AppendableLink, ItemLink):
             outFile = dump_translator(outPath.s, bass.active_locale)
         self._showOk(_(u'Translation keys written to %s') % outFile,
                      self._text + u': ' + outPath.stail)
+
+#------------------------------------------------------------------------------
+class Settings_ShowGlobalMenu(BoolLink):
+    _text = _(u'Show Global Menu')
+    _help = _(u'If checked, a global menu will be shown above the tabs. If '
+              u'disabled, its options will still be accessible by '
+              u'right-clicking the columns.')
+    key = u'bash.show_global_menu'
+
+    def Execute(self):
+        super(Settings_ShowGlobalMenu, self).Execute()
+        Link.Frame.refresh_global_menu_visibility()

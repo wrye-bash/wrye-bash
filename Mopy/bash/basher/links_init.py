@@ -735,9 +735,10 @@ def InitSettingsLinks():
     SettingsMenu.append(Settings_RestoreSettings())
     SettingsMenu.append(Settings_SaveSettings())
     #--OBSE Dll info
-    SettingsMenu.append(SeparatorLink())
-    SettingsMenu.append(Settings_ExportDllInfo())
-    SettingsMenu.append(Settings_ImportDllInfo())
+    if bush.game.Se.se_abbrev:
+        SettingsMenu.append(SeparatorLink())
+        SettingsMenu.append(Settings_ExportDllInfo())
+        SettingsMenu.append(Settings_ImportDllInfo())
     #--Color config
     SettingsMenu.append(SeparatorLink())
     SettingsMenu.append(Settings_Colors())
@@ -762,6 +763,7 @@ def InitSettingsLinks():
     SettingsMenu.append(Settings_Games())
     SettingsMenu.append(SeparatorLink())
     SettingsMenu.append(Settings_UseAltName())
+    SettingsMenu.append(Settings_ShowGlobalMenu())
     SettingsMenu.append(Settings_Deprint())
     SettingsMenu.append(Settings_DumpTranslator())
     SettingsMenu.append(Settings_UAC())
