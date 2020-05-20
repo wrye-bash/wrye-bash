@@ -1675,7 +1675,7 @@ class ModDetails(_ModsSavesDetails):
         ##: Popup the menu - ChoiceLink should really be a Links subclass
         tagLinks = Links()
         tagLinks.append(_TagLinks())
-        tagLinks.new_menu(self.gTags, None)
+        tagLinks.popup_menu(self.gTags, None)
         return EventResult.FINISH
 
 #------------------------------------------------------------------------------
@@ -2915,13 +2915,13 @@ class InstallersDetails(_SashDetailsPanel):
         """Handle right click in espm list."""
         self.gEspmList.lb_select_index(lb_selection_dex)
         #--Show/Destroy Menu
-        InstallersPanel.espmMenu.new_menu(self, lb_selection_dex)
+        InstallersPanel.espmMenu.popup_menu(self, lb_selection_dex)
 
     def _sub_selection_menu(self, lb_selection_dex):
         """Handle right click in sub-packages list."""
         self.gSubList.lb_select_index(lb_selection_dex)
         #--Show/Destroy Menu
-        InstallersPanel.subsMenu.new_menu(self, lb_selection_dex)
+        InstallersPanel.subsMenu.popup_menu(self, lb_selection_dex)
 
     def _on_check_plugin(self, lb_selection_dex):
         """Handle check/uncheck of item."""
@@ -3678,7 +3678,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         tabId = self.HitTest(pos)
         if tabId != wx.NOT_FOUND and tabId[0] != wx.NOT_FOUND:
             menu = self.tabLinks(Links())
-            menu.new_menu(self, None)
+            menu.popup_menu(self, None)
         else:
             event.Skip()
 

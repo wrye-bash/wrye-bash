@@ -1134,7 +1134,7 @@ class UIList(wx.Panel):
     #--Column Menu
     def DoColumnMenu(self, evt_col):
         """Show column menu."""
-        if self.mainMenu: self.mainMenu.new_menu(self, evt_col)
+        if self.mainMenu: self.mainMenu.popup_menu(self, evt_col)
         return EventResult.FINISH
 
     #--Item Menu
@@ -1144,7 +1144,7 @@ class UIList(wx.Panel):
         if not selected:
             self.DoColumnMenu(0)
         elif self.itemMenu:
-            self.itemMenu.new_menu(self, selected)
+            self.itemMenu.popup_menu(self, selected)
         return EventResult.FINISH
 
     #--Callbacks --------------------------------------------------------------
@@ -1609,15 +1609,21 @@ class UIList(wx.Panel):
 class Links(list):
     """List of menu or button links."""
 
-    #--Popup a menu from the links
     def new_menu(self, parent, selection):
+        """Creates a new menu from these links."""
         parent = parent or Link.Frame
-        menu = wx.Menu() # TODO(inf) de-wx!
-        Link.Popup = menu
+        wip_menu = wx.Menu() # TODO(inf) de-wx!
         for link in self:
-            link.AppendToMenu(menu, parent, selection)
-        Link.Frame.popup_menu(menu)
-        menu.Destroy()
+            link.AppendToMenu(wip_menu, parent, selection)
+        return wip_menu
+
+    def popup_menu(self, parent, selection):
+        """Pops up a new menu from these links. Convenience method to pop up
+        the result of new_menu, then destroy it."""
+        to_popup = self.new_menu(parent, selection)
+        Link.Popup = to_popup
+        Link.Frame.show_popup_menu(to_popup)
+        to_popup.Destroy()
         Link.Popup = None # do not leak the menu reference
 
 #------------------------------------------------------------------------------
@@ -1636,18 +1642,19 @@ class Link(object):
     except for "local" Link subclasses used in ChoiceLink related code.
     - Link.AppendToMenu() overrides stay confined in balt.
     - Link.Frame is set once and for all to the (ex) basher.bashFrame
-      singleton. Use (sparingly) as the 'link' between menus and data layer.
-    """
-    Frame = None   # BashFrame singleton, set once and for all in BashFrame()
-    Popup = None   # Current popup menu, set in Links.new_menu()
-    _text = u''    # Menu label (may depend on UI state when the menu is shown)
+      singleton. Use (sparingly) as the 'link' between menus and data layer."""
+    # BashFrame singleton, set once and for all in BashFrame()
+    Frame = None
+    # Current popup menu, set in Links.popup_menu()
+    Popup = None
+    # Menu label (may depend on UI state when the menu is shown)
+    _text = u''
 
     def __init__(self, _text=None):
         """Initialize a Link instance.
 
         Parameter _text underscored cause its use should be avoided - prefer to
-        specify text as a class attribute (or set in it _initData()).
-        """
+        specify text as a class attribute (or set in it _initData())."""
         super(Link, self).__init__()
         self._text = _text or self.__class__._text # menu label
 
@@ -1663,7 +1670,7 @@ class Link(object):
         :param selection: the selected items when the menu is appended or None.
         In modlist/installers it's a list<Path> while in subpackage it's the
         index of the right-clicked item. In main (column header) menus it's
-        the column clicked on or the first column. Set in Links.new_menu().
+        the column clicked on or the first column. Set in Links.popup_menu().
         :type window: UIList | wx.Panel | gui.buttons.Button | DnDStatusBar |
             gui.misc_components.CheckListBox
         :type selection: list[Path | unicode | int] | int | None
@@ -1760,8 +1767,8 @@ class ItemLink(Link):
     Subclasses MUST define _text (preferably class) attribute and should
     override _help. Registers the Execute() and ShowHelp methods on menu events
     """
-    kind = wx.ITEM_NORMAL  # the default in wx.MenuItem(... kind=...)
-    _help = None           # the tooltip to show at the bottom of the GUI
+    kind = wx.ITEM_NORMAL # The default in wx.MenuItem(... kind=...)
+    _help = u''           # The tooltip to show at the bottom of the GUI
 
     @property
     def menu_help(self):
@@ -1771,7 +1778,7 @@ class ItemLink(Link):
         Override this if you need to change the help text dynamically
         depending on certain conditions (e.g. whether or not the link is
         enabled)."""
-        return self._help or u''
+        return self._help
 
     def AppendToMenu(self, menu, window, selection):
         """Append self as menu item and set callbacks to be executed when
@@ -2181,7 +2188,7 @@ class ListBoxes(DialogWindow):
 
     def _on_context(self, lb_instance):
         """Context Menu"""
-        self.itemMenu.new_menu(lb_instance, lb_instance.lb_get_selections())
+        self.itemMenu.popup_menu(lb_instance, lb_instance.lb_get_selections())
 
     def getChecked(self, key, items, checked=True):
         """Return a sublist of 'items' containing (un)checked items.

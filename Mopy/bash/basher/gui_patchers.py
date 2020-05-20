@@ -642,7 +642,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             else:
                 links.append(_ValueLink(label, index))
         #--Show/Destroy Menu
-        links.new_menu(self.gTweakList, None)
+        links.popup_menu(self.gTweakList, None)
 
     def tweak_choice(self, index, tweakIndex):
         """Handle choice menu selection."""
@@ -882,7 +882,7 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
             else:
                 links.append(_OnItemChoice(label, index))
         #--Show/Destroy Menu
-        links.new_menu(self.gList, None)
+        links.popup_menu(self.gList, None)
 
     def _log_config(self, conf, config, clip, log):
         self.configChoices = conf.get('configChoices', {})

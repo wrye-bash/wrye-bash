@@ -133,7 +133,7 @@ class WindowFrame(_TopLevelWin):
     def raise_frame(self): self._native_widget.Raise()
 
     # TODO(inf) de-wx! Menu should become a wrapped component as well
-    def popup_menu(self, menu):
+    def show_popup_menu(self, menu):
         self._native_widget.PopupMenu(menu)
 
 class DialogWindow(_TopLevelWin):
