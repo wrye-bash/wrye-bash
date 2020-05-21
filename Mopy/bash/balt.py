@@ -1637,19 +1637,12 @@ class UIList(wx.Panel):
 #------------------------------------------------------------------------------
 class Links(list):
     """List of menu or button links."""
-
-    def new_menu(self, parent, selection):
-        """Creates a new menu from these links."""
-        parent = parent or Link.Frame
-        wip_menu = wx.Menu() # TODO(inf) de-wx!
-        for link in self:
-            link.AppendToMenu(wip_menu, parent, selection)
-        return wip_menu
-
     def popup_menu(self, parent, selection):
-        """Pops up a new menu from these links. Convenience method to pop up
-        the result of new_menu, then destroy it."""
-        to_popup = self.new_menu(parent, selection)
+        """Pops up a new menu from these links."""
+        parent = parent or Link.Frame
+        to_popup = wx.Menu() # TODO(inf) de-wx!
+        for link in self:
+            link.AppendToMenu(to_popup, parent, selection)
         Link.Popup = to_popup
         Link.Frame.show_popup_menu(to_popup)
         to_popup.Destroy()
