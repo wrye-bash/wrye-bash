@@ -75,8 +75,10 @@ class LayoutOptions(object):
         The horizontal and vertical alignment for an item
         within the space the layout has allocated for it, specified with the
         enums LEFT/CENTER/RIGHT for h_align and TOP/CENTER/BOTTOM for v_align.
-        Note that these options do nothing if fill is true, since the item
-        then takes up all of the space and has no room to move.
+        Note that these options will raise an error if expand is true, since
+        the item then takes up all of the space and has no room to move. They
+        will also raise an error for layouts that expand in the same direction
+        (e.g. v_align errors if used in a VLayout).
     col_span, row_span (int)
         The number of columns or rows this items should take up.
     """
@@ -93,10 +95,18 @@ class LayoutOptions(object):
         self.v_align = v_align
         self.col_span = col_span
         self.row_span = row_span
+        if self.expand and self.v_align:
+            raise SyntaxError(u'May not specify both expand and v_align')
+        if self.expand and self.h_align:
+            raise SyntaxError(u'May not specify both expand and h_align')
 
-    def layout_flags(self):
-        l_flags = _wx.ALL | _H_ALIGNS[self.h_align] | _V_ALIGNS[self.v_align]
+    def layout_flags(self, use_horizontal=False, use_vertical=False):
+        l_flags = _wx.ALL
         if self.expand: l_flags |= _wx.EXPAND
+        else:
+            # If EXPAND is set, no other alignment flags make sense
+            if use_horizontal: l_flags |= _H_ALIGNS[self.h_align]
+            if use_vertical: l_flags |= _V_ALIGNS[self.v_align]
         return l_flags
 
     def from_other(self, other):
@@ -159,6 +169,7 @@ class _ALayout(object):
 
 class _ALineLayout(_ALayout):
     """Abstract base class for one-dimensional layouts."""
+    _is_vertical = False
 
     def __init__(self, sizer, spacing=0, item_weight=0, items=(), **kwargs):
         """Initiate the layout - in addition to _ALayout arguments, that you
@@ -183,11 +194,19 @@ class _ALineLayout(_ALayout):
             self._add_spacer(item.size)
         else:
             item, options = self._get_item_options(item)
+            if options and self._is_vertical and options.v_align:
+                raise SyntaxError(u'May not specify v_align in a vertical '
+                                  u'layout')
+            elif options and not self._is_vertical and options.h_align:
+                raise SyntaxError(u'May not specify h_align in a horizontal '
+                                  u'layout')
             if item is None: return
             if self.spacing > 0 and not self._sizer.IsEmpty():
                 self._add_spacer(self.spacing)
-            self._sizer.Add(item, proportion=options.weight,
-                            flag=options.layout_flags(), border=options.border)
+            lt_flags = options.layout_flags(use_horizontal=self._is_vertical,
+                                            use_vertical=not self._is_vertical)
+            self._sizer.Add(item, proportion=options.weight, flag=lt_flags,
+                            border=options.border)
             self._sizer.SetItemMinSize(item, -1, -1)
 
     def _add_spacer(self, length=4):
@@ -213,6 +232,8 @@ class HLayout(_ALineLayout):
 
 class VLayout(_ALineLayout):
     """A simple vertical layout."""
+    _is_vertical = True
+
     def __init__(self, *args, **kwargs):
         super(VLayout, self).__init__(_wx.BoxSizer(_wx.VERTICAL), *args,
                                       **kwargs)

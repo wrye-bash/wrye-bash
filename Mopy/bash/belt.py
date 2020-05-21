@@ -447,8 +447,7 @@ class PageVersions(PageInstaller):
             Stretch(1), (text_warning, LayoutOptions(h_align=CENTER)),
             Stretch(1), (versions_box, LayoutOptions(expand=True, weight=1)),
             Stretch(2),
-            (self.checkOk, LayoutOptions(h_align=RIGHT, v_align=BOTTOM,
-                                         border=5))
+            (self.checkOk, LayoutOptions(h_align=RIGHT, border=5))
         ]).apply_to(self)
         self._enableForward(False)
         self.Layout()

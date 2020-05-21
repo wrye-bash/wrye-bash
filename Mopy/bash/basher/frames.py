@@ -445,8 +445,8 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
         cancel_button = CancelButton(self)
         cancel_button.on_clicked.subscribe(self.on_closing)
         VLayout(item_expand=True, spacing=4, border=4, items=[
-            GridLayout(h_spacing=4, v_spacing=4, item_v_align=CENTER,
-                       stretch_cols=[1], item_expand=True, items=[
+            GridLayout(h_spacing=4, v_spacing=4, stretch_cols=[1],
+                       item_expand=True, items=[
                 (_no_fill_text(_(u'Name:')), self.gName),
                 (_no_fill_text(_(u'Version:')), self.gVersion),
                 (_no_fill_text(_(u'Website:')), self.gWebsite),
