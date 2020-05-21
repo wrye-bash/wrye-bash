@@ -27,7 +27,7 @@ attributes which are populated here. Therefore the layout of the menus is
 also defined in these functions."""
 from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
     BSAList, ScreensList, MasterList, bEnableWizard, PeopleList, \
-    BashStatusBar, BashNotebook
+    BashStatusBar
 from .. import bass, balt, bush
 from ..cint import CBashApi
 from ..balt import MenuLink, SeparatorLink, UIList_OpenItems, \
@@ -394,7 +394,7 @@ def InitInstallerLinks():
     settings_menu.append(Installers_GlobalSkips())
     settings_menu.append(Installers_GlobalRedirects())
     settings_menu.append(SeparatorLink())
-    append_global_settings(settings_menu)
+    settings_menu.append(GlobalSettingsMenu())
 
 #------------------------------------------------------------------------------
 def InitINILinks():
@@ -432,7 +432,7 @@ def InitINILinks():
     settings_menu = INIList.global_links[_(u'Settings')]
     settings_menu.append(INI_AllowNewLines())
     settings_menu.append(SeparatorLink())
-    append_global_settings(settings_menu)
+    settings_menu.append(GlobalSettingsMenu())
 
 #------------------------------------------------------------------------------
 def InitModLinks():
@@ -672,7 +672,7 @@ def InitModLinks():
     settings_menu.append(Mods_LockActivePlugins())
     settings_menu.append(Mods_ScanDirty())
     settings_menu.append(SeparatorLink())
-    append_global_settings(settings_menu)
+    settings_menu.append(GlobalSettingsMenu())
 
 #------------------------------------------------------------------------------
 def InitSaveLinks():
@@ -777,7 +777,7 @@ def InitSaveLinks():
     view_menu.append(SortByMenu())
     view_menu.append(ColumnsMenu())
     # Settings Menu
-    append_global_settings(SaveList.global_links[_(u'Settings')])
+    SaveList.global_links[_(u'Settings')].append(GlobalSettingsMenu())
 
 #------------------------------------------------------------------------------
 def InitBSALinks():
@@ -817,7 +817,7 @@ def InitBSALinks():
     view_menu.append(SortByMenu())
     view_menu.append(ColumnsMenu())
     # Settings Menu
-    append_global_settings(BSAList.global_links[_(u'Settings')])
+    BSAList.global_links[_(u'Settings')].append(GlobalSettingsMenu())
 
 #------------------------------------------------------------------------------
 def InitScreenLinks():
@@ -873,7 +873,7 @@ def InitScreenLinks():
     jpeg_quality_menu.links.append(Screens_JpgQualityCustom())
     settings_menu.append(qualityMenu)
     settings_menu.append(SeparatorLink())
-    append_global_settings(settings_menu)
+    ScreensList.global_links[_(u'Settings')].append(GlobalSettingsMenu())
 
 #------------------------------------------------------------------------------
 def InitPeopleLinks():
@@ -901,60 +901,11 @@ def InitPeopleLinks():
     view_menu.append(SortByMenu())
     view_menu.append(ColumnsMenu())
     # Settings Menu
-    append_global_settings(PeopleList.global_links[_(u'Settings')])
-
-#------------------------------------------------------------------------------
-def InitSettingsLinks(SettingsMenu):
-    """Initialize settings menu."""
-    #--User settings
-    SettingsMenu.append(Settings_BackupSettings())
-    SettingsMenu.append(Settings_RestoreSettings())
-    SettingsMenu.append(Settings_SaveSettings())
-    #--OBSE Dll info
-    if bush.game.Se.se_abbrev:
-        SettingsMenu.append(SeparatorLink())
-        SettingsMenu.append(Settings_ExportDllInfo())
-        SettingsMenu.append(Settings_ImportDllInfo())
-    #--Color config
-    SettingsMenu.append(SeparatorLink())
-    SettingsMenu.append(Settings_Colors())
-    if True:
-        tabsMenu = BashNotebook.tabLinks(MenuLink(_(u'Tabs')))
-        SettingsMenu.append(tabsMenu)
-    #--StatusBar
-    if True:
-        sbMenu = MenuLink(_(u'Status bar'))
-        #--Icon size
-        # FIXME(inf) Either fix these or remove them entirely
-        # if True:
-        #     sizeMenu = MenuLink(_(u'Icon size'))
-        #     for size in (16,24,32):
-        #         sizeMenu.links.append(Settings_IconSize(size))
-        #     sbMenu.links.append(sizeMenu)
-        sbMenu.links.append(Settings_UnHideButtons())
-        sbMenu.links.append(Settings_StatusBar_ShowVersions())
-        SettingsMenu.append(sbMenu)
-    SettingsMenu.append(Settings_Languages())
-    SettingsMenu.append(Settings_PluginEncodings())
-    SettingsMenu.append(Settings_Games())
-    SettingsMenu.append(SeparatorLink())
-    SettingsMenu.append(Settings_UseAltName())
-    SettingsMenu.append(Settings_ShowGlobalMenu())
-    SettingsMenu.append(Settings_Deprint())
-    SettingsMenu.append(Settings_DumpTranslator())
-    SettingsMenu.append(Settings_UAC())
-
-def append_global_settings(settings_menu):
-    """Creates the 'Global Settings' link for each tab's 'Settings'
-    category."""
-    global_settings = MenuLink(_(u'Global Settings'))
-    InitSettingsLinks(global_settings)
-    settings_menu.append(global_settings)
+    PeopleList.global_links[_(u'Settings')].append(GlobalSettingsMenu())
 
 def InitLinks():
     """Call other link initializers."""
     InitStatusBar()
-    InitSettingsLinks(BashStatusBar.SettingsMenu)
     InitMasterLinks()
     InitInstallerLinks()
     InitINILinks()

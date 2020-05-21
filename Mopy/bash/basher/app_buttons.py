@@ -26,6 +26,7 @@ import subprocess
 import webbrowser
 from . import BashStatusBar, BashFrame
 from .frames import ModChecker, DocBrowser
+from .settings_dialog import SettingsDialog
 from .. import bass, bosh, bolt, balt, bush, mod_files, load_order
 from ..balt import ItemLink, Link, Links, SeparatorLink, BoolLink, staticBitmap
 from ..bolt import GPath
@@ -699,7 +700,7 @@ class App_Settings(StatusBar_Button):
             window, image, lambda: self.Execute())
 
     def Execute(self):
-        BashStatusBar.SettingsMenu.popup_menu(Link.Frame.statusBar, None)
+        SettingsDialog.display_dialog()
 
 #------------------------------------------------------------------------------
 class App_Restart(StatusBar_Button):

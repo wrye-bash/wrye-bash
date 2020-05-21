@@ -26,7 +26,7 @@ from __future__ import print_function
 import sys
 
 from . import BashStatusBar
-from .dialogs import ColorDialog
+from .settings_dialog import SettingsDialog
 from .. import barb, bush, balt, bass, bolt, env, exception
 from ..balt import ItemLink, AppendableLink, RadioLink, CheckLink, MenuLink, \
     TransLink, EnabledLink, BoolLink, Link
@@ -36,14 +36,7 @@ from ..gui import BusyCursor
 from ..localize import dump_translator
 # TODO(ut): settings links do not seem to use Link.data attribute - it's None..
 
-__all__ = ['Settings_BackupSettings', 'Settings_RestoreSettings',
-           'Settings_SaveSettings', 'Settings_ExportDllInfo',
-           'Settings_ImportDllInfo', 'Settings_Colors', 'Settings_IconSize',
-           'Settings_UnHideButtons', 'Settings_StatusBar_ShowVersions',
-           'Settings_Languages', 'Settings_PluginEncodings', 'Settings_Games',
-           'Settings_UseAltName', 'Settings_Deprint',
-           'Settings_DumpTranslator', 'Settings_UAC',
-           u'Settings_ShowGlobalMenu']
+__all__ = [u'GlobalSettingsMenu']
 
 #------------------------------------------------------------------------------
 # Settings Links --------------------------------------------------------------
@@ -231,14 +224,6 @@ class Settings_ImportDllInfo(AppendableLink, ItemLink):
             self._showError(_(u'Wrye Bash could not load %s, because there was'
                               u' an error in the format of the file.')
                             % textPath.s)
-
-#------------------------------------------------------------------------------
-class Settings_Colors(ItemLink):
-    """Shows the color configuration dialog."""
-    _text = _(u'Colors...')
-    _help = _(u"Configure the custom colors used in the UI.")
-
-    def Execute(self): ColorDialog.display_dialog()
 
 #------------------------------------------------------------------------------
 class Settings_IconSize(RadioLink):
@@ -512,3 +497,12 @@ class Settings_ShowGlobalMenu(BoolLink):
     def Execute(self):
         super(Settings_ShowGlobalMenu, self).Execute()
         Link.Frame.refresh_global_menu_visibility()
+
+#------------------------------------------------------------------------------
+class GlobalSettingsMenu(ItemLink):
+    _text = _(u'Global Settings...')
+    _help = _(u'Allows you to configure various settings that apply to the '
+              u'entirety of Wrye Bash, not just one tab.')
+
+    def Execute(self):
+        SettingsDialog.display_dialog()
