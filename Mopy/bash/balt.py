@@ -49,7 +49,7 @@ from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
     web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
     Font, CheckListBox, UIListCtrl, PanelWin, Colors, HtmlDisplay, Image, \
-    BusyCursor, GlobalMenu
+    BusyCursor, GlobalMenu, WrappingTextMixin
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -2137,8 +2137,9 @@ class TreeCtrl(_AComponent):
 
     def OnMotion(self, event): return
 
-class ListBoxes(DialogWindow):
+class ListBoxes(WrappingTextMixin, DialogWindow):
     """A window with 1 or more lists."""
+    _wrapping_offset = 64
 
     def __init__(self, parent, title, message, lists, liststyle=u'check',
                  style=0, bOk=_(u'OK'), bCancel=_(u'Cancel'), canCancel=True):
@@ -2150,16 +2151,15 @@ class ListBoxes(DialogWindow):
         [title,tooltip,{item1:[subitem1,subitemn],item2:[subitem1,subitemn],itemn:[subitem1,subitemn]}],
         [title,tooltip,....],
         """
-        super(ListBoxes, self).__init__(parent, title=title,
+        super(ListBoxes, self).__init__(message, parent, title=title,
                                         icon_bundle=Resources.bashBlue,
                                         sizes_dict=sizes, style=style)
         self.itemMenu = Links()
         self.itemMenu.append(_CheckList_SelectAll())
         self.itemMenu.append(_CheckList_SelectAll(False))
         minWidth = self._native_widget.GetTextExtent(title)[0] * 1.2 + 64
-        self.text = Label(self, message)
-        self.text.wrap(minWidth) # otherwise self.text expands to max width
-        layout = VLayout(border=5, spacing=5, items=[self.text])
+        self._panel_text.wrap(minWidth) # otherwise expands to max width
+        layout = VLayout(border=5, spacing=5, items=[self._panel_text])
         self._ctrls = {}
         # Size ourselves slightly larger than the wrapped text, otherwise some
         # of it may be cut off and the buttons may become too small to read
@@ -2193,14 +2193,6 @@ class ListBoxes(DialogWindow):
         layout.add((HLayout(spacing=5, items=btns),
                     LayoutOptions(h_align=RIGHT)))
         layout.apply_to(self)
-        self.on_size_changed.subscribe(self._wrap_text)
-        self._width = self.component_size[0]
-
-    def _wrap_text(self):
-        # Account for the window being larger than the wrapped text
-        if self._width != self.component_size[0]:
-            self._width = self.component_size[0]
-            self.text.wrap(self.component_size[0] - 64)
 
     def _on_context(self, lb_instance):
         """Context Menu"""

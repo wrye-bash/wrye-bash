@@ -86,7 +86,7 @@ from ..balt import Links, ItemLink
 from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
     TOP, VLayout, EventResult, DropDown, DialogWindow, WindowFrame, Spinner, \
-    Splitter, NotebookCtrl, PanelWin, CheckListBox, Color, Picture, Image, \
+    Splitter, TabbedPanel, PanelWin, CheckListBox, Color, Picture, Image, \
     CenteredSplash, BusyCursor, RadioButton, GlobalMenu
 
 # Constants -------------------------------------------------------------------
@@ -2654,7 +2654,7 @@ class InstallersDetails(_SashDetailsPanel):
         self.gPackage = TextArea(top, editable=False, no_border=True)
         #--Info Tabs
         self.gNotebook, self.checkListSplitter = self.subSplitter.make_panes(
-            first_pane=NotebookCtrl(self.subSplitter, multiline=True),
+            first_pane=TabbedPanel(self.subSplitter, multiline=True),
             second_pane=Splitter(self.subSplitter, min_pane_size=50,
                                  sash_gravity=0.5))
         self.gNotebook.set_min_size(100, 100)
@@ -2673,9 +2673,10 @@ class InstallersDetails(_SashDetailsPanel):
             gPage = TextArea(self.gNotebook, editable=False,
                              auto_tooltip=False, do_wrap=False)
             gPage.component_name = cmp_name
-            self.gNotebook.nb_add_page(gPage, page_title)
+            self.gNotebook.add_page(gPage, page_title)
             self.infoPages.append([gPage,False])
-        self.gNotebook.nb_set_selected_index(settings['bash.installers.page'])
+        self.gNotebook.set_selected_page_index(
+            settings['bash.installers.page'])
         self.gNotebook.on_nb_page_change.subscribe(self.OnShowInfoPage)
         self.sp_panel, espmsPanel = self.checkListSplitter.make_panes(
             vertically=True)
@@ -2742,7 +2743,7 @@ class InstallersDetails(_SashDetailsPanel):
         if not self._firstShow and destroy: # save subsplitters
             super(InstallersDetails, self).ClosePanel(destroy)
             settings['bash.installers.page'] = \
-                self.gNotebook.nb_get_selected_index()
+                self.gNotebook.get_selected_page_index()
         self._save_comments()
 
     def _save_comments(self):
@@ -2763,7 +2764,7 @@ class InstallersDetails(_SashDetailsPanel):
             #--Name
             self.gPackage.text_content = fileName.s
             #--Info Pages
-            currentIndex = self.gNotebook.nb_get_selected_index()
+            currentIndex = self.gNotebook.get_selected_page_index()
             for index,(gPage,state) in enumerate(self.infoPages):
                 self.infoPages[index][1] = False
                 if index == currentIndex: self.RefreshInfoPage(index,installer)
