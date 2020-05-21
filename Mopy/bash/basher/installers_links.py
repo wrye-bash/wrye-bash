@@ -53,9 +53,9 @@ __all__ = ['Installers_SortActive', 'Installers_SortProjects',
 #------------------------------------------------------------------------------
 class Installers_AddMarker(ItemLink):
     """Add an installer marker."""
-    _text = _(u'Add Marker...')
-    _help = _(u'Adds a Marker, a special type of package useful for separating'
-             u' and labelling your packages.')
+    _text = _(u'New Marker...')
+    _help = _(u'Adds a Marker, a special type of package useful for '
+              u'separating and labelling your packages.')
 
     def Execute(self):
         """Add a Marker."""

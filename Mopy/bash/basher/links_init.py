@@ -344,6 +344,56 @@ def InitInstallerLinks():
     InstallersPanel.subsMenu.append(Installer_Subs_ToggleSelection())
     InstallersPanel.subsMenu.append(SeparatorLink())
     InstallersPanel.subsMenu.append(Installer_Subs_ListSubPackages())
+    # InstallersList: Global Links
+    # File Menu
+    file_menu = InstallersList.global_links[_(u'File')]
+    file_menu.append(UIList_OpenStore())
+    file_menu.append(Files_Unhide(u'installer'))
+    file_menu.append(SeparatorLink())
+    file_menu.append(Installers_AddMarker())
+    file_menu.append(Installers_CreateNewProject())
+    # Edit Menu
+    edit_menu = InstallersList.global_links[_(u'Edit')]
+    edit_menu.append(Installers_MonitorInstall())
+    edit_menu.append(SeparatorLink())
+    edit_menu.append(Installers_AnnealAll())
+    edit_menu.append(Installers_UninstallAllUnknownFiles())
+    edit_menu.append(Installers_UninstallAllPackages())
+    edit_menu.append(SeparatorLink())
+    edit_menu.append(Installers_Refresh())
+    edit_menu.append(Installers_Refresh(full_refresh=True))
+    # View Menu
+    view_menu = InstallersList.global_links[_(u'View')]
+    view_menu.append(SortByMenu(
+        sort_options=[Installers_SortActive(), # Installers_SortStructure(),
+                      Installers_SortProjects()]))
+    view_menu.append(ColumnsMenu())
+    view_menu.append(SeparatorLink())
+    view_menu.append(Installers_ListPackages())
+    view_menu.append(Installers_WizardOverlay())
+    # Settings Menu
+    settings_menu = InstallersList.global_links[_(u'Settings')]
+    settings_menu.append(Installers_Enabled())
+    settings_menu.append(Installers_AvoidOnStart())
+    settings_menu.append(SeparatorLink())
+    settings_menu.append(Installers_AutoAnneal())
+    if bEnableWizard:
+        settings_menu.append(Installers_AutoWizard())
+    settings_menu.append(Installers_AutoApplyEmbeddedBCFs())
+    settings_menu.append(Installers_AutoRefreshProjects())
+    settings_menu.append(SeparatorLink())
+    settings_menu.append(Installers_ConflictsReportShowBSAConflicts())
+    settings_menu.append(Installers_ConflictsReportShowsInactive())
+    settings_menu.append(Installers_ConflictsReportShowsLower())
+    settings_menu.append(SeparatorLink())
+    settings_menu.append(Installers_BsaRedirection())
+    settings_menu.append(Installers_RemoveEmptyDirs())
+    settings_menu.append(SeparatorLink())
+    settings_menu.append(Installers_AutoRefreshBethsoft())
+    settings_menu.append(Installers_GlobalSkips())
+    settings_menu.append(Installers_GlobalRedirects())
+    settings_menu.append(SeparatorLink())
+    append_global_settings(settings_menu)
 
 #------------------------------------------------------------------------------
 def InitINILinks():
@@ -368,6 +418,20 @@ def InitINILinks():
     INIList.itemMenu.append(SeparatorLink())
     INIList.itemMenu.append(INI_FileOpenOrCopy())
     INIList.itemMenu.append(INI_Delete())
+    # INIList: Global Links
+    # File Menu
+    INIList.global_links[_(u'File')].append(UIList_OpenStore())
+    # View Menu
+    view_menu = INIList.global_links[_(u'View')]
+    view_menu.append(SortByMenu(sort_options=[INI_SortValid()]))
+    view_menu.append(ColumnsMenu())
+    view_menu.append(SeparatorLink())
+    view_menu.append(INI_ListINIs())
+    # Settings Menu
+    settings_menu = INIList.global_links[_(u'Settings')]
+    settings_menu.append(INI_AllowNewLines())
+    settings_menu.append(SeparatorLink())
+    append_global_settings(settings_menu)
 
 #------------------------------------------------------------------------------
 def InitModLinks():
@@ -562,6 +626,50 @@ def InitModLinks():
             ModList.itemMenu.append(Mod_CreateDummyMasters())
         if bush.game.fsName == u'Oblivion':
             ModList.itemMenu.append(Mod_SetVersion())
+    # ModList: Global Links
+    # File Menu
+    file_menu = ModList.global_links[_(u'File')]
+    file_menu.append(UIList_OpenStore())
+    file_menu.append(Files_Unhide(u'mod'))
+    if bush.game.Esp.canBash:
+        file_menu.append(SeparatorLink())
+        file_menu.append(Mods_CreateBlankBashedPatch())
+        file_menu.append(Mods_CreateBlank())
+        file_menu.append(Mods_CreateBlank(masterless=True))
+    # Edit Menu
+    edit_menu = ModList.global_links[_(u'Edit')]
+    am_submenu = MenuLink(_(u'Active Mods'))
+    am_submenu.append(Mods_LoadList())
+    edit_menu.append(am_submenu)
+    if bush.game.fsName == u'Oblivion':
+        edit_menu.append(SeparatorLink())
+        versions_menu = MenuLink(u'Oblivion.esm')
+        versions_menu.links.append(Mods_OblivionVersion(u'1.1'))
+        versions_menu.links.append(Mods_OblivionVersion(u'1.1b'))
+        versions_menu.links.append(Mods_OblivionVersion(u'GOTY non-SI'))
+        versions_menu.links.append(Mods_OblivionVersion(u'SI'))
+        edit_menu.append(versions_menu)
+    edit_menu.append(SeparatorLink())
+    edit_menu.append(Mods_CleanDummyMasters())
+    edit_menu.append(Mods_CrcRefresh())
+    # View Menu
+    view_menu = ModList.global_links[_(u'View')]
+    view_menu.append(SortByMenu(
+        sort_options=[Mods_EsmsFirst(), Mods_SelectedFirst()]))
+    view_menu.append(ColumnsMenu())
+    view_menu.append(SeparatorLink())
+    view_menu.append(Mods_ListMods())
+    view_menu.append(Mods_ListBashTags())
+    # Settings Menu
+    settings_menu = ModList.global_links[_(u'Settings')]
+    settings_menu.append(Mods_AutoGhost())
+    if bush.game.has_esl:
+        settings_menu.append(Mods_AutoESLFlagBP())
+    settings_menu.append(Mods_LockLoadOrder())
+    settings_menu.append(Mods_LockActivePlugins())
+    settings_menu.append(Mods_ScanDirty())
+    settings_menu.append(SeparatorLink())
+    append_global_settings(settings_menu)
 
 #------------------------------------------------------------------------------
 def InitSaveLinks():
@@ -640,6 +748,33 @@ def InitSaveLinks():
         SaveList.itemMenu.append(Save_Unbloat())
         SaveList.itemMenu.append(Save_RepairAbomb())
         SaveList.itemMenu.append(Save_RepairHair())
+    # SaveList: Global Links
+    # File Menu
+    file_Menu = SaveList.global_links[_(u'File')]
+    file_Menu.append(UIList_OpenStore())
+    file_Menu.append(Files_Unhide(u'save'))
+    # Edit Menu
+    edit_menu = SaveList.global_links[_(u'Edit')]
+    if bush.game.fsName == u'Oblivion':
+        versions_menu = MenuLink(u'Oblivion.esm')
+        versions_menu.links.append(Mods_OblivionVersion(
+            u'1.1', setProfile=True))
+        versions_menu.links.append(Mods_OblivionVersion(
+            u'1.1b', setProfile=True))
+        versions_menu.links.append(Mods_OblivionVersion(
+            u'GOTY non-SI', setProfile=True))
+        versions_menu.links.append(Mods_OblivionVersion(
+            u'SI', setProfile=True))
+        edit_menu.append(versions_menu)
+    profile_menu = MenuLink(_(u'Profile'))
+    profile_menu.append(Saves_Profiles())
+    edit_menu.append(profile_menu)
+    # View Menu
+    view_menu = SaveList.global_links[_(u'View')]
+    view_menu.append(SortByMenu())
+    view_menu.append(ColumnsMenu())
+    # Settings Menu
+    append_global_settings(SaveList.global_links[_(u'Settings')])
 
 #------------------------------------------------------------------------------
 def InitBSALinks():
@@ -669,6 +804,17 @@ def InitBSALinks():
     BSAList.itemMenu.append(file_menu)
     BSAList.itemMenu.append(BSA_ExtractToProject())
     BSAList.itemMenu.append(BSA_ListContents())
+    # BSAList: Global Links
+    # File Menu
+    file_menu = BSAList.global_links[_(u'File')]
+    file_menu.append(UIList_OpenStore())
+    file_menu.append(Files_Unhide(u'BSA'))
+    # View Menu
+    view_menu = BSAList.global_links[_(u'View')]
+    view_menu.append(SortByMenu())
+    view_menu.append(ColumnsMenu())
+    # Settings Menu
+    append_global_settings(BSAList.global_links[_(u'Settings')])
 
 #------------------------------------------------------------------------------
 def InitScreenLinks():
@@ -708,6 +854,23 @@ def InitScreenLinks():
         convertMenu.links.append(Screen_ConvertTo(u'bmp', image_type['bmp']))
         convertMenu.links.append(Screen_ConvertTo(u'tif', image_type['tif']))
         ScreensList.itemMenu.append(convertMenu)
+    # ScreensList: Global Links
+    # File Menu
+    ScreensList.global_links[_(u'File')].append(UIList_OpenStore())
+    # View Menu
+    view_menu = ScreensList.global_links[_(u'View')]
+    view_menu.append(SortByMenu())
+    view_menu.append(ColumnsMenu())
+    # Settings Menu
+    settings_menu = ScreensList.global_links[_(u'Settings')]
+    settings_menu.append(Screens_NextScreenShot())
+    jpeg_quality_menu = MenuLink(_(u'JPEG Quality'))
+    for i in range(100, 80, -5):
+        jpeg_quality_menu.links.append(Screens_JpgQuality(i))
+    jpeg_quality_menu.links.append(Screens_JpgQualityCustom())
+    settings_menu.append(qualityMenu)
+    settings_menu.append(SeparatorLink())
+    append_global_settings(settings_menu)
 
 #------------------------------------------------------------------------------
 def InitPeopleLinks():
@@ -725,11 +888,21 @@ def InitPeopleLinks():
     PeopleList.itemMenu.append(People_AddNew())
     PeopleList.itemMenu.append(balt.UIList_Delete())
     PeopleList.itemMenu.append(People_Export())
+    # PeopleList: Global Links
+    # Edit Menu
+    edit_menu = PeopleList.global_links[_(u'Edit')]
+    edit_menu.append(People_AddNew())
+    edit_menu.append(People_Import())
+    # View Menu
+    view_menu = PeopleList.global_links[_(u'View')]
+    view_menu.append(SortByMenu())
+    view_menu.append(ColumnsMenu())
+    # Settings Menu
+    append_global_settings(PeopleList.global_links[_(u'Settings')])
 
 #------------------------------------------------------------------------------
-def InitSettingsLinks():
+def InitSettingsLinks(SettingsMenu):
     """Initialize settings menu."""
-    SettingsMenu = BashStatusBar.SettingsMenu
     #--User settings
     SettingsMenu.append(Settings_BackupSettings())
     SettingsMenu.append(Settings_RestoreSettings())
@@ -768,10 +941,17 @@ def InitSettingsLinks():
     SettingsMenu.append(Settings_DumpTranslator())
     SettingsMenu.append(Settings_UAC())
 
+def append_global_settings(settings_menu):
+    """Creates the 'Global Settings' link for each tab's 'Settings'
+    category."""
+    global_settings = MenuLink(_(u'Global Settings'))
+    InitSettingsLinks(global_settings)
+    settings_menu.append(global_settings)
+
 def InitLinks():
     """Call other link initializers."""
     InitStatusBar()
-    InitSettingsLinks()
+    InitSettingsLinks(BashStatusBar.SettingsMenu)
     InitMasterLinks()
     InitInstallerLinks()
     InitINILinks()
