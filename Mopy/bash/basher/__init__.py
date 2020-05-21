@@ -290,8 +290,8 @@ class _ModsUIList(balt.UIList):
 
 #------------------------------------------------------------------------------
 class MasterList(_ModsUIList):
-    mainMenu = Links()
-    itemMenu = Links()
+    column_links = Links()
+    context_links = Links()
     keyPrefix = 'bash.masters' # use for settings shared among the lists (cols)
     _editLabels = True
     #--Sorting
@@ -543,8 +543,8 @@ class MasterList(_ModsUIList):
 
 #------------------------------------------------------------------------------
 class INIList(balt.UIList):
-    mainMenu = Links()  #--Column menu
-    itemMenu = Links()  #--Single item menu
+    column_links = Links()  #--Column menu
+    context_links = Links()  #--Single item menu
     global_links = OrderedDefaultDict(lambda: Links()) # Global menu
     _shellUI = True
     _sort_keys = {'File'     : None,
@@ -791,8 +791,8 @@ class TargetINILineCtrl(INIListCtrl):
 #------------------------------------------------------------------------------
 class ModList(_ModsUIList):
     #--Class Data
-    mainMenu = Links() #--Column menu
-    itemMenu = Links() #--Single item menu
+    column_links = Links() #--Column menu
+    context_links = Links() #--Single item menu
     global_links = OrderedDefaultDict(lambda: Links()) # Global menu
     def _get(self, mod): return partial(self.data_store.table.getItem, mod)
     _sort_keys = {
@@ -1883,8 +1883,8 @@ class ModPanel(BashTab):
 #------------------------------------------------------------------------------
 class SaveList(balt.UIList):
     #--Class Data
-    mainMenu = Links() #--Column menu
-    itemMenu = Links() #--Single item menu
+    column_links = Links() #--Column menu
+    context_links = Links() #--Single item menu
     global_links = OrderedDefaultDict(lambda: Links()) # Global menu
     _editLabels = True
     _sort_keys = {
@@ -2170,8 +2170,8 @@ class SavePanel(BashTab):
 
 #------------------------------------------------------------------------------
 class InstallersList(balt.UIList):
-    mainMenu = Links()
-    itemMenu = Links()
+    column_links = Links()
+    context_links = Links()
     global_links = OrderedDefaultDict(lambda: Links()) # Global menu
     icons = installercons
     _sunkenBorder = False
@@ -3203,8 +3203,8 @@ class InstallersPanel(BashTab):
 
 #------------------------------------------------------------------------------
 class ScreensList(balt.UIList):
-    mainMenu = Links() #--Column menu
-    itemMenu = Links() #--Single item menu
+    column_links = Links() #--Column menu
+    context_links = Links() #--Single item menu
     global_links = OrderedDefaultDict(lambda: Links()) # Global menu
     _shellUI = True
     _editLabels = True
@@ -3330,9 +3330,8 @@ class ScreensPanel(BashTab):
 
 #------------------------------------------------------------------------------
 class BSAList(balt.UIList):
-
-    mainMenu = Links() #--Column menu
-    itemMenu = Links() #--Single item menu
+    column_links = Links() #--Column menu
+    context_links = Links() #--Single item menu
     global_links = OrderedDefaultDict(lambda: Links()) # Global menu
     _sort_keys = {'File'    : None,
                   'Modified': lambda self, a: self.data_store[a].mtime,
@@ -3426,8 +3425,8 @@ class BSAPanel(BashTab):
 
 #------------------------------------------------------------------------------
 class PeopleList(balt.UIList):
-    mainMenu = Links()
-    itemMenu = Links()
+    column_links = Links()
+    context_links = Links()
     global_links = OrderedDefaultDict(lambda: Links()) # Global menu
     icons = karmacons
     _sunkenBorder = False

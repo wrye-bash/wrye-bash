@@ -898,8 +898,8 @@ def conversation(func):
 class UIList(wx.Panel):
     """Offspring of basher.List and balt.Tank, ate its parents."""
     # optional menus
-    mainMenu = None ##: rename to main_links & context_links?
-    itemMenu = None
+    column_links = None # A list of all links to show in the column menu
+    context_links = None # A list of all links to show in item context menus
     # A dict mapping category names to a Links instance that will be displayed
     # when the corresponding category is clicked on in the global menu. The
     # order in which categories are added will also be the display order.
@@ -1138,7 +1138,7 @@ class UIList(wx.Panel):
     #--Column Menu
     def DoColumnMenu(self, evt_col):
         """Show column menu."""
-        if self.mainMenu: self.mainMenu.popup_menu(self, evt_col)
+        if self.column_links: self.column_links.popup_menu(self, evt_col)
         return EventResult.FINISH
 
     #--Item Menu
@@ -1147,8 +1147,8 @@ class UIList(wx.Panel):
         selected = self.GetSelected()
         if not selected:
             self.DoColumnMenu(0)
-        elif self.itemMenu:
-            self.itemMenu.popup_menu(self, selected)
+        elif self.context_links:
+            self.context_links.popup_menu(self, selected)
         return EventResult.FINISH
 
     #--Callbacks --------------------------------------------------------------
