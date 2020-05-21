@@ -25,6 +25,7 @@
 points to BashFrame.modList singleton."""
 
 import re
+from .frames import ModChecker
 from .. import bosh, balt, load_order
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from .. import exception
@@ -38,7 +39,7 @@ __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
            'Mods_CreateBlank', 'Mods_ListMods', 'Mods_ListBashTags',
            'Mods_CleanDummyMasters', 'Mods_AutoGhost', 'Mods_LockLoadOrder',
            'Mods_ScanDirty', 'Mods_CrcRefresh', 'Mods_AutoESLFlagBP',
-           u'Mods_LockActivePlugins']
+           u'Mods_LockActivePlugins', u'Mods_ModChecker']
 
 # "Load" submenu --------------------------------------------------------------
 class _Mods_LoadListData(balt.ListEditorData):
@@ -369,3 +370,14 @@ class Mods_CrcRefresh(ItemLink):
             self.window.RefreshUI(redraw=mismatched.keys(), refreshSaves=False)
         else: message += _(u'No stale cached CRC values detected')
         self._showWryeLog(message)
+
+#------------------------------------------------------------------------------
+class Mods_ModChecker(ItemLink):
+    """Launches the Mod Checker. More discoverable alternative to the teensy
+    icon at the bottom."""
+    _text = _(u'Mod Checker...')
+    _help = _(u'Checks your loaded plugins for certain problems and shows a '
+              u'configurable report.')
+
+    def Execute(self):
+        ModChecker.create_or_raise()

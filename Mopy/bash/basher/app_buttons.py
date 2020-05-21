@@ -778,6 +778,4 @@ class App_ModChecker(StatusBar_Button):
     imageKey, _tip = 'modchecker.%s', _(u"Mod Checker")
 
     def Execute(self):
-        if not Link.Frame.modChecker:
-            ModChecker().show_frame()
-        Link.Frame.modChecker.raise_frame()
+        ModChecker.create_or_raise()

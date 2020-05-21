@@ -413,6 +413,14 @@ class ModChecker(WindowFrame):
         Link.Frame.modChecker = None
         super(ModChecker, self).on_closing(destroy)
 
+    @classmethod
+    def create_or_raise(cls):
+        """Creates and shows the mod checker if it doesn't already exist,
+        otherwise just raises the existing one."""
+        if not Link.Frame.modChecker:
+            cls().show_frame()
+        Link.Frame.modChecker.raise_frame()
+
 #------------------------------------------------------------------------------
 class InstallerProject_OmodConfigDialog(WindowFrame):
     """Dialog for editing omod configuration data."""

@@ -480,6 +480,7 @@ def InitModLinks():
     ModList.column_links.append(Mods_ScanDirty())
     ModList.column_links.append(SeparatorLink())
     ModList.column_links.append(Mods_CrcRefresh())
+    ModList.column_links.append(Mods_ModChecker())
     #--ModList: Item Links
     if bass.inisettings['ShowDevTools'] and bush.game.Esp.canBash:
         ModList.context_links.append(Mod_FullLoad())
@@ -661,6 +662,7 @@ def InitModLinks():
     view_menu.append(SeparatorLink())
     view_menu.append(Mods_ListMods())
     view_menu.append(Mods_ListBashTags())
+    view_menu.append(Mods_ModChecker())
     # Settings Menu
     settings_menu = ModList.global_links[_(u'Settings')]
     settings_menu.append(Mods_AutoGhost())
