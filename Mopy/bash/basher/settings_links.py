@@ -28,8 +28,8 @@ import sys
 from .settings_dialog import SettingsDialog
 from .. import bush, balt, bass, bolt, env
 from ..balt import ItemLink, AppendableLink, RadioLink, CheckLink, MenuLink, \
-    TransLink, EnabledLink, BoolLink, Link
-from ..bolt import deprint, GPath
+    EnabledLink, BoolLink, Link
+from ..bolt import deprint
 from ..gui import BusyCursor
 from ..localize import dump_translator
 # TODO(ut): settings links do not seem to use Link.data attribute - it's None..
@@ -133,69 +133,6 @@ class Settings_ImportDllInfo(AppendableLink, ItemLink):
             self._showError(_(u'Wrye Bash could not load %s, because there was'
                               u' an error in the format of the file.')
                             % textPath.s)
-
-#------------------------------------------------------------------------------
-class Settings_Languages(TransLink):
-    """Menu for available Languages."""
-    def _decide(self, window, selection):
-        languages = []
-        for f in bass.dirs['l10n'].list():
-            if f.cext == u'.txt' and f.csbody[-3:] != u'new':
-                languages.append(f.body)
-        if languages:
-            subMenu = MenuLink(_(u'Language'))
-            for lang in languages:
-                subMenu.links.append(_Settings_Language(lang.s))
-            if GPath('english') not in languages:
-                subMenu.links.append(_Settings_Language('English'))
-            return subMenu
-        else:
-            class _NoLang(EnabledLink):
-                _text = _(u'Language')
-                _help = _(u"Wrye Bash was unable to detect any translation"
-                         u" files.")
-                def _enable(self): return False
-            return _NoLang()
-
-#------------------------------------------------------------------------------
-class _Settings_Language(EnabledLink, RadioLink):
-    """Specific language for Wrye Bash."""
-    languageMap = {
-        u'chinese (simplified)': _(u'Chinese (Simplified)') + u' (简体中文)',
-        u'chinese (traditional)': _(u'Chinese (Traditional)') + u' (繁体中文)',
-        u'de': _(u'German') + u' (Deutsch)',
-        u'pt_opt': _(u'Portuguese') + u' (português)',
-        u'italian': _(u'Italian') + u' (italiano)',
-        u'russian': _(u'Russian') + u' (ру́сский язы́к)',
-        u'english': _(u'English') + u' (English)',
-        }
-
-    def __init__(self, lang):
-        super(_Settings_Language, self).__init__()
-        self._lang = lang
-        self._text = self.__class__.languageMap.get(self._lang.lower(),
-                                                    self._lang)
-
-    def _initData(self, window, selection):
-        if bass.active_locale.lower() in self._lang.lower():
-            self._help = _(u"Currently using %(languagename)s as the active "
-                          u"language.") % ({'languagename': self._text})
-            self.check = True
-        else:
-            self._help = _(
-                u"Restart Wrye Bash and use %(languagename)s as the active "
-                u"language.") % ({'languagename': self._text})
-            self.check = False
-
-    def _check(self): return self.check
-
-    def _enable(self): return not self.check
-
-    def Execute(self):
-        if balt.askYes(Link.Frame,
-                _(u'Wrye Bash needs to restart to change languages.  Do you '
-                  u'want to restart?'), _(u'Restart Wrye Bash')):
-            Link.Frame.Restart(['--Language', self._lang])
 
 #------------------------------------------------------------------------------
 class Settings_PluginEncodings(MenuLink):

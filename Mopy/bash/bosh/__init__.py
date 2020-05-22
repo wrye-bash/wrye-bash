@@ -1300,7 +1300,6 @@ class TableFileInfos(DataStore):
         # the type of the table keys is always bolt.Path
         self.table = bolt.DataTable(
             bolt.PickleDict(self.bash_dir.join(u'Table.dat')))
-        deprint(u' Successfully initialized %s' % self.__class__.__name__)
 
     def __init__(self, dir_, factory=AFile):
         """Init with specified directory and specified factory type."""
