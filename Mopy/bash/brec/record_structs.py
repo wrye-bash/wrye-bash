@@ -83,44 +83,6 @@ class MelSet(object):
                         curr_rec_sig, repr(duplicate_slots)))
             all_slots.update(element_slots)
 
-    def loadData(self,record,ins,endPos):
-        """Loads data from input stream. Called by load()."""
-        rec_type = record.recType
-        loaders = self.loaders
-        # Load each subrecord
-        ins_at_end = ins.atEnd
-        load_sub_header = partial(unpackSubHeader, ins)
-        read_id_prefix = rec_type + '.'
-        while not ins_at_end(endPos, rec_type):
-            sub_type, sub_size = load_sub_header(rec_type)
-            try:
-                loaders[sub_type].load_mel(record, ins, sub_type, sub_size,
-                                           read_id_prefix + sub_type)
-            except UnicodeDecodeError:
-                bolt.deprint(u'ins.inName: %r' % ins.inName)
-                bolt.deprint(u'read_id_prefix: %r' % read_id_prefix)
-                bolt.deprint(u'sub_type: %r' % sub_type)
-                raise
-            except KeyError:
-                # Wrap this error to make it more understandable
-                self._handle_load_error(
-                    exception.ModError(
-                        ins.inName, u'Unexpected subrecord: %s' % (
-                                read_id_prefix + sub_type)),
-                    record, ins, sub_type, sub_size)
-            except Exception as error:
-                self._handle_load_error(error, record, ins, sub_type, sub_size)
-
-    def _handle_load_error(self, error, record, ins, sub_type, sub_size):
-        eid = getattr(record, u'eid', u'<<NO EID>>')
-        bolt.deprint(u'Error loading %r record and/or subrecord: %08X' %
-                     (record.recType, record.fid))
-        bolt.deprint(u'  eid = %r' % eid)
-        bolt.deprint(u'  subrecord = %r' % sub_type)
-        bolt.deprint(u'  subrecord size = %d' % sub_size)
-        bolt.deprint(u'  file pos = %d' % ins.tell(), traceback=True)
-        raise exception.ModError(ins.inName, repr(error))
-
     def dumpData(self,record, out):
         """Dumps state into out. Called by getSize()."""
         for element in self.elements:
@@ -492,9 +454,41 @@ class MelRecord(MreRecord):
         MelGroup and MelGroups."""
         return cls.melSet.mel_providers_dict[attr]()
 
-    def loadData(self,ins,endPos):
+    def loadData(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
-        self.__class__.melSet.loadData(self, ins, endPos)
+        rec_type = self.recType
+        loaders = self.__class__.melSet.loaders
+        # Load each subrecord
+        ins_at_end = ins.atEnd
+        load_sub_header = partial(unpackSubHeader, ins)
+        while not ins_at_end(endPos, rec_type):
+            sub_type, sub_size = load_sub_header(rec_type)
+            try:
+                prefix_sub_type = rec_type + b'.' + sub_type
+                loaders[sub_type].load_mel(self, ins, sub_type, sub_size,
+                                           prefix_sub_type)
+            except UnicodeDecodeError:
+                bolt.deprint(u'ins.inName: %r' % ins.inName)
+                bolt.deprint(u'read_id_prefix: %r' % rec_type + b'.')
+                bolt.deprint(u'sub_type: %r' % sub_type)
+                raise
+            except KeyError:
+                # Wrap this error to make it more understandable
+                self.handle_load_error(exception.ModError(ins.inName,
+                    u'Unexpected subrecord: %s' % prefix_sub_type), ins,
+                    sub_type, sub_size)
+            except Exception as error:
+                self.handle_load_error(error, ins, sub_type, sub_size)
+
+    def handle_load_error(self, error, ins, sub_type, sub_size):
+        eid = getattr(self, u'eid', u'<<NO EID>>')
+        bolt.deprint(u'Error loading %r record and/or subrecord: %08X' %
+                     (self.recType, self.fid))
+        bolt.deprint(u'  eid = %r' % eid)
+        bolt.deprint(u'  subrecord = %r' % sub_type)
+        bolt.deprint(u'  subrecord size = %d' % sub_size)
+        bolt.deprint(u'  file pos = %d' % ins.tell(), traceback=True)
+        raise exception.ModError(ins.inName, repr(error))
 
     def dumpData(self,out):
         """Dumps state into out. Called by getSize()."""
