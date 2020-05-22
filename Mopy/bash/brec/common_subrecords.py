@@ -114,6 +114,7 @@ class MelCtda(MelUnion):
             loader=MelStruct(ctda_sub_sig, u'8sH', u'ctda_ignored', u'ifunc'),
             decider=AttrValDecider(u'ifunc'),
         ))
+        self._ctda_mel = next(self.element_mapping.itervalues()) # type: MelStruct
 
     # Helper methods - Note that we skip func_data[0]; the first element is
     # the function name, which is only needed for puny human brains
@@ -183,11 +184,10 @@ class MelCtda(MelUnion):
         formElements.add(self)
 
     def getLoaders(self, loaders):
-        loaders[next(self.element_mapping.itervalues()).mel_sig] = self
+        loaders[self._ctda_mel.mel_sig] = self
 
-    def getSlotsUsed(self):
-        return (self.decider_result_attr,) + next(
-            self.element_mapping.itervalues()).getSlotsUsed()
+    def getSlotsUsed(self): # PY3: unpack
+        return (self.decider_result_attr,) + self._ctda_mel.getSlotsUsed()
 
     def setDefault(self, record):
         next(self.element_mapping.itervalues()).setDefault(record)

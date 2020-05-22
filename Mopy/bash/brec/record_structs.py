@@ -401,7 +401,8 @@ class MreRecord(object):
             subrecord.packSub(out, subrecord.mel_data)
 
     @property
-    def rec_str(self): # used in exceptions and co - no need to cache
+    def rec_str(self):
+        """Decoded record signature - **only** use in exceptions and co."""
         return self._rec_sig.decode(u'ascii')
 
     def dump(self,out):
@@ -478,7 +479,7 @@ class MelRecord(MreRecord):
         ins_at_end = ins.atEnd
         load_sub_header = partial(unpackSubHeader, ins)
         while not ins_at_end(endPos, self._rec_sig):
-            sub_type, sub_size = load_sub_header(self.rec_str)
+            sub_type, sub_size = load_sub_header(self._rec_sig)
             try:
                 loaders[sub_type].load_mel(self, ins, sub_type, sub_size,
                     self._rec_sig, sub_type)# *debug_strs
