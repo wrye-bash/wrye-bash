@@ -160,7 +160,7 @@ def exit_cleanup():
             file_ = tmpDir.join(file_)
             try:
                 if file_.isdir():
-                    file_.rmtree(safety=file_.stail)
+                    file_.rmtree(safety=u'wryebash_')
                 else:
                     file_.remove()
             except:
