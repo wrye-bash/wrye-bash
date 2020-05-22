@@ -93,36 +93,6 @@ class MelSet(object):
         MelGroup and MelGroups."""
         return self.defaulters[attr].getDefault()
 
-    def loadData(self,record,ins,endPos):
-        """Loads data from input stream. Called by load()."""
-        rec_type = record.recType
-        loaders = self.loaders
-        # Load each subrecord
-        ins_at_end = ins.atEnd
-        load_sub_header = partial(unpackSubHeader, ins)
-        while not ins_at_end(endPos, rec_type):
-            sub_type, sub_size = load_sub_header(rec_type)
-            try:
-                loaders[sub_type].load_mel(record, ins, sub_type, sub_size,
-                                           rec_type, sub_type) # *debug_strs
-            except KeyError:
-                # Wrap this error to make it more understandable
-                self._handle_load_error(exception.ModError(ins.inName,
-                    u'Unexpected subrecord: %s.%s' % (rec_type, sub_type)),
-                    record, ins, sub_type, sub_size)
-            except Exception as error:
-                self._handle_load_error(error, record, ins, sub_type, sub_size)
-
-    def _handle_load_error(self, error, record, ins, sub_type, sub_size):
-        eid = getattr(record, u'eid', u'<<NO EID>>')
-        bolt.deprint(u'Error loading %r record and/or subrecord: %08X' %
-                     (record.recType, record.fid))
-        bolt.deprint(u'  eid = %r' % eid)
-        bolt.deprint(u'  subrecord = %r' % sub_type)
-        bolt.deprint(u'  subrecord size = %d' % sub_size)
-        bolt.deprint(u'  file pos = %d' % ins.tell(), traceback=True)
-        raise exception.ModError(ins.inName, repr(error))
-
     def dumpData(self,record, out):
         """Dumps state into out. Called by getSize()."""
         for element in self.elements:
@@ -494,9 +464,35 @@ class MelRecord(MreRecord):
         MelGroup and MelGroups."""
         return cls.melSet.getDefault(attr)
 
-    def loadData(self,ins,endPos):
+    def loadData(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
-        self.__class__.melSet.loadData(self, ins, endPos)
+        rec_type = self.recType
+        loaders = self.__class__.melSet.loaders
+        # Load each subrecord
+        ins_at_end = ins.atEnd
+        load_sub_header = partial(unpackSubHeader, ins)
+        while not ins_at_end(endPos, rec_type):
+            sub_type, sub_size = load_sub_header(rec_type)
+            try:
+                loaders[sub_type].load_mel(self, ins, sub_type, sub_size,
+                                           rec_type, sub_type) # *debug_strs
+            except KeyError:
+                # Wrap this error to make it more understandable
+                self.handle_load_error(exception.ModError(ins.inName,
+                    u'Unexpected subrecord: %s.%s' % (rec_type, sub_type)),
+                    ins, sub_type, sub_size)
+            except Exception as error:
+                self.handle_load_error(error, ins, sub_type, sub_size)
+
+    def handle_load_error(self, error, ins, sub_type, sub_size):
+        eid = getattr(self, u'eid', u'<<NO EID>>')
+        bolt.deprint(u'Error loading %r record and/or subrecord: %08X' %
+                     (self.recType, self.fid))
+        bolt.deprint(u'  eid = %r' % eid)
+        bolt.deprint(u'  subrecord = %r' % sub_type)
+        bolt.deprint(u'  subrecord size = %d' % sub_size)
+        bolt.deprint(u'  file pos = %d' % ins.tell(), traceback=True)
+        raise exception.ModError(ins.inName, repr(error))
 
     def dumpData(self,out):
         """Dumps state into out. Called by getSize()."""
