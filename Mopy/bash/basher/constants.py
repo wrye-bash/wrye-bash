@@ -201,6 +201,10 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     },
     #--BSA Redirection
     'bash.bsaRedirection':True,
+    # Wrye Bash: Localization
+    u'bash.l10n.editor.param_fmt': u'%s',
+    u'bash.l10n.editor.path': u'',
+    u'bash.l10n.editor.rename_to_po': False,
     #--Wrye Bash: Load Lists
     'bash.loadLists.data': {}, ##: to be removed
     # Wrye Bash: Load Order

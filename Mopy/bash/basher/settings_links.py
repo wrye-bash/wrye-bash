@@ -23,15 +23,12 @@
 # =============================================================================
 
 from __future__ import print_function
-import sys
 
 from .settings_dialog import SettingsDialog
 from .. import bush, balt, bass, bolt, env
 from ..balt import ItemLink, AppendableLink, RadioLink, CheckLink, MenuLink, \
-    EnabledLink, BoolLink, Link
+    BoolLink, Link
 from ..bolt import deprint
-from ..gui import BusyCursor
-from ..localize import dump_translator
 # TODO(ut): settings links do not seem to use Link.data attribute - it's None..
 
 __all__ = [u'GlobalSettingsMenu']
@@ -233,28 +230,6 @@ class Settings_Deprint(CheckLink):
         deprint(u'Debug Printing: Off')
         bolt.deprintOn = not bolt.deprintOn
         deprint(u'Debug Printing: On')
-
-class Settings_DumpTranslator(AppendableLink, ItemLink):
-    """Dumps new translation key file using existing key, value pairs."""
-    _text = _(u'Dump Translator')
-    _help = _(u"Generate a new version of the translator file for your locale.")
-
-    def _append(self, window):
-        """Can't dump the strings if the files don't exist."""
-        return not hasattr(sys,'frozen')
-
-    def Execute(self):
-        message = _(u'Generate Bash program translator file?') + u'\n\n' + _(
-            u'This function is for translating Bash itself (NOT mods) into '
-            u'non-English languages.  For more info, '
-            u'see Internationalization section of Bash readme.')
-        if not self._askContinue(message, 'bash.dump_translator.continue',
-                                _(u'Dump Translator')): return
-        outPath = bass.dirs['l10n']
-        with BusyCursor():
-            outFile = dump_translator(outPath.s, bass.active_locale)
-        self._showOk(_(u'Translation keys written to %s') % outFile,
-                     self._text + u': ' + outPath.stail)
 
 #------------------------------------------------------------------------------
 class Settings_ShowGlobalMenu(BoolLink):

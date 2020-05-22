@@ -3937,8 +3937,8 @@ class BashFrame(WindowFrame):
             title = bush.game.altName + u' %s%s'
         else:
             title = u'Wrye Bash %s%s '+_(u'for')+u' '+bush.game.displayName
-        title %= (bass.AppVersion, (u' ' + _(u'(Standalone)')) if settings[
-                      'bash.standalone'] else u'')
+        title %= (bass.AppVersion, (u' ' + _(u'(Standalone)'))
+                                    if bass.is_standalone else u'')
         if CBashApi.Enabled:
             title += u', CBash %s: ' % (CBashApi.VersionText,)
         else:
@@ -4337,8 +4337,6 @@ def InitSettings(): # this must run first !
     #--Wrye Balt
     settings['balt.WryeLog.temp'] = bass.dirs['saveBase'].join(u'WryeLogTemp.html')
     settings['balt.WryeLog.cssDir'] = bass.dirs['mopy'].join(u'Docs')
-    #--StandAlone version?
-    settings['bash.standalone'] = hasattr(sys,'frozen')
     initPatchers()
 
 def InitImages():

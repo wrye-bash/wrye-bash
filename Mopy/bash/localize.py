@@ -39,8 +39,7 @@ import time
 import traceback
 
 # Minimal local imports - needs to be imported statically in bash
-from . import bass
-from . import bolt
+from . import bass, bolt
 
 #------------------------------------------------------------------------------
 # Locale Detection & Setup
@@ -104,7 +103,7 @@ def setup_locale(cli_lang, _wx):
                 # standalone build
                 shutil.copy(txt, po)
                 args = [u'm', u'-o', mo, po]
-                if hasattr(sys, 'frozen'):
+                if bass.is_standalone:
                     # Delayed import, since it's only present on standalone
                     import msgfmt
                     old_argv = sys.argv[:]
@@ -175,7 +174,7 @@ def dump_translator(out_path, lang):
     gt_args = [u'p', u'-a', u'-o', new_txt]
     gt_args.extend(_find_all_bash_modules())
     # Need to do this differently on standalone
-    if hasattr(sys, 'frozen'):
+    if bass.is_standalone:
         # Delayed import, since it's only present on standalone
         import pygettext
         old_argv = sys.argv[:]

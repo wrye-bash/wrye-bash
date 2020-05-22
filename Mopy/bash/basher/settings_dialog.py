@@ -21,17 +21,21 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import os
+import subprocess
 from collections import defaultdict
 
 from . import BashStatusBar, tabInfo
 from .constants import colorInfo, settingDefaults
 from .. import balt, barb, bass, bush, env, exception
 from ..balt import colors, Link, Resources
-from ..bolt import deprint
+from ..bolt import deprint, GPath
 from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
     ColorPicker, DialogWindow, DropDown, HLayout, HorizontalLine, \
     LayoutOptions, OkButton, PanelWin, Stretch, TextArea, TreePanel, VLayout, \
-    WrappingTextMixin, ListBox, Label, Spacer, HBoxedLayout, CheckBox
+    WrappingTextMixin, ListBox, Label, Spacer, HBoxedLayout, CheckBox, \
+    TextField, OpenButton
+from ..localize import dump_translator
 
 class SettingsDialog(DialogWindow):
     """A dialog for configuring settings, split into multiple pages."""
@@ -346,6 +350,70 @@ class ColorsPanel(_ASettingsPanel):
         self.comboBox.unsubscribe_handler_()
 
 # Languages -------------------------------------------------------------------
+class ConfigureEditorDialog(DialogWindow):
+    """A dialog for configuring a localization file editor."""
+    _min_size = _def_size = (400, 240)
+
+    def __init__(self, parent):
+        super(ConfigureEditorDialog, self).__init__(parent,
+            title=_(u'Configure Editor'), icon_bundle=Resources.bashBlue,
+            sizes_dict=balt.sizes)
+        self._editor_location = TextField(self,
+            init_text=bass.settings[u'bash.l10n.editor.path'])
+        browse_editor_btn = OpenButton(self, _(u'Browse...'),
+            btn_tooltip=_(u'Launch a file dialog to interactively choose the '
+                          u'editor binary.'))
+        browse_editor_btn.on_clicked.subscribe(self._handle_browse)
+        self._params_field = TextField(self,
+            init_text=bass.settings[u'bash.l10n.editor.param_fmt'])
+        self._po_rename_box = CheckBox(self, _(u'Rename to .po'),
+            checked=bass.settings[u'bash.l10n.editor.rename_to_po'],
+            chkbx_tooltip=_(u"Some gettext editors will not open Wrye Bash's "
+                            u'.txt localization files. With this ticked, the '
+                            u'file will be renamed to .po before it is opened '
+                            u'by the editor, and renamed back to .txt when '
+                            u'it is closed.'))
+        ok_btn = OkButton(self)
+        ok_btn.on_clicked.subscribe(self._handle_ok)
+        VLayout(border=6, spacing=4, item_expand=True, items=[
+            HBoxedLayout(self, title=_(u'Editor'), spacing=4, items=[
+                (self._editor_location, LayoutOptions(expand=True, weight=1)),
+                browse_editor_btn,
+            ]),
+            Spacer(12),
+            HBoxedLayout(self, title=_(u'Parameters'), item_expand=True,
+                item_weight=1, items=[
+                VLayout(spacing=4, items=[
+                    (self._params_field, LayoutOptions(expand=True, weight=1)),
+                    Label(self, _(u"Note: '%s' will be replaced by the path "
+                                  u'to the localization file.')),
+                    Spacer(4), self._po_rename_box,
+                ]),
+            ]),
+            Stretch(), HLayout(spacing=5, items=[
+                Stretch(), ok_btn, CancelButton(self),
+            ]),
+        ]).apply_to(self)
+
+    def _handle_browse(self):
+        """Opens a file dialog to choose the editor."""
+        # Don't use mustExist, we want to show an error message for that below
+        chosen_editor = balt.askOpen(self, title=_(u'Choose Editor'),
+            defaultDir=os.environ.get(u'ProgramFiles', u''), wildcard=u'*.exe',
+            mustExist=True)
+        if chosen_editor:
+            self._editor_location.text_content = chosen_editor.s
+
+    def _handle_ok(self):
+        """Stores all changes that have been made."""
+        bass.settings[u'bash.l10n.editor.path'] = \
+            self._editor_location.text_content
+        bass.settings[u'bash.l10n.editor.param_fmt'] = \
+            self._params_field.text_content
+        bass.settings[u'bash.l10n.editor.rename_to_po'] = \
+            self._po_rename_box.is_checked
+
+##: Quite a bit of duplicate code with the Backups panel here (esp. rename)
 class LanguagePanel(_ASettingsPanel):
     """Change the language that the GUI is displayed in."""
     _internal_to_localized = defaultdict(lambda l: l, {
@@ -384,9 +452,133 @@ class LanguagePanel(_ASettingsPanel):
         self._lang_dropdown.tooltip = _(u'Changes the language that Wrye Bash '
                                         u'will be displayed in.')
         self._lang_dropdown.on_combo_select.subscribe(self._handle_lang_select)
-        VLayout(border=6, spacing=4, items=[
-            self._panel_text, self._lang_dropdown,
+        self._l10n_list = ListBox(self, isSort=True, isHScroll=True,
+            onSelect=self._handle_select_l10n)
+        configure_editor_btn = Button(self, _(u'Configure Editor...'),
+            btn_tooltip=_(u'Choose the editor to use for editing '
+                          u'localizations.'))
+        configure_editor_btn.on_clicked.subscribe(self._handle_editor_cfg_btn)
+        is_standalone_warning = Label(self,
+            _(u'Note: You are using the standalone version and will not able '
+              u'to dump localizations.'))
+        is_standalone_warning.set_foreground_color(colors.RED)
+        is_standalone_warning.visible = bass.is_standalone
+        dump_localization_btn = Button(self, _(u'Dump Localization...'),
+            btn_tooltip=_(u'Generates an up-to-date version of the '
+                          u'localization file for the currently active '
+                          u'language (%s).') % active_lang.split(u' ')[0])
+        dump_localization_btn.enabled = not bass.is_standalone
+        dump_localization_btn.on_clicked.subscribe(self._dump_localization)
+        self._edit_l10n_btn = OpenButton(self, _(u'Edit...'),
+            btn_tooltip=_(u'Opens the selected localization in an editor. You '
+                          u'can configure which editor to use via the '
+                          u"'Configure Editor...' button."))
+        self._edit_l10n_btn.on_clicked.subscribe(self._edit_l10n)
+        self._rename_l10n_btn = Button(self, _(u'Rename...'),
+            btn_tooltip=_(u'Rename the selected localization.'))
+        self._rename_l10n_btn.on_clicked.subscribe(self._rename_l10n)
+        # Populate the list and disable the context buttons by default
+        self._populate_l10n_list()
+        self._set_context_buttons(btns_enabled=False)
+        VLayout(border=6, item_expand=True, spacing=4, items=[
+            self._panel_text,
+            HBoxedLayout(self, title=_(u'Change Language'),
+                items=[self._lang_dropdown]),
+            (HBoxedLayout(self, title=_(u'Manage Localizations'),
+                item_expand=True, item_weight=1, items=[
+                    VLayout(spacing=4, item_expand=True, items=[
+                        is_standalone_warning,
+                        (HLayout(spacing=4, item_expand=True, items=[
+                            (self._l10n_list, LayoutOptions(weight=1)),
+                            VLayout(spacing=4, item_expand=True, items=[
+                                configure_editor_btn, dump_localization_btn,
+                                HorizontalLine(self), self._edit_l10n_btn,
+                                self._rename_l10n_btn,
+                            ]),
+                        ]), LayoutOptions(weight=1)),
+                    ]),
+                ]), LayoutOptions(weight=1)),
         ]).apply_to(self)
+
+    @property
+    def _chosen_l10n(self):
+        """Returns the localization file that the user has selected. Note that
+        this will raise an error if no hidden icon has been selected, so it is
+        only safe to call if that has already been checked."""
+        return self._l10n_list.lb_get_selected_strings()[0]
+
+    def _dump_localization(self):
+        """Dumps out an up-to-date version of the current l10n file."""
+        message = _(u'Generate Bash program translator file?') + u'\n\n' + _(
+            u'This function is for translating Bash itself (NOT mods) into '
+            u'non-English languages. For more info, '
+            u'see the Internationalization section of the Advanced Readme.')
+        if not balt.askContinue(self, message, 'bash.dump_translator.continue',
+                _(u'Dump Localization')): return
+        outPath = bass.dirs[u'l10n']
+        with BusyCursor():
+            outFile = dump_translator(outPath.s, bass.active_locale)
+        balt.showOk(self, _(u'Translation keys written to %s') % outFile,
+                     _(u'Dump Localization: %s') % outPath.stail)
+        # Make the new localization show up in the list
+        self._populate_l10n_list()
+        # wx unselects here, so disable the context buttons
+        self._set_context_buttons(btns_enabled=False)
+
+    def _edit_l10n(self):
+        """Opens the selected localization file in an editor."""
+        chosen_editor = GPath(bass.settings[u'bash.l10n.editor.path'])
+        editor_arg_fmt = bass.settings[u'bash.l10n.editor.param_fmt']
+        rename_po = bass.settings[u'bash.l10n.editor.rename_to_po']
+        # First, verify that the chosen editor is valid
+        if not chosen_editor:
+            balt.showError(self, _(u'No localization editor has been chosen. '
+                                   u"Please click on 'Configure Editor' to "
+                                   u'set one up.'), title=_(u'Invalid Editor'))
+            return
+        elif not chosen_editor.isfile():
+            balt.showError(self, _(u'The chosen editor (%s) does not exist or '
+                                   u'is not a file.') % chosen_editor,
+                title=_(u'Invalid Editor'))
+            return
+        # Now we can move on to actually opening the editor
+        selected_l10n = bass.dirs[u'l10n'].join(self._chosen_l10n)
+        l10n_po_path = selected_l10n.root + u'.po'
+        # This is what we'll actually be opening, changed below if rename_po
+        final_l10n_path = selected_l10n
+        if rename_po:
+            # If we have to rename to .po, do that now
+            selected_l10n.moveTo(l10n_po_path)
+            final_l10n_path = l10n_po_path
+        # Construct the final command and pass it to subprocess
+        try:
+            subprocess.Popen([chosen_editor.s] + [
+                (a % final_l10n_path if u'%s' in a else a)
+                for a in editor_arg_fmt.split(u' ')], close_fds=True)
+            # Tell the user that we've launched the editor and wait until they
+            # confirm that they're done using it
+            balt.showOk(self, _(u'Your localization editor has been launched '
+                                u"to edit '%s'. Once you are done with "
+                                u"editing, please close it and click 'OK'.")
+                              % selected_l10n, title=_(u'Editor Launched'))
+        finally:
+            if rename_po:
+                # Always undo the .po rename if we did that
+                l10n_po_path.moveTo(selected_l10n)
+
+    @staticmethod
+    def _gather_l10n():
+        """Returns a list of all localization files in the l10n directory."""
+        all_l10n_files = []
+        for f in bass.dirs[u'l10n'].list():
+            if f.cext == u'.txt':
+                all_l10n_files.append(f.tail)
+        return all_l10n_files
+
+    def _handle_editor_cfg_btn(self):
+        """Internal callback, called when the 'Configure Editor...' button has
+        been clicked. Shows a dialog for configuring the editor."""
+        ConfigureEditorDialog.display_dialog(self)
 
     def _handle_lang_select(self, selected_lang):
         """Internal callback, called when a new language has been selected.
@@ -394,10 +586,20 @@ class LanguagePanel(_ASettingsPanel):
         self._mark_changed(self, not self._is_active_lang(
             self._localized_to_internal[selected_lang]))
 
+    def _handle_select_l10n(self, _lb_dex, _item_text):
+        """Internal callback, enables the context buttons once a localization
+        has been selected."""
+        self._set_context_buttons(btns_enabled=True)
+
     @staticmethod
     def _is_active_lang(internal_name):
         """Returns True if the specified language is currently active."""
         return bass.active_locale.lower() in internal_name.lower()
+
+    @property
+    def _l10n_dir(self):
+        """Returns the directory in which localizations are stored."""
+        return bass.dirs[u'l10n']
 
     def on_apply(self):
         self._mark_changed(self, False)
@@ -409,6 +611,39 @@ class LanguagePanel(_ASettingsPanel):
             # new language to some 'early boot' info file
             self._request_restart(_(u'Language: %s') % selected_lang,
                 [u'--Language', internal_name])
+
+    def _populate_l10n_list(self):
+        """Clears and repopulates the localization list."""
+        self._l10n_list.lb_set_items([l.s for l in self._gather_l10n()])
+
+    def _rename_l10n(self):
+        """Renames the currently selected localization file."""
+        new_l10n_name = balt.askText(self,
+            _(u'Please enter the new name for this localization file.'),
+            title=_(u'Rename Localization'), default=self._chosen_l10n)
+        if not new_l10n_name or new_l10n_name == self._chosen_l10n:
+            return # user canceled or entered identical name
+        new_l10n = self._l10n_dir.join(new_l10n_name)
+        old_l10n = self._l10n_dir.join(self._chosen_l10n)
+        if new_l10n.isfile():
+            if not balt.askYes(self, _(u'The chosen filename (%s) already '
+                                       u'exists. Do you want to replace the '
+                                       u'file?') % new_l10n_name,
+                    title=_(u'Name Conflict')):
+                return # don't want to replace it, so cancel
+        try:
+            env.shellMove(old_l10n, new_l10n, parent=self._native_widget)
+        except (exception.CancelError, exception.SkipError):
+            return # user canceled
+        self._populate_l10n_list()
+        # This is equivalent to removing the selected entry and adding a new
+        # one, so we need to disable localization-specific buttons
+        self._set_context_buttons(btns_enabled=False)
+
+    def _set_context_buttons(self, btns_enabled):
+        """Enables or disables all l10n-specific buttons."""
+        for ctx_btn in (self._edit_l10n_btn, self._rename_l10n_btn):
+            ctx_btn.enabled = btns_enabled
 
 # Status Bar ------------------------------------------------------------------
 class StatusBarPanel(_ASettingsPanel):
@@ -585,6 +820,7 @@ class StatusBarPanel(_ASettingsPanel):
                 return link_candidate
         return None
 
+    ##: This whole API should probably move into _ASettingsPanel
     def _mark_setting_changed(self, setting_id, is_changed):
         """Marks the setting with the specified ID as changed or unchanged."""
         self._setting_states[setting_id] = is_changed
@@ -863,7 +1099,7 @@ _page_descriptions = {
     _(u'Confirmations'): _(u"Enable or disable popups with a 'Don't show this "
                            u"in the future' option."),
     _(u'Language'):      _(u'Change the language that Wrye Bash is displayed '
-                           u'in.'),
+                           u'in and manage localizations.'),
     _(u'Status Bar'):    _(u'Change settings related to the status bar at the '
                            u'bottom and manage hidden buttons.'),
 }

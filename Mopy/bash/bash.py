@@ -43,7 +43,7 @@ basher = balt = initialization = None
 # External dependencies that we want to use in this file but have to check for
 # first (in _import_deps)
 _wx = _lz4 = _yaml = None
-is_standalone = hasattr(sys, 'frozen')
+bass.is_standalone = hasattr(sys, 'frozen')
 
 def _early_setup(debug):
     """Executes (very) early setup by changing working directory and debug
@@ -52,7 +52,7 @@ def _early_setup(debug):
     :param debug: True if debug mode is enabled."""
     # ensure we are in the correct directory so relative paths will work
     # properly
-    if is_standalone:
+    if bass.is_standalone:
         pathToProg = os.path.dirname(
             unicode(sys.executable, bolt.Path.sys_fs_enc))
     else:
@@ -62,7 +62,7 @@ def _early_setup(debug):
         os.chdir(pathToProg)
     bolt.deprintOn = debug
     # useful for understanding context of bug reports
-    if debug or is_standalone:
+    if debug or bass.is_standalone:
         # Standalone stdout is NUL no matter what.   Redirect it to stderr.
         # Also, setup stdout/stderr to the debug log if debug mode /
         # standalone before wxPython is up
@@ -116,7 +116,7 @@ def _import_deps():
         deps_msg += u'- PyYAML\n'
     if deps_msg:
         deps_msg += u'\n'
-        if is_standalone:
+        if bass.is_standalone:
             # Dependencies are always present in standalone, so this probably
             # means an MSVC redist is missing
             deps_msg += _(u'This most likely means you are missing a certain '
@@ -173,7 +173,7 @@ def exit_cleanup():
         try:
             if '--uac' in bass.sys_argv: ##: mostly untested - needs revamp
                 import win32api
-                if is_standalone:
+                if bass.is_standalone:
                     exe = cli[0]
                     cli = cli[1:]
                 else:
@@ -185,7 +185,8 @@ def exit_cleanup():
                 return
             else:
                 import subprocess
-                cmd_line = (is_standalone and cli) or [sys.executable] + cli
+                cmd_line = ((bass.is_standalone and cli)
+                            or [sys.executable] + cli)
                 subprocess.Popen(cmd_line, # a list, no need to escape spaces
                                  close_fds=True)
         except Exception as error:
@@ -199,7 +200,7 @@ def dump_environment():
     fse = sys.getfilesystemencoding()
     msg = [
         u'Using Wrye Bash Version %s%s' % (bass.AppVersion,
-            u' (Standalone)' if is_standalone else u''),
+            u' (Standalone)' if bass.is_standalone else u''),
         u'OS info: %s, running on %s' % (
             platform.platform(), platform.processor()),
         u'Python version: %s' % sys.version,
@@ -344,7 +345,7 @@ def _main(opts, wx_locale):
     basher.InitImages()
     #--Start application
     if opts.debug:
-        if is_standalone:
+        if bass.is_standalone:
             # Special case for py2exe version
             app = basher.BashApp(False)
             # Regain control of stdout/stderr from wxPython - TODO(inf) needed?
@@ -356,7 +357,7 @@ def _main(opts, wx_locale):
         app = basher.BashApp(True)
     # Need to reference the locale object somewhere, so let's do it on the App
     app.locale = wx_locale
-    if not is_standalone and (
+    if not bass.is_standalone and (
         not _rightWxVersion() or not _rightPythonVersion()): return
     if env.isUAC:
         uacRestart = opts.uac
