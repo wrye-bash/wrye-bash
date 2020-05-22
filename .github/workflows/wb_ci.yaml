@@ -32,8 +32,7 @@ jobs:
       run: |
         git config --local user.name "GitHub Actions"
         git config --local user.email "github-action@users.noreply.github.com"
-        python scripts/build.py --no-installer
-        cat scripts/build.log
+        python scripts/build.py --verbose --no-installer
     - name: Test Wrye Bash
       run: |
         python -m pytest

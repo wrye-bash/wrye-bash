@@ -4,7 +4,7 @@ https://bintray.com/loot/snapshots/download_file?file_path=loot_api_python-4.0.2
 lz4~=2.2
 pywin32>=220,<225
 pyyaml~=5.3
-wxPython~=4.0
+wxPython~=4.0.7
 # Runtime, recommended
 scandir~=1.9
 # Compile/Build-time
