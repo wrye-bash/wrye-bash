@@ -25,7 +25,6 @@
 from __future__ import print_function
 import sys
 
-from . import BashStatusBar
 from .settings_dialog import SettingsDialog
 from .. import bush, balt, bass, bolt, env
 from ..balt import ItemLink, AppendableLink, RadioLink, CheckLink, MenuLink, \
@@ -134,37 +133,6 @@ class Settings_ImportDllInfo(AppendableLink, ItemLink):
             self._showError(_(u'Wrye Bash could not load %s, because there was'
                               u' an error in the format of the file.')
                             % textPath.s)
-
-#------------------------------------------------------------------------------
-class Settings_IconSize(RadioLink):
-    def __init__(self, sb_icon_size):
-        super(Settings_IconSize, self).__init__()
-        self.sb_icon_size = sb_icon_size
-        self._text = unicode(sb_icon_size)
-        self._help = _(u"Sets the status bar icons to %(sb_icon_size)s pixels") % (
-            {'sb_icon_size': unicode(sb_icon_size)})
-
-    def _check(self):
-        return self.sb_icon_size == bass.settings['bash.statusbar.iconSize']
-
-    def Execute(self):
-        bass.settings['bash.statusbar.iconSize'] = self.sb_icon_size
-        Link.Frame.statusBar.UpdateIconSizes()
-
-#------------------------------------------------------------------------------
-class Settings_StatusBar_ShowVersions(CheckLink):
-    """Show/Hide version numbers for buttons on the statusbar."""
-    _text = _(u'Show App Version')
-    _help = _(u"Show/hide version numbers for buttons on the status bar.")
-
-    def _check(self): return bass.settings['bash.statusbar.showversion']
-
-    def Execute(self):
-        bass.settings['bash.statusbar.showversion'] ^= True
-        for button in BashStatusBar.buttons:
-            button.set_sb_button_tooltip()
-        if BashStatusBar.obseButton.button_state:
-            BashStatusBar.obseButton.UpdateToolTips()
 
 #------------------------------------------------------------------------------
 class Settings_Languages(TransLink):
@@ -292,51 +260,6 @@ class _Settings_Game(RadioLink):
                                 'bash.switch_games_warning.shown'):
             return
         Link.Frame.Restart(['--oblivionPath', bush.game_path(self._text).s])
-
-#------------------------------------------------------------------------------
-class Settings_UnHideButtons(TransLink):
-    """Menu to unhide a StatusBar button."""
-
-    def _decide(self, window, selection):
-        hide = bass.settings['bash.statusbar.hide']
-        hidden = []
-        for link in BashStatusBar.buttons:
-            if link.uid in hide:
-                hidden.append(link)
-        if hidden:
-            subMenu = MenuLink(_(u'Unhide Buttons'))
-            for link in hidden:
-                subMenu.links.append(Settings_UnHideButton(link))
-            return subMenu
-        else:
-            class _NoButtons(EnabledLink):
-                _text = _(u'Unhide Buttons')
-                _help = _(u'No hidden buttons available to unhide.')
-                def _enable(self): return False
-            return _NoButtons()
-
-#------------------------------------------------------------------------------
-class Settings_UnHideButton(ItemLink):
-    """Unhide a specific StatusBar button."""
-    def __init__(self,link):
-        super(Settings_UnHideButton, self).__init__()
-        self.link = link
-        button = self.link.gButton
-        # Get a title for the hidden button
-        if button:
-            # If the wx.Button object exists (it was hidden this session),
-            # Use the tooltip from it
-            tip_ = button.tooltip
-        else:
-            # If the link is an _App_Button, it will have a 'sb_button_tip' attribute
-            tip_ = getattr(self.link,'sb_button_tip',None) # YAK YAK YAK
-        if tip_ is None:
-            # No good, use its uid as a last resort
-            tip_ = self.link.uid
-        self._text = tip_
-        self._help = _(u"Unhide the '%s' status bar button.") % tip_
-
-    def Execute(self): Link.Frame.statusBar.UnhideButton(self.link)
 
 #------------------------------------------------------------------------------
 class Settings_UseAltName(BoolLink):

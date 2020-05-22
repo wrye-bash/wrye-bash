@@ -597,6 +597,9 @@ class _StatefulButton(StatusBar_Button):
         return super(_StatefulButton, self).GetBitmapButton(window, image,
                                                             onRClick)
 
+    def IsPresent(self):
+        return self._present
+
     def Execute(self):
         """Invert state."""
         self.SetState(-1)

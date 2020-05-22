@@ -3730,7 +3730,7 @@ class BashStatusBar(DnDStatusBar):
     obseButton = None
     laaButton = None
 
-    def UpdateIconSizes(self):
+    def UpdateIconSizes(self, skip_refresh=False):
         self.buttons = [] # will be populated with _displayed_ gButtons - g ?
         order = settings['bash.statusbar.order']
         orderChanged = False
@@ -3771,9 +3771,10 @@ class BashStatusBar(DnDStatusBar):
         # Update settings
         if orderChanged: settings.setChanged('bash.statusbar.order')
         if hideChanged: settings.setChanged('bash.statusbar.hide')
-        self._do_refresh(refresh_icon_size=True)
+        if not skip_refresh:
+            self.refresh_status_bar(refresh_icon_size=True)
 
-    def HideButton(self,button):
+    def HideButton(self, button, skip_refresh=False):
         if button in self.buttons:
             # Find the BashStatusBar_Button instance that made it
             link = self.GetLink(button=button)
@@ -3782,9 +3783,10 @@ class BashStatusBar(DnDStatusBar):
                 self.buttons.remove(button)
                 settings['bash.statusbar.hide'].add(link.uid)
                 settings.setChanged('bash.statusbar.hide')
-                self._do_refresh()
+                if not skip_refresh:
+                    self.refresh_status_bar()
 
-    def UnhideButton(self,link):
+    def UnhideButton(self, link, skip_refresh=False):
         uid = link.uid
         settings['bash.statusbar.hide'].discard(uid)
         settings.setChanged('bash.statusbar.hide')
@@ -3807,7 +3809,8 @@ class BashStatusBar(DnDStatusBar):
                     insertBefore = i
                     break
             self.buttons.insert(insertBefore,button)
-        self._do_refresh()
+        if not skip_refresh:
+            self.refresh_status_bar()
 
     def GetLink(self,uid=None,index=None,button=None):
         """Get the Link object with a specific uid,
@@ -3824,7 +3827,7 @@ class BashStatusBar(DnDStatusBar):
                     return link
         return None
 
-    def _do_refresh(self, refresh_icon_size=False):
+    def refresh_status_bar(self, refresh_icon_size=False):
         """Updates status widths and the icon sizes, if refresh_icon_size is
         True. Also propagates resizing events.
 

@@ -43,14 +43,16 @@ class DropDown(_AComponent):
      selected. The parameter is the new value of selection."""
     _wx_widget_type = _wx.ComboBox
 
-    def __init__(self, parent, value, choices):
+    def __init__(self, parent, value, choices, auto_tooltip=True):
         """Creates a new DropDown with the specified properties.
 
         :param parent: The object that this dropdown belongs to. May be a wx
                        object or a component.
         :param value: The selected choice, also the text shown on this
                       dropdown.
-        :param choices: The choices to show in the dropdown."""
+        :param choices: The choices to show in the dropdown.
+        :param auto_tooltip: If True, show a tooltip corresponding to the
+            currently selected value."""
         # We behave like wx.Choice, but we need some ComboBox methods - hence
         # we use ComboBox and CB_READONLY
         super(DropDown, self).__init__(parent, value=value, choices=choices,
@@ -59,10 +61,11 @@ class DropDown(_AComponent):
         self.on_combo_select = self._evt_handler(_wx.EVT_COMBOBOX,
             lambda event: [event.GetString()])
         # Internal use only - used to set the tooltip
-        self._on_size_changed = self._evt_handler(_wx.EVT_SIZE)
-        self._on_text_changed = self._evt_handler(_wx.EVT_TEXT)
-        self._on_size_changed.subscribe(self._set_tooltip)
-        self._on_text_changed.subscribe(self._set_tooltip)
+        if auto_tooltip:
+            self._on_size_changed = self._evt_handler(_wx.EVT_SIZE)
+            self._on_text_changed = self._evt_handler(_wx.EVT_TEXT)
+            self._on_size_changed.subscribe(self._set_tooltip)
+            self._on_text_changed.subscribe(self._set_tooltip)
 
     def unsubscribe_handler_(self):
         # PY3: TODO(inf) needed for wx3, check if needed in Phoenix
@@ -190,6 +193,13 @@ class ListBox(WithMouseEvents):
 
     def lb_get_items_count(self):
         return self._native_widget.GetCount()
+
+    def lb_clear_selection(self):
+        self.lb_select_index(_wx.NOT_FOUND)
+
+    def lb_get_selected_strings(self):
+        return [self.lb_get_str_item_at_index(i)
+                for i in self.lb_get_selections()]
 
 class CheckListBox(ListBox, WithCharEvents):
     """A list of checkboxes, of which one or more can be selected.

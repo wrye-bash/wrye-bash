@@ -21,7 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from . import tabInfo
+from . import BashStatusBar, tabInfo
 from .constants import colorInfo, settingDefaults
 from .. import balt, barb, bass, bush, env, exception
 from ..balt import colors, Link, Resources
@@ -29,12 +29,12 @@ from ..bolt import deprint
 from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
     ColorPicker, DialogWindow, DropDown, HLayout, HorizontalLine, \
     LayoutOptions, OkButton, PanelWin, Stretch, TextArea, TreePanel, VLayout, \
-    WrappingTextMixin, ListBox
+    WrappingTextMixin, ListBox, Label, Spacer, HBoxedLayout, CheckBox
 
 class SettingsDialog(DialogWindow):
     """A dialog for configuring settings, split into multiple pages."""
     title = _(u'Settings')
-    _def_size = (600, 400)
+    _def_size = (700, 450)
 
     def __init__(self):
         super(SettingsDialog, self).__init__(Link.Frame,
@@ -311,6 +311,260 @@ class ColorsPanel(_ASettingsPanel):
     def on_closing(self):
         self.comboBox.unsubscribe_handler_()
 
+# Status Bar ------------------------------------------------------------------
+class StatusBarPanel(_ASettingsPanel):
+    """Settings related to the status bar."""
+    def __init__(self, parent, page_desc):
+        super(StatusBarPanel, self).__init__(parent, page_desc)
+        # Used to keep track of each setting's 'changed' state
+        self._setting_states = {
+            u'app_ver': False,
+            u'icon_size': False,
+            u'hidden_icons': False,
+        }
+        # Used to retrieve the Link object for hiding/unhiding a button
+        self._tip_to_links = {}
+        # GUI/Layout definition
+        self._show_app_ver_chk = CheckBox(self, label=_(u'Show App Version'),
+            chkbx_tooltip=_(u'Show/hide version numbers for buttons on the '
+                            u'status bar.'),
+            checked=bass.settings[u'bash.statusbar.showversion'])
+        self._show_app_ver_chk.on_checked.subscribe(self._handle_app_ver)
+        self._icon_size_dropdown = DropDown(self,
+            value=unicode(bass.settings[u'bash.statusbar.iconSize']),
+            choices=(u'16', u'24', u'32'), auto_tooltip=False)
+        self._icon_size_dropdown.tooltip = _(u'Sets the status bar icons to '
+                                             u'the selected size in pixels.')
+        self._icon_size_dropdown.on_combo_select.subscribe(
+            self._handle_icon_size)
+        # FIXME(inf) Disabled for now because it doesn't work correctly.
+        #  Supposedly crashes too, but for me it just glitches the status bar
+        self._icon_size_dropdown.enabled = False
+        ##: Switch to a wx.ListCtrl here (UIList? maybe overkill) and actually
+        # show the icons in the list
+        self._visible_icons = ListBox(self, isSort=True, isHScroll=True,
+            onSelect=lambda _lb_dex, _item_text: self._handle_list_selected(
+                self._visible_icons))
+        self._hidden_icons = ListBox(self, isSort=True, isHScroll=True,
+            onSelect=lambda _lb_dex, _item_text: self._handle_list_selected(
+                self._hidden_icons))
+        self._move_right_btn = Button(self, u'>>', exact_fit=True,
+            btn_tooltip=_(u'Hide the selected button.'))
+        self._move_right_btn.on_clicked.subscribe(
+            lambda: self._handle_move_button(self._move_right_btn))
+        self._move_left_btn = Button(self, u'<<', exact_fit=True,
+            btn_tooltip=_(u'Make the selected button visible again.'))
+        self._move_left_btn.on_clicked.subscribe(
+            lambda: self._handle_move_button(self._move_left_btn))
+        self._populate_icon_lists()
+        VLayout(border=6, spacing=6, item_expand=True, items=[
+            self._panel_text, Spacer(3),
+            HBoxedLayout(self, item_border=3, title=_(u'General'), items=[
+                VLayout(spacing=6, items=[
+                    self._show_app_ver_chk,
+                    HLayout(spacing=6, items=[
+                        Label(self, _(u'Icon Size:')),
+                        self._icon_size_dropdown,
+                        Label(self, _(u'(currently disabled due to unsolved '
+                                      u'glitches and crashes)'))
+                    ]),
+                ]),
+            ]),
+            (HBoxedLayout(self, item_expand=True,
+                title=_(u'Manage Hidden Icons'), items=[
+                HLayout(item_expand=True, spacing=4, items=[
+                    (HBoxedLayout(self, item_border=3, item_expand=True,
+                        item_weight=1, title=_(u'Visible Icons'),
+                        items=[self._visible_icons]), LayoutOptions(weight=1)),
+                    VLayout(spacing=4, items=[
+                        Stretch(), self._move_right_btn, self._move_left_btn,
+                        Stretch()
+                    ]),
+                    (HBoxedLayout(self, item_border=3, item_expand=True,
+                        item_weight=1, title=_(u'Hidden Icons'),
+                        items=[self._hidden_icons]), LayoutOptions(weight=1)),
+                ]),
+            ]), LayoutOptions(weight=1)),
+        ]).apply_to(self)
+
+    @property
+    def _chosen_hidden(self):
+        """Returns the name of the hidden icon that is currently selected by
+        the user. Note that this will raise an error if no hidden icon has been
+        selected, so it is only safe to call if that has already been
+        checked."""
+        return self._hidden_icons.lb_get_selected_strings()[0]
+
+    @property
+    def _chosen_visible(self):
+        """Returns the name of the visible icon that is currently selected by
+        the user. Note that this will raise an error if no visible icon has been
+        selected, so it is only safe to call if that has already been
+        checked."""
+        return self._visible_icons.lb_get_selected_strings()[0]
+
+    def _disable_move_buttons(self):
+        """Disables both move buttons."""
+        for move_btn in (self._move_right_btn, self._move_left_btn):
+            move_btn.enabled = False
+
+    def _get_chosen_hidden_icons(self):
+        """Returns a set of UIDs that have been chosen for hiding by the
+        user."""
+        return {self._tip_to_links[x].uid
+                for x in self._hidden_icons.lb_get_str_items()}
+
+    def _handle_app_ver(self, checked):
+        """Internal callback, called when the version checkbox is changed."""
+        self._mark_setting_changed(u'app_ver',
+            checked != bass.settings[u'bash.statusbar.showversion'])
+
+    def _handle_icon_size(self, new_selection):
+        """Internal callback, called when the icon size dropdown is changed."""
+        self._mark_setting_changed(u'icon_size',
+            int(new_selection) != bass.settings[u'bash.statusbar.iconSize'])
+
+    def _handle_list_selected(self, my_list):
+        """Internal callback, called when an item in one of the two lists is
+        selected. Deselects the other list and enables the right move
+        button."""
+        if my_list == self._visible_icons:
+            other_list = self._hidden_icons
+            my_btn = self._move_right_btn
+            other_btn = self._move_left_btn
+        else:
+            other_list = self._visible_icons
+            my_btn = self._move_left_btn
+            other_btn = self._move_right_btn
+        other_list.lb_clear_selection()
+        my_btn.enabled = True
+        other_btn.enabled = False
+
+    def _handle_move_button(self, my_btn):
+        """Internal callback, called when one of the move buttons is clicked.
+        Performs an actual move from one list to the other."""
+        if my_btn == self._move_right_btn:
+            chosen_icon = self._chosen_visible
+            my_list = self._visible_icons
+            other_list = self._hidden_icons
+        else:
+            chosen_icon = self._chosen_hidden
+            my_list = self._hidden_icons
+            other_list = self._visible_icons
+        # Add the icon to the other list. These ListBoxes are sorted, so no
+        # need to worry about where to insert it
+        other_list.lb_append(chosen_icon)
+        sel_index = my_list.lb_get_selections()[0]
+        icon_count = my_list.lb_get_items_count()
+        # Delete the icon from our list
+        my_list.lb_delete_at_index(sel_index)
+        if icon_count == 1:
+            # If we only had one icon left, don't select anything now. We do
+            # need to disable the move buttons now, since nothing is selected
+            self._disable_move_buttons()
+        elif sel_index == icon_count:
+            # If the last icon was selected, select the one before that now
+            my_list.lb_select_index(sel_index - 1)
+        else:
+            # Otherwise, the index will have shifted down by one, so just
+            # select the icon at the old index
+            my_list.lb_select_index(sel_index)
+        # Finally, mark our setting as changed if the selected hidden icons no
+        # longer match the ones that are currently hidden
+        self._mark_setting_changed(u'hidden_icons',
+            self._get_chosen_hidden_icons() != bass.settings[
+                u'bash.statusbar.hide'])
+
+    def _is_changed(self, setting_id):
+        """Checks if the setting with the specified ID has been changed."""
+        return self._setting_states[setting_id]
+
+    def _link_by_uid(self, link_uid):
+        """Returns the status bar Link with the specified UID."""
+        for link_candidate in self._tip_to_links.itervalues():
+            if link_candidate.uid == link_uid:
+                return link_candidate
+        return None
+
+    def _mark_setting_changed(self, setting_id, is_changed):
+        """Marks the setting with the specified ID as changed or unchanged."""
+        self._setting_states[setting_id] = is_changed
+        self._mark_changed(self, any(self._setting_states.itervalues()))
+
+    def on_apply(self):
+        # Note we skip_refresh all status bar changes in order to do them all
+        # at once at the end
+        # Show App Version
+        if self._is_changed(u'app_ver'):
+            bass.settings[u'bash.statusbar.showversion'] ^= True
+            for button in BashStatusBar.buttons:
+                button.set_sb_button_tooltip()
+            if BashStatusBar.obseButton.button_state:
+                BashStatusBar.obseButton.UpdateToolTips()
+            # Will change tooltips, so need to repopulate these
+            self._populate_icon_lists()
+        # Icon Size
+        icon_size_changed = self._is_changed(u'icon_size')
+        if icon_size_changed:
+            bass.settings[u'bash.statusbar.iconSize'] = \
+                int(self._icon_size_dropdown.get_value())
+            Link.Frame.statusBar.UpdateIconSizes(skip_refresh=True)
+        # Hidden Icons
+        hidden_icons_changed = self._is_changed(u'hidden_icons')
+        if hidden_icons_changed:
+            # Compare old and new hidden, then hide the newly hidden buttons
+            # and unhide the newly visible ones
+            old_hidden = bass.settings[u'bash.statusbar.hide']
+            new_hidden = self._get_chosen_hidden_icons()
+            hidden_added = new_hidden - old_hidden
+            hidden_removed = old_hidden - new_hidden
+            for to_hide in hidden_added:
+                Link.Frame.statusBar.HideButton(
+                    self._link_by_uid(to_hide).gButton, skip_refresh=True)
+            for to_unhide in hidden_removed:
+                Link.Frame.statusBar.UnhideButton(self._link_by_uid(to_unhide),
+                    skip_refresh=True)
+        # Perform a single update of the status bar if needed
+        if hidden_icons_changed or icon_size_changed:
+            Link.Frame.statusBar.refresh_status_bar(
+                refresh_icon_size=icon_size_changed)
+        for setting_key in self._setting_states:
+            self._setting_states[setting_key] = False
+        self._mark_changed(self, False)
+
+    def _populate_icon_lists(self):
+        """Clears and repopulates the two icon lists."""
+        # Here be dragons, of the tooltip-related kind
+        self._tip_to_links.clear()
+        hide = bass.settings[u'bash.statusbar.hide']
+        hidden = []
+        visible = []
+        for link in BashStatusBar.buttons:
+            if not link.IsPresent() or not link.canHide: continue
+            button = link.gButton
+            # Get a title for the hidden button
+            if button:
+                # If the wx.Button object exists (it was hidden this
+                # session), use the tooltip from it
+                tip_ = button.tooltip
+            else:
+                # If the link is an _App_Button, it will have a
+                # 'sb_button_tip' attribute
+                tip_ = getattr(link, u'sb_button_tip', None) # YAK YAK YAK
+            if tip_ is None:
+                # No good, use its uid as a last resort
+                tip_ = link.uid
+            target_link_list = hidden if link.uid in hide else visible
+            target_link_list.append(tip_)
+            self._tip_to_links[tip_] = link
+        self._visible_icons.lb_set_items(visible)
+        self._hidden_icons.lb_set_items(hidden)
+        # If repopulating caused our selections to disappear, disable the move
+        # buttons again
+        if (not self._visible_icons.lb_get_selections()
+                and not self._hidden_icons.lb_get_selections()):
+            self._disable_move_buttons()
+
 # Backups ---------------------------------------------------------------------
 class BackupsPanel(_ASettingsPanel):
     """Create, manage and restore backups."""
@@ -360,8 +614,7 @@ class BackupsPanel(_ASettingsPanel):
         """Returns the name of the backup that is currently selected by the
         user. Note that this will raise an error if no backup has been selected
         yet, so it is only safe to call if that has already been checked."""
-        return self._backup_list.lb_get_str_item_at_index(
-            self._backup_list.lb_get_selections()[0])
+        return self._backup_list.lb_get_selected_strings()[0]
 
     def _delete_backup(self):
         """Deletes the currently selected backup."""
@@ -495,6 +748,7 @@ class BackupsPanel(_ASettingsPanel):
 _settings_pages = {
     _(u'Appearance'): {
         _(u'Colors'): ColorsPanel,
+        _(u'Status Bar'): StatusBarPanel,
     },
     _(u'Backups'): BackupsPanel,
 }
@@ -507,5 +761,7 @@ _page_descriptions = {
                            u'manage it.'),
     _(u'Colors'):        _(u'Change colors of various GUI components.'),
     _(u'Confirmations'): _(u"Enable or disable popups with a 'Don't show this "
-                           u"in the future' option.")
+                           u"in the future' option."),
+    _(u'Status Bar'):    _(u'Change settings related to the status bar at the '
+                           u'bottom and manage hidden buttons.'),
 }

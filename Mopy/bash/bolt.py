@@ -244,6 +244,8 @@ def sortFiles(files, __split=os.path.split):
 
 CBash = 0
 
+# PY3: Dicts are ordered by default on py3.7, so drop this in favor of just
+# collections.defaultdict
 class OrderedDefaultDict(collections.OrderedDict, collections.defaultdict):
     """A defaultdict that preserves order."""
     def __init__(self, default_factory=None, *args, **kwargs):
