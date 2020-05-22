@@ -27,6 +27,7 @@ import struct
 # Set MelModel in brec, in this case it's identical to the fallout 3 one
 from ..fallout3.records import MelOwnership, MelDestructible, MelBipedFlags, \
     MelEffects, MelConditions, MreHasEffects, MelEmbeddedScript
+from ..fallout3.records import _MelModel # HACK - needed for tests
 from ... import brec
 from ...bolt import Flags
 from ...brec import MelModel # set in Mopy/bash/game/fallout3/records.py

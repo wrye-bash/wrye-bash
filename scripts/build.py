@@ -64,6 +64,7 @@ ROOT_PATH = os.path.abspath(os.path.join(SCRIPTS_PATH, u".."))
 MOPY_PATH = os.path.join(ROOT_PATH, u"Mopy")
 APPS_PATH = os.path.join(MOPY_PATH, u"Apps")
 NSIS_PATH = os.path.join(SCRIPTS_PATH, u"build", u"nsis")
+TESTS_PATH = os.path.join(MOPY_PATH, u'bash', u'tests')
 
 sys.path.insert(0, MOPY_PATH)
 from bash import bass
@@ -497,7 +498,10 @@ def clean_repo():
         if mod_stashed:
             repo.stash_pop(index=[mod_stashed, unt_stashed].count(True) - 1)
     try:
-        yield
+        # Move the tests out during building, otherwise the resources will end
+        # up being included in all three archives
+        with hold_files(TESTS_PATH):
+            yield
     finally:
         if unt_stashed:
             # if we commit during the yield above
