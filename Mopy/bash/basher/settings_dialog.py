@@ -23,12 +23,13 @@
 # =============================================================================
 from . import tabInfo
 from .constants import colorInfo, settingDefaults
-from .. import balt, bass
+from .. import balt, barb, bass, bush, env, exception
 from ..balt import colors, Link, Resources
+from ..bolt import deprint
 from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
     ColorPicker, DialogWindow, DropDown, HLayout, HorizontalLine, \
     LayoutOptions, OkButton, PanelWin, Stretch, TextArea, TreePanel, VLayout, \
-    WrappingTextMixin
+    WrappingTextMixin, ListBox
 
 class SettingsDialog(DialogWindow):
     """A dialog for configuring settings, split into multiple pages."""
@@ -311,7 +312,184 @@ class ColorsPanel(_ASettingsPanel):
         self.comboBox.unsubscribe_handler_()
 
 # Backups ---------------------------------------------------------------------
-class BackupsPanel(_ASettingsPanel): pass
+class BackupsPanel(_ASettingsPanel):
+    """Create, manage and restore backups."""
+    def __init__(self, parent, page_desc):
+        super(BackupsPanel, self).__init__(parent, page_desc)
+        self._backup_list = ListBox(self, isSort=True, isHScroll=True,
+            onSelect=self._handle_backup_selected)
+        save_settings_btn = Button(self, _(u'Save Data'),
+            btn_tooltip=_(u"Save all of Wrye Bash's settings/data now."))
+        save_settings_btn.on_clicked.subscribe(self._save_settings)
+        new_backup_btn = Button(self, _(u'New Backup...'),
+            btn_tooltip=_(u"Backup all of Wrye Bash's settings/data to an "
+                          u'archive file.'))
+        new_backup_btn.on_clicked.subscribe(self._new_backup)
+        self.restore_backup_btn = Button(self, _(u'Restore...'),
+            btn_tooltip=_(u"Restore all of Wrye Bash's settings/data from the "
+                          u'selected backup.'))
+        self.restore_backup_btn.on_clicked.subscribe(self._restore_backup)
+        self.rename_backup_btn = Button(self, _(u'Rename...'),
+            btn_tooltip=_(u'Rename the selected backup archive.'))
+        self.rename_backup_btn.on_clicked.subscribe(self._rename_backup)
+        self.delete_backup_btn = Button(self, _(u'Delete...'),
+            btn_tooltip=_(u'Delete the selected backup archive.'))
+        self.delete_backup_btn.on_clicked.subscribe(self._delete_backup)
+        # These start out disabled, because nothing is selected by default
+        self._set_context_buttons(btns_enabled=False)
+        self._populate_backup_list()
+        VLayout(border=6, spacing=3, item_expand=True, items=[
+            self._panel_text,
+            (HLayout(spacing=4, item_expand=True, items=[
+                (self._backup_list, LayoutOptions(weight=1)),
+                VLayout(item_expand=True, spacing=4, items=[
+                    save_settings_btn, new_backup_btn, HorizontalLine(self),
+                    self.restore_backup_btn, self.rename_backup_btn,
+                    self.delete_backup_btn,
+                ]),
+            ]), LayoutOptions(weight=1)),
+        ]).apply_to(self)
+
+    @property
+    def _backup_dir(self):
+        """Returns the directory into which backups will be saved."""
+        return bass.settings[u'bash.backupPath'] or bass.dirs[u'modsBash']
+
+    @property
+    def _chosen_backup(self):
+        """Returns the name of the backup that is currently selected by the
+        user. Note that this will raise an error if no backup has been selected
+        yet, so it is only safe to call if that has already been checked."""
+        return self._backup_list.lb_get_str_item_at_index(
+            self._backup_list.lb_get_selections()[0])
+
+    def _delete_backup(self):
+        """Deletes the currently selected backup."""
+        settings_file = self._backup_dir.join(self._chosen_backup)
+        try:
+            env.shellDelete(settings_file, parent=self._native_widget,
+                confirm=True, recycle=True)
+        except (exception.CancelError, exception.SkipError): pass
+        finally:
+            self._populate_backup_list()
+            self._set_context_buttons(btns_enabled=False)
+
+    def _handle_backup_selected(self, _lb_dex, _item_text):
+        """Internal callback, enables the backup-specific buttons as soon as a
+        backup has been selected. There is no way to unselect besides removing
+        the selected entry, which is handled in _delete_backup and
+        _populate_backup_list."""
+        self._set_context_buttons(btns_enabled=True)
+
+    @balt.conversation
+    def _new_backup(self):
+        """Saves the current settings and data to create a new backup."""
+        with BusyCursor(): Link.Frame.SaveSettings()
+        settings_file = balt.askSave(self,
+            title=_(u'Backup Bash Settings'), defaultDir=self._backup_dir,
+            wildcard=u'*.7z', defaultFile=barb.BackupSettings.backup_filename(
+                bush.game.fsName))
+        if not settings_file: return
+        with BusyCursor():
+            backup = barb.BackupSettings(settings_file, bush.game.fsName,
+                bush.game.bash_root_prefix, bush.game.mods_dir)
+        try:
+            with BusyCursor(): backup.backup_settings(balt)
+        except exception.StateError:
+            deprint(u'Backup settings failed', traceback=True)
+            backup.warn_message(balt)
+        finally:
+            self._populate_backup_list()
+
+    def _populate_backup_list(self):
+        """Clears and repopulates the backups list."""
+        all_backups = [x.s for x in self._backup_dir.list()
+                       if barb.BackupSettings.is_backup(x)]
+        self._backup_list.lb_set_items(all_backups)
+        if not all_backups:
+            # If there are no more backups left, we need to disable all
+            # backup-specific buttons again
+            self._set_context_buttons(btns_enabled=False)
+
+    def _rename_backup(self):
+        """Renames the currently selected backup."""
+        new_backup_name = balt.askText(self,
+            _(u'Please enter the new name for this backup.'),
+            title=_(u'Rename Backup'), default=self._chosen_backup)
+        if not new_backup_name or new_backup_name == self._chosen_backup:
+            return # user canceled or entered identical name
+        new_backup = self._backup_dir.join(new_backup_name)
+        old_backup = self._backup_dir.join(self._chosen_backup)
+        if new_backup.isfile():
+            if not balt.askYes(self, _(u'The chosen filename (%s) already '
+                                       u'exists. Do you want to replace the '
+                                       u'file?') % new_backup_name,
+                    title=_(u'Name Conflict')):
+                return # don't want to replace it, so cancel
+        try:
+            env.shellMove(old_backup, new_backup, parent=self._native_widget)
+        except (exception.CancelError, exception.SkipError):
+            return # user canceled
+        self._populate_backup_list()
+        # This is equivalent to removing the selected entry and adding a new
+        # one, so we need to disable backup-specific buttons
+        self._set_context_buttons(btns_enabled=False)
+
+    @balt.conversation
+    def _restore_backup(self):
+        """Restores the currently selected backup."""
+        if not balt.askYes(self, u'\n\n'.join([
+            _(u"Are you sure you want to restore your Bash settings from "
+              u"'%s'?") % self._chosen_backup,
+            _(u'This will force a restart of Wrye Bash once your settings are '
+              u'restored.')]), _(u'Restore Bash Settings?')):
+            return
+        # former may be None
+        settings_file = self._backup_dir.join(self._chosen_backup)
+        with BusyCursor():
+            restore_ = barb.RestoreSettings(settings_file)
+        backup_dir = None
+        restarting = False
+        try:
+            with BusyCursor():
+                backup_dir = restore_.extract_backup()
+            error_msg, error_title = restore_.incompatible_backup_error(
+                bush.game.fsName)
+            if error_msg:
+                balt.showError(self, error_msg, error_title)
+                return
+            error_msg, error_title = restore_.incompatible_backup_warn()
+            if error_msg and not balt.askWarning(self, error_msg, error_title):
+                return
+            restarting = True
+            balt.showInfo(self, '\n'.join([
+                _(u'Your Bash settings have been successfully extracted.'),
+                _(u'Backup Path: ') + settings_file.s, u'', _(u'Before the '
+                  u'settings can take effect, Wrye Bash must restart.'), _(
+                u'Click OK to restart now.')]), _(u'Bash Settings Extracted'))
+            try: # we currently disallow backup and restore on the same boot
+                bass.sys_argv.remove(u'--backup')
+            except ValueError:
+                pass
+            Link.Frame.Restart([u'--restore'], [u'--filename', backup_dir.s])
+        except exception.BoltError as e:
+            deprint(u'Restore settings failed:', traceback=True)
+            restore_.warn_message(balt, e.message)
+        finally:
+            if not restarting and backup_dir is not None:
+                barb.RestoreSettings.remove_extract_dir(backup_dir)
+
+    @staticmethod
+    def _save_settings():
+        """Saves all settings and data right now."""
+        with BusyCursor():
+            Link.Frame.SaveSettings()
+
+    def _set_context_buttons(self, btns_enabled):
+        """Enables or disables all backup-specific buttons."""
+        for ctx_btn in (self.restore_backup_btn, self.rename_backup_btn,
+                        self.delete_backup_btn):
+            ctx_btn.enabled = btns_enabled
 
 # Page Definitions ------------------------------------------------------------
 _settings_pages = {
@@ -322,10 +500,11 @@ _settings_pages = {
 }
 
 _page_descriptions = {
-    _(u'Appearance'):    _(u'Personalize various aspects of how Wyre Bash '
+    _(u'Appearance'):    _(u'Personalize various aspects of how Wrye Bash '
                            u'looks, including colors and some GUI options.'),
     _(u'Backups'):       _(u'Create, manage and restore backups of Wrye Bash '
-                           u'settings and other data.'),
+                           u'settings and other data. Click on a backup to '
+                           u'manage it.'),
     _(u'Colors'):        _(u'Change colors of various GUI components.'),
     _(u'Confirmations'): _(u"Enable or disable popups with a 'Don't show this "
                            u"in the future' option.")

@@ -27,11 +27,10 @@ import sys
 
 from . import BashStatusBar
 from .settings_dialog import SettingsDialog
-from .. import barb, bush, balt, bass, bolt, env, exception
+from .. import bush, balt, bass, bolt, env
 from ..balt import ItemLink, AppendableLink, RadioLink, CheckLink, MenuLink, \
     TransLink, EnabledLink, BoolLink, Link
 from ..bolt import deprint, GPath
-from ..exception import BoltError
 from ..gui import BusyCursor
 from ..localize import dump_translator
 # TODO(ut): settings links do not seem to use Link.data attribute - it's None..
@@ -40,95 +39,6 @@ __all__ = [u'GlobalSettingsMenu']
 
 #------------------------------------------------------------------------------
 # Settings Links --------------------------------------------------------------
-#------------------------------------------------------------------------------
-class Settings_BackupSettings(ItemLink):
-    """Saves Bash's settings and user data.."""
-    _text =_(u'Backup Settings...')
-    _help = _(u"Backup all of Wrye Bash's settings/data to an archive file.")
-
-    @balt.conversation
-    def Execute(self):
-        msg = _(u'Do you want to backup your Bash settings now?')
-        if not balt.askYes(Link.Frame, msg,_(u'Backup Bash Settings?')): return
-        with BusyCursor(): Link.Frame.SaveSettings()
-        base_dir = bass.settings['bash.backupPath'] or bass.dirs['modsBash']
-        settings_file = balt.askSave(Link.Frame,
-                                     title=_(u'Backup Bash Settings'),
-                                     defaultDir=base_dir, wildcard=u'*.7z',
-                                     defaultFile=barb.BackupSettings.
-                                     backup_filename(bush.game.fsName))
-        if not settings_file: return
-        with BusyCursor():
-            backup = barb.BackupSettings(settings_file, bush.game.fsName,
-                bush.game.bash_root_prefix, bush.game.mods_dir)
-        try:
-            with BusyCursor(): backup.backup_settings(balt)
-        except exception.StateError:
-            deprint(u'Backup settings failed', traceback=True)
-            backup.warn_message(balt)
-
-#------------------------------------------------------------------------------
-class Settings_RestoreSettings(ItemLink):
-    """Restore Bash's settings and user data from backup."""
-    _text = _(u'Restore Settings...')
-    _help = _(u"Restore all of Wrye Bash's settings/data from a backup archive "
-             u"file.")
-
-    @balt.conversation
-    def Execute(self):
-        if not balt.askYes(Link.Frame, u'\n\n'.join([
-            _(u'Do you want to restore your Bash settings from a backup?'),
-            _(u'This will force a restart of Wrye Bash once your settings are '
-              u'restored.')]), _(u'Restore Bash Settings?')):
-            return
-        # former may be None
-        base_dir = bass.settings['bash.backupPath'] or bass.dirs['modsBash']
-        settings_file = balt.askOpen(Link.Frame, _(u'Restore Bash Settings'),
-                                     base_dir, u'', u'*.7z')
-        if not settings_file: return
-        with BusyCursor():
-            restore_ = barb.RestoreSettings(settings_file)
-        backup_dir = None
-        restarting = False
-        try:
-            with BusyCursor():
-                backup_dir = restore_.extract_backup()
-            error_msg, error_title = restore_.incompatible_backup_error(
-                bush.game.fsName)
-            if error_msg:
-                balt.showError(Link.Frame, error_msg, error_title)
-                return
-            error_msg, error_title = restore_.incompatible_backup_warn()
-            if error_msg and not balt.askWarning(Link.Frame, error_msg,
-                                                 error_title):
-                return
-            restarting = True
-            balt.showInfo(Link.Frame, '\n'.join([
-                _(u'Your Bash settings have been successfully extracted.'),
-                _(u'Backup Path: ') + settings_file.s, u'', _(u'Before the '
-                  u'settings can take effect, Wrye Bash must restart.'), _(
-                u'Click OK to restart now.')]), _(u'Bash Settings Extracted'))
-            try: # we currently disallow backup and restore on the same boot
-                bass.sys_argv.remove('--backup')
-            except ValueError:
-                pass
-            Link.Frame.Restart(['--restore'], ['--filename', backup_dir.s])
-        except BoltError as e:
-            deprint(u'Restore settings failed:', traceback=True)
-            restore_.warn_message(balt, e.message)
-        finally:
-            if not restarting and backup_dir is not None:
-                barb.RestoreSettings.remove_extract_dir(backup_dir)
-
-#------------------------------------------------------------------------------
-class Settings_SaveSettings(ItemLink):
-    """Saves Bash's settings and user data."""
-    _text = _(u'Save Settings')
-    _help = _(u"Save all of Wrye Bash's settings/data now.")
-
-    def Execute(self):
-        Link.Frame.SaveSettings()
-
 #------------------------------------------------------------------------------
 class Settings_ExportDllInfo(AppendableLink, ItemLink):
     """Exports list of good and bad dll's."""
