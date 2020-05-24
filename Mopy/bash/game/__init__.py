@@ -68,7 +68,7 @@ class GameInfo(object):
     iniFiles = []
     # The pickle file for this game.  Holds encoded GMST IDs from the big list
     # below
-    pklfile = u'bash\\db\\*GAMENAME*_ids.pkl'
+    pklfile = u'*GAMENAME*_ids.pkl'
     # The directory containing the masterlist for this game, relative to
     # 'Mopy/Bash Patches'
     masterlist_dir = u''

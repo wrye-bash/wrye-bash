@@ -37,7 +37,7 @@ class Fallout3GameInfo(GameInfo):
     version_detect_file = [u'Fallout3.exe']
     master_file = u'Fallout3.esm'
     iniFiles = [u'Fallout.ini', u'FalloutPrefs.ini']
-    pklfile = u'bash\\db\\Fallout3_ids.pkl'
+    pklfile = u'Fallout3_ids.pkl'
     masterlist_dir = u'Fallout3'
     regInstallKeys = (u'Bethesda Softworks\\Fallout3',u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/fallout3/'

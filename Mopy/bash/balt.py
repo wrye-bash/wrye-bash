@@ -341,10 +341,11 @@ except ImportError: # bare linux (in wine it's imported but malfunctions)
     canVista = False
 
 def vistaDialog(parent, message, title, checkBoxTxt=None,
-                buttons=((_win.BTN_OK, 'ok'), (_win.BTN_CANCEL, 'cancel')),
-                icon='warning', commandLinks=True, footer=u'',
+                buttons=None, icon='warning', commandLinks=True, footer=u'',
                 expander=[], heading=u''):
     """Always guard with canVista == True"""
+    buttons = buttons if buttons is not None else ((_win.BTN_OK, 'ok'),
+                                                   (_win.BTN_CANCEL, 'cancel'))
     heading = heading if heading is not None else title
     title = title if heading is not None else u'Wrye Bash'
     dialog = _win.TaskDialog(title, heading, message,

@@ -40,7 +40,7 @@ class EnderalGameInfo(SkyrimGameInfo):
     # closest we're going to get
     version_detect_file = [u'Enderal Launcher.exe']
     iniFiles = [u'Enderal.ini', u'EnderalPrefs.ini']
-    pklfile = u'bash\\db\\Enderal_ids.pkl'
+    pklfile = u'Enderal_ids.pkl'
     regInstallKeys = (u'SureAI\\Enderal', u'Install_Path')
 
     class Ini(SkyrimGameInfo.Ini):

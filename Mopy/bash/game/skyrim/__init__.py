@@ -39,7 +39,7 @@ class SkyrimGameInfo(GameInfo):
     version_detect_file = [u'TESV.exe']
     master_file = u'Skyrim.esm'
     iniFiles = [u'Skyrim.ini', u'SkyrimPrefs.ini']
-    pklfile = u'bash\\db\\Skyrim_ids.pkl'
+    pklfile = u'Skyrim_ids.pkl'
     masterlist_dir = u'Skyrim'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/skyrim/'

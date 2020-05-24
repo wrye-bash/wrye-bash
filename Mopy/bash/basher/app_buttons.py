@@ -669,9 +669,10 @@ class App_Help(StatusBar_Button):
     imageKey, _tip = u'help.%s', _(u"Help File")
 
     def Execute(self):
-        html = bass.dirs['mopy'].join(u'Docs\Wrye Bash General Readme.html')
-        if html.exists():
-            html.start()
+        readme_html = bass.dirs[u'mopy'].join(
+            u'Docs', u'Wrye Bash General Readme.html')
+        if readme_html.isfile():
+            webbrowser.open(readme_html.s)
         else:
             balt.showError(Link.Frame, _(u'Cannot find General Readme file.'))
 
@@ -726,7 +727,8 @@ class App_GenPickle(StatusBar_Button):
         #--Data base
         import cPickle as pickle  # PY3
         try:
-            fids = pickle.load(GPath(bush.game.pklfile).open('r'))['GMST']
+            fids = pickle.load(bass.dirs[u'db'].join(
+                bush.game.pklfile).open('r'))['GMST']
             if fids:
                 maxId = max(fids.values())
             else:
@@ -761,7 +763,8 @@ class App_GenPickle(StatusBar_Button):
         #--Changes?
         if maxId > maxOld:
             outData = {'GMST': fids}
-            pickle.dump(outData, GPath(bush.game.pklfile).open('w'))
+            pickle.dump(outData, bass.dirs[u'db'].join(
+                bush.game.pklfile).open('w'))
             print(_(u"%d new gmst ids written to " + bush.game.pklfile) % (
                 (maxId - maxOld),))
         else:
