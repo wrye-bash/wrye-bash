@@ -23,6 +23,7 @@
 # =============================================================================
 import os
 import subprocess
+import webbrowser
 from collections import defaultdict
 
 from . import BashStatusBar, tabInfo
@@ -34,7 +35,8 @@ from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
     ColorPicker, DialogWindow, DropDown, HLayout, HorizontalLine, \
     LayoutOptions, OkButton, PanelWin, Stretch, TextArea, TreePanel, VLayout, \
     WrappingTextMixin, ListBox, Label, Spacer, HBoxedLayout, CheckBox, \
-    TextField, OpenButton
+    TextField, OpenButton, ScrollableWindow, ClickableImage, RevertButton, \
+    SaveButton, SaveAsButton
 from ..localize import dump_translator
 
 class SettingsDialog(DialogWindow):
@@ -64,21 +66,24 @@ class SettingsDialog(DialogWindow):
 # non-matching items, etc. Making this work is a very long-term goal.
 #        self._search_bar = SearchBar(self)
 #        self._search_bar.on_text_changed.subscribe(self._handle_search)
-        self.ok_btn = OkButton(self)
-        self.ok_btn.on_clicked.subscribe(self._send_ok)
-        self.cancel_btn = CancelButton(self)
+        help_btn = ClickableImage(self, balt.images[u'help.24'].GetBitmap(),
+            btn_tooltip=_(u'Open the Wrye Bash readme in a browser.'))
+        help_btn.on_clicked.subscribe(self._open_readme)
+        ok_btn = OkButton(self)
+        ok_btn.on_clicked.subscribe(self._send_ok)
+        cancel_btn = CancelButton(self)
         # This will automatically be picked up for the top-right close button
         # by wxPython, due to us using CancelButton
-        self.cancel_btn.on_clicked.subscribe(self._send_closing)
-        self.apply_btn = ApplyButton(self)
-        self.apply_btn.enabled = False
-        self.apply_btn.on_clicked.subscribe(self._send_apply)
+        cancel_btn.on_clicked.subscribe(self._send_closing)
+        self._apply_btn = ApplyButton(self)
+        self._apply_btn.enabled = False
+        self._apply_btn.on_clicked.subscribe(self._send_apply)
         VLayout(border=4, spacing=4, item_expand=True, items=[
 #            self._search_bar,
             (self._tab_tree, LayoutOptions(weight=1)),
             HorizontalLine(self),
             HLayout(spacing=5, items=[
-                Stretch(), self.ok_btn, self.cancel_btn, self.apply_btn,
+                help_btn, Stretch(), ok_btn, cancel_btn, self._apply_btn,
             ]),
         ]).apply_to(self)
 
@@ -86,12 +91,21 @@ class SettingsDialog(DialogWindow):
         """Marks or unmarks the requesting page as changed, and enables or
         disables the Apply button accordingly."""
         self._changed_state[requesting_page] = is_changed
-        self.apply_btn.enabled = any(self._changed_state.itervalues())
+        self._apply_btn.enabled = any(self._changed_state.itervalues())
 
     def _exec_request_restart(self, requesting_setting, restart_params):
         """Schedules a restart request from the specified setting."""
         self._requesting_restart.add(requesting_setting)
         self._restart_params.extend(restart_params)
+
+    def _open_readme(self):
+        """Handles a click on the help button by opening the readme."""
+        general_readme = bass.dirs[u'mopy'].join(
+            u'Docs', u'Wrye Bash General Readme.html')
+        if general_readme.isfile():
+            webbrowser.open(general_readme.s)
+        else:
+            balt.showError(self, _(u'Cannot find General Readme file.'))
 
     def _send_apply(self):
         """Propagates an Apply button click to all child pages."""
@@ -122,7 +136,7 @@ class SettingsDialog(DialogWindow):
         self._send_closing()
         self._send_apply()
 
-class _ASettingsPanel(WrappingTextMixin, PanelWin):
+class _ASettingsPanel(WrappingTextMixin):
     """Abstract class for all settings panels."""
     def __init__(self, parent, page_desc):
         super(_ASettingsPanel, self).__init__(page_desc, parent)
@@ -152,8 +166,11 @@ class _ASettingsPanel(WrappingTextMixin, PanelWin):
     def on_closing(self):
         """Called when the settings dialog is about to be closed."""
 
+class _AScrollablePanel(_ASettingsPanel, ScrollableWindow): pass
+class _AFixedPanel(_ASettingsPanel, PanelWin): pass
+
 # Colors ----------------------------------------------------------------------
-class ColorsPanel(_ASettingsPanel):
+class ColorsPanel(_AFixedPanel): ##: _AScrollablePanel breaks the color picker??
     """Color configuration panel."""
     _keys_to_tabs = {
         u'mods': _(u'[Mods] '),
@@ -185,11 +202,11 @@ class ColorsPanel(_ASettingsPanel):
         #--Buttons
         self.default = Button(self, _(u'Reset Color'))
         self.default.on_clicked.subscribe(self.OnDefault)
-        self.defaultAll = Button(self, _(u'Reset All Colors'))
+        self.defaultAll = RevertButton(self, _(u'Reset All Colors'))
         self.defaultAll.on_clicked.subscribe(self.OnDefaultAll)
-        self.export_config = Button(self, _(u'Export Colors...'))
+        self.export_config = SaveAsButton(self, _(u'Export Colors...'))
         self.export_config.on_clicked.subscribe(self.OnExport)
-        self.importConfig = Button(self, _(u'Import Colors...'))
+        self.importConfig = OpenButton(self, _(u'Import Colors...'))
         self.importConfig.on_clicked.subscribe(self.OnImport)
         #--Events
         self.picker.on_color_picker_evt.subscribe(self.OnColorPicker)
@@ -415,7 +432,7 @@ class ConfigureEditorDialog(DialogWindow):
             self._po_rename_box.is_checked
 
 ##: Quite a bit of duplicate code with the Backups panel here (esp. rename)
-class LanguagePanel(_ASettingsPanel):
+class LanguagePanel(_AScrollablePanel):
     """Change the language that the GUI is displayed in."""
     _internal_to_localized = defaultdict(lambda l: l, {
         u'chinese (simplified)': _(u'Chinese (Simplified)') + u' (简体中文)',
@@ -647,7 +664,7 @@ class LanguagePanel(_ASettingsPanel):
             ctx_btn.enabled = btns_enabled
 
 # Status Bar ------------------------------------------------------------------
-class StatusBarPanel(_ASettingsPanel):
+class StatusBarPanel(_AScrollablePanel):
     """Settings related to the status bar."""
     def __init__(self, parent, page_desc):
         super(StatusBarPanel, self).__init__(parent, page_desc)
@@ -902,13 +919,13 @@ class StatusBarPanel(_ASettingsPanel):
             self._disable_move_buttons()
 
 # Backups ---------------------------------------------------------------------
-class BackupsPanel(_ASettingsPanel):
+class BackupsPanel(_AFixedPanel):
     """Create, manage and restore backups."""
     def __init__(self, parent, page_desc):
         super(BackupsPanel, self).__init__(parent, page_desc)
         self._backup_list = ListBox(self, isSort=True, isHScroll=True,
             onSelect=self._handle_backup_selected)
-        save_settings_btn = Button(self, _(u'Save Data'),
+        save_settings_btn = SaveButton(self, _(u'Save Data'),
             btn_tooltip=_(u"Save all of Wrye Bash's settings/data now."))
         save_settings_btn.on_clicked.subscribe(self._save_settings)
         new_backup_btn = Button(self, _(u'New Backup...'),

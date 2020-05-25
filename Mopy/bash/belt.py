@@ -35,7 +35,7 @@ from . import ScriptParser         # generic parser class
 from . import balt, bass, bolt, bosh, bush, load_order
 from .ini_files import OBSEIniFile
 from .env import get_file_version
-from .gui import BOTTOM, CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
+from .gui import CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
     WizardDialog, EventResult, ListBox, CheckListBox, Image, PictureWithCursor
 from .ScriptParser import error

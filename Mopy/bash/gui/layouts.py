@@ -217,6 +217,8 @@ class _ALineLayout(_ALayout):
         """Add a growing space to the layout."""
         self._sizer.AddStretchSpacer(prop=weight)
 
+##: Quite a few usages do HBoxedLayout(items=[VLayout()]). Those could be
+# refactored with a VBoxedLayout
 class HBoxedLayout(_ALineLayout):
     """A horizontal layout with a border around it and an optional title."""
     def __init__(self, parent, title=u'', **kwargs):
