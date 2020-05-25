@@ -41,6 +41,7 @@ class SettingsDialog(DialogWindow):
     """A dialog for configuring settings, split into multiple pages."""
     title = _(u'Settings')
     _def_size = (700, 450)
+    _min_size = (500, 300)
 
     def __init__(self):
         super(SettingsDialog, self).__init__(Link.Frame,

@@ -32,6 +32,8 @@ from ..gui import BOTTOM, Button, CancelButton, CENTER, CheckBox, GridLayout, \
 
 class ImportFaceDialog(DialogWindow):
     """Dialog for importing faces."""
+    _min_size = (550, 300)
+
     def __init__(self, parent, title, fileInfo, faces):
         #--Data
         self.fileInfo = fileInfo
@@ -43,7 +45,6 @@ class ImportFaceDialog(DialogWindow):
         #--GUI
         super(ImportFaceDialog, self).__init__(parent, title=title,
                                                sizes_dict=balt.sizes)
-        self.set_min_size(550, 300)
         #--List Box
         self.listBox = ListBox(self, choices=self.list_items,
                                onSelect=self.EvtListBox)

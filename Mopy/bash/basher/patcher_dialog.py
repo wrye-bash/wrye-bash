@@ -52,6 +52,7 @@ class PatchDialog(DialogWindow):
 
     :type _gui_patchers: list[basher.gui_patchers._PatcherPanel]
     """
+    _min_size = (400, 300)
 
     def __init__(self, parent, patchInfo, doCBash, importConfig,
                  mods_to_reselect):
@@ -66,7 +67,6 @@ class PatchDialog(DialogWindow):
         size = balt.sizes.get(self.__class__.__name__, (500,600))
         super(PatchDialog, self).__init__(parent, title=title,
             icon_bundle=Resources.bashMonkey, sizes_dict=balt.sizes, size=size)
-        self.set_min_size(400, 300)
         #--Data
         list_patches_dir() # refresh cached dir
         groupOrder = dict([(group,index) for index,group in
@@ -123,7 +123,6 @@ class PatchDialog(DialogWindow):
         self.defaultTipText = _(u'Items that are new since the last time this patch was built are displayed in bold')
         self.gTipText = Label(self,self.defaultTipText)
         #--Events
-        self.on_size_changed.subscribe(self.save_size) # save dialog size
         self.gPatchers.on_mouse_leaving.subscribe(self._mouse_leaving)
         self.gPatchers.on_mouse_motion.subscribe(self.handle_mouse_motion)
         self.gPatchers.on_key_pressed.subscribe(self._on_char)
