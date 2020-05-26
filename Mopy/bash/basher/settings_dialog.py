@@ -1108,16 +1108,21 @@ _settings_pages = {
 }
 
 _page_descriptions = {
-    _(u'Appearance'):    _(u'Personalize various aspects of how Wrye Bash '
-                           u'looks, including colors and some GUI options.'),
-    _(u'Backups'):       _(u'Create, manage and restore backups of Wrye Bash '
-                           u'settings and other data. Click on a backup to '
-                           u'manage it.'),
-    _(u'Colors'):        _(u'Change colors of various GUI components.'),
-    _(u'Confirmations'): _(u"Enable or disable popups with a 'Don't show this "
-                           u"in the future' option."),
-    _(u'Language'):      _(u'Change the language that Wrye Bash is displayed '
-                           u'in and manage localizations.'),
-    _(u'Status Bar'):    _(u'Change settings related to the status bar at the '
-                           u'bottom and manage hidden buttons.'),
+    _(u'Appearance'):
+        _(u'Personalize various aspects of how Wrye Bash looks, including '
+          u'colors and some GUI options.'),
+    _(u'Appearance') + u'/' + _(u'Colors'):
+        _(u'Change colors of various GUI components.'),
+    _(u'Appearance') + u'/' + _(u'Language'):
+        _(u'Change the language that Wrye Bash is displayed in and manage '
+          u'localizations.'),
+    _(u'Appearance') + u'/' + _(u'Status Bar'):
+        _(u'Change settings related to the status bar at the bottom and '
+          u'manage hidden buttons.'),
+    _(u'Backups'):
+        _(u'Create, manage and restore backups of Wrye Bash settings and '
+          u'other data. Click on a backup to manage it.'),
+    _(u'Confirmations'):
+        _(u"Enable or disable popups with a 'Don't show this in the future' "
+          u'option.'),
 }

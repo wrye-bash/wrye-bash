@@ -396,7 +396,7 @@ class TreePanel(_APageComponent):
                 for subpage_name, subpage_val in sorted(page_val.iteritems(),
                         key=lambda i: i[0]):
                     new_subpage = subpage_val(self, page_descriptions.get(
-                        subpage_name, u''))
+                        u'%s/%s' % (page_name, subpage_name), u''))
                     self._all_leaf_pages.append(new_subpage)
                     self.add_sub_page(new_subpage, subpage_name)
             else:
