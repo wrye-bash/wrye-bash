@@ -31,9 +31,7 @@ defPos = _wx.DefaultPosition
 defSize = _wx.DefaultSize
 
 from .base_components import _AComponent, WithFirstShow
-from .events import EventResult
-from .layouts import HLayout, Spacer, VLayout
-from .text_components import HyperlinkLabel, Label
+from .text_components import Label
 
 class _TopLevelWin(_AComponent):
     """Methods mixin for top level windows
@@ -255,26 +253,6 @@ class PanelWin(_AComponent):
     def pnl_layout(self): self._native_widget.Layout()
     def pnl_hide(self): self._native_widget.Hide()
 
-class WrappingTextMixin(_AComponent):
-    """Mixin for components with a label that needs to be wrapped whenever the
-    component is resized."""
-    # Optional offset - wrap this many pixels sooner than we would otherwise
-    _wrapping_offset = 0
-
-    def __init__(self, panel_desc, *args, **kwargs):
-        super(WrappingTextMixin, self).__init__(*args, **kwargs)
-        self._panel_text = Label(self, panel_desc)
-        self._panel_text.wrap(self.component_size[0] - self._wrapping_offset)
-        self._last_width = self.component_size[0]
-        self._on_size_changed = self._evt_handler(_wx.EVT_SIZE)
-        self._on_size_changed.subscribe(self._wrap_text)
-
-    def _wrap_text(self):
-        """Internal callback that wraps the panel text."""
-        if self._last_width != self.component_size[0]:
-            self._last_width = self.component_size[0]
-            self._panel_text.wrap(self._last_width - self._wrapping_offset)
-
 class Splitter(_AComponent):
     _wx_widget_type = _wx.SplitterWindow
 
@@ -345,105 +323,6 @@ class ListPanel(_APageComponent):
         super(ListPanel, self).__init__(parent)
         left_list = self._native_widget.GetChildren()[0]
         left_list.SetSingleStyle(_wx.LC_LIST | _wx.LC_ALIGN_LEFT)
-
-class TreePanel(_APageComponent):
-    """A panel with a tree of options where each leaf corresponds to a
-    different subpanel. Note that only a depth of one or two is supported, but
-    a depth of one is obviously pointless - just use ListPanel instead.
-
-    Note that all pages and subpages will automatically be sorted by page
-    name."""
-    _wx_widget_type = _wx.Treebook
-
-    class _LinkPage(WrappingTextMixin, PanelWin):
-        """A panel with links to each subpage, that will take the user there
-        when they click on them."""
-        def __init__(self, parent, page_desc, select_page_callback,
-                parent_page_name, sub_pages):
-            super(TreePanel._LinkPage, self).__init__(page_desc, parent)
-            def make_link(subpage_name):
-                new_link = HyperlinkLabel(self, subpage_name, u'%s/%s' % (
-                    parent_page_name, subpage_name), always_unvisited=True)
-                new_link.on_link_clicked.subscribe(select_page_callback)
-                return new_link
-            VLayout(border=6, spacing=3,
-                items=[self._panel_text, Spacer(6)] + [
-                    HLayout(items=[Spacer(6), make_link(p)])
-                    for p in sorted(sub_pages)
-                ]).apply_to(self)
-
-    def __init__(self, parent, tree_geometry, page_descriptions):
-        """Creates a new TreePanel with the specified tree geometry and page
-        descriptions.
-
-        :param tree_geometry: A dict mapping page names to either component
-            classes or another dict. Components will be constructed with two
-            parameters, parent and page description (see page_descriptions
-            below), and act as leaves in the tree to display a page of options.
-            A dict will create a level of subpages and an automatically
-            generated 'link page'.
-        :param page_descriptions: A dict mapping page names to descriptions."""
-        super(TreePanel, self).__init__(parent)
-        self._all_leaf_pages = []
-        for page_name, page_val in sorted(tree_geometry.iteritems(),
-                key=lambda i: i[0]):
-            page_desc = page_descriptions.get(page_name, u'')
-            if isinstance(page_val, dict):
-                # This is not a leaf, add a link page and then the subpages
-                link_page = self._LinkPage(self,
-                    page_desc, self.select_page, page_name, page_val.keys())
-                self.add_page(link_page, page_name)
-                for subpage_name, subpage_val in sorted(page_val.iteritems(),
-                        key=lambda i: i[0]):
-                    new_subpage = subpage_val(self, page_descriptions.get(
-                        u'%s/%s' % (page_name, subpage_name), u''))
-                    self._all_leaf_pages.append(new_subpage)
-                    self.add_sub_page(new_subpage, subpage_name)
-            else:
-                new_page = page_val(self, page_desc)
-                self._all_leaf_pages.append(new_page)
-                self.add_page(new_page, page_name)
-
-    def add_sub_page(self, sub_page_component, sub_page_title):
-        """Adds a subpage to the tree. The subpage will belong to the last page
-        that was added via add_page."""
-        self._native_widget.AddSubPage(self._resolve(sub_page_component),
-            sub_page_title)
-
-    def get_leaf_pages(self):
-        """Returns a list of all leaf pages in this TreePanel."""
-        return self._all_leaf_pages
-
-    def select_page(self, page_path):
-        """Scrolls to and selects the page corresponding to the specified path.
-        The path must be a string of the form 'parent/child', where parent is
-        the name of the parent page and child is the name of the child page."""
-        parent_page, sub_page = page_path.split(u'/')
-        ##: wx.TreeCtrl has the worst API ever, this desperately needs wrapping
-        # and some rethinking (plus virtualizing etc.)
-        tree_ctrl = self._native_widget.GetTreeCtrl()
-        root_item = tree_ctrl.GetRootItem()
-        # The root does not actually exist, so look at its first child. The
-        # cookie value is only needed by wx to keep track of the current
-        # iteration, it has no meaning outside of that
-        curr_child, cookie = tree_ctrl.GetFirstChild(root_item)
-        while curr_child.IsOk():
-            # Check if we found the parent page yet
-            if tree_ctrl.GetItemText(curr_child) == parent_page:
-                # Found it - now to look for the child page
-                curr_subchild, sub_cookie = tree_ctrl.GetFirstChild(curr_child)
-                while curr_subchild.IsOk():
-                    if tree_ctrl.GetItemText(curr_subchild) == sub_page:
-                        # Found it - scroll to it and select it
-                        tree_ctrl.ScrollTo(curr_subchild)
-                        tree_ctrl.SelectItem(curr_subchild)
-                        break
-                    curr_subchild, sub_cookie = tree_ctrl.GetNextChild(
-                        curr_child, sub_cookie)
-                break
-            curr_child, cookie = tree_ctrl.GetNextChild(root_item, cookie)
-        # Need to return FINISH, otherwise the browser would try to open it
-        return EventResult.FINISH
 
 class ScrollableWindow(_AComponent):
     """A window with a scrollbar."""

@@ -36,7 +36,7 @@ from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
     LayoutOptions, OkButton, PanelWin, Stretch, TextArea, TreePanel, VLayout, \
     WrappingTextMixin, ListBox, Label, Spacer, HBoxedLayout, CheckBox, \
     TextField, OpenButton, ScrollableWindow, ClickableImage, RevertButton, \
-    SaveButton, SaveAsButton
+    SaveButton, SaveAsButton, DoubleListBox
 from ..localize import dump_translator
 
 class SettingsDialog(DialogWindow):
@@ -156,12 +156,6 @@ class _ASettingsPanel(WrappingTextMixin):
     def on_apply(self):
         """Called when the OK or Apply button on the settings dialog is
         clicked. Should apply whatever changes have been made on this panel."""
-
-    def on_cancel(self): # FIXME(inf) See if we'll actually need this
-        """Called when the settings dialog is closed via the top-right X or
-        when the Cancel button has been clicked. Only has to be overriden if
-        some changes made on this panel require special actions in order to be
-        discarded."""
 
     def on_closing(self):
         """Called when the settings dialog is about to be closed."""
@@ -692,22 +686,12 @@ class StatusBarPanel(_AScrollablePanel):
         # FIXME(inf) Disabled for now because it doesn't work correctly.
         #  Supposedly crashes too, but for me it just glitches the status bar
         self._icon_size_dropdown.enabled = False
-        ##: Switch to a wx.ListCtrl here (UIList? maybe overkill) and actually
-        # show the icons in the list
-        self._visible_icons = ListBox(self, isSort=True, isHScroll=True,
-            onSelect=lambda _lb_dex, _item_text: self._handle_list_selected(
-                self._visible_icons))
-        self._hidden_icons = ListBox(self, isSort=True, isHScroll=True,
-            onSelect=lambda _lb_dex, _item_text: self._handle_list_selected(
-                self._hidden_icons))
-        self._move_right_btn = Button(self, u'>>', exact_fit=True,
-            btn_tooltip=_(u'Hide the selected button.'))
-        self._move_right_btn.on_clicked.subscribe(
-            lambda: self._handle_move_button(self._move_right_btn))
-        self._move_left_btn = Button(self, u'<<', exact_fit=True,
-            btn_tooltip=_(u'Make the selected button visible again.'))
-        self._move_left_btn.on_clicked.subscribe(
-            lambda: self._handle_move_button(self._move_left_btn))
+        ##: Create a variant of DoubleListBox that can actually show the icons
+        self._icon_lists = DoubleListBox(self,
+            left_label=_(u'Visible Buttons'), right_label=_(u'Hidden Buttons'),
+            left_btn_tooltip=_(u'Make the selected button visible again.'),
+            right_btn_tooltip=_(u'Hide the selected button.'))
+        self._icon_lists.move_btn_callback = self._on_move_btn
         self._populate_icon_lists()
         VLayout(border=6, spacing=6, item_expand=True, items=[
             self._panel_text, Spacer(3),
@@ -723,48 +707,15 @@ class StatusBarPanel(_AScrollablePanel):
                 ]),
             ]),
             (HBoxedLayout(self, item_expand=True,
-                title=_(u'Manage Hidden Icons'), items=[
-                HLayout(item_expand=True, spacing=4, items=[
-                    (HBoxedLayout(self, item_border=3, item_expand=True,
-                        item_weight=1, title=_(u'Visible Icons'),
-                        items=[self._visible_icons]), LayoutOptions(weight=1)),
-                    VLayout(spacing=4, items=[
-                        Stretch(), self._move_right_btn, self._move_left_btn,
-                        Stretch()
-                    ]),
-                    (HBoxedLayout(self, item_border=3, item_expand=True,
-                        item_weight=1, title=_(u'Hidden Icons'),
-                        items=[self._hidden_icons]), LayoutOptions(weight=1)),
-                ]),
-            ]), LayoutOptions(weight=1)),
+                title=_(u'Manage Hidden Buttons'), items=[self._icon_lists]),
+             LayoutOptions(weight=1)),
         ]).apply_to(self)
-
-    @property
-    def _chosen_hidden(self):
-        """Returns the name of the hidden icon that is currently selected by
-        the user. Note that this will raise an error if no hidden icon has been
-        selected, so it is only safe to call if that has already been
-        checked."""
-        return self._hidden_icons.lb_get_selected_strings()[0]
-
-    @property
-    def _chosen_visible(self):
-        """Returns the name of the visible icon that is currently selected by
-        the user. Note that this will raise an error if no visible icon has been
-        selected, so it is only safe to call if that has already been
-        checked."""
-        return self._visible_icons.lb_get_selected_strings()[0]
-
-    def _disable_move_buttons(self):
-        """Disables both move buttons."""
-        for move_btn in (self._move_right_btn, self._move_left_btn):
-            move_btn.enabled = False
 
     def _get_chosen_hidden_icons(self):
         """Returns a set of UIDs that have been chosen for hiding by the
         user."""
         return {self._tip_to_links[x].uid
-                for x in self._hidden_icons.lb_get_str_items()}
+                for x in self._icon_lists.right_items}
 
     def _handle_app_ver(self, checked):
         """Internal callback, called when the version checkbox is changed."""
@@ -775,57 +726,6 @@ class StatusBarPanel(_AScrollablePanel):
         """Internal callback, called when the icon size dropdown is changed."""
         self._mark_setting_changed(u'icon_size',
             int(new_selection) != bass.settings[u'bash.statusbar.iconSize'])
-
-    def _handle_list_selected(self, my_list):
-        """Internal callback, called when an item in one of the two lists is
-        selected. Deselects the other list and enables the right move
-        button."""
-        if my_list == self._visible_icons:
-            other_list = self._hidden_icons
-            my_btn = self._move_right_btn
-            other_btn = self._move_left_btn
-        else:
-            other_list = self._visible_icons
-            my_btn = self._move_left_btn
-            other_btn = self._move_right_btn
-        other_list.lb_clear_selection()
-        my_btn.enabled = True
-        other_btn.enabled = False
-
-    def _handle_move_button(self, my_btn):
-        """Internal callback, called when one of the move buttons is clicked.
-        Performs an actual move from one list to the other."""
-        if my_btn == self._move_right_btn:
-            chosen_icon = self._chosen_visible
-            my_list = self._visible_icons
-            other_list = self._hidden_icons
-        else:
-            chosen_icon = self._chosen_hidden
-            my_list = self._hidden_icons
-            other_list = self._visible_icons
-        # Add the icon to the other list. These ListBoxes are sorted, so no
-        # need to worry about where to insert it
-        other_list.lb_append(chosen_icon)
-        sel_index = my_list.lb_get_selections()[0]
-        icon_count = my_list.lb_get_items_count()
-        # Delete the icon from our list
-        my_list.lb_delete_at_index(sel_index)
-        if icon_count == 1:
-            # If we only had one icon left, don't select anything now. We do
-            # need to disable the move buttons now, since nothing is selected
-            self._disable_move_buttons()
-        elif sel_index == icon_count:
-            # If the last icon was selected, select the one before that now
-            my_list.lb_select_index(sel_index - 1)
-        else:
-            # Otherwise, the index will have shifted down by one, so just
-            # select the icon at the old index
-            my_list.lb_select_index(sel_index)
-        # Finally, mark our setting as changed if the selected hidden icons no
-        # longer match the ones that are currently hidden
-        self._mark_setting_changed(u'hidden_icons',
-            self._get_chosen_hidden_icons() != bass.settings[
-                u'bash.statusbar.hide'])
 
     def _is_changed(self, setting_id):
         """Checks if the setting with the specified ID has been changed."""
@@ -885,6 +785,13 @@ class StatusBarPanel(_AScrollablePanel):
             self._setting_states[setting_key] = False
         self._mark_changed(self, False)
 
+    def _on_move_btn(self):
+        """Mark our setting as changed if the hidden icons list no longer
+        matches the list of icons that are currently hidden."""
+        self._mark_setting_changed(u'hidden_icons',
+             self._get_chosen_hidden_icons() != bass.settings[
+                 u'bash.statusbar.hide'])
+
     def _populate_icon_lists(self):
         """Clears and repopulates the two icon lists."""
         # Here be dragons, of the tooltip-related kind
@@ -910,13 +817,8 @@ class StatusBarPanel(_AScrollablePanel):
             target_link_list = hidden if link.uid in hide else visible
             target_link_list.append(tip_)
             self._tip_to_links[tip_] = link
-        self._visible_icons.lb_set_items(visible)
-        self._hidden_icons.lb_set_items(hidden)
-        # If repopulating caused our selections to disappear, disable the move
-        # buttons again
-        if (not self._visible_icons.lb_get_selections()
-                and not self._hidden_icons.lb_get_selections()):
-            self._disable_move_buttons()
+        self._icon_lists.left_items = visible
+        self._icon_lists.right_items = hidden
 
 # Backups ---------------------------------------------------------------------
 class BackupsPanel(_AFixedPanel):
