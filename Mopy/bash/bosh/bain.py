@@ -380,17 +380,16 @@ class Installer(object):
     _executables_process = {}
     _goodDlls = _badDlls = None
     @staticmethod
-    def goodDlls():
-        if Installer._goodDlls is None:
-            Installer._goodDlls = collections.defaultdict(list)
-            Installer._goodDlls.update(
+    def goodDlls(force_recalc=False):
+        if Installer._goodDlls is None or force_recalc:
+            Installer._goodDlls = collections.defaultdict(list,
                 bass.settings['bash.installers.goodDlls'])
         return Installer._goodDlls
     @staticmethod
-    def badDlls():
-        if Installer._badDlls is None:
-            Installer._badDlls = collections.defaultdict(list)
-            Installer._badDlls.update(bass.settings['bash.installers.badDlls'])
+    def badDlls(force_recalc=False):
+        if Installer._badDlls is None or force_recalc:
+            Installer._badDlls = collections.defaultdict(list,
+                bass.settings['bash.installers.badDlls'])
         return Installer._badDlls
     # while checking for skips process some installer attributes
     _attributes_process = {}

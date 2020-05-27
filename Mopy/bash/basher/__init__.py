@@ -4330,6 +4330,15 @@ def InitSettings(): # this must run first !
     balt.sizes = bass.settings.getChanged('bash.window.sizes',{})
     settings = bass.settings
     settings.loadDefaults(settingDefaults)
+    # Import/Export DLL permissions was broken and stored DLLs with a ':'
+    # appended, simply drop those here (worst case some people will have to
+    # re-confirm that they want to install a DLL). Note we have to do this here
+    # because init_global_skips below bakes them into Installer._{bad,good}Dlls
+    for key_suffix in (u'goodDlls', u'badDlls'):
+        dict_key = u'bash.installers.' + key_suffix
+        bass.settings[dict_key] = {k: v for k, v
+                                   in bass.settings[dict_key].iteritems()
+                                   if not k.endswith(u':')}
     bosh.bain.Installer.init_global_skips() # must be after loadDefaults - grr #178
     bosh.bain.Installer.init_attributes_process()
     # Plugin encoding used to decode mod string fields

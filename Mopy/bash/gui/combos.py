@@ -231,8 +231,8 @@ class TreePanel(_APageComponent):
             classes or another dict. Components will be constructed with two
             parameters, parent and page description (see page_descriptions
             below), and act as leaves in the tree to display a page of options.
-            A dict will create a level of subpages and an automatically
-            generated 'link page'.
+            They must inherit from ATreeMixin. A dict will create a level of
+            subpages and an automatically generated 'link page'.
         :param page_descriptions: A dict mapping page names to descriptions."""
         super(TreePanel, self).__init__(parent)
         self._all_leaf_pages = []
@@ -246,14 +246,16 @@ class TreePanel(_APageComponent):
                 self.add_page(link_page, page_name)
                 for subpage_name, subpage_val in sorted(page_val.iteritems(),
                         key=lambda i: i[0]):
-                    new_subpage = subpage_val(self, page_descriptions.get(
-                        u'%s/%s' % (page_name, subpage_name), u''))
-                    self._all_leaf_pages.append(new_subpage)
-                    self.add_sub_page(new_subpage, subpage_name)
+                    if subpage_val.should_appear():
+                        new_subpage = subpage_val(self, page_descriptions.get(
+                            u'%s/%s' % (page_name, subpage_name), u''))
+                        self._all_leaf_pages.append(new_subpage)
+                        self.add_sub_page(new_subpage, subpage_name)
             else:
-                new_page = page_val(self, page_desc)
-                self._all_leaf_pages.append(new_page)
-                self.add_page(new_page, page_name)
+                if page_val.should_appear():
+                    new_page = page_val(self, page_desc)
+                    self._all_leaf_pages.append(new_page)
+                    self.add_page(new_page, page_name)
 
     def add_sub_page(self, sub_page_component, sub_page_title):
         """Adds a subpage to the tree. The subpage will belong to the last page
@@ -295,3 +297,12 @@ class TreePanel(_APageComponent):
             curr_child, cookie = tree_ctrl.GetNextChild(root_item, cookie)
         # Need to return FINISH, otherwise the browser would try to open it
         return EventResult.FINISH
+
+class ATreeMixin(_AComponent):
+    """A mixin for all leaf pages in a TreePanel."""
+    @staticmethod
+    def should_appear():
+        """This component will only be constructed and shown to the user in the
+        TreePanel if this method returns True. You can override this and use it
+        to hide components that aren't relevant for the current state."""
+        return True
