@@ -28,6 +28,7 @@ from __future__ import division, print_function
 import cPickle as pickle  # PY3
 import re
 import struct
+from collections import deque
 from operator import attrgetter
 
 from .advanced_elements import AttrExistsDecider, AttrValDecider, MelArray, \
@@ -410,6 +411,9 @@ class MreDialBase(MelRecord):
         """Dumps self., then group header and then records."""
         MreRecord.dump(self,out)
         if not self.infos: return
+        # Sort our INFOs by PNAM just before writing them out
+        self.infos = self.sort_by_pnam()
+        # Now we're ready to dump out the headers and each INFO child
         hsize = __rh.rec_header_size
         dial_size = hsize + sum(hsize + info.getSize() for info in self.infos)
         # pack the header for the group of infos records (?)
@@ -426,6 +430,65 @@ class MreDialBase(MelRecord):
         MelRecord.convertFids(self,mapper,toLong)
         for info in self.infos:
             info.convertFids(mapper,toLong)
+
+    def sort_by_pnam(self):
+        """Returns a list of the INFOs of this DIAL record, sorted by their
+        (PNAM) Previous Info. These do not simply describe a linear list, but a
+        directed graph - e.g. you can have edges B->A and C->A, which would
+        leave both C->B->A and B->C->A as valid orders. To decide in such
+        cases, we stick to low->high FormIDs.
+
+        Note: We assume the PNAM graph is acyclic - cyclic graphs are errors
+        in plugins anyways, so the behavior of PBash when encountering such
+        errors is undefined."""
+        # First gather a list of all 'orphans', i.e. INFOs that have no PNAM.
+        # We'll start with these and insert non-orphans into the list at the
+        # right spot based on their PNAM
+        sorted_infos = sorted((o for o in self.infos if not o.prevInfo),
+            key=lambda x: x.fid)
+        remaining_infos = deque(sorted(set(self.infos) - set(sorted_infos),
+            key=lambda x: x.fid))
+        visited_fids = set()
+        while remaining_infos:
+            # Pop from the right to maintain a low->high sort order of FormIDs
+            # when inserting multiple INFOs with the same PNAM
+            curr_info = remaining_infos.pop()
+            wanted_prev_fid = curr_info.prevInfo
+            # Look if a record matching the PNAM has already been inserted
+            for i, prev_candidate in enumerate(sorted_infos):
+                if prev_candidate.fid == wanted_prev_fid:
+                    # It has, so just insert our INFO after it
+                    sorted_infos.insert(i + 1, curr_info)
+                    break
+            else:
+                # Not in the sorted INFOs, check for a cycle/unknown record
+                if curr_info.fid in visited_fids:
+                    # Either the PNAM points to a record that's not in our
+                    # file (which is fine and happens all the time), or this
+                    # INFO is in a cycle, or the PNAM points to a non-existent
+                    # record.
+                    # To handle this situation, we basically do a single
+                    # iteration of insertion sort to find a suitable spot to
+                    # put it.
+                    # We don't warn here because trying to determine the valid
+                    # and common case from the two error cases would be too
+                    # slow. xEdit can do this much better
+                    for i in xrange(len(sorted_infos) - 1): # skip the last one
+                        if (sorted_infos[i].fid <= curr_info.fid <=
+                                sorted_infos[i + 1].fid):
+                            # We found a suitable spot, insert it and break
+                            sorted_infos.insert(i + 1, curr_info)
+                            break
+                    else:
+                        # List is either empty or the fid is >= all fids in the
+                        # list. Either way, just append to the end
+                        sorted_infos.append(curr_info)
+                else:
+                    # We'll have to revisit this INFO later when its PNAM may
+                    # have been added, so move it to the end of the queue
+                    visited_fids.add(curr_info.fid)
+                    remaining_infos.appendleft(curr_info)
+        return sorted_infos
 
 #------------------------------------------------------------------------------
 class MreHasEffects(object):

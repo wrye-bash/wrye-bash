@@ -376,6 +376,8 @@ class MobObjects(MobBase):
         return u'<%s GRUP: %u record(s)>' % (self.label, len(self.records))
 
 #------------------------------------------------------------------------------
+##: This should be refactored (alongside MreDialBase) to eventually expand it
+# to FO4's QUST groups
 class MobDials(MobObjects):
     """DIAL top block of mod file."""
 
@@ -438,7 +440,7 @@ class MobDials(MobObjects):
                     hsize + info.getSize() for info in record.infos)
         return size
 
-    def getNumRecords(self,includeGroups=1):
+    def getNumRecords(self,includeGroups=True):
         """Returns number of records, including self plus info records."""
         self.numRecords = (
             len(self.records) + includeGroups * bool(self.records) +
@@ -446,6 +448,122 @@ class MobDials(MobObjects):
                 x.infos)
         )
         return self.numRecords
+
+    def iter_records(self):
+        return chain(iter(self.records), chain.from_iterable(
+            r.infos for r in self.records))
+
+    def keepRecords(self, p_keep_ids):
+        super(MobDials, self).keepRecords(p_keep_ids)
+        for record in self.records:
+            record.infos = [i for i in record.infos if i.fid in p_keep_ids]
+
+    def updateRecords(self, srcBlock, mapper, mergeIds):
+        id_dials = {r.fid: r for r in self.records}
+        merge_ids_discard = mergeIds.discard
+        for record in srcBlock.getActiveRecords():
+            src_dial_fid = mapper(record.fid)
+            # First check if we have a corresponding DIAL record and, if so,
+            # retrieve it
+            if src_dial_fid in id_dials:
+                patch_dial = id_dials[src_dial_fid]
+                updated_infos = patch_dial.infos
+                # Build up a dict mapping INFO fids to their positions in the
+                # INFO list of this DIAL record in the patch file
+                id_patch_infos = {}
+                for i, p in enumerate(updated_infos):
+                    id_patch_infos[p.fid] = i
+                # Now, update each INFO child that's present in both the source
+                # mod and the patch file individually
+                for src_info in record.infos:
+                    info_fid = mapper(src_info.fid)
+                    if info_fid in id_patch_infos:
+                        updated_infos[id_patch_infos[info_fid]] = \
+                            src_info.getTypeCopy(mapper)
+                        merge_ids_discard(info_fid)
+                # We always have to make a copy of the main DIAL record to
+                # carry forward changes, but we assign the already updated
+                # INFOs to it after doing that
+                record = record.getTypeCopy(mapper)
+                self.setRecord(record)
+                record.infos = updated_infos
+                # Note that we can only discard the DIAL record from mergeIds
+                # if none of its children are marked as merged, since otherwise
+                # we'd end up wanting to keep a child but not its parent
+                if not any(i.fid in mergeIds for i in updated_infos):
+                    merge_ids_discard(record.fid)
+
+    def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
+        from .mod_files import MasterSet # YUCK
+        filtered_dials = []
+        filtered_dials_append = filtered_dials.append
+        loadSetIsSuperset = loadSet.issuperset
+        mergeIdsAdd = mergeIds.add
+        copy_to_self = self.setRecord
+        # We'll need an up-to-date self.id_records, see usage below
+        self.indexRecords()
+        for record in block.getActiveRecords():
+            # A list of the INFO children that were previously in the patch
+            # file's version of this DIAL record
+            patch_infos = []
+            # Maps the FormID of each INFO child in patch_infos to its position
+            # in that list
+            id_patch_infos = {}
+            # Check if we want this DIAL record before we start checking the
+            # INFO children
+            if doFilter:
+                # Filter the DIAL record, skip it (and by extension all its
+                # INFO children) if filtered out
+                record.mergeFilter(loadSet)
+                masters = MasterSet()
+                record.updateMasters(masters)
+                if not loadSetIsSuperset(masters):
+                    continue
+            # Not Filter-tagged or we want this DIAL record
+            filtered_dials_append(record)
+            # In IIM, we can't just skip to the next record since we also need
+            # to filter the INFO children that came with this DIAL record
+            if not iiSkipMerge:
+                # We're past all hurdles - mark the record as merged, but
+                # before we can stick a copy into ourselves we need to preserve
+                # the current INFO children for later merging
+                mergeIdsAdd(record.fid)
+                old_dial = self.id_records.get(record.fid)
+                if old_dial:
+                    patch_infos = old_dial.infos
+                    for i, p in enumerate(patch_infos):
+                        id_patch_infos[p.fid] = i
+                new_dial = record.getTypeCopy()
+                new_dial.infos = patch_infos
+                copy_to_self(new_dial)
+            # Now we're ready to filter and merge the INFO children
+            filtered_infos = []
+            filtered_infos_append = filtered_infos.append
+            for info_rec in record.infos:
+                if info_rec.flags1.ignored: continue
+                if doFilter:
+                    # Filter the INFO child, skip if filtered out
+                    info_rec.mergeFilter(loadSet)
+                    masters = MasterSet()
+                    info_rec.updateMasters(masters)
+                    if not loadSetIsSuperset(masters):
+                        continue
+                # Not Filter-tagged or we want this INFO child
+                filtered_infos_append(info_rec)
+                # In IIM, skip all merging (duh)
+                if iiSkipMerge: continue
+                # We're past all hurdles - stick a copy of this INFO child into
+                # the current DIAL record and mark it as merged
+                mergeIdsAdd(info_rec.fid)
+                info_fid = info_rec.fid
+                new_info_rec = info_rec.getTypeCopy()
+                if info_fid in id_patch_infos:
+                    patch_infos[id_patch_infos[info_fid]] = new_info_rec
+                else:
+                    patch_infos.append(new_info_rec)
+            record.infos = filtered_infos
+        block.records = filtered_dials
+        block.indexRecords()
 
 #------------------------------------------------------------------------------
 class MobCell(MobBase):
@@ -680,7 +798,7 @@ class MobCell(MobBase):
             # Grab the version that we're trying to merge, and check if there's
             # even one present
             src_rec = getattr(block, single_attr)
-            if src_rec:
+            if src_rec and not src_rec.flags1.ignored:
                 # If we're Filter-tagged, perform merge filtering first
                 if doFilter:
                     src_rec.mergeFilter(loadSet)
@@ -696,11 +814,10 @@ class MobCell(MobBase):
                 if dest_rec and dest_rec.fid != src_rec.fid:
                     raise ArgumentError(u"Fids don't match! %08x, %08x" % (
                         dest_rec.fid, src_rec.fid))
-                if not src_rec.flags1.ignored:
-                    # We're past all hurdles - stick a copy of this record into
-                    # ourselves and mark it as merged
-                    mergeIdsAdd(src_rec.fid)
-                    setattr(self, single_attr, src_rec.getTypeCopy())
+                # We're past all hurdles - stick a copy of this record into
+                # ourselves and mark it as merged
+                mergeIdsAdd(src_rec.fid)
+                setattr(self, single_attr, src_rec.getTypeCopy())
         for list_attr in (u'temp', u'persistent', u'distant'):
             filtered_list = []
             filtered_append = filtered_list.append
@@ -711,6 +828,7 @@ class MobCell(MobBase):
             id_fids = {record.fid: i for i, record
                        in enumerate(dest_list)}
             for src_rec in getattr(block, list_attr):
+                if src_rec.flags1.ignored: continue
                 # If we're Filter-tagged, perform merge filtering first
                 if doFilter:
                     src_rec.mergeFilter(loadSet)
@@ -722,16 +840,15 @@ class MobCell(MobBase):
                 filtered_append(src_rec)
                 # In IIM, skip all merging (duh)
                 if iiSkipMerge: continue
-                if not src_rec.flags1.ignored:
-                    # We're past all hurdles - stick a copy of this record into
-                    # ourselves and mark it as merged
-                    src_fid = src_rec.fid
-                    rec_copy = src_rec.getTypeCopy()
-                    mergeIdsAdd(src_fid)
-                    if rec_copy.fid in id_fids:
-                        dest_list[id_fids[src_fid]] = rec_copy
-                    else:
-                        append_to_dest(rec_copy)
+                # We're past all hurdles - stick a copy of this record into
+                # ourselves and mark it as merged
+                src_fid = src_rec.fid
+                rec_copy = src_rec.getTypeCopy()
+                mergeIdsAdd(src_fid)
+                if rec_copy.fid in id_fids:
+                    dest_list[id_fids[src_fid]] = rec_copy
+                else:
+                    append_to_dest(rec_copy)
             # Apply any merge filtering we've done here
             setattr(block, list_attr, filtered_list)
 
@@ -828,7 +945,7 @@ class MobCells(MobBase):
                                     stamp).pack_head())
             cellBlock.dump(out)
 
-    def getNumRecords(self,includeGroups=1):
+    def getNumRecords(self,includeGroups=True):
         """Returns number of records, including self and all children."""
         count = sum(x.getNumRecords(includeGroups) for x in self.cellBlocks)
         if count and includeGroups:
@@ -1225,7 +1342,7 @@ class MobWorld(MobCells):
         loadSetIsSuperset = loadSet.issuperset
         for single_attr in (u'world', u'road'):
             src_rec = getattr(block, single_attr)
-            if src_rec:
+            if src_rec and not src_rec.flags1.ignored:
                 # If we're Filter-tagged, perform merge filtering first
                 if doFilter:
                     src_rec.mergeFilter(loadSet)
@@ -1241,11 +1358,10 @@ class MobWorld(MobCells):
                 if dest_rec and dest_rec.fid != src_rec.fid:
                     raise ArgumentError(u"Fids don't match! %08x, %08x" % (
                         dest_rec.fid, src_rec.fid))
-                if not src_rec.flags1.ignored:
-                    # We're past all hurdles - stick a copy of this record into
-                    # ourselves and mark it as merged
-                    mergeIdsAdd(src_rec.fid)
-                    setattr(self, single_attr, src_rec.getTypeCopy())
+                # We're past all hurdles - stick a copy of this record into
+                # ourselves and mark it as merged
+                mergeIdsAdd(src_rec.fid)
+                setattr(self, single_attr, src_rec.getTypeCopy())
         if block.worldCellBlock:
             was_newly_added = False
             # If we don't have a world cell block yet, make a new one to merge
