@@ -1040,16 +1040,6 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         patch_files.executing_patch = self._selected_item
         mods_prior_to_patch = load_order.cached_lower_loading_espms(
             self._selected_item)
-        if bush.game.Esp.canCBash:
-            # If the game has CBash capabilities we *have* to rescan each time
-            # or we may end up in a situation where a user decides to use the
-            # '-P' CLI parameter to disable CBash and build a PBash patch using
-            # the cached mergeability information - which now contains
-            # mergeable mods that PBash can't handle!
-            ##: We can drop this once PBash and CBash are equally capable
-            bosh.modInfos.rescanMergeable(mods_prior_to_patch,
-                                          doCBash=self.doCBash)
-            self.window.RefreshUI(refreshSaves=False) # rescanned mergeable
         #--Check if we should be deactivating some plugins
         active_prior_to_patch = [x for x in mods_prior_to_patch if
                                  load_order.cached_is_active(x)]
