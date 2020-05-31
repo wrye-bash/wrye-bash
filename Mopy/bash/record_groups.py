@@ -151,6 +151,10 @@ class MobBase(object):
         converting to short format."""
         raise AbstractError
 
+    def get_all_signatures(self):
+        """Returns a set of all signatures contained in this block."""
+        raise AbstractError
+
     def indexRecords(self):
         """Indexes records by fid."""
         raise AbstractError
@@ -266,6 +270,9 @@ class MobObjects(MobBase):
         for record in self.records:
             record.convertFids(mapper,toLong)
         self.id_records.clear()
+
+    def get_all_signatures(self):
+        return {self.label}
 
     def indexRecords(self):
         """Indexes records by fid."""
@@ -434,6 +441,8 @@ class MobDials(MobObjects):
         hsize = RecordHeader.rec_header_size
         size = hsize
         for record in self.records:
+            # Resynchronize the stamps (##: unsure if needed)
+            record.infoStamp = self.stamp
             size += hsize + record.getSize()
             if record.infos:
                 size += hsize + sum(
@@ -448,6 +457,9 @@ class MobDials(MobObjects):
                 x.infos)
         )
         return self.numRecords
+
+    def get_all_signatures(self):
+        return super(MobDials, self).get_all_signatures() | {b'INFO'}
 
     def iter_records(self):
         return chain(iter(self.records), chain.from_iterable(
@@ -733,6 +745,15 @@ class MobCell(MobBase):
         if self.pgrd:
             self.pgrd.convertFids(mapper,toLong)
 
+    def get_all_signatures(self):
+        cell_sigs = {self.cell.recType}
+        cell_sigs.update(r.recType for r in self.temp)
+        cell_sigs.update(r.recType for r in self.persistent)
+        cell_sigs.update(r.recType for r in self.distant)
+        if self.land: cell_sigs.add(self.land.recType)
+        if self.pgrd: cell_sigs.add(self.pgrd.recType)
+        return cell_sigs
+
     def updateMasters(self,masters):
         """Updates set of master names according to masters actually used."""
         self.cell.updateMasters(masters)
@@ -954,6 +975,10 @@ class MobCells(MobBase):
         return count
 
     #--Fid manipulation, record filtering ----------------------------------
+    def get_all_signatures(self):
+        return set(chain.from_iterable(c.get_all_signatures()
+                                       for c in self.cellBlocks))
+
     def iter_records(self):
         return chain.from_iterable(c.iter_records() for c in self.cellBlocks)
 
@@ -1318,6 +1343,14 @@ class MobWorld(MobCells):
                                               mergeIds)
         MobCells.updateRecords(self,srcBlock,mapper,mergeIds)
 
+    def get_all_signatures(self):
+        all_sigs = super(MobWorld, self).get_all_signatures()
+        all_sigs.add(self.world.recType)
+        if self.road: all_sigs.add(self.road.recType)
+        if self.worldCellBlock:
+            all_sigs |= self.worldCellBlock.get_all_signatures()
+        return all_sigs
+
     def iter_records(self):
         single_recs = [x for x in (self.world, self.road) if x]
         c_recs = (self.worldCellBlock.iter_records() if self.worldCellBlock
@@ -1537,6 +1570,10 @@ class MobWorlds(MobBase):
             self.indexRecords()
         self.worldBlocks.remove(world)
         del self.id_worldBlocks[world.fid]
+
+    def get_all_signatures(self):
+        return set(chain.from_iterable(w.get_all_signatures()
+                                       for w in self.worldBlocks))
 
     def iter_records(self):
         return chain.from_iterable(w.iter_records() for w in self.worldBlocks)

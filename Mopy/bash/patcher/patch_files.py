@@ -259,12 +259,17 @@ class PatchFile(_PFile, ModFile):
     def mergeModFile(self, modFile, doFilter, iiMode):
         """Copies contents of modFile into self."""
         modFile.convertToLongFids()
+        def add_to_factories(merged_sig):
+            """Makes sure that once we merge a record type, all later plugin
+            loads will load that record type too so that we can update the
+            merged records according to LO."""
+            if merged_sig not in self.loadFactory.recTypes:
+                merged_class = self.mergeFactory.type_class[merged_sig]
+                self.readFactory.addClass(merged_class)
+                self.loadFactory.addClass(merged_class)
         for blockType,block in modFile.tops.iteritems():
-            #--Make sure block type is also in read and write factories
-            if blockType not in self.loadFactory.recTypes:
-                recClass = self.mergeFactory.type_class[blockType]
-                self.readFactory.addClass(recClass)
-                self.loadFactory.addClass(recClass)
+            for s in block.get_all_signatures():
+                add_to_factories(s)
             iiSkipMerge = iiMode and blockType not in bush.game.listTypes
             getattr(self, blockType).merge_records(block, self.loadSet,
                 self.mergeIds, iiSkipMerge, doFilter)
