@@ -33,6 +33,7 @@ from .basic_elements import *
 from .common_records import *
 from .common_subrecords import *
 from .mod_io import *
+from .record_groups import *
 from .record_structs import *
 from .utils_constants import *
 

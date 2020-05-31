@@ -32,9 +32,8 @@ from . import bolt, bush, env, load_order
 from .bass import dirs
 from .bolt import deprint, GPath, SubProgress
 from .brec import MreRecord, ModReader, ModWriter, RecordHeader, RecHeader, \
-    TopGrupHeader
+    TopGrupHeader, MobBase, MobDials, MobICells, MobObjects, MobWorlds
 from .exception import ArgumentError, MasterMapError, ModError, StateError
-from .record_groups import MobBase, MobDials, MobICells, MobObjects, MobWorlds
 
 class MasterSet(set):
     """Set of master names."""
@@ -137,8 +136,8 @@ class LoadFactory(object):
 
     def getTopClass(self, top_rec_type):
         """Return top block class for top block type, or None.
-        :rtype: type[record_groups.MobBase]
-        """
+
+        :rtype: type[MobBase]"""
         if top_rec_type in self.topTypes:
             if   top_rec_type == b'DIAL': return MobDials
             elif top_rec_type == b'CELL': return MobICells

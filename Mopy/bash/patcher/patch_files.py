@@ -36,8 +36,7 @@ from ..bolt import GPath, SubProgress, deprint, Progress
 from ..cint import ObModFile, FormID, dump_record, ObCollection, MGEFCode
 from ..exception import BoltError, CancelError, ModError, StateError
 from ..localize import format_date
-from ..mod_files import ModFile, LoadFactory, MasterSet
-from ..record_groups import MobObjects
+from ..mod_files import ModFile, LoadFactory
 
 # the currently executing patch set in _Mod_Patch_Update before showing the
 # dialog - used in getAutoItems, to get mods loading before the patch

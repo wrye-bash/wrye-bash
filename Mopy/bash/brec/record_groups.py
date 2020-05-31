@@ -21,18 +21,18 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+"""Houses classes for reading, manipulating and writing groups of records."""
 
-"""Classes that group records."""
 # Python imports
 from __future__ import division, print_function
 import struct
 from itertools import chain
 from operator import itemgetter
 # Wrye Bash imports
-from .brec import ModReader, RecordHeader, GrupHeader, TopGrupHeader, MreRecord
-from .bolt import GPath, sio
-from . import bush # for fallout3/nv fsName
-from .exception import AbstractError, ArgumentError, ModError
+from .mod_io import GrupHeader, ModReader, RecordHeader, TopGrupHeader
+from .record_structs import MreRecord
+from ..bolt import GPath, sio
+from ..exception import AbstractError, ArgumentError, ModError
 
 # TES4 Group/Top Types --------------------------------------------------------
 groupTypes = [
@@ -298,7 +298,7 @@ class MobObjects(MobBase):
 
     def setRecord(self,record):
         """Adds record to record list and indexed."""
-        from . import bosh
+        from .. import bosh
         if self.records and not self.id_records:
             self.indexRecords()
         record_id = record.fid
@@ -315,7 +315,7 @@ class MobObjects(MobBase):
 
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
-        from . import bosh
+        from .. import bosh
         self.records = [record for record in self.records if (record.fid == (
             record.isKeyedByEid and bosh.modInfos.masterName,
             0) and record.eid in p_keep_ids) or record.fid in p_keep_ids]
@@ -334,10 +334,11 @@ class MobObjects(MobBase):
 
     def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
         # YUCK, drop these local imports!
-        from .bosh import modInfos
-        from .mod_files import MasterSet
+        from .. import bush
+        from ..bosh import modInfos
+        from ..mod_files import MasterSet
         bad_form = (GPath(bush.game.master_file), 0xA31D) # DarkPCB record
-        is_oblivion = bush.game.fsName == u'Oblivion'
+        is_oblivion = bush.game.displayName == u'Oblivion'
         _null_fid = (modInfos.masterName, 0)
         filtered = []
         filteredAppend = filtered.append
@@ -506,7 +507,7 @@ class MobDials(MobObjects):
                     merge_ids_discard(record.fid)
 
     def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
-        from .mod_files import MasterSet # YUCK
+        from ..mod_files import MasterSet # YUCK
         filtered_dials = []
         filtered_dials_append = filtered_dials.append
         loadSetIsSuperset = loadSet.issuperset
@@ -812,7 +813,7 @@ class MobCell(MobBase):
         self.setChanged()
 
     def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
-        from .mod_files import MasterSet # YUCK
+        from ..mod_files import MasterSet # YUCK
         loadSetIsSuperset = loadSet.issuperset
         mergeIdsAdd = mergeIds.add
         for single_attr in (u'cell', u'pgrd', u'land'):
@@ -992,7 +993,7 @@ class MobCells(MobBase):
         self.setChanged()
 
     def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
-        from .mod_files import MasterSet # YUCK
+        from ..mod_files import MasterSet # YUCK
         if self.cellBlocks and not self.id_cellBlock:
             self.indexRecords()
         lookup_cell_block = self.id_cellBlock.get
@@ -1166,6 +1167,7 @@ class MobWorld(MobCells):
         insTell = ins.tell
         selfLoadFactory = self.loadFactory
         cellBlocksAppend = cellBlocks.append
+        from .. import bush
         isFallout = bush.game.fsName != u'Oblivion'
         cells = {}
         while not insAtEnd(endPos,errLabel):
@@ -1370,7 +1372,7 @@ class MobWorld(MobCells):
             p_keep_ids.add(self.world.fid)
 
     def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
-        from .mod_files import MasterSet # YUCK
+        from ..mod_files import MasterSet # YUCK
         mergeIdsAdd = mergeIds.add
         loadSetIsSuperset = loadSet.issuperset
         for single_attr in (u'world', u'road'):
@@ -1447,6 +1449,7 @@ class MobWorlds(MobBase):
         insSeek = ins.seek
         selfLoadFactory = self.loadFactory
         worldBlocksAppend = worldBlocks.append
+        from .. import bush
         isFallout = bush.game.fsName != u'Oblivion'
         worlds = {}
         header = None
@@ -1587,7 +1590,7 @@ class MobWorlds(MobBase):
         self.setChanged()
 
     def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
-        from .mod_files import MasterSet # YUCK
+        from ..mod_files import MasterSet # YUCK
         if self.worldBlocks and not self.id_worldBlocks:
             self.indexRecords()
         lookup_world_block = self.id_worldBlocks.get
