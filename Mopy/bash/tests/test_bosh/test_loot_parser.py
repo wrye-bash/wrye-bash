@@ -23,7 +23,7 @@
 # =============================================================================
 from pytest import fail
 
-from ...bosh.loot_parser import _process_condition_string
+from ...loot_parser import _process_condition_string
 from ...exception import LexerError, ParserError
 
 # Conditions: Canonical representation tests ----------------------------------

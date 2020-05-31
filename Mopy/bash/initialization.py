@@ -23,6 +23,7 @@
 """Functions for initializing Bash data structures on boot. For now exports
 functions to initialize bass.dirs that need be initialized high up into the
 boot sequence to be able to backup/restore settings."""
+from __future__ import annotations
 import io
 from configparser import ConfigParser, MissingSectionHeaderError
 
@@ -34,12 +35,18 @@ from .env import get_personal_path, get_local_app_data_path, \
     get_win_store_game_info, shellMakeDirs
 from .exception import BoltError, NonExistentDriveError
 
-mopy_dirs_initialized = bash_dirs_initialized = False
-
+##: we need to import LOOTParser after defining this as LOOTParser imports bush
+# (via loot_conditions) - a solution is to make dirs pathlib.Paths so this
+# function is moved to bass
 def get_path_from_ini(bash_ini_, option_key, section_key=u'General'):
     get_value = get_ini_option(bash_ini_, option_key, section_key)
     get_value = (get_value and get_value.strip()) or u'.'
     return GPath(get_value) if get_value != u'.' else None
+from .loot_parser import LOOTParser
+
+mopy_dirs_initialized = bash_dirs_initialized = False
+#--Config Helper files (LOOT Master List, etc.)
+lootDb = None # type: LOOTParser | None
 
 def getPersonalPath(bash_ini_, my_docs_path):
     #--Determine User folders from Personal and Local Application Data directories
@@ -250,6 +257,18 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
         msg = _dirs_err_msg(e, dir_keys, bainDataSrc, modsBashSrc,
                             oblivionMods, oblivionModsSrc)
         raise BoltError(msg)
+    loot_gname = game_info.loot_dir
+    loot_folder = dirs['local_appdata'].join('LOOT')
+    # Since LOOT v0.18, games are stored in LOOT\games\<game>, try that first
+    loot_path = loot_folder.join('games', loot_gname)
+    if not loot_path.is_dir():
+        # Fall back to the 'legacy' path (LOOT\<game>)
+        loot_path = loot_folder.join(loot_gname)
+    loot_master_path = loot_path.join('masterlist.yaml')
+    loot_user_path = loot_path.join('userlist.yaml')
+    loot_tag_path = dirs['taglists'].join('taglist.yaml')
+    global lootDb
+    lootDb = LOOTParser(loot_master_path, loot_user_path, loot_tag_path)
     global bash_dirs_initialized
     bash_dirs_initialized = True
     return game_ini_path, init_warnings

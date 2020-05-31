@@ -39,7 +39,6 @@ from functools import wraps, partial
 from typing import Iterable
 #--Local
 from ._mergeability import isPBashMergeable, is_esl_capable
-from .loot_parser import LOOTParser, libloot_version
 from .mods_metadata import get_tags_from_dir
 from .. import bass, bolt, balt, bush, env, load_order, initialization, \
     archives
@@ -71,8 +70,6 @@ saveInfos = None   # type: SaveInfos
 iniInfos = None    # type: INIInfos
 bsaInfos = None    # type: BSAInfos
 screen_infos = None # type: ScreenInfos
-#--Config Helper files (LOOT Master List, etc.)
-lootDb = None # type: LOOTParser
 
 #--Header tags
 # re does not support \p{L} - [^\W\d_] is almost equivalent (N vs Nd)
@@ -1030,8 +1027,8 @@ class ModInfo(FileInfo):
 
     def getDirtyMessage(self):
         """Returns a dirty message from LOOT."""
-        if self.get_table_prop(u'ignoreDirty', False) or \
-                not lootDb.is_plugin_dirty(self.ci_key, modInfos):
+        if self.get_table_prop(u'ignoreDirty', False) or not \
+                initialization.lootDb.is_plugin_dirty(self.ci_key, modInfos):
             return False, u''
         return True, _(u'Contains dirty edits, needs cleaning.')
 
@@ -1123,7 +1120,8 @@ def read_dir_tags(plugin_name, ci_cached_bt_contents=None):
 
 def read_loot_tags(plugin_name):
     """Wrapper around get_tags_from_loot. See that method for docs."""
-    added_tags, deleted_tags = lootDb.get_tags_from_loot(plugin_name)
+    added_tags, deleted_tags = initialization.lootDb.get_tags_from_loot(
+        plugin_name)
     return process_tags(added_tags), process_tags(deleted_tags)
 
 #------------------------------------------------------------------------------
@@ -3710,20 +3708,6 @@ def initBosh(bashIni, game_ini_path):
     # Setup loot_parser, needs to be done after the dirs are initialized
     if not initialization.bash_dirs_initialized:
         raise BoltError(u'initBosh: Bash dirs are not initialized')
-    loot_gname = bush.game.loot_dir
-    loot_folder = bass.dirs['local_appdata'].join('LOOT')
-    # Since LOOT v0.18, games are stored in LOOT\games\<game>, try that first
-    loot_path = loot_folder.join('games', loot_gname)
-    if not loot_path.is_dir():
-        # Fall back to the 'legacy' path (LOOT\<game>)
-        loot_path = loot_folder.join(loot_gname)
-    loot_master_path = loot_path.join('masterlist.yaml')
-    loot_user_path = loot_path.join('userlist.yaml')
-    loot_tag_path = bass.dirs['taglists'].join('taglist.yaml')
-    global lootDb
-    lootDb = LOOTParser(loot_master_path, loot_user_path, loot_tag_path)
-    deprint(u'Initialized loot_parser, compatible with libloot '
-            u'v%s' % libloot_version)
     # game ini files
     deprint(u'Looking for main game INI at %s' % game_ini_path)
     global oblivionIni, gameInis

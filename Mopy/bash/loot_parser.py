@@ -38,8 +38,8 @@ from copy import deepcopy
 
 from .loot_conditions import _ACondition, Comparison, ConditionAnd, \
     ConditionFunc, ConditionNot, ConditionOr, is_regex
-from ..bolt import deprint, LowerDict, Path, AFile
-from ..exception import LexerError, ParserError, BoltError, EvalError
+from .bolt import deprint, LowerDict, Path, AFile
+from .exception import LexerError, ParserError, BoltError, EvalError
 
 # Try to use the C version (way faster), if that isn't possible fall back to
 # the pure Python version
@@ -90,6 +90,8 @@ class LOOTParser(object):
         self._refresh_tags_cache(_force=True)
         # Old api
         self._tagCache = {}
+        deprint(f'Initialized loot_parser, compatible with libloot '
+                f'v{libloot_version}')
 
     def _refresh_tags_cache(self, _force=False):
         try:
@@ -113,8 +115,8 @@ class LOOTParser(object):
                 pass
             except yaml.YAMLError as e:
                 raise BoltError(
-                    u'%s could not be parsed (%r). Please ensure Wrye Bash is '
-                    u'installed correctly.' % (e, self._taglist.abs_path))
+                    f'{self._taglist.abs_path} could not be parsed ({e!r}). '
+                    f'Please ensure Wrye Bash is installed correctly.')
         return False
 
     def get_plugin_tags(self, plugin_name, catch_errors=True):
@@ -165,15 +167,14 @@ class LOOTParser(object):
             if userlist_path:
                 _merge_lists(masterlist, _parse_list(userlist_path))
             self._cached_masterlist = masterlist
-            self._cached_regexes = [(re.compile(r, re.I | re.U).match, e)
-                                    for r, e in masterlist.items()
-                                    if is_regex(r)]
+            self._cached_regexes = [(re.compile(r, re.I).match, e) for r, e in
+                                    masterlist.items() if is_regex(r)]
             self._cached_merges = {}
         except (re.error, TypeError, yaml.YAMLError):
             if not catch_errors:
                 raise
-            deprint(u'Error when parsing LOOT masterlist %s, it likely has '
-                    u'malformed syntax' % masterlist_path, traceback=True)
+            deprint(f'Error when parsing LOOT masterlist {masterlist_path}, '
+                    f'it likely has malformed syntax', traceback=True)
 
     def is_plugin_dirty(self, plugin_name, mod_infos):
         """Checks if the specified plugin is dirty according to the information
@@ -325,7 +326,7 @@ class _ConditionalTag(object):
             return self.tag_condition.evaluate()
 
     def __repr__(self):
-        return u'%s if %r' % (self.tag_name, self.tag_condition)
+        return f'{self.tag_name} if {self.tag_condition!r}'
 
 def _resolve_tags(tag_set):
     """Convenience method to evaluate conditions for a set of tags (may
@@ -570,10 +571,9 @@ def _parse_atom(tokens, accept_not=True):
         _pop_token(tokens, _NOT)
         return ConditionNot(_parse_atom(tokens, accept_not=False))
     else:
-        raise ParserError(
-            u'Unexpected token %s - expected one of %s' % (
-                ttag, u'[%s]' % u', '.join([_FUNCTION, _LPAREN, _NOT])),
-            *_pop_token(tokens, ttag).debug_info)
+        raise ParserError(f'Unexpected token {ttag} - expected one of '
+                          f'{[_FUNCTION, _LPAREN, _NOT]}',
+                          *_pop_token(tokens, ttag).debug_info)
 
 def _parse_function(tokens):
     """Parses the specified deque of tokens, returning a function call. These
@@ -691,7 +691,7 @@ def _parse_list(list_path):
     # parsing the contents does not result in a dict (e.g. if the file is just
     # a long string of random characters), return an empty dict as well.
     if not isinstance(list_contents, dict):
-        deprint(u'Masterlist file %s is empty or invalid' % list_path)
+        deprint(f'Masterlist file {list_path} is empty or invalid')
         return LowerDict()
     return LowerDict({p[u'name']: _PluginEntry(p) for p
                       in list_contents.get(u'plugins', ())})

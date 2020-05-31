@@ -32,11 +32,13 @@ import operator
 import os
 import re
 
-from .. import bass, bush
-from ..bolt import GPath, Path, deprint, LooseVersion
-from ..env import get_file_version
-from ..exception import AbstractError, EvalError, FileError
-from ..load_order import cached_active_tuple, cached_is_active, in_master_block
+from . import bass, bush ##: drop the bush import!
+from .bolt import GPath, Path, deprint, LooseVersion
+from .env import get_file_version
+from .exception import AbstractError, EvalError, FileError
+##: below is too tight coupling with Bash internals - pass those as
+# parameters along with modInfos currently imported locally
+from .load_order import cached_active_tuple, cached_is_active, in_master_block
 
 # Conditions
 class _ACondition(object):
@@ -88,7 +90,7 @@ class ConditionFunc(_ACondition):
         try:
             wanted_func = _function_mapping[self.func_name]
         except KeyError:
-            raise EvalError(u"Unknown function '%s'" % self.func_name)
+            raise EvalError(f"Unknown function '{self.func_name}'")
         try:
             return wanted_func(*self.func_args)
         except EvalError: raise
@@ -108,8 +110,7 @@ class ConditionFunc(_ACondition):
             else: # Comparison
                 fmt_a = u'%r' % a
             fmt_args.append(fmt_a)
-        return u'%s(%s)' % (
-            self.func_name, u', '.join(fmt_args))
+        return f'{self.func_name}({u", ".join(fmt_args)})'
 
 class ConditionNot(_ACondition):
     """Evaluates to True iff the specified condition evaluates to False."""
@@ -197,7 +198,7 @@ def _fn_is_master(file_path):
 
     :param file_path: The file path to check."""
     plugin_path = GPath(file_path)
-    from . import modInfos
+    from .bosh import modInfos
     # Need to check if it's on disk first, otherwise modInfos[x] errors
     return plugin_path in modInfos and in_master_block(modInfos[plugin_path])
 
@@ -285,7 +286,7 @@ def _fn_version(file_path, expected_ver, comparison):
     file_path = _process_path(file_path)
     if file_path.cext in bush.game.espm_extensions:
         # Read version from the description
-        from . import modInfos
+        from .bosh import modInfos
         actual_ver = LooseVersion(
             modInfos.getVersion(file_path.tail) or '0')
     elif file_path.cext in ('.exe', '.dll'):
@@ -369,7 +370,7 @@ def _read_binary_ver(binary_path):
     # Handle special case of (0, 0, 0, 0) - no version present
     if binary_ver == (0, 0, 0, 0):
         return '0'
-    return '.'.join(str(s) for s in binary_ver)
+    return '.'.join(map(str, binary_ver))
 
 def _iter_dir(parent_dir):
     """Takes a path and returns an iterator of the filenames (as strings) of
