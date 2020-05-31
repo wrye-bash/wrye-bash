@@ -276,16 +276,22 @@ class PatchDialog(DialogWindow):
                 # change. That's a general problem with crc cache - API limits
                 info.calculate_crc(recalculate=True)
             BashFrame.modList.RefreshUI(refreshSaves=bool(count))
+        except CancelError:
+            pass
         except FileEditError as error:
             balt.playSound(self.parent, bass.inisettings['SoundError'].s)
             balt.showError(self,u'%s'%error,_(u'File Edit Error'))
-        except CancelError:
-            pass
+            bolt.deprint(u'Exception during Bashed Patch building:',
+                traceback=True)
         except BoltError as error:
             balt.playSound(self.parent, bass.inisettings['SoundError'].s)
             balt.showError(self,u'%s'%error,_(u'Processing Error'))
+            bolt.deprint(u'Exception during Bashed Patch building:',
+                traceback=True)
         except:
             balt.playSound(self.parent, bass.inisettings['SoundError'].s)
+            bolt.deprint(u'Exception during Bashed Patch building:',
+                traceback=True)
             raise
         finally:
             if self.doCBash:

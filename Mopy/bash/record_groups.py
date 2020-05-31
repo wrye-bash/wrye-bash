@@ -1243,7 +1243,7 @@ class MobWorld(MobCells):
         """Returns number of records, including self and all children."""
         if not self.changed:
             return MobBase.getNumRecords(self)
-        count = 1 + includeGroups #--world record & group
+        count = 1 # self.world, always present
         count += bool(self.road)
         if self.worldCellBlock:
             count += self.worldCellBlock.getNumRecords(includeGroups)
@@ -1416,11 +1416,20 @@ class MobWorlds(MobBase):
         worldBlocksAppend = worldBlocks.append
         isFallout = bush.game.fsName != u'Oblivion'
         worlds = {}
+        header = None
         while not insAtEnd(endPos,errLabel):
             #--Get record info and handle it
+            prev_header = header
             header = insRecHeader()
             recType = header.recType
             if recType == expType:
+                # FIXME(inf) The getattr here has to go
+                if (prev_header and
+                        getattr(prev_header, u'recType', None) == b'WRLD'):
+                    # We hit a WRLD directly after another WRLD, so there are
+                    # no children to read - just finish this WRLD
+                    worldBlocksAppend(MobWorld(prev_header, selfLoadFactory,
+                        world))
                 world = recWrldClass(header,ins,True)
                 if isFallout: worlds[world.fid] = world
             elif recType == 'GRUP':
@@ -1449,6 +1458,9 @@ class MobWorlds(MobBase):
                 raise ModError(ins.inName,
                                u'Unexpected %s record in %s group.' % (
                                    recType,expType))
+        if world:
+            # We have a last WRLD without children lying around, finish it
+            worldBlocksAppend(MobWorld(header, selfLoadFactory, world))
 
     def getSize(self):
         """Returns size (including size of any group headers)."""
