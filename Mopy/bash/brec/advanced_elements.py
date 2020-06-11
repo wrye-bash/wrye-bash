@@ -318,7 +318,7 @@ class MelArray(MelBase):
         """Creates a new MelArray with the specified attribute and element.
 
         :param array_attr: The attribute name to give the entire array.
-        :type array_attr: str
+        :type array_attr: unicode
         :param element: The element that each entry in this array will be
             loaded and dumped by.
         :type element: MelBase

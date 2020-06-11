@@ -69,7 +69,7 @@ __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
            'Mod_ScanDirty', 'Mod_RemoveWorldOrphans', 'Mod_FogFixer',
            'Mod_CopyToEsmp', 'Mod_DecompileAll', 'Mod_FlipEsm', 'Mod_FlipEsl',
            'Mod_FlipMasters', 'Mod_SetVersion', 'Mod_ListDependent',
-           'Mod_JumpToInstaller', 'Mod_Move']
+           'Mod_JumpToInstaller', 'Mod_Move', 'Mod_RecalcRecordCounts']
 
 #------------------------------------------------------------------------------
 # Mod Links -------------------------------------------------------------------
@@ -99,6 +99,23 @@ class Mod_FullLoad(OneItemLink):
                 return
         self._showOk(_(u'File fully verified using current record '
                        u'definitions.'), title=_(u'Verification Succeeded'))
+
+class Mod_RecalcRecordCounts(OneItemLink):
+    """Useful for debugging if any getNumRecords implementations are broken.
+    Simply copy-paste the loop from below into ModFile.save to get output on BP
+    save, then compare it to the MobBase-based output from this link."""
+    _text = _(u'Recalculate Record Counts')
+    _help = _(u'Recalculates the group record counts for the selected plugin '
+              u'and writes them to the BashBugDump.')
+
+    def Execute(self):
+        loadFactory = mod_files.LoadFactory(True)
+        modFile = mod_files.ModFile(self._selected_info, loadFactory)
+        modFile.load(True)
+        for topType, block in sorted(modFile.tops.iteritems(),
+                key=lambda t: t[0]):
+            bolt.deprint(u'%s GRUP has %u records' % (
+                topType, block.getNumRecords()))
 
 # File submenu ----------------------------------------------------------------
 # the rest of the File submenu links come from file_links.py

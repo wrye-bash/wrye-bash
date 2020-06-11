@@ -381,7 +381,7 @@ class MelReadOnly(MelSequential):
 class MelGroup(MelSequential):
     """Represents a group record."""
     def __init__(self,attr,*elements):
-        """:type attr: str"""
+        """:type attr: unicode"""
         MelSequential.__init__(self, *elements)
         self.attr, self.loaders = attr, {}
 

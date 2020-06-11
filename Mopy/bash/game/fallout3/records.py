@@ -40,9 +40,9 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelRaceVoices, MelBounds, null1, null2, null3, null4, MelScriptVars, \
     MelSequential, MelTruncatedStruct, PartialLoadDecider, MelReadOnly, \
     MelCoordinates, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, \
-    MelArray, MelWthrColors, MreLeveledListBase, MreDialBase, MreActorBase, \
-    MreWithItems, MelCtdaFo3, MelRef3D, MelXlod, MelNull, MelWorldBounds, \
-    MelEnableParent, MelRefScale, MelMapMarker, MelActionFlags
+    MelArray, MelWthrColors, MreLeveledListBase, MreActorBase, MreWithItems, \
+    MelCtdaFo3, MelRef3D, MelXlod, MelNull, MelWorldBounds, MelEnableParent, \
+    MelRefScale, MelMapMarker, MelActionFlags
 from ...exception import ModError, ModSizeError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
@@ -1039,8 +1039,10 @@ class MreDebr(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreDial(MreDialBase):
+class MreDial(MelRecord):
     """Dialogue."""
+    rec_sig = b'DIAL'
+
     _DialFlags = Flags(0, Flags.getNames('rumors', 'toplevel'))
 
     melSet = MelSet(

@@ -26,7 +26,7 @@ import struct
 
 from ..oblivion import OblivionGameInfo
 from ... import brec
-from ...brec import MreGlob
+from ...brec import MreGlob, MreLand
 
 class NehrimGameInfo(OblivionGameInfo):
     displayName = u'Nehrim'
@@ -80,7 +80,8 @@ class NehrimGameInfo(OblivionGameInfo):
             MreRace, MreScpt, MreSgst, MreSlgm, MreSoun, MreSpel, MreStat, \
             MreTree, MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle, \
             MreLtex, MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, \
-            MreGmst, MreRefr, MreRoad, MreTes4, MreWrld, MreDial, MreInfo
+            MreGmst, MreRefr, MreRoad, MreTes4, MreWrld, MreDial, MreInfo, \
+            MrePgrd
         cls.mergeClasses = (
             MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook,
             MreBsgn, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh,
@@ -90,7 +91,7 @@ class NehrimGameInfo(OblivionGameInfo):
             MreScpt, MreSgst, MreSlgm, MreSoun, MreSpel, MreStat, MreTree,
             MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle, MreLtex,
             MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, MreGmst,
-            MreRefr, MreRoad, MreWrld, MreDial, MreInfo
+            MreRefr, MreRoad, MreWrld, MreDial, MreInfo, MreLand, MrePgrd,
         )
         cls.readClasses = (MreMgef, MreScpt,)
         cls.writeClasses = (MreMgef,)
@@ -130,10 +131,10 @@ class NehrimGameInfo(OblivionGameInfo):
             MreNpc, MrePack, MreQust, MreRace, MreRefr, MreRoad, MreScpt,
             MreSgst, MreSkil, MreSlgm, MreSoun, MreSpel, MreStat, MreTree,
             MreTes4, MreWatr, MreWeap, MreWrld, MreWthr, MreClmt, MreCsty,
-            MreIdle, MreLtex, MreRegn, MreSbsp, MreDial, MreInfo,)}
-        brec.MreRecord.simpleTypes = (
-            set(brec.MreRecord.type_class) - {b'TES4', b'ACHR', b'ACRE', b'REFR',
-                                              b'CELL', b'PGRD', b'ROAD', b'LAND',
-                                              b'WRLD', b'INFO', b'DIAL'})
+            MreIdle, MreLtex, MreRegn, MreSbsp, MreDial, MreInfo, MreLand,
+            MrePgrd)}
+        brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) - {
+            b'TES4', b'ACHR', b'ACRE', b'REFR', b'CELL', b'PGRD', b'ROAD',
+            b'LAND', b'WRLD', b'INFO', b'DIAL'})
 
 GAME_TYPE = NehrimGameInfo

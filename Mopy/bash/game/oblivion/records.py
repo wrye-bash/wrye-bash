@@ -35,9 +35,9 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelRaceParts, MelRaceVoices, null1, null2, null3, null4, MelScriptVars, \
     MelSequential, MelUnion, FlagDecider, AttrValDecider, PartialLoadDecider, \
     MelTruncatedStruct, MelCoordinates, MelIcon, MelIco2, MelEdid, MelFull, \
-    MelArray, MelWthrColors, MelObject, MreDialBase, MreActorBase, \
-    MreWithItems, MelReadOnly, MelCtda, MelRef3D, MelXlod, MelWorldBounds, \
-    MelEnableParent, MelRefScale, MelMapMarker, MelActionFlags
+    MelArray, MelWthrColors, MelObject, MreActorBase, MreWithItems, \
+    MelReadOnly, MelCtda, MelRef3D, MelXlod, MelWorldBounds, MelEnableParent, \
+    MelRefScale, MelMapMarker, MelActionFlags
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
 
@@ -839,8 +839,10 @@ class MreCsty(MelRecord):
         )
     __slots__ = melSet.getSlotsUsed()
 
-class MreDial(MreDialBase):
+class MreDial(MelRecord):
     """Dialogue."""
+    rec_sig = b'DIAL'
+
     melSet = MelSet(
         MelEdid(),
         MelFids(b'QSTI', u'quests'),
@@ -1426,42 +1428,24 @@ class MrePack(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
-#------------------------------------------------------------------------------
-## See the comments on MreLand. Commented out for same reasons.
-##class MrePgrd(MelRecord):
-##    """Path grid structure. Part of cells."""
-##    ####Could probably be loaded via MelArray,
-##    ####but little point since it is too complex to manipulate
-##    rec_sig = b'PGRD'
-##    class MelPgrl(MelStructs):
-##        """Handler for pathgrid pgrl record."""
-##        def loadData(self,record,ins,type,size,readId):
-##            if(size % 4 != 0):
-##                raise ModError(
-##                    ins.inName, u'%s: Expected subrecord of size divisible '
-##                                u'by 4, but got %u' % (readId, size_))
-##            format = 'I' * (size % 4)
-##            attrs = self.attrs
-##            target = self.getDefault()
-##            record.__getattribute__(self.attr).append(target)
-##            target.__slots__ = self.attrs
-##            unpacked = ins.unpack(format,size,readId)
-##            setter = target.__setattr__
-##            map(setter,attrs,(unpacked[0], unpacked[1:]))
-##
-##        def dumpData(self,record,out):
-##            for target in record.__getattribute__(self.attr):
-##                out.packSub(self.subType,'I' + 'I'*(len(target.points)), target.reference, target.points)
-##
-##    melSet = MelSet(
-##        MelBase('DATA','data_p'),
-##        MelBase('PGRP','points_p'),
-##        MelBase('PGAG','pgag_p'),
-##        MelBase('PGRR','pgrr_p'),
-##        MelBase('PGRI','pgri_p'),
-##        MelPgrl('PGRL','','pgrl',(FID,'reference'),'points'),
-##    )
-##    __slots__ = melSet.getSlotsUsed()
+class MrePgrd(MelRecord):
+    """Path Grid."""
+    rec_sig = b'PGRD'
+
+    # Most of these MelBases could be loaded via MelArray, but they're really
+    # big, don't contain FormIDs and are too complex to manipulate
+    melSet = MelSet(
+        MelUInt16(b'DATA', u'point_count'),
+        MelBase(b'PGRP', u'point_array'),
+        MelBase(b'PGAG', u'unknown1'),
+        MelBase(b'PGRR', u'point_to_point_connections'),
+        MelBase(b'PGRI', u'inter_cell_connections'),
+        MelGroups(u'point_to_reference_mappings',
+            MelArray(u'mapping_points', MelUInt32(b'PGRL', u'm_point'),
+                prelude=MelFid(b'PGRL', u'mapping_reference'))
+        ),
+    )
+    __slots__ = melSet.getSlotsUsed()
 
 class MreQust(MelRecord):
     """Quest."""

@@ -418,6 +418,7 @@ def InitModLinks():
     #--ModList: Item Links
     if bass.inisettings['ShowDevTools'] and bush.game.Esp.canBash:
         ModList.itemMenu.append(Mod_FullLoad())
+        ModList.itemMenu.append(Mod_RecalcRecordCounts())
     if True: #--File
         file_menu = MenuLink(_(u'File..'))
         file_menu.links.append(File_Duplicate())

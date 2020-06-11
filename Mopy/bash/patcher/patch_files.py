@@ -261,7 +261,7 @@ class PatchFile(_PFile, ModFile):
         def add_to_factories(merged_sig):
             """Makes sure that once we merge a record type, all later plugin
             loads will load that record type too so that we can update the
-            merged records according to LO."""
+            merged records according to load order."""
             if merged_sig not in self.loadFactory.recTypes:
                 merged_class = self.mergeFactory.type_class[merged_sig]
                 self.readFactory.addClass(merged_class)

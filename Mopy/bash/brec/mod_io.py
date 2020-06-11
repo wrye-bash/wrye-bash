@@ -155,7 +155,7 @@ class GrupHeader(RecordHeader):
         block of group records, ie call this immediately after unpacking self.
         """
         ins.seek(self.size - self.__class__.rec_header_size, 1,
-                 b'GRUP.' + self.label)
+                 b'GRUP.%s' % self.label) # label could be an int
 
     def __repr__(self):
         return u'<GRUP Header: %s v%u>' % (self.label, self.form_version)

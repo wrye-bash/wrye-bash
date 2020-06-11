@@ -38,7 +38,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelPartialCounter, MelBounds, null1, null2, null3, null4, MelSequential, \
     MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, \
     MelFull, MelArray, MelWthrColors, GameDecider, MelReadOnly, \
-    MreDialBase, MreActorBase, MreWithItems, MelCtdaFo3, MelRef3D, MelXlod, \
+    MreActorBase, MreWithItems, MelCtdaFo3, MelRef3D, MelXlod, \
     MelWorldBounds, MelEnableParent, MelRefScale, MelMapMarker
 from ...exception import ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
@@ -2029,8 +2029,9 @@ class MreDebr(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreDial(MreDialBase):
+class MreDial(MelRecord):
     """Dialogue."""
+    rec_sig = b'DIAL'
 
     DialTopicFlags = Flags(0, Flags.getNames(
         (0, 'doAllBeforeRepeating'),

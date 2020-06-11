@@ -38,8 +38,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, MelBounds, null1, \
     null2, null3, null4, MelTruncatedStruct, MelReadOnly, MelCoordinates, \
     MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, MelArray, \
-    MelObject, MreDialBase, MreWithItems, MelRef3D, MelXlod, MelNull, \
-    MelEnableParent, MelRefScale, MelMapMarker, MelActionFlags
+    MelObject, MreWithItems, MelRef3D, MelXlod, MelNull, MelEnableParent, \
+    MelRefScale, MelMapMarker, MelActionFlags
 from ...exception import ModSizeError
 
 #------------------------------------------------------------------------------
@@ -607,8 +607,10 @@ class MreDehy(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreDial(MreDialBase):
+class MreDial(MelRecord):
     """Dialogue."""
+    rec_sig = b'DIAL'
+
     _DialFlags = Flags(0, Flags.getNames('rumors', 'toplevel', ))
 
     melSet = MelSet(

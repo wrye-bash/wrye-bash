@@ -2183,11 +2183,11 @@ listTypes = ('LVLI','LVLN','LVSP',)
 #------------------------------------------------------------------------------
 # remaining to add: 'PERK', 'RACE',
 namesTypes = {b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'AVIF', b'BOOK',
-              b'CLAS', b'CLFM', b'CONT', b'DIAL', b'DOOR', b'ENCH', b'EXPL',
-              b'EYES', b'FACT', b'FLOR', b'FURN', b'HAZD', b'HDPT', b'INGR',
-              b'KEYM', b'LCTN', b'LIGH', b'MESG', b'MGEF', b'MISC', b'MSTT',
-              b'NPC_', b'PROJ', b'SCRL', b'SHOU', b'SLGM', b'SNCT', b'TACT',
-              b'TREE', b'WATR', b'WEAP', b'WOOP'}
+              b'CLAS', b'CLFM', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'EYES',
+              b'FACT', b'FLOR', b'FURN', b'HAZD', b'HDPT', b'INGR', b'KEYM',
+              b'LCTN', b'LIGH', b'MESG', b'MGEF', b'MISC', b'MSTT', b'NPC_',
+              b'PROJ', b'SCRL', b'SHOU', b'SLGM', b'SNCT', b'TACT', b'TREE',
+              b'WATR', b'WEAP', b'WOOP'}
 
 #------------------------------------------------------------------------------
 # ItemPrices Patcher
