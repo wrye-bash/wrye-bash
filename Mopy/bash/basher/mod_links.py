@@ -635,9 +635,9 @@ class Mod_ListBashTags(ItemLink):
         balt.copyToClipboard(tags_text)
         self._showLog(tags_text, title=_(u"Bash Tags"), fixedFont=False)
 
-def _getUrl(fileName, installer):
-    """"Try to get the url of the file (order of priority will be: TESNexus,
-    TESAlliance)."""
+def _getUrl(installer):
+    """"Try to get the url of the installer (order of priority will be:
+    TESNexus, TESAlliance)."""
     url = None
     ma = bosh.reTesNexus.search(installer)
     if ma and ma.group(2):
@@ -699,7 +699,7 @@ class Mod_CreateLOOTReport(EnabledLink):
             log_txt += u"  - name: '%s'\n" % fileName
             installer = bosh.modInfos.table.getItem(
                 fileName, u'installer', u'')
-            if installer: log_txt += _getUrl(fileName, installer)
+            if installer: log_txt += _getUrl(installer)
             # Tags applied after the description
             fmt_tags = sorted(added | {u'-%s' % t for t in removed})
             if fmt_tags:
@@ -755,7 +755,7 @@ class Mod_CopyModInfo(ItemLink):
             #-- Name of file, plus a link if we can figure it out
             installer = bosh.modInfos.table.getItem(fileName,'installer',u'')
             if not installer: info_txt += fileName.s
-            else: info_txt = _getUrl(fileName, installer, info_txt)
+            else: info_txt = _getUrl(installer)
             labels = self.window.labels
             for col in self.window.cols:
                 if col == 'File': continue

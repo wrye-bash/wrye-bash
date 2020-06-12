@@ -54,7 +54,8 @@ if brec.MelModel is None:
             MelGroup.__init__(
                 self, attr,
                 MelString(types[0], 'modPath'),
-                MelFloat(types[1], 'modb'),
+                # None here is on purpose - 0 is a legitimate value
+                MelOptFloat(types[1], (u'modb', None)),
                 # Texture File Hashes
                 MelBase(types[2], 'modt_p')
             )
@@ -1541,7 +1542,8 @@ class MreRace(MelRecord):
             #  which breaks that. Change this to a MelModel, then hunt down
             #  that code and change it
             MelString('MODL', 'modPath'),
-            MelFloat('MODB', 'modb'),
+            # None here is on purpose - 0 is a legitimate value
+            MelOptFloat(b'MODB', (u'modb', None)),
             MelBase('MODT', 'modt_p'),
             MelIcon(),
         )),

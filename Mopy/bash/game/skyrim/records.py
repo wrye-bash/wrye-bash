@@ -549,10 +549,10 @@ class _AFixedContainer(_AVmadComponent):
             child = get_child(child_attr)
             if child is not None:
                 store_child(child)
-                set_flag(True)
+                set_flag(flag_attr, True)
             else:
                 # No need to store children we won't be writing out
-                set_flag(False)
+                set_flag(flag_attr, False)
         out_data = super(_AFixedContainer, self).dump_data(record)
         # Then, dump each child for which the flag is now set, in order
         dump_child = self.child_loader.dump_data
@@ -3843,7 +3843,7 @@ class MrePack(MelRecord):
                   'unused1', 'schedule_duration'),
         MelConditions(),
         MelGroup('idleAnimations',
-            MelUInt32('IDLF', 'animation_flags'),
+            MelUInt8(b'IDLF', u'animation_flags'),
             MelPartialCounter(MelStruct('IDLC', 'B3s', 'animation_count',
                                         'unknown'),
                               counter='animation_count', counts='animations'),
