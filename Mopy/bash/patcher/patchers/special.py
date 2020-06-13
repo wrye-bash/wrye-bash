@@ -289,7 +289,7 @@ class ListsMerger(_PListsMerger):
         super(ListsMerger, self).__init__(p_name, p_file, p_sources,
                                           remove_empty, tag_choices)
         self.empties = set()
-        _skip_id = lambda x: (GPath(u'Oblivion.esm'), x)
+        _skip_id = lambda x: (GPath(bush.game.master_file), x)
         self._overhaul_compat(self.srcs, _skip_id)
 
     def _check_list(self, record, log):
@@ -317,7 +317,7 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
         self.remove_empty_sublists = remove_empty
         self.tag_choices = tag_choices
         importMods = set(self.srcs) & p_file.loadSet
-        _skip_id = lambda x: FormID(GPath(u'Oblivion.esm'),x)
+        _skip_id = lambda x: FormID(GPath(bush.game.master_file), x)
         self._overhaul_compat(importMods, _skip_id)
 
     def getTypes(self):

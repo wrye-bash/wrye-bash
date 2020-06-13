@@ -134,10 +134,10 @@ class _PFile(object):
                 u"genericLoreScript. This is usually a sign that the mod "
                 u"author did a __compile all__ while editing scripts. This "
                 u"may interfere with the behavior of other mods that "
-                u"intentionally modify scripts from Oblivion.esm. (E.g. Cobl "
+                u"intentionally modify scripts from %s. (E.g. Cobl "
                 u"and Unofficial Oblivion Patch.) You can use Bash's [["
                 u"%s%s|Decompile All]] command to repair the mods."
-                  ) % _link(u'modsDecompileAll'))
+                  ) % ((bush.game.master_file,) + _link(u'modsDecompileAll')))
             for mod in self.compiledAllMods: log(u'* ' + mod.s)
         log.setHeader(u'=== ' + _(u'Active Mods'), True)
         for mname in self.allMods:
@@ -230,7 +230,8 @@ class PatchFile(_PFile, ModFile):
                     self.worldOrphanMods.append(modName)
                 # TODO adapt for other games
                 if bush.game.fsName == u'Oblivion' and 'SCPT' in \
-                        modFile.tops and modName != GPath(u'Oblivion.esm'):
+                        modFile.tops and \
+                        modName != GPath(bush.game.master_file):
                     gls = modFile.SCPT.getRecord(0x00025811)
                     if gls and gls.compiled_size == 4 and gls.last_index == 0:
                         self.compiledAllMods.append(modName)
@@ -264,7 +265,8 @@ class PatchFile(_PFile, ModFile):
         mergeIdsAdd = mergeIds.add
         loadSet = self.loadSet
         modFile.convertToLongFids()
-        badForm = (GPath(u"Oblivion.esm"),0xA31D) #--DarkPCB record
+        badForm = (GPath(bush.game.master_file), 0xA31D) #--DarkPCB record
+        is_oblivion = bush.game.fsName == u'Oblivion'
         selfLoadFactoryRecTypes = self.loadFactory.recTypes
         selfMergeFactoryType_class = self.mergeFactory.type_class
         selfReadFactoryAddClass = self.readFactory.addClass
@@ -286,7 +288,7 @@ class PatchFile(_PFile, ModFile):
             loadSetIssuperset = loadSet.issuperset
             for record in block.getActiveRecords():
                 fid = record.fid
-                if fid == badForm: continue
+                if is_oblivion and fid == badForm: continue
                 #--Include this record?
                 if doFilter:
                     record.mergeFilter(loadSet)
@@ -380,7 +382,7 @@ class CBash_PatchFile(_PFile, ObModFile):
         """Copies contents of modFile group into self."""
         if iiMode and group not in ('LVLC','LVLI','LVSP'): return
         mergeIds = self.mergeIds
-        badForm = FormID(GPath(u"Oblivion.esm"),0xA31D) #--DarkPCB record
+        badForm = FormID(GPath(bush.game.master_file), 0xA31D) #--DarkPCB record
         for record in getattr(modFile,group):
             #don't merge deleted items
             if record.IsDeleted and group not in ('REFRS','ACHRS','ACRES'):
@@ -518,7 +520,7 @@ class CBash_PatchFile(_PFile, ObModFile):
             if bush.game.fsName == u'Oblivion':
                 gls = modFile.LookupRecord(FormID(0x00025811))
                 if gls and gls.compiledSize == 4 and gls.lastIndex == 0 and \
-                                modName != GPath(u'Oblivion.esm'):
+                                modName != GPath(bush.game.master_file):
                     self.compiledAllMods.append(modName)
             isScanned = modName in self.scanSet and modName not in self.loadSet and modName not in self.mergeSet
             if not isScanned:

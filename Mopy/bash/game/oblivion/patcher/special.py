@@ -723,7 +723,7 @@ class _ASEWorldEnforcer(_ExSpecial):
         cls_vars = super(_ASEWorldEnforcer, cls).gui_cls_vars()
         return cls_vars.update({u'default_isEnabled': True}) or cls_vars
 
-_ob_path = GPath(u'Oblivion.esm')
+_ob_path = GPath(bush.game.master_file)
 class SEWorldEnforcer(_ASEWorldEnforcer,Patcher):
 
     def __init__(self, p_name, p_file):

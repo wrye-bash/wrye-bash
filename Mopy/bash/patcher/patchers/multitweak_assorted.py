@@ -29,9 +29,9 @@ import random
 import re
 from collections import Counter
 # Internal
+from ... import bush, load_order
 from ...bolt import GPath, deprint
 from ...brec import MreRecord
-from ... import load_order
 from ...cint import MGEFCode
 from ...patcher.base import AMultiTweakItem, DynamicNamedTweak
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
@@ -1066,7 +1066,7 @@ class AssortedTweak_ScriptEffectSilencer(AAssortedTweak_ScriptEffectSilencer,
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        nullRef = (GPath(u'Oblivion.esm'),0)
+        nullRef = (GPath(bush.game.master_file), 0)
         silentattrs = {
             'model' : None,
             'projectileSpeed' : 9999,

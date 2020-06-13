@@ -72,7 +72,8 @@ class BasalCreatureTweaker(MultiTweakItem):
 
 class _NpcCTweak(CBash_MultiTweakItem):
     tweak_read_classes = 'NPC_',
-    playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007) # used in 4/6 derived
+    # used in 4/6 derived
+    playerFid = FormID(GPath(bush.game.master_file), 0x000007)
 
 class _CreaCTweak(CBash_MultiTweakItem):
     tweak_read_classes = 'CREA',
@@ -106,8 +107,8 @@ class MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher,BasalNPCTweaker):
             elif self.choiceValues[self.chosen][
                 0] == 2 and record.flags.female:
                 continue
-            if record.fid == (GPath(u'Oblivion.esm'), 0x000007): continue  #
             # skip player record
+            if record.fid == (GPath(bush.game.master_file), 0x000007): continue
             try:
                 oldModPath = record.model.modPath
             except AttributeError:  # for freaking weird esps with NPC's
@@ -206,7 +207,7 @@ class VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,BasalNPCTweaker):
         if skeletonList:
             femaleOnly = self.choiceValues[self.chosen][0] == 1
             maleOnly = self.choiceValues[self.chosen][0] == 2
-            playerFid = (GPath(u'Oblivion.esm'),0x000007)
+            playerFid = (GPath(bush.game.master_file), 0x000007)
             for record in patchFile.NPC_.records:
                 # skip records (male only, female only, player)
                 if femaleOnly and not record.flags.female: continue
@@ -375,7 +376,7 @@ class RedguardNPCPatcher(ARedguardNPCPatcher,BasalNPCTweaker):
         self._patchLog(log,count)
 
 class CBash_RedguardNPCPatcher(ARedguardNPCPatcher, _NpcCTweak):
-    redguardId = FormID(GPath(u'Oblivion.esm'),0x00000D43)
+    redguardId = FormID(GPath(bush.game.master_file), 0x00000D43)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
@@ -458,7 +459,7 @@ class AsIntendedImpsPatcher(AAsIntendedImpsPatcher,BasalCreatureTweaker):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
         keep = patchFile.getKeeper()
-        spell = (GPath(u'Oblivion.esm'), 0x02B53F)
+        spell = (GPath(bush.game.master_file), 0x02B53F)
         reImp  = self.reImp
         reImpModPath = self.reImpModPath
         for record in patchFile.CREA.records:
@@ -485,7 +486,7 @@ class AsIntendedImpsPatcher(AAsIntendedImpsPatcher,BasalCreatureTweaker):
         self._patchLog(log,count)
 
 class CBash_AsIntendedImpsPatcher(AAsIntendedImpsPatcher, _CreaCTweak):
-    spell = FormID(GPath(u'Oblivion.esm'), 0x02B53F)
+    spell = FormID(GPath(bush.game.master_file), 0x02B53F)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
@@ -532,7 +533,7 @@ class AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,BasalCreatureTweaker):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
-        spell = (GPath(u'Oblivion.esm'), 0x02B54E)
+        spell = (GPath(bush.game.master_file), 0x02B54E)
         keep = patchFile.getKeeper()
         reBoar  = self.reBoar
         reBoarModPath = self.reBoarModPath
@@ -555,7 +556,7 @@ class AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,BasalCreatureTweaker):
         self._patchLog(log,count)
 
 class CBash_AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher, _CreaCTweak):
-    spell = FormID(GPath(u'Oblivion.esm'), 0x02B54E)
+    spell = FormID(GPath(bush.game.master_file), 0x02B54E)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
