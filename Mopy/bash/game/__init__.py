@@ -507,6 +507,11 @@ class GameInfo(object):
     actor_tweaks = set()
 
     #--------------------------------------------------------------------------
+    # Assorted Tweaker
+    #--------------------------------------------------------------------------
+    nirnroots = _(u'Nirnroots')
+
+    #--------------------------------------------------------------------------
     # Names Tweaker
     #--------------------------------------------------------------------------
     body_tags = u''
@@ -569,7 +574,7 @@ class GameInfo(object):
         'graphicsLongsTypes', 'graphicsModelAttrs', 'graphicsTypes',
         'hostile_effects', 'inventoryTypes', 'keywords_types', 'listTypes',
         'mgef_basevalue', 'mgef_name', 'mgef_school', 'namesTypes',
-        'object_bounds_types', 'pricesTypes', 'record_type_name',
+        'nirnroots', 'object_bounds_types', 'pricesTypes', 'record_type_name',
         'save_rec_types', 'scripts_types', 'soundsLongsTypes', 'soundsTypes',
         'spell_stats_attrs', 'statsHeaders', 'statsTypes', 'text_long_types',
         'text_types',

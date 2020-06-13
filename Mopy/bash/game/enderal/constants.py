@@ -949,3 +949,8 @@ gmstEids = [
     'sNoChargeItems_', 'sRemoveItemFromInventory', 'sVerletCape',
     'uiMuteMusicPauseTime',
 ]
+
+#------------------------------------------------------------------------------
+# Assorted Tweaker
+#------------------------------------------------------------------------------
+nirnroots = _(u'Vynroots')

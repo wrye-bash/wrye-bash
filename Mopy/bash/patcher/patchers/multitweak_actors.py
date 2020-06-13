@@ -838,15 +838,12 @@ class TweakActors(MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to
     better work with mods or avoid bugs."""
     _tweak_classes = sorted(
-        [globals()[tweak_name] for tweak_name in bush.game.actor_tweaks],
+        (globals()[t] for t in bush.game.actor_tweaks),
         key=lambda a: a.tweak_name.lower())
 
 class CBash_TweakActors(CBash_MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to
     better work with mods or avoid bugs."""
-    _tweak_classes = [CBash_VORB_NPCSkeletonPatcher,
-        CBash_MAONPCSkeletonPatcher, CBash_VanillaNPCSkeletonPatcher,
-        CBash_RedguardNPCPatcher, CBash_NoBloodCreaturesPatcher,
-        CBash_AsIntendedImpsPatcher, CBash_AsIntendedBoarsPatcher,
-        CBash_QuietFeetPatcher, CBash_IrresponsibleCreaturesPatcher,
-        CBash_RWALKNPCAnimationPatcher, CBash_SWALKNPCAnimationPatcher]
+    _tweak_classes = sorted(
+        (globals()[u'CBash_' + t] for t in bush.game.actor_tweaks),
+        key=lambda a: a.tweak_name.lower()) if bush.game.Esp.canCBash else []

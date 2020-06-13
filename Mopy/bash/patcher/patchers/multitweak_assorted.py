@@ -1068,7 +1068,7 @@ class AssortedTweak_ScriptEffectSilencer(AAssortedTweak_ScriptEffectSilencer,
         """Edits patch file as desired. Will write to log."""
         nullRef = (GPath(bush.game.master_file), 0)
         silentattrs = {
-            'model' : None,
+            'model': None,
             'projectileSpeed' : 9999,
             'light' : nullRef,
             'effectShader' : nullRef,
@@ -1645,13 +1645,17 @@ class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,
             record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
+# Will be refactored in inf-312-tweak-pooling
+_nirnroot_words = {u'nirnroot', u'vynroot', u'vynwurz'}
+def _is_nirnroot(record):
+    return any(x in record.eid.lower() for x in _nirnroot_words)
+
 class AAssortedTweak_SetSoundAttenuationLevels(AMultiTweakItem):
     """Sets Sound Attenuation Levels for all records except Nirnroots."""
     tweak_read_classes = 'SOUN',
     tweak_name = _(u'Set Sound Attenuation Levels')
-    tweak_tip = _(
-        u'The sound attenuation levels will be set to tweak%*current level, '
-        u'thereby increasing (or decreasing) the sound volume.')
+    tweak_tip = _(u'Sets sound attenuation levels to tweak%*current level. '
+                  u'Does not affect {}.').format(bush.game.nirnroots)
 
     def __init__(self):
         super(AAssortedTweak_SetSoundAttenuationLevels, self).__init__(
@@ -1668,7 +1672,7 @@ class AssortedTweak_SetSoundAttenuationLevels(
         id_records = patchBlock.id_records
         for record in modFile.SOUN.getActiveRecords():
             if mapper(record.fid) in id_records: continue
-            if record.staticAtten:
+            if record.staticAtten and not _is_nirnroot(record):
                 record = record.getTypeCopy(mapper)
                 patchBlock.setRecord(record)
 
@@ -1677,7 +1681,7 @@ class AssortedTweak_SetSoundAttenuationLevels(
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.SOUN.records:
-            if record.staticAtten:
+            if record.staticAtten and not _is_nirnroot(record):
                 record.staticAtten = record.staticAtten * \
                                      self.choiceValues[self.chosen][0] / 100
                 keep(record.fid)
@@ -1693,7 +1697,7 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels(
         if choice == 1:  # Prevent any pointless changes if a custom value
             # of 100 is used.
             return
-        if record.staticAtten:
+        if record.staticAtten and not _is_nirnroot(record):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.staticAtten *= choice
@@ -1705,14 +1709,14 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels(
 class AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(AMultiTweakItem):
     """Sets Sound Attenuation Levels for Nirnroots."""
     tweak_read_classes = 'SOUN',
-    tweak_name = _(u'Set Sound Attenuation Levels: Nirnroots Only')
-    tweak_tip = _(u'The sound attenuation levels will be set to '
-                  u'tweak%*current level, thereby increasing (or decreasing) '
-                  u'the sound volume. This one only affects Nirnroots.')
+    tweak_name = _(u'Set Sound Attenuation Levels: %s '
+                   u'Only') % bush.game.nirnroots
+    tweak_tip = _(u'Sets sound attenuation levels to tweak%*current level. '
+                  u'Only affects {}.').format(bush.game.nirnroots)
 
     def __init__(self):
         super(AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly,
-              self).__init__(u'Nirnroot Attenuation%:', (u'0%', 0), (u'5%', 5),
+              self).__init__(u'Attenuation%:', (u'0%', 0), (u'5%', 5),
             (u'10%', 10), (u'20%', 20), (u'50%', 50), (u'80%', 80),
             (_(u'Custom'), 0))
         self.logMsg = u'* ' + _(u'Sounds Modified') + u': %d'
@@ -1726,7 +1730,7 @@ class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(
         id_records = patchBlock.id_records
         for record in modFile.SOUN.getActiveRecords():
             if mapper(record.fid) in id_records: continue
-            if record.staticAtten and u'nirnroot' in record.eid.lower():
+            if _is_nirnroot(record) and record.staticAtten:
                 record = record.getTypeCopy(mapper)
                 patchBlock.setRecord(record)
 
@@ -1735,7 +1739,7 @@ class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.SOUN.records:
-            if record.staticAtten and u'nirnroot' in record.eid.lower():
+            if _is_nirnroot(record) and record.staticAtten:
                 record.staticAtten = record.staticAtten * \
                                      self.choiceValues[self.chosen][0] / 100
                 keep(record.fid)
@@ -1752,7 +1756,7 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(
         if choice == 1:  # Prevent any pointless changes if a custom value
             # of 100 is used.
             return
-        if record.staticAtten and u'nirnroot' in record.eid.lower() :
+        if _is_nirnroot(record) and record.staticAtten:
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.staticAtten *= choice

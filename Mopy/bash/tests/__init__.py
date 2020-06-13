@@ -29,7 +29,6 @@ import os
 import toml
 import traceback
 import wx
-from .. import bush, localize
 
 class FailedTest(Exception):
     """Misc exception for when a test should fail for meta reasons."""
@@ -118,7 +117,11 @@ def set_game(game_fsName):
 def _emulate_startup():
     """Emulates a normal Wrye Bash startup, but without launching basher
     etc."""
+    # bush needs _() to be available, so need to do it like this
+    global bush
+    from .. import localize
     localize.setup_locale(u'English', wx)
+    from .. import bush
     # noinspection PyProtectedMember
     bush._supportedGames()
     set_game(u'Oblivion') # just need to pick one to start
