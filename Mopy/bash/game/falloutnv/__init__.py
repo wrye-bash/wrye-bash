@@ -30,6 +30,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     displayName = u'Fallout New Vegas'
     fsName = u'FalloutNV'
     altName = u'Wrye Flash NV'
+    bash_root_prefix = u'FalloutNV'
     defaultIniFile = u'Fallout_default.ini'
     launch_exe = u'FalloutNV.exe'
     game_detect_file = [u'FalloutNV.exe']

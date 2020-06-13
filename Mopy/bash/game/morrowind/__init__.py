@@ -29,6 +29,7 @@ class MorrowindGameInfo(GameInfo):
     displayName = u'Morrowind'
     fsName = u'Morrowind'
     altName = u'Wrye Mash'
+    bash_root_prefix = u'Morrowind'
     defaultIniFile = u'Morrowind.ini'
     uses_personal_folders = False
     launch_exe = u'Morrowind.exe'

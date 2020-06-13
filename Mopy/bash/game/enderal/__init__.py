@@ -32,7 +32,7 @@ from ...brec import MreGlob
 class EnderalGameInfo(SkyrimGameInfo):
     displayName = u'Enderal'
     fsName = u'Enderal'
-    altName = u'Wrye Smash'
+    bash_root_prefix = u'Enderal'
     defaultIniFile = u'enderal_default.ini'
     # Set to this because TESV.exe also exists for Enderal
     game_detect_file = [u'Enderal Launcher.exe']

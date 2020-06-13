@@ -37,6 +37,9 @@ class GameInfo(object):
     fsName = u'' ## Example: u'Skyrim'
     # Alternate display name of Wrye Bash when managing this game
     altName = u'' ## Example: u'Wrye Smash'
+    # Name of the prefix of the '<X> Mods' folder, i.e. <X> is this string.
+    # Preferably pick a single word here, equal to fsName if possible.
+    bash_root_prefix = u'' ## Example: u'Skyrim'
     # Name of game's default ini file.
     defaultIniFile = u''
     # True if the game uses the 'My Documents' folder, False to just use the

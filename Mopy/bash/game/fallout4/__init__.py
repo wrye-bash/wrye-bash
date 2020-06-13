@@ -30,6 +30,7 @@ class Fallout4GameInfo(GameInfo):
     displayName = u'Fallout 4'
     fsName = u'Fallout4'
     altName = u'Wrye Flash'
+    bash_root_prefix = u'Fallout4'
     defaultIniFile = u'Fallout4_default.ini'
     launch_exe = u'Fallout4.exe'
     game_detect_file = [u'Fallout4.exe']

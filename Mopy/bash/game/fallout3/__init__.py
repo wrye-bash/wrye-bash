@@ -30,6 +30,7 @@ class Fallout3GameInfo(GameInfo):
     displayName = u'Fallout 3'
     fsName = u'Fallout3'
     altName = u'Wrye Flash'
+    bash_root_prefix = u'Fallout3'
     defaultIniFile = u'Fallout_default.ini'
     launch_exe = u'Fallout3.exe'
     game_detect_file = [u'Fallout3.exe']
