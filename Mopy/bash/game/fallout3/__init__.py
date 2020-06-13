@@ -34,7 +34,7 @@ class Fallout3GameInfo(GameInfo):
     launch_exe = u'Fallout3.exe'
     game_detect_file = [u'Fallout3.exe']
     version_detect_file = [u'Fallout3.exe']
-    masterFiles = [u'Fallout3.esm']
+    master_file = u'Fallout3.esm'
     iniFiles = [u'Fallout.ini', u'FalloutPrefs.ini']
     pklfile = u'bash\\db\\Fallout3_ids.pkl'
     masterlist_dir = u'Fallout3'

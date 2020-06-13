@@ -54,8 +54,8 @@ from ..bolt import GPath, DataDict, deprint, sio, Path, decode, struct_pack, \
 from ..brec import MreRecord, ModReader, RecordHeader
 from ..cint import CBashApi
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
-    CancelError, DDSError, FileError, ModError, PluginsFullError, \
-    SaveFileError, SaveHeaderError, SkipError, StateError
+    CancelError, FileError, ModError, PluginsFullError, SaveFileError, \
+    SaveHeaderError, SkipError, StateError
 from ..ini_files import IniFile, OBSEIniFile, DefaultIniFile, GameIni, \
     get_ini_type_and_encoding
 from ..mod_files import ModFile
@@ -1740,20 +1740,12 @@ class ModInfos(FileInfos):
         FileInfos.__init__(self, dirs['mods'], factory=ModInfo)
         #--Info lists/sets
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
-        for fname in bush.game.masterFiles:
-            if dirs['mods'].join(fname).exists():
-                self.masterName = GPath(fname)
-                break
+        game_master = bush.game.master_file
+        if dirs[u'mods'].join(game_master).isfile():
+            self.masterName = GPath(game_master) ##: maybe drop entirely?
         else:
-            if len(bush.game.masterFiles) == 1:
-                deprint(_(u'Missing master file; %s does not exist in an unghosted state in %s') % (fname, dirs['mods'].s))
-            else:
-                msg = bush.game.masterFiles[0]
-                if len(bush.game.masterFiles) > 2:
-                    msg += u', '.join(bush.game.masterFiles[1:-1])
-                msg += u' or ' + bush.game.masterFiles[-1]
-                deprint(_(u'Missing master file; Neither %s exists in an unghosted state in %s.  Presuming that %s is the correct masterfile.') % (msg, dirs['mods'].s, bush.game.masterFiles[0]))
-            self.masterName = GPath(bush.game.masterFiles[0])
+            raise FileError(game_master, u'File is required, but could not be '
+                                         u'found')
         self.mergeable = set() #--Set of all mods which can be merged.
         self.bad_names = set() #--Set of all mods with names that can't be saved to plugins.txt
         self.missing_strings = set() #--Set of all mods with missing .STRINGS files
@@ -2564,7 +2556,7 @@ class ModInfos(FileInfos):
     #--Delete
     def files_to_delete(self, filenames, **kwargs):
         for f in set(filenames):
-            if f.s in bush.game.masterFiles:
+            if f.s == bush.game.master_file:
                 if kwargs.pop('raise_on_master_deletion', True):
                     raise BoltError(
                         u"Cannot delete the game's master file(s).")

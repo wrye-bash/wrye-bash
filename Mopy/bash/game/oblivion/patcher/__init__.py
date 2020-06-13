@@ -41,14 +41,14 @@ _special_patchers = (
 gameSpecificPatchers = {pname: pi(ptype, twin, ptype.gui_cls_vars()) for
                         pname, ptype, twin in _special_patchers}
 
-_list_pacthers =(
+_list_patchers =(
     (b'CoblExhaustion', CoblExhaustion, u'CBash_CoblExhaustion'),
     (b'CBash_CoblExhaustion', CBash_CoblExhaustion, u'CoblExhaustion'),
     (b'MFactMarker', MFactMarker, u'CBash_MFactMarker'),
     (b'CBash_MFactMarker', CBash_MFactMarker, u'MFactMarker')
 )
 gameSpecificListPatchers = {pname: pi(ptype, twin, ptype.gui_cls_vars()) for
-                            pname, ptype, twin in _list_pacthers}
+                            pname, ptype, twin in _list_patchers}
 
 _import_patchers = (
     (b'RoadImporter', RoadImporter, u'CBash_RoadImporter'),

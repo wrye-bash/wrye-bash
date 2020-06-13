@@ -35,7 +35,7 @@ class OblivionGameInfo(GameInfo):
     launch_exe = u'Oblivion.exe'
     game_detect_file = [u'Oblivion.exe']
     version_detect_file  = [u'Oblivion.exe']
-    masterFiles = [u'Oblivion.esm', u'Nehrim.esm']
+    master_file = u'Oblivion.esm'
     iniFiles = [u'Oblivion.ini']
     pklfile = u'bash\\db\\Oblivion_ids.pkl'
     masterlist_dir = u'Oblivion'

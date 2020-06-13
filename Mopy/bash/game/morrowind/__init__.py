@@ -34,7 +34,7 @@ class MorrowindGameInfo(GameInfo):
     launch_exe = u'Morrowind.exe'
     game_detect_file = [u'Morrowind.exe']
     version_detect_file  = [u'Morrowind.exe']
-    masterFiles = [u'Morrowind.esm']
+    master_file = u'Morrowind.esm'
     mods_dir = u'Data Files'
     iniFiles = [u'Morrowind.ini']
     pklfile = u'bash\\db\\Morrowind_ids.pkl'

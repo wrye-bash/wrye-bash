@@ -666,7 +666,7 @@ class Mod_CreateLOOTReport(EnabledLink):
             except CancelError:
                 return
         for i, (fileName, fileInfo) in enumerate(self.iselected_pairs()):
-            if fileName in bush.game.masterFiles: continue
+            if fileName == bush.game.master_file: continue
             # Check if we found ITMs or deleted references
             udrs, itms, fogs = udr_itm_fog[i] if can_check_dirty else (0, 0, 0)
             # Gather all tags applied after the description (including existing
@@ -1443,7 +1443,7 @@ class Mod_FogFixer(ItemLink):
             progress.setFull(len(self.selected))
             fixed = []
             for index,(fileName,fileInfo) in enumerate(self.iselected_pairs()):
-                if fileName.cs in bush.game.masterFiles: continue
+                if fileName == bush.game.master_file: continue
                 progress(index,_(u'Scanning')+fileName.s)
                 fog_fixer = bosh.mods_metadata.NvidiaFogFixer(fileInfo)
                 fog_fixer.fix_fog(SubProgress(progress, index, index + 1))

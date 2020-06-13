@@ -35,7 +35,7 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
     launch_exe = u'Fallout4VR.exe'
     game_detect_file = [u'Fallout4VR.exe']
     version_detect_file = [u'Fallout4VR.exe']
-    masterFiles = [u'Fallout4.esm', u'Fallout4_VR.esm',]
+    master_file = u'Fallout4.esm'
     iniFiles = [
         u'Fallout4.ini',
         u'Fallout4Prefs.ini',

@@ -34,7 +34,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     launch_exe = u'FalloutNV.exe'
     game_detect_file = [u'FalloutNV.exe']
     version_detect_file = [u'FalloutNV.exe']
-    masterFiles = [u'FalloutNV.esm']
+    master_file = u'FalloutNV.esm'
     iniFiles = [u'Fallout.ini', u'FalloutPrefs.ini']
     pklfile = u'bash\\db\\FalloutNV_ids.pkl'
     masterlist_dir = u'FalloutNV'
