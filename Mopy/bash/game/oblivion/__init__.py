@@ -33,7 +33,7 @@ class OblivionGameInfo(GameInfo):
     altName = u'Wrye Bash'
     defaultIniFile = u'Oblivion_default.ini'
     launch_exe = u'Oblivion.exe'
-    game_detect_file = [u'Oblivion.exe']
+    game_detect_file = [u'Data', u'Oblivion.esm']
     version_detect_file  = [u'Oblivion.exe']
     master_file = u'Oblivion.esm'
     iniFiles = [u'Oblivion.ini']

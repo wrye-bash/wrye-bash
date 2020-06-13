@@ -24,7 +24,7 @@
 import StringIO
 
 from .. import get_meta_value, iter_games, iter_resources, \
-    resource_to_fsName, set_game
+    resource_to_displayName, set_game
 from ... import bush
 from ...bolt import GPath, LogFile
 from ...bosh.cosaves import get_cosave_types, xSECosave, _xSEHeader, \
@@ -45,9 +45,9 @@ def _map_cosaves(map_func, cosv_exts, cosv_type):
     """Maps the specified function over all cosaves with one of the specified
     extensions, setting up the correct cosave tags, extensions, etc. first."""
     for gm_folder in iter_games(u'saves'):
-        gm_fsName = resource_to_fsName[gm_folder]
-        set_game(gm_fsName)
-        get_cosave_types(gm_fsName, None,
+        gm_displayName = resource_to_displayName[gm_folder]
+        set_game(gm_displayName)
+        get_cosave_types(bush.game.fsName, None,
                          bush.game.Se.cosave_tag, bush.game.Se.cosave_ext)
         for c in iter_cosaves(filter_by_game={gm_folder}):
             if c.endswith(cosv_exts):

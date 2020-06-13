@@ -84,18 +84,18 @@ def iter_resources(resource_subfolder, filter_by_game=frozenset()):
             yield os.path.join(full_game_folder, resource_file)
 
 # Here be hacks ---------------------------------------------------------------
-# Maps the resource subfolder game names back to fsNames
-resource_to_fsName = {
+# Maps the resource subfolder game names back to displayNames
+resource_to_displayName = {
     u'enderal': u'Enderal',
-    u'fallout3': u'Fallout3',
-    u'fallout4': u'Fallout4',
-    u'fallout4vr': u'Fallout4VR',
-    u'falloutnv': u'FalloutNV',
+    u'fallout3': u'Fallout 3',
+    u'fallout4': u'Fallout 4',
+    u'fallout4vr': u'Fallout 4 VR',
+    u'falloutnv': u'Fallout New Vegas',
     u'morrowind': u'Morrowind',
     u'oblivion': u'Oblivion',
     u'skyrim': u'Skyrim',
     u'skyrimse': u'Skyrim Special Edition',
-    u'skyrimvr': u'SkyrimVR',
+    u'skyrimvr': u'Skyrim VR',
 }
 # Cache for created and initialized GameInfos
 _game_cache = {}
