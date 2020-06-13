@@ -244,7 +244,7 @@ class _ListPatcherPanel(_PatcherPanel):
     show_empty_sublist_checkbox = False
     # ADDITIONAL CONFIG DEFAULTS FOR LIST PATCHER
     default_autoIsChecked = True
-    default_remove_empty_sublists = bush.game.fsName == u'Oblivion'
+    default_remove_empty_sublists = bush.game.displayName == u'Oblivion'
     default_configItems   = []
     default_configChecks  = {}
     default_configChoices = {}

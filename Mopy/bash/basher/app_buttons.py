@@ -494,8 +494,11 @@ class Game_Button(_ExeButton):
             # Should use the LAA Launcher if it's present
             exe_path = (exe_laa if exe_laa.isfile() else exe_path)
         elif BashStatusBar.obseButton.button_state:
-            # Should use the xSE launcher if it's present
-            exe_path = (exe_xse if exe_xse.isfile() else exe_path)
+            # OBSE refuses to start when its EXE is launched on a Steam
+            # installation
+            if not bass.dirs[u'app'].join(u'steam_api.dll').isfile():
+                # Should use the xSE launcher if it's present
+                exe_path = (exe_xse if exe_xse.isfile() else exe_path)
         self._run_exe(exe_path, [exe_path.s])
         if bass.settings.get(u'bash.autoQuit.on', False):
             Link.Frame.close_win(True)

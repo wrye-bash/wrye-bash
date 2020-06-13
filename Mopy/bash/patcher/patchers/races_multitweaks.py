@@ -799,9 +799,11 @@ class RacePatcher(AMultiTweaker, ListPatcher):
             if record.fid not in id_records:
                 patchBlock.setRecord(record.getTypeCopy(mapper))
             if not record.rightEye or not record.leftEye:
-                deprint(_(u'No right and/or no left eye recorded in race %s, '
-                          u'from mod %s') % (
-                            record.full, modName))
+                # Don't complain if the FULL is missing, that probably means
+                # it's an internal or unused RACE
+                if record.full:
+                    deprint(_(u'No right and/or no left eye recorded in race '
+                              u'%s, from mod %s') % (record.full, modName))
                 continue
             for eye in record.eyes:
                 if eye in srcEyes:

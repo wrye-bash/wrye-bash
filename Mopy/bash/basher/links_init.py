@@ -395,7 +395,7 @@ def InitModLinks():
         loadMenu.links.append(Mods_LoadList())
         ModList.mainMenu.append(loadMenu)
     ModList.mainMenu.append(SeparatorLink())
-    if bush.game.fsName == u'Oblivion': #--Versions
+    if bush.game.displayName == u'Oblivion': #--Versions
         versionsMenu = MenuLink(u"Oblivion.esm")
         versionsMenu.links.append(Mods_OblivionVersion(u'1.1'))
         versionsMenu.links.append(Mods_OblivionVersion(u'1.1b'))
@@ -581,7 +581,7 @@ def InitSaveLinks():
         subDirMenu = MenuLink(_(u"Profile"))
         subDirMenu.links.append(Saves_Profiles())
         SaveList.mainMenu.append(subDirMenu)
-    if bush.game.fsName == u'Oblivion': #--Versions
+    if bush.game.displayName == u'Oblivion': #--Versions
         SaveList.mainMenu.append(SeparatorLink())
         versionsMenu = MenuLink(u"Oblivion.esm")
         versionsMenu.links.append(Mods_OblivionVersion(u'1.1',setProfile=True))
