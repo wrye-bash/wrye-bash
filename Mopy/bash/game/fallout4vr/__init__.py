@@ -31,11 +31,12 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
     displayName = u'Fallout 4 VR'
     fsName = u'Fallout4VR'
     altName = u'Wrye VRash'
+    bash_root_prefix = u'Fallout4VR'
     defaultIniFile = u'Fallout4.ini'
     launch_exe = u'Fallout4VR.exe'
     game_detect_file = [u'Fallout4VR.exe']
     version_detect_file = [u'Fallout4VR.exe']
-    masterFiles = [u'Fallout4.esm', u'Fallout4_VR.esm',]
+    master_file = u'Fallout4.esm'
     iniFiles = [
         u'Fallout4.ini',
         u'Fallout4Prefs.ini',

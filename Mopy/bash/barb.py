@@ -49,13 +49,14 @@ from .bass import dirs, AppVersion
 from .bolt import GPath, deprint
 from .exception import BoltError, StateError, raise_bolt_error
 
-def _init_settings_files(fsName_, mods_folder):
+def _init_settings_files(fsName_, root_prefix, mods_folder):
     """Construct a dict mapping directory paths to setting files. Keys are
     tuples of absolute paths to directories, paired with the relative paths
     in the backup file. Values are sets of setting files in those paths,
     or empty, meaning we have to list those paths and backup everything.
 
     :param fsName_: bush.game.fsName
+    :param root_prefix: bush.game.bash_root_prefix
     :param mods_folder: bush.game.mods_dir"""
     if not initialization.bash_dirs_initialized:
         raise BoltError(u'_init_settings_files: Bash dirs are not initialized')
@@ -67,13 +68,13 @@ def _init_settings_files(fsName_, mods_folder):
             u'Bash Readme Template.txt', u'Bash Readme Template.html',
             u'My Readme Template.txt', u'My Readme Template.html',
             u'wtxt_sand_small.css', u'wtxt_teal.css', },
-        (dirs['modsBash'], jo(fsName_ + u' Mods', u'Bash Mod Data')): {
+        (dirs['modsBash'], jo(root_prefix + u' Mods', u'Bash Mod Data')): {
             u'Table.dat', },
         (dirs['modsBash'].join(u'INI Data'),
-         jo(fsName_ + u' Mods', u'Bash Mod Data', u'INI Data')): {
+         jo(root_prefix + u' Mods', u'Bash Mod Data', u'INI Data')): {
            u'Table.dat', },
         (dirs['bainData'],
-         jo(fsName_ + u' Mods', u'Bash Installers', u'Bash')): {
+         jo(root_prefix + u' Mods', u'Bash Installers', u'Bash')): {
            u'Converters.dat', u'Installers.dat', },
         (dirs['saveBase'], jo(u'My Games', fsName_)): {
             u'BashProfiles.dat', u'BashSettings.dat', u'BashLoadOrders.dat',

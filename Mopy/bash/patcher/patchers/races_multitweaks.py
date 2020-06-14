@@ -45,6 +45,8 @@ from .base import MultiTweakItem, CBash_MultiTweakItem, SpecialPatcher, \
     ListPatcher, CBash_ListPatcher, CBash_MultiTweaker
 
 # Patchers: 40 ----------------------------------------------------------------
+_main_master = GPath(bush.game.master_file)
+
 class ARaceTweaker_BiggerOrcsAndNords(AMultiTweakItem):
     tweak_read_classes = 'RACE',
     tweak_name = _(u'Bigger Nords and Orcs')
@@ -797,9 +799,11 @@ class RacePatcher(AMultiTweaker, ListPatcher):
             if record.fid not in id_records:
                 patchBlock.setRecord(record.getTypeCopy(mapper))
             if not record.rightEye or not record.leftEye:
-                deprint(_(u'No right and/or no left eye recorded in race %s, '
-                          u'from mod %s') % (
-                            record.full, modName))
+                # Don't complain if the FULL is missing, that probably means
+                # it's an internal or unused RACE
+                if record.full:
+                    deprint(_(u'No right and/or no left eye recorded in race '
+                              u'%s, from mod %s') % (record.full, modName))
                 continue
             for eye in record.eyes:
                 if eye in srcEyes:
@@ -908,21 +912,21 @@ class RacePatcher(AMultiTweaker, ListPatcher):
         #--Eye Mesh filtering
         eye_mesh = self.eye_mesh
         try:
-            blueEyeMesh = eye_mesh[(GPath(u'Oblivion.esm'),0x27308)]
+            blueEyeMesh = eye_mesh[(_main_master, 0x27308)]
         except KeyError:
             print(u'error getting blue eye mesh:')
             print(u'eye meshes:', eye_mesh)
             raise
-        argonianEyeMesh = eye_mesh[(GPath(u'Oblivion.esm'),0x3e91e)]
+        argonianEyeMesh = eye_mesh[(_main_master, 0x3e91e)]
         if debug:
             print(u'== Eye Mesh Filtering')
             print(u'blueEyeMesh',blueEyeMesh)
             print(u'argonianEyeMesh',argonianEyeMesh)
         for eye in (
-            (GPath(u'Oblivion.esm'),0x1a), #--Reanimate
-            (GPath(u'Oblivion.esm'),0x54bb9), #--Dark Seducer
-            (GPath(u'Oblivion.esm'),0x54bba), #--Golden Saint
-            (GPath(u'Oblivion.esm'),0x5fa43), #--Ordered
+            (_main_master, 0x1a), #--Reanimate
+            (_main_master, 0x54bb9), #--Dark Seducer
+            (_main_master, 0x54bba), #--Golden Saint
+            (_main_master, 0x5fa43), #--Ordered
             ):
             eye_mesh.setdefault(eye,blueEyeMesh)
         def setRaceEyeMesh(race,rightPath,leftPath):
@@ -966,7 +970,7 @@ class RacePatcher(AMultiTweaker, ListPatcher):
                     print(mesh)
                     for eye in eyes: print(' ',strFid(eye))
             if len(mesh_eye) > 1 and (race.flags.playable or race.fid == (
-                    GPath('Oblivion.esm'), 0x038010)):
+                    _main_master, 0x038010)):
                 #--If blueEyeMesh (mesh used for vanilla eyes) is present,
                 # use that.
                 if blueEyeMesh in mesh_eye and currentMesh != argonianEyeMesh:
@@ -1007,7 +1011,7 @@ class RacePatcher(AMultiTweaker, ListPatcher):
             x.fid for x in patchFile.HAIR.records if not x.flags.notFemale)
         for race in patchFile.RACE.records:
             if (race.flags.playable or race.fid == (
-                    GPath(u'Oblivion.esm'), 0x038010)) and race.eyes:
+                    _main_master, 0x038010)) and race.eyes:
                 final_eyes[race.fid] = [x for x in
                                         self.vanilla_eyes.get(race.fid, [])
                                         if x in race.eyes]
@@ -1023,10 +1027,10 @@ class RacePatcher(AMultiTweaker, ListPatcher):
                 keep(race.fid)
         #--Npcs with unassigned eyes/hair
         for npc in patchFile.NPC_.records:
-            if npc.fid == (GPath(u'Oblivion.esm'), 0x000007): continue  #
+            if npc.fid == (_main_master, 0x000007): continue  #
             # skip player
             if npc.full is not None and npc.race == (
-                    GPath(u'Oblivion.esm'), 0x038010) and not reProcess.search(
+                    _main_master, 0x038010) and not reProcess.search(
                     npc.full): continue
             raceEyes = final_eyes.get(npc.race)
             if not npc.eye and raceEyes:
@@ -1257,9 +1261,9 @@ class CBash_RacePatcher_Spells(_CBashOnlyRacePatchers):
 class CBash_RacePatcher_Eyes(_CBashOnlyRacePatchers):
     """Merges and filters changes to race eyes."""
     autoKey = {u'Eyes'}
-    blueEye = FormID(GPath(u'Oblivion.esm'),0x27308)
-    argonianEye = FormID(GPath(u'Oblivion.esm'),0x3e91e)
-    dremoraRace = FormID(GPath(u'Oblivion.esm'),0x038010)
+    blueEye = FormID(_main_master, 0x27308)
+    argonianEye = FormID(_main_master, 0x3e91e)
+    dremoraRace = FormID(_main_master, 0x038010)
     reX117 = re.compile(u'^117[a-z]',re.I|re.U)
     scanRequiresChecked = False
     _read_write_records = ('EYES', 'HAIR', 'RACE')
@@ -1400,12 +1404,12 @@ class CBash_RacePatcher_Eyes(_CBashOnlyRacePatchers):
             return
         fixedRaces = set()
         fixedNPCs = {
-        FormID(GPath(u'Oblivion.esm'), 0x000007)}  #causes player to be skipped
+        FormID(_main_master, 0x000007)}  #causes player to be skipped
         for eye in (
-            FormID(GPath(u'Oblivion.esm'),0x1a), #--Reanimate
-            FormID(GPath(u'Oblivion.esm'),0x54bb9), #--Dark Seducer
-            FormID(GPath(u'Oblivion.esm'),0x54bba), #--Golden Saint
-            FormID(GPath(u'Oblivion.esm'),0x5fa43), #--Ordered
+            FormID(_main_master, 0x1a), #--Reanimate
+            FormID(_main_master, 0x54bb9), #--Dark Seducer
+            FormID(_main_master, 0x54bba), #--Golden Saint
+            FormID(_main_master, 0x5fa43), #--Ordered
             self.dremoraRace,
             ):
             eye_meshes.setdefault(eye,blueEyeMeshes)

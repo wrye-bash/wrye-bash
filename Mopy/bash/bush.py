@@ -45,14 +45,11 @@ foundGames = {}     # {'name': Path} dict used by the Settings switch game menu
 _allGames = {}        # 'name' -> GameInfo
 _allModules = {}      # 'name' -> module
 _registryGames = {}   # 'name' -> path
-_fsName_display = {}
-_display_fsName = {}
 
 def reset_bush_globals():
     global game, game_mod
     game = game_mod = None
-    for d in (_allGames, _allModules, _registryGames, _fsName_display,
-              _display_fsName):
+    for d in (_allGames, _allModules, _registryGames):
         d.clear()
 
 def _supportedGames():
@@ -68,27 +65,25 @@ def _supportedGames():
             module = __import__('game',globals(),locals(),[modname],-1)
             submod = getattr(module,modname)
             game_type = submod.GAME_TYPE
-            _allModules[game_type.fsName] = submod
-            _allGames[game_type.fsName] = game_type
-            _fsName_display[game_type.fsName] = game_type.displayName
+            _allModules[game_type.displayName] = submod
+            _allGames[game_type.displayName] = game_type
             #--Get this game's install path
             registry_path = get_registry_game_path(game_type)
         except (ImportError, AttributeError):
             deprint(u'Error in game support module:', modname, traceback=True)
             continue
-        if registry_path: _registryGames[game_type.fsName] = registry_path
+        if registry_path: _registryGames[game_type.displayName] = registry_path
         del module
     # unload some modules, _supportedGames is meant to run once
     del pkgutil
-    _display_fsName.update({v: k for k, v in _fsName_display.iteritems()})
     # Dump out info about all games that we *could* launch, but wrap it
     deprint(u'The following games are supported by this version of Wrye Bash:')
-    all_supported_games = u', '.join(sorted(_display_fsName.keys()))
+    all_supported_games = u', '.join(sorted(_allGames.iterkeys()))
     for wrapped_line in textwrap.wrap(all_supported_games):
         deprint(u' ' + wrapped_line)
     # Dump out info about all games that we *actually* found
     deprint(u'The following installed games were found via Windows Registry:')
-    for found_name in sorted(_registryGames.keys()):
+    for found_name in sorted(_registryGames.iterkeys()):
         deprint(u' %s: %s' % (found_name, _registryGames[found_name]))
     return _registryGames.copy()
 
@@ -177,8 +172,6 @@ def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, name=None):
     if name is None: # detect available games
         foundGames_, name = _detectGames(cli_game_dir, bash_ini_)
         foundGames.update(foundGames_) # set the global name -> game path dict
-    else:
-        name = _display_fsName[name] # we are passed a display name in
     if name is not None: # try the game returned by detectGames() or specified
         __setGame(name, u' Using %(gamename)s game:')
         return None, None
@@ -187,9 +180,8 @@ def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, name=None):
         return None, None
     # No match found, return the list of possible games (may be empty if
     # nothing is found in registry)
-    game_icons = {_fsName_display[g]: bass.dirs['images'].join(g + u'32.png').s
+    game_icons = {g: bass.dirs[u'images'].join(g + u'32.png').s
                   for g in foundGames}
     return game_icons.keys(), game_icons
 
-def game_path(display_name): return foundGames[_display_fsName[display_name]]
-def get_display_name(fs_name): return _fsName_display[fs_name]
+def game_path(display_name): return foundGames[display_name]

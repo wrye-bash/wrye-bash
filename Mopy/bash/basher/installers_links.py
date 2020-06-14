@@ -405,7 +405,7 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
         if bass.settings[self.key]:
             # Delete ArchiveInvalidation.txt, if it exists
             bosh.bsaInfos.remove_invalidation_file()
-            if bush.game.fsName == u'Oblivion':
+            if bush.game.displayName == u'Oblivion':
                 # For Oblivion, undo any alterations done to the textures BSA
                 # and reset the mtimes of vanilla BSAs ##: port to FO3/FNV?
                 bsaPath = bosh.modInfos.store_dir.join(

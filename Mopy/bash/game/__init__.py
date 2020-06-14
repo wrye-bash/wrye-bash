@@ -37,6 +37,9 @@ class GameInfo(object):
     fsName = u'' ## Example: u'Skyrim'
     # Alternate display name of Wrye Bash when managing this game
     altName = u'' ## Example: u'Wrye Smash'
+    # Name of the prefix of the '<X> Mods' folder, i.e. <X> is this string.
+    # Preferably pick a single word here, equal to fsName if possible.
+    bash_root_prefix = u'' ## Example: u'Skyrim'
     # Name of game's default ini file.
     defaultIniFile = u''
     # True if the game uses the 'My Documents' folder, False to just use the
@@ -56,7 +59,7 @@ class GameInfo(object):
     # and therefore needs a different file here).
     version_detect_file = []
     # The main plugin Wrye Bash should look for
-    masterFiles = []
+    master_file = u''
     # The directory in which mods and other data files reside. This is relative
     # to the game directory.
     mods_dir = u'Data'
@@ -507,6 +510,11 @@ class GameInfo(object):
     actor_tweaks = set()
 
     #--------------------------------------------------------------------------
+    # Assorted Tweaker
+    #--------------------------------------------------------------------------
+    nirnroots = _(u'Nirnroots')
+
+    #--------------------------------------------------------------------------
     # Names Tweaker
     #--------------------------------------------------------------------------
     body_tags = u''
@@ -569,7 +577,7 @@ class GameInfo(object):
         'graphicsLongsTypes', 'graphicsModelAttrs', 'graphicsTypes',
         'hostile_effects', 'inventoryTypes', 'keywords_types', 'listTypes',
         'mgef_basevalue', 'mgef_name', 'mgef_school', 'namesTypes',
-        'object_bounds_types', 'pricesTypes', 'record_type_name',
+        'nirnroots', 'object_bounds_types', 'pricesTypes', 'record_type_name',
         'save_rec_types', 'scripts_types', 'soundsLongsTypes', 'soundsTypes',
         'spell_stats_attrs', 'statsHeaders', 'statsTypes', 'text_long_types',
         'text_types',

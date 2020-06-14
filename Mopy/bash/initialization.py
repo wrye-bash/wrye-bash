@@ -89,7 +89,8 @@ def getOblivionModsPath(bash_ini_, game_info):
     if ob_mods_path:
         src = [u'[General]', u'sOblivionMods']
     else:
-        ob_mods_path = GPath(GPath(u'..').join(u'%s Mods' % game_info.fsName))
+        ob_mods_path = GPath(GPath(u'..').join(u'%s Mods'
+                                               % game_info.bash_root_prefix))
         src = u'Relative Path'
     if not ob_mods_path.isabs(): ob_mods_path = dirs['app'].join(ob_mods_path)
     return ob_mods_path, src

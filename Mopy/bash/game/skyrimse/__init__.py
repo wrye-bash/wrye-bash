@@ -33,6 +33,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     displayName = u'Skyrim Special Edition'
     fsName = u'Skyrim Special Edition'
     altName = u'Wrye Smash'
+    bash_root_prefix = u'Skyrim Special Edition' # backwards compat :(
     defaultIniFile = u'Skyrim_Default.ini'
     launch_exe = u'SkyrimSE.exe'
     game_detect_file = [u'SkyrimSE.exe']

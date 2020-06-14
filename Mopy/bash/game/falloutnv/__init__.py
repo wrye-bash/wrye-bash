@@ -30,11 +30,12 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     displayName = u'Fallout New Vegas'
     fsName = u'FalloutNV'
     altName = u'Wrye Flash NV'
+    bash_root_prefix = u'FalloutNV'
     defaultIniFile = u'Fallout_default.ini'
     launch_exe = u'FalloutNV.exe'
     game_detect_file = [u'FalloutNV.exe']
     version_detect_file = [u'FalloutNV.exe']
-    masterFiles = [u'FalloutNV.esm']
+    master_file = u'FalloutNV.esm'
     iniFiles = [u'Fallout.ini', u'FalloutPrefs.ini']
     pklfile = u'bash\\db\\FalloutNV_ids.pkl'
     masterlist_dir = u'FalloutNV'

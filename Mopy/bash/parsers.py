@@ -345,7 +345,7 @@ class ActorLevels(object):
                     fid,eid,offset,calcMin,calcMax = fields[:5]
                     source = GPath(u'Unknown')
                     fidObject = _coerce(fid[4:], int, 16)
-                    fid = (GPath(bush.game.masterFiles[0]), fidObject)
+                    fid = (GPath(bush.game.master_file), fidObject)
                     eid = _coerce(eid, unicode)
                     offset = _coerce(offset, int)
                     calcMin = _coerce(calcMin, int)
@@ -355,7 +355,7 @@ class ActorLevels(object):
                     source,eid,fidMod,fidObject,offset,calcMin,calcMax = \
                         fields[:7]
                     source = _coerce(source, unicode)
-                    if source.lower() in (u'none', bush.game.masterFiles[0].lower()): continue
+                    if source.lower() in (u'none', bush.game.master_file.lower()): continue
                     source = GPath(source)
                     eid = _coerce(eid, unicode)
                     fidMod = GPath(_coerce(fidMod, unicode))
@@ -384,9 +384,9 @@ class ActorLevels(object):
                 _(u'Old IsPCLevelOffset'),_(u'Old Offset'),_(u'Old CalcMin'),
                 _(u'Old CalcMax')))
             #Sorted based on mod, then editor ID
-            obId_levels = mod_id_levels[GPath(bush.game.masterFiles[0])]
+            obId_levels = mod_id_levels[GPath(bush.game.master_file)]
             for mod in sorted(mod_id_levels):
-                if mod.s.lower() == bush.game.masterFiles[0].lower(): continue
+                if mod.s.lower() == bush.game.master_file.lower(): continue
                 id_levels = mod_id_levels[mod]
                 for id_ in sorted(id_levels,key=lambda k:(
                         k[0].s.lower(),id_levels[k][0].lower())):
@@ -418,7 +418,7 @@ class CBash_ActorLevels(object):
         """Imports actor level data from the specified mod and its masters."""
         mod_fid_levels, gotLevels = self.mod_fid_levels, self.gotLevels
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(u'Oblivion.esm', Saveable=False)
+            Current.addMod(bush.game.master_file, Saveable=False)
             Current.addMod(modInfo.getPath().stail, Saveable=False)
             Current.load()
             for modFile in Current.LoadOrderMods:
@@ -465,7 +465,7 @@ class CBash_ActorLevels(object):
                     fid,eid,offset,calcMin,calcMax = fields[:5]
                     source = GPath(u'Unknown')
                     fidObject = _coerce(fid[4:], int, 16)
-                    fid = FormID(GPath(u'Oblivion.esm'), fidObject)
+                    fid = FormID(GPath(bush.game.master_file), fidObject)
                     eid = _coerce(eid, unicode, AllowNone=True)
                     offset = _coerce(offset, int)
                     calcMin = _coerce(calcMin, int)
@@ -475,7 +475,8 @@ class CBash_ActorLevels(object):
                     source,eid,fidMod,fidObject,offset,calcMin,calcMax = \
                         fields[:7]
                     source = _coerce(source, unicode)
-                    if source.lower() in (u'none', u'oblivion.esm'): continue
+                    if source.lower() in (
+                            u'none', bush.game.master_file.lower()): continue
                     source = GPath(source)
                     eid = _coerce(eid, unicode, AllowNone=True)
                     fidMod = GPath(_coerce(fidMod, unicode))
@@ -504,9 +505,9 @@ class CBash_ActorLevels(object):
                 _(u'Old IsPCLevelOffset'),_(u'Old Offset'),_(u'Old CalcMin'),
                 _(u'Old CalcMax')))
             #Sorted based on mod, then editor ID
-            obfid_levels = mod_fid_levels[GPath(u'Oblivion.esm')]
+            obfid_levels = mod_fid_levels[GPath(bush.game.master_file)]
             for mod in sorted(mod_fid_levels):
-                if mod.s.lower() == u'oblivion.esm': continue
+                if mod.s.lower() == bush.game.master_file.lower(): continue
                 fid_levels = mod_fid_levels[mod]
                 for fid in sorted(fid_levels,
                                   key=lambda k:(k[0].s,fid_levels[k][0])):
@@ -3058,7 +3059,7 @@ class CBash_MapMarkers(object):
     def __init__(self,types=None,aliases=None):
         self.fid_markerdata = {}
         self.aliases = aliases or {}
-        self.markerFid = FormID(GPath(u'Oblivion.esm'), 0x000010)
+        self.markerFid = FormID(GPath(bush.game.master_file), 0x000010)
         self.attrs = ['eid','markerName','markerType','IsVisible',
                       'IsCanTravelTo','posX','posY','posZ','rotX','rotY',
                       'rotZ']

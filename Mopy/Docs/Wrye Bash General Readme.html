@@ -125,6 +125,7 @@
 <p>It currently supports the following games:</p>
 <ul>
     <li>Oblivion</li>
+    <li>Nehrim&colon; At Fate's Edge</li>
     <li>Fallout 3</li>
     <li>Fallout&colon; New Vegas</li>
     <li>Skyrim</li>
@@ -156,6 +157,7 @@
         <thead><tr><th>Game</th><th>Master File</th></tr></thead>
         <tbody>
             <tr><td>Oblivion</td><td>Oblivion.esm</td></tr>
+            <tr><td>Nehrim&colon; At Fate's Edge</td><td>Nehrim.esm</td></tr>
             <tr><td>Fallout 3</td><td>Fallout3.esm</td></tr>
             <tr><td>Fallout&colon; New Vegas</td><td>FalloutNV.esm</td></tr>
             <tr><td>Skyrim</td><td>Skyrim.esm</td></tr>
@@ -286,7 +288,7 @@ be restructured.</p>
 <table>
     <thead><tr><th>Game</th><th>Extra Game Directories</th></tr></thead>
     <tbody>
-        <tr><td>Oblivion</td><td>_tejon, distantlod, facegen, fonts, menus, obse, pluggy, scripts, shaders, streamline, trees</td></tr>
+        <tr><td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td><td>_tejon, distantlod, facegen, fonts, menus, obse, pluggy, scripts, shaders, streamline, trees</td></tr>
         <tr><td>Fallout 3</td><td>config, distantlod, facegen, fonts, fose, menus, uio, scripts, shaders, trees</td></tr>
         <tr><td>Fallout&colon; New Vegas</td><td>config, distantlod, facegen, fonts, menus, nvse, uio, scripts, shaders, trees</td></tr>
         <tr><td>Skyrim &amp; Enderal&colon; Forgotten Stories</td><td>asi, calientetools, dialogueviews, dyndolod, grass, interface, lodsettings, scripts, seq, shadersfx, skse, skyproc patchers, strings, tools</td></tr>
@@ -569,7 +571,7 @@ from other packages previously overridden by the uninstalled package's
     if there's a conflict with a mod loading earlier (which will have a lower number). <strong>Load order is not the same thing as BAIN install
         order!</strong> Install order determines which package's files overwrite other packages files when they conflict.
 <p>Although in general "Load Order" stands for the load order of the <em>active</em> plugins, all installed plugins have a load order assigned
-    to them. In Oblivion, Fallout 3 and Fallout&colon; New Vegas this is based on the modification time of the plugin,
+    to them. In Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 and Fallout&colon; New Vegas this is based on the modification time of the plugin,
     in Skyrim and Enderal&colon; Forgotten Stories it is based on a text-file based standard the community agreed on,
     while Fallout 4 and all later games dump all installed plugins in its plugins.txt, marking active ones with an asterisk (<code>*</code>).
     Bash needs plugin load order even for inactive plugins to correctly merge inactive mods in the Bashed Patch, for instance.</p>
@@ -603,8 +605,8 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
     <li>Alphabetical sorting by selecting a group of plugins and choosing File-&gt;Sort from the right-click menu.
     <li>Moving plugins up or down the load order by selecting them and using Ctrl-Up or Ctrl-Down respectively. This also works with groups of plugins and preserves the group's internal order.
     <li>Dragging and dropping plugins will also change the load order if the plugins are being sorted by Load Order.
-    <li><em>Oblivion only.</em> Selecting a group of plugins and choosing File-&gt;Redate from the right-click menu. This will move the first plugin to the specified date/time and position the others at one minute intervals after it.
-    <li><em>Oblivion only.</em> Editing plugin modification dates in the right-hand details panel.
+    <li><em>Timestamp-based games only.</em> Selecting a group of plugins and choosing File-&gt;Redate from the right-click menu. This will move the first plugin to the specified date/time and position the others at one minute intervals after it.
+    <li><em>Timestamp-based games only.</em> Editing plugin modification dates in the right-hand details panel.
 </ul>
 <p>When running Wrye Bash, you can also lock your load order in place to prevent unintended changes to it by selecting the <a href="#modsLockLoadOrder">Lock Load Order</a>
     option in the column header right-click menu. Note that this will prevent other utilities from changing the load order, so uncheck this option if you use such a
@@ -659,9 +661,9 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
         <tr><td class="load-symbols-pnktxt">Pink Text</td><td>An ESL-flagged plugin. <em>Only shown for games with ESL support.</em></td></tr>
         <tr><td class="load-symbols-prptxt">Purple Text</td><td>An ESL-flagged plugin that is also a master. The color is a combination of the blue one for masters and the pink one for ESLs.</td></tr>
         <tr><td class="load-symbols-ylwtxt">Yellow Text</td><td>A plugin that should not be merged (ie. tagged with <code>NoMerge</code> - <em>only shown in games without ESL support</em>).</td></tr>
-        <tr><td class="load-symbols-pnkbg">Pink Background</td><td><em>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only.</em> A plugin that shares its modification date with another plugin.
+        <tr><td class="load-symbols-pnkbg">Pink Background</td><td><em>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</em> A plugin that shares its modification date with another plugin.
             Not a problem unless both plugins are active.</td></tr>
-        <tr><td class="load-symbols-redkbg">Red Background</td><td>An active plugin that should remain deactivated (ie. tagged with <code>Deactivate</code>) or, <em>for Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only</em>,
+        <tr><td class="load-symbols-redkbg">Red Background</td><td>An active plugin that should remain deactivated (ie. tagged with <code>Deactivate</code>) or, <em>for Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</em>,
             an active plugin that shares its modification date with another active plugin. This must be corrected so that they have different modification dates or else it may break your load order.</td></tr>
         <tr><td class="load-symbols-lorgbg">Light Orange Background</td><td><em>Morrowind only.</em> In Morrowind, plugin files contain <code>DATA</code>
             subrecords that store the size of the plugin's masters when it was created. If a stored size does not match the one on disk, Wrye Bash will
@@ -714,14 +716,15 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             <td>Creates LOOT masterlist entries based on the tags you have
                 applied to the selected plugin(s). Also tries to figure out the
                 URL that the plugin came from based on the BAIN package it was
-                installed from. In <strong>Oblivion only</strong>, CBash will
-                also be used to check for ITMs and deleted references.</td>
+                installed from. In <strong>Oblivion &amp; Nehrim&colon; At
+                Fate's Edge only</strong>, CBash will also be used to check for
+                ITMs and deleted references.</td>
         </tr>
         <tr><td>Copy Mod Info...<td>Outputs a report on the selected plugins(s) with the info from the currently displayed columns.
         <tr><td>Don't Ghost<td>Don't ghost this plugin when it is inactive, even if <a href="#modsAutoGhost">Auto-Ghost</a> is enabled.
         <tr><td>Ghost<td>Ghost this plugin when it is inactive even if <a href="#modsAutoGhost">Auto-Ghost</a> is disabled.
         <tr><td id="modsRebuildPatch">Rebuild Patch...<td>Rebuild the selected Bashed Patch using the Python patcher.
-        <tr><td id="modsRebuildPatchCBash">Rebuild Patch (CBash *Beta*)...<td><em>Oblivion only.</em> Rebuild the selected Bashed Patch using the CBash patcher.
+        <tr><td id="modsRebuildPatchCBash">Rebuild Patch (CBash *Beta*)...<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Rebuild the selected Bashed Patch using the CBash patcher.
 </table>
 
 
@@ -782,21 +785,21 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
     <tbody>
         <tr><td>Import Actors</td><td><em>All but Fallout 4.</em> Preserves changes made to actors (ie. NPCs and creatures) by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
         <tr><td id="patchImportActorsAIPackages">Import Actors: AI Packages</td><td><em>All but Fallout 4.</em> Merges the changes made to actor AI packages by all the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td>Import Actors: Animations</td><td><em>Oblivion, Fallout 3 and Fallout&colon; New Vegas only.</em> Merges the changes made to actor animations by all the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
+        <tr><td>Import Actors: Animations</td><td><em>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</em> Merges the changes made to actor animations by all the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
         <tr><td>Import Actors: Death Items</td><td><em>All but Fallout 4.</em> Preserves the changes made to the items added to an actor when it dies by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
         <tr><td id="patchImportActorsSpells">Import Actors: Spells</td><td><em>All but Fallout 4.</em> Preserves the changes made to the spells actors have by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
         <tr><td id="patchImportCells">Import Cells<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to cell settings such as lighting, climate, music, name, owner, water and more.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td>Import Destructible</td><td><em>All but Oblivion and Fallout 4.</em> Preserves the changes made to the ability to destroy certain parts of the environment.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td>Import Factions<td><em>Oblivion, Fallout 3 and Fallout&colon; New Vegas only.</em> Preserves the changes made to the factions an actor belongs to by the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
+        <tr><td>Import Destructible</td><td><em>All but Oblivion, Nehrim&colon; At Fate's Edge &amp; Fallout 4.</em> Preserves the changes made to the ability to destroy certain parts of the environment.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
+        <tr><td>Import Factions<td><em>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</em> Preserves the changes made to the factions an actor belongs to by the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
         <tr><td id="patchImportGraphics">Import Graphics<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to various textures and models throughout the game.<td>The decision is entirely based on user preference. Choose whichever mods' graphics you prefer.
         <tr><td id="patchImportInventory">Import Inventory<td><em>All but Fallout 4.</em> Merges the changes made to the items in an actor's inventory by all the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td>Import Keywords</td><td><em>Skyrim and Skyrim&colon; Special Edition only.</em> Preserves the changes made to the keywords attached to various things throughout the game by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td id="patchImportNPCFaces">Import NPC Faces</td><td><em>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only.</em> Preserves the changes made to NPC faces by the mods selected.</td><td>The decision is entirely based on user preference. Choose whichever mods' NPC faces you prefer.</td>
+        <tr><td>Import Keywords</td><td><em>Skyrim &amp; Skyrim&colon; Special Edition only.</em> Preserves the changes made to the keywords attached to various things throughout the game by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
+        <tr><td id="patchImportNPCFaces">Import NPC Faces</td><td><em>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</em> Preserves the changes made to NPC faces by the mods selected.</td><td>The decision is entirely based on user preference. Choose whichever mods' NPC faces you prefer.</td>
         <tr><td id="patchImportNames">Import Names<td><em>All but Fallout 4.</em> Preserves the changes made to various names throughout the game by the mods selected.<td>The decision is entirely based on user preference. Choose whichever mods' names you prefer.
-        <tr><td>Import Object Bounds</td><td><em>All but Oblivion.</em> Preserves the changes made by the mods selected to the bounds of many types of objects throughout the world.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td id="patchImportRelations">Import Relations<td><em>Oblivion only.</em> Preserves the changes made by the mods selected to how factions interact.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td>Import Roads<td><em>Oblivion only.</em> Preserves the changes made by the mods selected to the landscape's roads.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td>Import Scripts<td><em>Oblivion, Fallout 3 and Fallout&colon; New Vegas only.</em> Preserves the changes made by the mods selected to the scripts attached to things in the game.<td>Always, unless you are told otherwise by a mod's readme.
+        <tr><td>Import Object Bounds</td><td><em>All but Oblivion &amp; Nehrim&colon; At Fate's Edge.</em> Preserves the changes made by the mods selected to the bounds of many types of objects throughout the world.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
+        <tr><td id="patchImportRelations">Import Relations<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Preserves the changes made by the mods selected to how factions interact.<td>Always, unless you are told otherwise by a mod's readme.
+        <tr><td>Import Roads<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Preserves the changes made by the mods selected to the landscape's roads.<td>Always, unless you are told otherwise by a mod's readme.
+        <tr><td>Import Scripts<td><em>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</em> Preserves the changes made by the mods selected to the scripts attached to things in the game.<td>Always, unless you are told otherwise by a mod's readme.
         <tr><td id="patchImportSounds">Import Sounds<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to various sounds in the game.<td>The decision is entirely based on user preference. Choose whichever mods' sounds you prefer.
         <tr><td id="patchImportSpellStats">Import Spell Stats</td><td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to spells / actor effects in order to fix bugs or rebalance them.</td><td>Always, unless you are told otherwise by a mod's readme. There is an element of user preference, for instance if you are using several mods that overhaul spell stats. In such cases, choose whichever mods' stats you prefer.</td></tr>
         <tr><td>Import Stats<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to items in order to fix bugs or rebalance them.<td>Always, unless you are told otherwise by a mod's readme. There is an element of user preference, for instance if you are using several mods that overhaul item stats. In such cases, choose whichever mods' stats you prefer.
@@ -810,9 +813,9 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
     <thead><tr><th>Section<th>Description<th>When You Should Use It
     <tbody>
         <tr><td id="patchTweakActors">Tweak Actors</td><td><em>All but Fallout 4.</em> Allows you to change a number of the game's settings relating to actors (i.e. NPCs).</td><td>The decision is entirely based on user preference.</td></tr>
-        <tr><td id="patchTweakAssorted">Tweak Assorted<td><em>Oblivion only.</em> Contains a set of miscellaneous tweaks to the game.<td>The <strong>Bow Reach Fix</strong> and <strong>Nvidia Fog Fix</strong> are recommended for all users, as they fix bugs that may be uncovered by mods. The <strong>DarNified Books</strong> option is recommended for users of DarNified UI. Other than those, the decision is entirely based on user preference.
-        <tr><td id="patchTweakClothes">Tweak Clothes<td><em>Oblivion only.</em> Contains a set of tweaks that changes settings relating to the game's clothing.<td>The decision is entirely based on user preference.
-        <tr><td id="patchTweakNames">Tweak Names<td><em>Oblivion only.</em> Contains a set of tweaks that changes the names of things in the game. Most change the names to change how they are sorted in your inventory.<td>The decision is entirely based on user preference.
+        <tr><td id="patchTweakAssorted">Tweak Assorted<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Contains a set of miscellaneous tweaks to the game.<td>The <strong>Bow Reach Fix</strong> and <strong>Nvidia Fog Fix</strong> are recommended for all users, as they fix bugs that may be uncovered by mods. The <strong>DarNified Books</strong> option is recommended for users of DarNified UI. Other than those, the decision is entirely based on user preference.
+        <tr><td id="patchTweakClothes">Tweak Clothes<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Contains a set of tweaks that changes settings relating to the game's clothing.<td>The decision is entirely based on user preference.
+        <tr><td id="patchTweakNames">Tweak Names<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Contains a set of tweaks that changes the names of things in the game. Most change the names to change how they are sorted in your inventory.<td>The decision is entirely based on user preference.
         <tr><td id="patchTweakSettings">Tweak Settings<td><em>All but Fallout 4.</em> Contains a set of tweaks that changes various global and non-global game settings. <td>In Oblivion, the <strong>UOP Vampire Aging and Face Fix.esp</strong> tweak is recommended for all users. Beyond that, the decision is entirely based on user preference.
 </table>
 
@@ -821,14 +824,14 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 <table>
     <thead><tr><th>Section<th>Description<th>When You Should Use It
     <tbody>
-        <tr><td id="patchAliasModNames">Alias Mod Names<td><em>Oblivion, Fallout 3 and Fallout&colon; New Vegas only.</em> Allows Wrye Bash to recognise some common renamings of plugins that are referenced in .csv data files that it imports as part of some Bashed Patch sections. Renamings should be listed in the text box for this section. The format is <code>Old.esp =&gt; New.esp</code>.<td>If you have renamed a plugin that is referenced in a CSV file you have selected in the Bashed Patch's configuration. It is recommended that you refrain from renaming plugins, as it can break parts of Wrye Bash and other utilities.
-        <tr><td id="patchReplaceFormIDs">Replace Form IDs<td><em>Oblivion only.</em> Replaces a set of formIDs with another set of formIDs defined by a .csv file.<td>If you use a mod that tells you to use it.
+        <tr><td id="patchAliasModNames">Alias Mod Names<td><em>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 and Fallout&colon; New Vegas only.</em> Allows Wrye Bash to recognise some common renamings of plugins that are referenced in .csv data files that it imports as part of some Bashed Patch sections. Renamings should be listed in the text box for this section. The format is <code>Old.esp =&gt; New.esp</code>.<td>If you have renamed a plugin that is referenced in a CSV file you have selected in the Bashed Patch's configuration. It is recommended that you refrain from renaming plugins, as it can break parts of Wrye Bash and other utilities.
+        <tr><td id="patchReplaceFormIDs">Replace Form IDs<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Replaces a set of formIDs with another set of formIDs defined by a .csv file.<td>If you use a mod that tells you to use it.
         <tr><td id="patchCoblCatalogs">Cobl Catalogs<td><em>Oblivion only.</em> Updates Cobl's ingredient and effect catalogs to take into account those added by mods you use.<td>If you use Cobl (a.k.a. Common Oblivion).
         <tr><td>Cobl Exhaustion<td><em>Oblivion only.</em> Updates greater powers added by the mods that are listed in the selected .csv file options so that they're compatible with Cobl's Exhaustion feature.<td>If you use Cobl's Exhaustion feature.
         <tr><td>Contents Checker</td><td><em>All but Fallout 4.</em> Checks that leveled lists, outfits, recipes and inventories contain the correct types of entries, and removes any incorrect entries.</td><td>Always.</td></tr>
         <tr><td id="patchLeveledLists">Leveled Lists<td>Merges changes made to leveled lists by mods to increase compatibility between them.<td>Always. If you don't have any mods that alter leveled lists, the option won't do anything, in which case it doesn't hurt to have it enabled.
         <tr><td id="patchMorphFactions">Morph Factions<td><em>Oblivion only.</em> Updates factions so that they are more likely to work with Wrye Morph.<td>If you use Cobl and Wrye Morph.
-        <tr><td id="patchRaceRecords">Race Records<td><em>Oblivion only.</em> Some mods make changes to races and want those changes to be preserved even if another mod changes the same race. This ensures that those changes are kept. It also checks for and fixes various errors such as googly eyes and missing hair or eyes. It also has a section of race tweaks which the user can select as desired.<td>Always, even if there are no mods listed on the right.
+        <tr><td id="patchRaceRecords">Race Records<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Some mods make changes to races and want those changes to be preserved even if another mod changes the same race. This ensures that those changes are kept. It also checks for and fixes various errors such as googly eyes and missing hair or eyes. It also has a section of race tweaks which the user can select as desired.<td>Always, even if there are no mods listed on the right.
         <tr><td id="patchSEWorldTests">SEWorld Tests<td><em>Oblivion only.</em> Fixes quests that aren't suspended while your character is in the Shivering Isles. This doesn't apply to mod-added quests, it only restores suspension to vanilla quests where mods have removed it.<td>Always. If you don't have Shivering Isles, the option won't do anything, in which case it doesn't hurt to have it enabled.
 </table>
 
@@ -968,6 +971,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
     <thead>
         <tr>
             <th colspan="2">Oblivion</th>
+            <th colspan="2">Nehrim&colon; At Fate's Edge</th>
             <th colspan="2">Fallout 3</th>
             <th colspan="2">Fallout&colon; New Vegas</th>
             <th colspan="2">Skyrim</th>
@@ -983,19 +987,22 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             <th>Icon</th><th>Application</th>
             <th>Icon</th><th>Application</th>
             <th>Icon</th><th>Application</th>
+            <th>Icon</th><th>Application</th>
         </tr>
     </thead>
     <tbody>
         <tr>
-            <td><img alt="Oblivion Icon" src="../bash/images/oblivion32.png" width="32" height="32"/></td><td>Oblivion</td>
-            <td><img alt="Fallout 3 Icon" src="../bash/images/fallout332.png" width="32" height="32"/></td><td>Fallout 3</td>
-            <td><img alt="Fallout&colon; New Vegas Icon" src="../bash/images/falloutnv32.png" width="32" height="32"/></td><td>Fallout&colon; New Vegas</td>
-            <td><img alt="Skyrim Icon" src="../bash/images/skyrim32.png" width="32" height="32"/></td><td>Skyrim</td>
-            <td><img alt="Enderal Icon" src="../bash/images/enderal32.png" width="32" height="32"/></td><td>Enderal&colon; Forgotten Stories</td>
-            <td><img alt="Fallout 4 Icon" src="../bash/images/fallout432.png" width="32" height="32"/></td><td>Fallout 4</td>
+            <td><img alt="Oblivion Icon" src="../bash/images/Oblivion32.png" width="32" height="32"/></td><td>Oblivion</td>
+            <td><img alt="Nehrim Icon" src="../bash/images/Nehrim32.png" width="32" height="32"/></td><td>Nehrim&colon; At Fate's Edge</td>
+            <td><img alt="Fallout 3 Icon" src="../bash/images/Fallout 332.png" width="32" height="32"/></td><td>Fallout 3</td>
+            <td><img alt="Fallout&colon; New Vegas Icon" src="../bash/images/Fallout New Vegas32.png" width="32" height="32"/></td><td>Fallout&colon; New Vegas</td>
+            <td><img alt="Skyrim Icon" src="../bash/images/Skyrim32.png" width="32" height="32"/></td><td>Skyrim</td>
+            <td><img alt="Enderal Icon" src="../bash/images/Enderal32.png" width="32" height="32"/></td><td>Enderal&colon; Forgotten Stories</td>
+            <td><img alt="Fallout 4 Icon" src="../bash/images/Fallout 432.png" width="32" height="32"/></td><td>Fallout 4</td>
             <td><img alt="Skyrim&colon; Special Edition Icon" src="../bash/images/Skyrim Special Edition32.png" width="32" height="32"/></td><td>Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
+            <td><img alt="Oblivion CS Icon" src="../bash/images/tescs32.png" width="32" height="32"/></td><td><a href="https://cs.elderscrolls.com/index.php?title=The_Elder_Scrolls_Construction_Set">TES Construction Set</a></td>
             <td><img alt="Oblivion CS Icon" src="../bash/images/tescs32.png" width="32" height="32"/></td><td><a href="https://cs.elderscrolls.com/index.php?title=The_Elder_Scrolls_Construction_Set">TES Construction Set</a></td>
             <td><img alt="Fallout 3 GECK Icon" src="../bash/images/geck32.png" width="32" height="32"/></td><td><a href="https://geck.bethsoft.com/index.php?title=Main_Page">Garden of Eden Creation Kit</a></td>
             <td><img alt="Fallout&colon; New Vegas GECK Icon" src="../bash/images/geck32.png" width="32" height="32"/></td><td><a href="https://geck.bethsoft.com/index.php?title=Main_Page">Garden of Eden Creation Kit</a></td>
