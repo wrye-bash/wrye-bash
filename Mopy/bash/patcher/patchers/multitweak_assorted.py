@@ -1716,7 +1716,7 @@ class AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(AMultiTweakItem):
 
     def __init__(self):
         super(AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly,
-              self).__init__(u'Attenuation%:', (u'0%', 0), (u'5%', 5),
+              self).__init__(u'Nirnroot Attenuation%:', (u'0%', 0), (u'5%', 5),
             (u'10%', 10), (u'20%', 20), (u'50%', 50), (u'80%', 80),
             (_(u'Custom'), 0))
         self.logMsg = u'* ' + _(u'Sounds Modified') + u': %d'
