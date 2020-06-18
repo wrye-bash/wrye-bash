@@ -360,7 +360,12 @@ class PageSelect(PageInstaller):
         except KeyError:
             final_image = opt_img
         self._img_cache[opt_img] = self._bmp_item.set_bitmap(final_image)
+        # Check if we need to display a special string above the description
         type_desc, type_color = self._option_type_info[option.option_type]
+        if self.checkable_to_group[checkable].group_type == u'SelectAll':
+            # Ugh. Some FOMODs set SelectAll but don't mark the options as
+            # required. In such a case, we let the SelectAll win.
+            type_desc, type_color = self._option_type_info[u'Required']
         self._option_type_label.label_text = type_desc
         self._option_type_label.set_foreground_color(type_color)
         self._text_item.text_content = option.option_desc

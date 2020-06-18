@@ -269,7 +269,7 @@ def _main(opts, wx_locale):
         if restore_:
             try:
                 restore_.restore_settings(bush_game.fsName,
-                                          bush_game.mods_dir)
+                    bush_game.bash_root_prefix, bush_game.mods_dir)
                 # we currently disallow backup and restore on the same boot
                 if opts.quietquit: return
             except (exception.BoltError, OSError, shutil.Error):
@@ -349,7 +349,7 @@ def _main(opts, wx_locale):
         if settings_file:
             with gui.BusyCursor():
                 backup = barb.BackupSettings(settings_file, bush_game.fsName,
-                                             bush_game.mods_dir)
+                    bush_game.bash_root_prefix, bush_game.mods_dir)
             try:
                 with gui.BusyCursor():
                     backup.backup_settings(balt)

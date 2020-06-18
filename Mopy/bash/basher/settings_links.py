@@ -66,7 +66,7 @@ class Settings_BackupSettings(ItemLink):
         if not settings_file: return
         with BusyCursor():
             backup = barb.BackupSettings(settings_file, bush.game.fsName,
-                                         bush.game.mods_dir)
+                bush.game.bash_root_prefix, bush.game.mods_dir)
         try:
             with BusyCursor(): backup.backup_settings(balt)
         except exception.StateError:

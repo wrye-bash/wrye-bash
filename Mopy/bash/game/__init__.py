@@ -313,6 +313,9 @@ class GameInfo(object):
         # If True, generate ONAM by reading each temp CELL child when adding
         # the ESM flag to plugins and discard it when removing the ESM flag.
         generate_temp_child_onam = False
+        # The maximum number of entries inside a leveled list for this game.
+        # Zero means no limit.
+        max_lvl_list_size = 0
 
     # Bash Tags supported by this game
     allTags = set()

@@ -294,11 +294,13 @@ class ListsMerger(_PListsMerger):
         self._overhaul_compat(self.srcs, _skip_id)
 
     def _check_list(self, record, log):
-        # Emit a warning for lists that may have exceeded 255
-        if len(record.entries) == 255:
-            log(u'  * __%s__' % _(u'Warning: Now has 255 entries, may '
+        # Emit a warning for lists that may have exceeded 255 - note that
+        # pre-Skyrim games have no size limit since they have no counter
+        max_lvl_size = bush.game.Esp.max_lvl_list_size
+        if max_lvl_size and len(record.entries) == max_lvl_size:
+            log(u'  * __%s__' % _(u'Warning: Now has %u entries, may '
                                   u'have been truncated - check and '
-                                  u'fix manually!'))
+                                  u'fix manually!') % max_lvl_size)
 
     def _get_entries(self, target_list):
         return [list_entry.listId for list_entry in target_list.entries]

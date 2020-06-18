@@ -102,11 +102,11 @@ class BackupSettings(object):
     settings we backup (bass.settings['bash.version']). Creates a backup.dat
     file that stores those versions."""
 
-    def __init__(self, settings_file, fsName, mods_folder):
+    def __init__(self, settings_file, fsName,  root_prefix, mods_folder):
         self._backup_dest_file = settings_file # absolute path to dest 7z file
         self.files = {}
-        for (bash_dir, tmpdir), setting_files in \
-                _init_settings_files(fsName, mods_folder).iteritems():
+        for (bash_dir, tmpdir), setting_files in _init_settings_files(
+                fsName, root_prefix, mods_folder).iteritems():
             if not setting_files: # we have to backup everything in there
                 setting_files = bash_dir.list()
             tmp_dir = GPath(tmpdir)
@@ -243,17 +243,17 @@ class RestoreSettings(object):
         else: self.bash_ini_path = None
         return self._bash_ini_path
 
-    def restore_settings(self, fsName, mods_folder):
+    def restore_settings(self, fsName, root_prefix, mods_folder):
         if self._bash_ini_path is self.__unset: raise BoltError(
             u'restore_settings: you must handle bash ini first')
         if self._extract_dir is self.__unset: raise BoltError(
             u'restore_settings: you must extract the settings file first')
         try:
-            self._restore_settings(fsName, mods_folder)
+            self._restore_settings(fsName, root_prefix, mods_folder)
         finally:
             self.remove_extract_dir(self._extract_dir)
 
-    def _restore_settings(self, fsName, mods_folder):
+    def _restore_settings(self, fsName, root_prefix, mods_folder):
         deprint(u'')
         deprint(_(u'RESTORE BASH SETTINGS: ') + self._settings_file.s)
         # backup previous Bash ini if it exists
@@ -270,7 +270,8 @@ class RestoreSettings(object):
             deprint(back_path_.join(*end_path).s + u' --> ' + dest_dir_.join(
                 *end_path).s)
             full_back_path.join(*end_path).copyTo(dest_dir_.join(*end_path))
-        restore_paths = _init_settings_files(fsName, mods_folder).keys()
+        restore_paths = list(_init_settings_files(fsName, root_prefix,
+            mods_folder))
         for dest_dir, back_path in restore_paths:
             full_back_path = self._extract_dir.join(back_path)
             for fname in full_back_path.list():

@@ -324,16 +324,18 @@ class MreLeveledListBase(MelRecord):
             if entry.listId not in self.items:
                 entriesAppend(entry)
                 newItemsAdd(entry.listId)
-        # Check if merging exceeded the 8-bit counter's limit and, if so,
-        # truncate it back to 255 and warn
-        if len(self.entries) > 255:
+        # Check if merging exceeded the counter's limit and, if so, truncate it
+        # and warn. Note that pre-Skyrim games do not have this limitation.
+        from .. import bush
+        max_lvl_size = bush.game.Esp.max_lvl_list_size
+        if max_lvl_size and len(self.entries) > max_lvl_size:
             # TODO(inf) In the future, offer an option to auto-split these into
             #  multiple sub-lists instead
-            bolt.deprint(u'Merging changes from mod \'%s\' to leveled list %r '
-                         u'caused it to exceed 255 entries. Truncating back '
-                         u'to 255, you will have to fix this manually!' %
-                         (otherMod.s, self))
-            self.entries = self.entries[:255]
+            bolt.deprint(u"Merging changes from mod '%s' to leveled list %r "
+                         u'caused it to exceed %u entries. Truncating back '
+                         u'to %u, you will have to fix this manually!' %
+                         (otherMod.s, self, max_lvl_size, max_lvl_size))
+            self.entries = self.entries[:max_lvl_size]
         entry_copy_attrs_key = attrgetter(*self.__class__.entry_copy_attrs)
         if newItems:
             self.items |= newItems

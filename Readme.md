@@ -21,11 +21,11 @@ Here is a list of supported games with the minimal patch version that Bash was
 tested on (previous versions or latest versions may or may not work):
 
 * Oblivion (patch 1.2.0.416)
-* Nehrim (patch 1.5.0.5, depends on language)
+* Nehrim (patch 2.0.1.6)
 * Fallout 3 (patch 1.7.0.3)
 * Fallout New Vegas (patch 1.4.0.525)
 * Skyrim (patch 1.9.36.0)
-* Enderal (patch 1.5.8.0)
+* Enderal (patch 1.5.9.0)
 * Fallout 4 (patch 1.10.163.0)
 * Skyrim Special Edition (patch 1.5.97.0)
 
@@ -169,4 +169,4 @@ bleeding edge branch. Commits land here for testing.
   [28]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-and-merging-to-dev-using-rebase
   [29]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Coding-Style
   [30]: https://www.nexusmods.com/enderal/mods/97
-  [31]: https://www.nexusmods.com/nehrim/mods/???
+  [31]: https://www.nexusmods.com/nehrim/mods/2
