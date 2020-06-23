@@ -976,6 +976,7 @@ class UIList(wx.Panel):
         VLayout(item_expand=True, item_weight=1,
                 items=[self.__gList]).apply_to(self)
         # Columns
+        self._clean_column_settings()
         self.PopulateColumns()
         #--Items
         self._defaultTextBackground = wx.SystemSettings.GetColour(
@@ -1397,6 +1398,31 @@ class UIList(wx.Panel):
         return self.__gList.FindIndexOf(item)
 
     #--Populate Columns -------------------------------------------------------
+    def _clean_column_settings(self):
+        """Removes columns that no longer exist from settings files."""
+        valid_columns = set(self.allCols)
+        # Clean the widths/reverse dictionaries - extracted into helper method
+        def clean_dict(dict_key):
+            stored_dict = _settings.getChanged(self.keyPrefix + dict_key, {})
+            invalid_columns = set(stored_dict) - valid_columns
+            if invalid_columns:
+                for c in invalid_columns:
+                    del stored_dict[c]
+                _settings.setChanged(self.keyPrefix + dict_key)
+        clean_dict(u'.colWidths')
+        clean_dict(u'.colReverse')
+        # Clean the list of enabled columns for this UIList
+        stored_cols = self.cols
+        invalid_columns = set(stored_cols) - valid_columns
+        if invalid_columns:
+            for c in invalid_columns:
+                while c in stored_cols: # Just in case there's duplicates
+                    stored_cols.remove(c)
+            _settings.setChanged(self.keyPrefix + u'.cols')
+        # Finally, reset the sort column to the default if it's invalid now
+        if self.sort_column not in valid_columns:
+            self.sort_column = self._default_sort_col
+
     def PopulateColumns(self):
         """Create/name columns in ListCtrl."""
         cols = self.cols # this may have been updated in ColumnsMenu.Execute()
