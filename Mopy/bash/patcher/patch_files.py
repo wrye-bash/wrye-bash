@@ -36,8 +36,7 @@ from ..bolt import GPath, SubProgress, deprint, Progress
 from ..cint import ObModFile, FormID, dump_record, ObCollection, MGEFCode
 from ..exception import BoltError, CancelError, ModError, StateError
 from ..localize import format_date
-from ..mod_files import ModFile, LoadFactory, MasterSet
-from ..record_groups import MobObjects
+from ..mod_files import ModFile, LoadFactory
 
 # the currently executing patch set in _Mod_Patch_Update before showing the
 # dialog - used in getAutoItems, to get mods loading before the patch
@@ -186,10 +185,7 @@ class PatchFile(_PFile, ModFile):
 
     def getKeeper(self):
         """Returns a function to add fids to self.keepIds."""
-        def keep(fid):
-            self.keepIds.add(fid)
-            return fid
-        return keep
+        return self.keepIds.add
 
     def initFactories(self,progress):
         """Gets load factories."""
@@ -242,7 +238,7 @@ class PatchFile(_PFile, ModFile):
                 iiMode = isMerged and bool({u'InventOnly', u'IIM'} & bashTags)
                 if isMerged:
                     progress(pstate,modName.s+u'\n'+_(u'Merging...'))
-                    self.mergeModFile(modFile,nullProgress,doFilter,iiMode)
+                    self.mergeModFile(modFile, doFilter, iiMode)
                 else:
                     progress(pstate,modName.s+u'\n'+_(u'Scanning...'))
                     self.update_patch_records_from_mod(modFile)
@@ -259,54 +255,23 @@ class PatchFile(_PFile, ModFile):
                 raise
         progress(progress.full,_(u'Load mods scanned.'))
 
-    def mergeModFile(self,modFile,progress,doFilter,iiMode):
+    def mergeModFile(self, modFile, doFilter, iiMode):
         """Copies contents of modFile into self."""
-        mergeIds = self.mergeIds
-        mergeIdsAdd = mergeIds.add
-        loadSet = self.loadSet
         modFile.convertToLongFids()
-        badForm = (GPath(bush.game.master_file), 0xA31D) #--DarkPCB record
-        is_oblivion = bush.game.fsName == u'Oblivion'
-        selfLoadFactoryRecTypes = self.loadFactory.recTypes
-        selfMergeFactoryType_class = self.mergeFactory.type_class
-        selfReadFactoryAddClass = self.readFactory.addClass
-        selfLoadFactoryAddClass = self.loadFactory.addClass
-        nullFid = (bosh.modInfos.masterName, 0)
+        def add_to_factories(merged_sig):
+            """Makes sure that once we merge a record type, all later plugin
+            loads will load that record type too so that we can update the
+            merged records according to load order."""
+            if merged_sig not in self.loadFactory.recTypes:
+                merged_class = self.mergeFactory.type_class[merged_sig]
+                self.readFactory.addClass(merged_class)
+                self.loadFactory.addClass(merged_class)
         for blockType,block in modFile.tops.iteritems():
+            for s in block.get_all_signatures():
+                add_to_factories(s)
             iiSkipMerge = iiMode and blockType not in bush.game.listTypes
-            #--Make sure block type is also in read and write factories
-            if blockType not in selfLoadFactoryRecTypes:
-                recClass = selfMergeFactoryType_class[blockType]
-                selfReadFactoryAddClass(recClass)
-                selfLoadFactoryAddClass(recClass)
-            patchBlock = getattr(self,blockType)
-            patchBlockSetRecord = patchBlock.setRecord
-            if not isinstance(patchBlock,MobObjects):
-                raise BoltError(u"Merge unsupported for type: "+blockType)
-            filtered = []
-            filteredAppend = filtered.append
-            loadSetIssuperset = loadSet.issuperset
-            for record in block.getActiveRecords():
-                fid = record.fid
-                if is_oblivion and fid == badForm: continue
-                #--Include this record?
-                if doFilter:
-                    record.mergeFilter(loadSet)
-                    masters = MasterSet()
-                    record.updateMasters(masters)
-                    if not loadSetIssuperset(masters):
-                        continue
-                filteredAppend(record)
-                if iiSkipMerge: continue
-                record = record.getTypeCopy()
-                patchBlockSetRecord(record)
-                if record.isKeyedByEid and fid == nullFid:
-                    mergeIdsAdd(record.eid)
-                else:
-                    mergeIdsAdd(fid)
-            #--Filter records
-            block.records = filtered
-            block.indexRecords()
+            getattr(self, blockType).merge_records(block, self.loadSet,
+                self.mergeIds, iiSkipMerge, doFilter)
 
     def update_patch_records_from_mod(self, modFile):
         """Scans file and overwrites own records with modfile records."""
@@ -378,7 +343,7 @@ class CBash_PatchFile(_PFile, ObModFile):
         return enumerate(
             sorted(self._patcher_instances, key=attrgetter(u'scanOrder')))
 
-    def mergeModFile(self,modFile,progress,doFilter,iiMode,group):
+    def mergeModFile(self, modFile, doFilter, iiMode, group):
         """Copies contents of modFile group into self."""
         if iiMode and group not in ('LVLC','LVLI','LVSP'): return
         mergeIds = self.mergeIds
@@ -436,7 +401,6 @@ class CBash_PatchFile(_PFile, ObModFile):
 
         iiModeSet = {u'InventOnly', u'IIM'}
         levelLists = bush.game.listTypes
-        nullProgress = Progress()
 
         infos = bosh.modInfos
         IIMSet = set([modName for modName in (self.allSet | self.scanSet) if
@@ -612,7 +576,7 @@ class CBash_PatchFile(_PFile, ObModFile):
                         record.UnloadRecord()
                 if isMerged:
                     progress(index,modFile.ModName+u'\n'+_(u'Merging...')+u'\n'+group)
-                    self.mergeModFile(modFile,nullProgress,doFilter,iiMode,group)
+                    self.mergeModFile(modFile, doFilter, iiMode, group)
                 maxVersion = max(modFile.TES4.version, maxVersion)
         # Force 1.0 as max TES4 version for now, as we don't expect any new esp format changes,
         # and if they do come about, we can always change this.  Plus this will solve issues where

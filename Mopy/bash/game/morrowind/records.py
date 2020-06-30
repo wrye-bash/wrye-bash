@@ -26,8 +26,8 @@ and subrecords used for the saves - see MorrowindSaveHeader for more
 information."""
 from ... import bolt
 from ...bolt import cstrip, decode
-from ...brec import MelBase, MelGroup, MelSet, MelString, MelStruct, \
-    MelArray, MreHeaderBase, MelUnion, SaveDecider, MelNull, MelSequential
+from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
+    MreHeaderBase, MelUnion, SaveDecider, MelNull, MelSequential
 
 # Utilities
 def _decode_raw(target_str):

@@ -23,6 +23,8 @@
 # =============================================================================
 from __future__ import division
 import os
+import struct
+from functools import partial
 
 from ._mergeability import is_esl_capable
 from .loot_parser import libloot_version, LOOTParser
@@ -491,7 +493,8 @@ class ModCleaner(object):
         return ret
 
     @staticmethod
-    def _scan_Python(modInfos,what,progress,detailed=False):
+    def _scan_Python(modInfos, what, progress, detailed=False,
+                     __unpacker=struct.Struct(u'=12s2f2l2f').unpack):
         if not (what & (ModCleaner.UDR|ModCleaner.FOG)):
             return [(set(), set(), set())] * len(modInfos)
         # Python can't do ITM scanning
@@ -526,7 +529,7 @@ class ModCleaner(object):
                         insUnpackRecHeader = ins.unpackRecHeader
                         insUnpackSubHeader = ins.unpackSubHeader
                         insRead = ins.read
-                        insUnpack = ins.unpack
+                        ins_unpack = partial(ins.unpack, __unpacker)
                         headerSize = RecordHeader.rec_header_size
                         while not insAtEnd():
                             subprogress(insTell())
@@ -577,7 +580,7 @@ class ModCleaner(object):
                                         if nextType != 'XCLL':
                                             insRead(nextSize)
                                         else:
-                                            color,near,far,rotXY,rotZ,fade,clip = insUnpack('=12s2f2l2f',nextSize,'CELL.XCLL')
+                                            color,near,far,rotXY,rotZ,fade,clip = ins_unpack(nextSize,'CELL.XCLL')
                                             if not (near or far or clip):
                                                 fog.add(header.fid)
                                 else:
@@ -631,7 +634,8 @@ class NvidiaFogFixer(object):
         self.modInfo = modInfo
         self.fixedCells = set()
 
-    def fix_fog(self, progress):
+    def fix_fog(self, progress,
+                     __unpacker=struct.Struct(u'=12s2f2l2f').unpack):
         """Duplicates file, then walks through and edits file as necessary."""
         progress.setFull(self.modInfo.size)
         fixedCells = self.fixedCells
@@ -640,6 +644,7 @@ class NvidiaFogFixer(object):
         path = self.modInfo.getPath()
         #--Scan/Edit
         with ModReader(self.modInfo.name,path.open('rb')) as ins:
+            ins_unpack = partial(ins.unpack, __unpacker)
             with path.temp.open('wb') as  out:
                 def copy(size):
                     buff = ins.read(size)
@@ -653,12 +658,12 @@ class NvidiaFogFixer(object):
                     header = ins.unpackRecHeader()
                     type,size = header.recType,header.size
                     #(type,size,str0,fid,uint2) = ins.unpackRecHeader()
-                    copyPrev(header.__class__.rec_header_size)
+                    copyPrev(RecordHeader.rec_header_size)
                     if type == 'GRUP':
                         if header.groupType != 0: #--Ignore sub-groups
                             pass
                         elif header.label not in ('CELL','WRLD'):
-                            copy(size-header.__class__.rec_header_size)
+                            copy(size - RecordHeader.rec_header_size)
                     #--Handle cells
                     elif type == 'CELL':
                         nextRecord = ins.tell() + size
@@ -668,7 +673,8 @@ class NvidiaFogFixer(object):
                             if type != 'XCLL':
                                 copy(size)
                             else:
-                                color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',size,'CELL.XCLL')
+                                color, near, far, rotXY, rotZ, fade, clip = \
+                                    ins_unpack(size, 'CELL.XCLL')
                                 if not (near or far or clip):
                                     near = 0.0001
                                     fixedCells.add(header.fid)
@@ -716,14 +722,14 @@ class ModDetails(object):
                     # FIXME(ut): monkey patch for fallout QUST GRUP
                     if bush.game.fsName in (u'Fallout4', u'Fallout4VR') and \
                             header.groupType == 10:
-                        ins.seek(rec_siz - header.__class__.rec_header_size, 1)
+                        header.skip_group(ins)
                         continue
                     label = header.label
                     progress(1.0*ins.tell()/modInfo.size,_(u"Scanning: ")+label)
                     records = group_records.setdefault(label,[])
                     if label in ('CELL', 'WRLD', 'DIAL'): # skip these groups
-                        ins.seek(rec_siz - header.__class__.rec_header_size, 1)
-                elif recType != 'GRUP':
+                        header.skip_group(ins)
+                else:
                     eid = u''
                     nextRecord = ins.tell() + rec_siz
                     recs, endRecs = getRecordReader(header.flags1, rec_siz)

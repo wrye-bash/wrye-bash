@@ -26,7 +26,7 @@ import re
 from collections import Counter, defaultdict
 from .... import bush, load_order
 from ....bolt import GPath, sio, SubProgress, CsvReader, deprint
-from ....brec import MreRecord, RecordHeader, null4
+from ....brec import MreRecord, RecHeader, null4
 from ....exception import StateError
 from ....mod_files import ModFile, LoadFactory
 from ....patcher import getPatchesPath
@@ -40,17 +40,17 @@ __all__ = ['AlchemicalCatalogs', 'CBash_AlchemicalCatalogs', 'CoblExhaustion',
 _cobl_main = GPath(u'COBL Main.esm')
 
 # Util Functions --------------------------------------------------------------
-def _PrintFormID(fid):
+def _PrintFormID(form_id):
     # PBash short Fid
-    if isinstance(fid, (int, long)): # PY3: just int here
-        fid = u'%08X' % fid
+    if isinstance(form_id, (int, long)): # PY3: just int here
+        form_id = u'%08X' % form_id
     # PBash long FId
-    elif isinstance(fid, tuple):
-        fid =  u'(%s, %06X)' % (fid[0], fid[1])
+    elif isinstance(form_id, tuple):
+        form_id = u'(%s, %06X)' % (form_id[0], form_id[1])
     # CBash / other(error)
     else:
-        fid = repr(fid)
-    print fid.encode('utf-8')
+        form_id = repr(form_id)
+    print form_id.encode('utf-8')
 
 class _ExSpecial(Abstract_Patcher):
     """Those used to be subclasses of SpecialPatcher that did not make much
@@ -96,6 +96,8 @@ class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
         mapper = modFile.getLongMapper()
         for record in modFile.INGR.getActiveRecords():
             if not record.full: continue #--Ingredient must have name!
+            if record.obme_record_version is not None:
+                continue ##: Skips OBME records - rework to support them
             effects = record.getEffects()
             if not ('SEFF',0) in effects:
                 id_ingred[mapper(record.fid)] = (
@@ -112,10 +114,9 @@ class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
         actorEffects = bush.game.generic_av_effects
         actorNames = bush.game.actor_values
         keep = self.patchFile.getKeeper()
-        #--Book generatator
+        #--Book generator
         def getBook(objectId,eid,full,value,iconPath,modelPath,modb_p):
-            book = MreRecord.type_class['BOOK'](
-                RecordHeader('BOOK', 0, 0, 0, 0))
+            book = MreRecord.type_class[b'BOOK'](RecHeader(b'BOOK', 0, 0, 0, 0))
             book.longFids = True
             book.changed = True
             book.eid = eid
@@ -154,7 +155,7 @@ class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
                 book.text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
         #--Get Ingredients by Effect
         effect_ingred = defaultdict(list)
-        for fid,(eid,full,effects) in id_ingred.iteritems():
+        for _fid,(eid,full,effects) in id_ingred.iteritems():
             for index,(mgef,actorValue) in enumerate(effects):
                 effectName = mgef_name[mgef]
                 if mgef in actorEffects: effectName += actorNames[actorValue]
@@ -235,14 +236,14 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
             # sanity checks
             if book:
                 if book.recType != 'BOOK':
-                    _PrintFormID(fid)
+                    _PrintFormID(ingr_fid)
                     print patchFile.Current.Debug_DumpModFiles()
                     print book
                     raise StateError(u"Cobl Catalogs: Unable to lookup book"
                                      u" record in Cobl Main.esm!")
                 book = book.CopyAsOverride(self.patchFile)
                 if not book:
-                    _PrintFormID(fid)
+                    _PrintFormID(ingr_fid)
                     print patchFile.Current.Debug_DumpModFiles()
                     print book
                     book = coblMod.LookupRecord(
@@ -294,7 +295,7 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
                 book.text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
         #--Get Ingredients by Effect
         effect_ingred = self.effect_ingred = defaultdict(list)
-        for fid,(eid,full,effects_list) in id_ingred.iteritems():
+        for ingr_fid,(eid,full,effects_list) in id_ingred.iteritems():
             for index,effect in enumerate(effects_list):
                 mgef, actorValue = effect[0], effect[5]
                 try:
@@ -436,8 +437,11 @@ class CoblExhaustion(_ACoblExhaustion,ListPatcher):
         exhaustId = (_cobl_main, 0x05139B)
         keep = self.patchFile.getKeeper()
         for record in self.patchFile.SPEL.records:
+            ##: Skips OBME records - rework to support them
+            if record.obme_record_version is not None: continue
             #--Skip this one?
-            duration = self.id_exhaustion.get(record.fid,0)
+            rec_fid = record.fid
+            duration = self.id_exhaustion.get(rec_fid, 0)
             if not (duration and record.spellType == 2): continue
             isExhausted = False
             for effect in record.effects:
@@ -460,8 +464,8 @@ class CoblExhaustion(_ACoblExhaustion,ListPatcher):
             scriptEffect.flags.hostile = False
             effect.scriptEffect = scriptEffect
             record.effects.append(effect)
-            keep(record.fid)
-            count[record.fid[0]] += 1
+            keep(rec_fid)
+            count[rec_fid[0]] += 1
         #--Log
         self._pLog(log, count)
 
@@ -578,9 +582,9 @@ class MFactMarker(_AMFactMarker,ListPatcher):
             if record:
                 patchBlock.setRecord(record.getTypeCopy())
         for record in modFile.FACT.getActiveRecords():
-            fid = record.fid
-            if not record.longFids: fid = mapper(fid)
-            if fid in id_info:
+            rec_fid = record.fid
+            if not record.longFids: rec_fid = mapper(rec_fid)
+            if rec_fid in id_info:
                 patchBlock.setRecord(record.getTypeCopy(mapper))
 
     def buildPatch(self,log,progress):
@@ -593,30 +597,32 @@ class MFactMarker(_AMFactMarker,ListPatcher):
         changed = Counter()
         mFactable = []
         for record in modFile.FACT.getActiveRecords():
-            if record.fid not in id_info: continue
-            if record.fid == mFactLong: continue
-            mFactable.append(record.fid)
+            rec_fid = record.fid
+            if rec_fid not in id_info: continue
+            if rec_fid == mFactLong: continue
+            mFactable.append(rec_fid)
             #--Update record if it doesn't have an existing relation with
             # mFactLong
             if mFactLong not in [relation.faction for relation in
                                  record.relations]:
-                record.flags.hiddenFromPC = False
+                record.general_flags.hidden_from_pc = False
                 relation = record.getDefault('relations')
                 relation.faction = mFactLong
                 relation.mod = 10
                 record.relations.append(relation)
-                mname,rankName = id_info[record.fid]
+                mname,rankName = id_info[rec_fid]
                 record.full = mname
                 if not record.ranks:
                     record.ranks = [record.getDefault('ranks')]
                 for rank in record.ranks:
-                    if not rank.male: rank.male = rankName
-                    if not rank.female: rank.female = rank.male
-                    if not rank.insigniaPath:
-                        rank.insigniaPath = \
-                            u'Menus\\Stats\\Cobl\\generic%02d.dds' % rank.rank
-                keep(record.fid)
-                changed[record.fid[0]] += 1
+                    if not rank.male_title: rank.male_title = rankName
+                    if not rank.female_title: rank.female_title = rankName
+                    if not rank.insignia_path:
+                        rank.insignia_path = (
+                                u'Menus\\Stats\\Cobl\\generic%02d.dds' %
+                                rank.rank_level)
+                keep(rec_fid)
+                changed[rec_fid[0]] += 1
         #--MFact record
         record = modFile.FACT.getRecord(mFactLong)
         if record:
@@ -657,10 +663,10 @@ class CBash_MFactMarker(_AMFactMarker, _DefaultDictLog):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         id_info = self.id_info
-        recordId = record.fid
+        rec_fid = record.fid
         mFactLong = self.mFactLong
-        if recordId in id_info and recordId != mFactLong:
-            self.mFactable.add(recordId)
+        if rec_fid in id_info and rec_fid != mFactLong:
+            self.mFactable.add(rec_fid)
             if mFactLong not in [relation.faction for relation in
                                  record.relations]:
                 override = record.CopyAsOverride(self.patchFile)
@@ -669,7 +675,7 @@ class CBash_MFactMarker(_AMFactMarker, _DefaultDictLog):
                     relation = override.create_relation()
                     relation.faction = mFactLong
                     relation.mod = 10
-                    mname,rankName = id_info[recordId]
+                    mname,rankName = id_info[rec_fid]
                     override.full = mname
                     ranks = override.ranks or [override.create_rank()]
                     for rank in ranks:
@@ -764,14 +770,15 @@ class SEWorldEnforcer(_ASEWorldEnforcer,Patcher):
         keep = patchFile.getKeeper()
         patched = []
         for record in patchFile.QUST.getActiveRecords():
-            if record.fid not in cyrodiilQuests: continue
+            rec_fid = record.fid
+            if rec_fid not in cyrodiilQuests: continue
             for condition in record.conditions:
                 if condition.ifunc == 365: break #--365: playerInSeWorld
             else:
                 condition = record.getDefault('conditions')
                 condition.ifunc = 365
                 record.conditions.insert(0,condition)
-                keep(record.fid)
+                keep(rec_fid)
                 patched.append(record.eid)
         log.setHeader(u'= ' + self._patcher_name)
         log(u'==='+_(u'Quests Patched') + u': %d' % (len(patched),))
@@ -798,8 +805,7 @@ class CBash_SEWorldEnforcer(_ASEWorldEnforcer,CBash_Patcher):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         if modFile.GName == _ob_path: return
-        recordId = record.fid
-        if recordId in self.cyrodiilQuests:
+        if record.fid in self.cyrodiilQuests:
             for condition in record.conditions:
                 if condition.ifunc == 365: return #--365: playerInSeWorld
             else:

@@ -2114,6 +2114,10 @@ class ModInfos(FileInfos):
                     # deprint (_(u"Error scanning mod %s (%s)") % (fileName, e))
                     # canMerge = False #presume non-mergeable.
                     raise
+            if fileName in self.mergeable and u'NoMerge' in fileInfo.getBashTags():
+                tagged_no_merge.add(fileName)
+                if return_results: reasons.append(_(u'Technically mergeable '
+                                                    u'but has NoMerge tag.'))
             result[fileName] = reasons is not None and (
                     u'\n.    ' + u'\n.    '.join(reasons))
             if canMerge:
@@ -2122,8 +2126,6 @@ class ModInfos(FileInfos):
             else:
                 mod_mergeInfo[fileName] = (fileInfo.size,False)
                 self.mergeable.discard(fileName)
-            if fileName in self.mergeable and u'NoMerge' in fileInfo.getBashTags():
-                tagged_no_merge.add(fileName)
             reasons = reasons if reasons is None else []
         return result, tagged_no_merge
 

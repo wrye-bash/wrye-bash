@@ -27,7 +27,7 @@
 
 from ..skyrim import SkyrimGameInfo
 from ... import brec
-from ...brec import MreGlob
+from ...brec import MreFlst, MreGlob
 
 class EnderalGameInfo(SkyrimGameInfo):
     displayName = u'Enderal'
@@ -102,7 +102,7 @@ class EnderalGameInfo(SkyrimGameInfo):
             MreInfo, MreCams, MreWthr, MreDual, MreMato, MreVtyp, MreMatt, \
             MreLvsp, MreEnch, MreProj, MreDlbr, MreRfct, MreMisc, MreActi, \
             MreEqup, MreCpth, MreDoor, MreAnio, MreHazd, MreIdlm, MreEczn, \
-            MreIdle, MreLtex, MreQust, MreMstt, MreNpc, MreFlst, MreIpds, \
+            MreIdle, MreLtex, MreQust, MreMstt, MreNpc, MreIpds, MrePack, \
             MreGmst, MreRevb, MreClmt, MreDebr, MreSmbn, MreLvli, MreSpel, \
             MreKywd, MreLvln, MreAact, MreSlgm, MreRegn, MreFurn, MreGras, \
             MreAstp, MreWoop, MreMovt, MreCobj, MreShou, MreSmen, MreColl, \
@@ -113,7 +113,7 @@ class EnderalGameInfo(SkyrimGameInfo):
             MreLscr, MreDlvw, MreTree, MreWatr, MreFlor, MreEyes, MreWeap, \
             MreIngr, MreClfm, MreMesg, MreLigh, MreExpl, MreLcrt, MreStat, \
             MreAmmo, MreSmqn, MreImad, MreSoun, MreAvif, MreCont, MreIpct, \
-            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk, MrePack
+            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk
         # ---------------------------------------------------------------------
         # Unused records, they have empty GRUP in skyrim.esm-------------------
         # CLDC HAIR PWAT RGDL SCOL SCPT
@@ -128,9 +128,9 @@ class EnderalGameInfo(SkyrimGameInfo):
         # ---------------------------------------------------------------------
         # These need syntax revision but can be merged once that is corrected
         #
-        #       MreAchr, MreDial, MreLctn, MreInfo, MreFact,
+        #       MreAchr, MreDial, MreInfo,
         # ---------------------------------------------------------------------
-        cls.mergeClasses = (# MreAchr, MreDial, MreInfo, MreFact,
+        cls.mergeClasses = (# MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
             MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook,
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCobj, MreColl,
@@ -145,33 +145,39 @@ class EnderalGameInfo(SkyrimGameInfo):
             MreRegn, MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm,
             MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun,
             MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
-            MreWatr, MreWeap, MreWoop, MreWthr, MreQust, MrePack, )
+            MreWatr, MreWeap, MreWoop, MreWthr, MreQust, MrePack, MreFact,
+        )
 
         # MreScpt is Oblivion/FO3/FNV Only
         # MreMgef, has not been verified to be used here for Skyrim
 
         # Setting RecordHeader class variables --------------------------------
-        brec.RecordHeader.topTypes = ['GMST', 'KYWD', 'LCRT', 'AACT', 'TXST',
-            'GLOB', 'CLAS', 'FACT', 'HDPT', 'HAIR', 'EYES', 'RACE', 'SOUN',
-            'ASPC', 'MGEF', 'SCPT', 'LTEX', 'ENCH', 'SPEL', 'SCRL', 'ACTI',
-            'TACT', 'ARMO', 'BOOK', 'CONT', 'DOOR', 'INGR', 'LIGH', 'MISC',
-            'APPA', 'STAT', 'SCOL', 'MSTT', 'PWAT', 'GRAS', 'TREE', 'CLDC',
-            'FLOR', 'FURN', 'WEAP', 'AMMO', 'NPC_', 'LVLN', 'KEYM', 'ALCH',
-            'IDLM', 'COBJ', 'PROJ', 'HAZD', 'SLGM', 'LVLI', 'WTHR', 'CLMT',
-            'SPGD', 'RFCT', 'REGN', 'NAVI', 'CELL', 'WRLD', 'DIAL', 'QUST',
-            'IDLE', 'PACK', 'CSTY', 'LSCR', 'LVSP', 'ANIO', 'WATR', 'EFSH',
-            'EXPL', 'DEBR', 'IMGS', 'IMAD', 'FLST', 'PERK', 'BPTD', 'ADDN',
-            'AVIF', 'CAMS', 'CPTH', 'VTYP', 'MATT', 'IPCT', 'IPDS', 'ARMA',
-            'ECZN', 'LCTN', 'MESG', 'RGDL', 'DOBJ', 'LGTM', 'MUSC', 'FSTP',
-            'FSTS', 'SMBN', 'SMQN', 'SMEN', 'DLBR', 'MUST', 'DLVW', 'WOOP',
-            'SHOU', 'EQUP', 'RELA', 'SCEN', 'ASTP', 'OTFT', 'ARTO', 'MATO',
-            'MOVT', 'SNDR', 'DUAL', 'SNCT', 'SOPM', 'COLL', 'CLFM', 'REVB']
+        header_type = brec.RecordHeader
+        header_type.top_grup_sigs = [
+            b'GMST', b'KYWD', b'LCRT', b'AACT', b'TXST', b'GLOB', b'CLAS',
+            b'FACT', b'HDPT', b'HAIR', b'EYES', b'RACE', b'SOUN', b'ASPC',
+            b'MGEF', b'SCPT', b'LTEX', b'ENCH', b'SPEL', b'SCRL', b'ACTI',
+            b'TACT', b'ARMO', b'BOOK', b'CONT', b'DOOR', b'INGR', b'LIGH',
+            b'MISC', b'APPA', b'STAT', b'SCOL', b'MSTT', b'PWAT', b'GRAS',
+            b'TREE', b'CLDC', b'FLOR', b'FURN', b'WEAP', b'AMMO', b'NPC_',
+            b'LVLN', b'KEYM', b'ALCH', b'IDLM', b'COBJ', b'PROJ', b'HAZD',
+            b'SLGM', b'LVLI', b'WTHR', b'CLMT', b'SPGD', b'RFCT', b'REGN',
+            b'NAVI', b'CELL', b'WRLD', b'DIAL', b'QUST', b'IDLE', b'PACK',
+            b'CSTY', b'LSCR', b'LVSP', b'ANIO', b'WATR', b'EFSH', b'EXPL',
+            b'DEBR', b'IMGS', b'IMAD', b'FLST', b'PERK', b'BPTD', b'ADDN',
+            b'AVIF', b'CAMS', b'CPTH', b'VTYP', b'MATT', b'IPCT', b'IPDS',
+            b'ARMA', b'ECZN', b'LCTN', b'MESG', b'RGDL', b'DOBJ', b'LGTM',
+            b'MUSC', b'FSTP', b'FSTS', b'SMBN', b'SMQN', b'SMEN', b'DLBR',
+            b'MUST', b'DLVW', b'WOOP', b'SHOU', b'EQUP', b'RELA', b'SCEN',
+            b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT', b'SNDR', b'DUAL',
+            b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB',
+        ]
         #-> this needs updating for Skyrim
-        brec.RecordHeader.recordTypes = set(
-            brec.RecordHeader.topTypes + ['GRUP', 'TES4', 'REFR', 'ACHR',
-                                          'ACRE', 'LAND', 'INFO', 'NAVM',
-                                          'PHZD', 'PGRE'])
-        brec.RecordHeader.plugin_form_version = 43
+        header_type.valid_header_sigs = set(
+            header_type.top_grup_sigs + [b'GRUP', b'TES4', b'REFR', b'ACHR',
+                                         b'ACRE', b'LAND', b'INFO', b'NAVM',
+                                         b'PHZD', b'PGRE'])
+        header_type.plugin_form_version = 43
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreAchr, MreDial, MreInfo, MreAact, MreActi, MreAddn, MreAlch,
             MreAmmo, MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc,
@@ -192,7 +198,7 @@ class EnderalGameInfo(SkyrimGameInfo):
             # MreNavm, MreNavi
         )}
         brec.MreRecord.simpleTypes = (
-            set(brec.MreRecord.type_class) - {'TES4', 'ACHR', 'CELL', 'DIAL',
-                                              'INFO', 'WRLD', })
+                set(brec.MreRecord.type_class) - {b'TES4', b'ACHR', b'CELL',
+                                                  b'DIAL', b'INFO', b'WRLD'})
 
 GAME_TYPE = EnderalGameInfo

@@ -22,13 +22,13 @@
 #
 # =============================================================================
 import re
-from .. import bush, bolt
-from ..bolt import Flags, encode, sio, Path, struct_pack, struct_unpack
-from ..exception import SaveFileError, StateError
 from . import SaveInfo
 from ._saves import SreNPC, SaveFile
+from .. import bush, bolt
+from ..bolt import Flags, encode, sio, Path, struct_pack, struct_unpack
+from ..brec import getModIndex, MreRecord, genFid, RecHeader, null2
+from ..exception import SaveFileError, StateError
 from ..mod_files import LoadFactory, MasterMap, ModFile
-from ..brec import getModIndex, MreRecord, genFid, RecordHeader, null2
 
 class PCFaces(object):
     """Package: Objects and functions for working with face data."""
@@ -457,7 +457,7 @@ class PCFaces(object):
         #--NPC
         npcid = genFid(len(tes4.masters),tes4.getNextObject())
         npc = MreRecord.type_class['NPC_'](
-            RecordHeader('NPC_', 0, 0x40000, npcid, 0))
+            RecHeader(b'NPC_', 0, 0x40000, npcid, 0))
         npc.eid = eid
         npc.full = face.pcName
         npc.flags.female = face.gender

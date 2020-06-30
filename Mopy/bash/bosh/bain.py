@@ -1465,9 +1465,9 @@ class InstallerProject(Installer):
         self._dir_dirs_files = []
         for root, d, files in bolt.walkdir(apath.s):
             cAppend(getM(root))
-            stats = [_lstat(join(root, fi)) for fi in files]
-            cExtend(fi.st_mtime for fi in stats)
-            size += sum(fi.st_size for fi in stats)
+            lstats = [_lstat(join(root, f)) for f in files]
+            cExtend(ls.st_mtime for ls in lstats)
+            size += sum(ls.st_size for ls in lstats)
             self._dir_dirs_files.append((root, [], files)) # dirs is unused
         if self.size != size: return True
         # below is for the fix me - we need to add mtimes_str_crc extra persistent attribute to Installer

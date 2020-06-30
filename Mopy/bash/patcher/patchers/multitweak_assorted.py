@@ -775,8 +775,10 @@ class AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,MultiTweakItem):
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.ALCH.records:
-            if maxWeight < record.weight < 1 and not (
-                    'SEFF', 0) in record.getEffects():
+            ##: Skips OBME records - rework to support them
+            if (maxWeight < record.weight < 1 and
+                record.obme_record_version is None and
+                    ('SEFF', 0) not in record.getEffects()):
                 record.weight = maxWeight
                 keep(record.fid)
                 count[record.fid[0]] += 1
@@ -1766,12 +1768,12 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(
 
 #------------------------------------------------------------------------------
 class AAssortedTweak_FactioncrimeGoldMultiplier(AMultiTweakItem):
-    """Fix factions with unset crimeGoldMultiplier to have a
-    crimeGoldMultiplier of 1.0."""
-    tweak_read_classes = 'FACT',
-    tweak_name = _(u'Faction crime Gold Multiplier Fix')
-    tweak_tip = _(u'Fix factions with unset crimeGoldMultiplier to have a '
-                  u'crimeGoldMultiplier of 1.0.')
+    """Fix factions with unset crime gold multiplier to have a
+    crime gold multiplier of 1.0."""
+    tweak_read_classes = b'FACT',
+    tweak_name = _(u'Faction Crime Gold Multiplier Fix')
+    tweak_tip = _(u'Fix factions with unset Crime Gold Multiplier to have a '
+                  u'Crime Gold Multiplier of 1.0.')
 
     def __init__(self):
         super(AAssortedTweak_FactioncrimeGoldMultiplier, self).__init__(
@@ -1785,17 +1787,16 @@ class AssortedTweak_FactioncrimeGoldMultiplier(
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.FACT
         for record in modFile.FACT.getActiveRecords():
-            if not isinstance(record.crimeGoldMultiplier,float):
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
+            if record.crime_gold_multiplier is None:
+                patchRecords.setRecord(record.getTypeCopy(mapper))
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = Counter()
         keep = patchFile.getKeeper()
         for record in patchFile.FACT.records:
-            if not isinstance(record.crimeGoldMultiplier,float):
-                record.crimeGoldMultiplier = 1.0
+            if record.crime_gold_multiplier is None:
+                record.crime_gold_multiplier = 1.0
                 keep(record.fid)
                 count[record.fid[0]] += 1
         self._patchLog(log,count)

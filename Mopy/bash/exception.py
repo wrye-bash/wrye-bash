@@ -94,8 +94,6 @@ class ModReadError(ModError):
     """Mod Error: Attempt to read outside of buffer."""
     def __init__(self, in_name, record_sig, try_pos, max_pos):
         ## type: (Path, basestring, int, int) -> None
-        self.try_pos = try_pos
-        self.max_pos = max_pos
         if try_pos < 0:
             message = (u'%s: Attempted to read before (%s) beginning of '
                        u'file/buffer.' % (record_sig, try_pos))
@@ -113,12 +111,17 @@ class ModSizeError(ModError):
         :type record_sig: basestring
         :type expected_sizes: tuple[int]
         :type actual_size: int"""
-        self.expected_sizes = expected_sizes
-        self.actual_size = actual_size
         message_form = (u'%s: Expected one of sizes [%s], but got %u' % (
             record_sig, u', '.join([u'%s' % x for x in expected_sizes]),
             actual_size))
         super(ModSizeError, self).__init__(in_name.s, message_form)
+
+class ModFidMismatchError(ModError):
+    """Mod Error: Two FormIDs that should be equal are not."""
+    def __init__(self, in_name, record_sig, fid_expected, fid_actual):
+        message_form = (u'%s: FormIDs do not match - expected %r but got %r'
+                        % (record_sig, fid_expected, fid_actual))
+        super(ModFidMismatchError, self).__init__(in_name.s, message_form)
 
 # Shell (OS) File Operation exceptions ----------------------------------------
 class FileOperationError(OSError):

@@ -31,9 +31,9 @@ from struct import Struct
 from . import bolt, bush, env, load_order
 from .bass import dirs
 from .bolt import deprint, GPath, SubProgress
-from .brec import MreRecord, ModReader, ModWriter, RecordHeader
+from .brec import MreRecord, ModReader, ModWriter, RecordHeader, RecHeader, \
+    TopGrupHeader, MobBase, MobDials, MobICells, MobObjects, MobWorlds
 from .exception import ArgumentError, MasterMapError, ModError, StateError
-from .record_groups import MobBase, MobDials, MobICells, MobObjects, MobWorlds
 
 class MasterSet(set):
     """Set of master names."""
@@ -136,8 +136,8 @@ class LoadFactory(object):
 
     def getTopClass(self, top_rec_type):
         """Return top block class for top block type, or None.
-        :rtype: type[record_groups.MobBase]
-        """
+
+        :rtype: type[MobBase]"""
         if top_rec_type in self.topTypes:
             if   top_rec_type == b'DIAL': return MobDials
             elif top_rec_type == b'CELL': return MobICells
@@ -161,22 +161,22 @@ class ModFile(object):
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True)
         #--Variables to load
-        self.tes4 = bush.game.plugin_header_class(RecordHeader())
+        self.tes4 = bush.game.plugin_header_class(RecHeader())
         self.tes4.setChanged()
         self.strings = bolt.StringTable()
         self.tops = {} #--Top groups.
         self.topsSkipped = set() #--Types skipped
         self.longFids = False
 
-    def __getattr__(self,topType):
+    def __getattr__(self, topType, __rh=RecordHeader):
         """Returns top block of specified topType, creating it, if necessary."""
         if topType in self.tops:
             return self.tops[topType]
-        elif topType in RecordHeader.topTypes:
+        elif topType in __rh.top_grup_sigs:
             topClass = self.loadFactory.getTopClass(topType)
             try:
-                self.tops[topType] = topClass(
-                    RecordHeader(b'GRUP', 0, topType, 0, 0), self.loadFactory)
+                self.tops[topType] = topClass(TopGrupHeader(0, topType, 0, 0),
+                                              self.loadFactory)
             except TypeError:
                 raise ModError(
                     self.fileInfo.name,
@@ -224,8 +224,7 @@ class ModFile(object):
             while not insAtEnd():
                 #--Get record info and handle it
                 header = insRecHeader()
-                type = header.recType
-                if type != b'GRUP' or header.groupType != 0:
+                if not header.is_top_group_header:
                     raise ModError(self.fileInfo.name,u'Improperly grouped file.')
                 label,size = header.label,header.size
                 topClass = self.loadFactory.getTopClass(label)
@@ -235,8 +234,7 @@ class ModFile(object):
                         self.tops[label].load(ins, do_unpack and (topClass != MobBase))
                     else:
                         self.topsSkipped.add(label)
-                        insSeek(size - header.__class__.rec_header_size, 1,
-                                u'%s.%s' % (type.decode(u'ascii'), label))
+                        header.skip_group(ins)
                 except:
                     if catch_errors:
                         deprint(u'Error in %s' % self.fileInfo.name.s,
@@ -285,7 +283,7 @@ class ModFile(object):
             self.tes4.dump(out)
             #--Blocks
             selfTops = self.tops
-            for rec_type in RecordHeader.topTypes:
+            for rec_type in RecordHeader.top_grup_sigs:
                 if rec_type in selfTops:
                     selfTops[rec_type].dump(out)
 

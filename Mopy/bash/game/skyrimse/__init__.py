@@ -27,7 +27,7 @@ import os
 
 from ..skyrim import SkyrimGameInfo
 from ... import brec
-from ...brec import MreGlob
+from ...brec import MreFlst, MreGlob
 
 class SkyrimSEGameInfo(SkyrimGameInfo):
     displayName = u'Skyrim Special Edition'
@@ -111,7 +111,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             MreClfm, MreClmt, MreCobj, MreColl, MreCont, MreCpth, MreCsty, \
             MreDebr, MreDial, MreDlbr, MreDlvw, MreDobj, MreDoor, MreDual, \
             MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFact, \
-            MreFlor, MreFlst, MreFstp, MreFsts, MreFurn, MreGmst, MreGras, \
+            MreFlor, MreFstp, MreFsts, MreFurn, MreGmst, MreGras, MrePack, \
             MreHazd, MreHdpt, MreTes4, MreIdle, MreIdlm, MreImad, MreImgs, \
             MreInfo, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt, \
             MreLctn, MreLgtm, MreLigh, MreLscr, MreLvli, MreLvln, MreLvsp, \
@@ -120,10 +120,9 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, \
             MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, \
             MreSpgd, MreTact, MreTree, MreTxst, MreVtyp, MreWoop, MreWrld, \
-            MreAmmo, MreLtex, MreMato, MreStat, MreWatr, MreWeap, MreWthr, \
-            MrePack
+            MreAmmo, MreLtex, MreMato, MreStat, MreWatr, MreWeap, MreWthr
         cls.mergeClasses = (
-            # MreAchr, MreDial, MreInfo, MreFact,
+            # MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
             MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook,
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCobj, MreColl,
@@ -139,10 +138,11 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun,
             MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
             MreWatr, MreWeap, MreWoop, MreWthr, MreVoli, MreLens, MreQust,
-            MrePack,
+            MrePack, MreFact,
         )
         # Setting RecordHeader class variables --------------------------------
-        brec.RecordHeader.topTypes = [
+        header_type = brec.RecordHeader
+        header_type.top_grup_sigs = [
             'GMST', 'KYWD', 'LCRT', 'AACT', 'TXST', 'GLOB', 'CLAS', 'FACT',
             'HDPT', 'HAIR', 'EYES', 'RACE', 'SOUN', 'ASPC', 'MGEF', 'SCPT',
             'LTEX', 'ENCH', 'SPEL', 'SCRL', 'ACTI', 'TACT', 'ARMO', 'BOOK',
@@ -159,11 +159,10 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             'SCEN', 'ASTP', 'OTFT', 'ARTO', 'MATO', 'MOVT', 'SNDR', 'DUAL',
             'SNCT', 'SOPM', 'COLL', 'CLFM', 'REVB', 'LENS', 'VOLI']
         #-> this needs updating for Skyrim
-        brec.RecordHeader.recordTypes = set(
-            brec.RecordHeader.topTypes + ['GRUP', 'TES4', 'REFR', 'ACHR',
-                                          'ACRE', 'LAND', 'INFO', 'NAVM',
-                                          'PHZD', 'PGRE'])
-        brec.RecordHeader.plugin_form_version = 44
+        header_type.valid_header_sigs = set(
+            header_type.top_grup_sigs + ['GRUP', 'TES4', 'REFR', 'ACHR', 'ACRE',
+                                    'LAND', 'INFO', 'NAVM', 'PHZD', 'PGRE'])
+        header_type.plugin_form_version = 44
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreAchr, MreDial, MreInfo, MreAact, MreActi, MreAddn, MreAlch,
             MreAmmo, MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc,

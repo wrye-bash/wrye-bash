@@ -177,16 +177,16 @@ class _SimpleImporter(ImportPatcher):
         In:
             KFFZPatcher, DeathItemPatcher, ImportScripts, SoundPatcher
         """
-        id_data, set_id_data = self.id_data, set(self.id_data)
+        id_data = self.id_data
         for record in records:
-            fid = record.fid
-            if fid not in set_id_data: continue
-            for attr, value in id_data[fid].iteritems():
+            rec_fid = record.fid
+            if rec_fid not in id_data: continue
+            for attr, value in id_data[rec_fid].iteritems():
                 if record.__getattribute__(attr) != value: break
             else: continue
-            for attr, value in id_data[fid].iteritems():
+            for attr, value in id_data[rec_fid].iteritems():
                 record.__setattr__(attr, value)
-            keep(fid)
+            keep(rec_fid)
             type_count[top_mod_rec] += 1
 
     def buildPatch(self, log, progress, types=None):
@@ -295,17 +295,17 @@ class CellImporter(ImportPatcher):
             update these records where the value is different.
             """
             if not cellBlock.cell.flags1.ignored:
-                fid = cellBlock.cell.fid
-                if fid not in tempCellData: return
+                rec_fid = cellBlock.cell.fid
+                if rec_fid not in tempCellData: return
                 for attr in attrs:
                     master_attr = cellBlock.cell.__getattribute__(attr)
-                    if tempCellData[fid][attr] != master_attr:
-                        cellData[fid][attr] = tempCellData[fid][attr]
+                    if tempCellData[rec_fid][attr] != master_attr:
+                        cellData[rec_fid][attr] = tempCellData[rec_fid][attr]
                 for flg_ in flgs_:
                     master_flag = cellBlock.cell.flags.__getattr__(flg_)
-                    if tempCellData[fid + ('flags',)][flg_] != master_flag:
-                        cellData[fid + ('flags',)][flg_] = \
-                            tempCellData[fid + ('flags',)][flg_]
+                    if tempCellData[rec_fid + ('flags',)][flg_] != master_flag:
+                        cellData[rec_fid + ('flags',)][flg_] = \
+                            tempCellData[rec_fid + ('flags',)][flg_]
         loadFactory = LoadFactory(False,MreRecord.type_class['CELL'],
                                         MreRecord.type_class['WRLD'])
         progress.setFull(len(self.srcs))
@@ -408,7 +408,8 @@ class CellImporter(ImportPatcher):
             Modified cell Blocks are kept, the other are discarded.
             """
             modified=False
-            for attr,value in cellData[patchCellBlock.cell.fid].iteritems():
+            patch_cell_fid = patchCellBlock.cell.fid
+            for attr,value in cellData[patch_cell_fid].iteritems():
                 if attr == 'regions':
                     if set(value).difference(set(patchCellBlock.cell.__getattribute__(attr))):
                         patchCellBlock.cell.__setattr__(attr, value)
@@ -418,26 +419,27 @@ class CellImporter(ImportPatcher):
                         patchCellBlock.cell.__setattr__(attr, value)
                         modified=True
             for flag, value in cellData[
-                        patchCellBlock.cell.fid + ('flags',)].iteritems():
+                patch_cell_fid + ('flags',)].iteritems():
                 if patchCellBlock.cell.flags.__getattr__(flag) != value:
                     patchCellBlock.cell.flags.__setattr__(flag, value)
                     modified=True
             if modified:
                 patchCellBlock.cell.setChanged()
-                keep(patchCellBlock.cell.fid)
+                keep(patch_cell_fid)
             return modified
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         cellData, count = self.cellData, Counter()
         for cellBlock in self.patchFile.CELL.cellBlocks:
-            if cellBlock.cell.fid in cellData and handlePatchCellBlock(cellBlock):
-                count[cellBlock.cell.fid[0]] += 1
+            cell_fid = cellBlock.cell.fid
+            if cell_fid in cellData and handlePatchCellBlock(cellBlock):
+                count[cell_fid[0]] += 1
         for worldBlock in self.patchFile.WRLD.worldBlocks:
             keepWorld = False
             for cellBlock in worldBlock.cellBlocks:
-                if cellBlock.cell.fid in cellData and handlePatchCellBlock(
-                        cellBlock):
-                    count[cellBlock.cell.fid[0]] += 1
+                cell_fid = cellBlock.cell.fid
+                if cell_fid in cellData and handlePatchCellBlock(cellBlock):
+                    count[cell_fid[0]] += 1
                     keepWorld = True
             if worldBlock.worldCellBlock:
                 if worldBlock.worldCellBlock.cell.fid in cellData:
@@ -518,9 +520,9 @@ class DestructiblePatcher(_SimpleImporter):
     def _inner_loop(self, keep, records, top_mod_rec, type_count):
         id_data, set_id_data = self.id_data, set(self.id_data)
         for record in records:
-            fid = record.fid
-            if fid not in set_id_data: continue
-            for attr, value in id_data[fid].iteritems():
+            rec_fid = record.fid
+            if rec_fid not in set_id_data: continue
+            for attr, value in id_data[rec_fid].iteritems():
                 rec_attr = record.__getattribute__(attr)
                 if isinstance(rec_attr, str) and isinstance(value, str):
                     if rec_attr.lower() != value.lower():
@@ -537,9 +539,9 @@ class DestructiblePatcher(_SimpleImporter):
                     break
             else:
                 continue
-            for attr, value in id_data[fid].iteritems():
+            for attr, value in id_data[rec_fid].iteritems():
                 record.__setattr__(attr, value)
-            keep(fid)
+            keep(rec_fid)
             type_count[top_mod_rec] += 1
 
 #------------------------------------------------------------------------------
@@ -899,27 +901,27 @@ class NPCAIPackagePatcher(ImportPatcher):
         self.id_merged_deleted = {}
         self.target_rec_types = bush.game.actor_types
 
-    def _insertPackage(self, data, fid, index, pkg, recordData):
-        if index == 0: data[fid]['merged'].insert(0, pkg)# insert as first item
+    def _insertPackage(self, data, fi, index, pkg, recordData):
+        if index == 0: data[fi]['merged'].insert(0, pkg)# insert as first item
         elif index == (len(recordData['merged']) - 1):
-            data[fid]['merged'].append(pkg)  # insert as last item
+            data[fi]['merged'].append(pkg)  # insert as last item
         else:  # figure out a good spot to insert it based on next or last
             # recognized item (ugly ugly ugly)
             i = index - 1
             while i >= 0:
-                if recordData['merged'][i] in data[fid]['merged']:
-                    slot = data[fid]['merged'].index(
+                if recordData['merged'][i] in data[fi]['merged']:
+                    slot = data[fi]['merged'].index(
                         recordData['merged'][i]) + 1
-                    data[fid]['merged'].insert(slot, pkg)
+                    data[fi]['merged'].insert(slot, pkg)
                     break
                 i -= 1
             else:
                 i = index + 1
                 while i != len(recordData['merged']):
-                    if recordData['merged'][i] in data[fid]['merged']:
-                        slot = data[fid]['merged'].index(
+                    if recordData['merged'][i] in data[fi]['merged']:
+                        slot = data[fi]['merged'].index(
                             recordData['merged'][i])
-                        data[fid]['merged'].insert(slot, pkg)
+                        data[fi]['merged'].insert(slot, pkg)
                         break
                     i += 1
 
@@ -947,8 +949,8 @@ class NPCAIPackagePatcher(ImportPatcher):
                 if recClass.rec_sig not in srcFile.tops: continue
                 for record in srcFile.tops[
                     recClass.rec_sig].getActiveRecords():
-                    fid = mapper(record.fid)
-                    tempData[fid] = list(record.aiPackages)
+                    fi = mapper(record.fid)
+                    tempData[fi] = list(record.aiPackages)
             for master in reversed(masters):
                 if master not in minfs: continue # or break filter mods
                 if master in cachedMasters:
@@ -966,55 +968,55 @@ class NPCAIPackagePatcher(ImportPatcher):
                     if block.rec_sig not in masterFile.tops: continue
                     for record in masterFile.tops[
                         block.rec_sig].getActiveRecords():
-                        fid = mapper(record.fid)
-                        if fid not in tempData: continue
-                        if record.aiPackages == tempData[fid] and not \
+                        fi = mapper(record.fid)
+                        if fi not in tempData: continue
+                        if record.aiPackages == tempData[fi] and not \
                             u'Actors.AIPackagesForceAdd' in bashTags:
                             # if subrecord is identical to the last master
                             # then we don't care about older masters.
-                            del tempData[fid]
+                            del tempData[fi]
                             continue
-                        if fid in mer_del:
-                            if tempData[fid] == mer_del[fid]['merged']:
+                        if fi in mer_del:
+                            if tempData[fi] == mer_del[fi]['merged']:
                                 continue
-                        recordData = {'deleted':[],'merged':tempData[fid]}
+                        recordData = {'deleted':[],'merged':tempData[fi]}
                         for pkg in list(record.aiPackages):
-                            if pkg not in tempData[fid]:
+                            if pkg not in tempData[fi]:
                                 recordData['deleted'].append(pkg)
-                        if fid not in mer_del:
-                            mer_del[fid] = recordData
+                        if fi not in mer_del:
+                            mer_del[fi] = recordData
                         else:
                             for pkg in recordData['deleted']:
-                                if pkg in mer_del[fid]['merged']:
-                                    mer_del[fid]['merged'].remove(pkg)
-                                mer_del[fid]['deleted'].append(pkg)
-                            if mer_del[fid]['merged'] == []:
+                                if pkg in mer_del[fi]['merged']:
+                                    mer_del[fi]['merged'].remove(pkg)
+                                mer_del[fi]['deleted'].append(pkg)
+                            if mer_del[fi]['merged'] == []:
                                 for pkg in recordData['merged']:
-                                    if pkg in mer_del[fid]['deleted'] and not \
+                                    if pkg in mer_del[fi]['deleted'] and not \
                                       u'Actors.AIPackagesForceAdd' in bashTags:
                                         continue
-                                    mer_del[fid]['merged'].append(pkg)
+                                    mer_del[fi]['merged'].append(pkg)
                                 continue
                             for index, pkg in enumerate(recordData['merged']):
-                                if pkg not in mer_del[fid]['merged']:# so needs
+                                if pkg not in mer_del[fi]['merged']:# so needs
                                     #  to be added... (unless deleted that is)
                                     # find the correct position to add and add.
-                                    if pkg in mer_del[fid]['deleted'] and not \
+                                    if pkg in mer_del[fi]['deleted'] and not \
                                       u'Actors.AIPackagesForceAdd' in bashTags:
                                         continue  # previously deleted
-                                    self._insertPackage(mer_del, fid, index,
+                                    self._insertPackage(mer_del, fi, index,
                                                         pkg, recordData)
                                     continue # Done with this package
-                                elif index == mer_del[fid]['merged'].index(
+                                elif index == mer_del[fi]['merged'].index(
                                         pkg) or (
                                     len(recordData['merged']) - index) == (
-                                    len(mer_del[fid]['merged']) - mer_del[fid][
+                                    len(mer_del[fi]['merged']) - mer_del[fi][
                                     'merged'].index(pkg)):
                                     continue  # pkg same in both lists.
                                 else:  # this import is later loading so we'll
                                     #  assume it is better order
-                                    mer_del[fid]['merged'].remove(pkg)
-                                    self._insertPackage(mer_del, fid, index,
+                                    mer_del[fi]['merged'].remove(pkg)
+                                    self._insertPackage(mer_del, fi, index,
                                                         pkg, recordData)
             progress.plus()
 
@@ -2483,15 +2485,15 @@ class SpellsPatcher(ImportPatcher, _ASpellsPatcher):
         spell_attrs = self.spell_attrs
         counts = Counter()
         for record in patchFile.SPEL.records:
-            fid = record.fid
-            spellStats = id_stat.get(fid)
+            rec_fid = record.fid
+            spellStats = id_stat.get(rec_fid)
             if not spellStats: continue
             oldValues = [getattr_deep(record, attr) for attr in spell_attrs]
             if oldValues == spellStats: continue
             for attr,value in zip(spell_attrs,spellStats):
                 setattr_deep(record,attr,value)
-            keep(fid)
-            counts[fid[0]] += 1
+            keep(rec_fid)
+            counts[rec_fid[0]] += 1
         self.id_stat.clear()
         allCounts.append(('SPEL', sum(counts.values()), counts))
         self._patchLog(log, allCounts)

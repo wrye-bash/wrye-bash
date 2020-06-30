@@ -34,7 +34,7 @@ from . import bush # for game
 from .balt import Progress
 from .bass import dirs, inisettings
 from .bolt import GPath, decode, deprint, CsvReader, csvFormat, floats_equal
-from .brec import MreRecord, MelObject, _coerce, genFid, RecordHeader
+from .brec import MreRecord, MelObject, _coerce, genFid, RecHeader
 from .cint import ObCollection, FormID, aggregateTypes, validTypes, MGEFCode, \
     ActorValue, ValidateList, IUNICODE, getattr_deep, setattr_deep
 from .mod_files import ModFile, LoadFactory
@@ -1779,8 +1779,8 @@ class ScriptText(_ScriptText):
             for eid, data in eid_data.iteritems():
                 newText, longid = data
                 scriptFid = genFid(len(tes4.masters),tes4.getNextObject())
-                newScript = MreRecord.type_class['SCPT'](
-                    RecordHeader('SCPT', 0, 0x40000, scriptFid, 0))
+                newScript = MreRecord.type_class[b'SCPT'](
+                    RecHeader(b'SCPT', 0, 0x40000, scriptFid, 0))
                 newScript.eid = eid
                 newScript.script_source = newText
                 newScript.setChanged()

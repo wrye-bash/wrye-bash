@@ -349,7 +349,13 @@ class GameInfo(object):
     # CTDA Data for the game. Maps function ID to tuple with name of function
     # and the parameter types of the function.
     # 0: no param; 1: int param; 2: formid param; 3: float param
+    # Note that each line must have the same number of parameters after the
+    # function name - so pad out functions with fewer parameters with zeroes
     condition_function_data = {}
+    # The function index for the GetVATSValue function. This function is
+    # special, because the type of its second parameter depends on the value of
+    # the first parameter.
+    getvatsvalue_index = 0
 
     # Known record types - maps integers from the save format to human-readable
     # names for the record types. Used in save editing code.
@@ -573,28 +579,29 @@ class GameInfo(object):
         'actor_values', 'bethDataFiles', 'body_tags', 'cc_valid_types',
         'cc_passes', 'cellAutoKeys', 'cellRecAttrs', 'cellRecFlags',
         'condition_function_data', 'default_eyes', 'destructible_types',
-        'generic_av_effects', 'gmstEids', 'graphicsFidTypes',
-        'graphicsLongsTypes', 'graphicsModelAttrs', 'graphicsTypes',
-        'hostile_effects', 'inventoryTypes', 'keywords_types', 'listTypes',
-        'mgef_basevalue', 'mgef_name', 'mgef_school', 'namesTypes',
-        'nirnroots', 'object_bounds_types', 'pricesTypes', 'record_type_name',
-        'save_rec_types', 'scripts_types', 'soundsLongsTypes', 'soundsTypes',
-        'spell_stats_attrs', 'statsHeaders', 'statsTypes', 'text_long_types',
-        'text_types',
+        'generic_av_effects', 'getvatsvalue_index', 'gmstEids',
+        'graphicsFidTypes', 'graphicsLongsTypes', 'graphicsModelAttrs',
+        'graphicsTypes', 'hostile_effects', 'inventoryTypes', 'keywords_types',
+        'listTypes', 'mgef_basevalue', 'mgef_name', 'mgef_school',
+        'namesTypes', 'nirnroots', 'object_bounds_types', 'pricesTypes',
+        'record_type_name', 'save_rec_types', 'scripts_types',
+        'soundsLongsTypes', 'soundsTypes', 'spell_stats_attrs', 'statsHeaders',
+        'statsTypes', 'text_long_types', 'text_types',
     }
 
     @classmethod
     def init(cls):
         # Setting RecordHeader class variables --------------------------------
         # Top types in order of the main ESM
-        brec.RecordHeader.topTypes = []
-        brec.RecordHeader.recordTypes = set(
-            brec.RecordHeader.topTypes + ['GRUP', 'TES4'])
+        header_type = brec.RecordHeader
+        header_type.top_grup_sigs = []
+        header_type.valid_header_sigs = set(
+            header_type.top_grup_sigs + [b'GRUP', b'TES4'])
         # Record Types
         brec.MreRecord.type_class = {x.rec_sig: x for x in ()}
         # Simple records
         brec.MreRecord.simpleTypes = (
-                set(brec.MreRecord.type_class) - {'TES4'})
+                set(brec.MreRecord.type_class) - {b'TES4'})
 
     @classmethod
     def _dynamic_import_modules(cls, package_name):
