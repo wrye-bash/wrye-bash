@@ -21,10 +21,8 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""This module houses abstractions over wx.html2.WebView, allowing us to
-utilize fully interactive webpages inside a GUI. The main reason this was split
-into its own file instead of remaining inside __init__ is the wx.html2 import,
-which is quite ugly and should ideally remain as contained as possible."""
+"""Houses DocumentViewer, a class for viewing various types of documents (e.g.
+webpages, text and PDFs)."""
 
 __author__ = u'Infernio'
 
@@ -33,6 +31,11 @@ try:
     import wx.html2 as _wx_html2
 except ImportError:
     _wx_html2 = None
+# Try to import the PDF viewer, may not be available everywhere
+try:
+    from wx.lib.pdfviewer import pdfViewer as _PdfViewer
+except ImportError:
+    _PdfViewer = None
 import wx as _wx
 
 import urllib
@@ -43,6 +46,7 @@ from .base_components import _AComponent
 from .buttons import BackwardButton, ForwardButton, ReloadButton
 from .text_components import TextArea
 from .layouts import VLayout
+from ..bolt import decode
 from ..exception import StateError
 
 def web_viewer_available():
@@ -51,6 +55,18 @@ def web_viewer_available():
 
     :return: True if we can render HTML."""
     return bool(_wx_html2)
+
+def pdf_viewer_available():
+    """Checks if pdfViewer is available, meaning that we can display PDFs.
+
+    :return: True if we can render PDFs."""
+    return bool(_PdfViewer) and _wx.VERSION >= (4, 1)
+
+class ViewerType(object): # PY3: enum
+    """The different types of viewers that DocumentViewer can display."""
+    HTML = u'html'
+    PDF =  u'pdf'
+    TEXT = u'text'
 
 class WebViewer(_AComponent):
     """Implements an HTML & CSS renderer with JavaScript support. May not be
@@ -172,10 +188,25 @@ class WebViewer(_AComponent):
                                        self._native_widget.CanGoForward()
         self._reload_button.enabled = can_enable
 
-class HtmlDisplay(_AComponent):
-    """A wrapper around WebViewer that implements a fallback raw text display
-    of the HTML code, as well as permanently disabled fallback versions of
-    WebViewer's navigation buttons."""
+class PDFViewer(_AComponent):
+    """Implements a simple PDF viewer. Only available if PyMuPDF or PyPDF2 is
+    installed. PyPDF2 is pure Python, but PyMuPDF is *vastly* more complete and
+    hence preferred."""
+    _wx_widget_type = _PdfViewer
+
+    def __init__(self, parent):
+        super(PDFViewer, self).__init__(parent, nid=-1, pos=(-1, -1),
+            size=(-1, -1), style=0) # has no defaults, so need to specify them
+
+    def open_file(self, file_path): # type: (unicode) -> None
+        """Opens the specified PDF file.
+
+        :param file_path: The path to the file to open."""
+        self._native_widget.LoadFile(file_path)
+
+class DocumentViewer(_AComponent):
+    """A viewer for a variety of document types. Can display webpages, text and
+    PDFs."""
     _wx_widget_type = _wx.Window
 
     def __init__(self, parent):
@@ -183,7 +214,7 @@ class HtmlDisplay(_AComponent):
 
         :param parent: The object that this HTML display belongs to. May be a
                        wx object or a component."""
-        super(HtmlDisplay, self).__init__(parent)
+        super(DocumentViewer, self).__init__(parent)
         # init the fallback/plaintext widget
         self._text_ctrl = TextArea(self, editable=False, auto_tooltip=False)
         items = [self._text_ctrl]
@@ -199,21 +230,26 @@ class HtmlDisplay(_AComponent):
             self._prev_button = BackwardButton(parent)
             self._next_button = ForwardButton(parent)
             self._reload_button = ReloadButton(parent)
+        if pdf_viewer_available():
+            self._pdf_ctrl = PDFViewer(self)
+            items.append(self._pdf_ctrl)
         VLayout(item_weight=4, item_expand=True, items=items).apply_to(self)
         self.switch_to_text() # default to text
 
-    def _update_views(self, enable_html):
-        """Internal method to switch between HTML and text display, as well as
+    def _update_views(self, viewer_type):
+        """Internal method to switch between display types, as well as
         update the state of the WebViewer buttons.
 
-        :param enable_html: If set to True, use the HTML display if
-                            available."""
+        :param viewer_type: One of """
         if web_viewer_available():
-            self._html_ctrl.enabled = enable_html
-            self._html_ctrl.visible = enable_html
+            self._html_ctrl.enabled = viewer_type == ViewerType.HTML
+            self._html_ctrl.visible = viewer_type == ViewerType.HTML
             self._html_ctrl.update_buttons()
-        self._text_ctrl.enabled = not enable_html
-        self._text_ctrl.visible = not enable_html
+        if pdf_viewer_available():
+            self._pdf_ctrl.enabled = viewer_type == ViewerType.PDF
+            self._pdf_ctrl.visible = viewer_type == ViewerType.PDF
+        self._text_ctrl.enabled = viewer_type == ViewerType.TEXT
+        self._text_ctrl.visible = viewer_type == ViewerType.TEXT
 
     @property
     def fallback_text(self):
@@ -250,30 +286,55 @@ class HtmlDisplay(_AComponent):
         self._text_ctrl.editable = text_editable
 
     def switch_to_html(self):
-        """Disables the text viewer and switches to HTML mode, if WebViewer is
-        available."""
+        """Disables the other viewers and switches to HTML mode, if WebViewer
+        is available."""
         if not web_viewer_available(): return
-        self._update_views(enable_html=True)
+        self._update_views(viewer_type=ViewerType.HTML)
+        self._native_widget.Layout()
+
+    def switch_to_pdf(self):
+        """Disables the other viewers and switches to PDF mode, if PDFViewer is
+        available."""
+        if not pdf_viewer_available(): return
+        self._update_views(viewer_type=ViewerType.PDF)
         self._native_widget.Layout()
 
     def switch_to_text(self):
-        """Disables the HTML viewer and switches to raw text mode."""
-        self._update_views(enable_html=False)
+        """Disables the other viewers and switches to raw text mode."""
+        self._update_views(viewer_type=ViewerType.TEXT)
         self._native_widget.Layout()
 
     def get_buttons(self):
         """Returns the three navigation buttons as a tuple."""
         return self._prev_button, self._next_button, self._reload_button
 
-    def try_load_html(self, file_path, file_text=u''):
+    def try_load_html(self, file_path):
         """Load a HTML file if WebViewer is available, or load the text.
 
-        :param file_path: A bolt.Path instance or a unicode string.
-        :Param file_text: If the HTML viewer is unavailable, use this as the
-                          fallback text."""
+        :param file_path: A bolt.Path instance or a unicode string."""
         if web_viewer_available():
             self._html_ctrl.clear_history()
             self._html_ctrl.open_file(u'%s' % file_path)
             self.switch_to_html()
         else:
-            self.load_text(file_text)
+            self.try_load_text(file_path)
+
+    def try_load_pdf(self, file_path):
+        """Load a PDF file if PDFViewer is available, or load the text.
+
+        :param file_path: A bolt.Path instance or a unicode string."""
+        if pdf_viewer_available():
+            self._pdf_ctrl.open_file(u'%s' % file_path)
+            self.switch_to_pdf()
+        else:
+            self.try_load_text(file_path)
+
+    def try_load_text(self, file_path):
+        """Load a file as raw text.
+
+        :param file_path: A bolt.Path instance or a unicode string."""
+        # We can't assume that this is UTF-8 - e.g. some official Beth docs in
+        # Morrowind are cp1252. However, it most likely is UTF-8 or
+        # UTF-8-compatible (ASCII), so try that first.
+        with file_path.open(u'rb') as ins:
+            self.load_text(decode(ins.read(), u'utf-8'))

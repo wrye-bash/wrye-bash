@@ -31,6 +31,7 @@ from .base_components import *
 from .buttons import *
 from .checkables import *
 from .combos import *
+from .doc_viewer import *
 from .events import *
 from .layouts import *
 from .list_ctrl import *
@@ -38,4 +39,3 @@ from .misc_components import *
 from .multi_choices import *
 from .text_components import *
 from .top_level_windows import *
-from .web_components import *

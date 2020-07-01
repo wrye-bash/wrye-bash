@@ -48,7 +48,7 @@ import wx.lib.newevent
 from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
     web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
-    Font, CheckListBox, UIListCtrl, PanelWin, Colors, HtmlDisplay, Image, \
+    Font, CheckListBox, UIListCtrl, PanelWin, Colors, DocumentViewer, Image, \
     BusyCursor, GlobalMenu, WrappingTextMixin
 from .gui.base_components import _AComponent
 
@@ -505,7 +505,7 @@ class WryeLog(_Log):
             convert_wtext_to_html(logPath, logText)
         super(WryeLog, self).__init__(parent, title, asDialog, log_icons)
         #--Text
-        self._html_ctrl = HtmlDisplay(self.window)
+        self._html_ctrl = DocumentViewer(self.window)
         self._html_ctrl.try_load_html(file_path=logPath)
         #--Buttons
         gOkButton = OkButton(self.window, default=True)

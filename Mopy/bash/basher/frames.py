@@ -30,10 +30,10 @@ from .. import bass, balt, bosh, bolt, load_order
 from ..balt import bell, Link, Resources
 from ..bolt import decode, GPath
 from ..bosh import omods
-from ..gui import Button, CancelButton, CENTER, CheckBox, GridLayout, \
-    HLayout, Label, LayoutOptions, SaveButton, Spacer, Stretch, TextArea, \
-    TextField, VLayout, web_viewer_available, Splitter, WindowFrame, ListBox, \
-    HtmlDisplay
+from ..gui import Button, CancelButton, CheckBox, GridLayout, HLayout, Label, \
+    LayoutOptions, SaveButton, Spacer, Stretch, TextArea, TextField, VLayout, \
+    web_viewer_available, Splitter, WindowFrame, ListBox, DocumentViewer, \
+    pdf_viewer_available
 
 class DocBrowser(WindowFrame):
     """Doc Browser frame."""
@@ -88,7 +88,7 @@ class DocBrowser(WindowFrame):
                                               u'default viewer/editor.'))
         self._open_btn.on_clicked.subscribe(self._do_open)
         self._doc_name_box = TextField(main_window, editable=False)
-        self._doc_ctrl = HtmlDisplay(main_window)
+        self._doc_ctrl = DocumentViewer(main_window)
         self._prev_btn, self._next_btn, self._reload_btn = \
             self._doc_ctrl.get_buttons()
         self._buttons = [self._edit_box, self._set_btn, self._forget_btn,
@@ -212,16 +212,14 @@ class DocBrowser(WindowFrame):
         if doc_path and doc_path.cext in __html_extensions and not editing \
                 and web_viewer_available():
             self._doc_ctrl.try_load_html(doc_path)
+        elif doc_path and doc_path.cext == u'.pdf' and not editing \
+                and pdf_viewer_available():
+            self._doc_ctrl.try_load_pdf(doc_path)
         else:
-            # Oddly, wxPython's LoadFile function doesn't read unicode
-            # correctly, even in unicode builds
             if uni_str is None and doc_path:
-                # We can't assume that this is UTF-8 - e.g. some official Beth
-                # docs in Morrowind are cp1252. However, it most likely is
-                # UTF-8 or UTF-8-compatible (ASCII), so try that first.
-                with doc_path.open(u'rb') as ins:
-                    uni_str = decode(ins.read(), u'utf-8')
-            self._doc_ctrl.load_text(uni_str)
+                self._doc_ctrl.try_load_text(doc_path)
+            else:
+                self._doc_ctrl.load_text(uni_str)
 
     def SetMod(self, mod_name):
         """Sets the mod to show docs for."""
@@ -316,7 +314,7 @@ class ModChecker(WindowFrame):
         self.__imported = None
         #--Text
         self.check_mods_text = None
-        self._html_ctrl = HtmlDisplay(self)
+        self._html_ctrl = DocumentViewer(self)
         back_btn, forward_btn, reload_btn = self._html_ctrl.get_buttons()
         self._controls = OrderedDict()
         self._setting_names = {}
