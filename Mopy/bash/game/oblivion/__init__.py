@@ -92,6 +92,9 @@ class OblivionGameInfo(GameInfo):
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True
+        # Oblivion accepts the base name and literally *anything* after
+        # that. E.g. MyModMeshes.bsa will load from a MyMod.esp plugin
+        attachment_regex = u'.*'
         valid_versions = {0x67}
 
     class Xe(GameInfo.Xe):

@@ -26,6 +26,7 @@ state and methods. game.GameInfo#init classmethod is used to import rest of
 active game package as needed (currently the record and constants modules)
 and to set some brec.RecordHeader/MreRecord class variables."""
 import importlib
+from collections import defaultdict
 
 from .. import brec
 
@@ -225,10 +226,19 @@ class GameInfo(object):
         # Whether or not the INI setting ResetBSATimestamps should have any
         # effect on this game
         allow_reset_timestamps = False
+        # Part of a regex used to determine which BSAs will attach to a plugin.
+        # The full regex prepends the base name of the plugin (e.g. for
+        # MyMod.esp, MyMod will be prepended) and appends Bsa.bsa_extension.
+        # Most games accept arbitrary BSA names, hence this default
+        attachment_regex = r'(?: \- \w+)?'
         # The extension used for BSA files
         bsa_extension = u'.bsa'
         # Whether or not the Archive.exe tool for this game creates BSL files
         has_bsl = False
+        # Maps BSA names to the date to which they should be redated. Fallback
+        # will be used for BSAs which are not explicitly listed. Format is
+        # ISO 8601 (year-month-day)
+        redate_dict = defaultdict(lambda: u'2006-01-01')
         # All BSA versions accepted by this game. If empty, indicates that this
         # game does not use BSA versions and so BSA version checks will be
         # skipped entirely.

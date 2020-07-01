@@ -63,6 +63,8 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         install_dir = u''
 
     class Bsa(SkyrimGameInfo.Bsa):
+        # Skyrim SE accepts the base name and ' - Textures'
+        attachment_regex = r'(?: \- Textures)?'
         valid_versions = {0x69}
         vanilla_string_bsas = {
             u'skyrim.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],

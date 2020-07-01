@@ -415,7 +415,6 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
                 with balt.Progress(_(u'Enabling BSA Redirection...'),
                                    message=u'\n' + u' ' * 60) as progress:
                     bsaFile.undo_alterations(progress)
-                bosh.bsaInfos.reset_oblivion_mtimes()
         bosh.oblivionIni.setBsaRedirection(bass.settings[self.key])
 
 class Installers_ConflictsReportShowsInactive(_Installers_BoolLink_Refresh):

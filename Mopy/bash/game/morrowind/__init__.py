@@ -23,6 +23,7 @@
 # =============================================================================
 """GameInfo override for TES III: Morrowind."""
 import struct
+from collections import defaultdict
 
 from .. import GameInfo
 from ... import brec
@@ -68,6 +69,13 @@ class MorrowindGameInfo(GameInfo):
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True
+        # Make Bethesda's files load before all mod BSAs, and all BSAs before
+        # all loose assets (real solution is BSA tab - #233)
+        redate_dict = defaultdict(lambda: u'2003-06-04', {
+            u'Morrowind.bsa': u'2002-05-01',
+            u'Tribunal.bsa': u'2002-11-06',
+            u'Bloodmoon.bsa': u'2003-06-03',
+        })
 
     class Xe(GameInfo.Xe):
         full_name = u'TES3Edit'

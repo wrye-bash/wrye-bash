@@ -202,7 +202,9 @@ class FileInfo(AFile):
         return ModInfos.rightFileType(self.name)
 
     def setmtime(self, set_time=0, crc_changed=False):
-        """Sets mtime. Defaults to current value (i.e. reset)."""
+        """Sets mtime. Defaults to current value (i.e. reset).
+
+        :type set_time: int|float"""
         set_time = int(set_time or self.mtime)
         self.abs_path.mtime = set_time
         self._file_mod_time = set_time
@@ -652,16 +654,20 @@ class ModInfo(FileInfo):
         return modInfos.file_pattern.sub(u'', self.name.s)
 
     def mod_bsas(self, bsa_infos=None):
-        """Return bsas from bsaInfos, that match plugin's name."""
-        pattern = re.escape(self._modname)
-        # games other than skyrim accept more general bsa names
-        if bush.game.fsName not in (u'Enderal', u'Skyrim'):
-            pattern +=  r'(?: \- \w+)?'
-        pattern += re.escape(bush.game.Bsa.bsa_extension)
-        reg = re.compile(pattern, re.I | re.U)
+        """Returns a list of all BSAs that the game will attach to this
+        plugin. bsa_infos is optional and will default to bosh.bsaInfos."""
+        if bush.game.fsName == u'Morrowind':
+            # Morrowind does not load attached BSAs at all - they all have to
+            # be registered via the INI
+            return []
+        bsa_pattern = (re.escape(self._modname) +
+                       bush.game.Bsa.attachment_regex +
+                       re.escape(bush.game.Bsa.bsa_extension))
+        is_attached = re.compile(bsa_pattern, re.I | re.U).match
         # bsaInfos must be updated and contain all existing bsas
         if bsa_infos is None: bsa_infos = bsaInfos
-        return [inf for bsa, inf in bsa_infos.iteritems() if reg.match(bsa.s)]
+        return [inf for bsa, inf in bsa_infos.iteritems()
+                if is_attached(bsa.s)]
 
     def hasBsa(self):
         """Returns True if plugin has an associated BSA."""
@@ -2563,6 +2569,8 @@ class ModInfos(FileInfos):
         """Return active bsas and the order of their activator mods. If a mod
         activates more than one bsa, their relative order is undefined."""
         # TODO(ut): get those activated by inis
+        # TODO(inf): Morrowind does not have attached BSAs, there is instead a
+        #  'second load order' of BSAs in the INI
         active_bsas = OrderedDict()
         # bsaInfos must be updated
         bsas = dict(bsaInfos.iteritems())
@@ -2990,9 +2998,6 @@ class BSAInfos(FileInfos):
         _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
 
         class BSAInfo(FileInfo, _bsa_type):
-            _default_mtime = time.mktime(
-                time.strptime('01-01-2006 00:00:00', '%m-%d-%Y %H:%M:%S'))
-
             def __init__(self, fullpath, load_cache=False):
                 try:  # Never load_cache for memory reasons - let it be
                     # loaded as needed
@@ -3018,8 +3023,10 @@ class BSAInfos(FileInfos):
             def _reset_bsa_mtime(self):
                 if bush.game.Bsa.allow_reset_timestamps and inisettings[
                     'ResetBSATimestamps']:
-                    if self._file_mod_time != self._default_mtime:
-                        self.setmtime(self._default_mtime)
+                    default_mtime = time.mktime(time.strptime(
+                        bush.game.Bsa.redate_dict[self.name.s], '%Y-%m-%d'))
+                    if self._file_mod_time != default_mtime:
+                        self.setmtime(default_mtime)
 
         super(BSAInfos, self).__init__(dirs['mods'], factory=BSAInfo)
 
@@ -3042,24 +3049,6 @@ class BSAInfos(FileInfos):
         This is used when disabling other solutions to the Archive Invalidation
         problem prior to enabling WB's BSA Redirection."""
         dirs['app'].join(u'ArchiveInvalidation.txt').remove()
-
-    @staticmethod
-    def reset_oblivion_mtimes():
-        # TODO(inf) Should probably make this game-agnostic instead and add it
-        #  to FO3/FNV as well?
-        """Resets the mtimes of all Oblivion BSAs to a series of dates in 2006.
-
-        This is done to make sure they load in the correct order (that's why
-        the dates are all in incremental order) and so they load before any
-        mod-added content (that's why early 2006 is chosen)."""
-        bsa_times = ((1138162634, inisettings['OblivionTexturesBSAName']),
-                     (1138162934, u'Oblivion - Voices1.bsa'),
-                     (1138166742, u'Oblivion - Voices2.bsa'),
-                     (1138575220, u'Oblivion - Meshes.bsa'),
-                     (1138660560, u'Oblivion - Sounds.bsa'),
-                     (1139433736, u'Oblivion - Misc.bsa'))
-        for mtime, bsa_file in bsa_times:
-            dirs['mods'].join(bsa_file).mtime = mtime
 
 #------------------------------------------------------------------------------
 class PeopleData(DataStore):

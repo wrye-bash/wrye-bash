@@ -82,6 +82,8 @@ class SkyrimGameInfo(GameInfo):
                                   u'sResourceArchiveList2')
 
     class Bsa(GameInfo.Bsa):
+        # Skyrim only accepts the base name
+        attachment_regex = u''
         has_bsl = True
         valid_versions = {0x68}
         vanilla_string_bsas = {
