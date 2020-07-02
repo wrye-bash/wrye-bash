@@ -45,11 +45,10 @@ regErrMatch = re.compile(u'^(Error:.+|.+     Data Error?|Sub items Errors:.+)',
 reListArchive = re.compile(
     u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
 
-def compress7z(command, outDir, destArchive, srcDir, progress=None):
-    outFile = outDir.join(destArchive)
+def compress7z(command, full_dest, rel_dest, srcDir, progress=None):
     if progress is not None: #--Used solely for the progress bar
         length = sum([len(files) for x, y, files in walkdir(srcDir.s)])
-        progress(0, destArchive.s + u'\n' + _(u'Compressing files...'))
+        progress(0, rel_dest.s + u'\n' + _(u'Compressing files...'))
         progress.setFull(1 + length)
     #--Pack the files
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1,
@@ -66,17 +65,17 @@ def compress7z(command, outDir, destArchive, srcDir, progress=None):
             if progress is None: continue
             maCompressing = regCompressMatch(line)
             if maCompressing:
-                progress(index, destArchive.s + u'\n' + _(
+                progress(index, rel_dest.s + u'\n' + _(
                     u'Compressing files...') + u'\n' + maCompressing.group(
                     1).strip())
                 index += 1
     returncode = proc.wait()
     if returncode or errorLine:
-        outFile.temp.remove()
-        raise StateError(destArchive.s + u': Compression failed:\n' +
+        full_dest.temp.remove()
+        raise StateError(rel_dest.s + u': Compression failed:\n' +
                 u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine)
     #--Finalize the file, and cleanup
-    outFile.untemp()
+    full_dest.untemp()
 
 def extract7z(src_archive, extract_dir, progress=None, readExtensions=None,
               recursive=False, filelist_to_extract=None):
@@ -150,7 +149,7 @@ def compressionSettings(archive_path, blockSize, isSolid):
 
 def compressCommand(destArchive, destDir, srcFolder, solid=u'-ms=on',
                     archiveType=u'7z'): # WIP - note solid on by default (7z)
-    return [exe7z, u'a', destDir.join(destArchive).temp.s,
+    return [exe7z, u'a', destArchive.temp.s,
             u'-t%s' % archiveType] + solid.split() + [
             u'-y', u'-r', # quiet, recursive
             u'-o"%s"' % destDir.s,

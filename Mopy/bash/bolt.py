@@ -562,26 +562,17 @@ class Path(object):
             self._cext = os.path.normcase(self.ext)
             return self._cext
     @property
-    def temp(self,unicodeSafe=True):
-        """Temp file path.  If unicodeSafe is True, the returned
-        temp file will be a fileName that can be passes through Popen
-        (Popen automatically tries to encode the name)"""
-        baseDir = GPath(unicode(tempfile.gettempdir(), Path.sys_fs_enc)).join(u'WryeBash_temp')
+    def temp(self):
+        """Temp file path."""
+        baseDir = GPath(unicode(tempfile.gettempdir(), Path.sys_fs_enc)).join(
+            u'WryeBash_temp')
         baseDir.makedirs()
-        dirJoin = baseDir.join
-        if unicodeSafe:
-            try:
-                self._s.encode('ascii')
-                return dirJoin(self.tail+u'.tmp')
-            except UnicodeEncodeError:
-                ret = unicode(self._s.encode('ascii','xmlcharrefreplace'),'ascii')+u'_unicode_safe.tmp'
-                return dirJoin(ret)
-        else:
-            return dirJoin(self.tail+u'.tmp')
+        return baseDir.join(self.tail + u'.tmp')
 
     @staticmethod
     def tempDir(prefix=u'WryeBash_'):
-        try: # workaround for http://bugs.python.org/issue1681974 see there
+        # workaround for http://bugs.python.org/issue1681974 see there - PY3: ?
+        try:
             return GPath(tempfile.mkdtemp(prefix=prefix))
         except UnicodeDecodeError:
             try:
@@ -838,9 +829,10 @@ class Path(object):
         self.moveTo(destName)
         return _temp_file(self,destName)
 
-    def unicodeSafe(self):
-        """Temporarily rename (only if necessary) the file to a unicode safe name.
-           Use with the 'with' statement."""
+    def unicodeSafe(self): # PY3: investigate if obsoleted.
+        """Temporarily rename (only if necessary) the file to a unicode safe
+        name. Use with the 'with' statement. Meant to be used with Popen (which
+        automatically tries to encode the name)."""
         try:
             self._s.encode(u'ascii')
             class _noop_file(object):
@@ -850,7 +842,9 @@ class Path(object):
                 def __exit__(self, exc_type, exc_value, exc_traceback): pass
             return _noop_file(self)
         except UnicodeEncodeError:
-            return self.tempMoveTo(self.temp)
+            safe_path = unicode(self._s.encode(u'ascii', u'xmlcharrefreplace'),
+                u'ascii') + u'_unicode_safe.tmp'
+            return self.tempMoveTo(safe_path)
 
     def untemp(self,doBackup=False):
         """Replaces file with temp version, optionally making backup of file first."""
