@@ -311,20 +311,20 @@ def test_permissions(path, permissions=u'rwcd'):
                     removeAtEnd = True
                 else:
                     removeAtEnd = False
-                temp = getTemp(path)
-                with temp.open('wb'):
+                perm_temp = getTemp(path)
+                with perm_temp.open('wb'):
                     pass
-                temp.remove()
+                perm_temp.remove()
                 if removeAtEnd:
                     path.removedirs()
         #--Test file deletion permission
         if u'd' in permissions and path_exists:
             smallestFile = smallestFile or getSmallest()
             if smallestFile:
-                temp = getTemp(smallestFile)
-                smallestFile.copyTo(temp)
+                smallest_temp = getTemp(smallestFile)
+                smallestFile.copyTo(smallest_temp)
                 smallestFile.remove()
-                temp.moveTo(smallestFile)
+                smallest_temp.moveTo(smallestFile)
     except Exception as e:
         if getattr(e, u'errno', 0) == 13:
             return False # Access denied

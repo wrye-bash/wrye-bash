@@ -159,17 +159,17 @@ def encode(text_str, encodings=encodingOrder, firstEncoding=None,
     # Try the list of encodings in order
     for encoding in encodings:
         try:
-            temp = text_str.encode(encoding)
-            detectedEncoding = getbestencoding(temp)
+            test_encoded = text_str.encode(encoding)
+            detectedEncoding = getbestencoding(test_encoded)
             if detectedEncoding[0] == encoding:
                 # This encoding also happens to be detected
                 # By the encoding detector as the same thing,
                 # which means use it!
-                if returnEncoding: return temp,encoding
-                else: return temp
+                if returnEncoding: return test_encoded, encoding
+                else: return test_encoded
             # The encoding detector didn't detect it, but
             # it works, so save it for later
-            if not goodEncoding: goodEncoding = (temp,encoding)
+            if not goodEncoding: goodEncoding = (test_encoded, encoding)
         except UnicodeEncodeError:
             pass
     # Non of the encodings also where detectable via the
@@ -828,7 +828,7 @@ class Path(object):
 
     def tempMoveTo(self,destName):
         """Temporarily rename/move an object.  Use with the 'with' statement"""
-        class temp(object):
+        class _temp_file(object):
             def __init__(self,oldPath,newPath):
                 self.newPath = GPath(newPath)
                 self.oldPath = GPath(oldPath)
@@ -836,19 +836,19 @@ class Path(object):
             def __enter__(self): return self.newPath
             def __exit__(self, exc_type, exc_value, exc_traceback): self.newPath.moveTo(self.oldPath)
         self.moveTo(destName)
-        return temp(self,destName)
+        return _temp_file(self,destName)
 
     def unicodeSafe(self):
         """Temporarily rename (only if necessary) the file to a unicode safe name.
            Use with the 'with' statement."""
         try:
-            self._s.encode('ascii')
-            class temp(object):
+            self._s.encode(u'ascii')
+            class _noop_file(object):
                 def __init__(self,path):
                     self.path = path
                 def __enter__(self): return self.path
                 def __exit__(self, exc_type, exc_value, exc_traceback): pass
-            return temp(self)
+            return _noop_file(self)
         except UnicodeEncodeError:
             return self.tempMoveTo(self.temp)
 

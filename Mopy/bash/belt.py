@@ -247,26 +247,26 @@ class PageSelect(PageInstaller):
         # self.Layout() # the bitmap would change size and so blurred
 
     def OnNext(self):
-        temp = []
+        temp_items = []
         if self.bMany:
             index = -1
             for item in self.listItems:
                 index += 1
                 if self.listOptions.lb_is_checked_at_index(index):
-                    temp.append(item)
+                    temp_items.append(item)
         else:
             for i in self.listOptions.lb_get_selections():
-                temp.append(self.listItems[i])
+                temp_items.append(self.listItems[i])
         if self._wiz_parent.parser.choiceIdex < len(self._wiz_parent.parser.choices):
             oldChoices = self._wiz_parent.parser.choices[self._wiz_parent.parser.choiceIdex]
-            if temp == oldChoices:
+            if temp_items == oldChoices:
                 pass
             else:
                 self._wiz_parent.parser.choices = self._wiz_parent.parser.choices[0:self._wiz_parent.parser.choiceIdex]
-                self._wiz_parent.parser.choices.append(temp)
+                self._wiz_parent.parser.choices.append(temp_items)
         else:
-            self._wiz_parent.parser.choices.append(temp)
-        self._wiz_parent.parser.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values=temp, hitCase=False)
+            self._wiz_parent.parser.choices.append(temp_items)
+        self._wiz_parent.parser.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values=temp_items, hitCase=False)
 
 _obse_mod_formats = bolt.LowerDict(
     {u']set[': u' %(setting)s to %(value)s%(comment)s',

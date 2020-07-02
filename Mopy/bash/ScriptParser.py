@@ -641,17 +641,17 @@ class Parser(object):
                     stack[-2].numArgs += stack[-1].numArgs
                     stack[-1].numArgs = 0
             elif i.type == COLON:
-                temp = []
+                temp_tokens = []
                 while len(stack) > 0 and stack[-1].type != OPEN_BRACKET:
-                    temp.append(stack.pop())
+                    temp_tokens.append(stack.pop())
                 if len(stack) <= 1:
                     error(_(u"Misplaced ':' or missing bracket."))
                 stack[-2].numArgs += stack[-1].numArgs
-                if len(temp) == 0 and stack[-1].numArgs == 0:
+                if len(temp_tokens) == 0 and stack[-1].numArgs == 0:
                     rpn.append(Parser.Token(Parser._marker,Type=UNKNOWN,parser=self))
                     stack[-2].numArgs += 1
                 else:
-                    rpn.extend(temp)
+                    rpn.extend(temp_tokens)
                 stack[-1].numArgs = 0
             elif i.type == FUNCTION:
                 stack.append(i)
@@ -695,17 +695,17 @@ class Parser(object):
                     stack[-1].numArgs += numArgs
                     rpn.append(stack.pop())
             elif i.type == CLOSE_BRACKET:
-                temp = []
+                temp_tokens = []
                 while len(stack) > 0 and stack[-1].type != OPEN_BRACKET:
-                    temp.append(stack.pop())
+                    temp_tokens.append(stack.pop())
                 if len(stack) == 0:
                     error(_(u'Unmatched brackets.'))
                 numArgs = stack[-1].numArgs
                 stack.pop()
-                if len(temp) == 0 and numArgs == 0 and stack[-1].numArgs != 0:
+                if len(temp_tokens) == 0 and numArgs == 0 and stack[-1].numArgs != 0:
                     rpn.append(Parser.Token(Parser._marker,Type=UNKNOWN,parser=self))
                     numArgs += 1
-                rpn.extend(temp)
+                rpn.extend(temp_tokens)
                 stack[-1].numArgs += numArgs + 1
                 if stack[-1].numArgs == 1:
                     error(_(u'IndexError'))
