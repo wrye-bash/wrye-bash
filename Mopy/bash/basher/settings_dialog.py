@@ -45,7 +45,11 @@ class SettingsDialog(DialogWindow):
     _def_size = (700, 450)
     _min_size = (500, 300)
 
-    def __init__(self):
+    def __init__(self, initial_page=u''):
+        """Creates a new settings dialog with the specified initial page.
+
+        :param initial_page: If set to a truthy string, will switch to that
+                             page before showing the dialog to the user."""
         super(SettingsDialog, self).__init__(Link.Frame,
             icon_bundle=Resources.bashBlue, sizes_dict=balt.sizes)
         # Used to keep track of the pages that have changed settings
@@ -60,6 +64,10 @@ class SettingsDialog(DialogWindow):
             self._changed_state[leaf_page] = False
             leaf_page._mark_changed = self._exec_mark_changed
             leaf_page._request_restart = self._exec_request_restart
+        ##: Unused right now, will come in handy once we move all tab-specific
+        # settings into this dialog as well
+        if initial_page:
+            self._tab_tree.select_page(initial_page)
 ##: Not yet ready, will need much more refactoring (#178). We'd need a way to
 # have each page and each setting as an object, so that we can pass the search
 # term along to each page. Plus TreeCtrl refactoring is needed to easily hide
@@ -138,6 +146,10 @@ class SettingsDialog(DialogWindow):
 
 class _ASettingsPage(WrappingTextMixin, ATreeMixin):
     """Abstract class for all settings pages."""
+    # A set of all setting IDs in this page. This is optional, see
+    # _mark_setting_changed below
+    _setting_ids = set()
+
     def __init__(self, parent, page_desc):
         super(_ASettingsPage, self).__init__(page_desc, parent)
         # Callback to a method that takes the settings page and a boolean,
@@ -152,10 +164,39 @@ class _ASettingsPage(WrappingTextMixin, ATreeMixin):
         # next start definitely having these parameters passed to it
         ##: The restart parameters here are a smell, see usage in LanguagePage
         self._request_restart = None
+        # Used to keep track of each setting's 'changed' state
+        self._setting_states = {k: False for k in self._setting_ids}
+
+    def _is_changed(self, setting_id):
+        """Checks if the setting with the specified ID has been changed. See
+        _mark_setting_changed below."""
+        if setting_id not in self._setting_ids:
+            raise SyntaxError(u'Setting ID (%s) missing from _setting_ids for '
+                              u"page '%r'" % (setting_id, self))
+        return self._setting_states[setting_id]
+
+    def _mark_setting_changed(self, setting_id, is_changed):
+        """Marks the setting with the specified ID as changed or unchanged.
+
+        This method is intended to provide a convenient way to manage a page
+        with several independent settings. It's just a wrapper around
+        _mark_changed, you do not have to use it.
+
+        If you do want to use it, _setting_ids needs to be populated with all
+        setting IDs that you're going to pass to this method, or else a
+        SyntaxError will be raised."""
+        if setting_id not in self._setting_ids:
+            raise SyntaxError(u'Setting ID (%s) missing from _setting_ids for '
+                              u"page '%r'" % (setting_id, self))
+        self._setting_states[setting_id] = is_changed
+        self._mark_changed(self, any(self._setting_states.itervalues()))
 
     def on_apply(self):
         """Called when the OK or Apply button on the settings dialog is
         clicked. Should apply whatever changes have been made on this page."""
+        for setting_key in self._setting_states:
+            self._setting_states[setting_key] = False
+        self._mark_changed(self, False)
 
     def on_page_closing(self):
         """Called when the settings dialog is about to be closed."""
@@ -442,21 +483,10 @@ class LanguagePage(_AScrollablePage):
         {v: k for k, v in _internal_to_localized.iteritems()})
 
     def __init__(self, parent, page_desc):
-<<<<<<< HEAD
-        super(LanguagePanel, self).__init__(parent, page_desc)
-        all_langs = []
-        # Gather all localizations in the l10n directory
-        for f in bass.dirs[u'l10n'].list():
-            if f.cext == u'.txt' and f.csbody[-3:] != u'new':
-                all_langs.append(f.sbody)
-=======
         super(LanguagePage, self).__init__(parent, page_desc)
-        # Used to map localized radio button names back to internal language
-        # names
-        self._button_to_lang = {}
-        all_langs = [l.body for l in self._gather_l10n()
-                     if l.csbody[-3:] != u'new']
->>>>>>> ae1213728... Settings: Trusted Binaries page
+        # Gather all localizations in the l10n directory
+        all_langs = [f.sbody for f in bass.dirs[u'l10n'].list()
+                     if f.cext == u'.txt' and f.csbody[-3:] != u'new']
         # Insert English since there's no localization file for that
         if u'english' not in all_langs:
             all_langs.append(u'english')
@@ -623,7 +653,7 @@ class LanguagePage(_AScrollablePage):
         return bass.dirs[u'l10n']
 
     def on_apply(self):
-        self._mark_changed(self, False)
+        super(LanguagePage, self).on_apply()
         selected_lang = self._lang_dropdown.get_value()
         internal_name = self._localized_to_internal[selected_lang]
         if not self._is_active_lang(internal_name):
@@ -669,14 +699,10 @@ class LanguagePage(_AScrollablePage):
 # Status Bar ------------------------------------------------------------------
 class StatusBarPage(_AScrollablePage):
     """Settings related to the status bar."""
+    _setting_ids = {u'app_ver', u'icon_size', u'hidden_icons'}
+
     def __init__(self, parent, page_desc):
         super(StatusBarPage, self).__init__(parent, page_desc)
-        # Used to keep track of each setting's 'changed' state
-        self._setting_states = {
-            u'app_ver': False,
-            u'icon_size': False,
-            u'hidden_icons': False,
-        }
         # Used to retrieve the Link object for hiding/unhiding a button
         self._tip_to_links = {}
         # GUI/Layout definition
@@ -736,22 +762,12 @@ class StatusBarPage(_AScrollablePage):
         self._mark_setting_changed(u'icon_size',
             int(new_selection) != bass.settings[u'bash.statusbar.iconSize'])
 
-    def _is_changed(self, setting_id):
-        """Checks if the setting with the specified ID has been changed."""
-        return self._setting_states[setting_id]
-
     def _link_by_uid(self, link_uid):
         """Returns the status bar Link with the specified UID."""
         for link_candidate in self._tip_to_links.itervalues():
             if link_candidate.uid == link_uid:
                 return link_candidate
         return None
-
-    ##: This whole API should probably move into _ASettingsPage
-    def _mark_setting_changed(self, setting_id, is_changed):
-        """Marks the setting with the specified ID as changed or unchanged."""
-        self._setting_states[setting_id] = is_changed
-        self._mark_changed(self, any(self._setting_states.itervalues()))
 
     def on_apply(self):
         # Note we skip_refresh all status bar changes in order to do them all
@@ -790,9 +806,7 @@ class StatusBarPage(_AScrollablePage):
         if hidden_icons_changed or icon_size_changed:
             Link.Frame.statusBar.refresh_status_bar(
                 refresh_icon_size=icon_size_changed)
-        for setting_key in self._setting_states:
-            self._setting_states[setting_key] = False
-        self._mark_changed(self, False)
+        super(StatusBarPage, self).on_apply()
 
     def _on_move_btn(self):
         """Mark our setting as changed if the hidden icons list no longer
