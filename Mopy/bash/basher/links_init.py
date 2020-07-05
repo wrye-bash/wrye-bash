@@ -41,7 +41,6 @@ from .files_links import *
 from .installers_links import *
 from .installer_links import *
 from .saves_links import *
-from .settings_links import *
 from .misc_links import *
 from .ini_links import *
 from .mod_links import *
@@ -394,7 +393,7 @@ def InitInstallerLinks():
     settings_menu.append(Installers_GlobalSkips())
     settings_menu.append(Installers_GlobalRedirects())
     settings_menu.append(SeparatorLink())
-    settings_menu.append(GlobalSettingsMenu())
+    settings_menu.append(Misc_SettingsDialog())
 
 #------------------------------------------------------------------------------
 def InitINILinks():
@@ -432,7 +431,7 @@ def InitINILinks():
     settings_menu = INIList.global_links[_(u'Settings')]
     settings_menu.append(INI_AllowNewLines())
     settings_menu.append(SeparatorLink())
-    settings_menu.append(GlobalSettingsMenu())
+    settings_menu.append(Misc_SettingsDialog())
 
 #------------------------------------------------------------------------------
 def InitModLinks():
@@ -672,7 +671,7 @@ def InitModLinks():
     settings_menu.append(Mods_LockActivePlugins())
     settings_menu.append(Mods_ScanDirty())
     settings_menu.append(SeparatorLink())
-    settings_menu.append(GlobalSettingsMenu())
+    settings_menu.append(Misc_SettingsDialog())
 
 #------------------------------------------------------------------------------
 def InitSaveLinks():
@@ -777,7 +776,7 @@ def InitSaveLinks():
     view_menu.append(SortByMenu())
     view_menu.append(ColumnsMenu())
     # Settings Menu
-    SaveList.global_links[_(u'Settings')].append(GlobalSettingsMenu())
+    SaveList.global_links[_(u'Settings')].append(Misc_SettingsDialog())
 
 #------------------------------------------------------------------------------
 def InitBSALinks():
@@ -817,7 +816,7 @@ def InitBSALinks():
     view_menu.append(SortByMenu())
     view_menu.append(ColumnsMenu())
     # Settings Menu
-    BSAList.global_links[_(u'Settings')].append(GlobalSettingsMenu())
+    BSAList.global_links[_(u'Settings')].append(Misc_SettingsDialog())
 
 #------------------------------------------------------------------------------
 def InitScreenLinks():
@@ -873,7 +872,7 @@ def InitScreenLinks():
     jpeg_quality_menu.links.append(Screens_JpgQualityCustom())
     settings_menu.append(qualityMenu)
     settings_menu.append(SeparatorLink())
-    ScreensList.global_links[_(u'Settings')].append(GlobalSettingsMenu())
+    ScreensList.global_links[_(u'Settings')].append(Misc_SettingsDialog())
 
 #------------------------------------------------------------------------------
 def InitPeopleLinks():
@@ -901,7 +900,7 @@ def InitPeopleLinks():
     view_menu.append(SortByMenu())
     view_menu.append(ColumnsMenu())
     # Settings Menu
-    PeopleList.global_links[_(u'Settings')].append(GlobalSettingsMenu())
+    PeopleList.global_links[_(u'Settings')].append(Misc_SettingsDialog())
 
 def InitLinks():
     """Call other link initializers."""

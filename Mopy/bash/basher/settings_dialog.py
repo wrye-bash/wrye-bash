@@ -28,7 +28,7 @@ from collections import defaultdict
 
 from . import BashStatusBar, tabInfo
 from .constants import colorInfo, settingDefaults
-from .. import balt, barb, bass, bosh, bush, env, exception
+from .. import balt, barb, bass, bolt, bosh, bush, env, exception
 from ..balt import colors, Link, Resources
 from ..bolt import deprint, GPath
 from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
@@ -148,6 +148,7 @@ class _ASettingsPage(WrappingTextMixin, ATreeMixin):
     """Abstract class for all settings pages."""
     # A set of all setting IDs in this page. This is optional, see
     # _mark_setting_changed below
+    # PY3: Consider an enum here for stricter typing + no chance of typos
     _setting_ids = set()
 
     def __init__(self, parent, page_desc):
@@ -706,7 +707,7 @@ class StatusBarPage(_AScrollablePage):
         # Used to retrieve the Link object for hiding/unhiding a button
         self._tip_to_links = {}
         # GUI/Layout definition
-        self._show_app_ver_chk = CheckBox(self, label=_(u'Show App Version'),
+        self._show_app_ver_chk = CheckBox(self, _(u'Show App Version'),
             chkbx_tooltip=_(u'Show/hide version numbers for buttons on the '
                             u'status bar.'),
             checked=bass.settings[u'bash.statusbar.showversion'])
@@ -1022,6 +1023,147 @@ class BackupsPage(_AFixedPage):
                         self.delete_backup_btn):
             ctx_btn.enabled = btns_enabled
 
+# General ---------------------------------------------------------------------
+class GeneralPage(_AScrollablePage):
+    """Houses settings that didn't fit anywhere else."""
+    _all_encodings = {
+        _(u'Automatic'): None,
+        _(u'Chinese (Simplified)'): u'gbk',
+        _(u'Chinese (Traditional)'): u'big5',
+        _(u'Russian'): u'cp1251',
+        _(u'Japanese (Shift_JIS)'): u'cp932',
+        _(u'UTF-8'): u'utf-8',
+        _(u'Western European (English, French, German, etc)'): u'cp1252',
+    }
+    _encodings_reverse = {v: k for k, v in _all_encodings.iteritems()}
+    _setting_ids = {u'alt_name_on', u'deprint_on', u'global_menu_on',
+                    u'managed_game', u'plugin_encoding', u'uac_restart'}
+
+    def __init__(self, parent, page_desc):
+        super(GeneralPage, self).__init__(parent, page_desc)
+        self._managed_game = DropDown(self, value=bush.game.displayName,
+            choices=sorted(bush.foundGames), auto_tooltip=False)
+        self._managed_game.tooltip = _(u'Changes which game Wrye Bash is '
+                                       u'managing.')
+        self._managed_game.on_combo_select.subscribe(self._on_managed_game)
+        self._plugin_encoding = DropDown(self, value=self._current_encoding,
+            choices=sorted(self._all_encodings), auto_tooltip=False)
+        self._plugin_encoding.tooltip = _(u'Changes the encoding Wrye Bash '
+                                          u'will use to read and write '
+                                          u'plugins.')
+        self._plugin_encoding.on_combo_select.subscribe(self._on_plugin_enc)
+        self._deprint_checkbox = CheckBox(self, _(u'Debug Mode'),
+            chkbx_tooltip=_(u'Turns on extra debug prints to help debug an '
+                            u'error or just for advanced testing.'),
+            checked=bolt.deprintOn)
+        self._deprint_checkbox.on_checked.subscribe(self._on_deprint)
+        ##: The next two should belong to a subpage of Appearance
+        self._global_menu_checkbox = CheckBox(self, _(u'Show Global Menu'),
+            chkbx_tooltip=_(u'If checked, a global menu will be shown above '
+                            u'the tabs. If disabled, its options will still '
+                            u'be accessible by right-clicking the columns.'),
+            checked=bass.settings[u'bash.show_global_menu'])
+        self._global_menu_checkbox.on_checked.subscribe(self._on_global_menu)
+        self._alt_name_checkbox = CheckBox(self,
+            _(u'Use Alternate Wrye Bash Name'),
+            chkbx_tooltip=_(u'Use an alternate display name for Wrye Bash '
+                            u'based on the game it is managing.'),
+            checked=bass.settings[u'bash.useAltName'])
+        self._alt_name_checkbox.on_checked.subscribe(self._on_alt_name)
+        ##: Doesn't really belong here, but couldn't think of a better place
+        self._uac_restart_checkbox = CheckBox(self, _(u'Administrator Mode'),
+            chkbx_tooltip=_(u'Restart Wrye Bash with administrator '
+                            u'privileges.'))
+        self._uac_restart_checkbox.on_checked.subscribe(self._on_uac_restart)
+        self._uac_restart_checkbox.visible = env.isUAC
+        VLayout(border=6, spacing=3, item_expand=True, items=[
+            self._panel_text,
+            HBoxedLayout(self, title=_(u'Game'), items=[
+                VLayout(spacing=6, items=[
+                    HLayout(spacing=6, items=[
+                        Label(self, _(u'Managed Game:')), self._managed_game,
+                    ]),
+                    HLayout(spacing=6, items=[
+                        Label(self, _(u'Plugin Encoding:')),
+                        self._plugin_encoding,
+                    ]),
+                ]),
+            ]),
+            HBoxedLayout(self, title=_(u'Miscellaneous'), items=[
+                VLayout(spacing=6, items=[
+                    self._deprint_checkbox, self._global_menu_checkbox,
+                    self._alt_name_checkbox, self._uac_restart_checkbox,
+                ]),
+            ]),
+        ]).apply_to(self)
+
+    @property
+    def _current_encoding(self):
+        return self._encodings_reverse[bass.settings[u'bash.pluginEncoding']]
+
+    def _on_alt_name(self, checked):
+        self._mark_setting_changed(u'alt_name_on',
+            checked != bass.settings[u'bash.useAltName'])
+
+    def _on_deprint(self, checked):
+        self._mark_setting_changed(u'deprint_on', checked != bolt.deprintOn)
+
+    def _on_global_menu(self, checked):
+        self._mark_setting_changed(u'global_menu_on',
+            checked != bass.settings[u'bash.show_global_menu'])
+
+    def _on_managed_game(self, new_game):
+        self._mark_setting_changed(u'managed_game',
+            new_game != bush.game.displayName)
+
+    def _on_plugin_enc(self, new_enc):
+        self._mark_setting_changed(u'plugin_encoding',
+            new_enc != self._current_encoding)
+
+    def _on_uac_restart(self, checked):
+        self._mark_setting_changed(u'uac_restart', checked)
+
+    def on_apply(self):
+        # Managed Game
+        if self._is_changed(u'managed_game') and balt.askContinue(self,
+                    _(u'Switching games this way will simply relaunch this '
+                      u'Wrye Bash installation with the -o command line '
+                      u'switch.') + u'\n\n' +
+                    _(u'That means manually added application launchers in '
+                      u'the status bar will not change after switching.'),
+                    u'bash.switch_games_warning.continue'):
+            chosen_game = self._managed_game.get_value()
+            self._request_restart(
+                _(u'Managed Game: %s') % chosen_game,
+                [u'--oblivionPath', bush.game_path(chosen_game).s])
+        # Plugin Encoding
+        if self._is_changed(u'plugin_encoding'):
+            chosen_encoding = self._plugin_encoding.get_value()
+            internal_encoding = self._all_encodings[chosen_encoding]
+            bass.settings[u'bash.pluginEncoding'] = internal_encoding
+            bolt.pluginEncoding = internal_encoding
+            # Request a restart so that alrady loaded plugins can be reparsed
+            self._request_restart(_(u'Plugin Encoding: %s') % chosen_encoding)
+        # Debug Mode
+        if self._is_changed(u'deprint_on'):
+            deprint(u'Debug Printing: Off')
+            bolt.deprintOn = self._deprint_checkbox.is_checked
+            deprint(u'Debug Printing: On')
+        # Show Global Menu
+        if self._is_changed(u'global_menu_on'):
+            new_gm_on = self._global_menu_checkbox.is_checked
+            bass.settings[u'bash.show_global_menu'] = new_gm_on
+            Link.Frame.refresh_global_menu_visibility()
+        # Use Alternate Wrye Bash Name
+        if self._is_changed(u'alt_name_on'):
+            new_alt_name = self._alt_name_checkbox.is_checked
+            bass.settings[u'bash.useAltName'] = new_alt_name
+            Link.Frame.set_bash_frame_title()
+        # Administrator Mode
+        if self._is_changed(u'uac_restart'):
+            self._request_restart(_(u'Administrator Mode'), [u'--uac'])
+        super(GeneralPage, self).on_apply()
+
 # Trusted Binaries ------------------------------------------------------------
 class TrustedBinariesPage(_AFixedPage):
     """Change which binaries are trusted and which aren't."""
@@ -1190,6 +1332,7 @@ _settings_pages = {
         _(u'Status Bar'): StatusBarPage,
     },
     _(u'Backups'): BackupsPage,
+    _(u'General'): GeneralPage,
     _(u'Trusted Binaries'): TrustedBinariesPage,
 }
 
@@ -1211,6 +1354,8 @@ _page_descriptions = {
     _(u'Confirmations'):
         _(u"Enable or disable popups with a 'Don't show this in the future' "
           u'option.'),
+    _(u'General'):
+        _(u'Change various general settings.'),
     _(u'Trusted Binaries'):
         _(u'Change which binaries (DLLs, EXEs, etc.) you trust. Untrusted '
           u'binaries will be skipped by BAIN when installing packages.')
