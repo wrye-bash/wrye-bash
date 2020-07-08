@@ -265,8 +265,8 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         },
     #--Wrye Bash: Masters
     'bash.masters.cols': ['File', 'Num', 'Current Order'],
-    'bash.masters.esmsFirst': 1,
-    'bash.masters.selectedFirst': 0,
+    u'bash.masters.esmsFirst': False,
+    u'bash.masters.selectedFirst': False,
     'bash.masters.sort': 'Num',
     'bash.masters.colReverse': {},
     'bash.masters.colWidths': {
@@ -342,8 +342,8 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.mods.auto_flag_esl': True,
     'bash.mods.cols': ['File', 'Load Order', 'Installer', 'Modified', 'Size',
                        'Author', 'CRC'],
-    'bash.mods.esmsFirst': 1,
-    'bash.mods.selectedFirst': 0,
+    u'bash.mods.esmsFirst': False,
+    u'bash.mods.selectedFirst': False,
     'bash.mods.sort': 'Load Order',
     'bash.mods.colReverse': {},
     'bash.mods.colWidths': {

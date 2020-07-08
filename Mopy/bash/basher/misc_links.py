@@ -397,7 +397,7 @@ class SortByMenu(ChoiceMenuLink):
             self.extraItems = sort_options + [SeparatorLink()]
 
     @property
-    def _choices(self): return self.window.allCols
+    def _choices(self): return self.window.cols
 
 # Settings Dialog -------------------------------------------------------------
 #------------------------------------------------------------------------------
