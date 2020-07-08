@@ -78,8 +78,8 @@ class Screens_NextScreenShot(EnabledLink):
         settings_screens[enabled_key[0]][enabled_key[1]] = enabled_key[2]
         screens_dir = GPath(new_base).head
         if screens_dir:
-            if not screens_dir.isabs(): screensDir = bass.dirs[u'app'].join(
-                screens_dir)
+            if not screens_dir.isabs():
+                screens_dir = bass.dirs[u'app'].join(screens_dir)
             screens_dir.makedirs()
         bosh.oblivionIni.saveSettings(settings_screens)
         bosh.screen_infos.refresh()

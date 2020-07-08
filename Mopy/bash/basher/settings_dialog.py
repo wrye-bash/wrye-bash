@@ -36,7 +36,7 @@ from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
     LayoutOptions, OkButton, PanelWin, Stretch, TextArea, TreePanel, VLayout, \
     WrappingTextMixin, ListBox, Label, Spacer, HBoxedLayout, CheckBox, \
     TextField, OpenButton, ScrollableWindow, ClickableImage, RevertButton, \
-    SaveButton, SaveAsButton, DoubleListBox, ATreeMixin
+    SaveButton, SaveAsButton, DoubleListBox, ATreeMixin, CheckListBox
 from ..localize import dump_translator
 
 class SettingsDialog(DialogWindow):
@@ -1023,6 +1023,212 @@ class BackupsPage(_AFixedPage):
                         self.delete_backup_btn):
             ctx_btn.enabled = btns_enabled
 
+# Confirmations ---------------------------------------------------------------
+class ConfirmationsPage(_AFixedPage):
+    """Manage the consent you gave to 'Don't show this again' checkboxes."""
+    # Actions to take when dropping files onto the Installers tab
+    _action_to_label = {
+        None:    _(u'Ask every time'),
+        u'COPY': _(u'Copy'),
+        u'MOVE': _(u'Move'),
+    }
+    _label_to_action = {v: k for k, v in _action_to_label.iteritems()}
+    ##: Maybe hide some of these per game? E.g. Nvidia Fog Fix & CBash will
+    # never be relevant outside of Oblivion/Nehrim, while Add/Remove ESL Flag
+    # makes no sense for non-SSE/FO4 games
+    _confirmations = {
+        _(u'[INI Edits] Applying an INI tweak'):
+            u'bash.iniTweaks.continue',
+        _(u'[Installers, Screenshots] Opening a lot of items'):
+            u'bash.maxItemsOpen.continue',
+        _(u"[Installers] Opening a mod's page at the "
+          u'%s') % bush.game.nexusName:
+            bush.game.nexusKey,
+        _(u"[Installers] Opening a mod's page at TES Alliance"):
+            u'bash.installers.openTESA.continue',
+        _(u'[Installers] Searching for a mod on Google'):
+            u'bash.installers.opensearch.continue',
+        _(u'[Installers] Trying to reorder installers, but Install Order '
+          u'column not selected'):
+            u'bash.installers.dnd.column.continue',
+        _(u'[Masters] Editing or updating a master list'):
+            u'bash.masters.update.continue',
+        _(u'[Mods] Adding or removing the ESL flag from a plugin'):
+            u'bash.flipToEslp.continue',
+        _(u'[Mods] Adding or removing the ESM flag from a plugin'):
+            u'bash.flipToEsmp.continue',
+        _(u"[Mods] Adding or removing the ESM flag from a plugin's masters"):
+            u'bash.flipMasters.continue',
+        _(u'[Mods] Applying the Nvidia Fog Fix'):
+            u'bash.cleanMod.continue',
+        _(u'[Mods] Building the Bashed Patch with CBash'):
+            u'bash.patch.ReallyUseCBash.295.continue',
+        _(u"[Mods] Changing a plugin's version to 0.8"):
+            u'bash.setModVersion.continue',
+        _(u'[Mods] Exporting NPC levels to a text file'):
+            u'bash.actorLevels.export.continue',
+        _(u'[Mods] Importing groups from a text file'):
+            u'bash.groups.import.continue',
+        _(u'[Mods] Locking or unlocking the load order'):
+            u'bash.load_order.lock_continue',
+        _(u'[Mods] Removing world orphans'):
+            u'bash.removeWorldOrphans.continue',
+        _(u"[Mods] Renaming a plugin to something that %s can't "
+          u'load') % bush.game.displayName:
+            u'bash.rename.isBadFileName.continue',
+        _(u'[Mods] Reordering plugins by name'):
+            u'bash.sortMods.continue',
+        _(u"[Mods] Replacing a plugin's FormIDs based on a text file"):
+            u'bash.formIds.replace.continue',
+        _(u'[Mods] Resetting groups to default ones'):
+            u'bash.groups.reset.continue',
+        _(u'[Mods] Synchronizing groups to currently active ones'):
+            u'bash.groups.sync.continue',
+        _(u"[Mods] Trying to activate plugins that can't be activated"):
+            u'bash.mods.dnd.illegal_activation.continue',
+        _(u"[Mods] Trying to deactivate plugins that can't be deactivated"):
+            u'bash.mods.dnd.illegal_deactivation.continue',
+        _(u'[Mods] Trying to reorder plugins, but Load Order column not '
+          u'selected'):
+            u'bash.mods.dnd.column.continue',
+        _(u"[Mods] Trying to reorder plugins that can't be reordered"):
+            u'bash.mods.dnd.pinned.continue',
+        _(u"[Mods] Using Decompile All to undo a 'Recompile All'"):
+            u'bash.decompileAll.continue',
+        _(u'[Saves] Disabling a save'):
+            u'bash.saves.askDisable.continue',
+        _(u'[Saves] Updating NPC levels in a save based on current plugins'):
+            u'bash.updateNpcLevels.continue',
+        _(u'[Settings] Dumping a new translation file'):
+            u'bash.dump_translator.continue',
+        _(u'[Settings] Switching the currently managed game'):
+            u'bash.switch_games_warning.continue',
+    }
+    # The Import links are highly formulaic, so we just generate these here
+    for k, v in {_(u'Editor IDs'):   u'editorIds',
+                 _(u'Ingredients'):  u'Ingredient',
+                 _(u'Map Markers'):  u'MapMarkers',
+                 _(u'Names'):        u'fullNames',
+                 _(u'NPC Levels'):   u'actorLevels',
+                 _(u'Prices'):       u'prices',
+                 _(u'Relations'):    u'factionRelations',
+                 _(u'Scripts'):      u'scripts',
+                 _(u'Sigil Stones'): u'SigilStone',
+                 _(u'Spells'):       u'SpellRecords',
+                 _(u'Stats'):        u'stats'}.iteritems():
+        _confirmations[_(u'[Mods] Importing %s from a text '
+                         u'file') % k] = u'bash.%s.import.continue' % v
+    _setting_ids = {u'confirmed_prompts', u'drop_action', u'internal_keys'}
+
+    def __init__(self, parent, page_desc):
+        super(ConfirmationsPage, self).__init__(parent, page_desc)
+        self._show_keys_checkbox = CheckBox(self, _(u'Show Internal Keys'),
+            chkbx_tooltip=_(u'If checked, show the internal key Wrye Bash '
+                            u'uses to store these settings as well.'),
+            checked=bass.settings[u'bash.show_internal_keys'])
+        self._show_keys_checkbox.on_checked.subscribe(self._on_show_keys)
+        self._confirmation_list = CheckListBox(self, isSort=True,
+            isHScroll=True, onCheck=self._on_check_conf)
+        self._file_drop_dropdown = DropDown(self, value=self._saved_action,
+            choices=sorted(self._label_to_action), auto_tooltip=False)
+        self._file_drop_dropdown.tooltip = _(u'Choose what to do with files '
+                                             u'that are dropped onto the '
+                                             u'Installers tab.')
+        self._file_drop_dropdown.on_combo_select.subscribe(self._on_file_drop)
+        self._populate_confirmations()
+        VLayout(border=6, spacing=3, item_expand=True, items=[
+            self._panel_text,
+            HLayout(spacing=6, items=[
+                Label(self, _(u'Drop Action:')), self._file_drop_dropdown,
+            ]),
+            HLayout(items=[
+                Label(self, _(u'Unchecking an entry below will reenable that '
+                              u'prompt and vice versa.')),
+                Stretch(), self._show_keys_checkbox,
+            ]),
+            (self._confirmation_list, LayoutOptions(weight=1)),
+        ]).apply_to(self)
+
+    def _on_check_conf(self, _lb_selection_dex):
+        self._mark_setting_changed(u'confirmed_prompts',
+            self._selected_confirmations != self._saved_confirmations)
+
+    def _on_file_drop(self, selected_action):
+        self._mark_setting_changed(u'drop_action',
+            selected_action != self._saved_action)
+
+    def _on_show_keys(self, checked):
+        def mark_internal_keys(ik_checked):
+            self._mark_setting_changed(u'internal_keys',
+                ik_checked != bass.settings[u'bash.show_internal_keys'])
+        # Make sure we don't throw away changes the user made
+        if self._is_changed(u'confirmed_prompts') and not balt.askYes(self,
+                _(u'Activating this setting will discard all changes you have '
+                  u'made below. Are you sure you want to proceed?'),
+                title=_(u'Warning: Unapplied Changes')):
+            # User chose to cancel, reset the checkbox for visual consistency
+            self._show_keys_checkbox.is_checked = not checked
+            mark_internal_keys(not checked)
+            return
+        mark_internal_keys(checked)
+        # Repopulating the list obviously means we'll have no user changes left
+        # anymore, so mark this False
+        self._mark_setting_changed(u'confirmed_prompts', False)
+        self._populate_confirmations()
+
+    def _populate_confirmations(self):
+        """Repopulates the list of confirmations and ticks them according to
+        bass.settings."""
+        sorted_confs = sorted(self._confirmations.iteritems(),
+            key=lambda c: c[0])
+        if self._show_keys_checkbox.is_checked:
+            conf_names = [u'%s (%s)' % c for c in sorted_confs]
+        else:
+            conf_names = [c[0] for c in sorted_confs]
+        self._confirmation_list.lb_set_items(conf_names)
+        for i, conf_key in enumerate([c[1] for c in sorted_confs]):
+            self._confirmation_list.lb_check_at_index(i, bass.settings.get(
+                conf_key, False))
+
+    @property
+    def _saved_action(self):
+        """Returns the label for the drop action saved in bass.settings."""
+        return self._action_to_label[bass.settings[
+            u'bash.installers.onDropFiles.action']]
+
+    @property
+    def _saved_confirmations(self):
+        """Returns a dict mapping confirmation descriptions to booleans
+        indicating whether or not that entry is active in bass.settings."""
+        return {conf_name: bass.settings.get(conf_key, False)
+                for conf_name, conf_key in self._confirmations.iteritems()}
+
+    @property
+    def _selected_confirmations(self):
+        """Returns a dict mapping confirmation descriptions to booleans
+        indicating whether or not the user checked that entry."""
+        # Cut off the internal key extension that may be present
+        return {self._confirmation_list.lb_get_str_item_at_index(i).split(
+            u'(')[0].strip(): self._confirmation_list.lb_is_checked_at_index(i)
+                for i in xrange(self._confirmation_list.lb_get_items_count())}
+
+    def on_apply(self):
+        if self._is_changed(u'confirmed_prompts'):
+            conf_states = {self._confirmations[conf_name]: conf_checked
+                           for conf_name, conf_checked
+                           in self._selected_confirmations.iteritems()}
+            for conf_key in self._confirmations.itervalues():
+                if bass.settings.get(conf_key, False) != conf_states[conf_key]:
+                    bass.settings[conf_key] = conf_states[conf_key]
+        if self._is_changed(u'drop_action'):
+            new_drop_act = self._label_to_action[
+                self._file_drop_dropdown.get_value()]
+            bass.settings[u'bash.installers.onDropFiles.action'] = new_drop_act
+        if self._is_changed(u'internal_keys'):
+            new_internal_keys = self._show_keys_checkbox.is_checked
+            bass.settings[u'bash.show_internal_keys'] = new_internal_keys
+        super(ConfirmationsPage, self).on_apply()
+
 # General ---------------------------------------------------------------------
 class GeneralPage(_AScrollablePage):
     """Houses settings that didn't fit anywhere else."""
@@ -1332,6 +1538,7 @@ _settings_pages = {
         _(u'Status Bar'): StatusBarPage,
     },
     _(u'Backups'): BackupsPage,
+    _(u'Confirmations'): ConfirmationsPage,
     _(u'General'): GeneralPage,
     _(u'Trusted Binaries'): TrustedBinariesPage,
 }

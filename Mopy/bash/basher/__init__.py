@@ -1120,15 +1120,15 @@ class ModList(_ModsUIList):
         # attempted to activate mods that can't be activated (e.g. .esu
         # plugins).
         if illegal_deactivations:
-            balt.askContinue(self, u"You can't deactivate the following "
-                                   u'mods:\n%s' %
-                             u', '.join(illegal_deactivations),
-                             'bash.mods.dnd.illegal_deactivation.continue')
+            balt.askContinue(self,
+                _(u"You can't deactivate the following mods:")
+                + u'\n%s' % u', '.join(illegal_deactivations),
+                u'bash.mods.dnd.illegal_deactivation.continue')
         if illegal_activations:
-            balt.askContinue(self, u"You can't activate the following "
-                                   u'mods:\n%s' %
-                             u', '.join(illegal_activations),
-                             'bash.mods.dnd.illegal_activation.continue')
+            balt.askContinue(self,
+                _(u"You can't activate the following mods:")
+                + u'\n%s' % u', '.join(illegal_activations),
+                u'bash.mods.dnd.illegal_activation.continue')
         if refreshNeeded:
             bosh.modInfos.cached_lo_save_active()
             self.__toggle_active_msg(changes)

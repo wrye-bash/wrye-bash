@@ -168,6 +168,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.useAltName':True,
     u'bash.show_global_menu': True,
     'bash.pluginEncoding': 'cp1252',    # Western European
+    u'bash.show_internal_keys': False,
     #--Colors
     'bash.colors': {
         #--Common Colors
