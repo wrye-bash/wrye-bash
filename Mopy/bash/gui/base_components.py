@@ -72,7 +72,7 @@ class Color(object):
                 and self.alpha == other.alpha)
 
     def __repr__(self):
-        return u'Color(%s, %s, %s, %s)' % (
+        return u'Color(red=%s, green=%s, blue=%s, alpha=%s)' % (
             self.red, self.green, self.blue, self.alpha)
 
     @classmethod
@@ -82,7 +82,7 @@ class Color(object):
 
         :param color: The wx.Colour object to copy.
         :return: A Color object representing the same color."""
-        return cls(color.red, color.green, color.blue, color.alpha)
+        return cls(color.Red(), color.Green(), color.Blue(), color.Alpha())
 
 class Colors(object):
     """Color collection and wrapper for wx.ColourDatabase. Provides
@@ -148,15 +148,13 @@ class _AComponent(object):
             raise RuntimeError(u"Failed to resolve object '%r' to wx object." %
                                obj)
 
-    @property
-    def component_name(self): # type: () -> unicode
+    def get_component_name(self): # type: () -> unicode
         """Returns the name of this component.
 
         :return: This component's name."""
         return self._native_widget.GetName()
 
-    @component_name.setter
-    def component_name(self, new_name): # type: (unicode) -> None
+    def set_component_name(self, new_name): # type: (unicode) -> None
         """Sets the name of this component to the specified name.
 
         :param new_name: The string to change this component's name to."""
@@ -295,8 +293,7 @@ class _AComponent(object):
         all possible."""
         self._native_widget.Destroy()
 
-    @property
-    def wx_id_(self): # avoid, we do not want to program with gui ids
+    def wx_id_(self): ##: Avoid, we do not want to program with gui ids
         return self._native_widget.GetId()
 
 # Events Mixins ---------------------------------------------------------------

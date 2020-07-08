@@ -532,6 +532,9 @@ class Installer_Install(_InstallLink):
             u'\n' + u'\n'.join([u' * %s\n' % x.stail for (x, y) in new_tweaks])
         self._showInfo(msg, title=_(u'INI Tweaks'))
 
+##: Would be nice to have this work for multiple installers, but wizards use
+# self.iPanel.detailsPanel, which won't be set correctly when multiple
+# installers are selected
 class Installer_InstallSmart(_InstallLink, OneItemLink):
     """A 'smart' installer for new users. Uses wizards and FOMODs if present,
     then falls back to regular install if that isn't possible."""

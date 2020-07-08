@@ -2672,7 +2672,7 @@ class InstallersDetails(_SashDetailsPanel):
         for cmp_name, page_title in infoTitles:
             gPage = TextArea(self.gNotebook, editable=False,
                              auto_tooltip=False, do_wrap=False)
-            gPage.component_name = cmp_name
+            gPage.set_component_name(cmp_name)
             self.gNotebook.add_page(gPage, page_title)
             self.infoPages.append([gPage,False])
         self.gNotebook.set_selected_page_index(
@@ -2732,7 +2732,7 @@ class InstallersDetails(_SashDetailsPanel):
 
     def OnShowInfoPage(self, wx_id, selected_index):
         """A specific info page has been selected."""
-        if wx_id == self.gNotebook.wx_id_: # todo because of BashNotebook event??
+        if wx_id == self.gNotebook.wx_id_(): # todo because of BashNotebook event??
             # todo use the pages directly not the index
             gPage,initialized = self.infoPages[selected_index]
             if self._displayed_installer and not initialized:
@@ -2806,7 +2806,7 @@ class InstallersDetails(_SashDetailsPanel):
         gPage,initialized = self.infoPages[index]
         if initialized: return
         else: self.infoPages[index][1] = True
-        pageName = gPage.component_name
+        pageName = gPage.get_component_name()
         def dumpFiles(files, header=u''):
             if files:
                 buff = StringIO.StringIO()
@@ -3581,7 +3581,7 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
             if not panel:
                 panel = globals()[className](Link.Frame.notebook)
                 tabInfo[self.tabKey][2] = panel
-                _widget_to_panel[panel.wx_id_] = panel
+                _widget_to_panel[panel.wx_id_()] = panel
             if insertAt > Link.Frame.notebook.GetPageCount():
                 Link.Frame.notebook.AddPage(panel._native_widget,title)
             else:
@@ -3641,7 +3641,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
                 item = panel(self)
                 self.AddPage(item._native_widget, title)
                 tabInfo[page][2] = item
-                _widget_to_panel[item.wx_id_] = item
+                _widget_to_panel[item.wx_id_()] = item
             except:
                 if page == 'Mods':
                     deprint(u"Fatal error constructing '%s' panel." % title)
