@@ -41,6 +41,12 @@ default_tweaks = {
     u'Archery, NavMeshMove 8192 [Skyrim].ini': OrderedDict(
         [(u'Actor', OrderedDict(
             [(u'fVisibleNavmeshMoveDist', u'8192.0000')]))]),
+    u'Blood and Gore, Enabled ~Default [Skyrim.ini]': OrderedDict(
+        [(u'General', OrderedDict(
+            [(u'bDisableAllGore', u'0')]))]),
+    u'Blood and Gore, Disabled [Skyrim.ini]': OrderedDict(
+        [(u'General', OrderedDict(
+            [(u'bDisableAllGore', u'1')]))]),
     u'BGS Intro sequence, Disabled [Skyrim].ini': OrderedDict(
         [(u'General', OrderedDict([(u'sIntroSequence', u'')]))]),
     u'BGS Intro sequence, Enabled ~Default [Skyrim].ini': OrderedDict(

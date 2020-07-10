@@ -1888,13 +1888,6 @@ GmstTweaks = [
         (u'3x',                   0.750),
         (_(u'Custom (in units)'), 0.250),
         ),
-    (_(u'Visuals: NPC Blood'),
-     _(u'Changes or disables NPC Blood splatter textures.'),
-        (u'sBloodTextureDefault', u'sBloodSplatterAlpha01OPTFilename',
-         u'sBloodSplatterColor01OPTFilename', u'sBloodSplatterFlare01Filename'),
-        (_(u'No Blood'), u'', u'', u'', u''),
-        (_(u'Custom'),   u'', u'', u'', u''),
-        ),
     (_(u'Visuals: Secunda Size'),
      _(u'Changes the size of the moon Secunda (the smaller one) in the night '
        u'sky.'),
