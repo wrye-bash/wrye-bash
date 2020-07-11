@@ -876,13 +876,13 @@ class MobCell(MobBase):
         #--Interior cell
         if cell.flags.isInterior:
             baseFid = cell.fid & 0x00FFFFFF
-            return baseFid%10, baseFid%100//10
+            return baseFid % 10, baseFid % 100 // 10
         #--Exterior cell
         else:
-            x,y = cell.posY,cell.posX
+            x, y = cell.posX, cell.posY
             if x is None: x = 0
             if y is None: y = 0
-            return (x//32, y//32), (x//8, y//8)
+            return (y // 32, x // 32), (y // 8, x // 8)
 
     def dump(self,out):
         """Dumps group header and then records."""
@@ -1386,9 +1386,8 @@ class MobWorld(MobCells):
                     else:
                         if self.worldCellBlock:
                             raise ModError(self.inName,
-                                           u'Extra exterior cell <%s> %s '
-                                           u'before block group.' % (
-                                               hex(cell.fid),cell.eid))
+                                u'Extra exterior cell %r before block '
+                                u'group.' % cell)
                         self.worldCellBlock = cellBlock
                 cell = recClass(header,ins,True)
                 if isFallout: cells[cell.fid] = cell
@@ -1400,15 +1399,13 @@ class MobWorld(MobCells):
                         else:
                             if self.worldCellBlock:
                                 raise ModError(self.inName,
-                                               u'Extra exterior cell <%s> %s '
-                                               u'before block group.' % (
-                                                   hex(cell.fid), cell.eid))
+                                    u'Extra exterior cell %r before block '
+                                    u'group.' % cell)
                             self.worldCellBlock = cellBlock
                     elif insTell() > endBlockPos or insTell() > endSubblockPos:
                         raise ModError(self.inName,
-                                       u'Exterior cell <%s> %s after block or'
-                                       u' subblock.' % (
-                                           hex(cell.fid),cell.eid))
+                            u'Exterior cell %r after block or subblock.'
+                            % cell)
             elif recType == 'GRUP':
                 groupFid,groupType = header.label,header.groupType
                 if groupType == 4: # Exterior Cell Block
@@ -1426,10 +1423,8 @@ class MobWorld(MobCells):
                     if cell:
                         if groupFid != cell.fid:
                             raise ModError(self.inName,
-                                           u'Cell subgroup (%s) does not '
-                                           u'match CELL <%s> %s.' %
-                                           (hex(groupFid),hex(cell.fid),
-                                            cell.eid))
+                                u'Cell subgroup (%s) does not match CELL %r.'
+                                % (hex(groupFid), cell))
                         if unpackCellBlocks:
                             cellBlock = MobCell(header,selfLoadFactory,cell,
                                                 ins,True)
@@ -1441,9 +1436,8 @@ class MobWorld(MobCells):
                         else:
                             if self.worldCellBlock:
                                 raise ModError(self.inName,
-                                               u'Extra exterior cell <%s> %s '
-                                               u'before block group.' % (
-                                                   hex(cell.fid),cell.eid))
+                                       u'Exterior cell %r after block or '
+                                       u'subblock.' % cell)
                             self.worldCellBlock = cellBlock
                         cell = None
                     else:
@@ -1685,8 +1679,7 @@ class MobWorlds(MobBase):
                 if groupFid != world.fid:
                     raise ModError(ins.inName,
                                    u'WRLD subgroup (%s) does not match WRLD '
-                                   u'<%s> %s.' % (
-                                   hex(groupFid),hex(world.fid),world.eid))
+                                   u'%r.' % (hex(groupFid), world))
                 worldBlock = MobWorld(header,selfLoadFactory,world,ins,True)
                 worldBlocksAppend(worldBlock)
                 world = None
@@ -1757,14 +1750,13 @@ class MobWorlds(MobBase):
             if worldBlock:
                 worldBlock.updateRecords(srcWorldBlock,mapper,mergeIds)
 
-    def setWorld(self, world, worldcellblock=None):
+    def setWorld(self, world):
         """Adds record to record list and indexed."""
         if self.worldBlocks and not self.id_worldBlocks:
             self.indexRecords()
         fid = world.fid
         if fid in self.id_worldBlocks:
             self.id_worldBlocks[fid].world = world
-            self.id_worldBlocks[fid].worldCellBlock = worldcellblock
         else:
             worldBlock = MobWorld(GrupHeader(0, 0, 1, self.stamp), ##: groupType = 1
                                   self.loadFactory, world)

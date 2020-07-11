@@ -788,7 +788,7 @@ soundsTypes = {
 cellAutoKeys = {u'C.Acoustic', u'C.Climate', u'C.Encounter',
                 u'C.ForceHideLand', u'C.ImageSpace', u'C.Light', u'C.Music',
                 u'C.Name', u'C.Owner', u'C.RecordFlags', u'C.Regions',
-                u'C.Water'} #,u'C.Maps')
+                u'C.Water'}
 cellRecAttrs = {
     u'C.Acoustic': ('acousticSpace',),
     u'C.Climate': ('climate',),
