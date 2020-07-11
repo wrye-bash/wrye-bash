@@ -96,10 +96,10 @@ class BSA_ListContents(ItemLink):
 
     def Execute(self):
         full_text = u'=== Selected BSA Contents:'
-        full_text += u'\n[spoiler][xml]'
+        full_text += u'\n[spoiler]'
         for bsa_inf in self.iselected_infos():
             full_text += u'\n\n* %s:\n' % bsa_inf.abs_path.tail
             full_text += u'\n'.join(sorted(bsa_inf.assets))
-        full_text += u'\n[/xml][/spoiler]'
+        full_text += u'\n[/spoiler]'
         balt.copyToClipboard(full_text)
         self._showLog(full_text, _(u'BSA Contents'))

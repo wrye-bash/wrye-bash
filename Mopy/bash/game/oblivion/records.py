@@ -1415,12 +1415,12 @@ class MrePack(MelRecord):
         )),
         MelStruct('PSDT','2bBbi','month','day','date','time','duration'),
         MelUnion({
-            0: MelStruct('PTDT', 'iIi', 'targetType', (FID, 'targetId'),
-                         'targetCount'),
-            1: MelStruct('PTDT', 'iIi', 'targetType', (FID, 'targetId'),
-                         'targetCount'),
-            2: MelStruct('PTDT', 'iIi', 'targetType', 'targetId',
-                         'targetCount'),
+            0: MelOptStruct(b'PTDT', u'iIi', u'targetType', (FID, u'targetId'),
+                u'targetCount'),
+            1: MelOptStruct(b'PTDT', u'iIi', u'targetType', (FID, u'targetId'),
+                u'targetCount'),
+            2: MelOptStruct(b'PTDT', u'iIi', u'targetType', u'targetId',
+                u'targetCount'),
         }, decider=PartialLoadDecider(
             loader=MelSInt32('PTDT', 'targetType'),
             decider=AttrValDecider('targetType'),

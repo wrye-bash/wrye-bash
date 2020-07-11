@@ -789,7 +789,7 @@ class Mod_ListDependent(OneItemLink):
         head, bul = u'=== ', u'* '
         with bolt.sio() as out:
             log = bolt.LogFile(out)
-            log(u'[spoiler][xml]')
+            log(u'[spoiler]')
             log.setHeader(head + self.legend + u': ')
             loOrder =  lambda tup: load_order.cached_lo_index_or_max(tup[0])
             text_list = u''
@@ -805,7 +805,7 @@ class Mod_ListDependent(OneItemLink):
                     text_list = u'%s  %s' % (prefix, mod.s,)
                     log(text_list)
             if not text_list:  log(u'None')
-            log(u'[/xml][/spoiler]')
+            log(u'[/spoiler]')
             text_list = bolt.winNewLines(log.out.getvalue())
         balt.copyToClipboard(text_list)
         self._showLog(text_list, title=self.legend, fixedFont=False)
@@ -1199,7 +1199,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         log(_(u'This is the current configuration of this Bashed Patch.  This report has also been copied into your clipboard.')+u'\n')
         clip = StringIO.StringIO()
         clip.write(u'%s %s:\n' % (self._selected_item, _(u'Config')))
-        clip.write(u'[spoiler][xml]\n')
+        clip.write(u'[spoiler]\n')
         # CBash/Python patch?
         log.setHeader(u'== '+_(u'Patch Mode'))
         clip.write(u'== '+_(u'Patch Mode')+u'\n')
@@ -1217,7 +1217,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         for patcher in _gui_patchers:
             patcher.log_config(config, clip, log)
         #-- Show log
-        clip.write(u'[/xml][/spoiler]')
+        clip.write(u'[/spoiler]')
         balt.copyToClipboard(clip.getvalue())
         clip.close()
         log_text = log.out.getvalue()

@@ -582,11 +582,11 @@ class INIList(balt.UIList):
     def ListTweaks(self):
         """Returns text list of tweaks"""
         tweaklist = _(u'Active Ini Tweaks:') + u'\n'
-        tweaklist += u'[spoiler][xml]\n'
+        tweaklist += u'[spoiler]\n'
         for tweak, info in sorted(self.data_store.items(), key=itemgetter(0)):
             if not info.tweak_status == 20: continue
             tweaklist+= u'%s\n' % tweak
-        tweaklist += u'[/xml][/spoiler]\n'
+        tweaklist += u'[/spoiler]\n'
         return tweaklist
 
     @staticmethod
@@ -770,8 +770,8 @@ class TargetINILineCtrl(INIListCtrl):
             self.DeleteAllItems()
         num = self.GetItemCount()
         try:
-            with bosh.iniInfos.ini.abs_path.open('r') as target_ini_file:
-                lines = target_ini_file.readlines()
+            with bosh.iniInfos.ini.abs_path.open(u'rb') as target_ini_file:
+                lines = bolt.decode(target_ini_file.read()).splitlines()
             if bush.game.iniFiles[0] == bosh.iniInfos.ini.abs_path.stail:
                 Link.Frame.oblivionIniMissing = False
             for i,line in enumerate(lines):

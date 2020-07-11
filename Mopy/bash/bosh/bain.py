@@ -1125,10 +1125,10 @@ class Installer(object):
         with sio() as out:
             log = bolt.LogFile(out)
             log.setHeader(u'%s ' % self.archive + _(u'Package Structure:'))
-            log(u'[spoiler][xml]\n', False)
+            log(u'[spoiler]\n', False)
             apath = bass.dirs['installers'].join(self.archive)
             self._list_package(apath, log)
-            log(u'[/xml][/spoiler]')
+            log(u'[/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
 
     @staticmethod
@@ -2888,7 +2888,7 @@ class InstallersData(DataStore):
             log = bolt.LogFile(out)
             log.setHeader(_(u'Bain Packages:'))
             #--List
-            log(u'[spoiler][xml]\n',False)
+            log(u'[spoiler]\n',False)
             for package, installer in self.sorted_pairs():
                 prefix = u'%03d' % installer.order
                 if installer.is_marker():
@@ -2899,7 +2899,7 @@ class InstallersData(DataStore):
                 elif showInactive:
                     log(u'-- %s - %s (%08X) (Not Installed)' % (
                         prefix, package.s, installer.crc))
-            log(u'[/xml][/spoiler]')
+            log(u'[/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
 
     def filterInstallables(self, installerKeys):

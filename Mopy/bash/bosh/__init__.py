@@ -2252,7 +2252,7 @@ class ModInfos(FileInfos):
             all_mods = load_order.get_ordered(all_mods)
             #--List
             modIndex = 0
-            if not wtxt: log(u'[spoiler][xml]\n', appendNewline=False)
+            if not wtxt: log(u'[spoiler]\n', appendNewline=False)
             for mname in all_mods:
                 if mname in masters:
                     prefix = bul+u'%02X' % modIndex
@@ -2275,7 +2275,7 @@ class ModInfos(FileInfos):
                         elif load_order.get_ordered((mname, master2))[
                             1] == master2:
                             log(sDelinquent+master2.s)
-            if not wtxt: log(u'[/xml][/spoiler]')
+            if not wtxt: log(u'[/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
 
     @staticmethod
@@ -2316,7 +2316,7 @@ class ModInfos(FileInfos):
         ones are applied via a patch) - either for all mods in the data folder
         or if specified for one specific mod."""
         tagList = u'=== '+_(u'Current Bash Tags')+u':\n'
-        tagList += u'[spoiler][xml]\n'
+        tagList += u'[spoiler]\n'
         tagList += _(u'Note: Sources are processed from top to bottom, '
                      u'meaning that lower-ranking sources override '
                      u'higher-ranking ones.\n')
@@ -2333,7 +2333,7 @@ class ModInfos(FileInfos):
                 if modInfo.getBashTags():
                     tagList += u'\n* ' + modInfo.name.s + u'\n'
                     tagList = ModInfos._tagsies(modInfo, tagList)
-        tagList += u'[/xml][/spoiler]'
+        tagList += u'[/spoiler]'
         return tagList
 
     @staticmethod
