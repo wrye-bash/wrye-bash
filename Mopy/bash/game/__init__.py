@@ -461,6 +461,7 @@ class GameInfo(object):
     cellAutoKeys = set()  # use a set literal
     cellRecAttrs = {}
     cellRecFlags = {}
+    cell_float_attrs = set()
 
     #--------------------------------------------------------------------------
     # GraphicsPatcher
@@ -599,17 +600,18 @@ class GameInfo(object):
         u'GlobalsTweaks', u'GmstTweaks', u'actor_importer_attrs',
         u'actor_tweaks', u'actor_types', u'actor_values', u'bethDataFiles',
         u'body_tags', u'cc_valid_types', u'cc_passes', u'cellAutoKeys',
-        u'cellRecAttrs', u'cellRecFlags', u'condition_function_data',
-        u'default_eyes', u'destructible_types', u'generic_av_effects',
-        u'getvatsvalue_index', u'gmstEids', u'graphicsFidTypes',
-        u'graphicsLongsTypes', u'graphicsModelAttrs', u'graphicsTypes',
-        u'hostile_effects', u'inventoryTypes', u'keywords_types', u'listTypes',
-        u'mgef_basevalue', u'mgef_name', u'mgef_school', u'namesTypes',
-        u'nirnroots', u'object_bounds_types', u'pricesTypes',
-        u'record_type_name', u'relations_attrs', u'relations_csv_header',
-        u'relations_csv_row_format', u'save_rec_types', u'scripts_types',
-        u'soundsLongsTypes', u'soundsTypes', u'spell_stats_attrs',
-        u'statsHeaders', u'statsTypes', u'text_long_types', u'text_types',
+        u'cell_float_attrs', u'cellRecAttrs', u'cellRecFlags',
+        u'condition_function_data', u'default_eyes', u'destructible_types',
+        u'generic_av_effects', u'getvatsvalue_index', u'gmstEids',
+        u'graphicsFidTypes', u'graphicsLongsTypes', u'graphicsModelAttrs',
+        u'graphicsTypes', u'hostile_effects', u'inventoryTypes',
+        u'keywords_types', u'listTypes', u'mgef_basevalue', u'mgef_name',
+        u'mgef_school', u'namesTypes', u'nirnroots', u'object_bounds_types',
+        u'pricesTypes', u'record_type_name', u'relations_attrs',
+        u'relations_csv_header', u'relations_csv_row_format',
+        u'save_rec_types', u'scripts_types', u'soundsLongsTypes',
+        u'soundsTypes', u'spell_stats_attrs', u'statsHeaders', u'statsTypes',
+        u'text_long_types', u'text_types',
     }
 
     @classmethod

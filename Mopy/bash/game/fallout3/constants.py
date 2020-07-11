@@ -793,7 +793,7 @@ cellRecAttrs = {
     u'C.Acoustic': ('acousticSpace',),
     u'C.Climate': ('climate',),
     u'C.Encounter': ('encounterZone',),
-    u'C.ForceHideLand': ('fhlFlags',),
+    u'C.ForceHideLand': (u'land_flags',),
     u'C.ImageSpace': ('imageSpace',),
     u'C.Light': ('ambientRed', 'ambientGreen', 'ambientBlue', 'unused1',
                  'directionalRed', 'directionalGreen', 'directionalBlue',
@@ -822,6 +822,8 @@ cellRecFlags = {
     u'C.Regions': '',
     u'C.Water': 'hasWater',
 }
+cell_float_attrs = {u'fogNear', u'fogFar', u'directionalFade', u'fogClip',
+                    u'fogPower', u'waterHeight'}
 
 #------------------------------------------------------------------------------
 # GraphicsPatcher

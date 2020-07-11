@@ -33,7 +33,7 @@ from ._shared import _ANamesPatcher, _ANpcFacePatcher, _ASpellsPatcher, \
 from .base import ImportPatcher
 from .. import getPatchesPath
 from ... import bush, load_order, parsers
-from ...bolt import deprint
+from ...bolt import deprint, floats_equal
 from ...brec import MreRecord
 from ...mod_files import ModFile, LoadFactory
 
@@ -619,33 +619,49 @@ class CellImporter(ImportPatcher):
 
     def buildPatch(self,log,progress): # buildPatch0
         """Adds merged lists to patchfile."""
+        c_float_attrs = bush.game.cell_float_attrs
         def handlePatchCellBlock(patchCellBlock):
-            """
-            This function checks if an attribute or flag in CellData has
+            """This function checks if an attribute or flag in CellData has
             a value which is different to the corresponding value in the
             bash patch file.
             The Patch file will contain the last corresponding record
             found when it is created regardless of tags.
             If the CellData value is different, then the value is copied
             to the bash patch, and the cell is flagged as modified.
-            Modified cell Blocks are kept, the other are discarded.
-            """
-            modified=False
+            Modified cell Blocks are kept, the other are discarded."""
+            modified = False
             patch_cell_fid = patchCellBlock.cell.fid
+            patch_cell_get = patchCellBlock.cell.__getattribute__
+            patch_cell_set = patchCellBlock.cell.__setattr__
             for attr,value in cellData[patch_cell_fid].iteritems():
-                if attr == 'regions':
-                    if set(value).difference(set(patchCellBlock.cell.__getattribute__(attr))):
-                        patchCellBlock.cell.__setattr__(attr, value)
+                curr_value = patch_cell_get(attr)
+                if attr == u'regions':
+                    if set(value).difference(set(curr_value)):
+                        patch_cell_set(attr, value)
+                        modified = True
+                # bolt.Flags-backed attributes need special comparison logic,
+                # since flags can have nonsense values outside of the actual
+                # flags. ##: if we ever end up having more flags attrs, this
+                # should become a set, probably per-game
+                elif attr == u'land_flags':
+                    if value.getTrueAttrs() != curr_value.getTrueAttrs():
+                        patch_cell_set(attr, value)
+                        modified = True
+                elif attr in c_float_attrs:
+                    if not floats_equal(value, curr_value):
+                        patch_cell_set(attr, value)
                         modified = True
                 else:
-                    if patchCellBlock.cell.__getattribute__(attr) != value:
-                        patchCellBlock.cell.__setattr__(attr, value)
-                        modified=True
+                    if value != curr_value:
+                        patch_cell_set(attr, value)
+                        modified = True
+            patch_get_flag = patchCellBlock.cell.flags.__getattr__
+            patch_set_flag = patchCellBlock.cell.flags.__setattr__
             for flag, value in cellData[
-                patch_cell_fid + ('flags',)].iteritems():
-                if patchCellBlock.cell.flags.__getattr__(flag) != value:
-                    patchCellBlock.cell.flags.__setattr__(flag, value)
-                    modified=True
+                patch_cell_fid + (u'flags',)].iteritems():
+                if patch_get_flag(flag) != value:
+                    patch_set_flag(flag, value)
+                    modified = True
             if modified:
                 patchCellBlock.cell.setChanged()
                 keep(patch_cell_fid)
@@ -666,10 +682,10 @@ class CellImporter(ImportPatcher):
                     keepWorld = True
             if worldBlock.worldCellBlock:
                 cell_fid = worldBlock.worldCellBlock.cell.fid
-                if cell_fid in cellData:
-                    if handlePatchCellBlock(worldBlock.worldCellBlock):
-                        count[cell_fid[0]] += 1
-                        keepWorld = True
+                if cell_fid in cellData and handlePatchCellBlock(
+                        worldBlock.worldCellBlock):
+                    count[cell_fid[0]] += 1
+                    keepWorld = True
             if keepWorld:
                 keep(worldBlock.world.fid)
         self.cellData.clear()

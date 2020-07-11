@@ -1559,6 +1559,9 @@ cellRecFlags = {
     u'C.RecordFlags': '',
     u'C.Regions': '',
 }
+cell_float_attrs = {u'fogNear', u'fogFar', u'directionalFade', u'fogClip',
+                    u'waterHeight'}
+
 #------------------------------------------------------------------------------
 # GraphicsPatcher
 #------------------------------------------------------------------------------
