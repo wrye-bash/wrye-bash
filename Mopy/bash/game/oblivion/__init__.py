@@ -38,7 +38,6 @@ class OblivionGameInfo(GameInfo):
     game_detect_file = _j(u'Data', u'Oblivion.esm')
     version_detect_file = u'Oblivion.exe'
     master_file = u'Oblivion.esm'
-    pklfile = u'Oblivion_ids.pkl'
     masterlist_dir = u'Oblivion'
     regInstallKeys = (u'Bethesda Softworks\\Oblivion', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/oblivion/'

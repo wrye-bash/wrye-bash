@@ -39,7 +39,6 @@ class MorrowindGameInfo(GameInfo):
     version_detect_file = u'Morrowind.exe'
     master_file = u'Morrowind.esm'
     mods_dir = u'Data Files'
-    pklfile = u'Morrowind_ids.pkl'
     masterlist_dir = u'Morrowind'
     # This is according to xEdit's sources, but it doesn't make that key for me
     regInstallKeys = (u'Bethesda Softworks\\Morrowind', u'Installed Path')

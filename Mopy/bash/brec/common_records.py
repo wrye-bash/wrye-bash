@@ -100,9 +100,9 @@ class MreHeaderBase(MelRecord):
 
     def getNextObject(self):
         """Gets next object index and increments it for next time."""
-        self.changed = True
         self.nextObject += 1
-        return self.nextObject -1
+        self.setChanged()
+        return self.nextObject - 1
 
     __slots__ = []
 
@@ -201,29 +201,6 @@ class MreGmstBase(MelRecord):
         ),
     )
     __slots__ = melSet.getSlotsUsed()
-
-    def getGMSTFid(self):
-        """Returns <Oblivion/Skyrim/etc>.esm fid in long format for specified
-           eid."""
-        cls = self.__class__
-        from .. import bosh # Late import to avoid circular imports
-        if not cls.Ids:
-            from .. import bush
-            fname = bass.dirs[u'db'].join(bush.game.pklfile)
-            try:
-                with fname.open(u'rb') as pkl_file:
-                    cls.Ids = pickle.load(pkl_file)[cls.rec_sig]
-            except:
-                old = bolt.deprintOn
-                bolt.deprintOn = True
-                bolt.deprint(u'Error loading %s:' % fname, traceback=True)
-                bolt.deprintOn = old
-                raise
-        try:
-            return bosh.modInfos.masterName,cls.Ids[self.eid]
-        except KeyError:
-            bolt.deprint(u'%s is missing from pickle file!' % self.eid)
-            return None
 
 #------------------------------------------------------------------------------
 class MreLand(MelRecord):

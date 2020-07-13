@@ -27,7 +27,7 @@ from ... import brec
 from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelStruct, MelUnicode, MelNull, MelFidList, MreLeveledListBase, MelFid, \
     FID, MelLString, MelUInt8, MelOptFid, MelOptFloat, MelBounds, MelEdid, \
-    MelArray
+    MelArray, MreGmstBase
 # Set brec.MelModel to the Fallout 4 one - do not import from skyrim.records yet
 if brec.MelModel is None:
 
@@ -60,8 +60,6 @@ if brec.MelModel is None:
     brec.MelModel = _MelModel
 # Now we can import from parent game records file
 from ..skyrim.records import MreLeveledList
-# Those are unused here, but need be in this file as are accessed via it
-from ..skyrim.records import MreGmst # used in basher.app_buttons.App_GenPickle#_update_pkl
 
 #------------------------------------------------------------------------------
 # Fallout 4 Records -----------------------------------------------------------
@@ -71,8 +69,8 @@ class MreTes4(MreHeaderBase):
     rec_sig = b'TES4'
 
     melSet = MelSet(
-        MelStruct('HEDR', 'f2I', ('version', 1.0), 'numRecords',
-                  ('nextObject', 0x800)),
+        MelStruct(b'HEDR', u'f2I', (u'version', 1.0), u'numRecords',
+            (u'nextObject', 0x001)),
         MelBase('TNAM', 'tnam_p'),
         MelUnicode('CNAM','author',u'',512),
         MelUnicode('SNAM','description',u'',512),
@@ -83,6 +81,11 @@ class MreTes4(MreHeaderBase):
         MelBase('INCC', 'unknownINCC'),
     )
     __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreGmst(MreGmstBase):
+    """Game Setting."""
+    isKeyedByEid = True # NULL fids are acceptable.
 
 #------------------------------------------------------------------------------
 class MreLvli(MreLeveledList):

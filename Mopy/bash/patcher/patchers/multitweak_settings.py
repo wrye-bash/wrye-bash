@@ -112,6 +112,8 @@ class _AGmstTweak(DynamicTweak):
         return None
 
     def wants_record(self, record):
+        if record.fid[0] not in bush.game.bethDataFiles:
+            return False # Avoid adding new masters just for a game setting
         rec_eid = record.eid.lower()
         if rec_eid not in self.eid_was_itpo: return False # not needed
         target_val = self._find_chosen_value(rec_eid)
@@ -125,7 +127,7 @@ class _AGmstTweak(DynamicTweak):
 
     def tweak_record(self, record):
         rec_eid = record.eid.lower()
-        # We don't need to inject a GMST for this EDID anymore
+        # We don't need to create a GMST for this EDID anymore
         self.eid_was_itpo[rec_eid] = True
         record.value = self._find_chosen_value(rec_eid)
 
@@ -150,17 +152,17 @@ class GmstTweak(_AGmstTweak, MultiTweakItem):
     def finish_tweaking(self, patch_file):
         keep = patch_file.getKeeper()
         add_gmst = patch_file.GMST.setRecord
-        # Inject new records for any remaining EDIDs
+        # Create new records for any remaining EDIDs
         for remaining_eid, was_itpo in self.eid_was_itpo.iteritems():
             if not was_itpo:
                 new_gmst = MreRecord.type_class[b'GMST'](RecHeader(b'GMST'))
                 new_gmst.eid = self._find_original_eid(remaining_eid)
                 new_gmst.value = self._find_chosen_value(remaining_eid)
                 new_gmst.longFids = True
-                new_gmst.fid = new_gmst.getGMSTFid()
-                if new_gmst.fid is not None: # None if missing from pickle
-                    keep(new_gmst.fid)
-                    add_gmst(new_gmst)
+                new_gmst.fid = (patch_file.fileInfo.name,
+                                patch_file.tes4.getNextObject())
+                keep(new_gmst.fid)
+                add_gmst(new_gmst)
 
 class CBash_GmstTweak(_AGmstTweak, CBash_MultiTweakItem):
     """Sets a GMST to specified value."""

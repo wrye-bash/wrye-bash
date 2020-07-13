@@ -306,25 +306,6 @@ condition_function_data = {
 }
 getvatsvalue_index = 408
 
-#--List of GMST's in the main plugin (Fallout3.esm) that have 0x00000000
-#  as the form id.  Any GMST as such needs its Editor Id listed here.
-gmstEids = [
-    'fPlayerDeathReloadTime', 'iMapMarkerVisibleDistance',
-    'fVanityModeWheelMax', 'fChase3rdPersonZUnitsPerSecond',
-    'fAutoAimMaxDegreesMiss', 'iHoursToRespawnCell', 'fEssentialDeathTime',
-    'fJumpHeightMin', 'fPlayerPipBoyLightTimer', 'iAINumberActorsComplexScene',
-    'iHackingMaxWords', 'fGunShellLifetime', 'fGunShellCameraDistance',
-    'fGunDecalCameraDistance', 'iDebrisMaxCount', 'iHackingDumpRate',
-    'iHackingInputRate', 'iHackingOutputRate', 'iHackingFlashOffDuration',
-    'iHackingFlashOnDuration', 'iComputersDisplayRateMenus',
-    'iComputersDisplayRateNotes', 'iInventoryAskQuantityAt',
-    'iNumberActorsInCombatPlayer', 'iNumberActorsAllowedToFollowPlayer',
-    'iRemoveExcessDeadCount', 'iRemoveExcessDeadTotalActorCount',
-    'iRemoveExcessDeadComplexTotalActorCount', 'iRemoveExcessDeadComplexCount',
-    'fRemoveExcessDeadTime', 'fRemoveExcessComplexDeadTime',
-    'iLevItemLevelDifferenceMax', 'fMoveWeightMax',
-]
-
 GlobalsTweaks = [
     (_(u'World: Timescale'),_(u'Timescale will be set to:'),
         u'timescale',

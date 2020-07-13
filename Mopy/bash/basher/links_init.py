@@ -195,7 +195,6 @@ def InitStatusBar():
     BashStatusBar.buttons.append(App_Help(uid=u'Help',canHide=False))
     if bass.inisettings['ShowDevTools']:
         BashStatusBar.buttons.append(App_Restart(uid=u'Restart'))
-        BashStatusBar.buttons.append(App_GenPickle(uid=u'Generate PKL File'))
 
 #------------------------------------------------------------------------------
 def InitMasterLinks():

@@ -64,9 +64,6 @@ class GameInfo(object):
     # The directory in which mods and other data files reside. This is relative
     # to the game directory.
     mods_dir = u'Data'
-    # The pickle file for this game.  Holds encoded GMST IDs from the big list
-    # below
-    pklfile = u'*GAMENAME*_ids.pkl'
     # The directory containing the masterlist for this game, relative to
     # 'Mopy/Bash Patches'
     masterlist_dir = u''
@@ -385,10 +382,6 @@ class GameInfo(object):
     # names for the record types. Used in save editing code.
     save_rec_types = {}
 
-    #--List of GMST's in the main plugin (Oblivion.esm) that have 0x00000000
-    #  as the form id.  Any GMST as such needs it Editor Id listed here.
-    gmstEids = []
-
     """
     GLOB record tweaks used by patcher.patchers.multitweak_settings.GmstTweaker
 
@@ -635,7 +628,7 @@ class GameInfo(object):
         u'cell_float_attrs', u'cellRecAttrs', u'cellRecFlags',
         u'cell_skip_interior_attrs', u'condition_function_data',
         u'default_eyes', u'destructible_types', u'ench_stats_attrs',
-        u'generic_av_effects', u'getvatsvalue_index', u'gmstEids',
+        u'generic_av_effects', u'getvatsvalue_index',
         u'graphicsFidTypes', u'graphicsModelAttrs', u'graphicsTypes',
         u'hostile_effects', u'inventoryTypes', u'keywords_types', u'listTypes',
         u'mgef_basevalue', u'mgef_name', u'mgef_school', u'mgef_stats_attrs',

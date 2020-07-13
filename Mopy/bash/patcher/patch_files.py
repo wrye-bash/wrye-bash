@@ -308,9 +308,13 @@ class PatchFile(_PFile, ModFile):
                 _(u'Updated: ') + format_date(time.time()) + u'\n\n' + _(
                 u'Records Changed: %d') % numRecords)
         # Flag as ESL if the game supports them and the option is enabled
-        # Note that we can always safely mark as ESL, since the BP only ever
-        # contains overrides, no new records
-        if bush.game.has_esl and bass.settings['bash.mods.auto_flag_esl']:
+        # Note that we can always safely mark as ESL as long as the number of
+        # new records we created is smaller than 0xFFF, since the BP only ever
+        # copies overrides into itself, no new records. The only new records it
+        # can contain come from Tweak Settings, which creates them through
+        # getNextObject and so properly increments nextObject.
+        if (bush.game.has_esl and bass.settings['bash.mods.auto_flag_esl'] and
+                self.tes4.nextObject <= 0xFFF):
             self.tes4.flags1.eslFile = True
             self.tes4.description += u'\n' + _(
                 u'This patch has been automatically ESL-flagged to save a '

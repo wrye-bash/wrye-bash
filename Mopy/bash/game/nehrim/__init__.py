@@ -34,7 +34,6 @@ class NehrimGameInfo(OblivionGameInfo):
     bash_root_prefix = u'Nehrim'
     game_detect_file = _j(u'Data', u'Nehrim.esm')
     master_file = u'Nehrim.esm'
-#    pklfile = u'Nehrim_ids.pkl' # TODO new pickle
     nexusUrl = u'https://www.nexusmods.com/nehrim/'
     nexusName = u'Nehrim Nexus'
     nexusKey = u'bash.installers.openNehrimNexus.continue'

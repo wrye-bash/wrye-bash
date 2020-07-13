@@ -29,7 +29,6 @@ import struct
 from collections import defaultdict
 
 from . import bolt, bush, env, load_order
-from .bass import dirs
 from .bolt import deprint, GPath, SubProgress
 from .brec import MreRecord, ModReader, ModWriter, RecordHeader, RecHeader, \
     TopGrupHeader, MobBase, MobDials, MobICells, MobObjects, MobWorlds
@@ -358,6 +357,8 @@ class ModFile(object):
         masters_set = MasterSet([GPath(bush.game.master_file)])
         for block in self.tops.values():
             block.updateMasters(masters_set.add)
+        # The file itself is always implicitly available, so discard it here
+        masters_set.discard(self.fileInfo.name)
         return masters_set.getOrdered()
 
     def _index_mgefs(self):
