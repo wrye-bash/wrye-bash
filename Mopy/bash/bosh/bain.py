@@ -1298,7 +1298,7 @@ class InstallerArchive(Installer):
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
         self.isSolid = False
-        class _li(object): # line info - we really want python's 3 'nonlocal'
+        class _li(object): # line info - PY3: we really want nonlocal here
             filepath = size = crc = isdir = cumCRC = 0
             __slots__ = ()
         def _parse_archive_line(key, value):

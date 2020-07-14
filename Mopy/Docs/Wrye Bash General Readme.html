@@ -724,7 +724,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
         <tr><td>Don't Ghost<td>Don't ghost this plugin when it is inactive, even if <a href="#modsAutoGhost">Auto-Ghost</a> is enabled.
         <tr><td>Ghost<td>Ghost this plugin when it is inactive even if <a href="#modsAutoGhost">Auto-Ghost</a> is disabled.
         <tr><td id="modsRebuildPatch">Rebuild Patch...<td>Rebuild the selected Bashed Patch using the Python patcher.
-        <tr><td id="modsRebuildPatchCBash">Rebuild Patch (CBash *Beta*)...<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Rebuild the selected Bashed Patch using the CBash patcher.
+        <tr><td id="modsRebuildPatchCBash">Rebuild Patch (CBash *deprecated*)...<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Rebuild the selected Bashed Patch using the CBash patcher.
 </table>
 
 
@@ -748,7 +748,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 </div>
 </div>
 <h3 id="patch-configuration">Bash Configuration <a class="back2top" href="#contents">Back to top</a></h3>
-<p>A Bashed Patch is created by Wrye Bash the first time you run it, with the plugin being called <q><strong>Bashed Patch, 0.esp</strong></q>. It is configured using the plugin context menu commands <a href="#modsRebuildPatch">Rebuild Patch...</a> or <a href="#modsRebuildPatchCBash">Rebuild Patch (CBash *Beta*)...</a>. <strong>You should rebuild your Bashed Patch every time you change your load order, before playing the game.</strong> The Bashed Patch should be last in your load order, unless you have plugins that explicitly state that they must load last.
+<p>A Bashed Patch is created by Wrye Bash the first time you run it, with the plugin being called <q><strong>Bashed Patch, 0.esp</strong></q>. It is configured using the plugin context menu commands <a href="#modsRebuildPatch">Rebuild Patch...</a> or <a href="#modsRebuildPatchCBash">Rebuild Patch (CBash *deprecated*)...</a>. <strong>You should rebuild your Bashed Patch every time you change your load order, before playing the game.</strong> The Bashed Patch should be last in your load order, unless you have plugins that explicitly state that they must load last.
 <p>The configuration dialog consists of a list of major sections to the left, and the contents of the selected section to the right, with the build and save buttons at the bottom. The sections and their items have checkboxes: checking a section will include all its checked items in the Bashed Patch. Unchecked sections and items will not be included. Some sections don't have any items, and so just need the section checkbox checked.
 <p>A short description of each section and some items is displayed near the bottom of the window if the section/item is hovered over. Bolded items are new since the last time the Bashed Patch was built. Wrye Bash will try to auto-configure most sections, but some will still need tweaking.
 <p><strong>Note:</strong> There are currently two methods of building a Bashed Patch. One uses Python, and the other uses CBash, which is a software library written to speed up the reading of plugins. Both methods offer the same options. The CBash method is faster and allows more types of plugin to be merged, but contains some bugs as CBash is still a work in progress. CBash will become the default in the near future, once its bugs have been fixed. For now, it is probably safer to use the Python method.

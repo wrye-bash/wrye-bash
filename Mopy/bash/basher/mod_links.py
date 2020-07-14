@@ -996,7 +996,8 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         super(_Mod_Patch_Update, self).__init__()
         self.doCBash = doCBash
         self.CBashMismatch = False
-        self._text = _(u'Rebuild Patch (CBash *BETA*)...') if doCBash else _(
+        self._text = _(
+            u'Rebuild Patch (CBash *deprecated*)...') if doCBash else _(
             u'Rebuild Patch...')
         self._help = _(u'Rebuild the Bashed Patch (CBash)') if doCBash else _(
             u'Rebuild the Bashed Patch')
@@ -1038,12 +1039,13 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 _(u'Existential Error'))
             return
         # Verify they want to build a previous Python patch in CBash mode, or vice versa
-        if self.doCBash and not self._askContinue(_(
-                u"Building with CBash is cool.  It's faster and allows more "
-                u"things to be handled, but it is still in BETA.  If you "
-                u"have problems, post them in the official thread, then use "
-                u"the non-CBash build function."),
-            'bash.patch.ReallyUseCBash.295.continue'):
+        if self.doCBash and not self._askContinue(
+                _(u'CBash is deprecated. PBash can now merge everything CBash '
+                  u'can, has fewer bugs and more patchers. The only advantage '
+                  u'CBash still has is that it is faster. CBash will continue '
+                  u'to work, but we strongly recommend using PBash instead.')
+                + u'\n\n' + _(u'Do you want to continue regardless?'),
+            u'bash.patch.cbash_deprecated.continue'):
             return
         importConfig = True
         msg = _(u"The patch you are rebuilding (%s) was created in %s "

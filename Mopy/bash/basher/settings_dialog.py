@@ -1061,7 +1061,7 @@ class ConfirmationsPage(_AFixedPage):
         _(u'[Mods] Applying the Nvidia Fog Fix'):
             u'bash.cleanMod.continue',
         _(u'[Mods] Building the Bashed Patch with CBash'):
-            u'bash.patch.ReallyUseCBash.295.continue',
+            u'bash.patch.cbash_deprecated.continue',
         _(u"[Mods] Changing a plugin's version to 0.8"):
             u'bash.setModVersion.continue',
         _(u'[Mods] Exporting NPC levels to a text file'):
