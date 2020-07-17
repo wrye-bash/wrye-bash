@@ -549,9 +549,11 @@ class InstallerConverter(object):
         #--Determine settings for 7z
         destArchive, archiveType, solid = compressionSettings(destArchive,
                 self.blockSize, self.isSolid)
-        command = compressCommand(destArchive, outDir, srcFolder, solid,
-                                  archiveType)
-        archives.compress7z(command, outDir, destArchive, srcFolder, progress)
+        with outDir.join(destArchive).unicodeSafe() as dest_safe:
+            command = compressCommand(dest_safe, outDir, srcFolder, solid,
+                archiveType)
+            archives.compress7z(command, dest_safe, destArchive, srcFolder,
+                progress)
         bass.rmTempDir()
 
     def _unpack(self, srcInstaller, fileNames, progress=None):
@@ -583,13 +585,13 @@ class InstallerConverter(object):
             progress(0, srcInstaller.s + u'\n' + _(u'Extracting files...'))
             progress.setFull(1 + len(fileNames))
         #--Extract files
-        try:
-            subArchives = archives.extract7z(apath, subTempDir,
-                                             progress, readExtensions=readExts,
-                                             filelist_to_extract=tempList.s)
-        finally:
-            tempList.remove()
-            bolt.clearReadOnly(subTempDir) ##: do this once
+        with apath.unicodeSafe() as arch:
+            try:
+                subArchives = archives.extract7z(arch, subTempDir, progress,
+                    readExtensions=readExts, filelist_to_extract=tempList.s)
+            finally:
+                tempList.remove()
+                bolt.clearReadOnly(subTempDir) ##: do this once
         #--Recursively unpack subArchives
         for archive in map(subTempDir.join, subArchives):
             self._unpack(archive, [u'*']) # it will also unpack the embedded BCF if any...

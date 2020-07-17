@@ -217,30 +217,30 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
                 if cellBlock.cell.fid in patchCells.id_cellBlock:
                     patchCells.id_cellBlock[cellBlock.cell.fid].cell = cellBlock.cell
                     cellImported = True
-                for record in cellBlock.temp:
+                for record in cellBlock.temp_refs:
                     if record.base in self.old_new:
                         if not cellImported:
                             patchCells.setCell(cellBlock.cell)
                             cellImported = True
-                        for newRef in patchCells.id_cellBlock[cellBlock.cell.fid].temp:
+                        for newRef in patchCells.id_cellBlock[cellBlock.cell.fid].temp_refs:
                             if newRef.fid == record.fid:
-                                loc = patchCells.id_cellBlock[cellBlock.cell.fid].temp.index(newRef)
-                                patchCells.id_cellBlock[cellBlock.cell.fid].temp[loc] = record
+                                loc = patchCells.id_cellBlock[cellBlock.cell.fid].temp_refs.index(newRef)
+                                patchCells.id_cellBlock[cellBlock.cell.fid].temp_refs[loc] = record
                                 break
                         else:
-                            patchCells.id_cellBlock[cellBlock.cell.fid].temp.append(record)
-                for record in cellBlock.persistent:
+                            patchCells.id_cellBlock[cellBlock.cell.fid].temp_refs.append(record)
+                for record in cellBlock.persistent_refs:
                     if record.base in self.old_new:
                         if not cellImported:
                             patchCells.setCell(cellBlock.cell)
                             cellImported = True
-                        for newRef in patchCells.id_cellBlock[cellBlock.cell.fid].persistent:
+                        for newRef in patchCells.id_cellBlock[cellBlock.cell.fid].persistent_refs:
                             if newRef.fid == record.fid:
-                                loc = patchCells.id_cellBlock[cellBlock.cell.fid].persistent.index(newRef)
-                                patchCells.id_cellBlock[cellBlock.cell.fid].persistent[loc] = record
+                                loc = patchCells.id_cellBlock[cellBlock.cell.fid].persistent_refs.index(newRef)
+                                patchCells.id_cellBlock[cellBlock.cell.fid].persistent_refs[loc] = record
                                 break
                         else:
-                            patchCells.id_cellBlock[cellBlock.cell.fid].persistent.append(record)
+                            patchCells.id_cellBlock[cellBlock.cell.fid].persistent_refs.append(record)
         if 'WRLD' in modFile.tops:
             for worldBlock in modFile.WRLD.worldBlocks:
                 worldImported = False
@@ -252,7 +252,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
                     if worldBlock.world.fid in patchWorlds.id_worldBlocks and cellBlock.cell.fid in patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock:
                         patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].cell = cellBlock.cell
                         cellImported = True
-                    for record in cellBlock.temp:
+                    for record in cellBlock.temp_refs:
                         if record.base in self.old_new:
                             if not worldImported:
                                 patchWorlds.setWorld(worldBlock.world)
@@ -260,14 +260,14 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
                             if not cellImported:
                                 patchWorlds.id_worldBlocks[worldBlock.world.fid].setCell(cellBlock.cell)
                                 cellImported = True
-                            for newRef in patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].temp:
+                            for newRef in patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].temp_refs:
                                 if newRef.fid == record.fid:
-                                    loc = patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].temp.index(newRef)
-                                    patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].temp[loc] = record
+                                    loc = patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].temp_refs.index(newRef)
+                                    patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].temp_refs[loc] = record
                                     break
                             else:
-                                patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].temp.append(record)
-                    for record in cellBlock.persistent:
+                                patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].temp_refs.append(record)
+                    for record in cellBlock.persistent_refs:
                         if record.base in self.old_new:
                             if not worldImported:
                                 patchWorlds.setWorld(worldBlock.world)
@@ -275,13 +275,13 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
                             if not cellImported:
                                 patchWorlds.id_worldBlocks[worldBlock.world.fid].setCell(cellBlock.cell)
                                 cellImported = True
-                            for newRef in patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].persistent:
+                            for newRef in patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].persistent_refs:
                                 if newRef.fid == record.fid:
-                                    loc = patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].persistent.index(newRef)
-                                    patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].persistent[loc] = record
+                                    loc = patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].persistent_refs.index(newRef)
+                                    patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].persistent_refs[loc] = record
                                     break
                             else:
-                                patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].persistent.append(record)
+                                patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].persistent_refs.append(record)
 
     def buildPatch(self,log,progress):
         """Adds merged fids to patchfile."""
@@ -301,14 +301,14 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
 ##                    record.setChanged()
 ##                    keep(record.fid)
         for cellBlock in self.patchFile.CELL.cellBlocks:
-            for record in cellBlock.temp:
+            for record in cellBlock.temp_refs:
                 if record.base in self.old_new:
                     record.base = swapper(record.base)
                     count[cellBlock.cell.fid[0]] += 1
 ##                    record.mapFids(swapper,True)
                     record.setChanged()
                     keep(record.fid)
-            for record in cellBlock.persistent:
+            for record in cellBlock.persistent_refs:
                 if record.base in self.old_new:
                     record.base = swapper(record.base)
                     count[cellBlock.cell.fid[0]] += 1
@@ -318,7 +318,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
         for worldBlock in self.patchFile.WRLD.worldBlocks:
             keepWorld = False
             for cellBlock in worldBlock.cellBlocks:
-                for record in cellBlock.temp:
+                for record in cellBlock.temp_refs:
                     if record.base in self.old_new:
                         record.base = swapper(record.base)
                         count[cellBlock.cell.fid[0]] += 1
@@ -326,7 +326,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
                         record.setChanged()
                         keep(record.fid)
                         keepWorld = True
-                for record in cellBlock.persistent:
+                for record in cellBlock.persistent_refs:
                     if record.base in self.old_new:
                         record.base = swapper(record.base)
                         count[cellBlock.cell.fid[0]] += 1

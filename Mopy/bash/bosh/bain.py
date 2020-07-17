@@ -1567,10 +1567,17 @@ class InstallerProject(Installer):
                     out.write(u'*meta.ini\n')
                     out.write(u'--*\\')
             #--Compress
-            command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsUTF-8 -sccUTF-8' % (
-                archives.exe7z, outFile.temp.s, archiveType, solid, outDir.s, projectDir.s, self.tempList.s)
+            command = (u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" '
+                       u'-x@%s -scsUTF-8 -sccUTF-8' % (
+                archives.exe7z, outFile.temp.s, archiveType, solid,
+                outDir.s, projectDir.s, self.tempList.s))
             try:
-                compress7z(command, outDir, outFile.tail, projectDir, progress)
+                # Safe to call without unicodeSafe because the name we chose is
+                # static and therefore guaranteed ASCII. Note that we lie a bit
+                # here - the third argument will be shown to the user, so we
+                # show the final archive name instead of the temp one we're
+                # internally using.
+                compress7z(command, outFile, archive, projectDir, progress)
             finally:
                 self.tempList.remove()
             outFile.moveTo(realOutFile)
