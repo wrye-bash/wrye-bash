@@ -1440,13 +1440,11 @@ class ModDetails(_ModsSavesDetails):
         self.version.label_text = self.versionStr
         self.uilist.SetFileInfo(self.modInfo)
         self.gTags.text_content = tagsStr
-        if fileName and not bosh.modInfos.table.getItem(fileName,'autoBashTags', True):
+        if self.modInfo and not self.modInfo.is_auto_tagged():
             self.gTags.set_background_color(
                 self.gAuthor.get_background_color())
         else:
             self.gTags.set_background_color(self.get_background_color())
-        # TODO(inf) de-wx! - or investigate why it's needed
-        self.gTags._native_widget.Refresh()
 
     def _OnTextEdit(self, old_text, new_text):
         if not self.modInfo: return
@@ -1595,34 +1593,32 @@ class ModDetails(_ModsSavesDetails):
         # text menu will get shown after a tag is applied.
         if not self.modInfo: return EventResult.FINISH
         #--Links closure
-        mod_info = self.modInfo
+        mod_info = self.modInfo # type: bosh.ModInfo
         mod_tags = mod_info.getBashTags()
-        is_auto = bosh.modInfos.table.getItem(mod_info.name, 'autoBashTags',
-                                              True)
-        def _refreshUI(): self.panel_uilist.RefreshUI(redraw=[mod_info.name],
-                refreshSaves=False) # why refresh saves when updating tags (?)
-        def _isAuto():
-            return bosh.modInfos.table.getItem(mod_info.name, 'autoBashTags')
-        def _setAuto(to):
-            bosh.modInfos.table.setItem(mod_info.name, 'autoBashTags', to)
+        def _refreshUI():
+            self.panel_uilist.RefreshUI(redraw=[mod_info.name],
+                refreshSaves=False)
         # Toggle auto Bash tags
         class _TagsAuto(CheckLink):
             _text = _(u'Automatic')
-            _help = _(
-                u"Use the tags from the description and masterlist/userlist.")
-            def _check(self): return is_auto
+            _help = _(u'Use the tags from the description and '
+                      u'masterlist/userlist.')
+            def _check(self): return mod_info.is_auto_tagged()
             def Execute(self):
-                """Handle selection of automatic bash tags."""
-                _setAuto(not _isAuto()) # toggle
-                if _isAuto(): mod_info.reloadBashTags()
+                """Toggle automatic bash tags on/off."""
+                new_auto = not mod_info.is_auto_tagged()
+                mod_info.set_auto_tagged(new_auto)
+                if new_auto: mod_info.reloadBashTags()
                 _refreshUI()
         # Copy tags to various places
         bashTagsDesc = mod_info.getBashTagsDesc()
         class _CopyBashTagsDir(EnabledLink):
             _text = _(u'Copy to Data/BashTags')
             _help = _(u'Copies currently applied tags to %s.') % (
-                bass.dirs['tag_files'].join(mod_info.name.body + u'.txt'))
-            def _enable(self): return not is_auto and mod_tags != bashTagsDesc
+                bass.dirs[u'tag_files'].join(mod_info.name.body + u'.txt'))
+            def _enable(self):
+                return (not mod_info.is_auto_tagged()
+                        and mod_tags != bashTagsDesc)
             def Execute(self):
                 """Copy manually assigned bash tags into the Data/BashTags
                 folder."""
@@ -1641,7 +1637,9 @@ class ModDetails(_ModsSavesDetails):
         class _CopyDesc(EnabledLink):
             _text = _(u'Copy to Description')
             _help = _(u'Copies currently applied tags to the mod description.')
-            def _enable(self): return not is_auto and mod_tags != bashTagsDesc
+            def _enable(self):
+                return (not mod_info.is_auto_tagged()
+                        and mod_tags != bashTagsDesc)
             def Execute(self):
                 """Copy manually assigned bash tags into the mod description"""
                 if mod_info.setBashTagsDesc(mod_tags):
@@ -1662,7 +1660,7 @@ class ModDetails(_ModsSavesDetails):
             def _check(self): return self._text in mod_tags
             def Execute(self):
                 """Toggle bash tag from menu."""
-                if _isAuto(): _setAuto(False)
+                if mod_info.is_auto_tagged(): mod_info.set_auto_tagged(False)
                 modTags = mod_tags ^ {self._text}
                 mod_info.setBashTags(modTags)
                 _refreshUI()

@@ -462,9 +462,9 @@ class Mods_ClearManualBashTags(ItemLink):
             return
         pl_reset = []
         for pl_name, p in bosh.modInfos.iteritems():
-            if not bosh.modInfos.table.getItem(pl_name, u'autoBashTags'):
+            if not p.is_auto_tagged():
                 pl_reset.append(pl_name)
-                bosh.modInfos.table.setItem(pl_name, u'autoBashTags', True)
+                p.set_auto_tagged(True)
                 p.reloadBashTags()
         self.window.RefreshUI(redraw=pl_reset, refreshSaves=False)
         self._showOk(_(u'Cleared tags from %u plugin(s).') % len(pl_reset))

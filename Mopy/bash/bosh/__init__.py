@@ -565,6 +565,18 @@ class ModInfo(FileInfo):
         tags -= removed
         self.setBashTags(tags)
 
+    def is_auto_tagged(self, default_auto=True):
+        """Returns True if this plugin receives its tags automatically from
+        sources like the description, LOOT masterlist and BashTags files.
+
+        :type default_auto: bool | None"""
+        return modInfos.table.getItem(self.name, u'autoBashTags', default_auto)
+
+    def set_auto_tagged(self, auto_tagged):
+        """Changes whether or not this plugin receives its tags
+        automatically. See is_auto_tagged."""
+        modInfos.table.setItem(self.name, u'autoBashTags', auto_tagged)
+
     #--Header Editing ---------------------------------------------------------
     def _read_tes4_record(self, ins):
         tes4_rec_header = ins.unpackRecHeader()
@@ -2027,7 +2039,7 @@ class ModInfos(FileInfos):
         _modTimesChange = _modTimesChange and not load_order.using_txt_file()
         lo_changed = self.refreshLoadOrder(
             forceRefresh=hasChanged or _modTimesChange, forceActive=deleted)
-        self.reloadBashTags()
+        self._refresh_bash_tags()
         # if active did not change, we must perform the refreshes below
         if lo_changed < 2: # in case ini files were deleted or modified
             self._refresh_mod_inis()
@@ -2197,18 +2209,19 @@ class ModInfos(FileInfos):
             reasons = reasons if reasons is None else []
         return result, tagged_no_merge
 
-    def reloadBashTags(self):
-        """Reloads bash tags for all mods set to receive automatic bash tags."""
-        for modName, mod in self.iteritems():
-            autoTag = self.table.getItem(modName, 'autoBashTags')
+    def _refresh_bash_tags(self):
+        """Reloads bash tags for all mods set to receive automatic bash
+        tags."""
+        for modName, mod in self.iteritems(): # type: (Path, ModInfo)
+            autoTag = mod.is_auto_tagged(default_auto=None)
             if autoTag is None and self.table.getItem(
                     modName, 'bashTags') is None:
-                # A new mod, set autoBashTags to True (default)
-                self.table.setItem(modName, 'autoBashTags', True)
+                # A new mod, set auto tags to True (default)
+                mod.set_auto_tagged(True)
                 autoTag = True
             elif autoTag is None:
-                # An old mod that had manual bash tags added, disable autoBashTags
-                self.table.setItem(modName, 'autoBashTags', False)
+                # An old mod that had manual bash tags added, disable auto tags
+                mod.set_auto_tagged(False)
             if autoTag:
                 mod.reloadBashTags()
 
@@ -2340,13 +2353,11 @@ class ModInfos(FileInfos):
         if dir_removed:
             tagList = _tags(_(u'Removed by %s: ') % tags_file,
                             sorted(dir_removed), tagList)
-        if not modInfos.table.getItem(mname, 'autoBashTags') and \
-               modInfos.table.getItem(mname, 'bashTags', u''):
-            tagList = _tags(
-                _(u'From Manual (overrides all other sources): '),
-                sorted(modInfos.table.getItem(mname, 'bashTags', u'')),
-                tagList)
-        return _tags(_(u'Result: '), sorted(modInfo.getBashTags()), tagList)
+        sorted_tags = sorted(modInfo.getBashTags())
+        if not modInfo.is_auto_tagged() and sorted_tags:
+            tagList = _tags(_(u'From Manual (overrides all other sources): '),
+                sorted_tags, tagList)
+        return _tags(_(u'Result: '), sorted_tags, tagList)
 
     @staticmethod
     def getTagList(mod_list=None):
