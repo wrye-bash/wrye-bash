@@ -26,12 +26,12 @@ points to BashFrame.modList singleton."""
 
 import re
 from .frames import ModChecker
-from .. import bosh, balt, load_order
+from .. import bass, bosh, balt, load_order
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from .. import exception
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
-    SeparatorLink, Link
-from ..bolt import GPath
+    SeparatorLink, Link, AppendableLink
+from ..bolt import CsvReader, GPath
 from ..gui import BusyCursor
 
 __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
@@ -39,7 +39,9 @@ __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
            'Mods_CreateBlank', 'Mods_ListMods', 'Mods_ListBashTags',
            'Mods_CleanDummyMasters', 'Mods_AutoGhost', 'Mods_LockLoadOrder',
            'Mods_ScanDirty', 'Mods_CrcRefresh', 'Mods_AutoESLFlagBP',
-           u'Mods_LockActivePlugins', u'Mods_ModChecker']
+           u'Mods_LockActivePlugins', u'Mods_ModChecker',
+           u'Mods_ExportBashTags', u'Mods_ImportBashTags',
+           u'Mods_ClearManualBashTags']
 
 # "Load" submenu --------------------------------------------------------------
 class _Mods_LoadListData(balt.ListEditorData):
@@ -263,7 +265,8 @@ class Mods_ListMods(ItemLink):
         self._showLog(list_txt, title=_(u"Active Mod Files"), fixedFont=False)
 
 #------------------------------------------------------------------------------
-class Mods_ListBashTags(ItemLink): # duplicate of mod_links.Mod_ListBashTags
+# Basically just a convenient 'whole LO' version of Mod_ListBashTags
+class Mods_ListBashTags(ItemLink):
     """Copies list of bash tags to clipboard."""
     _text = _(u"List Bash Tags...")
     _help = _(u"Copies list of bash tags to clipboard.")
@@ -381,3 +384,87 @@ class Mods_ModChecker(ItemLink):
 
     def Execute(self):
         ModChecker.create_or_raise()
+
+#------------------------------------------------------------------------------
+class Mods_ExportBashTags(ItemLink):
+    """Writes all currently applied bash tags to a CSV file."""
+    _text = _(u'Export Bash Tags...')
+    _help = _(u'Exports all currently applied bash tags to a CSV file.')
+
+    def Execute(self):
+        exp_path = self._askSave(title=_(u'Export bash tags to CSV file:'),
+            defaultDir=bass.dirs[u'patches'], defaultFile=u'SavedTags.csv',
+            wildcard=u'*.csv')
+        plugins_exported = 0
+        with exp_path.open(u'w', encoding=u'utf-8-sig') as out:
+            out.write(u'"Plugin","Tags"\n')
+            for pl_name, p in sorted(bosh.modInfos.iteritems(),
+                    key=lambda i: i[0]):
+                curr_tags = p.getBashTags()
+                if curr_tags:
+                    out.write(u'"%s","%s"\n' % (
+                        pl_name, u', '.join(sorted(curr_tags))))
+                    plugins_exported += 1
+        self._showOk(_(u'Exported tags for %(exp_num)u plugin(s) to '
+                       u'%(exp_path)s.') % {u'exp_num': plugins_exported,
+                                            u'exp_path': exp_path})
+
+#------------------------------------------------------------------------------
+class Mods_ImportBashTags(ItemLink):
+    """Reads bash tags from a CSV file and applies them to the current plugins
+    (as far as possible)."""
+    _text = _(u'Import Bash Tags...')
+    _help = _(u'Imports applied bash tags from a CSV file.')
+
+    def Execute(self):
+        if not self._askWarning(
+            _(u'This will permanently replace applied bash tags with ones '
+              u'from a previously exported CSV file. Plugins that are not '
+              u'listed in the CSV file will not be touched.') + u'\n\n' +
+            _(u'Are you sure you want to proceed?')):
+            return
+        imp_path = self._askOpen(title=_(u'Import bash tags from CSV file:'),
+            defaultDir=bass.dirs[u'patches'], defaultFile=u'SavedTags.csv',
+            wildcard=u'*.csv')
+        first_line = True
+        plugins_imported = []
+        with CsvReader(imp_path) as ins:
+            for csv_line in ins:
+                if first_line:
+                    first_line = False
+                    if len(csv_line) != 2 or csv_line != [u'Plugin', u'Tags']:
+                        self._showError(_(u'The selected file is not a valid '
+                                          u'bash tags CSV export.'))
+                        return
+                    continue
+                pl_name, curr_tags = GPath(csv_line[0]), csv_line[1]
+                if pl_name in bosh.modInfos:
+                    plugins_imported.append(pl_name)
+                    bosh.modInfos[pl_name].setBashTags(
+                        {t.strip() for t in curr_tags.split(u',')})
+        self.window.RefreshUI(redraw=plugins_imported, refreshSaves=False)
+        self._showOk(
+            _(u'Imported tags for %u plugin(s).') % len(plugins_imported))
+
+#------------------------------------------------------------------------------
+class Mods_ClearManualBashTags(ItemLink):
+    """Removes all manually applied tags."""
+    _text = _(u'Clear Manual Bash Tags')
+    _help = _(u'Removes all manually applied bash tags.')
+
+    def Execute(self):
+        if not self._askWarning(
+                _(u'This will permanently and irreversibly remove all '
+                  u'manually applied bash tags from all plugins. Tags from '
+                  u'plugin descriptions, the LOOT masterlist/userlist and '
+                  u'BashTags files will be left alone.') + u'\n\n' +
+                _(u'Are you sure you want to proceed?')):
+            return
+        pl_reset = []
+        for pl_name, p in bosh.modInfos.iteritems():
+            if not bosh.modInfos.table.getItem(pl_name, u'autoBashTags'):
+                pl_reset.append(pl_name)
+                bosh.modInfos.table.setItem(pl_name, u'autoBashTags', True)
+                p.reloadBashTags()
+        self.window.RefreshUI(redraw=pl_reset, refreshSaves=False)
+        self._showOk(_(u'Cleared tags from %u plugin(s).') % len(pl_reset))

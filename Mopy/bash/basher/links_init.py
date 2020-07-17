@@ -468,7 +468,11 @@ def InitModLinks():
         ModList.column_links.append(versionsMenu)
         ModList.column_links.append(SeparatorLink())
     ModList.column_links.append(Mods_ListMods())
-    ModList.column_links.append(Mods_ListBashTags())
+    if bush.game.allTags:
+        ModList.column_links.append(Mods_ListBashTags())
+        ModList.column_links.append(Mods_ExportBashTags())
+        ModList.column_links.append(Mods_ImportBashTags())
+        ModList.column_links.append(Mods_ClearManualBashTags())
     ModList.column_links.append(Mods_CleanDummyMasters())
     ModList.column_links.append(SeparatorLink())
     ModList.column_links.append(Mods_AutoGhost())
@@ -650,6 +654,11 @@ def InitModLinks():
         versions_menu.links.append(Mods_OblivionVersion(u'GOTY non-SI'))
         versions_menu.links.append(Mods_OblivionVersion(u'SI'))
         edit_menu.append(versions_menu)
+    if bush.game.allTags:
+        edit_menu.append(SeparatorLink())
+        edit_menu.append(Mods_ExportBashTags())
+        edit_menu.append(Mods_ImportBashTags())
+        edit_menu.append(Mods_ClearManualBashTags())
     edit_menu.append(SeparatorLink())
     edit_menu.append(Mods_CleanDummyMasters())
     edit_menu.append(Mods_CrcRefresh())
@@ -660,7 +669,8 @@ def InitModLinks():
     view_menu.append(ColumnsMenu())
     view_menu.append(SeparatorLink())
     view_menu.append(Mods_ListMods())
-    view_menu.append(Mods_ListBashTags())
+    if bush.game.allTags:
+        view_menu.append(Mods_ListBashTags())
     view_menu.append(Mods_ModChecker())
     # Settings Menu
     settings_menu = ModList.global_links[_(u'Settings')]
