@@ -62,7 +62,7 @@ class _PFile(object):
         self.bodyTags = bush.game.body_tags
         #--Mods
         # checking for files to include in patch, investigate
-        loadMods = [m for m in load_order.cached_lower_loading_espms(
+        loadMods = [m for m in load_order.cached_lower_loading(
             self.patchName) if load_order.cached_is_active(m)]
         if not loadMods:
             raise BoltError(u"No active mods loading before the bashed patch")
@@ -412,7 +412,7 @@ class CBash_PatchFile(_PFile, ObModFile):
         #if it was added as a normal mod first, it isn't flagged correctly when later added as a merge mod
         #if it was added as a scan mod first, it isn't flagged correctly when later added as a normal mod
         # checking for files to include in patch, investigate
-        for m in load_order.cached_lower_loading_espms(self.patchName):
+        for m in load_order.cached_lower_loading(self.patchName):
             real_filename = infos[m].getPath().stail # beware of .ghost
             if m in self.mergeSet: self.Current.addMergeMod(real_filename)
             elif m in self.loadSet: self.Current.addMod(real_filename)

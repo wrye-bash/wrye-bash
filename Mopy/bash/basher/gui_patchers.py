@@ -466,7 +466,7 @@ class _ListPatcherPanel(_PatcherPanel):
         return autoItems
 
     def _get_auto_mods(self):
-        mods_prior_to_patch = load_order.cached_lower_loading_espms(
+        mods_prior_to_patch = load_order.cached_lower_loading(
             patch_files.executing_patch)
         return [mod for mod in mods_prior_to_patch if
                 self.__class__.autoKey & bosh.modInfos[mod].getBashTags()]
@@ -909,7 +909,7 @@ class _MergerPanel(_ListPatcherPanel):
 
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
-        mods_prior_to_patch = load_order.cached_lower_loading_espms(
+        mods_prior_to_patch = load_order.cached_lower_loading(
             patch_files.executing_patch)
         return [mod for mod in mods_prior_to_patch if (
             mod in bosh.modInfos.mergeable and u'NoMerge' not in bosh.modInfos[
@@ -1094,7 +1094,7 @@ class _ANpcFacePatcher(_ImporterPatcherPanel):
 
     def _get_auto_mods(self, autoRe=re.compile(u'^TNR .*.esp$', re.I | re.U)):
         """Pick TNR esp if present in addition to appropriately tagged mods."""
-        mods_prior_to_patch = load_order.cached_lower_loading_espms(
+        mods_prior_to_patch = load_order.cached_lower_loading(
             patch_files.executing_patch)
         return [mod for mod in mods_prior_to_patch if autoRe.match(mod.s) or (
             self.__class__.autoKey & bosh.modInfos[mod].getBashTags())]

@@ -1816,13 +1816,16 @@ class MenuLink(Link):
         Link.Frame.set_status_info(u'')
 
     def _enable_menu(self):
-        """Disable ourselves if none of our children are enabled."""
-        ##: This hasattr call is really ugly, needed to support nested menus
+        """Disable ourselves if none of our children are visible."""
+        ##: These hasattr calls are really ugly, try to find a better way
         for l in self.links:
-            if hasattr(l, u'_enable_menu'):
+            if isinstance(l, AppendableLink):
+                # This is an AppendableLink, skip if it's not appended
+                if not l._append(self.window): continue
+            if isinstance(l, MenuLink): # not elif!
                 # MenuLinks have an _enable method too, avoid calling that
                 if l._enable_menu(): return True
-            elif hasattr(l, u'_enable'):
+            elif isinstance(l, EnabledLink):
                 # This is an EnabledLink, check if it's enabled
                 if l._enable(): return True
             else:
