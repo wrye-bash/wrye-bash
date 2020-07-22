@@ -159,9 +159,10 @@ class SkyrimGameInfo(GameInfo):
         u'C.Regions', u'C.SkyLighting', u'C.Water', u'Deactivate', u'Delev',
         u'Destructible', u'Filter', u'Graphics', u'Invent.Add',
         u'Invent.Change', u'Invent.Remove', u'Keywords',
-        u'MustBeActiveIfImported', u'Names', u'NoMerge', u'NPC.Class',
-        u'NPC.Race', u'ObjectBounds', u'Outfits.Add', u'Outfits.Remove',
-        u'Relev', u'Sound', u'SpellStats', u'Stats', u'Text',
+        u'MustBeActiveIfImported', u'Names', u'NoMerge',
+        u'NPC.AIPackageOverrides', u'NPC.Class', u'NPC.Race', u'ObjectBounds',
+        u'Outfits.Add', u'Outfits.Remove', u'Relev', u'Sound', u'SpellStats',
+        u'Stats', u'Text',
     }
 
     patchers = (u'PatchMerger', # PatchMerger must come first!

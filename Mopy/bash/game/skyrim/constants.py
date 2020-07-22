@@ -2554,13 +2554,11 @@ actor_importer_attrs = {
                           u'smithingSO', u'smithingSV', u'sneakSO', u'sneakSV',
                           u'speechcraftSO', u'speechcraftSV', u'stamina',
                           u'twoHandedSO', u'twoHandedSV'),
+        u'NPC.AIPackageOverrides': (u'spectator', u'observe', u'guardWarn',
+                                    u'combat'),
         u'NPC.Class': (u'iclass',),
         u'NPC.Race': (u'race',),
     },
-}
-actor_importer_auto_key = {
-    u'Actors.ACBS', u'Actors.AIData', u'Actors.CombatStyle', u'Actors.Stats',
-    u'NPC.Class', u'NPC.Race',
 }
 actor_types = ('NPC_',)
 

@@ -1774,11 +1774,6 @@ actor_importer_attrs = {
         u'NPC.Race': (u'race',),
     },
 }
-actor_importer_auto_key = {
-    u'Actors.ACBS', u'Actors.AIData', u'Actors.CombatStyle',
-    u'Actors.Skeleton', u'Actors.Stats', u'Creatures.Blood', u'Creatures.Type',
-    u'NPC.Class', u'NPC.Race',
-}
 actor_types = ('CREA', 'NPC_')
 
 #------------------------------------------------------------------------------

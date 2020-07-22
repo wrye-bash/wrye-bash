@@ -25,6 +25,7 @@ from __future__ import division
 import copy
 import re
 from collections import defaultdict
+from itertools import chain
 from operator import itemgetter
 # Internal
 from .. import bass, bosh, bush, balt, load_order, bolt, exception
@@ -993,7 +994,8 @@ class _AActorImporter(_ImporterPatcherPanel):
     """Merges changes to actors."""
     patcher_name = _(u'Import Actors')
     _patcher_txt = _(u'Import various actor attributes from source mods.')
-    autoKey = bush.game.actor_importer_auto_key
+    autoKey = set(chain.from_iterable(
+        d.iterkeys() for d in bush.game.actor_importer_attrs.itervalues()))
 
 class ActorImporter(_AActorImporter):
     patcher_type = preservers.ActorImporter
