@@ -86,6 +86,14 @@ class _APreserver(ImportPatcher):
         #--Type Fields
         self.recAttrs_class = {MreRecord.type_class[recType]: attrs for
                                recType, attrs in self.rec_attrs.iteritems()}
+        # Check if we need to use _setattr_deep to set attributes
+        if self._multi_tag:
+            all_attrs = chain.from_iterable(
+                v for d in self.recAttrs_class.itervalues()
+                for v in d.itervalues())
+        else:
+            all_attrs = chain.from_iterable(self.recAttrs_class.itervalues())
+        self._deep_attrs = any(u'.' in a for a in all_attrs)
         #--Needs Longs
         self.longTypes = set(self.__class__.long_types or self.rec_attrs)
 
@@ -191,12 +199,13 @@ class _APreserver(ImportPatcher):
                         break
 
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
-                    __attrgetters=_attrgetters, __setattr=setattr):
+                    __attrgetters=_attrgetters):
         """Most common pattern for the internal buildPatch() loop.
 
         In:
             KFFZPatcher, DeathItemPatcher, ImportScripts, SoundPatcher
         """
+        loop_setattr = _setattr_deep if self._deep_attrs else setattr
         id_data = self.id_data
         for record in records:
             rec_fid = record.fid
@@ -205,7 +214,7 @@ class _APreserver(ImportPatcher):
                 if __attrgetters[attr](record) != value: break
             else: continue
             for attr, value in id_data[rec_fid].iteritems():
-                __setattr(record, attr, value)
+                loop_setattr(record, attr, value)
             keep(rec_fid)
             type_count[top_mod_rec] += 1
 
@@ -238,11 +247,6 @@ class _APreserver(ImportPatcher):
 class ActorImporter(_APreserver):
     rec_attrs = bush.game.actor_importer_attrs
     _multi_tag = True
-
-    def _inner_loop(self, keep, records, top_mod_rec, type_count,
-                    __attrgetters=_attrgetters, __setattr=_setattr_deep):
-        super(ActorImporter, self)._inner_loop(keep, records, top_mod_rec,
-            type_count, _attrgetters, __setattr)
 
 #------------------------------------------------------------------------------
 class DeathItemPatcher(_APreserver):
@@ -282,6 +286,21 @@ class SoundPatcher(_APreserver):
 class TextImporter(_APreserver):
     rec_attrs = bush.game.text_types
     long_types = bush.game.text_long_types
+
+#------------------------------------------------------------------------------
+# TODO(inf) Currently FNV-only, but don't move to game/falloutnv/patcher yet -
+#  this could potentially be refactored and reused for FO4's modifications
+class WeaponModsPatcher(_APreserver):
+    """Merge changes to weapon modifications for FalloutNV."""
+    scanOrder = 27
+    editOrder = 27
+    rec_attrs = {b'WEAP': (
+        u'modelWithMods', u'firstPersonModelWithMods', u'weaponMods',
+        u'soundMod1Shoot3Ds', u'soundMod1Shoot2D', u'effectMod1',
+        u'effectMod2', u'effectMod3', u'valueAMod1', u'valueAMod2',
+        u'valueAMod3', u'valueBMod1', u'valueBMod2', u'valueBMod3',
+        u'reloadAnimationMod', u'vatsModReqiured', u'scopeModel',
+        u'dnamFlags1.hasScope', u'dnamFlags2.scopeFromMod')}
 
 #------------------------------------------------------------------------------
 # Patchers to absorb ----------------------------------------------------------
@@ -550,7 +569,7 @@ class GraphicsPatcher(_APreserver):
                                      in recAttrs}
 
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
-                    __attrgetters=_attrgetters, __setattr=setattr):
+                    __attrgetters=_attrgetters):
         id_data = self.id_data
         for record in records:
             fid = record.fid
@@ -572,7 +591,7 @@ class GraphicsPatcher(_APreserver):
                 if rec_attr != value: break
             else: continue
             for attr, value in id_data[fid].iteritems():
-                __setattr(record, attr, value)
+                setattr(record, attr, value)
             keep(fid)
             type_count[top_mod_rec] += 1
 
@@ -987,7 +1006,7 @@ class SpellsPatcher(ImportPatcher, _ASpellsPatcher):
             oldValues = [__attrgetters[attr](record) for attr in spell_attrs]
             if oldValues == spellStats: continue
             for attr,value in zip(spell_attrs,spellStats):
-                _setattr_deep(record,attr,value)
+                _setattr_deep(record, attr, value) ##: aborb, duh
             keep(rec_fid)
             counts[rec_fid[0]] += 1
         self.id_stat.clear()
@@ -1072,23 +1091,3 @@ class StatsPatcher(_AStatsPatcher, ImportPatcher):
         self._patchLog(log, allCounts)
 
     def _plog(self, log, allCounts): self._plog2(log, allCounts)
-
-#------------------------------------------------------------------------------
-# TODO(inf) Currently FNV-only, but don't move to game/falloutnv/patcher yet -
-#  this could potentially be refactored and reused for FO4's modifications
-class WeaponModsPatcher(_APreserver):
-    """Merge changes to weapon modifications for FalloutNV."""
-    scanOrder = 27
-    editOrder = 27
-    rec_attrs = {b'WEAP': (
-        u'modelWithMods', u'firstPersonModelWithMods', u'weaponMods',
-        u'soundMod1Shoot3Ds', u'soundMod1Shoot2D', u'effectMod1',
-        u'effectMod2', u'effectMod3', u'valueAMod1', u'valueAMod2',
-        u'valueAMod3', u'valueBMod1', u'valueBMod2', u'valueBMod3',
-        u'reloadAnimationMod', u'vatsModReqiured', u'scopeModel',
-        u'dnamFlags1.hasScope', u'dnamFlags2.scopeFromMod')}
-
-    def _inner_loop(self, keep, records, top_mod_rec, type_count,
-                    __attrgetters=_attrgetters, __setattr=_setattr_deep):
-        super(WeaponModsPatcher, self)._inner_loop(keep, records, top_mod_rec,
-            type_count, _attrgetters, __setattr)
