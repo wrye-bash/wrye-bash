@@ -405,6 +405,8 @@ class MelGroup(MelSequential):
 
     def getDefault(self):
         target = MelObject()
+        target.__slots__ = [s for element in self.elements for s in
+                            element.getSlotsUsed()]
         for element in self.elements:
             element.setDefault(target)
         return target
@@ -413,8 +415,6 @@ class MelGroup(MelSequential):
         target = record.__getattribute__(self.attr)
         if target is None:
             target = self.getDefault()
-            target.__slots__ = [s for element in self.elements for s in
-                                element.getSlotsUsed()]
             record.__setattr__(self.attr,target)
         self.loaders[sub_type].loadData(target, ins, sub_type, size_, readId)
 

@@ -32,12 +32,11 @@ from ._shared import _ANamesPatcher, _ANpcFacePatcher, _ASpellsPatcher, \
     _AStatsPatcher
 from .base import ImportPatcher
 from .. import getPatchesPath
-from ... import bush, load_order
+from ... import bush, load_order, parsers
 from ...bolt import deprint
 from ...brec import MreRecord, MelObject
 from ...mod_files import ModFile, LoadFactory
-from ...parsers import ActorFactions, FactionRelations, FullNames, ItemStats, \
-    SpellRecords
+from ...parsers import FactionRelations, FullNames, ItemStats, SpellRecords
 
 #------------------------------------------------------------------------------
 # cache attrgetter objects
@@ -103,7 +102,7 @@ class _APreserver(ImportPatcher):
         self.csv_srcs = [s for s in p_sources if s.cext == u'.csv']
         self.srcs = [s for s in p_sources if s.cext != u'.csv']
 
-    # Temporary CSV helpers - will hopefully be obsoleted by inf-312-parser-abc
+    # CSV helpers - holding out hope for inf-312-parser-abc
     def _parse_csv_sources(self, progress):
         """Parses CSV files. Only called if _csv_parser is set. Override as
         needed and call _process_csv_sources until parser ABC is done."""
@@ -302,6 +301,27 @@ class DestructiblePatcher(_APreserver):
     """Merges changes to destructible records for Fallout3/FalloutNV."""
     # All destructibles may contain FIDs, so let longTypes be set automatically
     rec_attrs = {x: ('destructible',) for x in bush.game.destructible_types}
+
+#------------------------------------------------------------------------------
+class ImportFactions(_APreserver):
+    logMsg = u'\n=== ' + _(u'Refactioned Actors')
+    srcsHeader = u'=== ' + _(u'Source Mods/Files')
+    rec_attrs = {x: (u'factions',) for x in (b'CREA', b'NPC_')}
+    _csv_parser = parsers.ActorFactions
+
+    def _parse_csv_sources(self, progress):
+        fact_parser = super(ImportFactions, self)._parse_csv_sources(progress)
+        # Turn the faction lists into lists of MelObjects
+        def make_obj(csv_rsig, csv_obj):
+            obj_faction, obj_rank = csv_obj
+            ret_obj = MreRecord.type_class[csv_rsig].getDefault(u'factions')
+            ret_obj.faction = obj_faction
+            ret_obj.rank = obj_rank
+            return ret_obj
+        self._process_csv_sources(
+            {r: {f: {u'factions': [make_obj(r, o) for o in a]}
+                 for f, a in d.iteritems()}
+             for r, d in fact_parser.type_id_factions.iteritems()})
 
 #------------------------------------------------------------------------------
 class ImportScripts(_APreserver):
@@ -639,70 +659,6 @@ class GraphicsPatcher(_APreserver):
                 setattr(record, attr, value)
             keep(fid)
             type_count[top_mod_rec] += 1
-
-#------------------------------------------------------------------------------
-class ImportFactions(_APreserver):
-    logMsg = u'\n=== ' + _(u'Refactioned Actors')
-    srcsHeader = u'=== ' + _(u'Source Mods/Files')
-
-    def initData(self,progress):
-        """Get names from source files."""
-        actorFactions = self._parse_sources(progress, parser=ActorFactions)
-        if not actorFactions: return
-        #--Finish
-        id_factions= self.id_data
-        for type,aFid_factions in actorFactions.type_id_factions.iteritems():
-            if type not in ('CREA','NPC_'): continue
-            self.srcClasses.add(MreRecord.type_class[type])
-            for longid,factions in aFid_factions.iteritems():
-                id_factions[longid] = factions
-        self.isActive = bool(self.srcClasses)
-
-    def scanModFile(self, modFile, progress): # scanModFile2
-        """Scan modFile."""
-        id_factions = self.id_data
-        mapper = modFile.getLongMapper()
-        for recClass in self.srcClasses:
-            if recClass.rec_sig not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile,
-                recClass.rec_sig.decode(u'ascii'))
-            id_records = patchBlock.id_records
-            for record in modFile.tops[recClass.rec_sig].getActiveRecords():
-                fid = record.fid
-                if not record.longFids: fid = mapper(fid)
-                if fid in id_records: continue
-                if fid not in id_factions: continue
-                patchBlock.setRecord(record.getTypeCopy(mapper))
-
-    def _inner_loop(self, keep, records, top_mod_rec, type_count):
-        id_data, set_id_data = self.id_data, set(self.id_data)
-        for record in records:
-            fid = record.fid
-            if fid not in set_id_data: continue
-            newFactions = set(id_data[fid])
-            curFactions = set((x.faction, x.rank) for x in record.factions)
-            changed = newFactions - curFactions
-            if not changed: continue
-            doKeep = False
-            for faction, rank in changed:
-                for entry in record.factions:
-                    if entry.faction == faction:
-                        if entry.rank != rank:
-                            entry.rank = rank
-                            doKeep = True
-                            keep(fid)
-                        break
-                else:
-                    entry = MelObject()
-                    entry.faction = faction
-                    entry.rank = rank
-                    entry.unused1 = 'ODB'
-                    record.factions.append(entry)
-                    doKeep = True
-            if doKeep:
-                record.factions = [x for x in record.factions if x.rank != -1]
-                type_count[top_mod_rec] += 1
-                keep(fid)
 
 #------------------------------------------------------------------------------
 # TODO(inf) actually a merger, should be refactored and moved there

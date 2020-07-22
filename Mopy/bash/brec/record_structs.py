@@ -533,10 +533,11 @@ class MelRecord(MreRecord):
     def __init__(self, header, ins=None, do_unpack=False):
         self.__class__.melSet.initRecord(self, header, ins, do_unpack)
 
-    def getDefault(self,attr):
+    @classmethod
+    def getDefault(cls, attr):
         """Returns default instance of specified instance. Only useful for
         MelGroup and MelGroups."""
-        return self.__class__.melSet.getDefault(attr)
+        return cls.melSet.getDefault(attr)
 
     def loadData(self,ins,endPos):
         """Loads data from input stream. Called by load()."""
