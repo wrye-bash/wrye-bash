@@ -36,7 +36,7 @@ from ... import bush, load_order, parsers
 from ...bolt import deprint
 from ...brec import MreRecord, MelObject
 from ...mod_files import ModFile, LoadFactory
-from ...parsers import FactionRelations, FullNames, SpellRecords
+from ...parsers import FactionRelations, FullNames
 
 #------------------------------------------------------------------------------
 # cache attrgetter objects
@@ -351,6 +351,20 @@ class SoundPatcher(_APreserver):
     """Imports sounds from source mods into patch."""
     rec_attrs = bush.game.soundsTypes
     long_types = bush.game.soundsLongsTypes
+
+#------------------------------------------------------------------------------
+class SpellsPatcher(_ASpellsPatcher, _APreserver):
+    logMsg = u'\n=== ' + _(u'Modified SPEL Stats')
+    srcsHeader = u'=== ' + _(u'Source Mods/Files')
+    rec_attrs = {b'SPEL': bush.game.spell_stats_attrs}
+    _csv_parser = parsers.SpellRecords
+
+    def _parse_csv_sources(self, progress):
+        spel_parser = super(SpellsPatcher, self)._parse_csv_sources(progress)
+        # Add attribute names to the values
+        self._process_csv_sources(
+            {b'SPEL': {f: {a: v for a, v in zip(self.rec_attrs[b'SPEL'], l)}
+                       for f, l in spel_parser.fid_stats.iteritems()}})
 
 #------------------------------------------------------------------------------
 class StatsPatcher(_AStatsPatcher, _APreserver):
@@ -976,66 +990,3 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
         self._patchLog(log,count)
 
     def _plog(self, log, count): log(self.__class__.logMsg % count)
-
-#------------------------------------------------------------------------------
-class SpellsPatcher(ImportPatcher, _ASpellsPatcher):
-    logMsg = u'\n=== ' + _(u'Modified SPEL Stats')
-    srcsHeader = u'=== ' + _(u'Source Mods/Files')
-
-    def __init__(self, p_name, p_file, p_sources):
-        super(SpellsPatcher, self).__init__(p_name, p_file, p_sources)
-        #--To be filled by initData
-        self.id_stat = {} #--Stats keyed by long fid.
-        self.spell_attrs = None #set in initData
-
-    def initData(self,progress):
-        """Get stats from source files."""
-        spellStats = self._parse_sources(progress, parser=SpellRecords)
-        if not spellStats: return
-        self.spell_attrs = spellStats.attrs
-        #--Finish
-        self.id_stat.update(spellStats.fid_stats)
-        self.isActive = bool(self.id_stat)
-
-    def scanModFile(self, modFile, progress, __attrgetters=_attrgetters): # scanModFile4: ?
-        """Add affected items to patchFile."""
-        if not self.isActive or 'SPEL' not in modFile.tops:
-            return
-        id_stat = self.id_stat
-        spell_attrs = self.spell_attrs
-        patchBlock = self.patchFile.SPEL
-        id_records = patchBlock.id_records
-        modFile.convertToLongFids(('SPEL',))
-        for record in modFile.SPEL.getActiveRecords():
-            fid = record.fid
-            if fid in id_records: continue
-            spellStats = id_stat.get(fid)
-            if not spellStats: continue
-            oldValues = [__attrgetters[attr](record) for attr in spell_attrs]
-            if oldValues != spellStats:
-                patchBlock.setRecord(record.getTypeCopy())
-
-    def buildPatch(self, log, progress, __attrgetters=_attrgetters): # buildPatch3: one type
-        """Adds merged lists to patchfile."""
-        if not self.isActive: return
-        patchFile = self.patchFile
-        keep = self.patchFile.getKeeper()
-        id_stat = self.id_stat
-        allCounts = []
-        spell_attrs = self.spell_attrs
-        counts = Counter()
-        for record in patchFile.SPEL.records:
-            rec_fid = record.fid
-            spellStats = id_stat.get(rec_fid)
-            if not spellStats: continue
-            oldValues = [__attrgetters[attr](record) for attr in spell_attrs]
-            if oldValues == spellStats: continue
-            for attr,value in zip(spell_attrs,spellStats):
-                _setattr_deep(record, attr, value) ##: aborb, duh
-            keep(rec_fid)
-            counts[rec_fid[0]] += 1
-        self.id_stat.clear()
-        allCounts.append(('SPEL', sum(counts.values()), counts))
-        self._patchLog(log, allCounts)
-
-    def _plog(self, log, allCounts): self._plog2(log, allCounts)
