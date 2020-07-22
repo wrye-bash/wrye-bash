@@ -924,7 +924,7 @@ class _GmstTweakerPanel(_TweakPatcherPanel):
 # Do _not_ rename the gui patcher classes or you will break existing BP configs
 #------------------------------------------------------------------------------
 from ..patcher.patchers import base
-from ..patcher.patchers import importers
+from ..patcher.patchers import mergers, preservers, _cbash_importers
 from ..patcher.patchers import multitweak_actors, multitweak_assorted, \
     multitweak_clothes, multitweak_names, multitweak_settings, \
     races_multitweaks
@@ -953,9 +953,9 @@ class _AGraphicsPatcher(_ImporterPatcherPanel):
     autoKey = {u'Graphics'}
 
 class GraphicsPatcher(_AGraphicsPatcher):
-    patcher_type = importers.GraphicsPatcher
+    patcher_type = preservers.GraphicsPatcher
 class CBash_GraphicsPatcher(_AGraphicsPatcher):
-    patcher_type = importers.CBash_GraphicsPatcher
+    patcher_type = _cbash_importers.CBash_GraphicsPatcher
 
 # -----------------------------------------------------------------------------
 class _AKFFZPatcher(_ImporterPatcherPanel):
@@ -965,9 +965,9 @@ class _AKFFZPatcher(_ImporterPatcherPanel):
     autoKey = {u'Actors.Anims'}
 
 class KFFZPatcher(_AKFFZPatcher):
-    patcher_type = importers.KFFZPatcher
+    patcher_type = preservers.KFFZPatcher
 class CBash_KFFZPatcher(_AKFFZPatcher):
-    patcher_type = importers.CBash_KFFZPatcher
+    patcher_type = _cbash_importers.CBash_KFFZPatcher
 
 # -----------------------------------------------------------------------------
 class _ANPCAIPackagePatcher(_ImporterPatcherPanel):
@@ -977,9 +977,9 @@ class _ANPCAIPackagePatcher(_ImporterPatcherPanel):
     autoKey = {u'Actors.AIPackages', u'Actors.AIPackagesForceAdd'}
 
 class NPCAIPackagePatcher(_ANPCAIPackagePatcher):
-    patcher_type = importers.NPCAIPackagePatcher
+    patcher_type = mergers.NPCAIPackagePatcher
 class CBash_NPCAIPackagePatcher(_ANPCAIPackagePatcher):
-    patcher_type = importers.CBash_NPCAIPackagePatcher
+    patcher_type = _cbash_importers.CBash_NPCAIPackagePatcher
 
 # -----------------------------------------------------------------------------
 class _AActorImporter(_ImporterPatcherPanel):
@@ -989,9 +989,9 @@ class _AActorImporter(_ImporterPatcherPanel):
     autoKey = bush.game.actor_importer_auto_key
 
 class ActorImporter(_AActorImporter):
-    patcher_type = importers.ActorImporter
+    patcher_type = preservers.ActorImporter
 class CBash_ActorImporter(_AActorImporter):
-    patcher_type = importers.CBash_ActorImporter
+    patcher_type = _cbash_importers.CBash_ActorImporter
     patcher_type.autoKey = _AActorImporter.autoKey ##: autoKey hack
 
 # -----------------------------------------------------------------------------
@@ -1002,9 +1002,9 @@ class _ADeathItemPatcher(_ImporterPatcherPanel):
     autoKey = {u'Actors.DeathItem'}
 
 class DeathItemPatcher(_ADeathItemPatcher):
-    patcher_type = importers.DeathItemPatcher
+    patcher_type = preservers.DeathItemPatcher
 class CBash_DeathItemPatcher(_ADeathItemPatcher):
-    patcher_type = importers.CBash_DeathItemPatcher
+    patcher_type = _cbash_importers.CBash_DeathItemPatcher
 
 # -----------------------------------------------------------------------------
 class _ACellImporter(_ImporterPatcherPanel):
@@ -1014,12 +1014,12 @@ class _ACellImporter(_ImporterPatcherPanel):
     patcher_name = _(u'Import Cells')
 
 class CellImporter(_ACellImporter):
-    patcher_type = importers.CellImporter
+    patcher_type = preservers.CellImporter
     autoKey = bush.game.cellAutoKeys
 class CBash_CellImporter(_ACellImporter):
     autoKey = {u'C.Climate', u'C.Light', u'C.Water', u'C.Owner', u'C.Name',
                u'C.RecordFlags', u'C.Music'}  #,u'C.Maps'
-    patcher_type = importers.CBash_CellImporter
+    patcher_type = _cbash_importers.CBash_CellImporter
     patcher_type.autoKey = autoKey ##: autoKey hack
 
 # -----------------------------------------------------------------------------
@@ -1030,9 +1030,9 @@ class _AImportFactions(_ImporterPatcherPanel):
     autoKey = {u'Factions'}
 
 class ImportFactions(_AImportFactions):
-    patcher_type = importers.ImportFactions
+    patcher_type = preservers.ImportFactions
 class CBash_ImportFactions(_AImportFactions):
-    patcher_type = importers.CBash_ImportFactions
+    patcher_type = _cbash_importers.CBash_ImportFactions
 
 # -----------------------------------------------------------------------------
 class _AImportRelations(_ImporterPatcherPanel):
@@ -1042,9 +1042,9 @@ class _AImportRelations(_ImporterPatcherPanel):
     autoKey = {u'Relations'}
 
 class ImportRelations(_AImportRelations):
-    patcher_type = importers.ImportRelations
+    patcher_type = preservers.ImportRelations
 class CBash_ImportRelations(_AImportRelations):
-    patcher_type = importers.CBash_ImportRelations
+    patcher_type = _cbash_importers.CBash_ImportRelations
 
 # -----------------------------------------------------------------------------
 class _AImportInventory(_ImporterPatcherPanel):
@@ -1055,9 +1055,9 @@ class _AImportInventory(_ImporterPatcherPanel):
     autoKey = {u'Invent.Add', u'Invent.Change', u'Invent.Remove'}
 
 class ImportInventory(_AImportInventory):
-    patcher_type = importers.ImportInventory
+    patcher_type = mergers.ImportInventory
 class CBash_ImportInventory(_AImportInventory):
-    patcher_type = importers.CBash_ImportInventory
+    patcher_type = _cbash_importers.CBash_ImportInventory
 
 # -----------------------------------------------------------------------------
 class ImportOutfits(_ImporterPatcherPanel):
@@ -1065,7 +1065,7 @@ class ImportOutfits(_ImporterPatcherPanel):
     patcher_name = _(u'Import Outfits')
     _patcher_txt = _(u'Merges changes to NPC outfits.')
     autoKey = {u'Outfits.Add', u'Outfits.Remove'}
-    patcher_type = importers.ImportOutfits
+    patcher_type = mergers.ImportOutfits
 
 # -----------------------------------------------------------------------------
 class _AImportActorsSpells(_ImporterPatcherPanel):
@@ -1075,9 +1075,9 @@ class _AImportActorsSpells(_ImporterPatcherPanel):
     autoKey = {u'Actors.Spells', u'Actors.SpellsForceAdd'}
 
 class ImportActorsSpells(_AImportActorsSpells):
-    patcher_type = importers.ImportActorsSpells
+    patcher_type = mergers.ImportActorsSpells
 class CBash_ImportActorsSpells(_AImportActorsSpells):
-    patcher_type = importers.CBash_ImportActorsSpells
+    patcher_type = _cbash_importers.CBash_ImportActorsSpells
 
 # -----------------------------------------------------------------------------
 class _ANamesPatcher(_ImporterPatcherPanel):
@@ -1087,9 +1087,9 @@ class _ANamesPatcher(_ImporterPatcherPanel):
     autoKey = {u'Names'}
 
 class NamesPatcher(_ANamesPatcher):
-    patcher_type = importers.NamesPatcher
+    patcher_type = preservers.NamesPatcher
 class CBash_NamesPatcher(_ANamesPatcher):
-    patcher_type = importers.CBash_NamesPatcher
+    patcher_type = _cbash_importers.CBash_NamesPatcher
 
 # -----------------------------------------------------------------------------
 class _ANpcFacePatcher(_ImporterPatcherPanel):
@@ -1108,26 +1108,23 @@ class _ANpcFacePatcher(_ImporterPatcherPanel):
             self.__class__.autoKey & bosh.modInfos[mod].getBashTags())]
 
 class NpcFacePatcher(_ANpcFacePatcher):
-    patcher_type = importers.NpcFacePatcher
+    patcher_type = preservers.NpcFacePatcher
 class CBash_NpcFacePatcher(_ANpcFacePatcher):
-    patcher_type = importers.CBash_NpcFacePatcher
+    patcher_type = _cbash_importers.CBash_NpcFacePatcher
 
 # -----------------------------------------------------------------------------
 class _ASoundPatcher(_ImporterPatcherPanel):
     """Imports sounds from source mods into patch."""
     patcher_name = _(u'Import Sounds')
-    autoKey = {u'Sound'}
-
-class SoundPatcher(_ASoundPatcher):
     _patcher_txt = _(u'Import sounds (from Magic Effects, Containers, '
                      u'Activators, Lights, Weathers and Doors) from source '
                      u'mods.')
-    patcher_type = importers.SoundPatcher
+    autoKey = {u'Sound'}
+
+class SoundPatcher(_ASoundPatcher):
+    patcher_type = preservers.SoundPatcher
 class CBash_SoundPatcher(_ASoundPatcher):
-    _patcher_txt = _(u'Import sounds (from Activators, Containers, Creatures, '
-                     u'Doors, Lights, Magic Effects and Weathers) from source '
-                     u'mods.')
-    patcher_type = importers.CBash_SoundPatcher
+    patcher_type = _cbash_importers.CBash_SoundPatcher
 
 # -----------------------------------------------------------------------------
 class _AStatsPatcher(_ImporterPatcherPanel):
@@ -1138,9 +1135,9 @@ class _AStatsPatcher(_ImporterPatcherPanel):
     autoKey = {u'Stats'}
 
 class StatsPatcher(_AStatsPatcher):
-    patcher_type = importers.StatsPatcher
+    patcher_type = preservers.StatsPatcher
 class CBash_StatsPatcher(_AStatsPatcher):
-    patcher_type = importers.CBash_StatsPatcher
+    patcher_type = _cbash_importers.CBash_StatsPatcher
 
 # -----------------------------------------------------------------------------
 class _AImportScripts(_ImporterPatcherPanel):
@@ -1151,9 +1148,9 @@ class _AImportScripts(_ImporterPatcherPanel):
     autoKey = {u'Scripts'}
 
 class ImportScripts(_AImportScripts):
-    patcher_type = importers.ImportScripts
+    patcher_type = preservers.ImportScripts
 class CBash_ImportScripts(_AImportScripts):
-    patcher_type = importers.CBash_ImportScripts
+    patcher_type = _cbash_importers.CBash_ImportScripts
 
 # -----------------------------------------------------------------------------
 class _ASpellsPatcher(_ImporterPatcherPanel):
@@ -1164,9 +1161,9 @@ class _ASpellsPatcher(_ImporterPatcherPanel):
     autoKey = {u'SpellStats'}
 
 class SpellsPatcher(_ASpellsPatcher):
-    patcher_type = importers.SpellsPatcher
+    patcher_type = preservers.SpellsPatcher
 class CBash_SpellsPatcher(_ASpellsPatcher):
-    patcher_type = importers.CBash_SpellsPatcher
+    patcher_type = _cbash_importers.CBash_SpellsPatcher
 
 # Non CBash Importers----------------------------------------------------------
 class DestructiblePatcher(_ImporterPatcherPanel):
@@ -1175,33 +1172,33 @@ class DestructiblePatcher(_ImporterPatcherPanel):
                      u'have to use if a mod that allows you to destroy part '
                      u'of the environment is installed and active.')
     autoKey = {u'Destructible'}
-    patcher_type = importers.DestructiblePatcher
+    patcher_type = preservers.DestructiblePatcher
 
 class WeaponModsPatcher(_ImporterPatcherPanel):
     patcher_name = _(u'Import Weapon Modifications')
     _patcher_txt = _(u'Merges changes to weapon modifications.')
     autoKey = {u'WeaponMods'}
-    patcher_type = importers.WeaponModsPatcher
+    patcher_type = preservers.WeaponModsPatcher
 
 class KeywordsImporter(_ImporterPatcherPanel):
     patcher_name = _(u'Import Keywords')
     _patcher_txt = _(u'Import keyword changes from source mods.')
     autoKey = {u'Keywords'}
-    patcher_type = importers.KeywordsImporter
+    patcher_type = preservers.KeywordsImporter
 
 class TextImporter(_ImporterPatcherPanel):
     patcher_name = _(u'Import Text')
     _patcher_txt = _(u'Import various types of long-form text like book '
                      u'texts, effect descriptions, etc. from source mods.')
     autoKey = {u'Text'}
-    patcher_type = importers.TextImporter
+    patcher_type = preservers.TextImporter
 
 class ObjectBoundsImporter(_ImporterPatcherPanel):
     patcher_name = _(u'Import Object Bounds')
     _patcher_txt = _(u'Import object bounds for various actors, items and '
                      u'objects.')
     autoKey = {u'ObjectBounds'}
-    patcher_type = importers.ObjectBoundsImporter
+    patcher_type = preservers.ObjectBoundsImporter
 
 # Patchers 30 -----------------------------------------------------------------
 class AssortedTweaker(_TweakPatcherPanel):

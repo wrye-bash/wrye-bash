@@ -32,7 +32,9 @@ patcher/base.py
 In patchers/base.py
 
 # Patchers: 20 ----------------------------------------------------------------
-importers.py
+_cbash_importers.py
+mergers.py
+preservers.py
 
 # Patchers: 30 ----------------------------------------------------------------
 # MultiTweakItem and MultiTweaker classes except from races_multitweaks
