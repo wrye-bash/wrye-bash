@@ -67,9 +67,14 @@ class _APreserver(ImportPatcher):
     """Fairly mature base class for preservers. Some parts could (read should)
     be moved to ImportPatcher and used to eliminate duplication with _AMerger.
 
-    :type rec_attrs: dict[str, tuple]"""
+    :type rec_attrs: dict[bytes, tuple] | dict[bytes, dict[unicode, tuple]]"""
     rec_attrs = {}
     long_types = None
+    # True if this importer is a multi-tag importer. That means its rec_attrs
+    # must map record signatures to dicts mapping the tags to a tuple of the
+    # subrecords to import, instead of just mapping the record signatures
+    # directly to the tuples
+    _multi_tag = False
 
     def __init__(self, p_name, p_file, p_sources):
         super(_APreserver, self).__init__(p_name, p_file, p_sources)
@@ -97,6 +102,12 @@ class _APreserver(ImportPatcher):
     def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data,
                         __attrgetters=_attrgetters):
         recAttrs = self.recAttrs_class[recClass]
+        if self._multi_tag:
+            # For multi-tag importers, we need to look up the applied bash tags
+            # and use those to find all applicable attributes
+            mod_tags = srcFile.fileInfo.getBashTags()
+            recAttrs = set(chain.from_iterable(
+                attrs for t, attrs in recAttrs.iteritems() if t in mod_tags))
         for record in srcFile.tops[recClass.rec_sig].getActiveRecords():
             fid = mapper(record.fid)
             temp_id_data[fid] = {attr: __attrgetters[attr](record) for attr in
@@ -224,6 +235,16 @@ class _APreserver(ImportPatcher):
 #------------------------------------------------------------------------------
 # Absorbed patchers -----------------------------------------------------------
 #------------------------------------------------------------------------------
+class ActorImporter(_APreserver):
+    rec_attrs = bush.game.actor_importer_attrs
+    _multi_tag = True
+
+    def _inner_loop(self, keep, records, top_mod_rec, type_count,
+                    __attrgetters=_attrgetters, __setattr=_setattr_deep):
+        super(ActorImporter, self)._inner_loop(keep, records, top_mod_rec,
+            type_count, _attrgetters, __setattr)
+
+#------------------------------------------------------------------------------
 class DeathItemPatcher(_APreserver):
     rec_attrs = {x: ('deathItem',) for x in bush.game.actor_types}
 
@@ -264,27 +285,6 @@ class TextImporter(_APreserver):
 
 #------------------------------------------------------------------------------
 # Patchers to absorb ----------------------------------------------------------
-#------------------------------------------------------------------------------
-class ActorImporter(_APreserver):
-    # note peculiar mapping of record type to dictionaries[tag, attributes]
-    rec_attrs = bush.game.actor_importer_attrs
-
-    def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data,
-                        __attrgetters=_attrgetters):
-        mod_tags = srcFile.fileInfo.getBashTags()
-        tags_to_attrs = self.recAttrs_class[recClass]
-        attrs = set(chain.from_iterable(
-            attrs for t, attrs in tags_to_attrs.iteritems() if t in mod_tags))
-        for record in srcFile.tops[recClass.rec_sig].getActiveRecords():
-            fid = mapper(record.fid)
-            temp_id_data[fid] = {attr: __attrgetters[attr](record) for attr in
-                                 attrs}
-
-    def _inner_loop(self, keep, records, top_mod_rec, type_count,
-                    __attrgetters=_attrgetters, __setattr=_setattr_deep):
-        super(ActorImporter, self)._inner_loop(keep, records, top_mod_rec,
-            type_count, _attrgetters, __setattr)
-
 #------------------------------------------------------------------------------
 class CellImporter(ImportPatcher):
     logMsg = u'\n=== ' + _(u'Cells/Worlds Patched')
