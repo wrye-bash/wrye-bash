@@ -23,7 +23,7 @@
 # =============================================================================
 """This module houses preservers. A preserver is an import patcher that simply
 carries forward changes from the last tagged plugin. The goal is to eventually
-absorb all of them under the _SimpleImporter base class."""
+absorb all of them under the _APreserver base class."""
 from collections import defaultdict, Counter
 from itertools import chain
 from operator import attrgetter
@@ -63,14 +63,16 @@ def _setattr_deep(obj, attr, value, __attrgetters=_attrgetters,
         leaf_attr, value)
 
 #------------------------------------------------------------------------------
-class _SimpleImporter(ImportPatcher): # TODO(inf) rename -> _APreserver
-    """For lack of a better name - common methods of a bunch of importers.
+class _APreserver(ImportPatcher):
+    """Fairly mature base class for preservers. Some parts could (read should)
+    be moved to ImportPatcher and used to eliminate duplication with _AMerger.
+
     :type rec_attrs: dict[str, tuple]"""
     rec_attrs = {}
     long_types = None
 
     def __init__(self, p_name, p_file, p_sources):
-        super(_SimpleImporter, self).__init__(p_name, p_file, p_sources)
+        super(_APreserver, self).__init__(p_name, p_file, p_sources)
         #--(attribute-> value) dicts keyed by long fid.
         self.id_data = defaultdict(dict)
         self.srcClasses = set() #--Record classes actually provided by src
@@ -222,48 +224,48 @@ class _SimpleImporter(ImportPatcher): # TODO(inf) rename -> _APreserver
 #------------------------------------------------------------------------------
 # Absorbed patchers -----------------------------------------------------------
 #------------------------------------------------------------------------------
-class DeathItemPatcher(_SimpleImporter):
+class DeathItemPatcher(_APreserver):
     rec_attrs = {x: ('deathItem',) for x in bush.game.actor_types}
 
 #------------------------------------------------------------------------------
-class DestructiblePatcher(_SimpleImporter):
+class DestructiblePatcher(_APreserver):
     """Merges changes to destructible records for Fallout3/FalloutNV."""
     # All destructibles may contain FIDs, so let longTypes be set automatically
     rec_attrs = {x: ('destructible',) for x in bush.game.destructible_types}
 
 #------------------------------------------------------------------------------
-class ImportScripts(_SimpleImporter):
+class ImportScripts(_APreserver):
     rec_attrs = {x: ('script',) for x in bush.game.scripts_types}
 
 #------------------------------------------------------------------------------
-class KeywordsImporter(_SimpleImporter):
+class KeywordsImporter(_APreserver):
     rec_attrs = {x: ('keywords',) for x in bush.game.keywords_types}
     # Keywords are all fids, so default to long_types == rec_attrs
 
 #------------------------------------------------------------------------------
-class KFFZPatcher(_SimpleImporter):
+class KFFZPatcher(_APreserver):
     rec_attrs = {x: ('animations',) for x in bush.game.actor_types}
 
 #------------------------------------------------------------------------------
-class ObjectBoundsImporter(_SimpleImporter):
+class ObjectBoundsImporter(_APreserver):
     rec_attrs = {x: ('bounds',) for x in bush.game.object_bounds_types}
     long_types = () # OBND never has fids
 
 #------------------------------------------------------------------------------
-class SoundPatcher(_SimpleImporter):
+class SoundPatcher(_APreserver):
     """Imports sounds from source mods into patch."""
     rec_attrs = bush.game.soundsTypes
     long_types = bush.game.soundsLongsTypes
 
 #------------------------------------------------------------------------------
-class TextImporter(_SimpleImporter):
+class TextImporter(_APreserver):
     rec_attrs = bush.game.text_types
     long_types = bush.game.text_long_types
 
 #------------------------------------------------------------------------------
 # Patchers to absorb ----------------------------------------------------------
 #------------------------------------------------------------------------------
-class ActorImporter(_SimpleImporter):
+class ActorImporter(_APreserver):
     # note peculiar mapping of record type to dictionaries[tag, attributes]
     rec_attrs = bush.game.actor_importer_attrs
 
@@ -494,7 +496,7 @@ class CellImporter(ImportPatcher):
             log(u'* %s: %d' % (srcMod.s,count[srcMod]))
 
 #------------------------------------------------------------------------------
-class GraphicsPatcher(_SimpleImporter):
+class GraphicsPatcher(_APreserver):
     rec_attrs = bush.game.graphicsTypes
     long_types = bush.game.graphicsLongsTypes
 
@@ -575,7 +577,7 @@ class GraphicsPatcher(_SimpleImporter):
             type_count[top_mod_rec] += 1
 
 #------------------------------------------------------------------------------
-class ImportFactions(_SimpleImporter):
+class ImportFactions(_APreserver):
     logMsg = u'\n=== ' + _(u'Refactioned Actors')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
@@ -640,7 +642,7 @@ class ImportFactions(_SimpleImporter):
 
 #------------------------------------------------------------------------------
 # TODO(inf) actually a merger, should be refactored and moved there
-class ImportRelations(_SimpleImporter):
+class ImportRelations(_APreserver):
     logMsg = u'\n=== ' + _(u'Modified Factions') + u': %d'
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
@@ -1074,7 +1076,7 @@ class StatsPatcher(_AStatsPatcher, ImportPatcher):
 #------------------------------------------------------------------------------
 # TODO(inf) Currently FNV-only, but don't move to game/falloutnv/patcher yet -
 #  this could potentially be refactored and reused for FO4's modifications
-class WeaponModsPatcher(_SimpleImporter):
+class WeaponModsPatcher(_APreserver):
     """Merge changes to weapon modifications for FalloutNV."""
     scanOrder = 27
     editOrder = 27
