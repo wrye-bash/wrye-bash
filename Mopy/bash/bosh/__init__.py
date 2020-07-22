@@ -847,7 +847,8 @@ removed_tags = {u'Merge', u'ScriptContents'}
 tag_aliases = {
     u'C.GridFlags': {u'C.ForceHideLand'},
     u'InventOnly': {u'IIM', u'Invent.Add', u'Invent.Remove'},
-    u'Invent': {u'Invent.Add', u'Invent.Remove'}
+    u'Invent': {u'Invent.Add', u'Invent.Remove'},
+    u'Spells': {u'SpellStats'},
 }
 
 def process_tags(tag_set, drop_unknown=True):

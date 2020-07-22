@@ -1161,7 +1161,7 @@ class _ASpellsPatcher(_ImporterPatcherPanel):
     patcher_name = _(u'Import Spell Stats')
     _patcher_txt = _(u'Import stats from any spells / actor effects from '
                      u'source mods/files.')
-    autoKey = {u'Spells', u'SpellStats'}
+    autoKey = {u'SpellStats'}
 
 class SpellsPatcher(_ASpellsPatcher):
     patcher_type = importers.SpellsPatcher
