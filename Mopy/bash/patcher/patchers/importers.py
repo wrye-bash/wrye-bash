@@ -25,7 +25,6 @@
 from collections import defaultdict, Counter
 from functools import reduce
 from itertools import chain
-from operator import attrgetter
 # Internal
 from .base import ImportPatcher, CBash_ImportPatcher
 from ..base import AImportPatcher, AListPatcher
@@ -34,6 +33,7 @@ from ...bolt import GPath, MemorySet
 from ...brec import MreRecord, MelObject
 from ...cint import ValidateDict, ValidateList, FormID, validTypes, \
     getattr_deep, setattr_deep
+from ...exception import AbstractError
 from ...parsers import ActorFactions, CBash_ActorFactions, FactionRelations, \
     CBash_FactionRelations, FullNames, CBash_FullNames, ItemStats, \
     CBash_ItemStats, SpellRecords, CBash_SpellRecords
@@ -1513,31 +1513,38 @@ class CBash_ImportScripts(_RecTypeModLogging):
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class _AImportInventory(AListPatcher):  # next class that has ___init__
-    iiMode = True
+##: currently relies on the merged subrecord being sorted - fix that
+##: add ForceAdd support
+##: once the two tasks above are done, absorb all other mergers
+class _AMerger(ImportPatcher):
+    """Still very WIP base class for mergers. A merger is a patcher that
+    targets a list of entries, adding, removing (and, for more complex entries,
+    changing some of rheir properties) entries from multiple tagged plugins to
+    create a final merged list."""
+    # Bash tags for each function of the merger. None means that it does not
+    # support that function. E.g. the change tag is only applicable if the
+    # entries in question are more complex than mere FormIDs.
+    _add_tag = None
+    _change_tag = None
+    _remove_tag = None
+    # Dict mapping each record type to the subrecord we want to merge for it
+    _wanted_subrecord = {}
 
     def __init__(self, p_name, p_file, p_sources):
-        super(_AImportInventory, self).__init__(p_name, p_file, p_sources)
-        self.id_deltas = defaultdict(list)
-        #should be redundant since this patcher doesn't allow unloaded
-        #self.srcs = [x for x in self.srcs if (x in modInfos and x in
-        # patchFile.allMods)]
-        self.inventOnlyMods = {x for x in self.srcs if x in p_file.mergeSet and
-                               u'IIM' in p_file.p_file_minfos[x].getBashTags()}
-
-class ImportInventory(_AImportInventory, ImportPatcher):
-    logMsg = u'\n=== ' + _(u'Inventories Changed') + u': %d'
-
-    def __init__(self, p_name, p_file, p_sources):
+        ##: Is this equivalent to allowUnloaded on the CBash side?
         p_sources = [x for x in p_sources if
                      x in p_file.p_file_minfos and x in p_file.allSet]
-        super(ImportInventory, self).__init__(p_name, p_file, p_sources)
+        super(_AMerger, self).__init__(p_name, p_file, p_sources)
+        self.id_deltas = defaultdict(list)
         self.masters = set(chain.from_iterable(
             self._recurse_masters(srcMod, p_file.p_file_minfos)
             for srcMod in self.srcs))
         self._masters_and_srcs = self.masters | set(self.srcs)
         self.mod_id_entries = {}
         self.touched = set()
+        self.inventOnlyMods = (
+            {x for x in self.srcs if x in p_file.mergeSet and u'IIM' in
+             p_file.p_file_minfos[x].getBashTags()} if self.iiMode else set())
 
     ##: Move to ModInfo? get_recursive_masters()? get_masters(recursive=True)?
     def _recurse_masters(self, srcMod, minfs):
@@ -1549,67 +1556,64 @@ class ImportInventory(_AImportInventory, ImportPatcher):
             ret_masters.update(self._recurse_masters(src_master, minfs))
         return ret_masters
 
+    def _entry_key(self, subrecord_entry):
+        """Returns a key to sort and compare by for the specified subrecord
+        entry. Default implementation returns the entry itself (useful if the
+        subrecord is e.g. just a list of FormIDs)."""
+        return subrecord_entry
+
     def initData(self,progress):
-        """Get data from source files."""
         if not self.isActive or not self.srcs: return
-        inv_types = bush.game.inventoryTypes
-        loadFactory = LoadFactory(False, *inv_types)
+        loadFactory = LoadFactory(False, *[MreRecord.type_class[x]
+                                           for x in self._read_write_records])
         progress.setFull(len(self.srcs))
         for index,srcMod in enumerate(self.srcs):
             srcInfo = self.patchFile.p_file_minfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
-            mapper = srcFile.getLongMapper()
-            for block in inv_types:
+            srcFile.convertToLongFids(self._read_write_records)
+            for block in self._read_write_records:
                 for record in getattr(srcFile, block).getActiveRecords():
-                    self.touched.add(mapper(record.fid))
+                    self.touched.add(record.fid)
             progress.plus()
 
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return bush.game.inventoryTypes if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return bush.game.inventoryTypes if self.isActive else ()
-
-    def scanModFile(self, modFile, progress): # scanModFile0
-        """Add record from modFile."""
+    def scanModFile(self, modFile, progress):
         if not self.isActive: return
         touched = self.touched
         id_deltas = self.id_deltas
         mod_id_entries = self.mod_id_entries
-        mapper = modFile.getLongMapper()
         modName = modFile.fileInfo.name
+        modFile.convertToLongFids(self._read_write_records)
         #--Master or source?
         if modName in self._masters_and_srcs:
             id_entries = mod_id_entries[modName] = {}
-            modFile.convertToLongFids(bush.game.inventoryTypes)
-            for inv_type in bush.game.inventoryTypes:
-                for record in getattr(modFile,inv_type).getActiveRecords():
+            for curr_sig in self._read_write_records:
+                sr_attr = self._wanted_subrecord[curr_sig]
+                for record in getattr(modFile, curr_sig).getActiveRecords():
                     if record.fid in touched:
-                        id_entries[record.fid] = record.items[:]
+                        id_entries[record.fid] = getattr(record, sr_attr)[:]
         #--Source mod?
         if modName in self.srcs:
             # The applied tags limit what data we're going to collect
             applied_tags = modFile.fileInfo.getBashTags()
-            can_add = u'Invent.Add' in applied_tags
-            can_change = u'Invent.Change' in applied_tags
-            can_remove = u'Invent.Remove' in applied_tags
+            can_add = self._add_tag in applied_tags
+            can_change = self._change_tag in applied_tags
+            can_remove = self._remove_tag in applied_tags
             id_entries = {}
+            en_key = self._entry_key
             for master in modFile.tes4.masters:
                 if master in mod_id_entries:
                     id_entries.update(mod_id_entries[master])
             for fid,entries in mod_id_entries[modName].iteritems():
                 masterEntries = id_entries.get(fid)
                 if masterEntries is None: continue
-                masterItems = {x.item for x in masterEntries}
-                modItems = {x.item for x in entries}
-                removeItems = masterItems - modItems if can_remove else set()
+                master_keys = {en_key(x) for x in masterEntries}
+                mod_keys = {en_key(x) for x in entries}
+                remove_keys = master_keys - mod_keys if can_remove else set()
                 # Note that we need to calculate these whether or not we're
-                # Invent.Add-tagged, because Invent.Change needs them as well.
-                addItems = modItems - masterItems
-                addEntries = [x for x in entries if x.item in addItems]
+                # Add-tagged, because Change needs them as well.
+                addItems = mod_keys - master_keys
+                addEntries = [x for x in entries if en_key(x) in addItems]
                 # Changed entries are those entries that haven't been newly
                 # added but also differ from the master entries
                 if can_change:
@@ -1621,76 +1625,102 @@ class ImportInventory(_AImportInventory, ImportPatcher):
                 else:
                     changed_entries = []
                 final_add_entries = addEntries if can_add else []
-                if removeItems or final_add_entries or changed_entries:
-                    id_deltas[fid].append((removeItems, final_add_entries,
+                if remove_keys or final_add_entries or changed_entries:
+                    id_deltas[fid].append((remove_keys, final_add_entries,
                                            changed_entries))
-        #--Keep record?
+        # Copy the new records we want to keep, unless we're an IIM merger and
+        # the mod is IIM-tagged
         if modFile.fileInfo.name not in self.inventOnlyMods:
-            for inv_type in bush.game.inventoryTypes:
-                patchBlock = getattr(self.patchFile,inv_type)
+            for curr_sig in self._read_write_records:
+                patchBlock = getattr(self.patchFile, curr_sig)
                 id_records = patchBlock.id_records
-                for record in getattr(modFile,inv_type).getActiveRecords():
-                    fid = mapper(record.fid)
+                for record in getattr(modFile, curr_sig).getActiveRecords():
                     # Copy the defining version of each record into the BP -
                     # updating it is handled by
                     # mergeModFile/update_patch_records_from_mod
-                    if fid in touched and fid not in id_records:
-                        patchBlock.setRecord(record.getTypeCopy(mapper))
+                    curr_fid = record.fid
+                    if curr_fid in touched and curr_fid not in id_records:
+                        patchBlock.setRecord(record.getTypeCopy())
 
-    def buildPatch(self,log,progress): # buildPatch1:no modFileTops, for type..
-        """Applies delta to patchfile."""
+    def buildPatch(self,log,progress):
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         id_deltas = self.id_deltas
         mod_count = Counter()
-        def item_fid_key(i):
-            return i.item
-        for inv_type in bush.game.inventoryTypes:
-            for record in getattr(self.patchFile,inv_type).records:
-                changed = False
+        en_key = self._entry_key
+        for curr_sig in self._read_write_records:
+            sr_attr = self._wanted_subrecord[curr_sig]
+            for record in getattr(self.patchFile, curr_sig).records:
                 deltas = id_deltas[record.fid]
                 if not deltas: continue
                 # Use sorted to preserve duplicates, but ignore order. This is
                 # safe because order does not matter for items.
-                old_items = sorted(record.items, key=item_fid_key)
-                for remove_items, add_entries, change_entries in deltas:
+                old_items = sorted(getattr(record, sr_attr), key=en_key)
+                for remove_keys, add_entries, change_entries in deltas:
                     # First execute removals, don't want to change something
                     # we're going to remove
-                    if remove_items:
-                        record.items = [x for x in record.items if
-                                        x.item not in remove_items]
+                    if remove_keys:
+                        setattr(record, sr_attr,
+                            [x for x in getattr(record, sr_attr)
+                             if en_key(x) not in remove_keys])
                     # Then execute changes, don't want to modify our own
                     # additions
                     if change_entries:
                         # In order to not modify the list while iterating
                         final_remove = set()
                         final_add = []
+                        record_entries = getattr(record, sr_attr)
                         for change_entry in change_entries:
                             # Look for one with the same item - can't just use
                             # a dict or change the items directly because we
                             # have to respect duplicates
-                            for current_entry in record.items:
-                                if change_entry.item == current_entry.item:
+                            for curr_entry in record_entries:
+                                if en_key(change_entry) == en_key(curr_entry):
                                     # Remove the old entry, add the changed one
-                                    final_remove.add(current_entry)
+                                    final_remove.add(curr_entry)
                                     final_add.append(change_entry)
                                     break
                         # No need to check both, see add/append above
                         if final_remove:
-                            record.items = [i for i in record.items if i
-                                            not in final_remove] + final_add
+                            setattr(record, sr_attr,
+                                [x for x in record_entries
+                                 if x not in final_remove] + final_add)
+                    # Finally, execute additions - fairly straightforward
                     if add_entries:
-                        current_entries = {x.item for x in record.items}
+                        record_entries = getattr(record, sr_attr)
+                        current_entries = {en_key(x) for x in record_entries}
                         for entry in add_entries:
-                            if entry.item not in current_entries:
-                                record.items.append(entry)
-                if old_items != sorted(record.items, key=item_fid_key):
+                            if en_key(entry) not in current_entries:
+                                record_entries.append(entry)
+                if old_items != sorted(getattr(record, sr_attr), key=en_key):
                     keep(record.fid)
                     mod_count[record.fid[0]] += 1
         self.id_deltas.clear()
         self._patchLog(log,mod_count)
 
     def _plog(self, log, mod_count): self._plog1(log, mod_count)
+
+#------------------------------------------------------------------------------
+class _AImportInventory(AListPatcher):  # next class that has ___init__
+    iiMode = True
+
+    def __init__(self, p_name, p_file, p_sources):
+        super(_AImportInventory, self).__init__(p_name, p_file, p_sources)
+        self.id_deltas = defaultdict(list)
+        #should be redundant since this patcher doesn't allow unloaded
+        #self.srcs = [x for x in self.srcs if (x in modInfos and x in
+        # patchFile.allMods)]
+
+class ImportInventory(_AMerger, _AImportInventory):
+    logMsg = u'\n=== ' + _(u'Inventories Changed') + u': %d'
+    _read_write_records = bush.game.inventoryTypes
+    _add_tag = u'Invent.Add'
+    _change_tag = u'Invent.Change'
+    _remove_tag = u'Invent.Remove'
+    _wanted_subrecord = {x: u'items' for x in _read_write_records}
+
+    def _entry_key(self, subrecord):
+        return subrecord.item
 
 class CBash_ImportInventory(_AImportInventory, _RecTypeModLogging):
     _read_write_records = ('CREA', 'NPC_', 'CONT')
