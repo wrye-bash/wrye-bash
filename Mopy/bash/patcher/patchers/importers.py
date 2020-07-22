@@ -1796,6 +1796,14 @@ class CBash_ImportInventory(_AImportInventory, _RecTypeModLogging):
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
+class ImportOutfits(_AMerger):
+    logMsg = u'\n=== ' + _(u'Outfits Changed') + u': %d'
+    _read_write_records = (b'OTFT',)
+    _add_tag = u'Outfits.Add'
+    _remove_tag = u'Outfits.Remove'
+    _wanted_subrecord = {x: u'items' for x in _read_write_records}
+
+#------------------------------------------------------------------------------
 class ImportActorsSpells(ImportPatcher):
     logMsg = u'\n=== ' + _(u'Spell Lists Changed') + u': %d'
 

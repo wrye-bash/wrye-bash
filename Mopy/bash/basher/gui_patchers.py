@@ -1060,6 +1060,14 @@ class CBash_ImportInventory(_AImportInventory):
     patcher_type = importers.CBash_ImportInventory
 
 # -----------------------------------------------------------------------------
+class ImportOutfits(_ImporterPatcherPanel):
+    """Merge changes to outfits."""
+    patcher_name = _(u'Import Outfits')
+    _patcher_txt = _(u'Merges changes to NPC outfits.')
+    autoKey = {u'Outfits.Add', u'Outfits.Remove'}
+    patcher_type = importers.ImportOutfits
+
+# -----------------------------------------------------------------------------
 class _AImportActorsSpells(_ImporterPatcherPanel):
     """Merges changes to the spells lists of Actors."""
     patcher_name = _(u'Import Actors: Spells')

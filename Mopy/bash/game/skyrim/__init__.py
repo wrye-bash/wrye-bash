@@ -160,15 +160,15 @@ class SkyrimGameInfo(GameInfo):
         u'Destructible', u'Filter', u'Graphics', u'Invent.Add',
         u'Invent.Change', u'Invent.Remove', u'Keywords',
         u'MustBeActiveIfImported', u'Names', u'NoMerge', u'NPC.Class',
-        u'NPC.Race', u'Relev', u'ObjectBounds', u'Sound', u'SpellStats',
-        u'Stats', u'Text',
+        u'NPC.Race', u'ObjectBounds', u'Outfits.Add', u'Outfits.Remove',
+        u'Relev', u'Sound', u'SpellStats', u'Stats', u'Text',
     }
 
     patchers = (u'PatchMerger', # PatchMerger must come first!
         u'ActorImporter', u'CellImporter', u'ContentsChecker',
         u'DeathItemPatcher', u'DestructiblePatcher', u'GmstTweaker',
         u'GraphicsPatcher', u'ImportActorsSpells', u'ImportInventory',
-        u'KeywordsImporter', u'ListsMerger', u'NamesPatcher',
+        u'ImportOutfits', u'KeywordsImporter', u'ListsMerger', u'NamesPatcher',
         u'NPCAIPackagePatcher', u'ObjectBoundsImporter', u'SoundPatcher',
         u'SpellsPatcher', u'StatsPatcher', u'TextImporter', u'TweakActors',
     )
