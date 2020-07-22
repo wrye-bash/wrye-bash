@@ -31,7 +31,9 @@ from operator import attrgetter
 from ._shared import _ANamesPatcher, _ANpcFacePatcher, _ASpellsPatcher, \
     _AStatsPatcher
 from .base import ImportPatcher
+from .. import getPatchesPath
 from ... import bush, load_order
+from ...bolt import deprint
 from ...brec import MreRecord, MelObject
 from ...mod_files import ModFile, LoadFactory
 from ...parsers import ActorFactions, FactionRelations, FullNames, ItemStats, \
@@ -75,6 +77,7 @@ class _APreserver(ImportPatcher):
     # subrecords to import, instead of just mapping the record signatures
     # directly to the tuples
     _multi_tag = False
+    _csv_parser = None
 
     def __init__(self, p_name, p_file, p_sources):
         super(_APreserver, self).__init__(p_name, p_file, p_sources)
@@ -96,6 +99,37 @@ class _APreserver(ImportPatcher):
         self._deep_attrs = any(u'.' in a for a in all_attrs)
         #--Needs Longs
         self.longTypes = set(self.__class__.long_types or self.rec_attrs)
+        # Split srcs based on CSV extension ##: move somewhere else?
+        self.csv_srcs = [s for s in p_sources if s.cext == u'.csv']
+        self.srcs = [s for s in p_sources if s.cext != u'.csv']
+
+    # Temporary CSV helpers - will hopefully be obsoleted by inf-312-parser-abc
+    def _parse_csv_sources(self, progress):
+        """Parses CSV files. Only called if _csv_parser is set. Override as
+        needed and call _process_csv_sources until parser ABC is done."""
+        parser_instance = self._csv_parser(aliases=self.patchFile.aliases)
+        for src_path in self.csv_srcs:
+            try:
+                parser_instance.readFromText(getPatchesPath(src_path))
+            except OSError:
+                deprint(u'%s is no longer in patches set' % src_path,
+                    traceback=True)
+            except UnicodeError:
+                deprint(u'%s is not saved in UTF-8 format' % src_path,
+                    traceback=True)
+            progress.plus()
+        return parser_instance
+
+    def _process_csv_sources(self, parsed_sources):
+        """Call from an override of _parse_csv_sources. Applies changes parsed
+        from the CSV sources to this patcher's internal data structures."""
+        # Filter out any entries that don't actually have data or don't
+        # actually exist (for this game at least)
+        filtered_dict = {k: v for k, v in parsed_sources.iteritems()
+                         if k and k in MreRecord.type_class}
+        self.srcClasses.update(MreRecord.type_class[x] for x in filtered_dict)
+        for src_data in filtered_dict.itervalues():
+            self.id_data.update(src_data)
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -131,7 +165,7 @@ class _APreserver(ImportPatcher):
         id_data = self.id_data
         loadFactory = LoadFactory(False, *self.recAttrs_class.keys())
         longTypes = self.longTypes & {x.rec_sig for x in self.recAttrs_class}
-        progress.setFull(len(self.srcs))
+        progress.setFull(len(self.srcs) + len(self.csv_srcs))
         cachedMasters = {}
         minfs = self.patchFile.p_file_minfos
         for index,srcMod in enumerate(self.srcs):
@@ -172,6 +206,8 @@ class _APreserver(ImportPatcher):
                             else:
                                 id_data[fid][attr] = value
             progress.plus()
+        if self._csv_parser:
+            self._parse_csv_sources(progress)
         self.longTypes &= {x.rec_sig for x in self.srcClasses}
         self.isActive = bool(self.srcClasses)
 
@@ -240,6 +276,15 @@ class _APreserver(ImportPatcher):
         self.id_data.clear() # cleanup to save memory
         # Log
         self._patchLog(log, type_count)
+
+    def _srcMods(self,log):
+        log(self.__class__.srcsHeader)
+        all_srcs = self.srcs + self.csv_srcs
+        if not all_srcs:
+            log(u". ~~%s~~" % _(u'None'))
+        else:
+            for srcFile in all_srcs:
+                log(u"* " +srcFile.s)
 
 #------------------------------------------------------------------------------
 # Absorbed patchers -----------------------------------------------------------
