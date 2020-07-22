@@ -473,7 +473,7 @@ class ImportPatcher(AImportPatcher, ListPatcher):
             for modName in sorted(counts):
                 log(u'  * %s: %d' % (modName.s, counts[modName]))
 
-    # helpers WIP
+    ##: hunt down and exterminate in favor of _SimpleImporter
     def _parse_sources(self, progress, parser):
         if not self.isActive: return None
         fullNames = parser(aliases=self.patchFile.aliases)

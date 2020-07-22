@@ -36,7 +36,7 @@ from ... import bush, load_order, parsers
 from ...bolt import deprint
 from ...brec import MreRecord, MelObject
 from ...mod_files import ModFile, LoadFactory
-from ...parsers import FactionRelations, FullNames, ItemStats, SpellRecords
+from ...parsers import FactionRelations, FullNames, SpellRecords
 
 #------------------------------------------------------------------------------
 # cache attrgetter objects
@@ -224,10 +224,15 @@ class _APreserver(ImportPatcher):
             if recClass.rec_sig not in modFile.tops: continue
             patchBlock = getattr(self.patchFile,
                 recClass.rec_sig.decode(u'ascii'))
+            # Records that have been copied into the BP once will automatically
+            # be updated by update_patch_records_from_mod/mergeModFile
+            copied_records = patchBlock.id_records
             for record in modFile.tops[recClass.rec_sig].getActiveRecords():
                 fid = record.fid
                 if not record.longFids: fid = mapper(fid)
-                if fid not in id_data: continue
+                # Skip if we've already copied this record or if we're not
+                # interested in it
+                if fid in copied_records or fid not in id_data: continue
                 for attr, value in id_data[fid].iteritems():
                     if __attrgetters[attr](record) != value:
                         patchBlock.setRecord(record.getTypeCopy(mapper))
@@ -348,6 +353,22 @@ class SoundPatcher(_APreserver):
     long_types = bush.game.soundsLongsTypes
 
 #------------------------------------------------------------------------------
+class StatsPatcher(_AStatsPatcher, _APreserver):
+    # Don't patch Editor IDs - those are only in statsTypes for the
+    # Export/Import links
+    rec_attrs = {r: tuple(x for x in a if x != u'eid')
+                 for r, a in bush.game.statsTypes.iteritems()}
+    _csv_parser = parsers.ItemStats
+
+    def _parse_csv_sources(self, progress):
+        stat_parser = super(StatsPatcher, self)._parse_csv_sources(progress)
+        # See rec_attrs above for an explanation of the Editor ID problem
+        for src_attrs in stat_parser.class_fid_attr_value.itervalues():
+            for attr_values in src_attrs.itervalues():
+                del attr_values[u'eid']
+        self._process_csv_sources(stat_parser.class_fid_attr_value)
+
+#------------------------------------------------------------------------------
 class TextImporter(_APreserver):
     rec_attrs = bush.game.text_types
     long_types = bush.game.text_long_types
@@ -370,6 +391,9 @@ class WeaponModsPatcher(_APreserver):
 #------------------------------------------------------------------------------
 # Patchers to absorb ----------------------------------------------------------
 #------------------------------------------------------------------------------
+##: absorbing this one will be hard - hint: getActiveRecords only exists on
+# MobObjects, iter_records works for all Mob* classes, so attack that part of
+# _SimpleImporter
 class CellImporter(ImportPatcher):
     logMsg = u'\n=== ' + _(u'Cells/Worlds Patched')
     _read_write_records = ('CELL', 'WRLD')
@@ -1012,83 +1036,6 @@ class SpellsPatcher(ImportPatcher, _ASpellsPatcher):
             counts[rec_fid[0]] += 1
         self.id_stat.clear()
         allCounts.append(('SPEL', sum(counts.values()), counts))
-        self._patchLog(log, allCounts)
-
-    def _plog(self, log, allCounts): self._plog2(log, allCounts)
-
-#------------------------------------------------------------------------------
-class StatsPatcher(_AStatsPatcher, ImportPatcher):
-
-    def __init__(self, p_name, p_file, p_sources):
-        super(StatsPatcher, self).__init__(p_name, p_file, p_sources)
-        #--To be filled by initData
-        self.fid_attr_value = {} #--Stats keyed by long fid.
-        self.activeTypes = [] #--Types ('ARMO', etc.) of data actually provided by src mods/files.
-        self.class_attrs = {}
-
-    def initData(self,progress):
-        """Get stats from source files."""
-        itemStats = self._parse_sources(progress, parser=ItemStats)
-        if not itemStats: return
-        #--Finish
-        for group,nId_attr_value in itemStats.class_fid_attr_value.iteritems():
-            self.activeTypes.append(group)
-            for id, attr_value in nId_attr_value.iteritems():
-                del attr_value['eid']
-            self.fid_attr_value.update(nId_attr_value)
-            self.class_attrs[group] = itemStats.class_attrs[group][1:]
-        self.isActive = bool(self.activeTypes)
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return tuple(self.activeTypes) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return tuple(self.activeTypes) if self.isActive else ()
-
-    def scanModFile(self, modFile, progress): # scanModFile4: ?
-        """Add affected items to patchFile."""
-        fid_attr_value = self.fid_attr_value
-        mapper = modFile.getLongMapper()
-        for group in self.activeTypes:
-            if group not in modFile.tops: continue
-            attrs = self.class_attrs[group]
-            patchBlock = getattr(self.patchFile,group)
-            id_records = patchBlock.id_records
-            for record in getattr(modFile,group).getActiveRecords():
-                longid = record.fid
-                if not record.longFids: longid = mapper(longid)
-                if longid in id_records: continue
-                itemStats = fid_attr_value.get(longid,None)
-                if not itemStats: continue
-                oldValues = dict(zip(attrs,map(record.__getattribute__,attrs)))
-                if oldValues != itemStats:
-                    patchBlock.setRecord(record.getTypeCopy(mapper))
-
-    def buildPatch(self,log,progress):# buildPatch2 !!!!
-        """Adds merged lists to patchfile."""
-        if not self.isActive: return
-        patchFile = self.patchFile
-        keep = self.patchFile.getKeeper()
-        fid_attr_value = self.fid_attr_value
-        allCounts = []
-        for group in self.activeTypes:
-            if group not in patchFile.tops: continue
-            attrs = self.class_attrs[group]
-            counts = Counter()
-            for record in patchFile.tops[group].records:
-                fid = record.fid
-                itemStats = fid_attr_value.get(fid,None)
-                if not itemStats: continue
-                oldValues = dict(zip(attrs,map(record.__getattribute__,attrs)))
-                if oldValues != itemStats:
-                    for attr, value in itemStats.iteritems():
-                        setattr(record,attr,value)
-                    keep(fid)
-                    counts[fid[0]] += 1
-            allCounts.append((group, sum(counts.values()), counts))
-        self.fid_attr_value.clear()
         self._patchLog(log, allCounts)
 
     def _plog(self, log, allCounts): self._plog2(log, allCounts)
