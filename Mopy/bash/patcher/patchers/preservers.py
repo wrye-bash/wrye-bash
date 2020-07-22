@@ -36,7 +36,7 @@ from ... import bush, load_order, parsers
 from ...bolt import deprint
 from ...brec import MreRecord, MelObject
 from ...mod_files import ModFile, LoadFactory
-from ...parsers import FactionRelations, FullNames
+from ...parsers import FactionRelations
 
 #------------------------------------------------------------------------------
 # cache attrgetter objects
@@ -149,7 +149,8 @@ class _APreserver(ImportPatcher):
             mod_tags = srcFile.fileInfo.getBashTags()
             recAttrs = set(chain.from_iterable(
                 attrs for t, attrs in recAttrs.iteritems() if t in mod_tags))
-        for record in srcFile.tops[recClass.rec_sig].getActiveRecords():
+        for record in srcFile.tops[recClass.rec_sig].iter_filtered_records(
+                self.getReadClasses()):
             fid = mapper(record.fid)
             temp_id_data[fid] = {attr: __attrgetters[attr](record) for attr in
                                  recAttrs}
@@ -197,7 +198,8 @@ class _APreserver(ImportPatcher):
                     if recClass.rec_sig not in masterFile.tops: continue
                     if recClass not in self.classestemp: continue
                     for record in masterFile.tops[
-                        recClass.rec_sig].getActiveRecords():
+                        recClass.rec_sig].iter_filtered_records(
+                        self.getReadClasses()): # ugh, looks hideous...
                         fid = mapper(record.fid)
                         if fid not in temp_id_data: continue
                         for attr, value in temp_id_data[fid].iteritems():
@@ -227,7 +229,8 @@ class _APreserver(ImportPatcher):
             # Records that have been copied into the BP once will automatically
             # be updated by update_patch_records_from_mod/mergeModFile
             copied_records = patchBlock.id_records
-            for record in modFile.tops[recClass.rec_sig].getActiveRecords():
+            for record in modFile.tops[recClass.rec_sig].iter_filtered_records(
+                self.getReadClasses()):
                 fid = record.fid
                 if not record.longFids: fid = mapper(fid)
                 # Skip if we've already copied this record or if we're not
@@ -275,7 +278,8 @@ class _APreserver(ImportPatcher):
         types = filter(modFileTops.__contains__,
             types if types else (x.rec_sig for x in self.srcClasses))
         for top_mod_rec in types:
-            records = modFileTops[top_mod_rec].records
+            records = modFileTops[top_mod_rec].iter_filtered_records(
+                self.getReadClasses(), include_ignored=True)
             self._inner_loop(keep, records, top_mod_rec, type_count)
         self.id_data.clear() # cleanup to save memory
         # Log
@@ -340,6 +344,18 @@ class KeywordsImporter(_APreserver):
 #------------------------------------------------------------------------------
 class KFFZPatcher(_APreserver):
     rec_attrs = {x: ('animations',) for x in bush.game.actor_types}
+
+#------------------------------------------------------------------------------
+class NamesPatcher(_ANamesPatcher, _APreserver):
+    rec_attrs = {x: (u'full',) for x in bush.game.namesTypes}
+    _csv_parser = parsers.FullNames
+
+    def _parse_csv_sources(self, progress):
+        full_parser = super(NamesPatcher, self)._parse_csv_sources(progress)
+        # Discard the Editor ID and turn the tuples into dictionaries
+        self._process_csv_sources(
+            {r: {f: {u'full': a[1]} for f, a in d.iteritems()}
+             for r, d in full_parser.type_id_name.iteritems()})
 
 #------------------------------------------------------------------------------
 class ObjectBoundsImporter(_APreserver):
@@ -782,97 +798,6 @@ class ImportRelations(_APreserver):
 
     def _plog(self,log,type_count):
         log(self.__class__.logMsg % type_count['FACT'])
-
-#------------------------------------------------------------------------------
-class NamesPatcher(_ANamesPatcher, ImportPatcher):
-    def __init__(self, p_name, p_file, p_sources):
-        super(NamesPatcher, self).__init__(p_name, p_file, p_sources)
-        self.id_full = {} #--Names keyed by long fid.
-        self.activeTypes = []  #--Types ('ALCH', etc.) of data actually
-        # provided by src mods/files.
-        self.skipTypes = [] #--Unknown types that were skipped.
-
-    def initData(self,progress):
-        """Get names from source files."""
-        fullNames = self._parse_sources(progress, parser=FullNames)
-        if not fullNames: return
-        #--Finish
-        id_full = self.id_full
-        knownTypes = set(MreRecord.type_class.keys())
-        for type,id_name in fullNames.type_id_name.iteritems():
-            if type not in knownTypes:
-                self.skipTypes.append(type)
-                continue
-            self.activeTypes.append(type)
-            for longid,(eid,name_) in id_name.iteritems():
-                if name_ != u'NO NAME':
-                    id_full[longid] = name_
-        self.isActive = bool(self.activeTypes)
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return tuple(self.activeTypes) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return tuple(self.activeTypes) if self.isActive else ()
-
-    def scanModFile(self, modFile, progress): # scanModFile0?
-        """Scan modFile."""
-        id_full = self.id_full
-        mapper = modFile.getLongMapper()
-        for active_type in self.activeTypes:
-            if active_type not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile, active_type)
-            if active_type == 'CELL':
-                id_records = patchBlock.id_cellBlock
-                activeRecords = (cellBlock.cell for cellBlock in
-                                 modFile.CELL.cellBlocks if
-                                 not cellBlock.cell.flags1.ignored)
-                setter = patchBlock.setCell
-            elif active_type == 'WRLD':
-                id_records = patchBlock.id_worldBlocks
-                activeRecords = (worldBlock.world for worldBlock in
-                                 modFile.WRLD.worldBlocks if
-                                 not worldBlock.world.flags1.ignored)
-                setter = patchBlock.setWorld
-            else:
-                id_records = patchBlock.id_records
-                activeRecords = modFile.tops[active_type].getActiveRecords()
-                setter = patchBlock.setRecord
-            for record in activeRecords:
-                fid = record.fid
-                if not record.longFids: fid = mapper(fid)
-                if fid in id_records: continue
-                if fid not in id_full: continue # not a name
-                if record.full != id_full[fid]:
-                    setter(record.getTypeCopy(mapper))
-
-    def buildPatch(self,log,progress):# buildPatch0
-        """Make changes to patchfile."""
-        if not self.isActive: return
-        modFile = self.patchFile
-        keep = self.patchFile.getKeeper()
-        id_full = self.id_full
-        type_count = Counter()
-        for act_type in self.activeTypes:
-            if act_type not in modFile.tops: continue
-            if act_type == 'CELL':
-                records = (cellBlock.cell for cellBlock in
-                           modFile.CELL.cellBlocks)
-            elif act_type == 'WRLD':
-                records = (worldBlock.world for worldBlock in
-                           modFile.WRLD.worldBlocks)
-            else:
-                records = modFile.tops[act_type].records
-            for record in records:
-                fid = record.fid
-                if fid in id_full and record.full != id_full[fid]:
-                    record.full = id_full[fid]
-                    keep(fid)
-                    type_count[act_type] += 1
-        self.id_full.clear()
-        self._patchLog(log,type_count)
 
 #------------------------------------------------------------------------------
 ##: is this correct? or is this a merger?
