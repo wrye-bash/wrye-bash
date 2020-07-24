@@ -1670,7 +1670,7 @@ class MreBptd(MelRecord):
         MelEdid(),
         MelModel(),
         MelGroups('bodyParts',
-            MelString('BPTN', 'partName'),
+            MelLString(b'BPTN', u'partName'),
             MelString('PNAM','poseMatching'),
             MelString('BPNN', 'nodeName'),
             MelString('BPNT','vatsTarget'),

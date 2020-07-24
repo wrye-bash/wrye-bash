@@ -36,7 +36,7 @@ from collections import deque
 
 from .loot_conditions import _ACondition, Comparison, ConditionAnd, \
     ConditionFunc, ConditionNot, ConditionOr
-from ..bolt import decode, deprint, LowerDict, Path
+from ..bolt import deprint, LowerDict, Path
 from ..exception import LexerError, ParserError
 
 # Try to use the C version (way faster), if that isn't possible fall back to
@@ -135,6 +135,12 @@ class LOOTParser(object):
             return False # Plugin has no entry in the masterlist, this is fine
 
 # Implementation
+def _loot_decode(raw_str):
+    """LOOT masterlists are always encoded in UTF-8, but simply opening the
+    file in UTF-8 mode is not enough. PyYAML stores everything it can encode as
+    ASCII as bytestrings, and everything else as unicode. No idea why."""
+    return raw_str if type(raw_str) is unicode else unicode(raw_str, u'utf-8')
+
 class _PluginEntry(object):
     """Represents stored information about a plugin's entry in the LOOT
     masterlist and/or userlist."""
@@ -158,21 +164,21 @@ class _PluginEntry(object):
         assumed as the default.
 
         :type yaml_entry: dict"""
-        self.dirty_crcs = {c['crc'] for c in yaml_entry.get('dirty', ())}
+        self.dirty_crcs = {c[u'crc'] for c in yaml_entry.get(u'dirty', ())}
         self.tags_added = set()
         self.tags_removed = set()
         # Need to handle a starting '-', which means removed
-        for tag in yaml_entry.get('tag', ()):
+        for tag in yaml_entry.get(u'tag', ()):
             try:
-                removes = tag[0] == '-'
-                target_tag = decode(tag[1:] if removes else tag)
+                removes = tag[0] == u'-'
+                target_tag = _loot_decode(tag[1:] if removes else tag)
             except KeyError:
                 # This is a dict, means we'll have to handle conditions later
-                tag_name = tag['name']
-                removes = tag_name[0] == '-'
+                tag_name = tag[u'name']
+                removes = tag_name[0] == u'-'
                 target_tag = _ConditionalTag(
-                    decode(tag_name[1:] if removes else tag_name),
-                    decode(tag['condition']))
+                    _loot_decode(tag_name[1:] if removes else tag_name),
+                    _loot_decode(tag[u'condition']))
             target_set = self.tags_removed if removes else self.tags_added
             target_set.add(target_tag)
 
@@ -583,7 +589,7 @@ def _parse_list(list_path):
     :type list_path: Path
     :return: A LowerDict representing the list's contents.
     :rtype: LowerDict[unicode, _PluginEntry]"""
-    with list_path.open('rb') as ins:
+    with list_path.open(u'r', encoding=u'utf-8') as ins:
         # HACK! https://github.com/yaml/pyyaml/issues/373
         if u'fallout4' in list_path.cs:
             yaml_data = ins.read().replace(b'incWithPatchVersion1.5.157.0',
@@ -595,6 +601,5 @@ def _parse_list(list_path):
     # empty YAML file. Just return an empty dict in that case.
     if not list_contents:
         return LowerDict()
-    ##: Are the decode calls here (and in _PluginEntry.__init__) needed?
-    return LowerDict({decode(p['name']): _PluginEntry(p) for p
-                      in list_contents.get('plugins', ())})
+    return LowerDict({_loot_decode(p[u'name']): _PluginEntry(p) for p
+                      in list_contents.get(u'plugins', ())})

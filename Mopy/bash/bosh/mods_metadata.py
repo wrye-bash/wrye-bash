@@ -69,9 +69,7 @@ class ConfigHelpers(object):
                 (userpath.exists() and userpath.mtime != self.lootUserTime)):
                 self.tagCache = {}
                 self.lootMasterTime = path.mtime
-                parsing = u'', u'%s' % path
                 if userpath.exists():
-                    parsing = u's', u'%s, %s' % (path, userpath)
                     self.lootUserTime = userpath.mtime
                     lootDb.load_lists(path, userpath)
                 else:

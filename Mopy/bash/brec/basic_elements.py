@@ -443,14 +443,20 @@ class MelGroups(MelGroup):
     def loadData(self, record, ins, sub_type, size_, readId):
         if sub_type in self._init_sigs:
             # We've hit one of the initial signatures, make a new object
-            target = self.getDefault()
-            target.__slots__ = [s for element in self.elements for s in
-                                element.getSlotsUsed()]
-            record.__getattribute__(self.attr).append(target)
+            target = self._new_object(record)
         else:
             # Add to the existing element
             target = record.__getattribute__(self.attr)[-1]
         self.loaders[sub_type].loadData(target, ins, sub_type, size_, readId)
+
+    def _new_object(self, record):
+        """Creates a new MelObject, initializes it and appends it to this
+        MelGroups' attribute."""
+        target = self.getDefault()
+        target.__slots__ = [s for element in self.elements for s in
+                            element.getSlotsUsed()]
+        record.__getattribute__(self.attr).append(target)
+        return target
 
     def dumpData(self,record,out):
         elements = self.elements
