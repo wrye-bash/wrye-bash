@@ -1,6 +1,5 @@
 # Runtime, required
 chardet==3.0.4
-https://bintray.com/loot/snapshots/download_file?file_path=loot_api_python-4.0.2-7-g580bf87_master-python2.7-win32.zip
 lz4==2.2.1
 pywin32==224
 PyYAML==5.3.1
@@ -8,6 +7,7 @@ wxPython==4.0.7.post2
 # Runtime, recommended
 scandir==1.10.0
 # Compile/Build-time
+https://bintray.com/loot/snapshots/download_file?file_path=libloot-python-4.0.2-13-g01a8567_fix-logging-gil-python2.7-win32.zip
 pygit2==0.28.2
 pyfiglet==0.8.post1
 pytest==4.6.11

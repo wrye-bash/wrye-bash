@@ -30,19 +30,19 @@ loop."""
 from __future__ import print_function
 import atexit
 import codecs
-import lz4
 import os
 import platform
 import shutil
 import sys
 import traceback
-import yaml
 from ConfigParser import ConfigParser
 # Local
 from . import bass, bolt, env, exception, localize
 # NO OTHER LOCAL IMPORTS HERE (apart from the ones above) !
 basher = balt = initialization = None
-_wx = None
+# External dependencies that we want to use in this file but have to check for
+# first (in _import_deps)
+_wx = _lz4 = _yaml = None
 is_standalone = hasattr(sys, 'frozen')
 
 def _early_setup(debug):
@@ -88,6 +88,49 @@ def _import_wx():
         msg = u'\n'.join([dump_environment(), u'', u'Unable to load wx:',
                           traceback.format_exc(), u'Exiting.'])
         _tkinter_error_dial(msg, but_kwargs)
+        sys.exit(1)
+
+def _import_deps():
+    """Import other required dependencies or show an error if they're
+    missing. Relies on locale being set and wx already having been imported."""
+    deps_msg = u''
+    try:
+        import chardet
+    except ImportError:
+        deps_msg += u'- chardet\n'
+    global _lz4
+    try:
+        import lz4 as _lz4
+    except ImportError:
+        deps_msg += u'- python-lz4\n'
+    try:
+        import win32api, win32com
+    except ImportError:
+        # Only a dependency on Windows, so skip on other operating systems
+        if os.name == u'nt':
+            deps_msg += u'- pywin32\n'
+    global _yaml
+    try:
+        import yaml as _yaml
+    except ImportError:
+        deps_msg += u'- PyYAML\n'
+    if deps_msg:
+        deps_msg += u'\n'
+        if is_standalone:
+            # Dependencies are always present in standalone, so this probably
+            # means an MSVC redist is missing
+            deps_msg += _(u'This most likely means you are missing a certain '
+                          u'version of the Microsoft Visual C++ '
+                          u'Redistributable. Try installing some older ones.')
+        else:
+            deps_msg += _(u'Ensure you have installed these dependencies '
+                          u'properly. Should the error still occur, check '
+                          u'your installed Microsoft Visual C++ '
+                          u'Redistributables and try installing some older '
+                          u'ones.')
+        _close_dialog_windows()
+        _show_wx_popup(_(u'The following dependencies could not be located or '
+                         u'failed to load:') + u'\n\n' + deps_msg)
         sys.exit(1)
 
 #------------------------------------------------------------------------------
@@ -163,8 +206,8 @@ def dump_environment():
         u'wxPython version: %s' % _wx.version() if _wx is not None else \
             u'wxPython not found',
         u'python-lz4 version: %s; bundled LZ4 version: %s' % (
-            lz4.version.version, lz4.library_version_string()),
-        u'pyyaml version: %s' % yaml.__version__,
+            _lz4.version.version, _lz4.library_version_string()),
+        u'pyyaml version: %s' % _yaml.__version__,
         # Standalone: stdout will actually be pointing to stderr, which has no
         # 'encoding' attribute
         u'Input encoding: %s; output encoding: %s' % (
@@ -198,6 +241,9 @@ def main(opts):
     _import_wx()
     # Next, proceed to initialize the locale using wx
     wx_locale = localize.setup_locale(opts.language, _wx)
+    # Check for some non-critical dependencies (e.g. lz4) and warn if they're
+    # missing
+    _import_deps()
     try:
         _main(opts, wx_locale)
     except Exception:

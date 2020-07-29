@@ -38,15 +38,14 @@ import shutil
 import sys
 import tempfile
 
-# The loot_api module is still required here to handle writing out minimal
-# lists
-import loot_api
+# The loot module is still required here to handle writing out minimal lists
+import loot
 
 import utils
 
 LOGGER = logging.getLogger(__name__)
 
-MASTERLIST_VERSION = "0.14"
+MASTERLIST_VERSION = u'0.15'
 
 SCRIPTS_PATH = os.path.dirname(os.path.abspath(__file__))
 LOGFILE = os.path.join(SCRIPTS_PATH, "taglist.log")
@@ -90,17 +89,17 @@ def download_masterlist(repository, version, dl_path):
 def main(args):
     utils.setup_log(LOGGER, verbosity=args.verbosity, logfile=args.logfile)
     LOGGER.debug(
-        u"Loaded the LOOT API v{} using wrapper version {}".format(
-            loot_api.Version.string(), loot_api.WrapperVersion.string()
+        u'Loaded the LOOT API v{} using wrapper version {}'.format(
+            loot.Version.string(), loot.WrapperVersion.string()
         )
     )
     game_data = [
-        (u"Oblivion", "Oblivion.esm", "oblivion", loot_api.GameType.tes4),
-        (u"Skyrim", "Skyrim.esm", "skyrim", loot_api.GameType.tes5),
-        (u"SkyrimSE", "Skyrim.esm", "skyrimse", loot_api.GameType.tes5se),
-        (u"Fallout3", "Fallout3.esm", "fallout3", loot_api.GameType.fo3),
-        (u"FalloutNV", "FalloutNV.esm", "falloutnv", loot_api.GameType.fonv),
-        (u"Fallout4", "Fallout4.esm", "fallout4", loot_api.GameType.fo4),
+        (u'Oblivion', u'Oblivion.esm', u'oblivion', loot.GameType.tes4),
+        (u'Skyrim', u'Skyrim.esm', u'skyrim', loot.GameType.tes5),
+        (u'SkyrimSE', u'Skyrim.esm', u'skyrimse', loot.GameType.tes5se),
+        (u'Fallout3', u'Fallout3.esm', u'fallout3', loot.GameType.fo3),
+        (u'FalloutNV', u'FalloutNV.esm', u'falloutnv', loot.GameType.fonv),
+        (u'Fallout4', u'Fallout4.esm', u'fallout4', loot.GameType.fo4),
     ]
     for game_name, master_name, repository, game_type in game_data:
         game_install_path = mock_game_install(master_name)
@@ -114,8 +113,7 @@ def main(args):
             )
             continue
         download_masterlist(repository, args.masterlist_version, masterlist_path)
-        loot_api.initialise_locale("")
-        loot_game = loot_api.create_game_handle(game_type, game_install_path)
+        loot_game = loot.create_game_handle(game_type, game_install_path)
         loot_db = loot_game.get_database()
         loot_db.load_lists(masterlist_path)
         loot_db.write_minimal_list(taglist_path, True)
