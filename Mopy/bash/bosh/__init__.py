@@ -49,9 +49,9 @@ from .. import bass, bolt, balt, bush, env, load_order, archives, \
 from .. import patcher # for configIsCBash()
 from ..archives import readExts
 from ..bass import dirs, inisettings, tooldirs
-from ..bolt import GPath, DataDict, deprint, sio, Path, decode, struct_pack, \
-    struct_unpack, AFile
-from ..brec import MreRecord, ModReader, RecordHeader
+from ..bolt import GPath, DataDict, deprint, sio, Path, decode, AFile, \
+    GPath_no_norm
+from ..brec import ModReader, RecordHeader
 from ..cint import CBashApi
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
     CancelError, FileError, ModError, PluginsFullError, SaveFileError, \
@@ -109,7 +109,7 @@ class MasterInfo(object):
                  u'stored_size')
 
     def __init__(self, master_name, master_size):
-        self.old_name = self.curr_name = GPath(master_name)
+        self.old_name = self.curr_name = GPath_no_norm(master_name)
         self.stored_size = master_size
         self.mod_info = modInfos.get(self.curr_name, None)
         self.is_ghost = self.mod_info and self.mod_info.isGhost
@@ -119,7 +119,7 @@ class MasterInfo(object):
         return self.curr_name.cext
 
     def set_name(self,name):
-        self.curr_name = GPath(name)
+        self.curr_name = GPath_no_norm(name)
         self.mod_info = modInfos.get(name, None)
 
     def has_esm_flag(self):
@@ -717,17 +717,18 @@ class ModInfo(FileInfo):
 
     def _extra_bsas(self):
         """Return a list of bsas to get assets from.
-        :rtype: list[BSAInfo]
-        """
+
+        :rtype: list[BSAInfo]"""
         if self.name.cs in bush.game.Bsa.vanilla_string_bsas: # lowercase !
             string_bsas = bush.game.Bsa.vanilla_string_bsas[self.name.cs]
-            bsa_infos = [bsaInfos[b] for b in (GPath(s) for s in string_bsas) if b in bsaInfos]
+            bsa_infos = [bsaInfos[b] for b in (
+                GPath_no_norm(s) for s in string_bsas) if b in bsaInfos]
         else:
             bsa_infos = self.mod_bsas() # first check bsa with same name
             for iniFile in modInfos.ini_files():
                 for key in bush.game.Ini.resource_archives_keys:
                     extraBsas = (
-                        GPath(x.strip())
+                        GPath_no_norm(x.strip())
                         for x in iniFile.getSetting(u'Archive', key, u'').split(u',')
                     )
                     bsa_infos.extend(
@@ -1057,7 +1058,7 @@ class SaveInfo(FileInfo):
         with self.abs_path.open('rb') as ins:
             with self.abs_path.temp.open('wb') as out:
                 oldMasters = self.header.writeMasters(ins, out)
-        oldMasters = [GPath(decode(x)) for x in oldMasters]
+        oldMasters = [GPath_no_norm(decode(x)) for x in oldMasters]
         self.abs_path.untemp()
         # Cosaves - note that we have to use self.header.masters since in
         # FO4/SSE get_masters() returns the correct interleaved order, but
@@ -1133,7 +1134,7 @@ class SaveInfo(FileInfo):
             if xse_cosave is not None: # the cached cosave should be valid
                 # Make sure the cosave's masters are actually useful
                 if xse_cosave.has_accurate_master_list(has_esl=True):
-                    return [GPath(master) for master in
+                    return [GPath_no_norm(master) for master in
                             xse_cosave.get_master_list()]
         # Fall back on the regular masters - either the cosave is unnecessary,
         # doesn't exist or isn't accurate
@@ -1522,7 +1523,7 @@ class INIInfos(TableFileInfos):
 
     def __init__(self):
         INIInfos._default_tweaks = dict(
-            (GPath(k), DefaultIniInfo(k, v)) for k, v in
+            (GPath_no_norm(k), DefaultIniInfo(k, v)) for k, v in
             bush.game.default_tweaks.iteritems())
         super(INIInfos, self).__init__(dirs['ini_tweaks'],
                                        factory=ini_info_factory)
@@ -1772,7 +1773,8 @@ class ModInfos(FileInfos):
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
         game_master = bush.game.master_file
         if dirs[u'mods'].join(game_master).isfile():
-            self.masterName = GPath(game_master) ##: maybe drop entirely?
+            ##: This needs to be moved elsewhere, then drop a bunch of GPaths
+            self.masterName = GPath(game_master)
         else:
             raise FileError(game_master, u'File is required, but could not be '
                                          u'found')

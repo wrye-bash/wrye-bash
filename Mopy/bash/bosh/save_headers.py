@@ -44,7 +44,7 @@ from .. import bolt
 from ..bolt import decode, cstrip, unpack_string, unpack_int, unpack_str8, \
     unpack_short, unpack_float, unpack_str16, unpack_byte, struct_pack, \
     unpack_str_int_delim, unpack_str16_delim_null, unpack_str_byte_delim, \
-    unpack_many, encode
+    unpack_many, encode, struct_unpack
 from ..exception import SaveHeaderError, raise_bolt_error
 
 # Utilities -------------------------------------------------------------------
@@ -87,19 +87,14 @@ class SaveFileHeader(object):
         self.calc_time()
         self.pcName = decode(cstrip(self.pcName))
         self.pcLocation = decode(cstrip(self.pcLocation), bolt.pluginEncoding,
-                                 avoidEncodings=('utf8', 'utf-8'))
-        self.masters = [bolt.GPath(decode(x)) for x in self.masters]
+                                 avoidEncodings=(u'utf8', u'utf-8'))
+        self.masters = [bolt.GPath_no_norm(decode(
+            x, bolt.pluginEncoding, avoidEncodings=(u'utf8', u'utf-8')))
+            for x in self.masters]
 
     def load_image_data(self, ins):
-        self.ssData = ins.read(3 * self.ssWidth * self.ssHeight)
-
-    def _drop_alpha(self, ins): ## TODO: Setup Bash to use the alpha data
-        # Game is in 32bit RGB, Bash is expecting 24bit RGB
-        ssData = ins.read(4 * self.ssWidth * self.ssHeight)
-        # pick out only every 3 bytes, drop the 4th (alpha channel)
-        #ssAlpha = ''.join(itertools.islice(ssData, 0, None, 4))
-        self.ssData = ''.join(
-            itertools.compress(ssData, itertools.cycle(reversed(range(4)))))
+        bpp = (4 if self.has_alpha else 3)
+        self.ssData = bytearray(ins.read(bpp * self.ssWidth * self.ssHeight))
 
     def load_masters(self, ins):
         self._mastersStart = ins.tell()
@@ -111,8 +106,13 @@ class SaveFileHeader(object):
     def calc_time(self): pass
 
     @property
-    def image(self):
-        return self.ssWidth, self.ssHeight, self.ssData
+    def has_alpha(self):
+        """Whether or not this save file has alpha."""
+        return False
+
+    @property
+    def image_parameters(self):
+        return self.ssWidth, self.ssHeight, self.ssData, self.has_alpha
 
     def writeMasters(self, ins, out):
         """Rewrites masters of existing save file."""
@@ -224,17 +224,17 @@ class SkyrimSaveHeader(SaveFileHeader):
 
     def _esl_block(self): return self.__is_sse() and self._formVersion >= 78
 
+    @property
+    def has_alpha(self):
+        return self.__is_sse()
+
     def load_image_data(self, ins):
         if self.__is_sse():
             self._compressType = unpack_short(ins)
         if ins.tell() != self.header_size + 17: raise SaveHeaderError(
             u'New Save game header size (%s) not as expected (%s).' % (
                 ins.tell() - 17, self.header_size))
-        #--Image Data
-        if self.__is_sse():
-            self._drop_alpha(ins)
-        else:
-            super(SkyrimSaveHeader, self).load_image_data(ins)
+        super(SkyrimSaveHeader, self).load_image_data(ins)
 
     def load_masters(self, ins):
         # If on SSE, check _compressType and respond accordingly:
@@ -246,7 +246,8 @@ class SkyrimSaveHeader(SaveFileHeader):
             decompressed_size = unpack_int(ins)
             compressed_size = unpack_int(ins)
             sse_offset = ins.tell()
-            ins = self._sse_decompress(ins, compressed_size, decompressed_size)
+            ins = self._sse_decompress(ins, compressed_size, decompressed_size,
+                light_decompression=True)
         else:
             sse_offset = 0
         self._formVersion = unpack_byte(ins)
@@ -291,12 +292,17 @@ class SkyrimSaveHeader(SaveFileHeader):
         except (zlib.error, lz4.block.LZ4BlockError) as e:
             raise SaveHeaderError(u'Failed to compress header: %r' % e)
 
-    def _sse_decompress(self, ins, compressed_size, decompressed_size):
+    def _sse_decompress(self, ins, compressed_size, decompressed_size,
+            light_decompression=False):
         """Decompresses the specified data using either LZ4 or zlib, depending
         on self._compressType. Do not call for uncompressed files!"""
-        decompressor = (self._sse_decompress_lz4
-                       if self._compressType == 2
-                       else self._sse_decompress_zlib)
+        if self._compressType == 1:
+            decompressor = self._sse_decompress_zlib
+        else:
+            if light_decompression:
+                decompressor = self._sse_light_decompress_lz4
+            else:
+                decompressor = self._sse_decompress_lz4
         return decompressor(ins, compressed_size, decompressed_size)
 
     @staticmethod
@@ -325,6 +331,64 @@ class SkyrimSaveHeader(SaveFileHeader):
                                   u'expected %u, but got %u.' % (
                 decompressed_size, len(decompressed_data)))
         return StringIO.StringIO(decompressed_data)
+
+    @staticmethod
+    def _sse_light_decompress_lz4(ins, _comp_size, _decomp_size):
+        """Read the start of the LZ4 compressed data in the SSE savefile and
+        stop when the whole master table is found.
+        Return a file-like object that can be read by _load_masters_16
+        containing the now decompressed master table.
+        See https://fastcompression.blogspot.se/2011/05/lz4-explained.html
+        for an LZ4 explanation/specification."""
+        def _read_lsic_int():
+            # type: () -> int
+            """Read a compressed int from the stream.
+            In short, add every byte to the output until a byte lower than
+            255 is found, then add that as well and return the total sum.
+            LSIC stands for linear small-integer code, taken from
+            https://ticki.github.io/blog/how-lz4-works."""
+            result = 0
+            while True:  # there is no size limit to LSIC values
+                num = unpack_byte(ins)
+                result += num
+                if num != 255:
+                    return result
+        uncompressed = ''
+        masters_size = None  # type: int
+        while True:  # parse and decompress each block here
+            token = unpack_byte(ins)
+            # How many bytes long is the literals-field?
+            literal_length = token >> 4
+            if literal_length == 15:  # add more if we hit max value
+                literal_length += _read_lsic_int()
+            # Read all the literals (which are good ol' uncompressed bytes)
+            uncompressed += ins.read(literal_length)
+            # The offset is how many bytes back in the uncompressed string the
+            # start of the match-field (copied bytes) is
+            offset = unpack_short(ins)
+            # How many bytes long is the match-field?
+            match_length = token & 0b1111
+            if match_length == 15:
+                match_length += _read_lsic_int()
+            match_length += 4  # the match-field always gets an extra 4 bytes
+            # The boundary of the match-field
+            start_pos = len(uncompressed) - offset
+            end_pos = start_pos + match_length
+            # Matches can be overlapping (aka including not yet decompressed
+            # data) so we can't jump the whole match_length directly
+            while start_pos < end_pos:
+                uncompressed += uncompressed[start_pos:min(start_pos + offset,
+                                                           end_pos)]
+                start_pos += offset
+            # The masters table's size is found in bytes 1-5
+            if masters_size is None and len(uncompressed) >= 5:
+                masters_size = struct_unpack('I', uncompressed[1:5])[0]
+            # Stop when we have the whole masters table
+            if masters_size is not None:
+                if len(uncompressed) >= masters_size + 5:
+                    break
+        # Wrap the decompressed data in a file-like object and return it
+        return StringIO.StringIO(uncompressed)
 
     def calc_time(self):
         # gameDate format: hours.minutes.seconds
@@ -398,12 +462,15 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
 
     def _esl_block(self): return self.version == 15 and self._formVersion >= 68
 
+    @property
+    def has_alpha(self):
+        return True
+
     def load_image_data(self, ins):
         if ins.tell() != self.header_size + 16: raise SaveHeaderError(
             u'New Save game header size (%s) not as expected (%s).' % (
                 ins.tell() - 16, self.header_size))
-        #--Image Data
-        self._drop_alpha(ins)
+        super(SkyrimSaveHeader, self).load_image_data(ins)
 
     def load_masters(self, ins):
         self._formVersion = unpack_byte(ins)

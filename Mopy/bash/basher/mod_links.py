@@ -1815,7 +1815,9 @@ class Mod_Face_Import(OneItemLink):
         imagePath = bosh.modInfos.store_dir.join(u'Docs', u'Images', npc.eid + u'.jpg')
         if not imagePath.exists():
             srcInfo.readHeader()
-            image = Image.GetImage(*srcInfo.header.image)
+            # TODO(inf) de-wx! Again, image/bitmap stuff
+            image = Image.from_bitstream(
+                *srcInfo.header.image_parameters).ConvertToImage()
             imagePath.head.makedirs()
             image.SaveFile(imagePath.s, Image.typesDict[u'jpg'])
         self.window.RefreshUI(refreshSaves=False) # import save to esp

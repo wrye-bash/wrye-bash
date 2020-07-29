@@ -37,6 +37,7 @@ import time
 from collections import defaultdict, OrderedDict
 # Local
 from . import bass, bolt, env, exception
+from .bolt import GPath_no_norm
 from .ini_files import get_ini_type_and_encoding
 from .localize import format_date
 
@@ -94,23 +95,23 @@ def _parse_plugins_txt_(path, mod_infos, _star):
             except UnicodeError:
                 bolt.deprint(u'%r failed to properly decode' % modname)
                 continue
-            if bolt.GPath(test) not in mod_infos:
+            if GPath_no_norm(test) not in mod_infos:
                 # The automatic encoding detector could have returned
                 # an encoding it actually wasn't.  Luckily, we
                 # have a way to double check: modInfos.data
                 for encoding in bolt.encodingOrder:
                     try:
                         test2 = unicode(modname, encoding)
-                        if bolt.GPath(test2) not in mod_infos:
+                        if GPath_no_norm(test2) not in mod_infos:
                             continue
-                        modname = bolt.GPath(test2)
+                        modname = GPath_no_norm(test2)
                         break
                     except UnicodeError:
                         pass
                 else:
-                    modname = bolt.GPath(test)
+                    modname = GPath_no_norm(test)
             else:
-                modname = bolt.GPath(test)
+                modname = GPath_no_norm(test)
             modnames.append(modname)
             if is_active_: active.append(modname)
     return active, modnames
@@ -614,7 +615,7 @@ class INIGame(Game):
         section_mapping = cached_ini.get_setting_values(ini_key[1], {})
         # Sort by line number, then convert the values to paths and return
         section_vals = sorted(section_mapping.items(), key=lambda t: t[1][1])
-        return [bolt.GPath(x[1][0]) for x in section_vals]
+        return [GPath_no_norm(x[1][0]) for x in section_vals]
 
     @staticmethod
     def _write_ini(cached_ini, ini_key, mod_list):
@@ -1115,8 +1116,8 @@ class AsteriskGame(Game):
         _ccc_path = bass.dirs['app'].join(cls._ccc_filename)
         try:
             with open(_ccc_path.s, u'r') as ins:
-                lines = (bolt.GPath(line.strip()) for line in ins.readlines())
-                cls.must_be_active_if_present += tuple(lines)
+                cls.must_be_active_if_present += tuple(
+                    GPath_no_norm(line.strip()) for line in ins.readlines())
         except (OSError, IOError) as e:
             if e.errno != errno.ENOENT:
                 bolt.deprint(u'Failed to open %s' % _ccc_path, traceback=True)
@@ -1126,268 +1127,263 @@ class AsteriskGame(Game):
 
 # TextfileGame overrides
 class Skyrim(TextfileGame):
-    must_be_active_if_present = (bolt.GPath(u'Update.esm'),
-                                 bolt.GPath(u'Dawnguard.esm'),
-                                 bolt.GPath(u'Hearthfires.esm'),
-                                 bolt.GPath(u'Dragonborn.esm'))
+    must_be_active_if_present = tuple(GPath_no_norm(p) for p in (
+        u'Update.esm', u'Dawnguard.esm', u'Hearthfires.esm',
+        u'Dragonborn.esm'))
 
 class Enderal(TextfileGame):
-    must_be_active_if_present = (bolt.GPath(u'Update.esm'),
-                                 bolt.GPath(u'Enderal - Forgotten '
-                                            u'Stories.esm'))
+    must_be_active_if_present = tuple(GPath_no_norm(p) for p in (
+        u'Update.esm', u'Enderal - Forgotten Stories.esm'))
 
 # AsteriskGame overrides
 class Fallout4(AsteriskGame):
-    must_be_active_if_present = (bolt.GPath(u'DLCRobot.esm'),
-                                 bolt.GPath(u'DLCworkshop01.esm'),
-                                 bolt.GPath(u'DLCCoast.esm'),
-                                 bolt.GPath(u'DLCWorkshop02.esm'),
-                                 bolt.GPath(u'DLCWorkshop03.esm'),
-                                 bolt.GPath(u'DLCNukaWorld.esm'),
-                                 bolt.GPath(u'DLCUltraHighResolution.esm'),)
+    must_be_active_if_present = tuple(GPath_no_norm(p) for p in (
+        u'DLCRobot.esm', u'DLCworkshop01.esm', u'DLCCoast.esm',
+        u'DLCWorkshop02.esm', u'DLCWorkshop03.esm', u'DLCNukaWorld.esm',
+        u'DLCUltraHighResolution.esm'))
     _ccc_filename = u'Fallout4.ccc'
-    _ccc_fallback = (
+    _ccc_fallback = tuple(GPath_no_norm(p) for p in (
         # Up to date as of 2019/11/22
-        bolt.GPath(u'ccBGSFO4001-PipBoy(Black).esl'),
-        bolt.GPath(u'ccBGSFO4002-PipBoy(Blue).esl'),
-        bolt.GPath(u'ccBGSFO4003-PipBoy(Camo01).esl'),
-        bolt.GPath(u'ccBGSFO4004-PipBoy(Camo02).esl'),
-        bolt.GPath(u'ccBGSFO4006-PipBoy(Chrome).esl'),
-        bolt.GPath(u'ccBGSFO4012-PipBoy(Red).esl'),
-        bolt.GPath(u'ccBGSFO4014-PipBoy(White).esl'),
-        bolt.GPath(u'ccBGSFO4005-BlueCamo.esl'),
-        bolt.GPath(u'ccBGSFO4016-Prey.esl'),
-        bolt.GPath(u'ccBGSFO4018-GaussRiflePrototype.esl'),
-        bolt.GPath(u'ccBGSFO4019-ChineseStealthArmor.esl'),
-        bolt.GPath(u'ccBGSFO4020-PowerArmorSkin(Black).esl'),
-        bolt.GPath(u'ccBGSFO4022-PowerArmorSkin(Camo01).esl'),
-        bolt.GPath(u'ccBGSFO4023-PowerArmorSkin(Camo02).esl'),
-        bolt.GPath(u'ccBGSFO4025-PowerArmorSkin(Chrome).esl'),
-        bolt.GPath(u'ccBGSFO4033-PowerArmorSkinWhite.esl'),
-        bolt.GPath(u'ccBGSFO4024-PACamo03.esl'),
-        bolt.GPath(u'ccBGSFO4038-HorseArmor.esl'),
-        bolt.GPath(u'ccBGSFO4041-DoomMarineArmor.esl'),
-        bolt.GPath(u'ccBGSFO4042-BFG.esl'),
-        bolt.GPath(u'ccBGSFO4044-HellfirePowerArmor.esl'),
-        bolt.GPath(u'ccFSVFO4001-ModularMilitaryBackpack.esl'),
-        bolt.GPath(u'ccFSVFO4002-MidCenturyModern.esl'),
-        bolt.GPath(u'ccFRSFO4001-HandmadeShotgun.esl'),
-        bolt.GPath(u'ccEEJFO4001-DecorationPack.esl'),
-        bolt.GPath(u'ccRZRFO4001-TunnelSnakes.esm'),
-        bolt.GPath(u'ccBGSFO4045-AdvArcCab.esl'),
-        bolt.GPath(u'ccFSVFO4003-Slocum.esl'),
-        bolt.GPath(u'ccGCAFO4001-FactionWS01Army.esl'),
-        bolt.GPath(u'ccGCAFO4002-FactionWS02ACat.esl'),
-        bolt.GPath(u'ccGCAFO4003-FactionWS03BOS.esl'),
-        bolt.GPath(u'ccGCAFO4004-FactionWS04Gun.esl'),
-        bolt.GPath(u'ccGCAFO4005-FactionWS05HRPink.esl'),
-        bolt.GPath(u'ccGCAFO4006-FactionWS06HRShark.esl'),
-        bolt.GPath(u'ccGCAFO4007-FactionWS07HRFlames.esl'),
-        bolt.GPath(u'ccGCAFO4008-FactionWS08Inst.esl'),
-        bolt.GPath(u'ccGCAFO4009-FactionWS09MM.esl'),
-        bolt.GPath(u'ccGCAFO4010-FactionWS10RR.esl'),
-        bolt.GPath(u'ccGCAFO4011-FactionWS11VT.esl'),
-        bolt.GPath(u'ccGCAFO4012-FactionAS01ACat.esl'),
-        bolt.GPath(u'ccGCAFO4013-FactionAS02BoS.esl'),
-        bolt.GPath(u'ccGCAFO4014-FactionAS03Gun.esl'),
-        bolt.GPath(u'ccGCAFO4015-FactionAS04HRPink.esl'),
-        bolt.GPath(u'ccGCAFO4016-FactionAS05HRShark.esl'),
-        bolt.GPath(u'ccGCAFO4017-FactionAS06Inst.esl'),
-        bolt.GPath(u'ccGCAFO4018-FactionAS07MM.esl'),
-        bolt.GPath(u'ccGCAFO4019-FactionAS08Nuk.esl'),
-        bolt.GPath(u'ccGCAFO4020-FactionAS09RR.esl'),
-        bolt.GPath(u'ccGCAFO4021-FactionAS10HRFlames.esl'),
-        bolt.GPath(u'ccGCAFO4022-FactionAS11VT.esl'),
-        bolt.GPath(u'ccGCAFO4023-FactionAS12Army.esl'),
-        bolt.GPath(u'ccAWNFO4001-BrandedAttire.esl'),
-        bolt.GPath(u'ccSWKFO4001-AstronautPowerArmor.esm'),
-        bolt.GPath(u'ccSWKFO4002-PipNuka.esl'),
-        bolt.GPath(u'ccSWKFO4003-PipQuan.esl'),
-        bolt.GPath(u'ccBGSFO4050-DgBColl.esl'),
-        bolt.GPath(u'ccBGSFO4051-DgBox.esl'),
-        bolt.GPath(u'ccBGSFO4052-DgDal.esl'),
-        bolt.GPath(u'ccBGSFO4053-DgGoldR.esl'),
-        bolt.GPath(u'ccBGSFO4054-DgGreatD.esl'),
-        bolt.GPath(u'ccBGSFO4055-DgHusk.esl'),
-        bolt.GPath(u'ccBGSFO4056-DgLabB.esl'),
-        bolt.GPath(u'ccBGSFO4057-DgLabY.esl'),
-        bolt.GPath(u'ccBGSFO4058-DGLabC.esl'),
-        bolt.GPath(u'ccBGSFO4059-DgPit.esl'),
-        bolt.GPath(u'ccBGSFO4060-DgRot.esl'),
-        bolt.GPath(u'ccBGSFO4061-DgShiInu.esl'),
-        bolt.GPath(u'ccBGSFO4036-TrnsDg.esl'),
-        bolt.GPath(u'ccRZRFO4004-PipInst.esl'),
-        bolt.GPath(u'ccBGSFO4062-PipPat.esl'),
-        bolt.GPath(u'ccRZRFO4003-PipOver.esl'),
-        bolt.GPath(u'ccFRSFO4002-AntimaterielRifle.esl'),
-        bolt.GPath(u'ccEEJFO4002-Nuka.esl'),
-        bolt.GPath(u'ccYGPFO4001-PipCruiser.esl'),
-        bolt.GPath(u'ccBGSFO4072-PipGrog.esl'),
-        bolt.GPath(u'ccBGSFO4073-PipMMan.esl'),
-        bolt.GPath(u'ccBGSFO4074-PipInspect.esl'),
-        bolt.GPath(u'ccBGSFO4075-PipShroud.esl'),
-        bolt.GPath(u'ccBGSFO4076-PipMystery.esl'),
-        bolt.GPath(u'ccBGSFO4071-PipArc.esl'),
-        bolt.GPath(u'ccBGSFO4079-PipVim.esl'),
-        bolt.GPath(u'ccBGSFO4078-PipReily.esl'),
-        bolt.GPath(u'ccBGSFO4077-PipRocket.esl'),
-        bolt.GPath(u'ccBGSFO4070-PipAbra.esl'),
-        bolt.GPath(u'ccBGSFO4008-PipGrn.esl'),
-        bolt.GPath(u'ccBGSFO4015-PipYell.esl'),
-        bolt.GPath(u'ccBGSFO4009-PipOran.esl'),
-        bolt.GPath(u'ccBGSFO4011-PipPurp.esl'),
-        bolt.GPath(u'ccBGSFO4021-PowerArmorSkinBlue.esl'),
-        bolt.GPath(u'ccBGSFO4027-PowerArmorSkinGreen.esl'),
-        bolt.GPath(u'ccBGSFO4034-PowerArmorSkinYellow.esl'),
-        bolt.GPath(u'ccBGSFO4028-PowerArmorSkinOrange.esl'),
-        bolt.GPath(u'ccBGSFO4031-PowerArmorSkinRed.esl'),
-        bolt.GPath(u'ccBGSFO4030-PowerArmorSkinPurple.esl'),
-        bolt.GPath(u'ccBGSFO4032-PowerArmorSkinTan.esl'),
-        bolt.GPath(u'ccBGSFO4029-PowerArmorSkinPink.esl'),
-        bolt.GPath(u'ccGRCFO4001-PipGreyTort.esl'),
-        bolt.GPath(u'ccGRCFO4002-PipGreenVim.esl'),
-        bolt.GPath(u'ccBGSFO4013-PipTan.esl'),
-        bolt.GPath(u'ccBGSFO4010-PipPnk.esl'),
-        bolt.GPath(u'ccSBJFO4001-SolarFlare.esl'),
-        bolt.GPath(u'ccZSEF04001-BHouse.esm'),
-        bolt.GPath(u'ccTOSFO4001-NeoSky.esm'),
-        bolt.GPath(u'ccKGJFO4001-bastion.esl'),
-        bolt.GPath(u'ccBGSFO4063-PAPat.esl'),
-        bolt.GPath(u'ccQDRFO4001_PowerArmorAI.esl'),
-        bolt.GPath(u'ccBGSFO4048-Dovah.esl'),
-        bolt.GPath(u'ccBGSFO4101-AS_Shi.esl'),
-        bolt.GPath(u'ccBGSFO4114-WS_Shi.esl'),
-        bolt.GPath(u'ccBGSFO4115-X02.esl'),
-        bolt.GPath(u'ccRZRFO4002-Disintegrate.esl'),
-        bolt.GPath(u'ccBGSFO4116-HeavyFlamer.esl'),
-        bolt.GPath(u'ccBGSFO4091-AS_Bats.esl'),
-        bolt.GPath(u'ccBGSFO4092-AS_CamoBlue.esl'),
-        bolt.GPath(u'ccBGSFO4093-AS_CamoGreen.esl'),
-        bolt.GPath(u'ccBGSFO4094-AS_CamoTan.esl'),
-        bolt.GPath(u'ccBGSFO4097-AS_Jack-oLantern.esl'),
-        bolt.GPath(u'ccBGSFO4104-WS_Bats.esl'),
-        bolt.GPath(u'ccBGSFO4105-WS_CamoBlue.esl'),
-        bolt.GPath(u'ccBGSFO4106-WS_CamoGreen.esl'),
-        bolt.GPath(u'ccBGSFO4107-WS_CamoTan.esl'),
-        bolt.GPath(u'ccBGSFO4111-WS_Jack-oLantern.esl'),
-        bolt.GPath(u'ccBGSFO4118-WS_TunnelSnakes.esl'),
-        bolt.GPath(u'ccBGSFO4113-WS_ReillysRangers.esl'),
-        bolt.GPath(u'ccBGSFO4112-WS_Pickman.esl'),
-        bolt.GPath(u'ccBGSFO4110-WS_Enclave.esl'),
-        bolt.GPath(u'ccBGSFO4108-WS_ChildrenOfAtom.esl'),
-        bolt.GPath(u'ccBGSFO4103-AS_TunnelSnakes.esl'),
-        bolt.GPath(u'ccBGSFO4099-AS_ReillysRangers.esl'),
-        bolt.GPath(u'ccBGSFO4098-AS_Pickman.esl'),
-        bolt.GPath(u'ccBGSFO4096-AS_Enclave.esl'),
-        bolt.GPath(u'ccBGSFO4095-AS_ChildrenOfAtom.esl'),
-        bolt.GPath(u'ccBGSFO4090-PipTribal.esl'),
-        bolt.GPath(u'ccBGSFO4089-PipSynthwave.esl'),
-        bolt.GPath(u'ccBGSFO4087-PipHaida.esl'),
-        bolt.GPath(u'ccBGSFO4085-PipHawaii.esl'),
-        bolt.GPath(u'ccBGSFO4084-PipRetro.esl'),
-        bolt.GPath(u'ccBGSFO4083-PipArtDeco.esl'),
-        bolt.GPath(u'ccBGSFO4082-PipPRC.esl'),
-        bolt.GPath(u'ccBGSFO4081-PipPhenolResin.esl'),
-        bolt.GPath(u'ccBGSFO4080-PipPop.esl'),
-        bolt.GPath(u'ccBGSFO4035-Pint.esl'),
-        bolt.GPath(u'ccBGSFO4086-PipAdventure.esl'),
-        bolt.GPath(u'ccJVDFO4001-Holiday.esl'),
-        bolt.GPath(u'ccBGSFO4047-QThund.esl'),
-        bolt.GPath(u'ccFRSFO4003-CR75L.esl'),
-        bolt.GPath(u'ccZSEFO4002-SManor.esm'),
-        bolt.GPath(u'ccACXFO4001-VSuit.esl'),
-        bolt.GPath(u'ccBGSFO4040-VRWorkshop01.esl'),
-        bolt.GPath(u'ccFSVFO4005-VRDesertIsland.esl'),
-        bolt.GPath(u'ccFSVFO4006-VRWasteland.esl'),
-        bolt.GPath(u'ccSBJFO4002_ManwellRifle.esl'),
-        bolt.GPath(u'ccTOSFO4002_NeonFlats.esm'),
-        bolt.GPath(u'ccBGSFO4117-CapMerc.esl'),
-        bolt.GPath(u'ccFSVFO4004-VRWorkshopGNRPlaza.esl'),
-        bolt.GPath(u'ccBGSFO4046-TesCan.esl'),
-        bolt.GPath(u'ccGCAFO4025-PAGunMM.esl'),
-        bolt.GPath(u'ccCRSFO4001-PipCoA.esl'),
-    )
+        u'ccBGSFO4001-PipBoy(Black).esl',
+        u'ccBGSFO4002-PipBoy(Blue).esl',
+        u'ccBGSFO4003-PipBoy(Camo01).esl',
+        u'ccBGSFO4004-PipBoy(Camo02).esl',
+        u'ccBGSFO4006-PipBoy(Chrome).esl',
+        u'ccBGSFO4012-PipBoy(Red).esl',
+        u'ccBGSFO4014-PipBoy(White).esl',
+        u'ccBGSFO4005-BlueCamo.esl',
+        u'ccBGSFO4016-Prey.esl',
+        u'ccBGSFO4018-GaussRiflePrototype.esl',
+        u'ccBGSFO4019-ChineseStealthArmor.esl',
+        u'ccBGSFO4020-PowerArmorSkin(Black).esl',
+        u'ccBGSFO4022-PowerArmorSkin(Camo01).esl',
+        u'ccBGSFO4023-PowerArmorSkin(Camo02).esl',
+        u'ccBGSFO4025-PowerArmorSkin(Chrome).esl',
+        u'ccBGSFO4033-PowerArmorSkinWhite.esl',
+        u'ccBGSFO4024-PACamo03.esl',
+        u'ccBGSFO4038-HorseArmor.esl',
+        u'ccBGSFO4041-DoomMarineArmor.esl',
+        u'ccBGSFO4042-BFG.esl',
+        u'ccBGSFO4044-HellfirePowerArmor.esl',
+        u'ccFSVFO4001-ModularMilitaryBackpack.esl',
+        u'ccFSVFO4002-MidCenturyModern.esl',
+        u'ccFRSFO4001-HandmadeShotgun.esl',
+        u'ccEEJFO4001-DecorationPack.esl',
+        u'ccRZRFO4001-TunnelSnakes.esm',
+        u'ccBGSFO4045-AdvArcCab.esl',
+        u'ccFSVFO4003-Slocum.esl',
+        u'ccGCAFO4001-FactionWS01Army.esl',
+        u'ccGCAFO4002-FactionWS02ACat.esl',
+        u'ccGCAFO4003-FactionWS03BOS.esl',
+        u'ccGCAFO4004-FactionWS04Gun.esl',
+        u'ccGCAFO4005-FactionWS05HRPink.esl',
+        u'ccGCAFO4006-FactionWS06HRShark.esl',
+        u'ccGCAFO4007-FactionWS07HRFlames.esl',
+        u'ccGCAFO4008-FactionWS08Inst.esl',
+        u'ccGCAFO4009-FactionWS09MM.esl',
+        u'ccGCAFO4010-FactionWS10RR.esl',
+        u'ccGCAFO4011-FactionWS11VT.esl',
+        u'ccGCAFO4012-FactionAS01ACat.esl',
+        u'ccGCAFO4013-FactionAS02BoS.esl',
+        u'ccGCAFO4014-FactionAS03Gun.esl',
+        u'ccGCAFO4015-FactionAS04HRPink.esl',
+        u'ccGCAFO4016-FactionAS05HRShark.esl',
+        u'ccGCAFO4017-FactionAS06Inst.esl',
+        u'ccGCAFO4018-FactionAS07MM.esl',
+        u'ccGCAFO4019-FactionAS08Nuk.esl',
+        u'ccGCAFO4020-FactionAS09RR.esl',
+        u'ccGCAFO4021-FactionAS10HRFlames.esl',
+        u'ccGCAFO4022-FactionAS11VT.esl',
+        u'ccGCAFO4023-FactionAS12Army.esl',
+        u'ccAWNFO4001-BrandedAttire.esl',
+        u'ccSWKFO4001-AstronautPowerArmor.esm',
+        u'ccSWKFO4002-PipNuka.esl',
+        u'ccSWKFO4003-PipQuan.esl',
+        u'ccBGSFO4050-DgBColl.esl',
+        u'ccBGSFO4051-DgBox.esl',
+        u'ccBGSFO4052-DgDal.esl',
+        u'ccBGSFO4053-DgGoldR.esl',
+        u'ccBGSFO4054-DgGreatD.esl',
+        u'ccBGSFO4055-DgHusk.esl',
+        u'ccBGSFO4056-DgLabB.esl',
+        u'ccBGSFO4057-DgLabY.esl',
+        u'ccBGSFO4058-DGLabC.esl',
+        u'ccBGSFO4059-DgPit.esl',
+        u'ccBGSFO4060-DgRot.esl',
+        u'ccBGSFO4061-DgShiInu.esl',
+        u'ccBGSFO4036-TrnsDg.esl',
+        u'ccRZRFO4004-PipInst.esl',
+        u'ccBGSFO4062-PipPat.esl',
+        u'ccRZRFO4003-PipOver.esl',
+        u'ccFRSFO4002-AntimaterielRifle.esl',
+        u'ccEEJFO4002-Nuka.esl',
+        u'ccYGPFO4001-PipCruiser.esl',
+        u'ccBGSFO4072-PipGrog.esl',
+        u'ccBGSFO4073-PipMMan.esl',
+        u'ccBGSFO4074-PipInspect.esl',
+        u'ccBGSFO4075-PipShroud.esl',
+        u'ccBGSFO4076-PipMystery.esl',
+        u'ccBGSFO4071-PipArc.esl',
+        u'ccBGSFO4079-PipVim.esl',
+        u'ccBGSFO4078-PipReily.esl',
+        u'ccBGSFO4077-PipRocket.esl',
+        u'ccBGSFO4070-PipAbra.esl',
+        u'ccBGSFO4008-PipGrn.esl',
+        u'ccBGSFO4015-PipYell.esl',
+        u'ccBGSFO4009-PipOran.esl',
+        u'ccBGSFO4011-PipPurp.esl',
+        u'ccBGSFO4021-PowerArmorSkinBlue.esl',
+        u'ccBGSFO4027-PowerArmorSkinGreen.esl',
+        u'ccBGSFO4034-PowerArmorSkinYellow.esl',
+        u'ccBGSFO4028-PowerArmorSkinOrange.esl',
+        u'ccBGSFO4031-PowerArmorSkinRed.esl',
+        u'ccBGSFO4030-PowerArmorSkinPurple.esl',
+        u'ccBGSFO4032-PowerArmorSkinTan.esl',
+        u'ccBGSFO4029-PowerArmorSkinPink.esl',
+        u'ccGRCFO4001-PipGreyTort.esl',
+        u'ccGRCFO4002-PipGreenVim.esl',
+        u'ccBGSFO4013-PipTan.esl',
+        u'ccBGSFO4010-PipPnk.esl',
+        u'ccSBJFO4001-SolarFlare.esl',
+        u'ccZSEF04001-BHouse.esm',
+        u'ccTOSFO4001-NeoSky.esm',
+        u'ccKGJFO4001-bastion.esl',
+        u'ccBGSFO4063-PAPat.esl',
+        u'ccQDRFO4001_PowerArmorAI.esl',
+        u'ccBGSFO4048-Dovah.esl',
+        u'ccBGSFO4101-AS_Shi.esl',
+        u'ccBGSFO4114-WS_Shi.esl',
+        u'ccBGSFO4115-X02.esl',
+        u'ccRZRFO4002-Disintegrate.esl',
+        u'ccBGSFO4116-HeavyFlamer.esl',
+        u'ccBGSFO4091-AS_Bats.esl',
+        u'ccBGSFO4092-AS_CamoBlue.esl',
+        u'ccBGSFO4093-AS_CamoGreen.esl',
+        u'ccBGSFO4094-AS_CamoTan.esl',
+        u'ccBGSFO4097-AS_Jack-oLantern.esl',
+        u'ccBGSFO4104-WS_Bats.esl',
+        u'ccBGSFO4105-WS_CamoBlue.esl',
+        u'ccBGSFO4106-WS_CamoGreen.esl',
+        u'ccBGSFO4107-WS_CamoTan.esl',
+        u'ccBGSFO4111-WS_Jack-oLantern.esl',
+        u'ccBGSFO4118-WS_TunnelSnakes.esl',
+        u'ccBGSFO4113-WS_ReillysRangers.esl',
+        u'ccBGSFO4112-WS_Pickman.esl',
+        u'ccBGSFO4110-WS_Enclave.esl',
+        u'ccBGSFO4108-WS_ChildrenOfAtom.esl',
+        u'ccBGSFO4103-AS_TunnelSnakes.esl',
+        u'ccBGSFO4099-AS_ReillysRangers.esl',
+        u'ccBGSFO4098-AS_Pickman.esl',
+        u'ccBGSFO4096-AS_Enclave.esl',
+        u'ccBGSFO4095-AS_ChildrenOfAtom.esl',
+        u'ccBGSFO4090-PipTribal.esl',
+        u'ccBGSFO4089-PipSynthwave.esl',
+        u'ccBGSFO4087-PipHaida.esl',
+        u'ccBGSFO4085-PipHawaii.esl',
+        u'ccBGSFO4084-PipRetro.esl',
+        u'ccBGSFO4083-PipArtDeco.esl',
+        u'ccBGSFO4082-PipPRC.esl',
+        u'ccBGSFO4081-PipPhenolResin.esl',
+        u'ccBGSFO4080-PipPop.esl',
+        u'ccBGSFO4035-Pint.esl',
+        u'ccBGSFO4086-PipAdventure.esl',
+        u'ccJVDFO4001-Holiday.esl',
+        u'ccBGSFO4047-QThund.esl',
+        u'ccFRSFO4003-CR75L.esl',
+        u'ccZSEFO4002-SManor.esm',
+        u'ccACXFO4001-VSuit.esl',
+        u'ccBGSFO4040-VRWorkshop01.esl',
+        u'ccFSVFO4005-VRDesertIsland.esl',
+        u'ccFSVFO4006-VRWasteland.esl',
+        u'ccSBJFO4002_ManwellRifle.esl',
+        u'ccTOSFO4002_NeonFlats.esm',
+        u'ccBGSFO4117-CapMerc.esl',
+        u'ccFSVFO4004-VRWorkshopGNRPlaza.esl',
+        u'ccBGSFO4046-TesCan.esl',
+        u'ccGCAFO4025-PAGunMM.esl',
+        u'ccCRSFO4001-PipCoA.esl',
+    ))
 
     @property
     def remove_from_plugins_txt(self):
-        return {bolt.GPath(u'Fallout4.esm')} | set(
+        return {GPath_no_norm(u'Fallout4.esm')} | set(
             self.must_be_active_if_present)
 
 class Fallout4VR(Fallout4):
-    must_be_active_if_present = (bolt.GPath(u'Fallout4_VR.esm'),)
+    must_be_active_if_present = Fallout4.must_be_active_if_present + (
+        GPath_no_norm(u'Fallout4_VR.esm'),)
     _ccc_filename = u''
 
 class SkyrimSE(AsteriskGame):
-    must_be_active_if_present = (bolt.GPath(u'Update.esm'),
-                                 bolt.GPath(u'Dawnguard.esm'),
-                                 bolt.GPath(u'Hearthfires.esm'),
-                                 bolt.GPath(u'Dragonborn.esm'),)
+    must_be_active_if_present = tuple(GPath_no_norm(p) for p in (
+        u'Update.esm', u'Dawnguard.esm', u'Hearthfires.esm', u'Dragonborn.esm'
+    ))
     _ccc_filename = u'Skyrim.ccc'
-    _ccc_fallback = (
+    _ccc_fallback = tuple(GPath_no_norm(p) for p in (
         # Up to date as of 2019/11/22
-        bolt.GPath(u'ccBGSSSE002-ExoticArrows.esl'),
-        bolt.GPath(u'ccBGSSSE003-Zombies.esl'),
-        bolt.GPath(u'ccBGSSSE004-RuinsEdge.esl'),
-        bolt.GPath(u'ccBGSSSE006-StendarsHammer.esl'),
-        bolt.GPath(u'ccBGSSSE007-Chrysamere.esl'),
-        bolt.GPath(u'ccBGSSSE010-PetDwarvenArmoredMudcrab.esl'),
-        bolt.GPath(u'ccBGSSSE014-SpellPack01.esl'),
-        bolt.GPath(u'ccBGSSSE019-StaffofSheogorath.esl'),
-        bolt.GPath(u'ccBGSSSE020-GrayCowl.esl'),
-        bolt.GPath(u'ccBGSSSE021-LordsMail.esl'),
-        bolt.GPath(u'ccMTYSSE001-KnightsoftheNine.esl'),
-        bolt.GPath(u'ccQDRSSE001-SurvivalMode.esl'),
-        bolt.GPath(u'ccTWBSSE001-PuzzleDungeon.esm'),
-        bolt.GPath(u'ccEEJSSE001-Hstead.esm'),
-        bolt.GPath(u'ccQDRSSE002-Firewood.esl'),
-        bolt.GPath(u'ccBGSSSE018-Shadowrend.esl'),
-        bolt.GPath(u'ccBGSSSE035-PetNHound.esl'),
-        bolt.GPath(u'ccFSVSSE001-Backpacks.esl'),
-        bolt.GPath(u'ccEEJSSE002-Tower.esl'),
-        bolt.GPath(u'ccEDHSSE001-NorJewel.esl'),
-        bolt.GPath(u'ccVSVSSE002-Pets.esl'),
-        bolt.GPath(u'ccBGSSSE037-Curios.esl'),
-        bolt.GPath(u'ccBGSSSE034-MntUni.esl'),
-        bolt.GPath(u'ccBGSSSE045-Hasedoki.esl'),
-        bolt.GPath(u'ccBGSSSE008-Wraithguard.esl'),
-        bolt.GPath(u'ccBGSSSE036-PetBWolf.esl'),
-        bolt.GPath(u'ccFFBSSE001-ImperialDragon.esl'),
-        bolt.GPath(u'ccMTYSSE002-VE.esl'),
-        bolt.GPath(u'ccBGSSSE043-CrossElv.esl'),
-        bolt.GPath(u'ccVSVSSE001-Winter.esl'),
-        bolt.GPath(u'ccEEJSSE003-Hollow.esl'),
-        bolt.GPath(u'ccBGSSSE016-Umbra.esm'),
-        bolt.GPath(u'ccBGSSSE031-AdvCyrus.esm'),
-        bolt.GPath(u'ccBGSSSE040-AdvObGobs.esl'),
-        bolt.GPath(u'ccBGSSSE050-BA_Daedric.esl'),
-        bolt.GPath(u'ccBGSSSE052-BA_Iron.esl'),
-        bolt.GPath(u'ccBGSSSE054-BA_Orcish.esl'),
-        bolt.GPath(u'ccBGSSSE058-BA_Steel.esl'),
-        bolt.GPath(u'ccBGSSSE059-BA_Dragonplate.esl'),
-        bolt.GPath(u'ccBGSSSE061-BA_Dwarven.esl'),
-        bolt.GPath(u'ccPEWSSE002-ArmsOfChaos.esl'),
-        bolt.GPath(u'ccBGSSSE041-NetchLeather.esl'),
-        bolt.GPath(u'ccEDHSSE002-SplKntSet.esl'),
-        bolt.GPath(u'ccBGSSSE064-BA_Elven.esl'),
-        bolt.GPath(u'ccBGSSSE063-BA_Ebony.esl'),
-        bolt.GPath(u'ccBGSSSE062-BA_DwarvenMail.esl'),
-        bolt.GPath(u'ccBGSSSE060-BA_Dragonscale.esl'),
-        bolt.GPath(u'ccBGSSSE056-BA_Silver.esl'),
-        bolt.GPath(u'ccBGSSSE055-BA_OrcishScaled.esl'),
-        bolt.GPath(u'ccBGSSSE053-BA_Leather.esl'),
-        bolt.GPath(u'ccBGSSSE051-BA_DaedricMail.esl'),
-        bolt.GPath(u'ccBGSSSE057-BA_Stalhrim.esl'),
-        bolt.GPath(u'ccVSVSSE003-NecroArts.esl'),
-        bolt.GPath(u'ccBGSSSE025-AdvDSGS.esm'),
-        bolt.GPath(u'ccFFBSSE002-CrossbowPack.esl'),
-        bolt.GPath(u'ccBGSSSE013-Dawnfang.esl'),
-        bolt.GPath(u'ccRMSSSE001-NecroHouse.esl'),
-        bolt.GPath(u'ccEEJSSE004-Hall.esl'),
-    )
+        u'ccBGSSSE002-ExoticArrows.esl',
+        u'ccBGSSSE003-Zombies.esl',
+        u'ccBGSSSE004-RuinsEdge.esl',
+        u'ccBGSSSE006-StendarsHammer.esl',
+        u'ccBGSSSE007-Chrysamere.esl',
+        u'ccBGSSSE010-PetDwarvenArmoredMudcrab.esl',
+        u'ccBGSSSE014-SpellPack01.esl',
+        u'ccBGSSSE019-StaffofSheogorath.esl',
+        u'ccBGSSSE020-GrayCowl.esl',
+        u'ccBGSSSE021-LordsMail.esl',
+        u'ccMTYSSE001-KnightsoftheNine.esl',
+        u'ccQDRSSE001-SurvivalMode.esl',
+        u'ccTWBSSE001-PuzzleDungeon.esm',
+        u'ccEEJSSE001-Hstead.esm',
+        u'ccQDRSSE002-Firewood.esl',
+        u'ccBGSSSE018-Shadowrend.esl',
+        u'ccBGSSSE035-PetNHound.esl',
+        u'ccFSVSSE001-Backpacks.esl',
+        u'ccEEJSSE002-Tower.esl',
+        u'ccEDHSSE001-NorJewel.esl',
+        u'ccVSVSSE002-Pets.esl',
+        u'ccBGSSSE037-Curios.esl',
+        u'ccBGSSSE034-MntUni.esl',
+        u'ccBGSSSE045-Hasedoki.esl',
+        u'ccBGSSSE008-Wraithguard.esl',
+        u'ccBGSSSE036-PetBWolf.esl',
+        u'ccFFBSSE001-ImperialDragon.esl',
+        u'ccMTYSSE002-VE.esl',
+        u'ccBGSSSE043-CrossElv.esl',
+        u'ccVSVSSE001-Winter.esl',
+        u'ccEEJSSE003-Hollow.esl',
+        u'ccBGSSSE016-Umbra.esm',
+        u'ccBGSSSE031-AdvCyrus.esm',
+        u'ccBGSSSE040-AdvObGobs.esl',
+        u'ccBGSSSE050-BA_Daedric.esl',
+        u'ccBGSSSE052-BA_Iron.esl',
+        u'ccBGSSSE054-BA_Orcish.esl',
+        u'ccBGSSSE058-BA_Steel.esl',
+        u'ccBGSSSE059-BA_Dragonplate.esl',
+        u'ccBGSSSE061-BA_Dwarven.esl',
+        u'ccPEWSSE002-ArmsOfChaos.esl',
+        u'ccBGSSSE041-NetchLeather.esl',
+        u'ccEDHSSE002-SplKntSet.esl',
+        u'ccBGSSSE064-BA_Elven.esl',
+        u'ccBGSSSE063-BA_Ebony.esl',
+        u'ccBGSSSE062-BA_DwarvenMail.esl',
+        u'ccBGSSSE060-BA_Dragonscale.esl',
+        u'ccBGSSSE056-BA_Silver.esl',
+        u'ccBGSSSE055-BA_OrcishScaled.esl',
+        u'ccBGSSSE053-BA_Leather.esl',
+        u'ccBGSSSE051-BA_DaedricMail.esl',
+        u'ccBGSSSE057-BA_Stalhrim.esl',
+        u'ccVSVSSE003-NecroArts.esl',
+        u'ccBGSSSE025-AdvDSGS.esm',
+        u'ccFFBSSE002-CrossbowPack.esl',
+        u'ccBGSSSE013-Dawnfang.esl',
+        u'ccRMSSSE001-NecroHouse.esl',
+        u'ccEEJSSE004-Hall.esl',
+    ))
 
     @property
     def remove_from_plugins_txt(self):
-        return {bolt.GPath(u'Skyrim.esm')} | set(
+        return {GPath_no_norm(u'Skyrim.esm')} | set(
             self.must_be_active_if_present)
 
     __dlc_spacing = 60 # in seconds
@@ -1400,7 +1396,7 @@ class SkyrimSE(AsteriskGame):
             x for x in self.must_be_active_if_present if x in self.mod_infos)
         # rewrite mtimes
         master_mtime = self.mod_infos[self.master_path].mtime
-        update = bolt.GPath(u'Update.esm')
+        update = GPath_no_norm(u'Update.esm')
         for dlc in add[1:]:
             if dlc == update:
                 master_mtime = self.mod_infos[update].mtime
@@ -1425,11 +1421,8 @@ class SkyrimSE(AsteriskGame):
         self.plugins_txt_path.copyTo(bass.dirs[u'app'].join(u'plugins.txt'))
 
 class SkyrimVR(SkyrimSE):
-    must_be_active_if_present = (bolt.GPath(u'Update.esm'),
-                                 bolt.GPath(u'Dawnguard.esm'),
-                                 bolt.GPath(u'Hearthfires.esm'),
-                                 bolt.GPath(u'Dragonborn.esm'),
-                                 bolt.GPath(u'SkyrimVR.esm'),)
+    must_be_active_if_present = SkyrimSE.must_be_active_if_present + (
+        GPath_no_norm(u'SkyrimVR.esm'),)
     _ccc_filename = u''
 
 # Game factory

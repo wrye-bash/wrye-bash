@@ -469,6 +469,16 @@ class Image(object):
         return self.icon
 
     @staticmethod
+    def from_bitstream(bm_width, bm_height, stream_data, with_alpha):
+        """Creates a bitmap from the specified stream data."""
+        wx_depth = (32 if with_alpha else 24)
+        wx_fmt = (_wx.BitmapBufferFormat_RGBA if with_alpha
+                  else _wx.BitmapBufferFormat_RGB)
+        bm = _wx.Bitmap(bm_width, bm_height, wx_depth)
+        bm.CopyFromBuffer(stream_data, wx_fmt)
+        return bm
+
+    @staticmethod
     def GetImage(width, height, image_data):
         """Hasty wrapper around wx.Image - absorb to GetBitmap."""
         image = _wx.Image(width, height)

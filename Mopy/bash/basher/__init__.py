@@ -2062,8 +2062,9 @@ class SaveDetails(_ModsSavesDetails):
         self.gCoSaves.label_text = self.coSaves
         self.uilist.SetFileInfo(self.saveInfo)
         #--Picture
-        image_tuple = self.saveInfo.header.image if self.saveInfo else None
-        self.picture.set_bitmap(image_tuple)
+        new_save_screen = Image.from_bitstream(
+            *self.saveInfo.header.image_parameters) if self.saveInfo else None
+        self.picture.set_bitmap(new_save_screen)
         #--Info Box
         self.gInfo.modified = False
         note_text = bosh.saveInfos.table.getItem(fileName, 'info',
