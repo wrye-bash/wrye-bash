@@ -473,29 +473,6 @@ class ImportPatcher(AImportPatcher, ListPatcher):
             for modName in sorted(counts):
                 log(u'  * %s: %d' % (modName.s, counts[modName]))
 
-    ##: hunt down and exterminate in favor of _SimpleImporter
-    def _parse_sources(self, progress, parser):
-        if not self.isActive: return None
-        fullNames = parser(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs))
-        for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            minfs = self.patchFile.p_file_minfos
-            if minfs.rightFileType(srcPath):
-                if srcPath not in minfs: continue
-                srcInfo = minfs[srcPath]
-                fullNames.readFromMod(srcInfo)
-            else:
-                try:
-                    fullNames.readFromText(getPatchesPath(srcFile))
-                except OSError:
-                    deprint(u'%s is no longer in patches set' % srcPath,
-                        traceback=True)
-                except UnicodeError as e: # originally in NamesPatcher, keep ?
-                    print(srcPath.stail, u'is not saved in UTF-8 format:', e)
-            progress.plus()
-        return fullNames
-
 class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher, SpecialPatcher):
     scanRequiresChecked = True
     applyRequiresChecked = False

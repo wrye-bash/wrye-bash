@@ -38,6 +38,7 @@ from ...mod_files import ModFile, LoadFactory
 ##: currently relies on the merged subrecord being sorted - fix that
 ##: add ForceAdd support
 ##: once the two tasks above are done, absorb all other mergers
+##: a lot of code still shared with _APreserver - move to ImportPatcher
 class _AMerger(ImportPatcher):
     """Still very WIP base class for mergers."""
     # Bash tags for each function of the merger. None means that it does not
@@ -59,6 +60,8 @@ class _AMerger(ImportPatcher):
             self._recurse_masters(srcMod, p_file.p_file_minfos)
             for srcMod in self.srcs))
         self._masters_and_srcs = self.masters | set(self.srcs)
+        # Set of record signatures that are actually provided by sources
+        self._present_sigs = set()
         self.mod_id_entries = {}
         self.touched = set()
         self.inventOnlyMods = (
@@ -75,24 +78,34 @@ class _AMerger(ImportPatcher):
             ret_masters.update(self._recurse_masters(src_master, minfs))
         return ret_masters
 
+    ##: post-tweak pooling, see if we can use RecPath for this
     def _entry_key(self, subrecord_entry):
         """Returns a key to sort and compare by for the specified subrecord
         entry. Default implementation returns the entry itself (useful if the
         subrecord is e.g. just a list of FormIDs)."""
         return subrecord_entry
 
+    def getReadClasses(self):
+        return tuple(self._present_sigs) if self.isActive else ()
+
+    def getWriteClasses(self):
+        return self.getReadClasses()
+
     def initData(self,progress):
         if not self.isActive or not self.srcs: return
+        wanted_sigs = list(self._wanted_subrecord)
         loadFactory = LoadFactory(False, *[MreRecord.type_class[x]
-                                           for x in self._read_write_records])
+                                           for x in wanted_sigs])
         progress.setFull(len(self.srcs))
         for index,srcMod in enumerate(self.srcs):
             srcInfo = self.patchFile.p_file_minfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
-            srcFile.convertToLongFids(self._read_write_records)
-            for block in self._read_write_records:
-                for record in getattr(srcFile, block).getActiveRecords():
+            srcFile.convertToLongFids(wanted_sigs)
+            for block in wanted_sigs:
+                if block not in srcFile.tops: continue
+                self._present_sigs.add(block)
+                for record in srcFile.tops[block].getActiveRecords():
                     self.touched.add(record.fid)
             progress.plus()
 
@@ -102,13 +115,14 @@ class _AMerger(ImportPatcher):
         id_deltas = self.id_deltas
         mod_id_entries = self.mod_id_entries
         modName = modFile.fileInfo.name
-        modFile.convertToLongFids(self._read_write_records)
+        modFile.convertToLongFids(self._present_sigs)
         #--Master or source?
         if modName in self._masters_and_srcs:
             id_entries = mod_id_entries[modName] = {}
-            for curr_sig in self._read_write_records:
+            for curr_sig in self._present_sigs:
                 sr_attr = self._wanted_subrecord[curr_sig]
-                for record in getattr(modFile, curr_sig).getActiveRecords():
+                for record in getattr(modFile, unicode(
+                        curr_sig, u'ascii')).getActiveRecords():
                     if record.fid in touched:
                         id_entries[record.fid] = getattr(record, sr_attr)[:]
         #--Source mod?
@@ -150,7 +164,8 @@ class _AMerger(ImportPatcher):
         # Copy the new records we want to keep, unless we're an IIM merger and
         # the mod is IIM-tagged
         if modFile.fileInfo.name not in self.inventOnlyMods:
-            for curr_sig in self._read_write_records:
+            for curr_sig in self._present_sigs:
+                curr_sig = unicode(curr_sig, u'ascii')
                 patchBlock = getattr(self.patchFile, curr_sig)
                 id_records = patchBlock.id_records
                 for record in getattr(modFile, curr_sig).getActiveRecords():
@@ -167,9 +182,10 @@ class _AMerger(ImportPatcher):
         id_deltas = self.id_deltas
         mod_count = Counter()
         en_key = self._entry_key
-        for curr_sig in self._read_write_records:
+        for curr_sig in self._present_sigs:
             sr_attr = self._wanted_subrecord[curr_sig]
-            for record in getattr(self.patchFile, curr_sig).records:
+            for record in getattr(self.patchFile, unicode(
+                    curr_sig, u'ascii')).records:
                 deltas = id_deltas[record.fid]
                 if not deltas: continue
                 # Use sorted to preserve duplicates, but ignore order. This is
@@ -224,11 +240,10 @@ class _AMerger(ImportPatcher):
 #------------------------------------------------------------------------------
 class ImportInventory(_AMerger, _AImportInventory):
     logMsg = u'\n=== ' + _(u'Inventories Changed') + u': %d'
-    _read_write_records = bush.game.inventoryTypes
     _add_tag = u'Invent.Add'
     _change_tag = u'Invent.Change'
     _remove_tag = u'Invent.Remove'
-    _wanted_subrecord = {x: u'items' for x in _read_write_records}
+    _wanted_subrecord = {x: u'items' for x in bush.game.inventoryTypes}
 
     def _entry_key(self, subrecord_entry):
         return subrecord_entry.item
@@ -236,10 +251,20 @@ class ImportInventory(_AMerger, _AImportInventory):
 #------------------------------------------------------------------------------
 class ImportOutfits(_AMerger):
     logMsg = u'\n=== ' + _(u'Outfits Changed') + u': %d'
-    _read_write_records = (b'OTFT',)
     _add_tag = u'Outfits.Add'
     _remove_tag = u'Outfits.Remove'
-    _wanted_subrecord = {x: u'items' for x in _read_write_records}
+    _wanted_subrecord = {b'OTFT': u'items'}
+
+#------------------------------------------------------------------------------
+class ImportRelations(_AMerger):
+    logMsg = u'\n=== ' + _(u'Modified Factions') + u': %d'
+    _add_tag = u'Relations.Add'
+    _change_tag = u'Relations.Change'
+    _remove_tag = u'Relations.Remove'
+    _wanted_subrecord = {b'FACT': u'relations'}
+
+    def _entry_key(self, subrecord_entry):
+        return subrecord_entry.faction
 
 #------------------------------------------------------------------------------
 # Patchers to absorb ----------------------------------------------------------

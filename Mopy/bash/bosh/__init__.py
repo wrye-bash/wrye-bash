@@ -846,8 +846,10 @@ removed_tags = {u'Merge', u'ScriptContents'}
 # Indefinite backwards-compatibility aliases for deprecated tags
 tag_aliases = {
     u'C.GridFlags': {u'C.ForceHideLand'},
+    u'Derel': {u'Relations.Remove'},
     u'InventOnly': {u'IIM', u'Invent.Add', u'Invent.Remove'},
     u'Invent': {u'Invent.Add', u'Invent.Remove'},
+    u'Relations': {u'Relations.Add', u'Relations.Change'},
     u'Spells': {u'SpellStats'},
 }
 

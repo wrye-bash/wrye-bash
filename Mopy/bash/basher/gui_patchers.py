@@ -1049,11 +1049,11 @@ class _AImportRelations(_ImporterPatcherPanel, _AListPanelCsv):
     """Import faction relations to factions."""
     patcher_name = _(u'Import Relations')
     _patcher_txt = _(u'Import relations from source mods/files.')
-    autoKey = {u'Relations'}
+    autoKey = {u'Relations.Add', u'Relations.Change', u'Relations.Remove'}
     _csv_key = u'Relations'
 
 class ImportRelations(_AImportRelations):
-    patcher_type = preservers.ImportRelations
+    patcher_type = mergers.ImportRelations
 class CBash_ImportRelations(_AImportRelations):
     patcher_type = _cbash_importers.CBash_ImportRelations
 

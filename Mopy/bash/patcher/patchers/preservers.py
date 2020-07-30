@@ -34,9 +34,8 @@ from .base import ImportPatcher
 from .. import getPatchesPath
 from ... import bush, load_order, parsers
 from ...bolt import deprint
-from ...brec import MreRecord, MelObject
+from ...brec import MreRecord
 from ...mod_files import ModFile, LoadFactory
-from ...parsers import FactionRelations
 
 #------------------------------------------------------------------------------
 # cache attrgetter objects
@@ -131,14 +130,11 @@ class _APreserver(ImportPatcher):
             self.id_data.update(src_data)
 
     def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
         return tuple(
             x.rec_sig for x in self.srcClasses) if self.isActive else ()
 
     def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return tuple(
-            x.rec_sig for x in self.srcClasses) if self.isActive else ()
+        return self.getReadClasses()
 
     def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data,
                         __attrgetters=_attrgetters):
@@ -713,91 +709,6 @@ class GraphicsPatcher(_APreserver):
                 setattr(record, attr, value)
             keep(fid)
             type_count[top_mod_rec] += 1
-
-#------------------------------------------------------------------------------
-# TODO(inf) actually a merger, should be refactored and moved there
-class ImportRelations(_APreserver):
-    logMsg = u'\n=== ' + _(u'Modified Factions') + u': %d'
-    srcsHeader = u'=== ' + _(u'Source Mods/Files')
-
-    def __init__(self, p_name, p_file, p_sources):
-        super(ImportRelations, self).__init__(p_name, p_file, p_sources)
-        self.id_data = {}  #--[(otherLongid0,disp0),(...)] =
-        # id_relations[mainLongid]. # WAS id_relations -renamed for _buildPatch
-
-    def initData(self,progress):
-        """Get names from source files."""
-        factionRelations = self._parse_sources(progress, parser=FactionRelations)
-        if not factionRelations: return
-        #--Finish
-        for fid, relations in factionRelations.id_relations.iteritems():
-            if fid and (
-                    fid[0] is not None and fid[0] in self.patchFile.loadSet):
-                filteredRelations = [relation for relation in relations if
-                                     relation[0] and (
-                                     relation[0][0] is not None and
-                                     relation[0][0] in self.patchFile.loadSet)]
-                if filteredRelations:
-                    self.id_data[fid] = filteredRelations
-        self.isActive = bool(self.id_data)
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('FACT',) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('FACT',) if self.isActive else ()
-
-    def scanModFile(self, modFile, progress): # scanModFile2
-        """Scan modFile."""
-        id_relations= self.id_data
-        mapper = modFile.getLongMapper()
-        for type in ('FACT',):
-            if type not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile,type)
-            id_records = patchBlock.id_records
-            for record in modFile.tops[type].getActiveRecords():
-                fid = record.fid
-                if not record.longFids: fid = mapper(fid)
-                if fid in id_records: continue
-                if fid not in id_relations: continue
-                patchBlock.setRecord(record.getTypeCopy(mapper))
-
-    def _inner_loop(self, keep, records, top_mod_rec, type_count):
-        id_data, set_id_data = self.id_data, set(self.id_data)
-        for record in records:
-            fid = record.fid
-            if fid in set_id_data:
-                newRelations = set(id_data[fid])
-                curRelations = set(
-                    (x.faction, x.mod) for x in record.relations)
-                changed = newRelations - curRelations
-                if not changed: continue
-                doKeep = False
-                for faction, disp in changed:
-                    for entry in record.relations:
-                        if entry.faction == faction:
-                            if entry.mod != disp:
-                                entry.mod = disp
-                                doKeep = True
-                                keep(fid)
-                            break
-                    else:
-                        entry = MelObject()
-                        entry.faction = faction
-                        entry.mod = disp
-                        record.relations.append(entry)
-                        doKeep = True
-                if doKeep:
-                    type_count[top_mod_rec] += 1
-                    keep(fid)
-
-    def buildPatch(self, log, progress, types=None):
-        super(ImportRelations, self).buildPatch(log, progress, ('FACT',))
-
-    def _plog(self,log,type_count):
-        log(self.__class__.logMsg % type_count['FACT'])
 
 #------------------------------------------------------------------------------
 ##: is this correct? or is this a merger?
