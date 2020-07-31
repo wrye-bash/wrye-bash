@@ -260,7 +260,7 @@ class BashTab(_DetailsViewMixin, SashUIListPanel):
 #------------------------------------------------------------------------------
 class _ModsUIList(balt.UIList):
 
-    _esmsFirstCols = {u'Load Order', u'Current Order'}
+    _esmsFirstCols = balt.UIList.nonReversibleCols
     @property
     def esmsFirst(self): return settings.get(self.keyPrefix + '.esmsFirst',
                             True) or self.sort_column in self._esmsFirstCols

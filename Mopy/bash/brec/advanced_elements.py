@@ -596,7 +596,7 @@ class AttrValDecider(ACommonDecider):
 
         :param target_attr: The name of the attribute to return the value
             for.
-        :type target_attr: str
+        :type target_attr: unicode
         :param transformer: A function that takes a single argument, the value
             read from target_attr, and returns some other value. Can be used to
             e.g. return only the first character of an eid.
