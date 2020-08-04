@@ -34,8 +34,8 @@ class Fallout4GameInfo(GameInfo):
     altName = u'Wrye Flash'
     bash_root_prefix = u'Fallout4'
     launch_exe = u'Fallout4.exe'
-    game_detect_file = [u'Fallout4.exe']
-    version_detect_file = [u'Fallout4.exe']
+    game_detect_file = u'Fallout4.exe'
+    version_detect_file = u'Fallout4.exe'
     master_file = u'Fallout4.esm'
     pklfile = u'Fallout4_ids.pkl'
     masterlist_dir = u'Fallout4'
@@ -48,8 +48,8 @@ class Fallout4GameInfo(GameInfo):
     has_achlist = True
     check_esl = True
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
-        [u'meshes', u'actors', u'character', u'facegendata', u'facegeom'],
-        [u'meshes', u'actors', u'character', u'facecustomization']]
+        _j(u'meshes', u'actors', u'character', u'facegendata', u'facegeom'),
+        _j(u'meshes', u'actors', u'character', u'facecustomization')]
 
     class Ck(GameInfo.Ck):
         ck_abbrev = u'CK'

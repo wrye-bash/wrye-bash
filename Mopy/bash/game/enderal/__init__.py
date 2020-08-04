@@ -34,10 +34,10 @@ class EnderalGameInfo(SkyrimGameInfo):
     fsName = u'Enderal'
     bash_root_prefix = u'Enderal'
     # Set to this because TESV.exe also exists for Enderal
-    game_detect_file = [u'Enderal Launcher.exe']
+    game_detect_file = u'Enderal Launcher.exe'
     # This isn't exact (currently 1.5.0 when it should be 1.5.7), but it's the
     # closest we're going to get
-    version_detect_file = [u'Enderal Launcher.exe']
+    version_detect_file = u'Enderal Launcher.exe'
     pklfile = u'Enderal_ids.pkl'
     regInstallKeys = (u'SureAI\\Enderal', u'Install_Path')
 

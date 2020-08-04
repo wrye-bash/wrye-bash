@@ -67,7 +67,7 @@ class InstallerFomod(WizardDialog):
             if target_installer.fileRootIdex else u'')
         fm_file = target_installer.fomod_file().s
         gver = env.get_file_version(bass.dirs[u'app'].join(
-            *bush.game.version_detect_file).s)
+            bush.game.version_detect_file).s)
         self.fomod_parser = FomodInstaller(
             fm_file, self.files_list, self.installer_root, bass.dirs[u'mods'],
             u'.'.join([unicode(i) for i in gver]))

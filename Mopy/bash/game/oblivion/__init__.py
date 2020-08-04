@@ -22,8 +22,8 @@
 #
 # =============================================================================
 """GameInfo override for TES IV: Oblivion."""
-from os.path import join as _j
 import struct
+from os.path import join as _j
 
 from .. import GameInfo
 from ... import brec
@@ -35,8 +35,8 @@ class OblivionGameInfo(GameInfo):
     altName = u'Wrye Bash'
     bash_root_prefix = u'Oblivion'
     launch_exe = u'Oblivion.exe'
-    game_detect_file = [u'Data', u'Oblivion.esm']
-    version_detect_file  = [u'Oblivion.exe']
+    game_detect_file = _j(u'Data', u'Oblivion.esm')
+    version_detect_file = u'Oblivion.exe'
     master_file = u'Oblivion.esm'
     pklfile = u'Oblivion_ids.pkl'
     masterlist_dir = u'Oblivion'

@@ -35,8 +35,8 @@ class MorrowindGameInfo(GameInfo):
     bash_root_prefix = u'Morrowind'
     uses_personal_folders = False
     launch_exe = u'Morrowind.exe'
-    game_detect_file = [u'Morrowind.exe']
-    version_detect_file  = [u'Morrowind.exe']
+    game_detect_file = u'Morrowind.exe'
+    version_detect_file = u'Morrowind.exe'
     master_file = u'Morrowind.esm'
     mods_dir = u'Data Files'
     pklfile = u'Morrowind_ids.pkl'

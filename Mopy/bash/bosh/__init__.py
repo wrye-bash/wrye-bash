@@ -813,7 +813,7 @@ class ModInfo(FileInfo):
         as a list of path components."""
         # If resource_path is empty, then we would effectively query
         # self.dir.join(self.name), which always exists - that's the mod file!
-        return resource_path and self.dir.join(*resource_path).join(
+        return resource_path and self.dir.join(resource_path).join(
             self.name).exists()
 
     def has_master_size_mismatch(self): # used in status calculation
@@ -3190,7 +3190,7 @@ def initDefaultTools():
         tooldirs[u'boss'] = GPath(u'C:\\**DNE**')
         # Detect globally installed (into Program Files) BOSS
         path_in_registry = env.get_registry_path(u'Boss', u'Installed Path',
-                                                 [u'BOSS.exe'])
+                                                 u'BOSS.exe')
         if path_in_registry:
             if path_in_registry.isdir():
                 path_in_registry = path_in_registry.join(u'BOSS.exe')

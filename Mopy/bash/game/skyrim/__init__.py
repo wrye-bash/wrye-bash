@@ -36,8 +36,8 @@ class SkyrimGameInfo(GameInfo):
     bash_root_prefix = u'Skyrim'
     launch_exe = u'TESV.exe'
     # Set to this because TESV.exe also exists for Enderal
-    game_detect_file = [u'SkyrimLauncher.exe']
-    version_detect_file = [u'TESV.exe']
+    game_detect_file = u'SkyrimLauncher.exe'
+    version_detect_file = u'TESV.exe'
     master_file = u'Skyrim.esm'
     pklfile = u'Skyrim_ids.pkl'
     masterlist_dir = u'Skyrim'
@@ -47,8 +47,8 @@ class SkyrimGameInfo(GameInfo):
     nexusKey = 'bash.installers.openSkyrimNexus.continue'
 
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
-        [u'meshes', u'actors', u'character', u'facegendata', u'facegeom'],
-        [u'textures', u'actors', u'character', u'facegendata', u'facetint']]
+        _j(u'meshes', u'actors', u'character', u'facegendata', u'facegeom'),
+        _j(u'textures', u'actors', u'character', u'facegendata', u'facetint')]
 
     class Ck(GameInfo.Ck):
         ck_abbrev = u'CK'

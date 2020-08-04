@@ -25,8 +25,10 @@
 state and methods. game.GameInfo#init classmethod is used to import rest of
 active game package as needed (currently the record and constants modules)
 and to set some brec.RecordHeader/MreRecord class variables."""
+
 import importlib
 from collections import defaultdict
+from os.path import join as _j
 
 from .. import brec
 
@@ -46,17 +48,17 @@ class GameInfo(object):
     uses_personal_folders = True
     # The exe to use when launching the game (without xSE present)
     launch_exe = u'' ## Example: u'TESV.exe'
-    # Path to a file to look for to see if this is the right game. Given as a
-    # list of strings that will be joined with the -o parameter. Must be unique
-    # among all games. As a rule of thumb, use the file you specified in
-    # launch_exe, unless that file is shared by multiple games, in which case
-    # you MUST find unique files - see Skyrim and Enderal, which share TESV.exe
-    game_detect_file = []
+    # Path to a file to look for to see if this is the right game when joined
+    # with the -o parameter. Must be unique among all games. As a rule of
+    # thumb, use the file you specified in launch_exe, unless that file is
+    # shared by multiple games, in which case you MUST find unique files - see
+    # Skyrim and Enderal, which share TESV.exe.
+    game_detect_file = u''
     # Path to a file to pass to env.get_file_version to determine the game's
     # version. Usually the same as launch_exe, but some games need different
     # ones here (e.g. Enderal, which has Skyrim's version in the launch_exe,
     # and therefore needs a different file here).
-    version_detect_file = []
+    version_detect_file = u''
     # The main plugin Wrye Bash should look for
     master_file = u''
     # The directory in which mods and other data files reside. This is relative
@@ -100,9 +102,9 @@ class GameInfo(object):
     has_standalone_pluggy = False
     # Information about Plugin-Name-specific Directories supported by this
     # game. Some examples are sound\voices\PLUGIN_NAME.esp, or the facegendata
-    # ones. All paths are given as lists for future cross-platform support. An
-    # empty list means that the game does not have any such directories.
-    plugin_name_specific_dirs = [[u'sound', u'voice']]
+    # ones. An empty list means that the game does not have any such
+    # directories.
+    plugin_name_specific_dirs = [_j(u'sound', u'voice')]
 
     def __init__(self, gamePath):
         self.gamePath = gamePath # absolute bolt Path to the game directory

@@ -22,6 +22,9 @@
 #
 # =============================================================================
 """GameInfo override for Fallout 3."""
+
+from os.path import join as _j
+
 from .. import GameInfo
 from ... import brec
 from ...brec import MreFlst, MreGlob
@@ -32,8 +35,8 @@ class Fallout3GameInfo(GameInfo):
     altName = u'Wrye Flash'
     bash_root_prefix = u'Fallout3'
     launch_exe = u'Fallout3.exe'
-    game_detect_file = [u'Fallout3.exe']
-    version_detect_file = [u'Fallout3.exe']
+    game_detect_file = u'Fallout3.exe'
+    version_detect_file = u'Fallout3.exe'
     master_file = u'Fallout3.esm'
     pklfile = u'Fallout3_ids.pkl'
     masterlist_dir = u'Fallout3'
@@ -44,8 +47,8 @@ class Fallout3GameInfo(GameInfo):
 
     using_txt_file = False
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
-        [u'textures', u'characters', u'BodyMods'],
-        [u'textures', u'characters', u'FaceMods']]
+        _j(u'textures', u'characters', u'BodyMods'),
+        _j(u'textures', u'characters', u'FaceMods')]
 
     class Ck(GameInfo.Ck):
         ck_abbrev = u'GECK'

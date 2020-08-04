@@ -23,6 +23,7 @@
 # =============================================================================
 """GameInfo override for TES IV: Oblivion."""
 import struct
+from os.path import join as _j
 
 from ..oblivion import OblivionGameInfo
 from ... import brec
@@ -31,7 +32,7 @@ from ...brec import MreGlob, MreLand
 class NehrimGameInfo(OblivionGameInfo):
     displayName = u'Nehrim'
     bash_root_prefix = u'Nehrim'
-    game_detect_file = [u'Data', u'Nehrim.esm']
+    game_detect_file = _j(u'Data', u'Nehrim.esm')
     master_file = u'Nehrim.esm'
 #    pklfile = u'Nehrim_ids.pkl' # TODO new pickle
     nexusUrl = u'https://www.nexusmods.com/nehrim/'

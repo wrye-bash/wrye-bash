@@ -66,7 +66,7 @@ def get_registry_path(subkey, entry, detection_file):
             if value[1] != winreg.REG_SZ: continue
             installPath = GPath(value[0])
             if not installPath.exists(): continue
-            exePath = installPath.join(*detection_file)
+            exePath = installPath.join(detection_file)
             if not exePath.exists(): continue
             return installPath
     return None

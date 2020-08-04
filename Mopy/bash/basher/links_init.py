@@ -75,7 +75,7 @@ def InitStatusBar():
     BashStatusBar.buttons.append( # Game
         Game_Button(
             bass.dirs[u'app'].join(bush.game.launch_exe),
-            bass.dirs[u'app'].join(*bush.game.version_detect_file),
+            bass.dirs[u'app'].join(bush.game.version_detect_file),
             imageList(u'%s%%s.png' % bush.game.displayName),
             u' '.join((_(u"Launch"),bush.game.displayName)),
             u' '.join((_(u"Launch"),bush.game.displayName,u'%(version)s'))))

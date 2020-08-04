@@ -34,7 +34,7 @@ def _is_mergeable_no_load(modInfo, reasons):
     verbose = reasons is not None
     if modInfo.has_esm_flag():
         if not verbose: return False
-        reasons.append(_(u'Is esm.'))
+        reasons.append(_(u'Has ESM flag.'))
     #--Bashed Patch
     if modInfo.isBP():
         if not verbose: return False
@@ -62,7 +62,7 @@ def _is_mergeable_no_load(modInfo, reasons):
 def _format_blocking_dir(blocking_dir):
     """Formats a path with path separators. Returns u'' for empty paths."""
     if blocking_dir:
-        return os.sep.join(blocking_dir) + os.sep + u'%(plugin_name)s'
+        return blocking_dir + os.sep + u'%(plugin_name)s'
     else:
         return u''
 

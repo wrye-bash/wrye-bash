@@ -33,8 +33,8 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     altName = u'Wrye Smash'
     bash_root_prefix = u'Skyrim Special Edition' # backwards compat :(
     launch_exe = u'SkyrimSE.exe'
-    game_detect_file = [u'SkyrimSE.exe']
-    version_detect_file = [u'SkyrimSE.exe']
+    game_detect_file = u'SkyrimSE.exe'
+    version_detect_file = u'SkyrimSE.exe'
     masterlist_dir = u'SkyrimSE'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim Special Edition',
                       u'Installed Path')
