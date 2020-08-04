@@ -1642,10 +1642,10 @@ class INIInfos(TableFileInfos):
     @staticmethod
     def __sort_target_inis():
         keys = bass.settings['bash.ini.choices'].keys()
-        # Sort alphabetically
+        # Sort non-game INIs alphabetically
         keys.sort()
-        # Sort Oblivion.ini to the top, and 'Browse...' to the bottom
-        game_inis = bush.game.iniFiles
+        # Sort game INIs to the top, and 'Browse...' to the bottom
+        game_inis = bush.game.Ini.dropdown_inis
         len_inis = len(game_inis)
         keys.sort(key=lambda a: game_inis.index(a) if a in game_inis else (
                       len_inis + 1 if a == _(u'Browse...') else len_inis))
@@ -3361,7 +3361,7 @@ def initBosh(bashIni, game_ini_path):
     oblivionIni = GameIni(game_ini_path, 'cp1252')
     gameInis = [oblivionIni]
     gameInis.extend(IniFile(dirs[u'saveBase'].join(x), 'cp1252') for x in
-                    bush.game.iniFiles[1:])
+                    bush.game.Ini.dropdown_inis[1:])
     load_order.initialize_load_order_files()
     initOptions(bashIni)
     from .bain import Installer

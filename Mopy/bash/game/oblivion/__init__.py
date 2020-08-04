@@ -22,6 +22,7 @@
 #
 # =============================================================================
 """GameInfo override for TES IV: Oblivion."""
+from os.path import join as _j
 import struct
 
 from .. import GameInfo
@@ -33,12 +34,10 @@ class OblivionGameInfo(GameInfo):
     fsName = u'Oblivion'
     altName = u'Wrye Bash'
     bash_root_prefix = u'Oblivion'
-    defaultIniFile = u'Oblivion_default.ini'
     launch_exe = u'Oblivion.exe'
     game_detect_file = [u'Data', u'Oblivion.esm']
     version_detect_file  = [u'Oblivion.exe']
     master_file = u'Oblivion.esm'
-    iniFiles = [u'Oblivion.ini']
     pklfile = u'Oblivion_ids.pkl'
     masterlist_dir = u'Oblivion'
     regInstallKeys = (u'Bethesda Softworks\\Oblivion', u'Installed Path')
@@ -85,6 +84,8 @@ class OblivionGameInfo(GameInfo):
     class Ini(GameInfo.Ini):
         allow_new_lines = False
         bsa_redirection_key = (u'Archive', u'sArchiveList')
+        default_ini_file = u'Oblivion_default.ini'
+        dropdown_inis = [u'Oblivion.ini']
         supports_mod_inis = False
 
     class Ess(GameInfo.Ess):
@@ -101,39 +102,39 @@ class OblivionGameInfo(GameInfo):
         full_name = u'TES4Edit'
         xe_key_prefix = u'tes4View'
 
-    # BAIN:
-    dataDirs = GameInfo.dataDirs | {
-        u'_tejon',
-        u'distantlod',
-        u'facegen',
-        u'fonts',
-        u'menus',
-        u'obse',
-        u'pluggy',
-        u'scripts',
-        u'shaders',
-        u'streamline',
-        u'trees',
-    }
-    SkipBAINRefresh = {
-        u'tes4edit backups',
-        u'tes4edit cache',
-        u'bgsee',
-        u'conscribe logs',
-    }
-    wryeBashDataFiles = GameInfo.wryeBashDataFiles | {
-        u'ArchiveInvalidationInvalidated!.bsa'}
-    ignoreDataFiles = {
-        u'OBSE\\Plugins\\Construction Set Extender.dll',
-        u'OBSE\\Plugins\\Construction Set Extender.ini'
-    }
-    ignoreDataFilePrefixes = {
-        u'Meshes\\Characters\\_Male\\specialanims\\0FemaleVariableWalk_'
-    }
-    ignoreDataDirs = {
-        u'OBSE\\Plugins\\ComponentDLLs\\CSE',
-        u'LSData'
-    }
+    class Bain(GameInfo.Bain):
+        data_dirs = GameInfo.Bain.data_dirs | {
+            u'_tejon',
+            u'distantlod',
+            u'facegen',
+            u'fonts',
+            u'menus',
+            u'obse',
+            u'pluggy',
+            u'scripts',
+            u'shaders',
+            u'streamline',
+            u'trees',
+        }
+        keep_data_dirs = {
+            _j(u'OBSE', u'Plugins', u'ComponentDLLs', u'CSE'),
+            u'LSData'
+        }
+        keep_data_files = {
+            _j(u'OBSE', u'Plugins', u'Construction Set Extender.dll'),
+            _j(u'OBSE', u'Plugins', u'Construction Set Extender.ini'),
+        }
+        keep_data_file_prefixes = {
+            _j(u'Meshes', u'Characters', u'_Male', u'specialanims',
+                u'0FemaleVariableWalk_'),
+        }
+        skip_bain_refresh = {
+            u'tes4edit backups',
+            u'tes4edit cache',
+            u'bgsee',
+            u'conscribe logs',
+        }
+        wrye_bash_data_files = {u'ArchiveInvalidationInvalidated!.bsa'}
 
     class Esp(GameInfo.Esp):
         canBash = True

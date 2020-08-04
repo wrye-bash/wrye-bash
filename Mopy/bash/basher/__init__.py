@@ -675,7 +675,7 @@ class INIList(balt.UIList):
         msg = target_ini_file.target_ini_exists(msg)
         if msg in (True, False): return msg
         # Game ini does not exist - try copying the default game ini
-        default_ini = bass.dirs[u'app'].join(bush.game.defaultIniFile)
+        default_ini = bass.dirs[u'app'].join(bush.game.Ini.default_ini_file)
         if default_ini.exists():
             msg += _(u'Do you want Bash to create it by copying '
                      u'%(default_ini)s ?' % {u'default_ini': default_ini})
@@ -703,7 +703,7 @@ class INIList(balt.UIList):
     @balt.conversation
     def _warn_tweak_game_ini(chosen):
         ask = True
-        if chosen in bush.game.iniFiles:
+        if chosen in bush.game.Ini.dropdown_inis:
             message = (_(u"Apply an ini tweak to %s?") % chosen + u'\n\n' + _(
                 u"WARNING: Incorrect tweaks can result in CTDs and even "
                 u"damage to your computer!"))
@@ -771,10 +771,12 @@ class TargetINILineCtrl(INIListCtrl):
         if new_target:
             self.DeleteAllItems()
         num = self.GetItemCount()
+        main_ini_selected = (bush.game.Ini.dropdown_inis[0] ==
+                             bosh.iniInfos.ini.abs_path.stail)
         try:
             with bosh.iniInfos.ini.abs_path.open(u'rb') as target_ini_file:
                 lines = bolt.decode(target_ini_file.read()).splitlines()
-            if bush.game.iniFiles[0] == bosh.iniInfos.ini.abs_path.stail:
+            if main_ini_selected:
                 Link.Frame.oblivionIniMissing = False
             for i,line in enumerate(lines):
                 if i >= num:
@@ -784,7 +786,7 @@ class TargetINILineCtrl(INIListCtrl):
             for i in xrange(len(lines), num):
                 self.DeleteItem(len(lines))
         except IOError:
-            if bush.game.iniFiles[0] == bosh.iniInfos.ini.abs_path.stail:
+            if main_ini_selected:
                 Link.Frame.oblivionIniMissing = True
         self.fit_column_to_header(0)
 

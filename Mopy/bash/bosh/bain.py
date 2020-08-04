@@ -107,7 +107,7 @@ class Installer(object):
     @staticmethod
     def init_bain_dirs():
         """Initialize BAIN data directories on a per game basis."""
-        Installer.dataDirsPlus |= bush.game.dataDirs
+        Installer.dataDirsPlus |= bush.game.Bain.data_dirs
         InstallersData.installers_dir_skips.update(
             {bass.dirs[u'converters'].stail.lower(), u'bash'})
         user_skipped = bass.inisettings['SkippedBashInstallersDirs'].split(u'|')
@@ -458,8 +458,9 @@ class Installer(object):
             parentDir, fname = (u'', rsplit[0]) if len(rsplit) == 1 else rsplit
             if not self.overrideSkips and bass.settings[
                 'bash.installers.skipDocs'] and not (
-                        fname in bush.game.dontSkip) and not (
-                        fileExt in bush.game.dontSkipDirs.get(parentDir, [])):
+                        fname in bush.game.Bain.no_skip) and not (
+                        fileExt in bush.game.Bain.no_skip_dirs.get(
+                parentDir, [])):
                 return None # skip
             dest = file_relative
             if not parentDir:
@@ -2176,7 +2177,7 @@ class InstallersData(DataStore):
         if setSkipDocs and setSkipImages:
             newSDirs = (x for x in newSDirs if x.lower() != u'docs')
         newSDirs = (x for x in newSDirs if
-                    x.lower() not in bush.game.SkipBAINRefresh)
+                    x.lower() not in bush.game.Bain.skip_bain_refresh)
         sDirs[:] = [x for x in newSDirs]
 
     def update_data_SizeCrcDate(self, dest_paths, progress=None):
@@ -2692,14 +2693,17 @@ class InstallersData(DataStore):
                 keepFiles.add((bolt.CIstr(
                     bp_doc.root.s + (u'.txt' if bp_doc.cext == u'.html'
                                      else u'.html'))))
-        keepFiles.update((bolt.CIstr(f) for f in bush.game.wryeBashDataFiles))
-        keepFiles.update((bolt.CIstr(f) for f in bush.game.ignoreDataFiles))
+        keepFiles.update((bolt.CIstr(f)
+                          for f in bush.game.Bain.wrye_bash_data_files))
+        keepFiles.update((bolt.CIstr(f)
+                          for f in bush.game.Bain.keep_data_files))
         removes = set(self.data_sizeCrcDate) - keepFiles
         # don't remove files in Wrye Bash-related directories or Ini Tweaks
         skipPrefixes = [skipDir.lower() + os.sep for skipDir in
-                        bush.game.wryeBashDataDirs | bush.game.ignoreDataDirs]
-        skipPrefixes.extend([skipPrefix.lower()
-                        for skipPrefix in bush.game.ignoreDataFilePrefixes])
+                        bush.game.Bain.wrye_bash_data_dirs |
+                        bush.game.Bain.keep_data_dirs]
+        skipPrefixes.extend([skipPrefix.lower() for skipPrefix
+                             in bush.game.Bain.keep_data_file_prefixes])
         skipPrefixes = tuple(skipPrefixes)
         filtered_removes = [f for f in removes
                             if not f.lower().startswith(skipPrefixes)]

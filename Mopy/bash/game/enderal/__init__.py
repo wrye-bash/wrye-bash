@@ -33,17 +33,17 @@ class EnderalGameInfo(SkyrimGameInfo):
     displayName = u'Enderal'
     fsName = u'Enderal'
     bash_root_prefix = u'Enderal'
-    defaultIniFile = u'enderal_default.ini'
     # Set to this because TESV.exe also exists for Enderal
     game_detect_file = [u'Enderal Launcher.exe']
     # This isn't exact (currently 1.5.0 when it should be 1.5.7), but it's the
     # closest we're going to get
     version_detect_file = [u'Enderal Launcher.exe']
-    iniFiles = [u'Enderal.ini', u'EnderalPrefs.ini']
     pklfile = u'Enderal_ids.pkl'
     regInstallKeys = (u'SureAI\\Enderal', u'Install_Path')
 
     class Ini(SkyrimGameInfo.Ini):
+        default_ini_file = u'enderal_default.ini'
+        dropdown_inis = [u'Enderal.ini', u'EnderalPrefs.ini']
         save_prefix = u'..\\Enderal\\Saves'
 
     class Bsa(SkyrimGameInfo.Bsa):
@@ -61,7 +61,7 @@ class EnderalGameInfo(SkyrimGameInfo):
     nexusName = u'Enderal Nexus'
     nexusKey = u'bash.installers.openEnderalNexus.continue'
 
-    SkipBAINRefresh = {u'enderaledit backups', u'enderaledit cache'}
+    skip_bain_refresh = {u'enderaledit backups', u'enderaledit cache'}
 
     raceNames = {
         0x13741 : _(u'Half Kilénian'),

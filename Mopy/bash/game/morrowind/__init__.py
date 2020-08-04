@@ -33,14 +33,12 @@ class MorrowindGameInfo(GameInfo):
     fsName = u'Morrowind'
     altName = u'Wrye Mash'
     bash_root_prefix = u'Morrowind'
-    defaultIniFile = u'Morrowind.ini'
     uses_personal_folders = False
     launch_exe = u'Morrowind.exe'
     game_detect_file = [u'Morrowind.exe']
     version_detect_file  = [u'Morrowind.exe']
     master_file = u'Morrowind.esm'
     mods_dir = u'Data Files'
-    iniFiles = [u'Morrowind.ini']
     pklfile = u'Morrowind_ids.pkl'
     masterlist_dir = u'Morrowind'
     # This is according to xEdit's sources, but it doesn't make that key for me
@@ -61,6 +59,8 @@ class MorrowindGameInfo(GameInfo):
     # TODO(inf) MWSE and MGE are vastly different from the later game versions
 
     class Ini(GameInfo.Ini): # No BSA Redirection, TODO need BSA Invalidation
+        default_ini_file = u'Morrowind.ini'
+        dropdown_inis = [u'Morrowind.ini']
         screenshot_enabled_key = (u'General', u'Screen Shot Enable', u'1')
         screenshot_base_key = (u'General', u'Screen Shot Base Name',
                                u'ScreenShot')
@@ -81,17 +81,22 @@ class MorrowindGameInfo(GameInfo):
         full_name = u'TES3Edit'
         xe_key_prefix = u'tes3View'
 
-    # BAIN:
-    dataDirs = GameInfo.dataDirs | {
-        u'bookart',
-        u'icons',
-        u'mwse',
-        u'shaders',
-    }
-    SkipBAINRefresh = {
-        u'tes3edit backups',
-        u'tes3edit cache',
-    }
+    class Bain(GameInfo.Bain):
+        data_dirs = GameInfo.Bain.data_dirs | {
+            u'bookart',
+            u'fonts',
+            u'icons',
+            u'mwse',
+            u'shaders',
+            u'splash',
+        }
+        skip_bain_refresh = {
+            u'tes3edit backups',
+            u'tes3edit cache',
+        }
+        # 'Mash' is not used by us, but kept here so we don't clean out Wrye
+        # Mash table files
+        wrye_bash_data_dirs = GameInfo.Bain.wrye_bash_data_dirs | {u'Mash'}
 
     class Esp(GameInfo.Esp):
         validHeaderVersions = (1.2, 1.3)

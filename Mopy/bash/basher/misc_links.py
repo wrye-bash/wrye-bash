@@ -56,7 +56,7 @@ class Screens_NextScreenShot(EnabledLink):
     def menu_help(self):
         if not self._enable():
             return self._help + u'.  ' + _(u'%(ini)s must exist') % {
-                'ini': bush.game.iniFiles[0]}
+                u'ini': bush.game.Ini.dropdown_inis[0]}
         else: return self._help
 
     def Execute(self):

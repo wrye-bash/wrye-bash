@@ -23,6 +23,8 @@
 # =============================================================================
 """GameInfo override for Fallout 4."""
 
+from os.path import join as _j
+
 from .. import GameInfo
 from ... import brec
 
@@ -31,12 +33,10 @@ class Fallout4GameInfo(GameInfo):
     fsName = u'Fallout4'
     altName = u'Wrye Flash'
     bash_root_prefix = u'Fallout4'
-    defaultIniFile = u'Fallout4_default.ini'
     launch_exe = u'Fallout4.exe'
     game_detect_file = [u'Fallout4.exe']
     version_detect_file = [u'Fallout4.exe']
     master_file = u'Fallout4.esm'
-    iniFiles = [u'Fallout4.ini', u'Fallout4Prefs.ini', u'Fallout4Custom.ini', ]
     pklfile = u'Fallout4_ids.pkl'
     masterlist_dir = u'Fallout4'
     regInstallKeys = (u'Bethesda Softworks\\Fallout4', u'Installed Path')
@@ -69,6 +69,8 @@ class Fallout4GameInfo(GameInfo):
         url_tip = u'http://f4se.silverlock.org/'
 
     class Ini(GameInfo.Ini):
+        default_ini_file = u'Fallout4_default.ini'
+        dropdown_inis = [u'Fallout4.ini', u'Fallout4Prefs.ini']
         resource_archives_keys = (
             u'sResourceIndexFileList', u'sResourceStartUpArchiveList',
             u'sResourceArchiveList', u'sResourceArchiveList2',
@@ -98,27 +100,27 @@ class Fallout4GameInfo(GameInfo):
         full_name = u'FO4Edit'
         xe_key_prefix = u'fo4View'
 
-    # BAIN:
-    dataDirs = GameInfo.dataDirs | {
-        u'f4se',
-        u'interface',
-        u'lodsettings',
-        u'materials',
-        u'mcm', # FO4 MCM
-        u'misc',
-        u'programs',
-        u'scripts',
-        u'seq',
-        u'shadersfx',
-        u'strings',
-        u'tools', # bodyslide
-        u'vis',
-    }
-    dontSkipDirs = {
-        # This rule is to allow mods with string translation enabled.
-        u'interface\\translations': [u'.txt']
-    }
-    SkipBAINRefresh = {u'fo4edit backups', u'fo4edit cache'}
+    class Bain(GameInfo.Bain):
+        data_dirs = GameInfo.Bain.data_dirs | {
+            u'f4se',
+            u'interface',
+            u'lodsettings',
+            u'materials',
+            u'mcm', # FO4 MCM
+            u'misc',
+            u'programs',
+            u'scripts',
+            u'seq',
+            u'shadersfx',
+            u'strings',
+            u'tools', # bodyslide
+            u'vis',
+        }
+        no_skip_dirs = {
+            # This rule is to allow mods with string translation enabled.
+            _j(u'interface', u'translations'): [u'.txt']
+        }
+        skip_bain_refresh = {u'fo4edit backups', u'fo4edit cache'}
 
     class Esp(GameInfo.Esp):
         canBash = True

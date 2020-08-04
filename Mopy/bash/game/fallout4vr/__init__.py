@@ -32,17 +32,10 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
     fsName = u'Fallout4VR'
     altName = u'Wrye VRash'
     bash_root_prefix = u'Fallout4VR'
-    defaultIniFile = u'Fallout4.ini'
     launch_exe = u'Fallout4VR.exe'
     game_detect_file = [u'Fallout4VR.exe']
     version_detect_file = [u'Fallout4VR.exe']
     master_file = u'Fallout4.esm'
-    iniFiles = [
-        u'Fallout4.ini',
-        u'Fallout4Prefs.ini',
-        u'Fallout4Custom.ini',
-        u'Fallout4VrCustom.ini',
-    ]
     regInstallKeys = (u'Bethesda Softworks\\Fallout 4 VR', u'Installed Path')
 
     espm_extensions = Fallout4GameInfo.espm_extensions - {u'.esl'}
@@ -54,6 +47,11 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
         exe = u'f4sevr_loader.exe'
         ver_files = [u'f4sevr_loader.exe', u'f4sevr_steam_loader.dll']
 
+    class Ini(Fallout4GameInfo.Ini):
+        default_ini_file = u'Fallout4.ini' ##: why not Fallout4_default.ini?
+        dropdown_inis = Fallout4GameInfo.Ini.dropdown_inis + [
+            u'Fallout4VrCustom.ini'] ##: why is this here?
+
     class Bsa(Fallout4GameInfo.Bsa):
         vanilla_string_bsas = Fallout4GameInfo.Bsa.vanilla_string_bsas.copy()
         vanilla_string_bsas.update({
@@ -64,7 +62,7 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
         full_name = u'FO4VREdit'
         xe_key_prefix = u'fo4vrView'
 
-    SkipBAINRefresh = {u'fo4vredit backups', u'fo4vredit cache'}
+    skip_bain_refresh = {u'fo4vredit backups', u'fo4vredit cache'}
 
     class Esp(Fallout4GameInfo.Esp):
         validHeaderVersions = (0.95,)

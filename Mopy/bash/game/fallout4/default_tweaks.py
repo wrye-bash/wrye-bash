@@ -24,11 +24,11 @@
 from collections import OrderedDict
 
 default_tweaks = {
-    u'Modding, Enabled [Fallout4Custom].ini': OrderedDict(
+    u'Modding, Enabled [Fallout4].ini': OrderedDict(
         [(u'Archive', OrderedDict(
             [(u'bInvalidateOlderFiles', u'1'),
              (u'sResourceDataDirsFinal', u'')]))]),
-    u'Modding, Disabled ~Default [Fallout4Custom].ini': OrderedDict(
+    u'Modding, Disabled ~Default [Fallout4].ini': OrderedDict(
         [(u'Archive', OrderedDict(
             [(u'bInvalidateOlderFiles', u'0'),
              (u'sResourceDataDirsFinal', u'STRINGS\\')]))]),
@@ -92,11 +92,11 @@ default_tweaks = {
         [(u'Pipboy', OrderedDict([(u'fPipboyEffectColorB', u'0.5983'),
             (u'fPipboyEffectColorR', u'0.0973'),
             (u'fPipboyEffectColorG', u'0.6185')]))]),
-    u'DebugLog, Disabled ~Default [Fallout4Custom].ini': OrderedDict([(
+    u'DebugLog, Disabled ~Default [Fallout4].ini': OrderedDict([(
         u'Papyrus', OrderedDict(
             [(u'bEnableLogging', u'0'), (u'bLoadDebugInformation', u'0'),
              (u'bEnableTrace', u'0')]))]),
-    u'DebugLog, Enabled  [Fallout4Custom].ini': OrderedDict(
+    u'DebugLog, Enabled  [Fallout4].ini': OrderedDict(
         [(u'Papyrus', OrderedDict(
             [(u'bEnableLogging', u'1'), (u'bLoadDebugInformation', u'1'),
                 (u'bEnableTrace', u'1')]))]),

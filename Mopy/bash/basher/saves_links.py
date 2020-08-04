@@ -105,7 +105,9 @@ class Saves_ProfilesData(balt.ListEditorData):
             newName.encode('cp1252')
         except UnicodeEncodeError:
             balt.showError(self.parent,
-                _(u'Name must be encodable in Windows Codepage 1252 (Western European), due to limitations of %(gameIni)s.') % {'gameIni':bush.game.iniFiles[0]})
+                _(u'Name must be encodable in Windows Codepage 1252 '
+                  u'(Western European), due to limitations of %(gameIni)s.')
+                % {u'gameIni': bush.game.Ini.dropdown_inis[0]})
             return False
         self.baseSaves.join(newName).makedirs()
         newSaves = _win_join(newName)

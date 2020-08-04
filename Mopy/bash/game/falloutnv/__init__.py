@@ -31,12 +31,10 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     fsName = u'FalloutNV'
     altName = u'Wrye Flash NV'
     bash_root_prefix = u'FalloutNV'
-    defaultIniFile = u'Fallout_default.ini'
     launch_exe = u'FalloutNV.exe'
     game_detect_file = [u'FalloutNV.exe']
     version_detect_file = [u'FalloutNV.exe']
     master_file = u'FalloutNV.esm'
-    iniFiles = [u'Fallout.ini', u'FalloutPrefs.ini']
     pklfile = u'FalloutNV_ids.pkl'
     masterlist_dir = u'FalloutNV'
     regInstallKeys = (u'Bethesda Softworks\\FalloutNV',u'Installed Path')
@@ -46,7 +44,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
 
     class Se(Fallout3GameInfo.Se):
         se_abbrev = u'NVSE'
-        long_name = u'Fallout Script Extender'
+        long_name = u'New Vegas Script Extender'
         exe = u'nvse_loader.exe'
         ver_files = [u'nvse_loader.exe', u'nvse_steam_loader.dll']
         plugin_dir = u'NVSE'
@@ -59,14 +57,9 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         full_name = u'FNVEdit'
         xe_key_prefix = u'fnvView'
 
-    # BAIN:
-    dataDirs = (Fallout3GameInfo.dataDirs - {u'fose'}) | {u'nvse'}
-    SkipBAINRefresh = {u'fnvedit backups', u'fnvedit cache'}
-    ignoreDataFiles = {
-        #    u'NVSE\\Plugins\\Construction Set Extender.dll',
-        #    u'NVSE\\Plugins\\Construction Set Extender.ini'
-    }
-    ignoreDataDirs = {u'LSData'} #    u'NVSE\\Plugins\\ComponentDLLs\\CSE',
+    class Bain(Fallout3GameInfo.Bain):
+        data_dirs = (Fallout3GameInfo.Bain.data_dirs - {u'fose'}) | {u'nvse'}
+        skip_bain_refresh = {u'fnvedit backups', u'fnvedit cache'}
 
     class Esp(Fallout3GameInfo.Esp):
         canCBash = False # True?

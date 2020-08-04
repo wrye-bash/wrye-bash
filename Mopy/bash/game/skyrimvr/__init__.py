@@ -58,7 +58,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
         full_name = u'TES5VREdit'
         xe_key_prefix = u'tes5vrview'
 
-    SkipBAINRefresh = {u'tes5vredit backups', u'tes5vredit cache'}
+    skip_bain_refresh = {u'tes5vredit backups', u'tes5vredit cache'}
 
     allTags = SkyrimSEGameInfo.allTags | {u'NoMerge'}
     # PatchMerger must come first!

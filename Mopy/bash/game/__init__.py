@@ -41,8 +41,6 @@ class GameInfo(object):
     # Name of the prefix of the '<X> Mods' folder, i.e. <X> is this string.
     # Preferably pick a single word here, equal to fsName if possible.
     bash_root_prefix = u'' ## Example: u'Skyrim'
-    # Name of game's default ini file.
-    defaultIniFile = u''
     # True if the game uses the 'My Documents' folder, False to just use the
     # game path
     uses_personal_folders = True
@@ -64,9 +62,6 @@ class GameInfo(object):
     # The directory in which mods and other data files reside. This is relative
     # to the game directory.
     mods_dir = u'Data'
-    # INI files that should show up in the INI Edits tab
-    #  Example: [u'Oblivion.ini']
-    iniFiles = []
     # The pickle file for this game.  Holds encoded GMST IDs from the big list
     # below
     pklfile = u'*GAMENAME*_ids.pkl'
@@ -194,8 +189,14 @@ class GameInfo(object):
         # INI Entry to enable BSA Redirection - two empty strings if this game
         # does not need BSA redirection
         bsa_redirection_key = (u'', u'')
+        # Name of game's default ini file.
+        default_ini_file = u''
+        # INI files that should show up in the INI Edits tab. Note that the
+        # first one *must* be the main INI!
+        #  Example: [u'Oblivion.ini']
+        dropdown_inis = []
         # INI setting used to setup Save Profiles
-        #  (section,key)
+        #  (section, key)
         save_profiles_key = (u'General', u'SLocalSavePath')
         # Base dir for the save_profiles_key setting above
         save_prefix = u'Saves'
@@ -266,34 +267,35 @@ class GameInfo(object):
         # expert mode)
         xe_key_prefix = u''
 
-    # BAIN:
-    #  These are the allowed default data directories that BAIN can install to
-    dataDirs = {
-        u'ini',
-        u'meshes',
-        u'music',
-        u'sound',
-        u'textures',
-        u'video'
-    }
-    # Files BAIN shouldn't skip
-    dontSkip = ()
-    # Directories where specific file extensions should not be skipped by BAIN
-    dontSkipDirs = {}
-    # Folders BAIN should never CRC check in the Data directory
-    SkipBAINRefresh = set((
-        # Use lowercase names
-    ))
-    # Files to exclude from clean data
-    wryeBashDataFiles = {u'Docs\\Bash Readme Template.html',
-                         u'Docs\\wtxt_sand_small.css', u'Docs\\wtxt_teal.css',
-                         u'Docs\\Bash Readme Template.txt'}
-    # 'Mash' is not used by us, but kept here so we don't clean out Wrye Mash
-    # table files
-    wryeBashDataDirs = {u'Bash Patches', u'BashTags', u'INI Tweaks', u'Mash'}
-    ignoreDataFiles = set()
-    ignoreDataFilePrefixes = set()
-    ignoreDataDirs = set()
+    class Bain(object):
+        """Information about what BAIN should do for this game."""
+        # The allowed default data directories that BAIN can install to
+        data_dirs = {
+            u'ini',
+            u'meshes',
+            u'music',
+            u'sound',
+            u'textures',
+            u'video'
+        }
+        # Directories in the Data folder to exclude from Clean Data
+        keep_data_dirs = set()
+        # Files in the Data folder to exclude from Clean Data
+        keep_data_files = set()
+        # File prefixes in the Data folder to exclude from Clean Data
+        keep_data_file_prefixes = set()
+        # Files BAIN shouldn't skip
+        no_skip = ()
+        # Directories where specific file extensions should not be skipped
+        no_skip_dirs = {}
+        # Folders BAIN should never CRC check in the Data directory
+        skip_bain_refresh = set(
+            # Use lowercase names
+        )
+        # Wrye Bash files to exclude from Clean Data
+        wrye_bash_data_files = set()
+        # Wrye Bash directories to exclude from Clean Data
+        wrye_bash_data_dirs = {u'Bash Patches', u'BashTags', u'INI Tweaks'}
 
     # Plugin format stuff
     class Esp(object):

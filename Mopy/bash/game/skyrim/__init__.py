@@ -23,6 +23,8 @@
 # =============================================================================
 """GameInfo override for TES V: Skyrim."""
 
+from os.path import join as _j
+
 from .. import GameInfo
 from ... import brec
 from ...brec import MreFlst, MreGlob
@@ -32,13 +34,11 @@ class SkyrimGameInfo(GameInfo):
     fsName = u'Skyrim'
     altName = u'Wrye Smash'
     bash_root_prefix = u'Skyrim'
-    defaultIniFile = u'Skyrim_default.ini'
     launch_exe = u'TESV.exe'
     # Set to this because TESV.exe also exists for Enderal
     game_detect_file = [u'SkyrimLauncher.exe']
     version_detect_file = [u'TESV.exe']
     master_file = u'Skyrim.esm'
-    iniFiles = [u'Skyrim.ini', u'SkyrimPrefs.ini']
     pklfile = u'Skyrim_ids.pkl'
     masterlist_dir = u'Skyrim'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim', u'Installed Path')
@@ -78,6 +78,8 @@ class SkyrimGameInfo(GameInfo):
         install_dir = u'SkyProc Patchers'
 
     class Ini(GameInfo.Ini):
+        default_ini_file = u'Skyrim_default.ini'
+        dropdown_inis = [u'Skyrim.ini', u'SkyrimPrefs.ini']
         resource_archives_keys = (u'sResourceArchiveList',
                                   u'sResourceArchiveList2')
 
@@ -96,51 +98,64 @@ class SkyrimGameInfo(GameInfo):
 
     class Psc(GameInfo.Psc):
         source_extensions = {u'.psc'}
+        # In SSE Bethesda made the mistake of packaging the CK's script source
+        # as 'source/scripts' instead of 'scripts/source'. The CK even still
+        # expects the sources to be in 'scripts/source', so you'd have to edit
+        # its INI if you wanted to use 'source/scripts'. However, some modders
+        # have nonetheless adopted this convention, so to support this we
+        # redirect them to the correct path while scanning the package in BAIN.
+        # Sits here because the situation then got worse - some modders have
+        # started packaging 'source' dirs even in Skyrim LE.
+        source_redirects = {
+            _j(u'source', u'scripts'): _j(u'scripts', u'source'),
+            u'source': _j(u'scripts', u'source'),
+        }
 
     class Xe(GameInfo.Xe):
         full_name = u'TES5Edit'
         xe_key_prefix = u'tes5View'
 
-    # BAIN:
-    dataDirs = GameInfo.dataDirs | {
-        u'asi', # script dragon
-        u'calientetools', # bodyslide
-        u'dialogueviews',
-        u'dyndolod',
-        u'grass',
-        u'interface',
-        u'lodsettings',
-        u'scripts',
-        u'seq',
-        u'shadersfx',
-        u'skse',
-        u'skyproc patchers',
-        u'strings',
-        u'tools', # FNIS
-    }
-    dontSkip = (
-           # These are all in the Interface folder. Apart from the skyui_ files,
-           # they are all present in vanilla.
-           u'skyui_cfg.txt',
-           u'skyui_translate.txt',
-           u'credits.txt',
-           u'credits_french.txt',
-           u'fontconfig.txt',
-           u'controlmap.txt',
-           u'gamepad.txt',
-           u'mouse.txt',
-           u'keyboard_english.txt',
-           u'keyboard_french.txt',
-           u'keyboard_german.txt',
-           u'keyboard_spanish.txt',
-           u'keyboard_italian.txt',
-    )
-    dontSkipDirs = {
-        # This rule is to allow mods with string translation enabled.
-        u'interface\\translations': [u'.txt']
-    }
-    SkipBAINRefresh = {u'tes5edit backups', u'tes5edit cache'}
-    ignoreDataDirs = {u'LSData'}
+    class Bain(GameInfo.Bain):
+        data_dirs = GameInfo.Bain.data_dirs | {
+            u'asi', # script dragon
+            u'calientetools', # bodyslide
+            u'dialogueviews',
+            u'dyndolod',
+            u'grass',
+            u'interface',
+            u'lodsettings',
+            u'scripts',
+            u'seq',
+            u'shadersfx',
+            u'skse',
+            u'skyproc patchers',
+            u'source', # see Psc.source_redirects above
+            u'strings',
+            u'tools', # FNIS
+        }
+        keep_data_dirs = {u'LSData'}
+        no_skip = (
+            # These are all in the Interface folder. Apart from the skyui_
+            # files, they are all present in vanilla.
+            u'skyui_cfg.txt',
+            u'skyui_translate.txt',
+            u'credits.txt',
+            u'credits_french.txt',
+            u'fontconfig.txt',
+            u'controlmap.txt',
+            u'gamepad.txt',
+            u'mouse.txt',
+            u'keyboard_english.txt',
+            u'keyboard_french.txt',
+            u'keyboard_german.txt',
+            u'keyboard_spanish.txt',
+            u'keyboard_italian.txt',
+        )
+        no_skip_dirs = {
+            # This rule is to allow mods with string translation enabled.
+            _j(u'interface', u'translations'): [u'.txt']
+        }
+        skip_bain_refresh = {u'tes5edit backups', u'tes5edit cache'}
 
     class Esp(GameInfo.Esp):
         canBash = True

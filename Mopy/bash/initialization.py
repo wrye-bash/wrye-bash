@@ -157,8 +157,9 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     # in the Oblivion.ini directory where Oblivion.exe is run from will
     # actually matter.
     # Utumno: not sure how/if this applies to other games
-    data_oblivion_ini = dirs[u'app'].join(game_info.iniFiles[0])
-    game_ini_path = dirs[u'saveBase'].join(game_info.iniFiles[0])
+    first_ini_name = game_info.Ini.dropdown_inis[0]
+    data_oblivion_ini = dirs[u'app'].join(first_ini_name)
+    game_ini_path = dirs[u'saveBase'].join(first_ini_name)
     dirs[u'mods'] = dirs[u'app'].join(game_info.mods_dir)
     if data_oblivion_ini.isfile():
         oblivionIni = ConfigParser(allow_no_value=True) ##: use GameIni here

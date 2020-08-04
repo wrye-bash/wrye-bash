@@ -31,12 +31,10 @@ class Fallout3GameInfo(GameInfo):
     fsName = u'Fallout3'
     altName = u'Wrye Flash'
     bash_root_prefix = u'Fallout3'
-    defaultIniFile = u'Fallout_default.ini'
     launch_exe = u'Fallout3.exe'
     game_detect_file = [u'Fallout3.exe']
     version_detect_file = [u'Fallout3.exe']
     master_file = u'Fallout3.esm'
-    iniFiles = [u'Fallout.ini', u'FalloutPrefs.ini']
     pklfile = u'Fallout3_ids.pkl'
     masterlist_dir = u'Fallout3'
     regInstallKeys = (u'Bethesda Softworks\\Fallout3',u'Installed Path')
@@ -75,6 +73,8 @@ class Fallout3GameInfo(GameInfo):
     class Ini(GameInfo.Ini):
         allow_new_lines = False
         bsa_redirection_key = (u'Archive', u'sArchiveList')
+        default_ini_file = u'Fallout_default.ini'
+        dropdown_inis = [u'Fallout.ini', u'FalloutPrefs.ini']
         supports_mod_inis = False
 
     class Ess(GameInfo.Ess):
@@ -91,30 +91,24 @@ class Fallout3GameInfo(GameInfo):
         full_name = u'FO3Edit'
         xe_key_prefix = u'fo3View'
 
-    # BAIN:
-    dataDirs = GameInfo.dataDirs | {
-        u'config', # mod config files (INIs)
-        u'distantlod',
-        u'docs',
-        u'facegen',
-        u'fonts',
-        u'fose',
-        u'menus',
-        u'uio', # User Interface Organizer
-        u'scripts',
-        u'shaders',
-        u'trees',
-    }
-    SkipBAINRefresh = {u'fo3edit backups', u'fo3edit cache'}
-    wryeBashDataFiles = GameInfo.wryeBashDataFiles | {
-        u'ArchiveInvalidationInvalidated!.bsa',
-        u'Fallout - AI!.bsa'
-    }
-    ignoreDataFiles = {
-        #    u'FOSE\\Plugins\\Construction Set Extender.dll',
-        #    u'FOSE\\Plugins\\Construction Set Extender.ini'
-    }
-    ignoreDataDirs = {u'LSData'} # u'FOSE\\Plugins\\ComponentDLLs\\CSE',
+    class Bain(GameInfo.Bain):
+        data_dirs = GameInfo.Bain.data_dirs | {
+            u'config', # mod config files (INIs)
+            u'distantlod',
+            u'docs',
+            u'facegen',
+            u'fonts',
+            u'fose',
+            u'menus',
+            u'uio', # User Interface Organizer
+            u'scripts',
+            u'shaders',
+            u'trees',
+        }
+        keep_data_dirs = {u'LSData'}
+        keep_data_files = {u'Fallout - AI!.bsa'}
+        skip_bain_refresh = {u'fo3edit backups', u'fo3edit cache'}
+        wrye_bash_data_files = {u'ArchiveInvalidationInvalidated!.bsa'}
 
     class Esp(GameInfo.Esp):
         canBash = True
