@@ -700,55 +700,7 @@ class CellImporter(ImportPatcher):
 class GraphicsPatcher(_APreserver):
     rec_attrs = bush.game.graphicsTypes
     long_types = bush.game.graphicsLongsTypes
-
-    def __init__(self, p_name, p_file, p_sources):
-        super(GraphicsPatcher, self).__init__(p_name, p_file, p_sources)
-        #--Type Fields
-        # Not available in Skyrim yet LAND, PERK, PACK, QUST, RACE, SCEN, REFR, REGN
-        # Look into why these records are not included, are they part of other patchers?
-        # no 'model' attr: 'EYES', 'AVIF', 'MICN',
-        # Would anyone ever change these: 'PERK', 'QUST', 'SKIL', 'REPU'
-        # for recClass in (MreRecord.type_class[x] for x in bush.game.graphicsIconOnlyRecs):
-        #     recAttrs_class[recClass] = ('iconPath',)
-        # no 'iconPath' attr: 'ADDN', 'ANIO', 'ARTO', 'BPTD', 'CAMS', 'CLMT',
-        # 'CONT', 'EXPL', 'HAZD', 'HPDT', 'IDLM',  'IPCT', 'MATO', 'MSTT',
-        # 'PROJ', 'TACT', 'TREE',
-        # for recClass in (MreRecord.type_class[x] for x in bush.game.graphicsModelOnlyRecs):
-        #     recAttrs_class[recClass] = ('model',)
-        # no'model' and 'iconpath' attr: 'COBJ', 'HAIR', 'NOTE', 'CCRD', 'CHIP', 'CMNY', 'IMOD',
-        # Is 'RACE' included in race patcher?
-        # for recClass in (MreRecord.type_class[x] for x in bush.game.graphicsIconModelRecs):
-        #     recAttrs_class[recClass] = ('iconPath','model',)
-        # Why does Graphics have a seperate entry for Fids when SoundPatcher does not?
-        # for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
-        #     recFidAttrs_class[recClass] = bush.game.graphicsMgefFidAttrs
-        self.recFidAttrs_class = {MreRecord.type_class[recType]: attrs for
-                        recType, attrs in bush.game.graphicsFidTypes.iteritems()}
-
-    def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data,
-                        __attrgetters=_attrgetters):
-        recAttrs = self.recAttrs_class[recClass]
-        recFidAttrs = self.recFidAttrs_class.get(recClass, None)
-        for record in srcFile.tops[recClass.rec_sig].getActiveRecords():
-            fid = mapper(record.fid)
-            if recFidAttrs:
-                attr_fidvalue = {attr: __attrgetters[attr](record) for attr in
-                                 recFidAttrs}
-                for fidvalue in attr_fidvalue.values():
-                    if fidvalue and (fidvalue[0] is None or fidvalue[
-                        0] not in self.patchFile.loadSet):
-                        # Ignore the record. Another option would be
-                        # to just ignore the attr_fidvalue result
-                        self.patchFile.patcher_mod_skipcount[
-                            self._patcher_name][srcMod] += 1
-                        break
-                else:
-                    temp_id_data[fid] = {attr: __attrgetters[attr](record) for
-                                         attr in recAttrs}
-                    temp_id_data[fid].update(attr_fidvalue)
-            else:
-                temp_id_data[fid] = {attr: __attrgetters[attr](record) for attr
-                                     in recAttrs}
+    _fid_rec_attrs = bush.game.graphicsFidTypes
 
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
                     __attrgetters=_attrgetters):

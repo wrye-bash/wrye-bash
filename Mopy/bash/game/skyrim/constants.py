@@ -2435,8 +2435,6 @@ graphicsTypes = {
     "WEAP": ('model1','model2','iconPath','firstPersonModelObject',),
     "WTHR": ('wthrAmbientColors',),
 }
-# TODO(inf) What on earth is this? Plenty of entries above have fids, but are
-#  not listed here...
 graphicsFidTypes = {
     "MGEF": ('castingArt', 'castingLight', 'dualCastingArt', 'enchantArt',
              'enchantShader', 'hitEffectArt', 'hitShader',
