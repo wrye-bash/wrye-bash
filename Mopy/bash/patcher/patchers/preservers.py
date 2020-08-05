@@ -70,12 +70,20 @@ class _APreserver(ImportPatcher):
     :type rec_attrs: dict[bytes, tuple] | dict[bytes, dict[unicode, tuple]]"""
     rec_attrs = {}
     long_types = None
+    # Record attributes that are FormIDs. These will be checked to see if their
+    # FormID is valid before being imported
+    ##: set for more patchers?
+    _fid_rec_attrs = {}
     # True if this importer is a multi-tag importer. That means its rec_attrs
     # must map record signatures to dicts mapping the tags to a tuple of the
     # subrecords to import, instead of just mapping the record signatures
     # directly to the tuples
     _multi_tag = False
     _csv_parser = None
+    # A bash tag to force the import of all relevant data from a tagged mod,
+    # without it being checked against the masters first. None means no such
+    # tag exists for this patcher
+    _force_full_import_tag = None
 
     def __init__(self, p_name, p_file, p_sources):
         super(_APreserver, self).__init__(p_name, p_file, p_sources)
@@ -85,8 +93,21 @@ class _APreserver(ImportPatcher):
         # mods/files.
         self.classestemp = set()
         #--Type Fields
-        self.recAttrs_class = {MreRecord.type_class[recType]: attrs for
-                               recType, attrs in self.rec_attrs.iteritems()}
+        self._fid_rec_attrs_class = (defaultdict(dict) if self._multi_tag
+                                     else defaultdict(tuple))
+        self._fid_rec_attrs_class.update({MreRecord.type_class[r]: a for r, a
+                                          in self._fid_rec_attrs.iteritems()})
+        # We want FormID attrs in the full recAttrs as well. They're only
+        # separate for checking before we import
+        if self._multi_tag: ##: This is hideous
+            def collect_attrs(r, tag_dict):
+                return {t: a + self._fid_rec_attrs.get(r, {}).get(t, ())
+                        for t, a in tag_dict.iteritems()}
+        else:
+            def collect_attrs(r, a):
+                return a + self._fid_rec_attrs.get(r, ())
+        self.recAttrs_class = {MreRecord.type_class[r]: collect_attrs(r, a)
+                               for r, a in self.rec_attrs.iteritems()}
         # Check if we need to use _setattr_deep to set attributes
         if self._multi_tag:
             all_attrs = chain.from_iterable(
@@ -136,21 +157,37 @@ class _APreserver(ImportPatcher):
     def getWriteClasses(self):
         return self.getReadClasses()
 
+    # noinspection PyDefaultArgument
     def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data,
                         __attrgetters=_attrgetters):
         recAttrs = self.recAttrs_class[recClass]
+        fid_attrs = self._fid_rec_attrs_class[recClass]
+        loaded_mods = self.patchFile.loadSet
         if self._multi_tag:
             # For multi-tag importers, we need to look up the applied bash tags
             # and use those to find all applicable attributes
             mod_tags = srcFile.fileInfo.getBashTags()
             recAttrs = set(chain.from_iterable(
                 attrs for t, attrs in recAttrs.iteritems() if t in mod_tags))
+            fid_attrs = set(chain.from_iterable(
+                attrs for t, attrs in fid_attrs.iteritems() if t in mod_tags))
         for record in srcFile.tops[recClass.rec_sig].iter_filtered_records(
                 self.getReadClasses()):
             fid = mapper(record.fid)
+            # If we have FormID attributes, check those before importing
+            if fid_attrs:
+                fid_attr_values = [__attrgetters[a](record) for a in fid_attrs]
+                if any(f and (f[0] is None or f[0] not in loaded_mods) for f
+                       in fid_attr_values):
+                    # Ignore the record. Another option would be to just ignore
+                    # the attr_fidvalue result
+                    self.patchFile.patcher_mod_skipcount[
+                        self._patcher_name][srcMod] += 1
+                    continue
             temp_id_data[fid] = {attr: __attrgetters[attr](record) for attr in
                                  recAttrs}
 
+    # noinspection PyDefaultArgument
     def initData(self, progress, __attrgetters=_attrgetters):
         """Common initData pattern.
         Used in KFFZPatcher, DeathItemPatcher, SoundPatcher, ImportScripts,
@@ -170,7 +207,7 @@ class _APreserver(ImportPatcher):
             srcInfo = minfs[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             masters = srcInfo.get_masters()
-            srcFile.load(True)
+            srcFile.load(do_unpack=True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
             for recClass in self.recAttrs_class:
@@ -179,6 +216,12 @@ class _APreserver(ImportPatcher):
                 self.classestemp.add(recClass)
                 self._init_data_loop(mapper, recClass, srcFile, srcMod,
                                      temp_id_data)
+            if (self._force_full_import_tag and
+                    self._force_full_import_tag in srcInfo.getBashTags()):
+                # We want to force-import - copy the temp data without
+                # filtering by masters, then move on to the next mod
+                id_data.update(temp_id_data)
+                continue
             for master in masters:
                 if master not in minfs: continue # or break filter mods
                 if master in cachedMasters:
@@ -208,6 +251,7 @@ class _APreserver(ImportPatcher):
         self.longTypes &= {x.rec_sig for x in self.srcClasses}
         self.isActive = bool(self.srcClasses)
 
+    # noinspection PyDefaultArgument
     def scanModFile(self, modFile, progress, __attrgetters=_attrgetters):
         """Identical scanModFile() pattern of :
 
@@ -237,6 +281,7 @@ class _APreserver(ImportPatcher):
                         patchBlock.setRecord(record.getTypeCopy(mapper))
                         break
 
+    # noinspection PyDefaultArgument
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
                     __attrgetters=_attrgetters):
         """Most common pattern for the internal buildPatch() loop.
@@ -352,6 +397,28 @@ class NamesPatcher(_ANamesPatcher, _APreserver):
         self._process_csv_sources(
             {r: {f: {u'full': a[1]} for f, a in d.iteritems()}
              for r, d in full_parser.type_id_name.iteritems()})
+
+#------------------------------------------------------------------------------
+class NpcFacePatcher(_ANpcFacePatcher, _APreserver):
+    logMsg = u'\n=== '+_(u'Faces Patched')
+    rec_attrs = {b'NPC_': {
+        u'Npc.EyesOnly': (),
+        u'Npc.HairOnly': (u'hairLength', u'hairRed', u'hairBlue',
+                          u'hairGreen'),
+        u'NpcFaces': (u'fggs_p', u'fgga_p', u'fgts_p', u'hairLength',
+                      u'hairRed', u'hairBlue', u'hairGreen'),
+        u'NpcFacesForceFullImport': (u'fggs_p', u'fgga_p', u'fgts_p',
+                                     u'hairLength', u'hairRed', u'hairBlue',
+                                     u'hairGreen'),
+    }}
+    _fid_rec_attrs = {b'NPC_': {
+        u'Npc.EyesOnly': (u'eye',),
+        u'Npc.HairOnly': (u'hair',),
+        u'NpcFaces': (u'eye', u'hair'),
+        u'NpcFacesForceFullImport': (u'eye', u'hair'),
+    }}
+    _multi_tag = True
+    _force_full_import_tag = u'NpcFacesForceFullImport'
 
 #------------------------------------------------------------------------------
 class ObjectBoundsImporter(_APreserver):
@@ -709,120 +776,3 @@ class GraphicsPatcher(_APreserver):
                 setattr(record, attr, value)
             keep(fid)
             type_count[top_mod_rec] += 1
-
-#------------------------------------------------------------------------------
-##: is this correct? or is this a merger?
-class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
-    logMsg = u'\n=== '+_(u'Faces Patched') + u': %d'
-
-    def __init__(self, p_name, p_file, p_sources):
-        super(NpcFacePatcher, self).__init__(p_name, p_file, p_sources)
-        self.faceData = {}
-
-    def initData(self,progress):
-        """Get faces from TNR files."""
-        if not self.isActive: return
-        faceData = self.faceData
-        loadFactory = LoadFactory(False,MreRecord.type_class['NPC_'])
-        progress.setFull(len(self.srcs))
-        cachedMasters = {}
-        minfs = self.patchFile.p_file_minfos
-        for index,faceMod in enumerate(self.srcs):
-            if faceMod not in minfs: continue
-            temp_faceData = {}
-            faceInfo = minfs[faceMod]
-            faceFile = ModFile(faceInfo,loadFactory)
-            masters = faceInfo.get_masters()
-            bashTags = faceInfo.getBashTags()
-            faceFile.load(do_unpack=True)
-            faceFile.convertToLongFids(('NPC_',))
-            for npc in faceFile.NPC_.getActiveRecords():
-                if npc.fid[0] in self.patchFile.loadSet:
-                    attrs, fidattrs = [],[]
-                    if u'Npc.HairOnly' in bashTags:
-                        fidattrs += ['hair']
-                        attrs = ['hairLength','hairRed','hairBlue','hairGreen']
-                    if u'Npc.EyesOnly' in bashTags:
-                        fidattrs += ['eye']
-                    if fidattrs:
-                        attr_fidvalue = dict(
-                            (attr, npc.__getattribute__(attr)) for attr in
-                            fidattrs)
-                    else:
-                        attr_fidvalue = dict(
-                            (attr, npc.__getattribute__(attr)) for attr in
-                            ('eye', 'hair'))
-                    for fidvalue in attr_fidvalue.values():
-                        if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
-                            self._ignore_record(faceMod)
-                            break
-                    else:
-                        if not fidattrs:
-                            temp_faceData[npc.fid] = dict(
-                                (attr, npc.__getattribute__(attr)) for attr in
-                                ('fggs_p', 'fgga_p', 'fgts_p', 'hairLength',
-                                 'hairRed', 'hairBlue', 'hairGreen'))
-                        else:
-                            temp_faceData[npc.fid] = dict(
-                                (attr, npc.__getattribute__(attr)) for attr in
-                                attrs)
-                        temp_faceData[npc.fid].update(attr_fidvalue)
-            if u'NpcFacesForceFullImport' in bashTags:
-                for fid in temp_faceData:
-                    faceData[fid] = temp_faceData[fid]
-            else:
-                for master in masters:
-                    if master not in minfs: continue # or break filter mods
-                    if master in cachedMasters:
-                        masterFile = cachedMasters[master]
-                    else:
-                        masterInfo = minfs[master]
-                        masterFile = ModFile(masterInfo,loadFactory)
-                        masterFile.load(True)
-                        masterFile.convertToLongFids(('NPC_',))
-                        cachedMasters[master] = masterFile
-                    if 'NPC_' not in masterFile.tops: continue
-                    for npc in masterFile.NPC_.getActiveRecords():
-                        if npc.fid not in temp_faceData: continue
-                        for attr, value in temp_faceData[npc.fid].iteritems():
-                            if value == npc.__getattribute__(attr): continue
-                            if npc.fid not in faceData: faceData[
-                                npc.fid] = dict()
-                            try:
-                                faceData[npc.fid][attr] = \
-                                temp_faceData[npc.fid][attr]
-                            except KeyError:
-                                faceData[npc.fid].setdefault(attr,value)
-            progress.plus()
-
-    def scanModFile(self, modFile, progress): # scanModFile3: mapper unused !
-        """Add lists from modFile."""
-        modName = modFile.fileInfo.name
-        if not self.isActive or modName in self.srcs or 'NPC_' not in modFile.tops:
-            return
-        faceData,patchNpcs = self.faceData,self.patchFile.NPC_
-        modFile.convertToLongFids(('NPC_',))
-        for npc in modFile.NPC_.getActiveRecords():
-            if npc.fid in faceData:
-                patchNpcs.setRecord(npc)
-
-    def buildPatch(self,log,progress):# buildPatch3: one type
-        """Adds merged lists to patchfile."""
-        if not self.isActive: return
-        keep = self.patchFile.getKeeper()
-        faceData, count = self.faceData, 0
-        for npc in self.patchFile.NPC_.records:
-            if npc.fid in faceData:
-                changed = False
-                for attr, value in faceData[npc.fid].iteritems():
-                    if value != npc.__getattribute__(attr):
-                        npc.__setattr__(attr,value)
-                        changed = True
-                if changed:
-                    npc.setChanged()
-                    keep(npc.fid)
-                    count += 1
-        self.faceData.clear()
-        self._patchLog(log,count)
-
-    def _plog(self, log, count): log(self.__class__.logMsg % count)
