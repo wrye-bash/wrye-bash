@@ -518,7 +518,6 @@ class GameInfo(object):
     # Actor Patchers
     #--------------------------------------------------------------------------
     actor_importer_attrs = {}
-    actor_importer_auto_key = set()
     actor_types = ()
 
     #--------------------------------------------------------------------------
@@ -590,19 +589,19 @@ class GameInfo(object):
     # Import from the constants module ----------------------------------------
     # Class attributes moved to constants module, set dynamically at init
     _constants_members = {
-        'GlobalsTweaks', 'GmstTweaks', 'actor_importer_attrs',
-        'actor_importer_auto_key', 'actor_tweaks', 'actor_types',
-        'actor_values', 'bethDataFiles', 'body_tags', 'cc_valid_types',
-        'cc_passes', 'cellAutoKeys', 'cellRecAttrs', 'cellRecFlags',
-        'condition_function_data', 'default_eyes', 'destructible_types',
-        'generic_av_effects', 'getvatsvalue_index', 'gmstEids',
-        'graphicsFidTypes', 'graphicsLongsTypes', 'graphicsModelAttrs',
-        'graphicsTypes', 'hostile_effects', 'inventoryTypes', 'keywords_types',
-        'listTypes', 'mgef_basevalue', 'mgef_name', 'mgef_school',
-        'namesTypes', 'nirnroots', 'object_bounds_types', 'pricesTypes',
-        'record_type_name', 'save_rec_types', 'scripts_types',
-        'soundsLongsTypes', 'soundsTypes', 'spell_stats_attrs', 'statsHeaders',
-        'statsTypes', 'text_long_types', 'text_types',
+        'GlobalsTweaks', 'GmstTweaks', 'actor_importer_attrs', 'actor_tweaks',
+        'actor_types', 'actor_values', 'bethDataFiles', 'body_tags',
+        'cc_valid_types', 'cc_passes', 'cellAutoKeys', 'cellRecAttrs',
+        'cellRecFlags', 'condition_function_data', 'default_eyes',
+        'destructible_types', 'generic_av_effects', 'getvatsvalue_index',
+        'gmstEids', 'graphicsFidTypes', 'graphicsLongsTypes',
+        'graphicsModelAttrs', 'graphicsTypes', 'hostile_effects',
+        'inventoryTypes', 'keywords_types', 'listTypes', 'mgef_basevalue',
+        'mgef_name', 'mgef_school', 'namesTypes', 'nirnroots',
+        'object_bounds_types', 'pricesTypes', 'record_type_name',
+        'save_rec_types', 'scripts_types', 'soundsLongsTypes', 'soundsTypes',
+        'spell_stats_attrs', 'statsHeaders', 'statsTypes', 'text_long_types',
+        'text_types',
     }
 
     @classmethod

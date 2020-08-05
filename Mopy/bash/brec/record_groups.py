@@ -130,6 +130,14 @@ class MobBase(object):
         """Returns a ModReader wrapped around self.data."""
         return ModReader(self.inName,sio(self.data))
 
+    def iter_filtered_records(self, wanted_sigs, include_ignored=False):
+        """Filters iter_records, returning a generator that only yields records
+        with one of the signatures in wanted_sigs. If include_ignored is True,
+        records that have the Ignored flag set will be included. Otherwise,
+        they will be ignored as well."""
+        return (r for r in self.iter_records() if r.recType in wanted_sigs and
+                (include_ignored or not r.flags1.ignored))
+
     # Abstract methods --------------------------------------------------------
     def get_all_signatures(self):
         """Returns a set of all signatures contained in this block."""
