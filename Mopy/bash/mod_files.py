@@ -219,7 +219,6 @@ class ModFile(object):
             #--Raw data read
             subProgress.setFull(ins.size)
             insAtEnd = ins.atEnd
-            insSeek = ins.seek
             insTell = ins.tell
             while not insAtEnd():
                 #--Get record info and handle it
@@ -230,8 +229,27 @@ class ModFile(object):
                 topClass = self.loadFactory.getTopClass(label)
                 try:
                     if topClass:
-                        self.tops[label] = topClass(header, self.loadFactory)
-                        self.tops[label].load(ins, do_unpack and (topClass != MobBase))
+                        new_top = topClass(header, self.loadFactory)
+                        load_fully = do_unpack and (topClass != MobBase)
+                        new_top.load(ins, load_fully)
+                        # Starting with FO4, some of Bethesda's official files
+                        # have duplicate top-level groups
+                        if label not in self.tops:
+                            self.tops[label] = new_top
+                        elif not load_fully:
+                            # Duplicate top-level group and we can't merge due
+                            # to not loading it fully. Log and replace the
+                            # existing one
+                            deprint(u'%s: Duplicate top-level %s group '
+                                    u'loaded as MobBase, replacing')
+                            self.tops[label] = new_top
+                        else:
+                            # Duplicate top-level group and we can merge
+                            deprint(u'%s: Duplicate top-level %s group, '
+                                    u'merging' % (
+                                self.fileInfo.name, label))
+                            self.tops[label].merge_records(new_top, set(),
+                                set(), False, False)
                     else:
                         self.topsSkipped.add(label)
                         header.skip_group(ins)

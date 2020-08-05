@@ -136,7 +136,8 @@ class MobBase(object):
         records that have the Ignored flag set will be included. Otherwise,
         they will be ignored as well."""
         return (r for r in self.iter_records() if r.recType in wanted_sigs and
-                (include_ignored or not r.flags1.ignored))
+                (include_ignored or not r.flags1.ignored)
+                and not r.flags1.deleted) # skip deleted records (ugh)
 
     # Abstract methods --------------------------------------------------------
     def get_all_signatures(self):
