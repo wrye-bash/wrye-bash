@@ -1399,6 +1399,23 @@ C.Location, -C.LockList
             <td>Obsoleted due to Merge Patches rework.</td>
         </tr>
         <tr>
+            <td>Npc.EyesOnly</td>
+            <td>Older name for NPC.Eyes.</td>
+        </tr>
+        <tr>
+            <td>Npc.HairOnly</td>
+            <td>Older name for NPC.Hair.</td>
+        </tr>
+        <tr>
+            <td>NpcFaces</td>
+            <td>Split into NPC.Eyes, NPC.Hair and NPC.FaceGen. Previous
+                behavior is equivalent to all three tags combined.
+                <br>
+                Warning: Previous versions allowed applying both NpcFaces and
+                one of the two 'Only' tags above. This was undefined behavior,
+                but thankfully no mods seem to have made this mistake.</td>
+        </tr>
+        <tr>
             <td>Relations</td>
             <td>Split into Relations.Add and Relations.Change. The behavior of
                 the old Relations tag is equivalent to Relations.Add combined
@@ -2079,7 +2096,7 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
-            <td>Npc.EyesOnly</td>
+            <td>NPC.Eyes</td>
             <td>Modifies Non-Player Character eyes.</td>
             <td>The (ENAM) Eyes subrecord of (NPC_) Non-Player Character records.
                 <br>
@@ -2088,7 +2105,20 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
-            <td>Npc.HairOnly</td>
+            <td>NPC.FaceGen</td>
+            <td>Modifies Non-Player Character faces.</td>
+            <td>The following (NPC_) Non-Player Character subrecords:
+                <ul>
+                    <li>(FGGS) FaceGen Geometry-Symmetric</li>
+                    <li>(FGGA) FaceGen Geometry-Asymmetric</li>
+                    <li>(FGTS) FaceGen Texture-Symmetry </li>
+                </ul>
+                <br>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>NPC.Hair</td>
             <td>Modifies Non-Player Character hair.</td>
             <td>The (HNAM) Hair subrecord of (NPC_) Non-Player Character records.
                 <br>
@@ -2103,33 +2133,6 @@ C.Location, -C.LockList
                 <br>
                 <br>
                 <strong>Not available for Fallout 4.</strong>
-            </td>
-        </tr>
-        <tr>
-            <td>NpcFaces</td>
-            <td>Modifies Non-Player Character faces.</td>
-            <td>The following (NPC_) Non-Player Character subrecords:
-                <ul>
-                    <li>FaceGen Data
-                        <ul>
-                            <li>(FGGS) FaceGen Geometry-Symmetric</li>
-                            <li>(FGGA) FaceGen Geometry-Asymmetric</li>
-                            <li>(FGTS) FaceGen Texture-Symmetry </li>
-                        </ul>
-                    </li>
-                    <li>(ENAM) Eyes</li>
-                    <li>(HNAM) Hair</li>
-                    <li>(LNAM) Hair Length</li>
-                    <li>(HCLR) Hair Color</li>
-                </ul>
-                <br>
-                <strong>Do not use NpcFaces in combination with Npc.EyesOnly
-                    and/or Npc.HairOnly!</strong> The resulting behavior is
-                    undefined. This tag does everything those two tags do and
-                    also handles facegen data.
-                <br>
-                <br>
-                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
             </td>
         </tr>
         <tr>
@@ -2150,6 +2153,11 @@ C.Location, -C.LockList
                     <li>(LNAM) Hair Length</li>
                     <li>(HCLR) Hair Color</li>
                 </ul>
+                <br>
+                Note: If you have applied this tag, there is no more need to
+                apply NPC.Eyes, NPC.FaceGen or NPC.Hair as well. This tag
+                already does everything those tags do.
+                <br>
                 <br>
                 <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
             </td>

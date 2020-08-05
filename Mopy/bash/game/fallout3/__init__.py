@@ -147,7 +147,7 @@ class Fallout3GameInfo(GameInfo):
         u'Deflst', u'Delev', u'Destructible', u'Factions', u'Filter',
         u'Graphics', u'Invent.Add', u'Invent.Change', u'Invent.Remove',
         u'MustBeActiveIfImported', u'Names', u'NoMerge', u'NPC.Class',
-        u'Npc.EyesOnly', u'Npc.HairOnly', u'NPC.Race', u'NpcFaces',
+        u'NPC.Eyes', u'NPC.FaceGen', u'NPC.Hair', u'NPC.Race',
         u'NpcFacesForceFullImport', u'ObjectBounds', u'Relev', u'Scripts',
         u'Sound', u'SpellStats', u'Stats', u'Text',
     }

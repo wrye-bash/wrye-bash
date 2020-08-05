@@ -782,13 +782,13 @@ class CBash_NpcFacePatcher(_ANpcFacePatcher,CBash_ImportPatcher):
             else:
                 self._ignore_record(modFile.GName)
             return
-        elif u'NpcFaces' in bashTags:
-            attrs = self.faceData
         else:
-            if u'Npc.HairOnly' in bashTags:
+            if u'NPC.Hair' in bashTags:
                 attrs = ['hair', 'hairLength','hairRed','hairBlue','hairGreen']
-            if u'Npc.EyesOnly' in bashTags:
+            if u'NPC.Eyes' in bashTags:
                 attrs += ['eye']
+            if u'NPC.FaceGen' in bashTags:
+                attrs += ['fggs_p', 'fgga_p', 'fgts_p']
         if not attrs:
             return
         face = record.ConflictDetails(attrs)

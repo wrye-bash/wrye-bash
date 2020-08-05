@@ -402,19 +402,17 @@ class NamesPatcher(_ANamesPatcher, _APreserver):
 class NpcFacePatcher(_ANpcFacePatcher, _APreserver):
     logMsg = u'\n=== '+_(u'Faces Patched')
     rec_attrs = {b'NPC_': {
-        u'Npc.EyesOnly': (),
-        u'Npc.HairOnly': (u'hairLength', u'hairRed', u'hairBlue',
-                          u'hairGreen'),
-        u'NpcFaces': (u'fggs_p', u'fgga_p', u'fgts_p', u'hairLength',
-                      u'hairRed', u'hairBlue', u'hairGreen'),
+        u'NPC.Eyes': (),
+        u'NPC.FaceGen': (u'fggs_p', u'fgga_p', u'fgts_p'),
+        u'NPC.Hair': (u'hairLength', u'hairRed', u'hairBlue', u'hairGreen'),
         u'NpcFacesForceFullImport': (u'fggs_p', u'fgga_p', u'fgts_p',
                                      u'hairLength', u'hairRed', u'hairBlue',
                                      u'hairGreen'),
     }}
     _fid_rec_attrs = {b'NPC_': {
-        u'Npc.EyesOnly': (u'eye',),
-        u'Npc.HairOnly': (u'hair',),
-        u'NpcFaces': (u'eye', u'hair'),
+        u'NPC.Eyes': (u'eye',),
+        u'NPC.FaceGen': (),
+        u'NPC.Hair': (u'hair',),
         u'NpcFacesForceFullImport': (u'eye', u'hair'),
     }}
     _multi_tag = True

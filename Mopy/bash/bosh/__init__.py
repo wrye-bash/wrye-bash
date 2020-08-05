@@ -847,8 +847,11 @@ removed_tags = {u'Merge', u'ScriptContents'}
 tag_aliases = {
     u'C.GridFlags': {u'C.ForceHideLand'},
     u'Derel': {u'Relations.Remove'},
-    u'InventOnly': {u'IIM', u'Invent.Add', u'Invent.Remove'},
     u'Invent': {u'Invent.Add', u'Invent.Remove'},
+    u'InventOnly': {u'IIM', u'Invent.Add', u'Invent.Remove'},
+    u'Npc.EyesOnly': {u'NPC.Eyes'},
+    u'Npc.HairOnly': {u'NPC.Hair'},
+    u'NpcFaces': {u'NPC.Eyes', u'NPC.Hair', u'NPC.FaceGen'},
     u'Relations': {u'Relations.Add', u'Relations.Change'},
     u'Spells': {u'SpellStats'},
 }

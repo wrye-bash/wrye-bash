@@ -1106,11 +1106,11 @@ class CBash_NamesPatcher(_ANamesPatcher):
 # -----------------------------------------------------------------------------
 class _ANpcFacePatcher(_ImporterPatcherPanel):
     """NPC Faces patcher, for use with TNR or similar mods."""
-    patcher_name = _(u'Import NPC Faces')
+    patcher_name = _(u'Import Actors: Faces')
     _patcher_txt = _(u'Import NPC face/eyes/hair from source mods. For use '
                      u'with TNR and similar mods.')
-    autoKey = {u'NpcFaces', u'NpcFacesForceFullImport', u'Npc.HairOnly',
-               u'Npc.EyesOnly'}
+    autoKey = {u'NPC.Eyes', u'NPC.FaceGen', u'NPC.Hair',
+               u'NpcFacesForceFullImport'}
 
     def _get_auto_mods(self, autoRe=re.compile(u'^TNR .*.esp$', re.I | re.U)):
         """Pick TNR esp if present in addition to appropriately tagged mods."""
