@@ -1964,6 +1964,66 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td>EffectStats</td>
+            <td>Modifies (MGEF) Magic Effect / Base Effect stats.</td>
+            <td>The following fields of the (DATA) Data subrecord in (MGEF)
+                Magic Effect / Base Effect records:
+                <ul>
+                    <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only:</strong>
+                    <br>
+                    <br>
+                    <li>Flags</li>
+                    <li>Base Cost</li>
+                    <li>Associated Item</li>
+                    <li>Magic School</li>
+                    <li>Resist Value</li>
+                    <li>Projectile Speed</li>
+                    <li>Constant Effect Enchantment Factor</li>
+                    <li>Constant Effect Barter Factor</li>
+                    <li>Archetype &mdash;
+                        <strong>Fallout 3 &amp; Fallout&colon; New Vegas only.</strong></li>
+                    <li>Actor Value &mdash;
+                        <strong>Fallout 3 &amp; Fallout&colon; New Vegas only.</strong></li>
+                    <br>
+                    <strong>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition only:</strong>
+                    <br>
+                    <br>
+                    <li>Flags</li>
+                    <li>Base Cost</li>
+                    <li>Associated Item</li>
+                    <li>Magic Skill</li>
+                    <li>Resist Value</li>
+                    <li>Taper Weight</li>
+                    <li>Minimum Skill Level</li>
+                    <li>Spellmaking
+                        <ul>
+                            <li>Area</li>
+                            <li>Casting Time</li>
+                        </ul>
+                    </li>
+                    <li>Taper Curve</li>
+                    <li>Taper Duration</li>
+                    <li>Second AV Weight</li>
+                    <li>Archetype</li>
+                    <li>Actor Value</li>
+                    <li>Casting Type</li>
+                    <li>Delivery</li>
+                    <li>Second Actor Value</li>
+                    <li>Skill Usage Multiplier</li>
+                    <li>Equip Ability</li>
+                    <li>Perk to Apply</li>
+                    <li>Script Effect AI
+                        <ul>
+                            <li>Score</li>
+                            <li>Delay Time</li>
+                        </ul>
+                    </li>
+                </ul>
+                <br>
+                <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
             <td>EnchantmentStats</td>
             <td>Modifies (ENCH) Enchantment / Object Effect stats.</td>
             <td>The following fields of the (ENIT) Effect Data subrecord in
@@ -4470,8 +4530,12 @@ C.Location, -C.LockList
                                     <li>Casting Art</li>
                                     <li>Hit Effect Art</li>
                                     <li>Impact Data</li>
-                                    <li>Dual Casting Art</li>
-                                    <li>Dual Casting Scale</li>
+                                    <li>Dual Casting
+                                        <ul>
+                                            <li>Art</li>
+                                            <li>Scale</li>
+                                        </ul>
+                                    </li>
                                     <li>Enchant Art</li>
                                     <li>Image Space Modifier</li>
                                 </ul>

@@ -2604,6 +2604,18 @@ ench_stats_attrs = (u'enchantmentCost', u'generalFlags', u'castType',
                     u'enchantmentAmount', u'targetType', u'enchantType',
                     u'chargeTime', u'baseEnchantment', u'wornRestrictions')
 
+#--------------------------------------------------------------------------
+# Effect Stats Patcher
+#--------------------------------------------------------------------------
+mgef_stats_attrs = (u'flags', u'base_cost', u'associated_item', u'magic_skill',
+                    u'resist_value', u'taper_weight', u'minimum_skill_level',
+                    u'spellmaking_area', u'spellmaking_casting_time',
+                    u'taper_curve', u'taper_duration', u'second_av_weight',
+                    u'effect_archetype', u'actorValue', u'casting_type',
+                    u'delivery', u'second_av', u'skill_usage_multiplier',
+                    u'equip_ability', u'perk_to_apply',
+                    u'script_effect_ai_score', u'script_effect_ai_delay_time')
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH': _(u'Potions'),

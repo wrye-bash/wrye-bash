@@ -157,24 +157,25 @@ class SkyrimGameInfo(GameInfo):
         u'C.ForceHideLand', u'C.ImageSpace', u'C.Light', u'C.Location',
         u'C.LockList', u'C.Music', u'C.Name', u'C.Owner', u'C.RecordFlags',
         u'C.Regions', u'C.SkyLighting', u'C.Water', u'Deactivate', u'Delev',
-        u'Destructible', u'EnchantmentStats', u'Factions', u'Filter',
-        u'Graphics', u'Invent.Add', u'Invent.Change', u'Invent.Remove',
-        u'Keywords', u'MustBeActiveIfImported', u'Names', u'NoMerge',
-        u'NPC.AIPackageOverrides', u'NPC.Class', u'NPC.Race', u'ObjectBounds',
-        u'Outfits.Add', u'Outfits.Remove', u'Relations.Add',
+        u'Destructible', u'EffectStats', u'EnchantmentStats', u'Factions',
+        u'Filter', u'Graphics', u'Invent.Add', u'Invent.Change',
+        u'Invent.Remove', u'Keywords', u'MustBeActiveIfImported', u'Names',
+        u'NoMerge', u'NPC.AIPackageOverrides', u'NPC.Class', u'NPC.Race',
+        u'ObjectBounds', u'Outfits.Add', u'Outfits.Remove', u'Relations.Add',
         u'Relations.Change', u'Relations.Remove', u'Relev', u'Sound',
         u'SpellStats', u'Stats', u'Text',
     }
 
-    patchers = (u'PatchMerger', # PatchMerger must come first!
+    patchers = (
+        u'PatchMerger', # PatchMerger must come first!
         u'ActorImporter', u'CellImporter', u'ContentsChecker',
         u'DeathItemPatcher', u'DestructiblePatcher', u'GmstTweaker',
-        u'GraphicsPatcher', u'ImportActorsSpells', u'ImportEnchantmentStats',
-        u'ImportFactions', u'ImportInventory', u'ImportOutfits',
-        u'ImportRelations', u'KeywordsImporter', u'ListsMerger',
-        u'NamesPatcher', u'NPCAIPackagePatcher', u'ObjectBoundsImporter',
-        u'SoundPatcher', u'SpellsPatcher', u'StatsPatcher', u'TextImporter',
-        u'TweakActors',
+        u'GraphicsPatcher', u'ImportActorsSpells', u'ImportEffectsStats',
+        u'ImportEnchantmentStats', u'ImportFactions', u'ImportInventory',
+        u'ImportOutfits', u'ImportRelations', u'KeywordsImporter',
+        u'ListsMerger', u'NamesPatcher', u'NPCAIPackagePatcher',
+        u'ObjectBoundsImporter', u'SoundPatcher', u'SpellsPatcher',
+        u'StatsPatcher', u'TextImporter', u'TweakActors',
     )
 
     weaponTypes = (

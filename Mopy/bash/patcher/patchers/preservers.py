@@ -358,6 +358,11 @@ class DestructiblePatcher(_APreserver):
     rec_attrs = {x: ('destructible',) for x in bush.game.destructible_types}
 
 #------------------------------------------------------------------------------
+class ImportEffectsStats(_APreserver):
+    """Preserves changes to MGEF stats."""
+    rec_attrs = {b'MGEF': bush.game.mgef_stats_attrs}
+
+#------------------------------------------------------------------------------
 class ImportEnchantmentStats(_APreserver):
     """Preserves changes to ENCH stats."""
     rec_attrs = {b'ENCH': bush.game.ench_stats_attrs}

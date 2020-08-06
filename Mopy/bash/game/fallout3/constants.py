@@ -1098,6 +1098,13 @@ relations_csv_row_format = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s","%s"\n'
 #------------------------------------------------------------------------------
 ench_stats_attrs = (u'itemType', u'chargeAmount', u'enchantCost', u'flags')
 
+#--------------------------------------------------------------------------
+# Effect Stats Patcher
+#--------------------------------------------------------------------------
+mgef_stats_attrs = (u'flags', u'base_cost', u'associated_item', u'school',
+                    u'resist_value', u'projectileSpeed', u'cef_enchantment',
+                    u'cef_barter', u'effect_archetype', u'actorValue')
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH':_(u'Potions'),

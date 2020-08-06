@@ -135,10 +135,11 @@ class Fallout3GameInfo(GameInfo):
         u'C.Encounter', u'C.ForceHideLand', u'C.ImageSpace', u'C.Light',
         u'C.Music', u'C.Name', u'C.Owner', u'C.RecordFlags', u'C.Regions',
         u'C.Water', u'Creatures.Blood', u'Creatures.Type', u'Deactivate',
-        u'Deflst', u'Delev', u'Destructible', u'EnchantmentStats', u'Factions',
-        u'Filter', u'Graphics', u'Invent.Add', u'Invent.Change',
-        u'Invent.Remove', u'MustBeActiveIfImported', u'Names', u'NoMerge',
-        u'NPC.Class', u'NPC.Eyes', u'NPC.FaceGen', u'NPC.Hair', u'NPC.Race',
+        u'Deflst', u'Delev', u'Destructible', u'EffectStats',
+        u'EnchantmentStats', u'Factions', u'Filter', u'Graphics',
+        u'Invent.Add', u'Invent.Change', u'Invent.Remove',
+        u'MustBeActiveIfImported', u'Names', u'NoMerge', u'NPC.Class',
+        u'NPC.Eyes', u'NPC.FaceGen', u'NPC.Hair', u'NPC.Race',
         u'NpcFacesForceFullImport', u'ObjectBounds', u'Relations.Add',
         u'Relations.Change', u'Relations.Remove', u'Relev', u'Scripts',
         u'Sound', u'SpellStats', u'Stats', u'Text',
@@ -146,13 +147,14 @@ class Fallout3GameInfo(GameInfo):
 
     # Remaining to add:
     #  AssortedTweaker, NamesTweaker, RacePatcher, UpdateReferences
-    patchers = (u'PatchMerger', # PatchMerger must come first!
+    patchers = (
+        u'PatchMerger', # PatchMerger must come first!
         u'ActorImporter', u'AliasesPatcher', u'CellImporter',
         u'ContentsChecker', u'DeathItemPatcher', u'DestructiblePatcher',
         u'FidListsMerger', u'GmstTweaker', u'GraphicsPatcher',
-        u'ImportActorsSpells', u'ImportEnchantmentStats', u'ImportFactions',
-        u'ImportInventory', u'ImportRelations', u'ImportScripts',
-        u'KFFZPatcher', u'ListsMerger', u'NamesPatcher',
+        u'ImportActorsSpells', u'ImportEffectsStats', u'ImportEnchantmentStats',
+        u'ImportFactions', u'ImportInventory', u'ImportRelations',
+        u'ImportScripts', u'KFFZPatcher', u'ListsMerger', u'NamesPatcher',
         u'NPCAIPackagePatcher', u'NpcFacePatcher', u'ObjectBoundsImporter',
         u'SoundPatcher', u'SpellsPatcher', u'StatsPatcher', u'TextImporter',
         u'TweakActors',

@@ -555,6 +555,11 @@ class GameInfo(object):
     ench_stats_attrs = ()
 
     #--------------------------------------------------------------------------
+    # Effect Stats Patcher
+    #--------------------------------------------------------------------------
+    mgef_stats_attrs = ()
+
+    #--------------------------------------------------------------------------
     # Magic Effects - Oblivion-specific
     #--------------------------------------------------------------------------
     # Doesn't list MGEFs that use actor values, but rather MGEFs that have a
@@ -612,12 +617,12 @@ class GameInfo(object):
         u'gmstEids', u'graphicsFidTypes', u'graphicsModelAttrs',
         u'graphicsTypes', u'hostile_effects', u'inventoryTypes',
         u'keywords_types', u'listTypes', u'mgef_basevalue', u'mgef_name',
-        u'mgef_school', u'namesTypes', u'nirnroots', u'object_bounds_types',
-        u'pricesTypes', u'record_type_name', u'relations_attrs',
-        u'relations_csv_header', u'relations_csv_row_format',
-        u'save_rec_types', u'scripts_types', u'soundsLongsTypes',
-        u'soundsTypes', u'spell_stats_attrs', u'statsHeaders', u'statsTypes',
-        u'text_long_types', u'text_types',
+        u'mgef_school', u'mgef_stats_attrs', u'namesTypes', u'nirnroots',
+        u'object_bounds_types', u'pricesTypes', u'record_type_name',
+        u'relations_attrs', u'relations_csv_header',
+        u'relations_csv_row_format', u'save_rec_types', u'scripts_types',
+        u'soundsLongsTypes', u'soundsTypes', u'spell_stats_attrs',
+        u'statsHeaders', u'statsTypes', u'text_long_types', u'text_types',
     }
 
     @classmethod
