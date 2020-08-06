@@ -123,6 +123,16 @@ class ModFidMismatchError(ModError):
                         % (record_sig, fid_expected, fid_actual))
         super(ModFidMismatchError, self).__init__(in_name.s, message_form)
 
+class ModSigMismatchError(ModError):
+    """Mod Error: A record is getting overriden by a record with a different
+    signature. This is undefined behavior."""
+    def __init__(self, in_name, record):
+        message_form = (u'%r is likely overriding or being overwritten by a '
+                        u'record with the same FormID but a different type. '
+                        u'This is undefined behavior and could lead to '
+                        u'crashes.') % record
+        super(ModSigMismatchError, self).__init__(in_name.s, message_form)
+
 # Shell (OS) File Operation exceptions ----------------------------------------
 class FileOperationError(OSError):
     def __init__(self, error_code, message=None):

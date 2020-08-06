@@ -322,7 +322,8 @@ class ModFile(object):
         indices = {name: index for index, name in enumerate(masters)}
         gLong = self.getLongMapper()
         has_expanded_range = bush.game.Esp.expanded_plugin_range
-        if has_expanded_range and len(masters) > 1:
+        if (has_expanded_range and len(masters) > 1
+                and self.tes4.version >= 1.0):
             # Plugin has at least one master, it may freely use the
             # expanded (0x000-0x800) range
             def _master_index(m_name, obj_id):

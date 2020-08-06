@@ -35,6 +35,7 @@ from .. import getPatchesPath
 from ... import bush, load_order, parsers
 from ...bolt import deprint, floats_equal
 from ...brec import MreRecord
+from ...exception import ModSigMismatchError
 from ...mod_files import ModFile, LoadFactory
 
 #------------------------------------------------------------------------------
@@ -242,9 +243,13 @@ class _APreserver(ImportPatcher):
                         fid = mapper(record.fid)
                         if fid not in temp_id_data: continue
                         for attr, value in temp_id_data[fid].iteritems():
-                            if value == __attrgetters[attr](record): continue
-                            else:
-                                id_data[fid][attr] = value
+                            try:
+                                if value == __attrgetters[attr](record):
+                                    continue
+                                else:
+                                    id_data[fid][attr] = value
+                            except AttributeError:
+                                raise ModSigMismatchError(master, record)
             progress.plus()
         if self._csv_parser:
             self._parse_csv_sources(progress)

@@ -32,6 +32,7 @@ from ._shared import _AImportInventory
 from .base import ImportPatcher
 from ... import bush
 from ...brec import MreRecord
+from ...exception import ModSigMismatchError
 from ...mod_files import ModFile, LoadFactory
 
 #------------------------------------------------------------------------------
@@ -124,7 +125,11 @@ class _AMerger(ImportPatcher):
                 for record in getattr(modFile, unicode(
                         curr_sig, u'ascii')).getActiveRecords():
                     if record.fid in touched:
-                        id_entries[record.fid] = getattr(record, sr_attr)[:]
+                        try:
+                            id_entries[record.fid] = getattr(
+                                record, sr_attr)[:]
+                        except AttributeError:
+                            raise ModSigMismatchError(modName, record)
         #--Source mod?
         if modName in self.srcs:
             # The applied tags limit what data we're going to collect
