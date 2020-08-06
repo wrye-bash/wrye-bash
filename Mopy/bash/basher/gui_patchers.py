@@ -1215,6 +1215,13 @@ class ObjectBoundsImporter(_ImporterPatcherPanel):
     autoKey = {u'ObjectBounds'}
     patcher_type = preservers.ObjectBoundsImporter
 
+class ImportEnchantmentStats(_ImporterPatcherPanel):
+    patcher_name = _(u'Import Enchantment Stats')
+    _patcher_txt = _(u'Import stats from enchantments / object effects from '
+                     u'source mods.')
+    autoKey = {u'EnchantmentStats'}
+    patcher_type = preservers.ImportEnchantmentStats
+
 # Patchers 30 -----------------------------------------------------------------
 class AssortedTweaker(_TweakPatcherPanel):
     patcher_name = _(u'Tweak Assorted')

@@ -657,10 +657,10 @@ listTypes = ('LVLC','LVLI','LVLN')
 # NamesPatcher
 #------------------------------------------------------------------------------
 namesTypes = {
-    'ACTI', 'ALCH', 'AMMO', 'ARMO', 'AVIF', 'BOOK', 'CLAS', 'COBJ', 'CONT',
-    'CREA', 'DOOR', 'EYES', 'FACT', 'HAIR', 'INGR', 'KEYM', 'LIGH', 'MESG',
-    'MGEF', 'MISC', 'NOTE', 'NPC_', 'PERK', 'RACE', 'SPEL', 'TACT', 'TERM',
-    'WEAP',
+    b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'AVIF', b'BOOK', b'CLAS', b'COBJ',
+    b'CONT', b'CREA', b'DOOR', b'ENCH', b'EYES', b'FACT', b'HAIR', b'INGR',
+    b'KEYM', b'LIGH', b'MESG', b'MGEF', b'MISC', b'NOTE', b'NPC_', b'PERK',
+    b'RACE', b'SPEL', b'TACT', b'TERM', b'WEAP',
 }
 
 #------------------------------------------------------------------------------
@@ -897,7 +897,7 @@ graphicsTypes = {
     "LIGH": ('iconPath','model','duration','radius','red','green','blue',
              'flags','falloff','fade'),
     "LSCR": ('iconPath',),
-    "MGEF": ('iconPath','model','light','effectShader','objectDisplayShader',),
+    "MGEF": ('iconPath','model',),
     "MICN": ('iconPath','smallIconPath',),
     "MISC": ('iconPath','smallIconPath','model',),
     "MSTT": ('model',),
@@ -1091,6 +1091,11 @@ relations_csv_header = u'"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (
     _(u'Other Mod'), _(u'Other Object'), _(u'Modifier'),
     _(u'Group Combat Reaction'))
 relations_csv_row_format = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s","%s"\n'
+
+#------------------------------------------------------------------------------
+# Enchantment Stats Patcher
+#------------------------------------------------------------------------------
+ench_stats_attrs = (u'itemType', u'chargeAmount', u'enchantCost', u'flags')
 
 # Record type to name dictionary
 record_type_name = {

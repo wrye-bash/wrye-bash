@@ -1428,10 +1428,11 @@ listTypes = ('LVLC','LVLI','LVSP',)
 #------------------------------------------------------------------------------
 # NamesPatcher
 #------------------------------------------------------------------------------
-namesTypes = {'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT',
-              'CONT', 'CREA', 'DOOR', 'EYES', 'FACT', 'FLOR', 'HAIR', 'INGR',
-              'KEYM', 'LIGH', 'MISC', 'NPC_', 'RACE', 'SGST', 'SLGM', 'SPEL',
-              'WEAP'}
+namesTypes = {b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'BSGN', b'CLAS',
+              b'CLOT', b'CONT', b'CREA', b'DOOR', b'ENCH', b'EYES', b'FACT',
+              b'FLOR', b'HAIR', b'INGR', b'KEYM', b'LIGH', b'MGEF', b'MISC',
+              b'NPC_', b'RACE', b'SGST', b'SLGM', b'SPEL', b'WEAP'}
+
 #------------------------------------------------------------------------------
 # ItemPrices Patcher
 #------------------------------------------------------------------------------
@@ -1807,6 +1808,20 @@ actor_tweaks = {
 body_tags = u'ARGHTCCPBS'
 
 #------------------------------------------------------------------------------
+# Relations Patcher
+#------------------------------------------------------------------------------
+relations_attrs = (u'faction', u'mod')
+relations_csv_header = u'"%s","%s","%s","%s","%s","%s","%s"\n' % (
+    _(u'Main Eid'), _(u'Main Mod'), _(u'Main Object'), _(u'Other Eid'),
+    _(u'Other Mod'), _(u'Other Object'), _(u'Modifier'))
+relations_csv_row_format = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
+
+#------------------------------------------------------------------------------
+# Enchantment Stats Patcher
+#------------------------------------------------------------------------------
+ench_stats_attrs = (u'itemType', u'chargeAmount', u'enchantCost', u'flags')
+
+#------------------------------------------------------------------------------
 # Magic Effects
 #------------------------------------------------------------------------------
 import struct as _struct # hide from dynamic importer
@@ -2123,15 +2138,6 @@ actor_values = [
     u'Darkness', #--70
     u'ResistWaterDamage',
 ]
-
-#------------------------------------------------------------------------------
-# Relations Patcher
-#------------------------------------------------------------------------------
-relations_attrs = (u'faction', u'mod')
-relations_csv_header = u'"%s","%s","%s","%s","%s","%s","%s"\n' % (
-    _(u'Main Eid'), _(u'Main Mod'), _(u'Main Object'), _(u'Other Eid'),
-    _(u'Other Mod'), _(u'Other Object'), _(u'Modifier'))
-relations_csv_row_format = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
 
 # Record type to name dictionary
 record_type_name = {

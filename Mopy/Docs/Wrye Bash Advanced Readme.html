@@ -1964,9 +1964,40 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td>EnchantmentStats</td>
+            <td>Modifies (ENCH) Enchantment / Object Effect stats.</td>
+            <td>The following fields of the (ENIT) Effect Data subrecord in
+                (ENCH) Enchantment / Object Effect records:
+                <ul>
+                    <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only:</strong>
+                    <br>
+                    <br>
+                    <li>Type</li>
+                    <li>Charge Amount</li>
+                    <li>Enchant Cost</li>
+                    <li>Flags</li>
+                    <br>
+                    <strong>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition only:</strong>
+                    <br>
+                    <br>
+                    <li>Enchantment Cost</li>
+                    <li>Flags</li>
+                    <li>Cast Type</li>
+                    <li>Enchantment Amount</li>
+                    <li>Target Type</li>
+                    <li>Enchant Type</li>
+                    <li>Charge Time</li>
+                    <li>Base Enchantment</li>
+                    <li>Worn Restrictions</li>
+                </ul>
+                <br>
+                <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
             <td>Factions</td>
-            <td>Changes Creature (<strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>) or Non-Player Character factions.</td>
-            <td>Addition or removal of a faction, or change of faction rank in (NPC_) Non-Player Character or (CREA) Creature (<strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>) records.
+            <td>Changes Creature (<strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>) or Non-Player Character factions.</td>
+            <td>Addition or removal of a faction, or change of faction rank in (NPC_) Non-Player Character or (CREA) Creature (<strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>) records.
                 <ul>
                     <li>Factions
                         <ul>
@@ -2006,7 +2037,7 @@ C.Location, -C.LockList
                 <ul>
                     <li>(CONT) Container</li>
                     <li>(CREA) Creature &mdash;
-                        <strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
@@ -2028,7 +2059,7 @@ C.Location, -C.LockList
                 <ul>
                     <li>(CONT) Container</li>
                     <li>(CREA) Creature &mdash;
-                        <strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
@@ -2674,7 +2705,19 @@ C.Location, -C.LockList
                     <li>(LIGH) Light: (ICON) Icon Filename, Model</li>
                     <li>(LSCR) Load Screen: (ICON) Icon Filename</li>
                     <li>(LTEX) Landscape Texture: (ICON) Icon Filename</li>
-                    <li>(MGEF) Magic Effect: (ICON) Icon Filename, Model</li>
+                    <li>(MGEF) Magic Effect:
+                        <ul>
+                            <li>(ICON) Icon Filename</li>
+                            <li>Model</li>
+                            <li>(DATA) Data
+                                <ul>
+                                    <li>Light</li>
+                                    <li>Effect Shader</li>
+                                    <li>Enchant Effect</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
                     <li>(MISC) Misc. Item: (ICON) Icon Filename, Model</li>
                     <li>(QUST) Quest: (ICON) Icon Filename</li>
                     <li>(REGN) Region: (ICON) Icon Filename</li>
@@ -2708,6 +2751,7 @@ C.Location, -C.LockList
                     <li>(CONT) Container</li>
                     <li>(CREA) Creature</li>
                     <li>(DOOR) Door</li>
+                    <li>(ENCH) Enchantment</li>
                     <li>(EYES) Eyes</li>
                     <li>(FACT) Faction</li>
                     <li>(FLOR) Flora</li>
@@ -2715,6 +2759,7 @@ C.Location, -C.LockList
                     <li>(INGR) Ingredient</li>
                     <li>(KEYM) Key</li>
                     <li>(LIGH) Light</li>
+                    <li>(MGEF) Magic Effect</li>
                     <li>(MISC) Misc. Item</li>
                     <li>(NPC_) Non-Player Character</li>
                     <li>(RACE) Race</li>
@@ -3155,7 +3200,8 @@ C.Location, -C.LockList
                     <li>(NPC_ only) Flags:
                         <ul>
                             <li>Auto-Calc Stats</li>
-                            <li>Autocalc Service - <strong>Fallout&colon; New Vegas only</strong></li>
+                            <li>Autocalc Service &mdash;
+                                <strong>Fallout&colon; New Vegas only</strong></li>
                             <li>Can Be All Races</li>
                             <li>Essential</li>
                             <li>Female</li>
@@ -3570,9 +3616,13 @@ C.Location, -C.LockList
                         <ul>
                             <li>(MODL) Model</li>
                             <li>(ICON) Icon</li>
-                            <li>(DATA) Light</li>
-                            <li>(DATA) Effect Shader</li>
-                            <li>(DATA) Object Display Shader</li>
+                            <li>(DATA) Data
+                                <ul>
+                                    <li>Light</li>
+                                    <li>Effect Shader</li>
+                                    <li>Object Display Shader</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(MICN) Menu Icon:
@@ -4409,14 +4459,18 @@ C.Location, -C.LockList
                     <li>(LSCR) Load Screen: (ICON) Icon</li>
                     <li>(MGEF) Magic Effect:
                         <ul>
-                            <li>(DATA) Casting Art</li>
-                            <li>(DATA) Casting Light</li>
-                            <li>(DATA) Dual-Casting Art</li>
-                            <li>(DATA) Enchant Art</li>
-                            <li>(DATA) Enchant Shader</li>
-                            <li>(DATA) Hit Effect Art</li>
-                            <li>(DATA) Hit Shader</li>
                             <li>(MDOB) Menu Display Object</li>
+                            <li>(DATA) Data
+                                <ul>
+                                    <li>Casting Art</li>
+                                    <li>Casting Light</li>
+                                    <li>Dual-Casting Art</li>
+                                    <li>Enchant Art</li>
+                                    <li>Enchant Shader</li>
+                                    <li>Hit Effect Art</li>
+                                    <li>Hit Shader</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(SCRL) Scroll: (MDOB) Menu Display Object</li>
@@ -4462,6 +4516,7 @@ C.Location, -C.LockList
                     <li>(MISC) Misc. Item</li>
                     <li>(MSTT) Movable Static</li>
                     <li>(NPC_) Non Player Character</li>
+                    <li>(PERK) Perk</li>
                     <li>(SCRL) Scroll</li>
                     <li>(SHOU) Shout</li>
                     <li>(SLGM) Soul Gem</li>
@@ -5023,7 +5078,7 @@ C.Location, -C.LockList
                     <li>(SPLO) Spells</li>
                 </ul>
             </td>
-            <td>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas</td>
         </tr>
         <tr>
             <td>(LVLC) Leveled Creature</td>
@@ -5032,7 +5087,7 @@ C.Location, -C.LockList
                     <li>(LVLO) Entries</li>
                 </ul>
             </td>
-            <td>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas</td>
         </tr>
         <tr>
             <td>(LVLI) Leveled Item</td>

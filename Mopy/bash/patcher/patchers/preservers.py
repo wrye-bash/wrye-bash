@@ -358,6 +358,11 @@ class DestructiblePatcher(_APreserver):
     rec_attrs = {x: ('destructible',) for x in bush.game.destructible_types}
 
 #------------------------------------------------------------------------------
+class ImportEnchantmentStats(_APreserver):
+    """Preserves changes to ENCH stats."""
+    rec_attrs = {b'ENCH': bush.game.ench_stats_attrs}
+
+#------------------------------------------------------------------------------
 class ImportFactions(_APreserver):
     logMsg = u'\n=== ' + _(u'Refactioned Actors')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')

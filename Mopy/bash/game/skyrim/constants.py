@@ -2174,13 +2174,13 @@ listTypes = ('LVLI','LVLN','LVSP',)
 #------------------------------------------------------------------------------
 # NamesPatcher
 #------------------------------------------------------------------------------
-# remaining to add: 'PERK', 'RACE',
+# remaining to add: 'RACE',
 namesTypes = {b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'AVIF', b'BOOK',
               b'CLAS', b'CLFM', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'EYES',
               b'FACT', b'FLOR', b'FURN', b'HAZD', b'HDPT', b'INGR', b'KEYM',
               b'LCTN', b'LIGH', b'MESG', b'MGEF', b'MISC', b'MSTT', b'NPC_',
-              b'PROJ', b'SCRL', b'SHOU', b'SLGM', b'SNCT', b'TACT', b'TREE',
-              b'WATR', b'WEAP', b'WOOP'}
+              b'PERK', b'PROJ', b'SCRL', b'SHOU', b'SLGM', b'SNCT', b'TACT',
+              b'TREE', b'WATR', b'WEAP', b'WOOP'}
 
 #------------------------------------------------------------------------------
 # ItemPrices Patcher
@@ -2588,6 +2588,13 @@ relations_csv_header = u'"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (
     _(u'Other Mod'), _(u'Other Object'), _(u'Modifier'),
     _(u'Group Combat Reaction'))
 relations_csv_row_format = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s","%s"\n'
+
+#------------------------------------------------------------------------------
+# Enchantment Stats Patcher
+#------------------------------------------------------------------------------
+ench_stats_attrs = (u'enchantmentCost', u'generalFlags', u'castType',
+                    u'enchantmentAmount', u'targetType', u'enchantType',
+                    u'chargeTime', u'baseEnchantment', u'wornRestrictions')
 
 # Record type to name dictionary
 record_type_name = {
