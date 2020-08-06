@@ -1027,7 +1027,7 @@ class CellImporter(_ACellImporter):
     autoKey = bush.game.cellAutoKeys
 class CBash_CellImporter(_ACellImporter):
     autoKey = {u'C.Climate', u'C.Light', u'C.Water', u'C.Owner', u'C.Name',
-               u'C.RecordFlags', u'C.Music'}  #,u'C.Maps'
+               u'C.RecordFlags', u'C.Music'}
     patcher_type = _cbash_importers.CBash_CellImporter
     patcher_type.autoKey = autoKey ##: autoKey hack
 

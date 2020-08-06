@@ -876,13 +876,13 @@ class MobCell(MobBase):
         #--Interior cell
         if cell.flags.isInterior:
             baseFid = cell.fid & 0x00FFFFFF
-            return baseFid%10, baseFid%100//10
+            return baseFid % 10, baseFid % 100 // 10
         #--Exterior cell
         else:
-            x,y = cell.posY,cell.posX
+            x, y = cell.posX, cell.posY
             if x is None: x = 0
             if y is None: y = 0
-            return (x//32, y//32), (x//8, y//8)
+            return (y // 32, x // 32), (y // 8, x // 8)
 
     def dump(self,out):
         """Dumps group header and then records."""
@@ -1272,13 +1272,23 @@ class MobICells(MobCells):
         selfLoadFactory = self.loadFactory
         insTell = ins.tell
         insSeek = ins.seek
+        def build_cell_block(unpack_block=False, skip_delta=False):
+            """Helper method that parses and stores a cell block for the
+            current cell."""
+            if unpack_block:
+                cellBlock = MobCell(header, selfLoadFactory, cell, ins, True)
+            else:
+                cellBlock = MobCell(header, selfLoadFactory, cell)
+                if skip_delta:
+                    insSeek(delta, 1)
+            cellBlocksAppend(cellBlock)
         while not insAtEnd(endPos,errLabel):
             header = insRecHeader()
             recType = header.recType
             if recType == expType:
                 if cell:
-                    cellBlock = MobCell(header,selfLoadFactory,cell)
-                    cellBlocksAppend(cellBlock)
+                    # If we already have a cell lying around, finish it off
+                    build_cell_block()
                 cell = recCellClass(header,ins,True)
                 if insTell() > endBlockPos or insTell() > endSubblockPos:
                     raise ModError(self.inName,
@@ -1300,13 +1310,8 @@ class MobICells(MobCells):
                                            u'Cell subgroup (%X) does not '
                                            u'match CELL <%X> %s.' %
                                            (groupFid,cell.fid,cell.eid))
-                        if unpackCellBlocks:
-                            cellBlock = MobCell(header,selfLoadFactory,cell,
-                                                ins,True)
-                        else:
-                            cellBlock = MobCell(header,selfLoadFactory,cell)
-                            insSeek(delta,1)
-                        cellBlocksAppend(cellBlock)
+                        build_cell_block(unpack_block=unpackCellBlocks,
+                            skip_delta=True)
                         cell = None
                     else:
                         raise ModError(self.inName,
@@ -1320,6 +1325,9 @@ class MobICells(MobCells):
                 raise ModError(self.inName,
                                u'Unexpected %s record in %s group.' % (
                                    recType,expType))
+        if cell:
+            # We have a CELL without children left over, finish it
+            build_cell_block()
         self.setChanged()
 
     def dump(self,out):
@@ -1364,6 +1372,22 @@ class MobWorld(MobCells):
         from .. import bush
         isFallout = bush.game.fsName != u'Oblivion'
         cells = {}
+        def build_cell_block(unpack_block=False, skip_delta=False):
+            """Helper method that parses and stores a cell block for the
+            current cell."""
+            if unpack_block:
+                cellBlock = MobCell(header, selfLoadFactory, cell, ins, True)
+            else:
+                cellBlock = MobCell(header, selfLoadFactory, cell)
+                if skip_delta:
+                    insSeek(delta, 1)
+            if cell.flags1.persistent:
+                if self.worldCellBlock:
+                    raise ModError(self.inName,
+                        u'Misplaced exterior cell %r.' % cell)
+                self.worldCellBlock = cellBlock
+            else:
+                cellBlocksAppend(cellBlock)
         while not insAtEnd(endPos,errLabel):
             curPos = insTell()
             if curPos >= endBlockPos:
@@ -1380,35 +1404,15 @@ class MobWorld(MobCells):
                 else: self.road = recClass(header,ins,True)
             elif recType == 'CELL':
                 if cell:
-                    cellBlock = MobCell(header,selfLoadFactory,cell)
-                    if block:
-                        cellBlocksAppend(cellBlock)
-                    else:
-                        if self.worldCellBlock:
-                            raise ModError(self.inName,
-                                           u'Extra exterior cell <%s> %s '
-                                           u'before block group.' % (
-                                               hex(cell.fid),cell.eid))
-                        self.worldCellBlock = cellBlock
+                    # If we already have a cell lying around, finish it off
+                    build_cell_block()
                 cell = recClass(header,ins,True)
                 if isFallout: cells[cell.fid] = cell
-                if block:
-                    if cell:
-                        cellBlock = MobCell(header, selfLoadFactory, cell)
-                        if block:
-                            cellBlocksAppend(cellBlock)
-                        else:
-                            if self.worldCellBlock:
-                                raise ModError(self.inName,
-                                               u'Extra exterior cell <%s> %s '
-                                               u'before block group.' % (
-                                                   hex(cell.fid), cell.eid))
-                            self.worldCellBlock = cellBlock
-                    elif insTell() > endBlockPos or insTell() > endSubblockPos:
+                if block and (
+                        insTell() > endBlockPos or insTell() > endSubblockPos):
                         raise ModError(self.inName,
-                                       u'Exterior cell <%s> %s after block or'
-                                       u' subblock.' % (
-                                           hex(cell.fid),cell.eid))
+                            u'Exterior cell %r after block or subblock.'
+                            % cell)
             elif recType == 'GRUP':
                 groupFid,groupType = header.label,header.groupType
                 if groupType == 4: # Exterior Cell Block
@@ -1426,25 +1430,10 @@ class MobWorld(MobCells):
                     if cell:
                         if groupFid != cell.fid:
                             raise ModError(self.inName,
-                                           u'Cell subgroup (%s) does not '
-                                           u'match CELL <%s> %s.' %
-                                           (hex(groupFid),hex(cell.fid),
-                                            cell.eid))
-                        if unpackCellBlocks:
-                            cellBlock = MobCell(header,selfLoadFactory,cell,
-                                                ins,True)
-                        else:
-                            cellBlock = MobCell(header,selfLoadFactory,cell)
-                            insSeek(delta,1)
-                        if block:
-                            cellBlocksAppend(cellBlock)
-                        else:
-                            if self.worldCellBlock:
-                                raise ModError(self.inName,
-                                               u'Extra exterior cell <%s> %s '
-                                               u'before block group.' % (
-                                                   hex(cell.fid),cell.eid))
-                            self.worldCellBlock = cellBlock
+                                u'Cell subgroup (%s) does not match CELL %r.'
+                                % (hex(groupFid), cell))
+                        build_cell_block(unpack_block=unpackCellBlocks,
+                            skip_delta=True)
                         cell = None
                     else:
                         raise ModError(self.inName,
@@ -1458,6 +1447,9 @@ class MobWorld(MobCells):
                 raise ModError(self.inName,
                                u'Unexpected %s record in world children '
                                u'group.' % recType)
+        if cell:
+            # We have a CELL without children left over, finish it
+            build_cell_block()
         self.setChanged()
 
     def getNumRecords(self,includeGroups=True):
@@ -1685,8 +1677,7 @@ class MobWorlds(MobBase):
                 if groupFid != world.fid:
                     raise ModError(ins.inName,
                                    u'WRLD subgroup (%s) does not match WRLD '
-                                   u'<%s> %s.' % (
-                                   hex(groupFid),hex(world.fid),world.eid))
+                                   u'%r.' % (hex(groupFid), world))
                 worldBlock = MobWorld(header,selfLoadFactory,world,ins,True)
                 worldBlocksAppend(worldBlock)
                 world = None
@@ -1757,14 +1748,13 @@ class MobWorlds(MobBase):
             if worldBlock:
                 worldBlock.updateRecords(srcWorldBlock,mapper,mergeIds)
 
-    def setWorld(self, world, worldcellblock=None):
+    def setWorld(self, world):
         """Adds record to record list and indexed."""
         if self.worldBlocks and not self.id_worldBlocks:
             self.indexRecords()
         fid = world.fid
         if fid in self.id_worldBlocks:
             self.id_worldBlocks[fid].world = world
-            self.id_worldBlocks[fid].worldCellBlock = worldcellblock
         else:
             worldBlock = MobWorld(GrupHeader(0, 0, 1, self.stamp), ##: groupType = 1
                                   self.loadFactory, world)

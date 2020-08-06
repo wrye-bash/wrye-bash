@@ -1762,9 +1762,11 @@ def isclose_(a, b, rel_tol=1e-09, abs_tol=0.0):
     return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
 def floats_equal(a, b):
-    """Checks if the two floats are equal to the sixth place. Used for inexact
-    comparisons in tweaks, etc."""
-    return isclose_(a, b, rel_tol=1e-06)
+    """Checks if the two floats are equal to the sixth place (relatively) or to
+    the twelfth place (absolutely). Used for inexact comparisons in tweaks,
+    etc. Note that these parameters were picked fairly arbitrarily, so feel
+    free to tweak them if they turn out to be a problem."""
+    return isclose_(a, b, rel_tol=1e-06, abs_tol=1e-12)
 
 def copyattrs(source,dest,attrs):
     """Copies specified attrbutes from source object to dest object."""

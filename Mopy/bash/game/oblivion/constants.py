@@ -1534,7 +1534,7 @@ soundsTypes = {
 # CellImporter
 #------------------------------------------------------------------------------
 cellAutoKeys = {u'C.Climate', u'C.Light', u'C.Music', u'C.Name', u'C.Owner',
-                u'C.RecordFlags', u'C.Regions', u'C.Water'}#,u'C.Maps'}
+                u'C.RecordFlags', u'C.Regions', u'C.Water'}
 cellRecAttrs = {
     u'C.Climate': ('climate',),
     u'C.Light': ('ambientRed','ambientGreen','ambientBlue','unused1',
@@ -1559,6 +1559,9 @@ cellRecFlags = {
     u'C.RecordFlags': '',
     u'C.Regions': '',
 }
+cell_float_attrs = {u'fogNear', u'fogFar', u'directionalFade', u'fogClip',
+                    u'waterHeight'}
+
 #------------------------------------------------------------------------------
 # GraphicsPatcher
 #------------------------------------------------------------------------------

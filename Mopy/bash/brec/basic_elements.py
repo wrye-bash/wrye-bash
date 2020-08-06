@@ -171,7 +171,7 @@ class MelCounter(MelBase):
         :param element: The element that stores the counter's value.
         :type element: MelStruct
         :param counts: The attribute name that this counter counts.
-        :type counts: str"""
+        :type counts: unicode"""
         self.element = element
         self.counted_attr = counts
 

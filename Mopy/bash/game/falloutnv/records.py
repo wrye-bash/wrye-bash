@@ -408,21 +408,16 @@ class MreCell(MelRecord):
         'fogPower'
     ))
 
-    # 'Force Hide Land' flags
-    CellFHLFlags = Flags(0, Flags.getNames(
-        (0, 'quad1'),
-        (1, 'quad2'),
-        (2, 'quad3'),
-        (3, 'quad4'),
-    ))
+    _land_flags = Flags(0, Flags.getNames(u'quad1', u'quad2', u'quad3',
+        u'quad4'))
 
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelUInt8('DATA', (cellFlags, 'flags', 0)),
         MelCoordinates(b'XCLC', u'2iI', u'posX', u'posY',
-                       (CellFHLFlags, u'fhlFlags'), is_optional=True,
-                       old_versions={u'2i'}),
+            (_land_flags, u'land_flags'), is_optional=True,
+            old_versions={u'2i'}),
         MelTruncatedStruct('XCLL', '=3Bs3Bs3Bs2f2i3f', 'ambientRed',
                            'ambientGreen', 'ambientBlue', ('unused1', null1),
                            'directionalRed', 'directionalGreen',
