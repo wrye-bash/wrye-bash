@@ -361,7 +361,7 @@ class DestructiblePatcher(_APreserver):
 class ImportFactions(_APreserver):
     logMsg = u'\n=== ' + _(u'Refactioned Actors')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
-    rec_attrs = {x: (u'factions',) for x in (b'CREA', b'NPC_')}
+    rec_attrs = {x: (u'factions',) for x in bush.game.actor_types}
     _csv_parser = parsers.ActorFactions
 
     def _parse_csv_sources(self, progress):
