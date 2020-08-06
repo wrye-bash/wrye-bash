@@ -709,7 +709,6 @@ class CellImporter(ImportPatcher):
 #------------------------------------------------------------------------------
 class GraphicsPatcher(_APreserver):
     rec_attrs = bush.game.graphicsTypes
-    long_types = bush.game.graphicsLongsTypes
     _fid_rec_attrs = bush.game.graphicsFidTypes
 
     def _inner_loop(self, keep, records, top_mod_rec, type_count,

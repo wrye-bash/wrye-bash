@@ -37,7 +37,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelTruncatedStruct, MelCoordinates, MelIcon, MelIco2, MelEdid, MelFull, \
     MelArray, MelWthrColors, MelObject, MreActorBase, MreWithItems, \
     MelReadOnly, MelCtda, MelRef3D, MelXlod, MelWorldBounds, MelEnableParent, \
-    MelRefScale, MelMapMarker, MelActionFlags
+    MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
 
@@ -219,8 +219,8 @@ class MelEffects(MelSequential):
                 MelString(b'EFII', u'obme_icon'),
                 # FIXME(inf) Again, FID here needs testing
                 MelOptStruct(b'EFIX', u'2Ifi16s', u'efix_override_mask',
-                             u'efix_flags', u'base_cost', (FID, u'resist_av'),
-                             (u'efix_reserved', null1 * 16)),
+                    u'efix_flags', u'efix_base_cost', (FID, u'resist_av'),
+                    (u'efix_reserved', null1 * 16)),
             ),
             MelBase(b'EFXX', u'effects_end_marker', b''),
             MelString(b'FULL', u'obme_full'),
@@ -334,7 +334,7 @@ class MreLeveledList(MreLeveledListBase):
         MelEdid(),
         MelLevListLvld(),
         MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0)),
-        MelFid('SCRI','script'), # LVLC only
+        MelScript(), # LVLC only
         MelFid('TNAM','template'),
         MelGroups('entries',
             MelLevListLvlo(b'LVLO', u'h2sIh2s', u'level', (u'unused1', null2),
@@ -445,7 +445,7 @@ class MreActi(MelRecord):
         MelEdid(),
         MelFull(),
         MelModel(),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelFid('SNAM','sound'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -462,7 +462,7 @@ class MreAlch(MelRecord,MreHasEffects):
         MelFull(),
         MelModel(),
         MelIcon(),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelFloat('DATA', 'weight'),
         MelStruct('ENIT','iB3s','value',(_flags,'flags',0),('unused1',null3)),
         MelEffects(),
@@ -507,7 +507,7 @@ class MreAppa(MelRecord):
         MelFull(),
         MelModel(),
         MelIcon(),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelStruct('DATA', '=BIff', ('apparatus', 0), ('value', 25),
                   ('weight', 1), ('quality', 10)),
     )
@@ -525,7 +525,7 @@ class MreArmo(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelFid('ENAM','enchantment'),
         MelOptUInt16('ANAM', 'enchantPoints'),
         MelUInt32('BMDT', (_flags, 'flags', 0)),
@@ -551,7 +551,7 @@ class MreBook(MelRecord):
         MelModel(),
         MelIcon(),
         MelString('DESC','text'),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelFid('ENAM','enchantment'),
         MelOptUInt16('ANAM', 'enchantPoints'),
         MelStruct('DATA', '=BbIf', (_flags, 'flags', 0), ('teaches', -1),
@@ -676,7 +676,7 @@ class MreClot(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelFid('ENAM','enchantment'),
         MelOptUInt16('ANAM', 'enchantPoints'),
         MelUInt32('BMDT', (_flags, 'flags', 0)),
@@ -700,7 +700,7 @@ class MreCont(MreWithItems):
         MelEdid(),
         MelFull(),
         MelModel(),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelItems(),
         MelStruct('DATA','=Bf',(_flags,'flags',0),'weight'),
         MelFid('SNAM','soundOpen'),
@@ -762,7 +762,7 @@ class MreCrea(MreActorBase):
                       (u'unused1', b'IFZ')),
         ),
         MelFid('INAM','deathItem'),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelItems(),
         MelStruct('AIDT','=4BIbB2s',
             ('aggression',5),('confidence',50),('energyLevel',50),
@@ -864,7 +864,7 @@ class MreDoor(MelRecord):
         MelEdid(),
         MelFull(),
         MelModel(),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelFid('SNAM','soundOpen'),
         MelFid('ANAM','soundClose'),
         MelFid('BNAM','soundLoop'),
@@ -976,7 +976,7 @@ class MreFlor(MelRecord):
         MelEdid(),
         MelFull(),
         MelModel(),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelFid('PFIG','ingredient'),
         MelStruct('PFPC','4B','spring','summer','fall','winter'),
     )
@@ -994,7 +994,7 @@ class MreFurn(MelRecord):
         MelEdid(),
         MelFull(),
         MelModel(),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelUInt32(b'MNAM', (_flags, u'activeMarkers')), # ByteArray in xEdit
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1087,7 +1087,7 @@ class MreIngr(MelRecord,MreHasEffects):
         MelFull(),
         MelModel(),
         MelIcon(),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelFloat('DATA', 'weight'),
         MelStruct('ENIT','iB3s','value',(_flags,'flags',0),('unused1',null3)),
         MelEffects(),
@@ -1103,7 +1103,7 @@ class MreKeym(MelRecord):
         MelFull(),
         MelModel(),
         MelIcon(),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelStruct('DATA','if','value','weight'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1119,7 +1119,7 @@ class MreLigh(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelModel(),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelFull(),
         MelIcon(),
         MelTruncatedStruct('DATA', 'iI3BsIffIf', 'duration', 'radius', 'red',
@@ -1208,29 +1208,29 @@ class MreMgef(MelRecord):
         (30, u'ov_hidden'),
     ))
     _flags = Flags(0, Flags.getNames(
-        ( 0,'hostile'),
-        ( 1,'recover'),
-        ( 2,'detrimental'),
-        ( 3,'magnitude'),
-        ( 4,'self'),
-        ( 5,'touch'),
-        ( 6,'target'),
-        ( 7,'noDuration'),
-        ( 8,'noMagnitude'),
-        ( 9,'noArea'),
-        (10,'fxPersist'),
-        (11,'spellmaking'),
-        (12,'enchanting'),
-        (13,'noIngredient'),
-        (16,'useWeapon'),
-        (17,'useArmor'),
-        (18,'useCreature'),
-        (19,'useSkill'),
-        (20,'useAttr'),
-        (24,'useAV'),
-        (25,'sprayType'),
-        (26,'boltType'),
-        (27,'noHitEffect'),))
+        ( 0, u'hostile'),
+        ( 1, u'recover'),
+        ( 2, u'detrimental'),
+        ( 3, u'magnitude'),
+        ( 4, u'self'),
+        ( 5, u'touch'),
+        ( 6, u'target'),
+        ( 7, u'noDuration'),
+        ( 8, u'noMagnitude'),
+        ( 9, u'noArea'),
+        (10, u'fxPersist'),
+        (11, u'spellmaking'),
+        (12, u'enchanting'),
+        (13, u'noIngredient'),
+        (16, u'useWeapon'),
+        (17, u'useArmor'),
+        (18, u'useCreature'),
+        (19, u'useSkill'),
+        (20, u'useAttr'),
+        (24, u'useAV'),
+        (25, u'sprayType'),
+        (26, u'boltType'),
+        (27, u'noHitEffect'),))
 
     melSet = MelSet(
         MelEdid(),
@@ -1243,20 +1243,20 @@ class MreMgef(MelRecord):
         }, decider=AttrValDecider(u'obme_record_version'),
             fallback=MelString(b'EDDX', u'obme_eid')),
         MelFull(),
-        MelString('DESC','text'),
+        MelString(b'DESC', u'text'),
         MelIcon(),
         MelModel(),
-        MelTruncatedStruct(
-            'DATA', 'IfIiiH2sIf6I2f', (_flags, 'flags'), 'baseCost',
-            (FID, 'associated'), 'school', 'resistValue', 'numCounters',
-            ('unused1', null2), (FID, 'light'), 'projectileSpeed',
-            (FID, 'effectShader'), (FID, 'enchantEffect', 0),
-            (FID, 'castingSound', 0), (FID, 'boltSound', 0),
-            (FID, 'hitSound', 0), (FID, 'areaSound', 0),
-            ('cefEnchantment', 0.0), ('cefBarter', 0.0),
-            old_versions={'IfIiiH2sIfI'}),
-        MelArray('counterEffects',
-            MelStruct('ESCE', '4s', 'effect'),
+        MelPartialCounter(MelTruncatedStruct(
+            b'DATA', u'IfIiiH2sIf6I2f', (_flags, u'flags'), u'base_cost',
+            (FID, u'associated_item'), u'school', u'resist_value',
+            u'counter_effect_count', (u'unused1', null2),
+            (FID, u'light'), u'projectileSpeed', (FID, u'effectShader'),
+            (FID, u'enchantEffect'), (FID, u'castingSound'),
+            (FID, u'boltSound'), (FID, u'hitSound'), (FID, u'areaSound'),
+            u'cef_enchantment', u'cef_barter', old_versions={u'IfIiiH2sIfI'}),
+            counter=u'counter_effect_count', counts=u'counter_effects'),
+        MelArray(u'counter_effects',
+            MelStruct(b'ESCE', u'4s', u'counter_effect_code'),
         ),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1270,7 +1270,7 @@ class MreMisc(MelRecord):
         MelFull(),
         MelModel(),
         MelIcon(),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelUnion({
             False: MelStruct('DATA', 'if', 'value', 'weight'),
             True: MelStruct('DATA', '2I', (FID, 'value'), 'weight'),
@@ -1330,7 +1330,7 @@ class MreNpc(MreActorBase):
         MelFid('INAM','deathItem'),
         MelFid('RNAM','race'),
         MelFids('SPLO','spells'),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelItems(),
         MelStruct('AIDT', '=4BIbB2s', ('aggression', 5), ('confidence', 50),
                   ('energyLevel', 50), ('responsibility', 50),
@@ -1459,7 +1459,7 @@ class MreQust(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelFull(),
         MelIcon(),
         MelStruct('DATA','BB',(_questFlags,'questFlags',0),'priority'),
@@ -1746,7 +1746,7 @@ class MreSgst(MelRecord,MreHasEffects):
         MelFull(),
         MelModel(),
         MelIcon(),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelEffects(),
         MelStruct('DATA','=BIf','uses','value','weight'),
     ).with_distributor(_effects_distributor)
@@ -1778,7 +1778,7 @@ class MreSlgm(MelRecord):
         MelFull(),
         MelModel(),
         MelIcon(),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelStruct('DATA','If','value','weight'),
         MelUInt8('SOUL', ('soul', 0)),
         MelUInt8('SLCP', ('capacity', 1)),
@@ -1914,7 +1914,7 @@ class MreWeap(MelRecord):
         MelFull(),
         MelModel(),
         MelIcon(),
-        MelFid('SCRI','script'),
+        MelScript(),
         MelFid('ENAM','enchantment'),
         MelOptUInt16('ANAM', 'enchantPoints'),
         MelStruct('DATA','I2f3IfH','weaponType','speed','reach',(_flags,'flags',0),

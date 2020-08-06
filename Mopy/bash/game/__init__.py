@@ -468,7 +468,6 @@ class GameInfo(object):
     #--------------------------------------------------------------------------
     # GraphicsPatcher
     #--------------------------------------------------------------------------
-    graphicsLongsTypes = set()  # initialize with literal
     graphicsTypes = {}
     graphicsFidTypes = {}
     graphicsModelAttrs = ()
@@ -610,15 +609,15 @@ class GameInfo(object):
         u'cell_float_attrs', u'cellRecAttrs', u'cellRecFlags',
         u'condition_function_data', u'default_eyes', u'destructible_types',
         u'ench_stats_attrs', u'generic_av_effects', u'getvatsvalue_index',
-        u'gmstEids', u'graphicsFidTypes', u'graphicsLongsTypes',
-        u'graphicsModelAttrs', u'graphicsTypes', u'hostile_effects',
-        u'inventoryTypes', u'keywords_types', u'listTypes', u'mgef_basevalue',
-        u'mgef_name', u'mgef_school', u'namesTypes', u'nirnroots',
-        u'object_bounds_types', u'pricesTypes', u'record_type_name',
-        u'relations_attrs', u'relations_csv_header',
-        u'relations_csv_row_format', u'save_rec_types', u'scripts_types',
-        u'soundsLongsTypes', u'soundsTypes', u'spell_stats_attrs',
-        u'statsHeaders', u'statsTypes', u'text_long_types', u'text_types',
+        u'gmstEids', u'graphicsFidTypes', u'graphicsModelAttrs',
+        u'graphicsTypes', u'hostile_effects', u'inventoryTypes',
+        u'keywords_types', u'listTypes', u'mgef_basevalue', u'mgef_name',
+        u'mgef_school', u'namesTypes', u'nirnroots', u'object_bounds_types',
+        u'pricesTypes', u'record_type_name', u'relations_attrs',
+        u'relations_csv_header', u'relations_csv_row_format',
+        u'save_rec_types', u'scripts_types', u'soundsLongsTypes',
+        u'soundsTypes', u'spell_stats_attrs', u'statsHeaders', u'statsTypes',
+        u'text_long_types', u'text_types',
     }
 
     @classmethod

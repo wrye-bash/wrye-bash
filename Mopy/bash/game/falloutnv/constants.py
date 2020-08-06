@@ -290,17 +290,16 @@ statsHeaders = (
 #------------------------------------------------------------------------------
 soundsTypes.update({
     b'CONT': (u'soundOpen', u'soundClose', u'soundRandomLooping'),
-    b'WEAP': (
-        u'pickupSound', u'dropSound', u'soundGunShot3D', u'soundGunShot2D',
-        u'soundGunShot3DLooping', u'soundMeleeSwingGunNoAmmo', u'soundBlock',
-        u'idleSound', u'equipSound', u'unequipSound', u'soundMod1Shoot3Ds',
-        u'soundMod1Shoot2D', u'soundLevel')})
+    b'WEAP': (u'pickupSound', u'dropSound', u'soundGunShot3D',
+              u'soundGunShot2D', u'soundGunShot3DLooping',
+              u'soundMeleeSwingGunNoAmmo', u'soundBlock', u'idleSound',
+              u'equipSound', u'unequipSound', u'soundMod1Shoot3Ds',
+              u'soundMod1Shoot2D', u'soundLevel'),
+})
 
 #------------------------------------------------------------------------------
 # GraphicsPatcher
 #------------------------------------------------------------------------------
-graphicsLongsTypes = graphicsLongsTypes | {b'CCRD', b'CHIP', b'CMNY', b'CSNO',
-                                           b'IMOD', b'REPU'}
 graphicsTypes.update({
     b'CCRD': (u'iconPath', u'smallIconPath', u'model', u'textureFace',
               u'textureBack'),
@@ -311,12 +310,10 @@ graphicsTypes.update({
               u'slotReelTextures', u'blackjackDecks'),
     b'IMOD': (u'iconPath', u'smallIconPath', u'model'),
     b'REPU': (u'iconPath', u'smallIconPath'),
-    b'WEAP': (
-        u'iconPath', u'smallIconPath', u'model', u'objectEffect',
-        u'shellCasingModel', u'scopeModel', u'scopeEffect', u'worldModel',
-        u'modelWithMods', u'impactDataset', u'firstPersonModel',
-        u'firstPersonModelWithMods', u'animationType', u'gripAnimation',
-        u'reloadAnimation'),
+    b'WEAP': (u'iconPath', u'smallIconPath', u'model', u'shellCasingModel',
+              u'scopeModel', u'worldModel', u'modelWithMods',
+              u'firstPersonModelWithMods', u'animationType', u'gripAnimation',
+              u'reloadAnimation'),
 })
 
 #------------------------------------------------------------------------------
