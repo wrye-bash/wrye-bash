@@ -109,6 +109,9 @@ _encodingSwap = {
 # setting it tries the specified encoding first
 pluginEncoding = None
 
+# Encodings that we can't use because Python doesn't even support them
+_blocked_encodings = {u'EUC-TW'}
+
 def getbestencoding(bitstream):
     """Tries to detect the encoding a bitstream was saved in.  Uses Mozilla's
        detection library to find the best match (heuristics)"""
@@ -132,7 +135,9 @@ def decode(byte_str, encoding=None, avoidEncodings=()):
         except UnicodeDecodeError: pass
     # Try to detect the encoding next
     encoding,confidence = getbestencoding(byte_str)
-    if encoding and confidence >= 0.55 and (encoding not in avoidEncodings or confidence == 1.0):
+    if encoding and confidence >= 0.55 and (
+            encoding not in avoidEncodings or confidence == 1.0) and (
+            encoding not in _blocked_encodings):
         try: return unicode(byte_str, encoding)
         except UnicodeDecodeError: pass
     # If even that fails, fall back to the old method, trial and error
@@ -394,8 +399,8 @@ def GPath(str_or_uni):
 # not - hunt down and just use strings
 def GPath_no_norm(str_or_uni):
     """Alternative to GPath that does not call normpath. It is up to the caller
-    to ensure that the invariant name == os.path.normpath(name) holds for all
-    values pased into this method.
+    to ensure that the precondition name == os.path.normpath(name) holds for
+    all values pased into this method.
 
     :rtype: Path"""
     if isinstance(str_or_uni, Path) or str_or_uni is None: return str_or_uni
@@ -1214,7 +1219,7 @@ class OrderedSet(list, MutableSet):
        to the end of the set.
     """
     def update(self, *args, **kwdargs):
-        if kwdargs: raise exception.TypeError("update() takes no keyword arguments")
+        if kwdargs: raise TypeError(u'update() takes no keyword arguments')
         for s in args:
             for e in s:
                 self.add(e)
@@ -1222,7 +1227,11 @@ class OrderedSet(list, MutableSet):
     def add(self, elem):
         if elem not in self:
             self.append(elem)
-    def discard(self, elem): self.pop(self.index(elem),None)
+    def discard(self, elem):
+        try:
+            self.remove(elem)
+        except ValueError:
+            pass # We want to discard, don't care about missing values
     def __or__(self,other):
         left = OrderedSet(self)
         left.update(other)

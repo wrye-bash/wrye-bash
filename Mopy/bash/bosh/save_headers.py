@@ -392,7 +392,7 @@ class SkyrimSaveHeader(SaveFileHeader):
 
     def calc_time(self):
         # gameDate format: hours.minutes.seconds
-        hours, minutes, seconds = [int(x) for x in self.gameDate.split('.')]
+        hours, minutes, seconds = [int(x) for x in self.gameDate.split(b'.')]
         playSeconds = hours * 60 * 60 + minutes * 60 + seconds
         self.gameDays = float(playSeconds) / (24 * 60 * 60)
         self.gameTicks = playSeconds * 1000
@@ -482,12 +482,17 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
     def calc_time(self):
         # gameDate format: Xd.Xh.Xm.X days.X hours.X minutes
         # russian game format: '0д.0ч.9м.0 д.0 ч.9 мин'
-        self.gameDate = unicode(self.gameDate, encoding='utf-8')
-        days, hours, minutes, _days, _hours, _minutes = self.gameDate.split(
-            '.')
-        days = int(days[:-1])
-        hours = int(hours[:-1])
-        minutes = int(minutes[:-1])
+        # So handle it by concatenating digits until we hit a non-digit char
+        def parse_int(gd_bytes):
+            int_data = b''
+            for c in gd_bytes:
+                if c.isdigit():
+                    int_data += c
+                else:
+                    break # hit the end of the int
+            return int(int_data)
+        days, hours, minutes = [parse_int(x) for x in
+                                self.gameDate.split(b'.')[:3]]
         self.gameDays = float(days) + float(hours) / 24 + float(minutes) / (
             24 * 60)
         # Assuming still 1000 ticks per second
@@ -566,7 +571,7 @@ class FalloutNVSaveHeader(SaveFileHeader):
 
     def calc_time(self):
         # gameDate format: hours.minutes.seconds
-        hours, minutes, seconds = [int(x) for x in self.gameDate.split('.')]
+        hours, minutes, seconds = [int(x) for x in self.gameDate.split(b'.')]
         playSeconds = hours * 60 * 60 + minutes * 60 + seconds
         self.gameDays = float(playSeconds) / (24 * 60 * 60)
         self.gameTicks = playSeconds * 1000
