@@ -4059,7 +4059,7 @@ class BashFrame(WindowFrame):
         corruptSaves = set(bosh.saveInfos.corrupted.keys())
         if warn_saves and not corruptSaves <= self.knownCorrupted:
             m = [_(u'Save game warnings'),
-                 _(u'The following save files have unrecognized header formats: ')]
+                 _(u'The following save files have errors: ')]
             m.extend(sorted(corruptSaves))
             message.append(m)
             self.knownCorrupted |= corruptSaves

@@ -32,13 +32,15 @@ __author__ = u'Infernio'
 import binascii
 import re
 import string
+import struct
 from itertools import imap
 from . import bak_file_pattern
 from ..bolt import sio, decode, encode, struct_pack, struct_unpack, \
     unpack_string, unpack_int, unpack_short, unpack_4s, unpack_byte, \
     unpack_str16, unpack_float, unpack_double, unpack_int_signed, \
     unpack_str32, AFile, unpack_spaced_string
-from ..exception import AbstractError, FileError, BoltError
+from ..exception import AbstractError, BoltError, CosaveError, \
+    InvalidCosaveError, UnsupportedCosaveError
 
 #------------------------------------------------------------------------------
 # Utilities
@@ -127,9 +129,9 @@ class _AHeader(_Dumpable):
         :param cosave_path: The path to the cosave."""
         actual_tag = _cosave_decode(unpack_string(ins, len(self.savefile_tag)))
         if actual_tag != self.savefile_tag:
-            raise FileError(cosave_path.tail, u'Header tag wrong: got %s, but '
-                                              u'expected %s' %
-                            (actual_tag, self.savefile_tag))
+            raise InvalidCosaveError(cosave_path.tail,
+                u'Header tag wrong: got %s, but expected %s' %
+                (actual_tag, self.savefile_tag))
 
     def write_header(self, out):
         """Writes this header to the specified output stream. The base method
@@ -184,15 +186,13 @@ class _PluggyHeader(_AHeader):
         super(_PluggyHeader, self).__init__(ins, cosave_path)
         version = unpack_int(ins)
         if version > self._max_supported_version:
-            raise FileError(cosave_path.tail, u'Version of pluggy save file'
-                                              u'format is too new - only'
-                                              u'versions up to 1.6.0000 are'
-                                              u'supported.')
+            raise UnsupportedCosaveError(cosave_path.tail,
+                u'Version of pluggy save file format is too new - only '
+                u'versions <= 1.6.0000 are supported.')
         elif version < self._min_supported_version:
-            raise FileError(cosave_path.tail, u'Version of pluggy save file'
-                                              u'format is too old - only'
-                                              u'versions >= 1.4.0000 are'
-                                              u'supported.')
+            raise UnsupportedCosaveError(cosave_path.tail,
+                u'Version of pluggy save file format is too old - only '
+                u'versions >= 1.4.0000 are supported.')
 
     def write_header(self, out):
         super(_PluggyHeader, self).write_header(out)
@@ -1288,10 +1288,14 @@ class ACosave(_Dumpable, _Remappable, AFile):
             # Need to reset these to avoid adding duplicates
             self.cosave_chunks = []
             self.remappable_chunks = []
-            with self.abs_path.open('rb') as ins:
-                self._read_cosave_header(ins)
-                self._read_cosave_body(ins, light)
-            self.loading_state = target_state
+            try:
+                with self.abs_path.open(u'rb') as ins:
+                    self._read_cosave_header(ins)
+                    self._read_cosave_body(ins, light)
+                self.loading_state = target_state
+            except struct.error as e:
+                raise CosaveError(self.abs_path.tail,
+                    u'Failed to read cosave: %r' % e)
 
     def _reset_cache(self, stat_tuple, load_cache):
         # Reset our loading state to 'unloaded', which will discard everything
@@ -1443,9 +1447,8 @@ class xSECosave(ACosave):
                     first_chunk.mod_entries]
         elif first_chunk.chunk_type == u'MODS':
             return first_chunk.mod_names
-        raise FileError(self.abs_path.tail, u'Invalid or unsupported cosave: '
-                                            u'First chunk was not PLGN or '
-                                            u'MODS chunk.')
+        raise InvalidCosaveError(self.abs_path.tail,
+            u'First chunk was not PLGN or MODS chunk.')
 
     def has_accurate_master_list(self, has_esl):
         if not has_esl:
@@ -1520,8 +1523,8 @@ class xSECosave(ACosave):
             if plugin_chunk.plugin_signature == self._xse_signature:
                 return plugin_chunk
         # Something has gone seriously wrong, the xSE chunk _must_ be present
-        raise FileError(self.abs_path.tail, u'Invalid cosave: xSE plugin '
-                                            u'chunk is missing.')
+        raise InvalidCosaveError(self.abs_path.tail,
+            u'xSE plugin chunk is missing.')
 
 class PluggyCosave(ACosave):
     """Represents a Pluggy cosave, with a .pluggy extension."""
@@ -1560,10 +1563,9 @@ class PluggyCosave(ACosave):
                 actual_position = ins.tell()
                 expected_position = unpack_int(ins)
                 if actual_position != expected_position:
-                    raise FileError(self.abs_path.tail,
-                                    u'Invalid cosave: End control position was'
-                                    u' incorrect (expected %u, but  got %u).' %
-                                    (expected_position, actual_position))
+                    raise InvalidCosaveError(self.abs_path.tail,
+                        u'End control position was incorrect (expected %u, '
+                        u'but got %u).' % (expected_position, actual_position))
                 # Finally, check if the stored CRC matches the actual CRC of
                 # all preceding data.
                 ins.seek(0)
@@ -1571,13 +1573,16 @@ class PluggyCosave(ACosave):
                 expected_crc = unpack_int_signed(ins)
             actual_crc = binascii.crc32(checksum_data)
             if actual_crc != expected_crc:
-                raise FileError(self.abs_path.tail,
-                                u'Invalid cosave: Checksum does not match '
-                                u'(expected %X, but got %X).' %
-                                (expected_crc, actual_crc))
-            with sio(buffered_data) as ins:
-                self._read_cosave_header(ins)
-                self._read_cosave_body(ins, light)
+                raise InvalidCosaveError(self.abs_path.tail,
+                    u'Checksum does not match (expected %X, but got '
+                    u'%X).' % (expected_crc, actual_crc))
+            try:
+                with sio(buffered_data) as ins:
+                    self._read_cosave_header(ins)
+                    self._read_cosave_body(ins, light)
+            except struct.error as e:
+                raise CosaveError(self.abs_path.tail,
+                    u'Failed to read cosave: %r' % e)
             self.loading_state = target_state
 
     def _read_cosave_body(self, ins, light=False):
@@ -1598,8 +1603,8 @@ class PluggyCosave(ACosave):
         try:
             return self._block_types[record_type]
         except IndexError:
-            raise FileError(self.abs_path.tail, u'Unknown pluggy record block '
-                                                u'type %u.' % record_type)
+            raise InvalidCosaveError(self.abs_path.tail,
+                u'Unknown pluggy record block type %u.' % record_type)
 
     def write_cosave(self, out_path):
         super(PluggyCosave, self).write_cosave(out_path)
@@ -1623,9 +1628,8 @@ class PluggyCosave(ACosave):
         self.read_cosave(light=True)
         first_block = self.cosave_chunks[0] # type: _PluggyPluginBlock
         if first_block.record_type != 0:
-            raise FileError(self.abs_path.tail, u'Invalid cosave: First '
-                                                u'Pluggy block is not the '
-                                                u'plugin block.')
+            raise InvalidCosaveError(self.abs_path.tail,
+                u'First Pluggy block is not the plugin block.')
         return [plugin.plugin_name for plugin in first_block.plugins]
 
     def has_accurate_master_list(self, has_esl):

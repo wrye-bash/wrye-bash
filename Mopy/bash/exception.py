@@ -195,6 +195,22 @@ class BSAFlagError(BSAError):
         super(BSAFlagError, self).__init__(
             in_name, u'%s (flag %s) unset' % (message, flag))
 
+# Cosave exceptions -----------------------------------------------------------
+class CosaveError(FileError):
+    """An error while handling cosaves."""
+
+class InvalidCosaveError(CosaveError):
+    """Invalid cosave."""
+    def __init__(self, in_name, message):
+        super(InvalidCosaveError, self).__init__(in_name,
+            u'Invalid cosave: %s' % message)
+
+class UnsupportedCosaveError(CosaveError):
+    """Unsupported cosave."""
+    def __init__(self, in_name, message):
+        super(UnsupportedCosaveError, self).__init__(in_name,
+            u'Unsupported cosave: %s' % message)
+
 # DDS exceptions --------------------------------------------------------------
 class DDSError(Exception): pass
 
