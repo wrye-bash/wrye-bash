@@ -9,8 +9,17 @@
 .launchers-hide-figcap {
   padding-top: 5.9375rem;			/* 95px */
 }
-.tools-settings-figcap {
-  padding-top: 24rem;				/* 400px */
+.settings-figcap {
+  padding-top: 30rem;				/* 460px */
+}
+.settings-colors-figcap {
+  padding-top: 35rem;
+}
+.settings-language-figcap {
+  padding-top: 33rem;
+}
+.settings-static-figcap {
+  padding-top: 1rem;
 }
 .tools-docs-figcap {
   padding-top: 34.5rem;			/* 520px */
