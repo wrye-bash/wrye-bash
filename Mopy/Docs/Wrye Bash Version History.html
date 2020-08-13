@@ -421,11 +421,11 @@
 <ul>
 	<li>Major Unicode rewrite!  Everything has been gone through to make Wrye Bash works with Unicode file names and characters:
 	<ul>
-		<li>Special thanks to __bluesky404__ for a ton of work testing, debugging, and providing patches to help make this possible.
-		<li>By default when reading plugins, Wrye Bash first tries to interpret the data as 'Western European'.  This includes languages such as English, French, German, Spanish, and Italian.  Some languages this does ~~not~~ cover are Russian and Asian languages (Chinese, Japanese, Korean, etc).
+		<li>Special thanks to <strong>bluesky404</strong> for a ton of work testing, debugging, and providing patches to help make this possible.
+		<li>By default when reading plugins, Wrye Bash first tries to interpret the data as 'Western European'.  This includes languages such as English, French, German, Spanish, and Italian.  Some languages this does <em>not</em> cover are Russian and Asian languages (Chinese, Japanese, Korean, etc).
 		<ul>
-			<li>To modify this behavior, there is a new setting, accessible via the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-settings">Setting Menu</a>, Plugin Encoding.  This would be used if you have a plugin with Chinese, Russian, or other languages that don't fall under the 'Western European' encoding.
-			<li>This is a global setting, so changing it will have an effect on ~~all~~ plugins.
+			<li>To modify this behavior, there is a new setting, accessible via the <a href="Wrye%20Bash%20Advanced%20Readme.html#settings-general">Setting Menu</a>, Plugin Encoding.  This would be used if you have a plugin with Chinese, Russian, or other languages that don't fall under the 'Western European' encoding.
+			<li>This is a global setting, so changing it will have an effect on <em>all</em> plugins.
 			<li>Changing this setting won't be immediately obvious on the Mods Tab, as the data isn't updated unless it is read from file again.  However, the change will effect Bashed Patch creation and the mod file Import/Export commands immediately.
 			<li>Changing this setting to Automatic will have the best result all around, but due to the extra processing involved in Automatic mode, it is not enabled by default.  In one example, Bashed Patch creation time went from about 15 minutes with a specified encoding, to 22 minutes with Automatic encoding.
 		</ul>
@@ -492,8 +492,8 @@
 		<ul>
 			<li>New <a href="Wrye%20Bash%20General%20Readme.html#patchTweakAssorted">Assorted Tweaker</a>: No Description Loading Screens (requested by hellwing).
 		</ul>
-		<li>Wrye Bash will ask to backup your settings on ~~every~~ update now, instead of just a major version update (like from 294 to 295).
-		<li>Quickly switching between games can be accomplished via the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-settings">Settings Menu</a>.
+		<li>Wrye Bash will ask to backup your settings on <em>every</em> update now, instead of just a major version update (like from 294 to 295).
+		<li>Quickly switching between games can be accomplished via the <a href="Wrye%20Bash%20Advanced%20Readme.html#settings">Settings Menu</a>.
 	</ul>
 </ul>
 
@@ -697,7 +697,7 @@
 	<li>UI components in the Mods and Saves Tabs are now resizable
 	<li>Progress bars now shown in several cases where the program could be perceived to be hung but was actually processing data
 	<li>Fixed progress bar disappearing for some people while loading the installers tab
-	<li>UI colors are now customizable with the <a href="Wrye%20Bash%20Advanced%20Readme.html#settingsColors">Colors Dialog</a>.  This allows you to change what colors Wrye Bash uses for various informational purposes.  This only configures the custom colors that Wrye Bash uses.  Anything else uses your system defaults, so if you want to change those, you'll need to do it through your OS.
+	<li>UI colors are now customizable with the <a href="Wrye%20Bash%20Advanced%20Readme.html#settings-appearance-colors">Colors Dialog</a>.  This allows you to change what colors Wrye Bash uses for various informational purposes.  This only configures the custom colors that Wrye Bash uses.  Anything else uses your system defaults, so if you want to change those, you'll need to do it through your OS.
 	<li>Save-&gt;Edit Spells will now work with corrupted/malformed/unexpectedly formed mod files; will just skip those mod files rather than fatally choking (and if in debug mode will say the mod is skipped and why).
 	<li><a href="Wrye%20Bash%20Advanced%20Readme.html#launchers-custom">Custom launcher buttons</a> now support launching of msi created shortcuts.
 	<li>Mod-&gt;Export Script has new option to skip export of comments (and a spiffy new export dialogue).

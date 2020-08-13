@@ -642,7 +642,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             else:
                 links.append(_ValueLink(label, index))
         #--Show/Destroy Menu
-        links.new_menu(self.gTweakList, None)
+        links.popup_menu(self.gTweakList, None)
 
     def tweak_choice(self, index, tweakIndex):
         """Handle choice menu selection."""
@@ -882,7 +882,7 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
             else:
                 links.append(_OnItemChoice(label, index))
         #--Show/Destroy Menu
-        links.new_menu(self.gList, None)
+        links.popup_menu(self.gList, None)
 
     def _log_config(self, conf, config, clip, log):
         self.configChoices = conf.get('configChoices', {})
@@ -1182,9 +1182,10 @@ class CBash_SpellsPatcher(_ASpellsPatcher):
 # Non CBash Importers----------------------------------------------------------
 class DestructiblePatcher(_ImporterPatcherPanel):
     patcher_name = _(u'Import Destructible')
-    _patcher_txt = _(u'Preserves changes to destructible records.\n\nWill '
-                     u'have to use if a mod that allows you to destroy part '
-                     u'of the environment is installed and active.')
+    _patcher_txt = (_(u'Preserves changes to destructible records.')
+                    + u'\n\n' +
+                    _(u'Will have to use if a mod that allows you to destroy '
+                      u'part of the environment is installed and active.'))
     autoKey = {u'Destructible'}
     patcher_type = preservers.DestructiblePatcher
 

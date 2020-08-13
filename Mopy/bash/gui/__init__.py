@@ -30,6 +30,7 @@ __author__ = u'Infernio'
 from .base_components import *
 from .buttons import *
 from .checkables import *
+from .combos import *
 from .events import *
 from .layouts import *
 from .list_ctrl import *

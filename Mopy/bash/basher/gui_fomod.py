@@ -344,7 +344,7 @@ class PageSelect(PageInstaller):
 
     def _handle_context_menu(self, checkable):
         """Shows the right click menu with mass (de)select options."""
-        self._group_links.new_menu(self, checkable)
+        self._group_links.popup_menu(self, checkable)
 
     def _set_option_details(self, checkable):
         """Sets the image and description on the right side based on the

@@ -31,6 +31,7 @@ defPos = _wx.DefaultPosition
 defSize = _wx.DefaultSize
 
 from .base_components import _AComponent, WithFirstShow
+from .text_components import Label
 
 class _TopLevelWin(_AComponent):
     """Methods mixin for top level windows
@@ -39,7 +40,7 @@ class _TopLevelWin(_AComponent):
      - _on_close_evt(): request to close the window."""
     _defPos = defPos
     _def_size = defSize
-    _size_key = _pos_key = None
+    _min_size = _size_key = _pos_key = None
 
     def __init__(self, parent, sizes_dict, icon_bundle, *args, **kwargs):
         # dict holding size/pos info ##: can be bass.settings or balt.sizes
@@ -49,6 +50,7 @@ class _TopLevelWin(_AComponent):
         self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
         self._on_close_evt.subscribe(self.on_closing)
         if icon_bundle: self.set_icons(icon_bundle)
+        if self._min_size: self.set_min_size(*self._min_size)
 
     def _set_pos_size(self, kwargs, sizes_dict):
         kwargs['pos'] = kwargs.get('pos', None) or sizes_dict.get(
@@ -126,14 +128,13 @@ class WindowFrame(_TopLevelWin):
         self.on_activate = self._evt_handler(_wx.EVT_ACTIVATE,
                                              lambda event: [event.GetActive()])
         self.reset_background_color()
-        self.set_min_size(*self._min_size)
 
     def show_frame(self): self._native_widget.Show()
 
     def raise_frame(self): self._native_widget.Raise()
 
     # TODO(inf) de-wx! Menu should become a wrapped component as well
-    def popup_menu(self, menu):
+    def show_popup_menu(self, menu):
         self._native_widget.PopupMenu(menu)
 
 class DialogWindow(_TopLevelWin):
@@ -154,7 +155,8 @@ class DialogWindow(_TopLevelWin):
         super(DialogWindow, self).__init__(parent, sizes_dict, icon_bundle,
                                            title=self.title, style=style,
                                            **kwargs)
-        self.on_size_changed = self._evt_handler(_wx.EVT_SIZE)
+        self._on_size_changed = self._evt_handler(_wx.EVT_SIZE)
+        self._on_size_changed.subscribe(self.save_size) # save dialog size
 
     def save_size(self):
         if self._sizes_dict is not None and self._size_key:
@@ -229,10 +231,6 @@ class WizardDialog(DialogWindow, WithFirstShow):
         # enforce min size
         self.component_size = (max(saved_size[0], self._def_size[0]),
                                max(saved_size[1], self._def_size[1]))
-        # avoid strange size events on window creation - we used to set the
-        # size but then a size event from the system would unset it
-        self.on_size_changed.subscribe(
-            self.save_size)  # needed for correctly saving the size
 
     def _set_pos_size(self, kwargs, sizes_dict):
         # default keys for wizard should exist and return settingDefaults
@@ -293,23 +291,38 @@ class Splitter(_AComponent):
     def set_sash_gravity(self, sash_gravity):
         self._native_widget.SetSashGravity(sash_gravity)
 
-class NotebookCtrl(_AComponent):
+class _APageComponent(_AComponent):
+    """Abstract base class for 'page' compoenents, i.e. notebooks and
+    listbooks."""
+    def add_page(self, page_component, page_title):
+        self._native_widget.AddPage(self._resolve(page_component), page_title)
+
+    def get_selected_page_index(self):
+        return self._native_widget.GetSelection()
+
+    def set_selected_page_index(self, page_index):
+        self._native_widget.SetSelection(page_index)
+
+class TabbedPanel(_APageComponent):
+    """A panel with tabs, each of which contains a different panel."""
     _wx_widget_type = _wx.Notebook
 
     def __init__(self, parent, multiline=False):
-        super(NotebookCtrl, self).__init__(
+        super(TabbedPanel, self).__init__(
             parent, style=_wx.NB_MULTILINE if multiline else 0)
         self.on_nb_page_change = self._evt_handler(
             _wx.EVT_NOTEBOOK_PAGE_CHANGED,
             lambda event: [event.GetId(), event.GetSelection()])
 
-    def nb_add_page(self, page_component, page_title):
-        self._native_widget.AddPage(self._resolve(page_component), page_title)
+class ListPanel(_APageComponent):
+    """A panel with a list of options that each correspond to a different
+    panel."""
+    _wx_widget_type =  _wx.Listbook
 
-    def nb_get_selected_index(self): return self._native_widget.GetSelection()
-
-    def nb_set_selected_index(self, page_index):
-        self._native_widget.SetSelection(page_index)
+    def __init__(self, parent):
+        super(ListPanel, self).__init__(parent)
+        left_list = self._native_widget.GetChildren()[0]
+        left_list.SetSingleStyle(_wx.LC_LIST | _wx.LC_ALIGN_LEFT)
 
 class ScrollableWindow(_AComponent):
     """A window with a scrollbar."""

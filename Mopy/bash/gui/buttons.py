@@ -43,7 +43,7 @@ class Button(_AComponent):
     # e.g. when pressing Tab
     _id = _wx.ID_ANY
     # The label to use when no label was explicitly specified. Set per class.
-    default_label = u''
+    _default_label = u''
 
     def __init__(self, parent, btn_label=u'', btn_tooltip=None, default=False,
                  exact_fit=False, no_border=False):
@@ -61,8 +61,8 @@ class Button(_AComponent):
                           exactly to its contents.
         :param no_border: If set to True, the borders of this button will be
                           hidden."""
-        if not btn_label and self.__class__.default_label:
-            btn_label = self.__class__.default_label
+        if not btn_label and self.__class__._default_label:
+            btn_label = self.__class__._default_label
         btn_style = 0
         if exact_fit:
             btn_style |= _wx.BU_EXACTFIT
@@ -84,7 +84,7 @@ class OkButton(Button):
 
     See Button for documentation on button events."""
     _id = _wx.ID_OK
-    default_label = _(u'OK')
+    _default_label = _(u'OK')
 
 class CancelButton(Button):
     """A button with the label 'Cancel'. Rejects pending changes or aborts a
@@ -92,7 +92,7 @@ class CancelButton(Button):
 
     See Button for documentation on button events."""
     _id = _wx.ID_CANCEL
-    default_label = _(u'Cancel')
+    _default_label = _(u'Cancel')
 
 class SaveButton(Button):
     """A button with the label 'Save'. Saves pending changes or edits by the
@@ -100,13 +100,13 @@ class SaveButton(Button):
 
     See Button for documentation on button events."""
     _id = _wx.ID_SAVE
-    default_label = _(u'Save')
+    _default_label = _(u'Save')
 
 class SaveAsButton(Button):
     """A button with the label 'Save As'. Behaves like the 'Save' button above,
     but shows some type of prompt first, asking the user where to save."""
     _id = _wx.ID_SAVEAS
-    default_label = _(u'Save As...')
+    _default_label = _(u'Save As...')
 
 class RevertButton(Button):
     """A button with the label 'Revert'. Resets pending changes back to the
@@ -114,7 +114,7 @@ class RevertButton(Button):
 
     See Button for documentation on button events."""
     _id = _wx.ID_REVERT
-    default_label = _(u'Revert')
+    _default_label = _(u'Revert')
 
 class RevertToSavedButton(Button):
     """A button with the label 'Revert to Saved'. Resets pending changes back
@@ -123,7 +123,7 @@ class RevertToSavedButton(Button):
 
     See Button for documentation on button events."""
     _id = _wx.ID_REVERT_TO_SAVED
-    default_label = _(u'Revert to Saved')
+    _default_label = _(u'Revert to Saved')
 
 class OpenButton(Button):
     """A button with the label 'Open'. Opens a file in an editor or displays
@@ -131,7 +131,7 @@ class OpenButton(Button):
 
     See Button for documentation on button events."""
     _id = _wx.ID_OPEN
-    default_label = _(u'Open')
+    _default_label = _(u'Open')
 
 class SelectAllButton(Button):
     """A button with the label 'Select All'. Checks all elements in a
@@ -139,7 +139,7 @@ class SelectAllButton(Button):
 
     See Button for documentation on button events."""
     _id = _wx.ID_SELECTALL
-    default_label = _(u'Select All')
+    _default_label = _(u'Select All')
 
 class DeselectAllButton(Button):
     """A button with the label 'Deselect All'. Unchecks all elements in a
@@ -147,7 +147,7 @@ class DeselectAllButton(Button):
 
     See Button for documentation on button events."""
     _id = _wx.ID_SELECTALL
-    default_label = _(u'Deselect All')
+    _default_label = _(u'Deselect All')
 
 class ApplyButton(Button):
     """A button with the label 'Apply'. Applies pending changes without closing
@@ -155,7 +155,7 @@ class ApplyButton(Button):
 
     See Button for documentation on button events."""
     _id = _wx.ID_APPLY
-    default_label = _(u'Apply')
+    _default_label = _(u'Apply')
 
 # TODO(inf) Image API! Need to get rid of all bitmaps passed to this
 class ImageButton(Button):

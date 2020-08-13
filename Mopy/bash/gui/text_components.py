@@ -204,6 +204,10 @@ class TextField(_ATextInput):
                                         max_length=max_length,
                                         no_border=no_border)
 
+class SearchBar(TextField):
+    """A variant of TextField that looks like a typical search bar."""
+    _wx_widget_type = _wx.SearchCtrl
+
 # Labels ----------------------------------------------------------------------
 class _ALabel(_AComponent):
     """Abstract base class for labels."""
@@ -247,7 +251,11 @@ class Label(_ALabel):
 
 class HyperlinkLabel(_ALabel):
     """A label that opens a URL when clicked, imitating a hyperlink in a
-    browser. Typically styled blue."""
+    browser. Typically styled blue.
+
+    Events:
+        - on_link_clicked(target_url: unicode): Posted when the link is
+        clicked on by the user."""
     _wx_widget_type = _adv.HyperlinkCtrl
 
     def __init__(self, parent, init_text, url, always_unvisited=False):
@@ -265,6 +273,8 @@ class HyperlinkLabel(_ALabel):
         if always_unvisited:
             self._native_widget.SetVisitedColour(
                 self._native_widget.GetNormalColour())
+        self.on_link_clicked = self._evt_handler(_adv.EVT_HYPERLINK,
+            lambda event: [event.GetURL()])
 
 # Spinner - technically text, just limited to digits --------------------------
 class Spinner(_AComponent):

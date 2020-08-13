@@ -31,6 +31,7 @@ and environment issues - do not modify or imitate (ut)."""
 # The name of the locale we ended up with after localize.setup_locale()
 active_locale = None
 AppVersion = u'307'  # must represent a valid float
+is_standalone = False # whether or not we're on standalone
 
 #--Global dictionaries - do _not_ reassign !
 # Bash's directories - values are absolute Paths - populated in initDirs()

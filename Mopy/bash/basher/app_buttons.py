@@ -26,6 +26,7 @@ import subprocess
 import webbrowser
 from . import BashStatusBar, BashFrame
 from .frames import ModChecker, DocBrowser
+from .settings_dialog import SettingsDialog
 from .. import bass, bosh, bolt, balt, bush, mod_files, load_order
 from ..balt import ItemLink, Link, Links, SeparatorLink, BoolLink, staticBitmap
 from ..bolt import GPath
@@ -96,7 +97,7 @@ class StatusBar_Button(ItemLink):
                     self.mainMenu.append(SeparatorLink())
                 self.mainMenu.append(_StatusBar_Hide())
         if len(self.mainMenu) > 0:
-            self.mainMenu.new_menu(self.gButton, 0)
+            self.mainMenu.popup_menu(self.gButton, 0)
             return EventResult.FINISH ##: Kept it as such, test if needed
 
     # Helper function to get OBSE version
@@ -596,6 +597,9 @@ class _StatefulButton(StatusBar_Button):
         return super(_StatefulButton, self).GetBitmapButton(window, image,
                                                             onRClick)
 
+    def IsPresent(self):
+        return self._present
+
     def Execute(self):
         """Invert state."""
         self.SetState(-1)
@@ -699,7 +703,7 @@ class App_Settings(StatusBar_Button):
             window, image, lambda: self.Execute())
 
     def Execute(self):
-        BashStatusBar.SettingsMenu.new_menu(Link.Frame.statusBar, None)
+        SettingsDialog.display_dialog()
 
 #------------------------------------------------------------------------------
 class App_Restart(StatusBar_Button):
@@ -778,6 +782,4 @@ class App_ModChecker(StatusBar_Button):
     imageKey, _tip = 'modchecker.%s', _(u"Mod Checker")
 
     def Execute(self):
-        if not Link.Frame.modChecker:
-            ModChecker().show_frame()
-        Link.Frame.modChecker.raise_frame()
+        ModChecker.create_or_raise()

@@ -5603,7 +5603,7 @@ msgstr "データディレクトリのクリーニングを行いますか?"
 
 #: bash\bash\basher.py:7496
 msgid "This includes files that were installed manually or by another program.  Files will be moved to the\"%\" directory instead of being deleted so you can retrieve them later if necessary"
-msgstr "手動もしくは他のプログラムによってインストールされたファイル�\"%\"ディレクトリに移動します。必要な場合はそちらからファイルを書き戻して下さい。"
+msgstr "手動もしくは他のプログラムによってインストールされたファイル\"%\"ディレクトリに移動します。必要な場合はそちらからファイルを書き戻して下さい。"
 
 #: bash\bash\basher.py:7500
 msgid "Cleaning Data Files"

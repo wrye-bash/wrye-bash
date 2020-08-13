@@ -133,11 +133,13 @@ class Mod_CreateDummyMasters(OneItemLink):
 
     def Execute(self):
         """Create Dummy Masters"""
-        msg = _(u'This is an advanced feature, originally intended for '
-                u"viewing and editing 'Filter' patches in %s. It will create "
-                u'empty plugins for each missing master. Are you sure you '
-                u'want to continue?\n\nTo remove these files later, use '
-                u"'Clean Dummy Masters...'") % bush.game.Xe.full_name
+        msg = (_(u'This is an advanced feature, originally intended for '
+                 u"viewing and editing 'Filter' patches in %s. It will create "
+                 u'empty plugins for each missing master. Are you sure you '
+                 u'want to continue?') + u'\n\n' +
+               _(u"To remove these files later, use 'Remove Dummy "
+                 u"Masters...'.")
+               % bush.game.Xe.full_name)
         if not self._askYes(msg, title=_(u'Create Files')): return
         to_refresh = []
         # creates esp files - so place them correctly after the last esm
@@ -237,8 +239,9 @@ class Mod_Move(EnabledLink):
             # will just lead to sadness
             entered_text = self._askText(
                 _(u'Please enter the plugin index to which the selected '
-                  u'plugins should be moved.\nNote that it must be a '
-                  u'hexadecimal number, as shown in the Mods tab.'),
+                  u'plugins should be moved.') + u'\n' +
+                _(u'Note that it must be a hexadecimal number, as shown in '
+                  u'the Mods tab.'),
                 default=u'%X' % default_index)
             if not entered_text: return # Abort if canceled or empty string
             target_index = int(entered_text, base=16)

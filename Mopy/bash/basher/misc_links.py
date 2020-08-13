@@ -30,13 +30,15 @@ from ..balt import EnabledLink, AppendableLink, ItemLink, RadioLink, \
 from ..gui import Image
 from .. import bass, balt, bosh, bush
 from .import People_Link, SaveDetails
+from .settings_dialog import SettingsDialog
 from ..bolt import GPath
 
 __all__ = ['ColumnsMenu', 'Master_ChangeTo', 'Master_Disable',
            'Screens_NextScreenShot', 'Screens_JpgQuality',
            'Screens_JpgQualityCustom', 'Screen_Rename', 'Screen_ConvertTo',
            'People_AddNew', 'People_Import', 'People_Karma', 'People_Export',
-           'Master_AllowEdit', 'Master_ClearRenames', 'SortByMenu']
+           'Master_AllowEdit', 'Master_ClearRenames', 'SortByMenu',
+           u'Misc_SettingsDialog']
 
 # Screen Links ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -76,8 +78,8 @@ class Screens_NextScreenShot(EnabledLink):
         settings_screens[enabled_key[0]][enabled_key[1]] = enabled_key[2]
         screens_dir = GPath(new_base).head
         if screens_dir:
-            if not screens_dir.isabs(): screensDir = bass.dirs[u'app'].join(
-                screens_dir)
+            if not screens_dir.isabs():
+                screens_dir = bass.dirs[u'app'].join(screens_dir)
             screens_dir.makedirs()
         bosh.oblivionIni.saveSettings(settings_screens)
         bosh.screen_infos.refresh()
@@ -395,4 +397,14 @@ class SortByMenu(ChoiceMenuLink):
             self.extraItems = sort_options + [SeparatorLink()]
 
     @property
-    def _choices(self): return self.window.allCols
+    def _choices(self): return self.window.cols
+
+# Settings Dialog -------------------------------------------------------------
+#------------------------------------------------------------------------------
+class Misc_SettingsDialog(ItemLink):
+    _text = _(u'Global Settings...')
+    _help = _(u'Allows you to configure various settings that apply to the '
+              u'entirety of Wrye Bash, not just one tab.')
+
+    def Execute(self):
+        SettingsDialog.display_dialog()

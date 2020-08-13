@@ -49,7 +49,7 @@ from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
     web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
     Font, CheckListBox, UIListCtrl, PanelWin, Colors, HtmlDisplay, Image, \
-    BusyCursor
+    BusyCursor, GlobalMenu, WrappingTextMixin
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -898,8 +898,12 @@ def conversation(func):
 class UIList(wx.Panel):
     """Offspring of basher.List and balt.Tank, ate its parents."""
     # optional menus
-    mainMenu = None
-    itemMenu = None
+    column_links = None # A list of all links to show in the column menu
+    context_links = None # A list of all links to show in item context menus
+    # A dict mapping category names to a Links instance that will be displayed
+    # when the corresponding category is clicked on in the global menu. The
+    # order in which categories are added will also be the display order.
+    global_links = None
     #--gList image collection
     __icons = ImageList(16, 16) # sentinel value due to bass.dirs not being
     # yet initialized when balt is imported, so I can't use ColorChecks here
@@ -1134,7 +1138,7 @@ class UIList(wx.Panel):
     #--Column Menu
     def DoColumnMenu(self, evt_col):
         """Show column menu."""
-        if self.mainMenu: self.mainMenu.new_menu(self, evt_col)
+        if self.column_links: self.column_links.popup_menu(self, evt_col)
         return EventResult.FINISH
 
     #--Item Menu
@@ -1143,8 +1147,8 @@ class UIList(wx.Panel):
         selected = self.GetSelected()
         if not selected:
             self.DoColumnMenu(0)
-        elif self.itemMenu:
-            self.itemMenu.new_menu(self, selected)
+        elif self.context_links:
+            self.context_links.popup_menu(self, selected)
         return EventResult.FINISH
 
     #--Callbacks --------------------------------------------------------------
@@ -1604,20 +1608,44 @@ class UIList(wx.Panel):
                                 wildcard=wildcard)
         return destDir, srcDir, srcPaths
 
+    # Global Menu -------------------------------------------------------------
+    def populate_category(self, cat_label, target_category):
+        for cat_link in self.global_links[cat_label]:
+            cat_link.AppendToMenu(target_category, self, 0)
+
+    def setup_global_menu(self):
+        """Changes the categories displayed by the global menu to the ones for
+        this tab."""
+        glb_menu = Link.Frame.global_menu
+        if not self.global_links:
+            # If we don't have a global link menu, reset and abort
+            glb_menu.set_categories([])
+            return
+        tab_categories = self.global_links.keys()
+        # Check if we have to change category names
+        if not glb_menu.categories_equal(tab_categories):
+            # Release and recreate the global menu to avoid GUI flicker
+            glb_menu.release_bindings()
+            glb_menu = GlobalMenu()
+            glb_menu.set_categories(tab_categories)
+            Link.Frame.set_global_menu(glb_menu)
+        for curr_cat in tab_categories:
+            Link.Frame.global_menu.register_category_handler(curr_cat, partial(
+                self.populate_category, curr_cat))
+
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Links(list):
     """List of menu or button links."""
-
-    #--Popup a menu from the links
-    def new_menu(self, parent, selection):
+    def popup_menu(self, parent, selection):
+        """Pops up a new menu from these links."""
         parent = parent or Link.Frame
-        menu = wx.Menu() # TODO(inf) de-wx!
-        Link.Popup = menu
+        to_popup = wx.Menu() # TODO(inf) de-wx!
         for link in self:
-            link.AppendToMenu(menu, parent, selection)
-        Link.Frame.popup_menu(menu)
-        menu.Destroy()
+            link.AppendToMenu(to_popup, parent, selection)
+        Link.Popup = to_popup
+        Link.Frame.show_popup_menu(to_popup)
+        to_popup.Destroy()
         Link.Popup = None # do not leak the menu reference
 
 #------------------------------------------------------------------------------
@@ -1636,18 +1664,19 @@ class Link(object):
     except for "local" Link subclasses used in ChoiceLink related code.
     - Link.AppendToMenu() overrides stay confined in balt.
     - Link.Frame is set once and for all to the (ex) basher.bashFrame
-      singleton. Use (sparingly) as the 'link' between menus and data layer.
-    """
-    Frame = None   # BashFrame singleton, set once and for all in BashFrame()
-    Popup = None   # Current popup menu, set in Links.new_menu()
-    _text = u''    # Menu label (may depend on UI state when the menu is shown)
+      singleton. Use (sparingly) as the 'link' between menus and data layer."""
+    # BashFrame singleton, set once and for all in BashFrame()
+    Frame = None
+    # Current popup menu, set in Links.popup_menu()
+    Popup = None
+    # Menu label (may depend on UI state when the menu is shown)
+    _text = u''
 
     def __init__(self, _text=None):
         """Initialize a Link instance.
 
         Parameter _text underscored cause its use should be avoided - prefer to
-        specify text as a class attribute (or set in it _initData()).
-        """
+        specify text as a class attribute (or set in it _initData())."""
         super(Link, self).__init__()
         self._text = _text or self.__class__._text # menu label
 
@@ -1663,7 +1692,7 @@ class Link(object):
         :param selection: the selected items when the menu is appended or None.
         In modlist/installers it's a list<Path> while in subpackage it's the
         index of the right-clicked item. In main (column header) menus it's
-        the column clicked on or the first column. Set in Links.new_menu().
+        the column clicked on or the first column. Set in Links.popup_menu().
         :type window: UIList | wx.Panel | gui.buttons.Button | DnDStatusBar |
             gui.misc_components.CheckListBox
         :type selection: list[Path | unicode | int] | int | None
@@ -1760,8 +1789,8 @@ class ItemLink(Link):
     Subclasses MUST define _text (preferably class) attribute and should
     override _help. Registers the Execute() and ShowHelp methods on menu events
     """
-    kind = wx.ITEM_NORMAL  # the default in wx.MenuItem(... kind=...)
-    _help = None           # the tooltip to show at the bottom of the GUI
+    kind = wx.ITEM_NORMAL # The default in wx.MenuItem(... kind=...)
+    _help = u''           # The tooltip to show at the bottom of the GUI
 
     @property
     def menu_help(self):
@@ -1771,7 +1800,7 @@ class ItemLink(Link):
         Override this if you need to change the help text dynamically
         depending on certain conditions (e.g. whether or not the link is
         enabled)."""
-        return self._help or u''
+        return self._help
 
     def AppendToMenu(self, menu, window, selection):
         """Append self as menu item and set callbacks to be executed when
@@ -1825,7 +1854,6 @@ class MenuLink(Link):
     def AppendToMenu(self, menu, window, selection):
         """Append self as submenu (along with submenu items) to menu."""
         super(MenuLink, self).AppendToMenu(menu, window, selection)
-        Link.Frame._native_widget.Bind(wx.EVT_MENU_OPEN, MenuLink.OnMenuOpen)
         subMenu = wx.Menu()
         appended_menu = menu.AppendSubMenu(subMenu, self._text)
         if not self._enable():
@@ -1835,11 +1863,6 @@ class MenuLink(Link):
                 link.AppendToMenu(subMenu, window, selection)
             appended_menu.Enable(self._enable_menu())
         return subMenu
-
-    @staticmethod
-    def OnMenuOpen(event):
-        """Hover over a submenu, clear the status bar text"""
-        Link.Frame.set_status_info(u'')
 
     def _enable_menu(self):
         """Disable ourselves if none of our children are visible."""
@@ -1942,7 +1965,7 @@ class EnabledLink(ItemLink):
     """
 
     def _enable(self):
-        """"Override as needed to enable or disable the menu item (enabled
+        """Override as needed to enable or disable the menu item (enabled
         by default)."""
         return True
 
@@ -2019,7 +2042,7 @@ class UIList_OpenItems(ItemLink):
 
 class UIList_OpenStore(ItemLink):
     """Opens data directory in explorer."""
-    _text = _(u'Open...')
+    _text = _(u'Open Folder...')
 
     @property
     def menu_help(self):
@@ -2114,8 +2137,9 @@ class TreeCtrl(_AComponent):
 
     def OnMotion(self, event): return
 
-class ListBoxes(DialogWindow):
+class ListBoxes(WrappingTextMixin, DialogWindow):
     """A window with 1 or more lists."""
+    _wrapping_offset = 64
 
     def __init__(self, parent, title, message, lists, liststyle=u'check',
                  style=0, bOk=_(u'OK'), bCancel=_(u'Cancel'), canCancel=True):
@@ -2127,16 +2151,15 @@ class ListBoxes(DialogWindow):
         [title,tooltip,{item1:[subitem1,subitemn],item2:[subitem1,subitemn],itemn:[subitem1,subitemn]}],
         [title,tooltip,....],
         """
-        super(ListBoxes, self).__init__(parent, title=title,
+        super(ListBoxes, self).__init__(message, parent, title=title,
                                         icon_bundle=Resources.bashBlue,
                                         sizes_dict=sizes, style=style)
         self.itemMenu = Links()
         self.itemMenu.append(_CheckList_SelectAll())
         self.itemMenu.append(_CheckList_SelectAll(False))
         minWidth = self._native_widget.GetTextExtent(title)[0] * 1.2 + 64
-        self.text = Label(self, message)
-        self.text.wrap(minWidth) # otherwise self.text expands to max width
-        layout = VLayout(border=5, spacing=5, items=[self.text])
+        self._panel_text.wrap(minWidth) # otherwise expands to max width
+        layout = VLayout(border=5, spacing=5, items=[self._panel_text])
         self._ctrls = {}
         # Size ourselves slightly larger than the wrapped text, otherwise some
         # of it may be cut off and the buttons may become too small to read
@@ -2170,18 +2193,10 @@ class ListBoxes(DialogWindow):
         layout.add((HLayout(spacing=5, items=btns),
                     LayoutOptions(h_align=RIGHT)))
         layout.apply_to(self)
-        self.on_size_changed.subscribe(self._wrap_text)
-        self._width = self.component_size[0]
-
-    def _wrap_text(self):
-        # Account for the window being larger than the wrapped text
-        if self._width != self.component_size[0]:
-            self._width = self.component_size[0]
-            self.text.wrap(self.component_size[0] - 64)
 
     def _on_context(self, lb_instance):
         """Context Menu"""
-        self.itemMenu.new_menu(lb_instance, lb_instance.lb_get_selections())
+        self.itemMenu.popup_menu(lb_instance, lb_instance.lb_get_selections())
 
     def getChecked(self, key, items, checked=True):
         """Return a sublist of 'items' containing (un)checked items.
@@ -2275,7 +2290,7 @@ class DnDStatusBar(wx.StatusBar):
         self.dragStart = 0
         self.moved = False
 
-    def UpdateIconSizes(self): raise AbstractError
+    def UpdateIconSizes(self, skip_refresh=False): raise AbstractError
     def GetLink(self,uid=None,index=None,button=None): raise AbstractError
 
     @property
@@ -2298,7 +2313,7 @@ class DnDStatusBar(wx.StatusBar):
     def _getButtonIndex(self, mouseEvent):
         id_ = mouseEvent.GetId()
         for i, button in enumerate(self.buttons):
-            if button.wx_id_ == id_:
+            if button.wx_id_() == id_:
                 x = mouseEvent.GetPosition()[0]
                 # position is 0 at the beginning of the button's _icon_
                 # negative beyond that (on the left) and positive after
