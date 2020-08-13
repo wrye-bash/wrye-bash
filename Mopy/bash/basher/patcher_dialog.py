@@ -332,23 +332,28 @@ class PatchDialog(DialogWindow):
 
     def _pretry(self, patch_name):
         return balt.askYes(
-            self, _(u'Bash encountered an error when saving %(patch_name)s.'
-                    u'\n\nEither Bash needs Administrator Privileges to save '
-                    u'the file, or the file is in use by another process such '
-                    u'as %(xedit_name)s.\nPlease close any program that is '
-                    u'accessing %(patch_name)s, and provide Administrator '
-                    u'Privileges if prompted to do so.\n\nTry again?') % {
+            self, (_(u'Bash encountered an error when saving '
+                     u'%(patch_name)s.') + u'\n\n' +
+                   _(u'Either Bash needs Administrator Privileges to save '
+                     u'the file, or the file is in use by another process '
+                     u'such as %(xedit_name)s.') + u'\n' +
+                   _(u'Please close any program that is accessing '
+                     u'%(patch_name)s, and provide Administrator Privileges '
+                     u'if prompted to do so.') + u'\n\n' +
+                   _(u'Try again?')) % {
                 u'patch_name': patch_name.s,
                 u'xedit_name': bush.game.Xe.full_name},
             _(u'Bashed Patch - Save Error'))
 
     def _cretry(self, patch_name):
         return balt.askYes(
-            self, _(u'Bash encountered an error when renaming '
-                    u'%(temp_patch)s to %(patch_name)s.\n\nThe file is in use '
-                    u'by another process such as %(xedit_name)s.\nPlease '
-                    u'close the other program that is accessing %s.\n\nTry '
-                    u'again?') % {
+            self, (_(u'Bash encountered an error when renaming %(temp_patch)s '
+                     u'to %(patch_name)s.') + u'\n\n' +
+                   _(u'The file is in use by another process such as '
+                     u'%(xedit_name)s.') + u'\n' +
+                   _(u'Please close the other program that is accessing '
+                     u'%(patch_name)s.') + u'\n\n' +
+                   _(u'Try again?')) % {
                 u'temp_patch': patch_name.temp.s, u'patch_name': patch_name.s,
                 u'xedit_name': bush.game.Xe.full_name},
             _(u'Bashed Patch - Save Error'))
@@ -374,7 +379,7 @@ class PatchDialog(DialogWindow):
     __new_key = u'Saved Bashed Patch Configuration (%s)'
     def ImportConfig(self):
         """Import the configuration from a user selected dat file."""
-        config_dat = self.patchInfo.name + _(u'_Configuration.dat')
+        config_dat = self.patchInfo.name + u'_Configuration.dat'
         textDir = bass.dirs['patches']
         textDir.makedirs()
         #--File dialog

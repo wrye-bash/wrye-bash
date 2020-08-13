@@ -2353,11 +2353,11 @@ class ModInfos(FileInfos):
         """Return the list as wtxt of current bash tags (but don't say which
         ones are applied via a patch) - either for all mods in the data folder
         or if specified for one specific mod."""
-        tagList = u'=== '+_(u'Current Bash Tags')+u':\n'
+        tagList = u'=== ' + _(u'Current Bash Tags') + u':\n'
         tagList += u'[spoiler]\n'
         tagList += _(u'Note: Sources are processed from top to bottom, '
                      u'meaning that lower-ranking sources override '
-                     u'higher-ranking ones.\n')
+                     u'higher-ranking ones.') + u'\n'
         if mod_list:
             for modInfo in mod_list:
                 tagList += u'\n* ' + modInfo.name.s + u'\n'
@@ -2719,10 +2719,13 @@ class ModInfos(FileInfos):
 
     def _retry(self, old, new):
         return balt.askYes(
-            self, _(u'Bash encountered an error when renaming %(old)s to '
-                    u'%(new)s.\n\nThe file is in use by another process such '
-                    u'as %(xedit_name)s.\nPlease close the other program that '
-                    u'is accessing %(new)s.\n\nTry again?') % {
+            self, (_(u'Bash encountered an error when renaming %(old)s to '
+                    u'%(new)s.') + u'\n\n' +
+                   _(u'The file is in use by another process such as '
+                     u'%(xedit_name)s.') + u'\n' +
+                   _(u'Please close the other program that is accessing '
+                     u'%(new)s.') + u'\n\n' +
+                   _(u'Try again?')) % {
                 u'xedit_name': bush.game.Xe.full_name, u'old': old.s,
                 u'new': new.s},
         _(u'File in use'))

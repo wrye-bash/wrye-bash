@@ -1182,9 +1182,10 @@ class CBash_SpellsPatcher(_ASpellsPatcher):
 # Non CBash Importers----------------------------------------------------------
 class DestructiblePatcher(_ImporterPatcherPanel):
     patcher_name = _(u'Import Destructible')
-    _patcher_txt = _(u'Preserves changes to destructible records.\n\nWill '
-                     u'have to use if a mod that allows you to destroy part '
-                     u'of the environment is installed and active.')
+    _patcher_txt = (_(u'Preserves changes to destructible records.')
+                    + u'\n\n' +
+                    _(u'Will have to use if a mod that allows you to destroy '
+                      u'part of the environment is installed and active.'))
     autoKey = {u'Destructible'}
     patcher_type = preservers.DestructiblePatcher
 
