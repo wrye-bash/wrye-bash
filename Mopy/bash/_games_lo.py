@@ -1410,16 +1410,6 @@ class SkyrimSE(AsteriskGame):
                         format_date(master_mtime)))
         return add
 
-    def _persist_load_order(self, lord, active):
-        # Write the primary file, then make a copy for the CK to use (it looks
-        # for plugins.txt in the wrong path, namely the game folder, not
-        # AppData\Local - and then falls back to timestamps when it can't find
-        # plugins.txt in the game folder)
-        # Note that this is fixed in FO4, and seems to crash the Skyrim LE CK,
-        # so we only do it for SSE
-        super(SkyrimSE, self)._persist_load_order(lord, active)
-        self.plugins_txt_path.copyTo(bass.dirs[u'app'].join(u'plugins.txt'))
-
 class SkyrimVR(SkyrimSE):
     must_be_active_if_present = SkyrimSE.must_be_active_if_present + (
         GPath_no_norm(u'SkyrimVR.esm'),)
