@@ -136,10 +136,9 @@ class Mod_CreateDummyMasters(OneItemLink):
         msg = (_(u'This is an advanced feature, originally intended for '
                  u"viewing and editing 'Filter' patches in %s. It will create "
                  u'empty plugins for each missing master. Are you sure you '
-                 u'want to continue?') + u'\n\n' +
+                 u'want to continue?') % bush.game.Xe.full_name + u'\n\n' +
                _(u"To remove these files later, use 'Remove Dummy "
-                 u"Masters...'.")
-               % bush.game.Xe.full_name)
+                 u"Masters...'."))
         if not self._askYes(msg, title=_(u'Create Files')): return
         to_refresh = []
         # creates esp files - so place them correctly after the last esm

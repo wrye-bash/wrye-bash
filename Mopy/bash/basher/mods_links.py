@@ -395,6 +395,7 @@ class Mods_ExportBashTags(ItemLink):
         exp_path = self._askSave(title=_(u'Export bash tags to CSV file:'),
             defaultDir=bass.dirs[u'patches'], defaultFile=u'SavedTags.csv',
             wildcard=u'*.csv')
+        if not exp_path: return
         plugins_exported = 0
         with exp_path.open(u'w', encoding=u'utf-8-sig') as out:
             out.write(u'"Plugin","Tags"\n')
@@ -426,6 +427,7 @@ class Mods_ImportBashTags(ItemLink):
         imp_path = self._askOpen(title=_(u'Import bash tags from CSV file:'),
             defaultDir=bass.dirs[u'patches'], defaultFile=u'SavedTags.csv',
             wildcard=u'*.csv')
+        if not imp_path: return
         first_line = True
         plugins_imported = []
         with CsvReader(imp_path) as ins:

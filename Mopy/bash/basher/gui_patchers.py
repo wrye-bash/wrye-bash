@@ -236,6 +236,9 @@ class _AliasesPatcherPanel(_PatcherPanel):
         return self.patcher_type(self.patcher_name, patch_file)
 
 #------------------------------------------------------------------------------
+##: A lot of this belongs into _ListsMergerPanel (e.g. the whole GetConfigPanel
+# split, remove empty sublists, etc.). Would also put forceAuto and
+# forceItemCheck to rest
 class _ListPatcherPanel(_PatcherPanel):
     """Patcher panel with option to select source elements."""
     listLabel = _(u'Source Mods/Files')
@@ -286,7 +289,7 @@ class _ListPatcherPanel(_PatcherPanel):
                     checked=self.remove_empty_sublists)
                 self.g_remove_empty.on_checked.subscribe(
                     self._on_remove_empty_checked)
-                right_side_components.extend([self.g_remove_empty])
+                right_side_components.append(self.g_remove_empty)
             self.gAuto = CheckBox(gConfigPanel, _(u'Automatic'),
                                   checked=self.autoIsChecked)
             self.gAuto.on_checked.subscribe(self.OnAutomatic)
@@ -297,6 +300,9 @@ class _ListPatcherPanel(_PatcherPanel):
             right_side_components.extend([self.gAuto, Spacer(4), self.gAdd,
                                           self.gRemove])
             self.OnAutomatic(self.autoIsChecked)
+            if not self.autoIsChecked:
+                # SetItems when autoIsChecked is handled by OnAutomatic above
+                self.SetItems(self.configItems)
             side_button_layout = VLayout(
                 spacing=4, items=right_side_components)
         self.main_layout.add(
@@ -403,6 +409,7 @@ class _ListPatcherPanel(_PatcherPanel):
         return load_order.get_ordered(items)
 
     def mass_select(self, select=True):
+        super(_ListPatcherPanel, self).mass_select(select)
         try:
             self.gList.set_all_checkmarks(checked=select)
             self.OnListCheck()

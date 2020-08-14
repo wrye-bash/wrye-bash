@@ -449,20 +449,17 @@ def _import_bush_and_set_game(opts, bashIni):
     ret, game_icons = bush.detect_and_set_game(opts.oblivionPath, bashIni)
     if ret is not None:  # None == success
         if len(ret) == 0:
-            msgtext = bolt.text_wrap(
-                _(u'Wrye Bash could not find a game to manage. Please use the '
-                  u'-o command line argument to specify the game path.'), 65)
+            msgtext = _(u'Wrye Bash could not find a game to manage. Please '
+                        u'use the -o command line argument to specify the '
+                        u'game path.')
         else:
-            msgtext = (
-                    bolt.text_wrap(
-                        _(u'Wrye Bash could not determine which game to '
-                          u'manage. The following games have been detected, '
-                          u'please select one to manage.'), 65) + u'\n\n' +
-                    bolt.text_wrap(
-                        _(u'To prevent this message in the future, use the -o '
-                          u'command line argument or the bash.ini to specify '
-                          u'the game path.'), 65))
-        retCode = _wxSelectGame(ret, game_icons, msgtext)
+            msgtext = (_(u'Wrye Bash could not determine which game to '
+                         u'manage. The following games have been detected, '
+                         u'please select one to manage.') + u'\n\n' +
+                       _(u'To prevent this message in the future, use the -o '
+                         u'command line argument or the bash.ini to specify '
+                         u'the game path.'))
+        retCode = _wxSelectGame(ret, game_icons, bolt.text_wrap(msgtext, 65))
         if retCode is None:
             bolt.deprint(u'No games were found or selected. Aborting.')
             return None
