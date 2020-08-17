@@ -15,7 +15,7 @@
             Abort
         ${EndIf}
 
-        ${NSD_CreateLabel} 0 0 100% 24u "Select which Elder Scrolls Game(s) you would like to install Wrye Bash for.$\nAlso select which version(s) to install (Standalone exe (default) and/or Python version).$\nFallout Install Locations are on the next page."
+        ${NSD_CreateLabel} 0 0 100% 24u "Select which Elder Scrolls Game(s) you would like to install Wrye Bash for.$\nFallout Install Locations are on the next page."
             Pop $Label
             IntOp $0 0 + 25
 
@@ -114,7 +114,7 @@
             Abort
         ${EndIf}
 
-        ${NSD_CreateLabel} 0 0 100% 24u "Select which Fallout Game(s) you would like to install Wrye Flash for.$\nAlso select which version(s) to install (Standalone exe (default) and/or Python version).$\nExtra Install Location are on the next page."
+        ${NSD_CreateLabel} 0 0 100% 24u "Select which Fallout Game(s) you would like to install Wrye Flash for.$\nExtra Install Location are on the next page."
             Pop $Label
             IntOp $0 0 + 25
 
@@ -185,7 +185,7 @@
             Abort
         ${EndIf}
 
-        ${NSD_CreateLabel} 0 0 100% 24u "Select which Extra location(s) you would like to install Wrye Bash/Flash for.$\nAlso select which version(s) to install (Standalone exe (default) and/or Python version)."
+        ${NSD_CreateLabel} 0 0 100% 24u "Select which Extra location(s) you would like to install Wrye Bash/Flash for."
             Pop $Label
             IntOp $0 0 + 25
 

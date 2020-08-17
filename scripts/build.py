@@ -65,11 +65,12 @@ MOPY_PATH = os.path.join(ROOT_PATH, u"Mopy")
 APPS_PATH = os.path.join(MOPY_PATH, u"Apps")
 NSIS_PATH = os.path.join(SCRIPTS_PATH, u"build", u"nsis")
 TESTS_PATH = os.path.join(MOPY_PATH, u'bash', u'tests')
+REDIST_PATH = os.path.join(MOPY_PATH, u'redist')
 
 sys.path.insert(0, MOPY_PATH)
 from bash import bass
 
-NSIS_VERSION = "3.04"
+NSIS_VERSION = u'3.06.1'
 if sys.platform.lower().startswith("linux"):
     EXE_7z = u"7z"
 else:
@@ -220,16 +221,33 @@ def get_nsis_root(cmd_arg):
             os.path.join(local_build_path, "nsis-{}".format(NSIS_VERSION)),
             NSIS_PATH,
         )
-        inetc_url = "https://nsis.sourceforge.io/mediawiki/images/c/c9/Inetc.zip"
-        inetc_zip = os.path.join(dl_dir, "inetc.zip")
-        LOGGER.info("Downloading inetc plugin...")
-        LOGGER.debug("Download url: {}".format(inetc_url))
-        LOGGER.debug("Download inetc plugin to {}".format(inetc_zip))
-        utils.download_file(inetc_url, inetc_zip)
-        with zipfile.ZipFile(inetc_zip) as fzip:
-            fzip.extract("Plugins/x86-unicode/INetC.dll", NSIS_PATH)
-        os.remove(inetc_zip)
     return NSIS_PATH
+
+
+def download_redists():
+    """Downloads all required MSVC redistributables if they're not already
+    present."""
+    if not os.path.isdir(REDIST_PATH):
+        os.makedirs(REDIST_PATH)
+    msvc_2010_x86 = os.path.join(REDIST_PATH, u'vcredist_2010_x86.exe')
+    if not os.path.isfile(msvc_2010_x86):
+        LOGGER.info(u'MSVC 2010 x86 redistributable not found, downloading')
+        utils.download_file(u'https://download.microsoft.com/download/5/B/C/'
+                            u'5BC5DBB3-652D-4DCE-B14A-475AB85EEF6E/'
+                            u'vcredist_x86.exe', msvc_2010_x86)
+        LOGGER.debug(u'MSVC 2010 x86 redistributable downloaded successfully')
+    else:
+        LOGGER.debug(u'MSVC 2010 x86 redistributable found')
+    ##: Commented out for now, uncomment once we switch to 64bit
+    # msvc_2010_x64 = os.path.join(REDIST_PATH, u'vcredist_2010_x64.exe')
+    # if not os.path.isfile(msvc_2010_x64):
+    #     LOGGER.info(u'MSVC 2010 x64 redistributable not found, downloading')
+    #     utils.download_file(u'https://download.microsoft.com/download/3/2/2/'
+    #                         u'3224B87F-CFA0-4E70-BDA3-3DE650EFEBA5/'
+    #                         u'vcredist_x64.exe', msvc_2010_x64)
+    #     LOGGER.debug(u'MSVC 2010 x64 redistributable downloaded successfully')
+    # else:
+    #     LOGGER.debug(u'MSVC 2010 x64 redistributable found')
 
 
 def pack_manual(version):
@@ -243,10 +261,14 @@ def pack_manual(version):
         join(ROOT_PATH, u"requirements.txt"): join(MOPY_PATH, u"requirements.txt"),
         join(WBSA_PATH, u"bash.ico"): join(MOPY_PATH, u"bash.ico"),
     }
+    ignores = (
+        u'Mopy/bash/tests',
+        u'Mopy/redist',
+    )
     for orig, target in files_to_include.items():
         cpy(orig, target)
     try:
-        pack_7z(archive)
+        pack_7z(archive, *[u'-xr!' + a for a in ignores])
     finally:
         for path in files_to_include.values():
             rm(path)
@@ -300,8 +322,10 @@ def pack_standalone(version):
         u'Mopy/bash/game',
         u'Mopy/bash/gui',
         u'Mopy/bash/patcher',
+        u'Mopy/bash/tests',
+        u'Mopy/redist',
     )
-    pack_7z(archive, *["-xr!" + a for a in ignores])
+    pack_7z(archive, *[u'-xr!' + a for a in ignores])
 
 
 def pack_installer(nsis_path, version, file_version):
@@ -313,12 +337,10 @@ def pack_installer(nsis_path, version, file_version):
             "installer creation.".format(script_path)
         )
     nsis_root = get_nsis_root(nsis_path)
+    download_redists()
     nsis_path = os.path.join(nsis_root, "makensis.exe")
     if not os.path.isfile(nsis_path):
         raise IOError("Could not find 'makensis.exe', aborting installer creation.")
-    inetc_path = os.path.join(nsis_root, "Plugins", "x86-unicode", "inetc.dll")
-    if not os.path.isfile(inetc_path):
-        raise IOError("Could not find NSIS Inetc plugin, aborting installer creation.")
     # Build the installer
     utils.run_subprocess(
         [
@@ -475,7 +497,7 @@ def clean_repo():
             "You are building off branch '{}', which does not "
             "appear to be a release branch".format(branch_name)
         )
-    with hold_files(NSIS_PATH):
+    with hold_files(NSIS_PATH, REDIST_PATH):
         # stash everything away
         # - stash modified files
         # - then stash ignored and untracked
@@ -498,10 +520,7 @@ def clean_repo():
         if mod_stashed:
             repo.stash_pop(index=[mod_stashed, unt_stashed].count(True) - 1)
     try:
-        # Move the tests out during building, otherwise the resources will end
-        # up being included in all three archives
-        with hold_files(TESTS_PATH):
-            yield
+        yield
     finally:
         if unt_stashed:
             # if we commit during the yield above

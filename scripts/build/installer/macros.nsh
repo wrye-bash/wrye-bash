@@ -20,6 +20,8 @@
                         /x "gui" \
                         /x "game" \
                         /x "patcher" \
+                        /x "redist" \
+                        /x "tests" \
                         "${WB_CLEAN_MOPY}\*.*"
         WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${RegPath}" "${GameDir}"
         ; Install the standalone only files
@@ -562,6 +564,8 @@
         RMDir /r "${Path}\Mopy\bash\game"
         RMDir /r "${Path}\Mopy\bash\gui"
         RMDir /r "${Path}\Mopy\bash\patcher"
+        RMDir /r "${Path}\Mopy\redist"
+        RMDir /r "${Path}\Mopy\bash\tests"
         ; As of 307, Wizard Images have been moved to bash/images/Wizard Images
         RMDir /r "${Path}\Mopy\Wizard Images"
     !macroend

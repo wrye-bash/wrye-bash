@@ -30,6 +30,9 @@ scripts/dist/*.7z
 # Local NSIS
 scripts/build/nsis/
 
+# Local redistributables
+Mopy/redist/
+
 # translation files
 Mopy/bash/l10n/*.mo
 Mopy/bash/l10n/*NEW.txt
