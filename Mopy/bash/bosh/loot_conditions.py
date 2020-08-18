@@ -131,7 +131,7 @@ def _fn_active(path_or_regex):
     active plugin matches the specified path or regex.
 
     :param path_or_regex: The file path or regex to check."""
-    if _is_regex(path_or_regex):
+    if is_regex(path_or_regex):
         # Regex means we have to look at each active plugin - plugins can
         # obviously only be in Data, no need to process the path here
         file_regex = re.compile(path_or_regex)
@@ -158,7 +158,7 @@ def _fn_file(path_or_regex):
 
     :param path_or_regex: The file path or regex to check."""
     # Takes either a regex or a file path
-    if _is_regex(path_or_regex):
+    if is_regex(path_or_regex):
         # Regex means we have to look at each file in the parent directory
         # Note that only the last part of the path may be a regex, so no need
         # to check every step of the way
@@ -286,7 +286,7 @@ _function_mapping = {
 }
 
 # Misc
-def _is_regex(string_to_check):
+def is_regex(string_to_check):
     # type: (unicode) -> bool
     """Checks if the specified string is to be treated as a regex for purposes
     of differentiating between file paths and regexes for the functions that

@@ -109,6 +109,7 @@ class _AMerger(ImportPatcher):
                 for record in srcFile.tops[block].getActiveRecords():
                     self.touched.add(record.fid)
             progress.plus()
+        self.isActive = bool(self._present_sigs)
 
     def scanModFile(self, modFile, progress):
         if not self.isActive: return
@@ -121,9 +122,9 @@ class _AMerger(ImportPatcher):
         if modName in self._masters_and_srcs:
             id_entries = mod_id_entries[modName] = {}
             for curr_sig in self._present_sigs:
+                if curr_sig not in modFile.tops: continue
                 sr_attr = self._wanted_subrecord[curr_sig]
-                for record in getattr(modFile, unicode(
-                        curr_sig, u'ascii')).getActiveRecords():
+                for record in modFile.tops[curr_sig].getActiveRecords():
                     if record.fid in touched:
                         try:
                             id_entries[record.fid] = getattr(

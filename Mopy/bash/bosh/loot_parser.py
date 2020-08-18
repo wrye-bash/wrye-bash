@@ -30,12 +30,13 @@ https://loot-api.readthedocs.io/en/latest/metadata/file_structure.html
 https://loot-api.readthedocs.io/en/latest/metadata/data_structures/index.html
 https://loot-api.readthedocs.io/en/latest/metadata/conditions.html."""
 
+import copy
 import re
 import yaml
 from collections import deque
 
 from .loot_conditions import _ACondition, Comparison, ConditionAnd, \
-    ConditionFunc, ConditionNot, ConditionOr
+    ConditionFunc, ConditionNot, ConditionOr, is_regex
 from ..bolt import deprint, LowerDict, Path
 from ..exception import LexerError, ParserError
 
@@ -52,16 +53,18 @@ except ImportError:
 __author__ = u'Infernio'
 
 # API
-libloot_version = u'0.15.x' # The libloot version with which this
+libloot_version = u'0.16.x' # The libloot version with which this
                             # implementation is compatible
 
 class LOOTParser(object):
     """The main frontend for interacting with LOOT's masterlists. Provides
     methods to parse masterlists and to retrieve information from them."""
-    __slots__ = (u'_cached_masterlist',)
+    __slots__ = (u'_cached_masterlist', u'_cached_regexes', u'_cached_merges')
 
     def __init__(self):
         self._cached_masterlist = {}
+        self._cached_regexes = {}
+        self._cached_merges = {}
 
     def get_plugin_tags(self, plugin_name, catch_errors=True):
         """Retrieves added and removed tags for the specified plugin. If the
@@ -77,20 +80,20 @@ class LOOTParser(object):
         :return: A tuple containing two sets, one with added and one with
             removed tags.
         :rtype: tuple[set[unicode], set[unicode]]"""
-        try:
-            plugin_entry = self._cached_masterlist[plugin_name.s]
+        def get_resolved_tags(res_entry):
             # We may have to evaluate conditions now
-            return (_ConditionalTag.resolve_tags(plugin_entry.tags_added),
-                    _ConditionalTag.resolve_tags(plugin_entry.tags_removed))
-        except KeyError:
-            # Plugin has no entry in the masterlist, this is fine
-            if not catch_errors:
-                raise
-        except (LexerError, ParserError):
-            if not catch_errors:
-                raise
-            deprint(u'Error when evaluating LOOT condition', traceback=True)
-        return set(), set()
+            try:
+                return (_ConditionalTag.resolve_tags(res_entry.tags_added),
+                        _ConditionalTag.resolve_tags(res_entry.tags_removed))
+            except (LexerError, ParserError):
+                if not catch_errors:
+                    raise
+                deprint(u'Error while evaluating LOOT condition',
+                    traceback=True)
+        plugin_s = plugin_name.s
+        if plugin_s in self._cached_merges:
+            return get_resolved_tags(self._cached_merges[plugin_s])
+        return get_resolved_tags(self._perform_merge(plugin_s))
 
     def load_lists(self, masterlist_path, userlist_path=None,
                    catch_errors=True):
@@ -110,36 +113,60 @@ class LOOTParser(object):
             if userlist_path:
                 _merge_lists(masterlist, _parse_list(userlist_path))
             self._cached_masterlist = masterlist
+            self._cached_regexes = [(re.compile(r, re.I | re.U).match, e)
+                                    for r, e in masterlist.iteritems()
+                                    if is_regex(r)]
+            self._cached_merges = {}
         except yaml.YAMLError:
             if not catch_errors:
                 raise
             deprint(u'Error when parsing LOOT masterlist', traceback=True)
 
-    def is_plugin_dirty(self, plugin_name, mod_infos, catch_errors=True):
+    def is_plugin_dirty(self, plugin_name, mod_infos):
         """Checks if the specified plugin is dirty according to the information
         inside the LOOT masterlist (or userlist, if it was parsed).
 
         :param plugin_name: The name of the plugin whose dirty info should be
             checked.
         :type plugin_name: Path
-        :param mod_infos: bosh.modInfos. Must be up to date.
-        :param catch_errors: If False, no errors will be caught - you will have
-            to handle them manually. Intended for unit tests."""
-        try:
-            plugin_entry = self._cached_masterlist[plugin_name.s]
-            return (plugin_entry and mod_infos[plugin_name].cached_mod_crc()
-                    in plugin_entry.dirty_crcs)
-        except KeyError:
-            if not catch_errors:
-                raise
-            return False # Plugin has no entry in the masterlist, this is fine
+        :param mod_infos: bosh.modInfos. Must be up to date."""
+        def check_dirty(res_entry):
+            return (res_entry and mod_infos[plugin_name].cached_mod_crc()
+                    in res_entry.dirty_crcs)
+        plugin_s = plugin_name.s
+        if plugin_s in self._cached_merges:
+            return check_dirty(self._cached_merges[plugin_s])
+        return check_dirty(self._perform_merge(plugin_s))
+
+    def _perform_merge(self, plugin_s):
+        """Checks the masterlist and all regexes for a match with the spcified
+        plugin name string, then merges the resulting entries, stores the final
+        entry in _cached_merges and returns it."""
+        all_entries = []
+        # Check for a literal match first
+        main_entry = self._cached_masterlist.get(plugin_s)
+        if main_entry:
+            all_entries.append(main_entry)
+        for match_plugin, plugin_entry in self._cached_regexes:
+            if match_plugin(plugin_s):
+                all_entries.append(plugin_entry)
+        if not all_entries:
+            # Plugin has no entry in the masterlist, this is fine
+            merged_entry = _PluginEntry({})
+        else:
+            # Merge the later entries with the first one
+            merged_entry = copy.deepcopy(all_entries[0])
+            for plugin_entry in all_entries[1:]:
+                merged_entry.merge_with(plugin_entry)
+        self._cached_merges[plugin_s] = merged_entry
+        return merged_entry
 
 # Implementation
 def _loot_decode(raw_str):
     """LOOT masterlists are always encoded in UTF-8, but simply opening the
     file in UTF-8 mode is not enough. PyYAML stores everything it can encode as
     ASCII as bytestrings, and everything else as unicode. No idea why."""
-    return raw_str if type(raw_str) is unicode else unicode(raw_str, u'utf-8')
+    return raw_str if type(raw_str) is unicode else raw_str.decode(u'utf-8')
 
 class _PluginEntry(object):
     """Represents stored information about a plugin's entry in the LOOT
