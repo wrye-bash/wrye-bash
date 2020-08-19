@@ -1481,9 +1481,8 @@ class InstallerArchive(Installer):
             recurse=True)
         upt_numb, del_numb = self._do_sync_data(unpack_dir, delta_files)
         archive_name = GPath(self.archive)
-        new_archive = archive_name.root + (
-            archive_name.cext if archive_name.cext != u'.rar'
-            else archives.defaultExt)
+        new_archive = archive_name.root + archives.writeExts.get(
+            archive_name.cext, archives.defaultExt)
         self.packToArchive(unpack_dir, new_archive, isSolid=True,
                            blockSize=None)
         bass.rmTempDir()

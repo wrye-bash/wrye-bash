@@ -277,10 +277,10 @@ class PageSelect(PageInstaller):
                     any_selected = True
             if block_all_in_group:
                 checkables_to_block |= set(self.group_option_map[grp])
-                # Store a copy of the frozen state for each button
-                frozen_state = {c: c.is_checked for c in checkables_to_block}
-                for block_chk in checkables_to_block:
-                    self._frozen_states[block_chk] = frozen_state
+            # We'll need this when blocking user interaction with an unusable
+            # option
+            initial_state = {c: c.is_checked for c in
+                             self.group_option_map[grp]}
             if gtype == u'SelectAtMostOne':
                 none_button = RadioButton(panel_groups, label=_(u'None'))
                 if not any_selected:
@@ -288,9 +288,20 @@ class PageSelect(PageInstaller):
                 elif block_all_in_group:
                     checkables_to_block.add(none_button)
                 options_layout.add(none_button)
+                initial_state[none_button] = none_button.is_checked
             # At this point, all checkables that may have to be blocked have
             # been added, so perform the blocking and create the final layout
             for block_chk in checkables_to_block:
+                # For simplicity, we remember the initial state of all blocked
+                # checkables in this group even if we don't end up needing it
+                self._frozen_states[block_chk] = initial_state
+                ##: This will reset user choices if they've checked any usable
+                # options before checking an unusable one. We should find a way
+                # to catch 'valid' user interactions and update the frozen
+                # states at that point. Simply subscribing to all non-blocked
+                # on_clicked events does not work because they fire too early
+                # (e.g. radio buttons won't have run their logic for unchecking
+                # the other button yet).
                 block_chk.block_user(self._handle_block_user)
             groups_layout.add(HBoxedLayout(
                 panel_groups, title=grp.group_name, item_expand=True,
@@ -323,20 +334,16 @@ class PageSelect(PageInstaller):
         ##: Could maybe be de-wx'd further and moved to gui? RadioButtonGroup?
         frozen_state = self._frozen_states.get(block_checkable)
         if frozen_state:
-            for block_checkable, chk_state in frozen_state.iteritems():
-                block_checkable.is_checked = chk_state
-        if isinstance(block_checkable, CheckBox):
-            # Adjust the warning based on whether we can't check or can't
-            # uncheck this option
-            block_option = self.checkable_to_option[block_checkable]
-            if block_option.option_type == u'NotUsable':
-                balt.showWarning(self, _(
-                    u'This option cannot be enabled. It is probably '
-                    u'informational and only here to show a description on '
-                    u'the right.'))
-            else:
-                balt.showWarning(self, _(u'This option is required and cannot '
-                                         u'be disabled.'))
+            for chk, chk_state in frozen_state.iteritems():
+                chk.is_checked = chk_state
+        block_option = self.checkable_to_option[block_checkable]
+        # Adjust the warning based on whether the problem is due to this option
+        # or another one in the same group
+        if block_option.option_type == u'NotUsable':
+            balt.showWarning(self, _(u'This option cannot be enabled.'))
+        elif isinstance(block_checkable, CheckBox):
+            balt.showWarning(self, _(u'This option is required and cannot be '
+                                     u'disabled.'))
         else: # RadioButton
             balt.showWarning(self, _(u'One of the options in this group is '
                                      u'required and cannot be unselected by '

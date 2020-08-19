@@ -223,7 +223,9 @@ class _ALabel(_AComponent):
         """Changes the text of this label to the specified string.
 
         :param new_text: The new text to use."""
-        self._native_widget.SetLabel(new_text)
+        # Check first to avoid GUI flicker when setting to identical text
+        if self.label_text != new_text:
+            self._native_widget.SetLabel(new_text)
 
 class Label(_ALabel):
     """A static text element. Doesn't have a border and the text can't be
