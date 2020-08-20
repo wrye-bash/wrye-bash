@@ -41,9 +41,7 @@ from collections import OrderedDict
 #--wx
 import wx
 import wx.adv
-from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from wx.lib.embeddedimage import PyEmbeddedImage
-import wx.lib.newevent
 #--gui
 from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
@@ -715,8 +713,8 @@ class ListEditor(DialogWindow):
         self.cancel_modal()
 
 #------------------------------------------------------------------------------
-NoteBookDraggedEvent, EVT_NOTEBOOK_DRAGGED = wx.lib.newevent.NewEvent()
-
+##: Is there even a good reason for having this as a mixin? AFAICT, the only
+# thing this accomplishes is causing pycharm to spit out tons of warnings
 class TabDragMixin(object):
     """Mixin for the wx.Notebook class.  Enables draggable Tabs.
        Events:
@@ -796,8 +794,7 @@ class TabDragMixin(object):
                     self.RemovePage(left)
                 for page,title in addPages:
                     self.InsertPage(insert,page,title)
-                evt = NoteBookDraggedEvent(fromIndex=oldPos,toIndex=newPos)
-                wx.PostEvent(self,evt)
+                self.drag_tab(newPos)
         event.Skip()
 
 #------------------------------------------------------------------------------

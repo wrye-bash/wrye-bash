@@ -548,6 +548,7 @@
         Delete "${Path}\Mopy\bash\images\readme\wryebash_docbrowser.png"
         Delete "${Path}\Mopy\bash\images\readme\wryebash_peopletab.png"
         Delete "${Path}\Mopy\bash\images\x.png"
+        RMDir /r "${Path}\Mopy\Bash Patches\Skyrim Special Edition"
         ; As of 307, LOOT integration is handled through a hand-written parser
         Delete "${Path}\Mopy\loot.*"
         Delete "${Path}\Mopy\loot_api.*"

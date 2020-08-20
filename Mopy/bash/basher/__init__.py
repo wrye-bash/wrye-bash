@@ -3654,8 +3654,6 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         self.SetSelection(pageIndex)
         self.currentPage = _widget_to_panel[
             self.GetPage(self.GetSelection()).GetId()]
-        #--Dragging
-        self.Bind(balt.EVT_NOTEBOOK_DRAGGED, self.OnTabDragged)
         #--Setup Popup menu for Right Click on a Tab
         self.Bind(wx.EVT_CONTEXT_MENU, self.DoTabMenu)
 
@@ -3688,8 +3686,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         else:
             event.Skip()
 
-    def OnTabDragged(self, event):
-        newPos = event.toIndex
+    def drag_tab(self, newPos):
         # Find the key
         removeTitle = self.GetPageText(newPos)
         oldOrder = settings['bash.tabs.order'].keys()
@@ -3710,7 +3707,6 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             newOrder = oldOrder[:nextTabIndex]+[removeKey]+oldOrder[nextTabIndex:]
         settings['bash.tabs.order'] = OrderedDict(
             (k, settings['bash.tabs.order'][k]) for k in newOrder)
-        event.Skip()
 
     def OnShowPage(self,event):
         """Call panel's ShowPanel() and set the current panel."""
