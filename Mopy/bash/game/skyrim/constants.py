@@ -1818,7 +1818,7 @@ GmstTweaks = [
         (u'fCombatDodgeChanceMax',),
         (_(u'Enabled'), 0.0),
         ),
-     {'defaultEnabled':True}],
+     {u'defaultEnabled': True}],
     (_(u'Combat: Max Ally Hits'),
      _(u'Number of hits allowed by allies out of combat before attacking the '
        u'player.'),
@@ -2001,7 +2001,7 @@ GmstTweaks = [
         (u'sCantEquipGeneric',),
         (_(u'Enabled'), u''),
         ),
-     {'defaultEnabled':True}],
+     {u'defaultEnabled': True}],
     (_(u'Msg: Auto Saving'),
      _(u'Message upon auto saving.'),
         (u'sAutoSaving',),
@@ -2470,23 +2470,25 @@ keywords_types = ('ACTI', 'ALCH', 'AMMO', 'ARMO', 'BOOK', 'FLOR', 'FURN',
 #------------------------------------------------------------------------------
 text_long_types = set()
 text_types = {
-    'ALCH': ('description',),
-    'AMMO': ('description',),
-    'APPA': ('description',),
-    'ARMO': ('description',),
-    'AVIF': ('description',),
-    'BOOK': ('description','bookText',),
-    'CLAS': ('description',),
-    #'COLL': ('description',), # seems fairly useless to patch this
-    'LSCR': ('description',),
-    'MESG': ('description',),
-    'MGEF': ('magic_item_description',),
-    #'PERK': ('description',), # no other patchers right now
-    #'QUST': ('description',), # no other patchers and seems unused
-    'SCRL': ('description',),
-    'SHOU': ('description',),
-    'SPEL': ('description',),
-    'WEAP': ('description',),
+    b'ACTI': (u'activate_text_override',),
+    b'ALCH': (u'description',),
+    b'AMMO': (u'description',),
+    b'APPA': (u'description',),
+    b'ARMO': (u'description',),
+    b'AVIF': (u'description',),
+    b'BOOK': (u'description', u'bookText'),
+    b'CLAS': (u'description',),
+    #b'COLL': (u'description',), # seems fairly useless to patch this
+    b'LSCR': (u'description',),
+    b'MESG': (u'description',),
+    b'MGEF': (u'magic_item_description',),
+    b'PERK': (u'description',),
+    #b'QUST': (u'description',), # no other patchers and seems unused
+    # omit RACE - covered by R.Description
+    b'SCRL': (u'description',),
+    b'SHOU': (u'description',),
+    b'SPEL': (u'description',),
+    b'WEAP': (u'description',),
 }
 
 #------------------------------------------------------------------------------

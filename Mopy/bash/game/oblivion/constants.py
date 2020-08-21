@@ -1252,7 +1252,7 @@ GmstTweaks = [
         (u'iVampirismAgeOffset',),
         (u'Fix it!', 0),
         ),
-     {'defaultEnabled':True}],
+     {u'defaultEnabled': True}],
     (_(u'AI: Max Dead Actors'),
      _(u"Maximum number of dead actors allowed before they're removed."),
         (u'iRemoveExcessDeadCount', u'iRemoveExcessDeadTotalActorCount',u'iRemoveExcessDeadComplexTotalActorCount',
@@ -1699,13 +1699,13 @@ del _cobl, _ob
 # Text Patcher
 #------------------------------------------------------------------------------
 text_types = {
-    'BOOK': ('text',),
-    'BSGN': ('text',),
-    'CLAS': ('description',),
-    'LSCR': ('text',),
-    'MGEF': ('text',),
+    b'BOOK': (u'text',),
+    b'BSGN': (u'text',),
+    b'CLAS': (u'description',),
+    b'LSCR': (u'text',),
+    b'MGEF': (u'text',),
     # omit RACE - covered by R.Description
-    'SKIL': ('description',),
+    b'SKIL': (u'description',),
 }
 
 #------------------------------------------------------------------------------

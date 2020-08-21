@@ -936,16 +936,16 @@ inventoryTypes = ('CREA','NPC_','CONT',)
 #------------------------------------------------------------------------------
 text_long_types = {'NOTE',}
 text_types = {
-    'AVIF': ('description',),
-    'BOOK': ('text',),
-    'CLAS': ('description',),
-    'LSCR': ('text',),
-    'MESG': ('description',),
-    'MGEF': ('text',),
-    'NOTE': ('textTopic',),
-    'PERK': ('description',),
+    b'AVIF': (u'description',),
+    b'BOOK': (u'text',),
+    b'CLAS': (u'description',),
+    b'LSCR': (u'text',),
+    b'MESG': (u'description',),
+    b'MGEF': (u'text',),
+    b'NOTE': (u'textTopic',),
+    b'PERK': (u'description',),
     # omit RACE - covered by R.Description
-    'TERM': ('description',),
+    b'TERM': (u'description',),
 }
 
 #------------------------------------------------------------------------------

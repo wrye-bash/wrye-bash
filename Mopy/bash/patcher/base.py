@@ -180,7 +180,7 @@ class AMultiTweakItem(object):
             self.choiceValues.append(choice_tuple[1:])
         #--Config
         self.isEnabled = False
-        self.defaultEnabled = kwargs.get('defaultEnabled', False)
+        self.defaultEnabled = kwargs.get(u'defaultEnabled', False)
         self.chosen = 0
         #--Log
         self.logHeader = u'=== '+ self.tweak_name
