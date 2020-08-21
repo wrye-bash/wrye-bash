@@ -865,7 +865,6 @@ tag_aliases = {
     u'Npc.HairOnly': {u'NPC.Hair'},
     u'NpcFaces': {u'NPC.Eyes', u'NPC.Hair', u'NPC.FaceGen'},
     u'Relations': {u'Relations.Add', u'Relations.Change'},
-    u'Spells': {u'SpellStats'},
 }
 
 def process_tags(tag_set, drop_unknown=True):
