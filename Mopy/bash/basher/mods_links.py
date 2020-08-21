@@ -154,7 +154,7 @@ class Mods_LoadList(ChoiceLink):
         wait for this being initialized in ModInfos.__init__"""
         if self.__class__.loadListsDict is self.__class__.__uninitialized:
             loadListData = load_order.get_active_mods_lists()
-            loadListData['Bethesda ESMs'] = [
+            loadListData[u'Vanilla'] = [
                 GPath(x) for x in bush.game.bethDataFiles if x.endswith(
                     u'.esm') # but avoid activating modding esms for oblivion
                 and (not re.match(bosh.reOblivion.pattern, x, re.I)

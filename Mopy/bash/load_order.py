@@ -334,6 +334,9 @@ def __load_pickled_load_orders():
     _current_list_index = _lords_pickle.data.get('_current_list_index', -1)
     _active_mods_lists = _lords_pickle.data.get('_active_mods_lists',
                                                 active_mods_list)
+    if b'Bethesda ESMs' in _active_mods_lists: ##: backwards compat
+        _active_mods_lists[u'Vanilla'] = _active_mods_lists[b'Bethesda ESMs']
+        del _active_mods_lists[b'Bethesda ESMs']
     locked = bass.settings.get('bosh.modInfos.resetMTimes', False)
 
 def get_active_mods_lists():

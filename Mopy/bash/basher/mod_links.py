@@ -649,8 +649,7 @@ def _getUrl(installer):
         if ma and ma.group(2):
             url = u'http://tesalliance.org/forums/index.php?app' \
                   u'=downloads&showfile=' + ma.group(2)
-    if url: return u"    url: [ '%s' ]\n" % url
-    return u''
+    return url or u''
 
 class Mod_CreateLOOTReport(EnabledLink):
     """Creates a basic LOOT masterlist entry with ."""
@@ -701,7 +700,8 @@ class Mod_CreateLOOTReport(EnabledLink):
             log_txt += u"  - name: '%s'\n" % fileName
             installer = bosh.modInfos.table.getItem(
                 fileName, u'installer', u'')
-            if installer: log_txt += _getUrl(installer)
+            if installer:
+                log_txt += u"    url: [ '%s' ]\n" % _getUrl(installer)
             # Tags applied after the description
             fmt_tags = sorted(added | {u'-%s' % t for t in removed})
             if fmt_tags:
@@ -757,7 +757,7 @@ class Mod_CopyModInfo(ItemLink):
             #-- Name of file, plus a link if we can figure it out
             installer = bosh.modInfos.table.getItem(fileName,'installer',u'')
             if not installer: info_txt += fileName.s
-            else: info_txt = _getUrl(installer)
+            else: info_txt += _(u'URL: %s') % _getUrl(installer)
             labels = self.window.labels
             for col in self.window.cols:
                 if col == 'File': continue
