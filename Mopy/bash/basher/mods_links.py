@@ -143,7 +143,7 @@ class Mods_LoadList(ChoiceLink):
                 mods = [m for m in self.window.data_store.keys() if m in mods]
                 self._selectExact(mods)
             @property
-            def menu_help(self):
+            def link_help(self):
                 return _(u'Activate mods in the %(list_name)s list' % {
                     'list_name': self._text})
         self.__class__.choiceLinkType = _LoListLink

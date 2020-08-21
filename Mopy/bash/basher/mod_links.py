@@ -38,7 +38,8 @@ from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, CBash_gui_patchers, PBash_gui_patchers
 from .. import bass, bosh, bolt, balt, bush, mod_files, load_order
 from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink,\
-    TransLink, RadioLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes
+    TransLink, RadioLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes, \
+    MenuLink
 from ..gui import CancelButton, CheckBox, HLayout, Label, LayoutOptions, \
     OkButton, RIGHT, Spacer, Stretch, TextField, VLayout, DialogWindow, \
     Image, BusyCursor
@@ -52,7 +53,7 @@ from ..patcher import configIsCBash, exportConfig, patch_files
 __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
            'Mod_Groups', 'Mod_Ratings', 'Mod_Details', 'Mod_ShowReadme',
            'Mod_ListBashTags', 'Mod_CreateLOOTReport', 'Mod_CopyModInfo',
-           'Mod_AllowGhosting', 'Mod_Ghost', 'Mod_MarkMergeable',
+           'Mod_AllowGhosting', 'Mod_GhostUnghost', 'Mod_MarkMergeable',
            'Mod_Patch_Update', 'Mod_ListPatchConfig', 'Mod_ExportPatchConfig',
            'CBash_Mod_CellBlockInfo_Export', 'Mod_EditorIds_Export',
            'Mod_FullNames_Export', 'Mod_Prices_Export', 'Mod_Stats_Export',
@@ -67,7 +68,7 @@ __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
            'Mod_SigilStoneDetails_Import', 'Mod_SpellRecords_Import',
            'Mod_Face_Import', 'Mod_Fids_Replace', 'Mod_SkipDirtyCheck',
            'Mod_ScanDirty', 'Mod_RemoveWorldOrphans', 'Mod_FogFixer',
-           'Mod_CopyToEsmp', 'Mod_DecompileAll', 'Mod_FlipEsm', 'Mod_FlipEsl',
+           'Mod_CopyToMenu', 'Mod_DecompileAll', 'Mod_FlipEsm', 'Mod_FlipEsl',
            'Mod_FlipMasters', 'Mod_SetVersion', 'Mod_ListDependent',
            'Mod_JumpToInstaller', 'Mod_Move', 'Mod_RecalcRecordCounts']
 
@@ -411,7 +412,7 @@ class _Mod_Labels(ChoiceLink):
                     fileLabels[fileName] = self._text
                 _self._refresh()
             @property
-            def menu_help(self): return _(
+            def link_help(self): return _(
                 u"Applies the label '%(lbl)s' to the selected mod(s).") % {
                                             'lbl': self._text}
         self.__class__.choiceLinkType = _LabelLink
@@ -660,7 +661,7 @@ class Mod_CreateLOOTReport(EnabledLink):
             not bosh.reOblivion.match(self.selected[0].s))
 
     @property
-    def menu_help(self):
+    def link_help(self):
         full_help = _(u'Creates LOOT masterlist entries based on the tags you '
                       u'have applied to the selected plugin(s).')
         if bass.settings[u'bash.CBashEnabled']:
@@ -776,27 +777,28 @@ class Mod_ListDependent(OneItemLink):
     """Copies list of masters to clipboard."""
     _text = _(u"List Dependencies")
 
-    def _initData(self, window, selection):
-        super(Mod_ListDependent, self)._initData(window, selection)
-        self._help = _(u"Displays and copies to the clipboard a list of mods "
-                      u"that have %(filename)s as master.") % (
-                        {'filename': selection[0]})
-        self.legend = _(u'Mods dependent on %(filename)s') % (
-                        {'filename': selection[0]})
+    @property
+    def link_help(self):
+        return _(u'Displays and copies to the clipboard a list of mods that '
+                 u'have %(filename)s as master.') % (
+            {u'filename': self._selected_item})
 
     def Execute(self):
         ##: HACK - refactor getModList
+        sel_target = self._selected_item
+        legend = _(u'Mods dependent on %(filename)s') % (
+            {u'filename': sel_target})
         modInfos = self.window.data_store
         merged_, imported_ = modInfos.merged, modInfos.imported
         head, bul = u'=== ', u'* '
         with bolt.sio() as out:
             log = bolt.LogFile(out)
             log(u'[spoiler]')
-            log.setHeader(head + self.legend + u': ')
+            log.setHeader(head + legend + u': ')
             loOrder =  lambda tup: load_order.cached_lo_index_or_max(tup[0])
             text_list = u''
             for mod, info in sorted(modInfos.items(), key=loOrder):
-                if self._selected_item in info.masterNames:
+                if sel_target in info.masterNames:
                     hexIndex = modInfos.hexIndexString(mod)
                     if hexIndex:
                         prefix = bul + hexIndex
@@ -810,25 +812,25 @@ class Mod_ListDependent(OneItemLink):
             log(u'[/spoiler]')
             text_list = bolt.winNewLines(log.out.getvalue())
         balt.copyToClipboard(text_list)
-        self._showLog(text_list, title=self.legend, fixedFont=False)
+        self._showLog(text_list, title=legend, fixedFont=False)
 
 class Mod_JumpToInstaller(AppendableLink, OneItemLink):
     """Go to the installers tab and highlight the mods installer"""
     _text = _(u'Jump to Installer')
 
-    def _initData(self, window, selection):
-        super(Mod_JumpToInstaller, self)._initData(window, selection)
-        self._help = _(u'Jump to the installer of %(filename)s if it exists. '
-                       u'You can Alt-Click on the mod to the same '
-                       u'effect.') % {'filename': selection[0]}
-        self._selected_inst = self.window.get_installer(self._selected_item)
+    @property
+    def link_help(self):
+        return _(u'Jump to the installer of %(filename)s if it exists. You '
+                 u'can Alt-Click on the mod to the same effect.') % {
+            u'filename': self._selected_item}
 
     def _append(self, window): return balt.Link.Frame.iPanel and bass.settings[
         'bash.installers.enabled']
 
     def _enable(self):
         return (super(Mod_JumpToInstaller, self)._enable()
-                and self._selected_inst is not None) # need a boolean here
+                and self.window.get_installer(self._selected_item)
+                is not None) # need a boolean here
 
     def Execute(self): self.window.jump_to_mods_installer(self._selected_item)
 
@@ -874,39 +876,34 @@ class _Mod_DisallowGhosting_All(_GhostLink, ItemLink):
     toGhost = staticmethod(lambda filename: False) # ...so unghost if ghosted
 
 #------------------------------------------------------------------------------
-class Mod_Ghost(_GhostLink, EnabledLink): ##: consider an unghost all Link
+class _DirectGhostLink(_GhostLink, EnabledLink):
     setAllow = staticmethod(lambda fname: True) # allow ghosting
-    toGhost = staticmethod(lambda name: not load_order.cached_is_active(name))
-
-    def _initData(self, window, selection):
-        super(Mod_Ghost, self)._initData(window, selection)
-        if len(selection) == 1:
-            self._help = _(u"Ghost/Unghost selected mod.  Active mods can't be ghosted")
-            self.mname = selection[0]
-            self.fileInfo = bosh.modInfos[self.mname]
-            self.isGhost = self.fileInfo.isGhost
-            self._text = _(u"Ghost") if not self.isGhost else _(u"Unghost")
-        else:
-            self._help = _(u"Ghost selected mods.  Active mods can't be ghosted")
-            self._text = _(u"Ghost")
 
     def _enable(self):
-        # only enable ghosting for one item if not active
-        if len(self.selected) == 1 and not self.isGhost:
-            return not load_order.cached_is_active(self.mname)
-        return True
+        # Enable only if at least one plugin's ghost status would be changed
+        ghost_minfs = self.window.data_store
+        return any(self.__class__.toGhost(p) != ghost_minfs[p].isGhost
+                   for p in self.selected)
 
-    def Execute(self):
-        files = []
-        if len(self.selected) == 1:
-            # toggle - ghosting only enabled if plugin is inactive
-            if not self.isGhost: # ghosting - override allowGhosting with True
-                bosh.modInfos.table.setItem(self.mname, 'allowGhosting', True)
-            self.fileInfo.setGhost(not self.isGhost)
-            files.append(self.mname)
-        else:
-            files = self._loop()
-        self.window.RefreshUI(redraw=files, refreshSaves=False)
+class _Mod_Ghost(_DirectGhostLink):
+    _text = _(u'Ghost')
+    _help = _(u"Ghost selected mod(s). Active mods can't be ghosted.")
+    toGhost = staticmethod(lambda name: not load_order.cached_is_active(name))
+
+class _Mod_Unghost(_DirectGhostLink):
+    _text = _(u'Unghost')
+    _help = _(u'Unghost selected mod(s).')
+    toGhost = staticmethod(lambda name: False)
+
+class Mod_GhostUnghost(TransLink):
+    """Ghost or unghost selected mod(s)."""
+    def _decide(self, window, selection):
+        # If any of the selected plugins can be ghosted, return the ghosting
+        # link - otherwise, default to unghost
+        if any(_Mod_Ghost.toGhost(p) != window.data_store[p].isGhost
+               for p in selection):
+            return _Mod_Ghost()
+        return _Mod_Unghost()
 
 #------------------------------------------------------------------------------
 class _Mod_AllowGhostingInvert_All(_GhostLink, ItemLink):
@@ -1309,12 +1306,12 @@ class Mod_ScanDirty(ItemLink):
     _help = _(u'Give detailed printout of what Wrye Bash is detecting as UDR'
              u' and ITM records')
 
-    def _initData(self, window, selection):
-        super(Mod_ScanDirty, self)._initData(window, selection)
+    @property
+    def link_text(self):
         # settings['bash.CBashEnabled'] is set once in BashApp.Init() AFTER
         # InitLinks() is called in bash.py
-        self._text = _(u'Scan for Dirty Edits') if bass.settings[
-            'bash.CBashEnabled'] else _(u"Scan for UDR's")
+        return _(u'Scan for Dirty Edits') if bass.settings[
+            u'bash.CBashEnabled'] else _(u"Scan for UDR's")
 
     def Execute(self):
         """Handle execution"""
@@ -1470,34 +1467,26 @@ class Mod_FogFixer(ItemLink):
 
 # Rest of menu Links ----------------------------------------------------------
 #------------------------------------------------------------------------------
-class Mod_CopyToEsmp(EnabledLink):
-    """Create an esp(esm) copy of selected esm(esp)."""
-    _help = _(u'Creates a copy of the selected plugin(s) with reversed '
-              u'.esp/.esm extension.')
-
-    def _initData(self, window, selection):
-        super(Mod_CopyToEsmp, self)._initData(window, selection)
-        minfo = bosh.modInfos[selection[0]]
-        self._is_esm = minfo.has_esm_flag()
-        self._text = _(u'Copy to .esp') if self._is_esm else _(u'Copy to .esm')
+class _CopyToLink(EnabledLink):
+    def __init__(self, plugin_ext):
+        super(_CopyToLink, self).__init__(plugin_ext)
+        self._target_ext = plugin_ext
+        self._help = _(u'Creates a copy of the selected plugin(s) with the '
+                       u'extension changed to %s.') % plugin_ext
 
     def _enable(self):
-        """Disable if selected are mixed esm/p's, have something but esp/m or
-        if they're inverted mods."""
-        for minfo in self.iselected_infos():
-            if minfo.get_extension() not in (u'.esm', u'.esp') or \
-                    minfo.is_esl() or minfo.isInvertedMod() or \
-                    minfo.has_esm_flag() != self._is_esm:
-                return False
-        return True
+        return any(p.get_extension() != self._target_ext
+                   for p in self.iselected_infos())
 
     def Execute(self):
         modInfos, added = bosh.modInfos, []
-        save_lo = False
+        do_save_lo = False
+        add_esm_flag = self._target_ext in (u'.esm', u'.esl')
+        add_esl_flag = self._target_ext == u'.esl'
         with balt.BusyCursor(): # ONAM generation can take a bit
             for curName, minfo in self.iselected_pairs():
-                newType = (minfo.has_esm_flag() and u'esp') or u'esm'
-                newName = curName.root + u'.' + newType
+                newName = curName.root + self._target_ext
+                if newName == curName: continue
                 #--Replace existing file?
                 timeSource = None
                 if newName in modInfos:
@@ -1514,18 +1503,28 @@ class Mod_CopyToEsmp(EnabledLink):
                                    set_mtime=newTime)
                 added.append(newName)
                 newInfo = modInfos[newName]
-                newInfo.set_esm_flag(newType == u'esm')
+                newInfo.set_esm_flag(add_esm_flag)
+                newInfo.set_esl_flag(add_esl_flag)
                 if timeSource is None: # otherwise it has a load order already!
                     modInfos.cached_lo_insert_after(
                         modInfos.cached_lo_last_esm(), newName)
-                    save_lo = True
+                    do_save_lo = True
         #--Repopulate
         if added:
-            if save_lo: modInfos.cached_lo_save_lo()
+            if do_save_lo: modInfos.cached_lo_save_lo()
             modInfos.refresh(refresh_infos=False)
             self.window.RefreshUI(refreshSaves=True, # just in case
                                   detail_item=added[-1])
             self.window.SelectItemsNoCallback(added)
+
+class Mod_CopyToMenu(MenuLink):
+    """Makes copies of the selected plugin(s) with changed extension."""
+    _text = _(u'Copy To')
+
+    def __init__(self):
+        super(Mod_CopyToMenu, self).__init__()
+        for plugin_ext in sorted(bush.game.espm_extensions):
+            self.append(_CopyToLink(plugin_ext))
 
 #------------------------------------------------------------------------------
 class Mod_DecompileAll(EnabledLink):
@@ -1591,47 +1590,55 @@ class Mod_DecompileAll(EnabledLink):
 
 #------------------------------------------------------------------------------
 class _Esm_Esl_Flip(EnabledLink):
+    _add_flag = _remove_flag = u''
 
-    def _esm_esl_flip_refresh(self, updated):
+    @property
+    def _already_flagged(self): raise AbstractError()
+
+    def _exec_flip(self): raise AbstractError()
+
+    @property
+    def link_text(self):
+        return self._remove_flag if self._already_flagged else self._add_flag
+
+    @balt.conversation
+    def Execute(self):
         with BusyCursor():
+            self._exec_flip()
             ##: HACK: forcing active refresh cause mods may be reordered and
             # we then need to sync order in skyrim's plugins.txt
             bosh.modInfos.refreshLoadOrder()
             # converted to esps/esls - rescan mergeable
-            bosh.modInfos.rescanMergeable(updated, bolt.Progress())
+            bosh.modInfos.rescanMergeable(self.selected, bolt.Progress())
             # This will have changed the plugin, so let BAIN know
             bosh.modInfos._notify_bain(
-                changed={self.window.data_store[p].abs_path for p in updated})
+                changed={p.abs_path for p in self.iselected_infos()})
         # will be moved to the top - note that modification times won't
         # change - so mods will revert to their original position once back
         # to esp from esm (Oblivion etc). Refresh saves due to esms move
-        self.window.RefreshUI(redraw=updated, refreshSaves=True)
+        self.window.RefreshUI(redraw=self.selected, refreshSaves=True)
 
 class Mod_FlipEsm(_Esm_Esl_Flip):
     """Flip ESM flag. Extension must be .esp or .esu."""
     _help = _(u'Flips the ESM flag on the selected plugin(s), turning a master'
               u' into a regular plugin and vice versa.')
+    _add_flag, _remove_flag = _(u'Add ESM Flag'), _(u'Remove ESM Flag')
 
-    def _initData(self, window, selection):
-        super(Mod_FlipEsm, self)._initData(window, selection)
-        minfo = bosh.modInfos[selection[0]]
-        self._is_esm = minfo.has_esm_flag()
-        self._text = _(u'Remove ESM Flag') if self._is_esm else _(u'Add ESM '
-                                                                  u'Flag')
+    @property
+    def _already_flagged(self):
+        return self.window.data_store[self.selected[0]].has_esm_flag()
 
     def _enable(self):
         """For pre esl games check if all mods are of the same type (esm or
         esp), based on the flag and if are all esp extension files. For esl
         games the esp extension is even more important as .esm and .esl files
         implicitly have the master flag set no matter what."""
-        for m, minfo in self.iselected_pairs():
-            if m.cext not in (u'.esp', u'.esu') or \
-                minfo.has_esm_flag() != self._is_esm:
-                return False
-        return True
+        first_is_esm = self._already_flagged
+        return all(m.cext in (u'.esp', u'.esu') and
+                   minfo.has_esm_flag() == first_is_esm
+                   for m, minfo in self.iselected_pairs())
 
-    @balt.conversation
-    def Execute(self):
+    def _exec_flip(self):
         message = (_(u'WARNING! For advanced modders only!') + u'\n\n' +
             _(u'This command flips an internal bit in the mod, converting an '
               u'ESP to an ESM and vice versa. For older games (Skyrim and '
@@ -1642,35 +1649,29 @@ class Mod_FlipEsm(_Esm_Esl_Flip):
               u'plugins for ESP/ESM conversion on newer games.'))
         if not self._askContinue(message, 'bash.flipToEsmp.continue',
                                  _(u'Flip to ESM')): return
-        with balt.BusyCursor(): # ONAM generation can take a bit
-            for modInfo in self.iselected_infos():
-                modInfo.set_esm_flag(not modInfo.has_esm_flag())
-        self._esm_esl_flip_refresh(self.selected)
+        for modInfo in self.iselected_infos():
+            modInfo.set_esm_flag(not modInfo.has_esm_flag())
 
 class Mod_FlipEsl(_Esm_Esl_Flip):
     """Flip an esp(esl) to an esl(esp)."""
     _help = _(u'Flips the ESL flag on the selected plugin(s), turning a light '
               u'plugin into a regular one and vice versa.')
+    _add_flag, _remove_flag = _(u'Add ESL Flag'), _(u'Remove ESL Flag')
 
-    def _initData(self, window, selection):
-        super(Mod_FlipEsl, self)._initData(window, selection)
-        minfo = bosh.modInfos[selection[0]]
-        self._is_esl = minfo.is_esl()
-        self._text = _(u'Remove ESL Flag') if self._is_esl else _(u'Add ESL '
-                                                                  u'Flag')
+    @property
+    def _already_flagged(self):
+        return self.window.data_store[self.selected[0]].has_esl_flag()
 
     def _enable(self):
         """Allow if all selected mods have valid extensions, have same esl flag
         and are esl capable if converting to esl."""
-        for m, minfo in self.iselected_pairs():
-            if m.cext not in (u'.esm', u'.esp', u'.esu') \
-                    or minfo.is_esl() != self._is_esl \
-                    or (not self._is_esl and not m in bosh.modInfos.mergeable):
-                return False
-        return True
+        first_is_esl = self._already_flagged
+        return all(m.cext in (u'.esm', u'.esp', u'.esu') and
+                   minfo.has_esl_flag() == first_is_esl and
+                   (first_is_esl or m in bosh.modInfos.mergeable)
+                   for m, minfo in self.iselected_pairs())
 
-    @balt.conversation
-    def Execute(self):
+    def _exec_flip(self):
         message = (_(u'WARNING! For advanced modders only!') + u'\n\n' +
             _(u'This command flips an internal bit in the mod, converting an '
               u'ESP to an ESL and vice versa.  Note that it is this bit OR '
@@ -1681,10 +1682,7 @@ class Mod_FlipEsl(_Esm_Esl_Flip):
         if not self._askContinue(message, 'bash.flipToEslp.continue',
                                  _(u'Flip to ESL')): return
         for modInfo in self.iselected_infos():
-            header = modInfo.header
-            header.flags1.eslFile = not header.flags1.eslFile
-            modInfo.writeHeader()
-        self._esm_esl_flip_refresh(self.selected)
+            modInfo.set_esl_flag(not modInfo.has_esl_flag())
 
 #------------------------------------------------------------------------------
 class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
@@ -1692,43 +1690,43 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
     _help = _(u'Flips the ESM flag on all masters of the selected plugin, '
               u'allowing you to load it in the %(ck_name)s.') % (
               {u'ck_name': bush.game.Ck.long_name})
+    _add_flag = _(u'Add ESM Flag To Masters')
+    _remove_flag = _(u'Remove ESM Flag From Masters')
+
+    @property
+    def _already_flagged(self): return not self.toEsm
 
     def _initData(self, window, selection,
-                  __reEspExt=re.compile(u'' r'\.esp(.ghost)?$', re.I | re.U)):
-        super(Mod_FlipMasters, self)._initData(window, selection)
-        self._text = _(u'Add ESM Flag To Masters')
-        modinfo_masters = self._selected_info.masterNames
+            __reEspExt=re.compile(u'' r'\.esp(.ghost)?$', re.I | re.U)):
+        present_mods = window.data_store
+        modinfo_masters = present_mods[selection[0]].masterNames
         enable = len(selection) == 1 and len(modinfo_masters) > 1
         self.espMasters = [master for master in modinfo_masters
-            if __reEspExt.search(master.s)] if enable else []
-        self.enable = enable and bool(self.espMasters)
-        if not self.enable: return
+                           if master in present_mods and
+                           __reEspExt.search(master.s)] if enable else []
+        self.enable = bool(self.espMasters)
         for mastername in self.espMasters:
             masterInfo = bosh.modInfos.get(mastername, None)
             if masterInfo and masterInfo.isInvertedMod():
-                self._text = _(u'Remove ESM Flag From Masters')
                 self.toEsm = False
                 break
         else:
             self.toEsm = True
+        super(Mod_FlipMasters, self)._initData(window, selection)
 
     def _enable(self): return self.enable
 
-    @balt.conversation
-    def Execute(self):
+    def _exec_flip(self):
         message = _(u'WARNING! For advanced modders only! Flips the ESM flag '
                     u'of all ESP masters of the selected plugin. Useful for '
                     u'loading ESP-mastered mods in the %(ck_name)s.') % (
                     {u'ck_name': bush.game.Ck.long_name})
         if not self._askContinue(message, 'bash.flipMasters.continue'): return
-        updated = [self._selected_item]
-        with balt.BusyCursor(): # ONAM generation can take a bit
-            for masterPath in self.espMasters:
-                master_mod_info = bosh.modInfos.get(masterPath,None)
-                if master_mod_info:
-                    master_mod_info.set_esm_flag(self.toEsm)
-                    updated.append(masterPath)
-        self._esm_esl_flip_refresh(updated)
+        for masterPath in self.espMasters:
+            master_mod_info = bosh.modInfos.get(masterPath)
+            if master_mod_info:
+                master_mod_info.set_esm_flag(self.toEsm)
+                self.selected.append(masterPath) # for refresh in Execute
 
 #------------------------------------------------------------------------------
 class Mod_SetVersion(OneItemLink):

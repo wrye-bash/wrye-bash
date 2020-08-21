@@ -388,7 +388,7 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
     _help = _(u"Use Quarn's BSA redirection technique.")
 
     @property
-    def menu_help(self):
+    def link_help(self):
         if not self._enable():
             return self._help + u'  ' + _(u'%(ini)s must exist') % {
                 u'ini': bush.game.Ini.dropdown_inis[0]}
@@ -495,7 +495,7 @@ class _Installers_RescanningLink(Installers_Link, BoolLink):
 class _Installers_Skip(_Installers_RescanningLink):
     """Toggle global skip settings and update."""
     @property
-    def menu_help(self):
+    def link_help(self):
         # Slice off the starting 'Skip '
         return _(u'Skips the installation of %(skip_files)s.') % {
             u'skip_files': self._text[5:].lower()}

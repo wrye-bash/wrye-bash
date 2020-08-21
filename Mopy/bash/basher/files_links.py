@@ -83,12 +83,9 @@ class Files_Unhide(ItemLink):
 # File Links ------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class File_Duplicate(ItemLink):
-    """Create a duplicate of the file - mod, save or bsa."""
-
-    def _initData(self, window, selection):
-        super(File_Duplicate, self)._initData(window, selection)
-        self._text = (_(u'Duplicate'), _(u'Duplicate...'))[len(selection) == 1]
-        self._help = _(u"Make a copy of '%s'") % (selection[0])
+    """Create a duplicate of the file - mod, save, bsa, etc."""
+    _text = _(u'Duplicate...')
+    _help = _(u'Make a copy of the selected file(s).')
 
     _bsaAndBlocking = _(u"This mod has an associated archive (%s" +
                         bush.game.Bsa.bsa_extension + u") and an "
@@ -159,7 +156,7 @@ class File_ListMasters(OneItemLink):
     _text = _(u"List Masters...")
 
     @property
-    def menu_help(self):
+    def link_help(self):
         return _("Copies list of %(filename)s's masters to the clipboard.") % (
                         {'filename': self.selected[0]})
 
@@ -174,9 +171,9 @@ class File_Snapshot(ItemLink):
     _help = _(u'Creates a snapshot copy of the selected file(s) in a '
               u'subdirectory (Bash\Snapshots).')
 
-    def _initData(self, window, selection):
-        super(File_Snapshot, self)._initData(window, selection)
-        self._text = (_(u'Snapshot'),_(u'Snapshot...'))[len(selection) == 1]
+    @property
+    def link_text(self):
+        return (_(u'Snapshot'), _(u'Snapshot...'))[len(self.selected) == 1]
 
     def Execute(self):
         for fileName, fileInfo in self.iselected_pairs():

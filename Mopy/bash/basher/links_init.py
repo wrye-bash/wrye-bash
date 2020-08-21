@@ -518,15 +518,16 @@ def InitModLinks():
         ModList.context_links.append(Mod_Details())
     ModList.context_links.append(File_ListMasters())
     ModList.context_links.append(Mod_ShowReadme())
-    ModList.context_links.append(Mod_ListBashTags())
-    ModList.context_links.append(Mod_CreateLOOTReport())
+    if bush.game.allTags:
+        ModList.context_links.append(Mod_ListBashTags())
+        ModList.context_links.append(Mod_CreateLOOTReport())
     ModList.context_links.append(Mod_CopyModInfo())
     ModList.context_links.append(Mod_ListDependent())
     ModList.context_links.append(Mod_JumpToInstaller())
     #--------------------------------------------
     ModList.context_links.append(SeparatorLink())
     ModList.context_links.append(Mod_AllowGhosting())
-    ModList.context_links.append(Mod_Ghost())
+    ModList.context_links.append(Mod_GhostUnghost())
     if bush.game.Esp.canBash:
         ModList.context_links.append(SeparatorLink())
         ModList.context_links.append(Mod_MarkMergeable())
@@ -608,16 +609,14 @@ def InitModLinks():
             if bush.game.fsName == u'Oblivion':
                 cleanMenu.links.append(Mod_FogFixer())
             ModList.context_links.append(cleanMenu)
-        ModList.context_links.append(Mod_CopyToEsmp())
-        if bush.game.fsName == u'Oblivion':
-            ModList.context_links.append(Mod_DecompileAll())
+        ModList.context_links.append(Mod_CopyToMenu())
         ModList.context_links.append(Mod_FlipEsm())
         if bush.game.check_esl:
             ModList.context_links.append(Mod_FlipEsl())
         ModList.context_links.append(Mod_FlipMasters())
-        if bush.game.Esp.canBash:
-            ModList.context_links.append(Mod_CreateDummyMasters())
+        ModList.context_links.append(Mod_CreateDummyMasters())
         if bush.game.fsName == u'Oblivion':
+            ModList.context_links.append(Mod_DecompileAll())
             ModList.context_links.append(Mod_SetVersion())
     # ModList: Global Links
     # File Menu

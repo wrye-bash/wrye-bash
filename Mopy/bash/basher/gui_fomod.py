@@ -493,7 +493,7 @@ class _GroupLink(EnabledLink):
         return not self.selected.is_blocked()
 
     @property
-    def menu_help(self):
+    def link_help(self):
         return self._help % self.selected_group.group_name
 
     @property

@@ -85,23 +85,33 @@ class INI_ListErrors(EnabledLink):
                       fixedFont=False)
 
 #------------------------------------------------------------------------------
-class INI_FileOpenOrCopy(OneItemLink):
+class INI_FileOpenOrCopy(EnabledLink):
     """Open specified file(s) only if they aren't Bash supplied defaults."""
-    def _initData(self, window, selection):
-        super(INI_FileOpenOrCopy, self)._initData(window, selection)
-        if not len(selection) == 1:
-            self._text = _(u'Open/Copy...')
-            self._help = _(u'Only one INI file can be opened or copied at a time.')
-        elif not self._selected_info.is_default_tweak:
-            self._text = _(u'Open...')
-            self._help = _(u"Open '%s' with the system's default program.") % selection[0]
-        else:
-            self._text = _(u'Copy...')
-            self._help = _(u"Make an editable copy of the default tweak '%s'.") % selection[0]
+    def _targets_default(self):
+        return next(self.iselected_infos()).is_default_tweak
+
+    def _enable(self):
+        first_default = self._targets_default()
+        return all(i.is_default_tweak == first_default
+                   for i in self.iselected_infos())
+
+    @property
+    def link_text(self):
+        return [_(u'Open...'), _(u'Copy...')][self._targets_default()]
+
+    @property
+    def link_help(self):
+        return  [_(u"Open the selected INI file(s) with the system's default "
+                   u"program."),
+                 _(u"Make an editable copy of the selected default "
+                   u"tweak(s).")][self._targets_default()]
 
     def Execute(self):
-        if bosh.iniInfos.open_or_copy(self._selected_item):
-            self.window.RefreshUI(redraw=[self._selected_item])
+        newly_copied = []
+        for i in self.selected:
+            if bosh.iniInfos.open_or_copy(i):
+                newly_copied.append(i)
+        self.window.RefreshUI(redraw=newly_copied)
 
 #------------------------------------------------------------------------------
 class INI_Delete(balt.UIList_Delete, EnabledLink):
@@ -125,7 +135,7 @@ class INI_Apply(EnabledLink):
     _text = _(u'Apply')
 
     @property
-    def menu_help(self):
+    def link_help(self):
         if len(self.selected) == 1:
             tweak = self.selected[0]
             return _(u"Applies '%(tweak)s' to '%(ini)s'.") % {
@@ -149,7 +159,7 @@ class INI_CreateNew(OneItemLink):
     _text = _(u'Create Tweak with current settings...')
 
     @property
-    def menu_help(self):
+    def link_help(self):
         if not len(self.selected) == 1:
             return _(u'Please choose one Ini Tweak')
         else:

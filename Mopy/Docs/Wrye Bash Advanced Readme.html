@@ -1110,8 +1110,7 @@ tab. The directories skipped are:
                 is enabled. Will unghost the selected plugins if enabled.</td></tr>
             <tr><td colspan="2">Ghost/Unghost</td><td>Manually ghost/unghost selected plugins (active ones can't
                 be ghosted). Ghosting a plugin will clear its Disallow Ghosting flag (if set). This will survive autoGhost till next restart. If
-                you want your changes to persist, mark the plugin as <a href="#modsDontGhost">disallow ghosting</a>.
-                Note that you currently can't unghost multiple plugins.</td></tr>
+                you want your changes to persist, mark the plugin as <a href="#modsDontGhost">disallow ghosting</a>.</td></tr>
             <tr><td colspan="2">Allow Ghosting</td><td>Displayed if multiple plugins are selected. Unchecks <a href="#modsDontGhost">Disallow Ghosting</a>
                 for the selected plugins.</td></tr>
             <tr><td colspan="2">Invert Ghosting</td><td>Displayed if multiple plugins are selected. Toggles the status of
@@ -1221,7 +1220,6 @@ tab. The directories skipped are:
             <tr><td id="modsUndeleteRefs">Undelete Refs<td><strong>Removed.</strong> Use xEdit for cleaning.</td></tr>
             <tr><td colspan="2">Add Master...<td><strong>Removed.</strong> Use xEdit for such low-level editing.</td></tr>
             <tr><td colspan="2" id="modsCopyToEsm">Copy To Esm/Esp<td>Creates a .esp copy of a .esm or vice versa.
-            <tr><td colspan="2" id="modsDecompileAll">Decompile All<td>Undoes the effect of a <q>Compile All</q> performed in the Construction Set. It will not do anything to the game's master file.
             <tr><td colspan="2" id="modsEsmifySelf">Add/Remove ESM Flag<td>The distinction between esp and esm plugins is not dependent on their file
                 extensions, but on a bit in the file. This command toggles this bit so that .esp files behave as .esm files and vice versa. It is
                 useful for creating and editing plugins with .esp files as masters, which cannot be done in the Construction Set otherwise.
@@ -1240,7 +1238,8 @@ tab. The directories skipped are:
             <tr><td colspan="2" id="modsCreateDummyMasters">Create Dummy Masters...</td><td>Creates an empty plugin for each missing master a mod has.
                 This is useful for allowing TES4Edit to open a 'Filter' patch without having all of the required masters. These dummy
                 plugins can later be removed using the <a href="#modsRemoveDummyMasters">Remove Dummy Masters</a> command.</td></tr>
-            <tr><td colspan="2" id="modsVersion0.8">Version 0.8<td>Resets the file version number of the selected plugin so that it can be edited in an older version of the Construction Set, which is required when making certain changes due to bugs in the latest Construction Set.<br><br><strong>Warning:</strong> It is possible that this may cause data loss.
+            <tr><td colspan="2" id="modsDecompileAll">Decompile All</td><td><em>Oblivion only.</em> Undoes the effect of a <q>Compile All</q> performed in the Construction Set. It will not do anything to the game's master file.</td></tr>
+            <tr><td colspan="2" id="modsVersion0.8">Version 0.8</td><td><em>Oblivion only.</em> Resets the file version number of the selected plugin so that it can be edited in an older version of the Construction Set, which is required when making certain changes due to bugs in the latest Construction Set.<br><br><strong>Warning:</strong> It is possible that this may cause data loss.</td></tr>
         </tbody>
     </table>
 </div>

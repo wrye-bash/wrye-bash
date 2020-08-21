@@ -160,11 +160,11 @@ class _RefreshingLink(_SingleInstallable):
             self.idata.irefresh(what='NS', progress=progress)
         self.window.RefreshUI()
 
-class _InstallLink(_InstallerLink):
-
+class _NoMarkerLink(_InstallerLink):
+    """Installer link that does not accept any markers."""
     def _enable(self):
         self._installables = self.idata.filterInstallables(self.selected)
-        return bool(self._installables) and super(_InstallLink, self)._enable()
+        return bool(self._installables) and super(_NoMarkerLink, self)._enable()
 
 #------------------------------------------------------------------------------
 class _Installer_AWizardLink(OneItemLink, _InstallerLink):
@@ -216,9 +216,9 @@ class Installer_EditWizard(_SingleInstallable):
     """Edit the wizard.txt associated with this project"""
     _help = _(u"Edit the wizard.txt associated with this project.")
 
-    def _initData(self, window, selection):
-        super(Installer_EditWizard, self)._initData(window, selection)
-        self._text = _(u'View Wizard...') if self.isSingleArchive() else _(
+    @property
+    def link_text(self):
+        return _(u'View Wizard...') if self.isSingleArchive() else _(
             u'Edit Wizard...')
 
     def _enable(self):
@@ -359,7 +359,7 @@ class Installer_OpenReadme(OneItemLink, _InstallerLink):
     def Execute(self): self._selected_info.open_readme()
 
 #------------------------------------------------------------------------------
-class Installer_Anneal(_InstallLink):
+class Installer_Anneal(_NoMarkerLink):
     """Anneal all packages."""
     _text = _(u'Anneal')
     _help = _(u"Anneal all files in selected package(s).")
@@ -380,7 +380,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
     _text = _(u'Duplicate...')
 
     @property
-    def menu_help(self):
+    def link_help(self):
         return _(u"Duplicate selected %(installername)s.") % (
             {'installername': self._selected_item})
 
@@ -457,7 +457,7 @@ class Installer_OverrideSkips(CheckLink, _RefreshingLink):
     _text = _(u'Override Skips')
 
     @property
-    def menu_help(self):
+    def link_help(self):
         return _(
             u"Override global file type skipping for %(installername)s.") % (
                 {'installername': self._selected_item}) + u'  '+ _(u'BETA!')
@@ -489,7 +489,7 @@ class Installer_SkipRefresh(CheckLink, _SingleProject):
             self.idata.irefresh(what='N')
             self.window.RefreshUI()
 
-class Installer_Install(_InstallLink):
+class Installer_Install(_NoMarkerLink):
     """Install selected packages."""
     mode_title = {'DEFAULT': _(u'Install Current'), 'LAST': _(u'Install Last'),
                   'MISSING': _(u'Install Missing Files')}
@@ -535,7 +535,7 @@ class Installer_Install(_InstallLink):
 ##: Would be nice to have this work for multiple installers, but wizards use
 # self.iPanel.detailsPanel, which won't be set correctly when multiple
 # installers are selected
-class Installer_InstallSmart(_InstallLink, OneItemLink):
+class Installer_InstallSmart(_NoMarkerLink, OneItemLink):
     """A 'smart' installer for new users. Uses wizards and FOMODs if present,
     then falls back to regular install if that isn't possible."""
     _text = _(u'Install...')
@@ -634,15 +634,11 @@ class Installer_Move(_InstallerLink):
         self.window.RefreshUI(
             detail_item=self.iPanel.detailsPanel.displayed_item)
 
-class Installer_Open(balt.UIList_OpenItems, _InstallerLink):
-    """Open selected file(s)."""
+class Installer_Open(balt.UIList_OpenItems, _NoMarkerLink):
+    """Open selected installer(s). Selected markers are skipped."""
 
-    def _initData(self, window, selection):
-        super(Installer_Open, self)._initData(window, selection)
-        self.selected = [k for k, v in self.iselected_pairs() if
-                         not v.is_marker()]
-
-    def _enable(self): return bool(self.selected)
+    def Execute(self):
+        self.window.OpenSelected(selected=self._installables)
 
 #------------------------------------------------------------------------------
 class _Installer_OpenAt(_InstallerLink):
@@ -731,7 +727,7 @@ class Installer_SkipVoices(CheckLink, _RefreshingLink):
     _text = _(u'Skip Voices')
 
     @property
-    def menu_help(self):
+    def link_help(self):
         return _(u"Skip over any voice files in %(installername)s") % (
                     {'installername': self._selected_item})
 
@@ -741,7 +737,7 @@ class Installer_SkipVoices(CheckLink, _RefreshingLink):
         self._selected_info.skipVoices ^= True
         super(Installer_SkipVoices, self).Execute()
 
-class Installer_Uninstall(_InstallLink):
+class Installer_Uninstall(_NoMarkerLink):
     """Uninstall selected Installers."""
     _text = _(u'Uninstall')
     _help = _(u'Uninstall selected Installer(s)')
@@ -1195,7 +1191,7 @@ class InstallerConverter_Apply(_InstallerConverter_Link):
         self._selected = selected
 
     @property
-    def menu_help(self):
+    def link_help(self):
         return _(u'Applies %(bcf)s to the selected installer(s).') % {
             'bcf': self.dispName}
 

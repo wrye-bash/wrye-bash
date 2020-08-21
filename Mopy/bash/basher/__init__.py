@@ -1656,7 +1656,7 @@ class ModDetails(_ModsSavesDetails):
         # Tags links
         class _TagLink(CheckLink):
             @property
-            def menu_help(self):
+            def link_help(self):
                 return _(u"Add %(tag)s to %(modname)s") % (
                     {'tag': self._text, 'modname': mod_info.name})
             def _check(self): return self._text in mod_tags

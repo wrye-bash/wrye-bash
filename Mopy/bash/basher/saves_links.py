@@ -161,7 +161,6 @@ class Saves_ProfilesData(balt.ListEditorData):
 #------------------------------------------------------------------------------
 class Saves_Profiles(ChoiceLink):
     """Select a save set profile -- i.e., the saves directory."""
-    local = None
     # relative path to save base dir as in My Games/Oblivion
     _my_games = bass.dirs[u'saveBase'].s[
                 bass.dirs[u'saveBase'].cs.find(u'my games'):]
@@ -172,12 +171,12 @@ class Saves_Profiles(ChoiceLink):
 
     class _ProfileLink(CheckLink, EnabledLink):
         @property
-        def menu_help(self):
+        def link_help(self):
             profile_dir = Saves_Profiles._my_games.join(self._text)
             return _(u'Set profile to %s (%s)') % (self._text, profile_dir)
         @property
         def relativePath(self): return _win_join(self._text)
-        def _check(self): return Saves_Profiles.local == self.relativePath
+        def _check(self): return bosh.saveInfos.localSave == self.relativePath
         def _enable(self): return not self._check()
         def Execute(self):
             arcSaves = bosh.saveInfos.localSave
@@ -197,7 +196,7 @@ class Saves_Profiles(ChoiceLink):
         _text = _(u'Default')
 
         @property
-        def menu_help(self):
+        def link_help(self):
             profile_dir = Saves_Profiles._my_games.join(
                 bush.game.Ini.save_prefix)
             return _(u'Set profile to the default (%s)' % profile_dir)
@@ -216,10 +215,6 @@ class Saves_Profiles(ChoiceLink):
                                            data)
 
     extraItems = [_Edit(), SeparatorLink(), _Default()]
-
-    def _initData(self, window, selection):
-        super(Saves_Profiles, self)._initData(window, selection)
-        Saves_Profiles.local = bosh.saveInfos.localSave
 
 #------------------------------------------------------------------------------
 class Save_LoadMasters(OneItemLink):
@@ -625,7 +620,7 @@ class Save_Move(ChoiceLink):
             def Execute(self): _self.MoveFiles(_(u'Default'))
         class _SaveProfileLink(EnabledLink):
             @property
-            def menu_help(self):
+            def link_help(self):
                 return _self._help_str % bass.dirs[u'saveBase'].join(
                     bush.game.Ini.save_prefix, self._text)
             def _enable(self):

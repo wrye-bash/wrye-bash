@@ -386,11 +386,21 @@ class ModInfo(FileInfo):
         self.update_onam()
         self.writeHeader()
 
+    def has_esl_flag(self):
+        """Check if the mod info is an ESL based on ESL flag alone - header
+        must be set."""
+        return self.header.flags1.eslFile
+
+    def set_esl_flag(self, new_esl_flag):
+        """Changes this file's ESL flag to the specified value."""
+        self.header.flags1.eslFile = new_esl_flag
+        self.writeHeader()
+
     def is_esl(self):
         """Check if this is a light plugin - .esl files are automatically
         set the light flag, for espms check the flag."""
         return bush.game.has_esl and (self.get_extension() == u'.esl' or
-                                      self.header.flags1.eslFile)
+                                      self.has_esl_flag())
 
     def isInvertedMod(self):
         """Extension indicates esp/esm, but byte setting indicates opposite."""

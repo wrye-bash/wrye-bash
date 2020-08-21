@@ -1790,7 +1790,16 @@ class ItemLink(Link):
     _help = u''           # The tooltip to show at the bottom of the GUI
 
     @property
-    def menu_help(self):
+    def link_text(self):
+        """Returns the string that will be used as the display name for this
+        link.
+
+        Override this if you need to change the link name dynamically, similar
+        to link_help below."""
+        return self._text
+
+    @property
+    def link_help(self):
         """Returns a string that will be shown as static text at the bottom
         of the GUI.
 
@@ -1804,7 +1813,7 @@ class ItemLink(Link):
         selected."""
         super(ItemLink, self).AppendToMenu(menu, window, selection)
         # Note default id here is *not* ID_ANY but the special ID_SEPARATOR!
-        menuItem = wx.MenuItem(menu, wx.ID_ANY, self._text, self.menu_help,
+        menuItem = wx.MenuItem(menu, wx.ID_ANY, self.link_text, self.link_help,
                                self.__class__.kind)
         Link.Frame._native_widget.Bind(wx.EVT_MENU, self.__Execute, id=menuItem.GetId())
         Link.Frame._native_widget.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
@@ -2030,7 +2039,7 @@ class UIList_OpenItems(ItemLink):
     _text = _(u'Open...')
 
     @property
-    def menu_help(self):
+    def link_help(self):
         return _(u"Open '%s' with the system's default program.") % \
                self.selected[0] if len(self.selected) == 1 else _(
             u'Open the selected files.')
@@ -2042,7 +2051,7 @@ class UIList_OpenStore(ItemLink):
     _text = _(u'Open Folder...')
 
     @property
-    def menu_help(self):
+    def link_help(self):
         return _(u"Open '%s'") % self.window.data_store.store_dir
 
     def Execute(self): self.window.open_data_store()

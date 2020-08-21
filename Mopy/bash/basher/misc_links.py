@@ -53,7 +53,7 @@ class Screens_NextScreenShot(EnabledLink):
                and bosh.oblivionIni.abs_path.exists()
 
     @property
-    def menu_help(self):
+    def link_help(self):
         if not self._enable():
             return self._help + u'.  ' + _(u'%(ini)s must exist') % {
                 u'ini': bush.game.Ini.dropdown_inis[0]}
@@ -255,7 +255,7 @@ class _Master_EditList(OneItemLink): # one item cause _singleSelect = True
     def _enable(self): return self.window.allowEdit
 
     @property
-    def menu_help(self):
+    def link_help(self):
         if not self._enable(): return self.__class__._help + u'.  ' + _(
                 u'You must first allow editing from the column menu')
         else: return self.__class__._help
