@@ -40,7 +40,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelFull, MelArray, MelWthrColors, GameDecider, MelReadOnly, \
     MreActorBase, MreWithItems, MelCtdaFo3, MelRef3D, MelXlod, \
     MelWorldBounds, MelEnableParent, MelRefScale, MelMapMarker, MelMdob, \
-    MelEnchantment, MelDecalData
+    MelEnchantment, MelDecalData, MelDescription
 from ...exception import ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -1376,7 +1376,7 @@ class MreAlch(MelRecord,MreHasEffects):
         MelBounds(),
         MelFull(),
         MelKeywords(),
-        MelLString('DESC','description'),
+        MelDescription(),
         MelModel(),
         MelDestructible(),
         MelIcons(),
@@ -1411,7 +1411,7 @@ class MreAmmo(MelRecord):
         MelDestructible(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
-        MelLString('DESC','description'),
+        MelDescription(),
         MelKeywords(),
         MelIsSSE(
             le_version=MelStruct('DATA', 'IIfI', (FID, 'projectile'),
@@ -1451,7 +1451,7 @@ class MreAppa(MelRecord):
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
         MelUInt32('QUAL', 'quality'),
-        MelLString('DESC','description'),
+        MelDescription(),
         MelStruct('DATA','If','value','weight'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1514,7 +1514,7 @@ class MreArmo(MelRecord):
         MelOptFid('BAMT', 'material'),
         MelOptFid('RNAM', 'race'),
         MelKeywords(),
-        MelLString('DESC','description'),
+        MelDescription(),
         MelFids('MODL','addons'),
         MelStruct('DATA','=if','value','weight'),
         MelSInt32('DNAM', 'armorRating'),
@@ -1579,7 +1579,7 @@ class MreAvif(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelLString('DESC','description'),
+        MelDescription(),
         MelString('ANAM','abbreviation'),
         MelBase('CNAM','cnam_p'),
         MelOptStruct('AVSK','4f','skillUseMult','skillOffsetMult','skillImproveMult',
@@ -1623,7 +1623,7 @@ class MreBook(MelRecord):
         MelFull(),
         MelModel(),
         MelIcons(),
-        MelLString('DESC','bookText'),
+        MelDescription(u'bookText'),
         MelDestructible(),
         MelOptFid('YNAM', 'pickupSound'),
         MelOptFid('ZNAM', 'dropSound'),
@@ -1811,7 +1811,7 @@ class MreClas(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelLString('DESC','description'),
+        MelDescription(),
         MelIcons(),
         MelStruct('DATA','4sb19BfI4B','unknown','teaches','maximumtraininglevel',
                   'skillWeightsOneHanded','skillWeightsTwoHanded',
@@ -1890,7 +1890,7 @@ class MreColl(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelLString('DESC','description'),
+        MelDescription(),
         MelUInt32('BNAM', 'layerID'),
         MelColor('FNAM'),
         MelUInt32('GNAM', (CollisionLayerFlags,'flags',0),),
@@ -3128,7 +3128,7 @@ class MreLscr(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelIcons(),
-        MelLString('DESC','description'),
+        MelDescription(),
         MelConditions(),
         MelFid('NNAM','loadingScreenNIF'),
         MelFloat('SNAM', 'initialScale'),
@@ -3302,7 +3302,7 @@ class MreMesg(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelLString('DESC','description'),
+        MelDescription(),
         MelFull(),
         MelFid('INAM','iconUnused'), # leftover
         MelFid('QNAM','materialParent'),
@@ -3929,7 +3929,7 @@ class MrePerk(MelRecord):
         MelEdid(),
         MelVmad(),
         MelFull(),
-        MelLString('DESC','description'),
+        MelDescription(),
         MelIcons(),
         MelConditions(),
         MelTruncatedStruct('DATA', '5B', ('trait', 0), ('minLevel', 0),
@@ -4627,7 +4627,7 @@ class MreScrl(MelRecord,MreHasEffects):
         MelKeywords(),
         MelMdob(),
         MelFid('ETYP','equipmentType',),
-        MelLString('DESC','description'),
+        MelDescription(),
         MelModel(),
         MelDestructible(),
         MelFid('YNAM','pickupSound',),
@@ -4649,7 +4649,7 @@ class MreShou(MelRecord):
         MelEdid(),
         MelFull(),
         MelMdob(),
-        MelLString('DESC','description'),
+        MelDescription(),
         MelGroups('wordsOfPower',
             MelStruct(b'SNAM', u'2If', (FID, u'word'), (FID, u'spell'),
                       u'recoveryTime'),
@@ -4873,7 +4873,7 @@ class MreSpel(MelRecord,MreHasEffects):
         MelKeywords(),
         MelMdob(),
         MelFid('ETYP', 'equipmentType'),
-        MelLString('DESC','description'),
+        MelDescription(),
         MelStruct('SPIT','IIIfIIffI','cost',(SpelTypeFlags,'dataFlags',0),
                   'spellType','chargeTime','castType','targetType',
                   'castDuration','range',(FID,'halfCostPerk'),),
@@ -5173,7 +5173,7 @@ class MreWeap(MelRecord):
         MelFid('YNAM','pickupSound',),
         MelFid('ZNAM','dropSound',),
         MelKeywords(),
-        MelLString('DESC','description'),
+        MelDescription(),
         MelModel('model2','MOD3'),
         MelBase('NNAM','unused1'),
         MelFid('INAM','impactDataSet',),

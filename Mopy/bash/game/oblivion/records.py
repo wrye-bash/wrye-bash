@@ -37,7 +37,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelTruncatedStruct, MelCoordinates, MelIcon, MelIco2, MelEdid, MelFull, \
     MelArray, MelWthrColors, MelObject, MreActorBase, MreWithItems, \
     MelReadOnly, MelCtda, MelRef3D, MelXlod, MelWorldBounds, MelEnableParent, \
-    MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript
+    MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript, \
+    MelDescription
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
 
@@ -561,7 +562,7 @@ class MreBook(MelRecord):
         MelFull(),
         MelModel(),
         MelIcon(),
-        MelString('DESC','text'),
+        MelDescription(u'text'),
         MelScript(),
         MelFid('ENAM','enchantment'),
         MelOptUInt16('ANAM', 'enchantPoints'),
@@ -578,7 +579,7 @@ class MreBsgn(MelRecord):
         MelEdid(),
         MelFull(),
         MelIcon(),
-        MelString('DESC','text'),
+        MelDescription(u'text'),
         MelFids('SPLO','spells'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -648,7 +649,7 @@ class MreClas(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelString('DESC','description'),
+        MelDescription(),
         MelIcon(),
         MelTruncatedStruct('DATA', '2iI7i2IbB2s', 'primary1', 'primary2',
                            'specialization', 'major1', 'major2', 'major3',
@@ -1151,7 +1152,7 @@ class MreLscr(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelIcon(),
-        MelString('DESC','text'),
+        MelDescription(u'text'),
         MelGroups('locations',
             MelStruct('LNAM', '2I2h', (FID, 'direct'), (FID, 'indirect'),
                       'gridy', 'gridx'),
@@ -1512,7 +1513,7 @@ class MreRace(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelString('DESC','text'),
+        MelDescription(u'text'),
         MelFids('SPLO','spells'),
         MelGroups('relations',
             MelStruct('XNAM', 'Ii', (FID, 'faction'), 'mod'),
@@ -1772,7 +1773,7 @@ class MreSkil(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelSInt32('INDX', 'skill'),
-        MelString('DESC','description'),
+        MelDescription(),
         MelIcon(),
         MelStruct('DATA','2iI2f','action','attribute','specialization',('use0',1.0),'use1'),
         MelString('ANAM','apprentice'),

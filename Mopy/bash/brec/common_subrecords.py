@@ -281,6 +281,12 @@ class MelValueInterpolator(MelArray):
         )
 
 #------------------------------------------------------------------------------
+class MelDescription(MelLString):
+    """Handles a description (DESC) subrecord."""
+    def __init__(self, desc_attr=u'description'):
+        super(MelDescription, self).__init__(b'DESC', desc_attr)
+
+#------------------------------------------------------------------------------
 class MelEdid(MelString):
     """Handles an Editor ID (EDID) subrecord."""
     def __init__(self):

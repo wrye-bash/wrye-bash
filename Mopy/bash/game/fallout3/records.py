@@ -43,7 +43,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelArray, MelWthrColors, MreLeveledListBase, MreActorBase, MreWithItems, \
     MelCtdaFo3, MelRef3D, MelXlod, MelNull, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
-    MelDecalData
+    MelDecalData, MelDescription
 from ...exception import ModError, ModSizeError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
@@ -580,7 +580,7 @@ class MreAvif(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelString('DESC','description'),
+        MelDescription(),
         MelIcons(),
         MelString('ANAM','shortName'),
     )
@@ -600,7 +600,7 @@ class MreBook(MelRecord):
         MelModel(),
         MelIcons(),
         MelScript(),
-        MelString('DESC','text'),
+        MelDescription(u'text'),
         MelDestructible(),
         MelOptFid('YNAM', 'pickupSound'),
         MelOptFid('ZNAM', 'dropSound'),
@@ -806,7 +806,7 @@ class MreClas(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelString('DESC','description'),
+        MelDescription(),
         MelIcon(),
         MelStruct('DATA','4i2IbB2s','tagSkill1','tagSkill2','tagSkill3',
             'tagSkill4',(_flags,'flags',0),(aiService,'services',0),
@@ -1724,7 +1724,7 @@ class MreLscr(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelIcon(),
-        MelString('DESC','text'),
+        MelDescription(u'text'),
         MelGroups('locations',
             MelStruct('LNAM', 'I8s', (FID, 'cell'),
                       ('unused1', null4 + null4)),
@@ -1777,7 +1777,7 @@ class MreMesg(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelString('DESC','description'),
+        MelDescription(),
         MelFull(),
         MelFid('INAM','icon'),
         MelBase('NAM0', 'unused_0'),
@@ -1832,7 +1832,7 @@ class MreMgef(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelString(b'DESC', u'text'),
+        MelDescription(u'text'),
         MelIcon(),
         MelModel(),
         MelPartialCounter(MelStruct(
@@ -2245,7 +2245,7 @@ class MrePerk(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelString('DESC','description'),
+        MelDescription(),
         MelIcons(),
         MelConditions(),
         MelTruncatedStruct('DATA', '5B', ('trait', 0), ('minLevel', 0),
@@ -2543,7 +2543,7 @@ class MreRace(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelString('DESC','text'),
+        MelDescription(u'text'),
         MelGroups('relations',
             MelStruct('XNAM', 'I2i', (FID, 'faction'), 'mod',
                       'group_combat_reaction'),
@@ -2983,7 +2983,7 @@ class MreTerm(MelRecord):
         MelModel(),
         MelScript(),
         MelDestructible(),
-        MelString('DESC','description'),
+        MelDescription(),
         MelFid('SNAM','soundLooping'),
         MelFid('PNAM','passwordNote'),
         MelTruncatedStruct('DNAM', '3Bs', 'baseHackingDifficulty',

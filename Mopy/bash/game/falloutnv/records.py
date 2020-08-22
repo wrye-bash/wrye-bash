@@ -40,7 +40,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, MelArray, \
     MelObject, MreWithItems, MelRef3D, MelXlod, MelNull, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
-    MelDecalData
+    MelDecalData, MelDescription
 from ...exception import ModSizeError
 
 #------------------------------------------------------------------------------
@@ -458,7 +458,7 @@ class MreChal(MelRecord):
         MelEdid(),
         MelFull(),
         MelScript(),
-        MelString('DESC','description'),
+        MelDescription(),
         MelStruct('DATA','4I2s2s4s','type','threshold','flags','interval',
                   'dependOnType1','dependOnType2','dependOnType3'),
         MelFid('SNAM','dependOnType4'),
@@ -845,7 +845,7 @@ class MreImod(MelRecord):
         MelModel(),
         MelIcons(),
         MelScript(),
-        MelString('DESC','description'),
+        MelDescription(),
         MelDestructible(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
@@ -970,7 +970,7 @@ class MreLscr(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelIcon(),
-        MelString('DESC','text'),
+        MelDescription(u'text'),
         MelGroups('locations',
             MelStruct('LNAM', '2I2h', (FID, 'direct'), (FID, 'indirect'),
                       'gridy', 'gridx'),
