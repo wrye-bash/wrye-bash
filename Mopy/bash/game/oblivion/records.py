@@ -83,12 +83,12 @@ class MelConditions(MelGroups):
     """A list of conditions. Can contain the old CTDT format as well, which
     will be upgraded on dump."""
     def __init__(self):
-        super(MelConditions, self).__init__(u'conditions',
-            MelUnion({
-                b'CTDA': MelCtda(suffix_fmt=u'4s',
-                                 suffix_elements=[(u'unused3', null4)]),
-                b'CTDT': MelReadOnly(MelCtda(b'CTDT', u'4s',
-                                             [(u'unused3', null4)], {u''})),
+        super(MelConditions, self).__init__(u'conditions', MelUnion({
+            b'CTDA': MelCtda(suffix_fmt=u'4s',
+                suffix_elements=[(u'unused3', null4)]),
+            # The old (CTDT) format is length 20 and has no suffix
+            b'CTDT': MelReadOnly(MelCtda(b'CTDT', suffix_fmt=u'4s',
+                suffix_elements=[(u'unused3', null4)], old_suffix_fmts={u''})),
             }),
         )
 
@@ -176,22 +176,19 @@ class MelEffects(MelSequential):
                     0: MelStruct(b'EFIT', u'4s4I4s', (u'unused_name', null4),
                                  u'magnitude', u'area', u'duration',
                                  u'recipient', (u'efit_param', null4)),
-                    1: MelStruct(b'EFIT', u'4s5I', (u'unused_name', null4),
-                                 u'magnitude', u'area', u'duration',
-                                 u'recipient', (FID, u'efit_param')),
+                    ##: Test this! Does this actually work?
+                    (1, 3): MelStruct(b'EFIT', u'4s5I',
+                        (u'unused_name', null4), u'magnitude', u'area',
+                        u'duration', u'recipient', (FID, u'efit_param')),
                     ##: This case needs looking at, OBME docs say this about
                     # efit_param in case 2: 'If >= 0x80000000 lowest byte is
                     # Mod Index, otherwise no resolution'
                     2: MelStruct(b'EFIT', u'4s4I4s', (u'unused_name', null4),
                                  u'magnitude', u'area', u'duration',
                                  u'recipient', (u'efit_param', b'REHE')),
-                    # FIXME(inf) Test this! Does this actually work?
-                    3: MelStruct(b'EFIT', u'4s5I', (u'unused_name', null4),
-                                 u'magnitude', u'area', u'duration',
-                                 u'recipient', (FID, u'efit_param')),
                 }, decider=AttrValDecider(u'efit_param_info')),
                 MelObmeScitGroup(u'scriptEffect',
-                    # FIXME(inf) Test! xEdit has all this in EFIX, but it also
+                    ##: Test! xEdit has all this in EFIX, but it also
                     #  hard-crashes when I try to add EFIX subrecords... this
                     #  is adapted from OBME's official docs, but those could be
                     #  wrong. Also, same notes as above for case 2 and 3.
@@ -218,7 +215,7 @@ class MelEffects(MelSequential):
                     MelFull(),
                 ),
                 MelString(b'EFII', u'obme_icon'),
-                # FIXME(inf) Again, FID here needs testing
+                ##: Again, FID here needs testing
                 MelOptStruct(b'EFIX', u'2Ifi16s', u'efix_override_mask',
                     u'efix_flags', u'efix_base_cost', (FID, u'resist_av'),
                     (u'efix_reserved', null1 * 16)),
@@ -296,13 +293,13 @@ class MelEmbeddedScript(MelSequential):
     def __init__(self, with_script_vars=False):
         seq_elements = [
             MelUnion({
-                'SCHR': MelStruct('SCHR', '4s4I', ('unused1', null4),
-                                  'num_refs', 'compiled_size', 'last_index',
-                                  'script_type'),
-                'SCHD': MelBase('SCHD', 'old_script_header'),
+                b'SCHR': MelStruct(b'SCHR', u'4s4I', (u'unused1', null4),
+                                  u'num_refs', u'compiled_size', u'last_index',
+                                  u'script_type'),
+                b'SCHD': MelBase(b'SCHD', u'old_script_header'),
             }),
-            MelBase('SCDA', 'compiled_script'),
-            MelString('SCTX', 'script_source')
+            MelBase(b'SCDA', u'compiled_script'),
+            MelString(b'SCTX', u'script_source')
         ]
         if with_script_vars: seq_elements += [MelScriptVars()]
         MelSequential.__init__(self, *(seq_elements + [MelReferences()]))
@@ -1285,9 +1282,9 @@ class MreMisc(MelRecord):
         MelIcon(),
         MelScript(),
         MelUnion({
-            False: MelStruct('DATA', 'if', 'value', 'weight'),
-            True: MelStruct('DATA', '2I', (FID, 'value'), 'weight'),
-        }, decider=FlagDecider('flags1', 'borderRegion', 'turnFireOff')),
+            False: MelStruct(b'DATA', u'if', u'value', u'weight'),
+            True: MelStruct(b'DATA', u'2I', (FID, u'value'), u'weight'),
+        }, decider=FlagDecider(u'flags1', u'borderRegion', u'turnFireOff')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1411,32 +1408,23 @@ class MrePack(MelRecord):
         MelTruncatedStruct('PKDT', 'IB3s', (_flags, 'flags'), 'aiType',
                            ('unused1', null3), old_versions={'HBs'}),
         MelUnion({
-            0: MelStruct('PLDT', 'iIi', 'locType', (FID, 'locId'),
-                         'locRadius'),
-            1: MelStruct('PLDT', 'iIi', 'locType', (FID, 'locId'),
-                         'locRadius'),
-            2: MelStruct('PLDT', 'iIi', 'locType', (FID, 'locId'),
-                         'locRadius'),
-            3: MelStruct('PLDT', 'iIi', 'locType', (FID, 'locId'),
-                         'locRadius'),
-            4: MelStruct('PLDT', 'iIi', 'locType', (FID, 'locId'),
-                         'locRadius'),
-            5: MelStruct('PLDT', 'iIi', 'locType', 'locId', 'locRadius'),
+            (0, 1, 2, 3, 4): MelStruct(b'PLDT', u'iIi', u'locType',
+                (FID, u'locId'), u'locRadius'),
+            5: MelStruct(b'PLDT', u'iIi', u'locType', u'locId', u'locRadius'),
         }, decider=PartialLoadDecider(
-            loader=MelSInt32('PLDT', 'locType'),
-            decider=AttrValDecider('locType'),
+            loader=MelSInt32(b'PLDT', u'locType'),
+            decider=AttrValDecider(u'locType'),
         )),
-        MelStruct('PSDT','2bBbi','month','day','date','time','duration'),
+        MelStruct(b'PSDT', u'2bBbi', u'month', u'day', u'date', u'time',
+            u'duration'),
         MelUnion({
-            0: MelOptStruct(b'PTDT', u'iIi', u'targetType', (FID, u'targetId'),
-                u'targetCount'),
-            1: MelOptStruct(b'PTDT', u'iIi', u'targetType', (FID, u'targetId'),
-                u'targetCount'),
+            (0, 1): MelOptStruct(b'PTDT', u'iIi', u'targetType',
+                (FID, u'targetId'), u'targetCount'),
             2: MelOptStruct(b'PTDT', u'iIi', u'targetType', u'targetId',
                 u'targetCount'),
         }, decider=PartialLoadDecider(
-            loader=MelSInt32('PTDT', 'targetType'),
-            decider=AttrValDecider('targetType'),
+            loader=MelSInt32(b'PTDT', u'targetType'),
+            decider=AttrValDecider(u'targetType'),
         )),
         MelConditions(),
     )

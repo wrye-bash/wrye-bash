@@ -538,7 +538,7 @@ class ADecider(object):
         :param ins: The ModReader instance used to read the record.
         :type ins: ModReader
         :param sub_type: The four-character subrecord signature.
-        :type sub_type: str
+        :type sub_type: bytes
         :param rec_size: The total size of the subrecord.
         :type rec_size: int
         :return: Any value this decider deems fitting for the parameters it is
@@ -577,7 +577,7 @@ class AttrExistsDecider(ACommonDecider):
         """Creates a new AttrExistsDecider with the specified attribute.
 
         :param target_attr: The name of the attribute to check.
-        :type target_attr: str"""
+        :type target_attr: unicode"""
         self.target_attr = target_attr
 
     def _decide_common(self, record):
@@ -709,14 +709,14 @@ class MelUnion(MelBase):
 
     The decider is queried for a value, which is then used to perform a lookup
     in the element_mapping dict passed in. For example, consider this MelUnion,
-    which showcases all features:
+    which showcases most features:
         MelUnion({
-            'b': MelStruct('DATA', 'I', 'value'),
-            'f': MelStruct('DATA', 'f', 'value'),
-            's': MelLString('DATA', 'value'),
+            u'b': MelUInt32(b'DATA', u'value'), # actually a bool
+            u'f': MelFloat(b'DATA', u'value'),
+            u's': MelLString(b'DATA', u'value'),
         }, decider=AttrValDecider(
-            'eid', lambda eid: eid[0] if eid else 'i'),
-            fallback=MelStruct('DATA', 'i', 'value')
+            u'eid', transformer=lambda eid: decode(eid[0]) if eid else u'i'),
+            fallback=MelSInt32(b'DATA', u'value')
         ),
     When a DATA subrecord is encountered, the union is asked to load it. It
     queries its decider, which in this case reads the 'eid' attribute (i.e. the
@@ -756,7 +756,17 @@ class MelUnion(MelBase):
         :param fallback: The fallback element to use. Defaults to None, which
             will raise an error if the decider returns an unknown value.
         :type fallback: MelBase"""
-        self.element_mapping = element_mapping
+        # Preprocess the element mapping to split tuples
+        processed_mapping = {}
+        for decider_val, element in element_mapping.iteritems():
+            if type(decider_val) != tuple:
+                decider_val = (decider_val,)
+            for split_val in decider_val:
+                if split_val in processed_mapping:
+                    raise SyntaxError(u'Invalid union mapping: Duplicate key '
+                                      u"'%s'" % repr(split_val))
+                processed_mapping[split_val] = element
+        self.element_mapping = processed_mapping
         self.fid_elements = set()
         if not isinstance(decider, ADecider):
             raise exception.ArgumentError(u'decider must be an ADecider')

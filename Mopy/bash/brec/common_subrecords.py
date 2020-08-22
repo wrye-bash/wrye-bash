@@ -70,7 +70,7 @@ class MelCtda(MelUnion):
         u'swap_subject_and_target'))
 
     def __init__(self, ctda_sub_sig=b'CTDA', suffix_fmt=u'',
-                 suffix_elements=[], old_suffix_fmts=set()):
+            suffix_elements=None, old_suffix_fmts=None):
         """Creates a new MelCtda instance with the specified properties.
 
         :param ctda_sub_sig: The signature of this subrecord. Probably
@@ -83,6 +83,8 @@ class MelCtda(MelUnion):
             MelTruncatedStruct. Must conform to the same syntax as suffix_fmt.
             May be empty.
         :type old_suffix_fmts: set[unicode]"""
+        if old_suffix_fmts is None: old_suffix_fmts = set()
+        if suffix_elements is None: suffix_elements = []
         from .. import bush
         super(MelCtda, self).__init__({
             # Build a (potentially truncated) struct for each function index
@@ -245,9 +247,9 @@ class MelDecalData(MelOptStruct):
 class MelReferences(MelGroups):
     """Handles mixed sets of SCRO and SCRV for scripts, quests, etc."""
     def __init__(self):
-        MelGroups.__init__(self, 'references', MelUnion({
-            'SCRO': MelFid('SCRO', 'reference'),
-            'SCRV': MelUInt32('SCRV', 'reference'),
+        MelGroups.__init__(self, u'references', MelUnion({
+            b'SCRO': MelFid(b'SCRO', u'reference'),
+            b'SCRV': MelUInt32(b'SCRV', u'reference'),
         }))
 
 #------------------------------------------------------------------------------
@@ -538,8 +540,8 @@ class MelRegnEntrySubrecord(MelUnion):
         """:type entry_type_val: int"""
         MelUnion.__init__(self, {
             entry_type_val: element,
-        }, decider=AttrValDecider('entryType'),
-            fallback=MelNull('NULL')) # ignore
+        }, decider=AttrValDecider(u'entryType'),
+            fallback=MelNull(b'NULL')) # ignore
 
 #------------------------------------------------------------------------------
 class MelRef3D(MelStruct):
