@@ -40,7 +40,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelFull, MelArray, MelWthrColors, GameDecider, MelReadOnly, \
     MreActorBase, MreWithItems, MelCtdaFo3, MelRef3D, MelXlod, \
     MelWorldBounds, MelEnableParent, MelRefScale, MelMapMarker, MelMdob, \
-    MelEnchantment, MelDecalData, MelDescription
+    MelEnchantment, MelDecalData, MelDescription, MelSInt16
 from ...exception import ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -284,10 +284,9 @@ class MelKeywords(MelSequential):
     and a corresponding counter."""
     def __init__(self):
         MelSequential.__init__(self,
-            # TODO(inf) Kept it as such, why little-endian?
-            MelCounter(MelStruct('KSIZ', '<I', 'keyword_count'),
-                       counts='keywords'),
-            MelFidList('KWDA', 'keywords'),
+            MelCounter(MelUInt32(b'KSIZ', u'keyword_count'),
+                       counts=u'keywords'),
+            MelFidList(b'KWDA', u'keywords'),
         )
 
 class MelLocation(MelUnion):
@@ -3626,8 +3625,7 @@ class MreNpc(MreActorBase):
         MelOptFid('VTCK', 'voice'),
         MelOptFid('TPLT', 'template'),
         MelFid('RNAM','race'),
-        # TODO(inf) Kept it as such, why little-endian?
-        MelCounter(MelStruct('SPCT', '<I', 'spell_count'), counts='spells'),
+        MelCounter(MelUInt32(b'SPCT', u'spell_count'), counts=u'spells'),
         MelFids('SPLO', 'spells'),
         MelDestructible(),
         MelOptFid('WNAM', 'wornArmor'),
@@ -3669,40 +3667,40 @@ class MreNpc(MreActorBase):
             'health','magicka','stamina',('dnamUnused1',null2),
             'farawaymodeldistance','gearedupweapons',('dnamUnused2',null3)),
         MelFids('PNAM', 'head_part_addons',),
-        # TODO(inf) Left everything starting from here alone because it uses
-        #  little-endian - why?
-        MelOptStruct('HCLF', '<I', (FID, 'hair_color')),
-        MelOptStruct('ZNAM', '<I', (FID, 'combatStyle')),
-        MelOptStruct('GNAM', '<I', (FID, 'gifts')),
-        MelBase('NAM5', 'nam5_p'),
-        MelStruct('NAM6', '<f', 'height'),
-        MelStruct('NAM7', '<f', 'weight'),
-        MelStruct('NAM8', '<I', 'sound_level'),
+        MelOptFid(b'HCLF', u'hair_color'),
+        MelOptFid(b'ZNAM', u'combatStyle'),
+        MelOptFid(b'GNAM', u'gifts'),
+        MelBase(b'NAM5', u'nam5_p'),
+        MelFloat(b'NAM6', u'height'),
+        MelFloat(b'NAM7', u'weight'),
+        MelUInt32(b'NAM8', u'sound_level'),
         MelGroups('event_sound',
-            MelStruct('CSDT', '<I', 'sound_type'),
-            MelGroups('sound',
-                MelStruct('CSDI', '<I', (FID, 'sound')),
-                MelStruct('CSDC', '<B', 'chance')
-            )
+            MelUInt32(b'CSDT', u'sound_type'),
+            MelGroups(u'sound',
+                MelFid(b'CSDI', u'sound'),
+                MelUInt8(b'CSDC', u'chance')
+            ),
         ),
-        MelOptStruct('CSCR', '<I', (FID, 'audio_template')),
-        MelOptStruct('DOFT', '<I', (FID, 'default_outfit')),
-        MelOptStruct('SOFT', '<I', (FID, 'sleep_outfit')),
-        MelOptStruct('DPLT', '<I', (FID, 'default_package')),
-        MelOptStruct('CRIF', '<I', (FID, 'crime_faction')),
-        MelOptStruct('FTST', '<I', (FID, 'face_texture')),
-        MelOptStruct('QNAM', '<fff', 'skin_tone_r' ,'skin_tone_g', 'skin_tone_b'),
-        MelOptStruct('NAM9', '<fffffffffffffffffff', 'nose_long', 'nose_up',
-                     'jaw_up', 'jaw_wide', 'jaw_forward', 'cheeks_up', 'cheeks_back',
-                     'eyes_up', 'eyes_out', 'brows_up', 'brows_out', 'brows_forward',
-                     'lips_up', 'lips_out', 'chin_wide', 'chin_down', 'chin_underbite',
-                     'eyes_back', 'nam9_unused'),
-        MelOptStruct('NAMA', '<IiII', 'nose', 'unknown', 'eyes', 'mouth'),
-        MelGroups('face_tint_layer',
-            MelStruct('TINI', '<H', 'tint_item'),
-            MelStruct('TINC', '<4B', 'tintRed', 'tintGreen', 'tintBlue' ,'tintAlpha'),
-            MelStruct('TINV', '<i', 'tint_value'),
-            MelStruct('TIAS', '<h', 'preset'),
+        MelOptFid(b'CSCR', u'audio_template'),
+        MelOptFid(b'DOFT', u'default_outfit'),
+        MelOptFid(b'SOFT', u'sleep_outfit'),
+        MelOptFid(b'DPLT', u'default_package'),
+        MelOptFid(b'CRIF', u'crime_faction'),
+        MelOptFid(b'FTST', u'face_texture'),
+        MelOptStruct(b'QNAM', u'3f', u'skin_tone_r', u'skin_tone_g',
+            u'skin_tone_b'),
+        MelOptStruct(b'NAM9', u'19f', u'nose_long', u'nose_up', u'jaw_up',
+            u'jaw_wide', u'jaw_forward', u'cheeks_up', u'cheeks_back',
+            u'eyes_up', u'eyes_out', u'brows_up', u'brows_out',
+            u'brows_forward', u'lips_up', u'lips_out', u'chin_wide',
+            u'chin_down', u'chin_underbite', u'eyes_back', u'nam9_unused'),
+        MelOptStruct(b'NAMA', u'Ii2I', u'nose', u'unknown', u'eyes', u'mouth'),
+        MelGroups(u'face_tint_layer',
+            MelUInt16(b'TINI', u'tint_item'),
+            MelStruct(b'TINC', '4B', u'tintRed', u'tintGreen', u'tintBlue',
+                u'tintAlpha'),
+            MelSInt32(b'TINV', u'tint_value'),
+            MelSInt16(b'TIAS', u'preset'),
         ),
     )
     __slots__ = melSet.getSlotsUsed()
