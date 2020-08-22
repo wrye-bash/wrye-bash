@@ -39,7 +39,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelOptUInt16, MelOptUInt32, MelPartialCounter, MelRaceParts, \
     MelRaceVoices, MelBounds, null1, null2, null3, null4, MelScriptVars, \
     MelSequential, MelTruncatedStruct, PartialLoadDecider, MelReadOnly, \
-    MelCoordinates, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, \
+    MelSkipInterior, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, \
     MelArray, MelWthrColors, MreLeveledListBase, MreActorBase, MreWithItems, \
     MelCtdaFo3, MelRef3D, MelXlod, MelNull, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
@@ -746,9 +746,9 @@ class MreCell(MelRecord):
         MelEdid(),
         MelFull(),
         MelUInt8('DATA', (cellFlags, 'flags', 0)),
-        MelCoordinates(b'XCLC', u'2iI', u'posX', u'posY',
+        MelSkipInterior(MelTruncatedStruct(b'XCLC', u'2iI', u'posX', u'posY',
             (_land_flags, u'land_flags'), is_optional=True,
-            old_versions={u'2i'}),
+            old_versions={u'2i'})),
         MelTruncatedStruct('XCLL', '=3Bs3Bs3Bs2f2i3f', 'ambientRed',
                            'ambientGreen', 'ambientBlue', ('unused1', null1),
                            'directionalRed', 'directionalGreen',

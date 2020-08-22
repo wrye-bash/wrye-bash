@@ -28,10 +28,10 @@ from __future__ import division, print_function
 from collections import defaultdict
 
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
-    MelUnion, PartialLoadDecider
+    MelUnion, PartialLoadDecider, FlagDecider
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
-    MelOptFloat, MelOptUInt8, MelOptUInt32, MelOptFid
+    MelOptFloat, MelOptUInt8, MelOptUInt32, MelOptFid, MelReadOnly
 from .utils_constants import _int_unpacker, FID, null1, null2, null3, null4
 from ..bolt import Flags, encode, struct_pack, struct_unpack
 
@@ -253,11 +253,13 @@ class MelReferences(MelGroups):
         }))
 
 #------------------------------------------------------------------------------
-class MelCoordinates(MelTruncatedStruct):
-    """Skip dump if we're in an interior."""
-    def dumpData(self, record, out):
-        if not record.flags.isInterior:
-            MelTruncatedStruct.dumpData(self, record, out)
+class MelSkipInterior(MelUnion):
+    """Union that skips dumping if we're in an interior."""
+    def __init__(self, element):
+        super(MelSkipInterior, self).__init__({
+            True: MelReadOnly(element),
+            False: element,
+        }, decider=FlagDecider(u'flags', u'isInterior'))
 
 #------------------------------------------------------------------------------
 class MelColorInterpolator(MelArray):

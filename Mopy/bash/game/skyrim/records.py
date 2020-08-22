@@ -40,7 +40,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelFull, MelArray, MelWthrColors, GameDecider, MelReadOnly, \
     MreActorBase, MreWithItems, MelCtdaFo3, MelRef3D, MelXlod, \
     MelWorldBounds, MelEnableParent, MelRefScale, MelMapMarker, MelMdob, \
-    MelEnchantment, MelDecalData, MelDescription, MelSInt16
+    MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior
 from ...exception import ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -1736,6 +1736,7 @@ class MreCell(MelRecord):
         MelTruncatedStruct('DATA', '2B', (CellDataFlags1, 'flags', 0),
                            (CellDataFlags2, 'skyFlags', 0),
                            old_versions={'B'}),
+        ##: The other games skip this in interiors - why / why not here?
         MelOptStruct(b'XCLC', u'2iI', u'posX', u'posY',
             (_land_flags, u'land_flags')),
         MelTruncatedStruct(
@@ -1764,10 +1765,8 @@ class MreCell(MelRecord):
         MelFid('LTMP','lightTemplate',),
         # leftover flags, they are now in XCLC
         MelBase('LNAM','unknown_LNAM'),
-        MelUnion({ # see #302 for discussion on this
-            True:  MelNull(b'XCLW'), # Drop in interior cells for Skyrim
-            False: MelOptFloat(b'XCLW', (u'waterHeight', -2147483649)),
-        }, decider=FlagDecider(u'flags', u'isInterior')),
+        # Drop in interior cells for Skyrim, see #302 for discussion on this
+        MelSkipInterior(MelOptFloat(b'XCLW', (u'waterHeight', -2147483649))),
         MelString('XNAM','waterNoiseTexture'),
         MelFidList('XCLR','regions'),
         MelFid('XLCN','location',),

@@ -34,7 +34,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelOptFloat, MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, \
     MelRaceParts, MelRaceVoices, null1, null2, null3, null4, MelScriptVars, \
     MelSequential, MelUnion, FlagDecider, AttrValDecider, PartialLoadDecider, \
-    MelTruncatedStruct, MelCoordinates, MelIcon, MelIco2, MelEdid, MelFull, \
+    MelTruncatedStruct, MelSkipInterior, MelIcon, MelIco2, MelEdid, MelFull, \
     MelArray, MelWthrColors, MelObject, MreActorBase, MreWithItems, \
     MelReadOnly, MelCtda, MelRef3D, MelXlod, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript, \
@@ -599,8 +599,7 @@ class MreCell(MelRecord):
         MelEdid(),
         MelFull(),
         MelUInt8(b'DATA', (cellFlags, u'flags')),
-        MelCoordinates(b'XCLC', u'2i', u'posX', u'posY', is_optional=True,
-                       old_versions=set()),
+        MelSkipInterior(MelOptStruct(b'XCLC', u'2i', u'posX', u'posY')),
         MelOptStruct(b'XCLL', u'=3Bs3Bs3Bs2f2i2f', u'ambientRed',
             u'ambientGreen', u'ambientBlue', (u'unused1', null1),
             u'directionalRed', u'directionalGreen', u'directionalBlue',
