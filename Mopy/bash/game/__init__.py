@@ -468,7 +468,6 @@ class GameInfo(object):
     #--------------------------------------------------------------------------
     # GraphicsPatcher
     #--------------------------------------------------------------------------
-    graphicsLongsTypes = set()  # initialize with literal
     graphicsTypes = {}
     graphicsFidTypes = {}
     graphicsModelAttrs = ()
@@ -544,6 +543,23 @@ class GameInfo(object):
     body_tags = u''
 
     #--------------------------------------------------------------------------
+    # Relations Patcher
+    #--------------------------------------------------------------------------
+    relations_attrs = ()
+    relations_csv_header = u''
+    relations_csv_row_format = u''
+
+    #--------------------------------------------------------------------------
+    # Enchantment Stats Patcher
+    #--------------------------------------------------------------------------
+    ench_stats_attrs = ()
+
+    #--------------------------------------------------------------------------
+    # Effect Stats Patcher
+    #--------------------------------------------------------------------------
+    mgef_stats_attrs = ()
+
+    #--------------------------------------------------------------------------
     # Magic Effects - Oblivion-specific
     #--------------------------------------------------------------------------
     # Doesn't list MGEFs that use actor values, but rather MGEFs that have a
@@ -563,13 +579,6 @@ class GameInfo(object):
 
     # Human-readable names for each actor value
     actor_values = []
-
-    #--------------------------------------------------------------------------
-    # Relations Patcher
-    #--------------------------------------------------------------------------
-    relations_attrs = ()
-    relations_csv_header = u''
-    relations_csv_row_format = u''
 
     # Record type to name dictionary
     record_type_name = {}
@@ -604,16 +613,16 @@ class GameInfo(object):
         u'body_tags', u'cc_valid_types', u'cc_passes', u'cellAutoKeys',
         u'cell_float_attrs', u'cellRecAttrs', u'cellRecFlags',
         u'condition_function_data', u'default_eyes', u'destructible_types',
-        u'generic_av_effects', u'getvatsvalue_index', u'gmstEids',
-        u'graphicsFidTypes', u'graphicsLongsTypes', u'graphicsModelAttrs',
+        u'ench_stats_attrs', u'generic_av_effects', u'getvatsvalue_index',
+        u'gmstEids', u'graphicsFidTypes', u'graphicsModelAttrs',
         u'graphicsTypes', u'hostile_effects', u'inventoryTypes',
         u'keywords_types', u'listTypes', u'mgef_basevalue', u'mgef_name',
-        u'mgef_school', u'namesTypes', u'nirnroots', u'object_bounds_types',
-        u'pricesTypes', u'record_type_name', u'relations_attrs',
-        u'relations_csv_header', u'relations_csv_row_format',
-        u'save_rec_types', u'scripts_types', u'soundsLongsTypes',
-        u'soundsTypes', u'spell_stats_attrs', u'statsHeaders', u'statsTypes',
-        u'text_long_types', u'text_types',
+        u'mgef_school', u'mgef_stats_attrs', u'namesTypes', u'nirnroots',
+        u'object_bounds_types', u'pricesTypes', u'record_type_name',
+        u'relations_attrs', u'relations_csv_header',
+        u'relations_csv_row_format', u'save_rec_types', u'scripts_types',
+        u'soundsLongsTypes', u'soundsTypes', u'spell_stats_attrs',
+        u'statsHeaders', u'statsTypes', u'text_long_types', u'text_types',
     }
 
     @classmethod

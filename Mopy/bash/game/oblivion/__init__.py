@@ -150,10 +150,10 @@ class OblivionGameInfo(GameInfo):
         u'Body-Size-F', u'Body-Size-M', u'C.Climate', u'C.Light', u'C.Music',
         u'C.Name', u'C.Owner', u'C.RecordFlags', u'C.Regions', u'C.Water',
         u'Creatures.Blood', u'Creatures.Type', u'Deactivate', u'Delev',
-        u'Eyes', u'Factions', u'Filter', u'Graphics', u'Hair', u'IIM',
-        u'Invent.Add', u'Invent.Change', u'Invent.Remove',
-        u'MustBeActiveIfImported', u'Names', u'NoMerge', u'NPC.Class',
-        u'NPC.Eyes', u'NPC.FaceGen', u'NPC.Hair', u'NPC.Race',
+        u'EffectStats', u'EnchantmentStats', u'Eyes', u'Factions', u'Filter',
+        u'Graphics', u'Hair', u'IIM', u'Invent.Add', u'Invent.Change',
+        u'Invent.Remove', u'MustBeActiveIfImported', u'Names', u'NoMerge',
+        u'NPC.Class', u'NPC.Eyes', u'NPC.FaceGen', u'NPC.Hair', u'NPC.Race',
         u'NpcFacesForceFullImport', u'R.AddSpells', u'R.Attributes-F',
         u'R.Attributes-M', u'R.ChangeSpells', u'R.Description', u'R.Ears',
         u'R.Head', u'R.Mouth', u'R.Relations', u'R.Skills', u'R.Teeth',
@@ -162,17 +162,19 @@ class OblivionGameInfo(GameInfo):
         u'Voice-F', u'Voice-M',
     }
 
-    patchers = (u'PatchMerger', # PatchMerger must come first!
+    patchers = (
+        u'PatchMerger', # PatchMerger must come first!
         u'ActorImporter', u'AlchemicalCatalogs', u'AliasesPatcher',
         u'AssortedTweaker', u'CellImporter', u'ClothesTweaker',
         u'CoblExhaustion', u'ContentsChecker', u'DeathItemPatcher',
         u'GmstTweaker', u'GraphicsPatcher', u'ImportActorsSpells',
-        u'ImportFactions', u'ImportInventory', u'ImportRelations',
-        u'ImportScripts', u'KFFZPatcher', u'ListsMerger', u'MFactMarker',
-        u'NamesPatcher', u'NamesTweaker', u'NPCAIPackagePatcher',
-        u'NpcFacePatcher', u'RacePatcher', u'RoadImporter', u'SEWorldEnforcer',
-        u'SoundPatcher', u'SpellsPatcher', u'StatsPatcher', u'TextImporter',
-        u'TweakActors', u'UpdateReferences',
+        u'ImportEffectsStats', u'ImportEnchantmentStats', u'ImportFactions',
+        u'ImportInventory', u'ImportRelations', u'ImportScripts',
+        u'KFFZPatcher', u'ListsMerger', u'MFactMarker', u'NamesPatcher',
+        u'NamesTweaker', u'NPCAIPackagePatcher', u'NpcFacePatcher',
+        u'RacePatcher', u'RoadImporter', u'SEWorldEnforcer', u'SoundPatcher',
+        u'SpellsPatcher', u'StatsPatcher', u'TextImporter', u'TweakActors',
+        u'UpdateReferences',
     )
 
     CBash_patchers = (u'CBash_PatchMerger', # PatchMerger must come first!

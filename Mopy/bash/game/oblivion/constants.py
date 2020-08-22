@@ -1428,10 +1428,11 @@ listTypes = ('LVLC','LVLI','LVSP',)
 #------------------------------------------------------------------------------
 # NamesPatcher
 #------------------------------------------------------------------------------
-namesTypes = {'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT',
-              'CONT', 'CREA', 'DOOR', 'EYES', 'FACT', 'FLOR', 'HAIR', 'INGR',
-              'KEYM', 'LIGH', 'MISC', 'NPC_', 'RACE', 'SGST', 'SLGM', 'SPEL',
-              'WEAP'}
+namesTypes = {b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'BSGN', b'CLAS',
+              b'CLOT', b'CONT', b'CREA', b'DOOR', b'ENCH', b'EYES', b'FACT',
+              b'FLOR', b'HAIR', b'INGR', b'KEYM', b'LIGH', b'MGEF', b'MISC',
+              b'NPC_', b'RACE', b'SGST', b'SLGM', b'SPEL', b'WEAP'}
+
 #------------------------------------------------------------------------------
 # ItemPrices Patcher
 #------------------------------------------------------------------------------
@@ -1566,56 +1567,61 @@ cell_float_attrs = {u'fogNear', u'fogFar', u'directionalFade', u'fogClip',
 # GraphicsPatcher
 #------------------------------------------------------------------------------
 graphicsTypes = {
-    "ACTI": ('model',),
-    "ALCH": ('iconPath','model',),
-    "AMMO": ('iconPath','model',),
-    "APPA": ('iconPath','model',),
-    "ARMO": ('maleBody','maleWorld','maleIconPath','femaleBody','femaleWorld','femaleIconPath','flags',),
-    "BOOK": ('iconPath','model',),
-    "BSGN": ('iconPath',),
-    "CLAS": ('iconPath',),
-    "CLOT": ('maleBody','maleWorld','maleIconPath','femaleBody','femaleWorld','femaleIconPath','flags',),
-    "CREA": ('bodyParts','nift_p',),
-    "DOOR": ('model',),
-    "EFSH": ('particleTexture','fillTexture','flags','unused1','memSBlend',
-    'memBlendOp','memZFunc','fillRed','fillGreen','fillBlue',
-    'unused2','fillAIn','fillAFull','fillAOut','fillAPRatio',
-    'fillAAmp','fillAFreq','fillAnimSpdU','fillAnimSpdV','edgeOff',
-    'edgeRed','edgeGreen','edgeBlue','unused3','edgeAIn',
-    'edgeAFull','edgeAOut','edgeAPRatio','edgeAAmp','edgeAFreq',
-    'fillAFRatio','edgeAFRatio','memDBlend','partSBlend',
-    'partBlendOp','partZFunc','partDBlend','partBUp','partBFull',
-    'partBDown','partBFRatio','partBPRatio','partLTime',
-    'partLDelta','partNSpd','partNAcc','partVel1','partVel2',
-    'partVel3','partAcc1','partAcc2','partAcc3','partKey1',
-    'partKey2','partKey1Time','partKey2Time','key1Red','key1Green',
-    'key1Blue','unused4','key2Red','key2Green','key2Blue','unused5',
-    'key3Red','key3Green','key3Blue','unused6','key1A','key2A',
-    'key3A','key1Time','key2Time','key3Time',),
-    "EYES": ('iconPath',),
-    "FLOR": ('model',),
-    "FURN": ('model',),
-    "GRAS": ('model',),
-    "HAIR": ('iconPath','model',),
-    "INGR": ('iconPath','model',),
-    "KEYM": ('iconPath','model',),
-    "LIGH": ('iconPath','model',),
-    "LSCR": ('iconPath',),
-    "LTEX": ('iconPath',),
-    "MGEF": ('iconPath','model',),
-    "MISC": ('iconPath','model',),
-    "QUST": ('iconPath',),
-    "REGN": ('iconPath',),
-    "SGST": ('iconPath','model',),
-    "SKIL": ('iconPath',),
-    "SLGM": ('iconPath','model',),
-    "STAT": ('model',),
-    "TREE": ('iconPath','model',),
-    "WEAP": ('iconPath','model',),
+    b'ACTI': (u'model',),
+    b'ALCH': (u'iconPath', u'model'),
+    b'AMMO': (u'iconPath', u'model'),
+    b'APPA': (u'iconPath', u'model'),
+    b'ARMO': (u'maleBody', u'maleWorld', u'maleIconPath', u'femaleBody',
+              u'femaleWorld', u'femaleIconPath', u'flags'),
+    b'BOOK': (u'iconPath', u'model'),
+    b'BSGN': (u'iconPath',),
+    b'CLAS': (u'iconPath',),
+    b'CLOT': (u'maleBody', u'maleWorld', u'maleIconPath', u'femaleBody',
+              u'femaleWorld', u'femaleIconPath', u'flags'),
+    b'CREA': (u'bodyParts', u'nift_p'),
+    b'DOOR': (u'model',),
+    b'EFSH': (u'particleTexture', u'fillTexture', u'flags', u'unused1',
+              u'memSBlend', u'memBlendOp', u'memZFunc', u'fillRed',
+              u'fillGreen', u'fillBlue', u'unused2', u'fillAIn', u'fillAFull',
+              u'fillAOut', u'fillAPRatio', u'fillAAmp', u'fillAFreq',
+              u'fillAnimSpdU', u'fillAnimSpdV', u'edgeOff', u'edgeRed',
+              u'edgeGreen', u'edgeBlue', u'unused3', u'edgeAIn', u'edgeAFull',
+              u'edgeAOut', u'edgeAPRatio', u'edgeAAmp', u'edgeAFreq',
+              u'fillAFRatio', u'edgeAFRatio', u'memDBlend', u'partSBlend',
+              u'partBlendOp', u'partZFunc', u'partDBlend', u'partBUp',
+              u'partBFull', u'partBDown', u'partBFRatio', u'partBPRatio',
+              u'partLTime', u'partLDelta', u'partNSpd', u'partNAcc',
+              u'partVel1', u'partVel2', u'partVel3', u'partAcc1', u'partAcc2',
+              u'partAcc3', u'partKey1', u'partKey2', u'partKey1Time',
+              u'partKey2Time', u'key1Red', u'key1Green', u'key1Blue',
+              u'unused4', u'key2Red', u'key2Green', u'key2Blue', u'unused5',
+              u'key3Red', u'key3Green', u'key3Blue', u'unused6', u'key1A',
+              u'key2A', u'key3A', u'key1Time', u'key2Time', u'key3Time'),
+    b'EYES': (u'iconPath',),
+    b'FLOR': (u'model',),
+    b'FURN': (u'model',),
+    b'GRAS': (u'model',),
+    b'HAIR': (u'iconPath', u'model'),
+    b'INGR': (u'iconPath', u'model'),
+    b'KEYM': (u'iconPath', u'model'),
+    b'LIGH': (u'iconPath', u'model'),
+    b'LSCR': (u'iconPath',),
+    b'LTEX': (u'iconPath',),
+    b'MGEF': (u'iconPath', u'model'),
+    b'MISC': (u'iconPath', u'model'),
+    b'QUST': (u'iconPath',),
+    b'REGN': (u'iconPath',),
+    b'SGST': (u'iconPath', u'model'),
+    b'SKIL': (u'iconPath',),
+    b'SLGM': (u'iconPath', u'model'),
+    b'STAT': (u'model',),
+    b'TREE': (u'iconPath', u'model'),
+    b'WEAP': (u'iconPath', u'model'),
 }
-graphicsLongsTypes = set(graphicsTypes) # also MGEF (with different attributes)
-graphicsFidTypes = {"MGEF": ('effectShader', 'enchantEffect', 'light',)}
-graphicsModelAttrs = ('model',)
+graphicsFidTypes = {
+    b'MGEF': (u'light', u'effectShader', u'enchantEffect')
+}
+graphicsModelAttrs = (u'model', u'maleBody', u'maleWorld', u'femaleBody', u'femaleWorld')
 #------------------------------------------------------------------------------
 # Inventory Patcher
 #------------------------------------------------------------------------------
@@ -1805,6 +1811,27 @@ actor_tweaks = {
 # Names Tweaker
 #------------------------------------------------------------------------------
 body_tags = u'ARGHTCCPBS'
+
+#------------------------------------------------------------------------------
+# Relations Patcher
+#------------------------------------------------------------------------------
+relations_attrs = (u'faction', u'mod')
+relations_csv_header = u'"%s","%s","%s","%s","%s","%s","%s"\n' % (
+    _(u'Main Eid'), _(u'Main Mod'), _(u'Main Object'), _(u'Other Eid'),
+    _(u'Other Mod'), _(u'Other Object'), _(u'Modifier'))
+relations_csv_row_format = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
+
+#------------------------------------------------------------------------------
+# Enchantment Stats Patcher
+#------------------------------------------------------------------------------
+ench_stats_attrs = (u'itemType', u'chargeAmount', u'enchantCost', u'flags')
+
+#--------------------------------------------------------------------------
+# Effect Stats Patcher
+#--------------------------------------------------------------------------
+mgef_stats_attrs = (u'flags', u'base_cost', u'associated_item', u'school',
+                    u'resist_value', u'projectileSpeed', u'cef_enchantment',
+                    u'cef_barter')
 
 #------------------------------------------------------------------------------
 # Magic Effects
@@ -2123,15 +2150,6 @@ actor_values = [
     u'Darkness', #--70
     u'ResistWaterDamage',
 ]
-
-#------------------------------------------------------------------------------
-# Relations Patcher
-#------------------------------------------------------------------------------
-relations_attrs = (u'faction', u'mod')
-relations_csv_header = u'"%s","%s","%s","%s","%s","%s","%s"\n' % (
-    _(u'Main Eid'), _(u'Main Mod'), _(u'Main Object'), _(u'Other Eid'),
-    _(u'Other Mod'), _(u'Other Object'), _(u'Modifier'))
-relations_csv_row_format = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
 
 # Record type to name dictionary
 record_type_name = {

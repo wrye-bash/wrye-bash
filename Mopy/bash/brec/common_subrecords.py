@@ -31,7 +31,7 @@ from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
     MelUnion, PartialLoadDecider
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
-    MelOptFloat, MelOptUInt8, MelOptUInt32
+    MelOptFloat, MelOptUInt8, MelOptUInt32, MelOptFid
 from .utils_constants import _int_unpacker, FID, null1, null2, null3, null4
 from ..bolt import Flags, encode, struct_pack, struct_unpack
 
@@ -312,6 +312,12 @@ class MelIco2(MelIcons2):
         MelIcons2.__init__(self, ico2_attr=ico2_attr, mic2_attr='')
 
 #------------------------------------------------------------------------------
+class MelMdob(MelFid):
+    """Represents the common Menu Display Object subrecord."""
+    def __init__(self):
+        super(MelMdob, self).__init__(b'MDOB', u'menu_display_object')
+
+#------------------------------------------------------------------------------
 class MelWthrColors(MelStruct):
     """Used in WTHR for PNAM and NAM0 for all games but FNV."""
     def __init__(self, wthr_sub_sig):
@@ -321,6 +327,14 @@ class MelWthrColors(MelStruct):
             'dayBlue', ('unused2', null1), 'setRed', 'setGreen', 'setBlue',
             ('unused3', null1), 'nightRed', 'nightGreen', 'nightBlue',
             ('unused4', null1))
+
+#------------------------------------------------------------------------------
+class MelEnchantment(MelOptFid):
+    """Represents the common enchantment/object effect subrecord."""
+    ##: Would be better renamed to object_effect, but used in tons of places
+    # that need renaming/reworking first
+    def __init__(self):
+        super(MelEnchantment, self).__init__(b'EITM', u'enchantment')
 
 #------------------------------------------------------------------------------
 class MelRaceParts(MelNull):
@@ -392,6 +406,12 @@ class MelRaceVoices(MelStruct):
         if record.femaleVoice == record.fid: record.femaleVoice = 0
         if (record.maleVoice, record.femaleVoice) != (0, 0):
             MelStruct.dumpData(self, record, out)
+
+#------------------------------------------------------------------------------
+class MelScript(MelFid):
+    """Represents the common script subrecord in TES4/FO3/FNV."""
+    def __init__(self):
+        super(MelScript, self).__init__(b'SCRI', u'script')
 
 #------------------------------------------------------------------------------
 class MelScriptVars(MelGroups):

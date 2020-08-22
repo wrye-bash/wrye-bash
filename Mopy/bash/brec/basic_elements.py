@@ -213,9 +213,9 @@ class MelPartialCounter(MelCounter):
         :param element: The element that stores the counter's value.
         :type element: MelStruct
         :param counter: The attribute name of the counter.
-        :type counter: str
+        :type counter: unicode
         :param counts: The attribute name that this counter counts.
-        :type counts: str"""
+        :type counts: unicode"""
         MelCounter.__init__(self, element, counts)
         self.counter_attr = counter
 

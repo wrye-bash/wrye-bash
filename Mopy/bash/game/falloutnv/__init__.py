@@ -72,50 +72,13 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         canCBash = False # True?
         validHeaderVersions = (0.94, 1.32, 1.33, 1.34)
 
-    #--Bash Tags supported by this game
-    # 'Body-F', 'Body-M', 'Body-Size-M', 'Body-Size-F', 'C.Climate', 'C.Light',
-    # 'C.Music', 'C.Name', 'C.RecordFlags', 'C.Owner', 'C.Water','Deactivate',
-    # 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair',
-    # 'IIM', 'Invent', 'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev',
-    # 'Scripts', 'ScriptContents', 'Sound', 'Stats', 'Voice-F', 'Voice-M',
-    # 'R.Teeth', 'R.Mouth', 'R.Ears', 'R.Head', 'R.Attributes-F',
-    # 'R.Attributes-M', 'R.Skills', 'R.Description', 'Roads', 'Actors.Anims',
-    # 'Actors.AIData', 'Actors.DeathItem', 'Actors.AIPackages',
-    # 'Actors.AIPackagesForceAdd', 'Actors.Stats', 'Actors.ACBS', 'NPC.Class',
-    # 'Actors.CombatStyle', 'Creatures.Blood', 'NPC.Race','Actors.Skeleton',
-    # 'NpcFacesForceFullImport', 'MustBeActiveIfImported', 'Deflst',
-    # 'Destructible', 'WeaponMods'
     allTags = Fallout3GameInfo.allTags | {u'WeaponMods'}
-
-    # ActorImporter, AliasesPatcher, AssortedTweaker, CellImporter, ContentsChecker,
-    # DeathItemPatcher, DestructiblePatcher, FidListsMerger, GlobalsTweaker,
-    # GmstTweaker, GraphicsPatcher, ImportFactions, ImportInventory, ImportRelations,
-    # ImportScriptContents, ImportScripts, KFFZPatcher, ListsMerger, NamesPatcher,
-    # NamesTweaker, NPCAIPackagePatcher, NpcFacePatcher, PatchMerger, RacePatcher,
-    # RoadImporter, SoundPatcher, StatsPatcher, UpdateReferences, WeaponModsPatcher,
-    #--Patcher available when building a Bashed Patch (referenced by class name)
+    # PatchMerger must come first!
     patchers = Fallout3GameInfo.patchers + (u'WeaponModsPatcher',)
 
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        # From Valda's version
-        # MreAchr, MreAcre, MreActi, MreAlch, MreAloc, MreAmef, MreAmmo,
-        # MreAnio, MreAppa, MreArma, MreArmo, MreAspc, MreAvif, MreBook,
-        # MreBptd, MreBsgn, MreCcrd, MreCdck, MreChal, MreChip, MreClas,
-        # MreClmt, MreClot, MreCmny, MreCont, MreCrea, MreCsno, MreCsty,
-        # MreDebr, MreDehy, MreDial, MreDobj, MreDoor, MreEczn, MreEfsh,
-        # MreEnch, MreExpl, MreEyes, MreFact, MreFlor, MreFlst, MreFurn,
-        # MreGlob, MreGmst, MreGras, MreHair, MreHdpt, MreHung, MreIdle,
-        # MreIdlm, MreImad, MreImod, MreInfo, MreIngr, MreIpct, MreIpds,
-        # MreKeym, MreLigh, MreLscr, MreLsct, MreLtex, MreLvlc, MreLvli,
-        # MreLvln, MreLvsp, MreMgef, MreMicn, MreMisc, MreMset, MreMstt,
-        # MreMusc, MreNote, MreNpc, MrePack, MrePerk, MreProj, MrePwat,
-        # MreQust, MreRace, MreRcct, MreRcpe, MreRefr, MreRegn, MreRepu,
-        # MreRoad, MreSbsp, MreScpt, MreSgst, MreSkil, MreSlgm, MreSlpd,
-        # MreSoun, MreSpel, MreStat, MreTact, MreTerm, MreTes4, MreTree,
-        # MreTxst, MreVtyp, MreWatr, MreWeap, MreWthr, MreCell, MreWrld,
-        # MreNavm,
         # First import from our record file
         from .records import MreActi, MreAloc, MreAmef, MreAmmo, MreArma, \
             MreArmo, MreAspc, MreCcrd, MreCdck, MreChal, MreChip, MreCmny, \
@@ -135,21 +98,6 @@ class FalloutNVGameInfo(Fallout3GameInfo):
             MreMicn, MreMstt, MreNavi, MreNavm, MreNote, MrePwat, MreRads, \
             MreRgdl, MreScol, MreScpt, MreTree, MreTxst, MreVtyp, MreWatr, \
             MreWrld, MreAlch
-        # Old Mergeable from Valda's version
-        # MreActi, MreAlch, MreAloc, MreAmef, MreAmmo, MreAnio, MreAppa,
-        # MreArma, MreArmo, MreAspc, MreAvif, MreBook, MreBptd, MreBsgn,
-        # MreCcrd, MreCdck, MreChal, MreChip, MreClas, MreClmt, MreClot,
-        # MreCmny, MreCont, MreCrea, MreCsno, MreCsty, MreDebr, MreDehy,
-        # MreDobj, MreDoor, MreEczn, MreEfsh, MreEnch, MreExpl, MreEyes,
-        # MreFact, MreFlor, MreFlst, MreFurn, MreGlob, MreGras, MreHair,
-        # MreHdpt, MreHung, MreIdle, MreIdlm, MreImad, MreImod, MreIngr,
-        # MreIpct, MreIpds, MreKeym, MreLigh, MreLscr, MreLsct, MreLtex,
-        # MreLvlc, MreLvli, MreLvln, MreLvsp, MreMgef, MreMicn, MreMisc,
-        # MreMset, MreMstt, MreMusc, MreNote, MreNpc, MrePack, MrePerk,
-        # MreProj, MrePwat, MreQust, MreRace, MreRcct, MreRcpe, MreRegn,
-        # MreRepu, MreSbsp, MreScpt, MreSgst, MreSkil, MreSlgm, MreSlpd,
-        # MreSoun, MreSpel, MreStat, MreTact, MreTerm, MreTree, MreTxst,
-        # MreVtyp, MreWatr, MreWeap, MreWthr,
         cls.mergeClasses = (
                 MreActi, MreAddn, MreAlch, MreAloc, MreAmef, MreAmmo, MreAnio,
                 MreArma, MreArmo, MreAspc, MreAvif, MreBook, MreBptd, MreCams,
@@ -196,8 +144,6 @@ class FalloutNVGameInfo(Fallout3GameInfo):
                  MreNavm, MrePgre, MrePmis, MreRefr, MreWrld, MreTes4,))}
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {
-            # b'TES4',b'ACHR',b'ACRE',b'REFR',b'CELL',b'PGRD',b'PGRE',b'LAND',
-            # b'WRLD',b'INFO',b'DIAL',b'NAVM'
             b'TES4', b'ACHR', b'ACRE', b'CELL', b'DIAL', b'INFO', b'LAND', b'NAVI',
             b'NAVM', b'PGRE', b'PMIS', b'REFR', b'WRLD', })
 

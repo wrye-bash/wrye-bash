@@ -2174,13 +2174,13 @@ listTypes = ('LVLI','LVLN','LVSP',)
 #------------------------------------------------------------------------------
 # NamesPatcher
 #------------------------------------------------------------------------------
-# remaining to add: 'PERK', 'RACE',
+# remaining to add: 'RACE',
 namesTypes = {b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'AVIF', b'BOOK',
               b'CLAS', b'CLFM', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'EYES',
               b'FACT', b'FLOR', b'FURN', b'HAZD', b'HDPT', b'INGR', b'KEYM',
               b'LCTN', b'LIGH', b'MESG', b'MGEF', b'MISC', b'MSTT', b'NPC_',
-              b'PROJ', b'SCRL', b'SHOU', b'SLGM', b'SNCT', b'TACT', b'TREE',
-              b'WATR', b'WEAP', b'WOOP'}
+              b'PERK', b'PROJ', b'SCRL', b'SHOU', b'SLGM', b'SNCT', b'TACT',
+              b'TREE', b'WATR', b'WEAP', b'WOOP'}
 
 #------------------------------------------------------------------------------
 # ItemPrices Patcher
@@ -2286,7 +2286,7 @@ soundsTypes = {
     "KEYM": ('pickupSound','dropSound',),
     "LIGH": ('sound',),
     #Needs to loop over all the sounds
-    "MGEF": ('sounds',),
+    b'MGEF': (u'sounds', u'casting_sound_level'),
     # "REGN": ('entries',),
     "MISC": ('pickupSound','dropSound',),
     "MSTT": ('sound',),
@@ -2376,75 +2376,83 @@ cell_float_attrs = {u'fogNear', u'fogFar', u'directionalFade', u'fogClip',
 #------------------------------------------------------------------------------
 # GraphicsPatcher
 #------------------------------------------------------------------------------
-graphicsLongsTypes = {'ACTI', 'ALCH', 'AMMO', 'APPA', 'ARMA', 'ARMO', 'BOOK',
-                      'CLAS', 'CONT', 'DOOR', 'EFSH', 'FLOR', 'FURN', 'GRAS',
-                      'INGR', 'KEYM', 'LIGH', 'LSCR', 'SCRL', 'SLGM', 'SPEL',
-                      'STAT', 'TREE', 'WEAP', 'WTHR', 'MGEF'}
 graphicsTypes = {
-    "ACTI": ('model',),
-    "ALCH": ('iconPath','model',),
-    "AMMO": ('iconPath','model',),
-    "APPA": ('iconPath','model',),
-    "ARMA": ('male_model','female_model','male_model_1st','female_model_1st',),
-    "ARMO": ('model2','maleIconPath','model4','femaleIconPath','addons',),
-    "BOOK": ('iconPath','model','inventoryArt',),
-    "CLAS": ('iconPath',),
-    "CONT": ('model',),
-    "DOOR": ('model',),
-    "EFSH": ('unused1','memSBlend','memBlendOp','memZFunc','fillRed',
-    'fillGreen','fillBlue','unused2','fillAlphaIn','fillFullAlpha',
-    'fillAlphaOut','fillAlphaRatio','fillAlphaAmp','fillAlphaPulse',
-    'fillAnimSpeedU','fillAnimSpeedV','edgeEffectOff','edgeRed',
-    'edgeGreen','edgeBlue','unused3','edgeAlphaIn','edgeFullAlpha',
-    'edgeAlphaOut','edgeAlphaRatio','edgeAlphaAmp','edgeAlphaPulse',
-    'fillFullAlphaRatio','edgeFullAlphaRatio','memDestBlend',
-    'partSourceBlend','partBlendOp','partZTestFunc','partDestBlend',
-    'partBSRampUp','partBSFull','partBSRampDown','partBSRatio',
-    'partBSPartCount','partBSLifetime','partBSLifetimeDelta',
-    'partSSpeedNorm','partSAccNorm','partSVel1','partSVel2',
-    'partSVel3','partSAccel1','partSAccel2','partSAccel3',
-    'partSKey1','partSKey2','partSKey1Time','partSKey2Time',
-    'key1Red','key1Green','key1Blue','unused4','key2Red',
-    'key2Green','key2Blue','unused5','key3Red','key3Green',
-    'key3Blue','unused6','colorKey1Alpha','colorKey2Alpha',
-    'colorKey3Alpha','colorKey1KeyTime','colorKey2KeyTime',
-    'colorKey3KeyTime','partSSpeedNormDelta','partSSpeedRotDeg',
-    'partSSpeedRotDegDelta','partSRotDeg','partSRotDegDelta',
-    'addonModels','holesStart','holesEnd','holesStartVal',
-    'holesEndVal','edgeWidthAlphaUnit','edgeAlphRed',
-    'edgeAlphGreen','edgeAlphBlue','unused7','expWindSpeed',
-    'textCountU','textCountV','addonModelIn','addonModelOut',
-    'addonScaleStart','addonScaleEnd','addonScaleIn','addonScaleOut',
-    'ambientSound','key2FillRed','key2FillGreen',
-    'key2FillBlue','unused8','key3FillRed','key3FillGreen',
-    'key3FillBlue','unused9','key1ScaleFill','key2ScaleFill',
-    'key3ScaleFill','key1FillTime','key2FillTime','key3FillTime',
-    'colorScale','birthPosOffset','birthPosOffsetRange','startFrame',
-    'startFrameVariation','endFrame','loopStartFrame',
-    'loopStartVariation','frameCount','frameCountVariation',
-    'flags','fillTextScaleU',
-    'fillTextScaleV','sceneGraphDepthLimit',),
-    "FLOR": ('model',),
-    "FURN": ('model',),
-    "GRAS": ('model',),
-    "INGR": ('iconPath','model',),
-    "KEYM": ('iconPath','model',),
-    "LIGH": ('iconPath','model',),
-    "LSCR": ('iconPath',),
-    "SCRL": ('menuDisplayObject',),
-    "SLGM": ('iconPath','model',),
-    "SPEL": ('menuDisplayObject',),
-    "STAT": ('model',),
-    "TREE": ('model',),
-    "WEAP": ('model1','model2','iconPath','firstPersonModelObject',),
-    "WTHR": ('wthrAmbientColors',),
+    b'ACTI': (u'model',),
+    b'ALCH': (u'iconPath', u'model'),
+    b'AMMO': (u'iconPath', u'model'),
+    b'APPA': (u'iconPath', u'model'),
+    b'ARMA': (u'male_model', u'female_model', u'male_model_1st',
+              u'female_model_1st',),
+    b'ARMO': (u'model2', u'maleIconPath', u'model4', u'femaleIconPath',
+              u'addons'),
+    b'BOOK': (u'iconPath', u'model'),
+    b'CLAS': (u'iconPath',),
+    b'CONT': (u'model',),
+    b'DOOR': (u'model',),
+    b'EFSH': (u'unused1', u'memSBlend', u'memBlendOp', u'memZFunc', u'fillRed',
+              u'fillGreen', u'fillBlue', u'unused2', u'fillAlphaIn',
+              u'fillFullAlpha', u'fillAlphaOut', u'fillAlphaRatio',
+              u'fillAlphaAmp', u'fillAlphaPulse', u'fillAnimSpeedU',
+              u'fillAnimSpeedV', u'edgeEffectOff', u'edgeRed', u'edgeGreen',
+              u'edgeBlue', u'unused3', u'edgeAlphaIn', u'edgeFullAlpha',
+              u'edgeAlphaOut', u'edgeAlphaRatio', u'edgeAlphaAmp',
+              u'edgeAlphaPulse', u'fillFullAlphaRatio', u'edgeFullAlphaRatio',
+              u'memDestBlend', u'partSourceBlend', u'partBlendOp',
+              u'partZTestFunc', u'partDestBlend', u'partBSRampUp',
+              u'partBSFull', u'partBSRampDown', u'partBSRatio',
+              u'partBSPartCount', u'partBSLifetime', u'partBSLifetimeDelta',
+              u'partSSpeedNorm', u'partSAccNorm', u'partSVel1', u'partSVel2',
+              u'partSVel3', u'partSAccel1', u'partSAccel2', u'partSAccel3',
+              u'partSKey1', u'partSKey2', u'partSKey1Time', u'partSKey2Time',
+              u'key1Red', u'key1Green', u'key1Blue', u'unused4', u'key2Red',
+              u'key2Green', u'key2Blue', u'unused5', u'key3Red', u'key3Green',
+              u'key3Blue', u'unused6', u'colorKey1Alpha', u'colorKey2Alpha',
+              u'colorKey3Alpha', u'colorKey1KeyTime', u'colorKey2KeyTime',
+              u'colorKey3KeyTime', u'partSSpeedNormDelta', u'partSSpeedRotDeg',
+              u'partSSpeedRotDegDelta', u'partSRotDeg', u'partSRotDegDelta',
+              u'holesStart', u'holesEnd', u'holesStartVal', u'holesEndVal',
+              u'edgeWidthAlphaUnit', u'edgeAlphRed', u'edgeAlphGreen',
+              u'edgeAlphBlue', u'unused7', u'expWindSpeed', u'textCountU',
+              u'textCountV', u'addonModelIn', u'addonModelOut',
+              u'addonScaleStart', u'addonScaleEnd', u'addonScaleIn',
+              u'addonScaleOut', u'ambientSound', u'key2FillRed',
+              u'key2FillGreen', u'key2FillBlue', u'unused8', u'key3FillRed',
+              u'key3FillGreen', u'key3FillBlue', u'unused9', u'key1ScaleFill',
+              u'key2ScaleFill', u'key3ScaleFill', u'key1FillTime',
+              u'key2FillTime', u'key3FillTime', u'colorScale',
+              u'birthPosOffset', u'birthPosOffsetRange', u'startFrame',
+              u'startFrameVariation', u'endFrame', u'loopStartFrame',
+              u'loopStartVariation', u'frameCount', u'frameCountVariation',
+              u'flags', u'fillTextScaleU', u'fillTextScaleV',
+              u'sceneGraphDepthLimit',),
+    b'FLOR': (u'model',),
+    b'FURN': (u'model',),
+    b'GRAS': (u'model',),
+    b'INGR': (u'iconPath', u'model'),
+    b'KEYM': (u'iconPath', u'model'),
+    b'LIGH': (u'iconPath', u'model'),
+    b'LSCR': (u'iconPath',),
+    b'MGEF': (u'dual_casting_scale',),
+    b'SLGM': (u'iconPath', u'model'),
+    b'STAT': (u'model',),
+    b'TREE': (u'model',),
+    b'WEAP': (u'model1', u'model2', u'iconPath'),
+    b'WTHR': (u'wthrAmbientColors',),
 }
 graphicsFidTypes = {
-    "MGEF": ('castingArt', 'castingLight', 'dualCastingArt', 'enchantArt',
-             'enchantShader', 'hitEffectArt', 'hitShader',
-             'menuDisplayObject',)
+    b'BOOK': (u'inventoryArt',),
+    b'EFSH': (u'addonModels',),
+    b'MGEF': (u'menu_display_object', u'light', u'hit_shader',
+              u'enchant_shader', u'projectile', u'explosion', u'casting_art',
+              u'hit_effect_art', u'effect_impact_data', u'dual_casting_art',
+              u'enchant_art', u'effect_imad'),
+    b'SCRL': (u'menu_display_object',),
+    b'SPEL': (u'menu_display_object',),
+    b'WEAP': (u'firstPersonModelObject',),
 }
-graphicsModelAttrs = ('model',)
+graphicsModelAttrs = (u'model', u'model1', u'model2', u'model4', u'male_model',
+                      u'female_model', u'male_model_1st', u'female_model_1st')
+
 #------------------------------------------------------------------------------
 # Inventory Patcher
 #------------------------------------------------------------------------------
@@ -2472,7 +2480,7 @@ text_types = {
     #'COLL': ('description',), # seems fairly useless to patch this
     'LSCR': ('description',),
     'MESG': ('description',),
-    'MGEF': ('magicItemDescription',),
+    'MGEF': ('magic_item_description',),
     #'PERK': ('description',), # no other patchers right now
     #'QUST': ('description',), # no other patchers and seems unused
     'SCRL': ('description',),
@@ -2588,6 +2596,25 @@ relations_csv_header = u'"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (
     _(u'Other Mod'), _(u'Other Object'), _(u'Modifier'),
     _(u'Group Combat Reaction'))
 relations_csv_row_format = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s","%s"\n'
+
+#------------------------------------------------------------------------------
+# Enchantment Stats Patcher
+#------------------------------------------------------------------------------
+ench_stats_attrs = (u'enchantmentCost', u'generalFlags', u'castType',
+                    u'enchantmentAmount', u'targetType', u'enchantType',
+                    u'chargeTime', u'baseEnchantment', u'wornRestrictions')
+
+#--------------------------------------------------------------------------
+# Effect Stats Patcher
+#--------------------------------------------------------------------------
+mgef_stats_attrs = (u'flags', u'base_cost', u'associated_item', u'magic_skill',
+                    u'resist_value', u'taper_weight', u'minimum_skill_level',
+                    u'spellmaking_area', u'spellmaking_casting_time',
+                    u'taper_curve', u'taper_duration', u'second_av_weight',
+                    u'effect_archetype', u'actorValue', u'casting_type',
+                    u'delivery', u'second_av', u'skill_usage_multiplier',
+                    u'equip_ability', u'perk_to_apply',
+                    u'script_effect_ai_score', u'script_effect_ai_delay_time')
 
 # Record type to name dictionary
 record_type_name = {
