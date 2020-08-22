@@ -1481,10 +1481,10 @@ class InstallerArchive(Installer):
             recurse=True)
         upt_numb, del_numb = self._do_sync_data(unpack_dir, delta_files)
         archive_name = GPath(self.archive)
-        new_archive = archive_name.root + archives.writeExts.get(
-            archive_name.cext, archives.defaultExt)
-        self.packToArchive(unpack_dir, new_archive, isSolid=True,
-                           blockSize=None)
+        new_ext = (archive_name.cext if archive_name.cext in archives.writeExts
+                   else archives.defaultExt)
+        self.packToArchive(unpack_dir, archive_name.root + new_ext,
+            isSolid=True, blockSize=None)
         bass.rmTempDir()
         return upt_numb, del_numb
 

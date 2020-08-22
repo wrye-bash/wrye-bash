@@ -1601,7 +1601,7 @@ class _Esm_Esl_Flip(EnabledLink):
             bosh.modInfos.rescanMergeable(updated, bolt.Progress())
             # This will have changed the plugin, so let BAIN know
             bosh.modInfos._notify_bain(
-                changed={bass.dirs[u'mods'].join(p) for p in updated})
+                changed={self.window.data_store[p].abs_path for p in updated})
         # will be moved to the top - note that modification times won't
         # change - so mods will revert to their original position once back
         # to esp from esm (Oblivion etc). Refresh saves due to esms move
