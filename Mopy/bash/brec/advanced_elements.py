@@ -46,9 +46,9 @@ class _MelDistributor(MelNull):
     See the wiki page '[dev] Plugin Format: Distributors' for a detailed
     overview of this class and the semi-DSL it implements.
 
-    :type _attr_to_loader: dict[str, MelBase]
-    :type _sig_to_loader: dict[str, MelBase]
-    :type _target_sigs: set[str]"""
+    :type _attr_to_loader: dict[unicode, MelBase]
+    :type _sig_to_loader: dict[bytes, MelBase]
+    :type _target_sigs: set[bytes]"""
     def __init__(self, distributor_config): # type: (dict) -> None
         # Maps attribute name to loader
         self._attr_to_loader = {}
@@ -77,12 +77,12 @@ class _MelDistributor(MelNull):
         while mappings_to_iterate:
             mapping = mappings_to_iterate.pop()
             for signature_str in mapping.keys():
-                if type(signature_str) != str:
+                if type(signature_str) != bytes:
                     self._raise_syntax_error(
-                        u'All keys must be signature strings (offending key: '
-                        u'%r)' % signature_str)
+                        u'All keys must be signature bytestromgs (offending '
+                        u'key: %r)' % signature_str)
                 # Resolve 'A|B' syntax
-                signatures = signature_str.split('|')
+                signatures = signature_str.split(b'|')
                 resolved_entry = mapping[signature_str]
                 if not resolved_entry:
                     self._raise_syntax_error(
@@ -108,12 +108,12 @@ class _MelDistributor(MelNull):
                 elif re_type == tuple:
                     # TODO(inf) Proper name for tuple values
                     if (len(resolved_entry) != 2
-                            or type(resolved_entry[0]) != str
+                            or type(resolved_entry[0]) != unicode
                             or type(resolved_entry[1]) != dict):
                         self._raise_syntax_error(
                             u'Tuples used as values must always have two '
                             u'elements - an attribute string and a dict '
-                            u'(offending tuple: %r)' % resolved_entry)
+                            u'(offending tuple: %s)' % repr(resolved_entry))
                     # If the signature maps to a tuple, recurse into the
                     # dict stored in its second element
                     mappings_to_iterate.append(resolved_entry[1])
@@ -124,19 +124,19 @@ class _MelDistributor(MelNull):
                         if type(seq_entry) == tuple:
                             # Ensure that the tuple is correctly formatted
                             if (len(seq_entry) != 2
-                                    or type(seq_entry[0]) != str
-                                    or type(seq_entry[1]) != str):
+                                    or type(seq_entry[0]) != bytes
+                                    or type(seq_entry[1]) != unicode):
                                 self._raise_syntax_error(
                                     u'Sequential tuples must always have two '
-                                    u'elements, both of them strings '
-                                    u'(offending sequential entry: %r)' %
-                                    seq_entry)
-                        elif type(seq_entry) != str:
+                                    u'elements, a bytestring and a string '
+                                    u'(offending sequential entry: %s)' %
+                                    repr(seq_entry))
+                        elif type(seq_entry) != bytes:
                             self._raise_syntax_error(
                                 u'Sequential entries must either be '
-                                u'tuples or strings (actual type: %r)' %
+                                u'tuples or bytestrings (actual type: %r)' %
                                 type(seq_entry))
-                elif re_type != str:
+                elif re_type != unicode:
                     self._raise_syntax_error(
                         u'Only dicts, lists, strings and tuples may occur as '
                         u'values (offending type: %r)' % re_type)
@@ -165,7 +165,7 @@ class _MelDistributor(MelNull):
                     mappings_to_iterate.append(resolved_entry[1])
                 elif re_type == list:
                     # If the signature maps to a list, record the signatures of
-                    # each entry (str or tuple[str, str])
+                    # each entry (bytes or tuple[bytes, unicode])
                     self._target_sigs.update([t[0] if type(t) == tuple else t
                                               for t in resolved_entry])
                 # If it's not a dict, list or tuple, then this is a leaf node,
@@ -181,7 +181,7 @@ class _MelDistributor(MelNull):
         # subrecords we've visited.
         # _seq_index is only used when processing a sequential and marks
         # the index where we left off in the last loadData
-        return '_loader_state', '_seq_index'
+        return u'_loader_state', u'_seq_index'
 
     def setDefault(self, record):
         record._loader_state = ()
@@ -194,7 +194,7 @@ class _MelDistributor(MelNull):
         for element in mel_set.elements:
             # Underscore means internal usage only - e.g. distributor state
             el_attrs = [s for s in element.getSlotsUsed()
-                        if not s.startswith('_')]
+                        if not s.startswith(u'_')]
             for el_attr in el_attrs:
                 self._attr_to_loader[el_attr] = element
 
@@ -246,7 +246,7 @@ class _MelDistributor(MelNull):
             record._seq_index = 1 # we'll load the first element right now
             self._distribute_load(mapped_el[0], record, ins, size_,
                                   readId)
-        else: # el_type == str, verified in _pre_process
+        else: # el_type == unicode, verified in _pre_process
             # Targets -----------------------------------------------------
             # A target - don't add the signature to the load state and
             # distribute the load by attribute name.

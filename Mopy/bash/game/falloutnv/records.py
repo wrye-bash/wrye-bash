@@ -363,8 +363,8 @@ class MreCcrd(MelRecord):
         MelUInt32('INTV', 'card_value'),
         MelUInt32('DATA', 'value'),
     ).with_distributor({
-        'INTV': ('card_suit', {
-            'INTV': 'card_value',
+        b'INTV': (u'card_suit', {
+            b'INTV': u'card_value',
         }),
     })
     __slots__ = melSet.getSlotsUsed()
@@ -626,11 +626,11 @@ class MreDial(MelRecord):
         MelTruncatedStruct('DATA', '2B', 'dialType',
                            (_DialFlags, 'dialFlags', 0), old_versions={'B'}),
     ).with_distributor({
-        'INFC': 'bare_infc_p',
-        'INFX': 'bare_infx_p',
-        'QSTI': {
-            'INFC|INFX': 'quests',
-        }
+        b'INFC': u'bare_infc_p',
+        b'INFX': u'bare_infx_p',
+        b'QSTI': {
+            b'INFC|INFX': u'quests',
+        },
     })
     __slots__ = melSet.getSlotsUsed()
 
@@ -1245,11 +1245,11 @@ class MreRcpe(MelRecord):
             MelUInt32('RCQY', 'quantity'),
         ),
     ).with_distributor({
-        'RCIL': {
-            'RCQY': 'ingredients',
+        b'RCIL': {
+            b'RCQY': u'ingredients',
         },
-        'RCOD': {
-            'RCQY': 'outputs',
+        b'RCOD': {
+            b'RCQY': u'outputs',
         },
     })
     __slots__ = melSet.getSlotsUsed()

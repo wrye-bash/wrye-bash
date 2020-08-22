@@ -2221,14 +2221,14 @@ class MrePack(MelRecord):
         MelIdleHandler('on_end'),
         MelIdleHandler('on_change'),
     ).with_distributor({
-        'POBA': {
-            'INAM|SCHR|SCDA|SCTX|SLSD|SCVR|SCRO|SCRV|TNAM': 'on_begin',
+        b'POBA': {
+            b'INAM|SCHR|SCDA|SCTX|SLSD|SCVR|SCRO|SCRV|TNAM': u'on_begin',
         },
-        'POEA': {
-            'INAM|SCHR|SCDA|SCTX|SLSD|SCVR|SCRO|SCRV|TNAM': 'on_begin',
+        b'POEA': {
+            b'INAM|SCHR|SCDA|SCTX|SLSD|SCVR|SCRO|SCRV|TNAM': u'on_begin',
         },
-        'POCA': {
-            'INAM|SCHR|SCDA|SCTX|SLSD|SCVR|SCRO|SCRV|TNAM': 'on_begin',
+        b'POCA': {
+            b'INAM|SCHR|SCDA|SCTX|SLSD|SCVR|SCRO|SCRV|TNAM': u'on_begin',
         },
     })
     __slots__ = melSet.getSlotsUsed()
@@ -2295,12 +2295,12 @@ class MrePerk(MelRecord):
             MelBase('PRKF','footer'),
         ),
     ).with_distributor({
-        'DESC': {
-            'CTDA|CIS1|CIS2': 'conditions',
-            'DATA': 'trait',
+        b'DESC': {
+            b'CTDA|CIS1|CIS2': u'conditions',
+            b'DATA': u'trait',
         },
-        'PRKE': {
-            'CTDA|CIS1|CIS2|DATA': 'effects',
+        b'PRKE': {
+            b'CTDA|CIS1|CIS2|DATA': u'effects',
         },
     })
     __slots__ = melSet.getSlotsUsed()
@@ -2510,14 +2510,14 @@ class MreQust(MelRecord):
             ),
         ),
     ).with_distributor({
-        'EDID|DATA': { # just in case one is missing
-            'CTDA': 'conditions',
+        b'EDID|DATA': { # just in case one is missing
+            b'CTDA': u'conditions',
         },
-        'INDX': {
-            'CTDA': 'stages',
+        b'INDX': {
+            b'CTDA': u'stages',
         },
-        'QOBJ': {
-            'CTDA': 'objectives',
+        b'QOBJ': {
+            b'CTDA': u'objectives',
         },
     })
     __slots__ = melSet.getSlotsUsed()
@@ -2613,28 +2613,28 @@ class MreRace(MelRecord):
         MelBase('FNAM', 'female_facegen_marker', ''),
         MelRaceFaceGen('femaleFaceGen'),
     ).with_distributor({
-        'NAM0': {
-            'MNAM': ('male_head_data_marker', {
-                'INDX|ICON|MICO|MODL|MODB|MODT|MODS|MODD': 'maleHead',
+        b'NAM0': {
+            b'MNAM': (u'male_head_data_marker', {
+                b'INDX|ICON|MICO|MODL|MODB|MODT|MODS|MODD': u'maleHead',
             }),
-            'FNAM': ('female_head_data_marker', {
-                'INDX|ICON|MICO|MODL|MODB|MODT|MODS|MODD': 'femaleHead',
-            }),
-        },
-        'NAM1': {
-            'MNAM': ('male_body_data_marker', {
-                'INDX|ICON|MICO|MODL|MODB|MODT|MODS|MODD': 'maleUpperBody',
-            }),
-            'FNAM': ('female_body_data_marker', {
-                'INDX|ICON|MICO|MODL|MODB|MODT|MODS|MODD': 'femaleUpperBody',
+            b'FNAM': (u'female_head_data_marker', {
+                b'INDX|ICON|MICO|MODL|MODB|MODT|MODS|MODD': u'femaleHead',
             }),
         },
-        'ENAM': {
-            'MNAM': ('male_facegen_marker', {
-                'FGGS|FGGA|FGTS|SNAM': 'maleFaceGen',
+        b'NAM1': {
+            b'MNAM': (u'male_body_data_marker', {
+                b'INDX|ICON|MICO|MODL|MODB|MODT|MODS|MODD': u'maleUpperBody',
             }),
-            'FNAM': ('female_facegen_marker', {
-                'FGGS|FGGA|FGTS|SNAM': 'femaleFaceGen',
+            b'FNAM': (u'female_body_data_marker', {
+                b'INDX|ICON|MICO|MODL|MODB|MODT|MODS|MODD': u'femaleUpperBody',
+            }),
+        },
+        b'ENAM': {
+            b'MNAM': (u'male_facegen_marker', {
+                b'FGGS|FGGA|FGTS|SNAM': u'maleFaceGen',
+            }),
+            b'FNAM': (u'female_facegen_marker', {
+                b'FGGS|FGGA|FGTS|SNAM': u'femaleFaceGen',
             }),
         },
     })

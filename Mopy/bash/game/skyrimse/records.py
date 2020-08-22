@@ -78,9 +78,9 @@ class MreLens(MelRecord):
                 (LensFlareFlags, 'lensFlags', 0), ),
         )
     ).with_distributor({
-        'DNAM': 'fadeDistanceRadiusScale',
-        'LFSP': {
-            'DNAM': 'lensFlareSprites',
+        b'DNAM': u'fadeDistanceRadiusScale',
+        b'LFSP': {
+            b'DNAM': u'lensFlareSprites',
         },
     })
     __slots__ = melSet.getSlotsUsed()

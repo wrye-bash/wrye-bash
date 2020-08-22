@@ -1598,10 +1598,10 @@ class MreAvif(MelRecord):
             MelUInt32('INAM', 'index',),
         ),
     ).with_distributor({
-        'CNAM': 'cnam_p',
-        'PNAM': {
-            'CNAM': 'perkTree',
-        }
+        b'CNAM': u'cnam_p',
+        b'PNAM': {
+            b'CNAM': u'perkTree',
+        },
     })
     __slots__ = melSet.getSlotsUsed()
 
@@ -3886,31 +3886,31 @@ class MrePack(MelRecord):
         MelIdleHandler('on_end'),
         MelIdleHandler('on_change'),
     ).with_distributor({
-        'PKDT': {
-            'CTDA|CIS1|CIS2': 'conditions',
-            'CNAM': 'combatStyle',
-            'QNAM': 'owner_quest',
-            'ANAM': ('data_input_values', {
-                'BNAM|CNAM|PDTO': 'data_input_values',
+        b'PKDT': {
+            b'CTDA|CIS1|CIS2': u'conditions',
+            b'CNAM': u'combatStyle',
+            b'QNAM': u'owner_quest',
+            b'ANAM': (u'data_input_values', {
+                b'BNAM|CNAM|PDTO': u'data_input_values',
             }),
-            'UNAM': ('data_inputs1', {
-                'BNAM|PNAM': 'data_inputs1',
-            }),
-        },
-        'XNAM': {
-            'ANAM|CTDA|CIS1|CIS2|PNAM': 'procedure_tree_branches',
-            'UNAM': ('data_inputs2', {
-                'BNAM|PNAM': 'data_inputs2',
+            b'UNAM': (u'data_inputs1', {
+                'BNAM|PNAM': u'data_inputs1',
             }),
         },
-        'POBA': {
-            'INAM|SCHR|SCTX|QNAM|TNAM|PDTO': 'on_begin',
+        b'XNAM': {
+            b'ANAM|CTDA|CIS1|CIS2|PNAM': u'procedure_tree_branches',
+            b'UNAM': (u'data_inputs2', {
+                b'BNAM|PNAM': u'data_inputs2',
+            }),
         },
-        'POEA': {
-            'INAM|SCHR|SCTX|QNAM|TNAM|PDTO': 'on_end',
+        b'POBA': {
+            b'INAM|SCHR|SCTX|QNAM|TNAM|PDTO': u'on_begin',
         },
-        'POCA': {
-            'INAM|SCHR|SCTX|QNAM|TNAM|PDTO': 'on_change',
+        b'POEA': {
+            b'INAM|SCHR|SCTX|QNAM|TNAM|PDTO': u'on_end',
+        },
+        b'POCA': {
+            b'INAM|SCHR|SCTX|QNAM|TNAM|PDTO': u'on_change',
         },
     })
     __slots__ = melSet.getSlotsUsed()
@@ -3989,12 +3989,12 @@ class MrePerk(MelRecord):
             MelBase('PRKF','footer'),
         ),
     ).with_distributor({
-        'DESC': {
-            'CTDA|CIS1|CIS2': 'conditions',
-            'DATA': 'trait',
+        b'DESC': {
+            b'CTDA|CIS1|CIS2': u'conditions',
+            b'DATA': u'trait',
         },
-        'PRKE': {
-            'CTDA|CIS1|CIS2|DATA': 'effects',
+        b'PRKE': {
+            b'CTDA|CIS1|CIS2|DATA': u'effects',
         },
     })
     __slots__ = melSet.getSlotsUsed()
@@ -4195,32 +4195,26 @@ class MreQust(MelRecord):
             MelConditions(),
         ),
     ).with_distributor({
-        'DNAM': {
-            'CTDA|CIS1|CIS2': 'dialogueConditions',
+        b'DNAM': {
+            b'CTDA|CIS1|CIS2': u'dialogueConditions',
         },
-        'NEXT': {
-            'CTDA|CIS1|CIS2': 'eventConditions',
+        b'NEXT': {
+            b'CTDA|CIS1|CIS2': u'eventConditions',
         },
-        'INDX': {
-            'CTDA|CIS1|CIS2': 'stages',
+        b'INDX': {
+            b'CTDA|CIS1|CIS2': u'stages',
         },
-        'QOBJ': {
-            'CTDA|CIS1|CIS2|FNAM|QSTA': 'objectives',
-            # NNAM followed by NNAM means we've exited the objectives section
-            'NNAM': ('objectives', {
-                'NNAM': 'description',
-            }),
+        b'QOBJ': {
+            b'CTDA|CIS1|CIS2|FNAM|NNAM|QSTA': u'objectives',
         },
-        'ANAM': {
-            'CTDA|CIS1|CIS2|FNAM': 'aliases',
+        b'ANAM': {
+            b'CTDA|CIS1|CIS2|FNAM': u'aliases',
             # ANAM is required, so piggyback off of it here to resolve QSTA
-            'QSTA': ('targets', {
-                'CTDA|CIS1|CIS2': 'targets',
+            b'QSTA': (u'targets', {
+                b'CTDA|CIS1|CIS2': u'targets',
             }),
+            b'NNAM': u'description',
         },
-        # Have to duplicate this here in case a quest has no objectives but
-        # does have a description
-        'NNAM': 'description',
     })
     __slots__ = melSet.getSlotsUsed()
 

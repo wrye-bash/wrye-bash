@@ -96,12 +96,12 @@ class MelConditions(MelGroups):
 # A distributor config for use with MelEffects, since MelEffects also contains
 # a FULL subrecord
 _effects_distributor = {
-    b'FULL': 'full', # don't rely on EDID being present
+    b'FULL': u'full', # don't rely on EDID being present
     b'EFID': {
-        b'FULL': 'effects',
+        b'FULL': u'effects',
     },
     b'EFXX': {
-        b'FULL': 'obme_full',
+        b'FULL': u'obme_full',
     },
 }
 
@@ -1492,14 +1492,14 @@ class MreQust(MelRecord):
             MelConditions(),
         ),
     ).with_distributor({
-        'EDID|DATA': { # just in case one is missing
-            'CTDA': 'conditions',
+        b'EDID|DATA': { # just in case one is missing
+            b'CTDA': u'conditions',
         },
-        'INDX': {
-            'CTDA': 'stages',
+        b'INDX': {
+            b'CTDA': u'stages',
         },
-        'QSTA': {
-            'CTDA': 'targets',
+        b'QSTA': {
+            b'CTDA': u'targets',
         },
     })
     __slots__ = melSet.getSlotsUsed()
@@ -1587,16 +1587,16 @@ class MreRace(MelRecord):
         MelBase('FGTS','fgts_p'), ####FaceGen Texture-Symmetric
         MelStruct('SNAM','2s',('snam_p',null2)),
     ).with_distributor({
-        'NAM0': {
-            'INDX|MODL|MODB|MODT|ICON': 'head',
+        b'NAM0': {
+            b'INDX|MODL|MODB|MODT|ICON': u'head',
         },
-        'MNAM': {
-            'MODL|MODB|MODT': 'maleTailModel',
-            'INDX|ICON': 'maleUpperBodyPath',
+        b'MNAM': {
+            b'MODL|MODB|MODT': u'maleTailModel',
+            b'INDX|ICON': u'maleUpperBodyPath',
         },
-        'FNAM': {
-            'MODL|MODB|MODT': 'femaleTailModel',
-            'INDX|ICON': 'femaleUpperBodyPath',
+        b'FNAM': {
+            b'MODL|MODB|MODT': u'femaleTailModel',
+            b'INDX|ICON': u'femaleUpperBodyPath',
         },
     })
     __slots__ = melSet.getSlotsUsed()
@@ -1648,9 +1648,9 @@ class MreRefr(MelRecord):
         MelOptUInt8(b'XSOL', u'ref_soul'),
         MelRef3D(),
     ).with_distributor({
-        b'FULL': 'full', # unused, but still need to distribute it
+        b'FULL': u'full', # unused, but still need to distribute it
         b'XMRK': {
-            b'FULL': 'map_marker',
+            b'FULL': u'map_marker',
         },
     })
     __slots__ = melSet.getSlotsUsed()
