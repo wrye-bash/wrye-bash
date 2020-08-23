@@ -50,9 +50,9 @@ class MelBounds(MelGroup):
     """Wrapper around MelGroup for the common task of defining OBND - Object
     Bounds. Uses MelGroup to avoid merging them when importing."""
     def __init__(self):
-        MelGroup.__init__(self, 'bounds',
-            MelStruct('OBND', '=6h', 'boundX1', 'boundY1', 'boundZ1',
-                      'boundX2', 'boundY2', 'boundZ2')
+        super(MelBounds, self).__init__(u'bounds',
+            MelStruct(b'OBND', u'=6h', u'boundX1', u'boundY1', u'boundZ1',
+                      u'boundX2', u'boundY2', u'boundZ2')
         )
 
 #------------------------------------------------------------------------------
@@ -247,7 +247,7 @@ class MelDecalData(MelOptStruct):
 class MelReferences(MelGroups):
     """Handles mixed sets of SCRO and SCRV for scripts, quests, etc."""
     def __init__(self):
-        MelGroups.__init__(self, u'references', MelUnion({
+        super(MelReferences, self).__init__(u'references', MelUnion({
             b'SCRO': MelFid(b'SCRO', u'reference'),
             b'SCRV': MelUInt32(b'SCRV', u'reference'),
         }))
@@ -268,8 +268,9 @@ class MelColorInterpolator(MelArray):
     with 'time' as the X axis and 'red', 'green', 'blue' and 'alpha' as the Y
     axis."""
     def __init__(self, sub_type, attr):
-        MelArray.__init__(self, attr,
-            MelStruct(sub_type, '5f', 'time', 'red', 'green', 'blue', 'alpha'),
+        super(MelColorInterpolator, self).__init__(attr,
+            MelStruct(sub_type, u'5f', u'time', u'red', u'green', u'blue',
+                u'alpha'),
         )
 
 #------------------------------------------------------------------------------
@@ -280,8 +281,8 @@ class MelValueInterpolator(MelArray):
     of two floats, where each entry in the array describes a point on a curve,
     with 'time' as the X axis and 'value' as the Y axis."""
     def __init__(self, sub_type, attr):
-        MelArray.__init__(self, attr,
-            MelStruct(sub_type, '2f', 'time', 'value'),
+        super(MelValueInterpolator, self).__init__(attr,
+            MelStruct(sub_type, u'2f', u'time', u'value'),
         )
 
 #------------------------------------------------------------------------------
@@ -294,20 +295,20 @@ class MelDescription(MelLString):
 class MelEdid(MelString):
     """Handles an Editor ID (EDID) subrecord."""
     def __init__(self):
-        MelString.__init__(self, 'EDID', 'eid')
+        super(MelEdid, self).__init__(b'EDID', u'eid')
 
 #------------------------------------------------------------------------------
 class MelFull(MelLString):
     """Handles a name (FULL) subrecord."""
     def __init__(self):
-        MelLString.__init__(self, 'FULL', 'full')
+        super(MelFull, self).__init__(b'FULL', u'full')
 
 #------------------------------------------------------------------------------
 class MelIcons(MelSequential):
     """Handles icon subrecords. Defaults to ICON and MICO, with attribute names
     'iconPath' and 'smallIconPath', since that's most common."""
-    def __init__(self, icon_attr='iconPath', mico_attr='smallIconPath',
-                 icon_sig='ICON', mico_sig='MICO'):
+    def __init__(self, icon_attr=u'iconPath', mico_attr=u'smallIconPath',
+                 icon_sig=b'ICON', mico_sig=b'MICO'):
         """Creates a new MelIcons with the specified attributes.
 
         :param icon_attr: The attribute to use for the ICON subrecord. If
@@ -315,27 +316,27 @@ class MelIcons(MelSequential):
         :param mico_attr: The attribute to use for the MICO subrecord. If
             falsy, this means 'do not include a MICO subrecord'."""
         final_elements = []
-        if icon_attr: final_elements += [MelString(icon_sig, icon_attr)]
-        if mico_attr: final_elements += [MelString(mico_sig, mico_attr)]
-        MelSequential.__init__(self, *final_elements)
+        if icon_attr: final_elements.append(MelString(icon_sig, icon_attr))
+        if mico_attr: final_elements.append(MelString(mico_sig, mico_attr))
+        super(MelIcons, self).__init__(*final_elements)
 
 class MelIcons2(MelIcons):
     """Handles ICO2 and MIC2 subrecords. Defaults to attribute names
     'femaleIconPath' and 'femaleSmallIconPath', since that's most common."""
-    def __init__(self, ico2_attr='femaleIconPath',
-                 mic2_attr='femaleSmallIconPath'):
-        MelIcons.__init__(self, icon_attr=ico2_attr, mico_attr=mic2_attr,
-                          icon_sig='ICO2', mico_sig='MIC2')
+    def __init__(self, ico2_attr=u'femaleIconPath',
+                 mic2_attr=u'femaleSmallIconPath'):
+        super(MelIcons2, self).__init__(icon_attr=ico2_attr,
+            mico_attr=mic2_attr, icon_sig=b'ICO2', mico_sig=b'MIC2')
 
 class MelIcon(MelIcons):
     """Handles a standalone ICON subrecord, i.e. without any MICO subrecord."""
-    def __init__(self, icon_attr='iconPath'):
-        MelIcons.__init__(self, icon_attr=icon_attr, mico_attr='')
+    def __init__(self, icon_attr=u'iconPath'):
+        super(MelIcon, self).__init__(icon_attr=icon_attr, mico_attr=u'')
 
 class MelIco2(MelIcons2):
     """Handles a standalone ICO2 subrecord, i.e. without any MIC2 subrecord."""
     def __init__(self, ico2_attr):
-        MelIcons2.__init__(self, ico2_attr=ico2_attr, mic2_attr='')
+        super(MelIco2, self).__init__(ico2_attr=ico2_attr, mic2_attr=u'')
 
 #------------------------------------------------------------------------------
 class MelMdob(MelFid):
@@ -443,7 +444,7 @@ class MelRaceVoices(MelStruct):
         if record.maleVoice == record.fid: record.maleVoice = 0
         if record.femaleVoice == record.fid: record.femaleVoice = 0
         if (record.maleVoice, record.femaleVoice) != (0, 0):
-            MelStruct.dumpData(self, record, out)
+            super(MelRaceVoices, self).dumpData(record, out)
 
 #------------------------------------------------------------------------------
 class MelScript(MelFid):
@@ -454,15 +455,15 @@ class MelScript(MelFid):
 #------------------------------------------------------------------------------
 class MelScriptVars(MelGroups):
     """Handles SLSD and SCVR combos defining script variables."""
-    _var_flags = Flags(0, Flags.getNames('is_long_or_short'))
+    _var_flags = Flags(0, Flags.getNames(u'is_long_or_short'))
 
     def __init__(self):
-        MelGroups.__init__(self, 'script_vars',
-            MelStruct('SLSD', 'I12sB7s', 'var_index',
-                      ('unused1', null4 + null4 + null4),
-                      (self._var_flags, 'var_flags', 0),
-                      ('unused2', null4 + null3)),
-            MelString('SCVR', 'var_name'),
+        super(MelScriptVars, self).__init__(u'script_vars',
+            MelStruct(b'SLSD', u'I12sB7s', u'var_index',
+                      (u'unused1', null4 + null4 + null4),
+                      (self._var_flags, u'var_flags', 0),
+                      (u'unused2', null4 + null3)),
+            MelString(b'SCVR', u'var_name'),
         )
 
 #------------------------------------------------------------------------------
@@ -552,7 +553,7 @@ class MelRegnEntrySubrecord(MelUnion):
       - 8: Imposter (FNV only)"""
     def __init__(self, entry_type_val, element):
         """:type entry_type_val: int"""
-        MelUnion.__init__(self, {
+        super(MelRegnEntrySubrecord, self).__init__({
             entry_type_val: element,
         }, decider=AttrValDecider(u'entryType'),
             fallback=MelNull(b'NULL')) # ignore

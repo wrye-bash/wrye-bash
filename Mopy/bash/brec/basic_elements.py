@@ -216,7 +216,7 @@ class MelPartialCounter(MelCounter):
         :type counter: unicode
         :param counts: The attribute name that this counter counts.
         :type counts: unicode"""
-        MelCounter.__init__(self, element, counts)
+        super(MelPartialCounter, self).__init__(element, counts)
         self.counter_attr = counter
 
     def hasFids(self, formElements):
@@ -395,15 +395,15 @@ class MelGroup(MelSequential):
     """Represents a group record."""
     def __init__(self,attr,*elements):
         """:type attr: unicode"""
-        MelSequential.__init__(self, *elements)
+        super(MelGroup, self).__init__(*elements)
         self.attr, self.loaders = attr, {}
 
     def getDefaulters(self,defaulters,base):
         defaulters[base+self.attr] = self
-        MelSequential.getDefaulters(self, defaulters, base + self.attr)
+        super(MelGroup, self).getDefaulters(defaulters, base + self.attr)
 
     def getLoaders(self,loaders):
-        MelSequential.getLoaders(self, self.loaders)
+        super(MelGroup, self).getLoaders(self.loaders)
         for type in self.loaders:
             loaders[type] = self
 
@@ -431,12 +431,12 @@ class MelGroup(MelSequential):
     def dumpData(self,record,out):
         target = record.__getattribute__(self.attr)
         if not target: return
-        MelSequential.dumpData(self, target, out)
+        super(MelGroup, self).dumpData(target, out)
 
     def mapFids(self,record,function,save=False):
         target = record.__getattribute__(self.attr)
         if not target: return
-        MelSequential.mapFids(self, target, function, save)
+        super(MelGroup, self).mapFids(target, function, save)
 
 #------------------------------------------------------------------------------
 class MelGroups(MelGroup):
@@ -444,7 +444,7 @@ class MelGroups(MelGroup):
 
     def __init__(self,attr,*elements):
         """Initialize. Must have at least one element."""
-        MelGroup.__init__(self,attr,*elements)
+        super(MelGroups, self).__init__(attr, *elements)
         self._init_sigs = self.elements[0].signatures
 
     def setDefault(self,record):
@@ -489,7 +489,7 @@ class MelString(MelBase):
     """Represents a mod record string element."""
 
     def __init__(self, subType, attr, default=None, maxSize=0):
-        MelBase.__init__(self, subType, attr, default)
+        super(MelString, self).__init__(subType, attr, default)
         self.maxSize = maxSize
 
     def loadData(self, record, ins, sub_type, size_, readId):
@@ -506,7 +506,7 @@ class MelUnicode(MelString):
     """Like MelString, but instead of using bolt.pluginEncoding to read the
        string, it tries the encoding specified in the constructor instead"""
     def __init__(self, subType, attr, default=None, maxSize=0, encoding=None):
-        MelString.__init__(self, subType, attr, default, maxSize)
+        super(MelUnicode, self).__init__(subType, attr, default, maxSize)
         self.encoding = encoding # None == automatic detection
 
     def loadData(self, record, ins, sub_type, size_, readId):
@@ -674,7 +674,7 @@ class MelOptStruct(MelStruct):
         for attr,default in zip(self.attrs,self.defaults):
             oldValue = recordGetAttr(attr)
             if oldValue is not None and oldValue != default:
-                MelStruct.dumpData(self, record, out)
+                super(MelOptStruct, self).dumpData(record, out)
                 break
 
 #------------------------------------------------------------------------------
@@ -708,4 +708,4 @@ class MelOptFid(MelOptUInt32):
     def __init__(self, signature, attr):
         """:type signature: bytes
         :type attr: unicode"""
-        MelOptUInt32.__init__(self, signature, (FID, attr))
+        super(MelOptFid, self).__init__(signature, (FID, attr))

@@ -52,8 +52,7 @@ if brec.MelModel is None:
         def __init__(self, attr=u'model', index=0):
             """Initialize. Index is 0,2,3,4 for corresponding type id."""
             types = self.__class__.typeSets[(0,index-1)[index>0]]
-            MelGroup.__init__(
-                self, attr,
+            super(_MelModel, self).__init__(attr,
                 MelString(types[0], u'modPath'),
                 # None here is on purpose - 0 is a legitimate value
                 MelOptFloat(types[1], (u'modb', None)),
@@ -76,7 +75,7 @@ class MelBipedFlags(Flags):
                                'amulet', 'weapon', 'backWeapon', 'sideWeapon',
                                'quiver', 'shield', 'torch', 'tail')
         if newNames: names.update(newNames)
-        Flags.__init__(self,default,names)
+        super(MelBipedFlags, self).__init__(default, names)
 
 #------------------------------------------------------------------------------
 class MelConditions(MelGroups):
@@ -129,24 +128,24 @@ class MelObmeScitGroup(MelGroup):
             record.__setattr__(self.attr,target)
         self.loaders[sub_type].loadData(target, ins, sub_type, size_, readId)
 
+# TODO(inf) Do we really need to do this? It's an unused test spell
+class MelEffectsScit(MelTruncatedStruct):
+    """The script fid for MS40TestSpell doesn't point to a valid script,
+    so this class drops it."""
+    def _pre_process_unpacked(self, unpacked_val):
+        if len(unpacked_val) == 1:
+            if unpacked_val[0] & 0xFF000000:
+                unpacked_val = (0,) # Discard bogus MS40TestSpell fid
+        return super(MelEffectsScit, self)._pre_process_unpacked(unpacked_val)
+
 ##: Should we allow mixing regular effects and OBME ones? This implementation
 # assumes no, but xEdit's is broken right now, so...
 class MelEffects(MelSequential):
     """Represents ingredient/potion/enchantment/spell effects. Supports OBME,
     which is why it's so complex. The challenge is that we basically have to
     redirect every procedure to one of two lists of elements, depending on
-    whether an 'OBME' """
+    whether an 'OBME' subrecord exists or not."""
     _se_flags = Flags(0, Flags.getNames(u'hostile'))
-
-     # TODO(inf) Do we really need to do this? It's an unused test spell
-    class MelEffectsScit(MelTruncatedStruct):
-        """The script fid for MS40TestSpell doesn't point to a valid script,
-        so this class drops it."""
-        def _pre_process_unpacked(self, unpacked_val):
-            if len(unpacked_val) == 1:
-                if unpacked_val[0] & 0xFF000000:
-                    unpacked_val = (0,) # Discard bogus MS40TestSpell fid
-            return MelTruncatedStruct._pre_process_unpacked(self, unpacked_val)
 
     def __init__(self):
         # Vanilla Elements ----------------------------------------------------
@@ -156,9 +155,9 @@ class MelEffects(MelSequential):
                 MelStruct(b'EFIT', u'4s4Ii', (u'name', b'REHE'), u'magnitude',
                           u'area', u'duration', u'recipient', u'actorValue'),
                 MelGroup(u'scriptEffect',
-                    MelEffects.MelEffectsScit(
-                        b'SCIT', u'2I4sB3s', (FID, u'script'), u'school',
-                        (u'visual', null4), (MelEffects._se_flags, u'flags'),
+                    MelEffectsScit(b'SCIT', u'2I4sB3s', (FID, u'script'),
+                        u'school', (u'visual', null4),
+                        (MelEffects._se_flags, u'flags'),
                         (u'unused1', null3), old_versions={u'2I4s', u'I'}),
                     MelFull(),
                 ),
@@ -299,43 +298,45 @@ class MelEmbeddedScript(MelSequential):
                 b'SCHD': MelBase(b'SCHD', u'old_script_header'),
             }),
             MelBase(b'SCDA', u'compiled_script'),
-            MelString(b'SCTX', u'script_source')
+            MelString(b'SCTX', u'script_source'),
+            MelReferences(), # MelScriptVars goes before here (index 3)
         ]
-        if with_script_vars: seq_elements += [MelScriptVars()]
-        MelSequential.__init__(self, *(seq_elements + [MelReferences()]))
+        if with_script_vars: seq_elements.insert(3, MelScriptVars())
+        super(MelEmbeddedScript, self).__init__(*seq_elements)
 
 #------------------------------------------------------------------------------
 class MelItems(MelGroups):
     """Wraps MelGroups for the common task of defining a list of items."""
     def __init__(self):
-        MelGroups.__init__(self, 'items',
-            MelStruct('CNTO', 'Ii', (FID, 'item'), 'count'),
+        super(MelItems, self).__init__(u'items',
+            MelStruct(b'CNTO', u'Ii', (FID, u'item'), u'count'),
         ),
 
 #------------------------------------------------------------------------------
+class MelLevListLvld(MelUInt8):
+    """Subclass to handle chanceNone and flags.calcFromAllLevels."""
+    def __init__(self):
+        super(MelLevListLvld, self).__init__(b'LVLD', u'chanceNone')
+
+    def loadData(self, record, ins, sub_type, size_, readId):
+        super(MelLevListLvld, self).loadData(record, ins, sub_type, size_,
+            readId)
+        if record.chanceNone > 127:
+            record.flags.calcFromAllLevels = True
+            record.chanceNone &= 127
+
+##: Old format might be h2sI instead, which would retire this whole class
+class MelLevListLvlo(MelTruncatedStruct):
+    """Older format skips unused1, which is in the middle of the record."""
+    def _pre_process_unpacked(self, unpacked_val):
+        if len(unpacked_val) == 2:
+            # Pad it in the middle, then let our parent deal with the rest
+            unpacked_val = (unpacked_val[0], null2, unpacked_val[1])
+        return super(MelLevListLvlo, self)._pre_process_unpacked(unpacked_val)
+
 class MreLeveledList(MreLeveledListBase):
-    """Leveled item/creature/spell list.."""
+    """Leveled item/creature/spell list."""
     top_copy_attrs = ('script','template','chanceNone',)
-
-    class MelLevListLvld(MelUInt8):
-        """Subclass to handle chanceNone and flags.calcFromAllLevels."""
-        def __init__(self):
-            MelUInt8.__init__(self, 'LVLD', 'chanceNone')
-
-        def loadData(self, record, ins, sub_type, size_, readId):
-            MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-            if record.chanceNone > 127:
-                record.flags.calcFromAllLevels = True
-                record.chanceNone &= 127
-
-    ##: Old format might be h2sI instead, which would retire this whole class
-    class MelLevListLvlo(MelTruncatedStruct):
-        """Older format skips unused1, which is in the middle of the record."""
-        def _pre_process_unpacked(self, unpacked_val):
-            if len(unpacked_val) == 2:
-                # Pad it in the middle, then let our parent deal with the rest
-                unpacked_val = (unpacked_val[0], null2, unpacked_val[1])
-            return MelTruncatedStruct._pre_process_unpacked(self, unpacked_val)
 
     melSet = MelSet(
         MelEdid(),
@@ -357,13 +358,15 @@ class MelObme(MelOptStruct):
     """Oblivion Magic Extender subrecord. Prefixed every attribute with obme_
     both for easy grouping in debugger views and to differentiate them from
     vanilla attrs."""
-    def __init__(self, struct_sig=b'OBME', extra_format=u'', extra_contents=[],
-                 reserved_byte_count=28):
+    def __init__(self, struct_sig=b'OBME', extra_format=u'',
+            extra_contents=None, reserved_byte_count=28):
         """Initializes a MelObme instance. Supports customization for the
         variations that exist for effects subrecords and MGEF records."""
         # Always begins with record version and OBME version - None here is on
         # purpose, to differentiate from 0 which is almost always the record
         # version in plugins using OBME
+        if extra_contents is None:
+            extra_contents = []
         struct_contents = [(u'obme_record_version', None),
                            u'obme_version_beta', u'obme_version_minor',
                            u'obme_version_major']
@@ -379,7 +382,7 @@ class MelObme(MelOptStruct):
 class MelOwnership(MelGroup):
     """Handles XOWN, XRNK, and XGLB for cells and cell children."""
     def __init__(self, attr=u'ownership'):
-        MelGroup.__init__(self,attr,
+        super(MelOwnership, self).__init__(attr,
             MelFid(b'XOWN', u'owner'),
             # None here is on purpose - rank == 0 is a valid value, but XRNK
             # does not have to be present
@@ -389,7 +392,7 @@ class MelOwnership(MelGroup):
 
     def dumpData(self,record,out):
         if record.ownership and record.ownership.owner:
-            MelGroup.dumpData(self,record,out)
+            super(MelOwnership, self).dumpData(record, out)
 
 #------------------------------------------------------------------------------
 # Oblivion Records ------------------------------------------------------------
@@ -540,10 +543,10 @@ class MreArmo(MelRecord):
         MelUInt32('BMDT', (_flags, 'flags', 0)),
         MelModel(u'maleBody', 0),
         MelModel(u'maleWorld', 2),
-        MelIcon('maleIconPath'),
+        MelIcon(u'maleIconPath'),
         MelModel(u'femaleBody', 3),
         MelModel(u'femaleWorld', 4),
-        MelIco2('femaleIconPath'),
+        MelIco2(u'femaleIconPath'),
         MelStruct('DATA','=HIIf','strength','value','health','weight'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -690,10 +693,10 @@ class MreClot(MelRecord):
         MelUInt32('BMDT', (_flags, 'flags', 0)),
         MelModel(u'maleBody', 0),
         MelModel(u'maleWorld', 2),
-        MelIcon('maleIconPath'),
+        MelIcon(u'maleIconPath'),
         MelModel(u'femaleBody', 3),
         MelModel(u'femaleWorld', 4),
-        MelIco2('femaleIconPath'),
+        MelIco2(u'femaleIconPath'),
         MelStruct('DATA','If','value','weight'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1348,9 +1351,9 @@ class MreNpc(MreActorBase):
         MelFids('PKID','aiPackages'),
         MelStrings('KFFZ','animations'),
         MelFid('CNAM','iclass'),
-        MelNpcData(b'DATA', u'=21BH2s8B', (u'skills', [0 for __ in range(21)]),
+        MelNpcData(b'DATA', u'=21BH2s8B', (u'skills', [0 for _x in range(21)]),
                    u'health', (u'unused2', null2),
-                   (u'attributes', [0 for __ in range(8)])),
+                   (u'attributes', [0 for _y in range(8)])),
         MelFid('HNAM','hair'),
         # None here is on purpose, for race patcher
         MelOptFloat(b'LNAM', (u'hairLength', None)),
@@ -1865,18 +1868,18 @@ class MreTree(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
+class MelWatrData(MelTruncatedStruct):
+    """Chop off two junk bytes at the end of each older format."""
+    def _pre_process_unpacked(self, unpacked_val):
+        if len(unpacked_val) != 36:
+            unpacked_val = unpacked_val[:-1]
+        return super(MelWatrData, self)._pre_process_unpacked(unpacked_val)
+
 class MreWatr(MelRecord):
     """Water."""
     rec_sig = b'WATR'
 
     _flags = Flags(0, Flags.getNames('causesDmg','reflective'))
-
-    class MelWatrData(MelTruncatedStruct):
-        """Chop off two junk bytes at the end of each older format."""
-        def _pre_process_unpacked(self, unpacked_val):
-            if len(unpacked_val) != 36:
-                unpacked_val = unpacked_val[:-1]
-            return MelTruncatedStruct._pre_process_unpacked(self, unpacked_val)
 
     melSet = MelSet(
         MelEdid(),
@@ -1937,7 +1940,7 @@ class MreWrld(MelRecord):
         MelFid('WNAM','parent'),
         MelFid('CNAM','climate'),
         MelFid('NAM2','water'),
-        MelIcon('mapPath'),
+        MelIcon(u'mapPath'),
         MelStruct(b'MNAM', u'2i4h', u'dimX', u'dimY', u'NWCellX', u'NWCellY',
                   u'SECellX', u'SECellY'),
         MelUInt8('DATA', (_flags, 'flags', 0)),

@@ -121,7 +121,7 @@ class MreFlst(MelRecord):
                                          u're_records']
 
     def __init__(self, header, ins=None, do_unpack=False):
-        MelRecord.__init__(self, header, ins, do_unpack)
+        super(MreFlst, self).__init__(header, ins, do_unpack)
         self.mergeOverLast = False #--Merge overrides last mod merged
         self.mergeSources = None #--Set to list by other functions
         self.items  = None #--Set of items included in list
@@ -282,7 +282,7 @@ class MreLeveledListBase(MelRecord):
                 # + ['flags', 'entries'] # define those in the subclasses
 
     def __init__(self, header, ins=None, do_unpack=False):
-        MelRecord.__init__(self, header, ins, do_unpack)
+        super(MreLeveledListBase, self).__init__(header, ins, do_unpack)
         self.mergeOverLast = False #--Merge overrides last mod merged
         self.mergeSources = None #--Set to list by other functions
         self.items  = None #--Set of items included in list

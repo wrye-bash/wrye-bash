@@ -265,7 +265,7 @@ class MreArma(MelRecord):
         MelStruct('BMDT','=2I',(_flags,'bipedFlags',0),(_generalFlags,'generalFlags',0)),
         MelModel(u'maleBody'),
         MelModel(u'maleWorld', 2),
-        MelIcons('maleIconPath', 'maleSmallIconPath'),
+        MelIcons(u'maleIconPath', u'maleSmallIconPath'),
         MelModel(u'femaleBody', 3),
         MelModel(u'femaleWorld', 4),
         MelIcons2(),
@@ -302,7 +302,7 @@ class MreArmo(MelRecord):
                   (_generalFlags,'generalFlags',0),('armoBMDT1',null3),),
         MelModel(u'maleBody'),
         MelModel(u'maleWorld', 2),
-        MelIcons('maleIconPath', 'maleSmallIconPath'),
+        MelIcons(u'maleIconPath', u'maleSmallIconPath'),
         MelModel(u'femaleBody', 3),
         MelModel(u'femaleWorld', 4),
         MelIcons2(),
@@ -542,10 +542,10 @@ class MreCsno(MelRecord):
         MelString('MODT','extraBlackjackTableModel'),
         MelString('MOD4','rouletteTableModel'),
         MelGroups('slotReelTextures',
-            MelIcon('texture'),
+            MelIcon(u'texture'),
         ),
         MelGroups('blackjackDecks',
-            MelIco2('texture'),
+            MelIco2(u'texture'),
         ),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1668,58 +1668,59 @@ class MreWeap(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MelWthrColorsFnv(MelArray):
+    """Used twice in WTHR for PNAM and NAM0. Needs to handle older versions
+    as well. Can't simply use MelArray because MelTruncatedStruct does not
+    have a static_size."""
+    # TODO(inf) Rework MelArray - instead of static_size, have a
+    #  get_entry_size that receives the total size_ of loadData.
+    #  MelTruncatedStruct could override that and make a guess based on its
+    #  sizes. If that guess doesn't work, a small override class can be
+    #  created by hand
+    _new_sizes = {b'PNAM': 96, b'NAM0': 240}
+    _old_sizes = {b'PNAM': 64, b'NAM0': 160}
+
+    def __init__(self, wthr_sub_sig, wthr_attr):
+        struct_definition = [
+            u'3Bs3Bs3Bs3Bs3Bs3Bs', u'riseRed', u'riseGreen', u'riseBlue',
+            (u'unused1', null1), u'dayRed', u'dayGreen', u'dayBlue',
+            (u'unused2', null1), u'setRed', u'setGreen', u'setBlue',
+            (u'unused3', null1), u'nightRed', u'nightGreen', u'nightBlue',
+            (u'unused4', null1), u'noonRed', u'noonGreen', u'noonBlue',
+            (u'unused5', null1), u'midnightRed', u'midnightGreen',
+            u'midnightBlue', (u'unused6', null1)
+        ]
+        super(MelWthrColorsFnv, self).__init__(wthr_attr,
+            MelStruct(wthr_sub_sig, *struct_definition),
+        )
+        self._element_old = MelTruncatedStruct(
+            wthr_sub_sig, *struct_definition,
+            old_versions={u'3Bs3Bs3Bs3Bs'})
+
+    def loadData(self, record, ins, sub_type, size_, readId):
+        if size_ == self._new_sizes[sub_type]:
+            super(MelWthrColorsFnv, self).loadData(record, ins, sub_type,
+                size_, readId)
+        elif size_ == self._old_sizes[sub_type]:
+            # Copied and adjusted from MelArray. Yuck. See comment below
+            # docstring for some ideas for getting rid of this
+            append_entry = getattr(record, self.attr).append
+            entry_slots = self._element_old.attrs
+            entry_size = struct.calcsize(u'3Bs3Bs3Bs3Bs')
+            load_entry = self._element_old.loadData
+            for x in xrange(size_ // entry_size):
+                arr_entry = MelObject()
+                append_entry(arr_entry)
+                arr_entry.__slots__ = entry_slots
+                load_entry(arr_entry, ins, sub_type, entry_size, readId)
+        else:
+            _expected_sizes = (self._new_sizes[sub_type],
+                               self._old_sizes[sub_type])
+            raise ModSizeError(ins.inName, readId, _expected_sizes, size_)
+
 class MreWthr(MelRecord):
     """Weather."""
     rec_sig = b'WTHR'
-
-    class MelWthrColorsFnv(MelArray):
-        """Used twice in WTHR for PNAM and NAM0. Needs to handle older versions
-        as well. Can't simply use MelArray because MelTruncatedStruct does not
-        have a static_size."""
-        # TODO(inf) Rework MelArray - instead of static_size, have a
-        #  get_entry_size that receives the total size_ of loadData.
-        #  MelTruncatedStruct could override that and make a guess based on its
-        #  sizes. If that guess doesn't work, a small override class can be
-        #  created by hand
-        _new_sizes = {'PNAM': 96, 'NAM0': 240}
-        _old_sizes = {'PNAM': 64, 'NAM0': 160}
-
-        def __init__(self, wthr_sub_sig, wthr_attr):
-            struct_definition = [
-                '3Bs3Bs3Bs3Bs3Bs3Bs', 'riseRed', 'riseGreen', 'riseBlue',
-                ('unused1', null1), 'dayRed', 'dayGreen', 'dayBlue',
-                ('unused2', null1), 'setRed', 'setGreen', 'setBlue',
-                ('unused3', null1), 'nightRed', 'nightGreen', 'nightBlue',
-                ('unused4', null1), 'noonRed', 'noonGreen', 'noonBlue',
-                ('unused5', null1), 'midnightRed', 'midnightGreen',
-                'midnightBlue', ('unused6', null1)
-            ]
-            MelArray.__init__(self, wthr_attr,
-                MelStruct(wthr_sub_sig, *struct_definition),
-            )
-            self._element_old = MelTruncatedStruct(
-                wthr_sub_sig, *struct_definition,
-                old_versions={'3Bs3Bs3Bs3Bs'})
-
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == self._new_sizes[sub_type]:
-                MelArray.loadData(self, record, ins, sub_type, size_, readId)
-            elif size_ == self._old_sizes[sub_type]:
-                # Copied and adjusted from MelArray. Yuck. See comment below
-                # docstring for some ideas for getting rid of this
-                append_entry = getattr(record, self.attr).append
-                entry_slots = self._element_old.attrs
-                entry_size = struct.calcsize('3Bs3Bs3Bs3Bs')
-                load_entry = self._element_old.loadData
-                for x in xrange(size_ // entry_size):
-                    arr_entry = MelObject()
-                    append_entry(arr_entry)
-                    arr_entry.__slots__ = entry_slots
-                    load_entry(arr_entry, ins, sub_type, entry_size, readId)
-            else:
-                _expected_sizes = (self._new_sizes[sub_type],
-                                   self._old_sizes[sub_type])
-                raise ModSizeError(ins.inName, readId, _expected_sizes, size_)
 
     melSet = MelSet(
         MelEdid(),
@@ -1736,8 +1737,8 @@ class MreWthr(MelRecord):
         MelModel(),
         MelBase('LNAM','unknown1'),
         MelStruct('ONAM','4B','cloudSpeed0','cloudSpeed1','cloudSpeed3','cloudSpeed4'),
-        MelWthrColorsFnv('PNAM', 'cloudColors'),
-        MelWthrColorsFnv('NAM0', 'daytimeColors'),
+        MelWthrColorsFnv(b'PNAM', u'cloudColors'),
+        MelWthrColorsFnv(b'NAM0', u'daytimeColors'),
         MelStruct('FNAM','6f','fogDayNear','fogDayFar','fogNightNear','fogNightFar','fogDayPower','fogNightPower'),
         MelBase('INAM', 'unused1', null1 * 304),
         MelStruct('DATA','15B',

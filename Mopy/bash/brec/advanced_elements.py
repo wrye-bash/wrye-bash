@@ -334,7 +334,8 @@ class MelArray(MelBase):
             raise SyntaxError(u'MelArray may only be used with elements that '
                               u'resolve to exactly one signature')
         # Use this instead of element.subType to support e.g. unions
-        MelBase.__init__(self, next(iter(element.signatures)), array_attr)
+        super(MelArray, self).__init__(next(iter(element.signatures)),
+            array_attr)
         self._element = element
         # Underscore means internal usage only - e.g. distributor state
         self._element_attrs = [s for s in element.getSlotsUsed() if
@@ -443,7 +444,7 @@ class MelTruncatedStruct(MelStruct):
             raise SyntaxError(u'MelTruncatedStruct: old_versions must be a '
                               u'set')
         self._is_optional = kwargs.pop('is_optional', False)
-        MelStruct.__init__(self, sub_sig, sub_fmt, *elements)
+        super(MelTruncatedStruct, self).__init__(sub_sig, sub_fmt, *elements)
         self._all_unpackers = {
             struct.calcsize(alt_fmt): struct.Struct(alt_fmt).unpack for
             alt_fmt in old_versions}
@@ -488,7 +489,7 @@ class MelTruncatedStruct(MelStruct):
                     break
             else:
                 return
-        MelStruct.dumpData(self, record, out)
+        super(MelTruncatedStruct, self).dumpData(record, out)
 
     @property
     def static_size(self):

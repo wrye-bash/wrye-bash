@@ -79,88 +79,89 @@ from ...brec import MelModel
 class MelBipedObjectData(MelStruct):
     """Handler for BODT/BOD2 subrecords.  Reads both types, writes only BOD2"""
     BipedFlags = Flags(0, Flags.getNames(
-            (0, 'head'),
-            (1, 'hair'),
-            (2, 'body'),
-            (3, 'hands'),
-            (4, 'forearms'),
-            (5, 'amulet'),
-            (6, 'ring'),
-            (7, 'feet'),
-            (8, 'calves'),
-            (9, 'shield'),
-            (10, 'bodyaddon1_tail'),
-            (11, 'long_hair'),
-            (12, 'circlet'),
-            (13, 'bodyaddon2'),
-            (14, 'dragon_head'),
-            (15, 'dragon_lwing'),
-            (16, 'dragon_rwing'),
-            (17, 'dragon_body'),
-            (18, 'bodyaddon7'),
-            (19, 'bodyaddon8'),
-            (20, 'decapate_head'),
-            (21, 'decapate'),
-            (22, 'bodyaddon9'),
-            (23, 'bodyaddon10'),
-            (24, 'bodyaddon11'),
-            (25, 'bodyaddon12'),
-            (26, 'bodyaddon13'),
-            (27, 'bodyaddon14'),
-            (28, 'bodyaddon15'),
-            (29, 'bodyaddon16'),
-            (30, 'bodyaddon17'),
-            (31, 'fx01'),
-        ))
+        (0,  u'head'),
+        (1,  u'hair'),
+        (2,  u'body'),
+        (3,  u'hands'),
+        (4,  u'forearms'),
+        (5,  u'amulet'),
+        (6,  u'ring'),
+        (7,  u'feet'),
+        (8,  u'calves'),
+        (9,  u'shield'),
+        (10, u'bodyaddon1_tail'),
+        (11, u'long_hair'),
+        (12, u'circlet'),
+        (13, u'bodyaddon2'),
+        (14, u'dragon_head'),
+        (15, u'dragon_lwing'),
+        (16, u'dragon_rwing'),
+        (17, u'dragon_body'),
+        (18, u'bodyaddon7'),
+        (19, u'bodyaddon8'),
+        (20, u'decapate_head'),
+        (21, u'decapate'),
+        (22, u'bodyaddon9'),
+        (23, u'bodyaddon10'),
+        (24, u'bodyaddon11'),
+        (25, u'bodyaddon12'),
+        (26, u'bodyaddon13'),
+        (27, u'bodyaddon14'),
+        (28, u'bodyaddon15'),
+        (29, u'bodyaddon16'),
+        (30, u'bodyaddon17'),
+        (31, u'fx01'),
+    ))
 
-    ## Legacy Flags, (For BODT subrecords) - #4 is the only one not discarded.
+    # Legacy Flags, (For BODT subrecords) - #4 is the only one not discarded.
     LegacyFlags = Flags(0, Flags.getNames(
-            (0, 'modulates_voice'), #{>>> From ARMA <<<}
-            (1, 'unknown_2'),
-            (2, 'unknown_3'),
-            (3, 'unknown_4'),
-            (4, 'non_playable'), #{>>> From ARMO <<<}
-        ))
+        (0, u'modulates_voice'), # From ARMA
+        (1, u'unknown_2'),
+        (2, u'unknown_3'),
+        (3, u'unknown_4'),
+        (4, u'non_playable'), # From ARMO
+    ))
 
     ArmorTypeFlags = Flags(0, Flags.getNames(
-        (0, 'light_armor'),
-        (1, 'heavy_armor'),
-        (2, 'clothing'),
-        ))
+        (0, u'light_armor'),
+        (1, u'heavy_armor'),
+        (2, u'clothing'),
+    ))
 
     def __init__(self):
-        MelStruct.__init__(self,'BOD2','=2I',
-            (MelBipedObjectData.BipedFlags, 'bipedFlags', 0),
-            (MelBipedObjectData.ArmorTypeFlags, 'armorFlags', 0))
+        super(MelBipedObjectData, self).__init__(b'BOD2', u'2I',
+            (MelBipedObjectData.BipedFlags, u'bipedFlags'),
+            (MelBipedObjectData.ArmorTypeFlags, u'armorFlags'))
 
     def getLoaders(self,loaders):
         # Loads either old style BODT or new style BOD2 records
-        loaders['BOD2'] = self
-        loaders['BODT'] = self
+        loaders[b'BOD2'] = self
+        loaders[b'BODT'] = self
 
     def loadData(self, record, ins, sub_type, size_, readId,
                  __unpacker2=struct.Struct(u'2I').unpack,
                  __unpacker3=struct.Struct(u'3I').unpack):
-        if sub_type == 'BODT':
+        if sub_type == b'BODT':
             # Old record type, use alternate loading routine
             if size_ == 8:
-                # Version 20 of this subrecord is only 8 bytes (armorType omitted)
-                bipedFlags,legacyData = ins.unpack(__unpacker2, size_, readId)
+                # Version 20 of this subrecord is only 8 bytes (armorType
+                # omitted)
+                bipedFlags, legacyFlags = ins.unpack(__unpacker2, size_,
+                    readId)
                 armorFlags = 0
             elif size_ != 12:
                 raise ModSizeError(ins.inName, readId, (12, 8), size_)
             else:
-                bipedFlags, legacyData, armorFlags = ins.unpack(__unpacker3,
+                bipedFlags, legacyFlags, armorFlags = ins.unpack(__unpacker3,
                                                                 size_, readId)
             # legacyData is discarded except for non-playable status
-            setter = record.__setattr__
-            setter('bipedFlags',MelBipedObjectData.BipedFlags(bipedFlags))
-            legacyFlags = MelBipedObjectData.LegacyFlags(legacyData)
-            record.flags1[2] = legacyFlags[4]
-            setter('armorFlags',MelBipedObjectData.ArmorTypeFlags(armorFlags))
+            record.bipedFlags = MelBipedObjectData.BipedFlags(bipedFlags)
+            record.flags1[2] = MelBipedObjectData.LegacyFlags(legacyFlags)[4]
+            record.armorFlags = MelBipedObjectData.ArmorTypeFlags(armorFlags)
         else:
             # BOD2 - new style, MelStruct can handle it
-            MelStruct.loadData(self, record, ins, sub_type, size_, readId)
+            super(MelBipedObjectData, self).loadData(record, ins, sub_type,
+                size_, readId)
 
 #------------------------------------------------------------------------------
 class MelAttackData(MelStruct):
@@ -1507,7 +1508,7 @@ class MreArmo(MelRecord):
         MelEnchantment(),
         MelOptSInt16('EAMT', 'enchantmentAmount'),
         MelModel(u'model2', b'MOD2'),
-        MelIcons('maleIconPath', 'maleSmallIconPath'),
+        MelIcons(u'maleIconPath', u'maleSmallIconPath'),
         MelModel(u'model4', b'MOD4'),
         MelIcons2(),
         MelBipedObjectData(),
@@ -2206,8 +2207,8 @@ class MreEfsh(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelIcon('fillTexture'),
-        MelIco2('particleTexture'),
+        MelIcon(u'fillTexture'),
+        MelIco2(u'particleTexture'),
         MelString('NAM7','holesTexture'),
         MelString('NAM8','membranePaletteTexture'),
         MelString('NAM9','particlePaletteTexture'),
@@ -5232,7 +5233,7 @@ class MreWrld(MelRecord):
         MelOptFloat('NAM4', ('lODWaterHeight', 0.0)),
         MelOptStruct('DNAM','2f',('defaultLandHeight', 0.0),
                      ('defaultWaterHeight', 0.0),),
-        MelIcon('mapImage'),
+        MelIcon(u'mapImage'),
         MelModel(u'cloudModel', b'MODL'),
         MelTruncatedStruct('MNAM', '2i4h3f', 'usableDimensionsX',
                            'usableDimensionsY', 'cellCoordinatesX',

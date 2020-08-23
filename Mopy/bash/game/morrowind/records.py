@@ -48,7 +48,7 @@ class MelSavesOnly(MelSequential):
 class MelMWId(MelString):
     """Wraps MelString to define a common NAME handler."""
     def __init__(self):
-        MelString.__init__(self, b'NAME', u'mw_id')
+        super(MelMWId, self).__init__(b'NAME', u'mw_id')
 
 # Shared (plugins + saves) record classes
 class MreTes3(MreHeaderBase):
