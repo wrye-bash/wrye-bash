@@ -51,24 +51,23 @@ if brec.MelModel is None:
         """Represents a model record."""
         # MODB and MODD are no longer used by TES5Edit
         typeSets = {
-            'MODL': ('MODL', 'MODT', 'MODS'),
-            'MOD2': ('MOD2', 'MO2T', 'MO2S'),
-            'MOD3': ('MOD3', 'MO3T', 'MO3S'),
-            'MOD4': ('MOD4', 'MO4T', 'MO4S'),
-            'MOD5': ('MOD5', 'MO5T', 'MO5S'),
-            'DMDL': ('DMDL', 'DMDT', 'DMDS'),
+            b'MODL': (b'MODL', b'MODT', b'MODS'),
+            b'MOD2': (b'MOD2', b'MO2T', b'MO2S'),
+            b'MOD3': (b'MOD3', b'MO3T', b'MO3S'),
+            b'MOD4': (b'MOD4', b'MO4T', b'MO4S'),
+            b'MOD5': (b'MOD5', b'MO5T', b'MO5S'),
+            b'DMDL': (b'DMDL', b'DMDT', b'DMDS'),
         }
 
-        def __init__(self, attr='model', subType='MODL'):
+        def __init__(self, attr=u'model', subType=b'MODL'):
             types = self.__class__.typeSets[subType]
             MelGroup.__init__(
                 self, attr,
-                MelString(types[0], 'modPath'),
-                # Ignore texture hashes - they're only an
-                # optimization, plenty of records in Skyrim.esm
-                # are missing them
+                MelString(types[0], u'modPath'),
+                # Ignore texture hashes - they're only an optimization, plenty
+                # of records in Skyrim.esm are missing them
                 MelNull(types[1]),
-                MelMODS(types[2], 'alternateTextures')
+                MelMODS(types[2], u'alternateTextures')
             )
 
     brec.MelModel = _MelModel
@@ -248,7 +247,7 @@ class MelDestructible(MelGroup):
                           (MelDestructible.MelDestStageFlags, u'flagsDest'),
                           u'selfDamagePerSecond', (FID, u'explosion'),
                           (FID, u'debris'), u'debrisCount'),
-                MelModel('model','DMDL'),
+                MelModel(u'model', b'DMDL'),
                 MelBase('DSTF','footer'),
             ),
         )
@@ -1481,10 +1480,10 @@ class MreArma(MelRecord):
                   (WeightSliderFlags,'maleFlags',0),
                   (WeightSliderFlags,'femaleFlags',0),
                   'unknown','detectionSoundValue','unknown1','weaponAdjust',),
-        MelModel('male_model','MOD2'),
-        MelModel('female_model','MOD3'),
-        MelModel('male_model_1st','MOD4'),
-        MelModel('female_model_1st','MOD5'),
+        MelModel(u'male_model', b'MOD2'),
+        MelModel(u'female_model', b'MOD3'),
+        MelModel(u'male_model_1st', b'MOD4'),
+        MelModel(u'female_model_1st', b'MOD5'),
         MelOptFid('NAM0', 'skin0'),
         MelOptFid('NAM1', 'skin1'),
         MelOptFid('NAM2', 'skin2'),
@@ -1507,9 +1506,9 @@ class MreArmo(MelRecord):
         MelFull(),
         MelEnchantment(),
         MelOptSInt16('EAMT', 'enchantmentAmount'),
-        MelModel('model2','MOD2'),
+        MelModel(u'model2', b'MOD2'),
         MelIcons('maleIconPath', 'maleSmallIconPath'),
-        MelModel('model4','MOD4'),
+        MelModel(u'model4', b'MOD4'),
         MelIcons2(),
         MelBipedObjectData(),
         MelDestructible(),
@@ -5120,7 +5119,7 @@ class MreWeap(MelRecord):
         MelVmad(),
         MelBounds(),
         MelFull(),
-        MelModel('model1','MODL'),
+        MelModel(u'model1', b'MODL'),
         MelIcons(),
         MelEnchantment(),
         MelOptUInt16('EAMT', 'enchantPoints'),
@@ -5132,7 +5131,7 @@ class MreWeap(MelRecord):
         MelDropSound(),
         MelKeywords(),
         MelDescription(),
-        MelModel('model2','MOD3'),
+        MelModel(u'model2', b'MOD3'),
         MelBase('NNAM','unused1'),
         MelFid('INAM','impactDataSet',),
         MelFid('WNAM','firstPersonModelObject',),
@@ -5234,7 +5233,7 @@ class MreWrld(MelRecord):
         MelOptStruct('DNAM','2f',('defaultLandHeight', 0.0),
                      ('defaultWaterHeight', 0.0),),
         MelIcon('mapImage'),
-        MelModel('cloudModel','MODL',),
+        MelModel(u'cloudModel', b'MODL'),
         MelTruncatedStruct('MNAM', '2i4h3f', 'usableDimensionsX',
                            'usableDimensionsY', 'cellCoordinatesX',
                            'cellCoordinatesY', 'seCellX', 'seCellY',
@@ -5396,7 +5395,7 @@ class MreWthr(MelRecord):
         ),
         MelBase('NAM2', 'unused6'),
         MelBase('NAM3', 'unused7'),
-        MelModel('aurora','MODL'),
+        MelModel(u'aurora', b'MODL'),
         MelSSEOnly(MelFid('GNAM', 'sunGlareLensFlare')),
     )
     __slots__ = melSet.getSlotsUsed()

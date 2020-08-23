@@ -35,26 +35,26 @@ if brec.MelModel is None:
         """Represents a model record."""
         # MODB and MODD are no longer used by TES5Edit
         typeSets = {
-            'MODL': ('MODL', 'MODT', 'MODC', 'MODS', 'MODF'),
-            'MOD2': ('MOD2', 'MODT', 'MO2C', 'MO2S', 'MO2F'),
-            'MOD3': ('MOD3', 'MODT', 'MO3C', 'MO3S', 'MO3F'),
-            'MOD4': ('MOD4', 'MODT', 'MO4C', 'MO4S', 'MO4F'),
-            'MOD5': ('MOD5', 'MODT', 'MO5C', 'MO5S', 'MO5F'),
+            b'MODL': (b'MODL', b'MODT', b'MODC', b'MODS', b'MODF'),
+            b'MOD2': (b'MOD2', b'MODT', b'MO2C', b'MO2S', b'MO2F'),
+            b'MOD3': (b'MOD3', b'MODT', b'MO3C', b'MO3S', b'MO3F'),
+            b'MOD4': (b'MOD4', b'MODT', b'MO4C', b'MO4S', b'MO4F'),
+            b'MOD5': (b'MOD5', b'MODT', b'MO5C', b'MO5S', b'MO5F'),
             # Destructible
-            'DMDL': ('DMDL', 'DMDT', 'DMDC', 'DMDS'),
+            b'DMDL': (b'DMDL', b'DMDT', b'DMDC', b'DMDS'),
         }
 
-        def __init__(self, attr='model', subType='MODL'):
+        def __init__(self, attr=u'model', subType=b'MODL'):
             types = self.__class__.typeSets[subType]
             MelGroup.__init__(
                 self, attr,
-                MelString(types[0], 'modPath'),
+                MelString(types[0], u'modPath'),
                 # Ignore texture hashes - they're only an optimization, plenty
                 # of records in Skyrim.esm are missing them
                 MelNull(types[1]),
-                MelOptFloat(types[2], 'colorRemappingIndex'),
-                MelOptFid(types[3], 'materialSwap'),
-                MelBase(types[3], 'modf_p')
+                MelOptFloat(types[2], u'colorRemappingIndex'),
+                MelOptFid(types[3], u'materialSwap'),
+                MelBase(types[3], u'modf_p')
             )
 
     brec.MelModel = _MelModel

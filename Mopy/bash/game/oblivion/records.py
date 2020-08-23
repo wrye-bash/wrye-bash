@@ -44,21 +44,21 @@ if brec.MelModel is None:
 
     class _MelModel(MelGroup):
         """Represents a model record."""
-        typeSets = (('MODL','MODB','MODT'),
-                    ('MOD2','MO2B','MO2T'),
-                    ('MOD3','MO3B','MO3T'),
-                    ('MOD4','MO4B','MO4T'))
+        typeSets = ((b'MODL', b'MODB', b'MODT'),
+                    (b'MOD2', b'MO2B', b'MO2T'),
+                    (b'MOD3', b'MO3B', b'MO3T'),
+                    (b'MOD4', b'MO4B', b'MO4T'))
 
-        def __init__(self,attr='model',index=0):
+        def __init__(self, attr=u'model', index=0):
             """Initialize. Index is 0,2,3,4 for corresponding type id."""
             types = self.__class__.typeSets[(0,index-1)[index>0]]
             MelGroup.__init__(
                 self, attr,
-                MelString(types[0], 'modPath'),
+                MelString(types[0], u'modPath'),
                 # None here is on purpose - 0 is a legitimate value
                 MelOptFloat(types[1], (u'modb', None)),
                 # Texture File Hashes
-                MelBase(types[2], 'modt_p')
+                MelBase(types[2], u'modt_p')
             )
 
     brec.MelModel = _MelModel
@@ -538,11 +538,11 @@ class MreArmo(MelRecord):
         MelFid('ENAM','enchantment'),
         MelOptUInt16('ANAM', 'enchantPoints'),
         MelUInt32('BMDT', (_flags, 'flags', 0)),
-        MelModel('maleBody',0),
-        MelModel('maleWorld',2),
+        MelModel(u'maleBody', 0),
+        MelModel(u'maleWorld', 2),
         MelIcon('maleIconPath'),
-        MelModel('femaleBody',3),
-        MelModel('femaleWorld',4),
+        MelModel(u'femaleBody', 3),
+        MelModel(u'femaleWorld', 4),
         MelIco2('femaleIconPath'),
         MelStruct('DATA','=HIIf','strength','value','health','weight'),
     )
@@ -688,11 +688,11 @@ class MreClot(MelRecord):
         MelFid('ENAM','enchantment'),
         MelOptUInt16('ANAM', 'enchantPoints'),
         MelUInt32('BMDT', (_flags, 'flags', 0)),
-        MelModel('maleBody',0),
-        MelModel('maleWorld',2),
+        MelModel(u'maleBody', 0),
+        MelModel(u'maleWorld', 2),
         MelIcon('maleIconPath'),
-        MelModel('femaleBody',3),
-        MelModel('femaleWorld',4),
+        MelModel(u'femaleBody', 3),
+        MelModel(u'femaleWorld', 4),
         MelIco2('femaleIconPath'),
         MelStruct('DATA','If','value','weight'),
     )
@@ -1549,7 +1549,7 @@ class MreRace(MelRecord):
         )),
         MelBase('NAM1', 'body_data_marker', ''),
         MelBase('MNAM', 'male_body_data_marker', ''),
-        MelModel('maleTailModel'),
+        MelModel(u'maleTailModel'),
         MelRaceParts({
             0: 'maleUpperBodyPath',
             1: 'maleLowerBodyPath',
@@ -1558,7 +1558,7 @@ class MreRace(MelRecord):
             4: 'maleTailPath',
         }, group_loaders=lambda _indx: (MelIcon(),)),
         MelBase('FNAM', 'female_body_data_marker', ''),
-        MelModel('femaleTailModel'),
+        MelModel(u'femaleTailModel'),
         MelRaceParts({
             0: 'femaleUpperBodyPath',
             1: 'femaleLowerBodyPath',

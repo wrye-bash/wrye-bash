@@ -50,33 +50,33 @@ if brec.MelModel is None:
 
     class _MelModel(MelGroup):
         """Represents a model record."""
-        typeSets = (('MODL', 'MODB', 'MODT', 'MODS', 'MODD'),
-                    ('MOD2', 'MO2B', 'MO2T', 'MO2S'),
-                    ('MOD3', 'MO3B', 'MO3T', 'MO3S', 'MOSD'),
-                    ('MOD4', 'MO4B', 'MO4T', 'MO4S'))
+        typeSets = ((b'MODL', b'MODB', b'MODT', b'MODS', b'MODD'),
+                    (b'MOD2', b'MO2B', b'MO2T', b'MO2S'),
+                    (b'MOD3', b'MO3B', b'MO3T', b'MO3S', b'MOSD'),
+                    (b'MOD4', b'MO4B', b'MO4T', b'MO4S'))
 
         _facegen_model_flags = Flags(0, Flags.getNames(
-            'head',
-            'torso',
-            'rightHand',
-            'leftHand',
+            u'head',
+            u'torso',
+            u'rightHand',
+            u'leftHand',
         ))
 
-        def __init__(self, attr='model', index=0, with_facegen_flags=True):
+        def __init__(self, attr=u'model', index=0, with_facegen_flags=True):
             """Initialize. Index is 0,2,3,4 for corresponding type id."""
             types = self.__class__.typeSets[(0, index - 1)[index > 0]]
             model_elements = [
-                MelString(types[0], 'modPath'),
-                MelBase(types[1], 'modb_p'),
+                MelString(types[0], u'modPath'),
+                MelBase(types[1], u'modb_p'),
                 # Texture File Hashes
-                MelBase(types[2], 'modt_p'),
-                MelMODS(types[3], 'alternateTextures'),
+                MelBase(types[2], u'modt_p'),
+                MelMODS(types[3], u'alternateTextures'),
             ]
             # No MODD/MOSD equivalent for MOD2 and MOD4
             if len(types) == 5 and with_facegen_flags:
                 model_elements += [
                     MelOptUInt8(types[4], (_MelModel._facegen_model_flags,
-                                           'facegen_model_flags'))
+                                           u'facegen_model_flags'))
                 ]
             MelGroup.__init__(self, attr, *model_elements)
 
@@ -511,11 +511,11 @@ class MreArma(MelRecord):
         MelBounds(),
         MelFull(),
         MelStruct('BMDT','=2I',(_flags,'bipedFlags',0),(_generalFlags,'generalFlags',0)),
-        MelModel('maleBody'),
-        MelModel('maleWorld',2),
+        MelModel(u'maleBody'),
+        MelModel(u'maleWorld', 2),
         MelIcons('maleIconPath', 'maleSmallIconPath'),
-        MelModel('femaleBody',3),
-        MelModel('femaleWorld',4),
+        MelModel(u'femaleBody', 3),
+        MelModel(u'femaleWorld', 4),
         MelIcons2(),
         MelEquipmentType(),
         MelStruct('DATA','IIf','value','health','weight'),
@@ -547,11 +547,11 @@ class MreArmo(MelRecord):
         MelEnchantment(),
         MelStruct('BMDT','=IB3s',(_flags,'bipedFlags',0),
                   (_generalFlags,'generalFlags',0),('armoBMDT1',null3),),
-        MelModel('maleBody'),
-        MelModel('maleWorld',2),
+        MelModel(u'maleBody'),
+        MelModel(u'maleWorld', 2),
         MelIcons('maleIconPath', 'maleSmallIconPath'),
-        MelModel('femaleBody',3),
-        MelModel('femaleWorld',4),
+        MelModel(u'femaleBody', 3),
+        MelModel(u'femaleWorld', 4),
         MelIcons2(),
         MelString('BMCT','ragdollTemplatePath'),
         MelDestructible(),
@@ -2946,7 +2946,7 @@ class MreTact(MelRecord):
         MelEdid(),
         MelBounds(),
         MelFull(),
-        MelModel('model'),
+        MelModel(),
         MelScript(),
         MelDestructible(),
         MelFid('SNAM','sound'),
@@ -3174,7 +3174,7 @@ class MreWeap(MelRecord):
         MelEdid(),
         MelBounds(),
         MelFull(),
-        MelModel('model'),
+        MelModel(),
         MelIcons(),
         MelScript(),
         MelEnchantment(),
@@ -3186,10 +3186,10 @@ class MreWeap(MelRecord):
         MelFid('BIPL','bipedModelList'),
         MelPickupSound(),
         MelDropSound(),
-        MelModel('shellCasingModel',2),
-        MelModel('scopeModel', 3, with_facegen_flags=False),
+        MelModel(u'shellCasingModel', 2),
+        MelModel(u'scopeModel', 3, with_facegen_flags=False),
         MelFid('EFSD','scopeEffect'),
-        MelModel('worldModel',4),
+        MelModel(u'worldModel', 4),
         MelString('NNAM','embeddedWeaponNode'),
         MelFid('INAM','impactDataset'),
         MelFid('WNAM','firstPersonModel'),
