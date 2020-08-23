@@ -41,7 +41,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MreActorBase, MreWithItems, MelCtdaFo3, MelRef3D, MelXlod, \
     MelWorldBounds, MelEnableParent, MelRefScale, MelMapMarker, MelMdob, \
     MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
-    MelPickupSound
+    MelPickupSound, MelDropSound
 from ...exception import ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -1388,7 +1388,7 @@ class MreAlch(MelRecord,MreHasEffects):
         MelDestructible(),
         MelIcons(),
         MelPickupSound(),
-        MelOptFid('ZNAM', 'dropSound'),
+        MelDropSound(),
         MelEquipmentType(),
         MelFloat('DATA', 'weight'),
         MelStruct(b'ENIT', u'i2IfI', u'value', (IngestibleFlags, u'flags'),
@@ -1417,7 +1417,7 @@ class MreAmmo(MelRecord):
         MelIcons(),
         MelDestructible(),
         MelPickupSound(),
-        MelFid('ZNAM','dropSound'),
+        MelDropSound(),
         MelDescription(),
         MelKeywords(),
         MelIsSSE(
@@ -1456,7 +1456,7 @@ class MreAppa(MelRecord):
         MelIcons(),
         MelDestructible(),
         MelPickupSound(),
-        MelFid('ZNAM','dropSound'),
+        MelDropSound(),
         MelUInt32('QUAL', 'quality'),
         MelDescription(),
         MelStruct('DATA','If','value','weight'),
@@ -1514,7 +1514,7 @@ class MreArmo(MelRecord):
         MelBipedObjectData(),
         MelDestructible(),
         MelPickupSound(),
-        MelOptFid('ZNAM', 'dropSound'),
+        MelDropSound(),
         MelString('BMCT', 'ragdollTemplatePath'), #Ragdoll Constraint Template
         MelEquipmentType(),
         MelOptFid('BIDS', 'bashImpact'),
@@ -1633,7 +1633,7 @@ class MreBook(MelRecord):
         MelDescription(u'bookText'),
         MelDestructible(),
         MelPickupSound(),
-        MelOptFid('ZNAM', 'dropSound'),
+        MelDropSound(),
         MelKeywords(),
         MelUnion({
             False: MelStruct(b'DATA', u'2B2siIf',
@@ -2875,7 +2875,7 @@ class MreIngr(MelRecord,MreHasEffects):
         MelIcons(),
         MelEquipmentType(),
         MelPickupSound(),
-        MelFid('ZNAM','dropSound'),
+        MelDropSound(),
         MelStruct('DATA','if','value','weight'),
         MelStruct('ENIT','iI','ingrValue',(IngrTypeFlags,'flags',0),),
         MelEffects(),
@@ -2933,7 +2933,7 @@ class MreKeym(MelRecord):
         MelIcons(),
         MelDestructible(),
         MelPickupSound(),
-        MelFid('ZNAM','dropSound'),
+        MelDropSound(),
         MelKeywords(),
         MelStruct('DATA','if','value','weight'),
     )
@@ -3396,7 +3396,7 @@ class MreMisc(MelRecord):
         MelIcons(),
         MelDestructible(),
         MelPickupSound(),
-        MelOptFid('ZNAM', 'dropSound'),
+        MelDropSound(),
         MelKeywords(),
         MelStruct('DATA','=If','value','weight'),
     )
@@ -4611,8 +4611,8 @@ class MreScrl(MelRecord,MreHasEffects):
         MelModel(),
         MelDestructible(),
         MelPickupSound(),
-        MelFid('ZNAM','dropSound',),
-        MelStruct('DATA','If','itemValue','itemWeight',),
+        MelDropSound(),
+        MelStruct(b'DATA', u'If', u'itemValue', u'itemWeight'),
         MelSpit(),
         MelEffects(),
     )
@@ -4648,7 +4648,7 @@ class MreSlgm(MelRecord):
         MelIcons(),
         MelDestructible(),
         MelPickupSound(),
-        MelFid('ZNAM','dropSound'),
+        MelDropSound(),
         MelKeywords(),
         MelStruct('DATA','If','value','weight'),
         MelUInt8('SOUL', ('soul',0)),
@@ -5129,7 +5129,7 @@ class MreWeap(MelRecord):
         MelFid('BIDS','blockBashImpactDataSet',),
         MelFid('BAMT','alternateBlockMaterial',),
         MelPickupSound(),
-        MelFid('ZNAM','dropSound',),
+        MelDropSound(),
         MelKeywords(),
         MelDescription(),
         MelModel('model2','MOD3'),

@@ -355,6 +355,12 @@ class MelWthrColors(MelStruct):
             ('unused4', null1))
 
 #------------------------------------------------------------------------------
+class MelDropSound(MelFid):
+    """Handles the common ZNAM - Drop Sound subrecord."""
+    def __init__(self):
+        super(MelDropSound, self).__init__(b'ZNAM', u'dropSound')
+
+#------------------------------------------------------------------------------
 class MelEnchantment(MelOptFid):
     """Represents the common enchantment/object effect subrecord."""
     ##: Would be better renamed to object_effect, but used in tons of places

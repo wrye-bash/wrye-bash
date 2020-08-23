@@ -43,7 +43,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelArray, MelWthrColors, MreLeveledListBase, MreActorBase, MreWithItems, \
     MelCtdaFo3, MelRef3D, MelXlod, MelNull, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
-    MelDecalData, MelDescription, MelLists, MelPickupSound
+    MelDecalData, MelDescription, MelLists, MelPickupSound, MelDropSound
 from ...exception import ModError, ModSizeError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
@@ -446,7 +446,7 @@ class MreAlch(MelRecord,MreHasEffects):
         MelScript(),
         MelDestructible(),
         MelPickupSound(),
-        MelFid('ZNAM','dropSound'),
+        MelDropSound(),
         MelEquipmentType(),
         MelFloat('DATA', 'weight'),
         MelStruct(b'ENIT', u'iB3sIfI', u'value', (_flags, u'flags'),
@@ -471,7 +471,7 @@ class MreAmmo(MelRecord):
         MelIcons(),
         MelDestructible(),
         MelPickupSound(),
-        MelFid('ZNAM','dropSound'),
+        MelDropSound(),
         MelStruct('DATA','fB3siB','speed',(_flags,'flags',0),('ammoData1',null3),
                   'value','clipRounds'),
         MelString('ONAM','shortName'),
@@ -559,7 +559,7 @@ class MreArmo(MelRecord):
         MelFid('BIPL','bipedModelList'),
         MelEquipmentType(),
         MelPickupSound(),
-        MelFid('ZNAM','dropSound'),
+        MelDropSound(),
         MelStruct('DATA','=2if','value','health','weight'),
         MelStruct('DNAM','=hH','ar',(_dnamFlags,'dnamFlags',0),),
     )
@@ -610,7 +610,7 @@ class MreBook(MelRecord):
         MelDescription(u'text'),
         MelDestructible(),
         MelPickupSound(),
-        MelOptFid('ZNAM', 'dropSound'),
+        MelDropSound(),
         MelStruct('DATA', '=BbIf',(_flags,'flags',0),('teaches',-1),'value','weight'),
     )
     __slots__ = melSet.getSlotsUsed() + ['modb']
@@ -855,7 +855,7 @@ class MreCobj(MelRecord):
         MelIcons(),
         MelScript(),
         MelPickupSound(),
-        MelFid('ZNAM','dropSound'),
+        MelDropSound(),
         MelStruct('DATA','if','value','weight'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1677,7 +1677,7 @@ class MreKeym(MelRecord):
         MelScript(),
         MelDestructible(),
         MelPickupSound(),
-        MelFid('ZNAM','dropSound'),
+        MelDropSound(),
         MelStruct('DATA','if','value','weight'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1883,7 +1883,7 @@ class MreMisc(MelRecord):
         MelScript(),
         MelDestructible(),
         MelPickupSound(),
-        MelFid('ZNAM','dropSound'),
+        MelDropSound(),
         MelStruct('DATA','if','value','weight'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1973,7 +1973,7 @@ class MreNote(MelRecord):
         MelModel(),
         MelIcons(),
         MelPickupSound(),
-        MelFid('ZNAM','dropSound'),
+        MelDropSound(),
         MelUInt8('DATA', 'dataType'),
         MelFidList('ONAM','quests'),
         MelString('XNAM','texture'),
@@ -3185,7 +3185,7 @@ class MreWeap(MelRecord):
         MelEquipmentType(),
         MelFid('BIPL','bipedModelList'),
         MelPickupSound(),
-        MelFid('ZNAM','dropSound'),
+        MelDropSound(),
         MelModel('shellCasingModel',2),
         MelModel('scopeModel', 3, with_facegen_flags=False),
         MelFid('EFSD','scopeEffect'),
