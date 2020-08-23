@@ -357,6 +357,24 @@ class MelSSEOnly(MelIsSSE):
             se_version=element)
 
 #------------------------------------------------------------------------------
+class MelSpit(MelStruct):
+    """Handles the SPIT subrecord shared between SCRL and SPEL."""
+    spit_flags = Flags(0, Flags.getNames(
+        (0,  u'manualCostCalc'),
+        (17, u'pcStartSpell'),
+        (19, u'areaEffectIgnoresLOS'),
+        (20, u'ignoreResistance'),
+        (21, u'noAbsorbReflect'),
+        (23, u'noDualCastModification'),
+    ))
+
+    def __init__(self):
+        super(MelSpit, self).__init__(b'SPIT', u'IIIfIIffI', u'cost',
+            (MelSpit.spit_flags, u'dataFlags'), u'spellType', u'chargeTime',
+            u'castType', u'targetType', u'castDuration', u'range',
+            (FID, u'halfCostPerk'))
+
+#------------------------------------------------------------------------------
 class MelTopicData(MelGroups):
     """Occurs twice in PACK, so moved here to deduplicate the definition a
     bit. Can't be placed inside MrePack, since one of its own subclasses
@@ -4581,15 +4599,6 @@ class MreScrl(MelRecord,MreHasEffects):
     """Scroll."""
     rec_sig = b'SCRL'
 
-    ScrollDataFlags = Flags(0, Flags.getNames(
-        (0, 'manualCostCalc'),
-        (17, 'pcStartSpell'),
-        (19, 'areaEffectIgnoresLOS'),
-        (20, 'ignoreResistance'),
-        (21, 'noAbsorbReflect'),
-        (23, 'noDualCastModification'),
-    ))
-
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
@@ -4603,9 +4612,7 @@ class MreScrl(MelRecord,MreHasEffects):
         MelFid('YNAM','pickupSound',),
         MelFid('ZNAM','dropSound',),
         MelStruct('DATA','If','itemValue','itemWeight',),
-        MelStruct('SPIT','IIIfIIffI','baseCost',(ScrollDataFlags,'dataFlags',0),
-                  'scrollType','chargeTime','castType','targetType',
-                  'castDuration','range',(FID,'halfCostPerk'),),
+        MelSpit(),
         MelEffects(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -4818,24 +4825,6 @@ class MreSpel(MelRecord,MreHasEffects):
     """Spell."""
     rec_sig = b'SPEL'
 
-    # currently not used for Skyrim needs investigated to see if TES5Edit does this
-    # class SpellFlags(Flags):
-    #     """For SpellFlags, immuneSilence activates bits 1 AND 3."""
-    #     def __setitem__(self,index,value):
-    #         setter = Flags.__setitem__
-    #         setter(self,index,value)
-    #         if index == 1:
-    #             setter(self,3,value)
-
-    SpelTypeFlags = Flags(0, Flags.getNames(
-        (0, 'manualCostCalc'),
-        (17, 'pcStartSpell'),
-        (19, 'areaEffectIgnoresLOS'),
-        (20, 'ignoreResistance'),
-        (21, 'noAbsorbReflect'),
-        (23, 'noDualCastModification'),
-    ))
-
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
@@ -4844,9 +4833,7 @@ class MreSpel(MelRecord,MreHasEffects):
         MelMdob(),
         MelEquipmentType(),
         MelDescription(),
-        MelStruct('SPIT','IIIfIIffI','cost',(SpelTypeFlags,'dataFlags',0),
-                  'spellType','chargeTime','castType','targetType',
-                  'castDuration','range',(FID,'halfCostPerk'),),
+        MelSpit(),
         MelEffects(),
     )
     __slots__ = melSet.getSlotsUsed()
