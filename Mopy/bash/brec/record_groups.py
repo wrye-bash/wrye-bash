@@ -210,19 +210,16 @@ class MobObjects(MobBase):
         expType = self.label
         recClass = self.loadFactory.getRecClass(expType)
         errLabel = expType + u' Top Block'
-        records = self.records
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
-        recordsAppend = records.append
+        recordsAppend = self.records.append
         while not insAtEnd(endPos,errLabel):
             #--Get record info and handle it
             header = insRecHeader()
-            recType = header.recType
-            if recType != expType:
+            if header.recType != expType:
                 raise ModError(ins.inName,u'Unexpected %s record in %s group.'
-                               % (recType,expType))
-            record = recClass(header,ins,True)
-            recordsAppend(record)
+                               % (header.recType, expType))
+            recordsAppend(recClass(header, ins, True))
         self.setChanged()
 
     def getActiveRecords(self):

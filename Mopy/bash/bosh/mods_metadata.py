@@ -85,8 +85,9 @@ class ConfigHelpers(object):
         self.tagCache = {}
         lootDb.load_lists(self.tagList)
 
-    # TODO(inf) self.tagCache needs invalidation when a mod's CRC changes!
-    def getTagsInfoCache(self, modName):
+    ##: move cache into loot_parser, then build more sophisticated invalidation
+    # mechanism to handle CRCs, active status, etc. - ref #353
+    def get_tags_from_loot(self, modName):
         """Gets bash tag info from the cache, or from loot_parser if it is not
         cached."""
         from . import process_tags ##: yuck
@@ -100,10 +101,12 @@ class ConfigHelpers(object):
 
     @staticmethod
     def getDirtyMessage(modName, mod_infos):
+        ##: retrieve other messages (e.g. doNotClean, reqManualFix) here? or
+        # perhaps in a more general method (get_loot_messages)?
         if lootDb.is_plugin_dirty(modName, mod_infos):
-            return True, 'Contains dirty edits, needs cleaning.'
+            return True, _(u'Contains dirty edits, needs cleaning.')
         else:
-            return False, ''
+            return False, u''
 
     # BashTags dir ------------------------------------------------------------
     def get_tags_from_dir(self, plugin_name):

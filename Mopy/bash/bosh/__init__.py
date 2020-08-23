@@ -552,7 +552,7 @@ class ModInfo(FileInfo):
         tags = set()
         tags |= self.getBashTagsDesc()
         # Tags from LOOT take precendence over the description
-        added, removed = configHelpers.getTagsInfoCache(self.name)
+        added, removed = configHelpers.get_tags_from_loot(self.name)
         tags |= added
         tags -= removed
         # Tags from Data/BashTags/{self.name}.txt take precedence over both
@@ -2338,7 +2338,7 @@ class ModInfos(FileInfos):
         if tags_desc:
             tagList = _tags(_(u'From Plugin Description: '), sorted(tags_desc),
                             tagList)
-        tags, removed = configHelpers.getTagsInfoCache(mname)
+        tags, removed = configHelpers.get_tags_from_loot(mname)
         if tags:
             tagList = _tags(_(u'From LOOT Masterlist and / or Userlist: '),
                             sorted(tags), tagList)

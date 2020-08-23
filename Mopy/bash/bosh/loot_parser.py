@@ -90,6 +90,7 @@ class LOOTParser(object):
                     raise
                 deprint(u'Error while evaluating LOOT condition',
                     traceback=True)
+                return set(), set()
         plugin_s = plugin_name.s
         if plugin_s in self._cached_merges:
             return get_resolved_tags(self._cached_merges[plugin_s])
