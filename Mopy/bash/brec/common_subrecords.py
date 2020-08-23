@@ -363,6 +363,12 @@ class MelEnchantment(MelOptFid):
         super(MelEnchantment, self).__init__(b'EITM', u'enchantment')
 
 #------------------------------------------------------------------------------
+class MelPickupSound(MelFid):
+    """Handles the common YNAM - Pickup Sound subrecord."""
+    def __init__(self):
+        super(MelPickupSound, self).__init__(b'YNAM', u'pickupSound')
+
+#------------------------------------------------------------------------------
 class MelRaceParts(MelNull):
     """Handles a subrecord array, where each subrecord is introduced by an
     INDX subrecord, which determines the meaning of the subrecord. The
