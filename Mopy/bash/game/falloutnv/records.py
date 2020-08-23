@@ -26,7 +26,8 @@ from __future__ import division
 import struct
 # Set MelModel in brec, in this case it's identical to the fallout 3 one
 from ..fallout3.records import MelOwnership, MelDestructible, MelBipedFlags, \
-    MelEffects, MelConditions, MreHasEffects, MelEmbeddedScript, MelItems
+    MelEffects, MelConditions, MreHasEffects, MelEmbeddedScript, MelItems, \
+    MelEquipmentType
 from ..fallout3.records import _MelModel # HACK - needed for tests
 from ...bolt import Flags
 from ...brec import MelModel # set in Mopy/bash/game/fallout3/records.py
@@ -268,7 +269,7 @@ class MreArma(MelRecord):
         MelModel('femaleBody',3),
         MelModel('femaleWorld',4),
         MelIcons2(),
-        MelSInt32('ETYP', ('etype', -1)),
+        MelEquipmentType(),
         MelStruct('DATA','IIf','value','health','weight'),
         MelTruncatedStruct('DNAM', 'hHf4s', 'ar',
                            (_dnamFlags, 'dnamFlags', 0), ('dt', 0.0),
@@ -309,7 +310,7 @@ class MreArmo(MelRecord):
         MelDestructible(),
         MelFid('REPL','repairList'),
         MelFid('BIPL','bipedModelList'),
-        MelSInt32('ETYP', ('etype', -1)),
+        MelEquipmentType(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
         MelStruct('DATA','=2if','value','health','weight'),
@@ -1579,7 +1580,7 @@ class MreWeap(MelRecord):
         MelFid('NAM0','ammo'),
         MelDestructible(),
         MelFid('REPL','repairList'),
-        MelSInt32('ETYP', ('etype', -1)),
+        MelEquipmentType(),
         MelFid('BIPL','bipedModelList'),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),

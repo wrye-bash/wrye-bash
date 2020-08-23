@@ -43,7 +43,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelArray, MelWthrColors, MreLeveledListBase, MreActorBase, MreWithItems, \
     MelCtdaFo3, MelRef3D, MelXlod, MelNull, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
-    MelDecalData, MelDescription
+    MelDecalData, MelDescription, MelLists
 from ...exception import ModError, ModSizeError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
@@ -81,7 +81,7 @@ if brec.MelModel is None:
             MelGroup.__init__(self, attr, *model_elements)
 
     brec.MelModel = _MelModel
-from ...brec import MelModel, MelLists
+from ...brec import MelModel
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -181,6 +181,13 @@ class MelEmbeddedScript(MelSequential):
             MelScriptVars(),
             MelReferences(),
         )
+
+#------------------------------------------------------------------------------
+class MelEquipmentType(MelSInt32):
+    """Handles the common ETYP subrecord."""
+    def __init__(self):
+        super(MelEquipmentType, self).__init__(b'ETYP',
+            (u'equipment_type', -1)),
 
 #------------------------------------------------------------------------------
 class MelItems(MelGroups):
@@ -440,7 +447,7 @@ class MreAlch(MelRecord,MreHasEffects):
         MelDestructible(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
-        MelSInt32('ETYP', ('etype', -1)),
+        MelEquipmentType(),
         MelFloat('DATA', 'weight'),
         MelStruct(b'ENIT', u'iB3sIfI', u'value', (_flags, u'flags'),
                   (u'unused1', null3), (FID, u'withdrawalEffect'),
@@ -510,7 +517,7 @@ class MreArma(MelRecord):
         MelModel('femaleBody',3),
         MelModel('femaleWorld',4),
         MelIcons2(),
-        MelSInt32('ETYP', ('etype', -1)),
+        MelEquipmentType(),
         MelStruct('DATA','IIf','value','health','weight'),
         MelStruct('DNAM','hH','ar',(_dnamFlags,'dnamFlags',0),),
     )
@@ -550,7 +557,7 @@ class MreArmo(MelRecord):
         MelDestructible(),
         MelFid('REPL','repairList'),
         MelFid('BIPL','bipedModelList'),
-        MelSInt32('ETYP', ('etype', -1)),
+        MelEquipmentType(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
         MelStruct('DATA','=2if','value','health','weight'),
@@ -1616,7 +1623,7 @@ class MreIngr(MelRecord,MreHasEffects):
         MelModel(),
         MelIcon(),
         MelScript(),
-        MelSInt32('ETYP', ('etype', -1)),
+        MelEquipmentType(),
         MelFloat('DATA', 'weight'),
         MelStruct('ENIT','iB3s','value',(_flags,'flags',0),('unused1',null3)),
         MelEffects(),
@@ -3175,7 +3182,7 @@ class MreWeap(MelRecord):
         MelFid('NAM0','ammo'),
         MelDestructible(),
         MelFid('REPL','repairList'),
-        MelSInt32('ETYP', ('etype', -1)),
+        MelEquipmentType(),
         MelFid('BIPL','bipedModelList'),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),

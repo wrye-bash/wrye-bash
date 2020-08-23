@@ -264,6 +264,12 @@ class MelEffects(MelGroups):
         )
 
 #------------------------------------------------------------------------------
+class MelEquipmentType(MelOptFid):
+    """Handles the common ETYP subrecord."""
+    def __init__(self):
+        super(MelEquipmentType, self).__init__(b'ETYP', u'equipment_type')
+
+#------------------------------------------------------------------------------
 class MelItems(MelGroups):
     """Wraps MelGroups for the common task of defining a list of items."""
     def __init__(self):
@@ -1364,7 +1370,7 @@ class MreAlch(MelRecord,MreHasEffects):
         MelIcons(),
         MelOptFid('YNAM', 'pickupSound'),
         MelOptFid('ZNAM', 'dropSound'),
-        MelOptFid('ETYP', 'equipType'),
+        MelEquipmentType(),
         MelFloat('DATA', 'weight'),
         MelStruct(b'ENIT', u'i2IfI', u'value', (IngestibleFlags, u'flags'),
                   (FID, u'addiction'), u'addictionChance',
@@ -1491,7 +1497,7 @@ class MreArmo(MelRecord):
         MelOptFid('YNAM', 'pickupSound'),
         MelOptFid('ZNAM', 'dropSound'),
         MelString('BMCT', 'ragdollTemplatePath'), #Ragdoll Constraint Template
-        MelOptFid('ETYP', 'equipType'),
+        MelEquipmentType(),
         MelOptFid('BIDS', 'bashImpact'),
         MelOptFid('BAMT', 'material'),
         MelOptFid('RNAM', 'race'),
@@ -2848,7 +2854,7 @@ class MreIngr(MelRecord,MreHasEffects):
         MelKeywords(),
         MelModel(),
         MelIcons(),
-        MelFid('ETYP','equipmentType',),
+        MelEquipmentType(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
         MelStruct('DATA','if','value','weight'),
@@ -4590,7 +4596,7 @@ class MreScrl(MelRecord,MreHasEffects):
         MelFull(),
         MelKeywords(),
         MelMdob(),
-        MelFid('ETYP','equipmentType',),
+        MelEquipmentType(),
         MelDescription(),
         MelModel(),
         MelDestructible(),
@@ -4836,7 +4842,7 @@ class MreSpel(MelRecord,MreHasEffects):
         MelFull(),
         MelKeywords(),
         MelMdob(),
-        MelFid('ETYP', 'equipmentType'),
+        MelEquipmentType(),
         MelDescription(),
         MelStruct('SPIT','IIIfIIffI','cost',(SpelTypeFlags,'dataFlags',0),
                   'spellType','chargeTime','castType','targetType',
@@ -5131,7 +5137,7 @@ class MreWeap(MelRecord):
         MelEnchantment(),
         MelOptUInt16('EAMT', 'enchantPoints'),
         MelDestructible(),
-        MelFid('ETYP','equipmentType',),
+        MelEquipmentType(),
         MelFid('BIDS','blockBashImpactDataSet',),
         MelFid('BAMT','alternateBlockMaterial',),
         MelFid('YNAM','pickupSound',),
