@@ -369,7 +369,7 @@ class MelSpit(MelStruct):
     ))
 
     def __init__(self):
-        super(MelSpit, self).__init__(b'SPIT', u'IIIfIIffI', u'cost',
+        super(MelSpit, self).__init__(b'SPIT', u'3If2I2fI', u'cost',
             (MelSpit.spit_flags, u'dataFlags'), u'spellType', u'chargeTime',
             u'castType', u'targetType', u'castDuration', u'range',
             (FID, u'halfCostPerk'))

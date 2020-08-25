@@ -518,6 +518,7 @@ class GameInfo(object):
     # Spell Stats Patcher
     #--------------------------------------------------------------------------
     spell_stats_attrs = ()
+    spell_stats_types = {b'SPEL'}
 
     #--------------------------------------------------------------------------
     # Actor Tweaker
@@ -631,10 +632,9 @@ class GameInfo(object):
         u'record_type_name', u'relations_attrs', u'relations_csv_header',
         u'relations_csv_row_format', u'save_rec_types', u'scripts_types',
         u'soundsLongsTypes', u'soundsTypes', u'spell_stats_attrs',
-        u'statsHeaders', u'statsTypes', u'text_types',
+        u'spell_stats_types', u'statsHeaders', u'statsTypes', u'text_types',
         u'assorted_tweaks', u'staff_condition', u'static_attenuation_rec_type',
-        u'nonplayable_biped_flags', u'not_playable_flag',
-        # FIXME(inf) format right before merge!
+        u'nonplayable_biped_flags', u'not_playable_flag'
     }
 
     @classmethod

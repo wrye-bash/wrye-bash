@@ -1743,17 +1743,25 @@ class SpellRecords(_UsesEffectsMixin):
             self.detailed,self.aliases,self.spellTypeName_Number,\
             self.levelTypeName_Number
         fid_stats = self.fid_stats
+        is_old_format = False
         with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 8 or fields[2][:2] != u'0x': continue
-                group,mmod,mobj,eid,full,cost,levelType,spellType = fields[:8]
+                if isinstance(fields[4], unicode): # Index 4 was FULL
+                    is_old_format = True
+                if is_old_format: # FULL was dropped and flags added
+                    group, mmod, mobj, eid, _full, cost, levelType, \
+                    spellType = fields[:8]
+                    spell_flags = 0
+                else:
+                    group, mmod, mobj, eid, cost, levelType, spell_flags = \
+                        fields[:8]
                 fields = fields[8:]
                 group = _coerce(group, unicode)
                 if group.lower() != u'spel': continue
                 mmod = _coerce(mmod, unicode)
                 mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
                 eid = _coerce(eid, unicode, AllowNone=True)
-                full = _coerce(full, unicode, AllowNone=True)
                 cost = _coerce(cost, int)
                 levelType = _coerce(levelType, unicode)
                 levelType = levelTypeName_Number.get(levelType.lower(),
@@ -1763,8 +1771,12 @@ class SpellRecords(_UsesEffectsMixin):
                 spellType = spellTypeName_Number.get(spellType.lower(),
                                                      _coerce(spellType,
                                                              int) or 0)
+                ##: HACK, 'flags' needs to be a Flags instance on dump
+                spell_flags = bush.game_mod.records.MreSpel._SpellFlags(
+                    _coerce(spell_flags, int))
                 if not detailed or len(fields) < 7:
-                    fid_stats[mid] = [eid,full,cost,levelType,spellType]
+                    fid_stats[mid] = [eid, cost, levelType, spellType,
+                                      spell_flags]
                     continue
                 mc,ss,its,aeil,saa,daar,tewt = fields[:7]
                 fields = fields[7:]
@@ -1776,17 +1788,18 @@ class SpellRecords(_UsesEffectsMixin):
                 daar = _coerce(daar, bool)
                 tewt = _coerce(tewt, bool)
                 effects = self.readEffects(fields, aliases, False)
-                fid_stats[mid] = [eid,full,cost,levelType,spellType,mc,ss,its,
-                                  aeil,saa,daar,tewt,effects]
+                fid_stats[mid] = [eid, cost, levelType, spellType, spell_flags,
+                                  mc, ss, its, aeil, saa, daar, tewt, effects]
 
     def writeToText(self,textPath):
         """Exports stats to specified text file."""
         detailed,fid_stats,spellTypeNumber_Name,levelTypeNumber_Name = \
             self.detailed,self.fid_stats,self.spellTypeNumber_Name,\
             self.levelTypeNumber_Name
-        header = (_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),
-                  _(u'Name'),_(u'Cost'),_(u'Level Type'),_(u'Spell Type'))
-        rowFormat = u'"%s","%s","0x%06X","%s","%s","%d","%s","%s"'
+        header = (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'),
+                  _(u'Editor Id'), _(u'Cost'), _(u'Level Type'),
+                  _(u'Spell Type'), _(u'Spell Flags'))
+        rowFormat = u'"%s","%s","0x%06X","%s","%d","%s","%s","%d"'
         if detailed:
             header = header + (
                 _(u'Manual Cost'),_(u'Start Spell'),_(u'Immune To Silence'),
@@ -1802,21 +1815,22 @@ class SpellRecords(_UsesEffectsMixin):
             for fid in sorted(fid_stats,
                               key=lambda x:(fid_stats[x][0].lower(),x[0])):
                 if detailed:
-                    eid,name,cost,levelType,spellType,mc,ss,its,aeil,saa,\
-                    daar,tewt,effects = \
-                    fid_stats[fid]
+                    eid, cost, levelType, spellType, spell_flags, mc, ss, its,\
+                    aeil, saa, daar, tewt, effects = fid_stats[fid]
                     levelType = levelTypeNumber_Name.get(levelType,levelType)
                     spellType = spellTypeNumber_Name.get(spellType,spellType)
                     output = rowFormat % (
-                    u'SPEL',fid[0].s,fid[1],eid,name,cost,levelType,spellType,
-                    mc,ss,its,aeil,saa,daar,tewt)
+                    u'SPEL', fid[0].s, fid[1], eid, cost, levelType, spellType,
+                    spell_flags, mc, ss, its, aeil, saa, daar, tewt)
                     output += self.writeEffects(effects, False)
                 else:
-                    eid,name,cost,levelType,spellType = fid_stats[fid]
+                    eid, cost, levelType, spellType, spell_flags = \
+                        fid_stats[fid]
                     levelType = levelTypeNumber_Name.get(levelType,levelType)
                     spellType = spellTypeNumber_Name.get(spellType,spellType)
                     output = rowFormat % (
-                    u'SPEL',fid[0].s,fid[1],eid,name,cost,levelType,spellType)
+                    u'SPEL', fid[0].s, fid[1], eid, cost, levelType, spellType,
+                    spell_flags)
                 output += u'\n'
                 out.write(output)
 

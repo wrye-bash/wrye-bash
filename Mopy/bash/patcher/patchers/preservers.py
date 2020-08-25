@@ -404,9 +404,9 @@ class SpellsPatcher(_APreserver):
     """Import spell changes from mod files."""
     scanOrder = 29
     editOrder = 29 #--Run ahead of bow patcher
-    logMsg = u'\n=== ' + _(u'Modified SPEL Stats')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
-    rec_attrs = {b'SPEL': bush.game.spell_stats_attrs}
+    rec_attrs = {x: bush.game.spell_stats_attrs
+                 for x in bush.game.spell_stats_types}
     _csv_parser = parsers.SpellRecords
 
     def _parse_csv_sources(self, progress):
