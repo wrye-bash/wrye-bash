@@ -626,9 +626,9 @@ class MreClas(MelRecord):
     rec_sig = b'CLAS'
 
     _flags = Flags(0, Flags.getNames(
-        ( 0,'Playable'),
-        ( 1,'Guard'),
-        ))
+        u'class_playable',
+        u'class_guard',
+    ))
     aiService = Flags(0, Flags.getNames(
         (0,'weapons'),
         (1,'armor'),

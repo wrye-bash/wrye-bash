@@ -76,6 +76,7 @@ from ...brec import MelModel
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
 #------------------------------------------------------------------------------
+##: See what we can do with MelUnion & MelTruncatedStruct here
 class MelBipedObjectData(MelStruct):
     """Handler for BODT/BOD2 subrecords.  Reads both types, writes only BOD2"""
     BipedFlags = Flags(0, Flags.getNames(
@@ -92,15 +93,15 @@ class MelBipedObjectData(MelStruct):
         (10, u'bodyaddon1_tail'),
         (11, u'long_hair'),
         (12, u'circlet'),
-        (13, u'bodyaddon2'),
+        (13, u'bodyaddon2_ears'),
         (14, u'dragon_head'),
         (15, u'dragon_lwing'),
         (16, u'dragon_rwing'),
         (17, u'dragon_body'),
         (18, u'bodyaddon7'),
         (19, u'bodyaddon8'),
-        (20, u'decapate_head'),
-        (21, u'decapate'),
+        (20, u'decapitate_head'),
+        (21, u'decapitate'),
         (22, u'bodyaddon9'),
         (23, u'bodyaddon10'),
         (24, u'bodyaddon11'),
@@ -111,16 +112,19 @@ class MelBipedObjectData(MelStruct):
         (29, u'bodyaddon16'),
         (30, u'bodyaddon17'),
         (31, u'fx01'),
-    ))
+    ), unknown_is_unused=True) # mirrors xEdit, though it doesn't make sense
 
     # Legacy Flags, (For BODT subrecords) - #4 is the only one not discarded.
     LegacyFlags = Flags(0, Flags.getNames(
-        (0, u'modulates_voice'), # From ARMA
-        (1, u'unknown_2'),
-        (2, u'unknown_3'),
-        (3, u'unknown_4'),
-        (4, u'non_playable'), # From ARMO
-    ))
+        u'modulates_voice', # From ARMA
+        u'unknown_2',
+        u'unknown_3',
+        u'unknown_4',
+        u'non_playable', # From ARMO
+        u'unknown_6',
+        u'unknown_7',
+        u'unknown_8',
+    ), unknown_is_unused=True) # mirrors xEdit, though it doesn't make sense
 
     ArmorTypeFlags = Flags(0, Flags.getNames(
         (0, u'light_armor'),
@@ -139,21 +143,21 @@ class MelBipedObjectData(MelStruct):
         loaders[b'BODT'] = self
 
     def loadData(self, record, ins, sub_type, size_, readId,
-                 __unpacker2=struct.Struct(u'2I').unpack,
-                 __unpacker3=struct.Struct(u'3I').unpack):
+                 __unpacker2=struct.Struct(u'IB3s').unpack,
+                 __unpacker3=struct.Struct(u'IB3sI').unpack):
         if sub_type == b'BODT':
             # Old record type, use alternate loading routine
             if size_ == 8:
                 # Version 20 of this subrecord is only 8 bytes (armorType
                 # omitted)
-                bipedFlags, legacyFlags = ins.unpack(__unpacker2, size_,
-                    readId)
+                bipedFlags, legacyFlags, _unused = ins.unpack(
+                    __unpacker2, size_, readId)
                 armorFlags = 0
             elif size_ != 12:
                 raise ModSizeError(ins.inName, readId, (12, 8), size_)
             else:
-                bipedFlags, legacyFlags, armorFlags = ins.unpack(__unpacker3,
-                                                                size_, readId)
+                bipedFlags, legacyFlags, _unused, armorFlags = ins.unpack(
+                    __unpacker3, size_, readId)
             # legacyData is discarded except for non-playable status
             record.bipedFlags = MelBipedObjectData.BipedFlags(bipedFlags)
             record.flags1[2] = MelBipedObjectData.LegacyFlags(legacyFlags)[4]
@@ -1753,7 +1757,7 @@ class MreCell(MelRecord):
         ))
 
     _land_flags = Flags(0, Flags.getNames(u'quad1', u'quad2', u'quad3',
-        u'quad4'))
+        u'quad4'), unknown_is_unused=True)
 
     melSet = MelSet(
         MelEdid(),
@@ -2621,11 +2625,11 @@ class MreIdle(MelRecord):
     rec_sig = b'IDLE'
 
     IdleTypeFlags = Flags(0, Flags.getNames(
-            (0, 'parent'),
-            (1, 'sequence'),
-            (2, 'noAttacking'),
-            (3, 'blocking'),
-        ))
+        u'parent',
+        u'sequence',
+        u'noAttacking',
+        u'blocking',
+    ), unknown_is_unused=True)
 
     melSet = MelSet(
         MelEdid(),

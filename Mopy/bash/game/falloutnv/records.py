@@ -411,7 +411,7 @@ class MreCell(MelRecord):
     ))
 
     _land_flags = Flags(0, Flags.getNames(u'quad1', u'quad2', u'quad3',
-        u'quad4'))
+        u'quad4'), unknown_is_unused=True)
 
     melSet = MelSet(
         MelEdid(),

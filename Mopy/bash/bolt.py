@@ -992,7 +992,7 @@ class CsvReader(object):
 #------------------------------------------------------------------------------
 class Flags(object):
     """Represents a flag field."""
-    __slots__ = ['_names','_field']
+    __slots__ = [u'_names', u'_field', u'_unknown_is_unused']
 
     @staticmethod
     def getNames(*names):
@@ -1009,22 +1009,34 @@ class Flags(object):
         return namesDict
 
     #--Generation
-    def __init__(self,value=0,names=None):
-        """Initialize. Attrs, if present, is mapping of attribute names to indices. See getAttrs()"""
-        object.__setattr__(self,'_field',int(value))
-        object.__setattr__(self,'_names',names or {})
+    def __init__(self, value=0, names=None, unknown_is_unused=False):
+        """Initialize. Attrs, if present, is mapping of attribute names to
+        indices. unknown_is_unused will discard unknown flags."""
+        object.__setattr__(self, '_names', names or {})
+        object.__setattr__(self, '_field', int(value))
+        object.__setattr__(self, '_unknown_is_unused', unknown_is_unused)
+        self._clean_unused_flags()
 
     def __call__(self,newValue=None):
         """Returns a clone of self, optionally with new value."""
         if newValue is not None:
-            return Flags(int(newValue),self._names)
+            return Flags(int(newValue), self._names, self._unknown_is_unused)
         else:
-            return Flags(self._field,self._names)
+            return Flags(self._field, self._names, self._unknown_is_unused)
 
-    def __deepcopy__(self,memo={}):
-        newFlags=Flags(self._field,self._names)
-        memo[id(self)] = newFlags
+    def __deepcopy__(self, memo):
+        newFlags = Flags(self._field, self._names, self._unknown_is_unused)
+        memo[id(self)] = newFlags ##: huh?
         return newFlags
+
+    def _clean_unused_flags(self):
+        """Removes all unknown flags if that option was set in __init__."""
+        if self._unknown_is_unused:
+            final_flags = 0
+            for flg_name, flg_idx in self._names.iteritems():
+                if getattr(self, flg_name):
+                    final_flags |= 1 << flg_idx
+            self._field = final_flags
 
     #--As hex string
     def hex(self):
@@ -1032,13 +1044,14 @@ class Flags(object):
         return u'%08X' % (self._field,)
     def dump(self):
         """Returns value for packing"""
+        self._clean_unused_flags()
         return self._field
 
     #--As int
     def __int__(self):
         """Return as integer value for saving."""
         return self._field
-    def __getstate__(self):
+    def __getstate__(self): ##: do we even use this?
         """Return values for pickling."""
         return self._field, self._names
     def __setstate__(self,fields):

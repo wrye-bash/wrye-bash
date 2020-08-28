@@ -234,7 +234,7 @@ class MelDecalData(MelOptStruct):
         u'alphaBlending',
         u'alphaTesting',
         u'noSubtextures', # Skyrim+, will just be ignored for earlier games
-    ))
+    ), unknown_is_unused=True)
 
     def __init__(self):
         super(MelDecalData, self).__init__(b'DODT', u'7fBB2s3Bs', u'minWidth',

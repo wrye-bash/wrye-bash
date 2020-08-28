@@ -129,14 +129,13 @@ class MelConditions(MelGroups):
 class MelDestructible(MelGroup):
     """Represents a set of destruct record."""
 
-    MelDestVatsFlags = Flags(0, Flags.getNames(
-        (0, 'vatsTargetable'),
-        ))
+    MelDestVatsFlags = Flags(0, Flags.getNames(u'vatsTargetable'),
+        unknown_is_unused=True)
     MelDestStageFlags = Flags(0, Flags.getNames(
-        (0, 'capDamage'),
-        (1, 'disable'),
-        (2, 'destroy'),
-        ))
+        u'capDamage',
+        u'disable',
+        u'destroy'
+    ))
 
     def __init__(self, attr=u'destructible'):
         super(MelDestructible, self).__init__(attr,
@@ -513,7 +512,8 @@ class MreArma(MelRecord):
         MelEdid(),
         MelBounds(),
         MelFull(),
-        MelStruct('BMDT','=2I',(_flags,'bipedFlags',0),(_generalFlags,'generalFlags',0)),
+        MelStruct(b'BMDT', u'2I', (_flags, u'bipedFlags'),
+            (_generalFlags, u'generalFlags')),
         MelModel(u'maleBody'),
         MelModel(u'maleWorld', 2),
         MelIcons(u'maleIconPath', u'maleSmallIconPath'),
@@ -750,7 +750,7 @@ class MreCell(MelRecord):
     ))
 
     _land_flags = Flags(0, Flags.getNames(u'quad1', u'quad2', u'quad3',
-        u'quad4'))
+        u'quad4'), unknown_is_unused=True)
 
     melSet = MelSet(
         MelEdid(),
@@ -795,9 +795,9 @@ class MreClas(MelRecord):
     rec_sig = b'CLAS'
 
     _flags = Flags(0, Flags.getNames(
-        ( 0,'Playable'),
-        ( 1,'Guard'),
-        ))
+        u'class_playable',
+        u'class_guard',
+    ), unknown_is_unused=True)
     aiService = Flags(0, Flags.getNames(
         (0,'weapons'),
         (1,'armor'),
@@ -1523,11 +1523,11 @@ class MreImgs(MelRecord):
     rec_sig = b'IMGS'
 
     _dnam_flags = Flags(0, Flags.getNames(
-        'saturation',
-        'contrast',
-        'tint',
-        'brightness'
-    ))
+        u'saturation',
+        u'contrast',
+        u'tint',
+        u'brightness'
+    ), unknown_is_unused=True)
 
     # Struct elements shared by all three DNAM alternatives. Note that we can't
     # just use MelTruncatedStruct, because upgrading the format breaks interior
@@ -2126,12 +2126,23 @@ class MrePack(MelRecord):
         None,'alwaysSneak','allowSwimming','allowFalls',
         'unequipArmor','unequipWeapons','defensiveCombat','useHorse',
         'noIdleAnims',))
+    _fallout_behavior_flags = Flags(0, Flags.getNames(
+        u'hellos_to_player',
+        u'random_conversations',
+        u'observe_combat_behavior',
+        u'unknown_flag_4', # unknown, but not unused
+        u'reaction_to_player_actions',
+        u'friendly_fire_comments',
+        u'aggro_radius_behavior',
+        u'allow_idle_chatter',
+        u'avoid_radiation',
+    ), unknown_is_unused=True)
 
     melSet = MelSet(
         MelEdid(),
-        MelTruncatedStruct('PKDT', 'I2HI', (_flags, 'flags'), 'aiType',
-                           'falloutBehaviorFlags', 'typeSpecificFlags',
-                           old_versions={'I2H'}),
+        MelTruncatedStruct(b'PKDT', u'I2HI', (_flags, u'flags'), u'aiType',
+            (_fallout_behavior_flags, u'falloutBehaviorFlags'),
+            u'typeSpecificFlags', old_versions={u'I2H'}),
         MelUnion({
             (0, 1, 4): MelOptStruct(b'PLDT', u'iIi', u'locType',
                 (FID, u'locId'), u'locRadius'),
@@ -3238,8 +3249,14 @@ class MreWrld(MelRecord):
     _flags = Flags(0, Flags.getNames('smallWorld','noFastTravel','oblivionWorldspace',None,
         'noLODWater','noLODNoise','noAllowNPCFallDamage'))
     pnamFlags = Flags(0, Flags.getNames(
-        'useLandData','useLODData','useMapData','useWaterData','useClimateData',
-        'useImageSpaceData',None,'needsWaterAdjustment'))
+        (0, u'useLandData'),
+        (1, u'useLODData'),
+        (2, u'useMapData'),
+        (3, u'useWaterData'),
+        (4, u'useClimateData'),
+        (5, u'useImageSpaceData'),
+        (7, u'needsWaterAdjustment'),
+    ), unknown_is_unused=True)
 
     melSet = MelSet(
         MelEdid(),

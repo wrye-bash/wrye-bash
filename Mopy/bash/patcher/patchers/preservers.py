@@ -654,14 +654,6 @@ class CellImporter(ImportPatcher):
                     if set(value).difference(set(curr_value)):
                         patch_cell_set(attr, value)
                         modified = True
-                # bolt.Flags-backed attributes need special comparison logic,
-                # since flags can have nonsense values outside of the actual
-                # flags. ##: if we ever end up having more flags attrs, this
-                # should become a set, probably per-game
-                elif attr == u'land_flags':
-                    if value.getTrueAttrs() != curr_value.getTrueAttrs():
-                        patch_cell_set(attr, value)
-                        modified = True
                 elif attr in c_float_attrs:
                     if not floats_equal(value, curr_value):
                         patch_cell_set(attr, value)
