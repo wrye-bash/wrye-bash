@@ -25,9 +25,9 @@
 from __future__ import division
 import struct
 # Set MelModel in brec, in this case it's identical to the fallout 3 one
-from ..fallout3.records import MelOwnership, MelDestructible, MelBipedFlags, \
-    MelEffects, MelConditions, MreHasEffects, MelEmbeddedScript, MelItems, \
-    MelEquipmentType
+from ..fallout3.records import MelOwnership, MelDestructible, MelEffects, \
+    MelConditions, MreHasEffects, MelEmbeddedScript, MelItems, \
+    MelEquipmentType, MelBipedData
 from ..fallout3.records import _MelModel # HACK - needed for tests
 from ...bolt import Flags
 from ...brec import MelModel # set in Mopy/bash/game/fallout3/records.py
@@ -237,23 +237,13 @@ class MreArma(MelRecord):
     """Armor Addon."""
     rec_sig = b'ARMA'
 
-    _flags = MelBipedFlags(0, Flags.getNames())
-    _dnamFlags = Flags(0, Flags.getNames(
-        (0,'modulatesVoice'),
-    ))
-    _generalFlags = Flags(0, Flags.getNames(
-        ( 2,'hasBackpack'),
-        ( 3,'medium'),
-        (5,'powerArmor'),
-        (6,'notPlayable'),
-        (7,'heavyArmor')
-    ))
+    _dnamFlags = Flags(0, Flags.getNames(u'modulatesVoice'))
 
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
         MelFull(),
-        MelStruct('BMDT','=2I',(_flags,'bipedFlags',0),(_generalFlags,'generalFlags',0)),
+        MelBipedData(),
         MelModel(u'maleBody'),
         MelModel(u'maleWorld', 2),
         MelIcons(u'maleIconPath', u'maleSmallIconPath'),
@@ -273,15 +263,7 @@ class MreArmo(MelRecord):
     """Armor."""
     rec_sig = b'ARMO'
 
-    _flags = MelBipedFlags(0, Flags.getNames())
-    _dnamFlags = Flags(0, Flags.getNames(
-        (0,'modulatesVoice'),
-    ))
-    _generalFlags = Flags(0, Flags.getNames(
-        (5,'powerArmor'),
-        (6,'notPlayable'),
-        (7,'heavyArmor')
-    ))
+    _dnamFlags = Flags(0, Flags.getNames(u'modulatesVoice'))
 
     melSet = MelSet(
         MelEdid(),
@@ -289,8 +271,7 @@ class MreArmo(MelRecord):
         MelFull(),
         MelScript(),
         MelEnchantment(),
-        MelStruct('BMDT','=IB3s',(_flags,'bipedFlags',0),
-                  (_generalFlags,'generalFlags',0),('armoBMDT1',null3),),
+        MelBipedData(),
         MelModel(u'maleBody'),
         MelModel(u'maleWorld', 2),
         MelIcons(u'maleIconPath', u'maleSmallIconPath'),

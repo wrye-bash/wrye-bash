@@ -117,6 +117,23 @@ class MelBipedFlags(Flags):
         super(MelBipedFlags, self).__init__(default, names)
 
 #------------------------------------------------------------------------------
+class MelBipedData(MelStruct):
+    """Handles the common BMDT (Biped Data) subrecord."""
+    _biped_flags = MelBipedFlags()
+    _general_flags = Flags(0, Flags.getNames(
+        (2, u'hasBackpack'), # The first two are FNV-only, but will just be
+        (3, u'medium'),      # ignored on FO3, so no problem
+        (5, u'powerArmor'),
+        (6, u'notPlayable'),
+        (7, u'heavyArmor'),
+    ), unknown_is_unused=True)
+
+    def __init__(self):
+        super(MelBipedData, self).__init__(b'BMDT', u'IB3s',
+            (self._biped_flags, u'bipedFlags'),
+            (self._general_flags, u'generalFlags'), u'biped_unused')
+
+#------------------------------------------------------------------------------
 class MelConditions(MelGroups):
     """A list of conditions."""
     def __init__(self):
@@ -489,22 +506,13 @@ class MreArma(MelRecord):
     """Armor Addon."""
     rec_sig = b'ARMA'
 
-    _flags = MelBipedFlags(0)
-    _dnamFlags = Flags(0, Flags.getNames(
-        (0,'modulatesVoice'),
-    ))
-    _generalFlags = Flags(0, Flags.getNames(
-        (5,'powerArmor'),
-        (6,'notPlayable'),
-        (7,'heavyArmor')
-    ))
+    _dnamFlags = Flags(0, Flags.getNames(u'modulatesVoice'))
 
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
         MelFull(),
-        MelStruct(b'BMDT', u'2I', (_flags, u'bipedFlags'),
-            (_generalFlags, u'generalFlags')),
+        MelBipedData(),
         MelModel(u'maleBody'),
         MelModel(u'maleWorld', 2),
         MelIcons(u'maleIconPath', u'maleSmallIconPath'),
@@ -522,16 +530,7 @@ class MreArmo(MelRecord):
     """Armor."""
     rec_sig = b'ARMO'
 
-    _flags = MelBipedFlags(0, Flags.getNames())
-
-    _dnamFlags = Flags(0, Flags.getNames(
-        (0,'modulatesVoice'),
-    ))
-    _generalFlags = Flags(0, Flags.getNames(
-        (5,'powerArmor'),
-        (6,'notPlayable'),
-        (7,'heavyArmor')
-    ))
+    _dnamFlags = Flags(0, Flags.getNames(u'modulatesVoice'))
 
     melSet = MelSet(
         MelEdid(),
@@ -539,8 +538,7 @@ class MreArmo(MelRecord):
         MelFull(),
         MelScript(),
         MelEnchantment(),
-        MelStruct('BMDT','=IB3s',(_flags,'bipedFlags',0),
-                  (_generalFlags,'generalFlags',0),('armoBMDT1',null3),),
+        MelBipedData(),
         MelModel(u'maleBody'),
         MelModel(u'maleWorld', 2),
         MelIcons(u'maleIconPath', u'maleSmallIconPath'),
