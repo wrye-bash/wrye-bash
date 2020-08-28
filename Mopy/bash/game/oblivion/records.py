@@ -888,39 +888,38 @@ class MreEfsh(MelRecord):
     rec_sig = b'EFSH'
 
     _flags = Flags(0, Flags.getNames(
-        ( 0,'noMemShader'),
-        ( 3,'noPartShader'),
-        ( 4,'edgeInverse'),
-        ( 5,'memSkinOnly'),
-        ))
+        (0, u'noMemShader'),
+        (3, u'noPartShader'),
+        (4, u'edgeInverse'),
+        (5, u'memSkinOnly'),
+    ))
 
     melSet = MelSet(
         MelEdid(),
-        MelIcon('fillTexture'),
-        MelIco2('particleTexture'),
-        MelTruncatedStruct(
-            'DATA', 'B3s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs6f', (_flags, 'flags'),
-            ('unused1', null3), 'memSBlend', 'memBlendOp', 'memZFunc',
-            'fillRed', 'fillGreen', 'fillBlue', ('unused2', null1), 'fillAIn',
-            'fillAFull', 'fillAOut', 'fillAPRatio', 'fillAAmp', 'fillAFreq',
-            'fillAnimSpdU', 'fillAnimSpdV', 'edgeOff', 'edgeRed', 'edgeGreen',
-            'edgeBlue', ('unused3', null1), 'edgeAIn', 'edgeAFull', 'edgeAOut',
-            'edgeAPRatio', 'edgeAAmp', 'edgeAFreq', 'fillAFRatio',
-            'edgeAFRatio', 'memDBlend', ('partSBlend', 5), ('partBlendOp', 1),
-            ('partZFunc', 4), ('partDBlend', 6), ('partBUp', 0.0),
-            ('partBFull', 0.0), ('partBDown', 0.0), ('partBFRatio', 1.0),
-            ('partBPRatio', 1.0), ('partLTime', 1.0), ('partLDelta', 0.0),
-            ('partNSpd', 0.0), ('partNAcc', 0.0), ('partVel1', 0.0),
-            ('partVel2', 0.0), ('partVel3', 0.0), ('partAcc1', 0.0),
-            ('partAcc2', 0.0), ('partAcc3', 0.0), ('partKey1', 1.0),
-            ('partKey2', 1.0), ('partKey1Time', 0.0), ('partKey2Time', 1.0),
-            ('key1Red', 255), ('key1Green', 255), ('key1Blue', 255),
-            ('unused4', null1), ('key2Red', 255), ('key2Green', 255),
-            ('key2Blue', 255), ('unused5', null1), ('key3Red', 255),
-            ('key3Green', 255), ('key3Blue', 255), ('unused6', null1),
-            ('key1A', 1.0), ('key2A', 1.0), ('key3A', 1.0), ('key1Time', 0.0),
-            ('key2Time', 0.5), ('key3Time', 1.0),
-            old_versions={'B3s3I3Bs9f3Bs8fI'}),
+        MelIcon(u'fillTexture'),
+        MelIco2(u'particleTexture'),
+        MelTruncatedStruct(b'DATA', u'B3s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs6f',
+            (_flags, u'flags'), (u'unused1', null3), u'memSBlend',
+            u'memBlendOp', u'memZFunc', u'fillRed', u'fillGreen', u'fillBlue',
+            (u'unused2', null1), u'fillAIn', u'fillAFull', u'fillAOut',
+            u'fillAPRatio', u'fillAAmp', u'fillAFreq', u'fillAnimSpdU',
+            u'fillAnimSpdV', u'edgeOff', u'edgeRed', u'edgeGreen', u'edgeBlue',
+            (u'unused3', null1), u'edgeAIn', u'edgeAFull', u'edgeAOut',
+            u'edgeAPRatio', u'edgeAAmp', u'edgeAFreq', u'fillAFRatio',
+            u'edgeAFRatio', u'memDBlend', (u'partSBlend', 5),
+            (u'partBlendOp', 1), (u'partZFunc', 4), (u'partDBlend', 6),
+            u'partBUp', u'partBFull', u'partBDown', (u'partBFRatio', 1.0),
+            (u'partBPRatio', 1.0), (u'partLTime', 1.0), u'partLDelta',
+            u'partNSpd', u'partNAcc', u'partVel1', u'partVel2', u'partVel3',
+            u'partAcc1', u'partAcc2', u'partAcc3', u'partKey1',
+            (u'partKey2', 1.0), u'partKey1Time', (u'partKey2Time', 1.0),
+            (u'key1Red', 255), (u'key1Green', 255), (u'key1Blue', 255),
+            (u'unused4', null1), (u'key2Red', 255), (u'key2Green', 255),
+            (u'key2Blue', 255), (u'unused5', null1), (u'key3Red', 255),
+            (u'key3Green', 255), (u'key3Blue', 255), (u'unused6', null1),
+            (u'key1A', 1.0), (u'key2A', 1.0), (u'key3A', 1.0), u'key1Time',
+            (u'key2Time', 0.5), (u'key3Time', 1.0),
+            old_versions={u'B3s3I3Bs9f3Bs8fI'}),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1801,6 +1800,7 @@ class MreSlgm(MelRecord):
 class MreSoun(MelRecord):
     """Sound."""
     rec_sig = b'SOUN'
+    _has_duplicate_attrs = True # SNDD is an older version of SNDX
 
     _flags = Flags(0, Flags.getNames('randomFrequencyShift', 'playAtRandom',
         'environmentIgnored', 'randomLocation', 'loop','menuSound', '2d', '360LFE'))

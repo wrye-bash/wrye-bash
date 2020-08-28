@@ -703,7 +703,6 @@ class MreCams(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelString('DATA','eid'),
         MelModel(),
         MelStruct('DATA','4I6f','action','location','target',
                   (CamsFlagsFlags,'flags',0),'timeMultPlayer',
@@ -1153,28 +1152,27 @@ class MreEfsh(MelRecord):
     rec_sig = b'EFSH'
 
     _flags = Flags(0, Flags.getNames(
-        ( 0,'noMemShader'),
-        ( 3,'noPartShader'),
-        ( 4,'edgeInverse'),
-        ( 5,'memSkinOnly'),
-        ))
+        (0, u'noMemShader'),
+        (3, u'noPartShader'),
+        (4, u'edgeInverse'),
+        (5, u'memSkinOnly'),
+    ))
 
     melSet = MelSet(
         MelEdid(),
-        MelIcon('fillTexture'),
-        MelIco2('particleTexture'),
-        MelString('NAM7','holesTexture'),
-        MelTruncatedStruct(
-            b'DATA', u'B3s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6f',
-            (_flags, u'flags'), (u'unused1', null3),
-            (u'memSBlend', 5), (u'memBlendOp', 1), (u'memZFunc', 3),
-            u'fillRed', u'fillGreen', u'fillBlue', (u'unused2', null1),
-            u'fillAIn', u'fillAFull', u'fillAOut', u'fillAPRatio', u'fillAAmp',
-            u'fillAFreq', u'fillAnimSpdU', u'fillAnimSpdV', u'edgeOff',
-            u'edgeRed', u'edgeGreen', u'edgeBlue', (u'unused3', null1),
-            u'edgeAIn', u'edgeAFull', u'edgeAOut', u'edgeAPRatio', u'edgeAAmp',
-            u'edgeAFreq', u'fillAFRatio', u'edgeAFRatio', (u'memDBlend', 6),
-            (u'partSBlend', 5),
+        MelIcon(u'fillTexture'),
+        MelIco2(u'particleTexture'),
+        MelString(b'NAM7', u'holesTexture'),
+        MelTruncatedStruct(b'DATA',
+            u'B3s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6f', (_flags, u'flags'),
+            (u'unused1', null3), (u'memSBlend', 5), (u'memBlendOp', 1),
+            (u'memZFunc', 3), u'fillRed', u'fillGreen', u'fillBlue',
+            (u'unused2', null1), u'fillAIn', u'fillAFull', u'fillAOut',
+            u'fillAPRatio', u'fillAAmp', u'fillAFreq', u'fillAnimSpdU',
+            u'fillAnimSpdV', u'edgeOff', u'edgeRed', u'edgeGreen', u'edgeBlue',
+            (u'unused3', null1), u'edgeAIn', u'edgeAFull', u'edgeAOut',
+            u'edgeAPRatio', u'edgeAAmp', u'edgeAFreq', u'fillAFRatio',
+            u'edgeAFRatio', (u'memDBlend', 6), (u'partSBlend', 5),
             (u'partBlendOp', 1), (u'partZFunc', 4), (u'partDBlend', 6),
             u'partBUp', u'partBFull', u'partBDown', (u'partBFRatio', 1.0),
             (u'partBPRatio', 1.0), (u'partLTime', 1.0), u'partLDelta',
@@ -1184,13 +1182,14 @@ class MreEfsh(MelRecord):
             (u'key1Red', 255), (u'key1Green', 255), (u'key1Blue', 255),
             (u'unused4', null1), (u'key2Red', 255), (u'key2Green', 255),
             (u'key2Blue', 255), (u'unused5', null1), (u'key3Red', 255),
-            (u'key3Green',255), (u'key3Blue', 255), (u'unused6', null1),
-            (u'key1A', 1.0), (u'key2A',1.0), (u'key3A', 1.0), u'key1Time',
+            (u'key3Green', 255), (u'key3Blue', 255), (u'unused6', null1),
+            (u'key1A', 1.0), (u'key2A', 1.0), (u'key3A', 1.0), u'key1Time',
             (u'key2Time', 0.5), (u'key3Time', 1.0), u'partNSpdDelta',
             u'partRot', u'partRotDelta', u'partRotSpeed', u'partRotSpeedDelta',
             (FID, u'addonModels'), u'holesStartTime', u'holesEndTime',
-            u'holesStartVal', u'holesEndVal', u'edgeWidth', (u'edgeRed', 255),
-            (u'edgeGreen', 255), (u'edgeBlue', 255), (u'unused7', null1),
+            u'holesStartVal', u'holesEndVal', u'edgeWidth',
+            (u'edge_color_red', 255), (u'edge_color_green', 255),
+            (u'edge_color_blue', 255), (u'unused7', null1),
             u'explosionWindSpeed', (u'textureCountU', 1),
             (u'textureCountV', 1), (u'addonModelsFadeInTime', 1.0),
             (u'addonModelsFadeOutTime', 1.0), (u'addonModelsScaleStart', 1.0),
@@ -2668,8 +2667,10 @@ class MreRefr(MelRecord):
         MelFid('XEZN','encounterZone'),
         MelBase('XRGD','ragdollData'),
         MelBase('XRGB','ragdollBipedData'),
-        MelOptStruct('XPRM','3f3IfI','primitiveBoundX','primitiveBoundY','primitiveBoundX',
-                     'primitiveColorRed','primitiveColorGreen','primitiveColorBlue','primitiveUnknown','primitiveType'),
+        MelOptStruct(b'XPRM', u'3f3IfI', u'primitiveBoundX',
+            u'primitiveBoundY', u'primitiveBoundZ', u'primitiveColorRed',
+            u'primitiveColorGreen', u'primitiveColorBlue', u'primitiveUnknown',
+            u'primitiveType'),
         MelOptUInt32('XTRI', 'collisionLayer'),
         MelBase('XMBP','multiboundPrimitiveMarker'),
         MelOptStruct('XMBO','3f','boundHalfExtentsX','boundHalfExtentsY','boundHalfExtentsZ'),
@@ -2873,6 +2874,7 @@ class MreScpt(MelRecord):
 class MreSoun(MelRecord):
     """Sound."""
     rec_sig = b'SOUN'
+    _has_duplicate_attrs = True # SNDX, ANAM, GNAM and HNAM upgrade to SNDD
 
     _flags = Flags(0, Flags.getNames(
             'randomFrequencyShift',
@@ -3065,6 +3067,8 @@ class MreVtyp(MelRecord):
 class MreWatr(MelRecord):
     """Water."""
     rec_sig = b'WATR'
+    # FIXME(inf) Doesn't actually have duplicates - see TODO below
+    _has_duplicate_attrs = True
 
     _flags = Flags(0, Flags.getNames('causesDmg','reflective'))
 

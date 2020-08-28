@@ -321,5 +321,6 @@ class OblivionGameInfo(GameInfo):
         brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) - {
             b'TES4', b'ACHR', b'ACRE', b'REFR', b'CELL', b'PGRD', b'ROAD',
             b'LAND', b'WRLD', b'INFO', b'DIAL'})
+        cls._validate_records()
 
 GAME_TYPE = OblivionGameInfo

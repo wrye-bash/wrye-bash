@@ -200,5 +200,6 @@ class EnderalGameInfo(SkyrimGameInfo):
         brec.MreRecord.simpleTypes = (
                 set(brec.MreRecord.type_class) - {b'TES4', b'ACHR', b'CELL',
                                                   b'DIAL', b'INFO', b'WRLD'})
+        cls._validate_records()
 
 GAME_TYPE = EnderalGameInfo

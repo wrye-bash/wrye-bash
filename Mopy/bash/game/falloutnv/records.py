@@ -1271,8 +1271,10 @@ class MreRefr(MelRecord):
         MelFid('XEZN','encounterZone'),
         MelBase('XRGD','ragdollData'),
         MelBase('XRGB','ragdollBipedData'),
-        MelOptStruct('XPRM','3f3IfI','primitiveBoundX','primitiveBoundY','primitiveBoundX',
-                     'primitiveColorRed','primitiveColorGreen','primitiveColorBlue','primitiveUnknown','primitiveType'),
+        MelOptStruct(b'XPRM', u'3f3IfI', u'primitiveBoundX',
+            u'primitiveBoundY', u'primitiveBoundZ', u'primitiveColorRed',
+            u'primitiveColorGreen', u'primitiveColorBlue', u'primitiveUnknown',
+            u'primitiveType'),
         MelOptUInt32('XTRI', 'collisionLayer'),
         MelBase('XMBP','multiboundPrimitiveMarker'),
         MelOptStruct('XMBO','3f','boundHalfExtentsX','boundHalfExtentsY','boundHalfExtentsZ'),
@@ -1454,6 +1456,7 @@ class MreSlpd(MelRecord):
 class MreSoun(MelRecord):
     """Sound."""
     rec_sig = b'SOUN'
+    _has_duplicate_attrs = True # SNDX, ANAM, GNAM and HNAM upgrade to SNDD
 
     _flags = Flags(0, Flags.getNames(
             'randomFrequencyShift',

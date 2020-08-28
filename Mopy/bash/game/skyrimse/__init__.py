@@ -171,6 +171,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         )}
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {'TES4', 'ACHR', 'CELL', 'DIAL',
-                                              'INFO', 'WRLD', })
+                                              'INFO', 'WRLD'})
+        cls._validate_records()
 
 GAME_TYPE = SkyrimSEGameInfo

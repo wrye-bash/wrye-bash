@@ -385,6 +385,21 @@ class MelTopicData(MelGroups):
         ),
 
 #------------------------------------------------------------------------------
+class MelWaterVelocities(MelSequential):
+    """Handles the XWCU/XWCS/XWCN subrecords shared by REFR and CELL."""
+    def __init__(self):
+        super(MelWaterVelocities, self).__init__(
+            # Old version of XWCN - replace with XWCN upon dumping
+            MelReadOnly(MelUInt32(b'XWCS', u'water_velocities_count')),
+            MelCounter(MelOptUInt32(b'XWCN', u'water_velocities_count'),
+                       counts=u'water_velocities'),
+            MelArray(u'water_velocities',
+                MelStruct(b'XWCU', u'4f', u'x_offset', u'y_offset',
+                    u'z_offset', u'unknown1'),
+            ),
+        )
+
+#------------------------------------------------------------------------------
 # VMAD - Virtual Machine Adapters
 # Some helper classes and functions
 def _dump_vmad_str16(str_val):
@@ -1701,6 +1716,7 @@ class MreCams(MelRecord):
 class MreCell(MelRecord):
     """Cell."""
     rec_sig = b'CELL'
+    _has_duplicate_attrs = True # XWCS is an older version of XWCN
 
     CellDataFlags1 = Flags(0, Flags.getNames(
         (0,'isInterior'),
@@ -1774,14 +1790,7 @@ class MreCell(MelRecord):
         MelString('XNAM','waterNoiseTexture'),
         MelFidList('XCLR','regions'),
         MelFid('XLCN','location',),
-        # Old version of XWCN - replace with XWCN upon dumping
-        MelReadOnly(MelUInt32(b'XWCS', u'water_velocities_count')),
-        MelCounter(MelOptUInt32(b'XWCN', u'water_velocities_count'),
-                   counts=u'water_velocities'),
-        MelArray(u'water_velocities',
-            MelStruct(b'XWCU', u'4f', u'x_offset', u'y_offset', u'z_offset',
-                      u'unknown1'),
-        ),
+        MelWaterVelocities(),
         MelFid('XCWT','water'),
         MelOwnership(),
         MelFid('XILL','lockList',),
@@ -4264,7 +4273,8 @@ class MreRefr(MelRecord):
         MelOptStruct('XPTL','9f','portalWidth','portalHeight','portalPosX','portalPosY','portalPosZ',
                      'portalRot1','portalRot2','portalRot3','portalRot4'),
         MelGroup('roomData',
-            MelStruct('XRMR','BB2s','linkedRoomsCount',(roomDataFlags,'roomFlags'),'unknown'),
+            MelStruct(b'XRMR', u'BB2s', u'linkedRoomsCount',
+                (roomDataFlags, u'roomFlags'), u'unknown1'),
             MelFid('LNAM', 'lightingTemplate'),
             MelFid('INAM', 'imageSpace'),
             MelFids('XLRM','linkedRoom'),
@@ -4279,8 +4289,8 @@ class MreRefr(MelRecord):
         ),
         MelFids('XLTW','litWaters'),
         MelOptFid('XEMI', 'emittance'),
-        MelOptStruct('XLIG', '4f4s', 'fov90Delta', 'fadeDelta',
-                     'end_distance_cap', 'shadowDepthBias', 'unknown'),
+        MelOptStruct(b'XLIG', u'4f4s', u'fov90Delta', u'fadeDelta',
+            u'end_distance_cap', u'shadowDepthBias', u'unknown2'),
         MelOptStruct('XALP','BB','cutoffAlpha','baseAlpha',),
         MelOptStruct('XTEL','I6fI',(FID,'destinationFid'),'destinationPosX',
                      'destinationPosY','destinationPosZ','destinationRotX',
@@ -4288,14 +4298,11 @@ class MreRefr(MelRecord):
                      (_destinationFlags,'destinationFlags')),
         MelFids('XTNM','teleportMessageBox'),
         MelFid('XMBR','multiboundReference'),
-        MelBase('XWCN', 'xwcn_p',),
-        MelBase('XWCS', 'xwcs_p',),
-        MelOptStruct('XWCU','3f4s3f4s','offsetX','offsetY','offsetZ','unknown',
-                     'angleX','angleY','angleZ','unknown'),
-        MelOptStruct('XCVL','4sf4s','unknown','angleX','unknown',),
-        MelFid('XCZR','unknownRef'),
+        MelWaterVelocities(),
+        MelOptStruct(b'XCVL', u'4sf4s', u'unknown3', u'angleX', u'unknown4'),
+        MelFid(b'XCZR', u'unknown5'),
         MelBase('XCZA', 'xcza_p',),
-        MelFid('XCZC','unknownRef2'),
+        MelFid(b'XCZC', u'unknown6'),
         MelRefScale(),
         MelFid('XSPC','spawnContainer'),
         MelGroup('activateParents',
@@ -4314,7 +4321,8 @@ class MreRefr(MelRecord):
                            ('unused3', null3), ('unused4', null4 * 2),
                            old_versions={'B3sIB3s4s', 'B3sIB3s'}),
         MelFid('XEZN','encounterZone'),
-        MelOptStruct('XNDP','IH2s',(FID,'navMesh'),'teleportMarkerTriangle','unknown'),
+        MelOptStruct(b'XNDP', u'IH2s', (FID, u'navMesh'),
+            u'teleportMarkerTriangle', u'unknown7'),
         MelFidList('XLRT','locationRefType',),
         MelNull('XIS2',),
         MelOwnership(),
@@ -4449,14 +4457,15 @@ class MreRfct(MelRecord):
     rec_sig = b'RFCT'
 
     RfctTypeFlags = Flags(0, Flags.getNames(
-        (0, 'rotateToFaceTarget'),
-        (1, 'attachToCamera'),
-        (2, 'inheritRotation'),
+        u'rotate_to_face_target',
+        u'attach_to_camera',
+        u'inherit_rotation',
     ))
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct('DATA','3I',(FID,'impactSet'),(FID,'impactSet'),(RfctTypeFlags,'flags',0),),
+        MelStruct(b'DATA', u'3I', (FID, u'rfct_art'), (FID, u'rfct_shader'),
+            (RfctTypeFlags, u'rfct_flags')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -4525,7 +4534,7 @@ class MreScen(MelRecord):
                 MelConditions(),
             ),
             # The next three are all leftovers
-            MelGroup('unused',
+            MelGroup(u'unused1',
                 MelBase('SCHR','schr_p'),
                 MelBase('SCDA','scda_p'),
                 MelBase('SCTX','sctx_p'),
@@ -4533,7 +4542,7 @@ class MreScen(MelRecord):
                 MelBase('SCRO','scro_p'),
             ),
             MelNull('NEXT'),
-            MelGroup('unused',
+            MelGroup(u'unused2',
                 MelBase('SCHR','schr_p'),
                 MelBase('SCDA','scda_p'),
                 MelBase('SCTX','sctx_p'),
@@ -4575,7 +4584,7 @@ class MreScen(MelRecord):
             MelNull('ANAM'),
         ),
         # The next three are all leftovers
-        MelGroup('unused',
+        MelGroup(u'unused1',
             MelBase('SCHR','schr_p'),
             MelBase('SCDA','scda_p'),
             MelBase('SCTX','sctx_p'),
@@ -4583,7 +4592,7 @@ class MreScen(MelRecord):
             MelBase('SCRO','scro_p'),
         ),
         MelNull('NEXT'),
-        MelGroup('unused',
+        MelGroup(u'unused2',
             MelBase('SCHR','schr_p'),
             MelBase('SCDA','scda_p'),
             MelBase('SCTX','sctx_p'),

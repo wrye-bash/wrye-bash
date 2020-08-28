@@ -197,6 +197,7 @@ class Fallout4GameInfo(GameInfo):
             MreLvli, MreLvln, # Added to records.py
             )}
         brec.MreRecord.simpleTypes = (
-            set(brec.MreRecord.type_class) - {b'TES4',})
+            set(brec.MreRecord.type_class) - {b'TES4'})
+        cls._validate_records()
 
 GAME_TYPE = Fallout4GameInfo

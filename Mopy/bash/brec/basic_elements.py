@@ -553,6 +553,15 @@ class MelStruct(MelBase):
     def __init__(self, subType, struct_format, *elements):
         self.subType, self.struct_format = subType, struct_format
         self.attrs,self.defaults,self.actions,self.formAttrs = MelBase.parseElements(*elements)
+        # Check for duplicate attrs - can't rely on MelSet.getSlotsUsed only,
+        # since we may end up in a MelUnion which has to use a set to collect
+        # its slots
+        present_attrs = set()
+        for a in self.attrs:
+            if a in present_attrs:
+                raise SyntaxError(u"Duplicate attribute '%s' in struct "
+                                  u"definition" % a)
+            present_attrs.add(a)
         self._unpacker = struct.Struct(self.struct_format).unpack
 
     def getSlotsUsed(self):

@@ -389,7 +389,7 @@ class MelRaceParts(MelNull):
             loaders[signature] = self
 
     def getSlotsUsed(self):
-        return self._indx_to_attr.values()
+        return tuple(self._indx_to_attr.itervalues())
 
     def setDefault(self, record):
         for element in self._indx_to_loader.itervalues():
