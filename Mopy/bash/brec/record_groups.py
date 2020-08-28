@@ -580,6 +580,8 @@ class MobDials(MobBase):
     def load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         dial_class = self.loadFactory.getRecClass(b'DIAL')
+        ins_seek = ins.seek
+        if not dial_class: ins_seek(endPos) # skip the whole group
         expType = self.label
         errLabel = expType + u' Top Block'
         insAtEnd = ins.atEnd
@@ -607,7 +609,7 @@ class MobDials(MobBase):
                         # This is a DIAL record without children. Finish this
                         # one, then rewind and process next_header normally
                         self.set_dialogue(dial)
-                        ins.seek(-RecordHeader.rec_header_size, 1)
+                        ins_seek(-RecordHeader.rec_header_size, 1)
                     else:
                         raise ModError(ins.inName,
                             u'Unexpected %r in %s block.' % (next_header,
@@ -1256,6 +1258,8 @@ class MobICells(MobCells):
         """Loads data from input stream. Called by load()."""
         expType = self.label
         recCellClass = self.loadFactory.getRecClass(expType)
+        insSeek = ins.seek
+        if not recCellClass: insSeek(endPos) # skip the whole group
         errLabel = expType + u' Top Block'
         cell = None
         endBlockPos = endSubblockPos = 0
@@ -1265,7 +1269,6 @@ class MobICells(MobCells):
         cellBlocksAppend = self.cellBlocks.append
         selfLoadFactory = self.loadFactory
         insTell = ins.tell
-        insSeek = ins.seek
         def build_cell_block(unpack_block=False, skip_delta=False):
             """Helper method that parses and stores a cell block for the
             current cell."""
@@ -1629,12 +1632,13 @@ class MobWorlds(MobBase):
         """Loads data from input stream. Called by load()."""
         expType = self.label
         recWrldClass = self.loadFactory.getRecClass(expType)
+        insSeek = ins.seek
+        if not recWrldClass: insSeek(endPos) # skip the whole group
         errLabel = expType + u' Top Block'
         worldBlocks = self.worldBlocks
         world = None
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
-        insSeek = ins.seek
         selfLoadFactory = self.loadFactory
         worldBlocksAppend = worldBlocks.append
         from .. import bush
