@@ -31,7 +31,7 @@ from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
     MelUnion, PartialLoadDecider, FlagDecider
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
-    MelOptFloat, MelOptUInt8, MelOptUInt32, MelOptFid, MelReadOnly
+    MelOptFloat, MelOptUInt8, MelOptUInt32, MelOptFid, MelReadOnly, MelUInt8
 from .utils_constants import _int_unpacker, FID, null1, null2, null3, null4
 from ..bolt import Flags, encode, struct_pack, struct_unpack
 
@@ -44,6 +44,20 @@ class MelActionFlags(MelOptUInt32):
     def __init__(self):
         super(MelActionFlags, self).__init__(
             b'XACT', (self._act_flags, u'action_flags'))
+
+#------------------------------------------------------------------------------
+class MelActivateParents(MelGroup):
+    """XAPD/XAPR (Activate Parents) subrecords for REFR records."""
+    _ap_flags = Flags(0, Flags.getNames(u'parent_activate_only'),
+        unknown_is_unused=True)
+
+    def __init__(self):
+        super(MelActivateParents, self).__init__(u'activate_parents',
+            MelUInt8(b'XAPD', (self._ap_flags, u'activate_parent_flags')),
+            MelGroups(u'activate_parent_refs',
+                MelStruct(b'XAPR', u'If', (FID, u'ap_reference'), u'ap_delay'),
+            ),
+        )
 
 #------------------------------------------------------------------------------
 class MelBounds(MelGroup):

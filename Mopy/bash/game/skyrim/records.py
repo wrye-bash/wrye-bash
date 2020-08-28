@@ -41,7 +41,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MreActorBase, MreWithItems, MelCtdaFo3, MelRef3D, MelXlod, \
     MelWorldBounds, MelEnableParent, MelRefScale, MelMapMarker, MelMdob, \
     MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
-    MelPickupSound, MelDropSound
+    MelPickupSound, MelDropSound, MelActivateParents
 from ...exception import ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -1268,8 +1268,6 @@ class MreAchr(MelRecord):
     """Placed NPC."""
     rec_sig = b'ACHR'
 
-    _activate_parent_flags = Flags(0, Flags.getNames(u'parent_activate_only'))
-
     melSet = MelSet(
         MelEdid(),
         MelVmad(),
@@ -1296,10 +1294,7 @@ class MreAchr(MelRecord):
             MelStruct(b'XLKR', '2I', (FID, u'keyword_ref'),
                       (FID, u'linked_ref')),
         ),
-        MelUInt8(b'XAPD', (_activate_parent_flags, u'activate_parent_flags')),
-        MelGroups(u'activate_parent_refs',
-            MelStruct(b'XAPR', u'If', (FID, u'ap_reference'), u'ap_delay'),
-        ),
+        MelActivateParents(),
         MelStruct(b'XCLP', u'3Bs3Bs', u'start_color_red', u'start_color_green',
                   u'start_color_blue', u'start_color_unused', u'end_color_red',
                   u'end_color_green', u'end_color_blue', u'end_color_unused'),
@@ -4298,12 +4293,7 @@ class MreRefr(MelRecord):
         MelFid(b'XCZC', u'unknown6'),
         MelRefScale(),
         MelFid('XSPC','spawnContainer'),
-        MelGroup('activateParents',
-            MelUInt8(b'XAPD', (_parentActivate, u'flags')),
-            MelGroups('activateParentRefs',
-                MelStruct('XAPR', 'If', (FID, 'reference'), 'delay'),
-            ),
-        ),
+        MelActivateParents(),
         MelFid('XLIB','leveledItemBaseObject'),
         MelSInt32('XLCM', 'levelModifier'),
         MelFid('XLCN','persistentLocation',),
