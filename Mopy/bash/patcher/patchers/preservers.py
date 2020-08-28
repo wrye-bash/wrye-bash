@@ -526,7 +526,10 @@ class CellImporter(ImportPatcher):
             """
             if not cellBlock.cell.flags1.ignored:
                 fid = cellBlock.cell.fid
-                for attr in attrs:
+                # If we're in an interior, see if we have to ignore any attrs
+                actual_attrs = ((attrs - bush.game.cell_skip_interior_attrs)
+                                if cellBlock.cell.flags.isInterior else attrs)
+                for attr in actual_attrs:
                     tempCellData[fid][attr] = cellBlock.cell.__getattribute__(
                         attr)
                 for flg_ in flgs_:
@@ -543,7 +546,10 @@ class CellImporter(ImportPatcher):
             if not cellBlock.cell.flags1.ignored:
                 rec_fid = cellBlock.cell.fid
                 if rec_fid not in tempCellData: return
-                for attr in attrs:
+                # If we're in an interior, see if we have to ignore any attrs
+                actual_attrs = ((attrs - bush.game.cell_skip_interior_attrs)
+                                if cellBlock.cell.flags.isInterior else attrs)
+                for attr in actual_attrs:
                     master_attr = cellBlock.cell.__getattribute__(attr)
                     if tempCellData[rec_fid][attr] != master_attr:
                         cellData[rec_fid][attr] = tempCellData[rec_fid][attr]

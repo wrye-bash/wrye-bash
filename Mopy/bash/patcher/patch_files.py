@@ -317,9 +317,9 @@ class PatchFile(_PFile, ModFile):
         # contains overrides, no new records
         if bush.game.has_esl and bass.settings['bash.mods.auto_flag_esl']:
             self.tes4.flags1.eslFile = True
-            self.tes4.description += (u'\nThis patch has been automatically '
-                                      u'ESL-flagged to save a load order '
-                                      u'slot.')
+            self.tes4.description += u'\n' + _(
+                u'This patch has been automatically ESL-flagged to save a '
+                u'load order slot.')
 
 class CBash_PatchFile(_PFile, ObModFile):
     """Defines and executes patcher configuration."""
