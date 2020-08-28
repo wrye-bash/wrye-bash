@@ -39,7 +39,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     null2, null3, null4, MelTruncatedStruct, MelReadOnly, MelCoordinates, \
     MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, MelArray, \
     MelObject, MreWithItems, MelRef3D, MelXlod, MelNull, MelEnableParent, \
-    MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript
+    MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
+    MelDecalData
 from ...exception import ModSizeError
 
 #------------------------------------------------------------------------------
@@ -904,22 +905,12 @@ class MreIpct(MelRecord):
     """Impact."""
     rec_sig = b'IPCT'
 
-    DecalDataFlags = Flags(0, Flags.getNames(
-            (0, 'parallax'),
-            (0, 'alphaBlending'),
-            (0, 'alphaTesting'),
-            (0, 'noSubtextures'),
-        ))
-
     melSet = MelSet(
         MelEdid(),
         MelModel(),
         MelStruct('DATA','fIffII','effectDuration','effectOrientation',
                   'angleThreshold','placementRadius','soundLevel','flags'),
-        MelOptStruct('DODT','7fBB2s3Bs','minWidth','maxWidth','minHeight',
-                     'maxHeight','depth','shininess','parallaxScale',
-                     'parallaxPasses',(DecalDataFlags,'decalFlags',0),
-                     ('unused1',null2),'red','green','blue',('unused2',null1)),
+        MelDecalData(),
         MelFid('DNAM','textureSet'),
         MelFid('SNAM','sound1'),
         MelFid('NAM1','sound2'),

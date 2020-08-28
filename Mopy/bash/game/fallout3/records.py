@@ -42,7 +42,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelCoordinates, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, \
     MelArray, MelWthrColors, MreLeveledListBase, MreActorBase, MreWithItems, \
     MelCtdaFo3, MelRef3D, MelXlod, MelNull, MelWorldBounds, MelEnableParent, \
-    MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript
+    MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
+    MelDecalData
 from ...exception import ModError, ModSizeError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
@@ -1627,21 +1628,12 @@ class MreIpct(MelRecord):
     """Impact."""
     rec_sig = b'IPCT'
 
-    DecalDataFlags = Flags(0, Flags.getNames(
-            (0, 'parallax'),
-            (0, 'alphaBlending'),
-            (0, 'alphaTesting'),
-        ))
-
     melSet = MelSet(
         MelEdid(),
         MelModel(),
         MelStruct('DATA','fIffII','effectDuration','effectOrientation',
                   'angleThreshold','placementRadius','soundLevel','flags'),
-        MelOptStruct('DODT','7fBB2s3Bs','minWidth','maxWidth','minHeight',
-                     'maxHeight','depth','shininess','parallaxScale',
-                     'parallaxPasses',(DecalDataFlags,'decalFlags',0),
-                     ('unused1',null2),'red','green','blue',('unused2',null1)),
+        MelDecalData(),
         MelFid('DNAM','textureSet'),
         MelFid('SNAM','sound1'),
         MelFid('NAM1','sound2'),
@@ -3051,10 +3043,7 @@ class MreTxst(MelRecord):
         MelString('TX03','growMap'),
         MelString('TX04','parallaxMap'),
         MelString('TX05','environmentMap'),
-        MelOptStruct('DODT','7fBB2s3Bs','minWidth','maxWidth','minHeight',
-                     'maxHeight','depth','shininess','parallaxScale',
-                     'parallaxPasses',(DecalDataFlags,'decalFlags',0),
-                     ('unused1',null2),'red','green','blue',('unused2',null1)),
+        MelDecalData(),
         MelUInt16('DNAM', (TxstTypeFlags, 'flags', 0)),
     )
     __slots__ = melSet.getSlotsUsed()

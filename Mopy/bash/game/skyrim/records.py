@@ -40,7 +40,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelFull, MelArray, MelWthrColors, GameDecider, MelReadOnly, \
     MreActorBase, MreWithItems, MelCtdaFo3, MelRef3D, MelXlod, \
     MelWorldBounds, MelEnableParent, MelRefScale, MelMapMarker, MelMdob, \
-    MelEnchantment
+    MelEnchantment, MelDecalData
 from ...exception import ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -226,27 +226,6 @@ class MelConditionCounter(MelCounter):
     def __init__(self):
         MelCounter.__init__(
             self, MelUInt32('CITC', 'conditionCount'), counts='conditions')
-
-#------------------------------------------------------------------------------
-class MelDecalData(MelOptStruct):
-    """Represents Decal Data."""
-
-    DecalDataFlags = Flags(0, Flags.getNames(
-            (0, 'parallax'),
-            (1, 'alphaBlending'),
-            (2, 'alphaTesting'),
-            (3, 'noSubtextures'),
-        ))
-
-    def __init__(self):
-        """Initialize elements."""
-        MelOptStruct.__init__(
-            self, 'DODT', '7f2B2s3Bs', 'minWidth', 'maxWidth',
-            'minHeight', 'maxHeight', 'depth', 'shininess', 'parallaxScale',
-            'parallaxPasses', (MelDecalData.DecalDataFlags, 'flags', 0),
-            ('unknownDecal1', null2), 'redDecal', 'greenDecal', 'blueDecal',
-            ('unknownDecal2', null1)
-        )
 
 #------------------------------------------------------------------------------
 class MelDestructible(MelGroup):
