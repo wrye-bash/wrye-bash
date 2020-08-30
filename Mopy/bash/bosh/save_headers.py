@@ -63,15 +63,23 @@ class SaveFileHeader(object):
 
     def __init__(self, save_path):
         self._save_path = save_path
+        self.ssData = None # lazily loaded at runtime
+        self.read_save_header()
+
+    def read_save_header(self, load_image=False):
+        """Fully reads this save header, optionally loading the image as
+        well."""
         try:
-            with save_path.open('rb') as ins:
-                self.load_header(ins)
+            with self._save_path.open(u'rb') as ins:
+                self.load_header(ins, load_image)
         #--Errors
         except (OSError, struct.error, OverflowError):
-            bolt.deprint(u'Failed to read %s' % save_path, traceback=True)
-            raise_bolt_error(u'Failed to read %s' % save_path, SaveHeaderError)
+            bolt.deprint(u'Failed to read %s' % self._save_path,
+                traceback=True)
+            raise_bolt_error(u'Failed to read %s' % self._save_path,
+                SaveHeaderError)
 
-    def load_header(self, ins):
+    def load_header(self, ins, load_image=False):
         save_magic = unpack_string(ins, len(self.__class__.save_magic))
         if save_magic != self.__class__.save_magic:
             raise SaveHeaderError(u'Magic wrong: %r (expected %r)' % (
@@ -81,7 +89,7 @@ class SaveFileHeader(object):
                 if unp[0] > 0: ins.seek(unp[0])
                 else: ins.seek(ins.tell() - unp[0])
             self.__setattr__(attr, unp[1](ins))
-        self.load_image_data(ins)
+        self.load_image_data(ins, load_image)
         self.load_masters(ins)
         # additional calculations - TODO(ut): rework decoding
         self.calc_time()
@@ -92,9 +100,13 @@ class SaveFileHeader(object):
             x, bolt.pluginEncoding, avoidEncodings=(u'utf8', u'utf-8')))
             for x in self.masters]
 
-    def load_image_data(self, ins):
+    def load_image_data(self, ins, load_image=False):
         bpp = (4 if self.has_alpha else 3)
-        self.ssData = bytearray(ins.read(bpp * self.ssWidth * self.ssHeight))
+        image_size = bpp * self.ssWidth * self.ssHeight
+        if load_image:
+            self.ssData = bytearray(ins.read(image_size))
+        else:
+            ins.seek(image_size, 1)
 
     def load_masters(self, ins):
         self._mastersStart = ins.tell()
@@ -109,6 +121,11 @@ class SaveFileHeader(object):
     def has_alpha(self):
         """Whether or not this save file has alpha."""
         return False
+
+    @property
+    def image_loaded(self):
+        """Whether or not this save header has had its image loaded yet."""
+        return self.ssData is not None
 
     @property
     def image_parameters(self):
@@ -228,13 +245,13 @@ class SkyrimSaveHeader(SaveFileHeader):
     def has_alpha(self):
         return self.__is_sse()
 
-    def load_image_data(self, ins):
+    def load_image_data(self, ins, load_image=False):
         if self.__is_sse():
             self._compressType = unpack_short(ins)
         if ins.tell() != self.header_size + 17: raise SaveHeaderError(
             u'New Save game header size (%s) not as expected (%s).' % (
                 ins.tell() - 17, self.header_size))
-        super(SkyrimSaveHeader, self).load_image_data(ins)
+        super(SkyrimSaveHeader, self).load_image_data(ins, load_image)
 
     def load_masters(self, ins):
         # If on SSE, check _compressType and respond accordingly:
@@ -466,11 +483,11 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
     def has_alpha(self):
         return True
 
-    def load_image_data(self, ins):
+    def load_image_data(self, ins, load_image=False):
         if ins.tell() != self.header_size + 16: raise SaveHeaderError(
             u'New Save game header size (%s) not as expected (%s).' % (
                 ins.tell() - 16, self.header_size))
-        super(SkyrimSaveHeader, self).load_image_data(ins)
+        super(SkyrimSaveHeader, self).load_image_data(ins, load_image)
 
     def load_masters(self, ins):
         self._formVersion = unpack_byte(ins)
@@ -589,7 +606,7 @@ class MorrowindSaveHeader(SaveFileHeader):
     save_magic = 'TES3'
     __slots__ = ('pc_curr_health', 'pc_max_health')
 
-    def load_header(self, ins):
+    def load_header(self, ins, load_image=False):
         # TODO(inf) A bit ugly, this is not a mod - maybe move readHeader out?
         from . import ModInfo
         save_info = ModInfo(self._save_path, load_cache=True)
@@ -604,12 +621,14 @@ class MorrowindSaveHeader(SaveFileHeader):
         self.masters = save_info.masterNames[:]
         self.pc_curr_health = save_info.header.pc_curr_health
         self.pc_max_health = save_info.header.pc_max_health
-        # Read the image data - note that it comes as BGRA, which we
-        # need to turn into RGB - ##: in the future: RGBA
-        out = StringIO.StringIO()
-        for pxl in save_info.header.screenshot_data:
-            out.write(struct_pack(u'3B', pxl.red, pxl.green, pxl.blue))
-        self.ssData = out.getvalue()
+        if load_image:
+            # Read the image data - note that it comes as BGRA, which we
+            # need to turn into RGB. Note that we disregard the alpha, seems to
+            # make the image 100% black and is therefore unusable.
+            out = StringIO.StringIO()
+            for pxl in save_info.header.screenshot_data:
+                out.write(struct_pack(u'3B', pxl.red, pxl.green, pxl.blue))
+            self.ssData = out.getvalue()
         self.ssHeight = self.ssWidth = 128 # fixed size for Morrowind
 
     @property

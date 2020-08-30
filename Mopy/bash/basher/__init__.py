@@ -2067,9 +2067,14 @@ class SaveDetails(_ModsSavesDetails):
         self._set_player_info_label()
         self.gCoSaves.label_text = self.coSaves
         self.uilist.SetFileInfo(self.saveInfo)
-        #--Picture
-        new_save_screen = Image.from_bitstream(
-            *self.saveInfo.header.image_parameters) if self.saveInfo else None
+        # Picture - lazily loaded since it takes up so much memory
+        if self.saveInfo:
+            if not self.saveInfo.header.image_loaded:
+                self.saveInfo.header.read_save_header(load_image=True)
+            new_save_screen = Image.from_bitstream(
+                *self.saveInfo.header.image_parameters)
+        else:
+            new_save_screen = None # reset to default
         self.picture.set_bitmap(new_save_screen)
         #--Info Box
         self.gInfo.modified = False
