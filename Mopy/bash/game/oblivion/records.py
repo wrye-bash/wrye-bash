@@ -223,7 +223,6 @@ class MelEffects(MelSequential):
                     (u'efix_reserved', null1 * 16)),
             ),
             MelBase(b'EFXX', u'effects_end_marker', b''),
-            MelString(b'FULL', u'obme_full'),
         ]
         # Split everything by Vanilla/OBME
         self._vanilla_loaders = {}
@@ -278,6 +277,16 @@ class MelEffects(MelSequential):
                                 else self._vanilla_form_elements)
         for form_element in target_form_elements:
             form_element.mapFids(record, function, save)
+
+class MelEffectsObmeFull(MelString):
+    """Hacky class for handling the extra FULL that OBME includes after the
+    effects for some reason. We can't just pack this one into MelEffects above
+    since otherwise we'd have duplicate signatures in the same load, and
+    MelDistributor would just distribute the load to the same MelGroups
+    backend, which would blindly use the last FULL. Did I ever mention that
+    OBME is an awfully hacky mess?"""
+    def __init__(self):
+        super(MelEffectsObmeFull, self).__init__(b'FULL', u'obme_full')
 
 #------------------------------------------------------------------------------
 class MelEmbeddedScript(MelSequential):
@@ -466,6 +475,7 @@ class MreAlch(MelRecord,MreHasEffects):
         MelFloat('DATA', 'weight'),
         MelStruct('ENIT','iB3s','value',(_flags,'flags',0),('unused1',null3)),
         MelEffects(),
+        MelEffectsObmeFull(),
     ).with_distributor(_effects_distributor)
     __slots__ = melSet.getSlotsUsed()
 
@@ -927,6 +937,7 @@ class MreEnch(MelRecord,MreHasEffects):
         MelStruct('ENIT', '3IB3s', 'itemType', 'chargeAmount', 'enchantCost',
                   (_flags, 'flags', 0), ('unused1', null3)),
         MelEffects(),
+        MelEffectsObmeFull(),
     ).with_distributor(_effects_distributor)
     __slots__ = melSet.getSlotsUsed()
 
@@ -1091,6 +1102,7 @@ class MreIngr(MelRecord,MreHasEffects):
         MelFloat('DATA', 'weight'),
         MelStruct('ENIT','iB3s','value',(_flags,'flags',0),('unused1',null3)),
         MelEffects(),
+        MelEffectsObmeFull(),
     ).with_distributor(_effects_distributor)
     __slots__ = melSet.getSlotsUsed()
 
@@ -1748,6 +1760,7 @@ class MreSgst(MelRecord,MreHasEffects):
         MelIcon(),
         MelScript(),
         MelEffects(),
+        MelEffectsObmeFull(),
         MelStruct('DATA','=BIf','uses','value','weight'),
     ).with_distributor(_effects_distributor)
     __slots__ = melSet.getSlotsUsed()
@@ -1831,6 +1844,7 @@ class MreSpel(MelRecord,MreHasEffects):
         MelStruct('SPIT', '3IB3s', 'spellType', 'cost', 'level',
                   (_SpellFlags, 'flags', 0), ('unused1', null3)),
         MelEffects(),
+        MelEffectsObmeFull(),
     ).with_distributor(_effects_distributor)
     __slots__ = melSet.getSlotsUsed()
 

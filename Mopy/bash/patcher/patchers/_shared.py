@@ -36,6 +36,9 @@ class _AImportInventory(AListPatcher):  # next class that has ___init__
         #should be redundant since this patcher doesn't allow unloaded
         #self.srcs = [x for x in self.srcs if (x in modInfos and x in
         # patchFile.allMods)]
+        self.inventOnlyMods = (
+            {x for x in self.srcs if x in p_file.mergeSet and u'IIM' in
+             p_file.p_file_minfos[x].getBashTags()} if self.iiMode else set())
 
 #------------------------------------------------------------------------------
 class _ANamesPatcher(AImportPatcher):
