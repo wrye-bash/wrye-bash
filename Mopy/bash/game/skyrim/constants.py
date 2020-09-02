@@ -2433,6 +2433,8 @@ graphicsTypes = {
     b'LIGH': (u'iconPath', u'model'),
     b'LSCR': (u'iconPath',),
     b'MGEF': (u'dual_casting_scale',),
+    b'MISC': (u'iconPath', u'model'),
+    b'PERK': (u'iconPath',),
     b'SLGM': (u'iconPath', u'model'),
     b'STAT': (u'model',),
     b'TREE': (u'model',),
