@@ -541,34 +541,27 @@ def InitModLinks():
         ModList.context_links.append(SeparatorLink())
         if True: #--Export
             exportMenu = MenuLink(_(u"Export"))
-            if CBashApi.Enabled:
-                exportMenu.links.append(CBash_Mod_CellBlockInfo_Export())
             exportMenu.links.append(Mod_EditorIds_Export())
+            exportMenu.links.append(Mod_Factions_Export())
+            exportMenu.links.append(Mod_FactionRelations_Export())
             if bush.game.fsName in (u'Enderal', u'Skyrim'):
                 exportMenu.links.append(Mod_FullNames_Export())
                 exportMenu.links.append(Mod_Prices_Export())
-            elif bush.game.fsName == u'FalloutNV':
-                # exportMenu.links.append(Mod_Factions_Export())
+            elif bush.game.fsName in (u'Fallout3', u'FalloutNV'):
+                # TODO(inf) Commented out lines were only in FNV branch
                 exportMenu.links.append(Mod_FullNames_Export())
                 exportMenu.links.append(Mod_Prices_Export())
-                exportMenu.links.append(Mod_FactionRelations_Export())
                 # exportMenu.links.append(Mod_IngredientDetails_Export())
                 # exportMenu.links.append(Mod_Scripts_Export())
                 # exportMenu.links.append(Mod_SpellRecords_Export())
                 exportMenu.links.append(Mod_Stats_Export())
-            elif bush.game.fsName == u'Fallout3':
-                exportMenu.links.append(Mod_FullNames_Export())
-                exportMenu.links.append(Mod_Prices_Export())
-                exportMenu.links.append(Mod_Stats_Export())
-                exportMenu.links.append(Mod_FactionRelations_Export())
             elif bush.game.fsName == u'Oblivion':
-                exportMenu.links.append(Mod_Factions_Export())
+                exportMenu.links.append(CBash_Mod_CellBlockInfo_Export())
+                exportMenu.links.append(Mod_IngredientDetails_Export())
+                exportMenu.links.append(CBash_Mod_MapMarkers_Export())
                 exportMenu.links.append(Mod_FullNames_Export())
                 exportMenu.links.append(Mod_ActorLevels_Export())
-                exportMenu.links.append(CBash_Mod_MapMarkers_Export())
                 exportMenu.links.append(Mod_Prices_Export())
-                exportMenu.links.append(Mod_FactionRelations_Export())
-                exportMenu.links.append(Mod_IngredientDetails_Export())
                 exportMenu.links.append(Mod_Scripts_Export())
                 exportMenu.links.append(Mod_SigilStoneDetails_Export())
                 exportMenu.links.append(Mod_SpellRecords_Export())
@@ -577,32 +570,27 @@ def InitModLinks():
         if True: #--Import
             importMenu = MenuLink(_(u"Import"))
             importMenu.links.append(Mod_EditorIds_Import())
+            importMenu.links.append(Mod_Factions_Import())
+            importMenu.links.append(Mod_FactionRelations_Import())
             if bush.game.fsName in (u'Enderal', u'Skyrim'):
                 importMenu.links.append(Mod_FullNames_Import())
                 importMenu.links.append(Mod_Prices_Import())
-            elif bush.game.fsName == u'FalloutNV':
+            elif bush.game.fsName in (u'Fallout3', u'FalloutNV'):
+                # TODO(inf) Commented out lines were only in FNV branch
                 importMenu.links.append(Mod_FullNames_Import())
                 importMenu.links.append(Mod_Prices_Import())
-                importMenu.links.append(Mod_FactionRelations_Import())
                 # importMenu.links.append(Mod_IngredientDetails_Import())
                 # importMenu.links.append(Mod_Scripts_Import())
                 importMenu.links.append(Mod_Stats_Import())
                 # importMenu.links.append(SeparatorLink())
                 # importMenu.links.append(Mod_Face_Import())
                 # importMenu.links.append(Mod_Fids_Replace())
-            elif bush.game.fsName == u'Fallout3':
-                importMenu.links.append(Mod_FullNames_Import())
-                importMenu.links.append(Mod_Prices_Import())
-                importMenu.links.append(Mod_Stats_Import())
-                importMenu.links.append(Mod_FactionRelations_Import())
             elif bush.game.fsName == u'Oblivion':
-                importMenu.links.append(Mod_Factions_Import())
+                importMenu.links.append(Mod_IngredientDetails_Import())
+                importMenu.links.append(CBash_Mod_MapMarkers_Import())
                 importMenu.links.append(Mod_FullNames_Import())
                 importMenu.links.append(Mod_ActorLevels_Import())
-                importMenu.links.append(CBash_Mod_MapMarkers_Import())
                 importMenu.links.append(Mod_Prices_Import())
-                importMenu.links.append(Mod_FactionRelations_Import())
-                importMenu.links.append(Mod_IngredientDetails_Import())
                 importMenu.links.append(Mod_Scripts_Import())
                 importMenu.links.append(Mod_SigilStoneDetails_Import())
                 importMenu.links.append(Mod_SpellRecords_Import())

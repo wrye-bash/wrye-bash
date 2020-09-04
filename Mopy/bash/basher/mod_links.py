@@ -1832,8 +1832,23 @@ class Mod_Face_Import(OneItemLink):
                      self._selected_item.s)
 
 #--Common
-class _Mod_Export_Link(ItemLink):
+class _Import_Export_Link(AppendableLink):
+    """Mixin for Export and Import links that handles adding them automatically
+    depending on the game's record types."""
+    def _append(self, window):
+        test_parser = self._parser()
+        try:
+            # Check if all record types required by this parser exist for this
+            # game and are supported for loading
+            rec_types = MreRecord.type_class
+            return all(t in rec_types
+                       and rec_types[t] in bush.game.mergeClasses
+                       for t in test_parser.all_types)
+        except AttributeError:
+            # FIXME(inf) old-style export link, drop once parsers refactored
+            return True
 
+class _Mod_Export_Link(_Import_Export_Link, ItemLink):
     def Execute(self):
         textName = self.selected[0].root + self.__class__.csvFile
         textDir = bass.dirs[u'patches']
@@ -1858,7 +1873,7 @@ class _Mod_Export_Link(ItemLink):
 
     def _parser(self): raise AbstractError
 
-class _Mod_Import_Link(OneItemLink):
+class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
     noChange = _(u"No changes required.")
     supportedExts = {u'.csv'}
     progressTitle = continueInfo = continueKey = 'OVERRIDE'
@@ -2278,25 +2293,35 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
 #------------------------------------------------------------------------------
 from ..parsers import SpellRecords, CBash_SpellRecords
 
-class Mod_SpellRecords_Export(_Mod_Export_Link):
+class _SpellRecords_Link(ItemLink):
+    """Common code from Mod_SpellRecords_{Ex,Im}port."""
+    _do_what = progressTitle = u'OVERRIDE' # avoid pycharm warnings
+
+    def __init__(self, _text=None):
+        super(_SpellRecords_Link, self).__init__(_text)
+        self.do_detailed = False
+
+    def _parser(self):
+        return CBash_SpellRecords(detailed=self.do_detailed) \
+            if CBashApi.Enabled else SpellRecords(detailed=self.do_detailed)
+
+    def Execute(self):
+        message = self._do_what + u'\n' + _(u'(If not, they will just be '
+                                            u'skipped).')
+        self.do_detailed = self._askYes(message, self.progressTitle,
+                                        questionIcon=True)
+        super(_SpellRecords_Link, self).Execute()
+
+class Mod_SpellRecords_Export(_SpellRecords_Link, _Mod_Export_Link):
     """Export Spell details from mod to text file."""
     askTitle = _(u'Export Spell details to:')
     csvFile = u'_Spells.csv'
     progressTitle = _(u'Export Spell details')
     _text = _(u'Spells...')
     _help = _(u'Export Spell details from mod to text file')
+    _do_what = _(u'Export flags and effects?')
 
-    def _parser(self):
-        message = (_(u'Export flags and effects?')
-                   + u'\n' +
-                   _(u'(If not they will just be skipped).')
-                   )
-        doDetailed = self._askYes(message, _(u'Export Spells'),
-                                  questionIcon=True)
-        return CBash_SpellRecords(detailed=doDetailed) if CBashApi.Enabled \
-            else SpellRecords(detailed=doDetailed)
-
-class Mod_SpellRecords_Import(_Mod_Import_Link):
+class Mod_SpellRecords_Import(_SpellRecords_Link, _Mod_Import_Link):
     """Import Spell details from text file."""
     askTitle = _(u'Import Spell details from:')
     csvFile = u'_Spells.csv'
@@ -2308,16 +2333,7 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
         u"not reversible!")
     continueKey = 'bash.SpellRecords.import.continue'
     noChange = _(u'No relevant Spell details to import.')
-
-    def _parser(self):
-        message = (_(u'Import flags and effects?')
-                   + u'\n' +
-                   _(u'(If not they will just be skipped).')
-                   )
-        doDetailed = self._askYes(message, _(u'Import Spell details'),
-                                  questionIcon=True)
-        return CBash_SpellRecords(detailed=doDetailed) if CBashApi.Enabled \
-            else SpellRecords(detailed=doDetailed)
+    _do_what = _(u'Import flags and effects?')
 
     def _log(self, changed, fileName):
         with bolt.sio() as buff:
@@ -2486,18 +2502,14 @@ class Mod_FullNames_Import(_Mod_Import_Link):
             self._showLog(buff.getvalue(), title=_(u'Objects Renamed'))
 
 # CBash only Import/Export ----------------------------------------------------
-class _Mod_Export_Link_CBash(_Mod_Export_Link, EnabledLink):
-    def _enable(self): return CBashApi.Enabled
-
-class _Mod_Import_Link_CBash(_Mod_Import_Link):
-    def _enable(self):
-        return super(_Mod_Import_Link_CBash, self)._enable() and \
-               CBashApi.Enabled
+class _CBash_Link(EnabledLink):
+    def _append(self, window):
+        return super(_CBash_Link, self)._enable() and CBashApi.Enabled
 
 #------------------------------------------------------------------------------
 from ..parsers import CBash_MapMarkers
 
-class CBash_Mod_MapMarkers_Export(_Mod_Export_Link_CBash):
+class CBash_Mod_MapMarkers_Export(_Mod_Export_Link, _CBash_Link):
     """Export map marker stats from mod to text file."""
     askTitle = _(u'Export Map Markers to:')
     csvFile = u'_MapMarkers.csv'
@@ -2507,7 +2519,7 @@ class CBash_Mod_MapMarkers_Export(_Mod_Export_Link_CBash):
 
     def _parser(self): return CBash_MapMarkers()
 
-class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
+class CBash_Mod_MapMarkers_Import(_Mod_Import_Link, _CBash_Link):
     """Import MapMarkers from text file."""
     askTitle = _(u'Import Map Markers from:')
     csvFile = u'_MapMarkers.csv'
@@ -2554,7 +2566,7 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
 #------------------------------------------------------------------------------
 from ..parsers import CBash_CellBlockInfo
 
-class CBash_Mod_CellBlockInfo_Export(_Mod_Export_Link_CBash):
+class CBash_Mod_CellBlockInfo_Export(_Mod_Export_Link, _CBash_Link):
     """Export Cell Block Info to text file
     (in the form of Cell, block, subblock)."""
     askTitle = _(u'Export Cell Block Info to:')

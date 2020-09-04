@@ -183,14 +183,14 @@ class SkyrimGameInfo(GameInfo):
 
     patchers = (
         u'PatchMerger', # PatchMerger must come first!
-        u'ActorImporter', u'CellImporter', u'ContentsChecker',
-        u'DeathItemPatcher', u'DestructiblePatcher', u'GmstTweaker',
-        u'GraphicsPatcher', u'ImportActorsSpells', u'ImportEffectsStats',
-        u'ImportEnchantmentStats', u'ImportFactions', u'ImportInventory',
-        u'ImportOutfits', u'ImportRelations', u'KeywordsImporter',
-        u'ListsMerger', u'NamesPatcher', u'NPCAIPackagePatcher',
-        u'ObjectBoundsImporter', u'SoundPatcher', u'SpellsPatcher',
-        u'StatsPatcher', u'TextImporter', u'TweakActors',
+        u'ActorImporter', u'AliasesPatcher', u'CellImporter',
+        u'ContentsChecker', u'DeathItemPatcher', u'DestructiblePatcher',
+        u'GmstTweaker', u'GraphicsPatcher', u'ImportActorsSpells',
+        u'ImportEffectsStats', u'ImportEnchantmentStats', u'ImportFactions',
+        u'ImportInventory', u'ImportOutfits', u'ImportRelations',
+        u'KeywordsImporter', u'ListsMerger', u'NamesPatcher',
+        u'NPCAIPackagePatcher', u'ObjectBoundsImporter', u'SoundPatcher',
+        u'SpellsPatcher', u'StatsPatcher', u'TextImporter', u'TweakActors',
     )
 
     weaponTypes = (

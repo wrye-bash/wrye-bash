@@ -22,110 +22,401 @@
 #
 # =============================================================================
 
-"""This module contains the parser classes used by the importer patcher classes
-and the Mod_Import/Export Mods menu."""
+"""Parsers can read and write information from and to mods and from and to CSV
+files. They store the read information in an internal representation, which
+means that they can be used to export and import information from and to mods.
+They are also used by some of the patchers in order to not duplicate the work
+that has to be done when reading mods.
+However, not all parsers fit this pattern - some have to read mods twice,
+others barely even fit into the pattern at all (e.g. FidReplacer)."""
+
 from __future__ import division, print_function
 import ctypes
 import re
 from collections import defaultdict, Counter
 from operator import attrgetter, itemgetter
 # Internal
-from . import bush # for game
+from . import bush, load_order
 from .balt import Progress
 from .bass import dirs, inisettings
 from .bolt import GPath, decode, deprint, CsvReader, csvFormat, floats_equal
 from .brec import MreRecord, MelObject, _coerce, genFid, RecHeader
 from .cint import ObCollection, FormID, aggregateTypes, validTypes, MGEFCode, \
     ActorValue, ValidateList, IUNICODE, getattr_deep, setattr_deep
+from .exception import AbstractError
 from .mod_files import ModFile, LoadFactory
 
-class ActorFactions(object):
-    """Factions for npcs and creatures with functions for
-    importing/exporting from/to mod/text file."""
 
-    def __init__(self,aliases=None):
-        self.types = tuple([MreRecord.type_class[x] for x in ('CREA','NPC_')])
-        self.type_id_factions = {'CREA':{},'NPC_':{}} #--factions =
-        # type_id_factions[type][longid]
-        self.id_eid = {}
-        self.aliases = aliases or {}
-        self.gotFactions = set()
+# TODO(inf) Once refactoring is done, we could easily take in Progress objects
+#  for more accurate progress bars when importing/exporting
+class _AParser(object):
+    """The base class from which all parsers inherit. Attempts to accomodate
+    all the different parsers.
 
-    def readFactionEids(self,modInfo):
-        """Extracts faction editor ids from modInfo and its masters."""
+    Reading from mods:
+     - This is the most complex part of this design - we offer up to two
+       passes, where the first pass reads a mod and all its masters, but does
+       not offer fine-grained filtering of the read information. It is mapped
+       by long FormID and stored in id_context. You will have to set
+       _fp_types appropriately and override _read_record_fp to use this pass.
+     - The second pass filters by record type and long FormID, and can choose
+       whether or not it wants to store certain information. The result is
+       stored in id_stored_info. You will have to set _sp_types appropriately
+       and override _is_record_useful and _read_record_sp to use this pass.
+     - If you want to skip either pass, just leave _fp_types / _sp_types
+       empty."""
+
+    def __init__(self):
+        # The types of records to read from in the first pass. These should be
+        # strings matching the record types, *not* classes.
+        self._fp_types = ()
+        # Internal variable, keeps track of mods we've already processed during
+        # the first pass to avoid repeating work
+        self._fp_mods = set()
+        # The name of the mod that is currently being loaded. Some parsers need
+        # this to change their behavior when loading a mod file. This is a
+        # unicode string matching the name of the mod being loaded, or None if
+        # no mod is being loaded.
+        self._current_mod = None
+        # True if id_context needs another round of processing during the
+        # second pass
+        self._context_needs_followup = False
+        # Do we need to sort the masters during the first pass according to
+        # current LO?
+        self._needs_fp_master_sort = False
+        # Maps long fids to context info read during first pass
+        self.id_context = {}
+        # The types of records to read from in the second pass. These should be
+        # strings matching the record types, *not* classes.
+        self._sp_types = ()
+        # Maps record types to dicts that map long fids to stored information
+        # May have been retrieved from mod in second pass, or from a CSV file
+        self.id_stored_info = defaultdict(dict)
+        # Automatically set to True when called by a patcher - can be used to
+        # alter behavior correspondingly
+        self.called_from_patcher = False
+        # Automatically set in _parse_sources to the patch file's aliases -
+        # used if the Aliases Patcher has been enabled
+        self.aliases = {}
+
+    # Plugin-related utilities
+    def _mod_has_tag(self, tag_name):
+        """Returns True if the current mod has a Bash Tag with the specified
+        name."""
         from . import bosh
-        loadFactory = LoadFactory(False,MreRecord.type_class['FACT'])
-        for modName in (modInfo.masterNames + (modInfo.name,)):
-            if modName in self.gotFactions: continue
-            modFile = ModFile(bosh.modInfos[modName],loadFactory)
-            modFile.load(True)
-            mapper = modFile.getLongMapper()
-            for record in modFile.FACT.getActiveRecords():
-                self.id_eid[mapper(record.fid)] = record.eid
-            self.gotFactions.add(modName)
+        return self._current_mod and tag_name in bosh.modInfos[
+            self._current_mod].getBashTags()
 
-    def readFromMod(self,modInfo):
-        """Imports faction data from specified mod."""
-        self.readFactionEids(modInfo)
-        type_id_factions,types,id_eid = self.type_id_factions,self.types,\
-                                        self.id_eid
-        loadFactory = LoadFactory(False,*types)
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        mapper = modFile.getLongMapper()
-        for rsig in (x.rec_sig for x in types):
-            typeBlock = modFile.tops.get(rsig,None)
-            if not typeBlock: continue
-            id_factions = type_id_factions[rsig]
-            for record in typeBlock.getActiveRecords():
-                longid = mapper(record.fid)
-                if record.factions:
-                    id_eid[longid] = record.eid
-                    id_factions[longid] = [(mapper(x.faction),x.rank) for x in
-                                           record.factions]
+    def _load_plugin(self, mod_info, target_types):
+        """Loads the specified record types in the specified ModInfo and
+        returns the result. Abstract because it may be implemented by either
+        PBash or CBash.
 
-    def writeToMod(self,modInfo):
-        """Exports faction data to specified mod."""
-        type_id_factions,types = self.type_id_factions,self.types
-        loadFactory = LoadFactory(True,*types)
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        mapper = modFile.getLongMapper()
-        shortMapper = modFile.getShortMapper()
-        changed = Counter() # {'CREA':0,'NPC_':0}
-        for rsig in (x.rec_sig for x in types):
-            id_factions = type_id_factions.get(rsig,None)
-            typeBlock = modFile.tops.get(rsig,None)
-            if not id_factions or not typeBlock: continue
-            for record in typeBlock.records:
-                longid = mapper(record.fid)
-                if longid not in id_factions: continue
-                newFactions = set(id_factions[longid])
-                curFactions = set(
-                    (mapper(x.faction),x.rank) for x in record.factions)
-                changes = newFactions - curFactions
-                if not changes: continue
-                for faction,rank in changes:
-                    faction = shortMapper(faction)
-                    for entry in record.factions:
-                        if entry.faction == faction:
-                            entry.rank = rank
-                            break
-                    else:
-                        entry = MelObject()
-                        entry.faction = faction
-                        entry.rank = rank
-                        entry.unused1 = 'ODB'
-                        record.factions.append(entry)
+        :param mod_info: The ModInfo object to read.
+        :param target_types: A list, set or tuple containing strings that shows
+            which record types to load.
+        :return: An object representing the loaded plugin."""
+        raise AbstractError(u'_load_plugin not implemented')
+
+    # Reading from plugin - first pass
+    def _read_plugin_fp(self, loaded_mod):
+        """Performs a first pass of reading on the specified plugin and its
+        masters. Results are stored in id_context.
+
+        :param loaded_mod: The loaded mod to read from."""
+        raise AbstractError(u'_read_plugin_fp not implemented')
+
+    # TODO(inf) Might need second_pass parameter?
+    def _read_record_fp(self, record):
+        """Performs the actual parser-specific first pass code on the specified
+        record. Treat this as a kind of lambda for a map call over all records
+        matching the _fp_types. If _context_needs_followup is true, this will
+        be called on every record again during the second pass.
+
+        :param record: The record to read.
+        :return: Whatever representation you want to convert this record
+            into."""
+        raise AbstractError(u'_read_record_fp not implemented')
+
+    # Reading from plugin - second pass
+    def _read_plugin_sp(self, loaded_mod):
+        """Performs a second pass of reading on the specified plugin, but not
+        its masters. Results are stored in id_stored_info.
+
+        :param loaded_mod: The loaded mod to read from."""
+        raise AbstractError(u'_read_plugin_sp not implemented')
+
+    def _is_record_useful(self, record):
+        """The parser should check if the specified record would be useful to
+        it during the second pass, i.e. if we should store information for it.
+
+        :param record: The record in question.
+        :return: True if information for the record should be stored."""
+        raise AbstractError(u'_is_record_useful not implemented')
+
+    def _read_record_sp(self, record):
+        """Performs the actual parser-specific second pass code on the
+        specified record. Treat this as a kind of lambda for a map call over
+        all records matching the _sp_types. Unless _get_cur_record_info is
+        overriden, this will also be used during writing to compare new and old
+        record information.
+
+        :param record: The record to read.
+        :return: Whatever representation you want to convert this record
+            into."""
+        raise AbstractError(u'_read_record_sp not implemented')
+
+    # Note the non-PEP8 names - those point to refactored pseudo-API methods
+    def readFromMod(self, mod_info):
+        """Asks this parser to read information from the specified ModInfo
+        instance. Executes the needed passes and stores extracted information
+        in id_context and / or id_stored_info. Note that this does not
+        automatically clear id_stored_info to allow combining multiple sources.
+
+        :param mod_info: The ModInfo instance to read from."""
+        self._current_mod = mod_info.name
+        # Check if we need to read at all
+        a_types = self.all_types
+        if not a_types:
+            # We need to unset _current_mod since we're no longer loading a mod
+            self._current_mod = None
+            return
+        # Load mod_info once and for all, then execute every needed pass
+        loaded_mod = self._load_plugin(mod_info, a_types)
+        if self._fp_types:
+            self._read_plugin_fp(loaded_mod)
+        if self._sp_types:
+            self._read_plugin_sp(loaded_mod)
+        # We need to unset _current_mod since we're no longer loading a mod
+        self._current_mod = None
+
+    # Writing to plugins
+    def _do_write_plugin(self, loaded_mod):
+        """Writes the information stored in id_stored_info into the specified
+        plugin.
+
+        :param loaded_mod: The loaded mod to write to.
+        :return: A dict mapping record types to the number of changed records
+            in them."""
+        raise AbstractError(u'_do_write_plugin not implemented')
+
+    def _get_cur_record_info(self, record):
+        """Reads current information for the specified record in order to
+        compare it with the stored information to determine if we need to write
+        out. Falls back to the regular _read_record_sp method if it's
+        implemented, since most parsers will want to do the same thing here,
+        but you may want to override this e.g. if your parser can write, but
+        not read plugins.
+
+        :param record: The record to read.
+        :return: Whatever representation you want to convert this record
+            into."""
+        return self._read_record_sp(record)
+
+    def _should_write_record(self, new_info, cur_info):
+        """Checks if we should write out information for the current record,
+        based on the 'new' information (i.e. the info stored in id_stored_info)
+        and the 'current' information (i.e. the info stored in the record
+        itself). By default, this returns True if they are different. However,
+        you may want to override this if you e.g. only care about the contents
+        of a list and not its order.
+
+        :param new_info: The new record info.
+        :param cur_info: The current record info.
+        :return: True if _write_record should be called."""
+        return new_info != cur_info
+
+    def _write_record(self, record, new_info, cur_info):
+        """This is where your parser should perform the actual work of writing
+        out the necessary changes to the record, using the given record
+        information to determine what to change.
+
+        :param record: The record to write to.
+        :param new_info: The new record info.
+        :param cur_info: The current record info."""
+        raise AbstractError(u'_write_record not implemented')
+
+    def writeToMod(self, mod_info):
+        """Asks this parser to write its stored information to the specified
+        ModInfo instance.
+
+        :param mod_info: The ModInfo instance to write to.
+        :return: A dict mapping record types to the number of changed records
+            in them."""
+        return self._do_write_plugin(self._load_plugin(
+            mod_info, self.id_stored_info.keys()))
+
+    # Reading from CSV
+    def _get_read_format(self, csv_fields):
+        """Determines the _ACsvFormat to use when reading the specified CSV
+        line. We need to be dynamic here since some parsers need to support
+        multiple formats (e.g. for backwards compatibility).
+
+        :param csv_fields: A line in a CSV file, already split into fields.
+        :return: An _ACsvFormat instance (*not* a class!)."""
+        raise AbstractError()
+
+    def readFromText(self, csv_path):
+        """Reads information from the specified CSV file and stores the result
+        in id_stored_info. You must override _get_format for this method to
+        work.
+
+        :param csv_path: The path to the CSV file that should be read."""
+        with CsvReader(csv_path) as ins:
+            for csv_fields in ins:
+                # Figure out which format to use, then ask the format to parse
+                # the line
+                cur_format = self._get_read_format(csv_fields)
+                rec_type, source_mod, fid_key, rec_info = \
+                    cur_format.parse_line(csv_fields)
+                self.id_stored_info[rec_type][source_mod][fid_key] = rec_info
+
+    # Other API
+    @property
+    def all_types(self):
+        """Returns a set of all record types that this parser requires."""
+        return set(self._fp_types) | set(self._sp_types)
+
+# CSV Formats
+class _ACsvFormat(object):
+    """A format determines how lines in a CSV file are parsed and written."""
+    def parse_line(self, csv_fields):
+        """Parses the specified CSV line and returns a tuple containing the
+        result.
+
+        :param csv_fields: A line in a CSV file, already split into fields.
+        :return: A tuple containing the following, in order: The type of record
+            described by this line, the name of the plugin from which this line
+            originated, the (short) FormID of this"""
+
+# PBash / CBash implementations of the parsers
+# TODO(inf) Should this really be based on _AParser? Would object be better? If
+#  we do that, we will lose typing though...
+class _PBashParser(_AParser):
+    """Mixin for parsers that implements reading and writing mods using PBash
+    calls. You will of course still have to implement _read_record_fp et al.,
+    depending on the passes and behavior you want."""
+
+    def _load_plugin(self, mod_info, target_types):
+        mod_file = ModFile(mod_info, LoadFactory(
+            False, *[MreRecord.type_class[t] for t in target_types]))
+        mod_file.load(do_unpack=True)
+        mod_file.convertToLongFids(target_types)
+        return mod_file
+
+    def _read_plugin_fp(self, loaded_mod):
+        from . import bosh
+        def _fp_loop(mod_to_read):
+            """Central loop of _read_plugin_fp, factored out into a method so
+            that it can easily be used twice."""
+            for block_type in self._fp_types:
+                rec_block = mod_to_read.tops.get(block_type, None)
+                if not rec_block: continue
+                for record in rec_block.getActiveRecords():
+                    self.id_context[record.fid] = \
+                        self._read_record_fp(record)
+            self._fp_mods.add(mod_to_read.fileInfo.name)
+        # Process the mod's masters first, but see if we need to sort them
+        master_names = loaded_mod.tes4.masters
+        if self._needs_fp_master_sort:
+            master_names = load_order.get_ordered(master_names)
+        for mod_name in master_names:
+            if mod_name in self._fp_mods: continue
+            _fp_loop(self._load_plugin(bosh.modInfos[mod_name],
+                                       self._fp_types))
+        # Finally, process the mod itself
+        if loaded_mod.fileInfo.name in self._fp_mods: return
+        _fp_loop(loaded_mod)
+
+    def _read_plugin_sp(self, loaded_mod):
+        for rec_type in self._sp_types:
+            rec_block = loaded_mod.tops.get(rec_type, None)
+            if not rec_block: continue
+            for record in rec_block.getActiveRecords():
+                # Check if we even want this record first
+                if self._is_record_useful(record):
+                    rec_fid = record.fid
+                    self.id_stored_info[rec_type][rec_fid] = \
+                        self._read_record_sp(record)
+                    # Check if we need to follow up on the first pass info
+                    if self._context_needs_followup:
+                        self.id_context[rec_fid] = \
+                            self._read_record_fp(record)
+
+    def _do_write_plugin(self, loaded_mod):
+        # Counts the number of records that were changed in each record type
+        num_changed_records = Counter()
+        # We know that the loaded mod only has the tops loaded that we need
+        for rec_type, stored_rec_info in self.id_stored_info.iteritems():
+            rec_block = loaded_mod.tops.get(rec_type, None)
+            # Check if this record type makes any sense to patch
+            if not stored_rec_info or not rec_block: continue
+            # TODO(inf) Copied from implementations below, may have to be
+            #  getActiveRecords()?
+            for record in rec_block.records:
+                rec_fid = record.fid
+                if rec_fid not in stored_rec_info: continue
+                # Compare the stored information to the information currently
+                # in the plugin
+                new_info = stored_rec_info[rec_fid]
+                cur_info = self._get_cur_record_info(record)
+                if self._should_write_record(new_info, cur_info):
+                    # It's different, ask the parser to write it out
+                    self._write_record(record, new_info, cur_info)
                     record.setChanged()
-                changed[rsig] += 1
-        #--Done
-        if sum(changed.values()): modFile.safeSave()
-        return changed
+                    num_changed_records[rec_type] += 1
+        # Check if we've actually changed something, otherwise skip saving
+        if sum(num_changed_records):
+            # Don't forget to convert back to short fids when writing!
+            loaded_mod.convertToShortFids()
+            loaded_mod.safeSave()
+        return num_changed_records
+
+class ActorFactions(_PBashParser):
+    """Parses factions from NPCs and Creatures (in games that have those). Can
+    read and write both plugins and CSV, and uses a single pass if called from
+    a patcher, but two passes if called from a link."""
+
+    def __init__(self):
+        super(ActorFactions, self).__init__()
+        a_types = bush.game.actor_types
+        # We don't need the first pass if we're used by the parser
+        self._fp_types = (a_types + (b'FACT',) if not self.called_from_patcher
+                          else ())
+        self._sp_types = a_types
+
+    def _read_record_fp(self, record):
+        return record.eid
+
+    def _is_record_useful(self, record):
+        return bool(record.factions)
+
+    def _read_record_sp(self, record):
+        return [(f.faction, f.rank) for f in record.factions]
+
+    def _should_write_record(self, new_info, cur_info):
+        return bool(set(new_info) - set(cur_info))
+
+    def _write_record(self, record, new_info, cur_info):
+        for faction, rank in set(new_info) - set(cur_info):
+            # Check if this an addition or a change
+            for entry in record.factions:
+                if entry.faction == faction:
+                    # Just a change, use the existing faction
+                    target_entry = entry
+                    break
+            else:
+                # This is an addition, we need to create a new faction instance
+                target_entry = MelObject()
+                record.factions.append(target_entry)
+            # Actually write out the attributes from new_info
+            target_entry.faction = faction
+            target_entry.rank = rank
+            target_entry.unused1 = b'ODB'
 
     def readFromText(self,textPath):
         """Imports faction data from specified text file."""
-        type_id_factions = self.type_id_factions
+        type_id_factions = self.id_stored_info
         aliases = self.aliases
         with CsvReader(textPath) as ins:
             for fields in ins:
@@ -145,7 +436,7 @@ class ActorFactions(object):
 
     def writeToText(self,textPath):
         """Exports faction data to specified text file."""
-        type_id_factions,id_eid = self.type_id_factions,self.id_eid
+        type_id_factions,id_eid = self.id_stored_info, self.id_context
         headFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = u'"%s","%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
         with textPath.open(u'w', encoding=u'utf-8-sig') as out:
@@ -802,125 +1093,102 @@ class CBash_EditorIds(object):
                     out.write(rowFormat % (group,fid[0].s,fid[1],fid_eid[fid]))
 
 #------------------------------------------------------------------------------
-class FactionRelations(object):
-    """Faction relations."""
+class FactionRelations(_PBashParser):
+    """Parses the relations between factions. Can read and write both plugins
+    and CSV, and uses two passes to do so."""
+    cls_rel_attrs = bush.game.relations_attrs
 
-    def __init__(self,aliases=None):
-        self.id_relations = {} #--(otherLongid,otherDisp) = id_relation[longid]
-        self.id_eid = {} #--For all factions.
-        self.aliases = aliases or {}
-        self.gotFactions = set()
+    def __init__(self):
+        super(FactionRelations, self).__init__()
+        self._fp_types = (b'FACT',) if not self.called_from_patcher else ()
+        self._sp_types = (b'FACT',)
+        self._needs_fp_master_sort = True
 
-    def readFactionEids(self,modInfo):
-        """Extracts faction editor ids from modInfo and its masters."""
-        from . import bosh
-        loadFactory = LoadFactory(False,MreRecord.type_class['FACT'])
-        for modName in (modInfo.masterNames + (modInfo.name,)):
-            if modName in self.gotFactions: continue
-            modFile = ModFile(bosh.modInfos[modName],loadFactory)
-            modFile.load(True)
-            mapper = modFile.getLongMapper()
-            for record in modFile.FACT.getActiveRecords():
-                self.id_eid[mapper(record.fid)] = record.eid
-            self.gotFactions.add(modName)
+    def _read_record_fp(self, record):
+        # Gather the latest value for the EID matching the FID
+        return record.eid
 
-    def readFromMod(self,modInfo):
-        """Imports faction relations from specified mod."""
-        self.readFactionEids(modInfo)
-        loadFactory = LoadFactory(False,MreRecord.type_class['FACT'])
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        modFile.convertToLongFids(('FACT',))
-        for record in modFile.FACT.getActiveRecords():
-            #--Following is a bit messy. If already have relations for a
-            # given mod, want to do an in-place update. Otherwise do an append.
-            relations = self.id_relations.get(record.fid)
-            if relations is None:
-                relations = self.id_relations[record.fid] = []
-            other_index = dict((y[0],x) for x,y in enumerate(relations))
-            for relation in record.relations:
-                other,disp = relation.faction,relation.mod
-                if other in other_index:
-                    relations[other_index[other]] = (other,disp)
-                else:
-                    relations.append((other,disp))
+    def _is_record_useful(self, _record):
+        # We want all records - even ones that have no relations, since those
+        # may have still deleted original relations.
+        return True
+
+    def _read_record_sp(self, record):
+        # Look if we already have relations and base ourselves on those,
+        # otherwise make a new list
+        relations = self.id_stored_info[b'FACT'].get(record.fid, [])
+        other_index = dict((y[0], x) for x, y in enumerate(relations))
+        # Merge added relations, preserve changed relations
+        for relation in record.relations:
+            rel_attrs = tuple(getattr(relation, a) for a
+                              in self.cls_rel_attrs)
+            other_fac = rel_attrs[0]
+            if other_fac in other_index:
+                # This is just a change, preserve the latest value
+                relations[other_index[other_fac]] = rel_attrs
+            else:
+                # This is an addition, merge it
+                relations.append(rel_attrs)
+        return relations
+
+    def _write_record(self, record, new_info, cur_info):
+        for relation in set(new_info) - set(cur_info):
+            rel_fac = relation[0]
+            # See if this is a new relation or a change to an existing one
+            for entry in record.relations:
+                if rel_fac == entry.faction:
+                    # Just a change, change the attributes
+                    target_entry = entry
+                    break
+            else:
+                # It's an addition, we need to make a new relation object
+                target_entry = MelObject()
+                record.relations.append(target_entry)
+            # Actually write out the attributes from new_info
+            for rel_attr, rel_val in zip(self.cls_rel_attrs, relation):
+                setattr(target_entry, rel_attr, rel_val)
 
     def readFromText(self,textPath):
         """Imports faction relations from specified text file."""
-        id_relations = self.id_relations
+        id_relations = self.id_stored_info[b'FACT']
         aliases = self.aliases
         with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 7 or fields[2][:2] != u'0x': continue
-                med,mmod,mobj,oed,omod,oobj,disp = fields[:9]
+                med, mmod, mobj, oed, omod, oobj = fields[:6]
                 mmod = _coerce(mmod, unicode)
                 omod = _coerce(omod, unicode)
                 mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj[2:],int,16))
                 oid = (GPath(aliases.get(omod,omod)),_coerce(oobj[2:],int,16))
-                disp = _coerce(disp, int)
+                relation_attrs = (oid,) + tuple(fields[6:])
                 relations = id_relations.get(mid)
                 if relations is None:
                     relations = id_relations[mid] = []
                 for index,entry in enumerate(relations):
                     if entry[0] == oid:
-                        relations[index] = (oid,disp)
+                        relations[index] = relation_attrs
                         break
                 else:
-                    relations.append((oid,disp))
-
-    def writeToMod(self,modInfo):
-        """Exports faction relations to specified mod."""
-        id_relations = self.id_relations
-        loadFactory= LoadFactory(True,MreRecord.type_class['FACT'])
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        mapper = modFile.getLongMapper()
-        shortMapper = modFile.getShortMapper()
-        changed = 0
-        for record in modFile.FACT.getActiveRecords():
-            longid = mapper(record.fid)
-            if longid not in id_relations: continue
-            newRelations = set(id_relations[longid])
-            curRelations = set(
-                (mapper(x.faction),x.mod) for x in record.relations)
-            changes = newRelations - curRelations
-            if not changes: continue
-            for faction,mod in changes:
-                faction = shortMapper(faction)
-                for entry in record.relations:
-                    if entry.faction == faction:
-                        entry.mod = mod
-                        break
-                else:
-                    entry = MelObject()
-                    entry.faction = faction
-                    entry.mod = mod
-                    record.relations.append(entry)
-                record.setChanged()
-            changed += 1
-        #--Done
-        if changed: modFile.safeSave()
-        return changed
+                    relations.append(relation_attrs)
 
     def writeToText(self,textPath):
         """Exports faction relations to specified text file."""
-        id_relations,id_eid = self.id_relations, self.id_eid
-        headFormat = u'"%s","%s","%s","%s","%s","%s","%s"\n'
-        rowFormat = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
-        with textPath.open('w',encoding='utf-8-sig') as out:
-            out.write(headFormat % (
-                _(u'Main Eid'),_(u'Main Mod'),_(u'Main Object'),
-                _(u'Other Eid'),_(u'Other Mod'),_(u'Other Object'),_(u'Disp')))
-            for main in sorted(id_relations,
-                               key=lambda x:id_eid.get(x).lower()):
-                mainEid = id_eid.get(main,u'Unknown')
-                for other,disp in sorted(id_relations[main],
-                                         key=lambda x:id_eid.get(
-                                                 x[0]).lower()):
-                    otherEid = id_eid.get(other,u'Unknown')
-                    out.write(rowFormat % (
-                        mainEid,main[0].s,main[1],otherEid,other[0].s,other[1],
-                        disp))
+        id_relations, id_eid = self.id_stored_info[b'FACT'], self.id_context
+        with textPath.open(u'w', encoding=u'utf-8-sig') as out:
+            out.write(bush.game.relations_csv_header)
+            for main_fid in sorted(id_relations,
+                                   key=lambda x: id_eid.get(x).lower()):
+                main_eid = id_eid.get(main_fid, u'Unknown')
+                for relation_obj in sorted(
+                        id_relations[main_fid],
+                        key=lambda x: id_eid.get(x[0]).lower()):
+                    other_fid = relation_obj[0]
+                    other_eid = id_eid.get(other_fid, u'Unknown')
+                    # I wish py2 allowed star exprs in tuples/lists...
+                    row_vals = (main_eid, main_fid[0].s, main_fid[1],
+                                other_eid, other_fid[0].s,
+                                other_fid[1]) + relation_obj[1:]
+                    out.write(bush.game.relations_csv_row_format % row_vals)
 
 class CBash_FactionRelations(object):
     """Faction relations."""
