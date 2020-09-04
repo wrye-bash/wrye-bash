@@ -72,8 +72,8 @@ SET PYTHON=%PYPATH%pythonw.exe
 :FOUNDPYTHON
 ECHO Found Python at '%PYTHON%'
 ECHO Found Python at '%PYTHON%' >%OUTFILE%
-ECHO Launching Wrye Bash 307 in debug mode
-ECHO Launching Wrye Bash 307 in debug mode >>%OUTFILE%
+ECHO Launching Wrye Bash 308 in debug mode
+ECHO Launching Wrye Bash 308 in debug mode >>%OUTFILE%
 :: Line below won't do due to us redirecting stdout/err inside bash.py
 SET PYTHONIOENCODING=UTF8
 :: The following line checks if %OUTFILE% is writeable to determine if there is
