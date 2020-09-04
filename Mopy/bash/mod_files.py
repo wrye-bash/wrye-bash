@@ -291,6 +291,11 @@ class ModFile(object):
         outPath -- Path of the output file to write to. Defaults to original file path."""
         if not self.loadFactory.keepAll: raise StateError(u"Insufficient data to write file.")
         outPath = outPath or self.fileInfo.getPath()
+        # Too many masters is fatal and results in cryptic struct errors, so
+        # loudly complain about it here
+        if len(self.tes4.masters) > 255:
+            raise ModError(self.fileInfo.name,
+                u'Attempting to write a file with too many masters (>255).')
         with ModWriter(outPath.open(u'wb')) as out:
             #--Mod Record
             self.tes4.setChanged()
