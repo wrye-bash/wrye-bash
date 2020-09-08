@@ -51,12 +51,6 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
         dropdown_inis = Fallout4GameInfo.Ini.dropdown_inis + [
             u'Fallout4VrCustom.ini'] ##: why is this here?
 
-    class Bsa(Fallout4GameInfo.Bsa):
-        vanilla_string_bsas = Fallout4GameInfo.Bsa.vanilla_string_bsas.copy()
-        vanilla_string_bsas.update({
-            u'fallout4_vr.esm': [u'Fallout4_VR - Main.ba2'],
-        })
-
     class Xe(Fallout4GameInfo.Xe):
         full_name = u'FO4VREdit'
         xe_key_prefix = u'fo4vrView'

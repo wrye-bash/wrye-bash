@@ -44,13 +44,6 @@ class EnderalGameInfo(SkyrimGameInfo):
         dropdown_inis = [u'Enderal.ini', u'EnderalPrefs.ini']
         save_prefix = u'..\\Enderal\\Saves'
 
-    class Bsa(SkyrimGameInfo.Bsa):
-        vanilla_string_bsas = {
-            u'skyrim.esm': [u'Skyrim - Interface.bsa'],
-            u'update.esm': [u'Skyrim - Interface.bsa'],
-            u'enderal - forgotten stories.esm': [u'Skyrim - Interface.bsa'],
-        }
-
     class Xe(SkyrimGameInfo.Xe):
         full_name = u'EnderalEdit'
         xe_key_prefix = u'enderalView'

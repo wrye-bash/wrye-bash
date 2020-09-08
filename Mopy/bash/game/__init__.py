@@ -210,6 +210,9 @@ class GameInfo(object):
         screenshot_index_key = (u'Display', u'iScreenShotIndex', u'0')
         # The INI entries listing vanilla BSAs to load
         resource_archives_keys = ()
+        # An INI key listing BSAs that will override all plugin BSAs. Blank if
+        # it doesn't exist for this game
+        resource_override_key = u''
         # Whether this game supports mod ini files aka ini fragments
         supports_mod_inis = True
 
@@ -238,13 +241,13 @@ class GameInfo(object):
         # will be used for BSAs which are not explicitly listed. Format is
         # ISO 8601 (year-month-day)
         redate_dict = defaultdict(lambda: u'2006-01-01')
+        # The default value for Ini.resource_override_key if it's missing from
+        # the game INI
+        resource_override_defaults = []
         # All BSA versions accepted by this game. If empty, indicates that this
         # game does not use BSA versions and so BSA version checks will be
         # skipped entirely.
         valid_versions = set()
-        # Maps vanilla plugin names to the BSA that contain their localization
-        # strings
-        vanilla_string_bsas = {}
 
     class Psc(object):
         """Information about script sources (only Papyrus right now) for this

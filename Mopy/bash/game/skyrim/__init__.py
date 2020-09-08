@@ -86,13 +86,6 @@ class SkyrimGameInfo(GameInfo):
         attachment_regex = u''
         has_bsl = True
         valid_versions = {0x68}
-        vanilla_string_bsas = {
-            u'skyrim.esm': [u'Skyrim - Interface.bsa'],
-            u'update.esm': [u'Skyrim - Interface.bsa'],
-            u'dawnguard.esm': [u'Dawnguard.bsa'],
-            u'hearthfires.esm': [u'Hearthfires.bsa'],
-            u'dragonborn.esm': [u'Dragonborn.bsa'],
-        }
 
     class Psc(GameInfo.Psc):
         source_extensions = {u'.psc'}

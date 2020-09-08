@@ -81,15 +81,6 @@ class Fallout4GameInfo(GameInfo):
     class Bsa(GameInfo.Bsa):
         bsa_extension = u'.ba2'
         valid_versions = {0x01}
-        vanilla_string_bsas = {
-            u'fallout4.esm': [u'Fallout4 - Interface.ba2'],
-            u'dlcrobot.esm': [u'DLCRobot - Main.ba2'],
-            u'dlcworkshop01.esm': [u'DLCworkshop01 - Main.ba2'],
-            u'dlcworkshop02.esm': [u'DLCworkshop02 - Main.ba2'],
-            u'dlcworkshop03.esm': [u'DLCworkshop03 - Main.ba2'],
-            u'dlccoast.esm': [u'DLCCoast - Main.ba2'],
-            u'dlcnukaworld.esm':  [u'DLCNukaWorld - Main.ba2'],
-        }
 
     class Psc(GameInfo.Psc):
         source_extensions = {u'.psc'}

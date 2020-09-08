@@ -46,12 +46,11 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
         exe = u'sksevr_loader.exe'
         ver_files = [u'sksevr_loader.exe', u'sksevr_steam_loader.dll']
 
+    class Ini(SkyrimSEGameInfo.Ini):
+        resource_override_key = u'sVrResourceArchiveList'
+
     class Bsa(SkyrimSEGameInfo.Bsa):
-        vanilla_string_bsas = SkyrimSEGameInfo.Bsa.vanilla_string_bsas.copy()
-        vanilla_string_bsas.update({
-            u'skyrimvr.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa',
-                              u'Skyrim_VR - Main.bsa'],
-        })
+        resource_override_defaults = [u'Skyrim_VR - Main.bsa']
 
     class Xe(SkyrimSEGameInfo.Xe):
         full_name = u'TES5VREdit'

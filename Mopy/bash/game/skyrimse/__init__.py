@@ -62,16 +62,6 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         # Skyrim SE accepts the base name and ' - Textures'
         attachment_regex = r'(?: \- Textures)?'
         valid_versions = {0x69}
-        vanilla_string_bsas = {
-            u'skyrim.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
-            u'update.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
-            u'dawnguard.esm': [u'Skyrim - Patch.bsa',
-                               u'Skyrim - Interface.bsa'],
-            u'hearthfires.esm': [u'Skyrim - Patch.bsa',
-                                 u'Skyrim - Interface.bsa'],
-            u'dragonborn.esm': [u'Skyrim - Patch.bsa',
-                                u'Skyrim - Interface.bsa'],
-        }
 
     class Xe(SkyrimGameInfo.Xe):
         full_name = u'SSEEdit'

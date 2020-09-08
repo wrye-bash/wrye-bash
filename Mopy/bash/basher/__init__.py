@@ -2892,10 +2892,10 @@ class InstallersDetails(_SashDetailsPanel):
             gPage.text_content = dumpFiles(installer.mismatchedFiles)
         elif pageName == 'gConflicts':
             gPage.text_content = self._idata.getConflictReport(
-                installer, 'OVER', bosh.modInfos)
+                installer, u'OVER', bosh.modInfos)
         elif pageName == 'gUnderrides':
             gPage.text_content = self._idata.getConflictReport(
-                installer, 'UNDER', bosh.modInfos)
+                installer, u'UNDER', bosh.modInfos)
         elif pageName == 'gDirty':
             gPage.text_content = dumpFiles(installer.dirty_sizeCrc)
         elif pageName == 'gSkipped':

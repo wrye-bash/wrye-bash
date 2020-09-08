@@ -87,6 +87,11 @@ class IniFile(AFile):
         self._deleted = False
         self.updated = False # notify iniInfos which should clear this flag
 
+    def has_setting(self, section, key):
+        """Returns True if this INI file has the specified section and key."""
+        ci_temp = self.get_ci_settings()
+        return section in ci_temp and key in ci_temp[section]
+
     def getSetting(self, section, key, default):
         """Gets a single setting from the file."""
         try:
