@@ -183,7 +183,7 @@ class APreserver(ImportPatcher):
         cachedMasters = {}
         minfs = self.patchFile.p_file_minfos
         loaded_mods = self.patchFile.loadSet
-        for index,srcMod in enumerate(self.srcs):
+        for srcMod in self.srcs:
             mod_id_data = {}
             if srcMod not in minfs: continue
             srcInfo = minfs[srcMod]
@@ -272,9 +272,9 @@ class APreserver(ImportPatcher):
         type_count = Counter()
         for rsig in self.srcs_sigs:
             if rsig not in modFileTops: continue
-            records = modFileTops[rsig].iter_present_records(
+            present_recs = modFileTops[rsig].iter_present_records(
                 include_ignored=True) ##: why include_ignored?
-            self._inner_loop(keep, records, rsig, type_count)
+            self._inner_loop(keep, present_recs, rsig, type_count)
         self.id_data.clear() # cleanup to save memory
         # Log
         self._patchLog(log, type_count)
@@ -477,8 +477,7 @@ class ImportCellsPatcher(ImportPatcher):
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
-                    masterInfo = minfs[master]
-                    masterFile = self._mod_file_read(masterInfo)
+                    masterFile = self._mod_file_read(minfs[master])
                     cachedMasters[master] = masterFile
                 if b'CELL' in masterFile.tops:
                     for cellBlock in masterFile.tops[b'CELL'].id_cellBlock.values():

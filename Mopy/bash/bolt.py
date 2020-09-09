@@ -217,8 +217,8 @@ def encode_complex_string(string_val: str, max_size: int | None = None,
             string_val = test
     else:
         string_val = encode(string_val, firstEncoding=preferred_encoding)
-    if min_size and len(string_val) < min_size:
-        string_val += b'\x00' * (min_size - len(string_val))
+    if min_size and (missing := min_size - len(string_val)) > 0:
+        string_val += b'\x00' * missing
     return string_val
 
 class Tee:
@@ -240,19 +240,19 @@ class Tee:
         self._stream_a.write(s)
         return self._stream_b.write(s)
 
-def to_unix_newlines(s): # type: (str) -> str
+def to_unix_newlines(s: str) -> str:
     """Replaces non-Unix newlines in the specified string with Unix newlines.
     Handles both CR-LF (Windows) and pure CR (macOS)."""
-    return s.replace(u'\r\n', u'\n').replace(u'\r', u'\n')
+    return s.replace('\r\n', '\n').replace('\r', '\n')
 
 def to_win_newlines(s):
     """Converts LF (Unix) newlines to CR-LF (Windows) newlines."""
-    return reUnixNewLine.sub('\r\n',s)
+    return reUnixNewLine.sub('\r\n', s)
 
-def remove_newlines(s): # type: (str) -> str
+def remove_newlines(s: str) -> str:
     """Removes all newlines (whether they are in LF, CR-LF or CR form) from the
     specified string."""
-    return to_unix_newlines(s).replace(u'\n', u'')
+    return to_unix_newlines(s).replace('\n', '')
 
 # The current OS's path seperator, escaped for use in regexes
 os_sep_re = re.escape(os.path.sep)

@@ -137,10 +137,9 @@ class LoadFactory(object):
     def getUnpackCellBlocks(self,topType):
         """Returns whether cell blocks should be unpacked or not. Only relevant
         if CELL and WRLD top types are expanded."""
-        return (
-            self.keepAll or
-            (self.recTypes & {b'REFR', b'ACHR', b'ACRE', b'PGRD', b'LAND'}) or
-            (topType == b'WRLD' and b'LAND' in self.recTypes))
+        return self.keepAll or (
+                self.recTypes & {b'REFR', b'ACHR', b'ACRE', b'PGRD'}) or (
+                       topType == b'WRLD' and b'LAND' in self.recTypes)
 
     def getTopClass(self, top_rec_type):
         """Return top block class for top block type, or None.
@@ -503,36 +502,36 @@ class ModHeaderReader(object):
                                 f'{size_check}, got {len(new_rec_data)}.')
                     else:
                         new_rec_data = ins_read(blob_siz)
-                    recs = FastModReader(plugin_fn, new_rec_data)
-                    recs_seek = recs.seek
-                    recs_read = recs.read
-                    recs_tell = recs.tell
-                    recs_size = recs.size
-                    recs_unpack = recs.unpack
-                    while recs_tell() != recs_size:
+                    fmr = FastModReader(plugin_fn, new_rec_data)
+                    fmr_seek = fmr.seek
+                    fmr_read = fmr.read
+                    fmr_tell = fmr.tell
+                    fmr_size = fmr.size
+                    fmr_unpack = fmr.unpack
+                    while fmr_tell() != fmr_size:
                         # Inlined from unpackSubHeader & FastModReader.unpack
-                        read_data = recs_read(sh_size)
+                        read_data = fmr_read(sh_size)
                         if len(read_data) != sh_size:
                             raise ModReadError(
                                 plugin_fn, [_rsig, u'SUB_HEAD'],
-                                recs_tell() - len(read_data), recs_size)
+                                fmr_tell() - len(read_data), fmr_size)
                         mel_sig, mel_size = sh_unpack(read_data)
                         # Extended storage - very rare, so don't optimize
                         # inlines etc. for it
                         if mel_sig == b'XXXX':
                             # Throw away size here (always == 0)
-                            mel_size = recs_unpack(__unpacker, 4, _rsig,
+                            mel_size = fmr_unpack(__unpacker, 4, _rsig,
                                                    u'XXXX.SIZE')[0]
-                            mel_sig = recs_unpack(sh_unpack, sh_size,
+                            mel_sig = fmr_unpack(sh_unpack, sh_size,
                                                   _rsig, u'XXXX.TYPE')[0]
                         if mel_sig == b'EDID':
                             # No need to worry about newlines, these are Editor
                             # IDs and so won't contain any
-                            eid = decoder(recs_read(mel_size).rstrip(null1),
+                            eid = decoder(fmr_read(mel_size).rstrip(null1),
                                           wanted_encoding, avoided_encodings)
                             break
                         else:
-                            recs_seek(mel_size, 1)
+                            fmr_seek(mel_size, 1)
                     records[header.fid] = (header, eid)
                     ins_seek(next_record) # we may have break'd at EDID
         del group_records[bush.game.Esp.plugin_header_sig] # skip TES4 record

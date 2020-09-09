@@ -947,9 +947,9 @@ class MelOwnership(MelGroup):
             MelSInt32(b'XRNK', 'rank'),
         )
 
-    def dumpData(self,record,out): ##: use pack_subrecord_data ?
+    def pack_subrecord_data(self, record):
         if record.ownership and record.ownership.owner:
-            MelGroup.dumpData(self,record,out)
+            return super().pack_subrecord_data(record) # else None - don't dump
 
 #------------------------------------------------------------------------------
 class MelPerkData(MelTruncatedStruct):

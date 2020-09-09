@@ -248,7 +248,8 @@ class PatchFile(ModFile):
                 # TODO adapt for other games
                 if bush.game.fsName == 'Oblivion' and b'SCPT' in \
                         modFile.tops and modName != bush.game.master_file:
-                    gls = modFile.tops[b'SCPT'].getRecord(0x00025811)
+                    gls = modFile.tops[b'SCPT'].getRecord(
+                        bush.game.master_fid(0x00025811))
                     if gls and gls.compiled_size == 4 and gls.last_index == 0:
                         self.compiledAllMods.append(modName)
                 pstate = index+0.5

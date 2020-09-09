@@ -1045,9 +1045,9 @@ class ScriptText(_TextParser):
         eid_data = self.eid_data
         modFile = self._load_plugin(modInfo, keepAll=False)
         with Progress(_(u'Export Scripts')) as progress:
-            records = list(modFile.tops[b'SCPT'].iter_present_records())
-            y = len(records)
-            for z, (rfid, record) in enumerate(records):
+            present_recs = list(modFile.tops[b'SCPT'].iter_present_records())
+            y = len(present_recs)
+            for z, (rfid, record) in enumerate(present_recs):
                 progress(((0.5/y) * z), _(u'Reading scripts in %s.') % modInfo)
                 eid_data[record.eid] = (record.script_source.splitlines(),
                                         rfid)

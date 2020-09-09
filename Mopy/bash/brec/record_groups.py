@@ -299,15 +299,15 @@ class MobObjects(MobBase):
             self_recs.append(record)
         self_id_recs[record_id] = record
 
-    def copy_records(self, records):
+    def copy_records(self, recs):
         """Copies the specified records into this block, overwriting existing
         records. Note that the records *must* already be in long fid format!
         If condition_func is given, it will be called on each record to decide
         whether or not to copy it.
 
-        :type records: list[brec.MreRecord]"""
+        :type recs: list[brec.MreRecord]"""
         copy_record = self.setRecord
-        for record in records:
+        for record in recs:
             copy_record(record.getTypeCopy())
 
     def keepRecords(self, p_keep_ids):
@@ -772,7 +772,7 @@ class MobCell(MobBase):
         persistentAppend = self.persistent_refs.append
         tempAppend = self.temp_refs.append
         distantAppend = self.distant_refs.append
-        subgroupLoaded = [False, False, False]
+        subgroupLoaded = set()
         groupType = None # guaranteed to compare False to any of them
         while not insAtEnd(endPos, u'Cell Block'):
             header = unpack_header(ins)
@@ -784,12 +784,11 @@ class MobCell(MobBase):
                     raise ModError(self.inName,
                                    f'Unexpected subgroup {groupType:d} in '
                                    f'cell children group.')
-                if subgroupLoaded[groupType - 8]:
+                if groupType in subgroupLoaded:
                     raise ModError(self.inName,
                                    f'Extra subgroup {groupType:d} in cell '
                                    f'children group.')
-                else:
-                    subgroupLoaded[groupType - 8] = True
+                subgroupLoaded.add(groupType)
             elif _rsig not in cellType_class:
                 raise ModError(self.inName,
                                f'Unexpected {sig_to_str(_rsig)} record in '
@@ -1062,8 +1061,8 @@ class MobCells(MobBase):
         if cfid in self.id_cellBlock:
             self.id_cellBlock[cfid].cell = cell_copy
         else:
-            grup_header = ChildrenGrupHeader(0, DUMMY_FID, 6, self.stamp)
-            cellBlock = MobCell(grup_header, self.loadFactory, cell_copy)
+            children_head = ChildrenGrupHeader(0, DUMMY_FID, 6, self.stamp)
+            cellBlock = MobCell(children_head, self.loadFactory, cell_copy)
             cellBlock.setChanged()
             self.id_cellBlock[cfid] = cellBlock
 
@@ -1446,8 +1445,8 @@ class MobWorld(MobCells):
         if self.worldCellBlock:
             self.worldCellBlock.cell = cell_copy
         else:
-            grup_header = ChildrenGrupHeader(0, DUMMY_FID, 6, self.stamp)
-            new_pers_block = MobCell(grup_header, self.loadFactory, cell_copy)
+            children_head = ChildrenGrupHeader(0, DUMMY_FID, 6, self.stamp)
+            new_pers_block = MobCell(children_head, self.loadFactory, cell_copy)
             new_pers_block.setChanged()
             self.worldCellBlock = new_pers_block
 
@@ -1539,8 +1538,8 @@ class MobWorld(MobCells):
             # If we don't have a world cell block yet, make a new one to merge
             # the source's world cell block into
             if not self.worldCellBlock:
-                grup_header = ChildrenGrupHeader(0, DUMMY_FID, 6, self.stamp)
-                self.worldCellBlock = MobCell(grup_header, self.loadFactory,
+                children_head = ChildrenGrupHeader(0, DUMMY_FID, 6, self.stamp)
+                self.worldCellBlock = MobCell(children_head, self.loadFactory,
                     None) # cell will be set in merge_records
                 was_newly_added = True
             # Delegate merging to the (potentially newly added) block
@@ -1694,8 +1693,8 @@ class MobWorlds(MobBase):
         if wfid in self.id_worldBlocks:
             self.id_worldBlocks[wfid].world = world_copy
         else:
-            grup_header = ChildrenGrupHeader(0, DUMMY_FID, 1, self.stamp)
-            worldBlock = MobWorld(grup_header, self.loadFactory, world_copy)
+            children_head = ChildrenGrupHeader(0, DUMMY_FID, 1, self.stamp)
+            worldBlock = MobWorld(children_head, self.loadFactory, world_copy)
             worldBlock.setChanged()
             self.id_worldBlocks[wfid] = worldBlock
 

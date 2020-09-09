@@ -604,9 +604,9 @@ class Mod_Details(OneItemLink):
                     buff.append(u'  %s\n' % _(u'(Details not provided for '
                                                u'this record type.)'))
                     continue
-                records = [(f, e) for f, (_h, e) in group_records.items()]
-                records.sort(key=lambda r: r[1].lower())
-                for f, e in records:
+                recs = [(f, e) for f, (_h, e) in group_records.items()]
+                recs.sort(key=lambda r: r[1].lower())
+                for f, e in recs:
                     buff.append(f'  {f} {e}')
                 buff.append(u'') # an empty line
             self._showLog('\n'.join(buff), title=self._selected_item,

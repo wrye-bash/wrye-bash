@@ -446,8 +446,8 @@ class Save_EditCreatedData(balt.ListEditorData):
     def getInfo(self,item):
         """Returns string info on specified item."""
         buff = []
-        record_full, records = self.name_nameRecords[item]
-        record = records[0]
+        record_full, recs = self.name_nameRecords[item]
+        record = recs[0]
         #--Armor, clothing, weapons
         rsig = record.rec_sig
         if rsig in self._attrs:
@@ -494,9 +494,9 @@ class Save_EditCreatedData(balt.ListEditorData):
             self.changed = False #--Allows graceful effort if close fails.
             count = 0
             with ShortFidWriteContext(): # needed for the getSize below
-                for newName,(oldName,records) in self.name_nameRecords.items():
+                for newName,(oldName,recs) in self.name_nameRecords.items():
                     if newName == oldName: continue
-                    for record in records:
+                    for record in recs:
                         record.full = newName
                         record.setChanged()
                         record.getSize()
@@ -530,9 +530,8 @@ class Save_EditCreated(OneItemLink):
             saveFile.load(progress)
         #--No custom items?
         types_set = Save_EditCreated.rec_types[self.save_rec_type]
-        records = [rec for rec in saveFile.created.values() if
-                   rec._rec_sig in types_set]
-        if not records:
+        if not any(rec._rec_sig in types_set for rec in
+                   saveFile.created.values()):
             self._showOk(_(u'No items to edit.'))
             return
         #--Open editor dialog
