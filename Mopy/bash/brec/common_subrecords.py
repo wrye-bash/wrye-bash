@@ -31,7 +31,7 @@ from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
     MelOptFloat, MelOptUInt8, MelOptUInt32, MelOptFid, MelReadOnly, MelUInt8, \
-    MelFids
+    MelFids, MelOptSInt32
 from .utils_constants import _int_unpacker, FID, null1, null2, null3, null4
 from ..bolt import Flags, encode, struct_pack, struct_unpack
 
@@ -623,3 +623,19 @@ class MelXlod(MelOptStruct):
     def __init__(self):
         super(MelXlod, self).__init__(b'XLOD', u'3f', u'lod1', u'lod2',
                                       u'lod3')
+
+#------------------------------------------------------------------------------
+class MelOwnership(MelGroup):
+    """Handles XOWN, XRNK for cells and cell children."""
+
+    def __init__(self, attr=u'ownership'):
+        MelGroup.__init__(self, attr,
+            MelOptFid(b'XOWN', u'owner'),
+            # None here is on purpose - rank == 0 is a valid value, but XRNK
+            # does not have to be present
+            MelOptSInt32(b'XRNK', (u'rank', None)),
+        )
+
+    def dumpData(self,record,out):
+        if record.ownership and record.ownership.owner:
+            MelGroup.dumpData(self,record,out)

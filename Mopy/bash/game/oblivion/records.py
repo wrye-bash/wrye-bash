@@ -367,20 +367,16 @@ class MelObme(MelOptStruct):
             *struct_contents)
 
 #------------------------------------------------------------------------------
-class MelOwnership(MelGroup):
+class MelOwnershipTes4(brec.MelOwnership):
     """Handles XOWN, XRNK, and XGLB for cells and cell children."""
     def __init__(self, attr=u'ownership'):
-        super(MelOwnership, self).__init__(attr,
+        super(brec.MelOwnership, self).__init__(attr,
             MelFid(b'XOWN', u'owner'),
             # None here is on purpose - rank == 0 is a valid value, but XRNK
             # does not have to be present
             MelOptSInt32(b'XRNK', (u'rank', None)),
             MelFid(b'XGLB', u'global'),
         )
-
-    def dumpData(self,record,out):
-        if record.ownership and record.ownership.owner:
-            super(MelOwnership, self).dumpData(record, out)
 
 ##: Could technically be reworked for non-Oblivion games, but is broken and
 # unused outside of Oblivion right now
@@ -487,7 +483,7 @@ class MreAcre(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFid(b'NAME', u'base'),
-        MelOwnership(),
+        MelOwnershipTes4(),
         MelEnableParent(),
         MelBase(b'XRGD', u'xrgd_p'), # Ragdoll Data, bytearray
         MelRefScale(),
@@ -667,7 +663,7 @@ class MreCell(MelRecord):
         MelOptFloat(b'XCLW', (u'waterHeight', -2147483649)),
         MelFid(b'XCCM', u'climate'),
         MelFid(b'XCWT', u'water'),
-        MelOwnership(),
+        MelOwnershipTes4(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1665,7 +1661,7 @@ class MreRefr(MelRecord):
         MelRefrXloc(b'XLOC', u'B3sI4sB3s', u'lockLevel', (u'unused1', null3),
             (FID, u'lockKey'), (u'unused2', null4), (_lockFlags, u'lockFlags'),
             (u'unused3', null3), is_optional=True, old_versions={u'B3sIB3s'}),
-        MelOwnership(),
+        MelOwnershipTes4(),
         MelEnableParent(),
         MelFid(b'XTRG', u'targetId'),
         MelBase(b'XSED', u'seed_p'),

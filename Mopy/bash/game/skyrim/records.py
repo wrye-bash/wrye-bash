@@ -41,7 +41,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelWorldBounds, MelEnableParent, MelRefScale, MelMapMarker, MelMdob, \
     MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
     MelPickupSound, MelDropSound, MelActivateParents, BipedFlags, MelColor, \
-    MelColorO, MelSpells, MelFixedString
+    MelColorO, MelSpells, MelFixedString, MelOwnership
 from ...exception import ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -295,21 +295,6 @@ class MelLocation(MelUnion):
         )
 
 #------------------------------------------------------------------------------
-class MelOwnership(MelGroup):
-    """Handles XOWN, XRNK for cells and cell children."""
-
-    def __init__(self, attr=u'ownership'):
-        MelGroup.__init__(self, attr,
-            MelFid(b'XOWN', u'owner'),
-            # None here is on purpose - rank == 0 is a valid value, but XRNK
-            # does not have to be present
-            MelOptSInt32(b'XRNK', (u'rank', None)),
-        )
-
-    def dumpData(self,record,out):
-        if record.ownership and record.ownership.owner:
-            MelGroup.dumpData(self,record,out)
-
 class MelIsSSE(MelUnion):
     """Union that resolves to one of two different subrecords, depending on
     whether we're managing Skyrim LE or SE."""
