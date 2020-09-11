@@ -909,7 +909,7 @@ class INIInfo(IniFile):
 
     def _reset_cache(self, stat_tuple, load_cache):
         super(INIInfo, self)._reset_cache(stat_tuple, load_cache)
-        if load_cache: self._status = None
+        if load_cache: self._status = None ##: is the if check needed here?
 
     @property
     def tweak_status(self):
