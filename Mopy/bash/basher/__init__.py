@@ -721,7 +721,13 @@ class INITweakLineCtrl(INIListCtrl):
 
     def _get_selected_line(self, index): return self.tweakLines[index][5]
 
-    def RefreshTweakLineCtrl(self, tweakPath):
+    def refresh_tweak_contents(self, tweakPath):
+        # Make sure to freeze/thaw, all the InsertItem calls make the GUI lag
+        self.Freeze()
+        self._RefreshTweakLineCtrl(tweakPath)
+        self.Thaw()
+
+    def _RefreshTweakLineCtrl(self, tweakPath):
         # Clear the list, then populate it with the new lines
         self.DeleteAllItems()
         if tweakPath is None:
@@ -766,25 +772,24 @@ class TargetINILineCtrl(INIListCtrl):
             if index == line[5]: return i
         return -1
 
-    def RefreshIniContents(self, new_target=False):
+    def refresh_ini_contents(self):
+        # Make sure to freeze/thaw, all the InsertItem calls make the GUI lag
+        self.Freeze()
+        self._RefreshIniContents()
+        self.Thaw()
+
+    def _RefreshIniContents(self):
         if bosh.iniInfos.ini.isCorrupted: return
-        if new_target:
-            self.DeleteAllItems()
-        num = self.GetItemCount()
+        # Clear the list, then populate it with the new lines
+        self.DeleteAllItems()
         main_ini_selected = (bush.game.Ini.dropdown_inis[0] ==
                              bosh.iniInfos.ini.abs_path.stail)
         try:
-            with bosh.iniInfos.ini.abs_path.open(u'rb') as target_ini_file:
-                lines = bolt.decode(target_ini_file.read()).splitlines()
-            if main_ini_selected:
+            sel_ini_lines = bosh.iniInfos.ini.read_ini_content()
+            if main_ini_selected: # If we got here, reading the INI worked
                 Link.Frame.oblivionIniMissing = False
-            for i,line in enumerate(lines):
-                if i >= num:
-                    self.InsertItem(i, line.rstrip())
-                else:
-                    self.SetItem(i, 0, line.rstrip())
-            for i in xrange(len(lines), num):
-                self.DeleteItem(len(lines))
+            for i, line in enumerate(sel_ini_lines):
+                self.InsertItem(i, line.rstrip())
         except IOError:
             if main_ini_selected:
                 Link.Frame.oblivionIniMissing = True
@@ -1749,7 +1754,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
     def SetFile(self, fileName='SAME'):
         fileName = super(INIDetailsPanel, self).SetFile(fileName)
         self._ini_detail = fileName
-        self.tweakContents.RefreshTweakLineCtrl(fileName)
+        self.tweakContents.refresh_tweak_contents(fileName)
         self.tweakName.text_content = fileName.sbody if fileName else u''
 
     def _enable_buttons(self):
@@ -1813,9 +1818,9 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
             bosh.iniInfos.ini = self.current_ini_path
         self._enable_buttons() # if a game ini was deleted will disable edit
         if clean_targets: self._clean_targets()
-        # first RefreshIniContents as RefreshTweakLineCtrl needs its lines
+        # first refresh_ini_contents as refresh_tweak_contents needs its lines
         if new_target or target_changed:
-            self.iniContents.RefreshIniContents(new_target)
+            self.iniContents.refresh_ini_contents()
             Link.Frame.warn_game_ini()
         self._inis_combo_box.set_selection(settings['bash.ini.choice'])
 

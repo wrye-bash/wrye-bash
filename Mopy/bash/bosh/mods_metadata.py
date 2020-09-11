@@ -48,9 +48,9 @@ class ConfigHelpers(object):
                 u'v%s' % libloot_version)
         # LOOT stores the masterlist/userlist in a %LOCALAPPDATA% subdirectory.
         self.lootMasterPath = bass.dirs[u'userApp'].join(
-            os.pardir, u'LOOT', bush.game.fsName, u'masterlist.yaml')
+            os.pardir, u'LOOT', bush.game.masterlist_dir, u'masterlist.yaml')
         self.lootUserPath = bass.dirs[u'userApp'].join(
-            os.pardir, u'LOOT', bush.game.fsName, u'userlist.yaml')
+            os.pardir, u'LOOT', bush.game.masterlist_dir, u'userlist.yaml')
         self.lootMasterTime = None
         self.lootUserTime = None
         self.tagList = bass.dirs[u'defaultPatches'].join(u'taglist.yaml')

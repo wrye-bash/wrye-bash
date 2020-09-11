@@ -492,7 +492,7 @@ class LanguagePage(_AScrollablePage):
             all_langs.append(u'english')
         localized_langs = [self._internal_to_localized[l.lower()] for l
                            in all_langs]
-        active_lang = None
+        active_lang = u'english' # If the user has an unknown language active
         for internal_name, localized_name in sorted(zip(
                 all_langs, localized_langs), key=lambda l: l[1]):
             if self._is_active_lang(internal_name):

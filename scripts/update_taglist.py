@@ -94,6 +94,8 @@ def main(args):
         )
     )
     game_data = [
+        ##: libloot-python has not been updated for MW yet
+        #(u'Morrowind', u'Morrowind.esm', u'morrowind', loot.GameType.tes3),
         (u'Oblivion', u'Oblivion.esm', u'oblivion', loot.GameType.tes4),
         (u'Skyrim', u'Skyrim.esm', u'skyrim', loot.GameType.tes5),
         (u'SkyrimSE', u'Skyrim.esm', u'skyrimse', loot.GameType.tes5se),
