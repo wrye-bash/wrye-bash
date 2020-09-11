@@ -186,36 +186,18 @@
 
 
 <h3 id="install-components">Python Components <a class="back2top" href="#contents">Back to top</a></h3>
-<p>If you are installing the Python version of Wrye Bash and wish to install the Python dependencies separately, the following must be installed.
-<p class="emphasis">Note that the 32-bit versions are required even if you are on a 64-bit operating system.
+<p>If you are installing the Python version of Wrye Bash and wish to install the Python dependencies separately, the following must be installed.</p>
+<p>Installation is easiest by just using pip, which comes with Python (see below). Simply run <code>path/to/python.exe -m pip install -r requirements.txt</code>
+    (obviously replacing <code>path/to/python.exe</code> with the actual path to your python.exe).</p>
+<p class="emphasis">Note that the 32-bit versions are required even if you are on a 64-bit operating system.</p>
 <ul>
-    <li><a href="https://www.python.org/ftp/python/2.7.16/python-2.7.16.msi">Python 2.7.16</a>: Versions prior to 2.7.16 may work with Wrye Bash, but have not been tested. Updating is recommended for bug and security fixes.
-    <li><a href="https://pypi.org/project/wxPython">wxPython 4.0.7.post2 for Python 2.7</a>: Newer versions may work, older ones will not</li>
+    <li><a href="https://www.python.org/ftp/python/2.7.18/python-2.7.18.msi">Python 2.7.18</a>: Versions prior to 2.7.18 may work with Wrye Bash, but have not been tested. Updating is recommended for bug and security fixes.
+    <li><a href="https://pypi.org/project/wxPython">wxPython 4.0.7.post2</a>: Newer versions may work, older ones will not</li>
     <li><a href="https://pypi.org/project/chardet/">Mozilla's chardet library</a>: Wrye Bash uses this library to help in detecting
         character encodings used when reading and writing encoded Unicode strings.
-    <li><a href="https://sourceforge.net/projects/pywin32/files/pywin32/Build%20220/pywin32-220.win32-py2.7.exe/download">PyWin32</a>: This component is required for Wizards to function. If you do not wish to use Wizards, then it need not be installed.
+    <li><a href="https://pypi.python.org/pypi/pywin32">PyWin32</a>: This component is required for Wizards to function. If you do not wish to use Wizards, then it need not be installed.
     <li><a href="https://pypi.python.org/pypi/scandir">scandir</a>: Optional but highly recommended module (in the standard library since
-    python 3.5). Scandir speeds up disk I/O operations (namely os. walk) by 5-50x on the Windows operating system family. There are several
-    ways to install Scandir, in levels of increasing complexity
-  <ul>
-    <li>The first is to download the Scandir wheel file (.whl)&nbsp; and install it using the Pip command line tool.</li>
-    <ul>
-        <li>Browse to the <a href="https://pypi.python.org/pypi/scandir" target="_blank">official Python Scandir page</a> and download <a href="https://files.pythonhosted.org/packages/9e/a5/56b4dec02b16bb720cac9872fccd63b61a815b70633ef15bfe3ea5ce4488/scandir-1.9.0-cp27-cp27m-win32.whl" target="_blank">scandir-1.9.0-cp27-cp27m-win32.whl</a> or newer. Remember the path to the download location on your hard disk.&nbsp; For this example we will use "C:\Downloads\".
-          <li>Open a Windows command or Powershell prompt and issue the <code>command python.exe -m pip install C:\Downloads\scandir-1.9.0-cp27-cp27m-win32.whl</code></li>
-      <li>Follow the instructions on screen if any appear.
-    </ul>
-    <li>The second method is to install Scandir via the Python pip package manager.
-    </li>
-    <ul>
-      <li>Open a Windows command prompt or Powershell prompt.
-      <li>Issue the command <code>python.exe -m pip install --upgrade scandir</code>
-      <ul>
-        <li>You may be asked to install the 'Microsoft Visual C++ Compiler for Python 2.7'. In this event, download and install the compiler from the <a href="https://www.microsoft.com/en-us/download/details.aspx?id=44266" target="_blank">official Microsoft download page</a>.
-        <li>You may also be asked to install Python "setuptools". To install setuptools, issue the command (from within the same command prompt is fine) <code>python.exe -m pip install --upgrade setuptools</code>
-        <li>Once these two tools are installed the installation should proceed as expected.
-      </ul>
-    </ul>
-  </ul>
+        python 3.5). Scandir speeds up disk I/O operations (namely os. walk) by 5-50x on the Windows operating system family.</li>
 </ul>
 
 <h2 id="bain">Installers Tab <a class="back2top" href="#contents">Back to top</a></h2>
