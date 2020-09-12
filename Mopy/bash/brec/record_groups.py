@@ -496,15 +496,16 @@ class MobDial(MobObjects):
 
     def updateRecords(self, srcBlock, mapper, mergeIds):
         src_dial = srcBlock.dial
-        if self.dial.fid != mapper(src_dial.fid):
+        src_dial_fid = mapper(src_dial.fid)
+        if self.dial.fid != src_dial_fid:
             raise ModFidMismatchError(self.inName, u'DIAL', self.dial.fid,
-                mapper(srcBlock.dial.fid))
+                src_dial_fid)
         # Copy the latest version of the DIAL record over. We can safely mark
         # it as not merged because keepRecords above ensures that we never
         # discard a DIAL when it still has INFO children
         if not src_dial.flags1.ignored:
             self.dial = src_dial.getTypeCopy(mapper)
-            mergeIds.discard(self.dial.fid)
+            mergeIds.discard(src_dial_fid)
         super(MobDial, self).updateRecords(srcBlock, mapper, mergeIds)
 
     def _sort_by_pnam(self):
@@ -946,26 +947,27 @@ class MobCell(MobBase):
         u'distant_refs')):
         """Updates any records in 'self' that exist in 'srcBlock'."""
         mergeDiscard = mergeIds.discard
-        selfSetter = self.__setattr__
         self_src_attrs = zip(__attrget(self), __attrget(srcBlock))
         for attr, (myRecord, record) in zip((u'cell', u'pgrd', u'land'),
                                           self_src_attrs):
             if myRecord and record:
-                if myRecord.fid != mapper(record.fid):
+                src_rec_fid = mapper(record.fid)
+                if myRecord.fid != src_rec_fid:
                     raise ModFidMismatchError(self.inName, myRecord.recType,
-                        myRecord.fid, mapper(record.fid))
+                        myRecord.fid, src_rec_fid)
                 if not record.flags1.ignored:
                     record = record.getTypeCopy(mapper)
                     setattr(self, attr, record)
-                    mergeDiscard(record.fid)
+                    mergeDiscard(src_rec_fid)
         for attr, (self_rec_list, src_rec_list) in zip(
                 (u'persistent_refs', u'temp_refs', u'distant_refs'),
                 self_src_attrs[3:]):
             fids = {record.fid: i for i, record in enumerate(self_rec_list)}
             for record in src_rec_list:
-                if not record.flags1.ignored and mapper(record.fid) in fids:
-                    self_rec_list[fids[record.fid]] = record.getTypeCopy(mapper)
-                    mergeDiscard(record.fid)
+                src_fid = mapper(record.fid)
+                if not record.flags1.ignored and src_fid in fids:
+                    self_rec_list[fids[src_fid]] = record.getTypeCopy(mapper)
+                    mergeDiscard(src_fid)
 
     def iter_records(self):
         single_recs = [x for x in (self.cell, self.pgrd, self.land) if x]
@@ -1515,17 +1517,18 @@ class MobWorld(MobCells):
 
     def updateRecords(self,srcBlock,mapper,mergeIds):
         """Updates any records in 'self' that exist in 'srcBlock'."""
-        for attr in ('world','road'):
+        for attr in (u'world', u'road'):
             myRecord = getattr(self, attr)
             record = getattr(srcBlock, attr)
             if myRecord and record:
-                if myRecord.fid != mapper(record.fid):
+                src_rec_fid = mapper(record.fid)
+                if myRecord.fid != src_rec_fid:
                     raise ModFidMismatchError(self.inName, myRecord.recType,
-                        myRecord.fid, mapper(record.fid))
+                        myRecord.fid, src_rec_fid)
                 if not record.flags1.ignored:
                     record = record.getTypeCopy(mapper)
                     setattr(self, attr, record)
-                    mergeIds.discard(record.fid)
+                    mergeIds.discard(src_rec_fid)
         if self.worldCellBlock and srcBlock.worldCellBlock:
             self.worldCellBlock.updateRecords(srcBlock.worldCellBlock,mapper,
                                               mergeIds)
