@@ -39,7 +39,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     null2, null3, null4, MelTruncatedStruct, MelReadOnly, MelCoordinates, \
     MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, MelArray, \
     MelObject, MreWithItems, MelRef3D, MelXlod, MelNull, MelEnableParent, \
-    MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript
+    MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
+    MelDecalData
 from ...exception import ModSizeError
 
 #------------------------------------------------------------------------------
@@ -904,22 +905,12 @@ class MreIpct(MelRecord):
     """Impact."""
     rec_sig = b'IPCT'
 
-    DecalDataFlags = Flags(0, Flags.getNames(
-            (0, 'parallax'),
-            (0, 'alphaBlending'),
-            (0, 'alphaTesting'),
-            (0, 'noSubtextures'),
-        ))
-
     melSet = MelSet(
         MelEdid(),
         MelModel(),
         MelStruct('DATA','fIffII','effectDuration','effectOrientation',
                   'angleThreshold','placementRadius','soundLevel','flags'),
-        MelOptStruct('DODT','7fBB2s3Bs','minWidth','maxWidth','minHeight',
-                     'maxHeight','depth','shininess','parallaxScale',
-                     'parallaxPasses',(DecalDataFlags,'decalFlags',0),
-                     ('unused1',null2),'red','green','blue',('unused2',null1)),
+        MelDecalData(),
         MelFid('DNAM','textureSet'),
         MelFid('SNAM','sound1'),
         MelFid('NAM1','sound2'),
@@ -1280,8 +1271,10 @@ class MreRefr(MelRecord):
         MelFid('XEZN','encounterZone'),
         MelBase('XRGD','ragdollData'),
         MelBase('XRGB','ragdollBipedData'),
-        MelOptStruct('XPRM','3f3IfI','primitiveBoundX','primitiveBoundY','primitiveBoundX',
-                     'primitiveColorRed','primitiveColorGreen','primitiveColorBlue','primitiveUnknown','primitiveType'),
+        MelOptStruct(b'XPRM', u'3f3IfI', u'primitiveBoundX',
+            u'primitiveBoundY', u'primitiveBoundZ', u'primitiveColorRed',
+            u'primitiveColorGreen', u'primitiveColorBlue', u'primitiveUnknown',
+            u'primitiveType'),
         MelOptUInt32('XTRI', 'collisionLayer'),
         MelBase('XMBP','multiboundPrimitiveMarker'),
         MelOptStruct('XMBO','3f','boundHalfExtentsX','boundHalfExtentsY','boundHalfExtentsZ'),
@@ -1463,6 +1456,7 @@ class MreSlpd(MelRecord):
 class MreSoun(MelRecord):
     """Sound."""
     rec_sig = b'SOUN'
+    _has_duplicate_attrs = True # SNDX, ANAM, GNAM and HNAM upgrade to SNDD
 
     _flags = Flags(0, Flags.getNames(
             'randomFrequencyShift',

@@ -2266,7 +2266,7 @@ soundsLongsTypes = {'ACTI', 'ADDN', 'ALCH', 'AMMO', 'APPA', 'ARMA', 'ARMO',
                     'MSTT', 'SCRL', 'SLGM', 'SNCT', 'SNDR', 'SOPM', 'SOUN',
                     'TACT', 'TREE', 'WATR', 'WEAP', 'WTHR'}
 soundsTypes = {
-    "ACTI": ('dropSound','pickupSound',),
+    b'ACTI': (u'soundLooping', u'soundActivation'),
     "ADDN": ('ambientSound',),
     "ALCH": ('dropSound','pickupSound','soundConsume',),
     "AMMO": ('pickupSound','dropSound',),

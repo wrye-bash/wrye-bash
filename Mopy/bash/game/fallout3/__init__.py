@@ -321,6 +321,7 @@ class Fallout3GameInfo(GameInfo):
                  MreNavm, MrePgre, MrePmis, MreRefr, MreWrld, MreTes4))}
         brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) - {
             b'TES4', b'ACHR', b'ACRE', b'CELL', b'DIAL', b'INFO', b'LAND',
-            b'NAVI', b'NAVM', b'PGRE', b'PMIS', b'REFR', b'WRLD', })
+            b'NAVI', b'NAVM', b'PGRE', b'PMIS', b'REFR', b'WRLD'})
+        cls._validate_records()
 
 GAME_TYPE = Fallout3GameInfo

@@ -226,6 +226,22 @@ class MelCtdaFo3(MelCtda):
         super(MelCtdaFo3, self).dumpData(record, out)
 
 #------------------------------------------------------------------------------
+class MelDecalData(MelOptStruct):
+    _decal_data_flags = Flags(0, Flags.getNames(
+        u'parallax',
+        u'alphaBlending',
+        u'alphaTesting',
+        u'noSubtextures', # Skyrim+, will just be ignored for earlier games
+    ))
+
+    def __init__(self):
+        super(MelDecalData, self).__init__(b'DODT', u'7fBB2s3Bs', u'minWidth',
+            u'maxWidth', u'minHeight', u'maxHeight', u'depth', u'shininess',
+            u'parallaxScale', u'parallaxPasses',
+            (self._decal_data_flags, u'decalFlags'), (u'unusedDecal1', null2),
+            u'redDecal', u'greenDecal', u'blueDecal', (u'unusedDecal2', null1))
+
+#------------------------------------------------------------------------------
 class MelReferences(MelGroups):
     """Handles mixed sets of SCRO and SCRV for scripts, quests, etc."""
     def __init__(self):
@@ -373,7 +389,7 @@ class MelRaceParts(MelNull):
             loaders[signature] = self
 
     def getSlotsUsed(self):
-        return self._indx_to_attr.values()
+        return tuple(self._indx_to_attr.itervalues())
 
     def setDefault(self, record):
         for element in self._indx_to_loader.itervalues():

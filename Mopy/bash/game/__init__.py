@@ -642,6 +642,7 @@ class GameInfo(object):
         # Simple records
         brec.MreRecord.simpleTypes = (
                 set(brec.MreRecord.type_class) - {b'TES4'})
+        cls._validate_records()
 
     @classmethod
     def _dynamic_import_modules(cls, package_name):
@@ -668,5 +669,12 @@ class GameInfo(object):
         cls.gameSpecificListPatchers = patchers_module.gameSpecificListPatchers
         cls.game_specific_import_patchers = \
             patchers_module.game_specific_import_patchers
+
+    @staticmethod
+    def _validate_records():
+        """Performs validation on the record syntax for all decoded records."""
+        for rec_class in brec.MreRecord.type_class.itervalues():
+            if issubclass(rec_class, brec.MelRecord):
+                rec_class.validate_record_syntax()
 
 GAME_TYPE = None

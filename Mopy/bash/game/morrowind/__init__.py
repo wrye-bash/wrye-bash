@@ -138,5 +138,6 @@ class MorrowindGameInfo(GameInfo):
         brec.MreRecord.type_class = {x.rec_sig: x for x in (MreTes3,)}
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {b'TES3'})
+        cls._validate_records()
 
 GAME_TYPE = MorrowindGameInfo

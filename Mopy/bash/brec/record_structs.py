@@ -49,8 +49,30 @@ class MelSet(object):
             element.hasFids(self.formElements)
 
     def getSlotsUsed(self):
-        """This function returns all of the attributes used in record instances that use this instance."""
-        return [s for element in self.elements for s in element.getSlotsUsed()]
+        """This function returns all of the attributes used in record instances
+        that use this instance."""
+        # Use a set to discard duplicates - saves memory!
+        return list({s for element in self.elements
+                     for s in element.getSlotsUsed()})
+
+    def check_duplicate_attrs(self, curr_rec_sig):
+        """This will raise a SyntaxError if any record attributes occur in more
+        than one element. However, this is sometimes intended behavior (e.g.
+        Oblivion's MreSoun uses it to upgrade an old subrecord to a newer one).
+        In such cases, set the MreRecord class variable _has_duplicate_attrs to
+        True for that record type (after carefully checking that there are no
+        unwanted duplicate attributes)."""
+        all_slots = set()
+        for element in self.elements:
+            element_slots = set(element.getSlotsUsed())
+            duplicate_slots = sorted(all_slots & element_slots)
+            if duplicate_slots:
+                raise SyntaxError(
+                    u'Duplicate element attributes in record type %s: %s. '
+                    u'This most likely points at an attribute collision, make '
+                    u'sure to choose unique attribute names!' % (
+                        curr_rec_sig, repr(duplicate_slots)))
+            all_slots.update(element_slots)
 
     def initRecord(self, record, header, ins, do_unpack):
         """Initialize record, setting its attributes based on its elements."""
@@ -518,10 +540,20 @@ class MelRecord(MreRecord):
     """Mod record built from mod record elements."""
     #--Subclasses must define as MelSet(*mels)
     melSet = None # type: MelSet
+    rec_sig = None # type: bytes
+    # If set to False, skip the check for duplicate attributes for this
+    # subrecord. See MelSet.check_duplicate_attrs for more information.
+    _has_duplicate_attrs = False
     __slots__ = []
 
     def __init__(self, header, ins=None, do_unpack=False):
         self.__class__.melSet.initRecord(self, header, ins, do_unpack)
+
+    @classmethod
+    def validate_record_syntax(cls):
+        """Performs validations on this record's definition."""
+        if not cls._has_duplicate_attrs:
+            cls.melSet.check_duplicate_attrs(cls.rec_sig)
 
     @classmethod
     def getDefault(cls, attr):

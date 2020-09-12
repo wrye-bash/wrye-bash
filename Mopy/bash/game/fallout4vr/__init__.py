@@ -129,6 +129,7 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
         brec.MreRecord.type_class = {x.rec_sig: x for x in
                                      (MreTes4, MreLvli, MreLvln,)}
         brec.MreRecord.simpleTypes = (
-                set(brec.MreRecord.type_class) - {b'TES4', })
+                set(brec.MreRecord.type_class) - {b'TES4'})
+        cls._validate_records()
 
 GAME_TYPE = Fallout4VRGameInfo
