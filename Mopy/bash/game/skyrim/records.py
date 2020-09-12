@@ -1336,8 +1336,8 @@ class MreActi(MelRecord):
         MelDestructible(),
         MelKeywords(),
         MelColor('PNAM'),
-        MelOptFid('SNAM', 'dropSound'),
-        MelOptFid('VNAM', 'pickupSound'),
+        MelOptFid(b'SNAM', u'soundLooping'),
+        MelOptFid(b'VNAM', u'soundActivation'),
         MelOptFid('WNAM', 'water'),
         MelLString('RNAM', 'activate_text_override'),
         MelOptUInt16('FNAM', (ActivatorFlags, 'flags', 0)),
@@ -2037,8 +2037,7 @@ class MreDial(MelRecord):
                   'subtype',),
         # SNAM is a 4 byte string no length byte - TODO(inf) MelFixedString?
         MelStruct('SNAM', '4s', ('subtypeName', null4)),
-        ##: Check if this works - if not, move back to method
-        MelCounter(MelUInt32('TIFC', 'infoCount'), counts='infos'),
+        MelUInt32(b'TIFC', u'info_count'), # Updated in MobDial.dump
     )
     __slots__ = melSet.getSlotsUsed()
 

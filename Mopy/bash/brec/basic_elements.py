@@ -334,14 +334,17 @@ class MelSequential(MelBase):
         self.elements, self.form_elements = elements, set()
         self._possible_sigs = {s for element in self.elements for s
                                in element.signatures}
+        self._sub_loaders = {}
 
     def getDefaulters(self, defaulters, base):
         for element in self.elements:
             element.getDefaulters(defaulters, base + '.')
 
     def getLoaders(self, loaders):
+        # We need a copy of the loaders in case we're used in a distributor
         for element in self.elements:
-            element.getLoaders(loaders)
+            element.getLoaders(self._sub_loaders)
+        loaders.update(self._sub_loaders)
 
     def getSlotsUsed(self):
         slots_ret = set()
@@ -357,6 +360,13 @@ class MelSequential(MelBase):
     def setDefault(self, record):
         for element in self.elements:
             element.setDefault(record)
+
+    def loadData(self, record, ins, sub_type, size_, readId):
+        # This will only ever be called if we're used in a distributor, regular
+        # MelSet will just bypass us entirely. So just redirect to the right
+        # sub-loader that we found in getLoaders
+        self._sub_loaders[sub_type].loadData(record, ins, sub_type, size_,
+            readId)
 
     def dumpData(self, record, out):
         for element in self.elements:

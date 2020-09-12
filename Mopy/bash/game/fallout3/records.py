@@ -2177,9 +2177,9 @@ class MrePack(MelRecord):
             2: MelTruncatedStruct(
                 'PTDT', 'iIif', 'targetType', 'targetId', 'targetCount',
                 'targetUnknown1', is_optional=True, old_versions={'iIi'}),
-            3: MelTruncatedStruct(
-                'PTDT', 'i4sif', 'targetType', 'targetId', 'targetCount',
-                'targetUnknown1', is_optional=True, old_versions={'iIi'}),
+            3: MelTruncatedStruct(b'PTDT', u'i4sif', u'targetType',
+                u'targetId', u'targetCount', u'targetUnknown1',
+                is_optional=True, old_versions={u'i4si'}),
         }, decider=PartialLoadDecider(
             loader=MelSInt32('PTDT', 'targetType'),
             decider=AttrValDecider('targetType'),
@@ -2213,9 +2213,9 @@ class MrePack(MelRecord):
             2: MelTruncatedStruct(
                 'PTD2', 'iIif', 'targetType2', 'targetId2', 'targetCount2',
                 'targetUnknown2', is_optional=True, old_versions={'iIi'}),
-            3: MelTruncatedStruct(
-                'PTD2', 'i4sif', 'targetType2', 'targetId2', 'targetCount2',
-                'targetUnknown2', is_optional=True, old_versions={'iIi'}),
+            3: MelTruncatedStruct(b'PTD2', u'i4sif', u'targetType2',
+                u'targetId2', u'targetCount2', u'targetUnknown2',
+                is_optional=True, old_versions={u'i4si'}),
         }, decider=PartialLoadDecider(
             loader=MelSInt32('PTD2', 'targetType2'),
             decider=AttrValDecider('targetType2'),

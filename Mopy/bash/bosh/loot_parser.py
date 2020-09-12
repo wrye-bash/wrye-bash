@@ -163,7 +163,7 @@ class LOOTParser(object):
         return merged_entry
 
 # Implementation
-def _loot_decode(raw_str):
+def _loot_decode(raw_str): # PY3: drop entirely, pyyaml is fully unicode on py3
     """LOOT masterlists are always encoded in UTF-8, but simply opening the
     file in UTF-8 mode is not enough. PyYAML stores everything it can encode as
     ASCII as bytestrings, and everything else as unicode. No idea why."""
@@ -620,8 +620,8 @@ def _parse_list(list_path):
     with list_path.open(u'r', encoding=u'utf-8') as ins:
         # HACK! https://github.com/yaml/pyyaml/issues/373
         if u'fallout4' in list_path.cs:
-            yaml_data = ins.read().replace(b'incWithPatchVersion1.5.157.0',
-                                           b'incWithPatchVersion1_5_157_0')
+            yaml_data = ins.read().replace(u'incWithPatchVersion1.5.157.0',
+                                           u'incWithPatchVersion1_5_157_0')
             list_contents = yaml.load(yaml_data, Loader=SafeLoader)
         else:
             list_contents = yaml.load(ins, Loader=SafeLoader)

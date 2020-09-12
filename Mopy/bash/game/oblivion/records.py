@@ -1635,7 +1635,7 @@ class MreRefr(MelRecord):
         MelOptFloat(b'XCHG', u'charge'),
         MelOptSInt32(b'XHLT', u'health'),
         MelNull(b'XPCI'), # These two are unused
-        MelNull(b'FULL'),
+        MelReadOnly(MelFull()), # Can't use MelNull, we need to distribute
         MelOptSInt32(b'XLCM', u'levelMod'),
         MelFid(b'XRTM', u'teleport_ref'),
         MelActionFlags(),
