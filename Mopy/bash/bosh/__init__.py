@@ -3059,6 +3059,10 @@ class BSAInfos(FileInfos):
     mismatched_versions = set()
 
     def __init__(self):
+        if bush.game.displayName == u'Oblivion':
+            # Need to do this at runtime since it depends on inisettings (ugh)
+            bush.game.Bsa.redate_dict[inisettings[
+                u'OblivionTexturesBSAName'].s] = u'2005-01-01'
         self.__class__.file_pattern = re.compile(
             re.escape(bush.game.Bsa.bsa_extension) + u'$', re.I | re.U)
         _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)

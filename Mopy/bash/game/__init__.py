@@ -239,7 +239,9 @@ class GameInfo(object):
         has_bsl = False
         # Maps BSA names to the date to which they should be redated. Fallback
         # will be used for BSAs which are not explicitly listed. Format is
-        # ISO 8601 (year-month-day)
+        # ISO 8601 (year-month-day). Generally used to redate the vanilla BSAs
+        # before all mod BSAs, and all BSAs before loose files by choosing
+        # dates older than the game's release date.
         redate_dict = defaultdict(lambda: u'2006-01-01')
         # The default value for Ini.resource_override_key if it's missing from
         # the game INI

@@ -22,6 +22,7 @@
 # =============================================================================
 """GameInfo override for Fallout 3."""
 
+from collections import defaultdict
 from os.path import join as _j
 
 from .. import GameInfo
@@ -83,6 +84,14 @@ class Fallout3GameInfo(GameInfo):
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True
+        redate_dict = defaultdict(lambda: u'2006-01-01', {
+            u'Fallout - MenuVoices.bsa': u'2005-01-01',
+            u'Fallout - Meshes.bsa': u'2005-01-02',
+            u'Fallout - Misc.bsa': u'2005-01-03',
+            u'Fallout - Sound.bsa': u'2005-01-04',
+            u'Fallout - Textures.bsa': u'2005-01-05',
+            u'Fallout - Voices.bsa': u'2005-01-06',
+        })
         # ArchiveInvalidation Invalidated, which we shipped unmodified for a
         # long time, uses an Oblivion BSA with version 0x67, so we have to
         # accept those here as well

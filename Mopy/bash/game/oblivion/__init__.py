@@ -22,6 +22,7 @@
 # =============================================================================
 """GameInfo override for TES IV: Oblivion."""
 import struct
+from collections import defaultdict
 from os.path import join as _j
 
 from .. import GameInfo
@@ -94,6 +95,13 @@ class OblivionGameInfo(GameInfo):
         # Oblivion accepts the base name and literally *anything* after
         # that. E.g. MyModMeshes.bsa will load from a MyMod.esp plugin
         attachment_regex = u'.*'
+        redate_dict = defaultdict(lambda: u'2006-01-01', {
+            u'Oblivion - Voices1.bsa': u'2005-01-02',
+            u'Oblivion - Voices2.bsa': u'2005-01-03',
+            u'Oblivion - Meshes.bsa': u'2005-01-04',
+            u'Oblivion - Sounds.bsa': u'2005-01-05',
+            u'Oblivion - Misc.bsa': u'2005-01-06',
+        })
         valid_versions = {0x67}
 
     class Xe(GameInfo.Xe):

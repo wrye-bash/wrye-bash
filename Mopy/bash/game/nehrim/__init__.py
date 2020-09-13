@@ -22,6 +22,7 @@
 # =============================================================================
 """GameInfo override for TES IV: Oblivion."""
 import struct
+from collections import defaultdict
 from os.path import join as _j
 
 from ..oblivion import OblivionGameInfo
@@ -36,6 +37,17 @@ class NehrimGameInfo(OblivionGameInfo):
     nexusUrl = u'https://www.nexusmods.com/nehrim/'
     nexusName = u'Nehrim Nexus'
     nexusKey = u'bash.installers.openNehrimNexus.continue'
+
+    class Bsa(OblivionGameInfo.Bsa):
+        redate_dict = defaultdict(lambda: u'2006-01-01', {
+            u'N - Textures1.bsa': u'2005-01-01',
+            u'N - Textures2.bsa': u'2005-01-02',
+            u'L - Voices.bsa': u'2005-01-03',
+            u'N - Meshes.bsa': u'2005-01-04',
+            u'N - Sounds.bsa': u'2005-01-05',
+            u'L - Misc.bsa': u'2005-01-06',
+            u'N - Misc.bsa': u'2005-01-07',
+        })
 
     # Oblivion minus Oblivion-specific patchers (Cobl Catalogs, Cobl
     # Exhaustion, Morph Factions and SEWorld Tests)

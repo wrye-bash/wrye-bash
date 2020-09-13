@@ -21,6 +21,9 @@
 #
 # =============================================================================
 """GameInfo override for Fallout NV."""
+
+from collections import defaultdict
+
 from ..fallout3 import Fallout3GameInfo
 from ... import brec
 from ...brec import MreFlst, MreGlob
@@ -50,6 +53,17 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         cosave_ext = u'.nvse'
         url = u'http://nvse.silverlock.org/'
         url_tip = u'http://nvse.silverlock.org/'
+
+    class Bsa(Fallout3GameInfo.Bsa):
+        redate_dict = defaultdict(lambda: u'2006-01-01', {
+            u'Fallout - Meshes.bsa': u'2005-01-01',
+            u'Fallout - Meshes2.bsa': u'2005-01-02',
+            u'Fallout - Misc.bsa': u'2005-01-03',
+            u'Fallout - Sound.bsa': u'2005-01-04',
+            u'Fallout - Textures.bsa': u'2005-01-05',
+            u'Fallout - Textures2.bsa': u'2005-01-06',
+            u'Fallout - Voices1.bsa': u'2005-01-07',
+        })
 
     class Xe(Fallout3GameInfo.Xe):
         full_name = u'FNVEdit'
