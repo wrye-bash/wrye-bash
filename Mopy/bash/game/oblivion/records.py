@@ -400,8 +400,9 @@ class MreTes4(MreHeaderBase):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
 
-    melSet = MelSet(MelStruct('HEDR', 'f2I', ('version', 0.8), 'numRecords',
-                              ('nextObject', 0x800)),
+    melSet = MelSet(
+        MelStruct(b'HEDR', u'f2I', (u'version', 1.0), u'numRecords',
+            (u'nextObject', 0x800)),
         MelNull(b'OFST'), # Not even CK/xEdit can recalculate these right now
         MelBase('DELE','dele_p',),  #--Obsolete?
         MelUnicode('CNAM','author',u'',512),
