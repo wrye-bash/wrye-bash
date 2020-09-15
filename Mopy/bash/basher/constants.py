@@ -23,8 +23,10 @@
 # =============================================================================
 
 """This module contains some constants ripped out of basher.py"""
+import wx # TODO(inf) de-wx! Very ugly, our setting defaults depend on wx
+
 from .. import bass, bush
-from ..balt import ImageList, defPos
+from ..balt import ImageList
 from ..gui import Image
 
 # Color Descriptions ----------------------------------------------------------
@@ -321,10 +323,10 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.installers.commentsSplitterSashPos':0,
     #--Wrye Bash: Wizards
     u'bash.fomod.size': (600, 500),
-    u'bash.fomod.pos': tuple(defPos),
+    u'bash.fomod.pos': tuple(wx.DefaultPosition),
     u'bash.fomod.use_table': False,
     'bash.wizard.size': (600, 500),
-    'bash.wizard.pos': tuple(defPos),
+    'bash.wizard.pos': tuple(wx.DefaultPosition),
     #--Wrye Bash: INI Tweaks
     'bash.ini.cols': ['File','Installer'],
     'bash.ini.sort': 'File',

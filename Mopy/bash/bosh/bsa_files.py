@@ -127,7 +127,7 @@ class _Header(object):
 
     def load_header(self, ins, bsa_name):
         for fmt, attr in zip(_Header.formats, _Header.__slots__):
-            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
+            setattr(self, attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
         # error checking
         if self.file_id != self.__class__.bsa_magic:
             raise BSAError(bsa_name, u'Magic wrong: got %r, expected %r' % (
@@ -156,7 +156,7 @@ class BsaHeader(_Header):
     def load_header(self, ins, bsa_name):
         super(BsaHeader, self).load_header(ins, bsa_name)
         for fmt, attr in zip(BsaHeader.formats, BsaHeader.__slots__):
-            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
+            setattr(self, attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
         self.archive_flags = self._archive_flags(self.archive_flags)
         # error checking
         if self.folder_records_offset != self.__class__.header_size:
@@ -181,7 +181,7 @@ class Ba2Header(_Header):
     def load_header(self, ins, bsa_name):
         super(Ba2Header, self).load_header(ins, bsa_name)
         for fmt, attr in zip(Ba2Header.formats, Ba2Header.__slots__):
-            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
+            setattr(self, attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
         # error checking
         if not self.ba2_files_type in self.file_types:
             raise BSAError(bsa_name, u'Unrecognised file type: %r. Should be '
@@ -196,7 +196,7 @@ class MorrowindBsaHeader(_Header):
     def load_header(self, ins, bsa_name):
         for fmt, attr in zip(MorrowindBsaHeader.formats,
                              MorrowindBsaHeader.__slots__):
-            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
+            setattr(self, attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
         self.version = None # Morrowind BSAs have no version
         # error checking
         if self.file_id != self.__class__.bsa_magic:
@@ -252,14 +252,13 @@ class _BsaHashedRecord(_HashedRecord):
     def load_record(self, ins):
         super(_BsaHashedRecord, self).load_record(ins)
         for fmt, attr in zip(self.__class__.formats, self.__class__.__slots__):
-            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
+            setattr(self, attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
 
     def load_record_from_buffer(self, memview, start):
         start = super(_BsaHashedRecord, self).load_record_from_buffer(memview,
                                                                       start)
         for fmt, attr in zip(self.__class__.formats, self.__class__.__slots__):
-            self.__setattr__(attr,
-                             struct.unpack_from(fmt[0], memview, start)[0])
+            setattr(self, attr, struct.unpack_from(fmt[0], memview, start)[0])
             start += fmt[1]
         return start
 
@@ -299,12 +298,11 @@ class BSAMorrowindFileRecord(_HashedRecord):
 
     def load_record(self, ins):
         for fmt, attr in zip(self.__class__.formats, self.__class__.__slots__):
-            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
+            setattr(self, attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
 
     def load_record_from_buffer(self, memview, start):
         for fmt, attr in zip(self.__class__.formats, self.__class__.__slots__):
-            self.__setattr__(attr,
-                             struct.unpack_from(fmt[0], memview, start)[0])
+            setattr(self, attr, struct.unpack_from(fmt[0], memview, start)[0])
             start += fmt[1]
         return start
 
@@ -389,7 +387,7 @@ class Ba2TexChunk(object):
 
     def load_chunk(self, ins): ##: Centralize this, copy-pasted everywhere
         for fmt, attr in zip(Ba2TexChunk.formats, Ba2TexChunk.__slots__):
-            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
+            setattr(self, attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
 
     def __repr__(self):
         return u'Ba2TexChunk<mipmaps #%u to #%u>' % (
@@ -621,7 +619,7 @@ class BSA(ABsa):
                 folder_records.append(rec)
             # load the file record block
             for folder_record in folder_records:
-                folder_path = u'?%d' % folder_record.record_hash # hack - untested
+                folder_path = u'?%d' % folder_record.record_hash # hack - untested ##: unused?
                 name_size = unpack_byte(bsa_file)
                 folder_path = _decode_path(
                     unpack_string(bsa_file, name_size - 1), self.bsa_name)

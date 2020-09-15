@@ -4376,6 +4376,9 @@ def InitImages():
     #--Standard
     images['save.on'] = _png(u'save_on.png')
     images['save.off'] = _png(u'save_off.png')
+    # Up/Down arrows for UIList columns
+    images[u'arrow.up'] = _png(u'arrow_up.png')
+    images[u'arrow.down'] = _png(u'arrow_down.png')
     #--Misc
     #images['oblivion'] = Image(GPath(bass.dirs[u'images'].join(u'oblivion.png')),png)
     images['help.16'] = _png(u'help16.png')

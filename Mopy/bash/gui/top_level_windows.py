@@ -27,19 +27,16 @@ __author__ = u'Utumno, Infernio'
 
 import wx as _wx
 import wx.adv as _adv     # wxPython wizard class
-defPos = _wx.DefaultPosition
-defSize = _wx.DefaultSize
 
 from .base_components import _AComponent, WithFirstShow
-from .text_components import Label
 
 class _TopLevelWin(_AComponent):
     """Methods mixin for top level windows
 
     Events:
      - _on_close_evt(): request to close the window."""
-    _defPos = defPos
-    _def_size = defSize
+    _def_pos = _wx.DefaultPosition
+    _def_size = _wx.DefaultSize
     _min_size = _size_key = _pos_key = None
 
     def __init__(self, parent, sizes_dict, icon_bundle, *args, **kwargs):
@@ -54,7 +51,7 @@ class _TopLevelWin(_AComponent):
 
     def _set_pos_size(self, kwargs, sizes_dict):
         kwargs['pos'] = kwargs.get('pos', None) or sizes_dict.get(
-            self._pos_key, self._defPos)
+            self._pos_key, self._def_pos)
         kwargs['size'] = kwargs.get('size', None) or sizes_dict.get(
             self._size_key, self._def_size)
 

@@ -24,6 +24,7 @@
 
 import re
 import string
+import wx
 from collections import OrderedDict
 
 from .. import bass, balt, bosh, bolt, load_order
@@ -144,7 +145,7 @@ class DocBrowser(WindowFrame):
         if self._mod_name not in self._db_doc_paths:
             return
         index = self._mod_list.lb_index_for_str_item(self._mod_name.s)
-        if index != balt.notFound:
+        if index != wx.NOT_FOUND:
             self._mod_list.lb_delete_at_index(index)
         del self._db_doc_paths[self._mod_name]
         self.DoSave()
@@ -154,7 +155,7 @@ class DocBrowser(WindowFrame):
         self._doc_name_box.text_content = u''
         self._load_data(uni_str=u'')
 
-    def _do_select_mod(self, lb_selection_dex, lb_selection_str):
+    def _do_select_mod(self, _lb_selection_dex, lb_selection_str):
         """Handle mod name combobox selection."""
         self.SetMod(lb_selection_str)
 

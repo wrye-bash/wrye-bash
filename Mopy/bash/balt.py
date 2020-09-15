@@ -21,6 +21,8 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+"""Weird module that sits in-between basher and gui on the abstraction tree
+now. See #190, its code should be refactored and land in basher and/or gui."""
 
 # Imports ---------------------------------------------------------------------
 from __future__ import division
@@ -41,7 +43,6 @@ from collections import OrderedDict
 #--wx
 import wx
 import wx.adv
-from wx.lib.embeddedimage import PyEmbeddedImage
 #--gui
 from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
@@ -62,11 +63,6 @@ class Resources(object):
     bashDocBrowser = None
     bashMonkey = None
 
-# Constants -------------------------------------------------------------------
-defPos = wx.DefaultPosition
-
-notFound = wx.NOT_FOUND
-
 # Settings --------------------------------------------------------------------
 __unset = bolt.Settings(dictFile=None) # type information
 _settings = __unset # must be bound to bosh.settings - smelly, see #174
@@ -77,18 +73,6 @@ colors = Colors()
 
 # Images ----------------------------------------------------------------------
 images = {} #--Singleton for collection of images.
-
-#----------------------------------------------------------------------
-SmallUpArrow = PyEmbeddedImage(
-    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADxJ"
-    "REFUOI1jZGRiZqAEMFGke2gY8P/f3/9kGwDTjM8QnAaga8JlCG3CAJdt2MQxDCAUaOjyjKMp"
-    "cRAYAABS2CPsss3BWQAAAABJRU5ErkJggg==")
-
-#----------------------------------------------------------------------
-SmallDnArrow = PyEmbeddedImage(
-    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAEhJ"
-    "REFUOI1jZGRiZqAEMFGke9QABgYGBgYWdIH///7+J6SJkYmZEacLkCUJacZqAD5DsInTLhDR"
-    "bcPlKrwugGnCFy6Mo3mBAQChDgRlP4RC7wAAAABJRU5ErkJggg==")
 
 #------------------------------------------------------------------------------
 class ImageBundle(object):
@@ -950,8 +934,8 @@ class UIList(wx.Panel):
             # Image List: Column sorting order indicators
             # explorer style ^ == ascending
             checkboxesIL = self.icons.GetImageList()
-            self.sm_up = checkboxesIL.Add(SmallUpArrow.GetBitmap())
-            self.sm_dn = checkboxesIL.Add(SmallDnArrow.GetBitmap())
+            self.sm_up = checkboxesIL.Add(images[u'arrow.up'].GetBitmap())
+            self.sm_dn = checkboxesIL.Add(images[u'arrow.down'].GetBitmap())
             self.__gList._native_widget.SetImageList(checkboxesIL, wx.IMAGE_LIST_SMALL)
         if self.__class__._editLabels:
             self.__gList.on_edit_label_begin.subscribe(self.OnBeginEditLabel)
