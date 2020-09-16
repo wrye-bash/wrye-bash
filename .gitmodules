@@ -1,0 +1,3 @@
+[submodule "Mopy/bash/tests/test_resources"]
+	path = Mopy/bash/tests/test_resources
+	url = https://github.com/wrye-bash/test_resources.git

@@ -17,7 +17,7 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -32,7 +32,9 @@ patcher/base.py
 In patchers/base.py
 
 # Patchers: 20 ----------------------------------------------------------------
-importers.py
+_cbash_importers.py
+mergers.py
+preservers.py
 
 # Patchers: 30 ----------------------------------------------------------------
 # MultiTweakItem and MultiTweaker classes except from races_multitweaks

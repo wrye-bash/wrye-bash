@@ -17,41 +17,63 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 
 # Imports ---------------------------------------------------------------------
 #--Standard
-import cPickle
+from __future__ import division, print_function
 import StringIO
+import cPickle as pickle  # PY3
+import chardet
+import codecs
+import collections
 import copy
-import locale
+import csv
+import datetime
+import errno
 import os
-import stat
 import re
 import shutil
+import stat
+import string
 import struct
-import sys
-import time
 import subprocess
-import codecs
-import gettext
-import traceback
-import csv
+import sys
 import tempfile
-import pkgutil
-close_fds = True
-import types
+import textwrap
+import traceback
 from binascii import crc32
-import bass
-import chardet
+from functools import partial
+from itertools import chain
+# Internal
+from . import exception
+
+# PY3
+try:
+    from urllib.parse import quote
+except ImportError:
+    from urllib import quote
+
+# structure aliases, mainly introduced to reduce uses of 'pack' and 'unpack'
+struct_pack = struct.pack
+struct_unpack = struct.unpack
+
 #-- To make commands executed with Popen hidden
 startupinfo = None
 if os.name == u'nt':
     startupinfo = subprocess.STARTUPINFO()
     startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
+# speed up os.walk
+try:
+    import scandir
+    _walk = walkdir = scandir.walk
+except ImportError:
+    _walk = walkdir = os.walk
+    scandir = None
 
 # Unicode ---------------------------------------------------------------------
 #--decode unicode strings
@@ -66,8 +88,9 @@ encodingOrder = (
     'utf8',
     'cp500',
     'UTF-16LE',
-    'mbcs',
     )
+if os.name == u'nt':
+    encodingOrder += ('mbcs',)
 
 _encodingSwap = {
     # The encoding detector reports back some encodings that
@@ -78,6 +101,7 @@ _encodingSwap = {
     'SHIFT_JIS': 'cp932',   # Japanese
     'windows-1252': 'cp1252',
     'windows-1251': 'cp1251',
+    'utf-8': 'utf8',
     }
 
 # Preferred encoding to use when decoding/encoding strings in plugin files
@@ -85,61 +109,72 @@ _encodingSwap = {
 # setting it tries the specified encoding first
 pluginEncoding = None
 
-def _getbestencoding(text):
+# Encodings that we can't use because Python doesn't even support them
+_blocked_encodings = {u'EUC-TW'}
+
+def getbestencoding(bitstream):
     """Tries to detect the encoding a bitstream was saved in.  Uses Mozilla's
        detection library to find the best match (heuristics)"""
-    result = chardet.detect(text)
-    encoding,confidence = result['encoding'],result['confidence']
-    encoding = _encodingSwap.get(encoding,encoding)
+    result = chardet.detect(bitstream)
+    encoding_,confidence = result['encoding'],result['confidence']
+    encoding_ = _encodingSwap.get(encoding_,encoding_)
     ## Debug: uncomment the following to output stats on encoding detection
     #print
-    #print '%s: %s (%s)' % (repr(text),encoding,confidence)
-    return encoding,confidence
+    #print '%s: %s (%s)' % (repr(bitstream),encoding,confidence)
+    return encoding_,confidence
 
-def decode(text,encoding=None,avoidEncodings=()):
-    if isinstance(text,unicode) or text is None: return text
+def decode(byte_str, encoding=None, avoidEncodings=()):
+    """Decode a byte string to unicode, using heuristics on encoding."""
+    if isinstance(byte_str, unicode) or byte_str is None: return byte_str
     # Try the user specified encoding first
+    # TODO(ut) monkey patch
+    if encoding == 'cp65001':
+        encoding = 'utf-8'
     if encoding:
-        try: return unicode(text,encoding)
+        try: return unicode(byte_str, encoding)
         except UnicodeDecodeError: pass
     # Try to detect the encoding next
-    encoding,confidence = _getbestencoding(text)
-    if encoding and confidence >= 0.55 and (encoding not in avoidEncodings or confidence == 1.0):
-        try: return unicode(text,encoding)
+    encoding,confidence = getbestencoding(byte_str)
+    if encoding and confidence >= 0.55 and (
+            encoding not in avoidEncodings or confidence == 1.0) and (
+            encoding not in _blocked_encodings):
+        try: return unicode(byte_str, encoding)
         except UnicodeDecodeError: pass
     # If even that fails, fall back to the old method, trial and error
     for encoding in encodingOrder:
-        try: return unicode(text,encoding)
+        try: return unicode(byte_str, encoding)
         except UnicodeDecodeError: pass
     raise UnicodeDecodeError(u'Text could not be decoded using any method')
 
-def encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False):
-    if isinstance(text,str) or text is None:
-        if returnEncoding: return text,None
-        else: return text
+def encode(text_str, encodings=encodingOrder, firstEncoding=None,
+           returnEncoding=False):
+    """Encode unicode string to byte string, using heuristics on encoding."""
+    if isinstance(text_str, str) or text_str is None:
+        if returnEncoding: return text_str, None
+        else: return text_str
     # Try user specified encoding
     if firstEncoding:
         try:
-            text = text.encode(firstEncoding)
-            if returnEncoding: return text,firstEncoding
-            else: return text
+            text_str = text_str.encode(firstEncoding)
+            if returnEncoding: return text_str, firstEncoding
+            else: return text_str
         except UnicodeEncodeError:
             pass
     goodEncoding = None
     # Try the list of encodings in order
     for encoding in encodings:
         try:
-            temp = text.encode(encoding)
-            detectedEncoding = _getbestencoding(temp)
-            if detectedEncoding == encoding:
+            test_encoded = text_str.encode(encoding)
+            detectedEncoding = getbestencoding(test_encoded)
+            if detectedEncoding[0] == encoding:
                 # This encoding also happens to be detected
                 # By the encoding detector as the same thing,
                 # which means use it!
-                if returnEncoding: return temp,encoding
-                else: return temp
+                if returnEncoding: return test_encoded, encoding
+                else: return test_encoded
             # The encoding detector didn't detect it, but
             # it works, so save it for later
-            if not goodEncoding: goodEncoding = (temp,encoding)
+            if not goodEncoding: goodEncoding = (test_encoded, encoding)
         except UnicodeEncodeError:
             pass
     # Non of the encodings also where detectable via the
@@ -149,291 +184,194 @@ def encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False)
         else: return goodEncoding[0]
     raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
 
-# Localization ----------------------------------------------------------------
-# noinspection PyDefaultArgument
-def _findAllBashModules(files=[], bashPath=None, cwd=None,
-                        exts=('.py', '.pyw'), exclude=(u'chardet',),
-                        _firstRun=False):
-    """Return a list of all Bash files as relative paths to the Mopy
-    directory.
+def encode_complex_string(string_val, max_size=None, min_size=None,
+                          preferred_encoding=None):
+    """Handles encoding of a string that must satisfy certain conditions. Any
+    of the keyword arguments may be omitted, in which case they will simply not
+    apply.
 
-    :param files: files list cache - populated in first run. In the form: [
-    u'Wrye Bash Launcher.pyw', u'bash\\balt.py', ..., u'bash\\__init__.py',
-    u'bash\\basher\\app_buttons.py', ...]
-    :param bashPath: the relative path from Mopy
-    :param cwd: initially C:\...\Mopy - but not at the time def is executed !
-    :param exts: extensions to keep in listdir()
-    :param exclude: tuple of excluded packages
-    :param _firstRun: internal use
-    """
-    if not _firstRun and files:
-        return files # cache, not likely to change during execution
-    cwd = cwd or os.getcwdu()
-    files.extend([(bashPath or Path(u'')).join(m).s for m in
-                  os.listdir(cwd) if m.lower().endswith(exts)])
-    # find subpackages -- p=(module_loader, name, ispkg)
-    for p in pkgutil.iter_modules([cwd]):
-        if not p[2] or p[1] in exclude: continue
-        _findAllBashModules(
-            files, bashPath.join(p[1]) if bashPath else GPath(u'bash'),
-            cwd=os.path.join(cwd, p[1]), _firstRun=True)
-    return files
-
-def dumpTranslator(outPath,language,*files):
-    """Dumps all translatable strings in python source files to a new text file.
-       as this requires the source files, it will not work in WBSA mode, unless
-       the source files are also installed"""
-    outTxt = u'%sNEW.txt' % language
-    fullTxt = os.path.join(outPath,outTxt)
-    tmpTxt = os.path.join(outPath,u'%sNEW.tmp' % language)
-    oldTxt = os.path.join(outPath,u'%s.txt' % language)
-    if not files: files = _findAllBashModules()
-    args = [u'p',u'-a',u'-o',fullTxt]
-    args.extend(files)
-    if hasattr(sys,'frozen'):
-        import pygettext
-        old_argv = sys.argv[:]
-        sys.argv = args
-        pygettext.main()
-        sys.argv = old_argv
+    :param string_val: The unicode string to encode.
+    :param max_size: The maximum size of the unicode string. If string_val is
+        longer than this, it will be truncated.
+    :param min_size: The minimum size of the encoded string. If the result of
+        encoding string_val is shorter than this, it will be right-padded with
+        null bytes.
+    :param preferred_encoding: The encoding to try first. Defaults to
+        bolt.pluginEncoding.
+    :return: The encoded string."""
+    preferred_encoding = preferred_encoding or pluginEncoding
+    if max_size:
+        string_val = winNewLines(string_val.rstrip())
+        truncated_size = min(max_size, len(string_val))
+        test, tested_encoding = encode(string_val,
+                                       firstEncoding=preferred_encoding,
+                                       returnEncoding=True)
+        extra_encoded = len(test) - max_size
+        if extra_encoded > 0:
+            total = 0
+            i = -1
+            while total < extra_encoded:
+                total += len(string_val[i].encode(tested_encoding))
+                i -= 1
+            truncated_size += i + 1
+            string_val = string_val[:truncated_size]
+            string_val = encode(string_val, firstEncoding=tested_encoding)
+        else:
+            string_val = test
     else:
-        p = os.path.join(sys.prefix,u'Tools',u'i18n',u'pygettext.py')
-        args[0] = p
-        subprocess.call(args,shell=True)
-    # Fill in any already translated stuff...?
-    try:
-        reMsgIdsStart = re.compile('#:')
-        reEncoding = re.compile(r'"Content-Type:\s*text/plain;\s*charset=(.*?)\\n"$',re.I)
-        reNonEscapedQuote = re.compile(r'([^\\])"')
-        def subQuote(match): return match.group(1)+'\\"'
-        encoding = None
-        with open(tmpTxt,'w') as out:
-            outWrite = out.write
-            #--Copy old translation file header, and get encoding for strings
-            with open(oldTxt,'r') as ins:
-                for line in ins:
-                    if not encoding:
-                        match = reEncoding.match(line.strip('\r\n'))
-                        if match:
-                            encoding = match.group(1)
-                    match = reMsgIdsStart.match(line)
-                    if match: break
-                    outWrite(line)
-            #--Read through the new translation file, fill in any already
-            #  translated strings
-            with open(fullTxt,'r') as ins:
-                header = False
-                msgIds = False
-                for line in ins:
-                    if not header:
-                        match = reMsgIdsStart.match(line)
-                        if match:
-                            header = True
-                            outWrite(line)
-                        continue
-                    elif line[0:7] == 'msgid "':
-                        text = line.strip('\r\n')[7:-1]
-                        # Replace escape sequences
-                        text = text.replace('\\"','"')      # Quote
-                        text = text.replace('\\t','\t')     # Tab
-                        text = text.replace('\\\\', '\\')   # Backslash
-                        translated = _(text)
-                        if text != translated:
-                            # Already translated
-                            outWrite(line)
-                            outWrite('msgstr "')
-                            translated = translated.encode(encoding)
-                            # Re-escape the escape sequences
-                            translated = translated.replace('\\','\\\\')
-                            translated = translated.replace('\t','\\t')
-                            translated = reNonEscapedQuote.sub(subQuote,translated)
-                            outWrite(translated)
-                            outWrite('"\n')
-                        else:
-                            # Not translated
-                            outWrite(line)
-                            outWrite('msgstr ""\n')
-                    elif line[0:8] == 'msgstr "':
-                        continue
-                    else:
-                        outWrite(line)
-    except:
-        try: os.remove(tmpTxt)
-        except: pass
-    else:
-        try:
-            os.remove(fullTxt)
-            os.rename(tmpTxt,fullTxt)
-        except:
-            if os.path.exists(fullTxt):
-                try: os.remove(tmpTxt)
-                except: pass
-    return outTxt
+        string_val = encode(string_val, firstEncoding=preferred_encoding)
+    if min_size and len(string_val) < min_size:
+        string_val += b'\x00' * (min_size - len(string_val))
+    return string_val
 
-def initTranslator(language=None,path=None):
-    if not language:
-        try:
-            language = locale.getlocale()[0].split('_',1)[0]
-            language = decode(language)
-        except UnicodeError:
-            deprint(u'Still unicode problems detecting locale:', repr(locale.getlocale()),traceback=True)
-            # Default to English
-            language = u'English'
-    path = path or os.path.join(u'bash',u'l10n')
-    if language.lower() == u'german': language = u'de'
-    txt,po,mo = (os.path.join(path,language+ext)
-                 for ext in (u'.txt',u'.po',u'.mo'))
-    if not os.path.exists(txt) and not os.path.exists(mo):
-        if language.lower() != u'english':
-            print u'No translation file for language:', language
-        trans = gettext.NullTranslations()
-    else:
-        try:
-            if not os.path.exists(mo) or (os.path.getmtime(txt) > os.path.getmtime(mo)):
-                # Compile
-                shutil.copy(txt,po)
-                args = [u'm',u'-o',mo,po]
-                if hasattr(sys,'frozen'):
-                    import msgfmt
-                    old_argv = sys.argv[:]
-                    sys.argv = args
-                    msgfmt.main()
-                    sys.argv = old_argv
-                else:
-                    m = os.path.join(sys.prefix,u'Tools',u'i18n',u'msgfmt.py')
-                    subprocess.call([m,u'-o',mo,po],shell=True)
-                os.remove(po)
-            # install translator
-            with open(mo,'rb') as file:
-                trans = gettext.GNUTranslations(file)
-        except:
-            print 'Error loading translation file:'
-            traceback.print_exc()
-            trans = gettext.NullTranslations()
-    trans.install(unicode=True)
+def timestamp(): return datetime.datetime.now().strftime(u'%Y-%m-%d %H.%M.%S')
 
-#--Do translator test and set
-if locale.getlocale() == (None,None):
-    locale.setlocale(locale.LC_ALL,u'')
-initTranslator(bass.language)
+##: Keep an eye on https://bugs.python.org/issue31749
+def round_size(size_bytes):
+    """Returns the specified size in bytes as a human-readable size string."""
+    ##: Maybe offer an option to switch between KiB and KB?
+    prefix_pt2 = u'B' # if bass.settings[...] else u'iB'
+    size_bytes /= 1024 # Don't show bytes
+    for prefix_pt1 in (u'K', u'M', u'G', u'T', u'P', u'E', u'Z', u'Y'):
+        if size_bytes < 1024:
+            # Show a single decimal digit, but never show trailing zeroes
+            return u'%s %s' % (
+                    (u'%.1f' % size_bytes).rstrip(u'0').rstrip(u'.'),
+                    prefix_pt1 + prefix_pt2)
+        size_bytes /= 1024
+    return _(u'<very large>') # ;)
+
+# Helpers ---------------------------------------------------------------------
+def sortFiles(files, __split=os.path.split):
+    """Utility function. Sorts files by directory, then file name."""
+    sort_keys_dict = dict((x, __split(x.lower())) for x in files)
+    return sorted(files, key=sort_keys_dict.__getitem__)
 
 CBash = 0
-# Errors ----------------------------------------------------------------------
-class BoltError(Exception):
-    """Generic error with a string message."""
-    def __init__(self,message):
-        self.message = message
-    def __str__(self):
-        return self.message
 
-#------------------------------------------------------------------------------
-class AbstractError(BoltError):
-    """Coding Error: Abstract code section called."""
-    def __init__(self,message=u'Abstract section called.'):
-        BoltError.__init__(self,message)
-
-#------------------------------------------------------------------------------
-class ArgumentError(BoltError):
-    """Coding Error: Argument out of allowed range of values."""
-    def __init__(self,message=u'Argument is out of allowed ranged of values.'):
-        BoltError.__init__(self,message)
-
-#------------------------------------------------------------------------------
-class StateError(BoltError):
-    """Error: Object is corrupted."""
-    def __init__(self,message=u'Object is in a bad state.'):
-        BoltError.__init__(self,message)
-
-#------------------------------------------------------------------------------
-class UncodedError(BoltError):
-    """Coding Error: Call to section of code that hasn't been written."""
-    def __init__(self,message=u'Section is not coded yet.'):
-        BoltError.__init__(self,message)
-
-#------------------------------------------------------------------------------
-class CancelError(BoltError):
-    """User pressed 'Cancel' on the progress meter."""
-    def __init__(self,message=u'Action aborted by user.'):
-        BoltError.__init__(self, message)
-
-class SkipError(BoltError):
-    """User pressed Skipped n operations."""
-    def __init__(self,count=None,message=u'%s actions skipped by user.'):
-        if count:
-            message = message % count
-        else:
-            message = u'Action skipped by user.'
-        BoltError.__init__(self,message)
-
-#------------------------------------------------------------------------------
-class PermissionError(BoltError):
-    """Wrye Bash doesn't have permission to access the specified file/directory."""
-    def __init__(self,message=u'Access is denied.'):
-        BoltError.__init__(self,message)
-
-#------------------------------------------------------------------------------
-class FileError(BoltError):
-    """TES4/Tes4SaveFile Error: File is corrupted."""
-    def __init__(self,inName,message):
-        BoltError.__init__(self,message)
-        self.inName = inName
-
-    def __str__(self):
-        if self.inName:
-            if isinstance(self.inName, basestring):
-                return self.inName+u': '+self.message
-            return self.inName.s+u': '+self.message
-        else:
-            return u'Unknown File: '+self.message
-
-#------------------------------------------------------------------------------
-class FileEditError(BoltError):
-    """Unable to edit a file"""
-    def __init__(self,filePath,message=None):
-        message = message or u"Unable to edit file %s." % filePath.s
-        BoltError.__init__(self,message)
-        self.filePath = filePath
+# PY3: Dicts are ordered by default on py3.7, so drop this in favor of just
+# collections.defaultdict
+class OrderedDefaultDict(collections.OrderedDict, collections.defaultdict):
+    """A defaultdict that preserves order."""
+    def __init__(self, default_factory=None, *args, **kwargs):
+        super(OrderedDefaultDict, self).__init__(*args, **kwargs)
+        self.default_factory = default_factory
 
 # LowStrings ------------------------------------------------------------------
-class LString(object):
-    """Strings that compare as lower case strings."""
-    __slots__ = ('_s','_cs')
-
-    def __init__(self,s):
-        if isinstance(s,LString):
-            self._s = s._s
-            self._cs = s._cs
-        else:
-            self._s = s
-            self._cs = s.lower()
-
-    def __getstate__(self):
-        """Used by pickler. _cs is redundant,so don't include."""
-        return self._s
-
-    def __setstate__(self,s):
-        """Used by unpickler. Reconstruct _cs."""
-        self._s = s
-        self._cs = s.lower()
-
-    def __len__(self):
-        return len(self._s)
-
-    def __str__(self):
-        return self._s
-
-    def __repr__(self):
-        return u'bolt.LString('+repr(self._s)+u')'
-
-    def __add__(self,other):
-        return LString(self._s + other)
+class CIstr(unicode):
+    """See: http://stackoverflow.com/q/43122096/281545"""
+    __slots__ = ()
 
     #--Hash/Compare
     def __hash__(self):
-        return hash(self._cs)
-    def __cmp__(self, other):
-        if isinstance(other,LString): return cmp(self._cs, other._cs)
-        else: return cmp(self._cs, other.lower())
+        return hash(self.lower())
+    def __eq__(self, other):
+        if isinstance(other, CIstr):
+            return self.lower() == other.lower()
+        return NotImplemented
+    def __ne__(self, other):
+        if isinstance(other, CIstr):
+            return self.lower() != other.lower()
+        return NotImplemented
+    def __lt__(self, other):
+        if isinstance(other, CIstr):
+            return self.lower() < other.lower()
+        return NotImplemented
+    def __ge__(self, other):
+        if isinstance(other, CIstr):
+            return self.lower() >= other.lower()
+        return NotImplemented
+    def __gt__(self, other):
+        if isinstance(other, CIstr):
+            return self.lower() > other.lower()
+        return NotImplemented
+    def __le__(self, other):
+        if isinstance(other, CIstr):
+            return self.lower() <= other.lower()
+        return NotImplemented
+    #--repr
+    def __repr__(self):
+        return u'%s(%s)' % (type(self).__name__, super(CIstr, self).__repr__())
+
+def _ci_str(maybe_str):
+    """dict keys can be any hashable object - only call CIstr if str"""
+    return CIstr(maybe_str) if isinstance(maybe_str, basestring) else maybe_str
+
+class LowerDict(dict):
+    """Dictionary that transforms its keys to CIstr instances.
+    See: https://stackoverflow.com/a/43457369/281545
+    """
+    __slots__ = () # no __dict__ - that would be redundant
+
+    @staticmethod # because this doesn't make sense as a global function.
+    def _process_args(mapping=(), **kwargs):
+        if hasattr(mapping, 'iteritems'):
+            mapping = getattr(mapping, 'iteritems')()
+        return ((_ci_str(k), v) for k, v in
+                chain(mapping, getattr(kwargs, 'iteritems')()))
+
+    def __init__(self, mapping=(), **kwargs):
+        # dicts take a mapping or iterable as their optional first argument
+        super(LowerDict, self).__init__(self._process_args(mapping, **kwargs))
+
+    def __getitem__(self, k):
+        return super(LowerDict, self).__getitem__(_ci_str(k))
+
+    def __setitem__(self, k, v):
+        return super(LowerDict, self).__setitem__(_ci_str(k), v)
+
+    def __delitem__(self, k):
+        return super(LowerDict, self).__delitem__(_ci_str(k))
+
+    def copy(self): # don't delegate w/ super - dict.copy() -> dict :(
+        return type(self)(self)
+
+    def get(self, k, default=None):
+        return super(LowerDict, self).get(_ci_str(k), default)
+
+    def setdefault(self, k, default=None):
+        return super(LowerDict, self).setdefault(_ci_str(k), default)
+
+    __no_default = object()
+    def pop(self, k, v=__no_default):
+        if v is LowerDict.__no_default:
+            # super will raise KeyError if no default and key does not exist
+            return super(LowerDict, self).pop(_ci_str(k))
+        return super(LowerDict, self).pop(_ci_str(k), v)
+
+    def update(self, mapping=(), **kwargs):
+        super(LowerDict, self).update(self._process_args(mapping, **kwargs))
+
+    def __contains__(self, k):
+        return super(LowerDict, self).__contains__(_ci_str(k))
+
+    @classmethod
+    def fromkeys(cls, keys, v=None):
+        return super(LowerDict, cls).fromkeys((_ci_str(k) for k in keys), v)
+
+    def __repr__(self):
+        return u'%s(%s)' % (
+            type(self).__name__, super(LowerDict, self).__repr__())
+
+class DefaultLowerDict(LowerDict, collections.defaultdict):
+    """LowerDict that inherits from defaultdict."""
+    __slots__ = () # no __dict__ - that would be redundant
+
+    def __init__(self, default_factory=None, mapping=(), **kwargs):
+        # note we can't use LowerDict __init__ directly
+        super(LowerDict, self).__init__(default_factory,
+                                        self._process_args(mapping, **kwargs))
+
+    def copy(self):
+        return type(self)(self.default_factory, self)
+
+    def __repr__(self):
+        return u'%s(%s, %s)' % (type(self).__name__, self.default_factory,
+            super(collections.defaultdict, self).__repr__())
+
+class OrderedLowerDict(LowerDict, collections.OrderedDict):
+    """LowerDict that inherits from OrdererdDict."""
+    __slots__ = () # no __dict__ - that would be redundant
 
 # sio - StringIO wrapper so it uses the 'with' statement, so they can be used
 #  in the same functions that accept files as input/output as well.  Really,
@@ -442,22 +380,33 @@ class LString(object):
 #------------------------------------------------------------------------------
 class sio(StringIO.StringIO):
     def __enter__(self): return self
-    def __exit__(self,*args,**kwdargs): self.close()
+    def __exit__(self, exc_type, exc_value, exc_traceback): self.close()
 
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 _gpaths = {}
 
-def GPath(name):
-    """Path factory and cache."""
-    if name is None: return None
-    elif not name: norm = name
-    elif isinstance(name,Path): norm = name._s
-    elif isinstance(name,unicode): norm = os.path.normpath(name)
-    else: norm = os.path.normpath(decode(name))
-    path = _gpaths.get(norm)
-    if path is not None: return path
-    else: return _gpaths.setdefault(norm,Path(norm))
+def GPath(str_or_uni):
+    """Path factory and cache.
+
+    :rtype: Path"""
+    if isinstance(str_or_uni, Path) or str_or_uni is None: return str_or_uni
+    if not str_or_uni: return Path(u'') # needed, os.path.normpath(u'') = u'.'!
+    if str_or_uni in _gpaths: return _gpaths[str_or_uni]
+    return _gpaths.setdefault(str_or_uni, Path(os.path.normpath(str_or_uni)))
+
+##: generally points at file names, masters etc. using Paths, which they should
+# not - hunt down and just use strings
+def GPath_no_norm(str_or_uni):
+    """Alternative to GPath that does not call normpath. It is up to the caller
+    to ensure that the precondition name == os.path.normpath(name) holds for
+    all values pased into this method.
+
+    :rtype: Path"""
+    if isinstance(str_or_uni, Path) or str_or_uni is None: return str_or_uni
+    if not str_or_uni: return Path(u'') # needed, os.path.normpath(u'') = u'.'!
+    if str_or_uni in _gpaths: return _gpaths[str_or_uni]
+    return _gpaths.setdefault(str_or_uni, Path(str_or_uni))
 
 def GPathPurge():
     """Cleans out the _gpaths dictionary of any unused bolt.Path objects.
@@ -476,7 +425,7 @@ def GPathPurge():
     for key in _gpaths.keys():
         # Using .keys() allows use to modify the dictionary while iterating
         if sys.getrefcount(_gpaths[key]) == 2:
-            # 1 for the reference in the _gpath dictionary,
+            # 1 for the reference in the _gpaths dictionary,
             # 1 for the temp reference passed to sys.getrefcount
             # meanin the object is not reference anywhere else
             del _gpaths[key]
@@ -487,16 +436,8 @@ class Path(object):
      May be just a directory, filename or full path."""
 
     #--Class Vars/Methods -------------------------------------------
-    norm_path = {} #--Dictionary of paths
     sys_fs_enc = sys.getfilesystemencoding() or 'mbcs'
-
-    @staticmethod
-    def get(name):
-        """Returns path object for specified name/path."""
-        if isinstance(name,Path): norm = name._s
-        elif isinstance(name,str): norm = os.path.normpath(decode(name))
-        else: norm = os.path.normpath(name)
-        return Path.norm_path.setdefault(norm,Path(norm))
+    invalid_chars_re = re.compile(u'' r'(.*)([/\\:*?"<>|]+)(.*)', re.I | re.U)
 
     @staticmethod
     def getNorm(name):
@@ -507,11 +448,10 @@ class Path(object):
         return os.path.normpath(name)
 
     @staticmethod
-    def getCase(name):
+    def __getCase(name):
         """Return the normpath+normcase for specified name/path object."""
         if not name: return name
-        if isinstance(name,Path): return name._cs
-        elif isinstance(name,str): name = decode(name)
+        if isinstance(name, str): name = decode(name)
         return os.path.normcase(os.path.normpath(name))
 
     @staticmethod
@@ -519,15 +459,20 @@ class Path(object):
         return Path(os.getcwdu())
 
     def setcwd(self):
-        """Set cwd. Works as either instance or class method."""
-        if isinstance(self,Path): dir = self._s
-        else: dir = self
-        os.chdir(dir)
+        """Set cwd."""
+        os.chdir(self._s)
+
+    @staticmethod
+    def has_invalid_chars(string):
+        match = Path.invalid_chars_re.match(string)
+        if not match: return None
+        return match.groups()[1]
 
     #--Instance stuff --------------------------------------------------
     #--Slots: _s is normalized path. All other slots are just pre-calced
     #  variations of it.
-    __slots__ = ('_s','_cs','_csroot','_sroot','_shead','_stail','_ext','_cext','_sbody','_csbody')
+    __slots__ = ('_s', '_cs', '_sroot', '_shead', '_stail', '_ext',
+                 '_cext', '_sbody')
 
     def __init__(self, name):
         """Initialize."""
@@ -546,18 +491,12 @@ class Path(object):
         if not isinstance(norm,unicode): norm = decode(norm)
         self._s = norm
         self._cs = os.path.normcase(self._s)
-        self._sroot,self._ext = os.path.splitext(self._s)
-        self._shead,self._stail = os.path.split(self._s)
-        self._cext = os.path.normcase(self._ext)
-        self._csroot = os.path.normcase(self._sroot)
-        self._sbody = os.path.basename(os.path.splitext(self._s)[0])
-        self._csbody = os.path.normcase(self._sbody)
 
     def __len__(self):
         return len(self._s)
 
     def __repr__(self):
-        return u"bolt.Path("+repr(self._s)+u")"
+        return u'bolt.Path(%r)' % self._s
 
     def __unicode__(self):
         return self._s
@@ -573,107 +512,115 @@ class Path(object):
         """Path as string in normalized case."""
         return self._cs
     @property
-    def csroot(self):
-        """Root as string."""
-        return self._csroot
-    @property
     def sroot(self):
         """Root as string."""
-        return self._sroot
+        try:
+            return self._sroot
+        except AttributeError:
+            self._sroot, self._ext = os.path.splitext(self._s)
+            return self._sroot
     @property
     def shead(self):
         """Head as string."""
-        return self._shead
+        try:
+            return self._shead
+        except AttributeError:
+            self._shead, self._stail = os.path.split(self._s)
+            return self._shead
     @property
     def stail(self):
         """Tail as string."""
-        return self._stail
+        try:
+            return self._stail
+        except AttributeError:
+            self._shead, self._stail = os.path.split(self._s)
+            return self._stail
     @property
     def sbody(self):
         """For alpha\beta.gamma returns beta as string."""
-        return self._sbody
+        try:
+            return self._sbody
+        except AttributeError:
+            self._sbody = os.path.basename(self.sroot)
+            return self._sbody
     @property
     def csbody(self):
         """For alpha\beta.gamma returns beta as string in normalized case."""
-        return self._csbody
+        return os.path.normcase(self.sbody)
 
     #--Head, tail
     @property
     def headTail(self):
         """For alpha\beta.gamma returns (alpha,beta.gamma)"""
-        return map(GPath,(self._shead,self._stail))
+        return map(GPath,(self.shead,self.stail))
     @property
     def head(self):
         """For alpha\beta.gamma, returns alpha."""
-        return GPath(self._shead)
+        return GPath(self.shead)
     @property
     def tail(self):
         """For alpha\beta.gamma, returns beta.gamma."""
-        return GPath(self._stail)
+        return GPath_no_norm(self.stail)
     @property
     def body(self):
         """For alpha\beta.gamma, returns beta."""
-        return GPath(self._sbody)
+        return GPath_no_norm(self.sbody)
 
     #--Root, ext
     @property
-    def rootExt(self):
-        return GPath(self._sroot),self._ext
-    @property
     def root(self):
         """For alpha\beta.gamma returns alpha\beta"""
-        return GPath(self._sroot)
+        return GPath(self.sroot)
     @property
     def ext(self):
         """Extension (including leading period, e.g. '.txt')."""
-        return self._ext
+        try:
+            return self._ext
+        except AttributeError:
+            self._sroot, self._ext = os.path.splitext(self._s)
+            return self._ext
     @property
     def cext(self):
         """Extension in normalized case."""
-        return self._cext
+        try:
+            return self._cext
+        except AttributeError:
+            self._cext = os.path.normcase(self.ext)
+            return self._cext
     @property
-    def temp(self,unicodeSafe=True):
-        """Temp file path.  If unicodeSafe is True, the returned
-        temp file will be a fileName that can be passes through Popen
-        (Popen automatically tries to encode the name)"""
-        baseDir = GPath(tempfile.gettempdir()).join(u'WryeBash_temp')
+    def temp(self):
+        """Temp file path."""
+        baseDir = GPath(unicode(tempfile.gettempdir(), Path.sys_fs_enc)).join(
+            u'WryeBash_temp')
         baseDir.makedirs()
-        dirJoin = baseDir.join
-        if unicodeSafe:
-            try:
-                self._s.encode('ascii')
-                return dirJoin(self.tail+u'.tmp')
-            except UnicodeEncodeError:
-                ret = unicode(self._s.encode('ascii','xmlcharrefreplace'),'ascii')+u'_unicode_safe.tmp'
-                return dirJoin(ret)
-        else:
-            return dirJoin(self.tail+u'.tmp')
+        return baseDir.join(self.tail + u'.tmp')
 
     @staticmethod
     def tempDir(prefix=u'WryeBash_'):
-        try: # workaround for http://bugs.python.org/issue1681974 see there
+        # workaround for http://bugs.python.org/issue1681974 see there - PY3: ?
+        try:
             return GPath(tempfile.mkdtemp(prefix=prefix))
         except UnicodeDecodeError:
             try:
                 traceback.print_exc()
-                print 'Trying to pass temp dir in...'
+                print('Trying to pass temp dir in...')
                 tempdir = unicode(tempfile.gettempdir(), Path.sys_fs_enc)
                 return GPath(tempfile.mkdtemp(prefix=prefix, dir=tempdir))
             except UnicodeDecodeError:
                 try:
                     traceback.print_exc()
-                    print 'Trying to encode temp dir prefix...'
+                    print('Trying to encode temp dir prefix...')
                     return GPath(tempfile.mkdtemp(
                         prefix=prefix.encode(Path.sys_fs_enc)).decode(
                         Path.sys_fs_enc))
                 except:
                     traceback.print_exc()
-                    print 'Failed to create tmp dir, Bash will not function ' \
-                          'correctly.'
+                    print('Failed to create tmp dir, Bash will not function ' \
+                          'correctly.')
 
     @staticmethod
     def baseTempDir():
-        return GPath(tempfile.gettempdir())
+        return GPath(unicode(tempfile.gettempdir(), Path.sys_fs_enc))
 
     @property
     def backup(self):
@@ -686,62 +633,36 @@ class Path(object):
         """Size of file or directory."""
         if self.isdir():
             join = os.path.join
-            getSize = os.path.getsize
+            op_size = os.path.getsize
             try:
-                return sum([sum(map(getSize,map(lambda z: join(x,z),files))) for x,y,files in os.walk(self._s)])
+                return sum([sum(map(op_size,map(lambda z: join(x,z),files))) for x,y,files in _walk(self._s)])
             except ValueError:
                 return 0
         else:
-            try:
-                return os.path.getsize(self._s)
-            except WindowsError, werr:
-                    if werr.winerror != 123: raise
-                    deprint(u'Unable to determine size of %s - probably a unicode error' % self._s)
-                    return 0
+            return os.path.getsize(self._s)
+
     @property
     def atime(self):
-        try:
-            return os.path.getatime(self._s)
-        except WindowsError, werr:
-            if werr.winerror != 123: raise
-            deprint(u'Unable to determine atime of %s - probably a unicode error' % self._s)
-            return 1309853942.895 #timestamp of oblivion.exe (also known as any random time may work).
+        return os.path.getatime(self._s)
     @property
     def ctime(self):
         return os.path.getctime(self._s)
 
     #--Mtime
-    def getmtime(self,maxMTime=False):
-        """Returns mtime for path. But if mtime is outside of epoch, then resets
-        mtime to an in-epoch date and uses that."""
-        if self.isdir() and maxMTime:
-            #fastest implementation I could make
-            c = []
-            cExtend = c.extend
-            join = os.path.join
-            getM = os.path.getmtime
-            try:
-                [cExtend([getM(join(root,dir)) for dir in dirs] + [getM(join(root,file)) for file in files]) for root,dirs,files in os.walk(self._s)]
-            except: #slower but won't fail (fatally) on funky unicode files when Bash in ANSI Mode.
-                [cExtend([GPath(join(root,dir)).mtime for dir in dirs] + [GPath(join(root,file)).mtime for file in files]) for root,dirs,files in os.walk(self._s)]
-            try:
-                return max(c)
-            except ValueError:
-                return 0
-        try:
-            mtime = int(os.path.getmtime(self._s))
-        except WindowsError, werr:
-                if werr.winerror != 123: raise
-                deprint(u'Unable to determine modified time of %s - probably a unicode error' % self._s)
-                mtime = 1146007898.0 #0blivion.exe's time... random basically.
-        return mtime
-    def setmtime(self,mtime):
-        try:
-            os.utime(self._s,(self.atime,int(mtime)))
-        except WindowsError, werr:
-            if werr.winerror != 123: raise
-            deprint(u'Unable to set modified time of %s - probably a unicode error' % self._s)
-    mtime = property(getmtime,setmtime,doc="Time file was last modified.")
+    def _getmtime(self):
+        """Return mtime for path."""
+        return int(os.path.getmtime(self._s))
+    def _setmtime(self, mtime):
+        os.utime(self._s, (self.atime, int(mtime)))
+    mtime = property(_getmtime, _setmtime, doc="Time file was last modified.")
+
+    def size_mtime(self):
+        lstat = os.lstat(self._s)
+        return lstat.st_size, int(lstat.st_mtime)
+
+    def size_mtime_ctime(self):
+        lstat = os.lstat(self._s)
+        return lstat.st_size, int(lstat.st_mtime), lstat.st_ctime
 
     @property
     def stat(self):
@@ -750,16 +671,9 @@ class Path(object):
 
     @property
     def version(self):
-        """File version (exe/dll) embeded in the file properties (windows only)."""
-        try:
-            import win32api
-            info = win32api.GetFileVersionInfo(self._s,u'\\')
-            ms = info['FileVersionMS']
-            ls = info['FileVersionLS']
-            version = (win32api.HIWORD(ms),win32api.LOWORD(ms),win32api.HIWORD(ls),win32api.LOWORD(ls))
-        except:
-            version = (0,0,0,0)
-        return version
+        """File version (exe/dll) embedded in the file properties."""
+        from .env import get_file_version
+        return get_file_version(self._s)
 
     @property
     def strippedVersion(self):
@@ -775,32 +689,11 @@ class Path(object):
     @property
     def crc(self):
         """Calculates and returns crc value for self."""
-        size = self.size
-        crc = 0L
+        crc = 0
         with self.open('rb') as ins:
-            insRead = ins.read
-            insTell = ins.tell
-            while insTell() < size:
-                crc = crc32(insRead(512),crc)
+            for block in iter(partial(ins.read, 2097152), ''):
+                crc = crc32(block, crc) # 2MB at a time, probably ok
         return crc & 0xffffffff
-
-    #--crc with progress bar
-    def crcProgress(self, progress):
-        """Calculates and returns crc value for self, updating progress as it goes."""
-        size = self.size
-        progress.setFull(max(size,1))
-        crc = 0L
-        try:
-            with self.open('rb') as ins:
-                insRead = ins.read
-                insTell = ins.tell
-                while insTell() < size:
-                    crc = crc32(insRead(2097152),crc) # 2MB at a time, probably ok
-                    progress(insTell())
-        except IOError, ierr:
-            #if werr.winerror != 123: raise
-            deprint(u'Unable to get crc of %s - probably a unicode error' % self._s)
-        return crc & 0xFFFFFFFF
 
     #--Path stuff -------------------------------------------------------
     #--New Paths, subpaths
@@ -809,19 +702,25 @@ class Path(object):
     def join(*args):
         norms = [Path.getNorm(x) for x in args]
         return GPath(os.path.join(*norms))
+
     def list(self):
         """For directory: Returns list of files."""
         if not os.path.exists(self._s): return []
-        return [GPath(x) for x in os.listdir(self._s)]
+        return [GPath_no_norm(x) for x in os.listdir(self._s)]
+
     def walk(self,topdown=True,onerror=None,relative=False):
         """Like os.walk."""
         if relative:
             start = len(self._s)
-            for root,dirs,files in os.walk(self._s,topdown,onerror):
-                yield (GPath(root[start:]),[GPath(x) for x in dirs],[GPath(x) for x in files])
+            for root_dir,dirs,files in _walk(self._s, topdown, onerror):
+                yield (GPath(root_dir[start:]),
+                       [GPath_no_norm(x) for x in dirs],
+                       [GPath_no_norm(x) for x in files])
         else:
-            for root,dirs,files in os.walk(self._s,topdown,onerror):
-                yield (GPath(root),[GPath(x) for x in dirs],[GPath(x) for x in files])
+            for root_dir,dirs,files in _walk(self._s, topdown, onerror):
+                yield (GPath(root_dir),
+                       [GPath_no_norm(x) for x in dirs],
+                       [GPath_no_norm(x) for x in files])
 
     def split(self):
         """Splits the path into each of it's sub parts.  IE: C:\Program Files\Bethesda Softworks
@@ -844,10 +743,6 @@ class Path(object):
     def drive(self):
         """Returns the drive part of the path string."""
         return GPath(os.path.splitdrive(self._s)[0])
-
-    def cdrive(self):
-        """Returns the case-insensitive drive part of the path string."""
-        return GPath(os.path.splitdrive(self._cs)[0])
 
     #--File system info
     #--THESE REALLY OUGHT TO BE PROPERTIES.
@@ -878,37 +773,40 @@ class Path(object):
             try:
                 clearReadOnly(self)
             except UnicodeError:
-                flags = stat.S_IWUSR|stat.S_IWOTH
+                stat_flags = stat.S_IWUSR|stat.S_IWOTH
                 chmod = os.chmod
-                for root,dirs,files in os.walk(self._s):
-                    rootJoin = root.join
-                    for dir in dirs:
-                        try: chmod(rootJoin(dir),flags)
+                for root_dir,dirs,files in _walk(self._s):
+                    rootJoin = root_dir.join
+                    for directory in dirs:
+                        try: chmod(rootJoin(directory),stat_flags)
                         except: pass
-                    for file in files:
-                        try: chmod(rootJoin(file),flags)
+                    for filename in files:
+                        try: chmod(rootJoin(filename),stat_flags)
                         except: pass
 
     def open(self,*args,**kwdargs):
-        if self._shead and not os.path.exists(self._shead):
-            os.makedirs(self._shead)
+        if self.shead and not os.path.exists(self.shead):
+            os.makedirs(self.shead)
         if 'encoding' in kwdargs:
             return codecs.open(self._s,*args,**kwdargs)
         else:
             return open(self._s,*args,**kwdargs)
     def makedirs(self):
-        if not self.exists(): os.makedirs(self._s)
+        try:
+            os.makedirs(self._s)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
     def remove(self):
         try:
             if self.exists(): os.remove(self._s)
-        except WindowsError:
-            # Clear RO flag
-            os.chmod(self._s,stat.S_IWUSR|stat.S_IWOTH)
+        except OSError:
+            self.clearRO()
             os.remove(self._s)
     def removedirs(self):
         try:
             if self.exists(): os.removedirs(self._s)
-        except WindowsError:
+        except OSError:
             self.clearRO()
             os.removedirs(self._s)
     def rmtree(self,safety='PART OF DIRECTORY NAME'):
@@ -919,71 +817,67 @@ class Path(object):
     #--start, move, copy, touch, untemp
     def start(self, exeArgs=None):
         """Starts file as if it had been doubleclicked in file explorer."""
-        if self._cext == u'.exe':
+        if self.cext == u'.exe':
             if not exeArgs:
-                subprocess.Popen([self.s], close_fds=close_fds)
+                subprocess.Popen([self.s], close_fds=True)
             else:
-                subprocess.Popen(exeArgs, executable=self.s, close_fds=close_fds)
+                subprocess.Popen(exeArgs, executable=self.s, close_fds=True)
         else:
             os.startfile(self._s)
     def copyTo(self,destName):
+        """Copy self to destName, make dirs if necessary and preserve mtime."""
         destName = GPath(destName)
         if self.isdir():
             shutil.copytree(self._s,destName._s)
         else:
-            if destName._shead and not os.path.exists(destName._shead):
-                os.makedirs(destName._shead)
+            if destName.shead and not os.path.exists(destName.shead):
+                os.makedirs(destName.shead)
             shutil.copyfile(self._s,destName._s)
             destName.mtime = self.mtime
     def moveTo(self,destName):
         if not self.exists():
-            raise StateError(self._s + u' cannot be moved because it does not exist.')
+            raise exception.StateError(self._s + u' cannot be moved because it does not exist.')
         destPath = GPath(destName)
         if destPath._cs == self._cs: return
-        if destPath._shead and not os.path.exists(destPath._shead):
-            os.makedirs(destPath._shead)
+        if destPath.shead and not os.path.exists(destPath.shead):
+            os.makedirs(destPath.shead)
         elif destPath.exists():
             destPath.remove()
         try:
             shutil.move(self._s,destPath._s)
-        except WindowsError:
+        except OSError:
             self.clearRO()
             shutil.move(self._s,destPath._s)
 
     def tempMoveTo(self,destName):
         """Temporarily rename/move an object.  Use with the 'with' statement"""
-        class temp(object):
+        class _temp_file(object):
             def __init__(self,oldPath,newPath):
                 self.newPath = GPath(newPath)
                 self.oldPath = GPath(oldPath)
 
             def __enter__(self): return self.newPath
-            def __exit__(self,*args,**kwdargs): self.newPath.moveTo(self.oldPath)
+            def __exit__(self, exc_type, exc_value, exc_traceback): self.newPath.moveTo(self.oldPath)
         self.moveTo(destName)
-        return temp(self,destName)
+        return _temp_file(self,destName)
 
-    def unicodeSafe(self):
-        """Temporarily rename (only if necessary) the file to a unicode safe name.
-           Use with the 'with' statement."""
+    def unicodeSafe(self): # PY3: investigate if obsoleted.
+        """Temporarily rename (only if necessary) the file to a unicode safe
+        name. Use with the 'with' statement. Meant to be used with Popen (which
+        automatically tries to encode the name)."""
         try:
-            self._s.encode('ascii')
-            class temp(object):
+            self._s.encode(u'ascii')
+            class _noop_file(object):
                 def __init__(self,path):
                     self.path = path
                 def __enter__(self): return self.path
-                def __exit__(self,*args,**kwdargs): pass
-            return temp(self)
+                def __exit__(self, exc_type, exc_value, exc_traceback): pass
+            return _noop_file(self)
         except UnicodeEncodeError:
-            return self.tempMoveTo(self.temp)
+            safe_path = unicode(self._s.encode(u'ascii', u'xmlcharrefreplace'),
+                u'ascii') + u'_unicode_safe.tmp'
+            return self.tempMoveTo(safe_path)
 
-    def touch(self):
-        """Like unix 'touch' command. Creates a file with current date/time."""
-        if self.exists():
-            self.mtime = time.time()
-        else:
-            with self.temp.open('w'):
-                pass
-            self.untemp()
     def untemp(self,doBackup=False):
         """Replaces file with temp version, optionally making backup of file first."""
         if self.temp.exists():
@@ -992,13 +886,22 @@ class Path(object):
                     self.backup.remove()
                     shutil.move(self._s, self.backup._s)
                 else:
-                    os.remove(self._s)
+                    # this will fail with Access Denied (!) if self._s is
+                    # (unexpectedly) a directory
+                    try:
+                        os.remove(self._s)
+                    except OSError as e:
+                        if e.errno != errno.EACCES:
+                            raise
+                        self.clearRO()
+                        os.remove(self._s)
             shutil.move(self.temp._s, self._s)
+
     def editable(self):
         """Safely check whether a file is editable."""
         delete = not os.path.exists(self._s)
         try:
-            with open(self._s,'ab') as f:
+            with open(self._s,u'ab'):
                 return True
         except:
             return False
@@ -1011,27 +914,52 @@ class Path(object):
                     pass
 
     #--Hash/Compare, based on the _cs attribute so case insensitive. NB: Paths
-    # directly compare to strings
+    # directly compare to basestring and Path and will blow for anything else
     def __hash__(self):
         return hash(self._cs)
-    def __cmp__(self, other):
-        if isinstance(other,Path):
-            return cmp(self._cs, other._cs)
+    def __eq__(self, other):
+        if isinstance(other, Path):
+            return self._cs == other._cs
         else:
-            return cmp(self._cs, Path.getCase(other))
+            return self._cs == Path.__getCase(other)
+    def __ne__(self, other):
+        if isinstance(other, Path):
+            return self._cs != other._cs
+        else:
+            return self._cs != Path.__getCase(other)
+    def __lt__(self, other):
+        if isinstance(other, Path):
+            return self._cs < other._cs
+        else:
+            return self._cs < Path.__getCase(other)
+    def __ge__(self, other):
+        if isinstance(other, Path):
+            return self._cs >= other._cs
+        else:
+            return self._cs >= Path.__getCase(other)
+    def __gt__(self, other):
+        if isinstance(other, Path):
+            return self._cs > other._cs
+        else:
+            return self._cs > Path.__getCase(other)
+    def __le__(self, other):
+        if isinstance(other, Path):
+            return self._cs <= other._cs
+        else:
+            return self._cs <= Path.__getCase(other)
 
 def clearReadOnly(dirPath):
-    """Recursivelly (/S) clear ReadOnly flag if set - include folders (/D)."""
-    cmd = ur'attrib -R "%s\*" /S /D' % dirPath.s
+    """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""
+    cmd = u'' r'attrib -R "%s\*" /S /D' % dirPath.s
     subprocess.call(cmd, startupinfo=startupinfo)
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines
-reUnixNewLine = re.compile(ur'(?<!\r)\n',re.U)
+reUnixNewLine = re.compile(u'' r'(?<!\r)\n', re.U)
 
 # Util Classes ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class CsvReader:
+class CsvReader(object):
     """For reading csv files. Handles comma, semicolon and tab separated (excel) formats.
        CSV files must be encoded in UTF-8"""
     @staticmethod
@@ -1041,17 +969,17 @@ class CsvReader:
 
     def __init__(self,path):
         self.ins = path.open('rb',encoding='utf-8-sig')
-        format = ('excel','excel-tab')[u'\t' in self.ins.readline()]
-        if format == 'excel':
+        excel_fmt = ('excel','excel-tab')[u'\t' in self.ins.readline()]
+        if excel_fmt == 'excel':
             delimiter = (',',';')[u';' in self.ins.readline()]
             self.ins.seek(0)
-            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),format,delimiter=delimiter)
+            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),excel_fmt,delimiter=delimiter)
         else:
             self.ins.seek(0)
-            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),format)
+            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),excel_fmt)
 
     def __enter__(self): return self
-    def __exit__(self,*args,**kwdargs): self.ins.close()
+    def __exit__(self, exc_type, exc_value, exc_traceback): self.ins.close()
 
     def __iter__(self):
         for iter in self.reader:
@@ -1069,6 +997,7 @@ class Flags(object):
     @staticmethod
     def getNames(*names):
         """Returns dictionary mapping names to indices.
+        Indices range may not be contiguous.
         Names are either strings or (index,name) tuples.
         E.g., Flags.getNames('isQuest','isHidden',None,(4,'isDark'),(7,'hasWater'))"""
         namesDict = {}
@@ -1082,13 +1011,13 @@ class Flags(object):
     #--Generation
     def __init__(self,value=0,names=None):
         """Initialize. Attrs, if present, is mapping of attribute names to indices. See getAttrs()"""
-        object.__setattr__(self,'_field',int(value) | 0L)
+        object.__setattr__(self,'_field',int(value))
         object.__setattr__(self,'_names',names or {})
 
     def __call__(self,newValue=None):
         """Returns a clone of self, optionally with new value."""
         if newValue is not None:
-            return Flags(int(newValue) | 0L,self._names)
+            return Flags(int(newValue),self._names)
         else:
             return Flags(self._field,self._names)
 
@@ -1124,8 +1053,8 @@ class Flags(object):
 
     def __setitem__(self,index,value):
         """Set value by index. E.g., flags[3] = True"""
-        value = ((value or 0L) and 1L) << index
-        mask = 1L << index
+        value = ((value or 0) and 1) << index
+        mask = 1 << index
         self._field = ((self._field & ~mask) | value)
 
     #--As class
@@ -1185,27 +1114,21 @@ class Flags(object):
         trueNames.sort(key = lambda xxx: self._names[xxx])
         return tuple(trueNames)
 
+    def __repr__(self):
+        """Shows all set flags."""
+        all_flags = u', '.join(self.getTrueAttrs()) if self._field else u'None'
+        return u'0x%s (%s)' % (self.hex(), all_flags)
+
 #------------------------------------------------------------------------------
-class DataDict:
-    """Mixin class that handles dictionary emulation, assuming that dictionary is its 'data' attribute."""
+class DataDict(object):
+    """Mixin class that handles dictionary emulation, assuming that
+    dictionary is its 'data' attribute."""
 
     def __contains__(self,key):
         return key in self.data
     def __getitem__(self,key):
-        """Return value for key or modinfo (?) of the game master file."""
-        if self.data.has_key(key):
-            return self.data[key]
-        else:
-            if isinstance(key, Path):
-                try: # TODO(ut): why? data may not contain ModInfos necessarily
-                    import bush
-                    return self.data[Path(bush.game.masterFiles[0])]
-                except:
-                    print
-                    print "An error occurred trying to access data for mod file:", key
-                    print "This can occur when the game's main ESM file is corrupted."
-                    print
-                    raise
+        """Return value for key or raise KeyError if not present."""
+        return self.data[key]
     def __setitem__(self,key,value):
         self.data[key] = value
     def __delitem__(self,key):
@@ -1220,8 +1143,6 @@ class DataDict:
         return self.data.values()
     def items(self):
         return self.data.items()
-    def has_key(self,key):
-        return self.data.has_key(key)
     def get(self,key,default=None):
         return self.data.get(key,default)
     def pop(self,key,default=None):
@@ -1233,10 +1154,58 @@ class DataDict:
     def itervalues(self):
         return self.data.itervalues()
 
-    def delete(self, itemOrItems, **kwargs):
-        raise NotImplementedError('Only use in UIList data stores.')
-    def delete_Refresh(self, deleted):
-        raise NotImplementedError('Only use in UIList data stores.')
+#------------------------------------------------------------------------------
+class AFile(object):
+    """Abstract file, supports caching - beta."""
+    _null_stat = (-1, None)
+    __slots__ = (u'_file_key', u'_file_size', u'_file_mod_time')
+
+    def _stat_tuple(self): return self.abs_path.size_mtime()
+
+    def __init__(self, fullpath, load_cache=False, raise_on_error=False):
+        self._file_key = GPath(fullpath) # abs path of the file but see ModInfo
+        #Set cache info (mtime, size[, ctime]) and reload if load_cache is True
+        try:
+            self._reset_cache(self._stat_tuple(), load_cache)
+        except OSError:
+            if raise_on_error: raise
+            self._reset_cache(self._null_stat, load_cache=False)
+
+    @property
+    def abs_path(self): return self._file_key
+
+    @abs_path.setter
+    def abs_path(self, val): self._file_key = val
+
+    def do_update(self):
+        """Check cache, reset it if needed. Return True if reset else False."""
+        try:
+            stat_tuple = self._stat_tuple()
+        except OSError:
+            self._reset_cache(self._null_stat, load_cache=False)
+            return False # we should not call do_update on deleted files
+        if self._file_changed(stat_tuple):
+            self._reset_cache(stat_tuple, load_cache=True)
+            return True
+        return False
+
+    def needs_update(self):
+        """Returns True if this file changed. Throws an OSErorr if it is
+        deleted."""
+        return self._file_changed(self._stat_tuple())
+
+    def _file_changed(self, stat_tuple):
+        return (self._file_size, self._file_mod_time) != stat_tuple
+
+    def _reset_cache(self, stat_tuple, load_cache):
+        """Reset cache flags (size, mtime,...) and possibly reload the cache.
+        :param load_cache: if True either load the cache (header in Mod and
+        SaveInfo) or reset it so it gets reloaded later
+        """
+        self._file_size, self._file_mod_time = stat_tuple
+
+    def __repr__(self): return u'%s<%s>' % (self.__class__.__name__,
+                                            self.abs_path.stail)
 
 #------------------------------------------------------------------------------
 from collections import MutableSet
@@ -1246,11 +1215,11 @@ class OrderedSet(list, MutableSet):
         - index(value)
         - __getitem__(index)
         - __call__ -> to enable 'enumerate'
-       If an item is dicarded, then later readded, it will be added
+       If an item is discarded, then later readded, it will be added
        to the end of the set.
     """
     def update(self, *args, **kwdargs):
-        if kwdargs: raise TypeError("update() takes no keyword arguments")
+        if kwdargs: raise TypeError(u'update() takes no keyword arguments')
         for s in args:
             for e in s:
                 self.add(e)
@@ -1258,7 +1227,11 @@ class OrderedSet(list, MutableSet):
     def add(self, elem):
         if elem not in self:
             self.append(elem)
-    def discard(self, elem): self.pop(self.index(elem),None)
+    def discard(self, elem):
+        try:
+            self.remove(elem)
+        except ValueError:
+            pass # We want to discard, don't care about missing values
     def __or__(self,other):
         left = OrderedSet(self)
         left.update(other)
@@ -1286,7 +1259,7 @@ class MemorySet(object):
     """
     def __init__(self, *args, **kwdargs):
         self.items = OrderedSet(*args, **kwdargs)
-        self.mask = [True for i in range(len(self.items))]
+        self.mask = [True] * len(self.items)
 
     def add(self,elem):
         if elem in self.items: self.mask[self.items.index(elem)] = True
@@ -1361,7 +1334,7 @@ class MemorySet(object):
     def __ne__(self,other): return list(self) != list(other)
 
 #------------------------------------------------------------------------------
-class MainFunctions:
+class MainFunctions(object):
     """Encapsulates a set of functions and/or object instances so that they can
     be called from the command line with normal command line syntax.
 
@@ -1392,16 +1365,16 @@ class MainFunctions:
         func = self.funcs.get(key)
         if not func:
             msg = _(u"Unknown function/object: %s") % key
-            try: print msg
-            except UnicodeError: print msg.encode('mbcs')
+            try: print(msg)
+            except UnicodeError: print(msg.encode('mbcs'))
             return
         for attr in attrs:
             func = getattr(func,attr)
         #--Separate out keywords args
         keywords = {}
         argDex = 0
-        reKeyArg  = re.compile(ur'^\-(\D\w+)',re.U)
-        reKeyBool = re.compile(ur'^\+(\D\w+)',re.U)
+        reKeyArg  = re.compile(u'' r'^-(\D\w+)', re.U)
+        reKeyBool = re.compile(u'' r'^\+(\D\w+)', re.U)
         while argDex < len(args):
             arg = args[argDex]
             if reKeyArg.match(arg):
@@ -1416,7 +1389,7 @@ class MainFunctions:
             else:
                 argDex += 1
         #--Apply
-        apply(func,args,keywords)
+        func(*args, **keywords)
 
 #--Commands Singleton
 _mainFunctions = MainFunctions()
@@ -1427,7 +1400,7 @@ def mainfunc(func):
     return func
 
 #------------------------------------------------------------------------------
-class PickleDict:
+class PickleDict(object):
     """Dictionary saved in a pickle file.
     Note: self.vdata and self.data are not reassigned! (Useful for some clients.)"""
     def __init__(self,path,readOnly=False):
@@ -1440,6 +1413,13 @@ class PickleDict:
 
     def exists(self):
         return self.path.exists() or self.backup.exists()
+
+    class Mold(Exception):
+        def __init__(self, moldedFile):
+            msg = (u'Your settings in %s come from an ancient Bash version. '
+                   u'Please load them in 306 so they are converted '
+                   u'to the newer format' % moldedFile)
+            super(PickleDict.Mold, self).__init__(msg)
 
     def load(self):
         """Loads vdata and data from file or backup file.
@@ -1458,38 +1438,28 @@ class PickleDict:
         """
         self.vdata.clear()
         self.data.clear()
+        cor = cor_name =  None
         for path in (self.path,self.backup):
+            if cor is not None:
+                cor.moveTo(cor_name)
+                cor = None
             if path.exists():
                 try:
                     with path.open('rb') as ins:
                         try:
-                            firstPickle = cPickle.load(ins)
+                            firstPickle = pickle.load(ins)
                         except ValueError:
-                            os.remove(path)
+                            cor = path
+                            cor_name = GPath(path.s + u' (%s)' % timestamp() +
+                                    u'.corrupted')
+                            deprint(u'Unable to load %s (moved to "%s")' % (
+                                path, cor_name.tail), traceback=True)
                             continue # file corrupt - try next file
                         if firstPickle == 'VDATA2':
-                            self.vdata.update(cPickle.load(ins))
-                            self.data.update(cPickle.load(ins))
-                        elif firstPickle == 'VDATA':
-                            # translate data types to new hierarchy
-                            class _Translator:
-                                def __init__(self, fileToWrap):
-                                    self._file = fileToWrap
-                                def read(self, numBytes):
-                                    return self._translate(self._file.read(numBytes))
-                                def readline(self):
-                                    return self._translate(self._file.readline())
-                                def _translate(self, s):
-                                    return re.sub(u'^(bolt|bosh)$', r'bash.\1', s,flags=re.U)
-                            translator = _Translator(ins)
-                            try:
-                                self.vdata.update(cPickle.load(translator))
-                                self.data.update(cPickle.load(translator))
-                            except:
-                                deprint(u'unable to unpickle data', traceback=True)
-                                raise
-                        else: # no version string or vdata
-                            self.data.update(firstPickle)
+                            self.vdata.update(pickle.load(ins))
+                            self.data.update(pickle.load(ins))
+                        else:
+                            raise PickleDict.Mold(path)
                     return 1 + (path == self.backup)
                 except (EOFError, ValueError):
                     pass
@@ -1500,13 +1470,14 @@ class PickleDict:
         """Save to pickle file.
 
         Three objects are writen - a version string and the vdata and data
-        dictionaries, in this order.
+        dictionaries, in this order. Current version string is VDATA2.
         """
         if self.readOnly: return False
         #--Pickle it
+        self.vdata['boltPaths'] = True # needed so pre 307 versions don't blow
         with self.path.temp.open('wb') as out:
             for data in ('VDATA2',self.vdata,self.data):
-                cPickle.dump(data,out,-1)
+                pickle.dump(data,out,-1)
         self.path.untemp(doBackup=True)
         return True
 
@@ -1539,15 +1510,12 @@ class Settings(DataDict):
         self.changed = set()
         self.deleted = set()
 
-    def loadDefaults(self,defaults):
+    def loadDefaults(self, default_settings):
         """Add default settings to dictionary. Will not replace values that are already set."""
-        self.defaults = defaults
-        for key in defaults.keys():
+        self.defaults = default_settings
+        for key in default_settings.keys():
             if key not in self.data:
-                self.data[key] = copy.deepcopy(defaults[key])
-
-    def setDefault(self,key,default):
-        """Sets a single value to a default value if it has not yet been set."""
+                self.data[key] = copy.deepcopy(default_settings[key])
 
     def save(self):
         """Save to pickle file. Only key/values marked as changed are saved."""
@@ -1568,7 +1536,7 @@ class Settings(DataDict):
     def setChanged(self,key):
         """Marks given key as having been changed. Use if value is a dictionary, list or other object."""
         if key not in self.data:
-            raise ArgumentError(u'No settings data for '+key)
+            raise exception.ArgumentError(u'No settings data for ' + key)
         self.changed.add(key)
 
     def getChanged(self,key,default=None):
@@ -1605,91 +1573,58 @@ class Settings(DataDict):
         self.deleted.add(key)
         return self.data.pop(key,default)
 
-#------------------------------------------------------------------------------
-class StructFile(file):
-    """File reader/writer with extra functions for handling structured data."""
-    def unpack(self,format,size):
-        """Reads and unpacks according to format."""
-        return struct.unpack(format,self.read(size))
+# Structure wrappers ----------------------------------------------------------
+def unpack_str8(ins, __unpack=struct.Struct(u'B').unpack):
+    return ins.read(__unpack(ins.read(1))[0])
+def unpack_str16(ins, __unpack=struct.Struct(u'H').unpack):
+    return ins.read(__unpack(ins.read(2))[0])
+def unpack_str32(ins, __unpack=struct.Struct(u'I').unpack):
+    return ins.read(__unpack(ins.read(4))[0])
+def unpack_int(ins, __unpack=struct.Struct(u'I').unpack):
+    return __unpack(ins.read(4))[0]
+def unpack_short(ins, __unpack=struct.Struct(u'H').unpack):
+    return __unpack(ins.read(2))[0]
+def unpack_float(ins, __unpack=struct.Struct(u'f').unpack):
+    return __unpack(ins.read(4))[0]
+def unpack_double(ins, __unpack=struct.Struct(u'd').unpack):
+    return __unpack(ins.read(8))[0]
+def unpack_byte(ins, __unpack=struct.Struct(u'B').unpack):
+    return __unpack(ins.read(1))[0]
+def unpack_int_signed(ins, __unpack=struct.Struct(u'i').unpack):
+    return __unpack(ins.read(4))[0]
+def unpack_int64_signed(ins, __unpack=struct.Struct(u'q').unpack):
+    return __unpack(ins.read(8))[0]
+def unpack_4s(ins, __unpack=struct.Struct(u'4s').unpack):
+    return __unpack(ins.read(4))[0]
+def unpack_str16_delim_null(ins, __unpack=struct.Struct(u'Hc').unpack):
+    str_value = ins.read(__unpack(ins.read(3))[0])
+    ins.seek(1, 1) # discard null string terminator
+    return str_value
+def unpack_str_int_delim(ins, __unpack=struct.Struct(u'Ic').unpack):
+    return __unpack(ins.read(5))[0]
+def unpack_str_byte_delim(ins, __unpack=struct.Struct(u'Bc').unpack):
+    return __unpack(ins.read(2))[0]
 
-    def pack(self,format,*data):
-        """Packs data according to format."""
-        self.write(struct.pack(format,*data))
+def unpack_string(ins, string_len):
+    return struct_unpack(u'%ds' % string_len, ins.read(string_len))[0]
 
-    def readNetString(self):
-        """Read a .net string. THIS CODE IS DUBIOUS!"""
-        pos = self.tell()
-        strLen, = self.unpack('B',1)
-        if strLen >= 128:
-            self.seek(pos)
-            strLen, = self.unpack('H',2)
-            strLen = strLen & 0x7f | (strLen >> 1) & 0xff80
-            if strLen > 0x7FFF:
-                raise UncodedError(u'String too long to convert.')
-        return self.read(strLen)
+def unpack_many(ins, fmt):
+    return struct_unpack(fmt, ins.read(struct.calcsize(fmt)))
 
-    def writeNetString(self,str):
-        """Write string as a .net string. THIS CODE IS DUBIOUS!"""
-        strLen = len(str)
-        if strLen < 128:
-            self.pack('b',strLen)
-        elif strLen > 0x7FFF: #--Actually probably fails earlier.
-            raise UncodedError(u'String too long to convert.')
-        else:
-            strLen =  0x80 | strLen & 0x7f | (strLen & 0xff80) << 1
-            self.pack('H',strLen)
-        self.write(str)
-
-#------------------------------------------------------------------------------
-class BinaryFile(StructFile):
-    """File reader/writer easier to read specific number of bytes."""
-    def __init__(self,*args,**kwdargs):
-        # Ensure we're reading/writing in binary mode
-        if len(args) < 2:
-            mode = kwdargs.get('mode',None)
-            if mode =='r': mode = 'rb'
-            elif mode == 'w': mode = 'wb'
-            elif mode == 'rb' or mode == 'wb':
-                pass
-            else: mode = 'rb'
-            kwdargs['mode'] = mode
-        else:
-            new_args = list(args)
-            if args[1] == 'r': new_args[1] = 'rb'
-            elif args[1] == 'w': new_args[1] = 'wb'
-            elif args[1] == 'rb' or args[1] == 'wb':
-                pass
-            else: new_args[1] = 'rb'
-            args = tuple(new_args)
-        types.FileType.__init__(self,*args,**kwdargs)
-
-    def readPascalString(self): return self.read(self.readByte())
-    def readCString(self):
-        pos = self.tell()
-        while self.readByte() != 0:
-            pass
-        end = self.tell()
-        self.seek(pos)
-        return self.read(end-pos+1)
-    # readNetString defined in StructFile
-    def readByte(self): return struct.unpack('B',self.read(1))[0]
-    def readBytes(self, numBytes): return list(struct.unpack('b'*numBytes,self.read(numBytes)))
-    def readInt16(self): return struct.unpack('h',self.read(2))[0]
-    def readInt32(self): return struct.unpack('i',self.read(4))[0]
-    def readInt64(self): return struct.unpack('q',self.read(8))[0]
-
-    def writeString(self, text):
-        self.writeByte(len(text))
-        self.write(text)
-    def writeByte(self, byte): self.write(struct.pack('B',byte))
-    def writeBytes(self, bytes): self.write(struct.pack('b'*len(bytes),*bytes))
-    def writeInt16(self, int16): self.write(struct.pack('h',int16))
-    def writeInt32(self, int32): self.write(struct.pack('i',int32))
-    def writeInt64(self, int64): self.write(struct.pack('q',int64))
+def unpack_spaced_string(ins, replacement_char=b'\x07'):
+    """Unpacks a space-terminated string. Occurs if someone used
+    std::stringstream to convert struct data into strings. Obviously that means
+    a replacement character is needed for spaces, which is \x07 by default."""
+    wip_string = []
+    while True:
+        next_char = ins.read(1)
+        if next_char == b' ': break
+        wip_string.append(b' ' if next_char == replacement_char else next_char)
+    return b''.join(wip_string)
 
 #------------------------------------------------------------------------------
-class TableColumn:
-    """Table accessor that presents table column as a dictionary."""
+class DataTableColumn(object):
+    """DataTable accessor that presents table column as a dictionary."""
     def __init__(self,table,column):
         self.table = table
         self.column = column
@@ -1706,9 +1641,6 @@ class TableColumn:
         tableData = self.table.data
         column = self.column
         return [(key,tableData[key][column]) for key in self]
-    def has_key(self,key):
-        """Dictionary emulation."""
-        return self.__contains__(key)
     def clear(self):
         """Dictionary emulation."""
         self.table.delColumn(self.column)
@@ -1719,7 +1651,7 @@ class TableColumn:
     def __contains__(self,key):
         """Dictionary emulation."""
         tableData = self.table.data
-        return tableData.has_key(key) and tableData[key].has_key(self.column)
+        return key in tableData and self.column in tableData[key]
     def __getitem__(self,key):
         """Dictionary emulation."""
         return self.table.data[key][self.column]
@@ -1731,7 +1663,7 @@ class TableColumn:
         self.table.delItem(key,self.column)
 
 #------------------------------------------------------------------------------
-class Table(DataDict):
+class DataTable(DataDict):
     """Simple data table of rows and columns, saved in a pickle file. It is
     currently used by modInfos to represent properties associated with modfiles,
     where each modfile is a row, and each property (e.g. modified date or
@@ -1766,7 +1698,7 @@ class Table(DataDict):
 
     def getColumn(self,column):
         """Returns a data accessor for column."""
-        return TableColumn(self,column)
+        return DataTableColumn(self, column)
 
     def setItem(self,row,column,value):
         """Set value for row, column."""
@@ -1837,12 +1769,28 @@ class Table(DataDict):
 
 # Util Functions --------------------------------------------------------------
 #------------------------------------------------------------------------------
+def cmp_(x, y):
+    """Compares x and y. For backwards compatibility since py3 drops cmp."""
+    # TODO(lojack): Hunt down and rewrite any usages of this
+    return (x > y) - (x < y)
+
+def isclose_(a, b, rel_tol=1e-09, abs_tol=0.0):
+    """Inexact float comparison. PY3: drop in favor of math.isclose."""
+    return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+
+def floats_equal(a, b):
+    """Checks if the two floats are equal to the sixth place (relatively) or to
+    the twelfth place (absolutely). Used for inexact comparisons in tweaks,
+    etc. Note that these parameters were picked fairly arbitrarily, so feel
+    free to tweak them if they turn out to be a problem."""
+    return isclose_(a, b, rel_tol=1e-06, abs_tol=1e-12)
+
 def copyattrs(source,dest,attrs):
     """Copies specified attrbutes from source object to dest object."""
     for attr in attrs:
         setattr(dest,attr,getattr(source,attr))
 
-def cstrip(inString):
+def cstrip(inString): # TODO(ut): hunt down and deprecate - it's O(n)+
     """Convert c-string (null-terminated string) to python string."""
     zeroDex = inString.find('\x00')
     if zeroDex == -1:
@@ -1850,28 +1798,18 @@ def cstrip(inString):
     else:
         return inString[:zeroDex]
 
-def csvFormat(format):
+def text_wrap(text_to_wrap, width=60):
+    """Wraps paragraph to width characters."""
+    pars = [textwrap.fill(line, width) for line in text_to_wrap.split(u'\n')]
+    return u'\n'.join(pars)
+
+_formats = dict.fromkeys(u'bBhHiIlLqQ', u'%d')
+_formats.update({u'f': u'%f', u'd': u'%f', u's': u'"%s"'})
+def csvFormat(format_chars, __formats=_formats):
     """Returns csv format for specified structure format."""
-    csvFormat = u''
-    for char in format:
-        if char in u'bBhHiIlLqQ': csvFormat += u',%d'
-        elif char in u'fd': csvFormat += u',%f'
-        elif char in u's': csvFormat += u',"%s"'
-    return csvFormat[1:] #--Chop leading comma
+    return u','.join([__formats[c] for c in format_chars])
 
 deprintOn = False
-
-class tempDebugMode(object):
-    __slots__= '_old'
-    def __init__(self):
-        global deprintOn
-        self._old = deprintOn
-        deprintOn = True
-
-    def __enter__(self): return self
-    def __exit__(self,*args,**kwdargs):
-        global deprintOn
-        deprintOn = self._old
 
 import inspect
 def deprint(*args,**keyargs):
@@ -1894,7 +1832,7 @@ def deprint(*args,**keyargs):
             try:
                 msg += u' %s' % x
             except UnicodeError:
-                msg += u' %s' % repr(x)
+                msg += u' %r' % x
 
     if keyargs.get('traceback',False):
         o = StringIO.StringIO()
@@ -1904,14 +1842,14 @@ def deprint(*args,**keyargs):
             msg += u'\n%s' % unicode(value, 'utf-8')
         except UnicodeError:
             traceback.print_exc()
-            msg += u'\n%s' % repr(value)
+            msg += u'\n%r' % value
         o.close()
     try:
         # Should work if stdout/stderr is going to wxPython output
-        print msg
+        print(msg)
     except UnicodeError:
         # Nope, it's going somewhere else
-        print msg.encode(Path.sys_fs_enc)
+        print(msg.encode(Path.sys_fs_enc))
 
 def getMatch(reMatch,group=0):
     """Returns the match or an empty string."""
@@ -1921,99 +1859,16 @@ def getMatch(reMatch,group=0):
 def intArg(arg,default=None):
     """Returns argument as an integer. If argument is a string, then it converts it using int(arg,0)."""
     if arg is None: return default
-    elif isinstance(arg,types.StringTypes): return int(arg,0)
+    elif isinstance(arg, basestring): return int(arg,0)
     else: return int(arg)
-
-def invertDict(indict):
-    """Invert a dictionary."""
-    return dict((y,x) for x,y in indict.iteritems())
-
-def listSubtract(alist, blist):
-    """Return a copy of first list minus items in second list."""
-    s = set(blist)
-    return [a for a in alist if a not in s]
 
 def winNewLines(inString):
     """Converts unix newlines to windows newlines."""
     return reUnixNewLine.sub(u'\r\n',inString)
 
-# Archives --------------------------------------------------------------------
-regCompressMatch = re.compile(ur'Compressing\s+(.+)', re.U).match
-regExtractMatch = re.compile(ur'Extracting\s+(.+)', re.U).match
-regErrMatch = re.compile(
-    u'^(Error:.+|.+     Data Error?|Sub items Errors:.+)',re.U).match
-
-def compress7z(command, outDir, destArchive, srcDir, progress=None):
-    outFile = outDir.join(destArchive)
-    if progress is not None: #--Used solely for the progress bar
-        length = sum([len(files) for x, y, files in os.walk(srcDir.s)])
-        progress(0, destArchive.s + u'\n' + _(u'Compressing files...'))
-        progress.setFull(1 + length)
-    #--Pack the files
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1,
-                            stdin=subprocess.PIPE, # needed for some commands
-                            startupinfo=startupinfo)
-    #--Error checking and progress feedback
-    index, errorLine = 0, u''
-    with proc.stdout as out:
-        for line in iter(out.readline, b''):
-            line = unicode(line, 'utf8') # utf-8 is ok see bosh.compressCommand
-            if regErrMatch(line):
-                errorLine = line + u''.join(out)
-                break
-            if progress is None: continue
-            maCompressing = regCompressMatch(line)
-            if maCompressing:
-                progress(index, destArchive.s + u'\n' + _(
-                    u'Compressing files...') + u'\n' + maCompressing.group(
-                    1).strip())
-                index += 1
-    returncode = proc.wait()
-    if returncode or errorLine:
-        outFile.temp.remove()
-        raise StateError(destArchive.s + u': Compression failed:\n' +
-                u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine)
-    #--Finalize the file, and cleanup
-    outFile.untemp()
-
-def extract7z(command, srcFile, progress=None, readExtensions=None):
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1,
-                            stdin=subprocess.PIPE, startupinfo=startupinfo)
-    # Error checking, progress feedback and subArchives for recursive unpacking
-    index, errorLine, subArchives = 0, u'', []
-    with proc.stdout as out:
-        for line in iter(out.readline, b''):
-            line = unicode(line, 'utf8')
-            if regErrMatch(line):
-                errorLine = line + u''.join(out)
-                break
-            maExtracting = regExtractMatch(line)
-            if maExtracting:
-                extracted = GPath(maExtracting.group(1).strip())
-                if readExtensions and extracted.cext in readExtensions:
-                    subArchives.append(extracted)
-                if not progress: continue
-                progress(index, srcFile.s + u'\n' + _(
-                    u'Extracting files...') + u'\n' + extracted.s)
-                index += 1
-    returncode = proc.wait()
-    if returncode or errorLine:
-        raise StateError(srcFile.s + u': Extraction failed:\n' +
-                u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine)
-    return subArchives
-
-def wrapPopenOut(command, wrapper, errorMsg):
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=-1,
-                            stdin=subprocess.PIPE, startupinfo=startupinfo)
-    out, unused_err = proc.communicate()
-    wrapper(out)
-    returncode = proc.returncode
-    if returncode:
-        raise StateError(errorMsg + u'\nPopen return value: %d' + returncode)
-
 # Log/Progress ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Log:
+class Log(object):
     """Log Callable. This is the abstract/null version. Useful version should
     override write functions.
 
@@ -2041,12 +1896,12 @@ class Log:
             if self.prevHeader and self.doFooter:
                 self.writeFooter()
             if self.header:
-                self.writeHeader(self.header)
+                self.writeLogHeader(self.header)
             self.prevHeader = self.header
         if message: self.writeMessage(message,appendNewline)
 
     #--Abstract/null writing functions...
-    def writeHeader(self,header):
+    def writeLogHeader(self, header):
         """Write header. Abstract/null version."""
         pass
     def writeFooter(self):
@@ -2063,7 +1918,7 @@ class LogFile(Log):
         self.out = out
         Log.__init__(self)
 
-    def writeHeader(self,header):
+    def writeLogHeader(self, header):
         self.out.write(header+u'\n')
 
     def writeFooter(self):
@@ -2074,12 +1929,12 @@ class LogFile(Log):
         if appendNewline: self.out.write(u'\n')
 
 #------------------------------------------------------------------------------
-class Progress:
+class Progress(object):
     """Progress Callable: Shows progress when called."""
     def __init__(self,full=1.0):
-        if (1.0*full) == 0: raise ArgumentError(u'Full must be non-zero!')
+        if (1.0*full) == 0: raise exception.ArgumentError(u'Full must be non-zero!')
         self.message = u''
-        self.full = full
+        self.full = 1.0 * full
         self.state = 0
         self.debug = False
 
@@ -2088,8 +1943,8 @@ class Progress:
 
     def setFull(self,full):
         """Set's full and for convenience, returns self."""
-        if (1.0*full) == 0: raise ArgumentError(u'Full must be non-zero!')
-        self.full = full
+        if (1.0*full) == 0: raise exception.ArgumentError(u'Full must be non-zero!')
+        self.full = 1.0 * full
         return self
 
     def plus(self,increment=1):
@@ -2098,15 +1953,18 @@ class Progress:
 
     def __call__(self,state,message=''):
         """Update progress with current state. Progress is state/full."""
-        if (1.0*self.full) == 0: raise ArgumentError(u'Full must be non-zero!')
+        if (1.0*self.full) == 0: raise exception.ArgumentError(u'Full must be non-zero!')
         if message: self.message = message
         if self.debug: deprint(u'%0.3f %s' % (1.0*state/self.full, self.message))
-        self.doProgress(1.0*state/self.full, self.message)
+        self._do_progress(1.0 * state / self.full, self.message)
         self.state = state
 
-    def doProgress(self,progress,message):
-        """Default doProgress does nothing."""
-        pass
+    def _do_progress(self, state, message):
+        """Default _do_progress does nothing."""
+
+    # __enter__ and __exit__ for use with the 'with' statement
+    def __enter__(self): return self
+    def __exit__(self, exc_type, exc_value, exc_traceback): pass
 
 #------------------------------------------------------------------------------
 class SubProgress(Progress):
@@ -2121,7 +1979,7 @@ class SubProgress(Progress):
         Progress.__init__(self,full)
         if baseTo == '+1': baseTo = baseFrom + 1
         if baseFrom < 0 or baseFrom >= baseTo:
-            raise ArgumentError(u'BaseFrom must be >= 0 and BaseTo must be > BaseFrom')
+            raise exception.ArgumentError(u'BaseFrom must be >= 0 and BaseTo must be > BaseFrom')
         self.parent = parent
         self.baseFrom = baseFrom
         self.scale = 1.0*(baseTo-baseFrom)
@@ -2134,18 +1992,17 @@ class SubProgress(Progress):
         self.state = state
 
 #------------------------------------------------------------------------------
-class ProgressFile(Progress): # CRUFT
-    """Prints progress to file (stdout by default)."""
-    def __init__(self,full=1.0,out=None):
-        Progress.__init__(self,full)
-        self.out = out or sys.stdout
+def readCString(ins, file_path):
+    """Read null terminated string, dropping the final null byte."""
+    byte_list = []
+    for b in iter(partial(ins.read, 1), ''):
+        if b == '\0': break
+        byte_list.append(b)
+    else:
+        raise exception.FileError(file_path,
+                                  u'Reached end of file while expecting null')
+    return ''.join(byte_list)
 
-    def doProgress(self,progress,message):
-        msg = u'%0.2f %s\n' % (progress,message)
-        try: self.out.write(msg)
-        except UnicodeError: self.out.write(msg.encode('mbcs'))
-
-#------------------------------------------------------------------------------
 class StringTable(dict):
     """For reading .STRINGS, .DLSTRINGS, .ILSTRINGS files."""
     encodings = {
@@ -2155,11 +2012,11 @@ class StringTable(dict):
         u'russian': 'cp1251',
         }
 
-    def load(self,modFilePath,language=u'English',progress=Progress()):
+    def load(self, modFilePath, lang=u'English', progress=Progress()):
         baseName = modFilePath.tail.body
         baseDir = modFilePath.head.join(u'Strings')
-        files = (baseName+u'_'+language+x for x in (u'.STRINGS',u'.DLSTRINGS',
-                                                   u'.ILSTRINGS'))
+        files = (baseName + u'_' + lang + x for x in
+                 (u'.STRINGS', u'.DLSTRINGS', u'.ILSTRINGS'))
         files = (baseDir.join(file) for file in files)
         self.clear()
         progress.setFull(3)
@@ -2167,32 +2024,31 @@ class StringTable(dict):
             progress(i)
             self.loadFile(file,SubProgress(progress,i,i+1))
 
-    def loadFile(self,path,progress,language=u'english'):
-        if path.cext == u'.strings': format = 0
-        else: format = 1
-        language = language.lower()
-        backupEncoding = self.encodings.get(language,'cp1252')
+    def loadFile(self, path, progress, lang=u'english'):
+        formatted = path.cext != u'.strings'
+        backupEncoding = self.encodings.get(lang.lower(), 'cp1252')
         try:
-            with BinaryFile(path.s) as ins:
+            with open(path.s, u'rb') as ins:
                 insSeek = ins.seek
                 insTell = ins.tell
-                insUnpack = ins.unpack
-                insReadCString = ins.readCString
-                insRead = ins.read
 
                 insSeek(0,os.SEEK_END)
                 eof = insTell()
                 insSeek(0)
                 if eof < 8:
-                    deprint(u"Warning: Strings file '%s' file size (%d) is less than 8 bytes.  8 bytes are the minimum required by the expected format, assuming the Strings file is empty."
-                            % (path, eof))
+                    deprint(u"Warning: Strings file '%s' file size (%d) is "
+                            u"less than 8 bytes.  8 bytes are the minimum "
+                            u"required by the expected format, assuming the "
+                            u"Strings file is empty." % (path, eof))
                     return
 
-                numIds,dataSize = insUnpack('=2I',8)
+                numIds,dataSize = unpack_many(ins, '=2I')
                 progress.setFull(max(numIds,1))
                 stringsStart = 8 + (numIds*8)
                 if stringsStart != eof-dataSize:
-                    deprint(u"Warning: Strings file '%s' dataSize element (%d) results in a string start location of %d, but the expected location is %d"
+                    deprint(u"Warning: Strings file '%s' dataSize element "
+                            u"(%d) results in a string start location of %d, "
+                            u"but the expected location is %d"
                             % (path, dataSize, eof-dataSize, stringsStart))
 
                 id_ = -1
@@ -2200,15 +2056,15 @@ class StringTable(dict):
                 for x in xrange(numIds):
                     try:
                         progress(x)
-                        id_,offset = insUnpack('=2I',8)
+                        id_,offset = unpack_many(ins, '=2I')
                         pos = insTell()
                         insSeek(stringsStart+offset)
-                        if format:
-                            strLen, = insUnpack('I',4)
-                            value = insRead(strLen)
+                        if formatted:
+                            value = unpack_str32(ins) # TODO(ut): unpack_str32_null
+                            # seems needed, strings are null terminated
+                            value = cstrip(value)
                         else:
-                            value = insReadCString()
-                        value = cstrip(value)
+                            value = readCString(ins, path) #drops the null byte
                         try:
                             value = unicode(value,'utf-8')
                         except UnicodeDecodeError:
@@ -2225,9 +2081,23 @@ class StringTable(dict):
             deprint(u'Error loading string file:', path.stail, traceback=True)
             return
 
+#------------------------------------------------------------------------------
+_digit_re = re.compile(u'([0-9]+)')
+
+def natural_key():
+    """Returns a sort key for 'natural' sort order, i.e. similar to how most
+    file managers display it - a1.png, a2.png, a10.png. Can handle both strings
+    and paths. Inspired by
+    https://blog.codinghorror.com/sorting-for-humans-natural-sort-order/."""
+    def _to_cmp(sub_str):
+        """Helper function that prepares substrings for comparison."""
+        return int(sub_str) if sub_str.isdigit() else sub_str.lower()
+    return lambda curr_str: [_to_cmp(s) for s in
+                             _digit_re.split(u'%s' % curr_str)]
+
 # WryeText --------------------------------------------------------------------
 codebox = None
-class WryeText:
+class WryeText(object):
     """This class provides a function for converting wtxt text files to html
     files.
 
@@ -2306,7 +2176,6 @@ class WryeText:
     @staticmethod
     def genHtml(ins,out=None,*cssDirs):
         """Reads a wtxt input stream and writes an html output stream."""
-        import string, urllib
         # Path or Stream? -----------------------------------------------
         if isinstance(ins,(Path,str,unicode)):
             srcPath = GPath(ins)
@@ -2322,18 +2191,18 @@ class WryeText:
         cssDirs = map(GPath,cssDirs)
         # Setup ---------------------------------------------------------
         #--Headers
-        reHead = re.compile(ur'(=+) *(.+)',re.U)
+        reHead = re.compile(u'(=+) *(.+)',re.U)
         headFormat = u"<h%d><a id='%s'>%s</a></h%d>\n"
         headFormatNA = u"<h%d>%s</h%d>\n"
         #--List
-        reList = re.compile(ur'( *)([-x!?\.\+\*o])(.*)',re.U)
+        reWryeList = re.compile(u'( *)([-x!?.+*o])(.*)',re.U)
         #--Code
-        reCode = re.compile(ur'\[code\](.*?)\[/code\]',re.I|re.U)
-        reCodeStart = re.compile(ur'(.*?)\[code\](.*?)$',re.I|re.U)
-        reCodeEnd = re.compile(ur'(.*?)\[/code\](.*?)$',re.I|re.U)
-        reCodeBoxStart = re.compile(ur'\s*\[codebox\](.*?)',re.I|re.U)
-        reCodeBoxEnd = re.compile(ur'(.*?)\[/codebox\]\s*',re.I|re.U)
-        reCodeBox = re.compile(ur'\s*\[codebox\](.*?)\[/codebox\]\s*',re.I|re.U)
+        reCode = re.compile(u'' r'\[code\](.*?)\[/code\]', re.I | re.U)
+        reCodeStart = re.compile(u'' r'(.*?)\[code\](.*?)$', re.I | re.U)
+        reCodeEnd = re.compile(u'' r'(.*?)\[/code\](.*?)$', re.I | re.U)
+        reCodeBoxStart = re.compile(u'' r'\s*\[codebox\](.*?)', re.I | re.U)
+        reCodeBoxEnd = re.compile(u'' r'(.*?)\[/codebox\]\s*', re.I | re.U)
+        reCodeBox = re.compile(u'' r'\s*\[codebox\](.*?)\[/codebox\]\s*', re.I | re.U)
         codeLines = None
         codeboxLines = None
         def subCode(match):
@@ -2343,8 +2212,8 @@ class WryeText:
                 return match(1)
         #--Misc. text
         reHr = re.compile(u'^------+$',re.U)
-        reEmpty = re.compile(ur'\s+$',re.U)
-        reMDash = re.compile(ur' -- ',re.U)
+        reEmpty = re.compile(u'' r'\s+$', re.U)
+        reMDash = re.compile(u' -- ',re.U)
         rePreBegin = re.compile(u'<pre',re.I|re.U)
         rePreEnd = re.compile(u'</pre>',re.I|re.U)
         anchorlist = [] #to make sure that each anchor is unique.
@@ -2354,9 +2223,9 @@ class WryeText:
             # urllib will automatically take any unicode characters and escape them, so to
             # convert back to unicode for purposes of storing the string, everything will
             # be in cp1252, due to the escapings.
-            anchor = unicode(urllib.quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
+            anchor = unicode(quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
             count = 0
-            if re.match(ur'\d', anchor):
+            if re.match(u'' r'\d', anchor):
                 anchor = u'_' + anchor
             while anchor in anchorlist and count < 10:
                 count += 1
@@ -2367,9 +2236,9 @@ class WryeText:
             anchorlist.append(anchor)
             return u"<a id='%s'>%s</a>" % (anchor,text)
         #--Bold, Italic, BoldItalic
-        reBold = re.compile(ur'__',re.U)
-        reItalic = re.compile(ur'~~',re.U)
-        reBoldItalic = re.compile(ur'\*\*',re.U)
+        reBold = re.compile(u'__',re.U)
+        reItalic = re.compile(u'~~',re.U)
+        reBoldItalic = re.compile(u'' r'\*\*',re.U)
         states = {'bold':False,'italic':False,'boldItalic':False,'code':0}
         def subBold(match):
             state = states['bold'] = not states['bold']
@@ -2382,14 +2251,14 @@ class WryeText:
             return u'<i><b>' if state else u'</b></i>'
         #--Preformatting
         #--Links
-        reLink = re.compile(ur'\[\[(.*?)\]\]',re.U)
-        reHttp = re.compile(ur' (http://[_~a-zA-Z0-9\./%-]+)',re.U)
-        reWww = re.compile(ur' (www\.[_~a-zA-Z0-9\./%-]+)',re.U)
-        reWd = re.compile(ur'(<[^>]+>|\[\[[^\]]+\]\]|\s+|[%s]+)' % re.escape(string.punctuation.replace(u'_',u'')),re.U)
-        rePar = re.compile(ur'^(\s*[a-zA-Z(;]|\*\*|~~|__|\s*<i|\s*<a)',re.U)
-        reFullLink = re.compile(ur'(:|#|\.[a-zA-Z0-9]{2,4}$)',re.U)
-        reColor = re.compile(ur'\[\s*color\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*color\s*\]',re.I|re.U)
-        reBGColor = re.compile(ur'\[\s*bg\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*bg\s*\]',re.I|re.U)
+        reLink = re.compile(u'' r'\[\[(.*?)\]\]', re.U)
+        reHttp = re.compile(u' (http://[_~a-zA-Z0-9./%-]+)',re.U)
+        reWww = re.compile(u'' r' (www\.[_~a-zA-Z0-9./%-]+)', re.U)
+        reWd = re.compile(u'' r'(<[^>]+>|\[\[[^\]]+\]\]|\s+|[%s]+)' % re.escape(string.punctuation.replace(u'_',u'')), re.U)
+        rePar = re.compile(u'' r'^(\s*[a-zA-Z(;]|\*\*|~~|__|\s*<i|\s*<a)', re.U)
+        reFullLink = re.compile(u'' r'(:|#|\.[a-zA-Z0-9]{2,4}$)', re.U)
+        reColor = re.compile(u'' r'\[\s*color\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*color\s*\]', re.I | re.U)
+        reBGColor = re.compile(u'' r'\[\s*bg\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*bg\s*\]', re.I | re.U)
         def subColor(match):
             return u'<span style="color:%s;">%s</span>' % (match.group(1),match.group(2))
         def subBGColor(match):
@@ -2398,9 +2267,12 @@ class WryeText:
             address = text = match.group(1).strip()
             if u'|' in text:
                 (address,text) = [chunk.strip() for chunk in text.split(u'|',1)]
-                if address == u'#': address += unicode(urllib.quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
+                if address == u'#': address += unicode(quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
             if address.startswith(u'!'):
                 newWindow = u' target="_blank"'
+                if address == text:
+                    # We have no text, cut off the '!' here too
+                    text = text[1:]
                 address = address[1:]
             else:
                 newWindow = u''
@@ -2409,8 +2281,8 @@ class WryeText:
             return u'<a href="%s"%s>%s</a>' % (address,newWindow,text)
         #--Tags
         reAnchorTag = re.compile(u'{{A:(.+?)}}',re.U)
-        reContentsTag = re.compile(ur'\s*{{CONTENTS=?(\d+)}}\s*$',re.U)
-        reAnchorHeadersTag = re.compile(ur'\s*{{ANCHORHEADERS=(\d+)}}\s*$',re.U)
+        reContentsTag = re.compile(u'' r'\s*{{CONTENTS=?(\d+)}}\s*$', re.U)
+        reAnchorHeadersTag = re.compile(u'' r'\s*{{ANCHORHEADERS=(\d+)}}\s*$', re.U)
         reCssTag = re.compile(u'\s*{{CSS:(.+?)}}\s*$',re.U)
         #--Defaults ----------------------------------------------------------
         title = u''
@@ -2494,7 +2366,7 @@ class WryeText:
             maAnchorHeaders = reAnchorHeadersTag.match(line)
             maCss = reCssTag.match(line)
             maHead = reHead.match(line)
-            maList  = reList.match(line)
+            maList  = reWryeList.match(line)
             maPar   = rePar.match(line)
             maEmpty = reEmpty.match(line)
             #--Contents
@@ -2516,10 +2388,10 @@ class WryeText:
             elif maHead:
                 lead,text = maHead.group(1,2)
                 text = re.sub(u' *=*#?$','',text.strip())
-                anchor = unicode(urllib.quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
+                anchor = unicode(quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
                 level = len(lead)
                 if anchorHeaders:
-                    if re.match(ur'\d', anchor):
+                    if re.match(u'' r'\d', anchor):
                         anchor = u'_' + anchor
                     count = 0
                     while anchor in anchorlist and count < 10:
@@ -2545,7 +2417,7 @@ class WryeText:
                 text = maList.group(3)
                 if bullet == u'.': bullet = u'&nbsp;'
                 elif bullet == u'*': bullet = u'&bull;'
-                level = len(spaces)/2 + 1
+                level = len(spaces)//2 + 1
                 line = spaces+u'<p class="list-%i">'%level+bullet+u'&nbsp; '
                 line = line + text + u'</p>\n'
             #--Empty line
@@ -2562,8 +2434,8 @@ class WryeText:
             line = reAnchorTag.sub(subAnchor,line)
             #--Hyperlinks
             line = reLink.sub(subLink,line)
-            line = reHttp.sub(ur' <a href="\1">\1</a>',line)
-            line = reWww.sub(ur' <a href="http://\1">\1</a>',line)
+            line = reHttp.sub(u'' r' <a href="\1">\1</a>', line)
+            line = reWww.sub(u'' r' <a href="http://\1">\1</a>', line)
             #--Save line ------------------
             #print line,
             outLines.append(line)
@@ -2572,16 +2444,16 @@ class WryeText:
             css = WryeText.defaultCss
         else:
             if cssName.ext != u'.css':
-                raise BoltError(u'Invalid Css file: '+cssName.s)
-            for dir in cssDirs:
-                cssPath = GPath(dir).join(cssName)
+                raise exception.BoltError(u'Invalid Css file: ' + cssName.s)
+            for css_dir in cssDirs:
+                cssPath = GPath(css_dir).join(cssName)
                 if cssPath.exists(): break
             else:
-                raise BoltError(u'Css file not found: '+cssName.s)
+                raise exception.BoltError(u'Css file not found: ' + cssName.s)
             with cssPath.open('r',encoding='utf-8-sig') as cssIns:
                 css = u''.join(cssIns.readlines())
             if u'<' in css:
-                raise BoltError(u'Non css tag in '+cssPath.s)
+                raise exception.BoltError(u'Non css tag in ' + cssPath.s)
         #--Write Output ------------------------------------------------------
         outWrite(WryeText.htmlHead % (title,css))
         didContents = False

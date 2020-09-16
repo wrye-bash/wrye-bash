@@ -1,0 +1,11 @@
+name: Close PR
+on: pull_request
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: roots/issue-closer@v1.1
+      with:
+        repo-token: ${{secrets.GITHUB_TOKEN}}
+        pr-pattern: "$impossible"
+        pr-close-message: "@${pull_request.user.login}, pull requests are not used in this repository. See the [Contributing.md](https://github.com/wrye-bash/wrye-bash/blob/dev/Contributing.md#contributing-code) document on how to contribute code."

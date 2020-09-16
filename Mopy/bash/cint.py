@@ -37,18 +37,21 @@
 #
 ####### END LICENSE BLOCK ######
 
-from ctypes import *
-import struct
+from __future__ import division, print_function
+from ctypes import byref, cast, c_bool, c_byte, c_char, c_char_p, c_float, \
+    CFUNCTYPE, c_long, c_short, c_ubyte, c_uint32, c_ushort, c_ulong, CDLL, \
+    POINTER, string_at
 import math
 import os
+from operator import attrgetter
 from os.path import exists, join
 try:
     #See if cint is being used by Wrye Bash
-    from bolt import CBash as CBashEnabled
-    from bolt import GPath, deprint, Path
-    from bolt import encode as _enc
-    from bolt import decode as _uni
-    import bolt
+    from .bolt import CBash as CBashEnabled
+    from .bolt import GPath, deprint, Path
+    from .bolt import encode as _enc
+    from .bolt import decode as _uni
+    from . import bolt
     def _encode(text,*args,**kwdargs):
         if len(args) > 1:
             args = list(args)
@@ -72,7 +75,7 @@ except:
     def GPath(obj):
         return obj
     def deprint(obj):
-        print obj
+        print(obj)
     def _(obj):
         return obj
 
@@ -127,9 +130,6 @@ except:
         raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
     _enc = _encode
 
-
-_CBashRequiredVersion = (0,6,0)
-
 class CBashError(Exception):
     def __init__(self, value):
         self.value = value
@@ -137,51 +137,42 @@ class CBashError(Exception):
         return repr(self.value)
 
 def ZeroIsErrorCheck(result, function, cArguments, *args):
-    if result == 0: raise CBashError("Function returned an error code.")
+    if result == 0: raise CBashError("Function returned error code 0.")
     return result
 
 def NegativeIsErrorCheck(result, function, cArguments, *args):
-    if result < 0: raise CBashError("Function returned an error code.")
+    if result < 0:
+        raise CBashError("Function returned error code %i." % result)
     return result
 
 def PositiveIsErrorCheck(result, function, cArguments, *args):
-    if result > 0: raise CBashError("Function returned an error code.")
+    if result > 0:
+        raise CBashError("Function returned error code %i" % result)
     return result
 
-CBash = None
-# path to compiled dir hardcoded since importing bosh would be circular
-# TODO: refactor to avoid circular deps
-if CBashEnabled == 0: #regular depends on the filepath existing.
-    paths = [join(u'bash', u'compiled', u'CBash.dll'),join(u'compiled', u'CBash.dll')]
-elif CBashEnabled == 1: #force python mode
-    paths = []
-elif CBashEnabled == 2: #attempt to force CBash mode
-    paths = [join(u'bash',u'compiled',filename) for filename in [u'CBash.dll',u'rename_CBash.dll',u'_CBash.dll']]
-else: #attempt to force path to CBash dll
-    paths = [join(path,u'CBash.dll') for path in CBashEnabled]
+_CBash = None
+# Have to hardcode this relative to the cwd, because passing any non-unicode
+# characters to CDLL tries to encode them as ASCII and crashes
+# PY3: fixed in py3, remove this on upgrade
+cb_path = join(u'bash', u'compiled', u'CBash.dll')
+if CBashEnabled != 1 and exists(cb_path):
+    try:
+        from .env import get_file_version
+        if get_file_version(cb_path) < (0, 7):
+            raise ImportError(u'Bundled CBash version is too old for this '
+                              u'Wrye Bash version. Only 0.7.0+ is '
+                              u'supported.')
+        _CBash = CDLL(cb_path)
+    except (AttributeError, ImportError, OSError):
+        _CBash = None
+        deprint(u'Failed to import CBash.', traceback=True)
+    except:
+        _CBash = None
+        raise
 
-try:
-    for path in paths:
-        if exists(path):
-            # CDLL doesn't play with unicode path strings nicely on windows :(
-            # Use this workaround
-            handle = None
-            if isinstance(path,unicode) and os.name in ('nt','ce'):
-                LoadLibrary = windll.kernel32.LoadLibraryW
-                handle = LoadLibrary(path)
-            CBash = CDLL(path,handle=handle)
-            break
-    del paths
-except (AttributeError,ImportError,OSError) as error:
-    CBash = None
-    print error
-except:
-    CBash = None
-    raise
-
-if CBash:
+if _CBash:
     def LoggingCB(logString):
-        print logString,
+        print(logString, end=' ')
         return 0
 
     def RaiseCB(raisedString):
@@ -201,98 +192,91 @@ if CBash:
         #CBash. Dunno.
 
         #This particular callback may disappear, or be morphed into something else
-        print "CBash encountered an error", raisedString, "Check the log."
+        print("CBash encountered an error", raisedString, "Check the log.")
 ##        raise CBashError("Check the log.")
         return
 
-    try:
-        _CGetVersionMajor = CBash.GetVersionMajor
-        _CGetVersionMinor = CBash.GetVersionMinor
-        _CGetVersionRevision = CBash.GetVersionRevision
-    except AttributeError: #Functions were renamed in v0.5.0
-        _CGetVersionMajor = CBash.GetMajor
-        _CGetVersionMinor = CBash.GetMinor
-        _CGetVersionRevision = CBash.GetRevision
+    _CGetVersionMajor = _CBash.cb_GetVersionMajor
+    _CGetVersionMinor = _CBash.cb_GetVersionMinor
+    _CGetVersionRevision = _CBash.cb_GetVersionRevision
     _CGetVersionMajor.restype = c_ulong
     _CGetVersionMinor.restype = c_ulong
     _CGetVersionRevision.restype = c_ulong
-    if (_CGetVersionMajor(),_CGetVersionMinor(),_CGetVersionRevision()) < _CBashRequiredVersion:
-        raise ImportError(_("cint.py requires CBash v%d.%d.%d or higher! (found v%d.%d.%d)") % (_CBashRequiredVersion + (_CGetVersionMajor(),_CGetVersionMinor(),_CGetVersionRevision())))
-    _CCreateCollection = CBash.CreateCollection
+    _CCreateCollection = _CBash.cb_CreateCollection
     _CCreateCollection.errcheck = ZeroIsErrorCheck
-    _CDeleteCollection = CBash.DeleteCollection
+    _CDeleteCollection = _CBash.cb_DeleteCollection
     _CDeleteCollection.errcheck = NegativeIsErrorCheck
-    _CLoadCollection = CBash.LoadCollection
+    _CLoadCollection = _CBash.cb_LoadCollection
     _CLoadCollection.errcheck = NegativeIsErrorCheck
-    _CUnloadCollection = CBash.UnloadCollection
+    _CUnloadCollection = _CBash.cb_UnloadCollection
     _CUnloadCollection.errcheck = NegativeIsErrorCheck
-    _CGetCollectionType = CBash.GetCollectionType
+    _CGetCollectionType = _CBash.cb_GetCollectionType
     _CGetCollectionType.errcheck = NegativeIsErrorCheck
-    _CUnloadAllCollections = CBash.UnloadAllCollections
+    _CUnloadAllCollections = _CBash.cb_UnloadAllCollections
     _CUnloadAllCollections.errcheck = NegativeIsErrorCheck
-    _CDeleteAllCollections = CBash.DeleteAllCollections
+    _CDeleteAllCollections = _CBash.cb_DeleteAllCollections
     _CDeleteAllCollections.errcheck = NegativeIsErrorCheck
-    _CAddMod = CBash.AddMod
+    _CAddMod = _CBash.cb_AddMod
     _CAddMod.errcheck = ZeroIsErrorCheck
-    _CLoadMod = CBash.LoadMod
+    _CLoadMod = _CBash.cb_LoadMod
     _CLoadMod.errcheck = NegativeIsErrorCheck
-    _CUnloadMod = CBash.UnloadMod
+    _CUnloadMod = _CBash.cb_UnloadMod
     _CUnloadMod.errcheck = NegativeIsErrorCheck
-    _CCleanModMasters = CBash.CleanModMasters
+    _CCleanModMasters = _CBash.cb_CleanModMasters
     _CCleanModMasters.errcheck = NegativeIsErrorCheck
-    _CSaveMod = CBash.SaveMod
+    _CSaveMod = _CBash.cb_SaveMod
     _CSaveMod.errcheck = NegativeIsErrorCheck
-    _CGetAllNumMods = CBash.GetAllNumMods
-    _CGetAllModIDs = CBash.GetAllModIDs
-    _CGetLoadOrderNumMods = CBash.GetLoadOrderNumMods
-    _CGetLoadOrderModIDs = CBash.GetLoadOrderModIDs
-    _CGetFileNameByID = CBash.GetFileNameByID
-    _CGetFileNameByLoadOrder = CBash.GetFileNameByLoadOrder
-    _CGetModNameByID = CBash.GetModNameByID
-    _CGetModNameByLoadOrder = CBash.GetModNameByLoadOrder
-    _CGetModIDByName = CBash.GetModIDByName
-    _CGetModIDByLoadOrder = CBash.GetModIDByLoadOrder
-    _CGetModLoadOrderByName = CBash.GetModLoadOrderByName
-    _CGetModLoadOrderByID = CBash.GetModLoadOrderByID
-    _CGetModIDByRecordID = CBash.GetModIDByRecordID
-    _CGetCollectionIDByRecordID = CBash.GetCollectionIDByRecordID
-    _CGetCollectionIDByModID = CBash.GetCollectionIDByModID
-    _CIsModEmpty = CBash.IsModEmpty
-    _CGetModNumTypes = CBash.GetModNumTypes
+    _CGetAllNumMods = _CBash.cb_GetAllNumMods
+    _CGetAllModIDs = _CBash.cb_GetAllModIDs
+    _CGetLoadOrderNumMods = _CBash.cb_GetLoadOrderNumMods
+    _CGetLoadOrderModIDs = _CBash.cb_GetLoadOrderModIDs
+    _CGetFileNameByID = _CBash.cb_GetFileNameByID
+    _CGetFileNameByLoadOrder = _CBash.cb_GetFileNameByLoadOrder
+    _CGetModNameByID = _CBash.cb_GetModNameByID
+    _CGetModNameByLoadOrder = _CBash.cb_GetModNameByLoadOrder
+    _CGetModIDByName = _CBash.cb_GetModIDByName
+    _CGetModIDByLoadOrder = _CBash.cb_GetModIDByLoadOrder
+    _CGetModLoadOrderByName = _CBash.cb_GetModLoadOrderByName
+    _CGetModLoadOrderByID = _CBash.cb_GetModLoadOrderByID
+    _CGetModIDByRecordID = _CBash.cb_GetModIDByRecordID
+    _CGetCollectionIDByRecordID = _CBash.cb_GetCollectionIDByRecordID
+    _CGetCollectionIDByModID = _CBash.cb_GetCollectionIDByModID
+    _CIsModEmpty = _CBash.cb_IsModEmpty
+    _CGetModNumTypes = _CBash.cb_GetModNumTypes
     _CGetModNumTypes.errcheck = NegativeIsErrorCheck
-    _CGetModTypes = CBash.GetModTypes
+    _CGetModTypes = _CBash.cb_GetModTypes
     _CGetModTypes.errcheck = NegativeIsErrorCheck
-    _CGetModNumEmptyGRUPs = CBash.GetModNumEmptyGRUPs
+    _CGetModNumEmptyGRUPs = _CBash.cb_GetModNumEmptyGRUPs
     _CGetModNumEmptyGRUPs.errcheck = NegativeIsErrorCheck
-    _CGetModNumOrphans = CBash.GetModNumOrphans
+    _CGetModNumOrphans = _CBash.cb_GetModNumOrphans
     _CGetModNumOrphans.errcheck = NegativeIsErrorCheck
-    _CGetModOrphansFormIDs = CBash.GetModOrphansFormIDs
+    _CGetModOrphansFormIDs = _CBash.cb_GetModOrphansFormIDs
     _CGetModOrphansFormIDs.errcheck = NegativeIsErrorCheck
 
-    _CGetLongIDName = CBash.GetLongIDName
-    _CMakeShortFormID = CBash.MakeShortFormID
-    _CCreateRecord = CBash.CreateRecord
-    _CCopyRecord = CBash.CopyRecord
-    _CUnloadRecord = CBash.UnloadRecord
-    _CResetRecord = CBash.ResetRecord
-    _CDeleteRecord = CBash.DeleteRecord
-    _CGetRecordID = CBash.GetRecordID
-    _CGetNumRecords = CBash.GetNumRecords
-    _CGetRecordIDs = CBash.GetRecordIDs
-    _CIsRecordWinning = CBash.IsRecordWinning
-    _CGetNumRecordConflicts = CBash.GetNumRecordConflicts
-    _CGetRecordConflicts = CBash.GetRecordConflicts
-    _CGetRecordHistory = CBash.GetRecordHistory
-    _CGetNumIdenticalToMasterRecords = CBash.GetNumIdenticalToMasterRecords
-    _CGetIdenticalToMasterRecords = CBash.GetIdenticalToMasterRecords
-    _CIsRecordFormIDsInvalid = CBash.IsRecordFormIDsInvalid
-    _CUpdateReferences = CBash.UpdateReferences
-    _CGetRecordUpdatedReferences = CBash.GetRecordUpdatedReferences
-    _CSetIDFields = CBash.SetIDFields
-    _CSetField = CBash.SetField
-    _CDeleteField = CBash.DeleteField
-    _CGetFieldAttribute = CBash.GetFieldAttribute
-    _CGetField = CBash.GetField
+    _CGetLongIDName = _CBash.cb_GetLongIDName
+    _CMakeShortFormID = _CBash.cb_MakeShortFormID
+    _CCreateRecord = _CBash.cb_CreateRecord
+    _CCopyRecord = _CBash.cb_CopyRecord
+    _CUnloadRecord = _CBash.cb_UnloadRecord
+    _CResetRecord = _CBash.cb_ResetRecord
+    _CDeleteRecord = _CBash.cb_DeleteRecord
+    _CGetRecordID = _CBash.cb_GetRecordID
+    _CGetNumRecords = _CBash.cb_GetNumRecords
+    _CGetRecordIDs = _CBash.cb_GetRecordIDs
+    _CIsRecordWinning = _CBash.cb_IsRecordWinning
+    _CGetNumRecordConflicts = _CBash.cb_GetNumRecordConflicts
+    _CGetRecordConflicts = _CBash.cb_GetRecordConflicts
+    _CGetRecordHistory = _CBash.cb_GetRecordHistory
+    _CGetNumIdenticalToMasterRecords = _CBash.cb_GetNumIdenticalToMasterRecords
+    _CGetIdenticalToMasterRecords = _CBash.cb_GetIdenticalToMasterRecords
+    _CIsRecordFormIDsInvalid = _CBash.cb_IsRecordFormIDsInvalid
+    _CUpdateReferences = _CBash.cb_UpdateReferences
+    _CGetRecordUpdatedReferences = _CBash.cb_GetRecordUpdatedReferences
+    _CSetIDFields = _CBash.cb_SetIDFields
+    _CSetField = _CBash.cb_SetField
+    _CDeleteField = _CBash.cb_DeleteField
+    _CGetFieldAttribute = _CBash.cb_GetFieldAttribute
+    _CGetField = _CBash.cb_GetField
 
     _CCreateCollection.restype = c_ulong
     _CDeleteCollection.restype = c_long
@@ -350,8 +334,18 @@ if CBash:
     _CGetFieldAttribute.restype = c_ulong
     LoggingCallback = CFUNCTYPE(c_long, c_char_p)(LoggingCB)
     RaiseCallback = CFUNCTYPE(None, c_char_p)(RaiseCB)
-    CBash.RedirectMessages(LoggingCallback)
-    CBash.AllowRaising(RaiseCallback)
+    _CBash.cb_RedirectMessages(LoggingCallback)
+    _CBash.cb_AllowRaising(RaiseCallback)
+
+class CBashApi (object):
+    Enabled = _CBash is not None
+
+    VersionMajor = _CGetVersionMajor() if Enabled else 0
+    VersionMinor = _CGetVersionMinor() if Enabled else 0
+    VersionRevision = _CGetVersionRevision() if Enabled else 0
+    VersionInfo = (VersionMajor, VersionMinor, VersionRevision)
+
+    VersionText = u'v%u.%u.%u' % VersionInfo if Enabled else ''
 
 #Helper functions
 class API_FIELDS(object):
@@ -380,8 +374,8 @@ class API_FIELDS(object):
 for value, attr in enumerate(API_FIELDS.__slots__):
     setattr(API_FIELDS, attr, value)
 
-class ICASEMixin:
-    """Case insesnsitive string/unicode class mixin.  Performs like str/unicode,
+class ICASEMixin(object):
+    """Case insensitive string/unicode class mixin.  Performs like str/unicode,
        except comparisons are case insensitive."""
     def __eq__(self, other):
         try: return self.lower() == other.lower()
@@ -405,10 +399,6 @@ class ICASEMixin:
 
     def __ge__(self, other):
         try: return self.lower() >= other.lower()
-        except AttributeError: return False
-
-    def __cmp__(self, other):
-        try: return cmp(self.lower(), other.lower())
         except AttributeError: return False
 
     def __hash__(self):
@@ -510,10 +500,10 @@ class FormID(object):
             return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
-            return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
+            return self.master if x == 0 else int(self.objectID & 0x00FFFFFF)
 
         def __repr__(self):
-            return u"UnvalidatedFormID('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFFL))
+            return u"UnvalidatedFormID('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFF))
 
         def Validate(self, target):
             """Unvalidated FormIDs have to be tested for each destination collection
@@ -548,7 +538,7 @@ class FormID(object):
             return hash((None, self.objectID))
 
         def __getitem__(self, x):
-            return None if x == 0 else int(self.objectID & 0x00FFFFFFL)
+            return None if x == 0 else int(self.objectID & 0x00FFFFFF)
 
         def __repr__(self):
             return "InvalidFormID(None, 0x%06X)" % (self.objectID,)
@@ -578,10 +568,10 @@ class FormID(object):
             return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
-            return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
+            return self.master if x == 0 else int(self.objectID & 0x00FFFFFF)
 
         def __repr__(self):
-            return u"ValidFormID('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFFL))
+            return u"ValidFormID('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFF))
 
         def Validate(self, target):
             """This FormID has already been validated for a specific collection.
@@ -637,7 +627,7 @@ class FormID(object):
             return hash((self.shortID, None))
 
         def __getitem__(self, x):
-            return self.shortID >> 24 if x == 0 else int(self.shortID & 0x00FFFFFFL)
+            return self.shortID >> 24 if x == 0 else int(self.shortID & 0x00FFFFFF)
 
         def __repr__(self):
             return "RawFormID(0x%08X)" % (self.shortID,)
@@ -674,8 +664,10 @@ class FormID(object):
         try: return other[1] != self.formID[1] or other[0] != self.formID[0]
         except TypeError: return False
 
-    def __nonzero__(self):
+    def __bool__(self):
         return not isinstance(self.formID, (FormID.EmptyFormID, FormID.InvalidFormID))
+    # PY3 get rid of this once we port
+    __nonzero__ = __bool__
 
     def __getitem__(self, x):
         return self.formID[0] if x == 0 else self.formID[1]
@@ -745,10 +737,10 @@ class ActorValue(object):
             return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
-            return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
+            return self.master if x == 0 else int(self.objectID & 0x00FFFFFF)
 
         def __repr__(self):
-            return u"UnvalidatedActorValue('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFFL))
+            return u"UnvalidatedActorValue('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFF))
 
         def Validate(self, target):
             """Unvalidated ActorValues have to be tested for each destination collection.
@@ -784,7 +776,7 @@ class ActorValue(object):
             return hash((None, self.objectID))
 
         def __getitem__(self, x):
-            return None if x == 0 else int(self.objectID & 0x00FFFFFFL)
+            return None if x == 0 else int(self.objectID & 0x00FFFFFF)
 
         def __repr__(self):
             return "InvalidActorValue(None, 0x%06X)" % (self.objectID,)
@@ -813,10 +805,10 @@ class ActorValue(object):
             return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
-            return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
+            return self.master if x == 0 else int(self.objectID & 0x00FFFFFF)
 
         def __repr__(self):
-            return u"ValidActorValue('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFFL))
+            return u"ValidActorValue('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFF))
 
         def Validate(self, target):
             """This ActorValue has already been validated for a specific record.
@@ -873,7 +865,7 @@ class ActorValue(object):
             return hash((self.shortID, None))
 
         def __getitem__(self, x):
-            return self.shortID >> 24 if x == 0 else int(self.shortID & 0x00FFFFFFL)
+            return self.shortID >> 24 if x == 0 else int(self.shortID & 0x00FFFFFF)
 
         def __repr__(self):
             return "RawActorValue(0x%08X)" % (self.shortID,)
@@ -911,8 +903,10 @@ class ActorValue(object):
         try: return other[1] != self.actorValue[1] or other[0] != self.actorValue[0]
         except TypeError: return False
 
-    def __nonzero__(self):
+    def __bool__(self):
         return not isinstance(self.actorValue, (ActorValue.EmptyActorValue, ActorValue.InvalidActorValue))
+    # PY3 get rid of this once we port
+    __nonzero__ = __bool__
 
     def __getitem__(self, x):
         return self.actorValue[0] if x == 0 else self.actorValue[1]
@@ -933,22 +927,22 @@ class ActorValue(object):
         return self.actorValue.__repr__()
 
     @staticmethod
-    def FilterValid(actorValues, target, AsShort=False):
-        if AsShort: return [x.GetShortActorValue(target) for x in actorValues if x.ValidateActorValue(target)]
-        return [x for x in actorValues if x.ValidateActorValue(target)]
+    def FilterValid(ActorValues, target, AsShort=False):
+        if AsShort: return [x.GetShortActorValue(target) for x in ActorValues if x.ValidateActorValue(target)]
+        return [x for x in ActorValues if x.ValidateActorValue(target)]
 
     @staticmethod
-    def FilterValidDict(actorValues, target, KeysAreActorValues, ValuesAreActorValues, AsShort=False):
+    def FilterValidDict(ActorValues, target, KeysAreActorValues, ValuesAreActorValues, AsShort=False):
         if KeysAreActorValues:
             if ValuesAreActorValues:
-                if AsShort: return dict([(key.GetShortActorValue(target), value.GetShortFormID(target)) for key, value in actorValues.iteritems() if key.ValidateActorValue(target) and value.ValidateActorValue(target)])
-                return dict([(key, value) for key, value in actorValues.iteritems() if key.ValidateActorValue(target) and value.ValidateActorValue(target)])
-            if AsShort: return dict([(key.GetShortActorValue(target), value) for key, value in actorValues.iteritems() if key.ValidateActorValue(target)])
-            return dict([(key, value) for key, value in actorValues.iteritems() if key.ValidateActorValue(target)])
+                if AsShort: return dict([(key.GetShortActorValue(target), value.GetShortFormID(target)) for key, value in ActorValues.iteritems() if key.ValidateActorValue(target) and value.ValidateActorValue(target)])
+                return dict([(key, value) for key, value in ActorValues.iteritems() if key.ValidateActorValue(target) and value.ValidateActorValue(target)])
+            if AsShort: return dict([(key.GetShortActorValue(target), value) for key, value in ActorValues.iteritems() if key.ValidateActorValue(target)])
+            return dict([(key, value) for key, value in ActorValues.iteritems() if key.ValidateActorValue(target)])
         if ValuesAreActorValues:
-            if AsShort: return dict([(key, value.GetShortActorValue(target)) for key, value in actorValues.iteritems() if value.ValidateActorValue(target)])
-            return dict([(key, value) for key, value in actorValues.iteritems() if value.ValidateActorValue(target)])
-        return actorValues
+            if AsShort: return dict([(key, value.GetShortActorValue(target)) for key, value in ActorValues.iteritems() if value.ValidateActorValue(target)])
+            return dict([(key, value) for key, value in ActorValues.iteritems() if value.ValidateActorValue(target)])
+        return ActorValues
 
     def ValidateActorValue(self, target):
         """Tests whether the ActorValue is valid for the destination target.
@@ -985,10 +979,10 @@ class MGEFCode(object):
             return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
-            return self.master if x == 0 else int(self.objectID & 0xFFFFFF00L)
+            return self.master if x == 0 else int(self.objectID & 0xFFFFFF00)
 
         def __repr__(self):
-            return u"UnvalidatedMGEFCode('%s', 0x%06X)" % (self.master, int(self.objectID & 0xFFFFFF00L))
+            return u"UnvalidatedMGEFCode('%s', 0x%06X)" % (self.master, int(self.objectID & 0xFFFFFF00))
 
         def Validate(self, target):
             """Unvalidated MGEFCodes have to be tested for each destination collection.
@@ -1024,7 +1018,7 @@ class MGEFCode(object):
             return hash((None, self.objectID))
 
         def __getitem__(self, x):
-            return None if x == 0 else int(self.objectID & 0xFFFFFF00L)
+            return None if x == 0 else int(self.objectID & 0xFFFFFF00)
 
         def __repr__(self):
             return "InvalidMGEFCode(None, 0x%06X)" % (self.objectID,)
@@ -1053,10 +1047,10 @@ class MGEFCode(object):
             return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
-            return self.master if x == 0 else int(self.objectID & 0xFFFFFF00L)
+            return self.master if x == 0 else int(self.objectID & 0xFFFFFF00)
 
         def __repr__(self):
-            return u"ValidMGEFCode('%s', 0x%06X)" % (self.master, int(self.objectID & 0xFFFFFF00L))
+            return u"ValidMGEFCode('%s', 0x%06X)" % (self.master, int(self.objectID & 0xFFFFFF00))
 
         def Validate(self, target):
             """This MGEFCode has already been validated for a specific record.
@@ -1119,7 +1113,7 @@ class MGEFCode(object):
             return hash((self.shortID, None))
 
         def __getitem__(self, x):
-            return self.shortID if isinstance(self.shortID, basestring) else self.shortID >> 24 if x == 0 else int(self.shortID & 0xFFFFFF00L)
+            return self.shortID if isinstance(self.shortID, basestring) else self.shortID >> 24 if x == 0 else int(self.shortID & 0xFFFFFF00)
 
         def __repr__(self):
             return "RawMGEFCode(%s)" % (self.shortID,) if isinstance(self.shortID, basestring) else "RawMGEFCode(0x%08X)" % (self.shortID,)
@@ -1159,8 +1153,10 @@ class MGEFCode(object):
     def __ne__(self, other):
         return other[1] != self.mgefCode[1] or other[0] != self.mgefCode[0]
 
-    def __nonzero__(self):
+    def __bool__(self):
         return not isinstance(self.mgefCode, (MGEFCode.EmptyMGEFCode, MGEFCode.InvalidMGEFCode))
+    # PY3 get rid of this once we port
+    __nonzero__ = __bool__
 
     def __getitem__(self, x):
         return self.mgefCode[0] if x == 0 else self.mgefCode[1]
@@ -1237,11 +1233,16 @@ def ValidateDict(Elements, target):
     return True
 
 def getattr_deep(obj, attr):
-    return reduce(getattr, attr.split('.'), obj)
+    return attrgetter(attr)(obj)
 
 def setattr_deep(obj, attr, value):
-    attrs = attr.split('.')
-    setattr(reduce(getattr, attrs[:-1], obj), attrs[-1], value)
+    dot_dex = attr.rfind(u'.')
+    if dot_dex > 0:
+        parent_attr = attr[:dot_dex]
+        leaf_attr = attr[dot_dex + 1:]
+        attrgetter(parent_attr)(obj).__setattr__(leaf_attr, value)
+    else:
+        obj.__setattr__(attr, value)
 
 def ExtractCopyList(Elements):
     return [tuple(getattr(listElement, attr) for attr in listElement.copyattrs) for listElement in Elements]
@@ -1265,7 +1266,7 @@ def dump_record(record, expand=False):
             for x in range(32):
                 z = 1 << x
                 if y & z == z:
-                    print hex(z)
+                    print(hex(z))
         global _dump_RecIndent
         global _dump_LastIndent
         if hasattr(record, 'copyattrs'):
@@ -1280,20 +1281,20 @@ def dump_record(record, expand=False):
                         attr = attr[:-5]
                         wasList = True
                 rec = getattr(record, attr)
-                if _dump_RecIndent: print " " * (_dump_RecIndent - 1),
+                if _dump_RecIndent: print(" " * (_dump_RecIndent - 1), end=' ')
                 if wasList:
-                    print attr
+                    print(attr)
                 else:
-                    print attr + " " * (msize - len(attr)), ":",
+                    print(attr + " " * (msize - len(attr)), ":", end=' ')
                 if rec is None:
-                    print rec
+                    print(rec)
                 elif 'flag' in attr.lower() or 'service' in attr.lower():
-                    print hex(rec)
+                    print(hex(rec))
                     if _dump_ExpandLists == True:
                         for x in range(32):
                             z = pow(2, x)
                             if rec & z == z:
-                                print " " * _dump_RecIndent, " Active" + " " * (msize - len("  Active")), "  :", hex(z)
+                                print(" " * _dump_RecIndent, " Active" + " " * (msize - len("  Active")), "  :", hex(z))
 
                 elif isinstance(rec, list):
                     if len(rec) > 0:
@@ -1303,15 +1304,15 @@ def dump_record(record, expand=False):
                                 IsFidList = False
                                 break
                         if IsFidList:
-                            print rec
+                            print(rec)
                         elif not wasList:
-                            print rec
+                            print(rec)
                     elif not wasList:
-                        print rec
+                        print(rec)
                 elif isinstance(rec, basestring):
-                    print `rec`
+                    print(repr(rec))
                 elif not wasList:
-                    print rec
+                    print(rec)
                 _dump_RecIndent += 2
                 printRecord(rec)
                 _dump_RecIndent -= 2
@@ -1322,12 +1323,12 @@ def dump_record(record, expand=False):
                     for rec in record:
                         printRecord(rec)
                         if _dump_LastIndent == _dump_RecIndent:
-                            print
+                            print()
     global _dump_ExpandLists
     _dump_ExpandLists = expand
     try:
         msize = max([len(attr) for attr in record.copyattrs])
-        print "  fid" + " " * (msize - len("fid")), ":", record.fid
+        print("  fid" + " " * (msize - len("fid")), ":", record.fid)
     except AttributeError:
         pass
     printRecord(record)
@@ -3021,31 +3022,31 @@ class FnvBaseRecord(object):
             for attr in attrs:
                 if isinstance(attr,basestring):
                     # Single attr
-                    conflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for parentRecord in parentRecords if reduce(getattr, attr.split('.'), self) != reduce(getattr, attr.split('.'), parentRecord)])
+                    conflicting.update([(attr,attrgetter(attr)(self)) for parentRecord in parentRecords if attrgetter(attr)(self) != attrgetter(attr)(parentRecord)])
                 elif isinstance(attr,(list,tuple,set)):
                     # Group of attrs that need to stay together
                     for parentRecord in parentRecords:
                         subconflicting = {}
                         conflict = False
                         for subattr in attr:
-                            self_value = reduce(getattr, subattr.split('.'), self)
-                            if not conflict and self_value != reduce(getattr, subattr.split('.'), parentRecord):
+                            self_value = attrgetter(subattr)(self)
+                            if not conflict and self_value != attrgetter(subattr)(parentRecord):
                                 conflict = True
                             subconflicting.update([(subattr,self_value)])
                         if conflict: conflicting.update(subconflicting)
         else: #is the first instance of the record
             for attr in attrs:
                 if isinstance(attr, basestring):
-                    conflicting.update([(attr,reduce(getattr, attr.split('.'), self))])
+                    conflicting.update([(attr,attrgetter(attr)(self))])
                 elif isinstance(attr,(list,tuple,set)):
-                    conflicting.update([(subattr,reduce(getattr, subattr.split('.'), self)) for subattr in attr])
+                    conflicting.update([(subattr,attrgetter(subattr)(self)) for subattr in attr])
 
         skipped_conflicting = [(attr, value) for attr, value in conflicting.iteritems() if isinstance(value, FormID) and not value.ValidateFormID(self)]
         for attr, value in skipped_conflicting:
             try:
-                deprint(_(u"%s attribute of %s record (maybe named: %s) importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.full, self.GetParentMod().GName, value))
+                deprint(u'%s attribute of %s record (maybe named: %s) importing from %s referenced an unloaded object (probably %s) - value skipped' % (attr, self.fid, self.full, self.GetParentMod().GName, value))
             except: #a record type that doesn't have a full chunk:
-                deprint(_(u"%s attribute of %s record importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.GetParentMod().GName, value))
+                deprint(u'%s attribute of %s record importing from %s referenced an unloaded object (probably %s) - value skipped' % (attr, self.fid, self.GetParentMod().GName, value))
             del conflicting[attr]
 
         return conflicting
@@ -8992,7 +8993,7 @@ class FnvCELLRecord(FnvBaseRecord):
         #--Interior cell
         if self.IsInterior:
             ObjectID = self.fid[1]
-            return (ObjectID % 10, (ObjectID / 10) % 10)
+            return (ObjectID % 10, (ObjectID // 10) % 10)
         #--Exterior cell
         else:
             subblockX = int(math.floor((self.posX or 0) / 8.0))
@@ -10615,15 +10616,16 @@ class ObBaseRecord(object):
             for attr in attrs:
                 if isinstance(attr,basestring):
                     # Single attr
-                    conflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for parentRecord in parentRecords if reduce(getattr, attr.split('.'), self) != reduce(getattr, attr.split('.'), parentRecord)])
+                    attr_value = attrgetter(attr)(self)
+                    conflicting.update([(attr,attr_value) for parentRecord in parentRecords if attr_value != attrgetter(attr)(parentRecord)])
                 elif isinstance(attr,(list,tuple,set)):
                     # Group of attrs that need to stay together
                     for parentRecord in parentRecords:
                         subconflicting = {}
                         conflict = False
                         for subattr in attr:
-                            self_value = reduce(getattr, subattr.split('.'), self)
-                            if not conflict and self_value != reduce(getattr, subattr.split('.'), parentRecord):
+                            self_value = attrgetter(subattr)(self)
+                            if not conflict and self_value != attrgetter(subattr)(parentRecord):
                                 conflict = True
                             subconflicting.update([(subattr,self_value)])
                         if conflict:
@@ -10631,16 +10633,16 @@ class ObBaseRecord(object):
         else: #is the first instance of the record
             for attr in attrs:
                 if isinstance(attr, basestring):
-                    conflicting.update([(attr,reduce(getattr, attr.split('.'), self))])
+                    conflicting.update([(attr,attrgetter(attr)(self))])
                 elif isinstance(attr,(list,tuple,set)):
-                    conflicting.update([(subattr,reduce(getattr, subattr.split('.'), self)) for subattr in attr])
+                    conflicting.update([(subattr,attrgetter(subattr)(self)) for subattr in attr])
 
         skipped_conflicting = [(attr, value) for attr, value in conflicting.iteritems() if isinstance(value, FormID) and not value.ValidateFormID(self)]
         for attr, value in skipped_conflicting:
             try:
-                deprint(_(u"%s attribute of %s record (maybe named: %s) importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.full, self.GetParentMod().GName, value))
+                deprint(u'%s attribute of %s record (maybe named: %s) importing from %s referenced an unloaded object (probably %s) - value skipped' % (attr, self.fid, self.full, self.GetParentMod().GName, value))
             except: #a record type that doesn't have a full chunk:
-                deprint(_(u"%s attribute of %s record importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.GetParentMod().GName, value))
+                deprint(u'%s attribute of %s record importing from %s referenced an unloaded object (probably %s) - value skipped' % (attr, self.fid, self.GetParentMod().GName, value))
             del conflicting[attr]
 
         return conflicting
@@ -11530,7 +11532,7 @@ class ObCELLRecord(ObBaseRecord):
         #--Interior cell
         if self.IsInterior:
             ObjectID = self.fid[1]
-            return (ObjectID % 10, (ObjectID / 10) % 10)
+            return (ObjectID % 10, (ObjectID // 10) % 10)
         #--Exterior cell
         else:
             subblockX = int(math.floor((self.posX or 0) / 8.0))
@@ -14111,11 +14113,11 @@ type_record = dict([('BASE',ObBaseRecord),(None,None),('',None),
                     ('CSTY',ObCSTYRecord),('LSCR',ObLSCRRecord),('LVSP',ObLVSPRecord),
                     ('ANIO',ObANIORecord),('WATR',ObWATRRecord),('EFSH',ObEFSHRecord)])
 
-fnv_validTypes = set([])
+fnv_validTypes = set()
 
-fnv_aggregateTypes = set([])
+fnv_aggregateTypes = set()
 
-fnv_pickupables = set([])
+fnv_pickupables = set()
 
 fnv_type_record = dict([('BASE',FnvBaseRecord),(None,None),('',None),
                         ('GMST',FnvGMSTRecord),('TXST',FnvTXSTRecord),('MICN',FnvMICNRecord),
@@ -15289,8 +15291,9 @@ class FnvModFile(object):
                      ("CMNY", self.CMNY),("CDCK", self.CDCK),("DEHY", self.DEHY),
                      ("HUNG", self.HUNG),("SLPD", self.SLPD),))
 
-class ObCollection:
-    __slots__ = ['_CollectionID','_WhichGame','_ModIndex','_ModType','LoadOrderMods','AllMods']
+class ObCollection(object):
+    __slots__ = ['_CollectionID', '_WhichGame', '_ModIndex', '_ModType',
+                 'LoadOrderMods', 'AllMods', '_cwd']
     """Collection of esm/esp's."""
     def __init__(self, CollectionID=None, ModsPath=".", CollectionType=0):
         #CollectionType == 0, Oblivion
@@ -15299,11 +15302,12 @@ class ObCollection:
         self._CollectionID, self._WhichGame = (CollectionID,_CGetCollectionType(CollectionID)) if CollectionID else (_CCreateCollection(_encode(ModsPath), CollectionType),CollectionType)
         self._ModIndex, self.LoadOrderMods, self.AllMods = -1, [], []
         self._ModType = ObModFile if self._WhichGame == 0 else FnvModFile
+        self._cwd = os.getcwd()
 
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, exc_traceback):
         self.Close()
 
     def __eq__(self, other):
@@ -15319,6 +15323,7 @@ class ObCollection:
         _CUnloadCollection(self._CollectionID)
 
     def Close(self):
+        os.chdir(self._cwd)
         _CDeleteCollection(self._CollectionID)
 
     @staticmethod
@@ -15411,7 +15416,11 @@ class ObCollection:
         return self.addMod(FileName, Flags=0x00001084)
 
     def load(self):
-        _CLoadCollection(self._CollectionID)
+        def _callback(current, last, modName):
+            return True
+
+        cb = CFUNCTYPE(c_bool, c_uint32, c_uint32, c_char_p)(_callback)
+        _CLoadCollection(self._CollectionID, cb)
 
         _NumModsIDs = _CGetLoadOrderNumMods(self._CollectionID)
         if _NumModsIDs > 0:
@@ -15444,7 +15453,13 @@ class ObCollection:
         return _CGetRecordUpdatedReferences(self._CollectionID, 0)
 
     def Debug_DumpModFiles(self):
-        col = [_(u"Collection (%08X) contains the following modfiles:") % (self._CollectionID,)]
-        files = [_(u"Load Order (%s), Name(%s)") % ('--' if _CGetModLoadOrderByID(mod._ModID) == -1 else '%02X' % (_CGetModLoadOrderByID(mod._ModID),), mod.ModName) if mod.ModName == mod.FileName else _("Load Order (%s), ModName(%s) FileName(%s)") % ('--' if _CGetModLoadOrderByID(mod._ModID) == -1 else '%02X' % (_CGetModLoadOrderByID(mod._ModID)), mod.ModName, mod.FileName) for mod in self.AllMods]
+        col = [_(u"Collection contains the following modfiles:")]
+        lo_mods = [(_CGetModLoadOrderByID(mod._ModID), mod.ModName,
+                    mod.FileName) for mod in self.AllMods]
+        files = [_(u"Load Order (%s), Name(%s)") % (
+            u'--' if lo == -1 else (u'%02X' % lo), mname) if mname == fname else
+                 _(u"Load Order (%s), ModName(%s) FileName(%s)") % (
+            u'--' if lo == -1 else (u'%02X' % lo), mname, fname)
+                 for lo, mname, fname in lo_mods]
         col.extend(files)
         return u'\n'.join(col)

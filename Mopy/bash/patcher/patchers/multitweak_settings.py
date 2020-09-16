@@ -17,25 +17,27 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module contains oblivion multitweak item patcher classes that belong
 to the Gmst Multitweaker - as well as the GmstTweaker itself. Gmst stands
 for game settings."""
-
+from __future__ import print_function
 from ... import bush # for game
-from ...bolt import SubProgress, StateError, deprint
-from ...brec import MreRecord, ModReader
+from ...bolt import SubProgress, deprint
+from ...brec import MreRecord, RecHeader
+from ...exception import StateError
+from ...patcher.base import AMultiTweaker, DynamicNamedTweak
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
-class GlobalsTweak(MultiTweakItem):
+class GlobalsTweak(DynamicNamedTweak, MultiTweakItem):
     """set a global to specified value"""
-    #--Patch Phase ------------------------------------------------------------
+    tweak_read_classes = 'GLOB',
+
     def buildPatch(self,patchFile,keep,log):
         """Build patch."""
         value = self.choiceValues[self.chosen][0]
@@ -47,15 +49,13 @@ class GlobalsTweak(MultiTweakItem):
                         keep(record.fid)
                     break
         log(u'* ' + _(u'%(label)s set to') % {
-            'label': (u'%s ' % self.label)} + (u': %4.2f' % value))
+            'label': (u'%s ' % self.tweak_name)} + (u': %4.2f' % value))
 
-class CBash_GlobalsTweak(CBash_MultiTweakItem):
+class CBash_GlobalsTweak(DynamicNamedTweak, CBash_MultiTweakItem):
     """Sets a global to specified value"""
     scanOrder = 29
     editOrder = 29
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['GLOB']
+    tweak_read_classes = 'GLOB',
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -76,19 +76,20 @@ class CBash_GlobalsTweak(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         if self.count: log(u'* ' + _(u'%(label)s set to') % {
-            'label': (u'%s ' % self.label)} + (u': %4.2f' % self.value))
+            'label': (u'%s ' % self.tweak_name)} + (u': %4.2f' % self.value))
 
 #------------------------------------------------------------------------------
-class GmstTweak(MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
+class GmstTweak(DynamicNamedTweak, MultiTweakItem):
+    tweak_read_classes = 'GMST',
+
     def buildPatch(self,patchFile,keep,log):
         """Build patch."""
         eids = ((self.key,),self.key)[isinstance(self.key,tuple)]
         isOblivion = bush.game.fsName.lower() == u'oblivion'
         for eid,value in zip(eids,self.choiceValues[self.chosen]):
             if isOblivion and value < 0:
-                deprint(_(u"GMST values can't be negative - currently %s - "
-                          u"skipping setting GMST.") % value)
+                deprint(u"GMST values can't be negative - currently %s - "
+                        u'skipping setting GMST.' % value)
                 return
             eidLower = eid.lower()
             for record in patchFile.GMST.records:
@@ -98,35 +99,34 @@ class GmstTweak(MultiTweakItem):
                         keep(record.fid)
                     break
             else:
-                gmst = MreRecord.type_class['GMST'](
-                    ModReader.recHeader('GMST', 0, 0, 0, 0))
+                gmst = MreRecord.type_class['GMST'](RecHeader('GMST'))
                 gmst.eid,gmst.value,gmst.longFids = eid,value,True
-                fid = gmst.fid = keep(gmst.getGMSTFid())
+                gmst_fid = gmst.getGMSTFid()
+                gmst.fid = gmst_fid
+                keep(gmst_fid)
                 patchFile.GMST.setRecord(gmst)
         if len(self.choiceLabels) > 1:
             if self.choiceLabels[self.chosen].startswith(_(u'Custom')):
                 if isinstance(self.choiceValues[self.chosen][0],basestring):
                     log(u'* %s: %s %s' % (
-                        self.label, self.choiceLabels[self.chosen],
+                        self.tweak_name, self.choiceLabels[self.chosen],
                         self.choiceValues[self.chosen][0]))
                 else:
                     log(u'* %s: %s %4.2f' % (
-                        self.label, self.choiceLabels[self.chosen],
+                        self.tweak_name, self.choiceLabels[self.chosen],
                         self.choiceValues[self.chosen][0]))
             else:
-                log(u'* %s: %s' % (self.label, self.choiceLabels[self.chosen]))
+                log(u'* %s: %s' % (
+                    self.tweak_name, self.choiceLabels[self.chosen]))
         else:
-            log(u'* ' + self.label)
+            log(u'* ' + self.tweak_name)
 
-class CBash_GmstTweak(CBash_MultiTweakItem):
+class CBash_GmstTweak(DynamicNamedTweak, CBash_MultiTweakItem):
     """Sets a gmst to specified value"""
     scanOrder = 29
     editOrder = 29
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['GMST']
+    tweak_read_classes = 'GMST',
 
-    #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         values = self.values = self.choiceValues[self.chosen]
@@ -138,14 +138,14 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
         else:
             return
         if recEid.startswith(u"f") and type(newValue) != float:
-            deprint(_(u"converting custom value to float for GMST %s: %s") % (
+            deprint(u'converting custom value to float for GMST %s: %s' % (
                 recEid, newValue))
             newValue = float(newValue)
         if record.value != newValue:
             self.eid_count[eid] = 1
             if newValue < 0:
-                deprint(_(u"GMST values can't be negative - currently %s - "
-                          u"skipping setting GMST.") % newValue)
+                deprint(u"GMST values can't be negative - currently %s - "
+                        u'skipping setting GMST.' % newValue)
                 return
             override = record.CopyAsOverride(self.patchFile)
             if override:
@@ -165,14 +165,14 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
                 self.eid_count[eid] = 1
                 record = patchFile.create_GMST(eid)
                 if not record:
-                    print eid
-                    print patchFile.Current.Debug_DumpModFiles()
+                    print(eid)
+                    print(patchFile.Current.Debug_DumpModFiles())
                     for conflict in patchFile.Current.LookupRecords(eid,False):
-                        print conflict.GetParentMod().ModName
+                        print(conflict.GetParentMod().ModName)
                     raise StateError(u"Tweak Settings: Unable to create GMST!")
                 if eid.startswith("f") and type(value) != float:
-                    deprint(_(u"converting custom value to float for GMST"
-                              u" %s: %s") % (eid, value))
+                    deprint(u'Converting custom value to float for GMST %s: '
+                            u'%s' % (eid, value))
                     value = float(value)
                 record.value = value
             pstate += 1
@@ -184,63 +184,47 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
             if self.choiceLabels[self.chosen].startswith(_(u'Custom')):
                 if isinstance(self.values[0],basestring):
                     log(u'  * %s: %s %s' % (
-                        self.label, self.choiceLabels[self.chosen],
+                        self.tweak_name, self.choiceLabels[self.chosen],
                         self.values[0]))
                 else:
                     log(u'  * %s: %s %4.2f' % (
-                        self.label, self.choiceLabels[self.chosen],
+                        self.tweak_name, self.choiceLabels[self.chosen],
                         self.values[0]))
             else:
                 log(u'  * %s: %s' % (
-                    self.label, self.choiceLabels[self.chosen]))
+                    self.tweak_name, self.choiceLabels[self.chosen]))
         else:
-            log(u'  * ' + self.label)
+            log(u'  * ' + self.tweak_name)
 
 #------------------------------------------------------------------------------
-class GmstTweaker(MultiTweaker):
+class _AGmstTweaker(AMultiTweaker):
+    """Tweaks miscellaneous gmsts in miscellaneous ways."""
+
+    @classmethod
+    def tweak_instances(cls):
+        instances = []
+        for clazz, game_tweaks in cls._class_tweaks:
+            for tweak in game_tweaks:
+                if isinstance(tweak, tuple):
+                    instances.append(clazz(*tweak))
+                elif isinstance(tweak, list):
+                    args = tweak[0]
+                    kwdargs = tweak[1]
+                    instances.append(clazz(*args, **kwdargs))
+        instances.sort(key=lambda a: a.tweak_name.lower())
+        return instances
+
+class GmstTweaker(MultiTweaker, _AGmstTweaker):
     """Tweaks miscellaneous gmsts in miscellaneous ways."""
     scanOrder = 29
     editOrder = 29
-    name = _(u'Tweak Settings')
-    text = _(u"Tweak game settings.")
-    defaultConfig = {'isEnabled':True}
-    tweaks = []
-
-    #--Config Phase -----------------------------------------------------------
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = configs.setdefault(self.__class__.__name__,
-                                    self.__class__.defaultConfig)
-        self.isEnabled = config.get('isEnabled',False)
-        # Load game specific tweaks
-        self.tweaks = []
-        tweaksAppend = self.tweaks.append
-        for cls,tweaks in [(GlobalsTweak,bush.game.GlobalsTweaks),
-                           (GmstTweak,bush.game.GmstTweaks)]:
-            for tweak in tweaks:
-                if isinstance(tweak,tuple):
-                    tweaksAppend(cls(*tweak))
-                elif isinstance(tweak,list):
-                    args = tweak[0]
-                    kwdargs = tweak[1]
-                    tweaksAppend(cls(*args,**kwdargs))
-        self.tweaks.sort(key=lambda a: a.label.lower())
-        for tweak in self.tweaks:
-            tweak.getConfig(config)
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('GMST','GLOB') if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('GMST','GLOB') if self.isActive else ()
+    _class_tweaks = [(GlobalsTweak, bush.game.GlobalsTweaks),
+                    (GmstTweak, bush.game.GmstTweaks)]
+    _read_write_records = ('GMST', 'GLOB')
 
     def scanModFile(self,modFile,progress):
-        if not self.isActive: return
         mapper = modFile.getLongMapper()
-        for blockType in ['GMST','GLOB']:
+        for blockType in self._read_write_records:
             if blockType not in modFile.tops: continue
             modBlock = getattr(modFile,blockType)
             patchBlock = getattr(self.patchFile,blockType)
@@ -254,44 +238,18 @@ class GmstTweaker(MultiTweaker):
         """Edits patch file as desired. Will write to log."""
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
-        log.setHeader(u'= '+self.__class__.name)
-        for tweak in self.enabledTweaks:
+        log.setHeader(u'= '+self._patcher_name)
+        for tweak in self.enabled_tweaks:
             tweak.buildPatch(self.patchFile,keep,log)
 
-class CBash_GmstTweaker(CBash_MultiTweaker):
+class CBash_GmstTweaker(CBash_MultiTweaker, _AGmstTweaker):
     """Tweaks miscellaneous gmsts in miscellaneous ways."""
-    name = _(u'Tweak Settings')
-    text = _(u"Tweak game settings.")
-    defaultConfig = {'isEnabled':True}
-    tweaks = []
+    _class_tweaks = [(CBash_GlobalsTweak, bush.game.GlobalsTweaks),
+                     (CBash_GmstTweak, bush.game.GmstTweaks)]
 
-    #--Config Phase -----------------------------------------------------------
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = configs.setdefault(self.__class__.__name__,
-                                    self.__class__.defaultConfig)
-        self.isEnabled = config.get('isEnabled',False)
-        CBash_MultiTweaker.getConfig(self,configs)
-        # Load game specific tweaks
-        self.tweaks = []
-        tweaksAppend = self.tweaks.append
-        for cls,tweaks in [(CBash_GlobalsTweak,bush.game.GlobalsTweaks),
-                           (CBash_GmstTweak,bush.game.GmstTweaks)]:
-            for tweak in tweaks:
-                if isinstance(tweak,tuple):
-                    tweaksAppend(cls(*tweak))
-                elif isinstance(tweak,list):
-                    args = tweak[0]
-                    kwdargs = tweak[1]
-                    tweaksAppend(cls(*args,**kwdargs))
-        self.tweaks.sort(key=lambda a: a.label.lower())
-        for tweak in self.tweaks:
-            tweak.getConfig(config)
-
-    def initPatchFile(self,patchFile,loadMods):
-        self.patchFile = patchFile
-        for tweak in self.tweaks:
-            tweak.patchFile = patchFile
+    def __init__(self, p_name, p_file, enabled_tweaks):
+        super(CBash_GmstTweaker, self).__init__(p_name, p_file, enabled_tweaks)
+        for tweak in self.enabled_tweaks:
             if isinstance(tweak,CBash_GlobalsTweak):
                 tweak.count = 0
             else:

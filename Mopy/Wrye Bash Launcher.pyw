@@ -18,7 +18,7 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2019 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -59,7 +59,7 @@ class UnicodeImporter(object):
             initfile = '__init__'
         try:
             if os.path.exists(filename+ext):
-                with open(filename+ext,'U') as fp:
+                with open(filename+ext,u'U') as fp:
                     mod = imp.load_source(fullname,filename+ext,fp)
                     sys.modules[fullname] = mod
                     mod.__loader__ = self
@@ -71,7 +71,7 @@ class UnicodeImporter(object):
                 #init file
                 initfile = os.path.join(filename,initfile+ext)
                 if os.path.exists(initfile):
-                    with open(initfile,'U') as fp:
+                    with open(initfile,u'U') as fp:
                         code = fp.read()
                     exec compile(code, initfile, 'exec') in mod.__dict__
             return mod
@@ -84,5 +84,6 @@ if not hasattr(sys,'frozen'):
     sys.meta_path = [UnicodeImporter()]
 
 if __name__ == '__main__':
-    from bash import bash
-    bash.main()
+    from bash import bash, barg
+    opts = barg.parse()
+    bash.main(opts)

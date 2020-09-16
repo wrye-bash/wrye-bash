@@ -17,7 +17,7 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -60,6 +60,7 @@
 #  TokensToRPN
 #  ExecuteRPN
 #==================================================
+from __future__ import division
 from string import digits, whitespace
 import types
 #--------------------------------------------------
@@ -69,13 +70,13 @@ name_chars = name_start + u'0123456789'
 # validName ---------------------------------------
 #  Test if a string can be used as a valid name
 #--------------------------------------------------
-def validName(name):
+def validName(string):
     try:
-        if name[0] not in name_start: return False
-        for i in name:
+        if string[0] not in name_start: return False
+        for i in string:
             if i not in name_chars: return False
         return True
-    except:
+    except (TypeError, KeyError): # TypeError means not iterable
         return False
 
 # validNumber -------------------------------------
@@ -86,7 +87,7 @@ def validNumber(string):
         float(string)
         if u'.' in string and string == u'.': return False
         return True
-    except:
+    except ValueError:
         return False
 
 # Define Some Constants ---------------------------
@@ -96,12 +97,12 @@ ERR_CANNOT_SET = u"Cannot set %s '%s': type is '%s'."
 ERR_TOO_FEW_ARGS = u"Too few arguments to %s '%s':  got %s, expected %s."
 ERR_TOO_MANY_ARGS = u"Too many arguments to %s '%s':  got %s, expected %s."
 
-class KEY:
+class KEY(object):
     # Constants for keyword args
     NO_MAX = -1     # No maximum arguments
     NA = 0          # Not a variable argument keyword
 
-class OP:
+class OP(object):
     # Constants for operator precedences
     PAR = 0     # Parenthesis
     EXP = 1     # Exponent
@@ -113,7 +114,7 @@ class OP:
     MEM = 7     # Membership test (a in b)
     NOT = 8     # Logical not (not, !)
     AND = 9     # Logical and (and, &)
-    OR  = 10    # Locical or (or, |)
+    OR  = 10    # Logical or (or, |)
     ASS = 11    # Assignment (=,+=,etc
 
 # Constants for operator associations
@@ -161,7 +162,7 @@ Types = {UNKNOWN:u'UNKNOWN',
 # getType ---------------------------------------
 #  determines the type of a string.  If 'parser'
 #  is passed, then it will attempt it against
-#  vairious names as well.
+#  various names as well.
 #------------------------------------------------
 def getType(item, parser=None):
     if isinstance(item, unicode):
@@ -192,9 +193,9 @@ def getType(item, parser=None):
 #  Flow control object, to hold info about a flow
 #  control statement
 #--------------------------------------------------
-class FlowControl:
-    def __init__(self, type, active, keywords=[], **attribs):
-        self.type = type
+class FlowControl(object):
+    def __init__(self, statement_type, active, keywords=[], **attribs):
+        self.type = statement_type
         self.active = active
         self.keywords = keywords
         for i in attribs:
@@ -213,9 +214,9 @@ class ParserError(SyntaxError): pass
 gParser = None
 def error(msg):
     if gParser:
-        raise ParserError, u'(Line %s, Column %s): %s' % (gParser.cLine, gParser.cCol, msg)
+        raise ParserError(u'(Line %s, Column %s): %s' % (gParser.cLine, gParser.cCol, msg))
     else:
-        raise ParserError, msg
+        raise ParserError(msg)
 
 # Parser ------------------------------------------
 #  This is where the magic happens
@@ -226,7 +227,9 @@ class Parser(object):
         def Type(self): return self.__class__.__name__
 
     class Callable(ParserType):
-        def __init__(self, function, min_args=0, max_args=KEY.NA, passTokens=False, passCommas=False):
+        def __init__(self, callable_name, function, min_args=0,
+                     max_args=KEY.NA, passTokens=False, passCommas=False):
+            self.callable_name = callable_name
             self.function = function
             self.passTokens = passTokens
             self.passCommas = passCommas
@@ -238,7 +241,7 @@ class Parser(object):
         def __call__(self, *args):
             # Remove commas if necessary, pass values if necessary
             if not self.passCommas or not self.passTokens:
-                args = [(x.data,x)[self.passTokens] for x in args if x.type != COMMA or self.passCommas]
+                args = [(x.tkn,x)[self.passTokens] for x in args if x.type != COMMA or self.passCommas]
             return self.execute(*args)
 
         def execute(self, *args):
@@ -246,34 +249,46 @@ class Parser(object):
             numArgs = len(args)
             if self.maxArgs != KEY.NO_MAX and numArgs > self.maxArgs:
                 if self.minArgs == self.maxArgs:
-                    error(ERR_TOO_MANY_ARGS % (self.Type, u'self.text', numArgs, self.minArgs))
+                    error(ERR_TOO_MANY_ARGS % (
+                        self.Type, self.callable_name, numArgs, self.minArgs))
                 else:
-                    error(ERR_TOO_MANY_ARGS % (self.Type, u'self.text', numArgs, u'min: %s, max: %s' % (self.minArgs,self.maxArgs)))
+                    error(ERR_TOO_MANY_ARGS % (
+                        self.Type, self.callable_name, numArgs,
+                        u'min: %s, max: %s' % (self.minArgs,self.maxArgs)))
             if numArgs < self.minArgs:
                 if self.maxArgs == KEY.NO_MAX:
-                    error(ERR_TOO_FEW_ARGS % (self.Type, u'self.text', numArgs, u'min: %s' % self.minArgs))
+                    error(ERR_TOO_FEW_ARGS % (
+                        self.Type, self.callable_name, numArgs,
+                        u'min: %s' % self.minArgs))
                 elif self.minArgs == self.maxArgs:
-                    error(ERR_TOO_FEW_ARGS % (self.Type, u'self.text', numArgs, self.minArgs))
+                    error(ERR_TOO_FEW_ARGS % (
+                        self.Type, self.callable_name, numArgs, self.minArgs))
                 else:
-                    error(ERR_TOO_FEW_ARGS % (self.Type, u'self.text', numArgs, u'min: %s, max: %s' % (self.minArgs, self.maxArgs)))
+                    error(ERR_TOO_FEW_ARGS % (
+                        self.Type, self.callable_name, numArgs,
+                        u'min: %s, max: %s' % (self.minArgs, self.maxArgs)))
             return self.function(*args)
 
-
-
     class Operator(Callable):
-        def __init__(self, function, precedence, association=LEFT, passTokens=True):
+        def __init__(self, operator_name, function, precedence,
+                     association=LEFT, passTokens=True):
             self.precedence = precedence
             self.association = association
             if self.precedence in (OP.UNA, OP.NOT):
                 min_args = 1
             else:
                 min_args = 2
-            super(Parser.Operator,self).__init__(function, min_args, passTokens=passTokens)
+            super(Parser.Operator,self).__init__(operator_name, function,
+                                                 min_args,
+                                                 passTokens=passTokens)
 
     class Keyword(Callable):
-        def __init__(self, function, min_args=0, max_args=KEY.NA, passTokens=False, splitCommas=True, passCommas=False):
+        def __init__(self, keyword_name, function, min_args=0, max_args=KEY.NA,
+                     passTokens=False, splitCommas=True, passCommas=False):
             self.splitCommas = splitCommas
-            super(Parser.Keyword,self).__init__(function, min_args, max_args, passTokens, passCommas)
+            super(Parser.Keyword,self).__init__(keyword_name, function,
+                                                min_args, max_args,
+                                                passTokens, passCommas)
 
         def __call__(self, *args):
             gParser.StripOuterParens(args)
@@ -295,33 +310,40 @@ class Parser(object):
             return self.execute(*args)
 
     class Function(Callable):
-        def __init__(self, function, min_args=0, max_args=KEY.NA, passTokens=False, dotFunction=False):
+        def __init__(self, function_name, function, min_args=0,
+                     max_args=KEY.NA, passTokens=False, dotFunction=False):
             """function: function that will be called with the args
                num_args: number of args required for the function
                passTokens: whether tokens or the data within should be passed as args
                dotFunction: whether this function can be called using the dot operator
                """
-            super(Parser.Function,self).__init__(function, min_args, max_args, passTokens)
+            super(Parser.Function,self).__init__(function_name, function,
+                                                 min_args, max_args,
+                                                 passTokens)
             self.dotFunction = dotFunction
 
-    class Token:
-        def __init__(self, text, Type=None, parser=None, line=None, pos=(None,None)):
-            if isinstance(text, Parser.Token):
-                self.text = text.text
-                self.type = text.type
-                self.parser = text.parser
-                self.line = text.line
-                self.pos = text.pos
-                self.numArgs = text.numArgs
+    class Token(object):
+        def __init__(self, token_or_text, Type=None, parser=None, line=None,
+                     pos=(None, None)):
+            if isinstance(token_or_text, Parser.Token):
+                self.text = token_or_text.text
+                self.type = token_or_text.type
+                self.parser = token_or_text.parser
+                self.line = token_or_text.line
+                self.pos = token_or_text.pos
+                self.numArgs = token_or_text.numArgs
             else:
-                self.text = text
-                self.type = Type or getType(text,parser)
+                self.text = token_or_text
+                self.type = Type or getType(token_or_text, parser)
                 self.parser = parser
                 self.line = line
                 self.pos = pos
                 self.numArgs = 0
 
         def GetData(self):
+            """:rtype: Parser.Function | Parser.Keyword | Parser.Operator |
+            basestring | int | float
+            """
             if self.parser:
                 if self.type == FUNCTION: return self.parser.functions[self.text]
                 if self.type == KEYWORD : return self.parser.keywords[self.text]
@@ -331,38 +353,62 @@ class Parser(object):
                 if self.type == DECIMAL : return float(self.text)
                 if self.type == INTEGER : return int(self.text)
             return self.text
-        data = property(GetData)
+        tkn = property(GetData) # did I catch all uses ?
 
-        def __cmp__(self, other):
+        # Implement rich comparisons, __cmp__ is deprecated
+        def __eq__(self, other):
             if isinstance(other, Parser.Token):
-                return cmp(self.data, other.data)
-            return cmp(self.data, other)
-        def __add__(self, other): return Parser.Token(self.data + other.data)
-        def __sub__(self, other): return Parser.Token(self.data - other.data)
-        def __mul__(self, other): return Parser.Token(self.data * other.data)
-        def __div__(self, other): return Parser.Token(self.data / other.data)
-        def __truediv__(self, other): return Parser.Token(self.data / other.data)
-        def __floordiv__(self, other): return Parser.Token(self.data // other.data)
-        def __divmod__(self, other): return Parser.Token(divmod(self.data, other.data))
-        def __pow__(self, other): return Parser.Token(self.data ** other.data)
-        def __lshift__(self, other): return Parser.Token(self.data << other.data)
-        def __rshift__(self, other): return Parser.Token(self.data >> other.data)
-        def __and__(self, other): return Parser.Token(self.data & other.data)
-        def __xor__(self, other): return Parser.Token(self.data ^ other.data)
-        def __or__(self, other): return Parser.Token(self.data | other.data)
-        def __nonzero__(self): return bool(self.data)
-        def __neg__(self): return Parser.Token(-self.data)
-        def __pos__(self): return Parser.Token(+self.data)
-        def __abs__(self): return abs(self.data)
-        def __int__(self): return int(self.data)
-        def __long__(self): return long(self.data)
-        def __float__(self): return float(self.data)
-        def __str__(self): return str(self.data)
+                return self.tkn == other.tkn
+            return self.tkn == other
+        def __ne__(self, other):
+            if isinstance(other, Parser.Token):
+                return self.tkn != other.tkn
+            return self.tkn != other
+        def __lt__(self, other):
+            if isinstance(other, Parser.Token):
+                return self.tkn < other.tkn
+            return self.tkn < other
+        def __le__(self, other):
+            if isinstance(other, Parser.Token):
+                return self.tkn <= other.tkn
+            return self.tkn <= other
+        def __gt__(self, other):
+            if isinstance(other, Parser.Token):
+                return self.tkn > other.tkn
+            return self.tkn > other
+        def __ge__(self, other):
+            if isinstance(other, Parser.Token):
+                return self.tkn >= other.tkn
+            return self.tkn >= other
+
+        def __add__(self, other): return Parser.Token(self.tkn + other.tkn)
+        def __sub__(self, other): return Parser.Token(self.tkn - other.tkn)
+        def __mul__(self, other): return Parser.Token(self.tkn * other.tkn)
+        def __mod__(self, other): return Parser.Token(self.tkn % other.tkn)
+        def __truediv__(self, other): return Parser.Token(self.tkn / other.tkn)
+        def __floordiv__(self, other): return Parser.Token(self.tkn // other.tkn)
+        def __divmod__(self, other): return Parser.Token(divmod(self.tkn, other.tkn))
+        def __pow__(self, other): return Parser.Token(self.tkn ** other.tkn)
+        def __lshift__(self, other): return Parser.Token(self.tkn << other.tkn)
+        def __rshift__(self, other): return Parser.Token(self.tkn >> other.tkn)
+        def __and__(self, other): return Parser.Token(self.tkn & other.tkn)
+        def __xor__(self, other): return Parser.Token(self.tkn ^ other.tkn)
+        def __or__(self, other): return Parser.Token(self.tkn | other.tkn)
+        def __bool__(self): return bool(self.tkn)
+        def __neg__(self): return Parser.Token(-self.tkn)
+        def __pos__(self): return Parser.Token(+self.tkn)
+        def __abs__(self): return abs(self.tkn)
+        def __int__(self): return int(self.tkn)
+        def __float__(self): return float(self.tkn)
+        def __str__(self): return str(self.tkn)
 
         def __repr__(self): return u'<Token-%s:%s>' % (Types[self.type],self.text)
 
         # Fall through to function/keyword
-        def __call__(self, *args, **kwdargs): return self.data(*args, **kwdargs)
+        def __call__(self, *args, **kwdargs): return self.tkn(*args, **kwdargs)
+
+        # PY3 get rid of this once we port
+        __nonzero__ = __bool__
 
 
     # Now for the Parser class
@@ -400,7 +446,8 @@ class Parser(object):
         if dotOperator:
             self.SetOperator(dotOperator, self.opDotOperator, OP.PAR)
         # Special function
-        self.functions[u']index['] = Parser.Function(self.fnIndex, 2, 4)
+        self.functions[u']index['] = Parser.Function(u'<index>', self.fnIndex,
+                                                     2, 4)
 
         global gParser
         gParser = self
@@ -438,34 +485,36 @@ class Parser(object):
             error(_(u'IndexError'))
 
     def SetOperator(self, name, *args, **kwdargs):
-        type = getType(name, self)
-        if type not in [NAME,OPERATOR,UNKNOWN]:
-            error(ERR_CANNOT_SET % (u'operator', name, Types[type]))
-        self.operators[name] = Parser.Operator(*args, **kwdargs)
+        type_ = getType(name, self)
+        if type_ not in [NAME,OPERATOR,UNKNOWN]:
+            error(ERR_CANNOT_SET % (u'operator', name, Types[type_]))
+        self.operators[name] = Parser.Operator(name, *args, **kwdargs)
         for i in name:
             if i not in self.opChars: self.opChars += i
     def SetKeyword(self, name, *args, **kwdargs):
-        type = getType(name, self)
-        if type not in [NAME,KEYWORD]:
-            error(ERR_CANNOT_SET % (u'keyword', name, Types[type]))
-        self.keywords[name] = Parser.Keyword(*args, **kwdargs)
+        type_ = getType(name, self)
+        if type_ not in [NAME,KEYWORD]:
+            error(ERR_CANNOT_SET % (u'keyword', name, Types[type_]))
+        self.keywords[name] = Parser.Keyword(name, *args, **kwdargs)
     def SetFunction(self, name, *args, **kwdargs):
-        type = getType(name, self)
-        if type not in [NAME,FUNCTION]:
-            error(ERR_CANNOT_SET % (u'function', name, Types[type]))
-        self.functions[name] = Parser.Function(*args, **kwdargs)
+        type_ = getType(name, self)
+        if type_ not in [NAME,FUNCTION]:
+            error(ERR_CANNOT_SET % (u'function', name, Types[type_]))
+        self.functions[name] = Parser.Function(name, *args, **kwdargs)
     def SetConstant(self, name, value):
-        type = getType(name, self)
-        if type not in [NAME,CONSTANT]:
-            error(ERR_CANNOT_SET % (u'constant', name, Types[type]))
+        type_ = getType(name, self)
+        if type_ not in [NAME,CONSTANT]:
+            error(ERR_CANNOT_SET % (u'constant', name, Types[type_]))
         self.constants[name] = value
     def SetVariable(self, name, value):
-        type = getType(name, self)
-        if type not in [NAME, VARIABLE]:
-            error(ERR_CANNOT_SET % (u'variable', name, Types[type]))
+        type_ = getType(name, self)
+        if type_ not in [NAME, VARIABLE]:
+            error(ERR_CANNOT_SET % (u'variable', name, Types[type_]))
+        self.variables[name] = value
 
     # Flow control stack
-    def PushFlow(self, type, active, keywords, **attribs): self.Flow.append(FlowControl(type,active,keywords,**attribs))
+    def PushFlow(self, stmnt_type, active, keywords, **attribs):
+        self.Flow.append(FlowControl(stmnt_type, active, keywords, **attribs))
     def PopFlow(self): return self.Flow.pop()
     def PopFrontFlow(self): return self.Flow.pop(0)
     def PeekFlow(self,index=-1): return self.Flow[index]
@@ -511,14 +560,6 @@ class Parser(object):
         tokens = [x for x in tokens if x.type != COMMA]
         return tokens
 
-    # Changes out tokens for their values
-    def ConvertToValues(self, tokens=None):
-        if tokens is None:
-            self.tokens = [x.data for x in self.tokens]
-            return self.tokens
-        tokens = [x.data for x in tokens]
-        return tokens
-
     # Split tokens at commas
     def SplitAtCommas(self, tokens=None):
         tokens = tokens or self.tokens
@@ -531,13 +572,13 @@ class Parser(object):
             elif tok.type == CLOSE_PARENS:
                 parenDepth -= 1
                 if parenDepth < 0:
-                    error(_(u"Missmatched parenthesis."))
+                    error(_(u'Mismatched parenthesis.'))
             elif tok.type == OPEN_BRACKET:
                 bracketDepth += 1
             elif tok.type == CLOSE_BRACKET:
                 bracketDepth -= 1
                 if bracketDepth < 0:
-                    error(_(u"Mismatched brackets."))
+                    error(_(u'Mismatched brackets.'))
             if tok.type == COMMA and parenDepth == 0 and bracketDepth == 0:
                     ret.append([])
             else:
@@ -600,17 +641,17 @@ class Parser(object):
                     stack[-2].numArgs += stack[-1].numArgs
                     stack[-1].numArgs = 0
             elif i.type == COLON:
-                temp = []
+                temp_tokens = []
                 while len(stack) > 0 and stack[-1].type != OPEN_BRACKET:
-                    temp.append(stack.pop())
+                    temp_tokens.append(stack.pop())
                 if len(stack) <= 1:
                     error(_(u"Misplaced ':' or missing bracket."))
                 stack[-2].numArgs += stack[-1].numArgs
-                if len(temp) == 0 and stack[-1].numArgs == 0:
+                if len(temp_tokens) == 0 and stack[-1].numArgs == 0:
                     rpn.append(Parser.Token(Parser._marker,Type=UNKNOWN,parser=self))
                     stack[-2].numArgs += 1
                 else:
-                    rpn.extend(temp)
+                    rpn.extend(temp_tokens)
                 stack[-1].numArgs = 0
             elif i.type == FUNCTION:
                 stack.append(i)
@@ -621,15 +662,15 @@ class Parser(object):
                         error(_(u"Dot operator: no function to call."))
                     if tokens[idex+1].type != FUNCTION:
                         error(_(u"Dot operator: cannot access non-function '%s'.") % tokens[idex+1].text)
-                    if not tokens[idex+1].data.dotFunction:
+                    if not tokens[idex+1].tkn.dotFunction:
                         error(_(u"Dot operator: cannot access function '%s'.") % tokens[idex+1].text)
                     tokens[idex+1].numArgs += 1
                 # Other operators
                 else:
                     while len(stack) > 0 and stack[-1].type == OPERATOR:
-                        if i.data.association == LEFT and i.data.precedence >= stack[-1].data.precedence:
+                        if i.tkn.association == LEFT and i.tkn.precedence >= stack[-1].tkn.precedence:
                             rpn.append(stack.pop())
-                        elif i.data.association == RIGHT and i.data.precedence > stack[-1].data.precedence:
+                        elif i.tkn.association == RIGHT and i.tkn.precedence > stack[-1].tkn.precedence:
                             rpn.append(stack.pop())
                         else:
                             break
@@ -654,17 +695,17 @@ class Parser(object):
                     stack[-1].numArgs += numArgs
                     rpn.append(stack.pop())
             elif i.type == CLOSE_BRACKET:
-                temp = []
+                temp_tokens = []
                 while len(stack) > 0 and stack[-1].type != OPEN_BRACKET:
-                    temp.append(stack.pop())
+                    temp_tokens.append(stack.pop())
                 if len(stack) == 0:
                     error(_(u'Unmatched brackets.'))
                 numArgs = stack[-1].numArgs
                 stack.pop()
-                if len(temp) == 0 and numArgs == 0 and stack[-1].numArgs != 0:
+                if len(temp_tokens) == 0 and numArgs == 0 and stack[-1].numArgs != 0:
                     rpn.append(Parser.Token(Parser._marker,Type=UNKNOWN,parser=self))
                     numArgs += 1
-                rpn.extend(temp)
+                rpn.extend(temp_tokens)
                 stack[-1].numArgs += numArgs + 1
                 if stack[-1].numArgs == 1:
                     error(_(u'IndexError'))
@@ -685,10 +726,10 @@ class Parser(object):
         stack = []
         for i in rpn:
             if i.type == OPERATOR:
-                if len(stack) < i.data.minArgs:
-                    error(ERR_TOO_FEW_ARGS % (u'operator', i.text, len(stack), i.data.minArgs))
+                if len(stack) < i.tkn.minArgs:
+                    error(ERR_TOO_FEW_ARGS % (u'operator', i.text, len(stack), i.tkn.minArgs))
                 args = []
-                while len(args) < i.data.minArgs:
+                while len(args) < i.tkn.minArgs:
                     args.append(stack.pop())
                 args.reverse()
                 ret = i(*args)
@@ -711,11 +752,11 @@ class Parser(object):
             else:
                 stack.append(i)
         if len(stack) == 1:
-            return stack[0].data
+            return stack[0].tkn
         error(_(u'Too many values left at the end of evaluation.'))
 
     def error(self, msg):
-        raise ParserError, u'(Line %s, Column %s): %s' % (self.cLine, self.cCol, msg)
+        raise ParserError(u'(Line %s, Column %s): %s' % (self.cLine, self.cCol, msg))
 
     #Functions for parsing a line into tokens
     def _grow(self, c):
@@ -724,15 +765,15 @@ class Parser(object):
             self.word = c
             self.wordStart = self.cCol
 
-    def _emit(self, word=None, type=None):
+    def _emit(self, word=None, type_=None):
         word = word or self.word
         if word is None: return
         if self.wordStart is None: self.wordStart = self.cCol - 1
-        type = type or getType(word, self)
+        type_ = type_ or getType(word, self)
 
-        # Try to figure out if it's mutliple operators bunched together
+        # Try to figure out if it's multiple operators bunched together
         rightWord = None
-        if type == UNKNOWN:
+        if type_ == UNKNOWN:
             for idex in range(len(word),0,-1):
                 newType = getType(word[0:idex], self)
                 if newType != UNKNOWN:
@@ -746,15 +787,15 @@ class Parser(object):
             if len(self.tokens) > 0:
                 left = self.tokens[-1].type
                 if left in [CLOSE_PARENS,CLOSE_BRACKET]:
-                    if type in [OPEN_PARENS,DECIMAL,INTEGER,FUNCTION,VARIABLE,CONSTANT,NAME]:
+                    if type_ in [OPEN_PARENS, DECIMAL, INTEGER, FUNCTION, VARIABLE, CONSTANT, NAME]:
                         self.tokens.append(Parser.Token(self.doImplicit,OPERATOR,self,self.cLine))
                 elif left in [DECIMAL,INTEGER]:
-                    if type in [OPEN_PARENS,FUNCTION,VARIABLE,CONSTANT,NAME]:
+                    if type_ in [OPEN_PARENS, FUNCTION, VARIABLE, CONSTANT, NAME]:
                         self.tokens.append(Parser.Token(self.doImplicit,OPERATOR,self,self.cLine))
                 elif left in [VARIABLE, CONSTANT, NAME]:
-                    if type == OPEN_PARENS:
+                    if type_ == OPEN_PARENS:
                         self.tokens.append(Parser.Token(self.doImplicit,OPERATOR,self,self.cLine))
-        self.tokens.append(Parser.Token(word,type,self,self.cLine,(self.wordStart,self.cCol)))
+        self.tokens.append(Parser.Token(word, type_, self, self.cLine, (self.wordStart, self.cCol)))
         self.word = None
         self.wordStart = None
 
@@ -789,7 +830,7 @@ class Parser(object):
         if c == u'\\': return self._stateSQuoteEscape
         if c == u"'":
             if not self.word: self.word = u''
-            self._emit(type=STRING)
+            self._emit(type_=STRING)
             return self._stateSpace
         if c == u'\n':
             error(_(u'Unterminated single quote.'))
@@ -804,7 +845,7 @@ class Parser(object):
         if c == u'\\': return self._stateDQuoteEscape
         if c == u'"':
             if not self.word: self.word = u""
-            self._emit(type=STRING)
+            self._emit(type_=STRING)
             return self._stateSpace
         if c == u'\n':
             error(_(u"Unterminated double quote."))

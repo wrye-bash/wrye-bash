@@ -1,0 +1,6 @@
+Some of the icons packaged with Wrye Bash are released / used under other licenses:
+
+- checkmark_16.png, checkmark_24.png and checkmark_32.png are rescaled and recolored versions
+  of https://fontawesome.com/icons/check?style=solid, licensed under the CC-BY license: https://fontawesome.com/license/free
+- error_cross_16.png, error_cross_24.png and error_cross_32.png are rescaled and recolored versions
+  of https://fontawesome.com/icons/times?style=solid, licensed under the CC-BY license: https://fontawesome.com/license/free

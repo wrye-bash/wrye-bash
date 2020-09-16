@@ -17,7 +17,7 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -26,18 +26,37 @@
 contains the data structures that are dynamically set on a per game basis in
 bush."""
 from ....patcher import PatcherInfo as pi
-from .special import * # defines the __all__ directive
+from .preservers import RoadImporter, CBash_RoadImporter
+from .special import AlchemicalCatalogs, CBash_AlchemicalCatalogs, \
+    SEWorldEnforcer, CBash_SEWorldEnforcer, CoblExhaustion, \
+    CBash_CoblExhaustion, MFactMarker, CBash_MFactMarker
 
-gameSpecificPatchers = {
-    # special
-    "AlchemicalCatalogs": pi(AlchemicalCatalogs, 'CBash_AlchemicalCatalogs'),
-    "CBash_AlchemicalCatalogs": pi(CBash_AlchemicalCatalogs, 'AlchemicalCatalogs'),
-    "SEWorldEnforcer": pi(SEWorldEnforcer, 'CBash_SEWorldEnforcer'),
-    "CBash_SEWorldEnforcer": pi(CBash_SEWorldEnforcer, 'SEWorldEnforcer'),
-}
-gameSpecificListPatchers = {
-    "CoblExhaustion": pi(CoblExhaustion, 'CBash_CoblExhaustion'),
-    "CBash_CoblExhaustion": pi(CBash_CoblExhaustion, 'CoblExhaustion'),
-    "MFactMarker": pi(MFactMarker, 'CBash_MFactMarker'),
-    "CBash_MFactMarker": pi(CBash_MFactMarker, 'MFactMarker'),
+_special_patchers = (
+    (b'AlchemicalCatalogs', AlchemicalCatalogs, u'CBash_AlchemicalCatalogs'),
+    (b'CBash_AlchemicalCatalogs', CBash_AlchemicalCatalogs,
+     u'AlchemicalCatalogs'),
+    (b'SEWorldEnforcer', SEWorldEnforcer, u'CBash_SEWorldEnforcer'),
+    (b'CBash_SEWorldEnforcer', CBash_SEWorldEnforcer, u'SEWorldEnforcer')
+)
+gameSpecificPatchers = {pname: pi(ptype, twin, ptype.gui_cls_vars()) for
+                        pname, ptype, twin in _special_patchers}
+
+_list_patchers =(
+    (b'CoblExhaustion', CoblExhaustion, u'CBash_CoblExhaustion'),
+    (b'CBash_CoblExhaustion', CBash_CoblExhaustion, u'CoblExhaustion'),
+    (b'MFactMarker', MFactMarker, u'CBash_MFactMarker'),
+    (b'CBash_MFactMarker', CBash_MFactMarker, u'MFactMarker')
+)
+gameSpecificListPatchers = {pname: pi(ptype, twin, ptype.gui_cls_vars()) for
+                            pname, ptype, twin in _list_patchers}
+
+_import_patchers = (
+    (b'RoadImporter', RoadImporter, u'CBash_RoadImporter'),
+    (b'CBash_RoadImporter', CBash_RoadImporter, u'RoadImporter')
+)
+game_specific_import_patchers = {
+    pname: pi(ptype, twin,
+              {u'patcher_type': ptype, u'_patcher_txt': ptype.patcher_text,
+               u'patcher_name': ptype.patcher_name, u'autoKey': ptype.autoKey})
+    for pname, ptype, twin in _import_patchers
 }

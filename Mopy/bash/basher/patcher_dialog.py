@@ -17,7 +17,7 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,41 +25,50 @@
 """Patch dialog"""
 import StringIO
 import copy
+import errno
 import re
 import time
-import wx
 from datetime import timedelta
-from . import SetUAC, BashFrame
-from .. import bosh, bolt, balt
-from ..bass import Resources
-from ..balt import StaticText, vSizer, hSizer, spacer, Link, OkButton, \
-    SelectAllButton, CancelButton, SaveAsButton, OpenButton, \
-    RevertToSavedButton, RevertButton
-from ..bolt import UncodedError, SubProgress, GPath, CancelError, BoltError, \
-    SkipError, deprint, Path
-from ..patcher import configIsCBash, exportConfig
+from . import BashFrame ##: drop this - decouple !
+from .. import balt, bass, bolt, bosh, bush, env, load_order
+from ..balt import Link, Resources
+from ..bolt import SubProgress, GPath, Path
+from ..exception import BoltError, CancelError, FileEditError, \
+    PluginsFullError, SkipError
+from ..gui import CancelButton, DeselectAllButton, HLayout, Label, \
+    LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
+    SaveAsButton, SelectAllButton, Stretch, VLayout, DialogWindow, \
+    CheckListBox, HorizontalLine
+from ..patcher import configIsCBash, exportConfig, list_patches_dir
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
 
 # Final lists of gui patcher classes instances, initialized in
 # gui_patchers.InitPatchers() based on game. These must be copied as needed.
-gui_patchers = []       #--All patchers.
-CBash_gui_patchers = [] #--All patchers (CBash mode).
+PBash_gui_patchers = [] #--All gui patchers classes for this game
+CBash_gui_patchers = [] #--All gui patchers classes for this game (CBash mode)
 
-class PatchDialog(balt.Dialog):
-    """Bash Patch update dialog."""
+class PatchDialog(DialogWindow):
+    """Bash Patch update dialog.
 
-    def __init__(self,parent,patchInfo,doCBash=None,importConfig=True):
+    :type _gui_patchers: list[basher.gui_patchers._PatcherPanel]
+    """
+    _min_size = (400, 300)
+
+    def __init__(self, parent, patchInfo, doCBash, importConfig,
+                 mods_to_reselect):
+        self.mods_to_reselect = mods_to_reselect
         self.parent = parent
-        if (doCBash or doCBash is None) and bosh.settings['bash.CBashEnabled']:
+        if (doCBash or doCBash is None) and bass.settings['bash.CBashEnabled']:
             doCBash = True
         else:
             doCBash = False
         self.doCBash = doCBash
         title = _(u'Update ') + patchInfo.name.s + [u'', u' (CBash)'][doCBash]
         size = balt.sizes.get(self.__class__.__name__, (500,600))
-        super(PatchDialog, self).__init__(parent, title=title, size=size)
-        self.SetSizeHints(400,300)
+        super(PatchDialog, self).__init__(parent, title=title,
+            icon_bundle=Resources.bashMonkey, sizes_dict=balt.sizes, size=size)
         #--Data
+        list_patches_dir() # refresh cached dir
         groupOrder = dict([(group,index) for index,group in
             enumerate((_(u'General'),_(u'Importers'),_(u'Tweakers'),_(u'Special')))])
         patchConfigs = bosh.modInfos.table.getItem(patchInfo.name,'bash.patch.configs',{})
@@ -72,163 +81,137 @@ class PatchDialog(balt.Dialog):
                 patchConfigs = {}
         isFirstLoad = 0 == len(patchConfigs)
         self.patchInfo = patchInfo
-        self.patchers = [copy.deepcopy(p) for p in
-                         (CBash_gui_patchers if doCBash else gui_patchers)]
-        self.patchers.sort(key=lambda a: a.__class__.name)
-        self.patchers.sort(key=lambda a: groupOrder[a.__class__.group])
-        for patcher in self.patchers:
+        self._gui_patchers = [copy.deepcopy(p) for p in (
+            CBash_gui_patchers if doCBash else PBash_gui_patchers)]
+        self._gui_patchers.sort(key=lambda a: a.__class__.patcher_name)
+        self._gui_patchers.sort(key=lambda a: groupOrder[a.patcher_type.group]) ##: what does this ordering do??
+        for patcher in self._gui_patchers:
             patcher.getConfig(patchConfigs) #--Will set patcher.isEnabled
-            if u'UNDEFINED' in (patcher.__class__.group, patcher.__class__.group):
-                raise UncodedError(u'Name or group not defined for: %s' % patcher.__class__.__name__)
-            patcher.SetCallbackFns(self._CheckPatcher, self._BoldPatcher)
             patcher.SetIsFirstLoad(isFirstLoad)
         self.currentPatcher = None
-        patcherNames = [patcher.getName() for patcher in self.patchers]
+        patcherNames = [patcher.patcher_name for patcher in self._gui_patchers]
         #--GUI elements
-        self.gExecute = OkButton(self, label=_(u'Build Patch'),onClick=self.Execute)
-        SetUAC(self.gExecute)
-        self.gSelectAll = SelectAllButton(self,label=_(u'Select All'),onClick=self.SelectAll)
-        self.gDeselectAll = SelectAllButton(self,label=_(u'Deselect All'),onClick=self.DeselectAll)
+        self.gExecute = OkButton(self, btn_label=_(u'Build Patch'))
+        self.gExecute.on_clicked.subscribe(self.PatchExecute)
+        # TODO(nycz): somehow move setUAC further into env?
+        # Note: for this to work correctly, it needs to be run BEFORE
+        # appending a menu item to a menu (and so, needs to be enabled/
+        # disabled prior to that as well.
+        # TODO(nycz): DEWX - Button.GetHandle
+        env.setUAC(self.gExecute._native_widget.GetHandle(), True)
+        self.gSelectAll = SelectAllButton(self)
+        self.gSelectAll.on_clicked.subscribe(
+            lambda: self.mass_select_recursive(True))
+        self.gDeselectAll = DeselectAllButton(self)
+        self.gDeselectAll.on_clicked.subscribe(
+            lambda: self.mass_select_recursive(False))
         cancelButton = CancelButton(self)
-        self.gPatchers = balt.listBox(self, choices=patcherNames,
-                                      isSingle=True, kind='checklist')
-        self.gExportConfig = SaveAsButton(self,label=_(u'Export'),onClick=self.ExportConfig)
-        self.gImportConfig = OpenButton(self,label=_(u'Import'),onClick=self.ImportConfig)
-        self.gRevertConfig = RevertToSavedButton(self,label=_(u'Revert To Saved'),onClick=self.RevertConfig)
-        self.gRevertToDefault = RevertButton(self,label=_(u'Revert To Default'),onClick=self.DefaultConfig)
-        for index,patcher in enumerate(self.patchers):
-            self.gPatchers.Check(index,patcher.isEnabled)
+        self.gPatchers = CheckListBox(self, choices=patcherNames,
+                                      isSingle=True, onSelect=self.OnSelect,
+                                      onCheck=self.OnCheck)
+        self.gExportConfig = SaveAsButton(self, btn_label=_(u'Export'))
+        self.gExportConfig.on_clicked.subscribe(self.ExportConfig)
+        self.gImportConfig = OpenButton(self, btn_label=_(u'Import'))
+        self.gImportConfig.on_clicked.subscribe(self.ImportConfig)
+        self.gRevertConfig = RevertToSavedButton(self)
+        self.gRevertConfig.on_clicked.subscribe(self.RevertConfig)
+        self.gRevertToDefault = RevertButton(self,
+                                             btn_label=_(u'Revert To Default'))
+        self.gRevertToDefault.on_clicked.subscribe(self.DefaultConfig)
+        for index,patcher in enumerate(self._gui_patchers):
+            self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
         self.defaultTipText = _(u'Items that are new since the last time this patch was built are displayed in bold')
-        self.gTipText = StaticText(self,self.defaultTipText)
+        self.gTipText = Label(self,self.defaultTipText)
         #--Events
-        self.Bind(wx.EVT_SIZE,self.OnSize)
-        self.gPatchers.Bind(wx.EVT_LISTBOX, self.OnSelect)
-        self.gPatchers.Bind(wx.EVT_CHECKLISTBOX, self.OnCheck)
-        self.gPatchers.Bind(wx.EVT_MOTION,self.OnMouse)
-        self.gPatchers.Bind(wx.EVT_LEAVE_WINDOW,self.OnMouse)
-        self.gPatchers.Bind(wx.EVT_CHAR,self.OnChar)
-        self.mouseItem = -1
+        self.gPatchers.on_mouse_leaving.subscribe(self._mouse_leaving)
+        self.gPatchers.on_mouse_motion.subscribe(self.handle_mouse_motion)
+        self.gPatchers.on_key_pressed.subscribe(self._on_char)
+        self.mouse_dex = -1
         #--Layout
-        self.gConfigSizer = gConfigSizer = vSizer()
-        sizer = vSizer(
-            (hSizer(
-                (self.gPatchers,0,wx.EXPAND),
-                (self.gConfigSizer,1,wx.EXPAND|wx.LEFT,4),
-                ),1,wx.EXPAND|wx.ALL,4),
-            (self.gTipText,0,wx.EXPAND|wx.ALL^wx.TOP,4),
-            (wx.StaticLine(self),0,wx.EXPAND|wx.BOTTOM,4),
-            (hSizer(
-                spacer,
-                (self.gExportConfig,0,wx.LEFT,4),
-                (self.gImportConfig,0,wx.LEFT,4),
-                (self.gRevertConfig,0,wx.LEFT,4),
-                (self.gRevertToDefault,0,wx.LEFT,4),
-                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4),
-            (hSizer(
-                spacer,
-                self.gExecute,
-                (self.gSelectAll,0,wx.LEFT,4),
-                (self.gDeselectAll,0,wx.LEFT,4),
-                (cancelButton,0,wx.LEFT,4),
-                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4)
-            )
-        self.SetSizer(sizer)
-        self.SetIcons(Resources.bashMonkey)
+        self.config_layout = VLayout(item_expand=True, item_weight=1)
+        VLayout(border=4, spacing=4, item_expand=True, items=[
+            (HLayout(spacing=8, item_expand=True, items=[
+                self.gPatchers,
+                (self.config_layout, LayoutOptions(weight=1))
+             ]), LayoutOptions(weight=1)),
+            self.gTipText,
+            HorizontalLine(self),
+            HLayout(spacing=4, items=[
+                Stretch(), self.gExportConfig, self.gImportConfig,
+                self.gRevertConfig, self.gRevertToDefault]),
+            HLayout(spacing=4, items=[
+                Stretch(), self.gExecute, self.gSelectAll, self.gDeselectAll,
+                cancelButton])
+        ]).apply_to(self)
         #--Patcher panels
-        for patcher in self.patchers:
-            gConfigPanel = patcher.GetConfigPanel(self,gConfigSizer,self.gTipText)
-            gConfigSizer.Show(gConfigPanel,False)
-        self.gPatchers.Select(1)
-        self.ShowPatcher(self.patchers[1])
+        for patcher in self._gui_patchers:
+            patcher.GetConfigPanel(self, self.config_layout,
+                                   self.gTipText).pnl_hide()
+        initial_select = min(len(self._gui_patchers) - 1, 1)
+        if initial_select >= 0:
+            self.gPatchers.lb_select_index(initial_select) # callback not fired
+            self.ShowPatcher(self._gui_patchers[initial_select]) # so this is needed
         self.SetOkEnable()
 
     #--Core -------------------------------
     def SetOkEnable(self):
-        """Sets enable state for Ok button."""
-        for patcher in self.patchers:
-            if patcher.isEnabled:
-                return self.gExecute.Enable(True)
-        self.gExecute.Enable(False)
+        """Enable Build Patch button if at least one patcher is enabled."""
+        self.gExecute.enabled = any(p.isEnabled for p in self._gui_patchers)
 
     def ShowPatcher(self,patcher):
         """Show patcher panel."""
-        gConfigSizer = self.gConfigSizer
         if patcher == self.currentPatcher: return
         if self.currentPatcher is not None:
-            gConfigSizer.Show(self.currentPatcher.gConfigPanel,False)
-        gConfigPanel = patcher.GetConfigPanel(self,gConfigSizer,self.gTipText)
-        gConfigSizer.Show(gConfigPanel,True)
-        self.Layout()
+            self.currentPatcher.gConfigPanel.pnl_hide()
+        patcher.GetConfigPanel(self, self.config_layout, self.gTipText).visible = True
+        self._native_widget.Layout()
         patcher.Layout()
         self.currentPatcher = patcher
 
     @balt.conversation
-    def Execute(self,event=None): # TODO(ut): needs more work to reduce P/C differences to an absolute minimum
+    def PatchExecute(self): # TODO(ut): needs more work to reduce P/C differences to an absolute minimum
         """Do the patch."""
-        self.EndModalOK()
+        self.accept_modal()
         patchFile = progress = None
         try:
-            patchName = self.patchInfo.name
-            progress = balt.Progress(patchName.s,(u' '*60+u'\n'), abort=True)
+            patch_name = self.patchInfo.name
+            patch_size = self.patchInfo.size
+            progress = balt.Progress(patch_name.s,(u' '*60+u'\n'), abort=True)
             timer1 = time.clock()
             #--Save configs
-            self._saveConfig(patchName)
+            self._saveConfig(patch_name)
             #--Do it
             log = bolt.LogFile(StringIO.StringIO())
-            patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
-            patchFile = CBash_PatchFile(patchName, patchers) if self.doCBash \
-                   else PatchFile(self.patchInfo, patchers)
-            patchFile.initData(SubProgress(progress,0,0.1)) #try to speed this up!
+            patchFile = CBash_PatchFile(patch_name) if self.doCBash else \
+                PatchFile(self.patchInfo)
+            enabled_patchers = [p.get_patcher_instance(patchFile) for p in
+                                self._gui_patchers if p.isEnabled] ##: what happens if empty
+            patchFile.init_patchers_data(enabled_patchers, SubProgress(progress, 0, 0.1)) #try to speed this up!
             if self.doCBash:
                 #try to speed this up!
                 patchFile.buildPatch(SubProgress(progress,0.1,0.9))
                 #no speeding needed/really possible (less than 1/4 second even with large LO)
-                patchFile.buildPatchLog(patchName,log,SubProgress(progress,0.95,0.99))
+                patchFile.buildPatchLog(log, SubProgress(progress, 0.95, 0.99))
                 #--Save
-                progress.setCancel(False)
-                progress(1.0,patchName.s+u'\n'+_(u'Saving...'))
-                patchFile.save()
-                fullName = self.patchInfo.getPath().tail
-                patchTime = fullName.mtime
-                try:
-                    patchName.untemp()
-                except WindowsError, werr:
-                    while werr.winerror == 32 and self._retry(patchName.temp.s,
-                                                              patchName.s):
-                        try:
-                            patchName.untemp()
-                        except WindowsError, werr:
-                            continue
-                        break
-                    else:
-                        raise
-                patchName.mtime = patchTime
+                progress.setCancel(False, patch_name.s+u'\n'+_(u'Saving...'))
+                progress(0.99)
+                self._save_cbash(patchFile, patch_name)
             else:
                 patchFile.initFactories(SubProgress(progress,0.1,0.2)) #no speeding needed/really possible (less than 1/4 second even with large LO)
                 patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
                 patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
+                if len(patchFile.tes4.masters) > 255:
+                    balt.showError(self,
+                        _(u'The resulting Bashed Patch contains too many '
+                          u'masters (>255). You can try to disable some '
+                          u'patchers, create a second Bashed Patch and '
+                          u'rebuild that one with only the patchers you '
+                          u'disabled in this one active.'))
+                    return # Abort, we'll just blow up on saving it
                 #--Save
-                progress.setCancel(False)
-                progress(0.9,patchName.s+u'\n'+_(u'Saving...'))
-                message = (_(u'Bash encountered and error when saving %(patchName)s.')
-                           + u'\n\n' +
-                           _(u'Either Bash needs Administrator Privileges to save the file, or the file is in use by another process such as TES4Edit.')
-                           + u'\n' +
-                           _(u'Please close any program that is accessing %(patchName)s, and provide Administrator Privileges if prompted to do so.')
-                           + u'\n\n' +
-                           _(u'Try again?')) % {'patchName':patchName.s}
-                while True:
-                    try:
-                        patchFile.safeSave()
-                    except (CancelError,SkipError,WindowsError) as error:
-                        if isinstance(error,WindowsError) and error.winerror != 32:
-                            raise
-                        if balt.askYes(self,message,_(u'Bash Patch - Save Error')):
-                            continue
-                        raise
-                    break
-            #--Cleanup
-            self.patchInfo.refresh()
+                progress.setCancel(False, patch_name.s+u'\n'+_(u'Saving...'))
+                progress(0.9)
+                self._save_pbash(patchFile, patch_name)
             #--Done
             progress.Destroy(); progress = None
             timer2 = time.clock()
@@ -239,8 +222,8 @@ class PatchDialog(balt.Dialog):
             log.out.close()
             timerString = unicode(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
             logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
-            readme = bosh.modInfos.dir.join(u'Docs',patchName.sroot+u'.txt')
-            docsDir = bosh.settings.get('balt.WryeLog.cssDir', GPath(u''))
+            readme = bosh.modInfos.store_dir.join(u'Docs', patch_name.sroot + u'.txt')
+            docsDir = bass.settings.get('balt.WryeLog.cssDir', GPath(u''))
             if self.doCBash: ##: eliminate this if/else
                 with readme.open('w',encoding='utf-8') as file:
                     file.write(logValue)
@@ -248,7 +231,7 @@ class PatchDialog(balt.Dialog):
                 bolt.WryeText.genHtml(readme,None,docsDir)
             else:
                 tempReadmeDir = Path.tempDir().join(u'Docs')
-                tempReadme = tempReadmeDir.join(patchName.sroot+u'.txt')
+                tempReadme = tempReadmeDir.join(patch_name.sroot+u'.txt')
                 #--Write log/readme to temp dir first
                 with tempReadme.open('w',encoding='utf-8-sig') as file:
                     file.write(logValue)
@@ -256,129 +239,202 @@ class PatchDialog(balt.Dialog):
                 bolt.WryeText.genHtml(tempReadme,None,docsDir)
                 #--Try moving temp log/readme to Docs dir
                 try:
-                    balt.shellMove(tempReadmeDir, bosh.dirs['mods'],
-                                   parent=self)
+                    env.shellMove(tempReadmeDir, bass.dirs[u'mods'],
+                                  parent=self._native_widget)
                 except (CancelError,SkipError):
                     # User didn't allow UAC, move to My Games directory instead
-                    balt.shellMove([tempReadme, tempReadme.root + u'.html'],
-                                   bosh.dirs['saveBase'], parent=self)
-                    readme = bosh.dirs['saveBase'].join(readme.tail)
+                    env.shellMove([tempReadme, tempReadme.root + u'.html'],
+                                  bass.dirs[u'saveBase'], parent=self)
+                    readme = bass.dirs[u'saveBase'].join(readme.tail)
                 #finally:
                 #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
-            bosh.modInfos.table.setItem(patchName,'doc',readme)
-            balt.playSound(self.parent,bosh.inisettings['SoundSuccess'].s)
-            balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=Resources.bashBlue)
+            readme = readme.root + u'.html'
+            bosh.modInfos.table.setItem(patch_name, 'doc', readme)
+            balt.playSound(self.parent, bass.inisettings['SoundSuccess'].s)
+            balt.WryeLog(self.parent, readme, patch_name.s,
+                         log_icons=Resources.bashBlue)
             #--Select?
-            count, message = 0, _(u'Activate %s?') % patchName.s
-            if bosh.modInfos.isActiveCached(patchName) or (
-                        bosh.inisettings['PromptActivateBashedPatch'] and
-                        balt.askYes(self.parent, message, patchName.s)):
+            if self.mods_to_reselect:
+                for mod in self.mods_to_reselect:
+                    bosh.modInfos.lo_activate(mod, doSave=False)
+                self.mods_to_reselect.clear()
+                bosh.modInfos.cached_lo_save_active() ##: also done below duh
+            count, message = 0, _(u'Activate %s?') % patch_name.s
+            if load_order.cached_is_active(patch_name) or (
+                        bass.inisettings['PromptActivateBashedPatch'] and
+                        balt.askYes(self.parent, message, patch_name.s)):
                 try:
-                    changedFiles = bosh.modInfos.select(patchName, doSave=True)
+                    changedFiles = bosh.modInfos.lo_activate(patch_name,
+                                                             doSave=True)
                     count = len(changedFiles)
-                    if count > 1: Link.Frame.SetStatusInfo(
+                    if count > 1: Link.Frame.set_status_info(
                             _(u'Masters Activated: ') + unicode(count - 1))
-                except bosh.PluginsFullError:
+                except PluginsFullError:
                     balt.showError(self, _(
                         u'Unable to add mod %s because load list is full.')
-                                   % patchName.s)
-            bosh.modInfos.refreshFile(patchName) # (ut) not sure if needed
+                                   % patch_name.s)
+            # although improbable user has package with bashed patches...
+            info = bosh.modInfos.new_info(patch_name, notify_bain=True)
+            if info.size == patch_size:
+                # needed if size remains the same - mtime is set in
+                # parsers.ModFile#safeSave (or save for CBash...) which can't
+                # use setmtime(crc_changed), as no info is there. In this case
+                # _reset_cache > calculate_crc() would not detect the crc
+                # change. That's a general problem with crc cache - API limits
+                info.calculate_crc(recalculate=True)
             BashFrame.modList.RefreshUI(refreshSaves=bool(count))
-        except bolt.FileEditError, error:
-            balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
-            balt.showError(self,u'%s'%error,_(u'File Edit Error'))
         except CancelError:
             pass
-        except BoltError, error:
-            balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
+        except FileEditError as error:
+            balt.playSound(self.parent, bass.inisettings['SoundError'].s)
+            balt.showError(self,u'%s'%error,_(u'File Edit Error'))
+            bolt.deprint(u'Exception during Bashed Patch building:',
+                traceback=True)
+        except BoltError as error:
+            balt.playSound(self.parent, bass.inisettings['SoundError'].s)
             balt.showError(self,u'%s'%error,_(u'Processing Error'))
+            bolt.deprint(u'Exception during Bashed Patch building:',
+                traceback=True)
         except:
-            balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
+            balt.playSound(self.parent, bass.inisettings['SoundError'].s)
+            bolt.deprint(u'Exception during Bashed Patch building:',
+                traceback=True)
             raise
         finally:
             if self.doCBash:
                 try: patchFile.Current.Close()
-                except: pass
+                except:
+                    bolt.deprint(u'Failed to close CBash collection',
+                                 traceback=True)
             if progress: progress.Destroy()
 
-    def _retry(self, old, new):
-        return balt.askYes(self,
-            _(u'Bash encountered an error when renaming %s to %s.') + u'\n\n' +
-            _(u'The file is in use by another process such as TES4Edit.') +
-            u'\n' + _(u'Please close the other program that is accessing %s.')
-            + u'\n\n' + _(u'Try again?') % (old.s, new.s, new.s),
-             _(u'Bash Patch - Save Error'))
+    def _save_pbash(self, patchFile, patch_name):
+        while True:
+            try:
+                # FIXME will keep displaying a bogus UAC prompt if file is
+                # locked - aborting bogus UAC dialog raises SkipError() in
+                # shellMove, not sure if ever a Windows or Cancel are raised
+                patchFile.safeSave()
+                return
+            except (CancelError, SkipError, OSError, IOError) as werr:
+                if isinstance(werr, OSError) and werr.errno != errno.EACCES:
+                    raise
+                if self._pretry(patch_name):
+                    continue
+                raise # will raise the SkipError which is correctly processed
+
+    def _save_cbash(self, patchFile, patch_name):
+        patchFile.save()
+        patchTime = self.patchInfo.mtime
+        while True:
+            try:
+                patch_name.untemp()
+                patch_name.mtime = patchTime
+                return
+            except OSError as werr:
+                if werr.errno == errno.EACCES:
+                    if not self._cretry(patch_name):
+                        raise SkipError() # caught - Processing error displayed
+                    continue
+                raise
+
+    def _pretry(self, patch_name):
+        return balt.askYes(
+            self, (_(u'Bash encountered an error when saving '
+                     u'%(patch_name)s.') + u'\n\n' +
+                   _(u'Either Bash needs Administrator Privileges to save '
+                     u'the file, or the file is in use by another process '
+                     u'such as %(xedit_name)s.') + u'\n' +
+                   _(u'Please close any program that is accessing '
+                     u'%(patch_name)s, and provide Administrator Privileges '
+                     u'if prompted to do so.') + u'\n\n' +
+                   _(u'Try again?')) % {
+                u'patch_name': patch_name.s,
+                u'xedit_name': bush.game.Xe.full_name},
+            _(u'Bashed Patch - Save Error'))
+
+    def _cretry(self, patch_name):
+        return balt.askYes(
+            self, (_(u'Bash encountered an error when renaming %(temp_patch)s '
+                     u'to %(patch_name)s.') + u'\n\n' +
+                   _(u'The file is in use by another process such as '
+                     u'%(xedit_name)s.') + u'\n' +
+                   _(u'Please close the other program that is accessing '
+                     u'%(patch_name)s.') + u'\n\n' +
+                   _(u'Try again?')) % {
+                u'temp_patch': patch_name.temp.s, u'patch_name': patch_name.s,
+                u'xedit_name': bush.game.Xe.full_name},
+            _(u'Bashed Patch - Save Error'))
 
     def __config(self):
         config = {'ImportedMods': set()}
-        for patcher in self.patchers: patcher.saveConfig(config)
+        for p in self._gui_patchers: p.saveConfig(config)
         return config
 
-    def _saveConfig(self, patchName):
+    def _saveConfig(self, patch_name):
         """Save the configuration"""
         config = self.__config()
-        bosh.modInfos.table.setItem(patchName, 'bash.patch.configs', config)
+        bosh.modInfos.table.setItem(patch_name, 'bash.patch.configs', config)
 
-    def ExportConfig(self,event=None):
+    def ExportConfig(self):
         """Export the configuration to a user selected dat file."""
         config = self.__config()
-        exportConfig(patchName=self.patchInfo.name, config=config,
-                     isCBash=self.doCBash, win=self.parent)
+        exportConfig(patch_name=self.patchInfo.name, config=config,
+                     isCBash=self.doCBash, win=self.parent,
+                     outDir=bass.dirs[u'patches'])
 
-    def ImportConfig(self,event=None):
+    __old_key = GPath(u'Saved Bashed Patch Configuration')
+    __new_key = u'Saved Bashed Patch Configuration (%s)'
+    def ImportConfig(self):
         """Import the configuration from a user selected dat file."""
-        patchName = self.patchInfo.name + _(u'_Configuration.dat')
-        textDir = bosh.dirs['patches']
+        config_dat = self.patchInfo.name + u'_Configuration.dat'
+        textDir = bass.dirs[u'patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askOpen(self.parent,_(u'Import Bashed Patch configuration from:'),textDir,patchName, u'*.dat',mustExist=True)
+        textPath = balt.askOpen(self.parent,
+                                _(u'Import Bashed Patch configuration from:'),
+                                textDir, config_dat, u'*.dat', mustExist=True)
         if not textPath: return
-        pklPath = textPath+u'.pkl'
-        table = bolt.Table(bosh.PickleDict(
-            textPath, pklPath))
-        #try the current Bashed Patch mode.
-        patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][self.doCBash])),'bash.patch.configs',{})
-        if not patchConfigs: #try the old format:
-            patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration'),'bash.patch.configs',{})
-            if patchConfigs:
-                if configIsCBash(patchConfigs) != self.doCBash:
-                    patchConfigs = self.UpdateConfig(patchConfigs)
-            else:   #try the non-current Bashed Patch mode:
-                patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'CBash',u'Python'][self.doCBash])),'bash.patch.configs',{})
-                if patchConfigs:
-                    patchConfigs = self.UpdateConfig(patchConfigs)
-        if patchConfigs is None:
-            patchConfigs = {}
-        for index,patcher in enumerate(self.patchers):
-            patcher.SetIsFirstLoad(False)
-            patcher.getConfig(patchConfigs)
-            self.gPatchers.Check(index,patcher.isEnabled)
-            if hasattr(patcher, 'gList'):
-                if patcher.getName() == 'Leveled Lists': continue #not handled yet!
-                for index, item in enumerate(patcher.items):
-                    try:
-                        patcher.gList.Check(index,patcher.configChecks[item])
-                    except KeyError: pass#deprint(_(u'item %s not in saved configs') % (item))
-            if hasattr(patcher, 'gTweakList'):
-                for index, item in enumerate(patcher.tweaks):
-                    try:
-                        patcher.gTweakList.Check(index,item.isEnabled)
-                        patcher.gTweakList.SetString(index,item.getListLabel())
-                    except: deprint(_(u'item %s not in saved configs') % item)
+        table = bolt.DataTable(bolt.PickleDict(textPath))
+        # try the current Bashed Patch mode.
+        patchConfigs = table.getItem(
+            GPath(self.__new_key % ([u'Python', u'CBash'][self.doCBash])),
+            'bash.patch.configs', {})
+        convert = False
+        if not patchConfigs: # try the non-current Bashed Patch mode
+            patchConfigs = table.getItem(
+                GPath(self.__new_key % ([u'CBash', u'Python'][self.doCBash])),
+                'bash.patch.configs', {})
+            convert = bool(patchConfigs)
+        if not patchConfigs: # try the old format
+            patchConfigs = table.getItem(self.__old_key, 'bash.patch.configs',
+                                         {})
+            convert = configIsCBash(patchConfigs) != self.doCBash
+        if not patchConfigs:
+            balt.showWarning(_(u'No patch config data found in %s') % textPath,
+                             _(u'Import Config'))
+            return
+        if convert:
+            patchConfigs = self.UpdateConfig(patchConfigs)
+            if patchConfigs is None: return
+        self._load_config(patchConfigs)
+
+    def _load_config(self, patchConfigs, set_first_load=False, default=False):
+        for index, patcher in enumerate(self._gui_patchers):
+            patcher.import_config(patchConfigs, set_first_load=set_first_load,
+                                  default=default)
+            self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
         self.SetOkEnable()
 
-    def UpdateConfig(self,patchConfigs,event=None):
-        if not balt.askYes(self.parent,
-            _(u"Wrye Bash detects that the selected file was saved in Bash's %s mode, do you want Wrye Bash to attempt to adjust the configuration on import to work with %s mode (Good chance there will be a few mistakes)? (Otherwise this import will have no effect.)")
-                % ([u'CBash',u'Python'][self.doCBash],
-                   [u'Python',u'CBash'][self.doCBash])):
+    def UpdateConfig(self, patchConfigs):
+        if not balt.askYes(self.parent, _(
+            u"Wrye Bash detects that the selected file was saved in Bash's "
+            u"%s mode, do you want Wrye Bash to attempt to adjust the "
+            u"configuration on import to work with %s mode (Good chance "
+            u"there will be a few mistakes)? (Otherwise this import will "
+            u"have no effect.)") % ([u'CBash', u'Python'][self.doCBash],
+                                    [u'Python', u'CBash'][self.doCBash])):
             return
-        if self.doCBash:
-            PatchFile.patchTime = CBash_PatchFile.patchTime
-            PatchFile.patchName = CBash_PatchFile.patchName
-        else:
-            CBash_PatchFile.patchTime = PatchFile.patchTime
-            CBash_PatchFile.patchName = PatchFile.patchName
         return self.ConvertConfig(patchConfigs)
 
     @staticmethod
@@ -391,142 +447,75 @@ class PatchDialog(balt.Dialog):
                 newConfig[key] = patchConfigs[key]
         return newConfig
 
-    def RevertConfig(self,event=None):
+    def RevertConfig(self):
         """Revert configuration back to saved"""
-        patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,'bash.patch.configs',{})
+        patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,
+                                                   'bash.patch.configs', {})
         if configIsCBash(patchConfigs) and not self.doCBash:
             patchConfigs = self.ConvertConfig(patchConfigs)
-        for index,patcher in enumerate(self.patchers):
-            patcher.SetIsFirstLoad(False)
-            patcher.getConfig(patchConfigs)
-            self.gPatchers.Check(index,patcher.isEnabled)
-            if hasattr(patcher, 'gList'):
-                if patcher.getName() == 'Leveled Lists': continue #not handled yet!
-                for index, item in enumerate(patcher.items):
-                    try: patcher.gList.Check(index,patcher.configChecks[item])
-                    except Exception, err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
-            if hasattr(patcher, 'gTweakList'):
-                for index, item in enumerate(patcher.tweaks):
-                    try:
-                        patcher.gTweakList.Check(index,item.isEnabled)
-                        patcher.gTweakList.SetString(index,item.getListLabel())
-                    except Exception, err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
-        self.SetOkEnable()
+        self._load_config(patchConfigs)
 
-    def DefaultConfig(self,event=None):
+    def DefaultConfig(self):
         """Revert configuration back to default"""
-        patchConfigs = {}
-        for index,patcher in enumerate(self.patchers):
-            patcher.SetIsFirstLoad(True)
-            patcher.getConfig(patchConfigs)
-            self.gPatchers.Check(index,patcher.isEnabled)
-            if hasattr(patcher, 'gList'):
-                patcher.SetItems(patcher.getAutoItems())
-            if hasattr(patcher, 'gTweakList'):
-                for index, item in enumerate(patcher.tweaks):
-                    try:
-                        patcher.gTweakList.Check(index,item.isEnabled)
-                        patcher.gTweakList.SetString(index,item.getListLabel())
-                    except Exception, err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
-        self.SetOkEnable()
+        self._load_config({}, set_first_load=True, default=True)
 
-    def SelectAll(self,event=None):
-        """Select all patchers and entries in patchers with child entries."""
-        for index,patcher in enumerate(self.patchers):
-            self.gPatchers.Check(index,True)
-            patcher.isEnabled = True
-            if hasattr(patcher, 'gList'):
-                if patcher.getName() == 'Leveled Lists': continue
-                for index, item in enumerate(patcher.items):
-                    patcher.gList.Check(index,True)
-                    patcher.configChecks[item] = True
-            if hasattr(patcher, 'gTweakList'):
-                for index, item in enumerate(patcher.tweaks):
-                    patcher.gTweakList.Check(index,True)
-                    item.isEnabled = True
-            self.gExecute.Enable(True)
-
-    def DeselectAll(self,event=None):
-        """Deselect all patchers and entries in patchers with child entries."""
-        for index,patcher in enumerate(self.patchers):
-            self.gPatchers.Check(index,False)
-            patcher.isEnabled = False
-            if patcher.getName() in [_(u'Leveled Lists'),_(u"Alias Mod Names")]: continue # special case that one.
-            if hasattr(patcher, 'gList'):
-                patcher.gList.SetChecked([])
-                patcher.OnListCheck()
-            if hasattr(patcher, 'gTweakList'):
-                patcher.gTweakList.SetChecked([])
-        self.gExecute.Enable(False)
+    def mass_select_recursive(self, select=True):
+        """Select or deselect all patchers and entries in patchers with child
+        entries."""
+        self.gPatchers.set_all_checkmarks(checked=select)
+        for patcher in self._gui_patchers:
+            patcher.mass_select(select=select)
+        self.gExecute.enabled = select
 
     #--GUI --------------------------------
-    def OnSize(self,event): ##: needed ? event.Skip() ??
-        balt.sizes[self.__class__.__name__] = self.GetSizeTuple()
-        self.Layout()
-        self.currentPatcher.Layout()
-
-    def OnSelect(self,event):
+    def OnSelect(self, lb_selection_dex, lb_selection_str):
         """Responds to patchers list selection."""
-        itemDex = event.GetSelection()
-        self.ShowPatcher(self.patchers[itemDex])
+        self.ShowPatcher(self._gui_patchers[lb_selection_dex])
+        self.gPatchers.lb_select_index(lb_selection_dex)
 
-    def _CheckPatcher(self,patcher):
-        """Remotely enables a patcher.  Called from a particular patcher's OnCheck method."""
-        index = self.patchers.index(patcher)
-        self.gPatchers.Check(index)
-        patcher.isEnabled = True
+    def CheckPatcher(self, patcher):
+        """Enable a patcher - Called from a patcher's OnCheck method."""
+        index = self._gui_patchers.index(patcher)
+        self.gPatchers.lb_check_at_index(index, True)
         self.SetOkEnable()
 
-    def _BoldPatcher(self,patcher):
-        """Set the patcher label to bold font.  Called from a patcher when it realizes it has something new in its list"""
-        index = self.patchers.index(patcher)
-        font = self.gPatchers.GetFont()
-        font.SetWeight(wx.FONTWEIGHT_BOLD)
-        self.gPatchers.SetItemFont(index, font)
+    def BoldPatcher(self, patcher):
+        """Set the patcher label to bold font.  Called from a patcher when
+        it realizes it has something new in its list"""
+        index = self._gui_patchers.index(patcher)
+        self.gPatchers.lb_bold_font_at_index(index)
 
-    def OnCheck(self,event):
+    def OnCheck(self, lb_selection_dex):
         """Toggle patcher activity state."""
-        index = event.GetSelection()
-        patcher = self.patchers[index]
-        patcher.isEnabled = self.gPatchers.IsChecked(index)
-        self.gPatchers.SetSelection(index)
-        self.ShowPatcher(patcher)
+        patcher = self._gui_patchers[lb_selection_dex]
+        patcher.isEnabled = self.gPatchers.lb_is_checked_at_index(lb_selection_dex)
+        self.gPatchers.lb_select_index(lb_selection_dex)
+        self.ShowPatcher(patcher) # SetSelection does not fire the callback
         self.SetOkEnable()
 
-    def OnMouse(self,event):
-        """Check mouse motion to detect right click event."""
-        if event.Moving():
-            mouseItem = (event.m_y/self.gPatchers.GetItemHeight() +
-                self.gPatchers.GetScrollPos(wx.VERTICAL))
-            if mouseItem != self.mouseItem:
-                self.mouseItem = mouseItem
-                self.MouseEnteredItem(mouseItem)
-        elif event.Leaving():
-            self.gTipText.SetLabel(self.defaultTipText)
-            self.mouseItem = -1
-        event.Skip()
+    def _mouse_leaving(self): self._set_tip_text(-1)
 
-    def MouseEnteredItem(self,item):
+    def handle_mouse_motion(self, wrapped_evt, lb_dex):
         """Show tip text when changing item."""
-        #--Following isn't displaying correctly.
-        if item < len(self.patchers):
-            patcherClass = self.patchers[item].__class__
-            tip = patcherClass.tip or re.sub(ur'\..*',u'.',patcherClass.text.split(u'\n')[0],flags=re.U)
-            self.gTipText.SetLabel(tip)
-        else:
-            self.gTipText.SetLabel(self.defaultTipText)
+        if wrapped_evt.is_moving:
+            if lb_dex != self.mouse_dex:
+                self.mouse_dex = lb_dex
+        self._set_tip_text(lb_dex)
 
-    def OnChar(self,event):
+    def _set_tip_text(self, mouseItem):
+        if 0 <= mouseItem < len(self._gui_patchers):
+            gui_patcher = self._gui_patchers[mouseItem]
+            self.gTipText.label_text = gui_patcher.patcher_tip
+        else:
+            self.gTipText.label_text = self.defaultTipText
+
+    def _on_char(self, wrapped_evt):
         """Keyboard input to the patchers list box"""
-        if event.GetKeyCode() == 1 and event.CmdDown(): # Ctrl+'A'
+        if wrapped_evt.key_code == 1 and wrapped_evt.is_cmd_down: # Ctrl+'A'
             patcher = self.currentPatcher
             if patcher is not None:
-                if event.ShiftDown():
-                    patcher.DeselectAll()
-                else:
-                    patcher.SelectAll()
+                patcher.mass_select(select=not wrapped_evt.is_shift_down)
                 return
-        event.Skip()
 
 # Used in ConvertConfig to convert between C and P *gui* patchers config - so
 # it belongs with gui_patchers (and not with patchers/ package). Still a hack

@@ -1,0 +1,9 @@
+/********************
+*Main Overrides
+********************/
+
+code.box {
+  display: table;
+  margin: 0.875rem 0 0 1.125rem;	/* T:14px R:0 B:0 L:18px */
+  padding: 0.3125rem 0.625rem;	/* TB:5px RL:10px */
+}

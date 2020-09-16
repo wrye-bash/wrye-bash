@@ -16,12 +16,22 @@ __pycache__/
 # the user ini
 Mopy/bash.ini
 
+# the shortcuts in the Mopy/App folder
+Mopy/Apps/*.lnk
+
 # Windows etc
 desktop.ini
 .dropbox
+.DS_Store
 
 # Release archives.
 scripts/dist/*.7z
+
+# Local NSIS
+scripts/build/nsis/
+
+# Local redistributables
+Mopy/redist/
 
 # translation files
 Mopy/bash/l10n/*.mo
@@ -29,5 +39,11 @@ Mopy/bash/l10n/*NEW.txt
 
 # IDE files
 .idea/
+.vscode/
 # if a symlink
 .idea
+.vscode
+
+# pytest-cov
+.coverage
+.cov_html/

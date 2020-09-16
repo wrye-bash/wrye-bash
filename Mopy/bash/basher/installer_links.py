@@ -17,7 +17,7 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,28 +25,31 @@
 """Installer*: Menu items for the __item__ menu of the installer tab. Their
 window attribute points to the InstallersList singleton. Check before using
 BashFrame.iniList - can be None (ini panel not shown).
-Installer_Espm_*: Menu items for the Esp/m Filter list in the installer tab.
+Installer_Espm_*: Menu items for the Plugin Filter list in the installer tab.
 Their window attribute points to the InstallersPanel singleton.
 Installer_Subs_*: Menu items for the Sub-Packages list in the installer tab.
 Their window attribute points to the InstallersPanel singleton.
 """
 
 import StringIO
-import copy
+import os
 import re
 import webbrowser
-from . import settingDefaults, Installers_Link, BashFrame
+from collections import defaultdict
+
+from . import Installers_Link, BashFrame, INIList
 from .frames import InstallerProject_OmodConfigDialog
-from .. import bosh, bush, balt
-from ..bass import Resources
-from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink
+from .gui_fomod import InstallerFomod
+from .. import bass, bolt, bosh, bush, balt, archives
+from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
+    UIList_Rename, UIList_Hide
 from ..belt import InstallerWizard, generateTweakLines
-from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
-    SubProgress, LogFile
-from ..bosh import formatInteger
+from ..bolt import GPath, SubProgress, LogFile, round_size, text_wrap
+from ..exception import CancelError, SkipError, StateError
+from ..gui import BusyCursor
 
 __all__ = ['Installer_Open', 'Installer_Duplicate', 'InstallerOpenAt_MainMenu',
-           'Installer_OpenSearch', 'Installer_OpenTESA', 'Installer_OpenPES',
+           'Installer_OpenSearch', 'Installer_OpenTESA',
            'Installer_Hide', 'Installer_Rename', 'Installer_Refresh',
            'Installer_Move', 'Installer_HasExtraData',
            'Installer_OverrideSkips', 'Installer_SkipVoices',
@@ -55,14 +58,16 @@ __all__ = ['Installer_Open', 'Installer_Duplicate', 'InstallerOpenAt_MainMenu',
            'Installer_Uninstall', 'InstallerConverter_MainMenu',
            'InstallerConverter_Create', 'InstallerConverter_ConvertMenu',
            'InstallerProject_Pack', 'InstallerArchive_Unpack',
-           'InstallerProject_ReleasePack', 'InstallerProject_Sync',
+           'InstallerProject_ReleasePack', 'Installer_SyncFromData',
            'Installer_CopyConflicts', 'InstallerProject_OmodConfig',
            'Installer_ListStructure', 'Installer_Espm_SelectAll',
            'Installer_Espm_DeselectAll', 'Installer_Espm_List',
            'Installer_Espm_Rename', 'Installer_Espm_Reset',
            'Installer_Espm_ResetAll', 'Installer_Subs_SelectAll',
            'Installer_Subs_DeselectAll', 'Installer_Subs_ToggleSelection',
-           'Installer_Subs_ListSubPackages', 'Installer_OpenNexus']
+           'Installer_Subs_ListSubPackages', 'Installer_OpenNexus',
+           'Installer_ExportAchlist', 'Installer_Espm_JumpToMod',
+           u'Installer_Fomod', u'Installer_InstallSmart']
 
 #------------------------------------------------------------------------------
 # Installer Links -------------------------------------------------------------
@@ -70,45 +75,10 @@ __all__ = ['Installer_Open', 'Installer_Duplicate', 'InstallerOpenAt_MainMenu',
 class _InstallerLink(Installers_Link, EnabledLink):
     """Common functions for installer links..."""
 
-    def isSingleInstallable(self):
-        if len(self.selected) == 1:
-            installer = self.idata[self.selected[0]]
-            if not isinstance(installer,
-                              (bosh.InstallerProject, bosh.InstallerArchive)):
-                return False
-            elif installer.type not in (1,2):
-                return False
-            return True
-        return False
-
-    def filterInstallables(self):
-        return self.idata.filterInstallables(self.selected)
-
-    def hasMarker(self):
-        if len(self.selected) > 0:
-            for i in self.selected:
-                if isinstance(self.idata[i],bosh.InstallerMarker):
-                    return True
-        return False
-
-    def isSingleProject(self):
-        """Indicates whether or not is single project."""
-        if len(self.selected) != 1: return False
-        else: return isinstance(self.idata[self.selected[0]],
-                                bosh.InstallerProject)
-
     def isSingleArchive(self):
         """Indicates whether or not is single archive."""
         if len(self.selected) != 1: return False
-        else: return isinstance(self.idata[self.selected[0]],
-                                bosh.InstallerArchive)
-
-    def isSelectedArchives(self):
-        """Indicates whether or not selected is all archives."""
-        for selected in self.selected:
-            if not isinstance(self.idata[selected],
-                              bosh.InstallerArchive): return False
-        return True
+        else: return next(self.iselected_infos()).is_archive()
 
     ##: Methods below should be in an "archives.py"
     def _promptSolidBlockSize(self, title, value=0):
@@ -117,306 +87,317 @@ class _InstallerLink(Installers_Link, EnabledLink):
                 u"Enter '0' to use 7z's default size."), prompt=u'MB',
             title=title, value=value, min=0, max=102400)
 
-    def _pack(self, archive, installer, project, release=False):
+    def _pack(self, archive_path, installer, project, release=False):
         #--Archive configuration options
         blockSize = None
-        if archive.cext in bosh.noSolidExts:
+        if archive_path.cext in archives.noSolidExts:
             isSolid = False
         else:
-            if not u'-ms=' in bosh.inisettings['7zExtraCompressionArguments']:
+            if not u'-ms=' in bass.inisettings['7zExtraCompressionArguments']:
                 isSolid = self._askYes(_(u'Use solid compression for %s?')
-                                       % archive.s, default=False)
+                                       % archive_path.s, default=False)
                 if isSolid:
-                    blockSize = self._promptSolidBlockSize(title=self.text)
+                    blockSize = self._promptSolidBlockSize(title=self._text)
             else:
                 isSolid = True
         with balt.Progress(_(u'Packing to Archive...'),
                            u'\n' + u' ' * 60) as progress:
             #--Pack
-            installer.packToArchive(project, archive, isSolid, blockSize,
+            installer.packToArchive(project, archive_path, isSolid, blockSize,
                                     SubProgress(progress, 0, 0.8),
                                     release=release)
             #--Add the new archive to Bash
-            if archive not in self.idata:
-                self.idata[archive] = bosh.InstallerArchive(archive)
-            #--Refresh UI
-            iArchive = self.idata[archive]
-            pArchive = bosh.dirs['installers'].join(archive)
+            iArchive = self.idata.refresh_installer(archive_path,
+                is_project=False, progress=progress,
+                install_order=installer.order + 1, do_refresh=True)
             iArchive.blockSize = blockSize
-            iArchive.refreshed = False
-            iArchive.refreshBasic(pArchive, SubProgress(progress, 0.8, 0.99),
-                                  True)
-            if iArchive.order == -1:
-                self.idata.moveArchives([archive], installer.order + 1)
-            #--Refresh UI
-            self.idata.irefresh(what='I')
-            self.window.RefreshUI()
+        self.window.RefreshUI(detail_item=archive_path)
 
     def _askFilename(self, message, filename):
+        """:rtype: bolt.Path"""
         result = self._askText(message, title=self.dialogTitle,
                                default=filename)
-        result = (result or u'').strip()
         if not result: return
-        archive = GPath(result).tail
+        archive_path = GPath(result).tail
         #--Error checking
-        if not archive.s:
+        if not archive_path.s:
             self._showWarning(_(u'%s is not a valid archive name.') % result)
             return
-        if self.idata.dir.join(archive).isdir():
-            self._showWarning(_(u'%s is a directory.') % archive.s)
+        if self.idata.store_dir.join(archive_path).isdir():
+            self._showWarning(_(u'%s is a directory.') % archive_path.s)
             return
-        if archive.cext not in bosh.writeExts:
+        if archive_path.cext not in archives.writeExts:
             self._showWarning(
                 _(u'The %s extension is unsupported. Using %s instead.') % (
-                archive.cext, bosh.defaultExt))
-            archive = GPath(archive.sroot + bosh.defaultExt).tail
-        if archive in self.idata:
+                    archive_path.cext, archives.defaultExt))
+            archive_path = GPath(archive_path.sroot + archives.defaultExt).tail
+        if archive_path in self.idata:
             if not self._askYes(_(u'%s already exists. Overwrite it?') %
-                    archive.s, title=self.dialogTitle, default=False): return
-        return archive
+                    archive_path.s, title=self.dialogTitle, default=False): return
+        return archive_path
+
+class _SingleInstallable(OneItemLink, _InstallerLink):
+
+    def _enable(self):
+        return super(_SingleInstallable, self)._enable() and bool(
+            self.idata.filterInstallables(self.selected))
+
+class _SingleProject(OneItemLink, _InstallerLink):
+
+    def _enable(self):
+        return super(_SingleProject, self)._enable() and \
+               self._selected_info.is_project()
+
+class _RefreshingLink(_SingleInstallable):
+    _overrides_skips = False
+
+    @balt.conversation
+    def Execute(self):
+        dest_src = self._selected_info.refreshDataSizeCrc()
+        with balt.Progress(title=_(u'Override Skips')) as progress:
+            if self._overrides_skips:
+                self.idata.update_for_overridden_skips(set(dest_src), progress)
+            self.idata.irefresh(what='NS', progress=progress)
+        self.window.RefreshUI()
+
+class _InstallLink(_InstallerLink):
+
+    def _enable(self):
+        self._installables = self.idata.filterInstallables(self.selected)
+        return bool(self._installables) and super(_InstallLink, self)._enable()
 
 #------------------------------------------------------------------------------
-class Installer_EditWizard(_InstallerLink):
+class _Installer_AWizardLink(OneItemLink, _InstallerLink):
+    """Base class for wizard links."""
+    def _perform_install(self, ui_refresh):
+        if self._selected_info.is_active: # If it's currently installed, anneal
+            title, do_it = _(u'Annealing...'), self.idata.bain_anneal
+        else: # Install if it's not installed
+            title, do_it = _(u'Installing...'), self.idata.bain_install
+        with balt.Progress(title, u'\n'+u' '*60) as progress:
+            do_it(self.selected, ui_refresh, progress)
+
+class Installer_Fomod(_Installer_AWizardLink):
+    """Runs the FOMOD installer"""
+    parentWindow = ''
+    _text = _(u'FOMOD Installer...')
+    _help = _(u'Run the FOMOD installer.')
+
+    def _enable(self):
+        is_single = super(Installer_Fomod, self)._enable()
+        return is_single and bool(self._selected_info.has_fomod_conf)
+
+    @balt.conversation
+    def Execute(self):
+        with balt.BusyCursor():
+            sel_installer = self._selected_info
+            try:
+                fm_wizard = InstallerFomod(self.window, sel_installer)
+            except CancelError:
+                return
+            fm_wizard.ensureDisplayed()
+        # Run the FOMOD installer
+        ret = fm_wizard.run_fomod()
+        if ret.canceled:
+            return
+        ui_refresh = [False, False]
+        idetails = self.iPanel.detailsPanel
+        # Switch the GUI to FOMOD mode and pass the selected files to BAIN
+        idetails.set_fomod_mode(fomod_enabled=True)
+        sel_installer.extras_dict[u'fomod_dict'] = ret.install_files
+        try:
+            idetails.refreshCurrent(sel_installer)
+            if ret.should_install:
+                self._perform_install(ui_refresh)
+        finally:
+            self.iPanel.RefreshUIMods(*ui_refresh)
+
+class Installer_EditWizard(_SingleInstallable):
     """Edit the wizard.txt associated with this project"""
-    help = _(u"Edit the wizard.txt associated with this project.")
+    _help = _(u"Edit the wizard.txt associated with this project.")
 
     def _initData(self, window, selection):
         super(Installer_EditWizard, self)._initData(window, selection)
-        self.text = _(u'View Wizard...') if self.isSingleArchive() else _(
+        self._text = _(u'View Wizard...') if self.isSingleArchive() else _(
             u'Edit Wizard...')
 
     def _enable(self):
-        return self.isSingleInstallable() and bool(
-            self.idata[self.selected[0]].hasWizard)
+        return super(Installer_EditWizard, self)._enable() and bool(
+            self._selected_info.hasWizard)
 
-    def Execute(self, event):
-        path = self.selected[0]
-        if self.isSingleProject():
-            # Project, open for edit
-            self.idata.dir.join(path.s, self.idata[path].hasWizard).start()
-        else:
-            # Archive, open for viewing
-            archive = self.idata[path]
-            with balt.BusyCursor():
-                # This is going to leave junk temp files behind...
-                try:
-                    archive.unpackToTemp(path, [archive.hasWizard])
-                    archive.getTempDir().join(archive.hasWizard).start()
-                except:
-                    # Don't clean up temp dir here.  Sometimes the editor
-                    # That starts to open the wizard.txt file is slower than
-                    # Bash, and the file will be deleted before it opens.
-                    # Just allow Bash's atexit function to clean it when
-                    # quitting.
-                    pass
+    def Execute(self): self._selected_info.open_wizard()
 
-class Installer_Wizard(OneItemLink, _InstallerLink):
-    """Runs the install wizard to select subpackages and esp/m filtering"""
+class Installer_Wizard(_Installer_AWizardLink):
+    """Runs the install wizard to select subpackages and plugin filtering"""
     parentWindow = ''
-    help = _(u"Run the install wizard.")
 
     def __init__(self, bAuto):
         super(Installer_Wizard, self).__init__()
         self.bAuto = bAuto
-        self.text = _(u'Auto Wizard') if self.bAuto else _(u'Wizard')
+        self._text = (_(u'Auto Wizard...') if self.bAuto
+                      else _(u'Manual Wizard...'))
+        self._help = _(u"Run the install wizard selecting the default options"
+                       ) if self.bAuto else _(u"Run the install wizard.")
 
     def _enable(self):
-        isSingle = super(Installer_Wizard, self)._enable()
-        return isSingle and (self.idata[self.selected[0]]).hasWizard != False
+        single_item = super(Installer_Wizard, self)._enable()
+        return single_item and self._selected_info.hasWizard != False
 
-    def Execute(self, event):
-        with balt.BusyCursor():
-            installer = self.idata[self.selected[0]]
-            subs = []
-            oldRemaps = copy.copy(installer.remaps)
-            installer.remaps = {}
-            self.iPanel.refreshCurrent(installer)
-            for index in range(self.iPanel.gSubList.GetCount()):
-                subs.append(self.iPanel.gSubList.GetString(index))
-            saved = bosh.settings['bash.wizard.size']
-            default = settingDefaults['bash.wizard.size']
-            pos = bosh.settings['bash.wizard.pos']
-            # Sanity checks on saved size/position
-            if not isinstance(pos,tuple) or len(pos) != 2:
-                deprint(_(u'Saved Wizard position (%s) was not a tuple (%s), reverting to default position.') % (pos,type(pos)))
-                pos = balt.defPos
-            if not isinstance(saved,tuple) or len(saved) != 2:
-                deprint(_(u'Saved Wizard size (%s) was not a tuple (%s), reverting to default size.') % (saved, type(saved)))
-                pageSize = tuple(default)
-            else:
-                pageSize = (max(saved[0],default[0]),max(saved[1],default[1]))
+    @balt.conversation
+    def Execute(self):
+        ##: Investigate why we have so many refreshCurrents in here. At least
+        # the first one seems pointless?
+        with BusyCursor():
+            installer = self._selected_info
+            idetails = self.iPanel.detailsPanel
+            idetails.refreshCurrent(installer)
             try:
-                wizard = InstallerWizard(self.window, self.idata,
-                                         self.selected[0], self.bAuto,
-                                         self.isSingleArchive(), subs,
-                                         pageSize, pos)
+                wizard = InstallerWizard(self.window, self._selected_info,
+                                         self.bAuto)
             except CancelError:
                 return
-            balt.ensureDisplayed(wizard)
+            wizard.ensureDisplayed()
         ret = wizard.Run()
-        # Sanity checks on returned size/position
-        if not isinstance(ret.Pos, balt.wxPoint):
-            deprint(_(u'Returned Wizard position (%s) was not a wx.Point (%s), reverting to default position.') % (ret.Pos, type(ret.Pos)))
-            ret.Pos = balt.defPos
-        if not isinstance(ret.PageSize, balt.wxSize):
-            deprint(_(u'Returned Wizard size (%s) was not a wx.Size (%s), reverting to default size.') % (ret.PageSize, type(ret.PageSize)))
-            ret.PageSize = tuple(default)
-        bosh.settings['bash.wizard.size'] = (ret.PageSize[0],ret.PageSize[1])
-        bosh.settings['bash.wizard.pos'] = (ret.Pos[0],ret.Pos[1])
-        if ret.Canceled:
-            installer.remaps = oldRemaps
-            self.iPanel.refreshCurrent(installer)
+        if ret.canceled:
+            idetails.refreshCurrent(installer)
             return
-        #Check the sub-packages that were selected by the wizard
         installer.resetAllEspmNames()
-        for index in xrange(self.iPanel.gSubList.GetCount()):
-            select = installer.subNames[index + 1] in ret.SelectSubPackages
-            self.iPanel.gSubList.Check(index, select)
+        # Switch away from FOMOD mode, then check the sub-packages that were
+        # selected by the wizard
+        idetails.set_fomod_mode(fomod_enabled=False)
+        for index in xrange(len(installer.subNames[1:])):
+            select = installer.subNames[index + 1] in ret.select_sub_packages
+            idetails.gSubList.lb_check_at_index(index, select)
             installer.subActives[index + 1] = select
-        self.iPanel.refreshCurrent(installer)
+        idetails.refreshCurrent(installer)
         #Check the espms that were selected by the wizard
-        espms = self.iPanel.gEspmList.GetStrings()
+        espms = idetails.gEspmList.lb_get_str_items()
         espms = [x.replace(u'&&',u'&') for x in espms]
         installer.espmNots = set()
-        for index, espm in enumerate(self.iPanel.espms):
-            if espms[index] in ret.SelectEspms:
-                self.iPanel.gEspmList.Check(index, True)
+        for index, espm in enumerate(idetails.espms):
+            if espms[index] in ret.select_plugins:
+                idetails.gEspmList.lb_check_at_index(index, True)
             else:
-                self.iPanel.gEspmList.Check(index, False)
+                idetails.gEspmList.lb_check_at_index(index, False)
                 installer.espmNots.add(espm)
-        self.iPanel.refreshCurrent(installer)
+        idetails.refreshCurrent(installer)
         #Rename the espms that need renaming
-        for oldName in ret.RenameEspms:
-            installer.setEspmName(oldName, ret.RenameEspms[oldName])
-        self.iPanel.refreshCurrent(installer)
+        for oldName in ret.rename_plugins:
+            installer.setEspmName(oldName, ret.rename_plugins[oldName])
+        idetails.refreshCurrent(installer)
         #Install if necessary
-        if ret.Install:
-            if self.idata[self.selected[0]].isActive: #If it's currently installed, anneal
-                title, doIt = _(u'Annealing...'), self.idata.anneal
-            else: #Install, if it's not installed
-                title, doIt = _(u'Installing...'), self.idata.install
-            try:
-                with balt.Progress(title, u'\n'+u' '*60) as progress:
-                    doIt(self.selected, progress)
-            finally:
-                self.iPanel.RefreshUIMods(_refreshData=True)
+        ui_refresh = [False, False]
+        try:
+            if ret.should_install:
+                self._perform_install(ui_refresh)
+            self._apply_tweaks(installer, ret, ui_refresh)
+        finally:
+            self.iPanel.RefreshUIMods(*ui_refresh)
+
+    def _apply_tweaks(self, installer, ret, ui_refresh):
         #Build any ini tweaks
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
-        for iniFile in ret.IniEdits:
-            outFile = bosh.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
+        new_targets = {}
+        for iniFile, wizardEdits in ret.ini_edits.iteritems():
+            outFile = bass.dirs[u'ini_tweaks'].join(u'%s - Wizard Tweak [%s].ini' %
+                (installer.archive, iniFile.sbody))
             with outFile.open('w') as out:
-                for line in generateTweakLines(ret.IniEdits[iniFile],iniFile):
-                    out.write(line+u'\n')
-            bosh.iniInfos.refresh()
-            bosh.iniInfos.table.setItem(outFile.tail, 'installer', installer.archive)
-            if BashFrame.iniList is not None: BashFrame.iniList.RefreshUI()
-            if iniFile in installer.data_sizeCrc or any([iniFile == x for x in bush.game.iniFiles]):
-                if not ret.Install and not any([iniFile == x for x in bush.game.iniFiles]):
-                    # Can only automatically apply ini tweaks if the ini was actually installed.  Since
-                    # BAIN is setup to not auto install after the wizard, we'll show a message telling the
-                    # User what tweaks to apply manually.
-                    manuallyApply.append((outFile,iniFile))
+                for line in generateTweakLines(wizardEdits, iniFile):
+                    out.write(line + u'\n')
+            bosh.iniInfos.new_info(outFile.tail, owner=installer.archive)
+            # trigger refresh UI
+            ui_refresh[1] = True
+            # We wont automatically apply tweaks to anything other than
+            # Oblivion.ini or an ini from this installer
+            game_ini = bosh.get_game_ini(iniFile, is_abs=False)
+            if game_ini:
+                target_path = game_ini.abs_path
+                target_ini_file = game_ini
+            else: # suppose that the target ini file is in the Data/ dir
+                target_path = bass.dirs[u'mods'].join(iniFile)
+                new_targets[target_path.stail] = target_path
+                if not (iniFile.s in installer.ci_dest_sizeCrc and
+                        ret.should_install):
+                    # Can only automatically apply ini tweaks if the ini was
+                    # actually installed.  Since BAIN is setup to not auto
+                    # install after the wizard, we'll show a message telling
+                    # the User what tweaks to apply manually.
+                    manuallyApply.append((outFile, iniFile))
                     continue
-                # Editing an INI file from this installer is ok, but editing Oblivion.ini
-                # give a warning message
-                if any([iniFile == x for x in bush.game.iniFiles]):
-                    message = (_(u'Apply an ini tweak to %s?')
-                               + u'\n\n' +
-                               _(u'WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!')
-                               ) % iniFile.sbody
-                    if not self._askContinue(message,
-                                             'bash.iniTweaks.continue',
-                                             _(u'INI Tweaks')): continue
-                if BashFrame.iniList is not None:
-                    BashFrame.iniList.panel.AddOrSelectIniDropDown(
-                        bosh.dirs['mods'].join(iniFile))
-                if bosh.iniInfos[outFile.tail] == 20: continue
-                bosh.iniInfos.ini.applyTweakFile(outFile)
+                target_ini_file = bosh.BestIniFile(target_path)
+            if INIList.apply_tweaks((bosh.iniInfos[outFile.tail],),
+                                    target_ini_file):
                 lastApplied = outFile.tail
-            else:
-                # We wont automatically apply tweaks to anything other than Oblivion.ini or an ini from
-                # this installer
-                manuallyApply.append((outFile,iniFile))
         #--Refresh after all the tweaks are applied
-        if lastApplied is not None and BashFrame.iniList is not None:
-            BashFrame.iniList.RefreshUIValid()
-            BashFrame.iniList.panel.iniContents.RefreshIniContents()
-            BashFrame.iniList.panel.tweakContents.RefreshTweakLineCtrl(lastApplied)
+        if lastApplied is not None:
+            target_updated = bosh.INIInfos.update_targets(new_targets)
+            if BashFrame.iniList is not None:
+                BashFrame.iniList.panel.detailsPanel.set_choice(
+                    target_path.stail, reset_choices=target_updated)
+                BashFrame.iniList.panel.ShowPanel(focus_list=False,
+                                                  detail_item=lastApplied)
+            ui_refresh[1] = False
         if len(manuallyApply) > 0:
-            message = balt.fill(_(u'The following INI Tweaks were not automatically applied.  Be sure to apply them after installing the package.'))
+            message = text_wrap(_(u'The following INI Tweaks were not '
+                                  u'automatically applied.  Be sure to apply '
+                                  u'them after installing the package.'))
             message += u'\n\n'
-            message += u'\n'.join([u' * ' + x[0].stail + u'\n   TO: ' + x[1].s for x in manuallyApply])
+            message += u'\n'.join([u' * ' + x[0].stail + u'\n   TO: ' + x[1].s
+                                   for x in manuallyApply])
             self._showInfo(message)
 
 class Installer_OpenReadme(OneItemLink, _InstallerLink):
     """Opens the installer's readme if BAIN can find one."""
-    text = _(u'Open Readme')
-    help = _(u"Open the installer's readme if BAIN can find one")
+    _text = _(u'Open Readme')
+    _help = _(u"Open the installer's readme if BAIN can find one")
 
     def _enable(self):
-        isSingle = super(Installer_OpenReadme, self)._enable()
-        return isSingle and bool(self.idata[self.selected[0]].hasReadme)
+        single_item = super(Installer_OpenReadme, self)._enable()
+        return single_item and bool(self._selected_info.hasReadme)
 
-    def Execute(self, event):
-        installer = self.selected[0]
-        if self.isSingleProject():
-            # Project, open for edit
-            self.idata.dir.join(installer.s, self.idata[installer].hasReadme).start()
-        else:
-            # Archive, open for viewing
-            archive = self.idata[installer]
-            with balt.BusyCursor():
-                # This is going to leave junk temp files behind...
-                archive.unpackToTemp(installer, [archive.hasReadme])
-            archive.getTempDir().join(archive.hasReadme).start()
+    def Execute(self): self._selected_info.open_readme()
 
 #------------------------------------------------------------------------------
-class Installer_Anneal(_InstallerLink):
+class Installer_Anneal(_InstallLink):
     """Anneal all packages."""
-    text = _(u'Anneal')
-    help = _(u"Anneal all packages.")
+    _text = _(u'Anneal')
+    _help = _(u"Anneal all files in selected package(s).")
 
-    def _enable(self): return bool(self.filterInstallables())
-
-    def Execute(self,event):
-        """Handle selection."""
+    def Execute(self):
+        ui_refresh = [False, False]
         try:
             with balt.Progress(_(u"Annealing..."),u'\n'+u' '*60) as progress:
-                self.idata.anneal(self.filterInstallables(),progress)
+                self.idata.bain_anneal(self._installables, ui_refresh,
+                                       progress)
         except (CancelError,SkipError):
             pass
         finally:
-            self.iPanel.RefreshUIMods(_refreshData=True)
+            self.iPanel.RefreshUIMods(*ui_refresh)
 
 class Installer_Duplicate(OneItemLink, _InstallerLink):
     """Duplicate selected Installer."""
-    text = _(u'Duplicate...')
+    _text = _(u'Duplicate...')
 
-    def _initData(self, window, selection):
-        super(Installer_Duplicate, self)._initData(window, selection)
-        self.help = _(u"Duplicate selected %(installername)s.") % (
-            {'installername': self.selected[0]})
+    @property
+    def menu_help(self):
+        return _(u"Duplicate selected %(installername)s.") % (
+            {'installername': self._selected_item})
 
     def _enable(self):
-        isSingle = super(Installer_Duplicate, self)._enable()
-        return isSingle and not isinstance(self.idata[self.selected[0]],
-                                           bosh.InstallerMarker)
+        single_item = super(Installer_Duplicate, self)._enable()
+        return single_item and not self._selected_info.is_marker()
 
-    def Execute(self,event):
-        """Handle selection."""
-        curName = self.selected[0]
-        isdir = self.idata.dir.join(curName).isdir()
+    @balt.conversation
+    def Execute(self):
+        """Duplicate selected Installer."""
+        curName = self._selected_item
+        isdir = self.idata.store_dir.join(curName).isdir()
         if isdir: root,ext = curName,u''
-        else: root,ext = curName.rootExt
-        newName = root+_(u' Copy')+ext
-        index = 0
-        while newName in self.idata:
-            newName = root + (_(u' Copy (%d)') % index) + ext
-            index += 1
+        else: root,ext = curName.root, curName.ext
+        newName = self.window.new_name(root + _(u' Copy') + ext)
         result = self._askText(_(u"Duplicate %s to:") % curName.s,
                                default=newName.s)
-        result = (result or u'').strip()
         if not result: return
         #--Error checking
         newName = GPath(result).tail
@@ -426,232 +407,242 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         if newName in self.idata:
             self._showWarning(_(u"%s already exists.") % newName.s)
             return
-        if self.idata.dir.join(curName).isfile() and curName.cext != newName.cext:
+        if self.idata.store_dir.join(curName).isfile() and curName.cext != newName.cext:
             self._showWarning(_(u"%s does not have correct extension (%s).")
                               % (newName.s,curName.ext))
             return
         #--Duplicate
-        with balt.BusyCursor():
-            self.idata.copy(curName,newName)
+        with BusyCursor():
+            self.idata.copy_installer(curName,newName)
             self.idata.irefresh(what='N')
-            self.window.RefreshUI()
+        self.window.RefreshUI(detail_item=newName)
 
-class Installer_Hide(_InstallerLink):
+class Installer_Hide(_InstallerLink, UIList_Hide):
     """Hide selected Installers."""
-    text = _(u'Hide...')
-    help = _(
-        u"Hide selected installer(s). No installer markers should be selected")
+    _help = UIList_Hide._help + _(u' Not available if any markers have been '
+                                  u'selected.')
 
     def _enable(self):
-        for item in self.selected:
-            if isinstance(self.idata[item],bosh.InstallerMarker):
-                return False
-        return True
+        return not any(inf.is_marker() for inf in self.iselected_infos())
 
-    def Execute(self,event):
-        """Handle selection."""
-        if not bosh.inisettings['SkipHideConfirmation']:
-            message = _(u'Hide these files? Note that hidden files are simply moved to the Bash\\Hidden subdirectory.')
-            if not self._askYes(message, _(u'Hide Files')): return
-        destDir = bosh.dirs['modsBash'].join(u'Hidden')
-        for curName in self.selected:
-            newName = destDir.join(curName)
-            if newName.exists():
-                message = (_(u'A file named %s already exists in the hidden files directory. Overwrite it?')
-                    % newName.stail)
-                if not self._askYes(message, _(u'Hide Files')): return
-            #Move
-            with balt.BusyCursor():
-                file = bosh.dirs['installers'].join(curName)
-                file.moveTo(newName)
-        self.idata.irefresh(what='ION')
-        self.window.RefreshUI()
-
-class Installer_Rename(_InstallerLink):
+class Installer_Rename(UIList_Rename, _InstallerLink):
     """Renames files by pattern."""
-    text = _(u'Rename...')
-    help = _(u"Rename selected installer(s).")
+    _help = _(u"Rename selected installer(s).") + u'  ' + _(
+        u'All selected installers must be of the same type')
 
     def _enable(self):
         ##Only enable if all selected items are of the same type
-        firstItem = self.idata[self.selected[0]]
-        if isinstance(firstItem,bosh.InstallerMarker):
-            self.InstallerType = bosh.InstallerMarker
-        elif isinstance(firstItem,bosh.InstallerArchive):
-            self.InstallerType = bosh.InstallerArchive
-        elif isinstance(firstItem,bosh.InstallerProject):
-            self.InstallerType = bosh.InstallerProject
-        else: return False
-        for item in self.selected:
-            if not isinstance(self.idata[item], self.InstallerType):
-                return False
-        return True
+        firstItem = next(self.iselected_infos())
+        return all(map(lambda inf: isinstance(inf, type(firstItem)),
+                       self.iselected_infos()))
 
-    def Execute(self,event): self.window.Rename(selected=self.selected)
-
-class Installer_HasExtraData(CheckLink, _InstallerLink):
+class Installer_HasExtraData(CheckLink, _RefreshingLink):
     """Toggle hasExtraData flag on installer."""
-    text = _(u'Has Extra Directories')
-    help = _(u"Allow installation of files in non-standard directories.")
+    _text = _(u'Has Extra Directories')
+    _help = _(u"Allow installation of files in non-standard directories.")
 
-    def _enable(self): return self.isSingleInstallable()
+    def _enable(self):
+        return len(self.selected) == 1 and not self._selected_info.is_marker()
 
-    def _check(self): return self.isSingleInstallable() and (
-        self.idata[self.selected[0]]).hasExtraData
+    def _check(self):
+        return self._enable() and self._selected_info.hasExtraData
 
-    def Execute(self,event):
-        """Handle selection."""
-        installer = self.idata[self.selected[0]]
-        installer.hasExtraData ^= True
-        installer.refreshDataSizeCrc()
-        installer.refreshStatus(self.idata)
-        self.idata.irefresh(what='N')
-        self.window.RefreshUI()
+    def Execute(self):
+        """Toggle hasExtraData installer attribute"""
+        self._selected_info.hasExtraData ^= True
+        super(Installer_HasExtraData, self).Execute()
 
-class Installer_OverrideSkips(CheckLink, _InstallerLink):
+class Installer_OverrideSkips(CheckLink, _RefreshingLink):
     """Toggle overrideSkips flag on installer."""
-    text = _(u'Override Skips')
-    help = _(u"Allow installation of files in non-standard directories.")
+    _text = _(u'Override Skips')
 
-    def _initData(self, window, selection):
-        super(Installer_OverrideSkips, self)._initData(window, selection)
-        self.help = _(
+    @property
+    def menu_help(self):
+        return _(
             u"Override global file type skipping for %(installername)s.") % (
-                    {'installername': self.selected[0]})
+                {'installername': self._selected_item}) + u'  '+ _(u'BETA!')
 
-    def _enable(self): return self.isSingleInstallable()
+    def _check(self):
+        return self._enable() and self._selected_info.overrideSkips
 
-    def _check(self): return self.isSingleInstallable() and (
-        self.idata[self.selected[0]]).overrideSkips
+    def Execute(self):
+        self._selected_info.overrideSkips ^= True
+        self._overrides_skips = self._selected_info.overrideSkips
+        super(Installer_OverrideSkips, self).Execute()
 
-    def Execute(self,event):
-        """Handle selection."""
-        installer = self.idata[self.selected[0]]
-        installer.overrideSkips ^= True
-        installer.refreshDataSizeCrc()
-        installer.refreshStatus(self.idata)
-        self.idata.irefresh(what='N')
-        self.window.RefreshUI()
+class Installer_SkipRefresh(CheckLink, _SingleProject):
+    """Toggle skipRefresh flag on project."""
+    _text = _(u"Don't Refresh")
+    _help = _(u"Don't automatically refresh project.")
 
-class Installer_SkipRefresh(CheckLink, _InstallerLink):
-    """Toggle skipRefresh flag on installer."""
-    text = _(u"Don't Refresh")
-    help = _(u"Don't automatically refresh project.")
+    def _check(self): return self._enable() and self._selected_info.skipRefresh
 
-    def _enable(self): return self.isSingleProject()
-
-    def _check(self): return self.isSingleProject() and (
-        self.idata[self.selected[0]]).skipRefresh
-
-    def Execute(self,event):
-        """Handle selection."""
-        installer = self.idata[self.selected[0]]
+    def Execute(self):
+        """Toggle skipRefresh project attribute and refresh the project if
+        skipRefresh is set to False."""
+        installer = self._selected_info
         installer.skipRefresh ^= True
         if not installer.skipRefresh:
-            # Check to see if we need to refresh this Project
-            file = bosh.dirs['installers'].join(installer.archive)
-            if (installer.size,installer.modified) != (file.size,file.getmtime(True)):
-                installer.refreshDataSizeCrc()
-                installer.refreshBasic(file)
-                installer.refreshStatus(self.idata)
-                self.idata.irefresh(what='N')
-                self.window.RefreshUI()
+            installer.refreshBasic(progress=None,
+                                   recalculate_project_crc=False)
+            installer.refreshStatus(self.idata)
+            self.idata.irefresh(what='N')
+            self.window.RefreshUI()
 
-class Installer_Install(_InstallerLink):
+class Installer_Install(_InstallLink):
     """Install selected packages."""
-    mode_title = {'DEFAULT': _(u'Install'), 'LAST': _(u'Install Last'),
-                  'MISSING': _(u'Install Missing')}
+    mode_title = {'DEFAULT': _(u'Install Current'), 'LAST': _(u'Install Last'),
+                  'MISSING': _(u'Install Missing Files')}
+    mode_help = {'DEFAULT': _(u'Install all configured files from selected '
+                              u'installer(s).'),
+                 'LAST': _(u'Install all configured files from selected '
+                           u'installer(s) at the last position.'),
+                 'MISSING': _(u'Install all missing files from the selected '
+                              u'installer(s).')}
 
     def __init__(self,mode='DEFAULT'):
         super(Installer_Install, self).__init__()
         self.mode = mode
-        self.text = self.mode_title[self.mode]
+        self._text = self.mode_title[self.mode]
+        self._help = self.mode_help[self.mode]
 
-    def _enable(self): return len(self.filterInstallables())
-
-    def Execute(self,event):
-        """Handle selection."""
+    @balt.conversation
+    def Execute(self):
+        ui_refresh = [False, False]
         try:
             with balt.Progress(_(u'Installing...'),u'\n'+u' '*60) as progress:
                 last = (self.mode == 'LAST')
                 override = (self.mode != 'MISSING')
                 try:
-                    tweaks = self.idata.install(self.filterInstallables(),progress,last,override)
+                    new_tweaks = self.idata.bain_install(self._installables,
+                        ui_refresh, progress, last, override)
                 except (CancelError,SkipError):
                     pass
                 except StateError as e:
                     self._showError(u'%s'%e)
-                else:
-                    if tweaks:
-                        msg = _(u'The following INI Tweaks were created, '
-                                u'because the existing INI was different than '
-                                u'what BAIN installed:') + u'\n' + u'\n'.join(
-                                [u' * %s\n' % x.stail for (x, y) in tweaks])
-                        self._showInfo(msg, title=_(u'INI Tweaks'))
+                else: # no error occurred
+                    self._warn_mismatched_ini_tweaks_created(new_tweaks)
         finally:
-            self.iPanel.RefreshUIMods(_refreshData=True)
+            self.iPanel.RefreshUIMods(*ui_refresh)
+
+    def _warn_mismatched_ini_tweaks_created(self, new_tweaks):
+        if not new_tweaks: return
+        msg = _(u'The following INI Tweaks were created, because the '
+            u'existing INI was different than what BAIN installed:') + \
+            u'\n' + u'\n'.join([u' * %s\n' % x.stail for (x, y) in new_tweaks])
+        self._showInfo(msg, title=_(u'INI Tweaks'))
+
+##: Would be nice to have this work for multiple installers, but wizards use
+# self.iPanel.detailsPanel, which won't be set correctly when multiple
+# installers are selected
+class Installer_InstallSmart(_InstallLink, OneItemLink):
+    """A 'smart' installer for new users. Uses wizards and FOMODs if present,
+    then falls back to regular install if that isn't possible."""
+    _text = _(u'Install...')
+    _help = _(u'Installs selected installer(s), preferring a visual method if '
+              u'available.')
+
+    def _try_installer(self, inst_instance):
+        """Checks if the specified installer link is enabled and, if so, runs
+        it.
+
+        :type inst_instance: EnabledLink"""
+        inst_instance._initData(self.window, self.selected)
+        if inst_instance._enable():
+            inst_instance.Execute()
+            return True
+        return False
+
+    def Execute(self):
+        ##: Not the best implementation. It is pretty readable and obvious though
+        # Look for a BAIN wizard first, best integration with BAIN (duh)
+        if self._try_installer(Installer_Wizard(bAuto=False)): return
+        # Next, look for an FOMOD wizard - not quite as good, but at least it's
+        # visual
+        if self._try_installer(Installer_Fomod()): return
+        # Finally, fall back to the regular 'install' method
+        self._try_installer(Installer_Install())
 
 class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Waruddar
     """Copies folder structure of installer to clipboard."""
-    text = _(u"List Structure...")
+    _text = _(u"List Structure...")
+    _help = _(u'Displays the folder structure of the selected installer (and '
+              u'copies it to the system clipboard).')
 
     def _enable(self):
-        isSingle = super(Installer_ListStructure, self)._enable()
-        return isSingle and not isinstance(self.idata[self.selected[0]],
-                                                  bosh.InstallerMarker)
+        single_item = super(Installer_ListStructure, self)._enable()
+        return single_item and not self._selected_info.is_marker()
 
-    def Execute(self,event):
-        archive = self.selected[0]
-        installer = self.idata[archive]
-        text = installer.listSource(archive)
+    @balt.conversation ##: no use ! _showLog returns immediately
+    def Execute(self):
+        source_list_txt = self._selected_info.listSource()
         #--Get masters list
-        balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'Package Structure'), fixedFont=False,
-                      icons=Resources.bashBlue)
+        balt.copyToClipboard(source_list_txt)
+        self._showLog(source_list_txt, title=_(u'Package Structure'),
+                      fixedFont=False)
+
+class Installer_ExportAchlist(OneItemLink, _InstallerLink):
+    """Write an achlist file with all the destinations files for this
+    installer in this configuration."""
+    _text = _(u'Export Achlist')
+    _mode_info_dir = u'Mod Info Exports'
+    _help = (_(u'Create achlist file for use by the %s.') %
+             bush.game.Ck.long_name)
+
+    def _enable(self):
+        single_item = super(Installer_ExportAchlist, self)._enable()
+        return single_item and not self._selected_info.is_marker()
+
+    def Execute(self):
+        info_dir = bass.dirs[u'app'].join(self.__class__._mode_info_dir)
+        info_dir.makedirs()
+        achlist = info_dir.join(self._selected_info.archive + u'.achlist')
+        with BusyCursor(), open(achlist.s, u'w') as out:
+            out.write(u'[\n\t"')
+            lines = u'",\n\t"'.join(
+                u'\\'.join((u'Data', d)).replace(u'\\', u'\\\\') for d in
+                bolt.sortFiles(self._selected_info.ci_dest_sizeCrc)
+                # exclude top level files and docs - last one monkey patched
+                if os.path.split(d)[0] and not d.lower().startswith(u'docs'))
+            out.write(lines)
+            out.write(u'"\n]')
 
 class Installer_Move(_InstallerLink):
     """Moves selected installers to desired spot."""
-    text = _(u'Move To...')
+    _text = _(u'Move To...')
+    _help = _(u'Move the selected installer(s) to a position of your choice.')
 
-    def Execute(self,event):
-        """Handle selection."""
-        curPos = min(self.idata[x].order for x in self.selected)
-        message = (_(u'Move selected archives to what position?')
-                   + u'\n' +
-                   _(u'Enter position number.')
-                   + u'\n' +
+    @balt.conversation
+    def Execute(self):
+        curPos = min(inf.order for inf in self.iselected_infos())
+        message = (_(u'Move selected archives to what position?') + u'\n' +
+                   _(u'Enter position number.') + u'\n' +
                    _(u'Last: -1; First of Last: -2; Semi-Last: -3.')
                    )
         newPos = self._askText(message, default=unicode(curPos))
         if not newPos: return
-        newPos = newPos.strip()
         try:
             newPos = int(newPos)
-        except:
+        except ValueError:
             self._showError(_(u'Position must be an integer.'))
             return
         if newPos == -3: newPos = self.idata[self.idata.lastKey].order
         elif newPos == -2: newPos = self.idata[self.idata.lastKey].order+1
-        elif newPos < 0: newPos = len(self.idata.data)
+        elif newPos < 0: newPos = len(self.idata)
         self.idata.moveArchives(self.selected,newPos)
         self.idata.irefresh(what='N')
-        self.window.RefreshUI()
+        self.window.RefreshUI(
+            detail_item=self.iPanel.detailsPanel.displayed_item)
 
-class Installer_Open(_InstallerLink):
+class Installer_Open(balt.UIList_OpenItems, _InstallerLink):
     """Open selected file(s)."""
-    text = _(u'Open...')
 
     def _initData(self, window, selection):
         super(Installer_Open, self)._initData(window, selection)
-        self.help = _(u"Open '%s'") % selection[0] if len(selection) == 1 \
-            else _(u"Open selected files.")
-        self.selected = [x for x in self.selected if
-                         not isinstance(self.idata.data[x],
-                                        bosh.InstallerMarker)]
+        self.selected = [k for k, v in self.iselected_pairs() if
+                         not v.is_marker()]
 
     def _enable(self): return bool(self.selected)
-
-    def Execute(self,event): self.window.OpenSelected(selected=self.selected)
 
 #------------------------------------------------------------------------------
 class _Installer_OpenAt(_InstallerLink):
@@ -665,13 +656,15 @@ class _Installer_OpenAt(_InstallerLink):
 
     def _url(self): return self.__class__.baseUrl + self.mod_url_id
 
-    def Execute(self, event):
+    def Execute(self):
         if self._askContinue(self.message, self.key, self.askTitle):
             webbrowser.open(self._url())
 
 class Installer_OpenNexus(AppendableLink, _Installer_OpenAt):
     regexp = bosh.reTesNexus
-    text = _(bush.game.nexusName)
+    _text = _(bush.game.nexusName)
+    _help = _(u"Opens this mod's page at the %(nexusName)s.") % \
+            {'nexusName': bush.game.nexusName}
     message = _(
         u"Attempt to open this as a mod at %(nexusName)s? This assumes that "
         u"the trailing digits in the package's name are actually the id "
@@ -687,18 +680,20 @@ class Installer_OpenNexus(AppendableLink, _Installer_OpenAt):
 class Installer_OpenSearch(_Installer_OpenAt):
     group = 1
     regexp = bosh.reTesNexus
-    text = _(u'Google...')
+    _text = _(u'Google...')
+    _help = _(u"Searches for this mod's title on Google.")
     key = 'bash.installers.opensearch.continue'
     askTitle = _(u'Open a search')
     message = _(u"Open a search for this on Google?")
 
     def _url(self):
         return u'http://www.google.com/search?hl=en&q=' + u'+'.join(
-            re.split(ur'\W+|_+', self.mod_url_id))
+            re.split(u'' r'\W+|_+', self.mod_url_id))
 
 class Installer_OpenTESA(_Installer_OpenAt):
     regexp = bosh.reTESA
-    text = _(u'TES Alliance...')
+    _text = _(u'TES Alliance...')
+    _help = _(u"Opens this mod's page at TES Alliance.")
     key = 'bash.installers.openTESA.continue'
     askTitle = _(u'Open at TES Alliance')
     message = _(
@@ -709,575 +704,589 @@ class Installer_OpenTESA(_Installer_OpenAt):
         u"Alliance.")
     baseUrl =u'http://tesalliance.org/forums/index.php?app=downloads&showfile='
 
-class Installer_OpenPES(_Installer_OpenAt):
-    regexp = bosh.reTESA
-    text = _(u'Planet Elderscrolls...')
-    key = 'bash.installers.openPES.continue'
-    askTitle = _(u'Open at Planet Elderscrolls')
-    message = _(
-        u"Attempt to open this as a mod at Planet Elderscrolls? This assumes "
-        u"that the trailing digits in the package's name are actually the id "
-        u"number of the mod at Planet Elderscrolls. If this assumption is "
-        u"wrong, you'll just get a random mod page (or error notice) at "
-        u"Planet Elderscrolls.")
-    baseUrl = u'http://planetelderscrolls.gamespy.com/View.php' \
-               u'?view=OblivionMods.Detail&id='
-
 #------------------------------------------------------------------------------
 class Installer_Refresh(_InstallerLink):
     """Rescans selected Installers."""
-    text = _(u'Refresh')
-    help = _(u'Rescan selected Installer(s)')
+    _text = _(u'Refresh')
+    _help = _(u'Rescan selected Installer(s)') + u'.  ' + _(
+        u'Ignores skip refresh flag on projects')
 
-    def _enable(self):
-        return not len(self.selected) == 1 or self.isSingleInstallable()
+    def __init__(self, calculate_projects_crc=True):
+        super(Installer_Refresh, self).__init__()
+        self.calculate_projects_crc = calculate_projects_crc
+        if not calculate_projects_crc:
+            self._text = _(u'Quick Refresh')
+            self._help = Installer_Refresh._help + u'.  ' + _(
+                u'Will not recalculate cached crcs of files in a project')
 
-    def Execute(self,event):
-        toRefresh = set((x, self.idata[x]) for x in self.selected)
-        self.window.rescanInstallers(toRefresh, abort=True)
+    def _enable(self): return bool(self.idata.filterPackages(self.selected))
 
-class Installer_SkipVoices(CheckLink, _InstallerLink):
+    @balt.conversation
+    def Execute(self):
+        self.window.rescanInstallers(self.selected, abort=True,
+                            calculate_projects_crc=self.calculate_projects_crc)
+
+class Installer_SkipVoices(CheckLink, _RefreshingLink):
     """Toggle skipVoices flag on installer."""
-    text = _(u'Skip Voices')
+    _text = _(u'Skip Voices')
 
-    def _enable(self): return self.isSingleInstallable()
+    @property
+    def menu_help(self):
+        return _(u"Skip over any voice files in %(installername)s") % (
+                    {'installername': self._selected_item})
 
-    def _check(self): return self.isSingleInstallable() and (
-        self.idata[self.selected[0]]).skipVoices
+    def _check(self): return self._enable() and self._selected_info.skipVoices
 
-    def Execute(self,event):
-        """Handle selection."""
-        installer = self.idata[self.selected[0]]
-        installer.skipVoices ^= True
-        installer.refreshDataSizeCrc()
-        self.idata.irefresh(what='NS')
-        self.window.RefreshUI()
+    def Execute(self):
+        self._selected_info.skipVoices ^= True
+        super(Installer_SkipVoices, self).Execute()
 
-class Installer_Uninstall(_InstallerLink):
+class Installer_Uninstall(_InstallLink):
     """Uninstall selected Installers."""
-    text = _(u'Uninstall')
-    help = _(u'Uninstall selected Installer(s)')
+    _text = _(u'Uninstall')
+    _help = _(u'Uninstall selected Installer(s)')
 
-    def _enable(self): return len(self.filterInstallables())
-
-    def Execute(self,event):
+    @balt.conversation
+    def Execute(self):
         """Uninstall selected Installers."""
+        ui_refresh = [False, False]
         try:
             with balt.Progress(_(u"Uninstalling..."),u'\n'+u' '*60) as progress:
-                self.idata.uninstall(self.filterInstallables(),progress)
+                self.idata.bain_uninstall(self._installables, ui_refresh,
+                                          progress)
         except (CancelError,SkipError): # now where could this be raised from ?
             pass
         finally:
-            self.iPanel.RefreshUIMods(_refreshData=True)
+            self.iPanel.RefreshUIMods(*ui_refresh)
 
-class Installer_CopyConflicts(_InstallerLink):
+class Installer_CopyConflicts(_SingleInstallable):
     """For Modders only - copy conflicts to a new project."""
-    text = _(u'Copy Conflicts to Project')
-    help = _(u'Copy all files that conflict with the selected package into a'
-             u' new project')
+    _text = _(u'Copy Conflicts to Project')
+    _help = _(u'Copy all files that conflict with the selected installer into a'
+             u' new project') + u'.  ' + _(
+        u'Conflicts with inactive installers are included')
 
-    def _enable(self): return self.isSingleInstallable()
-
-    def Execute(self,event):
-        """Handle selection."""
-        data = self.idata # bosh.InstallersData instance (dict bolt.Path ->
-        # InstallerArchive)
-        installers_dir = data.dir
+    @balt.conversation
+    def Execute(self):
+        """Copy files that conflict with this installer from all other
+        installers to a project."""
         srcConflicts = set()
         packConflicts = []
+        src_sizeCrc = self._selected_info.ci_dest_sizeCrc # CIstr -> (int, int)
+        def _ok(msg): self._showOk(msg % self._selected_item)
+        if not src_sizeCrc:
+            return _ok(_(u'No files to install for %s'))
+        src_order = self._selected_info.order
+        with balt.Progress(_(u"Scanning Packages..."),
+                           u'\n' + u' ' * 60) as progress:
+            progress.setFull(len(self.idata))
+            numFiles = 0
+            destDir = GPath(u"Conflicts - %03d" % src_order)
+            for i,(package, installer) in enumerate(self.idata.sorted_pairs()):
+                curConflicts = set()
+                progress(i, _(u"Scanning Packages...") + u'\n' + package.s)
+                for z, y in installer.refreshDataSizeCrc().iteritems():
+                    if z in src_sizeCrc and installer.ci_dest_sizeCrc[z] != \
+                            src_sizeCrc[z]:
+                        curConflicts.add(y)
+                        srcConflicts.add(src_sizeCrc[z])
+                numFiles += len(curConflicts)
+                if curConflicts: packConflicts.append(
+                    (installer.order, package, curConflicts))
+            srcConflicts = set( # we need the paths rel to the archive not Data
+                src for src, size, crc in self._selected_info.fileSizeCrcs if
+                (size,crc) in srcConflicts)
+            numFiles += len(srcConflicts)
+        if not numFiles:
+            return _ok(_(u'No conflicts detected for %s'))
+        ijoin = self.idata.store_dir.join
+        def _copy_conflicts(curFile):
+            inst = self.idata[package]
+            if inst.is_project():
+                for src in curConflicts:
+                    srcFull = ijoin(package, src)
+                    destFull = ijoin(destDir, g_path, src)
+                    if srcFull.exists():
+                        progress(curFile, self._selected_item.s + u'\n' + _(
+                            u'Copying files...') + u'\n' + src)
+                        srcFull.copyTo(destFull)
+                        curFile += 1
+            else:
+                unpack_dir = inst.unpackToTemp(curConflicts,
+                    SubProgress(progress, curFile, curFile + len(curConflicts),
+                                len(curConflicts)))
+                unpack_dir.moveTo(ijoin(destDir, g_path))
+                curFile += len(curConflicts)
+            return curFile
         with balt.Progress(_(u"Copying Conflicts..."),
                            u'\n' + u' ' * 60) as progress:
-            srcArchive = self.selected[0]
-            srcInstaller = data[srcArchive]
-            src_sizeCrc = srcInstaller.data_sizeCrc # dictionary Path
-            mismatched = set(src_sizeCrc) # just a set of bolt.Path of the src
-            # installer files
-            if mismatched:
-                numFiles = 0
-                curFile = 1
-                srcOrder = srcInstaller.order
-                destDir = GPath(u"%03d - Conflicts" % srcOrder)
-                getArchiveOrder = lambda y: data[y].order
-                for package in sorted(data.data,key=getArchiveOrder):
-                    installer = data[package]
-                    curConflicts = set()
-                    for z,y in installer.refreshDataSizeCrc().iteritems():
-                        if z in mismatched and installer.data_sizeCrc[z] != \
-                                src_sizeCrc[z]:
-                            curConflicts.add(y)
-                            srcConflicts.add(src_sizeCrc[z])
-                    numFiles += len(curConflicts)
-                    if curConflicts: packConflicts.append(
-                        (installer.order,installer,package,curConflicts))
-                srcConflicts = set(
-                    src for src,size,crc in srcInstaller.fileSizeCrcs if
-                    (size,crc) in srcConflicts)
-                numFiles += len(srcConflicts)
-                if numFiles: # there are conflicting files
-                    progress.setFull(numFiles)
-                    if isinstance(srcInstaller,bosh.InstallerProject):
-                        for src in srcConflicts:
-                            srcFull = installers_dir.join(srcArchive,src)
-                            destFull = installers_dir.join(destDir,
-                                                           GPath(srcArchive.s),
-                                                           src)
-                            if srcFull.exists():
-                                progress(curFile,srcArchive.s + u'\n' + _(
-                                    u'Copying files...') + u'\n' + src)
-                                srcFull.copyTo(destFull)
-                                curFile += 1
-                    else:
-                        srcInstaller.unpackToTemp(srcArchive,srcConflicts,
-                                                  SubProgress(progress,0,len(
-                                                      srcConflicts),numFiles))
-                        srcInstaller.getTempDir().moveTo(
-                            installers_dir.join(destDir,GPath(srcArchive.s)))
-                    curFile = len(srcConflicts)
-                    for order,installer,package,curConflicts in packConflicts:
-                        if isinstance(installer,bosh.InstallerProject):
-                            for src in curConflicts:
-                                srcFull = installers_dir.join(package,src)
-                                destFull = installers_dir.join(destDir,GPath(
-                                    u"%03d - %s" % (order,package.s)),src)
-                                if srcFull.exists():
-                                    progress(curFile,srcArchive.s + u'\n' + _(
-                                        u'Copying files...') + u'\n' + src)
-                                    srcFull.copyTo(destFull)
-                                    curFile += 1
-                        else:
-                            installer.unpackToTemp(package, curConflicts,
-                                SubProgress(progress, curFile,
-                                    curFile + len(curConflicts), numFiles))
-                            installer.getTempDir().moveTo(
-                                installers_dir.join(destDir,GPath(
-                                    u"%03d - %s" % (order,package.s))))
-                            curFile += len(curConflicts)
-                    project = destDir.root
-                    if project not in data:
-                        data[project] = bosh.InstallerProject(project)
-                    iProject = data[project] #bash.bosh.InstallerProject object
-                    pProject = installers_dir.join(project) # bolt.Path
-                    # ...\Bash Installers\030 - Conflicts
-                    iProject.refreshed = False
-                    iProject.refreshBasic(pProject,None,True)
-                    if iProject.order == -1:
-                        data.moveArchives([project],srcInstaller.order + 1)
-                    data.irefresh(what='I')
-                    self.window.RefreshUI()
+            progress.setFull(numFiles)
+            curFile = 0
+            g_path = package = self._selected_item
+            curConflicts = srcConflicts
+            curFile = _copy_conflicts(curFile)
+            for order,package,curConflicts in packConflicts:
+                g_path = GPath(u"%03d - %s" % (
+                    order if order < src_order else order + 1, package.s))
+                curFile = _copy_conflicts(curFile)
+        self.idata.refresh_installer(destDir, is_project=True, progress=None,
+                                     install_order=src_order + 1,
+                                     do_refresh=True)
+        self.window.RefreshUI(detail_item=destDir)
 
 #------------------------------------------------------------------------------
-# InstallerDetails Espm Links -------------------------------------------------
+# InstallerDetails Plugin Filter Links ----------------------------------------
 #------------------------------------------------------------------------------
-class Installer_Espm_SelectAll(EnabledLink):
-    """Select All Esp/ms in installer for installation."""
-    text = _(u'Select All')
+class _Installer_Details_Link(EnabledLink):
 
     def _enable(self): return len(self.window.espms) != 0
 
-    def Execute(self,event):
-        """Handle selection."""
-        installer = self.window.GetDetailsItem()
-        installer.espmNots = set()
-        for i in range(len(self.window.espms)):
-            self.window.gEspmList.Check(i, True)
-        self.window.refreshCurrent(installer)
+    def _initData(self, window, selection):
+        """:type window: bosh.InstallersDetails
+        :type selection: int"""
+        super(_Installer_Details_Link, self)._initData(window, selection)
+        self._installer = self.window.file_info
 
-class Installer_Espm_DeselectAll(EnabledLink):
-    """Deselect All Esp/ms in installer for installation."""
-    text = _(u'Deselect All')
+class Installer_Espm_SelectAll(_Installer_Details_Link):
+    """Select all plugins in installer for installation."""
+    _text = _(u'Select All')
+    _help = _(u'Selects all plugin files in the selected sub-packages.')
 
-    def _enable(self): return len(self.window.espms) != 0
+    def Execute(self):
+        self._installer.espmNots = set()
+        self.window.gEspmList.set_all_checkmarks(checked=True)
+        self.window.refreshCurrent(self._installer)
 
-    def Execute(self,event):
-        """Handle selection."""
-        installer = self.window.GetDetailsItem()
-        espmNots = installer.espmNots = set()
-        for i in range(len(self.window.espms)):
-            self.window.gEspmList.Check(i, False)
-            espm =GPath(self.window.gEspmList.GetString(i).replace(u'&&',u'&'))
-            espmNots.add(espm)
-        self.window.refreshCurrent(installer)
+class Installer_Espm_DeselectAll(_Installer_Details_Link):
+    """Deselect all plugins in installer for installation."""
+    _text = _(u'Deselect All')
+    _help = _(u'Deselects all plugin files in the selected sub-packages.')
 
-class Installer_Espm_Rename(EnabledLink):
-    """Changes the installed name for an Esp/m."""
-    text = _(u'Rename...')
+    def Execute(self):
+        self._installer.espmNots = set(self.window.espms)
+        self.window.gEspmList.set_all_checkmarks(checked=False)
+        self.window.refreshCurrent(self._installer)
+
+class Installer_Espm_Rename(_Installer_Details_Link):
+    """Changes the installed name for a plugin."""
+    _text = _(u'Rename...')
+    _help = _(u'Changes the name under which this plugin will be installed.')
 
     def _enable(self): return self.selected != -1
 
-    def Execute(self,event):
-        """Handle selection."""
-        installer = self.window.GetDetailsItem()
-        curName = self.window.gEspmList.GetString(self.selected).replace(u'&&',
+    def Execute(self):
+        curName = self.window.gEspmList.lb_get_str_item_at_index(self.selected).replace(u'&&',
                                                                          u'&')
         if curName[0] == u'*':
             curName = curName[1:]
         _file = GPath(curName)
         newName = self._askText(_(u"Enter new name (without the extension):"),
-                                title=_(u"Rename Esp/m"), default=_file.sbody)
+                                title=_(u"Rename Plugin"), default=_file.sbody)
         if not newName: return
         if newName in self.window.espms: return
-        installer.setEspmName(curName, newName + _file.cext)
-        self.window.refreshCurrent(installer)
+        self._installer.setEspmName(curName, newName + _file.cext)
+        self.window.refreshCurrent(self._installer)
 
-class Installer_Espm_Reset(EnabledLink):
-    """Resets the installed name for an Esp/m."""
-    text = _(u'Reset Name')
+class Installer_Espm_Reset(_Installer_Details_Link):
+    """Resets the installed name for a plugin."""
+    _text = _(u'Reset Name')
+    _help = _(u'Resets the name under which this plugin will be installed '
+              u'back to its default name.')
 
     def _enable(self):
         if self.selected == -1: return False
-        self.installer = installer = self.window.GetDetailsItem()
-        curName = self.window.gEspmList.GetString(self.selected).replace(u'&&',
+        curName = self.window.gEspmList.lb_get_str_item_at_index(self.selected).replace(u'&&',
                                                                          u'&')
         if curName[0] == u'*': curName = curName[1:]
         self.curName = curName
-        return installer.isEspmRenamed(curName)
+        return self._installer.isEspmRenamed(curName)
 
-    def Execute(self,event):
-        """Handle selection."""
-        self.installer.resetEspmName(self.curName)
-        self.window.refreshCurrent(self.installer)
+    def Execute(self):
+        self._installer.resetEspmName(self.curName)
+        self.window.refreshCurrent(self._installer)
 
-class Installer_Espm_ResetAll(EnabledLink):
-    """Resets all renamed Esp/ms."""
-    text = _(u'Reset All Names')
+class Installer_Espm_ResetAll(_Installer_Details_Link):
+    """Resets all renamed plugins."""
+    _text = _(u'Reset All Names')
+    _help = _(u'Resets all plugins with changed names back to their default '
+              u'ones.')
 
-    def _enable(self): return len(self.window.espms) != 0
+    def Execute(self):
+        self._installer.resetAllEspmNames()
+        self.window.refreshCurrent(self._installer)
 
-    def Execute(self,event):
-        """Handle selection."""
-        installer = self.window.GetDetailsItem()
-        installer.resetAllEspmNames()
-        self.window.refreshCurrent(installer)
+class Installer_Espm_List(_Installer_Details_Link):
+    """Lists all plugins in installer for user information."""
+    _text = _(u'List Plugins')
+    _help = _(u'Displays a list of all plugin files in the selected '
+              u'sub-packages (and copies it to the system clipboard).')
 
-class Installer_Espm_List(EnabledLink):
-    """Lists all Esp/ms in installer for user information/w/e."""
-    text = _(u'List Esp/ms')
-
-    def _enable(self): return len(self.window.espms) != 0
-
-    def Execute(self,event):
-        """Handle selection."""
-        subs = _(u'Esp/m List for %s:') % self.window.GetDetailsItem(
-                    ).archive + u'\n[spoiler]\n'
+    def Execute(self):
+        subs = (_(u'Plugin List for %s:') % self._installer.archive +
+                u'\n[spoiler]\n')
         espm_list = self.window.gEspmList
-        for index in range(espm_list.GetCount()):
-            subs += [u'   ',u'** '][espm_list.IsChecked(index)] + \
-                    espm_list.GetString(index) + '\n'
+        for index in range(espm_list.lb_get_items_count()):
+            subs += [u'   ',u'** '][espm_list.lb_is_checked_at_index(index)] + \
+                    espm_list.lb_get_str_item_at_index(index) + '\n'
         subs += u'[/spoiler]'
         balt.copyToClipboard(subs)
-        self._showLog(subs, title=_(u'Esp/m List'), fixedFont=False,
-                      icons=Resources.bashBlue)
+        self._showLog(subs, title=_(u'Plugin List'), fixedFont=False)
+
+class Installer_Espm_JumpToMod(_Installer_Details_Link):
+    """Jumps to a plugin in the Mods tab, if it is installed."""
+    _text = _(u'Jump to Mod')
+    _help = _(u'Jumps to this plugin in the Mods tab. You can double-click on '
+              u'the plugin to the same effect.')
+
+    def _enable(self):
+        if self.selected == -1: return False
+        ##: Maybe refactor all this plugin logic (especially the renamed plugin
+        # (asterisk) handling) to a property inside a base class?
+        selected_plugin = self.window.gEspmList.lb_get_str_item_at_index(
+            self.selected).replace(u'&&', u'&')
+        if selected_plugin[0] == u'*': selected_plugin = selected_plugin[1:]
+        self.target_plugin = GPath(selected_plugin)
+        return self.target_plugin in bosh.modInfos
+
+    def Execute(self):
+        balt.Link.Frame.notebook.SelectPage('Mods', self.target_plugin)
 
 #------------------------------------------------------------------------------
 # InstallerDetails Subpackage Links -------------------------------------------
 #------------------------------------------------------------------------------
-class _Installer_Subs(EnabledLink):
-    def _enable(self): return self.window.gSubList.GetCount() > 1
+class _Installer_Subs(_Installer_Details_Link):
+    def _enable(self): return self.window.gSubList.lb_get_items_count() > 1
 
-class Installer_Subs_SelectAll(_Installer_Subs):
+class _Installer_Subs_MassSelect(_Installer_Subs):
+    """Base class for the (de)select all links."""
+    _should_check = False
+
+    def Execute(self):
+        self.window.set_subpackage_checkmarks(checked=self._should_check)
+        self.window.refreshCurrent(self._installer)
+
+class Installer_Subs_SelectAll(_Installer_Subs_MassSelect):
     """Select All sub-packages in installer for installation."""
-    text = _(u'Select All')
+    _text = _(u'Select All')
+    _help = _(u'Selects all sub-packages in this installer.')
+    _should_check = True
 
-    def Execute(self,event):
-        """Handle selection."""
-        installer = self.window.GetDetailsItem()
-        for index in xrange(self.window.gSubList.GetCount()):
-            self.window.gSubList.Check(index, True)
-            installer.subActives[index + 1] = True
-        self.window.refreshCurrent(installer)
-
-class Installer_Subs_DeselectAll(_Installer_Subs):
+class Installer_Subs_DeselectAll(_Installer_Subs_MassSelect):
     """Deselect All sub-packages in installer for installation."""
-    text = _(u'Deselect All')
-
-    def Execute(self,event):
-        """Handle selection."""
-        installer = self.window.GetDetailsItem()
-        for index in xrange(self.window.gSubList.GetCount()):
-            self.window.gSubList.Check(index, False)
-            installer.subActives[index + 1] = False
-        self.window.refreshCurrent(installer)
+    _text = _(u'Deselect All')
+    _help = _(u'Deselects all sub-packages in this installer.')
 
 class Installer_Subs_ToggleSelection(_Installer_Subs):
     """Toggles selection state of all sub-packages in installer for
     installation."""
-    text = _(u'Toggle Selection')
+    _text = _(u'Toggle Selection')
+    _help = _(u'Deselects all selected sub-packages and vice versa.')
 
-    def Execute(self,event):
-        """Handle selection."""
-        installer = self.window.GetDetailsItem()
-        for index in xrange(self.window.gSubList.GetCount()):
-            check = not installer.subActives[index+1]
-            self.window.gSubList.Check(index, check)
-            installer.subActives[index + 1] = check
-        self.window.refreshCurrent(installer)
+    def Execute(self):
+        for index in xrange(self.window.gSubList.lb_get_items_count()):
+            # + 1 due to empty string included in subActives by BAIN
+            check = not self._installer.subActives[index + 1]
+            self.window.gSubList.lb_check_at_index(index, check)
+            self._installer.subActives[index + 1] = check
+        self.window.refreshCurrent(self._installer)
 
 class Installer_Subs_ListSubPackages(_Installer_Subs):
     """Lists all sub-packages in installer for user information/w/e."""
-    text = _(u'List Sub-packages')
+    _text = _(u'List Sub-Packages')
+    _help = _(u'Displays a list of all sub-packages in this installer (and '
+              u'copies it to the system clipboard).')
 
-    def Execute(self,event):
-        """Handle selection."""
-        installer = self.window.GetDetailsItem()
-        subs = _(u'Sub-Packages List for %s:') % installer.archive
+    def Execute(self):
+        subs = _(u'Sub-Packages List for %s:') % self._installer.archive
         subs += u'\n[spoiler]\n'
-        for index in xrange(self.window.gSubList.GetCount()):
-            subs += [u'   ', u'** '][self.window.gSubList.IsChecked(
-                index)] + self.window.gSubList.GetString(index) + u'\n'
+        for index in xrange(self.window.gSubList.lb_get_items_count()):
+            subs += [u'   ', u'** '][self.window.gSubList.lb_is_checked_at_index(
+                index)] + self.window.gSubList.lb_get_str_item_at_index(index) + u'\n'
         subs += u'[/spoiler]'
         balt.copyToClipboard(subs)
-        self._showLog(subs, title=_(u'Sub-Package Lists'), fixedFont=False,
-                      icons=Resources.bashBlue)
+        self._showLog(subs, title=_(u'Sub-Package Lists'), fixedFont=False)
 
 #------------------------------------------------------------------------------
 # InstallerArchive Links ------------------------------------------------------
 #------------------------------------------------------------------------------
 class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
     """Unpack installer package(s) to Project(s)."""
-    text = _(u'Unpack to Project(s)...')
-    help = _(u'Unpack installer package(s) to Project(s)')
+    _text = _(u'Unpack to Project(s)...')
+    _help = _(u'Unpack installer package(s) to Project(s)')
 
     def _append(self, window):
         self.selected = window.GetSelected() # append runs before _initData
         self.window = window # and the idata access is via self.window
-        return self.isSelectedArchives()
+        return all(map(lambda inf: inf.is_archive(), self.iselected_infos()))
 
-    def Execute(self,event):
-        if self.isSingleArchive():
-            archive = self.selected[0]
-            installer = self.idata[archive]
+    @balt.conversation
+    def Execute(self):
+        # Ask the user first to avoid the progress dialog shoving itself over
+        # any dialogs we pop up
+        to_unpack = []
+        for archive, installer in self.idata.sorted_pairs(self.selected):
             project = archive.root
-            result = self._askText(_(u"Unpack %s to Project:") % archive.s,
-                                   default=project.s)
-            result = (result or u'').strip()
-            if not result: return
-            #--Error checking
-            project = GPath(result).tail
-            if not project.s or project.cext in bosh.readExts:
-                self._showWarning(_(u"%s is not a valid project name.") % result)
-                return
-            if self.idata.dir.join(project).isfile():
-                self._showWarning(_(u"%s is a file.") % project.s)
-                return
+            if self.isSingleArchive():
+                result = self._askText(_(u"Unpack %s to Project:") % archive.s,
+                                       default=project.s)
+                if not result: return
+                # Error checking
+                project = GPath(result).tail
+                if not project.s or project.cext in archives.readExts:
+                    self._showWarning(_(u"%s is not a valid project name.") %
+                                      result)
+                    return
+                if self.idata.store_dir.join(project).isfile():
+                    self._showWarning(_(u"%s is a file.") % project.s)
+                    return
             if project in self.idata:
                 if not self._askYes(
-                            _(u"%s already exists. Overwrite it?") % project.s,
-                            default=False): return
-        #--Copy to Build
-        with balt.Progress(_(u"Unpacking to Project..."),u'\n'+u' '*60) as progress:
-            if self.isSingleArchive():
-                installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
-                if project not in self.idata:
-                    self.idata[project] = bosh.InstallerProject(project)
-                iProject = self.idata[project]
-                pProject = bosh.dirs['installers'].join(project)
-                iProject.refreshed = False
-                iProject.refreshBasic(pProject,SubProgress(progress,0.8,0.99),True)
-                if iProject.order == -1:
-                    self.idata.moveArchives([project],installer.order+1)
-                self.idata.irefresh(what='NS')
-                self.window.RefreshUI()
-                #pProject.start()
-            else:
-                for archive in self.selected:
-                    project = archive.root
-                    installer = self.idata[archive]
-                    if project in self.idata:
-                        if not self._askYes(
-                            _(u"%s already exists. Overwrite it?") % project.s,
-                            default=False): continue
-                    installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
-                    if project not in self.idata:
-                        self.idata[project] = bosh.InstallerProject(project)
-                    iProject = self.idata[project]
-                    pProject = bosh.dirs['installers'].join(project)
-                    iProject.refreshed = False
-                    iProject.refreshBasic(pProject,SubProgress(progress,0.8,0.99),True)
-                    if iProject.order == -1:
-                        self.idata.moveArchives([project],installer.order+1)
-                self.idata.irefresh(what='NS')
-                self.window.RefreshUI()
+                    _(u"%s already exists. Overwrite it?") % project.s,
+                    default=False): continue
+            # All check passed, we can unpack this
+            to_unpack.append((installer, project))
+        # We're safe to show the progress dialog now
+        with balt.Progress(_(u"Unpacking to Project..."),u'\n'+u' '*60) \
+                as progress:
+            projects = []
+            for installer, project in to_unpack:
+                installer.unpackToProject(project,SubProgress(progress,0,0.8))
+                self.idata.refresh_installer(project, is_project=True,
+                    progress=SubProgress(progress, 0.8, 0.99),
+                    install_order=installer.order + 1, do_refresh=False)
+                projects.append(project)
+            if not projects: return
+            self.idata.irefresh(what='NS')
+            self.window.RefreshUI(detail_item=projects[-1]) # all files ? can status of others change ?
+            self.window.SelectItemsNoCallback(projects)
 
 #------------------------------------------------------------------------------
 # InstallerProject Links ------------------------------------------------------
 #------------------------------------------------------------------------------
-class InstallerProject_OmodConfig(_InstallerLink):
+class InstallerProject_OmodConfig(_SingleProject):
     """Projects only. Allows you to read/write omod configuration info."""
-    text = _(u'Omod Info...')
-    help = _(u'Projects only. Allows you to read/write omod configuration info')
+    _text = _(u'Omod Info...')
+    _help = _(u'Projects only. Allows you to read/write omod configuration info')
 
-    def _enable(self): return self.isSingleProject()
-
-    def Execute(self,event):
-        project = self.selected[0]
-        (InstallerProject_OmodConfigDialog(self.window, self.idata,
-                                           project)).Show()
-
+    def Execute(self):
+        InstallerProject_OmodConfigDialog(self.window,
+                                          self._selected_item).show_frame()
 #------------------------------------------------------------------------------
-class InstallerProject_Sync(_InstallerLink):
-    """Synchronize the project with files from the Data directory."""
-    text = _(u'Sync from Data')
-    help = _(u'Synchronize the project with files from the Data directory')
+class Installer_SyncFromData(_SingleInstallable):
+    """Synchronize an archive or project with files from the Data directory."""
+    _text = _(u'Sync from Data')
+    _help = _(u'Synchronize an installer with files from the Data directory')
 
     def _enable(self):
-        if not self.isSingleProject(): return False
-        project = self.selected[0]
-        installer = self.idata[project]
-        return bool(installer.missingFiles or installer.mismatchedFiles)
+        if not super(Installer_SyncFromData, self)._enable(): return False
+        return bool(self._selected_info.missingFiles or
+                    self._selected_info.mismatchedFiles)
 
-    def Execute(self,event):
-        project = self.selected[0]
-        installer = self.idata[project]
-        missing = installer.missingFiles
-        mismatched = installer.mismatchedFiles
-        message = (_(u'Update %s according to data directory?') + u'\n' +
-                   _(u'Files to delete:') + u'%d\n' +
-                   _(u'Files to update:') + u'%d') % (
-                        project.s, len(missing), len(mismatched))
-        if not self._askWarning(message, title=self.text): return
+    def Execute(self):
+        if self._selected_item.cext == u'.rar':
+            if not self._askYes(
+                    _(u'.rar files cannot be modified. Wrye Bash can however '
+                      u'repack them to .7z files, which can then be '
+                      u'modified.') + u'\n\n' +
+                    _(u'Note that doing this will leave the old .rar file '
+                      u'behind, so you may want to manually delete it '
+                      u'afterwards.') + u'\n\n' +
+                    _(u"Click 'Yes' to repack, or 'No' to abort the sync.")):
+                return # user clicked 'No'
+        missing = sorted(self._selected_info.missingFiles)
+        mismatched = sorted(self._selected_info.mismatchedFiles)
+        msg_del = [_(u'Files to delete (%u):') % len(missing),
+                   _(u'Uncheck files to keep them in the package.')]
+        msg_del.extend(missing)
+        msg_upd = [_(u'Files to update (%u):') % len(mismatched),
+                   _(u'Uncheck files to keep them unchanged in the package.')]
+        msg_upd.extend(mismatched)
+        sel_missing, sel_mismatched = [], []
+        with balt.ListBoxes(self.window, self._text,
+                            _(u'Update %s according to data directory?')
+                            % self._selected_item.s + u'\n' +
+                            _(u'Uncheck any files you want to keep '
+                              u'unchanged.'), [msg_del, msg_upd]) as dialog:
+            if dialog.show_modal():
+                sel_missing = set(dialog.getChecked(msg_del[0], missing))
+                sel_mismatched = set(dialog.getChecked(msg_upd[0], mismatched))
+        if not sel_missing and not sel_mismatched:
+            return # Nothing left to sync, cancel
         #--Sync it, baby!
-        with balt.Progress(self.text, u'\n' + u' ' * 60) as progress:
+        with balt.Progress(self._text, u'\n' + u' ' * 60) as progress:
             progress(0.1,_(u'Updating files.'))
-            installer.syncToData(project,missing|mismatched)
-            pProject = bosh.dirs['installers'].join(project)
-            installer.refreshed = False
-            installer.refreshBasic(pProject,SubProgress(progress,0.1,0.99),True)
+            actual_upd, actual_del = self._selected_info.sync_from_data(
+                sel_missing | sel_mismatched)
+            if (actual_del != len(sel_missing)
+                    or actual_upd != len(sel_mismatched)):
+                self._showWarning(
+                    _(u'Something went wrong when updating "%s" installer.') %
+                    self._selected_info.archive + u'\n' +
+                    _(u'Deleted %s. Expected to delete %s file(s).') % (
+                        actual_del, len(sel_missing)) + u'\n' +
+                    _(u'Updated %s. Expected to update %s file(s).') % (
+                        actual_upd, len(sel_mismatched))  + u'\n' +
+                    _(u'Check the integrity of the installer.'))
+            self._selected_info.refreshBasic(SubProgress(progress, 0.1, 0.99))
             self.idata.irefresh(what='NS')
             self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
-class InstallerProject_Pack(_InstallerLink):
+class InstallerProject_Pack(_SingleProject):
     """Pack project to an archive."""
-    text = dialogTitle = _(u'Pack to Archive...')
-    help = _(u'Pack project to an archive')
+    _text = dialogTitle = _(u'Pack to Archive...')
+    _help = _(u'Pack project to an archive')
     release = False
 
-    def _enable(self): return self.isSingleProject()
-
     @balt.conversation
-    def Execute(self,event):
+    def Execute(self):
         #--Generate default filename from the project name and the default extension
-        project = self.selected[0]
-        installer = self.idata[project]
-        archive = bosh.GPath(project.s + bosh.defaultExt)
+        archive = GPath(self._selected_item.s + archives.defaultExt)
         #--Confirm operation
         archive = self._askFilename(
-            message=_(u'Pack %s to Archive:') % project.s, filename=archive.s)
+            message=_(u'Pack %s to Archive:') % self._selected_item.s,
+            filename=archive.s)
         if not archive: return
-        self._pack(archive, installer, project, release=self.__class__.release)
+        self._pack(archive, self._selected_info, self._selected_item,
+                   release=self.__class__.release)
 
 #------------------------------------------------------------------------------
 class InstallerProject_ReleasePack(InstallerProject_Pack):
     """Pack project to an archive for release. Ignores dev files/folders."""
-    text = _(u'Package for Release...')
-    help = _(
+    _text = _(u'Package for Release...')
+    _help = _(
         u'Pack project to an archive for release. Ignores dev files/folders')
     release = True
 
 #------------------------------------------------------------------------------
-class InstallerConverter_Apply(_InstallerLink):
+class _InstallerConverter_Link(_InstallerLink):
+
+    @balt.conversation
+    def _check_identical_content(self, message):
+        # check that no installers with identical content are selected, this
+        # leads to undefined behavior
+        crcs_dict = defaultdict(set)
+        for inst in self.iselected_infos():
+            crcs_dict[inst.crc].add(inst)
+        duplicates = []
+        for crc_, installers in crcs_dict.iteritems():
+            if len(installers) > 1:
+                duplicates.append((crc_, u'  \n* ' + u'  \n* '.join(
+                    sorted(x.archive for x in installers))))
+        if duplicates:
+            msg = _(u'Installers with identical content selected:') + u'\n'
+            msg += u'\n'.join(
+                sorted(u'CRC: %08X%s' % (k, v) for k, v in duplicates))
+            if message: msg += u'\n' + message
+            self._showError(msg, _(u'Identical installers content'))
+            return True
+        return False
+
+class InstallerConverter_Apply(_InstallerConverter_Link):
     """Apply a Bain Conversion File."""
     dialogTitle = _(u'Apply BCF...') # title used in dialog
 
-    def __init__(self,converter,numAsterisks):
+    def __init__(self,converter,selected):
         super(InstallerConverter_Apply, self).__init__()
         self.converter = converter
         #--Add asterisks to indicate the number of unselected archives that the BCF uses
-        self.dispName = u''.join((self.converter.fullPath.sbody,u'*' * numAsterisks))
-        self.text = self.dispName
+        self.dispName = self.converter.fullPath.sbody
+        self._text = self.dispName
+        self._selected = selected
+
+    @property
+    def menu_help(self):
+        return _(u'Applies %(bcf)s to the selected installer(s).') % {
+            'bcf': self.dispName}
 
     @balt.conversation
-    def Execute(self,event):
+    def Execute(self):
+        if self._check_identical_content(
+                _(u'Please only select the installers this converter was made '
+                  u'for.')):
+            return
+        # all installers that this converter needs are present and unique
+        crc_installer = dict((x.crc, x) for x in self.iselected_infos())
         #--Generate default filename from BCF filename
-        defaultFilename = self.converter.fullPath.sbody[:-4] + bosh.defaultExt
+        defaultFilename = self.converter.fullPath.sbody[:-4] + archives\
+            .defaultExt
         #--List source archives
         message = _(u'Using:') + u'\n* ' + u'\n* '.join(sorted(
-            u'(%08X) - %s' % (x, self.idata.crc_installer[x].archive) for x in
+            u'(%08X) - %s' % (x, crc_installer[x].archive) for x in
             self.converter.srcCRCs)) + u'\n'
         #--Ask for an output filename
         destArchive = self._askFilename(message, filename=defaultFilename)
         if not destArchive: return
         with balt.Progress(_(u'Converting to Archive...'),u'\n'+u' '*60) as progress:
             #--Perform the conversion
+            msg = u'%s: ' % destArchive.s + _(
+                u'An error occurred while applying an Auto-BCF.')
+            msg += _(u'Maybe the BCF was packed for another installer ?')
+            new_archive_order = self.idata[self.selected[-1]].order + 1
             try:
-                self.converter.apply(destArchive, self.idata.crc_installer,
-                                     SubProgress(progress, 0.0, 0.99))
+                self.idata.apply_converter(self.converter, destArchive,
+                    progress, msg, show_warning=self._showWarning,
+                    position=new_archive_order, crc_installer=crc_installer)
             except StateError:
-                # hasBCF will be set to False if there is an error while
-                # rearranging files
-                msg = u'%s: ' % destArchive.s + _(
-                    u'An error occurred while applying an Auto-BCF.')
-                deprint(msg, traceback=True)
-                self._showWarning(msg)
                 return
-            #--Add the new archive to Bash
-            if destArchive not in self.idata:
-                self.idata[destArchive] = bosh.InstallerArchive(destArchive)
-            #--Apply settings from the BCF to the new InstallerArchive
-            iArchive = self.idata[destArchive]
-            self.converter.applySettings(iArchive)
-            #--Refresh UI
-            pArchive = bosh.dirs['installers'].join(destArchive)
-            iArchive.refreshed = False
-            iArchive.refreshBasic(pArchive,SubProgress(progress,0.99,1.0),True)
-            if iArchive.order == -1:
-                lastInstaller = self.idata[self.selected[-1]]
-                self.idata.moveArchives([destArchive],lastInstaller.order+1)
-            self.idata.irefresh(what='I')
-            self.window.RefreshUI()
+        self.window.RefreshUI(detail_item=destArchive)
 
 #------------------------------------------------------------------------------
 class InstallerConverter_ApplyEmbedded(_InstallerLink):
-    text = _(u'Embedded BCF')
+    _text = _(u'Embedded BCF')
+    _help = _(u'Applies the BAIN converter files (BCFs) embedded in the '
+              u'selected installer(s).')
     dialogTitle = _(u'Apply BCF...')
 
     @balt.conversation
-    def Execute(self,event):
-        name = self.selected[0]
-        archive = self.idata[name]
+    def Execute(self):
+        iname, archive = next(self.iselected_pairs()) # first selected pair
         #--Ask for an output filename
-        dest = self._askFilename(_(u'Output file:'), filename=name.stail)
+        dest = self._askFilename(_(u'Output file:'), filename=iname.stail)
         if not dest: return
         with balt.Progress(_(u'Extracting BCF...'),u'\n'+u' '*60) as progress:
-            self.idata.applyEmbeddedBCFs([archive], [dest], progress)
-            iArchive = self.idata[dest]
-            if iArchive.order == -1:
-                lastInstaller = self.idata[self.selected[-1]]
-                self.idata.moveArchives([dest], lastInstaller.order + 1)
-            self.idata.irefresh(what='I')
-            self.window.RefreshUI()
+            destinations, converted = self.idata.applyEmbeddedBCFs(
+                [archive], [dest], progress)
+            if not destinations: return # destinations == [dest] if all was ok
+        self.window.RefreshUI(detail_item=dest)
 
-class InstallerConverter_Create(_InstallerLink):
+class InstallerConverter_Create(_InstallerConverter_Link):
     """Create BAIN conversion file."""
     dialogTitle = _(u'Create BCF...') # title used in dialog
-    text = _(u'Create...')
+    _text = _(u'Create...')
+    _help = _(u'Creates a new BAIN conversion file (BCF).')
 
-    def Execute(self,event):
+    def Execute(self):
+        if self._check_identical_content(
+                _(u'Please only select installers that are needed.')):
+            return
+        # all installers that this converter needs are unique
+        crc_installer = dict((x.crc, x) for x in self.iselected_infos())
         #--Generate allowable targets
-        readTypes = u'*%s' % u';*'.join(bosh.readExts)
+        readTypes = u'*%s' % u';*'.join(archives.readExts)
         #--Select target archive
         destArchive = self._askOpen(title=_(u"Select the BAIN'ed Archive:"),
-                                    defaultDir=self.idata.dir,
+                                    defaultDir=self.idata.store_dir,
                                     wildcard=readTypes, mustExist=True)
         if not destArchive: return
         #--Error Checking
         BCFArchive = destArchive = destArchive.tail
-        if not destArchive.s or destArchive.cext not in bosh.readExts:
+        if not destArchive.s or destArchive.cext not in archives.readExts:
             self._showWarning(_(u'%s is not a valid archive name.') % destArchive.s)
             return
         if destArchive not in self.idata:
             self._showWarning(_(u'%s must be in the Bash Installers directory.') % destArchive.s)
             return
         if BCFArchive.csbody[-4:] != u'-bcf':
-            BCFArchive = GPath(BCFArchive.sbody + u'-BCF' + bosh.defaultExt).tail
+            BCFArchive = GPath(BCFArchive.sbody + u'-BCF' + archives.defaultExt).tail
         #--List source archives and target archive
         message = _(u'Convert:')
-        message += u'\n* ' + u'\n* '.join(sorted(u'(%08X) - %s' % (self.idata[x].crc,x.s) for x in self.selected))
+        message += u'\n* ' + u'\n* '.join(sorted(
+            u'(%08X) - %s' % (v.crc, k.s) for k, v in self.iselected_pairs()))
         message += (u'\n\n'+_(u'To:')+u'\n* (%08X) - %s') % (self.idata[destArchive].crc,destArchive.s) + u'\n'
         #--Confirm operation
         result = self._askText(message, title=self.dialogTitle,
                                default=BCFArchive.s)
-        result = (result or u'').strip()
         if not result: return
         #--Error checking
         BCFArchive = GPath(result).tail
@@ -1286,28 +1295,29 @@ class InstallerConverter_Create(_InstallerLink):
             return
         if BCFArchive.csbody[-4:] != u'-bcf':
             BCFArchive = GPath(BCFArchive.sbody + u'-BCF' + BCFArchive.cext).tail
-        if BCFArchive.cext != bosh.defaultExt:
-            self._showWarning(_(u"BCF's only support %s. The %s extension will be discarded.") % (bosh.defaultExt, BCFArchive.cext))
-            BCFArchive = GPath(BCFArchive.sbody + bosh.defaultExt).tail
-        if bosh.dirs['converters'].join(BCFArchive).exists():
+        if BCFArchive.cext != archives.defaultExt:
+            self._showWarning(_(u"BCF's only support %s. The %s extension will"
+                      u" be discarded.") % (
+                              archives.defaultExt, BCFArchive.cext))
+            BCFArchive = GPath(BCFArchive.sbody + archives.defaultExt).tail
+        if bass.dirs[u'converters'].join(BCFArchive).exists():
             if not self._askYes(_(
                     u'%s already exists. Overwrite it?') % BCFArchive.s,
                                 title=self.dialogTitle, default=False): return
             #--It is safe to removeConverter, even if the converter isn't overwritten or removed
             #--It will be picked back up by the next refresh.
-            self.idata.removeConverter(BCFArchive)
+            self.idata.converters_data.removeConverter(BCFArchive)
         destInstaller = self.idata[destArchive]
         blockSize = None
         if destInstaller.isSolid:
             blockSize = self._promptSolidBlockSize(
                 title=self.dialogTitle, value=destInstaller.blockSize or 0)
-        progress = balt.Progress(_(u'Creating %s...') % BCFArchive.s,u'\n'+u' '*60)
-        log = None
-        try:
+        with balt.Progress(_(u'Creating %s...') % BCFArchive.s,u'\n'+u' '*60) as progress:
             #--Create the converter
-            converter = bosh.InstallerConverter(self.selected, self.idata, destArchive, BCFArchive, blockSize, progress)
+            converter = bosh.converters.InstallerConverter(self.selected,
+                    self.idata, destArchive, BCFArchive, blockSize, progress)
             #--Add the converter to Bash
-            self.idata.addConverter(converter)
+            self.idata.converters_data.addConverter(converter)
             #--Refresh UI
             self.idata.irefresh(what='C')
             #--Generate log
@@ -1315,10 +1325,12 @@ class InstallerConverter_Create(_InstallerLink):
             log.setHeader(u'== '+_(u'Overview')+u'\n')
 ##            log('{{CSS:wtxt_sand_small.css}}')
             log(u'. '+_(u'Name')+u': '+BCFArchive.s)
-            log(u'. '+_(u'Size')+u': %s KB'% formatInteger(max(converter.fullPath.size,1024)/1024 if converter.fullPath.size else 0))
-            log(u'. '+_(u'Remapped')+u': %s'%formatInteger(len(converter.convertedFiles))+(_(u'file'),_(u'files'))[len(converter.convertedFiles) > 1])
-            log.setHeader(u'. '+_(u'Requires')+u': %s'%formatInteger(len(converter.srcCRCs))+(_(u'file'),_(u'files'))[len(converter.srcCRCs) > 1])
-            log(u'  * '+u'\n  * '.join(sorted(u'(%08X) - %s' % (x, self.idata.crc_installer[x].archive) for x in converter.srcCRCs if x in self.idata.crc_installer)))
+            log(u'. '+_(u'Size')+u': %s'% round_size(converter.fullPath.size))
+            log(u'. ' + _(u'Remapped: %u file(s)') %
+                len(converter.convertedFiles))
+            log.setHeader(u'. ' + _(u'Requires: %u file(s)') %
+                          len(converter.srcCRCs))
+            log(u'  * '+u'\n  * '.join(sorted(u'(%08X) - %s' % (x, crc_installer[x].archive) for x in converter.srcCRCs if x in crc_installer)))
             log.setHeader(u'. '+_(u'Options:'))
             log(u'  * '+_(u'Skip Voices')+u'   = %s'%bool(converter.skipVoices))
             log(u'  * '+_(u'Solid Archive')+u' = %s'%bool(converter.isSolid))
@@ -1331,27 +1343,27 @@ class InstallerConverter_Create(_InstallerLink):
             log(u'  *  '+_(u'Has Extra Directories')+u' = %s'%bool(converter.hasExtraData))
             log(u'  *  '+_(u'Has Esps Unselected')+u'   = %s'%bool(converter.espmNots))
             log(u'  *  '+_(u'Has Packages Selected')+u' = %s'%bool(converter.subActives))
-            log.setHeader(u'. '+_(u'Contains')+u': %s'%formatInteger(len(converter.missingFiles))+ (_(u'file'),_(u'files'))[len(converter.missingFiles) > 1])
-            log(u'  * '+u'\n  * '.join(sorted(u'%s' % x for x in converter.missingFiles)))
-        finally:
-            progress.Destroy()
-            if log:
-                self._showLog(log.out.getvalue(), title=_(u'BCF Information'))
+            log.setHeader(u'. ' + _(u'Contains: %u file(s)') %
+                          len(converter.bcf_missing_files))
+            log(u'  * ' +u'\n  * '.join(sorted(u'%s' % x for x in converter
+                                               .bcf_missing_files)))
+        if log:
+            self._showLog(log.out.getvalue(), title=_(u'BCF Information'))
 
 #------------------------------------------------------------------------------
 # Installer Submenus ----------------------------------------------------------
 #------------------------------------------------------------------------------
 class InstallerOpenAt_MainMenu(balt.MenuLink):
     """Main Open At Menu"""
-    text = _(u"Open at")
+    _text = _(u"Open at")
     def _enable(self):
-        return super(InstallerOpenAt_MainMenu, self)._enable() and isinstance(
-            self.window.data[self.selected[0]], bosh.InstallerArchive)
+        return super(InstallerOpenAt_MainMenu, self)._enable() and (
+            self.window.data_store[self.selected[0]].is_archive())
 
 class InstallerConverter_ConvertMenu(balt.MenuLink):
     """Apply BCF SubMenu."""
-    text = _(u"Apply")
-    def _enable(self): # TODO(ut) untested for multiple selections
+    _text = _(u"Apply")
+    def _enable(self):
         """Return False to disable the converter menu, otherwise populate its
         links attribute and return True."""
         linkSet = set()
@@ -1359,25 +1371,22 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         #--Converters are linked by CRC, not archive name
         #--So, first get all the selected archive CRCs
         selected = self.selected
-        instData = self.window.data # InstallersData singleton
-        selectedCRCs = set(instData[archive].crc for archive in selected)
-        crcInstallers = set(instData.crc_installer)
-        srcCRCs = set(instData.srcCRC_converters)
+        idata = self.window.data_store # InstallersData singleton
+        selectedCRCs = set(idata[archive].crc for archive in selected)
+        srcCRCs = set(idata.converters_data.srcCRC_converters)
         #--There is no point in testing each converter unless
         #--every selected archive has an associated converter
         if selectedCRCs <= srcCRCs:
             #--Test every converter for every selected archive
-            #--Only add a link to the converter if it uses all selected archives,
-            #--and all of its required archives are available (but not necessarily selected)
-            linkSet = set( #--List comprehension is faster than unrolling the for loops, but readability suffers
-                [converter for installerCRC in selectedCRCs for converter in
-                 instData.srcCRC_converters[installerCRC] if
-                 selectedCRCs <= converter.srcCRCs <= crcInstallers])
-##            for installerCRC in selectedCRCs:
-##                for converter in window.data.srcCRC_converters[installerCRC]:
-##                    if selectedCRCs <= converter.srcCRCs <= set(window.data.crc_installer): linkSet.add(converter)
+            # Only add a link to the converter if all of its required archives
+            # are selected
+            linkSet = set()
+            for installerCRC in selectedCRCs:
+               for converter in idata.converters_data.srcCRC_converters[installerCRC]:
+                   if converter.srcCRCs <= selectedCRCs:
+                       linkSet.add(converter)
         #--If the archive is a single archive with an embedded BCF, add that
-        if len(selected) == 1 and instData[selected[0]].hasBCF:
+        if len(selected) == 1 and idata[selected[0]].hasBCF:
             self.links.append(InstallerConverter_ApplyEmbedded())
         #--Disable the menu if there were no valid converters found
         elif not linkSet:
@@ -1385,16 +1394,15 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         #--Otherwise add each link in alphabetical order, and
         #--indicate the number of additional, unselected archives
         #--that the converter requires
-        for converter in sorted(linkSet,key=lambda x: x.fullPath.stail.lower()):
-            numAsterisks = len(converter.srcCRCs - selectedCRCs)
-            self.links.append(InstallerConverter_Apply(converter, numAsterisks))
+        for converter in sorted(linkSet,key=lambda x:x.fullPath.stail.lower()):
+            self.links.append(InstallerConverter_Apply(converter, selected))
         return True
 
 class InstallerConverter_MainMenu(balt.MenuLink):
     """Main BCF Menu"""
-    text = _(u"Conversions")
+    _text = _(u"BAIN Conversions")
     def _enable(self):
         for item in self.selected:
-            if not isinstance(self.window.data[item], bosh.InstallerArchive):
+            if not self.window.data_store[item].is_archive():
                 return False
         return True

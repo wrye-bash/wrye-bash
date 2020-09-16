@@ -17,7 +17,7 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,12 +25,11 @@
 """Menu items for the _main_ menu of the installer tab - their window attribute
 points to the InstallersList singleton."""
 
-import copy
 from . import Installers_Link
 from .dialogs import CreateNewProject
-from .. import bosh, balt, bush
-from ..balt import BoolLink, AppendableLink, ItemLink, ListBoxes
-from ..bass import Resources
+from .. import bass, bosh, balt, bush, load_order
+from ..balt import BoolLink, AppendableLink, ItemLink, ListBoxes, \
+    EnabledLink
 
 __all__ = ['Installers_SortActive', 'Installers_SortProjects',
            'Installers_Refresh', 'Installers_AddMarker',
@@ -46,78 +45,69 @@ __all__ = ['Installers_SortActive', 'Installers_SortProjects',
            'Installers_ConflictsReportShowsInactive',
            'Installers_ConflictsReportShowsLower',
            'Installers_ConflictsReportShowBSAConflicts',
-           'Installers_WizardOverlay', 'Installers_SkipOBSEPlugins',
-           'Installers_SkipScreenshots', 'Installers_SkipImages',
-           'Installers_SkipDocs', 'Installers_SkipDistantLOD',
-           'Installers_SkipLandscapeLODMeshes',
-           'Installers_SkipLandscapeLODTextures',
-           'Installers_SkipLandscapeLODNormals', 'Installers_SkipBsl',
-           'Installers_RenameStrings']
+           u'Installers_WizardOverlay', u'Installers_GlobalSkips',
+           u'Installers_GlobalRedirects']
 
 #------------------------------------------------------------------------------
 # Installers Links ------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Installers_AddMarker(ItemLink):
     """Add an installer marker."""
-    text = _(u'Add Marker...')
-    help = _(u'Adds a Marker, a special type of package useful for separating'
-             u' and labelling your packages.')
+    _text = _(u'New Marker...')
+    _help = _(u'Adds a Marker, a special type of package useful for '
+              u'separating and labelling your packages.')
 
-    def Execute(self,event):
+    def Execute(self):
         """Add a Marker."""
         self.window.addMarker()
 
 class Installers_MonitorInstall(Installers_Link):
     """Monitors Data folder for external installation."""
-    text = _(u'Monitor External Installation...')
-    help = _(u'Monitors the Data folder during installation via manual install'
-             u' or 3rd party tools.')
+    _text = _(u'Monitor External Installation...')
+    _help = _(u'Monitors the Data folder during installation via manual '
+              u'install or 3rd party tools.')
 
-    def Execute(self,event):
-        """Handle Selection."""
+    @balt.conversation
+    def Execute(self):
         msg = _(u'Wrye Bash will monitor your data folder for changes when '
                 u'installing a mod via an external application or manual '
                 u'install.  This will require two refreshes of the Data folder'
                 u' and may take some time.')
         if not self._askOk(msg, _(u'External Installation')): return
         # Refresh Data
-        self.iPanel.refreshed = False
-        self.iPanel.fullRefresh = False
-        self.iPanel.ShowPanel(canCancel=False)
+        self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Backup CRC data
-        data = copy.copy(self.iPanel.data.data_sizeCrcDate)
+        data_sizeCrcDate = self.idata.data_sizeCrcDate.copy()
         # Install and wait
         self._showOk(_(u'You may now install your mod.  When installation is '
-                       u'complete, press Ok.'),
-                     _(u'External Installation'))
+                       u'complete, press Ok.'), _(u'External Installation'))
         # Refresh Data
-        self.iPanel.refreshed = False
-        self.iPanel.fullRefresh = False
-        self.iPanel.ShowPanel(canCancel=False)
+        bosh.bsaInfos.refresh() # TODO: add bsas to BAIN refresh
+        with load_order.Unlock():
+            mods_changed = bosh.modInfos.refresh()
+        inis_changed = bosh.iniInfos.refresh()
+        ui_refresh = map(bool, [mods_changed, inis_changed])
+        self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Determine changes
-        curData = self.iPanel.data.data_sizeCrcDate
-        oldFiles = set(data)
+        curData = self.idata.data_sizeCrcDate
+        oldFiles = set(data_sizeCrcDate)
         curFiles = set(curData)
         newFiles = curFiles - oldFiles
         delFiles = oldFiles - curFiles
         sameFiles = curFiles & oldFiles
-        changedFiles = set(file_ for file_ in sameFiles if data[file_][1] != curData[file_][1])
-        touchedFiles = set(file_ for file_ in sameFiles if data[file_][2] != curData[file_][2])
+        changedFiles = set(file_ for file_ in sameFiles if
+                           data_sizeCrcDate[file_][1] != curData[file_][1])
+        touchedFiles = set(file_ for file_ in sameFiles if
+                           data_sizeCrcDate[file_][2] != curData[file_][2])
         touchedFiles -= changedFiles
 
         if not newFiles and not changedFiles and not touchedFiles:
             self._showOk(_(u'No changes were detected in the Data directory.'),
                          _(u'External Installation'))
             return
-
-        # Change to list for sorting
-        newFiles = list(newFiles)
-        newFiles.sort()
-        delFiles = list(delFiles)
-        changedFiles = list(changedFiles)
-        changedFiles.sort()
-        touchedFiles = list(touchedFiles)
-        touchedFiles.sort()
+        newFiles = sorted(newFiles) # sorts case insensitive as those are CIStr
+        changedFiles = sorted(changedFiles)
+        touchedFiles = sorted(touchedFiles)
         # Show results, select which files to include
         checklists = []
         newFilesKey = _(u'New Files: %(count)i') % {'count':len(newFiles)}
@@ -125,387 +115,504 @@ class Installers_MonitorInstall(Installers_Link):
         touchedFilesKey = _(u'Touched Files: %(count)i') % {'count':len(touchedFiles)}
         delFilesKey = _(u'Deleted Files')
         if newFiles:
-            group = [newFilesKey,
-                     _(u'These files are newly added to the Data directory.'),
-                     ]
+            group = [newFilesKey, _(
+                u'These files are newly added to the Data directory.'), ]
             group.extend(newFiles)
             checklists.append(group)
         if changedFiles:
-            group = [changedFilesKey,
-                     _(u'These files were modified.'),
-                     ]
+            group = [changedFilesKey, _(u'These files were modified.'), ]
             group.extend(changedFiles)
             checklists.append(group)
         if touchedFiles:
-            group = [touchedFilesKey,
-                     _(u'These files were not changed, but had their modification time altered.  Most likely, these files are included in the external installation, but were the same version as already existed.'),
-                     ]
+            group = [touchedFilesKey, _(
+                u'These files were not changed, but had their modification '
+                u'time altered.  Most likely, these files are included in '
+                u'the external installation, but were the same version as '
+                u'already existed.'), ]
             group.extend(touchedFiles)
             checklists.append(group)
         if delFiles:
-            group = [delFilesKey,
-                     _(u'These files were deleted.  BAIN does not have the capability to remove files when installing.'),
-                     ]
-            group.extend(delFiles)
-        dialog = ListBoxes(self.window,_(u'External Installation'),
-                           _(u'The following changes were detected in the Data directory'),
-                           checklists, bOk=_(u'Create Project'))
-        if not dialog.askOkModal():
-            dialog.Destroy()
-            return
-        include = set()
-        for (lst, key) in [(newFiles, newFilesKey),
-                           (changedFiles, changedFilesKey),
-                           (touchedFiles, touchedFilesKey), ]:
-            include |= set(dialog.getChecked(key, lst))
-        dialog.Destroy()
+            group = [delFilesKey, _(
+                u'These files were deleted.  BAIN does not have the '
+                u'capability to remove files when installing.'), ]
+            group.extend(sorted(delFiles))
+        with ListBoxes(self.window, _(u'External Installation'),
+            _(u'The following changes were detected in the Data directory'),
+            checklists, bOk=_(u'Create Project')) as dialog:
+            if not dialog.show_modal(): return
+            include = set()
+            for (lst, key) in [(newFiles, newFilesKey),
+                               (changedFiles, changedFilesKey),
+                               (touchedFiles, touchedFilesKey), ]:
+                include |= set(dialog.getChecked(key, lst))
+            if not include: return
         # Create Project
-        if not include:
-            return
         projectName = self._askText(_(u'Project Name'),
                                     _(u'External Installation'))
         if not projectName:
             return
-        path = bosh.dirs['installers'].join(projectName).root
-        if path.exists():
-            num = 2
-            tmpPath = path + u' (%i)' % num
-            while tmpPath.exists():
-                num += 1
-                tmpPath = path + u' (%i)' % num
-            path = tmpPath
+        path = self.window.new_name(projectName)
         # Copy Files
-        with balt.Progress(_(u'Creating Project...'),u'\n'+u' '*60) as progress:
-            bosh.InstallerProject.createFromData(path,include,progress)
-        # Refresh Installers - so we can manipulate the InstallerProject item
-        self.iPanel.ShowPanel()
-        # Update the status of the installer (as installer last)
-        path = path.relpath(bosh.dirs['installers'])
-        self.idata.install([path],None,True,False)
-        # Refresh UI
-        self.iPanel.RefreshUIMods()
+        with balt.Progress(_(u'Creating Project...'), u'\n' + u' '*60) as prog:
+            self.idata.createFromData(path, include, prog) # will order last
+        # createFromData placed the new project last in install order - install
+        try:
+            self.idata.bain_install([path], ui_refresh, override=False)
+        finally:
+            self.iPanel.RefreshUIMods(*ui_refresh)
         # Select new installer
         self.window.SelectLast()
 
 class Installers_ListPackages(Installers_Link):
     """Copies list of Bain files to clipboard."""
-    text = _(u'List Packages...')
-    help = _(u'Displays a list of all packages.  Also copies that list to the '
-        u'clipboard.  Useful for posting your package order on forums.')
+    _text = _(u'List Packages...')
+    _help = _(u'Displays a list of all packages.  Also copies that list to '
+        u'the clipboard.  Useful for posting your package order on forums.')
 
-    def Execute(self,event):
+    @balt.conversation
+    def Execute(self):
         #--Get masters list
-        message = (_(u'Only show Installed Packages?')
-                   + u'\n' +
-                   _(u'(Else shows all packages)')
-                   )
-        if self._askYes(message,_(u'Only Show Installed?')):
-            text = self.idata.getPackageList(False)
-        else: text = self.idata.getPackageList()
-        balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'BAIN Packages'), fixedFont=False,
-                      icons=Resources.bashBlue)
+        message = _(u'Only show Installed Packages?') + u'\n' + _(
+            u'(Else shows all packages)')
+        installed_only = self._askYes(message, _(u'Only Show Installed?'))
+        package_list = self.idata.getPackageList(
+            showInactive=not installed_only)
+        balt.copyToClipboard(package_list)
+        self._showLog(package_list, title=_(u'BAIN Packages'), fixedFont=False)
 
 class Installers_AnnealAll(Installers_Link):
     """Anneal all packages."""
-    text = _(u'Anneal All')
-    help = _(u'This will install any missing files (for active installers)'
+    _text = _(u'Anneal All')
+    _help = _(u'This will install any missing files (for active installers)'
              u' and correct all install order and reconfiguration errors.')
 
-    def Execute(self,event):
+    @balt.conversation
+    def Execute(self):
         """Anneal all packages."""
+        ui_refresh = [False, False]
         try:
             with balt.Progress(_(u"Annealing..."),u'\n'+u' '*60) as progress:
-                self.idata.anneal(progress=progress)
+                self.idata.bain_anneal(None, ui_refresh, progress=progress)
         finally:
-            self.iPanel.RefreshUIMods(_refreshData=True)
+            self.iPanel.RefreshUIMods(*ui_refresh)
 
 class Installers_UninstallAllPackages(Installers_Link):
     """Uninstall all packages."""
-    text = _(u'Uninstall All Packages')
-    help = _(u'This will uninstall all packages.')
+    _text = _(u'Uninstall All Packages')
+    _help = _(u'This will uninstall all packages.')
 
-    def Execute(self,event):
+    @balt.conversation
+    def Execute(self):
         """Uninstall all packages."""
         if not self._askYes(_(u"Really uninstall All Packages?")): return
+        ui_refresh = [False, False]
         try:
             with balt.Progress(_(u"Uninstalling..."),u'\n'+u' '*60) as progress:
-                self.idata.uninstall(unArchives='ALL',progress=progress)
+                self.idata.bain_uninstall('ALL', ui_refresh, progress=progress)
         finally:
-            self.iPanel.RefreshUIMods(_refreshData=True)
+            self.iPanel.RefreshUIMods(*ui_refresh)
 
 class Installers_Refresh(AppendableLink, Installers_Link):
     """Refreshes all Installers data."""
     msg = _(u"Refresh ALL data from scratch? This may take five to ten minutes"
             u" (or more) depending on the number of mods you have installed.")
 
-    def __init__(self, fullRefresh=False):
+    def __init__(self, full_refresh=False):
         super(Installers_Refresh, self).__init__()
-        self.fullRefresh = fullRefresh
-        self.text = (_(u'Refresh Data'),_(u'Full Refresh'))[self.fullRefresh]
-        self.help = _(
+        self.full_refresh = full_refresh
+        self._text = _(u'Full Refresh') if full_refresh else _(u'Refresh Data')
+        self._help = _(
             u"Perform a full refresh of all data files, recalculating all "
-            u"CRCs.  This can take 5-15 minutes.") if self.fullRefresh else _(
+            u"CRCs.  This can take 5-15 minutes.") if self.full_refresh else _(
             u"Rescan the Data directory and all project directories.")
 
-    def _append(self, window): return bosh.settings['bash.installers.enabled']
-    def Execute(self,event):
+    def _append(self, window): return bass.settings['bash.installers.enabled']
+
+    @balt.conversation
+    def Execute(self):
         """Refreshes all Installers data"""
-        if self.fullRefresh and not self._askWarning(self.msg, self.text):
+        if self.full_refresh and not self._askWarning(self.msg, self._text):
             return
-        self.iPanel.refreshed = False
-        self.iPanel.fullRefresh = self.fullRefresh
-        self.iPanel.ShowPanel()
+        self.idata.reset_refresh_flag_on_projects()
+        self.iPanel.ShowPanel(fullRefresh=self.full_refresh,scan_data_dir=True)
 
 class Installers_UninstallAllUnknownFiles(Installers_Link):
     """Uninstall all files that do not come from a current package/bethesda
-    files. For safety just moved to Oblivion Mods\Bash Installers\Bash\Data
+    files. For safety just moved to Game Mods\Bash Installers\Bash\Data
     Folder Contents (date/time)\."""
-    text = _(u'Clean Data')
-    help = _(u'This will remove all mod files that are not linked to an'
-             u' active installer out of the Data folder.')
-    fullMessage = _(u"Clean Data directory?") + u"  " + help + u"  " + _(
+    _text = _(u'Clean Data')
+    _help = _(u'This will remove all mod files that are not linked to an '
+             u'active installer out of the Data folder.')
+    fullMessage = (_(u'Clean Data directory?') + u' ' + _help + u'\n\n' + _(
         u'This includes files that were installed manually or by another '
-        u'program.  Files will be moved to the "%s" directory instead of '
-        u'being deleted so you can retrieve them later if necessary.  '
-        u'Note that if you use TES4LODGen, this will also clean out the '
-        u'DistantLOD folder, so on completion please run TES4LodGen again.'
-        ) % ur'Oblivion Mods\Bash Installers\Bash\Data Folder Contents <date>'
+        u'program. Files will be moved to the "%s" directory instead of '
+        u'being deleted so you can retrieve them later if necessary.') %
+                   bass.dirs[u'bainData'].join(u'Data Folder Contents <date>')
+        + u'\n\n' + _(u'Note that you will first be shown a list of files '
+                      u'that this operation would remove and will have a '
+                      u'chance to change the selection.'))
 
-    def Execute(self,event):
-        if self._askYes(self.fullMessage):
-            try:
-                with balt.Progress(_(u"Cleaning Data Files..."),
-                                   u'\n' + u' ' * 65) as progress:
-                    self.idata.clean(progress=progress)
-            finally:
-                self.idata.irefresh(what='NS')
-                self.iPanel.RefreshUIMods(_refreshData=True)
+    @balt.conversation
+    def Execute(self):
+        if not self._askYes(self.fullMessage): return
+        ui_refresh = [False, False]
+        try:
+            all_unknown_files = self.idata.get_clean_data_dir_list()
+            if not all_unknown_files:
+                self._showOk(
+                    _(u'There are no untracked files in the Data folder.'),
+                    _(u'Data folder is clean'))
+                return
+            message = [u'',       # adding a tool tip
+                       _(u'Uncheck files to keep them in the Data folder.')]
+            all_unknown_files.sort()
+            message.extend(all_unknown_files)
+            with ListBoxes(self.window,
+                  _(u'Move files out of the Data folder.'),
+                  _(u'Uncheck any files you want to keep in the Data folder.'),
+                  [message]) as dialog:
+                selected_unknown_files = dialog.show_modal() and \
+                    dialog.getChecked(message[0], all_unknown_files)
+            if selected_unknown_files:
+                with balt.Progress(_(u'Cleaning Data Files...'),
+                                   u'\n' + u' ' * 65):
+                    self.idata.clean_data_dir(selected_unknown_files,
+                                              ui_refresh)
+        finally:
+            self.iPanel.RefreshUIMods(*ui_refresh)
 
 #------------------------------------------------------------------------------
 # Installers BoolLinks --------------------------------------------------------
 #------------------------------------------------------------------------------
 class Installers_AutoAnneal(BoolLink):
-    text, key, help = _(u'Auto-Anneal'), 'bash.installers.autoAnneal', _(
+    _text, key, _help = _(u'Auto-Anneal'), 'bash.installers.autoAnneal', _(
         u"Enable/Disable automatic annealing of packages.")
 
 class Installers_AutoWizard(BoolLink):
-    text = _(u'Auto-Anneal/Install Wizards')
+    _text = _(u'Auto-Anneal/Install Wizards')
     key = 'bash.installers.autoWizard'
-    help = _(u"Enable/Disable automatic installing or anneal (as applicable)"
+    _help = _(u"Enable/Disable automatic installing or anneal (as applicable)"
              u" of packages after running its wizard.")
 
 class _Installers_BoolLink_Refresh(BoolLink):
-    def Execute(self,event):
-        super(_Installers_BoolLink_Refresh, self).Execute(event)
+    def Execute(self):
+        super(_Installers_BoolLink_Refresh, self).Execute()
         self.window.RefreshUI()
 
 class Installers_WizardOverlay(_Installers_BoolLink_Refresh):
     """Toggle using the wizard overlay icon"""
-    text  = _(u'Wizard Icon Overlay')
+    _text  = _(u'Wizard Icon Overlay')
     key = 'bash.installers.wizardOverlay'
-    help =_(u"Enable/Disable the magic wand icon overlay for packages with"
+    _help =_(u"Enable/Disable the magic wand icon overlay for packages with"
             u" Wizards.")
 
 class Installers_AutoRefreshProjects(BoolLink):
     """Toggle autoRefreshProjects setting and update."""
-    text = _(u'Auto-Refresh Projects')
+    _text = _(u'Auto-Refresh Projects')
     key = 'bash.installers.autoRefreshProjects'
+    _help = _(u'Toggles whether or not Wrye Bash will automatically detect '
+              u'changes to projects in the installers directory.')
 
-class Installers_AutoApplyEmbeddedBCFs(BoolLink):
-    """Toggle autoApplyEmbeddedBCFs setting and update."""
-    text = _(u'Auto-Apply Embedded BCFs')
+class Installers_AutoApplyEmbeddedBCFs(ItemLink):
+    """Automatically apply Embedded BCFs to archives that have one."""
+    _text = _(u'Auto-Apply Embedded BCFs')
     key = 'bash.installers.autoApplyEmbeddedBCFs'
-    help = _(u'If enabled, embedded BCFs will automatically be applied to '
-        u'archives.')
+    _help = _(
+        u'Automatically apply Embedded BCFs to their containing archives.')
 
-    def Execute(self,event):
-        super(Installers_AutoApplyEmbeddedBCFs, self).Execute(event)
-        self.window.panel.ShowPanel()
+    @balt.conversation
+    def Execute(self):
+        with balt.Progress(_(u'Auto-Applying Embedded BCFs...'),
+                           message=u'\n' + u' ' * 60) as progress:
+            destinations, converted = self.window.data_store.applyEmbeddedBCFs(
+                progress=progress)
+            if not destinations: return
+        self.window.RefreshUI()
+        self.window.ClearSelected(clear_details=True)
+        self.window.SelectItemsNoCallback(destinations + converted)
 
 class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
     """Toggle refreshVanilla setting and update."""
-    text = _(u'Skip Bethsoft Content')
+    _text = _(u'Skip Bethsoft Content')
     key = 'bash.installers.autoRefreshBethsoft'
-    help = _(u'Skip installing Bethesda ESMs, ESPs, and BSAs')
+    _help = _(u'Skip installing Bethesda ESMs, ESPs, and BSAs')
     opposite = True
     message = _(u"Enable installation of Bethsoft Content?") + u'\n\n' + _(
         u"In order to support this, Bethesda ESPs, ESMs, and BSAs need to "
-        u"have their CRCs calculated.  This will be accomplished by a full "
-        u"refresh of BAIN data an may take quite some time.  Are you sure "
+        u"have their CRCs calculated.  Moreover Bethesda ESPs, ESMs will have "
+        u"their crc recalculated every time on booting BAIN.  Are you sure "
         u"you want to continue?")
 
-    def Execute(self,event):
-        if not bosh.settings[self.key] and not self._askYes(self.message):
+    @balt.conversation
+    def Execute(self):
+        if not bass.settings[self.key] and not self._askYes(self.message):
             return
-        super(Installers_AutoRefreshBethsoft, self).Execute(event)
-        if bosh.settings[self.key]:
+        super(Installers_AutoRefreshBethsoft, self).Execute()
+        if bass.settings[self.key]:
             # Refresh Data - only if we are now including Bethsoft files
-            self.iPanel.refreshed = False
-            self.iPanel.fullRefresh = False
-            self.iPanel.ShowPanel()
+            with balt.Progress(title=_(u'Refreshing Bethsoft Content'),
+                               message=u'\n' + u' ' * 60) as progress:
+                self.idata.update_for_overridden_skips(bush.game.bethDataFiles,
+                                                       progress)
         # Refresh Installers
-        toRefresh = set()
-        for name, installer in self.idata.iteritems():
-            if installer.hasBethFiles: toRefresh.add((name,installer))
-        self.window.rescanInstallers(toRefresh, abort=False)
+        toRefresh = set(iname for iname, installer in self.idata.iteritems() if
+                        installer.hasBethFiles)
+        self.window.rescanInstallers(toRefresh, abort=False,
+                                     update_from_data=False, shallow=True)
 
 class Installers_Enabled(BoolLink):
     """Flips installer state."""
-    text, key, help = _(u'Enabled'), 'bash.installers.enabled', _(
+    _text, key, _help = _(u'Enabled'), 'bash.installers.enabled', _(
         u'Enable/Disable the Installers tab.')
     dialogTitle = _(u'Enable Installers')
     message = _(u"Do you want to enable Installers?") + u'\n\n\t' + _(
         u"If you do, Bash will first need to initialize some data. This can "
         u"take on the order of five minutes if there are many mods installed.")
 
-    def Execute(self,event):
+    @balt.conversation
+    def Execute(self):
         """Enable/Disable the installers tab."""
-        enabled = bosh.settings[self.key]
+        enabled = bass.settings[self.key]
         if not enabled and not self._askYes(self.message,
                                             title=self.dialogTitle): return
-        enabled = bosh.settings[self.key] = not enabled
+        enabled = bass.settings[self.key] = not enabled
         if enabled:
-            self.window.panel.refreshed = False
-            self.window.panel.ShowPanel()
-            self.window.RefreshUI()
+            self.window.panel.ShowPanel(scan_data_dir=True)
         else:
-            self.window.DeleteAll() ##: crude
+            self.window.DeleteAll()
             self.window.panel.ClearDetails()
 
-class Installers_BsaRedirection(AppendableLink, BoolLink):
+class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
     """Toggle BSA Redirection."""
-    text, key = _(u'BSA Redirection'),'bash.bsaRedirection'
-    help = _(u"Use Quarn's BSA redirection technique.")
+    _text, key = _(u'BSA Redirection'), 'bash.bsaRedirection'
+    _help = _(u"Use Quarn's BSA redirection technique.")
+
+    @property
+    def menu_help(self):
+        if not self._enable():
+            return self._help + u'  ' + _(u'%(ini)s must exist') % {
+                u'ini': bush.game.Ini.dropdown_inis[0]}
+        else: return self._help
 
     def _append(self, window):
-        section,key = bush.game.ini.bsaRedirection
+        section, key = bush.game.Ini.bsa_redirection_key
         return bool(section) and bool(key)
 
-    def Execute(self,event):
-        """Handle selection."""
-        super(Installers_BsaRedirection, self).Execute(event)
-        if bosh.settings[self.key]:
-            bsaPath = bosh.modInfos.dir.join(bosh.inisettings['OblivionTexturesBSAName'])
-            bsaFile = bosh.BsaFile(bsaPath)
-            bsaFile.scan()
-            resetCount = bsaFile.reset()
-            #balt.showOk(self,_(u"BSA Hashes reset: %d") % (resetCount,))
-        bosh.oblivionIni.setBsaRedirection(bosh.settings[self.key])
+    def _enable(self): return bosh.oblivionIni.abs_path.exists()
+
+    def Execute(self):
+        super(Installers_BsaRedirection, self).Execute()
+        if bass.settings[self.key]:
+            # Delete ArchiveInvalidation.txt, if it exists
+            bosh.bsaInfos.remove_invalidation_file()
+            if bush.game.displayName == u'Oblivion':
+                # For Oblivion, undo any alterations done to the textures BSA
+                # and reset the mtimes of vanilla BSAs ##: port to FO3/FNV?
+                bsaPath = bosh.modInfos.store_dir.join(
+                        bass.inisettings['OblivionTexturesBSAName'])
+                bsaFile = bosh.bsa_files.OblivionBsa(bsaPath, load_cache=True,
+                                                     names_only=False)
+                with balt.Progress(_(u'Enabling BSA Redirection...'),
+                                   message=u'\n' + u' ' * 60) as progress:
+                    bsaFile.undo_alterations(progress)
+        bosh.oblivionIni.setBsaRedirection(bass.settings[self.key])
 
 class Installers_ConflictsReportShowsInactive(_Installers_BoolLink_Refresh):
     """Toggles option to show inactive on conflicts report."""
-    text = _(u'Show Inactive Conflicts')
+    _text = _(u'Show Inactive Conflicts')
+    _help = _(u'In the conflicts tab also display conflicts with inactive '
+              u'(not installed) installers')
     key = 'bash.installers.conflictsReport.showInactive'
 
 class Installers_ConflictsReportShowsLower(_Installers_BoolLink_Refresh):
     """Toggles option to show lower on conflicts report."""
-    text = _(u'Show Lower Conflicts')
+    _text = _(u'Show Lower Conflicts')
+    _help = _(u'In the conflicts tab also display conflicts with lower order '
+             u'installers (or lower loading active bsas)')
     key = 'bash.installers.conflictsReport.showLower'
 
 class Installers_ConflictsReportShowBSAConflicts(_Installers_BoolLink_Refresh):
     """Toggles option to show files inside BSAs on conflicts report."""
-    text = _(u'Show BSA Conflicts')
+    _text = _(u'Show Active BSA Conflicts')
+    _help = _(u'In the conflicts tab also display same-name resources inside '
+             u'installed *and* active bsas')
     key = 'bash.installers.conflictsReport.showBSAConflicts'
 
 class Installers_AvoidOnStart(BoolLink):
     """Ensures faster bash startup by preventing Installers from being startup tab."""
-    text, key, help = _(u'Avoid at Startup'), 'bash.installers.fastStart', _(
+    _text, key, _help = _(u'Avoid at Startup'), 'bash.installers.fastStart', _(
         u"Toggles Wrye Bash to avoid the Installers tab on startup,"
         u" avoiding unnecessary data scanning.")
 
 class Installers_RemoveEmptyDirs(BoolLink):
     """Toggles option to remove empty directories on file scan."""
-    text, key = _(u'Clean Data Directory'), 'bash.installers.removeEmptyDirs'
+    _text = _(u'Remove Empty Directories')
+    _help = _(u'Toggles whether or not Wrye Bash will remove empty '
+              u'directories when scanning the Data folder.')
+    key = 'bash.installers.removeEmptyDirs'
 
 # Sorting Links
 class _Installer_Sort(ItemLink):
-    def Execute(self,event):
-        super(_Installer_Sort, self).Execute(event)
+    def Execute(self):
+        super(_Installer_Sort, self).Execute()
         self.window.SortItems()
 
 class Installers_SortActive(_Installer_Sort, BoolLink):
     """Sort by type."""
-    text, key, help = _(u'Sort by Active'), 'bash.installers.sortActive', _(
-        u'If selected, active installers will be sorted to the top of the list.')
+    _text, key, _help = _(u'Sort by Active'), 'bash.installers.sortActive', _(
+        u'If selected, active installers will be sorted to the top of the '
+        u'list.')
 
 class Installers_SortProjects(_Installer_Sort, BoolLink):
     """Sort dirs to the top."""
-    text, key, help = _(u'Projects First'), 'bash.installers.sortProjects', _(
-        u'If selected, projects will be sorted to the top of the list.')
+    _text, key, _help = _(u'Projects First'), 'bash.installers.sortProjects', \
+        _(u'If selected, projects will be sorted to the top of the list.')
 
 class Installers_SortStructure(_Installer_Sort, BoolLink):
     """Sort by type."""
-    text, key = _(u'Sort by Structure'), 'bash.installers.sortStructure'
+    _text, key = _(u'Sort by Structure'), 'bash.installers.sortStructure'
 
 #------------------------------------------------------------------------------
 # Installers_Skip Links -------------------------------------------------------
 #------------------------------------------------------------------------------
-class Installers_Skip(Installers_Link, BoolLink):
-    """Toggle various skip settings and update."""
-    def Execute(self,event):
-        super(Installers_Skip, self).Execute(event)
-        with balt.Progress(_(u'Refreshing Packages...'),u'\n'+u' '*60, abort=False) as progress:
-            progress.setFull(len(self.idata))
-            for index,dataItem in enumerate(self.idata.iteritems()):
-                progress(index,_(u'Refreshing Packages...')+u'\n'+dataItem[0].s)
-                dataItem[1].refreshDataSizeCrc()
-        self.idata.irefresh(what='NS')
-        self.window.RefreshUI()
+class _Installers_RescanningLink(Installers_Link, BoolLink):
+    """An Installers link that rescans installers upon being toggled."""
+    def Execute(self):
+        super(_Installers_RescanningLink, self).Execute()
+        self._pre_rescan_action()
+        self._do_installers_rescan()
 
-class Installers_SkipScreenshots(Installers_Skip):
+    def _pre_rescan_action(self):
+        """A method to call after executing the link but before rescanning.
+        Does nothing by default."""
+
+    def _do_installers_rescan(self):
+        """Performs the rescan of installers after toggling the link."""
+        self.window.rescanInstallers(self.idata.keys(), abort=False,
+            update_from_data=False,##:update data too when turning skips off ??
+            shallow=True)
+
+class _Installers_Skip(_Installers_RescanningLink):
+    """Toggle global skip settings and update."""
+    @property
+    def menu_help(self):
+        # Slice off the starting 'Skip '
+        return _(u'Skips the installation of %(skip_files)s.') % {
+            u'skip_files': self._text[5:].lower()}
+
+    def _pre_rescan_action(self):
+        bosh.bain.Installer.init_global_skips()
+
+class _Installers_SkipOBSEPlugins(AppendableLink, _Installers_Skip):
+    """Toggle allowOBSEPlugins setting and update."""
+    _se_sd = bush.game.Se.se_abbrev + (
+            u'/' + bush.game.Sd.long_name) if bush.game.Sd.sd_abbrev else u''
+    _text = _(u'Skip %s Plugins') % _se_sd
+    key = u'bash.installers.allowOBSEPlugins'
+    def _append(self, window): return bool(self._se_sd)
+    def _check(self): return not bass.settings[self.key]
+
+class _Installers_SkipScreenshots(_Installers_Skip):
     """Toggle skipScreenshots setting and update."""
-    text, key = _(u'Skip Screenshots'), 'bash.installers.skipScreenshots'
+    _text, key = _(u'Skip Screenshots'), 'bash.installers.skipScreenshots'
 
-class Installers_SkipImages(Installers_Skip):
+class _Installers_SkipScriptSources(AppendableLink, _Installers_Skip):
+    """Toggle skipScriptSources setting and update."""
+    _text, key = _(u'Skip Script Sources'), 'bash.installers.skipScriptSources'
+    def _append(self, window): return bool(bush.game.Psc.source_extensions)
+
+class _Installers_SkipImages(_Installers_Skip):
     """Toggle skipImages setting and update."""
-    text, key = _(u'Skip Images'), 'bash.installers.skipImages'
+    _text, key = _(u'Skip Images'), 'bash.installers.skipImages'
 
-class Installers_SkipDocs(Installers_Skip):
+class _Installers_SkipDocs(_Installers_Skip):
     """Toggle skipDocs setting and update."""
-    text, key = _(u'Skip Docs'), 'bash.installers.skipDocs'
+    _text, key = _(u'Skip Docs'), u'bash.installers.skipDocs'
 
-class Installers_SkipDistantLOD(Installers_Skip):
+class _Installers_SkipDistantLOD(_Installers_Skip):
     """Toggle skipDistantLOD setting and update."""
-    text, key = _(u'Skip DistantLOD'), 'bash.installers.skipDistantLOD'
+    _text, key = _(u'Skip DistantLOD'), 'bash.installers.skipDistantLOD'
 
-class Installers_SkipLandscapeLODMeshes(Installers_Skip):
+class _Installers_SkipLandscapeLODMeshes(_Installers_Skip):
     """Toggle skipLandscapeLODMeshes setting and update."""
-    text, key = _(u'Skip LOD Meshes'), 'bash.installers.skipLandscapeLODMeshes'
+    _text = _(u'Skip LOD Meshes')
+    key = 'bash.installers.skipLandscapeLODMeshes'
 
-class Installers_SkipLandscapeLODTextures(Installers_Skip):
+class _Installers_SkipLandscapeLODTextures(_Installers_Skip):
     """Toggle skipLandscapeLODTextures setting and update."""
-    text = _(u'Skip LOD Textures')
+    _text = _(u'Skip LOD Textures')
     key = 'bash.installers.skipLandscapeLODTextures'
 
-class Installers_SkipLandscapeLODNormals(Installers_Skip):
+class _Installers_SkipLandscapeLODNormals(_Installers_Skip):
     """Toggle skipLandscapeLODNormals setting and update."""
-    text = _(u'Skip LOD Normals')
+    _text = _(u'Skip LOD Normals')
     key = 'bash.installers.skipLandscapeLODNormals'
 
-class Installers_SkipBsl(AppendableLink, Installers_Skip):
+class _Installers_SkipBsl(AppendableLink, _Installers_Skip):
     """Toggle skipTESVBsl setting and update."""
-    text, key = _(u'Skip bsl Files'), 'bash.installers.skipTESVBsl'
-    def _append(self, window): return bush.game.fsName == 'Skyrim'
+    _text, key = _(u'Skip BSL Files'), 'bash.installers.skipTESVBsl'
+    def _append(self, window): return bush.game.Bsa.has_bsl
 
-class Installers_SkipOBSEPlugins(AppendableLink, Installers_Skip):
-    """Toggle allowOBSEPlugins setting and update."""
-    text = _(u'Skip %s Plugins') % bush.game.se_sd
-    key = 'bash.installers.allowOBSEPlugins'
+class Installers_GlobalSkips(balt.MenuLink):
+    """Global Skips submenu."""
+    _text = _(u'Global Skips')
 
-    def _append(self, window): return bool(bush.game.se_sd)
-    def _check(self): return not bosh.settings[self.key]
+    def __init__(self):
+        super(Installers_GlobalSkips, self).__init__()
+        self.append(_Installers_SkipOBSEPlugins())
+        self.append(_Installers_SkipScreenshots())
+        self.append(_Installers_SkipScriptSources())
+        self.append(_Installers_SkipImages())
+        self.append(_Installers_SkipDocs())
+        self.append(_Installers_SkipDistantLOD())
+        self.append(_Installers_SkipLandscapeLODMeshes())
+        self.append(_Installers_SkipLandscapeLODTextures())
+        self.append(_Installers_SkipLandscapeLODNormals())
+        self.append(_Installers_SkipBsl())
 
-class Installers_RenameStrings(AppendableLink, Installers_Skip):
+#------------------------------------------------------------------------------
+# Redirection/Rename Links ----------------------------------------------------
+#------------------------------------------------------------------------------
+class _Installers_RenameStrings(AppendableLink, _Installers_RescanningLink):
     """Toggle auto-renaming of .STRINGS files"""
-    text = _(u'Auto-name String Translation Files')
+    _text = _(u'Rename String Translation Files')
+    _help = _(u'If checked, Wrye Bash will rename all installed string files '
+              u'so they match your current language.')
     key = 'bash.installers.renameStrings'
+    def _append(self, window): return bool(bush.game.Esp.stringsFiles)
 
-    def _append(self, window): return bool(bush.game.esp.stringsFiles)
+class _Installers_RedirectScriptSources(AppendableLink, EnabledLink,
+                                        _Installers_RescanningLink):
+    """Toggle auto-redirection of script sources."""
+    _text = _(u'Redirect Script Sources')
+    _help = _(u'If checked, Wrye Bash will move all script sources '
+              u'installed to incorrect directories (%s) to the correct ones. '
+              u"'Skip Script Sources' must be "
+              u'off.') % u', '.join(bush.game.Psc.source_redirects.iterkeys())
+    key = u'bash.installers.redirect_scripts'
 
+    def _append(self, window): return bool(bush.game.Psc.source_redirects)
+    def _enable(self): return not bass.settings[
+        u'bash.installers.skipScriptSources']
+
+class Installers_GlobalRedirects(AppendableLink, balt.MenuLink):
+    """Global Redirects menu."""
+    _text = _(u'Global Redirects')
+
+    def __init__(self):
+        super(Installers_GlobalRedirects, self).__init__()
+        self.append(_Installers_RenameStrings())
+        self.append(_Installers_RedirectScriptSources())
+
+    def _append(self, window):
+        # Otherwise this menu would be empty for e.g. Oblivion
+        return any(l._append(window) for l in self.links)
+
+#--New project dialog ---------------------------------------------------------
 class Installers_CreateNewProject(ItemLink):
-    """Open the Create New Project Dialog"""
-    text = _(u'Create New Project...')
-    help = _(u'Create a new project...')
+    """Open the New Project Dialog"""
+    _text = _(u'New Project...')
+    _help = _(u'Create a new project.')
 
-    def Execute(self, event): CreateNewProject.Display()
+    @balt.conversation
+    def Execute(self): CreateNewProject.display_dialog(self.window)

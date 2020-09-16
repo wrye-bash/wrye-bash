@@ -4,138 +4,64 @@
 
 ; Prevent redefining the macro if included multiple times
 !ifmacrondef InstallBashFiles
-    !macro InstallBashFiles GameName GameTemplate GameDir RegValuePy RegValueExe RegPath DoPython DoExe DoAII
+    !macro InstallBashFiles GameName GameTemplate GameDir RegPath
         ; Parameters:
         ;  GameName - name of the game files are being installed for.  This is used for registry entries
         ;  GameTemplate - name of the game that the template files are coming from (for example, Nehrim uses Oblivion files for templates)
         ;  GameDir - base directory for the game (one folder up from the Data directory)
-        ;  RegValuePy - Registry value for the python version (Usually of the form $Reg_Value_OB_Py)
-        ;  RegValueExe - Registry value for the standalone version
         ;  RegPath - Name of the registry string that will hold the path installing to
-        ;  DoPython - Install python version of Wrye Bash (should be {BST_CHECKED} for true - this allows you to simple pass the state of the checkbox)
-        ;  DoExe - Install the standalone version of Wrye Bash (should be {BST_CHECKED} for true)
-        ;  IsExtra - true or false: if false, template files are not installed (since we don't know which type of game it is)
-        ;  DoAII - true or false: if true, installs the ArchiveInvalidationInvalidated files (Oblivion based games)
 
         ; Install common files
         SetOutPath "${GameDir}\Mopy"
-        File /r /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
-        ${If} ${DoAII} == true
-            ; Some games don't use ArchiveInvalidationInvalidated
-            SetOutPath "${GameDir}\Data"
-            File /r "Mopy\templates\Oblivion\ArchiveInvalidationInvalidated!.bsa"
-        ${EndIf}
+        File /r /x "*.bat" /x "*.py*" /x "Wrye Bash.exe" \
+                        /x "basher" \
+                        /x "bosh" \
+                        /x "brec" \
+                        /x "gui" \
+                        /x "game" \
+                        /x "patcher" \
+                        /x "redist" \
+                        /x "tests" \
+                        "${WB_CLEAN_MOPY}\*.*"
         WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${RegPath}" "${GameDir}"
-        ${If} ${DoPython} == ${BST_CHECKED}
-            ; Install Python only files
-            SetOutPath "${GameDir}\Mopy"
-            File /r "Mopy\*.py" "Mopy\*.pyw" "Mopy\*.bat"
-            ; Write the installation path into the registry
-            WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${GameName} Python Version" "True"
-        ${ElseIf} ${RegValuePy} == $Empty
-            ; Only write this entry if it's never been installed before
-            WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${GameName} Python Version" ""
-        ${EndIf}
-        ${If} ${DoExe} == ${BST_CHECKED}
-            ; Install the standalone only files
-            SetOutPath "${GameDir}\Mopy"
-            File "Mopy\Wrye Bash.exe"
-            ${IfNot} ${AtLeastWinXP}
-                # Running earlier than WinXP, need w9xpopen
-                File "Mopy\w9xpopen.exe"
-            ${EndIf}
-            ; Write the installation path into the registry
-            WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${GameName} Standalone Version" "True"
-        ${ElseIf} ${RegValueExe} == $Empty
-            ; Only write this entry if it's never been installed before
-            WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${GameName} Standalone Version" ""
-        ${EndIf}
+        ; Install the standalone only files
+        SetOutPath "${GameDir}\Mopy"
+        File "${WB_CLEAN_MOPY}\Wrye Bash.exe"
     !macroend
 
 
     !macro RemoveRegistryEntries GameName
-        ; Paramters:
+        ; Parameters:
         ;  GameName -  name of the game to remove registry entries for
-        
+
+        ; handles x86 registry paths
         DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "${GameName} Path"
         DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "${GameName} Python Version"
         DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "${GameName} Standalone Version"
+
+        ; handles x64 registry paths
+        DeleteRegValue HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "${GameName} Path"
+        DeleteRegValue HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "${GameName} Python Version"
+        DeleteRegValue HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "${GameName} Standalone Version"
+
+        ; handles Extra Path 1 and Extra Path 2
+        DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "${GameName}"
+        DeleteRegValue HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "${GameName}"
     !macroend
 
 
     !macro RemoveOldFiles Path
         ; Old old files to delete (from before 294, the directory restructure)
-        Delete "${Path}\Mopy\BashBugDump.log"
         Delete "${Path}\Mopy\DebugLog(Python2.7).bat"
         Delete "${Path}\Mopy\7zUnicode.exe"
-        Delete "${Path}\Mopy\Wizard Images\Thumbs.db"
-        Delete "${Path}\Data\Bashed Lists.txt"
-        Delete "${Path}\Data\Bashed Lists.html"
-        Delete "${Path}\Data\Ini Tweaks\Autosave, Never [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Autosave, ~Always [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Border Regions, Disabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Border Regions, ~Enabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Fonts 1, ~Default [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Fonts, ~Default [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Grass, Fade 4k-5k [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Grass, ~Fade 2k-3k [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Intro Movies, Disabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Intro Movies, ~Normal [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Joystick, Disabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Joystick, ~Enabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Local Map Shader, Disabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Local Map Shader, ~Enabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Music, Disabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Music, ~Enabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Refraction Shader, Disabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Refraction Shader, ~Enabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Save Backups, 1 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Save Backups, 2 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Save Backups, 3 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Save Backups, 5 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Screenshot, Enabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Screenshot, ~Disabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\ShadowMapResolution, 10 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\ShadowMapResolution, ~256 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\ShadowMapResolution, 1024 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound Card Channels, 24 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound Card Channels, ~32 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound Card Channels, 128 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound Card Channels, 16 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound Card Channels, 192 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound Card Channels, 48 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound Card Channels, 64 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound Card Channels, 8 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound Card Channels, 96 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound, Disabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound, ~Enabled [Oblivion].ini"
-        Delete "${Path}\Data\Bash Patches\Assorted to Cobl.csv"
-        Delete "${Path}\Data\Bash Patches\Assorted_Exhaust.csv"
-        Delete "${Path}\Data\Bash Patches\Bash_Groups.csv"
-        Delete "${Path}\Data\Bash Patches\Bash_MFact.csv"
-        Delete "${Path}\Data\Bash Patches\ShiveringIsleTravellers_Names.csv"
-        Delete "${Path}\Data\Bash Patches\TamrielTravellers_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Guard_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Kmacg94_Exhaust.csv"
-        Delete "${Path}\Data\Bash Patches\P1DCandles_Formids.csv"
-        Delete "${Path}\Data\Bash Patches\OOO_Potion_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Random_NPC_Alternate_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Random_NPC_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Rational_Names.csv"
-        Delete "${Path}\Data\Bash Patches\TI to Cobl_Formids.csv"
-        Delete "${Path}\Data\Bash Patches\taglist.txt"
-        Delete "${Path}\Data\Bash Patches\OOO, 1.23 Mincapped_NPC_Levels.csv"
-        Delete "${Path}\Data\Bash Patches\OOO, 1.23 Uncapped_NPC_Levels.csv"
-        Delete "${Path}\Data\Bash Patches\Crowded Cities 15_Alternate_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Crowded Cities 15_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Crowded Cities 30_Alternate_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Crowded Cities 30_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Crowded Roads Revamped_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Crowded Roads Revisited_Alternate_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Crowded Roads Revisited_Names.csv"
-        Delete "${Path}\Data\Bash Patches\PTRoamingNPCs_Names.csv"
         Delete "${Path}\Mopy\uninstall.exe"
-        Delete "${Path}\Mopy\*.html"
+        Delete "${Path}\Mopy\Wrye Bash General Readme.html"
+        Delete "${Path}\Mopy\Wrye Bash Advanced Readme.html"
+        Delete "${Path}\Mopy\Wrye Bash Technical Readme.html"
+        Delete "${Path}\Mopy\Wrye Bash Version History.html"
+        Delete "${Path}\Mopy\Wrye Bash.html"
+        Delete "${Path}\Mopy\patch_option_reference.html"
+        Delete "${Path}\Mopy\wizards.html"
         Delete "${Path}\Mopy\7z.*"
         Delete "${Path}\Mopy\*CBash.dll"
         Delete "${Path}\Mopy\DebugLog(Python2.6).bat"
@@ -156,7 +82,6 @@
         Delete "${Path}\Mopy\gpl.txt"
         Delete "${Path}\Mopy\lzma.exe"
         Delete "${Path}\Mopy\Wrye Bash.txt"
-        Delete "${Path}\Mopy\Wrye Bash.exe.log"
         Delete "${Path}\Mopy\wizards.txt"
         Delete "${Path}\Mopy\patch_option_reference.txt"
         RMDir /r "${Path}\Mopy\Data"
@@ -296,6 +221,9 @@
         Delete "${Path}\Mopy\bash\images\isobl16.png"
         Delete "${Path}\Mopy\bash\images\isobl24.png"
         Delete "${Path}\Mopy\bash\images\isobl32.png"
+        Delete "${Path}\Mopy\bash\images\krita16.png"
+        Delete "${Path}\Mopy\bash\images\krita24.png"
+        Delete "${Path}\Mopy\bash\images\krita32.png"
         Delete "${Path}\Mopy\bash\images\logitechkeyboard16.png"
         Delete "${Path}\Mopy\bash\images\logitechkeyboard24.png"
         Delete "${Path}\Mopy\bash\images\logitechkeyboard32.png"
@@ -536,44 +464,123 @@
         RMDir /r "${Path}\Mopy\macro"
         Delete "${Path}\Mopy\bash\installerstabtips.txt"
         Delete "${Path}\Mopy\bash\wizSTCo"
-        Delete "${Path}\Mopy\bash\wizSTC.p*"
         Delete "${Path}\Mopy\bash\keywordWIZBAINo"
-        Delete "${Path}\Mopy\bash\keywordWIZBAIN.p*"
         Delete "${Path}\Mopy\bash\keywordWIZBAIN2o"
-        Delete "${Path}\Mopy\bash\keywordWIZBAIN2.p*"
         Delete "${Path}\Mopy\bash\settingsModuleo"
-        Delete "${Path}\Mopy\bash\settingsModule.p*"
         RMDir /r "${Path}\Mopy\bash\images\stc"
         ; As of 303 the following are obsolete:
         Delete "${Path}\Mopy\templates\*.esp"
         ; As of 304.4 the following are obsolete
         Delete "${Path}\Mopy\bash\compiled\libloadorder32.dll"
         Delete "${Path}\Mopy\bash\compiled\boss32.dll"
-        Delete "${Path}\Mopy\bash\bapi.p*"
         Delete "${Path}\Mopy\bash\compiled\boss64.dll"
         Delete "${Path}\Mopy\bash\compiled\libloadorder64.dll"
         ; As of 305, the following are obsolete:
         RMDir /r "${Path}\Mopy\bash\compiled\Microsoft.VC80.CRT"
-        Delete "${Path}\Mopy\bash\images\WryeSplash_Original.png"
         Delete "${Path}\Mopy\bash\compiled\7zUnicode.exe"
         Delete "${Path}\Mopy\bash\compiled\7zCon.sfx"
         Delete "${Path}\Mopy\Bash Patches\Oblivion\taglist.txt"
         Delete "${Path}\Mopy\Bash Patches\Skyrim\taglist.txt"
         ${If} ${AtLeastWinXP}
             # Running XP or later, w9xpopen is only for 95/98/ME
+            # Bash no longer ships with w9xpopen, but it may be left
+            # over from a previous install
             Delete "${Path}\Mopy\w9xpopen.exe"
         ${EndIf}
+        ; As of 307, the following are obsolete:
+        Delete "${Path}\Mopy\bash\compiled\loot32.dll"
+        Delete "${Path}\Mopy\bash\images\tools\gimpshop16.png"
+        Delete "${Path}\Mopy\bash\images\tools\gimpshop24.png"
+        Delete "${Path}\Mopy\bash\images\tools\gimpshop32.png"
+        Delete "${Path}\Mopy\bash\loot.py"
+        ; And some leftovers from various releases, some of them only appeared on dev:
+        Delete "${Path}\Mopy\bash\compiled\7za.exe"
+        Delete "${Path}\Mopy\7z_newversion.dll"
+        Delete "${Path}\Mopy\7z_newversion.exe"
+        Delete "${Path}\Mopy\bash\images\4gb16.png"
+        Delete "${Path}\Mopy\bash\images\4gb24.png"
+        Delete "${Path}\Mopy\bash\images\4gb32.png"
+        Delete "${Path}\Bug List thread Starter.txt"
+        Delete "${Path}\Forum thread starter post.txt"
+        Delete "${Path}\Mopy\WizardDocs.txt"
+        Delete "${Path}\New Skyrim Forum thread starter.txt"
+        Delete "${Path}\Package For Release.p*"
+        Delete "${Path}\Patcher Reference.txt"
+        Delete "${Path}\scripts\Build All Packages.bat"
+        Delete "${Path}\scripts\Build Package.bat"
+        Delete "${Path}\scripts\build\standalone\w9xpopen.exe"
+        Delete "${Path}\scripts\build\Wrye Bash.nsi"
+        Delete "${Path}\scripts\built_taglist"
+        Delete "${Path}\scripts\WBReleaseBuild.bat"
+        Delete "${Path}\Wrye Bash.nsi"
+        ; As of 307, the following are obsolete:
+        Delete "${Path}\Mopy\bash.ico"
+        Delete "${Path}\Mopy\bash\images\check.png"
+        Delete "${Path}\Mopy\bash\images\readme\error.jpg"
+        Delete "${Path}\Mopy\bash\images\readme\installers-wizard-1.jpg"
+        Delete "${Path}\Mopy\bash\images\readme\installers-wizard-2.jpg"
+        Delete "${Path}\Mopy\bash\images\readme\mods.png"
+        Delete "${Path}\Mopy\bash\images\readme\pm-archive-1.png"
+        Delete "${Path}\Mopy\bash\images\readme\pm-archive-2.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-repair-factions.png"
+        Delete "${Path}\Mopy\bash\images\readme\selectmany.jpg"
+        Delete "${Path}\Mopy\bash\images\readme\selectone.jpg"
+        Delete "${Path}\Mopy\bash\images\readme\settings-1-colour_highlighted.png"
+        Delete "${Path}\Mopy\bash\images\readme\settings-1-colours-dialogue-1.png"
+        Delete "${Path}\Mopy\bash\images\readme\settings-1-colours-dialogue-2.png"
+        Delete "${Path}\Mopy\bash\images\readme\settings-2-tabs_highlighted.png"
+        Delete "${Path}\Mopy\bash\images\readme\settings-3-status_bar_and_icon_size_highlighted.png"
+        Delete "${Path}\Mopy\bash\images\readme\settings-3-status_bar_and_unhide_buttons_highlighted.png"
+        Delete "${Path}\Mopy\bash\images\readme\settings-4-language_highlighted.png"
+        Delete "${Path}\Mopy\bash\images\readme\settings-5-plugin_encoding_highlighted.png"
+        Delete "${Path}\Mopy\bash\images\readme\settings-6-game_highlighted.png"
+        Delete "${Path}\Mopy\bash\images\readme\settings-7-check_for_updates_highlighted.png"
+        Delete "${Path}\Mopy\bash\images\readme\toolbar-5-hover-launchbashmon.png"
+        Delete "${Path}\Mopy\bash\images\readme\wryebash_01.png"
+        Delete "${Path}\Mopy\bash\images\readme\wryebash_02.png"
+        Delete "${Path}\Mopy\bash\images\readme\wryebash_03.png"
+        Delete "${Path}\Mopy\bash\images\readme\wryebash_04.png"
+        Delete "${Path}\Mopy\bash\images\readme\wryebash_05.png"
+        Delete "${Path}\Mopy\bash\images\readme\wryebash_06.png"
+        Delete "${Path}\Mopy\bash\images\readme\wryebash_07.png"
+        Delete "${Path}\Mopy\bash\images\readme\wryebash_08.png"
+        Delete "${Path}\Mopy\bash\images\readme\wryebash_colors.png"
+        Delete "${Path}\Mopy\bash\images\readme\wryebash_docbrowser.png"
+        Delete "${Path}\Mopy\bash\images\readme\wryebash_peopletab.png"
+        Delete "${Path}\Mopy\bash\images\x.png"
+        RMDir /r "${Path}\Mopy\Bash Patches\Skyrim Special Edition"
+        ; As of 307, LOOT integration is handled through a hand-written parser
+        Delete "${Path}\Mopy\loot.*"
+        Delete "${Path}\Mopy\loot_api.*"
+        ; As of 307, all default INI Tweaks are generated via code
+        RMDir /r "${Path}\Mopy\INI Tweaks"
+        ; As of 307, the installer can no longer install python versions
+        Delete "${Path}\Mopy\*.bat"
+        Delete "${Path}\Mopy\*.pyw"
+        Delete "${Path}\Mopy\bash\*.p*"
+        RMDir /r "${Path}\Mopy\bash\basher"
+        RMDir /r "${Path}\Mopy\bash\bosh"
+        RMDir /r "${Path}\Mopy\bash\brec"
+        RMDir /r "${Path}\Mopy\bash\chardet"
+        RMDir /r "${Path}\Mopy\bash\game"
+        RMDir /r "${Path}\Mopy\bash\gui"
+        RMDir /r "${Path}\Mopy\bash\patcher"
+        RMDir /r "${Path}\Mopy\redist"
+        RMDir /r "${Path}\Mopy\bash\tests"
+        ; As of 307, Wizard Images have been moved to bash/images/Wizard Images
+        RMDir /r "${Path}\Mopy\Wizard Images"
     !macroend
 
 
     !macro RemoveCurrentFiles Path
         ; Remove files belonging to current build
         RMDir /r "${Path}\Mopy"
-        ; Do not remove ArchiveInvalidationInvalidated!, because if it's registeredDelete
+        ; Do not remove ArchiveInvalidationInvalidated!, because if it's registered
         ; in the users INI file, this will cause problems
         ;;Delete "${Path}\Data\ArchiveInvalidationInvalidated!.bsa"
         RMDir "${Path}\Data\INI Tweaks"
         RMDir "${Path}\Data\Docs"
+        RMDir "${Path}\Data\BashTags"
         RMDir "${Path}\Data\Bash Patches"
         Delete "$SMPROGRAMS\Wrye Bash\*oblivion*"
     !macroend
@@ -582,5 +589,110 @@
         !insertmacro RemoveOldFiles "${GamePath}"
         !insertmacro RemoveCurrentFiles "${GamePath}"
         !insertmacro RemoveRegistryEntries "${GameName}"
+    !macroend
+
+    !macro InitializeRegistryPaths
+        ReadRegStr $Path_OB HKLM "SOFTWARE\Wrye Bash" "Oblivion Path"
+        ${If} $Path_OB == $Empty
+            ReadRegStr $Path_OB HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Oblivion Path"
+        ${EndIf}
+
+        ReadRegStr $Path_Nehrim HKLM "SOFTWARE\Wrye Bash" "Nehrim Path"
+        ${If} $Path_Nehrim == $Empty
+            ReadRegStr $Path_Nehrim HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Nehrim Path"
+        ${EndIf}
+
+        ReadRegStr $Path_Skyrim HKLM "SOFTWARE\Wrye Bash" "Skyrim Path"
+        ${If} $Path_Skyrim == $Empty
+            ReadRegStr $Path_Skyrim HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Skyrim Path"
+        ${EndIf}
+
+        ReadRegStr $Path_Fallout4 HKLM "SOFTWARE\Wrye Bash" "Fallout4 Path"
+        ${If} $Path_Fallout4 == $Empty
+            ReadRegStr $Path_Fallout4 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout4 Path"
+        ${EndIf}
+
+        ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\Wrye Bash" "SkyrimSE Path"
+        ${If} $Path_SkyrimSE == $Empty
+            ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Path"
+        ${EndIf}
+
+        ReadRegStr $Path_Fallout3 HKLM "SOFTWARE\Wrye Bash" "Fallout3 Path"
+        ${If} $Path_Fallout3 == $Empty
+            ReadRegStr $Path_Fallout3 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout3 Path"
+        ${EndIf}
+
+        ReadRegStr $Path_FalloutNV HKLM "SOFTWARE\Wrye Bash" "FalloutNV Path"
+        ${If} $Path_FalloutNV == $Empty
+            ReadRegStr $Path_FalloutNV HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "FalloutNV Path"
+        ${EndIf}
+
+        ReadRegStr $Path_Enderal HKLM "SOFTWARE\Wrye Bash" "Enderal Path"
+        ${If} $Path_Enderal == $Empty
+            ReadRegStr $Path_Enderal HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Enderal Path"
+        ${EndIf}
+
+        ReadRegStr $Path_Ex1 HKLM "SOFTWARE\Wrye Bash" "Extra Path 1"
+        ${If} $Path_Ex1 == $Empty
+            ReadRegStr $Path_Ex1 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 1"
+        ${EndIf}
+
+        ReadRegStr $Path_Ex2 HKLM "SOFTWARE\Wrye Bash" "Extra Path 2"
+        ${If} $Path_Ex2 == $Empty
+            ReadRegStr $Path_Ex2 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 2"
+        ${EndIf}
+    !macroend
+
+    !macro UpdateRegistryPaths
+        ; get current registry entries
+        ReadRegStr $Path_OB HKLM "SOFTWARE\Wrye Bash" "Oblivion Path"
+        ${If} $Path_OB == $Empty
+            ReadRegStr $Path_OB HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Oblivion Path"
+        ${EndIf}
+
+        ReadRegStr $Path_Nehrim HKLM "Software\Wrye Bash" "Nehrim Path"
+        ${If} $Path_Nehrim == $Empty
+            ReadRegStr $Path_Nehrim HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Nehrim Path"
+        ${EndIf}
+
+        ReadRegStr $Path_Skyrim HKLM "Software\Wrye Bash" "Skyrim Path"
+        ${If} $Path_Skyrim == $Empty
+            ReadRegStr $Path_Skyrim HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Skyrim Path"
+        ${EndIf}
+
+        ReadRegStr $Path_Fallout4 HKLM "SOFTWARE\Wrye Bash" "Fallout4 Path"
+        ${If} $Path_Fallout4 == $Empty
+            ReadRegStr $Path_Fallout4 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout4 Path"
+        ${EndIf}
+
+        ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\Wrye Bash" "SkyrimSE Path"
+        ${If} $Path_SkyrimSE == $Empty
+            ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Path"
+        ${EndIf}
+
+        ReadRegStr $Path_Fallout3 HKLM "Software\Wrye Bash" "Fallout3 Path"
+        ${If} $Path_Fallout3 == $Empty
+            ReadRegStr $Path_Fallout3 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout3 Path"
+        ${EndIf}
+
+        ReadRegStr $Path_FalloutNV HKLM "SOFTWARE\Wrye Bash" "FalloutNV Path"
+        ${If} $Path_FalloutNV == $Empty
+            ReadRegStr $Path_FalloutNV HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "FalloutNV Path"
+        ${EndIf}
+
+        ReadRegStr $Path_Enderal HKLM "SOFTWARE\Wrye Bash" "Enderal Path"
+        ${If} $Path_Enderal == $Empty
+            ReadRegStr $Path_Enderal HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Enderal Path"
+        ${EndIf}
+
+        ReadRegStr $Path_Ex1 HKLM "SOFTWARE\Wrye Bash" "Extra Path 1"
+        ${If} $Path_Ex1 == $Empty
+            ReadRegStr $Path_Ex1 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 1"
+        ${EndIf}
+
+        ReadRegStr $Path_Ex2 HKLM "SOFTWARE\Wrye Bash" "Extra Path 2"
+        ${If} $Path_Ex2 == $Empty
+            ReadRegStr $Path_Ex2 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 2"
+        ${EndIf}
     !macroend
 !endif

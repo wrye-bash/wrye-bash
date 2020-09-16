@@ -28,7 +28,7 @@
 #
 
 from ctypes import *
-from bolt import deprint
+from .bolt import deprint
 import subprocess
 
 try:
@@ -40,12 +40,20 @@ except ValueError:
     except (ValueError, subprocess.CalledProcessError, OSError):
         deprint('calling getconf failed - error:', traceback=True)
         MAX_PATH = 4096
+##: keep this below so it raises on linux - for now (win32gui is unused here)
 try:
     import win32gui
 except ImportError: # linux
     win32gui = None
     raise
-from bass import winreg
+from env import winreg
+
+# Button constants - happen to mirror wxPython's
+BTN_OK                          = 5100
+BTN_CANCEL                      = 5101
+BTN_YES                         = 5103
+BTN_NO                          = 5104
+GOOD_EXITS                      = (BTN_OK, BTN_YES)
 
 BUTTONID_OFFSET                 = 1000
 
@@ -247,49 +255,11 @@ class SHSTOCKICONINFO(Structure):
                 ('szPath',c_wchar*MAX_PATH)]
 
 
-try:
-    stockiconinfo = windll.shell32.SHGetStockIconInfo
-    stockiconinfo.argtypes = [c_uint,c_uint,POINTER(SHSTOCKICONINFO)]
-    stockiconinfo.restype = c_uint32
-    STOCK_ICON_AVAILABLE = True
-
-    def GetStockIcon(id_,flags=0):
-        flags = ~(~flags|SHGSI_ICONLOCATION)|SHGSI_ICON
-        info = SHSTOCKICONINFO()
-        info.cbSize = sizeof(info)
-        result = stockiconinfo(id_,flags,byref(info))
-        if result != 0:
-            raise Exception(result)
-        return info.hIcon
-
-    def GetStockIconLocation(id_,flags=0):
-        flags = ~(~flags|SHGSI_ICON)|SHGSI_ICONLOCATION
-        info = SHSTOCKICONINFO()
-        info.cbSize = sizeof(info)
-        result = stockiconinfo(id_,flags,byref(info))
-        if result != 0:
-            raise Exception(result)
-        return info.szPath,info.iIcon
-except AttributeError:
-    STOCK_ICON_AVAILABLE = False
-
-    def GetStockIcon(id_,flags=0):
-        return None
-
-    def GetStockIconLocation(id_,flags=0):
-        return u'',0
-
-#--Set a Button as a UAC button
-def setUAC(handle,uac=True):
-    """Calls the Windows API to set a button as UAC"""
-    if win32gui: win32gui.SendMessage(handle, 0x0000160C, None, uac)
-
 #--Start a webpage with an anchor ---------------------------------------------
 # Need to do this specially, because doing it via os.startfile, ShellExecute,
 # etc drops off the anchor part of the url
 def StartURL(url):
-    if not isinstance(url,basestring):
-        url = url.s
+    url = u'%s' % url # stringify if a Path instance
     # Get default browser location
     try:
         key = winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,u'http\\shell\\open\\command')
@@ -298,7 +268,7 @@ def StartURL(url):
         cmd = cmd.replace(u'%1',url)
         subprocess.Popen(cmd)
     except WindowsError:
-        # Regestry detection failed, fallback
+        # Registry detection failed, fallback
         # This method doesn't work with # anchors in the url name on windows
         import webbrowser
         webbrowser.open(url,new=2)
@@ -340,7 +310,7 @@ class TaskDialog(object):
                        'no': 7,
                        'close': 8}
 
-    def __init__(self, title, heading, content, buttons=[], main_icon=None,
+    def __init__(self, title, heading, content, buttons=(), main_icon=None,
                  parenthwnd=None, footer=None):
         """Initialize the dialog."""
         self.__events = {CREATED:[],
@@ -367,6 +337,7 @@ class TaskDialog(object):
         self._main_icon = self.stock_icons[
             main_icon] if self._main_is_stock else main_icon
         # buttons
+        buttons = list(buttons)
         self.set_buttons(buttons)
         # parent handle
         self._parent = parenthwnd
@@ -375,11 +346,11 @@ class TaskDialog(object):
         """Close the task dialog."""
         windll.user32.SendMessageW(self.__handle, 0x0010, 0, 0)
 
-    def bind(self, event, func):
+    def bind(self, task_dialog_event, func):
         """Bind a function to one of the task dialog events."""
-        if event not in self.__events.keys():
+        if task_dialog_event not in self.__events.keys():
             raise Exception("The control does not support the event.")
-        self.__events[event].append(func)
+        self.__events[task_dialog_event].append(func)
         return self
 
     def bindHyperlink(self):
@@ -464,9 +435,9 @@ class TaskDialog(object):
         self._progress_bar = {'func':callback, 'range': _range, 'pos':pos}
         return self
 
-    def set_check_box(self, label, checked=False):
+    def set_check_box(self, cbox_label, checked=False):
         """Set up a verification check box that appears on the task dialog."""
-        self._cbox_label = label
+        self._cbox_label = cbox_label
         self._cbox_checked = checked
         return self
 
@@ -503,19 +474,20 @@ class TaskDialog(object):
     ###############################
     # Windows windll.user32 calls #
     ###############################
-    def __configure(self, c_links, centered, close, minimize, h_links, flags):
+    def __configure(self, c_links, centered, close, minimize, h_links,
+                    additional_flags):
         conf = TASKDIALOGCONFIG()
 
         if c_links and len(getattr(self, '_buttons', [])) > 0:
-            flags |= USE_COMMAND_LINKS
+            additional_flags |= USE_COMMAND_LINKS
         if centered:
-            flags |= POSITION_RELATIVE_TO_WINDOW
+            additional_flags |= POSITION_RELATIVE_TO_WINDOW
         if close:
-            flags |= ALLOW_DIALOG_CANCELLATION
+            additional_flags |= ALLOW_DIALOG_CANCELLATION
         if minimize:
-            flags |= CAN_BE_MINIMIZED
+            additional_flags |= CAN_BE_MINIMIZED
         if h_links:
-            flags |= ENABLE_HYPERLINKS
+            additional_flags |= ENABLE_HYPERLINKS
 
         conf.cbSize = sizeof(TASKDIALOGCONFIG)
         conf.hwndParent = self._parent
@@ -523,27 +495,27 @@ class TaskDialog(object):
         conf.pszMainInstruction = self._heading
         conf.pszContent = self._content
 
-        attrs = dir(self) # FIXME(ut): unpythonic, as the builder pattern above
+        attributes = dir(self) # FIXME(ut): unpythonic, as the builder pattern above
 
-        if '_width' in attrs:
+        if '_width' in attributes:
             conf.cxWidth = self._width
 
         if self._footer:
             conf.pszFooter = self._footer
-        if '_footer_icon' in attrs:
+        if '_footer_icon' in attributes:
             if self._footer_is_stock:
                 conf.uFooterIcon.pszFooterIcon = self._footer_icon
             else:
                 conf.uFooterIcon.hFooterIcon = self._footer_icon
-                flags |= USE_HICON_FOOTER
+                additional_flags |= USE_HICON_FOOTER
         if self._main_icon is not None:
             if self._main_is_stock:
                 conf.uMainIcon.pszMainIcon = self._main_icon
             else:
                 conf.uMainIcon.hMainIcon = self._main_icon
-                flags |= USE_HICON_MAIN
+                additional_flags |= USE_HICON_MAIN
 
-        if '_buttons' in attrs:
+        if '_buttons' in attributes:
             custom_buttons = []
             # Enumerate through button list
             for i, button in enumerate(self._buttons):
@@ -575,7 +547,7 @@ class TaskDialog(object):
             conf.pButtons = c_array
             self.__custom_buttons = custom_buttons
 
-        if '_radio_buttons' in attrs:
+        if '_radio_buttons' in attributes:
             conf.cRadioButtons = len(self._radio_buttons)
             array_type = ARRAY(TASKDIALOG_BUTTON, conf.cRadioButtons)
             c_array = array_type()
@@ -584,34 +556,34 @@ class TaskDialog(object):
             conf.pRadioButtons = c_array
 
             if self._default_radio is None:
-                flags |= NO_DEFAULT_RADIO_BUTTON
+                additional_flags |= NO_DEFAULT_RADIO_BUTTON
             else:
                 conf.nDefaultRadioButton = self._default_radio
 
-        if '_expander_data' in attrs:
+        if '_expander_data' in attributes:
             conf.pszCollapsedControlText = self._expander_data[0]
             conf.pszExpandedControlText = self._expander_data[1]
             conf.pszExpandedInformation = self._expander_data[2]
 
             if self._expander_expanded:
-                flags |= EXPANDED_BY_DEFAULT
+                additional_flags |= EXPANDED_BY_DEFAULT
             if self._expands_at_footer:
-                flags |= EXPAND_FOOTER_AREA
+                additional_flags |= EXPAND_FOOTER_AREA
 
-        if '_cbox_label' in attrs:
+        if '_cbox_label' in attributes:
             conf.pszVerificationText = self._cbox_label
             if self._cbox_checked:
-                flags |= VERIFICATION_FLAG_CHECKED
+                additional_flags |= VERIFICATION_FLAG_CHECKED
 
-        if '_marquee_progress_bar' in attrs:
-            flags |= SHOW_MARQUEE_PROGRESS_BAR
-            flags |= CALLBACK_TIMER
+        if '_marquee_progress_bar' in attributes:
+            additional_flags |= SHOW_MARQUEE_PROGRESS_BAR
+            additional_flags |= CALLBACK_TIMER
 
-        if '_progress_bar' in attrs:
-            flags |= SHOW_PROGRESS_BAR
-            flags |= CALLBACK_TIMER
+        if '_progress_bar' in attributes:
+            additional_flags |= SHOW_PROGRESS_BAR
+            additional_flags |= CALLBACK_TIMER
 
-        conf.dwFlags = flags
+        conf.dwFlags = additional_flags
         conf.pfCallback = PFTASKDIALOGCALLBACK(self.__callback)
         return conf
 
