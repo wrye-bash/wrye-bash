@@ -47,24 +47,41 @@ import tempfile
 import zipfile
 import _winreg as winreg  # PY3
 from contextlib import contextmanager
+from distutils.version import LooseVersion
 
 import pygit2
 
+import update_taglist
 import utils
 
 
 LOGGER = logging.getLogger(__name__)
 
 SCRIPTS_PATH = os.path.dirname(os.path.abspath(__file__))
-LOGFILE = os.path.join(SCRIPTS_PATH, "build.log")
+LOGFILE = os.path.join(SCRIPTS_PATH, u'build.log')
+TAGINFO = os.path.join(SCRIPTS_PATH, u'taginfo.txt')
 WBSA_PATH = os.path.join(SCRIPTS_PATH, u"build", u"standalone")
 DIST_PATH = os.path.join(SCRIPTS_PATH, u"dist")
-ROOT_PATH = os.path.abspath(os.path.join(SCRIPTS_PATH, u".."))
+ROOT_PATH = os.path.abspath(os.path.join(SCRIPTS_PATH, os.pardir))
 MOPY_PATH = os.path.join(ROOT_PATH, u"Mopy")
 APPS_PATH = os.path.join(MOPY_PATH, u"Apps")
 NSIS_PATH = os.path.join(SCRIPTS_PATH, u"build", u"nsis")
 TESTS_PATH = os.path.join(MOPY_PATH, u'bash', u'tests')
 REDIST_PATH = os.path.join(MOPY_PATH, u'redist')
+TAGLISTS_PATH = os.path.join(MOPY_PATH, u'taglists')
+IDEA_PATH = os.path.join(ROOT_PATH, u'.idea')
+VSCODE_PATH = os.path.join(ROOT_PATH, u'.vscode')
+
+# List of files that should be preserved during the repo cleaning
+#  NSIS_PATH, REDIST_PATH: Not tracked, should only be downloaded once
+#  TAGLISTS_PATH, TAGINFO: Not tracked since it's specific to each developer,
+#                          removing it would update the taglists every time
+#  update_taglist.LOGFILE: Removing it breaks the update_taglist script if it's
+#                          currently running (duh)
+# IDEA_PATH, VSCODE_PATH: Annoying to remove, won't get included anyways and
+#                         can break the 'git stash pop'
+TO_PRESERVE = [NSIS_PATH, REDIST_PATH, TAGLISTS_PATH, TAGINFO,
+               update_taglist.LOGFILE, IDEA_PATH, VSCODE_PATH]
 
 sys.path.insert(0, MOPY_PATH)
 from bash import bass
@@ -127,6 +144,13 @@ def setup_parser(parser):
         default=None,
         dest="nsis",
         help="Specify a custom path to the NSIS root folder.",
+    )
+    parser.add_argument(
+        u'-u',
+        u'--update-taglists',
+        action=u'store_true',
+        dest=u'force_tl_update',
+        help=u'Forces an update of the bundled taglists.',
     )
     parser.set_defaults(version=nightly_version)
 
@@ -415,12 +439,10 @@ def handle_apps_folder():
             rm(APPS_PATH)
 
 
-# Checks whether the current nightly timestamp
-#   is the same as the previous nightly build.
-# Returns False if it's the same, True otherwise
-# Happens when a build is triggered too quickly
-#   after the previous one.
 def check_timestamp(build_version):
+    """Checks whether the current nightly timestamp is the same as the previous
+    nightly build. Returns False if it's the same, True otherwise. Happens when
+    a build is triggered too quickly after the previous one."""
     nightly_re = re.compile(r"\d{3,}\.\d{12}")
     # check whether we're building a nightly
     nightly_version = nightly_re.match(build_version)
@@ -443,6 +465,31 @@ def check_timestamp(build_version):
     return True
 
 
+def taglists_need_update():
+    """Checks if we should update the taglists. Can be overriden via CLI
+    argument."""
+    last_ml_ver = u'0.0'
+    try:
+        with open(TAGINFO, u'r') as ins:
+            last_ml_ver = ins.read()
+    except (IOError, OSError): pass # we'll have to update
+    latest_ml_ver = update_taglist.MASTERLIST_VERSION
+    if LooseVersion(last_ml_ver) < LooseVersion(latest_ml_ver):
+        # LOOT version changed so the syntax probably changed too,
+        # update them to be safe
+        LOGGER.info(u'LOOT version changed since the last taglist update (was '
+                    u'%s, now %s), updating taglists' % (
+            last_ml_ver, latest_ml_ver))
+        return True
+    LOGGER.debug(u'LOOT version matches last taglist update (was %s, '
+                 u'now %s)' % (last_ml_ver, latest_ml_ver))
+    if not update_taglist.all_taglists_present():
+        LOGGER.info(u'One or more taglists are missing, updating taglists')
+        return True
+    LOGGER.debug(u'All taglists present, no update needed')
+    return False
+
+
 def main(args):
     utils.setup_log(LOGGER, verbosity=args.verbosity, logfile=LOGFILE)
     # check nightly timestamp is different than previous
@@ -458,6 +505,12 @@ def main(args):
         license_temp = os.path.join(MOPY_PATH, u'LICENSE.md')
         try:
             cpy(license_real, license_temp)
+            # Check if we need to update the LOOT taglists
+            if args.force_tl_update or taglists_need_update():
+                update_taglist.main()
+                # Remember the last LOOT version we generated taglists for
+                with open(TAGINFO, u'w') as out:
+                    out.write(update_taglist.MASTERLIST_VERSION)
             if args.manual:
                 LOGGER.info("Creating python source distributable...")
                 pack_manual(args.version)
@@ -503,13 +556,14 @@ def clean_repo():
             "You are building off branch '{}', which does not "
             "appear to be a release branch".format(branch_name)
         )
-    with hold_files(NSIS_PATH, REDIST_PATH):
+    with hold_files(*TO_PRESERVE):
         # stash everything away
         # - stash modified files
         # - then stash ignored and untracked
         # - unstash modified files
         # and we have a clean repo!
         sig = repo.default_signature
+        # Not unused, PyCharm is not smart enough to understand utils.suppress
         mod_stashed = False
         unt_stashed = False
         with utils.suppress(KeyError):

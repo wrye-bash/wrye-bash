@@ -60,7 +60,7 @@ def getPatchesPath(fileName):
 def getPatchesList():
     """Get a basic list of potential Bash Patches."""
     return set(bass.dirs[u'patches'].list()) | set(
-        bass.dirs[u'defaultPatches'].list())
+        bass.dirs[u'defaultPatches'].list()) # Empty list if it doesn't exist
 
 # this is set once and stays the same for the patch execution session
 _patches_set = None

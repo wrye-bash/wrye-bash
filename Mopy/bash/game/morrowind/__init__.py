@@ -38,7 +38,7 @@ class MorrowindGameInfo(GameInfo):
     version_detect_file = u'Morrowind.exe'
     master_file = u'Morrowind.esm'
     mods_dir = u'Data Files'
-    masterlist_dir = u'Morrowind'
+    taglist_dir = u'Morrowind'
     # This is according to xEdit's sources, but it doesn't make that key for me
     regInstallKeys = (u'Bethesda Softworks\\Morrowind', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/morrowind/'

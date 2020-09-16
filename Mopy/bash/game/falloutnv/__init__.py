@@ -34,7 +34,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     game_detect_file = u'FalloutNV.exe'
     version_detect_file = u'FalloutNV.exe'
     master_file = u'FalloutNV.esm'
-    masterlist_dir = u'FalloutNV'
+    taglist_dir = u'FalloutNV'
     regInstallKeys = (u'Bethesda Softworks\\FalloutNV',u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/newvegas/'
     nexusName = u'New Vegas Nexus'

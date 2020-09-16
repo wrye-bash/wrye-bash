@@ -51,7 +51,7 @@ class ConfigHelpers(object):
             os.pardir, u'LOOT', bush.game.masterlist_dir, u'userlist.yaml')
         self.lootMasterTime = None
         self.lootUserTime = None
-        self.tagList = bass.dirs[u'defaultPatches'].join(u'taglist.yaml')
+        self.tagList = bass.dirs[u'taglists'].join(u'taglist.yaml')
         self.tagListModTime = None
         #--Bash Tags
         self.tagCache = {}
@@ -75,9 +75,9 @@ class ConfigHelpers(object):
             return # no changes or we parsed successfully
         #--No masterlist or an error occurred while reading it, use the taglist
         if not self.tagList.exists():
-            raise BoltError(u'Mopy\\Bash Patches\\' + bush.game.fsName +
-                u'\\taglist.yaml could not be found.  Please ensure Wrye '
-                u'Bash is installed correctly.')
+            # Missing taglist is fine, happens if someone cloned without
+            # running update_taglist.py
+            return
         if self.tagList.mtime == self.tagListModTime: return
         self.tagListModTime = self.tagList.mtime
         self.tagCache = {}

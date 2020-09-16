@@ -2,7 +2,7 @@ Wrye Bash
 =========
 
 [![Wrye Bash CI](https://github.com/wrye-bash/wrye-bash/workflows/Wrye%20Bash%20CI/badge.svg)](https://github.com/wrye-bash/wrye-bash/actions?query=workflow%3A%22Wrye+Bash+CI%22)
-[![License: GPL v2](https://img.shields.io/badge/license-GPLv2-blue.svg)](Mopy/license.txt)
+[![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE.md)
 
 ### About
 

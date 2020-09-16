@@ -575,6 +575,16 @@
         Delete "${Path}\Mopy\bash\compiled\CBash.dll"
         ; As of 308, the license file was renamed to LICENSE.md
         Delete "${Path}\Mopy\license.txt"
+        ; As of 308, taglists have been moved to Mopy\taglists
+        ; NOTE: If we ever end up using Mopy\Bash Patches outside Oblivion,
+        ; change these to 'Delete's similar to Oblivion's
+        RMDir /r "${Path}\Mopy\Bash Patches\Fallout3"
+        RMDir /r "${Path}\Mopy\Bash Patches\Fallout4"
+        RMDir /r "${Path}\Mopy\Bash Patches\FalloutNV"
+        RMDir /r "${Path}\Mopy\Bash Patches\Morrowind"
+        Delete "${Path}\Mopy\Bash Patches\Oblivion\taglist.yaml"
+        RMDir /r "${Path}\Mopy\Bash Patches\Skyrim"
+        RMDir /r "${Path}\Mopy\Bash Patches\SkyrimSE"
     !macroend
 
 

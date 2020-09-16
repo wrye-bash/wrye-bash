@@ -34,7 +34,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     launch_exe = u'SkyrimSE.exe'
     game_detect_file = u'SkyrimSE.exe'
     version_detect_file = u'SkyrimSE.exe'
-    masterlist_dir = u'SkyrimSE'
+    taglist_dir = u'SkyrimSE'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim Special Edition',
                       u'Installed Path')
 

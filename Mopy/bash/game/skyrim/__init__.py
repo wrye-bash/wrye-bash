@@ -38,7 +38,7 @@ class SkyrimGameInfo(GameInfo):
     game_detect_file = u'SkyrimLauncher.exe'
     version_detect_file = u'TESV.exe'
     master_file = u'Skyrim.esm'
-    masterlist_dir = u'Skyrim'
+    taglist_dir = u'Skyrim'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/skyrim/'
     nexusName = u'Skyrim Nexus'

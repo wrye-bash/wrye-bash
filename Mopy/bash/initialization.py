@@ -137,7 +137,8 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     #--Oblivion (Application) Directories
     dirs[u'app'] = game_info.gamePath
     dirs[u'defaultPatches'] = dirs[u'mopy'].join(u'Bash Patches',
-                                                 game_info.masterlist_dir)
+        game_info.fsName)
+    dirs[u'taglists'] = dirs[u'mopy'].join(u'taglists', game_info.taglist_dir)
     #  Personal
     if game_info.uses_personal_folders:
         personal = getPersonalPath(bashIni_, personal)

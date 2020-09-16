@@ -63,9 +63,9 @@ class GameInfo(object):
     # The directory in which mods and other data files reside. This is relative
     # to the game directory.
     mods_dir = u'Data'
-    # The directory containing the masterlist for this game, relative to
-    # 'Mopy/Bash Patches'
-    masterlist_dir = u''
+    # The directory containing the taglist for this game, relative to
+    # 'Mopy/taglists'
+    taglist_dir = u''
     # Registry keys to read to find the install location
     # These are relative to:
     #  HKLM\Software
