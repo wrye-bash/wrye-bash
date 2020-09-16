@@ -200,7 +200,7 @@ class MobObjects(MobBase):
     def __init__(self, header, loadFactory, ins=None, do_unpack=False):
         self.records = []
         self.id_records = {}
-        MobBase.__init__(self, header, loadFactory, ins, do_unpack)
+        super(MobObjects, self).__init__(header, loadFactory, ins, do_unpack)
 
     def get_all_signatures(self):
         return {self.label}
@@ -767,7 +767,7 @@ class MobCell(MobBase):
         self.temp_refs = []
         self.land = None
         self.pgrd = None
-        MobBase.__init__(self, header, loadFactory, ins, do_unpack)
+        super(MobCell, self).__init__(header, loadFactory, ins, do_unpack)
 
     def load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
@@ -1076,7 +1076,7 @@ class MobCells(MobBase):
         self.cellBlocks = [] #--Each cellBlock is a cell and its related
         # records.
         self.id_cellBlock = {}
-        MobBase.__init__(self, header, loadFactory, ins, do_unpack)
+        super(MobCells, self).__init__(header, loadFactory, ins, do_unpack)
 
     def indexRecords(self):
         """Indexes records by fid."""
@@ -1347,7 +1347,7 @@ class MobWorld(MobCells):
         # all persistent objects in the worldspace
         self.worldCellBlock = None
         self.road = None
-        MobCells.__init__(self, header, loadFactory, ins, do_unpack)
+        super(MobWorld, self).__init__(header, loadFactory, ins, do_unpack)
 
     def load_rec_group(self, ins, endPos, __packer=struct.Struct(u'I').pack,
                        __unpacker=struct.Struct(u'2h').unpack):
@@ -1452,12 +1452,12 @@ class MobWorld(MobCells):
     def getNumRecords(self,includeGroups=True):
         """Returns number of records, including self and all children."""
         if not self.changed:
-            return MobBase.getNumRecords(self)
+            return super(MobCells, self).getNumRecords() ##: includeGroups?
         count = 1 # self.world, always present
         count += bool(self.road)
         if self.worldCellBlock:
             count += self.worldCellBlock.getNumRecords(includeGroups)
-        count += MobCells.getNumRecords(self,includeGroups)
+        count += super(MobWorld, self).getNumRecords(includeGroups)
         return count
 
     def dump(self,out):
@@ -1507,7 +1507,7 @@ class MobWorld(MobCells):
             self.road.convertFids(mapper,toLong)
         if self.worldCellBlock:
             self.worldCellBlock.convertFids(mapper,toLong)
-        MobCells.convertFids(self,mapper,toLong)
+        super(MobWorld, self).convertFids(mapper, toLong)
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
@@ -1535,7 +1535,7 @@ class MobWorld(MobCells):
         if self.worldCellBlock and srcBlock.worldCellBlock:
             self.worldCellBlock.updateRecords(srcBlock.worldCellBlock,mapper,
                                               mergeIds)
-        MobCells.updateRecords(self,srcBlock,mapper,mergeIds)
+        super(MobWorld, self).updateRecords(srcBlock, mapper, mergeIds)
 
     def iter_records(self):
         single_recs = [x for x in (self.world, self.road) if x]
@@ -1551,7 +1551,7 @@ class MobWorld(MobCells):
             self.worldCellBlock.keepRecords(p_keep_ids)
             if self.worldCellBlock.cell.fid not in p_keep_ids:
                 self.worldCellBlock = None
-        MobCells.keepRecords(self, p_keep_ids)
+        super(MobWorld, self).keepRecords(p_keep_ids)
         if self.road or self.worldCellBlock or self.cellBlocks:
             p_keep_ids.add(self.world.fid)
 
@@ -1626,7 +1626,7 @@ class MobWorlds(MobBase):
         self.worldBlocks = []
         self.id_worldBlocks = {}
         self.orphansSkipped = 0
-        MobBase.__init__(self, header, loadFactory, ins, do_unpack)
+        super(MobWorlds, self).__init__(header, loadFactory, ins, do_unpack)
 
     def load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""

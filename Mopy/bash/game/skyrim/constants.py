@@ -2372,6 +2372,7 @@ cellRecFlags = {
 cell_float_attrs = {u'fogNear', u'fogFar', u'directionalFade', u'fogClip',
                     u'fogPower', u'fogMax', u'fresnelPower', u'lightFadeBegin',
                     u'lightFadeEnd', u'waterHeight'}
+cell_skip_interior_attrs = {u'waterHeight'}
 
 #------------------------------------------------------------------------------
 # GraphicsPatcher

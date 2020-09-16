@@ -526,7 +526,10 @@ class CellImporter(ImportPatcher):
             """
             if not cellBlock.cell.flags1.ignored:
                 fid = cellBlock.cell.fid
-                for attr in attrs:
+                # If we're in an interior, see if we have to ignore any attrs
+                actual_attrs = ((attrs - bush.game.cell_skip_interior_attrs)
+                                if cellBlock.cell.flags.isInterior else attrs)
+                for attr in actual_attrs:
                     tempCellData[fid][attr] = cellBlock.cell.__getattribute__(
                         attr)
                 for flg_ in flgs_:
@@ -543,7 +546,10 @@ class CellImporter(ImportPatcher):
             if not cellBlock.cell.flags1.ignored:
                 rec_fid = cellBlock.cell.fid
                 if rec_fid not in tempCellData: return
-                for attr in attrs:
+                # If we're in an interior, see if we have to ignore any attrs
+                actual_attrs = ((attrs - bush.game.cell_skip_interior_attrs)
+                                if cellBlock.cell.flags.isInterior else attrs)
+                for attr in actual_attrs:
                     master_attr = cellBlock.cell.__getattribute__(attr)
                     if tempCellData[rec_fid][attr] != master_attr:
                         cellData[rec_fid][attr] = tempCellData[rec_fid][attr]
@@ -652,14 +658,6 @@ class CellImporter(ImportPatcher):
                 curr_value = patch_cell_get(attr)
                 if attr == u'regions':
                     if set(value).difference(set(curr_value)):
-                        patch_cell_set(attr, value)
-                        modified = True
-                # bolt.Flags-backed attributes need special comparison logic,
-                # since flags can have nonsense values outside of the actual
-                # flags. ##: if we ever end up having more flags attrs, this
-                # should become a set, probably per-game
-                elif attr == u'land_flags':
-                    if value.getTrueAttrs() != curr_value.getTrueAttrs():
                         patch_cell_set(attr, value)
                         modified = True
                 elif attr in c_float_attrs:

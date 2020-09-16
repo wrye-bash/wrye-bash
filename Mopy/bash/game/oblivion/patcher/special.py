@@ -123,14 +123,19 @@ class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
             book.full = full
             book.value = value
             book.weight = 0.2
-            book.fid = keep((GPath(u'Cobl Main.esm'),objectId))
             book.text = u'<div align="left"><font face=3 color=4444>'
-            book.text += _(u"Salan's Catalog of ")+u'%s\r\n\r\n' % full
+            book.text += (_(u"Salan's Catalog of %s") + u'\r\n\r\n') % full
             book.iconPath = iconPath
             book.model = book.getDefault('model')
             book.model.modPath = modelPath
             book.model.modb_p = modb_p
             book.modb = book
+            ##: In Cobl Main.esm, the books have a script attached
+            # (<cobGenDevalueOS [SCPT:01001DDD]>). This currently gets rid of
+            # that, should we keep it instead?
+            # book.script = (GPath(u'Cobl Main.esm'), 0x001DDD)
+            book.fid = (GPath(u'Cobl Main.esm'), objectId)
+            keep(book.fid)
             self.patchFile.BOOK.setRecord(book)
             return book
         #--Ingredients Catalog

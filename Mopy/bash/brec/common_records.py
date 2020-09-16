@@ -121,7 +121,7 @@ class MreFlst(MelRecord):
                                          u're_records']
 
     def __init__(self, header, ins=None, do_unpack=False):
-        MelRecord.__init__(self, header, ins, do_unpack)
+        super(MreFlst, self).__init__(header, ins, do_unpack)
         self.mergeOverLast = False #--Merge overrides last mod merged
         self.mergeSources = None #--Set to list by other functions
         self.items  = None #--Set of items included in list
@@ -192,12 +192,12 @@ class MreGmstBase(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelUnion({
-            u'b': MelUInt32('DATA', 'value'), # actually a bool
-            u'f': MelFloat('DATA', 'value'),
-            u's': MelLString('DATA', 'value'),
+            u'b': MelUInt32(b'DATA', u'value'), # actually a bool
+            u'f': MelFloat(b'DATA', u'value'),
+            u's': MelLString(b'DATA', u'value'),
         }, decider=AttrValDecider(
-            'eid', transformer=lambda eid: decode(eid[0]) if eid else u'i'),
-            fallback=MelSInt32('DATA', 'value')
+            u'eid', transformer=lambda eid: decode(eid[0]) if eid else u'i'),
+            fallback=MelSInt32(b'DATA', u'value')
         ),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -234,16 +234,16 @@ class MreLand(MelRecord):
         MelGroups('layers',
             # Start a new layer each time we hit one of these
             MelUnion({
-                'ATXT': MelStruct('ATXT', 'IBsh', (FID, 'atxt_texture'),
-                                  'quadrant', 'unknown', 'layer'),
-                'BTXT': MelStruct('BTXT', 'IBsh', (FID, 'btxt_texture'),
-                                  'quadrant', 'unknown', 'layer'),
+                b'ATXT': MelStruct(b'ATXT', u'IBsh', (FID, u'atxt_texture'),
+                    u'quadrant', u'unknown', u'layer'),
+                b'BTXT': MelStruct(b'BTXT', u'IBsh', (FID, u'btxt_texture'),
+                    u'quadrant', u'unknown', u'layer'),
             }),
             # VTXT only exists for ATXT layers
             MelUnion({
-                True:  MelBase('VTXT', 'alpha_layer_data'),
-                False: MelNull('VTXT'),
-            }, decider=AttrExistsDecider('atxt_texture')),
+                True:  MelBase(b'VTXT', u'alpha_layer_data'),
+                False: MelNull(b'VTXT'),
+            }, decider=AttrExistsDecider(u'atxt_texture')),
         ),
         MelArray('vertex_textures',
             MelFid('VTEX', 'vertex_texture'),
@@ -282,7 +282,7 @@ class MreLeveledListBase(MelRecord):
                 # + ['flags', 'entries'] # define those in the subclasses
 
     def __init__(self, header, ins=None, do_unpack=False):
-        MelRecord.__init__(self, header, ins, do_unpack)
+        super(MreLeveledListBase, self).__init__(header, ins, do_unpack)
         self.mergeOverLast = False #--Merge overrides last mod merged
         self.mergeSources = None #--Set to list by other functions
         self.items  = None #--Set of items included in list
