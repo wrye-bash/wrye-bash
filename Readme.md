@@ -69,10 +69,10 @@ path/to/python.exe -m pip install -r requirements.txt
 Refer to the readmes for [detailed instructions][12]. In short:
 
 1. Install one of the supported games (Oblivion, Skyrim, Fallout).
-2. Install Python and plugins above.
-3. Extract the downloaded Wrye Bash archive into your game folder.
-4. Run Wrye Bash by double-clicking "Wrye Bash Launcher.pyw" in the new Mopy
- folder.
+1. Install Python and plugins above.
+1. Extract the downloaded Wrye Bash archive into your game folder.
+1. Run Wrye Bash by double-clicking "Wrye Bash Launcher.pyw" in the new Mopy
+   folder.
 
 #### WINE
 
