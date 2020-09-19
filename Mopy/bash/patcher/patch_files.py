@@ -31,7 +31,7 @@ from .. import bolt # for type hints
 from ..balt import readme_url
 from .. import load_order
 from .. import bass
-from ..brec import MreRecord
+from ..brec import MreRecord, RecHeader
 from ..bolt import GPath, SubProgress, deprint, Progress
 from ..cint import ObModFile, FormID, dump_record, ObCollection, MGEFCode
 from ..exception import BoltError, CancelError, ModError, StateError
@@ -186,6 +186,16 @@ class PatchFile(_PFile, ModFile):
     def getKeeper(self):
         """Returns a function to add fids to self.keepIds."""
         return self.keepIds.add
+
+    def new_gmst(self, gmst_eid, gmst_val):
+        """Creates a new GMST record and adds it to this patch."""
+        gmst_rec = MreRecord.type_class[b'GMST'](RecHeader(b'GMST'))
+        gmst_rec.eid = gmst_eid
+        gmst_rec.value = gmst_val
+        gmst_rec.longFids = True
+        gmst_rec.fid = (self.fileInfo.name, self.tes4.getNextObject())
+        self.keepIds.add(gmst_rec.fid)
+        getattr(self, u'GMST').setRecord(gmst_rec) # ugh...
 
     def initFactories(self,progress):
         """Gets load factories."""

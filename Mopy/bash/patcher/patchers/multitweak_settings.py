@@ -27,7 +27,6 @@ for game settings."""
 from __future__ import print_function
 from ... import bush # for game
 from ...bolt import SubProgress, floats_equal
-from ...brec import MreRecord, RecHeader
 from ...exception import StateError
 from ...patcher.base import AMultiTweaker, DynamicTweak
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
@@ -150,19 +149,11 @@ class _AGmstTweak(DynamicTweak):
 
 class GmstTweak(_AGmstTweak, MultiTweakItem):
     def finish_tweaking(self, patch_file):
-        keep = patch_file.getKeeper()
-        add_gmst = patch_file.GMST.setRecord
         # Create new records for any remaining EDIDs
         for remaining_eid, was_itpo in self.eid_was_itpo.iteritems():
             if not was_itpo:
-                new_gmst = MreRecord.type_class[b'GMST'](RecHeader(b'GMST'))
-                new_gmst.eid = self._find_original_eid(remaining_eid)
-                new_gmst.value = self._find_chosen_value(remaining_eid)
-                new_gmst.longFids = True
-                new_gmst.fid = (patch_file.fileInfo.name,
-                                patch_file.tes4.getNextObject())
-                keep(new_gmst.fid)
-                add_gmst(new_gmst)
+                patch_file.new_gmst(self._find_original_eid(remaining_eid),
+                    self._find_chosen_value(remaining_eid))
 
 class CBash_GmstTweak(_AGmstTweak, CBash_MultiTweakItem):
     """Sets a GMST to specified value."""

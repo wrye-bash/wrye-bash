@@ -587,6 +587,21 @@ class CBash_NamesTweak_StaffsToStaves(_ATR_StaffsToStaves,
     _ATextReplacer_C): pass
 
 #------------------------------------------------------------------------------
+class NamesTweak_FatigueToStamina(_ATextReplacer_P):
+    """Replaces 'fatigue' with 'stamina', similar to Skyrim."""
+    tweak_name = _(u'Skyrim-style Text: Fatigue -> Stamina')
+    tweak_tip = _(u'Replace any occurrences of the word "fatigue" with '
+                  u'"stamina", similar to Skyrim.')
+    tweak_key = u'FatigueToStamina'
+    tweak_choices = [(u'1.0', u'1.0')]
+    _tr_replacements = {u'' r'\bfatigue\b': u'stamina',
+                        u'' r'\bFatigue\b': u'Stamina'}
+
+    def finish_tweaking(self, patch_file):
+        # This GMST doesn't exist in Oblivion.esm, so just create it in the BP
+        patch_file.new_gmst(u'sDerivedAttributeNameFatigue', u'Stamina')
+
+#------------------------------------------------------------------------------
 class _ANamesTweaker(AMultiTweaker):
     """Tweaks record full names in various ways."""
     scanOrder = 32
@@ -613,7 +628,7 @@ class NamesTweaker(_ANamesTweaker, MultiTweaker):
                       NamesTweak_Potions, NamesTweak_Scrolls,
                       NamesTweak_Spells, NamesTweak_Weapons,
                       NamesTweak_DwarvenToDwemer, NamesTweak_DwarfsToDwarves,
-                      NamesTweak_StaffsToStaves]
+                      NamesTweak_StaffsToStaves, NamesTweak_FatigueToStamina]
     _body_tags_tweak = NamesTweak_BodyTags
 
 class CBash_NamesTweaker(_ANamesTweaker,CBash_MultiTweaker):
