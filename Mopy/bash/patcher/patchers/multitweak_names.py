@@ -27,7 +27,6 @@ to the Names Multitweaker - as well as the NamesTweaker itself."""
 
 from __future__ import division
 import re
-from functools import partial
 # Internal
 from ...bolt import RecPath
 from ...brec import MreRecord # yuck, see usage below
@@ -454,8 +453,7 @@ class CBash_NamesTweak_Weapons(_ANamesTweak_Weapons, _CNamesTweak): pass
 #------------------------------------------------------------------------------
 class _ATextReplacer(_ANamesTweak):
     """Base class for replacing any text via regular expressions."""
-    # FIXME(inf) Move to game/*/constants, and boom, we have a cross-game text
-    #  replacer!
+    ##: Move to game/*/constants, and boom, we have a cross-game text replacer!
     _match_replace_rpaths = {
         b'ALCH': (u'full', u'effects[i].scriptEffect?.full'),
         b'AMMO': (u'full',),
@@ -473,6 +471,7 @@ class _ATextReplacer(_ANamesTweak):
         b'FACT': (u'full',), ##: maybe add male_title/female_title?
         b'FLOR': (u'full',),
         b'FURN': (u'full',),
+        b'GMST': (u'value',),
         b'HAIR': (u'full',),
         b'INGR': (u'full', u'effects[i].scriptEffect?.full'),
         b'KEYM': (u'full',),
@@ -483,7 +482,6 @@ class _ATextReplacer(_ANamesTweak):
         b'NPC_': (u'full',),
         b'QUST': (u'full', u'stages[i].entries[i].text'),
         b'RACE': (u'full', u'text'),
-#        b'SCPT': (), ##: doesn't have any text to replace
         b'SGST': (u'full', u'effects[i].scriptEffect?.full'),
         b'SKIL': (u'description', u'apprentice', u'journeyman', u'expert',
                   u'master'),
@@ -491,13 +489,15 @@ class _ATextReplacer(_ANamesTweak):
         b'SPEL': (u'full', u'effects[i].scriptEffect?.full'),
         b'WEAP': (u'full',),
     }
-    tweak_read_classes = tuple(_match_replace_rpaths) + (b'GMST',)
-    _tr_match = _tr_replacement = None # override in implementations
+    tweak_read_classes = tuple(_match_replace_rpaths)
+    # Maps regexes we want to match to replacement strings. Those replacements
+    # will be passed to re.sub, so they may use the results of regex groups.
+    _tr_replacements = {}
 
     def __init__(self):
         super(_ATextReplacer, self).__init__()
-        self._re_match = re.compile(self._tr_match)
-        self._re_replacement = self._tr_replacement
+        self._re_mapping = {re.compile(m): r for m, r in
+                            self._tr_replacements.iteritems()}
         # Convert the match/replace strings to record paths
         self._match_replace_rpaths = {
             rsig: tuple([RecPath(r) for r in rpaths])
@@ -505,11 +505,12 @@ class _ATextReplacer(_ANamesTweak):
         }
 
     def wants_record(self, record):
-        can_change = self._re_match.search
+        def can_change(test_text):
+            return any(m.search(test_text) for m in self._re_mapping)
         record_sig = self._get_record_signature(record)
         if record_sig == b'GMST':
-            # GMST can't be handled by RecPath (yet?), thankfully it's
-            # identical for all games
+            # GMST needs this check which can't be handled by RecPath yet,
+            # thankfully it's identical for all games
             return record.eid[0] == u's' and can_change(record.value or u'')
         else:
             for rp in self._match_replace_rpaths[record_sig]: # type: RecPath
@@ -519,15 +520,13 @@ class _ATextReplacer(_ANamesTweak):
             return False
 
     def tweak_record(self, record):
-        self._exec_rename(record) # Changes more than just FULL
-
-    def _exec_rename(self, record):
-        sub_replacement, replacement = self._re_match.sub, self._re_replacement
-        exec_replacement = partial(sub_replacement, replacement)
-        record_sig = self._get_record_signature(record)
-        if record_sig == b'GMST':
-            record.value = exec_replacement(record.value)
-        else:
+        for re_to_match, replacement in self._re_mapping.iteritems():
+            replacement_sub = re_to_match.sub
+            def exec_replacement(rec_val):
+                if rec_val: # or blow up on re.sub
+                    return replacement_sub(replacement, rec_val)
+                return rec_val
+            record_sig = self._get_record_signature(record)
             for rp in self._match_replace_rpaths[record_sig]: # type: RecPath
                 if rp.rp_exists(record):
                     rp.rp_map(record, exec_replacement)
@@ -553,8 +552,7 @@ class _ATR_DwarvenToDwemer(_ATextReplacer):
                   u'with "dwemer" to better follow lore.')
     tweak_key = u'Dwemer'
     tweak_choices = [(u'Lore Friendly Text: Dwarven -> Dwemer', u'Dwemer')]
-    _tr_match = u'' r'\b(d|D)(?:warven|warf)\b'
-    _tr_replacement = u'' r'\1wemer'
+    _tr_replacements = {u'' r'\b(d|D)(?:warven|warf)\b': u'' r'\1wemer'}
 
 class NamesTweak_DwarvenToDwemer(_ATR_DwarvenToDwemer, _ATextReplacer_P): pass
 class CBash_NamesTweak_DwarvenToDwemer(_ATR_DwarvenToDwemer,
@@ -568,8 +566,7 @@ class _ATR_DwarfsToDwarves(_ATextReplacer):
                   u'"dwarves" to better follow proper English.')
     tweak_key = u'Dwarfs'
     tweak_choices = [(u'Proper English Text: Dwarfs -> Dwarves', u'Dwarves')]
-    _tr_match = u'' r'\b(d|D)(?:warfs)\b'
-    _tr_replacement = u'' r'\1warves'
+    _tr_replacements = {u'' r'\b(d|D)(?:warfs)\b': u'' r'\1warves'}
 
 class NamesTweak_DwarfsToDwarves(_ATR_DwarfsToDwarves, _ATextReplacer_P): pass
 class CBash_NamesTweak_DwarfsToDwarves(_ATR_DwarfsToDwarves,
@@ -583,8 +580,7 @@ class _ATR_StaffsToStaves(_ATextReplacer):
                   u'"staves" to better follow proper English.')
     tweak_key = u'Staffs'
     tweak_choices = [(u'Proper English Text: Staffs -> Staves', u'Staves')]
-    _tr_match = u'' r'\b(s|S)(?:taffs)\b'
-    _tr_replacement = u'' r'\1taves'
+    _tr_replacements = {u'' r'\b(s|S)(?:taffs)\b': u'' r'\1taves'}
 
 class NamesTweak_StaffsToStaves(_ATR_StaffsToStaves, _ATextReplacer_P): pass
 class CBash_NamesTweak_StaffsToStaves(_ATR_StaffsToStaves,
