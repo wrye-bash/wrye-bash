@@ -352,6 +352,8 @@ class AMultiTweakItem(object):
         """Returns True if the specified record is marked as nonplayable."""
         raise AbstractError(u'_is_nonplayable not implemented')
 
+# TODO(inf) DEPRECATED! - don't use for new tweaks -> all tweaks should really
+#  be static classes, much more readable
 class DynamicTweak(AMultiTweakItem):
     """A tweak that has its name, tip, key and choices passed in as init
     parameters."""

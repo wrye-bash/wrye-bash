@@ -33,7 +33,7 @@ from ...bolt import RecPath
 from ...brec import MreRecord # yuck, see usage below
 from ...exception import AbstractError
 from ...parsers import LoadFactory, ModFile # yuck, see usage below
-from ...patcher.base import AMultiTweakItem, AMultiTweaker, DynamicTweak
+from ...patcher.base import AMultiTweakItem, AMultiTweaker
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
 
@@ -148,6 +148,7 @@ class _ANamesTweak_BodyTags(AMultiTweakItem): # not _ANamesTweak, no classes!
     tweak_choices = [(u'ARGHTCCPBS', u'ARGHTCCPBS'),
                      (u'ABGHINOPSL', u'ABGHINOPSL')]
 
+##: This would be better handled with some sort of settings menu for the BP
 class NamesTweak_BodyTags(_ANamesTweak_BodyTags, _PNamesTweak):
     def tweak_log(self, log, count): pass # 'internal' tweak, log nothing
 class CBash_NamesTweak_BodyTags(_ANamesTweak_BodyTags,
@@ -292,11 +293,11 @@ class _ANamesTweak_Potions(_AMgefNamesTweak):
 
 class NamesTweak_Potions(_ANamesTweak_Potions, _PNamesTweak):
     def _get_rename_params(self, record):
-        return (record, record.flags.isFood)
+        return record, record.flags.isFood
 
 class CBash_NamesTweak_Potions(_ANamesTweak_Potions, _CNamesTweak):
     def _get_rename_params(self, record):
-        return (record, record.IsFood)
+        return record, record.IsFood
 
 #------------------------------------------------------------------------------
 _re_old_magic_label = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ', re.U)
@@ -365,7 +366,7 @@ class NamesTweak_Scrolls(_ANamesTweak_Scrolls, _PNamesTweak):
         self._look_up_ench = None
 
     def _get_rename_params(self, record):
-        return (record, lambda e: self._look_up_ench.get(e, 6))
+        return record, lambda e: self._look_up_ench.get(e, 6)
 
 class CBash_NamesTweak_Scrolls(_ANamesTweak_Scrolls, _CNamesTweak):
     def wants_record(self, record):
@@ -451,7 +452,7 @@ class NamesTweak_Weapons(_ANamesTweak_Weapons, _PNamesTweak): pass
 class CBash_NamesTweak_Weapons(_ANamesTweak_Weapons, _CNamesTweak): pass
 
 #------------------------------------------------------------------------------
-class _ATextReplacer(DynamicTweak, _ANamesTweak):
+class _ATextReplacer(_ANamesTweak):
     """Base class for replacing any text via regular expressions."""
     # FIXME(inf) Move to game/*/constants, and boom, we have a cross-game text
     #  replacer!
@@ -491,13 +492,12 @@ class _ATextReplacer(DynamicTweak, _ANamesTweak):
         b'WEAP': (u'full',),
     }
     tweak_read_classes = tuple(_match_replace_rpaths) + (b'GMST',)
+    _tr_match = _tr_replacement = None # override in implementations
 
-    def __init__(self, reMatch, reReplace, label, tweak_tip, tweak_key,
-                 *tweak_choices):
-        super(_ATextReplacer, self).__init__(label, tweak_tip, tweak_key,
-                                             *tweak_choices)
-        self.re_match = re.compile(reMatch)
-        self.re_replacement = reReplace
+    def __init__(self):
+        super(_ATextReplacer, self).__init__()
+        self._re_match = re.compile(self._tr_match)
+        self._re_replacement = self._tr_replacement
         # Convert the match/replace strings to record paths
         self._match_replace_rpaths = {
             rsig: tuple([RecPath(r) for r in rpaths])
@@ -505,7 +505,7 @@ class _ATextReplacer(DynamicTweak, _ANamesTweak):
         }
 
     def wants_record(self, record):
-        can_change = self.re_match.search
+        can_change = self._re_match.search
         record_sig = self._get_record_signature(record)
         if record_sig == b'GMST':
             # GMST can't be handled by RecPath (yet?), thankfully it's
@@ -522,7 +522,7 @@ class _ATextReplacer(DynamicTweak, _ANamesTweak):
         self._exec_rename(record) # Changes more than just FULL
 
     def _exec_rename(self, record):
-        sub_replacement, replacement = self.re_match.sub, self.re_replacement
+        sub_replacement, replacement = self._re_match.sub, self._re_replacement
         exec_replacement = partial(sub_replacement, replacement)
         record_sig = self._get_record_signature(record)
         if record_sig == b'GMST':
@@ -532,8 +532,8 @@ class _ATextReplacer(DynamicTweak, _ANamesTweak):
                 if rp.rp_exists(record):
                     rp.rp_map(record, exec_replacement)
 
-class TextReplacer(_ATextReplacer, _PNamesTweak): pass
-class CBash_TextReplacer(_ATextReplacer, _CNamesTweak):
+class _ATextReplacer_P(_ATextReplacer, _PNamesTweak): pass
+class _ATextReplacer_C(_ATextReplacer, _CNamesTweak):
     tweak_read_classes = (b'CELLS',) + _ATextReplacer.tweak_read_classes
     _match_replace_rpaths = _ATextReplacer._match_replace_rpaths.copy()
     _match_replace_rpaths.update({
@@ -546,28 +546,56 @@ class CBash_TextReplacer(_ATextReplacer, _CNamesTweak):
     })
 
 #------------------------------------------------------------------------------
+class _ATR_DwarvenToDwemer(_ATextReplacer):
+    """Replaces 'dwarven' with 'dwemer' to better follow lore."""
+    tweak_name = _(u'Lore Friendly Text: Dwarven -> Dwemer')
+    tweak_tip = _(u'Replace any occurrences of the word "dwarf" or "dwarven" '
+                  u'with "dwemer" to better follow lore.')
+    tweak_key = u'Dwemer'
+    tweak_choices = [(u'Lore Friendly Text: Dwarven -> Dwemer', u'Dwemer')]
+    _tr_match = u'' r'\b(d|D)(?:warven|warf)\b'
+    _tr_replacement = u'' r'\1wemer'
+
+class NamesTweak_DwarvenToDwemer(_ATR_DwarvenToDwemer, _ATextReplacer_P): pass
+class CBash_NamesTweak_DwarvenToDwemer(_ATR_DwarvenToDwemer,
+    _ATextReplacer_C): pass
+
+#------------------------------------------------------------------------------
+class _ATR_DwarfsToDwarves(_ATextReplacer):
+    """Replaces 'dwarfs' with 'dwarves' for proper spelling."""
+    tweak_name = _(u'Proper English Text: Dwarfs -> Dwarves')
+    tweak_tip = _(u'Replace any occurrences of the word "dwarfs" with '
+                  u'"dwarves" to better follow proper English.')
+    tweak_key = u'Dwarfs'
+    tweak_choices = [(u'Proper English Text: Dwarfs -> Dwarves', u'Dwarves')]
+    _tr_match = u'' r'\b(d|D)(?:warfs)\b'
+    _tr_replacement = u'' r'\1warves'
+
+class NamesTweak_DwarfsToDwarves(_ATR_DwarfsToDwarves, _ATextReplacer_P): pass
+class CBash_NamesTweak_DwarfsToDwarves(_ATR_DwarfsToDwarves,
+    _ATextReplacer_C): pass
+
+#------------------------------------------------------------------------------
+class _ATR_StaffsToStaves(_ATextReplacer):
+    """Replaces 'staffs' with 'staves' for proper spelling."""
+    tweak_name = _(u'Proper English Text: Staffs -> Staves')
+    tweak_tip = _(u'Replace any occurrences of the word "staffs" with '
+                  u'"staves" to better follow proper English.')
+    tweak_key = u'Staffs'
+    tweak_choices = [(u'Proper English Text: Staffs -> Staves', u'Staves')]
+    _tr_match = u'' r'\b(s|S)(?:taffs)\b'
+    _tr_replacement = u'' r'\1taves'
+
+class NamesTweak_StaffsToStaves(_ATR_StaffsToStaves, _ATextReplacer_P): pass
+class CBash_NamesTweak_StaffsToStaves(_ATR_StaffsToStaves,
+    _ATextReplacer_C): pass
+
+#------------------------------------------------------------------------------
 class _ANamesTweaker(AMultiTweaker):
     """Tweaks record full names in various ways."""
     scanOrder = 32
     editOrder = 32
-    _txtReplacer = ((u'' r'\b(d|D)(?:warven|warf)\b', u'' r'\1wemer',
-                     _(u'Lore Friendly Text: Dwarven -> Dwemer'),
-                     _(u'Replace any occurrences of the word "dwarf" or '
-                       u'"dwarven" with "dwemer" to better follow lore.'),
-                     u'Dwemer',
-                     (u'Lore Friendly Text: Dwarven -> Dwemer', u'Dwemer'),),
-                    (u'' r'\b(d|D)(?:warfs)\b', u'' r'\1warves',
-                     _(u'Proper English Text: Dwarfs -> Dwarves'),
-                     _(u'Replace any occurrences of the word "dwarfs" with '
-                       u'"dwarves" to better follow proper English.'),
-                     u'Dwarfs',
-                     (u'Proper English Text: Dwarfs -> Dwarves', u'Dwarves'),),
-                    (u'' r'\b(s|S)(?:taffs)\b', u'' r'\1taves',
-                     _(u'Proper English Text: Staffs -> Staves'),
-                     _(u'Replace any occurrences of the word "staffs" with '
-                       u'"staves" to better follow proper English.'),
-                     u'Staffs',
-                    (u'Proper English Text: Staffs -> Staves', u'Staves'),),)
+    _body_tags_tweak = None # override in implementations
 
     def __init__(self, p_name, p_file, enabled_tweaks):
         super(_ANamesTweaker, self).__init__(p_name, p_file, enabled_tweaks)
@@ -579,33 +607,31 @@ class _ANamesTweaker(AMultiTweaker):
             elif isinstance(names_tweak, _ANamesTweak_Body):
                 names_tweak._tweak_body_tags = p_file.bodyTags
 
-class NamesTweaker(_ANamesTweaker,MultiTweaker):
     @classmethod
     def tweak_instances(cls):
-        instances = sorted(
-            [TextReplacer(*x) for x in cls._txtReplacer] + [
-                NamesTweak_Body_Armor(), NamesTweak_Body_Clothes(),
-                NamesTweak_Potions(), NamesTweak_Scrolls(),
-                NamesTweak_Spells(), NamesTweak_Weapons()],
-            key=lambda a: a.tweak_name.lower())
-        instances.insert(0, NamesTweak_BodyTags())
-        return instances
+        return [cls._body_tags_tweak()] + super( # always first, see __init__
+            _ANamesTweaker, cls).tweak_instances()
+
+class NamesTweaker(_ANamesTweaker, MultiTweaker):
+    _tweak_classes = [NamesTweak_Body_Armor, NamesTweak_Body_Clothes,
+                      NamesTweak_Potions, NamesTweak_Scrolls,
+                      NamesTweak_Spells, NamesTweak_Weapons,
+                      NamesTweak_DwarvenToDwemer, NamesTweak_DwarfsToDwarves,
+                      NamesTweak_StaffsToStaves]
+    _body_tags_tweak = NamesTweak_BodyTags
 
 class CBash_NamesTweaker(_ANamesTweaker,CBash_MultiTweaker):
-    @classmethod
-    def tweak_instances(cls):
-        instances = sorted(
-            [CBash_TextReplacer(*x) for x in cls._txtReplacer] + [
-                CBash_NamesTweak_Body_Armor(), CBash_NamesTweak_Body_Clothes(),
-                CBash_NamesTweak_Potions(), CBash_NamesTweak_Scrolls(),
-                CBash_NamesTweak_Spells(), CBash_NamesTweak_Weapons()],
-            key=lambda a: a.tweak_name.lower())
-        instances.insert(0, CBash_NamesTweak_BodyTags())
-        return instances
+    _tweak_classes = [
+        CBash_NamesTweak_Body_Armor, CBash_NamesTweak_Body_Clothes,
+        CBash_NamesTweak_Potions, CBash_NamesTweak_Scrolls,
+        CBash_NamesTweak_Spells, CBash_NamesTweak_Weapons,
+        CBash_NamesTweak_DwarvenToDwemer, CBash_NamesTweak_DwarfsToDwarves,
+        CBash_NamesTweak_StaffsToStaves]
+    _body_tags_tweak = CBash_NamesTweak_BodyTags
 
     def __init__(self, p_name, p_file, enabled_tweaks):
         super(CBash_NamesTweaker, self).__init__(p_name, p_file,
-                                                 enabled_tweaks)
+            enabled_tweaks)
         # Potions, scrolls and spells names tweaks need MGEFs to be indexed -
         # PBash does this JIT, CBash needs this to be specified when
         # constructing patchers
