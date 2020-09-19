@@ -2096,6 +2096,67 @@ class StringTable(dict):
             return
 
 #------------------------------------------------------------------------------
+_esub_component = re.compile(u'' r'\$(\d+)\(([^)]+)\)')
+_rsub_component = re.compile(u'' r'\\(\d+)')
+_plain_component = re.compile(u'' r'[^\\\$]+', re.U)
+
+def build_esub(esub_str):
+    """Builds an esub (enhanced substitution) callable and returns it. These
+    expand normal re.sub syntax to allow the case of a match to be preserved,
+    even while the letters change.
+
+    The syntax looks like this:
+        my_sub = build_sub('$1(s)tamina')
+        print(re.sub(r'\b(f|F)atigue\b', my_sub, u'Fatigue'))
+        # prints 'Stamina'
+
+    The $1(s) part is what's important. The $2 identifies which regex group to
+    target. The part in parentheses will be what the case of the group gets
+    applied to."""
+    # Callables we'll chain together at the end
+    final_components = []
+    i = 0
+    while i < len(esub_str):
+        esub_match = _esub_component.match(esub_str, i)
+        if esub_match:
+            # esub substitution - return the target string, with the case of
+            # the wanted group's contents
+            esub_group = int(esub_match.group(1))
+            target_str = esub_match.group(2)
+            def esub_impl(ma_obj, g=esub_group, s=target_str):
+                wip_str = []
+                wip_append = wip_str.append
+                for t, o in zip(s, ma_obj.group(g)):
+                    # Carry forward the target string, but keep the case
+                    wip_append(t.upper() if o.isupper() else t.lower())
+                # Add in the rest of the target string unchanged
+                return u''.join(wip_str + list(s[len(wip_str):]))
+            final_components.append(esub_impl)
+            i = esub_match.end(0)
+            continue # skip the other match attempts
+        rsub_match = _rsub_component.match(esub_str, i)
+        if rsub_match:
+            # Regular substitution - return the wanted group's contents
+            rsub_group = int(rsub_match.group(1))
+            def rsub_impl(ma_obj, g=rsub_group):
+                return ma_obj.group(g)
+            final_components.append(rsub_impl)
+            i = rsub_match.end(0)
+            continue # skip the plain match attempt
+        plain_match = _plain_component.match(esub_str, i)
+        if plain_match:
+            # Plain component, just return it unaltered (and make sure to
+            # capture the value of group(0) so that plain_match can get GC'd)
+            plain_contents = plain_match.group(0)
+            final_components.append(lambda _ma_obj, p=plain_contents: p)
+            i = plain_match.end(0)
+            continue # skip the error check
+        raise SyntaxError(u'Could not parse esub string %r' % esub_str)
+    def final_impl(ma_obj):
+        return u''.join(c(ma_obj) for c in final_components)
+    return final_impl
+
+#------------------------------------------------------------------------------
 # no re.U, we want our record attrs to be ASCII
 _valid_rpath_attr = re.compile(u'' r'^[^\d\W]\w*\Z')
 

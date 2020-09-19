@@ -27,8 +27,9 @@ to the Names Multitweaker - as well as the NamesTweaker itself."""
 
 from __future__ import division
 import re
+from collections import OrderedDict
 # Internal
-from ...bolt import RecPath
+from ...bolt import build_esub, RecPath
 from ...brec import MreRecord # yuck, see usage below
 from ...exception import AbstractError
 from ...parsers import LoadFactory, ModFile # yuck, see usage below
@@ -490,14 +491,16 @@ class _ATextReplacer(_ANamesTweak):
         b'WEAP': (u'full',),
     }
     tweak_read_classes = tuple(_match_replace_rpaths)
-    # Maps regexes we want to match to replacement strings. Those replacements
-    # will be passed to re.sub, so they may use the results of regex groups.
-    _tr_replacements = {}
+    # Will be passed to OrderedDict to construct a dict that maps regexes we
+    # want to match to replacement strings. Those replacements will be passed
+    # to re.sub, so they will apply in order and may use the results of their
+    # regex groups. # PY3: replace with regular dict
+    _tr_replacements = []
 
     def __init__(self):
         super(_ATextReplacer, self).__init__()
-        self._re_mapping = {re.compile(m): r for m, r in
-                            self._tr_replacements.iteritems()}
+        self._re_mapping = OrderedDict([(re.compile(m, re.U), r) for m, r in
+                                        self._tr_replacements])
         # Convert the match/replace strings to record paths
         self._match_replace_rpaths = {
             rsig: tuple([RecPath(r) for r in rpaths])
@@ -531,7 +534,14 @@ class _ATextReplacer(_ANamesTweak):
                 if rp.rp_exists(record):
                     rp.rp_map(record, exec_replacement)
 
-class _ATextReplacer_P(_ATextReplacer, _PNamesTweak): pass
+class _ATextReplacer_P(_ATextReplacer, _PNamesTweak):
+    _tr_extra_gmsts = {} # override in implementations
+
+    def finish_tweaking(self, patch_file):
+        # These GMSTs don't exist in Oblivion.esm, so create them in the BP
+        for extra_eid, extra_val in self._tr_extra_gmsts.iteritems():
+            patch_file.new_gmst(extra_eid, extra_val)
+
 class _ATextReplacer_C(_ATextReplacer, _CNamesTweak):
     tweak_read_classes = (b'CELLS',) + _ATextReplacer.tweak_read_classes
     _match_replace_rpaths = _ATextReplacer._match_replace_rpaths.copy()
@@ -552,7 +562,7 @@ class _ATR_DwarvenToDwemer(_ATextReplacer):
                   u'with "dwemer" to better follow lore.')
     tweak_key = u'Dwemer'
     tweak_choices = [(u'Lore Friendly Text: Dwarven -> Dwemer', u'Dwemer')]
-    _tr_replacements = {u'' r'\b(d|D)(?:warven|warf)\b': u'' r'\1wemer'}
+    _tr_replacements = [(u'' r'\b(d|D)(?:warven|warf)\b', u'' r'\1wemer')]
 
 class NamesTweak_DwarvenToDwemer(_ATR_DwarvenToDwemer, _ATextReplacer_P): pass
 class CBash_NamesTweak_DwarvenToDwemer(_ATR_DwarvenToDwemer,
@@ -566,7 +576,7 @@ class _ATR_DwarfsToDwarves(_ATextReplacer):
                   u'"dwarves" to better follow proper English.')
     tweak_key = u'Dwarfs'
     tweak_choices = [(u'Proper English Text: Dwarfs -> Dwarves', u'Dwarves')]
-    _tr_replacements = {u'' r'\b(d|D)(?:warfs)\b': u'' r'\1warves'}
+    _tr_replacements = [(u'' r'\b(d|D)(?:warfs)\b', u'' r'\1warves')]
 
 class NamesTweak_DwarfsToDwarves(_ATR_DwarfsToDwarves, _ATextReplacer_P): pass
 class CBash_NamesTweak_DwarfsToDwarves(_ATR_DwarfsToDwarves,
@@ -580,7 +590,7 @@ class _ATR_StaffsToStaves(_ATextReplacer):
                   u'"staves" to better follow proper English.')
     tweak_key = u'Staffs'
     tweak_choices = [(u'Proper English Text: Staffs -> Staves', u'Staves')]
-    _tr_replacements = {u'' r'\b(s|S)(?:taffs)\b': u'' r'\1taves'}
+    _tr_replacements = [(u'' r'\b(s|S)(?:taffs)\b', u'' r'\1taves')]
 
 class NamesTweak_StaffsToStaves(_ATR_StaffsToStaves, _ATextReplacer_P): pass
 class CBash_NamesTweak_StaffsToStaves(_ATR_StaffsToStaves,
@@ -594,12 +604,32 @@ class NamesTweak_FatigueToStamina(_ATextReplacer_P):
                   u'"stamina", similar to Skyrim.')
     tweak_key = u'FatigueToStamina'
     tweak_choices = [(u'1.0', u'1.0')]
-    _tr_replacements = {u'' r'\bfatigue\b': u'stamina',
-                        u'' r'\bFatigue\b': u'Stamina'}
+    _tr_replacements = [(u'' r'\b(f|F)atigue\b', build_esub(u'$1(s)tamina'))]
+    _tr_extra_gmsts = {u'sDerivedAttributeNameFatigue': u'Stamina'}
 
-    def finish_tweaking(self, patch_file):
-        # This GMST doesn't exist in Oblivion.esm, so just create it in the BP
-        patch_file.new_gmst(u'sDerivedAttributeNameFatigue', u'Stamina')
+#------------------------------------------------------------------------------
+def _mta_esub(first_suffix): # small helper to deduplicate that nonsense
+    return build_esub(u'' r'\1%s $2(a)rcher' % first_suffix)
+
+class NamesTweak_MarksmanToArchery(_ATextReplacer_P):
+    """Replaces 'marksman' with 'archery', similar to Skyrim."""
+    tweak_name = _(u'Skyrim-style Text: Marksman -> Archery')
+    tweak_tip = _(u'Replace any occurrences of the word "marksman" with '
+                  u'"archery", similar to Skyrim.')
+    tweak_key = u'MarksmanToArchery'
+    tweak_choices = [(u'1.0', u'1.0')]
+    _tr_replacements = [
+        (u'' r'\b(t|T)he (m|M)arksman\b', _mta_esub(u'he')),
+        (u'' r'\b(a|A) (m|M)arksman\b', _mta_esub(u'n')),
+        # These four work around vanilla Oblivion records, ugh...
+        (u'' r'\b(a|A)pprentice (m|M)arksman\b', _mta_esub(u'pprentice')),
+        (u'' r'\b(j|J)ourneyman (m|M)arksman\b', _mta_esub(u'ourneyman')),
+        (u'' r'\b(e|E)xpert (m|M)arksman\b', _mta_esub(u'xpert')),
+        (u'' r'\b(m|M)aster (m|M)arksman\b', _mta_esub(u'aster')),
+        (u'' r'\b(m|M)arksman\b', build_esub(u'$1(a)rchery')),
+    ]
+    _tr_extra_gmsts = {u'sSkillNameMarksman': u'Archery',
+                       u'sSkillDescMarksman': u'Archery Description'}
 
 #------------------------------------------------------------------------------
 class _ANamesTweaker(AMultiTweaker):
@@ -628,7 +658,8 @@ class NamesTweaker(_ANamesTweaker, MultiTweaker):
                       NamesTweak_Potions, NamesTweak_Scrolls,
                       NamesTweak_Spells, NamesTweak_Weapons,
                       NamesTweak_DwarvenToDwemer, NamesTweak_DwarfsToDwarves,
-                      NamesTweak_StaffsToStaves, NamesTweak_FatigueToStamina]
+                      NamesTweak_StaffsToStaves, NamesTweak_FatigueToStamina,
+                      NamesTweak_MarksmanToArchery]
     _body_tags_tweak = NamesTweak_BodyTags
 
 class CBash_NamesTweaker(_ANamesTweaker,CBash_MultiTweaker):
