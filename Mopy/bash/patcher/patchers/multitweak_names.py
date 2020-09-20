@@ -576,7 +576,7 @@ class _ATR_DwarfsToDwarves(_ATextReplacer):
                   u'"dwarves" to better follow proper English.')
     tweak_key = u'Dwarfs'
     tweak_choices = [(u'Proper English Text: Dwarfs -> Dwarves', u'Dwarves')]
-    _tr_replacements = [(u'' r'\b(d|D)(?:warfs)\b', u'' r'\1warves')]
+    _tr_replacements = [(u'' r'\b(d|D)warfs\b', u'' r'\1warves')]
 
 class NamesTweak_DwarfsToDwarves(_ATR_DwarfsToDwarves, _ATextReplacer_P): pass
 class CBash_NamesTweak_DwarfsToDwarves(_ATR_DwarfsToDwarves,
@@ -590,7 +590,7 @@ class _ATR_StaffsToStaves(_ATextReplacer):
                   u'"staves" to better follow proper English.')
     tweak_key = u'Staffs'
     tweak_choices = [(u'Proper English Text: Staffs -> Staves', u'Staves')]
-    _tr_replacements = [(u'' r'\b(s|S)(?:taffs)\b', u'' r'\1taves')]
+    _tr_replacements = [(u'' r'\b(s|S)taffs\b', u'' r'\1taves')]
 
 class NamesTweak_StaffsToStaves(_ATR_StaffsToStaves, _ATextReplacer_P): pass
 class CBash_NamesTweak_StaffsToStaves(_ATR_StaffsToStaves,
@@ -632,6 +632,22 @@ class NamesTweak_MarksmanToArchery(_ATextReplacer_P):
                        u'sSkillDescMarksman': u'Archery Description'}
 
 #------------------------------------------------------------------------------
+class NamesTweak_SecurityToLockpicking(_ATextReplacer_P):
+    """Replaces 'security' with 'lockpicking', similar to Skyrim."""
+    tweak_read_classes = tuple(c for c in _ATextReplacer_P.tweak_read_classes
+                               if c != b'BOOK') # way too many false positives
+    tweak_name = _(u'Skyrim-style Text: Security -> Lockpicking')
+    tweak_tip = _(u'Replace any occurrences of the word "security" with '
+                  u'"lockpicking", similar to Skyrim.')
+    tweak_key = u'SecurityToLockpicking'
+    tweak_choices = [(u'1.0', u'1.0')]
+    _tr_replacements = [
+        (u'' r'\b(s|S)ecurity\b', build_esub(u'$1(l)ockpicking'))
+    ]
+    _tr_extra_gmsts = {u'sSkillNameSecurity': u'Lockpicking',
+                       u'sSkillDescSecurity': u'Lockpicking Description'}
+
+#------------------------------------------------------------------------------
 class _ANamesTweaker(AMultiTweaker):
     """Tweaks record full names in various ways."""
     scanOrder = 32
@@ -654,12 +670,12 @@ class _ANamesTweaker(AMultiTweaker):
             _ANamesTweaker, cls).tweak_instances()
 
 class NamesTweaker(_ANamesTweaker, MultiTweaker):
-    _tweak_classes = [NamesTweak_Body_Armor, NamesTweak_Body_Clothes,
-                      NamesTweak_Potions, NamesTweak_Scrolls,
-                      NamesTweak_Spells, NamesTweak_Weapons,
-                      NamesTweak_DwarvenToDwemer, NamesTweak_DwarfsToDwarves,
-                      NamesTweak_StaffsToStaves, NamesTweak_FatigueToStamina,
-                      NamesTweak_MarksmanToArchery]
+    _tweak_classes = [
+        NamesTweak_Body_Armor, NamesTweak_Body_Clothes, NamesTweak_Potions,
+        NamesTweak_Scrolls, NamesTweak_Spells, NamesTweak_Weapons,
+        NamesTweak_DwarvenToDwemer, NamesTweak_DwarfsToDwarves,
+        NamesTweak_StaffsToStaves, NamesTweak_FatigueToStamina,
+        NamesTweak_MarksmanToArchery, NamesTweak_SecurityToLockpicking]
     _body_tags_tweak = NamesTweak_BodyTags
 
 class CBash_NamesTweaker(_ANamesTweaker,CBash_MultiTweaker):
