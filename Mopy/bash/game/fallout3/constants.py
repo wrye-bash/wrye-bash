@@ -843,6 +843,7 @@ graphicsTypes = {
     b'BPTD': (u'model',),
     b'CLAS': (u'iconPath',),
     b'COBJ': (u'iconPath', u'smallIconPath', u'model'),
+    b'CONT': (u'model',),
     b'CREA': (u'model', u'bodyParts', u'nift_p'),
     b'DOOR': (u'model',),
     b'EFSH': (u'flags', u'particleTexture', u'fillTexture', u'holesTexture',

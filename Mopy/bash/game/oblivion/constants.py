@@ -1578,6 +1578,7 @@ graphicsTypes = {
     b'CLAS': (u'iconPath',),
     b'CLOT': (u'maleBody', u'maleWorld', u'maleIconPath', u'femaleBody',
               u'femaleWorld', u'femaleIconPath', u'flags'),
+    b'CONT': (u'model',),
     b'CREA': (u'bodyParts', u'nift_p'),
     b'DOOR': (u'model',),
     b'EFSH': (u'particleTexture', u'fillTexture', u'flags', u'unused1',

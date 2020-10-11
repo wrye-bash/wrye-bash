@@ -1401,14 +1401,24 @@ for patcher_name, p_info in bush.game.gameSpecificPatchers.items():
         otherPatcherDict[patcher_name] = p_info.twin_patcher
 # Simple list patchers
 for patcher_name, p_info in bush.game.gameSpecificListPatchers.items():
-    globals()[patcher_name] = type(patcher_name, (_ListPatcherPanel,),
-                                   p_info.cls_vars)
+    patcher_bases = (_ListPatcherPanel,)
+    patcher_attrs = p_info.cls_vars
+    if p_info.cls_csv_key:
+        # This patcher accepts CSV files, need to edit its dict as well
+        patcher_bases = (_AListPanelCsv,)
+        patcher_attrs[u'_csv_key'] = p_info.cls_csv_key
+    globals()[patcher_name] = type(patcher_name, patcher_bases, patcher_attrs)
     if p_info.twin_patcher:
         otherPatcherDict[patcher_name] = p_info.twin_patcher
 # Import patchers
 for patcher_name, p_info in bush.game.game_specific_import_patchers.items():
-    globals()[patcher_name] = type(patcher_name, (_ImporterPatcherPanel,),
-                                   p_info.cls_vars)
+    patcher_bases = (_ImporterPatcherPanel,)
+    patcher_attrs = p_info.cls_vars
+    if p_info.cls_csv_key:
+        # This patcher accepts CSV files, need to edit its dict as well
+        patcher_bases += (_AListPanelCsv,)
+        patcher_attrs[u'_csv_key'] = p_info.cls_csv_key
+    globals()[patcher_name] = type(patcher_name, patcher_bases, patcher_attrs)
     if p_info.twin_patcher:
         otherPatcherDict[patcher_name] = p_info.twin_patcher
 

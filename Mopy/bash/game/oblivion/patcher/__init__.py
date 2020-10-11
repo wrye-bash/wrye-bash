@@ -36,23 +36,24 @@ _special_patchers = (
     (b'CBash_AlchemicalCatalogs', CBash_AlchemicalCatalogs,
      u'AlchemicalCatalogs'),
     (b'SEWorldEnforcer', SEWorldEnforcer, u'CBash_SEWorldEnforcer'),
-    (b'CBash_SEWorldEnforcer', CBash_SEWorldEnforcer, u'SEWorldEnforcer')
+    (b'CBash_SEWorldEnforcer', CBash_SEWorldEnforcer, u'SEWorldEnforcer'),
 )
 gameSpecificPatchers = {pname: pi(ptype, twin, ptype.gui_cls_vars()) for
                         pname, ptype, twin in _special_patchers}
 
 _list_patchers =(
-    (b'CoblExhaustion', CoblExhaustion, u'CBash_CoblExhaustion'),
-    (b'CBash_CoblExhaustion', CBash_CoblExhaustion, u'CoblExhaustion'),
-    (b'MFactMarker', MFactMarker, u'CBash_MFactMarker'),
-    (b'CBash_MFactMarker', CBash_MFactMarker, u'MFactMarker')
+    (b'CoblExhaustion', CoblExhaustion, u'CBash_CoblExhaustion', u'Exhaust'),
+    (b'CBash_CoblExhaustion', CBash_CoblExhaustion, u'CoblExhaustion',
+     u'Exhaust'),
+    (b'MFactMarker', MFactMarker, u'CBash_MFactMarker', u'MFact'),
+    (b'CBash_MFactMarker', CBash_MFactMarker, u'MFactMarker', u'MFact'),
 )
-gameSpecificListPatchers = {pname: pi(ptype, twin, ptype.gui_cls_vars()) for
-                            pname, ptype, twin in _list_patchers}
+gameSpecificListPatchers = {pname: pi(ptype, twin, ptype.gui_cls_vars(), ck)
+                            for pname, ptype, twin, ck in _list_patchers}
 
 _import_patchers = (
     (b'RoadImporter', RoadImporter, u'CBash_RoadImporter'),
-    (b'CBash_RoadImporter', CBash_RoadImporter, u'RoadImporter')
+    (b'CBash_RoadImporter', CBash_RoadImporter, u'RoadImporter'),
 )
 game_specific_import_patchers = {
     pname: pi(ptype, twin,

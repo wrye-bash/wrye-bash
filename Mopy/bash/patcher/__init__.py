@@ -21,10 +21,16 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from collections import namedtuple
 from .. import balt, bolt, bass
 
-PatcherInfo = namedtuple('PatcherInfo', ['clazz', 'twin_patcher', 'cls_vars'])
+class PatcherInfo(object): ##: clazz is unused?
+    __slots__ = (u'clazz', u'twin_patcher', u'cls_vars', u'cls_csv_key')
+
+    def __init__(self, clazz, twin_patcher, cls_vars, cls_csv_key=u''):
+        self.clazz = clazz
+        self.twin_patcher = twin_patcher
+        self.cls_vars = cls_vars
+        self.cls_csv_key = cls_csv_key
 
 def configIsCBash(patchConfigs): ##: belongs to basher but used also in bosh
     for key in patchConfigs:
