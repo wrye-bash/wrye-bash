@@ -23,18 +23,43 @@
 """This module contains the Morrowind record classes. Also contains records
 and subrecords used for the saves - see MorrowindSaveHeader for more
 information."""
-from ... import bolt
-from ...bolt import cstrip, decode
+from ... import bolt, brec
+from ...bolt import cstrip, decode, Flags
 from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
-    MreHeaderBase, MelUnion, SaveDecider, MelNull, MelSequential
+    MreHeaderBase, MelUnion, SaveDecider, MelNull, MelSequential, MelRecord, \
+    MelGroup, MelGroups, MelUInt8
+if brec.MelModel is None:
 
-# Utilities
+    class _MelModel(MelGroup):
+        def __init__(self):
+            super(_MelModel, self).__init__(u'model',
+                MelString(b'MODL', u'modPath'))
+
+    brec.MelModel = _MelModel
+from ...brec import MelModel
+
+#------------------------------------------------------------------------------
+# Utilities -------------------------------------------------------------------
+#------------------------------------------------------------------------------
 def _decode_raw(target_str):
     """Adapted from MelUnicode.loadData. ##: maybe move to bolt/brec?"""
     return u'\n'.join(
         decode(x, avoidEncodings=(u'utf8', u'utf-8')) for x
         in cstrip(target_str).split(b'\n'))
 
+#------------------------------------------------------------------------------
+class MelMWId(MelString):
+    """Wraps MelString to define a common NAME handler."""
+    def __init__(self):
+        super(MelMWId, self).__init__(b'NAME', u'mw_id')
+
+#------------------------------------------------------------------------------
+class MelMWFull(MelString):
+    """Defines FNAM, Morrowind's version of FULL."""
+    def __init__(self):
+        super(MelMWFull, self).__init__(b'FNAM', u'full')
+
+#------------------------------------------------------------------------------
 class MelSavesOnly(MelSequential):
     """Record element that only loads contents if the input file is a save
     file."""
@@ -44,12 +69,15 @@ class MelSavesOnly(MelSequential):
             False: MelNull(b'ANY')
         }, decider=SaveDecider()) for element in elements))
 
-class MelMWId(MelString):
-    """Wraps MelString to define a common NAME handler."""
+#------------------------------------------------------------------------------
+class MelScriptId(MelString):
+    """Handles the common SCRI subrecord."""
     def __init__(self):
-        super(MelMWId, self).__init__(b'NAME', u'mw_id')
+        super(MelScriptId, self).__init__(b'SCRI', u'script_id'),
 
-# Shared (plugins + saves) record classes
+#------------------------------------------------------------------------------
+# Shared (plugins + saves) record classes -------------------------------------
+#------------------------------------------------------------------------------
 class MreTes3(MreHeaderBase):
     """TES3 Record. File header."""
     rec_sig = b'TES3'
@@ -94,5 +122,98 @@ class MreTes3(MreHeaderBase):
                 MelStruct(b'SCRS', u'4B', u'blue', u'green', u'red', u'alpha'),
             ),
         ),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+# Plugins-only record classes -------------------------------------------------
+#------------------------------------------------------------------------------
+class MreActi(MelRecord):
+    """Activator."""
+    rec_sig = b'ACTI'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelModel(),
+        MelMWFull(),
+        MelScriptId(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAlch(MelRecord):
+    """Potion."""
+    rec_sig = b'ALCH'
+
+    _potion_flags = Flags(0, Flags.getNames(u'auto_calc'))
+
+    melSet = MelSet(
+        MelMWId(),
+        MelModel(),
+        MelString(b'TEXT', u'book_text'),
+        MelScriptId(),
+        MelMWFull(),
+        MelStruct(b'ALDT', u'f2I', u'potion_weight', u'potion_value',
+            (_potion_flags, u'potion_flags')),
+        MelGroups(u'potion_enchantments',
+            MelStruct(b'ENAM', u'H2b5I', u'effect_index', u'skill_affected',
+                u'attribute_affected', u'ench_range', u'ench_area',
+                u'ench_duration', u'ench_magnitude_min',
+                u'ench_magnitude_max'),
+        ),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAppa(MelRecord):
+    """Alchemical Apparatus."""
+    rec_sig = b'APPA'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelModel(),
+        MelMWFull(),
+        MelScriptId(),
+        MelStruct(b'AADT', u'I2fI', u'appa_type', u'appa_quality',
+            u'appa_weight', u'appa_value'),
+        MelString(b'ITEX', u'icon_filename'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreArmo(MelRecord):
+    """Armor."""
+    rec_sig = b'ARMO'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelModel(),
+        MelMWFull(),
+        MelScriptId(),
+        MelStruct(b'AODT', u'If4I', u'armo_type', u'armo_weight',
+            u'armo_value', u'armo_health', u'enchant_points', u'armor_rating'),
+        MelString(b'ITEX', u'icon_filename'),
+        MelGroups(u'armor_data',
+            MelUInt8(b'INDX', u'biped_object'),
+            MelString(b'BNAM', u'armor_name_male'),
+            MelString(b'CNAM', u'armor_name_female'),
+        ),
+        MelString(b'ENAM', u'enchant_name'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreBody(MelRecord):
+    """Body Parts."""
+    rec_sig = b'BODY'
+
+    _part_flags = Flags(0, Flags.getNames(u'part_female', u'part_playable'))
+
+    melSet = MelSet(
+        MelMWId(),
+        MelModel(),
+        MelString(b'FNAM', u'race_name'),
+        MelStruct(b'BYDT', u'4B', u'part_index', u'part_vampire',
+            (_part_flags, u'part_flags'), u'part_type'),
     )
     __slots__ = melSet.getSlotsUsed()
