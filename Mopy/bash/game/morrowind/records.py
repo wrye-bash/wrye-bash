@@ -27,7 +27,9 @@ from ... import bolt, brec
 from ...bolt import cstrip, decode, Flags
 from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     MreHeaderBase, MelUnion, SaveDecider, MelNull, MelSequential, MelRecord, \
-    MelGroup, MelGroups, MelUInt8
+    MelGroup, MelGroups, MelUInt8, MelDescription, MelUInt32, MelColorO,\
+    MelOptStruct, MelCounter, MelRefScale, MelOptSInt32, MelRef3D, \
+    MelOptFloat, MelOptUInt32, MelIcons
 if brec.MelModel is None:
 
     class _MelModel(MelGroup):
@@ -48,6 +50,28 @@ def _decode_raw(target_str):
         in cstrip(target_str).split(b'\n'))
 
 #------------------------------------------------------------------------------
+class MelArmorData(MelGroups):
+    """Handles the INDX, BNAM and CNAM subrecords shared by ARMO and CLOT."""
+    def __init__(self):
+        super(MelArmorData, self).__init__(u'armor_data',
+            MelUInt8(b'INDX', u'biped_object'),
+            MelString(b'BNAM', u'armor_name_male'),
+            MelString(b'CNAM', u'armor_name_female'),
+        )
+
+#------------------------------------------------------------------------------
+class MelMWEnchantment(MelString):
+    """Handles ENAM, Morrowind's version of EITM."""
+    def __init__(self):
+        super(MelMWEnchantment, self).__init__(b'ENAM', u'enchantment')
+
+#------------------------------------------------------------------------------
+class MelMWIcon(MelIcons):
+    """Handles the common ITEX record, Morrowind's version of ICON."""
+    def __init__(self):
+        super(MelMWIcon, self).__init__(icon_sig=b'ITEX', mico_attr=u'')
+
+#------------------------------------------------------------------------------
 class MelMWId(MelString):
     """Wraps MelString to define a common NAME handler."""
     def __init__(self):
@@ -58,6 +82,39 @@ class MelMWFull(MelString):
     """Defines FNAM, Morrowind's version of FULL."""
     def __init__(self):
         super(MelMWFull, self).__init__(b'FNAM', u'full')
+
+#------------------------------------------------------------------------------
+class MelReference(MelSequential):
+    """Defines a single 'reference', which is Morrowind's version of REFRs in
+    later games."""
+    def __init__(self):
+        super(MelReference, self).__init__(
+            MelUInt32(b'FRMR', u'object_index'),
+            MelMWId(),
+            MelBase(b'UNAM', u'ref_blocked_marker'),
+            MelRefScale(),
+            MelString(b'ANAM', u'ref_owner'),
+            MelString(b'BNAM', u'global_variable'),
+            MelString(b'CNAM', u'ref_faction'),
+            MelOptSInt32(b'INDX', u'ref_faction_rank'),
+            MelString(b'XSOL', u'ref_soul'),
+            MelOptFloat(b'XCHG', u'enchantment_charge'),
+            ##: INTV should have a decider - uint32 or float, depending on
+            # object type
+            MelBase(b'INTV', u'remaining_usage'),
+            MelOptUInt32(b'NAM9', u'gold_value'),
+            MelGroups(u'cell_travel_destinations',
+                MelStruct(b'DODT', u'6f', u'dest_pos_x', u'dest_pos_y',
+                    u'dest_pos_z', u'dest_rot_x', u'dest_rot_y',
+                    u'dest_rot_z'),
+                MelString(b'DNAM', u'dest_cell_name'),
+            ),
+            MelOptUInt32(b'FLTV', u'lock_level'),
+            MelString(b'KNAM', u'key_name'),
+            MelString(b'TNAM', u'trap_name'),
+            MelBase(b'ZNAM', u'ref_disabled_marker'),
+            MelRef3D(),
+        )
 
 #------------------------------------------------------------------------------
 class MelSavesOnly(MelSequential):
@@ -176,7 +233,7 @@ class MreAppa(MelRecord):
         MelScriptId(),
         MelStruct(b'AADT', u'I2fI', u'appa_type', u'appa_quality',
             u'appa_weight', u'appa_value'),
-        MelString(b'ITEX', u'icon_filename'),
+        MelMWIcon(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -192,13 +249,9 @@ class MreArmo(MelRecord):
         MelScriptId(),
         MelStruct(b'AODT', u'If4I', u'armo_type', u'armo_weight',
             u'armo_value', u'armo_health', u'enchant_points', u'armor_rating'),
-        MelString(b'ITEX', u'icon_filename'),
-        MelGroups(u'armor_data',
-            MelUInt8(b'INDX', u'biped_object'),
-            MelString(b'BNAM', u'armor_name_male'),
-            MelString(b'CNAM', u'armor_name_female'),
-        ),
-        MelString(b'ENAM', u'enchant_name'),
+        MelMWIcon(),
+        MelArmorData(),
+        MelMWEnchantment(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -215,5 +268,143 @@ class MreBody(MelRecord):
         MelString(b'FNAM', u'race_name'),
         MelStruct(b'BYDT', u'4B', u'part_index', u'part_vampire',
             (_part_flags, u'part_flags'), u'part_type'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreBook(MelRecord):
+    """Book."""
+    rec_sig = b'BOOK'
+
+    _scroll_flags = Flags(0, Flags.getNames(u'is_scroll'))
+
+    melSet = MelSet(
+        MelMWId(),
+        MelModel(),
+        MelMWFull(),
+        MelStruct(b'BKDT', u'f2IiI', u'book_weight', u'book_value',
+            (_scroll_flags, u'scroll_flags'), u'skill_id', u'enchant_points'),
+        MelScriptId(),
+        MelMWIcon(),
+        MelString(b'TEXT', u'book_text'),
+        MelMWEnchantment(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreBsgn(MelRecord):
+    """Birthsign."""
+    rec_sig = b'BSGN'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelMWFull(),
+        MelGroups(u'birth_sign_spells',
+            MelString(b'NPCS', u'spell_id'),
+        ),
+        MelString(b'TNAM', u'texture_filename'),
+        MelDescription(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreCell(MelRecord):
+    """Cell."""
+    rec_sig = b'CELL'
+
+    _cell_flags = Flags(0, Flags.getNames(
+        (0, u'is_interior_cell'),
+        (1, u'has_water'),
+        (2, u'illegal_to_sleep_here'),
+        (7, u'behave_like_exterior'),
+    ))
+
+    melSet = MelSet(
+        MelMWId(),
+        MelStruct(b'DATA', u'3I', (_cell_flags, u'cell_flags'), u'cell_x',
+            u'cell_y'),
+        MelString(b'RGNN', u'region_name'),
+        MelColorO(b'NAM5'),
+        MelOptFloat(b'WHGT', u'water_height'),
+        MelOptStruct(b'AMBI', u'12Bf', u'ambient_red', u'ambient_blue',
+            u'ambient_green', u'unused_alpha1', u'sunlight_red',
+            u'sunlight_blue', u'sunlight_green', u'unused_alpha2', u'fog_red',
+            u'fog_blue', u'fog_green', u'unused_alpha3'),
+        MelGroups(u'moved_references',
+            MelUInt32(b'MVRF', u'reference_id'),
+            MelString(b'CNAM', u'new_interior_cell'),
+            # None here are on purpose - only present for exterior cells, and
+            # zeroes are perfectly valid X/Y coordinates
+            ##: Double-check the signeds - UESP does not list them either way
+            MelOptStruct(b'CNDT', u'2i', (u'new_exterior_cell_x', None),
+                (u'new_exterior_cell_y', None)),
+            MelReference(),
+        ),
+        MelGroups(u'persistent_children',
+            MelReference(),
+        ),
+        MelCounter(MelUInt32(b'NAM0', u'temporary_children_counter'),
+            counts=u'temporary_children'),
+        MelGroups(u'temporary_children',
+            MelReference(),
+        ),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreClas(MelRecord):
+    """Class."""
+    rec_sig = b'CLAS'
+
+    _class_flags = Flags(0, Flags.getNames(u'class_playable'))
+    _ac_flags = Flags(0, Flags.getNames(
+        u'ac_weapon',
+        u'ac_armor',
+        u'ac_clothing',
+        u'ac_books',
+        u'ac_ingredients',
+        u'ac_picks',
+        u'ac_probes',
+        u'ac_lights',
+        u'ac_apparatus',
+        u'ac_repair_items',
+        u'ac_misc',
+        u'ac_spells',
+        u'ac_magic_items',
+        u'ac_potions',
+        u'ac_training',
+        u'ac_spellmaking',
+        u'ac_enchanting',
+        u'ac_repair',
+    ))
+
+    melSet = MelSet(
+        MelMWId(),
+        MelMWFull(),
+        ##: UESP says 'alternating minor/major' skills - not sure what exactly
+        # it means, check with real data
+        MelStruct(b'CLDT', u'15I', u'primary1', u'primary2',
+            u'specialization', u'minor1', u'major1', u'minor2', u'major2',
+            u'minor3', u'major3', u'minor4', u'major4', u'minor5', u'major5',
+            (_class_flags, u'class_flags'), (_ac_flags, u'auto_calc_flags')),
+        MelDescription(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreClot(MelRecord):
+    """Clothing."""
+    rec_sig = b'CLOT'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelModel(),
+        MelMWFull(),
+        MelStruct(b'CTDT', u'If2H', u'clot_type', u'clot_weight',
+            u'clot_value', u'enchant_points'),
+        MelScriptId(),
+        MelMWIcon(),
+        MelArmorData(),
+        MelMWEnchantment(),
     )
     __slots__ = melSet.getSlotsUsed()

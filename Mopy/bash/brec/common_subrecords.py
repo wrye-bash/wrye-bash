@@ -299,6 +299,19 @@ class MelValueInterpolator(MelArray):
         )
 
 #------------------------------------------------------------------------------
+class MelColor(MelStruct):
+    """Required Color."""
+    def __init__(self, color_sig=b'CNAM'):
+        super(MelColor, self).__init__(color_sig, u'4B', u'red', u'green',
+            u'blue', u'unused_alpha')
+
+class MelColorO(MelOptStruct):
+    """Optional Color."""
+    def __init__(self, color_sig=b'CNAM'):
+        super(MelColorO, self).__init__(color_sig, u'4B', u'red', u'green',
+            u'blue', u'unused_alpha')
+
+#------------------------------------------------------------------------------
 class MelDescription(MelLString):
     """Handles a description (DESC) subrecord."""
     def __init__(self, desc_attr=u'description'):
@@ -572,7 +585,7 @@ class MelRegnEntrySubrecord(MelUnion):
             fallback=MelNull(b'NULL')) # ignore
 
 #------------------------------------------------------------------------------
-class MelRef3D(MelStruct):
+class MelRef3D(MelOptStruct):
     """3D position and rotation for a reference record (REFR, ACHR, etc.)."""
     def __init__(self):
         super(MelRef3D, self).__init__(

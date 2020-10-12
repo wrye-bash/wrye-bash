@@ -550,6 +550,8 @@ class MelStruct(MelBase):
     """Represents a structure record."""
 
     def __init__(self, subType, struct_format, *elements):
+        """:type subType: bytes
+        :type struct_format: unicode"""
         self.subType, self.struct_format = subType, struct_format
         self.attrs,self.defaults,self.actions,self.formAttrs = MelBase.parseElements(*elements)
         # Check for duplicate attrs - can't rely on MelSet.getSlotsUsed only,
