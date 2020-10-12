@@ -640,7 +640,7 @@ class INIGame(Game):
         else: super(INIGame, self)._backup_active_plugins()
 
     def _backup_load_order(self):
-        if self._handles_actives:
+        if self._handles_lo:
             ini_path = self._cached_ini_lo.abs_path
             ini_path.copyTo(ini_path.backup)
         else: super(INIGame, self)._backup_load_order()

@@ -339,6 +339,24 @@ class MelSSEOnly(MelIsSSE):
             se_version=element)
 
 #------------------------------------------------------------------------------
+class MelSMFlags(MelStruct):
+    """Handles Story Manager flags shared by SMBN, SMQN and SMEN."""
+    _node_flags = Flags(0, Flags.getNames(u'sm_random', u'no_child_warn'))
+    _quest_flags = Flags(0, Flags.getNames(
+        u'do_all_before_repeating',
+        u'shares_event',
+        u'num_quests_to_run'
+    ))
+
+    def __init__(self, sm_sig, with_quest_flags=False):
+        sm_fmt = u'I'
+        sm_elements = [(self._node_flags, u'node_flags')]
+        if with_quest_flags:
+            sm_fmt = u'2H'
+            sm_elements.append((self._quest_flags, u'quest_flags'))
+        super(MelSMFlags, self).__init__(sm_sig, sm_fmt, *sm_elements)
+
+#------------------------------------------------------------------------------
 class MelSpit(MelStruct):
     """Handles the SPIT subrecord shared between SCRL and SPEL."""
     spit_flags = Flags(0, Flags.getNames(
@@ -4610,19 +4628,14 @@ class MreSmbn(MelRecord):
     """Story Manager Branch Node."""
     rec_sig = b'SMBN'
 
-    SmbnNodeFlags = Flags(0, Flags.getNames(
-        (0,'Random'),
-        (1,'noChildWarn'),
-    ))
-
     melSet = MelSet(
         MelEdid(),
-        MelFid('PNAM','parent',),
-        MelFid('SNAM','child',),
+        MelFid(b'PNAM', u'sm_parent',),
+        MelFid(b'SNAM', u'sm_child',),
         MelConditionCounter(),
         MelConditions(),
-        MelUInt32('DNAM', (SmbnNodeFlags, 'nodeFlags', 0)),
-        MelBase('XNAM','xnam_p'),
+        MelSMFlags(b'DNAM'),
+        MelUInt32(b'XNAM', u'max_concurrent_quests'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -4631,20 +4644,15 @@ class MreSmen(MelRecord):
     """Story Manager Event Node."""
     rec_sig = b'SMEN'
 
-    SmenNodeFlags = Flags(0, Flags.getNames(
-        (0,'Random'),
-        (1,'noChildWarn'),
-    ))
-
     melSet = MelSet(
         MelEdid(),
-        MelFid('PNAM','parent',),
-        MelFid('SNAM','child',),
+        MelFid(b'PNAM', u'sm_parent',),
+        MelFid(b'SNAM', u'sm_child',),
         MelConditionCounter(),
         MelConditions(),
-        MelUInt32('DNAM', (SmenNodeFlags, 'nodeFlags', 0)),
-        MelBase('XNAM','xnam_p'),
-        MelString('ENAM','type'),
+        MelSMFlags(b'DNAM'),
+        MelUInt32(b'XNAM', u'max_concurrent_quests'),
+        MelUInt32(b'ENAM', u'sm_type'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -4653,33 +4661,20 @@ class MreSmqn(MelRecord):
     """Story Manager Quest Node."""
     rec_sig = b'SMQN'
 
-    # "Do all" = "Do all before repeating"
-    SmqnQuestFlags = Flags(0, Flags.getNames(
-        (0,'doAll'),
-        (1,'sharesEvent'),
-        (2,'numQuestsToRun'),
-    ))
-
-    SmqnNodeFlags = Flags(0, Flags.getNames(
-        (0,'Random'),
-        (1,'noChildWarn'),
-    ))
-
     melSet = MelSet(
         MelEdid(),
-        MelFid('PNAM','parent',),
-        MelFid('SNAM','child',),
+        MelFid(b'PNAM', u'sm_parent',),
+        MelFid(b'SNAM', u'sm_child',),
         MelConditionCounter(),
         MelConditions(),
-        MelStruct('DNAM', '2H', (SmqnNodeFlags, 'nodeFlags', 0),
-                  (SmqnQuestFlags, 'questFlags', 0), ),
-        MelUInt32('XNAM', 'maxConcurrentQuests'),
-        MelOptUInt32(b'MNAM', u'numQuestsToRun'),
-        MelCounter(MelUInt32('QNAM', 'quest_count'), counts='quests'),
-        MelGroups('quests',
-            MelFid('NNAM','quest',),
-            MelBase('FNAM','fnam_p'),
-            MelOptFloat(b'RNAM', u'hoursUntilReset'),
+        MelSMFlags(b'DNAM', with_quest_flags=True),
+        MelUInt32(b'XNAM', u'max_concurrent_quests'),
+        MelOptUInt32(b'MNAM', u'num_quests_to_run'),
+        MelCounter(MelUInt32(b'QNAM', u'quest_count'), counts=u'sm_quests'),
+        MelGroups(u'sm_quests',
+            MelFid(b'NNAM', u'sm_quest'),
+            MelUInt32(b'FNAM', u'sm_quest_flags'), # all unknown
+            MelOptFloat(b'RNAM', u'hours_until_reset'),
         )
     )
     __slots__ = melSet.getSlotsUsed()

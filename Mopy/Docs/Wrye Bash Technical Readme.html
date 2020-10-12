@@ -287,7 +287,7 @@
 </ul>
 <p class="indent">Return values:
 <ul class="indent">
-	<li>Decimal value of <var>value</var>, if possible. For example <code>int('2.4')</code> would return <code>2.4</code>.
+	<li>Decimal value of <var>value</var>, if possible. For example <code>float('2.4')</code> would return <code>2.4</code>.
 	<li><code>0.0</code> - If decimal conversion is not possible.
 </ul>
 <p><dfn>len</dfn> - Used to find the length of a string.
@@ -489,7 +489,7 @@ EndWhile</code>
 	<li><code>EndWhile</code> - Ends the while loop. <var>statement</var> is re-evaluated, and if <code>True</code>, execution begins again at the start of the <code>While</code> block.
 </ul>
 <p><dfn id="wizardsForContinueBreakEndFor">For-Continue-Break-EndFor</dfn> - A For loop.
-<code class="box">For <var>var</var> to <var>start_value</var> to <var>end_value</var> [by <var>increment_value</var>]
+<code class="box">For <var>var</var> from <var>start_value</var> to <var>end_value</var> [by <var>increment_value</var>]
     lines
     Continue
     lines

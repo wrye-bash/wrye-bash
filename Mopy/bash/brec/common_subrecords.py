@@ -76,9 +76,9 @@ class MelCtda(MelUnion):
     amounts to a decision tree using MelUnions."""
     # 0 = Unknown/Ignored, 1 = Int, 2 = FormID, 3 = Float
     _param_types = {0: u'4s', 1: u'i', 2: u'I', 3: u'f'}
-    # This technically a lot more complex (the highest three bits also encode
-    # the comparison operator), but we only care about use_global, so we can
-    # treat the rest as unknown flags and just carry them forward
+    # This is technically a lot more complex (the highest three bits also
+    # encode the comparison operator), but we only care about use_global, so we
+    # can treat the rest as unknown flags and just carry them forward
     _ctda_type_flags = Flags(0, Flags.getNames(
         u'do_or', u'use_aliases', u'use_global', u'use_packa_data',
         u'swap_subject_and_target'))
