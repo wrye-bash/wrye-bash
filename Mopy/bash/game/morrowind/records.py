@@ -29,7 +29,7 @@ from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     MreHeaderBase, MelUnion, SaveDecider, MelNull, MelSequential, MelRecord, \
     MelGroup, MelGroups, MelUInt8, MelDescription, MelUInt32, MelColorO,\
     MelOptStruct, MelCounter, MelRefScale, MelOptSInt32, MelRef3D, \
-    MelOptFloat, MelOptUInt32, MelIcons
+    MelOptFloat, MelOptUInt32, MelIcons, MelFloat, null1, null3, null32
 if brec.MelModel is None:
 
     class _MelModel(MelGroup):
@@ -50,6 +50,38 @@ def _decode_raw(target_str):
         in cstrip(target_str).split(b'\n'))
 
 #------------------------------------------------------------------------------
+class MelAIAccompanyPackage(MelOptStruct):
+    """Deduplicated from AI_E and AI_F (see below)."""
+    def __init__(self, ai_package_sig):
+        super(MelAIAccompanyPackage, self).__init__(ai_package_sig,
+            u'3fH32sBs', u'dest_x', u'dest_y', u'dest_z', u'package_duration',
+            (u'package_id', null32), (u'unknown_marker', 1),
+            (u'unused1', null1))
+
+class MelAIPackages(MelGroups):
+    """Handles the AI_* and CNDT subrecords, which have the additional
+    complication that they may occur in any order."""
+    def __init__(self):
+        super(MelAIPackages, self).__init__(u'aiPackages',
+            MelUnion({
+                b'AI_A': MelStruct(b'AI_A', u'=32sB',
+                    (u'package_name', null32), (u'unknown_marker', 1)),
+                b'AI_E': MelAIAccompanyPackage(b'AI_E'),
+                b'AI_F': MelAIAccompanyPackage(b'AI_F'),
+                b'AI_T': MelStruct(b'AI_T', u'3fB3s', u'dest_x', u'dest_y',
+                    u'dest_z', (u'unknown_marker', 1), (u'unused1', null1)),
+                b'AI_W': MelStruct(b'AI_W', u'=2H10B', u'wanter_distance',
+                    u'wanter_duration', u'time_of_day', u'idle_1', u'idle_2',
+                    u'idle_3', u'idle_4', u'idle_5', u'idle_6', u'idle_7',
+                    u'idle_8', (u'unknown_marker', 1)),
+            }),
+            # Only present for AI_E and AI_F, but should be fine since the
+            # default for MelString is None, so won't be dumped unless already
+            # present (i.e. the file is already broken)
+            MelString(b'CNDT', u'cell_name'),
+        )
+
+#------------------------------------------------------------------------------
 class MelArmorData(MelGroups):
     """Handles the INDX, BNAM and CNAM subrecords shared by ARMO and CLOT."""
     def __init__(self):
@@ -60,10 +92,45 @@ class MelArmorData(MelGroups):
         )
 
 #------------------------------------------------------------------------------
+class MelDestinations(MelGroups):
+    """Handles the common DODT/DNAM subrecords."""
+    def __init__(self):
+        super(MelDestinations, self).__init__(u'cell_travel_destinations',
+            MelStruct(b'DODT', u'6f', u'dest_pos_x', u'dest_pos_y',
+                u'dest_pos_z', u'dest_rot_x', u'dest_rot_y', u'dest_rot_z'),
+            MelString(b'DNAM', u'dest_cell_name'),
+        )
+
+#------------------------------------------------------------------------------
+class MelEffects(MelGroups):
+    """Handles the list of ENAM structs present on several records."""
+    def __init__(self):
+        super(MelEffects, self).__init__(u'effects',
+            MelStruct(b'ENAM', u'H2b5I', u'effect_index', u'skill_affected',
+                u'attribute_affected', u'ench_range', u'ench_area',
+                u'ench_duration', u'ench_magnitude_min',
+                u'ench_magnitude_max'),
+        )
+
+#------------------------------------------------------------------------------
+class MelItems(MelGroups):
+    """Wraps MelGroups for the common task of defining a list of items."""
+    def __init__(self):
+        super(MelItems, self).__init__(u'items',
+            MelStruct(b'NPCO', u'I32s', u'count', (u'item', null32)),
+        )
+
+#------------------------------------------------------------------------------
 class MelMWEnchantment(MelString):
     """Handles ENAM, Morrowind's version of EITM."""
     def __init__(self):
         super(MelMWEnchantment, self).__init__(b'ENAM', u'enchantment')
+
+#------------------------------------------------------------------------------
+class MelMWFull(MelString):
+    """Defines FNAM, Morrowind's version of FULL."""
+    def __init__(self):
+        super(MelMWFull, self).__init__(b'FNAM', u'full')
 
 #------------------------------------------------------------------------------
 class MelMWIcon(MelIcons):
@@ -78,10 +145,12 @@ class MelMWId(MelString):
         super(MelMWId, self).__init__(b'NAME', u'mw_id')
 
 #------------------------------------------------------------------------------
-class MelMWFull(MelString):
-    """Defines FNAM, Morrowind's version of FULL."""
+class MelMWSpells(MelGroups):
+    """Handles NPCS, Morrowind's version of SPLO."""
     def __init__(self):
-        super(MelMWFull, self).__init__(b'FNAM', u'full')
+        super(MelMWSpells, self).__init__(u'spells',
+            MelStruct(b'NPCS', u'32s', (u'spell_id', null32)),
+        )
 
 #------------------------------------------------------------------------------
 class MelReference(MelSequential):
@@ -103,12 +172,7 @@ class MelReference(MelSequential):
             # object type
             MelBase(b'INTV', u'remaining_usage'),
             MelOptUInt32(b'NAM9', u'gold_value'),
-            MelGroups(u'cell_travel_destinations',
-                MelStruct(b'DODT', u'6f', u'dest_pos_x', u'dest_pos_y',
-                    u'dest_pos_z', u'dest_rot_x', u'dest_rot_y',
-                    u'dest_rot_z'),
-                MelString(b'DNAM', u'dest_cell_name'),
-            ),
+            MelDestinations(),
             MelOptUInt32(b'FLTV', u'lock_level'),
             MelString(b'KNAM', u'key_name'),
             MelString(b'TNAM', u'trap_name'),
@@ -166,13 +230,13 @@ class MreTes3(MreHeaderBase):
 
     melSet = MelSet(
         MelTes3Hedr(b'HEDR', u'fI32s256sI', (u'version', 1.3), u'esp_flags',
-                    u'author', u'description', u'numRecords'),
+            (u'author', null32), (u'description', null32 * 8), u'numRecords'),
         MreHeaderBase.MelMasterNames(),
         MelSavesOnly(
             # Wrye Mash calls unknown1 'day', but that seems incorrect?
             MelStruct(b'GMDT', u'6f64sf32s', u'pc_curr_health',
-                      u'pc_max_health', u'unknown1', u'unknown2', u'unknown3',
-                      u'unknown4', u'curr_cell', u'unknown5', u'pc_name'),
+                u'pc_max_health', u'unknown1', u'unknown2', u'unknown3',
+                u'unknown4', u'curr_cell', u'unknown5', (u'pc_name', null32)),
             MelBase(b'SCRD', u'unknown_scrd'), # likely screenshot-related
             MelArray(u'screenshot_data',
                 # Yes, the correct order is bgra
@@ -202,8 +266,6 @@ class MreAlch(MelRecord):
     """Potion."""
     rec_sig = b'ALCH'
 
-    _potion_flags = Flags(0, Flags.getNames(u'auto_calc'))
-
     melSet = MelSet(
         MelMWId(),
         MelModel(),
@@ -211,13 +273,8 @@ class MreAlch(MelRecord):
         MelScriptId(),
         MelMWFull(),
         MelStruct(b'ALDT', u'f2I', u'potion_weight', u'potion_value',
-            (_potion_flags, u'potion_flags')),
-        MelGroups(u'potion_enchantments',
-            MelStruct(b'ENAM', u'H2b5I', u'effect_index', u'skill_affected',
-                u'attribute_affected', u'ench_range', u'ench_area',
-                u'ench_duration', u'ench_magnitude_min',
-                u'ench_magnitude_max'),
-        ),
+            u'potion_auto_calc'),
+        MelEffects(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -299,9 +356,7 @@ class MreBsgn(MelRecord):
     melSet = MelSet(
         MelMWId(),
         MelMWFull(),
-        MelGroups(u'birth_sign_spells',
-            MelString(b'NPCS', u'spell_id'),
-        ),
+        MelMWSpells(),
         MelString(b'TNAM', u'texture_filename'),
         MelDescription(),
     )
@@ -406,5 +461,132 @@ class MreClot(MelRecord):
         MelMWIcon(),
         MelArmorData(),
         MelMWEnchantment(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreCont(MelRecord):
+    """Container."""
+    rec_sig = b'CONT'
+
+    _cont_flags = Flags(0, Flags.getNames(
+        u'cont_organic',
+        u'cont_respawns',
+        u'default_unknown', # always set
+    ))
+
+    melSet = MelSet(
+        MelMWId(),
+        MelModel(),
+        MelMWFull(),
+        MelFloat(b'CNDT', u'cont_weight'),
+        MelUInt32(b'FLAG', (_cont_flags, u'cont_flags')),
+        MelItems(),
+        MelScriptId(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreCrea(MelRecord):
+    """Creature."""
+    rec_sig = b'CREA'
+
+    _crea_flags = Flags(0, Flags.getNames(
+        u'biped', # names match those of MreCrea._flags in later games
+        u'respawn',
+        u'weaponAndShield',
+        u'crea_none',
+        u'swims',
+        u'flies',
+        u'walks',
+        u'default_flags',
+        u'essential',
+        u'skeleton_blood',
+        u'metal_blood',
+    ))
+    _ai_flags = Flags(0, Flags.getNames(
+        u'ai_weapon',
+        u'ai_armor',
+        u'ai_clothing',
+        u'ai_books',
+        u'ai_ingredient',
+        u'ai_picks',
+        u'ai_probes',
+        u'ai_lights',
+        u'ai_apparatus',
+        u'ai_repair_items',
+        u'ai_misc',
+        u'ai_spells',
+        u'ai_magic_items',
+        u'ai_potions',
+        u'ai_training',
+        u'ai_spellmaking',
+        u'ai_enchanting',
+        u'ai_repair',
+    ))
+
+    melSet = MelSet(
+        MelMWId(),
+        MelModel(),
+        MelString(b'CNAM', u'sound_gen_creature'),
+        MelMWFull(),
+        MelScriptId(),
+        MelStruct(b'NPDT', u'24I', u'crea_type', u'crea_level',
+            u'crea_strength', u'crea_intelligence', u'crea_willpower',
+            u'crea_agility', u'crea_speed', u'crea_endurance',
+            u'crea_personality', u'crea_luck', u'crea_health',
+            u'crea_spell_points', u'crea_fatigue', u'crea_soul',
+            u'crea_combat', u'crea_magic', u'crea_stealth',
+            u'crea_attack_min_1', u'crea_attack_max_1', u'crea_attack_min_2',
+            u'crea_attack_max_2', u'crea_attack_min_3', u'crea_attack_max_3',
+            u'crea_gold'),
+        MelUInt32(b'FLAG', (_crea_flags, u'crea_flags')),
+        MelRefScale(),
+        MelItems(),
+        MelMWSpells(),
+        MelStruct(b'AIDT', u'Bs3B3sI', u'ai_hello', (u'unknown1', null1),
+            u'ai_fight', u'ai_flee', u'ai_alarm', (u'unknown2', null3),
+            (_ai_flags, u'ai_flags')),
+        MelDestinations(),
+        MelAIPackages(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreDial(MelRecord):
+    """Dialog Topic."""
+    rec_sig = b'DIAL'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelUInt8(b'DATA', u'dialogue_type'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreDoor(MelRecord):
+    """Door."""
+    rec_sig = b'DOOR'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelModel(),
+        MelMWFull(),
+        MelScriptId(),
+        MelString(b'SNAM', u'sound_open'),
+        MelString(b'ANAM', u'sound_close'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreEnch(MelRecord):
+    """Enchantment."""
+    rec_sig = b'ENCH'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelStruct(b'ENDT', u'4I', u'ench_type', u'ench_cost', u'ench_charge',
+            u'ench_auto_calc'),
+        MelEffects(),
     )
     __slots__ = melSet.getSlotsUsed()

@@ -38,7 +38,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelArray, MelWthrColors, MelObject, MreActorBase, MreWithItems, \
     MelReadOnly, MelCtda, MelRef3D, MelXlod, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript, \
-    MelDescription, BipedFlags
+    MelDescription, BipedFlags, MelSpells
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
 
@@ -627,7 +627,7 @@ class MreBsgn(MelRecord):
         MelFull(),
         MelIcon(),
         MelDescription(u'text'),
-        MelFids('SPLO','spells'),
+        MelSpells(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -812,7 +812,7 @@ class MreCrea(MreActorBase):
         MelEdid(),
         MelFull(),
         MelModel(),
-        MelFids('SPLO','spells'),
+        MelSpells(),
         MelStrings('NIFZ','bodyParts'),
         MelBase('NIFT','nift_p'), # Texture File Hashes
         MelStruct('ACBS','=I3Hh2H',
@@ -1391,7 +1391,7 @@ class MreNpc(MreActorBase):
         ),
         MelFid('INAM','deathItem'),
         MelFid('RNAM','race'),
-        MelFids('SPLO','spells'),
+        MelSpells(),
         MelScript(),
         MelItems(),
         MelStruct('AIDT', '=4BIbB2s', ('aggression', 5), ('confidence', 50),
@@ -1554,7 +1554,7 @@ class MreRace(MelRecord):
         MelEdid(),
         MelFull(),
         MelDescription(u'text'),
-        MelFids('SPLO','spells'),
+        MelSpells(),
         MelGroups('relations',
             MelStruct('XNAM', 'Ii', (FID, 'faction'), 'mod'),
         ),

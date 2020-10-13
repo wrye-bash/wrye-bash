@@ -29,7 +29,7 @@ import re
 import struct
 from operator import attrgetter
 
-from .advanced_elements import AttrExistsDecider, AttrValDecider, MelArray, \
+from .advanced_elements import FidNotNullDecider, AttrValDecider, MelArray, \
     MelUnion
 from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroups, \
     MelLString, MelNull, MelStruct, MelUInt32, MelSInt32
@@ -219,11 +219,11 @@ class MreLand(MelRecord):
                 b'BTXT': MelStruct(b'BTXT', u'IBsh', (FID, u'btxt_texture'),
                     u'quadrant', u'unknown', u'layer'),
             }),
-            # VTXT only exists for ATXT layers
+            # VTXT only exists for ATXT layers, i.e. if ATXT's FormID is valid
             MelUnion({
                 True:  MelBase(b'VTXT', u'alpha_layer_data'),
                 False: MelNull(b'VTXT'),
-            }, decider=AttrExistsDecider(u'atxt_texture')),
+            }, decider=FidNotNullDecider(u'atxt_texture')),
         ),
         MelArray('vertex_textures',
             MelFid('VTEX', 'vertex_texture'),

@@ -41,7 +41,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelWorldBounds, MelEnableParent, MelRefScale, MelMapMarker, MelMdob, \
     MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
     MelPickupSound, MelDropSound, MelActivateParents, BipedFlags, MelColor, \
-    MelColorO
+    MelColorO, MelSpells
 from ...exception import ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -215,11 +215,10 @@ class MelDestructible(MelGroup):
 #------------------------------------------------------------------------------
 class MelEffects(MelGroups):
     """Represents ingredient/potion/enchantment/spell effects."""
-
-    def __init__(self,attr='effects'):
-        MelGroups.__init__(self,attr,
-            MelFid('EFID','name'), # baseEffect, name
-            MelStruct('EFIT','f2I','magnitude','area','duration',),
+    def __init__(self):
+        MelGroups.__init__(self, u'effects',
+            MelFid(b'EFID', u'name'), # baseEffect, name
+            MelStruct(b'EFIT', u'f2I', u'magnitude', u'area', u'duration'),
             MelConditions(),
         )
 
@@ -3609,7 +3608,7 @@ class MreNpc(MreActorBase):
         MelOptFid('TPLT', 'template'),
         MelFid('RNAM','race'),
         MelCounter(MelUInt32(b'SPCT', u'spell_count'), counts=u'spells'),
-        MelFids('SPLO', 'spells'),
+        MelSpells(),
         MelDestructible(),
         MelOptFid('WNAM', 'wornArmor'),
         MelOptFid('ANAM', 'farawaymodel'),

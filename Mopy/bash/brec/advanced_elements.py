@@ -37,7 +37,7 @@ from collections import OrderedDict
 from .basic_elements import MelBase, MelNull, MelObject, MelStruct
 from .mod_io import ModWriter
 from .. import exception
-from ..bolt import sio, struct_pack
+from ..bolt import GPath, sio, struct_pack
 
 #------------------------------------------------------------------------------
 class _MelDistributor(MelNull):
@@ -570,18 +570,22 @@ class ACommonDecider(ADecider):
         """Performs the actual decisions for both loading and dumping."""
         raise exception.AbstractError()
 
-class AttrExistsDecider(ACommonDecider):
-    """Decider that returns True if an attribute with the specified name is
-    present on the record."""
+class FidNotNullDecider(ACommonDecider):
+    """Decider that returns True if the FormID attribute with the specified
+    name is not NULL."""
     def __init__(self, target_attr):
-        """Creates a new AttrExistsDecider with the specified attribute.
+        """Creates a new FidNotNullDecider with the specified attribute.
 
         :param target_attr: The name of the attribute to check.
         :type target_attr: unicode"""
-        self.target_attr = target_attr
+        self._target_attr = target_attr
 
     def _decide_common(self, record):
-        return hasattr(record, self.target_attr)
+        ##: Wasteful, but bush imports brec which uses this decider, so we
+        # can't import bush in __init__...
+        from .. import bush
+        return getattr(record, self._target_attr) != (
+            GPath(bush.game.master_file), 0)
 
 class AttrValDecider(ACommonDecider):
     """Decider that returns an attribute value (may optionally apply a function

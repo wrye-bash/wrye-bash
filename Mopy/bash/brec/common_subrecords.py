@@ -30,7 +30,8 @@ from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
     MelUnion, PartialLoadDecider, FlagDecider
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
-    MelOptFloat, MelOptUInt8, MelOptUInt32, MelOptFid, MelReadOnly, MelUInt8
+    MelOptFloat, MelOptUInt8, MelOptUInt32, MelOptFid, MelReadOnly, MelUInt8, \
+    MelFids
 from .utils_constants import _int_unpacker, FID, null1, null2, null3, null4
 from ..bolt import Flags, encode, struct_pack, struct_unpack
 
@@ -597,6 +598,12 @@ class MelRefScale(MelOptFloat):
     """Scale for a reference record (REFR, ACHR, etc.)."""
     def __init__(self):
         super(MelRefScale, self).__init__(b'XSCL', (u'ref_scale', 1.0))
+
+#------------------------------------------------------------------------------
+class MelSpells(MelFids):
+    """Handles the common SPLO subrecord."""
+    def __init__(self):
+        super(MelSpells, self).__init__(b'SPLO', u'spells')
 
 #------------------------------------------------------------------------------
 class MelWorldBounds(MelSequential):

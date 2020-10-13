@@ -110,6 +110,7 @@ null1 = '\x00'
 null2 = null1 * 2
 null3 = null1 * 3
 null4 = null1 * 4
+null32 = null1 * 32
 
 # Hack for allowing record imports from parent games - set per game
 MelModel = None # type: type
