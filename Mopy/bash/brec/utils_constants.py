@@ -26,7 +26,8 @@ almost all other parts of brec."""
 from __future__ import division, print_function
 import struct
 
-from ..bolt import decode, Flags, struct_pack, struct_unpack
+from .. import bolt
+from ..bolt import cstrip, decode, Flags, struct_pack, struct_unpack
 # no local imports, imported everywhere in brec
 
 # Random stuff ----------------------------------------------------------------
@@ -65,6 +66,36 @@ def _make_hashable(target_obj):
     elif isinstance(target_obj, (list, set, tuple)):
         return tuple([_make_hashable(x) for x in target_obj])
     return target_obj
+
+class FixedString(unicode):
+    """An action for MelStructs that will decode and encode a fixed-length
+    string. Note that you do not need to specify defaults when using this."""
+    __slots__ = (u'str_length',)
+    _str_encoding = bolt.pluginEncoding
+
+    def __new__(cls, str_length, target_str=b''):
+        if isinstance(target_str, unicode):
+            decoded_str = target_str
+        else:
+            decoded_str = u'\n'.join(
+                decode(x, cls._str_encoding,
+                    avoidEncodings=(u'utf8', u'utf-8'))
+                for x in cstrip(target_str).split(b'\n'))
+        new_str = super(FixedString, cls).__new__(cls, decoded_str)
+        new_str.str_length = str_length
+        return new_str
+
+    def __call__(self, new_str):
+        # 0 is the default, so replace it with whatever we currently have
+        return FixedString(self.str_length, new_str or unicode(self))
+
+    def dump(self):
+        return bolt.encode_complex_string(self, max_size=self.str_length,
+            min_size=self.str_length)
+
+class AutoFixedString(FixedString):
+    """Variant of FixedString that uses chardet to detect encodings."""
+    _str_encoding = None
 
 # Reference (fid) -------------------------------------------------------------
 def strFid(form_id):
@@ -110,7 +141,6 @@ null1 = '\x00'
 null2 = null1 * 2
 null3 = null1 * 3
 null4 = null1 * 4
-null32 = null1 * 32
 
 # Hack for allowing record imports from parent games - set per game
 MelModel = None # type: type

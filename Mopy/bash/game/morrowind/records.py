@@ -23,13 +23,14 @@
 """This module contains the Morrowind record classes. Also contains records
 and subrecords used for the saves - see MorrowindSaveHeader for more
 information."""
-from ... import bolt, brec
-from ...bolt import cstrip, decode, Flags
+from ... import brec
+from ...bolt import Flags
 from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     MreHeaderBase, MelUnion, SaveDecider, MelNull, MelSequential, MelRecord, \
     MelGroup, MelGroups, MelUInt8, MelDescription, MelUInt32, MelColorO,\
     MelOptStruct, MelCounter, MelRefScale, MelOptSInt32, MelRef3D, \
-    MelOptFloat, MelOptUInt32, MelIcons, MelFloat, null1, null3, null32
+    MelOptFloat, MelOptUInt32, MelIcons, MelFloat, null1, null3, MelSInt32, \
+    MelFixedString, FixedString, AutoFixedString, MreGmstBase, MelOptUInt8
 if brec.MelModel is None:
 
     class _MelModel(MelGroup):
@@ -43,19 +44,12 @@ from ...brec import MelModel
 #------------------------------------------------------------------------------
 # Utilities -------------------------------------------------------------------
 #------------------------------------------------------------------------------
-def _decode_raw(target_str):
-    """Adapted from MelUnicode.loadData. ##: maybe move to bolt/brec?"""
-    return u'\n'.join(
-        decode(x, avoidEncodings=(u'utf8', u'utf-8')) for x
-        in cstrip(target_str).split(b'\n'))
-
-#------------------------------------------------------------------------------
 class MelAIAccompanyPackage(MelOptStruct):
     """Deduplicated from AI_E and AI_F (see below)."""
     def __init__(self, ai_package_sig):
         super(MelAIAccompanyPackage, self).__init__(ai_package_sig,
             u'3fH32sBs', u'dest_x', u'dest_y', u'dest_z', u'package_duration',
-            (u'package_id', null32), (u'unknown_marker', 1),
+            (FixedString(32), u'package_id'), (u'unknown_marker', 1),
             (u'unused1', null1))
 
 class MelAIPackages(MelGroups):
@@ -65,7 +59,8 @@ class MelAIPackages(MelGroups):
         super(MelAIPackages, self).__init__(u'aiPackages',
             MelUnion({
                 b'AI_A': MelStruct(b'AI_A', u'=32sB',
-                    (u'package_name', null32), (u'unknown_marker', 1)),
+                    (FixedString(32), u'package_name'),
+                    (u'unknown_marker', 1)),
                 b'AI_E': MelAIAccompanyPackage(b'AI_E'),
                 b'AI_F': MelAIAccompanyPackage(b'AI_F'),
                 b'AI_T': MelStruct(b'AI_T', u'3fB3s', u'dest_x', u'dest_y',
@@ -117,7 +112,7 @@ class MelItems(MelGroups):
     """Wraps MelGroups for the common task of defining a list of items."""
     def __init__(self):
         super(MelItems, self).__init__(u'items',
-            MelStruct(b'NPCO', u'I32s', u'count', (u'item', null32)),
+            MelStruct(b'NPCO', u'I32s', u'count', (FixedString(32), u'item')),
         )
 
 #------------------------------------------------------------------------------
@@ -149,7 +144,7 @@ class MelMWSpells(MelGroups):
     """Handles NPCS, Morrowind's version of SPLO."""
     def __init__(self):
         super(MelMWSpells, self).__init__(u'spells',
-            MelStruct(b'NPCS', u'32s', (u'spell_id', null32)),
+            MelFixedString(b'NPCS', u'spell_id', 32),
         )
 
 #------------------------------------------------------------------------------
@@ -203,40 +198,17 @@ class MreTes3(MreHeaderBase):
     """TES3 Record. File header."""
     rec_sig = b'TES3'
 
-    class MelTes3Hedr(MelStruct):
-        """Wrapper around MelStruct to handle the author and description
-        fields, which are padded to 32 and 256 bytes, respectively, with null
-        bytes."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            super(MreTes3.MelTes3Hedr, self).loadData(record, ins, sub_type,
-                                                      size_, readId)
-            # Strip off the null bytes and convert to unicode
-            record.author = _decode_raw(record.author)
-            record.description = _decode_raw(record.description)
-
-        def dumpData(self, record, out):
-            # Store the original values in case we dump more than once
-            orig_author = record.author
-            orig_desc = record.description
-            # Encode and enforce limits, then dump out
-            record.author = bolt.encode_complex_string(
-                record.author, max_size=32, min_size=32)
-            record.description = bolt.encode_complex_string(
-                record.description, max_size=256, min_size=256)
-            super(MreTes3.MelTes3Hedr, self).dumpData(record, out)
-            # Restore the original values again, see comment above
-            record.author = orig_author
-            record.description = orig_desc
-
     melSet = MelSet(
-        MelTes3Hedr(b'HEDR', u'fI32s256sI', (u'version', 1.3), u'esp_flags',
-            (u'author', null32), (u'description', null32 * 8), u'numRecords'),
+        MelStruct(b'HEDR', u'fI32s256sI', (u'version', 1.3), u'esp_flags',
+            (AutoFixedString(32), u'author'),
+            (AutoFixedString(256), u'description'), u'numRecords'),
         MreHeaderBase.MelMasterNames(),
         MelSavesOnly(
             # Wrye Mash calls unknown1 'day', but that seems incorrect?
             MelStruct(b'GMDT', u'6f64sf32s', u'pc_curr_health',
                 u'pc_max_health', u'unknown1', u'unknown2', u'unknown3',
-                u'unknown4', u'curr_cell', u'unknown5', (u'pc_name', null32)),
+                u'unknown4', (FixedString(64), u'curr_cell'), u'unknown5',
+                (AutoFixedString(32), u'pc_name')),
             MelBase(b'SCRD', u'unknown_scrd'), # likely screenshot-related
             MelArray(u'screenshot_data',
                 # Yes, the correct order is bgra
@@ -588,5 +560,141 @@ class MreEnch(MelRecord):
         MelStruct(b'ENDT', u'4I', u'ench_type', u'ench_cost', u'ench_charge',
             u'ench_auto_calc'),
         MelEffects(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreFact(MelRecord):
+    """Faction."""
+    rec_sig = b'FACT'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelMWFull(),
+        MelGroups(u'ranks', # always 10
+            MelString(b'RNAM', u'rank_name'),
+        ),
+        ##: Double-check that these are all unsigned (especially
+        # rank_*_reaction), xEdit makes most of them signed (and puts them in
+        # an enum, which makes no sense). Also, why couldn't Bethesda put these
+        # into the ranks list up above?
+        MelStruct(b'FADT', u'52I7iI', u'faction_attribute_1',
+            u'faction_attribute_2', u'rank_1_attribute_1',
+            u'rank_1_attribute_2', u'rank_1_skill_1', u'rank_1_skill_2',
+            u'rank_1_reaction', u'rank_2_attribute_1', u'rank_2_attribute_2',
+            u'rank_2_skill_1', u'rank_2_skill_2', u'rank_2_reaction',
+            u'rank_3_attribute_1', u'rank_3_attribute_2', u'rank_3_skill_1',
+            u'rank_3_skill_2', u'rank_3_reaction', u'rank_4_attribute_1',
+            u'rank_4_attribute_2', u'rank_4_skill_1', u'rank_4_skill_2',
+            u'rank_4_reaction', u'rank_5_attribute_1', u'rank_5_attribute_2',
+            u'rank_5_skill_1', u'rank_5_skill_2', u'rank_5_reaction',
+            u'rank_6_attribute_1', u'rank_6_attribute_2', u'rank_6_skill_1',
+            u'rank_6_skill_2', u'rank_6_reaction', u'rank_7_attribute_1',
+            u'rank_7_attribute_2', u'rank_7_skill_1', u'rank_7_skill_2',
+            u'rank_7_reaction', u'rank_8_attribute_1', u'rank_8_attribute_2',
+            u'rank_8_skill_1', u'rank_8_skill_2', u'rank_8_reaction',
+            u'rank_9_attribute_1', u'rank_9_attribute_2', u'rank_9_skill_1',
+            u'rank_9_skill_2', u'rank_9_reaction', u'rank_10_attribute_1',
+            u'rank_10_attribute_2', u'rank_10_skill_1', u'rank_10_skill_2',
+            u'rank_10_reaction', u'skill_1', u'skill_2', u'skill_3',
+            u'skill_4', u'skill_5', u'skill_6', u'skill_7',
+            u'hidden_from_pc'),
+        MelGroups(u'relations', # bad names to match other games
+            MelString(b'ANAM', u'faction'),
+            MelSInt32(b'INTV', u'mod'),
+        ),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreGlob(MelRecord):
+    """Global."""
+    rec_sig = b'GLOB'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelFixedString(b'FNAM', u'global_format', 1, u's'),
+        MelFloat(b'FLTV', u'global_value'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MelGmstUnion(MelUnion):
+    """Some GMSTs do not have one of the value subrecords - fall back to
+    using the first letter of the NAME subrecord in those cases."""
+    _fmt_mapping = {
+        u'f': b'FLTV',
+        u'i': b'INTV',
+        u's': b'STRV',
+    }
+
+    def _get_element_from_record(self, record):
+        if not hasattr(record, self.decider_result_attr):
+            format_char = record.mw_id[0] if record.mw_id else u'i'
+            return self._get_element(self._fmt_mapping[format_char])
+        return super(MelGmstUnion, self)._get_element_from_record(record)
+
+class MreGmst(MreGmstBase):
+    """Game Setting."""
+    melSet = MelSet(
+        MelMWId(),
+        MelGmstUnion({
+            b'FLTV': MelFloat(b'FLTV', u'value'),
+            b'INTV': MelSInt32(b'INTV', u'value'),
+            b'STRV': MelString(b'STRV', u'value'),
+        }),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreInfo(MelRecord):
+    """Dialog Response."""
+    rec_sig = b'INFO'
+
+    melSet = MelSet(
+        MelString(b'INAM', u'info_name_string'),
+        MelString(b'PNAM', u'prev_info_name'),
+        MelString(b'NNAM', u'next_info_name'),
+        MelStruct(b'DATA', u'B3sIBbBs', u'dialogue_type', (u'unused1', null3),
+            u'disposition', u'dialogue_rank', u'speaker_gender', u'pc_rank',
+            (u'unused2', null1)),
+        MelString(b'ONAM', u'actor_name'),
+        MelString(b'RNAM', u'race_name'),
+        MelString(b'CNAM', u'class_name'),
+        MelString(b'FNAM', u'faction_name'),
+        MelString(b'ANAM', u'cell_name'),
+        MelString(b'DNAM', u'pc_faction_name'),
+        MelString(b'SNAM', u'sound_name'),
+        MelMWId(),
+        MelGroups(u'conditions',
+            MelString(b'SCVR', u'condition_string'),
+            # None here are on purpose - 0 is a valid value, but only certain
+            # conditions need these subrecords to be present
+            MelOptUInt32(b'INTV', (u'comparison_int', None)),
+            MelOptFloat(b'FLTV', (u'comparison_float', None)),
+        ),
+        MelString(b'BNAM', u'result_text'),
+        MelOptUInt8(b'QSTN', u'quest_name'),
+        MelOptUInt8(b'QSTF', u'quest_finished'),
+        MelOptUInt8(b'QSTR', u'quest_restart'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreIngr(MelRecord):
+    """Ingredient."""
+    rec_sig = b'INGR'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelModel(),
+        MelMWFull(),
+        MelStruct(b'IRDT', u'fI12i', u'ingr_weight', u'ingr_value',
+            u'effect_index_1', u'effect_index_2', u'effect_index_3',
+            u'effect_index_4', u'skill_id_1', u'skill_id_2', u'skill_id_3',
+            u'skill_id_4', u'attribute_id_1', u'attribute_id_2',
+            u'attribute_id_3', u'attribute_id_4'),
+        MelScriptId(),
+        MelMWIcon(),
     )
     __slots__ = melSet.getSlotsUsed()

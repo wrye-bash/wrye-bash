@@ -26,7 +26,7 @@ higher-level building blocks can be found in common_subrecords.py."""
 from __future__ import division, print_function
 import struct
 
-from .utils_constants import FID, null1, _make_hashable
+from .utils_constants import FID, null1, _make_hashable, FixedString
 from .. import bolt, exception
 from ..bolt import decode, encode
 
@@ -487,9 +487,10 @@ class MelGroups(MelGroup):
 class MelString(MelBase):
     """Represents a mod record string element."""
 
-    def __init__(self, subType, attr, default=None, maxSize=0):
+    def __init__(self, subType, attr, default=None, maxSize=0, minSize=0):
         super(MelString, self).__init__(subType, attr, default)
         self.maxSize = maxSize
+        self.minSize = minSize
 
     def loadData(self, record, ins, sub_type, size_, readId):
         value = ins.readString(size_, readId)
@@ -498,7 +499,8 @@ class MelString(MelBase):
     def dumpData(self,record,out):
         string_val = record.__getattribute__(self.attr)
         if string_val is not None:
-            out.write_string(self.subType, string_val, max_size=self.maxSize)
+            out.write_string(self.subType, string_val, max_size=self.maxSize,
+                min_size=self.minSize)
 
 #------------------------------------------------------------------------------
 class MelUnicode(MelString):
@@ -590,7 +592,10 @@ class MelStruct(MelBase):
         getter = record.__getattribute__
         for attr,action in zip(self.attrs,self.actions):
             value = getter(attr)
-            if action: value = value.dump()
+            # Just in case, apply the action to itself before dumping to handle
+            # e.g. a FixedString getting assigned a unicode value. Worst case,
+            # this is just a noop.
+            if action: value = action(value).dump()
             valuesAppend(value)
         out.packSub(self.subType, self.struct_format, *values)
 
@@ -604,6 +609,14 @@ class MelStruct(MelBase):
     @property
     def static_size(self):
         return struct.calcsize(self.struct_format)
+
+#------------------------------------------------------------------------------
+class MelFixedString(MelStruct):
+    """Subrecord that stores a string of a constant length. Just a wrapper
+    around a struct with a single FixedString element."""
+    def __init__(self, signature, attr, str_length, default=b''):
+        super(MelFixedString, self).__init__(signature, u'%us' % str_length,
+            (FixedString(str_length, default), attr))
 
 #------------------------------------------------------------------------------
 # Simple primitive type wrappers

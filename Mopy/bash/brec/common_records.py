@@ -32,7 +32,7 @@ from operator import attrgetter
 from .advanced_elements import FidNotNullDecider, AttrValDecider, MelArray, \
     MelUnion
 from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroups, \
-    MelLString, MelNull, MelStruct, MelUInt32, MelSInt32
+    MelLString, MelNull, MelStruct, MelUInt32, MelSInt32, MelFixedString
 from .common_subrecords import MelEdid
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID
@@ -174,10 +174,11 @@ class MreGlob(MelRecord):
        (short,long,float), are stored as floats -- which means that very large
        integers lose precision."""
     rec_sig = b'GLOB'
+
     melSet = MelSet(
         MelEdid(),
-        MelStruct('FNAM','s',('format','s')),
-        MelFloat('FLTV', 'value'),
+        MelFixedString(b'FNAM', u'global_format', 1, u's'),
+        MelFloat(b'FLTV', u'global_value'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -195,7 +196,7 @@ class MreGmstBase(MelRecord):
             u'f': MelFloat(b'DATA', u'value'),
             u's': MelLString(b'DATA', u'value'),
         }, decider=AttrValDecider(
-            u'eid', transformer=lambda eid: decode(eid[0]) if eid else u'i'),
+            u'eid', transformer=lambda e: e[0] if e else u'i'),
             fallback=MelSInt32(b'DATA', u'value')
         ),
     )

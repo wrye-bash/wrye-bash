@@ -44,10 +44,10 @@ class GlobalsTweak(DynamicTweak, MultiTweakItem):
     def wants_record(self, record):
         return (getattr(record, u'eid', None) and # skip missing and empty EDID
                 record.eid.lower() == self.tweak_key and
-                record.value != self.chosen_value)
+                record.global_value != self.chosen_value)
 
     def tweak_record(self, record):
-        record.value = self.chosen_value
+        record.global_value = self.chosen_value
 
     def tweak_log(self, log, count):
         if count: log(u'* ' + _(u'%s set to: %4.2f') % (

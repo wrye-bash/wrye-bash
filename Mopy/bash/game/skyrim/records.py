@@ -41,7 +41,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelWorldBounds, MelEnableParent, MelRefScale, MelMapMarker, MelMdob, \
     MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
     MelPickupSound, MelDropSound, MelActivateParents, BipedFlags, MelColor, \
-    MelColorO, MelSpells
+    MelColorO, MelSpells, MelFixedString
 from ...exception import ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -2004,8 +2004,7 @@ class MreDial(MelRecord):
         MelFid('QNAM','quest',),
         MelStruct('DATA','2BH',(DialTopicFlags,'flags_dt',0),'category',
                   'subtype',),
-        # SNAM is a 4 byte string no length byte - TODO(inf) MelFixedString?
-        MelStruct('SNAM', '4s', ('subtypeName', null4)),
+        MelFixedString(b'SNAM', u'subtypeName', 4),
         MelUInt32(b'TIFC', u'info_count'), # Updated in MobDial.dump
     )
     __slots__ = melSet.getSlotsUsed()

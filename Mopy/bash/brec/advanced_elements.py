@@ -719,7 +719,7 @@ class MelUnion(MelBase):
             u'f': MelFloat(b'DATA', u'value'),
             u's': MelLString(b'DATA', u'value'),
         }, decider=AttrValDecider(
-            u'eid', transformer=lambda eid: decode(eid[0]) if eid else u'i'),
+            u'eid', transformer=lambda e: e[0] if e else u'i'),
             fallback=MelSInt32(b'DATA', u'value')
         ),
     When a DATA subrecord is encountered, the union is asked to load it. It
