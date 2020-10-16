@@ -30,7 +30,8 @@ from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     MelGroup, MelGroups, MelUInt8, MelDescription, MelUInt32, MelColorO,\
     MelOptStruct, MelCounter, MelRefScale, MelOptSInt32, MelRef3D, \
     MelOptFloat, MelOptUInt32, MelIcons, MelFloat, null1, null3, MelSInt32, \
-    MelFixedString, FixedString, AutoFixedString, MreGmstBase, MelOptUInt8
+    MelFixedString, FixedString, AutoFixedString, MreGmstBase, MelOptUInt8, \
+    MreLeveledListBase, MelUInt16
 if brec.MelModel is None:
 
     class _MelModel(MelGroup):
@@ -190,6 +191,29 @@ class MelScriptId(MelString):
     """Handles the common SCRI subrecord."""
     def __init__(self):
         super(MelScriptId, self).__init__(b'SCRI', u'script_id'),
+
+#------------------------------------------------------------------------------
+class MreLeveledList(MreLeveledListBase):
+    """Base class for LEVC and LEVI."""
+    _lvl_flags = Flags(0, Flags.getNames(
+        u'calcFromAllLevels',
+        u'calcForEachItem', # LEVI only, but will be ignored for LEVC so fine
+    ))
+    top_copy_attrs = (u'chanceNone',)
+    entry_copy_attrs = (u'listId', u'level') # no count
+
+    # Bad names to mirror the other games (needed by MreLeveledListBase)
+    melSet = MelSet(
+        MelMWId(),
+        MelUInt32(b'DATA', (_lvl_flags, u'flags')),
+        MelUInt8(b'NNAM', u'chanceNone'),
+        MelCounter(MelUInt32(b'INDX', u'entry_count'), counts=u'entries'),
+        MelGroups(u'entries',
+            MelString(b'INAM', u'listId'),
+            MelUInt16(b'INTV', u'level'),
+        ),
+    )
+    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 # Shared (plugins + saves) record classes -------------------------------------
@@ -694,6 +718,88 @@ class MreIngr(MelRecord):
             u'effect_index_4', u'skill_id_1', u'skill_id_2', u'skill_id_3',
             u'skill_id_4', u'attribute_id_1', u'attribute_id_2',
             u'attribute_id_3', u'attribute_id_4'),
+        MelScriptId(),
+        MelMWIcon(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreLand(MelRecord):
+    """Landscape."""
+    rec_sig = b'LAND'
+
+    _data_type_flags = Flags(0, Flags.getNames( ##: Shouldn't we set/use these?
+        u'include_vnml_vhgt_wnam',
+        u'include_vclr',
+        u'include_vtex',
+    ))
+
+    ##: No MelMWId, will that be a problem?
+    melSet = MelSet(
+        MelStruct(b'INTV', u'2I', u'land_x', u'land_y'),
+        MelUInt32(b'DATA', (_data_type_flags, u'dt_flags')),
+        # These are all very large and too complex to manipulate -> MelBase
+        MelBase(b'VNML', u'vertex_normals'),
+        MelBase(b'VHGT', u'vertex_height_map'),
+        MelBase(b'WNAM', u'world_map_heights'),
+        MelBase(b'VCLR', u'vertex_colors'),
+        MelBase(b'VTEX', u'vertex_textures'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreLevc(MreLeveledList):
+    """Leveled Creature."""
+    rec_sig = b'LEVC'
+    __slots__ = []
+
+#------------------------------------------------------------------------------
+class MreLevi(MreLeveledList):
+    """Leveled Item."""
+    rec_sig = b'LEVI'
+    __slots__ = []
+
+#------------------------------------------------------------------------------
+class MreLigh(MelRecord):
+    """Light."""
+    rec_sig = b'LIGH'
+
+    _light_flags = Flags(0, Flags.getNames(
+        u'dynamic', # Bad names to match the other games (for tweaks)
+        u'canTake',
+        u'negative',
+        u'flickers',
+        u'light_fire',
+        u'offByDefault',
+        u'flickerSlow',
+        u'pulse',
+        u'pulseSlow',
+    ))
+
+    melSet = MelSet(
+        MelMWId(),
+        MelModel(),
+        MelMWFull(),
+        MelMWIcon(),
+        MelStruct(b'LHDT', u'fIiI4BI', u'light_weight', u'light_value',
+            u'light_time', u'light_red', u'light_green', u'light_blue',
+            u'unused_alpha', (_light_flags, u'flags')),
+        MelString(b'SNAM', u'sound_name'),
+        MelScriptId(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreLock(MelRecord):
+    """Lockpicking Item."""
+    rec_sig = b'LOCK'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelModel(),
+        MelMWFull(),
+        MelStruct(b'LKDT', u'fIfI', u'lock_weight', u'lock_value',
+            u'lock_quality', u'lock_uses'),
         MelScriptId(),
         MelMWIcon(),
     )

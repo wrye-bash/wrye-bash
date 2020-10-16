@@ -97,10 +97,11 @@ class MorrowindGameInfo(GameInfo):
         wrye_bash_data_dirs = GameInfo.Bain.wrye_bash_data_dirs | {u'Mash'}
 
     class Esp(GameInfo.Esp):
-        validHeaderVersions = (1.2, 1.3)
-        stringsFiles = []
-        plugin_header_sig = b'TES3'
         check_master_sizes = True
+        max_lvl_list_size = 2 ** 32 - 1
+        plugin_header_sig = b'TES3'
+        stringsFiles = []
+        validHeaderVersions = (1.2, 1.3)
 
     @classmethod
     def init(cls):
