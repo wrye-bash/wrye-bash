@@ -33,7 +33,8 @@ from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     MelOptStruct, MelCounter, MelRefScale, MelOptSInt32, MelRef3D, \
     MelOptFloat, MelOptUInt32, MelIcons, MelFloat, null1, null3, MelSInt32, \
     MelFixedString, FixedString, AutoFixedString, MreGmstBase, MelOptUInt8, \
-    MreLeveledListBase, MelUInt16, null4, SizeDecider, MelLists, null2
+    MreLeveledListBase, MelUInt16, null4, SizeDecider, MelLists, null2, \
+    MelTruncatedStruct, MelColor, MelStrings
 if brec.MelModel is None:
 
     class _MelModel(MelGroup):
@@ -422,6 +423,9 @@ class MreCell(MelRecord):
                 (u'new_exterior_cell_y', None)),
             MelReference(),
         ),
+        ##: Move this into a dedicated Mob* class instead - difficult to
+        # manipulate otherwise, tons of duplicate signatures and a distributor
+        # is impossible due to the lack of static separators in the record.
         MelGroups(u'persistent_children',
             MelReference(),
         ),
@@ -951,5 +955,100 @@ class MrePgrd(MelRecord):
         # Could be loaded via MelArray, but are very big and not very useful
         MelBase(b'PGRP', u'point_array'),
         MelBase(b'PGRC', u'point_edges'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreProb(MelRecord):
+    """Probe Item."""
+    rec_sig = b'PROB'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelModel(),
+        MelMWFull(),
+        MelStruct(b'PBDT', u'fIfI', u'probe_weight', u'probe_value',
+            u'probe_quality', u'probe_uses'),
+        MelMWIcon(),
+        MelScriptId(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreRace(MelRecord):
+    """Race."""
+    rec_sig = b'RACE'
+
+    _race_flags = Flags(0, Flags.getNames(u'playable', u'beast_race'))
+
+    melSet = MelSet(
+        MelMWId(),
+        MelMWFull(),
+        # Bad names to match other games (race patcher)
+        MelStruct(b'RADT', u'14i16I4fI', u'skill1', u'skill1Boost', u'skill2',
+            u'skill2Boost', u'skill3', u'skill3Boost', u'skill4',
+            u'skill4Boost', u'skill5', u'skill5Boost', u'skill6',
+            u'skill6Boost', u'skill7', u'skill7Boost', u'maleStrength',
+            u'femaleStrength', u'maleIntelligence', u'femaleIntelligence',
+            u'maleWillpower', u'femaleWillpower', u'maleAgility',
+            u'femaleAgility', u'maleSpeed', u'femaleSpeed', u'maleEndurance',
+            u'femaleEndurance', u'malePersonality', u'femalePersonality',
+            u'maleLuck', u'femaleLuck', u'maleHeight', u'femaleHeight',
+            u'maleWeight', u'femaleWeight', (_race_flags, u'race_flags')),
+        MelMWSpells(),
+        MelDescription(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreRegn(MelRecord):
+    """Region."""
+    rec_sig = b'REGN'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelMWFull(),
+        MelTruncatedStruct(b'WEAT', u'=10B', u'chance_clear', u'chance_cloudy',
+            u'chance_foggy', u'chance_overcast', u'chance_rain',
+            u'chance_thunder', u'chance_ash', u'chance_blight',
+            u'chance_snow', u'chance_blizzard', old_versions={u'8B'}),
+        MelString(b'BNAM', u'sleep_creature'),
+        MelColor(),
+        MelGroups(u'sound_chances',
+            MelStruct(b'SNAM', u'=32sB', (FixedString(32), u'sound_name'),
+                u'sound_chance'),
+        ),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreRepa(MelRecord):
+    """Repair Item."""
+    rec_sig = b'REPA'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelModel(),
+        MelMWFull(),
+        MelStruct(b'RIDT', u'f2If', u'repa_weight', u'repa_value',
+            u'repa_uses', u'repa_quality'),
+        MelMWIcon(),
+        MelScriptId(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreScpt(MelRecord):
+    """Script."""
+    rec_sig = b'SCPT'
+
+    melSet = MelSet(
+        # Yes, the usual NAME sits in this subrecord instead
+        MelStruct(b'SCHD', u'32s5I', (FixedString(32), u'mw_id'),
+            u'num_shorts', u'num_longs', u'num_floats', u'script_data_size',
+            u'local_var_size'),
+        MelStrings(b'SCVR', u'script_variables'),
+        MelBase(b'SCDT', u'compiled_script'),
+        MelString(b'SCTX', u'script_source'),
     )
     __slots__ = melSet.getSlotsUsed()
