@@ -29,6 +29,10 @@ import wx.adv as _adv     # wxPython wizard class
 
 from .base_components import _AComponent, WithFirstShow
 
+# Special constant defining a window as having whatever position the underlying
+# GUI implementation picks for it by default.
+DEFAULT_POSITION = (-1, -1)
+
 class _TopLevelWin(_AComponent):
     """Methods mixin for top level windows
 
@@ -49,8 +53,11 @@ class _TopLevelWin(_AComponent):
         if self._min_size: self.set_min_size(*self._min_size)
 
     def _set_pos_size(self, kwargs, sizes_dict):
-        kwargs['pos'] = kwargs.get('pos', None) or sizes_dict.get(
+        wanted_pos = kwargs.get('pos', None) or sizes_dict.get(
             self._pos_key, self._def_pos)
+        # Resolve the special DEFAULT_POSITION constant to a real value
+        kwargs['pos'] = (self._def_pos if wanted_pos == DEFAULT_POSITION
+                         else wanted_pos)
         kwargs['size'] = kwargs.get('size', None) or sizes_dict.get(
             self._size_key, self._def_size)
 
@@ -233,7 +240,10 @@ class WizardDialog(DialogWindow, WithFirstShow):
         # values. Moreover _wiz.Wizard does not accept a size argument (!)
         # so this override is needed
         ##: note wx python expects kwargs as strings - PY3: check
-        kwargs['pos'] = kwargs.get('pos', None) or sizes_dict[self._pos_key]
+        wanted_pos = kwargs.get('pos', None) or sizes_dict[self._pos_key]
+        # Resolve the special DEFAULT_POSITION constant to a real value
+        kwargs['pos'] = (self._def_pos if wanted_pos == DEFAULT_POSITION
+                         else wanted_pos)
 
     def enable_forward_btn(self, do_enable):
         self._native_widget.FindWindowById(_wx.ID_FORWARD).Enable(do_enable)

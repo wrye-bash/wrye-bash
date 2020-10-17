@@ -4733,26 +4733,27 @@ class MreSopm(MelRecord):
     """Sound Output Model."""
     rec_sig = b'SOPM'
 
-    SopmFlags = Flags(0, Flags.getNames(
-            (0, 'attenuatesWithDistance'),
-            (1, 'allowsRumble'),
-        ))
+    _sopm_flags = Flags(0, Flags.getNames(
+        u'attenuates_with_distance',
+        u'allows_rumble',
+    ))
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct('NAM1','B2sB',(SopmFlags,'flags',0),'unknown1','reverbSendpct',),
-        MelBase('FNAM','fnam_p'),
-        MelUInt32('MNAM', 'outputType'),
-        MelBase('CNAM','cnam_p'),
-        MelBase('SNAM','snam_p'),
-        MelStruct('ONAM', '=24B', 'ch0_l', 'ch0_r', 'ch0_c', 'ch0_lFE',
-                  'ch0_rL', 'ch0_rR', 'ch0_bL', 'ch0_bR', 'ch1_l', 'ch1_r',
-                  'ch1_c', 'ch1_lFE', 'ch1_rL', 'ch1_rR', 'ch1_bL', 'ch1_bR',
-                  'ch2_l', 'ch2_r', 'ch2_c', 'ch2_lFE', 'ch2_rL', 'ch2_rR',
-                  'ch2_bL', 'ch2_bR'),
+        MelStruct(b'NAM1', u'B2sB', (_sopm_flags, u'flags'),
+            (u'unknown1', null2), u'reverbSendpct'),
+        MelBase(b'FNAM', u'unused_fnam'),
+        MelUInt32(b'MNAM', u'outputType'),
+        MelBase(b'CNAM', u'unused_cnam'),
+        MelBase(b'SNAM', u'unused_snam'),
+        MelStruct(b'ONAM', '24B', u'ch0_l', u'ch0_r', u'ch0_c', u'ch0_lFE',
+            u'ch0_rL', u'ch0_rR', u'ch0_bL', u'ch0_bR', u'ch1_l', u'ch1_r',
+            u'ch1_c', u'ch1_lFE', u'ch1_rL', u'ch1_rR', u'ch1_bL', u'ch1_bR',
+            u'ch2_l', u'ch2_r', u'ch2_c', u'ch2_lFE', u'ch2_rL', u'ch2_rR',
+            u'ch2_bL', u'ch2_bR'),
         MelStruct(b'ANAM', u'4s2f5B3s', (u'unknown2', null4), u'minDistance',
-                  u'maxDistance', u'curve1', u'curve2', u'curve3', u'curve4',
-                  u'curve5', (u'unknown3', null3)),
+            u'maxDistance', u'curve1', u'curve2', u'curve3', u'curve4',
+            u'curve5', (u'unknown3', null3)),
     )
     __slots__ = melSet.getSlotsUsed()
 
