@@ -1630,11 +1630,11 @@ class ModDetails(_ModsSavesDetails):
                 # We need to grab both the ones from the description and from
                 # LOOT, since we need to save a diff
                 plugin_name = mod_info.name
-                added, removed = bosh.lootDb.get_tags_from_loot(plugin_name)
+                added_tags, deleted_tags = bosh.read_loot_tags(plugin_name)
                 # Emulate the effects of applying the LOOT tags
                 old_tags = bashTagsDesc.copy()
-                old_tags |= added
-                old_tags -= removed
+                old_tags |= added_tags
+                old_tags -= deleted_tags
                 bosh.mods_metadata.save_tags_to_dir(plugin_name, mod_tags,
                                                     old_tags)
                 _refreshUI()

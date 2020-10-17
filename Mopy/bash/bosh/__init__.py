@@ -555,18 +555,18 @@ class ModInfo(FileInfo):
 
     def reloadBashTags(self):
         """Reloads bash tags from mod description, LOOT and Data/BashTags."""
-        tags = set()
-        tags |= self.getBashTagsDesc()
+        wip_tags = set()
+        wip_tags |= self.getBashTagsDesc()
         # Tags from LOOT take precendence over the description
-        added, removed = lootDb.get_tags_from_loot(self.name)
-        tags |= added
-        tags -= removed
+        added_tags, deleted_tags = read_loot_tags(self.name)
+        wip_tags |= added_tags
+        wip_tags -= deleted_tags
         # Tags from Data/BashTags/{self.name}.txt take precedence over both
         # the description and LOOT
-        added, removed = get_tags_from_dir(self.name)
-        tags |= added
-        tags -= removed
-        self.setBashTags(tags)
+        added_tags, deleted_tags = read_dir_tags(self.name)
+        wip_tags |= added_tags
+        wip_tags -= deleted_tags
+        self.setBashTags(wip_tags)
 
     def is_auto_tagged(self, default_auto=True):
         """Returns True if this plugin receives its tags automatically from
@@ -884,6 +884,17 @@ def process_tags(tag_set, drop_unknown=True):
     if drop_unknown:
         ret_tags &= bush.game.allTags
     return ret_tags
+
+# Some wrappers to decouple other files from process_tags
+def read_dir_tags(plugin_name):
+    """Wrapper around get_tags_from_dir. See that method for docs."""
+    added_tags, deleted_tags = get_tags_from_dir(plugin_name)
+    return process_tags(added_tags), process_tags(deleted_tags)
+
+def read_loot_tags(plugin_name):
+    """Wrapper around get_tags_from_loot. See that method for docs."""
+    added_tags, deleted_tags = lootDb.get_tags_from_loot(plugin_name)
+    return process_tags(added_tags), process_tags(deleted_tags)
 
 #------------------------------------------------------------------------------
 def get_game_ini(ini_path, is_abs=True):
@@ -2338,14 +2349,14 @@ class ModInfos(FileInfos):
         if tags_desc:
             tagList = _tags(_(u'From Plugin Description: '), sorted(tags_desc),
                             tagList)
-        tags, removed = lootDb.get_tags_from_loot(mname)
-        if tags:
+        loot_added, loot_removed = read_loot_tags(mname)
+        if loot_added:
             tagList = _tags(_(u'From LOOT Masterlist and / or Userlist: '),
-                            sorted(tags), tagList)
-        if removed:
+                            sorted(loot_added), tagList)
+        if loot_removed:
             tagList = _tags(_(u'Removed by LOOT Masterlist and / or '
-                              u'Userlist: '), sorted(removed), tagList)
-        dir_added, dir_removed = get_tags_from_dir(mname)
+                              u'Userlist: '), sorted(loot_removed), tagList)
+        dir_added, dir_removed = read_dir_tags(mname)
         tags_file = u"'Data/BashTags/%s'" % (mname.body + u'.txt')
         if dir_added:
             tagList = _tags(_(u'Added by %s: ') % tags_file, sorted(dir_added),
