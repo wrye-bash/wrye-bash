@@ -554,6 +554,16 @@ class MelStruct(MelBase):
     def __init__(self, subType, struct_format, *elements):
         """:type subType: bytes
         :type struct_format: unicode"""
+        # Sometimes subrecords have to preserve non-aligned sizes, check that
+        # we don't accidentally pad those to alignment
+        if (not struct_format.startswith(u'=') and
+                struct.calcsize(struct_format) != struct.calcsize(
+                    u'=' + struct_format)):
+            raise SyntaxError(
+                u"Automatic padding inserted for struct format '%s', this is "
+                u"almost certainly not what you want. Prepend '=' to preserve "
+                u"the unaligned size or manually pad with 'x' to avoid this "
+                u"error." % struct_format)
         self.subType, self.struct_format = subType, struct_format
         self.attrs,self.defaults,self.actions,self.formAttrs = MelBase.parseElements(*elements)
         # Check for duplicate attrs - can't rely on MelSet.getSlotsUsed only,

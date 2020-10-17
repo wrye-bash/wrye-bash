@@ -23,6 +23,8 @@
 """This module contains the Morrowind record classes. Also contains records
 and subrecords used for the saves - see MorrowindSaveHeader for more
 information."""
+from collections import OrderedDict
+
 from ... import brec
 from ...bolt import Flags
 from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
@@ -31,7 +33,7 @@ from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     MelOptStruct, MelCounter, MelRefScale, MelOptSInt32, MelRef3D, \
     MelOptFloat, MelOptUInt32, MelIcons, MelFloat, null1, null3, MelSInt32, \
     MelFixedString, FixedString, AutoFixedString, MreGmstBase, MelOptUInt8, \
-    MreLeveledListBase, MelUInt16
+    MreLeveledListBase, MelUInt16, null4, SizeDecider, MelLists, null2
 if brec.MelModel is None:
 
     class _MelModel(MelGroup):
@@ -44,6 +46,35 @@ from ...brec import MelModel
 
 #------------------------------------------------------------------------------
 # Utilities -------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class MelAIData(MelStruct):
+    """Handles the AIDT subrecord shared between CREA and NPC_."""
+    _ai_flags = Flags(0, Flags.getNames(
+        u'ai_weapon',
+        u'ai_armor',
+        u'ai_clothing',
+        u'ai_books',
+        u'ai_ingredient',
+        u'ai_picks',
+        u'ai_probes',
+        u'ai_lights',
+        u'ai_apparatus',
+        u'ai_repair_items',
+        u'ai_misc',
+        u'ai_spells',
+        u'ai_magic_items',
+        u'ai_potions',
+        u'ai_training',
+        u'ai_spellmaking',
+        u'ai_enchanting',
+        u'ai_repair',
+    ))
+
+    def __init__(self):
+        super(MelAIData, self).__init__(b'AIDT', u'Bs3B3sI', u'ai_hello',
+            (u'aidt_unknown1', null1), u'ai_fight', u'ai_flee', u'ai_alarm',
+            (u'aidt_unknown2', null3), (self._ai_flags, u'ai_flags')),
+
 #------------------------------------------------------------------------------
 class MelAIAccompanyPackage(MelOptStruct):
     """Deduplicated from AI_E and AI_F (see below)."""
@@ -183,7 +214,7 @@ class MelSavesOnly(MelSequential):
     def __init__(self, *elements):
         super(MelSavesOnly, self).__init__(*(MelUnion({
             True: element,
-            False: MelNull(b'ANY')
+            False: MelNull(next(iter(element.signatures))),
         }, decider=SaveDecider()) for element in elements))
 
 #------------------------------------------------------------------------------
@@ -500,26 +531,6 @@ class MreCrea(MelRecord):
         u'skeleton_blood',
         u'metal_blood',
     ))
-    _ai_flags = Flags(0, Flags.getNames(
-        u'ai_weapon',
-        u'ai_armor',
-        u'ai_clothing',
-        u'ai_books',
-        u'ai_ingredient',
-        u'ai_picks',
-        u'ai_probes',
-        u'ai_lights',
-        u'ai_apparatus',
-        u'ai_repair_items',
-        u'ai_misc',
-        u'ai_spells',
-        u'ai_magic_items',
-        u'ai_potions',
-        u'ai_training',
-        u'ai_spellmaking',
-        u'ai_enchanting',
-        u'ai_repair',
-    ))
 
     melSet = MelSet(
         MelMWId(),
@@ -540,9 +551,7 @@ class MreCrea(MelRecord):
         MelRefScale(),
         MelItems(),
         MelMWSpells(),
-        MelStruct(b'AIDT', u'Bs3B3sI', u'ai_hello', (u'unknown1', null1),
-            u'ai_fight', u'ai_flee', u'ai_alarm', (u'unknown2', null3),
-            (_ai_flags, u'ai_flags')),
+        MelAIData(),
         MelDestinations(),
         MelAIPackages(),
     )
@@ -802,5 +811,145 @@ class MreLock(MelRecord):
             u'lock_quality', u'lock_uses'),
         MelScriptId(),
         MelMWIcon(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreLtex(MelRecord):
+    """Landscape Texture."""
+    rec_sig = b'LTEX'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelUInt32(b'INTV', u'landscape_index'),
+        MelString(b'DATA', u'landscape_texture_name'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreMgef(MelRecord):
+    """Magic Effect."""
+    rec_sig = b'MGEF'
+
+    _mgef_flags = Flags(0, Flags.getNames(
+        (9,  u'spellmaking'),
+        (10, u'enchanting'),
+        (11, u'negative'),
+    ))
+
+    ##: No MelMWId, will that be a problem?
+    ##: This will be a pain. They're hardcoded like in Oblivion, but use an int
+    # index instead of a fourcc (i.e. the EDID in Oblivion).
+    # Bad names to match other games (MGEF is scary since it's littered
+    # implicity all over our codebase still)
+    melSet = MelSet(
+        MelUInt32(b'INDX', u'mgef_index'),
+        MelStruct(b'MEDT', u'If4I3f', u'school', u'base_cost',
+            (_mgef_flags, u'flags'), u'mgef_red', u'mgef_green', u'mgef_blue',
+            u'speed_x', u'size_x', u'size_cap'),
+        MelMWIcon(),
+        MelString(b'PTEX', u'particle_texture'),
+        MelString(b'BSND', u'boltSound'),
+        MelString(b'CSND', u'castingSound'),
+        MelString(b'HSND', u'hitSound'),
+        MelString(b'ASND', u'areaSound'),
+        MelString(b'CVFX', u'casting_visual'),
+        MelString(b'BVFX', u'bolt_visual'),
+        MelString(b'HVFX', u'hit_visual'),
+        MelString(b'AVFX', u'are_visual'),
+        MelDescription(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreMisc(MelRecord):
+    """Misc. Item."""
+    rec_sig = b'MISC'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelModel(),
+        MelMWFull(),
+        MelStruct(b'MCDT', u'fI4s', u'misc_weight', u'misc_value',
+            (u'unknown1', null4)),
+        MelScriptId(),
+        MelMWIcon(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreNpc(MelRecord):
+    """Non-Player Character."""
+    rec_sig = b'NPC_'
+
+    _npc_flags = Flags(0, Flags.getNames(
+        (0, u'female'),
+        (1, u'essential'),
+        (2, u'respawn'),
+        (3, u'default_unknown'), # always set
+        (4, u'autoCalc'), # Bad name to match other games
+        (10, u'skeleton_blood'),
+        (11, u'metal_blood'),
+    ))
+
+    class MelNpcData(MelLists):
+        """Converts attributes and skills into lists."""
+        _attr_indexes = OrderedDict([
+            (u'npc_level', 0), (u'attributes', slice(1, 9)),
+            (u'skills', slice(9, 36)), (u'unknown2', 36), (u'npc_health', 38),
+            (u'npc_spell_points', 39), (u'npc_fatigue', 40),
+            (u'npc_disposition', 41), (u'npc_reputation', 42),
+            (u'npc_rank', 43), (u'unknown3', 44), (u'npc_gold', 45),
+        ])
+
+    class NpcDataDecider(SizeDecider):
+        """At load time we can decide based on the subrecord size, but at dump
+        time we need to consider the auto-calculate flag instead."""
+        can_decide_at_dump = True
+
+        def decide_dump(self, record):
+            return 12 if record.npc_flags.autoCalc else 52
+
+    melSet = MelSet(
+        MelMWId(),
+        MelModel(),
+        MelMWFull(),
+        MelString(b'RNAM', u'race_name'),
+        MelString(b'CNAM', u'class_name'),
+        MelString(b'ANAM', u'faction_name'),
+        MelString(b'BNAM', u'head_model'),
+        MelString(b'KNAM', u'hair_model'),
+        MelScriptId(),
+        MelUnion({
+            12: MelStruct(b'NPDT', u'H3B3sB', u'npc_level', u'npc_disposition',
+                u'npc_reputation', u'npc_rank', (u'unknown1', null3),
+                u'npc_gold'),
+            52: MelNpcData(b'NPDT', u'H35Bs3H3BsI', u'npc_level',
+                (u'attributes', [0] * 8), (u'skills', [0] * 27),
+                (u'unknown2', null1), u'npc_health', u'npc_spell_points',
+                u'npc_fatigue', u'npc_disposition', u'npc_reputation',
+                u'npc_rank', (u'unknown3', null1), u'npc_gold'),
+        }, decider=NpcDataDecider()),
+        MelUInt32(b'FLAG', (_npc_flags, u'npc_flags')),
+        MelItems(),
+        MelMWSpells(),
+        MelAIData(),
+        MelDestinations(),
+        MelAIPackages(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MrePgrd(MelRecord):
+    """Path Grid."""
+    rec_sig = b'PGRD'
+
+    melSet = MelSet(
+        MelStruct(b'DATA', u'2I2sH', u'pgrd_x', u'pgrd_y',
+            (u'unknown1', null2), u'point_count'),
+        MelMWId(),
+        # Could be loaded via MelArray, but are very big and not very useful
+        MelBase(b'PGRP', u'point_array'),
+        MelBase(b'PGRC', u'point_edges'),
     )
     __slots__ = melSet.getSlotsUsed()
