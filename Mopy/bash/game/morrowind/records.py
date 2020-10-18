@@ -1126,3 +1126,39 @@ class MreSscr(MelRecord):
         MelMWId(),
     )
     __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreStat(MelRecord):
+    """Static."""
+    rec_sig = b'STAT'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelModel(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreWeap(MelRecord):
+    """Weapon."""
+    rec_sig = b'WEAP'
+
+    _weapon_flags = Flags(0, Flags.getNames(
+        u'ignore_normal_weapon_resistance',
+        u'is_silver',
+    ))
+
+    melSet = MelSet(
+        MelMWId(),
+        MelModel(),
+        MelMWFull(),
+        MelStruct(b'WPDT', u'fI2H2fH6BI', u'weapon_weight', u'weapon_value',
+            u'weapon_type', u'weapon_health', u'weapon_speed', u'weapon_reach',
+            u'enchant_points', u'chop_minimum', u'chop_maximum',
+            u'slash_minimum', u'slash_maximum', u'thrust_minimum',
+            u'thrust_maximum', (_weapon_flags, u'weapon_flags')),
+        MelMWIcon(),
+        MelMWEnchantment(),
+        MelScriptId(),
+    )
+    __slots__ = melSet.getSlotsUsed()
