@@ -1052,3 +1052,77 @@ class MreScpt(MelRecord):
         MelString(b'SCTX', u'script_source'),
     )
     __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreSkil(MelRecord):
+    """Skill."""
+    rec_sig = b'SKIL'
+
+    ##: No MelMWId, will that be a problem?
+    melSet = MelSet(
+        MelUInt32(b'INDX', u'skill_index'),
+        MelStruct(b'SKDT', u'2I4f', u'skill_attribute',
+            u'skill_specialization', u'use_value_1', u'use_value_2',
+            u'use_value_3', u'use_value_4'),
+        MelDescription(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreSndg(MelRecord):
+    """Sound Generator."""
+    rec_sig = b'SNDG'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelUInt32(b'DATA', u'sdng_type'),
+        MelString(b'CNAM', u'creature_name'),
+        ##: Investigate what this is and if we should use it instead of NAME
+        MelString(b'SNAM', u'sound_id'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreSoun(MelRecord):
+    """Sound."""
+    rec_sig = b'SOUN'
+
+    melSet = MelSet(
+        MelMWId(),
+        MelString(b'FNAM', u'sound_filename'),
+        MelStruct(b'DATA', u'=3B', u'atten_volume', u'min_range',
+            u'max_range'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreSpel(MelRecord):
+    """Spell."""
+    rec_sig = b'SPEL'
+
+    _spell_flags = Flags(0, Flags.getNames(
+        u'auto_calc',
+        u'pc_start',
+        u'always_suceeds',
+    ))
+
+    melSet = MelSet(
+        MelMWId(),
+        MelMWFull(),
+        # Bad names to match other games (tweaks)
+        MelStruct(b'SPDT', u'3I', u'spellType', u'cost',
+            (_spell_flags, u'spell_flags')),
+        MelEffects(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreSscr(MelRecord):
+    """Start Script."""
+    rec_sig = b'SSCR'
+
+    melSet = MelSet(
+        MelString(b'DATA', u'unknown_digits'), # series of ASCII digits
+        MelMWId(),
+    )
+    __slots__ = melSet.getSlotsUsed()
