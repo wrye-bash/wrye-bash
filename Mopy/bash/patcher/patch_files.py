@@ -31,7 +31,7 @@ from .. import bolt # for type hints
 from ..balt import readme_url
 from .. import load_order
 from .. import bass
-from ..brec import MreRecord
+from ..brec import MreRecord, RecHeader
 from ..bolt import GPath, SubProgress, deprint, Progress
 from ..cint import ObModFile, FormID, dump_record, ObCollection, MGEFCode
 from ..exception import BoltError, CancelError, ModError, StateError
@@ -153,8 +153,8 @@ class _PFile(object):
         #--Load Mods and error mods
         if self.aliases:
             log.setHeader(u'= ' + _(u'Mod Aliases'))
-            for key, value in sorted(self.aliases.iteritems()):
-                log(u'* %s >> %s' % (key.s, value.s))
+            for alias_target, alias_repl in sorted(self.aliases.iteritems()):
+                log(u'* %s >> %s' % (alias_target.s, alias_repl.s))
 
     def init_patchers_data(self, patchers, progress):
         """Gives each patcher a chance to get its source data."""
@@ -186,6 +186,16 @@ class PatchFile(_PFile, ModFile):
     def getKeeper(self):
         """Returns a function to add fids to self.keepIds."""
         return self.keepIds.add
+
+    def new_gmst(self, gmst_eid, gmst_val):
+        """Creates a new GMST record and adds it to this patch."""
+        gmst_rec = MreRecord.type_class[b'GMST'](RecHeader(b'GMST'))
+        gmst_rec.eid = gmst_eid
+        gmst_rec.value = gmst_val
+        gmst_rec.longFids = True
+        gmst_rec.fid = (self.fileInfo.name, self.tes4.getNextObject())
+        self.keepIds.add(gmst_rec.fid)
+        getattr(self, u'GMST').setRecord(gmst_rec) # ugh...
 
     def initFactories(self,progress):
         """Gets load factories."""
@@ -257,7 +267,6 @@ class PatchFile(_PFile, ModFile):
 
     def mergeModFile(self, modFile, doFilter, iiMode):
         """Copies contents of modFile into self."""
-        modFile.convertToLongFids()
         def add_to_factories(merged_sig):
             """Makes sure that once we merge a record type, all later plugin
             loads will load that record type too so that we can update the
@@ -276,16 +285,13 @@ class PatchFile(_PFile, ModFile):
     def update_patch_records_from_mod(self, modFile):
         """Scans file and overwrites own records with modfile records."""
         #--Keep all MGEFs
-        modFile.convertToLongFids(('MGEF',))
-        if 'MGEF' in modFile.tops:
+        if b'MGEF' in modFile.tops:
             for record in modFile.MGEF.getActiveRecords():
                 self.MGEF.setRecord(record.getTypeCopy())
         #--Merger, override.
-        mergeIds = self.mergeIds
-        mapper = modFile.getLongMapper()
-        for blockType,block in self.tops.iteritems():
-            if blockType in modFile.tops:
-                block.updateRecords(modFile.tops[blockType],mapper,mergeIds)
+        for block_type in set(self.tops) & set(modFile.tops):
+            self.tops[block_type].updateRecords(modFile.tops[block_type],
+                                                self.mergeIds)
 
     def buildPatch(self,log,progress):
         """Completes merge process. Use this when finished using
@@ -305,17 +311,20 @@ class PatchFile(_PFile, ModFile):
         progress(0.95,_(u'Completing')+u'\n'+_(u'Converting fids...'))
         # Convert masters to short fids
         self.tes4.masters = self.getMastersUsed()
-        self.convertToShortFids()
         progress(1.0,_(u"Compiled."))
         # Build the description
         numRecords = sum([x.getNumRecords(False) for x in self.tops.values()])
         self.tes4.description = (
                 _(u'Updated: ') + format_date(time.time()) + u'\n\n' + _(
-                u'Records Changed') + u': %d' % numRecords)
+                u'Records Changed: %d') % numRecords)
         # Flag as ESL if the game supports them and the option is enabled
-        # Note that we can always safely mark as ESL, since the BP only ever
-        # contains overrides, no new records
-        if bush.game.has_esl and bass.settings['bash.mods.auto_flag_esl']:
+        # Note that we can always safely mark as ESL as long as the number of
+        # new records we created is smaller than 0xFFF, since the BP only ever
+        # copies overrides into itself, no new records. The only new records it
+        # can contain come from Tweak Settings, which creates them through
+        # getNextObject and so properly increments nextObject.
+        if (bush.game.has_esl and bass.settings['bash.mods.auto_flag_esl'] and
+                self.tes4.nextObject <= 0xFFF):
             self.tes4.flags1.eslFile = True
             self.tes4.description += u'\n' + _(
                 u'This patch has been automatically ESL-flagged to save a '
@@ -332,10 +341,6 @@ class CBash_PatchFile(_PFile, ObModFile):
         self.mgef_name = bush.game.mgef_name.copy()
         self.hostileEffects = bush.game.hostile_effects.copy()
         self.scanSet = set()
-        self.races_vanilla = ['argonian', 'breton', 'dremora', 'dark elf',
-                              'dark seducer', 'golden saint', 'high elf',
-                              'imperial', 'khajiit', 'nord', 'orc', 'redguard',
-                              'wood elf']
         self.races_data = {'EYES': [], 'HAIR': []}
         _PFile.__init__(self, patch_name)
 
@@ -620,4 +625,4 @@ class CBash_PatchFile(_PFile, ObModFile):
         numRecords = sum([len(x) for x in self.aggregates.values()])
         self.TES4.description = (
                 _(u"Updated: %s") % format_date(time.time()) + u'\n\n' + _(
-                u'Records Changed') + u': %d' % numRecords)
+            u'Records Changed: %d') % numRecords)

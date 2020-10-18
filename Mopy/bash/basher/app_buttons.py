@@ -37,7 +37,7 @@ from ..gui import ClickableImage, EventResult
 __all__ = [u'Obse_Button', u'LAA_Button', u'AutoQuit_Button', u'Game_Button',
            u'TESCS_Button', u'App_Tes4View', u'App_BOSS',
            u'App_DocBrowser', u'App_ModChecker', u'App_Settings', u'App_Help',
-           u'App_Restart', u'App_GenPickle', u'app_button_factory']
+           u'App_Restart', u'app_button_factory']
 
 #------------------------------------------------------------------------------
 # StatusBar Links--------------------------------------------------------------
@@ -720,64 +720,6 @@ class App_Restart(StatusBar_Button):
             onRClick)
 
     def Execute(self): Link.Frame.Restart()
-
-#------------------------------------------------------------------------------
-class App_GenPickle(StatusBar_Button):
-    """Generate PKL File. Ported out of bish.py which wasn't working."""
-    imageKey, _tip = 'pickle.%s', _(u"Generate PKL File")
-
-    def Execute(self): self._update_pkl()
-
-    @staticmethod
-    def _update_pkl(fileName=None):
-        """Update map of GMST eids to fids in bash\db\Oblivion_ids.pkl,
-        based either on a list of new eids or the gmsts in the specified mod
-        file. Updated pkl file is dropped in Mopy directory."""
-        #--Data base
-        import cPickle as pickle  # PY3
-        try:
-            fids = pickle.load(bass.dirs[u'db'].join(
-                bush.game.pklfile).open('r'))['GMST']
-            if fids:
-                maxId = max(fids.values())
-            else:
-                maxId = 0
-        except:
-            fids = {}
-            maxId = 0
-        maxId = max(maxId, 0xf12345)
-        maxOld = maxId
-        print('maxId', hex(maxId))
-        #--Eid list? - if the GMST has a 00000000 eid when looking at it in
-        # the CS with nothing but oblivion.esm loaded you need to add the
-        # gmst to this list, rebuild the pickle and overwrite the old one.
-        for eid in bush.game.gmstEids:
-            if eid not in fids:
-                maxId += 1
-                fids[eid] = maxId
-                print('%08X  %08X %s' % (0, maxId, eid))
-        #--Source file
-        if fileName:
-            sorter = lambda a: a.eid
-            loadFactory = mod_files.LoadFactory(False, bush.game_mod.records.MreGmst)
-            modInfo = bosh.modInfos[GPath(fileName)]
-            modFile = mod_files.ModFile(modInfo, loadFactory)
-            modFile.load(True)
-            for gmst in sorted(modFile.GMST.records, key=sorter):
-                print(gmst.eid, gmst.value)
-                if gmst.eid not in fids:
-                    maxId += 1
-                    fids[gmst.eid] = maxId
-                    print('%08X  %08X %s' % (gmst.fid, maxId, gmst.eid))
-        #--Changes?
-        if maxId > maxOld:
-            outData = {'GMST': fids}
-            pickle.dump(outData, bass.dirs[u'db'].join(
-                bush.game.pklfile).open('w'))
-            print(_(u"%d new gmst ids written to " + bush.game.pklfile) % (
-                (maxId - maxOld),))
-        else:
-            print(_(u'No changes necessary. PKL data unchanged.'))
 
 #------------------------------------------------------------------------------
 class App_ModChecker(StatusBar_Button):

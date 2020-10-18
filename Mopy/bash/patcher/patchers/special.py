@@ -133,7 +133,6 @@ class _PListsMerger(_AListsMerger, ListPatcher):
     def scanModFile(self, modFile, progress):
         #--Begin regular scan
         sc_name = modFile.fileInfo.name
-        modFile.convertToLongFids(self._read_write_records)
         #--PreScan for later Relevs/Delevs?
         if sc_name in self.de_masters:
             for list_type in self._read_write_records:
@@ -509,7 +508,7 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
         #--Log
         mod_count = self.mod_count
         log.setHeader(u'= ' + self._patcher_name)
-        log(u'* '+_(u'Modified LVL') + u': %d' % (sum(mod_count.values()),))
+        log(u'* ' + _(u'Modified LVL: %d') % (sum(mod_count.values()),))
         for srcMod in load_order.get_ordered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = Counter()
@@ -555,7 +554,6 @@ class ContentsChecker(_AContentsChecker,Patcher):
 
     def scanModFile(self, modFile, progress):
         """Scan modFile."""
-        modFile.convertToLongFids(self.contTypes | self.entryTypes)
         # First, map fids to record type for all records for the valid record
         # types. We need to know if a given fid belongs to one of the valid
         # types, otherwise we want to remove it.
@@ -720,7 +718,7 @@ class CBash_ContentsChecker(_AContentsChecker,CBash_Patcher):
         for mod, type_id_badEntries in mod_type_id_badEntries.iteritems():
             log(u'\n=== %s' % mod.s)
             for type,id_badEntries in type_id_badEntries.iteritems():
-                log(u'  * '+_(u'Cleaned %s: %d') % (type,len(id_badEntries)))
+                log(u'  * ' + _(u'Cleaned %s: %d') % (type,len(id_badEntries)))
                 for id, badEntries in id_badEntries.iteritems():
                     log(u'    * %s : %d' % (id,len(badEntries)))
                     for entry in sorted(badEntries, key=itemgetter(0)):

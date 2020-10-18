@@ -22,14 +22,15 @@
 #
 # =============================================================================
 """This module contains the oblivion record classes."""
+import re
 from collections import OrderedDict
 
 from ... import brec
-from ...bolt import Flags
+from ...bolt import Flags, sio
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, \
     MelFids, MreHeaderBase, MelBase, MelUnicode, MelFidList, MelStrings, \
-    MreGmstBase, MreHasEffects, MelReferences, MelRegnEntrySubrecord, \
+    MreGmstBase, MelReferences, MelRegnEntrySubrecord, \
     MelFloat, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
     MelOptFloat, MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, \
     MelRaceParts, MelRaceVoices, null1, null2, null3, null4, MelScriptVars, \
@@ -38,7 +39,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelArray, MelWthrColors, MelObject, MreActorBase, MreWithItems, \
     MelReadOnly, MelCtda, MelRef3D, MelXlod, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript, \
-    MelDescription
+    MelDescription, BipedFlags
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
 
@@ -65,18 +66,6 @@ from ...brec import MelModel, MelLists
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
-#------------------------------------------------------------------------------
-class MelBipedFlags(Flags):
-    """Biped flags element. Includes biped flag set by default."""
-    mask = 0xFFFF
-    def __init__(self,default=0,newNames=None):
-        names = Flags.getNames('head', 'hair', 'upperBody', 'lowerBody',
-                               'hand', 'foot', 'rightRing', 'leftRing',
-                               'amulet', 'weapon', 'backWeapon', 'sideWeapon',
-                               'quiver', 'shield', 'torch', 'tail')
-        if newNames: names.update(newNames)
-        super(MelBipedFlags, self).__init__(default, names)
-
 #------------------------------------------------------------------------------
 class MelConditions(MelGroups):
     """A list of conditions. Can contain the old CTDT format as well, which
@@ -394,6 +383,65 @@ class MelOwnership(MelGroup):
         if record.ownership and record.ownership.owner:
             super(MelOwnership, self).dumpData(record, out)
 
+##: Could technically be reworked for non-Oblivion games, but is broken and
+# unused outside of Oblivion right now
+class MreHasEffects(object):
+    """Mixin class for magic items."""
+    __slots__ = []
+
+    def getEffects(self):
+        """Returns a summary of effects. Useful for alchemical catalog."""
+        from ... import bush
+        effects = []
+        effectsAppend = effects.append
+        for effect in self.effects:
+            mgef, actorValue = effect.name, effect.actorValue
+            if mgef not in bush.game.generic_av_effects:
+                actorValue = 0
+            effectsAppend((mgef,actorValue))
+        return effects
+
+    def getSpellSchool(self):
+        """Returns the school based on the highest cost spell effect."""
+        from ... import bush
+        spellSchool = [0,0]
+        for effect in self.effects:
+            school = bush.game.mgef_school[effect.name]
+            effectValue = bush.game.mgef_basevalue[effect.name]
+            if effect.magnitude:
+                effectValue *= effect.magnitude
+            if effect.area:
+                effectValue *= (effect.area // 10)
+            if effect.duration:
+                effectValue *= effect.duration
+            if spellSchool[0] < effectValue:
+                spellSchool = [effectValue,school]
+        return spellSchool[1]
+
+    def getEffectsSummary(self):
+        """Return a text description of magic effects."""
+        from ... import bush
+        with sio() as buff:
+            avEffects = bush.game.generic_av_effects
+            aValues = bush.game.actor_values
+            buffWrite = buff.write
+            if self.effects:
+                school = self.getSpellSchool()
+                buffWrite(aValues[20+school] + u'\n')
+            for index,effect in enumerate(self.effects):
+                if effect.scriptEffect:
+                    effectName = effect.scriptEffect.full or u'Script Effect'
+                else:
+                    effectName = bush.game.mgef_name[effect.name]
+                    if effect.name in avEffects:
+                        effectName = re.sub(_(u'(Attribute|Skill)'),aValues[effect.actorValue],effectName)
+                buffWrite(u'o+*'[effect.recipient]+u' '+effectName)
+                if effect.magnitude: buffWrite(u' %sm'%effect.magnitude)
+                if effect.area: buffWrite(u' %sa'%effect.area)
+                if effect.duration > 1: buffWrite(u' %sd'%effect.duration)
+                buffWrite(u'\n')
+            return buff.getvalue()
+
 #------------------------------------------------------------------------------
 # Oblivion Records ------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -529,10 +577,10 @@ class MreArmo(MelRecord):
     """Armor."""
     rec_sig = b'ARMO'
 
-    _flags = MelBipedFlags(0, Flags.getNames((16, 'hideRings'),
-                                             (17, 'hideAmulet'),
-                                             (22, 'notPlayable'),
-                                             (23, 'heavyArmor')))
+    _flags = BipedFlags(0, Flags.getNames((16, u'hideRings'),
+                                          (17, u'hideAmulet'),
+                                          (22, u'notPlayable'),
+                                          (23, u'heavyArmor')))
 
     melSet = MelSet(
         MelEdid(),
@@ -540,7 +588,7 @@ class MreArmo(MelRecord):
         MelScript(),
         MelFid('ENAM','enchantment'),
         MelOptUInt16('ANAM', 'enchantPoints'),
-        MelUInt32('BMDT', (_flags, 'flags', 0)),
+        MelUInt32(b'BMDT', (_flags, u'biped_flags')),
         MelModel(u'maleBody', 0),
         MelModel(u'maleWorld', 2),
         MelIcon(u'maleIconPath'),
@@ -602,7 +650,10 @@ class MreCell(MelRecord):
         MelEdid(),
         MelFull(),
         MelUInt8(b'DATA', (cellFlags, u'flags')),
-        MelSkipInterior(MelOptStruct(b'XCLC', u'2i', u'posX', u'posY')),
+        # None defaults here are on purpose - XCLC does not necessarily exist,
+        # but 0 is a valid value for both coordinates (duh)
+        MelSkipInterior(MelOptStruct(b'XCLC', u'2i', (u'posX', None),
+            (u'posY', None))),
         MelOptStruct(b'XCLL', u'=3Bs3Bs3Bs2f2i2f', u'ambientRed',
             u'ambientGreen', u'ambientBlue', (u'unused1', null1),
             u'directionalRed', u'directionalGreen', u'directionalBlue',
@@ -680,9 +731,9 @@ class MreClot(MelRecord):
     """Clothing."""
     rec_sig = b'CLOT'
 
-    _flags = MelBipedFlags(0, Flags.getNames((16, 'hideRings'),
-                                              (17, 'hideAmulet'),
-                                              (22, 'notPlayable')))
+    _flags = BipedFlags(0, Flags.getNames((16, u'hideRings'),
+                                          (17, u'hideAmulet'),
+                                          (22, u'notPlayable')))
 
     melSet = MelSet(
         MelEdid(),
@@ -690,7 +741,7 @@ class MreClot(MelRecord):
         MelScript(),
         MelFid('ENAM','enchantment'),
         MelOptUInt16('ANAM', 'enchantPoints'),
-        MelUInt32('BMDT', (_flags, 'flags', 0)),
+        MelUInt32(b'BMDT', (_flags, u'biped_flags')),
         MelModel(u'maleBody', 0),
         MelModel(u'maleWorld', 2),
         MelIcon(u'maleIconPath'),
@@ -1151,7 +1202,7 @@ class MreLscr(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelIcon(),
-        MelDescription(u'text'),
+        MelDescription(),
         MelGroups('locations',
             MelStruct('LNAM', '2I2h', (FID, 'direct'), (FID, 'indirect'),
                       'gridy', 'gridx'),

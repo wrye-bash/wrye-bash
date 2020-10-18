@@ -195,7 +195,8 @@ class _AliasesPatcherPanel(_PatcherPanel):
     def SetAliasText(self):
         """Sets alias text according to current aliases."""
         self.gAliases.text_content = u'\n'.join([
-            u'%s >> %s' % (key.s,value.s) for key,value in sorted(self.aliases.items())])
+            u'%s >> %s' % (alias_target.s, alias_repl.s)
+            for alias_target, alias_repl in sorted(self.aliases.items())])
 
     def OnEditAliases(self):
         aliases_text = self.gAliases.text_content
@@ -450,11 +451,10 @@ class _ListPatcherPanel(_PatcherPanel):
         config = super(_ListPatcherPanel, self).saveConfig(configs)
         listSet = set(self.configItems)
         self.configChecks = config['configChecks'] = dict(
-            [(key, value) for key, value in self.configChecks.iteritems() if
-             key in listSet])
+            [(k, v) for k, v in self.configChecks.iteritems() if k in listSet])
         self.configChoices = config['configChoices'] = dict(
-            [(key, value) for key, value in self.configChoices.iteritems() if
-             key in listSet])
+            [(k, v) for k, v in self.configChoices.iteritems()
+             if k in listSet])
         config['configItems'] = self.configItems
         config['autoIsChecked'] = self.autoIsChecked
         config['remove_empty_sublists'] = self.remove_empty_sublists
@@ -604,8 +604,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             self._EnsurePatcherEnabled()
 
     def _mouse_leaving(self):
-            self.gTipText.label_text = u''
-            self.mouse_pos = None
+        self.gTipText.label_text = u''
+        self.mouse_pos = None
 
     def _handle_mouse_motion(self, wrapped_evt, lb_dex):
         """Check mouse motion to detect right click event. If any mouse button
@@ -667,45 +667,80 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
 
     def tweak_custom_choice(self, index, tweakIndex):
         """Handle choice menu selection."""
-        tweak = self._all_tweaks[tweakIndex]
+        tweak = self._all_tweaks[tweakIndex] # type: base.AMultiTweakItem
         value = []
+        new = None
         for i, v in enumerate(tweak.choiceValues[index]):
+            if tweak.show_key_for_custom:
+                ##: Mirrors chosen_eids, but all this is hacky - we should
+                # enforce that keys for settings tweaks *must* be tuples and
+                # then get rid of this
+                key_display = u'\n\n' + tweak.tweak_key[i] if isinstance(
+                    tweak.tweak_key, tuple) else tweak.tweak_key
+            else:
+                key_display = u''
             if isinstance(v,float):
-                label = self._msg + u'\n' + tweak.key[i]
+                while new is None: # keep going until user entered valid float
+                    label = (_(u'Enter the desired custom tweak value.')
+                             + u'\n\n' +
+                             _(u'Note: A floating point number is expected '
+                               u'here.') + key_display)
+                    new = balt.askText(
+                        self.gConfigPanel, label,
+                        title=tweak.tweak_name + _(u' - Custom Tweak Value'),
+                        default=unicode(tweak.choiceValues[index][i]))
+                    if new is None: #user hit cancel
+                        return
+                    try:
+                        value.append(float(new))
+                    except ValueError:
+                        balt.showError(self.gConfigPanel,
+                                       _(u"'%s' is not a valid floating point "
+                                         u"number.") % new,
+                                       title=tweak.tweak_name + _(u' - Error'))
+                        new = None # invalid float, try again
+            elif isinstance(v, int) or isinstance(v, long): # PY3: int only
+                label = (_(u'Enter the desired custom tweak value.')
+                         + key_display)
                 new = balt.askNumber(
                     self.gConfigPanel, label, prompt=_(u'Value'),
-                    title=tweak.tweak_name + _(u' ~ Custom Tweak Value'),
-                    value=tweak.choiceValues[index][i], min=-10000, max=10000)
-                if new is None: #user hit cancel
-                    return
-                value.append(float(new)/10)
-            elif isinstance(v,int):
-                label = _(u'Enter the desired custom tweak value.') + u'\n' + \
-                        tweak.key[i]
-                new = balt.askNumber(
-                    self.gConfigPanel, label, prompt=_(u'Value'),
-                    title=tweak.tweak_name + _(u' ~ Custom Tweak Value'),
+                    title=tweak.tweak_name + _(u' - Custom Tweak Value'),
                     value=tweak.choiceValues[index][i], min=-10000, max=10000)
                 if new is None: #user hit cancel
                     return
                 value.append(new)
             elif isinstance(v,basestring):
-                label = _(u'Enter the desired custom tweak text.') + u'\n' + \
-                        tweak.key[i]
+                label = (_(u'Enter the desired custom tweak text.')
+                         + key_display)
                 new = balt.askText(
                     self.gConfigPanel, label,
-                    title=tweak.tweak_name + _(u' ~ Custom Tweak Text'),
+                    title=tweak.tweak_name + _(u' - Custom Tweak Text'),
                     default=tweak.choiceValues[index][i], strip=False) ##: strip ?
                 if new is None: #user hit cancel
                     return
                 value.append(new)
-        if not value: value = tweak.choiceValues[index]
-        tweak.choiceValues[index] = tuple(value)
-        tweak.chosen = index
-        label = self._label(tweak.getListLabel(), tweak.choiceValues[index][0])
-        self.gTweakList.lb_set_label_at_index(tweakIndex, label)
-        self.gTweakList.lb_check_at_index(tweakIndex, True) # wx.EVT_CHECKLISTBOX is NOT
-        self.TweakOnListCheck() # fired so this line is needed (?)
+        if not value:
+            value = tweak.choiceValues[index]
+        value = tuple(value)
+        validation_error = tweak.validate_values(value)
+        if not validation_error: # no error, we're good to go
+            tweak.choiceValues[index] = value
+            tweak.chosen = index
+            label = self._label(tweak.getListLabel(), value[0])
+            self.gTweakList.lb_set_label_at_index(tweakIndex, label)
+            self.gTweakList.lb_check_at_index(tweakIndex, True)
+            self.TweakOnListCheck() # fired so this line is needed (?)
+        else:
+            # The tweak doesn't like the values the user chose, let them know
+            error_header = (_(u'The value you entered (%s) is not valid '
+                              u'for this tweak.') % value[0]
+                            if len(value) == 1 else
+                            _(u'The values you entered (%s) are not valid '
+                              u'for this tweak.') % u', '.join(
+                                unicode(s) for s in value))
+            balt.showError(self.gConfigPanel, error_header + u'\n\n' +
+                           _(u'Reason: %s') % validation_error,
+                           title=tweak.tweak_name + _(u' - Error'))
 
     def mass_select(self, select=True):
         """'Select All' or 'Deselect All' button was pressed, update all
@@ -737,8 +772,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
     def _log_config(self, conf, config, clip, log):
         self.getConfig(config) # set self._all_tweaks and load their config
         for tweak in self._all_tweaks:
-            if tweak.key in conf:
-                enabled, value = conf.get(tweak.key, (False, u''))
+            if tweak.tweak_key in conf:
+                enabled, value = conf.get(tweak.tweak_key, (False, u''))
                 label = tweak.getListLabel().replace(u'[[', u'[').replace(
                     u']]', u']')
                 if enabled:

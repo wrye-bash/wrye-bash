@@ -32,7 +32,7 @@ from ...bolt import Flags, struct_unpack, struct_pack
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MelSet, MelFid, MelOptStruct, MelFids, MreHeaderBase, \
     MelBase, MelUnicode, MelFidList, MreGmstBase, MelStrings, MelMODS, \
-    MreHasEffects, MelReferences, MelColorInterpolator, MelValueInterpolator, \
+    MelReferences, MelColorInterpolator, MelValueInterpolator, \
     MelUnion, AttrValDecider, MelRegnEntrySubrecord, SizeDecider, MelFloat, \
     MelSInt8, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
     MelOptFid, MelOptFloat, MelOptSInt16, MelOptSInt32, MelOptUInt8, \
@@ -44,7 +44,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelCtdaFo3, MelRef3D, MelXlod, MelNull, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
     MelDecalData, MelDescription, MelLists, MelPickupSound, MelDropSound, \
-    MelActivateParents
+    MelActivateParents, BipedFlags
 from ...exception import ModError, ModSizeError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
@@ -104,22 +104,9 @@ class MreActor(MreActorBase):
     __slots__ = []
 
 #------------------------------------------------------------------------------
-class MelBipedFlags(Flags):
-    """Biped flags element. Includes biped flag set by default."""
-    mask = 0xFFFF
-    def __init__(self,default=0,newNames=None):
-        names = Flags.getNames(
-            'head', 'hair', 'upperBody', 'leftHand', 'rightHand', 'weapon',
-            'pipboy', 'backpack', 'necklace', 'headband', 'hat', 'eyeGlasses',
-            'noseRing', 'earrings', 'mask', 'choker', 'mouthObject',
-            'bodyAddOn1', 'bodyAddOn2', 'bodyAddOn3')
-        if newNames: names.update(newNames)
-        super(MelBipedFlags, self).__init__(default, names)
-
-#------------------------------------------------------------------------------
 class MelBipedData(MelStruct):
     """Handles the common BMDT (Biped Data) subrecord."""
-    _biped_flags = MelBipedFlags()
+    _biped_flags = BipedFlags()
     _general_flags = Flags(0, Flags.getNames(
         (2, u'hasBackpack'), # The first two are FNV-only, but will just be
         (3, u'medium'),      # ignored on FO3, so no problem
@@ -130,7 +117,7 @@ class MelBipedData(MelStruct):
 
     def __init__(self):
         super(MelBipedData, self).__init__(b'BMDT', u'IB3s',
-            (self._biped_flags, u'bipedFlags'),
+            (self._biped_flags, u'biped_flags'),
             (self._general_flags, u'generalFlags'), u'biped_unused')
 
 #------------------------------------------------------------------------------
@@ -441,7 +428,7 @@ class MreAddn(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreAlch(MelRecord,MreHasEffects):
+class MreAlch(MelRecord):
     """Ingestible."""
     rec_sig = b'ALCH'
 
@@ -1203,7 +1190,7 @@ class MreEfsh(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreEnch(MelRecord,MreHasEffects):
+class MreEnch(MelRecord):
     """Object Effect."""
     rec_sig = b'ENCH'
 
@@ -1287,8 +1274,7 @@ class MreFact(MelRecord):
                            (_general_flags, u'general_flags'),
                            (_general_flags_2, u'general_flags_2'),
                            (u'unused1', null2), old_versions={u'2B', u'B'}),
-        # None here is on purpose! See AssortedTweak_FactioncrimeGoldMultiplier
-        MelOptFloat(b'CNAM', (u'crime_gold_multiplier', None)),
+        MelOptFloat(b'CNAM', u'cnam_unused'), # leftover from Oblivion
         MelGroups(u'ranks',
             MelSInt32(b'RNAM', u'rank_level'),
             MelString(b'MNAM', u'male_title'),
@@ -1602,7 +1588,7 @@ class MreInfo(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreIngr(MelRecord,MreHasEffects):
+class MreIngr(MelRecord):
     """Ingredient."""
     rec_sig = b'INGR'
 
@@ -1724,7 +1710,7 @@ class MreLscr(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelIcon(),
-        MelDescription(u'text'),
+        MelDescription(),
         MelGroups('locations',
             MelStruct('LNAM', 'I8s', (FID, 'cell'),
                       ('unused1', null4 + null4)),
@@ -2888,7 +2874,7 @@ class MreSoun(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreSpel(MelRecord,MreHasEffects):
+class MreSpel(MelRecord):
     """Actor Effect"""
     rec_sig = b'SPEL'
 

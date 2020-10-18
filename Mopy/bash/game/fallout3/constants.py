@@ -306,25 +306,6 @@ condition_function_data = {
 }
 getvatsvalue_index = 408
 
-#--List of GMST's in the main plugin (Fallout3.esm) that have 0x00000000
-#  as the form id.  Any GMST as such needs its Editor Id listed here.
-gmstEids = [
-    'fPlayerDeathReloadTime', 'iMapMarkerVisibleDistance',
-    'fVanityModeWheelMax', 'fChase3rdPersonZUnitsPerSecond',
-    'fAutoAimMaxDegreesMiss', 'iHoursToRespawnCell', 'fEssentialDeathTime',
-    'fJumpHeightMin', 'fPlayerPipBoyLightTimer', 'iAINumberActorsComplexScene',
-    'iHackingMaxWords', 'fGunShellLifetime', 'fGunShellCameraDistance',
-    'fGunDecalCameraDistance', 'iDebrisMaxCount', 'iHackingDumpRate',
-    'iHackingInputRate', 'iHackingOutputRate', 'iHackingFlashOffDuration',
-    'iHackingFlashOnDuration', 'iComputersDisplayRateMenus',
-    'iComputersDisplayRateNotes', 'iInventoryAskQuantityAt',
-    'iNumberActorsInCombatPlayer', 'iNumberActorsAllowedToFollowPlayer',
-    'iRemoveExcessDeadCount', 'iRemoveExcessDeadTotalActorCount',
-    'iRemoveExcessDeadComplexTotalActorCount', 'iRemoveExcessDeadComplexCount',
-    'fRemoveExcessDeadTime', 'fRemoveExcessComplexDeadTime',
-    'iLevItemLevelDifferenceMax', 'fMoveWeightMax',
-]
-
 GlobalsTweaks = [
     (_(u'World: Timescale'),_(u'Timescale will be set to:'),
         u'timescale',
@@ -348,8 +329,8 @@ GmstTweaks = [
         (u'x 2',       600.0*2.0, 800.0*2),
         (u'x 3',       600.0*3.0, 800.0*3),
         (u'x 5',       600.0*5.0, 800.0*5),
-        (u'x 10',      600.0*10,  5000),
-        (_(u'Custom'), 600,       800),
+        (u'x 10',      600.0*10,  5000.0), ##: why does the pattern break here?
+        (_(u'Custom'), 600.0,     800.0),
         ),
     (_(u'Compass: Recognition Distance'),
      _(u'Distance at which markers (dungeons, towns etc.) begin to show on '
@@ -472,7 +453,7 @@ GmstTweaks = [
         (u'x 3',       int(15*3)  , int(20*3)  , int(20*3)  , int(3*5), 10.0*9.0, 2.5*9.0),
         (u'x 3.5',     int(15*3.5), int(20*3.5), int(20*3.5), int(3*6), 10.0*11.0, 2.5*11.0),
         (u'x 4',       int(15*4)  , int(20*4)  , int(20*4)  , int(3*7), 10.0*13.0, 2.5*13.0),
-        (_(u'Custom'), 15, 20, 20, 3, 10, 2.5),
+        (_(u'Custom'), 15, 20, 20, 3, 10.0, 2.5),
         ),
     (_(u'Player: Inventory Quantity Prompt'),
      _(u'Number of items in a stack at which point the game prompts for a '
@@ -609,13 +590,13 @@ GmstTweaks = [
     (_(u'Visuals: Shell Litter Time'),
      _(u'Time before shell cases fade away from cells.'),
         (u'fGunShellLifetime',),
-        (_(u'[10 Seconds]'),        10),
-        (_(u'20 Seconds'),          20),
-        (_(u'30 Seconds'),          30),
-        (_(u'1 Minute'),            60),
-        (_(u'3 Minutes'),           60*3),
-        (_(u'5 Minutes'),           60*5),
-        (_(u'Custom (in seconds)'), 10),
+        (_(u'[10 Seconds]'),        10.0),
+        (_(u'20 Seconds'),          20.0),
+        (_(u'30 Seconds'),          30.0),
+        (_(u'1 Minute'),            60.0),
+        (_(u'3 Minutes'),           60.0*3.0),
+        (_(u'5 Minutes'),           60.0*5.0),
+        (_(u'Custom (in seconds)'), 10.0),
         ),
     (_(u'Visuals: Shell Litter Count'),
      _(u'Maximum number of debris (shell case, etc) allowed in cell.'),
@@ -752,10 +733,6 @@ statsHeaders = (
 #------------------------------------------------------------------------------
 # SoundPatcher
 #------------------------------------------------------------------------------
-# Needs longs in SoundPatcher
-soundsLongsTypes = {'ACTI', 'ADDN', 'ALCH', 'ASPC', 'COBJ', 'CONT', 'CREA',
-                    'DOOR', 'EXPL', 'IPCT', 'LIGH', 'MGEF', 'PROJ', 'SOUN',
-                    'TACT', 'WATR', 'WEAP', 'WTHR'}
 soundsTypes = {
     "ACTI": ('soundLooping','soundActivation',),
     "ADDN": ('ambientSound',),
@@ -936,12 +913,11 @@ inventoryTypes = ('CREA','NPC_','CONT',)
 #------------------------------------------------------------------------------
 # Text Patcher
 #------------------------------------------------------------------------------
-text_long_types = {'NOTE',}
 text_types = {
     b'AVIF': (u'description',),
     b'BOOK': (u'text',),
     b'CLAS': (u'description',),
-    b'LSCR': (u'text',),
+    b'LSCR': (u'description',),
     b'MESG': (u'description',),
     b'MGEF': (u'text',),
     b'NOTE': (u'textTopic',),
@@ -1088,6 +1064,28 @@ actor_tweaks = {
 body_tags = u'HAGPBFE'
 
 #------------------------------------------------------------------------------
+# Assorted Tweaker
+#------------------------------------------------------------------------------
+##: Mostly mirrored from valda's version - some of these seem to make no sense
+# (e.g. I can't find anything regarding FO3/FNV suffering from the fog bug).
+assorted_tweaks = {
+    u'AssortedTweak_ArmorPlayable',
+    u'AssortedTweak_FogFix',
+    u'AssortedTweak_NoLightFlicker',
+    u'AssortedTweak_WindSpeed',
+    u'AssortedTweak_SetSoundAttenuationLevels',
+    u'AssortedTweak_LightFadeValueFix',
+    u'AssortedTweak_TextlessLSCRs',
+    u'AssortedTweak_PotionWeightMinimum',
+    u'AssortedTweak_UniformGroundcover',
+    u'AssortedTweak_GunsUseISAnimation',
+}
+##: Taken from valda's version, investigate
+nonplayable_biped_flags = {u'pipboy'}
+not_playable_flag = (u'generalFlags', u'notPlayable')
+static_attenuation_rec_type = b'SOUN'
+
+#------------------------------------------------------------------------------
 # Relations Patcher
 #------------------------------------------------------------------------------
 relations_attrs = (u'faction', u'mod', u'group_combat_reaction')
@@ -1111,14 +1109,14 @@ mgef_stats_attrs = (u'flags', u'base_cost', u'associated_item', u'school',
 
 # Record type to name dictionary
 record_type_name = {
-    'ALCH':_(u'Potions'),
-    'AMMO':_(u'Ammo'),
-    'ARMA':_(u'Armature'),
-    'ARMO':_(u'Armors'),
-    'BOOK':_(u'Books'),
-    'INGR':_(u'Ingredients'),
-    'KEYM':_(u'Keys'),
-    'LIGH':_(u'Lights'),
-    'MISC':_(u'Misc'),
-    'WEAP':_(u'Weapons'),
+    b'ALCH': _(u'Ingestibles'),
+    b'AMMO': _(u'Ammo'),
+    b'ARMA': _(u'Armature'),
+    b'ARMO': _(u'Armors'),
+    b'BOOK': _(u'Books'),
+    b'INGR': _(u'Ingredients'),
+    b'KEYM': _(u'Keys'),
+    b'LIGH': _(u'Lights'),
+    b'MISC': _(u'Misc'),
+    b'WEAP': _(u'Weapons'),
 }

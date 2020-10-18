@@ -48,6 +48,7 @@ import traceback
 from binascii import crc32
 from functools import partial
 from itertools import chain
+from keyword import iskeyword
 # Internal
 from . import exception
 
@@ -2093,6 +2094,232 @@ class StringTable(dict):
         except:
             deprint(u'Error loading string file:', path.stail, traceback=True)
             return
+
+#------------------------------------------------------------------------------
+_esub_component = re.compile(u'' r'\$(\d+)\(([^)]+)\)')
+_rsub_component = re.compile(u'' r'\\(\d+)')
+_plain_component = re.compile(u'' r'[^\\\$]+', re.U)
+
+def build_esub(esub_str):
+    """Builds an esub (enhanced substitution) callable and returns it. These
+    expand normal re.sub syntax to allow the case of a match to be preserved,
+    even while the letters change.
+
+    The syntax looks like this:
+        my_sub = build_sub('$1(s)tamina')
+        print(re.sub(r'\b(f|F)atigue\b', my_sub, u'Fatigue'))
+        # prints 'Stamina'
+
+    The $1(s) part is what's important. The $2 identifies which regex group to
+    target. The part in parentheses will be what the case of the group gets
+    applied to."""
+    # Callables we'll chain together at the end
+    final_components = []
+    i = 0
+    while i < len(esub_str):
+        esub_match = _esub_component.match(esub_str, i)
+        if esub_match:
+            # esub substitution - return the target string, with the case of
+            # the wanted group's contents
+            esub_group = int(esub_match.group(1))
+            target_str = esub_match.group(2)
+            def esub_impl(ma_obj, g=esub_group, s=target_str):
+                wip_str = []
+                wip_append = wip_str.append
+                for t, o in zip(s, ma_obj.group(g)):
+                    # Carry forward the target string, but keep the case
+                    wip_append(t.upper() if o.isupper() else t.lower())
+                # Add in the rest of the target string unchanged
+                return u''.join(wip_str + list(s[len(wip_str):]))
+            final_components.append(esub_impl)
+            i = esub_match.end(0)
+            continue # skip the other match attempts
+        rsub_match = _rsub_component.match(esub_str, i)
+        if rsub_match:
+            # Regular substitution - return the wanted group's contents
+            rsub_group = int(rsub_match.group(1))
+            def rsub_impl(ma_obj, g=rsub_group):
+                return ma_obj.group(g)
+            final_components.append(rsub_impl)
+            i = rsub_match.end(0)
+            continue # skip the plain match attempt
+        plain_match = _plain_component.match(esub_str, i)
+        if plain_match:
+            # Plain component, just return it unaltered (and make sure to
+            # capture the value of group(0) so that plain_match can get GC'd)
+            plain_contents = plain_match.group(0)
+            final_components.append(lambda _ma_obj, p=plain_contents: p)
+            i = plain_match.end(0)
+            continue # skip the error check
+        raise SyntaxError(u'Could not parse esub string %r' % esub_str)
+    def final_impl(ma_obj):
+        return u''.join(c(ma_obj) for c in final_components)
+    return final_impl
+
+#------------------------------------------------------------------------------
+# no re.U, we want our record attrs to be ASCII
+_valid_rpath_attr = re.compile(u'' r'^[^\d\W]\w*\Z')
+
+class _ARP_Subpath(object):
+    """Abstract base class for all subpaths of a larger record path."""
+    __slots__ = (u'_subpath_attr', u'_next_subpath',)
+
+    def __init__(self, sub_rpath, rest_rpath):
+        # type: (unicode, unicode) -> None
+        if not _valid_rpath_attr.match(sub_rpath):
+            raise SyntaxError(u"'%s' is not a valid subpath. Your record path "
+                              u'likely contains a typo.' % sub_rpath)
+        elif iskeyword(sub_rpath):
+            raise SyntaxError(u'Record path subpaths may not be Python '
+                              u"keywords (was '%s')." % sub_rpath)
+        self._subpath_attr = sub_rpath
+        self._next_subpath = _parse_rpath(rest_rpath)
+
+    # See RecPath for documentation of these methods
+    def rp_eval(self, record):
+        """:rtype: list"""
+        raise exception.AbstractError(u'rp_eval not implemented')
+
+    def rp_exists(self, record):
+        """:rtype: bool"""
+        raise exception.AbstractError(u'rp_exists not implemented')
+
+    def rp_map(self, record, func):
+        raise exception.AbstractError(u'rp_map not implemented')
+
+class _RP_Subpath(_ARP_Subpath):
+    """A simple, intermediate subpath. Simply forwards all calls to the next
+    part of the record path."""
+    def rp_eval(self, record):
+        return self._next_subpath.rp_eval(getattr(record, self._subpath_attr))
+
+    def rp_exists(self, record):
+        try:
+            return self._next_subpath.rp_exists(getattr(
+                record, self._subpath_attr))
+        except AttributeError:
+            return False
+
+    def rp_map(self, record, func):
+        self._next_subpath.rp_map(getattr(record, self._subpath_attr), func)
+
+    def __repr__(self):
+        return u'%s.%r' % (self._subpath_attr, self._next_subpath)
+
+class _RP_LeafSubpath(_ARP_Subpath):
+    """The final part of a record path. This the part that actually gets and
+    sets values."""
+    def rp_eval(self, record):
+        return [getattr(record, self._subpath_attr)]
+
+    def rp_exists(self, record):
+        return hasattr(record, self._subpath_attr)
+
+    def rp_map(self, record, func):
+        s_attr = self._subpath_attr
+        setattr(record, s_attr, func(getattr(record, s_attr)))
+
+    def __repr__(self):
+        return self._subpath_attr
+
+class _RP_IteratedSubpath(_ARP_Subpath):
+    """An iterated part of a record path. A record path can't resolve to more
+    than one value unless it involves at least one of these."""
+    def __init__(self, sub_rpath, rest_rpath):
+        if not rest_rpath: raise SyntaxError(u'A RecPath may not end with an '
+                                             u'iterated subpath.')
+        super(_RP_IteratedSubpath, self).__init__(sub_rpath, rest_rpath)
+
+    def rp_eval(self, record):
+        eval_next = self._next_subpath.rp_eval
+        return chain.from_iterable(eval_next(iter_attr) for iter_attr
+                                   in getattr(record, self._subpath_attr))
+
+    def rp_exists(self, record):
+        num_iterated = 0
+        next_exists = self._next_subpath.rp_exists
+        for iter_attr in getattr(record, self._subpath_attr):
+            if not next_exists(iter_attr):
+                return False # short-circuit
+            num_iterated += 1
+        return num_iterated > 0 # faster than bool()
+
+    def rp_map(self, record, func):
+        map_next = self._next_subpath.rp_map
+        for iter_attr in getattr(record, self._subpath_attr):
+            map_next(iter_attr, func)
+
+    def __repr__(self):
+        return u'%s[i].%r' % (self._subpath_attr, self._next_subpath)
+
+class _RP_OptionalSubpath(_RP_Subpath):
+    """An optional part of a record path. If it doesn't exist, mapping and
+    evaluating will simply not continue past this part."""
+    def __init__(self, sub_rpath, rest_rpath):
+        if not rest_rpath: raise SyntaxError(u'A RecPath may not end with an '
+                                             u'optional subpath.')
+        super(_RP_OptionalSubpath, self).__init__(sub_rpath, rest_rpath)
+
+    def rp_eval(self, record):
+        try:
+            return super(_RP_OptionalSubpath, self).rp_eval(record)
+        except AttributeError:
+            return [] # Attribute did not exist, rest of the path evals to []
+
+    def rp_map(self, record, func):
+        try:
+            super(_RP_OptionalSubpath, self).rp_map(record, func)
+        except AttributeError:
+            pass # Attribute did not exist, can't map any further
+
+    def __repr__(self):
+        return u'%s?.%r' % (self._subpath_attr, self._next_subpath)
+
+class RecPath(object):
+    """Record paths (or 'rpaths' for short) provide a way to get and set
+    attributes from a record, even if the way to those attributes is very
+    complex (e.g. contains repeated or optional attributes). Does quite a bit
+    of validation and preprocessing, making it much faster and safer than a
+    'naive' solution. See the wiki page '[dev] Record Paths' for a full
+    overview of syntax and usage."""
+    __slots__ = (u'_root_subpath',)
+
+    def __init__(self, rpath_str): # type: (unicode) -> None
+        self._root_subpath = _parse_rpath(rpath_str)
+
+    def rp_eval(self, record):
+        """Evaluates this record path for the specified record, returning a
+        list of all attribute values that it resolved to."""
+        return self._root_subpath.rp_eval(record)
+
+    def rp_exists(self, record):
+        """Returns True if this record path will resolve to a non-empty list
+        for the specified record."""
+        return self._root_subpath.rp_exists(record)
+
+    def rp_map(self, record, func):
+        """Maps the specified function over all the values that this record
+        path points to and assigns the altered values to the corresponding
+        attributes on the specified record."""
+        self._root_subpath.rp_map(record, func)
+
+    def __repr__(self):
+        return repr(self._root_subpath)
+
+def _parse_rpath(rpath_str): # type: (unicode) -> _ARP_Subpath
+    """Parses the given unicode string as an RPath subpath."""
+    if not rpath_str: return None
+    sub_rpath, rest_rpath = (rpath_str.split(u'.', 1) if u'.' in rpath_str
+                             else (rpath_str, None))
+    # Iterated subpath
+    if sub_rpath.endswith(u'[i]'):
+        return _RP_IteratedSubpath(sub_rpath[:-3], rest_rpath)
+    # Optional subpath
+    elif sub_rpath.endswith(u'?'):
+        return _RP_OptionalSubpath(sub_rpath[:-1], rest_rpath)
+    else:
+        return (_RP_Subpath if rest_rpath else
+                _RP_LeafSubpath)(sub_rpath, rest_rpath)
 
 #------------------------------------------------------------------------------
 _digit_re = re.compile(u'([0-9]+)')

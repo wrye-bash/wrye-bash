@@ -26,179 +26,163 @@ to the Gmst Multitweaker - as well as the GmstTweaker itself. Gmst stands
 for game settings."""
 from __future__ import print_function
 from ... import bush # for game
-from ...bolt import SubProgress, deprint
-from ...brec import MreRecord, RecHeader
+from ...bolt import SubProgress, floats_equal
 from ...exception import StateError
-from ...patcher.base import AMultiTweaker, DynamicNamedTweak
+from ...patcher.base import AMultiTweaker, DynamicTweak
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
-class GlobalsTweak(DynamicNamedTweak, MultiTweakItem):
-    """set a global to specified value"""
-    tweak_read_classes = 'GLOB',
+class _AGlobalsTweak(DynamicTweak):
+    """Sets a global to specified value."""
+    tweak_read_classes = b'GLOB',
+    show_key_for_custom = True
 
-    def buildPatch(self,patchFile,keep,log):
-        """Build patch."""
-        value = self.choiceValues[self.chosen][0]
-        for record in patchFile.GLOB.records:
-            if hasattr(record,'eid'):
-                if record.eid.lower() == self.key:
-                    if record.value != value:
-                        record.value = value
-                        keep(record.fid)
-                    break
-        log(u'* ' + _(u'%(label)s set to') % {
-            'label': (u'%s ' % self.tweak_name)} + (u': %4.2f' % value))
+    @property
+    def chosen_value(self):
+        # Globals are always stored as floats, regardless of what the CS says
+        return float(self.choiceValues[self.chosen][0])
 
-class CBash_GlobalsTweak(DynamicNamedTweak, CBash_MultiTweakItem):
-    """Sets a global to specified value"""
+    def wants_record(self, record):
+        return (getattr(record, u'eid', None) and # skip missing and empty EDID
+                record.eid.lower() == self.tweak_key and
+                record.value != self.chosen_value)
+
+    def tweak_record(self, record):
+        record.value = self.chosen_value
+
+    def tweak_log(self, log, count):
+        if count: log(u'* ' + _(u'%s set to: %4.2f') % (
+            self.tweak_name, self.chosen_value))
+
+class GlobalsTweak(_AGlobalsTweak, MultiTweakItem): pass
+class CBash_GlobalsTweak(_AGlobalsTweak, CBash_MultiTweakItem):
     scanOrder = 29
     editOrder = 29
-    tweak_read_classes = 'GLOB',
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.eid == self.key: #eid is case insensitive on comparisons by
-            #  default
-            value = self.value = self.choiceValues[self.chosen][0]
-            if record.value != value:
-                self.count = 1
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.value = float(value) #Globals are always stored as
-                    # floats, regardless of what the CS says
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        if self.count: log(u'* ' + _(u'%(label)s set to') % {
-            'label': (u'%s ' % self.tweak_name)} + (u': %4.2f' % self.value))
 
 #------------------------------------------------------------------------------
-class GmstTweak(DynamicNamedTweak, MultiTweakItem):
-    tweak_read_classes = 'GMST',
+class _AGmstTweak(DynamicTweak):
+    """Sets a GMST to specified value."""
+    tweak_read_classes = b'GMST',
+    show_key_for_custom = True
 
-    def buildPatch(self,patchFile,keep,log):
-        """Build patch."""
-        eids = ((self.key,),self.key)[isinstance(self.key,tuple)]
-        isOblivion = bush.game.fsName.lower() == u'oblivion'
-        for eid,value in zip(eids,self.choiceValues[self.chosen]):
-            if isOblivion and value < 0:
-                deprint(u"GMST values can't be negative - currently %s - "
-                        u'skipping setting GMST.' % value)
-                return
-            eidLower = eid.lower()
-            for record in patchFile.GMST.records:
-                if record.eid.lower() == eidLower:
-                    if record.value != value:
-                        record.value = value
-                        keep(record.fid)
-                    break
-            else:
-                gmst = MreRecord.type_class['GMST'](RecHeader('GMST'))
-                gmst.eid,gmst.value,gmst.longFids = eid,value,True
-                gmst_fid = gmst.getGMSTFid()
-                gmst.fid = gmst_fid
-                keep(gmst_fid)
-                patchFile.GMST.setRecord(gmst)
+    @property
+    def chosen_eids(self):
+        return ((self.tweak_key,), self.tweak_key)[isinstance(self.tweak_key,
+                                                              tuple)]
+
+    @property
+    def chosen_values(self): return self.choiceValues[self.chosen]
+
+    @property
+    def eid_was_itpo(self):
+        try:
+            return self._eid_was_itpo
+        except AttributeError:
+            self._eid_was_itpo = {e.lower(): False for e in self.chosen_eids}
+            return self._eid_was_itpo
+
+    def _find_chosen_value(self, wanted_eid):
+        """Returns the value the user chose for the game setting with the
+        specified editor ID. Note that wanted_eid must be lower-case!"""
+        for test_eid, test_val in zip(self.chosen_eids, self.chosen_values):
+            if wanted_eid == test_eid.lower():
+                return test_val
+        return None
+
+    def _find_original_eid(self, lower_eid):
+        """We need to find the original case of the EDID, otherwise getFMSTFid
+        blows - plus the dumped record will look nicer :)."""
+        for orig_eid in self.chosen_eids:
+            if lower_eid == orig_eid.lower():
+                return orig_eid
+        return lower_eid # fallback, should never happen
+
+    def validate_values(self, chosen_values):
+        if bush.game.fsName == u'Oblivion': ##: add a comment why TES4 only!
+            for target_value in chosen_values:
+                if target_value < 0:
+                    return _(u"Oblivion GMST values can't be negative")
+        for target_eid, target_value in zip(self.chosen_eids, chosen_values):
+            if target_eid.startswith(u'f') and type(target_value) != float:
+                    return _(u"The value chosen for GMST '%s' must be a "
+                             u'float, but is currently of type %s (%s).') % (
+                        target_eid, type(target_value).__name__, target_value)
+        return None
+
+    def wants_record(self, record):
+        if record.fid[0] not in bush.game.bethDataFiles:
+            return False # Avoid adding new masters just for a game setting
+        rec_eid = record.eid.lower()
+        if rec_eid not in self.eid_was_itpo: return False # not needed
+        target_val = self._find_chosen_value(rec_eid)
+        if rec_eid.startswith(u'f'):
+            ret_val = not floats_equal(record.value, target_val)
+        else:
+            ret_val = record.value != target_val
+        # Remember whether the last entry was ITPO or not
+        self.eid_was_itpo[rec_eid] = not ret_val
+        return ret_val
+
+    def tweak_record(self, record):
+        rec_eid = record.eid.lower()
+        # We don't need to create a GMST for this EDID anymore
+        self.eid_was_itpo[rec_eid] = True
+        record.value = self._find_chosen_value(rec_eid)
+
+    def tweak_log(self, log, count): # count is ignored here
         if len(self.choiceLabels) > 1:
             if self.choiceLabels[self.chosen].startswith(_(u'Custom')):
-                if isinstance(self.choiceValues[self.chosen][0],basestring):
+                if isinstance(self.chosen_values[0], basestring):
                     log(u'* %s: %s %s' % (
                         self.tweak_name, self.choiceLabels[self.chosen],
-                        self.choiceValues[self.chosen][0]))
+                        self.chosen_values[0]))
                 else:
                     log(u'* %s: %s %4.2f' % (
                         self.tweak_name, self.choiceLabels[self.chosen],
-                        self.choiceValues[self.chosen][0]))
+                        self.chosen_values[0]))
             else:
                 log(u'* %s: %s' % (
                     self.tweak_name, self.choiceLabels[self.chosen]))
         else:
             log(u'* ' + self.tweak_name)
 
-class CBash_GmstTweak(DynamicNamedTweak, CBash_MultiTweakItem):
-    """Sets a gmst to specified value"""
+class GmstTweak(_AGmstTweak, MultiTweakItem):
+    def finish_tweaking(self, patch_file):
+        # Create new records for any remaining EDIDs
+        for remaining_eid, was_itpo in self.eid_was_itpo.iteritems():
+            if not was_itpo:
+                patch_file.new_gmst(self._find_original_eid(remaining_eid),
+                    self._find_chosen_value(remaining_eid))
+
+class CBash_GmstTweak(_AGmstTweak, CBash_MultiTweakItem):
+    """Sets a GMST to specified value."""
     scanOrder = 29
     editOrder = 29
-    tweak_read_classes = 'GMST',
 
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        values = self.values = self.choiceValues[self.chosen]
-        recEid = record.eid
-        for eid,value in zip(self.key,values):
-            if eid == recEid:
-                newValue = value
-                break
-        else:
-            return
-        if recEid.startswith(u"f") and type(newValue) != float:
-            deprint(u'converting custom value to float for GMST %s: %s' % (
-                recEid, newValue))
-            newValue = float(newValue)
-        if record.value != newValue:
-            self.eid_count[eid] = 1
-            if newValue < 0:
-                deprint(u"GMST values can't be negative - currently %s - "
-                        u'skipping setting GMST.' % newValue)
-                return
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.value = newValue
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-    def finishPatch(self,patchFile,progress):
-        """Edits the bashed patch file directly."""
+    def finishPatch(self, patchFile, progress):
         subProgress = SubProgress(progress)
-        values = self.values = self.choiceValues[self.chosen]
-        subProgress.setFull(max(len(values),1))
+        subProgress.setFull(max(len(self.chosen_values), 1))
         pstate = 0
-        for eid,value in zip(self.key,values):
-            subProgress(pstate, _(u"Finishing GMST Tweaks..."))
-            if not self.eid_count.get(eid,0):
-                self.eid_count[eid] = 1
-                record = patchFile.create_GMST(eid)
+        for remaining_eid, was_itpo in self.eid_was_itpo.iteritems():
+            subProgress(pstate, _(u'Finishing GMST Tweaks...'))
+            if not was_itpo:
+                orig_eid = self._find_original_eid(remaining_eid)
+                record = patchFile.create_GMST(orig_eid)
                 if not record:
-                    print(eid)
+                    print(orig_eid)
                     print(patchFile.Current.Debug_DumpModFiles())
-                    for conflict in patchFile.Current.LookupRecords(eid,False):
+                    for conflict in patchFile.Current.LookupRecords(orig_eid,
+                                                                    False):
                         print(conflict.GetParentMod().ModName)
-                    raise StateError(u"Tweak Settings: Unable to create GMST!")
-                if eid.startswith("f") and type(value) != float:
-                    deprint(u'Converting custom value to float for GMST %s: '
-                            u'%s' % (eid, value))
-                    value = float(value)
-                record.value = value
+                    raise StateError(u'Tweak Settings: Unable to create GMST!')
+                record.value = self._find_chosen_value(remaining_eid)
             pstate += 1
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        if len(self.choiceLabels) > 1:
-            if self.choiceLabels[self.chosen].startswith(_(u'Custom')):
-                if isinstance(self.values[0],basestring):
-                    log(u'  * %s: %s %s' % (
-                        self.tweak_name, self.choiceLabels[self.chosen],
-                        self.values[0]))
-                else:
-                    log(u'  * %s: %s %4.2f' % (
-                        self.tweak_name, self.choiceLabels[self.chosen],
-                        self.values[0]))
-            else:
-                log(u'  * %s: %s' % (
-                    self.tweak_name, self.choiceLabels[self.chosen]))
-        else:
-            log(u'  * ' + self.tweak_name)
 
 #------------------------------------------------------------------------------
 class _AGmstTweaker(AMultiTweaker):
-    """Tweaks miscellaneous gmsts in miscellaneous ways."""
+    """Tweaks GMST records in various ways."""
+    _class_tweaks = [] # override in implemententations
 
     @classmethod
     def tweak_instances(cls):
@@ -206,51 +190,24 @@ class _AGmstTweaker(AMultiTweaker):
         for clazz, game_tweaks in cls._class_tweaks:
             for tweak in game_tweaks:
                 if isinstance(tweak, tuple):
-                    instances.append(clazz(*tweak))
+                    new_tweak = clazz(*tweak)
                 elif isinstance(tweak, list):
-                    args = tweak[0]
-                    kwdargs = tweak[1]
-                    instances.append(clazz(*args, **kwdargs))
+                    new_tweak = clazz(*tweak[0])
+                    new_tweak.default_enabled = tweak[1].get(
+                        u'default_enabled', False)
+                else:
+                    raise SyntaxError(u'Invalid GMST tweak syntax: tuple or '
+                                      u'list expected, got %r' % type(tweak))
+                instances.append(new_tweak)
         instances.sort(key=lambda a: a.tweak_name.lower())
         return instances
 
 class GmstTweaker(MultiTweaker, _AGmstTweaker):
-    """Tweaks miscellaneous gmsts in miscellaneous ways."""
     scanOrder = 29
     editOrder = 29
     _class_tweaks = [(GlobalsTweak, bush.game.GlobalsTweaks),
                     (GmstTweak, bush.game.GmstTweaks)]
-    _read_write_records = ('GMST', 'GLOB')
-
-    def scanModFile(self,modFile,progress):
-        mapper = modFile.getLongMapper()
-        for blockType in self._read_write_records:
-            if blockType not in modFile.tops: continue
-            modBlock = getattr(modFile,blockType)
-            patchBlock = getattr(self.patchFile,blockType)
-            id_records = patchBlock.id_records
-            for record in modBlock.getActiveRecords():
-                if mapper(record.fid) not in id_records:
-                    record = record.getTypeCopy(mapper)
-                    patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress):
-        """Edits patch file as desired. Will write to log."""
-        if not self.isActive: return
-        keep = self.patchFile.getKeeper()
-        log.setHeader(u'= '+self._patcher_name)
-        for tweak in self.enabled_tweaks:
-            tweak.buildPatch(self.patchFile,keep,log)
 
 class CBash_GmstTweaker(CBash_MultiTweaker, _AGmstTweaker):
-    """Tweaks miscellaneous gmsts in miscellaneous ways."""
     _class_tweaks = [(CBash_GlobalsTweak, bush.game.GlobalsTweaks),
                      (CBash_GmstTweak, bush.game.GmstTweaks)]
-
-    def __init__(self, p_name, p_file, enabled_tweaks):
-        super(CBash_GmstTweaker, self).__init__(p_name, p_file, enabled_tweaks)
-        for tweak in self.enabled_tweaks:
-            if isinstance(tweak,CBash_GlobalsTweak):
-                tweak.count = 0
-            else:
-                tweak.eid_count = {}

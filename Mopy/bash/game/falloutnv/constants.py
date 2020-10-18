@@ -178,10 +178,6 @@ del condition_function_data[1165] # GetWeaponHasScope, 1076 in FNV
 del condition_function_data[1166] # IsControlPressed, 1131 in FNV
 del condition_function_data[1213] # GetFOSEBeta, 1026 in FNV
 
-#--List of GMST's in the main plugin (FalloutNV.esm) that have 0x00000000
-#  as the form id.  Any GMST as such needs its Editor Id listed here.
-gmstEids = gmstEids + ['fActorStrengthEncumbranceMult']
-
 GmstTweaks = GmstTweaks[:]
 GmstTweaks.insert(0, (
     _(u'Actor: Strength Encumbrance Multiplier'),
@@ -423,3 +419,8 @@ actor_importer_attrs[b'NPC_'][u'Actors.ACBS'] = ( # FO3 + flags.autocalcService
     u'flags.noVATSMelee', u'flags.pcLevelOffset', u'flags.respawn',
     u'flags.useTemplate', u'karma', u'level', u'speedMultiplier',
     u'templateFlags')
+
+#------------------------------------------------------------------------------
+# Assorted Tweaker
+#------------------------------------------------------------------------------
+assorted_tweaks |= {u'AssortedTweak_ArrowWeight'}

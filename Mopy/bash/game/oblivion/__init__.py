@@ -38,7 +38,6 @@ class OblivionGameInfo(GameInfo):
     game_detect_file = _j(u'Data', u'Oblivion.esm')
     version_detect_file = u'Oblivion.exe'
     master_file = u'Oblivion.esm'
-    pklfile = u'Oblivion_ids.pkl'
     masterlist_dir = u'Oblivion'
     regInstallKeys = (u'Bethesda Softworks\\Oblivion', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/oblivion/'
@@ -142,6 +141,10 @@ class OblivionGameInfo(GameInfo):
         canEditHeader = True
         validHeaderVersions = (0.8,1.0)
         stringsFiles = []
+        biped_flag_names = (u'head', u'hair', u'upperBody', u'lowerBody',
+                            u'hand', u'foot', u'rightRing', u'leftRing',
+                            u'amulet', u'weapon', u'backWeapon', u'sideWeapon',
+                            u'quiver', u'shield', u'torch', u'tail')
 
     allTags = {
         u'Actors.ACBS', u'Actors.AIData', u'Actors.AIPackages',

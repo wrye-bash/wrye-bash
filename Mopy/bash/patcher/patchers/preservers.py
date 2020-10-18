@@ -70,7 +70,6 @@ class _APreserver(ImportPatcher):
 
     :type rec_attrs: dict[bytes, tuple] | dict[bytes, dict[unicode, tuple]]"""
     rec_attrs = {}
-    long_types = None
     # Record attributes that are FormIDs. These will be checked to see if their
     # FormID is valid before being imported
     ##: set for more patchers?
@@ -117,8 +116,6 @@ class _APreserver(ImportPatcher):
         else:
             all_attrs = chain.from_iterable(self.recAttrs_class.itervalues())
         self._deep_attrs = any(u'.' in a for a in all_attrs)
-        #--Needs Longs
-        self.longTypes = set(self.__class__.long_types or self.rec_attrs)
         # Split srcs based on CSV extension ##: move somewhere else?
         self.csv_srcs = [s for s in p_sources if s.cext == u'.csv']
         self.srcs = [s for s in p_sources if s.cext != u'.csv']
@@ -161,7 +158,7 @@ class _APreserver(ImportPatcher):
         return self.getReadClasses()
 
     # noinspection PyDefaultArgument
-    def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data,
+    def _init_data_loop(self, recClass, srcFile, srcMod, temp_id_data,
                         __attrgetters=_attrgetters):
         recAttrs = self.recAttrs_class[recClass]
         fid_attrs = self._fid_rec_attrs_class[recClass]
@@ -176,7 +173,6 @@ class _APreserver(ImportPatcher):
                 attrs for t, attrs in fid_attrs.iteritems() if t in mod_tags))
         for record in srcFile.tops[recClass.rec_sig].iter_filtered_records(
                 self.getReadClasses()):
-            fid = mapper(record.fid)
             # If we have FormID attributes, check those before importing
             if fid_attrs:
                 fid_attr_values = [__attrgetters[a](record) for a in fid_attrs]
@@ -187,8 +183,8 @@ class _APreserver(ImportPatcher):
                     self.patchFile.patcher_mod_skipcount[
                         self._patcher_name][srcMod] += 1
                     continue
-            temp_id_data[fid] = {attr: __attrgetters[attr](record) for attr in
-                                 recAttrs}
+            temp_id_data[record.fid] = {attr: __attrgetters[attr](record)
+                                        for attr in recAttrs}
 
     # noinspection PyDefaultArgument
     def initData(self, progress, __attrgetters=_attrgetters):
@@ -200,7 +196,6 @@ class _APreserver(ImportPatcher):
         if not self.isActive: return
         id_data = self.id_data
         loadFactory = LoadFactory(False, *self.recAttrs_class.keys())
-        longTypes = self.longTypes & {x.rec_sig for x in self.recAttrs_class}
         progress.setFull(len(self.srcs) + len(self.csv_srcs))
         cachedMasters = {}
         minfs = self.patchFile.p_file_minfos
@@ -210,14 +205,11 @@ class _APreserver(ImportPatcher):
             srcInfo = minfs[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(do_unpack=True)
-            srcFile.convertToLongFids(longTypes)
-            mapper = srcFile.getLongMapper()
             for recClass in self.recAttrs_class:
                 if recClass.rec_sig not in srcFile.tops: continue
                 self.srcClasses.add(recClass)
                 self.classestemp.add(recClass)
-                self._init_data_loop(mapper, recClass, srcFile, srcMod,
-                                     temp_id_data)
+                self._init_data_loop(recClass, srcFile, srcMod, temp_id_data)
             if (self._force_full_import_tag and
                     self._force_full_import_tag in srcInfo.getBashTags()):
                 # We want to force-import - copy the temp data without
@@ -229,19 +221,16 @@ class _APreserver(ImportPatcher):
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
-                    masterInfo = minfs[master]
-                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile = ModFile(minfs[master], loadFactory)
                     masterFile.load(True)
-                    masterFile.convertToLongFids(longTypes)
                     cachedMasters[master] = masterFile
-                mapper = masterFile.getLongMapper()
                 for recClass in self.recAttrs_class:
                     if recClass.rec_sig not in masterFile.tops: continue
                     if recClass not in self.classestemp: continue
                     for record in masterFile.tops[
                         recClass.rec_sig].iter_filtered_records(
                         self.getReadClasses()): # ugh, looks hideous...
-                        fid = mapper(record.fid)
+                        fid = record.fid
                         if fid not in temp_id_data: continue
                         for attr, value in temp_id_data[fid].iteritems():
                             try:
@@ -254,7 +243,6 @@ class _APreserver(ImportPatcher):
             progress.plus()
         if self._csv_parser:
             self._parse_csv_sources(progress)
-        self.longTypes &= {x.rec_sig for x in self.srcClasses}
         self.isActive = bool(self.srcClasses)
 
     # noinspection PyDefaultArgument
@@ -265,9 +253,6 @@ class _APreserver(ImportPatcher):
             SoundPatcher, DestructiblePatcher, ActorImporter, WeaponModsPatcher
         """
         id_data = self.id_data
-        mapper = modFile.getLongMapper()
-        if self.longTypes:
-            modFile.convertToLongFids(self.longTypes)
         for recClass in self.srcClasses:
             if recClass.rec_sig not in modFile.tops: continue
             patchBlock = getattr(self.patchFile,
@@ -278,13 +263,12 @@ class _APreserver(ImportPatcher):
             for record in modFile.tops[recClass.rec_sig].iter_filtered_records(
                 self.getReadClasses()):
                 fid = record.fid
-                if not record.longFids: fid = mapper(fid)
                 # Skip if we've already copied this record or if we're not
                 # interested in it
                 if fid in copied_records or fid not in id_data: continue
                 for attr, value in id_data[fid].iteritems():
                     if __attrgetters[attr](record) != value:
-                        patchBlock.setRecord(record.getTypeCopy(mapper))
+                        patchBlock.setRecord(record.getTypeCopy())
                         break
 
     # noinspection PyDefaultArgument
@@ -355,7 +339,6 @@ class DeathItemPatcher(_APreserver):
 #------------------------------------------------------------------------------
 class DestructiblePatcher(_APreserver):
     """Merges changes to destructible records for Fallout3/FalloutNV."""
-    # All destructibles may contain FIDs, so let longTypes be set automatically
     rec_attrs = {x: ('destructible',) for x in bush.game.destructible_types}
 
 #------------------------------------------------------------------------------
@@ -396,7 +379,6 @@ class ImportScripts(_APreserver):
 #------------------------------------------------------------------------------
 class KeywordsImporter(_APreserver):
     rec_attrs = {x: ('keywords',) for x in bush.game.keywords_types}
-    # Keywords are all fids, so default to long_types == rec_attrs
 
 #------------------------------------------------------------------------------
 class KFFZPatcher(_APreserver):
@@ -437,13 +419,11 @@ class NpcFacePatcher(_ANpcFacePatcher, _APreserver):
 #------------------------------------------------------------------------------
 class ObjectBoundsImporter(_APreserver):
     rec_attrs = {x: ('bounds',) for x in bush.game.object_bounds_types}
-    long_types = () # OBND never has fids
 
 #------------------------------------------------------------------------------
 class SoundPatcher(_APreserver):
     """Imports sounds from source mods into patch."""
     rec_attrs = bush.game.soundsTypes
-    long_types = bush.game.soundsLongsTypes
 
 #------------------------------------------------------------------------------
 class SpellsPatcher(_ASpellsPatcher, _APreserver):
@@ -478,7 +458,6 @@ class StatsPatcher(_AStatsPatcher, _APreserver):
 #------------------------------------------------------------------------------
 class TextImporter(_APreserver):
     rec_attrs = bush.game.text_types
-    long_types = bush.game.text_long_types
 
 #------------------------------------------------------------------------------
 # TODO(inf) Currently FNV-only, but don't move to game/falloutnv/patcher yet -
@@ -573,7 +552,6 @@ class CellImporter(ImportPatcher):
             srcInfo = minfs[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
-            srcFile.convertToLongFids(('CELL','WRLD'))
             cachedMasters[srcMod] = srcFile
             bashTags = srcInfo.getBashTags()
             # print bashTags
@@ -600,7 +578,6 @@ class CellImporter(ImportPatcher):
                     masterInfo = minfs[master]
                     masterFile = ModFile(masterInfo,loadFactory)
                     masterFile.load(True)
-                    masterFile.convertToLongFids(('CELL','WRLD'))
                     cachedMasters[master] = masterFile
                 if 'CELL' in masterFile.tops:
                     for cellBlock in masterFile.CELL.cellBlocks:
@@ -622,7 +599,6 @@ class CellImporter(ImportPatcher):
         cellData = self.cellData
         patchCells = self.patchFile.CELL
         patchWorlds = self.patchFile.WRLD
-        modFile.convertToLongFids(('CELL','WRLD'))
         if 'CELL' in modFile.tops:
             for cellBlock in modFile.CELL.cellBlocks:
                 if cellBlock.cell.fid in cellData:

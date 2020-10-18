@@ -2790,7 +2790,7 @@ C.Location, -C.LockList
         <tr>
             <td id="NamesOblivion">Names</td>
             <td>Changes the names of things.</td>
-            <td>The Name (FULL) subrecord in the following record types:
+            <td>The (FULL) Name subrecord in the following record types:
                 <ul>
                     <li>(ALCH) Potion</li>
                     <li>(AMMO) Ammunition</li>
@@ -3246,7 +3246,7 @@ C.Location, -C.LockList
                             <li>Tilt Front/Back</li>
                             <li>Tilt Left/Right</li>
                             <li>Walks</li>
-                            <li>Weapon & Shield</li>
+                            <li>Weapon &amp; Shield</li>
                         </ul>
                     </li>
                     <li>(NPC_ only) Flags:
@@ -3846,7 +3846,7 @@ C.Location, -C.LockList
         <tr>
             <td id="NamesFO3">Names</td>
             <td>Changes the names of things.</td>
-            <td>The Name (FULL) subrecord in the following record types:
+            <td>The (FULL) Name subrecord in the following record types:
                 <ul>
                     <li>(ACTI) Activator</li>
                     <li>(ALCH) Ingestible</li>
@@ -4556,7 +4556,7 @@ C.Location, -C.LockList
         <tr>
             <td id="NamesSkyrim">Names</td>
             <td>Changes the names of things.</td>
-            <td>The (FULL - Name) Subrecord in the following record types:
+            <td>The (FULL) Name subrecord in the following record types:
                 <ul>
                     <li>(ACTI) Activator</li>
                     <li>(ALCH) Ingestible</li>
@@ -5045,7 +5045,7 @@ C.Location, -C.LockList
                             <li>(DNAM) Magic Item Description</li>
                         </ul>
                     </li>
-                    <li>(PERK) Perk
+                    <li>(PERK) Perk:
                         <ul>
                             <li>(DESC) Description</li>
                         </ul>
@@ -5239,7 +5239,8 @@ C.Location, -C.LockList
 
 <h3 id="patch-tweaks">Tweak Options In Detail <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Each <q>Tweak...</q> section has a table below that details the options found within it.
-<p>Tweaks are game dependant, most apply for Oblivion, not all of them will be available for newer games.
+<p>Unless a table explicitly lists the games for which each of its tweaks is
+    available, they are only available for Oblivion.</p>
 <table>
     <thead>
         <tr><th colspan="2">Race Tweaks
@@ -5277,68 +5278,267 @@ C.Location, -C.LockList
 </table>
 <table>
     <thead>
-        <tr><th colspan="2">Tweak Assorted
-        <tr><th>Tweak<th>Description
+        <tr><th colspan="3">Tweak Assorted</th></tr>
+        <tr><th>Tweak</th><th>Description</th><th>Available For</th></tr>
+    </thead>
     <tbody>
-        <tr><td>All Armor Playable<td>Modifies non-playable armors to make them playable, unless the armor satisfies one of the following conditions:
-            <ul>
-                <li>It is unnamed.
-                <li>It is scripted.
-                <li>It contains no body flags set other than right ring.
-                <li>It contains any of the following (case-insensitive) words:
+        <tr>
+            <td>All Armor Playable</td>
+            <td>Modifies non-playable armors to make them playable, unless the
+                armor satisfies at least one of the following conditions (all
+                checks are case-insensitive):
                 <ul>
-                    <li>"mark"
-                    <li>"token"
-                    <li>"willful"
-                    <li>"see" and "me"
-                    <li>"werewolf"
-                    <li>"no wings"
-                    <li>"tsaesci tail"
-                    <li>"widget"
+                    <li>It is unnamed.</li>
+                    <li>It is scripted. &mdash; <strong>Oblivion, Fallout 3
+                        &amp; Fallout New Vegas only.</strong></li>
+                    <li>It contains no body flags set other than:
+                        <ul>
+                            <li>Right Ring &mdash; <strong>Oblivion
+                                only</strong></li>
+                            <li>Pipboy &mdash; <strong>Fallout 3 &amp; Fallout
+                                New Vegas only</strong></li>
+                        </ul>
+                    </li>
+                    <li>Its (FULL) Name or (EDID) Editor ID subrecord contains
+                        any of the following words:
+                        <ul>
+                            <li>"briarheart"</li>
+                            <li>"child"</li>
+                            <li>"corpse"</li>
+                            <li>"dummy"</li>
+                            <li>"ghostly immobility"</li>
+                            <li>"no wings"</li>
+                            <li>"skin"</li>
+                            <li>"test"</li>
+                            <li>"token"</li>
+                            <li>"tsaesci tail"</li>
+                            <li>"werewolf"</li>
+                            <li>"widget"</li>
+                            <li>"willful"</li>
+                        </ul>
+                    </li>
+                    <li>Its (FULL) Name or (EDID) Editor ID subrecord starts
+                        with any of the following words:
+                        <ul>
+                            <li>"fx"</li>
+                            <li>"zz"</li>
+                        </ul>
+                    </li>
+                    <li>Its (FULL) Name or (EDID) Editor ID subrecord contains
+                        both "see" and "me".</li>
+                    <li>Its (FULL) Name or (EDID) Editor ID subrecord contains
+                        "mark", except as part of "markynaz".</li>
                 </ul>
-            </ul>
-        <tr><td>All Clothing Playable<td>Modifies non-playable clothes to make them playable, unless the clothing satisfies one of the following conditions:
-            <ul>
-                <li>It is unnamed.
-                <li>It is scripted.
-                <li>It contains no body flags set other than right ring.
-                <li>It contains any of the following (case-insensitive) words:
-                <ul>
-                    <li>"mark"
-                    <li>"token"
-                    <li>"willful"
-                    <li>"see" and "me"
-                    <li>"werewolf"
-                    <li>"no wings"
-                    <li>"tsaesci tail"
-                    <li>"widget"
-                </ul>
-            </ul>
-        <tr><td>Armor Shows Amulets<td>Modifies playable armor to show amulets.
-        <tr><td>Armor Shows Rings<td>Modifies playable armor to show rings.
-        <tr><td>Bow Reach Fix<td>Some of the bows in Oblivion (and a few in user mods) have a reach of zero. Due to a bug in the Oblivion engine, if these bows are equipped by an NPC, the game will crash. This patch changes bows with zero reach to have reach of 1.
-        <tr><td>Clothing Shows Amulets<td>Modifies playable clothing to show amulets.
-        <tr><td>Clothing Shows Rings<td>Modifies playable clothing to show rings.
-        <tr><td>DarNified Books<td>Tweaks book colours and fonts for use with DarNified UI.
-        <tr><td>Default Icons<td>Sets a default icon for any records that don't have any icon assigned.
-        <tr><td>Disable Wind<td>Sets wind speed for all weathers to 0; this means that bushes and trees don't move in the wind since there isn't any. May help on machines with low end graphic cards.
-        <tr><td>Faction Crime Gold Multplier Fix<td>Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0.
-        <tr><td>Harvest Chance<td>Sets the harvest chance of all flora to the desired chance.
-        <tr><td>Magic: Script Effect Silencer<td>Script Effects will be silenced and have no graphics.
-        <tr><td>No Light Fade Value Fix<td>Sets the fade values on all lights to a default of 1.0 if not already set.
-        <tr><td>No Light Flicker<td>Turns off flickering effects for lights. May help on machines with low end graphic cards.
-        <tr><td>Number of uses for pre-enchanted weapons and Staffs/Staves<td>The charge amount and cast cost will be edited so that all enchanted weapons and staffs have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.
-        <tr><td>Nvidia Fog Fix<td>Ensures that cells have at least one non-zero fog value. For avoiding the Nvidia fog-related black screen. This feature is based on <a href="https://www.nexusmods.com/oblivion/mods/11167/?">Quarn's Nvidia Black Screen Fix</a>.
-        <tr><td>Reweigh: Arrows<td>Reweighs arrows to a maximum weight.
-        <tr><td>Reweigh: Ingredients<td>Reweighs ingredients to a maximum weight.
-        <tr><td>Reweigh: Potions (Maximum)<td>Reweighs potions to a maximum weight. This does not affect potions with script effects, ones with OBME effects or with current weight &gt;= 1.0. Thus it should not affect alcoholic beverages or scripted "potions" like HTS water skins. Note that this is similar to, but not the same as, the Reweigh Potions command for savegames, which reweighs user created potions rather than mod created potions.
-        <tr><td>Reweigh: Potions (Minimum)<td>Reweighs potions to a minimum weight.
-        <tr><td>Reweigh: Staffs/Staves<td>Reweighs staves to a maximum weight.
-        <tr><td>Right Hand Rings<td>Makes rings behave more consistently by making all rings prefer to be on the right hand. With this tweak activated, rings will only equip to the left hand if the right hand has a ring, but the left hand does not. You can use this to make one ring permanently equipped - just equip it to the left hand and it will stay on until you specifically unequip it.
-        <tr><td>Set Sound Attenuation Levels<td>The sound attenuation levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume (lower attenuation = higher volume).
-        <tr><td>Set Sound Attenuation Levels: Nirnroots/Vynroots Only<td>The sound attenuation levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume (lower attenuation = higher volume). This one only affects Nirnroots/Vynroots.
-        <tr><td>Skyrim-style Weapons<td>Sets all one handed weapons as blades, two handed weapons as blunt.
-        <tr><td>Uniform Groundcover<td>Eliminates the random variation in groundcover (grass, vines, shrubs, etc). Tall groundcover will still be taller than short groundcover, but there will be less variation in size. May help on lower end machines.
+            </td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>All Clothing Playable</td>
+            <td>Modifies non-playable clothes to make them playable. The same
+                conditions described above for <code>All Armor Playable</code>
+                apply here too.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>All Guns Use Iron Sights Animation</td>
+            <td>Makes more guns use the iron sights animation. You can choose
+                whether to tweak all guns, only energy weapons, or only
+                conventional weapons.</td>
+            <td>Fallout 3 &amp; Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Armor Shows Amulets</td>
+            <td>Modifies playable armors to show amulets.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Armor Shows Rings</td>
+            <td>Modifies playable armors to show rings.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Bow Reach Fix</td>
+            <td>Some of the bows in Oblivion (and a few in user mods) have a
+                reach of zero. Due to a bug in the Oblivion engine, if these
+                bows are equipped by an NPC, the game will crash. This tweak
+                changes bows with zero reach to have reach of 1.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Clothing Shows Amulets</td>
+            <td>Modifies playable clothing to show amulets.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Clothing Shows Rings</td>
+            <td>Modifies playable clothing to show rings.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>DarNified Books</td>
+            <td>Tweaks book colours and fonts for use with DarNified UI.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Default Icons</td>
+            <td>Sets a default icon for any records that don't have any icon
+                assigned.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Disable Wind</td>
+            <td>Sets wind speed for all weathers to 0; this means that bushes
+                and trees don't move in the wind since there isn't any. May
+                help on machines with low end graphic cards.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Faction Crime Gold Multplier Fix</td>
+            <td>Fix factions with unset Crime Gold Multiplier to have a Crime
+                Gold Multiplier of 1.0.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Harvest Chance</td>
+            <td>Sets the harvest chance of all flora to the desired
+                chance.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
+        </tr>
+        <tr>
+            <td>Magic: Script Effect Icon Changer</td>
+            <td>Changes the Script Effect icon to one of several choices, or to
+                a custom icon.</td>
+            <td>Oblivion</td>
+        </tr>
+        <tr>
+            <td>Magic: Script Effect Silencer</td>
+            <td>Script Effects will be silenced and have no graphics.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>No Description Loading Screens</td>
+            <td>Removes the description from loading screens.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>No Light Fade Value Fix</td>
+            <td>Sets the fade values on all lights to a default of 1.0 if not
+                already set.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>No Light Flicker</td>
+            <td>Turns off flickering effects for lights. May help on machines
+                with low end graphic cards.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Number of Uses For Pre-enchanted Weapons and Staves</td>
+            <td>The charge amount and cast cost will be edited so that all
+                enchanted weapons and staffs have the amount of uses specified.
+                Cost will be rounded up to 1 (unless set to unlimited) so
+                number of uses may not exactly match for all weapons.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Nvidia Fog Fix</td>
+            <td>Ensures that cells have at least one non-zero fog value. For
+                avoiding the Nvidia fog-related black screen. This feature is
+                based on <a href="https://www.nexusmods.com/oblivion/mods/11167/?">Quarn's Nvidia Black Screen Fix</a>.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Reweigh: Ammunition</td>
+            <td>Reweighs ammunition (e.g. arrows, bullets, etc.) to a maximum
+                weight.</td>
+            <td>All but Fallout 3 &amp; Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Reweigh: Ingestibles (Minimum)</td>
+            <td>Reweighs ingestibles (potions and drinks, as well as food in
+                newer games than Oblivion) to a minimum weight.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Reweigh: Ingredients</td>
+            <td>Reweighs ingredients to a maximum weight. This does not affect
+                ingredients with script effects or ones with OBME effects.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
+        </tr>
+        <tr>
+            <td>Reweigh: Potions (Maximum)</td>
+            <td>Reweighs potions to a maximum weight. This does not affect
+                potions with script effects, ones with OBME effects or with
+                current weight &gt;= 1.0. Thus it should not affect alcoholic
+                beverages or scripted "potions" like HTS water skins. Note that
+                this is similar to, but not the same as, the Reweigh Potions
+                command for savegames, which reweighs user created potions
+                rather than mod created potions.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
+        </tr>
+        <tr>
+            <td>Reweigh: Staffs/Staves</td>
+            <td>Reweighs staves to a maximum weight.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
+        </tr>
+        <tr>
+            <td>Right Hand Rings</td>
+            <td>Makes rings behave more consistently by making all rings prefer
+                to be on the right hand. With this tweak activated, rings will
+                only equip to the left hand if the right hand has a ring, but
+                the left hand does not. You can use this to make one ring
+                permanently equipped - just equip it to the left hand and it
+                will stay on until you specifically unequip it.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Set Sound Attenuation Levels</td>
+            <td>The sound attenuation levels will be set to tweak%*current
+                level, thereby increasing (or decreasing) the sound volume
+                (lower attenuation = higher volume). Does not affect Nirnroots
+                (see below).</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Set Sound Attenuation Levels: Nirnroots Only</td>
+            <td>The sound attenuation levels will be set to tweak%*current
+                level, thereby increasing (or decreasing) the sound volume
+                (lower attenuation = higher volume). This one only affects
+                Nirnroots (see above).</td>
+            <td>Oblivion, Skyrim &amp; Skyrim&colon; Special Edition</td>
+        </tr>
+        <tr>
+            <td>Set Sound Attenuation Levels: Vynroots Only</td>
+            <td>Same as <q>Set Sound Attenutation Levels: Nirnroots Only</q>,
+                but for games set in the Vyn universe.</td>
+            <td>Nehrim&colon; At Fate's Edge &amp; Enderal&colon; Forgotten
+                Stories</td>
+        </tr>
+        <tr>
+            <td>Skyrim-style Weapons</td>
+            <td>Sets all one handed weapons as blades, two handed weapons as
+                blunt.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Uniform Groundcover</td>
+            <td>Eliminates the random variation in groundcover (grass, vines,
+                shrubs, etc). Tall groundcover will still be taller than short
+                groundcover, but there will be less variation in size. May help
+                on lower end machines.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+    </tbody>
 </table>
 <table>
     <thead>
@@ -5362,11 +5562,36 @@ C.Location, -C.LockList
         <tr><td>Body Part Codes<td>This determines what code will be used for tweaking armor and clothes covering various body parts. There are two versions. Each code letter is assigned in order to: Amulets, Rings, Gloves, Helmets, Tail items, Robes (upper+lower body), Chest, Pants/Greaves, Boots/Shoes, Shields.
         <tr><td>Armor<td>Tweaks names of armors to make them sort more easily in inventory. There is a choice of formats and whether you want armor rating to be shown.
         <tr><td>Clothes<td>Tweaks names of clothes to make them sort more easily in inventory. There is a choice of formats.
-        <tr><td>Lore Friendly Names: Dwarven -&gt; Dwemer<td>Changes nearly any usage of the word Dwarven to use Dwemer instead in order to better follow lore.
+        <tr>
+            <td>Lore Friendly Text: Dwarven -&gt; Dwemer</td>
+            <td>Changes nearly any usage of the word Dwarven to use Dwemer
+                instead in order to better follow lore.</td>
+        </tr>
         <tr><td>Notes and Scrolls<td>Tweaks names of notes and scrolls to make them sort more easily in inventory. There is a choice of formats and whether you want enchanted scrolls at top (~) or the bottom (.) of list. (Note that the "~" will not display in the inventory.)
         <tr><td>Potions<td>Tweaks names of potions to make them sort more easily in inventory. There is a choice of formats.
-        <tr><td>Proper English Names: Dwarfs -&gt; Dwarves<td>Renames any instances of dwarfs to dwarves
-        <tr><td>Proper English Names: Staffs -&gt; Staves<td>Renames any instances of staffs to staves.
+        <tr>
+            <td>Proper English Text: Dwarfs -&gt; Dwarves</td>
+            <td>Renames any instances of dwarfs to dwarves.</td>
+        </tr>
+        <tr>
+            <td>Proper English Text: Staffs -&gt; Staves</td>
+            <td>Renames any instances of staffs to staves.</td>
+        </tr>
+        <tr>
+            <td>Skyrim-style Text: Fatigue -&gt; Stamina</td>
+            <td>Renames any instances of fatigue to stamina.</td>
+        </tr>
+        <tr>
+            <td>Skyrim-style Text: Marksman -&gt; Archery</td>
+            <td>Renames any instances of marksman to archery or archer,
+                depending on whether or not they are preceded by an article
+                ('a' and 'the').</td>
+        </tr>
+        <tr>
+            <td>Skyrim-style Text: Security -&gt; Lockpicking</td>
+            <td>Renames any instances of security to lockpicking (except in
+                books, because of the huge number of false positives).</td>
+        </tr>
         <tr><td>Spells<td> There is a choice of formats and whether you wish the school (e.g. D) and spell level (e.g. D2) to show.
         <tr><td>Weapons<td> There is a choice of formats and whether you want damage to be shown.
 </table>
@@ -5395,8 +5620,9 @@ C.Location, -C.LockList
         <tr>
             <td>Actor: Greeting Distance</td>
             <td>Distance at which NPCs will greet the player.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Actor: Max Companions</td>
@@ -5427,8 +5653,9 @@ C.Location, -C.LockList
         <tr>
             <td>Actor: Training Limit</td>
             <td>Sets the training limit per level allowed by trainers.
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Actor: Unconsciousness Duration</td>
@@ -5455,14 +5682,16 @@ C.Location, -C.LockList
         <tr>
             <td>AI: Conversation Chance</td>
             <td>Chance of NPCs engaging in conversation in exteriors.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>AI: Conversation Chance - Interior</td>
             <td>Chance of NPCs engaging in conversation in interiors.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>AI: Max Active Actors</td>
@@ -5505,44 +5734,51 @@ C.Location, -C.LockList
             <td>Arrow: Recovery from Actor</td>
             <td>Your chance of recovering an arrow shot into an actor
                 (including arrows shot into player).</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Arrow: Speed</td>
             <td>Speed at which a full power arrow travels.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Bounty: Assault</td>
             <td>The bounty for attacking a "good" npc when observed.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Bounty: Horse Theft</td>
             <td>The bounty for stealing a horse.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Bounty: Jailbreak</td>
             <td>The bounty for escaping from jail.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Bounty: Murder</td>
             <td>The bounty for committing a witnessed murder.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Bounty: Pickpocketing</td>
             <td>The bounty for pickpocketing.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Bounty: Shapeshifting</td>
@@ -5554,14 +5790,16 @@ C.Location, -C.LockList
         <tr>
             <td>Bounty: Theft</td>
             <td>The bounty for stealing as a fraction of the item's value.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Bounty: Trespassing</td>
             <td>The bounty for trespassing.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Camera: Chase Distance</td>
@@ -5596,8 +5834,9 @@ C.Location, -C.LockList
             <td>By default, you cannot craft alchemy items in combat.
                 Disallowing it encourages you to be ready for battle ahead of
                 time.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Combat: Auto Aim Fix</td>
@@ -5628,14 +5867,16 @@ C.Location, -C.LockList
             <td>Combat: Max Ally Hits</td>
             <td>The maximum number of hits on an ally allowed in combat before
                 the ally will attack the hitting character.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Combat: Maximum Armor Rating</td>
             <td>The maximum armor rating that you can get.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Combat: NPC Death XP Threshold</td>
@@ -5647,8 +5888,9 @@ C.Location, -C.LockList
             <td>Combat: Recharge Weapons</td>
             <td>By default, you can recharge weapons during combat. Disallowing
                 that encourages you to be ready for battle ahead of time.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Combat: Repair</td>
@@ -5690,8 +5932,9 @@ C.Location, -C.LockList
         <tr>
             <td>Cost Multiplier: Enchantment</td>
             <td>The cost multiplier factor for enchanting.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Cost Multiplier: Recharge</td>
@@ -5712,8 +5955,9 @@ C.Location, -C.LockList
             <td>Crime: Alarm Distance</td>
             <td>The distance from the player that NPCs will be alerted to
                 crimes.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Crime: Force Jail</td>
@@ -5725,16 +5969,18 @@ C.Location, -C.LockList
             <td>Crime: Pickpocketing Chance</td>
             <td>Improve chances of successful pickpocketing. Custom values can
             set min and max chance.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Crime: Prison Duration Modifier</td>
             <td>Changes the bounty modifier for the amount of days you will
                 spend in prison when choosing to serve your sentence. Days in
                 prison is your bounty divided by this number.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Gore: Combat Dismember Part Chance</td>
@@ -5844,8 +6090,9 @@ C.Location, -C.LockList
             <td>Msg: Auto Saving</td>
             <td>Sets the message on autosaving to blank or either "." or
                 "Hmm..." or a custom value entered by user.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Msg: Cannot Equip Item Fix</td>
@@ -5896,30 +6143,34 @@ C.Location, -C.LockList
             <td>Sets the message when attempting to fast travel when it is
                 prohibited to blank or either "." or "Hmm..." or a custom value
                 entered by user.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Msg: Not Enough Charge</td>
             <td>Sets the message on attempting to use an enchanted item with
                 insufficient charge to blank or either "." or "Hmm..." or a
                 custom value entered by user.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Msg: Quick Load</td>
             <td>Sets the message on quick loading to blank or either "." or
                 "Hmm..." or a custom value entered by user.
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Msg: Quick Save</td>
             <td>Sets the message on quick saving to blank or either "." or
                 "Hmm..." or a custom value entered by user.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Msg: Soul Captured</td>
@@ -5945,8 +6196,9 @@ C.Location, -C.LockList
             <td>Player: Horse Turning Speed</td>
             <td>Default Horse turning speed is rather slow. This allows you to
                 increase it.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Player: Inventory Quantity Prompt</td>
@@ -6083,16 +6335,18 @@ C.Location, -C.LockList
             <td>Sets the minimum distance a hostile actor has to be from the
                 player to allow the player to sleep/fast travel/etc. in
                 exteriors.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Warning: Interior Distance To Hostiles</td>
             <td>Sets the minimum distance a hostile actor has to be from the
                 player to allow the player to sleep/fast travel/etc. in
                 interiors.</td>
-            <td>All but Fallout 3, Fallout&colon; New Vegas &amp;
-                Fallout 4</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>World: Cell Respawn Time</td>

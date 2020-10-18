@@ -397,6 +397,7 @@ class PCFaces(object):
         loadFactory = LoadFactory(False,MreRecord.type_class['NPC_'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
+        short_mapper = modFile.getShortMapper()
         faces = {}
         for npc in modFile.NPC_.getActiveRecords():
             face = PCFaces.PCFace()
@@ -406,7 +407,10 @@ class PCFaces(object):
                           'fggs_p','fgga_p','fgts_p','level','skills',
                           'health','unused2','baseSpell',
                           'fatigue','attributes','iclass'):
-                setattr(face,field,getattr(npc,field))
+                npc_val = getattr(npc, field)
+                if type(npc_val) == tuple: # Hacky check for FormIDs
+                    npc_val = short_mapper(npc_val)
+                setattr(face, field, npc_val)
             face.gender = npc.flags.female
             face.pcName = npc.full
             faces[face.eid] = face

@@ -33,8 +33,8 @@ class PatcherInfo(object): ##: clazz is unused?
         self.cls_csv_key = cls_csv_key
 
 def configIsCBash(patchConfigs): ##: belongs to basher but used also in bosh
-    for key in patchConfigs:
-        if 'CBash' in key:
+    for config_key in patchConfigs:
+        if 'CBash' in config_key:
             return True
     return False
 

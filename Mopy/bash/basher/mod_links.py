@@ -1556,15 +1556,14 @@ class Mod_DecompileAll(EnabledLink):
                 for master in modFile.tes4.masters:
                     masterFile = mod_files.ModFile(bosh.modInfos[master], loadFactory)
                     masterFile.load(True)
-                    mapper = masterFile.getLongMapper()
                     for record in masterFile.SCPT.getActiveRecords():
-                        id_text[mapper(record.fid)] = record.script_source
-                mapper = modFile.getLongMapper()
+                        id_text[record.fid] = record.script_source
                 newRecords = []
+                generic_lore_fid = (bosh.modInfos.masterName, 0x025811)
                 for record in modFile.SCPT.records:
-                    fid = mapper(record.fid)
+                    fid = record.fid
                     #--Special handling for genericLoreScript
-                    if (fid in id_text and record.fid == 0x00025811 and
+                    if (fid in id_text and record.fid == generic_lore_fid and
                         record.compiled_size == 4 and record.last_index == 0):
                         removed.append(record.eid)
                         badGenericLore = True

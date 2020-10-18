@@ -31,6 +31,7 @@ from this module outside of the patcher package."""
 # also document which methods MUST be overridden by raising AbstractError. For
 # instance Patcher.buildPatch() apparently is NOT always overridden
 from .. import load_order, bolt
+from ..exception import AbstractError
 
 #------------------------------------------------------------------------------
 # Abstract_Patcher and subclasses ---------------------------------------------
@@ -140,6 +141,7 @@ class AMultiTweaker(Abstract_Patcher):
     group = _(u'Tweakers')
     scanOrder = 20
     editOrder = 20
+    _tweak_classes = [] # override in implementations
 
     def __init__(self, p_name, p_file, enabled_tweaks):
         super(AMultiTweaker, self).__init__(p_name, p_file)
@@ -148,7 +150,7 @@ class AMultiTweaker(Abstract_Patcher):
 
     @classmethod
     def tweak_instances(cls):
-        return sorted([cls() for cls in cls._tweak_classes],
+        return sorted([tc() for tc in cls._tweak_classes],
                       key=lambda a: a.tweak_name.lower())
 
 
@@ -162,42 +164,117 @@ class AAliasesPatcher(Abstract_Patcher):
 # AMultiTweakItem(object) -----------------------------------------------------
 #------------------------------------------------------------------------------
 class AMultiTweakItem(object):
-    """A tweak item, optionally with configuration choices."""
+    """A tweak item, optionally with configuration choices. See tweak_
+    attribute comments below for information on how to specify names, tooltips,
+    dropdown choices, etc."""
+    # The signatures of the record types this tweak wants to edit. Must be
+    # bytestrings.
     tweak_read_classes = ()
+    # The name of the tweak, shown in the GUI
     tweak_name = u'OVERRIDE'
+    # The tooltip to show when hovering over the tweak in the GUI
     tweak_tip = u'OVERRIDE'
+    # A string used to persist whether this tweak was enabled and which of
+    # the tweak's options the user chose in the settings files. Must be unique
+    # per tweaker, but prefer completely unique strings. Changing this for an
+    # already released tweak will of course reset it for every user.
+    tweak_key = u'OVERRIDE'
+    # The choices to show to the user. A list of tuples, where each tuple
+    # specifies a single item to show the user in a dropdown. The first item in
+    # the tuple is the label to show in the GUI, while all subsequent items
+    # are the values to apply, available at runtime via
+    # self.choiceValues[self.chosen]. It is up to each tweak to decide for
+    # itself how to best lay these out.
+    #
+    # If a label starts with '[' and ends with ']', it is treated as the
+    # default option.
+    # If a label starts with 'Custom' (or the translated equivalent of it), it
+    # is treated as a custom choice. This choice will allow the user to choose
+    # any value they wish.
+    # Setting a label to '----' will not add a new choice. Instead, a separator
+    # will be added at that point in the dropdown.
+    # If only one choice is available, no dropdown will be shown - the tweak
+    # can only be toggled on and off.
+    #
+    # An example:
+    # tweak_choices = [(_(u'One Day', 24), (_(u'[Two Days]'), 48)]
+    #
+    # This will show two options to the user, with the 'Two Days' option as the
+    # default one. When retrieving a value via self.choiceValues[self.chosen],
+    # either 24 or 48 will be returned, which the tweak could use to e.g.
+    # change a record attribute controlling how long a quest is delayed.
+    tweak_choices = []
+    # The header to log before logging anything else about this tweak.
+    # If set to None, defaults to this tweak's name. Automatically gets wtxt
+    # formatting prepended.
+    tweak_log_header = None
+    # The message to log directly after the header (see above), listing the
+    # total number of changes made by the tweak. Receives a named formatting
+    # argument, total_changed, which contains the total number of changed
+    # records. Automatically gets wtxt formatting prepended.
+    tweak_log_msg = u'OVERRIDE'
+    # If True, this tweak will be checked by default
+    default_enabled = False
+    # If True, tweak_key will be shown in the 'custom value' popup
+    show_key_for_custom = False
 
-    def __init__(self, key, *choices, **kwargs):
-        # TODO: docs for attributes !
-        self.key = key
+    def __init__(self):
+        # Don't check tweak_log_msg, settings tweaks don't use it
+        for tweak_attr in (u'tweak_name', u'tweak_tip', u'tweak_key'):
+            if getattr(self, tweak_attr) == u'OVERRIDE':
+                self._raise_tweak_syntax_error(u"A '%s' attribute is still "
+                                               u'set to the default '
+                                               u"('OVERRIDE')" % tweak_attr)
+        # TODO: docs for attributes below! - done for static ones above
         self.choiceLabels = []
         self.choiceValues = []
-        self.default = 0
-        for choice_tuple in choices: # (choice_label, choice1, choice2, ...)
-            self.choiceLabels.append(choice_tuple[0])
-            if choice_tuple[0][0] == u'[':
-                self.default = choices.index(choice_tuple)
-            self.choiceValues.append(choice_tuple[1:])
+        self.default = None
+        has_custom = False
+        # Caught some copy-paste mistakes where I forgot to make a it list,
+        # left it in for that reason
+        if not isinstance(self.tweak_choices, list):
+            self._raise_tweak_syntax_error(u'tweak_choices must be a list of '
+                                           u'tuples')
+        for choice_index, choice_tuple in enumerate(self.tweak_choices):
+            # See comments above for the syntax definition
+            choice_label, choice_items = choice_tuple[0], choice_tuple[1:]
+            # Validate that we have at most one custom value
+            if choice_label.startswith(_(u'Custom')):
+                if has_custom:
+                    self._raise_tweak_syntax_error(u'At most one custom '
+                                                   u'choice may be specified')
+                has_custom = True
+            self.choiceLabels.append(choice_label)
+            self.choiceValues.append(choice_items)
+            if choice_label.startswith(u'[') and choice_label.endswith(u']'):
+                # This is the default item, check for duplicates and mark it
+                if self.default is not None:
+                    self._raise_tweak_syntax_error(u'Tweaks may only have one '
+                                                   u'default item')
+                self.default = choice_index
+        if self.default is None:
+            self.default = 0 # no explicit default item, so default to first
         #--Config
         self.isEnabled = False
-        self.defaultEnabled = kwargs.get(u'defaultEnabled', False)
         self.chosen = 0
         #--Log
-        self.logHeader = u'=== '+ self.tweak_name
+        if self.tweak_log_header is None:
+            self.tweak_log_header = self.tweak_name # default to tweak name
 
-    def _patchLog(self, log, count):
-        """Log - must define self.logMsg in subclasses"""
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in load_order.get_ordered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
+    def tweak_log(self, log, count):
+        """Logs the total changes and details for each plugin."""
+        log.setHeader(u'=== ' + self.tweak_log_header)
+        log(u'* ' + self.tweak_log_msg % {
+            u'total_changed': sum(count.values())})
+        for src_plugin in load_order.get_ordered(count.keys()):
+            log(u'  * %s: %d' % (src_plugin.s, count[src_plugin]))
 
     def init_tweak_config(self, configs):
         """Get config from configs dictionary and/or set to default."""
-        self.isEnabled,self.chosen = self.defaultEnabled,0
-        self._isNew = not (self.key in configs)
+        self.isEnabled, self.chosen = self.default_enabled, 0
+        self._isNew = not (self.tweak_key in configs)
         if not self._isNew:
-            self.isEnabled,value = configs[self.key]
+            self.isEnabled,value = configs[self.tweak_key]
             if value in self.choiceValues:
                 self.chosen = self.choiceValues.index(value)
             else:
@@ -213,9 +290,23 @@ class AMultiTweakItem(object):
         """Save config to configs dictionary."""
         if self.choiceValues: value = self.choiceValues[self.chosen]
         else: value = None
-        configs[self.key] = self.isEnabled,value
+        configs[self.tweak_key] = self.isEnabled,value
 
     # Methods particular to AMultiTweakItem
+    def _raise_tweak_syntax_error(self, err_msg):
+        """Small helper method to aid in validation. Raises a SyntaxError with
+        the specified error message and some information that should make
+        identifying the offending tweak much easier appended."""
+        err_msg += u'\nOffending tweak:'
+        # To distinguish dynamic tweaks, which have the same class
+        err_msg += u"\n Name: '%s'" % self.tweak_name
+        # To identify problems with e.g. duplicate custom values immediately
+        err_msg += u'\n Choices: %s' % self.tweak_choices
+        # To distinguish between a PBash and CBash-specific problem
+        err_msg += u'\n Class: %s.%s' % (self.__class__.__module__,
+                                         self.__class__.__name__)
+        raise SyntaxError(err_msg)
+
     def isNew(self):
         """returns whether this tweak is new (i.e. whether the value was not
         loaded from a saved config"""
@@ -228,13 +319,50 @@ class AMultiTweakItem(object):
             tweakname += u' [' + self.choiceLabels[self.chosen] + u']'
         return tweakname
 
-class DynamicNamedTweak(AMultiTweakItem):
-    """A tweak that has its name and tip passed in as init parameters."""
+    def validate_values(self, chosen_values):
+        """Gives this tweak a chance to check if the specified values (given
+        as a tuple, as if they were retrieved via
+        self.choiceValues[self.chosen][0]) are valid for this tweak. Return a
+        string if the values are invalid. It will then be shown as an error
+        message to the user. Return None if the values are valid, the values
+        will then be accepted and the tweak will be activated."""
+        return None
 
-    def __init__(self, tweak_name, tweak_tip, key, *choices, **kwargs):
+    def wants_record(self, record):
+        """Return a truthy value if you want to get a chance to change the
+        specified record. Must be implemented by every CBash tweak that does
+        not override apply, and every PBash tweak that supports pooling (see
+        MultiTweakItem.supports_pooling)."""
+        raise AbstractError(u'wants_record not implemented')
+
+    def tweak_record(self, record):
+        """This is where each tweak gets a chance to change the specified
+        record, which is a copy of the winning override inside the BP. It is
+        guaranteed that wants_record has been called and returned True right
+        before this call. Note that there is no taking that back: right after
+        this call, keep() will be called and the record will be kept as an
+        override in the BP. So make sure wants_record *never* lets ITMs and
+        ITPOs through! Must be implemented by every CBash tweak that does
+        not override apply, and every PBash tweak that supports pooling (see
+        MultiTweakItem.supports_pooling)."""
+        raise AbstractError(u'tweak_record not implemented')
+
+    @staticmethod
+    def _is_nonplayable(record): ##: ugh, very hasty abstraction
+        """Returns True if the specified record is marked as nonplayable."""
+        raise AbstractError(u'_is_nonplayable not implemented')
+
+# TODO(inf) DEPRECATED! - don't use for new tweaks -> all tweaks should really
+#  be static classes, much more readable
+class DynamicTweak(AMultiTweakItem):
+    """A tweak that has its name, tip, key and choices passed in as init
+    parameters."""
+    def __init__(self, tweak_name, tweak_tip, tweak_key, *tweak_choices):
         self.tweak_name = tweak_name
         self.tweak_tip = tweak_tip
-        super(DynamicNamedTweak, self).__init__(key, *choices, **kwargs)
+        self.tweak_key = tweak_key
+        self.tweak_choices = list(tweak_choices)
+        super(DynamicTweak, self).__init__()
 
     def __repr__(self):  return u'%s(%s)' % (
         self.__class__.__name__, self.tweak_name)

@@ -467,17 +467,6 @@ class SaveFile(object):
             del self.fid_recNum[fid]
             return True
 
-    def getShortMapper(self):
-        """Returns a mapping function to map long fids to short fids."""
-        indices = dict(
-            [(mas_name, idx) for idx, mas_name in enumerate(self._masters)])
-        def mapper(fid):
-            if fid is None: return None
-            modName,object = fid
-            mod = indices[modName]
-            return (int(mod) << 24 ) | int(object)
-        return mapper
-
     def getFid(self,iref,default=None):
         """Returns fid corresponding to iref."""
         if not iref: return default
@@ -746,9 +735,8 @@ class SaveSpells(object):
         except ModError as err:
             deprint(u'skipped mod due to read error (%s)' % err)
             return
-        modFile.convertToLongFids(('SPEL',))
-        spells = modInfo.extras['bash.spellList'] = dict(
-            [(record.fid,record) for record in modFile.SPEL.getActiveRecords()])
+        spells = modInfo.extras['bash.spellList'] = {
+            record.fid: record for record in modFile.SPEL.getActiveRecords()}
         self.allSpells.update(spells)
 
     def getPlayerSpells(self):

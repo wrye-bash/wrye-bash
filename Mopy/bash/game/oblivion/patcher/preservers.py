@@ -52,7 +52,6 @@ class RoadImporter(ImportPatcher, _ARoadImporter):
             srcInfo = self.patchFile.p_file_minfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
-            srcFile.convertToLongFids(('WRLD','ROAD'))
             for worldBlock in srcFile.WRLD.worldBlocks:
                 if worldBlock.road:
                     worldId = worldBlock.world.fid
@@ -64,7 +63,6 @@ class RoadImporter(ImportPatcher, _ARoadImporter):
         """Add lists from modFile."""
         if not self.isActive or 'WRLD' not in modFile.tops: return
         patchWorlds = self.patchFile.WRLD
-        modFile.convertToLongFids(('CELL','WRLD','ROAD'))
         for worldBlock in modFile.WRLD.worldBlocks:
             if worldBlock.road:
                 worldId = worldBlock.world.fid

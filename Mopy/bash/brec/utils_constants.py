@@ -27,7 +27,7 @@ almost all other parts of brec."""
 from __future__ import division, print_function
 import struct
 
-from ..bolt import decode, struct_pack, struct_unpack
+from ..bolt import decode, Flags, struct_pack, struct_unpack
 # no local imports, imported everywhere in brec
 
 # Random stuff ----------------------------------------------------------------
@@ -90,6 +90,17 @@ def getObjectIndex(form_id):
 def getFormIndices(form_id):
     """Returns tuple of modIndex and ObjectIndex of fid."""
     return int(form_id >> 24), int(form_id & 0x00FFFFFF)
+
+# Common flags ----------------------------------------------------------------
+##: xEdit marks these as unknown_is_unused, at least in Skyrim, but it makes no
+# sense because it also marks all 32 of its possible flags as known
+class BipedFlags(Flags):
+    """Biped flags element. Includes biped flag set by default."""
+    def __init__(self, flag_default=0, new_flag_names=None):
+        from .. import bush
+        flag_names = Flags.getNames(*bush.game.Esp.biped_flag_names)
+        if new_flag_names: flag_names.update(new_flag_names)
+        super(BipedFlags, self).__init__(flag_default, flag_names)
 
 # Constants -------------------------------------------------------------------
 # Used by MelStruct classes to indicate fid elements.

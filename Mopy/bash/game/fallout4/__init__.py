@@ -37,7 +37,6 @@ class Fallout4GameInfo(GameInfo):
     game_detect_file = u'Fallout4.exe'
     version_detect_file = u'Fallout4.exe'
     master_file = u'Fallout4.esm'
-    pklfile = u'Fallout4_ids.pkl'
     masterlist_dir = u'Fallout4'
     regInstallKeys = (u'Bethesda Softworks\\Fallout4', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/fallout4/'
@@ -193,8 +192,7 @@ class Fallout4GameInfo(GameInfo):
         header_type.plugin_form_version = 131
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreTes4, #--Always present
-            MreGmst, # Imported from Skyrim or SkyrimSE
-            MreLvli, MreLvln, # Added to records.py
+            MreGmst, MreLvli, MreLvln, # Added to records.py
             )}
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {b'TES4'})

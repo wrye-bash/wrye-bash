@@ -38,7 +38,6 @@ class Fallout3GameInfo(GameInfo):
     game_detect_file = u'Fallout3.exe'
     version_detect_file = u'Fallout3.exe'
     master_file = u'Fallout3.esm'
-    pklfile = u'Fallout3_ids.pkl'
     masterlist_dir = u'Fallout3'
     regInstallKeys = (u'Bethesda Softworks\\Fallout3',u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/fallout3/'
@@ -119,6 +118,12 @@ class Fallout3GameInfo(GameInfo):
         validHeaderVersions = (0.85, 0.94)
         stringsFiles = []
         generate_temp_child_onam = True
+        biped_flag_names = (u'head', u'hair', u'upperBody', u'leftHand',
+                            u'rightHand', u'weapon', u'pipboy', u'backpack',
+                            u'necklace', u'headband', u'hat', u'eyeGlasses',
+                            u'noseRing', u'earrings', u'mask', u'choker',
+                            u'mouthObject', u'bodyAddOn1', u'bodyAddOn2',
+                            u'bodyAddOn3')
 
     # Remaining to add:
     # 'Body-F', 'Body-M', 'Body-Size-F', 'Body-Size-M', 'Eyes', 'Hair',
@@ -143,18 +148,18 @@ class Fallout3GameInfo(GameInfo):
     }
 
     # Remaining to add:
-    #  AssortedTweaker, NamesTweaker, RacePatcher, UpdateReferences
+    #  NamesTweaker, RacePatcher, UpdateReferences
     patchers = (
         u'PatchMerger', # PatchMerger must come first!
-        u'ActorImporter', u'AliasesPatcher', u'CellImporter',
-        u'ContentsChecker', u'DeathItemPatcher', u'DestructiblePatcher',
-        u'FidListsMerger', u'GmstTweaker', u'GraphicsPatcher',
-        u'ImportActorsSpells', u'ImportEffectsStats', u'ImportEnchantmentStats',
-        u'ImportFactions', u'ImportInventory', u'ImportRelations',
-        u'ImportScripts', u'KFFZPatcher', u'ListsMerger', u'NamesPatcher',
-        u'NPCAIPackagePatcher', u'NpcFacePatcher', u'ObjectBoundsImporter',
-        u'SoundPatcher', u'SpellsPatcher', u'StatsPatcher', u'TextImporter',
-        u'TweakActors',
+        u'ActorImporter', u'AliasesPatcher', u'AssortedTweaker',
+        u'CellImporter', u'ContentsChecker', u'DeathItemPatcher',
+        u'DestructiblePatcher', u'FidListsMerger', u'GmstTweaker',
+        u'GraphicsPatcher', u'ImportActorsSpells', u'ImportEffectsStats',
+        u'ImportEnchantmentStats', u'ImportFactions', u'ImportInventory',
+        u'ImportRelations', u'ImportScripts', u'KFFZPatcher', u'ListsMerger',
+        u'NamesPatcher', u'NPCAIPackagePatcher', u'NpcFacePatcher',
+        u'ObjectBoundsImporter', u'SoundPatcher', u'SpellsPatcher',
+        u'StatsPatcher', u'TextImporter', u'TweakActors',
     )
 
     weaponTypes = (

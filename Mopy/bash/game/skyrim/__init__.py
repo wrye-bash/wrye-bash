@@ -39,7 +39,6 @@ class SkyrimGameInfo(GameInfo):
     game_detect_file = u'SkyrimLauncher.exe'
     version_detect_file = u'TESV.exe'
     master_file = u'Skyrim.esm'
-    pklfile = u'Skyrim_ids.pkl'
     masterlist_dir = u'Skyrim'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/skyrim/'
@@ -163,6 +162,15 @@ class SkyrimGameInfo(GameInfo):
         validHeaderVersions = (0.94, 1.70,)
         generate_temp_child_onam = True
         max_lvl_list_size = 255
+        biped_flag_names = (
+            u'head', u'hair', u'body', u'hands', u'forearms', u'amulet',
+            u'ring', u'feet', u'calves', u'shield', u'bodyaddon1_tail',
+            u'long_hair', u'circlet', u'bodyaddon2', u'dragon_head',
+            u'dragon_lwing', u'dragon_rwing', u'dragon_body', u'bodyaddon7',
+            u'bodyaddon8', u'decapate_head', u'decapate', u'bodyaddon9',
+            u'bodyaddon10', u'bodyaddon11', u'bodyaddon12', u'bodyaddon13',
+            u'bodyaddon14', u'bodyaddon15', u'bodyaddon16', u'bodyaddon17',
+            u'fx01')
 
     allTags = {
         u'Actors.ACBS', u'Actors.AIData', u'Actors.AIPackages',
@@ -184,14 +192,15 @@ class SkyrimGameInfo(GameInfo):
 
     patchers = (
         u'PatchMerger', # PatchMerger must come first!
-        u'ActorImporter', u'AliasesPatcher', u'CellImporter',
-        u'ContentsChecker', u'DeathItemPatcher', u'DestructiblePatcher',
-        u'GmstTweaker', u'GraphicsPatcher', u'ImportActorsSpells',
-        u'ImportEffectsStats', u'ImportEnchantmentStats', u'ImportFactions',
-        u'ImportInventory', u'ImportOutfits', u'ImportRelations',
-        u'KeywordsImporter', u'ListsMerger', u'NamesPatcher',
-        u'NPCAIPackagePatcher', u'ObjectBoundsImporter', u'SoundPatcher',
-        u'SpellsPatcher', u'StatsPatcher', u'TextImporter', u'TweakActors',
+        u'ActorImporter', u'AliasesPatcher', u'AssortedTweaker',
+        u'CellImporter', u'ContentsChecker', u'DeathItemPatcher',
+        u'DestructiblePatcher', u'GmstTweaker', u'GraphicsPatcher',
+        u'ImportActorsSpells', u'ImportEffectsStats',
+        u'ImportEnchantmentStats', u'ImportFactions', u'ImportInventory',
+        u'ImportOutfits', u'ImportRelations', u'KeywordsImporter',
+        u'ListsMerger', u'NamesPatcher', u'NPCAIPackagePatcher',
+        u'ObjectBoundsImporter', u'SoundPatcher', u'SpellsPatcher',
+        u'StatsPatcher', u'TextImporter', u'TweakActors',
     )
 
     weaponTypes = (

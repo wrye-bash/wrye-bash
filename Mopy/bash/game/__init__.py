@@ -64,9 +64,6 @@ class GameInfo(object):
     # The directory in which mods and other data files reside. This is relative
     # to the game directory.
     mods_dir = u'Data'
-    # The pickle file for this game.  Holds encoded GMST IDs from the big list
-    # below
-    pklfile = u'*GAMENAME*_ids.pkl'
     # The directory containing the masterlist for this game, relative to
     # 'Mopy/Bash Patches'
     masterlist_dir = u''
@@ -332,6 +329,8 @@ class GameInfo(object):
         # The maximum number of entries inside a leveled list for this game.
         # Zero means no limit.
         max_lvl_list_size = 0
+        # A tuple containing all biped flag names (in order) for this game
+        biped_flag_names = ()
 
     # Bash Tags supported by this game
     allTags = set()
@@ -383,10 +382,6 @@ class GameInfo(object):
     # names for the record types. Used in save editing code.
     save_rec_types = {}
 
-    #--List of GMST's in the main plugin (Oblivion.esm) that have 0x00000000
-    #  as the form id.  Any GMST as such needs it Editor Id listed here.
-    gmstEids = []
-
     """
     GLOB record tweaks used by patcher.patchers.multitweak_settings.GmstTweaker
 
@@ -405,7 +400,7 @@ class GameInfo(object):
 
     To make a tweak Enabled by Default, enclose the tuple entry for the
     tweak in a list, and make a dictionary as the second list item with {
-    'defaultEnabled ':True}. See the UOP Vampire face fix for an example of
+    u'default_enabled': True}. See the UOP Vampire face fix for an example of
     this (in the GMST Tweaks)
     """
     GlobalsTweaks = []
@@ -428,7 +423,7 @@ class GameInfo(object):
 
     To make a tweak Enabled by Default, enclose the tuple entry for the
     tweak in a list, and make a dictionary as the second list item with {
-    'defaultEnabled ':True}. See the UOP Vampire facefix for an example of
+    u'default_enabled': True}. See the UOP Vampire facefix for an example of
     this (in the GMST Tweaks)
     """
     GmstTweaks = []
@@ -457,8 +452,6 @@ class GameInfo(object):
     #--------------------------------------------------------------------------
     # SoundPatcher
     #--------------------------------------------------------------------------
-    # Needs longs in SoundPatcher
-    soundsLongsTypes = set()  # initialize with literal
     soundsTypes = {}
 
     #--------------------------------------------------------------------------
@@ -495,7 +488,6 @@ class GameInfo(object):
     #--------------------------------------------------------------------------
     # Text Patcher
     #--------------------------------------------------------------------------
-    text_long_types = set()
     text_types = {}
 
     #--------------------------------------------------------------------------
@@ -565,6 +557,23 @@ class GameInfo(object):
     mgef_stats_attrs = ()
 
     #--------------------------------------------------------------------------
+    # Assorted Tweaker
+    #--------------------------------------------------------------------------
+    assorted_tweaks = set()
+    # Only allow the 'mark playable' tweaks to mark a piece of armor/clothing
+    # as playable if it has at least one biped flag that is not in this set.
+    nonplayable_biped_flags = set()
+    # The record attribute and flag name needed to find out if a piece of armor
+    # is non-playable. Locations differ in TES4, FO3/FNV and TES5.
+    not_playable_flag = (u'flags1', u'isNotPlayable')
+    # Tuple containing the name of the attribute and the value it has to be set
+    # to in order for a weapon to count as a staff for reweighing purposes
+    staff_condition = ()
+    # The record type that contains the static attenuation field tweaked by the
+    # static attenuation tweaks. SNDR on newer games, SOUN on older games.
+    static_attenuation_rec_type = b'SNDR'
+
+    #--------------------------------------------------------------------------
     # Magic Effects - Oblivion-specific
     #--------------------------------------------------------------------------
     # Doesn't list MGEFs that use actor values, but rather MGEFs that have a
@@ -619,7 +628,7 @@ class GameInfo(object):
         u'cell_float_attrs', u'cellRecAttrs', u'cellRecFlags',
         u'cell_skip_interior_attrs', u'condition_function_data',
         u'default_eyes', u'destructible_types', u'ench_stats_attrs',
-        u'generic_av_effects', u'getvatsvalue_index', u'gmstEids',
+        u'generic_av_effects', u'getvatsvalue_index',
         u'graphicsFidTypes', u'graphicsModelAttrs', u'graphicsTypes',
         u'hostile_effects', u'inventoryTypes', u'keywords_types', u'listTypes',
         u'mgef_basevalue', u'mgef_name', u'mgef_school', u'mgef_stats_attrs',
@@ -627,7 +636,10 @@ class GameInfo(object):
         u'record_type_name', u'relations_attrs', u'relations_csv_header',
         u'relations_csv_row_format', u'save_rec_types', u'scripts_types',
         u'soundsLongsTypes', u'soundsTypes', u'spell_stats_attrs',
-        u'statsHeaders', u'statsTypes', u'text_long_types', u'text_types',
+        u'statsHeaders', u'statsTypes', u'text_types',
+        u'assorted_tweaks', u'staff_condition', u'static_attenuation_rec_type',
+        u'nonplayable_biped_flags', u'not_playable_flag',
+        # FIXME(inf) format right before merge!
     }
 
     @classmethod
@@ -652,20 +664,22 @@ class GameInfo(object):
         Currently populates the GameInfo namespace with the members defined in
         the relevant constants.py and imports default_tweaks.py and
         vanilla_files.py."""
-        constants = importlib.import_module('.constants', package=package_name)
+        constants = importlib.import_module(u'.constants',
+            package=package_name)
         for k in dir(constants):
-            if k.startswith('_'): continue
+            if k.startswith(u'_'): continue
             if k not in cls._constants_members:
-                raise RuntimeError(u'Unexpected game constant %s' % k)
+                raise SyntaxError(u"Unexpected game constant '%s', check for "
+                                  u'typos or update _constants_members' % k)
             setattr(cls, k, getattr(constants, k))
-        tweaks_module = importlib.import_module('.default_tweaks',
-                                                package=package_name)
+        tweaks_module = importlib.import_module(u'.default_tweaks',
+            package=package_name)
         cls.default_tweaks = tweaks_module.default_tweaks
-        vf_module = importlib.import_module('.vanilla_files',
-                                            package=package_name)
+        vf_module = importlib.import_module(u'.vanilla_files',
+            package=package_name)
         cls.vanilla_files = vf_module.vanilla_files
-        patchers_module = importlib.import_module('.patcher',
-                                                  package=package_name)
+        patchers_module = importlib.import_module(u'.patcher',
+            package=package_name)
         cls.gameSpecificPatchers = patchers_module.gameSpecificPatchers
         cls.gameSpecificListPatchers = patchers_module.gameSpecificListPatchers
         cls.game_specific_import_patchers = \

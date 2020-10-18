@@ -26,8 +26,7 @@ from __future__ import division
 import struct
 # Set MelModel in brec, in this case it's identical to the fallout 3 one
 from ..fallout3.records import MelOwnership, MelDestructible, MelEffects, \
-    MelConditions, MreHasEffects, MelEmbeddedScript, MelItems, \
-    MelEquipmentType, MelBipedData
+    MelConditions, MelEmbeddedScript, MelItems, MelEquipmentType, MelBipedData
 from ..fallout3.records import _MelModel # HACK - needed for tests
 from ...bolt import Flags
 from ...brec import MelModel # set in Mopy/bash/game/fallout3/records.py
@@ -627,7 +626,7 @@ class MreDobj(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreEnch(MelRecord,MreHasEffects):
+class MreEnch(MelRecord):
     """Object Effect."""
     rec_sig = b'ENCH'
 
@@ -662,8 +661,7 @@ class MreFact(MelRecord):
                            (_general_flags, u'general_flags'),
                            (_general_flags_2, u'general_flags_2'),
                            (u'unused1', null2), old_versions={u'2B', u'B'}),
-        # None here is on purpose! See AssortedTweak_FactioncrimeGoldMultiplier
-        MelOptFloat(b'CNAM', (u'crime_gold_multiplier', None)),
+        MelOptFloat(b'CNAM', u'cnam_unused'), # leftover from Oblivion
         MelGroups(u'ranks',
             MelSInt32(b'RNAM', u'rank_level'),
             MelString(b'MNAM', u'male_title'),
@@ -943,7 +941,7 @@ class MreLscr(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelIcon(),
-        MelDescription(u'text'),
+        MelDescription(),
         MelGroups('locations',
             MelStruct('LNAM', '2I2h', (FID, 'direct'), (FID, 'indirect'),
                       'gridy', 'gridx'),
@@ -1616,10 +1614,10 @@ class MreWeap(MelRecord):
         MelOptStruct('CRDT','H2sfB3sI',('criticalDamage', 0),('weapCrdt1', null2),
                      ('criticalMultiplier', 0.0),(_cflags,'criticalFlags', 0),
                      ('weapCrdt2', null3),(FID,'criticalEffect', 0),),
-        MelTruncatedStruct('VATS', 'I3f2B2s', 'vatsEffect', 'vatsSkill',
-                           'vatsDamMult', 'vatsAp', 'vatsSilent',
-                           'vatsModReqiured', ('weapVats1', null2),
-                           old_versions={'I3f'}),
+        MelTruncatedStruct(b'VATS', u'I3f2B2s', (FID, u'vatsEffect'),
+            u'vatsSkill', u'vatsDamMult', u'vatsAp', u'vatsSilent',
+            u'vatsModReqiured', (u'weapVats1', null2), old_versions={u'I3f'},
+            is_optional=True),
         MelBase('VNAM','soundLevel'),
     )
     __slots__ = melSet.getSlotsUsed()

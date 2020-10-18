@@ -338,6 +338,7 @@ class PatchDialog(DialogWindow):
                     continue
                 raise
 
+    ##: Ugly warts below, should be unified eventually (see also FIXME above)
     def _pretry(self, patch_name):
         return balt.askYes(
             self, (_(u'Bash encountered an error when saving '

@@ -301,7 +301,6 @@ class _PBashParser(_AParser):
         mod_file = ModFile(mod_info, LoadFactory(
             False, *[MreRecord.type_class[t] for t in target_types]))
         mod_file.load(do_unpack=True)
-        mod_file.convertToLongFids(target_types)
         return mod_file
 
     def _read_plugin_fp(self, loaded_mod):
@@ -367,8 +366,6 @@ class _PBashParser(_AParser):
                     num_changed_records[rec_type] += 1
         # Check if we've actually changed something, otherwise skip saving
         if sum(num_changed_records):
-            # Don't forget to convert back to short fids when writing!
-            loaded_mod.convertToShortFids()
             loaded_mod.safeSave()
         return num_changed_records
 
@@ -591,10 +588,9 @@ class ActorLevels(object):
             if modName in gotLevels: continue
             modFile = ModFile(bosh.modInfos[modName],loadFactory)
             modFile.load(True)
-            mapper = modFile.getLongMapper()
             for record in modFile.NPC_.getActiveRecords():
                 id_levels = mod_id_levels.setdefault(modName,{})
-                id_levels[mapper(record.fid)] = (
+                id_levels[record.fid] = (
                     record.eid, bool(record.flags.pcLevelOffset),
                     record.level,record.calcMin,record.calcMax)
             gotLevels.add(modName)
@@ -605,14 +601,13 @@ class ActorLevels(object):
         loadFactory = LoadFactory(True,MreRecord.type_class[b'NPC_'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        mapper = modFile.getLongMapper()
         changed = 0
         id_levels = mod_id_levels.get(modInfo.name,
                                       mod_id_levels.get(GPath(u'Unknown'),
                                                         None))
         if id_levels:
             for record in modFile.NPC_.records:
-                fid = mapper(record.fid)
+                fid = record.fid
                 if fid in id_levels:
                     eid,isOffset,level,calcMin,calcMax = id_levels[fid]
                     if ((record.level,record.calcMin,record.calcMax) != (
@@ -840,15 +835,13 @@ class EditorIds(object):
         loadFactory = LoadFactory(False,*classes)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        mapper = modFile.getLongMapper()
         for type_ in types:
             typeBlock = modFile.tops.get(type_)
             if not typeBlock: continue
             if type_ not in type_id_eid: type_id_eid[type_] = {}
             id_eid = type_id_eid[type_]
             for record in typeBlock.getActiveRecords():
-                longid = mapper(record.fid)
-                if record.eid: id_eid[longid] = record.eid
+                if record.eid: id_eid[record.fid] = record.eid
 
     def writeToMod(self,modInfo):
         """Exports eids to specified mod."""
@@ -857,15 +850,13 @@ class EditorIds(object):
         loadFactory = LoadFactory(True,*classes)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        mapper = modFile.getLongMapper()
         changed = []
         for type_ in types:
             id_eid = type_id_eid.get(type_,None)
             typeBlock = modFile.tops.get(type_,None)
             if not id_eid or not typeBlock: continue
             for record in typeBlock.records:
-                longid = mapper(record.fid)
-                newEid = id_eid.get(longid)
+                newEid = id_eid.get(record.fid)
                 oldEid = record.eid
                 if newEid and record.eid and newEid != oldEid:
                     record.eid = newEid
@@ -1336,29 +1327,24 @@ class FidReplacer(object):
         loadFactory = LoadFactory(True,*classes)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        #--Create  filtered versions of mappers.
-        mapper = modFile.getShortMapper()
+        # Create filtered versions of our mappings
         masters = modFile.tes4.masters + [modFile.fileInfo.name]
-        short = dict((oldId,mapper(oldId)) for oldId in self.old_eid if
-                     oldId[0] in masters)
-        short.update((newId,mapper(newId)) for newId in self.new_eid if
-                     newId[0] in masters)
-        old_eid = dict(
-            (short[oldId],eid) for oldId,eid in self.old_eid.iteritems() if
-            oldId in short)
-        new_eid = dict(
-            (short[newId],eid) for newId,eid in self.new_eid.iteritems() if
-            newId in short)
-        old_new = dict((short[oldId],short[newId]) for oldId,newId in
-                       self.old_new.iteritems() if
-                       (oldId in short and newId in short))
-        if not old_new: return False
+        filt_fids = {oldId for oldId in self.old_eid if oldId[0] in masters}
+        filt_fids.update(newId for newId in self.new_eid
+                         if newId[0] in masters)
+        old_eid_filtered = {oldId: eid for oldId, eid
+                            in self.old_eid.iteritems() if oldId in filt_fids}
+        new_eid_filtered = {newId: eid for newId, eid
+                            in self.new_eid.iteritems() if newId in filt_fids}
+        old_new_filtered = {oldId: newId for oldId, newId
+                            in self.old_new.iteritems()
+                            if oldId in filt_fids and newId in filt_fids}
+        if not old_new_filtered: return False
         #--Swapper function
-        old_count = {}
+        old_count = Counter()
         def swapper(oldId):
-            newId = old_new.get(oldId,None)
+            newId = old_new_filtered.get(oldId, None)
             if newId:
-                old_count.setdefault(oldId,0)
                 old_count[oldId] += 1
                 return newId
             else:
@@ -1367,13 +1353,14 @@ class FidReplacer(object):
         for type_ in types:
             for record in getattr(modFile,type_).getActiveRecords():
                 if changeBase: record.fid = swapper(record.fid)
-                record.mapFids(swapper,True)
+                record.mapFids(swapper, save=True)
                 record.setChanged()
         #--Done
         if not old_count: return False
         modFile.safeSave()
-        entries = [(count,old_eid[oldId],new_eid[old_new[oldId]]) for
-                   oldId,count in old_count.iteritems()]
+        entries = [(count, old_eid_filtered[oldId],
+                    new_eid_filtered[old_new_filtered[oldId]])
+                   for oldId, count in old_count.iteritems()]
         entries.sort(key=itemgetter(1))
         return u'\n'.join([u'%3d %s >> %s' % entry for entry in entries])
 
@@ -1451,14 +1438,13 @@ class FullNames(object):
         loadFactory = LoadFactory(False,*classes)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        mapper = modFile.getLongMapper()
         for type_ in types:
             typeBlock = modFile.tops.get(type_,None)
             if not typeBlock: continue
             if type_ not in type_id_name: type_id_name[type_] = {}
             id_name = type_id_name[type_]
             for record in typeBlock.getActiveRecords():
-                longid = mapper(record.fid)
+                longid = record.fid
                 full = record.full or (type_ == b'LIGH' and u'NO NAME')
                 if record.eid and full:
                     id_name[longid] = (record.eid,full)
@@ -1470,14 +1456,13 @@ class FullNames(object):
         loadFactory = LoadFactory(True,*classes)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        mapper = modFile.getLongMapper()
         changed = {}
         for type_ in types:
             id_name = type_id_name.get(type_,None)
             typeBlock = modFile.tops.get(type_,None)
             if not id_name or not typeBlock: continue
             for record in typeBlock.records:
-                longid = mapper(record.fid)
+                longid = record.fid
                 full = record.full
                 eid,newFull = id_name.get(longid,(0,0))
                 if newFull and newFull not in (full,u'NO NAME'):
@@ -1733,7 +1718,6 @@ class ItemStats(object):
         loadFactory = LoadFactory(False,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        modFile.convertToLongFids(list(self.class_attrs))
         for group, attrs in self.class_attrs.iteritems():
             for record in getattr(modFile,group).getActiveRecords():
                 self.class_fid_attr_value[group][record.fid].update(
@@ -2012,7 +1996,6 @@ class ScriptText(_ScriptText):
         loadFactory = LoadFactory(False,MreRecord.type_class[b'SCPT'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        mapper = modFile.getLongMapper()
         with Progress(_(u'Export Scripts')) as progress:
             records = modFile.SCPT.getActiveRecords()
             y = len(records)
@@ -2020,8 +2003,7 @@ class ScriptText(_ScriptText):
             for record in records:
                 z += 1
                 progress((0.5/y*z),_(u'Reading scripts in %s.')% file_)
-                eid_data[record.eid] = (record.script_source,
-                                        mapper(record.fid))
+                eid_data[record.eid] = (record.script_source, record.fid)
 
     def writeToMod(self, modInfo, makeNew=False):
         """Writes scripts to specified mod."""
@@ -2332,7 +2314,6 @@ class SigilStoneDetails(_UsesEffectsMixin):
         loadFactory = LoadFactory(False,MreRecord.type_class[b'SGST'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        modFile.convertToLongFids([b'SGST'])
         for record in modFile.SGST.getActiveRecords():
             effects = []
             for effect in record.effects:
@@ -2360,11 +2341,9 @@ class SigilStoneDetails(_UsesEffectsMixin):
         loadFactory = LoadFactory(True,MreRecord.type_class[b'SGST'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        mapper = modFile.getLongMapper()
-        shortMapper = modFile.getShortMapper()
         changed = [] #eids
         for record in modFile.SGST.getActiveRecords():
-            newStats = fid_stats.get(mapper(record.fid),None)
+            newStats = fid_stats.get(record.fid, None)
             if not newStats: continue
             effects = []
             for effect in record.effects:
@@ -2372,7 +2351,7 @@ class SigilStoneDetails(_UsesEffectsMixin):
                               effect.duration,effect.recipient,
                               effect.actorValue]
                 if effect.scriptEffect:
-                    effectlist.append([mapper(effect.scriptEffect.script),
+                    effectlist.append([effect.scriptEffect.script,
                                        effect.scriptEffect.school,
                                        effect.scriptEffect.visual,
                                        effect.scriptEffect.flags.hostile,
@@ -2381,14 +2360,14 @@ class SigilStoneDetails(_UsesEffectsMixin):
                 effects.append(effectlist)
             oldStats = [record.eid,record.full,record.model.modPath,
                         round(record.model.modb,6),record.iconPath,
-                        mapper(record.script),record.uses,record.value,
+                        record.script,record.uses,record.value,
                         round(record.weight,6),effects]
             if oldStats != newStats:
                 changed.append(oldStats[0]) #eid
                 record.eid,record.full,record.model.modPath,\
                 record.model.modb,record.iconPath,script,record.uses,\
                 record.value,record.weight,effects = newStats
-                record.script = shortMapper(script)
+                record.script = script
                 record.effects = []
                 for effect in effects:
                     neweffect = record.getDefault(u'effects')
@@ -2401,7 +2380,7 @@ class SigilStoneDetails(_UsesEffectsMixin):
                         script,scriptEffect.school,scriptEffect.visual,\
                         scriptEffect.flags.hostile,scriptEffect.full = \
                             scripteffect
-                        scriptEffect.script = shortMapper(script)
+                        scriptEffect.script = script
                         neweffect.scriptEffect = scriptEffect
                     record.effects.append(neweffect)
                 record.setChanged()
@@ -2590,12 +2569,10 @@ class ItemPrices(_ItemPrices):
         loadFactory = LoadFactory(False,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        mapper = modFile.getLongMapper()
         attrs = self.item_prices_attrs
         for group, fid_stats in class_fid_stats.iteritems():
             for record in getattr(modFile,group).getActiveRecords():
-                fid_stats[mapper(record.fid)] = map(record.__getattribute__,
-                                                    attrs)
+                fid_stats[record.fid] = map(record.__getattribute__, attrs)
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
@@ -2604,11 +2581,10 @@ class ItemPrices(_ItemPrices):
         loadFactory = LoadFactory(True,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        mapper = modFile.getLongMapper()
         changed = Counter() #--changed[modName] = numChanged
         for group, fid_stats in class_fid_stats.iteritems():
             for record in getattr(modFile,group).getActiveRecords():
-                longid = mapper(record.fid)
+                longid = record.fid
                 stats = fid_stats.get(longid,None)
                 if not stats: continue
                 value = stats[0]
@@ -2766,7 +2742,6 @@ class SpellRecords(_UsesEffectsMixin):
         loadFactory= LoadFactory(False,MreRecord.type_class[b'SPEL'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        modFile.convertToLongFids([b'SPEL'])
         for record in modFile.SPEL.getActiveRecords():
             fid_stats[record.fid] = [getattr_deep(record,attr) for attr in
                                      attrs]
@@ -2793,11 +2768,9 @@ class SpellRecords(_UsesEffectsMixin):
         loadFactory= LoadFactory(True,MreRecord.type_class[b'SPEL'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        mapper = modFile.getLongMapper()
-        shortMapper = modFile.getShortMapper()
         changed = [] #eids
         for record in modFile.SPEL.getActiveRecords():
-            newStats = fid_stats.get(mapper(record.fid), None)
+            newStats = fid_stats.get(record.fid, None)
             if not newStats: continue
             oldStats = [getattr_deep(record, attr) for attr in attrs]
             if detailed:
@@ -2807,7 +2780,7 @@ class SpellRecords(_UsesEffectsMixin):
                                   effect.duration,effect.recipient,
                                   effect.actorValue]
                     if effect.scriptEffect:
-                        effectlist.append([mapper(effect.scriptEffect.script),
+                        effectlist.append([effect.scriptEffect.script,
                                            effect.scriptEffect.school,
                                            effect.scriptEffect.visual,
                                            effect.scriptEffect.flags.hostile,
@@ -2833,7 +2806,7 @@ class SpellRecords(_UsesEffectsMixin):
                             script,scriptEffect.school,scriptEffect.visual,\
                             scriptEffect.flags.hostile,scriptEffect.full = \
                                 scripteffect
-                            scriptEffect.script = shortMapper(script)
+                            scriptEffect.script = script
                             neweffect.scriptEffect = scriptEffect
                         record.effects.append(neweffect)
                 record.setChanged()
@@ -3084,7 +3057,6 @@ class IngredientDetails(_UsesEffectsMixin):
         loadFactory= LoadFactory(False,MreRecord.type_class[b'INGR'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        modFile.convertToLongFids([b'INGR'])
         for record in modFile.INGR.getActiveRecords():
             effects = []
             for effect in record.effects:
@@ -3112,11 +3084,9 @@ class IngredientDetails(_UsesEffectsMixin):
         loadFactory = LoadFactory(True,MreRecord.type_class[b'INGR'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        mapper = modFile.getLongMapper()
-        shortMapper = modFile.getShortMapper()
         changed = [] #eids
         for record in modFile.INGR.getActiveRecords():
-            newStats = fid_stats.get(mapper(record.fid), None)
+            newStats = fid_stats.get(record.fid, None)
             if not newStats: continue
             effects = []
             for effect in record.effects:
@@ -3124,7 +3094,7 @@ class IngredientDetails(_UsesEffectsMixin):
                               effect.duration,effect.recipient,
                               effect.actorValue]
                 if effect.scriptEffect:
-                    effectlist.append([mapper(effect.scriptEffect.script),
+                    effectlist.append([effect.scriptEffect.script,
                                        effect.scriptEffect.school,
                                        effect.scriptEffect.visual,
                                        effect.scriptEffect.flags.hostile,
@@ -3133,14 +3103,14 @@ class IngredientDetails(_UsesEffectsMixin):
                 effects.append(effectlist)
             oldStats = [record.eid,record.full,record.model.modPath,
                         round(record.model.modb,6),record.iconPath,
-                        mapper(record.script),record.value,
+                        record.script, record.value,
                         round(record.weight,6),effects]
             if oldStats != newStats:
                 changed.append(oldStats[0]) #eid
                 record.eid,record.full,record.model.modPath,\
                 record.model.modb,record.iconPath,script,record.value,\
                 record.weight,effects = newStats
-                record.script = shortMapper(script)
+                record.script = script
                 record.effects = []
                 for effect in effects:
                     neweffect = record.getDefault(u'effects')
@@ -3153,7 +3123,7 @@ class IngredientDetails(_UsesEffectsMixin):
                         script,scriptEffect.school,scriptEffect.visual,\
                         scriptEffect.flags.hostile.hostile,scriptEffect.full\
                             = scripteffect
-                        scriptEffect.script = shortMapper(script)
+                        scriptEffect.script = script
                         neweffect.scriptEffect = scriptEffect
                     record.effects.append(neweffect)
                 record.setChanged()
