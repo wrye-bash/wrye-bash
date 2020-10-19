@@ -68,7 +68,6 @@ import wx
 from .. import bush, bosh, bolt, bass, env, load_order, archives
 from ..bolt import GPath, SubProgress, deprint, round_size, OrderedDefaultDict
 from ..bosh import omods
-from ..cint import CBashApi
 from ..exception import AbstractError, BoltError, CancelError, FileError, \
     SkipError, UnknownListener
 from ..localize import format_date, unformat_date
@@ -3945,10 +3944,7 @@ class BashFrame(WindowFrame):
             title = u'Wrye Bash %s%s '+_(u'for')+u' '+bush.game.displayName
         title %= (bass.AppVersion, (u' ' + _(u'(Standalone)'))
                                     if bass.is_standalone else u'')
-        if CBashApi.Enabled:
-            title += u', CBash %s: ' % (CBashApi.VersionText,)
-        else:
-            title += u': '
+        title += u': '
         # chop off save prefix - +1 for the path separator
         maProfile = bosh.saveInfos.localSave[len(
             bush.game.Ini.save_prefix) + 1:]
@@ -4324,7 +4320,6 @@ class BashApp(wx.App):
             settings['bash.version'] = bass.AppVersion
             # rescan mergeability on version upgrade to detect new mergeable
             bosh.modInfos.rescanMergeable(bosh.modInfos.data, bolt.Progress())
-        settings['bash.CBashEnabled'] = CBashApi.Enabled
 
 # Initialization --------------------------------------------------------------
 from .gui_patchers import initPatchers

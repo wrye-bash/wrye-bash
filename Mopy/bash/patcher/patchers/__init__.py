@@ -25,14 +25,12 @@
 """This module contains the patcher classes
 
 # Patchers 1 ------------------------------------------------------------------
-In patchers/base.py except Patcher and CBash_Patcher which are in
-patcher/base.py
+In patchers/base.py except Patcher which is in patcher/base.py
 
 # Patchers 10 -----------------------------------------------------------------
 In patchers/base.py
 
 # Patchers: 20 ----------------------------------------------------------------
-_cbash_importers.py
 mergers.py
 preservers.py
 

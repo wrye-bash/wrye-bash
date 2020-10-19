@@ -28,7 +28,6 @@ to eventually absorb all of them under the _AMerger base class."""
 from collections import defaultdict, Counter
 from itertools import chain
 # Internal
-from ._shared import _AImportInventory
 from .base import ImportPatcher
 from ... import bush
 from ...brec import MreRecord
@@ -242,12 +241,13 @@ class _AMerger(ImportPatcher):
 #------------------------------------------------------------------------------
 # Absorbed patchers -----------------------------------------------------------
 #------------------------------------------------------------------------------
-class ImportInventory(_AMerger, _AImportInventory):
+class ImportInventory(_AMerger):
     logMsg = u'\n=== ' + _(u'Inventories Changed') + u': %d'
     _add_tag = u'Invent.Add'
     _change_tag = u'Invent.Change'
     _remove_tag = u'Invent.Remove'
     _wanted_subrecord = {x: u'items' for x in bush.game.inventoryTypes}
+    iiMode = True
 
     def _entry_key(self, subrecord_entry):
         return subrecord_entry.item

@@ -26,42 +26,14 @@ carries forward changes from the last tagged plugin. The goal is to eventually
 absorb all of them under the _APreserver base class."""
 from collections import defaultdict, Counter
 from itertools import chain
-from operator import attrgetter
 # Internal
-from ._shared import _ANamesPatcher, _ANpcFacePatcher, _ASpellsPatcher, \
-    _AStatsPatcher
 from .base import ImportPatcher
 from .. import getPatchesPath
 from ... import bush, load_order, parsers
-from ...bolt import deprint, floats_equal
+from ...bolt import attrgetter_cache, deprint, floats_equal, setattr_deep
 from ...brec import MreRecord
 from ...exception import ModSigMismatchError
 from ...mod_files import ModFile, LoadFactory
-
-#------------------------------------------------------------------------------
-# cache attrgetter objects
-class _AttrGettersCache(dict):
-    def __missing__(self, attr_name):
-        return self.setdefault(attr_name, attrgetter(attr_name))
-
-_attrgetters = _AttrGettersCache()
-
-# noinspection PyDefaultArgument
-def _setattr_deep(obj, attr, value, __attrgetters=_attrgetters,
-                  __split_cache={}):
-    try:
-        parent_attr, leaf_attr = __split_cache[attr]
-    except KeyError:
-        dot_dex = attr.rfind(u'.')
-        if dot_dex > 0:
-            parent_attr = attr[:dot_dex]
-            leaf_attr = attr[dot_dex + 1:]
-        else:
-            parent_attr = u''
-            leaf_attr = attr
-        __split_cache[attr] = parent_attr, leaf_attr
-    setattr(__attrgetters[parent_attr](obj) if parent_attr else obj,
-        leaf_attr, value)
 
 #------------------------------------------------------------------------------
 class _APreserver(ImportPatcher):
@@ -108,7 +80,7 @@ class _APreserver(ImportPatcher):
                 return a + self._fid_rec_attrs.get(r, ())
         self.recAttrs_class = {MreRecord.type_class[r]: collect_attrs(r, a)
                                for r, a in self.rec_attrs.iteritems()}
-        # Check if we need to use _setattr_deep to set attributes
+        # Check if we need to use setattr_deep to set attributes
         if self._multi_tag:
             all_attrs = chain.from_iterable(
                 v for d in self.recAttrs_class.itervalues()
@@ -159,7 +131,7 @@ class _APreserver(ImportPatcher):
 
     # noinspection PyDefaultArgument
     def _init_data_loop(self, recClass, srcFile, srcMod, temp_id_data,
-                        __attrgetters=_attrgetters):
+                        __attrgetters=attrgetter_cache):
         recAttrs = self.recAttrs_class[recClass]
         fid_attrs = self._fid_rec_attrs_class[recClass]
         loaded_mods = self.patchFile.loadSet
@@ -187,7 +159,7 @@ class _APreserver(ImportPatcher):
                                         for attr in recAttrs}
 
     # noinspection PyDefaultArgument
-    def initData(self, progress, __attrgetters=_attrgetters):
+    def initData(self, progress, __attrgetters=attrgetter_cache):
         """Common initData pattern.
         Used in KFFZPatcher, DeathItemPatcher, SoundPatcher, ImportScripts,
         WeaponModsPatcher, ActorImporter.
@@ -246,7 +218,7 @@ class _APreserver(ImportPatcher):
         self.isActive = bool(self.srcClasses)
 
     # noinspection PyDefaultArgument
-    def scanModFile(self, modFile, progress, __attrgetters=_attrgetters):
+    def scanModFile(self, modFile, progress, __attrgetters=attrgetter_cache):
         """Identical scanModFile() pattern of :
 
             GraphicsPatcher, KFFZPatcher, DeathItemPatcher, ImportScripts,
@@ -273,13 +245,13 @@ class _APreserver(ImportPatcher):
 
     # noinspection PyDefaultArgument
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
-                    __attrgetters=_attrgetters):
+                    __attrgetters=attrgetter_cache):
         """Most common pattern for the internal buildPatch() loop.
 
         In:
             KFFZPatcher, DeathItemPatcher, ImportScripts, SoundPatcher
         """
-        loop_setattr = _setattr_deep if self._deep_attrs else setattr
+        loop_setattr = setattr_deep if self._deep_attrs else setattr
         id_data = self.id_data
         for record in records:
             rec_fid = record.fid
@@ -385,7 +357,10 @@ class KFFZPatcher(_APreserver):
     rec_attrs = {x: ('animations',) for x in bush.game.actor_types}
 
 #------------------------------------------------------------------------------
-class NamesPatcher(_ANamesPatcher, _APreserver):
+class NamesPatcher(_APreserver):
+    """Import names from source mods/files."""
+    logMsg =  u'\n=== ' + _(u'Renamed Items')
+    srcsHeader = u'=== ' + _(u'Source Mods/Files')
     rec_attrs = {x: (u'full',) for x in bush.game.namesTypes}
     _csv_parser = parsers.FullNames
 
@@ -397,7 +372,7 @@ class NamesPatcher(_ANamesPatcher, _APreserver):
              for r, d in full_parser.type_id_name.iteritems()})
 
 #------------------------------------------------------------------------------
-class NpcFacePatcher(_ANpcFacePatcher, _APreserver):
+class NpcFacePatcher(_APreserver):
     logMsg = u'\n=== '+_(u'Faces Patched')
     rec_attrs = {b'NPC_': {
         u'NPC.Eyes': (),
@@ -426,7 +401,10 @@ class SoundPatcher(_APreserver):
     rec_attrs = bush.game.soundsTypes
 
 #------------------------------------------------------------------------------
-class SpellsPatcher(_ASpellsPatcher, _APreserver):
+class SpellsPatcher(_APreserver):
+    """Import spell changes from mod files."""
+    scanOrder = 29
+    editOrder = 29 #--Run ahead of bow patcher
     logMsg = u'\n=== ' + _(u'Modified SPEL Stats')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
     rec_attrs = {b'SPEL': bush.game.spell_stats_attrs}
@@ -440,7 +418,12 @@ class SpellsPatcher(_ASpellsPatcher, _APreserver):
                        for f, l in spel_parser.fid_stats.iteritems()}})
 
 #------------------------------------------------------------------------------
-class StatsPatcher(_AStatsPatcher, _APreserver):
+class StatsPatcher(_APreserver):
+    """Import stats from mod file."""
+    scanOrder = 28
+    editOrder = 28 #--Run ahead of bow patcher
+    logMsg = u'\n=== ' + _(u'Imported Stats')
+    srcsHeader = u'=== ' + _(u'Source Mods/Files')
     # Don't patch Editor IDs - those are only in statsTypes for the
     # Export/Import links
     rec_attrs = {r: tuple(x for x in a if x != u'eid')
@@ -691,7 +674,7 @@ class GraphicsPatcher(_APreserver):
     _fid_rec_attrs = bush.game.graphicsFidTypes
 
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
-                    __attrgetters=_attrgetters):
+                    __attrgetters=attrgetter_cache):
         id_data = self.id_data
         for record in records:
             fid = record.fid

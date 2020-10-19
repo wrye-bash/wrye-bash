@@ -23,11 +23,8 @@
 # =============================================================================
 """Tmp module to get mergeability stuff out of bosh.__init__.py."""
 import os
-from .. import bass, bush
-from ..bolt import GPath
-from ..cint import ObCollection
+from .. import bush
 from ..exception import ModError
-from ..load_order import cached_is_active
 from ..mod_files import LoadFactory, ModHeaderReader, ModFile
 
 def _is_mergeable_no_load(modInfo, reasons):
@@ -130,8 +127,8 @@ def is_esl_capable(modInfo, _minfos, reasons):
     plugin. Optionally also returns the reasons it can't be converted.
 
     :param modInfo: The mod to check.
-    :param _minfos: Ignored. Needed to mirror the signature of isPBashMergeable
-                    and isCBashMergeable.
+    :param _minfos: Ignored. Needed to mirror the signature of
+                    isPBashMergeable.
     :param reasons: A list of strings that should be filled with the reasons
                     why this mod can't be ESL flagged, or None if only the
                     return value of this method is of interest.
@@ -156,64 +153,4 @@ def is_esl_capable(modInfo, _minfos, reasons):
             if not verbose: return False
             reasons.append(_(u'New FormIDs greater than 0xFFF.'))
             break
-    return False if reasons else True
-
-def _modIsMergeableLoad(modInfo, minfos, reasons):
-    """Check if mod is mergeable, loading it and taking into account the
-    rest of mods."""
-    verbose = reasons is not None
-    allowMissingMasters = {u'Filter', u'IIM'}
-    tags = modInfo.getBashTags()
-    #--Load test
-    with ObCollection(ModsPath=bass.dirs[u'mods'].s) as Current:
-        #MinLoad, InLoadOrder, AddMasters, TrackNewTypes, SkipAllRecords
-        modFile = Current.addMod(modInfo.getPath().stail, Flags=0x00002129)
-        Current.load()
-        missingMasters = []
-        nonActiveMasters = []
-        for master in modFile.TES4.masters:
-            master = GPath(master)
-            if not tags & allowMissingMasters:
-                if master not in minfos:
-                    if not verbose: return False
-                    missingMasters.append(master.s)
-                elif not cached_is_active(master):
-                    if not verbose: return False
-                    nonActiveMasters.append(master.s)
-        #--masters not present in mod list?
-        if len(missingMasters):
-            if not verbose: return False
-            reasons.append(_(u'Masters missing: ')+u'\n    * %s' % (u'\n    * '.join(sorted(missingMasters))))
-        if len(nonActiveMasters):
-            if not verbose: return False
-            reasons.append(_(u'Masters not active: ')+u'\n    * %s' % (u'\n    * '.join(sorted(nonActiveMasters))))
-        #--Empty mod
-        if modFile.IsEmpty():
-            if not verbose: return False
-            reasons.append(_(u'Empty mod.'))
-        #--New record
-        else:
-            if not tags & allowMissingMasters:
-                newblocks = modFile.GetNewRecordTypes()
-                if newblocks:
-                    if not verbose: return False
-                    reasons.append(_(u'New record(s) in block(s): %s.') % u', '.join(sorted(newblocks)))
-        # dependent mods mergeability should be determined BEFORE their masters
-        dependent = _dependent(modInfo, minfos)
-        if dependent:
-            if not verbose: return False
-            reasons.append(_(u'Is a master of non-mergeable mod(s): %s.') % u', '.join(sorted(dependent)))
-    return False if reasons else True
-
-def isCBashMergeable(modInfo, minfos, reasons):
-    """Returns True or error message indicating whether specified mod is mergeable."""
-    verbose = reasons is not None
-    if modInfo.name.s == u"Oscuro's_Oblivion_Overhaul.esp":
-        if verbose: return [u'\n.    ' +
-            _(u'Marked non-mergeable at request of mod author.')]
-        return False
-    if not  _is_mergeable_no_load(modInfo, reasons) and not verbose:
-        return False
-    if not _modIsMergeableLoad(modInfo, minfos, reasons) and not verbose:
-        return False
     return False if reasons else True

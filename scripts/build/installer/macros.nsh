@@ -571,6 +571,8 @@
         RMDir /r "${Path}\Mopy\Wizard Images"
         ; As of 308, game settings are no longer injected
         RMDir /r "${Path}\Mopy\bash\db"
+        ; As of 308, CBash was removed
+        Delete "${Path}\Mopy\bash\compiled\CBash.dll"
     !macroend
 
 

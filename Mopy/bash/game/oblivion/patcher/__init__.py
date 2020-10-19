@@ -26,38 +26,30 @@
 contains the data structures that are dynamically set on a per game basis in
 bush."""
 from ....patcher import PatcherInfo as pi
-from .preservers import RoadImporter, CBash_RoadImporter
-from .special import AlchemicalCatalogs, CBash_AlchemicalCatalogs, \
-    SEWorldEnforcer, CBash_SEWorldEnforcer, CoblExhaustion, \
-    CBash_CoblExhaustion, MFactMarker, CBash_MFactMarker
+from .preservers import RoadImporter
+from .special import AlchemicalCatalogs, SEWorldEnforcer, CoblExhaustion, \
+    MFactMarker
 
 _special_patchers = (
-    (b'AlchemicalCatalogs', AlchemicalCatalogs, u'CBash_AlchemicalCatalogs'),
-    (b'CBash_AlchemicalCatalogs', CBash_AlchemicalCatalogs,
-     u'AlchemicalCatalogs'),
-    (b'SEWorldEnforcer', SEWorldEnforcer, u'CBash_SEWorldEnforcer'),
-    (b'CBash_SEWorldEnforcer', CBash_SEWorldEnforcer, u'SEWorldEnforcer'),
+    (b'AlchemicalCatalogs', AlchemicalCatalogs),
+    (b'SEWorldEnforcer', SEWorldEnforcer),
 )
-gameSpecificPatchers = {pname: pi(ptype, twin, ptype.gui_cls_vars()) for
-                        pname, ptype, twin in _special_patchers}
+gameSpecificPatchers = {pname: pi(ptype, ptype.gui_cls_vars()) for
+                        pname, ptype in _special_patchers}
 
 _list_patchers =(
-    (b'CoblExhaustion', CoblExhaustion, u'CBash_CoblExhaustion', u'Exhaust'),
-    (b'CBash_CoblExhaustion', CBash_CoblExhaustion, u'CoblExhaustion',
-     u'Exhaust'),
-    (b'MFactMarker', MFactMarker, u'CBash_MFactMarker', u'MFact'),
-    (b'CBash_MFactMarker', CBash_MFactMarker, u'MFactMarker', u'MFact'),
+    (b'CoblExhaustion', CoblExhaustion, u'Exhaust'),
+    (b'MFactMarker', MFactMarker, u'MFact'),
 )
-gameSpecificListPatchers = {pname: pi(ptype, twin, ptype.gui_cls_vars(), ck)
-                            for pname, ptype, twin, ck in _list_patchers}
+gameSpecificListPatchers = {pname: pi(ptype, ptype.gui_cls_vars(), ck)
+                            for pname, ptype, ck in _list_patchers}
 
 _import_patchers = (
-    (b'RoadImporter', RoadImporter, u'CBash_RoadImporter'),
-    (b'CBash_RoadImporter', CBash_RoadImporter, u'RoadImporter'),
+    (b'RoadImporter', RoadImporter),
 )
 game_specific_import_patchers = {
-    pname: pi(ptype, twin,
+    pname: pi(ptype,
               {u'patcher_type': ptype, u'_patcher_txt': ptype.patcher_text,
                u'patcher_name': ptype.patcher_name, u'autoKey': ptype.autoKey})
-    for pname, ptype, twin in _import_patchers
+    for pname, ptype in _import_patchers
 }

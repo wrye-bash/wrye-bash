@@ -26,14 +26,13 @@ to the Gmst Multitweaker - as well as the GmstTweaker itself. Gmst stands
 for game settings."""
 from __future__ import print_function
 from ... import bush # for game
-from ...bolt import SubProgress, floats_equal
-from ...exception import StateError
-from ...patcher.base import AMultiTweaker, DynamicTweak
-from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
-from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
+from ...bolt import floats_equal
+from ...patcher.base import DynamicTweak
+from ...patcher.patchers.base import MultiTweakItem
+from ...patcher.patchers.base import MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
-class _AGlobalsTweak(DynamicTweak):
+class GlobalsTweak(DynamicTweak, MultiTweakItem):
     """Sets a global to specified value."""
     tweak_read_classes = b'GLOB',
     show_key_for_custom = True
@@ -55,13 +54,8 @@ class _AGlobalsTweak(DynamicTweak):
         if count: log(u'* ' + _(u'%s set to: %4.2f') % (
             self.tweak_name, self.chosen_value))
 
-class GlobalsTweak(_AGlobalsTweak, MultiTweakItem): pass
-class CBash_GlobalsTweak(_AGlobalsTweak, CBash_MultiTweakItem):
-    scanOrder = 29
-    editOrder = 29
-
 #------------------------------------------------------------------------------
-class _AGmstTweak(DynamicTweak):
+class GmstTweak(DynamicTweak, MultiTweakItem):
     """Sets a GMST to specified value."""
     tweak_read_classes = b'GMST',
     show_key_for_custom = True
@@ -147,7 +141,6 @@ class _AGmstTweak(DynamicTweak):
         else:
             log(u'* ' + self.tweak_name)
 
-class GmstTweak(_AGmstTweak, MultiTweakItem):
     def finish_tweaking(self, patch_file):
         # Create new records for any remaining EDIDs
         for remaining_eid, was_itpo in self.eid_was_itpo.iteritems():
@@ -155,34 +148,13 @@ class GmstTweak(_AGmstTweak, MultiTweakItem):
                 patch_file.new_gmst(self._find_original_eid(remaining_eid),
                     self._find_chosen_value(remaining_eid))
 
-class CBash_GmstTweak(_AGmstTweak, CBash_MultiTweakItem):
-    """Sets a GMST to specified value."""
+#------------------------------------------------------------------------------
+class GmstTweaker(MultiTweaker):
+    """Tweaks GMST records in various ways."""
     scanOrder = 29
     editOrder = 29
-
-    def finishPatch(self, patchFile, progress):
-        subProgress = SubProgress(progress)
-        subProgress.setFull(max(len(self.chosen_values), 1))
-        pstate = 0
-        for remaining_eid, was_itpo in self.eid_was_itpo.iteritems():
-            subProgress(pstate, _(u'Finishing GMST Tweaks...'))
-            if not was_itpo:
-                orig_eid = self._find_original_eid(remaining_eid)
-                record = patchFile.create_GMST(orig_eid)
-                if not record:
-                    print(orig_eid)
-                    print(patchFile.Current.Debug_DumpModFiles())
-                    for conflict in patchFile.Current.LookupRecords(orig_eid,
-                                                                    False):
-                        print(conflict.GetParentMod().ModName)
-                    raise StateError(u'Tweak Settings: Unable to create GMST!')
-                record.value = self._find_chosen_value(remaining_eid)
-            pstate += 1
-
-#------------------------------------------------------------------------------
-class _AGmstTweaker(AMultiTweaker):
-    """Tweaks GMST records in various ways."""
-    _class_tweaks = [] # override in implemententations
+    _class_tweaks = [(GlobalsTweak, bush.game.GlobalsTweaks),
+                     (GmstTweak, bush.game.GmstTweaks)]
 
     @classmethod
     def tweak_instances(cls):
@@ -201,13 +173,3 @@ class _AGmstTweaker(AMultiTweaker):
                 instances.append(new_tweak)
         instances.sort(key=lambda a: a.tweak_name.lower())
         return instances
-
-class GmstTweaker(MultiTweaker, _AGmstTweaker):
-    scanOrder = 29
-    editOrder = 29
-    _class_tweaks = [(GlobalsTweak, bush.game.GlobalsTweaks),
-                    (GmstTweak, bush.game.GmstTweaks)]
-
-class CBash_GmstTweaker(CBash_MultiTweaker, _AGmstTweaker):
-    _class_tweaks = [(CBash_GlobalsTweak, bush.game.GlobalsTweaks),
-                     (CBash_GmstTweak, bush.game.GmstTweaks)]

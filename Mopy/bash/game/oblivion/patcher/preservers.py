@@ -23,18 +23,16 @@
 # =============================================================================
 from ....brec import MreRecord
 from ....mod_files import ModFile, LoadFactory
-from ....patcher.patchers.base import AImportPatcher, CBash_ImportPatcher, \
-    ImportPatcher
+from ....patcher.patchers.base import ImportPatcher
 
-__all__ = ['RoadImporter', 'CBash_RoadImporter']
+__all__ = [u'RoadImporter']
 
-class _ARoadImporter(AImportPatcher):
+class RoadImporter(ImportPatcher):
     """Imports roads."""
     patcher_name = _(u'Import Roads')
     patcher_text = _(u"Import roads from source mods.")
     autoKey = {u'Roads'}
 
-class RoadImporter(ImportPatcher, _ARoadImporter):
     logMsg = u'\n=== ' + _(u'Worlds Patched')
     _read_write_records = (b'CELL', b'WRLD', b'ROAD')
 
@@ -93,55 +91,3 @@ class RoadImporter(ImportPatcher, _ARoadImporter):
         log(self.__class__.logMsg)
         for modWorld in sorted(worldsPatched):
             log(u'* %s: %s' % modWorld)
-
-class CBash_RoadImporter(CBash_ImportPatcher, _ARoadImporter):
-    _read_write_records = ('ROADS',)
-    logMsg = u'* ' + _(u'Roads Imported') + u': %d'
-    #The regular patch routine doesn't allow merging of world records. The CBash patch routine does.
-    #So, allowUnloaded isn't needed for this patcher to work. The same functionality could be gained by merging the tagged record.
-    #It is needed however so that the regular patcher and the CBash patcher have the same behavior.
-    #The regular patcher has to allow unloaded mods because it can't otherwise force the road record to be merged
-    #This isn't standard behavior for import patchers, but consistency between patchers is more important.
-    def __init__(self, p_name, p_file, p_sources):
-        """Prepare to handle specified patch mod. All functions are called
-        after this."""
-        super(CBash_RoadImporter, self).__init__(p_name, p_file, p_sources)
-        self.id_ROAD = {}
-
-    def scan(self,modFile,record,bashTags):
-        """Records information needed to apply the patch."""
-        self.id_ROAD[record.fid] = record
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired."""
-        self.scan_more(modFile,record,bashTags)
-        recordId = record.fid
-        #If a previous road was scanned, and it is replaced by a new road
-        curRoad = record
-        newRoad = self.id_ROAD.get(recordId, None)
-        if newRoad:
-            #Roads and pathgrids are complex records...
-            #No good way to tell if the roads are equal.
-            #A direct comparison can prove equality, but not inequality
-            if curRoad.pgrp_list == newRoad.pgrp_list and curRoad.pgrr_list == newRoad.pgrr_list:
-                return
-            #So some records that are actually equal won't pass the above test and end up copied over
-            #Bloats the patch a little, but won't hurt anything.
-            if newRoad.fid.ValidateFormID(self.patchFile):
-                copyRoad = newRoad #Copy the new road over
-            elif curRoad and curRoad.fid.ValidateFormID(self.patchFile):
-                copyRoad = curRoad #Copy the current road over (its formID is acceptable)
-            else:
-                #Ignore the record.
-                self.patchFile.patcher_mod_skipcount[self.patcher_name][
-                    modFile.GName] += 1
-                return
-
-            override = copyRoad.CopyAsOverride(self.patchFile, UseWinningParents=True) #Copies the road over (along with the winning version of its parents if needed)
-            if override:
-                #Copy the new road values into the override (in case the CopyAsOverride returned a record pre-existing in the patch file)
-                for copyattr in newRoad.copyattrs:
-                    setattr(override, copyattr, getattr(newRoad, copyattr))
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID

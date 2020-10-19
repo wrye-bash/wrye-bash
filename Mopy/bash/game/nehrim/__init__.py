@@ -43,10 +43,6 @@ class NehrimGameInfo(OblivionGameInfo):
     patchers = tuple(p for p in OblivionGameInfo.patchers if p not in
                      (u'AlchemicalCatalogs', u'CoblExhaustion', u'MFactMarker',
                       u'SEWorldEnforcer'))
-    CBash_patchers = tuple(
-        p for p in OblivionGameInfo.CBash_patchers if p not in
-         (u'CBash_AlchemicalCatalogs', u'CBash_CoblExhaustion',
-          u'CBash_MFactMarker', u'CBash_SEWorldEnforcer'))
 
     raceNames = {
         0x224fc:  _(u'Alemanne'),

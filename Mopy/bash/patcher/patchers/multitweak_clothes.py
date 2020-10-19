@@ -25,14 +25,12 @@
 """This module contains oblivion multitweak item patcher classes that belong
 to the Clothes Multitweaker - as well as the ClothesTweaker itself."""
 import itertools
-from ... import bush
-from ...exception import AbstractError
 from ...patcher.base import AMultiTweaker, DynamicTweak
-from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
-from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
+from ...patcher.patchers.base import MultiTweakItem
+from ...patcher.patchers.base import MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
-class AClothesTweak(DynamicTweak):
+class ClothesTweak(DynamicTweak, MultiTweakItem):
     tweak_read_classes = b'CLOT',
     clothes_flags = {
         u'hoods':    0x00000002,
@@ -48,8 +46,8 @@ class AClothesTweak(DynamicTweak):
     }
 
     def __init__(self, tweak_name, tweak_tip, tweak_key, *tweak_choices):
-        super(AClothesTweak, self).__init__(tweak_name, tweak_tip, tweak_key,
-                                            *tweak_choices)
+        super(ClothesTweak, self).__init__(tweak_name, tweak_tip, tweak_key,
+            *tweak_choices)
         type_key = tweak_key[:tweak_key.find(u'.')]
         self.or_type_flags = type_key in (u'robes', u'rings')
         self.type_flags = self.clothes_flags[type_key]
@@ -57,35 +55,19 @@ class AClothesTweak(DynamicTweak):
     @staticmethod
     def _get_biped_flags(record):
         """Returns the biped flags of the specified record as an integer."""
-        raise AbstractError(u'_get_biped_flags not implemented')
+        return int(record.biped_flags) & 0xFFFF
 
     def wants_record(self, record):
+        if self._is_nonplayable(record):
+            return False
         rec_type_flags = self._get_biped_flags(record)
         my_type_flags = self.type_flags
         return ((rec_type_flags == my_type_flags) or (self.or_type_flags and (
                 rec_type_flags & my_type_flags == rec_type_flags)))
 
-class ClothesTweak(AClothesTweak, MultiTweakItem):
-    @staticmethod
-    def _get_biped_flags(record):
-        return int(record.biped_flags) & 0xFFFF
-
-    def wants_record(self, record):
-        return super(ClothesTweak, self).wants_record(
-            record) and not self._is_nonplayable(record)
-
-class CBash_ClothesTweak(AClothesTweak, CBash_MultiTweakItem):
-    @staticmethod
-    def _get_biped_flags(record):
-        return record.flags & 0xFFFF
-
-    def wants_record(self, record):
-        return super(CBash_ClothesTweak, self).wants_record(
-            record) and record.IsPlayable
-
 #------------------------------------------------------------------------------
-class _AMaxWeightTweak(AClothesTweak):
-    """Shared code of PBash/CBash max weight tweaks."""
+class ClothesTweak_MaxWeight(ClothesTweak):
+    """Shared code of max weight tweaks."""
     tweak_log_msg = _(u'Clothes Reweighed: %(total_changed)d')
 
     @property
@@ -95,7 +77,7 @@ class _AMaxWeightTweak(AClothesTweak):
         # Guess (i.e. super_weight) is intentionally overweight
         max_weight = self.chosen_weight
         super_weight = max(10, 5 * max_weight)
-        return super(_AMaxWeightTweak, self).wants_record(
+        return super(ClothesTweak_MaxWeight, self).wants_record(
             record) and max_weight < record.weight < super_weight
 
     def tweak_record(self, record):
@@ -104,13 +86,10 @@ class _AMaxWeightTweak(AClothesTweak):
     def tweak_log(self, log, count):
         self.tweak_log_header = (self.tweak_name +
                                  u' [%4.2f]' % self.chosen_weight)
-        super(_AMaxWeightTweak, self).tweak_log(log, count)
-
-class ClothesTweak_MaxWeight(_AMaxWeightTweak, ClothesTweak): pass
-class CBash_ClothesTweak_MaxWeight(_AMaxWeightTweak, CBash_ClothesTweak): pass
+        super(ClothesTweak_MaxWeight, self).tweak_log(log, count)
 
 #------------------------------------------------------------------------------
-class _AUnblockTweak(AClothesTweak):
+class _AUnblockTweak(ClothesTweak):
     """Unlimited rings, amulets."""
     tweak_log_msg = _(u'Clothes Tweaked: %(total_changed)d')
 
@@ -130,13 +109,6 @@ class _AUnblockTweak(AClothesTweak):
 class ClothesTweak_Unblock(_AUnblockTweak, ClothesTweak):
     def tweak_record(self, record):
         record.biped_flags &= ~self.unblock_flags
-
-class CBash_ClothesTweak_Unblock(_AUnblockTweak, CBash_ClothesTweak):
-    scanOrder = 31 ##: this causes silly changes to e.g. JailPants, investigate
-    editOrder = 31
-
-    def tweak_record(self, record):
-        record.flags &= ~self.unblock_flags
 
 #------------------------------------------------------------------------------
 class _AClothesTweaker(AMultiTweaker):
@@ -192,12 +164,4 @@ class ClothesTweaker(_AClothesTweaker,MultiTweaker):
         return sorted(itertools.chain(
             (ClothesTweak_Unblock(*x) for x in cls._unblock),
             (ClothesTweak_MaxWeight(*x) for x in cls._max_weight)),
-                      key=lambda a: a.tweak_name.lower())
-
-class CBash_ClothesTweaker(_AClothesTweaker,CBash_MultiTweaker):
-    @classmethod
-    def tweak_instances(cls):
-        return sorted(itertools.chain(
-            (CBash_ClothesTweak_Unblock(*x) for x in cls._unblock),
-            (CBash_ClothesTweak_MaxWeight(*x) for x in cls._max_weight)),
                       key=lambda a: a.tweak_name.lower())

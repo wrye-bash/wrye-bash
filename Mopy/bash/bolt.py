@@ -49,6 +49,7 @@ from binascii import crc32
 from functools import partial
 from itertools import chain
 from keyword import iskeyword
+from operator import attrgetter
 # Internal
 from . import exception
 
@@ -248,8 +249,6 @@ def sortFiles(files, __split=os.path.split):
     sort_keys_dict = dict((x, __split(x.lower())) for x in files)
     return sorted(files, key=sort_keys_dict.__getitem__)
 
-CBash = 0
-
 # PY3: Dicts are ordered by default on py3.7, so drop this in favor of just
 # collections.defaultdict
 class OrderedDefaultDict(collections.OrderedDict, collections.defaultdict):
@@ -373,6 +372,31 @@ class DefaultLowerDict(LowerDict, collections.defaultdict):
 class OrderedLowerDict(LowerDict, collections.OrderedDict):
     """LowerDict that inherits from OrdererdDict."""
     __slots__ = () # no __dict__ - that would be redundant
+
+#------------------------------------------------------------------------------
+# cache attrgetter objects
+class _AttrGettersCache(dict):
+    def __missing__(self, attr_name):
+        return self.setdefault(attr_name, attrgetter(attr_name))
+
+attrgetter_cache = _AttrGettersCache()
+
+# noinspection PyDefaultArgument
+def setattr_deep(obj, attr, value, __attrgetters=attrgetter_cache,
+        __split_cache={}):
+    try:
+        parent_attr, leaf_attr = __split_cache[attr]
+    except KeyError:
+        dot_dex = attr.rfind(u'.')
+        if dot_dex > 0:
+            parent_attr = attr[:dot_dex]
+            leaf_attr = attr[dot_dex + 1:]
+        else:
+            parent_attr = u''
+            leaf_attr = attr
+        __split_cache[attr] = parent_attr, leaf_attr
+    setattr(__attrgetters[parent_attr](obj) if parent_attr else obj,
+        leaf_attr, value)
 
 # sio - StringIO wrapper so it uses the 'with' statement, so they can be used
 #  in the same functions that accept files as input/output as well.  Really,

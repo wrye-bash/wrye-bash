@@ -29,7 +29,6 @@ from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
     BSAList, ScreensList, MasterList, bEnableWizard, PeopleList, \
     BashStatusBar
 from .. import bass, balt, bush
-from ..cint import CBashApi
 from ..balt import MenuLink, SeparatorLink, UIList_OpenItems, \
     UIList_OpenStore, UIList_Hide
 from ..env import init_app_links
@@ -530,11 +529,7 @@ def InitModLinks():
     if bush.game.Esp.canBash:
         ModList.context_links.append(SeparatorLink())
         ModList.context_links.append(Mod_MarkMergeable())
-        if CBashApi.Enabled:
-            ModList.context_links.append(Mod_MarkMergeable(doCBash=True))
         ModList.context_links.append(Mod_Patch_Update())
-        if CBashApi.Enabled:
-            ModList.context_links.append(Mod_Patch_Update(doCBash=True))
         ModList.context_links.append(Mod_ListPatchConfig())
         ModList.context_links.append(Mod_ExportPatchConfig())
         #--Advanced
@@ -556,9 +551,7 @@ def InitModLinks():
                 # exportMenu.links.append(Mod_SpellRecords_Export())
                 exportMenu.links.append(Mod_Stats_Export())
             elif bush.game.fsName == u'Oblivion':
-                exportMenu.links.append(CBash_Mod_CellBlockInfo_Export())
                 exportMenu.links.append(Mod_IngredientDetails_Export())
-                exportMenu.links.append(CBash_Mod_MapMarkers_Export())
                 exportMenu.links.append(Mod_FullNames_Export())
                 exportMenu.links.append(Mod_ActorLevels_Export())
                 exportMenu.links.append(Mod_Prices_Export())
@@ -587,7 +580,6 @@ def InitModLinks():
                 # importMenu.links.append(Mod_Fids_Replace())
             elif bush.game.fsName == u'Oblivion':
                 importMenu.links.append(Mod_IngredientDetails_Import())
-                importMenu.links.append(CBash_Mod_MapMarkers_Import())
                 importMenu.links.append(Mod_FullNames_Import())
                 importMenu.links.append(Mod_ActorLevels_Import())
                 importMenu.links.append(Mod_Prices_Import())

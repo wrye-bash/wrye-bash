@@ -30,40 +30,14 @@ import re
 # Internal
 from ... import bush, load_order
 from ...bolt import GPath, deprint, floats_equal
-from ...cint import MGEFCode
-from ...exception import AbstractError
-from ...patcher.base import AMultiTweakItem
-from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
-from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
-
-# Patchers: 30 ----------------------------------------------------------------
-class _AAssortedTweak(AMultiTweakItem):
-    """Hasty abstraction over PBash/CBash records differences to allow moving
-    wants_record overrides into the abstract classes."""
-    @staticmethod
-    def _is_scroll(record):
-        """Returns True if this record has the 'is scroll' flag set."""
-        raise AbstractError(u'_is_scroll not implemented')
-
-class _AssortPTweak(_AAssortedTweak, MultiTweakItem):
-    """An assorted PBash tweak."""
-    @staticmethod
-    def _is_scroll(record):
-        return record.flags.isScroll
-
-class _AssortCTweak(_AAssortedTweak, CBash_MultiTweakItem):
-    """An assorted CBash tweak."""
-    @staticmethod
-    def _is_scroll(record):
-        return record.IsScroll
+from ...patcher.patchers.base import MultiTweakItem
+from ...patcher.patchers.base import MultiTweaker
 
 #------------------------------------------------------------------------------
-class _AShowsTweak(_AAssortedTweak):
-    """Shared parts of CBash/PBash show clothing/armor tweaks."""
+class _AShowsTweak(MultiTweakItem):
+    """Shared code of 'show clothing/armor' tweaks."""
     _hides_bit = None # override in implementations
 
-class _PShowsTweak(_AShowsTweak, _AssortPTweak):
-    """Shared code of PBash show clothing/armor tweaks."""
     def wants_record(self, record):
         return (record.biped_flags[self._hides_bit] and
                 not self._is_nonplayable(record))
@@ -71,42 +45,23 @@ class _PShowsTweak(_AShowsTweak, _AssortPTweak):
     def tweak_record(self, record):
         record.biped_flags[self._hides_bit] = False
 
-class _CShowsTweak(_AShowsTweak, _AssortCTweak):
-    """Shared code of CBash show clothing/armor tweaks."""
-    def wants_record(self, record):
-        return (record.flags >> self._hides_bit & 1 and
-                not self._is_nonplayable(record))
-
-    def tweak_record(self, record):
-        record.flags &= ~(1 << self._hides_bit)
-
 #------------------------------------------------------------------------------
-class _AArmoShowsTweak(_AAssortedTweak):
+class _AArmoShowsTweak(_AShowsTweak):
     """Fix armor to show amulets/rings."""
     tweak_read_classes = b'ARMO',
     tweak_log_msg = _(u'Armor Pieces Tweaked: %(total_changed)d')
 
-class _AArmoShowsAmuletsTweak(_AArmoShowsTweak):
+class AssortedTweak_ArmorShows_Amulets(_AArmoShowsTweak):
     tweak_name = _(u'Armor Shows Amulets')
     tweak_tip = _(u'Prevents armor from hiding amulets.')
     tweak_key = u'armorShowsAmulets'
     _hides_bit = 17
 
-class AssortedTweak_ArmorShows_Amulets(_AArmoShowsAmuletsTweak,
-                                       _PShowsTweak): pass
-class CBash_AssortedTweak_ArmorShows_Amulets(_AArmoShowsAmuletsTweak,
-                                             _CShowsTweak): pass
-
-class _AArmoShowsRingsTweak(_AArmoShowsTweak):
+class AssortedTweak_ArmorShows_Rings(_AArmoShowsTweak):
     tweak_name = _(u'Armor Shows Rings')
     tweak_tip = _(u'Prevents armor from hiding rings.')
     tweak_key = u'armorShowsRings'
     _hides_bit = 16
-
-class AssortedTweak_ArmorShows_Rings(_AArmoShowsRingsTweak,
-                                     _PShowsTweak): pass
-class CBash_AssortedTweak_ArmorShows_Rings(_AArmoShowsRingsTweak,
-                                           _CShowsTweak): pass
 
 #------------------------------------------------------------------------------
 class _AClotShowsTweak(_AShowsTweak):
@@ -114,30 +69,20 @@ class _AClotShowsTweak(_AShowsTweak):
     tweak_read_classes = b'CLOT',
     tweak_log_msg = _(u'Clothes Tweaked: %(total_changed)d')
 
-class _AClotShowsAmuletsTweak(_AClotShowsTweak):
+class AssortedTweak_ClothingShows_Amulets(_AClotShowsTweak):
     tweak_name = _(u'Clothing Shows Amulets')
     tweak_tip = _(u'Prevents Clothing from hiding amulets.')
     tweak_key = u'ClothingShowsAmulets'
     _hides_bit = 17
 
-class AssortedTweak_ClothingShows_Amulets(_AClotShowsAmuletsTweak,
-                                          _PShowsTweak): pass
-class CBash_AssortedTweak_ClothingShows_Amulets(_AClotShowsAmuletsTweak,
-                                                _CShowsTweak): pass
-
-class _AClotShowsRingsTweak(_AClotShowsTweak):
+class AssortedTweak_ClothingShows_Rings(_AClotShowsTweak):
     tweak_name = _(u'Clothing Shows Rings')
     tweak_tip = _(u'Prevents Clothing from hiding rings.')
     tweak_key = u'ClothingShowsRings'
     _hides_bit = 16
 
-class AssortedTweak_ClothingShows_Rings(_AClotShowsRingsTweak,
-                                        _PShowsTweak): pass
-class CBash_AssortedTweak_ClothingShows_Rings(_AClotShowsRingsTweak,
-                                              _CShowsTweak): pass
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_BowReach(_AAssortedTweak):
+class AssortedTweak_BowReach(MultiTweakItem):
     """Fix bows to have reach = 1.0."""
     tweak_read_classes = b'WEAP',
     tweak_name = _(u'Bow Reach Fix')
@@ -153,12 +98,8 @@ class AAssortedTweak_BowReach(_AAssortedTweak):
     def tweak_record(self, record):
         record.reach = 1.0
 
-class AssortedTweak_BowReach(AAssortedTweak_BowReach, _AssortPTweak): pass
-class CBash_AssortedTweak_BowReach(AAssortedTweak_BowReach,
-                                   _AssortCTweak): pass
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_SkyrimStyleWeapons(_AAssortedTweak):
+class AssortedTweak_SkyrimStyleWeapons(MultiTweakItem):
     """Sets all one handed weapons as blades, two handed weapons as blunt."""
     tweak_read_classes = b'WEAP',
     tweak_name = _(u'Skyrim-style Weapons')
@@ -174,13 +115,8 @@ class AAssortedTweak_SkyrimStyleWeapons(_AAssortedTweak):
     def tweak_record(self, record):
         record.weaponType = (3 if record.weaponType == 1 else 0)
 
-class AssortedTweak_SkyrimStyleWeapons(AAssortedTweak_SkyrimStyleWeapons,
-                                       _AssortPTweak): pass
-class CBash_AssortedTweak_SkyrimStyleWeapons(AAssortedTweak_SkyrimStyleWeapons,
-                                             _AssortCTweak): pass
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_ConsistentRings(_AAssortedTweak):
+class AssortedTweak_ConsistentRings(MultiTweakItem):
     """Sets rings to all work on same finger."""
     tweak_read_classes = b'CLOT',
     tweak_name = _(u'Right Hand Rings')
@@ -191,23 +127,12 @@ class AAssortedTweak_ConsistentRings(_AAssortedTweak):
     tweak_log_msg = _(u'Rings Fixed: %(total_changed)d')
     default_enabled = True
 
-class AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,
-                                    _AssortPTweak):
     def wants_record(self, record):
         return record.biped_flags.leftRing
 
     def tweak_record(self, record):
         record.biped_flags.leftRing = False
         record.biped_flags.rightRing = True
-
-class CBash_AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,
-                                          _AssortCTweak):
-    def wants_record(self, record):
-        return record.IsLeftRing
-
-    def tweak_record(self, record):
-        record.IsLeftRing = False
-        record.IsRightRing = True
 
 #------------------------------------------------------------------------------
 _in_checks = (u'briarheart', u'child', u'corpse', u'dummy',
@@ -217,14 +142,18 @@ _starts_checks = (u'fx', u'zz')
 # Checks that can't be expressed via simple in/startswith checks
 _remaining_checks = re.compile(u'see.*me|mark(?!ynaz)')
 
-class _APlayableTweak(_AAssortedTweak):
-    """Shared code of PBash/CBash armor/clothing playable tweaks."""
+class _APlayableTweak(MultiTweakItem):
+    """Shared code of 'armor/clothing playable' tweaks."""
+    ##: This was in the CBash version only - do we need to build something like
+    # this for PBash tweaks?
+    #scanOrder = 29 # Run before the show armor/clothing tweaks
+    #editOrder = 29
+
     @staticmethod
     def _any_body_flag_set(record):
-        """Checks if any body flag but the ones ignored by this game is set. If
-        none of the 'regular' flags are set, then this is probably a token that
-        wasn't zeroed (which there are a lot of)."""
-        raise AbstractError(u'_any_body_flag_set not implemented')
+        return any(getattr(record.biped_flags, bd_flag) for bd_flag
+                   in (set(bush.game.Esp.biped_flag_names) -
+                       bush.game.nonplayable_biped_flags))
 
     @staticmethod
     def _should_skip(test_str):
@@ -245,37 +174,14 @@ class _APlayableTweak(_AAssortedTweak):
         if clothing_eid and self._should_skip(clothing_eid.lower()):
             return False
         clothing_name = record.full
-        return (clothing_name and not self._should_skip(clothing_name.lower()))
-
-class _PPlayableTweak(_APlayableTweak, _AssortPTweak):
-    """Shared code of PBash armor/clothing playable tweaks."""
-    @staticmethod
-    def _any_body_flag_set(record):
-        return any(getattr(record.biped_flags, bd_flag) for bd_flag
-                   in (set(bush.game.Esp.biped_flag_names) -
-                       bush.game.nonplayable_biped_flags))
+        return clothing_name and not self._should_skip(clothing_name.lower())
 
     def tweak_record(self, record):
         np_flag_attr, np_flag_name = bush.game.not_playable_flag
         setattr(getattr(record, np_flag_attr), np_flag_name, False) # yuck
 
-class _CPlayableTweak(_APlayableTweak, _AssortCTweak):
-    """Shared code of CBash armor/clothing playable tweaks."""
-    scanOrder = 29 # Run before the show armor/clothing tweaks
-    editOrder = 29
-
-    @staticmethod
-    def _any_body_flag_set(record):
-        return (record.IsLeftRing or record.IsFoot or record.IsHand or
-                record.IsAmulet or record.IsLowerBody or record.IsUpperBody or
-                record.IsHead or record.IsHair or record.IsTail or
-                record.IsShield)
-
-    def tweak_record(self, record):
-        record.IsNonPlayable = False
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_ClothingPlayable(_APlayableTweak):
+class AssortedTweak_ClothingPlayable(_APlayableTweak):
     """Sets all clothes to playable."""
     tweak_read_classes = b'CLOT',
     tweak_name = _(u'All Clothing Playable')
@@ -285,13 +191,8 @@ class AAssortedTweak_ClothingPlayable(_APlayableTweak):
     tweak_log_header = _(u'Playable Clothes')
     tweak_log_msg = _(u'Clothes Set As Playable: %(total_changed)d')
 
-class AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,
-                                     _PPlayableTweak): pass
-class CBash_AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,
-                                           _CPlayableTweak): pass
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_ArmorPlayable(_APlayableTweak):
+class AssortedTweak_ArmorPlayable(_APlayableTweak):
     """Sets all armors to be playable."""
     tweak_read_classes = b'ARMO',
     tweak_name = _(u'All Armor Playable')
@@ -301,13 +202,8 @@ class AAssortedTweak_ArmorPlayable(_APlayableTweak):
     tweak_log_header = _(u'Playable Armor')
     tweak_log_msg = _(u'Armor Pieces Set As Playable: %(total_changed)d')
 
-class AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,
-                                  _PPlayableTweak): pass
-class CBash_AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,
-                                        _CPlayableTweak): pass
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_DarnBooks(_AAssortedTweak):
+class AssortedTweak_DarnBooks(MultiTweakItem):
     """DarNifies books."""
     tweak_read_classes = b'BOOK',
     tweak_name = _(u'DarNified Books')
@@ -357,7 +253,7 @@ class AAssortedTweak_DarnBooks(_AAssortedTweak):
             ma_color = self._re_color.search(rec_text)
             if ma_color:
                 color = ma_color.group(1)
-            elif self._is_scroll(record):
+            elif record.flags.isScroll:
                 color = u'000000'
             else:
                 color = u'444444'
@@ -371,7 +267,7 @@ class AAssortedTweak_DarnBooks(_AAssortedTweak):
         return rec_text
 
     # Helper methods for _darnify
-    def _replace_bold(self, mo):
+    def _replace_bold(self, _mo):
         self.inBold = not self.inBold
         return u'<font face=3 color=%s>' % (
             u'440000' if self.inBold else u'444444')
@@ -379,12 +275,8 @@ class AAssortedTweak_DarnBooks(_AAssortedTweak):
     def _replace_align(self, mo):
         return u'<div align=%s>' % self._align_text[mo.group(1)]
 
-class AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks, _AssortPTweak): pass
-class CBash_AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,
-                                    _AssortCTweak): pass
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_FogFix(_AAssortedTweak):
+class AssortedTweak_FogFix(MultiTweakItem):
     """Fix fog in cell to be non-zero."""
     tweak_name = _(u'Nvidia Fog Fix')
     tweak_tip = _(u'Fix fog related Nvidia black screen problems.')
@@ -393,10 +285,13 @@ class AAssortedTweak_FogFix(_AAssortedTweak):
     tweak_log_msg = _(u'Cells With Fog Tweaked To 0.0001: %(total_changed)d')
     # Probably not needed on newer games, so default-enable only on TES4
     default_enabled = bush.game.fsName == u'Oblivion'
+    supports_pooling = False
+    tweak_read_classes = b'CELL', b'WRLD', # WRLD is useless, but we want this
+    # patcher to run in the same group as the CellImporter, so we'll have to
+    # skip worldspaces. It shouldn't be a problem in those CELLs. ##: ?
 
     def wants_record(self, record):
-        # All of these floats must be approximately equal to 0. They can be
-        # None in CBash as well, so guard against that.
+        # All of these floats must be approximately equal to 0
         for fog_attr in (u'fogNear', u'fogFar', u'fogClip'):
             fog_val = getattr(record, fog_attr)
             if fog_val is not None and not floats_equal(fog_val, 0.0):
@@ -405,12 +300,6 @@ class AAssortedTweak_FogFix(_AAssortedTweak):
 
     def tweak_record(self, record):
         record.fogNear = 0.0001
-
-class AssortedTweak_FogFix(AAssortedTweak_FogFix, _AssortPTweak):
-    supports_pooling = False
-    tweak_read_classes = b'CELL', b'WRLD', # WRLD is useless, but we want this
-    # patcher to run in the same group as the CellImporter, so we'll have to
-    # skip worldspaces. It shouldn't be a problem in those CELLs.
 
     def tweak_scan_file(self, mod_file, patch_file):
         if b'CELL' not in mod_file.tops: return
@@ -431,18 +320,8 @@ class AssortedTweak_FogFix(AAssortedTweak_FogFix, _AssortPTweak):
                 keep(cell.fid)
                 count[cell.fid[0]] += 1
 
-class CBash_AssortedTweak_FogFix(AAssortedTweak_FogFix, _AssortCTweak):
-    tweak_read_classes = b'CELLS', # or CELL, but we want this patcher to
-    # run in the same group as the CellImporter, so we'll have to skip
-    # worldspaces. It shouldn't be a problem in those CELLs.
-
-    def wants_record(self, record):
-        # It's a CELL that showed up because we said CELLS instead of CELL
-        return super(CBash_AssortedTweak_FogFix, self).wants_record(
-            record) and not record.Parent
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_NoLightFlicker(_AAssortedTweak):
+class AssortedTweak_NoLightFlicker(MultiTweakItem):
     """Remove light flickering for low end machines."""
     tweak_read_classes = b'LIGH',
     tweak_name = _(u'No Light Flicker')
@@ -459,14 +338,12 @@ class AAssortedTweak_NoLightFlicker(_AAssortedTweak):
     def tweak_record(self, record):
         record.flags &= ~self._flicker_flags
 
-class AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,
-                                   _AssortPTweak): pass
-class CBash_AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,
-                                         _AssortCTweak): pass
-
 #------------------------------------------------------------------------------
-class AMultiTweakItem_Weight(_AAssortedTweak):
+class _AMultiTweakItem_Weight(MultiTweakItem):
+    """Mixin for weight tweaks that need to ignore SEFF effects."""
     _log_weight_value = u'OVERRIDE' # avoid pycharm warning
+    _seff_code = (b'SEFF', 0)
+    _ignore_effects = bush.game.fsName != u'Oblivion'
 
     @property
     def chosen_weight(self): return self.choiceValues[self.chosen][0]
@@ -481,36 +358,19 @@ class AMultiTweakItem_Weight(_AAssortedTweak):
             log(u'  * %s: %d' % (src_plugin.s, count[src_plugin]))
 
     def wants_record(self, record):
-        return (record.weight > self.chosen_weight and
-                not floats_equal(record.weight, self.chosen_weight))
+        if (record.weight <= self.chosen_weight or floats_equal(
+                record.weight, self.chosen_weight)):
+            return False
+        # Skip OBME records, at least for now
+        return (self._ignore_effects or
+                (record.obme_record_version is None and
+                 self._seff_code not in record.getEffects()))
 
     def tweak_record(self, record):
         record.weight = self.chosen_weight
 
-# see https://github.com/wrye-bash/wrye-bash/commit/3aa3c941b2de6d751f71e50613ba20ac14f477e8
-# CBash only, PBash gets away with just knowing the FormID of SEFF and always
-# assuming it exists, since it's from Oblivion.esm. CBash handles this by
-# making sure the MGEF records are almost always read in, and always before
-# patchers that will need them.
-_SEFF = MGEFCode(b'SEFF')
-
-class _PSeffWeightTweak(AMultiTweakItem_Weight, _AssortPTweak):
-    """Mixin for PBash weight tweaks that need to ignore SEFF effects."""
-    def wants_record(self, record):
-        # Skip OBME records, at least for now
-        return (super(_PSeffWeightTweak, self).wants_record(record) and
-                (bush.game.fsName != u'Oblivion' or
-                 (record.obme_record_version is None and
-                  (b'SEFF', 0) not in record.getEffects())))
-
-class _CSeffWeightTweak(AMultiTweakItem_Weight, _AssortCTweak):
-    """Mixin for CBash weight tweaks that need to ignore SEFF effects."""
-    def wants_record(self, record):
-        return super(_CSeffWeightTweak, self).wants_record(
-            record) and not any(e.name == _SEFF for e in record.effects)
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_PotionWeight(AMultiTweakItem_Weight):
+class AssortedTweak_PotionWeight(_AMultiTweakItem_Weight):
     """Reweighs standard potions down to 0.1."""
     tweak_read_classes = b'ALCH',
     tweak_name = _(u'Reweigh: Potions (Maximum)')
@@ -529,16 +389,11 @@ class AAssortedTweak_PotionWeight(AMultiTweakItem_Weight):
         return None
 
     def wants_record(self, record):
-        return self.chosen_weight < record.weight < 1.0 and super(
-            AAssortedTweak_PotionWeight, self).wants_record(record)
-
-class AssortedTweak_PotionWeight(_PSeffWeightTweak,
-                                 AAssortedTweak_PotionWeight): pass
-class CBash_AssortedTweak_PotionWeight(_CSeffWeightTweak,
-                                       AAssortedTweak_PotionWeight): pass
+        return record.weight < 1.0 and super(
+            AssortedTweak_PotionWeight, self).wants_record(record)
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_IngredientWeight(AMultiTweakItem_Weight):
+class AssortedTweak_IngredientWeight(_AMultiTweakItem_Weight):
     """Reweighs standard ingredients down to 0.1."""
     tweak_read_classes = b'INGR',
     tweak_name = _(u'Reweigh: Ingredients')
@@ -549,13 +404,8 @@ class AAssortedTweak_IngredientWeight(AMultiTweakItem_Weight):
     tweak_log_msg = _(u'Ingredients Reweighed: %(total_changed)d')
     _log_weight_value = _(u'Ingredients set to maximum weight of %f.')
 
-class AssortedTweak_IngredientWeight(_PSeffWeightTweak,
-                                     AAssortedTweak_IngredientWeight): pass
-class CBash_AssortedTweak_IngredientWeight(
-    _CSeffWeightTweak, AAssortedTweak_IngredientWeight): pass
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_PotionWeightMinimum(AMultiTweakItem_Weight):
+class AssortedTweak_PotionWeightMinimum(_AMultiTweakItem_Weight):
     """Reweighs any potions up to 4."""
     tweak_name = _(u'Reweigh: Ingestibles (Minimum)')
     tweak_tip = _(u'The weight of ingestibles like potions and drinks will be '
@@ -565,20 +415,17 @@ class AAssortedTweak_PotionWeightMinimum(AMultiTweakItem_Weight):
                      (u'2.0', 2.0), (u'4.0', 4.0), (_(u'Custom'), 0.0)]
     tweak_log_msg = _(u'Ingestibles Reweighed: %(total_changed)d')
     _log_weight_value = _(u'Ingestibles set to minimum weight of %f.')
+    ##: This was in the CBash version only - do we need to build something like
+    # this for PBash tweaks?
+    #scanOrder = 33 #Have it run after the max weight for consistent results
+    #editOrder = 33
 
     def wants_record(self, record): # note no SEFF condition
         return (record.weight < self.chosen_weight and
                 not floats_equal(record.weight, self.chosen_weight))
 
-class AssortedTweak_PotionWeightMinimum(
-    _AssortPTweak, AAssortedTweak_PotionWeightMinimum): pass
-class CBash_AssortedTweak_PotionWeightMinimum(
-    _AssortCTweak, AAssortedTweak_PotionWeightMinimum):
-    scanOrder = 33 #Have it run after the max weight for consistent results
-    editOrder = 33
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_StaffWeight(AMultiTweakItem_Weight):
+class AssortedTweak_StaffWeight(_AMultiTweakItem_Weight):
     """Reweighs staves."""
     tweak_read_classes = b'WEAP',
     tweak_name = _(u'Reweigh: Staves')
@@ -593,15 +440,10 @@ class AAssortedTweak_StaffWeight(AMultiTweakItem_Weight):
     def wants_record(self, record):
         staff_attr, staff_val = bush.game.staff_condition
         return getattr(record, staff_attr) == staff_val and super(
-            AAssortedTweak_StaffWeight, self).wants_record(record)
-
-class AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,
-                                _AssortPTweak): pass
-class CBash_AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,
-                                      _AssortCTweak): pass
+            AssortedTweak_StaffWeight, self).wants_record(record)
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_ArrowWeight(AMultiTweakItem_Weight):
+class AssortedTweak_ArrowWeight(_AMultiTweakItem_Weight):
     tweak_read_classes = b'AMMO',
     tweak_name = _(u'Reweigh: Ammunition')
     tweak_tip = _(u'The weight of ammunition (e.g. arrows, bullets, etc.) '
@@ -612,13 +454,8 @@ class AAssortedTweak_ArrowWeight(AMultiTweakItem_Weight):
     tweak_log_msg = _(u'Ammunition Reweighed: %(total_changed)d')
     _log_weight_value = _(u'Ammunition set to maximum weight of %f.')
 
-class AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,
-                                _AssortPTweak): pass
-class CBash_AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,
-                                      _AssortCTweak): pass
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_ScriptEffectSilencer(_AAssortedTweak):
+class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
     """Silences the script magic effect and gives it an extremely high
     speed."""
     tweak_read_classes = b'MGEF',
@@ -628,7 +465,12 @@ class AAssortedTweak_ScriptEffectSilencer(_AAssortedTweak):
     tweak_choices = [(u'0', 0)]
     tweak_log_msg = _(u'Script Effect silenced.')
     default_enabled = True
-    _silent_attrs = {} # override in implementations
+    _null_ref = (GPath(bush.game.master_file), 0)
+    _silent_attrs = {u'model': None, u'projectileSpeed': 9999,
+                     u'light': _null_ref, u'effectShader': _null_ref,
+                     u'enchantEffect': _null_ref, u'castingSound': _null_ref,
+                     u'boltSound': _null_ref, u'hitSound': _null_ref,
+                     u'areaSound': _null_ref}
 
     def wants_record(self, record):
         # u'' here is on purpose! We're checking the EDID, which gets decoded
@@ -638,34 +480,14 @@ class AAssortedTweak_ScriptEffectSilencer(_AAssortedTweak):
     def tweak_record(self, record):
         s_attrs = self._silent_attrs
         for attr in s_attrs: setattr(record, attr, s_attrs[attr])
-
-class AssortedTweak_ScriptEffectSilencer(AAssortedTweak_ScriptEffectSilencer,
-                                         _AssortPTweak):
-    _null_ref = (GPath(bush.game.master_file), 0)
-    _silent_attrs = {u'model': None, u'projectileSpeed': 9999,
-                     u'light': _null_ref, u'effectShader': _null_ref,
-                     u'enchantEffect': _null_ref, u'castingSound': _null_ref,
-                     u'boltSound': _null_ref, u'hitSound': _null_ref,
-                     u'areaSound': _null_ref}
-
-    def tweak_record(self, record):
-        super(AssortedTweak_ScriptEffectSilencer, self).tweak_record(record)
         record.flags.noHitEffect = True
 
     def tweak_log(self, log, count):
         # count would be pointless, always one record
         super(AssortedTweak_ScriptEffectSilencer, self).tweak_log(log, {})
 
-class CBash_AssortedTweak_ScriptEffectSilencer(
-    AAssortedTweak_ScriptEffectSilencer, _AssortCTweak):
-    _silent_attrs = {
-        u'modPath': None, u'modb': None, u'modt_p': None,
-        u'projectileSpeed': 9999, u'light': None, u'effectShader': None,
-        u'enchantEffect': None, u'castingSound': None, u'boltSound': None,
-        u'hitSound': None, u'areaSound': None, u'IsNoHitEffect': True}
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_HarvestChance(_AAssortedTweak):
+class AssortedTweak_HarvestChance(MultiTweakItem):
     """Adjust Harvest Chances."""
     tweak_read_classes = b'FLOR',
     tweak_name = _(u'Harvest Chance')
@@ -691,13 +513,8 @@ class AAssortedTweak_HarvestChance(_AAssortedTweak):
         for attr in self._season_attrs:
             setattr(record, attr, self.chosen_chance)
 
-class AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,
-                                  _AssortPTweak): pass
-class CBash_AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,
-                                        _AssortCTweak): pass
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_WindSpeed(_AAssortedTweak):
+class AssortedTweak_WindSpeed(MultiTweakItem):
     """Disables Weather winds."""
     tweak_read_classes = b'WTHR',
     tweak_name = _(u'Disable Wind')
@@ -712,12 +529,8 @@ class AAssortedTweak_WindSpeed(_AAssortedTweak):
     def tweak_record(self, record):
         record.windSpeed = 0
 
-class AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed, _AssortPTweak): pass
-class CBash_AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed,
-                                    _AssortCTweak): pass
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_UniformGroundcover(_AAssortedTweak):
+class AssortedTweak_UniformGroundcover(MultiTweakItem):
     """Eliminates random variation in groundcover."""
     tweak_read_classes = b'GRAS',
     tweak_name = _(u'Uniform Groundcover')
@@ -733,13 +546,8 @@ class AAssortedTweak_UniformGroundcover(_AAssortedTweak):
     def tweak_record(self, record):
         record.heightRange = 0.0
 
-class AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,
-                                       _AssortPTweak): pass
-class CBash_AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,
-                                             _AssortCTweak): pass
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_SetCastWhenUsedEnchantmentCosts(_AAssortedTweak):
+class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
     """Sets Cast When Used Enchantment number of uses."""
     tweak_read_classes = b'ENCH',
     tweak_name = _(u'Number of Uses For Pre-enchanted Weapons and Staves')
@@ -775,16 +583,11 @@ class AAssortedTweak_SetCastWhenUsedEnchantmentCosts(_AAssortedTweak):
                       if chosen_uses != 0 else 0)
         return final_cost, final_cost * chosen_uses
 
-class AssortedTweak_SetCastWhenUsedEnchantmentCosts(
-    AAssortedTweak_SetCastWhenUsedEnchantmentCosts, _AssortPTweak): pass
-class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(
-    AAssortedTweak_SetCastWhenUsedEnchantmentCosts, _AssortCTweak): pass
-
 #------------------------------------------------------------------------------
 ##: It's possible to simplify this further, but will require some effort
 ##: Also, will have to become more powerful in the process if we want it to
 # support FO3/FNV eventually ##: does it even make sense there?
-class AAssortedTweak_DefaultIcons(_AAssortedTweak):
+class AssortedTweak_DefaultIcons(MultiTweakItem):
     """Sets a default icon for any records that don't have any icon
     assigned."""
     tweak_name = _(u'Default Icons')
@@ -837,11 +640,17 @@ class AAssortedTweak_DefaultIcons(_AAssortedTweak):
     default_enabled = True
 
     def wants_record(self, record):
+        rsig = record.recType
+        if (rsig == b'LIGH' and not record.flags.canTake or
+                rsig == b'QUST' and not record.stages or
+                rsig in (b'ARMO', b'CLOT') and
+                self._is_nonplayable(record)): return False
         return (not getattr(record, u'iconPath', None) and
                 not getattr(record, u'maleIconPath', None) and
                 not getattr(record, u'femaleIconPath', None))
 
-    def _assign_icons(self, record, d_icons):
+    @staticmethod
+    def _assign_icons(record, d_icons):
         """Assigns the specified default icons to the specified record."""
         try:
             if isinstance(d_icons, tuple):
@@ -854,15 +663,6 @@ class AAssortedTweak_DefaultIcons(_AAssortedTweak):
         except ValueError:
             deprint(u'Error while assigning default icons to %r' % record)
             raise
-
-class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons, _AssortPTweak):
-    def wants_record(self, record):
-        rsig = record.recType
-        if (rsig == b'LIGH' and not record.flags.canTake or
-                rsig == b'QUST' and not record.stages or
-                rsig in (b'ARMO', b'CLOT') and
-                self._is_nonplayable(record)): return False
-        return super(AssortedTweak_DefaultIcons, self).wants_record(record)
 
     def tweak_record(self, record):
         curr_sig = record.recType
@@ -900,62 +700,22 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons, _AssortPTweak):
         elif curr_sig in (b'BOOK', b'BSGN', b'CLAS'):
             # Just a random book icon - for class/birthsign as well.
             random.seed(record.fid[1]) # make it deterministic
-            d_icons = d_icons % (random.randint(1, 13))
-        self._assign_icons(record, d_icons)
-
-class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,
-                                       _AssortCTweak):
-    def wants_record(self, record):
-        if (record._Type == b'LIGH' and not record.IsCanTake or
-                record._Type == b'QUST' and not record.stages or
-                record._Type in (b'ARMO', b'CLOT') and record.IsNonPlayable):
-            return False
-        return super(CBash_AssortedTweak_DefaultIcons, self).wants_record(
-            record)
-
-    def tweak_record(self, record):
-        d_icons = self._default_icons[record._Type]
-        if isinstance(d_icons, tuple):
-            if record._Type in (b'ARMO', b'CLOT'):
-                #choose based on body flags:
-                if record.IsUpperBody:
-                    d_icons = d_icons[0]
-                elif record.IsLowerBody:
-                    d_icons = d_icons[1]
-                elif record.IsHead or record.IsHair:
-                    d_icons = d_icons[2]
-                elif record.IsHand:
-                    d_icons = d_icons[3]
-                elif record.IsFoot:
-                    d_icons = d_icons[4]
-                elif (record._Type == b'ARMO' and record.IsShield
-                      or record._Type == b'CLOT' and
-                      record.IsLeftRing or record.IsRightRing):
-                    d_icons = d_icons[5]
-                else: # Default icon, probably a token or somesuch
-                    d_icons = d_icons[6]
-            elif record._Type == b'KEYM':
-                random.seed(record.fid[1]) # make it deterministic
-                d_icons = d_icons[random.randint(0,1)]
-            elif record._Type == b'WEAP':
-                #choose based on weapon type:
-                try:
-                    d_icons = d_icons[record.weaponType]
-                except IndexError: #just in case
-                    d_icons = d_icons[0]
-        elif record._Type in (b'BOOK', b'BSGN', b'CLAS'):
-            # just a random book icon - for class/birthsign as well.
-            random.seed(record.fid[1]) # make it deterministic
-            d_icons = d_icons % (random.randint(1,13))
+            d_icons %= random.randint(1, 13)
         self._assign_icons(record, d_icons)
 
 #------------------------------------------------------------------------------
-class _AAttenuationTweak(_AAssortedTweak):
-    """Shared code of PBash/CBash sound attenuation tweaks."""
+class _AAttenuationTweak(MultiTweakItem):
+    """Shared code of sound attenuation tweaks."""
     tweak_read_classes = bush.game.static_attenuation_rec_type,
     tweak_choices = [(u'0%', 0), (u'5%', 5), (u'10%', 10), (u'20%', 20),
                      (u'50%', 50), (u'80%', 80), (_(u'Custom'), 0)]
     tweak_log_msg = _(u'Sounds Modified: %(total_changed)d')
+    _nirnroot_words = {u'nirnroot', u'vynroot', u'vynwurz'}
+
+    @classmethod
+    def _is_nirnroot(cls, record):
+        """Helper method for checking whether a record is a nirnroot."""
+        return any(x in record.eid.lower() for x in cls._nirnroot_words)
 
     @property
     def chosen_atten(self): return self.choiceValues[self.chosen][0] / 100
@@ -964,15 +724,11 @@ class _AAttenuationTweak(_AAssortedTweak):
         return record.staticAtten and self.chosen_atten != 1 # avoid ITPOs
 
     def tweak_record(self, record):
-        # Must be an int on py3 & for cint, otherwise errors on dump
+        # Must be an int on py3, otherwise errors on dump
         record.staticAtten = int(record.staticAtten * self.chosen_atten)
 
 #------------------------------------------------------------------------------
-_nirnroot_words = {u'nirnroot', u'vynroot', u'vynwurz'}
-def _is_nirnroot(record):
-    return any(x in record.eid.lower() for x in _nirnroot_words)
-
-class AAssortedTweak_SetSoundAttenuationLevels(_AAttenuationTweak):
+class AssortedTweak_SetSoundAttenuationLevels(_AAttenuationTweak):
     """Sets Sound Attenuation Levels for all records except Nirnroots."""
     tweak_name = _(u'Set Sound Attenuation Levels')
     tweak_tip = _(u'Sets sound attenuation levels to tweak%*current level. '
@@ -980,18 +736,11 @@ class AAssortedTweak_SetSoundAttenuationLevels(_AAttenuationTweak):
     tweak_key = u'Attenuation%:'
 
     def wants_record(self, record):
-        return super(AAssortedTweak_SetSoundAttenuationLevels,
-                     self).wants_record(
-            record) and not _is_nirnroot(record)
-
-class AssortedTweak_SetSoundAttenuationLevels(
-    AAssortedTweak_SetSoundAttenuationLevels, _AssortPTweak): pass
-class CBash_AssortedTweak_SetSoundAttenuationLevels(
-    AAssortedTweak_SetSoundAttenuationLevels, _AssortCTweak): pass
+        return super(AssortedTweak_SetSoundAttenuationLevels,
+            self).wants_record(record) and not self._is_nirnroot(record)
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(
-    _AAttenuationTweak):
+class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(_AAttenuationTweak):
     """Sets Sound Attenuation Levels for Nirnroots."""
     tweak_name = _(u'Set Sound Attenuation Levels: %s '
                    u'Only') % bush.game.nirnroots
@@ -1000,19 +749,11 @@ class AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(
     tweak_key = u'Nirnroot Attenuation%:'
 
     def wants_record(self, record):
-        return super(AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly,
-                     self).wants_record(
-            record) and _is_nirnroot(record)
-
-class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(
-    AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly,
-    _AssortPTweak): pass
-class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(
-    AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly,
-    _AssortCTweak): pass
+        return super(AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly,
+            self).wants_record(record) and self._is_nirnroot(record)
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_FactioncrimeGoldMultiplier(_AAssortedTweak):
+class AssortedTweak_FactioncrimeGoldMultiplier(MultiTweakItem):
     """Fix factions with unset crime gold multiplier to have a
     crime gold multiplier of 1.0."""
     tweak_read_classes = b'FACT',
@@ -1023,24 +764,14 @@ class AAssortedTweak_FactioncrimeGoldMultiplier(_AAssortedTweak):
     tweak_choices = [(u'1.0', u'1.0')]
     tweak_log_msg = _(u'Factions Fixed: %(total_changed)d')
 
-class AssortedTweak_FactioncrimeGoldMultiplier(
-    AAssortedTweak_FactioncrimeGoldMultiplier, _AssortPTweak):
     def wants_record(self, record):
         return record.crime_gold_multiplier is None
 
     def tweak_record(self, record):
         record.crime_gold_multiplier = 1.0
 
-class CBash_AssortedTweak_FactioncrimeGoldMultiplier(
-    AAssortedTweak_FactioncrimeGoldMultiplier, _AssortCTweak):
-    def wants_record(self, record):
-        return record.crimeGoldMultiplier is None
-
-    def tweak_record(self, record):
-        record.crimeGoldMultiplier = 1.0
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_LightFadeValueFix(_AAssortedTweak):
+class AssortedTweak_LightFadeValueFix(MultiTweakItem):
     """Remove light flickering for low end machines."""
     tweak_read_classes = b'LIGH',
     tweak_name = _(u'No Light Fade Value Fix')
@@ -1055,13 +786,8 @@ class AAssortedTweak_LightFadeValueFix(_AAssortedTweak):
     def tweak_record(self, record):
         record.fade = 1.0
 
-class AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,
-                                      _AssortPTweak): pass
-class CBash_AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,
-                                            _AssortCTweak): pass
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_TextlessLSCRs(_AAssortedTweak):
+class AssortedTweak_TextlessLSCRs(MultiTweakItem):
     """Removes the description from loading screens."""
     tweak_read_classes = b'LSCR',
     tweak_name = _(u'No Description Loading Screens')
@@ -1076,13 +802,8 @@ class AAssortedTweak_TextlessLSCRs(_AAssortedTweak):
     def tweak_record(self, record):
         record.description = u''
 
-class AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,
-                                  _AssortPTweak): pass
-class CBash_AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,
-                                        _AssortCTweak): pass
-
 #------------------------------------------------------------------------------
-class _AAssortedTweak_SEFFIcon(_AAssortedTweak):
+class AssortedTweak_SEFFIcon(MultiTweakItem):
     """Changes the icon for the SEFF (Script Effect) magic effect."""
     tweak_read_classes = b'MGEF',
     tweak_name = _(u'Magic: Script Effect Icon Changer')
@@ -1107,10 +828,6 @@ class _AAssortedTweak_SEFFIcon(_AAssortedTweak):
 
     def tweak_record(self, record):
         record.iconPath = self.chosen_icon
-
-class AssortedTweak_SEFFIcon(_AAssortedTweak_SEFFIcon, _AssortPTweak): pass
-class CBash_AssortedTweak_SEFFIcon(_AAssortedTweak_SEFFIcon,
-                                   _AssortCTweak): pass
 
 #------------------------------------------------------------------------------
 class AssortedTweak_GunsUseISAnimation(MultiTweakItem):
@@ -1138,11 +855,3 @@ class AssortedTweaker(MultiTweaker):
     scanOrder = 32
     editOrder = 32
     _tweak_classes = [globals()[t] for t in bush.game.assorted_tweaks]
-
-class CBash_AssortedTweaker(CBash_MultiTweaker):
-    """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
-    scanOrder = 32
-    editOrder = 32
-    _tweak_classes = (
-        [globals()[u'CBash_' + t] for t in bush.game.assorted_tweaks]
-        if bush.game.Esp.canCBash else [])

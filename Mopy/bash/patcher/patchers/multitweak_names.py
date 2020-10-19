@@ -33,16 +33,16 @@ from ...bolt import build_esub, RecPath
 from ...brec import MreRecord # yuck, see usage below
 from ...exception import AbstractError
 from ...parsers import LoadFactory, ModFile # yuck, see usage below
-from ...patcher.base import AMultiTweakItem, AMultiTweaker
-from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
-from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
+from ...patcher.patchers.base import MultiTweakItem
+from ...patcher.patchers.base import MultiTweaker
 
 _ignored_chars=frozenset(u'+-=.()[]')
 
-class _ANamesTweak(AMultiTweakItem):
-    """Shared code of PBash/CBash names tweaks and hasty abstraction over
-    CBash/PBash differences to allow moving duplicate code into _A classes."""
+class _ANamesTweak(MultiTweakItem):
+    """Shared code of names tweaks."""
     tweak_log_msg = _(u'Items Renamed: %(total_changed)d')
+    _tweak_mgef_hostiles = set()
+    _tweak_mgef_school = {}
 
     @property
     def chosen_format(self): return self.choiceValues[self.chosen][0]
@@ -51,94 +51,53 @@ class _ANamesTweak(AMultiTweakItem):
         record.full = self._exec_rename(record)
 
     def _do_exec_rename(self, *placeholder):
-        """Does the actual renaming, returning the new name as its reuslt.
-        Should be CBash/PBash-agnostic, and take any information it needs as
-        parameters - see overrides for examples."""
+        """Does the actual renaming, returning the new name as its result.
+        Should take any information it needs as parameters - see overrides for
+        examples."""
         raise AbstractError(u'_do_exec_rename not implemented')
 
     def _exec_rename(self, record):
         """Convenience method that calls _do_exec_rename, passing the correct
-        CBash/PBash record attributes in."""
+        record attributes in."""
         return self._do_exec_rename(*self._get_rename_params(record))
-
-    def _get_effect_school(self, magic_effect):
-        """Returns the school of the specified MGEF."""
-        raise AbstractError(u'_get_effect_school not implemented')
-
-    def _get_record_signature(self, record):
-        """Returns the record signature of the specified record."""
-        raise AbstractError(u'_get_record_signature not implemented')
 
     def _get_rename_params(self, record):
         """Returns the parameters that should be passed to _do_exec_rename.
         Passes only the record itself by default."""
         return (record,)
 
-    def _has_mgefs_indexed(self):
-        """Returns a truthy value if MGEFs have been indexed already. Different
-        implementations are necessary for CBash and PBash."""
-        raise AbstractError(u'_has_mgefs_indexed not implemented')
-
     def _is_effect_hostile(self, magic_effect):
         """Returns a truthy value if the specified MGEF is nonhostile."""
-        raise AbstractError(u'_is_effect_nonhostile not implemented')
+        return (magic_effect.scriptEffect.flags.hostile
+                if magic_effect.scriptEffect
+                else magic_effect.name in self._tweak_mgef_hostiles)
 
     def _try_renaming(self, record):
         """Checks if renaming via _exec_rename would change the specified
         record's name."""
         return record.full != self._exec_rename(record)
 
-class _PNamesTweak(_ANamesTweak, MultiTweakItem):
-    """Shared code of PBash names tweaks."""
-    _tweak_mgef_hostiles = set()
-    _tweak_mgef_school = {}
-
     def prepare_for_tweaking(self, patch_file):
         # These are cached, so fine to call for all tweaks
         self._tweak_mgef_hostiles = patch_file.getMgefHostiles()
         self._tweak_mgef_school = patch_file.getMgefSchool()
 
+class _AMgefNamesTweak(_ANamesTweak):
+    """Shared code of a few names tweaks that handle MGEFs."""
     def _get_effect_school(self, magic_effect):
+        """Returns the school of the specified MGEF."""
         return (magic_effect.scriptEffect.school if magic_effect.scriptEffect
                 else self._tweak_mgef_school.get(magic_effect.name, 6))
 
-    def _get_record_signature(self, record):
-        return record.recType
-
-    def _has_mgefs_indexed(self):
-        return self._tweak_mgef_hostiles
-
-    def _is_effect_hostile(self, magic_effect):
-        return (magic_effect.scriptEffect.flags.hostile
-                if magic_effect.scriptEffect
-                else magic_effect.name in self._tweak_mgef_hostiles)
-
-class _CNamesTweak(_ANamesTweak, CBash_MultiTweakItem):
-    """Shared code of CBash names tweaks."""
-    def _get_effect_school(self, magic_effect):
-         return (magic_effect.schoolType if magic_effect.script
-                 else self.patchFile.mgef_school.get(magic_effect.name, 6))
-
-    def _get_record_signature(self, record):
-        return record._Type
-
-    def _has_mgefs_indexed(self):
-        return self.patchFile.hostileEffects
-
-    def _is_effect_hostile(self, magic_effect):
-        return (magic_effect.IsHostile if magic_effect.script
-                else magic_effect.name in self.patchFile.hostileEffects)
-
-class _AMgefNamesTweak(_ANamesTweak):
-    """Shared code of a few names tweaks that handle MGEFs."""
     def wants_record(self, record):
         # Once we have MGEFs indexed, we can try renaming to check more
         # thoroughly (i.e. during the buildPatch/apply phase)
-        return (record.full and not self._has_mgefs_indexed() or
+        return (record.full and not self._tweak_mgef_hostiles or
                 self._try_renaming(record))
 
 # Patchers: 30 ----------------------------------------------------------------
-class _ANamesTweak_BodyTags(AMultiTweakItem): # not _ANamesTweak, no classes!
+##: This would be better handled with some sort of settings menu for the BP
+class NamesTweak_BodyTags(MultiTweakItem): # not _ANamesTweak, no classes!
     """Only exists to change _PFile.bodyTags - see _ANamesTweaker.__init__ for
     the implementation."""
     tweak_name = _(u'Body Part Codes')
@@ -148,18 +107,16 @@ class _ANamesTweak_BodyTags(AMultiTweakItem): # not _ANamesTweak, no classes!
     tweak_choices = [(u'ARGHTCCPBS', u'ARGHTCCPBS'),
                      (u'ABGHINOPSL', u'ABGHINOPSL')]
 
-##: This would be better handled with some sort of settings menu for the BP
-class NamesTweak_BodyTags(_ANamesTweak_BodyTags, _PNamesTweak):
     def tweak_log(self, log, count): pass # 'internal' tweak, log nothing
-class CBash_NamesTweak_BodyTags(_ANamesTweak_BodyTags,
-                                CBash_MultiTweakItem): pass
 
 #------------------------------------------------------------------------------
 class _ANamesTweak_Body(_ANamesTweak):
-    """Shared code of CBash/PBash body names tweaks."""
+    """Shared code of 'body names' tweaks."""
     _tweak_body_tags = u'' # set in _ANamesTweaker.__init__
 
     def wants_record(self, record):
+        if self._is_nonplayable(record):
+            return False
         old_full = record.full
         return (old_full and old_full[0] not in _ignored_chars and
                 self._try_renaming(record))
@@ -187,12 +144,6 @@ class _ANamesTweak_Body(_ANamesTweak):
             prefix_subs += (record.strength / 100,)
         return prefix_format % prefix_subs + curr_name
 
-class _PNamesTweak_Body(_ANamesTweak_Body, _PNamesTweak):
-    """Shared code of PBash body names tweaks."""
-    def wants_record(self, record):
-        return not self._is_nonplayable(record) and super(
-            _PNamesTweak_Body, self).wants_record(record)
-
     def _get_rename_params(self, record):
         body_flags = record.biped_flags
         return (record, (u'LH'[body_flags.heavyArmor]
@@ -203,24 +154,8 @@ class _PNamesTweak_Body(_ANamesTweak_Body, _PNamesTweak):
                 body_flags.upperBody, body_flags.lowerBody, body_flags.hand,
                 body_flags.foot, body_flags.tail, body_flags.shield)
 
-class _CNamesTweak_Body(_ANamesTweak_Body, CBash_MultiTweakItem):
-    """Shared code of CBash body names tweaks."""
-    def wants_record(self, record):
-        return record.IsPlayable and super(
-            _CNamesTweak_Body, self).wants_record(record)
-
-    def _get_rename_params(self, record):
-        return (record, (u'LH'[record.IsHeavyArmor]
-                         if record._Type == b'ARMO' else u''),
-                record.IsHead or record.IsHair,
-                record.IsRightRing or record.IsLeftRing, record.IsAmulet,
-                record.IsUpperBody or record.IsLowerBody, record.IsUpperBody,
-                record.IsLowerBody, record.IsHand, record.IsFoot,
-                record.IsTail, record.IsShield)
-
 #------------------------------------------------------------------------------
-class _AArmoNamesTweak(_ANamesTweak_Body):
-    """Shared code of CBash/PBash armor names tweaks."""
+class NamesTweak_Body_Armor(_ANamesTweak_Body):
     tweak_read_classes = b'ARMO',
     tweak_name = _(u'Armor')
     tweak_tip = _(u'Rename armor to sort by type.')
@@ -236,12 +171,8 @@ class _AArmoNamesTweak(_ANamesTweak_Body):
                      (_(u'(BL02) Leather Boots'), u'(%s%02d) ')]
     tweak_log_msg = _(u'Armor Pieces Renamed: %(total_changed)d')
 
-class NamesTweak_Body_Armor(_AArmoNamesTweak, _PNamesTweak_Body): pass
-class CBash_NamesTweak_Body_Armor(_AArmoNamesTweak, _CNamesTweak_Body): pass
-
 #------------------------------------------------------------------------------
-class _AClotNamesTweak(_ANamesTweak_Body):
-    """Shared code of CBash/PBash clothes names tweaks."""
+class NamesTweak_Body_Clothes(_ANamesTweak_Body):
     tweak_read_classes = b'CLOT',
     tweak_name = _(u'Clothes')
     tweak_tip = _(u'Rename clothes to sort by type.')
@@ -252,14 +183,11 @@ class _AClotNamesTweak(_ANamesTweak_Body):
                      (_(u'(P) Grey Trousers'), u'(%s) ')]
     tweak_log_msg = _(u'Clothes Renamed: %(total_changed)d')
 
-class NamesTweak_Body_Clothes(_AClotNamesTweak, _PNamesTweak_Body): pass
-class CBash_NamesTweak_Body_Clothes(_AClotNamesTweak, _CNamesTweak_Body): pass
-
 #------------------------------------------------------------------------------
 _re_old_potion_label = re.compile(u'^(-|X) ', re.U)
 _re_old_potion_end = re.compile(u' -$', re.U)
 
-class _ANamesTweak_Potions(_AMgefNamesTweak):
+class NamesTweak_Potions(_AMgefNamesTweak):
     """Names tweaker for potions."""
     tweak_read_classes = b'ALCH',
     tweak_name = _(u'Potions')
@@ -291,18 +219,13 @@ class _ANamesTweak_Potions(_AMgefNamesTweak):
             effect_label = (u'X' if is_poison else u'') + u'ACDIMRU'[school]
             return self.chosen_format % effect_label + wip_name
 
-class NamesTweak_Potions(_ANamesTweak_Potions, _PNamesTweak):
     def _get_rename_params(self, record):
         return record, record.flags.isFood
-
-class CBash_NamesTweak_Potions(_ANamesTweak_Potions, _CNamesTweak):
-    def _get_rename_params(self, record):
-        return record, record.IsFood
 
 #------------------------------------------------------------------------------
 _re_old_magic_label = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ', re.U)
 
-class _ANamesTweak_Scrolls(_AMgefNamesTweak):
+class NamesTweak_Scrolls(_AMgefNamesTweak):
     """Names tweaker for scrolls."""
     tweak_read_classes = b'BOOK',
     tweak_name = _(u'Notes and Scrolls')
@@ -320,6 +243,7 @@ class _ANamesTweak_Scrolls(_AMgefNamesTweak):
                      (_(u'.D - Fire Ball'), u'.%s - '),
                      (_(u'.(D) Fire Ball'), u'.(%s) ')]
     tweak_log_msg = _(u'Notes and Scrolls Renamed: %(total_changed)d')
+    _look_up_ench = None
 
     def _do_exec_rename(self, record, look_up_ench):
         # Magic label
@@ -338,9 +262,6 @@ class _ANamesTweak_Scrolls(_AMgefNamesTweak):
             wip_name = magic_format % u'ACDIMRU'[school] + wip_name
         # Ordering
         return order_format[is_enchanted] + wip_name
-
-class NamesTweak_Scrolls(_ANamesTweak_Scrolls, _PNamesTweak):
-    _look_up_ench = None
 
     def wants_record(self, record):
         return (record.flags.isScroll and not record.flags.isFixed and
@@ -366,19 +287,10 @@ class NamesTweak_Scrolls(_ANamesTweak_Scrolls, _PNamesTweak):
         self._look_up_ench = None
 
     def _get_rename_params(self, record):
-        return record, lambda e: self._look_up_ench.get(e, 6)
-
-class CBash_NamesTweak_Scrolls(_ANamesTweak_Scrolls, _CNamesTweak):
-    def wants_record(self, record):
-        return (record.IsScroll and not record.IsFixed and super(
-            CBash_NamesTweak_Scrolls, self).wants_record(record))
-
-    def _get_rename_params(self, record):
-        return (record, lambda e: (
-                self.patchFile.Current.LookupRecords(e) or [None])[0])
+        return record, lambda e: self._look_up_ench.get(e, 6) ##: 6?
 
 #------------------------------------------------------------------------------
-class _ANamesTweak_Spells(_AMgefNamesTweak):
+class NamesTweak_Spells(_AMgefNamesTweak):
     """Names tweaker for spells."""
     tweak_read_classes = b'SPEL',
     tweak_name = _(u'Spells')
@@ -399,7 +311,7 @@ class _ANamesTweak_Spells(_AMgefNamesTweak):
 
     def wants_record(self, record):
         return record.spellType == 0 and super(
-            _ANamesTweak_Spells, self).wants_record(record)
+            NamesTweak_Spells, self).wants_record(record)
 
     def _do_exec_rename(self, record):
         school = 6 # Default to 6 (U: unknown)
@@ -415,11 +327,8 @@ class _ANamesTweak_Spells(_AMgefNamesTweak):
                 wip_name = self.chosen_format % u'ACDIMRU'[school] + wip_name
         return wip_name
 
-class NamesTweak_Spells(_ANamesTweak_Spells, _PNamesTweak): pass
-class CBash_NamesTweak_Spells(_ANamesTweak_Spells, _CNamesTweak): pass
-
 #------------------------------------------------------------------------------
-class _ANamesTweak_Weapons(_ANamesTweak):
+class NamesTweak_Weapons(_ANamesTweak):
     """Names tweaker for weapons and ammo."""
     tweak_read_classes = b'AMMO', b'WEAP',
     tweak_name = _(u'Weapons')
@@ -436,20 +345,16 @@ class _ANamesTweak_Weapons(_ANamesTweak):
                      (_(u'(B08) Iron Bow'), u'(%s%02d) ')]
 
     def wants_record(self, record):
-        return (record.full and (self._get_record_signature(record) != b'AMMO'
+        return (record.full and (record.recType != b'AMMO'
                                  or record.full[0] not in _ignored_chars)
                 and self._try_renaming(record))
 
     def _do_exec_rename(self, record):
-        weapon_index = record.weaponType if self._get_record_signature(
-            record) == b'WEAP' else 6
+        weapon_index = record.weaponType if record.recType  == b'WEAP' else 6
         format_subs = (u'CDEFGBA'[weapon_index],)
         if u'%02d' in self.chosen_format:
             format_subs += (record.damage,)
         return self.chosen_format % format_subs + record.full
-
-class NamesTweak_Weapons(_ANamesTweak_Weapons, _PNamesTweak): pass
-class CBash_NamesTweak_Weapons(_ANamesTweak_Weapons, _CNamesTweak): pass
 
 #------------------------------------------------------------------------------
 class _ATextReplacer(_ANamesTweak):
@@ -496,6 +401,7 @@ class _ATextReplacer(_ANamesTweak):
     # to re.sub, so they will apply in order and may use the results of their
     # regex groups. # PY3: replace with regular dict
     _tr_replacements = []
+    _tr_extra_gmsts = {} # override in implementations
 
     def __init__(self):
         super(_ATextReplacer, self).__init__()
@@ -510,7 +416,7 @@ class _ATextReplacer(_ANamesTweak):
     def wants_record(self, record):
         def can_change(test_text):
             return any(m.search(test_text) for m in self._re_mapping)
-        record_sig = self._get_record_signature(record)
+        record_sig = record.recType
         if record_sig == b'GMST':
             # GMST needs this check which can't be handled by RecPath yet,
             # thankfully it's identical for all games
@@ -529,33 +435,18 @@ class _ATextReplacer(_ANamesTweak):
                 if rec_val: # or blow up on re.sub
                     return replacement_sub(replacement, rec_val)
                 return rec_val
-            record_sig = self._get_record_signature(record)
+            record_sig = record.recType
             for rp in self._match_replace_rpaths[record_sig]: # type: RecPath
                 if rp.rp_exists(record):
                     rp.rp_map(record, exec_replacement)
-
-class _ATextReplacer_P(_ATextReplacer, _PNamesTweak):
-    _tr_extra_gmsts = {} # override in implementations
 
     def finish_tweaking(self, patch_file):
         # These GMSTs don't exist in Oblivion.esm, so create them in the BP
         for extra_eid, extra_val in self._tr_extra_gmsts.iteritems():
             patch_file.new_gmst(extra_eid, extra_val)
 
-class _ATextReplacer_C(_ATextReplacer, _CNamesTweak):
-    tweak_read_classes = (b'CELLS',) + _ATextReplacer.tweak_read_classes
-    _match_replace_rpaths = _ATextReplacer._match_replace_rpaths.copy()
-    _match_replace_rpaths.update({
-        b'ALCH': (u'full', u'effects[i].full'),
-        b'CELL': (u'full',),
-        b'ENCH': (u'full', u'effects[i].full'),
-        b'INGR': (u'full', u'effects[i].full'),
-        b'SGST': (u'full', u'effects[i].full'),
-        b'SPEL': (u'full', u'effects[i].full'),
-    })
-
 #------------------------------------------------------------------------------
-class _ATR_DwarvenToDwemer(_ATextReplacer):
+class NamesTweak_DwarvenToDwemer(_ATextReplacer):
     """Replaces 'dwarven' with 'dwemer' to better follow lore."""
     tweak_name = _(u'Lore Friendly Text: Dwarven -> Dwemer')
     tweak_tip = _(u'Replace any occurrences of the word "dwarf" or "dwarven" '
@@ -564,12 +455,8 @@ class _ATR_DwarvenToDwemer(_ATextReplacer):
     tweak_choices = [(u'Lore Friendly Text: Dwarven -> Dwemer', u'Dwemer')]
     _tr_replacements = [(u'' r'\b(d|D)(?:warven|warf)\b', u'' r'\1wemer')]
 
-class NamesTweak_DwarvenToDwemer(_ATR_DwarvenToDwemer, _ATextReplacer_P): pass
-class CBash_NamesTweak_DwarvenToDwemer(_ATR_DwarvenToDwemer,
-    _ATextReplacer_C): pass
-
 #------------------------------------------------------------------------------
-class _ATR_DwarfsToDwarves(_ATextReplacer):
+class NamesTweak_DwarfsToDwarves(_ATextReplacer):
     """Replaces 'dwarfs' with 'dwarves' for proper spelling."""
     tweak_name = _(u'Proper English Text: Dwarfs -> Dwarves')
     tweak_tip = _(u'Replace any occurrences of the word "dwarfs" with '
@@ -578,12 +465,8 @@ class _ATR_DwarfsToDwarves(_ATextReplacer):
     tweak_choices = [(u'Proper English Text: Dwarfs -> Dwarves', u'Dwarves')]
     _tr_replacements = [(u'' r'\b(d|D)warfs\b', u'' r'\1warves')]
 
-class NamesTweak_DwarfsToDwarves(_ATR_DwarfsToDwarves, _ATextReplacer_P): pass
-class CBash_NamesTweak_DwarfsToDwarves(_ATR_DwarfsToDwarves,
-    _ATextReplacer_C): pass
-
 #------------------------------------------------------------------------------
-class _ATR_StaffsToStaves(_ATextReplacer):
+class NamesTweak_StaffsToStaves(_ATextReplacer):
     """Replaces 'staffs' with 'staves' for proper spelling."""
     tweak_name = _(u'Proper English Text: Staffs -> Staves')
     tweak_tip = _(u'Replace any occurrences of the word "staffs" with '
@@ -592,12 +475,8 @@ class _ATR_StaffsToStaves(_ATextReplacer):
     tweak_choices = [(u'Proper English Text: Staffs -> Staves', u'Staves')]
     _tr_replacements = [(u'' r'\b(s|S)taffs\b', u'' r'\1taves')]
 
-class NamesTweak_StaffsToStaves(_ATR_StaffsToStaves, _ATextReplacer_P): pass
-class CBash_NamesTweak_StaffsToStaves(_ATR_StaffsToStaves,
-    _ATextReplacer_C): pass
-
 #------------------------------------------------------------------------------
-class NamesTweak_FatigueToStamina(_ATextReplacer_P):
+class NamesTweak_FatigueToStamina(_ATextReplacer):
     """Replaces 'fatigue' with 'stamina', similar to Skyrim."""
     tweak_name = _(u'Skyrim-style Text: Fatigue -> Stamina')
     tweak_tip = _(u'Replace any occurrences of the word "fatigue" with '
@@ -611,7 +490,7 @@ class NamesTweak_FatigueToStamina(_ATextReplacer_P):
 def _mta_esub(first_suffix): # small helper to deduplicate that nonsense
     return build_esub(u'' r'\1%s $2(a)rcher' % first_suffix)
 
-class NamesTweak_MarksmanToArchery(_ATextReplacer_P):
+class NamesTweak_MarksmanToArchery(_ATextReplacer):
     """Replaces 'marksman' with 'archery', similar to Skyrim."""
     tweak_name = _(u'Skyrim-style Text: Marksman -> Archery')
     tweak_tip = _(u'Replace any occurrences of the word "marksman" with '
@@ -632,9 +511,9 @@ class NamesTweak_MarksmanToArchery(_ATextReplacer_P):
                        u'sSkillDescMarksman': u'Archery Description'}
 
 #------------------------------------------------------------------------------
-class NamesTweak_SecurityToLockpicking(_ATextReplacer_P):
+class NamesTweak_SecurityToLockpicking(_ATextReplacer):
     """Replaces 'security' with 'lockpicking', similar to Skyrim."""
-    tweak_read_classes = tuple(c for c in _ATextReplacer_P.tweak_read_classes
+    tweak_read_classes = tuple(c for c in _ATextReplacer.tweak_read_classes
                                if c != b'BOOK') # way too many false positives
     tweak_name = _(u'Skyrim-style Text: Security -> Lockpicking')
     tweak_tip = _(u'Replace any occurrences of the word "security" with '
@@ -648,17 +527,22 @@ class NamesTweak_SecurityToLockpicking(_ATextReplacer_P):
                        u'sSkillDescSecurity': u'Lockpicking Description'}
 
 #------------------------------------------------------------------------------
-class _ANamesTweaker(AMultiTweaker):
+class NamesTweaker(MultiTweaker):
     """Tweaks record full names in various ways."""
     scanOrder = 32
     editOrder = 32
-    _body_tags_tweak = None # override in implementations
+    _tweak_classes = [
+        NamesTweak_Body_Armor, NamesTweak_Body_Clothes, NamesTweak_Potions,
+        NamesTweak_Scrolls, NamesTweak_Spells, NamesTweak_Weapons,
+        NamesTweak_DwarvenToDwemer, NamesTweak_DwarfsToDwarves,
+        NamesTweak_StaffsToStaves, NamesTweak_FatigueToStamina,
+        NamesTweak_MarksmanToArchery, NamesTweak_SecurityToLockpicking]
 
     def __init__(self, p_name, p_file, enabled_tweaks):
-        super(_ANamesTweaker, self).__init__(p_name, p_file, enabled_tweaks)
-        for names_tweak in enabled_tweaks:
+        super(NamesTweaker, self).__init__(p_name, p_file, enabled_tweaks)
+        for names_tweak in enabled_tweaks[1:]:
             # Always the first one if it's enabled, so this is safe
-            if isinstance(names_tweak, _ANamesTweak_BodyTags):
+            if isinstance(names_tweak, NamesTweak_BodyTags):
                 p_file.bodyTags = names_tweak.choiceValues[
                     names_tweak.chosen][0]
             elif isinstance(names_tweak, _ANamesTweak_Body):
@@ -666,31 +550,5 @@ class _ANamesTweaker(AMultiTweaker):
 
     @classmethod
     def tweak_instances(cls):
-        return [cls._body_tags_tweak()] + super( # always first, see __init__
-            _ANamesTweaker, cls).tweak_instances()
-
-class NamesTweaker(_ANamesTweaker, MultiTweaker):
-    _tweak_classes = [
-        NamesTweak_Body_Armor, NamesTweak_Body_Clothes, NamesTweak_Potions,
-        NamesTweak_Scrolls, NamesTweak_Spells, NamesTweak_Weapons,
-        NamesTweak_DwarvenToDwemer, NamesTweak_DwarfsToDwarves,
-        NamesTweak_StaffsToStaves, NamesTweak_FatigueToStamina,
-        NamesTweak_MarksmanToArchery, NamesTweak_SecurityToLockpicking]
-    _body_tags_tweak = NamesTweak_BodyTags
-
-class CBash_NamesTweaker(_ANamesTweaker,CBash_MultiTweaker):
-    _tweak_classes = [
-        CBash_NamesTweak_Body_Armor, CBash_NamesTweak_Body_Clothes,
-        CBash_NamesTweak_Potions, CBash_NamesTweak_Scrolls,
-        CBash_NamesTweak_Spells, CBash_NamesTweak_Weapons,
-        CBash_NamesTweak_DwarvenToDwemer, CBash_NamesTweak_DwarfsToDwarves,
-        CBash_NamesTweak_StaffsToStaves]
-    _body_tags_tweak = CBash_NamesTweak_BodyTags
-
-    def __init__(self, p_name, p_file, enabled_tweaks):
-        super(CBash_NamesTweaker, self).__init__(p_name, p_file,
-            enabled_tweaks)
-        # Potions, scrolls and spells names tweaks need MGEFs to be indexed -
-        # PBash does this JIT, CBash needs this to be specified when
-        # constructing patchers
-        p_file.indexMGEFs = True
+        return [NamesTweak_BodyTags()] + super( # always first, see __init__
+            NamesTweaker, cls).tweak_instances()

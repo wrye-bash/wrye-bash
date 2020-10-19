@@ -30,7 +30,7 @@ from this module outside of the patcher package."""
 # unhelpful) docs from overriding methods to save some (100s) lines. We must
 # also document which methods MUST be overridden by raising AbstractError. For
 # instance Patcher.buildPatch() apparently is NOT always overridden
-from .. import load_order, bolt
+from .. import load_order
 from ..exception import AbstractError
 
 #------------------------------------------------------------------------------
@@ -87,33 +87,6 @@ class Patcher(Abstract_Patcher):
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Should write to log."""
 
-class CBash_Patcher(Abstract_Patcher):
-    """Abstract base class for patcher elements performing a CBash patch - must
-    be just before Abstract_Patcher in MRO.""" ##: "performing" ? how ?
-    allowUnloaded = True # if True patcher needs a srcs attribute
-    scanRequiresChecked = False # if True patcher needs a srcs attribute
-    applyRequiresChecked = False # if True patcher needs a srcs attribute
-
-    def getTypes(self):
-        """Returns the group types that this patcher checks"""
-        return list(self.__class__._read_write_records) if self.isActive else []
-
-    def initData(self, progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as
-        necessary."""
-        if not self.isActive: return
-        for top_group_sig in self.getTypes():
-            self.patchFile.group_patchers[top_group_sig].append(self)
-        if self.allowUnloaded:
-            loadMods = set([mod for mod in self.srcs if
-                            self.patchFile.p_file_minfos.rightFileType(
-                                mod) and mod not in self.patchFile.allMods])
-            self.patchFile.scanSet |= loadMods
-
-    def buildPatchLog(self,log):
-        """Write to log."""
-        pass
-
 class AListPatcher(Abstract_Patcher):
     """Subclass for patchers that have GUI lists of objects."""
     # log header to be used if the ListPatcher has mods/files source files
@@ -152,13 +125,6 @@ class AMultiTweaker(Abstract_Patcher):
     def tweak_instances(cls):
         return sorted([tc() for tc in cls._tweak_classes],
                       key=lambda a: a.tweak_name.lower())
-
-
-class AAliasesPatcher(Abstract_Patcher):
-    """Specify mod aliases for patch files."""
-    scanOrder = 10
-    editOrder = 10
-    group = _(u'General')
 
 #------------------------------------------------------------------------------
 # AMultiTweakItem(object) -----------------------------------------------------
@@ -302,7 +268,6 @@ class AMultiTweakItem(object):
         err_msg += u"\n Name: '%s'" % self.tweak_name
         # To identify problems with e.g. duplicate custom values immediately
         err_msg += u'\n Choices: %s' % self.tweak_choices
-        # To distinguish between a PBash and CBash-specific problem
         err_msg += u'\n Class: %s.%s' % (self.__class__.__module__,
                                          self.__class__.__name__)
         raise SyntaxError(err_msg)
@@ -330,9 +295,8 @@ class AMultiTweakItem(object):
 
     def wants_record(self, record):
         """Return a truthy value if you want to get a chance to change the
-        specified record. Must be implemented by every CBash tweak that does
-        not override apply, and every PBash tweak that supports pooling (see
-        MultiTweakItem.supports_pooling)."""
+        specified record. Must be implemented by every PBash tweak that
+        supports pooling (see MultiTweakItem.supports_pooling)."""
         raise AbstractError(u'wants_record not implemented')
 
     def tweak_record(self, record):
@@ -342,15 +306,9 @@ class AMultiTweakItem(object):
         before this call. Note that there is no taking that back: right after
         this call, keep() will be called and the record will be kept as an
         override in the BP. So make sure wants_record *never* lets ITMs and
-        ITPOs through! Must be implemented by every CBash tweak that does
-        not override apply, and every PBash tweak that supports pooling (see
-        MultiTweakItem.supports_pooling)."""
+        ITPOs through! Must be implemented by every PBash tweak that supports
+        pooling (see MultiTweakItem.supports_pooling)."""
         raise AbstractError(u'tweak_record not implemented')
-
-    @staticmethod
-    def _is_nonplayable(record): ##: ugh, very hasty abstraction
-        """Returns True if the specified record is marked as nonplayable."""
-        raise AbstractError(u'_is_nonplayable not implemented')
 
 # TODO(inf) DEPRECATED! - don't use for new tweaks -> all tweaks should really
 #  be static classes, much more readable
@@ -366,31 +324,3 @@ class DynamicTweak(AMultiTweakItem):
 
     def __repr__(self):  return u'%s(%s)' % (
         self.__class__.__name__, self.tweak_name)
-
-#------------------------------------------------------------------------------
-# AListPatcher subclasses -----------------------------------------------------
-#------------------------------------------------------------------------------
-class AImportPatcher(AListPatcher):
-    """Subclass for patchers in group Importer."""
-    group = _(u'Importers')
-    scanOrder = 20
-    editOrder = 20
-
-class APatchMerger(AListPatcher):
-    """Merges specified patches into Bashed Patch."""
-    scanOrder = 10
-    editOrder = 10
-    group = _(u'General')
-
-    def __init__(self, p_name, p_file, p_sources):
-        super(APatchMerger, self).__init__(p_name, p_file, p_sources)
-        if not self.isActive: return
-        #--WARNING: Since other patchers may rely on the following update
-        # during their __init__, it's important that PatchMerger runs first
-        p_file.set_mergeable_mods(self.srcs)
-
-class AUpdateReferences(AListPatcher):
-    """Imports Form Id replacers into the Bashed Patch."""
-    scanOrder = 15
-    editOrder = 15
-    group = _(u'General')

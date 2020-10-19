@@ -24,11 +24,10 @@
 from .. import balt, bolt, bass
 
 class PatcherInfo(object): ##: clazz is unused?
-    __slots__ = (u'clazz', u'twin_patcher', u'cls_vars', u'cls_csv_key')
+    __slots__ = (u'clazz', u'cls_vars', u'cls_csv_key')
 
-    def __init__(self, clazz, twin_patcher, cls_vars, cls_csv_key=u''):
+    def __init__(self, clazz, cls_vars, cls_csv_key=u''):
         self.clazz = clazz
-        self.twin_patcher = twin_patcher
         self.cls_vars = cls_vars
         self.cls_csv_key = cls_csv_key
 
@@ -38,7 +37,7 @@ def configIsCBash(patchConfigs): ##: belongs to basher but used also in bosh
             return True
     return False
 
-def exportConfig(patch_name, config, isCBash, win, outDir):
+def exportConfig(patch_name, config, win, outDir):
     outFile = patch_name + u'_Configuration.dat'
     outDir.makedirs()
     #--File dialog
@@ -48,8 +47,8 @@ def exportConfig(patch_name, config, isCBash, win, outDir):
         wildcard=u'*_Configuration.dat')
     if outPath:
         table = bolt.DataTable(bolt.PickleDict(outPath))
-        table.setItem(bolt.GPath(u'Saved Bashed Patch Configuration (%s)' % (
-            [u'Python', u'CBash'][isCBash])), 'bash.patch.configs', config)
+        table.setItem(bolt.GPath(u'Saved Bashed Patch Configuration (Python)'),
+            'bash.patch.configs', config)
         table.save()
 
 def getPatchesPath(fileName):

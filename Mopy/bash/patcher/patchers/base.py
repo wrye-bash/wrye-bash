@@ -26,12 +26,9 @@
 from __future__ import print_function
 from collections import Counter, defaultdict
 from itertools import chain
-from operator import itemgetter
 # Internal
 from .. import getPatchesPath
-from ..base import AMultiTweakItem, AMultiTweaker, Patcher, CBash_Patcher, \
-    AAliasesPatcher, AListPatcher, AImportPatcher, APatchMerger, \
-    AUpdateReferences
+from ..base import AMultiTweakItem, AMultiTweaker, Patcher, AListPatcher
 from ... import load_order, bush
 from ...bolt import GPath, CsvReader, deprint
 from ...brec import MreRecord
@@ -39,17 +36,6 @@ from ...exception import AbstractError
 
 # Patchers 1 ------------------------------------------------------------------
 class ListPatcher(AListPatcher,Patcher): pass
-
-class CBash_ListPatcher(AListPatcher,CBash_Patcher):
-
-    def __init__(self, p_name, p_file, p_sources):
-        if not self.allowUnloaded:
-            p_sources = [s for s in p_sources if s in p_file.allSet or
-                         not p_file.p_file_minfos.rightFileType(s.s)]
-        super(CBash_ListPatcher, self).__init__(p_name, p_file, p_sources)
-        # used in all subclasses except CBash_RacePatcher,
-        # CBash_PatchMerger, CBash_UpdateReferences
-        self.mod_count = Counter()
 
 class MultiTweakItem(AMultiTweakItem):
     # If True, do not call tweak_scan_file and pool the records this tweak
@@ -68,7 +54,6 @@ class MultiTweakItem(AMultiTweakItem):
         """Returns load factory classes needed for writing."""
         return self.__class__.tweak_read_classes
 
-    ##: Could we move this to AMultiTweakItem and apply it to CBash as well?
     def prepare_for_tweaking(self, patch_file):
         """Gives this tweak a chance to use prepare for the phase where it gets
         its tweak_record calls using the specified patch file instance. At this
@@ -100,46 +85,10 @@ class MultiTweakItem(AMultiTweakItem):
 
     @staticmethod
     def _is_nonplayable(record):
+        """Returns True if the specified record is marked as nonplayable."""
+        ##: yuck, this whole thing is just hacky
         np_flag_attr, np_flag_name = bush.game.not_playable_flag
-        return getattr(getattr(record, np_flag_attr), np_flag_name) # yuck
-
-class CBash_MultiTweakItem(AMultiTweakItem):
-    # extra CBash_MultiTweakItem class variables
-    iiMode = False
-    scanRequiresChecked = False
-    applyRequiresChecked = False
-    # the default scan and edit orders - override as needed
-    scanOrder = 32
-    editOrder = 32
-
-    def __init__(self):
-        super(CBash_MultiTweakItem, self).__init__()
-        # extra CBash_MultiTweakItem attribute, mod -> num of tweaked records
-        self.mod_count = Counter()
-
-    def getTypes(self):
-        """Returns the group types that this patcher checks"""
-        return list(self.__class__.tweak_read_classes)
-
-    def apply(self, modFile, record, bashTags):
-        if self.wants_record(record):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                self.tweak_record(override)
-                ##: This causes log differences to PBash. Can we use
-                # record.fid[0] here instead and unify these logs?
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        self.tweak_log(log, self.mod_count)
-        self.mod_count = Counter()
-
-    @staticmethod
-    def _is_nonplayable(record):
-        return record.IsNonPlayable
+        return getattr(getattr(record, np_flag_attr), np_flag_name)
 
 class MultiTweaker(AMultiTweaker,Patcher):
 
@@ -224,41 +173,32 @@ class MultiTweaker(AMultiTweaker,Patcher):
             tweak.finish_tweaking(self.patchFile)
             tweak.tweak_log(log, tweak_counter[tweak])
 
-class CBash_MultiTweaker(AMultiTweaker,CBash_Patcher):
-
-    def __init__(self, p_name, p_file, enabled_tweaks):
-        super(CBash_MultiTweaker, self).__init__(p_name, p_file,
-                                                 enabled_tweaks)
-        for tweak in self.enabled_tweaks:
-            tweak.patchFile = p_file
-
-    def initData(self, progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as
-        necessary."""
-        if not self.isActive: return
-        for tweak in self.enabled_tweaks: ##: FIXME allowUnloaded (use or not base class method)
-            for top_group_sig in tweak.getTypes():
-                self.patchFile.group_patchers[top_group_sig].append(tweak)
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        log.setHeader(u'= ' + self._patcher_name, True)
-        for tweak in self.enabled_tweaks:
-            tweak.buildPatchLog(log)
-
 # Patchers: 10 ----------------------------------------------------------------
-class AliasesPatcher(AAliasesPatcher,Patcher): pass
+class AliasesPatcher(Patcher):
+    """Specify mod aliases for patch files."""
+    scanOrder = 10
+    editOrder = 10
+    group = _(u'General')
 
-class CBash_AliasesPatcher(AAliasesPatcher,CBash_Patcher):
-    allowUnloaded = False # avoid the srcs check in CBash_Patcher.initData
+class PatchMerger(ListPatcher):
+    """Merges specified patches into Bashed Patch."""
+    scanOrder = 10
+    editOrder = 10
+    group = _(u'General')
 
-class PatchMerger(APatchMerger, ListPatcher): pass
+    def __init__(self, p_name, p_file, p_sources):
+        super(PatchMerger, self).__init__(p_name, p_file, p_sources)
+        if not self.isActive: return
+        #--WARNING: Since other patchers may rely on the following update
+        # during their __init__, it's important that PatchMerger runs first
+        p_file.set_mergeable_mods(self.srcs)
 
-class CBash_PatchMerger(APatchMerger, CBash_ListPatcher): pass
-
-class UpdateReferences(AUpdateReferences,ListPatcher):
-    # TODO move this to a file it's imported after MreRecord.simpleTypes is set
+# TODO move this to a file it's imported after MreRecord.simpleTypes is set
+class UpdateReferences(ListPatcher):
+    """Imports Form Id replacers into the Bashed Patch."""
+    scanOrder = 15
+    editOrder = 15
+    group = _(u'General')
 
     def __init__(self, p_name, p_file, p_sources):
         super(UpdateReferences, self).__init__(p_name, p_file,
@@ -443,102 +383,12 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
         for srcMod in load_order.get_ordered(count.keys()):
             log(u'* %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
-    _read_write_records = (
-        'MOD', 'FACT', 'RACE', 'MGEF', 'SCPT', 'LTEX', 'ENCH', 'SPEL', 'BSGN',
-        'ACTI', 'APPA', 'ARMO', 'BOOK', 'CLOT', 'CONT', 'DOOR', 'INGR', 'LIGH',
-        'MISC', 'FLOR', 'FURN', 'WEAP', 'AMMO', 'NPC_', 'CREA', 'LVLC', 'SLGM',
-        'KEYM', 'ALCH', 'SGST', 'LVLI', 'WTHR', 'CLMT', 'REGN', 'CELLS',
-        'WRLD', 'ACHRS', 'ACRES', 'REFRS', 'DIAL', 'INFOS', 'QUST', 'IDLE',
-        'PACK', 'LSCR', 'LVSP', 'ANIO', 'WATR')
-
-    def __init__(self, p_name, p_file, p_sources):
-        super(CBash_UpdateReferences, self).__init__(p_name, p_file, p_sources)
-        self.old_eid = {} #--Maps old fid to old editor id
-        self.new_eid = {} #--Maps new fid to new editor id
-        self.mod_count_old_new = {}
-
-    def initData(self, progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        if not self.isActive: return
-        from ...parsers import CBash_FidReplacer
-        fidReplacer = CBash_FidReplacer(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs))
-        for srcFile in self.srcs:
-            if not self.patchFile.p_file_minfos.rightFileType(srcFile):
-                try: fidReplacer.readFromText(getPatchesPath(srcFile))
-                except OSError: deprint(
-                    u'%s is no longer in patches set' % srcFile, traceback=True)
-            progress.plus()
-        #--Finish
-        self.old_new = fidReplacer.old_new
-        self.old_eid.update(fidReplacer.old_eid)
-        self.new_eid.update(fidReplacer.new_eid)
-        self.isActive = bool(self.old_new)
-        if not self.isActive: return
-        # resets isActive !!
-        for top_group_sig in self.getTypes():
-            self.patchFile.group_patchers[top_group_sig].append(self)
-
-    def mod_apply(self, modFile):
-        """Changes the mod in place without copying any records."""
-        counts = modFile.UpdateReferences(self.old_new)
-        #--Done
-        if sum(counts):
-            self.mod_count_old_new[modFile.GName] = [(count,self.old_eid[old_newId[0]],self.new_eid[old_newId[1]]) for count, old_newId in zip(counts, self.old_new.iteritems())]
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.GetRecordUpdatedReferences():
-            override = record.CopyAsOverride(self.patchFile, UseWinningParents=True)
-            if override:
-                record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        #--Log
-        mod_count_old_new = self.mod_count_old_new
-
-        log.setHeader(u'= ' + self._patcher_name)
-        self._srcMods(log)
-        log(u'\n')
-        for mod in load_order.get_ordered(mod_count_old_new.keys()):
-            entries = mod_count_old_new[mod]
-            log(u'\n=== %s' % mod.s)
-            entries.sort(key=itemgetter(1))
-            log(u'  * '+_(u'Updated References: %d') % sum([count for count, old, new in entries]))
-            log(u'\n'.join([u'    * %3d %s >> %s' % entry for entry in entries if entry[0] > 0]))
-
-        self.old_new = {} #--Maps old fid to new fid
-        self.old_eid = {} #--Maps old fid to old editor id
-        self.new_eid = {} #--Maps new fid to new editor id
-        self.mod_count_old_new = {}
-
-# Patchers: 40 ----------------------------------------------------------------
-class SpecialPatcher(CBash_Patcher):
-    """Provides scan_more method only used in CBash importers (17) and CBash
-    race patchers (3/4 except CBash_RacePatcher_Eyes)."""
-    group = _(u'Special')
-    scanOrder = 40
-    editOrder = 40
-
-    def scan_more(self,modFile,record,bashTags):
-        if modFile.GName in self.srcs:
-            self.scan(modFile,record,bashTags)
-        #Must check for "unloaded" conflicts that occur past the winning record
-        #If any exist, they have to be scanned
-        minfs = self.patchFile.p_file_minfos
-        for conflict in record.Conflicts(True):
-            if conflict != record:
-                mod = conflict.GetParentMod()
-                if mod.GName in self.srcs:
-                    tags = minfs[mod.GName].getBashTags()
-                    self.scan(mod,conflict,tags)
-            else: return
-
 # Patchers: 20 ----------------------------------------------------------------
-class ImportPatcher(AImportPatcher, ListPatcher):
+class ImportPatcher(ListPatcher):
+    """Subclass for patchers in group Importer."""
+    group = _(u'Importers')
+    scanOrder = 20
+    editOrder = 20
     # Override in subclasses as needed
     logMsg = u'\n=== ' + _(u'Modified Records')
 
@@ -572,42 +422,3 @@ class ImportPatcher(AImportPatcher, ListPatcher):
             log(u'* %s: %d' % (typeName, count))
             for modName in sorted(counts):
                 log(u'  * %s: %d' % (modName.s, counts[modName]))
-
-class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher, SpecialPatcher):
-    scanRequiresChecked = True
-    applyRequiresChecked = False
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        #--Log
-        log.setHeader(u'= ' + self._patcher_name)
-        self._clog(log)
-
-    def _clog(self,log):
-        """Most common logging pattern - override as needed.
-
-        Used in:
-        CBash_CellImporter, CBash_KFFZPatcher, CBash_NPCAIPackagePatcher,
-        CBash_ImportRelations, CBash_RoadImporter, CBash_SpellsPatcher.
-        You must define logMsg as a class attribute in subclasses except
-        CBash_ImportFactions and CBash_ImportInventory.
-        """
-        mod_count = self.mod_count
-        log(self.__class__.logMsg % sum(mod_count.values()))
-        for srcMod in load_order.get_ordered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = Counter()
-
-    # helpers WIP
-    def _parse_texts(self, parser_class, progress):
-        actorFactions = parser_class(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs))
-        for srcFile in self.srcs:
-            if not self.patchFile.p_file_minfos.rightFileType(srcFile):
-                try: actorFactions.readFromText(getPatchesPath(srcFile))
-                except OSError:
-                    deprint(u'%s is no longer in patches set' % srcFile,
-                            traceback=True)
-            progress.plus()
-        return actorFactions

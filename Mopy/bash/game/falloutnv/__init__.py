@@ -61,7 +61,6 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         skip_bain_refresh = {u'fnvedit backups', u'fnvedit cache'}
 
     class Esp(Fallout3GameInfo.Esp):
-        canCBash = False # True?
         validHeaderVersions = (0.94, 1.32, 1.33, 1.34)
 
     allTags = Fallout3GameInfo.allTags | {u'WeaponMods'}

@@ -148,14 +148,13 @@
 
 <h3 id="intro-title">Title Bar Info <a class="back2top" href="#contents">Back to top</a></h3>
 <p>As a quick note that doesn't really belong anywhere else, Wrye Bash's title bar contains some useful information. The title is formatted as:
-<p><code>[Application Name] [Bash Version] [Install Type] [Game Modifier], CBash v[CBash Version]: [Save Profile] [Version Indicator]</code>
+<p><code>[Application Name] [Bash Version] [Install Type] [Game Modifier]: [Save Profile] [Version Indicator]</code>
 <p>The square bracketed information is:
 <ul>
     <li><code>[Application Name]</code>: <q>Wrye Bash</q> if <a href="#settings-use-alt-name">Use Alternate Wrye Bash Name</a> is disabled, otherwise this will be a name based on the game Wrye Bash is managing (e.g. <q>Wrye Smash</q> for Skyrim).</li>
     <li><code>[Bash Version]</code>: This is the version number for the version of Wrye Bash running. Useful when troubleshooting.
     <li><code>[Install Type]</code>: If the Standalone version is running, it will read <q>(Standalone)</q>. If the Python version is running, this part is omitted. See the <a href="#install">Installation</a> section for more information.</li>
     <li><code>[Game Modifier]</code>: <q>for [Game]</q>, where [Game] is the name of the managed game, if <a href="#settings-use-alt-name">Use Alternate Wrye Bash Name</a> is disabled. Otherwise, this is not displayed.</li>
-    <li><code>[CBash Version]</code>: This is the version number for the version of CBash included with the Wrye Bash install. Useful when troubleshooting. See the <a href="#patch">Setting Up A Bashed Patch</a> section for more information.
     <li><code>[Save Profile]</code>: This is the name of the <a href="Wrye%20Bash%20Advanced%20Readme.html#saves-profiles">save profile</a> Wrye Bash is currently using. By default it is <q>Default</q>.
     <li><code>[Version Indicator]</code>: This is only displayed when Wrye Bash is running for Oblivion. It indicates the version of Oblivion.esm currently being used. This is related to the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-swapping">Oblivion.esm Swapping</a> feature.
 </ul>
@@ -1096,9 +1095,7 @@ tab. The directories skipped are:
                 <td>Creates LOOT masterlist entries based on the tags you have
                     applied to the selected plugin(s). Also tries to figure out
                     the URL that the plugin came from based on the BAIN package
-                    it was installed from. In <strong>Oblivion &amp;
-                    Nehrim&colon; At Fate's Edge only</strong>, CBash will also
-                    be used to check for ITMs and deleted references.</td>
+                    it was installed from.</td>
             </tr>
             <tr><td colspan="2" id="modsCopyModInfo">Copy Mod Info...<td>Outputs a report on the selected plugins(s) with the info from the currently displayed columns.
             <tr><td colspan="2">List Dependencies<td>Displays and copies to the clipboard a list of mods that have the currently selected
@@ -1118,15 +1115,10 @@ tab. The directories skipped are:
             <tr><td colspan="2" id="modsMarkMergeable">Mark Mergeable...</td><td><em>Not available for Skyrim&colon; Special Edition &amp; Fallout 4.</em>
                 Scans the selected plugin(s) to determine if they are mergeable or not. Wrye Bash does this automatically, but this command reports why
                 mods are unmergeable.</td></tr>
-            <tr><td colspan="2">Mark Mergeable (CBash)...</td><td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Does the same thing as
-                <a href="#modsMarkMergeable">Mark Mergeable...</a>, but uses CBash to scan the plugins. A Bashed Patch built using CBash can merge
-                more plugins, so the results between the two Mark Mergeable commands will differ.</td></tr>
             <tr><td colspan="2">Check ESL Qualifications</td><td><em>Skyrim&colon; Special Edition &amp; Fallout 4 only.</em> Checks if the selected plugin(s)
                 can be ESL-flagged using <a href="#modsEslifySelf">Add ESL Flag</a>. Wrye Bash does this automatically, but this command reports why
                 mods can't be ESL-flagged.</td></tr>
             <tr><td colspan="2">Rebuild Patch...<td>Rebuild the selected Bashed Patch using the Python patcher.
-            <tr><td colspan="2">Rebuild Patch (CBash *deprecated*)...<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Rebuild the selected
-                Bashed Patch using the CBash patcher.
             <tr><td colspan="2" id="modsListPatchConfig">List Patch Config...<td>Displays a summary of how the selected Bashed Patch is configured.
             <tr><td colspan="2" id="modsExportPatchConfig">Export Patch Config...<td>Exports the configuration of the selected Bashed Patch to a file.
             <tr><td rowspan="13">Export<td>Cell Block Info...<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Exports a list of cell block Editor IDs and their coordinates in the selected plugin to a CSV file.
@@ -2116,7 +2108,7 @@ C.Location, -C.LockList
                 </ul>
                 <br>
                 <br>
-                <strong>Not available for Fallout 4 &amp; not functional for CBash in Oblivion.</strong>
+                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -7391,13 +7383,6 @@ C.Location, -C.LockList
             <td><code>-d, --debug</code>
             <td>Useful if bash is crashing on startup or if you want to
                 print a lot of information (e.g. while developing or debugging).
-        <tr>
-            <td><code>-C, --Cbash-mode</code>
-            <td>enables CBash and uses CBash to build the bashed patch.
-        <tr>
-            <td><code>-P, --Python-mode</code>
-            <td>disables CBash and uses python code to build the bashed
-                patch.
         <tr>
             <td><code>-L&nbsp;LANGUAGE, --language=LANGUAGE</code>
             <td>Specify the user language overriding the system language

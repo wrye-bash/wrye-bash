@@ -716,15 +716,12 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             <td>Creates LOOT masterlist entries based on the tags you have
                 applied to the selected plugin(s). Also tries to figure out the
                 URL that the plugin came from based on the BAIN package it was
-                installed from. In <strong>Oblivion &amp; Nehrim&colon; At
-                Fate's Edge only</strong>, CBash will also be used to check for
-                ITMs and deleted references.</td>
+                installed from.</td>
         </tr>
         <tr><td>Copy Mod Info...<td>Outputs a report on the selected plugins(s) with the info from the currently displayed columns.
         <tr><td>Don't Ghost<td>Don't ghost this plugin when it is inactive, even if <a href="#modsAutoGhost">Auto-Ghost</a> is enabled.
         <tr><td>Ghost<td>Ghost this plugin when it is inactive even if <a href="#modsAutoGhost">Auto-Ghost</a> is disabled.
         <tr><td id="modsRebuildPatch">Rebuild Patch...<td>Rebuild the selected Bashed Patch using the Python patcher.
-        <tr><td id="modsRebuildPatchCBash">Rebuild Patch (CBash *deprecated*)...<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Rebuild the selected Bashed Patch using the CBash patcher.
 </table>
 
 
@@ -748,10 +745,9 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 </div>
 </div>
 <h3 id="patch-configuration">Bash Configuration <a class="back2top" href="#contents">Back to top</a></h3>
-<p>A Bashed Patch is created by Wrye Bash the first time you run it, with the plugin being called <q><strong>Bashed Patch, 0.esp</strong></q>. It is configured using the plugin context menu commands <a href="#modsRebuildPatch">Rebuild Patch...</a> or <a href="#modsRebuildPatchCBash">Rebuild Patch (CBash *deprecated*)...</a>. <strong>You should rebuild your Bashed Patch every time you change your load order, before playing the game.</strong> The Bashed Patch should be last in your load order, unless you have plugins that explicitly state that they must load last.
+<p>A Bashed Patch is created by Wrye Bash the first time you run it, with the plugin being called <q><strong>Bashed Patch, 0.esp</strong></q>. It is configured using the plugin context menu command <a href="#modsRebuildPatch">Rebuild Patch...</a>. <strong>You should rebuild your Bashed Patch every time you change your load order, before playing the game.</strong> The Bashed Patch should be last in your load order, unless you have plugins that explicitly state that they must load last.
 <p>The configuration dialog consists of a list of major sections to the left, and the contents of the selected section to the right, with the build and save buttons at the bottom. The sections and their items have checkboxes: checking a section will include all its checked items in the Bashed Patch. Unchecked sections and items will not be included. Some sections don't have any items, and so just need the section checkbox checked.
 <p>A short description of each section and some items is displayed near the bottom of the window if the section/item is hovered over. Bolded items are new since the last time the Bashed Patch was built. Wrye Bash will try to auto-configure most sections, but some will still need tweaking.
-<p><strong>Note:</strong> There are currently two methods of building a Bashed Patch. One uses Python, and the other uses CBash, which is a software library written to speed up the reading of plugins. Both methods offer the same options. The CBash method is faster and allows more types of plugin to be merged, but contains some bugs as CBash is still a work in progress. CBash will become the default in the near future, once its bugs have been fixed. For now, it is probably safer to use the Python method.
 <table>
     <thead>
         <tr><th colspan="2">Bashed Patch Configuration Buttons
@@ -1353,7 +1349,7 @@ MemoryError</code>
                 <li>Avoid rebuilding the Bashed Patch after using BAIN.  Instead, restart Wrye Bash, then rebuild the Bashed Patch.
                 <li>If running the Python source, try enabling the LAA flag on python.exe and pythonw.exe.  For 64-bit OS users, this may allow Wrye Bash up to almost 4GB of memory before crashing.
                 <li>If running the Standalone executable, try enabling the LAA flag on Wrye Bash.exe.
-                <li>If you do not need access to CBash, you can setup your Python environment using 64-bit Python.
+                <li>You can try to setup your Python environment using 64-bit Python.
             </ul>
         <tr><td>Wrye Bash will not start, and no Bug Dump can be generated<td>Wrye Bash is installed in a directory with unicode characters, and the Python interpreter has problems importing files in such directories.<td>Reinstall Wrye Bash to a directory without unicode characters.
         <tr><td>File not found errors<td>Mapped paths and junction links can confuse Wrye Bash, leading to file not found errors.<td>Avoid using mapped paths and junction links for your game install.
@@ -1512,19 +1508,6 @@ MemoryError</code>
 <h3>Packaged Programs <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Additionally, Wrye Bash comes packaged with the following programs:
 <ul>
-    <li>CBash
-    <ul>
-        <li>Website: <a href="https://github.com/wrye-bash/CBash">GITHUB</a>
-        <li>License: Triple-license <a href="https://www.mozilla.org/en-US/MPL/1.1/">MPL 1.1</a>/<a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.html">GPL 2.0</a>/<a href="https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html">LGPL 2.1</a>
-        <li>Details:
-        <ul>
-            <li>cint.py - For v0.7.0, cint.py is in sync between Wrye Bash vs CBash repos, at the time of writing this.
-            <li>C/C++ Source Code: Version 0.7.x of CBash is built off directly from the GITHUB source code, which can be found in the CBash github repository, <a href="https://github.com/wrye-bash/CBash">here</a>.
-            <li>The code is for all intents and purposes the same as the old v0.6.x CBash version, just with a few minor fixes and an updated runtime dependence on <a href="https://www.microsoft.com/en-us/download/details.aspx?id=48234">Microsoft's Universal C Runtime</a> which should be already installed on any Windows 7 PC that's normally updated through the Windows Update system.</li>
-            <li>Original CBash project was hosted in <a href="https://sourceforge.net/projects/cbash/">SourceForge</a>, but now the code that is present there is for the old v0.6.x version, minus some changes contributed by <a href="https://github.com/Ethatron/CBash">Ethathron</a>, and later forked by <a href="https://github.com/lojack5/CBash">Lojack5</a> (which, in turn, was the ancestor of the <a href="https://github.com/wrye-bash/CBash">current development repository</a>.)</li>
-            <li>The state of that old SourceForge repository was imported to <a href="https://github.com/leandor/CBashSF.git">this</a> GITHUB read-only mirror, for easier sharing and branching, and history keeping reasons.</li>
-        </ul>
-    </ul>
     <li>7zip:
     <ul>
         <li>Website: <a href="https://www.7-zip.org/">7zip.org</a>

@@ -1032,9 +1032,9 @@ class ConfirmationsPage(_AFixedPage):
         u'MOVE': _(u'Move'),
     }
     _label_to_action = {v: k for k, v in _action_to_label.iteritems()}
-    ##: Maybe hide some of these per game? E.g. Nvidia Fog Fix & CBash will
-    # never be relevant outside of Oblivion/Nehrim, while Add/Remove ESL Flag
-    # makes no sense for non-SSE/FO4 games
+    ##: Maybe hide some of these per game? E.g. Nvidia Fog will never be
+    # relevant outside of Oblivion/Nehrim, while Add/Remove ESL Flag makes no
+    # sense for non-SSE/FO4 games
     _confirmations = {
         _(u'[INI Edits] Applying an INI tweak'):
             u'bash.iniTweaks.continue',
@@ -1060,8 +1060,6 @@ class ConfirmationsPage(_AFixedPage):
             u'bash.flipMasters.continue',
         _(u'[Mods] Applying the Nvidia Fog Fix'):
             u'bash.cleanMod.continue',
-        _(u'[Mods] Building the Bashed Patch with CBash'):
-            u'bash.patch.cbash_deprecated.continue',
         _(u"[Mods] Changing a plugin's version to 0.8"):
             u'bash.setModVersion.continue',
         _(u'[Mods] Exporting NPC levels to a text file'):

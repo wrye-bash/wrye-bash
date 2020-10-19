@@ -466,8 +466,6 @@ def _import_bush_and_set_game(opts, bashIni):
         # Add the game to the command line, so we use it if we restart
         bass.update_sys_argv(['--oblivionPath', bush.game_path(retCode).s])
         bush.detect_and_set_game(opts.oblivionPath, bashIni, retCode)
-    # Force Python mode if CBash can't work with this game
-    bolt.CBash = opts.mode if bush.game.Esp.canCBash else 1 #1 = python mode...
     return bush.game
 
 def _show_wx_popup(msg, is_critical=True):

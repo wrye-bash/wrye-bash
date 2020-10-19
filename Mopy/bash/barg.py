@@ -104,19 +104,6 @@ def parse():
                              'you want to print a lot of information'
                              ' (e.g. while developing or '
                              'debugging).')
-    parser.set_defaults(mode=0)
-    parser.add_argument('-C', '--Cbash-mode',
-                        action='store_const',
-                        const=2,
-                        dest='mode',
-                        help='enables CBash and uses CBash to build bashed '
-                             'patch.')
-    parser.add_argument('-P', '--Python-mode',
-                        action='store_const',
-                        const=1,
-                        dest='mode',
-                        help='disables CBash and uses python code to build '
-                             'bashed patch.')
     parser.add_argument('--no-uac',
                         action='store_true',
                         dest='noUac',
@@ -148,8 +135,7 @@ _short_to_long = dict(
     [('-o', '--oblivionPath'), ('-p', '--personalPath'), ('-u', '--userPath'),
      ('-l', '--localAppDataPath'), ('-b', '--backup'), ('-r', '--restore'),
      ('-q', '--quiet-quit'), ('-f', '--filename'),
-     ('-d', '--debug'), ('-C', '--Cbash-mode'), ('-P', '--Python-mode'),
-     ('-L', '--Language'), ])
+     ('-d', '--debug'), ('-L', '--Language'), ])
 
 def convert_to_long_options(sys_argv):
     sys_argv = list(sys_argv)

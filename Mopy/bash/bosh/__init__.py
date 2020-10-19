@@ -42,7 +42,7 @@ from collections import OrderedDict, Iterable
 from functools import wraps, partial
 from itertools import imap
 #--Local
-from ._mergeability import isPBashMergeable, isCBashMergeable, is_esl_capable
+from ._mergeability import isPBashMergeable, is_esl_capable
 from .mods_metadata import ConfigHelpers
 from .. import bass, bolt, balt, bush, env, load_order, archives, \
     initialization
@@ -52,7 +52,6 @@ from ..bass import dirs, inisettings, tooldirs
 from ..bolt import GPath, DataDict, deprint, sio, Path, decode, AFile, \
     GPath_no_norm
 from ..brec import ModReader, RecordHeader
-from ..cint import CBashApi
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
     CancelError, FileError, ModError, PluginsFullError, SaveFileError, \
     SaveHeaderError, SkipError, StateError
@@ -2160,25 +2159,18 @@ class ModInfos(FileInfos):
                 newMods.append(mpath)
         return newMods
 
-    def rescanMergeable(self, names, prog=None, doCBash=None,
-                        return_results=False):
+    def rescanMergeable(self, names, prog=None, return_results=False):
         """Rescan specified mods. Return value is only meaningful when
         return_results is set to True."""
         messagetext = _(u'Check ESL Qualifications') if bush.game.check_esl \
             else _(u"Mark Mergeable")
         with prog or balt.Progress(_(messagetext) + u' ' * 30) as prog:
-            return self._rescanMergeable(names, prog, doCBash, return_results)
+            return self._rescanMergeable(names, prog, return_results)
 
-    def _rescanMergeable(self, names, progress, doCBash, return_results):
+    def _rescanMergeable(self, names, progress, return_results):
         reasons = None if not return_results else []
-        if doCBash is None:
-            doCBash = CBashApi.Enabled
-        elif doCBash and not CBashApi.Enabled:
-            doCBash = False
         if bush.game.check_esl:
             is_mergeable = is_esl_capable
-        elif doCBash:
-            is_mergeable = isCBashMergeable
         else:
             is_mergeable = isPBashMergeable
         mod_mergeInfo = self.table.getColumn('mergeInfo')
@@ -2265,8 +2257,7 @@ class ModInfos(FileInfos):
         for patch in patches:
             patchConfigs = self.table.getItem(patch, 'bash.patch.configs')
             if not patchConfigs: continue
-            patcherstr = 'CBash_PatchMerger' if patcher.configIsCBash(
-                patchConfigs) else 'PatchMerger'
+            patcherstr = 'PatchMerger'
             if patchConfigs.get(patcherstr,{}).get('isEnabled'):
                 config_checked = patchConfigs[patcherstr]['configChecks']
                 for modName in config_checked:

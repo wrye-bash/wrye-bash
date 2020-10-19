@@ -337,9 +337,7 @@ class ModChecker(WindowFrame):
         _f(_MOD_LIST,   True,  _(u'Mod List'),        'ModList', False)
         _f(_VERSION,    True,  _(u'Version Numbers'), 'Version', True)
         _f(_CRC,        True,  _(u'CRCs'),            'CRC', False)
-        _f(_SCAN_DIRTY, True,  (_(u'Scan for Dirty Edits')
-                                   if bass.settings['bash.CBashEnabled']
-                                   else _(u"Scan for UDRs")))
+        _f(_SCAN_DIRTY, True,  _(u'Scan for UDRs'))
         _f(_COPY_TEXT,  False, _(u'Copy Text'), callback=self.OnCopyText)
         _f(_UPDATE,     False, _(u'Update'))
         #--Events

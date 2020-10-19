@@ -163,7 +163,6 @@ if bush.game.Esp.check_master_sizes:
 settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     #--Basics
     'bash.version': 0,
-    'bash.CBashEnabled': True,
     'bash.backupPath': None,
     'bash.frameMax': False, # True if maximized
     'bash.page':1,

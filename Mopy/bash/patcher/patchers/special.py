@@ -22,24 +22,28 @@
 #
 # =============================================================================
 import copy
-from collections import Counter, defaultdict
+from collections import defaultdict
 from itertools import chain
-from operator import itemgetter, attrgetter
+from operator import attrgetter
 # Internal
-from .base import Patcher, CBash_Patcher, ListPatcher, CBash_ListPatcher
-from ..base import Abstract_Patcher, AListPatcher
-from ... import bush, load_order
-from ...bolt import GPath, SubProgress
-from ...cint import FormID
+from .base import Patcher, ListPatcher
+from ... import bush
+from ...bolt import GPath
 from ...exception import AbstractError
 
 # Patchers: 40 ----------------------------------------------------------------
-class _AListsMerger(AListPatcher):
+class _AListsMerger(ListPatcher):
     """Merges lists of objects, e.g. leveled lists or FormID lists."""
     group = _(u'Special')
     scanOrder = 45
     editOrder = 45
     iiMode = True
+    # De/Re Tags - None means the patcher does not have such a tag
+    _de_tag = None
+    _re_tag = None
+    # Maps record type (str) to translated label (unicode)
+    _type_to_label = {}
+    _de_re_header = None
 
     def _overhaul_compat(self, mods, _skip_id):
         OOOMods = {GPath(u"Oscuro's_Oblivion_Overhaul.esm"),
@@ -110,15 +114,6 @@ class _AListsMerger(AListPatcher):
         self.srcs = set(self.srcs) & p_file.loadSet
         self.remove_empty_sublists = remove_empty
         self.tag_choices = tag_choices
-
-class _PListsMerger(_AListsMerger, ListPatcher):
-    """Common code from PBash _AListsMerger subclasses."""
-    # De/Re Tags - None means the patcher does not have such a tag
-    _de_tag = None
-    _re_tag = None
-    # Maps record type (str) to translated label (unicode)
-    _type_to_label = {}
-    _de_re_header = None
 
     def annotate_plugin(self, ann_plugin):
         """Returns the name of the specified plugin, with any Relev/Delev tags
@@ -272,7 +267,7 @@ class _PListsMerger(_AListsMerger, ListPatcher):
         implementation, every patcher needs to override this."""
         raise AbstractError()
 
-class ListsMerger(_PListsMerger):
+class ListsMerger(_AListsMerger):
     """Merges leveled lists."""
     _read_write_records = bush.game.listTypes # bush.game must be set!
     _de_tag = u'Delev'
@@ -304,217 +299,8 @@ class ListsMerger(_PListsMerger):
     def _get_entries(self, target_list):
         return [list_entry.listId for list_entry in target_list.entries]
 
-class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
-    allowUnloaded = False
-    scanRequiresChecked = False # same as CBash_Patcher.scanRequiresChecked
-    applyRequiresChecked = False # same as CBash_Patcher.applyRequiresChecked
-
-    def __init__(self, p_name, p_file, p_sources, remove_empty, tag_choices):
-        super(_AListsMerger, self).__init__(p_name, p_file, p_sources)
-        self.isActive = True
-        self.id_delevs = {}
-        self.id_list = {}
-        self.id_attrs = {}
-        self.empties = set()
-        self.remove_empty_sublists = remove_empty
-        self.tag_choices = tag_choices
-        importMods = set(self.srcs) & p_file.loadSet
-        _skip_id = lambda x: FormID(GPath(bush.game.master_file), x)
-        self._overhaul_compat(importMods, _skip_id)
-
-    def getTypes(self):
-        return ['LVLC','LVLI','LVSP']
-
-    def scan(self, modFile, record, bashTags, __empty=frozenset()):
-        """Records information needed to apply the patch."""
-        recordId = record.fid
-        if recordId in self.OverhaulUOPSkips and modFile.GName == GPath(
-                'Unofficial Oblivion Patch.esp'):
-            return
-        script = record.script
-        if script and not script.ValidateFormID(self.patchFile):
-            script = None
-        template = record.template
-        if template and not template.ValidateFormID(self.patchFile):
-            template = None
-        curList = [(level, listId, count) for level, listId, count in
-                   record.entries_list if
-                   listId.ValidateFormID(self.patchFile)]
-        if recordId not in self.id_list:
-            #['level', 'listId', 'count']
-            self.id_list[recordId] = curList
-            self.id_attrs[recordId] = [record.chanceNone, script, template,
-                                       (record.flags or 0)]
-        else:
-            mergedList = self.id_list[recordId]
-            applied_tags = self.tag_choices[modFile.GName]
-            isRelev = u'Relev' in applied_tags
-            isDelev = u'Delev' in applied_tags
-            delevs = self.id_delevs.setdefault(recordId, __empty)
-            curItems = set([listId for level, listId, count in curList])
-            if isRelev:
-                # Can add and set the level/count of items, but not delete
-                # items
-                #Ironically, the first step is to delete items that the list
-                #  will add right back
-                #This is an easier way to update level/count than actually
-                # checking if they need changing
-
-                #Filter out any records that may have their level/count updated
-                mergedList = [entry for entry in mergedList if
-                              entry[1] not in curItems]  # entry[1] = listId
-                #Add any new records as well as any that were filtered out
-                mergedList += curList
-                #Remove the added items from the deleveled list
-                delevs -= curItems
-                self.id_attrs[recordId] = [record.chanceNone, script, template,
-                                           (record.flags or 0)]
-            else:
-                #Can add new items, but can't change existing ones
-                items = set([entry[1] for entry in mergedList])  # entry[1]
-                # = listId
-                mergedList += [(level, listId, count) for level, listId, count
-                               in curList if listId not in items]
-                mergedAttrs = self.id_attrs[recordId]
-                self.id_attrs[recordId] =[record.chanceNone or mergedAttrs[0],
-                                         script or mergedAttrs[1],
-                                         template or mergedAttrs[2],
-                                         (record.flags or 0) | mergedAttrs[3]]
-            #--Delevs: all items in masters minus current items
-            if isDelev:
-                deletedItems = set([listId for master in record.History() for
-                                    level, listId, count in master.entries_list
-                                    if listId.ValidateFormID(
-                        self.patchFile)]) - curItems
-                delevs |= deletedItems
-            #Remove any items that were deleveled
-            mergedList = [entry for entry in mergedList if
-                          entry[1] not in delevs]  # entry[1] = listId
-            self.id_list[recordId] = mergedList
-            self.id_delevs[recordId] = delevs
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired."""
-        recordId = record.fid
-        merged_ = recordId in self.id_list
-        if merged_:
-            self.scan(modFile,record,bashTags)
-            mergedList = self.id_list[recordId]
-            mergedAttrs = self.id_attrs[recordId]
-            newList = [(level, listId, count) for level, listId, count in
-                       record.entries_list if
-                       listId.ValidateFormID(self.patchFile)]
-            script = record.script
-            if script and not script.ValidateFormID(self.patchFile):
-                script = None
-            template = record.template
-            if template and not template.ValidateFormID(self.patchFile):
-                template = None
-            newAttrs = [record.chanceNone, script, template,
-                        (record.flags or 0)]
-        # Can't tell if any sublists are actually empty until they've all
-        # been processed/merged
-        #So every level list gets copied into the patch, so that they can be
-        #  checked after the regular patch process
-        #They'll get deleted from the patch there as needed.
-        override = record.CopyAsOverride(self.patchFile)
-        if override:
-            if merged_ and (newAttrs != mergedAttrs or sorted(newList,
-                key=itemgetter(1)) != sorted(mergedList, key=itemgetter(1))):
-                override.chanceNone, override.script, override.template, \
-                override.flags = mergedAttrs
-                override.entries_list = mergedList
-                self.mod_count[modFile.GName] += 1
-            record.UnloadRecord()
-            record._RecordID = override._RecordID
-
-    def finishPatch(self,patchFile, progress):
-        """Edits the bashed patch file directly."""
-        if self.empties is None: return
-        subProgress = SubProgress(progress)
-        subProgress.setFull(len(self.getTypes()) * 2)
-        pstate = 0
-        #Clean up any empty sublists
-        empties = self.empties
-        emptiesAdd = empties.add
-        emptiesDiscard = empties.discard
-        # Only do this if 'Remove Empty Sublists' is checked
-        if self.remove_empty_sublists:
-            for type in self.getTypes():
-                subProgress(pstate, _(u'Looking for empty %s sublists...') %
-                            type + u'\n')
-                #Remove any empty sublists
-                madeChanges = True
-                while madeChanges:
-                    madeChanges = False
-                    oldEmpties = empties.copy()
-                    for record in getattr(patchFile,type):
-                        recordId = record.fid
-                        items = set([entry.listId for entry in record.entries])
-                        if items:
-                            emptiesDiscard(recordId)
-                        else:
-                            emptiesAdd(recordId)
-                        toRemove = empties & items
-                        if toRemove:
-                            madeChanges = True
-                            cleanedEntries = [entry for entry in record.entries
-                                              if entry.listId not in toRemove]
-                            record.entries = cleanedEntries
-                            if cleanedEntries:
-                                emptiesDiscard(recordId)
-                            else:
-                                emptiesAdd(recordId)
-                    madeChanges |= oldEmpties != empties
-                    pstate += 1
-        # Still need to clean this, even if 'Remove Empty Sublists' is off
-        # TODO(inf) We could avoid this if we rewrote apply() above
-        for type in self.getTypes():
-            subProgress(pstate,
-                        _(u'Cleaning %s ITPOs...') % type + u'\n')
-            # Remove any identical to winning lists, except those that were
-            # merged into the patch
-            for record in getattr(patchFile,type):
-                conflicts = record.Conflicts()
-                numConflicts = len(conflicts)
-                if numConflicts:
-                    curConflict = 1  # Conflict at 0 will be the patchfile.
-                    # No sense comparing it to itself.
-                    #Find the first conflicting record that wasn't merged
-                    while curConflict < numConflicts:
-                        prevRecord = conflicts[curConflict]
-                        if prevRecord.GetParentMod().GName not in \
-                                patchFile.mergeSet:
-                            break
-                        curConflict += 1
-                    else:
-                        continue
-                    # If the record in the patchfile matches the previous
-                    # non-merged record, delete it.
-                    #Ordering doesn't matter, hence the conversion to sets
-                    if set(prevRecord.entries_list) == set(
-                            record.entries_list) and [record.chanceNone,
-                                                      record.script,
-                                                      record.template,
-                                                      record.flags] == [
-                        prevRecord.chanceNone, prevRecord.script,
-                        prevRecord.template, prevRecord.flags]:
-                        record.DeleteRecord()
-            pstate += 1
-        self.empties = None
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(u'= ' + self._patcher_name)
-        log(u'* ' + _(u'Modified LVL: %d') % (sum(mod_count.values()),))
-        for srcMod in load_order.get_ordered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = Counter()
-
 #------------------------------------------------------------------------------
-class FidListsMerger(_PListsMerger):
+class FidListsMerger(_AListsMerger):
     """Merges FormID lists."""
     scanOrder = 46
     editOrder = 46
@@ -527,7 +313,7 @@ class FidListsMerger(_PListsMerger):
         return target_list.formIDInList
 
 #------------------------------------------------------------------------------
-class _AContentsChecker(Abstract_Patcher):
+class ContentsChecker(Patcher):
     """Checks contents of leveled lists, inventories and containers for
     correct content types."""
     group = _(u'Special')
@@ -536,8 +322,6 @@ class _AContentsChecker(Abstract_Patcher):
     contType_entryTypes = bush.game.cc_valid_types
     contTypes = set(contType_entryTypes)
     entryTypes = set(chain.from_iterable(contType_entryTypes.itervalues()))
-
-class ContentsChecker(_AContentsChecker,Patcher):
 
     def __init__(self, p_name, p_file):
         super(ContentsChecker, self).__init__(p_name, p_file)
@@ -644,96 +428,3 @@ class ContentsChecker(_AContentsChecker,Patcher):
                         for removedId in sorted(id_removed[contId]):
                             log(u'  . %s: %06X' % (removedId[0].s,
                                                    removedId[1]))
-
-class CBash_ContentsChecker(_AContentsChecker,CBash_Patcher):
-    allowUnloaded = False # avoid the srcs check in CBash_Patcher.initData
-
-    def __init__(self, p_name, p_file):
-        super(CBash_ContentsChecker, self).__init__(p_name, p_file)
-        self.listTypes = {'LVSP', 'LVLC', 'LVLI'}
-        self.containerTypes = {'CONT', 'CREA', 'NPC_'}
-        self.mod_type_id_badEntries = {}
-        self.knownGood = set()
-
-    def getTypes(self):
-        """Returns the group types that this patcher checks"""
-        return ['CONT','CREA','NPC_','LVLI','LVLC','LVSP']
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired."""
-        rec_type = record._Type
-        Current = self.patchFile.Current
-        badEntries = set()
-        goodEntries = []
-        knownGood = self.knownGood
-        knownGoodAdd = knownGood.add
-        goodAppend = goodEntries.append
-        badAdd = badEntries.add
-        validEntries = self.contType_entryTypes[rec_type]
-        if rec_type in self.listTypes:
-            topattr, subattr = ('entries','listId')
-        else: #Is a container type
-            topattr, subattr = ('items','item')
-
-        for entry in getattr(record,topattr):
-            entryId = getattr(entry,subattr)
-            #Cache known good entries to decrease execution time
-            if entryId in knownGood:
-                goodAppend(entry)
-            else:
-                if entryId.ValidateFormID(self.patchFile):
-                    entryRecords = Current.LookupRecords(entryId)
-                else:
-                    entryRecords = None
-                if not entryRecords:
-                    badAdd((_(u'NONE'),entryId,None,_(u'NONE')))
-                else:
-                    entryRecord = entryRecords[0]
-                    if entryRecord.recType in validEntries:
-                        knownGoodAdd(entryId)
-                        goodAppend(entry)
-                    else:
-                        badAdd((entryRecord.eid, entryId,
-                                entryRecord.GetParentMod().GName,
-                                entryRecord.recType))
-                        entryRecord.UnloadRecord()
-
-        if badEntries:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                setattr(override, topattr, goodEntries)
-                type_id_badEntries = self.mod_type_id_badEntries.setdefault(
-                    modFile.GName, {})
-                id_badEntries = type_id_badEntries.setdefault(rec_type, {})
-                id_badEntries[record.eid] = badEntries.copy()
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        #--Log
-        mod_type_id_badEntries = self.mod_type_id_badEntries
-        log.setHeader(u'= ' + self._patcher_name)
-        for mod, type_id_badEntries in mod_type_id_badEntries.iteritems():
-            log(u'\n=== %s' % mod.s)
-            for type,id_badEntries in type_id_badEntries.iteritems():
-                log(u'  * ' + _(u'Cleaned %s: %d') % (type,len(id_badEntries)))
-                for id, badEntries in id_badEntries.iteritems():
-                    log(u'    * %s : %d' % (id,len(badEntries)))
-                    for entry in sorted(badEntries, key=itemgetter(0)):
-                        longId = entry[1]
-                        if entry[2]:
-                            modName = entry[2].s
-                        else:
-                            try:
-                                modName = longId[0].s
-                            except:
-                                log(u'        . ' + _(
-                                    u'Unloaded Object or Undefined Reference'))
-                                continue
-                        log(u'        . ' + _(
-                            u'Editor ID: "%s", Object ID %06X: Defined in '
-                            u'mod "%s" as %s') % (
-                                entry[0], longId[1], modName, entry[3]))
-        self.mod_type_id_badEntries = {}

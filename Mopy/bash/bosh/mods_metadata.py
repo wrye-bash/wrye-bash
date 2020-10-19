@@ -31,7 +31,6 @@ from .loot_parser import libloot_version, LOOTParser
 from .. import balt, bolt, bush, bass, load_order
 from ..bolt import GPath, deprint, sio, struct_pack, struct_unpack
 from ..brec import ModReader, MreRecord, RecordHeader
-from ..cint import ObBaseRecord, ObCollection
 from ..exception import BoltError, CancelError, ModError
 
 lootDb = None # type: LOOTParser
@@ -341,8 +340,8 @@ class ConfigHelpers(object):
 
 #------------------------------------------------------------------------------
 class ModCleaner(object):
-    """Class for cleaning ITM and UDR edits from mods.
-       ITM detection requires CBash to work."""
+    """Class for cleaning ITM and UDR edits from mods. ITM detection does not
+    currently work with PBash."""
     UDR     = 0x01  # Deleted references
     ITM     = 0x02  # Identical to master records
     FOG     = 0x04  # Nvidia Fog Fix
@@ -355,33 +354,14 @@ class ModCleaner(object):
         def __init__(self,fid,Type=None,parentFid=None,parentEid=u'',
                      parentType=None,parentParentFid=None,parentParentEid=u'',
                      pos=None):
-            if isinstance(fid,ObBaseRecord):
-                # CBash - passed in the record instance
-                record = fid
-                parent = record.Parent
-                self.fid = record.fid
-                self.type = record._Type
-                self.parentFid = parent.fid
-                self.parentEid = parent.eid
-                if parent.IsInterior:
-                    self.parentType = 0
-                    self.parentParentFid = None
-                    self.parentParentEid = u''
-                    self.pos = None
-                else:
-                    self.parentType = 1
-                    self.parentParentFid = parent.Parent.fid
-                    self.parentParentEid = parent.Parent.eid
-                    self.pos = (record.posX,record.posY)
-            else:
-                self.fid = fid
-                self.type = Type
-                self.parentFid = parentFid
-                self.parentEid = parentEid
-                self.parentType = parentType
-                self.pos = pos
-                self.parentParentFid = parentParentFid
-                self.parentParentEid = parentParentEid
+            self.fid = fid
+            self.type = Type
+            self.parentFid = parentFid
+            self.parentEid = parentEid
+            self.parentType = parentType
+            self.pos = pos
+            self.parentParentFid = parentParentFid
+            self.parentParentEid = parentParentEid
 
         # Implement rich comparison operators, __cmp__ is deprecated
         def __eq__(self, other):
@@ -417,88 +397,10 @@ class ModCleaner(object):
         return udr,itm,fog
 
     @staticmethod
-    def scan_Many(modInfos,what=DEFAULT,progress=bolt.Progress(),detailed=False):
+    def scan_Many(modInfos, what=DEFAULT, progress=bolt.Progress(),
+            detailed=False, __unpacker=struct.Struct(u'=12s2f2l2f').unpack):
         """Scan multiple mods for dirty edits"""
         if len(modInfos) == 0: return []
-        if not bass.settings['bash.CBashEnabled']:
-            return ModCleaner._scan_Python(modInfos,what,progress,detailed)
-        else:
-            return ModCleaner._scan_CBash(modInfos,what,progress)
-
-    @staticmethod
-    def _scan_CBash(modInfos,what,progress):
-        """Scan multiple mods for problems"""
-        if not (what & ModCleaner.ALL):
-            return [(set(),set(),set())] * len(modInfos)
-        # There are scans to do
-        doUDR = bool(what & ModCleaner.UDR)
-        doITM = bool(what & ModCleaner.ITM)
-        doFog = bool(what & ModCleaner.FOG)
-        # If there are more than 255 mods, we have to break it up into
-        # smaller groups.  We'll do groups of 200 for now, to allow for
-        # added files due to implicitly loading masters.
-        modInfos = [x.modInfo if isinstance(x,ModCleaner) else x for x in modInfos]
-        numMods = len(modInfos)
-        if numMods > 255:
-            ModsPerGroup = 200
-            numGroups = numMods // ModsPerGroup
-            if numMods % ModsPerGroup:
-                numGroups += 1
-        else:
-            ModsPerGroup = 255
-            numGroups = 1
-        progress.setFull(numGroups)
-        ret = []
-        for i in range(numGroups):
-            #--Load
-            progress(i,_(u'Loading...'))
-            groupModInfos = modInfos[i*ModsPerGroup:(i+1)*ModsPerGroup]
-            with ObCollection(ModsPath=bass.dirs[u'mods'].s) as Current:
-                for mod in groupModInfos:
-                    if len(mod.masterNames) == 0: continue
-                    path = mod.getPath()
-                    Current.addMod(path.stail)
-                Current.load()
-                #--Scan
-                subprogress1 = bolt.SubProgress(progress,i,i+1)
-                subprogress1.setFull(max(len(groupModInfos),1))
-                for j,modInfo in enumerate(groupModInfos):
-                    subprogress1(j,_(u'Scanning...') + u'\n' + modInfo.name.s)
-                    udr = set()
-                    itm = set()
-                    fog = set()
-                    if len(modInfo.masterNames) > 0:
-                        path = modInfo.getPath()
-                        modFile = Current.LookupModFile(path.stail)
-                        if modFile:
-                            udrRecords = []
-                            fogRecords = []
-                            if doUDR:
-                                udrRecords += modFile.ACRES + modFile.ACHRS + modFile.REFRS
-                            if doFog:
-                                fogRecords += modFile.CELL
-                            if doITM:
-                                itm |= set([x.fid for x in modFile.GetRecordsIdenticalToMaster()])
-                            total = len(udrRecords) + len(fogRecords)
-                            subprogress2 = bolt.SubProgress(subprogress1,j,j+1)
-                            subprogress2.setFull(max(total,1))
-                            #--Scan UDR
-                            for record in udrRecords:
-                                subprogress2.plus()
-                                if record.IsDeleted:
-                                    udr.add(ModCleaner.UdrInfo(record))
-                            #--Scan fog
-                            for record in fogRecords:
-                                subprogress2.plus()
-                                if not (record.fogNear or record.fogFar or record.fogClip):
-                                    fog.add(record.fid)
-                            modFile.Unload()
-                    ret.append((udr,itm,fog))
-        return ret
-
-    @staticmethod
-    def _scan_Python(modInfos, what, progress, detailed=False,
-                     __unpacker=struct.Struct(u'=12s2f2l2f').unpack):
         if not (what & (ModCleaner.UDR|ModCleaner.FOG)):
             return [(set(), set(), set())] * len(modInfos)
         # Python can't do ITM scanning

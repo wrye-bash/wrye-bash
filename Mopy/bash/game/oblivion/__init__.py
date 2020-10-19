@@ -137,7 +137,6 @@ class OblivionGameInfo(GameInfo):
 
     class Esp(GameInfo.Esp):
         canBash = True
-        canCBash = True
         canEditHeader = True
         validHeaderVersions = (0.8,1.0)
         stringsFiles = []
@@ -179,23 +178,6 @@ class OblivionGameInfo(GameInfo):
         u'RacePatcher', u'RoadImporter', u'SEWorldEnforcer', u'SoundPatcher',
         u'SpellsPatcher', u'StatsPatcher', u'TextImporter', u'TweakActors',
         u'UpdateReferences',
-    )
-
-    CBash_patchers = (u'CBash_PatchMerger', # PatchMerger must come first!
-        u'CBash_ActorImporter', u'CBash_AlchemicalCatalogs',
-        u'CBash_AliasesPatcher', u'CBash_AssortedTweaker',
-        u'CBash_CellImporter', u'CBash_ClothesTweaker',
-        u'CBash_CoblExhaustion', u'CBash_ContentsChecker',
-        u'CBash_DeathItemPatcher', u'CBash_GmstTweaker',
-        u'CBash_GraphicsPatcher', u'CBash_ImportActorsSpells',
-        u'CBash_ImportFactions', u'CBash_ImportInventory',
-        u'CBash_ImportRelations', u'CBash_ImportScripts', u'CBash_KFFZPatcher',
-        u'CBash_ListsMerger', u'CBash_MFactMarker', u'CBash_NamesPatcher',
-        u'CBash_NamesTweaker', u'CBash_NPCAIPackagePatcher',
-        u'CBash_NpcFacePatcher', u'CBash_RacePatcher', u'CBash_RoadImporter',
-        u'CBash_SEWorldEnforcer', u'CBash_SoundPatcher',
-        u'CBash_SpellsPatcher', u'CBash_StatsPatcher', u'CBash_TweakActors',
-        u'CBash_UpdateReferences',
     )
 
     weaponTypes = (

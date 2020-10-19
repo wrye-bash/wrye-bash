@@ -40,12 +40,11 @@ from ..gui import CancelButton, DeselectAllButton, HLayout, Label, \
     SaveAsButton, SelectAllButton, Stretch, VLayout, DialogWindow, \
     CheckListBox, HorizontalLine
 from ..patcher import configIsCBash, exportConfig, list_patches_dir
-from ..patcher.patch_files import PatchFile, CBash_PatchFile
+from ..patcher.patch_files import PatchFile
 
 # Final lists of gui patcher classes instances, initialized in
 # gui_patchers.InitPatchers() based on game. These must be copied as needed.
-PBash_gui_patchers = [] #--All gui patchers classes for this game
-CBash_gui_patchers = [] #--All gui patchers classes for this game (CBash mode)
+all_gui_patchers = [] #--All gui patchers classes for this game
 
 class PatchDialog(DialogWindow):
     """Bash Patch update dialog.
@@ -54,16 +53,10 @@ class PatchDialog(DialogWindow):
     """
     _min_size = (400, 300)
 
-    def __init__(self, parent, patchInfo, doCBash, importConfig,
-                 mods_to_reselect):
+    def __init__(self, parent, patchInfo, mods_to_reselect):
         self.mods_to_reselect = mods_to_reselect
         self.parent = parent
-        if (doCBash or doCBash is None) and bass.settings['bash.CBashEnabled']:
-            doCBash = True
-        else:
-            doCBash = False
-        self.doCBash = doCBash
-        title = _(u'Update ') + patchInfo.name.s + [u'', u' (CBash)'][doCBash]
+        title = _(u'Update ') + patchInfo.name.s
         size = balt.sizes.get(self.__class__.__name__, (500,600))
         super(PatchDialog, self).__init__(parent, title=title,
             icon_bundle=Resources.bashMonkey, sizes_dict=balt.sizes, size=size)
@@ -72,17 +65,11 @@ class PatchDialog(DialogWindow):
         groupOrder = dict([(group,index) for index,group in
             enumerate((_(u'General'),_(u'Importers'),_(u'Tweakers'),_(u'Special')))])
         patchConfigs = bosh.modInfos.table.getItem(patchInfo.name,'bash.patch.configs',{})
-        # If the patch config isn't from the same mode (CBash/Python), try converting
-        # it over to the current mode
-        if configIsCBash(patchConfigs) != self.doCBash:
-            if importConfig:
-                patchConfigs = self.ConvertConfig(patchConfigs)
-            else:
-                patchConfigs = {}
+        if configIsCBash(patchConfigs):
+            patchConfigs = {}
         isFirstLoad = 0 == len(patchConfigs)
         self.patchInfo = patchInfo
-        self._gui_patchers = [copy.deepcopy(p) for p in (
-            CBash_gui_patchers if doCBash else PBash_gui_patchers)]
+        self._gui_patchers = [copy.deepcopy(p) for p in all_gui_patchers]
         self._gui_patchers.sort(key=lambda a: a.__class__.patcher_name)
         self._gui_patchers.sort(key=lambda a: groupOrder[a.patcher_type.group]) ##: what does this ordering do??
         for patcher in self._gui_patchers:
@@ -182,36 +169,25 @@ class PatchDialog(DialogWindow):
             self._saveConfig(patch_name)
             #--Do it
             log = bolt.LogFile(StringIO.StringIO())
-            patchFile = CBash_PatchFile(patch_name) if self.doCBash else \
-                PatchFile(self.patchInfo)
+            patchFile = PatchFile(self.patchInfo)
             enabled_patchers = [p.get_patcher_instance(patchFile) for p in
                                 self._gui_patchers if p.isEnabled] ##: what happens if empty
             patchFile.init_patchers_data(enabled_patchers, SubProgress(progress, 0, 0.1)) #try to speed this up!
-            if self.doCBash:
-                #try to speed this up!
-                patchFile.buildPatch(SubProgress(progress,0.1,0.9))
-                #no speeding needed/really possible (less than 1/4 second even with large LO)
-                patchFile.buildPatchLog(log, SubProgress(progress, 0.95, 0.99))
-                #--Save
-                progress.setCancel(False, patch_name.s+u'\n'+_(u'Saving...'))
-                progress(0.99)
-                self._save_cbash(patchFile, patch_name)
-            else:
-                patchFile.initFactories(SubProgress(progress,0.1,0.2)) #no speeding needed/really possible (less than 1/4 second even with large LO)
-                patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
-                patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
-                if len(patchFile.tes4.masters) > 255:
-                    balt.showError(self,
-                        _(u'The resulting Bashed Patch contains too many '
-                          u'masters (>255). You can try to disable some '
-                          u'patchers, create a second Bashed Patch and '
-                          u'rebuild that one with only the patchers you '
-                          u'disabled in this one active.'))
-                    return # Abort, we'll just blow up on saving it
-                #--Save
-                progress.setCancel(False, patch_name.s+u'\n'+_(u'Saving...'))
-                progress(0.9)
-                self._save_pbash(patchFile, patch_name)
+            patchFile.initFactories(SubProgress(progress,0.1,0.2)) #no speeding needed/really possible (less than 1/4 second even with large LO)
+            patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
+            patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
+            if len(patchFile.tes4.masters) > 255:
+                balt.showError(self,
+                    _(u'The resulting Bashed Patch contains too many '
+                      u'masters (>255). You can try to disable some '
+                      u'patchers, create a second Bashed Patch and '
+                      u'rebuild that one with only the patchers you '
+                      u'disabled in this one active.'))
+                return # Abort, we'll just blow up on saving it
+            #--Save
+            progress.setCancel(False, patch_name.s+u'\n'+_(u'Saving...'))
+            progress(0.9)
+            self._save_pbash(patchFile, patch_name)
             #--Done
             progress.Destroy(); progress = None
             timer2 = time.clock()
@@ -224,30 +200,24 @@ class PatchDialog(DialogWindow):
             logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
             readme = bosh.modInfos.store_dir.join(u'Docs', patch_name.sroot + u'.txt')
             docsDir = bass.settings.get('balt.WryeLog.cssDir', GPath(u''))
-            if self.doCBash: ##: eliminate this if/else
-                with readme.open('w',encoding='utf-8') as file:
-                    file.write(logValue)
-                #--Convert log/readme to wtxt and show log
-                bolt.WryeText.genHtml(readme,None,docsDir)
-            else:
-                tempReadmeDir = Path.tempDir().join(u'Docs')
-                tempReadme = tempReadmeDir.join(patch_name.sroot+u'.txt')
-                #--Write log/readme to temp dir first
-                with tempReadme.open('w',encoding='utf-8-sig') as file:
-                    file.write(logValue)
-                #--Convert log/readmeto wtxt
-                bolt.WryeText.genHtml(tempReadme,None,docsDir)
-                #--Try moving temp log/readme to Docs dir
-                try:
-                    env.shellMove(tempReadmeDir, bass.dirs[u'mods'],
-                                  parent=self._native_widget)
-                except (CancelError,SkipError):
-                    # User didn't allow UAC, move to My Games directory instead
-                    env.shellMove([tempReadme, tempReadme.root + u'.html'],
-                                  bass.dirs[u'saveBase'], parent=self)
-                    readme = bass.dirs[u'saveBase'].join(readme.tail)
-                #finally:
-                #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
+            tempReadmeDir = Path.tempDir().join(u'Docs')
+            tempReadme = tempReadmeDir.join(patch_name.sroot+u'.txt')
+            #--Write log/readme to temp dir first
+            with tempReadme.open('w',encoding='utf-8-sig') as file:
+                file.write(logValue)
+            #--Convert log/readmeto wtxt
+            bolt.WryeText.genHtml(tempReadme,None,docsDir)
+            #--Try moving temp log/readme to Docs dir
+            try:
+                env.shellMove(tempReadmeDir, bass.dirs[u'mods'],
+                              parent=self._native_widget)
+            except (CancelError,SkipError):
+                # User didn't allow UAC, move to My Games directory instead
+                env.shellMove([tempReadme, tempReadme.root + u'.html'],
+                              bass.dirs[u'saveBase'], parent=self)
+                readme = bass.dirs[u'saveBase'].join(readme.tail)
+            #finally:
+            #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
             readme = readme.root + u'.html'
             bosh.modInfos.table.setItem(patch_name, 'doc', readme)
             balt.playSound(self.parent, bass.inisettings['SoundSuccess'].s)
@@ -277,8 +247,8 @@ class PatchDialog(DialogWindow):
             info = bosh.modInfos.new_info(patch_name, notify_bain=True)
             if info.size == patch_size:
                 # needed if size remains the same - mtime is set in
-                # parsers.ModFile#safeSave (or save for CBash...) which can't
-                # use setmtime(crc_changed), as no info is there. In this case
+                # parsers.ModFile#safeSave which can't use
+                # setmtime(crc_changed), as no info is there. In this case
                 # _reset_cache > calculate_crc() would not detect the crc
                 # change. That's a general problem with crc cache - API limits
                 info.calculate_crc(recalculate=True)
@@ -301,11 +271,6 @@ class PatchDialog(DialogWindow):
                 traceback=True)
             raise
         finally:
-            if self.doCBash:
-                try: patchFile.Current.Close()
-                except:
-                    bolt.deprint(u'Failed to close CBash collection',
-                                 traceback=True)
             if progress: progress.Destroy()
 
     def _save_pbash(self, patchFile, patch_name):
@@ -323,22 +288,7 @@ class PatchDialog(DialogWindow):
                     continue
                 raise # will raise the SkipError which is correctly processed
 
-    def _save_cbash(self, patchFile, patch_name):
-        patchFile.save()
-        patchTime = self.patchInfo.mtime
-        while True:
-            try:
-                patch_name.untemp()
-                patch_name.mtime = patchTime
-                return
-            except OSError as werr:
-                if werr.errno == errno.EACCES:
-                    if not self._cretry(patch_name):
-                        raise SkipError() # caught - Processing error displayed
-                    continue
-                raise
-
-    ##: Ugly warts below, should be unified eventually (see also FIXME above)
+    ##: Ugly warts below (see also FIXME above)
     def _pretry(self, patch_name):
         return balt.askYes(
             self, (_(u'Bash encountered an error when saving '
@@ -351,19 +301,6 @@ class PatchDialog(DialogWindow):
                      u'if prompted to do so.') + u'\n\n' +
                    _(u'Try again?')) % {
                 u'patch_name': patch_name.s,
-                u'xedit_name': bush.game.Xe.full_name},
-            _(u'Bashed Patch - Save Error'))
-
-    def _cretry(self, patch_name):
-        return balt.askYes(
-            self, (_(u'Bash encountered an error when renaming %(temp_patch)s '
-                     u'to %(patch_name)s.') + u'\n\n' +
-                   _(u'The file is in use by another process such as '
-                     u'%(xedit_name)s.') + u'\n' +
-                   _(u'Please close the other program that is accessing '
-                     u'%(patch_name)s.') + u'\n\n' +
-                   _(u'Try again?')) % {
-                u'temp_patch': patch_name.temp.s, u'patch_name': patch_name.s,
                 u'xedit_name': bush.game.Xe.full_name},
             _(u'Bashed Patch - Save Error'))
 
@@ -381,8 +318,7 @@ class PatchDialog(DialogWindow):
         """Export the configuration to a user selected dat file."""
         config = self.__config()
         exportConfig(patch_name=self.patchInfo.name, config=config,
-                     isCBash=self.doCBash, win=self.parent,
-                     outDir=bass.dirs[u'patches'])
+            win=self.parent, outDir=bass.dirs[u'patches'])
 
     __old_key = GPath(u'Saved Bashed Patch Configuration')
     __new_key = u'Saved Bashed Patch Configuration (%s)'
@@ -398,26 +334,31 @@ class PatchDialog(DialogWindow):
         if not textPath: return
         table = bolt.DataTable(bolt.PickleDict(textPath))
         # try the current Bashed Patch mode.
-        patchConfigs = table.getItem(
-            GPath(self.__new_key % ([u'Python', u'CBash'][self.doCBash])),
+        patchConfigs = table.getItem(GPath(self.__new_key % u'Python'),
             'bash.patch.configs', {})
         convert = False
         if not patchConfigs: # try the non-current Bashed Patch mode
-            patchConfigs = table.getItem(
-                GPath(self.__new_key % ([u'CBash', u'Python'][self.doCBash])),
+            patchConfigs = table.getItem(GPath(self.__new_key % u'CBash'),
                 'bash.patch.configs', {})
             convert = bool(patchConfigs)
         if not patchConfigs: # try the old format
             patchConfigs = table.getItem(self.__old_key, 'bash.patch.configs',
-                                         {})
-            convert = configIsCBash(patchConfigs) != self.doCBash
+                {})
+            convert = bool(patchConfigs)
         if not patchConfigs:
-            balt.showWarning(_(u'No patch config data found in %s') % textPath,
-                             _(u'Import Config'))
+            balt.showWarning(self,
+                _(u'No patch config data found in %s') % textPath,
+                title=_(u'Import Config'))
             return
         if convert:
-            patchConfigs = self.UpdateConfig(patchConfigs)
-            if patchConfigs is None: return
+            balt.showError(self,
+                _(u'The patch config data in %s is too old for this version '
+                  u'of Wrye Bash to handle or was created with CBash. Please '
+                  u'use Wrye Bash 307 to import the config, then rebuild the '
+                  u'patch using PBash to convert it and finally export the '
+                  u'config again to get one that will work in this '
+                  u'version.') % textPath, title=_(u'Config Too Old'))
+            return
         self._load_config(patchConfigs)
 
     def _load_config(self, patchConfigs, set_first_load=False, default=False):
@@ -427,33 +368,10 @@ class PatchDialog(DialogWindow):
             self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
         self.SetOkEnable()
 
-    def UpdateConfig(self, patchConfigs):
-        if not balt.askYes(self.parent, _(
-            u"Wrye Bash detects that the selected file was saved in Bash's "
-            u"%s mode, do you want Wrye Bash to attempt to adjust the "
-            u"configuration on import to work with %s mode (Good chance "
-            u"there will be a few mistakes)? (Otherwise this import will "
-            u"have no effect.)") % ([u'CBash', u'Python'][self.doCBash],
-                                    [u'Python', u'CBash'][self.doCBash])):
-            return
-        return self.ConvertConfig(patchConfigs)
-
-    @staticmethod
-    def ConvertConfig(patchConfigs):
-        newConfig = {}
-        for key in patchConfigs:
-            if key in otherPatcherDict:
-                newConfig[otherPatcherDict[key]] = patchConfigs[key]
-            else:
-                newConfig[key] = patchConfigs[key]
-        return newConfig
-
     def RevertConfig(self):
         """Revert configuration back to saved"""
         patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,
                                                    'bash.patch.configs', {})
-        if configIsCBash(patchConfigs) and not self.doCBash:
-            patchConfigs = self.ConvertConfig(patchConfigs)
         self._load_config(patchConfigs)
 
     def DefaultConfig(self):
@@ -469,7 +387,7 @@ class PatchDialog(DialogWindow):
         self.gExecute.enabled = select
 
     #--GUI --------------------------------
-    def OnSelect(self, lb_selection_dex, lb_selection_str):
+    def OnSelect(self, lb_selection_dex, _lb_selection_str):
         """Responds to patchers list selection."""
         self.ShowPatcher(self._gui_patchers[lb_selection_dex])
         self.gPatchers.lb_select_index(lb_selection_dex)
@@ -517,64 +435,3 @@ class PatchDialog(DialogWindow):
             if patcher is not None:
                 patcher.mass_select(select=not wrapped_evt.is_shift_down)
                 return
-
-# Used in ConvertConfig to convert between C and P *gui* patchers config - so
-# it belongs with gui_patchers (and not with patchers/ package). Still a hack
-otherPatcherDict = {
-    'AliasesPatcher' : 'CBash_AliasesPatcher',
-    'AssortedTweaker' : 'CBash_AssortedTweaker',
-    'PatchMerger' : 'CBash_PatchMerger',
-    'KFFZPatcher' : 'CBash_KFFZPatcher',
-    'ActorImporter' : 'CBash_ActorImporter',
-    'DeathItemPatcher' : 'CBash_DeathItemPatcher',
-    'NPCAIPackagePatcher' : 'CBash_NPCAIPackagePatcher',
-    'UpdateReferences' : 'CBash_UpdateReferences',
-    'CellImporter' : 'CBash_CellImporter',
-    'ClothesTweaker' : 'CBash_ClothesTweaker',
-    'GmstTweaker' : 'CBash_GmstTweaker',
-    'GraphicsPatcher' : 'CBash_GraphicsPatcher',
-    'ImportFactions' : 'CBash_ImportFactions',
-    'ImportInventory' : 'CBash_ImportInventory',
-    'SpellsPatcher' : 'CBash_SpellsPatcher',
-    'TweakActors' : 'CBash_TweakActors',
-    'ImportRelations' : 'CBash_ImportRelations',
-    'ImportScripts' : 'CBash_ImportScripts',
-    'ImportActorsSpells' : 'CBash_ImportActorsSpells',
-    'ListsMerger' : 'CBash_ListsMerger',
-    'NamesPatcher' : 'CBash_NamesPatcher',
-    'NamesTweaker' : 'CBash_NamesTweaker',
-    'NpcFacePatcher' : 'CBash_NpcFacePatcher',
-    'RacePatcher' : 'CBash_RacePatcher',
-    'RoadImporter' : 'CBash_RoadImporter',
-    'SoundPatcher' : 'CBash_SoundPatcher',
-    'StatsPatcher' : 'CBash_StatsPatcher',
-    'ContentsChecker' : 'CBash_ContentsChecker',
-    'CBash_AliasesPatcher' : 'AliasesPatcher',
-    'CBash_AssortedTweaker' : 'AssortedTweaker',
-    'CBash_PatchMerger' : 'PatchMerger',
-    'CBash_KFFZPatcher' : 'KFFZPatcher',
-    'CBash_ActorImporter' : 'ActorImporter',
-    'CBash_DeathItemPatcher' : 'DeathItemPatcher',
-    'CBash_NPCAIPackagePatcher' : 'NPCAIPackagePatcher',
-    'CBash_UpdateReferences' : 'UpdateReferences',
-    'CBash_CellImporter' : 'CellImporter',
-    'CBash_ClothesTweaker' : 'ClothesTweaker',
-    'CBash_GmstTweaker' : 'GmstTweaker',
-    'CBash_GraphicsPatcher' : 'GraphicsPatcher',
-    'CBash_ImportFactions' : 'ImportFactions',
-    'CBash_ImportInventory' : 'ImportInventory',
-    'CBash_SpellsPatcher' : 'SpellsPatcher',
-    'CBash_TweakActors' : 'TweakActors',
-    'CBash_ImportRelations' : 'ImportRelations',
-    'CBash_ImportScripts' : 'ImportScripts',
-    'CBash_ImportActorsSpells' : 'ImportActorsSpells',
-    'CBash_ListsMerger' : 'ListsMerger',
-    'CBash_NamesPatcher' : 'NamesPatcher',
-    'CBash_NamesTweaker' : 'NamesTweaker',
-    'CBash_NpcFacePatcher' : 'NpcFacePatcher',
-    'CBash_RacePatcher' : 'RacePatcher',
-    'CBash_RoadImporter' : 'RoadImporter',
-    'CBash_SoundPatcher' : 'SoundPatcher',
-    'CBash_StatsPatcher' : 'StatsPatcher',
-    'CBash_ContentsChecker' : 'ContentsChecker',
-    }
