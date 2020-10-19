@@ -573,6 +573,8 @@
         RMDir /r "${Path}\Mopy\bash\db"
         ; As of 308, CBash was removed
         Delete "${Path}\Mopy\bash\compiled\CBash.dll"
+        ; As of 308, the license file was renamed to LICENSE.md
+        Delete "${Path}\Mopy\license.txt"
     !macroend
 
 

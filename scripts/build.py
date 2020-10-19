@@ -4,9 +4,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -15,8 +15,7 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
 #  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
 #  https://github.com/wrye-bash
@@ -455,18 +454,26 @@ def main(args):
         version_info = get_version_info(args.version)
         # create distributable directory
         utils.mkdir(DIST_PATH, exists_ok=True)
-        if args.manual:
-            LOGGER.info("Creating python source distributable...")
-            pack_manual(args.version)
-        if not args.standalone and not args.installer:
-            return
-        with build_executable(args.version, version_info):
-            if args.standalone:
-                LOGGER.info("Creating standalone distributable...")
-                pack_standalone(args.version)
-            if args.installer:
-                LOGGER.info("Creating installer distributable...")
-                pack_installer(args.nsis, args.version, version_info)
+        # Copy the license so it's included in the built releases
+        license_real = os.path.join(ROOT_PATH, u'LICENSE.md')
+        license_temp = os.path.join(MOPY_PATH, u'LICENSE.md')
+        try:
+            cpy(license_real, license_temp)
+            if args.manual:
+                LOGGER.info("Creating python source distributable...")
+                pack_manual(args.version)
+            if not args.standalone and not args.installer:
+                return
+            with build_executable(args.version, version_info):
+                if args.standalone:
+                    LOGGER.info("Creating standalone distributable...")
+                    pack_standalone(args.version)
+                if args.installer:
+                    LOGGER.info("Creating installer distributable...")
+                    pack_installer(args.nsis, args.version, version_info)
+        finally:
+            # Clean up the temp copy of the license
+            rm(license_temp)
 
 
 @contextmanager
