@@ -25,6 +25,10 @@
 contains the data structures that are dynamically set on a per game basis in
 bush."""
 
+from .preservers import WeaponModsPatcher
+
 gameSpecificPatchers = {}
 gameSpecificListPatchers = {}
-game_specific_import_patchers = {}
+game_specific_import_patchers = {
+    u'ImportWeaponMods': WeaponModsPatcher,
+}
