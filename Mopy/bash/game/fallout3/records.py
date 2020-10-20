@@ -43,7 +43,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelCtdaFo3, MelRef3D, MelXlod, MelNull, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
     MelDecalData, MelDescription, MelLists, MelPickupSound, MelDropSound, \
-    MelActivateParents, BipedFlags
+    MelActivateParents, BipedFlags, MelSpells
 from ...exception import ModError, ModSizeError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
@@ -160,9 +160,8 @@ class MelDestructible(MelGroup):
 #------------------------------------------------------------------------------
 class MelEffects(MelGroups):
     """Represents ingredient/potion/enchantment/spell effects."""
-
-    def __init__(self, attr=u'effects'):
-        super(MelEffects, self).__init__(attr,
+    def __init__(self):
+        super(MelEffects, self).__init__(u'effects',
             MelFid(b'EFID', u'baseEffect'),
             MelStruct(b'EFIT', u'4Ii', u'magnitude', u'area', u'duration',
                 u'recipient', u'actorValue'),
@@ -928,7 +927,7 @@ class MreCrea(MreActor):
         MelBounds(),
         MelFull(),
         MelModel(),
-        MelFids('SPLO','spells'),
+        MelSpells(),
         MelEnchantment(),
         MelUInt16('EAMT', 'eamt'),
         MelStrings('NIFZ','bodyParts'),
@@ -2034,7 +2033,7 @@ class MreNpc(MreActor):
         MelEnchantment(),
         MelUInt16('EAMT', 'unarmedAttackAnimation'),
         MelDestructible(),
-        MelFids('SPLO','spells'),
+        MelSpells(),
         MelScript(),
         MelItems(),
         MelStruct('AIDT','=5B3sIbBbBi', ('aggression', 0), ('confidence',2),

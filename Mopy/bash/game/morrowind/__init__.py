@@ -97,15 +97,22 @@ class MorrowindGameInfo(GameInfo):
         wrye_bash_data_dirs = GameInfo.Bain.wrye_bash_data_dirs | {u'Mash'}
 
     class Esp(GameInfo.Esp):
-        validHeaderVersions = (1.2, 1.3)
-        stringsFiles = []
-        plugin_header_sig = b'TES3'
         check_master_sizes = True
+        max_lvl_list_size = 2 ** 32 - 1
+        plugin_header_sig = b'TES3'
+        stringsFiles = []
+        validHeaderVersions = (1.2, 1.3)
 
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        from .records import MreTes3
+        from .records import MreActi, MreAlch, MreAppa, MreArmo, MreBody, \
+            MreBook, MreBsgn, MreCell, MreClas, MreClot, MreCont, MreCrea, \
+            MreDial, MreDoor, MreEnch, MreFact, MreGmst, MreGlob, MreInfo, \
+            MreIngr, MreLand, MreLevc, MreLevi, MreLigh, MreLock, MreLtex, \
+            MreMgef, MreMisc, MreNpc,  MrePgrd, MreProb, MreRace, MreRegn, \
+            MreRepa, MreScpt, MreSkil, MreSndg, MreSoun, MreSpel, MreSscr, \
+            MreStat, MreTes3, MreWeap
         # Setting RecordHeader class variables - Morrowind is special
         header_type = brec.RecordHeader
         header_type.rec_header_size = 16
@@ -124,18 +131,19 @@ class MorrowindGameInfo(GameInfo):
             b'LIGH', b'ENCH', b'NPC_', b'ARMO', b'CLOT', b'REPA', b'ACTI',
             b'APPA', b'LOCK', b'PROB', b'INGR', b'BOOK', b'ALCH', b'LEVI',
             b'LEVC', b'CELL', b'LAND', b'PGRD', b'SNDG', b'DIAL', b'INFO']
-            # +SSCR? in xEdit: to be confirmed
-        # TODO(inf) Everything up to this TODO correct, the rest may not be yet
-        header_type.pack_formats = {0: u'=4sI4s2I'}
-        header_type.pack_formats.update(
-            {x: u'=4s4I' for x in {1, 6, 7, 8, 9, 10}})
-        header_type.pack_formats.update({x: u'=4sIi2I' for x in {2, 3}})
-        header_type.pack_formats.update({x: u'=4sIhh2I' for x in {4, 5}})
         header_type.valid_header_sigs = set(
             header_type.top_grup_sigs + [b'TES3'])
-        brec.MreRecord.type_class = {x.rec_sig: x for x in (MreTes3,)}
+        brec.MreRecord.type_class = {x.rec_sig: x for x in (
+            MreActi, MreAlch, MreAppa, MreArmo, MreBody, MreBook, MreBsgn,
+            MreCell, MreClas, MreClot, MreCont, MreCrea, MreDial, MreDoor,
+            MreEnch, MreFact, MreGmst, MreGlob, MreInfo, MreIngr, MreLand,
+            MreLevc, MreLevi, MreLigh, MreLock, MreLtex, MreMgef, MreMisc,
+            MreNpc,  MrePgrd, MreProb, MreRace, MreRegn, MreRepa, MreScpt,
+            MreSkil, MreSndg, MreSoun, MreSpel, MreSscr, MreStat, MreTes3,
+            MreWeap,
+        )}
         brec.MreRecord.simpleTypes = (
-            set(brec.MreRecord.type_class) - {b'TES3'})
+            set(brec.MreRecord.type_class) - {b'TES3', b'CELL', b'DIAL'})
         cls._validate_records()
 
 GAME_TYPE = MorrowindGameInfo

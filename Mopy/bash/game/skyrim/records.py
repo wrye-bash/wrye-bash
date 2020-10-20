@@ -40,7 +40,8 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MreActorBase, MreWithItems, MelCtdaFo3, MelRef3D, MelXlod, \
     MelWorldBounds, MelEnableParent, MelRefScale, MelMapMarker, MelMdob, \
     MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
-    MelPickupSound, MelDropSound, MelActivateParents, BipedFlags
+    MelPickupSound, MelDropSound, MelActivateParents, BipedFlags, MelColor, \
+    MelColorO, MelSpells, MelFixedString
 from ...exception import ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -164,19 +165,6 @@ class MelCoed(MelOptStruct):
                               'itemCondition')
 
 #------------------------------------------------------------------------------
-class MelColor(MelStruct):
-    """Required Color."""
-    def __init__(self, signature='CNAM'):
-        MelStruct.__init__(self, signature, '=4B', 'red', 'green', 'blue',
-                           'unk_c')
-
-class MelColorO(MelOptStruct):
-    """Optional Color."""
-    def __init__(self, signature='CNAM'):
-        MelOptStruct.__init__(self, signature, '=4B', 'red', 'green', 'blue',
-                           'unk_c')
-
-#------------------------------------------------------------------------------
 class MelConditions(MelGroups):
     """A list of conditions. See also MelConditionCounter, which is commonly
     combined with this class."""
@@ -227,11 +215,10 @@ class MelDestructible(MelGroup):
 #------------------------------------------------------------------------------
 class MelEffects(MelGroups):
     """Represents ingredient/potion/enchantment/spell effects."""
-
-    def __init__(self,attr='effects'):
-        MelGroups.__init__(self,attr,
-            MelFid('EFID','name'), # baseEffect, name
-            MelStruct('EFIT','f2I','magnitude','area','duration',),
+    def __init__(self):
+        MelGroups.__init__(self, u'effects',
+            MelFid(b'EFID', u'name'), # baseEffect, name
+            MelStruct(b'EFIT', u'f2I', u'magnitude', u'area', u'duration'),
             MelConditions(),
         )
 
@@ -240,6 +227,29 @@ class MelEquipmentType(MelOptFid):
     """Handles the common ETYP subrecord."""
     def __init__(self):
         super(MelEquipmentType, self).__init__(b'ETYP', u'equipment_type')
+
+#------------------------------------------------------------------------------
+class MelIdleHandler(MelGroup):
+    """Occurs three times in PACK, so moved here to deduplicate the
+    definition a bit."""
+    # The subrecord type used for the marker
+    _attr_lookup = {
+        u'on_begin': b'POBA',
+        u'on_change': b'POCA',
+        u'on_end': b'POEA',
+    }
+
+    def __init__(self, attr):
+        super(MelIdleHandler, self).__init__(attr,
+            MelBase(self._attr_lookup[attr], attr + u'_marker'),
+            MelFid(b'INAM', u'idle_anim'),
+            # The next four are leftovers from earlier CK versions
+            MelBase(b'SCHR', u'unused1'),
+            MelBase(b'SCTX', u'unused2'),
+            MelBase(b'QNAM', u'unused3'),
+            MelBase(b'TNAM', u'unused4'),
+            MelTopicData(u'idle_topic_data'),
+        )
 
 #------------------------------------------------------------------------------
 class MelItems(MelGroups):
@@ -1994,8 +2004,7 @@ class MreDial(MelRecord):
         MelFid('QNAM','quest',),
         MelStruct('DATA','2BH',(DialTopicFlags,'flags_dt',0),'category',
                   'subtype',),
-        # SNAM is a 4 byte string no length byte - TODO(inf) MelFixedString?
-        MelStruct('SNAM', '4s', ('subtypeName', null4)),
+        MelFixedString(b'SNAM', u'subtypeName', 4),
         MelUInt32(b'TIFC', u'info_count'), # Updated in MobDial.dump
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3598,7 +3607,7 @@ class MreNpc(MreActorBase):
         MelOptFid('TPLT', 'template'),
         MelFid('RNAM','race'),
         MelCounter(MelUInt32(b'SPCT', u'spell_count'), counts=u'spells'),
-        MelFids('SPLO', 'spells'),
+        MelSpells(),
         MelDestructible(),
         MelOptFid('WNAM', 'wornArmor'),
         MelOptFid('ANAM', 'farawaymodel'),
@@ -3746,28 +3755,6 @@ class MrePack(MelRecord):
                 MelUInt32('PNAM', (self._DataInputFlags, 'input_flags', 0)),
             ),
 
-    class MelIdleHandler(MelGroup):
-        """Occurs three times in PACK, so moved here to deduplicate the
-        definition a bit."""
-        # The subrecord type used for the marker
-        _attr_lookup = {
-            'on_begin': 'POBA',
-            'on_change': 'POCA',
-            'on_end': 'POEA',
-        }
-
-        def __init__(self, attr):
-            MelGroup.__init__(self, attr,
-                MelBase(self._attr_lookup[attr], attr + '_marker'),
-                MelFid('INAM', 'idle_anim'),
-                # The next four are leftovers from earlier CK versions
-                MelBase('SCHR', 'unused1'),
-                MelBase('SCTX', 'unused2'),
-                MelBase('QNAM', 'unused3'),
-                MelBase('TNAM', 'unused4'),
-                MelTopicData('idle_topic_data'),
-            )
-
     melSet = MelSet(
         MelEdid(),
         MelVmad(),
@@ -3846,9 +3833,9 @@ class MrePack(MelRecord):
             ),
         ),
         MelDataInputs('data_inputs2'),
-        MelIdleHandler('on_begin'),
-        MelIdleHandler('on_end'),
-        MelIdleHandler('on_change'),
+        MelIdleHandler(u'on_begin'),
+        MelIdleHandler(u'on_end'),
+        MelIdleHandler(u'on_change'),
     ).with_distributor({
         b'PKDT': {
             b'CTDA|CIS1|CIS2': u'conditions',

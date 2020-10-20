@@ -30,7 +30,8 @@ from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
     MelUnion, PartialLoadDecider, FlagDecider
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
-    MelOptFloat, MelOptUInt8, MelOptUInt32, MelOptFid, MelReadOnly, MelUInt8
+    MelOptFloat, MelOptUInt8, MelOptUInt32, MelOptFid, MelReadOnly, MelUInt8, \
+    MelFids
 from .utils_constants import _int_unpacker, FID, null1, null2, null3, null4
 from ..bolt import Flags, encode, struct_pack, struct_unpack
 
@@ -297,6 +298,19 @@ class MelValueInterpolator(MelArray):
         super(MelValueInterpolator, self).__init__(attr,
             MelStruct(sub_type, u'2f', u'time', u'value'),
         )
+
+#------------------------------------------------------------------------------
+class MelColor(MelStruct):
+    """Required Color."""
+    def __init__(self, color_sig=b'CNAM'):
+        super(MelColor, self).__init__(color_sig, u'4B', u'red', u'green',
+            u'blue', u'unused_alpha')
+
+class MelColorO(MelOptStruct):
+    """Optional Color."""
+    def __init__(self, color_sig=b'CNAM'):
+        super(MelColorO, self).__init__(color_sig, u'4B', u'red', u'green',
+            u'blue', u'unused_alpha')
 
 #------------------------------------------------------------------------------
 class MelDescription(MelLString):
@@ -572,7 +586,7 @@ class MelRegnEntrySubrecord(MelUnion):
             fallback=MelNull(b'NULL')) # ignore
 
 #------------------------------------------------------------------------------
-class MelRef3D(MelStruct):
+class MelRef3D(MelOptStruct):
     """3D position and rotation for a reference record (REFR, ACHR, etc.)."""
     def __init__(self):
         super(MelRef3D, self).__init__(
@@ -584,6 +598,12 @@ class MelRefScale(MelOptFloat):
     """Scale for a reference record (REFR, ACHR, etc.)."""
     def __init__(self):
         super(MelRefScale, self).__init__(b'XSCL', (u'ref_scale', 1.0))
+
+#------------------------------------------------------------------------------
+class MelSpells(MelFids):
+    """Handles the common SPLO subrecord."""
+    def __init__(self):
+        super(MelSpells, self).__init__(b'SPLO', u'spells')
 
 #------------------------------------------------------------------------------
 class MelWorldBounds(MelSequential):

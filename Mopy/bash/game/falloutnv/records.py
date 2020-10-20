@@ -63,6 +63,7 @@ class MreTes4(MreHeaderBase):
     )
     __slots__ = melSet.getSlotsUsed()
 
+#------------------------------------------------------------------------------
 class MreAchr(MelRecord):
     """Placed NPC."""
     rec_sig = b'ACHR'

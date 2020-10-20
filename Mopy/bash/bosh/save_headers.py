@@ -32,7 +32,6 @@ from __future__ import division
 __author__ = u'Utumno'
 
 import copy
-import itertools
 import lz4.block
 import StringIO
 import struct
@@ -611,11 +610,9 @@ class MorrowindSaveHeader(SaveFileHeader):
         save_info = ModInfo(self._save_path, load_cache=True)
         ##: Figure out where some more of these are (e.g. level)
         self.header_size = save_info.header.size
-        self.pcName = decode(cstrip(save_info.header.pc_name))
+        self.pcName = save_info.header.pc_name
         self.pcLevel = 0
-        self.pcLocation = decode(cstrip(save_info.header.curr_cell),
-                                 bolt.pluginEncoding,
-                                 avoidEncodings=(u'utf8', u'utf-8'))
+        self.pcLocation = save_info.header.curr_cell
         self.gameDays = self.gameTicks = 0
         self.masters = save_info.masterNames[:]
         self.pc_curr_health = save_info.header.pc_curr_health
