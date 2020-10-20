@@ -29,7 +29,7 @@ from .. import bass, bosh, balt, load_order
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from .. import exception
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
-    SeparatorLink, Link, AppendableLink
+    SeparatorLink, Link
 from ..bolt import CsvReader, GPath
 from ..gui import BusyCursor
 

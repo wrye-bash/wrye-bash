@@ -30,7 +30,7 @@ from .loot_parser import libloot_version, LOOTParser
 from .. import balt, bolt, bush, bass, load_order
 from ..bolt import GPath, deprint, sio, struct_pack, struct_unpack
 from ..brec import ModReader, MreRecord, RecordHeader
-from ..exception import BoltError, CancelError, ModError
+from ..exception import CancelError, ModError
 
 lootDb = None # type: LOOTParser
 

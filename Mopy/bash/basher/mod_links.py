@@ -31,6 +31,7 @@ import copy
 import re
 import traceback
 # Local
+from . import configIsCBash
 from .constants import settingDefaults
 from .files_links import File_Redate
 from .frames import DocBrowser
@@ -45,7 +46,7 @@ from ..bolt import GPath, SubProgress
 from ..bosh import faces
 from ..brec import MreRecord
 from ..exception import AbstractError, BoltError, CancelError
-from ..patcher import configIsCBash, exportConfig, patch_files
+from ..patcher import exportConfig, patch_files
 
 __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_Groups', u'Mod_Ratings', u'Mod_Details', u'Mod_ShowReadme',

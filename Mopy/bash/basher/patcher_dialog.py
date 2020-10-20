@@ -28,7 +28,7 @@ import errno
 import re
 import time
 from datetime import timedelta
-from . import BashFrame ##: drop this - decouple !
+from . import BashFrame, configIsCBash  ##: drop this - decouple !
 from .. import balt, bass, bolt, bosh, bush, env, load_order
 from ..balt import Link, Resources
 from ..bolt import SubProgress, GPath, Path
@@ -38,7 +38,7 @@ from ..gui import CancelButton, DeselectAllButton, HLayout, Label, \
     LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
     SaveAsButton, SelectAllButton, Stretch, VLayout, DialogWindow, \
     CheckListBox, HorizontalLine
-from ..patcher import configIsCBash, exportConfig, list_patches_dir
+from ..patcher import exportConfig, list_patches_dir
 from ..patcher.patch_files import PatchFile
 
 # Final lists of gui patcher classes instances, initialized in
@@ -155,7 +155,7 @@ class PatchDialog(DialogWindow):
         self.currentPatcher = patcher
 
     @balt.conversation
-    def PatchExecute(self): # TODO(ut): needs more work to reduce P/C differences to an absolute minimum
+    def PatchExecute(self):
         """Do the patch."""
         self.accept_modal()
         patchFile = progress = None
@@ -283,25 +283,21 @@ class PatchDialog(DialogWindow):
             except (CancelError, SkipError, OSError, IOError) as werr:
                 if isinstance(werr, OSError) and werr.errno != errno.EACCES:
                     raise
-                if self._pretry(patch_name):
+                ##: Ugly warts below (see also FIXME above)
+                if balt.askYes(self,
+                    (_(u'Bash encountered an error when saving '
+                       u'%(patch_name)s.') + u'\n\n' + _(
+                        u'Either Bash needs Administrator Privileges to save '
+                        u'the file, or the file is in use by another process '
+                        u'such as %(xedit_name)s.') + u'\n' + _(
+                        u'Please close any program that is accessing '
+                        u'%(patch_name)s, and provide Administrator '
+                        u'Privileges if prompted to do so.') + u'\n\n' + _(
+                        u'Try again?')) % {u'patch_name': patch_name.s,
+                        u'xedit_name': bush.game.Xe.full_name},
+                        _(u'Bashed Patch - Save Error')):
                     continue
                 raise # will raise the SkipError which is correctly processed
-
-    ##: Ugly warts below (see also FIXME above)
-    def _pretry(self, patch_name):
-        return balt.askYes(
-            self, (_(u'Bash encountered an error when saving '
-                     u'%(patch_name)s.') + u'\n\n' +
-                   _(u'Either Bash needs Administrator Privileges to save '
-                     u'the file, or the file is in use by another process '
-                     u'such as %(xedit_name)s.') + u'\n' +
-                   _(u'Please close any program that is accessing '
-                     u'%(patch_name)s, and provide Administrator Privileges '
-                     u'if prompted to do so.') + u'\n\n' +
-                   _(u'Try again?')) % {
-                u'patch_name': patch_name.s,
-                u'xedit_name': bush.game.Xe.full_name},
-            _(u'Bashed Patch - Save Error'))
 
     def __config(self):
         config = {'ImportedMods': set()}

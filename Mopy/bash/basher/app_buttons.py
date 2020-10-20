@@ -26,9 +26,8 @@ import webbrowser
 from . import BashStatusBar, BashFrame
 from .frames import ModChecker, DocBrowser
 from .settings_dialog import SettingsDialog
-from .. import bass, bosh, bolt, balt, bush, mod_files, load_order
+from .. import bass, bosh, bolt, balt, bush, load_order
 from ..balt import ItemLink, Link, Links, SeparatorLink, BoolLink, staticBitmap
-from ..bolt import GPath
 from ..env import getJava
 from ..exception import AbstractError
 from ..gui import ClickableImage, EventResult

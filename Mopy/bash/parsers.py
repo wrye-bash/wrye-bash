@@ -48,8 +48,10 @@ from .mod_files import ModFile, LoadFactory
 # TODO(inf) Once refactoring is done, we could easily take in Progress objects
 #  for more accurate progress bars when importing/exporting
 class _AParser(object):
-    """The base class from which all parsers inherit. Attempts to accomodate
-    all the different parsers.
+    """The base class from which all parsers inherit, implements reading and
+    writing mods using PBash calls. You will of course still have to
+    implement _read_record_fp et al., depending on the passes and behavior
+    you want.
 
     Reading from mods:
      - This is the most complex part of this design - we offer up to two
@@ -105,7 +107,8 @@ class _AParser(object):
         return self._current_mod and tag_name in bosh.modInfos[
             self._current_mod].getBashTags()
 
-    def _load_plugin(self, mod_info, target_types):
+    @staticmethod
+    def _load_plugin(mod_info, target_types):
         """Loads the specified record types in the specified ModInfo and
         returns the result.
 
@@ -113,7 +116,10 @@ class _AParser(object):
         :param target_types: A list, set or tuple containing strings that shows
             which record types to load.
         :return: An object representing the loaded plugin."""
-        raise AbstractError(u'_load_plugin not implemented')
+        mod_file = ModFile(mod_info, LoadFactory(
+            False, *[MreRecord.type_class[t] for t in target_types]))
+        mod_file.load(do_unpack=True)
+        return mod_file
 
     # Reading from plugin - first pass
     def _read_plugin_fp(self, loaded_mod):
@@ -121,7 +127,28 @@ class _AParser(object):
         masters. Results are stored in id_context.
 
         :param loaded_mod: The loaded mod to read from."""
-        raise AbstractError(u'_read_plugin_fp not implemented')
+        from . import bosh
+        def _fp_loop(mod_to_read):
+            """Central loop of _read_plugin_fp, factored out into a method so
+            that it can easily be used twice."""
+            for block_type in self._fp_types:
+                rec_block = mod_to_read.tops.get(block_type, None)
+                if not rec_block: continue
+                for record in rec_block.getActiveRecords():
+                    self.id_context[record.fid] = \
+                        self._read_record_fp(record)
+            self._fp_mods.add(mod_to_read.fileInfo.name)
+        # Process the mod's masters first, but see if we need to sort them
+        master_names = loaded_mod.tes4.masters
+        if self._needs_fp_master_sort:
+            master_names = load_order.get_ordered(master_names)
+        for mod_name in master_names:
+            if mod_name in self._fp_mods: continue
+            _fp_loop(self._load_plugin(bosh.modInfos[mod_name],
+                                       self._fp_types))
+        # Finally, process the mod itself
+        if loaded_mod.fileInfo.name in self._fp_mods: return
+        _fp_loop(loaded_mod)
 
     # TODO(inf) Might need second_pass parameter?
     def _read_record_fp(self, record):
@@ -141,7 +168,19 @@ class _AParser(object):
         its masters. Results are stored in id_stored_info.
 
         :param loaded_mod: The loaded mod to read from."""
-        raise AbstractError(u'_read_plugin_sp not implemented')
+        for rec_type in self._sp_types:
+            rec_block = loaded_mod.tops.get(rec_type, None)
+            if not rec_block: continue
+            for record in rec_block.getActiveRecords():
+                # Check if we even want this record first
+                if self._is_record_useful(record):
+                    rec_fid = record.fid
+                    self.id_stored_info[rec_type][rec_fid] = \
+                        self._read_record_sp(record)
+                    # Check if we need to follow up on the first pass info
+                    if self._context_needs_followup:
+                        self.id_context[rec_fid] = \
+                            self._read_record_fp(record)
 
     def _is_record_useful(self, record):
         """The parser should check if the specified record would be useful to
@@ -195,7 +234,31 @@ class _AParser(object):
         :param loaded_mod: The loaded mod to write to.
         :return: A dict mapping record types to the number of changed records
             in them."""
-        raise AbstractError(u'_do_write_plugin not implemented')
+        # Counts the number of records that were changed in each record type
+        num_changed_records = Counter()
+        # We know that the loaded mod only has the tops loaded that we need
+        for rec_type, stored_rec_info in self.id_stored_info.iteritems():
+            rec_block = loaded_mod.tops.get(rec_type, None)
+            # Check if this record type makes any sense to patch
+            if not stored_rec_info or not rec_block: continue
+            # TODO(inf) Copied from implementations below, may have to be
+            #  getActiveRecords()?
+            for record in rec_block.records:
+                rec_fid = record.fid
+                if rec_fid not in stored_rec_info: continue
+                # Compare the stored information to the information currently
+                # in the plugin
+                new_info = stored_rec_info[rec_fid]
+                cur_info = self._get_cur_record_info(record)
+                if self._should_write_record(new_info, cur_info):
+                    # It's different, ask the parser to write it out
+                    self._write_record(record, new_info, cur_info)
+                    record.setChanged()
+                    num_changed_records[rec_type] += 1
+        # Check if we've actually changed something, otherwise skip saving
+        if sum(num_changed_records):
+            loaded_mod.safeSave()
+        return num_changed_records
 
     def _get_cur_record_info(self, record):
         """Reads current information for the specified record in order to
@@ -286,85 +349,7 @@ class _ACsvFormat(object):
             described by this line, the name of the plugin from which this line
             originated, the (short) FormID of this"""
 
-##: Probably merge back into _AParser now that CBash is gone?
-class _PBashParser(_AParser):
-    """Mixin for parsers that implements reading and writing mods using PBash
-    calls. You will of course still have to implement _read_record_fp et al.,
-    depending on the passes and behavior you want."""
-
-    def _load_plugin(self, mod_info, target_types):
-        mod_file = ModFile(mod_info, LoadFactory(
-            False, *[MreRecord.type_class[t] for t in target_types]))
-        mod_file.load(do_unpack=True)
-        return mod_file
-
-    def _read_plugin_fp(self, loaded_mod):
-        from . import bosh
-        def _fp_loop(mod_to_read):
-            """Central loop of _read_plugin_fp, factored out into a method so
-            that it can easily be used twice."""
-            for block_type in self._fp_types:
-                rec_block = mod_to_read.tops.get(block_type, None)
-                if not rec_block: continue
-                for record in rec_block.getActiveRecords():
-                    self.id_context[record.fid] = \
-                        self._read_record_fp(record)
-            self._fp_mods.add(mod_to_read.fileInfo.name)
-        # Process the mod's masters first, but see if we need to sort them
-        master_names = loaded_mod.tes4.masters
-        if self._needs_fp_master_sort:
-            master_names = load_order.get_ordered(master_names)
-        for mod_name in master_names:
-            if mod_name in self._fp_mods: continue
-            _fp_loop(self._load_plugin(bosh.modInfos[mod_name],
-                                       self._fp_types))
-        # Finally, process the mod itself
-        if loaded_mod.fileInfo.name in self._fp_mods: return
-        _fp_loop(loaded_mod)
-
-    def _read_plugin_sp(self, loaded_mod):
-        for rec_type in self._sp_types:
-            rec_block = loaded_mod.tops.get(rec_type, None)
-            if not rec_block: continue
-            for record in rec_block.getActiveRecords():
-                # Check if we even want this record first
-                if self._is_record_useful(record):
-                    rec_fid = record.fid
-                    self.id_stored_info[rec_type][rec_fid] = \
-                        self._read_record_sp(record)
-                    # Check if we need to follow up on the first pass info
-                    if self._context_needs_followup:
-                        self.id_context[rec_fid] = \
-                            self._read_record_fp(record)
-
-    def _do_write_plugin(self, loaded_mod):
-        # Counts the number of records that were changed in each record type
-        num_changed_records = Counter()
-        # We know that the loaded mod only has the tops loaded that we need
-        for rec_type, stored_rec_info in self.id_stored_info.iteritems():
-            rec_block = loaded_mod.tops.get(rec_type, None)
-            # Check if this record type makes any sense to patch
-            if not stored_rec_info or not rec_block: continue
-            # TODO(inf) Copied from implementations below, may have to be
-            #  getActiveRecords()?
-            for record in rec_block.records:
-                rec_fid = record.fid
-                if rec_fid not in stored_rec_info: continue
-                # Compare the stored information to the information currently
-                # in the plugin
-                new_info = stored_rec_info[rec_fid]
-                cur_info = self._get_cur_record_info(record)
-                if self._should_write_record(new_info, cur_info):
-                    # It's different, ask the parser to write it out
-                    self._write_record(record, new_info, cur_info)
-                    record.setChanged()
-                    num_changed_records[rec_type] += 1
-        # Check if we've actually changed something, otherwise skip saving
-        if sum(num_changed_records):
-            loaded_mod.safeSave()
-        return num_changed_records
-
-class ActorFactions(_PBashParser):
+class ActorFactions(_AParser):
     """Parses factions from NPCs and Creatures (in games that have those). Can
     read and write both plugins and CSV, and uses a single pass if called from
     a patcher, but two passes if called from a link."""
@@ -708,7 +693,7 @@ class EditorIds(object):
                     out.write(rowFormat % (type_,id_[0].s,id_[1],id_eid[id_]))
 
 #------------------------------------------------------------------------------
-class FactionRelations(_PBashParser):
+class FactionRelations(_AParser):
     """Parses the relations between factions. Can read and write both plugins
     and CSV, and uses two passes to do so."""
     cls_rel_attrs = bush.game.relations_attrs

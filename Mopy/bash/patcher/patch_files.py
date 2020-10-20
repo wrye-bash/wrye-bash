@@ -41,33 +41,8 @@ from ..mod_files import ModFile, LoadFactory
 ##: HACK ! replace with method param once gui_patchers are refactored
 executing_patch = None # type: bolt.Path
 
-class _PFile(object):
-    """Base class of patch files - factoring out common code __WIP__. Wraps an
-    executing bashed Patch."""
-    def __init__(self, patch_path):
-        """:type patch_path: bolt.Path"""
-        #--New attrs
-        self.patchName = patch_path # the bashed Patch
-        # Aliases from one mod name to another. Used by text file patchers.
-        self.aliases = {}
-        self.mergeIds = set()
-        self.loadErrorMods = []
-        self.worldOrphanMods = []
-        self.unFilteredMods = []
-        self.compiledAllMods = []
-        self.patcher_mod_skipcount = defaultdict(Counter)
-        #--Config
-        self.bodyTags = bush.game.body_tags
-        #--Mods
-        # checking for files to include in patch, investigate
-        loadMods = [m for m in load_order.cached_lower_loading(
-            self.patchName) if load_order.cached_is_active(m)]
-        if not loadMods:
-            raise BoltError(u"No active mods loading before the bashed patch")
-        self.loadMods = tuple(loadMods)
-        self.loadSet = frozenset(self.loadMods)
-        self.set_mergeable_mods([])
-        self.p_file_minfos = bosh.modInfos
+class PatchFile(ModFile):
+    """Base class of patch files. Wraps an executing bashed Patch."""
 
     def set_mergeable_mods(self, mergeMods):
         """Set `mergeSet` attribute to the srcs of PatchMerger. Update allMods
@@ -159,17 +134,12 @@ class _PFile(object):
         self._patcher_instances = [p for p in patchers if p.isActive]
         if not self._patcher_instances: return
         progress = progress.setFull(len(self._patcher_instances))
-        for index, patcher in self._enumerate_patchers():
+        for index, patcher in enumerate(self._patcher_instances):
             progress(index, _(u'Preparing') + u'\n' + patcher.getName())
             patcher.initData(SubProgress(progress, index))
         progress(progress.full, _(u'Patchers prepared.'))
         # initData may set isActive to zero - TODO(ut) track down
         self._patcher_instances = [p for p in patchers if p.isActive]
-
-    def _enumerate_patchers(self): return enumerate(self._patcher_instances)
-
-class PatchFile(_PFile, ModFile):
-    """Defines and executes patcher configuration."""
 
     #--Instance
     def __init__(self, modInfo):
@@ -179,7 +149,28 @@ class PatchFile(_PFile, ModFile):
         self.tes4.masters = [bosh.modInfos.masterName]
         self.longFids = True
         self.keepIds = set()
-        _PFile.__init__(self, modInfo.name)
+        #--New attrs
+        self.patchName = modInfo.name # the bashed Patch
+        # Aliases from one mod name to another. Used by text file patchers.
+        self.aliases = {}
+        self.mergeIds = set()
+        self.loadErrorMods = []
+        self.worldOrphanMods = []
+        self.unFilteredMods = []
+        self.compiledAllMods = []
+        self.patcher_mod_skipcount = defaultdict(Counter)
+        #--Config
+        self.bodyTags = bush.game.body_tags
+        #--Mods
+        # checking for files to include in patch, investigate
+        loadMods = [m for m in load_order.cached_lower_loading(
+            self.patchName) if load_order.cached_is_active(m)]
+        if not loadMods:
+            raise BoltError(u"No active mods loading before the bashed patch")
+        self.loadMods = tuple(loadMods)
+        self.loadSet = frozenset(self.loadMods)
+        self.set_mergeable_mods([])
+        self.p_file_minfos = bosh.modInfos
 
     def getKeeper(self):
         """Returns a function to add fids to self.keepIds."""
@@ -250,7 +241,7 @@ class PatchFile(_PFile, ModFile):
                 else:
                     progress(pstate,modName.s+u'\n'+_(u'Scanning...'))
                     self.update_patch_records_from_mod(modFile)
-                for patcher in sorted(self._patcher_instances, key=attrgetter('scanOrder')):
+                for patcher in sorted(self._patcher_instances, key=attrgetter(u'scanOrder')):
                     if iiMode and not patcher.iiMode: continue
                     progress(pstate,u'%s\n%s' % (modName.s,patcher.getName()))
                     patcher.scan_mod_file(modFile,nullProgress)
@@ -297,7 +288,7 @@ class PatchFile(_PFile, ModFile):
         # Run buildPatch on each patcher
         self.keepIds |= self.mergeIds
         subProgress = SubProgress(progress, 0, 0.9, len(self._patcher_instances))
-        for index,patcher in enumerate(sorted(self._patcher_instances, key=attrgetter('editOrder'))):
+        for index,patcher in enumerate(sorted(self._patcher_instances, key=attrgetter(u'editOrder'))):
             subProgress(index,_(u'Completing')+u'\n%s...' % patcher.getName())
             patcher.buildPatch(log,SubProgress(subProgress,index))
         # Trim records to only keep ones we actually changed
@@ -319,7 +310,7 @@ class PatchFile(_PFile, ModFile):
         # copies overrides into itself, no new records. The only new records it
         # can contain come from Tweak Settings, which creates them through
         # getNextObject and so properly increments nextObject.
-        if (bush.game.has_esl and bass.settings['bash.mods.auto_flag_esl'] and
+        if (bush.game.has_esl and bass.settings[u'bash.mods.auto_flag_esl'] and
                 self.tes4.nextObject <= 0xFFF):
             self.tes4.flags1.eslFile = True
             self.tes4.description += u'\n' + _(

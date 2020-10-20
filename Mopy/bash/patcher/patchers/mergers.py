@@ -50,7 +50,6 @@ class _AMerger(ImportPatcher):
     _wanted_subrecord = {}
 
     def __init__(self, p_name, p_file, p_sources):
-        ##: Is this equivalent to allowUnloaded on the CBash side?
         p_sources = [x for x in p_sources if
                      x in p_file.p_file_minfos and x in p_file.allSet]
         super(_AMerger, self).__init__(p_name, p_file, p_sources)

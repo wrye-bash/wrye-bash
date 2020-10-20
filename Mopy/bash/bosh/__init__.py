@@ -45,7 +45,6 @@ from ._mergeability import isPBashMergeable, is_esl_capable
 from .mods_metadata import ConfigHelpers
 from .. import bass, bolt, balt, bush, env, load_order, archives, \
     initialization
-from .. import patcher # for configIsCBash()
 from ..archives import readExts
 from ..bass import dirs, inisettings, tooldirs
 from ..bolt import GPath, DataDict, deprint, sio, Path, decode, AFile, \

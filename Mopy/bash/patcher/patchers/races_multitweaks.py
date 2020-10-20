@@ -104,8 +104,8 @@ class _ARaceTweak(MultiTweakItem):
         return changed_hairs
 
     def _get_changed_eyes(self):
-        """Returns the changed eyes dictionary. A cached CBash/PBash-agnostic
-        wrapper around _calc_changed_face_parts."""
+        """Returns the changed eyes dictionary. A cached wrapper around
+        _calc_changed_face_parts."""
         try:
             return self._cached_changed_eyes
         except AttributeError:
@@ -114,8 +114,8 @@ class _ARaceTweak(MultiTweakItem):
             return self._cached_changed_eyes
 
     def _get_changed_hairs(self):
-        """Returns the changed hairs dictionary. A cached CBash/PBash-agnostic
-        wrapper around _calc_changed_face_parts."""
+        """Returns the changed hairs dictionary. A cached wrapper around
+        _calc_changed_face_parts."""
         try:
             return self._cached_changed_hairs
         except AttributeError:
