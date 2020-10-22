@@ -27,11 +27,11 @@ coded for rest of the games."""
 from __future__ import division, print_function
 from collections import Counter, defaultdict
 from itertools import starmap, repeat
-
+from .save_headers import OblivionSaveHeader
 from .. import bolt, bush
-from ..bolt import Flags, sio, GPath, decoder, deprint, encode, cstrip, \
-    SubProgress, unpack_byte, unpack_str8, unpack_many, unpack_int, \
-    unpack_short, struct_pack, struct_unpack, pack_int, pack_short, pack_byte
+from ..bolt import Flags, sio, deprint, encode, SubProgress, unpack_many, \
+    unpack_int, unpack_short, struct_pack, struct_unpack, pack_int, \
+    pack_short, pack_byte
 from ..brec import ModReader, MreRecord, ModWriter, getObjectIndex, \
     getFormIndices, unpack_header
 from ..exception import ModError, StateError
@@ -59,11 +59,12 @@ class SreNPC(object):
         ))
 
     class ACBS(object):
-        __slots__ = ['flags','baseSpell','fatigue','barterGold','level','calcMin','calcMax']
+        __slots__ = (u'flags', u'baseSpell', u'fatigue', u'barterGold',
+                     u'level', u'calcMin', u'calcMax')
 
     def __init__(self, sre_flags=0, data=None):
         for attr in self.__slots__:
-            self.__setattr__(attr,None)
+            setattr(self, attr, None)
         if data: self.load(sre_flags, data)
 
     def getDefault(self,attr):
@@ -114,8 +115,8 @@ class SreNPC(object):
         """Returns current flags set."""
         sr_flags = SreNPC.sre_flags()
         for attr in SreNPC.__slots__:
-            if attr != 'unused2':
-                sr_flags.__setattr__(attr,self.__getattribute__(attr) is not None)
+            if attr != u'unused2':
+                setattr(sr_flags, attr, getattr(self, attr) is not None)
         return int(sr_flags)
 
     def getData(self):
@@ -230,9 +231,8 @@ class SaveFile(object):
         self.fileInfo = saveInfo
         self.canSave = canSave
         #--File Header, Save Game Header
-        self.header = None
+        self.header = None # type: OblivionSaveHeader| None
         self.gameHeader = None
-        self.pcName = None
         #--Masters
         self._masters = []
         #--Global
@@ -256,25 +256,15 @@ class SaveFile(object):
         """Extract info from save file."""
         # TODO: This is Oblivion only code.  Needs to be refactored
         import array
-        with self.fileInfo.getPath().open(u'rb') as ins:
+        with self.fileInfo.abs_path.open(u'rb') as ins:
             #--Progress
             progress = progress or bolt.Progress()
             progress.setFull(self.fileInfo.size)
             #--Header
             progress(0,_(u'Reading Header.'))
-            self.header = ins.read(34)
-
-            #--Save Header, pcName
-            gameHeaderSize = unpack_int(ins)
-            self.saveNum,pcNameSize = unpack_many(ins, '=IB')
-            self.pcName = decoder(cstrip(ins.read(pcNameSize)))
-            self.postNameHeader = ins.read(gameHeaderSize-5-pcNameSize)
-
-            #--Masters
             del self._masters[:]
-            numMasters = unpack_byte(ins)
-            for count in range(numMasters):
-                self._masters.append(GPath(decoder(unpack_str8(ins))))
+            self.header = OblivionSaveHeader(self.fileInfo.abs_path,
+                                             load_image=True, ins=ins)
             #--Pre-Records copy buffer
             def insCopy(buff,size,backSize=0):
                 if backSize: ins.seek(-backSize,1)
@@ -345,20 +335,7 @@ class SaveFile(object):
             progress.setFull(self.fileInfo.size)
             #--Header
             progress(0,_(u'Writing Header.'))
-            out.write(self.header)
-            #--Save Header
-            pcName = encode(self.pcName)
-            _pack('=IIB',5+len(pcName)+1+len(self.postNameHeader),
-                self.saveNum, len(pcName)+1)
-            out.write(pcName)
-            out.write('\x00')
-            out.write(self.postNameHeader)
-            #--Masters
-            _pack('B', len(self._masters))
-            for master in self._masters:
-                enc_name = encode(master.s)
-                _pack('B', len(enc_name))
-                out.write(enc_name)
+            self.header.dump_header(out)
             #--Fids Pointer, num records
             fidsPointerPos = out.tell()
             _pack('I',0) #--Temp. Will write real value later.
@@ -604,12 +581,11 @@ class SaveFile(object):
         progress.setFull(len(self.created)+len(self.records))
         #--Created objects
         progress(0,_(u'Scanning created objects'))
-        fullAttr = 'full'
         for citem in self.created:
-            if fullAttr in citem.__class__.__slots__:
-                full = citem.__getattribute__(fullAttr)
+            if u'full' in citem.__class__.__slots__:
+                full = citem.full
             else:
-                full = citem.getSubString('FULL')
+                full = citem.getSubString(b'FULL')
             if full:
                 createdCounts[(citem.recType, full)] += 1
             progress.plus()
@@ -640,10 +616,10 @@ class SaveFile(object):
             progress(0,_(u'Scanning created objects'))
             kept = []
             for citem in self.created:
-                if 'full' in citem.__class__.__slots__:
-                    full = citem.__getattribute__('full')
+                if u'full' in citem.__class__.__slots__:
+                    full = citem.full
                 else:
-                    full = citem.getSubString('FULL')
+                    full = citem.getSubString(b'FULL')
                 if full and (citem.recType,full) in uncreateKeys:
                     uncreated.add(citem.fid)
                     numUncreated += 1
@@ -833,6 +809,6 @@ class Save_NPCEdits(object):
         (rec_id,rec_kind,recFlags,version,data) = saveFile.getRecord(7)
         npc = SreNPC(recFlags,data)
         npc.full = encode(newName)
-        saveFile.pcName = newName
+        saveFile.header.pcName = newName
         saveFile.setRecord(npc.getTuple(rec_id,version))
         saveFile.safeSave()

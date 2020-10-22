@@ -1486,8 +1486,6 @@ class Settings(DataDict):
         return self.data.pop(key,default)
 
 # Structure wrappers ----------------------------------------------------------
-def unpack_str8(ins, __unpack=struct.Struct(u'B').unpack):
-    return ins.read(__unpack(ins.read(1))[0])
 def unpack_str16(ins, __unpack=struct.Struct(u'H').unpack):
     return ins.read(__unpack(ins.read(2))[0])
 def unpack_str32(ins, __unpack=struct.Struct(u'I').unpack):
@@ -1506,11 +1504,11 @@ def pack_float(out, val, __pack=struct.Struct(u'=f').pack):
     out.write(__pack(val))
 def unpack_double(ins, __unpack=struct.Struct(u'd').unpack):
     return __unpack(ins.read(8))[0]
+def pack_double(out, val, __pack=struct.Struct(u'=d').pack):
+    out.write(__pack(val))
 def unpack_byte(ins, __unpack=struct.Struct(u'B').unpack):
     return __unpack(ins.read(1))[0]
 def pack_byte(out, val, __pack=struct.Struct(u'=B').pack):
-    out.write(__pack(val))
-def pack_double(out, val, __pack=struct.Struct(u'=d').pack):
     out.write(__pack(val))
 def unpack_int_signed(ins, __unpack=struct.Struct(u'i').unpack):
     return __unpack(ins.read(4))[0]
@@ -1528,9 +1526,19 @@ def unpack_str_int_delim(ins, __unpack=struct.Struct(u'Ic').unpack):
     return __unpack(ins.read(5))[0]
 def unpack_str_byte_delim(ins, __unpack=struct.Struct(u'Bc').unpack):
     return __unpack(ins.read(2))[0]
-
+def unpack_str8(ins, __unpack=struct.Struct(u'B').unpack):
+    return ins.read(__unpack(ins.read(1))[0])
+def pack_str8(out, val, __pack=struct.Struct(u'=B').pack):
+    pack_byte(out, len(val))
+    out.write(val)
+def pack_bzstr8(out, val, __pack=struct.Struct(u'=B').pack):
+    pack_byte(out, len(val) + 1)
+    out.write(val)
+    out.write(b'\x00')
 def unpack_string(ins, string_len):
     return struct_unpack(u'%ds' % string_len, ins.read(string_len))[0]
+def pack_string(out, val):
+    out.write(val)
 
 def pack_byte_signed(out, value, __pack=struct.Struct(u'b').pack):
     out.write(__pack(value))
