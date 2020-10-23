@@ -68,12 +68,12 @@ class MreAloc(MelRecord):
         MelUInt32(b'NAM5', 'dayStart'),
         MelUInt32(b'NAM6', 'nightStart'),
         MelUInt32(b'NAM7', 'retrigerDelay'),
-        MelSorted(MelFids(b'HNAM', 'neutralSets')),
-        MelSorted(MelFids(b'ZNAM', 'allySets')),
-        MelSorted(MelFids(b'XNAM', 'friendSets')),
-        MelSorted(MelFids(b'YNAM', 'enemySets')),
-        MelSorted(MelFids(b'LNAM', 'locationSets')),
-        MelSorted(MelFids(b'GNAM', 'battleSets')),
+        MelSorted(MelFids('neutralSets', MelFid(b'HNAM'))),
+        MelSorted(MelFids('allySets', MelFid(b'ZNAM'))),
+        MelSorted(MelFids('friendSets', MelFid(b'XNAM'))),
+        MelSorted(MelFids('enemySets', MelFid(b'YNAM'))),
+        MelSorted(MelFids('locationSets', MelFid(b'LNAM'))),
+        MelSorted(MelFids('battleSets', MelFid(b'GNAM'))),
         MelFid(b'RNAM','conditionalFaction'),
         MelUInt32(b'FNAM', 'fnam'),
     )
@@ -125,7 +125,7 @@ class MreCdck(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelSorted(MelFids(b'CARD', 'cards')),
+        MelSorted(MelFids('cards', MelFid(b'CARD'))),
         MelUInt32(b'DATA', 'count'), # 'Count (broken)' in xEdit - unused?
     )
     __slots__ = melSet.getSlotsUsed()
@@ -241,7 +241,7 @@ class MreDial(MelRecord):
             ),
         ), sort_by_attrs='added_quest'),
         # Apparently unused, but xEdit has it so we should keep it too
-        MelSorted(MelFids(b'QSTR', 'removed_quests')),
+        MelSorted(MelFids('removed_quests', MelFid(b'QSTR'))),
         MelFull(),
         MelFloat(b'PNAM', 'priority'),
         MelString(b'TDUM', 'dumb_response'),

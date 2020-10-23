@@ -250,32 +250,6 @@ class MelNum(MelBase):
         return None if num is None else self.packer(num)
 
 #------------------------------------------------------------------------------
-# TODO(inf) DEPRECATED! - don't use for new usages -> MelGroups(MelFid)
-#  instead. Same idea as with MelFidList.
-class MelFids(MelBase):
-    """Represents a mod record fid elements."""
-
-    def hasFids(self,formElements):
-        formElements.add(self)
-
-    def setDefault(self,record):
-        setattr(record, self.attr, [])
-
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        fid = ins.unpackRef()
-        getattr(record, self.attr).append(fid)
-
-    def dumpData(self, record, out, __packer=structs_cache[u'I'].pack):
-        for fid in getattr(record, self.attr):
-            MelFid(self.mel_sig, '').packSub(out, __packer(fid))
-
-    def mapFids(self, record, function, save_fids=False):
-        fids = getattr(record, self.attr)
-        for index,fid in enumerate(fids):
-            result = function(fid)
-            if save_fids: fids[index] = result
-
-#------------------------------------------------------------------------------
 class MelNull(MelBase):
     """Represents an obsolete record. Reads bytes from instream, but then
     discards them and is otherwise inactive."""
@@ -453,6 +427,37 @@ class MelGroups(MelGroup):
     @property
     def static_size(self):
         raise exception.AbstractError()
+
+#------------------------------------------------------------------------------
+class MelFids(MelGroups):
+    """A lighter version of MelGroups, holding an array of separate form id
+    subrecords."""
+
+    def __init__(self, attr, *elements):
+        if not len(elements) == 1 or not isinstance(elements[0], MelFid):
+            raise SyntaxError(
+                f'{type(self)} requires a single initializer of type MelFid, '
+                f'passed: {elements}')
+        super().__init__(attr, *elements)
+
+    def hasFids(self,formElements):
+        formElements.add(self)
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        """Override MelGroups.load_mel to not create the MelObjects."""
+        getattr(record, self.attr).append(
+            self.elements[0].load_bytes(ins, size_, *debug_strs))
+
+    def dumpData(self, record, out, __packer=structs_cache[u'I'].pack):
+        fid_mel = self.elements[0]
+        for fid in getattr(record, self.attr):
+            fid_mel.packSub(out, fid_mel.packer(fid))
+
+    def mapFids(self, record, function, save_fids=False):
+        fids = getattr(record, self.attr)
+        for index,fid in enumerate(fids):
+            result = function(fid)
+            if save_fids: fids[index] = result
 
 #------------------------------------------------------------------------------
 class MelString(MelBase):

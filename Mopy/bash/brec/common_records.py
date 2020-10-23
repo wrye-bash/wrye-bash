@@ -136,7 +136,7 @@ class MreFlst(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFids(b'LNAM', u'formIDInList'), # do *not* sort!
+        MelFids('formIDInList', MelFid(b'LNAM')),  # do *not* sort!
     )
 
     __slots__ = melSet.getSlotsUsed() + [u'mergeOverLast', u'mergeSources',

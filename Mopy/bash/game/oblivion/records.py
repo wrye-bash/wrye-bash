@@ -408,7 +408,7 @@ class MelSpellsTes4(MelFids): ##: HACKy workaround, see docstring
     that link to SPELs, and we can't handle that without loading the plugin's
     masters (see #282 and #577 for two issues that need this as well)."""
     def __init__(self):
-        super().__init__(b'SPLO', u'spells')
+        super().__init__('spells', MelFid(b'SPLO'))
 
 #------------------------------------------------------------------------------
 ##: Could technically be reworked for non-Oblivion games, but is broken and
@@ -1025,7 +1025,7 @@ class MreCrea(MreActorBase):
             ('aggression',5),('confidence',50),('energyLevel',50),
             ('responsibility',50),(aiService, u'services'),'trainSkill',
             'trainLevel','unused1'),
-        MelFids(b'PKID','aiPackages'),
+        MelFids('aiPackages', MelFid(b'PKID')),
         MelAnimations(),
         MelStruct(b'DATA', [u'5B', u's', u'H', u'2s', u'H', u'8B'],'creatureType','combatSkill','magic',
                   'stealth','soul','unused2','health',
@@ -1099,8 +1099,8 @@ class MreDial(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelSorted(MelFids(b'QSTI', 'added_quests')),
-        MelSorted(MelFids(b'QSTR', 'removed_quests')),
+        MelSorted(MelFids('added_quests', MelFid(b'QSTI'))),
+        MelSorted(MelFids('removed_quests', MelFid(b'QSTR'))),
         MelFull(),
         MelUInt8(b'DATA', u'dialType'),
     )
@@ -1122,7 +1122,7 @@ class MreDoor(MelRecord):
         MelFid(b'ANAM','soundClose'),
         MelFid(b'BNAM','soundLoop'),
         MelUInt8Flags(b'FNAM', u'flags', _flags),
-        MelSorted(MelFids(b'TNAM', 'destinations')),
+        MelSorted(MelFids('destinations', MelFid(b'TNAM'))),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1307,7 +1307,7 @@ class MreInfo(MelRecord):
         MelFid(b'QSTI', u'info_quest'),
         MelFid(b'TPIC', u'info_topic'),
         MelFid(b'PNAM', u'prev_info'),
-        MelFids(b'NAME', u'addTopics'),
+        MelFids('addTopics', MelFid(b'NAME')),
         MelGroups(u'responses',
             MelStruct(b'TRDT', [u'I', u'i', u'4s', u'B', u'3s'], u'emotionType', u'emotionValue',
                 u'unused1', u'responseNum', u'unused2'),
@@ -1315,8 +1315,8 @@ class MreInfo(MelRecord):
             MelString(b'NAM2', u'actorNotes'),
         ),
         MelConditions(),
-        MelFids(b'TCLT', u'choices'),
-        MelFids(b'TCLF', u'linksFrom'),
+        MelFids('choices', MelFid(b'TCLT')),
+        MelFids('linksFrom', MelFid(b'TCLF')),
         MelEmbeddedScript(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1419,7 +1419,7 @@ class MreLtex(MelRecord):
         MelOptStruct(b'HNAM', [u'3B'], (_flags, 'flags'), 'friction',
                      'restitution'), ##: flags are actually an enum....
         MelUInt8(b'SNAM', 'specular'),
-        MelSorted(MelFids(b'GNAM', 'grass')),
+        MelSorted(MelFids('grass', MelFid(b'GNAM'))),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1796,7 +1796,7 @@ class MreNpc(MreActorBase):
                   ('energyLevel', 50), ('responsibility', 50),
                   (aiService, u'services'), 'trainSkill', 'trainLevel',
                   'unused1'),
-        MelFids(b'PKID','aiPackages'),
+        MelFids('aiPackages', MelFid(b'PKID')),
         MelAnimations(),
         MelFid(b'CNAM','iclass'),
         MelNpcData(b'DATA', [u'21B', u'H', u'2s', u'8B'],
