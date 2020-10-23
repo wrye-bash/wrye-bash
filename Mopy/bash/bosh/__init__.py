@@ -60,7 +60,7 @@ from ..mod_files import ModFile, ModHeaderReader
 
 # Singletons, Constants -------------------------------------------------------
 reOblivion = re.compile(
-    u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|_GOTY non-SI).esm$', re.U)
+    u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|_GOTY non-SI|_GBR SI).esm$', re.U)
 # quick or auto save.bak(.bak...)
 bak_file_pattern = re.compile(u'' r'(quick|auto)(save)(\.bak)+(f?)$',
                               re.I | re.U)
@@ -1849,7 +1849,8 @@ class ModInfos(FileInfos):
             u'1.1':        247388848, #--Standard
             u'1.1b':       247388894, # Arthmoor has this size.
             u'GOTY non-SI':247388812, # GOTY version
-            u'SI':         277504985} # Shivering Isles 1.2
+            u'SI':         277504985, # Shivering Isles 1.2
+            u'GBR SI':     260961973} # GBR Main File Patch
         self.size_voVersion = {y:x for x, y in self.version_voSize.iteritems()}
         self.voCurrent = None
         self.voAvailable = set()
