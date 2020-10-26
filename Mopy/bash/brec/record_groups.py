@@ -55,6 +55,7 @@ class MobBase(object):
             self.label, self.groupType, self.stamp = (
                 header.flags1, header.fid, header.flags2)
         self.debug = False
+        # binary blob of the whole record group minus its GRUP header ##: rename
         self.data = None
         self.changed = False
         self.numRecords = -1
@@ -68,7 +69,7 @@ class MobBase(object):
         #--Read, but don't analyze.
         if not do_unpack:
             self.data = ins.read(self.size - RecordHeader.rec_header_size,
-                                 type(self))
+                                 type(self)) # PY3: bytes?
         #--Analyze ins.
         elif ins is not None:
             self._load_rec_group(ins,
@@ -103,6 +104,7 @@ class MobBase(object):
             return self.numRecords
         else:
             numSubRecords = 0
+            num_groups = 1 # the top level grup itself - not included in data
             reader = self.getReader()
             errLabel = group_types[self.groupType]
             readerAtEnd = reader.atEnd
@@ -110,11 +112,11 @@ class MobBase(object):
             readerSeek = reader.seek
             while not readerAtEnd(reader.size,errLabel):
                 header = readerRecHeader()
-                recType,size = header.recType,header.size
-                if recType == 'GRUP': size = 0
-                readerSeek(size,1)
-                numSubRecords += 1
-            self.numRecords = numSubRecords + includeGroups
+                if header.recType != b'GRUP':
+                    readerSeek(header.size, 1)
+                    numSubRecords += 1
+                else: num_groups += 1
+            self.numRecords = numSubRecords + includeGroups * num_groups
             return self.numRecords
 
     def dump(self,out):
@@ -123,7 +125,7 @@ class MobBase(object):
             raise AbstractError
         if self.numRecords == -1:
             self.getNumRecords()
-        if self.numRecords > 0:
+        if self.numRecords > 0: ##: trivially True for MobBase with includeGroups=True
             self.header.size = self.size
             out.write(self.header.pack_head())
             out.write(self.data)
@@ -232,7 +234,7 @@ class MobObjects(MobBase):
         return [record for record in self.records if not record.flags1.ignored]
 
     def getNumRecords(self,includeGroups=True):
-        """Returns number of records, including self."""
+        """Returns number of records, including self - if empty return 0."""
         numRecords = len(self.records)
         if numRecords: numRecords += includeGroups #--Count self
         self.numRecords = numRecords
@@ -1464,7 +1466,7 @@ class MobWorld(MobCells):
     def getNumRecords(self,includeGroups=True):
         """Returns number of records, including self and all children."""
         if not self.changed:
-            return super(MobCells, self).getNumRecords() ##: includeGroups?
+            return super(MobCells, self).getNumRecords(includeGroups) ##: TTT?
         count = 1 # self.world, always present
         count += bool(self.road)
         if self.worldCellBlock:

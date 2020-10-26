@@ -193,7 +193,7 @@ class ModFile(object):
         self.longFids = False
 
     def load(self, do_unpack=False, progress=None, loadStrings=True,
-             catch_errors=True, do_map_fids=True):
+             catch_errors=True, do_map_fids=True): # TODO: let it blow?
         """Load file."""
         from . import bosh
         progress = progress or bolt.Progress()

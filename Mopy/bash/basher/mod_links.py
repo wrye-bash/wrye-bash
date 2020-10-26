@@ -1431,7 +1431,7 @@ class Mod_DecompileAll(_NotObLink):
             removed = []
             id_text = {}
             scpt_grp = modFile.tops[b'SCPT']
-            if scpt_grp.getNumRecords(False):
+            if scpt_grp.getNumRecords(includeGroups=False):
                 loadFactory = mod_files.LoadFactory(False, MreRecord.type_class[b'SCPT'])
                 for master in modFile.tes4.masters:
                     masterFile = mod_files.ModFile(bosh.modInfos[master], loadFactory)

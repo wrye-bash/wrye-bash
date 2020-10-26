@@ -299,7 +299,8 @@ class PatchFile(ModFile):
         self.tes4.masters = self.getMastersUsed()
         progress(1.0, _(u'Compiled.'))
         # Build the description
-        numRecords = sum([x.getNumRecords(False) for x in self.tops.values()])
+        numRecords = sum(
+            x.getNumRecords(includeGroups=False) for x in self.tops.values())
         self.tes4.description = (
                 _(u'Updated: ') + format_date(time.time()) + u'\n\n' + _(
                 u'Records Changed: %d') % numRecords)
