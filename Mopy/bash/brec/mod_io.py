@@ -147,7 +147,9 @@ class GrupHeader(RecordHeader):
         block of group records, ie call this immediately after unpacking self.
         """
         ins.seek(self.size - self.__class__.rec_header_size, 1,
-                 b'GRUP.%s' % self.label) # label could be an int
+            ##: HACK -> label is an int for MobDials groupType == 7
+            b'GRUP.' + self.label if isinstance(self.label, bytes) else bytes(
+                self.label))
 
     def __repr__(self):
         return u'<GRUP Header: %s, %s>' % (

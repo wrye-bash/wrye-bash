@@ -99,7 +99,7 @@ class MobBase(object):
             self.numRecords = 0
             return self.numRecords
         else:
-            numSubRecords = 0
+            numSubRecords = num_groups = 0
             reader = self.getReader()
             errLabel = group_types[self.groupType]
             readerAtEnd = reader.atEnd
@@ -107,11 +107,12 @@ class MobBase(object):
             readerSeek = reader.seek
             while not readerAtEnd(reader.size,errLabel):
                 header = readerRecHeader()
-                recType,size = header.recType,header.size
-                if recType == 'GRUP': size = 0
-                readerSeek(size,1)
-                numSubRecords += 1
-            self.numRecords = numSubRecords + includeGroups
+                if header.recType != b'GRUP':
+                    numSubRecords += 1
+                    readerSeek(header.size, 1)
+                else:
+                    num_groups += 1
+            self.numRecords = numSubRecords + (includeGroups and num_groups)
             return self.numRecords
 
     def dump(self,out):
@@ -120,7 +121,7 @@ class MobBase(object):
             raise AbstractError
         if self.numRecords == -1:
             self.getNumRecords()
-        if self.numRecords > 0:
+        if self.numRecords > 0: ##: this is trivially True??
             self.header.size = self.size
             out.write(self.header.pack_head())
             out.write(self.data)
