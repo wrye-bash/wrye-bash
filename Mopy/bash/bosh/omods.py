@@ -27,7 +27,8 @@ import subprocess
 from subprocess import PIPE
 from .. import env, bolt, bass, archives
 from ..bolt import decoder, encode, Path, startupinfo, unpack_int_signed, \
-    unpack_byte, unpack_short, unpack_int64_signed, struct_pack
+    unpack_byte, unpack_short, unpack_int64_signed, pack_byte_signed, \
+    pack_byte, pack_int_signed
 
 def _readNetString(open_file):
     """Read a .net string. THIS CODE IS DUBIOUS!"""
@@ -45,12 +46,12 @@ def _writeNetString(open_file, string):
     """Write string as a .net string. THIS CODE IS DUBIOUS!"""
     strLen = len(string)
     if strLen < 128:
-        open_file.write(struct_pack('b', strLen))
+        pack_byte_signed(open_file, strLen)
     elif strLen > 0x7FFF: #--Actually probably fails earlier.
         raise NotImplementedError(u'String too long to convert.')
     else:
         strLen =  0x80 | strLen & 0x7f | (strLen & 0xff80) << 1
-        open_file.write(struct_pack('b', strLen))
+        pack_byte_signed(open_file, strLen)
     open_file.write(string)
 
 failedOmods = set()
@@ -262,7 +263,7 @@ class OmodFile(object):
                 # Next 8 bytes are the size of the data stream
                 for i in range(8):
                     out = totalSize >> (i*8)
-                    output.write(struct_pack('B', out & 0xFF))
+                    pack_byte(output, out & 0xFF)
                     done += 1
                     subprogress(done)
 
@@ -337,14 +338,14 @@ class OmodConfig(object):
         configPath = bass.dirs[u'installers'].join(name,u'omod conversion data',u'config')
         configPath.head.makedirs()
         with open(configPath.temp.s,u'wb') as out:
-            out.write(struct_pack(u'B', 4))
+            pack_byte(out, 4)
             _writeNetString(out, config.name.encode(u'utf8'))
-            out.write(struct_pack(u'i', config.vMajor))
-            out.write(struct_pack(u'i', config.vMinor))
+            pack_int_signed(out, config.vMajor)
+            pack_int_signed(out, config.vMinor)
             for attr in (u'omod_author', u'email', u'website', u'abstract'):
                 # OBMM reads it fine if in UTF-8, so we'll do that.
                 _writeNetString(out, getattr(config, attr).encode(u'utf-8'))
             out.write('\x74\x1a\x74\x67\xf2\x7a\xca\x88') #--Random date time
-            out.write(struct_pack(u'b', 0)) #--zip compression (will be ignored)
+            pack_byte_signed(out, 0) #--zip compression (will be ignored)
             out.write('\xFF\xFF\xFF\xFF')
         configPath.untemp()

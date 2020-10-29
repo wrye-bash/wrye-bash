@@ -24,7 +24,8 @@ import re
 from . import SaveInfo
 from ._saves import SreNPC, SaveFile
 from .. import bush, bolt
-from ..bolt import Flags, encode, sio, Path, struct_pack, struct_unpack
+from ..bolt import Flags, encode, sio, Path, struct_pack, struct_unpack, \
+    pack_int
 from ..brec import getModIndex, MreRecord, genFid, RecHeader, null2
 from ..exception import SaveFileError, StateError
 from ..mod_files import LoadFactory, MasterMap, ModFile
@@ -289,7 +290,7 @@ class PCFaces(object):
             newFid = oldFid and masterMap(oldFid,None)
             if newFid and doPack:
                 newRef = saveFile.getIref(newFid)
-                buff.write(struct_pack('I', newRef))
+                pack_int(buff, newRef)
             else:
                 buff.seek(4,1)
         oldRecord = saveFile.getRecord(0x14)

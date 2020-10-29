@@ -41,11 +41,12 @@ from .. import bolt
 from ..bolt import decoder, cstrip, unpack_string, unpack_int, unpack_str8, \
     unpack_short, unpack_float, unpack_str16, unpack_byte, struct_pack, \
     unpack_str_int_delim, unpack_str16_delim_null, unpack_str_byte_delim, \
-    unpack_many, encode, struct_unpack
+    unpack_many, encode, struct_unpack, pack_int, pack_byte, pack_short
 from ..exception import SaveHeaderError, raise_bolt_error
 
 # Utilities -------------------------------------------------------------------
-def _pack(out, fmt, pack_arg): out.write(struct_pack(fmt, pack_arg))
+def _pack_c(out, value, __pack=struct.Struct(u'=c').pack):
+    out.write(__pack(value))
 
 class SaveFileHeader(object):
     save_magic = 'OVERRIDE'
@@ -139,7 +140,7 @@ class SaveFileHeader(object):
 
     def _write_masters(self, ins, out):
         ins.seek(4, 1) # Discard oldSize
-        _pack(out, '=I', self._master_block_size())
+        pack_int(out, self._master_block_size())
         #--Skip old masters
         numMasters = unpack_byte(ins)
         oldMasters = self._dump_masters(ins, numMasters, out)
@@ -151,7 +152,7 @@ class SaveFileHeader(object):
             # globalDataTable1Offset, globalDataTable2Offset,
             # changeFormsOffset, globalDataTable3Offset
             oldOffset = unpack_int(ins)
-            _pack(out, '=I', oldOffset + offset)
+            pack_int(out, oldOffset + offset)
         return oldMasters
 
     def _dump_masters(self, ins, numMasters, out):
@@ -159,9 +160,9 @@ class SaveFileHeader(object):
         for x in xrange(numMasters):
             oldMasters.append(unpack_str16(ins))
         #--Write new masters
-        _pack(out, '=B', len(self.masters))
+        pack_byte(out, len(self.masters))
         for master in self.masters:
-            _pack(out, '=H', len(master))
+            pack_short(out, len(master))
             out.write(master.s)
         return oldMasters
 
@@ -197,14 +198,14 @@ class OblivionSaveHeader(SaveFileHeader):
         for x in xrange(numMasters):
             oldMasters.append(unpack_str8(ins))
         #--Write new masters
-        _pack(out, '=B', len(self.masters))
+        pack_byte(out, len(self.masters))
         for master in self.masters:
-            _pack(out, '=B', len(master))
+            pack_byte(out, len(master))
             out.write(master.s)
         #--Fids Address
         offset = out.tell() - ins.tell()
         fidsAddress = unpack_int(ins)
-        _pack(out, '=I', fidsAddress + offset)
+        pack_int(out, fidsAddress + offset)
         return oldMasters
 
 class SkyrimSaveHeader(SaveFileHeader):
@@ -423,7 +424,7 @@ class SkyrimSaveHeader(SaveFileHeader):
         ins = self._sse_decompress(ins, compressed_size, decompressed_size)
         # Gather the data that will be compressed
         to_compress = StringIO.StringIO()
-        to_compress.write(struct_pack(u'=B', self._formVersion))
+        pack_byte(to_compress, self._formVersion)
         ins.seek(1, 1) # skip the form version
         old_masters = self._write_masters(ins, to_compress)
         for block in iter(partial(ins.read, 0x5000000), b''):
@@ -431,8 +432,8 @@ class SkyrimSaveHeader(SaveFileHeader):
         # Compress the gathered data, write out the sizes and finally write out
         # the actual compressed data
         compressed_data = self._sse_compress(to_compress)
-        _pack(out, u'=I', to_compress.tell())   # decompressed_size
-        _pack(out, u'=I', len(compressed_data)) # compressed_size
+        pack_int(out, to_compress.tell())   # decompressed_size
+        pack_int(out, len(compressed_data)) # compressed_size
         out.write(compressed_data)
         return old_masters
 
@@ -453,14 +454,14 @@ class SkyrimSaveHeader(SaveFileHeader):
         # Write out the (potentially altered) masters - note that we have to
         # encode here, since we may be writing to StringIO instead of a file
         num_regulars = len(regular_masters)
-        _pack(out, '=B', num_regulars)
+        pack_byte(out, num_regulars)
         for master in self.masters[:num_regulars]:
-            _pack(out, '=H', len(master))
+            pack_short(out, len(master))
             out.write(encode(master.s))
         if has_esl_block:
-            _pack(out, '=H', len(esl_masters))
+            pack_short(out, len(esl_masters))
             for master in self.masters[num_regulars:]:
-                _pack(out, '=H', len(master))
+                pack_short(out, len(master))
                 out.write(encode(master.s))
         return regular_masters + esl_masters
 
@@ -552,8 +553,8 @@ class FalloutNVSaveHeader(SaveFileHeader):
 
     def _write_masters(self, ins, out):
         self._master_list_size(ins) # discard old size
-        _pack(out, '=B', self._masters_unknown_byte)
-        _pack(out, '=I', self._master_block_size())
+        pack_byte(out, self._masters_unknown_byte)
+        pack_int(out, self._master_block_size())
         #--Skip old masters
         numMasters = unpack_str_byte_delim(ins) # get me the Byte
         oldMasters = self._dump_masters(ins, numMasters, out)
@@ -563,7 +564,7 @@ class FalloutNVSaveHeader(SaveFileHeader):
         for i in xrange(5):
             # formIdArrayCount offset and 5 others
             oldOffset = unpack_int(ins)
-            _pack(out, '=I', oldOffset + offset)
+            pack_int(out, oldOffset + offset)
         return oldMasters
 
     def _dump_masters(self, ins, numMasters, out):
@@ -571,13 +572,13 @@ class FalloutNVSaveHeader(SaveFileHeader):
         for count in xrange(numMasters):
             oldMasters.append(unpack_str16_delim_null(ins))
         # Write new masters - note the silly delimiters
-        _pack(out, '=B', len(self.masters))
-        _pack(out, '=c', '|')
+        pack_byte(out, len(self.masters))
+        _pack_c(out, b'|')
         for master in self.masters:
-            _pack(out, '=H', len(master))
-            _pack(out, '=c', '|')
+            pack_short(out, len(master))
+            _pack_c(out, b'|')
             out.write(master.s)
-            _pack(out, '=c', '|')
+            _pack_c(out, b'|')
         return oldMasters
 
     def _master_block_size(self):

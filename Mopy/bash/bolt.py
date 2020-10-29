@@ -1492,16 +1492,28 @@ def unpack_str32(ins, __unpack=struct.Struct(u'I').unpack):
     return ins.read(__unpack(ins.read(4))[0])
 def unpack_int(ins, __unpack=struct.Struct(u'I').unpack):
     return __unpack(ins.read(4))[0]
+def pack_int(out, value, __pack=struct.Struct(u'=I').pack):
+    out.write(__pack(value))
 def unpack_short(ins, __unpack=struct.Struct(u'H').unpack):
     return __unpack(ins.read(2))[0]
+def pack_short(out, val, __pack=struct.Struct(u'=H').pack):
+    out.write(__pack(val))
 def unpack_float(ins, __unpack=struct.Struct(u'f').unpack):
     return __unpack(ins.read(4))[0]
+def pack_float(out, val, __pack=struct.Struct(u'=f').pack):
+    out.write(__pack(val))
 def unpack_double(ins, __unpack=struct.Struct(u'd').unpack):
     return __unpack(ins.read(8))[0]
 def unpack_byte(ins, __unpack=struct.Struct(u'B').unpack):
     return __unpack(ins.read(1))[0]
+def pack_byte(out, val, __pack=struct.Struct(u'=B').pack):
+    out.write(__pack(val))
+def pack_double(out, val, __pack=struct.Struct(u'=d').pack):
+    out.write(__pack(val))
 def unpack_int_signed(ins, __unpack=struct.Struct(u'i').unpack):
     return __unpack(ins.read(4))[0]
+def pack_int_signed(out, val, __pack=struct.Struct(u'=i').pack):
+    out.write(__pack(val))
 def unpack_int64_signed(ins, __unpack=struct.Struct(u'q').unpack):
     return __unpack(ins.read(8))[0]
 def unpack_4s(ins, __unpack=struct.Struct(u'4s').unpack):
@@ -1517,6 +1529,9 @@ def unpack_str_byte_delim(ins, __unpack=struct.Struct(u'Bc').unpack):
 
 def unpack_string(ins, string_len):
     return struct_unpack(u'%ds' % string_len, ins.read(string_len))[0]
+
+def pack_byte_signed(out, value, __pack=struct.Struct(u'b').pack):
+    out.write(__pack(value))
 
 def unpack_many(ins, fmt):
     return struct_unpack(fmt, ins.read(struct.calcsize(fmt)))

@@ -31,7 +31,7 @@ from itertools import starmap, repeat
 from .. import bolt, bush
 from ..bolt import Flags, sio, GPath, decoder, deprint, encode, cstrip, \
     SubProgress, unpack_byte, unpack_str8, unpack_many, unpack_int, \
-    unpack_short, struct_pack, struct_unpack
+    unpack_short, struct_pack, struct_unpack, pack_int, pack_short, pack_byte
 from ..brec import ModReader, MreRecord, ModWriter, getObjectIndex, \
     getFormIndices, unpack_header
 from ..exception import ModError, StateError
@@ -125,7 +125,7 @@ class SreNPC(object):
                 out.write(struct_pack(fmt, *args))
             #--Form
             if self.form is not None:
-                _pack('I',self.form)
+                pack_int(out, self.form)
             #--Attributes
             if self.attributes is not None:
                 _pack('8B',*self.attributes)
@@ -136,13 +136,13 @@ class SreNPC(object):
                     acbs.calcMin, acbs.calcMax)
             #--Factions
             if self.factions is not None:
-                _pack('H',len(self.factions))
+                pack_short(out, len(self.factions))
                 for faction in self.factions:
                     _pack('=Ib',*faction)
             #--Spells
             if self.spells is not None:
                 num = len(self.spells)
-                _pack('H',num)
+                pack_short(out, num)
                 _pack('%dI' % num,*self.spells)
             #--AI Data
             if self.ai is not None:
@@ -152,12 +152,12 @@ class SreNPC(object):
                 _pack('H2s',self.health,self.unused2)
             #--Modifiers
             if self.modifiers is not None:
-                _pack('H',len(self.modifiers))
+                pack_short(out, len(self.modifiers))
                 for modifier in self.modifiers:
                     _pack('=Bf',*modifier)
             #--Full
             if self.full is not None:
-                _pack('B',len(self.full))
+                pack_byte(out, len(self.full))
                 out.write(self.full)
             #--Skills
             if self.skills is not None:
@@ -690,7 +690,7 @@ class SaveFile(object):
         with sio() as buff:
             buff.write(data)
             buff.seek(2+tesClassSize-4)
-            buff.write(struct_pack('I', value))
+            pack_int(buff, value)
             self.preCreated = buff.getvalue()
 
 #------------------------------------------------------------------------------
