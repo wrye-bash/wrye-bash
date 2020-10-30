@@ -160,7 +160,7 @@ class ModFile(object):
         #--Variables to load
         self.tes4 = bush.game.plugin_header_class(
             RecHeader(bush.game.Esp.plugin_header_sig, arg2=ZERO_FID,
-                      _entering_context=True))
+                      _entering_context=True)) # TODO use create record
         self.tes4.setChanged()
         self.strings = bolt.StringTable()
         self.tops = _TopGroupDict(self) #--Top groups.
@@ -285,7 +285,7 @@ class ModFile(object):
 
     def augmented_masters(self):
         """List of plugin masters with the plugin's own name appended."""
-        return [*self.tes4.masters, self.fileInfo.fn_key]
+        return [*self.tes4.masters_paths, self.fileInfo.fn_key]
 
     def iter_tops(self, top_sigs):
         return ((top_sig, t) for top_sig, t in self.tops.items() if

@@ -1460,7 +1460,7 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
                 id_text = {}
                 if scpt_grp := modFile.tops.get(b'SCPT'):
                     master_factory = self._load_fact(keepAll=False)
-                    for master in modFile.tes4.masters:
+                    for master in modFile.tes4.masters_paths:
                         masterFile = self._load_mod(bosh.modInfos[master],
                                                     load_fact=master_factory)
                         for rfid, r in masterFile.tops[b'SCPT'].iter_present_records():

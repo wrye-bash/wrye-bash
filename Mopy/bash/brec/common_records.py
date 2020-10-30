@@ -41,7 +41,7 @@ from .record_structs import MelRecord, MelSet
 from .utils_constants import FID, FormId, gen_coed_key
 from .. import bolt, bush
 from ..bolt import ChardetStr, Flags, StripNewlines, flag, to_unix_newlines, \
-    to_win_newlines
+    to_win_newlines, FName
 
 #------------------------------------------------------------------------------
 # Mixins ----------------------------------------------------------------------
@@ -336,6 +336,10 @@ class AMreHeader(MelRecord):
 
     @property
     def num_masters(self): return len(self.plugin_masters)
+
+    @property
+    def masters_paths(self): # TODO: drop!
+        return [FName('%s' % x) for x in self.masters]
 
 #------------------------------------------------------------------------------
 class AMreImad(MelRecord):

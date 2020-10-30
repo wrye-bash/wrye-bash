@@ -347,7 +347,7 @@ class _AParser(_HandleAliases):
                     self.id_context[rfid] = self._read_record_fp(record)
             self._fp_mods.add(mod_to_read.fileInfo.fn_key)
         # Process the mod's masters first, but see if we need to sort them
-        master_names = loaded_mod.tes4.masters
+        master_names = loaded_mod.tes4.masters_paths
         if self._needs_fp_master_sort:
             master_names = load_order.get_ordered(master_names)
         for mod_name in master_names:
