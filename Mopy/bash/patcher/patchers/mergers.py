@@ -133,11 +133,11 @@ class _AMerger(ImportPatcher):
             en_key = self._entry_key
             # Determine the effective master entries. First, find the winning
             # master entries (as determined by rule of one)
-            for master in modFile.tes4.masters:
+            for master in modFile.tes4.masters_paths:
                 if master in mod_id_entries:
                     id_entries.update(mod_id_entries[master])
             # Then, apply all deltas that originate from masters of this source
-            src_masters_set = set(modFile.tes4.masters)
+            src_masters_set = set(modFile.tes4.masters_paths)
             for m_fid, curr_entries in list(id_entries.items()):
                 # Check here since this is a defaultdict and we don't want to
                 # fill it with a ton of empty lists, that just wastes memory
@@ -663,7 +663,7 @@ class AListsMerger(ListPatcher):
         is_relev = self._re_tag in applied_tags
         is_delev = self._de_tag in applied_tags
         #--Scan
-        mod_masts = {*modFile.tes4.masters}
+        mod_masts = {*modFile.tes4.masters_paths}
         for list_type_sig, new_lists in modFile.iter_tops(self._read_sigs):
             # Ensure the block exists in the patch file - needed in buildPatch
             self.patchFile.tops[list_type_sig]
