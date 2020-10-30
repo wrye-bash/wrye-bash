@@ -42,15 +42,16 @@ from typing import final
 import lz4.block
 
 from .. import bolt, load_order, plugin_types
-from ..bolt import FName, decoder, deprint, encode, pack_byte, pack_bzstr8, \
+from ..bolt import deprint, pack_byte, pack_bzstr8, \
     pack_float, pack_int, pack_short, pack_str8, struct_error, struct_unpack, \
     structs_cache, unpack_byte, unpack_float, unpack_int, unpack_many, \
     unpack_short, unpack_str8, unpack_str16, unpack_str16_delim, \
     unpack_str_byte_delim, unpack_str_int_delim, unpack_int64, ChardetStr, \
-    StripNewlines
+    PluginStr, StripNewlines
 from ..exception import SaveHeaderError
 from ..plugin_types import PluginFlag
 
+class _SaveMasterStr(PluginStr): pass
 class _PcNameStr(StripNewlines, ChardetStr): pass
 
 # Utilities -------------------------------------------------------------------
@@ -67,7 +68,7 @@ def _skip_str16(ins):
 def _write_s16_list(out, master_bstrs):
     for master_bstr in master_bstrs:
         pack_short(out, len(master_bstr))
-        out.write(master_bstr)
+        out.write(master_bstr.reencode(None))
 def _pack_str8_1(out, val): # TODO: val = val.reencode(...)
     pack_bzstr8(out, val)
     return len(val) + 2
@@ -221,7 +222,7 @@ class SaveFileHeader(object):
     # turned image to a property)
     __slots__ = (u'header_size', u'pc_name_pstr', u'pcLevel', u'pcLocation',
                  u'gameDays', u'gameTicks', u'ssWidth', u'ssHeight', u'ssData',
-                 u'masters', u'_save_info', u'_mastersStart')
+                 u'_save_masters', u'_save_info', u'_mastersStart') ## FIXME: _save_masters belongs to *some* of the subclasses
     # map slots to (seek position, unpacker) - seek position negative means
     # seek relative to ins.tell(), otherwise to the beginning of the file
     _unpackers = {}
@@ -269,7 +270,18 @@ class SaveFileHeader(object):
         self.calc_time()
         self.pc_name_pstr = _PcNameStr(self.pc_name_pstr)
         self.pcLocation = StripNewlines(self.pcLocation)
-        self._decode_masters()
+
+    @property
+    def masters(self) -> list[_SaveMasterStr]:
+        """Return the save masters byte strings in the order they are packed
+        in the save. Those can be used to dump on an output stream,
+        displayed or replace existing masters in cosaves."""
+        return self._save_masters
+
+    @masters.setter
+    def masters(self, new_masters):
+        self._save_masters = [_SaveMasterStr.from_unicode(
+            x.s if isinstance(x, bolt.Path) else x) for x in new_masters]
 
     @property
     def pcName(self):
@@ -292,23 +304,16 @@ class SaveFileHeader(object):
 
     def _load_masters(self, ins):
         self._load_from_unpackers(ins, self.__class__._unpackers_post_ss)
-        self.masters = []
+        self._save_masters = []
         numMasters = unpack_byte(ins)
-        append_master = self.masters.append
+        append_master = self._save_masters.append
         for count in range(numMasters):
-            append_master(unpack_str8(ins))
-
-    def _decode_masters(self):
-        self.masters = [FName(decoder(x, bolt.pluginEncoding,
-            avoidEncodings=(u'utf8', u'utf-8'))) for x in self.masters]
-
-    def _encode_masters(self):
-        self.masters = [encode(x) for x in self.masters] ##: encoding?
+            append_master(_SaveMasterStr(unpack_str8(ins)))
 
     def remap_masters(self, master_map):
         """Remaps all masters in this save header according to the specified
         master map (dict mapping old -> new FNames)."""
-        self.masters = [master_map.get(x, x) for x in self.masters]
+        self.masters = [master_map.get(str(x), x) for x in self.masters]
 
     def calc_time(self): pass
 
@@ -330,9 +335,7 @@ class SaveFileHeader(object):
         """Write out the full save header. Needs the unaltered file stream as
         input."""
         # Work with encoded masters for the entire writing process
-        self._encode_masters()
         self._do_write_header(ins, out)
-        self._decode_masters()
 
     def _do_write_header(self, ins, out):
         out.write(ins.read(self._mastersStart))
@@ -364,7 +367,7 @@ class SaveFileHeader(object):
         _write_s16_list(out, self.masters)
 
     def _master_block_size(self):
-        return 1 + sum(len(x) + 2 for x in self.masters)
+        return 1 + sum(len(x) + 2 for x in self._save_masters)
 
 class OblivionSaveHeader(SaveFileHeader):
     save_magic = b'TES4SAVEGAME'
@@ -407,7 +410,7 @@ class OblivionSaveHeader(SaveFileHeader):
     def __write_masters_ob(self, out):
         pack_byte(out, len(self.masters))
         for master_bstr in self.masters:
-            pack_str8(out, master_bstr)
+            pack_str8(out, master_bstr.reencode(None))
 
     def dump_header(self, out):
         out.write(self.__class__.save_magic)
@@ -427,9 +430,7 @@ class OblivionSaveHeader(SaveFileHeader):
         self._unpackers['header_size'][0](out, self.header_size)
         out.seek(self._mastersStart)
         out.write(self.ssData)
-        self._encode_masters()
         self.__write_masters_ob(out)
-        self._decode_masters()
 
 class _AEslSaveHeader(SaveFileHeader):
     """Base class for save headers that may have ESLs."""
@@ -473,25 +474,13 @@ class _AEslSaveHeader(SaveFileHeader):
                 f'not as expected ({self.plugin_info_size}).')
 
     def _unpack_master(self, ins):
-        return unpack_str16(ins)
-
-    def _decode_masters(self):
-        _dec = lambda x: FName(decoder(x, bolt.pluginEncoding,
-                                       avoidEncodings=('utf8', 'utf-8')))
-        self.masters_regular = [*map(_dec, self.masters_regular)]
-        self.scale_masters = {pf: [*map(_dec, li)] for pf, li in
-                              self.scale_masters.items()}
-
-    def _encode_masters(self):
-        self.masters_regular = [*map(encode, self.masters_regular)]
-        self.scale_masters = {pf: [*map(encode, li)] for pf, li in
-                              self.scale_masters.items()}
+        return _SaveMasterStr(unpack_str16(ins))
 
     def remap_masters(self, master_map):
-        self.masters_regular = [master_map.get(x, x)
+        self.masters_regular = [master_map.get(str(x), x)
                                 for x in self.masters_regular]
-        self.scale_masters = {pf: [master_map.get(x, x) for x in li] for pf, li
-                              in self.scale_masters.items()}
+        self.scale_masters = {pf: [master_map.get(str(x), x) for x in li] for
+                              pf, li in self.scale_masters.items()}
 
     def _dump_masters(self, ins, out):
         # Skip the old masters
@@ -746,7 +735,7 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
                 self._master_info_block_size[mas] += len(unpack_str16(ins))
             unpack_byte(ins) # achievementCompatible
             self._master_info_block_size[mas] += 1
-        return mas
+        return _SaveMasterStr(mas)
 
     def _scale_flags(self):
         # ESL: some sources say if form version >= 82, MO2 says always
@@ -792,10 +781,10 @@ class FalloutNVSaveHeader(SaveFileHeader):
     def _load_masters(self, ins):
         self._mastersStart = ins.tell()
         self._master_list_size(ins)
-        self.masters = []
+        self._save_masters = []
         numMasters = unpack_str_byte_delim(ins)
         for count in range(numMasters):
-            self.masters.append(unpack_str16_delim(ins))
+            self._save_masters.append(_SaveMasterStr(unpack_str16_delim(ins)))
 
     def _master_list_size(self, ins):
         formVersion, masterListSize = unpack_many(ins, '=BI')
@@ -823,16 +812,16 @@ class FalloutNVSaveHeader(SaveFileHeader):
         for _x in range(len(self.masters)):
             unpack_str16_delim(ins)
         # Write new masters - note the silly delimiters
-        pack_byte(out, len(self.masters))
+        pack_byte(out, len(self._save_masters))
         _pack_c(out, b'|')
-        for master_bstr in self.masters:
+        for master_bstr in self._save_masters:
             pack_short(out, len(master_bstr))
             _pack_c(out, b'|')
-            out.write(master_bstr)
+            out.write(master_bstr.reencode(None))
             _pack_c(out, b'|')
 
     def _master_block_size(self):
-        return 2 + sum(len(x) + 4 for x in self.masters)
+        return 2 + sum(len(x) + 4 for x in self._save_masters)
 
     def calc_time(self):
         # gameDate format: hours.minutes.seconds

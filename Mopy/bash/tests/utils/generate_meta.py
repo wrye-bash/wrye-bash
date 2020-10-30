@@ -34,7 +34,8 @@ import sys
 
 from .. import resource_to_unique_display_name, set_game
 from ... import bush
-from ...bosh.cosaves import _xSEHeader, get_cosave_types, xSECosave
+from ...bosh.cosaves import _xSEHeader, get_cosave_types, xSECosave, \
+    _cosave_encoding
 
 def generate_meta_bsa(target_file):
     print(u"Skipping '%s': bsa .meta generation not implemented yet" %
@@ -57,21 +58,21 @@ def generate_meta_cosave_xse(target_file):
         # xSE cosave header ---------------------------------------------------
         cosv_header = test_cosave.cosave_header # type: _xSEHeader
         out.write(u'[cosave_header]\n')
-        out.write(u'savefile_tag = "%s"\n' % cosv_header.savefile_tag)
-        out.write(u'format_version = %u\n' % cosv_header.format_version)
+        out.write(f'savefile_tag = '
+            f'"{cosv_header.savefile_tag.decode(_cosave_encoding)}"\n')
+        out.write(f'format_version = {cosv_header.format_version:d}\n')
         out.write(u'se_version = %u\n' % cosv_header.se_version)
-        out.write(u'se_minor_version = %u\n' % cosv_header.se_minor_version)
-        out.write(u'game_version = 0x%08X\n' % cosv_header.game_version)
-        out.write(u'num_plugin_chunks = %u\n' % cosv_header.num_plugin_chunks)
+        out.write(f'se_minor_version = {cosv_header.se_minor_version:d}\n')
+        out.write(f'game_version = 0x{cosv_header.game_version:08X}\n')
+        out.write(f'num_plugin_chunks = {cosv_header.num_plugin_chunks:d}\n')
         out.write(u'\n[cosave_body]\n')
         out.write(u'cosave_masters = [\n')
         for m in test_cosave.get_master_list():
-            out.write(u'    "%s",\n' % m)
+            out.write(f'    "{m}",\n')
         out.write(u']\n')
         accurate_masters = (not bush.game.has_esl or
                             test_cosave.has_accurate_master_list())
-        out.write(u'masters_are_accurate = %s\n' %
-                  str(accurate_masters).lower())
+        out.write(f'masters_are_accurate = {str(accurate_masters).lower()}\n')
     ##: Once all are implemented, move to process_file
     print(u"Metadata successfully generated and written to '%s'" % (
             target_file + u'.meta'))

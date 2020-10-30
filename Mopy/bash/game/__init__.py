@@ -557,7 +557,7 @@ class GameInfo(object):
         plugin_dir = u''
         # The magic tag that the cosaves use (e.g. u'SKSE'). If this is empty,
         # it signals that this script extender has no cosaves.
-        cosave_tag = u''
+        cosave_tag = b''
         # The extension that the cosaves use (e.g. u'.skse')
         cosave_ext = u''
         # URL to download from

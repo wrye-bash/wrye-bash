@@ -29,6 +29,7 @@ from ...bolt import LogFile, Rounder, GPath_no_norm
 from ...bosh.cosaves import PluggyCosave, _Remappable, _xSEChunk, \
     _xSEChunkPLGN, _xSEHeader, _xSEModListChunk, get_cosave_types, xSECosave
 from ...wbtemp import TempFile
+from ...bosh.save_headers import _SaveMasterStr
 
 # Helper functions ------------------------------------------------------------
 _xse_cosave_exts = (u'.obse', u'.fose', u'.nvse', u'.skse', u'.f4se')
@@ -117,7 +118,8 @@ class ATestACosave(object):
             assert isinstance(test_log.out.getvalue(), str)
             # Remapping should make the new filename appear in the log
             curr_cosave.remap_plugins({
-                curr_cosave.get_master_list()[0]: _impossible_master})
+                curr_cosave.get_master_list()[0]: _SaveMasterStr(
+                    _impossible_master)})
             curr_cosave.dump_to_log(test_log, sv_masters)
             assert _impossible_master in test_log.out.getvalue()
         self._do_map_cosaves(_check_dump_to_log)
@@ -158,7 +160,7 @@ class TestxSECosave(ATestACosave):
             # must *always* be present, otherwise the cosave is invalid
             assert len(curr_cosave.cosave_chunks) == 1
             assert len(curr_cosave.cosave_chunks[0].chunks) == 1
-            assert (curr_cosave.cosave_chunks[0].chunks[0].chunk_type
+            assert (curr_cosave.cosave_chunks[0].chunks[0]._chunk_sig
                     in _valid_first_chunk_sigs)
         self._do_map_cosaves(_check_reading_light)
 
@@ -250,7 +252,7 @@ class ATest_xSEChunk(object):
 
     def _wants_chunk(self, curr_chunk: _xSEChunk) -> bool:
         """Whether or not _map_chunks should map over this chunk."""
-        return curr_chunk.chunk_type == self._target_chunk_sig
+        return curr_chunk._chunk_sig == self._target_chunk_sig
 
     # Actual test cases -------------------------------------------------------
     def test_chunk_length(self):
