@@ -71,7 +71,7 @@ class ASkyrimGameInfo(PatchGame):
         exe = u'skse_loader.exe'
         ver_files = [u'skse_loader.exe', u'skse_steam_loader.dll']
         plugin_dir = u'SKSE'
-        cosave_tag = u'SKSE'
+        cosave_tag = b'SKSE'
         cosave_ext = u'.skse'
         url = u'http://skse.silverlock.org/'
         url_tip = u'http://skse.silverlock.org/'
