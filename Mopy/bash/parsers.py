@@ -1256,7 +1256,7 @@ class ScriptText(object):
             tes4 = modFile.tes4
             for eid, data in eid_data.iteritems():
                 newText, longid = data
-                scriptFid = genFid(len(tes4.masters),tes4.getNextObject())
+                scriptFid = genFid(tes4.num_masters, tes4.getNextObject())
                 newScript = MreRecord.type_class[b'SCPT'](
                     RecHeader(b'SCPT', 0, 0x40000, scriptFid, 0))
                 newScript.eid = eid

@@ -175,7 +175,7 @@ class PatchDialog(DialogWindow):
             patchFile.initFactories(SubProgress(progress,0.1,0.2)) #no speeding needed/really possible (less than 1/4 second even with large LO)
             patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
             patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
-            if len(patchFile.tes4.masters) > 255:
+            if patchFile.tes4.num_masters > 255:
                 balt.showError(self,
                     _(u'The resulting Bashed Patch contains too many '
                       u'masters (>255). You can try to disable some '

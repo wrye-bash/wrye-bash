@@ -459,7 +459,7 @@ class PCFaces(object):
             count += 1
             eid = eidForm % count
         #--NPC
-        npcid = genFid(len(tes4.masters),tes4.getNextObject())
+        npcid = genFid(tes4.num_masters, tes4.getNextObject())
         npc = MreRecord.type_class['NPC_'](
             RecHeader(b'NPC_', 0, 0x40000, npcid, 0))
         npc.eid = eid

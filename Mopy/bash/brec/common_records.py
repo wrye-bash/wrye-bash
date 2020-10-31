@@ -101,6 +101,9 @@ class MreHeaderBase(MelRecord):
         self.setChanged()
         return self.nextObject - 1
 
+    @property
+    def num_masters(self): return len(self.masters)
+
     __slots__ = []
 
 #------------------------------------------------------------------------------

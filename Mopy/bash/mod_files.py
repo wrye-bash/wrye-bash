@@ -294,7 +294,7 @@ class ModFile(object):
         outPath = outPath or self.fileInfo.getPath()
         # Too many masters is fatal and results in cryptic struct errors, so
         # loudly complain about it here
-        if len(self.tes4.masters) > 255:
+        if self.tes4.num_masters > 255:
             raise ModError(self.fileInfo.name,
                 u'Attempting to write a file with too many masters (>255).')
         with ModWriter(outPath.open(u'wb')) as out:
