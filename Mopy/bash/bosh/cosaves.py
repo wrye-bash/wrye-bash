@@ -73,12 +73,12 @@ class _Remappable(object):
     of one or more plugin files referenced in the cosave has been changed."""
     __slots__ = ()
 
-    def remap_plugins(self, fnmod_rename: dict[str, str]):
+    def remap_plugins(self, fnmod_rename:  dict[PluginStr, PluginStr]):
         """Remaps the names of relevant plugin entries in this object.
 
         :param fnmod_rename: A dictionary containing the renames: key is the
             name of the plugin before the renaming, value is the name
-            afterwards."""
+            afterwards. Values should be already encoded (may not be cp1252 !)"""
         raise NotImplementedError
 
 class _Dumpable(object):
