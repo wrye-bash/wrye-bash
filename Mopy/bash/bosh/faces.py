@@ -28,7 +28,7 @@ from . import SaveInfo
 from ._saves import SaveFile, SreNPC
 from .. import bush
 from ..bolt import Flags, pack_byte, pack_int, struct_pack, struct_unpack, \
-    structs_cache
+    structs_cache, PluginStr
 from ..brec import FormId, int_unpacker, null2, RecordType
 from ..exception import SaveFileError, StateError
 from ..mod_files import LoadFactory, MasterMap, ModFile
@@ -409,7 +409,7 @@ class PCFaces(object):
         return faces
 
     @staticmethod
-    def mod_addFace(modInfo,face):
+    def mod_addFace(modInfo, face):
         """Writes a pcFace to a mod file."""
         #--Mod File
         modFile = PCFaces._mod_load_fact(modInfo, keepAll=True,
@@ -421,7 +421,8 @@ class PCFaces(object):
         if not tes4.description:
             tes4.description = _(u'Face dump from save game.')
         if bush.game.master_file not in tes4.masters:
-            tes4.masters.append(bush.game.master_file)
+            modFile.tes4.masters.insert(0, PluginStr.from_unicode(
+                bush.game.master_file, force_encoding=u'cp1252'))
         masterMap = MasterMap(face.face_masters, modFile.augmented_masters())
         #--Eid
         npcEids = {r.eid for r in modFile.tops[b'NPC_'].iter_records(skip_flagged=False)}

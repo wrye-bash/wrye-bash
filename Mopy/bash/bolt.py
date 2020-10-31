@@ -694,9 +694,10 @@ class PluginStr(bytes):
             target_encoding)
 
     @classmethod
-    def from_unicode(cls, uni_str):
-        return cls(encode(uni_str,
-            firstEncoding=cls.preferred_encoding or pluginEncoding))
+    def from_unicode(cls, uni_str, force_encoding=None):
+        enc = force_encoding if force_encoding else (
+                cls.preferred_encoding or pluginEncoding)
+        return cls(encode(uni_str, firstEncoding=enc))
 
     #--Hash/Compare
     def __hash__(self):
@@ -751,7 +752,7 @@ class ChardetStr(PluginStr):
         return self._preferred_encoding # None == automatic detection
 
     @classmethod
-    def from_unicode(cls, uni_str): # automatic detection
+    def from_unicode(cls, uni_str, force_encoding=None):  # automatic detection
         return cls(encode(uni_str, firstEncoding=None))
 
 class StripNewlines(PluginStr):
