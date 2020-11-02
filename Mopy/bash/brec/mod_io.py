@@ -218,9 +218,9 @@ class ModReader(object):
     def __enter__(self): return self
     def __exit__(self, exc_type, exc_value, exc_traceback): self.ins.close()
 
-    def setStringTable(self, table):
-        self.hasStrings = bool(table)
-        self.strings = table or {} # table may be None
+    def setStringTable(self, string_table):
+        self.hasStrings = bool(string_table)
+        self.strings = string_table or {} # table may be None
 
     #--I/O Stream -----------------------------------------
     def seek(self,offset,whence=os.SEEK_SET,recType='----'):

@@ -477,7 +477,7 @@ def _linux_get_file_version_info(filename):
         for section_num in xrange(section_count):
             section_pos = section_table_pos + 40 * section_num
             f.seek(section_pos)
-            if f.read(8).rstrip('\x00') != '.rsrc':  # section name
+            if f.read(8).rstrip('\x00') != '.rsrc':  # section name_
                 continue
             section_va = _read(_DWORD, f, offset=4)
             raw_data_pos = _read(_DWORD, f, offset=4)
@@ -486,8 +486,8 @@ def _linux_get_file_version_info(filename):
                                       offset=section_resources_pos + 12)
             for resource_num in xrange(num_named + num_id):
                 resource_pos = section_resources_pos + 16 + 8 * resource_num
-                name = _read(_DWORD, f, offset=resource_pos, absolute=True)
-                if name != 16: continue # RT_VERSION
+                name_ = _read(_DWORD, f, offset=resource_pos, absolute=True)
+                if name_ != 16: continue # RT_VERSION
                 for i in xrange(3):
                     res_offset = _read(_DWORD, f)
                     if i < 2:

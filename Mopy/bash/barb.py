@@ -123,9 +123,9 @@ class BackupSettings(object):
                 tpath = savedir.join(*txt)
                 fpath = dirs[u'saveBase'].join(*txt)
                 if fpath.exists(): self.files[tpath] = fpath
-            table = (u'Saves', profile, u'Bash', u'Table.dat')
-            tpath = savedir.join(*table)
-            fpath = dirs[u'saveBase'].join(*table)
+            prof_table = (u'Saves', profile, u'Bash', u'Table.dat')
+            tpath = savedir.join(*prof_table)
+            fpath = dirs[u'saveBase'].join(*prof_table)
             if fpath.exists(): self.files[tpath] = fpath
             if fpath.backup.exists(): self.files[tpath.backup] = fpath.backup
 

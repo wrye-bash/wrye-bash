@@ -2253,10 +2253,10 @@ class WryeText(object):
     files.
 
     Headings:
-    = XXXX >> H1 "XXX"
-    == XXXX >> H2 "XXX"
-    === XXXX >> H3 "XXX"
-    ==== XXXX >> H4 "XXX"
+    = HHHH >> H1 "HHHH"
+    == HHHH >> H2 "HHHH"
+    === HHHH >> H3 "HHHH"
+    ==== HHHH >> H4 "HHHH"
     Notes:
     * These must start at first character of line.
     * The XXX text is compressed to form an anchor. E.g == Foo Bar gets anchored as" FooBar".

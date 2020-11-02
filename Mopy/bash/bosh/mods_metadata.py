@@ -23,6 +23,7 @@
 from __future__ import division
 import os
 import struct
+from collections import defaultdict
 from functools import partial
 
 from ._mergeability import is_esl_capable
@@ -413,7 +414,7 @@ class ModCleaner(object):
             fog = set()
             #--UDR stuff
             udr = {}
-            parents_to_scan = {}
+            parents_to_scan = defaultdict(set)
             if len(modInfo.masterNames) > 0:
                 subprogress = bolt.SubProgress(progress,i,i+1)
                 if detailed:
@@ -463,21 +464,22 @@ class ModCleaner(object):
                                     else: # 3,4,5,7 - Topic Children
                                         pass
                             else:
+                                header_fid = header.fid
                                 if doUDR and header.flags1 & 0x20 and rtype in (
                                     'ACRE',               #--Oblivion only
                                     'ACHR','REFR',        #--Both
                                     'NAVM','PHZD','PGRE', #--Skyrim only
                                     ):
                                     if not detailed:
-                                        udr[header.fid] = ModCleaner.UdrInfo(header.fid)
+                                        udr[header_fid] = ModCleaner.UdrInfo(header_fid)
                                     else:
-                                        fid = header.fid
-                                        udr[fid] = ModCleaner.UdrInfo(fid,rtype,parentFid,u'',parentType,parentParentFid,u'',None)
-                                        parents_to_scan.setdefault(parentFid,set())
-                                        parents_to_scan[parentFid].add(fid)
+                                        udr[header_fid] = ModCleaner.UdrInfo(
+                                            header_fid, rtype, parentFid, u'',
+                                            parentType, parentParentFid, u'',
+                                            None)
+                                        parents_to_scan[parentFid].add(header_fid)
                                         if parentParentFid:
-                                            parents_to_scan.setdefault(parentParentFid,set())
-                                            parents_to_scan[parentParentFid].add(fid)
+                                            parents_to_scan[parentParentFid].add(header_fid)
                                 if doFog and rtype == 'CELL':
                                     nextRecord = insTell() + hsize
                                     while insTell() < nextRecord:
@@ -487,7 +489,7 @@ class ModCleaner(object):
                                         else:
                                             color,near,far,rotXY,rotZ,fade,clip = ins_unpack(nextSize,'CELL.XCLL')
                                             if not (near or far or clip):
-                                                fog.add(header.fid)
+                                                fog.add(header_fid)
                                 else:
                                     insRead(hsize)
                         if parents_to_scan:

@@ -116,7 +116,7 @@ class Saves_ProfilesData(balt.ListEditorData):
     def rename(self,oldName,newName):
         """Renames profile oldName to newName."""
         newName = newName.strip()
-        lowerNames = [name.lower() for name in self.getItemList()]
+        lowerNames = [save_dir.lower() for save_dir in self.getItemList()]
         #--Error checks
         if newName.lower() in lowerNames:
             balt.showError(self,_(u'Name must be unique.'))
@@ -434,7 +434,7 @@ class Save_EditCreatedData(balt.ListEditorData):
     def getInfo(self,item):
         """Returns string info on specified item."""
         buff = StringIO.StringIO()
-        name,records = self.name_nameRecords[item]
+        record_full, records = self.name_nameRecords[item]
         record = records[0]
         #--Armor, clothing, weapons
         rsig = record.recType
@@ -832,10 +832,10 @@ class Save_Unbloat(OneItemLink):
             return
         message = [_(u'Remove savegame bloating?')]
         if createdCounts:
-            for (created_item_rec_type, name), count_ in sorted(
+            for (created_item_rec_type, full), count_ in sorted(
                     createdCounts.items()):
                 message.append(u'  %s %s: %u' % (
-                    created_item_rec_type, name, count_))
+                    created_item_rec_type, full, count_))
         if nullRefCount:
             message.append(u'  ' + _(u'Null Ref Objects:') +
                            u' %u' % nullRefCount)

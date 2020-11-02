@@ -729,7 +729,7 @@ class MelOptUInt32(MelUInt32, MelOptStruct):
 class MelOptFid(MelOptUInt32):
     """Optional FormID. Wrapper around MelOptUInt32 to avoid having to
     constantly specify the format."""
-    def __init__(self, signature, attr):
-        """:type signature: bytes
+    def __init__(self, mel_sig, attr):
+        """:type mel_sig: bytes
         :type attr: unicode"""
-        super(MelOptFid, self).__init__(signature, (FID, attr))
+        super(MelOptFid, self).__init__(mel_sig, (FID, attr))

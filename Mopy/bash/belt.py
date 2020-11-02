@@ -1052,23 +1052,23 @@ class WryeParser(ScriptParser.Parser):
         self.cLine -= numLines
         self.ExecCount -= 1
 
-    def fnStr(self, data): return unicode(data)
+    def fnStr(self, data_): return unicode(data_)
 
-    def fnInt(self, data):
+    def fnInt(self, data_):
         try:
-            return int(data)
+            return int(data_)
         except ValueError:
             return 0
 
-    def fnFloat(self, data):
+    def fnFloat(self, data_):
         try:
-            return float(data)
+            return float(data_)
         except ValueError:
             return 0.0
 
-    def fnLen(self, data):
+    def fnLen(self, data_):
         try:
-            return len(data)
+            return len(data_)
         except TypeError:
             return 0
 
@@ -1297,7 +1297,7 @@ class WryeParser(ScriptParser.Parser):
     def kwdSelectMany(self, *args):
         self._KeywordSelect(True, u'SelectMany', *args)
 
-    def _KeywordSelect(self, bMany, name, *args):
+    def _KeywordSelect(self, bMany, name_, *args):
         args = list(args)
         if self.LenFlow() > 0 and self.PeekFlow().type == u'Select' and not self.PeekFlow().active:
             #We're inside an invalid Case for a Select already, so just add a blank FlowControl for
@@ -1307,7 +1307,7 @@ class WryeParser(ScriptParser.Parser):
         # Escape ampersands, since they're treated as escape characters by wx
         main_desc = args.pop(0).replace(u'&', u'&&')
         if len(args) % 3:
-            error(MISSING_ARGS % name)
+            error(MISSING_ARGS % name_)
         images = []
         titles = OrderedDict()
         descs = []

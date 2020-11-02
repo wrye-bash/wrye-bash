@@ -123,14 +123,14 @@ class MasterInfo(object):
         if self.mod_info:
             return self.mod_info.has_esm_flag()
         else:
-            return self.curr_name.cext in (u'.esm', u'.esl')
+            return self.get_extension() in (u'.esm', u'.esl')
 
     def is_esl(self):
         """Delegate to self.modInfo.is_esl if exists, else check extension."""
         if self.mod_info:
             return self.mod_info.is_esl()
         else:
-            return self.curr_name.cext == u'.esl'
+            return self.get_extension() == u'.esl'
 
     def hasTimeConflict(self):
         """True if has an mtime conflict with another mod."""

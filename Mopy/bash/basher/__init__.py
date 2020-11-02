@@ -2229,30 +2229,30 @@ class InstallersList(balt.UIList):
 
     #--Item Info
     def set_item_format(self, item, item_format):
-        installer = self.data_store[item] # type: bosh.bain.Installer
+        inst = self.data_store[item] # type: bosh.bain.Installer
         #--Text
-        if installer.type == 2 and len(installer.subNames) == 2:
+        if inst.type == 2 and len(inst.subNames) == 2:
             item_format.text_key = self._type_textKey[1]
-        elif installer.is_marker():
+        elif inst.is_marker():
             item_format.text_key = 'installers.text.marker'
-        else: item_format.text_key = self._type_textKey.get(installer.type,
+        else: item_format.text_key = self._type_textKey.get(inst.type,
                                              'installers.text.invalid')
         #--Background
-        if installer.skipDirFiles:
+        if inst.skipDirFiles:
             item_format.back_key = 'installers.bkgd.skipped'
         mouse_text = u''
-        if installer.dirty_sizeCrc:
+        if inst.dirty_sizeCrc:
             item_format.back_key = 'installers.bkgd.dirty'
             mouse_text += _(u'Needs Annealing due to a change in configuration.')
-        elif installer.underrides:
+        elif inst.underrides:
             item_format.back_key = 'installers.bkgd.outOfOrder'
             mouse_text += _(u'Needs Annealing due to a change in Install Order.')
         #--Icon
-        item_format.icon_key = 'on' if installer.is_active else 'off'
-        item_format.icon_key += '.' + self._status_color[installer.status]
-        if installer.type < 0: item_format.icon_key = 'corrupt'
-        elif installer.is_project(): item_format.icon_key += '.dir'
-        if settings['bash.installers.wizardOverlay'] and installer.hasWizard:
+        item_format.icon_key = 'on' if inst.is_active else 'off'
+        item_format.icon_key += '.' + self._status_color[inst.status]
+        if inst.type < 0: item_format.icon_key = 'corrupt'
+        elif inst.is_project(): item_format.icon_key += '.dir'
+        if settings['bash.installers.wizardOverlay'] and inst.hasWizard:
             item_format.icon_key += '.wiz'
         #if textKey == 'installers.text.invalid': # I need a 'text.markers'
         #    text += _(u'Marker Package. Use for grouping installers together')
@@ -2560,8 +2560,7 @@ class InstallersList(balt.UIList):
             sorted_ = self._SortItems(col='Order', sortSpecial=False)
             new = []
             for nextItem in sorted_[self.data_store[item].order + 1:]:
-                installer = self.data_store[nextItem]
-                if installer.is_marker():
+                if self.data_store[nextItem].is_marker():
                     break
                 new.append(nextItem)
             if new:
@@ -2762,9 +2761,9 @@ class InstallersDetails(_SashDetailsPanel):
         self._save_comments()
 
     def _save_comments(self):
-        installer = self.file_info
-        if installer and self.gComments.modified:
-            installer.comments = self.gComments.text_content
+        inst = self.file_info
+        if inst and self.gComments.modified:
+            inst.comments = self.gComments.text_content
             self._idata.setChanged()
 
     def SetFile(self, fileName='SAME'):

@@ -167,12 +167,12 @@ def __setGame(gamename, msg):
     _allModules.clear()
     game.init()
 
-def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, name=None):
-    if name is None: # detect available games
-        foundGames_, name = _detectGames(cli_game_dir, bash_ini_)
+def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, gname=None):
+    if gname is None: # detect available games
+        foundGames_, gname = _detectGames(cli_game_dir, bash_ini_)
         foundGames.update(foundGames_) # set the global name -> game path dict
-    if name is not None: # try the game returned by detectGames() or specified
-        __setGame(name, u' Using %(gamename)s game:')
+    if gname is not None: # try the game returned by detectGames() or specified
+        __setGame(gname, u' Using %(gamename)s game:')
         return None, None
     elif len(foundGames) == 1:
         __setGame(foundGames.keys()[0], u'Single game found [%(gamename)s]:')

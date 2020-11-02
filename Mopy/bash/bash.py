@@ -423,9 +423,9 @@ def _detect_game(opts, backup_bash_ini):
         if ini_user_path and not ini_user_path == u'.':
             user_path = ini_user_path
     if user_path:
-        drive, path = os.path.splitdrive(user_path)
-        os.environ['HOMEDRIVE'] = drive
-        os.environ['HOMEPATH'] = path
+        homedrive, homepath = os.path.splitdrive(user_path)
+        os.environ['HOMEDRIVE'] = homedrive
+        os.environ['HOMEPATH'] = homepath
     # Detect the game we're running for ---------------------------------------
     bush_game = _import_bush_and_set_game(opts, bashIni)
     if not bush_game:

@@ -39,10 +39,10 @@ I18N_FILES = [
 @contextmanager
 def move_to_bash(*files):
     file_map = {}  # avoid recalculating file paths
-    for path in files:
-        target = os.path.join(BASH_FOLDER, os.path.basename(path))
-        shutil.copy2(path, target)
-        file_map[path] = target
+    for filepath in files:
+        target = os.path.join(BASH_FOLDER, os.path.basename(filepath))
+        shutil.copy2(filepath, target)
+        file_map[filepath] = target
     try:
         yield
     finally:

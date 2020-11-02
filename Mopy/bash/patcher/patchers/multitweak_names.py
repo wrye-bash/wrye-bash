@@ -123,7 +123,7 @@ class _ANamesTweak_Body(_ANamesTweak):
     def _do_exec_rename(self, record, heavy_armor_addition, is_head, is_ring,
                         is_amulet, is_robe, is_chest, is_pants, is_gloves,
                         is_shoes, is_tail, is_shield):
-        curr_name = record.full
+        record_full = record.full
         amulet_tag, ring_tag, gloves_tag, head_tag, tail_tag, robe_tag, \
         chest_tag, pants_tag, shoes_tag, shield_tag = self._tweak_body_tags
         if is_head: equipment_tag = head_tag
@@ -136,12 +136,12 @@ class _ANamesTweak_Body(_ANamesTweak):
         elif is_shoes: equipment_tag = shoes_tag
         elif is_tail: equipment_tag = tail_tag
         elif is_shield: equipment_tag = shield_tag
-        else: return curr_name # Weird record, don't change anything
+        else: return record_full # Weird record, don't change anything
         prefix_subs = (equipment_tag + heavy_armor_addition,)
         prefix_format = self.chosen_format
         if u'%02d' in prefix_format: # Whether or not to show stats
             prefix_subs += (record.strength / 100,)
-        return prefix_format % prefix_subs + curr_name
+        return prefix_format % prefix_subs + record_full
 
     def _get_rename_params(self, record):
         body_flags = record.biped_flags
