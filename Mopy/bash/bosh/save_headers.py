@@ -40,7 +40,7 @@ import lz4.block
 from .. import bolt
 from ..bolt import decoder, cstrip, unpack_string, unpack_int, unpack_str8, \
     unpack_short, unpack_float, unpack_str16, unpack_byte, struct_pack, \
-    unpack_str_int_delim, unpack_str16_delim_null, unpack_str_byte_delim, \
+    unpack_str_int_delim, unpack_str16_delim, unpack_str_byte_delim, \
     unpack_many, encode, struct_unpack, pack_int, pack_byte, pack_short, \
     pack_float, pack_string, pack_str8, pack_bzstr8
 from ..exception import SaveHeaderError, raise_bolt_error, AbstractError
@@ -559,20 +559,21 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
 
 class FalloutNVSaveHeader(SaveFileHeader):
     save_magic = b'FO3SAVEGAME'
-    __slots__ = (u'language', u'ssDepth', u'pcNick', u'_unknown', u'gameDate')
+    __slots__ = (u'language', u'save_number', u'pcNick', u'version',
+                 u'gameDate')
     _masters_unknown_byte = 0x1B
     unpackers = OrderedDict([
         (u'header_size', (00, unpack_int)),
-        (u'_unknown',    (00, unpack_str_int_delim)),
-        (u'language',    (00, lambda ins: unpack_many(ins, '64sc')[0])),
+        (u'version',     (00, unpack_str_int_delim)),
+        (u'language',    (00, lambda ins: unpack_many(ins, u'64sc')[0])),
         (u'ssWidth',     (00, unpack_str_int_delim)),
         (u'ssHeight',    (00, unpack_str_int_delim)),
-        (u'ssDepth',     (00, unpack_str_int_delim)),
-        (u'pcName',      (00, unpack_str16_delim_null)),
-        (u'pcNick',      (00, unpack_str16_delim_null)),
+        (u'save_number', (00, unpack_str_int_delim)),
+        (u'pcName',      (00, unpack_str16_delim)),
+        (u'pcNick',      (00, unpack_str16_delim)),
         (u'pcLevel',     (00, unpack_str_int_delim)),
-        (u'pcLocation',  (00, unpack_str16_delim_null)),
-        (u'gameDate',    (00, unpack_str16_delim_null)),
+        (u'pcLocation',  (00, unpack_str16_delim)),
+        (u'gameDate',    (00, unpack_str16_delim)),
     ])
 
     def load_masters(self, ins):
@@ -581,7 +582,7 @@ class FalloutNVSaveHeader(SaveFileHeader):
         self.masters = []
         numMasters = unpack_str_byte_delim(ins)
         for count in xrange(numMasters):
-            self.masters.append(unpack_str16_delim_null(ins))
+            self.masters.append(unpack_str16_delim(ins))
 
     def _master_list_size(self, ins):
         formVersion, masterListSize = unpack_many(ins, '=BI')
@@ -609,7 +610,7 @@ class FalloutNVSaveHeader(SaveFileHeader):
     def _dump_masters(self, ins, numMasters, out):
         oldMasters = []
         for count in xrange(numMasters):
-            oldMasters.append(unpack_str16_delim_null(ins))
+            oldMasters.append(unpack_str16_delim(ins))
         # Write new masters - note the silly delimiters
         pack_byte(out, len(self.masters))
         _pack_c(out, b'|')
