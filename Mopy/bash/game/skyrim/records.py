@@ -348,13 +348,13 @@ class MelSMFlags(MelStruct):
         u'num_quests_to_run'
     ))
 
-    def __init__(self, sm_sig, with_quest_flags=False):
+    def __init__(self, with_quest_flags=False):
         sm_fmt = u'I'
         sm_elements = [(self._node_flags, u'node_flags')]
         if with_quest_flags:
             sm_fmt = u'2H'
             sm_elements.append((self._quest_flags, u'quest_flags'))
-        super(MelSMFlags, self).__init__(sm_sig, sm_fmt, *sm_elements)
+        super(MelSMFlags, self).__init__(b'DNAM', sm_fmt, *sm_elements)
 
 #------------------------------------------------------------------------------
 class MelSpit(MelStruct):
@@ -4630,11 +4630,11 @@ class MreSmbn(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFid(b'PNAM', u'sm_parent',),
-        MelFid(b'SNAM', u'sm_child',),
+        MelFid(b'PNAM', u'sm_parent'),
+        MelFid(b'SNAM', u'sm_child'),
         MelConditionCounter(),
         MelConditions(),
-        MelSMFlags(b'DNAM'),
+        MelSMFlags(),
         MelUInt32(b'XNAM', u'max_concurrent_quests'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -4646,11 +4646,11 @@ class MreSmen(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFid(b'PNAM', u'sm_parent',),
-        MelFid(b'SNAM', u'sm_child',),
+        MelFid(b'PNAM', u'sm_parent'),
+        MelFid(b'SNAM', u'sm_child'),
         MelConditionCounter(),
         MelConditions(),
-        MelSMFlags(b'DNAM'),
+        MelSMFlags(),
         MelUInt32(b'XNAM', u'max_concurrent_quests'),
         MelUInt32(b'ENAM', u'sm_type'),
     )
@@ -4663,11 +4663,11 @@ class MreSmqn(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFid(b'PNAM', u'sm_parent',),
-        MelFid(b'SNAM', u'sm_child',),
+        MelFid(b'PNAM', u'sm_parent'),
+        MelFid(b'SNAM', u'sm_child'),
         MelConditionCounter(),
         MelConditions(),
-        MelSMFlags(b'DNAM', with_quest_flags=True),
+        MelSMFlags(with_quest_flags=True),
         MelUInt32(b'XNAM', u'max_concurrent_quests'),
         MelOptUInt32(b'MNAM', u'num_quests_to_run'),
         MelCounter(MelUInt32(b'QNAM', u'quest_count'), counts=u'sm_quests'),

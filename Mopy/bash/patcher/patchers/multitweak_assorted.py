@@ -338,11 +338,9 @@ class AssortedTweak_NoLightFlicker(MultiTweakItem):
         record.flags &= ~self._flicker_flags
 
 #------------------------------------------------------------------------------
-class _AMultiTweakItem_Weight(MultiTweakItem):
-    """Mixin for weight tweaks that need to ignore SEFF effects."""
+class _AWeightTweak(MultiTweakItem):
+    """Base class for weight tweaks."""
     _log_weight_value = u'OVERRIDE' # avoid pycharm warning
-    _seff_code = (b'SEFF', 0)
-    _ignore_effects = bush.game.fsName != u'Oblivion'
 
     @property
     def chosen_weight(self): return self.choiceValues[self.chosen][0]
@@ -357,19 +355,27 @@ class _AMultiTweakItem_Weight(MultiTweakItem):
             log(u'  * %s: %d' % (src_plugin, count[src_plugin]))
 
     def wants_record(self, record):
-        if (record.weight <= self.chosen_weight or floats_equal(
-                record.weight, self.chosen_weight)):
-            return False
-        # Skip OBME records, at least for now
-        return (self._ignore_effects or
-                (record.obme_record_version is None and
-                 self._seff_code not in record.getEffects()))
+        return (record.weight > self.chosen_weight and
+                not floats_equal(record.weight, self.chosen_weight))
 
     def tweak_record(self, record):
         record.weight = self.chosen_weight
 
+class _AWeightTweak_SEFF(_AWeightTweak):
+    """Base class for weight tweaks that need to ignore SEFF effects."""
+    _seff_code = (b'SEFF', 0)
+    _ignore_effects = bush.game.fsName != u'Oblivion'
+
+    def wants_record(self, record):
+        if not super(_AWeightTweak_SEFF, self).wants_record(record):
+            return False
+        return (self._ignore_effects or
+                (self._seff_code not in record.getEffects() and
+                 ##: Skip OBME records, at least for now
+                 record.obme_record_version is not None))
+
 #------------------------------------------------------------------------------
-class AssortedTweak_PotionWeight(_AMultiTweakItem_Weight):
+class AssortedTweak_PotionWeight(_AWeightTweak_SEFF):
     """Reweighs standard potions down to 0.1."""
     tweak_read_classes = b'ALCH',
     tweak_name = _(u'Reweigh: Potions (Maximum)')
@@ -392,7 +398,7 @@ class AssortedTweak_PotionWeight(_AMultiTweakItem_Weight):
             AssortedTweak_PotionWeight, self).wants_record(record)
 
 #------------------------------------------------------------------------------
-class AssortedTweak_IngredientWeight(_AMultiTweakItem_Weight):
+class AssortedTweak_IngredientWeight(_AWeightTweak_SEFF):
     """Reweighs standard ingredients down to 0.1."""
     tweak_read_classes = b'INGR',
     tweak_name = _(u'Reweigh: Ingredients')
@@ -404,8 +410,9 @@ class AssortedTweak_IngredientWeight(_AMultiTweakItem_Weight):
     _log_weight_value = _(u'Ingredients set to maximum weight of %f.')
 
 #------------------------------------------------------------------------------
-class AssortedTweak_PotionWeightMinimum(_AMultiTweakItem_Weight):
+class AssortedTweak_PotionWeightMinimum(_AWeightTweak):
     """Reweighs any potions up to 4."""
+    tweak_read_classes = b'ALCH',
     tweak_name = _(u'Reweigh: Ingestibles (Minimum)')
     tweak_tip = _(u'The weight of ingestibles like potions and drinks will be '
                   u'floored.')
@@ -419,12 +426,12 @@ class AssortedTweak_PotionWeightMinimum(_AMultiTweakItem_Weight):
     #scanOrder = 33 #Have it run after the max weight for consistent results
     #editOrder = 33
 
-    def wants_record(self, record): # note no SEFF condition
+    def wants_record(self, record): ##: no SEFF condition - intended?
         return (record.weight < self.chosen_weight and
                 not floats_equal(record.weight, self.chosen_weight))
 
 #------------------------------------------------------------------------------
-class AssortedTweak_StaffWeight(_AMultiTweakItem_Weight):
+class AssortedTweak_StaffWeight(_AWeightTweak):
     """Reweighs staves."""
     tweak_read_classes = b'WEAP',
     tweak_name = _(u'Reweigh: Staves')
@@ -442,7 +449,7 @@ class AssortedTweak_StaffWeight(_AMultiTweakItem_Weight):
             AssortedTweak_StaffWeight, self).wants_record(record)
 
 #------------------------------------------------------------------------------
-class AssortedTweak_ArrowWeight(_AMultiTweakItem_Weight):
+class AssortedTweak_ArrowWeight(_AWeightTweak):
     tweak_read_classes = b'AMMO',
     tweak_name = _(u'Reweigh: Ammunition')
     tweak_tip = _(u'The weight of ammunition (e.g. arrows, bullets, etc.) '
