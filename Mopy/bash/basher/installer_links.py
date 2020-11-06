@@ -94,7 +94,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
         else:
             if not u'-ms=' in bass.inisettings['7zExtraCompressionArguments']:
                 isSolid = self._askYes(_(u'Use solid compression for %s?')
-                                       % archive_path.s, default=False)
+                                       % archive_path, default=False)
                 if isSolid:
                     blockSize = self._promptSolidBlockSize(title=self._text)
             else:
@@ -123,7 +123,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
             self._showWarning(_(u'%s is not a valid archive name.') % result)
             return
         if self.idata.store_dir.join(archive_path).isdir():
-            self._showWarning(_(u'%s is a directory.') % archive_path.s)
+            self._showWarning(_(u'%s is a directory.') % archive_path)
             return
         if archive_path.cext not in archives.writeExts:
             self._showWarning(
@@ -132,7 +132,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
             archive_path = GPath(archive_path.sroot + archives.defaultExt).tail
         if archive_path in self.idata:
             if not self._askYes(_(u'%s already exists. Overwrite it?') %
-                    archive_path.s, title=self.dialogTitle, default=False): return
+                    archive_path, title=self.dialogTitle, default=False): return
         return archive_path
 
 class _SingleInstallable(OneItemLink, _InstallerLink):
@@ -395,7 +395,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         if isdir: root,ext = curName,u''
         else: root,ext = curName.root, curName.ext
         newName = self.window.new_name(root + _(u' Copy') + ext)
-        result = self._askText(_(u"Duplicate %s to:") % curName.s,
+        result = self._askText(_(u"Duplicate %s to:") % curName,
                                default=newName.s)
         if not result: return
         #--Error checking
@@ -404,11 +404,11 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
             self._showWarning(_(u"%s is not a valid name.") % result)
             return
         if newName in self.idata:
-            self._showWarning(_(u"%s already exists.") % newName.s)
+            self._showWarning(_(u"%s already exists.") % newName)
             return
         if self.idata.store_dir.join(curName).isfile() and curName.cext != newName.cext:
             self._showWarning(_(u"%s does not have correct extension (%s).")
-                              % (newName.s,curName.ext))
+                              % (newName,curName.ext))
             return
         #--Duplicate
         with BusyCursor():
@@ -1022,7 +1022,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
         for archive, installer in self.idata.sorted_pairs(self.selected):
             project = archive.root
             if self.isSingleArchive():
-                result = self._askText(_(u"Unpack %s to Project:") % archive.s,
+                result = self._askText(_(u'Unpack %s to Project:') % archive,
                                        default=project.s)
                 if not result: return
                 # Error checking
@@ -1032,12 +1032,12 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                                       result)
                     return
                 if self.idata.store_dir.join(project).isfile():
-                    self._showWarning(_(u"%s is a file.") % project.s)
+                    self._showWarning(_(u'%s is a file.') % project)
                     return
-            if project in self.idata:
-                if not self._askYes(
-                    _(u"%s already exists. Overwrite it?") % project.s,
-                    default=False): continue
+            if project in self.idata and not self._askYes(
+                    _(u'%s already exists. Overwrite it?') % project,
+                    default=False):
+                continue
             # All check passed, we can unpack this
             to_unpack.append((installer, project))
         # We're safe to show the progress dialog now
@@ -1099,7 +1099,7 @@ class Installer_SyncFromData(_SingleInstallable):
         sel_missing, sel_mismatched = [], []
         with balt.ListBoxes(self.window, self._text,
                             _(u'Update %s according to data directory?')
-                            % self._selected_item.s + u'\n' +
+                            % self._selected_item + u'\n' +
                             _(u'Uncheck any files you want to keep '
                               u'unchanged.'), [msg_del, msg_upd]) as dialog:
             if dialog.show_modal():
@@ -1139,7 +1139,7 @@ class InstallerProject_Pack(_SingleProject):
         archive = GPath(self._selected_item.s + archives.defaultExt)
         #--Confirm operation
         archive = self._askFilename(
-            message=_(u'Pack %s to Archive:') % self._selected_item.s,
+            message=_(u'Pack %s to Archive:') % self._selected_item,
             filename=archive.s)
         if not archive: return
         self._pack(archive, self._selected_info, self._selected_item,
@@ -1214,7 +1214,7 @@ class InstallerConverter_Apply(_InstallerConverter_Link):
         if not destArchive: return
         with balt.Progress(_(u'Converting to Archive...'),u'\n'+u' '*60) as progress:
             #--Perform the conversion
-            msg = u'%s: ' % destArchive.s + _(
+            msg = u'%s: ' % destArchive + _(
                 u'An error occurred while applying an Auto-BCF.')
             msg += _(u'Maybe the BCF was packed for another installer ?')
             new_archive_order = self.idata[self.selected[-1]].order + 1
@@ -1267,10 +1267,10 @@ class InstallerConverter_Create(_InstallerConverter_Link):
         #--Error Checking
         BCFArchive = destArchive = destArchive.tail
         if not destArchive.s or destArchive.cext not in archives.readExts:
-            self._showWarning(_(u'%s is not a valid archive name.') % destArchive.s)
+            self._showWarning(_(u'%s is not a valid archive name.') % destArchive)
             return
         if destArchive not in self.idata:
-            self._showWarning(_(u'%s must be in the Bash Installers directory.') % destArchive.s)
+            self._showWarning(_(u'%s must be in the Bash Installers directory.') % destArchive)
             return
         if BCFArchive.csbody[-4:] != u'-bcf':
             BCFArchive = GPath(BCFArchive.sbody + u'-BCF' + archives.defaultExt).tail
@@ -1278,7 +1278,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
         message = _(u'Convert:')
         message += u'\n* ' + u'\n* '.join(sorted(
             u'(%08X) - %s' % (v.crc, k.s) for k, v in self.iselected_pairs()))
-        message += (u'\n\n'+_(u'To:')+u'\n* (%08X) - %s') % (self.idata[destArchive].crc,destArchive.s) + u'\n'
+        message += (u'\n\n'+_(u'To:')+u'\n* (%08X) - %s') % (self.idata[destArchive].crc,destArchive) + u'\n'
         #--Confirm operation
         result = self._askText(message, title=self.dialogTitle,
                                default=BCFArchive.s)
@@ -1297,7 +1297,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
             BCFArchive = GPath(BCFArchive.sbody + archives.defaultExt).tail
         if bass.dirs[u'converters'].join(BCFArchive).exists():
             if not self._askYes(_(
-                    u'%s already exists. Overwrite it?') % BCFArchive.s,
+                    u'%s already exists. Overwrite it?') % BCFArchive,
                                 title=self.dialogTitle, default=False): return
             #--It is safe to removeConverter, even if the converter isn't overwritten or removed
             #--It will be picked back up by the next refresh.
@@ -1307,7 +1307,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
         if destInstaller.isSolid:
             blockSize = self._promptSolidBlockSize(
                 title=self.dialogTitle, value=destInstaller.blockSize or 0)
-        with balt.Progress(_(u'Creating %s...') % BCFArchive.s,u'\n'+u' '*60) as progress:
+        with balt.Progress(_(u'Creating %s...') % BCFArchive,u'\n'+u' '*60) as progress:
             #--Create the converter
             converter = bosh.converters.InstallerConverter(self.selected,
                     self.idata, destArchive, BCFArchive, blockSize, progress)
@@ -1319,7 +1319,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
             log = LogFile(StringIO.StringIO())
             log.setHeader(u'== '+_(u'Overview')+u'\n')
 ##            log('{{CSS:wtxt_sand_small.css}}')
-            log(u'. '+_(u'Name')+u': '+BCFArchive.s)
+            log(u'. '+_(u'Name')+u': %s'%BCFArchive)
             log(u'. '+_(u'Size')+u': %s'% round_size(converter.fullPath.size))
             log(u'. ' + _(u'Remapped: %u file(s)') %
                 len(converter.convertedFiles))

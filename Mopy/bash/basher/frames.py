@@ -126,7 +126,7 @@ class DocBrowser(WindowFrame):
             return bell()
         if not doc_path.isfile():
             balt.showWarning(self, _(u'The assigned document is not present:')
-                             + u'\n  ' + doc_path.s)
+                             + u'\n  %s' % doc_path)
         else:
             doc_path.start()
 
@@ -167,7 +167,7 @@ class DocBrowser(WindowFrame):
         else:
             docs_dir = bass.settings['bash.modDocs.dir'] or bass.dirs[u'mods']
             file_name = GPath(u'')
-        doc_path = balt.askOpen(self, _(u'Select doc for %s:') % mod_name.s,
+        doc_path = balt.askOpen(self, _(u'Select doc for %s:') % mod_name,
                                 docs_dir, file_name, u'*.*')
         if not doc_path: return
         bass.settings['bash.modDocs.dir'] = doc_path.head

@@ -271,11 +271,12 @@ class IniFile(AFile):
                           deleted))
         return lines
 
-    def _open_for_writing(self, filepath): # preserve windows EOL
+    def _open_for_writing(self): # preserve windows EOL
         """Write to ourselves respecting windows newlines and out_encoding.
         Note content to be writen (if coming from ini tweaks) must be encodable
         to out_encoding."""
-        return codecs.getwriter(self.out_encoding)(open(filepath, u'w'))
+        return codecs.getwriter(self.out_encoding)(
+            open(self.abs_path.temp.s, u'w'))
 
     def target_ini_exists(self, msg=_(
         u'The target ini must exist to apply a tweak to it.')):
@@ -295,7 +296,7 @@ class IniFile(AFile):
         section = None
         sectionSettings = {}
         ini_lines = self.read_ini_content(as_unicode=True)
-        with self._open_for_writing(self.abs_path.temp.s) as tmpFile:
+        with self._open_for_writing() as tmpFile:
             tmpFileWrite = tmpFile.write
             def _add_remaining_new_items():
                 if section in ini_settings: del ini_settings[section]
@@ -372,7 +373,7 @@ class IniFile(AFile):
         # we've hit it and are actively removing it. If False, then we've fully
         # removed the section already and should ignore further occurences.
         remove_current = None
-        with self._open_for_writing(self.abs_path.temp.s) as out:
+        with self._open_for_writing() as out:
             for line in ini_lines:
                 stripped = re_comment.sub(u'', line).strip()
                 match_section = re_section.match(stripped)
@@ -541,7 +542,7 @@ class OBSEIniFile(IniFile):
         reDeleted = self.reDeleted
         reComment = self.reComment
         ini_lines = self.read_ini_content(as_unicode=True)
-        with self._open_for_writing(self.abs_path.temp.s) as tmpFile:
+        with self._open_for_writing() as tmpFile:
             # Modify/Delete existing lines
             for line in ini_lines:
                 # if not line.rstrip(): continue
@@ -609,7 +610,7 @@ class OBSEIniFile(IniFile):
         # we've hit it and are actively removing it. If False, then we've fully
         # removed the section already and should ignore further occurences.
         remove_current = None
-        with self._open_for_writing(self.abs_path.temp.s) as out:
+        with self._open_for_writing() as out:
             for line in ini_lines:
                 stripped = re_comment.sub(u'', line).strip()
                 # Try checking if it's an OBSE line first

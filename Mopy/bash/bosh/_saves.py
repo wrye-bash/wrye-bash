@@ -256,8 +256,7 @@ class SaveFile(object):
         """Extract info from save file."""
         # TODO: This is Oblivion only code.  Needs to be refactored
         import array
-        path = self.fileInfo.getPath()
-        with open(path.s,u'rb') as ins:
+        with self.fileInfo.getPath().open(u'rb') as ins:
             #--Progress
             progress = progress or bolt.Progress()
             progress.setFull(self.fileInfo.size)
@@ -276,7 +275,6 @@ class SaveFile(object):
             numMasters = unpack_byte(ins)
             for count in range(numMasters):
                 self._masters.append(GPath(decoder(unpack_str8(ins))))
-
             #--Pre-Records copy buffer
             def insCopy(buff,size,backSize=0):
                 if backSize: ins.seek(-backSize,1)

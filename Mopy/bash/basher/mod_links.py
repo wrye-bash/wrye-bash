@@ -469,7 +469,7 @@ class _ModGroups(object):
         with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(rowFormat % (_(u"Mod"),_(u"Group")))
             for mod in sorted(mod_group):
-                out.write(rowFormat % (mod.s,mod_group[mod]))
+                out.write(rowFormat % (mod, mod_group[mod]))
 
 class _Mod_Groups_Export(ItemLink):
     """Export mod groups to text file."""
@@ -766,7 +766,7 @@ class Mod_ListDependent(OneItemLink):
                         prefix = bul + u'++'
                     else:
                         prefix = bul + (u'**' if mod in imported_ else u'__')
-                    text_list = u'%s  %s' % (prefix, mod.s,)
+                    text_list = u'%s  %s' % (prefix, mod)
                     log(text_list)
             if not text_list:  log(u'None')
             log(u'[/spoiler]')
@@ -1253,7 +1253,7 @@ class Mod_ScanDirty(ItemLink):
             if modInfo.isBP(): itms = set()
             if udrs or itms:
                 pos = len(dirty)
-                dirty.append(u'* __'+modInfo.name.s+u'__:\n')
+                dirty.append(u'* __%s__:\n' % modInfo.name)
                 dirty[pos] += u'  * %s: %i\n' % (_(u'UDR'),len(udrs))
                 for udr in sorted(udrs):
                     if udr.parentEid:
@@ -1278,9 +1278,9 @@ class Mod_ScanDirty(ItemLink):
                             strFid(udr.fid),udr.type,parentStr,parentParentStr,atPos)
                     dirty[pos] += u'    * %s\n' % item
             elif udrs is None or itms is None:
-                error.append(u'* __'+modInfo.name.s+u'__')
+                error.append(u'* __%s__' % modInfo.name)
             else:
-                clean.append(u'* __'+modInfo.name.s+u'__')
+                clean.append(u'* __%s__' % modInfo.name)
         #-- Show log
         if dirty:
             log(_(u'Detected %d dirty mods:') % len(dirty))
@@ -1313,7 +1313,7 @@ class Mod_RemoveWorldOrphans(EnabledLink):
                                  _(u'Remove World Orphans')): return
         for index, (fileName, fileInfo) in enumerate(self.iselected_pairs()):
             if bosh.reOblivion.match(fileName.s):
-                self._showWarning(_(u"Skipping %s") % fileName.s,
+                self._showWarning(_(u'Skipping %s') % fileName,
                                   _(u'Remove World Orphans'))
                 continue
             #--Export
@@ -1321,11 +1321,11 @@ class Mod_RemoveWorldOrphans(EnabledLink):
                 loadFactory = mod_files.LoadFactory(True, MreRecord.type_class[
                     'CELL'], MreRecord.type_class['WRLD'])
                 modFile = mod_files.ModFile(fileInfo, loadFactory)
-                progress(0,_(u'Reading') + u' ' + fileName.s + u'.')
+                progress(0,_(u'Reading') + u' %s.' % fileName)
                 modFile.load(True,SubProgress(progress,0,0.7))
                 orphans = ('WRLD' in modFile.tops) and modFile.WRLD.orphansSkipped
                 if orphans:
-                    progress(0.1,_(u"Saving %s.") % fileName.s)
+                    progress(0.1, _(u'Saving %s.') % fileName)
                     modFile.safeSave()
                 progress(1.0,_(u"Done."))
             #--Log
@@ -1356,7 +1356,7 @@ class Mod_FogFixer(ItemLink):
                 fog_fixer.fix_fog(SubProgress(progress, index, index + 1))
                 if fog_fixer.fixedCells:
                     fixed.append(
-                        u'* %4d %s' % (len(fog_fixer.fixedCells), fileName.s))
+                        u'* %4d %s' % (len(fog_fixer.fixedCells), fileName))
         if fixed:
             message = u'==='+_(u'Cells Fixed')+u':\n'+u'\n'.join(fixed)
             self._showWryeLog(message)
@@ -1441,7 +1441,7 @@ class Mod_DecompileAll(EnabledLink):
                                  _(u'Decompile All')): return
         for fileName, fileInfo in self.iselected_pairs():
             if bosh.reOblivion.match(fileName.s):
-                self._showWarning(_(u"Skipping %s") % fileName.s,
+                self._showWarning(_(u'Skipping %s') % fileName,
                                   _(u'Decompile All'))
                 continue
             loadFactory = mod_files.LoadFactory(True, MreRecord.type_class['SCPT'])
@@ -1686,9 +1686,9 @@ class Mod_Fids_Replace(OneItemLink):
         #--Export
         with balt.Progress(_(u"Import Form IDs")) as progress:
             replacer = self._parser()
-            progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
+            progress(0.1,_(u'Reading') + u' %s.' % textName)
             replacer.readFromText(textPath)
-            progress(0.2, _(u'Applying to') +u' ' +self._selected_item.s +u'.')
+            progress(0.2, _(u'Applying to') + u' %s.' % self._selected_item)
             changed = replacer.updateMod(self._selected_info)
             progress(1.0,_(u'Done.'))
         #--Log
@@ -1761,9 +1761,9 @@ class _Mod_Export_Link(_Import_Export_Link, ItemLink):
             readProgress = SubProgress(progress, 0.1, 0.8)
             readProgress.setFull(len(self.selected))
             for index,(fileName,fileInfo) in enumerate(self.iselected_pairs()):
-                readProgress(index, _(u'Reading') + u' ' + fileName.s + u'.')
+                readProgress(index, _(u'Reading') + u' %s.' % fileName)
                 parser.readFromMod(fileInfo)
-            progress(0.8, _(u'Exporting to') + u' ' + textName.s + u'.')
+            progress(0.8, _(u'Exporting to') + u' %s.' % textName)
             parser.writeToText(textPath)
             progress(1.0, _(u'Done.'))
 
@@ -1785,13 +1785,13 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
     def _import(self, ext, textDir, textName, textPath):
         with balt.Progress(self.__class__.progressTitle) as progress:
             parser = self._parser()
-            progress(0.1, _(u'Reading') + u' ' + textName.s + u'.')
+            progress(0.1, _(u'Reading') + u' %s.' % textName)
             if ext == u'.csv':
                 parser.readFromText(textPath)
             else:
                 srcInfo = bosh.ModInfo(GPath(textDir).join(textName))
                 parser.readFromMod(srcInfo)
-            progress(0.2, _(u'Applying to') +u' ' +self._selected_item.s +u'.')
+            progress(0.2, _(u'Applying to') + u' %s.' % self._selected_item)
             changed = parser.writeToMod(self._selected_info)
             progress(1.0, _(u'Done.'))
         return changed
@@ -1803,7 +1803,7 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
             fixedFont=fixedFont, icons=icons)
 
     def _log(self, changed, fileName):
-        self._showLog(u'* %03d  %s\n' % (changed, fileName.s))
+        self._showLog(u'* %03d  %s\n' % (changed, fileName))
 
     def show_change_log(self, changed, fileName):
         if not changed:
@@ -1939,7 +1939,7 @@ class Mod_Factions_Import(_Mod_Import_Link):
 
     def _log(self, changed, fileName):
         log_out = u'\n'.join(
-            (u'* %s : %03d  %s' % (grp_name, v, fileName.s)) for
+            (u'* %s : %03d  %s' % (grp_name, v, fileName)) for
             grp_name, v in sorted(changed.iteritems()))
         self._showLog(log_out)
 
@@ -1956,7 +1956,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
 
     def Execute(self): # overrides _Mod_Export_Link
         fileName, fileInfo = next(self.iselected_pairs()) # first selected pair
-        defaultPath = bass.dirs[u'patches'].join(fileName.s + u' Exported Scripts')
+        defaultPath = bass.dirs[u'patches'].join(u'%s Exported Scripts' % fileName)
         def OnOk():
             dialog.accept_modal()
             bass.settings['bash.mods.export.deprefix'] = gdeprefix.text_content.strip()
@@ -2026,7 +2026,7 @@ class Mod_Scripts_Import(_Mod_Import_Link):
     def Execute(self):
         if not self._askContinueImport(): return
         defaultPath = bass.dirs[u'patches'].join(
-            self._selected_item.s + u' Exported Scripts')
+            u'%s Exported Scripts' % self._selected_item)
         if not defaultPath.exists():
             defaultPath = bass.dirs[u'patches']
         textDir = self._askDirectory(
@@ -2051,13 +2051,13 @@ class Mod_Scripts_Import(_Mod_Import_Link):
         if changed:
             changedScripts = (_(u'Imported %d changed scripts from %s:') +
                               u'\n%s') % (
-                len(changed), textDir.s, u'*' + u'\n*'.join(sorted(changed)))
+                len(changed), textDir, u'*' + u'\n*'.join(sorted(changed)))
         else:
             changedScripts = u''
         if added:
             addedScripts = (_(u'Imported %d new scripts from %s:')
                             + u'\n%s') % (
-                len(added), textDir.s, u'*' + u'\n*'.join(sorted(added)))
+                len(added), textDir, u'*' + u'\n*'.join(sorted(added)))
         else:
             addedScripts = u''
         report = None
@@ -2102,7 +2102,7 @@ class Mod_Stats_Import(_Mod_Import_Link):
     def _log(self, changed, fileName):
         with bolt.sio() as buff:
             for modName in sorted(changed):
-                buff.write(u'* %03d  %s\n' % (changed[modName], modName.s))
+                buff.write(u'* %03d  %s\n' % (changed[modName], modName))
             self._showLog(buff.getvalue())
             buff.close()
 
@@ -2140,7 +2140,7 @@ class Mod_Prices_Import(_Mod_Import_Link):
         with bolt.sio() as buff:
             for modName in sorted(changed):
                 buff.write(_(u'Imported Prices:')
-                           + u'\n* %s: %d\n' % (modName.s,changed[modName]))
+                           + u'\n* %s: %d\n' % (modName,changed[modName]))
             self._showLog(buff.getvalue())
 
 #------------------------------------------------------------------------------
@@ -2177,7 +2177,7 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
     def _log(self, changed, fileName):
         with bolt.sio() as buff:
             buff.write((_(u'Imported Sigil Stone details to mod %s:')
-                        +u'\n') % fileName.s)
+                        +u'\n') % fileName)
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
             self._showLog(buff.getvalue())
@@ -2229,7 +2229,7 @@ class Mod_SpellRecords_Import(_SpellRecords_Link, _Mod_Import_Link):
     def _log(self, changed, fileName):
         with bolt.sio() as buff:
             buff.write((_(u'Imported Spell details to mod %s:')
-                        +u'\n') % fileName.s)
+                        +u'\n') % fileName)
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
             self._showLog(buff.getvalue())
@@ -2267,7 +2267,7 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
     def _log(self, changed, fileName):
         with bolt.sio() as buff:
             buff.write((_(u'Imported Ingredient details to mod %s:')
-                        + u'\n') % fileName.s)
+                        + u'\n') % fileName)
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
             self._showLog(buff.getvalue())
@@ -2319,9 +2319,9 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
         try:
             with balt.Progress(self.__class__.progressTitle) as progress:
                 editorIds = self._parser()
-                progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
+                progress(0.1, _(u'Reading') + u' %s.' % textName)
                 editorIds.readFromText(textPath,questionableEidsSet,badEidsList)
-                progress(0.2, _(u"Applying to %s.") % (self._selected_item.s,))
+                progress(0.2, _(u'Applying to %s.') % self._selected_item)
                 changed = editorIds.writeToMod(self._selected_info)
                 progress(1.0,_(u"Done."))
             #--Log

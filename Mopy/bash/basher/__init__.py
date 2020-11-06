@@ -1562,7 +1562,7 @@ class ModDetails(_ModsSavesDetails):
                     u'File name %s cannot be encoded to ASCII.  %s may not be '
                     u'able to activate this plugin because of this.  Do you '
                     u'want to rename the plugin anyway?')
-                                     % (newName.s,bush.game.displayName),
+                                     % (newName,bush.game.displayName),
                                      'bash.rename.isBadFileName.continue')
                 ):
                 return

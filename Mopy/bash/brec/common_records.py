@@ -316,7 +316,7 @@ class MreLeveledListBase(MelRecord):
             bolt.deprint(u"Merging changes from mod '%s' to leveled list %r "
                          u'caused it to exceed %u entries. Truncating back '
                          u'to %u, you will have to fix this manually!' %
-                         (otherMod.s, self, max_lvl_size, max_lvl_size))
+                         (otherMod, self, max_lvl_size, max_lvl_size))
             self.entries = self.entries[:max_lvl_size]
         entry_copy_attrs_key = attrgetter(*self.__class__.entry_copy_attrs)
         if newItems:

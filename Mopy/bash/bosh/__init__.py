@@ -317,7 +317,7 @@ class FileInfo(AFile):
         separator = u'-'
         snapLast = [u'00']
         #--Look for old snapshots.
-        reSnap = re.compile(u'^'+root.s+u'[ -]([0-9.]*[0-9]+)'+ext+u'$',re.U)
+        reSnap = re.compile(u'^%s'%root+u'[ -]([0-9.]*[0-9]+)'+ext+u'$',re.U)
         for fileName in destDir.list():
             maSnap = reSnap.match(fileName.s)
             if not maSnap: continue
@@ -509,7 +509,7 @@ class ModInfo(FileInfo):
             modInfos._notify_bain(renamed={ghost_source: ghost_target})
         except:
             deprint(u'Failed to %sghost file %s' % ((u'un', u'')[isGhost],
-                (ghost.s, normal.s)[isGhost]), traceback=True)
+                (ghost, normal)[isGhost]), traceback=True)
         return self.isGhost
 
     #--Bash Tags --------------------------------------------------------------
@@ -2286,10 +2286,10 @@ class ModInfos(FileInfos):
             if fileInfo:
                 masters_set = set(fileInfo.masterNames)
                 missing = sorted(x for x in masters_set if x not in self)
-                log.setHeader(head+_(u'Missing Masters for %s: ') % fileInfo.name.s)
+                log.setHeader(head+_(u'Missing Masters for %s: ') % fileInfo.name)
                 for mod in missing:
-                    log(bul+u'xx '+mod.s)
-                log.setHeader(head+_(u'Masters for %s: ') % fileInfo.name.s)
+                    log(bul + u'xx %s' % mod)
+                log.setHeader(head+_(u'Masters for %s: ') % fileInfo.name)
                 present = {x for x in masters_set if x in self}
                 if fileInfo.name in self: #--In case is bashed patch (cf getSemiActive)
                     present.add(fileInfo.name)
@@ -2311,7 +2311,7 @@ class ModInfos(FileInfos):
                     prefix = bul+u'++'
                 else:
                     prefix = bul+sImported
-                log_str = u'%s  %s' % (prefix, mname.s,)
+                log_str = u'%s  %s' % (prefix, mname)
                 if showVersion:
                     version = self.getVersion(mname)
                     if version: log_str += _(u'  [Version %s]') % version
@@ -2370,7 +2370,7 @@ class ModInfos(FileInfos):
                      u'higher-ranking ones.') + u'\n'
         if mod_list:
             for modInfo in mod_list:
-                tagList += u'\n* ' + modInfo.name.s + u'\n'
+                tagList += u'\n* %s\n' % modInfo.name
                 if modInfo.getBashTags():
                     tagList = ModInfos._tagsies(modInfo, tagList)
                 else: tagList += u'    '+_(u'No tags')
@@ -2379,7 +2379,7 @@ class ModInfos(FileInfos):
             lindex = lambda t: load_order.cached_lo_index(t[0])
             for path, modInfo in sorted(modInfos.iteritems(), key=lindex):
                 if modInfo.getBashTags():
-                    tagList += u'\n* ' + modInfo.name.s + u'\n'
+                    tagList += u'\n* %s\n' % modInfo.name
                     tagList = ModInfos._tagsies(modInfo, tagList)
         tagList += u'[/spoiler]'
         return tagList
@@ -3385,10 +3385,10 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
         if delBackup: _bak.remove()
         # bolt machinery will automatically load the backup - bypass it if
         # user did, by temporarily renaming the .bak file
-        if ignoreBackup: _bak.moveTo(_bak.s + u'.ignore')
+        if ignoreBackup: _bak.moveTo(u'%s.ignore' % _bak)
         # load the .bak file, or an empty settings dict saved to disc at exit
         loaded = _load()
-        if ignoreBackup: GPath(_bak.s + u'.ignore').moveTo(_bak.s)
+        if ignoreBackup: GPath(u'%s.ignore' % _bak).moveTo(_bak.s)
         return loaded
     #--Set bass.settings ------------------------------------------------------
     try:

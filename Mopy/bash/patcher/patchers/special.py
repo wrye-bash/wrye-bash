@@ -120,8 +120,8 @@ class _AListsMerger(ListPatcher):
         :param ann_plugin: The plugin to return the name for, as a path.
         :type ann_plugin: bolt.Path"""
         applied_tags = [t[0] for t in self.tag_choices[ann_plugin]]
-        return ann_plugin.s + (u' [%s]' % u''.join(sorted(applied_tags))
-                               if applied_tags else u'')
+        return u'%s%s' % (ann_plugin, (u' [%s]' % u''.join(
+            sorted(applied_tags)) if applied_tags else u''))
 
     def scanModFile(self, modFile, progress):
         #--Begin regular scan
@@ -424,5 +424,5 @@ class ContentsChecker(Patcher):
                     for contId in sorted(id_removed):
                         log(u'* ' + id_eid[contId])
                         for removedId in sorted(id_removed[contId]):
-                            log(u'  . %s: %06X' % (removedId[0].s,
+                            log(u'  . %s: %06X' % (removedId[0],
                                                    removedId[1]))

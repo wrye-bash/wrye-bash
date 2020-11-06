@@ -83,7 +83,7 @@ class PatchFile(ModFile):
                   u"For the mods to work properly, you should deactivate the "
                   u"mods and then rebuild the patch with the mods [["
                   u"%s%s|Merged]] in.") % _link(u'patch-filter'))
-            for mod in self.unFilteredMods: log(u'* ' + mod.s)
+            for mod in self.unFilteredMods: log(u'* %s' % mod)
         if self.loadErrorMods:
             log.setHeader(u'=== ' + _(u'Load Error Mods'))
             log(_(u"The following mods had load errors and were skipped while "
@@ -92,14 +92,14 @@ class PatchFile(ModFile):
                   u"http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Bashed_Patch"
                   u"#Error_Messages|Bashed Patch: Error Messages]]."))
             for (mod, e) in self.loadErrorMods: log(
-                u'* ' + mod.s + u': %s' % e)
+                u'* %s' % mod + u': %s' % e)
         if self.worldOrphanMods:
             log.setHeader(u'=== ' + _(u'World Orphans'))
             log(_(u"The following mods had orphaned world groups, which were "
                   u"skipped. This is not a major problem, but you might want "
                   u"to use Bash's [[%s%s|Remove World Orphans]] command to "
                   u"repair the mods.") % _link(u'modsRemoveWorldOrphans'))
-            for mod in self.worldOrphanMods: log(u'* ' + mod.s)
+            for mod in self.worldOrphanMods: log(u'* %s' % mod)
         if self.compiledAllMods:
             log.setHeader(u'=== ' + _(u'Compiled All'))
             log(_(u"The following mods have an empty compiled version of "
@@ -110,7 +110,7 @@ class PatchFile(ModFile):
                 u"and Unofficial Oblivion Patch.) You can use Bash's [["
                 u"%s%s|Decompile All]] command to repair the mods."
                   ) % ((bush.game.master_file,) + _link(u'modsDecompileAll')))
-            for mod in self.compiledAllMods: log(u'* ' + mod.s)
+            for mod in self.compiledAllMods: log(u'* %s' % mod)
         log.setHeader(u'=== ' + _(u'Active Mods'), True)
         for mname in self.allMods:
             version = bosh.modInfos.getVersion(mname)
@@ -119,7 +119,7 @@ class PatchFile(ModFile):
             else:
                 message = u'* ++ '
             if version:
-                message += _(u'%s  [Version %s]') % (mname.s,version)
+                message += _(u'%s  [Version %s]') % (mname,version)
             else:
                 message += mname.s
             log(message)
@@ -127,7 +127,7 @@ class PatchFile(ModFile):
         if self.aliases:
             log.setHeader(u'= ' + _(u'Mod Aliases'))
             for alias_target, alias_repl in sorted(self.aliases.iteritems()):
-                log(u'* %s >> %s' % (alias_target.s, alias_repl.s))
+                log(u'* %s >> %s' % (alias_target, alias_repl))
 
     def init_patchers_data(self, patchers, progress):
         """Gives each patcher a chance to get its source data."""
@@ -212,7 +212,7 @@ class PatchFile(ModFile):
                 self.unFilteredMods.append(modName)
             try:
                 loadFactory = (self.readFactory,self.mergeFactory)[modName in self.mergeSet]
-                progress(index,modName.s+u'\n'+_(u'Loading...'))
+                progress(index, u'%s\n' % modName + _(u'Loading...'))
                 modFile = ModFile(modInfo,loadFactory)
                 modFile.load(True,SubProgress(progress,index,index+0.5))
             except ModError as e:
@@ -236,19 +236,19 @@ class PatchFile(ModFile):
                 #--iiMode is a hack to support Item Interchange. Actual key used is IIM.
                 iiMode = isMerged and u'IIM' in bashTags
                 if isMerged:
-                    progress(pstate,modName.s+u'\n'+_(u'Merging...'))
+                    progress(pstate, u'%s\n' % modName + _(u'Merging...'))
                     self.mergeModFile(modFile, doFilter, iiMode)
                 else:
-                    progress(pstate,modName.s+u'\n'+_(u'Scanning...'))
+                    progress(pstate, u'%s\n' % modName + _(u'Scanning...'))
                     self.update_patch_records_from_mod(modFile)
                 for patcher in sorted(self._patcher_instances, key=attrgetter(u'scanOrder')):
                     if iiMode and not patcher.iiMode: continue
-                    progress(pstate,u'%s\n%s' % (modName.s,patcher.getName()))
+                    progress(pstate, u'%s\n%s' % (modName, patcher.getName()))
                     patcher.scan_mod_file(modFile,nullProgress)
             except CancelError:
                 raise
             except:
-                print(_(u"MERGE/SCAN ERROR:"),modName.s)
+                print(u'MERGE/SCAN ERROR: %s' % modName)
                 raise
         progress(progress.full,_(u'Load mods scanned.'))
 
@@ -284,7 +284,7 @@ class PatchFile(ModFile):
         """Completes merge process. Use this when finished using
         scanLoadMods."""
         if not self._patcher_instances: return
-        self._log_header(log, self.fileInfo.name.s)
+        self._log_header(log, self.fileInfo.name)
         # Run buildPatch on each patcher
         self.keepIds |= self.mergeIds
         subProgress = SubProgress(progress, 0, 0.9, len(self._patcher_instances))

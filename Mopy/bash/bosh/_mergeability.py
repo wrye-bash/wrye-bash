@@ -50,7 +50,7 @@ def _is_mergeable_no_load(modInfo, reasons):
                     dir_list += u'\n  - ' + blocking_dir
             reasons.append(_(u'Has plugin-specific directory - one of the '
                              u'following:' + dir_list) %
-                           ({u'plugin_name': modInfo.name.s}))
+                           ({u'plugin_name': modInfo.name}))
     # Client must make sure NoMerge tag not in tags - if in tags
     # don't show up as mergeable.
     return False if reasons else True

@@ -1046,8 +1046,8 @@ class Installer(object):
             #--Compress
             command = (u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" '
                        u'-x@%s -scsUTF-8 -sccUTF-8' % (
-                archives.exe7z, outFile.temp.s, archiveType, solid,
-                outDir.s, projectDir.s, self.tempList.s))
+                archives.exe7z, outFile.temp, archiveType, solid,
+                outDir, projectDir, self.tempList))
             try:
                 # Safe to call without unicodeSafe because the name we chose is
                 # static and therefore guaranteed ASCII. Note that we lie a bit
@@ -1058,19 +1058,6 @@ class Installer(object):
             finally:
                 self.tempList.remove()
             outFile.moveTo(realOutFile)
-
-    def removeEmpties(self, target_dir=None):
-        """Removes empty directories from project directory."""
-        if not target_dir:
-            if not self.is_project():
-                raise StateError(u'removeEmpties must be either given a path '
-                                 u'or used on a project.')
-            target_dir = self.ipath.s
-        empties = set()
-        for asDir, sDirs, sFiles in bolt.walkdir(target_dir):
-            if not (sDirs or sFiles): empties.add(GPath(asDir))
-        for empty in empties: empty.removedirs()
-        self.ipath.makedirs() #--In case it just got wiped out.
 
     def _do_sync_data(self, proj_dir, delta_files):
         """Performs a Sync from Data on the specified project directory with
@@ -1090,7 +1077,12 @@ class Installer(object):
                 full_src.copyTo(full_dest)
                 upt_numb += 1
         if upt_numb or del_numb:
-            self.removeEmpties(proj_dir.s)
+            # Remove empty directories from project directory
+            empties = set()
+            for asDir, sDirs, sFiles in bolt.walkdir(proj_dir.s):
+                if not (sDirs or sFiles): empties.add(GPath(asDir))
+            for empty in empties: empty.removedirs()
+            self.ipath.makedirs()  #--In case it just got wiped out.
         return upt_numb, del_numb
 
     def size_or_mtime_changed(self, apath):
@@ -1316,7 +1308,7 @@ class InstallerArchive(Installer):
                 list_archive(tempArch, _parse_archive_line)
                 self.crc = _li.cumCRC & 0xFFFFFFFF
             except:
-                archive_msg = u"Unable to read archive '%s'." % self.ipath.s
+                archive_msg = u"Unable to read archive '%s'." % self.ipath
                 deprint(archive_msg, traceback=True)
                 raise InstallerArchiveError(archive_msg)
 
@@ -1371,10 +1363,10 @@ class InstallerArchive(Installer):
         destDir = bass.dirs[u'installers'].join(project)
         destDir.rmtree(safety=u'Installers')
         #--Extract
-        progress(0,project.s+u'\n'+_(u'Extracting files...'))
+        progress(0,u'%s\n'%project+_(u'Extracting files...'))
         unpack_dir = self.unpackToTemp(files, SubProgress(progress, 0, 0.9))
         #--Move
-        progress(0.9,project.s+u'\n'+_(u'Moving files...'))
+        progress(0.9,u'%s\n'%project+_(u'Moving files...'))
         count = 0
         tempDirJoin = unpack_dir.join
         destDirJoin = destDir.join
@@ -1858,7 +1850,7 @@ class InstallersData(DataStore):
             progress(0,_(u"Scanning Packages..."))
             progress.setFull(len(subPending))
             for index,package in enumerate(sorted(subPending)):
-                progress(index,_(u'Scanning Packages...')+u'\n'+package.s)
+                progress(index, _(u'Scanning Packages...') + u'\n%s' % package)
                 self.refresh_installer(package, is_project, progress,
                                        _index=index, _fullRefresh=fullRefresh)
         return changed
@@ -1903,7 +1895,7 @@ class InstallersData(DataStore):
             #--Create the converter, apply it
             converter = InstallerConverter(bcfFile.tail)
             try:
-                msg = u'%s: ' % destArchive.s + _(
+                msg = u'%s: ' % destArchive + _(
                     u'An error occurred while applying an Embedded BCF.')
                 self.apply_converter(converter, destArchive,
                                      SubProgress(progress, i + 0.5, i + 1.0),

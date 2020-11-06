@@ -353,8 +353,8 @@ class _AMultiTweakItem_Weight(MultiTweakItem):
         log(self._log_weight_value % self.chosen_weight)
         log(u'* ' + self.tweak_log_msg % {
             u'total_changed': sum(count.values())})
-        for src_plugin in load_order.get_ordered(count.keys()):
-            log(u'  * %s: %d' % (src_plugin.s, count[src_plugin]))
+        for src_plugin in load_order.get_ordered(count):
+            log(u'  * %s: %d' % (src_plugin, count[src_plugin]))
 
     def wants_record(self, record):
         if (record.weight <= self.chosen_weight or floats_equal(

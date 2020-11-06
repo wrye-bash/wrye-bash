@@ -1295,7 +1295,7 @@ class UIList(wx.Panel):
             try:
                 filepath.start()
             except OSError:
-                deprint(u'Failed to open %s', filepath, traceback=True)
+                deprint(u'Failed to open %s' % filepath, traceback=True)
 
     #--Sorting ----------------------------------------------------------------
     def SortItems(self, column=None, reverse='CURRENT'):

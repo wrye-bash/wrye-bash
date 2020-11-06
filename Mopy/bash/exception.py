@@ -69,8 +69,7 @@ class FileError(BoltError):
         self.in_name = in_name
 
     def __str__(self):
-        return u'{}: {}'.format((self.in_name or u'Unknown File'),
-                                self.message)
+        return u'{}: {}'.format(self.in_name or u'Unknown File', self.message)
 
 class SaveFileError(FileError):
     """Save File Error: File is corrupted."""
@@ -80,7 +79,7 @@ class FileEditError(BoltError):
     """Unable to edit a file"""
     def __init__(self, file_path, message=None):
         ## type: (Path, basestring) -> None
-        message = message or (u'Unable to edit file %s.' % file_path.s)
+        message = message or (u'Unable to edit file %s.' % file_path)
         super(FileEditError, self).__init__(message)
         self.filePath = file_path
 

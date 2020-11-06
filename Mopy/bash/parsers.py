@@ -542,10 +542,9 @@ class ActorLevels(object):
                         k[0].s.lower(),id_levels[k][0].lower())):
                     eid,isOffset,offset,calcMin,calcMax = id_levels[id_]
                     if isOffset:
-                        source = mod.s
                         fidMod, fidObject = id_[0].s,id_[1]
                         out.write(rowFormat % (
-                            source,eid,fidMod,fidObject,offset,calcMin,
+                            mod, eid, fidMod, fidObject, offset, calcMin,
                             calcMax))
                         oldLevels = obId_levels.get(id_,None)
                         if oldLevels:
@@ -690,7 +689,7 @@ class EditorIds(object):
             for type_ in sorted(type_id_eid):
                 id_eid = type_id_eid[type_]
                 for id_ in sorted(id_eid,key = lambda a: id_eid[a].lower()):
-                    out.write(rowFormat % (type_,id_[0].s,id_[1],id_eid[id_]))
+                    out.write(rowFormat % (type_,id_[0],id_[1],id_eid[id_]))
 
 #------------------------------------------------------------------------------
 class FactionRelations(_AParser):
@@ -1164,7 +1163,7 @@ class ItemStats(object):
                 out.write(header)
                 for longid in getSortedIds(fid_attr_value):
                     out.write(
-                        u'"%s","%s","0x%06X",' % (group,longid[0].s,longid[1]))
+                        u'"%s","%s","0x%06X",' % (group,longid[0],longid[1]))
                     attr_value = fid_attr_value[longid]
                     write(out, attrs, map(attr_value.get, attrs))
 

@@ -101,7 +101,7 @@ class BackupSettings(object):
     settings we backup (bass.settings['bash.version']). Creates a backup.dat
     file that stores those versions."""
 
-    def __init__(self, settings_file, fsName,  root_prefix, mods_folder):
+    def __init__(self, settings_file, fsName, root_prefix, mods_folder):
         self._backup_dest_file = settings_file # absolute path to dest 7z file
         self.files = {}
         for (bash_dir, tmpdir), setting_files in _init_settings_files(
@@ -168,7 +168,7 @@ class BackupSettings(object):
     def _backup_settings(self, temp_dir):
         # copy all files to ~tmp backup dir
         for tpath, fpath in self.files.iteritems():
-            deprint(tpath.s + u' <-- ' + fpath.s)
+            deprint(u'%s <-- %s' % (tpath, fpath))
             fpath.copyTo(temp_dir.join(tpath))
         # dump the version info and file listing
         with temp_dir.join(u'backup.dat').open('wb') as out:
@@ -274,8 +274,8 @@ class RestoreSettings(object):
             self._timestamped_old = None
         # restore all the settings files
         def _restore_file(dest_dir_, back_path_, *end_path):
-            deprint(back_path_.join(*end_path).s + u' --> ' + dest_dir_.join(
-                *end_path).s)
+            deprint(u'%s --> %s' % (back_path_.join(*end_path), dest_dir_.join(
+                *end_path)))
             full_back_path.join(*end_path).copyTo(dest_dir_.join(*end_path))
         restore_paths = list(_init_settings_files(fsName, root_prefix,
             mods_folder))
@@ -291,7 +291,7 @@ class RestoreSettings(object):
         if full_back_path.exists():
             for root_dir, folders, files_ in full_back_path.walk(True, None,
                                                                  True):
-                root_dir = GPath(u'.'+root_dir.s)
+                root_dir = GPath(u'.%s' % root_dir)
                 for fname in files_:
                     _restore_file(saves_dir, back_path, root_dir, fname)
 

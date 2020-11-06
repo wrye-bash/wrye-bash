@@ -55,7 +55,7 @@ class PatchDialog(DialogWindow):
     def __init__(self, parent, patchInfo, mods_to_reselect):
         self.mods_to_reselect = mods_to_reselect
         self.parent = parent
-        title = _(u'Update ') + patchInfo.name.s
+        title = _(u'Update ') + u'%s' % patchInfo.name
         size = balt.sizes.get(self.__class__.__name__, (500,600))
         super(PatchDialog, self).__init__(parent, title=title,
             icon_bundle=Resources.bashMonkey, sizes_dict=balt.sizes, size=size)
@@ -184,7 +184,7 @@ class PatchDialog(DialogWindow):
                       u'disabled in this one active.'))
                 return # Abort, we'll just blow up on saving it
             #--Save
-            progress.setCancel(False, patch_name.s+u'\n'+_(u'Saving...'))
+            progress.setCancel(False, u'%s\n' % patch_name + _(u'Saving...'))
             progress(0.9)
             self._save_pbash(patchFile, patch_name)
             #--Done
@@ -228,7 +228,7 @@ class PatchDialog(DialogWindow):
                     bosh.modInfos.lo_activate(mod, doSave=False)
                 self.mods_to_reselect.clear()
                 bosh.modInfos.cached_lo_save_active() ##: also done below duh
-            count, message = 0, _(u'Activate %s?') % patch_name.s
+            count, message = 0, _(u'Activate %s?') % patch_name
             if load_order.cached_is_active(patch_name) or (
                         bass.inisettings['PromptActivateBashedPatch'] and
                         balt.askYes(self.parent, message, patch_name.s)):
@@ -241,7 +241,7 @@ class PatchDialog(DialogWindow):
                 except PluginsFullError:
                     balt.showError(self, _(
                         u'Unable to add mod %s because load list is full.')
-                                   % patch_name.s)
+                                   % patch_name)
             # although improbable user has package with bashed patches...
             info = bosh.modInfos.new_info(patch_name, notify_bain=True)
             if info.size == patch_size:
@@ -255,22 +255,21 @@ class PatchDialog(DialogWindow):
         except CancelError:
             pass
         except FileEditError as error:
-            balt.playSound(self.parent, bass.inisettings['SoundError'].s)
-            balt.showError(self,u'%s'%error,_(u'File Edit Error'))
-            bolt.deprint(u'Exception during Bashed Patch building:',
-                traceback=True)
+            self._error(_(u'File Edit Error'), error)
         except BoltError as error:
-            balt.playSound(self.parent, bass.inisettings['SoundError'].s)
-            balt.showError(self,u'%s'%error,_(u'Processing Error'))
-            bolt.deprint(u'Exception during Bashed Patch building:',
-                traceback=True)
+            self._error(_(u'Processing Error'), error)
         except:
-            balt.playSound(self.parent, bass.inisettings['SoundError'].s)
-            bolt.deprint(u'Exception during Bashed Patch building:',
-                traceback=True)
+            self._error()
             raise
         finally:
             if progress: progress.Destroy()
+
+    def _error(self, msg=None, error=None):
+        balt.playSound(self.parent, bass.inisettings['SoundError'].s)
+        if msg:
+            balt.showError(self, u'%s' % error, _(u'File Edit Error'))
+        bolt.deprint(u'Exception during Bashed Patch building:',
+                     traceback=True)
 
     def _save_pbash(self, patchFile, patch_name):
         while True:
@@ -293,7 +292,7 @@ class PatchDialog(DialogWindow):
                         u'Please close any program that is accessing '
                         u'%(patch_name)s, and provide Administrator '
                         u'Privileges if prompted to do so.') + u'\n\n' + _(
-                        u'Try again?')) % {u'patch_name': patch_name.s,
+                        u'Try again?')) % {u'patch_name': patch_name,
                         u'xedit_name': bush.game.Xe.full_name},
                         _(u'Bashed Patch - Save Error')):
                     continue

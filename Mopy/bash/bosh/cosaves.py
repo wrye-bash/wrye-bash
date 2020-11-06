@@ -439,7 +439,7 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
             log(_(u'   Mod :  %02X (Save File)') % self.mod_index)
         else:
             log(_(u'   Mod :  %02X (%s)') % (
-                self.mod_index, save_masters[self.mod_index].s))
+                self.mod_index, save_masters[self.mod_index]))
         log(_(u'   ID  :  %u') % self.array_id)
         if self.key_type == 1: #Numeric
             if self.is_packed:
@@ -457,7 +457,7 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
                     log(_(u'    - %02X (Save File)') % refModID)
                 else:
                     log(u'    - %02X (%s)' % (refModID,
-                                              save_masters[refModID].s))
+                                              save_masters[refModID]))
         log(_(u'   Size:  %u') % len(self.elements))
         for element in self.elements:
             element.dump_to_log(log, save_masters)
@@ -700,7 +700,7 @@ class _xSEChunkSTVR(_xSEChunk, _Dumpable):
 
     def dump_to_log(self, log, save_masters):
         log(_(u'   Mod : %02X (%s)') % (self.mod_index,
-                                        save_masters[self.mod_index].s))
+                                        save_masters[self.mod_index]))
         log(_(u'   ID  : %u') % self.string_id)
         log(_(u'   Data: %s') % self.string_data)
 

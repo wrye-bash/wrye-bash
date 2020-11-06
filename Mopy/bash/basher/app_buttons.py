@@ -178,7 +178,7 @@ class _App_Button(StatusBar_Button):
     def ShowError(self,error):
         balt.showError(Link.Frame,
                        (u'%s'%error + u'\n\n' +
-                        _(u'Used Path: ') + self.exePath.s + u'\n' +
+                        _(u'Used Path: ') + u'%s\n' % self.exePath +
                         _(u'Used Arguments: ') + u'%s' % (self.exeArgs,)),
                        _(u"Could not launch '%s'") % self.exePath.stail)
 
@@ -191,7 +191,7 @@ class _App_Button(StatusBar_Button):
     def Execute(self):
         if not self.IsPresent():
             balt.showError(Link.Frame,
-                           _(u'Application missing: %s') % self.exePath.s,
+                           _(u'Application missing: %s') % self.exePath,
                            _(u"Could not launch '%s'" % self.exePath.stail)
                            )
             return
@@ -199,7 +199,7 @@ class _App_Button(StatusBar_Button):
 
     def _app_button_execute(self):
         dir_ = bolt.Path.getcwd().s
-        args = u'"%s"' % self.exePath.s
+        args = u'"%s"' % self.exePath
         args += u' '.join([u'%s' % arg for arg in self.exeArgs])
         try:
             import win32api

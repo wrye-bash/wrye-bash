@@ -105,7 +105,7 @@ class AListPatcher(Abstract_Patcher):
             log(u". ~~%s~~" % _(u'None'))
         else:
             for srcFile in self.srcs:
-                log(u"* " +srcFile.s)
+                log(u'* %s' % srcFile)
 
 class AMultiTweaker(Abstract_Patcher):
     """Combines a number of sub-tweaks which can be individually enabled and
@@ -231,8 +231,8 @@ class AMultiTweakItem(object):
         log.setHeader(u'=== ' + self.tweak_log_header)
         log(u'* ' + self.tweak_log_msg % {
             u'total_changed': sum(count.values())})
-        for src_plugin in load_order.get_ordered(count.keys()):
-            log(u'  * %s: %d' % (src_plugin.s, count[src_plugin]))
+        for src_plugin in load_order.get_ordered(count):
+            log(u'  * %s: %d' % (src_plugin, count[src_plugin]))
 
     def init_tweak_config(self, configs):
         """Get config from configs dictionary and/or set to default."""

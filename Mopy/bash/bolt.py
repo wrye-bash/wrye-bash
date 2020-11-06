@@ -973,7 +973,7 @@ class Path(object):
 
 def clearReadOnly(dirPath):
     """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""
-    cmd = u'' r'attrib -R "%s\*" /S /D' % dirPath.s
+    cmd = u'' r'attrib -R "%s\*" /S /D' % dirPath
     subprocess.call(cmd, startupinfo=startupinfo)
 
 # Util Constants --------------------------------------------------------------
@@ -1744,7 +1744,7 @@ def deprint(*args,**keyargs):
     if keyargs.get('trace', True):
         stack = inspect.stack()
         file_, line, function = stack[1][1:4]
-        msg = u'%s %4d %s: ' % (GPath(file_).tail.s, line, function)
+        msg = u'%s %4d %s: ' % (GPath(file_).tail, line, function)
     else:
         msg = u''
 
@@ -2595,16 +2595,16 @@ class WryeText(object):
             css = WryeText.defaultCss
         else:
             if cssName.ext != u'.css':
-                raise exception.BoltError(u'Invalid Css file: ' + cssName.s)
+                raise exception.BoltError(u'Invalid Css file: %s' % cssName)
             for css_dir in cssDirs:
                 cssPath = GPath(css_dir).join(cssName)
                 if cssPath.exists(): break
             else:
-                raise exception.BoltError(u'Css file not found: ' + cssName.s)
+                raise exception.BoltError(u'Css file not found: %s' % cssName)
             with cssPath.open('r',encoding='utf-8-sig') as cssIns:
                 css = u''.join(cssIns.readlines())
             if u'<' in css:
-                raise exception.BoltError(u'Non css tag in ' + cssPath.s)
+                raise exception.BoltError(u'Non css tag in %s' % cssPath)
         #--Write Output ------------------------------------------------------
         outWrite(WryeText.htmlHead % (title,css))
         didContents = False

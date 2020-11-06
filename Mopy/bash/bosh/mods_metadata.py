@@ -409,7 +409,7 @@ class ModCleaner(object):
         progress.setFull(max(len(modInfos),1))
         ret = []
         for i,modInfo in enumerate(modInfos):
-            progress(i,_(u'Scanning...') + u'\n' + modInfo.name.s)
+            progress(i,_(u'Scanning...') + u'\n%s' % modInfo.name)
             itm = set()
             fog = set()
             #--UDR stuff
@@ -528,7 +528,7 @@ class ModCleaner(object):
                     except CancelError:
                         raise
                     except:
-                        deprint(u'Error scanning %s, file read pos: %i:\n' % (modInfo.name.s,ins.tell()),traceback=True)
+                        deprint(u'Error scanning %s, file read pos: %i:\n' % (modInfo.name,ins.tell()),traceback=True)
                         udr = itm = fog = None
                 #--Done
             ret.append((udr.values() if udr is not None else None,itm,fog))

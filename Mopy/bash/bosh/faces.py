@@ -212,9 +212,9 @@ class PCFaces(object):
                 saveFile.created[index] = npc
                 break
         else:
-            raise StateError(u"Record %08X not found in %s." % (targetid,saveFile.fileInfo.name.s))
+            raise StateError(u"Record %08X not found in %s." % (targetid,saveFile.fileInfo.name))
         if npc.recType != 'NPC_':
-            raise StateError(u"Record %08X in %s is not an NPC." % (targetid,saveFile.fileInfo.name.s))
+            raise StateError(u"Record %08X in %s is not an NPC." % (targetid,saveFile.fileInfo.name))
         #--Update masters
         for fid in (face.race, face.eye, face.hair):
             if not fid: continue

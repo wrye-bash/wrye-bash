@@ -58,7 +58,7 @@ def getPersonalPath(bash_ini_, my_docs_path):
     if not my_docs_path.exists():
         raise BoltError(u"Personal folder does not exist.\n"
                         u"Personal folder: %s\nAdditional info:\n%s"
-                        % (my_docs_path.s, sErrorInfo))
+                        % (my_docs_path, sErrorInfo))
     return my_docs_path
 
 def getLocalAppDataPath(bash_ini_, app_data_local_path):
@@ -80,7 +80,7 @@ def getLocalAppDataPath(bash_ini_, app_data_local_path):
     #  Error check
     if not app_data_local_path.exists():
         raise BoltError(u"Local AppData folder does not exist.\nLocal AppData folder: %s\nAdditional info:\n%s"
-                        % (app_data_local_path.s, sErrorInfo))
+                        % (app_data_local_path, sErrorInfo))
     return app_data_local_path
 
 def getOblivionModsPath(bash_ini_, game_info):
@@ -181,7 +181,7 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
                   u'appear to be a valid game INI. It might come from an '
                   u'incorrectly installed third party tool. Consider '
                   u'deleting it and validating your game files.') %
-                data_oblivion_ini.s)
+                data_oblivion_ini)
         # is bUseMyGamesDirectory set to 0?
         if get_ini_option(oblivionIni, u'bUseMyGamesDirectory') == u'0':
             game_ini_path = data_oblivion_ini
@@ -229,15 +229,15 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
         relativePathError = []
         if u'modsBash' in badKeys:
             if isinstance(modsBashSrc, list):
-                msg += (u' '.join(modsBashSrc) + u'\n    '
-                        + dirs[u'modsBash'].s + u'\n')
+                msg += (u' '.join(modsBashSrc) + u'\n    %s\n' % dirs[
+                    u'modsBash'])
             else:
                 relativePathError.append(dirs[u'modsBash'])
         if {u'installers', u'converters', u'dupeBCFs', u'corruptBCFs'} & badKeys:
             # All derived from oblivionMods -> getOblivionModsPath
             if isinstance(oblivionModsSrc, list):
-                msg += (u' '.join(oblivionModsSrc) + u'\n    '
-                        + oblivionMods.s + u'\n')
+                msg += (u' '.join(oblivionModsSrc) + u'\n    %s\n' %
+                        oblivionMods)
             else:
                 relativePathError.append(oblivionMods)
         if {u'bainData', u'bsaCache'} & badKeys:
@@ -246,8 +246,8 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
             # So check to be sure we haven't already added a message about that
             if bainDataSrc != oblivionModsSrc:
                 if isinstance(bainDataSrc, list):
-                    msg += (u' '.join(bainDataSrc) + u'\n    '
-                            + dirs[u'bainData'].s + u'\n')
+                    msg += (u' '.join(bainDataSrc) + u'\n    %s\n' % dirs[
+                        u'bainData'])
                 else:
                     relativePathError.append(dirs[u'bainData'])
         if relativePathError:

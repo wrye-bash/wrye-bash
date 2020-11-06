@@ -63,7 +63,7 @@ class Files_Unhide(ItemLink):
             destPath = destDir.join(srcFileName)
             if destPath.exists() or (destPath + u'.ghost').exists():
                 self._showWarning(_(u"File skipped: %s. File is already "
-                                    u"present.") % (srcFileName.s,))
+                                    u"present.") % (srcFileName,))
             #--Move it?
             else:
                 srcFiles.append(srcPath)
@@ -220,14 +220,14 @@ class File_RevertToSnapshot(OneItemLink):
         wildcard = self._selected_info.getNextSnapshot()[2]
         #--File dialog
         srcDir.makedirs()
-        snapPath = self._askOpen(_(u'Revert %s to snapshot:') % fileName.s,
+        snapPath = self._askOpen(_(u'Revert %s to snapshot:') % fileName,
                                  defaultDir=srcDir, wildcard=wildcard,
                                  mustExist=True)
         if not snapPath: return
         snapName = snapPath.tail
         #--Warning box
         message = (_(u'Revert %s to snapshot %s dated %s?') % (
-            fileName.s, snapName.s, format_date(snapPath.mtime)))
+            fileName, snapName, format_date(snapPath.mtime)))
         if not self._askYes(message, _(u'Revert to Snapshot')): return
         with BusyCursor():
             destPath = self._selected_info.abs_path
@@ -247,7 +247,7 @@ class File_RevertToSnapshot(OneItemLink):
                     _(u'Failed to revert %s to snapshot %s. The snapshot file '
                       u'may be corrupt. Do you want to restore the original '
                       u"file again? 'No' keeps the reverted, possibly broken "
-                      u'snapshot instead.') % (fileName.s, snapName.s),
+                      u'snapshot instead.') % (fileName, snapName),
                         title=_(u'Revert to Snapshot - Error')):
                     # Restore the known good file again - no error check needed
                     destPath.untemp()
@@ -289,8 +289,7 @@ class _RevertBackup(OneItemLink):
         #--Warning box
         sel_file = self._selected_item
         backup_date = format_date(self.backup_path.mtime)
-        message = _(u'Revert %s to backup dated %s?') % (sel_file.s,
-                                                         backup_date)
+        message = _(u'Revert %s to backup dated %s?') % (sel_file, backup_date)
         if not self._askYes(message): return
         with BusyCursor():
             # Make a temp backup first in case reverting to backup fails
@@ -306,7 +305,7 @@ class _RevertBackup(OneItemLink):
                     _(u'Failed to revert %s to backup dated %s. The backup '
                       u'file may be corrupt. Do you want to restore the '
                       u"original file again? 'No' keeps the reverted, "
-                      u'possibly broken backup instead.') % (sel_file.s,
+                      u'possibly broken backup instead.') % (sel_file,
                                                              backup_date),
                         title=_(u'Revert to Backup - Error')):
                     # Restore the known good file again - no error check needed

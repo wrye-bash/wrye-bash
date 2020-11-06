@@ -152,7 +152,7 @@ class Saves_ProfilesData(balt.ListEditorData):
                 return False
         #--Remove directory
         if GPath(bush.game.fsName).join(u'Saves').s not in profileDir.s:
-            raise BoltError(u'Sanity check failed: No "%s\\Saves" in %s.' % (bush.game.fsName,profileDir.s))
+            raise BoltError(u'Sanity check failed: No "%s\\Saves" in %s.' % (bush.game.fsName,profileDir))
         shutil.rmtree(profileDir.s) #--DO NOT SCREW THIS UP!!!
         bosh.saveInfos.profiles.delRow(profileSaves)
         return True
@@ -304,7 +304,7 @@ class Save_ExportScreenshot(OneItemLink):
     def Execute(self):
         imagePath = balt.askSave(Link.Frame, _(u'Save Screenshot as:'),
             bass.dirs[u'patches'].s,
-            _(u'Screenshot %s.jpg') % self._selected_item.s, u'*.jpg')
+            _(u'Screenshot %s.jpg') % self._selected_item, u'*.jpg')
         if not imagePath: return
         # TODO(inf) de-wx! All the image stuff is still way too close to wx
         image = Image.from_bitstream(
@@ -341,11 +341,11 @@ class Save_DiffMasters(EnabledLink):
         else:
             message = u''
             if missing:
-                message += u'=== '+_(u'Removed Masters')+u' (%s):\n* ' % oldName.s
+                message += u'=== '+_(u'Removed Masters')+u' (%s):\n* ' % oldName
                 message += u'\n* '.join(x.s for x in load_order.get_ordered(missing))
                 if added: message += u'\n\n'
             if added:
-                message += u'=== '+_(u'Added Masters')+u' (%s):\n* ' % newName.s
+                message += u'=== '+_(u'Added Masters')+u' (%s):\n* ' % newName
                 message += u'\n* '.join(x.s for x in load_order.get_ordered(added))
             self._showWryeLog(message, title=_(u'Diff Masters'))
 
@@ -656,7 +656,7 @@ class Save_Move(ChoiceLink):
         for fileName in self.selected:
             if ask and destDir.join(fileName).exists():
                 message = (_(u'A file named %s already exists in %s. Overwrite it?')
-                    % (fileName.s,profile))
+                    % (fileName,profile))
                 result = self._askContinueShortTerm(message,
                                                     title=_(u'Move File'))
                 #if result is true just do the job but ask next time if applicable as well
@@ -832,10 +832,10 @@ class Save_Unbloat(OneItemLink):
             return
         message = [_(u'Remove savegame bloating?')]
         if createdCounts:
-            for (created_item_rec_type, full), count_ in sorted(
+            for (created_item_rec_type, rec_full), count_ in sorted(
                     createdCounts.items()):
                 message.append(u'  %s %s: %u' % (
-                    created_item_rec_type, full, count_))
+                    created_item_rec_type, rec_full, count_))
         if nullRefCount:
             message.append(u'  ' + _(u'Null Ref Objects:') +
                            u' %u' % nullRefCount)

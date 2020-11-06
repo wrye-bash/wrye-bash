@@ -101,7 +101,7 @@ class AutoFixedString(FixedString):
 def strFid(form_id):
     """Return a string representation of the fid."""
     if isinstance(form_id, tuple):
-        return u'(%s, %06X)' % (form_id[0].s, form_id[1])
+        return u'(%s, %06X)' % (form_id[0], form_id[1])
     else:
         return u'%08X' % form_id
 
