@@ -428,7 +428,7 @@ class _ModGroups(object):
 
     def readFromModInfos(self,mods=None):
         """Imports mods/groups from modInfos."""
-        column = bosh.modInfos.table.getColumn('group')
+        column = bosh.modInfos.table.getColumn(u'group')
         mods = mods or column.keys()# if mods are None read groups for all mods
         groups = tuple(column.get(x) for x in mods)
         self.mod_group.update((x,y) for x,y in zip(mods,groups) if y)
@@ -436,14 +436,14 @@ class _ModGroups(object):
     @staticmethod
     def assignedGroups():
         """Return all groups that are currently assigned to mods."""
-        column = bosh.modInfos.table.getColumn('group')
+        column = bosh.modInfos.table.getColumn(u'group')
         return {x[1] for x in column.items() if x[1]} #x=(bolt.Path,'group')
 
     def writeToModInfos(self,mods=None):
         """Exports mod groups to modInfos."""
         mods = mods or bosh.modInfos.table.data.keys()
         mod_group = self.mod_group
-        column = bosh.modInfos.table.getColumn('group')
+        column = bosh.modInfos.table.getColumn(u'group')
         changed = 0
         for mod in mods:
             if mod in mod_group and column.get(mod) != mod_group[mod]:
@@ -538,7 +538,7 @@ class Mod_Groups(_Mod_Labels):
     def _initData(self, window, selection):
         super(Mod_Groups, self)._initData(window, selection)
         selection = set(selection)
-        mod_group = bosh.modInfos.table.getColumn('group').items()
+        mod_group = bosh.modInfos.table.getColumn(u'group').items()
         modGroup = {x[1] for x in mod_group if x[0] in selection}
         class _CheckGroup(CheckLink, self.__class__.choiceLinkType):
             def _check(self):
@@ -716,7 +716,7 @@ class Mod_CopyModInfo(ItemLink):
             if isFirst: isFirst = False
             else: info_txt += u'\n\n'
             #-- Name of file, plus a link if we can figure it out
-            installer = bosh.modInfos.table.getItem(fileName,'installer',u'')
+            installer = bosh.modInfos.table.getItem(fileName,u'installer',u'')
             if not installer: info_txt += fileName.s
             else: info_txt += _(u'URL: %s') % _getUrl(installer)
             labels = self.window.labels
@@ -805,14 +805,14 @@ class _GhostLink(ItemLink):
         not load_order.cached_is_active(filename) # cannot ghost active mods
     @staticmethod
     def getAllow(filename):
-        return bosh.modInfos.table.getItem(filename, 'allowGhosting', True)
+        return bosh.modInfos.table.getItem(filename, u'allowGhosting', True)
 
     def _loop(self):
         """Loop selected files applying allow ghosting settings and
         (un)ghosting as needed."""
         files = []
         for fileName, fileInfo in self.iselected_pairs():
-            bosh.modInfos.table.setItem(fileName, 'allowGhosting',
+            bosh.modInfos.table.setItem(fileName, u'allowGhosting',
                                         self.__class__.setAllow(fileName))
             oldGhost = fileInfo.isGhost
             if fileInfo.setGhost(self.__class__.toGhost(fileName)) != oldGhost:
@@ -952,7 +952,7 @@ class Mod_Patch_Update(_Mod_BP_Link):
         super(Mod_Patch_Update, self)._initData(window, selection)
         # Detect the mode the patch was build in
         config = bosh.modInfos.table.getItem(self._selected_item,
-                                             'bash.patch.configs', {})
+                                             u'bash.patch.configs', {})
         self._config_is_cbash = configIsCBash(config)
         self.mods_to_reselect = set()
 
@@ -1111,7 +1111,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
             (_(u'General'), _(u'Importers'), _(u'Tweakers'), _(u'Special')))}
         #--Config
         config = bosh.modInfos.table.getItem(self._selected_item,
-                                             'bash.patch.configs', {})
+                                             u'bash.patch.configs', {})
         # Detect and warn about patch mode
         if configIsCBash(config):
             self._showError(_(u'The selected patch was built in CBash mode, '
@@ -1153,7 +1153,7 @@ class Mod_ExportPatchConfig(_Mod_BP_Link):
     def Execute(self):
         #--Config
         config = bosh.modInfos.table.getItem(self._selected_item,
-                                             'bash.patch.configs', {})
+                                             u'bash.patch.configs', {})
         exportConfig(patch_name=self._selected_item.s, config=config,
             win=self.window, outDir=bass.dirs[u'patches'])
 
@@ -1164,7 +1164,7 @@ class _DirtyLink(ItemLink):
 
     def Execute(self):
         for fileName in self.selected:
-            bosh.modInfos.table.setItem(fileName, 'ignoreDirty',
+            bosh.modInfos.table.setItem(fileName, u'ignoreDirty',
                                         self._ignoreDirty(fileName))
         self.window.RefreshUI(redraw=self.selected, refreshSaves=False)
 
@@ -1182,7 +1182,7 @@ class _Mod_SkipDirtyCheckAll(_DirtyLink, CheckLink):
     def _check(self):
         for fileName in self.selected:
             if bosh.modInfos.table.getItem(fileName,
-                    'ignoreDirty', self.skip) != self.skip: return False
+                    u'ignoreDirty', self.skip) != self.skip: return False
         return True
 
     def _ignoreDirty(self, filename): return self.skip
@@ -1193,7 +1193,7 @@ class _Mod_SkipDirtyCheckInvert(_DirtyLink, ItemLink):
         u"Invert checking against LOOT's dirty mod list for selected mod(s)")
 
     def _ignoreDirty(self, filename):
-        return not bosh.modInfos.table.getItem(filename, 'ignoreDirty', False)
+        return not bosh.modInfos.table.getItem(filename, u'ignoreDirty', False)
 
 class Mod_SkipDirtyCheck(TransLink):
     """Toggles scanning for dirty mods on a per-mod basis."""
@@ -1205,7 +1205,7 @@ class Mod_SkipDirtyCheck(TransLink):
                 _help = _(u"Toggles scanning for dirty mods on a per-mod basis")
 
                 def _check(self): return bosh.modInfos.table.getItem(
-                        self.selected[0], 'ignoreDirty', False)
+                        self.selected[0], u'ignoreDirty', False)
                 def _ignoreDirty(self, filename): return self._check() ^ True
 
             return _CheckLink()

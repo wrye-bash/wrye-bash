@@ -409,10 +409,10 @@ class ModInfo(FileInfo):
                 mod_ext != (u'.esp', u'.esm')[int(self.header.flags1) & 1])
 
     def calculate_crc(self, recalculate=False):
-        cached_crc = modInfos.table.getItem(self.name, 'crc')
+        cached_crc = modInfos.table.getItem(self.name, u'crc')
         if not recalculate:
-            cached_mtime = modInfos.table.getItem(self.name, 'crc_mtime')
-            cached_size = modInfos.table.getItem(self.name, 'crc_size')
+            cached_mtime = modInfos.table.getItem(self.name, u'crc_mtime')
+            cached_size = modInfos.table.getItem(self.name, u'crc_size')
             recalculate = cached_crc is None \
                           or self._file_mod_time != cached_mtime \
                           or self._file_size != cached_size
@@ -420,14 +420,14 @@ class ModInfo(FileInfo):
         if recalculate:
             path_crc = self.abs_path.crc
             if path_crc != cached_crc:
-                modInfos.table.setItem(self.name,'crc',path_crc)
-                modInfos.table.setItem(self.name,'ignoreDirty',False)
-            modInfos.table.setItem(self.name, 'crc_mtime', self._file_mod_time)
-            modInfos.table.setItem(self.name, 'crc_size', self._file_size)
+                modInfos.table.setItem(self.name,u'crc',path_crc)
+                modInfos.table.setItem(self.name,u'ignoreDirty',False)
+            modInfos.table.setItem(self.name, u'crc_mtime', self._file_mod_time)
+            modInfos.table.setItem(self.name, u'crc_size', self._file_size)
         return path_crc, cached_crc
 
     def cached_mod_crc(self): # be sure it's valid before using it!
-        return modInfos.table.getItem(self.name, 'crc')
+        return modInfos.table.getItem(self.name, u'crc')
 
     def crc_string(self):
         try:
@@ -459,7 +459,7 @@ class ModInfo(FileInfo):
         set_time = FileInfo.setmtime(self, set_time)
         # Prevent re-calculating the File CRC
         if not crc_changed:
-            modInfos.table.setItem(self.name,'crc_mtime', set_time)
+            modInfos.table.setItem(self.name,u'crc_mtime', set_time)
         else:
             self.calculate_crc(recalculate=True)
 
@@ -515,7 +515,7 @@ class ModInfo(FileInfo):
     #--Bash Tags --------------------------------------------------------------
     def setBashTags(self,keys):
         """Sets bash keys as specified."""
-        modInfos.table.setItem(self.name,'bashTags',keys)
+        modInfos.table.setItem(self.name,u'bashTags',keys)
 
     def setBashTagsDesc(self,keys):
         """Sets bash keys as specified."""
@@ -628,9 +628,9 @@ class ModInfo(FileInfo):
         filePath.untemp()
         self.setmtime(crc_changed=True)
         #--Merge info
-        size,canMerge = modInfos.table.getItem(self.name,'mergeInfo',(None,None))
+        size,canMerge = modInfos.table.getItem(self.name,u'mergeInfo',(None,None))
         if size is not None:
-            modInfos.table.setItem(self.name,'mergeInfo',(filePath.size,canMerge))
+            modInfos.table.setItem(self.name,u'mergeInfo',(filePath.size,canMerge))
 
     def writeDescription(self,description):
         """Sets description to specified text and then writes hedr."""
@@ -950,7 +950,7 @@ class INIInfo(IniFile):
         match = False
         mismatch = 0
         ini_settings = target_ini.get_ci_settings()
-        self_installer = infos.table.getItem(self.abs_path.tail, 'installer')
+        self_installer = infos.table.getItem(self.abs_path.tail, u'installer')
         for section_key in tweak_settings:
             if section_key not in ini_settings:
                 return _status(-10)
@@ -968,7 +968,7 @@ class INIInfo(IniFile):
                         for name, ini_info in infos.iteritems():
                             if self is ini_info: continue
                             if self_installer != infos.table.getItem(
-                                    name, 'installer'): continue
+                                    name, u'installer'): continue
                             # It's from the same installer
                             if self._incompatible(ini_info): continue
                             value = ini_info.getSetting(section_key, item, None)
@@ -1334,7 +1334,7 @@ class TableFileInfos(DataStore):
         info = self[fileName] = self.factory(self.store_dir.join(fileName),
                                              load_cache=True)
         if owner is not None:
-            self.table.setItem(fileName, 'installer', owner)
+            self.table.setItem(fileName, u'installer', owner)
         if notify_bain:
             self._notify_bain(changed={info.abs_path})
         return info
@@ -2124,7 +2124,7 @@ class ModInfos(FileInfos):
         changed = []
         toGhost = bass.settings.get('bash.mods.autoGhost',False)
         if force or toGhost:
-            allowGhosting = self.table.getColumn('allowGhosting')
+            allowGhosting = self.table.getColumn(u'allowGhosting')
             for mod, modInfo in self.iteritems():
                 modGhost = toGhost and not load_order.cached_is_active(mod) \
                            and allowGhosting.get(mod, True)
@@ -2139,7 +2139,7 @@ class ModInfos(FileInfos):
         #--Mods that need to be rescanned - call rescanMergeable !
         newMods = []
         self.mergeable.clear()
-        name_mergeInfo = self.table.getColumn('mergeInfo')
+        name_mergeInfo = self.table.getColumn(u'mergeInfo')
         #--Add known/unchanged and esms - we need to scan dependent mods
         # first to account for mergeability of their masters
         for mpath, modInfo in sorted(self.items(),
@@ -2171,7 +2171,7 @@ class ModInfos(FileInfos):
             is_mergeable = is_esl_capable
         else:
             is_mergeable = isPBashMergeable
-        mod_mergeInfo = self.table.getColumn('mergeInfo')
+        mod_mergeInfo = self.table.getColumn(u'mergeInfo')
         progress.setFull(max(len(names),1))
         result, tagged_no_merge = OrderedDict(), set()
         for i,fileName in enumerate(names):
@@ -2215,7 +2215,7 @@ class ModInfos(FileInfos):
         for modName, mod in self.iteritems(): # type: (Path, ModInfo)
             autoTag = mod.is_auto_tagged(default_auto=None)
             if autoTag is None and self.table.getItem(
-                    modName, 'bashTags') is None:
+                    modName, u'bashTags') is None:
                 # A new mod, set auto tags to True (default)
                 mod.set_auto_tagged(True)
                 autoTag = True
@@ -2253,7 +2253,7 @@ class ModInfos(FileInfos):
         merged_,imported_ = set(),set()
         patches &= self.bashed_patches
         for patch in patches:
-            patchConfigs = self.table.getItem(patch, 'bash.patch.configs')
+            patchConfigs = self.table.getItem(patch, u'bash.patch.configs')
             if not patchConfigs: continue
             patcherstr = 'PatchMerger'
             if patchConfigs.get(patcherstr,{}).get('isEnabled'):
@@ -2539,7 +2539,7 @@ class ModInfos(FileInfos):
 
     def getDirtyMessage(self, modname):
         """Returns a dirty message from LOOT."""
-        if self.table.getItem(modname, 'ignoreDirty', False):
+        if self.table.getItem(modname, u'ignoreDirty', False):
             return False, u''
         return configHelpers.getDirtyMessage(modname, self)
 
@@ -2689,7 +2689,7 @@ class ModInfos(FileInfos):
             if authorDir.isdir():
                 return authorDir
         #--Use group subdirectory instead?
-        file_group = self.table.getItem(name, 'group')
+        file_group = self.table.getItem(name, u'group')
         if file_group:
             groupDir = dest_dir.join(file_group)
             if groupDir.isdir():

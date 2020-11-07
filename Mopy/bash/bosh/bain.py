@@ -1100,15 +1100,15 @@ class Installer(object):
                 del idata_[g_path]
                 #--Update the iniInfos & modInfos for 'installer'
                 from . import modInfos, iniInfos
-                mfiles = [x for x in modInfos.table.getColumn('installer') if
-                          modInfos.table[x]['installer'] == self.archive]
-                ifiles = [x for x in iniInfos.table.getColumn('installer') if
-                          iniInfos.table[x]['installer'] == self.archive]
+                mfiles = [x for x in modInfos.table.getColumn(u'installer') if
+                          modInfos.table[x][u'installer'] == self.archive]
+                ifiles = [x for x in iniInfos.table.getColumn(u'installer') if
+                          iniInfos.table[x][u'installer'] == self.archive]
                 self.archive = newName.s # don't forget to rename !
                 for i in mfiles:
-                    modInfos.table[i]['installer'] = self.archive
+                    modInfos.table[i][u'installer'] = self.archive
                 for i in ifiles:
-                    iniInfos.table[i]['installer'] = self.archive
+                    iniInfos.table[i][u'installer'] = self.archive
                 return True, bool(mfiles), bool(ifiles)
         return False, False, False
 
@@ -2671,7 +2671,7 @@ class InstallersData(DataStore):
         keepFiles.update((bolt.CIstr(f) for f in bush.game.vanilla_files))
         for bpatch in modInfos.bashed_patches: # type: bolt.Path
             keepFiles.add(bolt.CIstr(bpatch.s))
-            bp_doc = modInfos.table.getItem(bpatch, 'doc')
+            bp_doc = modInfos.table.getItem(bpatch, u'doc')
             if bp_doc: # path is absolute, convert to relative to the Data/ dir
                 try:
                     bp_doc = bp_doc.relpath(bass.dirs[u'mods'].s)

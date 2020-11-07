@@ -554,7 +554,7 @@ class INIList(balt.UIList):
     _shellUI = True
     _sort_keys = {'File'     : None,
                   'Installer': lambda self, a: bosh.iniInfos.table.getItem(
-                     a, 'installer', u''),
+                     a, u'installer', u''),
                  }
     def _sortValidFirst(self, items):
         if settings['bash.ini.sortValid']:
@@ -564,7 +564,7 @@ class INIList(balt.UIList):
     labels = OrderedDict([
         ('File',      lambda self, p: p.s),
         ('Installer', lambda self, p: self.data_store.table.getItem(
-                                                   p, 'installer', u'')),
+                                                   p, u'installer', u'')),
     ])
 
     @property
@@ -810,9 +810,9 @@ class ModList(_ModsUIList):
     _sort_keys = {
         'File'      : None,
         'Author'    : lambda self, a: self.data_store[a].header.author.lower(),
-        'Rating'    : lambda self, a: self._get(a)('rating', u''),
-        'Group'     : lambda self, a: self._get(a)('group', u''),
-        'Installer' : lambda self, a: self._get(a)('installer', u''),
+        'Rating'    : lambda self, a: self._get(a)(u'rating', u''),
+        'Group'     : lambda self, a: self._get(a)(u'group', u''),
+        'Installer' : lambda self, a: self._get(a)(u'installer', u''),
         'Load Order': lambda self, a: load_order.cached_lo_index_or_max(a),
         u'Indices'  : lambda self, a: self.data_store[a].real_index(),
         'Modified'  : lambda self, a: self.data_store[a].mtime,
@@ -832,7 +832,7 @@ class ModList(_ModsUIList):
         (u'Indices',   lambda self, p: self.data_store[p].real_index_string()),
         ('Rating',     lambda self, p: self._get(p)('rating', u'')),
         ('Group',      lambda self, p: self._get(p)('group', u'')),
-        ('Installer',  lambda self, p: self._get(p)('installer', u'')),
+        ('Installer',  lambda self, p: self._get(p)(u'installer', u'')),
         ('Modified',   lambda self, p: format_date(self.data_store[p].mtime)),
         ('Size',       lambda self, p: round_size(self.data_store[p].size)),
         ('Author',     lambda self, p: self.data_store[p].header.author if
@@ -2088,7 +2088,7 @@ class SaveDetails(_ModsSavesDetails):
         self.picture.set_bitmap(new_save_screen)
         #--Info Box
         self.gInfo.modified = False
-        note_text = bosh.saveInfos.table.getItem(fileName, 'info',
+        note_text = bosh.saveInfos.table.getItem(fileName, u'info',
                                                  u'') if fileName else u''
         self.gInfo.text_content = note_text
         self._update_masters_warning()
@@ -2117,7 +2117,7 @@ class SaveDetails(_ModsSavesDetails):
     def OnInfoEdit(self, new_text):
         """Info field was edited."""
         if self.saveInfo and self.gInfo.modified:
-            bosh.saveInfos.table.setItem(self.saveInfo.name, 'info', new_text)
+            bosh.saveInfos.table.setItem(self.saveInfo.name, u'info', new_text)
 
     def _validate_filename(self, fileStr):
         return self.panel_uilist.validate_filename(fileStr,
@@ -3404,14 +3404,14 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         self.gInfo.modified = False
         if fileName:
             self.gInfo.text_content = \
-                bosh.bsaInfos.table.getItem(fileName, 'info', _(u'Notes: '))
+                bosh.bsaInfos.table.getItem(fileName, u'info', _(u'Notes: '))
         else:
             self.gInfo.text_content = _(u'Notes: ')
 
     def OnInfoEdit(self, new_text):
         """Info field was edited."""
         if self._bsa_info and self.gInfo.modified:
-            bosh.bsaInfos.table.setItem(self._bsa_info.name, 'info', new_text)
+            bosh.bsaInfos.table.setItem(self._bsa_info.name, u'info', new_text)
 
     def DoSave(self):
         """Event: Clicked Save button."""

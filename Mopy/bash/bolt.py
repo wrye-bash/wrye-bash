@@ -1550,42 +1550,42 @@ def unpack_spaced_string(ins, replacement_char=b'\x07'):
 #------------------------------------------------------------------------------
 class DataTableColumn(object):
     """DataTable accessor that presents table column as a dictionary."""
-    def __init__(self,table,column):
-        self.table = table
+    def __init__(self, table, column):
+        self._table = table
         self.column = column
     #--Dictionary Emulation
     def __iter__(self):
         """Dictionary emulation."""
-        tableData = self.table.data
+        tableData = self._table.data
         column = self.column
         return (key for key in tableData.keys() if (column in tableData[key]))
     def keys(self):
         return list(self.__iter__())
     def items(self):
         """Dictionary emulation."""
-        tableData = self.table.data
+        tableData = self._table.data
         column = self.column
         return [(key,tableData[key][column]) for key in self]
     def clear(self):
         """Dictionary emulation."""
-        self.table.delColumn(self.column)
+        self._table.delColumn(self.column)
     def get(self,key,default=None):
         """Dictionary emulation."""
-        return self.table.getItem(key,self.column,default)
+        return self._table.getItem(key, self.column, default)
     #--Overloaded
     def __contains__(self,key):
         """Dictionary emulation."""
-        tableData = self.table.data
+        tableData = self._table.data
         return key in tableData and self.column in tableData[key]
     def __getitem__(self,key):
         """Dictionary emulation."""
-        return self.table.data[key][self.column]
+        return self._table.data[key][self.column]
     def __setitem__(self,key,value):
         """Dictionary emulation. Marks key as changed."""
-        self.table.setItem(key,self.column,value)
+        self._table.setItem(key, self.column, value)
     def __delitem__(self,key):
         """Dictionary emulation. Marks key as deleted."""
-        self.table.delItem(key,self.column)
+        self._table.delItem(key, self.column)
 
 #------------------------------------------------------------------------------
 class DataTable(DataDict):

@@ -63,7 +63,7 @@ class PatchDialog(DialogWindow):
         list_patches_dir() # refresh cached dir
         groupOrder = {group: index for index, group in enumerate(
             (_(u'General'), _(u'Importers'), _(u'Tweakers'), _(u'Special')))}
-        patchConfigs = bosh.modInfos.table.getItem(patchInfo.name,'bash.patch.configs',{})
+        patchConfigs = bosh.modInfos.table.getItem(patchInfo.name,u'bash.patch.configs',{})
         if configIsCBash(patchConfigs):
             patchConfigs = {}
         isFirstLoad = 0 == len(patchConfigs)
@@ -218,7 +218,7 @@ class PatchDialog(DialogWindow):
             #finally:
             #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
             readme = readme.root + u'.html'
-            bosh.modInfos.table.setItem(patch_name, 'doc', readme)
+            bosh.modInfos.table.setItem(patch_name, u'doc', readme)
             balt.playSound(self.parent, bass.inisettings['SoundSuccess'].s)
             balt.WryeLog(self.parent, readme, patch_name.s,
                          log_icons=Resources.bashBlue)
@@ -306,7 +306,7 @@ class PatchDialog(DialogWindow):
     def _saveConfig(self, patch_name):
         """Save the configuration"""
         config = self.__config()
-        bosh.modInfos.table.setItem(patch_name, 'bash.patch.configs', config)
+        bosh.modInfos.table.setItem(patch_name, u'bash.patch.configs', config)
 
     def ExportConfig(self):
         """Export the configuration to a user selected dat file."""
@@ -329,14 +329,14 @@ class PatchDialog(DialogWindow):
         table = bolt.DataTable(bolt.PickleDict(textPath))
         # try the current Bashed Patch mode.
         patchConfigs = table.getItem(GPath(self.__new_key % u'Python'),
-            'bash.patch.configs', {})
+            u'bash.patch.configs', {})
         convert = False
         if not patchConfigs: # try the non-current Bashed Patch mode
             patchConfigs = table.getItem(GPath(self.__new_key % u'CBash'),
-                'bash.patch.configs', {})
+                u'bash.patch.configs', {})
             convert = bool(patchConfigs)
         if not patchConfigs: # try the old format
-            patchConfigs = table.getItem(self.__old_key, 'bash.patch.configs',
+            patchConfigs = table.getItem(self.__old_key, u'bash.patch.configs',
                 {})
             convert = bool(patchConfigs)
         if not patchConfigs:
@@ -365,7 +365,7 @@ class PatchDialog(DialogWindow):
     def RevertConfig(self):
         """Revert configuration back to saved"""
         patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,
-                                                   'bash.patch.configs', {})
+                                                   u'bash.patch.configs', {})
         self._load_config(patchConfigs)
 
     def DefaultConfig(self):

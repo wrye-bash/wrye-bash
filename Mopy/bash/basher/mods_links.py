@@ -246,7 +246,7 @@ class Mods_CreateBlank(ItemLink):
         self.window.data_store.create_new_mod(newName, windowSelected,
                                               masterless=self.masterless)
         if windowSelected: # assign it the group of the first selected mod
-            mod_group = self.window.data_store.table.getColumn('group')
+            mod_group = self.window.data_store.table.getColumn(u'group')
             mod_group[newName] = mod_group.get(windowSelected[0], u'')
         self.window.ClearSelected(clear_details=True)
         self.window.RefreshUI(redraw=[newName], refreshSaves=False)

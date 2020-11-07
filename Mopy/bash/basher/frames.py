@@ -43,8 +43,8 @@ class DocBrowser(WindowFrame):
     def __init__(self):
         # Data
         self._mod_name = GPath(u'')
-        self._db_doc_paths = bosh.modInfos.table.getColumn('doc')
-        self._db_is_editing = bosh.modInfos.table.getColumn('docEdit')
+        self._db_doc_paths = bosh.modInfos.table.getColumn(u'doc')
+        self._db_is_editing = bosh.modInfos.table.getColumn(u'docEdit')
         self._doc_is_wtxt = False
         # Clean data
         for mod_name, doc in self._db_doc_paths.items():
