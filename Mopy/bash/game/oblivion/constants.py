@@ -1112,6 +1112,8 @@ cellRecAttrs = {
                  u'unused2', u'fogRed', u'fogGreen', u'fogBlue', u'unused3',
                  u'fogNear', u'fogFar', u'directionalXY', u'directionalZ',
                  u'directionalFade', u'fogClip'),
+    u'C.MiscFlags': (u'flags.isInterior', u'flags.invertFastTravel',
+                     u'flags.forceHideLand', u'flags.handChanged'),
     u'C.Music': (u'music',),
     u'C.Name': (u'full',),
     u'C.Owner': (u'ownership', u'flags.publicPlace'),

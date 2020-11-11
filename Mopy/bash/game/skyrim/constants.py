@@ -1402,6 +1402,8 @@ cellRecAttrs = {
                  u'inherits', u'lightTemplate',),
     u'C.Location': (u'location',),
     u'C.LockList': (u'lockList',),
+    u'C.MiscFlags': (u'flags.isInterior', u'flags.cantFastTravel',
+                     u'flags.noLODWater', u'flags.handChanged'),
     u'C.Music': (u'music',),
     u'C.Name': (u'full',),
     u'C.Owner': (u'ownership', u'flags.publicPlace'),

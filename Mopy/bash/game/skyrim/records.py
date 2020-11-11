@@ -1756,7 +1756,9 @@ class MreCell(MelRecord):
                            (CellDataFlags2, 'skyFlags', 0),
                            old_versions={'B'}),
         ##: The other games skip this in interiors - why / why not here?
-        MelOptStruct(b'XCLC', u'2iI', u'posX', u'posY',
+        # None defaults here are on purpose - XCLC does not necessarily exist,
+        # but 0 is a valid value for both coordinates (duh)
+        MelOptStruct(b'XCLC', u'2iI', (u'posX', None), (u'posY', None),
             (_land_flags, u'land_flags')),
         MelTruncatedStruct(
             'XCLL', '3Bs3Bs3Bs2f2i3f3Bs3Bs3Bs3Bs3Bs3Bs3Bsf3Bs3fI',

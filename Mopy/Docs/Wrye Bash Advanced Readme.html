@@ -1645,12 +1645,12 @@ C.Location, -C.LockList
                 <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
                 <ul>
                     <li>(XCCM) Climate</li>
-                    <li>(DATA - flags) Behave Like Exterior</li>
+                    <li>(DATA - Flags) Behave Like Exterior</li>
                 </ul>
                 <strong>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition only.</strong>
                 <ul>
                     <li>(XCCM) Sky/Weather from Region</li>
-                    <li>(DATA - flags) Show Sky</li>
+                    <li>(DATA - Flags) Show Sky</li>
                 </ul>
                 <br>
                 <br>
@@ -1742,7 +1742,7 @@ C.Location, -C.LockList
         <tr>
           <td>C.LockList</td>
           <td>Modifies cell lock list.</td>
-          <td>The lock list (XILL) subrecord in cell (CELL) records.
+          <td>The lock list (XILL) subrecord in (CELL) Cell records.
             <br>
             <br>
             <strong>Available for Skyrim, Enderal&colon; Forgotten Stories and Skyrim&colon; Special Edition only.</strong>
@@ -1751,10 +1751,30 @@ C.Location, -C.LockList
         <tr>
             <td>C.Location</td>
             <td>Modifies cell Location.</td>
-            <td>The Location (XLCN) subrecord in Cell (CELL) records.
+            <td>The Location (XLCN) subrecord in (CELL) Cell records.
                 <br>
                 <br>
                 <strong>Available for Skyrim, Enderal&colon; Forgotten Stories and Skyrim&colon; Special Edition only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>C.MiscFlags</td>
+            <td>Modifies miscellaneous (CELL) Cell flags.</td>
+            <td>All (DATA) Flags not covered by other bash tags:
+                <ul>
+                    <li>Is Interior Cell</li>
+                    <li>Can't Travel From Here / Invert Fast Travel Behavior</li>
+                    <li>No LOD Water &mdash;
+                        <strong>All but Oblivion, Nehrim&colon; At Fate's Edge &amp; Fallout 4.</strong>
+                    </li>
+                    <li>Force Hide Land / Oblivion Interior &mdash;
+                        <strong>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</strong>
+                    </li>
+                    <li>Hand Changed</li>
+                </ul>
+                <br>
+                <br>
+                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -1778,7 +1798,7 @@ C.Location, -C.LockList
             <td>C.Name</td>
             <td>Modifies cell names.</td>
             <td>
-                The (FULL) - Name subrecord in Cell (CELL) records.
+                The (FULL) Name subrecord in (CELL) Cell records.
                 <br>
                 <br>
                 <strong>Not available for Fallout 4.</strong>
@@ -1787,7 +1807,7 @@ C.Location, -C.LockList
         <tr>
             <td>C.Owner</td>
             <td>Modifies Cell Ownership.</td>
-            <td>The following Cell (CELL) subrecords:
+            <td>The following (CELL) Cell subrecords:
                 <ul>
                     <li>Ownership
                         <ul>
@@ -1798,7 +1818,7 @@ C.Location, -C.LockList
                             </li>
                         </ul>
                     </li>
-                    <li>(DATA - flags) Public Place</li>
+                    <li>(DATA - Flags) Public Place</li>
                 </ul>
                 <br>
                 <br>
@@ -1807,8 +1827,8 @@ C.Location, -C.LockList
         </tr>
         <tr>
             <td>C.RecordFlags</td>
-            <td>Modifies the off-limits or dangerous flags.</td>
-            <td>Any Cell (CELL) record flags not covered by the other Cell-related Bash Tags.
+            <td>Modifies record flags in (CELL) Cell records.</td>
+            <td>Any Cell (CELL) record flags.
                 <br>
                 <br>
                 <strong>Not available for Fallout 4.</strong>
@@ -1825,7 +1845,7 @@ C.Location, -C.LockList
         </tr>
         <tr>
             <td>C.SkyLighting</td>
-            <td>Modifies Use Sky Lighting cell flag.</td>
+            <td>Modifies Use Sky Lighting (CELL) Cell flag.</td>
             <td>(DATA - Flags) Use Sky Lighting
                 <br>
                 <br>
@@ -1835,7 +1855,7 @@ C.Location, -C.LockList
         <tr>
             <td>C.Water</td>
             <td>Modifies cell water type or level.</td>
-            <td>The following Cell (CELL) subrecords:
+            <td>The following (CELL) Cell subrecords:
                 <ul>
                     <li>(XCWT) Water</li>
                     <li>(XCLW) Water Height</li>

@@ -388,8 +388,10 @@ class MreCell(MelRecord):
         MelEdid(),
         MelFull(),
         MelUInt8('DATA', (cellFlags, 'flags', 0)),
-        MelSkipInterior(MelTruncatedStruct(b'XCLC', u'2iI', u'posX', u'posY',
-            (_land_flags, u'land_flags'), is_optional=True,
+        # None defaults here are on purpose - XCLC does not necessarily exist,
+        # but 0 is a valid value for both coordinates (duh)
+        MelSkipInterior(MelTruncatedStruct(b'XCLC', u'2iI', (u'posX', None),
+            (u'posY', None), (_land_flags, u'land_flags'), is_optional=True,
             old_versions={u'2i'})),
         MelTruncatedStruct('XCLL', '=3Bs3Bs3Bs2f2i3f', 'ambientRed',
                            'ambientGreen', 'ambientBlue', ('unused1', null1),
