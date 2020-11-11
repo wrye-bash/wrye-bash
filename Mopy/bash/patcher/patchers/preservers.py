@@ -464,17 +464,14 @@ class WeaponModsPatcher(_APreserver):
 # _SimpleImporter
 class CellImporter(ImportPatcher):
     logMsg = u'\n=== ' + _(u'Cells/Worlds Patched')
-    _read_write_records = ('CELL', 'WRLD')
+    _read_write_records = (b'CELL', b'WRLD')
 
     def __init__(self, p_name, p_file, p_sources):
         super(CellImporter, self).__init__(p_name, p_file, p_sources)
         self.cellData = defaultdict(dict)
-        # TODO: docs: recAttrs vs tag_attrs - extra in PBash:
-        # 'unused1','unused2','unused3'
         self.recAttrs = bush.game.cellRecAttrs # dict[unicode, tuple[str]]
-        self.recFlags = bush.game.cellRecFlags # dict[unicode, str]
 
-    def initData(self,progress):
+    def initData(self, progress, __attrgetters=attrgetter_cache):
         """Get cells from source files."""
         if not self.isActive: return
         cellData = self.cellData
@@ -491,11 +488,8 @@ class CellImporter(ImportPatcher):
                 actual_attrs = ((attrs - bush.game.cell_skip_interior_attrs)
                                 if cellBlock.cell.flags.isInterior else attrs)
                 for attr in actual_attrs:
-                    tempCellData[fid][attr] = cellBlock.cell.__getattribute__(
-                        attr)
-                for flg_ in flgs_:
-                    tempCellData[fid + ('flags',)][
-                        flg_] = cellBlock.cell.flags.__getattr__(flg_)
+                    tempCellData[fid][attr] = __attrgetters[attr](
+                        cellBlock.cell)
         def checkMasterCellBlockData(cellBlock):
             """
             Add attribute values from record(s) in master file(s).
@@ -511,16 +505,11 @@ class CellImporter(ImportPatcher):
                 actual_attrs = ((attrs - bush.game.cell_skip_interior_attrs)
                                 if cellBlock.cell.flags.isInterior else attrs)
                 for attr in actual_attrs:
-                    master_attr = cellBlock.cell.__getattribute__(attr)
+                    master_attr = __attrgetters[attr](cellBlock.cell)
                     if tempCellData[rec_fid][attr] != master_attr:
                         cellData[rec_fid][attr] = tempCellData[rec_fid][attr]
-                for flg_ in flgs_:
-                    master_flag = cellBlock.cell.flags.__getattr__(flg_)
-                    if tempCellData[rec_fid + ('flags',)][flg_] != master_flag:
-                        cellData[rec_fid + ('flags',)][flg_] = \
-                            tempCellData[rec_fid + ('flags',)][flg_]
-        loadFactory = LoadFactory(False,MreRecord.type_class['CELL'],
-                                        MreRecord.type_class['WRLD'])
+        loadFactory = LoadFactory(False, MreRecord.type_class[b'CELL'],
+                                         MreRecord.type_class[b'WRLD'])
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         minfs = self.patchFile.p_file_minfos
@@ -540,13 +529,12 @@ class CellImporter(ImportPatcher):
             tags = bashTags & set(self.recAttrs)
             if not tags: continue
             attrs = set(chain.from_iterable(
-                self.recAttrs[bashKey] for bashKey in tags))
-            flgs_ = tuple(self.recFlags[bashKey] for bashKey in tags if
-                          self.recFlags[bashKey] != u'')
-            if 'CELL' in srcFile.tops:
+                self.recAttrs[bashKey] for bashKey in tags
+                if bashKey in self.recAttrs))
+            if b'CELL' in srcFile.tops:
                 for cellBlock in srcFile.CELL.cellBlocks:
                     importCellBlockData(cellBlock)
-            if 'WRLD' in srcFile.tops:
+            if b'WRLD' in srcFile.tops:
                 for worldBlock in srcFile.WRLD.worldBlocks:
                     for cellBlock in worldBlock.cellBlocks:
                         importCellBlockData(cellBlock)
@@ -561,10 +549,10 @@ class CellImporter(ImportPatcher):
                     masterFile = ModFile(masterInfo,loadFactory)
                     masterFile.load(True)
                     cachedMasters[master] = masterFile
-                if 'CELL' in masterFile.tops:
+                if b'CELL' in masterFile.tops:
                     for cellBlock in masterFile.CELL.cellBlocks:
                         checkMasterCellBlockData(cellBlock)
-                if 'WRLD' in masterFile.tops:
+                if b'WRLD' in masterFile.tops:
                     for worldBlock in masterFile.WRLD.worldBlocks:
                         for cellBlock in worldBlock.cellBlocks:
                             checkMasterCellBlockData(cellBlock)
@@ -575,17 +563,16 @@ class CellImporter(ImportPatcher):
 
     def scanModFile(self, modFile, progress): # scanModFile0
         """Add lists from modFile."""
-        if not self.isActive or (
-                'CELL' not in modFile.tops and 'WRLD' not in modFile.tops):
+        if not self.isActive or not (set(modFile.tops) & {b'CELL', b'WRLD'}):
             return
         cellData = self.cellData
         patchCells = self.patchFile.CELL
         patchWorlds = self.patchFile.WRLD
-        if 'CELL' in modFile.tops:
+        if b'CELL' in modFile.tops:
             for cellBlock in modFile.CELL.cellBlocks:
                 if cellBlock.cell.fid in cellData:
                     patchCells.setCell(cellBlock.cell)
-        if 'WRLD' in modFile.tops:
+        if b'WRLD' in modFile.tops:
             for worldBlock in modFile.WRLD.worldBlocks:
                 patchWorlds.setWorld(worldBlock.world)
                 curr_pworld = patchWorlds.id_worldBlocks[worldBlock.world.fid]
@@ -596,7 +583,7 @@ class CellImporter(ImportPatcher):
                 if pers_cell_block and pers_cell_block.cell.fid in cellData:
                     curr_pworld.worldCellBlock = pers_cell_block
 
-    def buildPatch(self,log,progress): # buildPatch0
+    def buildPatch(self, log, progress, __attrgetters=attrgetter_cache):
         """Adds merged lists to patchfile."""
         c_float_attrs = bush.game.cell_float_attrs
         def handlePatchCellBlock(patchCellBlock):
@@ -610,29 +597,20 @@ class CellImporter(ImportPatcher):
             Modified cell Blocks are kept, the other are discarded."""
             modified = False
             patch_cell_fid = patchCellBlock.cell.fid
-            patch_cell_get = patchCellBlock.cell.__getattribute__
-            patch_cell_set = patchCellBlock.cell.__setattr__
             for attr,value in cellData[patch_cell_fid].iteritems():
-                curr_value = patch_cell_get(attr)
+                curr_value = __attrgetters[attr](patchCellBlock.cell)
                 if attr == u'regions':
                     if set(value).difference(set(curr_value)):
-                        patch_cell_set(attr, value)
+                        setattr_deep(patchCellBlock.cell, attr, value)
                         modified = True
                 elif attr in c_float_attrs:
                     if not floats_equal(value, curr_value):
-                        patch_cell_set(attr, value)
+                        setattr_deep(patchCellBlock.cell, attr, value)
                         modified = True
                 else:
                     if value != curr_value:
-                        patch_cell_set(attr, value)
+                        setattr_deep(patchCellBlock.cell, attr, value)
                         modified = True
-            patch_get_flag = patchCellBlock.cell.flags.__getattr__
-            patch_set_flag = patchCellBlock.cell.flags.__setattr__
-            for flag, value in cellData[
-                patch_cell_fid + (u'flags',)].iteritems():
-                if patch_get_flag(flag) != value:
-                    patch_set_flag(flag, value)
-                    modified = True
             if modified:
                 patchCellBlock.cell.setChanged()
                 keep(patch_cell_fid)

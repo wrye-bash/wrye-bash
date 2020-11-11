@@ -1026,7 +1026,7 @@ class CellImporter(_ImporterPatcherPanel):
                      u'source mods.')
     patcher_name = _(u'Import Cells')
     patcher_type = preservers.CellImporter
-    autoKey = bush.game.cellAutoKeys
+    autoKey = set(bush.game.cellRecAttrs)
 
 # -----------------------------------------------------------------------------
 class ImportFactions(_ImporterPatcherPanel, _AListPanelCsv):

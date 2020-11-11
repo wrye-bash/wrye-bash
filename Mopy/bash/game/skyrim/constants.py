@@ -1378,57 +1378,38 @@ soundsTypes = {
 #------------------------------------------------------------------------------
 # CellImporter
 #------------------------------------------------------------------------------
-cellAutoKeys = {u'C.Acoustic', u'C.Climate', u'C.Encounter',
-                u'C.ForceHideLand', u'C.ImageSpace', u'C.Light', u'C.Location',
-                u'C.LockList', u'C.Music', u'C.Name', u'C.Owner',
-                u'C.RecordFlags', u'C.Regions', u'C.SkyLighting', u'C.Water'}
-
 cellRecAttrs = {
-    u'C.Acoustic': ('acousticSpace',),
-    u'C.Climate': ('climate',),
-    u'C.Encounter': ('encounterZone',),
+    u'C.Acoustic': (u'acousticSpace',),
+    u'C.Climate': (u'climate', u'flags.showSky'),
+    u'C.Encounter': (u'encounterZone',),
     u'C.ForceHideLand': (u'land_flags',),
-    u'C.ImageSpace': ('imageSpace',),
-    u'C.Light': ('ambientRed','ambientGreen','ambientBlue','unused1',
-         'directionalRed','directionalGreen','directionalBlue','unused2',
-         'fogRed','fogGreen','fogBlue','unused3',
-         'fogNear','fogFar','directionalXY','directionalZ',
-         'directionalFade','fogClip','fogPower',
-         'redXplus','greenXplus','blueXplus','unknownXplus', # 'X+'
-         'redXminus','greenXminus','blueXminus','unknownXminus', # 'X-'
-         'redYplus','greenYplus','blueYplus','unknownYplus', # 'Y+'
-         'redYminus','greenYminus','blueYminus','unknownYminus', # 'Y-'
-         'redZplus','greenZplus','blueZplus','unknownZplus', # 'Z+'
-         'redZminus','greenZminus','blueZminus','unknownZminus', # 'Z-'
-         'redSpec','greenSpec','blueSpec','unknownSpec', # Specular Color Values
-         'fresnelPower', # Fresnel Power
-         'fogColorFarRed','fogColorFarGreen','fogColorFarBlue','unused4',
-         'fogMax','lightFadeBegin','lightFadeEnd','inherits','lightTemplate',),
-    u'C.Location': ('location',),
-    u'C.LockList': ('lockList',),
-    u'C.Music': ('music',),
-    u'C.Name': ('full',),
-    u'C.Owner': ('ownership',),
-    u'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
-    u'C.Regions': ('regions',),
-    u'C.Water': ('water','waterHeight','waterNoiseTexture','waterEnvironmentMap',),
-}
-cellRecFlags = {
-    u'C.Acoustic': '',
-    u'C.Climate': 'showSky',
-    u'C.Encounter': '',
-    u'C.ForceHideLand': '',
-    u'C.ImageSpace': '',
-    u'C.Light': '',
-    u'C.Location': '',
-    u'C.LockList': '',
-    u'C.Music': '',
-    u'C.Name': '',
-    u'C.Owner': 'publicPlace',
-    u'C.RecordFlags': '',
-    u'C.Regions': '',
-    u'C.SkyLighting': 'useSkyLighting',
-    u'C.Water': 'hasWater',
+    u'C.ImageSpace': (u'imageSpace',),
+    ##: Patches unuseds?
+    u'C.Light': (u'ambientRed', u'ambientGreen', u'ambientBlue', u'unused1',
+                 u'directionalRed', u'directionalGreen', u'directionalBlue',
+                 u'unused2', u'fogRed', u'fogGreen', u'fogBlue', u'unused3',
+                 u'fogNear', u'fogFar', u'directionalXY', u'directionalZ',
+                 u'directionalFade', u'fogClip', u'fogPower', u'redXplus',
+                 u'greenXplus', u'blueXplus', u'unknownXplus', u'redXminus',
+                 u'greenXminus', u'blueXminus', u'unknownXminus', u'redYplus',
+                 u'greenYplus', u'blueYplus', u'unknownYplus', u'redYminus',
+                 u'greenYminus', u'blueYminus', u'unknownYminus', u'redZplus',
+                 u'greenZplus', u'blueZplus', u'unknownZplus', u'redZminus',
+                 u'greenZminus', u'blueZminus', u'unknownZminus', u'redSpec',
+                 u'greenSpec', u'blueSpec', u'unknownSpec', u'fresnelPower',
+                 u'fogColorFarRed', u'fogColorFarGreen', u'fogColorFarBlue',
+                 u'unused4', u'fogMax', u'lightFadeBegin', u'lightFadeEnd',
+                 u'inherits', u'lightTemplate',),
+    u'C.Location': (u'location',),
+    u'C.LockList': (u'lockList',),
+    u'C.Music': (u'music',),
+    u'C.Name': (u'full',),
+    u'C.Owner': (u'ownership', u'flags.publicPlace'),
+    u'C.RecordFlags': (u'flags1',), # Yes seems funky but thats the way it is
+    u'C.Regions': (u'regions',),
+    u'C.SkyLighting': (u'skyFlags.useSkyLighting',),
+    u'C.Water': (u'water', u'waterHeight', u'waterNoiseTexture',
+                 u'waterEnvironmentMap', u'flags.hasWater'),
 }
 cell_float_attrs = {u'fogNear', u'fogFar', u'directionalFade', u'fogClip',
                     u'fogPower', u'fogMax', u'fresnelPower', u'lightFadeBegin',

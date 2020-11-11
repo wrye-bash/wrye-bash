@@ -761,42 +761,26 @@ soundsTypes = {
 #------------------------------------------------------------------------------
 # CellImporter
 #------------------------------------------------------------------------------
-cellAutoKeys = {u'C.Acoustic', u'C.Climate', u'C.Encounter',
-                u'C.ForceHideLand', u'C.ImageSpace', u'C.Light', u'C.Music',
-                u'C.Name', u'C.Owner', u'C.RecordFlags', u'C.Regions',
-                u'C.Water'}
 cellRecAttrs = {
-    u'C.Acoustic': ('acousticSpace',),
-    u'C.Climate': ('climate',),
-    u'C.Encounter': ('encounterZone',),
+    u'C.Acoustic': (u'acousticSpace',),
+    u'C.Climate': (u'climate', u'flags.behaveLikeExterior'),
+    u'C.Encounter': (u'encounterZone',),
     u'C.ForceHideLand': (u'land_flags',),
-    u'C.ImageSpace': ('imageSpace',),
-    u'C.Light': ('ambientRed', 'ambientGreen', 'ambientBlue', 'unused1',
-                 'directionalRed', 'directionalGreen', 'directionalBlue',
-                 'unused2', 'fogRed', 'fogGreen', 'fogBlue', 'unused3',
-                 'fogNear', 'fogFar', 'directionalXY', 'directionalZ',
-                 'directionalFade', 'fogClip', 'fogPower',
-                 'lightTemplate', 'lightInheritFlags'),
-    u'C.Music': ('music',),
-    u'C.Name': ('full',),
-    u'C.Owner': ('ownership',),
-    u'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
-    u'C.Regions': ('regions',),
-    u'C.Water': ('water','waterHeight','waterNoiseTexture',),
-}
-cellRecFlags = {
-    u'C.Acoustic': '',
-    u'C.Climate': 'behaveLikeExterior',
-    u'C.Encounter': '',
-    u'C.ForceHideLand': '',
-    u'C.ImageSpace': '',
-    u'C.Light': '',
-    u'C.Music': '',
-    u'C.Name': '',
-    u'C.Owner': 'publicPlace',
-    u'C.RecordFlags': '',
-    u'C.Regions': '',
-    u'C.Water': 'hasWater',
+    u'C.ImageSpace': (u'imageSpace',),
+    ##: Patches unuseds?
+    u'C.Light': (u'ambientRed', u'ambientGreen', u'ambientBlue', u'unused1',
+                 u'directionalRed', u'directionalGreen', u'directionalBlue',
+                 u'unused2', u'fogRed', u'fogGreen', u'fogBlue', u'unused3',
+                 u'fogNear', u'fogFar', u'directionalXY', u'directionalZ',
+                 u'directionalFade', u'fogClip', u'fogPower',
+                 u'lightTemplate', u'lightInheritFlags'),
+    u'C.Music': (u'music',),
+    u'C.Name': (u'full',),
+    u'C.Owner': (u'ownership', u'flags.publicPlace'),
+    u'C.RecordFlags': (u'flags1',), # Yes seems funky but thats the way it is
+    u'C.Regions': (u'regions',),
+    u'C.Water': (u'water', u'waterHeight', u'waterNoiseTexture',
+                 u'flags.hasWater'),
 }
 cell_float_attrs = {u'fogNear', u'fogFar', u'directionalFade', u'fogClip',
                     u'fogPower', u'waterHeight'}
