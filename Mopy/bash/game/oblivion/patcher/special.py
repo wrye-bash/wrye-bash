@@ -112,8 +112,8 @@ class AlchemicalCatalogs(Patcher, _ExSpecial):
             ##: In Cobl Main.esm, the books have a script attached
             # (<cobGenDevalueOS [SCPT:01001DDD]>). This currently gets rid of
             # that, should we keep it instead?
-            # book.script = (GPath(u'Cobl Main.esm'), 0x001DDD)
-            book.fid = (GPath(u'Cobl Main.esm'), objectId)
+            # book.script = (_cobl_main, 0x001DDD)
+            book.fid = (_cobl_main, objectId)
             keep(book.fid)
             self.patchFile.BOOK.setRecord(book)
             return book
@@ -204,7 +204,6 @@ class CoblExhaustion(ListPatcher, _ExSpecialList):
         """Imports type_id_name from specified text file."""
         aliases = self.patchFile.aliases
         id_exhaustion = self.id_exhaustion
-        textPath = GPath(textPath)
         with CsvReader(textPath) as ins:
             for fields in ins:
                 try:

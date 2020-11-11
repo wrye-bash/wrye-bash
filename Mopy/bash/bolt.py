@@ -745,21 +745,6 @@ class Path(object):
                        [GPath_no_norm(x) for x in dirs],
                        [GPath_no_norm(x) for x in files])
 
-    def split(self):
-        """Splits the path into each of it's sub parts.  IE: C:\Program Files\Bethesda Softworks
-           would return ['C:','Program Files','Bethesda Softworks']"""
-        dirs = []
-        drive, path = os.path.splitdrive(self.s)
-        path = path.strip(os.path.sep)
-        l,r = os.path.split(path)
-        while l != u'':
-            dirs.append(r)
-            l,r = os.path.split(l)
-        dirs.append(r)
-        if drive != u'':
-            dirs.append(drive)
-        dirs.reverse()
-        return dirs
     def relpath(self,path):
         return GPath(os.path.relpath(self._s,Path.getNorm(path)))
 
@@ -991,7 +976,7 @@ class CsvReader(object):
             yield line.encode('utf8')
 
     def __init__(self,path):
-        self.ins = path.open('rb',encoding='utf-8-sig')
+        self.ins = GPath(path).open('rb', encoding='utf-8-sig')
         excel_fmt = ('excel','excel-tab')[u'\t' in self.ins.readline()]
         if excel_fmt == 'excel':
             delimiter = (',',';')[u';' in self.ins.readline()]

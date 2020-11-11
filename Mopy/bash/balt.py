@@ -197,7 +197,7 @@ def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
 #------------------------------------------------------------------------------
 def askDirectory(parent,message=_(u'Choose a directory.'),defaultPath=u''):
     """Shows a modal directory dialog and return the resulting path, or None if canceled."""
-    with wx.DirDialog(parent, message, GPath(defaultPath).s,
+    with wx.DirDialog(parent, message, defaultPath.s,
                       style=wx.DD_NEW_DIR_BUTTON) as dialog:
         if dialog.ShowModal() != wx.ID_OK: return None
         return GPath(dialog.GetPath())

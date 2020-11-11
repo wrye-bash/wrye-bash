@@ -920,7 +920,6 @@ class FullNames(object):
 
     def readFromText(self,textPath):
         """Imports type_id_name from specified text file."""
-        textPath = GPath(textPath)
         type_id_name = self.type_id_name
         aliases = self.aliases
         with CsvReader(textPath) as ins:

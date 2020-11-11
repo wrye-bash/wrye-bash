@@ -21,6 +21,8 @@
 #
 # =============================================================================
 from __future__ import division, print_function
+
+import os
 import subprocess
 import webbrowser
 from . import BashStatusBar, BashFrame
@@ -198,7 +200,7 @@ class _App_Button(StatusBar_Button):
         self._app_button_execute()
 
     def _app_button_execute(self):
-        dir_ = bolt.Path.getcwd().s
+        dir_ = os.getcwdu()
         args = u'"%s"' % self.exePath
         args += u' '.join([u'%s' % arg for arg in self.exeArgs])
         try:

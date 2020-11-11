@@ -453,7 +453,6 @@ class _ModGroups(object):
 
     def readFromText(self,textPath):
         """Imports mod groups from specified text file."""
-        textPath = GPath(textPath)
         mod_group = self.mod_group
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
