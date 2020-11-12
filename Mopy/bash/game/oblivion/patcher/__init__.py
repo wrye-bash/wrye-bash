@@ -29,6 +29,7 @@ from .preservers import RoadImporter
 from .special import AlchemicalCatalogs, SEWorldEnforcer, CoblExhaustion, \
     MFactMarker
 
+##: Bytestrings? why?
 _special_patchers = (
     (b'AlchemicalCatalogs', AlchemicalCatalogs),
     (b'SEWorldEnforcer', SEWorldEnforcer),
@@ -37,18 +38,14 @@ gameSpecificPatchers = {pname: pi(ptype.gui_cls_vars()) for
                         pname, ptype in _special_patchers}
 
 _list_patchers =(
-    (b'CoblExhaustion', CoblExhaustion, u'Exhaust'),
-    (b'MFactMarker', MFactMarker, u'MFact'),
+    (b'CoblExhaustion', CoblExhaustion),
+    (b'MFactMarker', MFactMarker),
 )
-gameSpecificListPatchers = {pname: pi(ptype.gui_cls_vars(), ck)
-                            for pname, ptype, ck in _list_patchers}
+gameSpecificListPatchers = {pname: pi(ptype.gui_cls_vars())
+                            for pname, ptype in _list_patchers}
 
 _import_patchers = (
     (b'RoadImporter', RoadImporter),
 )
-game_specific_import_patchers = {
-    pname: pi(
-              {u'patcher_type': ptype, u'_patcher_txt': ptype.patcher_text,
-               u'patcher_name': ptype.patcher_name, u'autoKey': ptype.autoKey})
-    for pname, ptype in _import_patchers
-}
+game_specific_import_patchers = {pname: pi(ptype.gui_cls_vars())
+                                 for pname, ptype in _import_patchers}

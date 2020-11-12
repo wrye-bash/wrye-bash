@@ -46,7 +46,8 @@ class _ExSpecial(Abstract_Patcher):
     def gui_cls_vars(cls):
         """Class variables for gui patcher classes created dynamically."""
         return {u'patcher_type': cls, u'_patcher_txt': cls.patcher_text,
-                u'patcher_name': cls.patcher_name}
+                u'patcher_name': cls.patcher_name,
+                u'_config_key': cls._config_key}
 
 class AlchemicalCatalogs(Patcher, _ExSpecial):
     """Updates COBL alchemical catalogs."""
@@ -54,6 +55,7 @@ class AlchemicalCatalogs(Patcher, _ExSpecial):
     patcher_text = u'\n\n'.join(
         [_(u"Update COBL's catalogs of alchemical ingredients and effects."),
          _(u'Will only run if Cobl Main.esm is loaded.')])
+    _config_key = u'AlchemicalCatalogs'
     _read_write_records = ('INGR',)
 
     @classmethod
@@ -175,7 +177,7 @@ class _ExSpecialList(_ExSpecial, AListPatcher):
     @classmethod
     def gui_cls_vars(cls):
         cls_vars = super(_ExSpecialList, cls).gui_cls_vars()
-        more = {u'canAutoItemCheck': False, u'autoKey': cls.autoKey}
+        more = {u'canAutoItemCheck': False, u'_csv_key': cls._csv_key}
         return cls_vars.update(more) or cls_vars
 
 class CoblExhaustion(ListPatcher, _ExSpecialList):
@@ -185,7 +187,8 @@ class CoblExhaustion(ListPatcher, _ExSpecialList):
     patcher_text = u'\n\n'.join(
         [_(u"Modify greater powers to use Cobl's Power Exhaustion feature."),
          _(u'Will only run if Cobl Main v1.66 (or higher) is active.')])
-    autoKey = {u'Exhaust'}
+    _csv_key = u'Exhaust'
+    _config_key = u'CoblExhaustion'
     _read_write_records = ('SPEL',)
 
     def __init__(self, p_name, p_file, p_sources):
@@ -280,7 +283,8 @@ class MFactMarker(ListPatcher, _ExSpecialList):
         [_(u"Mark factions that player can acquire while morphing."),
          _(u"Requires Cobl 1.28 and Wrye Morph or similar.")])
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
-    autoKey = {u'MFact'}
+    _csv_key = u'MFact'
+    _config_key = u'MFactMarker'
     _read_write_records = ('FACT',)
 
     def _pLog(self, log, changed):
@@ -391,6 +395,7 @@ class SEWorldEnforcer(_ExSpecial, Patcher):
     patcher_text = _(u"Suspends Cyrodiil quests while in Shivering Isles. "
                      u"I.e. re-instates GetPlayerInSEWorld tests as "
                      u"necessary.")
+    _config_key = u'SEWorldEnforcer'
     _read_write_records = ('QUST',)
 
     @classmethod
