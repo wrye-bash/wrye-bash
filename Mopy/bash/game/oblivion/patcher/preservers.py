@@ -30,7 +30,7 @@ __all__ = [u'RoadImporter']
 class RoadImporter(ImportPatcher, _ExSpecial):
     """Imports roads."""
     patcher_name = _(u'Import Roads')
-    patcher_text = _(u"Import roads from source mods.")
+    patcher_desc = _(u"Import roads from source mods.")
     autoKey = {u'Roads'}
     _config_key = u'RoadImporter'
 
