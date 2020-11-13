@@ -202,7 +202,7 @@ class Game(object):
         self.plugins_txt_path = plugins_txt_path # type: bolt.Path
         self.mod_infos = mod_infos # this is bosh.ModInfos, must be up to date
         self.master_path = mod_infos.masterName # type: bolt.Path
-        self.mtime_plugins_txt = 0
+        self.mtime_plugins_txt = 0.0
         self.size_plugins_txt = 0
 
     def _plugins_txt_modified(self):
@@ -769,18 +769,18 @@ class TimestampGame(Game):
     """
 
     allow_deactivate_master = True
-    _mtime_mods = defaultdict(set)
-    _get_free_time_step = 1 # step by one second intervals
+    _mtime_mods = defaultdict(set) # intentionally imprecise mtime cache
+    _get_free_time_step = 1.0 # step by one second intervals
 
     @classmethod
     def _must_update_active(cls, deleted, reordered): return deleted
 
     def has_load_order_conflict(self, mod_name):
-        mtime = self.mod_infos[mod_name].mtime
+        mtime = int(self.mod_infos[mod_name].mtime)
         return mtime in self._mtime_mods and len(self._mtime_mods[mtime]) > 1
 
     def has_load_order_conflict_active(self, mod_name, active):
-        mtime = self.mod_infos[mod_name].mtime
+        mtime = int(self.mod_infos[mod_name].mtime)
         return self.has_load_order_conflict(mod_name) and bool(
             (self._mtime_mods[mtime] - {mod_name}) & active)
 
@@ -829,7 +829,7 @@ class TimestampGame(Game):
         if mod is not None: # respace this and next mods in 60 sec intervals
             for mod in current[i + 1:]:
                 info = self.mod_infos[mod]
-                older += 60
+                older += 60.0
                 info.setmtime(older)
         restamp = []
         for ordered, mod in zip(lord, current):
@@ -843,8 +843,7 @@ class TimestampGame(Game):
     def _rebuild_mtimes_cache(self):
         self._mtime_mods.clear()
         for mod, info in self.mod_infos.iteritems():
-            mtime = info.mtime
-            self._mtime_mods[mtime] |= {mod}
+            self._mtime_mods[int(info.mtime)] |= {mod}
 
     def _persist_active_plugins(self, active, lord):
         self._write_plugins_txt(active, active)
@@ -1415,7 +1414,7 @@ class SkyrimSE(AsteriskGame):
         return {GPath_no_norm(u'Skyrim.esm')} | set(
             self.must_be_active_if_present)
 
-    __dlc_spacing = 60 # in seconds
+    __dlc_spacing = 60.0 # in seconds
     def _fixed_order_plugins(self):
         """Return the semi fixed plugins after pinning them in correct order by
         timestamping them."""

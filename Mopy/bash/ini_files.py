@@ -685,7 +685,6 @@ class GameIni(IniFile):
             if x.strip().lower() in self.bsaRedirectors)
         if doRedirect == is_bsa_redirection_active:
             return
-        # Skyrim does not have an Archive Invalidation File
         if doRedirect and not aiBsa.exists():
             source = dirs[u'templates'].join(bush.game.fsName, u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime

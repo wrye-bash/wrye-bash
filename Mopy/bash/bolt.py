@@ -674,18 +674,18 @@ class Path(object):
     #--Mtime
     def _getmtime(self):
         """Return mtime for path."""
-        return int(os.path.getmtime(self._s))
+        return os.path.getmtime(self._s)
     def _setmtime(self, mtime):
-        os.utime(self._s, (self.atime, int(mtime)))
+        os.utime(self._s, (self.atime, mtime))
     mtime = property(_getmtime, _setmtime, doc="Time file was last modified.")
 
     def size_mtime(self):
         lstat = os.lstat(self._s)
-        return lstat.st_size, int(lstat.st_mtime)
+        return lstat.st_size, lstat.st_mtime
 
     def size_mtime_ctime(self):
         lstat = os.lstat(self._s)
-        return lstat.st_size, int(lstat.st_mtime), lstat.st_ctime
+        return lstat.st_size, lstat.st_mtime, lstat.st_ctime
 
     @property
     def stat(self):

@@ -278,7 +278,7 @@ def dump_translator(out_path, lang):
 def format_date(secs): # type: (float) -> unicode
     """Convert time to string formatted to to locale's default date/time.
 
-    :param secs: """
+    :param secs: Formats the specified number of seconds into a string."""
     try:
         local = time.localtime(secs)
     except ValueError: # local time in windows can't handle negative values

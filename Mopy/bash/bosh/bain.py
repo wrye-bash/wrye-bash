@@ -1527,7 +1527,7 @@ class InstallerProject(Installer):
                 rpFile = os.path.join(rsDir, sFile)
                 # below calls may now raise even if "werr.winerror = 123"
                 lstat = os.lstat(asFile)
-                size, date = lstat.st_size, int(lstat.st_mtime)
+                size, date = lstat.st_size, lstat.st_mtime
                 max_mtime = max_mtime if max_mtime >= date else date
                 oSize, oCrc, oDate = oldGet(rpFile, (0, 0, 0))
                 if size == oSize and date == oDate:
@@ -1539,7 +1539,7 @@ class InstallerProject(Installer):
                                pending_size, progress, recalculate_all_crcs,
                                rootName)
         #--Done
-        return int(max_mtime)
+        return max_mtime
 
     def size_or_mtime_changed(self, apath, _lstat=os.lstat):
         #FIXME(ut): getmtime(True) won't detect all changes - for instance COBL
@@ -1561,9 +1561,9 @@ class InstallerProject(Installer):
         # mtimes_str = '.'.join(map(str, c))
         # mtimes_str_crc = crc32(mtimes_str)
         try:
-            mtime = int(max(c))
+            mtime = max(c)
         except ValueError: # int(max([]))
-            mtime = 0
+            mtime = 0.0
         return self.modified != mtime
 
     def _refreshSource(self, progress, recalculate_project_crc):
@@ -2111,7 +2111,7 @@ class InstallersData(DataStore):
                 asFile = os.path.join(asDir, sFile)
                 # below calls may now raise even if "werr.winerror = 123"
                 try:
-                    oSize, oCrc, oDate = oldGet(rpFile, (0, 0, 0))
+                    oSize, oCrc, oDate = oldGet(rpFile, (0, 0, 0.0))
                     if top_level_espm: # modInfos MUST BE UPDATED
                         try:
                             modInfo = modInfos[GPath(rpFile)]
@@ -2121,7 +2121,7 @@ class InstallersData(DataStore):
                         except KeyError:
                             pass # corrupted/missing, let os.lstat decide
                     lstat = os.lstat(asFile)
-                    size, date = lstat.st_size, int(lstat.st_mtime)
+                    size, date = lstat.st_size, lstat.st_mtime
                     if size != oSize or date != oDate:
                         pending[rpFile] = (size, oCrc, date, asFile)
                         pending_size += size

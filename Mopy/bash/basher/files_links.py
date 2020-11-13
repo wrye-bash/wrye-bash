@@ -329,10 +329,10 @@ class File_Redate(ItemLink):
         # Ask user for revised time and parse it
         new_time_input = self._askText(
             _(u'Redate selected file(s) starting at...'),
-            title=_(u'Redate Files'), default=format_date(int(time.time())))
+            title=_(u'Redate Files'), default=format_date(time.time()))
         if not new_time_input: return
         try:
-            new_time = int(time.mktime(unformat_date(new_time_input, '%c')))
+            new_time = time.mktime(unformat_date(new_time_input, '%c'))
         except ValueError:
             self._showError(_(u'Unrecognized date: ') + new_time_input)
             return

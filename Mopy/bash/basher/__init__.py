@@ -1588,8 +1588,7 @@ class ModDetails(_ModsSavesDetails):
 
     def _set_date(self, modInfo):
         newTimeTup = unformat_date(self.modifiedStr, '%c')
-        newTimeInt = int(time.mktime(newTimeTup))
-        modInfo.setmtime(newTimeInt)
+        modInfo.setmtime(time.mktime(newTimeTup))
 
     #--Bash Tags
     def ShowBashTagsMenu(self):

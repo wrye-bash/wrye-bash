@@ -197,11 +197,11 @@ class FileInfo(AFile):
     def isMod(self):
         return ModInfos.rightFileType(self.name)
 
-    def setmtime(self, set_time=0, crc_changed=False):
+    def setmtime(self, set_time=0.0, crc_changed=False):
         """Sets mtime. Defaults to current value (i.e. reset).
 
         :type set_time: int|float"""
-        set_time = int(set_time or self.mtime)
+        set_time = set_time or self.mtime
         self.abs_path.mtime = set_time
         self._file_mod_time = set_time
         return set_time
@@ -453,7 +453,7 @@ class ModInfo(FileInfo):
         else:
             return u'%02X' % cr_index
 
-    def setmtime(self, set_time=0, crc_changed=False):
+    def setmtime(self, set_time=0.0, crc_changed=False):
         """Set mtime and if crc_changed is True recalculate the crc."""
         set_time = FileInfo.setmtime(self, set_time)
         # Prevent re-calculating the File CRC
@@ -1555,7 +1555,7 @@ class FileInfos(TableFileInfos):
             self.table.copyRow(fileName, destName)
             if set_mtime is not None:
                 if set_mtime == '+1':
-                    set_mtime = srcPath.mtime + 1
+                    set_mtime = srcPath.mtime + 1.0
                 self[destName].setmtime(set_mtime) # correctly update table
         return set_mtime
 
@@ -1952,7 +1952,7 @@ class ModInfos(FileInfos):
             start_time  = self[previous].mtime
             if end_time is not None and \
                     end_time <= start_time: # can happen on esm/esp boundary
-                start_time = end_time - 60
+                start_time = end_time - 60.0
             set_time = load_order.get_free_time(start_time, end_time=end_time)
             self[new_mod].setmtime(set_time)
         self._lo_wip[previous_index + 1:previous_index + 1] = [new_mod]

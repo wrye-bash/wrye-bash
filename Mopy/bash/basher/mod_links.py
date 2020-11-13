@@ -204,7 +204,7 @@ class Mod_OrderByName(EnabledLink):
             newTime = min(x.mtime for x in self.iselected_infos())
             for inf in self.iselected_infos():
                 inf.setmtime(newTime)
-                newTime += 60
+                newTime += 60.0
             #--Refresh
             with load_order.Unlock():
                 bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=True)
