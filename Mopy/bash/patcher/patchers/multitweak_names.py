@@ -526,7 +526,7 @@ class NamesTweak_SecurityToLockpicking(_ATextReplacer):
                        u'sSkillDescSecurity': u'Lockpicking Description'}
 
 #------------------------------------------------------------------------------
-class NamesTweaker(MultiTweaker):
+class TweakNamesPatcher(MultiTweaker):
     """Tweaks record full names in various ways."""
     scanOrder = 32
     editOrder = 32
@@ -538,7 +538,7 @@ class NamesTweaker(MultiTweaker):
         NamesTweak_MarksmanToArchery, NamesTweak_SecurityToLockpicking]
 
     def __init__(self, p_name, p_file, enabled_tweaks):
-        super(NamesTweaker, self).__init__(p_name, p_file, enabled_tweaks)
+        super(TweakNamesPatcher, self).__init__(p_name, p_file, enabled_tweaks)
         for names_tweak in enabled_tweaks[1:]:
             # Always the first one if it's enabled, so this is safe
             if isinstance(names_tweak, NamesTweak_BodyTags):
@@ -550,4 +550,4 @@ class NamesTweaker(MultiTweaker):
     @classmethod
     def tweak_instances(cls):
         return [NamesTweak_BodyTags()] + super( # always first, see __init__
-            NamesTweaker, cls).tweak_instances()
+            TweakNamesPatcher, cls).tweak_instances()

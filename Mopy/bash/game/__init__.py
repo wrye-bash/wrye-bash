@@ -338,9 +338,10 @@ class GameInfo(object):
     # Bash Tags supported by this game
     allTags = set()
 
-    # Patcher available when building a Bashed Patch (referenced by class name)
+    # Patchers available when building a Bashed Patch (referenced by GUI class
+    # name, see gui_patchers.py for their definitions).
     # PatchMerger must come first if enabled, see
-    # patcher.patchers.base.PatchMerger.__init__
+    # patcher.patchers.base.MergePatchesPatcher.__init__
     patchers = ()
 
     # Magic Info

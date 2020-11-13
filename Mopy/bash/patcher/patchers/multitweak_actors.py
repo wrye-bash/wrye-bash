@@ -404,7 +404,7 @@ class OppositeGenderAnimsPatcher_Male(_AOppositeGenderAnimsPatcher):
     tweak_key = u'opposite_gender_anims_male'
 
 #------------------------------------------------------------------------------
-class TweakActors(MultiTweaker):
+class TweakActorsPatcher(MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to
     better work with mods or avoid bugs."""
     _tweak_classes = [globals()[t] for t in bush.game.actor_tweaks]

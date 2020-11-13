@@ -148,7 +148,7 @@ class GmstTweak(DynamicTweak, MultiTweakItem):
                     self._find_chosen_value(remaining_eid))
 
 #------------------------------------------------------------------------------
-class GmstTweaker(MultiTweaker):
+class TweakSettingsPatcher(MultiTweaker):
     """Tweaks GMST records in various ways."""
     scanOrder = 29
     editOrder = 29

@@ -173,35 +173,34 @@ class MultiTweaker(AMultiTweaker,Patcher):
             tweak.tweak_log(log, tweak_counter[tweak])
 
 # Patchers: 10 ----------------------------------------------------------------
-class AliasesPatcher(Patcher):
+class AliasModNamesPatcher(Patcher):
     """Specify mod aliases for patch files."""
     scanOrder = 10
     editOrder = 10
     group = _(u'General')
 
-class PatchMerger(ListPatcher):
+class MergePatchesPatcher(ListPatcher):
     """Merges specified patches into Bashed Patch."""
     scanOrder = 10
     editOrder = 10
     group = _(u'General')
 
     def __init__(self, p_name, p_file, p_sources):
-        super(PatchMerger, self).__init__(p_name, p_file, p_sources)
+        super(MergePatchesPatcher, self).__init__(p_name, p_file, p_sources)
         if not self.isActive: return
         #--WARNING: Since other patchers may rely on the following update
         # during their __init__, it's important that PatchMerger runs first
         p_file.set_mergeable_mods(self.srcs)
 
 # TODO move this to a file it's imported after MreRecord.simpleTypes is set
-class UpdateReferences(ListPatcher):
+class ReplaceFormIDsPatcher(ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
     scanOrder = 15
     editOrder = 15
     group = _(u'General')
 
     def __init__(self, p_name, p_file, p_sources):
-        super(UpdateReferences, self).__init__(p_name, p_file,
-                                               p_sources)
+        super(ReplaceFormIDsPatcher, self).__init__(p_name, p_file, p_sources)
         self.old_new = {} #--Maps old fid to new fid
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id

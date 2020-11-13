@@ -25,27 +25,27 @@
 contains the data structures that are dynamically set on a per game basis in
 bush."""
 from ....patcher import PatcherInfo as pi
-from .preservers import RoadImporter
-from .special import AlchemicalCatalogs, SEWorldEnforcer, CoblExhaustion, \
-    MFactMarker
+from .preservers import ImportRoadsPatcher
+from .special import CoblCatalogsPatcher, SEWorldTestsPatcher, CoblExhaustionPatcher, \
+    MorphFactionsPatcher
 
 ##: Bytestrings? why?
 _special_patchers = (
-    (b'AlchemicalCatalogs', AlchemicalCatalogs),
-    (b'SEWorldEnforcer', SEWorldEnforcer),
+    (b'AlchemicalCatalogs', CoblCatalogsPatcher),
+    (b'SEWorldEnforcer', SEWorldTestsPatcher),
 )
 gameSpecificPatchers = {pname: pi(ptype.gui_cls_vars()) for
                         pname, ptype in _special_patchers}
 
 _list_patchers =(
-    (b'CoblExhaustion', CoblExhaustion),
-    (b'MFactMarker', MFactMarker),
+    (b'CoblExhaustion', CoblExhaustionPatcher),
+    (b'MFactMarker', MorphFactionsPatcher),
 )
 gameSpecificListPatchers = {pname: pi(ptype.gui_cls_vars())
                             for pname, ptype in _list_patchers}
 
 _import_patchers = (
-    (b'RoadImporter', RoadImporter),
+    (b'RoadImporter', ImportRoadsPatcher),
 )
 game_specific_import_patchers = {pname: pi(ptype.gui_cls_vars())
                                  for pname, ptype in _import_patchers}

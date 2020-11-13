@@ -31,8 +31,8 @@ from ....patcher import getPatchesPath
 from ....patcher.base import Patcher, Abstract_Patcher, AListPatcher
 from ....patcher.patchers.base import ListPatcher
 
-__all__ = [u'AlchemicalCatalogs', u'CoblExhaustion', u'MFactMarker',
-           u'SEWorldEnforcer']
+__all__ = [u'CoblCatalogsPatcher', u'CoblExhaustionPatcher',
+           u'MorphFactionsPatcher', u'SEWorldTestsPatcher']
 _cobl_main = GPath(u'COBL Main.esm')
 
 class _ExSpecial(Abstract_Patcher):
@@ -49,28 +49,28 @@ class _ExSpecial(Abstract_Patcher):
                 u'patcher_name': cls.patcher_name,
                 u'_config_key': cls._config_key}
 
-class AlchemicalCatalogs(Patcher, _ExSpecial):
+class CoblCatalogsPatcher(Patcher, _ExSpecial):
     """Updates COBL alchemical catalogs."""
     patcher_name = _(u'Cobl Catalogs')
     patcher_desc = u'\n\n'.join(
         [_(u"Update COBL's catalogs of alchemical ingredients and effects."),
          _(u'Will only run if Cobl Main.esm is loaded.')])
     _config_key = u'AlchemicalCatalogs'
-    _read_write_records = ('INGR',)
+    _read_write_records = (b'INGR',)
 
     @classmethod
     def gui_cls_vars(cls):
-        cls_vars = super(AlchemicalCatalogs, cls).gui_cls_vars()
+        cls_vars = super(CoblCatalogsPatcher, cls).gui_cls_vars()
         return cls_vars.update({u'default_isEnabled': True}) or cls_vars
 
     def __init__(self, p_name, p_file):
-        super(AlchemicalCatalogs, self).__init__(p_name, p_file)
+        super(CoblCatalogsPatcher, self).__init__(p_name, p_file)
         self.isActive = (_cobl_main in p_file.loadSet)
         self.id_ingred = {}
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('BOOK',) if self.isActive else ()
+        return (b'BOOK',) if self.isActive else ()
 
     def scanModFile(self,modFile,progress):
         """Scans specified mod file to extract info. May add record to patch
@@ -81,7 +81,7 @@ class AlchemicalCatalogs(Patcher, _ExSpecial):
             if record.obme_record_version is not None:
                 continue ##: Skips OBME records - rework to support them
             effects = record.getEffects()
-            if not ('SEFF',0) in effects:
+            if not (b'SEFF', 0) in effects:
                 id_ingred[record.fid] = (record.eid, record.full, effects)
 
     def buildPatch(self,log,progress):
@@ -107,7 +107,7 @@ class AlchemicalCatalogs(Patcher, _ExSpecial):
             book.text = u'<div align="left"><font face=3 color=4444>'
             book.text += (_(u"Salan's Catalog of %s") + u'\r\n\r\n') % full
             book.iconPath = iconPath
-            book.model = book.getDefault('model')
+            book.model = book.getDefault(u'model')
             book.model.modPath = modelPath
             book.model.modb_p = modb_p
             book.modb = book
@@ -122,7 +122,8 @@ class AlchemicalCatalogs(Patcher, _ExSpecial):
         #--Ingredients Catalog
         id_ingred = self.id_ingred
         iconPath, modPath, modb_p = (u'Clutter\\IconBook9.dds',
-                                     u'Clutter\\Books\\Octavo02.NIF','\x03>@A')
+                                     u'Clutter\\Books\\Octavo02.NIF',
+                                     b'\x03>@A')
         for (num,objectId,full,value) in _ingred_alchem:
             book = getBook(objectId, u'cobCatAlchemIngreds%s' % num, full,
                            value, iconPath, modPath, modb_p)
@@ -148,7 +149,8 @@ class AlchemicalCatalogs(Patcher, _ExSpecial):
                 effect_ingred[effectName].append((index,full))
         #--Effect catalogs
         iconPath, modPath, modb_p = (u'Clutter\\IconBook7.dds',
-                                     u'Clutter\\Books\\Octavo01.NIF','\x03>@A')
+                                     u'Clutter\\Books\\Octavo01.NIF',
+                                     b'\x03>@A')
         for (num, objectId, full, value) in _effect_alchem:
             book = getBook(objectId, u'cobCatAlchemEffects%s' % num, full,
                            value, iconPath, modPath, modb_p)
@@ -180,7 +182,7 @@ class _ExSpecialList(_ExSpecial, AListPatcher):
         more = {u'canAutoItemCheck': False, u'_csv_key': cls._csv_key}
         return cls_vars.update(more) or cls_vars
 
-class CoblExhaustion(ListPatcher, _ExSpecialList):
+class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
     """Modifies most Greater power to work with Cobl's power exhaustion
     feature."""
     patcher_name = _(u'Cobl Exhaustion')
@@ -189,10 +191,10 @@ class CoblExhaustion(ListPatcher, _ExSpecialList):
          _(u'Will only run if Cobl Main v1.66 (or higher) is active.')])
     _csv_key = u'Exhaust'
     _config_key = u'CoblExhaustion'
-    _read_write_records = ('SPEL',)
+    _read_write_records = (b'SPEL',)
 
     def __init__(self, p_name, p_file, p_sources):
-        super(CoblExhaustion, self).__init__(p_name, p_file, p_sources)
+        super(CoblExhaustionPatcher, self).__init__(p_name, p_file, p_sources)
         self.isActive |= (_cobl_main in p_file.loadSet and
             self.patchFile.p_file_minfos.getVersionFloat(_cobl_main) > 1.65)
         self.id_exhaustion = {}
@@ -251,19 +253,19 @@ class CoblExhaustion(ListPatcher, _ExSpecialList):
             if not (duration and record.spellType == 2): continue
             isExhausted = False ##: unused, was it supposed to be used?
             for effect in record.effects:
-                if effect.name == 'SEFF' and effect.scriptEffect.script == \
+                if effect.name == b'SEFF' and effect.scriptEffect.script == \
                         exhaustId:
                     duration = 0
                     break
             if not duration: continue
             #--Okay, do it
-            record.full = '+'+record.full
+            record.full = u'+' + record.full
             record.spellType = 3 #--Lesser power
-            effect = record.getDefault('effects')
-            effect.name = 'SEFF'
+            effect = record.getDefault(u'effects')
+            effect.name = b'SEFF'
             effect.duration = duration
-            scriptEffect = record.getDefault('effects.scriptEffect')
-            scriptEffect.full = u"Power Exhaustion"
+            scriptEffect = record.getDefault(u'effects.scriptEffect')
+            scriptEffect.full = u'Power Exhaustion'
             scriptEffect.script = exhaustId
             scriptEffect.school = 2
             scriptEffect.visual = null4
@@ -276,7 +278,7 @@ class CoblExhaustion(ListPatcher, _ExSpecialList):
         self._pLog(log, count)
 
 #------------------------------------------------------------------------------
-class MFactMarker(ListPatcher, _ExSpecialList):
+class MorphFactionsPatcher(ListPatcher, _ExSpecialList):
     """Mark factions that player can acquire while morphing."""
     patcher_name = _(u'Morph Factions')
     patcher_desc = u'\n\n'.join(
@@ -285,7 +287,7 @@ class MFactMarker(ListPatcher, _ExSpecialList):
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
     _csv_key = u'MFact'
     _config_key = u'MFactMarker'
-    _read_write_records = ('FACT',)
+    _read_write_records = (b'FACT',)
 
     def _pLog(self, log, changed):
         log.setHeader(u'= ' + self._patcher_name)
@@ -312,7 +314,7 @@ class MFactMarker(ListPatcher, _ExSpecialList):
                 id_info[longid] = (morphName, rankName)
 
     def __init__(self, p_name, p_file, p_sources):
-        super(MFactMarker, self).__init__(p_name, p_file, p_sources)
+        super(MorphFactionsPatcher, self).__init__(p_name, p_file, p_sources)
         self.id_info = {} #--Morphable factions keyed by fid
         self.isActive &= _cobl_main in p_file.loadSet
         self.mFactLong = (_cobl_main, 0x33FB)
@@ -357,14 +359,14 @@ class MFactMarker(ListPatcher, _ExSpecialList):
             if mFactLong not in [relation.faction for relation in
                                  record.relations]:
                 record.general_flags.hidden_from_pc = False
-                relation = record.getDefault('relations')
+                relation = record.getDefault(u'relations')
                 relation.faction = mFactLong
                 relation.mod = 10
                 record.relations.append(relation)
                 mname,rankName = id_info[rec_fid]
                 record.full = mname
                 if not record.ranks:
-                    record.ranks = [record.getDefault('ranks')]
+                    record.ranks = [record.getDefault(u'ranks')]
                 for rank in record.ranks:
                     if not rank.male_title: rank.male_title = rankName
                     if not rank.female_title: rank.female_title = rankName
@@ -380,7 +382,7 @@ class MFactMarker(ListPatcher, _ExSpecialList):
             relations = record.relations
             del relations[:]
             for faction in mFactable:
-                relation = record.getDefault('relations')
+                relation = record.getDefault(u'relations')
                 relation.faction = faction
                 relation.mod = 10
                 relations.append(relation)
@@ -389,25 +391,25 @@ class MFactMarker(ListPatcher, _ExSpecialList):
 
 #------------------------------------------------------------------------------
 _ob_path = GPath(bush.game.master_file)
-class SEWorldEnforcer(_ExSpecial, Patcher):
+class SEWorldTestsPatcher(_ExSpecial, Patcher):
     """Suspends Cyrodiil quests while in Shivering Isles."""
     patcher_name = _(u'SEWorld Tests')
     patcher_desc = _(u"Suspends Cyrodiil quests while in Shivering Isles. "
                      u"I.e. re-instates GetPlayerInSEWorld tests as "
                      u"necessary.")
     _config_key = u'SEWorldEnforcer'
-    _read_write_records = ('QUST',)
+    _read_write_records = (b'QUST',)
 
     @classmethod
     def gui_cls_vars(cls):
-        cls_vars = super(SEWorldEnforcer, cls).gui_cls_vars()
+        cls_vars = super(SEWorldTestsPatcher, cls).gui_cls_vars()
         return cls_vars.update({u'default_isEnabled': True}) or cls_vars
 
     def __init__(self, p_name, p_file):
-        super(SEWorldEnforcer, self).__init__(p_name, p_file)
+        super(SEWorldTestsPatcher, self).__init__(p_name, p_file)
         self.cyrodiilQuests = set()
         if _ob_path in p_file.loadSet:
-            loadFactory = LoadFactory(False,MreRecord.type_class['QUST'])
+            loadFactory = LoadFactory(False, MreRecord.type_class[b'QUST'])
             modInfo = self.patchFile.p_file_minfos[_ob_path]
             modFile = ModFile(modInfo,loadFactory)
             modFile.load(True)
@@ -442,7 +444,7 @@ class SEWorldEnforcer(_ExSpecial, Patcher):
             for condition in record.conditions:
                 if condition.ifunc == 365: break #--365: playerInSeWorld
             else:
-                condition = record.getDefault('conditions')
+                condition = record.getDefault(u'conditions')
                 condition.ifunc = 365
                 record.conditions.insert(0,condition)
                 keep(rec_fid)

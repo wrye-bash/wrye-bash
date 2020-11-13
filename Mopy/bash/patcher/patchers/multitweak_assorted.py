@@ -856,7 +856,7 @@ class AssortedTweak_GunsUseISAnimation(MultiTweakItem):
         record.dnamFlags1.dontUse1stPersonISAnimations = False
 
 #------------------------------------------------------------------------------
-class AssortedTweaker(MultiTweaker):
+class TweakAssortedPatcher(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     scanOrder = 32
     editOrder = 32

@@ -157,7 +157,7 @@ class _AClothesTweaker(AMultiTweaker):
     scanOrder = 31
     editOrder = 31
 
-class ClothesTweaker(_AClothesTweaker,MultiTweaker):
+class TweakClothesPatcher(_AClothesTweaker,MultiTweaker):
     @classmethod
     def tweak_instances(cls):
         return sorted(itertools.chain(

@@ -297,7 +297,7 @@ class RaceTweaker_SexlessHairs(_ARaceTweak):
 #------------------------------------------------------------------------------
 # Race Patcher ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class RacePatcher(AMultiTweaker, ListPatcher):
+class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
     """Race patcher - we inherit from AMultiTweaker to use tweak_instances."""
     group = _(u'Special')
     scanOrder = 40

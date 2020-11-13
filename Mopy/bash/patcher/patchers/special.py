@@ -265,7 +265,7 @@ class _AListsMerger(ListPatcher):
         implementation, every patcher needs to override this."""
         raise AbstractError()
 
-class ListsMerger(_AListsMerger):
+class LeveledListsPatcher(_AListsMerger):
     """Merges leveled lists."""
     _read_write_records = bush.game.listTypes # bush.game must be set!
     _de_tag = u'Delev'
@@ -279,7 +279,7 @@ class ListsMerger(_AListsMerger):
     _de_re_header = _(u'Delevelers/Relevelers')
 
     def __init__(self, p_name, p_file, p_sources, remove_empty, tag_choices):
-        super(ListsMerger, self).__init__(p_name, p_file, p_sources,
+        super(LeveledListsPatcher, self).__init__(p_name, p_file, p_sources,
                                           remove_empty, tag_choices)
         self.empties = set()
         _skip_id = lambda x: (GPath(bush.game.master_file), x)
@@ -298,11 +298,11 @@ class ListsMerger(_AListsMerger):
         return [list_entry.listId for list_entry in target_list.entries]
 
 #------------------------------------------------------------------------------
-class FidListsMerger(_AListsMerger):
+class FormIDListsPatcher(_AListsMerger):
     """Merges FormID lists."""
     scanOrder = 46
     editOrder = 46
-    _read_write_records = ('FLST',)
+    _read_write_records = (b'FLST',)
     _de_tag = u'Deflst'
     _type_to_label = {'FLST': _(u'FormID')}
     _de_re_header = _(u'Deflsters')
@@ -311,7 +311,7 @@ class FidListsMerger(_AListsMerger):
         return target_list.formIDInList
 
 #------------------------------------------------------------------------------
-class ContentsChecker(Patcher):
+class ContentsCheckerPatcher(Patcher):
     """Checks contents of leveled lists, inventories and containers for
     correct content types."""
     group = _(u'Special')
@@ -322,7 +322,7 @@ class ContentsChecker(Patcher):
     entryTypes = set(chain.from_iterable(contType_entryTypes.itervalues()))
 
     def __init__(self, p_name, p_file):
-        super(ContentsChecker, self).__init__(p_name, p_file)
+        super(ContentsCheckerPatcher, self).__init__(p_name, p_file)
         self.fid_to_type = {}
         self.id_eid = {}
 

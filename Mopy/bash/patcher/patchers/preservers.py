@@ -299,79 +299,22 @@ class _APreserver(ImportPatcher):
 #------------------------------------------------------------------------------
 # Absorbed patchers -----------------------------------------------------------
 #------------------------------------------------------------------------------
-class ActorImporter(_APreserver):
+class ImportActorsPatcher(_APreserver):
     rec_attrs = bush.game.actor_importer_attrs
     _multi_tag = True
 
 #------------------------------------------------------------------------------
-class DeathItemPatcher(_APreserver):
-    rec_attrs = {x: ('deathItem',) for x in bush.game.actor_types}
+##: Could be absorbed by ImportActors, but would break existing configs
+class ImportActorsAnimationsPatcher(_APreserver):
+    rec_attrs = {x: (u'animations',) for x in bush.game.actor_types}
 
 #------------------------------------------------------------------------------
-class DestructiblePatcher(_APreserver):
-    """Merges changes to destructible records for Fallout3/FalloutNV."""
-    rec_attrs = {x: ('destructible',) for x in bush.game.destructible_types}
+##: Could be absorbed by ImportActors, but would break existing configs
+class ImportActorsDeathItemsPatcher(_APreserver):
+    rec_attrs = {x: (u'deathItem',) for x in bush.game.actor_types}
 
 #------------------------------------------------------------------------------
-class ImportEffectsStats(_APreserver):
-    """Preserves changes to MGEF stats."""
-    rec_attrs = {b'MGEF': bush.game.mgef_stats_attrs}
-
-#------------------------------------------------------------------------------
-class ImportEnchantmentStats(_APreserver):
-    """Preserves changes to ENCH stats."""
-    rec_attrs = {b'ENCH': bush.game.ench_stats_attrs}
-
-#------------------------------------------------------------------------------
-class ImportFactions(_APreserver):
-    logMsg = u'\n=== ' + _(u'Refactioned Actors')
-    srcsHeader = u'=== ' + _(u'Source Mods/Files')
-    rec_attrs = {x: (u'factions',) for x in bush.game.actor_types}
-    _csv_parser = parsers.ActorFactions
-
-    def _parse_csv_sources(self, progress):
-        fact_parser = super(ImportFactions, self)._parse_csv_sources(progress)
-        # Turn the faction lists into lists of MelObjects
-        def make_obj(csv_rsig, csv_obj):
-            obj_faction, obj_rank = csv_obj
-            ret_obj = MreRecord.type_class[csv_rsig].getDefault(u'factions')
-            ret_obj.faction = obj_faction
-            ret_obj.rank = obj_rank
-            return ret_obj
-        self._process_csv_sources(
-            {r: {f: {u'factions': [make_obj(r, o) for o in a]}
-                 for f, a in d.iteritems()}
-             for r, d in fact_parser.id_stored_info.iteritems()})
-
-#------------------------------------------------------------------------------
-class ImportScripts(_APreserver):
-    rec_attrs = {x: ('script',) for x in bush.game.scripts_types}
-
-#------------------------------------------------------------------------------
-class KeywordsImporter(_APreserver):
-    rec_attrs = {x: ('keywords',) for x in bush.game.keywords_types}
-
-#------------------------------------------------------------------------------
-class KFFZPatcher(_APreserver):
-    rec_attrs = {x: ('animations',) for x in bush.game.actor_types}
-
-#------------------------------------------------------------------------------
-class NamesPatcher(_APreserver):
-    """Import names from source mods/files."""
-    logMsg =  u'\n=== ' + _(u'Renamed Items')
-    srcsHeader = u'=== ' + _(u'Source Mods/Files')
-    rec_attrs = {x: (u'full',) for x in bush.game.namesTypes}
-    _csv_parser = parsers.FullNames
-
-    def _parse_csv_sources(self, progress):
-        full_parser = super(NamesPatcher, self)._parse_csv_sources(progress)
-        # Discard the Editor ID and turn the tuples into dictionaries
-        self._process_csv_sources(
-            {r: {f: {u'full': a[1]} for f, a in d.iteritems()}
-             for r, d in full_parser.type_id_name.iteritems()})
-
-#------------------------------------------------------------------------------
-class NpcFacePatcher(_APreserver):
+class ImportActorsFacesPatcher(_APreserver):
     logMsg = u'\n=== '+_(u'Faces Patched')
     rec_attrs = {b'NPC_': {
         u'NPC.Eyes': (),
@@ -391,16 +334,77 @@ class NpcFacePatcher(_APreserver):
     _force_full_import_tag = u'NpcFacesForceFullImport'
 
 #------------------------------------------------------------------------------
-class ObjectBoundsImporter(_APreserver):
-    rec_attrs = {x: ('bounds',) for x in bush.game.object_bounds_types}
+class ImportActorsFactionsPatcher(_APreserver):
+    logMsg = u'\n=== ' + _(u'Refactioned Actors')
+    srcsHeader = u'=== ' + _(u'Source Mods/Files')
+    rec_attrs = {x: (u'factions',) for x in bush.game.actor_types}
+    _csv_parser = parsers.ActorFactions
+
+    def _parse_csv_sources(self, progress):
+        fact_parser = super(
+            ImportActorsFactionsPatcher, self)._parse_csv_sources(progress)
+        # Turn the faction lists into lists of MelObjects
+        def make_obj(csv_rsig, csv_obj):
+            obj_faction, obj_rank = csv_obj
+            ret_obj = MreRecord.type_class[csv_rsig].getDefault(u'factions')
+            ret_obj.faction = obj_faction
+            ret_obj.rank = obj_rank
+            return ret_obj
+        self._process_csv_sources(
+            {r: {f: {u'factions': [make_obj(r, o) for o in a]}
+                 for f, a in d.iteritems()}
+             for r, d in fact_parser.id_stored_info.iteritems()})
 
 #------------------------------------------------------------------------------
-class SoundPatcher(_APreserver):
+class ImportDestructiblePatcher(_APreserver):
+    """Merges changes to destructible records."""
+    rec_attrs = {x: (u'destructible',) for x in bush.game.destructible_types}
+
+#------------------------------------------------------------------------------
+class ImportEffectsStatsPatcher(_APreserver):
+    """Preserves changes to MGEF stats."""
+    rec_attrs = {b'MGEF': bush.game.mgef_stats_attrs}
+
+#------------------------------------------------------------------------------
+class ImportEnchantmentStatsPatcher(_APreserver):
+    """Preserves changes to ENCH stats."""
+    rec_attrs = {b'ENCH': bush.game.ench_stats_attrs}
+
+#------------------------------------------------------------------------------
+class ImportKeywordsPatcher(_APreserver):
+    rec_attrs = {x: (u'keywords',) for x in bush.game.keywords_types}
+
+#------------------------------------------------------------------------------
+class ImportNamesPatcher(_APreserver):
+    """Import names from source mods/files."""
+    logMsg =  u'\n=== ' + _(u'Renamed Items')
+    srcsHeader = u'=== ' + _(u'Source Mods/Files')
+    rec_attrs = {x: (u'full',) for x in bush.game.namesTypes}
+    _csv_parser = parsers.FullNames
+
+    def _parse_csv_sources(self, progress):
+        full_parser = super(
+            ImportNamesPatcher, self)._parse_csv_sources(progress)
+        # Discard the Editor ID and turn the tuples into dictionaries
+        self._process_csv_sources(
+            {r: {f: {u'full': a[1]} for f, a in d.iteritems()}
+             for r, d in full_parser.type_id_name.iteritems()})
+
+#------------------------------------------------------------------------------
+class ImportObjectBoundsPatcher(_APreserver):
+    rec_attrs = {x: (u'bounds',) for x in bush.game.object_bounds_types}
+
+#------------------------------------------------------------------------------
+class ImportScriptsPatcher(_APreserver):
+    rec_attrs = {x: (u'script',) for x in bush.game.scripts_types}
+
+#------------------------------------------------------------------------------
+class ImportSoundsPatcher(_APreserver):
     """Imports sounds from source mods into patch."""
     rec_attrs = bush.game.soundsTypes
 
 #------------------------------------------------------------------------------
-class SpellsPatcher(_APreserver):
+class ImportSpellStatsPatcher(_APreserver):
     """Import spell changes from mod files."""
     scanOrder = 29
     editOrder = 29 #--Run ahead of bow patcher
@@ -410,14 +414,15 @@ class SpellsPatcher(_APreserver):
     _csv_parser = parsers.SpellRecords
 
     def _parse_csv_sources(self, progress):
-        spel_parser = super(SpellsPatcher, self)._parse_csv_sources(progress)
+        spel_parser = super(
+            ImportSpellStatsPatcher, self)._parse_csv_sources(progress)
         # Add attribute names to the values
         self._process_csv_sources(
             {b'SPEL': {f: {a: v for a, v in zip(self.rec_attrs[b'SPEL'], l)}
                        for f, l in spel_parser.fid_stats.iteritems()}})
 
 #------------------------------------------------------------------------------
-class StatsPatcher(_APreserver):
+class ImportStatsPatcher(_APreserver):
     """Import stats from mod file."""
     scanOrder = 28
     editOrder = 28 #--Run ahead of bow patcher
@@ -430,7 +435,8 @@ class StatsPatcher(_APreserver):
     _csv_parser = parsers.ItemStats
 
     def _parse_csv_sources(self, progress):
-        stat_parser = super(StatsPatcher, self)._parse_csv_sources(progress)
+        stat_parser = super(
+            ImportStatsPatcher, self)._parse_csv_sources(progress)
         # See rec_attrs above for an explanation of the Editor ID problem
         for src_attrs in stat_parser.class_fid_attr_value.itervalues():
             for attr_values in src_attrs.itervalues():
@@ -438,13 +444,13 @@ class StatsPatcher(_APreserver):
         self._process_csv_sources(stat_parser.class_fid_attr_value)
 
 #------------------------------------------------------------------------------
-class TextImporter(_APreserver):
+class ImportTextPatcher(_APreserver):
     rec_attrs = bush.game.text_types
 
 #------------------------------------------------------------------------------
 # TODO(inf) Currently FNV-only, but don't move to game/falloutnv/patcher yet -
 #  this could potentially be refactored and reused for FO4's modifications
-class WeaponModsPatcher(_APreserver):
+class ImportWeaponModificationsPatcher(_APreserver):
     """Merge changes to weapon modifications for FalloutNV."""
     scanOrder = 27
     editOrder = 27
@@ -461,13 +467,13 @@ class WeaponModsPatcher(_APreserver):
 #------------------------------------------------------------------------------
 ##: absorbing this one will be hard - hint: getActiveRecords only exists on
 # MobObjects, iter_records works for all Mob* classes, so attack that part of
-# _SimpleImporter
-class CellImporter(ImportPatcher):
+# _APreserver
+class ImportCellsPatcher(ImportPatcher):
     logMsg = u'\n=== ' + _(u'Cells/Worlds Patched')
     _read_write_records = (b'CELL', b'WRLD')
 
     def __init__(self, p_name, p_file, p_sources):
-        super(CellImporter, self).__init__(p_name, p_file, p_sources)
+        super(ImportCellsPatcher, self).__init__(p_name, p_file, p_sources)
         self.cellData = defaultdict(dict)
         self.recAttrs = bush.game.cellRecAttrs # dict[unicode, tuple[str]]
 
@@ -646,7 +652,7 @@ class CellImporter(ImportPatcher):
             log(u'* %s: %d' % (srcMod,count[srcMod]))
 
 #------------------------------------------------------------------------------
-class GraphicsPatcher(_APreserver):
+class ImportGraphicsPatcher(_APreserver):
     rec_attrs = bush.game.graphicsTypes
     _fid_rec_attrs = bush.game.graphicsFidTypes
 
