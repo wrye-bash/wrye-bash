@@ -24,7 +24,7 @@
 """This module contains some constants ripped out of basher.py"""
 from .. import bass, bush
 from ..balt import ImageList
-from ..gui import Image, DEFAULT_POSITION
+from ..gui import ImageWrapper, DEFAULT_POSITION
 
 # Color Descriptions ----------------------------------------------------------
 colorInfo = {
@@ -429,7 +429,7 @@ if bush.game.has_esl: # Enable Indices by default for ESL games
 # Images ----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 imDirJn = bass.dirs[u'images'].join
-def _png(fname): return Image(imDirJn(fname))
+def _png(fname): return ImageWrapper(imDirJn(fname))
 
 #--Image lists
 karmacons = ImageList(16,16)
@@ -510,7 +510,7 @@ installercons.images.extend({
 
 #--Buttons
 def imageList(template):
-    return [Image(imDirJn(template % x)) for x in (16,24,32)]
+    return [ImageWrapper(imDirJn(template % x)) for x in (16, 24, 32)]
 
 # TODO(65): game handling refactoring - some of the buttons are game specific
 toolbar_buttons = (

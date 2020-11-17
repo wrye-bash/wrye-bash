@@ -41,7 +41,7 @@ from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink,\
     TransLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes, MenuLink
 from ..gui import CancelButton, CheckBox, HLayout, Label, LayoutOptions, \
     OkButton, RIGHT, Spacer, Stretch, TextField, VLayout, DialogWindow, \
-    Image, BusyCursor
+    ImageWrapper, BusyCursor
 from ..bolt import GPath, SubProgress
 from ..bosh import faces
 from ..brec import MreRecord
@@ -1718,10 +1718,10 @@ class Mod_Face_Import(OneItemLink):
         if not imagePath.exists():
             srcInfo.readHeader()
             # TODO(inf) de-wx! Again, image/bitmap stuff
-            image = Image.from_bitstream(
+            image = ImageWrapper.from_bitstream(
                 *srcInfo.header.image_parameters).ConvertToImage()
             imagePath.head.makedirs()
-            image.SaveFile(imagePath.s, Image.typesDict[u'jpg'])
+            image.SaveFile(imagePath.s, ImageWrapper.typesDict[u'jpg'])
         self.window.RefreshUI(refreshSaves=False) # import save to esp
         self._showOk(_(u'Imported face to: %s') % npc.eid,
                      self._selected_item.s)

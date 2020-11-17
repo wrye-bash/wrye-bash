@@ -46,7 +46,7 @@ import wx.adv
 from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
     web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
-    Font, CheckListBox, UIListCtrl, PanelWin, Colors, DocumentViewer, Image, \
+    Font, CheckListBox, UIListCtrl, PanelWin, Colors, DocumentViewer, ImageWrapper, \
     BusyCursor, GlobalMenu, WrappingTextMixin
 from .gui.base_components import _AComponent
 
@@ -90,7 +90,7 @@ class ImageBundle(object):
             self.iconBundle = wx.IconBundle()
             for img_path in self._image_paths:
                 self.iconBundle.AddIcon(
-                    img_path.s, Image.typesDict[img_path.cext[1:]])
+                    img_path.s, ImageWrapper.typesDict[img_path.cext[1:]])
         return self.iconBundle
 
 #------------------------------------------------------------------------------
@@ -133,9 +133,9 @@ class ColorChecks(ImageList):
                            u'red'):
                 shortKey = status + u'.' + state
                 image_key = u'checkbox.' + shortKey
-                img = GPath(bass.dirs[u'images'].join(
-                    u'checkbox_' + status + u'_' + state + u'.png'))
-                image = images[image_key] = Image(img, Image.typesDict[u'png'])
+                img = bass.dirs[u'images'].join(
+                    u'checkbox_%s_%s.png' % (status, state))
+                image = images[image_key] = ImageWrapper(img, ImageWrapper.typesDict[u'png'])
                 self.Add(image, shortKey)
 
     def Get(self,status,on):

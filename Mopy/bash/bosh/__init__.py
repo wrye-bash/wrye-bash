@@ -67,8 +67,6 @@ bak_file_pattern = re.compile(u'' r'(quick|auto)(save)(\.bak)+(f?)$',
 undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
 empty_path = GPath(u'') # evaluates to False in boolean expressions
 undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
-#..Bit-and this with the fid to get the objectindex.
-oiMask = 0xFFFFFF
 
 #--Singletons
 gameInis = None    # type: tuple[GameIni | IniFile]
@@ -2715,7 +2713,7 @@ class ModInfos(FileInfos):
 
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
     def _setOblivionVersions(self):
-        """Set current (and available) master game esm(s) - oblivion only."""
+        """Set current (and available) master game esm(s) - Oblivion only."""
         if bush.game.fsName != u'Oblivion': return
         self.voAvailable.clear()
         for name,info in self.iteritems():

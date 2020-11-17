@@ -251,7 +251,7 @@ def init_app_links(apps_dir, badIcons, iconList):
             icon = GPath(icon)
             if icon.exists():
                 fileName = u';'.join((icon.s, idex))
-                icon = iconList(fileName)
+                icon = iconList(GPath(fileName))
                 # Last, use the 'x' icon
             else:
                 icon = badIcons

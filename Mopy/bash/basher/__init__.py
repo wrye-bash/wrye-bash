@@ -84,7 +84,7 @@ from ..balt import Links, ItemLink
 from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
     TOP, VLayout, EventResult, DropDown, DialogWindow, WindowFrame, Spinner, \
-    Splitter, TabbedPanel, PanelWin, CheckListBox, Color, Picture, Image, \
+    Splitter, TabbedPanel, PanelWin, CheckListBox, Color, Picture, ImageWrapper, \
     CenteredSplash, BusyCursor, RadioButton, GlobalMenu
 
 # Constants -------------------------------------------------------------------
@@ -2081,7 +2081,7 @@ class SaveDetails(_ModsSavesDetails):
         if self.saveInfo:
             if not self.saveInfo.header.image_loaded:
                 self.saveInfo.header.read_save_header(load_image=True)
-            new_save_screen = Image.from_bitstream(
+            new_save_screen = ImageWrapper.from_bitstream(
                 *self.saveInfo.header.image_parameters)
         else:
             new_save_screen = None # reset to default
@@ -4353,7 +4353,7 @@ def InitImages():
         colors[key] = value
     #--Images
     imgDirJn = bass.dirs[u'images'].join
-    def _png(fname): return Image(imgDirJn(fname))
+    def _png(fname): return ImageWrapper(imgDirJn(fname))
     #--Standard
     images['save.on'] = _png(u'save_on.png')
     images['save.off'] = _png(u'save_off.png')
@@ -4361,7 +4361,6 @@ def InitImages():
     images[u'arrow.up'] = _png(u'arrow_up.png')
     images[u'arrow.down'] = _png(u'arrow_down.png')
     #--Misc
-    #images['oblivion'] = Image(GPath(bass.dirs[u'images'].join(u'oblivion.png')),png)
     images['help.16'] = _png(u'help16.png')
     images['help.24'] = _png(u'help24.png')
     images['help.32'] = _png(u'help32.png')

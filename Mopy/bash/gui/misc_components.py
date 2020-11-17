@@ -32,7 +32,7 @@ from collections import defaultdict
 from itertools import chain, imap
 
 from .base_components import _AComponent, Color, WithMouseEvents, \
-    Image, WithCharEvents
+    ImageWrapper, WithCharEvents
 from .events import EventResult
 from ..bolt import Path
 
@@ -84,9 +84,9 @@ class Picture(_AComponent):
         """Set the bitmap on the native_widget and return the wx object for
         caching"""
         if isinstance(bmp, Path):
-            bmp = (bmp.isfile() and Image(bmp.s).GetBitmap()) or None
+            bmp = (bmp.isfile() and ImageWrapper(bmp).GetBitmap()) or None
         elif isinstance(bmp, tuple):
-            bmp = Image.GetImage(*bmp).ConvertToBitmap()
+            bmp = ImageWrapper.GetImage(*bmp).ConvertToBitmap()
         self.bitmap = bmp
         self._handle_resize()
         return self.bitmap

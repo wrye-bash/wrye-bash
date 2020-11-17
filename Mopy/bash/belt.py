@@ -36,7 +36,7 @@ from .ini_files import OBSEIniFile
 from .env import get_file_version
 from .gui import CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
-    WizardDialog, EventResult, ListBox, CheckListBox, Image, PictureWithCursor
+    WizardDialog, EventResult, ListBox, CheckListBox, ImageWrapper, PictureWithCursor
 from .ScriptParser import error
 
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")
@@ -398,9 +398,8 @@ class PageVersions(PageInstaller):
     def __init__(self, parent, bGameOk, gameHave, gameNeed, bSEOk, seHave,
                  seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
-        bmp = [Image(
-            bass.dirs[u'images'].join(u'error_cross_24.png').s).GetBitmap(),
-            Image(bass.dirs[u'images'].join(u'checkmark_24.png').s).GetBitmap()]
+        bmp = [ImageWrapper(bass.dirs[u'images'].join(x)).GetBitmap() for x in
+               (u'error_cross_24.png', u'checkmark_24.png')]
         versions_layout = GridLayout(h_spacing=5, v_spacing=5,
                                      stretch_cols=[0, 1, 2, 3])
         versions_layout.append_row([None, Label(self, _(u'Need')),

@@ -38,7 +38,7 @@ from ..bosh import faces, SaveInfo
 from ..brec import MreRecord
 from ..exception import ArgumentError, BoltError, CancelError, ModError
 from ..mod_files import LoadFactory, MasterMap, ModFile
-from ..gui import BusyCursor, Image
+from ..gui import BusyCursor, ImageWrapper
 
 __all__ = ['Saves_Profiles', 'Save_Rename', 'Save_Renumber', 'Save_Move',
            'Save_LoadMasters', 'Save_DiffMasters', 'Save_Stats',
@@ -307,9 +307,9 @@ class Save_ExportScreenshot(OneItemLink):
             _(u'Screenshot %s.jpg') % self._selected_item, u'*.jpg')
         if not imagePath: return
         # TODO(inf) de-wx! All the image stuff is still way too close to wx
-        image = Image.from_bitstream(
+        image = ImageWrapper.from_bitstream(
             *self._selected_info.header.image_parameters).ConvertToImage()
-        image.SaveFile(imagePath.s, Image.typesDict[u'jpg'])
+        image.SaveFile(imagePath.s, ImageWrapper.typesDict[u'jpg'])
 
 #------------------------------------------------------------------------------
 class Save_DiffMasters(EnabledLink):
