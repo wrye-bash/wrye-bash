@@ -1350,7 +1350,7 @@ class Mod_FogFixer(ItemLink):
             fixed = []
             for index,(fileName,fileInfo) in enumerate(self.iselected_pairs()):
                 if fileName == bush.game.master_file: continue
-                progress(index,_(u'Scanning')+fileName.s)
+                progress(index, _(u'Scanning %s') % fileName)
                 fog_fixer = bosh.mods_metadata.NvidiaFogFixer(fileInfo)
                 fog_fixer.fix_fog(SubProgress(progress, index, index + 1))
                 if fog_fixer.fixedCells:

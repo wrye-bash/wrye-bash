@@ -378,6 +378,22 @@ def pack_installer(nsis_path, version, file_version):
     )
 
 
+def get_repo_sig(repo):
+    """Wrapper around pygit2 that shows a helpful error message to the user if
+    their credentials have not been configured yet."""
+    try:
+        return repo.default_signature
+    except KeyError:
+        print(u'\n'.join([u'', # empty line before the error
+            u'ERROR: You have not set up your git identity yet.',
+            u'This is necessary for the git operations that the build script '
+            u'uses.',
+            u'You can configure them as follows:',
+            u'   git config --global user.name "Your Name"',
+            u'   git config --global user.email "you@example.com"']))
+        sys.exit(1)
+
+
 @contextmanager
 def update_file_version(version, commit=False):
     fname = "bass.py"
@@ -397,7 +413,7 @@ def update_file_version(version, commit=False):
         os.fsync(fopen.fileno())
     if commit:
         repo = pygit2.Repository(ROOT_PATH)
-        user = repo.default_signature
+        user = get_repo_sig(repo)
         parent = [repo.head.target]
         rel_path = os.path.relpath(orig_path, repo.workdir).replace('\\', '/')
         if repo.status_file(rel_path) == pygit2.GIT_STATUS_WT_MODIFIED:
@@ -562,7 +578,7 @@ def clean_repo():
         # - then stash ignored and untracked
         # - unstash modified files
         # and we have a clean repo!
-        sig = repo.default_signature
+        sig = get_repo_sig(repo)
         # Not unused, PyCharm is not smart enough to understand utils.suppress
         mod_stashed = False
         unt_stashed = False

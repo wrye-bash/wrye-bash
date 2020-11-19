@@ -874,16 +874,16 @@ class Save_UpdateNPCLevels(EnabledLink):
             subProgress = SubProgress(progress,0,0.4,len(ordered))
             modErrors = []
             for index,modName in enumerate(ordered):
-                subProgress(index,_(u'Scanning ') + modName.s)
+                subProgress(index, _(u'Scanning %s') % modName)
                 modInfo = bosh.modInfos[modName]
                 modFile = ModFile(modInfo, loadFactory)
-                short_mapper = modFile.getShortMapper()
                 try:
                     modFile.load(True)
                 except ModError as x:
                     modErrors.append(u'%s'%x)
                     continue
                 if 'NPC_' not in modFile.tops: continue
+                short_mapper = modFile.getShortMapper()
                 #--Loop over mod NPCs
                 mapToOrdered = MasterMap(modFile.tes4.masters + [modName],
                                          ordered)
