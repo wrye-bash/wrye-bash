@@ -77,8 +77,8 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         validHeaderVersions = (0.94, 1.32, 1.33, 1.34)
 
     allTags = Fallout3GameInfo.allTags | {u'WeaponMods'}
-    # PatchMerger must come first!
-    patchers = Fallout3GameInfo.patchers + (u'WeaponModsPatcher',)
+    # MergePatches must come first!
+    patchers = Fallout3GameInfo.patchers + (u'ImportWeaponMods',)
 
     @classmethod
     def init(cls):

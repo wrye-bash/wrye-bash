@@ -71,7 +71,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         skip_bain_refresh = {u'sseedit backups', u'sseedit cache'}
 
     allTags = SkyrimGameInfo.allTags - {u'NoMerge'}
-    # PatchMerger must come first if enabled - so skip it here
+    # MergePatches must come first if enabled - so skip it here
     patchers = SkyrimGameInfo.patchers[1:]
 
     @classmethod

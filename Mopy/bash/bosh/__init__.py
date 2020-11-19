@@ -2253,14 +2253,14 @@ class ModInfos(FileInfos):
         for patch in patches:
             patchConfigs = self.table.getItem(patch, u'bash.patch.configs')
             if not patchConfigs: continue
-            patcherstr = 'PatchMerger'
-            if patchConfigs.get(patcherstr,{}).get('isEnabled'):
-                config_checked = patchConfigs[patcherstr]['configChecks']
+            pm_config_key = u'PatchMerger'
+            if patchConfigs.get(pm_config_key,{}).get(u'isEnabled'):
+                config_checked = patchConfigs[pm_config_key][u'configChecks']
                 for modName in config_checked:
                     if config_checked[modName] and modName in self:
                         merged_.add(modName)
             imported_.update(filter(lambda x: x in self,
-                                    patchConfigs.get('ImportedMods', tuple())))
+                patchConfigs.get(u'ImportedMods', tuple())))
         return merged_,imported_
 
     def getModList(self,showCRC=False,showVersion=True,fileInfo=None,wtxt=False):

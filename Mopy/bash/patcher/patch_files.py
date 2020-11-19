@@ -45,8 +45,8 @@ class PatchFile(ModFile):
     """Base class of patch files. Wraps an executing bashed Patch."""
 
     def set_mergeable_mods(self, mergeMods):
-        """Set `mergeSet` attribute to the srcs of PatchMerger. Update allMods
-        and allSet to include the mergeMods"""
+        """Set `mergeSet` attribute to the srcs of MergePatchesPatcher. Update
+        allMods and allSet to include the mergeMods"""
         self.mergeSet = set(mergeMods)
         self.allMods = load_order.get_ordered(self.loadSet | self.mergeSet)
         self.allSet = frozenset(self.allMods)

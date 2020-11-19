@@ -21,8 +21,7 @@
 #
 # =============================================================================
 """This module contains oblivion multitweak item patcher classes that belong
-to the Gmst Multitweaker - as well as the GmstTweaker itself. Gmst stands
-for game settings."""
+to the Settings Multitweaker - as well as the tweaker itself."""
 from __future__ import print_function
 from ... import bush # for game
 from ...bolt import floats_equal

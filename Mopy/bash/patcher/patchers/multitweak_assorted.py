@@ -22,7 +22,7 @@
 # =============================================================================
 
 """This module contains oblivion multitweak item patcher classes that belong
-to the Assorted Multitweaker - as well as the AssortedTweaker itself."""
+to the Assorted Multitweaker - as well as the tweaker itself."""
 from __future__ import division
 import random
 import re
@@ -286,8 +286,9 @@ class AssortedTweak_FogFix(MultiTweakItem):
     default_enabled = bush.game.fsName == u'Oblivion'
     supports_pooling = False
     tweak_read_classes = b'CELL', b'WRLD', # WRLD is useless, but we want this
-    # patcher to run in the same group as the CellImporter, so we'll have to
+    # patcher to run in the same group as Import Cells, so we'll have to
     # skip worldspaces. It shouldn't be a problem in those CELLs. ##: ?
+    ##: Does this even make sense without CBash now?
 
     def wants_record(self, record):
         # All of these floats must be approximately equal to 0

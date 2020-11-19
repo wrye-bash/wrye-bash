@@ -629,12 +629,12 @@ GmstTweaks = [
         ),
     ]
 #------------------------------------------------------------------------------
-# ListsMerger
+# Leveled Lists
 #------------------------------------------------------------------------------
 listTypes = ('LVLC','LVLI','LVLN')
 
 #------------------------------------------------------------------------------
-# NamesPatcher
+# Import Names
 #------------------------------------------------------------------------------
 namesTypes = {
     b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'AVIF', b'BOOK', b'CLAS', b'COBJ',
@@ -644,13 +644,13 @@ namesTypes = {
 }
 
 #------------------------------------------------------------------------------
-# ItemPrices Patcher
+# Import Prices
 #------------------------------------------------------------------------------
 pricesTypes = {'ALCH': {}, 'AMMO': {}, 'ARMO': {}, 'ARMA': {}, 'BOOK': {},
                'INGR': {}, 'KEYM': {}, 'LIGH': {}, 'MISC': {}, 'WEAP': {}}
 
 #------------------------------------------------------------------------------
-# StatsImporter
+# Import Stats
 #------------------------------------------------------------------------------
 statsTypes = {
     'ALCH': ('eid', 'weight', 'value'),
@@ -730,7 +730,7 @@ statsHeaders = (
 )
 
 #------------------------------------------------------------------------------
-# SoundPatcher
+# Import Sounds
 #------------------------------------------------------------------------------
 soundsTypes = {
     "ACTI": ('soundLooping','soundActivation',),
@@ -759,7 +759,7 @@ soundsTypes = {
 }
 
 #------------------------------------------------------------------------------
-# CellImporter
+# Import Cells
 #------------------------------------------------------------------------------
 cellRecAttrs = {
     u'C.Acoustic': (u'acousticSpace',),
@@ -786,7 +786,7 @@ cell_float_attrs = {u'fogNear', u'fogFar', u'directionalFade', u'fogClip',
                     u'fogPower', u'waterHeight'}
 
 #------------------------------------------------------------------------------
-# GraphicsPatcher
+# Import Graphics
 #------------------------------------------------------------------------------
 graphicsTypes = {
     b'ACTI': (u'model',),
@@ -889,12 +889,12 @@ graphicsModelAttrs = (u'model', u'shellCasingModel', u'scopeModel',
                       u'femaleWorld')
 
 #------------------------------------------------------------------------------
-# Inventory Patcher
+# Import Inventory
 #------------------------------------------------------------------------------
 inventoryTypes = ('CREA','NPC_','CONT',)
 
 #------------------------------------------------------------------------------
-# Text Patcher
+# Import Text
 #------------------------------------------------------------------------------
 text_types = {
     b'AVIF': (u'description',),
@@ -910,7 +910,7 @@ text_types = {
 }
 
 #------------------------------------------------------------------------------
-# Object Bounds Patcher
+# Import Object Bounds
 #------------------------------------------------------------------------------
 object_bounds_types = {'ACTI', 'ADDN', 'ALCH', 'AMMO', 'ARMA', 'ARMO', 'ASPC',
                        'BOOK', 'COBJ', 'CONT', 'CREA', 'DOOR', 'EXPL', 'FURN',
@@ -942,7 +942,7 @@ cc_passes = (
 )
 
 #------------------------------------------------------------------------------
-# Scripts Patcher
+# Import Scripts
 #------------------------------------------------------------------------------
 # In valda's version: 'WEAP', 'ACTI', 'ALCH', 'ARMO', 'BOOK', 'CONT', 'CREA',
 #                     'DOOR', 'FURN', 'INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_',
@@ -954,14 +954,14 @@ scripts_types = {'ACTI', 'ALCH', 'ARMO', 'BOOK', 'COBJ', 'CONT', 'CREA',
                  'QUST', 'TACT', 'TERM', 'WEAP'}
 
 #------------------------------------------------------------------------------
-# Destructible Patcher
+# Import Destructible
 #------------------------------------------------------------------------------
 destructible_types = {'ACTI', 'ALCH', 'AMMO', 'ARMO', 'BOOK', 'CONT', 'CREA',
                       'DOOR', 'FURN', 'KEYM', 'LIGH', 'MISC', 'MSTT', 'NPC_',
                       'PROJ', 'TACT', 'TERM', 'WEAP'}
 
 #------------------------------------------------------------------------------
-# Actor Patchers
+# Import Actors
 #------------------------------------------------------------------------------
 actor_importer_attrs = {
     b'CREA': {
@@ -1029,12 +1029,12 @@ actor_importer_attrs = {
 actor_types = ('CREA', 'NPC_')
 
 #------------------------------------------------------------------------------
-# Spell Stats Patcher
+# Import Spell Stats
 #------------------------------------------------------------------------------
 spell_stats_attrs = (u'eid', u'cost', u'level', u'spellType', u'flags')
 
 #------------------------------------------------------------------------------
-# Actor Tweaker
+# Tweak Actors
 #------------------------------------------------------------------------------
 actor_tweaks = {
     u'QuietFeetPatcher',
@@ -1042,12 +1042,12 @@ actor_tweaks = {
 }
 
 #------------------------------------------------------------------------------
-# Names Tweaker
+# Tweak Names
 #------------------------------------------------------------------------------
 body_tags = u'HAGPBFE'
 
 #------------------------------------------------------------------------------
-# Assorted Tweaker
+# Tweak Assorted
 #------------------------------------------------------------------------------
 ##: Mostly mirrored from valda's version - some of these seem to make no sense
 # (e.g. I can't find anything regarding FO3/FNV suffering from the fog bug).
@@ -1069,7 +1069,7 @@ not_playable_flag = (u'generalFlags', u'notPlayable')
 static_attenuation_rec_type = b'SOUN'
 
 #------------------------------------------------------------------------------
-# Relations Patcher
+# Import Relations
 #------------------------------------------------------------------------------
 relations_attrs = (u'faction', u'mod', u'group_combat_reaction')
 relations_csv_header = u'"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (
@@ -1079,12 +1079,12 @@ relations_csv_header = u'"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (
 relations_csv_row_format = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s","%s"\n'
 
 #------------------------------------------------------------------------------
-# Enchantment Stats Patcher
+# Import Enchantment Stats
 #------------------------------------------------------------------------------
 ench_stats_attrs = (u'itemType', u'chargeAmount', u'enchantCost', u'flags')
 
 #--------------------------------------------------------------------------
-# Effect Stats Patcher
+# Import Effect Stats
 #--------------------------------------------------------------------------
 mgef_stats_attrs = (u'flags', u'base_cost', u'associated_item', u'school',
                     u'resist_value', u'projectileSpeed', u'cef_enchantment',

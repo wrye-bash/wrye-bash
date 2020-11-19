@@ -150,7 +150,7 @@ class _APreserver(ImportPatcher):
                 if any(f and (f[0] is None or f[0] not in loaded_mods) for f
                        in fid_attr_values):
                     # Ignore the record. Another option would be to just ignore
-                    # the attr_fidvalue result
+                    # the fid_attr_values result
                     self.patchFile.patcher_mod_skipcount[
                         self._patcher_name][srcMod] += 1
                     continue
@@ -159,11 +159,6 @@ class _APreserver(ImportPatcher):
 
     # noinspection PyDefaultArgument
     def initData(self, progress, __attrgetters=attrgetter_cache):
-        """Common initData pattern.
-        Used in KFFZPatcher, DeathItemPatcher, SoundPatcher, ImportScripts,
-        WeaponModsPatcher, ActorImporter.
-        Adding _init_data_loop absorbed GraphicsPatcher also.
-        """
         if not self.isActive: return
         id_data = self.id_data
         loadFactory = LoadFactory(False, *self.recAttrs_class.keys())
@@ -218,11 +213,6 @@ class _APreserver(ImportPatcher):
 
     # noinspection PyDefaultArgument
     def scanModFile(self, modFile, progress, __attrgetters=attrgetter_cache):
-        """Identical scanModFile() pattern of :
-
-            GraphicsPatcher, KFFZPatcher, DeathItemPatcher, ImportScripts,
-            SoundPatcher, DestructiblePatcher, ActorImporter, WeaponModsPatcher
-        """
         id_data = self.id_data
         for recClass in self.srcClasses:
             if recClass.rec_sig not in modFile.tops: continue
@@ -245,11 +235,6 @@ class _APreserver(ImportPatcher):
     # noinspection PyDefaultArgument
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
                     __attrgetters=attrgetter_cache):
-        """Most common pattern for the internal buildPatch() loop.
-
-        In:
-            KFFZPatcher, DeathItemPatcher, ImportScripts, SoundPatcher
-        """
         loop_setattr = setattr_deep if self._deep_attrs else setattr
         id_data = self.id_data
         for record in records:
@@ -264,15 +249,6 @@ class _APreserver(ImportPatcher):
             type_count[top_mod_rec] += 1
 
     def buildPatch(self, log, progress, types=None):
-        """Common buildPatch() pattern of:
-
-            GraphicsPatcher, ActorImporter, KFFZPatcher, DeathItemPatcher,
-            ImportScripts, SoundPatcher, DestructiblePatcher
-        Consists of a type selection loop which could be rewritten to support
-        more patchers (maybe using filter()) and an inner loop that should be
-        provided by a patcher specific, _inner_loop() method.
-        Adding `types` parameter absorbed ImportRelations and ImportFactions.
-        """
         if not self.isActive: return
         modFileTops = self.patchFile.tops
         keep = self.patchFile.getKeeper()

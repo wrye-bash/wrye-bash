@@ -31,21 +31,21 @@ from .special import CoblCatalogsPatcher, SEWorldTestsPatcher, CoblExhaustionPat
 
 ##: Bytestrings? why?
 _special_patchers = (
-    (b'AlchemicalCatalogs', CoblCatalogsPatcher),
-    (b'SEWorldEnforcer', SEWorldTestsPatcher),
+    (b'CoblCatalogs', CoblCatalogsPatcher),
+    (b'SEWorldTests', SEWorldTestsPatcher),
 )
 gameSpecificPatchers = {pname: pi(ptype.gui_cls_vars()) for
                         pname, ptype in _special_patchers}
 
 _list_patchers =(
     (b'CoblExhaustion', CoblExhaustionPatcher),
-    (b'MFactMarker', MorphFactionsPatcher),
+    (b'MorphFactions', MorphFactionsPatcher),
 )
 gameSpecificListPatchers = {pname: pi(ptype.gui_cls_vars())
                             for pname, ptype in _list_patchers}
 
 _import_patchers = (
-    (b'RoadImporter', ImportRoadsPatcher),
+    (b'ImportRoads', ImportRoadsPatcher),
 )
 game_specific_import_patchers = {pname: pi(ptype.gui_cls_vars())
                                  for pname, ptype in _import_patchers}

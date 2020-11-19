@@ -189,7 +189,8 @@ class MergePatchesPatcher(ListPatcher):
         super(MergePatchesPatcher, self).__init__(p_name, p_file, p_sources)
         if not self.isActive: return
         #--WARNING: Since other patchers may rely on the following update
-        # during their __init__, it's important that PatchMerger runs first
+        # during their __init__, it's important that MergePatchesPatcher runs
+        # first
         p_file.set_mergeable_mods(self.srcs)
 
 # TODO move this to a file it's imported after MreRecord.simpleTypes is set
@@ -396,12 +397,7 @@ class ImportPatcher(ListPatcher):
         self._plog(log,type_count)
 
     def _plog(self,log,type_count):
-        """Most common logging pattern - override as needed.
-
-        Used in:
-        GraphicsPatcher, ActorImporter, KFFZPatcher, DeathItemPatcher,
-        ImportFactions, ImportScripts, NamesPatcher, SoundPatcher.
-        """
+        """Most common logging pattern - override as needed."""
         log(self.__class__.logMsg)
         for type_,count in sorted(type_count.iteritems()):
             if count: log(u'* ' + _(u'Modified %(type)s Records: %(count)d')

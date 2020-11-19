@@ -52,8 +52,8 @@ class NehrimGameInfo(OblivionGameInfo):
     # Oblivion minus Oblivion-specific patchers (Cobl Catalogs, Cobl
     # Exhaustion, Morph Factions and SEWorld Tests)
     patchers = tuple(p for p in OblivionGameInfo.patchers if p not in
-                     (u'AlchemicalCatalogs', u'CoblExhaustion', u'MFactMarker',
-                      u'SEWorldEnforcer'))
+                     (u'CoblCatalogs', u'CoblExhaustion', u'MorphFactions',
+                      u'SEWorldTests'))
 
     raceNames = {
         0x224fc:  _(u'Alemanne'),

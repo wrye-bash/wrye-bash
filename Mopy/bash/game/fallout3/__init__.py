@@ -156,18 +156,18 @@ class Fallout3GameInfo(GameInfo):
     }
 
     # Remaining to add:
-    #  NamesTweaker, RacePatcher, UpdateReferences
+    #  TweakNames, RaceRecords, ReplaceFormIDs
     patchers = (
-        u'PatchMerger', # PatchMerger must come first!
-        u'ActorImporter', u'AliasesPatcher', u'AssortedTweaker',
-        u'CellImporter', u'ContentsChecker', u'DeathItemPatcher',
-        u'DestructiblePatcher', u'FidListsMerger', u'GmstTweaker',
-        u'GraphicsPatcher', u'ImportActorsSpells', u'ImportEffectsStats',
+        u'MergePatches', # MergePatches must come first!
+        u'ImportActors', u'AliasModNames', u'TweakAssorted', u'ImportCells',
+        u'ContentsChecker', u'ImportActorsDeathItems', u'ImportDestructible',
+        u'FormIDLists', u'TweakSettings', u'ImportGraphics',
+        u'ImportActorsSpells', u'ImportEffectsStats',
         u'ImportEnchantmentStats', u'ImportFactions', u'ImportInventory',
-        u'ImportRelations', u'ImportScripts', u'KFFZPatcher', u'ListsMerger',
-        u'NamesPatcher', u'NPCAIPackagePatcher', u'NpcFacePatcher',
-        u'ObjectBoundsImporter', u'SoundPatcher', u'SpellsPatcher',
-        u'StatsPatcher', u'TextImporter', u'TweakActors',
+        u'ImportRelations', u'ImportScripts', u'ImportActorsAnimations',
+        u'LeveledLists', u'ImportNames', u'ImportActorsAIPackages',
+        u'ImportActorsFaces', u'ImportObjectBounds', u'ImportSounds',
+        u'ImportSpellStats', u'ImportStats', u'ImportText', u'TweakActors',
     )
 
     weaponTypes = (
