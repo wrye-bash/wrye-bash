@@ -46,7 +46,7 @@ try:
 except ImportError: # linux
     win32gui = None
     raise
-from env import winreg
+from .env import winreg
 
 # Button constants - happen to mirror wxPython's
 BTN_OK                          = 5100

@@ -1460,7 +1460,7 @@ generic_av_effects = {
     'FOSK', #--Fortify Skill (Use Skill)
     'REAT', #--Restore Attribute (Use Attribute)
 }
-generic_av_effects |= set((_strU(x)[0] for x in generic_av_effects))
+generic_av_effects |= {_strU(x)[0] for x in generic_av_effects}
 hostile_effects = {
     'ABAT', #--Absorb Attribute
     'ABFA', #--Absorb Fatigue
@@ -1498,7 +1498,7 @@ hostile_effects = {
     'WKPO', #--Weakness to Poison
     'WKSH', #--Weakness to Shock
 }
-hostile_effects |= set((_strU(x)[0] for x in hostile_effects))
+hostile_effects |= {_strU(x)[0] for x in hostile_effects}
 _magic_effects = {
     'ABAT': [5, _(u'Absorb Attribute'), 0.95],
     'ABFA': [5, _(u'Absorb Fatigue'), 6],
@@ -1665,15 +1665,15 @@ _magic_effects = {
 # Note that ordering matters here, because of py2 bleeding the parameters into
 # the outer scope. Also, we have to use underscores to hide them from the
 # dynamic importer. Ugh.
-mgef_school = dict((_x, _y) for _x, [_y, _z, _num] in _magic_effects.items())
-mgef_name = dict((_x, _z) for _x, [_y, _z, __num] in _magic_effects.items())
-mgef_basevalue = dict((_x, _a) for _x, [_y, _z, _a] in _magic_effects.items())
+mgef_school = {_x: _y for _x, [_y, _z, _num] in _magic_effects.iteritems()}
+mgef_name = {_x: _z for _x, [_y, _z, __num] in _magic_effects.iteritems()}
+mgef_basevalue = {_x: _a for _x, [_y, _z, _a] in _magic_effects.iteritems()}
 mgef_school.update({_strU(_x)[0]: _y for _x, [_y, _z, _a]
-                    in _magic_effects.items()})
+                    in _magic_effects.iteritems()})
 mgef_name.update({_strU(_x)[0]: _z for _x, [_y, _z, _a]
-                  in _magic_effects.items()})
+                  in _magic_effects.iteritems()})
 mgef_basevalue.update({_strU(_x)[0]: _a for _x, [_y, _z, _a]
-                       in _magic_effects.items()})
+                       in _magic_effects.iteritems()})
 # Clean this up, no need to keep it around now
 del _strU
 

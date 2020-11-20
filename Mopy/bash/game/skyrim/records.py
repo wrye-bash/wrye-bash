@@ -1151,7 +1151,7 @@ class MelVmad(MelBase):
         :type record_sig: bytes
         :rtype: _AVmadComponent"""
         special_handler = self._handler_map[record_sig]
-        if type(special_handler) == type:
+        if isinstance(special_handler, type):
             # These initializations need to be delayed, since they require
             # MelVmad to be fully initialized first, so do this JIT
             self._handler_map[record_sig] = special_handler = special_handler()

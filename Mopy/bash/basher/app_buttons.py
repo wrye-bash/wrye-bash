@@ -145,7 +145,7 @@ class _App_Button(StatusBar_Button):
     @property
     def obseTip(self):
         if self._obseTip is None: return None
-        return self._obseTip % (dict(version=self.version))
+        return self._obseTip % {u'version': self.version}
 
     def __init__(self, exePath, exeArgs, images, tip, obseTip=None, uid=None,
                  canHide=True):
@@ -482,7 +482,7 @@ class Game_Button(_ExeButton):
     @property
     def obseTip(self):
         # Oblivion (version)
-        tip_ = self._obseTip % (dict(version=self.version))
+        tip_ = self._obseTip % {u'version': self.version}
         # + OBSE
         tip_ += u' + %s%s' % (bush.game.Se.se_abbrev, self.obseVersion)
         # + LAA

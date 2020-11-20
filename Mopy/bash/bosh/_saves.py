@@ -418,7 +418,7 @@ class SaveFile(object):
 
     def indexCreated(self):
         """Fills out self.fid_recNum."""
-        self.fid_createdNum = dict((x.fid,i) for i,x in enumerate(self.created))
+        self.fid_createdNum = {x.fid: i for i, x in enumerate(self.created)}
 
     def removeCreated(self,fid):
         """Removes created if it exists. Returns True if record existed, false if not."""
@@ -433,7 +433,7 @@ class SaveFile(object):
 
     def indexRecords(self):
         """Fills out self.fid_recNum."""
-        self.fid_recNum = dict((entry[0],index) for index,entry in enumerate(self.records))
+        self.fid_recNum = {r[0]: i for i, r in enumerate(self.records)}
 
     def getRecord(self,fid,default=None):
         """Returns recNum and record with corresponding fid."""
@@ -584,7 +584,7 @@ class SaveFile(object):
                                          key=lambda t: t[0]):
                 log(u'  %d\t%s' % (count,getMaster(modIndex)))
             log(u'  %d\tTotal' % (sum(modHisto.values()),))
-        objRefBases = dict((key,value) for key,value in objRefBases.iteritems() if value[0] > 100)
+        objRefBases = {k: v for k, v in objRefBases.iteritems() if v[0] > 100}
         log.setHeader(_(u'New ObjectRef Bases'))
         if objRefNullBases:
             log(u' Null Bases: %s' % objRefNullBases)

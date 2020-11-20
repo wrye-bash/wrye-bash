@@ -407,7 +407,7 @@ class PCFaces(object):
                           'health','unused2','baseSpell',
                           'fatigue','attributes','iclass'):
                 npc_val = getattr(npc, field)
-                if type(npc_val) == tuple: # Hacky check for FormIDs
+                if isinstance(npc_val, tuple): # Hacky check for FormIDs
                     npc_val = short_mapper(npc_val)
                 setattr(face, field, npc_val)
             face.gender = npc.flags.female
@@ -450,7 +450,7 @@ class PCFaces(object):
             tes4.masters.append(modInfos.masterName)
         masterMap = MasterMap(face.face_masters,tes4.masters+[modInfo.name])
         #--Eid
-        npcEids = set([record.eid for record in modFile.NPC_.records])
+        npcEids = {record.eid for record in modFile.NPC_.records}
         eidForm = u''.join((u"sg", bush.game.raceShortNames.get(face.race,u'Unk'),
             (face.gender and u'a' or u'u'), re.sub(u'' r'\W', u'', face.pcName), u'%02d'))
         count,eid = 0, eidForm % 0

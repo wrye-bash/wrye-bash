@@ -436,11 +436,10 @@ class _ListPatcherPanel(_PatcherPanel):
         #--Toss outdated configCheck data.
         config = super(_ListPatcherPanel, self).saveConfig(configs)
         listSet = set(self.configItems)
-        self.configChecks = config['configChecks'] = dict(
-            [(k, v) for k, v in self.configChecks.iteritems() if k in listSet])
-        self.configChoices = config['configChoices'] = dict(
-            [(k, v) for k, v in self.configChoices.iteritems()
-             if k in listSet])
+        self.configChecks = config['configChecks'] = {
+            k: v for k, v in self.configChecks.iteritems() if k in listSet}
+        self.configChoices = config['configChoices'] = {
+            k: v for k, v in self.configChoices.iteritems() if k in listSet}
         config['configItems'] = self.configItems
         config['autoIsChecked'] = self.autoIsChecked
         config['remove_empty_sublists'] = self.remove_empty_sublists

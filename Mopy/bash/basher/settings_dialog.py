@@ -222,9 +222,8 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         #--DropDown
         def _display_text(k):
             return _(self._keys_to_tabs[k.split(u'.')[0]]) + colorInfo[k][0]
-        self.text_key = dict((_display_text(x), x) for x in colors)
-        colored = self.text_key.keys()
-        colored.sort(key=unicode.lower)
+        self.text_key = {_display_text(x): x for x in colors}
+        colored = sorted(self.text_key, key=unicode.lower)
         combo_text = colored[0]
         choiceKey = self.text_key[combo_text]
         self.comboBox = DropDown(self, value=combo_text, choices=colored)

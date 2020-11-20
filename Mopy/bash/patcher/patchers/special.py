@@ -56,8 +56,7 @@ class _AListsMerger(ListPatcher):
                 (OOOMods | WCMods) & mods) or (
                                  FransMods & mods and not (TIEMods & mods))
         if OverhaulCompat:
-            self.OverhaulUOPSkips = set(
-                [_skip_id(x) for x in [
+            self.OverhaulUOPSkips = {_skip_id(x) for x in [
                     0x03AB5D,  # VendorWeaponBlunt
                     0x03C7F1,  # LL0LootWeapon0Magic4Dwarven100
                     0x03C7F2,  # LL0LootWeapon0Magic7Ebony100
@@ -83,7 +82,7 @@ class _AListsMerger(ListPatcher):
                     0x053D82,  # LL0LootArmor0MagicLight5Elven100
                     0x053D83,  # LL0LootArmor0MagicLight6Glass100
                     0x052D89,  # LL0LootArmor0MagicLight4Mithril100
-                ]])
+                ]}
         else:
             self.OverhaulUOPSkips = set()
 
@@ -98,7 +97,7 @@ class _AListsMerger(ListPatcher):
         :type tag_choices: defaultdict[bolt.Path, set[unicode]]"""
         super(_AListsMerger, self).__init__(p_name, p_file, p_sources)
         self.isActive |= bool(p_file.loadSet) # Can do meaningful work even without sources
-        self.type_list = dict([(rec, {}) for rec in self._read_write_records])
+        self.type_list = {rec: {} for rec in self._read_write_records}
         self.masterItems = defaultdict(dict)
         # Calculate levelers/de_masters first, using unmodified self.srcs
         self.levelers = [leveler for leveler in self.srcs if
@@ -210,7 +209,7 @@ class _AListsMerger(ListPatcher):
             empty_lists = []
             # Build a dict mapping leveled lists to other leveled lists that
             # they are sublists in
-            sub_supers = dict((x, []) for x in stored_lists.keys())
+            sub_supers = {x: [] for x in stored_lists.keys()}
             for stored_list in sorted(stored_lists.values()):
                 list_fid = stored_list.fid
                 if not stored_list.items:

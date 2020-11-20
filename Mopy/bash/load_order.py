@@ -105,12 +105,11 @@ class LoadOrder(object):
                     [x.s for x in (set(active) - set(loadOrder))]))
         self._loadOrder = tuple(loadOrder)
         self._active = frozenset(active)
-        self.__mod_loIndex = dict((a, i) for i, a in enumerate(loadOrder))
+        self.__mod_loIndex = {a: i for i, a in enumerate(loadOrder)}
         # below would raise key error if active have no loadOrder
         self._activeOrdered = tuple(
             sorted(active, key=self.__mod_loIndex.__getitem__))
-        self.__mod_actIndex = dict(
-            (a, i) for i, a in enumerate(self._activeOrdered))
+        self.__mod_actIndex = {a: i for i, a in enumerate(self._activeOrdered)}
 
     @property
     def loadOrder(self): return self._loadOrder # test if empty
@@ -142,10 +141,8 @@ class LoadOrder(object):
     def __setstate__(self, dct):
         self.__dict__.update(dct)   # update attributes
         self._active = frozenset(self._activeOrdered)
-        self.__mod_loIndex = dict(
-            (a, i) for i, a in enumerate(self._loadOrder))
-        self.__mod_actIndex = dict(
-            (a, i) for i, a in enumerate(self._activeOrdered))
+        self.__mod_loIndex = {a: i for i, a in enumerate(self._loadOrder)}
+        self.__mod_actIndex = {a: i for i, a in enumerate(self._activeOrdered)}
 
     def __unicode__(self):
         return u', '.join([((u'*%s' if x in self._active else u'%s') % x)
@@ -226,8 +223,7 @@ def get_ordered(mod_paths):
     :type mod_paths: collections.Iterable[bolt.Path]
     :rtype : list[bolt.Path]
     """
-    mod_paths = list(mod_paths)
-    mod_paths.sort() # resolve time conflicts or no load order
+    mod_paths = sorted(mod_paths)
     mod_paths.sort(key=cached_lo_index_or_max)
     return mod_paths
 

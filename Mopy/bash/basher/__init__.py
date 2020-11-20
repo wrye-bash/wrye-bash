@@ -2146,11 +2146,11 @@ class SaveDetails(_ModsSavesDetails):
             saveInfo.setmtime(prevMTime)
             detail_item = self._refresh_detail_info()
         else: detail_item = self.file_info.name
-        kwargs = dict(to_del=to_del, detail_item=detail_item)
+        kwargs = {u'to_del': to_del, u'detail_item': detail_item}
         if detail_item is None:
-            kwargs['to_del'] = to_del + [self.file_info.name]
+            kwargs[u'to_del'] = to_del + [self.file_info.name]
         else:
-            kwargs['redraw'] = [detail_item]
+            kwargs[u'redraw'] = [detail_item]
         self.panel_uilist.RefreshUI(**kwargs)
 
     def RefreshUIColors(self):
@@ -2532,7 +2532,7 @@ class InstallersList(balt.UIList):
                 self.data_store.moveArchives([thisFile], newPos)
             self.data_store.irefresh(what='N')
             self.RefreshUI()
-            visibleIndex = sorted([visibleIndex, 0, maxPos])[1]
+            visibleIndex = sorted((visibleIndex, 0, maxPos))[1]
             self.EnsureVisibleIndex(visibleIndex)
         elif wrapped_evt.is_cmd_down and code == ord('V'):
             ##Ctrl+V
@@ -4066,8 +4066,8 @@ class BashFrame(WindowFrame):
             m.extend(sorted(corruptSaves))
             message.append(m)
             self.knownCorrupted |= corruptSaves
-        invalidVersions = set([x.name for x in bosh.modInfos.values() if round(
-            x.header.version, 6) not in bush.game.Esp.validHeaderVersions])
+        invalidVersions = {x.name for x in bosh.modInfos.itervalues() if round(
+            x.header.version, 6) not in bush.game.Esp.validHeaderVersions}
         if warn_mods and not invalidVersions <= self.knownInvalidVerions:
             m = [_(u'Unrecognized Versions'),
                  _(u'The following mods have unrecognized header versions: ')]
@@ -4187,7 +4187,7 @@ class BashFrame(WindowFrame):
             settings.setChanged('bash.colors')
         #--Clean backup
         for fileInfos in (bosh.modInfos,bosh.saveInfos):
-            goodRoots = set(p.root for p in fileInfos.keys())
+            goodRoots = {p.root for p in fileInfos.keys()}
             backupDir = fileInfos.bash_dir.join(u'Backups')
             if not backupDir.isdir(): continue
             for name in backupDir.list():

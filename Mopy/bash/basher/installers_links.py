@@ -94,10 +94,10 @@ class Installers_MonitorInstall(Installers_Link):
         newFiles = curFiles - oldFiles
         delFiles = oldFiles - curFiles
         sameFiles = curFiles & oldFiles
-        changedFiles = set(file_ for file_ in sameFiles if
-                           data_sizeCrcDate[file_][1] != curData[file_][1])
-        touchedFiles = set(file_ for file_ in sameFiles if
-                           data_sizeCrcDate[file_][2] != curData[file_][2])
+        changedFiles = {file_ for file_ in sameFiles if
+                        data_sizeCrcDate[file_][1] != curData[file_][1]}
+        touchedFiles = {file_ for file_ in sameFiles if
+                        data_sizeCrcDate[file_][2] != curData[file_][2]}
         touchedFiles -= changedFiles
 
         if not newFiles and not changedFiles and not touchedFiles:
@@ -354,8 +354,8 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
                 self.idata.update_for_overridden_skips(bush.game.bethDataFiles,
                                                        progress)
         # Refresh Installers
-        toRefresh = set(iname for iname, installer in self.idata.iteritems() if
-                        installer.hasBethFiles)
+        toRefresh = {iname for iname, installer in self.idata.iteritems() if
+                     installer.hasBethFiles}
         self.window.rescanInstallers(toRefresh, abort=False,
                                      update_from_data=False, shallow=True)
 

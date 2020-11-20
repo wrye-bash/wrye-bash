@@ -459,8 +459,8 @@ class ABsa(AFile):
         folder_files_dict = {}
         folder_file.sort(key=itemgetter(0)) # sort first then group
         for key, val in groupby(folder_file, key=itemgetter(0)):
-            folder_files_dict[key.lower()] = set(dest.lower() for _key, dest
-                                                 in val)
+            folder_files_dict[key.lower()] = {dest.lower() for _key, dest
+                                              in val}
         return folder_files_dict
 
     def extract_assets(self, asset_paths, dest_folder, progress=None):
@@ -543,7 +543,7 @@ class ABsa(AFile):
 
     # API - delegates to abstract methods above
     def has_assets(self, asset_paths):
-        return set(a.cs for a in asset_paths) & self.assets
+        return {a.cs for a in asset_paths} & self.assets
 
     @property
     def assets(self):

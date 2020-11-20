@@ -1412,7 +1412,7 @@ class UIList(wx.Panel):
         """Create/name columns in ListCtrl."""
         cols = self.cols # this may have been updated in ColumnsMenu.Execute()
         numCols = len(cols)
-        names = set(_settings['bash.colNames'].get(key) for key in cols)
+        names = {_settings['bash.colNames'].get(key) for key in cols}
         self._colDict.clear()
         colDex, listCtrl = 0, self.__gList
         while colDex < numCols: ##: simplify!

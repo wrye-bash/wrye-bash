@@ -294,8 +294,8 @@ def generateTweakLines(wizardEdits, target):
         for realSetting in values[1]:
             setting,value,comment,deleted = values[1][realSetting]
             fmt = delFormat if deleted else modFormat
-            lines.append(fmt % (dict(setting=setting, value=value,
-                                     comment=comment)))
+            lines.append(fmt % {u'setting': setting, u'value': value,
+                                u'comment': comment})
     return lines
 
 class PageFinish(PageInstaller):

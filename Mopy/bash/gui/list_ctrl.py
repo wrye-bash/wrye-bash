@@ -268,7 +268,7 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
 
     def ReorderDisplayed(self, inorder):
         """Reorder the list control displayed items to match inorder."""
-        sortDict = dict((self._item_itemId[y], x) for x, y in enumerate(inorder))
+        sortDict = {self._item_itemId[y]: x for x, y in enumerate(inorder)}
         self._native_widget.SortItems(lambda x, y: bolt.cmp_(sortDict[x], sortDict[y]))
 
     # native edit control wrappers

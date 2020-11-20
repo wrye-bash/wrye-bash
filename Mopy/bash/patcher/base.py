@@ -122,7 +122,7 @@ class AMultiTweaker(Abstract_Patcher):
 
     @classmethod
     def tweak_instances(cls):
-        return sorted([tc() for tc in cls._tweak_classes],
+        return sorted((tc() for tc in cls._tweak_classes),
                       key=lambda a: a.tweak_name.lower())
 
 #------------------------------------------------------------------------------

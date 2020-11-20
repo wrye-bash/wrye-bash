@@ -287,6 +287,5 @@ def getLocalSaveDirs():
             folder.s.encode('cp1252')
         except UnicodeEncodeError:
             bad.add(folder)
-    localSaveDirs = [x for x in localSaveDirs if x not in bad]
-    localSaveDirs.sort()
+    localSaveDirs = sorted(x for x in localSaveDirs if x not in bad)
     return localSaveDirs

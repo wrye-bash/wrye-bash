@@ -303,8 +303,8 @@ class ConfigHelpers(object):
                 # Always an ASCII byte string, so this is fine
                 header_sig_ = unicode(bush.game.Esp.plugin_header_sig,
                                       encoding=u'ascii')
-                ver_list = u', '.join(sorted([
-                    unicode(v) for v in bush.game.Esp.validHeaderVersions]))
+                ver_list = u', '.join(sorted(
+                    unicode(v) for v in bush.game.Esp.validHeaderVersions))
                 log.setHeader(
                     u'=== ' + _(u'Mods with non-standard %s versions') %
                     header_sig_)

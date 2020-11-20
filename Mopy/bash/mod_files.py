@@ -315,7 +315,7 @@ class ModFile(object):
         maxMaster = len(masters)-1
         def mapper(fid):
             if fid is None: return None
-            if type(fid) is tuple: return fid
+            if isinstance(fid, tuple): return fid
             mod,object = int(fid >> 24),int(fid & 0xFFFFFF)
             return masters[min(mod, maxMaster)], object # clamp HITMEs
         return mapper

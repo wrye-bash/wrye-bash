@@ -61,8 +61,8 @@ class PatchDialog(DialogWindow):
             icon_bundle=Resources.bashMonkey, sizes_dict=balt.sizes, size=size)
         #--Data
         list_patches_dir() # refresh cached dir
-        groupOrder = dict([(group,index) for index,group in
-            enumerate((_(u'General'),_(u'Importers'),_(u'Tweakers'),_(u'Special')))])
+        groupOrder = {group: index for index, group in enumerate(
+            (_(u'General'), _(u'Importers'), _(u'Tweakers'), _(u'Special')))}
         patchConfigs = bosh.modInfos.table.getItem(patchInfo.name,'bash.patch.configs',{})
         if configIsCBash(patchConfigs):
             patchConfigs = {}

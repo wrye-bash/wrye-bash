@@ -364,7 +364,7 @@ class Mods_CrcRefresh(ItemLink):
     def Execute(self):
         message = u'== %s' % _(u'Mismatched CRCs') + u'\n\n'
         with BusyCursor(): pairs = bosh.modInfos.refresh_crcs()
-        mismatched = dict((k, v) for k, v in pairs.iteritems() if v[0] != v[1])
+        mismatched = {k: v for k, v in pairs.iteritems() if v[0] != v[1]}
         if mismatched:
             message += u'  * ' + u'\n  * '.join(
                 [u'%s: cached %08X real %08X' % (k.s, v[1], v[0]) for k, v in

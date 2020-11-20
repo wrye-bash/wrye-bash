@@ -166,7 +166,7 @@ def _loot_decode(raw_str): # PY3: drop entirely, pyyaml is fully unicode on py3
     """LOOT masterlists are always encoded in UTF-8, but simply opening the
     file in UTF-8 mode is not enough. PyYAML stores everything it can encode as
     ASCII as bytestrings, and everything else as unicode. No idea why."""
-    return raw_str if type(raw_str) is unicode else raw_str.decode(u'utf-8')
+    return raw_str if isinstance(raw_str, unicode) else raw_str.decode(u'utf-8')
 
 class _PluginEntry(object):
     """Represents stored information about a plugin's entry in the LOOT

@@ -130,11 +130,18 @@ def parse():
         parser.error('You must specify a filename for use with backup/restore')
     return args
 
-_short_to_long = dict(
-    [('-o', '--oblivionPath'), ('-p', '--personalPath'), ('-u', '--userPath'),
-     ('-l', '--localAppDataPath'), ('-b', '--backup'), ('-r', '--restore'),
-     ('-q', '--quiet-quit'), ('-f', '--filename'),
-     ('-d', '--debug'), ('-L', '--Language'), ])
+_short_to_long = {
+    u'-b': u'--backup',
+    u'-d': u'--debug',
+    u'-f': u'--filename',
+    u'-L': u'--Language',
+    u'-l': u'--localAppDataPath',
+    u'-o': u'--oblivionPath',
+    u'-p': u'--personalPath',
+    u'-q': u'--quiet-quit',
+    u'-r': u'--restore',
+    u'-u': u'--userPath',
+}
 
 def convert_to_long_options(sys_argv):
     sys_argv = list(sys_argv)

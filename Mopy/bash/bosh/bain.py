@@ -297,10 +297,10 @@ class Installer(object):
         return tuple(getter(self,x) for x in self.persistent)
 
     def _fixme_drop__for_loading_in_previous_versions(self):
-        self.src_sizeCrcDate = dict( # FIXME: backwards compat !
-            (GPath(x), y) for x, y in self.src_sizeCrcDate.iteritems())
-        self.dirty_sizeCrc = dict(
-            (GPath(x), y) for x, y in self.dirty_sizeCrc.iteritems())
+        self.src_sizeCrcDate = {GPath(x): y for x, y # FIXME: backwards compat!
+                                in self.src_sizeCrcDate.iteritems()}
+        self.dirty_sizeCrc = {GPath(x): y for x, y
+                              in self.dirty_sizeCrc.iteritems()}
         self.fileSizeCrcs = [(unicode(x), y, z) for x, y, z in
                              self.fileSizeCrcs]
 
@@ -527,8 +527,7 @@ class Installer(object):
             start.extend(Installer._global_start_skips)
             skip_ext = Installer._global_skip_extensions
         if start: skips.append(lambda f: f.startswith((tuple(start))))
-        skipEspmVoices = not self.skipVoices and set(
-            x.cs for x in self.espmNots)
+        skipEspmVoices = not self.skipVoices and {x.cs for x in self.espmNots}
         if skipEspmVoices:
             def _skip_espm_voices(fileLower):
                 farPos = fileLower.startswith( # u'sound\\voice\\', 12 chars
@@ -662,7 +661,7 @@ class Installer(object):
         hasExtraData = self.hasExtraData
         # exclude u'' from active subpackages
         activeSubs = (
-            set(x for x, y in zip(self.subNames[1:], self.subActives[1:]) if y)
+            {x for x, y in zip(self.subNames[1:], self.subActives[1:]) if y}
             if bain_type == 2 else set())
         data_sizeCrc = bolt.LowerDict()
         skipDirFiles = self.skipDirFiles
@@ -814,10 +813,8 @@ class Installer(object):
 
     def _find_root_index(self, _os_sep=os_sep, skips_start=_silentSkipsStart):
         # basically just care for skips and complex/simple packages
-        #--Sort file names
-        sort_keys_dict = dict( # sort as (dir_path, filename) pairs
-            (x, os.path.split(x[0].lower())) for x in self.fileSizeCrcs)
-        self.fileSizeCrcs.sort(key=sort_keys_dict.__getitem__)
+        # Sort file names as (dir_path, filename) pairs
+        self.fileSizeCrcs.sort(key=lambda x: os.path.split(x[0].lower()))
         #--Find correct starting point to treat as BAIN package
         self.extras_dict.pop(u'root_path', None)
         self.fileRootIdex = 0
@@ -958,7 +955,8 @@ class Installer(object):
         #--SubNames, SubActives
         if bain_type == 2:
             self.subNames = sorted(subNameSet,key=unicode.lower)
-            actives = set(x for x,y in zip(self.subNames,self.subActives) if (y or x == u''))
+            actives = {x for x, y in zip(self.subNames,self.subActives)
+                       if (y or x == u'')}
             if len(self.subNames) == 2: #--If only one subinstall, then make it active.
                 self.subActives = [True,True] # that's a complex/simple package
             else:
@@ -1755,11 +1753,11 @@ class InstallersData(DataStore):
         """Saves to pickle file."""
         if self.hasChanged:
             self.dictFile.data['installers'] = self.data
-            self.dictFile.data['sizeCrcDate'] = dict( # FIXME: backwards compat
-                (GPath(x), y) for x, y in self.data_sizeCrcDate.iteritems())
+            self.dictFile.data['sizeCrcDate'] = { # FIXME: backwards compat
+                GPath(x): y for x, y in self.data_sizeCrcDate.iteritems()}
             # for backwards compatibility, drop
-            self.dictFile.data['crc_installer'] = dict(
-                (x.crc, x) for x in self.itervalues() if x.is_archive())
+            self.dictFile.data['crc_installer'] = {
+                x.crc: x for x in self.itervalues() if x.is_archive()}
             self.dictFile.vdata['version'] = 1
             self.dictFile.save()
             self.converters_data.save()
@@ -1783,8 +1781,8 @@ class InstallersData(DataStore):
         super(InstallersData, self)._delete_operation(paths, markers, **kwargs)
 
     def delete_refresh(self, deleted, markers, check_existence):
-        deleted = set(item.tail for item in deleted if
-                      not check_existence or not item.exists())
+        deleted = {item.tail for item in deleted
+                   if not check_existence or not item.exists()}
         if deleted:
             self.irefresh(what='I', deleted=deleted)
         elif markers:
@@ -1980,8 +1978,8 @@ class InstallersData(DataStore):
                     apath):
                 pending.add(item)
             else: installers.add(item)
-        deleted = set(x for x, y in self.iteritems() if
-                      not y.is_marker()) - installers - pending
+        deleted = {x for x, y in self.iteritems()
+                   if not y.is_marker()} - installers - pending
         refresh_info = self._RefreshInfo(deleted, pending, projects)
         return refresh_info
 
@@ -2101,8 +2099,9 @@ class InstallersData(DataStore):
         if bass.settings['bash.installers.autoRefreshBethsoft']:
             bethFiles = set()
         else:
-            bethFiles = LowerDict.fromkeys(set(
-                map(CIstr, bush.game.bethDataFiles)) - self.overridden_skips)
+            beth_keys = {CIstr(b) for b in
+                         bush.game.bethDataFiles} - self.overridden_skips
+            bethFiles = LowerDict.fromkeys(beth_keys)
         skipExts = Installer.skipExts
         relPos = len(bass.dirs[u'mods'].s) + 1
         for index, (asDir, __sDirs, sFiles) in enumerate(dirDirsFiles):
@@ -2377,7 +2376,7 @@ class InstallersData(DataStore):
         mask = set()
         if last:
             self.moveArchives(packages, len(self))
-        to_install = set(self[x] for x in packages)
+        to_install = {self[x] for x in packages}
         min_order = min(x.order for x in to_install)
         #--Install packages in turn
         progress.setFull(len(packages))
@@ -2633,7 +2632,7 @@ class InstallersData(DataStore):
         installer_destinations = {}
         restores = sorted(restores.items(), key=itemgetter(1))
         for key, group in groupby(restores, key=itemgetter(1)):
-            installer_destinations[key] = set(dest for dest, _key in group)
+            installer_destinations[key] = {dest for dest, _key in group}
         if not installer_destinations: return
         installer_destinations = sorted(installer_destinations.items(),
             key=lambda item: self[item[0]].order)

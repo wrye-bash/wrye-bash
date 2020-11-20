@@ -436,7 +436,7 @@ class _ModGroups(object):
     def assignedGroups():
         """Return all groups that are currently assigned to mods."""
         column = bosh.modInfos.table.getColumn('group')
-        return set(x[1] for x in column.items() if x[1]) #x=(bolt.Path,'group')
+        return {x[1] for x in column.items() if x[1]} #x=(bolt.Path,'group')
 
     def writeToModInfos(self,mods=None):
         """Exports mod groups to modInfos."""
@@ -538,7 +538,7 @@ class Mod_Groups(_Mod_Labels):
         super(Mod_Groups, self)._initData(window, selection)
         selection = set(selection)
         mod_group = bosh.modInfos.table.getColumn('group').items()
-        modGroup = set([x[1] for x in mod_group if x[0] in selection])
+        modGroup = {x[1] for x in mod_group if x[0] in selection}
         class _CheckGroup(CheckLink, self.__class__.choiceLinkType):
             def _check(self):
                 """Check the Link if any of the selected mods belongs to it."""
@@ -1105,10 +1105,9 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         u'Lists the Bashed Patch configuration and copies it to the clipboard')
 
     def Execute(self):
-        #--Patcher info
-        groupOrder = dict([(group,index) for index,group in
-            enumerate((_(u'General'),_(u'Importers'),
-                       _(u'Tweakers'),_(u'Special')))])
+        #--Patcher info - ##: groupOrder is duplicated from patcher_dialog!
+        groupOrder = {group: index for index, group in enumerate(
+            (_(u'General'), _(u'Importers'), _(u'Tweakers'), _(u'Special')))}
         #--Config
         config = bosh.modInfos.table.getItem(self._selected_item,
                                              'bash.patch.configs', {})

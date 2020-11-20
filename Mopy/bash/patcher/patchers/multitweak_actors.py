@@ -142,8 +142,8 @@ class VORB_NPCSkeletonPatcher(_ASkeletonTweak):
             skeleton_list = [x for x in skel_nifs
                              if not x.cs.startswith(u'skel_special_')]
             set_skeleton_list = set(skeleton_list)
-            skeleton_specials = set(
-                x.s for x in skel_nifs if x not in set_skeleton_list)
+            skeleton_specials = {x.s for x in skel_nifs
+                                 if x not in set_skeleton_list}
             self._skeleton_list, self._skeleton_specials = (skeleton_list,
                                                             skeleton_specials)
             return skeleton_list, skeleton_specials

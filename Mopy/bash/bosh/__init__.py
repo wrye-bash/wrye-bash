@@ -728,7 +728,7 @@ class ModInfo(FileInfo):
                 if not found_assets: continue
                 bsa_assets[bsa_info] = found_assets
                 #extract contains Paths that compare equal to lowercase strings
-                extract -= set(imap(unicode.lower, found_assets))
+                extract -= {x.lower() for x in found_assets}
                 if not extract:
                     break
             else:
@@ -1303,7 +1303,7 @@ class DataStore(DataDict):
             env.shellMove(sources, destinations, parent=window)
         except (CancelError, SkipError):
             pass
-        return set(d.tail for d in destinations if d.exists())
+        return {d.tail for d in destinations if d.exists()}
 
 class TableFileInfos(DataStore):
     _bain_notify = True # notify BAIN on deletions/updates ?
@@ -1371,7 +1371,7 @@ class TableFileInfos(DataStore):
             #--Table
             tableUpdate[filePath] = fileName
         #--Now do actual deletions
-        abs_delete_paths = set(x for x in abs_delete_paths if x.exists())
+        abs_delete_paths = {x for x in abs_delete_paths if x.exists()}
         return abs_delete_paths, tableUpdate
 
     def _update_deleted_paths(self, deleted_keys, paths_to_keys,
@@ -1572,9 +1572,9 @@ class INIInfos(TableFileInfos):
     file_pattern = re.compile(u'' r'\.ini$', re.I | re.U)
 
     def __init__(self):
-        INIInfos._default_tweaks = dict(
-            (GPath_no_norm(k), DefaultIniInfo(k, v)) for k, v in
-            bush.game.default_tweaks.iteritems())
+        INIInfos._default_tweaks = {
+            GPath_no_norm(k): DefaultIniInfo(k, v) for k, v in
+            bush.game.default_tweaks.iteritems()}
         super(INIInfos, self).__init__(dirs[u'ini_tweaks'],
                                        factory=ini_info_factory)
         self._ini = None
@@ -1607,10 +1607,10 @@ class INIInfos(TableFileInfos):
                 if ini_name is previous_ini:
                     choice, previous_ini = -1, None
         try:
-            csChoices = set(x.lower() for x in _target_inis)
+            csChoices = {x.lower() for x in _target_inis}
         except AttributeError: # 'Path' object has no attribute 'lower'
             deprint(u'_target_inis contain a Path %s' % _target_inis.keys())
-            csChoices = set((u'%s' % x).lower() for x in _target_inis)
+            csChoices = {(u'%s' % x).lower() for x in _target_inis}
         for iFile in gameInis: # add the game inis even if missing
             if iFile.abs_path.tail.cs not in csChoices:
                 _target_inis[iFile.abs_path.stail] = iFile.abs_path
@@ -1649,21 +1649,20 @@ class INIInfos(TableFileInfos):
 
     @staticmethod
     def __sort_target_inis():
-        keys = bass.settings['bash.ini.choices'].keys()
         # Sort non-game INIs alphabetically
-        keys.sort()
+        keys = sorted(bass.settings[u'bash.ini.choices'])
         # Sort game INIs to the top, and 'Browse...' to the bottom
         game_inis = bush.game.Ini.dropdown_inis
         len_inis = len(game_inis)
         keys.sort(key=lambda a: game_inis.index(a) if a in game_inis else (
                       len_inis + 1 if a == _(u'Browse...') else len_inis))
-        bass.settings['bash.ini.choices'] = collections.OrderedDict(
+        bass.settings[u'bash.ini.choices'] = collections.OrderedDict(
             # convert stray Path instances back to unicode
-            [(u'%s' % k, bass.settings['bash.ini.choices'][k]) for k in keys])
+            [(u'%s' % k, bass.settings[u'bash.ini.choices'][k]) for k in keys])
 
     def _refresh_ini_tweaks(self):
         """Refresh from file directory."""
-        oldNames=set(n for n, v in self.iteritems() if not v.is_default_tweak)
+        oldNames = {n for n, v in self.iteritems() if not v.is_default_tweak}
         _added = set()
         _updated = set()
         newNames = self._names()
@@ -1764,8 +1763,8 @@ class INIInfos(TableFileInfos):
                         new_tweak_settings[section][setting] = \
                             target_settings[section][setting]
         for k,v in new_tweak_settings.items(): # drop line numbers
-            new_tweak_settings[k] = dict( # saveSettings converts to LowerDict
-                (sett, val[0]) for sett, val in v.iteritems())
+            new_tweak_settings[k] = { # saveSettings converts to LowerDict
+                sett: val[0] for sett, val in v.iteritems()}
         dup_info.saveSettings(new_tweak_settings)
         return True
 
@@ -1882,8 +1881,8 @@ class ModInfos(FileInfos):
     @property
     def bashed_patches(self):
         if self._bashed_patches is self.__calculate:
-            self._bashed_patches = set(
-                mname for mname, modinf in self.iteritems() if modinf.isBP())
+            self._bashed_patches = {mname for mname, modinf in self.iteritems()
+                                    if modinf.isBP()}
         return self._bashed_patches
 
     # Load order API for the rest of Bash to use - if the load order or
@@ -1972,7 +1971,7 @@ class ModInfos(FileInfos):
     def cached_lo_append_if_missing(self, mods):
         new = mods - set(self._lo_wip)
         if not new: return
-        esms = set(x for x in new if load_order.in_master_block(self[x]))
+        esms = {x for x in new if load_order.in_master_block(self[x])}
         if esms:
             last = self.cached_lo_last_esm()
             for esm in esms:
@@ -2106,8 +2105,8 @@ class ModInfos(FileInfos):
         """Refreshes which mods are supposed to have strings files, but are
         missing them (=CTD). For Skyrim you need to have a valid load order."""
         oldBad = self.missing_strings
-        self.missing_strings = set(
-            k for k, v in self.iteritems() if v.isMissingStrings())
+        self.missing_strings = {k for k, v in self.iteritems()
+                                if v.isMissingStrings()}
         self.new_missing_strings = self.missing_strings - oldBad
         return bool(self.new_missing_strings)
 
@@ -2287,12 +2286,12 @@ class ModInfos(FileInfos):
                 u'**')
             if fileInfo:
                 masters_set = set(fileInfo.masterNames)
-                missing = sorted([x for x in masters_set if x not in self])
+                missing = sorted(x for x in masters_set if x not in self)
                 log.setHeader(head+_(u'Missing Masters for %s: ') % fileInfo.name.s)
                 for mod in missing:
                     log(bul+u'xx '+mod.s)
                 log.setHeader(head+_(u'Masters for %s: ') % fileInfo.name.s)
-                present = set(x for x in masters_set if x in self)
+                present = {x for x in masters_set if x in self}
                 if fileInfo.name in self: #--In case is bashed patch (cf getSemiActive)
                     present.add(fileInfo.name)
                 merged,imported = self.getSemiActive(present)
@@ -2445,7 +2444,7 @@ class ModInfos(FileInfos):
         doSave=True."""
         if not isinstance(fileName, (set, list)): fileName = {fileName}
         notDeactivatable = load_order.must_be_active_if_present()
-        fileNames = set(x for x in fileName if x not in notDeactivatable)
+        fileNames = {x for x in fileName if x not in notDeactivatable}
         old = sel = set(self._active_wip)
         diff = sel - fileNames
         if len(diff) == len(sel): return set()
@@ -2607,8 +2606,8 @@ class ModInfos(FileInfos):
     #--Mod move/delete/rename -------------------------------------------------
     def _lo_caches_remove_mods(self, to_remove):
         """Remove the specified mods from _lo_wip and _active_wip caches."""
-        # Use set to remove any duplicates
-        to_remove = set(to_remove, )
+        # Use set to speed up lookups
+        to_remove = set(to_remove)
         # Remove mods from cache
         self._lo_wip = [x for x in self._lo_wip if x not in to_remove]
         self._active_wip  = [x for x in self._active_wip if x not in to_remove]

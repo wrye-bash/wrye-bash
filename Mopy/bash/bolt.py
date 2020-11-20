@@ -245,8 +245,7 @@ def round_size(size_bytes):
 # Helpers ---------------------------------------------------------------------
 def sortFiles(files, __split=os.path.split):
     """Utility function. Sorts files by directory, then file name."""
-    sort_keys_dict = dict((x, __split(x.lower())) for x in files)
-    return sorted(files, key=sort_keys_dict.__getitem__)
+    return sorted(files, key=lambda x: __split(x.lower()))
 
 # PY3: Dicts are ordered by default on py3.7, so drop this in favor of just
 # collections.defaultdict

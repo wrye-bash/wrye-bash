@@ -97,7 +97,7 @@ class GmstTweak(DynamicTweak, MultiTweakItem):
                 if target_value < 0:
                     return _(u"Oblivion GMST values can't be negative")
         for target_eid, target_value in zip(self.chosen_eids, chosen_values):
-            if target_eid.startswith(u'f') and type(target_value) != float:
+            if target_eid.startswith(u'f') and not isinstance(target_value, float):
                     return _(u"The value chosen for GMST '%s' must be a "
                              u'float, but is currently of type %s (%s).') % (
                         target_eid, type(target_value).__name__, target_value)

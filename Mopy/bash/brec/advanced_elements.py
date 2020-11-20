@@ -68,7 +68,7 @@ class _MelDistributor(MelNull):
     def _pre_process(self):
         """Ensures that the distributor config defined above has correct syntax
         and resolves shortcuts (e.g. A|B syntax)."""
-        if type(self.distributor_config) != dict:
+        if not isinstance(self.distributor_config, dict):
             self._raise_syntax_error(
                 u'distributor_config must be a dict (actual type: %s)' %
                 type(self.distributor_config))
@@ -76,12 +76,12 @@ class _MelDistributor(MelNull):
         while mappings_to_iterate:
             mapping = mappings_to_iterate.pop()
             for signature_str in mapping.keys():
-                if type(signature_str) != bytes:
+                if not isinstance(signature_str, bytes):
                     self._raise_syntax_error(
-                        u'All keys must be signature bytestromgs (offending '
+                        u'All keys must be signature bytestrings (offending '
                         u'key: %r)' % signature_str)
                 # Resolve 'A|B' syntax
-                signatures = signature_str.split(b'|')
+                split_sigs = signature_str.split(b'|')
                 resolved_entry = mapping[signature_str]
                 if not resolved_entry:
                     self._raise_syntax_error(
@@ -89,7 +89,7 @@ class _MelDistributor(MelNull):
                         u'%s)' % resolved_entry)
                 # Delete the 'A|B' entry, not needed anymore
                 del mapping[signature_str]
-                for signature in signatures:
+                for signature in split_sigs:
                     if len(signature) != 4:
                         self._raise_syntax_error(
                             u'Signature strings must have length 4 (offending '
@@ -107,8 +107,8 @@ class _MelDistributor(MelNull):
                 elif re_type == tuple:
                     # TODO(inf) Proper name for tuple values
                     if (len(resolved_entry) != 2
-                            or type(resolved_entry[0]) != unicode
-                            or type(resolved_entry[1]) != dict):
+                            or not isinstance(resolved_entry[0], unicode)
+                            or not isinstance(resolved_entry[1], dict)):
                         self._raise_syntax_error(
                             u'Tuples used as values must always have two '
                             u'elements - an attribute string and a dict '
@@ -120,17 +120,17 @@ class _MelDistributor(MelNull):
                     # If the signature maps to a list, ensure that each entry
                     # is correct
                     for seq_entry in resolved_entry:
-                        if type(seq_entry) == tuple:
+                        if isinstance(seq_entry, tuple):
                             # Ensure that the tuple is correctly formatted
                             if (len(seq_entry) != 2
-                                    or type(seq_entry[0]) != bytes
-                                    or type(seq_entry[1]) != unicode):
+                                    or not isinstance(seq_entry[0], bytes)
+                                    or not isinstance(seq_entry[1], unicode)):
                                 self._raise_syntax_error(
                                     u'Sequential tuples must always have two '
                                     u'elements, a bytestring and a string '
                                     u'(offending sequential entry: %s)' %
                                     repr(seq_entry))
-                        elif type(seq_entry) != bytes:
+                        elif not isinstance(seq_entry, bytes):
                             self._raise_syntax_error(
                                 u'Sequential entries must either be '
                                 u'tuples or bytestrings (actual type: %r)' %
@@ -165,7 +165,7 @@ class _MelDistributor(MelNull):
                 elif re_type == list:
                     # If the signature maps to a list, record the signatures of
                     # each entry (bytes or tuple[bytes, unicode])
-                    self._target_sigs.update([t[0] if type(t) == tuple else t
+                    self._target_sigs.update([t[0] if isinstance(t, tuple) else t
                                               for t in resolved_entry])
                 # If it's not a dict, list or tuple, then this is a leaf node,
                 # which means we've already recorded its type
@@ -200,14 +200,14 @@ class _MelDistributor(MelNull):
     def _accepts_signature(self, dist_specifier, signature):
         """Internal helper method that checks if the specified signature is
         handled by the specified distribution specifier."""
-        to_check = (dist_specifier[0] if type(dist_specifier) == tuple
+        to_check = (dist_specifier[0] if isinstance(dist_specifier, tuple)
                     else dist_specifier)
         return to_check == signature
 
     def _distribute_load(self, dist_specifier, record, ins, size_, readId):
         """Internal helper method that distributes a loadData call to the
         element loader pointed at by the specified distribution specifier."""
-        if type(dist_specifier) == tuple:
+        if isinstance(dist_specifier, tuple):
             signature = dist_specifier[0]
             target_loader = self._attr_to_loader[dist_specifier[1]]
         else:
@@ -262,7 +262,7 @@ class _MelDistributor(MelNull):
         # Scopes --------------------------------------------------------------
         for signature in loader_state:
             current_mapping = current_mapping[signature]
-            if type(current_mapping) == tuple: # handle mixed scopes
+            if isinstance(current_mapping, tuple): # handle mixed scopes
                 current_mapping = current_mapping[1]
             descent_tracker.append((signature, current_mapping))
         # Sequences -----------------------------------------------------------
@@ -439,7 +439,7 @@ class MelTruncatedStruct(MelStruct):
         except KeyError:
             raise SyntaxError(u'MelTruncatedStruct requires an old_versions '
                               u'keyword argument')
-        if type(old_versions) != set:
+        if not isinstance(old_versions, set):
             raise SyntaxError(u'MelTruncatedStruct: old_versions must be a '
                               u'set')
         self._is_optional = kwargs.pop('is_optional', False)
@@ -763,7 +763,7 @@ class MelUnion(MelBase):
         # Preprocess the element mapping to split tuples
         processed_mapping = {}
         for decider_val, element in element_mapping.iteritems():
-            if type(decider_val) != tuple:
+            if not isinstance(decider_val, tuple):
                 decider_val = (decider_val,)
             for split_val in decider_val:
                 if split_val in processed_mapping:

@@ -755,7 +755,7 @@ class TimestampGame(Game):
             (self._mtime_mods[mtime] - {mod_name}) & active)
 
     def get_free_time(self, start_time, default_time='+1', end_time=None):
-        all_mtimes = set(x.mtime for x in self.mod_infos.itervalues())
+        all_mtimes = {x.mtime for x in self.mod_infos.itervalues()}
         end_time = end_time or (start_time + 1000) # 1000 (seconds) is an arbitrary limit
         while start_time < end_time:
             if not start_time in all_mtimes:
@@ -916,7 +916,7 @@ class TextfileGame(Game):
         if cached_active is not None:
             cached_active_copy = cached_active[:]
             active_in_lo = [x for x in lo if x in set(cached_active)]
-            w = dict((x, i) for i, x in enumerate(lo))
+            w = {x: i for i, x in enumerate(lo)}
             while active_in_lo:
                 for i, (ordered, current) in enumerate(
                         zip(cached_active_copy, active_in_lo)):
@@ -932,8 +932,8 @@ class TextfileGame(Game):
                             # x should be above ordered
                             to = w[ordered] + 1 + j
                             # make room
-                            w = dict((x, i if i < to else i + 1) for x, i in
-                                     w.iteritems())
+                            w = {x: (i if i < to else i + 1) for x, i in
+                                 w.iteritems()}
                             w[x] = to # bubble them up !
                         active_in_lo.remove(ordered)
                         cached_active_copy = cached_active_copy[i + 1:]

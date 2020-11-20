@@ -12,4 +12,4 @@ pygit2==0.28.2
 pyfiglet==0.8.post1
 pytest==4.6.11
 https://github.com/wrye-bash/dev-tools/raw/64bit-wheels/wheels/py2exe-0.6.10a1-cp27-none-win_amd64.whl
-toml==0.10.1
+toml==0.10.2

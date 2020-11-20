@@ -61,7 +61,7 @@
 #==================================================
 from __future__ import division
 from string import digits, whitespace
-import types
+
 #--------------------------------------------------
 name_start = u'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_'
 name_chars = name_start + u'0123456789'
@@ -184,8 +184,8 @@ def getType(item, parser=None):
         for i in item:
             if i not in whitespace: return UNKNOWN
         return WHITESPACE
-    if type(item) == types.IntType: return INTEGER
-    if type(item) == types.FloatType: return DECIMAL
+    if isinstance(item, int): return INTEGER
+    if isinstance(item, float): return DECIMAL
     return UNKNOWN
 
 # FlowControl -------------------------------------

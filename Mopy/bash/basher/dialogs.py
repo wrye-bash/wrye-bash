@@ -37,7 +37,8 @@ class ImportFaceDialog(DialogWindow):
         #--Data
         self.fileInfo = fileInfo
         if faces and isinstance(faces.keys()[0], (int, long)): # PY3: just int
-            self.data = dict((u'%08X %s' % (key,face.pcName),face) for key,face in faces.items())
+            self.data = {u'%08X %s' % (key, face.pcName): face for key, face
+                         in faces.iteritems()}
         else:
             self.data = faces
         self.list_items = sorted(self.data.keys(),key=unicode.lower)
@@ -122,10 +123,10 @@ class CreateNewProject(DialogWindow):
     title = _(u'New Project')
     def __init__(self,parent=None):
         super(CreateNewProject, self).__init__(parent)
-        #--Build a list of existing directories
-        #  The text control will use this to change background color when name collisions occur
-        self.existingProjects = set(x for x in bass.dirs[u'installers'].list()
-            if bass.dirs[u'installers'].join(x).isdir())
+        # Build a list of existing directories. The text control will use this
+        # to change background color when name collisions occur.
+        self.existingProjects = {x for x in bass.dirs[u'installers'].list()
+                                 if bass.dirs[u'installers'].join(x).isdir()}
         #--Attributes
         self.textName = TextField(self, _(u'New Project Name-#####'))
         self.textName.on_text_changed.subscribe(

@@ -451,8 +451,7 @@ class RacePatcher(AMultiTweaker, ListPatcher):
         eye_mesh = self.eye_mesh
         modName = modFile.fileInfo.name
         if not (set(modFile.tops) & self.scanTypes): return
-        srcEyes = set(
-            [record.fid for record in modFile.EYES.getActiveRecords()])
+        srcEyes = {record.fid for record in modFile.EYES.getActiveRecords()}
         #--Eyes, Hair
         for type in ('EYES','HAIR'):
             patchBlock = getattr(self.patchFile,type)
@@ -588,7 +587,7 @@ class RacePatcher(AMultiTweaker, ListPatcher):
             #--Relations
             if 'relations' in raceData:
                 relations = raceData['relations']
-                oldRelations = set((x.faction,x.mod) for x in race.relations)
+                oldRelations = {(x.faction, x.mod) for x in race.relations}
                 newRelations = set(relations.iteritems())
                 if newRelations != oldRelations:
                     del race.relations[:]
@@ -730,12 +729,12 @@ class RacePatcher(AMultiTweaker, ListPatcher):
         final_eyes = {}
         defaultMaleHair = {}
         defaultFemaleHair = {}
-        eyeNames  = dict((x.fid,x.full) for x in patchFile.EYES.records)
-        hairNames = dict((x.fid,x.full) for x in patchFile.HAIR.records)
-        maleHairs = set(
-            x.fid for x in patchFile.HAIR.records if not x.flags.notMale)
-        femaleHairs = set(
-            x.fid for x in patchFile.HAIR.records if not x.flags.notFemale)
+        eyeNames  = {x.fid: x.full for x in patchFile.EYES.records}
+        hairNames = {x.fid: x.full for x in patchFile.HAIR.records}
+        maleHairs = {x.fid for x in patchFile.HAIR.records
+                     if not x.flags.notMale}
+        femaleHairs = {x.fid for x in patchFile.HAIR.records
+                       if not x.flags.notFemale}
         for race in patchFile.RACE.records:
             if (race.flags.playable or race.fid == (
                     _main_master, 0x038010)) and race.eyes:

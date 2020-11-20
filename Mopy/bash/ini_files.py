@@ -285,7 +285,7 @@ class IniFile(AFile):
         """Apply dictionary of settings to ini file, latter must exist!
         Values in settings dictionary must be actual (setting, value) pairs."""
         ini_settings = _to_lower(ini_settings)
-        deleted_settings = LowerDict((x, set(CIstr(u) for u in y)) for x, y in
+        deleted_settings = LowerDict((x, {CIstr(u) for u in y}) for x, y in
                                      deleted_settings.iteritems())
         reDeleted = self.reDeletedSetting
         reComment = self.reComment

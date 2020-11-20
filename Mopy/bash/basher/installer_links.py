@@ -788,9 +788,9 @@ class Installer_CopyConflicts(_SingleInstallable):
                 numFiles += len(curConflicts)
                 if curConflicts: packConflicts.append(
                     (installer.order, package, curConflicts))
-            srcConflicts = set( # we need the paths rel to the archive not Data
+            srcConflicts = { # we need the paths rel to the archive not Data
                 src for src, size, crc in self._selected_info.fileSizeCrcs if
-                (size,crc) in srcConflicts)
+                (size, crc) in srcConflicts}
             numFiles += len(srcConflicts)
         if not numFiles:
             return _ok(_(u'No conflicts detected for %s'))
@@ -1201,7 +1201,7 @@ class InstallerConverter_Apply(_InstallerConverter_Link):
                   u'for.')):
             return
         # all installers that this converter needs are present and unique
-        crc_installer = dict((x.crc, x) for x in self.iselected_infos())
+        crc_installer = {x.crc: x for x in self.iselected_infos()}
         #--Generate default filename from BCF filename
         defaultFilename = self.converter.fullPath.sbody[:-4] + archives\
             .defaultExt
@@ -1256,7 +1256,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
                 _(u'Please only select installers that are needed.')):
             return
         # all installers that this converter needs are unique
-        crc_installer = dict((x.crc, x) for x in self.iselected_infos())
+        crc_installer = {x.crc: x for x in self.iselected_infos()}
         #--Generate allowable targets
         readTypes = u'*%s' % u';*'.join(archives.readExts)
         #--Select target archive
@@ -1367,7 +1367,7 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         #--So, first get all the selected archive CRCs
         selected = self.selected
         idata = self.window.data_store # InstallersData singleton
-        selectedCRCs = set(idata[archive].crc for archive in selected)
+        selectedCRCs = {idata[archive].crc for archive in selected}
         srcCRCs = set(idata.converters_data.srcCRC_converters)
         #--There is no point in testing each converter unless
         #--every selected archive has an associated converter

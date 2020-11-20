@@ -622,8 +622,7 @@ class EditorIds(object):
                     changed.append((oldEid,newEid))
         #--Update scripts
         old_new = dict(self.old_new)
-        old_new.update(
-            dict([(oldEid.lower(),newEid) for oldEid,newEid in changed]))
+        old_new.update({oldEid.lower(): newEid for oldEid, newEid in changed})
         changed.extend(self.changeScripts(modFile,old_new))
         #--Done
         if changed: modFile.safeSave()
@@ -733,7 +732,7 @@ class FactionRelations(_PBashParser):
         # Look if we already have relations and base ourselves on those,
         # otherwise make a new list
         relations = self.id_stored_info[b'FACT'].get(record.fid, [])
-        other_index = dict((y[0], x) for x, y in enumerate(relations))
+        other_index = {y[0]: x for x, y in enumerate(relations)}
         # Merge added relations, preserve changed relations
         for relation in record.relations:
             rel_attrs = tuple(getattr(relation, a) for a
@@ -1323,21 +1322,21 @@ class _UsesEffectsMixin(object):
     headerFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s",' \
                    u'"%s","%s"'
     recipientTypeNumber_Name = {None:u'NONE',0:u'Self',1:u'Touch',2:u'Target',}
-    recipientTypeName_Number = dict(
-        [(y.lower(),x) for x,y in recipientTypeNumber_Name.iteritems() if
-         x is not None])
-    actorValueNumber_Name = dict(
-        [(x,y) for x,y in enumerate(bush.game.actor_values)])
+    recipientTypeName_Number = {y.lower(): x for x, y
+                                in recipientTypeNumber_Name.iteritems()
+                                if x is not None}
+    actorValueNumber_Name = {x: y for x, y
+                             in enumerate(bush.game.actor_values)}
     actorValueNumber_Name[None] = u'NONE'
-    actorValueName_Number = dict(
-        [(y.lower(),x) for x,y in actorValueNumber_Name.iteritems() if
-         x is not None])
+    actorValueName_Number = {y.lower(): x for x, y
+                             in actorValueNumber_Name.iteritems()
+                             if x is not None}
     schoolTypeNumber_Name = {None:u'NONE',0:u'Alteration',1:u'Conjuration',
                              2:u'Destruction',3:u'Illusion',4:u'Mysticism',
                              5:u'Restoration',}
-    schoolTypeName_Number = dict(
-        [(y.lower(),x) for x,y in schoolTypeNumber_Name.iteritems() if
-         x is not None])
+    schoolTypeName_Number = {y.lower(): x for x, y
+                             in schoolTypeNumber_Name.iteritems()
+                             if x is not None}
 
     def readEffects(self,_effects,aliases):
         schoolTypeName_Number = _UsesEffectsMixin.schoolTypeName_Number
@@ -1663,18 +1662,18 @@ class SpellRecords(_UsesEffectsMixin):
                                      3   : u'LesserPower',
                                      4   : u'Ability',
                                      5   : u'Poison',}
-        self.spellTypeName_Number = dict(
-            [(y.lower(),x) for x,y in self.spellTypeNumber_Name.iteritems() if
-             x is not None])
+        self.spellTypeName_Number = {y.lower(): x for x, y
+                                     in self.spellTypeNumber_Name.iteritems()
+                                     if x is not None}
         self.levelTypeNumber_Name = {None : u'NONE',
                                      0    : u'Novice',
                                      1    : u'Apprentice',
                                      2    : u'Journeyman',
                                      3    : u'Expert',
                                      4    : u'Master',}
-        self.levelTypeName_Number = dict(
-            [(y.lower(),x) for x,y in self.levelTypeNumber_Name.iteritems() if
-             x is not None])
+        self.levelTypeName_Number = {y.lower(): x for x, y
+                                     in self.levelTypeNumber_Name.iteritems()
+                                     if x is not None}
 
     def readFromMod(self, modInfo, __attrgetters=attrgetter_cache):
         """Reads stats from specified mod."""
