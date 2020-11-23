@@ -20,22 +20,20 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
-from collections import defaultdict
 import re
-import time
+from collections import defaultdict
+
+from . import SaveDetails
+from .settings_dialog import SettingsDialog
+from .. import bass, balt, bosh, bush
 from ..balt import EnabledLink, AppendableLink, ItemLink, RadioLink, \
     ChoiceMenuLink, CheckLink, UIList_Rename, OneItemLink, SeparatorLink
-from ..gui import ImageWrapper
-from .. import bass, balt, bosh, bush
-from .import People_Link, SaveDetails
-from .settings_dialog import SettingsDialog
 from ..bolt import GPath
+from ..gui import ImageWrapper
 
 __all__ = ['ColumnsMenu', 'Master_ChangeTo', 'Master_Disable',
            'Screens_NextScreenShot', 'Screens_JpgQuality',
            'Screens_JpgQualityCustom', 'Screen_Rename', 'Screen_ConvertTo',
-           'People_AddNew', 'People_Import', 'People_Karma', 'People_Export',
            'Master_AllowEdit', 'Master_ClearRenames', 'SortByMenu',
            u'Misc_SettingsDialog']
 
@@ -155,82 +153,6 @@ class Screens_JpgQualityCustom(Screens_JpgQuality):
 class Screen_Rename(UIList_Rename):
     """Renames files by pattern."""
     _help = _(u'Renames files by pattern')
-
-# People Links ----------------------------------------------------------------
-#------------------------------------------------------------------------------
-class People_AddNew(ItemLink, People_Link):
-    """Add a new record."""
-    dialogTitle = _(u'Add New Person')
-    _text = _(u'Add...')
-    _help = _(u'Add a new record')
-
-    def Execute(self):
-        person = self._askText(_(u"Add new person:"), self.dialogTitle)
-        if not person: return
-        if person in self.pdata: return self._showInfo(
-            person + _(u" already exists."), title=self.dialogTitle)
-        self.pdata[person] = (time.time(),0,u'')
-        self.window.RefreshUI(redraw=[person])
-        self.window.EnsureVisibleItem(person, focus=True)
-        self.pdata.setChanged()
-
-#------------------------------------------------------------------------------
-class People_Export(ItemLink, People_Link):
-    """Export people to text archive."""
-    dialogTitle = _(u"Export People")
-    _text = _(u'Export...')
-    _help = _(u'Export people to text archive')
-
-    def Execute(self):
-        textDir = bass.settings.get('bash.workDir', bass.dirs[u'app'])
-        #--File dialog
-        export_path = self._askSave(title=_(u'Export people to text file:'),
-                             defaultDir=textDir, defaultFile=u'People.txt',
-                             wildcard=u'*.txt')
-        if not export_path: return
-        bass.settings['bash.workDir'] = export_path.head
-        self.pdata.dumpText(export_path, self.selected)
-        self._showInfo(_(u'Records exported: %d.') % len(self.selected),
-                       title=self.dialogTitle)
-
-#------------------------------------------------------------------------------
-class People_Import(ItemLink, People_Link):
-    """Import people from text archive."""
-    dialogTitle = _(u"Import People")
-    _text = _(u'Import...')
-    _help = _(u'Import people from text archive')
-
-    def Execute(self):
-        textDir = bass.settings.get('bash.workDir', bass.dirs[u'app'])
-        #--File dialog
-        import_path = self._askOpen(title=_(u'Import people from text file:'),
-                                    defaultDir=textDir, wildcard=u'*.txt',
-                                    mustExist=True)
-        if not import_path: return
-        bass.settings['bash.workDir'] = import_path.head
-        newNames = self.pdata.loadText(import_path)
-        self._showInfo(_(u"People imported: %d") % len(newNames),
-                       title=self.dialogTitle)
-        self.window.RefreshUI()
-
-#------------------------------------------------------------------------------
-class People_Karma(ChoiceMenuLink, People_Link):
-    """Add Karma setting links."""
-    _text = _(u'Karma')
-    karma_labels = [u'%+d' % x for x in xrange(5, -6, -1)]
-
-    class _Karma(ItemLink, People_Link):
-        def Execute(self):
-            karma = int(self._text)
-            for item in self.selected:
-                self.pdata[item] = (time.time(), karma, self.pdata[item][2])
-            self.window.RefreshUI()
-            self.pdata.setChanged()
-
-    choiceLinkType = _Karma
-
-    @property
-    def _choices(self): return self.__class__.karma_labels
 
 # Masters Links ---------------------------------------------------------------
 #------------------------------------------------------------------------------

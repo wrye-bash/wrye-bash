@@ -25,24 +25,24 @@
 attributes which are populated here. Therefore the layout of the menus is
 also defined in these functions."""
 from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
-    BSAList, ScreensList, MasterList, bEnableWizard, PeopleList, \
-    BashStatusBar
+    BSAList, ScreensList, MasterList, bEnableWizard, BashStatusBar
+# modules below define the __all__ directive
+from .app_buttons import *
+from .bsa_links import *
+from .files_links import *
+from .ini_links import *
+from .installer_links import *
+from .installers_links import *
+from .misc_links import *
+from .mod_links import *
+from .mods_links import *
+from .saves_links import *
+# Rest of internal imports
 from .. import bass, balt, bush
 from ..balt import MenuLink, SeparatorLink, UIList_OpenItems, \
     UIList_OpenStore, UIList_Hide
 from ..env import init_app_links
 from ..gui import ImageWrapper
-# modules below define the __all__ directive
-from .app_buttons import *
-from .mods_links import *
-from .files_links import *
-from .installers_links import *
-from .installer_links import *
-from .saves_links import *
-from .misc_links import *
-from .ini_links import *
-from .mod_links import *
-from .bsa_links import *
 
 #------------------------------------------------------------------------------
 def InitStatusBar():
@@ -873,33 +873,6 @@ def InitScreenLinks():
     ScreensList.global_links[_(u'Settings')].append(Misc_SettingsDialog())
 
 #------------------------------------------------------------------------------
-def InitPeopleLinks():
-    """Initialize people tab menus."""
-    #--Header links
-    # Sorting and Columns
-    PeopleList.column_links.append(SortByMenu())
-    PeopleList.column_links.append(ColumnsMenu())
-    PeopleList.column_links.append(SeparatorLink())
-    PeopleList.column_links.append(People_AddNew())
-    PeopleList.column_links.append(People_Import())
-    #--Item links
-    PeopleList.context_links.append(People_Karma())
-    PeopleList.context_links.append(SeparatorLink())
-    PeopleList.context_links.append(People_AddNew())
-    PeopleList.context_links.append(balt.UIList_Delete())
-    PeopleList.context_links.append(People_Export())
-    # PeopleList: Global Links
-    # Edit Menu
-    edit_menu = PeopleList.global_links[_(u'Edit')]
-    edit_menu.append(People_AddNew())
-    edit_menu.append(People_Import())
-    # View Menu
-    view_menu = PeopleList.global_links[_(u'View')]
-    view_menu.append(SortByMenu())
-    view_menu.append(ColumnsMenu())
-    # Settings Menu
-    PeopleList.global_links[_(u'Settings')].append(Misc_SettingsDialog())
-
 def InitLinks():
     """Call other link initializers."""
     InitStatusBar()
@@ -909,5 +882,4 @@ def InitLinks():
     InitModLinks()
     InitSaveLinks()
     InitScreenLinks()
-    InitPeopleLinks()
     # InitBSALinks()

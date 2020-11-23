@@ -400,15 +400,6 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         },
     'bash.screens.jpgQuality': 95,
     'bash.screens.jpgCustomQuality': 75,
-    #--Wrye Bash: People
-    'bash.people.cols': ['Name','Karma','Header'],
-    'bash.people.sort': 'Name',
-    'bash.people.colReverse': {},
-    'bash.people.colWidths': {
-        'Name': 80,
-        'Karma': 25,
-        'Header': 50,
-        },
     #--BOSS:
     'BOSS.ClearLockTimes':True,
     'BOSS.AlwaysUpdate':True,

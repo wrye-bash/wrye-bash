@@ -83,8 +83,8 @@ from ..balt import Links, ItemLink
 
 from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
-    TOP, VLayout, EventResult, DropDown, DialogWindow, WindowFrame, Spinner, \
-    Splitter, TabbedPanel, PanelWin, CheckListBox, Color, Picture, ImageWrapper, \
+    TOP, VLayout, EventResult, DropDown, DialogWindow, WindowFrame, Splitter, \
+    TabbedPanel, PanelWin, CheckListBox, Color, Picture, ImageWrapper, \
     CenteredSplash, BusyCursor, RadioButton, GlobalMenu
 
 # Constants -------------------------------------------------------------------
@@ -128,13 +128,6 @@ class Installers_Link(ItemLink):
         """:rtype: InstallersPanel"""
         return self.window.panel
 
-class People_Link(Link):
-    """PeopleData mixin"""
-    @property
-    def pdata(self):
-        """:rtype: bosh.PeopleData"""
-        return self.window.data_store
-
 #--Information about the various Tabs
 tabInfo = {
     # InternalName: [className, title, instance]
@@ -143,7 +136,6 @@ tabInfo = {
     'Saves': ['SavePanel', _(u"Saves"), None],
     'INI Edits': ['INIPanel', _(u"INI Edits"), None],
     'Screenshots': ['ScreensPanel', _(u"Screenshots"), None],
-    'People':['PeoplePanel', _(u"People"), None],
     # 'BSAs':['BSAPanel', _(u"BSAs"), None],
 }
 
@@ -3438,110 +3430,7 @@ class BSAPanel(BashTab):
         super(BSAPanel, self).__init__(parent)
         BashFrame.bsaList = self.uiList
 
-#------------------------------------------------------------------------------
-class PeopleList(balt.UIList):
-    column_links = Links()
-    context_links = Links()
-    global_links = OrderedDefaultDict(lambda: Links()) # Global menu
-    icons = karmacons
-    _sunkenBorder = False
-    _recycle = False
-    _default_sort_col = 'Name'
-    _sort_keys = {'Name'  : lambda self, x: x.lower(),
-                  'Karma' : lambda self, x: self.data_store[x][1],
-                  'Header': lambda self, x: self.data_store[x][2][:50].lower(),
-                 }
-    #--Labels
-    @staticmethod
-    def _karma(personData):
-        karma = personData[1]
-        return (u'-', u'+')[karma >= 0] * abs(karma)
-    labels = OrderedDict([
-        ('Name',   lambda self, name_: name_),
-        ('Karma',  lambda self, name_: self._karma(self.data_store[name_])),
-        ('Header', lambda self, name_:
-                            self.data_store[name_][2].split(u'\n', 1)[0][:75]),
-    ])
-
-    def set_item_format(self, item, item_format, target_ini_setts):
-        item_format.icon_key = u'karma%+d' % self.data_store[item][1]
-
-#------------------------------------------------------------------------------
-class PeopleDetails(_DetailsMixin, NotebookPanel):
-    @property
-    def displayed_item(self): return self._people_detail
-    @property
-    def file_infos(self): return self.peoplePanel.listData
-
-    def __init__(self, parent, ui_list_panel):
-        super(PeopleDetails, self).__init__(parent)
-        self._people_detail = None # type: unicode
-        self.peoplePanel = ui_list_panel
-        self.gName = TextField(self, editable=False)
-        self.gText = TextArea(self)
-        self.gKarma = Spinner(self, min_val=-5, max_val=5)
-        self.gKarma.on_spun.subscribe(self.OnSpin)
-        self.gKarma.set_min_size(40,-1)
-        #--Layout
-        VLayout(spacing=4, item_expand=True, items=[
-            HLayout(item_expand=True, items=[
-                (self.gName, LayoutOptions(weight=1)), self.gKarma]),
-            (self.gText, LayoutOptions(weight=1))
-        ]).apply_to(self)
-
-    def OnSpin(self):
-        """Karma spin."""
-        if not self._people_detail: return
-        karma = self.gKarma.spinner_value
-        details = self.file_infos[self._people_detail][2]
-        self.file_infos[self._people_detail] = (time.time(), karma, details)
-        self.peoplePanel.uiList.PopulateItem(item=self._people_detail)
-        self.file_infos.setChanged()
-
-    def ClosePanel(self, destroy=False):
-        """Saves details if they need saving."""
-        if not self.gText.modified: return
-        if not self.file_info: return
-        mtime, karma, __text = self.file_infos[self._people_detail]
-        self.file_infos[self._people_detail] = (
-            time.time(), karma, self.gText.text_content.strip())
-        self.peoplePanel.uiList.PopulateItem(item=self._people_detail)
-        self.file_infos.setChanged()
-
-    def SetFile(self, fileName='SAME'):
-        """Refreshes detail view associated with data from item."""
-        self.ClosePanel()
-        item = super(PeopleDetails, self).SetFile(fileName)
-        self._people_detail = item
-        if not item: return
-        karma, details = self.peoplePanel.listData[item][1:3]
-        self.gName.text_content = item
-        self.gKarma.spinner_value = karma
-        self.gText.text_content = details
-
-    def _resetDetails(self):
-        self.gKarma.spinner_value = 0
-        self.gName.text_content = u''
-        self.gText.text_content = u''
-
-class PeoplePanel(BashTab):
-    """Panel for PeopleTank."""
-    keyPrefix = 'bash.people'
-    _status_str = _(u'People:') + u' %d'
-    _ui_list_type = PeopleList
-    _details_panel_type = PeopleDetails
-
-    def __init__(self,parent):
-        """Initialize."""
-        self.listData = bosh.PeopleData()
-        super(PeoplePanel, self).__init__(parent)
-
-    def ShowPanel(self, **kwargs):
-        if self.listData.refresh(): self.uiList.RefreshUI(focus_list=False)
-        super(PeoplePanel, self).ShowPanel()
-
-#------------------------------------------------------------------------------
-#--Tabs menu
+#--Tabs menu ------------------------------------------------------------------
 _widget_to_panel = {}
 class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
     """Handle hiding/unhiding tabs."""
@@ -3610,7 +3499,6 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
                                         ('Saves', True),
                                         ('INI Edits', True),
                                         ('Screenshots', True),
-                                        ('People', False),
                                         # ('BSAs', False),
                                        ))
 
@@ -4286,7 +4174,7 @@ class BashApp(wx.App):
         progress(0.60, _(u'Initializing IniInfos'))
         bosh.iniInfos = bosh.INIInfos()
         bosh.iniInfos.refresh(refresh_target=False)
-        # screens/people/installers data are refreshed upon showing the panel
+        # screens/installers data are refreshed upon showing the panel
         #--Patch check
         if bush.game.Esp.canBash:
             if not bosh.modInfos.bashed_patches and bass.inisettings[u'EnsurePatchExists']:

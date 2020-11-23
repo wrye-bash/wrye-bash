@@ -585,6 +585,10 @@
         Delete "${Path}\Mopy\Bash Patches\Oblivion\taglist.yaml"
         RMDir /r "${Path}\Mopy\Bash Patches\Skyrim"
         RMDir /r "${Path}\Mopy\Bash Patches\SkyrimSE"
+        ; As of 308, the People Tab was removed
+        Delete "${Path}\Mopy\bash\images\readme\people-1.png"
+        Delete "${Path}\Mopy\bash\images\readme\people-2.png"
+        Delete "${Path}\Mopy\bash\images\readme\people-3-menu.png"
     !macroend
 
 

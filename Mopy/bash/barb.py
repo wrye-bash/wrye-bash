@@ -76,8 +76,7 @@ def _init_settings_files(fsName_, root_prefix, mods_folder):
          jo(root_prefix + u' Mods', u'Bash Installers', u'Bash')): {
            u'Converters.dat', u'Installers.dat', },
         (dirs[u'saveBase'], jo(u'My Games', fsName_)): {
-            u'BashProfiles.dat', u'BashSettings.dat', u'BashLoadOrders.dat',
-            u'People.dat', },
+            u'BashProfiles.dat', u'BashSettings.dat', u'BashLoadOrders.dat'},
         # backup all files in Mopy\bash\l10n, Data\Bash Patches\,
         # Data\BashTags\ and Data\INI Tweaks\
         (dirs[u'l10n'], jo(fsName_, u'Mopy', u'bash', u'l10n')): {},
