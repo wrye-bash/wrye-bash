@@ -412,50 +412,57 @@ class MasterList(_ModsUIList):
         #--Font color
         fileBashTags = masterInfo.getBashTags()
         mouseText = u''
+        # Text foreground
         if masters_name in bosh.modInfos.bashed_patches:
-            item_format.text_key = 'mods.text.bashedPatch'
+            item_format.text_key = u'mods.text.bashedPatch'
+            mouseText += _(u'Bashed Patch. ')
+            if masterInfo.is_esl(): # ugh, copy-paste from below
+                mouseText += _(u'Light plugin. ')
         elif masters_name in bosh.modInfos.mergeable:
             if u'NoMerge' in fileBashTags and not bush.game.check_esl:
-                item_format.text_key = 'mods.text.noMerge'
-                mouseText += _(u"Technically mergeable but has NoMerge tag.  ")
+                item_format.text_key = u'mods.text.noMerge'
+                mouseText += _(u'Technically mergeable, but has NoMerge tag. ')
             else:
-                item_format.text_key = 'mods.text.mergeable'
+                item_format.text_key = u'mods.text.mergeable'
                 if bush.game.check_esl:
-                    mouseText += _(u"Qualifies to be ESL flagged.  ")
+                    mouseText += _(u'Can be ESL-flagged. ')
                 else:
                     # Merged plugins won't be in master lists
-                    mouseText += _(u"Can be merged into Bashed Patch.  ")
+                    mouseText += _(u'Can be merged into Bashed Patch. ')
         else:
             # NoMerge / Mergeable should take priority over ESL/ESM color
-            is_master = load_order.in_master_block(masterInfo)
-            is_esl = masterInfo.is_esl()
-            if is_master and is_esl:
-                item_format.text_key = 'mods.text.eslm'
-                mouseText += _(u'ESL Flagged file. Master file.')
-            elif is_master:
-                item_format.text_key = 'mods.text.esm'
-                mouseText += _(u"Master file. ")
-            elif is_esl:
-                item_format.text_key = 'mods.text.esl'
-                mouseText += _(u"ESL Flagged file. ")
-        #--Text BG
-        if bosh.modInfos.isBadFileName(masters_name.s):
-            if load_order.cached_is_active(masters_name):
-                item_format.back_key = 'mods.bkgd.doubleTime.load'
-            else:
-                item_format.back_key = 'mods.bkgd.doubleTime.exists'
+            final_text_key = u'mods.text.es'
+            if masterInfo.is_esl():
+                final_text_key += u'l'
+                mouseText += _(u'Light plugin. ')
+            if load_order.in_master_block(masterInfo):
+                final_text_key += u'm'
+                mouseText += _(u'Master plugin. ')
+            # Check if it's special, leave ESPs alone
+            if final_text_key != u'mods.text.es':
+                item_format.text_key = final_text_key
+        # Text background
+        if masters_name.s in bosh.modInfos.activeBad: # if active, it's in LO
+            item_format.back_key = u'mods.bkgd.doubleTime.load'
+            mouseText += _(u'Plugin name incompatible, will not load. ')
+        elif bosh.modInfos.isBadFileName(masters_name.s): # might not be in LO
+            item_format.back_key = u'mods.bkgd.doubleTime.exists'
+            mouseText += _(u'Plugin name incompatible, cannot be activated. ')
         elif masterInfo.hasActiveTimeConflict():
-            item_format.back_key = 'mods.bkgd.doubleTime.load'
+            item_format.back_key = u'mods.bkgd.doubleTime.load'
+            mouseText += _(u'Another plugin has the same timestamp. ')
         elif masterInfo.hasTimeConflict():
-            item_format.back_key = 'mods.bkgd.doubleTime.exists'
+            item_format.back_key = u'mods.bkgd.doubleTime.exists'
+            mouseText += _(u'Another plugin has the same timestamp. ')
         elif masterInfo.is_ghost:
-            item_format.back_key = 'mods.bkgd.ghosted'
+            item_format.back_key = u'mods.bkgd.ghosted'
+            mouseText += _(u'Plugin is ghosted. ')
         elif self._do_size_checks and bosh.modInfos.size_mismatch(
                 masters_name, masterInfo.stored_size):
             item_format.back_key = u'mods.bkgd.size_mismatch'
             mouseText += _(u'Stored size does not match the one on disk. ')
         if self.allowEdit:
-            if masterInfo.old_name in settings['bash.mods.renames']:
+            if masterInfo.old_name in settings[u'bash.mods.renames']:
                 item_format.strong = True
         #--Image
         status = self.GetMasterStatus(mi)
@@ -886,81 +893,88 @@ class ModList(_ModsUIList):
         #--Default message
         mouseText = u''
         fileBashTags = mod_info.getBashTags()
+        # Text foreground
+        if mod_name in bosh.modInfos.activeBad:
+            mouseText += _(u'Plugin name incompatible, will not load. ')
         if mod_name in bosh.modInfos.bad_names:
-            mouseText += _(u'Plugin name incompatible, cannot be activated.  ')
+            mouseText += _(u'Plugin name incompatible, cannot be activated. ')
         if mod_name in bosh.modInfos.missing_strings:
-            mouseText += _(u'Plugin is missing String Localization files.  ')
+            mouseText += _(u'Plugin is missing string localization files. ')
         if mod_name in bosh.modInfos.bashed_patches:
-            item_format.text_key = 'mods.text.bashedPatch'
+            item_format.text_key = u'mods.text.bashedPatch'
+            mouseText += _(u'Bashed Patch. ')
+            if mod_info.is_esl(): # ugh, copy-paste from below
+                mouseText += _(u'Light plugin. ')
         elif mod_name in bosh.modInfos.mergeable:
             if u'NoMerge' in fileBashTags and not bush.game.check_esl:
-                item_format.text_key = 'mods.text.noMerge'
-                mouseText += _(u"Technically mergeable but has NoMerge tag.  ")
+                item_format.text_key = u'mods.text.noMerge'
+                mouseText += _(u'Technically mergeable, but has NoMerge tag. ')
             else:
-                item_format.text_key = 'mods.text.mergeable'
+                item_format.text_key = u'mods.text.mergeable'
                 if bush.game.check_esl:
                     mouseText += _(u'Can be ESL-flagged. ')
                 else:
                     if checkMark == 2:
-                        mouseText += _(u"Merged into Bashed Patch.  ")
+                        mouseText += _(u'Merged into Bashed Patch. ')
                     else:
-                        mouseText += _(u"Can be merged into Bashed Patch.  ")
+                        mouseText += _(u'Can be merged into Bashed Patch. ')
         else:
             # NoMerge / Mergeable should take priority over ESL/ESM color
-            final_text_key = 'mods.text.es'
+            final_text_key = u'mods.text.es'
             if mod_info.is_esl():
-                final_text_key += 'l'
-                mouseText += _(u'ESL-flagged plugin. ')
+                final_text_key += u'l'
+                mouseText += _(u'Light plugin. ')
             if load_order.in_master_block(mod_info):
-                final_text_key += 'm'
+                final_text_key += u'm'
                 mouseText += _(u'Master plugin. ')
             # Check if it's special, leave ESPs alone
-            if final_text_key != 'mods.text.es':
+            if final_text_key != u'mods.text.es':
                 item_format.text_key = final_text_key
-        #--Image messages
+        # Mirror the checkbox color info in the status bar
         if status == 30:
-            mouseText += _(u"One or more masters are missing.  ")
+            mouseText += _(u'One or more masters are missing. ')
         else:
             if status in {20, 21}:
-                mouseText += _(u"Loads before its master(s).  ")
+                mouseText += _(u'Loads before its master(s). ')
             if status in {10, 21}:
-                mouseText += _(u"Masters have been re-ordered.  ")
+                mouseText += _(u'Masters have been re-ordered. ')
         if checkMark == 1:   mouseText += _(u'Active in load order. ')
-        elif checkMark == 3: mouseText += _(u"Imported into Bashed Patch.  ")
-        #should mod be deactivated
+        elif checkMark == 3: mouseText += _(u'Imported into Bashed Patch. ')
         if u'Deactivate' in fileBashTags:
             item_format.italics = True
-        #--Text BG
-        if mod_name in bosh.modInfos.bad_names:
-            item_format.back_key ='mods.bkgd.doubleTime.exists'
+        # Text background
+        if mod_name in bosh.modInfos.activeBad:
+            item_format.back_key = u'mods.bkgd.doubleTime.load'
+        elif mod_name in bosh.modInfos.bad_names:
+            item_format.back_key = u'mods.bkgd.doubleTime.exists'
         elif mod_name in bosh.modInfos.missing_strings:
             if load_order.cached_is_active(mod_name):
-                item_format.back_key = 'mods.bkgd.doubleTime.load'
+                item_format.back_key = u'mods.bkgd.doubleTime.load'
             else:
-                item_format.back_key = 'mods.bkgd.doubleTime.exists'
+                item_format.back_key = u'mods.bkgd.doubleTime.exists'
         elif mod_info.hasBadMasterNames():
             if load_order.cached_is_active(mod_name):
-                item_format.back_key = 'mods.bkgd.doubleTime.load'
+                item_format.back_key = u'mods.bkgd.doubleTime.load'
             else:
-                item_format.back_key = 'mods.bkgd.doubleTime.exists'
-            mouseText += _(u"WARNING: Has master names that will not load.  ")
+                item_format.back_key = u'mods.bkgd.doubleTime.exists'
+            mouseText += _(u'Has master names that will not load. ')
         elif mod_info.hasActiveTimeConflict():
-            item_format.back_key = 'mods.bkgd.doubleTime.load'
-            mouseText += _(u"WARNING: Has same load order as another mod.  ")
+            item_format.back_key = u'mods.bkgd.doubleTime.load'
+            mouseText += _(u'Another plugin has the same timestamp. ')
         elif u'Deactivate' in fileBashTags and checkMark == 1:
-            item_format.back_key = 'mods.bkgd.deactivate'
-            mouseText += _(u"Mod should be imported and deactivated.  ")
+            item_format.back_key = u'mods.bkgd.deactivate'
+            mouseText += _(u'Mod should be imported and deactivated. ')
         elif mod_info.hasTimeConflict():
-            item_format.back_key = 'mods.bkgd.doubleTime.exists'
-            mouseText += _(u"Has same time as another (unloaded) mod.  ")
+            item_format.back_key = u'mods.bkgd.doubleTime.exists'
+            mouseText += _(u'Another plugin has the same timestamp. ')
         elif mod_info.isGhost:
-            item_format.back_key = 'mods.bkgd.ghosted'
-            mouseText += _(u"File is ghosted.  ")
+            item_format.back_key = u'mods.bkgd.ghosted'
+            mouseText += _(u'Plugin is ghosted. ')
         elif (bush.game.Esp.check_master_sizes
               and mod_info.has_master_size_mismatch()):
             item_format.back_key = u'mods.bkgd.size_mismatch'
-            mouseText += _(u'Has one or more size-mismatched masters. ')
-        if settings['bash.mods.scanDirty']:
+            mouseText += _(u'Has size-mismatched master(s). ')
+        if settings[u'bash.mods.scanDirty']:
             message = bosh.modInfos.getDirtyMessage(mod_name)
             mouseText += message[1]
             if message[0]: item_format.underline = True

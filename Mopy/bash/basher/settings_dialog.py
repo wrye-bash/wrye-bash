@@ -240,10 +240,10 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         #--DropDown
         def _display_text(k):
             return _(self._keys_to_tabs[k.split(u'.')[0]]) + colorInfo[k][0]
-        self.text_key = {_display_text(x): x for x in colors}
-        colored = sorted(self.text_key, key=unicode.lower)
+        self._txt_key = {_display_text(x): x for x in colors}
+        colored = sorted(self._txt_key, key=unicode.lower)
         combo_text = colored[0]
-        choiceKey = self.text_key[combo_text]
+        choiceKey = self._txt_key[combo_text]
         self.comboBox = DropDown(self, value=combo_text, choices=colored)
         self.comboBox.on_combo_select.subscribe(lambda _sel: self.OnComboBox())
         #--Color Picker
@@ -279,7 +279,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
 
     def GetColorKey(self):
         """Return balt.colors dict key for current combobox selection."""
-        return self.text_key[self.comboBox.get_value()]
+        return self._txt_key[self.comboBox.get_value()]
 
     @staticmethod
     def UpdateUIColors():
