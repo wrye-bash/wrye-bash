@@ -318,7 +318,7 @@ def _main(opts, wx_locale):
                     bush_game.bash_root_prefix, bush_game.mods_dir)
                 # we currently disallow backup and restore on the same boot
                 if opts.quietquit: return
-            except (exception.BoltError, OSError, shutil.Error):
+            except (exception.BoltError, OSError, IOError, shutil.Error):
                 bolt.deprint(u'Failed to restore backup', traceback=True)
                 restore_.restore_ini()
                 # reset the game and ini

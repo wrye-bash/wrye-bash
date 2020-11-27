@@ -1476,12 +1476,12 @@ class TrustedBinariesPage(_AFixedPage):
             balt.showError(self,
                 _(u'Wrye Bash could not load %s, because it is not saved in '
                   u'UTF-8 format.  Please resave it in UTF-8 format and try '
-                  u'again.') % textPath.s)
+                  u'again.') % textPath)
         except Exception:
-            deprint(u'Error reading', textPath.s, traceback=True)
+            deprint(u'Error reading %s' % textPath, traceback=True)
             balt.showError(self,
                 _(u'Wrye Bash could not load %s, because there was an error '
-                  u'in the format of the file.') % textPath.s)
+                  u'in the format of the file.') % textPath)
         finally:
             self._check_changed()
 

@@ -1551,7 +1551,7 @@ class UIList(wx.Panel):
             destDir = self.data_store.get_hide_dir(key)
             if destDir.join(key).exists():
                 message = (_(u'A file named %s already exists in the hidden '
-                             u'files directory. Overwrite it?') % key.s)
+                             u'files directory. Overwrite it?') % key)
                 if not askYes(self, message, _(u'Hide Files')): continue
             #--Do it
             with BusyCursor(): self.data_store.move_info(key, destDir)
@@ -2163,7 +2163,7 @@ class ListBoxes(WrappingTextMixin, DialogWindow):
             title = item_group[0] # also serves as key in self._ctrls dict
             item_tip = item_group[1]
             strings = [u'%s' % x for x in item_group[2:]] # works for Path & strings
-            if len(strings) == 0: continue
+            if not strings: continue
             if liststyle == u'check':
                 checksCtrl = CheckListBox(self, choices=strings, isSingle=True,
                                           isHScroll=True)

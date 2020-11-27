@@ -739,7 +739,7 @@ class INITweakLineCtrl(INIListCtrl):
             return
         # TODO(ut) avoid if ini tweak did not change
         self.tweakLines = bosh.iniInfos.get_tweak_lines_infos(tweakPath)
-        updated = set()
+        updated_line_nums = set()
         for i,line in enumerate(self.tweakLines):
             #--Line
             self.InsertItem(i, line[0])
@@ -756,11 +756,11 @@ class INITweakLineCtrl(INIListCtrl):
             lineNo = line[5]
             if lineNo != -1:
                 self.iniContents.SetItemBackgroundColour(lineNo,color)
-                updated.add(lineNo)
+                updated_line_nums.add(lineNo)
         #--Reset line color for other iniContents lines
         background_color = self.iniContents.GetBackgroundColour()
         for i in xrange(self.iniContents.GetItemCount()):
-            if i in updated: continue
+            if i in updated_line_nums: continue
             if self.iniContents.GetItemBackgroundColour(i) != background_color:
                 self.iniContents.SetItemBackgroundColour(i, background_color)
         #--Refresh column width

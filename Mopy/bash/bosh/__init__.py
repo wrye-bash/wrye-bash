@@ -181,7 +181,7 @@ class FileInfo(AFile):
         self._file_size, self._file_mod_time, self.ctime = stat_tuple
         if load_cache: self.readHeader()
 
-    def mark_unchanged(self):
+    def __mark_unchanged(self):
         self._reset_cache(self._stat_tuple(), load_cache=False)
 
     ##: DEPRECATED-------------------------------------------------------------
@@ -502,7 +502,7 @@ class ModInfo(FileInfo):
             self.isGhost = isGhost
             # reset cache info as un/ghosting should not make do_update return
             # True
-            self.mark_unchanged()
+            self.__mark_unchanged()
             # Notify BAIN, as this is basically a rename operation
             modInfos._notify_bain(renamed={ghost_source: ghost_target})
         except:
@@ -1453,14 +1453,14 @@ class FileInfos(TableFileInfos):
                     deprint(u'Failed to load %s: %s' % (new, e.message)) #, traceback=True)
                     self.corrupted[new] = e.message
                 self.pop(new, None)
-        _deleted = oldNames - newNames
-        self.delete_refresh(_deleted, None, check_existence=False,
+        _deleted_ = oldNames - newNames
+        self.delete_refresh(_deleted_, None, check_existence=False,
                             _in_refresh=True)
         if _updated:
             self._notify_bain(changed={self[n].abs_path for n in _updated})
-        change = bool(_added) or bool(_updated) or bool(_deleted)
+        change = bool(_added) or bool(_updated) or bool(_deleted_)
         if not change: return change
-        return _added, _updated, _deleted
+        return _added, _updated, _deleted_
 
     def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
                        _in_refresh=False):
@@ -1507,7 +1507,7 @@ class FileInfos(TableFileInfos):
         self[newName] = self[oldName]
         del self[oldName]
         self.table.moveRow(oldName,newName)
-        # self[newName].mark_unchanged() # not needed with shellMove !
+        # self[newName].__mark_unchanged() # not needed with shellMove !
 
     #--Move
     def move_info(self, fileName, destDir):
@@ -1679,8 +1679,8 @@ class INIInfos(TableFileInfos):
                     continue
                 _added.add(new_tweak)
             self[new_tweak] = oldInfo
-        _deleted = oldNames - newNames
-        self.delete_refresh(_deleted, None, check_existence=False,
+        _deleted_ = oldNames - newNames
+        self.delete_refresh(_deleted_, None, check_existence=False,
                             _in_refresh=True)
         # re-add default tweaks
         for k in self.keys():
@@ -1689,25 +1689,25 @@ class INIInfos(TableFileInfos):
         for k, d in self._default_tweaks.iteritems():
             if k not in set_keys:
                 default_info = self.setdefault(k, d) # type: DefaultIniInfo
-                if k in _deleted: # we restore default over copy
+                if k in _deleted_: # we restore default over copy
                     _updated.add(k)
                     default_info.reset_status()
         if _updated:
             self._notify_bain(changed={self[n].abs_path for n in _updated})
-        return _added, _deleted, _updated
+        return _added, _deleted_, _updated
 
     def refresh(self, refresh_infos=True, refresh_target=True):
-        _added = _deleted = _updated = set()
+        _added = _deleted_ = _updated = set()
         if refresh_infos:
-            _added, _deleted, _updated = self._refresh_ini_tweaks()
+            _added, _deleted_, _updated = self._refresh_ini_tweaks()
         changed = refresh_target and (
             self.ini.updated or self.ini.do_update())
         if changed: # reset the status of all infos and let RefreshUI set it
             self.ini.updated = False
             for ini_info in self.itervalues(): ini_info.reset_status()
-        change = bool(_added) or bool(_updated) or bool(_deleted) or changed
+        change = bool(_added) or bool(_updated) or bool(_deleted_) or changed
         if not change: return change
-        return _added, _updated, _deleted, changed
+        return _added, _updated, _deleted_, changed
 
     @property
     def bash_dir(self): return dirs[u'modsBash'].join(u'INI Data')
@@ -2784,8 +2784,8 @@ class ModInfos(FileInfos):
                    _(u'Please close the other program that is accessing '
                      u'%(new)s.') + u'\n\n' +
                    _(u'Try again?')) % {
-                u'xedit_name': bush.game.Xe.full_name, u'old': old.s,
-                u'new': new.s},
+                u'xedit_name': bush.game.Xe.full_name, u'old': old,
+                u'new': new},
         _(u'File in use'))
 
     def _get_version_paths(self, newVersion):

@@ -825,7 +825,7 @@ class _GhostLink(ItemLink):
 class _Mod_AllowGhosting_All(_GhostLink, ItemLink):
     _text, _help = _(u"Allow Ghosting"), _(u'Allow Ghosting for selected mods')
     setAllow = staticmethod(lambda fname: True) # allow ghosting
-    toGhost = staticmethod(lambda name: not load_order.cached_is_active(name))
+    toGhost = staticmethod(lambda fname:not load_order.cached_is_active(fname))
 
 #------------------------------------------------------------------------------
 class _Mod_DisallowGhosting_All(_GhostLink, ItemLink):
@@ -847,12 +847,12 @@ class _DirectGhostLink(_GhostLink, EnabledLink):
 class _Mod_Ghost(_DirectGhostLink):
     _text = _(u'Ghost')
     _help = _(u"Ghost selected mod(s). Active mods can't be ghosted.")
-    toGhost = staticmethod(lambda name: not load_order.cached_is_active(name))
+    toGhost = staticmethod(lambda fname: not load_order.cached_is_active(fname))
 
 class _Mod_Unghost(_DirectGhostLink):
     _text = _(u'Unghost')
     _help = _(u'Unghost selected mod(s).')
-    toGhost = staticmethod(lambda name: False)
+    toGhost = staticmethod(lambda fname: False)
 
 class Mod_GhostUnghost(TransLink):
     """Ghost or unghost selected mod(s)."""

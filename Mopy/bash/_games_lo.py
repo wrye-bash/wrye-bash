@@ -183,6 +183,8 @@ class FixInfo(object):
         bolt.deprint(msg)
 
 class Game(object):
+    """API for setting, getting and validating the active plugins and the
+    load order (of all plugins) according to the game engine (in principle)."""
     allow_deactivate_master = False
     must_be_active_if_present = ()
     max_espms = 255
@@ -258,14 +260,47 @@ class Game(object):
 
     def set_load_order(self, lord, active, previous_lord=None,
                        previous_active=None, dry_run=False, fix_lo=None):
-        assert lord is not None or active is not None, \
-            'load order or active must be not None'
-        if lord is not None: self._fix_load_order(lord, fix_lo=fix_lo)
-        if (previous_lord is None or previous_lord != lord) and active is None:
+        """Set the load order and/or active plugins (or just validate if
+        dry_run is True). The different way each game handles this and how
+        it modifies common data structures necessitate that info on previous
+        (cached) state is passed in, usually for both active plugins and
+        load order. For instance, in the case of asterisk games plugins.txt
+        is the common structure for defining both the global load order and
+        which plugins are active). The logic is as follows:
+        - at least one of `lord` or `active` must be not None, otherwise no
+        much use in calling this function anyway - raise ValueError if not.
+        - if lord is not None pass it through _fix_load_order. That might
+        change it. If, after fixing it, it is the same as `previous_lord`
+        then we won't do anything regarding it (no mtime, loadorder.txt etc).
+        - if load order is actually being set we need info on active plugins.
+        In case active is None we do need to have previous_active - otherwise
+        a ValueError is raised.
+        - otherwise we determine if active needs change (for TESIV if
+        plugins were deleted we need to rewrite plugins.txt - for asterisk
+        games we always need to rewrite the plugins.txt for any load order
+        change, as it is stored there)
+        - we then validate active plugins against lord or previous_lord - if
+        we were not setting the load order we need previous_lord here otherwise
+        a ValueError is raised.
+        By now we should have a lord and active lists to set, if we are not in
+        dry run mode.
+        :returns the (possibly fixed) lord and active lists
+        """
+        if lord is active is None:
+            raise ValueError(u'Load order or active must be not None')
+        setting_lo = lord is not None
+        setting_active = active is not None
+        if setting_lo:
+            # fix the load order - lord is modified in place, hence test below
+            self._fix_load_order(lord, fix_lo=fix_lo)
+        setting_lo = setting_lo and previous_lord != lord
+        if setting_lo and not setting_active:
             # changing load order - must test if active plugins must change too
-            assert previous_active is not None, \
-                'you must pass info on active when setting load order'
-            if previous_lord is not None:
+            if previous_active is None: # active is None
+                raise ValueError(
+                    u'You must pass info on active when setting load order')
+            setting_active = previous_lord is None # we must check active
+            if not setting_active: # does active need change due to lo changes?
                 prev = set(previous_lord)
                 new = set(lord)
                 deleted = prev - new
@@ -273,21 +308,20 @@ class Game(object):
                 reordered = any(x != y for x, y in
                                 zip((x for x in previous_lord if x in common),
                                     (x for x in lord if x in common)))
-                test_active = self._must_update_active(deleted, reordered)
-            else:
-                test_active = True
-            if test_active: active = list(previous_active)
-        if active is not None:
-            assert lord is not None or previous_lord is not None, \
-                'you need to pass a load order in to set active plugins'
+                setting_active = self._must_update_active(deleted, reordered)
+            if setting_active: active = list(previous_active) # active was None
+        if setting_active:
+            if lord is previous_lord is None:
+                raise ValueError(
+                    u'You need to pass a load order in to set active plugins')
             # a load order is needed for all games to validate active against
-            test = lord if lord is not None else previous_lord
+            test = lord if setting_lo else previous_lord
             self._fix_active_plugins(active, test, on_disc=False,
                                      fix_active=fix_lo)
-        lord = lord if lord is not None else previous_lord
-        active = active if active is not None else previous_active
-        assert lord is not None and active is not None, \
-            'returned load order and active must be not None'
+        lord = lord if setting_lo else previous_lord
+        active = active if setting_active else previous_active
+        if lord is  None or active is  None: # sanity check
+            raise Exception(u'Returned load order and active must be not None')
         if not dry_run: # else just return the (possibly fixed) lists
             self._persist_if_changed(active, lord, previous_active,
                                      previous_lord)
@@ -543,8 +577,9 @@ class Game(object):
 
 class INIGame(Game):
     """Class for games which use an INI section to determine parts of the load
-    order. May be used in multiple inheritance with other Game types, just be
-    sure to put INIGame first.
+    order. Meant to be used in multiple inheritance with other Game types, be
+    sure to put INIGame first, as a few of its methods delegate to super
+    implementations, which are abstract in the Game base class.
 
     To use an INI section to specify active plugins, change ini_key_actives.
     To use an INI section to specify load order, change ini_key_lo. You can

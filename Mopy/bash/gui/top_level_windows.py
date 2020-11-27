@@ -348,7 +348,7 @@ class CenteredSplash(_AComponent):
     def __init__(self, splash_path):
         """Creates a new CenteredSplash with an image read from the specified
         path."""
-        splash_bitmap = _wx.Image(name=splash_path).ConvertToBitmap()
+        splash_bitmap = _wx.Image(splash_path).ConvertToBitmap()
         # Center image on the screen and image will stay until clicked by
         # user or is explicitly destroyed when the main window is ready
         splash_style = _adv.SPLASH_CENTER_ON_SCREEN | _adv.SPLASH_NO_TIMEOUT

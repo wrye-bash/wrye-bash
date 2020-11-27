@@ -1820,7 +1820,7 @@ class SpellRecords(_UsesEffectsMixin):
                     levelType = levelTypeNumber_Name.get(levelType,levelType)
                     spellType = spellTypeNumber_Name.get(spellType,spellType)
                     output = rowFormat % (
-                    u'SPEL', fid[0].s, fid[1], eid, cost, levelType, spellType,
+                    u'SPEL', fid[0], fid[1], eid, cost, levelType, spellType,
                     spell_flags, mc, ss, its, aeil, saa, daar, tewt)
                     output += self.writeEffects(effects, False)
                 else:
@@ -1829,7 +1829,7 @@ class SpellRecords(_UsesEffectsMixin):
                     levelType = levelTypeNumber_Name.get(levelType,levelType)
                     spellType = spellTypeNumber_Name.get(spellType,spellType)
                     output = rowFormat % (
-                    u'SPEL', fid[0].s, fid[1], eid, cost, levelType, spellType,
+                    u'SPEL', fid[0], fid[1], eid, cost, levelType, spellType,
                     spell_flags)
                 output += u'\n'
                 out.write(output)

@@ -1684,12 +1684,12 @@ class InstallersData(DataStore):
     @property
     def hidden_dir(self): return bass.dirs[u'modsBash'].join(u'Hidden')
 
-    def add_marker(self, name, order):
+    def add_marker(self, marker_name, order):
         from . import InstallerMarker
-        self[name] = InstallerMarker(name)
+        self[marker_name] = InstallerMarker(marker_name)
         if order is None:
             order = self[self.lastKey].order
-        self.moveArchives([name], order)
+        self.moveArchives([marker_name], order)
 
     def setChanged(self,hasChanged=True):
         """Mark as having changed."""

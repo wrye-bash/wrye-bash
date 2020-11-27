@@ -303,7 +303,7 @@ class LowerDict(dict):
 
     @staticmethod # because this doesn't make sense as a global function.
     def _process_args(mapping=(), **kwargs):
-        if hasattr(mapping, 'iteritems'):
+        if hasattr(mapping, 'iteritems'): # PY3: items
             mapping = getattr(mapping, 'iteritems')()
         return ((_ci_str(k), v) for k, v in
                 chain(mapping, getattr(kwargs, 'iteritems')()))
@@ -728,8 +728,11 @@ class Path(object):
 
     def list(self):
         """For directory: Returns list of files."""
-        if not os.path.exists(self._s): return []
-        return [GPath_no_norm(x) for x in os.listdir(self._s)]
+        try:
+            return [GPath_no_norm(x) for x in os.listdir(self._s)]
+        except OSError as e:
+            if e.errno != errno.ENOENT: raise
+            return []
 
     def walk(self,topdown=True,onerror=None,relative=False):
         """Like os.walk."""
@@ -827,9 +830,9 @@ class Path(object):
         """Starts file as if it had been doubleclicked in file explorer."""
         if self.cext == u'.exe':
             if not exeArgs:
-                subprocess.Popen([self.s], close_fds=True)
+                subprocess.Popen([self._s], close_fds=True)
             else:
-                subprocess.Popen(exeArgs, executable=self.s, close_fds=True)
+                subprocess.Popen(exeArgs, executable=self._s, close_fds=True)
         else:
             os.startfile(self._s)
     def copyTo(self,destName):
@@ -1188,7 +1191,7 @@ class AFile(object):
         #Set cache info (mtime, size[, ctime]) and reload if load_cache is True
         try:
             self._reset_cache(self._stat_tuple(), load_cache)
-        except OSError:
+        except (OSError, IOError):
             if raise_on_error: raise
             self._reset_cache(self._null_stat, load_cache=False)
 
@@ -1355,7 +1358,7 @@ class PickleDict(object):
                     else:
                         raise PickleDict.Mold(path)
                 return 1 + (path == self.backup)
-            except (IOError, OSError, EOFError, ValueError): #PY3:FileNotFound
+            except (OSError, IOError, EOFError, ValueError): #PY3:FileNotFound
                 pass
         else:
             if cor is not None:
@@ -1644,8 +1647,7 @@ class DataTable(DataDict):
 
     def delColumn(self,column):
         """Deletes column of data."""
-        data = self.data
-        for rowData in data.values():
+        for rowData in self.data.values():
             if column in rowData:
                 del rowData[column]
                 self.hasChanged = True

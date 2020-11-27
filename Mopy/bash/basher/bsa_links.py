@@ -47,7 +47,7 @@ class BSA_ExtractToProject(ItemLink):
             if not result: return
             # Error checking
             project = GPath(result).tail
-            if not project.s or project.cext in archives.readExts:
+            if project.cext in archives.readExts:
                 self._showWarning(_(u'%s is not a valid project name.') %
                                   result)
                 return

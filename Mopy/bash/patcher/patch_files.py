@@ -149,8 +149,6 @@ class PatchFile(ModFile):
         self.tes4.masters = [bosh.modInfos.masterName]
         self.longFids = True
         self.keepIds = set()
-        #--New attrs
-        self.patchName = modInfo.name # the bashed Patch
         # Aliases from one mod name to another. Used by text file patchers.
         self.aliases = {}
         self.mergeIds = set()
@@ -164,7 +162,7 @@ class PatchFile(ModFile):
         #--Mods
         # checking for files to include in patch, investigate
         loadMods = [m for m in load_order.cached_lower_loading(
-            self.patchName) if load_order.cached_is_active(m)]
+            modInfo.name) if load_order.cached_is_active(m)]
         if not loadMods:
             raise BoltError(u"No active mods loading before the bashed patch")
         self.loadMods = tuple(loadMods)
