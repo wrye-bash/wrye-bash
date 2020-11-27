@@ -784,8 +784,8 @@ class FactionRelations(_AParser):
                     other_fid = relation_obj[0]
                     other_eid = id_eid.get(other_fid, u'Unknown')
                     # I wish py2 allowed star exprs in tuples/lists...
-                    row_vals = (main_eid, main_fid[0].s, main_fid[1],
-                                other_eid, other_fid[0].s,
+                    row_vals = (main_eid, main_fid[0], main_fid[1],
+                                other_eid, other_fid[0],
                                 other_fid[1]) + relation_obj[1:]
                     out.write(bush.game.relations_csv_row_format % row_vals)
 
@@ -1211,7 +1211,7 @@ class ScriptText(object):
                         fileName + inisettings[u'ScriptFileExt'])
                     with outpath.open(u'wb', encoding=u'utf-8-sig') as out:
                         formid = u'0x%06X' % longid[1]
-                        out.write(u';' + longid[0].s + u'\r\n;' + formid + u'\r\n;' + eid + u'\r\n' + text)
+                        out.write(u';%s' % longid[0] + u'\r\n;' + formid + u'\r\n;' + eid + u'\r\n' + text)
                     exportedScripts.append(eid)
         return (_(u'Exported %d scripts from %s:') + u'\n') % (
             num,esp) + u'\n'.join(exportedScripts)
@@ -1397,7 +1397,7 @@ class _UsesEffectsMixin(object):
                     sevisual = u'NONE'
                 seschool = schoolTypeNumber_Name.get(seschool,seschool)
                 output.append(scriptEffectFormat % (
-                    longid[0].s,longid[1],seschool,sevisual,seflags,
+                    longid[0],longid[1],seschool,sevisual,seflags,
                     sename))
             else:
                 output.append(noscriptEffectFiller)
@@ -1539,12 +1539,12 @@ class SigilStoneDetails(_UsesEffectsMixin):
                 scriptfid = scriptfid or (GPath(u'None'),None)
                 try:
                     output = rowFormat % (
-                        fid[0].s,fid[1],eid,name,modpath,modb,iconpath,
-                        scriptfid[0].s,scriptfid[1],uses,value,weight)
+                        fid[0],fid[1],eid,name,modpath,modb,iconpath,
+                        scriptfid[0],scriptfid[1],uses,value,weight)
                 except TypeError:
                     output = altrowFormat % (
-                        fid[0].s,fid[1],eid,name,modpath,modb,iconpath,
-                        scriptfid[0].s,scriptfid[1],uses,value,weight)
+                        fid[0],fid[1],eid,name,modpath,modb,iconpath,
+                        scriptfid[0],scriptfid[1],uses,value,weight)
                 output += self.writeEffects(effects,False)
                 output += u'\n'
                 outWrite(output)
@@ -1619,7 +1619,7 @@ class ItemPrices(object):
                 out.write(header)
                 for fid in sorted(fid_stats,key=lambda x:(
                         fid_stats[x][1].lower(),fid_stats[x][0])):
-                    out.write(u'"%s","0x%06X",' % (fid[0].s,fid[1]))
+                    out.write(u'"%s","0x%06X",' % (fid[0], fid[1]))
                     out.write(
                         format_ % tuple(fid_stats[fid]) + u',%s\n' % group)
 
@@ -1954,12 +1954,12 @@ class IngredientDetails(_UsesEffectsMixin):
                 scriptfid = scriptfid or (GPath(u'None'), None)
                 try:
                     output = rowFormat % (
-                        fid[0].s,fid[1],eid,name,modpath,modb,iconpath,
-                        scriptfid[0].s,scriptfid[1],value,weight)
+                        fid[0],fid[1],eid,name,modpath,modb,iconpath,
+                        scriptfid[0],scriptfid[1],value,weight)
                 except TypeError:
                     output = altrowFormat % (
-                        fid[0].s,fid[1],eid,name,modpath,modb,iconpath,
-                        scriptfid[0].s,scriptfid[1],value,weight)
+                        fid[0],fid[1],eid,name,modpath,modb,iconpath,
+                        scriptfid[0],scriptfid[1],value,weight)
                 output += self.writeEffects(effects, False)
                 output += u'\n'
                 out.write(output)

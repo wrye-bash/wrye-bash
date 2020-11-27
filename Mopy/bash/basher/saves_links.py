@@ -209,9 +209,9 @@ class Saves_Profiles(ChoiceLink):
 
         def Execute(self):
             """Show save profiles editing dialog."""
-            data = Saves_ProfilesData(self.window)
+            sp_data = Saves_ProfilesData(self.window)
             balt.ListEditor.display_dialog(self.window, _(u'Save Profiles'),
-                                           data)
+                                           sp_data)
 
     extraItems = [_Edit(), SeparatorLink(), _Default()]
 
@@ -522,8 +522,8 @@ class Save_EditCreated(OneItemLink):
             self._showOk(_(u'No items to edit.'))
             return
         #--Open editor dialog
-        data = Save_EditCreatedData(self.window,saveFile,types_set)
-        balt.ListEditor.display_dialog(self.window, self._text, data)
+        secd = Save_EditCreatedData(self.window,saveFile,types_set)
+        balt.ListEditor.display_dialog(self.window, self._text, secd)
 
 #------------------------------------------------------------------------------
 class Save_EditPCSpellsData(balt.ListEditorData):

@@ -302,8 +302,8 @@ class Installer_Wizard(_Installer_AWizardLink):
             outFile = bass.dirs[u'ini_tweaks'].join(u'%s - Wizard Tweak [%s].ini' %
                 (installer.archive, iniFile.sbody))
             with outFile.open('w') as out:
-                for line in generateTweakLines(wizardEdits, iniFile):
-                    out.write(line + u'\n')
+                out.write(u'\n'.join(generateTweakLines(wizardEdits, iniFile)))
+                out.write(u'\n')
             bosh.iniInfos.new_info(outFile.tail, owner=installer.archive)
             # trigger refresh UI
             ui_refresh[1] = True
@@ -342,7 +342,7 @@ class Installer_Wizard(_Installer_AWizardLink):
                                   u'automatically applied.  Be sure to apply '
                                   u'them after installing the package.'))
             message += u'\n\n'
-            message += u'\n'.join([u' * ' + x[0].stail + u'\n   TO: ' + x[1].s
+            message += u'\n'.join([u' * %s\n   TO: %s' % (x[0].stail, x[1])
                                    for x in manuallyApply])
             self._showInfo(message)
 

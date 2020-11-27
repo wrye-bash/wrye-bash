@@ -113,7 +113,7 @@ def _detectGames(cli_path=u'', bash_ini_=None):
         test_path = GPath(cli_path)
         if not test_path.isabs():
             test_path = Path.getcwd().join(test_path)
-        installPaths['cmd'] = (test_path,
+        installPaths[u'cmd'] = (test_path,
             _(u'Set game mode to %(gamename)s specified via -o argument') +
               u': ',
             _(u'No known game in the path specified via -o argument: ' +
@@ -124,7 +124,7 @@ def _detectGames(cli_path=u'', bash_ini_=None):
         test_path = GPath(ini_game_path.strip())
         if not test_path.isabs():
             test_path = Path.getcwd().join(test_path)
-        installPaths['ini'] = (test_path,
+        installPaths[u'ini'] = (test_path,
             _(u'Set game mode to %(gamename)s based on sOblivionPath setting '
               u'in bash.ini') + u': ',
             _(u'No known game in the path specified in sOblivionPath ini '
@@ -135,7 +135,7 @@ def _detectGames(cli_path=u'', bash_ini_=None):
         test_path = GPath(test_path.s[:-5])
         if not test_path.isabs():
             test_path = Path.getcwd().join(test_path)
-        installPaths['upMopy'] = (test_path,
+        installPaths[u'upMopy'] = (test_path,
             _(u'Set game mode to %(gamename)s found in parent directory of'
               u' Mopy') + u': ',
             _(u'No known game in parent directory of Mopy: %(path)s'))
@@ -146,11 +146,11 @@ def _detectGames(cli_path=u'', bash_ini_=None):
         for gamename, info in _allGames.items():
             if test_path.join(info.game_detect_file).exists():
                 # Must be this game
-                deprint(foundMsg % {'gamename': gamename}, test_path)
+                deprint(foundMsg % {u'gamename': gamename}, test_path)
                 foundGames_[gamename] = test_path
                 return foundGames_, gamename
         # no game exe in this install path - print error message
-        deprint(errorMsg % {'path': test_path.s})
+        deprint(errorMsg % {u'path': test_path})
     # no game found in installPaths - foundGames are the ones from the registry
     return foundGames_, None
 
@@ -173,14 +173,14 @@ def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, gname=None):
         foundGames.update(foundGames_) # set the global name -> game path dict
     if gname is not None: # try the game returned by detectGames() or specified
         __setGame(gname, u' Using %(gamename)s game:')
-        return None, None
+        return None
     elif len(foundGames) == 1:
         __setGame(foundGames.keys()[0], u'Single game found [%(gamename)s]:')
-        return None, None
+        return None
     # No match found, return the list of possible games (may be empty if
     # nothing is found in registry)
     game_icons = {g: bass.dirs[u'images'].join(g + u'32.png').s
                   for g in foundGames}
-    return game_icons.keys(), game_icons
+    return game_icons
 
 def game_path(display_name): return foundGames[display_name]

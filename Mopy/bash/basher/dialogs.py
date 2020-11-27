@@ -37,11 +37,11 @@ class ImportFaceDialog(DialogWindow):
         #--Data
         self.fileInfo = fileInfo
         if faces and isinstance(faces.keys()[0], (int, long)): # PY3: just int
-            self.data = {u'%08X %s' % (key, face.pcName): face for key, face
-                         in faces.iteritems()}
+            self.fdata = {u'%08X %s' % (key, face.pcName): face for key, face
+                          in faces.iteritems()}
         else:
-            self.data = faces
-        self.list_items = sorted(self.data.keys(),key=unicode.lower)
+            self.fdata = faces
+        self.list_items = sorted(self.fdata, key=unicode.lower)
         #--GUI
         super(ImportFaceDialog, self).__init__(parent, title=title,
                                                sizes_dict=balt.sizes)
@@ -86,7 +86,7 @@ class ImportFaceDialog(DialogWindow):
     def EvtListBox(self, lb_selection_dex, lb_selection_str):
         """Responds to listbox selection."""
         item = self.list_items[lb_selection_dex]
-        face = self.data[item]
+        face = self.fdata[item]
         self.nameText.label_text = face.pcName
         self.raceText.label_text = face.getRaceName()
         self.genderText.label_text = face.getGenderName()
@@ -114,7 +114,7 @@ class ImportFaceDialog(DialogWindow):
         pc_flags.iclass = self.classCheck.is_checked
         #deprint(flags.getTrueAttrs())
         bass.settings['bash.faceImport.flags'] = int(pc_flags)
-        bosh.faces.PCFaces.save_setFace(self.fileInfo,self.data[item],pc_flags)
+        bosh.faces.PCFaces.save_setFace(self.fileInfo, self.fdata[item], pc_flags)
         balt.showOk(self, _(u'Face imported.'), self.fileInfo.name.s)
         self.accept_modal()
 

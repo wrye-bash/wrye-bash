@@ -142,20 +142,19 @@ def _find_all_bash_modules(bash_path=None, cur_dir=None, _files=None):
     :param bash_path: The relative path from Mopy.
     :param cur_dir: The directory to look for modules in. Defaults to cwd.
     :param _files: Internal parameter used to collect file recursively."""
-    if bash_path is None: bash_path = bolt.Path(u'')
+    if bash_path is None: bash_path = u''
     if cur_dir is None: cur_dir = os.getcwdu()
     if _files is None: _files = []
-    _files.extend([bash_path.join(m).s for m in os.listdir(cur_dir)
-                   if m.lower().endswith((u'.py', u'.pyw'))])
+    _files.extend([os.path.join(bash_path, m) for m in os.listdir(cur_dir)
+                   if m.lower().endswith((u'.py', u'.pyw'))]) ##: glob?
     # Find subpackages - returned format is (module_loader, name, is_pkg)
-    for p in pkgutil.iter_modules([cur_dir]):
-        # Skip it if it's not a package
-        if not p[2]:
+    for module_loader, pkg_name, is_pkg in pkgutil.iter_modules([cur_dir]):
+        if not is_pkg: # Skip it if it's not a package
             continue
         # Recurse into the subpackage we just found
         _find_all_bash_modules(
-            bash_path.join(p[1]) if bash_path else bolt.GPath(u'bash'),
-            os.path.join(cur_dir, p[1]), _files)
+            os.path.join(bash_path, pkg_name) if bash_path else u'bash',
+            os.path.join(cur_dir, pkg_name), _files)
     return _files
 
 def dump_translator(out_path, lang):

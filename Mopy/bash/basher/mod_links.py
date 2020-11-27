@@ -441,7 +441,7 @@ class _ModGroups(object):
 
     def writeToModInfos(self,mods=None):
         """Exports mod groups to modInfos."""
-        mods = mods or bosh.modInfos.table.data.keys()
+        mods = mods or bosh.modInfos.table.keys()
         mod_group = self.mod_group
         column = bosh.modInfos.table.getColumn(u'group')
         changed = 0
