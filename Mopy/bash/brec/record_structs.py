@@ -104,6 +104,11 @@ class MelSet(object):
             try:
                 loaders[sub_type].load_mel(record, ins, sub_type, sub_size,
                                            read_id_prefix + sub_type)
+            except UnicodeDecodeError:
+                bolt.deprint(u'ins.inName: %r' % ins.inName)
+                bolt.deprint(u'read_id_prefix: %r' % read_id_prefix)
+                bolt.deprint(u'sub_type: %r' % sub_type)
+                raise
             except KeyError:
                 # Wrap this error to make it more understandable
                 self._handle_load_error(
