@@ -166,10 +166,11 @@ class _AMerger(ImportPatcher):
         # the mod is IIM-tagged
         if modFile.fileInfo.name not in self.inventOnlyMods:
             for curr_sig in self._present_sigs:
-                curr_sig = unicode(curr_sig, u'ascii')
-                patchBlock = getattr(self.patchFile, curr_sig)
+                if curr_sig not in modFile.tops: continue
+                patchBlock = getattr(self.patchFile, unicode(curr_sig,
+                    u'ascii'))
                 id_records = patchBlock.id_records
-                for record in getattr(modFile, curr_sig).getActiveRecords():
+                for record in modFile.tops[curr_sig].getActiveRecords():
                     # Copy the defining version of each record into the BP -
                     # updating it is handled by
                     # mergeModFile/update_patch_records_from_mod

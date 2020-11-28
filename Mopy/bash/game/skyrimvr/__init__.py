@@ -47,6 +47,8 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
         ver_files = [u'sksevr_loader.exe', u'sksevr_steam_loader.dll']
 
     class Ini(SkyrimSEGameInfo.Ini):
+        default_ini_file = u'Skyrim.ini' # yes, that's the default one
+        dropdown_inis = [u'SkyrimVR.ini', u'SkyrimPrefs.ini']
         resource_override_key = u'sVrResourceArchiveList'
 
     class Bsa(SkyrimSEGameInfo.Bsa):

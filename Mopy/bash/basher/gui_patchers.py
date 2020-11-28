@@ -323,6 +323,7 @@ class _ListPatcherPanel(_PatcherPanel):
         patcherBold = False
         for index,item in enumerate(items):
             itemLabel = self.getItemLabel(item)
+            itemLabel = itemLabel.replace(u'&', u'&&') # escape & - thanks wx
             self.gList.lb_insert(itemLabel, index)
             if forceItemCheck:
                 if self.configChecks.get(item) is None:
