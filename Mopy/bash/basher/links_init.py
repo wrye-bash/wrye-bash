@@ -52,12 +52,12 @@ def InitStatusBar():
                 (16, 24, 32)]
     def _init_tool_buttons(): # tooldirs must have been initialized
         return (((bass.tooldirs[u'OblivionBookCreatorPath'],
-                  bass.inisettings['OblivionBookCreatorJavaArg']),
+                  bass.inisettings[u'OblivionBookCreatorJavaArg']),
                  imageList(u'tools/oblivionbookcreator%s.png'),
                  _(u"Launch Oblivion Book Creator"),
                  {'uid': u'OblivionBookCreator'}),
                 ((bass.tooldirs[u'Tes4GeckoPath'],
-                  bass.inisettings['Tes4GeckoJavaArg']),
+                  bass.inisettings[u'Tes4GeckoJavaArg']),
                  imageList(u'tools/tes4gecko%s.png'),
                  _(u"Launch Tes4Gecko"), {'uid': u'Tes4Gecko'}),
                 ((bass.tooldirs[u'Tes5GeckoPath']),
@@ -153,7 +153,7 @@ def InitStatusBar():
                 imageList(u'boss%s.png'),
                 _(u"Launch BOSS"),
                 uid=u'BOSS'))
-    if bass.inisettings['ShowModelingToolLaunchers']:
+    if bass.inisettings[u'ShowModelingToolLaunchers']:
         from .constants import modeling_tools_buttons
         for mb in modeling_tools_buttons:
             BashStatusBar.buttons.append(Tooldir_Button(*mb))
@@ -162,16 +162,16 @@ def InitStatusBar():
                                imageList(u'tools/softimagemodtool%s.png'),
                                _(u"Launch Softimage Mod Tool"),
                                uid=u'SoftimageModTool'))
-    if bass.inisettings['ShowModelingToolLaunchers'] \
-            or bass.inisettings['ShowTextureToolLaunchers']:
+    if bass.inisettings[u'ShowModelingToolLaunchers'] \
+            or bass.inisettings[u'ShowTextureToolLaunchers']:
         BashStatusBar.buttons.append( #Nifskope
             Tooldir_Button(u'NifskopePath', imageList(u'tools/nifskope%s.png'),
                 _(u"Launch Nifskope")))
-    if bass.inisettings['ShowTextureToolLaunchers']:
+    if bass.inisettings[u'ShowTextureToolLaunchers']:
         from .constants import texture_tool_buttons
         for tt in texture_tool_buttons:
             BashStatusBar.buttons.append(Tooldir_Button(*tt))
-    if bass.inisettings['ShowAudioToolLaunchers']:
+    if bass.inisettings[u'ShowAudioToolLaunchers']:
         from .constants import audio_tools
         for at in audio_tools:
             BashStatusBar.buttons.append(Tooldir_Button(*at))
@@ -192,7 +192,7 @@ def InitStatusBar():
     BashStatusBar.buttons.append(App_ModChecker(uid=u'ModChecker'))
     BashStatusBar.buttons.append(App_Settings(uid=u'Settings',canHide=False))
     BashStatusBar.buttons.append(App_Help(uid=u'Help',canHide=False))
-    if bass.inisettings['ShowDevTools']:
+    if bass.inisettings[u'ShowDevTools']:
         BashStatusBar.buttons.append(App_Restart(uid=u'Restart'))
 
 #------------------------------------------------------------------------------
@@ -484,7 +484,7 @@ def InitModLinks():
     ModList.column_links.append(Mods_CrcRefresh())
     ModList.column_links.append(Mods_ModChecker())
     #--ModList: Item Links
-    if bass.inisettings['ShowDevTools'] and bush.game.Esp.canBash:
+    if bass.inisettings[u'ShowDevTools'] and bush.game.Esp.canBash:
         ModList.context_links.append(Mod_FullLoad())
         ModList.context_links.append(Mod_RecalcRecordCounts())
     if True: #--File

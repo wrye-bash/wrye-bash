@@ -316,7 +316,7 @@ class _ListPatcherPanel(_PatcherPanel):
         """Set item to specified set of items."""
         items = self.items = self.sortConfig(items)
         forceItemCheck = self.forceItemCheck
-        defaultItemCheck = self.__class__.canAutoItemCheck and bass.inisettings['AutoItemCheck']
+        defaultItemCheck = self.__class__.canAutoItemCheck and bass.inisettings[u'AutoItemCheck']
         self.gList.lb_clear()
         isFirstLoad = self._GetIsFirstLoad()
         patcherOn = False

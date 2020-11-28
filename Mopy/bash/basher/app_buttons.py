@@ -402,7 +402,7 @@ class App_Tes4View(_ExeButton):
         skip_bsas = bush.game.Xe.xe_key_prefix and bass.settings[
             bush.game.Xe.xe_key_prefix + u'.skip_bsas']
         extraArgs = bass.inisettings[
-            'xEditCommandLineArguments'].split() if is_expert else []
+            u'xEditCommandLineArguments'].split() if is_expert else []
         if is_expert:
             extraArgs.append(u'-IKnowWhatImDoing')
         if skip_bsas:

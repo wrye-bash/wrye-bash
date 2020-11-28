@@ -43,7 +43,7 @@ from .. import bass, bolt, bosh, bush, balt, archives
 from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
     UIList_Rename, UIList_Hide
 from ..belt import InstallerWizard, generateTweakLines
-from ..bolt import GPath, SubProgress, LogFile, round_size, text_wrap
+from ..bolt import GPath, SubProgress, LogFile, round_size, text_wrap, body_
 from ..exception import CancelError, SkipError, StateError
 from ..gui import BusyCursor
 
@@ -92,7 +92,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
         if archive_path.cext in archives.noSolidExts:
             isSolid = False
         else:
-            if not u'-ms=' in bass.inisettings['7zExtraCompressionArguments']:
+            if not u'-ms=' in bass.inisettings[u'7zExtraCompressionArguments']:
                 isSolid = self._askYes(_(u'Use solid compression for %s?')
                                        % archive_path, default=False)
                 if isSolid:
@@ -300,7 +300,7 @@ class Installer_Wizard(_Installer_AWizardLink):
         new_targets = {}
         for iniFile, wizardEdits in ret.ini_edits.iteritems():
             outFile = bass.dirs[u'ini_tweaks'].join(u'%s - Wizard Tweak [%s].ini' %
-                (installer.archive, iniFile.sbody))
+                (installer.archive, body_(iniFile)))
             with outFile.open('w') as out:
                 out.write(u'\n'.join(generateTweakLines(wizardEdits, iniFile)))
                 out.write(u'\n')
@@ -316,7 +316,7 @@ class Installer_Wizard(_Installer_AWizardLink):
             else: # suppose that the target ini file is in the Data/ dir
                 target_path = bass.dirs[u'mods'].join(iniFile)
                 new_targets[target_path.stail] = target_path
-                if not (iniFile.s in installer.ci_dest_sizeCrc and
+                if not (iniFile in installer.ci_dest_sizeCrc and
                         ret.should_install):
                     # Can only automatically apply ini tweaks if the ini was
                     # actually installed.  Since BAIN is setup to not auto

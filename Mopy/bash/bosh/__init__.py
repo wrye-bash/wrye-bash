@@ -3062,7 +3062,7 @@ class BSAInfos(FileInfos):
         if bush.game.displayName == u'Oblivion':
             # Need to do this at runtime since it depends on inisettings (ugh)
             bush.game.Bsa.redate_dict[inisettings[
-                u'OblivionTexturesBSAName'].s] = u'2005-01-01'
+                u'OblivionTexturesBSAName']] = u'2005-01-01'
         self.__class__.file_pattern = re.compile(
             re.escape(bush.game.Bsa.bsa_extension) + u'$', re.I | re.U)
         _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
@@ -3226,13 +3226,11 @@ class InstallerMarker(InstallerMarker): pass
 class InstallerProject(InstallerProject): pass
 
 # Initialization --------------------------------------------------------------
-
 def initDefaultTools():
     #-- Other tool directories
     #   First to default path
     pf = [GPath(u'C:\\Program Files'),GPath(u'C:\\Program Files (x86)')]
     def pathlist(*args): return [x.join(*args) for x in pf]
-
     # BOSS can be in any number of places.
     # Detect locally installed (into game folder) BOSS
     if dirs[u'app'].join(u'BOSS', u'BOSS.exe').exists():
@@ -3246,7 +3244,6 @@ def initDefaultTools():
             if path_in_registry.isdir():
                 path_in_registry = path_in_registry.join(u'BOSS.exe')
             tooldirs[u'boss'] = path_in_registry
-
     tooldirs[u'Tes4FilesPath'] = dirs[u'app'].join(u'Tools', u'TES4Files.exe')
     tooldirs[u'Tes4EditPath'] = dirs[u'app'].join(u'TES4Edit.exe')
     tooldirs[u'Tes5EditPath'] = dirs[u'app'].join(u'TES5Edit.exe')
@@ -3332,40 +3329,40 @@ def initDefaultTools():
 
 def initDefaultSettings():
     #other settings from the INI:
-    inisettings['ScriptFileExt'] = u'.txt'
-    inisettings['ResetBSATimestamps'] = True
-    inisettings['EnsurePatchExists'] = True
-    inisettings['OblivionTexturesBSAName'] = GPath(u'Oblivion - Textures - Compressed.bsa')
-    inisettings['ShowDevTools'] = False
-    inisettings['Tes4GeckoJavaArg'] = u'-Xmx1024m'
-    inisettings['OblivionBookCreatorJavaArg'] = u'-Xmx1024m'
-    inisettings['ShowTextureToolLaunchers'] = True
-    inisettings['ShowModelingToolLaunchers'] = True
-    inisettings['ShowAudioToolLaunchers'] = True
-    inisettings['7zExtraCompressionArguments'] = u''
-    inisettings['xEditCommandLineArguments'] = u''
-    inisettings['AutoItemCheck'] = True
-    inisettings['SkipHideConfirmation'] = False
-    inisettings['SkipResetTimeNotifications'] = False
-    inisettings['SoundSuccess'] = GPath(u'')
-    inisettings['SoundError'] = GPath(u'')
-    inisettings['EnableSplashScreen'] = True
-    inisettings['PromptActivateBashedPatch'] = True
-    inisettings['WarnTooManyFiles'] = True
-    inisettings['SkippedBashInstallersDirs'] = u''
+    inisettings[u'ScriptFileExt'] = u'.txt'
+    inisettings[u'ResetBSATimestamps'] = True
+    inisettings[u'EnsurePatchExists'] = True
+    inisettings[u'OblivionTexturesBSAName'] = u'Oblivion - Textures - Compressed.bsa'
+    inisettings[u'ShowDevTools'] = False
+    inisettings[u'Tes4GeckoJavaArg'] = u'-Xmx1024m'
+    inisettings[u'OblivionBookCreatorJavaArg'] = u'-Xmx1024m'
+    inisettings[u'ShowTextureToolLaunchers'] = True
+    inisettings[u'ShowModelingToolLaunchers'] = True
+    inisettings[u'ShowAudioToolLaunchers'] = True
+    inisettings[u'7zExtraCompressionArguments'] = u''
+    inisettings[u'xEditCommandLineArguments'] = u''
+    inisettings[u'AutoItemCheck'] = True
+    inisettings[u'SkipHideConfirmation'] = False
+    inisettings[u'SkipResetTimeNotifications'] = False
+    inisettings[u'SoundSuccess'] = u''
+    inisettings[u'SoundError'] = u''
+    inisettings[u'EnableSplashScreen'] = True
+    inisettings[u'PromptActivateBashedPatch'] = True
+    inisettings[u'WarnTooManyFiles'] = True
+    inisettings[u'SkippedBashInstallersDirs'] = u''
 
 def initOptions(bashIni):
     initDefaultTools()
     initDefaultSettings()
 
     defaultOptions = {}
-    type_key = {str:u's',unicode:u's',list:u's',int:u'i',bool:u'b',bolt.Path:u's'}
+    type_key = {unicode: u's', list: u's', int: u'i', bool: u'b',
+                bolt.Path: u's'} # tooldirs only
     allOptions = [tooldirs, inisettings]
     unknownSettings = {}
     for settingsDict in allOptions:
         for defaultKey,defaultValue in settingsDict.iteritems():
-            settingType = type(defaultValue)
-            readKey = type_key[settingType] + defaultKey
+            readKey = type_key[type(defaultValue)] + defaultKey
             defaultOptions[readKey.lower()] = (defaultKey,settingsDict)
 
     # if bash.ini exists update the settings from there:

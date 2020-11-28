@@ -215,7 +215,7 @@ class PatchDialog(DialogWindow):
             #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
             readme = readme.root + u'.html'
             bosh.modInfos.table.setItem(patch_name, u'doc', readme)
-            balt.playSound(self.parent, bass.inisettings['SoundSuccess'].s)
+            balt.playSound(self.parent, bass.inisettings[u'SoundSuccess'])
             balt.WryeLog(self.parent, readme, patch_name.s,
                          log_icons=Resources.bashBlue)
             #--Select?
@@ -226,7 +226,7 @@ class PatchDialog(DialogWindow):
                 bosh.modInfos.cached_lo_save_active() ##: also done below duh
             count, message = 0, _(u'Activate %s?') % patch_name
             if load_order.cached_is_active(patch_name) or (
-                        bass.inisettings['PromptActivateBashedPatch'] and
+                        bass.inisettings[u'PromptActivateBashedPatch'] and
                         balt.askYes(self.parent, message, patch_name.s)):
                 try:
                     changedFiles = bosh.modInfos.lo_activate(patch_name,
@@ -261,7 +261,7 @@ class PatchDialog(DialogWindow):
             if progress: progress.Destroy()
 
     def _error(self, msg=None, error=None):
-        balt.playSound(self.parent, bass.inisettings['SoundError'].s)
+        balt.playSound(self.parent, bass.inisettings[u'SoundError'])
         if msg:
             balt.showError(self, u'%s' % error, _(u'File Edit Error'))
         bolt.deprint(u'Exception during Bashed Patch building:',

@@ -132,7 +132,7 @@ def compressionSettings(archive_path, blockSize, isSolid):
                 solid = u'-ms=on'
         else:
             solid = u'-ms=off'
-    userArgs = bass.inisettings['7zExtraCompressionArguments']
+    userArgs = bass.inisettings[u'7zExtraCompressionArguments']
     if userArgs:
         if reSolid.search(userArgs):
             if not solid: # zip, will blow if ms=XXX is passed in

@@ -27,7 +27,7 @@ from __future__ import division
 
 import os
 import traceback
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 import wx.adv as wiz  # wxPython wizard class
 from . import ScriptParser         # generic parser class
@@ -68,7 +68,7 @@ class WizInstallInfo(object):
         self.select_plugins = []
         self.rename_plugins = {}
         self.select_sub_packages = []
-        self.ini_edits = {}
+        self.ini_edits = bolt.LowerDict()
         self.should_install = False
 
 class InstallerWizard(WizardDialog):
@@ -332,7 +332,7 @@ class PageFinish(PageInstaller):
         self._wiz_parent.ret.rename_plugins = plugin_renames
         # Ini tweaks
         self.listInis = ListBox(self, onSelect=self._on_select_ini,
-                                choices=[x.s for x in iniedits.keys()])
+                                choices=list(iniedits))
         self.listTweaks = ListBox(self)
         self._wiz_parent.ret.ini_edits = iniedits
         # Apply/install checkboxes
@@ -386,9 +386,8 @@ class PageFinish(PageInstaller):
         self.plugin_selection.toggle_checked_at_index(lb_selection_dex)
 
     def _on_select_ini(self, lb_selection_dex, lb_selection_str):
-        ini_path = bolt.GPath(lb_selection_str)
-        lines = generateTweakLines(self._wiz_parent.ret.ini_edits[ini_path],
-                                   ini_path)
+        lines = generateTweakLines(
+            self._wiz_parent.ret.ini_edits[lb_selection_str], lb_selection_str)
         self.listTweaks.lb_set_items(lines)
         self.listInis.lb_select_index(lb_selection_dex)
 
@@ -746,11 +745,7 @@ class WryeParser(ScriptParser.Parser):
     def path(self): return self._path
 
     def Begin(self, file_path):
-        self.variables.clear()
-        self.Flow = []
-        self.notes = []
-        self.plugin_renames = {}
-        self.iniedits = {}
+        self._reset_vars()
         self.cLine = 0
         self.reversing = 0
         self.ExecCount = 0
@@ -765,6 +760,13 @@ class WryeParser(ScriptParser.Parser):
                 return
         balt.showWarning(self._wiz_parent, _(u'Could not open wizard file'))
         return None
+
+    def _reset_vars(self):
+        self.variables.clear()
+        self.Flow = []
+        self.notes = []
+        self.plugin_renames = {}
+        self.iniedits = defaultdict(bolt.LowerDict)
 
     def Continue(self):
         self.page = None
@@ -796,11 +798,7 @@ class WryeParser(ScriptParser.Parser):
         if self.choiceIdex == 0:
             return
         # Rebegin
-        self.variables.clear()
-        self.Flow = []
-        self.notes = []
-        self.plugin_renames = {}
-        self.iniedits = {}
+        self._reset_vars()
         i = 0
         while self.ExecCount > 0 and i < len(self.lines):
             line = self.lines[i]
@@ -1018,18 +1016,16 @@ class WryeParser(ScriptParser.Parser):
         :param disable: Whether or not this edit should disable the setting in
             question.
         """
-        ini_path = bolt.GPath(ini_name)
         section = section.strip()
         setting = setting.strip()
         comment = comment.strip()
         real_section = OBSEIniFile.ci_pseudosections.get(section, section)
         if comment and not comment.startswith(u';'):
             comment = u';' + comment
-        self.iniedits.setdefault(ini_path, bolt.LowerDict()).setdefault(
+        ci_section = self.iniedits[ini_name].setdefault(
             real_section, [section, bolt.LowerDict()])
-        self.iniedits[ini_path][real_section][0] = section
-        self.iniedits[ini_path][real_section][1][setting] = (setting, value,
-                                                             comment, disable)
+        ci_section[0] = section
+        ci_section[1][setting] = (setting, value, comment, disable)
 
     def fnExec(self, strLines):
         lines = strLines.split(u'\n')

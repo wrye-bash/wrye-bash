@@ -109,7 +109,7 @@ class Installer(object):
         Installer.dataDirsPlus |= bush.game.Bain.data_dirs
         InstallersData.installers_dir_skips.update(
             {bass.dirs[u'converters'].stail.lower(), u'bash'})
-        user_skipped = bass.inisettings['SkippedBashInstallersDirs'].split(u'|')
+        user_skipped = bass.inisettings[u'SkippedBashInstallersDirs'].split(u'|')
         InstallersData.installers_dir_skips.update(
             skipped.lower() for skipped in user_skipped if skipped)
 
