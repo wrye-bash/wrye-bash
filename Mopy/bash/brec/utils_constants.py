@@ -27,7 +27,7 @@ from __future__ import division, print_function
 import struct
 
 from .. import bolt
-from ..bolt import cstrip, decode, Flags, struct_pack, struct_unpack
+from ..bolt import cstrip, decoder, Flags, struct_pack, struct_unpack
 # no local imports, imported everywhere in brec
 
 # Random stuff ----------------------------------------------------------------
@@ -43,7 +43,7 @@ def _coerce(value, newtype, base=None, AllowNone=False):
                 return retValue not in (u'',u'none',u'false',u'no',u'0',u'0.0')
             else: return bool(value)
         elif base: retValue = newtype(value, base)
-        elif newtype is unicode: retValue = decode(value)
+        elif newtype is unicode: retValue = decoder(value)
         else: retValue = newtype(value)
         if (AllowNone and
             (isinstance(retValue,str) and retValue.lower() == 'none') or
@@ -78,7 +78,7 @@ class FixedString(unicode):
             decoded_str = target_str
         else:
             decoded_str = u'\n'.join(
-                decode(x, cls._str_encoding,
+                decoder(x, cls._str_encoding,
                     avoidEncodings=(u'utf8', u'utf-8'))
                 for x in cstrip(target_str).split(b'\n'))
         new_str = super(FixedString, cls).__new__(cls, decoded_str)
@@ -101,7 +101,7 @@ class AutoFixedString(FixedString):
 def strFid(form_id):
     """Return a string representation of the fid."""
     if isinstance(form_id, tuple):
-        return u'(%s, %06X)' % (form_id[0].s, form_id[1])
+        return u'(%s, %06X)' % (form_id[0], form_id[1])
     else:
         return u'%08X' % form_id
 

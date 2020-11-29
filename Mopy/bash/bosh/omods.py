@@ -26,8 +26,9 @@ import re
 import subprocess
 from subprocess import PIPE
 from .. import env, bolt, bass, archives
-from ..bolt import decode, encode, Path, startupinfo, unpack_int_signed, \
-    unpack_byte, unpack_short, unpack_int64_signed, struct_pack
+from ..bolt import decoder, encode, Path, startupinfo, unpack_int_signed, \
+    unpack_byte, unpack_short, unpack_int64_signed, pack_byte_signed, \
+    pack_byte, pack_int_signed
 
 def _readNetString(open_file):
     """Read a .net string. THIS CODE IS DUBIOUS!"""
@@ -45,12 +46,12 @@ def _writeNetString(open_file, string):
     """Write string as a .net string. THIS CODE IS DUBIOUS!"""
     strLen = len(string)
     if strLen < 128:
-        open_file.write(struct_pack('b', strLen))
+        pack_byte_signed(open_file, strLen)
     elif strLen > 0x7FFF: #--Actually probably fails earlier.
         raise NotImplementedError(u'String too long to convert.')
     else:
         strLen =  0x80 | strLen & 0x7f | (strLen & 0xff80) << 1
-        open_file.write(struct_pack('b', strLen))
+        pack_byte_signed(open_file, strLen)
     open_file.write(string)
 
 failedOmods = set()
@@ -71,18 +72,18 @@ class OmodFile(object):
         """Read info about the omod from the 'config' file"""
         with open(conf_path.s, u'rb') as omod_config:
             self.version = unpack_byte(omod_config) # OMOD version
-            self.modName = decode(_readNetString(omod_config)) # Mod name
+            self.modName = decoder(_readNetString(omod_config)) # Mod name
             # TODO(ut) original code unpacked signed int, maybe that's why "weird numbers" ?
             self.major = unpack_int_signed(omod_config) # Mod major version - getting weird numbers here though
             self.minor = unpack_int_signed(omod_config) # Mod minor version
-            self.omod_author = decode(_readNetString(omod_config)) # om_author
-            self.email = decode(_readNetString(omod_config)) # email
-            self.website = decode(_readNetString(omod_config)) # website
-            self.desc = decode(_readNetString(omod_config)) # description
+            self.omod_author = decoder(_readNetString(omod_config)) # om_author
+            self.email = decoder(_readNetString(omod_config)) # email
+            self.website = decoder(_readNetString(omod_config)) # website
+            self.desc = decoder(_readNetString(omod_config)) # description
             if self.version >= 2:
                 self.ftime = unpack_int64_signed(omod_config) # creation time
             else:
-                self.ftime = decode(_readNetString(omod_config))
+                self.ftime = decoder(_readNetString(omod_config))
             self.compType = unpack_byte(omod_config) # Compression type. 0 = lzma, 1 = zip
             if self.version >= 1:
                 self.build = unpack_int_signed(omod_config)
@@ -148,7 +149,7 @@ class OmodFile(object):
             subprogress = bolt.SubProgress(progress, 0, 0.4)
             current = 0
             with self.omod_path.unicodeSafe() as tempOmod:
-                cmd7z = [archives.exe7z, u'e', u'-r', u'-sccUTF-8', tempOmod.s, u'-o%s' % extractDir.s, u'-bb1']
+                cmd7z = [archives.exe7z, u'e', u'-r', u'-sccUTF-8', tempOmod.s, u'-o%s' % extractDir, u'-bb1']
                 with subprocess.Popen(cmd7z, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout as ins:
                     for line in ins:
                         line = unicode(line,'utf8')
@@ -219,7 +220,7 @@ class OmodFile(object):
 
         # Extracted data stream is saved as a file named 'a'
         progress(0, self.omod_path.tail + u'\n' + _(u'Unpacking %s') % dataPath.stail)
-        cmd = [archives.exe7z, u'e', u'-r', u'-sccUTF-8', dataPath.s, u'-o%s' % outPath.s]
+        cmd = [archives.exe7z, u'e', u'-r', u'-sccUTF-8', dataPath.s, u'-o%s' % outPath]
         subprocess.call(cmd, startupinfo=startupinfo)
 
         # Split the uncompress stream into files
@@ -262,7 +263,7 @@ class OmodFile(object):
                 # Next 8 bytes are the size of the data stream
                 for i in range(8):
                     out = totalSize >> (i*8)
-                    output.write(struct_pack('B', out & 0xFF))
+                    pack_byte(output, out & 0xFF)
                     done += 1
                     subprogress(done)
 
@@ -321,11 +322,11 @@ class OmodConfig(object):
             with open(configPath.s,u'rb') as ins:
                 ins.read(1) #--Skip first four bytes
                 # OBMM can support UTF-8, so try that first, then fail back to
-                config.name = decode(_readNetString(ins), encoding=u'utf-8')
+                config.name = decoder(_readNetString(ins), encoding=u'utf-8')
                 config.vMajor = unpack_int_signed(ins)
                 config.vMinor = unpack_int_signed(ins)
                 for attr in (u'omod_author',u'email',u'website',u'abstract'):
-                    setattr(config, attr, decode(_readNetString(ins), encoding=u'utf-8'))
+                    setattr(config, attr, decoder(_readNetString(ins), encoding=u'utf-8'))
                 ins.read(8) #--Skip date-time
                 ins.read(1) #--Skip zip-compression
                 #config['vBuild'], = ins.unpack('I',4)
@@ -337,14 +338,14 @@ class OmodConfig(object):
         configPath = bass.dirs[u'installers'].join(name,u'omod conversion data',u'config')
         configPath.head.makedirs()
         with open(configPath.temp.s,u'wb') as out:
-            out.write(struct_pack(u'B', 4))
+            pack_byte(out, 4)
             _writeNetString(out, config.name.encode(u'utf8'))
-            out.write(struct_pack(u'i', config.vMajor))
-            out.write(struct_pack(u'i', config.vMinor))
+            pack_int_signed(out, config.vMajor)
+            pack_int_signed(out, config.vMinor)
             for attr in (u'omod_author', u'email', u'website', u'abstract'):
                 # OBMM reads it fine if in UTF-8, so we'll do that.
                 _writeNetString(out, getattr(config, attr).encode(u'utf-8'))
             out.write('\x74\x1a\x74\x67\xf2\x7a\xca\x88') #--Random date time
-            out.write(struct_pack(u'b', 0)) #--zip compression (will be ignored)
+            pack_byte_signed(out, 0) #--zip compression (will be ignored)
             out.write('\xFF\xFF\xFF\xFF')
         configPath.untemp()

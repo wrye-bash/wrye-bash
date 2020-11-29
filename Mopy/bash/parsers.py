@@ -38,7 +38,7 @@ from operator import attrgetter, itemgetter
 from . import bush, load_order
 from .balt import Progress
 from .bass import dirs, inisettings
-from .bolt import GPath, decode, deprint, CsvReader, csvFormat, floats_equal, \
+from .bolt import GPath, decoder, deprint, CsvReader, csvFormat, floats_equal, \
     setattr_deep, attrgetter_cache
 from .brec import MreRecord, MelObject, _coerce, genFid, RecHeader
 from .exception import AbstractError
@@ -48,8 +48,10 @@ from .mod_files import ModFile, LoadFactory
 # TODO(inf) Once refactoring is done, we could easily take in Progress objects
 #  for more accurate progress bars when importing/exporting
 class _AParser(object):
-    """The base class from which all parsers inherit. Attempts to accomodate
-    all the different parsers.
+    """The base class from which all parsers inherit, implements reading and
+    writing mods using PBash calls. You will of course still have to
+    implement _read_record_fp et al., depending on the passes and behavior
+    you want.
 
     Reading from mods:
      - This is the most complex part of this design - we offer up to two
@@ -105,7 +107,8 @@ class _AParser(object):
         return self._current_mod and tag_name in bosh.modInfos[
             self._current_mod].getBashTags()
 
-    def _load_plugin(self, mod_info, target_types):
+    @staticmethod
+    def _load_plugin(mod_info, target_types):
         """Loads the specified record types in the specified ModInfo and
         returns the result.
 
@@ -113,7 +116,10 @@ class _AParser(object):
         :param target_types: A list, set or tuple containing strings that shows
             which record types to load.
         :return: An object representing the loaded plugin."""
-        raise AbstractError(u'_load_plugin not implemented')
+        mod_file = ModFile(mod_info, LoadFactory(
+            False, *[MreRecord.type_class[t] for t in target_types]))
+        mod_file.load(do_unpack=True)
+        return mod_file
 
     # Reading from plugin - first pass
     def _read_plugin_fp(self, loaded_mod):
@@ -121,7 +127,28 @@ class _AParser(object):
         masters. Results are stored in id_context.
 
         :param loaded_mod: The loaded mod to read from."""
-        raise AbstractError(u'_read_plugin_fp not implemented')
+        from . import bosh
+        def _fp_loop(mod_to_read):
+            """Central loop of _read_plugin_fp, factored out into a method so
+            that it can easily be used twice."""
+            for block_type in self._fp_types:
+                rec_block = mod_to_read.tops.get(block_type, None)
+                if not rec_block: continue
+                for record in rec_block.getActiveRecords():
+                    self.id_context[record.fid] = \
+                        self._read_record_fp(record)
+            self._fp_mods.add(mod_to_read.fileInfo.name)
+        # Process the mod's masters first, but see if we need to sort them
+        master_names = loaded_mod.tes4.masters
+        if self._needs_fp_master_sort:
+            master_names = load_order.get_ordered(master_names)
+        for mod_name in master_names:
+            if mod_name in self._fp_mods: continue
+            _fp_loop(self._load_plugin(bosh.modInfos[mod_name],
+                                       self._fp_types))
+        # Finally, process the mod itself
+        if loaded_mod.fileInfo.name in self._fp_mods: return
+        _fp_loop(loaded_mod)
 
     # TODO(inf) Might need second_pass parameter?
     def _read_record_fp(self, record):
@@ -141,7 +168,19 @@ class _AParser(object):
         its masters. Results are stored in id_stored_info.
 
         :param loaded_mod: The loaded mod to read from."""
-        raise AbstractError(u'_read_plugin_sp not implemented')
+        for rec_type in self._sp_types:
+            rec_block = loaded_mod.tops.get(rec_type, None)
+            if not rec_block: continue
+            for record in rec_block.getActiveRecords():
+                # Check if we even want this record first
+                if self._is_record_useful(record):
+                    rec_fid = record.fid
+                    self.id_stored_info[rec_type][rec_fid] = \
+                        self._read_record_sp(record)
+                    # Check if we need to follow up on the first pass info
+                    if self._context_needs_followup:
+                        self.id_context[rec_fid] = \
+                            self._read_record_fp(record)
 
     def _is_record_useful(self, record):
         """The parser should check if the specified record would be useful to
@@ -195,7 +234,31 @@ class _AParser(object):
         :param loaded_mod: The loaded mod to write to.
         :return: A dict mapping record types to the number of changed records
             in them."""
-        raise AbstractError(u'_do_write_plugin not implemented')
+        # Counts the number of records that were changed in each record type
+        num_changed_records = Counter()
+        # We know that the loaded mod only has the tops loaded that we need
+        for rec_type, stored_rec_info in self.id_stored_info.iteritems():
+            rec_block = loaded_mod.tops.get(rec_type, None)
+            # Check if this record type makes any sense to patch
+            if not stored_rec_info or not rec_block: continue
+            # TODO(inf) Copied from implementations below, may have to be
+            #  getActiveRecords()?
+            for record in rec_block.records:
+                rec_fid = record.fid
+                if rec_fid not in stored_rec_info: continue
+                # Compare the stored information to the information currently
+                # in the plugin
+                new_info = stored_rec_info[rec_fid]
+                cur_info = self._get_cur_record_info(record)
+                if self._should_write_record(new_info, cur_info):
+                    # It's different, ask the parser to write it out
+                    self._write_record(record, new_info, cur_info)
+                    record.setChanged()
+                    num_changed_records[rec_type] += 1
+        # Check if we've actually changed something, otherwise skip saving
+        if sum(num_changed_records):
+            loaded_mod.safeSave()
+        return num_changed_records
 
     def _get_cur_record_info(self, record):
         """Reads current information for the specified record in order to
@@ -286,85 +349,7 @@ class _ACsvFormat(object):
             described by this line, the name of the plugin from which this line
             originated, the (short) FormID of this"""
 
-##: Probably merge back into _AParser now that CBash is gone?
-class _PBashParser(_AParser):
-    """Mixin for parsers that implements reading and writing mods using PBash
-    calls. You will of course still have to implement _read_record_fp et al.,
-    depending on the passes and behavior you want."""
-
-    def _load_plugin(self, mod_info, target_types):
-        mod_file = ModFile(mod_info, LoadFactory(
-            False, *[MreRecord.type_class[t] for t in target_types]))
-        mod_file.load(do_unpack=True)
-        return mod_file
-
-    def _read_plugin_fp(self, loaded_mod):
-        from . import bosh
-        def _fp_loop(mod_to_read):
-            """Central loop of _read_plugin_fp, factored out into a method so
-            that it can easily be used twice."""
-            for block_type in self._fp_types:
-                rec_block = mod_to_read.tops.get(block_type, None)
-                if not rec_block: continue
-                for record in rec_block.getActiveRecords():
-                    self.id_context[record.fid] = \
-                        self._read_record_fp(record)
-            self._fp_mods.add(mod_to_read.fileInfo.name)
-        # Process the mod's masters first, but see if we need to sort them
-        master_names = loaded_mod.tes4.masters
-        if self._needs_fp_master_sort:
-            master_names = load_order.get_ordered(master_names)
-        for mod_name in master_names:
-            if mod_name in self._fp_mods: continue
-            _fp_loop(self._load_plugin(bosh.modInfos[mod_name],
-                                       self._fp_types))
-        # Finally, process the mod itself
-        if loaded_mod.fileInfo.name in self._fp_mods: return
-        _fp_loop(loaded_mod)
-
-    def _read_plugin_sp(self, loaded_mod):
-        for rec_type in self._sp_types:
-            rec_block = loaded_mod.tops.get(rec_type, None)
-            if not rec_block: continue
-            for record in rec_block.getActiveRecords():
-                # Check if we even want this record first
-                if self._is_record_useful(record):
-                    rec_fid = record.fid
-                    self.id_stored_info[rec_type][rec_fid] = \
-                        self._read_record_sp(record)
-                    # Check if we need to follow up on the first pass info
-                    if self._context_needs_followup:
-                        self.id_context[rec_fid] = \
-                            self._read_record_fp(record)
-
-    def _do_write_plugin(self, loaded_mod):
-        # Counts the number of records that were changed in each record type
-        num_changed_records = Counter()
-        # We know that the loaded mod only has the tops loaded that we need
-        for rec_type, stored_rec_info in self.id_stored_info.iteritems():
-            rec_block = loaded_mod.tops.get(rec_type, None)
-            # Check if this record type makes any sense to patch
-            if not stored_rec_info or not rec_block: continue
-            # TODO(inf) Copied from implementations below, may have to be
-            #  getActiveRecords()?
-            for record in rec_block.records:
-                rec_fid = record.fid
-                if rec_fid not in stored_rec_info: continue
-                # Compare the stored information to the information currently
-                # in the plugin
-                new_info = stored_rec_info[rec_fid]
-                cur_info = self._get_cur_record_info(record)
-                if self._should_write_record(new_info, cur_info):
-                    # It's different, ask the parser to write it out
-                    self._write_record(record, new_info, cur_info)
-                    record.setChanged()
-                    num_changed_records[rec_type] += 1
-        # Check if we've actually changed something, otherwise skip saving
-        if sum(num_changed_records):
-            loaded_mod.safeSave()
-        return num_changed_records
-
-class ActorFactions(_PBashParser):
+class ActorFactions(_AParser):
     """Parses factions from NPCs and Creatures (in games that have those). Can
     read and write both plugins and CSV, and uses a single pass if called from
     a patcher, but two passes if called from a link."""
@@ -557,10 +542,9 @@ class ActorLevels(object):
                         k[0].s.lower(),id_levels[k][0].lower())):
                     eid,isOffset,offset,calcMin,calcMax = id_levels[id_]
                     if isOffset:
-                        source = mod.s
                         fidMod, fidObject = id_[0].s,id_[1]
                         out.write(rowFormat % (
-                            source,eid,fidMod,fidObject,offset,calcMin,
+                            mod, eid, fidMod, fidObject, offset, calcMin,
                             calcMax))
                         oldLevels = obId_levels.get(id_,None)
                         if oldLevels:
@@ -705,10 +689,10 @@ class EditorIds(object):
             for type_ in sorted(type_id_eid):
                 id_eid = type_id_eid[type_]
                 for id_ in sorted(id_eid,key = lambda a: id_eid[a].lower()):
-                    out.write(rowFormat % (type_,id_[0].s,id_[1],id_eid[id_]))
+                    out.write(rowFormat % (type_,id_[0],id_[1],id_eid[id_]))
 
 #------------------------------------------------------------------------------
-class FactionRelations(_PBashParser):
+class FactionRelations(_AParser):
     """Parses the relations between factions. Can read and write both plugins
     and CSV, and uses two passes to do so."""
     cls_rel_attrs = bush.game.relations_attrs
@@ -800,8 +784,8 @@ class FactionRelations(_PBashParser):
                     other_fid = relation_obj[0]
                     other_eid = id_eid.get(other_fid, u'Unknown')
                     # I wish py2 allowed star exprs in tuples/lists...
-                    row_vals = (main_eid, main_fid[0].s, main_fid[1],
-                                other_eid, other_fid[0].s,
+                    row_vals = (main_eid, main_fid[0], main_fid[1],
+                                other_eid, other_fid[0],
                                 other_fid[1]) + relation_obj[1:]
                     out.write(bush.game.relations_csv_row_format % row_vals)
 
@@ -846,10 +830,11 @@ class FidReplacer(object):
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         # Create filtered versions of our mappings
-        masters = modFile.tes4.masters + [modFile.fileInfo.name]
-        filt_fids = {oldId for oldId in self.old_eid if oldId[0] in masters}
+        masters_list = set(modFile.tes4.masters + [modFile.fileInfo.name])
+        filt_fids = {oldId for oldId in self.old_eid if
+                     oldId[0] in masters_list}
         filt_fids.update(newId for newId in self.new_eid
-                         if newId[0] in masters)
+                         if newId[0] in masters_list)
         old_eid_filtered = {oldId: eid for oldId, eid
                             in self.old_eid.iteritems() if oldId in filt_fids}
         new_eid_filtered = {newId: eid for newId, eid
@@ -935,7 +920,6 @@ class FullNames(object):
 
     def readFromText(self,textPath):
         """Imports type_id_name from specified text file."""
-        textPath = GPath(textPath)
         type_id_name = self.type_id_name
         aliases = self.aliases
         with CsvReader(textPath) as ins:
@@ -1178,7 +1162,7 @@ class ItemStats(object):
                 out.write(header)
                 for longid in getSortedIds(fid_attr_value):
                     out.write(
-                        u'"%s","%s","0x%06X",' % (group,longid[0].s,longid[1]))
+                        u'"%s","%s","0x%06X",' % (group,longid[0],longid[1]))
                     attr_value = fid_attr_value[longid]
                     write(out, attrs, map(attr_value.get, attrs))
 
@@ -1203,7 +1187,7 @@ class ScriptText(object):
         with Progress(_(u'Export Scripts')) as progress:
             for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
                 text, longid = eid_data[eid]
-                text = decode(text) # TODO(ut) was only present in PBash version - needed ?
+                text = decoder(text) # TODO(ut) was only present in PBash version - needed ?
                 if skipcomments:
                     tmp = u''
                     for line in text.split(u'\n'):
@@ -1227,7 +1211,7 @@ class ScriptText(object):
                         fileName + inisettings[u'ScriptFileExt'])
                     with outpath.open(u'wb', encoding=u'utf-8-sig') as out:
                         formid = u'0x%06X' % longid[1]
-                        out.write(u';' + longid[0].s + u'\r\n;' + formid + u'\r\n;' + eid + u'\r\n' + text)
+                        out.write(u';%s' % longid[0] + u'\r\n;' + formid + u'\r\n;' + eid + u'\r\n' + text)
                     exportedScripts.append(eid)
         return (_(u'Exported %d scripts from %s:') + u'\n') % (
             num,esp) + u'\n'.join(exportedScripts)
@@ -1270,7 +1254,7 @@ class ScriptText(object):
             tes4 = modFile.tes4
             for eid, data in eid_data.iteritems():
                 newText, longid = data
-                scriptFid = genFid(len(tes4.masters),tes4.getNextObject())
+                scriptFid = genFid(tes4.num_masters, tes4.getNextObject())
                 newScript = MreRecord.type_class[b'SCPT'](
                     RecHeader(b'SCPT', 0, 0x40000, scriptFid, 0))
                 newScript.eid = eid
@@ -1413,7 +1397,7 @@ class _UsesEffectsMixin(object):
                     sevisual = u'NONE'
                 seschool = schoolTypeNumber_Name.get(seschool,seschool)
                 output.append(scriptEffectFormat % (
-                    longid[0].s,longid[1],seschool,sevisual,seflags,
+                    longid[0],longid[1],seschool,sevisual,seflags,
                     sename))
             else:
                 output.append(noscriptEffectFiller)
@@ -1555,12 +1539,12 @@ class SigilStoneDetails(_UsesEffectsMixin):
                 scriptfid = scriptfid or (GPath(u'None'),None)
                 try:
                     output = rowFormat % (
-                        fid[0].s,fid[1],eid,name,modpath,modb,iconpath,
-                        scriptfid[0].s,scriptfid[1],uses,value,weight)
+                        fid[0],fid[1],eid,name,modpath,modb,iconpath,
+                        scriptfid[0],scriptfid[1],uses,value,weight)
                 except TypeError:
                     output = altrowFormat % (
-                        fid[0].s,fid[1],eid,name,modpath,modb,iconpath,
-                        scriptfid[0].s,scriptfid[1],uses,value,weight)
+                        fid[0],fid[1],eid,name,modpath,modb,iconpath,
+                        scriptfid[0],scriptfid[1],uses,value,weight)
                 output += self.writeEffects(effects,False)
                 output += u'\n'
                 outWrite(output)
@@ -1635,7 +1619,7 @@ class ItemPrices(object):
                 out.write(header)
                 for fid in sorted(fid_stats,key=lambda x:(
                         fid_stats[x][1].lower(),fid_stats[x][0])):
-                    out.write(u'"%s","0x%06X",' % (fid[0].s,fid[1]))
+                    out.write(u'"%s","0x%06X",' % (fid[0], fid[1]))
                     out.write(
                         format_ % tuple(fid_stats[fid]) + u',%s\n' % group)
 
@@ -1970,12 +1954,12 @@ class IngredientDetails(_UsesEffectsMixin):
                 scriptfid = scriptfid or (GPath(u'None'), None)
                 try:
                     output = rowFormat % (
-                        fid[0].s,fid[1],eid,name,modpath,modb,iconpath,
-                        scriptfid[0].s,scriptfid[1],value,weight)
+                        fid[0],fid[1],eid,name,modpath,modb,iconpath,
+                        scriptfid[0],scriptfid[1],value,weight)
                 except TypeError:
                     output = altrowFormat % (
-                        fid[0].s,fid[1],eid,name,modpath,modb,iconpath,
-                        scriptfid[0].s,scriptfid[1],value,weight)
+                        fid[0],fid[1],eid,name,modpath,modb,iconpath,
+                        scriptfid[0],scriptfid[1],value,weight)
                 output += self.writeEffects(effects, False)
                 output += u'\n'
                 out.write(output)

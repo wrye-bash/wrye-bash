@@ -379,8 +379,8 @@ class UpdateReferences(ListPatcher):
         log.setHeader(u'= ' + self._patcher_name)
         self._srcMods(log)
         log(u'\n=== '+_(u'Records Patched'))
-        for srcMod in load_order.get_ordered(count.keys()):
-            log(u'* %s: %d' % (srcMod.s,count[srcMod]))
+        for srcMod in load_order.get_ordered(count):
+            log(u'* %s: %d' % (srcMod,count[srcMod]))
 
 # Patchers: 20 ----------------------------------------------------------------
 class ImportPatcher(ListPatcher):
@@ -411,7 +411,7 @@ class ImportPatcher(ListPatcher):
     def _plog1(self,log,mod_count): # common logging variation
         log(self.__class__.logMsg % sum(mod_count.values()))
         for mod in load_order.get_ordered(mod_count):
-            log(u'* %s: %3d' % (mod.s,mod_count[mod]))
+            log(u'* %s: %3d' % (mod, mod_count[mod]))
 
     def _plog2(self,log,allCounts):
         log(self.__class__.logMsg)
@@ -420,4 +420,4 @@ class ImportPatcher(ListPatcher):
             typeName = bush.game.record_type_name[top_rec_type]
             log(u'* %s: %d' % (typeName, count))
             for modName in sorted(counts):
-                log(u'  * %s: %d' % (modName.s, counts[modName]))
+                log(u'  * %s: %d' % (modName, counts[modName]))

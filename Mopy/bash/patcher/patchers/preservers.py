@@ -294,7 +294,7 @@ class _APreserver(ImportPatcher):
             log(u". ~~%s~~" % _(u'None'))
         else:
             for srcFile in all_srcs:
-                log(u"* " +srcFile.s)
+                log(u"* %s" % srcFile)
 
 #------------------------------------------------------------------------------
 # Absorbed patchers -----------------------------------------------------------
@@ -664,8 +664,8 @@ class CellImporter(ImportPatcher):
 
     def _plog(self,log,count): # type 1 but for logMsg % sum(count.values())...
         log(self.__class__.logMsg)
-        for srcMod in load_order.get_ordered(count.keys()):
-            log(u'* %s: %d' % (srcMod.s,count[srcMod]))
+        for srcMod in load_order.get_ordered(count):
+            log(u'* %s: %d' % (srcMod,count[srcMod]))
 
 #------------------------------------------------------------------------------
 class GraphicsPatcher(_APreserver):

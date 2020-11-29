@@ -34,30 +34,30 @@ import string
 import struct
 from itertools import imap
 from . import bak_file_pattern
-from ..bolt import sio, decode, encode, struct_pack, struct_unpack, \
+from ..bolt import sio, decoder, encode, struct_pack, struct_unpack, \
     unpack_string, unpack_int, unpack_short, unpack_4s, unpack_byte, \
-    unpack_str16, unpack_float, unpack_double, unpack_int_signed, \
-    unpack_str32, AFile, unpack_spaced_string
+    unpack_str16, unpack_float, unpack_double, unpack_int_signed, unpack_str32, \
+    AFile, unpack_spaced_string, pack_int, pack_short, pack_double, pack_byte, \
+    pack_int_signed, pack_float
 from ..exception import AbstractError, BoltError, CosaveError, \
     InvalidCosaveError, UnsupportedCosaveError
 
 #------------------------------------------------------------------------------
 # Utilities
-def _pack(buff, fmt, *args): buff.write(struct_pack(fmt, *args))
 _cosave_encoding = u'cp1252' # TODO Do Pluggy files use this encoding as well?
-# decode() / encode() with _cosave_encoding as encoding
-def _cosave_decode(byte_str): return decode(byte_str,
-                                            encoding=_cosave_encoding)
+# decoder() / encode() with _cosave_encoding as encoding
+def _cosave_decode(byte_str): return decoder(byte_str,
+                                             encoding=_cosave_encoding)
 def _cosave_encode(uni_str): return encode(uni_str,
                                            firstEncoding=_cosave_encoding)
 # Convenient methods for reading and writing that use the methods from above
 def _unpack_cosave_str16(ins): return _cosave_decode(unpack_str16(ins))
 def _pack_cosave_str16(out, uni_str):
-    _pack(out, '=H', len(uni_str))
+    pack_short(out, len(uni_str))
     out.write(_cosave_encode(uni_str))
 def _unpack_cosave_str32(ins): return _cosave_decode(unpack_str32(ins))
 def _pack_cosave_str32(out, uni_str):
-    _pack(out, '=I', len(uni_str))
+    pack_int(out, len(uni_str))
     out.write(_cosave_encode(uni_str))
 def _unpack_cosave_space_str(ins):
     return _cosave_decode(unpack_spaced_string(ins))
@@ -160,11 +160,11 @@ class _xSEHeader(_AHeader):
 
     def write_header(self, out):
         super(_xSEHeader, self).write_header(out)
-        _pack(out, '=I', self.format_version)
-        _pack(out, '=H', self.se_version)
-        _pack(out, '=H', self.se_minor_version)
-        _pack(out, '=I', self.game_version)
-        _pack(out, '=I', self.num_plugin_chunks)
+        pack_int(out, self.format_version)
+        pack_short(out, self.se_version)
+        pack_short(out, self.se_minor_version)
+        pack_int(out, self.game_version)
+        pack_int(out, self.num_plugin_chunks)
 
     def dump_to_log(self, log, save_masters):
         super(_xSEHeader, self).dump_to_log(log, save_masters)
@@ -195,7 +195,7 @@ class _PluggyHeader(_AHeader):
 
     def write_header(self, out):
         super(_PluggyHeader, self).write_header(out)
-        _pack(out, '=I', self._max_supported_version)
+        pack_int(out, self._max_supported_version)
 
     def dump_to_log(self, log, save_masters):
         super(_PluggyHeader, self).dump_to_log(log, save_masters)
@@ -234,9 +234,9 @@ class _xSEChunk(_AChunk):
 
     def write_chunk(self, out):
         # Don't forget to reverse signature when writing again
-        _pack(out, '=4s', _cosave_encode(self.chunk_type[::-1]))
-        _pack(out, '=I', self.chunk_version)
-        _pack(out, '=I', self.chunk_length())
+        out.write(struct_pack(u'=4s', _cosave_encode(self.chunk_type[::-1])))
+        pack_int(out, self.chunk_version)
+        pack_int(out, self.chunk_length())
         # If we haven't fully decoded this chunk, treat it as a binary blob
         if not self.fully_decoded:
             out.write(self.chunk_data)
@@ -325,17 +325,17 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
 
         def write_entry(self, out):
             if self._key_type == 1:
-                _pack(out, '=d', self.arvr_key)
+                pack_double(out, self.arvr_key)
             elif self._key_type == 3:
                 _pack_cosave_str16(out, self.arvr_key)
             else:
                 raise RuntimeError(u'Unknown or unsupported key type %u.' %
                                    self._key_type)
-            _pack(out, '=B', self.element_type)
+            pack_byte(out, self.element_type)
             if self.element_type == 1:
-                _pack(out, '=d', self.stored_data)
+                pack_double(out, self.stored_data)
             elif self.element_type in (2, 4):
-                _pack(out, '=I', self.stored_data)
+                pack_int(out, self.stored_data)
             elif self.element_type == 3:
                 _pack_cosave_str16(out, self.stored_data)
             else:
@@ -413,15 +413,15 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
 
     def write_chunk(self, out):
         super(_xSEChunkARVR, self).write_chunk(out)
-        _pack(out, '=B', self.mod_index)
-        _pack(out, '=I', self.array_id)
-        _pack(out, '=B', self.key_type)
-        _pack(out, '=B', self.is_packed)
+        pack_byte(out, self.mod_index)
+        pack_int(out, self.array_id)
+        pack_byte(out, self.key_type)
+        pack_byte(out, self.is_packed)
         if self.chunk_version >= 1:
-            _pack(out, '=I', len(self.references))
+            pack_int(out, len(self.references))
             for reference in self.references:
-                _pack(out, '=B', reference)
-        _pack(out, '=I', len(self.elements))
+                pack_byte(out, reference)
+        pack_int(out, len(self.elements))
         for element in self.elements:
             element.write_entry(out)
 
@@ -439,7 +439,7 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
             log(_(u'   Mod :  %02X (Save File)') % self.mod_index)
         else:
             log(_(u'   Mod :  %02X (%s)') % (
-                self.mod_index, save_masters[self.mod_index].s))
+                self.mod_index, save_masters[self.mod_index]))
         log(_(u'   ID  :  %u') % self.array_id)
         if self.key_type == 1: #Numeric
             if self.is_packed:
@@ -457,7 +457,7 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
                     log(_(u'    - %02X (Save File)') % refModID)
                 else:
                     log(u'    - %02X (%s)' % (refModID,
-                                              save_masters[refModID].s))
+                                              save_masters[refModID]))
         log(_(u'   Size:  %u') % len(self.elements))
         for element in self.elements:
             element.dump_to_log(log, save_masters)
@@ -548,7 +548,7 @@ class _xSEChunkLIMD(_xSEModListChunk):
 
     def write_chunk(self, out):
         super(_xSEChunkLIMD, self).write_chunk(out)
-        _pack(out, '=H', len(self.mod_names))
+        pack_short(out, len(self.mod_names))
         self.write_mod_names(out)
 
     def chunk_length(self):
@@ -572,7 +572,7 @@ class _xSEChunkLMOD(_xSEModListChunk):
 
     def write_chunk(self, out):
         super(_xSEChunkLMOD, self).write_chunk(out)
-        _pack(out, '=B', len(self.mod_names))
+        pack_byte(out, len(self.mod_names))
         self.write_mod_names(out)
 
     def chunk_length(self):
@@ -597,7 +597,7 @@ class _xSEChunkMODS(_xSEModListChunk):
 
     def write_chunk(self, out):
         super(_xSEChunkMODS, self).write_chunk(out)
-        _pack(out, '=B', len(self.mod_names))
+        pack_byte(out, len(self.mod_names))
         self.write_mod_names(out)
 
     def chunk_length(self):
@@ -630,9 +630,9 @@ class _xSEChunkPLGN(_xSEChunk, _Dumpable, _Remappable):
             self.mod_name = _unpack_cosave_str16(ins)
 
         def write_entry(self, out):
-            _pack(out, '=B', self.mod_index)
+            pack_byte(out, self.mod_index)
             if self.mod_index == 0xFE:
-                _pack(out, '=H', self.light_index)
+                pack_short(out, self.light_index)
             _pack_cosave_str16(out, self.mod_name)
 
         def entry_length(self):
@@ -659,7 +659,7 @@ class _xSEChunkPLGN(_xSEChunk, _Dumpable, _Remappable):
 
     def write_chunk(self, out):
         super(_xSEChunkPLGN, self).write_chunk(out)
-        _pack(out, '=H', len(self.mod_entries))
+        pack_short(out, len(self.mod_entries))
         for mod_entry in self.mod_entries:
             mod_entry.write_entry(out)
 
@@ -691,8 +691,8 @@ class _xSEChunkSTVR(_xSEChunk, _Dumpable):
 
     def write_chunk(self, out):
         super(_xSEChunkSTVR, self).write_chunk(out)
-        _pack(out, '=B', self.mod_index)
-        _pack(out, '=I', self.string_id)
+        pack_byte(out, self.mod_index)
+        pack_int(out, self.string_id)
         _pack_cosave_str16(out, self.string_data)
 
     def chunk_length(self):
@@ -700,7 +700,7 @@ class _xSEChunkSTVR(_xSEChunk, _Dumpable):
 
     def dump_to_log(self, log, save_masters):
         log(_(u'   Mod : %02X (%s)') % (self.mod_index,
-                                        save_masters[self.mod_index].s))
+                                        save_masters[self.mod_index]))
         log(_(u'   ID  : %u') % self.string_id)
         log(_(u'   Data: %s') % self.string_data)
 
@@ -759,9 +759,9 @@ class _xSEPluginChunk(_AChunk, _Remappable):
 
     def write_chunk(self, out):
         # Don't forget to reverse signature when writing again
-        _pack(out, '=I', self.plugin_signature)
-        _pack(out, '=I', len(self.chunks))
-        _pack(out, '=I', self.chunk_length())
+        pack_int(out, self.plugin_signature)
+        pack_int(out, len(self.chunks))
+        pack_int(out, self.chunk_length())
         for chunk in self.chunks:
             chunk.write_chunk(out)
 
@@ -788,7 +788,7 @@ class _PluggyBlock(_AChunk, _Dumpable):
         self.record_type = record_type
 
     def write_chunk(self, out):
-        _pack(out, '=B', self.record_type)
+        pack_byte(out, self.record_type)
 
     def unique_identifier(self):
         """Retrieves a unique identifier for this block. In most cases, this
@@ -814,8 +814,8 @@ class _PluggyPluginBlock(_PluggyBlock, _Remappable):
             self.plugin_name = _unpack_cosave_str32(ins)
 
         def write_entry(self, out):
-            _pack(out, '=B', self.pluggy_id)
-            _pack(out, '=B', self.game_id)
+            pack_byte(out, self.pluggy_id)
+            pack_byte(out, self.game_id)
             _pack_cosave_str32(out, self.plugin_name)
 
         def remap_plugins(self, plugin_renames):
@@ -835,7 +835,7 @@ class _PluggyPluginBlock(_PluggyBlock, _Remappable):
 
     def write_chunk(self, out):
         super(_PluggyPluginBlock, self).write_chunk(out)
-        _pack(out, '=I', len(self.plugins))
+        pack_int(out, len(self.plugins))
         for plugin in self.plugins:
             plugin.write_entry(out)
 
@@ -871,9 +871,9 @@ class _PluggyStringBlock(_PluggyBlock):
             self.string_data = _unpack_cosave_str32(ins)
 
         def write_entry(self, out):
-            _pack(out, '=I', self.string_id)
-            _pack(out, '=B', self.plugin_index)
-            _pack(out, '=B', self.string_flags)
+            pack_int(out, self.string_id)
+            pack_byte(out, self.plugin_index)
+            pack_byte(out, self.string_flags)
             _pack_cosave_str32(out, self.string_data)
 
         def dump_to_log(self, log, save_masters):
@@ -891,7 +891,7 @@ class _PluggyStringBlock(_PluggyBlock):
 
     def write_chunk(self, out):
         super(_PluggyStringBlock, self).write_chunk(out)
-        _pack(out, '=I', len(self.stored_strings))
+        pack_int(out, len(self.stored_strings))
         for stored_string in self.stored_strings:
             stored_string.write_entry(out)
 
@@ -928,19 +928,17 @@ class _PluggyArrayBlock(_PluggyBlock):
                 raise RuntimeError(u'Unknown or unsupported entry type %u.' %
                                    self.entry_type)
 
-        def write_entry(self, out):
-            _pack(out, '=I', self.entry_index)
-            _pack(out, '=B', self.entry_type)
-            if self.entry_type == 0:
-                data_format = 'i'
-            elif self.entry_type == 1:
-                data_format = 'I'
-            elif self.entry_type == 2:
-                data_format = 'f'
-            else:
+        def write_entry(self, out,
+                        __data_formats={0: pack_int_signed, 1: pack_int,
+                                        2: pack_float, }):
+            pack_int(out, self.entry_index)
+            pack_byte(out, self.entry_type)
+            try:
+                packer = __data_formats[self.entry_type]
+            except KeyError:
                 raise RuntimeError(u'Unknown or unsupported entry type %u.' %
                                    self.entry_type)
-            _pack(out, '=' + data_format, self.entry_data)
+            packer(out, self.entry_data)
 
         def dump_to_log(self, log, save_masters):
             if self.entry_type == 0:
@@ -966,11 +964,11 @@ class _PluggyArrayBlock(_PluggyBlock):
 
     def write_chunk(self, out):
         super(_PluggyArrayBlock, self).write_chunk(out)
-        _pack(out, '=I', self.array_id)
-        _pack(out, '=B', self.plugin_index)
-        _pack(out, '=B', self.array_flags)
-        _pack(out, '=I', self.max_size)
-        _pack(out, '=I', len(self.array_entries))
+        pack_int(out, self.array_id)
+        pack_byte(out, self.plugin_index)
+        pack_byte(out, self.array_flags)
+        pack_int(out, self.max_size)
+        pack_int(out, len(self.array_entries))
         for array_entry in self.array_entries:
             array_entry.write_entry(out)
 
@@ -1001,7 +999,7 @@ class _PluggyNameBlock(_PluggyBlock):
             self.name_data = _unpack_cosave_str32(ins)
 
         def write_entry(self, out):
-            _pack(out, '=I', self.reference_id)
+            pack_int(out, self.reference_id)
             _pack_cosave_str32(out, self.name_data)
 
         def dump_to_log(self, log, save_masters):
@@ -1022,7 +1020,7 @@ class _PluggyNameBlock(_PluggyBlock):
 
     def write_chunk(self, out):
         super(_PluggyNameBlock, self).write_chunk(out)
-        _pack(out, '=I', len(self.stored_names))
+        pack_int(out, len(self.stored_names))
         for stored_name in self.stored_names:
             stored_name.write_entry(out)
 
@@ -1047,8 +1045,8 @@ class _PluggyScreenInfoBlock(_PluggyBlock):
 
     def write_chunk(self, out):
         super(_PluggyScreenInfoBlock, self).write_chunk(out)
-        _pack(out, '=I', self.screen_width)
-        _pack(out, '=I', self.screen_height)
+        pack_int(out, self.screen_width)
+        pack_int(out, self.screen_height)
 
     def dump_to_log(self, log, save_masters):
         log(_(u'   Width : %u') % self.screen_width)
@@ -1087,21 +1085,21 @@ class _PluggyHudSBlock(_PluggyBlock):
             self.auto_scale = unpack_byte(ins)
 
         def write_entry(self, out):
-            _pack(out, '=I', self.hud_id)
-            _pack(out, '=B', self.plugin_index)
-            _pack(out, '=B', self.hud_flags)
-            _pack(out, '=B', self.root_id)
+            pack_int(out, self.hud_id)
+            pack_byte(out, self.plugin_index)
+            pack_byte(out, self.hud_flags)
+            pack_byte(out, self.root_id)
             _pack_cosave_str32(out, self.file_name)
-            _pack(out, '=B', self.show_mode)
-            _pack(out, '=I', self.pos_x)
-            _pack(out, '=I', self.pos_y)
-            _pack(out, '=H', self.depth)
-            _pack(out, '=I', self.scale_x)
-            _pack(out, '=I', self.scale_y)
-            _pack(out, '=I', 0) # Need to write this, but it's unused
-            _pack(out, '=B', self.alpha)
-            _pack(out, '=B', self.alignment)
-            _pack(out, '=B', self.auto_scale)
+            pack_byte(out, self.show_mode)
+            pack_int(out, self.pos_x)
+            pack_int(out, self.pos_y)
+            pack_short(out, self.depth)
+            pack_int(out, self.scale_x)
+            pack_int(out, self.scale_y)
+            pack_int(out, 0) # Need to write this, but it's unused
+            pack_byte(out, self.alpha)
+            pack_byte(out, self.alignment)
+            pack_byte(out, self.auto_scale)
 
         def dump_to_log(self, log, save_masters):
             log(_(u'    - HUD ID    : %u') % self.hud_id)
@@ -1127,7 +1125,7 @@ class _PluggyHudSBlock(_PluggyBlock):
 
     def write_chunk(self, out):
         super(_PluggyHudSBlock, self).write_chunk(out)
-        _pack(out, '=I', len(self.hud_entries))
+        pack_int(out, len(self.hud_entries))
         for hud_entry in self.hud_entries:
             hud_entry.write_entry(out)
 
@@ -1182,30 +1180,30 @@ class _PluggyHudTBlock(_PluggyBlock):
             self.font_blue = unpack_byte(ins)
 
         def write_entry(self, out):
-            _pack(out, '=I', self.hud_id)
-            _pack(out, '=B', self.plugin_index)
-            _pack(out, '=B', self.hud_flags)
-            _pack(out, '=I', self.pos_x)
-            _pack(out, '=I', self.pos_y)
-            _pack(out, '=H', self.depth)
-            _pack(out, '=I', self.scale_x)
-            _pack(out, '=I', self.scale_y)
-            _pack(out, '=I', 0) # Need to write this, but it's unused
-            _pack(out, '=B', self.alpha)
-            _pack(out, '=B', self.alignment)
-            _pack(out, '=B', self.auto_scale)
-            _pack(out, '=I', self.hud_width)
-            _pack(out, '=I', self.hud_height)
-            _pack(out, '=B', self.text_format)
+            pack_int(out, self.hud_id)
+            pack_byte(out, self.plugin_index)
+            pack_byte(out, self.hud_flags)
+            pack_int(out, self.pos_x)
+            pack_int(out, self.pos_y)
+            pack_short(out, self.depth)
+            pack_int(out, self.scale_x)
+            pack_int(out, self.scale_y)
+            pack_int(out, 0) # Need to write this, but it's unused
+            pack_byte(out, self.alpha)
+            pack_byte(out, self.alignment)
+            pack_byte(out, self.auto_scale)
+            pack_int(out, self.hud_width)
+            pack_int(out, self.hud_height)
+            pack_byte(out, self.text_format)
             _pack_cosave_str32(out, self.font_name)
             _pack_cosave_str32(out, self.text_data)
-            _pack(out, '=I', self.font_height)
-            _pack(out, '=I', self.font_width)
-            _pack(out, '=H', self.font_boldness)
-            _pack(out, '=B', self.font_italic)
-            _pack(out, '=B', self.font_red)
-            _pack(out, '=B', self.font_green)
-            _pack(out, '=B', self.font_blue)
+            pack_int(out, self.font_height)
+            pack_int(out, self.font_width)
+            pack_short(out, self.font_boldness)
+            pack_byte(out, self.font_italic)
+            pack_byte(out, self.font_red)
+            pack_byte(out, self.font_green)
+            pack_byte(out, self.font_blue)
 
         def dump_to_log(self, log, save_masters):
             log(_(u'    - HUD ID    : %u') % self.hud_id)
@@ -1241,7 +1239,7 @@ class _PluggyHudTBlock(_PluggyBlock):
 
     def write_chunk(self, out):
         super(_PluggyHudTBlock, self).write_chunk(out)
-        _pack(out, '=I', len(self.hud_entries))
+        pack_int(out, len(self.hud_entries))
         for hud_entry in self.hud_entries:
             hud_entry.write_entry(out)
 
@@ -1614,13 +1612,13 @@ class PluggyCosave(ACosave):
                 pluggy_block.write_chunk(out)
             # Write out the 'footer': Savegame Ticks and End Control - Checksum
             # is written down below
-            _pack(out, '=I', self.save_game_ticks)
-            _pack(out, '=I', out.tell())
+            pack_int(out, self.save_game_ticks)
+            pack_int(out, out.tell())
             final_data = out.getvalue()
         prev_mtime = self.abs_path.mtime
         with out_path.open('wb') as out:
             out.write(final_data)
-            _pack(out, u'=i', binascii.crc32(final_data))
+            pack_int_signed(out, binascii.crc32(final_data))
         out_path.mtime = prev_mtime
 
     def get_master_list(self):

@@ -423,9 +423,9 @@ def _detect_game(opts, backup_bash_ini):
         if ini_user_path and not ini_user_path == u'.':
             user_path = ini_user_path
     if user_path:
-        drive, path = os.path.splitdrive(user_path)
-        os.environ['HOMEDRIVE'] = drive
-        os.environ['HOMEPATH'] = path
+        homedrive, homepath = os.path.splitdrive(user_path)
+        os.environ['HOMEDRIVE'] = homedrive
+        os.environ['HOMEPATH'] = homepath
     # Detect the game we're running for ---------------------------------------
     bush_game = _import_bush_and_set_game(opts, bashIni)
     if not bush_game:
@@ -445,9 +445,9 @@ def _detect_game(opts, backup_bash_ini):
 def _import_bush_and_set_game(opts, bashIni):
     from . import bush
     bolt.deprint(u'Searching for game to manage:')
-    ret, game_icons = bush.detect_and_set_game(opts.oblivionPath, bashIni)
-    if ret is not None:  # None == success
-        if len(ret) == 0:
+    game_icons = bush.detect_and_set_game(opts.oblivionPath, bashIni)
+    if game_icons is not None:  # None == success
+        if len(game_icons) == 0:
             msgtext = _(u'Wrye Bash could not find a game to manage. Please '
                         u'use the -o command line argument to specify the '
                         u'game path.')
@@ -458,7 +458,7 @@ def _import_bush_and_set_game(opts, bashIni):
                        _(u'To prevent this message in the future, use the -o '
                          u'command line argument or the bash.ini to specify '
                          u'the game path.'))
-        retCode = _wxSelectGame(ret, game_icons, bolt.text_wrap(msgtext, 65))
+        retCode = _wxSelectGame(game_icons, bolt.text_wrap(msgtext, 65))
         if retCode is None:
             bolt.deprint(u'No games were found or selected. Aborting.')
             return None
@@ -552,17 +552,17 @@ class _AppReturnCode(object):
     def get(self): return self.value
     def set(self, value): self.value = value
 
-def _wxSelectGame(ret, game_icons, msgtext):
+def _wxSelectGame(game_icons, msgtext):
 
     class GameSelect(_wx.Frame):
-        def __init__(self, game_names, game_icons, callback):
+        def __init__(self, game_icons, callback):
             _wx.Frame.__init__(self, None, title=u'Wrye Bash')
             self.callback = callback
             # Setup the size - we give each button 42 pixels, 32 for the image
             # plus 10 for the borders. However, we limit the total size of the
             # display list at 600 pixels, where the scrollbar takes over
             self.SetSizeHints(420, 200)
-            self.SetSize((420, min(600, 200 + len(game_names) * 42)))
+            self.SetSize((420, min(600, 200 + len(game_icons) * 42)))
             # Construct the window and add the static text, setup the
             # scrollbars if needed
             scrl_win = _wx.ScrolledWindow(self, style=_wx.TAB_TRAVERSAL)
@@ -572,7 +572,7 @@ def _wxSelectGame(ret, game_icons, msgtext):
                                      style=_wx.ALIGN_CENTER_HORIZONTAL),
                       0, _wx.EXPAND | _wx.ALL, 5)
             # Add the game buttons to the window
-            for game_name in game_names:
+            for game_name in sorted(game_icons):
                 game_btn = _wx.Button(scrl_win, label=game_name)
                 game_btn.SetBitmap(_wx.Bitmap(game_icons[game_name]))
                 sizer.Add(game_btn, 0, _wx.EXPAND | _wx.ALL ^ _wx.BOTTOM, 5)
@@ -593,9 +593,7 @@ def _wxSelectGame(ret, game_icons, msgtext):
     _app = _wx.App(False)
     _app.locale = _wx.Locale(_wx.LANGUAGE_DEFAULT)
     retCode = _AppReturnCode()
-    # Sort before we pass these on - this is purely visual
-    ret.sort()
-    frame = GameSelect(ret, game_icons, retCode.set)
+    frame = GameSelect(game_icons, retCode.set)
     frame.Show()
     frame.Center()
     _app.MainLoop()

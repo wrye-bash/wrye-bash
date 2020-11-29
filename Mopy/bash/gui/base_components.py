@@ -25,11 +25,12 @@ more specialized parts (e.g. _AComponent)."""
 
 __author__ = u'nycz, Infernio'
 
+import os
 import textwrap
 import wx as _wx
 from .events import EventHandler, null_processor
+from ..bolt import deprint
 from ..exception import AbstractError
-from ..bolt import GPath, deprint
 from ..exception import ArgumentError
 
 # Utilities -------------------------------------------------------------------
@@ -413,7 +414,7 @@ class WithFirstShow(_AComponent):
         """Perform some one time initialization on show"""
         raise AbstractError
 
-class Image(object):
+class ImageWrapper(object):
     """Wrapper for images, allowing access in various formats/classes.
 
     Allows image to be specified before wx.App is initialized."""
@@ -423,17 +424,17 @@ class Image(object):
                  u'bmp': _wx.BITMAP_TYPE_BMP, u'tif': _wx.BITMAP_TYPE_TIF}
 
     def __init__(self, filename, imageType=None, iconSize=16):
-        self._img_path = GPath(filename)
+        self._img_path = filename.s # must be a bolt.Path
         try:
-            self._img_type = imageType or self.typesDict[self._img_path.cext[1:]]
+            self._img_type = imageType or self.typesDict[filename.cext[1:]]
         except KeyError:
-            deprint(u'Unknown image extension %s' % self._img_path.cext)
+            deprint(u'Unknown image extension %s' % filename.cext)
             self._img_type = _wx.BITMAP_TYPE_ANY
         self.bitmap = None
         self.icon = None
         self.iconSize = iconSize
-        if not GPath(self._img_path.s.split(u';')[0]).exists():
-            raise ArgumentError(u'Missing resource file: %s.' % self._img_path)
+        if not os.path.exists(self._img_path.split(u';')[0]):
+            raise ArgumentError(u'Missing resource file: %s.' % filename)
 
     def GetBitmap(self):
         if not self.bitmap:
@@ -448,17 +449,17 @@ class Image(object):
                         _wx.ImageFromBitmap(self.bitmap).Scale(
                           self.iconSize, self.iconSize, _wx.IMAGE_QUALITY_HIGH))
             else:
-                self.bitmap = _wx.Bitmap(self._img_path.s, self._img_type)
+                self.bitmap = _wx.Bitmap(self._img_path, self._img_type)
         return self.bitmap
 
     def GetIcon(self):
         if not self.icon:
             if self._img_type == _wx.BITMAP_TYPE_ICO:
-                self.icon = _wx.Icon(self._img_path.s, _wx.BITMAP_TYPE_ICO,
+                self.icon = _wx.Icon(self._img_path, _wx.BITMAP_TYPE_ICO,
                                      self.iconSize, self.iconSize)
                 # we failed to get the icon? (when display resolution changes)
                 if not self.icon.GetWidth() or not self.icon.GetHeight():
-                    self.icon = _wx.Icon(self._img_path.s, _wx.BITMAP_TYPE_ICO)
+                    self.icon = _wx.Icon(self._img_path, _wx.BITMAP_TYPE_ICO)
             else:
                 self.icon = _wx.Icon()
                 self.icon.CopyFromBitmap(self.GetBitmap())

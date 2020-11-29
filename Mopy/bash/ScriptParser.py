@@ -483,33 +483,33 @@ class Parser(object):
         except:
             error(_(u'IndexError'))
 
-    def SetOperator(self, name, *args, **kwdargs):
-        type_ = getType(name, self)
+    def SetOperator(self, op_name, *args, **kwdargs):
+        type_ = getType(op_name, self)
         if type_ not in [NAME,OPERATOR,UNKNOWN]:
-            error(ERR_CANNOT_SET % (u'operator', name, Types[type_]))
-        self.operators[name] = Parser.Operator(name, *args, **kwdargs)
-        for i in name:
+            error(ERR_CANNOT_SET % (u'operator', op_name, Types[type_]))
+        self.operators[op_name] = Parser.Operator(op_name, *args, **kwdargs)
+        for i in op_name:
             if i not in self.opChars: self.opChars += i
-    def SetKeyword(self, name, *args, **kwdargs):
-        type_ = getType(name, self)
+    def SetKeyword(self, keywrd_name, *args, **kwdargs):
+        type_ = getType(keywrd_name, self)
         if type_ not in [NAME,KEYWORD]:
-            error(ERR_CANNOT_SET % (u'keyword', name, Types[type_]))
-        self.keywords[name] = Parser.Keyword(name, *args, **kwdargs)
-    def SetFunction(self, name, *args, **kwdargs):
-        type_ = getType(name, self)
+            error(ERR_CANNOT_SET % (u'keyword', keywrd_name, Types[type_]))
+        self.keywords[keywrd_name] = Parser.Keyword(keywrd_name, *args, **kwdargs)
+    def SetFunction(self, fun_name, *args, **kwdargs):
+        type_ = getType(fun_name, self)
         if type_ not in [NAME,FUNCTION]:
-            error(ERR_CANNOT_SET % (u'function', name, Types[type_]))
-        self.functions[name] = Parser.Function(name, *args, **kwdargs)
-    def SetConstant(self, name, value):
-        type_ = getType(name, self)
+            error(ERR_CANNOT_SET % (u'function', fun_name, Types[type_]))
+        self.functions[fun_name] = Parser.Function(fun_name, *args, **kwdargs)
+    def SetConstant(self, const_name, value):
+        type_ = getType(const_name, self)
         if type_ not in [NAME,CONSTANT]:
-            error(ERR_CANNOT_SET % (u'constant', name, Types[type_]))
-        self.constants[name] = value
-    def SetVariable(self, name, value):
-        type_ = getType(name, self)
+            error(ERR_CANNOT_SET % (u'constant', const_name, Types[type_]))
+        self.constants[const_name] = value
+    def SetVariable(self, var_name, value):
+        type_ = getType(var_name, self)
         if type_ not in [NAME, VARIABLE]:
-            error(ERR_CANNOT_SET % (u'variable', name, Types[type_]))
-        self.variables[name] = value
+            error(ERR_CANNOT_SET % (u'variable', var_name, Types[type_]))
+        self.variables[var_name] = value
 
     # Flow control stack
     def PushFlow(self, stmnt_type, active, keywords, **attribs):

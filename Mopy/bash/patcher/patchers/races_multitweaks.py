@@ -104,8 +104,8 @@ class _ARaceTweak(MultiTweakItem):
         return changed_hairs
 
     def _get_changed_eyes(self):
-        """Returns the changed eyes dictionary. A cached CBash/PBash-agnostic
-        wrapper around _calc_changed_face_parts."""
+        """Returns the changed eyes dictionary. A cached wrapper around
+        _calc_changed_face_parts."""
         try:
             return self._cached_changed_eyes
         except AttributeError:
@@ -114,8 +114,8 @@ class _ARaceTweak(MultiTweakItem):
             return self._cached_changed_eyes
 
     def _get_changed_hairs(self):
-        """Returns the changed hairs dictionary. A cached CBash/PBash-agnostic
-        wrapper around _calc_changed_face_parts."""
+        """Returns the changed hairs dictionary. A cached wrapper around
+        _calc_changed_face_parts."""
         try:
             return self._cached_changed_hairs
         except AttributeError:
@@ -358,7 +358,7 @@ class RacePatcher(AMultiTweaker, ListPatcher):
                 raise BoltError(
                     u'WARNING mod %s has both R.AddSpells and R.ChangeSpells '
                     u'tags - only one of those tags should be on a mod at '
-                    u'one time' % srcMod.s)
+                    u'one time' % srcMod)
             for race in srcFile.RACE.getActiveRecords():
                 tempRaceData = self.tempRaceData.setdefault(race.fid,{})
                 raceData = self.raceData.setdefault(race.fid,{})
@@ -801,6 +801,6 @@ class RacePatcher(AMultiTweaker, ListPatcher):
         if mod_npcsFixed:
             log(u'\n=== ' + _(u'Eyes/Hair Assigned for NPCs'))
             for srcMod in sorted(mod_npcsFixed):
-                log(u'* %s: %d' % (srcMod.s,len(mod_npcsFixed[srcMod])))
+                log(u'* %s: %d' % (srcMod, len(mod_npcsFixed[srcMod])))
         for tweak in self.enabled_tweaks: # type: MultiTweakItem
             tweak.tweak_log(log, tweak_counter[tweak])

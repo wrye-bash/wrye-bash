@@ -50,7 +50,7 @@ def _is_mergeable_no_load(modInfo, reasons):
                     dir_list += u'\n  - ' + blocking_dir
             reasons.append(_(u'Has plugin-specific directory - one of the '
                              u'following:' + dir_list) %
-                           ({u'plugin_name': modInfo.name.s}))
+                           ({u'plugin_name': modInfo.name}))
     # Client must make sure NoMerge tag not in tags - if in tags
     # don't show up as mergeable.
     return False if reasons else True
@@ -140,7 +140,7 @@ def is_esl_capable(modInfo, _minfos, reasons):
         if not verbose: return False
         reasons.append(u'%s.' % e)
     # Check for new FormIDs greater then 0xFFF
-    num_masters = len(modInfo.header.masters)
+    num_masters = len(modInfo.masterNames)
     has_new_recs = False
     for _rec_type, rec_headers in record_headers.iteritems():
         for header in rec_headers:

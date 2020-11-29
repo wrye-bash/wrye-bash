@@ -26,7 +26,7 @@ import re
 import time
 from ..balt import EnabledLink, AppendableLink, ItemLink, RadioLink, \
     ChoiceMenuLink, CheckLink, UIList_Rename, OneItemLink, SeparatorLink
-from ..gui import Image
+from ..gui import ImageWrapper
 from .. import bass, balt, bosh, bush
 from .import People_Link, SaveDetails
 from .settings_dialog import SettingsDialog
@@ -109,7 +109,7 @@ class Screen_ConvertTo(EnabledLink):
                     srcPath = bosh.screen_infos[fileName].abs_path
                     destPath = srcPath.root+u'.'+self.ext
                     if srcPath == destPath or destPath.exists(): continue
-                    bitmap = Image.Load(srcPath, quality=bass.settings[
+                    bitmap = ImageWrapper.Load(srcPath, quality=bass.settings[
                         'bash.screens.jpgQuality'])
                     result = bitmap.SaveFile(destPath.s,self.imageType)
                     if not result: continue

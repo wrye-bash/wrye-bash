@@ -30,7 +30,7 @@ import zlib
 from .mod_io import ModReader, ModWriter
 from .utils_constants import strFid, _int_unpacker
 from .. import bolt, exception
-from ..bolt import decode, sio, struct_pack
+from ..bolt import decoder, sio, struct_pack
 
 #------------------------------------------------------------------------------
 # Mod Element Sets ------------------------------------------------------------
@@ -454,12 +454,6 @@ class MreRecord(object):
         """Sets changed attribute to value. [Default = True.]"""
         self.changed = value
 
-    def setData(self,data):
-        """Sets data and size."""
-        self.data = data
-        self.size = len(data)
-        self.changed = False
-
     def getSize(self):
         """Return size of self.data, after, if necessary, packing it."""
         if not self.changed: return self.size
@@ -536,7 +530,7 @@ class MreRecord(object):
                     else:
                         value = bolt.cstrip(readRead(size))
                         break
-        return decode(value)
+        return decoder(value)
 
 #------------------------------------------------------------------------------
 class MelRecord(MreRecord):

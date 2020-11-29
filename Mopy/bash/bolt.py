@@ -124,7 +124,7 @@ def getbestencoding(bitstream):
     #print '%s: %s (%s)' % (repr(bitstream),encoding,confidence)
     return encoding_,confidence
 
-def decode(byte_str, encoding=None, avoidEncodings=()):
+def decoder(byte_str, encoding=None, avoidEncodings=()):
     """Decode a byte string to unicode, using heuristics on encoding."""
     if isinstance(byte_str, unicode) or byte_str is None: return byte_str
     # Try the user specified encoding first
@@ -467,14 +467,14 @@ class Path(object):
         """Return the normpath for specified name/path object."""
         if isinstance(name,Path): return name._s
         elif not name: return name
-        elif isinstance(name,str): name = decode(name)
+        elif isinstance(name,str): name = decoder(name)
         return os.path.normpath(name)
 
     @staticmethod
     def __getCase(name):
         """Return the normpath+normcase for specified name/path object."""
         if not name: return name
-        if isinstance(name, str): name = decode(name)
+        if isinstance(name, str): name = decoder(name)
         return os.path.normcase(os.path.normpath(name))
 
     @staticmethod
@@ -511,9 +511,9 @@ class Path(object):
     def __setstate__(self,norm):
         """Used by unpickler. Reconstruct _cs."""
         # Older pickle files stored filename in str, not unicode
-        if not isinstance(norm,unicode): norm = decode(norm)
+        norm = decoder(norm) # decoder will check for unicode
         self._s = norm
-        self._cs = os.path.normcase(self._s)
+        self._cs = os.path.normcase(norm)
 
     def __len__(self):
         return len(self._s)
@@ -745,21 +745,6 @@ class Path(object):
                        [GPath_no_norm(x) for x in dirs],
                        [GPath_no_norm(x) for x in files])
 
-    def split(self):
-        """Splits the path into each of it's sub parts.  IE: C:\Program Files\Bethesda Softworks
-           would return ['C:','Program Files','Bethesda Softworks']"""
-        dirs = []
-        drive, path = os.path.splitdrive(self.s)
-        path = path.strip(os.path.sep)
-        l,r = os.path.split(path)
-        while l != u'':
-            dirs.append(r)
-            l,r = os.path.split(l)
-        dirs.append(r)
-        if drive != u'':
-            dirs.append(drive)
-        dirs.reverse()
-        return dirs
     def relpath(self,path):
         return GPath(os.path.relpath(self._s,Path.getNorm(path)))
 
@@ -973,7 +958,7 @@ class Path(object):
 
 def clearReadOnly(dirPath):
     """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""
-    cmd = u'' r'attrib -R "%s\*" /S /D' % dirPath.s
+    cmd = u'' r'attrib -R "%s\*" /S /D' % dirPath
     subprocess.call(cmd, startupinfo=startupinfo)
 
 # Util Constants --------------------------------------------------------------
@@ -991,7 +976,7 @@ class CsvReader(object):
             yield line.encode('utf8')
 
     def __init__(self,path):
-        self.ins = path.open('rb',encoding='utf-8-sig')
+        self.ins = GPath(path).open('rb', encoding='utf-8-sig')
         excel_fmt = ('excel','excel-tab')[u'\t' in self.ins.readline()]
         if excel_fmt == 'excel':
             delimiter = (',',';')[u';' in self.ins.readline()]
@@ -1244,132 +1229,6 @@ class AFile(object):
                                             self.abs_path.stail)
 
 #------------------------------------------------------------------------------
-from collections import MutableSet
-class OrderedSet(list, MutableSet):
-    """A set like object, that remembers the order items were added to it.
-       Since it has order, a few list functions were added as well:
-        - index(value)
-        - __getitem__(index)
-        - __call__ -> to enable 'enumerate'
-       If an item is discarded, then later readded, it will be added
-       to the end of the set.
-    """
-    def update(self, *args, **kwdargs):
-        if kwdargs: raise TypeError(u'update() takes no keyword arguments')
-        for s in args:
-            for e in s:
-                self.add(e)
-
-    def add(self, elem):
-        if elem not in self:
-            self.append(elem)
-    def discard(self, elem):
-        try:
-            self.remove(elem)
-        except ValueError:
-            pass # We want to discard, don't care about missing values
-    def __or__(self,other):
-        left = OrderedSet(self)
-        left.update(other)
-        return left
-    def __repr__(self): return u'OrderedSet%s' % unicode(list(self))[1:-1]
-    def __unicode__(self): return u'{%s}' % unicode(list(self))[1:-1]
-
-#------------------------------------------------------------------------------
-class MemorySet(object):
-    """Specialization of the OrderedSet, where it remembers the order of items
-       event if they're removed.  Also, combining and comparing to other MemorySet's
-       takes this into account:
-        a|b -> returns union of a and b, but keeps the ordering of b where possible.
-               if an item in a was also in b, but deleted, it will be added to the
-               deleted location.
-        a&b -> same as a|b, but only items 'not-deleted' in both a and b are marked
-               as 'not-deleted'
-        a^b -> same as a|b, but only items 'not-deleted' in a but not b, or b but not
-               a are marked as 'not-deleted'
-        a-b -> same as a|b, but any 'not-deleted' items in b are marked as deleted
-
-        a==b -> compares the 'not-deleted' items of the MemorySets.  If both are the same,
-                and in the same order, then they are equal.
-        a!=b -> oposite of a==b
-    """
-    def __init__(self, *args, **kwdargs):
-        self.items = OrderedSet(*args, **kwdargs)
-        self.mask = [True] * len(self.items)
-
-    def add(self,elem):
-        if elem in self.items: self.mask[self.items.index(elem)] = True
-        else:
-            self.items.add(elem)
-            self.mask.append(True)
-    def discard(self,elem):
-        if elem in self.items: self.mask[self.items.index(elem)] = False
-    discarded = property(lambda self: OrderedSet([x for i,x in enumerate(self.items) if not self.mask[i]]))
-
-    def __len__(self): return sum(self.mask)
-    def __iter__(self):
-        for i,elem in enumerate(self.items):
-            if self.mask[i]: yield self.items[i]
-    def __str__(self): return u'{%s}' % (','.join(map(repr,self._items())))
-    def __repr__(self): return u'MemorySet([%s])' % (','.join(map(repr,self._items())))
-    def forget(self, elem):
-        # Permanently remove an item from the list.  Don't remember its order
-        if elem in self.items:
-            idex = self.items.index(elem)
-            self.items.discard(elem)
-            del self.mask[idex]
-
-    def _items(self): return OrderedSet([x for x in self])
-
-    def __or__(self,other):
-        """Return items in self or in other"""
-        discards = (self.discarded-other._items())|(other.discarded-self._items())
-        right = list(other.items)
-        left = list(self.items)
-
-        for idex,elem in enumerate(left):
-            # elem is already in the other one, skip
-            if elem in right: continue
-
-            # Figure out best place to put it
-            if idex == 0:
-                # put it in front
-                right.insert(0,elem)
-            elif idex == len(left)-1:
-                # put in in back
-                right.append(elem)
-            else:
-                # Find out what item it comes after
-                afterIdex = idex-1
-                while afterIdex > 0 and left[afterIdex] not in right:
-                    afterIdex -= 1
-                insertIdex = right.index(left[afterIdex])+1
-                right.insert(insertIdex,elem)
-        ret = MemorySet(right)
-        ret.mask = [x not in discards for x in right]
-        return ret
-    def __and__(self,other):
-        items = self.items & other.items
-        discards = self.discarded | other.discarded
-        ret = MemorySet(items)
-        ret.mask = [x not in discards for x in items]
-        return ret
-    def __sub__(self,other):
-        discards = self.discarded | other._items()
-        ret = MemorySet(self.items)
-        ret.mask = [x not in discards for x in self.items]
-        return ret
-    def __xor__(self,other):
-        items = (self|other).items
-        discards = items - (self._items()^other._items())
-        ret = MemorySet(items)
-        ret.mask = [x not in discards for x in items]
-        return ret
-
-    def __eq__(self,other): return list(self) == list(other)
-    def __ne__(self,other): return list(self) != list(other)
-
-#------------------------------------------------------------------------------
 class MainFunctions(object):
     """Encapsulates a set of functions and/or object instances so that they can
     be called from the command line with normal command line syntax.
@@ -1479,26 +1338,28 @@ class PickleDict(object):
             if cor is not None:
                 cor.moveTo(cor_name)
                 cor = None
-            if path.exists():
-                try:
-                    with path.open('rb') as ins:
-                        try:
-                            firstPickle = pickle.load(ins)
-                        except ValueError:
-                            cor = path
-                            cor_name = GPath(path.s + u' (%s)' % timestamp() +
-                                    u'.corrupted')
-                            deprint(u'Unable to load %s (moved to "%s")' % (
+            try:
+                with path.open('rb') as ins:
+                    try:
+                        firstPickle = pickle.load(ins)
+                    except ValueError:
+                        cor = path
+                        cor_name = GPath(
+                            u'%s (%s).corrupted' % (path, timestamp()))
+                        deprint(u'Unable to load %s (will be moved to "%s")' %(
                                 path, cor_name.tail), traceback=True)
-                            continue # file corrupt - try next file
-                        if firstPickle == 'VDATA2':
-                            self.vdata.update(pickle.load(ins))
-                            self.data.update(pickle.load(ins))
-                        else:
-                            raise PickleDict.Mold(path)
-                    return 1 + (path == self.backup)
-                except (EOFError, ValueError):
-                    pass
+                        continue  # file corrupt - try next file
+                    if firstPickle == 'VDATA2':
+                        self.vdata.update(pickle.load(ins))
+                        self.data.update(pickle.load(ins))
+                    else:
+                        raise PickleDict.Mold(path)
+                return 1 + (path == self.backup)
+            except (IOError, OSError, EOFError, ValueError): #PY3:FileNotFound
+                pass
+        else:
+            if cor is not None:
+                cor.moveTo(cor_name)
         #--No files and/or files are corrupt
         return 0
 
@@ -1618,16 +1479,28 @@ def unpack_str32(ins, __unpack=struct.Struct(u'I').unpack):
     return ins.read(__unpack(ins.read(4))[0])
 def unpack_int(ins, __unpack=struct.Struct(u'I').unpack):
     return __unpack(ins.read(4))[0]
+def pack_int(out, value, __pack=struct.Struct(u'=I').pack):
+    out.write(__pack(value))
 def unpack_short(ins, __unpack=struct.Struct(u'H').unpack):
     return __unpack(ins.read(2))[0]
+def pack_short(out, val, __pack=struct.Struct(u'=H').pack):
+    out.write(__pack(val))
 def unpack_float(ins, __unpack=struct.Struct(u'f').unpack):
     return __unpack(ins.read(4))[0]
+def pack_float(out, val, __pack=struct.Struct(u'=f').pack):
+    out.write(__pack(val))
 def unpack_double(ins, __unpack=struct.Struct(u'd').unpack):
     return __unpack(ins.read(8))[0]
 def unpack_byte(ins, __unpack=struct.Struct(u'B').unpack):
     return __unpack(ins.read(1))[0]
+def pack_byte(out, val, __pack=struct.Struct(u'=B').pack):
+    out.write(__pack(val))
+def pack_double(out, val, __pack=struct.Struct(u'=d').pack):
+    out.write(__pack(val))
 def unpack_int_signed(ins, __unpack=struct.Struct(u'i').unpack):
     return __unpack(ins.read(4))[0]
+def pack_int_signed(out, val, __pack=struct.Struct(u'=i').pack):
+    out.write(__pack(val))
 def unpack_int64_signed(ins, __unpack=struct.Struct(u'q').unpack):
     return __unpack(ins.read(8))[0]
 def unpack_4s(ins, __unpack=struct.Struct(u'4s').unpack):
@@ -1643,6 +1516,9 @@ def unpack_str_byte_delim(ins, __unpack=struct.Struct(u'Bc').unpack):
 
 def unpack_string(ins, string_len):
     return struct_unpack(u'%ds' % string_len, ins.read(string_len))[0]
+
+def pack_byte_signed(out, value, __pack=struct.Struct(u'b').pack):
+    out.write(__pack(value))
 
 def unpack_many(ins, fmt):
     return struct_unpack(fmt, ins.read(struct.calcsize(fmt)))
@@ -1661,42 +1537,42 @@ def unpack_spaced_string(ins, replacement_char=b'\x07'):
 #------------------------------------------------------------------------------
 class DataTableColumn(object):
     """DataTable accessor that presents table column as a dictionary."""
-    def __init__(self,table,column):
-        self.table = table
+    def __init__(self, table, column):
+        self._table = table
         self.column = column
     #--Dictionary Emulation
     def __iter__(self):
         """Dictionary emulation."""
-        tableData = self.table.data
+        tableData = self._table.data
         column = self.column
         return (key for key in tableData.keys() if (column in tableData[key]))
     def keys(self):
         return list(self.__iter__())
     def items(self):
         """Dictionary emulation."""
-        tableData = self.table.data
+        tableData = self._table.data
         column = self.column
         return [(key,tableData[key][column]) for key in self]
     def clear(self):
         """Dictionary emulation."""
-        self.table.delColumn(self.column)
+        self._table.delColumn(self.column)
     def get(self,key,default=None):
         """Dictionary emulation."""
-        return self.table.getItem(key,self.column,default)
+        return self._table.getItem(key, self.column, default)
     #--Overloaded
     def __contains__(self,key):
         """Dictionary emulation."""
-        tableData = self.table.data
+        tableData = self._table.data
         return key in tableData and self.column in tableData[key]
     def __getitem__(self,key):
         """Dictionary emulation."""
-        return self.table.data[key][self.column]
+        return self._table.data[key][self.column]
     def __setitem__(self,key,value):
         """Dictionary emulation. Marks key as changed."""
-        self.table.setItem(key,self.column,value)
+        self._table.setItem(key, self.column, value)
     def __delitem__(self,key):
         """Dictionary emulation. Marks key as deleted."""
-        self.table.delItem(key,self.column)
+        self._table.delItem(key, self.column)
 
 #------------------------------------------------------------------------------
 class DataTable(DataDict):
@@ -1855,7 +1731,7 @@ def deprint(*args,**keyargs):
     if keyargs.get('trace', True):
         stack = inspect.stack()
         file_, line, function = stack[1][1:4]
-        msg = u'%s %4d %s: ' % (GPath(file_).tail.s, line, function)
+        msg = u'%s %4d %s: ' % (GPath(file_).tail, line, function)
     else:
         msg = u''
 
@@ -2364,10 +2240,10 @@ class WryeText(object):
     files.
 
     Headings:
-    = XXXX >> H1 "XXX"
-    == XXXX >> H2 "XXX"
-    === XXXX >> H3 "XXX"
-    ==== XXXX >> H4 "XXX"
+    = HHHH >> H1 "HHHH"
+    == HHHH >> H2 "HHHH"
+    === HHHH >> H3 "HHHH"
+    ==== HHHH >> H4 "HHHH"
     Notes:
     * These must start at first character of line.
     * The XXX text is compressed to form an anchor. E.g == Foo Bar gets anchored as" FooBar".
@@ -2706,16 +2582,16 @@ class WryeText(object):
             css = WryeText.defaultCss
         else:
             if cssName.ext != u'.css':
-                raise exception.BoltError(u'Invalid Css file: ' + cssName.s)
+                raise exception.BoltError(u'Invalid Css file: %s' % cssName)
             for css_dir in cssDirs:
                 cssPath = GPath(css_dir).join(cssName)
                 if cssPath.exists(): break
             else:
-                raise exception.BoltError(u'Css file not found: ' + cssName.s)
+                raise exception.BoltError(u'Css file not found: %s' % cssName)
             with cssPath.open('r',encoding='utf-8-sig') as cssIns:
                 css = u''.join(cssIns.readlines())
             if u'<' in css:
-                raise exception.BoltError(u'Non css tag in ' + cssPath.s)
+                raise exception.BoltError(u'Non css tag in %s' % cssPath)
         #--Write Output ------------------------------------------------------
         outWrite(WryeText.htmlHead % (title,css))
         didContents = False

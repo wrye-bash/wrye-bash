@@ -21,14 +21,15 @@
 #
 # =============================================================================
 from __future__ import division, print_function
+
+import os
 import subprocess
 import webbrowser
 from . import BashStatusBar, BashFrame
 from .frames import ModChecker, DocBrowser
 from .settings_dialog import SettingsDialog
-from .. import bass, bosh, bolt, balt, bush, mod_files, load_order
+from .. import bass, bosh, bolt, balt, bush, load_order
 from ..balt import ItemLink, Link, Links, SeparatorLink, BoolLink, staticBitmap
-from ..bolt import GPath
 from ..env import getJava
 from ..exception import AbstractError
 from ..gui import ClickableImage, EventResult
@@ -179,7 +180,7 @@ class _App_Button(StatusBar_Button):
     def ShowError(self,error):
         balt.showError(Link.Frame,
                        (u'%s'%error + u'\n\n' +
-                        _(u'Used Path: ') + self.exePath.s + u'\n' +
+                        _(u'Used Path: ') + u'%s\n' % self.exePath +
                         _(u'Used Arguments: ') + u'%s' % (self.exeArgs,)),
                        _(u"Could not launch '%s'") % self.exePath.stail)
 
@@ -192,15 +193,15 @@ class _App_Button(StatusBar_Button):
     def Execute(self):
         if not self.IsPresent():
             balt.showError(Link.Frame,
-                           _(u'Application missing: %s') % self.exePath.s,
+                           _(u'Application missing: %s') % self.exePath,
                            _(u"Could not launch '%s'" % self.exePath.stail)
                            )
             return
         self._app_button_execute()
 
     def _app_button_execute(self):
-        dir_ = bolt.Path.getcwd().s
-        args = u'"%s"' % self.exePath.s
+        dir_ = os.getcwdu()
+        args = u'"%s"' % self.exePath
         args += u' '.join([u'%s' % arg for arg in self.exeArgs])
         try:
             import win32api

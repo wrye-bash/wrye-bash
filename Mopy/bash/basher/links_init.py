@@ -31,7 +31,7 @@ from .. import bass, balt, bush
 from ..balt import MenuLink, SeparatorLink, UIList_OpenItems, \
     UIList_OpenStore, UIList_Hide
 from ..env import init_app_links
-from ..gui import Image
+from ..gui import ImageWrapper
 # modules below define the __all__ directive
 from .app_buttons import *
 from .mods_links import *
@@ -48,7 +48,7 @@ from .bsa_links import *
 def InitStatusBar():
     """Initialize status bar links."""
     def imageList(template):
-        return [Image(bass.dirs[u'images'].join(template % i)) for i in
+        return [ImageWrapper(bass.dirs[u'images'].join(template % i)) for i in
                 (16, 24, 32)]
     def _init_tool_buttons(): # tooldirs must have been initialized
         return (((bass.tooldirs[u'OblivionBookCreatorPath'],
@@ -179,10 +179,11 @@ def InitStatusBar():
     for mt in misc_tools: BashStatusBar.buttons.append(Tooldir_Button(*mt))
     #--Custom Apps
     dirApps = bass.dirs[u'mopy'].join(u'Apps')
-    badIcons = [Image(bass.dirs[u'images'].join(u'error_cross_16.png'))] * 3
+    badIcons = [ImageWrapper(
+        bass.dirs[u'images'].join(u'error_cross_16.png'))] * 3
     def iconList(fileName):
-        return [Image(fileName, Image.typesDict[u'ico'], x) for x in
-                (16, 24, 32)]
+        return [ImageWrapper(fileName, ImageWrapper.typesDict[u'ico'], x) for x
+                in (16, 24, 32)]
     for pth, icon, shortcut_descr in init_app_links(dirApps, badIcons, iconList):
             BashStatusBar.buttons.append(
                 app_button_factory((pth,()), icon, shortcut_descr, canHide=False))
@@ -847,11 +848,11 @@ def InitScreenLinks():
         ScreensList.context_links.append(file_menu)
     if True: #--Convert
         convertMenu = MenuLink(_(u'Convert'))
-        image_type = Image.typesDict
-        convertMenu.links.append(Screen_ConvertTo(u'jpg', image_type['jpg']))
-        convertMenu.links.append(Screen_ConvertTo(u'png', image_type['png']))
-        convertMenu.links.append(Screen_ConvertTo(u'bmp', image_type['bmp']))
-        convertMenu.links.append(Screen_ConvertTo(u'tif', image_type['tif']))
+        image_type = ImageWrapper.typesDict
+        convertMenu.links.append(Screen_ConvertTo(u'jpg', image_type[u'jpg']))
+        convertMenu.links.append(Screen_ConvertTo(u'png', image_type[u'png']))
+        convertMenu.links.append(Screen_ConvertTo(u'bmp', image_type[u'bmp']))
+        convertMenu.links.append(Screen_ConvertTo(u'tif', image_type[u'tif']))
         ScreensList.context_links.append(convertMenu)
     # ScreensList: Global Links
     # File Menu

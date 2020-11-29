@@ -199,7 +199,7 @@ class ModFile(object):
             self.tes4 = bush.game.plugin_header_class(header,ins,True)
             # Check if we need to handle strings
             self.strings.clear()
-            if do_unpack and self.tes4.flags1.hasStrings and loadStrings:
+            if do_unpack and loadStrings and self.tes4.flags1.hasStrings:
                 stringsProgress = SubProgress(progress,0,0.1) # Use 10% of progress bar for strings
                 lang = bosh.oblivionIni.get_ini_language()
                 stringsPaths = self.fileInfo.getStringsPaths(lang)
@@ -221,13 +221,13 @@ class ModFile(object):
                 header = insRecHeader()
                 if not header.is_top_group_header:
                     raise ModError(self.fileInfo.name,u'Improperly grouped file.')
-                label,size = header.label,header.size
+                label = header.label
                 topClass = self.loadFactory.getTopClass(label)
                 try:
                     if topClass:
                         new_top = topClass(header, self.loadFactory)
                         load_fully = do_unpack and (topClass != MobBase)
-                        new_top.load(ins, load_fully)
+                        new_top.load_rec_group(ins, load_fully)
                         # Starting with FO4, some of Bethesda's official files
                         # have duplicate top-level groups
                         if label not in self.tops:
@@ -251,7 +251,7 @@ class ModFile(object):
                         header.skip_group(ins)
                 except:
                     if catch_errors:
-                        deprint(u'Error in %s' % self.fileInfo.name.s,
+                        deprint(u'Error in %s' % self.fileInfo.name,
                                 traceback=True)
                         break
                     else:
@@ -267,11 +267,13 @@ class ModFile(object):
         and then save if the answer is yes. If hasSaved == False, then does nothing."""
         if not hasChanged: return
         fileName = self.fileInfo.name
-        if re.match(u'' r'\s*[yY]', raw_input(u'\nSave changes to '+fileName.s+u' [y/n]?: '), flags=re.U):
+        if re.match(u'' r'\s*[yY]',
+                    raw_input(u'\nSave changes to %s [y/n]?: ' % fileName),
+                    flags=re.U):
             self.safeSave()
-            print(fileName.s,u'saved.')
+            print(u'%s saved.' % fileName)
         else:
-            print(fileName.s,u'not saved.')
+            print(u'%s not saved.' % fileName)
 
     def safeSave(self):
         """Save data to file safely.  Works under UAC."""
@@ -294,7 +296,7 @@ class ModFile(object):
         outPath = outPath or self.fileInfo.getPath()
         # Too many masters is fatal and results in cryptic struct errors, so
         # loudly complain about it here
-        if len(self.tes4.masters) > 255:
+        if self.tes4.num_masters > 255:
             raise ModError(self.fileInfo.name,
                 u'Attempting to write a file with too many masters (>255).')
         with ModWriter(outPath.open(u'wb')) as out:
@@ -305,27 +307,27 @@ class ModFile(object):
             self.tes4.dump(out)
             #--Blocks
             selfTops = self.tops
-            for rec_type in RecordHeader.top_grup_sigs:
-                if rec_type in selfTops:
-                    selfTops[rec_type].dump(out)
+            for rsig in RecordHeader.top_grup_sigs:
+                if rsig in selfTops:
+                    selfTops[rsig].dump(out)
 
     def getLongMapper(self):
         """Returns a mapping function to map short fids to long fids."""
-        masters = self.tes4.masters+[self.fileInfo.name]
-        maxMaster = len(masters)-1
+        masters_list = self.tes4.masters+[self.fileInfo.name]
+        maxMaster = len(masters_list)-1
         def mapper(fid):
             if fid is None: return None
             if isinstance(fid, tuple): return fid
             mod,object = int(fid >> 24),int(fid & 0xFFFFFF)
-            return masters[min(mod, maxMaster)], object # clamp HITMEs
+            return masters_list[min(mod, maxMaster)], object # clamp HITMEs
         return mapper
 
     def getShortMapper(self):
         """Returns a mapping function to map long fids to short fids."""
-        masters = self.tes4.masters + [self.fileInfo.name]
-        indices = {name: index for index, name in enumerate(masters)}
+        masters_list = self.tes4.masters + [self.fileInfo.name]
+        indices = {name: index for index, name in enumerate(masters_list)}
         has_expanded_range = bush.game.Esp.expanded_plugin_range
-        if (has_expanded_range and len(masters) > 1
+        if (has_expanded_range and len(masters_list) > 1
                 and self.tes4.version >= 1.0):
             # Plugin has at least one master, it may freely use the
             # expanded (0x000-0x800) range
@@ -417,7 +419,7 @@ class ModFile(object):
             return self.cached_mgef_names
 
     def __repr__(self):
-        return u'ModFile<%s>' % self.fileInfo.name.s
+        return u'ModFile<%s>' % self.fileInfo.name
 
 # TODO(inf) Use this for a bunch of stuff in mods_metadata.py (e.g. UDRs)
 class ModHeaderReader(object):
@@ -447,7 +449,7 @@ class ModHeaderReader(object):
             except (OSError, struct.error) as e:
                 raise ModError(ins.inName, u'Error scanning %s, file read '
                                            u"pos: %i\nCaused by: '%r'" % (
-                    mod_info.name.s, ins.tell(), e))
+                    mod_info.name, ins.tell(), e))
         return ret_headers
 
     ##: The method above has to be very fast, but this one can afford to be
@@ -493,5 +495,5 @@ class ModHeaderReader(object):
             except (OSError, struct.error) as e:
                 raise ModError(ins.inName, u'Error scanning %s, file read '
                                            u"pos: %i\nCaused by: '%r'" % (
-                    mod_info.name.s, ins.tell(), e))
+                    mod_info.name, ins.tell(), e))
         return ret_headers

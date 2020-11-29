@@ -29,7 +29,7 @@ from .. import bass, bosh, balt, load_order
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from .. import exception
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
-    SeparatorLink, Link, AppendableLink
+    SeparatorLink, Link
 from ..bolt import CsvReader, GPath
 from ..gui import BusyCursor
 
@@ -246,7 +246,7 @@ class Mods_CreateBlank(ItemLink):
         self.window.data_store.create_new_mod(newName, windowSelected,
                                               masterless=self.masterless)
         if windowSelected: # assign it the group of the first selected mod
-            mod_group = self.window.data_store.table.getColumn('group')
+            mod_group = self.window.data_store.table.getColumn(u'group')
             mod_group[newName] = mod_group.get(windowSelected[0], u'')
         self.window.ClearSelected(clear_details=True)
         self.window.RefreshUI(redraw=[newName], refreshSaves=False)
@@ -367,7 +367,7 @@ class Mods_CrcRefresh(ItemLink):
         mismatched = {k: v for k, v in pairs.iteritems() if v[0] != v[1]}
         if mismatched:
             message += u'  * ' + u'\n  * '.join(
-                [u'%s: cached %08X real %08X' % (k.s, v[1], v[0]) for k, v in
+                [u'%s: cached %08X real %08X' % (k, v[1], v[0]) for k, v in
                  mismatched.iteritems()])
             self.window.RefreshUI(redraw=mismatched.keys(), refreshSaves=False)
         else: message += _(u'No stale cached CRC values detected')

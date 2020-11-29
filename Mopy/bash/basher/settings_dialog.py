@@ -465,9 +465,12 @@ class ConfigureEditorDialog(DialogWindow):
             self._po_rename_box.is_checked
 
 ##: Quite a bit of duplicate code with the Backups page here (esp. rename)
+class _LangDict(dict):
+    def __missing__(self, key):
+        return self.setdefault(key, key)
 class LanguagePage(_AScrollablePage):
     """Change the language that the GUI is displayed in."""
-    _internal_to_localized = defaultdict(lambda l: l, {
+    _internal_to_localized = _LangDict({
         u'chinese (simplified)': _(u'Chinese (Simplified)') + u' (简体中文)',
         u'chinese (traditional)': _(u'Chinese (Traditional)') + u' (繁体中文)',
         u'de': _(u'German') + u' (Deutsch)',
@@ -477,7 +480,7 @@ class LanguagePage(_AScrollablePage):
         u'russian': _(u'Russian') + u' (ру́сский язы́к)',
         u'english': _(u'English') + u' (English)',
     })
-    _localized_to_internal = defaultdict(lambda l: l,
+    _localized_to_internal = _LangDict(
         {v: k for k, v in _internal_to_localized.iteritems()})
 
     def __init__(self, parent, page_desc):

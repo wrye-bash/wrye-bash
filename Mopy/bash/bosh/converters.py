@@ -136,7 +136,7 @@ class ConvertersData(DataDict):
             progress.setFull(len(pending))
             for index, bcf_archive in enumerate(sorted(pending)):
                 progress(index,
-                         _(u'Scanning Converter...') + u'\n' + bcf_archive.s)
+                         _(u'Scanning Converter...') + u'\n%s' % bcf_archive)
                 pendingChanged |= self.addConverter(bcf_archive)
         changed = pendingChanged or (len(newData) != len(bcfCRC_converter))
         self._prune_converters()
@@ -283,7 +283,7 @@ class InstallerConverter(object):
         """Load BCF.dat. Called once when a BCF is first installed, during a
         fullRefresh, and when the BCF is applied"""
         if not self.fullPath.exists(): raise StateError(
-                u"\nLoading %s:\nBCF doesn't exist." % self.fullPath.s)
+                u"\nLoading %s:\nBCF doesn't exist." % self.fullPath)
         def translate(out):
             with sio(out) as stream:
                 # translate data types to new hierarchy
@@ -305,9 +305,9 @@ class InstallerConverter(object):
         with self.fullPath.unicodeSafe() as converter_path:
             # Temp rename if its name wont encode correctly
             command = u'"%s" x "%s" BCF.dat -y -so -sccUTF-8' % (
-                archives.exe7z, converter_path.s)
+                archives.exe7z, converter_path)
             archives.wrapPopenOut(command, translate, errorMsg=
-                u"\nLoading %s:\nBCF extraction failed." % self.fullPath.s)
+                u"\nLoading %s:\nBCF extraction failed." % self.fullPath)
 
     def save(self, destInstaller):
         #--Dump settings into BCF.dat
@@ -403,11 +403,11 @@ class InstallerConverter(object):
             destFile = destJoin(destFile)
             if not srcFile.exists():
                 raise StateError(u"%s: Missing source file:\n%s" % (
-                    self.fullPath.stail, srcFile.s))
+                    self.fullPath.stail, srcFile))
             if destFile is None:
                 raise StateError(
                     u"%s: Unable to determine file destination for:\n%s" % (
-                    self.fullPath.stail, srcFile.s))
+                    self.fullPath.stail, srcFile))
             numDupes = dupes[crcValue]
             #--Keep track of how many times the file is referenced by
             # convertedFiles
@@ -511,12 +511,12 @@ class InstallerConverter(object):
                 #--No files to pack, but subArchives were unpacked
                 sProgress = SubProgress(progress, lastStep, lastStep + 0.5)
                 lastStep += 0.5
-        sProgress(0, BCFArchive.s + u'\n' + _(u'Mapping files...'))
+        sProgress(0, u'%s\n' % BCFArchive + _(u'Mapping files...'))
         sProgress.setFull(1 + len(destFiles))
         #--Map the files
         for index, (fileCRC, fileName) in enumerate(destFiles):
             convertedFileAppend((fileCRC, srcFiles.get(fileCRC), fileName))
-            sProgress(index, BCFArchive.s + u'\n' + _(
+            sProgress(index, u'%s\n' % BCFArchive + _(
                     u'Mapping files...') + u'\n' + fileName)
         #--Build the BCF
         tempDir2 = bass.newTempDir().join(u'BCF-Missing')
@@ -581,7 +581,7 @@ class InstallerConverter(object):
             apath = srcInstaller
         subTempDir = tmpDir.join(u"%08X" % installerCRC)
         if progress:
-            progress(0, srcInstaller.s + u'\n' + _(u'Extracting files...'))
+            progress(0, u'%s\n' % srcInstaller + _(u'Extracting files...'))
             progress.setFull(1 + len(fileNames))
         #--Extract files
         with apath.unicodeSafe() as arch:

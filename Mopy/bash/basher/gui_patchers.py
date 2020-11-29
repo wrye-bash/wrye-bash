@@ -194,7 +194,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
     def SetAliasText(self):
         """Sets alias text according to current aliases."""
         self.gAliases.text_content = u'\n'.join([
-            u'%s >> %s' % (alias_target.s, alias_repl.s)
+            u'%s >> %s' % (alias_target, alias_repl)
             for alias_target, alias_repl in sorted(self.aliases.items())])
 
     def OnEditAliases(self):
@@ -226,8 +226,8 @@ class _AliasesPatcherPanel(_PatcherPanel):
     def _log_config(self, conf, config, clip, log):
         aliases = conf.get('aliases', {})
         for mod, alias in aliases.iteritems():
-            log(u'* __%s__ >> %s' % (mod.s, alias.s))
-            clip.write(u'  %s >> %s\n' % (mod.s, alias.s))
+            log(u'* __%s__ >> %s' % (mod, alias))
+            clip.write(u'  %s >> %s\n' % (mod, alias))
 
     def get_patcher_instance(self, patch_file):
         """Set patch_file aliases dict"""

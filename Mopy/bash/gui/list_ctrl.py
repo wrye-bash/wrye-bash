@@ -59,7 +59,7 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
             if dndList : self.data_object.Add(self.dataList)
             self.SetDataObject(self.data_object)
 
-        def OnData(self, x, y, data):
+        def OnData(self, x, y, _data):
             if self.GetData():
                 dtype = self.data_object.GetReceivedFormat().GetType()
                 if dtype == _wx.DF_FILENAME:
@@ -68,8 +68,8 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
                     return _wx.DragResult.DragCopy
                 elif dtype == self.dataList.GetFormat().GetType():
                     # ListCtrl indexes
-                    data = pickle.loads(self.dataList.GetData().tobytes())
-                    self.window._OnDropList(x, y, data)
+                    _data = pickle.loads(self.dataList.GetData().tobytes())
+                    self.window._OnDropList(x, y, _data)
                     return _wx.DragResult.DragCopy
             return _wx.DragResult.DragNone
 
@@ -134,10 +134,10 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
         selected = pickle.dumps(indices, 1)
         ldata = _wx.CustomDataObject('ListIndexes')
         ldata.SetData(selected)
-        data = _wx.DataObjectComposite()
-        data.Add(ldata)
+        data_object = _wx.DataObjectComposite()
+        data_object.Add(ldata)
         source = _wx.DropSource(self)
-        source.SetData(data)
+        source.SetData(data_object)
         source.DoDragDrop(flags=_wx.Drag_DefaultMove)
 
     def OnDropFiles(self, x, y, filenames):

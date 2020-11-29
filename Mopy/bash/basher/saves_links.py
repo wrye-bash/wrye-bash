@@ -38,7 +38,7 @@ from ..bosh import faces, SaveInfo
 from ..brec import MreRecord
 from ..exception import ArgumentError, BoltError, CancelError, ModError
 from ..mod_files import LoadFactory, MasterMap, ModFile
-from ..gui import BusyCursor, Image
+from ..gui import BusyCursor, ImageWrapper
 
 __all__ = ['Saves_Profiles', 'Save_Rename', 'Save_Renumber', 'Save_Move',
            'Save_LoadMasters', 'Save_DiffMasters', 'Save_Stats',
@@ -116,7 +116,7 @@ class Saves_ProfilesData(balt.ListEditorData):
     def rename(self,oldName,newName):
         """Renames profile oldName to newName."""
         newName = newName.strip()
-        lowerNames = [name.lower() for name in self.getItemList()]
+        lowerNames = [save_dir.lower() for save_dir in self.getItemList()]
         #--Error checks
         if newName.lower() in lowerNames:
             balt.showError(self,_(u'Name must be unique.'))
@@ -152,7 +152,7 @@ class Saves_ProfilesData(balt.ListEditorData):
                 return False
         #--Remove directory
         if GPath(bush.game.fsName).join(u'Saves').s not in profileDir.s:
-            raise BoltError(u'Sanity check failed: No "%s\\Saves" in %s.' % (bush.game.fsName,profileDir.s))
+            raise BoltError(u'Sanity check failed: No "%s\\Saves" in %s.' % (bush.game.fsName,profileDir))
         shutil.rmtree(profileDir.s) #--DO NOT SCREW THIS UP!!!
         bosh.saveInfos.profiles.delRow(profileSaves)
         return True
@@ -209,9 +209,9 @@ class Saves_Profiles(ChoiceLink):
 
         def Execute(self):
             """Show save profiles editing dialog."""
-            data = Saves_ProfilesData(self.window)
+            sp_data = Saves_ProfilesData(self.window)
             balt.ListEditor.display_dialog(self.window, _(u'Save Profiles'),
-                                           data)
+                                           sp_data)
 
     extraItems = [_Edit(), SeparatorLink(), _Default()]
 
@@ -304,12 +304,12 @@ class Save_ExportScreenshot(OneItemLink):
     def Execute(self):
         imagePath = balt.askSave(Link.Frame, _(u'Save Screenshot as:'),
             bass.dirs[u'patches'].s,
-            _(u'Screenshot %s.jpg') % self._selected_item.s, u'*.jpg')
+            _(u'Screenshot %s.jpg') % self._selected_item, u'*.jpg')
         if not imagePath: return
         # TODO(inf) de-wx! All the image stuff is still way too close to wx
-        image = Image.from_bitstream(
+        image = ImageWrapper.from_bitstream(
             *self._selected_info.header.image_parameters).ConvertToImage()
-        image.SaveFile(imagePath.s, Image.typesDict[u'jpg'])
+        image.SaveFile(imagePath.s, ImageWrapper.typesDict[u'jpg'])
 
 #------------------------------------------------------------------------------
 class Save_DiffMasters(EnabledLink):
@@ -341,11 +341,11 @@ class Save_DiffMasters(EnabledLink):
         else:
             message = u''
             if missing:
-                message += u'=== '+_(u'Removed Masters')+u' (%s):\n* ' % oldName.s
+                message += u'=== '+_(u'Removed Masters')+u' (%s):\n* ' % oldName
                 message += u'\n* '.join(x.s for x in load_order.get_ordered(missing))
                 if added: message += u'\n\n'
             if added:
-                message += u'=== '+_(u'Added Masters')+u' (%s):\n* ' % newName.s
+                message += u'=== '+_(u'Added Masters')+u' (%s):\n* ' % newName
                 message += u'\n* '.join(x.s for x in load_order.get_ordered(added))
             self._showWryeLog(message, title=_(u'Diff Masters'))
 
@@ -434,7 +434,7 @@ class Save_EditCreatedData(balt.ListEditorData):
     def getInfo(self,item):
         """Returns string info on specified item."""
         buff = StringIO.StringIO()
-        name,records = self.name_nameRecords[item]
+        record_full, records = self.name_nameRecords[item]
         record = records[0]
         #--Armor, clothing, weapons
         rsig = record.recType
@@ -522,8 +522,8 @@ class Save_EditCreated(OneItemLink):
             self._showOk(_(u'No items to edit.'))
             return
         #--Open editor dialog
-        data = Save_EditCreatedData(self.window,saveFile,types_set)
-        balt.ListEditor.display_dialog(self.window, self._text, data)
+        secd = Save_EditCreatedData(self.window,saveFile,types_set)
+        balt.ListEditor.display_dialog(self.window, self._text, secd)
 
 #------------------------------------------------------------------------------
 class Save_EditPCSpellsData(balt.ListEditorData):
@@ -656,7 +656,7 @@ class Save_Move(ChoiceLink):
         for fileName in self.selected:
             if ask and destDir.join(fileName).exists():
                 message = (_(u'A file named %s already exists in %s. Overwrite it?')
-                    % (fileName.s,profile))
+                    % (fileName,profile))
                 result = self._askContinueShortTerm(message,
                                                     title=_(u'Move File'))
                 #if result is true just do the job but ask next time if applicable as well
@@ -832,10 +832,10 @@ class Save_Unbloat(OneItemLink):
             return
         message = [_(u'Remove savegame bloating?')]
         if createdCounts:
-            for (created_item_rec_type, name), count_ in sorted(
+            for (created_item_rec_type, rec_full), count_ in sorted(
                     createdCounts.items()):
                 message.append(u'  %s %s: %u' % (
-                    created_item_rec_type, name, count_))
+                    created_item_rec_type, rec_full, count_))
         if nullRefCount:
             message.append(u'  ' + _(u'Null Ref Objects:') +
                            u' %u' % nullRefCount)

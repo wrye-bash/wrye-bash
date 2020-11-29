@@ -112,8 +112,8 @@ class AlchemicalCatalogs(Patcher, _ExSpecial):
             ##: In Cobl Main.esm, the books have a script attached
             # (<cobGenDevalueOS [SCPT:01001DDD]>). This currently gets rid of
             # that, should we keep it instead?
-            # book.script = (GPath(u'Cobl Main.esm'), 0x001DDD)
-            book.fid = (GPath(u'Cobl Main.esm'), objectId)
+            # book.script = (_cobl_main, 0x001DDD)
+            book.fid = (_cobl_main, objectId)
             keep(book.fid)
             self.patchFile.BOOK.setRecord(book)
             return book
@@ -197,14 +197,13 @@ class CoblExhaustion(ListPatcher, _ExSpecialList):
     def _pLog(self, log, count):
         log.setHeader(u'= ' + self._patcher_name)
         log(u'* ' + _(u'Powers Tweaked') + u': %d' % sum(count.values()))
-        for srcMod in load_order.get_ordered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
+        for srcMod in load_order.get_ordered(count):
+            log(u'  * %s: %d' % (srcMod, count[srcMod]))
 
     def readFromText(self, textPath):
         """Imports type_id_name from specified text file."""
         aliases = self.patchFile.aliases
         id_exhaustion = self.id_exhaustion
-        textPath = GPath(textPath)
         with CsvReader(textPath) as ins:
             for fields in ins:
                 try:
@@ -289,7 +288,7 @@ class MFactMarker(ListPatcher, _ExSpecialList):
         self._srcMods(log)
         log(u'\n=== ' + _(u'Morphable Factions'))
         for mod in load_order.get_ordered(changed):
-            log(u'* %s: %d' % (mod.s, changed[mod]))
+            log(u'* %s: %d' % (mod, changed[mod]))
 
     def readFromText(self, textPath):
         """Imports id_info from specified text file."""

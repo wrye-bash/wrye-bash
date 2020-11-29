@@ -28,7 +28,7 @@ import errno
 import re
 import time
 from datetime import timedelta
-from . import BashFrame ##: drop this - decouple !
+from . import BashFrame, configIsCBash  ##: drop this - decouple !
 from .. import balt, bass, bolt, bosh, bush, env, load_order
 from ..balt import Link, Resources
 from ..bolt import SubProgress, GPath, Path
@@ -38,7 +38,7 @@ from ..gui import CancelButton, DeselectAllButton, HLayout, Label, \
     LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
     SaveAsButton, SelectAllButton, Stretch, VLayout, DialogWindow, \
     CheckListBox, HorizontalLine
-from ..patcher import configIsCBash, exportConfig, list_patches_dir
+from ..patcher import exportConfig, list_patches_dir
 from ..patcher.patch_files import PatchFile
 
 # Final lists of gui patcher classes instances, initialized in
@@ -55,7 +55,7 @@ class PatchDialog(DialogWindow):
     def __init__(self, parent, patchInfo, mods_to_reselect):
         self.mods_to_reselect = mods_to_reselect
         self.parent = parent
-        title = _(u'Update ') + patchInfo.name.s
+        title = _(u'Update ') + u'%s' % patchInfo.name
         size = balt.sizes.get(self.__class__.__name__, (500,600))
         super(PatchDialog, self).__init__(parent, title=title,
             icon_bundle=Resources.bashMonkey, sizes_dict=balt.sizes, size=size)
@@ -63,7 +63,7 @@ class PatchDialog(DialogWindow):
         list_patches_dir() # refresh cached dir
         groupOrder = {group: index for index, group in enumerate(
             (_(u'General'), _(u'Importers'), _(u'Tweakers'), _(u'Special')))}
-        patchConfigs = bosh.modInfos.table.getItem(patchInfo.name,'bash.patch.configs',{})
+        patchConfigs = bosh.modInfos.table.getItem(patchInfo.name,u'bash.patch.configs',{})
         if configIsCBash(patchConfigs):
             patchConfigs = {}
         isFirstLoad = 0 == len(patchConfigs)
@@ -155,7 +155,7 @@ class PatchDialog(DialogWindow):
         self.currentPatcher = patcher
 
     @balt.conversation
-    def PatchExecute(self): # TODO(ut): needs more work to reduce P/C differences to an absolute minimum
+    def PatchExecute(self):
         """Do the patch."""
         self.accept_modal()
         patchFile = progress = None
@@ -175,7 +175,7 @@ class PatchDialog(DialogWindow):
             patchFile.initFactories(SubProgress(progress,0.1,0.2)) #no speeding needed/really possible (less than 1/4 second even with large LO)
             patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
             patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
-            if len(patchFile.tes4.masters) > 255:
+            if patchFile.tes4.num_masters > 255:
                 balt.showError(self,
                     _(u'The resulting Bashed Patch contains too many '
                       u'masters (>255). You can try to disable some '
@@ -184,7 +184,7 @@ class PatchDialog(DialogWindow):
                       u'disabled in this one active.'))
                 return # Abort, we'll just blow up on saving it
             #--Save
-            progress.setCancel(False, patch_name.s+u'\n'+_(u'Saving...'))
+            progress.setCancel(False, u'%s\n' % patch_name + _(u'Saving...'))
             progress(0.9)
             self._save_pbash(patchFile, patch_name)
             #--Done
@@ -218,7 +218,7 @@ class PatchDialog(DialogWindow):
             #finally:
             #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
             readme = readme.root + u'.html'
-            bosh.modInfos.table.setItem(patch_name, 'doc', readme)
+            bosh.modInfos.table.setItem(patch_name, u'doc', readme)
             balt.playSound(self.parent, bass.inisettings['SoundSuccess'].s)
             balt.WryeLog(self.parent, readme, patch_name.s,
                          log_icons=Resources.bashBlue)
@@ -228,7 +228,7 @@ class PatchDialog(DialogWindow):
                     bosh.modInfos.lo_activate(mod, doSave=False)
                 self.mods_to_reselect.clear()
                 bosh.modInfos.cached_lo_save_active() ##: also done below duh
-            count, message = 0, _(u'Activate %s?') % patch_name.s
+            count, message = 0, _(u'Activate %s?') % patch_name
             if load_order.cached_is_active(patch_name) or (
                         bass.inisettings['PromptActivateBashedPatch'] and
                         balt.askYes(self.parent, message, patch_name.s)):
@@ -241,7 +241,7 @@ class PatchDialog(DialogWindow):
                 except PluginsFullError:
                     balt.showError(self, _(
                         u'Unable to add mod %s because load list is full.')
-                                   % patch_name.s)
+                                   % patch_name)
             # although improbable user has package with bashed patches...
             info = bosh.modInfos.new_info(patch_name, notify_bain=True)
             if info.size == patch_size:
@@ -255,22 +255,21 @@ class PatchDialog(DialogWindow):
         except CancelError:
             pass
         except FileEditError as error:
-            balt.playSound(self.parent, bass.inisettings['SoundError'].s)
-            balt.showError(self,u'%s'%error,_(u'File Edit Error'))
-            bolt.deprint(u'Exception during Bashed Patch building:',
-                traceback=True)
+            self._error(_(u'File Edit Error'), error)
         except BoltError as error:
-            balt.playSound(self.parent, bass.inisettings['SoundError'].s)
-            balt.showError(self,u'%s'%error,_(u'Processing Error'))
-            bolt.deprint(u'Exception during Bashed Patch building:',
-                traceback=True)
+            self._error(_(u'Processing Error'), error)
         except:
-            balt.playSound(self.parent, bass.inisettings['SoundError'].s)
-            bolt.deprint(u'Exception during Bashed Patch building:',
-                traceback=True)
+            self._error()
             raise
         finally:
             if progress: progress.Destroy()
+
+    def _error(self, msg=None, error=None):
+        balt.playSound(self.parent, bass.inisettings['SoundError'].s)
+        if msg:
+            balt.showError(self, u'%s' % error, _(u'File Edit Error'))
+        bolt.deprint(u'Exception during Bashed Patch building:',
+                     traceback=True)
 
     def _save_pbash(self, patchFile, patch_name):
         while True:
@@ -283,25 +282,21 @@ class PatchDialog(DialogWindow):
             except (CancelError, SkipError, OSError, IOError) as werr:
                 if isinstance(werr, OSError) and werr.errno != errno.EACCES:
                     raise
-                if self._pretry(patch_name):
+                ##: Ugly warts below (see also FIXME above)
+                if balt.askYes(self,
+                    (_(u'Bash encountered an error when saving '
+                       u'%(patch_name)s.') + u'\n\n' + _(
+                        u'Either Bash needs Administrator Privileges to save '
+                        u'the file, or the file is in use by another process '
+                        u'such as %(xedit_name)s.') + u'\n' + _(
+                        u'Please close any program that is accessing '
+                        u'%(patch_name)s, and provide Administrator '
+                        u'Privileges if prompted to do so.') + u'\n\n' + _(
+                        u'Try again?')) % {u'patch_name': patch_name,
+                        u'xedit_name': bush.game.Xe.full_name},
+                        _(u'Bashed Patch - Save Error')):
                     continue
                 raise # will raise the SkipError which is correctly processed
-
-    ##: Ugly warts below (see also FIXME above)
-    def _pretry(self, patch_name):
-        return balt.askYes(
-            self, (_(u'Bash encountered an error when saving '
-                     u'%(patch_name)s.') + u'\n\n' +
-                   _(u'Either Bash needs Administrator Privileges to save '
-                     u'the file, or the file is in use by another process '
-                     u'such as %(xedit_name)s.') + u'\n' +
-                   _(u'Please close any program that is accessing '
-                     u'%(patch_name)s, and provide Administrator Privileges '
-                     u'if prompted to do so.') + u'\n\n' +
-                   _(u'Try again?')) % {
-                u'patch_name': patch_name.s,
-                u'xedit_name': bush.game.Xe.full_name},
-            _(u'Bashed Patch - Save Error'))
 
     def __config(self):
         config = {'ImportedMods': set()}
@@ -311,7 +306,7 @@ class PatchDialog(DialogWindow):
     def _saveConfig(self, patch_name):
         """Save the configuration"""
         config = self.__config()
-        bosh.modInfos.table.setItem(patch_name, 'bash.patch.configs', config)
+        bosh.modInfos.table.setItem(patch_name, u'bash.patch.configs', config)
 
     def ExportConfig(self):
         """Export the configuration to a user selected dat file."""
@@ -334,14 +329,14 @@ class PatchDialog(DialogWindow):
         table = bolt.DataTable(bolt.PickleDict(textPath))
         # try the current Bashed Patch mode.
         patchConfigs = table.getItem(GPath(self.__new_key % u'Python'),
-            'bash.patch.configs', {})
+            u'bash.patch.configs', {})
         convert = False
         if not patchConfigs: # try the non-current Bashed Patch mode
             patchConfigs = table.getItem(GPath(self.__new_key % u'CBash'),
-                'bash.patch.configs', {})
+                u'bash.patch.configs', {})
             convert = bool(patchConfigs)
         if not patchConfigs: # try the old format
-            patchConfigs = table.getItem(self.__old_key, 'bash.patch.configs',
+            patchConfigs = table.getItem(self.__old_key, u'bash.patch.configs',
                 {})
             convert = bool(patchConfigs)
         if not patchConfigs:
@@ -370,7 +365,7 @@ class PatchDialog(DialogWindow):
     def RevertConfig(self):
         """Revert configuration back to saved"""
         patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,
-                                                   'bash.patch.configs', {})
+                                                   u'bash.patch.configs', {})
         self._load_config(patchConfigs)
 
     def DefaultConfig(self):

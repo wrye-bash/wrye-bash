@@ -84,7 +84,7 @@ from ..balt import Links, ItemLink
 from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
     TOP, VLayout, EventResult, DropDown, DialogWindow, WindowFrame, Spinner, \
-    Splitter, TabbedPanel, PanelWin, CheckListBox, Color, Picture, Image, \
+    Splitter, TabbedPanel, PanelWin, CheckListBox, Color, Picture, ImageWrapper, \
     CenteredSplash, BusyCursor, RadioButton, GlobalMenu
 
 # Constants -------------------------------------------------------------------
@@ -104,6 +104,13 @@ if sys.prefix not in set(os.environ['PATH'].split(';')):
 
 # Settings --------------------------------------------------------------------
 settings = None # type: bolt.Settings
+
+# Utils
+def configIsCBash(patchConfigs):
+    for config_key in patchConfigs:
+        if u'CBash' in config_key:
+            return True
+    return False
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -365,9 +372,9 @@ class MasterList(_ModsUIList):
 
     def OnDClick(self, lb_dex_and_flags):
         if self.mouse_index < 0: return # nothing was clicked
-        mod_name = self.data_store[self.mouse_index].curr_name
-        if not mod_name in bosh.modInfos: return
-        balt.Link.Frame.notebook.SelectPage('Mods', mod_name)
+        curr_name = self.data_store[self.mouse_index].curr_name
+        if not curr_name in bosh.modInfos: return
+        balt.Link.Frame.notebook.SelectPage('Mods', curr_name)
 
     #--Set ModInfo
     def SetFileInfo(self,fileInfo):
@@ -547,7 +554,7 @@ class INIList(balt.UIList):
     _shellUI = True
     _sort_keys = {'File'     : None,
                   'Installer': lambda self, a: bosh.iniInfos.table.getItem(
-                     a, 'installer', u''),
+                     a, u'installer', u''),
                  }
     def _sortValidFirst(self, items):
         if settings['bash.ini.sortValid']:
@@ -557,7 +564,7 @@ class INIList(balt.UIList):
     labels = OrderedDict([
         ('File',      lambda self, p: p.s),
         ('Installer', lambda self, p: self.data_store.table.getItem(
-                                                   p, 'installer', u'')),
+                                                   p, u'installer', u'')),
     ])
 
     @property
@@ -803,9 +810,9 @@ class ModList(_ModsUIList):
     _sort_keys = {
         'File'      : None,
         'Author'    : lambda self, a: self.data_store[a].header.author.lower(),
-        'Rating'    : lambda self, a: self._get(a)('rating', u''),
-        'Group'     : lambda self, a: self._get(a)('group', u''),
-        'Installer' : lambda self, a: self._get(a)('installer', u''),
+        'Rating'    : lambda self, a: self._get(a)(u'rating', u''),
+        'Group'     : lambda self, a: self._get(a)(u'group', u''),
+        'Installer' : lambda self, a: self._get(a)(u'installer', u''),
         'Load Order': lambda self, a: load_order.cached_lo_index_or_max(a),
         u'Indices'  : lambda self, a: self.data_store[a].real_index(),
         'Modified'  : lambda self, a: self.data_store[a].mtime,
@@ -825,7 +832,7 @@ class ModList(_ModsUIList):
         (u'Indices',   lambda self, p: self.data_store[p].real_index_string()),
         ('Rating',     lambda self, p: self._get(p)('rating', u'')),
         ('Group',      lambda self, p: self._get(p)('group', u'')),
-        ('Installer',  lambda self, p: self._get(p)('installer', u'')),
+        ('Installer',  lambda self, p: self._get(p)(u'installer', u'')),
         ('Modified',   lambda self, p: format_date(self.data_store[p].mtime)),
         ('Size',       lambda self, p: round_size(self.data_store[p].size)),
         ('Author',     lambda self, p: self.data_store[p].header.author if
@@ -1555,7 +1562,7 @@ class ModDetails(_ModsSavesDetails):
                     u'File name %s cannot be encoded to ASCII.  %s may not be '
                     u'able to activate this plugin because of this.  Do you '
                     u'want to rename the plugin anyway?')
-                                     % (newName.s,bush.game.displayName),
+                                     % (newName,bush.game.displayName),
                                      'bash.rename.isBadFileName.continue')
                 ):
                 return
@@ -2074,14 +2081,14 @@ class SaveDetails(_ModsSavesDetails):
         if self.saveInfo:
             if not self.saveInfo.header.image_loaded:
                 self.saveInfo.header.read_save_header(load_image=True)
-            new_save_screen = Image.from_bitstream(
+            new_save_screen = ImageWrapper.from_bitstream(
                 *self.saveInfo.header.image_parameters)
         else:
             new_save_screen = None # reset to default
         self.picture.set_bitmap(new_save_screen)
         #--Info Box
         self.gInfo.modified = False
-        note_text = bosh.saveInfos.table.getItem(fileName, 'info',
+        note_text = bosh.saveInfos.table.getItem(fileName, u'info',
                                                  u'') if fileName else u''
         self.gInfo.text_content = note_text
         self._update_masters_warning()
@@ -2110,7 +2117,7 @@ class SaveDetails(_ModsSavesDetails):
     def OnInfoEdit(self, new_text):
         """Info field was edited."""
         if self.saveInfo and self.gInfo.modified:
-            bosh.saveInfos.table.setItem(self.saveInfo.name, 'info', new_text)
+            bosh.saveInfos.table.setItem(self.saveInfo.name, u'info', new_text)
 
     def _validate_filename(self, fileStr):
         return self.panel_uilist.validate_filename(fileStr,
@@ -2222,30 +2229,30 @@ class InstallersList(balt.UIList):
 
     #--Item Info
     def set_item_format(self, item, item_format):
-        installer = self.data_store[item] # type: bosh.bain.Installer
+        inst = self.data_store[item] # type: bosh.bain.Installer
         #--Text
-        if installer.type == 2 and len(installer.subNames) == 2:
+        if inst.type == 2 and len(inst.subNames) == 2:
             item_format.text_key = self._type_textKey[1]
-        elif installer.is_marker():
+        elif inst.is_marker():
             item_format.text_key = 'installers.text.marker'
-        else: item_format.text_key = self._type_textKey.get(installer.type,
+        else: item_format.text_key = self._type_textKey.get(inst.type,
                                              'installers.text.invalid')
         #--Background
-        if installer.skipDirFiles:
+        if inst.skipDirFiles:
             item_format.back_key = 'installers.bkgd.skipped'
         mouse_text = u''
-        if installer.dirty_sizeCrc:
+        if inst.dirty_sizeCrc:
             item_format.back_key = 'installers.bkgd.dirty'
             mouse_text += _(u'Needs Annealing due to a change in configuration.')
-        elif installer.underrides:
+        elif inst.underrides:
             item_format.back_key = 'installers.bkgd.outOfOrder'
             mouse_text += _(u'Needs Annealing due to a change in Install Order.')
         #--Icon
-        item_format.icon_key = 'on' if installer.is_active else 'off'
-        item_format.icon_key += '.' + self._status_color[installer.status]
-        if installer.type < 0: item_format.icon_key = 'corrupt'
-        elif installer.is_project(): item_format.icon_key += '.dir'
-        if settings['bash.installers.wizardOverlay'] and installer.hasWizard:
+        item_format.icon_key = 'on' if inst.is_active else 'off'
+        item_format.icon_key += '.' + self._status_color[inst.status]
+        if inst.type < 0: item_format.icon_key = 'corrupt'
+        elif inst.is_project(): item_format.icon_key += '.dir'
+        if settings['bash.installers.wizardOverlay'] and inst.hasWizard:
             item_format.icon_key += '.wiz'
         #if textKey == 'installers.text.invalid': # I need a 'text.markers'
         #    text += _(u'Marker Package. Use for grouping installers together')
@@ -2553,8 +2560,7 @@ class InstallersList(balt.UIList):
             sorted_ = self._SortItems(col='Order', sortSpecial=False)
             new = []
             for nextItem in sorted_[self.data_store[item].order + 1:]:
-                installer = self.data_store[nextItem]
-                if installer.is_marker():
+                if self.data_store[nextItem].is_marker():
                     break
                 new.append(nextItem)
             if new:
@@ -2755,9 +2761,9 @@ class InstallersDetails(_SashDetailsPanel):
         self._save_comments()
 
     def _save_comments(self):
-        installer = self.file_info
-        if installer and self.gComments.modified:
-            installer.comments = self.gComments.text_content
+        inst = self.file_info
+        if inst and self.gComments.modified:
+            inst.comments = self.gComments.text_content
             self._idata.setChanged()
 
     def SetFile(self, fileName='SAME'):
@@ -3398,14 +3404,14 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         self.gInfo.modified = False
         if fileName:
             self.gInfo.text_content = \
-                bosh.bsaInfos.table.getItem(fileName, 'info', _(u'Notes: '))
+                bosh.bsaInfos.table.getItem(fileName, u'info', _(u'Notes: '))
         else:
             self.gInfo.text_content = _(u'Notes: ')
 
     def OnInfoEdit(self, new_text):
         """Info field was edited."""
         if self._bsa_info and self.gInfo.modified:
-            bosh.bsaInfos.table.setItem(self._bsa_info.name, 'info', new_text)
+            bosh.bsaInfos.table.setItem(self._bsa_info.name, u'info', new_text)
 
     def DoSave(self):
         """Event: Clicked Save button."""
@@ -4295,25 +4301,6 @@ class BashApp(wx.App):
         """Perform any version to version conversion. Called by Init()."""
         #--Renames dictionary: Strings to Paths.
         bash_version = settings['bash.version']
-        if isinstance(bash_version, int):
-            if bash_version < 40:
-                #--Renames array
-                newRenames = {}
-                for key,value in settings['bash.mods.renames'].iteritems():
-                    newRenames[GPath(key)] = GPath(value)
-                settings['bash.mods.renames'] = newRenames
-                #--Mod table data
-                modTableData = bosh.modInfos.table.data
-                for key in modTableData.keys():
-                    if not isinstance(key,bolt.Path):
-                        modTableData[GPath(key)] = modTableData[key]
-                        del modTableData[key]
-            #--Window sizes by class name rather than by class
-            if bash_version < 43:
-                for key,value in balt.sizes.iteritems():
-                    if isinstance(key, type):
-                        balt.sizes[key.__name__] = value
-                        del balt.sizes[key]
         #--Current Version
         if settings['bash.version'] != bass.AppVersion:
             settings['bash.version'] = bass.AppVersion
@@ -4366,7 +4353,7 @@ def InitImages():
         colors[key] = value
     #--Images
     imgDirJn = bass.dirs[u'images'].join
-    def _png(fname): return Image(imgDirJn(fname))
+    def _png(fname): return ImageWrapper(imgDirJn(fname))
     #--Standard
     images['save.on'] = _png(u'save_on.png')
     images['save.off'] = _png(u'save_off.png')
@@ -4374,7 +4361,6 @@ def InitImages():
     images[u'arrow.up'] = _png(u'arrow_up.png')
     images[u'arrow.down'] = _png(u'arrow_down.png')
     #--Misc
-    #images['oblivion'] = Image(GPath(bass.dirs[u'images'].join(u'oblivion.png')),png)
     images['help.16'] = _png(u'help16.png')
     images['help.24'] = _png(u'help24.png')
     images['help.32'] = _png(u'help32.png')

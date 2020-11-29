@@ -29,9 +29,9 @@ from collections import Counter, defaultdict
 from itertools import starmap, repeat
 
 from .. import bolt, bush
-from ..bolt import Flags, sio, GPath, decode, deprint, encode, cstrip, \
+from ..bolt import Flags, sio, GPath, decoder, deprint, encode, cstrip, \
     SubProgress, unpack_byte, unpack_str8, unpack_many, unpack_int, \
-    unpack_short, struct_pack, struct_unpack
+    unpack_short, struct_pack, struct_unpack, pack_int, pack_short, pack_byte
 from ..brec import ModReader, MreRecord, ModWriter, getObjectIndex, \
     getFormIndices, unpack_header
 from ..exception import ModError, StateError
@@ -125,7 +125,7 @@ class SreNPC(object):
                 out.write(struct_pack(fmt, *args))
             #--Form
             if self.form is not None:
-                _pack('I',self.form)
+                pack_int(out, self.form)
             #--Attributes
             if self.attributes is not None:
                 _pack('8B',*self.attributes)
@@ -136,13 +136,13 @@ class SreNPC(object):
                     acbs.calcMin, acbs.calcMax)
             #--Factions
             if self.factions is not None:
-                _pack('H',len(self.factions))
+                pack_short(out, len(self.factions))
                 for faction in self.factions:
                     _pack('=Ib',*faction)
             #--Spells
             if self.spells is not None:
                 num = len(self.spells)
-                _pack('H',num)
+                pack_short(out, num)
                 _pack('%dI' % num,*self.spells)
             #--AI Data
             if self.ai is not None:
@@ -152,12 +152,12 @@ class SreNPC(object):
                 _pack('H2s',self.health,self.unused2)
             #--Modifiers
             if self.modifiers is not None:
-                _pack('H',len(self.modifiers))
+                pack_short(out, len(self.modifiers))
                 for modifier in self.modifiers:
                     _pack('=Bf',*modifier)
             #--Full
             if self.full is not None:
-                _pack('B',len(self.full))
+                pack_byte(out, len(self.full))
                 out.write(self.full)
             #--Skills
             if self.skills is not None:
@@ -256,8 +256,7 @@ class SaveFile(object):
         """Extract info from save file."""
         # TODO: This is Oblivion only code.  Needs to be refactored
         import array
-        path = self.fileInfo.getPath()
-        with open(path.s,u'rb') as ins:
+        with self.fileInfo.getPath().open(u'rb') as ins:
             #--Progress
             progress = progress or bolt.Progress()
             progress.setFull(self.fileInfo.size)
@@ -268,15 +267,14 @@ class SaveFile(object):
             #--Save Header, pcName
             gameHeaderSize = unpack_int(ins)
             self.saveNum,pcNameSize = unpack_many(ins, '=IB')
-            self.pcName = decode(cstrip(ins.read(pcNameSize)))
+            self.pcName = decoder(cstrip(ins.read(pcNameSize)))
             self.postNameHeader = ins.read(gameHeaderSize-5-pcNameSize)
 
             #--Masters
             del self._masters[:]
             numMasters = unpack_byte(ins)
             for count in range(numMasters):
-                self._masters.append(GPath(decode(unpack_str8(ins))))
-
+                self._masters.append(GPath(decoder(unpack_str8(ins))))
             #--Pre-Records copy buffer
             def insCopy(buff,size,backSize=0):
                 if backSize: ins.seek(-backSize,1)
@@ -690,7 +688,7 @@ class SaveFile(object):
         with sio() as buff:
             buff.write(data)
             buff.seek(2+tesClassSize-4)
-            buff.write(struct_pack('I', value))
+            pack_int(buff, value)
             self.preCreated = buff.getvalue()
 
 #------------------------------------------------------------------------------

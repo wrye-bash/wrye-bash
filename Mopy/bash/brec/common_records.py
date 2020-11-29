@@ -24,8 +24,6 @@
 some commonly needed records."""
 
 from __future__ import division, print_function
-import cPickle as pickle  # PY3
-import re
 import struct
 from operator import attrgetter
 
@@ -37,7 +35,7 @@ from .common_subrecords import MelEdid
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID
 from .. import bass, bolt, exception
-from ..bolt import decode, encode, GPath, sio
+from ..bolt import decoder, encode, GPath, sio
 from ..exception import StateError
 
 #------------------------------------------------------------------------------
@@ -66,8 +64,8 @@ class MreHeaderBase(MelRecord):
                 # Don't use ins.readString, because it will try to use
                 # bolt.pluginEncoding for the filename. This is one case where
                 # we want to use automatic encoding detection
-                master_name = decode(bolt.cstrip(ins.read(size_, readId)),
-                                     avoidEncodings=(u'utf8', u'utf-8'))
+                master_name = decoder(bolt.cstrip(ins.read(size_, readId)),
+                                      avoidEncodings=(u'utf8', u'utf-8'))
                 record.masters.append(GPath(master_name))
             else: # sub_type == 'DATA'
                 # DATA is the size for TES3, but unknown/unused for later games
@@ -102,6 +100,9 @@ class MreHeaderBase(MelRecord):
         self.nextObject += 1
         self.setChanged()
         return self.nextObject - 1
+
+    @property
+    def num_masters(self): return len(self.masters)
 
     __slots__ = []
 
@@ -315,7 +316,7 @@ class MreLeveledListBase(MelRecord):
             bolt.deprint(u"Merging changes from mod '%s' to leveled list %r "
                          u'caused it to exceed %u entries. Truncating back '
                          u'to %u, you will have to fix this manually!' %
-                         (otherMod.s, self, max_lvl_size, max_lvl_size))
+                         (otherMod, self, max_lvl_size, max_lvl_size))
             self.entries = self.entries[:max_lvl_size]
         entry_copy_attrs_key = attrgetter(*self.__class__.entry_copy_attrs)
         if newItems:
