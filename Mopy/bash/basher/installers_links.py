@@ -150,13 +150,13 @@ class Installers_MonitorInstall(Installers_Link):
                                     _(u'External Installation'))
         if not projectName:
             return
-        path = self.window.new_name(projectName)
+        pr_path = self.window.new_name(projectName)
         # Copy Files
         with balt.Progress(_(u'Creating Project...'), u'\n' + u' '*60) as prog:
-            self.idata.createFromData(path, include, prog) # will order last
+            self.idata.createFromData(pr_path, include, prog) # will order last
         # createFromData placed the new project last in install order - install
         try:
-            self.idata.bain_install([path], ui_refresh, override=False)
+            self.idata.bain_install([pr_path], ui_refresh, override=False)
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
         # Select new installer

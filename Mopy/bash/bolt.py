@@ -879,9 +879,9 @@ class Path(object):
         try:
             self._s.encode(u'ascii')
             class _noop_file(object):
-                def __init__(self,path):
-                    self.path = path
-                def __enter__(self): return self.path
+                def __init__(self, _fpath):
+                    self._fpath = _fpath
+                def __enter__(self): return self._fpath
                 def __exit__(self, exc_type, exc_value, exc_traceback): pass
             return _noop_file(self)
         except UnicodeEncodeError:
@@ -1307,16 +1307,16 @@ def mainfunc(func):
 class PickleDict(object):
     """Dictionary saved in a pickle file.
     Note: self.vdata and self.data are not reassigned! (Useful for some clients.)"""
-    def __init__(self,path,readOnly=False):
+    def __init__(self, pkl_path, readOnly=False):
         """Initialize."""
-        self.path = path
-        self.backup = path.backup
+        self._pkl_path = pkl_path
+        self.backup = pkl_path.backup
         self.readOnly = readOnly
         self.vdata = {}
         self.data = {}
 
     def exists(self):
-        return self.path.exists() or self.backup.exists()
+        return self._pkl_path.exists() or self.backup.exists()
 
     class Mold(Exception):
         def __init__(self, moldedFile):
@@ -1343,7 +1343,7 @@ class PickleDict(object):
         self.vdata.clear()
         self.data.clear()
         cor = cor_name =  None
-        for path in (self.path,self.backup):
+        for path in (self._pkl_path, self.backup):
             if cor is not None:
                 cor.moveTo(cor_name)
                 cor = None
@@ -1381,10 +1381,10 @@ class PickleDict(object):
         if self.readOnly: return False
         #--Pickle it
         self.vdata['boltPaths'] = True # needed so pre 307 versions don't blow
-        with self.path.temp.open('wb') as out:
+        with self._pkl_path.temp.open('wb') as out:
             for data in ('VDATA2',self.vdata,self.data):
                 pickle.dump(data,out,-1)
-        self.path.untemp(doBackup=True)
+        self._pkl_path.untemp(doBackup=True)
         return True
 
 #------------------------------------------------------------------------------

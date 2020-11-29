@@ -2375,7 +2375,7 @@ class ModInfos(FileInfos):
         else:
             # sort output by load order
             lindex = lambda t: load_order.cached_lo_index(t[0])
-            for path, modInfo in sorted(modInfos.iteritems(), key=lindex):
+            for __mname, modInfo in sorted(modInfos.iteritems(), key=lindex):
                 if modInfo.getBashTags():
                     tagList += u'\n* %s\n' % modInfo.name
                     tagList = ModInfos._tagsies(modInfo, tagList)

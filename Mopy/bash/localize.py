@@ -117,7 +117,7 @@ def setup_locale(cli_lang, _wx):
                                     shell=True)
                 # Clean up the temp file we created for compilation
                 os.remove(po)
-            # We've succesfully compiled the translation, read it into memory
+            # We've successfully compiled the translation, read it into memory
             with open(mo,u'rb') as trans_file:
                 trans = gettext.GNUTranslations(trans_file)
             bolt.deprint(u"Set Wrye Bash locale to '%s'" % target_name)
@@ -257,7 +257,7 @@ def dump_translator(out_path, lang):
                         continue
                     else:
                         out.write(new_line)
-    except (IOError, UnicodeError, OSError):
+    except (OSError, IOError, UnicodeError):
         bolt.deprint(u'Error while dumping translation file:', traceback=True)
         try: os.remove(tmp_txt)
         except OSError: pass

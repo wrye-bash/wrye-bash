@@ -421,14 +421,12 @@ class ModCleaner(object):
                     subprogress.setFull(max(modInfo.size*2,1))
                 else:
                     subprogress.setFull(max(modInfo.size,1))
-                #--File stream
-                path = modInfo.getPath()
                 #--Scan
                 parentType = None
                 parentFid = None
                 parentParentFid = None
                 # Location (Interior = #, Exteror = (X,Y)
-                with ModReader(modInfo.name,path.open('rb')) as ins:
+                with ModReader(modInfo.name,modInfo.getPath().open('rb')) as ins:
                     try:
                         insAtEnd = ins.atEnd
                         insTell = ins.tell
@@ -548,11 +546,11 @@ class NvidiaFogFixer(object):
         fixedCells = self.fixedCells
         fixedCells.clear()
         #--File stream
-        path = self.modInfo.getPath()
+        minfo_path = self.modInfo.getPath()
         #--Scan/Edit
-        with ModReader(self.modInfo.name,path.open('rb')) as ins:
+        with ModReader(self.modInfo.name,minfo_path.open('rb')) as ins:
             ins_unpack = partial(ins.unpack, __unpacker)
-            with path.temp.open('wb') as  out:
+            with minfo_path.temp.open('wb') as  out:
                 def copy(size):
                     buff = ins.read(size)
                     out.write(buff)
@@ -566,13 +564,13 @@ class NvidiaFogFixer(object):
                     type,size = header.recType,header.size
                     #(type,size,str0,fid,uint2) = ins.unpackRecHeader()
                     copyPrev(RecordHeader.rec_header_size)
-                    if type == 'GRUP':
+                    if type == b'GRUP':
                         if header.groupType != 0: #--Ignore sub-groups
                             pass
                         elif header.label not in ('CELL','WRLD'):
                             copy(size - RecordHeader.rec_header_size)
                     #--Handle cells
-                    elif type == 'CELL':
+                    elif type == b'CELL':
                         nextRecord = ins.tell() + size
                         while ins.tell() < nextRecord:
                             (type,size) = ins.unpackSubHeader()
@@ -592,10 +590,10 @@ class NvidiaFogFixer(object):
         #--Done
         if fixedCells:
             self.modInfo.makeBackup()
-            path.untemp()
+            minfo_path.untemp()
             self.modInfo.setmtime(crc_changed=True) # fog fixes
         else:
-            path.temp.remove()
+            minfo_path.temp.remove()
 
 #------------------------------------------------------------------------------
 class ModDetails(object):

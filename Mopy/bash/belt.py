@@ -609,10 +609,10 @@ class WryeParser(ScriptParser.Parser):
             self._wiz_parent = wiz_parent
             self.installer = installer
             self.bArchive = installer.is_archive()
-            self._path = bolt.GPath(installer.archive) if installer else None
+            self._path = installer.archive if installer else None
             if installer and installer.fileRootIdex:
                 root_path = installer.extras_dict.get('root_path', u'')
-                self._path = self._path.join(root_path)
+                self._path = os.path.join(self._path, root_path)
             self.bAuto = bAuto
             self.page = None
             self.choices = []
@@ -740,9 +740,6 @@ class WryeParser(ScriptParser.Parser):
         self.SetKeyword(u'Return', self.kwdReturn)
         self.SetKeyword(u'Cancel', self.kwdCancel, 0, 1)
         self.SetKeyword(u'RequireVersions', self.kwdRequireVersions, 1, 4)
-
-    @property
-    def path(self): return self._path
 
     def Begin(self, file_path):
         self._reset_vars()
@@ -1237,7 +1234,7 @@ class WryeParser(ScriptParser.Parser):
                     error(_(u"SubPackage '%s' does not exist.") % sub_name)
                 List = []
                 if self.installer.is_project():
-                    sub = bass.dirs[u'installers'].join(self.path, subpackage)
+                    sub = bass.dirs[u'installers'].join(self._path, subpackage)
                     for root_dir, dirs, files in sub.walk():
                         for file_ in files:
                             rel = root_dir.join(file_).relpath(sub)
@@ -1336,7 +1333,7 @@ class WryeParser(ScriptParser.Parser):
         if self.bArchive:
             imageJoin = bass.getTempDir().join
         else:
-            imageJoin = bass.dirs[u'installers'].join(self.path).join
+            imageJoin = bass.dirs[u'installers'].join(self._path).join
         for i in images:
             # Try looking inside the package first, then look if it's using one
             # of the images packaged with Wrye Bash (from Mopy/bash/images)
