@@ -911,9 +911,9 @@ class INIInfo(IniFile):
         super(INIInfo, self)._reset_cache(stat_tuple, load_cache)
         if load_cache: self._status = None ##: is the if check needed here?
 
-    @property
-    def tweak_status(self):
-        if self._status is None: self.getStatus()
+    def tweak_status(self, target_ini_settings=None):
+        if self._status is None:
+            self.getStatus(target_ini_settings=target_ini_settings)
         return self._status
 
     @property
@@ -925,11 +925,11 @@ class INIInfo(IniFile):
         return not isinstance(other, OBSEIniFile)
 
     def is_applicable(self, stat=None):
-        stat = stat or self.tweak_status
+        stat = stat or self.tweak_status()
         return stat != -20 and (
             bass.settings['bash.ini.allowNewLines'] or stat != -10)
 
-    def getStatus(self, target_ini=None):
+    def getStatus(self, target_ini=None, target_ini_settings=None):
         """Returns status of the ini tweak:
         20: installed (green with check)
         15: mismatches (green with dot) - mismatches are with another tweak from same installer that is applied
@@ -948,7 +948,8 @@ class INIInfo(IniFile):
             return _status(-20)
         match = False
         mismatch = 0
-        ini_settings = target_ini.get_ci_settings()
+        ini_settings = target_ini_settings if target_ini_settings is not None \
+            else target_ini.get_ci_settings()
         self_installer = infos.table.getItem(self.abs_path.tail, u'installer')
         for section_key in tweak_settings:
             if section_key not in ini_settings:
@@ -2947,7 +2948,7 @@ class SaveInfos(FileInfos):
     def bash_dir(self): return self.store_dir.join(u'Bash')
 
     def refresh(self, refresh_infos=True, booting=False):
-        self._refreshLocalSave()
+        if not booting: self._refreshLocalSave() # otherwise we just did this
         return refresh_infos and FileInfos.refresh(self, booting=booting)
 
     def _rename_operation(self, oldName, newName):

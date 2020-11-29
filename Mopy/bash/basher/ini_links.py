@@ -72,7 +72,7 @@ class INI_ListErrors(EnabledLink):
     _help = _(u'Lists any errors in the tweak file causing it to be invalid.')
 
     def _enable(self):
-        return any(imap(lambda inf: inf.tweak_status < 0,
+        return any(imap(lambda inf: inf.tweak_status() < 0,
                         self.iselected_infos()))
 
     def Execute(self):

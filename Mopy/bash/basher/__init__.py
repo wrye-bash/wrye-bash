@@ -414,7 +414,7 @@ class MasterList(_ModsUIList):
         else:
             return status  # 0, Green
 
-    def set_item_format(self, mi, item_format):
+    def set_item_format(self, mi, item_format, target_ini_setts):
         masterInfo = self.data_store[mi]
         masters_name = masterInfo.curr_name
         #--Font color
@@ -558,7 +558,7 @@ class INIList(balt.UIList):
                  }
     def _sortValidFirst(self, items):
         if settings['bash.ini.sortValid']:
-            items.sort(key=lambda a: self.data_store[a].tweak_status < 0)
+            items.sort(key=lambda a: self.data_store[a].tweak_status() < 0)
     _extra_sortings = [_sortValidFirst]
     #--Labels
     labels = OrderedDict([
@@ -566,6 +566,7 @@ class INIList(balt.UIList):
         ('Installer', lambda self, p: self.data_store.table.getItem(
                                                    p, u'installer', u'')),
     ])
+    _target_ini = True # pass the target_ini settings on PopulateItem
 
     @property
     def current_ini_name(self): return self.panel.detailsPanel.ini_name
@@ -579,7 +580,7 @@ class INIList(balt.UIList):
         not_applied = 0
         invalid = 0
         for ini_info in self.data_store.itervalues():
-            status = ini_info.tweak_status
+            status = ini_info.tweak_status()
             if status == -10: invalid += 1
             elif status == 0: not_applied += 1
             elif status == 10: mismatch += 1
@@ -591,7 +592,7 @@ class INIList(balt.UIList):
         tweaklist = _(u'Active Ini Tweaks:') + u'\n'
         tweaklist += u'[spoiler]\n'
         for tweak, info in sorted(self.data_store.items(), key=itemgetter(0)):
-            if not info.tweak_status == 20: continue
+            if not info.tweak_status() == 20: continue
             tweaklist+= u'%s\n' % tweak
         tweaklist += u'[/spoiler]\n'
         return tweaklist
@@ -605,9 +606,9 @@ class INIList(balt.UIList):
         items = super(INIList, self)._toDelete(items)
         return self.filterOutDefaultTweaks(items)
 
-    def set_item_format(self, ini_name, item_format):
+    def set_item_format(self, ini_name, item_format, target_ini_setts):
         iniInfo = self.data_store[ini_name]
-        status = iniInfo.tweak_status
+        status = iniInfo.tweak_status(target_ini_setts)
         #--Image
         checkMark = 0
         icon = 0    # Ok tweak, not applied
@@ -665,7 +666,7 @@ class INIList(balt.UIList):
             if target_ini: # if target was given calculate the status for it
                 stat = ini_info.getStatus(target_ini_file)
                 ini_info.reset_status() # iniInfos.ini may differ from target
-            else: stat = ini_info.tweak_status
+            else: stat = ini_info.tweak_status()
             if stat == 20 or not ini_info.is_applicable(stat): continue
             needsRefresh |= target_ini_file.applyTweakFile(
                 ini_info.read_ini_content())
@@ -881,7 +882,7 @@ class ModList(_ModsUIList):
         self.RefreshUI(refreshSaves=True)
 
     #--Populate Item
-    def set_item_format(self, mod_name, item_format):
+    def set_item_format(self, mod_name, item_format, target_ini_setts):
         mod_info = self.data_store[mod_name]
         #--Image
         status = mod_info.getStatus()
@@ -1966,7 +1967,7 @@ class SaveList(balt.UIList):
             u'Save files') + u' (' + starred + u')|' + starred
 
     #--Populate Item
-    def set_item_format(self, fileName, item_format):
+    def set_item_format(self, fileName, item_format, target_ini_setts):
         save_info = self.data_store[fileName]
         #--Image
         status = save_info.getStatus()
@@ -2227,7 +2228,7 @@ class InstallersList(balt.UIList):
     _type_textKey = {1: 'default.text', 2: 'installers.text.complex'}
 
     #--Item Info
-    def set_item_format(self, item, item_format):
+    def set_item_format(self, item, item_format, target_ini_setts):
         inst = self.data_store[item] # type: bosh.bain.Installer
         #--Text
         if inst.type == 2 and len(inst.subNames) == 2:
@@ -3462,7 +3463,7 @@ class PeopleList(balt.UIList):
                             self.data_store[name_][2].split(u'\n', 1)[0][:75]),
     ])
 
-    def set_item_format(self, item, item_format):
+    def set_item_format(self, item, item_format, target_ini_setts):
         item_format.icon_key = u'karma%+d' % self.data_store[item][1]
 
 #------------------------------------------------------------------------------

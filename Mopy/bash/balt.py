@@ -908,6 +908,7 @@ class UIList(wx.Panel):
     #--DnD
     _dndFiles = _dndList = False
     _dndColumns = ()
+    _target_ini = False # pass the target_ini settings on PopulateItem
 
     def __init__(self, parent, keyPrefix, listData=None, panel=None):
         wx.Panel.__init__(self, _AComponent._resolve(parent), style=wx.WANTS_CHARS)
@@ -1001,7 +1002,7 @@ class UIList(wx.Panel):
     def item_count(self): return self.__gList.lc_item_count()
 
     #--Items ----------------------------------------------
-    def PopulateItem(self, itemDex=-1, item=None):
+    def PopulateItem(self, itemDex=-1, item=None, target_ini_setts=None):
         """Populate ListCtrl for specified item. Either item or itemDex must be
         specified.
         :param itemDex: the index of the item in the list - must be given if
@@ -1024,7 +1025,7 @@ class UIList(wx.Panel):
                 self.__gList.InsertListCtrlItem(itemDex, labelTxt, item)
             else:
                 self.__gList._native_widget.SetItem(itemDex, colDex, labelTxt)
-        self.__setUI(item, itemDex)
+        self.__setUI(item, itemDex, target_ini_setts)
 
     class _ListItemFormat(object):
         def __init__(self):
@@ -1035,18 +1036,18 @@ class UIList(wx.Panel):
             self.italics = False
             self.underline = False
 
-    def set_item_format(self, item, item_format):
+    def set_item_format(self, item, item_format, target_ini_setts):
         """Populate item_format attributes for text and background colors
         and set icon, font and mouse text. Responsible (applicable if the
         data_store is a FileInfo subclass) for calling getStatus (or
         tweak_status in Inis) to update respective info's status."""
         pass # screens, bsas
 
-    def __setUI(self, fileName, itemDex):
+    def __setUI(self, fileName, itemDex, target_ini_setts):
         """Set font, status icon, background text etc."""
         gItem = self.__gList._native_widget.GetItem(itemDex)
         df = self._ListItemFormat()
-        self.set_item_format(fileName, df)
+        self.set_item_format(fileName, df, target_ini_setts=target_ini_setts)
         if df.icon_key and self.icons:
             if isinstance(df.icon_key, tuple):
                 img = self.icons.Get(*df.icon_key)
@@ -1067,17 +1068,23 @@ class UIList(wx.Panel):
         """Sort items and populate entire list."""
         self.mouseTexts.clear()
         items = set(self.data_store.keys())
+        if self.__class__._target_ini:
+            # hack for avoiding the syscall in get_ci_settings
+            target_setts = self.data_store.ini.get_ci_settings()
+        else:
+            target_setts = None
         #--Update existing items.
         index = 0
         while index < self.item_count:
             item = self.GetItem(index)
             if item not in items: self.__gList.RemoveItemAt(index)
             else:
-                self.PopulateItem(itemDex=index)
+                self.PopulateItem(itemDex=index, target_ini_setts=target_setts)
                 items.remove(item)
                 index += 1
         #--Add remaining new items
-        for item in items: self.PopulateItem(item=item)
+        for item in items:
+            self.PopulateItem(item=item, target_ini_setts=target_setts)
         #--Sort
         self.SortItems()
         self.autosizeColumns()
