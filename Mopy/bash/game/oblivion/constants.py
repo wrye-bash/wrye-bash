@@ -994,11 +994,12 @@ GmstTweaks = [
     ]
 
 #------------------------------------------------------------------------------
-# ListsMerger
+# Leveled Lists
 #------------------------------------------------------------------------------
 listTypes = ('LVLC','LVLI','LVSP',)
+
 #------------------------------------------------------------------------------
-# NamesPatcher
+# Import Prices
 #------------------------------------------------------------------------------
 namesTypes = {b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'BSGN', b'CLAS',
               b'CLOT', b'CONT', b'CREA', b'DOOR', b'ENCH', b'EYES', b'FACT',
@@ -1006,11 +1007,11 @@ namesTypes = {b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'BSGN', b'CLAS',
               b'NPC_', b'RACE', b'SGST', b'SLGM', b'SPEL', b'WEAP'}
 
 #------------------------------------------------------------------------------
-# ItemPrices Patcher
+# Import Prices
 #------------------------------------------------------------------------------
 pricesTypes = {'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},'BOOK':{},'CLOT':{},'INGR':{},'KEYM':{},'LIGH':{},'MISC':{},'SGST':{},'SLGM':{},'WEAP':{}}
 #------------------------------------------------------------------------------
-# StatsImporter
+# Import Stats
 #------------------------------------------------------------------------------
 statsTypes = {
     'ALCH':('eid', 'weight', 'value'),
@@ -1084,7 +1085,7 @@ statsHeaders = (
 )
 
 #------------------------------------------------------------------------------
-# SoundPatcher
+# Import Sounds
 #------------------------------------------------------------------------------
 soundsTypes = {
     "ACTI": ('sound',),
@@ -1101,39 +1102,28 @@ soundsTypes = {
 }
 
 #------------------------------------------------------------------------------
-# CellImporter
+# Import Cells
 #------------------------------------------------------------------------------
-cellAutoKeys = {u'C.Climate', u'C.Light', u'C.Music', u'C.Name', u'C.Owner',
-                u'C.RecordFlags', u'C.Regions', u'C.Water'}
 cellRecAttrs = {
-    u'C.Climate': ('climate',),
-    u'C.Light': ('ambientRed','ambientGreen','ambientBlue','unused1',
-                'directionalRed','directionalGreen','directionalBlue','unused2',
-                'fogRed','fogGreen','fogBlue','unused3',
-                'fogNear','fogFar','directionalXY','directionalZ',
-                'directionalFade','fogClip'),
-    u'C.Music': ('music',),
-    u'C.Name': ('full',),
-    u'C.Owner': ('ownership',),
-    u'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
-    u'C.Regions': ('regions',),
-    u'C.Water': ('water','waterHeight',),
-}
-cellRecFlags = {
-    u'C.Climate': 'behaveLikeExterior',
-    u'C.Music': '',
-    u'C.Name': '',
-    u'C.Owner': 'publicPlace',
-    u'C.Water': 'hasWater',
-    u'C.Light': '',
-    u'C.RecordFlags': '',
-    u'C.Regions': '',
+    u'C.Climate': (u'climate', u'flags.behaveLikeExterior'),
+    ##: Patches unuseds?
+    u'C.Light': (u'ambientRed', u'ambientGreen', u'ambientBlue', u'unused1',
+                 u'directionalRed', u'directionalGreen', u'directionalBlue',
+                 u'unused2', u'fogRed', u'fogGreen', u'fogBlue', u'unused3',
+                 u'fogNear', u'fogFar', u'directionalXY', u'directionalZ',
+                 u'directionalFade', u'fogClip'),
+    u'C.Music': (u'music',),
+    u'C.Name': (u'full',),
+    u'C.Owner': (u'ownership', u'flags.publicPlace'),
+    u'C.RecordFlags': (u'flags1',), # Yes seems funky but thats the way it is
+    u'C.Regions': (u'regions',),
+    u'C.Water': (u'water', u'waterHeight', u'flags.hasWater'),
 }
 cell_float_attrs = {u'fogNear', u'fogFar', u'directionalFade', u'fogClip',
                     u'waterHeight'}
 
 #------------------------------------------------------------------------------
-# GraphicsPatcher
+# Import Graphics
 #------------------------------------------------------------------------------
 graphicsTypes = {
     b'ACTI': (u'model',),
@@ -1193,12 +1183,12 @@ graphicsFidTypes = {
 }
 graphicsModelAttrs = (u'model', u'maleBody', u'maleWorld', u'femaleBody', u'femaleWorld')
 #------------------------------------------------------------------------------
-# Inventory Patcher
+# Import Inventory
 #------------------------------------------------------------------------------
 inventoryTypes = ('CREA','NPC_','CONT',)
 
 #------------------------------------------------------------------------------
-# Race Patcher
+# Race Records
 #------------------------------------------------------------------------------
 # Note that we use _x to avoid exposing these to the dynamic importer
 def _ob(_x): return u'Oblivion.esm', _x
@@ -1266,7 +1256,7 @@ default_eyes = {
 del _cobl, _ob
 
 #------------------------------------------------------------------------------
-# Text Patcher
+# Import Text
 #------------------------------------------------------------------------------
 text_types = {
     b'BOOK': (u'text',),
@@ -1298,14 +1288,14 @@ cc_passes = (
 )
 
 #------------------------------------------------------------------------------
-# Scripts Patcher
+# Import Scripts
 #------------------------------------------------------------------------------
 scripts_types = {'ACTI', 'ALCH', 'APPA', 'ARMO', 'BOOK', 'CLOT', 'CONT',
                  'CREA', 'DOOR', 'FLOR', 'FURN', 'INGR', 'KEYM', 'LIGH',
                  'MISC', 'NPC_', 'QUST', 'SGST', 'SLGM', 'WEAP'}
 
 #------------------------------------------------------------------------------
-# Actor Patchers
+# Import Actors
 #------------------------------------------------------------------------------
 actor_importer_attrs = {
     b'CREA': {
@@ -1358,12 +1348,12 @@ actor_importer_attrs = {
 actor_types = ('CREA', 'NPC_')
 
 #------------------------------------------------------------------------------
-# Spell Stats Patcher
+# Import Spell Stats
 #------------------------------------------------------------------------------
 spell_stats_attrs = (u'eid', u'cost', u'level', u'spellType', u'flags')
 
 #------------------------------------------------------------------------------
-# Actor Tweaker
+# Tweak Actors
 #------------------------------------------------------------------------------
 actor_tweaks = {
     u'VORB_NPCSkeletonPatcher',
@@ -1380,12 +1370,12 @@ actor_tweaks = {
 }
 
 #------------------------------------------------------------------------------
-# Names Tweaker
+# Tweak Names
 #------------------------------------------------------------------------------
 body_tags = u'ARGHTCCPBS'
 
 #------------------------------------------------------------------------------
-# Relations Patcher
+# Import Relations
 #------------------------------------------------------------------------------
 relations_attrs = (u'faction', u'mod')
 relations_csv_header = u'"%s","%s","%s","%s","%s","%s","%s"\n' % (
@@ -1394,19 +1384,19 @@ relations_csv_header = u'"%s","%s","%s","%s","%s","%s","%s"\n' % (
 relations_csv_row_format = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
 
 #------------------------------------------------------------------------------
-# Enchantment Stats Patcher
+# Import Enchantment Stats
 #------------------------------------------------------------------------------
 ench_stats_attrs = (u'itemType', u'chargeAmount', u'enchantCost', u'flags')
 
 #--------------------------------------------------------------------------
-# Effect Stats Patcher
+# Import Effect Stats
 #--------------------------------------------------------------------------
 mgef_stats_attrs = (u'flags', u'base_cost', u'associated_item', u'school',
                     u'resist_value', u'projectileSpeed', u'cef_enchantment',
                     u'cef_barter')
 
 #--------------------------------------------------------------------------
-# Assorted Tweaker
+# Tweak Assorted
 #------------------------------------------------------------------------------
 assorted_tweaks = {
     u'AssortedTweak_ArmorShows_Amulets',

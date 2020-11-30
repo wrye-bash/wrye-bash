@@ -61,16 +61,12 @@ class PatchDialog(DialogWindow):
             icon_bundle=Resources.bashMonkey, sizes_dict=balt.sizes, size=size)
         #--Data
         list_patches_dir() # refresh cached dir
-        groupOrder = {group: index for index, group in enumerate(
-            (_(u'General'), _(u'Importers'), _(u'Tweakers'), _(u'Special')))}
         patchConfigs = bosh.modInfos.table.getItem(patchInfo.name,u'bash.patch.configs',{})
         if configIsCBash(patchConfigs):
             patchConfigs = {}
         isFirstLoad = 0 == len(patchConfigs)
         self.patchInfo = patchInfo
         self._gui_patchers = [copy.deepcopy(p) for p in all_gui_patchers]
-        self._gui_patchers.sort(key=lambda a: a.__class__.patcher_name)
-        self._gui_patchers.sort(key=lambda a: groupOrder[a.patcher_type.group]) ##: what does this ordering do??
         for patcher in self._gui_patchers:
             patcher.getConfig(patchConfigs) #--Will set patcher.isEnabled
             patcher.SetIsFirstLoad(isFirstLoad)

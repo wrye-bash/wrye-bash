@@ -338,10 +338,9 @@ class GameInfo(object):
     # Bash Tags supported by this game
     allTags = set()
 
-    # Patcher available when building a Bashed Patch (referenced by class name)
-    # PatchMerger must come first if enabled, see
-    # patcher.patchers.base.PatchMerger.__init__
-    patchers = ()
+    # Patchers available when building a Bashed Patch (referenced by GUI class
+    # name, see gui_patchers.py for their definitions).
+    patchers = set()
 
     # Magic Info
     weaponTypes = ()
@@ -383,7 +382,8 @@ class GameInfo(object):
     save_rec_types = {}
 
     """
-    GLOB record tweaks used by patcher.patchers.multitweak_settings.GmstTweaker
+    GLOB record tweaks used by
+    patcher.patchers.multitweak_settings.TweakSettingsPatcher
 
     Each entry is a tuple in the following format:
       (DisplayText, MouseoverText, GLOB EditorID, Option1, Option2, ...,
@@ -406,7 +406,8 @@ class GameInfo(object):
     GlobalsTweaks = []
 
     """
-    GMST record tweaks used by patcher.patchers.multitweak_settings.GmstTweaker
+    GMST record tweaks used by
+    patcher.patchers.multitweak_settings.TweakSettingsPatcher
 
     Each entry is a tuple in the following format:
       (DisplayText, MouseoverText, GMST EditorID, Option1, Option2, ...,
@@ -429,69 +430,67 @@ class GameInfo(object):
     GmstTweaks = []
 
     #--------------------------------------------------------------------------
-    # ListsMerger patcher (leveled list patcher)
+    # Leveled Lists
     #--------------------------------------------------------------------------
     listTypes = ()
 
     #--------------------------------------------------------------------------
-    # NamesPatcher
+    # Import Names
     #--------------------------------------------------------------------------
     namesTypes = set()  # initialize with literal
 
     #--------------------------------------------------------------------------
-    # ItemPrices Patcher
+    # Import Prices
     #--------------------------------------------------------------------------
     pricesTypes = {}
 
     #--------------------------------------------------------------------------
-    # StatsImporter
+    # Import Stats
     #--------------------------------------------------------------------------
     statsTypes = {}
     statsHeaders = ()
 
     #--------------------------------------------------------------------------
-    # SoundPatcher
+    # Import Sounds
     #--------------------------------------------------------------------------
     soundsTypes = {}
 
     #--------------------------------------------------------------------------
-    # CellImporter
+    # Import Cells
     #--------------------------------------------------------------------------
-    cellAutoKeys = set()  # use a set literal
     cellRecAttrs = {}
-    cellRecFlags = {}
     cell_float_attrs = set()
     cell_skip_interior_attrs = set()
 
     #--------------------------------------------------------------------------
-    # GraphicsPatcher
+    # Import Graphics
     #--------------------------------------------------------------------------
     graphicsTypes = {}
     graphicsFidTypes = {}
     graphicsModelAttrs = ()
 
     #--------------------------------------------------------------------------
-    # Inventory Patcher
+    # Import Inventory
     #--------------------------------------------------------------------------
     inventoryTypes = ()
 
     #--------------------------------------------------------------------------
-    # Race Patcher
+    # Race Records
     #--------------------------------------------------------------------------
     default_eyes = {}
 
     #--------------------------------------------------------------------------
-    # Keywords Patcher
+    # Import Keywords
     #--------------------------------------------------------------------------
     keywords_types = ()
 
     #--------------------------------------------------------------------------
-    # Text Patcher
+    # Import Text
     #--------------------------------------------------------------------------
     text_types = {}
 
     #--------------------------------------------------------------------------
-    # Object Bounds Patcher
+    # Import Object Bounds
     #--------------------------------------------------------------------------
     object_bounds_types = set()
 
@@ -504,61 +503,61 @@ class GameInfo(object):
     cc_passes = ()
 
     #--------------------------------------------------------------------------
-    # Scripts Patcher
+    # Import Scripts
     #--------------------------------------------------------------------------
     scripts_types = set()
 
     #--------------------------------------------------------------------------
-    # Destructible Patcher
+    # Import Destructible
     #--------------------------------------------------------------------------
     destructible_types = set()
 
     #--------------------------------------------------------------------------
-    # Actor Patchers
+    # Import Actors
     #--------------------------------------------------------------------------
     actor_importer_attrs = {}
     actor_types = ()
 
     #--------------------------------------------------------------------------
-    # Spell Stats Patcher
+    # Import Spell Stats
     #--------------------------------------------------------------------------
     spell_stats_attrs = ()
     spell_stats_types = {b'SPEL'}
 
     #--------------------------------------------------------------------------
-    # Actor Tweaker
+    # Tweak Actors
     #--------------------------------------------------------------------------
     actor_tweaks = set()
 
     #--------------------------------------------------------------------------
-    # Assorted Tweaker
+    # Tweak Assorted
     #--------------------------------------------------------------------------
     nirnroots = _(u'Nirnroots')
 
     #--------------------------------------------------------------------------
-    # Names Tweaker
+    # Tweak Names
     #--------------------------------------------------------------------------
     body_tags = u''
 
     #--------------------------------------------------------------------------
-    # Relations Patcher
+    # Import Relations
     #--------------------------------------------------------------------------
     relations_attrs = ()
     relations_csv_header = u''
     relations_csv_row_format = u''
 
     #--------------------------------------------------------------------------
-    # Enchantment Stats Patcher
+    # Import Enchantment Stats
     #--------------------------------------------------------------------------
     ench_stats_attrs = ()
 
     #--------------------------------------------------------------------------
-    # Effect Stats Patcher
+    # Import Effect Stats
     #--------------------------------------------------------------------------
     mgef_stats_attrs = ()
 
     #--------------------------------------------------------------------------
-    # Assorted Tweaker
+    # Tweak Assorted
     #--------------------------------------------------------------------------
     assorted_tweaks = set()
     # Only allow the 'mark playable' tweaks to mark a piece of armor/clothing
@@ -625,8 +624,8 @@ class GameInfo(object):
     _constants_members = {
         u'GlobalsTweaks', u'GmstTweaks', u'actor_importer_attrs',
         u'actor_tweaks', u'actor_types', u'actor_values', u'bethDataFiles',
-        u'body_tags', u'cc_valid_types', u'cc_passes', u'cellAutoKeys',
-        u'cell_float_attrs', u'cellRecAttrs', u'cellRecFlags',
+        u'body_tags', u'cc_valid_types', u'cc_passes',
+        u'cell_float_attrs', u'cellRecAttrs',
         u'cell_skip_interior_attrs', u'condition_function_data',
         u'default_eyes', u'destructible_types', u'ench_stats_attrs',
         u'generic_av_effects', u'getvatsvalue_index',

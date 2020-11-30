@@ -38,7 +38,7 @@ bethDataFiles = {
 }
 
 #------------------------------------------------------------------------------
-# Race Patcher
+# Race Records
 #------------------------------------------------------------------------------
 # Note that we use _x to avoid exposing these to the dynamic importer
 def _neh(_x): return u'Nehrim.esm', _x
@@ -54,7 +54,7 @@ default_eyes = {
 del _neh
 
 #------------------------------------------------------------------------------
-# Actor Tweaker
+# Tweak Actors
 #------------------------------------------------------------------------------
 actor_tweaks = {
     u'VanillaNPCSkeletonPatcher',
@@ -64,6 +64,6 @@ actor_tweaks = {
 }
 
 #------------------------------------------------------------------------------
-# Assorted Tweaker
+# Tweak Assorted
 #------------------------------------------------------------------------------
 nirnroots = _(u'Vynroots')

@@ -23,7 +23,7 @@
 
 """This module contains the oblivion MultitweakItem patcher classes that tweak
 races records. As opposed to the rest of the multitweak items these are not
-grouped by a MultiTweaker but by the RacePatcher (also in this module) which
+grouped by a MultiTweaker but by the race patcher (also in this module) which
 is a special patcher. Notice the PBash ones do not log in buildPatch - the
 RacesTweaker patcher was calling their "log" method - now super's _patchLog()
 """
@@ -64,7 +64,7 @@ class _ARaceTweak(MultiTweakItem):
     """ABC for race tweaks."""
     tweak_read_classes = b'RACE',
     tweak_log_msg = _(u'Races Tweaked: %(total_changed)d')
-    _tweak_races_data = None # sentinel, set in RacePatcher.buildPatch
+    _tweak_races_data = None # sentinel, set in RaceRecordsPatcher.buildPatch
 
     def _calc_changed_face_parts(self, face_attr, collected_races_data):
         """Calculates a changes dictionary for the specified face attribute,
@@ -295,11 +295,11 @@ class RaceTweaker_SexlessHairs(_ARaceTweak):
         record.flags.notFemale = False
 
 #------------------------------------------------------------------------------
-# Race Patcher ----------------------------------------------------------------
+# Race Records ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class RacePatcher(AMultiTweaker, ListPatcher):
+class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
     """Race patcher - we inherit from AMultiTweaker to use tweak_instances."""
-    group = _(u'Special')
+    patcher_group = u'Special'
     scanOrder = 40
     editOrder = 40
     _read_write_records = ('RACE', 'EYES', 'HAIR', 'NPC_',)

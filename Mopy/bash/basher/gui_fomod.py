@@ -383,27 +383,27 @@ class PageSelect(PageInstaller):
 
     def on_next(self):
         sel_options = []
-        for group, option_chks in self.group_option_map.iteritems():
+        for grp, option_chks in self.group_option_map.iteritems():
             opts_selected = [self.checkable_to_option[c] for c in option_chks
                              if c.is_checked]
             option_len = len(opts_selected)
-            gtype = group.group_type
+            gtype = grp.group_type
             if gtype == u'SelectExactlyOne' and option_len != 1:
                 fm_err = _(u'Group "{}" should have exactly 1 option selected '
-                           u'but has {}.').format(group.group_name, option_len)
+                           u'but has {}.').format(grp.group_name, option_len)
                 self.show_fomod_error(fm_err)
             elif gtype == u'SelectAtMostOne' and option_len > 1:
                 fm_err = _(u'Group "{}" should have at most 1 option selected '
-                           u'but has {}.').format(group.group_name, option_len)
+                           u'but has {}.').format(grp.group_name, option_len)
                 self.show_fomod_error(fm_err)
             elif gtype == u'SelectAtLeast' and option_len < 1:
                 fm_err = _(u'Group "{}" should have at least 1 option '
-                           u'selected but has {}.').format(group.group_name,
+                           u'selected but has {}.').format(grp.group_name,
                                                            option_len)
                 self.show_fomod_error(fm_err)
             elif gtype == u'SelectAll' and option_len != len(option_chks):
                 fm_err = _(u'Group "{}" should have all options selected but '
-                           u'has only {}.').format(group.group_name,
+                           u'has only {}.').format(grp.group_name,
                                                    option_len)
                 self.show_fomod_error(fm_err)
             sel_options.extend(opts_selected)

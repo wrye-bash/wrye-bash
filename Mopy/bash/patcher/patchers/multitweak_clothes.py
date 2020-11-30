@@ -22,7 +22,7 @@
 # =============================================================================
 
 """This module contains oblivion multitweak item patcher classes that belong
-to the Clothes Multitweaker - as well as the ClothesTweaker itself."""
+to the Clothes Multitweaker - as well as the tweaker itself."""
 import itertools
 from ...patcher.base import AMultiTweaker, DynamicTweak
 from ...patcher.patchers.base import MultiTweakItem
@@ -157,7 +157,7 @@ class _AClothesTweaker(AMultiTweaker):
     scanOrder = 31
     editOrder = 31
 
-class ClothesTweaker(_AClothesTweaker,MultiTweaker):
+class TweakClothesPatcher(_AClothesTweaker,MultiTweaker):
     @classmethod
     def tweak_instances(cls):
         return sorted(itertools.chain(

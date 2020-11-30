@@ -172,20 +172,19 @@ class OblivionGameInfo(GameInfo):
         u'SpellStats', u'Stats', u'Text', u'Voice-F', u'Voice-M',
     }
 
-    patchers = (
-        u'PatchMerger', # PatchMerger must come first!
-        u'ActorImporter', u'AlchemicalCatalogs', u'AliasesPatcher',
-        u'AssortedTweaker', u'CellImporter', u'ClothesTweaker',
-        u'CoblExhaustion', u'ContentsChecker', u'DeathItemPatcher',
-        u'GmstTweaker', u'GraphicsPatcher', u'ImportActorsSpells',
+    patchers = {
+        u'AliasModNames', u'CoblCatalogs', u'CoblExhaustion',
+        u'ContentsChecker', u'ImportActors', u'ImportActorsAIPackages',
+        u'ImportActorsAnimations', u'ImportActorsDeathItems',
+        u'ImportActorsFaces', u'ImportActorsSpells', u'ImportCells',
         u'ImportEffectsStats', u'ImportEnchantmentStats', u'ImportFactions',
-        u'ImportInventory', u'ImportRelations', u'ImportScripts',
-        u'KFFZPatcher', u'ListsMerger', u'MFactMarker', u'NamesPatcher',
-        u'NamesTweaker', u'NPCAIPackagePatcher', u'NpcFacePatcher',
-        u'RacePatcher', u'RoadImporter', u'SEWorldEnforcer', u'SoundPatcher',
-        u'SpellsPatcher', u'StatsPatcher', u'TextImporter', u'TweakActors',
-        u'UpdateReferences',
-    )
+        u'ImportGraphics', u'ImportInventory', u'ImportNames',
+        u'ImportRelations', u'ImportRoads', u'ImportScripts', u'ImportSounds',
+        u'ImportSpellStats', u'ImportStats', u'ImportText', u'LeveledLists',
+        u'MergePatches', u'MorphFactions', u'RaceRecords', u'ReplaceFormIDs',
+        u'SEWorldTests', u'TweakActors', u'TweakAssorted', u'TweakClothes',
+        u'TweakNames', u'TweakSettings',
+    }
 
     weaponTypes = (
         _(u'Blade (1 Handed)'),

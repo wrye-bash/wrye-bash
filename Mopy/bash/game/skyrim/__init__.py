@@ -182,18 +182,17 @@ class SkyrimGameInfo(GameInfo):
         u'SpellStats', u'Stats', u'Text',
     }
 
-    patchers = (
-        u'PatchMerger', # PatchMerger must come first!
-        u'ActorImporter', u'AliasesPatcher', u'AssortedTweaker',
-        u'CellImporter', u'ContentsChecker', u'DeathItemPatcher',
-        u'DestructiblePatcher', u'GmstTweaker', u'GraphicsPatcher',
-        u'ImportActorsSpells', u'ImportEffectsStats',
-        u'ImportEnchantmentStats', u'ImportFactions', u'ImportInventory',
-        u'ImportOutfits', u'ImportRelations', u'KeywordsImporter',
-        u'ListsMerger', u'NamesPatcher', u'NPCAIPackagePatcher',
-        u'ObjectBoundsImporter', u'SoundPatcher', u'SpellsPatcher',
-        u'StatsPatcher', u'TextImporter', u'TweakActors',
-    )
+    patchers = {
+        u'AliasModNames', u'ContentsChecker', u'ImportActors',
+        u'ImportActorsAIPackages', u'ImportActorsDeathItems',
+        u'ImportActorsSpells', u'ImportCells', u'ImportDestructible',
+        u'ImportEffectsStats', u'ImportEnchantmentStats', u'ImportFactions',
+        u'ImportGraphics', u'ImportInventory', u'ImportKeywords',
+        u'ImportNames', u'ImportObjectBounds', u'ImportOutfits',
+        u'ImportRelations', u'ImportSounds', u'ImportSpellStats',
+        u'ImportStats', u'ImportText', u'LeveledLists', u'MergePatches',
+        u'TweakActors', u'TweakAssorted', u'TweakSettings',
+    }
 
     weaponTypes = (
         _(u'Blade (1 Handed)'),

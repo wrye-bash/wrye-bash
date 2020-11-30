@@ -193,7 +193,7 @@ GmstTweaks.insert(0, (
     ))
 
 #------------------------------------------------------------------------------
-# NamesPatcher
+# Import Names
 #------------------------------------------------------------------------------
 namesTypes = namesTypes | {
     b'CCRD', b'CHAL', b'CHIP', b'CMNY', b'CSNO', b'IMOD', b'RCCT', b'RCPE',
@@ -201,7 +201,7 @@ namesTypes = namesTypes | {
 }
 
 #------------------------------------------------------------------------------
-# StatsImporter
+# Import Stats
 #------------------------------------------------------------------------------
 statsTypes.update({
     b'AMMO': (u'eid', u'weight', u'value', u'speed', u'clipRounds',
@@ -281,7 +281,7 @@ statsHeaders = (
 )
 
 #------------------------------------------------------------------------------
-# SoundPatcher
+# Import Sounds
 #------------------------------------------------------------------------------
 soundsTypes.update({
     b'CONT': (u'soundOpen', u'soundClose', u'soundRandomLooping'),
@@ -293,7 +293,7 @@ soundsTypes.update({
 })
 
 #------------------------------------------------------------------------------
-# GraphicsPatcher
+# Import Graphics
 #------------------------------------------------------------------------------
 graphicsTypes.update({
     b'CCRD': (u'iconPath', u'smallIconPath', u'model', u'textureFace',
@@ -312,7 +312,7 @@ graphicsTypes.update({
 })
 
 #------------------------------------------------------------------------------
-# Race Patcher
+# Race Records
 #------------------------------------------------------------------------------
 # Note that we use _x to avoid exposing these to the dynamic importer
 def _fnv(_x): return u'FalloutNV.esm', _x
@@ -366,7 +366,7 @@ default_eyes = {
 del _fnv
 
 #------------------------------------------------------------------------------
-# Text Patcher
+# Import Text
 #------------------------------------------------------------------------------
 text_types.update({
     b'CHAL': (u'description',),
@@ -374,7 +374,7 @@ text_types.update({
 })
 
 #------------------------------------------------------------------------------
-# Object Bounds Patcher
+# Import Object Bounds
 #------------------------------------------------------------------------------
 object_bounds_types = object_bounds_types | {
     b'CCRD', b'CHIP', b'CMNY', b'IMOD',
@@ -397,17 +397,17 @@ cc_valid_types = {
 }
 
 #------------------------------------------------------------------------------
-# Scripts Patcher
+# Import Scripts
 #------------------------------------------------------------------------------
 scripts_types = scripts_types | {b'AMMO', b'CCRD', b'CHAL', b'IMOD'}
 
 #------------------------------------------------------------------------------
-# Destructible Patcher
+# Import Destructible
 #------------------------------------------------------------------------------
 destructible_types = destructible_types | {b'CHIP', b'IMOD'}
 
 #------------------------------------------------------------------------------
-# Actor Patchers
+# Import Actors
 #------------------------------------------------------------------------------
 actor_importer_attrs[b'NPC_'][u'Actors.ACBS'] = ( # FO3 + flags.autocalcService
     u'barterGold', u'calcMax', u'calcMin', u'dispositionBase', u'fatigue',
@@ -420,6 +420,6 @@ actor_importer_attrs[b'NPC_'][u'Actors.ACBS'] = ( # FO3 + flags.autocalcService
     u'templateFlags')
 
 #------------------------------------------------------------------------------
-# Assorted Tweaker
+# Tweak Assorted
 #------------------------------------------------------------------------------
 assorted_tweaks |= {u'AssortedTweak_ArrowWeight'}

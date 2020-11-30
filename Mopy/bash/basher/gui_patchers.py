@@ -39,24 +39,30 @@ reCsvExt = re.compile(u'' r'\.csv$', re.I | re.U)
 
 class _PatcherPanel(object):
     """Basic patcher panel with no options."""
-    selectCommands = True # whether this panel displays De/Select All
+    patcher_name = u'UNDEFINED'
+    patcher_desc = u'UNDEFINED'
+    autoKey = set()
+    # The key that will be used to read and write entries for BP configs
+    # These are sometimes quite ugly - backwards compat leftover from when
+    # those were the class names and got written directly into the configs
+    _config_key = None # type: unicode
+    patcher_type = None # type: base.Abstract_Patcher
     # CONFIG DEFAULTS
     default_isEnabled = False # is the patcher enabled on a new bashed patch ?
-    patcher_type = None # type: base.Abstract_Patcher
-    _patcher_txt = u'UNDEFINED'
-    patcher_name = u'UNDEFINED'
+    selectCommands = True # whether this panel displays De/Select All
 
     def __init__(self): # WIP- investigate why we instantiate gui patchers once
+        if not self.__class__._config_key:
+            raise SyntaxError(u'No _config_key set for patcher panel class '
+                              u'%s' % self.__class__.__name__)
         self.gConfigPanel = None
 
     @property
     def patcher_tip(self):
-        return re.sub(u'' r'\..*', u'.', self._patcher_txt.split(u'\n')[0],
+        # Remove everything but the first sentence from the first line of the
+        # patcher description
+        return re.sub(u'' r'\..*', u'.', self.patcher_desc.split(u'\n')[0],
                       flags=re.U)
-
-    @property
-    def patcher_text(self): ##: do we still need this?
-        return self.__class__._patcher_txt
 
     def SetIsFirstLoad(self,isFirstLoad):
         self.is_first_load = isFirstLoad
@@ -68,10 +74,7 @@ class _PatcherPanel(object):
     def _BoldPatcherLabel(self): self.patch_dialog.BoldPatcher(self)
 
     def _GetIsFirstLoad(self):
-        if hasattr(self, 'is_first_load'):
-            return self.is_first_load
-        else:
-            return False
+        return getattr(self, u'is_first_load', False)
 
     def GetConfigPanel(self, parent, config_layout, gTipText):
         """Show config.
@@ -84,7 +87,7 @@ class _PatcherPanel(object):
         self.gConfigPanel = PanelWin(parent, no_border=False)
         self.main_layout = VLayout(
             item_expand=True, item_weight=1, spacing=4, items=[
-                (Label(self.gConfigPanel, text_wrap(self._patcher_txt, 70)),
+                (Label(self.gConfigPanel, text_wrap(self.patcher_desc, 70)),
                  LayoutOptions(weight=0))])
         self.main_layout.apply_to(self.gConfigPanel)
         config_layout.add(self.gConfigPanel)
@@ -107,7 +110,7 @@ class _PatcherPanel(object):
         config for this patch stored in modInfos.table[patch][
         'bash.patch.configs']. If no config is saved then the class
         default_XXX values are used for the relevant attributes."""
-        config = configs.setdefault(self.__class__.__name__, {})
+        config = configs.setdefault(self.__class__._config_key, {})
         self.isEnabled = config.get('isEnabled',
                                     self.__class__.default_isEnabled)
         # return the config dict for this patcher to read additional values
@@ -117,19 +120,19 @@ class _PatcherPanel(object):
         """Save config to configs dictionary.
 
         Most patchers just save their enabled state, except the AListPatcher
-        subclasses - which save their choices - and the AliasesPatcher that
+        subclasses - which save their choices - and the AliasModNames that
         saves the aliases."""
-        config = configs[self.__class__.__name__] = {}
+        config = configs[self.__class__._config_key] = {}
         config['isEnabled'] = self.isEnabled
         return config # return the config dict for this patcher to further edit
 
     def log_config(self, config, clip, log):
-        className = self.__class__.__name__
+        ckey = self.__class__._config_key
         humanName = self.__class__.patcher_name
         # Patcher in the config?
-        if not className in config: return
+        if ckey not in config: return
         # Patcher active?
-        conf = config[className]
+        conf = config[ckey]
         if not conf.get('isEnabled',False): return
         # Active
         log.setHeader(u'== ' + humanName)
@@ -170,10 +173,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
     # CONFIG DEFAULTS
     default_aliases = {}
     patcher_name = _(u'Alias Mod Names')
-    _patcher_txt = _(u'Specify mod aliases for reading CSV source files.')
-
-    @property
-    def patcher_tip(self): return u''
+    patcher_desc = _(u'Specify mod aliases for reading CSV source files.')
 
     def GetConfigPanel(self, parent, config_layout, gTipText):
         """Show config."""
@@ -241,7 +241,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
 # forceItemCheck to rest
 class _ListPatcherPanel(_PatcherPanel):
     """Patcher panel with option to select source elements."""
-    listLabel = _(u'Source Mods/Files')
+    listLabel = _(u'Source Mods')
     forceAuto = True
     forceItemCheck = False #--Force configChecked to True for all items
     canAutoItemCheck = True #--GUI: Whether new items are checked by default
@@ -941,6 +941,7 @@ class _GmstTweakerPanel(_TweakPatcherPanel):
 
 class _AListPanelCsv(_ListPatcherPanel):
     """Base class for list panels that support CSV files as well."""
+    listLabel = _(u'Source Mods/Files')
     # CSV files for this patcher have to end with _{this value}.csv
     _csv_key = None
 
@@ -957,7 +958,7 @@ class _AListPanelCsv(_ListPatcherPanel):
 
 #------------------------------------------------------------------------------
 # GUI Patcher classes
-# Do _not_ rename the gui patcher classes or you will break existing BP configs
+# Do _not_ change the _config_key attr or you will break existing BP configs
 #------------------------------------------------------------------------------
 from ..patcher.patchers import base
 from ..patcher.patchers import mergers, preservers
@@ -967,127 +968,142 @@ from ..patcher.patchers import multitweak_actors, multitweak_assorted, \
 from ..patcher.patchers import special
 
 # Patchers 10 -----------------------------------------------------------------
-class AliasesPatcher(_AliasesPatcherPanel):
-    patcher_type = base.AliasesPatcher
+class AliasModNames(_AliasesPatcherPanel):
+    _config_key = u'AliasesPatcher'
+    patcher_type = base.AliasModNamesPatcher
 
-class PatchMerger(_MergerPanel):
+class MergePatches(_MergerPanel):
     """Merges specified patches into Bashed Patch."""
     patcher_name = _(u'Merge Patches')
-    _patcher_txt = _(u'Merge patch mods into Bashed Patch.')
-    autoKey = {u'Merge'}
-    patcher_type = base.PatchMerger
+    patcher_desc = _(u'Merge patch mods into Bashed Patch.')
+    _config_key = u'PatchMerger'
+    patcher_type = base.MergePatchesPatcher
 
 # Patchers 20 -----------------------------------------------------------------
-class GraphicsPatcher(_ImporterPatcherPanel):
+class ImportGraphics(_ImporterPatcherPanel):
     """Merges changes to graphics (models and icons)."""
     patcher_name = _(u'Import Graphics')
-    _patcher_txt = _(u'Import graphics (models, icons, etc.) from source '
+    patcher_desc = _(u'Import graphics (models, icons, etc.) from source '
                      u'mods.')
     autoKey = {u'Graphics'}
-    patcher_type = preservers.GraphicsPatcher
+    _config_key = u'GraphicsPatcher'
+    patcher_type = preservers.ImportGraphicsPatcher
 
 # -----------------------------------------------------------------------------
-class KFFZPatcher(_ImporterPatcherPanel):
+class ImportActorsAnimations(_ImporterPatcherPanel):
     """Merges changes to actor animation lists."""
     patcher_name = _(u'Import Actors: Animations')
-    _patcher_txt = _(u'Import actor animations from source mods.')
+    patcher_desc = _(u'Import actor animations from source mods.')
     autoKey = {u'Actors.Anims'}
-    patcher_type = preservers.KFFZPatcher
+    _config_key = u'KFFZPatcher'
+    patcher_type = preservers.ImportActorsAnimationsPatcher
 
 # -----------------------------------------------------------------------------
-class NPCAIPackagePatcher(_ImporterPatcherPanel):
+class ImportActorsAIPackages(_ImporterPatcherPanel):
     """Merges changes to the AI Packages of Actors."""
     patcher_name = _(u'Import Actors: AI Packages')
-    _patcher_txt = _(u'Import actor AI Package links from source mods.')
+    patcher_desc = _(u'Import actor AI Package links from source mods.')
     autoKey = {u'Actors.AIPackages', u'Actors.AIPackagesForceAdd'}
-    patcher_type = mergers.NPCAIPackagePatcher
+    _config_key = u'NPCAIPackagePatcher'
+    patcher_type = mergers.ImportActorsAIPackagesPatcher
 
 # -----------------------------------------------------------------------------
-class ActorImporter(_ImporterPatcherPanel):
+class ImportActors(_ImporterPatcherPanel):
     """Merges changes to actors."""
     patcher_name = _(u'Import Actors')
-    _patcher_txt = _(u'Import various actor attributes from source mods.')
+    patcher_desc = _(u'Import various actor attributes from source mods.')
     autoKey = set(chain.from_iterable(
         d.iterkeys() for d in bush.game.actor_importer_attrs.itervalues()))
-    patcher_type = preservers.ActorImporter
+    _config_key = u'ActorImporter'
+    patcher_type = preservers.ImportActorsPatcher
 
 # -----------------------------------------------------------------------------
-class DeathItemPatcher(_ImporterPatcherPanel):
+class ImportActorsDeathItems(_ImporterPatcherPanel):
     """Merges changes to actor death items."""
     patcher_name = _(u'Import Actors: Death Items')
-    _patcher_txt = _(u'Import actor death items from source mods.')
+    patcher_desc = _(u'Import actor death items from source mods.')
     autoKey = {u'Actors.DeathItem'}
-    patcher_type = preservers.DeathItemPatcher
+    _config_key = u'DeathItemPatcher'
+    patcher_type = preservers.ImportActorsDeathItemsPatcher
 
 # -----------------------------------------------------------------------------
-class CellImporter(_ImporterPatcherPanel):
+class ImportCells(_ImporterPatcherPanel):
     """Merges changes to cells (climate, lighting, and water.)"""
-    _patcher_txt = _(u'Import cells (climate, lighting, and water) from '
-                     u'source mods.')
     patcher_name = _(u'Import Cells')
-    patcher_type = preservers.CellImporter
-    autoKey = bush.game.cellAutoKeys
+    patcher_desc = _(u'Import cells (climate, lighting, and water) from '
+                     u'source mods.')
+    autoKey = set(bush.game.cellRecAttrs)
+    _config_key = u'CellImporter'
+    patcher_type = preservers.ImportCellsPatcher
 
 # -----------------------------------------------------------------------------
 class ImportFactions(_ImporterPatcherPanel, _AListPanelCsv):
     """Import factions to creatures and NPCs."""
-    patcher_name = _(u'Import Factions')
-    _patcher_txt = _(u'Import factions from source mods/files.')
+    patcher_name = _(u'Import Actors: Factions')
+    patcher_desc = _(u'Import actor factions from source mods/files.')
     autoKey = {u'Factions'}
     _csv_key = u'Factions'
-    patcher_type = preservers.ImportFactions
+    _config_key = u'ImportFactions'
+    patcher_type = preservers.ImportActorsFactionsPatcher
 
 # -----------------------------------------------------------------------------
 class ImportRelations(_ImporterPatcherPanel, _AListPanelCsv):
     """Import faction relations to factions."""
     patcher_name = _(u'Import Relations')
-    _patcher_txt = _(u'Import relations from source mods/files.')
+    patcher_desc = _(u'Import relations from source mods/files.')
     autoKey = {u'Relations.Add', u'Relations.Change', u'Relations.Remove'}
     _csv_key = u'Relations'
-    patcher_type = mergers.ImportRelations
+    _config_key = u'ImportRelations'
+    patcher_type = mergers.ImportRelationsPatcher
 
 # -----------------------------------------------------------------------------
 class ImportInventory(_ImporterPatcherPanel):
     """Merge changes to actor inventories."""
     patcher_name = _(u'Import Inventory')
-    _patcher_txt = _(u'Merges changes to NPC, creature and container '
+    patcher_desc = _(u'Merges changes to NPC, creature and container '
                      u'inventories.')
     autoKey = {u'Invent.Add', u'Invent.Change', u'Invent.Remove'}
-    patcher_type = mergers.ImportInventory
+    _config_key = u'ImportInventory'
+    patcher_type = mergers.ImportInventoryPatcher
 
 # -----------------------------------------------------------------------------
 class ImportOutfits(_ImporterPatcherPanel):
     """Merge changes to outfits."""
     patcher_name = _(u'Import Outfits')
-    _patcher_txt = _(u'Merges changes to NPC outfits.')
+    patcher_desc = _(u'Merges changes to NPC outfits.')
     autoKey = {u'Outfits.Add', u'Outfits.Remove'}
-    patcher_type = mergers.ImportOutfits
+    _config_key = u'ImportOutfits'
+    patcher_type = mergers.ImportOutfitsPatcher
 
 # -----------------------------------------------------------------------------
 class ImportActorsSpells(_ImporterPatcherPanel):
     """Merges changes to the spells lists of Actors."""
     patcher_name = _(u'Import Actors: Spells')
-    _patcher_txt = _(u'Merges changes to actor spell / effect lists.')
+    patcher_desc = _(u'Merges changes to actor spell / effect lists.')
     autoKey = {u'Actors.Spells', u'Actors.SpellsForceAdd'}
-    patcher_type = mergers.ImportActorsSpells
+    _config_key = u'ImportActorsSpells'
+    patcher_type = mergers.ImportActorsSpellsPatcher
 
 # -----------------------------------------------------------------------------
-class NamesPatcher(_ImporterPatcherPanel, _AListPanelCsv):
+class ImportNames(_ImporterPatcherPanel, _AListPanelCsv):
     """Import names from source mods/files."""
     patcher_name = _(u'Import Names')
-    _patcher_txt = _(u'Import names from source mods/files.')
+    patcher_desc = _(u'Import names from source mods/files.')
     autoKey = {u'Names'}
     _csv_key = u'Names'
-    patcher_type = preservers.NamesPatcher
+    _config_key = u'NamesPatcher'
+    patcher_type = preservers.ImportNamesPatcher
 
 # -----------------------------------------------------------------------------
-class NpcFacePatcher(_ImporterPatcherPanel):
+class ImportActorsFaces(_ImporterPatcherPanel):
     """NPC Faces patcher, for use with TNR or similar mods."""
     patcher_name = _(u'Import Actors: Faces')
-    _patcher_txt = _(u'Import NPC face/eyes/hair from source mods. For use '
+    patcher_desc = _(u'Import NPC face/eyes/hair from source mods. For use '
                      u'with TNR and similar mods.')
     autoKey = {u'NPC.Eyes', u'NPC.FaceGen', u'NPC.Hair',
                u'NpcFacesForceFullImport'}
+    _config_key = u'NpcFacePatcher'
+    patcher_type = preservers.ImportActorsFacesPatcher
 
     def _get_auto_mods(self, autoRe=re.compile(u'^TNR .*.esp$', re.I | re.U)):
         """Pick TNR esp if present in addition to appropriately tagged mods."""
@@ -1095,153 +1111,168 @@ class NpcFacePatcher(_ImporterPatcherPanel):
             patch_files.executing_patch)
         return [mod for mod in mods_prior_to_patch if autoRe.match(mod.s) or (
             self.__class__.autoKey & bosh.modInfos[mod].getBashTags())]
-    patcher_type = preservers.NpcFacePatcher
 
 # -----------------------------------------------------------------------------
-class SoundPatcher(_ImporterPatcherPanel):
+class ImportSounds(_ImporterPatcherPanel):
     """Imports sounds from source mods into patch."""
     patcher_name = _(u'Import Sounds')
-    _patcher_txt = _(u'Import sounds (from Magic Effects, Containers, '
+    patcher_desc = _(u'Import sounds (from Magic Effects, Containers, '
                      u'Activators, Lights, Weathers and Doors) from source '
                      u'mods.')
     autoKey = {u'Sound'}
-    patcher_type = preservers.SoundPatcher
+    _config_key = u'SoundPatcher'
+    patcher_type = preservers.ImportSoundsPatcher
 
 # -----------------------------------------------------------------------------
-class StatsPatcher(_ImporterPatcherPanel, _AListPanelCsv):
+class ImportStats(_ImporterPatcherPanel, _AListPanelCsv):
     """Import stats from mod file."""
     patcher_name = _(u'Import Stats')
-    _patcher_txt = _(u'Import stats from any pickupable items from source '
+    patcher_desc = _(u'Import stats from any pickupable items from source '
                      u'mods/files.')
     autoKey = {u'Stats'}
     _csv_key = u'Stats'
-    patcher_type = preservers.StatsPatcher
+    _config_key = u'StatsPatcher'
+    patcher_type = preservers.ImportStatsPatcher
 
 # -----------------------------------------------------------------------------
 class ImportScripts(_ImporterPatcherPanel):
     """Imports attached scripts on objects."""
     patcher_name = _(u'Import Scripts')
-    _patcher_txt = _(u'Import scripts on various objects (e.g. containers, '
+    patcher_desc = _(u'Import scripts on various objects (e.g. containers, '
                      u'weapons, etc.) from source mods.')
     autoKey = {u'Scripts'}
-    patcher_type = preservers.ImportScripts
+    _config_key = u'ImportScripts'
+    patcher_type = preservers.ImportScriptsPatcher
 
 # -----------------------------------------------------------------------------
-class SpellsPatcher(_ImporterPatcherPanel, _AListPanelCsv):
+class ImportSpellStats(_ImporterPatcherPanel, _AListPanelCsv):
     """Import spell changes from mod files."""
     patcher_name = _(u'Import Spell Stats')
-    _patcher_txt = _(u'Import stats from any spells / actor effects from '
+    patcher_desc = _(u'Import stats from any spells / actor effects from '
                      u'source mods/files.')
     autoKey = {u'SpellStats'}
     _csv_key = u'Spells'
-    patcher_type = preservers.SpellsPatcher
+    _config_key = u'SpellsPatcher'
+    patcher_type = preservers.ImportSpellStatsPatcher
 
 # -----------------------------------------------------------------------------
-class DestructiblePatcher(_ImporterPatcherPanel):
+class ImportDestructible(_ImporterPatcherPanel):
     patcher_name = _(u'Import Destructible')
-    _patcher_txt = (_(u'Preserves changes to destructible records.')
+    patcher_desc = (_(u'Preserves changes to destructible records.')
                     + u'\n\n' +
                     _(u'Will have to use if a mod that allows you to destroy '
                       u'part of the environment is installed and active.'))
     autoKey = {u'Destructible'}
-    patcher_type = preservers.DestructiblePatcher
+    _config_key = u'DestructiblePatcher'
+    patcher_type = preservers.ImportDestructiblePatcher
 
 # -----------------------------------------------------------------------------
-class WeaponModsPatcher(_ImporterPatcherPanel):
+class ImportWeaponMods(_ImporterPatcherPanel):
     patcher_name = _(u'Import Weapon Modifications')
-    _patcher_txt = _(u'Merges changes to weapon modifications.')
+    patcher_desc = _(u'Merges changes to weapon modifications.')
     autoKey = {u'WeaponMods'}
-    patcher_type = preservers.WeaponModsPatcher
+    _config_key = u'WeaponModsPatcher'
+    patcher_type = preservers.ImportWeaponModificationsPatcher
 
 # -----------------------------------------------------------------------------
-class KeywordsImporter(_ImporterPatcherPanel):
+class ImportKeywords(_ImporterPatcherPanel):
     patcher_name = _(u'Import Keywords')
-    _patcher_txt = _(u'Import keyword changes from source mods.')
+    patcher_desc = _(u'Import keyword changes from source mods.')
     autoKey = {u'Keywords'}
-    patcher_type = preservers.KeywordsImporter
+    _config_key = u'KeywordsImporter'
+    patcher_type = preservers.ImportKeywordsPatcher
 
 # -----------------------------------------------------------------------------
-class TextImporter(_ImporterPatcherPanel):
+class ImportText(_ImporterPatcherPanel):
     patcher_name = _(u'Import Text')
-    _patcher_txt = _(u'Import various types of long-form text like book '
+    patcher_desc = _(u'Import various types of long-form text like book '
                      u'texts, effect descriptions, etc. from source mods.')
     autoKey = {u'Text'}
-    patcher_type = preservers.TextImporter
+    _config_key = u'TextImporter'
+    patcher_type = preservers.ImportTextPatcher
 
 # -----------------------------------------------------------------------------
-class ObjectBoundsImporter(_ImporterPatcherPanel):
+class ImportObjectBounds(_ImporterPatcherPanel):
     patcher_name = _(u'Import Object Bounds')
-    _patcher_txt = _(u'Import object bounds for various actors, items and '
+    patcher_desc = _(u'Import object bounds for various actors, items and '
                      u'objects.')
     autoKey = {u'ObjectBounds'}
-    patcher_type = preservers.ObjectBoundsImporter
+    _config_key = u'ObjectBoundsImporter'
+    patcher_type = preservers.ImportObjectBoundsPatcher
 
 # -----------------------------------------------------------------------------
 class ImportEnchantmentStats(_ImporterPatcherPanel):
     patcher_name = _(u'Import Enchantment Stats')
-    _patcher_txt = _(u'Import stats from enchantments / object effects from '
+    patcher_desc = _(u'Import stats from enchantments / object effects from '
                      u'source mods.')
     autoKey = {u'EnchantmentStats'}
-    patcher_type = preservers.ImportEnchantmentStats
+    _config_key = u'ImportEnchantmentStats'
+    patcher_type = preservers.ImportEnchantmentStatsPatcher
 
 # -----------------------------------------------------------------------------
 class ImportEffectsStats(_ImporterPatcherPanel):
     patcher_name = _(u'Import Effect Stats')
-    _patcher_txt = _(u'Import stats from magic / base effects from source '
+    patcher_desc = _(u'Import stats from magic / base effects from source '
                      u'mods.')
     autoKey = {u'EffectStats'}
-    patcher_type = preservers.ImportEffectsStats
+    _config_key = u'ImportEffectsStats'
+    patcher_type = preservers.ImportEffectsStatsPatcher
 
 # Patchers 30 -----------------------------------------------------------------
-class AssortedTweaker(_TweakPatcherPanel):
+class TweakAssorted(_TweakPatcherPanel):
     patcher_name = _(u'Tweak Assorted')
-    _patcher_txt = _(u'Tweak various records in miscellaneous ways.')
-    patcher_type = multitweak_assorted.AssortedTweaker
+    patcher_desc = _(u'Tweak various records in miscellaneous ways.')
+    _config_key = u'AssortedTweaker'
+    patcher_type = multitweak_assorted.TweakAssortedPatcher
     default_isEnabled = True
 
 # -----------------------------------------------------------------------------
-class ClothesTweaker(_TweakPatcherPanel):
+class TweakClothes(_TweakPatcherPanel):
     patcher_name = _(u'Tweak Clothes')
-    _patcher_txt = _(u'Tweak clothing weight and blocking.')
-    patcher_type = multitweak_clothes.ClothesTweaker
+    patcher_desc = _(u'Tweak clothing weight and blocking.')
+    _config_key = u'ClothesTweaker'
+    patcher_type = multitweak_clothes.TweakClothesPatcher
 
 # -----------------------------------------------------------------------------
-class GmstTweaker(_GmstTweakerPanel):
+class TweakSettings(_GmstTweakerPanel):
     patcher_name = _(u'Tweak Settings')
-    _patcher_txt = _(u'Tweak game settings.')
-    patcher_type = multitweak_settings.GmstTweaker
+    patcher_desc = _(u'Tweak game settings.')
+    _config_key = u'GmstTweaker'
+    patcher_type = multitweak_settings.TweakSettingsPatcher
 
 # -----------------------------------------------------------------------------
-class NamesTweaker(_TweakPatcherPanel):
+class TweakNames(_TweakPatcherPanel):
     patcher_name = _(u'Tweak Names')
-    _patcher_txt = _(u'Tweak object names in various ways such as lore '
+    patcher_desc = _(u'Tweak object names in various ways such as lore '
                      u'friendliness or show type/quality.')
-    patcher_type = multitweak_names.NamesTweaker
+    _config_key = u'NamesTweaker'
+    patcher_type = multitweak_names.TweakNamesPatcher
 
 # -----------------------------------------------------------------------------
 class TweakActors(_TweakPatcherPanel):
     patcher_name = _(u'Tweak Actors')
-    _patcher_txt = _(u'Tweak NPC and Creatures records in specified ways.')
-    patcher_type = multitweak_actors.TweakActors
+    patcher_desc = _(u'Tweak NPC and Creatures records in specified ways.')
+    _config_key = u'TweakActors'
+    patcher_type = multitweak_actors.TweakActorsPatcher
 
 # Patchers 40 -----------------------------------------------------------------
-class UpdateReferences(_AListPanelCsv):
+class ReplaceFormIDs(_AListPanelCsv):
     """Imports Form Id replacers into the Bashed Patch."""
     patcher_name = _(u'Replace Form IDs')
-    _patcher_txt = _(u'Imports Form Id replacers from csv files into the '
+    patcher_desc = _(u'Imports Form Id replacers from csv files into the '
                      u'Bashed Patch.')
-    autoKey = {u'Formids'}
     _csv_key = u'Formids'
-    patcher_type = base.UpdateReferences
+    _config_key = u'UpdateReferences'
+    patcher_type = base.ReplaceFormIDsPatcher
     canAutoItemCheck = False #--GUI: Whether new items are checked by default.
 
 # -----------------------------------------------------------------------------
-class RacePatcher(_DoublePatcherPanel):
+class RaceRecords(_DoublePatcherPanel):
     """Merged leveled lists mod file."""
     patcher_name = _(u'Race Records')
-    _patcher_txt = u'\n\n'.join([
-        _(u'Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED '
-          u'mods.  Any non-active, non-merged mods in the following list '
+    patcher_desc = u'\n\n'.join([
+        _(u'Merge race eyes, hair, body, voice from mods.'),
+        _(u'Any non-active, non-merged mods in the following list '
           u'will be IGNORED.'),
         _(u'Even if none of the below mods are checked, this will sort '
           u'hairs and eyes and attempt to remove googly eyes from all '
@@ -1253,26 +1284,13 @@ class RacePatcher(_DoublePatcherPanel):
                u'R.Attributes-M', u'R.Attributes-F', u'Body-F', u'Body-M',
                u'R.Mouth', u'R.Description', u'R.AddSpells', u'Body-Size-F',
                u'R.Relations', u'Body-Size-M', u'R.Skills', u'Hair'}
-    patcher_type = races_multitweaks.RacePatcher
-
-    @property
-    def patcher_tip(self):
-        return _(u'Merge race eyes, hair, body, voice from mods.')
+    _config_key = u'RacePatcher'
+    patcher_type = races_multitweaks.RaceRecordsPatcher
 
 # -----------------------------------------------------------------------------
 class _AListsMerger(_ListsMergerPanel):
-    """Merged leveled lists mod file."""
-    patcher_name = _(u'Leveled Lists')
-    _patcher_txt = u'\n\n'.join([
-        _(u'Merges changes to leveled lists from ACTIVE/MERGED MODS ONLY.'),
-        _(u'Advanced users may override Relev/Delev tags for any mod (active '
-          u'or inactive) using the list below.')])
-    autoKey = {u'Delev', u'Relev'}
-
-    @property
-    def patcher_tip(self):
-        return _(u'Merges changes to leveled lists from all active mods.')
-
+    """Mergers targeting all mods in the LO, with the option to override
+    tags."""
     def get_patcher_instance(self, patch_file):
         patcher_sources = self._get_list_patcher_srcs(patch_file)
         return self.patcher_type(self.patcher_name, patch_file,
@@ -1280,37 +1298,44 @@ class _AListsMerger(_ListsMergerPanel):
                                  self.remove_empty_sublists,
                                  defaultdict(tuple, self.configChoices))
 
-class ListsMerger(_AListsMerger):
-    patcher_type = special.ListsMerger
+class LeveledLists(_AListsMerger):
+    patcher_name = _(u'Leveled Lists')
+    patcher_desc = u'\n\n'.join([
+        _(u'Merges changes to leveled lists from all active and/or merged '
+          u'mods.'),
+        _(u'Advanced users may override Relev/Delev tags for any mod (active '
+          u'or inactive) using the list below.')])
+    autoKey = {u'Delev', u'Relev'}
+    _config_key = u'ListsMerger'
+    patcher_type = special.LeveledListsPatcher
     show_empty_sublist_checkbox = True
 
-class FidListsMerger(_AListsMerger):
+class FormIDLists(_AListsMerger):
     patcher_name = _(u'FormID Lists')
-    _patcher_txt = u'\n\n'.join([
-        _(u'Merges changes to formid lists from ACTIVE/MERGED MODS ONLY.') ,
+    patcher_desc = u'\n\n'.join([
+        _(u'Merges changes to FormID lists from all active and/or merged '
+          u'mods.'),
         _(u'Advanced users may override Deflst tags for any mod (active or '
           u'inactive) using the list below.')])
     autoKey = {u'Deflst'}
-    patcher_type = special.FidListsMerger
+    _config_key = u'FidListsMerger'
+    patcher_type = special.FormIDListsPatcher
     listLabel = _(u'Override Deflst Tags')
     forceItemCheck = False #--Force configChecked to True for all items
     choiceMenu = (u'Auto', u'----', u'Deflst')
     # CONFIG DEFAULTS
     default_isEnabled = False
 
-    @property
-    def patcher_tip(self):
-        return _(u'Merges changes to formid lists from all active mods.')
-
 # -----------------------------------------------------------------------------
 class ContentsChecker(_PatcherPanel):
     """Checks contents of leveled lists, inventories and containers for
     correct content types."""
     patcher_name = _(u'Contents Checker')
-    _patcher_txt = _(u'Checks contents of leveled lists, inventories and '
+    patcher_desc = _(u'Checks contents of leveled lists, inventories and '
                      u'containers for correct types.')
+    _config_key = u'ContentsChecker'
+    patcher_type = special.ContentsCheckerPatcher
     default_isEnabled = True
-    patcher_type = special.ContentsChecker
 
 #------------------------------------------------------------------------------
 # Game specific GUI Patchers --------------------------------------------------
@@ -1319,28 +1344,37 @@ from .patcher_dialog import all_gui_patchers
 # Dynamically create game specific UI patcher classes and add them to module's
 # scope
 # Patchers with no options
-for patcher_name, p_info in bush.game.gameSpecificPatchers.items():
-    globals()[patcher_name] = type(patcher_name, (_PatcherPanel,),
-                                   p_info.cls_vars)
+for gsp_name, gsp_class in bush.game.gameSpecificPatchers.iteritems():
+    gsp_name = gsp_name.encode(u'ascii') # PY3: drop - py2 compat hack
+    globals()[gsp_name] = type(gsp_name, (_PatcherPanel,),
+        gsp_class.gui_cls_vars())
 # Simple list patchers
-for patcher_name, p_info in bush.game.gameSpecificListPatchers.items():
-    patcher_bases = (_ListPatcherPanel,)
-    patcher_attrs = p_info.cls_vars
-    if p_info.cls_csv_key:
-        # This patcher accepts CSV files, need to edit its dict as well
-        patcher_bases = (_AListPanelCsv,)
-        patcher_attrs[u'_csv_key'] = p_info.cls_csv_key
-    globals()[patcher_name] = type(patcher_name, patcher_bases, patcher_attrs)
+for gsp_name, gsp_class in bush.game.gameSpecificListPatchers.iteritems():
+    gsp_name = gsp_name.encode(u'ascii') # PY3: drop - py2 compat hack
+    gsp_bases = (_ListPatcherPanel,)
+    gsp_attrs = gsp_class.gui_cls_vars()
+    if u'_csv_key' in gsp_attrs:
+        # This patcher accepts CSV files, need to use the CSV base class
+        gsp_bases = (_AListPanelCsv,)
+    globals()[gsp_name] = type(gsp_name, gsp_bases, gsp_attrs)
 # Import patchers
-for patcher_name, p_info in bush.game.game_specific_import_patchers.items():
-    patcher_bases = (_ImporterPatcherPanel,)
-    patcher_attrs = p_info.cls_vars
-    if p_info.cls_csv_key:
-        # This patcher accepts CSV files, need to edit its dict as well
-        patcher_bases += (_AListPanelCsv,)
-        patcher_attrs[u'_csv_key'] = p_info.cls_csv_key
-    globals()[patcher_name] = type(patcher_name, patcher_bases, patcher_attrs)
+for gsp_name, gsp_class in bush.game.game_specific_import_patchers.iteritems():
+    gsp_name = gsp_name.encode(u'ascii') # PY3: drop - py2 compat hack
+    gsp_bases = (_ImporterPatcherPanel,)
+    gsp_attrs = gsp_class.gui_cls_vars()
+    if u'_csv_key' in gsp_attrs:
+        # This patcher accepts CSV files, need to add the CSV base class
+        gsp_bases += (_AListPanelCsv,)
+    globals()[gsp_name] = type(gsp_name, gsp_bases, gsp_attrs)
 
 # Init Patchers
 def initPatchers():
-    all_gui_patchers.extend((globals()[x]() for x in bush.game.patchers))
+    group_order = {p_grp: i for i, p_grp in enumerate( # PY3: enum?
+        (u'General', u'Importers', u'Tweakers', u'Special'))}
+    patcher_classes = [globals()[p] for p in bush.game.patchers]
+    # Sort alphabetically first for aesthetic reasons
+    patcher_classes.sort(key=lambda a: a.patcher_name)
+    # After that, sort by group to make patchers instantiate in the right order
+    patcher_classes.sort(
+        key=lambda a: group_order[a.patcher_type.patcher_group])
+    all_gui_patchers.extend((p() for p in patcher_classes))

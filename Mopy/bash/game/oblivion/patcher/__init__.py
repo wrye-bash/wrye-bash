@@ -24,31 +24,18 @@
 """This package contains the Oblivion specific patchers. This module
 contains the data structures that are dynamically set on a per game basis in
 bush."""
-from ....patcher import PatcherInfo as pi
-from .preservers import RoadImporter
-from .special import AlchemicalCatalogs, SEWorldEnforcer, CoblExhaustion, \
-    MFactMarker
+from .preservers import ImportRoadsPatcher
+from .special import CoblCatalogsPatcher, SEWorldTestsPatcher,\
+    CoblExhaustionPatcher, MorphFactionsPatcher
 
-_special_patchers = (
-    (b'AlchemicalCatalogs', AlchemicalCatalogs),
-    (b'SEWorldEnforcer', SEWorldEnforcer),
-)
-gameSpecificPatchers = {pname: pi(ptype.gui_cls_vars()) for
-                        pname, ptype in _special_patchers}
-
-_list_patchers =(
-    (b'CoblExhaustion', CoblExhaustion, u'Exhaust'),
-    (b'MFactMarker', MFactMarker, u'MFact'),
-)
-gameSpecificListPatchers = {pname: pi(ptype.gui_cls_vars(), ck)
-                            for pname, ptype, ck in _list_patchers}
-
-_import_patchers = (
-    (b'RoadImporter', RoadImporter),
-)
+gameSpecificPatchers = {
+    u'CoblCatalogs': CoblCatalogsPatcher,
+    u'SEWorldTests': SEWorldTestsPatcher,
+}
+gameSpecificListPatchers = {
+    u'CoblExhaustion': CoblExhaustionPatcher,
+    u'MorphFactions': MorphFactionsPatcher,
+}
 game_specific_import_patchers = {
-    pname: pi(
-              {u'patcher_type': ptype, u'_patcher_txt': ptype.patcher_text,
-               u'patcher_name': ptype.patcher_name, u'autoKey': ptype.autoKey})
-    for pname, ptype in _import_patchers
+    u'ImportRoads': ImportRoadsPatcher,
 }

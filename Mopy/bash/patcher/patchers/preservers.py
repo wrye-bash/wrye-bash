@@ -150,7 +150,7 @@ class _APreserver(ImportPatcher):
                 if any(f and (f[0] is None or f[0] not in loaded_mods) for f
                        in fid_attr_values):
                     # Ignore the record. Another option would be to just ignore
-                    # the attr_fidvalue result
+                    # the fid_attr_values result
                     self.patchFile.patcher_mod_skipcount[
                         self._patcher_name][srcMod] += 1
                     continue
@@ -159,11 +159,6 @@ class _APreserver(ImportPatcher):
 
     # noinspection PyDefaultArgument
     def initData(self, progress, __attrgetters=attrgetter_cache):
-        """Common initData pattern.
-        Used in KFFZPatcher, DeathItemPatcher, SoundPatcher, ImportScripts,
-        WeaponModsPatcher, ActorImporter.
-        Adding _init_data_loop absorbed GraphicsPatcher also.
-        """
         if not self.isActive: return
         id_data = self.id_data
         loadFactory = LoadFactory(False, *self.recAttrs_class.keys())
@@ -218,11 +213,6 @@ class _APreserver(ImportPatcher):
 
     # noinspection PyDefaultArgument
     def scanModFile(self, modFile, progress, __attrgetters=attrgetter_cache):
-        """Identical scanModFile() pattern of :
-
-            GraphicsPatcher, KFFZPatcher, DeathItemPatcher, ImportScripts,
-            SoundPatcher, DestructiblePatcher, ActorImporter, WeaponModsPatcher
-        """
         id_data = self.id_data
         for recClass in self.srcClasses:
             if recClass.rec_sig not in modFile.tops: continue
@@ -245,11 +235,6 @@ class _APreserver(ImportPatcher):
     # noinspection PyDefaultArgument
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
                     __attrgetters=attrgetter_cache):
-        """Most common pattern for the internal buildPatch() loop.
-
-        In:
-            KFFZPatcher, DeathItemPatcher, ImportScripts, SoundPatcher
-        """
         loop_setattr = setattr_deep if self._deep_attrs else setattr
         id_data = self.id_data
         for record in records:
@@ -264,15 +249,6 @@ class _APreserver(ImportPatcher):
             type_count[top_mod_rec] += 1
 
     def buildPatch(self, log, progress, types=None):
-        """Common buildPatch() pattern of:
-
-            GraphicsPatcher, ActorImporter, KFFZPatcher, DeathItemPatcher,
-            ImportScripts, SoundPatcher, DestructiblePatcher
-        Consists of a type selection loop which could be rewritten to support
-        more patchers (maybe using filter()) and an inner loop that should be
-        provided by a patcher specific, _inner_loop() method.
-        Adding `types` parameter absorbed ImportRelations and ImportFactions.
-        """
         if not self.isActive: return
         modFileTops = self.patchFile.tops
         keep = self.patchFile.getKeeper()
@@ -299,79 +275,22 @@ class _APreserver(ImportPatcher):
 #------------------------------------------------------------------------------
 # Absorbed patchers -----------------------------------------------------------
 #------------------------------------------------------------------------------
-class ActorImporter(_APreserver):
+class ImportActorsPatcher(_APreserver):
     rec_attrs = bush.game.actor_importer_attrs
     _multi_tag = True
 
 #------------------------------------------------------------------------------
-class DeathItemPatcher(_APreserver):
-    rec_attrs = {x: ('deathItem',) for x in bush.game.actor_types}
+##: Could be absorbed by ImportActors, but would break existing configs
+class ImportActorsAnimationsPatcher(_APreserver):
+    rec_attrs = {x: (u'animations',) for x in bush.game.actor_types}
 
 #------------------------------------------------------------------------------
-class DestructiblePatcher(_APreserver):
-    """Merges changes to destructible records for Fallout3/FalloutNV."""
-    rec_attrs = {x: ('destructible',) for x in bush.game.destructible_types}
+##: Could be absorbed by ImportActors, but would break existing configs
+class ImportActorsDeathItemsPatcher(_APreserver):
+    rec_attrs = {x: (u'deathItem',) for x in bush.game.actor_types}
 
 #------------------------------------------------------------------------------
-class ImportEffectsStats(_APreserver):
-    """Preserves changes to MGEF stats."""
-    rec_attrs = {b'MGEF': bush.game.mgef_stats_attrs}
-
-#------------------------------------------------------------------------------
-class ImportEnchantmentStats(_APreserver):
-    """Preserves changes to ENCH stats."""
-    rec_attrs = {b'ENCH': bush.game.ench_stats_attrs}
-
-#------------------------------------------------------------------------------
-class ImportFactions(_APreserver):
-    logMsg = u'\n=== ' + _(u'Refactioned Actors')
-    srcsHeader = u'=== ' + _(u'Source Mods/Files')
-    rec_attrs = {x: (u'factions',) for x in bush.game.actor_types}
-    _csv_parser = parsers.ActorFactions
-
-    def _parse_csv_sources(self, progress):
-        fact_parser = super(ImportFactions, self)._parse_csv_sources(progress)
-        # Turn the faction lists into lists of MelObjects
-        def make_obj(csv_rsig, csv_obj):
-            obj_faction, obj_rank = csv_obj
-            ret_obj = MreRecord.type_class[csv_rsig].getDefault(u'factions')
-            ret_obj.faction = obj_faction
-            ret_obj.rank = obj_rank
-            return ret_obj
-        self._process_csv_sources(
-            {r: {f: {u'factions': [make_obj(r, o) for o in a]}
-                 for f, a in d.iteritems()}
-             for r, d in fact_parser.id_stored_info.iteritems()})
-
-#------------------------------------------------------------------------------
-class ImportScripts(_APreserver):
-    rec_attrs = {x: ('script',) for x in bush.game.scripts_types}
-
-#------------------------------------------------------------------------------
-class KeywordsImporter(_APreserver):
-    rec_attrs = {x: ('keywords',) for x in bush.game.keywords_types}
-
-#------------------------------------------------------------------------------
-class KFFZPatcher(_APreserver):
-    rec_attrs = {x: ('animations',) for x in bush.game.actor_types}
-
-#------------------------------------------------------------------------------
-class NamesPatcher(_APreserver):
-    """Import names from source mods/files."""
-    logMsg =  u'\n=== ' + _(u'Renamed Items')
-    srcsHeader = u'=== ' + _(u'Source Mods/Files')
-    rec_attrs = {x: (u'full',) for x in bush.game.namesTypes}
-    _csv_parser = parsers.FullNames
-
-    def _parse_csv_sources(self, progress):
-        full_parser = super(NamesPatcher, self)._parse_csv_sources(progress)
-        # Discard the Editor ID and turn the tuples into dictionaries
-        self._process_csv_sources(
-            {r: {f: {u'full': a[1]} for f, a in d.iteritems()}
-             for r, d in full_parser.type_id_name.iteritems()})
-
-#------------------------------------------------------------------------------
-class NpcFacePatcher(_APreserver):
+class ImportActorsFacesPatcher(_APreserver):
     logMsg = u'\n=== '+_(u'Faces Patched')
     rec_attrs = {b'NPC_': {
         u'NPC.Eyes': (),
@@ -391,16 +310,77 @@ class NpcFacePatcher(_APreserver):
     _force_full_import_tag = u'NpcFacesForceFullImport'
 
 #------------------------------------------------------------------------------
-class ObjectBoundsImporter(_APreserver):
-    rec_attrs = {x: ('bounds',) for x in bush.game.object_bounds_types}
+class ImportActorsFactionsPatcher(_APreserver):
+    logMsg = u'\n=== ' + _(u'Refactioned Actors')
+    srcsHeader = u'=== ' + _(u'Source Mods/Files')
+    rec_attrs = {x: (u'factions',) for x in bush.game.actor_types}
+    _csv_parser = parsers.ActorFactions
+
+    def _parse_csv_sources(self, progress):
+        fact_parser = super(
+            ImportActorsFactionsPatcher, self)._parse_csv_sources(progress)
+        # Turn the faction lists into lists of MelObjects
+        def make_obj(csv_rsig, csv_obj):
+            obj_faction, obj_rank = csv_obj
+            ret_obj = MreRecord.type_class[csv_rsig].getDefault(u'factions')
+            ret_obj.faction = obj_faction
+            ret_obj.rank = obj_rank
+            return ret_obj
+        self._process_csv_sources(
+            {r: {f: {u'factions': [make_obj(r, o) for o in a]}
+                 for f, a in d.iteritems()}
+             for r, d in fact_parser.id_stored_info.iteritems()})
 
 #------------------------------------------------------------------------------
-class SoundPatcher(_APreserver):
+class ImportDestructiblePatcher(_APreserver):
+    """Merges changes to destructible records."""
+    rec_attrs = {x: (u'destructible',) for x in bush.game.destructible_types}
+
+#------------------------------------------------------------------------------
+class ImportEffectsStatsPatcher(_APreserver):
+    """Preserves changes to MGEF stats."""
+    rec_attrs = {b'MGEF': bush.game.mgef_stats_attrs}
+
+#------------------------------------------------------------------------------
+class ImportEnchantmentStatsPatcher(_APreserver):
+    """Preserves changes to ENCH stats."""
+    rec_attrs = {b'ENCH': bush.game.ench_stats_attrs}
+
+#------------------------------------------------------------------------------
+class ImportKeywordsPatcher(_APreserver):
+    rec_attrs = {x: (u'keywords',) for x in bush.game.keywords_types}
+
+#------------------------------------------------------------------------------
+class ImportNamesPatcher(_APreserver):
+    """Import names from source mods/files."""
+    logMsg =  u'\n=== ' + _(u'Renamed Items')
+    srcsHeader = u'=== ' + _(u'Source Mods/Files')
+    rec_attrs = {x: (u'full',) for x in bush.game.namesTypes}
+    _csv_parser = parsers.FullNames
+
+    def _parse_csv_sources(self, progress):
+        full_parser = super(
+            ImportNamesPatcher, self)._parse_csv_sources(progress)
+        # Discard the Editor ID and turn the tuples into dictionaries
+        self._process_csv_sources(
+            {r: {f: {u'full': a[1]} for f, a in d.iteritems()}
+             for r, d in full_parser.type_id_name.iteritems()})
+
+#------------------------------------------------------------------------------
+class ImportObjectBoundsPatcher(_APreserver):
+    rec_attrs = {x: (u'bounds',) for x in bush.game.object_bounds_types}
+
+#------------------------------------------------------------------------------
+class ImportScriptsPatcher(_APreserver):
+    rec_attrs = {x: (u'script',) for x in bush.game.scripts_types}
+
+#------------------------------------------------------------------------------
+class ImportSoundsPatcher(_APreserver):
     """Imports sounds from source mods into patch."""
     rec_attrs = bush.game.soundsTypes
 
 #------------------------------------------------------------------------------
-class SpellsPatcher(_APreserver):
+class ImportSpellStatsPatcher(_APreserver):
     """Import spell changes from mod files."""
     scanOrder = 29
     editOrder = 29 #--Run ahead of bow patcher
@@ -410,14 +390,15 @@ class SpellsPatcher(_APreserver):
     _csv_parser = parsers.SpellRecords
 
     def _parse_csv_sources(self, progress):
-        spel_parser = super(SpellsPatcher, self)._parse_csv_sources(progress)
+        spel_parser = super(
+            ImportSpellStatsPatcher, self)._parse_csv_sources(progress)
         # Add attribute names to the values
         self._process_csv_sources(
             {b'SPEL': {f: {a: v for a, v in zip(self.rec_attrs[b'SPEL'], l)}
                        for f, l in spel_parser.fid_stats.iteritems()}})
 
 #------------------------------------------------------------------------------
-class StatsPatcher(_APreserver):
+class ImportStatsPatcher(_APreserver):
     """Import stats from mod file."""
     scanOrder = 28
     editOrder = 28 #--Run ahead of bow patcher
@@ -430,7 +411,8 @@ class StatsPatcher(_APreserver):
     _csv_parser = parsers.ItemStats
 
     def _parse_csv_sources(self, progress):
-        stat_parser = super(StatsPatcher, self)._parse_csv_sources(progress)
+        stat_parser = super(
+            ImportStatsPatcher, self)._parse_csv_sources(progress)
         # See rec_attrs above for an explanation of the Editor ID problem
         for src_attrs in stat_parser.class_fid_attr_value.itervalues():
             for attr_values in src_attrs.itervalues():
@@ -438,13 +420,13 @@ class StatsPatcher(_APreserver):
         self._process_csv_sources(stat_parser.class_fid_attr_value)
 
 #------------------------------------------------------------------------------
-class TextImporter(_APreserver):
+class ImportTextPatcher(_APreserver):
     rec_attrs = bush.game.text_types
 
 #------------------------------------------------------------------------------
 # TODO(inf) Currently FNV-only, but don't move to game/falloutnv/patcher yet -
 #  this could potentially be refactored and reused for FO4's modifications
-class WeaponModsPatcher(_APreserver):
+class ImportWeaponModificationsPatcher(_APreserver):
     """Merge changes to weapon modifications for FalloutNV."""
     scanOrder = 27
     editOrder = 27
@@ -461,20 +443,17 @@ class WeaponModsPatcher(_APreserver):
 #------------------------------------------------------------------------------
 ##: absorbing this one will be hard - hint: getActiveRecords only exists on
 # MobObjects, iter_records works for all Mob* classes, so attack that part of
-# _SimpleImporter
-class CellImporter(ImportPatcher):
+# _APreserver
+class ImportCellsPatcher(ImportPatcher):
     logMsg = u'\n=== ' + _(u'Cells/Worlds Patched')
-    _read_write_records = ('CELL', 'WRLD')
+    _read_write_records = (b'CELL', b'WRLD')
 
     def __init__(self, p_name, p_file, p_sources):
-        super(CellImporter, self).__init__(p_name, p_file, p_sources)
+        super(ImportCellsPatcher, self).__init__(p_name, p_file, p_sources)
         self.cellData = defaultdict(dict)
-        # TODO: docs: recAttrs vs tag_attrs - extra in PBash:
-        # 'unused1','unused2','unused3'
         self.recAttrs = bush.game.cellRecAttrs # dict[unicode, tuple[str]]
-        self.recFlags = bush.game.cellRecFlags # dict[unicode, str]
 
-    def initData(self,progress):
+    def initData(self, progress, __attrgetters=attrgetter_cache):
         """Get cells from source files."""
         if not self.isActive: return
         cellData = self.cellData
@@ -491,11 +470,8 @@ class CellImporter(ImportPatcher):
                 actual_attrs = ((attrs - bush.game.cell_skip_interior_attrs)
                                 if cellBlock.cell.flags.isInterior else attrs)
                 for attr in actual_attrs:
-                    tempCellData[fid][attr] = cellBlock.cell.__getattribute__(
-                        attr)
-                for flg_ in flgs_:
-                    tempCellData[fid + ('flags',)][
-                        flg_] = cellBlock.cell.flags.__getattr__(flg_)
+                    tempCellData[fid][attr] = __attrgetters[attr](
+                        cellBlock.cell)
         def checkMasterCellBlockData(cellBlock):
             """
             Add attribute values from record(s) in master file(s).
@@ -511,16 +487,11 @@ class CellImporter(ImportPatcher):
                 actual_attrs = ((attrs - bush.game.cell_skip_interior_attrs)
                                 if cellBlock.cell.flags.isInterior else attrs)
                 for attr in actual_attrs:
-                    master_attr = cellBlock.cell.__getattribute__(attr)
+                    master_attr = __attrgetters[attr](cellBlock.cell)
                     if tempCellData[rec_fid][attr] != master_attr:
                         cellData[rec_fid][attr] = tempCellData[rec_fid][attr]
-                for flg_ in flgs_:
-                    master_flag = cellBlock.cell.flags.__getattr__(flg_)
-                    if tempCellData[rec_fid + ('flags',)][flg_] != master_flag:
-                        cellData[rec_fid + ('flags',)][flg_] = \
-                            tempCellData[rec_fid + ('flags',)][flg_]
-        loadFactory = LoadFactory(False,MreRecord.type_class['CELL'],
-                                        MreRecord.type_class['WRLD'])
+        loadFactory = LoadFactory(False, MreRecord.type_class[b'CELL'],
+                                         MreRecord.type_class[b'WRLD'])
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         minfs = self.patchFile.p_file_minfos
@@ -540,13 +511,12 @@ class CellImporter(ImportPatcher):
             tags = bashTags & set(self.recAttrs)
             if not tags: continue
             attrs = set(chain.from_iterable(
-                self.recAttrs[bashKey] for bashKey in tags))
-            flgs_ = tuple(self.recFlags[bashKey] for bashKey in tags if
-                          self.recFlags[bashKey] != u'')
-            if 'CELL' in srcFile.tops:
+                self.recAttrs[bashKey] for bashKey in tags
+                if bashKey in self.recAttrs))
+            if b'CELL' in srcFile.tops:
                 for cellBlock in srcFile.CELL.cellBlocks:
                     importCellBlockData(cellBlock)
-            if 'WRLD' in srcFile.tops:
+            if b'WRLD' in srcFile.tops:
                 for worldBlock in srcFile.WRLD.worldBlocks:
                     for cellBlock in worldBlock.cellBlocks:
                         importCellBlockData(cellBlock)
@@ -561,10 +531,10 @@ class CellImporter(ImportPatcher):
                     masterFile = ModFile(masterInfo,loadFactory)
                     masterFile.load(True)
                     cachedMasters[master] = masterFile
-                if 'CELL' in masterFile.tops:
+                if b'CELL' in masterFile.tops:
                     for cellBlock in masterFile.CELL.cellBlocks:
                         checkMasterCellBlockData(cellBlock)
-                if 'WRLD' in masterFile.tops:
+                if b'WRLD' in masterFile.tops:
                     for worldBlock in masterFile.WRLD.worldBlocks:
                         for cellBlock in worldBlock.cellBlocks:
                             checkMasterCellBlockData(cellBlock)
@@ -575,17 +545,16 @@ class CellImporter(ImportPatcher):
 
     def scanModFile(self, modFile, progress): # scanModFile0
         """Add lists from modFile."""
-        if not self.isActive or (
-                'CELL' not in modFile.tops and 'WRLD' not in modFile.tops):
+        if not self.isActive or not (set(modFile.tops) & {b'CELL', b'WRLD'}):
             return
         cellData = self.cellData
         patchCells = self.patchFile.CELL
         patchWorlds = self.patchFile.WRLD
-        if 'CELL' in modFile.tops:
+        if b'CELL' in modFile.tops:
             for cellBlock in modFile.CELL.cellBlocks:
                 if cellBlock.cell.fid in cellData:
                     patchCells.setCell(cellBlock.cell)
-        if 'WRLD' in modFile.tops:
+        if b'WRLD' in modFile.tops:
             for worldBlock in modFile.WRLD.worldBlocks:
                 patchWorlds.setWorld(worldBlock.world)
                 curr_pworld = patchWorlds.id_worldBlocks[worldBlock.world.fid]
@@ -596,7 +565,7 @@ class CellImporter(ImportPatcher):
                 if pers_cell_block and pers_cell_block.cell.fid in cellData:
                     curr_pworld.worldCellBlock = pers_cell_block
 
-    def buildPatch(self,log,progress): # buildPatch0
+    def buildPatch(self, log, progress, __attrgetters=attrgetter_cache):
         """Adds merged lists to patchfile."""
         c_float_attrs = bush.game.cell_float_attrs
         def handlePatchCellBlock(patchCellBlock):
@@ -610,29 +579,20 @@ class CellImporter(ImportPatcher):
             Modified cell Blocks are kept, the other are discarded."""
             modified = False
             patch_cell_fid = patchCellBlock.cell.fid
-            patch_cell_get = patchCellBlock.cell.__getattribute__
-            patch_cell_set = patchCellBlock.cell.__setattr__
             for attr,value in cellData[patch_cell_fid].iteritems():
-                curr_value = patch_cell_get(attr)
+                curr_value = __attrgetters[attr](patchCellBlock.cell)
                 if attr == u'regions':
                     if set(value).difference(set(curr_value)):
-                        patch_cell_set(attr, value)
+                        setattr_deep(patchCellBlock.cell, attr, value)
                         modified = True
                 elif attr in c_float_attrs:
                     if not floats_equal(value, curr_value):
-                        patch_cell_set(attr, value)
+                        setattr_deep(patchCellBlock.cell, attr, value)
                         modified = True
                 else:
                     if value != curr_value:
-                        patch_cell_set(attr, value)
+                        setattr_deep(patchCellBlock.cell, attr, value)
                         modified = True
-            patch_get_flag = patchCellBlock.cell.flags.__getattr__
-            patch_set_flag = patchCellBlock.cell.flags.__setattr__
-            for flag, value in cellData[
-                patch_cell_fid + (u'flags',)].iteritems():
-                if patch_get_flag(flag) != value:
-                    patch_set_flag(flag, value)
-                    modified = True
             if modified:
                 patchCellBlock.cell.setChanged()
                 keep(patch_cell_fid)
@@ -668,7 +628,7 @@ class CellImporter(ImportPatcher):
             log(u'* %s: %d' % (srcMod,count[srcMod]))
 
 #------------------------------------------------------------------------------
-class GraphicsPatcher(_APreserver):
+class ImportGraphicsPatcher(_APreserver):
     rec_attrs = bush.game.graphicsTypes
     _fid_rec_attrs = bush.game.graphicsFidTypes
 

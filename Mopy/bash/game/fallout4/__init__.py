@@ -122,9 +122,9 @@ class Fallout4GameInfo(GameInfo):
         u'Deactivate', u'Delev', u'Filter', u'ObjectBounds', u'Relev',
     }
 
-    patchers = ( # PatchMerger must come first if enabled!
-        u'ListsMerger', u'ObjectBoundsImporter',
-    )
+    patchers = {
+        u'ImportObjectBounds', u'LeveledLists',
+    }
 
     # ---------------------------------------------------------------------
     # --Imported - MreGlob is special import, not in records.py

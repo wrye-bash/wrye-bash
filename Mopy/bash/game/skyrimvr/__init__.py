@@ -61,8 +61,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
     skip_bain_refresh = {u'tes5vredit backups', u'tes5vredit cache'}
 
     allTags = SkyrimSEGameInfo.allTags | {u'NoMerge'}
-    # PatchMerger must come first!
-    patchers = (u'PatchMerger',) + SkyrimSEGameInfo.patchers
+    patchers = SkyrimSEGameInfo.patchers | {u'MergePatches'}
 
     @classmethod
     def init(cls):

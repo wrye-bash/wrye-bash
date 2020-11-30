@@ -156,19 +156,18 @@ class Fallout3GameInfo(GameInfo):
     }
 
     # Remaining to add:
-    #  NamesTweaker, RacePatcher, UpdateReferences
-    patchers = (
-        u'PatchMerger', # PatchMerger must come first!
-        u'ActorImporter', u'AliasesPatcher', u'AssortedTweaker',
-        u'CellImporter', u'ContentsChecker', u'DeathItemPatcher',
-        u'DestructiblePatcher', u'FidListsMerger', u'GmstTweaker',
-        u'GraphicsPatcher', u'ImportActorsSpells', u'ImportEffectsStats',
-        u'ImportEnchantmentStats', u'ImportFactions', u'ImportInventory',
-        u'ImportRelations', u'ImportScripts', u'KFFZPatcher', u'ListsMerger',
-        u'NamesPatcher', u'NPCAIPackagePatcher', u'NpcFacePatcher',
-        u'ObjectBoundsImporter', u'SoundPatcher', u'SpellsPatcher',
-        u'StatsPatcher', u'TextImporter', u'TweakActors',
-    )
+    #  TweakNames, RaceRecords, ReplaceFormIDs
+    patchers = {
+        u'AliasModNames', u'ContentsChecker', u'FormIDLists', u'ImportActors',
+        u'ImportActorsAIPackages', u'ImportActorsAnimations',
+        u'ImportActorsDeathItems', u'ImportActorsFaces', u'ImportActorsSpells',
+        u'ImportCells', u'ImportDestructible', u'ImportEffectsStats',
+        u'ImportEnchantmentStats', u'ImportFactions', u'ImportGraphics',
+        u'ImportInventory', u'ImportNames', u'ImportObjectBounds',
+        u'ImportRelations', u'ImportScripts', u'ImportSounds',
+        u'ImportSpellStats', u'ImportStats', u'ImportText', u'LeveledLists',
+        u'MergePatches', u'TweakActors', u'TweakAssorted', u'TweakSettings',
+    }
 
     weaponTypes = (
         _(u'Big gun'),

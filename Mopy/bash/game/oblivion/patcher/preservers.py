@@ -20,23 +20,25 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from .special import _ExSpecial ##: ugh
 from ....brec import MreRecord
 from ....mod_files import ModFile, LoadFactory
 from ....patcher.patchers.base import ImportPatcher
 
-__all__ = [u'RoadImporter']
+__all__ = [u'ImportRoadsPatcher']
 
-class RoadImporter(ImportPatcher):
+class ImportRoadsPatcher(ImportPatcher, _ExSpecial):
     """Imports roads."""
     patcher_name = _(u'Import Roads')
-    patcher_text = _(u"Import roads from source mods.")
+    patcher_desc = _(u"Import roads from source mods.")
     autoKey = {u'Roads'}
+    _config_key = u'RoadImporter'
 
     logMsg = u'\n=== ' + _(u'Worlds Patched')
     _read_write_records = (b'CELL', b'WRLD', b'ROAD')
 
     def __init__(self, p_name, p_file, p_sources):
-        super(RoadImporter, self).__init__(p_name, p_file, p_sources)
+        super(ImportRoadsPatcher, self).__init__(p_name, p_file, p_sources)
         self.world_road = {}
 
     def initData(self,progress):
@@ -90,3 +92,8 @@ class RoadImporter(ImportPatcher):
         log(self.__class__.logMsg)
         for modWorld in sorted(worldsPatched):
             log(u'* %s: %s' % modWorld)
+
+    @classmethod
+    def gui_cls_vars(cls):
+        cls_vars = super(ImportRoadsPatcher, cls).gui_cls_vars()
+        return cls_vars.update({u'autoKey': cls.autoKey}) or cls_vars

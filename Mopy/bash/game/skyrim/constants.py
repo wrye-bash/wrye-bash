@@ -1234,12 +1234,12 @@ GmstTweaks = [
     ]
 
 #------------------------------------------------------------------------------
-# ListsMerger
+# Leveled Lists
 #------------------------------------------------------------------------------
 listTypes = ('LVLI','LVLN','LVSP',)
 
 #------------------------------------------------------------------------------
-# NamesPatcher
+# Import Names
 #------------------------------------------------------------------------------
 # remaining to add: 'RACE',
 namesTypes = {b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'AVIF', b'BOOK',
@@ -1250,7 +1250,7 @@ namesTypes = {b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'AVIF', b'BOOK',
               b'TACT', b'TREE', b'WATR', b'WEAP', b'WOOP'}
 
 #------------------------------------------------------------------------------
-# ItemPrices Patcher
+# Import Prices
 #------------------------------------------------------------------------------
 pricesTypes = {
     'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},'BOOK':{},'INGR':{},'KEYM':{},
@@ -1258,7 +1258,7 @@ pricesTypes = {
     }
 
 #------------------------------------------------------------------------------
-# StatsImporter
+# Import Stats
 #------------------------------------------------------------------------------
 statsTypes = {
         'ALCH':('eid', 'weight', 'value'),
@@ -1324,7 +1324,7 @@ statsHeaders = (
 )
 
 #------------------------------------------------------------------------------
-# SoundPatcher
+# Import Sounds
 #------------------------------------------------------------------------------
 soundsTypes = {
     b'ACTI': (u'soundLooping', u'soundActivation'),
@@ -1376,59 +1376,40 @@ soundsTypes = {
 }
 
 #------------------------------------------------------------------------------
-# CellImporter
+# Import Cells
 #------------------------------------------------------------------------------
-cellAutoKeys = {u'C.Acoustic', u'C.Climate', u'C.Encounter',
-                u'C.ForceHideLand', u'C.ImageSpace', u'C.Light', u'C.Location',
-                u'C.LockList', u'C.Music', u'C.Name', u'C.Owner',
-                u'C.RecordFlags', u'C.Regions', u'C.SkyLighting', u'C.Water'}
-
 cellRecAttrs = {
-    u'C.Acoustic': ('acousticSpace',),
-    u'C.Climate': ('climate',),
-    u'C.Encounter': ('encounterZone',),
+    u'C.Acoustic': (u'acousticSpace',),
+    u'C.Climate': (u'climate', u'flags.showSky'),
+    u'C.Encounter': (u'encounterZone',),
     u'C.ForceHideLand': (u'land_flags',),
-    u'C.ImageSpace': ('imageSpace',),
-    u'C.Light': ('ambientRed','ambientGreen','ambientBlue','unused1',
-         'directionalRed','directionalGreen','directionalBlue','unused2',
-         'fogRed','fogGreen','fogBlue','unused3',
-         'fogNear','fogFar','directionalXY','directionalZ',
-         'directionalFade','fogClip','fogPower',
-         'redXplus','greenXplus','blueXplus','unknownXplus', # 'X+'
-         'redXminus','greenXminus','blueXminus','unknownXminus', # 'X-'
-         'redYplus','greenYplus','blueYplus','unknownYplus', # 'Y+'
-         'redYminus','greenYminus','blueYminus','unknownYminus', # 'Y-'
-         'redZplus','greenZplus','blueZplus','unknownZplus', # 'Z+'
-         'redZminus','greenZminus','blueZminus','unknownZminus', # 'Z-'
-         'redSpec','greenSpec','blueSpec','unknownSpec', # Specular Color Values
-         'fresnelPower', # Fresnel Power
-         'fogColorFarRed','fogColorFarGreen','fogColorFarBlue','unused4',
-         'fogMax','lightFadeBegin','lightFadeEnd','inherits','lightTemplate',),
-    u'C.Location': ('location',),
-    u'C.LockList': ('lockList',),
-    u'C.Music': ('music',),
-    u'C.Name': ('full',),
-    u'C.Owner': ('ownership',),
-    u'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
-    u'C.Regions': ('regions',),
-    u'C.Water': ('water','waterHeight','waterNoiseTexture','waterEnvironmentMap',),
-}
-cellRecFlags = {
-    u'C.Acoustic': '',
-    u'C.Climate': 'showSky',
-    u'C.Encounter': '',
-    u'C.ForceHideLand': '',
-    u'C.ImageSpace': '',
-    u'C.Light': '',
-    u'C.Location': '',
-    u'C.LockList': '',
-    u'C.Music': '',
-    u'C.Name': '',
-    u'C.Owner': 'publicPlace',
-    u'C.RecordFlags': '',
-    u'C.Regions': '',
-    u'C.SkyLighting': 'useSkyLighting',
-    u'C.Water': 'hasWater',
+    u'C.ImageSpace': (u'imageSpace',),
+    ##: Patches unuseds?
+    u'C.Light': (u'ambientRed', u'ambientGreen', u'ambientBlue', u'unused1',
+                 u'directionalRed', u'directionalGreen', u'directionalBlue',
+                 u'unused2', u'fogRed', u'fogGreen', u'fogBlue', u'unused3',
+                 u'fogNear', u'fogFar', u'directionalXY', u'directionalZ',
+                 u'directionalFade', u'fogClip', u'fogPower', u'redXplus',
+                 u'greenXplus', u'blueXplus', u'unknownXplus', u'redXminus',
+                 u'greenXminus', u'blueXminus', u'unknownXminus', u'redYplus',
+                 u'greenYplus', u'blueYplus', u'unknownYplus', u'redYminus',
+                 u'greenYminus', u'blueYminus', u'unknownYminus', u'redZplus',
+                 u'greenZplus', u'blueZplus', u'unknownZplus', u'redZminus',
+                 u'greenZminus', u'blueZminus', u'unknownZminus', u'redSpec',
+                 u'greenSpec', u'blueSpec', u'unknownSpec', u'fresnelPower',
+                 u'fogColorFarRed', u'fogColorFarGreen', u'fogColorFarBlue',
+                 u'unused4', u'fogMax', u'lightFadeBegin', u'lightFadeEnd',
+                 u'inherits', u'lightTemplate',),
+    u'C.Location': (u'location',),
+    u'C.LockList': (u'lockList',),
+    u'C.Music': (u'music',),
+    u'C.Name': (u'full',),
+    u'C.Owner': (u'ownership', u'flags.publicPlace'),
+    u'C.RecordFlags': (u'flags1',), # Yes seems funky but thats the way it is
+    u'C.Regions': (u'regions',),
+    u'C.SkyLighting': (u'skyFlags.useSkyLighting',),
+    u'C.Water': (u'water', u'waterHeight', u'waterNoiseTexture',
+                 u'waterEnvironmentMap', u'flags.hasWater'),
 }
 cell_float_attrs = {u'fogNear', u'fogFar', u'directionalFade', u'fogClip',
                     u'fogPower', u'fogMax', u'fresnelPower', u'lightFadeBegin',
@@ -1436,7 +1417,7 @@ cell_float_attrs = {u'fogNear', u'fogFar', u'directionalFade', u'fogClip',
 cell_skip_interior_attrs = {u'waterHeight'}
 
 #------------------------------------------------------------------------------
-# GraphicsPatcher
+# Import Graphics
 #------------------------------------------------------------------------------
 graphicsTypes = {
     b'ACTI': (u'model',),
@@ -1519,19 +1500,19 @@ graphicsModelAttrs = (u'model', u'model1', u'model2', u'model4', u'male_model',
                       u'female_model', u'male_model_1st', u'female_model_1st')
 
 #------------------------------------------------------------------------------
-# Inventory Patcher
+# Import Inventory
 #------------------------------------------------------------------------------
 inventoryTypes = ('NPC_','CONT',)
 
 #------------------------------------------------------------------------------
-# Keywords Patcher
+# Import Keywords
 #------------------------------------------------------------------------------
 keywords_types = ('ACTI', 'ALCH', 'AMMO', 'ARMO', 'BOOK', 'FLOR', 'FURN',
                   'INGR', 'KEYM', 'LCTN', 'MGEF', 'MISC', 'NPC_', 'SCRL',
                   'SLGM', 'SPEL', 'TACT', 'WEAP',)
 
 #------------------------------------------------------------------------------
-# Text Patcher
+# Import Text
 #------------------------------------------------------------------------------
 text_types = {
     b'ACTI': (u'activate_text_override',),
@@ -1556,7 +1537,7 @@ text_types = {
 }
 
 #------------------------------------------------------------------------------
-# Object Bounds Patcher
+# Import Object Bounds
 #------------------------------------------------------------------------------
 object_bounds_types = {'ACTI', 'ADDN', 'ALCH', 'AMMO', 'APPA', 'ARMO', 'ARTO',
                        'ASPC', 'BOOK', 'CONT', 'DOOR', 'DUAL', 'ENCH', 'EXPL',
@@ -1587,14 +1568,14 @@ cc_passes = (
 )
 
 #------------------------------------------------------------------------------
-# Destructible Patcher
+# Import Destructible
 #------------------------------------------------------------------------------
 destructible_types = {'ACTI', 'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'CONT',
                       'DOOR', 'FLOR', 'FURN', 'KEYM', 'LIGH', 'MISC', 'MSTT',
                       'NPC_', 'PROJ', 'SCRL', 'SLGM', 'TACT', 'WEAP'}
 
 #------------------------------------------------------------------------------
-# Actor Patchers
+# Import Actors
 #------------------------------------------------------------------------------
 actor_importer_attrs = {
     b'NPC_': {
@@ -1640,7 +1621,7 @@ actor_importer_attrs = {
 actor_types = ('NPC_',)
 
 #------------------------------------------------------------------------------
-# Spell Stats Patcher
+# Import Spell Stats
 #------------------------------------------------------------------------------
 spell_stats_attrs = (u'eid', u'cost', u'spellType', u'chargeTime', u'castType',
                      u'targetType', u'castDuration', u'range', u'halfCostPerk',
@@ -1648,7 +1629,7 @@ spell_stats_attrs = (u'eid', u'cost', u'spellType', u'chargeTime', u'castType',
 spell_stats_types = {b'SCRL', b'SPEL'}
 
 #------------------------------------------------------------------------------
-# Actor Tweaker
+# Tweak Actors
 #------------------------------------------------------------------------------
 actor_tweaks = {
     u'OppositeGenderAnimsPatcher_Female',
@@ -1656,7 +1637,7 @@ actor_tweaks = {
 }
 
 #------------------------------------------------------------------------------
-# Assorted Tweaker
+# Tweak Assorted
 #------------------------------------------------------------------------------
 assorted_tweaks = {
     u'AssortedTweak_ArmorPlayable',
@@ -1677,7 +1658,7 @@ assorted_tweaks = {
 staff_condition = (u'animationType', 8)
 
 #------------------------------------------------------------------------------
-# Relations Patcher
+# Import Relations
 #------------------------------------------------------------------------------
 relations_attrs = (u'faction', u'mod', u'group_combat_reaction')
 relations_csv_header = u'"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (
@@ -1687,14 +1668,14 @@ relations_csv_header = u'"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (
 relations_csv_row_format = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s","%s"\n'
 
 #------------------------------------------------------------------------------
-# Enchantment Stats Patcher
+# Import Enchantment Stats
 #------------------------------------------------------------------------------
 ench_stats_attrs = (u'enchantmentCost', u'generalFlags', u'castType',
                     u'enchantmentAmount', u'targetType', u'enchantType',
                     u'chargeTime', u'baseEnchantment', u'wornRestrictions')
 
 #--------------------------------------------------------------------------
-# Effect Stats Patcher
+# Import Effect Stats
 #--------------------------------------------------------------------------
 mgef_stats_attrs = (u'flags', u'base_cost', u'associated_item', u'magic_skill',
                     u'resist_value', u'taper_weight', u'minimum_skill_level',
