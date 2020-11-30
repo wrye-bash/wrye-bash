@@ -47,7 +47,7 @@ from .mods_metadata import get_tags_from_dir
 from .. import bass, bolt, balt, bush, env, load_order, archives, \
     initialization
 from ..archives import readExts
-from ..bass import dirs, inisettings, tooldirs
+from ..bass import dirs, inisettings
 from ..bolt import GPath, DataDict, deprint, sio, Path, decoder, AFile, \
     GPath_no_norm
 from ..brec import ModReader, RecordHeader
@@ -3183,6 +3183,7 @@ def initDefaultTools():
     #   First to default path
     pf = [GPath(u'C:\\Program Files'),GPath(u'C:\\Program Files (x86)')]
     def pathlist(*args): return [x.join(*args) for x in pf]
+    tooldirs = bass.tooldirs = bolt.LowerDict() ##: Yak! needed for case insensitive keys
     # BOSS can be in any number of places.
     # Detect locally installed (into game folder) BOSS
     if dirs[u'app'].join(u'BOSS', u'BOSS.exe').exists():
@@ -3196,14 +3197,17 @@ def initDefaultTools():
             if path_in_registry.isdir():
                 path_in_registry = path_in_registry.join(u'BOSS.exe')
             tooldirs[u'boss'] = path_in_registry
+    tooldirs[u'TES3EditPath'] = dirs[u'app'].join(u'TES3Edit.exe')
     tooldirs[u'Tes4FilesPath'] = dirs[u'app'].join(u'Tools', u'TES4Files.exe')
     tooldirs[u'Tes4EditPath'] = dirs[u'app'].join(u'TES4Edit.exe')
     tooldirs[u'Tes5EditPath'] = dirs[u'app'].join(u'TES5Edit.exe')
+    tooldirs[u'TES5VREditPath'] = dirs[u'app'].join(u'TES5VREdit.exe')
     tooldirs[u'EnderalEditPath'] = dirs[u'app'].join(u'EnderalEdit.exe')
     tooldirs[u'SSEEditPath'] = dirs[u'app'].join(u'SSEEdit.exe')
     tooldirs[u'Fo4EditPath'] = dirs[u'app'].join(u'FO4Edit.exe')
     tooldirs[u'Fo3EditPath'] = dirs[u'app'].join(u'FO3Edit.exe')
     tooldirs[u'FnvEditPath'] = dirs[u'app'].join(u'FNVEdit.exe')
+    tooldirs[u'FO4VREditPath'] = dirs[u'app'].join(u'FO4VREdit.exe')
     tooldirs[u'Tes4LodGenPath'] = dirs[u'app'].join(u'TES4LodGen.exe')
     tooldirs[u'Tes4GeckoPath'] = dirs[u'app'].join(u'Tes4Gecko.jar')
     tooldirs[u'Tes5GeckoPath'] = pathlist(u'Dark Creations',u'TESVGecko',u'TESVGecko.exe')
@@ -3306,17 +3310,15 @@ def initDefaultSettings():
 def initOptions(bashIni):
     initDefaultTools()
     initDefaultSettings()
-
     defaultOptions = {}
     type_key = {unicode: u's', list: u's', int: u'i', bool: u'b',
                 bolt.Path: u's'} # tooldirs only
-    allOptions = [tooldirs, inisettings]
+    allOptions = [bass.tooldirs, inisettings]
     unknownSettings = {}
     for settingsDict in allOptions:
         for defaultKey,defaultValue in settingsDict.iteritems():
             readKey = type_key[type(defaultValue)] + defaultKey
             defaultOptions[readKey.lower()] = (defaultKey,settingsDict)
-
     # if bash.ini exists update the settings from there:
     if bashIni:
         for section in bashIni.sections():
@@ -3345,9 +3347,8 @@ def initOptions(bashIni):
                 if compValue != (compDefaultValue[
                     0] if settingType is list else compDefaultValue):
                     usedSettings[usedKey] = value
-
-    tooldirs[u'Tes4ViewPath'] = tooldirs[u'Tes4EditPath'].head.join(u'TES4View.exe')
-    tooldirs[u'Tes4TransPath'] = tooldirs[u'Tes4EditPath'].head.join(u'TES4Trans.exe')
+    bass.tooldirs[u'Tes4ViewPath'] = bass.tooldirs[u'Tes4EditPath'].head.join(u'TES4View.exe')
+    bass.tooldirs[u'Tes4TransPath'] = bass.tooldirs[u'Tes4EditPath'].head.join(u'TES4Trans.exe')
 
 def initBosh(bashIni, game_ini_path):
     # Setup loot_parser, needs to be done after the dirs are initialized

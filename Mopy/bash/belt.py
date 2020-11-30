@@ -1226,7 +1226,7 @@ class WryeParser(ScriptParser.Parser):
                     error(_(u"Invalid syntax for 'For' statement.  Expected format:")
                           +u'\n For var_name in Subpackages\n For var_name in subpackage_name'
                           )
-                List = sorted(self.sublist.keys())
+                List = sorted(self.sublist)
             else:
                 sub_name = self.ExecuteTokens(args[2:])
                 subpackage = sub_name if sub_name in self.sublist else None

@@ -27,6 +27,7 @@ and to set some brec.RecordHeader/MreRecord class variables."""
 
 import importlib
 from collections import defaultdict
+from itertools import chain
 from os.path import join as _j
 
 from .. import brec
@@ -690,5 +691,12 @@ class GameInfo(object):
         for rec_class in brec.MreRecord.type_class.itervalues():
             if issubclass(rec_class, brec.MelRecord):
                 rec_class.validate_record_syntax()
+
+    @classmethod
+    def supported_games(cls):
+        game_types = set(cls.__subclasses__())
+        game_types.update(
+            chain.from_iterable(c.__subclasses__() for c in list(game_types)))
+        return game_types
 
 GAME_TYPE = None

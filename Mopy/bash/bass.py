@@ -38,7 +38,7 @@ dirs = {}
 # settings read from the Mopy/bash.ini file in initDefaultSettings()
 inisettings = {}
 # dirs where various apps may be located - populated in initDefaultTools()
-tooldirs = {}
+tooldirs = None # type: dict | None
 
 # settings dictionary - belongs to a dedicated settings module below bolt - WIP !
 settings = None # bolt.Settings !

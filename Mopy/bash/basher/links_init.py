@@ -42,6 +42,7 @@ from .. import bass, balt, bush
 from ..balt import MenuLink, SeparatorLink, UIList_OpenItems, \
     UIList_OpenStore, UIList_Hide
 from ..env import init_app_links
+from ..game import GameInfo
 from ..gui import ImageWrapper
 
 #------------------------------------------------------------------------------
@@ -102,40 +103,13 @@ def InitStatusBar():
             imageList(u'tools/tes4view%s.png'),
             _(u"Launch TES4View"),
             uid=u'TES4View'))
-    # TODO(inf) Refactor this! I made bush.game.Xe a class precisely for stuff
-    #  like this - so add stuff like Xe.command_line_arg and drop these 30+
-    #  braindead lines
-    BashStatusBar.buttons.append( #Tes4Edit
-        App_Tes4View((bass.tooldirs[u'Tes4EditPath'], u'-TES4 -edit'),
-                     imageList(u'tools/tes4edit%s.png'),
-                     _(u"Launch TES4Edit"),
-                     uid=u'TES4Edit'))
-    BashStatusBar.buttons.append( #Tes5Edit
-        App_Tes4View((bass.tooldirs[u'Tes5EditPath'], u'-TES5 -edit'),
-                     imageList(u'tools/tes4edit%s.png'),
-                     _(u"Launch TES5Edit"),
-                     uid=u'TES5Edit'))
-    BashStatusBar.buttons.append( #EnderalEdit
-        App_Tes4View((bass.tooldirs[u'EnderalEditPath'], u'-Enderal -edit'),
-                     imageList(u'tools/tes4edit%s.png'),
-                     _(u"Launch EnderalEdit"),
-                     uid=u'EnderalEdit'))
-    BashStatusBar.buttons.append(  #SSEEdit
-        App_Tes4View((bass.tooldirs[u'SSEEditPath'], u'-SSE -edit'),
-                     imageList(u'tools/tes4edit%s.png'), _(u"Launch SSEEdit"),
-                     uid=u'SSEEdit'))
-    BashStatusBar.buttons.append(  #Fo4Edit
-        App_Tes4View((bass.tooldirs[u'Fo4EditPath'], u'-FO4 -edit'),
-                     imageList(u'tools/tes4edit%s.png'), _(u"Launch FO4Edit"),
-                     uid=u'FO4Edit'))
-    BashStatusBar.buttons.append(  #Fo3Edit
-        App_Tes4View((bass.tooldirs[u'Fo3EditPath'], u'-FO3 -edit'),
-                     imageList(u'tools/tes4edit%s.png'), _(u"Launch FO3Edit"),
-                     uid=u'FO3Edit'))
-    BashStatusBar.buttons.append(  #FnvEdit
-        App_Tes4View((bass.tooldirs[u'FnvEditPath'], u'-FNV -edit'),
-                     imageList(u'tools/tes4edit%s.png'), _(u"Launch FNVEdit"),
-                     uid=u'FNVEdit'))
+    for game_class in GameInfo.supported_games(): # TODO(ut): don't save those for all games!
+        xe_name = game_class.Xe.full_name
+        BashStatusBar.buttons.append(App_Tes4View(
+            (bass.tooldirs[xe_name + u'Path'],
+             u'-%s -edit' % xe_name[:-4]), # chop off edit
+            imageList(u'tools/tes4edit%s.png'), _(u'Launch %s' % xe_name),
+            uid=xe_name))
     BashStatusBar.buttons.append(  #TesVGecko
         app_button_factory((bass.tooldirs[u'Tes5GeckoPath']),
                            imageList(u'tools/tesvgecko%s.png'),

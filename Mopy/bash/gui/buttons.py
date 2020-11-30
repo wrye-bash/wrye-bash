@@ -240,15 +240,11 @@ class ReloadButton(ImageButton):
     for reloading documents, websites, etc.
 
     See Button for documentation on button events."""
-    def __init__(self, parent):
+    def __init__(self, parent, reload_icon):
         """Creates a new ReloadButton with the specified parent.
 
         :param parent: The object that this button belongs to. May be a wx
                        object or a component."""
-        # TODO(inf) Image API! This is really, really ugly
-        from .. import bass
-        reload_icon = _wx.Bitmap(bass.dirs[u'images'].join(u'reload16.png').s,
-                                 _wx.BITMAP_TYPE_PNG)
         super(ReloadButton, self).__init__(parent, reload_icon,
                                            btn_tooltip=_(u'Reload'),
                                            exact_fit=True)
