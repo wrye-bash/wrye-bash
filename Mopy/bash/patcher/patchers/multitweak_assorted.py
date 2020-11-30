@@ -143,11 +143,6 @@ _remaining_checks = re.compile(u'see.*me|mark(?!ynaz)')
 
 class _APlayableTweak(MultiTweakItem):
     """Shared code of 'armor/clothing playable' tweaks."""
-    ##: This was in the CBash version only - do we need to build something like
-    # this for PBash tweaks?
-    #scanOrder = 29 # Run before the show armor/clothing tweaks
-    #editOrder = 29
-
     @staticmethod
     def _any_body_flag_set(record):
         return any(getattr(record.biped_flags, bd_flag) for bd_flag
@@ -371,9 +366,9 @@ class _AWeightTweak_SEFF(_AWeightTweak):
         if not super(_AWeightTweak_SEFF, self).wants_record(record):
             return False
         return (self._ignore_effects or
-                (self._seff_code not in record.getEffects() and
-                 ##: Skip OBME records, at least for now
-                 record.obme_record_version is not None))
+                ##: Skip OBME records, at least for now
+                (record.obme_record_version is None and
+                 self._seff_code not in record.getEffects()))
 
 #------------------------------------------------------------------------------
 class AssortedTweak_PotionWeight(_AWeightTweak_SEFF):
@@ -421,11 +416,8 @@ class AssortedTweak_PotionWeightMinimum(_AWeightTweak):
     tweak_choices = [(u'0.1', 0.1), (u'0.5', 0.5), (u'1.0', 1.0),
                      (u'2.0', 2.0), (u'4.0', 4.0), (_(u'Custom'), 0.0)]
     tweak_log_msg = _(u'Ingestibles Reweighed: %(total_changed)d')
+    tweak_order = 11 # Run after Reweigh: Potions (Maximum) for consistency
     _log_weight_value = _(u'Ingestibles set to minimum weight of %f.')
-    ##: This was in the CBash version only - do we need to build something like
-    # this for PBash tweaks?
-    #scanOrder = 33 #Have it run after the max weight for consistent results
-    #editOrder = 33
 
     def wants_record(self, record): ##: no SEFF condition - intended?
         return (record.weight < self.chosen_weight and
@@ -859,6 +851,6 @@ class AssortedTweak_GunsUseISAnimation(MultiTweakItem):
 #------------------------------------------------------------------------------
 class TweakAssortedPatcher(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
-    scanOrder = 32
-    editOrder = 32
+    scanOrder = 29 # Run before other tweakers (due to the 'playable' tweaks)
+    editOrder = 29
     _tweak_classes = [globals()[t] for t in bush.game.assorted_tweaks]

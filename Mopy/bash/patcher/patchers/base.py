@@ -167,7 +167,7 @@ class MultiTweaker(AMultiTweaker,Patcher):
                         keep(record.fid)
                         tweak_counter[p_tweak][record.fid[0]] += 1
         # We're done with all tweaks, give them a chance to clean up and do any
-        # finishing touches (e.g. injecting records for GMST tweaks), then log
+        # finishing touches (e.g. creating records for GMST tweaks), then log
         for tweak in self.enabled_tweaks:
             tweak.finish_tweaking(self.patchFile)
             tweak.tweak_log(log, tweak_counter[tweak])

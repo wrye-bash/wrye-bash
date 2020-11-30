@@ -29,7 +29,6 @@ from ...patcher.base import DynamicTweak
 from ...patcher.patchers.base import MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker
 
-# Patchers: 30 ----------------------------------------------------------------
 class GlobalsTweak(DynamicTweak, MultiTweakItem):
     """Sets a global to specified value."""
     tweak_read_classes = b'GLOB',
@@ -41,7 +40,7 @@ class GlobalsTweak(DynamicTweak, MultiTweakItem):
         return float(self.choiceValues[self.chosen][0])
 
     def wants_record(self, record):
-        return (getattr(record, u'eid', None) and # skip missing and empty EDID
+        return (record.eid and # skip missing and empty EDID
                 record.eid.lower() == self.tweak_key and
                 record.global_value != self.chosen_value)
 
@@ -49,7 +48,7 @@ class GlobalsTweak(DynamicTweak, MultiTweakItem):
         record.global_value = self.chosen_value
 
     def tweak_log(self, log, count):
-        if count: log(u'* ' + _(u'%s set to: %4.2f') % (
+        log(u'* ' + _(u'%s set to: %4.2f') % (
             self.tweak_name, self.chosen_value))
 
 #------------------------------------------------------------------------------
@@ -149,8 +148,6 @@ class GmstTweak(DynamicTweak, MultiTweakItem):
 #------------------------------------------------------------------------------
 class TweakSettingsPatcher(MultiTweaker):
     """Tweaks GMST records in various ways."""
-    scanOrder = 29
-    editOrder = 29
     _class_tweaks = [(GlobalsTweak, bush.game.GlobalsTweaks),
                      (GmstTweak, bush.game.GmstTweaks)]
 

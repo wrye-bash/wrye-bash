@@ -29,6 +29,8 @@ from this module outside of the patcher package."""
 # unhelpful) docs from overriding methods to save some (100s) lines. We must
 # also document which methods MUST be overridden by raising AbstractError. For
 # instance Patcher.buildPatch() apparently is NOT always overridden
+import copy
+
 from .. import load_order
 from ..exception import AbstractError
 
@@ -111,8 +113,8 @@ class AMultiTweaker(Abstract_Patcher):
     """Combines a number of sub-tweaks which can be individually enabled and
     configured through a choice menu."""
     patcher_group = u'Tweakers'
-    scanOrder = 20
-    editOrder = 20
+    scanOrder = 30
+    editOrder = 30
     _tweak_classes = [] # override in implementations
 
     def __init__(self, p_name, p_file, enabled_tweaks):
@@ -122,8 +124,12 @@ class AMultiTweaker(Abstract_Patcher):
 
     @classmethod
     def tweak_instances(cls):
-        return sorted((tc() for tc in cls._tweak_classes),
-                      key=lambda a: a.tweak_name.lower())
+        tweak_classes = copy.deepcopy(cls._tweak_classes)
+        # Sort alphabetically first for aesthetic reasons
+        tweak_classes.sort(key=lambda c: c.tweak_name)
+        # After that, sort to make tweaks instantiate & run in the right order
+        tweak_classes.sort(key=lambda c: c.tweak_order)
+        return [t() for t in tweak_classes]
 
 #------------------------------------------------------------------------------
 # AMultiTweakItem(object) -----------------------------------------------------
@@ -178,6 +184,10 @@ class AMultiTweakItem(object):
     # argument, total_changed, which contains the total number of changed
     # records. Automatically gets wtxt formatting prepended.
     tweak_log_msg = u'OVERRIDE'
+    # A sorting key which the tweaker that this tweak belongs to uses to
+    # determine the order in which to run tweaks. A lower number means that the
+    # tweak will run sooner, a higher number means later.
+    tweak_order = 10
     # If True, this tweak will be checked by default
     default_enabled = False
     # If True, tweak_key will be shown in the 'custom value' popup

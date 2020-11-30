@@ -1853,13 +1853,13 @@ class MreSoun(MelRecord):
         # This is the old format of SNDX - read it, but dump SNDX only
         MelReadOnly(
             MelStruct(b'SNDD', u'2BbsH2s', u'minDistance', u'maxDistance',
-                      u'freqAdjustment', (u'unused1', null1),
-                      (_flags, u'flags'), (u'unused2', null2))
+                u'freqAdjustment', (u'unused1', null1), (_flags, u'flags'),
+                (u'unused2', null2))
         ),
-        MelOptStruct(b'SNDX', u'2BbsH2sH2B', u'minDistance', u'maxDistance',
-                     u'freqAdjustment', (u'unused1', null1),
-                     (_flags, u'flags'), (u'unused2', null2), u'staticAtten',
-                     u'stopTime', u'startTime'),
+        MelStruct(b'SNDX', u'2BbsH2sH2B', u'minDistance', u'maxDistance',
+            u'freqAdjustment', (u'unused1', null1), (_flags, u'flags'),
+            (u'unused2', null2), (u'staticAtten', None), u'stopTime',
+            u'startTime'),
     )
     __slots__ = melSet.getSlotsUsed()
 

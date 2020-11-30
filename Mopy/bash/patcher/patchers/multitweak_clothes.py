@@ -48,18 +48,13 @@ class ClothesTweak(DynamicTweak, MultiTweakItem):
         super(ClothesTweak, self).__init__(tweak_name, tweak_tip, tweak_key,
             *tweak_choices)
         type_key = tweak_key[:tweak_key.find(u'.')]
-        self.or_type_flags = type_key in (u'robes', u'rings')
+        self.or_type_flags = type_key == u'rings'
         self.type_flags = self.clothes_flags[type_key]
-
-    @staticmethod
-    def _get_biped_flags(record):
-        """Returns the biped flags of the specified record as an integer."""
-        return int(record.biped_flags) & 0xFFFF
 
     def wants_record(self, record):
         if self._is_nonplayable(record):
             return False
-        rec_type_flags = self._get_biped_flags(record)
+        rec_type_flags = int(record.biped_flags) & 0xFFFF
         my_type_flags = self.type_flags
         return ((rec_type_flags == my_type_flags) or (self.or_type_flags and (
                 rec_type_flags & my_type_flags == rec_type_flags)))
@@ -88,7 +83,7 @@ class ClothesTweak_MaxWeight(ClothesTweak):
         super(ClothesTweak_MaxWeight, self).tweak_log(log, count)
 
 #------------------------------------------------------------------------------
-class _AUnblockTweak(ClothesTweak):
+class ClothesTweak_Unblock(ClothesTweak):
     """Unlimited rings, amulets."""
     tweak_log_msg = _(u'Clothes Tweaked: %(total_changed)d')
 
@@ -102,10 +97,9 @@ class _AUnblockTweak(ClothesTweak):
         return self._unblock_flags
 
     def wants_record(self, record):
-        return super(_AUnblockTweak, self).wants_record(
-            record) and int(self._get_biped_flags(record) & self.unblock_flags)
+        return super(ClothesTweak_Unblock, self).wants_record(
+            record) and int(record.biped_flags & self.unblock_flags)
 
-class ClothesTweak_Unblock(_AUnblockTweak, ClothesTweak):
     def tweak_record(self, record):
         record.biped_flags &= ~self.unblock_flags
 
@@ -154,8 +148,6 @@ class _AClothesTweaker(AMultiTweaker):
                     (u'0.5', 0.5),
                     (u'1.0', 1.0),
                     (_(u'Custom'), 0.0),),)
-    scanOrder = 31
-    editOrder = 31
 
 class TweakClothesPatcher(_AClothesTweaker,MultiTweaker):
     @classmethod

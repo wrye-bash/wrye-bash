@@ -382,8 +382,6 @@ class ImportSoundsPatcher(_APreserver):
 #------------------------------------------------------------------------------
 class ImportSpellStatsPatcher(_APreserver):
     """Import spell changes from mod files."""
-    scanOrder = 29
-    editOrder = 29 #--Run ahead of bow patcher
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
     rec_attrs = {x: bush.game.spell_stats_attrs
                  for x in bush.game.spell_stats_types}

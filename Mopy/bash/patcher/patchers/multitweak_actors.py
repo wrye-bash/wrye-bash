@@ -32,7 +32,6 @@ from ...bolt import GPath
 from ...exception import AbstractError
 from .base import MultiTweakItem, MultiTweaker
 
-# Patchers: 30 ----------------------------------------------------------------
 class _AActorTweak(MultiTweakItem):
     """Base for all actor tweaks."""
     @staticmethod
@@ -100,6 +99,7 @@ class MAONPCSkeletonPatcher(_ASkeletonTweak):
                   u'you have MAO installed.')
     tweak_key = u'MAO Skeleton'
     tweak_log_header = _(u'MAO Skeleton Setter')
+    tweak_order = 11 # Run after the vanilla skeleton tweak for consistency
     _sheo_skeleton = u'characters\\_male\\skeletonsesheogorath.nif'
     _sheo_skeleton_mao = (u"Mayu's Projects[M]\\Animation Overhaul\\Vanilla\\"
                           u'SkeletonSESheogorath.nif')
@@ -173,10 +173,6 @@ class VanillaNPCSkeletonPatcher(_ASkeletonTweak):
     tweak_log_header = _(u'Vanilla Beast Skeleton')
     _new_skeleton = u'Characters\\_Male\\SkeletonBeast.nif'
     _old_skeleton = u'characters\\_male\\skeleton.nif'
-    ##: This was in the CBash version only - do we need to build something like
-    # this for PBash tweaks?
-    #scanOrder = 31 #Run before MAO
-    #editOrder = 31
 
     def wants_record(self, record):
         old_mod_path = self._get_skeleton_path(record)

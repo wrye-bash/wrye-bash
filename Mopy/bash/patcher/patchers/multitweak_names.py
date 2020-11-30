@@ -25,13 +25,15 @@
 to the Names Multitweaker - as well as the tweaker itself."""
 
 from __future__ import division
+
 import re
 from collections import OrderedDict
+
 # Internal
 from ...bolt import build_esub, RecPath
-from ...brec import MreRecord # yuck, see usage below
+from ...brec import MreRecord  # yuck, see usage below
 from ...exception import AbstractError
-from ...parsers import LoadFactory, ModFile # yuck, see usage below
+from ...parsers import LoadFactory, ModFile  # yuck, see usage below
 from ...patcher.patchers.base import MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker
 
@@ -91,10 +93,9 @@ class _AMgefNamesTweak(_ANamesTweak):
     def wants_record(self, record):
         # Once we have MGEFs indexed, we can try renaming to check more
         # thoroughly (i.e. during the buildPatch/apply phase)
-        return (record.full and not self._tweak_mgef_hostiles or
-                self._try_renaming(record))
+        return (record.full and (not self._tweak_mgef_hostiles or
+                self._try_renaming(record)))
 
-# Patchers: 30 ----------------------------------------------------------------
 ##: This would be better handled with some sort of settings menu for the BP
 class NamesTweak_BodyTags(MultiTweakItem): # not _ANamesTweak, no classes!
     """Only exists to change _PFile.bodyTags - see _ANamesTweaker.__init__ for
@@ -105,6 +106,7 @@ class NamesTweak_BodyTags(MultiTweakItem): # not _ANamesTweak, no classes!
     tweak_key = u'bodyTags'
     tweak_choices = [(u'ARGHTCCPBS', u'ARGHTCCPBS'),
                      (u'ABGHINOPSL', u'ABGHINOPSL')]
+    tweak_order = 9 # Run before all other tweaks
 
     def tweak_log(self, log, count): pass # 'internal' tweak, log nothing
 
@@ -149,7 +151,7 @@ class _ANamesTweak_Body(_ANamesTweak):
                          if record.recType == b'ARMO' else u''),
                 body_flags.head or body_flags.hair,
                 body_flags.rightRing or body_flags.leftRing, body_flags.amulet,
-                body_flags.upperBody or body_flags.lowerBody,
+                body_flags.upperBody and body_flags.lowerBody,
                 body_flags.upperBody, body_flags.lowerBody, body_flags.hand,
                 body_flags.foot, body_flags.tail, body_flags.shield)
 
@@ -317,7 +319,7 @@ class NamesTweak_Spells(_AMgefNamesTweak):
         if record.effects:
             school = self._get_effect_school(record.effects[0])
         # Remove existing label
-        wip_name = _re_old_magic_label.sub(u'', record.full or u'')
+        wip_name = _re_old_magic_label.sub(u'', record.full)
         if u'%s' in self.chosen_format: # don't remove tags
             if u'%d' in self.chosen_format: # show level
                 wip_name = self.chosen_format % (u'ACDIMRU'[school],
@@ -528,14 +530,14 @@ class NamesTweak_SecurityToLockpicking(_ATextReplacer):
 #------------------------------------------------------------------------------
 class TweakNamesPatcher(MultiTweaker):
     """Tweaks record full names in various ways."""
-    scanOrder = 32
-    editOrder = 32
     _tweak_classes = [
-        NamesTweak_Body_Armor, NamesTweak_Body_Clothes, NamesTweak_Potions,
-        NamesTweak_Scrolls, NamesTweak_Spells, NamesTweak_Weapons,
-        NamesTweak_DwarvenToDwemer, NamesTweak_DwarfsToDwarves,
-        NamesTweak_StaffsToStaves, NamesTweak_FatigueToStamina,
-        NamesTweak_MarksmanToArchery, NamesTweak_SecurityToLockpicking]
+        NamesTweak_BodyTags, NamesTweak_Body_Armor, NamesTweak_Body_Clothes,
+        NamesTweak_Potions, NamesTweak_Scrolls, NamesTweak_Spells,
+        NamesTweak_Weapons, NamesTweak_DwarvenToDwemer,
+        NamesTweak_DwarfsToDwarves, NamesTweak_StaffsToStaves,
+        NamesTweak_FatigueToStamina, NamesTweak_MarksmanToArchery,
+        NamesTweak_SecurityToLockpicking
+    ]
 
     def __init__(self, p_name, p_file, enabled_tweaks):
         super(TweakNamesPatcher, self).__init__(p_name, p_file, enabled_tweaks)
@@ -546,8 +548,3 @@ class TweakNamesPatcher(MultiTweaker):
                     names_tweak.chosen][0]
             elif isinstance(names_tweak, _ANamesTweak_Body):
                 names_tweak._tweak_body_tags = p_file.bodyTags
-
-    @classmethod
-    def tweak_instances(cls):
-        return [NamesTweak_BodyTags()] + super( # always first, see __init__
-            TweakNamesPatcher, cls).tweak_instances()
