@@ -38,7 +38,7 @@ _cobl_main = GPath(u'COBL Main.esm')
 class _ExSpecial(Abstract_Patcher):
     """Those used to be subclasses of SpecialPatcher that did not make much
     sense as they did not use scan_more."""
-    group = _(u'Special')
+    patcher_group = u'Special'
     scanOrder = 40
     editOrder = 40
 

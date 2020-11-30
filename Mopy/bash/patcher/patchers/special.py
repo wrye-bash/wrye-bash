@@ -33,7 +33,7 @@ from ...exception import AbstractError
 # Patchers: 40 ----------------------------------------------------------------
 class _AListsMerger(ListPatcher):
     """Merges lists of objects, e.g. leveled lists or FormID lists."""
-    group = _(u'Special')
+    patcher_group = u'Special'
     scanOrder = 45
     editOrder = 45
     iiMode = True
@@ -314,7 +314,7 @@ class FormIDListsPatcher(_AListsMerger):
 class ContentsCheckerPatcher(Patcher):
     """Checks contents of leveled lists, inventories and containers for
     correct content types."""
-    group = _(u'Special')
+    patcher_group = u'Special'
     scanOrder = 50
     editOrder = 50
     contType_entryTypes = bush.game.cc_valid_types

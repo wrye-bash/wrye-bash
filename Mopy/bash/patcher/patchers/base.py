@@ -177,20 +177,20 @@ class AliasModNamesPatcher(Patcher):
     """Specify mod aliases for patch files."""
     scanOrder = 10
     editOrder = 10
-    group = _(u'General')
+    patcher_group = u'General'
 
 class MergePatchesPatcher(ListPatcher):
     """Merges specified patches into Bashed Patch."""
     scanOrder = 10
     editOrder = 10
-    group = _(u'General')
+    patcher_group = u'General'
 
     def __init__(self, p_name, p_file, p_sources):
         super(MergePatchesPatcher, self).__init__(p_name, p_file, p_sources)
         if not self.isActive: return
         #--WARNING: Since other patchers may rely on the following update
         # during their __init__, it's important that MergePatchesPatcher runs
-        # first
+        # first - ensured through its group of 'General'
         p_file.set_mergeable_mods(self.srcs)
 
 # TODO move this to a file it's imported after MreRecord.simpleTypes is set
@@ -198,7 +198,7 @@ class ReplaceFormIDsPatcher(ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
     scanOrder = 15
     editOrder = 15
-    group = _(u'General')
+    patcher_group = u'General'
 
     def __init__(self, p_name, p_file, p_sources):
         super(ReplaceFormIDsPatcher, self).__init__(p_name, p_file, p_sources)
@@ -385,7 +385,7 @@ class ReplaceFormIDsPatcher(ListPatcher):
 # Patchers: 20 ----------------------------------------------------------------
 class ImportPatcher(ListPatcher):
     """Subclass for patchers in group Importer."""
-    group = _(u'Importers')
+    patcher_group = u'Importers'
     scanOrder = 20
     editOrder = 20
     # Override in subclasses as needed

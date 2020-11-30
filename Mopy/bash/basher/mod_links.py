@@ -1105,9 +1105,6 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         u'Lists the Bashed Patch configuration and copies it to the clipboard')
 
     def Execute(self):
-        #--Patcher info - ##: groupOrder is duplicated from patcher_dialog!
-        groupOrder = {group: index for index, group in enumerate(
-            (_(u'General'), _(u'Importers'), _(u'Tweakers'), _(u'Special')))}
         #--Config
         config = bosh.modInfos.table.getItem(self._selected_item,
                                              u'bash.patch.configs', {})
@@ -1119,8 +1116,6 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
                 title=_(u'Unsupported CBash Patch'))
             return
         _gui_patchers = [copy.deepcopy(x) for x in all_gui_patchers]
-        _gui_patchers.sort(key=lambda a: a.__class__.patcher_name)
-        _gui_patchers.sort(key=lambda a: groupOrder[a.patcher_type.group])
         #--Log & Clipboard text
         log = bolt.LogFile(StringIO.StringIO())
         log.setHeader(u'= %s %s' % (self._selected_item, _(u'Config')))

@@ -62,8 +62,7 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
         expanded_plugin_range = False
 
     allTags = Fallout4GameInfo.allTags | {u'NoMerge'}
-    # MergePatches must come first!
-    patchers = (u'MergePatches',) + Fallout4GameInfo.patchers
+    patchers = Fallout4GameInfo.patchers | {u'MergePatches'}
 
     # ---------------------------------------------------------------------
     # --Imported - MreGlob is special import, not in records.py

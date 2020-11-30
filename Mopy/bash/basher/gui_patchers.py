@@ -1369,4 +1369,12 @@ for gsp_name, gsp_class in bush.game.game_specific_import_patchers.iteritems():
 
 # Init Patchers
 def initPatchers():
-    all_gui_patchers.extend((globals()[x]() for x in bush.game.patchers))
+    group_order = {p_grp: i for i, p_grp in enumerate( # PY3: enum?
+        (u'General', u'Importers', u'Tweakers', u'Special'))}
+    patcher_classes = [globals()[p] for p in bush.game.patchers]
+    # Sort alphabetically first for aesthetic reasons
+    patcher_classes.sort(key=lambda a: a.patcher_name)
+    # After that, sort by group to make patchers instantiate in the right order
+    patcher_classes.sort(
+        key=lambda a: group_order[a.patcher_type.patcher_group])
+    all_gui_patchers.extend((p() for p in patcher_classes))

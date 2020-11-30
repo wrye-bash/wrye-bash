@@ -40,7 +40,7 @@ class Abstract_Patcher(object):
      in MRO (method resolution order), just before object"""
     scanOrder = 10
     editOrder = 10
-    group = u'UNDEFINED'
+    patcher_group = u'UNDEFINED'
     iiMode = False
     # TODO naming (_patcher_top_sigs ?) and unify getTypes/read/writeClasses
     _read_write_records = () # top group signatures this patcher patches
@@ -110,7 +110,7 @@ class AListPatcher(Abstract_Patcher):
 class AMultiTweaker(Abstract_Patcher):
     """Combines a number of sub-tweaks which can be individually enabled and
     configured through a choice menu."""
-    group = _(u'Tweakers')
+    patcher_group = u'Tweakers'
     scanOrder = 20
     editOrder = 20
     _tweak_classes = [] # override in implementations

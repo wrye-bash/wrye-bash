@@ -340,9 +340,7 @@ class GameInfo(object):
 
     # Patchers available when building a Bashed Patch (referenced by GUI class
     # name, see gui_patchers.py for their definitions).
-    # MergePatches must come first if enabled, see
-    # patcher.patchers.base.MergePatchesPatcher.__init__
-    patchers = ()
+    patchers = set()
 
     # Magic Info
     weaponTypes = ()

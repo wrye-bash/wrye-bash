@@ -299,7 +299,7 @@ class RaceTweaker_SexlessHairs(_ARaceTweak):
 #------------------------------------------------------------------------------
 class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
     """Race patcher - we inherit from AMultiTweaker to use tweak_instances."""
-    group = _(u'Special')
+    patcher_group = u'Special'
     scanOrder = 40
     editOrder = 40
     _read_write_records = ('RACE', 'EYES', 'HAIR', 'NPC_',)
