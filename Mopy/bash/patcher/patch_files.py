@@ -239,7 +239,8 @@ class PatchFile(ModFile):
                 else:
                     progress(pstate, u'%s\n' % modName + _(u'Scanning...'))
                     self.update_patch_records_from_mod(modFile)
-                for patcher in sorted(self._patcher_instances, key=attrgetter(u'scanOrder')):
+                for patcher in sorted(self._patcher_instances,
+                        key=attrgetter(u'patcher_order')):
                     if iiMode and not patcher.iiMode: continue
                     progress(pstate, u'%s\n%s' % (modName, patcher.getName()))
                     patcher.scan_mod_file(modFile,nullProgress)
@@ -286,7 +287,8 @@ class PatchFile(ModFile):
         # Run buildPatch on each patcher
         self.keepIds |= self.mergeIds
         subProgress = SubProgress(progress, 0, 0.9, len(self._patcher_instances))
-        for index,patcher in enumerate(sorted(self._patcher_instances, key=attrgetter(u'editOrder'))):
+        for index,patcher in enumerate(sorted(self._patcher_instances,
+                key=attrgetter(u'patcher_order'))):
             subProgress(index,_(u'Completing')+u'\n%s...' % patcher.getName())
             patcher.buildPatch(log,SubProgress(subProgress,index))
         # Trim records to only keep ones we actually changed

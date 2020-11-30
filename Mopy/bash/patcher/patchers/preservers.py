@@ -398,8 +398,7 @@ class ImportSpellStatsPatcher(_APreserver):
 #------------------------------------------------------------------------------
 class ImportStatsPatcher(_APreserver):
     """Import stats from mod file."""
-    scanOrder = 28
-    editOrder = 28 #--Run ahead of bow patcher
+    patcher_order = 28 # Run ahead of Bow Reach Fix ##: This seems unneeded
     logMsg = u'\n=== ' + _(u'Imported Stats')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
     # Don't patch Editor IDs - those are only in statsTypes for the
@@ -426,8 +425,7 @@ class ImportTextPatcher(_APreserver):
 #  this could potentially be refactored and reused for FO4's modifications
 class ImportWeaponModificationsPatcher(_APreserver):
     """Merge changes to weapon modifications for FalloutNV."""
-    scanOrder = 27
-    editOrder = 27
+    patcher_order = 27 ##: This seems unneeded + no reason given
     rec_attrs = {b'WEAP': (
         u'modelWithMods', u'firstPersonModelWithMods', u'weaponMods',
         u'soundMod1Shoot3Ds', u'soundMod1Shoot2D', u'effectMod1',

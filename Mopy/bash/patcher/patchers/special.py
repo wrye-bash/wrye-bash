@@ -34,8 +34,7 @@ from ...exception import AbstractError
 class _AListsMerger(ListPatcher):
     """Merges lists of objects, e.g. leveled lists or FormID lists."""
     patcher_group = u'Special'
-    scanOrder = 45
-    editOrder = 45
+    patcher_order = 45
     iiMode = True
     # De/Re Tags - None means the patcher does not have such a tag
     _de_tag = None
@@ -300,8 +299,7 @@ class LeveledListsPatcher(_AListsMerger):
 #------------------------------------------------------------------------------
 class FormIDListsPatcher(_AListsMerger):
     """Merges FormID lists."""
-    scanOrder = 46
-    editOrder = 46
+    patcher_order = 46
     _read_write_records = (b'FLST',)
     _de_tag = u'Deflst'
     _type_to_label = {'FLST': _(u'FormID')}
@@ -315,8 +313,7 @@ class ContentsCheckerPatcher(Patcher):
     """Checks contents of leveled lists, inventories and containers for
     correct content types."""
     patcher_group = u'Special'
-    scanOrder = 50
-    editOrder = 50
+    patcher_order = 50
     contType_entryTypes = bush.game.cc_valid_types
     contTypes = set(contType_entryTypes)
     entryTypes = set(chain.from_iterable(contType_entryTypes.itervalues()))

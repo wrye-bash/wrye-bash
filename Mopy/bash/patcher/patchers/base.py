@@ -175,15 +175,13 @@ class MultiTweaker(AMultiTweaker,Patcher):
 # Patchers: 10 ----------------------------------------------------------------
 class AliasModNamesPatcher(Patcher):
     """Specify mod aliases for patch files."""
-    scanOrder = 10
-    editOrder = 10
     patcher_group = u'General'
+    patcher_order = 10
 
 class MergePatchesPatcher(ListPatcher):
     """Merges specified patches into Bashed Patch."""
-    scanOrder = 10
-    editOrder = 10
     patcher_group = u'General'
+    patcher_order = 10
 
     def __init__(self, p_name, p_file, p_sources):
         super(MergePatchesPatcher, self).__init__(p_name, p_file, p_sources)
@@ -196,9 +194,8 @@ class MergePatchesPatcher(ListPatcher):
 # TODO move this to a file it's imported after MreRecord.simpleTypes is set
 class ReplaceFormIDsPatcher(ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
-    scanOrder = 15
-    editOrder = 15
     patcher_group = u'General'
+    patcher_order = 15
 
     def __init__(self, p_name, p_file, p_sources):
         super(ReplaceFormIDsPatcher, self).__init__(p_name, p_file, p_sources)
@@ -386,8 +383,7 @@ class ReplaceFormIDsPatcher(ListPatcher):
 class ImportPatcher(ListPatcher):
     """Subclass for patchers in group Importer."""
     patcher_group = u'Importers'
-    scanOrder = 20
-    editOrder = 20
+    patcher_order = 20
     # Override in subclasses as needed
     logMsg = u'\n=== ' + _(u'Modified Records')
 

@@ -40,9 +40,8 @@ from ..exception import AbstractError
 class Abstract_Patcher(object):
     """Abstract base class for patcher elements - must be the penultimate class
      in MRO (method resolution order), just before object"""
-    scanOrder = 10
-    editOrder = 10
     patcher_group = u'UNDEFINED'
+    patcher_order = 10
     iiMode = False
     # TODO naming (_patcher_top_sigs ?) and unify getTypes/read/writeClasses
     _read_write_records = () # top group signatures this patcher patches
@@ -113,8 +112,7 @@ class AMultiTweaker(Abstract_Patcher):
     """Combines a number of sub-tweaks which can be individually enabled and
     configured through a choice menu."""
     patcher_group = u'Tweakers'
-    scanOrder = 30
-    editOrder = 30
+    patcher_order = 30
     _tweak_classes = [] # override in implementations
 
     def __init__(self, p_name, p_file, enabled_tweaks):

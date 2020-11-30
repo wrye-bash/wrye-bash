@@ -39,8 +39,7 @@ class _ExSpecial(Abstract_Patcher):
     """Those used to be subclasses of SpecialPatcher that did not make much
     sense as they did not use scan_more."""
     patcher_group = u'Special'
-    scanOrder = 40
-    editOrder = 40
+    patcher_order = 40
 
     @classmethod
     def gui_cls_vars(cls):

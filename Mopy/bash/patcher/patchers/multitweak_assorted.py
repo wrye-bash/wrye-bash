@@ -851,6 +851,9 @@ class AssortedTweak_GunsUseISAnimation(MultiTweakItem):
 #------------------------------------------------------------------------------
 class TweakAssortedPatcher(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
-    scanOrder = 29 # Run before other tweakers (due to the 'playable' tweaks)
-    editOrder = 29
+    # Run this before all other tweakers, since it contains the 'playable'
+    # tweaks, which set the playable flag on various records. Tweaks from other
+    # tweakers use this flag to determine which records to target, so they
+    # *must* run afterwards or we'll miss some records.
+    patcher_order = 29
     _tweak_classes = [globals()[t] for t in bush.game.assorted_tweaks]
