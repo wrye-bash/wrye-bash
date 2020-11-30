@@ -24,28 +24,18 @@
 """This package contains the Oblivion specific patchers. This module
 contains the data structures that are dynamically set on a per game basis in
 bush."""
-from ....patcher import PatcherInfo as pi
 from .preservers import ImportRoadsPatcher
-from .special import CoblCatalogsPatcher, SEWorldTestsPatcher, CoblExhaustionPatcher, \
-    MorphFactionsPatcher
+from .special import CoblCatalogsPatcher, SEWorldTestsPatcher,\
+    CoblExhaustionPatcher, MorphFactionsPatcher
 
-##: Bytestrings? why?
-_special_patchers = (
-    (b'CoblCatalogs', CoblCatalogsPatcher),
-    (b'SEWorldTests', SEWorldTestsPatcher),
-)
-gameSpecificPatchers = {pname: pi(ptype.gui_cls_vars()) for
-                        pname, ptype in _special_patchers}
-
-_list_patchers =(
-    (b'CoblExhaustion', CoblExhaustionPatcher),
-    (b'MorphFactions', MorphFactionsPatcher),
-)
-gameSpecificListPatchers = {pname: pi(ptype.gui_cls_vars())
-                            for pname, ptype in _list_patchers}
-
-_import_patchers = (
-    (b'ImportRoads', ImportRoadsPatcher),
-)
-game_specific_import_patchers = {pname: pi(ptype.gui_cls_vars())
-                                 for pname, ptype in _import_patchers}
+gameSpecificPatchers = {
+    u'CoblCatalogs': CoblCatalogsPatcher,
+    u'SEWorldTests': SEWorldTestsPatcher,
+}
+gameSpecificListPatchers = {
+    u'CoblExhaustion': CoblExhaustionPatcher,
+    u'MorphFactions': MorphFactionsPatcher,
+}
+game_specific_import_patchers = {
+    u'ImportRoads': ImportRoadsPatcher,
+}

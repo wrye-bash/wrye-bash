@@ -241,7 +241,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
 # forceItemCheck to rest
 class _ListPatcherPanel(_PatcherPanel):
     """Patcher panel with option to select source elements."""
-    listLabel = _(u'Source Mods/Files')
+    listLabel = _(u'Source Mods')
     forceAuto = True
     forceItemCheck = False #--Force configChecked to True for all items
     canAutoItemCheck = True #--GUI: Whether new items are checked by default
@@ -941,6 +941,7 @@ class _GmstTweakerPanel(_TweakPatcherPanel):
 
 class _AListPanelCsv(_ListPatcherPanel):
     """Base class for list panels that support CSV files as well."""
+    listLabel = _(u'Source Mods/Files')
     # CSV files for this patcher have to end with _{this value}.csv
     _csv_key = None
 
@@ -1343,25 +1344,28 @@ from .patcher_dialog import all_gui_patchers
 # Dynamically create game specific UI patcher classes and add them to module's
 # scope
 # Patchers with no options
-for patcher_name, p_info in bush.game.gameSpecificPatchers.items():
-    globals()[patcher_name] = type(patcher_name, (_PatcherPanel,),
-                                   p_info.cls_vars)
+for gsp_name, gsp_class in bush.game.gameSpecificPatchers.iteritems():
+    gsp_name = gsp_name.encode(u'ascii') # PY3: drop - py2 compat hack
+    globals()[gsp_name] = type(gsp_name, (_PatcherPanel,),
+        gsp_class.gui_cls_vars())
 # Simple list patchers
-for patcher_name, p_info in bush.game.gameSpecificListPatchers.items():
-    patcher_bases = (_ListPatcherPanel,)
-    patcher_attrs = p_info.cls_vars
-    if u'_csv_key' in patcher_attrs:
+for gsp_name, gsp_class in bush.game.gameSpecificListPatchers.iteritems():
+    gsp_name = gsp_name.encode(u'ascii') # PY3: drop - py2 compat hack
+    gsp_bases = (_ListPatcherPanel,)
+    gsp_attrs = gsp_class.gui_cls_vars()
+    if u'_csv_key' in gsp_attrs:
         # This patcher accepts CSV files, need to use the CSV base class
-        patcher_bases = (_AListPanelCsv,)
-    globals()[patcher_name] = type(patcher_name, patcher_bases, patcher_attrs)
+        gsp_bases = (_AListPanelCsv,)
+    globals()[gsp_name] = type(gsp_name, gsp_bases, gsp_attrs)
 # Import patchers
-for patcher_name, p_info in bush.game.game_specific_import_patchers.items():
-    patcher_bases = (_ImporterPatcherPanel,)
-    patcher_attrs = p_info.cls_vars
-    if u'_csv_key' in patcher_attrs:
+for gsp_name, gsp_class in bush.game.game_specific_import_patchers.iteritems():
+    gsp_name = gsp_name.encode(u'ascii') # PY3: drop - py2 compat hack
+    gsp_bases = (_ImporterPatcherPanel,)
+    gsp_attrs = gsp_class.gui_cls_vars()
+    if u'_csv_key' in gsp_attrs:
         # This patcher accepts CSV files, need to add the CSV base class
-        patcher_bases += (_AListPanelCsv,)
-    globals()[patcher_name] = type(patcher_name, patcher_bases, patcher_attrs)
+        gsp_bases += (_AListPanelCsv,)
+    globals()[gsp_name] = type(gsp_name, gsp_bases, gsp_attrs)
 
 # Init Patchers
 def initPatchers():

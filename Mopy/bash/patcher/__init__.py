@@ -22,12 +22,6 @@
 # =============================================================================
 from .. import balt, bolt, bass
 
-class PatcherInfo(object): ##: This is highly superfluous now
-    __slots__ = (u'cls_vars',)
-
-    def __init__(self, cls_vars):
-        self.cls_vars = cls_vars
-
 def exportConfig(patch_name, config, win, outDir):
     outFile = patch_name + u'_Configuration.dat'
     outDir.makedirs()
