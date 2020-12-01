@@ -37,7 +37,7 @@ is_standalone = False # whether or not we're on standalone
 dirs = {}
 # settings read from the Mopy/bash.ini file in initDefaultSettings()
 inisettings = {}
-# dirs where various apps may be located - populated in initDefaultTools()
+# dirs where various apps may be located - populated in initTooldirs()
 tooldirs = None # type: dict | None
 
 # settings dictionary - belongs to a dedicated settings module below bolt - WIP !
@@ -88,8 +88,9 @@ def newTempDir():
     _tempDir = Path.tempDir()
     return _tempDir
 
-# logic for getting the path from the ini - get(section, key, default), duh
 def get_ini_option(ini_parser, option_key, section_key=u'General'):
+    # logic for getting the path from the ini - get(section, key, default)
+    # section is case sensitive - key is not - return type is str in py3
     if not ini_parser or not ini_parser.has_option(section_key, option_key):
         return None
-    return ini_parser.get(section_key, option_key) # Py3: check if sections options are bytes!
+    return ini_parser.get(section_key, option_key)

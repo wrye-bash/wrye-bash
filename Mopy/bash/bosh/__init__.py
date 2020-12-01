@@ -3261,7 +3261,7 @@ class InstallerMarker(InstallerMarker): pass
 class InstallerProject(InstallerProject): pass
 
 # Initialization --------------------------------------------------------------
-def initDefaultTools():
+def initTooldirs():
     #-- Other tool directories
     #   First to default path
     pf = [GPath(u'C:\\Program Files'),GPath(u'C:\\Program Files (x86)')]
@@ -3390,26 +3390,26 @@ def initDefaultSettings():
     inisettings[u'WarnTooManyFiles'] = True
     inisettings[u'SkippedBashInstallersDirs'] = u''
 
+__type_key_preffix = {  # Path is tooldirs only int does not appear in either!
+    bolt.Path: u's', unicode: u's', list: u's', int: u'i', bool: u'b'}
 def initOptions(bashIni):
-    initDefaultTools()
+    initTooldirs()
     initDefaultSettings()
-    defaultOptions = {}
-    type_key = {unicode: u's', list: u's', int: u'i', bool: u'b',
-                bolt.Path: u's'} # tooldirs only
-    allOptions = [bass.tooldirs, inisettings]
-    unknownSettings = {}
-    for settingsDict in allOptions:
-        for defaultKey,defaultValue in settingsDict.iteritems():
-            readKey = type_key[type(defaultValue)] + defaultKey
-            defaultOptions[readKey.lower()] = (defaultKey,settingsDict)
-    # if bash.ini exists update the settings from there:
+    # if bash.ini exists update the settings from there
     if bashIni:
+        defaultOptions = {}
+        for settingsDict in [bass.tooldirs, inisettings]:
+            for defaultKey, defaultValue in settingsDict.iteritems():
+                valueType = type(defaultValue)
+                readKey = __type_key_preffix[valueType] + defaultKey
+                defaultOptions[readKey.lower()] = (defaultKey, settingsDict, valueType)
+        unknownSettings = {} ##: print those
         for section in bashIni.sections():
-            options = bashIni.items(section)
-            for key,value in options:
-                usedKey, usedSettings = defaultOptions.get(key,(key[1:],unknownSettings))
-                defaultValue = usedSettings.get(usedKey,u'')
-                settingType = type(defaultValue)
+            # retrieving ini settings is case insensitive - key: lowecase/bytes
+            for key, value in bashIni.items(section):
+                usedKey, usedSettings, settingType = defaultOptions.get(
+                    key, (key[1:], unknownSettings, unicode))
+                compDefaultValue = usedSettings.get(usedKey, u'')
                 if settingType in (bolt.Path,list):
                     if value == u'.': continue
                     value = GPath(value)
@@ -3419,16 +3419,14 @@ def initOptions(bashIni):
                     if value == u'.': continue
                     value = bashIni.getboolean(section,key)
                 else:
-                    value = settingType(value)
-                compDefaultValue = defaultValue
-                compValue = value
-                if settingType in (str,unicode):
+                    value = settingType(value) # py2 decodes using ascii here
+                comp_val = value
+                if settingType is unicode:
                     compDefaultValue = compDefaultValue.lower()
-                    compValue = compValue.lower()
-                    if compValue in (_(u'-option(s)'),_(u'tooltip text'),_(u'default')):
-                        compValue = compDefaultValue
-                if compValue != (compDefaultValue[
-                    0] if settingType is list else compDefaultValue):
+                    comp_val = comp_val.lower()
+                elif settingType is list:
+                    compDefaultValue = compDefaultValue[0]
+                if comp_val != compDefaultValue:
                     usedSettings[usedKey] = value
     bass.tooldirs[u'Tes4ViewPath'] = bass.tooldirs[u'Tes4EditPath'].head.join(u'TES4View.exe')
     bass.tooldirs[u'Tes4TransPath'] = bass.tooldirs[u'Tes4EditPath'].head.join(u'TES4Trans.exe')
