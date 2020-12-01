@@ -1834,7 +1834,7 @@ class MreSlgm(MelRecord):
         MelIcon(),
         MelScript(),
         MelStruct('DATA','If','value','weight'),
-        MelUInt8('SOUL', ('soul', 0)),
+        MelUInt8(b'SOUL', u'soul'),
         MelUInt8('SLCP', ('capacity', 1)),
     )
     __slots__ = melSet.getSlotsUsed()

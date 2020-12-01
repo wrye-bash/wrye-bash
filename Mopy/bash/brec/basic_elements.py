@@ -61,45 +61,11 @@ class MelBase(object):
     """Represents a mod record raw element. Typically used for unknown elements.
     Also used as parent class for other element types."""
 
-    def __init__(self, subType, attr, default=None):
-        self.subType, self.attr, self.default = subType, attr, default
+    def __init__(self, mel_sig, attr, default=None):
+        self.mel_sig, self.attr, self.default = mel_sig, attr, default
 
     def getSlotsUsed(self):
         return self.attr,
-
-    @staticmethod
-    def parseElements(*elements):
-        # type: (list[None|unicode|tuple]) -> list[tuple]
-        """Parses elements and returns attrs,defaults,actions,formAttrs where:
-        * attrs is tuple of attributes (names)
-        * formAttrs is tuple of attributes that have fids,
-        * defaults is tuple of default values for attributes
-        * actions is tuple of callables to be used when loading data
-        Note that each element of defaults and actions matches corresponding attr element.
-        Used by struct subclasses.
-
-        Example call:
-        parseElements('level', ('unused1', null2), (FID, 'listId', None),
-                      ('count', 1), ('unused2', null2))
-        """
-        formAttrs = []
-        lenEls = len(elements)
-        attrs, defaults, actions = [0] * lenEls, [0] * lenEls, [0] * lenEls
-        formAttrsAppend = formAttrs.append
-        for index,element in enumerate(elements):
-            if not isinstance(element,tuple): element = (element,)
-            el_0 = element[0]
-            attrIndex = el_0 == 0
-            if el_0 == FID:
-                formAttrsAppend(element[1])
-                attrIndex = 1
-            elif callable(el_0):
-                actions[index] = el_0
-                attrIndex = 1
-            attrs[index] = element[attrIndex]
-            if len(element) - attrIndex == 2:
-                defaults[index] = element[-1] # else leave to 0
-        return map(tuple,(attrs,defaults,actions,formAttrs))
 
     def getDefaulters(self,defaulters,base):
         """Registers self as a getDefault(attr) provider."""
@@ -111,7 +77,7 @@ class MelBase(object):
 
     def getLoaders(self,loaders):
         """Adds self as loader for type."""
-        loaders[self.subType] = self
+        loaders[self.mel_sig] = self
 
     def hasFids(self,formElements):
         """Include self if has fids."""
@@ -122,13 +88,14 @@ class MelBase(object):
         record.__setattr__(self.attr,self.default)
 
     def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute."""
+        """Read the actual data (not the headers) from ins into record
+        attribute."""
         record.__setattr__(self.attr, ins.read(size_, readId))
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
         value = record.__getattribute__(self.attr)
-        if value is not None: out.packSub(self.subType,value)
+        if value is not None: out.packSub(self.mel_sig, value)
 
     def mapFids(self,record,function,save=False):
         """Applies function to fids. If save is True, then fid is set
@@ -137,12 +104,12 @@ class MelBase(object):
 
     @property
     def signatures(self):
-        """Returns a set containing all the signatures (aka subTypes) that
+        """Returns a set containing all the signatures (aka mel_sigs) that
         could belong to this element. For most elements, this is just a single
         one, but groups and unions return multiple here.
 
-        :rtype: set[str]"""
-        return {self.subType}
+        :rtype: set[bytes]"""
+        return {self.mel_sig}
 
     @property
     def static_size(self):
@@ -178,7 +145,7 @@ class MelCounter(MelBase):
         return self.element.getSlotsUsed()
 
     def getLoaders(self, loaders):
-        loaders[self.element.subType] = self
+        loaders[self.element.mel_sig] = self
 
     def setDefault(self, record):
         self.element.setDefault(record)
@@ -242,7 +209,7 @@ class MelFid(MelBase):
             value = record.__getattribute__(self.attr)
         except AttributeError:
             value = None
-        if value is not None: out.packRef(self.subType,value)
+        if value is not None: out.packRef(self.mel_sig, value)
 
     def mapFids(self,record,function,save=False):
         attr = self.attr
@@ -274,7 +241,7 @@ class MelFids(MelBase):
         record.__getattribute__(self.attr).append(fid)
 
     def dumpData(self,record,out):
-        type = self.subType
+        type = self.mel_sig
         outPackRef = out.packRef
         for fid in record.__getattribute__(self.attr):
             outPackRef(type,fid)
@@ -290,8 +257,8 @@ class MelNull(MelBase):
     """Represents an obsolete record. Reads bytes from instream, but then
     discards them and is otherwise inactive."""
 
-    def __init__(self, subType):
-        self.subType = subType
+    def __init__(self, mel_sig):
+        self.mel_sig = mel_sig
 
     def getSlotsUsed(self):
         return ()
@@ -322,7 +289,7 @@ class MelFidList(MelFids):
     def dumpData(self,record,out):
         fids = record.__getattribute__(self.attr)
         if not fids: return
-        out.packSub(self.subType,repr(len(fids))+'I',*fids)
+        out.packSub(self.mel_sig, repr(len(fids)) + 'I', *fids)
 
 #------------------------------------------------------------------------------
 class MelSequential(MelBase):
@@ -487,8 +454,8 @@ class MelGroups(MelGroup):
 class MelString(MelBase):
     """Represents a mod record string element."""
 
-    def __init__(self, subType, attr, default=None, maxSize=0, minSize=0):
-        super(MelString, self).__init__(subType, attr, default)
+    def __init__(self, mel_sig, attr, default=None, maxSize=0, minSize=0):
+        super(MelString, self).__init__(mel_sig, attr, default)
         self.maxSize = maxSize
         self.minSize = minSize
 
@@ -499,15 +466,15 @@ class MelString(MelBase):
     def dumpData(self,record,out):
         string_val = record.__getattribute__(self.attr)
         if string_val is not None:
-            out.write_string(self.subType, string_val, max_size=self.maxSize,
-                min_size=self.minSize)
+            out.write_string(self.mel_sig, string_val, max_size=self.maxSize,
+                             min_size=self.minSize)
 
 #------------------------------------------------------------------------------
 class MelUnicode(MelString):
     """Like MelString, but instead of using bolt.pluginEncoding to read the
        string, it tries the encoding specified in the constructor instead"""
-    def __init__(self, subType, attr, default=None, maxSize=0, encoding=None):
-        super(MelUnicode, self).__init__(subType, attr, default, maxSize)
+    def __init__(self, mel_sig, attr, default=None, maxSize=0, encoding=None):
+        super(MelUnicode, self).__init__(mel_sig, attr, default, maxSize)
         self.encoding = encoding # None == automatic detection
 
     def loadData(self, record, ins, sub_type, size_, readId):
@@ -518,7 +485,7 @@ class MelUnicode(MelString):
     def dumpData(self,record,out):
         string_val = record.__getattribute__(self.attr)
         if string_val is not None:
-            out.write_string(self.subType, string_val, max_size=self.maxSize,
+            out.write_string(self.mel_sig, string_val, max_size=self.maxSize,
                              preferred_encoding=self.encoding)
 
 #------------------------------------------------------------------------------
@@ -545,14 +512,14 @@ class MelStrings(MelString):
     def dumpData(self,record,out):
         strings = record.__getattribute__(self.attr)
         if strings:
-            out.packSub0(self.subType,null1.join(encode(x,firstEncoding=bolt.pluginEncoding) for x in strings)+null1)
+            out.packSub0(self.mel_sig, null1.join(encode(x, firstEncoding=bolt.pluginEncoding) for x in strings) + null1)
 
 #------------------------------------------------------------------------------
 class MelStruct(MelBase):
     """Represents a structure record."""
 
-    def __init__(self, subType, struct_format, *elements):
-        """:type subType: bytes
+    def __init__(self, mel_sig, struct_format, *elements):
+        """:type mel_sig: bytes
         :type struct_format: unicode"""
         # Sometimes subrecords have to preserve non-aligned sizes, check that
         # we don't accidentally pad those to alignment
@@ -564,8 +531,9 @@ class MelStruct(MelBase):
                 u"almost certainly not what you want. Prepend '=' to preserve "
                 u"the unaligned size or manually pad with 'x' to avoid this "
                 u"error." % struct_format)
-        self.subType, self.struct_format = subType, struct_format
-        self.attrs,self.defaults,self.actions,self.formAttrs = MelBase.parseElements(*elements)
+        self.mel_sig, self.struct_format = mel_sig, struct_format
+        self.attrs, self.defaults, self.actions, self.formAttrs = \
+            parseElements(*elements)
         # Check for duplicate attrs - can't rely on MelSet.getSlotsUsed only,
         # since we may end up in a MelUnion which has to use a set to collect
         # its slots
@@ -607,7 +575,7 @@ class MelStruct(MelBase):
             # this is just a noop.
             if action: value = action(value).dump()
             valuesAppend(value)
-        out.packSub(self.subType, self.struct_format, *values)
+        out.packSub(self.mel_sig, self.struct_format, *values)
 
     def mapFids(self,record,function,save=False):
         getter = record.__getattribute__
@@ -619,6 +587,40 @@ class MelStruct(MelBase):
     @property
     def static_size(self):
         return struct.calcsize(self.struct_format)
+
+def parseElements(*elements):
+    """Parses elements and returns attrs,defaults,actions,formAttrs where:
+    * attrs is tuple of attributes (names)
+    * formAttrs is set of attributes that have fids,
+    * defaults is tuple of default values for attributes
+    * actions is tuple of callables to be used when loading data
+    Note that each element of defaults and actions matches corresponding attr element.
+    Used by MelStruct and _MelField.
+
+    Example call:
+    parseElements('level', ('unused1', null2), (FID, 'listId', None),
+                  ('count', 1), ('unused2', null2))
+
+    :type elements: (list[None|unicode|tuple])"""
+    formAttrs = set()
+    lenEls = len(elements)
+    attrs, defaults, actions = [0] * lenEls, [0] * lenEls, [0] * lenEls
+    for index,element in enumerate(elements):
+        if not isinstance(element,tuple):
+            attrs[index] = element
+        else:
+            el_0 = element[0]
+            attrIndex = el_0 == 0
+            if el_0 == FID:
+                formAttrs.add(element[1])
+                attrIndex = 1
+            elif callable(el_0):
+                actions[index] = el_0
+                attrIndex = 1
+            attrs[index] = element[attrIndex]
+            if len(element) - attrIndex == 2:
+                defaults[index] = element[-1] # else leave to 0
+    return tuple(attrs), tuple(defaults), tuple(actions), formAttrs
 
 #------------------------------------------------------------------------------
 class MelFixedString(MelStruct):
@@ -633,13 +635,12 @@ class MelFixedString(MelStruct):
 class _MelSimpleStruct(MelStruct):
     """Wrapper around MelStruct to avoid having to constantly specify the
     format."""
-    # defaults = actions = formAttrs = (0,)
 
     def __init__(self, signature, element):
-        self.subType = signature
+        self.mel_sig = signature
         # if isinstance(element, tuple):
         self.attrs, self.defaults, self.actions, self.formAttrs = \
-             MelBase.parseElements(element)
+            parseElements(element)
         # else: # XXX broken
         #     self.attrs = (element,)
 

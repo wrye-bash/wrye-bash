@@ -46,7 +46,7 @@ class MreHeaderBase(MelRecord):
         This is done to make updating the master list much easier."""
         def __init__(self):
             self._debug = False
-            self.subType = b'MAST' # just in case something is expecting this
+            self.mel_sig = b'MAST' # just in case something is expecting this
 
         def getLoaders(self, loaders):
             loaders[b'MAST'] = loaders[b'DATA'] = self

@@ -509,7 +509,7 @@ class MreRecord(object):
         # Subrecords available?
         if self.subrecords is not None:
             for subrecord in self.subrecords:
-                if subrecord.subType == subType:
+                if subrecord.mel_sig == subType:
                     value = bolt.cstrip(subrecord.data)
                     break
         # No subrecords, but we have data.

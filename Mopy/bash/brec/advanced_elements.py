@@ -332,14 +332,14 @@ class MelArray(MelBase):
         if len(element.signatures) != 1:
             raise SyntaxError(u'MelArray may only be used with elements that '
                               u'resolve to exactly one signature')
-        # Use this instead of element.subType to support e.g. unions
+        # Use this instead of element.mel_sig to support e.g. unions
         super(MelArray, self).__init__(next(iter(element.signatures)),
             array_attr)
         self._element = element
         # Underscore means internal usage only - e.g. distributor state
         self._element_attrs = [s for s in element.getSlotsUsed() if
                                not s.startswith(u'_')]
-        if prelude and prelude.subType != element.subType:
+        if prelude and prelude.mel_sig != element.mel_sig:
             raise SyntaxError(u'MelArray preludes must have the same '
                               u'signature as the main element')
         self._prelude = prelude
@@ -404,7 +404,7 @@ class MelArray(MelBase):
 
     def dumpData(self, record, out):
         array_data = self._collect_array_data(record)
-        if array_data: out.packSub(self.subType, array_data)
+        if array_data: out.packSub(self.mel_sig, array_data)
 
     def _collect_array_data(self, record):
         """Collects the actual data that will be dumped out."""
@@ -517,7 +517,7 @@ class MelLists(MelStruct):
             attr_val = recordGetAttr(rattr)
             values.append(attr_val) if isinstance(_slice, int) else \
                 values.extend(attr_val)
-        out.packSub(self.subType, self.struct_format, *values)
+        out.packSub(self.mel_sig, self.struct_format, *values)
 
 #------------------------------------------------------------------------------
 # Unions and Deciders

@@ -447,7 +447,7 @@ class ImportCellsPatcher(ImportPatcher):
     def __init__(self, p_name, p_file, p_sources):
         super(ImportCellsPatcher, self).__init__(p_name, p_file, p_sources)
         self.cellData = defaultdict(dict)
-        self.recAttrs = bush.game.cellRecAttrs # dict[unicode, tuple[str]]
+        self.recAttrs = bush.game.cellRecAttrs # dict[unicode, tuple[unicode]]
 
     def initData(self, progress, __attrgetters=attrgetter_cache):
         """Get cells from source files."""

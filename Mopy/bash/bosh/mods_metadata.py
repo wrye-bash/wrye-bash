@@ -265,6 +265,7 @@ def checkMods(showModList=False, showCRC=False, showVersion=True,
         return log.out.getvalue()
 
 #------------------------------------------------------------------------------
+_wrld_types = frozenset((b'CELL', b'WRLD'))
 class ModCleaner(object):
     """Class for cleaning ITM and UDR edits from mods. ITM detection does not
     currently work with PBash."""
@@ -324,7 +325,8 @@ class ModCleaner(object):
 
     @staticmethod
     def scan_Many(modInfos, what=DEFAULT, progress=bolt.Progress(),
-            detailed=False, __unpacker=struct.Struct(u'=12s2f2l2f').unpack):
+        detailed=False, __unpacker=struct.Struct(u'=12s2f2l2f').unpack,
+        __wrld_types=_wrld_types):
         """Scan multiple mods for dirty edits"""
         if len(modInfos) == 0: return []
         if not (what & (ModCleaner.UDR|ModCleaner.FOG)):
@@ -368,7 +370,7 @@ class ModCleaner(object):
                             #(type,size,flags,fid,uint2) = ins.unpackRecHeader()
                             if rtype == 'GRUP':
                                 groupType = header.groupType
-                                if groupType == 0 and header.label not in {'CELL','WRLD'}:
+                                if groupType == 0 and header.label not in __wrld_types:
                                     # Skip Tops except for WRLD and CELL groups
                                     insRead(hsize-headerSize)
                                 elif detailed:
@@ -404,7 +406,7 @@ class ModCleaner(object):
                                         parents_to_scan[parentFid].add(header_fid)
                                         if parentParentFid:
                                             parents_to_scan[parentParentFid].add(header_fid)
-                                if doFog and rtype == 'CELL':
+                                if doFog and rtype == b'CELL':
                                     nextRecord = insTell() + hsize
                                     while insTell() < nextRecord:
                                         (nextType,nextSize) = insUnpackSubHeader()
@@ -424,8 +426,8 @@ class ModCleaner(object):
                                 subprogress(baseSize+insTell())
                                 header = insUnpackRecHeader()
                                 rtype,hsize = header.recType,header.size
-                                if rtype == 'GRUP':
-                                    if header.groupType == 0 and header.label not in {'CELL','WRLD'}:
+                                if rtype == b'GRUP':
+                                    if header.groupType == 0 and header.label not in __wrld_types:
                                         insRead(hsize-headerSize)
                                 else:
                                     fid = header.fid
@@ -434,18 +436,18 @@ class ModCleaner(object):
                                         record.loadSubrecords()
                                         eid = u''
                                         for subrec in record.subrecords:
-                                            if subrec.subType == 'EDID':
+                                            if subrec.mel_sig == b'EDID':
                                                 eid = bolt.decoder(subrec.data)
-                                            elif subrec.subType == 'XCLC':
+                                            elif subrec.mel_sig == b'XCLC':
                                                 pos = struct_unpack(
                                                     '=2i', subrec.data[:8])
                                         for udrFid in parents_to_scan[fid]:
-                                            if rtype == 'CELL':
+                                            if rtype == b'CELL':
                                                 udr[udrFid].parentEid = eid
                                                 if udr[udrFid].parentType == 1:
                                                     # Exterior Cell, calculate position
                                                     udr[udrFid].pos = pos
-                                            elif rtype == 'WRLD':
+                                            elif rtype == b'WRLD':
                                                 udr[udrFid].parentParentEid = eid
                                     else:
                                         insRead(hsize)
@@ -465,8 +467,8 @@ class NvidiaFogFixer(object):
         self.modInfo = modInfo
         self.fixedCells = set()
 
-    def fix_fog(self, progress,
-                     __unpacker=struct.Struct(u'=12s2f2l2f').unpack):
+    def fix_fog(self, progress, __unpacker=struct.Struct(u'=12s2f2l2f').unpack,
+                __wrld_types=_wrld_types):
         """Duplicates file, then walks through and edits file as necessary."""
         progress.setFull(self.modInfo.size)
         fixedCells = self.fixedCells
@@ -493,7 +495,7 @@ class NvidiaFogFixer(object):
                     if type == b'GRUP':
                         if header.groupType != 0: #--Ignore sub-groups
                             pass
-                        elif header.label not in ('CELL','WRLD'):
+                        elif header.label not in __wrld_types:
                             copy(size - RecordHeader.rec_header_size)
                     #--Handle cells
                     elif type == b'CELL':

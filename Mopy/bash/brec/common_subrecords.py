@@ -84,7 +84,7 @@ class MelCtda(MelUnion):
         u'swap_subject_and_target'))
 
     def __init__(self, ctda_sub_sig=b'CTDA', suffix_fmt=u'',
-            suffix_elements=None, old_suffix_fmts=None):
+                 suffix_elements=None, old_suffix_fmts=None):
         """Creates a new MelCtda instance with the specified properties.
 
         :param ctda_sub_sig: The signature of this subrecord. Probably
@@ -142,7 +142,8 @@ class MelCtda(MelUnion):
                                       old_versions=full_old_versions)
         return MelStruct(*shared_params)
 
-    def _build_params(self, func_data, prefix_elements, suffix_elements):
+    @staticmethod
+    def _build_params(func_data, prefix_elements, suffix_elements):
         """Builds a list of struct elements to pass to MelTruncatedStruct."""
         # First, build up a list of the parameter elemnts to use
         func_elements = [
@@ -152,7 +153,7 @@ class MelCtda(MelUnion):
         return prefix_elements + func_elements + suffix_elements
 
     # Nesting workarounds -----------------------------------------------------
-    # To avoid having to test MelUnions too deply - hurts performance even
+    # To avoid having to nest MelUnions too deeply - hurts performance even
     # further (see below) plus grows exponentially
     def loadData(self, record, ins, sub_type, size_, readId):
         super(MelCtda, self).loadData(record, ins, sub_type, size_, readId)
@@ -180,7 +181,7 @@ class MelCtda(MelUnion):
         formElements.add(self)
 
     def getLoaders(self, loaders):
-        loaders[next(self.element_mapping.itervalues()).subType] = self
+        loaders[next(self.element_mapping.itervalues()).mel_sig] = self
 
     def getSlotsUsed(self):
         return (self.decider_result_attr,) + next(
@@ -556,7 +557,7 @@ class MelMODS(MelBase):
                 outData += struct_pack('I', len(string))
                 outData += encode(string)
                 outData += struct_pack('=2I', fid, index)
-            out.packSub(self.subType,outData)
+            out.packSub(self.mel_sig, outData)
 
     def mapFids(self,record,function,save=False):
         attr = self.attr
