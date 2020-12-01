@@ -3310,22 +3310,20 @@ def initDefaultSettings():
 def initOptions(bashIni):
     initDefaultTools()
     initDefaultSettings()
-    defaultOptions = {}
-    type_key = {unicode: u's', list: u's', int: u'i', bool: u'b',
-                bolt.Path: u's'} # tooldirs only
-    allOptions = [bass.tooldirs, inisettings]
-    unknownSettings = {}
-    for settingsDict in allOptions:
-        for defaultKey,defaultValue in settingsDict.iteritems():
-            readKey = type_key[type(defaultValue)] + defaultKey
-            defaultOptions[readKey.lower()] = (defaultKey,settingsDict)
+    defaultOptions = bolt.LowerDict()
+    type_key_pref = {unicode: u's', list: u's', int: u'i', bool: u'b',
+                     bolt.Path: u's'} # tooldirs only
+    for settingsDict in [bass.tooldirs, inisettings]:
+        for defaultKey, defaultValue in settingsDict.iteritems():
+            readKey = type_key_pref[type(defaultValue)] + defaultKey
+            defaultOptions[readKey] = (defaultKey, settingsDict)
     # if bash.ini exists update the settings from there:
     if bashIni:
+        unknownSettings = {}
         for section in bashIni.sections():
-            options = bashIni.items(section)
-            for key,value in options:
-                usedKey, usedSettings = defaultOptions.get(key,(key[1:],unknownSettings))
-                defaultValue = usedSettings.get(usedKey,u'')
+            for key, value in bashIni.items(section):
+                usedKey, usedSettings = defaultOptions.get(key, (key[1:], unknownSettings))
+                defaultValue = usedSettings.get(usedKey, u'')
                 settingType = type(defaultValue)
                 if settingType in (bolt.Path,list):
                     if value == u'.': continue
@@ -3338,13 +3336,11 @@ def initOptions(bashIni):
                 else:
                     value = settingType(value)
                 compDefaultValue = defaultValue
-                compValue = value
+                comp_val = value
                 if settingType in (str,unicode):
                     compDefaultValue = compDefaultValue.lower()
-                    compValue = compValue.lower()
-                    if compValue in (_(u'-option(s)'),_(u'tooltip text'),_(u'default')):
-                        compValue = compDefaultValue
-                if compValue != (compDefaultValue[
+                    comp_val = comp_val.lower()
+                if comp_val != (compDefaultValue[
                     0] if settingType is list else compDefaultValue):
                     usedSettings[usedKey] = value
     bass.tooldirs[u'Tes4ViewPath'] = bass.tooldirs[u'Tes4EditPath'].head.join(u'TES4View.exe')
