@@ -1791,11 +1791,11 @@ def _lo_cache(lord_func):
         3 if both changed else 0
         """
         try:
-            old_lo, old_active = load_order.cached_lord.loadOrder, \
-                                 load_order.cached_lord.activeOrdered
+            old_lo, old_active = load_order.cached_lo_tuple(), \
+                                 load_order.cached_active_tuple()
             lord_func(self, *args, **kwargs)
-            lo, active = load_order.cached_lord.loadOrder, \
-                         load_order.cached_lord.activeOrdered
+            lo, active = load_order.cached_lo_tuple(), \
+                         load_order.cached_active_tuple()
             lo_changed = lo != old_lo
             active_changed = active != old_active
             active_set_changed = active_changed and (
@@ -1817,9 +1817,8 @@ def _lo_cache(lord_func):
                 self[neu].setGhost(False)
             return (lo_changed and 1) + (active_changed and 2)
         finally:
-            self._lo_wip, self._active_wip = list(
-                load_order.cached_lord.loadOrder), list(
-                load_order.cached_lord.activeOrdered)
+            self._lo_wip = list(load_order.cached_lo_tuple())
+            self._active_wip = list(load_order.cached_active_tuple())
     return _modinfos_cache_wrapper
 
 #------------------------------------------------------------------------------
@@ -1914,9 +1913,9 @@ class ModInfos(FileInfos):
 
         Always call AFTER setting the load order - make sure we unghost
         ourselves so ctime of the unghosted mods is not set."""
-        load_order.save_lo(load_order.cached_lord.loadOrder,
-                           load_order.cached_lord.lorder(
-                        active if active is not None else self._active_wip))
+        load_order.save_lo(load_order.cached_lo_tuple(),
+            load_order.cached_lord.lorder(
+                active if active is not None else self._active_wip))
 
     @_lo_cache
     def cached_lo_save_lo(self):
