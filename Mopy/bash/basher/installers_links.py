@@ -587,7 +587,7 @@ class _Installers_RedirectScriptSources(AppendableLink, EnabledLink,
     _help = _(u'If checked, Wrye Bash will move all script sources '
               u'installed to incorrect directories (%s) to the correct ones. '
               u"'Skip Script Sources' must be "
-              u'off.') % u', '.join(bush.game.Psc.source_redirects.iterkeys())
+              u'off.') % u', '.join(bush.game.Psc.source_redirects)
     key = u'bash.installers.redirect_scripts'
 
     def _append(self, window): return bool(bush.game.Psc.source_redirects)

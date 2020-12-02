@@ -840,7 +840,7 @@ class Installer(object):
                 root['files'] = True
         else:
             if not layout: return
-            rootStr = layout.keys()[0]
+            rootStr = next(iter(layout))
             if rootStr.lower() in dataDirsPlus: return
             root = layout[rootStr]
             rootStr = u''.join((rootStr, _os_sep))

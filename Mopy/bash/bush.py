@@ -77,12 +77,12 @@ def _supportedGames():
     del pkgutil
     # Dump out info about all games that we *could* launch, but wrap it
     deprint(u'The following games are supported by this version of Wrye Bash:')
-    all_supported_games = u', '.join(sorted(_allGames.iterkeys()))
+    all_supported_games = u', '.join(sorted(_allGames))
     for wrapped_line in textwrap.wrap(all_supported_games):
         deprint(u' ' + wrapped_line)
     # Dump out info about all games that we *actually* found
     deprint(u'The following installed games were found via Windows Registry:')
-    for found_name in sorted(_registryGames.iterkeys()):
+    for found_name in sorted(_registryGames):
         deprint(u' %s: %s' % (found_name, _registryGames[found_name]))
     return _registryGames.copy()
 
@@ -175,7 +175,7 @@ def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, gname=None):
         __setGame(gname, u' Using %(gamename)s game:')
         return None
     elif len(foundGames) == 1:
-        __setGame(foundGames.keys()[0], u'Single game found [%(gamename)s]:')
+        __setGame(next(iter(foundGames)), u'Single game found [%(gamename)s]:')
         return None
     # No match found, return the list of possible games (may be empty if
     # nothing is found in registry)

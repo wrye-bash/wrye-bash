@@ -36,7 +36,7 @@ class ImportFaceDialog(DialogWindow):
     def __init__(self, parent, title, fileInfo, faces):
         #--Data
         self.fileInfo = fileInfo
-        if faces and isinstance(faces.keys()[0], (int, long)): # PY3: just int
+        if faces and isinstance(next(iter(faces)), (int, long)): # PY3: just int
             self.fdata = {u'%08X %s' % (key, face.pcName): face for key, face
                           in faces.iteritems()}
         else:
