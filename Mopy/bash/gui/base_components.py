@@ -296,6 +296,14 @@ class _AComponent(object):
     def wx_id_(self): ##: Avoid, we do not want to program with gui ids
         return self._native_widget.GetId()
 
+    def update_layout(self):
+        """Tells the layout applied to this component to update and lay out its
+        sub-components again, based on changes that have been made to them
+        since then. For example, you would have to call this if you hid or
+        resized one of the sub-components, so that the other sub-components can
+        be resized/moved/otherwise updated to account for that."""
+        self._native_widget.Layout()
+
 # Events Mixins ---------------------------------------------------------------
 class WithMouseEvents(_AComponent):
     """An _AComponent that handles mouse events.

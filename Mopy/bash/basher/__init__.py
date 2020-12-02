@@ -3004,7 +3004,7 @@ class InstallersDetails(_SashDetailsPanel):
         self.fomod_btn.is_checked = fomod_checked
         self.sp_btn.is_checked = not fomod_checked
         self.gSubList.enabled = not fomod_checked
-        self.sp_panel.pnl_layout()
+        self.sp_panel.update_layout()
 
     def set_fomod_mode(self, fomod_enabled):
         """Programatically enables or disables FOMOD mode and updates the GUI

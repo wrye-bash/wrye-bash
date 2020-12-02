@@ -145,8 +145,9 @@ class PatchDialog(DialogWindow):
         if patcher == self.currentPatcher: return
         if self.currentPatcher is not None:
             self.currentPatcher.gConfigPanel.pnl_hide()
-        patcher.GetConfigPanel(self, self.config_layout, self.gTipText).visible = True
-        self._native_widget.Layout()
+        patcher.GetConfigPanel(self, self.config_layout,
+            self.gTipText).visible = True
+        self.update_layout()
         patcher.Layout()
         self.currentPatcher = patcher
 

@@ -1395,7 +1395,7 @@ class TrustedBinariesPage(_AFixedPage):
         bad_changed = self._binaries_list.right_items != bass.settings[
             u'bash.installers.badDlls'].keys()
         self._mark_changed(self, good_changed or bad_changed)
-        self.pnl_layout()
+        self.update_layout()
 
     ##: Here be (some) dragons, especially in the import method
     def _export_lists(self):

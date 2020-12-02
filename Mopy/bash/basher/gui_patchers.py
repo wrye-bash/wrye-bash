@@ -96,7 +96,7 @@ class _PatcherPanel(object):
     def Layout(self):
         """Layout control components."""
         if self.gConfigPanel:
-            self.gConfigPanel.pnl_layout()
+            self.gConfigPanel.update_layout()
 
     def _set_focus(self): # TODO(ut) check if set_focus is enough
         self.patch_dialog.gPatchers.set_focus_from_kb()
