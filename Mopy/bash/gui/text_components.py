@@ -32,6 +32,17 @@ import wx.adv as _adv
 from .base_components import _AComponent
 
 # Text Input ------------------------------------------------------------------
+class TextAlignment(object): # PY3: enum
+    LEFT = 0
+    RIGHT = 1
+    CENTER = 2
+
+_ta_to_wx = {
+    TextAlignment.LEFT: _wx.TE_LEFT,
+    TextAlignment.RIGHT: _wx.TE_RIGHT,
+    TextAlignment.CENTER: _wx.TE_CENTER,
+}
+
 class _ATextInput(_AComponent):
     """Abstract base class for all text input classes.
 
@@ -49,7 +60,8 @@ class _ATextInput(_AComponent):
 
     # TODO: (fixed) font(s)
     def __init__(self, parent, init_text=None, multiline=True, editable=True,
-                 auto_tooltip=True, max_length=None, no_border=False, style=0):
+            auto_tooltip=True, max_length=None, no_border=False,
+            alignment=TextAlignment.LEFT, style=0):
         """Creates a new _ATextInput instance with the specified properties.
 
         :param parent: The object that this text input belongs to. May be a wx
@@ -65,12 +77,14 @@ class _ATextInput(_AComponent):
                            want a limit.
         :param no_border: True if the borders of this text input should be
                           hidden.
+        :param alignment: The alignment of text in this component.
         :param style: Internal parameter used to allow subclasses to wrap style
                       flags on their own."""
         # Construct the native widget
         if multiline: style |= _wx.TE_MULTILINE
         if not editable: style |= _wx.TE_READONLY
         if no_border: style |= _wx.BORDER_NONE
+        style |= _ta_to_wx[alignment]
         super(_ATextInput, self).__init__(parent, style=style)
         if init_text: self._native_widget.SetValue(init_text)
         if max_length:
@@ -153,55 +167,23 @@ class _ATextInput(_AComponent):
 class TextArea(_ATextInput):
     """A multi-line text edit widget. See the documentation for _ATextInput
     for a list of the events this component offers."""
-    def __init__(self, parent, init_text=None, editable=True,
-                 auto_tooltip=True, max_length=None, no_border=False,
-                 do_wrap=True):
+    def __init__(self, parent, *args, **kwargs):
         """Creates a new TextArea instance with the specified properties.
+        See _ATextInput for documentation on kwargs.
 
-        :param parent: The object that this text area belongs to. May be a wx
-                       object or a component.
-        :param init_text: The initial text in this text area.
-        :param editable: True if the user may edit text in this text area.
-        :param auto_tooltip: Whether or not to automatically show a tooltip
-                             when the entered text exceeds the length of this
-                             text area.
-        :param max_length: The maximum number of characters that can be
-                           entered into this text area. None if you don't
-                           want a limit.
-        :param no_border: True if the borders of this text area should be
-                          hidden.
         :param do_wrap: Whether or not to wrap text inside this text area."""
-        wrap_style = _wx.TE_DONTWRAP if not do_wrap else 0
-        super(TextArea, self).__init__(parent, init_text=init_text,
-                                       editable=editable,
-                                       auto_tooltip=auto_tooltip,
-                                       max_length=max_length,
-                                       no_border=no_border, style=wrap_style)
+        wrap_style = _wx.TE_DONTWRAP if not kwargs.pop('do_wrap', True) else 0
+        super(TextArea, self).__init__(parent, *args, style=wrap_style,
+            **kwargs)
 
 class TextField(_ATextInput):
     """A single-line text edit widget. See the documentation for _ATextInput
     for a list of the events this component offers."""
-    def __init__(self, parent, init_text=None, editable=True,
-                 auto_tooltip=True, max_length=None, no_border=False):
+    def __init__(self, parent, *args, **kwargs):
         """Creates a new TextField instance with the specified properties.
-
-        :param parent: The object that this text field belongs to. May be a wx
-                       object or a component.
-        :param init_text: The initial text in this text field.
-        :param editable: True if the user may edit text in this text field.
-        :param auto_tooltip: Whether or not to automatically show a tooltip
-                             when the entered text exceeds the length of this
-                             text field.
-        :param max_length: The maximum number of characters that can be
-                           entered into this text field. None if you don't
-                           want a limit.
-        :param no_border: True if the borders of this text field should be
-                          hidden."""
-        super(TextField, self).__init__(parent, init_text=init_text,
-                                        multiline=False, editable=editable,
-                                        auto_tooltip=auto_tooltip,
-                                        max_length=max_length,
-                                        no_border=no_border)
+        See _ATextInput for documentation on kwargs."""
+        super(TextField, self).__init__(parent, *args, multiline=False,
+            **kwargs)
 
 class SearchBar(TextField):
     """A variant of TextField that looks like a typical search bar."""
