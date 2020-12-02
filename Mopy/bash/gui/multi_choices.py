@@ -204,7 +204,7 @@ class CheckListBox(ListBox, WithCharEvents):
     """A list of checkboxes, of which one or more can be selected.
 
     Events:
-      - on_check_list_box(index: int): Posted when user checks an item from
+      - on_box_checked(index: int): Posted when user checks an item from the
         list. The default arg processor extracts the index of the event.
       - on_context(lb_instance: CheckListBox): Posted when this CheckListBox is
         right-clicked.
@@ -215,15 +215,13 @@ class CheckListBox(ListBox, WithCharEvents):
     bind_mouse_leaving = bind_lclick_double = True
     _wx_widget_type = _wx.CheckListBox
 
+    # note isSingle=False by default
     def __init__(self, parent, choices=None, isSingle=False, isSort=False,
-                 isHScroll=False, isExtended=False, onSelect=None,
-                 onCheck=None): # note isSingle=False by default
+                 isHScroll=False, isExtended=False, onSelect=None):
         super(CheckListBox, self).__init__(parent, choices, isSingle, isSort,
                                            isHScroll, isExtended, onSelect)
-        if onCheck:
-            self.on_check_list_box = self._evt_handler(
-                _wx.EVT_CHECKLISTBOX, lambda event: [event.GetSelection()])
-            self.on_check_list_box.subscribe(onCheck)
+        self.on_box_checked = self._evt_handler(_wx.EVT_CHECKLISTBOX,
+            lambda event: [event.GetSelection()])
         self.on_context = self._evt_handler(_wx.EVT_CONTEXT_MENU,
                                             lambda event: [self])
 

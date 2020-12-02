@@ -1114,7 +1114,8 @@ class ConfirmationsPage(_AFixedPage):
             checked=bass.settings[u'bash.show_internal_keys'])
         self._show_keys_checkbox.on_checked.subscribe(self._on_show_keys)
         self._confirmation_list = CheckListBox(self, isSort=True,
-            isHScroll=True, onCheck=self._on_check_conf)
+            isHScroll=True)
+        self._confirmation_list.on_box_checked.subscribe(self._on_check_conf)
         self._file_drop_dropdown = DropDown(self, value=self._saved_action,
             choices=sorted(self._label_to_action), auto_tooltip=False)
         self._file_drop_dropdown.tooltip = _(u'Choose what to do with files '

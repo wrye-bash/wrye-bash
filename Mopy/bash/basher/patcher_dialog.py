@@ -89,8 +89,8 @@ class PatchDialog(DialogWindow):
             lambda: self.mass_select_recursive(False))
         cancelButton = CancelButton(self)
         self.gPatchers = CheckListBox(self, choices=patcherNames,
-                                      isSingle=True, onSelect=self.OnSelect,
-                                      onCheck=self.OnCheck)
+                                      isSingle=True, onSelect=self.OnSelect)
+        self.gPatchers.on_box_checked.subscribe(self.OnCheck)
         self.gExportConfig = SaveAsButton(self, btn_label=_(u'Export'))
         self.gExportConfig.on_clicked.subscribe(self.ExportConfig)
         self.gImportConfig = OpenButton(self, btn_label=_(u'Import'))

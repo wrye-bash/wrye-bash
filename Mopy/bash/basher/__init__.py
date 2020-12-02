@@ -2704,8 +2704,8 @@ class InstallersDetails(_SashDetailsPanel):
         self.sp_panel, espmsPanel = self.checkListSplitter.make_panes(
             vertically=True)
         #--Sub-Installers
-        self.gSubList = CheckListBox(self.sp_panel, isExtended=True,
-                                     onCheck=self._check_subitem)
+        self.gSubList = CheckListBox(self.sp_panel, isExtended=True)
+        self.gSubList.on_box_checked.subscribe(self._check_subitem)
         self.gSubList.on_mouse_right_up.subscribe(self._sub_selection_menu)
         # FOMOD/Sub-Packages radio buttons
         self.fomod_btn = RadioButton(self.sp_panel, _(u'FOMOD'))
@@ -2720,8 +2720,8 @@ class InstallersDetails(_SashDetailsPanel):
         self._update_fomod_state()
         #--Espms
         self.espms = []
-        self.gEspmList = CheckListBox(espmsPanel, isExtended=True,
-                                      onCheck=self._on_check_plugin)
+        self.gEspmList = CheckListBox(espmsPanel, isExtended=True)
+        self.gEspmList.on_box_checked.subscribe(self._on_check_plugin)
         self.gEspmList.on_mouse_left_dclick.subscribe(
             self._on_plugin_filter_dclick)
         self.gEspmList.on_mouse_right_up.subscribe(self._selection_menu)
