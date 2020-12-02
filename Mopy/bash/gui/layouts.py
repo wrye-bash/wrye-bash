@@ -216,15 +216,6 @@ class _ALineLayout(_ALayout):
         """Add a growing space to the layout."""
         self._sizer.AddStretchSpacer(prop=weight)
 
-##: Quite a few usages do HBoxedLayout(items=[VLayout()]). Those could be
-# refactored with a VBoxedLayout
-class HBoxedLayout(_ALineLayout):
-    """A horizontal layout with a border around it and an optional title."""
-    def __init__(self, parent, title=u'', **kwargs):
-        sizer = _wx.StaticBoxSizer(
-            _wx.StaticBox(_res_parent(parent), label=title), _wx.HORIZONTAL)
-        super(HBoxedLayout, self).__init__(sizer, **kwargs)
-
 class HLayout(_ALineLayout):
     """A simple horizontal layout."""
     def __init__(self, *args, **kwargs):
@@ -238,6 +229,22 @@ class VLayout(_ALineLayout):
     def __init__(self, *args, **kwargs):
         super(VLayout, self).__init__(_wx.BoxSizer(_wx.VERTICAL), *args,
                                       **kwargs)
+
+class HBoxedLayout(_ALineLayout):
+    """A horizontal layout with a border around it and an optional title."""
+    def __init__(self, parent, title=u'', **kwargs):
+        sizer = _wx.StaticBoxSizer(_wx.StaticBox(_res_parent(parent),
+            label=title), _wx.HORIZONTAL)
+        super(HBoxedLayout, self).__init__(sizer, **kwargs)
+
+class VBoxedLayout(_ALineLayout):
+    """A vertical layout with a border around it and an optional title."""
+    _is_vertical = True
+
+    def __init__(self, parent, title=u'', **kwargs):
+        sizer = _wx.StaticBoxSizer(_wx.StaticBox(_res_parent(parent),
+            label=title), _wx.VERTICAL)
+        super(VBoxedLayout, self).__init__(sizer, **kwargs)
 
 class GridLayout(_ALayout):
     """A flexible grid layout.
