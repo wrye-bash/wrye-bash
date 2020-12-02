@@ -296,9 +296,10 @@ class ModFile(object):
         outPath = outPath or self.fileInfo.getPath()
         # Too many masters is fatal and results in cryptic struct errors, so
         # loudly complain about it here
-        if self.tes4.num_masters > 255:
+        if self.tes4.num_masters > bush.game.Esp.master_limit:
             raise ModError(self.fileInfo.name,
-                u'Attempting to write a file with too many masters (>255).')
+                u'Attempting to write a file with too many masters (>%u).'
+                % bush.game.Esp.master_limit)
         with ModWriter(outPath.open(u'wb')) as out:
             #--Mod Record
             self.tes4.setChanged()

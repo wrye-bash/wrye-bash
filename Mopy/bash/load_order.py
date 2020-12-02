@@ -71,8 +71,11 @@ def in_master_block(minf):
 def check_active_limit(mods):
     return _game_handle.check_active_limit(mods)
 
-def max_plugins():
-    return _game_handle.max_espms, _game_handle.max_esls
+def max_espms():
+    return _game_handle.max_espms
+
+def max_esls():
+    return _game_handle.max_esls
 
 def initialize_load_order_files():
     if bass.dirs[u'saveBase'] == bass.dirs[u'app']:

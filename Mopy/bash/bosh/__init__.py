@@ -448,7 +448,7 @@ class ModInfo(FileInfo):
             return u''
         elif self.is_esl():
             # Need to undo the offset we applied to sort ESLs after regulars
-            sort_offset = load_order.max_plugins()[0] - 1
+            sort_offset = load_order.max_espms() - 1
             return u'FE %03X' % (cr_index - sort_offset)
         else:
             return u'%02X' % cr_index
@@ -2419,9 +2419,9 @@ class ModInfos(FileInfos):
             if espms_extra or esls_extra:
                 msg = u'%s: Trying to activate more than ' % fileName
                 if espms_extra:
-                    msg += u'%d espms' % load_order.max_plugins()[0]
+                    msg += u'%d espms' % load_order.max_espms()
                 else:
-                    msg += u'%d light plugins' % load_order.max_plugins()[1]
+                    msg += u'%d light plugins' % load_order.max_esls()
                 raise PluginsFullError(msg)
             _children = (_children or tuple()) + (fileName,)
             if fileName in _children[:-1]:
@@ -2898,7 +2898,7 @@ class ModInfos(FileInfos):
         # defaultdict factory
         regular_index = 0
         esl_index = 0
-        esl_offset = load_order.max_plugins()[0] - 1
+        esl_offset = load_order.max_espms() - 1
         self.real_indices.clear()
         for p in load_order.cached_active_tuple():
             if self[p].is_esl():
