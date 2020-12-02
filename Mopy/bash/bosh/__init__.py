@@ -2560,16 +2560,22 @@ class ModInfos(FileInfos):
         iniFiles.append(oblivionIni)
         return iniFiles
 
-    def create_new_mod(self, newName, selected=(), masterless=False,
-                       directory=empty_path, bashed_patch=False):
+    def create_new_mod(self, newName, selected=(), wanted_masters=None,
+            directory=empty_path, bashed_patch=False, esm_flag=False,
+            esl_flag=False):
+        if wanted_masters is None:
+            wanted_masters = [self.masterName]
         directory = directory or self.store_dir
         new_name = GPath(newName)
         newInfo = self.factory(directory.join(new_name))
         newFile = ModFile(newInfo)
-        if not masterless:
-            newFile.tes4.masters = [self.masterName]
+        newFile.tes4.masters = wanted_masters
         if bashed_patch:
             newFile.tes4.author = u'BASHED PATCH'
+        if esm_flag:
+            newFile.tes4.flags1.esm = True
+        if esl_flag:
+            newFile.tes4.flags1.eslFile = True
         newFile.safeSave()
         if directory == self.store_dir:
             self.new_info(new_name, notify_bain=True) # notify just in case...
@@ -2587,7 +2593,7 @@ class ModInfos(FileInfos):
             modName = GPath(u'Bashed Patch, %d.esp' % num)
             if modName not in self:
                 self.create_new_mod(modName, selected=selected_mods,
-                                    masterless=True, bashed_patch=True)
+                                    wanted_masters=[], bashed_patch=True)
                 return modName
         return None
 

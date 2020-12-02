@@ -24,6 +24,7 @@
 points to BashFrame.modList singleton."""
 
 import re
+from .dialogs import CreateNewPlugin
 from .frames import ModChecker
 from .. import bass, bosh, balt, load_order
 from .. import bush # for Mods_LoadListData, Mods_LoadList
@@ -217,7 +218,8 @@ class Mods_OblivionVersion(CheckLink, EnabledLink):
 # "File" submenu --------------------------------------------------------------
 class Mods_CreateBlankBashedPatch(ItemLink):
     """Create a new bashed patch."""
-    _text, _help = _(u'New Bashed Patch...'), _(u'Create a new bashed patch')
+    _text = _(u'New Bashed Patch')
+    _help = _(u'Create a new Bashed Patch.')
 
     def Execute(self):
         newPatchName = bosh.modInfos.generateNextBashedPatch(
@@ -231,25 +233,11 @@ class Mods_CreateBlankBashedPatch(ItemLink):
 
 class Mods_CreateBlank(ItemLink):
     """Create a new blank mod."""
-    _text, _help = _(u'New Mod...'), _(u'Create a new blank mod')
-
-    def __init__(self, masterless=False):
-        super(Mods_CreateBlank, self).__init__()
-        self.masterless = masterless
-        if masterless:
-            self._text = _(u'New Mod (masterless)...')
-            self._help = _(u'Create a new blank mod with no masters')
+    _text = _(u'New Plugin...')
+    _help = _(u'Create a new blank plugin.')
 
     def Execute(self):
-        newName = self.window.new_name(GPath(u'New Mod.esp'))
-        windowSelected = self.window.GetSelected()
-        self.window.data_store.create_new_mod(newName, windowSelected,
-                                              masterless=self.masterless)
-        if windowSelected: # assign it the group of the first selected mod
-            mod_group = self.window.data_store.table.getColumn(u'group')
-            mod_group[newName] = mod_group.get(windowSelected[0], u'')
-        self.window.ClearSelected(clear_details=True)
-        self.window.RefreshUI(redraw=[newName], refreshSaves=False)
+        CreateNewPlugin.display_dialog(self.window)
 
 #------------------------------------------------------------------------------
 class Mods_ListMods(ItemLink):

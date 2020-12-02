@@ -20,14 +20,19 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from collections import OrderedDict
+from itertools import izip
+
 from . import bEnableWizard, BashFrame
 from .constants import installercons
-from .. import bass, balt, bosh, bolt, bush, env
+from .. import bass, balt, bosh, bolt, bush, env, load_order
 from ..balt import colors, bell
 from ..bosh import faces
 from ..gui import BOTTOM, Button, CancelButton, CENTER, CheckBox, GridLayout, \
     HLayout, Label, LayoutOptions, OkButton, RIGHT, Stretch, TextField, \
-    VLayout, DialogWindow, ListBox, Picture
+    VLayout, DialogWindow, ListBox, Picture, DropDown, CheckListBox, \
+    HBoxedLayout, SelectAllButton, DeselectAllButton, VBoxedLayout, \
+    TextAlignment, SearchBar
 
 class ImportFaceDialog(DialogWindow):
     """Dialog for importing faces."""
@@ -208,7 +213,7 @@ class CreateNewProject(DialogWindow):
         if self.checkEspMasterless.is_checked:
             fileName = u'Blank, %s (masterless).esp' % bush.game.fsName
             bosh.modInfos.create_new_mod(fileName, directory=tempProject,
-                                         masterless=True)
+                                         wanted_masters=[])
         if self.checkWizard.is_checked:
             # Create empty wizard.txt
             wizardPath = tempProject.join(u'wizard.txt')
@@ -231,3 +236,159 @@ class CreateNewProject(DialogWindow):
         tmpDir.rmtree(tmpDir.s)
         if not has_files:
             projectDir.join(u'temp_hack').rmtree(safety=u'temp_hack')
+
+#------------------------------------------------------------------------------
+class CreateNewPlugin(DialogWindow):
+    """Dialog for creating a new plugin, allowing the user to select extension,
+    name and flags."""
+    title = _(u'New Plugin')
+    _def_size = (400, 500)
+
+    def __init__(self, parent):
+        super(CreateNewPlugin, self).__init__(parent, sizes_dict=balt.sizes)
+        self._parent_window = parent
+        default_ext = u'.esp'
+        self._plugin_ext = DropDown(self, value=default_ext,
+            choices=sorted(bush.game.espm_extensions), auto_tooltip=False)
+        self._plugin_ext.tooltip = _(u'Select which extension the plugin will '
+                                     u'have.')
+        self._plugin_ext.on_combo_select.subscribe(self._handle_plugin_ext)
+        self._plugin_name = TextField(self, _(u'New Plugin'),
+            alignment=TextAlignment.RIGHT)
+        self._esm_flag = CheckBox(self, _(u'ESM Flag'),
+            chkbx_tooltip=_(u'Whether or not the the resulting plugin will be '
+                            u'a master, i.e. have the ESM flag.'))
+        # Completely hide the ESL checkbox for non-ESL games, but check it by
+        # default for ESL games, since one of the most common use cases for
+        # this command on those games is to create BSA-loading dummies.
+        self._esl_flag = CheckBox(self, _(u'ESL Flag'),
+            chkbx_tooltip=_(u'Whether or not the resulting plugin will be '
+                            u'light, i.e have the ESL flag.'),
+            checked=bush.game.has_esl)
+        self._esl_flag.visible = bush.game.has_esl
+        self._master_search = SearchBar(self)
+        self._master_search.on_text_changed.subscribe(self._handle_search)
+        self._masters_box = CheckListBox(self)
+        # Initially populate the masters list, checking only the game master
+        m_keys = [m.s for m in load_order.cached_lo_tuple()]
+        m_values = [m == bush.game.master_file for m in m_keys]
+        self._masters_box.set_all_items(m_keys, m_values)
+        self._masters_dict = OrderedDict(izip(m_keys, m_values))
+        # Only once that's done do we subscribe - avoid all the initial events
+        self._masters_box.on_box_checked.subscribe(self._handle_master_checked)
+        select_all_btn = SelectAllButton(self,
+            btn_tooltip=_(u'Select all plugins that are visible with the '
+                          u'current search term.'))
+        select_all_btn.on_clicked.subscribe(
+            lambda: self._handle_mass_select(mark_active=True))
+        deselect_all_btn = DeselectAllButton(self,
+            btn_tooltip=_(u'Deselect all plugins that are visible with the '
+                          u'current search term.'))
+        deselect_all_btn.on_clicked.subscribe(
+            lambda: self._handle_mass_select(mark_active=False))
+        self._ok_btn = OkButton(self)
+        self._ok_btn.on_clicked.subscribe(self._handle_ok)
+        self._too_many_masters = Label(self, u'')
+        self._too_many_masters.set_foreground_color(colors.RED)
+        self._too_many_masters.visible = False
+        VLayout(border=6, spacing=6, item_expand=True, items=[
+            HLayout(spacing=4, items=[
+                (self._plugin_name, LayoutOptions(weight=1)),
+                self._plugin_ext,
+            ]),
+            VBoxedLayout(self, title=_(u'Flags'), spacing=4, items=[
+                self._esm_flag, self._esl_flag,
+            ]),
+            (HBoxedLayout(self, title=_(u'Masters'), spacing=4,
+                item_expand=True, items=[
+                    (VLayout(item_expand=True, spacing=4, items=[
+                        self._master_search,
+                        (self._masters_box, LayoutOptions(weight=1)),
+                    ]), LayoutOptions(weight=1)),
+                    VLayout(spacing=4, items=[
+                        select_all_btn, deselect_all_btn,
+                    ]),
+            ]), LayoutOptions(weight=1)),
+            VLayout(item_expand=True, items=[
+                self._too_many_masters,
+                HLayout(spacing=5, item_expand=True, items=[
+                    Stretch(), self._ok_btn, CancelButton(self)
+                ]),
+            ]),
+        ]).apply_to(self)
+
+    @property
+    def _chosen_masters(self):
+        """Returns a generator yielding all checked masters."""
+        return (k for k, v in self._masters_dict.iteritems() if v)
+
+    def _check_master_limit(self):
+        """Checks if the current selection of masters exceeds the game's master
+        limit and, if so, disables the OK button and shows a warning
+        message."""
+        count_checked = len(list(self._chosen_masters))
+        count_limit = bush.game.Esp.master_limit
+        limit_exceeded = count_checked > count_limit
+        self._ok_btn.enabled = not limit_exceeded
+        self._too_many_masters.label_text = _(
+            u'Too many masters: %u checked, but only %u are allowed by the '
+            u'game.') % (count_checked, count_limit)
+        self._too_many_masters.visible = limit_exceeded
+        self.update_layout()
+
+    def _handle_plugin_ext(self, new_p_ext):
+        """Internal callback to handle a change in extension."""
+        # Enable the flags by default, but don't mess with their checked state
+        self._esl_flag.enabled = True
+        self._esm_flag.enabled = True
+        if new_p_ext == u'.esl':
+            # For .esl files, force-check the ESL flag
+            self._esl_flag.enabled = False
+            self._esl_flag.is_checked = True
+        if new_p_ext in (u'.esm', u'.esl'):
+            # For .esm and .esl files, force-check the ESM flag
+            self._esm_flag.enabled = False
+            self._esm_flag.is_checked = True
+
+    def _handle_mass_select(self, mark_active):
+        """Internal callback to handle the Select/Deselect All buttons."""
+        self._masters_box.set_all_checkmarks(checked=mark_active)
+        for m in self._masters_box.lb_get_str_items():
+            self._masters_dict[m] = mark_active # update only visible items!
+        self._check_master_limit()
+
+    def _handle_master_checked(self, master_index):
+        """Internal callback to update the dict we use to track state,
+        independent of the contents of the masters box."""
+        mast_name = self._masters_box.lb_get_str_item_at_index(master_index)
+        mast_checked = self._masters_box.lb_is_checked_at_index(master_index)
+        self._masters_dict[mast_name] = mast_checked
+        self._check_master_limit()
+
+    def _handle_search(self, search_str):
+        """Internal callback used to repopulate the masters box whenever the
+        text in the search bar changes."""
+        lower_search_str = search_str.lower()
+        new_m_keys, new_m_values = [], []
+        # Case-insensitively filter based on the keys, then update the box
+        for k, v in self._masters_dict.iteritems():
+            if lower_search_str in k.lower():
+                new_m_keys.append(k)
+                new_m_values.append(v)
+        self._masters_box.set_all_items(new_m_keys, new_m_values)
+
+    def _handle_ok(self):
+        """Internal callback to handle the OK button."""
+        pw = self._parent_window
+        chosen_name = pw.new_name(self._plugin_name.text_content +
+                                  self._plugin_ext.get_value())
+        windowSelected = pw.GetSelected()
+        pw.data_store.create_new_mod(chosen_name, windowSelected,
+            esm_flag=self._esm_flag.is_checked,
+            esl_flag=self._esl_flag.is_checked,
+            wanted_masters=[bolt.GPath(m) for m in self._chosen_masters])
+        if windowSelected:  # assign it the group of the first selected mod
+            mod_group = pw.data_store.table.getColumn(u'group')
+            mod_group[chosen_name] = mod_group.get(windowSelected[0], u'')
+        pw.ClearSelected(clear_details=True)
+        pw.RefreshUI(redraw=[chosen_name], refreshSaves=False)

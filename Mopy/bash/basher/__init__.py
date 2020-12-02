@@ -2800,7 +2800,7 @@ class InstallersDetails(_SashDetailsPanel):
                 sub_names_ = [x.replace(u'&', u'&&') for x in
                               installer.subNames[1:]]
                 vals = installer.subActives[1:]
-                self.gSubList.setCheckListItems(sub_names_, vals)
+                self.gSubList.set_all_items_keep_pos(sub_names_, vals)
             self._update_fomod_state()
             #--Espms
             if not installer.espms:
@@ -2811,7 +2811,7 @@ class InstallersDetails(_SashDetailsPanel):
                 names_ = [[u'', u'*'][installer.isEspmRenamed(x.s)] +
                           x.s.replace(u'&', u'&&') for x in names]
                 vals = [x not in installer.espmNots for x in names]
-                self.gEspmList.setCheckListItems(names_, vals)
+                self.gEspmList.set_all_items_keep_pos(names_, vals)
             #--Comments
             self.gComments.text_content = installer.comments
 
