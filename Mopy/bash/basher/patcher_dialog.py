@@ -128,7 +128,7 @@ class PatchDialog(DialogWindow):
         #--Patcher panels
         for patcher in self._gui_patchers:
             patcher.GetConfigPanel(self, self.config_layout,
-                                   self.gTipText).pnl_hide()
+                self.gTipText).visible = False
         initial_select = min(len(self._gui_patchers) - 1, 1)
         if initial_select >= 0:
             self.gPatchers.lb_select_index(initial_select) # callback not fired
@@ -144,7 +144,7 @@ class PatchDialog(DialogWindow):
         """Show patcher panel."""
         if patcher == self.currentPatcher: return
         if self.currentPatcher is not None:
-            self.currentPatcher.gConfigPanel.pnl_hide()
+            self.currentPatcher.gConfigPanel.visible = False
         patcher.GetConfigPanel(self, self.config_layout,
             self.gTipText).visible = True
         self.update_layout()
