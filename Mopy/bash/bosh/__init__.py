@@ -182,7 +182,7 @@ class FileInfo(AFile):
         self._file_size, self._file_mod_time, self.ctime = stat_tuple
         if load_cache: self.readHeader()
 
-    def __mark_unchanged(self):
+    def _mark_unchanged(self):
         self._reset_cache(self._stat_tuple(), load_cache=False)
 
     ##: DEPRECATED-------------------------------------------------------------
@@ -503,7 +503,7 @@ class ModInfo(FileInfo):
             self.isGhost = isGhost
             # reset cache info as un/ghosting should not make do_update return
             # True
-            self.__mark_unchanged()
+            self._mark_unchanged()
             # Notify BAIN, as this is basically a rename operation
             modInfos._notify_bain(renamed={ghost_source: ghost_target})
         except:
@@ -1510,7 +1510,7 @@ class FileInfos(TableFileInfos):
         self[newName] = self[oldName]
         del self[oldName]
         self.table.moveRow(oldName,newName)
-        # self[newName].__mark_unchanged() # not needed with shellMove !
+        # self[newName]._mark_unchanged() # not needed with shellMove !
 
     #--Move
     def move_info(self, fileName, destDir):

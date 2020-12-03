@@ -185,13 +185,13 @@ class SkyrimGameInfo(GameInfo):
     patchers = {
         u'AliasModNames', u'ContentsChecker', u'ImportActors',
         u'ImportActorsAIPackages', u'ImportActorsDeathItems',
-        u'ImportActorsSpells', u'ImportCells', u'ImportDestructible',
-        u'ImportEffectsStats', u'ImportEnchantmentStats', u'ImportFactions',
-        u'ImportGraphics', u'ImportInventory', u'ImportKeywords',
-        u'ImportNames', u'ImportObjectBounds', u'ImportOutfits',
-        u'ImportRelations', u'ImportSounds', u'ImportSpellStats',
-        u'ImportStats', u'ImportText', u'LeveledLists', u'MergePatches',
-        u'TweakActors', u'TweakAssorted', u'TweakSettings',
+        u'ImportActorsFactions', u'ImportActorsSpells', u'ImportCells',
+        u'ImportDestructible', u'ImportEffectsStats',
+        u'ImportEnchantmentStats', u'ImportGraphics', u'ImportInventory',
+        u'ImportKeywords', u'ImportNames', u'ImportObjectBounds',
+        u'ImportOutfits', u'ImportRelations', u'ImportSounds',
+        u'ImportSpellStats', u'ImportStats', u'ImportText', u'LeveledLists',
+        u'MergePatches', u'TweakActors', u'TweakAssorted', u'TweakSettings',
     }
 
     weaponTypes = (

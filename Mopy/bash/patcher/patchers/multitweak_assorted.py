@@ -143,6 +143,8 @@ _remaining_checks = re.compile(u'see.*me|mark(?!ynaz)')
 
 class _APlayableTweak(MultiTweakItem):
     """Shared code of 'armor/clothing playable' tweaks."""
+    tweak_order = 9 # Run before 'armor/clothing shows' tweaks
+
     @staticmethod
     def _any_body_flag_set(record):
         return any(getattr(record.biped_flags, bd_flag) for bd_flag

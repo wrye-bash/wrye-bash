@@ -4187,8 +4187,6 @@ class BashApp(wx.App):
     @staticmethod
     def InitVersion():
         """Perform any version to version conversion. Called by Init()."""
-        #--Renames dictionary: Strings to Paths.
-        bash_version = settings['bash.version']
         #--Current Version
         if settings['bash.version'] != bass.AppVersion:
             settings['bash.version'] = bass.AppVersion

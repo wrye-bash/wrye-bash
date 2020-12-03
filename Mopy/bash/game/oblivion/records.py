@@ -1858,8 +1858,7 @@ class MreSoun(MelRecord):
         ),
         MelStruct(b'SNDX', u'2BbsH2sH2B', u'minDistance', u'maxDistance',
             u'freqAdjustment', (u'unused1', null1), (_flags, u'flags'),
-            (u'unused2', null2), (u'staticAtten', None), u'stopTime',
-            u'startTime'),
+            (u'unused2', null2), u'staticAtten', u'stopTime', u'startTime'),
     )
     __slots__ = melSet.getSlotsUsed()
 

@@ -183,7 +183,7 @@ class _MelDistributor(MelNull):
         return u'_loader_state', u'_seq_index'
 
     def setDefault(self, record):
-        record._loader_state = ()
+        record._loader_state = []
         record._seq_index = None
 
     def set_mel_set(self, mel_set):
@@ -227,13 +227,13 @@ class _MelDistributor(MelNull):
             # A simple scope - add the signature to the load state and
             # distribute the load by signature. That way we will descend
             # into this scope on the next loadData call.
-            record._loader_state += (signature,)
+            record._loader_state.append(signature)
             self._distribute_load(signature, record, ins, size_, readId)
         elif el_type == tuple:
             # Mixed Scopes ------------------------------------------------
             # A mixed scope - implement it like a simple scope, but
             # distribute the load by attribute name.
-            record._loader_state += (signature,)
+            record._loader_state.append(signature)
             self._distribute_load((signature, mapped_el[0]), record, ins,
                                   size_, readId)
         elif el_type == list:
@@ -241,7 +241,7 @@ class _MelDistributor(MelNull):
             # A sequence - add the signature to the load state, set the
             # sequence index to 1, and distribute the load to the element
             # specified by the first sequence entry.
-            record._loader_state += (signature,)
+            record._loader_state.append(signature)
             record._seq_index = 1 # we'll load the first element right now
             self._distribute_load(mapped_el[0], record, ins, size_,
                                   readId)
@@ -292,14 +292,14 @@ class _MelDistributor(MelNull):
                 # Calculate the new loader state - contains signatures for all
                 # remaining scopes we haven't backtracked through yet plus the
                 # one we just backtrackd into
-                record._loader_state = tuple([x[0] for x in descent_tracker] +
-                                             [prev_sig])
+                record._loader_state = [x[0] for x
+                                        in descent_tracker] + [prev_sig]
                 self._apply_mapping(prev_mapping[sub_type], record, ins,
                                     sub_type, size_, readId)
                 return
         # We didn't find anything during backtracking, so it must be in the top
         # scope. Wipe the loader state first and then apply the mapping.
-        record._loader_state = ()
+        record._loader_state = []
         self._apply_mapping(self.distributor_config[sub_type], record, ins,
                             sub_type, size_, readId)
 
