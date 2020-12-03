@@ -31,20 +31,20 @@ from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
     MelUnion, PartialLoadDecider, FlagDecider
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
-    MelOptFloat, MelOptUInt8, MelOptUInt32, MelOptFid, MelReadOnly, MelUInt8, \
-    MelFids, MelOptSInt32
+    MelOptFloat, MelOptFid, MelReadOnly, MelFids, MelOptUInt32Flags, \
+    MelUInt8Flags, MelOptUInt8Flags, MelOptSInt32
 from .utils_constants import _int_unpacker, FID, null1, null2, null3, null4
 from ..bolt import Flags, encode, struct_pack, struct_unpack
 
 #------------------------------------------------------------------------------
-class MelActionFlags(MelOptUInt32):
+class MelActionFlags(MelOptUInt32Flags):
     """XACT (Action Flags) subrecord for REFR records."""
     _act_flags = Flags(0, Flags.getNames(u'act_use_default', u'act_activate',
         u'act_open', u'act_open_by_default'))
 
     def __init__(self):
-        super(MelActionFlags, self).__init__(
-            b'XACT', (self._act_flags, u'action_flags'))
+        super(MelActionFlags, self).__init__(b'XACT', u'action_flags',
+                                             self._act_flags)
 
 #------------------------------------------------------------------------------
 class MelActivateParents(MelGroup):
@@ -54,7 +54,7 @@ class MelActivateParents(MelGroup):
 
     def __init__(self):
         super(MelActivateParents, self).__init__(u'activate_parents',
-            MelUInt8(b'XAPD', (self._ap_flags, u'activate_parent_flags')),
+            MelUInt8Flags(b'XAPD', u'activate_parent_flags', self._ap_flags),
             MelGroups(u'activate_parent_refs',
                 MelStruct(b'XAPR', u'If', (FID, u'ap_reference'), u'ap_delay'),
             ),
@@ -477,7 +477,7 @@ class MelRaceVoices(MelStruct):
         return None
 
 #------------------------------------------------------------------------------
-class MelScript(MelFid):
+class MelScript(MelFid): # TODO(ut) : MelOptFid ??
     """Represents the common script subrecord in TES4/FO3/FNV."""
     def __init__(self):
         super(MelScript, self).__init__(b'SCRI', u'script')
@@ -519,7 +519,7 @@ class MelMapMarker(MelGroup):
     def __init__(self, with_reputation=False):
         group_elems = [
             MelBase(b'XMRK', u'marker_data'),
-            MelOptUInt8(b'FNAM', (self._marker_flags, u'marker_flags')),
+            MelOptUInt8Flags(b'FNAM', u'marker_flags', self._marker_flags),
             MelFull(),
             MelOptStruct(b'TNAM', u'Bs', u'marker_type', u'unused1'),
         ]
@@ -597,7 +597,7 @@ class MelRef3D(MelOptStruct):
 class MelRefScale(MelOptFloat):
     """Scale for a reference record (REFR, ACHR, etc.)."""
     def __init__(self):
-        super(MelRefScale, self).__init__(b'XSCL', (u'ref_scale', 1.0))
+        super(MelRefScale, self).__init__(b'XSCL', u'ref_scale', 1.0)
 
 #------------------------------------------------------------------------------
 class MelSpells(MelFids):
@@ -632,7 +632,7 @@ class MelOwnership(MelGroup):
             MelOptFid(b'XOWN', u'owner'),
             # None here is on purpose - rank == 0 is a valid value, but XRNK
             # does not have to be present
-            MelOptSInt32(b'XRNK', (u'rank', None)),
+            MelOptSInt32(b'XRNK', u'rank', None),
         )
 
     def dumpData(self,record,out):

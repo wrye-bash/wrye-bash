@@ -39,7 +39,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelArray, MelWthrColors, MelObject, MreActorBase, MreWithItems, \
     MelReadOnly, MelCtda, MelRef3D, MelXlod, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript, \
-    MelDescription, BipedFlags, MelSpells
+    MelDescription, BipedFlags, MelSpells, MelUInt8Flags, MelUInt32Flags
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
 
@@ -52,11 +52,11 @@ if brec.MelModel is None:
 
         def __init__(self, attr=u'model', index=0):
             """Initialize. Index is 0,2,3,4 for corresponding type id."""
-            types = self.__class__.typeSets[(0,index-1)[index>0]]
+            types = self.__class__.typeSets[index - 1 if index > 1 else 0]
             super(_MelModel, self).__init__(attr,
                 MelString(types[0], u'modPath'),
                 # None here is on purpose - 0 is a legitimate value
-                MelOptFloat(types[1], (u'modb', None)),
+                MelOptFloat(types[1], u'modb', None),
                 # Texture File Hashes
                 MelBase(types[2], u'modt_p')
             )
@@ -329,7 +329,7 @@ class MreLeveledList(MreLeveledListBase):
     melSet = MelSet(
         MelEdid(),
         MelLevListLvld(),
-        MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0)),
+        MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
         MelScript(), # LVLC only
         MelFid('TNAM','template'),
         MelGroups('entries',
@@ -374,7 +374,7 @@ class MelOwnershipTes4(brec.MelOwnership):
             MelFid(b'XOWN', u'owner'),
             # None here is on purpose - rank == 0 is a valid value, but XRNK
             # does not have to be present
-            MelOptSInt32(b'XRNK', (u'rank', None)),
+            MelOptSInt32(b'XRNK', u'rank', None),
             MelFid(b'XGLB', u'global'),
         )
 
@@ -583,7 +583,7 @@ class MreArmo(MelRecord):
         MelScript(),
         MelFid('ENAM','enchantment'),
         MelOptUInt16('ANAM', 'enchantPoints'),
-        MelUInt32(b'BMDT', (_flags, u'biped_flags')),
+        MelUInt32Flags(b'BMDT', u'biped_flags', _flags),
         MelModel(u'maleBody', 0),
         MelModel(u'maleWorld', 2),
         MelIcon(u'maleIconPath'),
@@ -644,7 +644,7 @@ class MreCell(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelUInt8(b'DATA', (cellFlags, u'flags')),
+        MelUInt8Flags(b'DATA', u'flags', cellFlags),
         # None defaults here are on purpose - XCLC does not necessarily exist,
         # but 0 is a valid value for both coordinates (duh)
         MelSkipInterior(MelOptStruct(b'XCLC', u'2i', (u'posX', None),
@@ -660,7 +660,7 @@ class MreCell(MelRecord):
         # CS default for water is -2147483648, but by setting default here
         # to -2147483649, we force the bashed patch to retain the value of
         # the last mod.
-        MelOptFloat(b'XCLW', (u'waterHeight', -2147483649)),
+        MelOptFloat(b'XCLW', u'waterHeight', -2147483649),
         MelFid(b'XCCM', u'climate'),
         MelFid(b'XCWT', u'water'),
         MelOwnershipTes4(),
@@ -736,7 +736,7 @@ class MreClot(MelRecord):
         MelScript(),
         MelFid('ENAM','enchantment'),
         MelOptUInt16('ANAM', 'enchantPoints'),
-        MelUInt32(b'BMDT', (_flags, u'biped_flags')),
+        MelUInt32Flags(b'BMDT', u'biped_flags', _flags),
         MelModel(u'maleBody', 0),
         MelModel(u'maleWorld', 2),
         MelIcon(u'maleIconPath'),
@@ -925,7 +925,7 @@ class MreDoor(MelRecord):
         MelFid('SNAM','soundOpen'),
         MelFid('ANAM','soundClose'),
         MelFid('BNAM','soundLoop'),
-        MelUInt8('FNAM', (_flags, 'flags', 0)),
+        MelUInt8Flags(b'FNAM', u'flags', _flags),
         MelFids('TNAM','destinations'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -997,7 +997,7 @@ class MreEyes(MelRecord):
         MelEdid(),
         MelFull(),
         MelIcon(),
-        MelUInt8('DATA', (_flags, 'flags')),
+        MelUInt8Flags(b'DATA', u'flags', _flags),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1014,9 +1014,9 @@ class MreFact(MelRecord):
         MelGroups(u'relations',
             MelStruct(b'XNAM', u'Ii', (FID, u'faction'), u'mod'),
         ),
-        MelUInt8(b'DATA', (_general_flags, u'general_flags')),
+        MelUInt8Flags(b'DATA', u'general_flags', _general_flags),
         # None here is on purpose! See AssortedTweak_FactioncrimeGoldMultiplier
-        MelOptFloat(b'CNAM', (u'crime_gold_multiplier', None)),
+        MelOptFloat(b'CNAM', u'crime_gold_multiplier', None),
         MelGroups(u'ranks',
             MelSInt32(b'RNAM', u'rank_level'),
             MelString(b'MNAM', u'male_title'),
@@ -1052,7 +1052,7 @@ class MreFurn(MelRecord):
         MelFull(),
         MelModel(),
         MelScript(),
-        MelUInt32(b'MNAM', (_flags, u'activeMarkers')), # ByteArray in xEdit
+        MelUInt32Flags(b'MNAM', u'activeMarkers', _flags), # ByteArray in xEdit
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1086,7 +1086,7 @@ class MreHair(MelRecord):
         MelFull(),
         MelModel(),
         MelIcon(),
-        MelUInt8('DATA', (_flags, 'flags')),
+        MelUInt8Flags(b'DATA', u'flags', _flags),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1185,7 +1185,7 @@ class MreLigh(MelRecord):
                            (_flags, 'flags', 0), 'falloff', 'fov', 'value',
                            'weight', old_versions={'iI3BsI2f'}),
         # None here is on purpose! See AssortedTweak_LightFadeValueFix
-        MelOptFloat(b'FNAM', (u'fade', None)),
+        MelOptFloat(b'FNAM', u'fade', None),
         MelFid('SNAM','sound'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1402,7 +1402,7 @@ class MreNpc(MreActorBase):
                    (u'attributes', [0 for _y in range(8)])),
         MelFid('HNAM','hair'),
         # None here is on purpose, for race patcher
-        MelOptFloat(b'LNAM', (u'hairLength', None)),
+        MelOptFloat(b'LNAM', u'hairLength', None),
         MelFid('ENAM','eye'), ####fid Array
         MelStruct('HCLR', '3Bs', 'hairRed', 'hairBlue', 'hairGreen',
                   ('unused3', null1)),
@@ -1516,7 +1516,7 @@ class MreQust(MelRecord):
         MelGroups('stages',
             MelSInt16('INDX', 'stage'),
             MelGroups('entries',
-                MelUInt8('QSDT', (stageFlags, 'flags')),
+                MelUInt8Flags(b'QSDT', u'flags', stageFlags),
                 MelConditions(),
                 MelString('CNAM','text'),
                 MelEmbeddedScript(),
@@ -1592,7 +1592,7 @@ class MreRace(MelRecord):
             #  that code and change it
             MelString('MODL', 'modPath'),
             # None here is on purpose - 0 is a legitimate value
-            MelOptFloat(b'MODB', (u'modb', None)),
+            MelOptFloat(b'MODB', u'modb', None),
             MelBase('MODT', 'modt_p'),
             MelIcon(),
         )),
@@ -1831,7 +1831,7 @@ class MreSlgm(MelRecord):
         MelScript(),
         MelStruct('DATA','If','value','weight'),
         MelUInt8(b'SOUL', u'soul'),
-        MelUInt8('SLCP', ('capacity', 1)),
+        MelUInt8(b'SLCP', u'capacity', 1),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1930,7 +1930,7 @@ class MreWatr(MelRecord):
         MelEdid(),
         MelString('TNAM','texture'),
         MelUInt8('ANAM', 'opacity'),
-        MelUInt8('FNAM', (_flags, 'flags', 0)),
+        MelUInt8Flags(b'FNAM', u'flags', _flags),
         MelString('MNAM','material'),
         MelFid('SNAM','sound'),
         MelWatrData(
@@ -1988,7 +1988,7 @@ class MreWrld(MelRecord):
         MelIcon(u'mapPath'),
         MelStruct(b'MNAM', u'2i4h', u'dimX', u'dimY', u'NWCellX', u'NWCellY',
                   u'SECellX', u'SECellY'),
-        MelUInt8('DATA', (_flags, 'flags', 0)),
+        MelUInt8Flags(b'DATA', u'flags', _flags),
         MelWorldBounds(),
         MelOptUInt32('SNAM', 'sound'),
         MelNull(b'OFST'), # Not even CK/xEdit can recalculate these right now

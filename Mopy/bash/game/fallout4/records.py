@@ -26,7 +26,8 @@ from ... import brec
 from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelStruct, MelUnicode, MelNull, MelFidList, MreLeveledListBase, MelFid, \
     FID, MelLString, MelUInt8, MelOptFid, MelOptFloat, MelBounds, MelEdid, \
-    MelArray, MreGmstBase
+    MelArray, MreGmstBase, MelUInt8Flags
+
 # Set brec.MelModel to the Fallout 4 one - do not import from skyrim.records yet
 if brec.MelModel is None:
 
@@ -99,7 +100,7 @@ class MreLvli(MreLeveledList):
         MelBounds(),
         MelUInt8('LVLD', 'chanceNone'),
         MelUInt8('LVLM', 'maxCount'),
-        MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0)),
+        MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
         MelOptFid('LVLG', 'glob'),
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
@@ -124,7 +125,7 @@ class MreLvln(MreLeveledList):
         MelBounds(),
         MelUInt8('LVLD', 'chanceNone'),
         MelUInt8('LVLM', 'maxCount'),
-        MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0)),
+        MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
         MelOptFid('LVLG', 'glob'),
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),

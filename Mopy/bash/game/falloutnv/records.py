@@ -40,7 +40,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelObject, MreWithItems, MelRef3D, MelXlod, MelNull, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
     MelDecalData, MelDescription, MelPickupSound, MelDropSound, \
-    MelActivateParents
+    MelActivateParents, MelUInt8Flags, MelOptUInt32Flags
 from ...exception import ModSizeError
 
 #------------------------------------------------------------------------------
@@ -387,7 +387,7 @@ class MreCell(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelUInt8('DATA', (cellFlags, 'flags', 0)),
+        MelUInt8Flags(b'DATA', u'flags', cellFlags),
         # None defaults here are on purpose - XCLC does not necessarily exist,
         # but 0 is a valid value for both coordinates (duh)
         MelSkipInterior(MelTruncatedStruct(b'XCLC', u'2iI', (u'posX', None),
@@ -404,11 +404,11 @@ class MreCell(MelRecord):
                            old_versions={'3Bs3Bs3Bs2f2i2f'}),
         MelBase('IMPF','footstepMaterials'), #--todo rewrite specific class.
         MelFid('LTMP','lightTemplate'),
-        MelOptUInt32('LNAM', (inheritFlags, 'lightInheritFlags', 0)),
+        MelOptUInt32Flags(b'LNAM', u'lightInheritFlags', inheritFlags),
         # GECK default for water is -2147483648, but by setting default here to
         # -2147483649, we force the Bashed Patch to retain the value of the
         # last mod.
-        MelOptFloat('XCLW', ('waterHeight', -2147483649)),
+        MelOptFloat(b'XCLW', u'waterHeight', -2147483649),
         MelString('XNAM','waterNoiseTexture'),
         MelFidList('XCLR','regions'),
         MelOptUInt8('XCMT', 'xcmt_p'),
@@ -690,7 +690,7 @@ class MreHdpt(MelRecord):
         MelEdid(),
         MelFull(),
         MelModel(),
-        MelUInt8('DATA', (_flags, 'flags')),
+        MelUInt8Flags(b'DATA', u'flags', _flags),
         MelFids('HNAM','extraParts'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -930,7 +930,7 @@ class MreLigh(MelRecord):
                   ('unused1',null1),(_flags,'flags',0),'falloff','fov','value',
                   'weight'),
         # None here is on purpose! See AssortedTweak_LightFadeValueFix
-        MelOptFloat(b'FNAM', (u'fade', None)),
+        MelOptFloat(b'FNAM', u'fade', None),
         MelFid('SNAM','sound'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1022,7 +1022,7 @@ class MreMset(MelRecord):
         MelFloat('MNAM', 'mnam'),
         MelFloat('NNAM', 'nnam'),
         MelFloat('ONAM', 'onam'),
-        MelUInt8('PNAM', (_flags, 'enableFlags')),
+        MelUInt8Flags(b'PNAM', u'enableFlags', _flags),
         MelFloat('DNAM', 'dnam'),
         MelFloat('ENAM', 'enam'),
         MelFloat('FNAM', 'fnam'),
@@ -1464,7 +1464,7 @@ class MreStat(MelRecord):
         MelEdid(),
         MelBounds(),
         MelModel(),
-        MelSInt8('BRUS', ('passthroughSound', -1)),
+        MelSInt8(b'BRUS', u'passthroughSound', -1),
         MelFid('RNAM','soundRandomLooping'),
     )
     __slots__ = melSet.getSlotsUsed()
