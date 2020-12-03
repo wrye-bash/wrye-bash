@@ -34,7 +34,8 @@ from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelOptFloat, MelOptFid, MelReadOnly, MelFids, MelOptUInt32Flags, \
     MelUInt8Flags, MelOptUInt8Flags, MelOptSInt32
 from .utils_constants import _int_unpacker, FID, null1, null2, null3, null4
-from ..bolt import Flags, encode, struct_pack, struct_unpack
+from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte
+from ..exception import ModError
 
 #------------------------------------------------------------------------------
 class MelActionFlags(MelOptUInt32Flags):
@@ -638,3 +639,22 @@ class MelOwnership(MelGroup):
     def dumpData(self,record,out):
         if record.ownership and record.ownership.owner: ##: use pack_subrecord_data ?
             MelGroup.dumpData(self,record,out)
+
+class MelDebrData(MelStruct):
+    def __init__(self):
+        # Format doesn't matter, struct.Struct(u'') works! ##: MelStructured
+        super(MelDebrData, self).__init__(b'DATA', u'', u'percentage',
+            (u'modPath', null1), u'flags')
+
+    def load_mel(self, record, ins, sub_type, size_, readId):
+        byte_data = ins.read(size_, readId)
+        (record.percentage,) = unpack_byte(ins, byte_data[0:1])
+        record.modPath = byte_data[1:-2]
+        if byte_data[-2] != null1:
+            raise ModError(ins.inName,u'Unexpected subrecord: %s' % readId)
+        (record.flags,) = struct_unpack(u'B',byte_data[-1])
+
+    def pack_subrecord_data(self, record):
+        return b''.join(
+            [struct_pack(u'B', record.percentage), record.modPath, null1,
+             struct_pack(u'B', record.flags)])

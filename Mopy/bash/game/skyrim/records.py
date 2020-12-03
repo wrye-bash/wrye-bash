@@ -25,7 +25,7 @@ import struct
 from collections import OrderedDict
 
 from ... import brec
-from ...bolt import Flags, encode, struct_pack, struct_unpack
+from ...bolt import Flags, encode, struct_pack
 from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelFidList, \
@@ -42,7 +42,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
     MelPickupSound, MelDropSound, MelActivateParents, BipedFlags, MelColor, \
     MelColorO, MelSpells, MelFixedString, MelUInt8Flags, MelUInt16Flags, \
-    MelUInt32Flags, MelOptUInt16Flags, MelOwnership
+    MelUInt32Flags, MelOptUInt16Flags, MelOwnership, MelDebrData
 from ...exception import ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -1961,27 +1961,6 @@ class MreDebr(MelRecord):
     rec_sig = b'DEBR'
 
     dataFlags = Flags(0, Flags.getNames('hasCollissionData'))
-
-    class MelDebrData(MelStruct):
-        def __init__(self):
-            # Format doesn't matter, see {load,dump}Data below
-            MelStruct.__init__(self, 'DATA', '', ('percentage', 0),
-                               ('modPath', null1), ('flags', 0))
-
-        def load_mel(self, record, ins, sub_type, size_, readId):
-            """Reads data from ins into record attribute."""
-            byte_data = ins.read(size_, readId)
-            (record.percentage,) = struct_unpack('B',byte_data[0:1])
-            record.modPath = byte_data[1:-2]
-            if byte_data[-2] != null1:
-                raise ModError(ins.inName,u'Unexpected subrecord: %s' % readId)
-            (record.flags,) = struct_unpack('B',byte_data[-1])
-
-        def pack_subrecord_data(self, record):
-            """Dumps data from record to outstream."""
-            return b''.join(
-                [struct_pack(u'B', record.percentage), record.modPath, null1,
-                 struct_pack(u'B', record.flags)])
 
     melSet = MelSet(
         MelEdid(),

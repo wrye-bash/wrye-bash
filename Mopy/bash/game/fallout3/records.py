@@ -27,7 +27,7 @@ import struct
 from collections import OrderedDict
 
 from ... import brec
-from ...bolt import Flags, struct_unpack, struct_pack
+from ...bolt import Flags, struct_pack
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MelSet, MelFid, MelOptStruct, MelFids, MreHeaderBase, \
     MelBase, MelUnicode, MelFidList, MreGmstBase, MelStrings, MelMODS, \
@@ -44,8 +44,9 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
     MelDecalData, MelDescription, MelLists, MelPickupSound, MelDropSound, \
     MelActivateParents, BipedFlags, MelSpells, MelUInt8Flags, MelUInt16Flags, \
-    MelUInt32Flags, MelOptUInt32Flags, MelOptUInt8Flags, MelOwnership
-from ...exception import ModError, ModSizeError
+    MelUInt32Flags, MelOptUInt32Flags, MelOptUInt8Flags, MelOwnership, \
+    MelDebrData
+from ...exception import ModSizeError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
 
@@ -1005,25 +1006,6 @@ class MreCsty(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MelDebrData(MelStruct):
-    def __init__(self):
-        # Format doesn't matter, see {load,dump}Data below
-        super(MelDebrData, self).__init__(b'DATA', u'', u'percentage',
-            (u'modPath', null1), u'flags')
-
-    def load_mel(self, record, ins, sub_type, size_, readId):
-        byte_data = ins.read(size_, readId)
-        (record.percentage,) = struct_unpack(u'B',byte_data[0:1])
-        record.modPath = byte_data[1:-2]
-        if byte_data[-2] != null1:
-            raise ModError(ins.inName,u'Unexpected subrecord: %s' % readId)
-        (record.flags,) = struct_unpack(u'B',byte_data[-1])
-
-    def pack_subrecord_data(self, record):
-        return b''.join(
-            [struct_pack(u'B', record.percentage), record.modPath, null1,
-             struct_pack(u'B', record.flags)])
-
 class MreDebr(MelRecord):
     """Debris."""
     rec_sig = b'DEBR'
