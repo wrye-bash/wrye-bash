@@ -15,9 +15,13 @@ ul.nodot li {
   list-style: none;
   margin-left: -1.25rem;			/* 20px */
 }
-img.bigcred {
+img.smallcred {
   max-height: 2rem;				/* 32px */
   max-width: 2rem;				/* 32px */
+}
+img.bigcred {
+  max-height: 3rem;				/* 48px */
+  max-width: 3rem;				/* 48px */
 }
 img.monkeygod {
   max-height: 4rem;				/* 64px */
