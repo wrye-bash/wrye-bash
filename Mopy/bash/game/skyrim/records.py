@@ -425,10 +425,9 @@ class _AVmadComponent(object):
         """Dumps data for this fragment using the specified record and
         returns the result as a string, ready for writing to an output
         stream."""
-        getter = record.__getattribute__
         out_data = b''
         for attr, fmt in self.__class__.processors.iteritems():
-            attr_val = getter(attr)
+            attr_val = getattr(record, attr)
             if fmt != u'str16':
                 out_data += fmt[1](attr_val)
             else:
@@ -439,12 +438,11 @@ class _AVmadComponent(object):
         """Loads data for this fragment from the specified input stream and
         attaches it to the specified record. The version of VMAD and the object
         format are also given."""
-        setter = record.__setattr__
         for attr, fmt in self.__class__.processors.iteritems():
             if fmt != u'str16':
-                setter(attr, ins.unpack(fmt[0], fmt[2], read_id)[0])
+                setattr(record, attr, ins.unpack(fmt[0], fmt[2], read_id)[0])
             else:
-                setter(attr, _read_vmad_str16(ins, read_id))
+                setattr(record, attr, _read_vmad_str16(ins, read_id))
 
     def make_new(self):
         """Creates a new runtime instance of this component with the
@@ -507,41 +505,35 @@ class _AFixedContainer(_AVmadComponent):
         # Finally, inspect the flags and load the appropriate children. We must
         # always load and dump these in the exact order specified by the
         # subclass!
-        is_flag_set = child_flags.__getattr__
-        set_child = record.__setattr__
         new_child = self.child_loader.make_new
         load_child = self.child_loader.load_frag
         for flag_attr, child_attr in \
                 self.__class__.flags_to_children.iteritems():
-            if is_flag_set(flag_attr):
-                child = new_child()
-                load_child(child, ins, vmad_version, obj_format, read_id)
-                set_child(child_attr, child)
-            else:
-                set_child(child_attr, None)
+            cont_child = None
+            if getattr(child_flags, flag_attr):
+                cont_child = new_child()
+                load_child(cont_child, ins, vmad_version, obj_format, read_id)
+            setattr(record, child_attr, cont_child)
 
     def dump_frag(self, record):
         # Update the flags first, then dump the regular attributes
         # Also use this chance to store the value of each present child
         children = []
-        get_child = record.__getattribute__
         child_flags = getattr(record, self.__class__.flags_attr)
-        set_flag = child_flags.__setattr__
         store_child = children.append
         for flag_attr, child_attr in \
                 self.__class__.flags_to_children.iteritems():
-            child = get_child(child_attr)
-            if child is not None:
-                store_child(child)
-                set_flag(flag_attr, True)
-            else:
-                # No need to store children we won't be writing out
-                set_flag(flag_attr, False)
+            cont_child = getattr(record, child_attr)
+            write_child = cont_child is not None
+            # No need to store children we won't be writing out
+            if write_child:
+                store_child(cont_child)
+            setattr(child_flags, flag_attr, write_child)
         out_data = super(_AFixedContainer, self).dump_frag(record)
         # Then, dump each child for which the flag is now set, in order
         dump_child = self.child_loader.dump_frag
-        for child in children:
-            out_data += dump_child(child)
+        for cont_child in children:
+            out_data += dump_child(cont_child)
         return out_data
 
     @property
@@ -574,9 +566,9 @@ class _AVariableContainer(_AVmadComponent):
         load_child = self.child_loader.load_frag
         append_child = children.append
         for x in xrange(getattr(record, self.__class__.counter_attr)):
-            child = new_child()
-            load_child(child, ins, vmad_version, obj_format, read_id)
-            append_child(child)
+            cont_child = new_child()
+            load_child(cont_child, ins, vmad_version, obj_format, read_id)
+            append_child(cont_child)
         setattr(record, self.__class__.children_attr, children)
 
     def dump_frag(self, record):
@@ -586,14 +578,14 @@ class _AVariableContainer(_AVmadComponent):
         out_data = super(_AVariableContainer, self).dump_frag(record)
         # Then, dump each child
         dump_child = self.child_loader.dump_frag
-        for child in children:
-            out_data += dump_child(child)
+        for cont_child in children:
+            out_data += dump_child(cont_child)
         return out_data
 
     def map_fids(self, record, map_function, save=False):
         map_child = self.child_loader.map_fids
-        for child in getattr(record, self.__class__.children_attr):
-            map_child(child, map_function, save)
+        for cont_child in getattr(record, self.__class__.children_attr):
+            map_child(cont_child, map_function, save)
 
     @property
     def used_slots(self):
@@ -847,7 +839,7 @@ class MelVmad(MelBase):
                 record, ins, vmad_version, obj_format, read_id)
             # Then, load each phase fragment
             record.phase_fragments = []
-            frag_count, = ins.unpack(__unpacker, 2, read_id)
+            frag_count = ins.unpack(__unpacker, 2, read_id)[0]
             new_fragment = self._phase_loader.make_new
             load_fragment = self._phase_loader.load_frag
             append_fragment = record.phase_fragments.append
@@ -943,9 +935,9 @@ class MelVmad(MelBase):
             elif property_type == 2: # string
                 record.prop_data = _read_vmad_str16(ins, read_id)
             elif property_type == 3: # sint32
-                record.prop_data, = ins.unpack(__unpackers[u'i'], 4, read_id)
+                record.prop_data = ins.unpack(__unpackers[u'i'], 4, read_id)[0]
             elif property_type == 4: # float
-                record.prop_data, = ins.unpack(__unpackers[u'f'], 4, read_id)
+                record.prop_data = ins.unpack(__unpackers[u'f'], 4, read_id)[0]
             elif property_type == 5: # bool (stored as uint8)
                 # Faster than bool() and other, similar checks
                 record.prop_data = ins.unpack(
@@ -958,21 +950,21 @@ class MelVmad(MelBase):
                                     xrange(ins.unpack(
                                         __unpackers[u'I'], 4, read_id)[0])]
             elif property_type == 13: # sint32 array
-                array_len, = ins.unpack(__unpackers[u'I'], 4, read_id)
+                array_len = ins.unpack(__unpackers[u'I'], 4, read_id)[0]
                 # Do *not* change without extensive benchmarking! This is
                 # faster than all alternatives, at least on py2.
                 record.prop_data = [x for x in ins.unpack(
                     structs_cache[u'%di' % array_len].unpack, array_len * 4,
                     read_id)]
             elif property_type == 14: # float array
-                array_len, = ins.unpack(__unpackers[u'I'], 4, read_id)
+                array_len = ins.unpack(__unpackers[u'I'], 4, read_id)[0]
                 # Do *not* change without extensive benchmarking! This is
                 # faster than all alternatives, at least on py2.
                 record.prop_data = [x for x in ins.unpack(
                     structs_cache[u'%df' % array_len].unpack, array_len * 4,
                     read_id)]
             elif property_type == 15: # bool array (stored as uint8 array)
-                array_len, = ins.unpack(__unpackers[u'I'], 4, read_id)
+                array_len = ins.unpack(__unpackers[u'I'], 4, read_id)[0]
                 # Do *not* change without extensive benchmarking! This is
                 # faster than all alternatives, at least on py2.
                 record.prop_data = [x != 0 for x in ins.unpack(
@@ -1072,9 +1064,9 @@ class MelVmad(MelBase):
             # the attributes is alias_obj_format, which tells us how to unpack
             # the ObjectRef at the start.
             ins.seek(8, 1, read_id)
-            record.alias_vmad_version, = ins.unpack(__unpacker_h, 2, read_id)
-            record.alias_obj_format, = ins.unpack(__unpacker_h, 2, read_id)
-            record.script_count, = ins.unpack(__unpacker_H, 2, read_id)
+            record.alias_vmad_version = ins.unpack(__unpacker_h, 2, read_id)[0]
+            record.alias_obj_format = ins.unpack(__unpacker_h, 2, read_id)[0]
+            record.script_count = ins.unpack(__unpacker_H, 2, read_id)[0]
             # Change our active VMAD version and object format to the ones we
             # read from this alias
             vmad_version = record.alias_vmad_version
@@ -1202,7 +1194,7 @@ class MelVmad(MelBase):
         formElements.add(self)
 
     def mapFids(self, record, function, save=False):
-        vmad = record.__getattribute__(self.attr)
+        vmad = getattr(record, self.attr)
         if vmad is None: return
         map_script = self._script_loader.map_fids
         for script in vmad.scripts:

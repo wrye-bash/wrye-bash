@@ -1071,7 +1071,7 @@ class ItemStats(object):
         for group, attrs in self.class_attrs.iteritems():
             for record in getattr(modFile,group).getActiveRecords():
                 self.class_fid_attr_value[group][record.fid].update(
-                    zip(attrs, map(record.__getattribute__, attrs)))
+                    zip(attrs, [getattr(record, a) for a in attrs]))
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
@@ -1086,7 +1086,7 @@ class ItemStats(object):
                 longid = record.fid
                 itemStats = fid_attr_value.get(longid,None)
                 if not itemStats: continue
-                oldValues = dict(zip(attrs,map(record.__getattribute__,attrs)))
+                oldValues = {a: getattr(record, a) for a in attrs}
                 for stat_key, n_stat in itemStats.iteritems():
                     o_stat = oldValues[stat_key]
                     if isinstance(o_stat, float) or isinstance(n_stat, float):
@@ -1565,7 +1565,7 @@ class ItemPrices(object):
         attrs = self.item_prices_attrs
         for group, fid_stats in class_fid_stats.iteritems():
             for record in getattr(modFile,group).getActiveRecords():
-                fid_stats[record.fid] = map(record.__getattribute__, attrs)
+                fid_stats[record.fid] = [getattr(record, a) for a in attrs]
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""

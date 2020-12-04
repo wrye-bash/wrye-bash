@@ -451,7 +451,7 @@ class MelRaceParts(MelNull):
     def load_mel(self, record, ins, sub_type, size_, readId,
                  __unpacker=_int_unpacker):
         if sub_type == 'INDX':
-            self._last_indx, = ins.unpack(__unpacker, size_, readId)
+            self._last_indx = ins.unpack(__unpacker, size_, readId)[0]
         else:
             self._indx_to_loader[self._last_indx].load_mel(
                 record, ins, sub_type, size_, readId)
@@ -535,36 +535,37 @@ class MelMODS(MelBase):
         formElements.add(self)
 
     def setDefault(self,record):
-        record.__setattr__(self.attr,None)
+        setattr(record, self.attr, None)
 
     def load_mel(self, record, ins, sub_type, size_, readId,
                  __unpacker=_int_unpacker):
         insUnpack = ins.unpack
         insRead32 = ins.readString32
         count, = insUnpack(__unpacker, 4, readId)
-        data = []
-        dataAppend = data.append
+        mods_data = []
+        dataAppend = mods_data.append
         for x in xrange(count):
             string = insRead32(readId)
             fid = ins.unpackRef()
             index, = insUnpack(__unpacker, 4, readId)
             dataAppend((string,fid,index))
-        record.__setattr__(self.attr,data)
+        setattr(record, self.attr, mods_data)
 
     def pack_subrecord_data(self,record):
-        data = record.__getattribute__(self.attr)
-        if data is not None:
-            return b''.join(chain([struct_pack(u'I', len(data))],
+        mods_data = getattr(record, self.attr)
+        if mods_data is not None:
+            return b''.join(chain([struct_pack(u'I', len(mods_data))],
                 *([struct_pack(u'I', len(string)), encode(string),
                    struct_pack(u'=2I', fid, index)]
-                  for (string, fid, index) in data)))
+                  for (string, fid, index) in mods_data)))
 
     def mapFids(self,record,function,save=False):
         attr = self.attr
-        data = record.__getattribute__(attr)
-        if data is not None:
-            data = [(string,function(fid),index) for (string,fid,index) in record.__getattribute__(attr)]
-            if save: record.__setattr__(attr,data)
+        mods_data = getattr(record, attr)
+        if mods_data is not None:
+            mods_data = [(string,function(fid),index) for (string,fid,index)
+                         in getattr(record, attr)]
+            if save: setattr(record, attr, mods_data)
 
 #------------------------------------------------------------------------------
 class MelRegnEntrySubrecord(MelUnion):

@@ -100,7 +100,7 @@ class MelObmeScitGroup(MelGroup):
     simply not put this in a group, because a bunch of code relies on a group
     called 'scriptEffect' existing..."""
     def load_mel(self, record, ins, sub_type, size_, readId):
-        target = record.__getattribute__(self.attr)
+        target = getattr(record, self.attr)
         if target is None:
             class _MelHackyObject(MelObject):
                 @property
@@ -114,7 +114,7 @@ class MelObmeScitGroup(MelGroup):
                 element.setDefault(target)
             target.__slots__ = [s for element in self.elements for s in
                                 element.getSlotsUsed()]
-            record.__setattr__(self.attr,target)
+            setattr(record, self.attr, target)
         self.loaders[sub_type].load_mel(target, ins, sub_type, size_, readId)
 
 # TODO(inf) Do we really need to do this? It's an unused test spell

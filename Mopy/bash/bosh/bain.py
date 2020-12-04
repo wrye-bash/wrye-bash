@@ -358,8 +358,8 @@ class Installer(object):
         subclasses don't add new data members)."""
         clone = self.__class__(GPath(self.archive))
         copier = copy.copy
-        getter = object.__getattribute__
-        setter = object.__setattr__
+        getter = object.__getattribute__ ##: is the object. necessary?
+        setter = object.__setattr__ ##: is the object. necessary?
         for attr in Installer.__slots__:
             setter(clone,attr,copier(getter(self,attr)))
         return clone
@@ -624,6 +624,7 @@ class Installer(object):
         self.hasWizard = self.hasBCF = self.hasReadme = False
         self.packageDoc = self.packagePic = None # = self.extras_dict['readMe']
         for attr in {'skipExtFiles','skipDirFiles','espms'}:
+            ##: is the object. necessary?
             object.__getattribute__(self,attr).clear()
         dest_src = bolt.LowerDict()
         #--Bad archive?
@@ -2450,7 +2451,7 @@ class InstallersData(DataStore):
             for folder in sorted(testDirs, key=len, reverse=True):
                 # Sorting by length, descending, ensure we always
                 # are processing the deepest directories first
-                files = set(imap(folder.join, folder.list()))
+                files = {folder.join(x) for x in folder.list()}
                 remaining = files - allRemoves
                 if not remaining: # If all items in this directory will be
                     # removed, this directory is also safe to remove.

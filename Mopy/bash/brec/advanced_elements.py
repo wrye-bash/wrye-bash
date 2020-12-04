@@ -445,10 +445,9 @@ class MelTruncatedStruct(MelStruct):
         unpacked_val = self._pre_process_unpacked(unpacked_val)
         # Apply any actions and then set the attributes according to the values
         # we just unpacked
-        setter = record.__setattr__
         for attr, value, action in zip(self.attrs, unpacked_val, self.actions):
             if callable(action): value = action(value)
-            setter(attr, value)
+            setattr(record, attr, value)
 
     def _pre_process_unpacked(self, unpacked_val):
         """You may override this if you need to change the unpacked value in
@@ -462,9 +461,8 @@ class MelTruncatedStruct(MelStruct):
             # If this struct is optional, compare the current values to the
             # defaults and skip the dump conditionally - basically the same
             # thing MelOptStruct does
-            record_get_attr = record.__getattribute__
             for attr, default in zip(self.attrs, self.defaults):
-                curr_val = record_get_attr(attr)
+                curr_val = getattr(record, attr)
                 if curr_val is not None and curr_val != default:
                     break
             else:
@@ -484,18 +482,17 @@ class MelLists(MelStruct):
     """Convenience subclass to collect unpacked attributes to lists.
     'actions' is discarded"""
     # map attribute names to slices/indexes of the tuple of unpacked elements
-    _attr_indexes = OrderedDict() # type: OrderedDict[basestring, slice | int]
+    _attr_indexes = OrderedDict() # type: OrderedDict[unicode, slice | int]
 
     def load_mel(self, record, ins, sub_type, size_, readId):
         unpacked = list(ins.unpack(self._unpacker, size_, readId))
-        setter = record.__setattr__
         for attr, _slice in self.__class__._attr_indexes.iteritems():
-            setter(attr, unpacked[_slice])
+            setattr(record, attr, unpacked[_slice])
 
     def pack_subrecord_data(self, record):
         values = list(chain.from_iterable(
             j if isinstance(j, list) else [j] for j in
-            map(record.__getattribute__, self.__class__._attr_indexes)))
+            [getattr(record, a) for a in self.__class__._attr_indexes]))
         return self._packer(*values)
 
 #------------------------------------------------------------------------------
@@ -615,8 +612,8 @@ class FlagDecider(ACommonDecider):
 
     def _decide_common(self, record):
         flags_val = getattr(record, self._flags_attr)
-        check_flag = flags_val.__getattr__
-        return all(check_flag(flag_name) for flag_name in self._required_flags)
+        return all(getattr(flags_val, flag_name)
+                   for flag_name in self._required_flags)
 
 class GameDecider(ACommonDecider):
     """Decider that returns the name of the currently managed game."""
