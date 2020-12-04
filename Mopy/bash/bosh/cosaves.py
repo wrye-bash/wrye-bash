@@ -34,11 +34,11 @@ import string
 import struct
 from itertools import imap
 from . import bak_file_pattern
-from ..bolt import sio, decoder, encode, struct_pack, struct_unpack, \
-    unpack_string, unpack_int, unpack_short, unpack_4s, unpack_byte, \
-    unpack_str16, unpack_float, unpack_double, unpack_int_signed, unpack_str32, \
-    AFile, unpack_spaced_string, pack_int, pack_short, pack_double, pack_byte, \
-    pack_int_signed, pack_float
+from ..bolt import sio, decoder, encode, struct_unpack, unpack_string, \
+    unpack_int, unpack_short, unpack_4s, unpack_byte, unpack_str16, \
+    unpack_float, unpack_double, unpack_int_signed, unpack_str32, AFile, \
+    unpack_spaced_string, pack_int, pack_short, pack_double, pack_byte, \
+    pack_int_signed, pack_float, pack_4s
 from ..exception import AbstractError, BoltError, CosaveError, \
     InvalidCosaveError, UnsupportedCosaveError
 
@@ -234,7 +234,7 @@ class _xSEChunk(_AChunk):
 
     def write_chunk(self, out):
         # Don't forget to reverse signature when writing again
-        out.write(struct_pack(u'=4s', _cosave_encode(self.chunk_type[::-1])))
+        pack_4s(out, _cosave_encode(self.chunk_type[::-1]))
         pack_int(out, self.chunk_version)
         pack_int(out, self.chunk_length())
         # If we haven't fully decoded this chunk, treat it as a binary blob

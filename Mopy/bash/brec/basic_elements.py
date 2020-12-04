@@ -324,9 +324,9 @@ class MelFids(MelBase):
         fid = ins.unpackRef()
         record.__getattribute__(self.attr).append(fid)
 
-    def dumpData(self,record,out):
+    def dumpData(self, record, out, __packer=struct.Struct(u'I').pack):
         for fid in record.__getattribute__(self.attr):
-            MelFid(self.mel_sig, '').packSub(out, struct_pack(u'=I', fid))
+            MelFid(self.mel_sig, '').packSub(out, __packer(fid))
 
     def mapFids(self,record,function,save=False):
         fids = record.__getattribute__(self.attr)

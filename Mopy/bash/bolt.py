@@ -1521,6 +1521,8 @@ def unpack_int64_signed(ins, __unpack=struct.Struct(u'q').unpack):
     return __unpack(ins.read(8))[0]
 def unpack_4s(ins, __unpack=struct.Struct(u'4s').unpack):
     return __unpack(ins.read(4))[0]
+def pack_4s(out, val, __pack=struct.Struct(u'=4s').pack):
+    out.write(__pack(val))
 def unpack_str16_delim(ins, __unpack=struct.Struct(u'Hc').unpack):
     str_len = __unpack(ins.read(3))[0]
     # The actual string (including terminator) isn't stored for empty strings

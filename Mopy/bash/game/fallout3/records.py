@@ -27,7 +27,7 @@ import struct
 from collections import OrderedDict
 
 from ... import brec
-from ...bolt import Flags, struct_pack
+from ...bolt import Flags
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MelSet, MelFid, MelOptStruct, MelFids, MreHeaderBase, \
     MelBase, MelUnicode, MelFidList, MreGmstBase, MelStrings, MelMODS, \
@@ -3008,8 +3008,9 @@ class MreWatr(MelRecord):
             else:
                 raise ModSizeError(ins.inName, readId, (186, 2), size_)
 
-        def pack_subrecord_data(self, record):
-            return struct_pack(u'H', record.damage)
+        def pack_subrecord_data(self, record,
+                __packer=struct.Struct(u'H').pack):
+            return __packer(record.damage)
 
     class MelWatrDnam(MelTruncatedStruct):
         # TODO(inf) Why do we do this?
