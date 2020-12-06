@@ -33,7 +33,8 @@ from ..fomod import FailedCondition, FomodInstaller, InstallerGroup, \
     InstallerOption, InstallerPage
 from ..gui import CENTER, CheckBox, HBoxedLayout, HLayout, Label, \
     LayoutOptions, TextArea, VLayout, WizardDialog, EventResult, \
-    PictureWithCursor, RadioButton, ScrollableWindow, Stretch, Table
+    PictureWithCursor, RadioButton, ScrollableWindow, Stretch, Table, \
+    BusyCursor
 
 class FomodInstallInfo(object):
     __slots__ = (u'canceled', u'install_files', u'should_install')
@@ -429,7 +430,7 @@ class PageFinish(PageInstaller):
                                                 u'going to be installed.'))
         check_output.on_checked.subscribe(self._on_switch_output)
         # This can take a bit for very large FOMOD installs
-        with balt.BusyCursor():
+        with BusyCursor():
             installer_output = self._page_parent.fomod_parser.get_fomod_files()
             # Create the two alternative output displays and fill them with
             # data from the FOMOD parser

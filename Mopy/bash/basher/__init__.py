@@ -2995,8 +2995,8 @@ class InstallersDetails(_SashDetailsPanel):
         self.sp_label.visible = not has_fomod
         # Same deal as above. Note that we need to do these always, otherwise
         # the Sub-Packages list would stay disabled when switching installers
-        fomod_checked = has_fomod and inst_info.extras_dict.get(
-            u'fomod_active', False)
+        fomod_checked = bool(has_fomod and inst_info.extras_dict.get(
+            u'fomod_active', False))
         self.fomod_btn.is_checked = fomod_checked
         self.sp_btn.is_checked = not fomod_checked
         self.gSubList.enabled = not fomod_checked

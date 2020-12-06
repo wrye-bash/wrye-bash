@@ -166,48 +166,53 @@ class _NoMarkerLink(_InstallerLink):
         return bool(self._installables) and super(_NoMarkerLink, self)._enable()
 
 #------------------------------------------------------------------------------
-class _Installer_AWizardLink(OneItemLink, _InstallerLink):
+class _Installer_AWizardLink(_InstallerLink):
     """Base class for wizard links."""
-    def _perform_install(self, ui_refresh):
-        if self._selected_info.is_active: # If it's currently installed, anneal
-            title, do_it = _(u'Annealing...'), self.idata.bain_anneal
+    def _perform_install(self, sel_package, ui_refresh):
+        if sel_package.is_active: # If it's currently installed, anneal
+            title = _(u'Annealing...')
+            do_it = self.window.data_store.bain_anneal
         else: # Install if it's not installed
-            title, do_it = _(u'Installing...'), self.idata.bain_install
+            title = _(u'Installing...')
+            do_it = self.window.data_store.bain_install
         with balt.Progress(title, u'\n'+u' '*60) as progress:
-            do_it(self.selected, ui_refresh, progress)
+            do_it([GPath(sel_package.archive)], ui_refresh, progress)
 
 class Installer_Fomod(_Installer_AWizardLink):
     """Runs the FOMOD installer"""
-    parentWindow = ''
     _text = _(u'FOMOD Installer...')
     _help = _(u'Run the FOMOD installer.')
 
     def _enable(self):
-        is_single = super(Installer_Fomod, self)._enable()
-        return is_single and bool(self._selected_info.has_fomod_conf)
+        return super(Installer_Fomod, self)._enable() and all(
+            i.has_fomod_conf for i in self.iselected_infos())
 
     @balt.conversation
     def Execute(self):
-        with balt.BusyCursor():
-            sel_installer = self._selected_info
-            try:
-                fm_wizard = InstallerFomod(self.window, sel_installer)
-            except CancelError:
-                return
-            fm_wizard.ensureDisplayed()
-        # Run the FOMOD installer
-        ret = fm_wizard.run_fomod()
-        if ret.canceled:
-            return
         ui_refresh = [False, False]
         idetails = self.iPanel.detailsPanel
-        # Switch the GUI to FOMOD mode and pass the selected files to BAIN
-        idetails.set_fomod_mode(fomod_enabled=True)
-        sel_installer.extras_dict[u'fomod_dict'] = ret.install_files
         try:
-            idetails.refreshCurrent(sel_installer)
-            if ret.should_install:
-                self._perform_install(ui_refresh)
+            # Use list() since we're going to deselect packages
+            for sel_package in list(self.iselected_infos()):
+                with BusyCursor():
+                    # Select the package we want to install - posts events to
+                    # set details and update GUI
+                    self.window.SelectItem(GPath(sel_package.archive))
+                    try:
+                        fm_wizard = InstallerFomod(self.window, sel_package)
+                    except CancelError:
+                        continue
+                    fm_wizard.ensureDisplayed()
+                # Run the FOMOD installer
+                ret = fm_wizard.run_fomod()
+                if ret.canceled:
+                    continue
+                # Switch the GUI to FOMOD mode and pass selected files to BAIN
+                idetails.set_fomod_mode(fomod_enabled=True)
+                sel_package.extras_dict[u'fomod_dict'] = ret.install_files
+                idetails.refreshCurrent(sel_package)
+                if ret.should_install:
+                    self._perform_install(sel_package, ui_refresh)
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
 
@@ -228,8 +233,6 @@ class Installer_EditWizard(_SingleInstallable):
 
 class Installer_Wizard(_Installer_AWizardLink):
     """Runs the install wizard to select subpackages and plugin filtering"""
-    parentWindow = ''
-
     def __init__(self, bAuto):
         super(Installer_Wizard, self).__init__()
         self.bAuto = bAuto
@@ -239,57 +242,63 @@ class Installer_Wizard(_Installer_AWizardLink):
                        ) if self.bAuto else _(u"Run the install wizard.")
 
     def _enable(self):
-        single_item = super(Installer_Wizard, self)._enable()
-        return single_item and self._selected_info.hasWizard != False
+        return super(Installer_Wizard, self)._enable() and all(
+            i.hasWizard for i in self.iselected_infos())
 
     @balt.conversation
     def Execute(self):
-        ##: Investigate why we have so many refreshCurrents in here. At least
-        # the first one seems pointless?
-        with BusyCursor():
-            installer = self._selected_info
-            idetails = self.iPanel.detailsPanel
-            idetails.refreshCurrent(installer)
-            try:
-                wizard = InstallerWizard(self.window, self._selected_info,
-                                         self.bAuto)
-            except CancelError:
-                return
-            wizard.ensureDisplayed()
-        ret = wizard.Run()
-        if ret.canceled:
-            idetails.refreshCurrent(installer)
-            return
-        installer.resetAllEspmNames()
-        # Switch away from FOMOD mode, then check the sub-packages that were
-        # selected by the wizard
-        idetails.set_fomod_mode(fomod_enabled=False)
-        for index in xrange(len(installer.subNames[1:])):
-            select = installer.subNames[index + 1] in ret.select_sub_packages
-            idetails.gSubList.lb_check_at_index(index, select)
-            installer.subActives[index + 1] = select
-        idetails.refreshCurrent(installer)
-        #Check the espms that were selected by the wizard
-        espms = idetails.gEspmList.lb_get_str_items()
-        espms = [x.replace(u'&&',u'&') for x in espms]
-        installer.espmNots = set()
-        for index, espm in enumerate(idetails.espms):
-            if espms[index] in ret.select_plugins:
-                idetails.gEspmList.lb_check_at_index(index, True)
-            else:
-                idetails.gEspmList.lb_check_at_index(index, False)
-                installer.espmNots.add(espm)
-        idetails.refreshCurrent(installer)
-        #Rename the espms that need renaming
-        for oldName in ret.rename_plugins:
-            installer.setEspmName(oldName, ret.rename_plugins[oldName])
-        idetails.refreshCurrent(installer)
-        #Install if necessary
+        ##: Investigate why we have so many refreshCurrents in here.
+        # Installer_Fomod has just one!
         ui_refresh = [False, False]
+        idetails = self.iPanel.detailsPanel
         try:
-            if ret.should_install:
-                self._perform_install(ui_refresh)
-            self._apply_tweaks(installer, ret, ui_refresh)
+            # Use list() since we're going to deselect packages
+            for sel_package in list(self.iselected_infos()):
+                with BusyCursor():
+                    # Select the package we want to install - posts events to
+                    # set details and update GUI
+                    self.window.SelectItem(GPath(sel_package.archive))
+                    idetails.refreshCurrent(sel_package)
+                    try:
+                        wizard = InstallerWizard(self.window, sel_package,
+                                                 self.bAuto)
+                    except CancelError:
+                        return
+                    wizard.ensureDisplayed()
+                ret = wizard.Run()
+                if ret.canceled:
+                    idetails.refreshCurrent(sel_package)
+                    continue
+                sel_package.resetAllEspmNames()
+                # Switch away from FOMOD mode, then check the sub-packages that
+                # were selected by the wizard
+                idetails.set_fomod_mode(fomod_enabled=False)
+                for index in xrange(len(sel_package.subNames[1:])):
+                    select = (sel_package.subNames[index + 1] in
+                              ret.select_sub_packages)
+                    idetails.gSubList.lb_check_at_index(index, select)
+                    sel_package.subActives[index + 1] = select
+                idetails.refreshCurrent(sel_package)
+                # Check the plugins that were selected by the wizard
+                espms = idetails.gEspmList.lb_get_str_items()
+                espms = [x.replace(u'&&',u'&') for x in espms]
+                sel_package.espmNots = set()
+                for index, espm in enumerate(idetails.espms):
+                    if espms[index] in ret.select_plugins:
+                        idetails.gEspmList.lb_check_at_index(index, True)
+                    else:
+                        idetails.gEspmList.lb_check_at_index(index, False)
+                        sel_package.espmNots.add(espm)
+                idetails.refreshCurrent(sel_package)
+                #Rename the espms that need renaming
+                for oldName in ret.rename_plugins:
+                    sel_package.setEspmName(oldName,
+                                            ret.rename_plugins[oldName])
+                idetails.refreshCurrent(sel_package)
+                #Install if necessary
+                if ret.should_install:
+                    self._perform_install(sel_package, ui_refresh)
+                self._apply_tweaks(sel_package, ret, ui_refresh)
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
 
@@ -531,38 +540,40 @@ class Installer_Install(_NoMarkerLink):
             u'\n' + u'\n'.join([u' * %s\n' % x.stail for (x, y) in new_tweaks])
         self._showInfo(msg, title=_(u'INI Tweaks'))
 
-##: Would be nice to have this work for multiple installers, but wizards use
-# self.iPanel.detailsPanel, which won't be set correctly when multiple
-# installers are selected
-class Installer_InstallSmart(_NoMarkerLink, OneItemLink):
+class Installer_InstallSmart(_NoMarkerLink):
     """A 'smart' installer for new users. Uses wizards and FOMODs if present,
     then falls back to regular install if that isn't possible."""
     _text = _(u'Install...')
     _help = _(u'Installs selected installer(s), preferring a visual method if '
               u'available.')
 
-    def _try_installer(self, inst_instance):
+    def _try_installer(self, sel_package, inst_instance):
         """Checks if the specified installer link is enabled and, if so, runs
         it.
 
         :type inst_instance: EnabledLink"""
-        inst_instance._initData(self.window, self.selected)
+        inst_instance._initData(self.window, [GPath(sel_package.archive)])
         if inst_instance._enable():
             inst_instance.Execute()
             return True
         return False
 
     def Execute(self):
-        ##: Not the best implementation. It is pretty readable and obvious though
-        # Look for a BAIN wizard first, best integration with BAIN (duh)
-        if self._try_installer(Installer_Wizard(bAuto=False)): return
-        # Next, look for an FOMOD wizard - not quite as good, but at least it's
-        # visual
-        if self._try_installer(Installer_Fomod()): return
-        # Finally, fall back to the regular 'install' method
-        self._try_installer(Installer_Install())
+        ##: Not the best implementation, pretty readable and obvious though
+        inst_wiz = Installer_Wizard(bAuto=False)
+        inst_fomod = Installer_Fomod()
+        inst_regular = Installer_Install()
+        # Use list() since the interactive installers can change selection
+        for sel_package in list(self.iselected_infos()):
+            # Look for a BAIN wizard first, best integration with BAIN (duh)
+            if self._try_installer(sel_package, inst_wiz): continue
+            # Next, look for an FOMOD wizard - not quite as good, but at least
+            # it's visual
+            if self._try_installer(sel_package, inst_fomod): continue
+            # Finally, fall back to the regular 'Install Current' method
+            self._try_installer(sel_package, inst_regular)
 
-class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Waruddar
+class Installer_ListStructure(OneItemLink, _InstallerLink):
     """Copies folder structure of installer to clipboard."""
     _text = _(u"List Structure...")
     _help = _(u'Displays the folder structure of the selected installer (and '

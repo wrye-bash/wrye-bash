@@ -1374,7 +1374,7 @@ class _CopyToLink(EnabledLink):
         do_save_lo = False
         add_esm_flag = self._target_ext in (u'.esm', u'.esl')
         add_esl_flag = self._target_ext == u'.esl'
-        with balt.BusyCursor(): # ONAM generation can take a bit
+        with BusyCursor(): # ONAM generation can take a bit
             for curName, minfo in self.iselected_pairs():
                 newName = curName.root + self._target_ext
                 if newName == curName: continue
