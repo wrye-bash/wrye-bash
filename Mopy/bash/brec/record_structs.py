@@ -231,7 +231,7 @@ class MreSubrecord(object):
 #------------------------------------------------------------------------------
 class MreRecord(object):
     """Generic Record. flags1 are game specific see comments."""
-    subtype_attr = {'EDID':'eid','FULL':'full','MODL':'model'}
+    subtype_attr = {b'EDID': u'eid', b'FULL': u'full', b'MODL': u'model'}
     flags1_ = bolt.Flags(0, bolt.Flags.getNames(
         # {Sky}, {FNV} 0x00000000 ACTI: Collision Geometry (default)
         ( 0,'esm'), # {0x00000001}

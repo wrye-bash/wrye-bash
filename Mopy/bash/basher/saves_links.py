@@ -869,7 +869,7 @@ class Save_UpdateNPCLevels(EnabledLink):
         with balt.Progress(_(u'Update NPC Levels')) as progress:
             #--Loop over active mods
             npc_info = {}
-            loadFactory = LoadFactory(False, MreRecord.type_class['NPC_'])
+            loadFactory = LoadFactory(False, MreRecord.type_class[b'NPC_'])
             ordered = list(load_order.cached_active_tuple())
             subProgress = SubProgress(progress,0,0.4,len(ordered))
             modErrors = []

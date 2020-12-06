@@ -222,7 +222,7 @@ class PatchFile(ModFile):
                 if 'WRLD' in modFile.tops and modFile.WRLD.orphansSkipped:
                     self.worldOrphanMods.append(modName)
                 # TODO adapt for other games
-                if bush.game.fsName == u'Oblivion' and 'SCPT' in \
+                if bush.game.fsName == u'Oblivion' and b'SCPT' in \
                         modFile.tops and \
                         modName != GPath(bush.game.master_file):
                     gls = modFile.SCPT.getRecord(0x00025811)

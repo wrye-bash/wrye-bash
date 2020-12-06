@@ -60,7 +60,7 @@ class ImportRoadsPatcher(ImportPatcher, _ExSpecial):
 
     def scanModFile(self, modFile, progress): # scanModFile3 ?
         """Add lists from modFile."""
-        if not self.isActive or 'WRLD' not in modFile.tops: return
+        if not self.isActive or b'WRLD' not in modFile.tops: return
         patchWorlds = self.patchFile.WRLD
         for worldBlock in modFile.WRLD.worldBlocks:
             if worldBlock.road:
@@ -84,7 +84,7 @@ class ImportRoadsPatcher(ImportPatcher, _ExSpecial):
                 worldBlock.road = newRoad
                 keep(worldId)
                 keep(newRoad.fid)
-                worldsPatched.add((worldId[0].s,worldBlock.world.eid))
+                worldsPatched.add((worldId[0], worldBlock.world.eid))
         self.world_road.clear()
         self._patchLog(log,worldsPatched)
 

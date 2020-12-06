@@ -388,7 +388,7 @@ class ImportPatcher(ListPatcher):
     logMsg = u'\n=== ' + _(u'Modified Records')
 
     def _patchLog(self,log,type_count):
-        log.setHeader(u'= ' + self._patcher_name)
+        log.setHeader(u'= %s' % self._patcher_name)
         self._srcMods(log)
         self._plog(log,type_count)
 
@@ -397,7 +397,7 @@ class ImportPatcher(ListPatcher):
         log(self.__class__.logMsg)
         for type_,count in sorted(type_count.iteritems()):
             if count: log(u'* ' + _(u'Modified %(type)s Records: %(count)d')
-                          % {'type': type_, 'count': count})
+                          % {u'type': type_, u'count': count})
 
     def _plog1(self,log,mod_count): # common logging variation
         log(self.__class__.logMsg % sum(mod_count.values()))

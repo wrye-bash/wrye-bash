@@ -38,9 +38,13 @@ class PCFaces(object):
 
     class PCFace(object):
         """Represents a face."""
-        __slots__ = ('face_masters', 'eid', 'pcName', 'race', 'gender', 'eye', 'hair',
-            'hairLength','hairRed','hairBlue','hairGreen','unused3','fggs_p','fgga_p','fgts_p','level','attributes',
-            'skills','health','unused2','baseSpell','fatigue','iclass','factions','modifiers','spells')
+        __slots__ = (
+            u'face_masters', u'eid', u'pcName', u'race', u'gender', u'eye',
+            u'hair', u'hairLength', u'hairRed', u'hairBlue', u'hairGreen',
+            u'unused3', u'fggs_p', u'fgga_p', u'fgts_p', u'level',
+            u'attributes', u'skills', u'health', u'unused2', u'baseSpell',
+            u'fatigue', u'iclass', u'factions', u'modifiers', u'spells')
+
         def __init__(self):
             self.face_masters = []
             self.eid = self.pcName = u'generic'
@@ -61,8 +65,8 @@ class PCFaces(object):
 
         def convertRace(self,fromRace,toRace):
             """Converts face from one race to another while preserving structure, etc."""
-            for attr,num in (('fggs_p',50),('fgga_p',30),('fgts_p',50)):
-                fmt = unicode(num)+u'f'
+            for attr, fmt in ((u'fggs_p', u'50f'), (u'fgga_p', u'30f'),
+                              (u'fgts_p', u'50f')):
                 sValues = list(struct_unpack(fmt,getattr(self, attr)))
                 fValues = list(struct_unpack(fmt,getattr(fromRace, attr)))
                 tValues = list(struct_unpack(fmt,getattr(toRace, attr)))
@@ -121,11 +125,11 @@ class PCFaces(object):
             npc = record.getTypeCopy()
             face = faces[npc.fid] = PCFaces.PCFace()
             face.face_masters = saveFile._masters
-            for attr in ('eid','race','eye','hair','hairLength',
-                         'hairRed','hairBlue','hairGreen','unused3',
-                         'fggs_p','fgga_p','fgts_p','level','skills',
-                         'health','unused2','baseSpell', 'fatigue',
-                         'attributes','iclass'):
+            for attr in (u'eid', u'race', u'eye', u'hair', u'hairLength',
+                         u'hairRed', u'hairBlue', u'hairGreen', u'unused3',
+                         u'fggs_p', u'fgga_p', u'fgts_p', u'level', u'skills',
+                         u'health', u'unused2', u'baseSpell', u'fatigue',
+                         u'attributes', u'iclass'):
                 setattr(face,attr,getattr(npc,attr))
             face.gender = (0,1)[npc.flags.female]
             face.pcName = npc.full
@@ -147,7 +151,7 @@ class PCFaces(object):
             face.level = npc.acbs.level
             face.baseSpell = npc.acbs.baseSpell
             face.fatigue = npc.acbs.fatigue
-        for attr in ('attributes','skills','health','unused2'):
+        for attr in (u'attributes', u'skills', u'health', u'unused2'):
             value = getattr(npc,attr)
             if value is not None:
                 setattr(face,attr,value)
@@ -394,7 +398,7 @@ class PCFaces(object):
     def mod_getFaces(modInfo):
         """Returns an array of PCFaces from a mod file."""
         #--Mod File
-        loadFactory = LoadFactory(False,MreRecord.type_class['NPC_'])
+        loadFactory = LoadFactory(False,MreRecord.type_class[b'NPC_'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         short_mapper = modFile.getShortMapper()
@@ -420,7 +424,7 @@ class PCFaces(object):
     @staticmethod
     def mod_getRaceFaces(modInfo):
         """Returns an array of Race Faces from a mod file."""
-        loadFactory = LoadFactory(False,MreRecord.type_class['RACE'])
+        loadFactory = LoadFactory(False,MreRecord.type_class[b'RACE'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         faces = {}
@@ -436,7 +440,7 @@ class PCFaces(object):
     def mod_addFace(modInfo,face):
         """Writes a pcFace to a mod file."""
         #--Mod File
-        loadFactory = LoadFactory(True,MreRecord.type_class['NPC_'])
+        loadFactory = LoadFactory(True,MreRecord.type_class[b'NPC_'])
         modFile = ModFile(modInfo,loadFactory)
         if modInfo.getPath().exists():
             modFile.load(True)
@@ -460,7 +464,7 @@ class PCFaces(object):
             eid = eidForm % count
         #--NPC
         npcid = genFid(tes4.num_masters, tes4.getNextObject())
-        npc = MreRecord.type_class['NPC_'](
+        npc = MreRecord.type_class[b'NPC_'](
             RecHeader(b'NPC_', 0, 0x40000, npcid, 0))
         npc.eid = eid
         npc.full = face.pcName

@@ -726,7 +726,7 @@ class SaveSpells(object):
             self.allSpells.update(modInfo.extras['bash.spellList'])
             return
         #--Else extract spell list
-        loadFactory = LoadFactory(False, MreRecord.type_class['SPEL'])
+        loadFactory = LoadFactory(False, MreRecord.type_class[b'SPEL'])
         modFile = ModFile(modInfo, loadFactory)
         try: modFile.load(True)
         except ModError as err:

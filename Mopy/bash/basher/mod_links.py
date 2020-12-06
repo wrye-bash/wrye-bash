@@ -649,15 +649,17 @@ def _getUrl(installer):
                   u'=downloads&showfile=' + ma.group(2)
     return url or u''
 
-class Mod_CreateLOOTReport(EnabledLink):
+class _NotObLink(EnabledLink):
+
+    def _enable(self):
+        return len(self.selected) != 1 or ( # disable on solo Oblivion.esm
+            not bosh.reOblivion.match(self.selected[0].s))
+
+class Mod_CreateLOOTReport(_NotObLink):
     """Creates a basic LOOT masterlist entry with ."""
     _text = _(u'Create LOOT Entry...')
     _help = _(u'Creates LOOT masterlist entries based on the tags you have '
               u'applied to the selected plugin(s).')
-
-    def _enable(self):
-        return len(self.selected) != 1 or (
-            not bosh.reOblivion.match(self.selected[0].s))
 
     def Execute(self):
         log_txt = u''
@@ -1292,14 +1294,10 @@ class Mod_ScanDirty(ItemLink):
         log.out.close()
 
 #------------------------------------------------------------------------------
-class Mod_RemoveWorldOrphans(EnabledLink):
+class Mod_RemoveWorldOrphans(_NotObLink):
     """Remove orphaned cell records."""
     _text = _(u'Remove World Orphans')
     _help = _(u'Remove orphaned cell records')
-
-    def _enable(self):
-        return len(self.selected) != 1 or (
-            not bosh.reOblivion.match(self.selected[0].s))
 
     def Execute(self):
         message = _(u"In some circumstances, editing a mod will leave orphaned cell records in the world group. This command will remove such orphans.")
@@ -1313,7 +1311,7 @@ class Mod_RemoveWorldOrphans(EnabledLink):
             #--Export
             with balt.Progress(_(u"Remove World Orphans")) as progress:
                 loadFactory = mod_files.LoadFactory(True, MreRecord.type_class[
-                    'CELL'], MreRecord.type_class['WRLD'])
+                    b'CELL'], MreRecord.type_class[b'WRLD'])
                 modFile = mod_files.ModFile(fileInfo, loadFactory)
                 progress(0,_(u'Reading') + u' %s.' % fileName)
                 modFile.load(True,SubProgress(progress,0,0.7))
@@ -1420,25 +1418,22 @@ class Mod_CopyToMenu(MenuLink):
             self.append(_CopyToLink(plugin_ext))
 
 #------------------------------------------------------------------------------
-class Mod_DecompileAll(EnabledLink):
+class Mod_DecompileAll(_NotObLink):
     """Removes effects of a "recompile all" on the mod."""
     _text = _(u'Decompile All')
     _help = _(u'Removes effects of a "recompile all" on the mod')
-
-    def _enable(self):
-        return len(self.selected) != 1 or (
-        not bosh.reOblivion.match(self.selected[0].s)) # disable on Oblivion.esm
 
     def Execute(self):
         message = _(u"This command will remove the effects of a 'compile all' by removing all scripts whose texts appear to be identical to the version that they override.")
         if not self._askContinue(message, 'bash.decompileAll.continue',
                                  _(u'Decompile All')): return
         for fileName, fileInfo in self.iselected_pairs():
-            if bosh.reOblivion.match(fileName.s):
+            file_name_s = fileName.s
+            if bosh.reOblivion.match(file_name_s):
                 self._showWarning(_(u'Skipping %s') % fileName,
                                   _(u'Decompile All'))
                 continue
-            loadFactory = mod_files.LoadFactory(True, MreRecord.type_class['SCPT'])
+            loadFactory = mod_files.LoadFactory(True, MreRecord.type_class[b'SCPT'])
             modFile = mod_files.ModFile(fileInfo, loadFactory)
             modFile.load(True)
             badGenericLore = False
@@ -1471,14 +1466,13 @@ class Mod_DecompileAll(EnabledLink):
                 modFile.safeSave()
                 self._showOk((_(u'Scripts removed: %d.') + u'\n' +
                               _(u'Scripts remaining: %d')) %
-                             (len(removed), len(modFile.SCPT.records)),
-                             fileName.s)
+                             (len(removed), len(modFile.SCPT.records)), file_name_s)
             elif removed:
-                self._showOk(_(u"Only %d scripts were identical.  This is "
-                               u"probably intentional, so no changes have "
-                               u"been made.") % len(removed),fileName.s)
+                self._showOk(_(u'Only %d scripts were identical.  This is '
+                               u'probably intentional, so no changes have '
+                               u'been made.') % len(removed), file_name_s)
             else:
-                self._showOk(_(u"No changes required."), fileName.s)
+                self._showOk(_(u'No changes required.'), file_name_s)
 
 #------------------------------------------------------------------------------
 class _Esm_Esl_Flip(EnabledLink):
@@ -1995,10 +1989,10 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         #--Export
         #try:
         scriptText = self._parser()
-        scriptText.readFromMod(fileInfo,fileName.s)
-        exportedScripts = scriptText.writeToText(fileInfo,
+        scriptText.readFromMod(fileInfo, fileName)
+        exportedScripts = scriptText.writeToText(
             bass.settings['bash.mods.export.skip'], textDir,
-            bass.settings['bash.mods.export.deprefix'], fileName.s,
+            bass.settings['bash.mods.export.deprefix'], fileName,
             bass.settings['bash.mods.export.skipcomments'])
         #finally:
         self._showLog(exportedScripts, title=_(u'Export Scripts'),

@@ -342,7 +342,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
             for read_sig in tweak.getReadClasses():
                 t_dict[read_sig][tweak.supports_pooling].append(tweak)
         if not self.isActive or not self.srcs: return
-        loadFactory = LoadFactory(False,MreRecord.type_class['RACE'])
+        loadFactory = LoadFactory(False,MreRecord.type_class[b'RACE'])
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         for index,srcMod in enumerate(self.srcs):
@@ -351,7 +351,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
             bashTags = srcInfo.getBashTags()
-            if 'RACE' not in srcFile.tops: continue
+            if b'RACE' not in srcFile.tops: continue
             self.tempRaceData = {} #so as not to carry anything over!
             if u'R.ChangeSpells' in bashTags and u'R.AddSpells' in bashTags:
                 raise BoltError(

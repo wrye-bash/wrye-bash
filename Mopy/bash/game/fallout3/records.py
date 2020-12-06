@@ -3042,7 +3042,7 @@ class MreWatr(MelRecord):
                     sub_type, size_, readId)
                 return
             elif size_ == 2:
-                (record.damage,) = ins.unpack(__unpacker, size_, readId)
+                record.damage = ins.unpack(__unpacker, size_, readId)[0]
                 return
             else:
                 raise ModSizeError(ins.inName, readId, (186, 2), size_)

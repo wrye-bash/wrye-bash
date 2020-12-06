@@ -2951,13 +2951,13 @@ class InstallersData(DataStore):
             for package, installer in self.sorted_pairs():
                 prefix = u'%03d' % installer.order
                 if installer.is_marker():
-                    log(u'%s - %s' % (prefix, package.s))
+                    log(u'%s - %s' % (prefix, package))
                 elif installer.is_active:
                     log(u'++ %s - %s (%08X) (Installed)' % (
-                        prefix, package.s, installer.crc))
+                        prefix, package, installer.crc))
                 elif showInactive:
                     log(u'-- %s - %s (%08X) (Not Installed)' % (
-                        prefix, package.s, installer.crc))
+                        prefix, package, installer.crc))
             log(u'[/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
 

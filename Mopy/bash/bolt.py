@@ -1735,14 +1735,12 @@ import inspect
 def deprint(*args,**keyargs):
     """Prints message along with file and line location."""
     if not deprintOn and not keyargs.get('on'): return
-
     if keyargs.get('trace', True):
         stack = inspect.stack()
         file_, line, function = stack[1][1:4]
         msg = u'%s %4d %s: ' % (GPath(file_).tail, line, function)
     else:
         msg = u''
-
     try:
         msg += u' '.join([u'%s'%x for x in args]) # OK, even with unicode args
     except UnicodeError:
@@ -1753,7 +1751,6 @@ def deprint(*args,**keyargs):
                 msg += u' %s' % x
             except UnicodeError:
                 msg += u' %r' % x
-
     if keyargs.get('traceback',False):
         o = StringIO.StringIO()
         traceback.print_exc(file=o)
