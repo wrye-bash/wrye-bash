@@ -692,9 +692,8 @@ class Installer(object):
                 self.has_fomod_conf = full
                 skipDirFilesDiscard(file_relative)
                 continue
-            elif fm_active:
-                if full not in fm_dict:
-                    continue # Pretend all unselected FOMOD files don't exist
+            fm_present = full in fm_dict
+            if fm_active and fm_present:
                 # Remap selected FOMOD files to usable paths
                 file_relative = fm_dict[full]
                 fileLower = file_relative.lower()
@@ -768,6 +767,12 @@ class Installer(object):
                 dest = Installer._attributes_process[fileExt](
                     self, fileLower, full, fileExt, file_relative, sub)
                 if dest is None: continue
+            if fm_active and not fm_present:
+                # Pretend all unselected FOMOD files don't exist, but only
+                # after giving them a chance to process up above - that way
+                # packages that include both a wizard and an FOMOD installer
+                # will work (as well as BCFs)
+                continue
             if fileExt in global_skip_ext: continue # docs treated above
             elif fileExt in Installer._executables_process: # and handle execs
                 if Installer._executables_process[fileExt](
