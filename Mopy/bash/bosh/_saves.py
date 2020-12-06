@@ -30,8 +30,8 @@ from itertools import starmap, repeat
 from .save_headers import OblivionSaveHeader
 from .. import bolt, bush
 from ..bolt import Flags, sio, deprint, encode, SubProgress, unpack_many, \
-    unpack_int, unpack_short, struct_pack, struct_unpack, pack_int, \
-    pack_short, pack_byte
+    unpack_int, unpack_short, struct_unpack, pack_int, pack_short, pack_byte, \
+    structs_cache
 from ..brec import ModReader, MreRecord, getObjectIndex, getFormIndices, \
     unpack_header
 from ..exception import ModError, StateError
@@ -123,7 +123,7 @@ class SreNPC(object):
         """Returns self.data."""
         with sio() as out:
             def _pack(fmt, *args):
-                out.write(struct_pack(fmt, *args))
+                out.write(structs_cache[fmt].pack(*args))
             #--Form
             if self.form is not None:
                 pack_int(out, self.form)
@@ -328,8 +328,8 @@ class SaveFile(object):
         if not self.canSave: raise StateError(u"Insufficient data to write file.")
         outPath = outPath or self.fileInfo.getPath()
         with outPath.open(u'wb') as out:
-            def _pack(*args):
-                out.write(struct_pack(*args))
+            def _pack(fmt, *args):
+                out.write(structs_cache[fmt].pack(*args))
             #--Progress
             progress = progress or bolt.Progress()
             progress.setFull(self.fileInfo.size)
@@ -338,19 +338,19 @@ class SaveFile(object):
             self.header.dump_header(out)
             #--Fids Pointer, num records
             fidsPointerPos = out.tell()
-            _pack('I',0) #--Temp. Will write real value later.
-            _pack('I',len(self.records))
+            _pack(u'I',0) #--Temp. Will write real value later.
+            _pack(u'I',len(self.records))
             #--Pre-Globals
             out.write(self.preGlobals)
             #--Globals
-            _pack('H',len(self.globals))
+            _pack(u'H',len(self.globals))
             for iref,value in self.globals:
-                _pack('If',iref,value)
+                _pack(u'If',iref,value)
             #--Pre-Created
             out.write(self.preCreated)
             #--Created
             progress(0.1,_(u'Writing created.'))
-            _pack('I',len(self.created))
+            _pack(u'I',len(self.created))
             for record in self.created:
                 record.dump(out)
             #--Pre-records
@@ -361,18 +361,18 @@ class SaveFile(object):
                 _pack(u'=IBIBH',rec_id,rec_kind,flags,version,len(data))
                 out.write(data)
             #--Temp Effects, fids, worldids
-            _pack('I',len(self.tempEffects))
+            _pack(u'I',len(self.tempEffects))
             out.write(self.tempEffects)
             #--Fids
             progress(0.9,_(u'Writing fids, worldids.'))
             fidsPos = out.tell()
             out.seek(fidsPointerPos)
-            _pack('I',fidsPos)
+            _pack(u'I',fidsPos)
             out.seek(fidsPos)
-            _pack('I',len(self.fids))
+            _pack(u'I',len(self.fids))
             self.fids.tofile(out)
             #--Worldspaces
-            _pack('I',len(self.worldSpaces))
+            _pack(u'I',len(self.worldSpaces))
             self.worldSpaces.tofile(out)
             #--Done
             progress(1.0,_(u'Writing complete.'))

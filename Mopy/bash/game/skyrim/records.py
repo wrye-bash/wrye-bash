@@ -21,11 +21,10 @@
 #
 # =============================================================================
 """This module contains the skyrim record classes."""
-import struct
 from collections import OrderedDict
 
 from ... import brec
-from ...bolt import Flags, encode, struct_pack
+from ...bolt import Flags, encode, struct_pack, structs_cache
 from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelFidList, \
@@ -42,7 +41,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
     MelPickupSound, MelDropSound, MelActivateParents, BipedFlags, MelColor, \
     MelColorO, MelSpells, MelFixedString, MelUInt8Flags, MelUInt16Flags, \
-    MelUInt32Flags, MelOptUInt16Flags, MelOwnership, MelDebrData
+    MelUInt32Flags, MelOptUInt16Flags, MelOwnership, MelDebrData, get_structs
 from ...exception import ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -111,8 +110,8 @@ class MelBipedObjectData(MelStruct):
         loaders[b'BODT'] = self
 
     def load_mel(self, record, ins, sub_type, size_, readId,
-                 __unpacker2=struct.Struct(u'IB3s').unpack,
-                 __unpacker3=struct.Struct(u'IB3sI').unpack):
+                 __unpacker2=structs_cache[u'IB3s'].unpack,
+                 __unpacker3=structs_cache[u'IB3sI'].unpack):
         if sub_type == b'BODT':
             # Old record type, use alternate loading routine
             if size_ == 8:
@@ -393,20 +392,13 @@ class MelWaterVelocities(MelSequential):
 
 #------------------------------------------------------------------------------
 # VMAD - Virtual Machine Adapters
-# Some helper classes and functions
-def _mks(s_fmt):
-    """Short for make struct. Creates a struct and returns bounds unpack, pack
-    and size methods in a tuple."""
-    ret_struct = struct.Struct(s_fmt)
-    return ret_struct.unpack, ret_struct.pack, ret_struct.size
-
-def _dump_vmad_str16(str_val, __packer=struct.Struct(u'H').pack):
+def _dump_vmad_str16(str_val, __packer=structs_cache[u'H'].pack):
     """Encodes the specified string using cp1252 and returns data for both its
     length (as a 16-bit integer) and its encoded value."""
     encoded_str = encode(str_val, firstEncoding=u'cp1252')
     return __packer(len(encoded_str)) + encoded_str
 
-def _read_vmad_str16(ins, read_id, __unpacker=struct.Struct(u'H').unpack):
+def _read_vmad_str16(ins, read_id, __unpacker=structs_cache[u'H'].unpack):
     """Reads a 16-bit length integer, then reads a string in that length.
     Always uses cp1252 to decode."""
     return ins.read(ins.unpack(__unpacker, 2, read_id)[0], read_id).decode(
@@ -618,7 +610,7 @@ class ObjectRef(object):
         self.aid = aid # The AliasID
         self.fid = fid # The FormID
 
-    def dump_out(self, __packer=struct.Struct(u'HhI').pack):
+    def dump_out(self, __packer=structs_cache[u'HhI'].pack):
         """Returns the dumped version of this ObjectRef, ready for writing onto
         an output stream."""
         # Write only object format v2
@@ -636,7 +628,7 @@ class ObjectRef(object):
     # Static helper methods
     @classmethod
     def array_from_file(cls, ins, obj_format, read_id,
-            __unpacker=struct.Struct(u'I').unpack):
+            __unpacker=structs_cache[u'I'].unpack):
         """Reads an array of ObjectRefs directly from the specified input
         stream. Needs the current object format and a read ID as well."""
         make_ref = cls.from_file
@@ -644,7 +636,7 @@ class ObjectRef(object):
                 xrange(ins.unpack(__unpacker, 4, read_id)[0])]
 
     @staticmethod
-    def dump_array(target_list, __packer=struct.Struct(u'I').pack):
+    def dump_array(target_list, __packer=structs_cache[u'I'].pack):
         """Returns the dumped version of the specified list of ObjectRefs,
         ready for writing onto an output stream. This includes a leading 32-bit
         integer denoting the size."""
@@ -655,8 +647,8 @@ class ObjectRef(object):
 
     @classmethod
     def from_file(cls, ins, obj_format, read_id,
-                  __unpacker1=struct.Struct(u'IhH').unpack,
-                  __unpacker2=struct.Struct(u'HhI').unpack):
+                  __unpacker1=structs_cache[u'IhH'].unpack,
+                  __unpacker2=structs_cache[u'HhI'].unpack):
         """Reads an ObjectRef directly from the specified input stream. Needs
         the current object format and a read ID as well."""
         if obj_format == 1: # object format v1 - fid, aid, unused
@@ -684,7 +676,7 @@ class MelVmad(MelBase):
             - PACK fragments
             - INFO fragments"""
         processors = OrderedDict([
-            (u'unknown1',      _mks(u'b')),
+            (u'unknown1',      get_structs(u'b')),
             (u'script_name',   u'str16'),
             (u'fragment_name', u'str16'),
         ])
@@ -692,9 +684,9 @@ class MelVmad(MelBase):
     class FragmentPERK(_AVmadComponent):
         """Implements PERK fragments."""
         processors = OrderedDict([
-            (u'fragment_index', _mks(u'H')),
-            (u'unknown1',       _mks(u'h')),
-            (u'unknown2',       _mks(u'b')),
+            (u'fragment_index', get_structs(u'H')),
+            (u'unknown1',       get_structs(u'h')),
+            (u'unknown2',       get_structs(u'b')),
             (u'script_name',    u'str16'),
             (u'fragment_name',  u'str16'),
         ])
@@ -702,10 +694,10 @@ class MelVmad(MelBase):
     class FragmentQUST(_AVmadComponent):
         """Implements QUST fragments."""
         processors = OrderedDict([
-            (u'quest_stage',       _mks(u'H')),
-            (u'unknown1',          _mks(u'h')),
-            (u'quest_stage_index', _mks(u'I')),
-            (u'unknown2',          _mks(u'b')),
+            (u'quest_stage',       get_structs(u'H')),
+            (u'unknown1',          get_structs(u'h')),
+            (u'quest_stage_index', get_structs(u'I')),
+            (u'unknown2',          get_structs(u'b')),
             (u'script_name',       u'str16'),
             (u'fragment_name',     u'str16'),
         ])
@@ -713,11 +705,11 @@ class MelVmad(MelBase):
     class FragmentSCENPhase(_AVmadComponent):
         """Implements SCEN phase fragments."""
         processors = OrderedDict([
-            (u'fragment_flags', _mks(u'B')),
-            (u'phase_index',    _mks(u'B')),
-            (u'unknown1',       _mks(u'h')),
-            (u'unknown2',       _mks(u'b')),
-            (u'unknown3',       _mks(u'b')),
+            (u'fragment_flags', get_structs(u'B')),
+            (u'phase_index',    get_structs(u'B')),
+            (u'unknown1',       get_structs(u'h')),
+            (u'unknown2',       get_structs(u'b')),
+            (u'unknown3',       get_structs(u'b')),
             (u'script_name',    u'str16'),
             (u'fragment_name',  u'str16'),
         ])
@@ -735,8 +727,8 @@ class MelVmad(MelBase):
     class VmadHandlerINFO(_AFixedContainer):
         """Implements special VMAD handling for INFO records."""
         processors = OrderedDict([
-            (u'extra_bind_data_version', _mks(u'b')),
-            (u'fragment_flags',          _mks(u'B')), # Updated before writing
+            (u'extra_bind_data_version', get_structs(u'b')),
+            (u'fragment_flags',          get_structs(u'B')), # Updated before writing
             (u'file_name',               u'str16'),
         ])
         flags_mapper = Flags(0, Flags.getNames(u'on_begin', u'on_end'))
@@ -752,8 +744,8 @@ class MelVmad(MelBase):
     class VmadHandlerPACK(_AFixedContainer):
         """Implements special VMAD handling for PACK records."""
         processors = OrderedDict([
-            (u'extra_bind_data_version', _mks(u'b')),
-            (u'fragment_flags',          _mks(u'B')), # Updated before writing
+            (u'extra_bind_data_version', get_structs(u'b')),
+            (u'fragment_flags',          get_structs(u'B')), # Updated before writing
             (u'file_name',               u'str16'),
         ])
         flags_mapper = Flags(0, Flags.getNames(u'on_begin', u'on_end',
@@ -771,9 +763,9 @@ class MelVmad(MelBase):
     class VmadHandlerPERK(_AVariableContainer):
         """Implements special VMAD handling for PERK records."""
         processors = OrderedDict([
-            (u'extra_bind_data_version', _mks(u'b')),
+            (u'extra_bind_data_version', get_structs(u'b')),
             (u'file_name',               u'str16'),
-            (u'fragment_count',          _mks(u'H')), # Updated before writing
+            (u'fragment_count',          get_structs(u'H')), # Updated before writing
         ])
 
         def __init__(self):
@@ -783,8 +775,8 @@ class MelVmad(MelBase):
     class VmadHandlerQUST(_AVariableContainer):
         """Implements special VMAD handling for QUST records."""
         processors = OrderedDict([
-            (u'extra_bind_data_version', _mks(u'b')),
-            (u'fragment_count',          _mks(u'H')),
+            (u'extra_bind_data_version', get_structs(u'b')),
+            (u'fragment_count',          get_structs(u'H')),
             (u'file_name',               u'str16'),
         ])
 
@@ -794,7 +786,7 @@ class MelVmad(MelBase):
             self._alias_loader = MelVmad.Alias()
 
         def load_frag(self, record, ins, vmad_version, obj_format, read_id,
-                       __unpacker=struct.Struct(u'H').unpack):
+                       __unpacker=structs_cache[u'H'].unpack):
             # Load the regular fragments first
             super(MelVmad.VmadHandlerQUST, self).load_frag(
                 record, ins, vmad_version, obj_format, read_id)
@@ -808,7 +800,7 @@ class MelVmad(MelBase):
                 load_alias(alias, ins, vmad_version, obj_format, read_id)
                 append_alias(alias)
 
-        def dump_frag(self, record, __packer=struct.Struct(u'H').pack):
+        def dump_frag(self, record, __packer=structs_cache[u'H'].pack):
             # Dump the regular fragments first
             out_data = super(MelVmad.VmadHandlerQUST, self).dump_frag(record)
             # Then, dump each alias
@@ -833,8 +825,8 @@ class MelVmad(MelBase):
     class VmadHandlerSCEN(_AFixedContainer):
         """Implements special VMAD handling for SCEN records."""
         processors = OrderedDict([
-            (u'extra_bind_data_version', _mks(u'b')),
-            (u'fragment_flags',          _mks(u'B')), # Updated before writing
+            (u'extra_bind_data_version', get_structs(u'b')),
+            (u'fragment_flags',          get_structs(u'B')), # Updated before writing
             (u'file_name',               u'str16'),
         ])
         flags_mapper = Flags(0, Flags.getNames(u'on_begin', u'on_end'))
@@ -849,7 +841,7 @@ class MelVmad(MelBase):
             self._phase_loader = MelVmad.FragmentSCENPhase()
 
         def load_frag(self, record, ins, vmad_version, obj_format, read_id,
-                       __unpacker=struct.Struct(u'H').unpack):
+                       __unpacker=structs_cache[u'H'].unpack):
             # First, load the regular attributes and fragments
             super(MelVmad.VmadHandlerSCEN, self).load_frag(
                 record, ins, vmad_version, obj_format, read_id)
@@ -865,7 +857,7 @@ class MelVmad(MelBase):
                               read_id)
                 append_fragment(phase_fragment)
 
-        def dump_frag(self, record, __packer=struct.Struct(u'H').pack):
+        def dump_frag(self, record, __packer=structs_cache[u'H'].pack):
             # First, dump the regular attributes and fragments
             out_data = super(MelVmad.VmadHandlerSCEN, self).dump_frag(record)
             # Then, dump each phase fragment
@@ -888,8 +880,8 @@ class MelVmad(MelBase):
         counter_attr = u'property_count'
         processors = OrderedDict([
             (u'script_name',    u'str16'),
-            (u'script_flags',   _mks(u'B')),
-            (u'property_count', _mks(u'H')),
+            (u'script_flags',   get_structs(u'B')),
+            (u'property_count', get_structs(u'H')),
         ])
         # actually an enum, 0x0 means 'local'
         _script_status_flags = Flags(0, Flags.getNames(u'inherited',
@@ -912,19 +904,19 @@ class MelVmad(MelBase):
         # Processors for VMAD >= v4
         _new_processors = OrderedDict([
             (u'prop_name',  u'str16'),
-            (u'prop_type',  _mks(u'B')),
-            (u'prop_flags', _mks(u'B')),
+            (u'prop_type',  get_structs(u'B')),
+            (u'prop_flags', get_structs(u'B')),
         ])
         # Processors for VMAD <= v3
         _old_processors = OrderedDict([
             (u'prop_name', u'str16'),
-            (u'prop_type', _mks(u'B')),
+            (u'prop_type', get_structs(u'B')),
         ])
         _property_status_flags = Flags(0, Flags.getNames(u'edited',
             u'removed'))
 
         def load_frag(self, record, ins, vmad_version, obj_format, read_id,
-                      __unpackers={k: struct.Struct(k).unpack for k in
+                      __unpackers={k: structs_cache[k].unpack for k in
                                    (u'i', u'f', u'B', u'I',)}):
             # Load the three regular attributes first - need to check version
             if vmad_version >= 4:
@@ -970,28 +962,28 @@ class MelVmad(MelBase):
                 # Do *not* change without extensive benchmarking! This is
                 # faster than all alternatives, at least on py2.
                 record.prop_data = [x for x in ins.unpack(
-                    struct.Struct(u'%di' % array_len).unpack, array_len * 4,
+                    structs_cache[u'%di' % array_len].unpack, array_len * 4,
                     read_id)]
             elif property_type == 14: # float array
                 array_len, = ins.unpack(__unpackers[u'I'], 4, read_id)
                 # Do *not* change without extensive benchmarking! This is
                 # faster than all alternatives, at least on py2.
                 record.prop_data = [x for x in ins.unpack(
-                    struct.Struct(u'%df' % array_len).unpack, array_len * 4,
+                    structs_cache[u'%df' % array_len].unpack, array_len * 4,
                     read_id)]
             elif property_type == 15: # bool array (stored as uint8 array)
                 array_len, = ins.unpack(__unpackers[u'I'], 4, read_id)
                 # Do *not* change without extensive benchmarking! This is
                 # faster than all alternatives, at least on py2.
                 record.prop_data = [x != 0 for x in ins.unpack(
-                    struct.Struct(u'%dB' % array_len).unpack, array_len,
+                    structs_cache[u'%dB' % array_len].unpack, array_len,
                     read_id)]
             else:
                 raise ModError(ins.inName, u'Unrecognized VMAD property type: '
                                            u'%u' % property_type)
 
         def dump_frag(self, record, __packers={
-            k: struct.Struct(k).pack for k in (u'i', u'f', u'B', u'I')}):
+            k: structs_cache[k].pack for k in (u'i', u'f', u'B', u'I')}):
             # Dump the three regular attributes first - note that we only write
             # out VMAD with version of 5 and object format 2, so make sure we
             # use new_processors here
@@ -1060,9 +1052,9 @@ class MelVmad(MelBase):
         # Can't use any processors when loading - see below
         _load_processors = OrderedDict()
         _dump_processors = OrderedDict([
-            (u'alias_vmad_version', _mks(u'h')),
-            (u'alias_obj_format',   _mks(u'h')),
-            (u'script_count',       _mks(u'H')),
+            (u'alias_vmad_version', get_structs(u'h')),
+            (u'alias_obj_format',   get_structs(u'h')),
+            (u'script_count',       get_structs(u'H')),
         ])
         children_attr = u'scripts'
         counter_attr = u'script_count'
@@ -1072,8 +1064,8 @@ class MelVmad(MelBase):
             self.child_loader = MelVmad.Script()
 
         def load_frag(self, record, ins, vmad_version, obj_format, read_id,
-                      __unpacker_H=struct.Struct(u'H').unpack,
-                      __unpacker_h=struct.Struct(u'h').unpack):
+                      __unpacker_H=structs_cache[u'H'].unpack,
+                      __unpacker_h=structs_cache[u'h'].unpack):
             MelVmad.Alias.processors = MelVmad.Alias._load_processors
             # Aliases start with an ObjectRef, skip that for now and unpack
             # the three regular attributes. We need to do this, since one of
@@ -1148,7 +1140,7 @@ class MelVmad(MelBase):
         return special_handler
 
     def load_mel(self, record, ins, sub_type, size_, readId,
-                 __unpacker=struct.Struct(u'=hhH').unpack):
+                 __unpacker=structs_cache[u'=hhH'].unpack):
         # Remember where this VMAD subrecord ends
         end_of_vmad = ins.tell() + size_
         if self._vmad_class is None:
@@ -1184,9 +1176,9 @@ class MelVmad(MelBase):
         else:
             vmad.special_data = None
 
-    def pack_subrecord_data(self, record, __packer1=struct.Struct(u'2h').pack,
-            __packer2=struct.Struct(u'H').pack):
-        vmad = record.__getattribute__(self.attr)
+    def pack_subrecord_data(self, record, __packer1=structs_cache[u'2h'].pack,
+                            __packer2=structs_cache[u'H'].pack):
+        vmad = getattr(record, self.attr)
         if vmad is None: return None
         # Start by dumping out the VMAD header - we read all VMAD versions and
         # object formats, but only dump out VMAD v5 and object format v2
@@ -3008,7 +3000,7 @@ class MreLgtm(MelRecord):
         """Older format skips 8 bytes in the middle and has the same unpacked
         length, so we can't use MelTruncatedStruct."""
         def load_mel(self, record, ins, sub_type, size_, readId,
-                     __unpacker=struct.Struct(u'3Bs3Bs3Bs2f2i3f24s3Bs3f4s').unpack):
+            __unpacker=structs_cache[u'3Bs3Bs3Bs2f2i3f24s3Bs3f4s'].unpack):
             if size_ == 92:
                 super(MreLgtm.MelLgtmData, self).load_mel(
                     record, ins, sub_type, size_, readId)

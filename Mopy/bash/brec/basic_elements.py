@@ -27,9 +27,9 @@ from __future__ import division, print_function
 import struct
 
 from .utils_constants import FID, null1, _make_hashable, FixedString, \
-    _int_unpacker
+    _int_unpacker, get_structs
 from .. import bolt, exception
-from ..bolt import decoder, encode, struct_pack
+from ..bolt import decoder, encode, structs_cache
 
 #------------------------------------------------------------------------------
 class MelObject(object):
@@ -63,7 +63,7 @@ class Subrecord(object):
     # Format used by sub-record headers. Morrowind uses a different one.
     sub_header_fmt = u'=4sH'
     # precompiled unpacker for sub-record headers
-    sub_header_unpack = struct.Struct(sub_header_fmt).unpack
+    sub_header_unpack = structs_cache[sub_header_fmt].unpack
     # Size of sub-record headers. Morrowind has a different one.
     sub_header_size = 6
     __slots__ = (u'mel_sig',)
@@ -86,7 +86,8 @@ class Subrecord(object):
         if lenData > 0xFFFF:
             MelXXXX(lenData).dumpData(u'record', out)
             lenData = 0
-        outWrite(struct_pack(Subrecord.sub_header_fmt, self.mel_sig, lenData))
+        outWrite(structs_cache[Subrecord.sub_header_fmt].pack(self.mel_sig,
+                                                              lenData))
         outWrite(binary_data)
 
 def unpackSubHeader(ins, recType='----', expType=None, expSize=0, # PY3: ,*,
@@ -215,13 +216,9 @@ class MelBase(Subrecord):
         raise exception.AbstractError()
 
 # Simple static Fields --------------------------------------------------------
-def _get_structs(struct_format):
-    _struct = struct.Struct(struct_format)
-    return _struct.unpack, _struct.pack, _struct.size
-
 class _MelNum(MelBase):
     """A simple static subrecord representing a number."""
-    _unpacker, _packer, static_size = _get_structs(u'I')
+    _unpacker, _packer, static_size = get_structs(u'I')
     __slots__ = ()
 
     def __init__(self, mel_sig, attr, default=0): # set default to zero
@@ -324,8 +321,8 @@ class MelFids(MelBase):
         fid = ins.unpackRef()
         record.__getattribute__(self.attr).append(fid)
 
-    def dumpData(self, record, out, __packer=struct.Struct(u'I').pack):
-        for fid in record.__getattribute__(self.attr):
+    def dumpData(self, record, out, __packer=structs_cache[u'I'].pack):
+        for fid in getattr(record, self.attr):
             MelFid(self.mel_sig, '').packSub(out, __packer(fid))
 
     def mapFids(self,record,function,save=False):
@@ -364,14 +361,14 @@ class MelFidList(MelFids):
 
     def load_mel(self, record, ins, sub_type, size_, readId):
         if not size_: return
-        fids = ins.unpack(struct.Struct(u'%dI' % (size_ // 4)).unpack, size_,
+        fids = ins.unpack(structs_cache[u'%dI' % (size_ // 4)].unpack, size_,
                           readId)
         record.__setattr__(self.attr,list(fids))
 
     def dumpData(self, record, out):
         fids = getattr(record, self.attr)
         if not fids: return
-        fids_packed = struct_pack(u'%dI' % len(fids), *fids)
+        fids_packed = structs_cache[u'%dI' % len(fids)].pack(*fids)
         self.packSub(out, fids_packed)
 
 #------------------------------------------------------------------------------
@@ -634,7 +631,7 @@ class MelStruct(MelBase):
                 raise SyntaxError(u"Duplicate attribute '%s' in struct "
                                   u"definition" % a)
             present_attrs.add(a)
-        _struct = struct.Struct(struct_format)
+        _struct = structs_cache[struct_format]
         self._unpacker = _struct.unpack
         self._packer = _struct.pack
         self._static_size = _struct.size
@@ -721,31 +718,31 @@ class MelFixedString(MelStruct):
 # Simple primitive type wrappers ----------------------------------------------
 class MelFloat(_MelNum):
     """Float."""
-    _unpacker, _packer, static_size = _get_structs(u'=f')
+    _unpacker, _packer, static_size = get_structs(u'=f')
 
 class MelSInt8(_MelNum):
     """Signed 8-bit integer."""
-    _unpacker, _packer, static_size = _get_structs(u'=b')
+    _unpacker, _packer, static_size = get_structs(u'=b')
 
 class MelSInt16(_MelNum):
     """Signed 16-bit integer."""
-    _unpacker, _packer, static_size = _get_structs(u'=h')
+    _unpacker, _packer, static_size = get_structs(u'=h')
 
 class MelSInt32(_MelNum):
     """Signed 32-bit integer."""
-    _unpacker, _packer, static_size = _get_structs(u'=i')
+    _unpacker, _packer, static_size = get_structs(u'=i')
 
 class MelUInt8(_MelNum):
     """Unsigned 8-bit integer."""
-    _unpacker, _packer, static_size = _get_structs(u'=B')
+    _unpacker, _packer, static_size = get_structs(u'=B')
 
 class MelUInt16(_MelNum):
     """Unsigned 16-bit integer."""
-    _unpacker, _packer, static_size = _get_structs(u'=H')
+    _unpacker, _packer, static_size = get_structs(u'=H')
 
 class MelUInt32(_MelNum):
     """Unsigned 32-bit integer."""
-    _unpacker, _packer, static_size = _get_structs(u'=I')
+    _unpacker, _packer, static_size = get_structs(u'=I')
 
 class _MelFlags(_MelNum):
     """Integer flag field."""

@@ -21,13 +21,12 @@
 #
 # =============================================================================
 from __future__ import division
-import struct
 import zlib
 from collections import defaultdict
 
 from ._mergeability import is_esl_capable
 from .. import balt, bolt, bush, bass, load_order
-from ..bolt import GPath, deprint, sio
+from ..bolt import GPath, deprint, sio, structs_cache
 from ..brec import ModReader, MreRecord, RecordHeader, SubrecordBlob, null1
 from ..exception import CancelError, ModError
 
@@ -325,8 +324,8 @@ class ModCleaner(object):
 
     @staticmethod
     def scan_Many(modInfos, what=DEFAULT, progress=bolt.Progress(),
-        detailed=False, __unpacker=struct.Struct(u'=12s2f2l2f').unpack,
-        __wrld_types=_wrld_types, __unpacker2=struct.Struct(u'2i').unpack):
+        detailed=False, __unpacker=structs_cache[u'=12s2f2l2f'].unpack,
+        __wrld_types=_wrld_types, __unpacker2=structs_cache[u'2i'].unpack):
         """Scan multiple mods for dirty edits"""
         if len(modInfos) == 0: return []
         if not (what & (ModCleaner.UDR|ModCleaner.FOG)):
@@ -463,9 +462,9 @@ class NvidiaFogFixer(object):
         self.modInfo = modInfo
         self.fixedCells = set()
 
-    def fix_fog(self, progress, __unpacker=struct.Struct(u'=12s2f2l2f').unpack,
+    def fix_fog(self, progress, __unpacker=structs_cache[u'=12s2f2l2f'].unpack,
                 __wrld_types=_wrld_types,
-                __packer=struct.Struct(u'12s2f2l2f').pack):
+                __packer=structs_cache[u'12s2f2l2f'].pack):
         """Duplicates file, then walks through and edits file as necessary."""
         progress.setFull(self.modInfo.size)
         fixedCells = self.fixedCells
@@ -522,7 +521,7 @@ class ModDetails(object):
         self.group_records = defaultdict(list)
 
     def readFromMod(self, modInfo, progress=None,
-            __unpacker=struct.Struct(u'I').unpack):
+            __unpacker=structs_cache[u'I'].unpack):
         """Extracts details from mod file."""
         def getRecordReader(flags, size):
             """Decompress record data as needed."""

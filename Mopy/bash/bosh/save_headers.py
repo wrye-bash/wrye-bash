@@ -39,14 +39,14 @@ from functools import partial
 import lz4.block
 from .. import bolt
 from ..bolt import decoder, cstrip, unpack_string, unpack_int, unpack_str8, \
-    unpack_short, unpack_float, unpack_str16, unpack_byte, struct_pack, \
+    unpack_short, unpack_float, unpack_str16, unpack_byte, \
     unpack_str_int_delim, unpack_str16_delim, unpack_str_byte_delim, \
     unpack_many, encode, struct_unpack, pack_int, pack_byte, pack_short, \
-    pack_float, pack_string, pack_str8, pack_bzstr8
+    pack_float, pack_string, pack_str8, pack_bzstr8, structs_cache
 from ..exception import SaveHeaderError, raise_bolt_error, AbstractError
 
 # Utilities -------------------------------------------------------------------
-def _pack_c(out, value, __pack=struct.Struct(u'=c').pack):
+def _pack_c(out, value, __pack=structs_cache[u'=c'].pack):
     out.write(__pack(value))
 unpack_fstr16 = partial(unpack_string, string_len=16)
 
@@ -663,7 +663,8 @@ class MorrowindSaveHeader(SaveFileHeader):
             # make the image 100% black and is therefore unusable.
             out = StringIO.StringIO()
             for pxl in save_info.header.screenshot_data:
-                out.write(struct_pack(u'3B', pxl.red, pxl.green, pxl.blue))
+                out.write(
+                    structs_cache[u'3B'].pack(pxl.red, pxl.green, pxl.blue))
             self.ssData = out.getvalue()
         self.ssHeight = self.ssWidth = 128 # fixed size for Morrowind
 

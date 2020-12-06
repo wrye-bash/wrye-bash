@@ -23,11 +23,10 @@
 """This module contains the fallout3 record classes. You must import from it
 __once__ only in game.fallout3.Fallout3GameInfo#init. No other game.records
 file must be imported till then."""
-import struct
 from collections import OrderedDict
 
 from ... import brec
-from ...bolt import Flags
+from ...bolt import Flags, structs_cache
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MelSet, MelFid, MelOptStruct, MelFids, MreHeaderBase, \
     MelBase, MelUnicode, MelFidList, MreGmstBase, MelStrings, MelMODS, \
@@ -2999,7 +2998,7 @@ class MreWatr(MelRecord):
         appended at the end. Read it in, but only dump out the damage - let
         DNAM handle the rest via duplicate attrs."""
         def load_mel(self, record, ins, sub_type, size_, readId,
-                     __unpacker=struct.Struct(u'H').unpack):
+                     __unpacker=structs_cache[u'H'].unpack):
             if size_ == 186:
                 super(MreWatr.MelWatrData, self).load_mel(
                     record, ins, sub_type, size_, readId)
@@ -3009,7 +3008,7 @@ class MreWatr(MelRecord):
                 raise ModSizeError(ins.inName, readId, (186, 2), size_)
 
         def pack_subrecord_data(self, record,
-                __packer=struct.Struct(u'H').pack):
+                __packer=structs_cache[u'H'].pack):
             return __packer(record.damage)
 
     class MelWatrDnam(MelTruncatedStruct):

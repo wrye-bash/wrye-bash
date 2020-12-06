@@ -28,7 +28,7 @@ import struct
 from collections import defaultdict
 
 from . import bolt, bush, env, load_order
-from .bolt import deprint, GPath, SubProgress
+from .bolt import deprint, GPath, SubProgress, structs_cache
 from .brec import MreRecord, ModReader, RecordHeader, RecHeader, \
     TopGrupHeader, MobBase, MobDials, MobICells, MobObjects, MobWorlds
 from .exception import ArgumentError, MasterMapError, ModError, StateError
@@ -372,7 +372,7 @@ class ModFile(object):
         m_names = bush.game.mgef_name.copy()
         hostile_recs = set()
         nonhostile_recs = set()
-        unpack_eid = struct.Struct(u'I').unpack
+        unpack_eid = structs_cache[u'I'].unpack
         if b'MGEF' in self.tops:
             for record in self.MGEF.getActiveRecords():
                 m_school[record.eid] = record.school

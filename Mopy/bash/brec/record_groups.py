@@ -24,14 +24,13 @@
 
 # Python imports
 from __future__ import division, print_function
-import struct
 from collections import deque
 from itertools import chain
 from operator import itemgetter, attrgetter
 # Wrye Bash imports
 from .mod_io import GrupHeader, ModReader, RecordHeader, TopGrupHeader
 from .utils_constants import group_types
-from ..bolt import GPath, sio, pack_int
+from ..bolt import GPath, sio, pack_int, structs_cache
 from ..exception import AbstractError, ModError, ModFidMismatchError
 
 class MobBase(object):
@@ -1367,8 +1366,8 @@ class MobWorld(MobCells):
         self.road = None
         super(MobWorld, self).__init__(header, loadFactory, ins, do_unpack)
 
-    def _load_rec_group(self, ins, endPos, __packer=struct.Struct(u'I').pack,
-                        __unpacker=struct.Struct(u'2h').unpack):
+    def _load_rec_group(self, ins, endPos, __packer=structs_cache[u'I'].pack,
+                        __unpacker=structs_cache[u'2h'].unpack):
         """Loads data from input stream. Called by load()."""
         cellType_class = self.loadFactory.getCellTypeClass()
         errLabel = u'World Block'

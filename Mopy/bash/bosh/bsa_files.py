@@ -32,16 +32,16 @@ __author__ = u'Utumno'
 
 import collections
 import errno
-import lz4.frame
 import os
 import struct
 import zlib
 from functools import partial
 from itertools import groupby, imap
 from operator import itemgetter
+import lz4.frame
 from .dds_files import DDSFile, mk_dxgi_fmt
-from ..bolt import deprint, Progress, struct_pack, struct_unpack, \
-    unpack_byte, unpack_string, unpack_int, Flags, AFile
+from ..bolt import deprint, Progress, struct_unpack, unpack_byte, \
+    unpack_string, unpack_int, Flags, AFile, structs_cache
 from ..exception import AbstractError, BSAError, BSADecodingError, \
     BSAFlagError, BSACompressionError, BSADecompressionError, \
     BSADecompressionSizeError
@@ -896,8 +896,9 @@ class OblivionBsa(BSA):
                     rebuilt_hash = self.calculate_hash(file_name)
                     if file_info.record_hash != rebuilt_hash:
                         bsa_file.seek(file_info.file_pos)
-                        bsa_file.write(struct_pack(_HashedRecord.formats[0][0],
-                                                   rebuilt_hash))
+                        bsa_file.write(
+                            structs_cache[_HashedRecord.formats[0][0]].pack(
+                                rebuilt_hash))
                         reset_count += 1
                 progress(progress.state + 1, u'Rebuilding Hashes...\n' +
                          folder_name)

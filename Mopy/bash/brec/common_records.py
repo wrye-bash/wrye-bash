@@ -24,7 +24,6 @@
 some commonly needed records."""
 
 from __future__ import division, print_function
-import struct
 from operator import attrgetter
 
 from .advanced_elements import FidNotNullDecider, AttrValDecider, MelArray, \
@@ -36,7 +35,7 @@ from .common_subrecords import MelEdid
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID
 from .. import bolt, exception
-from ..bolt import decoder, GPath, struct_pack
+from ..bolt import decoder, GPath, struct_pack, structs_cache
 from ..exception import StateError
 
 #------------------------------------------------------------------------------
@@ -60,7 +59,7 @@ class MreHeaderBase(MelRecord):
             record.master_sizes = []
 
         def load_mel(self, record, ins, sub_type, size_, readId,
-                     __unpacker=struct.Struct(u'Q').unpack):
+                     __unpacker=structs_cache[u'Q'].unpack):
             if sub_type == b'MAST':
                 # Don't use ins.readString, because it will try to use
                 # bolt.pluginEncoding for the filename. This is one case where

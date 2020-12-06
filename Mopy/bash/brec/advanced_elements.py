@@ -31,13 +31,12 @@ from __future__ import division, print_function
 __author__ = u'Infernio'
 
 import copy
-import struct
 from collections import OrderedDict
 from itertools import chain
 
 from .basic_elements import MelBase, MelNull, MelObject, MelStruct
 from .. import exception
-from ..bolt import GPath, sio, struct_pack
+from ..bolt import GPath, structs_cache
 
 #------------------------------------------------------------------------------
 class _MelDistributor(MelNull):
@@ -427,10 +426,10 @@ class MelTruncatedStruct(MelStruct):
         self._is_optional = kwargs.pop('is_optional', False)
         super(MelTruncatedStruct, self).__init__(sub_sig, sub_fmt, *elements)
         self._all_unpackers = {
-            struct.calcsize(alt_fmt): struct.Struct(alt_fmt).unpack for
+            structs_cache[alt_fmt].size: structs_cache[alt_fmt].unpack for
             alt_fmt in old_versions}
-        self._all_unpackers[struct.calcsize(sub_fmt)] = struct.Struct(
-            sub_fmt).unpack
+        self._all_unpackers[structs_cache[sub_fmt].size] = structs_cache[
+            sub_fmt].unpack
 
     def load_mel(self, record, ins, sub_type, size_, readId):
         # Try retrieving the format - if not possible, wrap the error to make

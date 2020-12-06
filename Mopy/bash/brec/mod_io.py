@@ -25,12 +25,11 @@ files."""
 
 from __future__ import division, print_function
 import os
-import struct
 
 # no local imports beyond this, imported everywhere in brec
 from .utils_constants import _int_unpacker, group_types, null1, strFid
 from .. import bolt, exception
-from ..bolt import decoder, struct_pack, struct_unpack
+from ..bolt import decoder, struct_pack, struct_unpack, structs_cache
 
 #------------------------------------------------------------------------------
 # Headers ---------------------------------------------------------------------
@@ -46,7 +45,7 @@ class RecordHeader(object):
     # rec_pack_format as a format string. Use for pack_head / unpack calls.
     rec_pack_format_str = u''.join(rec_pack_format)
     # precompiled unpacker for record headers
-    header_unpack = struct.Struct(rec_pack_format_str).unpack
+    header_unpack = structs_cache[rec_pack_format_str].unpack
     # http://en.uesp.net/wiki/Tes5Mod:Mod_File_Format#Groups
     pack_formats = {0: u'=4sI4s3I'} # Top Type
     pack_formats.update({x: u'=4s5I' for x in {1, 6, 7, 8, 9, 10}}) # Children
