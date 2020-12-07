@@ -538,15 +538,16 @@ class ActorLevels(object):
             for mod in sorted(mod_id_levels):
                 if mod.s.lower() == bush.game.master_file.lower(): continue
                 id_levels = mod_id_levels[mod]
-                for id_ in sorted(id_levels,key=lambda k:(
-                        k[0].s.lower(),id_levels[k][0].lower())):
-                    eid,isOffset,offset,calcMin,calcMax = id_levels[id_]
+                sor = sorted(id_levels.iteritems(), # PY3: unpack to list
+                           key=lambda ((fidM, __), (eid_, _1, _2, _3, _4)): (
+                           (u'%s' % fidM).lower(), eid_.lower()))
+                for (fidMod, fidObject), (
+                        eid, isOffset, offset, calcMin, calcMax) in sor:
                     if isOffset:
-                        fidMod, fidObject = id_[0].s,id_[1]
                         out.write(rowFormat % (
                             mod, eid, fidMod, fidObject, offset, calcMin,
                             calcMax))
-                        oldLevels = obId_levels.get(id_,None)
+                        oldLevels = obId_levels.get((fidMod, fidObject),None)
                         if oldLevels:
                             oldEid,wasOffset,oldOffset,oldCalcMin,oldCalcMax\
                                 = oldLevels
@@ -688,8 +689,9 @@ class EditorIds(object):
                 _(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id')))
             for type_ in sorted(type_id_eid):
                 id_eid = type_id_eid[type_]
-                for id_ in sorted(id_eid,key = lambda a: id_eid[a].lower()):
-                    out.write(rowFormat % (type_,id_[0],id_[1],id_eid[id_]))
+                for id_, eid_ in sorted(id_eid.iteritems(),
+                    key=lambda (__, eid_): eid_.lower()):
+                    out.write(rowFormat % (type_, id_[0], id_[1], eid_))
 
 #------------------------------------------------------------------------------
 class FactionRelations(_AParser):
@@ -775,12 +777,11 @@ class FactionRelations(_AParser):
         id_relations, id_eid = self.id_stored_info[b'FACT'], self.id_context
         with textPath.open(u'w', encoding=u'utf-8-sig') as out:
             out.write(bush.game.relations_csv_header)
-            for main_fid in sorted(id_relations,
-                                   key=lambda x: id_eid.get(x).lower()):
+            for main_fid, rel in sorted(id_relations.iteritems(),
+                key=lambda (mfid, __): id_eid.get(mfid).lower()):
                 main_eid = id_eid.get(main_fid, u'Unknown')
-                for relation_obj in sorted(
-                        id_relations[main_fid],
-                        key=lambda x: id_eid.get(x[0]).lower()):
+                for relation_obj in sorted(rel, # PY3: unpack to list
+                    key=lambda x: id_eid.get(x[0]).lower()):
                     other_fid = relation_obj[0]
                     other_eid = id_eid.get(other_fid, u'Unknown')
                     # I wish py2 allowed star exprs in tuples/lists...
@@ -948,14 +949,10 @@ class FullNames(object):
                 _(u'Name')))
             for type_ in sorted(type_id_name):
                 id_name = type_id_name[type_]
-                longids = id_name.keys()
-                longids.sort(key=lambda a: id_name[a][0].lower())
-                longids.sort(key=itemgetter(0))
-                for longid in longids:
-                    eid,name = id_name[longid]
-                    out.write(rowFormat % (
-                        type_,longid[0].s,longid[1],eid,
-                        name.replace(u'"',u'""')))
+                for longid, (eid, rec_name) in sorted(id_name.iteritems(),
+                    key=lambda (lid, (eid_, __)): (lid, eid_.lower())):
+                    out.write(rowFormat % (type_, longid[0], longid[1], eid,
+                                           rec_name.replace(u'"', u'""')))
 
 #------------------------------------------------------------------------------
 class ItemStats(object):
@@ -1128,15 +1125,10 @@ class ItemStats(object):
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
         class_fid_attr_value = self.class_fid_attr_value
-        def getSortedIds(fid_attr_value):
-            longids = fid_attr_value.keys()
-            longids.sort(key=lambda a: fid_attr_value[a][u'eid'].lower())
-            longids.sort(key=itemgetter(0))
-            return longids
         with textPath.open(u'w', encoding=u'utf-8-sig') as out:
             def write(out, attrs, values):
                 attr_type = self.attr_type
-                csvFormat = u''
+                csvFormat = []
                 sstr = self.sstr
                 sint = self.sint
                 snoneint = self.snoneint
@@ -1148,23 +1140,25 @@ class ItemStats(object):
                         stype = attr_type[attr]
                     values[index] = stype(values[index]) #sanitize output
                     if values[index] is None:
-                        csvFormat += u',"{0[%d]}"' % index
-                    elif stype is sstr: csvFormat += u',"{0[%d]}"' % index
-                    elif stype is sint or stype is snoneint: csvFormat += \
-                        u',"{0[%d]:d}"' % index
-                    elif stype is sfloat: csvFormat += u',"{0[%d]:f}"' % index
-                csvFormat = csvFormat[1:] #--Chop leading comma
+                        csvFormat.append(u'"{0[%d]}"' % index)
+                    elif stype is sstr:
+                        csvFormat.append(u'"{0[%d]}"' % index)
+                    elif stype is sint or stype is snoneint:
+                        csvFormat.append(u'"{0[%d]:d}"' % index)
+                    elif stype is sfloat:
+                        csvFormat.append(u'"{0[%d]:f}"' % index)
+                csvFormat = u','.join(csvFormat)
                 out.write(csvFormat.format(values) + u'\n')
             for group,header in bush.game.statsHeaders:
                 fid_attr_value = class_fid_attr_value[group]
                 if not fid_attr_value: continue
                 attrs = self.class_attrs[group]
                 out.write(header)
-                for longid in getSortedIds(fid_attr_value):
+                for longid, attr_value in sorted(fid_attr_value.iteritems(),
+                    key=lambda (lid, at_val): (lid, at_val[u'eid'].lower())):
                     out.write(
                         u'"%s","%s","0x%06X",' % (group,longid[0],longid[1]))
-                    attr_value = fid_attr_value[longid]
-                    write(out, attrs, map(attr_value.get, attrs))
+                    write(out, attrs, list(attr_value[a] for a in attrs))
 
 #------------------------------------------------------------------------------
 class ScriptText(object):
@@ -1174,8 +1168,9 @@ class ScriptText(object):
         self.eid_data = {}
         self.aliases = aliases or {} #--For aliasing mod names
 
-    def writeToText(self,textPath,skip,folder,deprefix,esp,skipcomments):
-        """Writes stats to specified text file."""
+    def writeToText(self, skip, folder, deprefix, fileName, skipcomments,
+            __win_line_sep=u'\r\n'): # scripts line separator - or so we trust
+        """Writes scripts to specified folder."""
         eid_data = self.eid_data
         skip, deprefix = skip.lower(), deprefix.lower()
         x = len(skip)
@@ -1185,21 +1180,23 @@ class ScriptText(object):
         num = 0
         r = len(deprefix)
         with Progress(_(u'Export Scripts')) as progress:
-            for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
-                text, longid = eid_data[eid]
-                text = decoder(text) # TODO(ut) was only present in PBash version - needed ?
+            for eid, (scpt_txt, longid) in sorted(eid_data.iteritems(),
+                key=lambda (eid, (scpt_txt, longid)): (eid, longid)):
+                scpt_txt = decoder(scpt_txt)
                 if skipcomments:
-                    tmp = u''
-                    for line in text.split(u'\n'):
+                    tmp = []
+                    for line in scpt_txt.split(__win_line_sep):
                         pos = line.find(u';')
-                        if pos == -1:
-                            tmp += line + u'\n'
+                        if pos == -1: # note ''.find(u';') == -1
+                            tmp.append(line)
                         elif pos == 0:
                             continue
                         else:
                             if line[:pos].isspace(): continue
-                            tmp += line[:pos] + u'\n'
-                    text = tmp
+                            tmp.append(line[:pos])
+                    if not tmp: continue
+                    # '\n'.split('\n') == ['', ''], so final newline preserved
+                    scpt_txt = u'\n'.join(tmp)
                 z += 1
                 progress((0.5 + 0.5 / y * z), _(u'Exporting script %s.') % eid)
                 if x == 0 or skip != eid[:x].lower():
@@ -1211,10 +1208,11 @@ class ScriptText(object):
                         fileName + inisettings[u'ScriptFileExt'])
                     with outpath.open(u'wb', encoding=u'utf-8-sig') as out:
                         formid = u'0x%06X' % longid[1]
-                        out.write(u';%s' % longid[0] + u'\r\n;' + formid + u'\r\n;' + eid + u'\r\n' + text)
+                        out.write(u';%s%s%s' % ((__win_line_sep + u';').join(
+                          (longid[0], formid, eid)), __win_line_sep, scpt_txt))
                     exportedScripts.append(eid)
-        return (_(u'Exported %d scripts from %s:') + u'\n') % (
-            num,esp) + u'\n'.join(exportedScripts)
+        return (_(u'Exported %d scripts from %s:') + u'\n%s') % (
+            num, fileName, u'\n'.join(exportedScripts))
 
     def readFromMod(self, modInfo, file_):
         """Reads stats from specified mod."""
@@ -1241,9 +1239,9 @@ class ScriptText(object):
         modFile.load(True)
         for record in modFile.SCPT.getActiveRecords():
             eid = record.eid
-            data = eid_data.get(eid,None)
-            if data is not None:
-                newText, longid = data
+            data_ = eid_data.get(eid,None)
+            if data_ is not None:
+                newText, longid = data_
                 oldText = record.script_source
                 if oldText.lower() != newText.lower():
                     record.script_source = newText
@@ -1252,8 +1250,7 @@ class ScriptText(object):
                 del eid_data[eid]
         if makeNew and eid_data:
             tes4 = modFile.tes4
-            for eid, data in eid_data.iteritems():
-                newText, longid = data
+            for eid, (newText, longid) in eid_data.iteritems():
                 scriptFid = genFid(tes4.num_masters, tes4.getNextObject())
                 newScript = MreRecord.type_class[b'SCPT'](
                     RecHeader(b'SCPT', 0, 0x40000, scriptFid, 0))

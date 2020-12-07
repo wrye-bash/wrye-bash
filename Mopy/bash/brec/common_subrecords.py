@@ -130,14 +130,14 @@ class MelCtda(MelUnion):
         # string from above plus the suffix we got passed in
         fmt_list = tuple([self._param_types[func_param]
                           for func_param in func_data[1:]])
-        full_old_versions = {(prefix_fmt + f) % fmt_list
-                             for f in old_suffix_fmts}
         shared_params = ([ctda_sub_sig, (prefix_fmt + suffix_fmt) % fmt_list] +
                          self._build_params(func_data, prefix_elements,
                                             suffix_elements))
         # Only use MelTruncatedStruct if we have old versions, save the
         # overhead otherwise
         if old_suffix_fmts:
+            full_old_versions = {(prefix_fmt + f) % fmt_list
+                                 for f in old_suffix_fmts}
             return MelTruncatedStruct(*shared_params,
                                       old_versions=full_old_versions)
         return MelStruct(*shared_params)

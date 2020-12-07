@@ -358,9 +358,8 @@ class MreRecord(object):
                                      and self.eid is not None else u''),
         }
 
-    def getTypeCopy(self,mapper=None):
-        """Returns a type class copy of self, optionally mapping fids to long.
-        """
+    def getTypeCopy(self):
+        """Returns a type class copy of self"""
         if self.__class__ == MreRecord:
             fullClass = MreRecord.type_class[self.recType]
             myCopy = fullClass(self.header)
@@ -368,8 +367,6 @@ class MreRecord(object):
             myCopy.load(do_unpack=True)
         else:
             myCopy = copy.deepcopy(self)
-        if mapper and not myCopy.longFids:
-            myCopy.convertFids(mapper,True)
         myCopy.changed = True
         myCopy.data = None
         return myCopy

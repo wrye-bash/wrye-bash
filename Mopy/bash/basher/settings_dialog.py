@@ -201,6 +201,24 @@ class _ASettingsPage(WrappingTextMixin, ATreeMixin):
     def on_page_closing(self):
         """Called when the settings dialog is about to be closed."""
 
+    def _rename_op(self, chosen_file, parent_dir, msg_title, msg):
+        new_fname = balt.askText(self, msg, title=msg_title,
+                                 default=chosen_file)
+        if not new_fname or new_fname == chosen_file:
+            return False # user canceled or entered identical name
+        new_fpath = parent_dir.join(new_fname)
+        old_fpath = parent_dir.join(chosen_file)
+        if new_fpath.isfile():
+            if not balt.askYes(self, _(u'The chosen filename (%s) already '
+                u'exists. Do you want to replace the file?') % new_fname,
+                title=_(u'Name Conflict')):
+                return False # don't want to replace it, so cancel
+        try:
+            env.shellMove(old_fpath, new_fpath, parent=self._native_widget)
+            return True
+        except (exception.CancelError, exception.SkipError):
+            return False # user canceled
+
 class _AScrollablePage(_ASettingsPage, ScrollableWindow): pass
 class _AFixedPage(_ASettingsPage, PanelWin): pass
 
@@ -464,8 +482,9 @@ class ConfigureEditorDialog(DialogWindow):
         bass.settings[u'bash.l10n.editor.rename_to_po'] = \
             self._po_rename_box.is_checked
 
-##: Quite a bit of duplicate code with the Backups page here (esp. rename)
+##: Quite a bit of duplicate code with the Backups page here
 class _LangDict(dict):
+    __slots__ = ()
     def __missing__(self, key):
         return self.setdefault(key, key)
 class LanguagePage(_AScrollablePage):
@@ -670,23 +689,10 @@ class LanguagePage(_AScrollablePage):
 
     def _rename_l10n(self):
         """Renames the currently selected localization file."""
-        new_l10n_name = balt.askText(self,
-            _(u'Please enter the new name for this localization file.'),
-            title=_(u'Rename Localization'), default=self._chosen_l10n)
-        if not new_l10n_name or new_l10n_name == self._chosen_l10n:
-            return # user canceled or entered identical name
-        new_l10n = self._l10n_dir.join(new_l10n_name)
-        old_l10n = self._l10n_dir.join(self._chosen_l10n)
-        if new_l10n.isfile():
-            if not balt.askYes(self, _(u'The chosen filename (%s) already '
-                                       u'exists. Do you want to replace the '
-                                       u'file?') % new_l10n_name,
-                    title=_(u'Name Conflict')):
-                return # don't want to replace it, so cancel
-        try:
-            env.shellMove(old_l10n, new_l10n, parent=self._native_widget)
-        except (exception.CancelError, exception.SkipError):
-            return # user canceled
+        if not self._rename_op(
+            self._chosen_l10n, self._l10n_dir, _(u'Rename Localization'),
+            _(u'Please enter the new name for this localization file.')):
+            return
         self._populate_l10n_list()
         # This is equivalent to removing the selected entry and adding a new
         # one, so we need to disable localization-specific buttons
@@ -945,23 +951,10 @@ class BackupsPage(_AFixedPage):
 
     def _rename_backup(self):
         """Renames the currently selected backup."""
-        new_backup_name = balt.askText(self,
-            _(u'Please enter the new name for this backup.'),
-            title=_(u'Rename Backup'), default=self._chosen_backup)
-        if not new_backup_name or new_backup_name == self._chosen_backup:
-            return # user canceled or entered identical name
-        new_backup = self._backup_dir.join(new_backup_name)
-        old_backup = self._backup_dir.join(self._chosen_backup)
-        if new_backup.isfile():
-            if not balt.askYes(self, _(u'The chosen filename (%s) already '
-                                       u'exists. Do you want to replace the '
-                                       u'file?') % new_backup_name,
-                    title=_(u'Name Conflict')):
-                return # don't want to replace it, so cancel
-        try:
-            env.shellMove(old_backup, new_backup, parent=self._native_widget)
-        except (exception.CancelError, exception.SkipError):
-            return # user canceled
+        if not self._rename_op(
+            self._chosen_backup, self._backup_dir, _(u'Rename Backup'),
+            _(u'Please enter the new name for this backup.')):
+            return
         self._populate_backup_list()
         # This is equivalent to removing the selected entry and adding a new
         # one, so we need to disable backup-specific buttons

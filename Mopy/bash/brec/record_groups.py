@@ -1138,13 +1138,13 @@ class MobCells(MobBase):
         bsb_size = {}
         hsize = RecordHeader.rec_header_size
         totalSize = hsize
-        bsb_setDefault = bsb_size.setdefault
+        bsb_set_default = bsb_size.setdefault
         for bsb,cellBlock in bsbCellBlocks:
             cellBlockSize = cellBlock.getSize()
             totalSize += cellBlockSize
             bsb0 = (bsb[0],None) #--Block group
-            bsb_setDefault(bsb0,hsize)
-            if bsb_setDefault(bsb, hsize) == hsize:
+            bsb_set_default(bsb0,hsize)
+            if bsb_set_default(bsb, hsize) == hsize:
                 bsb_size[bsb0] += hsize
             bsb_size[bsb] += cellBlockSize
             bsb_size[bsb0] += cellBlockSize
