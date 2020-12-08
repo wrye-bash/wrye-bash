@@ -61,6 +61,8 @@ except ImportError:
 # structure aliases, mainly introduced to reduce uses of 'pack' and 'unpack'
 struct_pack = struct.pack
 struct_unpack = struct.unpack
+struct_error = struct.error
+struct_calcsize = struct.calcsize
 
 #-- To make commands executed with Popen hidden
 startupinfo = None

@@ -24,12 +24,12 @@
 higher-level building blocks can be found in common_subrecords.py."""
 
 from __future__ import division, print_function
-import struct
 
 from .utils_constants import FID, null1, _make_hashable, FixedString, \
     _int_unpacker, get_structs
 from .. import bolt, exception
-from ..bolt import decoder, encode, structs_cache
+from ..bolt import decoder, encode, structs_cache, struct_calcsize, \
+    struct_error
 
 #------------------------------------------------------------------------------
 class MelObject(object):
@@ -612,7 +612,7 @@ class MelStruct(MelBase):
         # Sometimes subrecords have to preserve non-aligned sizes, check that
         # we don't accidentally pad those to alignment
         if (not struct_format.startswith(u'=') and
-                struct.calcsize(struct_format) != struct.calcsize(
+                struct_calcsize(struct_format) != struct_calcsize(
                     u'=' + struct_format)):
             raise SyntaxError(
                 u"Automatic padding inserted for struct format '%s', this is "
@@ -794,7 +794,7 @@ class MelFid(MelUInt32):
         try:
             return super(MelFid, self).pack_subrecord_data( # pack an u'=I'
                 record)
-        except (AttributeError, struct.error):
+        except (AttributeError, struct_error):
             ##: struct.error raised when trying to pack None (so the default,
             # meaning the subrecord was not present) - AttributeError should
             # never be raised due to brec.record_structs.MelSet.initRecord

@@ -24,11 +24,10 @@
 through PBash (LoadFactory + ModFile) as well as some related classes."""
 
 import re
-import struct
 from collections import defaultdict
 
 from . import bolt, bush, env, load_order
-from .bolt import deprint, GPath, SubProgress, structs_cache
+from .bolt import deprint, GPath, SubProgress, structs_cache, struct_error
 from .brec import MreRecord, ModReader, RecordHeader, RecHeader, \
     TopGrupHeader, MobBase, MobDials, MobICells, MobObjects, MobWorlds
 from .exception import ArgumentError, MasterMapError, ModError, StateError
@@ -447,7 +446,7 @@ class ModHeaderReader(object):
                     if header_rec_sig != b'GRUP':
                         ret_headers[header_rec_sig].append(header)
                         ins_seek(header.size, 1)
-            except (OSError, struct.error) as e:
+            except (OSError, struct_error) as e:
                 raise ModError(ins.inName, u'Error scanning %s, file read '
                                            u"pos: %i\nCaused by: '%r'" % (
                     mod_info.name, ins.tell(), e))
@@ -493,7 +492,7 @@ class ModHeaderReader(object):
                         # header and skip the record body
                         ret_headers.append(header)
                         ins_seek(header.size, 1)
-            except (OSError, struct.error) as e:
+            except (OSError, struct_error) as e:
                 raise ModError(ins.inName, u'Error scanning %s, file read '
                                            u"pos: %i\nCaused by: '%r'" % (
                     mod_info.name, ins.tell(), e))

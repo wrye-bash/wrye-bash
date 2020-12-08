@@ -31,14 +31,13 @@ __author__ = u'Infernio'
 import binascii
 import re
 import string
-import struct
 from itertools import imap
 from . import bak_file_pattern
 from ..bolt import sio, decoder, encode, struct_unpack, unpack_string, \
     unpack_int, unpack_short, unpack_4s, unpack_byte, unpack_str16, \
     unpack_float, unpack_double, unpack_int_signed, unpack_str32, AFile, \
     unpack_spaced_string, pack_int, pack_short, pack_double, pack_byte, \
-    pack_int_signed, pack_float, pack_4s
+    pack_int_signed, pack_float, pack_4s, struct_error
 from ..exception import AbstractError, BoltError, CosaveError, \
     InvalidCosaveError, UnsupportedCosaveError
 
@@ -1291,7 +1290,7 @@ class ACosave(_Dumpable, _Remappable, AFile):
                     self._read_cosave_header(ins)
                     self._read_cosave_body(ins, light)
                 self.loading_state = target_state
-            except struct.error as e:
+            except struct_error as e:
                 raise CosaveError(self.abs_path.tail,
                     u'Failed to read cosave: %r' % e)
 
@@ -1578,7 +1577,7 @@ class PluggyCosave(ACosave):
                 with sio(buffered_data) as ins:
                     self._read_cosave_header(ins)
                     self._read_cosave_body(ins, light)
-            except struct.error as e:
+            except struct_error as e:
                 raise CosaveError(self.abs_path.tail,
                     u'Failed to read cosave: %r' % e)
             self.loading_state = target_state

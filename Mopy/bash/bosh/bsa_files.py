@@ -33,15 +33,16 @@ __author__ = u'Utumno'
 import collections
 import errno
 import os
-import struct
 import zlib
 from functools import partial
 from itertools import groupby, imap
 from operator import itemgetter
 import lz4.frame
+from struct import unpack_from as _unpack_from
 from .dds_files import DDSFile, mk_dxgi_fmt
 from ..bolt import deprint, Progress, struct_unpack, unpack_byte, \
-    unpack_string, unpack_int, Flags, AFile, structs_cache
+    unpack_string, unpack_int, Flags, AFile, structs_cache, struct_calcsize, \
+    struct_error
 from ..exception import AbstractError, BSAError, BSADecodingError, \
     BSAFlagError, BSACompressionError, BSADecompressionError, \
     BSADecompressionSizeError
@@ -121,7 +122,7 @@ class _Bsa_lz4(_BsaCompressionType):
 # Headers ---------------------------------------------------------------------
 class _Header(object):
     __slots__ = (u'file_id', u'version')
-    formats = [(f, struct.calcsize(f)) for f in (u'4s', u'I')]
+    formats = [(f, struct_calcsize(f)) for f in (u'4s', u'I')]
     bsa_magic = b'BSA\x00'
 
     def load_header(self, ins, bsa_name):
@@ -137,7 +138,7 @@ class BsaHeader(_Header):
          u'folder_records_offset', u'archive_flags', u'folder_count',
          u'file_count', u'total_folder_name_length', u'total_file_name_length',
          u'file_flags')
-    formats = [(f, struct.calcsize(f)) for f in [u'I'] * 8]
+    formats = [(f, struct_calcsize(f)) for f in [u'I'] * 8]
     header_size = 36
     _archive_flags = Flags(0, Flags.getNames(
         u'include_directory_names',
@@ -172,7 +173,7 @@ class BsaHeader(_Header):
 class Ba2Header(_Header):
     __slots__ = ( # in the order encountered in the header
         u'ba2_files_type', u'ba2_num_files', u'ba2_name_table_offset')
-    formats = [(f, struct.calcsize(f)) for f in (u'4s', u'I', u'Q')]
+    formats = [(f, struct_calcsize(f)) for f in (u'4s', u'I', u'Q')]
     bsa_magic = b'BTDX'
     file_types = {b'GNRL', b'DX10'} # GNRL=General, DX10=Textures
     header_size = 24
@@ -189,7 +190,7 @@ class Ba2Header(_Header):
 
 class MorrowindBsaHeader(_Header):
     __slots__ = (u'file_id', u'hash_offset', u'file_count')
-    formats = [(f, struct.calcsize(f)) for f in (u'4s', u'I', u'I')]
+    formats = [(f, struct_calcsize(f)) for f in (u'4s', u'I', u'I')]
     bsa_magic = b'\x00\x01\x00\x00'
 
     def load_header(self, ins, bsa_name):
@@ -210,7 +211,7 @@ class OblivionBsaHeader(BsaHeader):
 # Records ---------------------------------------------------------------------
 class _HashedRecord(object):
     __slots__ = (u'record_hash',)
-    formats = [(u'Q', struct.calcsize(u'Q'))]
+    formats = [(u'Q', struct_calcsize(u'Q'))]
 
     def load_record(self, ins):
         fmt, fmt_siz = _HashedRecord.formats[0]
@@ -218,7 +219,7 @@ class _HashedRecord(object):
 
     def load_record_from_buffer(self, memview, start):
         fmt, fmt_siz = _HashedRecord.formats[0]
-        self.record_hash, = struct.unpack_from(fmt, memview, start)
+        self.record_hash, = _unpack_from(fmt, memview, start)
         return start + fmt_siz
 
     @classmethod
@@ -257,7 +258,7 @@ class _BsaHashedRecord(_HashedRecord):
         start = super(_BsaHashedRecord, self).load_record_from_buffer(memview,
                                                                       start)
         for fmt, attr in zip(self.__class__.formats, self.__class__.__slots__):
-            setattr(self, attr, struct.unpack_from(fmt[0], memview, start)[0])
+            setattr(self, attr, _unpack_from(fmt[0], memview, start)[0])
             start += fmt[1]
         return start
 
@@ -268,15 +269,15 @@ class _BsaHashedRecord(_HashedRecord):
 
 class BSAFolderRecord(_BsaHashedRecord):
     __slots__ = (u'files_count', u'file_records_offset')
-    formats = [(f, struct.calcsize(f)) for f in (u'I', u'I')]
+    formats = [(f, struct_calcsize(f)) for f in (u'I', u'I')]
 
 class BSASkyrimSEFolderRecord(_BsaHashedRecord):
     __slots__ = (u'files_count', u'unknown_int', u'file_records_offset')
-    formats = [(f, struct.calcsize(f)) for f in (u'I', u'I', u'Q')]
+    formats = [(f, struct_calcsize(f)) for f in (u'I', u'I', u'Q')]
 
 class BSAFileRecord(_BsaHashedRecord):
     __slots__ = (u'file_size_flags', u'raw_file_data_offset')
-    formats = [(f, struct.calcsize(f)) for f in (u'I', u'I')]
+    formats = [(f, struct_calcsize(f)) for f in (u'I', u'I')]
 
     def compression_toggle(self): return self.file_size_flags & 0x40000000
 
@@ -293,7 +294,7 @@ class BSAMorrowindFileRecord(_HashedRecord):
     # Note: We (ab)use the use of zip() here to reserve file_name without
     # actually loading it.
     __slots__ = (u'file_size', u'relative_offset', u'file_name')
-    formats = [(f, struct.calcsize(f)) for f in (u'I', u'I')]
+    formats = [(f, struct_calcsize(f)) for f in (u'I', u'I')]
 
     def load_record(self, ins):
         for fmt, attr in zip(self.__class__.formats, self.__class__.__slots__):
@@ -301,7 +302,7 @@ class BSAMorrowindFileRecord(_HashedRecord):
 
     def load_record_from_buffer(self, memview, start):
         for fmt, attr in zip(self.__class__.formats, self.__class__.__slots__):
-            setattr(self, attr, struct.unpack_from(fmt[0], memview, start)[0])
+            setattr(self, attr, _unpack_from(fmt[0], memview, start)[0])
             start += fmt[1]
         return start
 
@@ -344,7 +345,7 @@ class BSAOblivionFileRecord(BSAFileRecord):
     # fill it manually in our load_record override. This is necessary to find
     # the positions of hashes for undo_alterations().
     __slots__ = (u'file_size_flags', u'raw_file_data_offset', u'file_pos')
-    formats = [(f, struct.calcsize(f)) for f in (u'I', u'I')]
+    formats = [(f, struct_calcsize(f)) for f in (u'I', u'I')]
 
     def load_record(self, ins):
         self.file_pos = ins.tell()
@@ -355,7 +356,7 @@ class Ba2FileRecordGeneral(_BsaHashedRecord):
     # unused1 is always BAADF00D
     __slots__ = (u'file_extension', u'dir_hash', u'unknown1', u'offset',
                  u'packed_size', u'unpacked_size', u'unused1')
-    formats = [(f, struct.calcsize(f)) for f in (u'4s', u'I', u'I', u'Q', u'I',
+    formats = [(f, struct_calcsize(f)) for f in (u'4s', u'I', u'I', u'Q', u'I',
                                                  u'I', u'I')]
 
 class Ba2FileRecordTexture(_BsaHashedRecord):
@@ -364,7 +365,7 @@ class Ba2FileRecordTexture(_BsaHashedRecord):
     __slots__ = (u'file_extension', u'dir_hash', u'unknown_tex',
                  u'num_chunks', u'chunk_header_size', u'height', u'width',
                  u'num_mips', u'dxgi_format', u'cube_maps', u'tex_chunks')
-    formats = [(f, struct.calcsize(f)) for f in (u'4s', u'I', u'B', u'B', u'H',
+    formats = [(f, struct_calcsize(f)) for f in (u'4s', u'I', u'B', u'B', u'H',
                                                  u'H', u'H', u'B', u'B', u'H')]
 
     def load_record(self, ins):
@@ -381,7 +382,7 @@ class Ba2TexChunk(object):
     # unused1 is always BAADF00D
     __slots__ = (u'offset', u'packed_size', u'unpacked_size', u'start_mip',
                  u'end_mip', u'unused1')
-    formats = [(f, struct.calcsize(f)) for f in (u'Q', u'I', u'I', u'H', u'H',
+    formats = [(f, struct_calcsize(f)) for f in (u'Q', u'I', u'I', u'H', u'H',
                                                  u'I')]
 
     def load_chunk(self, ins): ##: Centralize this, copy-pasted everywhere
@@ -433,7 +434,7 @@ class ABsa(AFile):
         with self.abs_path.open(u'rb') as ins:
             try:
                 self.bsa_header.load_header(ins, self.bsa_name)
-            except struct.error as e:
+            except struct_error as e:
                 raise BSAError(self.bsa_name, u'Error while unpacking header: '
                                               u'%r' % e)
             return self.bsa_header.version
@@ -444,7 +445,7 @@ class ABsa(AFile):
                 self._load_bsa()
             else:
                 self._load_bsa_light()
-        except struct.error as e:
+        except struct_error as e:
             raise BSAError(self.bsa_name, u'Error while unpacking: %r' % e)
 
     @staticmethod
@@ -745,7 +746,7 @@ class BA2(ABsa):
             # close the file
         current_folder_name = current_folder = None
         for index in xrange(my_header.ba2_num_files):
-            name_size = struct.unpack_from(u'H', file_names_block)[0]
+            name_size = _unpack_from(u'H', file_names_block)[0]
             filename = _decode_path(
                 file_names_block[2:name_size + 2].tobytes(), self.bsa_name)
             file_names_block = file_names_block[name_size + 2:]
@@ -772,7 +773,7 @@ class BA2(ABsa):
             # close the file
         _filenames = []
         for index in xrange(my_header.ba2_num_files):
-            name_size = struct.unpack_from(u'H', file_names_block)[0]
+            name_size = _unpack_from(u'H', file_names_block)[0]
             filename = _decode_path(
                 file_names_block[2:name_size + 2].tobytes(), self.bsa_name)
             _filenames.append(filename)
@@ -921,5 +922,5 @@ def get_bsa_type(game_fsName):
         return SkyrimSeBsa
     elif game_fsName in (u'Fallout4', u'Fallout4VR'):
         # Hashes are I not Q in BA2s!
-        _HashedRecord.formats = [(u'I', struct.calcsize(u'I'))]
+        _HashedRecord.formats = [(u'I', struct_calcsize(u'I'))]
         return BA2

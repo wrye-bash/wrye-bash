@@ -21,7 +21,7 @@
 #
 # =============================================================================
 """GameInfo override for TES III: Morrowind."""
-import struct
+import struct as _struct
 from collections import defaultdict
 
 from .. import GameInfo
@@ -116,11 +116,11 @@ class MorrowindGameInfo(GameInfo):
         header_type.rec_header_size = 16
         header_type.rec_pack_format = [u'=4s', u'I', u'I', u'I']
         header_type.rec_pack_format_str = u''.join(header_type.rec_pack_format)
-        header_type.header_unpack = struct.Struct(
+        header_type.header_unpack = _struct.Struct(
             header_type.rec_pack_format_str).unpack
         from ...brec import Subrecord
         Subrecord.sub_header_fmt = u'=4sI'
-        Subrecord.sub_header_unpack = struct.Struct(
+        Subrecord.sub_header_unpack = _struct.Struct(
             Subrecord.sub_header_fmt).unpack
         Subrecord.sub_header_size = 8
         header_type.top_grup_sigs = [

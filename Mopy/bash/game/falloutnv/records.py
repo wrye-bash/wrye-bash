@@ -22,12 +22,11 @@
 # =============================================================================
 """This module contains the falloutnv record classes."""
 from __future__ import division
-import struct
 # Set MelModel in brec, in this case it's identical to the fallout 3 one
 from ..fallout3.records import MelOwnership, MelDestructible, MelEffects, \
     MelConditions, MelEmbeddedScript, MelItems, MelEquipmentType, MelBipedData
 from ..fallout3.records import _MelModel # HACK - needed for tests
-from ...bolt import Flags
+from ...bolt import Flags, struct_calcsize
 from ...brec import MelModel # set in Mopy/bash/game/fallout3/records.py
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MelSet, MelFid, MelOptStruct, MelFids, MelBase, \
@@ -1663,7 +1662,7 @@ class MelWthrColorsFnv(MelArray):
             # docstring for some ideas for getting rid of this
             append_entry = getattr(record, self.attr).append
             entry_slots = self._element_old.attrs
-            entry_size = struct.calcsize(u'3Bs3Bs3Bs3Bs')
+            entry_size = struct_calcsize(u'3Bs3Bs3Bs3Bs')
             load_entry = self._element_old.load_mel
             for x in xrange(size_ // entry_size):
                 arr_entry = MelObject()

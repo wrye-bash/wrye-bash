@@ -32,7 +32,6 @@ __author__ = u'Utumno'
 
 import StringIO
 import copy
-import struct
 import zlib
 from collections import OrderedDict
 from functools import partial
@@ -42,7 +41,8 @@ from ..bolt import decoder, cstrip, unpack_string, unpack_int, unpack_str8, \
     unpack_short, unpack_float, unpack_str16, unpack_byte, \
     unpack_str_int_delim, unpack_str16_delim, unpack_str_byte_delim, \
     unpack_many, encode, struct_unpack, pack_int, pack_byte, pack_short, \
-    pack_float, pack_string, pack_str8, pack_bzstr8, structs_cache
+    pack_float, pack_string, pack_str8, pack_bzstr8, structs_cache, \
+    struct_error
 from ..exception import SaveHeaderError, raise_bolt_error, AbstractError
 
 # Utilities -------------------------------------------------------------------
@@ -76,7 +76,7 @@ class SaveFileHeader(object):
             else:
                 self.load_header(ins, load_image)
         #--Errors
-        except (OSError, struct.error, OverflowError):
+        except (OSError, struct_error, OverflowError):
             bolt.deprint(u'Failed to read %s' % self._save_path,
                 traceback=True)
             raise_bolt_error(u'Failed to read %s' % self._save_path,

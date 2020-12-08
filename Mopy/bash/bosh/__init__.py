@@ -33,7 +33,6 @@ import collections
 import errno
 import os
 import re
-import struct
 import sys
 import time
 import traceback
@@ -49,7 +48,7 @@ from .. import bass, bolt, balt, bush, env, load_order, archives, \
 from ..archives import readExts
 from ..bass import dirs, inisettings
 from ..bolt import GPath, DataDict, deprint, sio, Path, decoder, AFile, \
-    GPath_no_norm
+    GPath_no_norm, struct_error
 from ..brec import ModReader, RecordHeader
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
     CancelError, FileError, ModError, PluginsFullError, SaveFileError, \
@@ -595,7 +594,7 @@ class ModInfo(FileInfo):
                 tes4_rec_header = self._read_tes4_record(ins)
                 self.header = bush.game.plugin_header_class(tes4_rec_header,
                                                             ins, True)
-            except struct.error as rex:
+            except struct_error as rex:
                 raise ModError(self.name,u'Struct.error: %s' % rex)
         if bush.game.fsName in (u'Skyrim Special Edition', u'Skyrim VR'):
             if tes4_rec_header.form_version != \
@@ -620,7 +619,7 @@ class ModInfo(FileInfo):
                     outWrite = out.write
                     for block in iter(partial(ins.read, 0x5000000), b''):
                         outWrite(block)
-                except struct.error as rex:
+                except struct_error as rex:
                     raise ModError(self.name,u'Struct.error: %s' % rex)
         #--Remove original and replace with temp
         filePath.untemp()
