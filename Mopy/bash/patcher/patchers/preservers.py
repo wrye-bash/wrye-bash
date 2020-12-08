@@ -216,8 +216,7 @@ class _APreserver(ImportPatcher):
         id_data = self.id_data
         for recClass in self.srcClasses:
             if recClass.rec_sig not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile,
-                recClass.rec_sig.decode(u'ascii'))
+            patchBlock = self.patchFile.tops[recClass.rec_sig]
             # Records that have been copied into the BP once will automatically
             # be updated by update_patch_records_from_mod/mergeModFile
             copied_records = patchBlock.id_records
@@ -510,10 +509,10 @@ class ImportCellsPatcher(ImportPatcher):
                 self.recAttrs[bashKey] for bashKey in tags
                 if bashKey in self.recAttrs))
             if b'CELL' in srcFile.tops:
-                for cellBlock in srcFile.CELL.cellBlocks:
+                for cellBlock in srcFile.tops[b'CELL'].cellBlocks:
                     importCellBlockData(cellBlock)
             if b'WRLD' in srcFile.tops:
-                for worldBlock in srcFile.WRLD.worldBlocks:
+                for worldBlock in srcFile.tops[b'WRLD'].worldBlocks:
                     for cellBlock in worldBlock.cellBlocks:
                         importCellBlockData(cellBlock)
                     if worldBlock.worldCellBlock:
@@ -528,10 +527,10 @@ class ImportCellsPatcher(ImportPatcher):
                     masterFile.load(True)
                     cachedMasters[master] = masterFile
                 if b'CELL' in masterFile.tops:
-                    for cellBlock in masterFile.CELL.cellBlocks:
+                    for cellBlock in masterFile.tops[b'CELL'].cellBlocks:
                         checkMasterCellBlockData(cellBlock)
                 if b'WRLD' in masterFile.tops:
-                    for worldBlock in masterFile.WRLD.worldBlocks:
+                    for worldBlock in masterFile.tops[b'WRLD'].worldBlocks:
                         for cellBlock in worldBlock.cellBlocks:
                             checkMasterCellBlockData(cellBlock)
                         if worldBlock.worldCellBlock:
@@ -544,14 +543,14 @@ class ImportCellsPatcher(ImportPatcher):
         if not self.isActive or not (set(modFile.tops) & {b'CELL', b'WRLD'}):
             return
         cellData = self.cellData
-        patchCells = self.patchFile.CELL
-        patchWorlds = self.patchFile.WRLD
+        patchCells = self.patchFile.tops[b'CELL']
+        patchWorlds = self.patchFile.tops[b'WRLD']
         if b'CELL' in modFile.tops:
-            for cellBlock in modFile.CELL.cellBlocks:
+            for cellBlock in modFile.tops[b'CELL'].cellBlocks:
                 if cellBlock.cell.fid in cellData:
                     patchCells.setCell(cellBlock.cell)
         if b'WRLD' in modFile.tops:
-            for worldBlock in modFile.WRLD.worldBlocks:
+            for worldBlock in modFile.tops[b'WRLD'].worldBlocks:
                 patchWorlds.setWorld(worldBlock.world)
                 curr_pworld = patchWorlds.id_worldBlocks[worldBlock.world.fid]
                 for cellBlock in worldBlock.cellBlocks:
@@ -596,11 +595,11 @@ class ImportCellsPatcher(ImportPatcher):
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         cellData, count = self.cellData, Counter()
-        for cellBlock in self.patchFile.CELL.cellBlocks:
+        for cellBlock in self.patchFile.tops[b'CELL'].cellBlocks:
             cell_fid = cellBlock.cell.fid
             if cell_fid in cellData and handlePatchCellBlock(cellBlock):
                 count[cell_fid[0]] += 1
-        for worldBlock in self.patchFile.WRLD.worldBlocks:
+        for worldBlock in self.patchFile.tops[b'WRLD'].worldBlocks:
             keepWorld = False
             for cellBlock in worldBlock.cellBlocks:
                 cell_fid = cellBlock.cell.fid

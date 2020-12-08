@@ -465,7 +465,7 @@ class ActorLevels(_HandleAliases):
             if modName in gotLevels: continue
             modFile = ModFile(bosh.modInfos[modName],loadFactory)
             modFile.load(True)
-            for record in modFile.NPC_.getActiveRecords():
+            for record in modFile.tops[b'NPC_'].getActiveRecords():
                 mod_id_levels[modName][record.fid] = (
                     record.eid, bool(record.flags.pcLevelOffset), record.level,
                     record.calcMin, record.calcMax)
@@ -482,7 +482,7 @@ class ActorLevels(_HandleAliases):
                                       mod_id_levels.get(GPath(u'Unknown'),
                                                         None))
         if id_levels:
-            for record in modFile.NPC_.records:
+            for record in modFile.tops[b'NPC_'].records:
                 fid = record.fid
                 if fid in id_levels:
                     eid,isOffset,level,calcMin,calcMax = id_levels[fid]
@@ -626,7 +626,7 @@ class EditorIds(_HandleAliases):
             else:
                 return newWord
         #--Scripts
-        for script in sorted(modFile.SCPT.records, key=attrgetter(u'eid')):
+        for script in sorted(modFile.tops[b'SCPT'].records, key=attrgetter(u'eid')):
             if not script.script_source: continue
             newText = reWord.sub(subWord,script.script_source)
             if newText != script.script_source:
@@ -636,7 +636,7 @@ class EditorIds(_HandleAliases):
                 script.setChanged()
                 changed.append((_(u'Script'),script.eid))
         #--Quest Scripts
-        for quest in sorted(modFile.QUST.records, key=attrgetter(u'eid')):
+        for quest in sorted(modFile.tops[b'QUST'].records, key=attrgetter(u'eid')):
             questChanged = False
             for stage in quest.stages:
                 for entry in stage.entries:
@@ -842,8 +842,8 @@ class FidReplacer(_HandleAliases):
             else:
                 return oldId
         #--Do swap on all records
-        for type_ in types:
-            for record in getattr(modFile,type_).getActiveRecords():
+        for top_grup_sig in types:
+            for record in modFile.tops[top_grup_sig].getActiveRecords():
                 if changeBase: record.fid = swapper(record.fid)
                 record.mapFids(swapper, save=True)
                 record.setChanged()
@@ -1054,9 +1054,9 @@ class ItemStats(_HandleAliases):
         loadFactory = LoadFactory(False,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        for group, attrs in self.class_attrs.iteritems():
-            for record in getattr(modFile,group).getActiveRecords():
-                self.class_fid_attr_value[group][record.fid].update(
+        for top_grup_sig, attrs in self.class_attrs.iteritems():
+            for record in modFile.tops[top_grup_sig].getActiveRecords():
+                self.class_fid_attr_value[top_grup_sig][record.fid].update(
                     zip(attrs, [getattr(record, a) for a in attrs]))
 
     def writeToMod(self,modInfo):
@@ -1066,9 +1066,10 @@ class ItemStats(_HandleAliases):
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         changed = Counter() #--changed[modName] = numChanged
-        for group, fid_attr_value in self.class_fid_attr_value.iteritems():
-            attrs = self.class_attrs[group]
-            for record in getattr(modFile,group).getActiveRecords():
+        for top_grup_sig, fid_attr_value in \
+                self.class_fid_attr_value.iteritems():
+            attrs = self.class_attrs[top_grup_sig]
+            for record in modFile.tops[top_grup_sig].getActiveRecords():
                 longid = record.fid
                 itemStats = fid_attr_value.get(longid,None)
                 if not itemStats: continue
@@ -1203,7 +1204,7 @@ class ScriptText(object):
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         with Progress(_(u'Export Scripts')) as progress:
-            records = modFile.SCPT.getActiveRecords()
+            records = modFile.tops[b'SCPT'].getActiveRecords()
             y = len(records)
             z = 0
             for record in records:
@@ -1219,7 +1220,7 @@ class ScriptText(object):
         loadFactory = LoadFactory(True,MreRecord.type_class[b'SCPT'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        for record in modFile.SCPT.getActiveRecords():
+        for record in modFile.tops[b'SCPT'].getActiveRecords():
             eid = record.eid
             data_ = eid_data.get(eid,None)
             if data_ is not None:
@@ -1239,7 +1240,7 @@ class ScriptText(object):
                 newScript.eid = eid
                 newScript.script_source = newText
                 newScript.setChanged()
-                modFile.SCPT.records.append(newScript)
+                modFile.tops[b'SCPT'].records.append(newScript)
                 added.append(eid)
         if changed or added: modFile.safeSave()
         return changed, added
@@ -1392,7 +1393,7 @@ class SigilStoneDetails(_UsesEffectsMixin):
         loadFactory = LoadFactory(False,MreRecord.type_class[b'SGST'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        for record in modFile.SGST.getActiveRecords():
+        for record in modFile.tops[b'SGST'].getActiveRecords():
             effects = []
             for effect in record.effects:
                 effectlist = [effect.effect_id,effect.magnitude,effect.area,
@@ -1420,7 +1421,7 @@ class SigilStoneDetails(_UsesEffectsMixin):
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         changed = [] #eids
-        for record in modFile.SGST.getActiveRecords():
+        for record in modFile.tops[b'SGST'].getActiveRecords():
             newStats = fid_stats.get(record.fid, None)
             if not newStats: continue
             effects = []
@@ -1539,8 +1540,8 @@ class ItemPrices(_HandleAliases):
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         attrs = self.item_prices_attrs
-        for group, fid_stats in class_fid_stats.iteritems():
-            for record in getattr(modFile,group).getActiveRecords():
+        for top_grup_sig, fid_stats in class_fid_stats.iteritems():
+            for record in modFile.tops[top_grup_sig].getActiveRecords():
                 fid_stats[record.fid] = [getattr(record, a) for a in attrs]
 
     def writeToMod(self,modInfo):
@@ -1551,8 +1552,8 @@ class ItemPrices(_HandleAliases):
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         changed = Counter() #--changed[modName] = numChanged
-        for group, fid_stats in class_fid_stats.iteritems():
-            for record in getattr(modFile,group).getActiveRecords():
+        for top_grup_sig, fid_stats in class_fid_stats.iteritems():
+            for record in modFile.tops[top_grup_sig].getActiveRecords():
                 longid = record.fid
                 stats = fid_stats.get(longid,None)
                 if not stats: continue
@@ -1637,7 +1638,7 @@ class SpellRecords(_UsesEffectsMixin):
         loadFactory= LoadFactory(False,MreRecord.type_class[b'SPEL'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        for record in modFile.SPEL.getActiveRecords():
+        for record in modFile.tops[b'SPEL'].getActiveRecords():
             fid_stats[record.fid] = [__attrgetters[attr](record) for attr in
                                      attrs]
             if detailed:
@@ -1664,7 +1665,7 @@ class SpellRecords(_UsesEffectsMixin):
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         changed = [] #eids
-        for record in modFile.SPEL.getActiveRecords():
+        for record in modFile.tops[b'SPEL'].getActiveRecords():
             newStats = fid_stats.get(record.fid, None)
             if not newStats: continue
             oldStats = [__attrgetters[attr](record) for attr in attrs]
@@ -1818,7 +1819,7 @@ class IngredientDetails(_UsesEffectsMixin):
         loadFactory= LoadFactory(False,MreRecord.type_class[b'INGR'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        for record in modFile.INGR.getActiveRecords():
+        for record in modFile.tops[b'INGR'].getActiveRecords():
             effects = []
             for effect in record.effects:
                 effectlist = [effect.effect_id,effect.magnitude,effect.area,
@@ -1846,7 +1847,7 @@ class IngredientDetails(_UsesEffectsMixin):
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         changed = [] #eids
-        for record in modFile.INGR.getActiveRecords():
+        for record in modFile.tops[b'INGR'].getActiveRecords():
             newStats = fid_stats.get(record.fid, None)
             if not newStats: continue
             effects = []

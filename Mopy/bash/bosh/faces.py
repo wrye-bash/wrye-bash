@@ -403,7 +403,7 @@ class PCFaces(object):
         modFile.load(True)
         short_mapper = modFile.getShortMapper()
         faces = {}
-        for npc in modFile.NPC_.getActiveRecords():
+        for npc in modFile.tops[b'NPC_'].getActiveRecords():
             face = PCFaces.PCFace()
             face.face_masters = modFile.tes4.masters + [modInfo.name]
             for field in ('eid','race','eye','hair','hairLength',
@@ -428,7 +428,7 @@ class PCFaces(object):
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         faces = {}
-        for race in modFile.RACE.getActiveRecords():
+        for race in modFile.tops[b'RACE'].getActiveRecords():
             face = PCFaces.PCFace()
             face.face_masters = []
             for field in ('eid','fggs_p','fgga_p','fgts_p'):
@@ -455,7 +455,7 @@ class PCFaces(object):
             tes4.masters.append(modInfos.masterName)
         masterMap = MasterMap(face.face_masters,tes4.masters+[modInfo.name])
         #--Eid
-        npcEids = {record.eid for record in modFile.NPC_.records}
+        npcEids = {record.eid for record in modFile.tops[b'NPC_'].records}
         eidForm = u''.join((u"sg", bush.game.raceShortNames.get(face.race,u'Unk'),
             (face.gender and u'a' or u'u'), re.sub(u'' r'\W', u'', face.pcName), u'%02d'))
         count,eid = 0, eidForm % 0
@@ -491,7 +491,7 @@ class PCFaces(object):
             npc.unused2 = face.unused2
         if face.attributes: npc.attributes = face.attributes
         npc.setChanged()
-        modFile.NPC_.records.append(npc)
+        modFile.tops[b'NPC_'].records.append(npc)
         #--Save
         modFile.safeSave()
         return npc

@@ -879,7 +879,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                 #--Loop over mod NPCs
                 mapToOrdered = MasterMap(modFile.tes4.masters + [modName],
                                          ordered)
-                for npc in modFile.NPC_.getActiveRecords():
+                for npc in modFile.tops[b'NPC_'].getActiveRecords():
                     fid = mapToOrdered(short_mapper(npc.fid), None)
                     if not fid: continue
                     npc_info[fid] = (npc.eid, npc.level, npc.calcMin, npc.calcMax, npc.flags.pcLevelOffset)
