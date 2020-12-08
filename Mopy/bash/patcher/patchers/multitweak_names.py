@@ -280,7 +280,7 @@ class NamesTweak_Scrolls(_AMgefNamesTweak):
             ench_plugin = ModFile(patch_file.p_file_minfos[pl_path],
                                   ench_factory)
             ench_plugin.load(do_unpack=True)
-            for record in ench_plugin.ENCH.getActiveRecords():
+            for record in ench_plugin.tops[b'ENCH'].getActiveRecords():
                 id_ench[record.fid] = record
 
     def _get_rename_params(self, record):

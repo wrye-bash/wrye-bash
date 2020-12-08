@@ -707,7 +707,7 @@ class SaveSpells(object):
             deprint(u'skipped mod due to read error (%s)' % err)
             return
         spells = modInfo.extras['bash.spellList'] = {
-            record.fid: record for record in modFile.SPEL.getActiveRecords()}
+            record.fid: record for record in modFile.tops[b'SPEL'].getActiveRecords()}
         self.allSpells.update(spells)
 
     def getPlayerSpells(self):

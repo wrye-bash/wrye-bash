@@ -167,8 +167,7 @@ class _AMerger(ImportPatcher):
         if modFile.fileInfo.name not in self.inventOnlyMods:
             for curr_sig in self._present_sigs:
                 if curr_sig not in modFile.tops: continue
-                patchBlock = getattr(self.patchFile, unicode(curr_sig,
-                    u'ascii'))
+                patchBlock = self.patchFile.tops[curr_sig]
                 id_records = patchBlock.id_records
                 for record in modFile.tops[curr_sig].getActiveRecords():
                     # Copy the defining version of each record into the BP -
@@ -186,8 +185,7 @@ class _AMerger(ImportPatcher):
         en_key = self._entry_key
         for curr_sig in self._present_sigs:
             sr_attr = self._wanted_subrecord[curr_sig]
-            for record in getattr(self.patchFile, unicode(
-                    curr_sig, u'ascii')).records:
+            for record in self.patchFile.tops[curr_sig].records:
                 deltas = id_deltas[record.fid]
                 if not deltas: continue
                 # Use sorted to preserve duplicates, but ignore order. This is
@@ -406,9 +404,9 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
     def scanModFile(self, modFile, progress): # scanModFile2: loop, LongTypes..
         """Add record from modFile."""
         merged_deleted = self.id_merged_deleted
-        for rec_type in self.target_rec_types:
-            patchBlock = getattr(self.patchFile,rec_type)
-            for record in getattr(modFile,rec_type).getActiveRecords():
+        for top_grup_sig in self.target_rec_types:
+            patchBlock = self.patchFile.tops[top_grup_sig]
+            for record in modFile.tops[top_grup_sig].getActiveRecords():
                 fid = record.fid
                 if fid not in merged_deleted: continue
                 if record.aiPackages != merged_deleted[fid]['merged']:
@@ -420,8 +418,8 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
         keep = self.patchFile.getKeeper()
         merged_deleted = self.id_merged_deleted
         mod_count = Counter()
-        for rec_type in self.target_rec_types:
-            for record in getattr(self.patchFile,rec_type).records:
+        for top_grup_sig in self.target_rec_types:
+            for record in self.patchFile.tops[top_grup_sig].records:
                 fid = record.fid
                 if fid not in merged_deleted: continue
                 changed = False
@@ -557,9 +555,9 @@ class ImportActorsSpellsPatcher(ImportPatcher):
     def scanModFile(self, modFile, progress): # scanModFile2
         """Add record from modFile."""
         merged_deleted = self.id_merged_deleted
-        for type in self._read_write_records:
-            patchBlock = getattr(self.patchFile,type)
-            for record in getattr(modFile,type).getActiveRecords():
+        for top_grup_sig in self._read_write_records:
+            patchBlock = self.patchFile.tops[top_grup_sig]
+            for record in modFile.tops[top_grup_sig].getActiveRecords():
                 fid = record.fid
                 if fid in merged_deleted:
                     if record.spells != merged_deleted[fid]['merged']:
@@ -571,8 +569,8 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         keep = self.patchFile.getKeeper()
         merged_deleted = self.id_merged_deleted
         mod_count = Counter()
-        for rec_type in self._read_write_records:
-            for record in getattr(self.patchFile,rec_type).records:
+        for top_grup_sig in self._read_write_records:
+            for record in self.patchFile.tops[top_grup_sig].records:
                 fid = record.fid
                 if fid not in merged_deleted: continue
                 changed = False

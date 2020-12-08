@@ -76,7 +76,7 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
         """Scans specified mod file to extract info. May add record to patch
         mod, but won't alter it."""
         id_ingred = self.id_ingred
-        for record in modFile.INGR.getActiveRecords():
+        for record in modFile.tops[b'INGR'].getActiveRecords():
             if not record.full: continue #--Ingredient must have name!
             if record.obme_record_version is not None:
                 continue ##: Skips OBME records - rework to support them
@@ -117,7 +117,7 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
             # book.script = (_cobl_main, 0x001DDD)
             book.fid = (_cobl_main, objectId)
             keep(book.fid)
-            self.patchFile.BOOK.setRecord(book)
+            self.patchFile.tops[b'BOOK'].setRecord(book)
             return book
         #--Ingredients Catalog
         id_ingred = self.id_ingred
@@ -232,8 +232,8 @@ class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
             progress.plus()
 
     def scanModFile(self,modFile,progress):
-        patchRecords = self.patchFile.SPEL
-        for record in modFile.SPEL.getActiveRecords():
+        patchRecords = self.patchFile.tops[b'SPEL']
+        for record in modFile.tops[b'SPEL'].getActiveRecords():
             if not record.spellType == 2: continue
             if record.fid in self.id_exhaustion:
                 patchRecords.setRecord(record.getTypeCopy())
@@ -244,7 +244,7 @@ class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
         count = Counter()
         exhaustId = (_cobl_main, 0x05139B)
         keep = self.patchFile.getKeeper()
-        for record in self.patchFile.SPEL.records:
+        for record in self.patchFile.tops[b'SPEL'].records:
             ##: Skips OBME records - rework to support them
             if record.obme_record_version is not None: continue
             #--Skip this one?
@@ -331,12 +331,12 @@ class MorphFactionsPatcher(ListPatcher, _ExSpecialList):
     def scanModFile(self, modFile, progress):
         """Scan modFile."""
         id_info = self.id_info
-        patchBlock = self.patchFile.FACT
+        patchBlock = self.patchFile.tops[b'FACT']
         if modFile.fileInfo.name == _cobl_main:
-            record = modFile.FACT.getRecord(self.mFactLong)
+            record = modFile.tops[b'FACT'].getRecord(self.mFactLong)
             if record:
                 patchBlock.setRecord(record.getTypeCopy())
-        for record in modFile.FACT.getActiveRecords():
+        for record in modFile.tops[b'FACT'].getActiveRecords():
             if record.fid in id_info:
                 patchBlock.setRecord(record.getTypeCopy())
 
@@ -349,7 +349,7 @@ class MorphFactionsPatcher(ListPatcher, _ExSpecialList):
         keep = self.patchFile.getKeeper()
         changed = Counter()
         mFactable = []
-        for record in modFile.FACT.getActiveRecords():
+        for record in modFile.tops[b'FACT'].getActiveRecords():
             rec_fid = record.fid
             if rec_fid not in id_info: continue
             if rec_fid == mFactLong: continue
@@ -377,7 +377,7 @@ class MorphFactionsPatcher(ListPatcher, _ExSpecialList):
                 keep(rec_fid)
                 changed[rec_fid[0]] += 1
         #--MFact record
-        record = modFile.FACT.getRecord(mFactLong)
+        record = modFile.tops[b'FACT'].getRecord(mFactLong)
         if record:
             relations = record.relations
             del relations[:]
@@ -413,7 +413,7 @@ class SEWorldTestsPatcher(_ExSpecial, Patcher):
             modInfo = self.patchFile.p_file_minfos[_ob_path]
             modFile = ModFile(modInfo,loadFactory)
             modFile.load(True)
-            for record in modFile.QUST.getActiveRecords():
+            for record in modFile.tops[b'QUST'].getActiveRecords():
                 for condition in record.conditions:
                     if condition.ifunc == 365 and condition.compValue == 0:
                         self.cyrodiilQuests.add(record.fid)
@@ -423,8 +423,8 @@ class SEWorldTestsPatcher(_ExSpecial, Patcher):
     def scanModFile(self,modFile,progress):
         if modFile.fileInfo.name == _ob_path: return
         cyrodiilQuests = self.cyrodiilQuests
-        patchBlock = self.patchFile.QUST
-        for record in modFile.QUST.getActiveRecords():
+        patchBlock = self.patchFile.tops[b'QUST']
+        for record in modFile.tops[b'QUST'].getActiveRecords():
             if record.fid not in cyrodiilQuests: continue
             for condition in record.conditions:
                 if condition.ifunc == 365: break #--365: playerInSeWorld
@@ -438,7 +438,7 @@ class SEWorldTestsPatcher(_ExSpecial, Patcher):
         patchFile = self.patchFile
         keep = patchFile.getKeeper()
         patched = []
-        for record in patchFile.QUST.getActiveRecords():
+        for record in patchFile.tops[b'QUST'].getActiveRecords():
             rec_fid = record.fid
             if rec_fid not in cyrodiilQuests: continue
             for condition in record.conditions:

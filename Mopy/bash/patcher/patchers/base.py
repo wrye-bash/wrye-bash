@@ -133,10 +133,9 @@ class MultiTweaker(AMultiTweaker,Patcher):
                         pool_record(record)
                         break # Exit as soon as a tweak is interested
         # Finally, copy all pooled records in one fell swoop
-        for rsig, pooled_records in rec_pool.iteritems():
+        for top_grup_sig, pooled_records in rec_pool.iteritems():
             if pooled_records: # only copy if we could pool
-                getattr(self.patchFile, rsig.decode(u'ascii')).copy_records(
-                    pooled_records)
+                self.patchFile.tops[top_grup_sig].copy_records(pooled_records)
 
     def buildPatch(self,log,progress):
         """Applies individual tweaks."""
@@ -245,15 +244,15 @@ class ReplaceFormIDsPatcher(ListPatcher):
     def scanModFile(self,modFile,progress):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
-        patchCells = self.patchFile.CELL
-        patchWorlds = self.patchFile.WRLD
-##        for type in MreRecord.simpleTypes:
-##            for record in getattr(modFile,type).getActiveRecords():
+        patchCells = self.patchFile.tops[b'CELL']
+        patchWorlds = self.patchFile.tops[b'WRLD']
+##        for top_grup_sig in MreRecord.simpleTypes:
+##            for record in modFile.tops[top_grup_sig].getActiveRecords():
 ##                record = record.getTypeCopy(mapper)
 ##                if record.fid in self.old_new:
-##                    getattr(self.patchFile,type).setRecord(record)
-        if 'CELL' in modFile.tops:
-            for cellBlock in modFile.CELL.cellBlocks:
+##                    self.patchFile.tops[top_grup_sig].setRecord(record)
+        if b'CELL' in modFile.tops:
+            for cellBlock in modFile.tops[b'CELL'].cellBlocks:
                 cellImported = False
                 if cellBlock.cell.fid in patchCells.id_cellBlock:
                     patchCells.id_cellBlock[cellBlock.cell.fid].cell = cellBlock.cell
@@ -282,8 +281,8 @@ class ReplaceFormIDsPatcher(ListPatcher):
                                 break
                         else:
                             patchCells.id_cellBlock[cellBlock.cell.fid].persistent_refs.append(record)
-        if 'WRLD' in modFile.tops:
-            for worldBlock in modFile.WRLD.worldBlocks:
+        if b'WRLD' in modFile.tops:
+            for worldBlock in modFile.tops[b'WRLD'].worldBlocks:
                 worldImported = False
                 if worldBlock.world.fid in patchWorlds.id_worldBlocks:
                     patchWorlds.id_worldBlocks[worldBlock.world.fid].world = worldBlock.world
@@ -334,14 +333,14 @@ class ReplaceFormIDsPatcher(ListPatcher):
             newId = old_new.get(oldId,None)
             return newId if newId else oldId
 ##        for type in MreRecord.simpleTypes:
-##            for record in getattr(self.patchFile,type).getActiveRecords():
+##            for record in self.patchFile.tops[type].getActiveRecords():
 ##                if record.fid in self.old_new:
 ##                    record.fid = swapper(record.fid)
 ##                    count.increment(record.fid[0])
 ####                    record.mapFids(swapper,True)
 ##                    record.setChanged()
 ##                    keep(record.fid)
-        for cellBlock in self.patchFile.CELL.cellBlocks:
+        for cellBlock in self.patchFile.tops[b'CELL'].cellBlocks:
             for record in cellBlock.temp_refs:
                 if record.base in self.old_new:
                     record.base = swapper(record.base)
@@ -356,7 +355,7 @@ class ReplaceFormIDsPatcher(ListPatcher):
 ##                    record.mapFids(swapper,True)
                     record.setChanged()
                     keep(record.fid)
-        for worldBlock in self.patchFile.WRLD.worldBlocks:
+        for worldBlock in self.patchFile.tops[b'WRLD'].worldBlocks:
             keepWorld = False
             for cellBlock in worldBlock.cellBlocks:
                 for record in cellBlock.temp_refs:

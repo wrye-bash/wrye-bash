@@ -1306,7 +1306,7 @@ class Mod_RemoveWorldOrphans(_NotObLink):
                 modFile = mod_files.ModFile(fileInfo, loadFactory)
                 progress(0,_(u'Reading') + u' %s.' % fileInfo)
                 modFile.load(True,SubProgress(progress,0,0.7))
-                orphans = ('WRLD' in modFile.tops) and modFile.WRLD.orphansSkipped
+                orphans = (b'WRLD' in modFile.tops) and modFile.tops[b'WRLD'].orphansSkipped
                 if orphans:
                     progress(0.1, _(u'Saving %s.') % fileInfo)
                     modFile.safeSave()
@@ -1430,16 +1430,17 @@ class Mod_DecompileAll(_NotObLink):
             badGenericLore = False
             removed = []
             id_text = {}
-            if modFile.SCPT.getNumRecords(False):
-                loadFactory = mod_files.LoadFactory(False, MreRecord.type_class['SCPT'])
+            scpt_grp = modFile.tops[b'SCPT']
+            if scpt_grp.getNumRecords(False):
+                loadFactory = mod_files.LoadFactory(False, MreRecord.type_class[b'SCPT'])
                 for master in modFile.tes4.masters:
                     masterFile = mod_files.ModFile(bosh.modInfos[master], loadFactory)
                     masterFile.load(True)
-                    for record in masterFile.SCPT.getActiveRecords():
+                    for record in masterFile.tops[b'SCPT'].getActiveRecords():
                         id_text[record.fid] = record.script_source
                 newRecords = []
                 generic_lore_fid = (bosh.modInfos.masterName, 0x025811)
-                for record in modFile.SCPT.records:
+                for record in scpt_grp.records:
                     fid = record.fid
                     #--Special handling for genericLoreScript
                     if (fid in id_text and record.fid == generic_lore_fid and
@@ -1451,13 +1452,13 @@ class Mod_DecompileAll(_NotObLink):
                         removed.append(record.eid)
                     else:
                         newRecords.append(record)
-                modFile.SCPT.records = newRecords
-                modFile.SCPT.setChanged()
+                scpt_grp.records = newRecords
+                scpt_grp.setChanged()
             if len(removed) >= 50 or badGenericLore:
                 modFile.safeSave()
                 self._showOk((_(u'Scripts removed: %d.') + u'\n' +
                               _(u'Scripts remaining: %d')) %
-                             (len(removed), len(modFile.SCPT.records)), file_name_s)
+                             (len(removed), len(scpt_grp.records)), file_name_s)
             elif removed:
                 self._showOk(_(u'Only %d scripts were identical.  This is '
                                u'probably intentional, so no changes have '

@@ -360,7 +360,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
                     u'WARNING mod %s has both R.AddSpells and R.ChangeSpells '
                     u'tags - only one of those tags should be on a mod at '
                     u'one time' % srcMod)
-            for race in srcFile.RACE.getActiveRecords():
+            for race in srcFile.tops[b'RACE'].getActiveRecords():
                 tempRaceData = self.tempRaceData.setdefault(race.fid,{})
                 raceData = self.raceData.setdefault(race.fid,{})
                 if u'Hair' in bashTags:
@@ -430,7 +430,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
                     masterFile.load(True)
                     if 'RACE' not in masterFile.tops: continue
                     cachedMasters[master] = masterFile
-                for race in masterFile.RACE.getActiveRecords():
+                for race in masterFile.tops[b'RACE'].getActiveRecords():
                     if race.fid not in self.tempRaceData: continue
                     tempRaceData = self.tempRaceData[race.fid]
                     raceData = self.raceData[race.fid]
@@ -451,25 +451,25 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
         races_data = self.races_data
         eye_mesh = self.eye_mesh
         if not (set(modFile.tops) & self.scanTypes): return
-        srcEyes = {record.fid for record in modFile.EYES.getActiveRecords()}
+        srcEyes = {record.fid for record in modFile.tops[b'EYES'].getActiveRecords()}
         #--Eyes, Hair
-        for rec_sig in (b'EYES', b'HAIR'):
-            patchBlock = getattr(self.patchFile,rec_sig)
+        for top_grup_sig in (b'EYES', b'HAIR'):
+            patchBlock = self.patchFile.tops[top_grup_sig]
             id_records = patchBlock.id_records
-            for record in getattr(modFile,rec_sig).getActiveRecords():
-                races_data[rec_sig].append(record.fid)
+            for record in modFile.tops[top_grup_sig].getActiveRecords():
+                races_data[top_grup_sig].append(record.fid)
                 if record.fid not in id_records:
                     patchBlock.setRecord(record.getTypeCopy())
         #--Npcs with unassigned eyes
-        patchBlock = self.patchFile.NPC_
+        patchBlock = self.patchFile.tops[b'NPC_']
         id_records = patchBlock.id_records
-        for record in modFile.NPC_.getActiveRecords():
+        for record in modFile.tops[b'NPC_'].getActiveRecords():
             if not record.eye and record.fid not in id_records:
                 patchBlock.setRecord(record.getTypeCopy())
         #--Race block
-        patchBlock = self.patchFile.RACE
+        patchBlock = self.patchFile.tops[b'RACE']
         id_records = patchBlock.id_records
-        for record in modFile.RACE.getActiveRecords():
+        for record in modFile.tops[b'RACE'].getActiveRecords():
             if record.fid not in id_records:
                 patchBlock.setRecord(record.getTypeCopy())
             if not record.rightEye or not record.leftEye:
@@ -501,10 +501,9 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
                         pool_record(record)
                         break # Exit as soon as a tweak is interested
         # Finally, copy all pooled records in one fell swoop
-        for rsig, pooled_records in rec_pool.iteritems():
+        for top_grup_sig, pooled_records in rec_pool.iteritems():
             if pooled_records: # only copy if we could pool
-                getattr(self.patchFile, rsig.decode(u'ascii')).copy_records(
-                    pooled_records)
+                self.patchFile.tops[top_grup_sig].copy_records(pooled_records)
 
     def buildPatch(self,log,progress):
         """Updates races as needed."""
@@ -522,7 +521,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
             u'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',
             re.I | re.U)
         #--Import race info
-        for race in patchFile.RACE.records:
+        for race in patchFile.tops[b'RACE'].records:
             #~~print 'Building',race.eid
             raceData = self.raceData.get(race.fid,None)
             if not raceData: continue
@@ -624,7 +623,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
         def setRaceEyeMesh(race,rightPath,leftPath):
             race.rightEye.modPath = rightPath
             race.leftEye.modPath = leftPath
-        for race in patchFile.RACE.records:
+        for race in patchFile.tops[b'RACE'].records:
             if debug: print(u'===', race.eid)
             if not race.eyes: continue  #--Sheogorath. Assume is handled
             # correctly.
@@ -728,13 +727,13 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
         final_eyes = {}
         defaultMaleHair = {}
         defaultFemaleHair = {}
-        eyeNames  = {x.fid: x.full for x in patchFile.EYES.records}
-        hairNames = {x.fid: x.full for x in patchFile.HAIR.records}
-        maleHairs = {x.fid for x in patchFile.HAIR.records
+        eyeNames  = {x.fid: x.full for x in patchFile.tops[b'EYES'].records}
+        hairNames = {x.fid: x.full for x in patchFile.tops[b'HAIR'].records}
+        maleHairs = {x.fid for x in patchFile.tops[b'HAIR'].records
                      if not x.flags.notMale}
-        femaleHairs = {x.fid for x in patchFile.HAIR.records
+        femaleHairs = {x.fid for x in patchFile.tops[b'HAIR'].records
                        if not x.flags.notFemale}
-        for race in patchFile.RACE.records:
+        for race in patchFile.tops[b'RACE'].records:
             if (race.flags.playable or race.fid == (
                     _main_master, 0x038010)) and race.eyes:
                 final_eyes[race.fid] = [x for x in
@@ -751,7 +750,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
                 racesSorted.append(race.eid)
                 keep(race.fid)
         #--Npcs with unassigned eyes/hair
-        for npc in patchFile.NPC_.records:
+        for npc in patchFile.tops[b'NPC_'].records:
             if npc.fid == (_main_master, 0x000007): continue  #
             # skip player
             if npc.full is not None and npc.race == (

@@ -181,7 +181,7 @@ class PatchFile(ModFile):
         gmst_rec.longFids = True
         gmst_rec.fid = (self.fileInfo.name, self.tes4.getNextObject())
         self.keepIds.add(gmst_rec.fid)
-        getattr(self, u'GMST').setRecord(gmst_rec) # ugh...
+        self.tops[b'GMST'].setRecord(gmst_rec)
 
     def initFactories(self,progress):
         """Gets load factories."""
@@ -218,13 +218,13 @@ class PatchFile(ModFile):
                 continue
             try:
                 #--Error checks
-                if 'WRLD' in modFile.tops and modFile.WRLD.orphansSkipped:
+                if b'WRLD' in modFile.tops and modFile.tops[b'WRLD'].orphansSkipped:
                     self.worldOrphanMods.append(modName)
                 # TODO adapt for other games
                 if bush.game.fsName == u'Oblivion' and b'SCPT' in \
                         modFile.tops and \
                         modName != GPath(bush.game.master_file):
-                    gls = modFile.SCPT.getRecord(0x00025811)
+                    gls = modFile.tops[b'SCPT'].getRecord(0x00025811)
                     if gls and gls.compiled_size == 4 and gls.last_index == 0:
                         self.compiledAllMods.append(modName)
                 pstate = index+0.5
@@ -260,19 +260,19 @@ class PatchFile(ModFile):
                 merged_class = self.mergeFactory.type_class[merged_sig]
                 self.readFactory.addClass(merged_class)
                 self.loadFactory.addClass(merged_class)
-        for blockType,block in modFile.tops.iteritems():
+        for top_grup_sig,block in modFile.tops.iteritems():
             for s in block.get_all_signatures():
                 add_to_factories(s)
-            iiSkipMerge = iiMode and blockType not in bush.game.listTypes
-            getattr(self, blockType).merge_records(block, self.loadSet,
+            iiSkipMerge = iiMode and top_grup_sig not in bush.game.listTypes
+            self.tops[top_grup_sig].merge_records(block, self.loadSet,
                 self.mergeIds, iiSkipMerge, doFilter)
 
     def update_patch_records_from_mod(self, modFile):
         """Scans file and overwrites own records with modfile records."""
         #--Keep all MGEFs
         if b'MGEF' in modFile.tops:
-            for record in modFile.MGEF.getActiveRecords():
-                self.MGEF.setRecord(record.getTypeCopy())
+            for record in modFile.tops[b'MGEF'].getActiveRecords():
+                self.tops[b'MGEF'].setRecord(record.getTypeCopy())
         #--Merger, override.
         for block_type in set(self.tops) & set(modFile.tops):
             self.tops[block_type].updateRecords(modFile.tops[block_type],

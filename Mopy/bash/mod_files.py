@@ -30,7 +30,7 @@ from . import bolt, bush, env, load_order
 from .bolt import deprint, GPath, SubProgress, structs_cache, struct_error
 from .brec import MreRecord, ModReader, RecordHeader, RecHeader, \
     TopGrupHeader, MobBase, MobDials, MobICells, MobObjects, MobWorlds
-from .exception import ArgumentError, MasterMapError, ModError, StateError
+from .exception import MasterMapError, ModError, StateError
 
 class MasterSet(set):
     """Set of master names."""
@@ -150,10 +150,33 @@ class LoadFactory(object):
             u'keep' if self.keepAll else u'discard',
         )
 
+class _RecGroupDict(dict):
+    """dict subclass holding ModFile's collection of top groups key'd by sig"""
+    __slots__ = (u'_mod_file',)
+
+    def __init__(self, mod_file, *args, **kwargs):
+        super(_RecGroupDict, self).__init__(*args, **kwargs)
+        self._mod_file = mod_file
+
+    def __missing__(self, top_grup_sig, __rh=RecordHeader):
+        """Return top block of specified topType, creating it, if necessary.
+        :raise ModError KeyError"""
+        if top_grup_sig not in __rh.top_grup_sigs:
+            raise KeyError(u'Invalid top group type: ' + top_grup_sig)
+        topClass = self._mod_file.loadFactory.getTopClass(top_grup_sig)
+        if topClass is None:
+                raise ModError(self._mod_file.fileInfo.name,
+               u'Failed to retrieve top class for %s; load factory is '
+               u'%r' % (top_grup_sig, self._mod_file.loadFactory))
+        self[top_grup_sig] = topClass(TopGrupHeader(0, top_grup_sig, 0, 0),
+                                      self._mod_file.loadFactory)
+        self[top_grup_sig].setChanged()
+        return self[top_grup_sig]
+
+
 class ModFile(object):
-    """Plugin file representation. **Overrides `__getattr__`** to return its
-    collection of records for a top record type. Will load only the top
-    record types specified in its LoadFactory."""
+    """Plugin file representation. Will load only the top record types
+    specified in its LoadFactory."""
     def __init__(self, fileInfo,loadFactory=None):
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True)
@@ -161,30 +184,9 @@ class ModFile(object):
         self.tes4 = bush.game.plugin_header_class(RecHeader())
         self.tes4.setChanged()
         self.strings = bolt.StringTable()
-        self.tops = {} #--Top groups.
+        self.tops = _RecGroupDict(self) #--Top groups.
         self.topsSkipped = set() #--Types skipped
         self.longFids = False
-
-    def __getattr__(self, topType, __rh=RecordHeader):
-        """Returns top block of specified topType, creating it, if necessary."""
-        if topType in self.tops:
-            return self.tops[topType]
-        elif topType in __rh.top_grup_sigs:
-            topClass = self.loadFactory.getTopClass(topType)
-            try:
-                self.tops[topType] = topClass(TopGrupHeader(0, topType, 0, 0),
-                                              self.loadFactory)
-            except TypeError:
-                raise ModError(
-                    self.fileInfo.name,
-                    u'Failed to retrieve top class for %s; load factory is '
-                    u'%r' % (topType, self.loadFactory))
-            self.tops[topType].setChanged()
-            return self.tops[topType]
-        elif topType == u'__repr__' or topType.startswith(u'cached_'):
-            raise AttributeError
-        else:
-            raise ArgumentError(u'Invalid top group type: '+topType)
 
     def load(self, do_unpack=False, progress=None, loadStrings=True,
              catch_errors=True):
@@ -371,7 +373,7 @@ class ModFile(object):
         nonhostile_recs = set()
         unpack_eid = structs_cache[u'I'].unpack
         if b'MGEF' in self.tops:
-            for record in self.MGEF.getActiveRecords():
+            for record in self.tops[b'MGEF'].getActiveRecords():
                 m_school[record.eid] = record.school
                 target_set = (hostile_recs if record.flags.hostile
                               else nonhostile_recs)

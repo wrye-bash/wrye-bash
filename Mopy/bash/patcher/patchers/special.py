@@ -128,7 +128,7 @@ class _AListsMerger(ListPatcher):
         #--PreScan for later Relevs/Delevs?
         if sc_name in self.de_masters:
             for list_type in self._read_write_records:
-                for de_list in getattr(modFile, list_type).getActiveRecords():
+                for de_list in modFile.tops[list_type].getActiveRecords():
                     self.masterItems[de_list.fid][sc_name] = set(
                         self._get_entries(de_list))
         #--Relev/Delev setup
@@ -138,7 +138,7 @@ class _AListsMerger(ListPatcher):
         #--Scan
         for list_type in self._read_write_records:
             stored_lists = self.type_list[list_type]
-            new_lists = getattr(modFile, list_type)
+            new_lists = modFile.tops[list_type]
             for new_list in new_lists.getActiveRecords():
                 list_fid = new_list.fid
                 # FIXME(inf) This is hideous and slows everything down
@@ -187,7 +187,7 @@ class _AListsMerger(ListPatcher):
         for list_type, list_label in self._type_to_label.iteritems():
             if list_type not in self._read_write_records: continue
             log.setHeader(u'=== ' + _(u'Merged %s Lists') % list_label)
-            patch_block = getattr(self.patchFile, list_type)
+            patch_block = self.patchFile.tops[list_type]
             stored_lists = self.type_list[list_type]
             for stored_list in sorted(stored_lists.values(),
                                       key=attrgetter('eid')):
@@ -203,7 +203,7 @@ class _AListsMerger(ListPatcher):
         if not self.remove_empty_sublists: return
         for list_type, list_label in self._type_to_label.iteritems():
             if list_type not in self._read_write_records: continue
-            patch_block = getattr(self.patchFile, list_type)
+            patch_block = self.patchFile.tops[list_type]
             stored_lists = self.type_list[list_type]
             empty_lists = []
             # Build a dict mapping leveled lists to other leveled lists that
@@ -347,7 +347,7 @@ class ContentsCheckerPatcher(Patcher):
         # types we may end up patching
         for cont_type in self.contTypes:
             if cont_type not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile, cont_type)
+            patchBlock = self.patchFile.tops[cont_type]
             pb_add_record = patchBlock.setRecord
             id_records = patchBlock.id_records
             for record in modFile.tops[cont_type].getActiveRecords():

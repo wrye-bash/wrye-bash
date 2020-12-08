@@ -51,7 +51,7 @@ class ImportRoadsPatcher(ImportPatcher, _ExSpecial):
             srcInfo = self.patchFile.p_file_minfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
-            for worldBlock in srcFile.WRLD.worldBlocks:
+            for worldBlock in srcFile.tops[b'WRLD'].worldBlocks:
                 if worldBlock.road:
                     worldId = worldBlock.world.fid
                     road = worldBlock.road.getTypeCopy()
@@ -61,8 +61,8 @@ class ImportRoadsPatcher(ImportPatcher, _ExSpecial):
     def scanModFile(self, modFile, progress): # scanModFile3 ?
         """Add lists from modFile."""
         if not self.isActive or b'WRLD' not in modFile.tops: return
-        patchWorlds = self.patchFile.WRLD
-        for worldBlock in modFile.WRLD.worldBlocks:
+        patchWorlds = self.patchFile.tops[b'WRLD']
+        for worldBlock in modFile.tops[b'WRLD'].worldBlocks:
             if worldBlock.road:
                 worldId = worldBlock.world.fid
                 road = worldBlock.road.getTypeCopy()
@@ -74,7 +74,7 @@ class ImportRoadsPatcher(ImportPatcher, _ExSpecial):
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         worldsPatched = set()
-        for worldBlock in self.patchFile.WRLD.worldBlocks:
+        for worldBlock in self.patchFile.tops[b'WRLD'].worldBlocks:
             worldId = worldBlock.world.fid
             curRoad = worldBlock.road
             newRoad = self.world_road.get(worldId)
