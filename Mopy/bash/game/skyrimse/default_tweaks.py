@@ -41,6 +41,12 @@ default_tweaks.update({
         [(u'Archive', OrderedDict([(u'bInvalidateOlderFiles', u'1')]))]),
     u'Invalidate, Disallow loose files ~Default [Skyrim].ini': OrderedDict(
         [(u'Archive', OrderedDict([(u'bInvalidateOlderFiles', u'0')]))]),
+    u'Save Game Compression, LZ4 ~Default [Skyrim].ini': OrderedDict(
+        [(u'SaveGame', OrderedDict([(u'uiCompression', u'2')]))]),
+    u'Save Game Compression, zlib [Skyrim].ini': OrderedDict(
+        [(u'SaveGame', OrderedDict([(u'uiCompression', u'1')]))]),
+    u'Save Game Compression, Off [Skyrim].ini': OrderedDict(
+        [(u'SaveGame', OrderedDict([(u'uiCompression', u'0')]))]),
     u'Depth Of Field, Off [SkyrimPrefs].ini': OrderedDict(
         [(u'Imagespace', OrderedDict([(u'bDoDepthOfField', u'0')]))]),
     u'Depth Of Field, On ~Default [SkyrimPrefs].ini': OrderedDict(
