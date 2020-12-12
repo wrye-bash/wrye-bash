@@ -478,7 +478,7 @@ class MelRaceVoices(MelStruct):
         return None
 
 #------------------------------------------------------------------------------
-class MelScript(MelFid): # TODO(ut) : MelOptFid ??
+class MelScript(MelOptFid):
     """Represents the common script subrecord in TES4/FO3/FNV."""
     def __init__(self):
         super(MelScript, self).__init__(b'SCRI', u'script')
