@@ -476,6 +476,8 @@ class MelRecord(MreRecord):
     # subrecord. See MelSet.check_duplicate_attrs for more information.
     _has_duplicate_attrs = False
     __slots__ = []
+    _cache_misses = Counter()
+    _key_errors = Counter()
 
     @classmethod
     def validate_record_syntax(cls):
@@ -517,4 +519,8 @@ class MelRecord(MreRecord):
             setattr(self, missing_attr, target)
             return target
         except KeyError:
+            if not missing_attr in  self.__class__._key_errors:
+                # https://stackoverflow.com/a/33388198/281545
+                print (missing_attr) # '__deepcopy__' !
+            self.__class__._key_errors[missing_attr] += 1
             raise AttributeError(missing_attr)

@@ -159,6 +159,11 @@ def assure_single_instance(instance):
         sys.exit(1)
 
 def exit_cleanup():
+    from brec import MelObject, MelRecord
+    bolt.deprint(u'MelRecord._missing_hits %s' % MelRecord._cache_misses)
+    bolt.deprint(u'MelRecord._key_errors %s' % MelRecord._key_errors)
+    bolt.deprint(u'MelObject_missing_hits %s' % MelObject._cache_misses)
+    bolt.deprint(u'MelObject_key_errors %s' % MelObject._key_errors)
     # Cleanup temp installers directory
     import tempfile
     tmpDir = bolt.GPath(tempfile.tempdir)

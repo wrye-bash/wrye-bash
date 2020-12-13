@@ -24,6 +24,7 @@
 higher-level building blocks can be found in common_subrecords.py."""
 
 from __future__ import division, print_function
+from collections import Counter
 
 from .utils_constants import FID, null1, _make_hashable, FixedString, \
     _int_unpacker, get_structs
@@ -35,6 +36,8 @@ from ..bolt import decoder, encode, structs_cache, struct_calcsize, \
 class MelObject(object):
     """An empty class used by group and structure elements for data storage."""
     __slots__ = ()
+    _cache_misses = Counter()
+    _key_errors = Counter()
 
     def __eq__(self,other):
         """Operator: =="""
@@ -256,6 +259,14 @@ class MelBase(Subrecord):
 
         :rtype: int"""
         raise exception.AbstractError()
+
+    def __repr__(self):
+        return u'[%s]: %s' % (type(self).__name__, getattr(self, u'attr', None))
+
+class MelCollection(MelBase):
+    """Any old collection of mod elements."""
+    def __init__(self, mel_sig, attr=u'', *elements):
+        super(MelCollection, self).__init__(mel_sig, attr)
 
 # Simple static Fields --------------------------------------------------------
 class _MelNum(MelBase):
@@ -504,11 +515,16 @@ class MelGroup(MelSequential):
             __slots__ = tuple(_mel_defaulters)
             mel_defaulters = _mel_defaulters
             def __getattr__(self, missing_attr):
+                self.__class__._cache_misses[missing_attr] += 1
                 try:
                     target = self.__class__.mel_defaulters[missing_attr]()
                     setattr(self, missing_attr, target)
                     return target
                 except KeyError:
+                    if not missing_attr in self.__class__._key_errors:
+                        # https://stackoverflow.com/a/33388198/281545
+                        print(missing_attr)  # '__deepcopy__' !
+                    self.__class__._key_errors[missing_attr] += 1
                     raise AttributeError(missing_attr)
         self._mel_object_type = _MelObject
 

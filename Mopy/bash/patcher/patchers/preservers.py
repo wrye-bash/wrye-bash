@@ -234,6 +234,10 @@ class _APreserver(ImportPatcher):
     # noinspection PyDefaultArgument
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
                     __attrgetters=attrgetter_cache):
+        """Common pattern of the internal buildPatch() loop for all but:
+            - GraphicsPatcher: compares ci
+        """
+        ##: """Common pattern of the internal buildPatch() loop."""
         loop_setattr = setattr_deep if self._deep_attrs else setattr
         id_data = self.id_data
         for record in records:
