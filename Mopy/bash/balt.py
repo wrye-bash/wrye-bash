@@ -792,7 +792,8 @@ class Progress(bolt.Progress):
         if elapsed: __style |= wx.PD_ELAPSED_TIME
         # TODO(inf) de-wx? Or maybe stop using None as parent for Progress?
         parent = _AComponent._resolve(parent) if parent else None
-        self.dialog = wx.ProgressDialog(title, message, 100, parent, __style)
+        self.dialog = wx.GenericProgressDialog(title, message, 100, parent,
+                                               __style)
         bolt.Progress.__init__(self)
         self.message = message
         self.isDestroyed = False
@@ -815,14 +816,14 @@ class Progress(bolt.Progress):
         else:
             new_style &= ~wx.PD_CAN_ABORT
         self.dialog.Destroy()
-        self.dialog = wx.ProgressDialog(new_title, new_message, 100,
-                                        new_parent, new_style)
+        self.dialog = wx.GenericProgressDialog(new_title, new_message, 100,
+                                               new_parent, new_style)
 
     def _do_progress(self, state, message):
         if not self.dialog:
             raise StateError(u'Dialog already destroyed.')
-        elif (state == 0 or state == 1 or (message != self.prevMessage) or
-            (state - self.prevState) > 0.05 or (time.time() - self.prevTime) > 0.5):
+        elif (state == 0 or state == 1 or (state - self.prevState) > 0.05 or (
+                time.time() - self.prevTime) > 0.5):
             if message != self.prevMessage:
                 ret = self.dialog.Update(int(state * 100), u'\n'.join(
                     [self._ellipsize(msg) for msg in message.split(u'\n')]))
