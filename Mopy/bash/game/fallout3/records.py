@@ -3027,23 +3027,21 @@ class MreVtyp(MelRecord):
 class MreWatr(MelRecord):
     """Water."""
     rec_sig = b'WATR'
-    # FIXME(inf) Doesn't actually have duplicates - see TODO below
-    _has_duplicate_attrs = True
+    _has_duplicate_attrs = True # DATA is an older version of DNAM + DATA
 
     _flags = Flags(0, Flags.getNames('causesDmg','reflective'))
 
-    # TODO(inf) Actually two separate DATA subrecords - union + distributor
     class MelWatrData(MelStruct):
-        """Handle older truncated DATA for WATR subrecord."""
+        """Older subrecord consisting of a truncated DNAM with the damage short
+        appended at the end. Read it in, but only dump out the damage - let
+        DNAM handle the rest via duplicate attrs."""
         def loadData(self, record, ins, sub_type, size_, readId,
                      __unpacker=struct.Struct(u'H').unpack):
             if size_ == 186:
                 super(MreWatr.MelWatrData, self).loadData(record, ins,
                     sub_type, size_, readId)
-                return
             elif size_ == 2:
                 record.damage = ins.unpack(__unpacker, size_, readId)[0]
-                return
             else:
                 raise ModSizeError(ins.inName, readId, (186, 2), size_)
 

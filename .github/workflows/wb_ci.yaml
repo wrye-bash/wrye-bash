@@ -16,7 +16,7 @@ jobs:
         python-version: 2.7
         architecture: 'x64'
     - name: Restore dependencies cache
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       with:
         path: ~\AppData\Local\pip\Cache
         key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}

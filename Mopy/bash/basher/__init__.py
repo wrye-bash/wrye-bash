@@ -1347,11 +1347,11 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
     :type uilist: MasterList"""
     _master_list_type = MasterList
 
-    def __init__(self, parent, ui_list_panel):
+    def __init__(self, parent, ui_list_panel, split_vertically=False):
         _SashDetailsPanel.__init__(self, parent)
         # min_pane_size split the bottom panel into the master uilist and mod tags/save notes
         self.masterPanel, self._bottom_low_panel = \
-            self.subSplitter.make_panes()
+            self.subSplitter.make_panes(vertically=split_vertically)
         _EditableMixinOnFileInfos.__init__(self, self.masterPanel,
                                            ui_list_panel)
         #--Masters
@@ -1390,7 +1390,8 @@ class ModDetails(_ModsSavesDetails):
     def allowDetailsEdit(self): return bush.game.Esp.canEditHeader
 
     def __init__(self, parent, ui_list_panel):
-        super(ModDetails, self).__init__(parent, ui_list_panel)
+        super(ModDetails, self).__init__(parent, ui_list_panel,
+                                         split_vertically=True)
         top, bottom = self.left, self.right
         #--Data
         self.modInfo = None
@@ -1430,6 +1431,9 @@ class ModDetails(_ModsSavesDetails):
             Label(self._bottom_low_panel, _(u'Bash Tags:')),
             (self.gTags, LayoutOptions(expand=True, weight=1))
         ]).apply_to(self._bottom_low_panel)
+
+    def _get_sub_splitter(self):
+        return Splitter(self.right, min_pane_size=128)
 
     def _resetDetails(self):
         self.modInfo = None
