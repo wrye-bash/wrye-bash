@@ -22,6 +22,7 @@
 # =============================================================================
 from __future__ import division
 import struct
+import zlib
 from collections import defaultdict
 
 from ._mergeability import is_esl_capable
@@ -517,54 +518,54 @@ class NvidiaFogFixer(object):
 class ModDetails(object):
     """Details data for a mods file. Similar to TesCS Details view."""
     def __init__(self):
-        self.group_records = {} #--group_records[group] = [(fid0,eid0),(fid1,eid1),...]
+        # group_records[group] = [(fid0, eid0), (fid1, eid1),...]
+        self.group_records = defaultdict(list)
 
     def readFromMod(self, modInfo, progress=None):
         """Extracts details from mod file."""
         def getRecordReader(flags, size):
             """Decompress record data as needed."""
             if not MreRecord.flags1_(flags).compressed:
-                return ins,ins.tell()+size
+                new_rec_data = ins.read(size)
             else:
-                import zlib
-                sizeCheck, = struct_unpack('I', ins.read(4))
-                decomp = zlib.decompress(ins.read(size-4))
-                if len(decomp) != sizeCheck:
+                size_check = struct_unpack('I', ins.read(4))[0]
+                new_rec_data = zlib.decompress(ins.read(size - 4))
+                if len(new_rec_data) != size_check:
                     raise ModError(ins.inName,
-                        u'Mis-sized compressed data. Expected %d, got %d.' % (size,len(decomp)))
-                reader = ModReader(modInfo.name,sio(decomp))
-                return reader,sizeCheck
+                        u'Mis-sized compressed data. Expected %d, got '
+                        u'%d.' % (size, len(new_rec_data)))
+            return ModReader(modInfo.name, sio(new_rec_data))
         progress = progress or bolt.Progress()
-        group_records = self.group_records = {}
-        records = group_records[bush.game.Esp.plugin_header_sig] = []
-        with ModReader(modInfo.name,modInfo.getPath().open('rb')) as ins:
+        group_records = self.group_records
+        records = group_records[bush.game.Esp.plugin_header_sig]
+        complex_groups = {b'CELL', b'DIAL', b'WRLD'}
+        if bush.game.fsName in (u'Fallout4', u'Fallout4VR'):
+            complex_groups.add(b'QUST')
+        with ModReader(modInfo.name, modInfo.abs_path.open(u'rb')) as ins:
             while not ins.atEnd():
                 header = ins.unpackRecHeader()
-                recType, rec_siz = header.recType, header.size
-                if recType == 'GRUP':
-                    # FIXME(ut): monkey patch for fallout QUST GRUP
-                    if bush.game.fsName in (u'Fallout4', u'Fallout4VR') and \
-                            header.groupType == 10:
-                        header.skip_group(ins)
-                        continue
+                rtyp = header.recType
+                rsiz = header.size
+                if rtyp == b'GRUP':
                     label = header.label
-                    progress(1.0*ins.tell()/modInfo.size,_(u"Scanning: ")+label)
-                    records = group_records.setdefault(label,[])
-                    if label in ('CELL', 'WRLD', 'DIAL'): # skip these groups
+                    progress(1.0 * ins.tell() / modInfo.size,
+                             _(u'Scanning: %s') % unicode(label))
+                    records = group_records[label]
+                    if label in complex_groups: # skip these groups
                         header.skip_group(ins)
                 else:
                     eid = u''
-                    nextRecord = ins.tell() + rec_siz
-                    recs, endRecs = getRecordReader(header.flags1, rec_siz)
-                    while recs.tell() < endRecs:
-                        subrec = SubrecordBlob(recs, recType, mel_sigs={b'EDID'})
+                    next_record = ins.tell() + rsiz
+                    recs = getRecordReader(header.flags1, rsiz)
+                    while not recs.atEnd():
+                        subrec = SubrecordBlob(recs, rtyp, mel_sigs={b'EDID'})
                         if subrec.mel_data is not None:
                             # FIXME copied from readString
-                            eid = u'\n'.join(bolt.decoder(x, bolt.pluginEncoding,
+                            eid = u'\n'.join(bolt.decoder(
+                                x, bolt.pluginEncoding,
                                 avoidEncodings=(u'utf8', u'utf-8')) for x
-                                in subrec.mel_data.rstrip(null1).split('\n'))
+                                in subrec.mel_data.rstrip(null1).split(b'\n'))
                             break
-                        recs.seek(rec_siz, 1)
-                    records.append((header.fid,eid))
-                    ins.seek(nextRecord)
+                    records.append((header.fid, eid))
+                    ins.seek(next_record) # we may have break'd at EDID
         del group_records[bush.game.Esp.plugin_header_sig]

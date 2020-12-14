@@ -126,6 +126,15 @@ class SubrecordBlob(Subrecord):
             self.mel_data = None
             ins.seek(mel_size, 1) # discard the data
 
+    def __repr__(self):
+        repr_args = (self.__class__.__name__, self.mel_sig)
+        if self.mel_data:
+            repr_fmt = u'%s<%s, %u bytes>'
+            repr_args += (len(self.mel_data),)
+        else:
+            repr_fmt = u'%s<%s, skipped>'
+        return repr_fmt % repr_args
+
 #------------------------------------------------------------------------------
 class MelBase(Subrecord):
     """Represents a mod record element which can be a subrecord, a field or a
