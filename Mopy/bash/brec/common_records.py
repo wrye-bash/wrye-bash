@@ -54,9 +54,8 @@ class MreHeaderBase(MelRecord):
         def getSlotsUsed(self):
             return (u'masters', u'master_sizes')
 
-        def getDefaulters(self, defaulters_, mel_providers, mel_key):
-            defaulters_[u'masters'] = lambda: []
-            defaulters_[u'master_sizes'] = lambda: []
+        def getDefaulters(self, mel_set_instance, mel_key):
+            mel_set_instance.listers.update([u'masters', u'master_sizes'])
 
         def load_mel(self, record, ins, sub_type, size_, readId,
                      __unpacker=structs_cache[u'Q'].unpack):
@@ -232,11 +231,11 @@ class MreLand(MelRecord):
     rec_sig = b'LAND'
 
     melSet = MelSet(
-        MelBase('DATA', 'unknown'),
-        MelBase('VNML', 'vertex_normals'),
-        MelBase('VHGT', 'vertex_height_map'),
-        MelBase('VCLR', 'vertex_colors'),
-        MelGroups('layers',
+        MelBase(b'DATA', u'unknown_land'),
+        MelBase(b'VNML', u'vertex_normals'),
+        MelBase(b'VHGT', u'vertex_height_map'),
+        MelBase(b'VCLR', u'vertex_colors'),
+        MelGroups(u'layers',
             # Start a new layer each time we hit one of these
             MelUnion({
                 b'ATXT': MelStruct(b'ATXT', u'IBsh', (FID, u'atxt_texture'),
@@ -250,8 +249,8 @@ class MreLand(MelRecord):
                 False: MelNull(b'VTXT'),
             }, decider=FidNotNullDecider(u'atxt_texture')),
         ),
-        MelArray('vertex_textures',
-            MelFid('VTEX', 'vertex_texture'),
+        MelArray(u'vertex_textures',
+            MelFid(b'VTEX', u'vertex_texture'),
         ),
     )
     __slots__ = melSet.getSlotsUsed()

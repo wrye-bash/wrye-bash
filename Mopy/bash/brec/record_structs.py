@@ -42,12 +42,13 @@ class MelSet(object):
 
     def __init__(self,*elements):
         self.elements = elements
-        self.defaulters = {}
+        self.defaulters = {} # map record attributes to default
+        self.listers = set() # collect list record attributes
         self.loaders = {}
         self.formElements = set()
-        self._mel_providers = {}
+        self.mel_providers_dict = {}
         for element in self.elements:
-            element.getDefaulters(self.defaulters, self._mel_providers, u'')
+            element.getDefaulters(self, u'')
             element.getLoaders(self.loaders)
             element.hasFids(self.formElements)
         for sig_candidate in self.loaders:
@@ -178,7 +179,7 @@ class MelSet(object):
         distributor = _MelDistributor(distributor_config.copy())
         self.elements += (distributor,)
         distributor.getLoaders(self.loaders)
-        distributor.getDefaulters(self.defaulters, self._mel_providers, u'')
+        distributor.getDefaulters(self, u'')
         distributor.set_mel_set(self)
         return self
 
@@ -489,7 +490,7 @@ class MelRecord(MreRecord):
     def get_mel_object_for_group(cls, attr):
         """Returns default instance of specified instance. Only useful for
         MelGroup and MelGroups."""
-        return cls.melSet._mel_providers[attr]()
+        return cls.melSet.mel_providers_dict[attr]()
 
     def loadData(self,ins,endPos):
         """Loads data from input stream. Called by load()."""
@@ -514,13 +515,17 @@ class MelRecord(MreRecord):
 
     def __getattr__(self, missing_attr):
         self.__class__._cache_misses[missing_attr] += 1
-        try:
-            target = self.melSet.defaulters[missing_attr]()
-            setattr(self, missing_attr, target)
-            return target
-        except KeyError:
-            if not missing_attr in  self.__class__._key_errors:
+        if missing_attr in self.__class__.melSet.defaulters:
+            target = self.__class__.melSet.defaulters[missing_attr]
+        elif missing_attr in self.__class__.melSet.listers:
+            target = []
+        elif missing_attr in self.__class__.melSet.mel_providers_dict:
+            target = self.__class__.melSet.mel_providers_dict[missing_attr]()
+        else:
+            if not missing_attr in self.__class__._key_errors:
                 # https://stackoverflow.com/a/33388198/281545
                 print (missing_attr) # '__deepcopy__' !
             self.__class__._key_errors[missing_attr] += 1
             raise AttributeError(missing_attr)
+        setattr(self, missing_attr, target)
+        return target

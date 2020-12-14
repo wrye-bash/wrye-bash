@@ -216,9 +216,9 @@ class MelEffects(MelSequential):
 
     # Note that we only support creating vanilla effects, as our records system
     # isn't expressive enough to pass more info along here
-    def getDefaulters(self, defaulters_, mel_providers, mel_key):
+    def getDefaulters(self, mel_set_instance, mel_key):
         for element in self._vanilla_elements:
-            element.getDefaulters(defaulters_, mel_providers, mel_key)
+            element.getDefaulters(mel_set_instance, mel_key)
 
     def getLoaders(self, loaders):
         # We need to collect all signatures and assign ourselves for them all

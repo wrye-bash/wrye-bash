@@ -189,8 +189,8 @@ class MelCtda(MelUnion):
     def getSlotsUsed(self): # PY3: unpack
         return (self.decider_result_attr,) + self._ctda_mel.getSlotsUsed()
 
-    def mel_default_value(self):
-        self._ctda_mel.mel_default_value()
+    # def mel_default_value(self): XXX getDefaulters
+    #     self._ctda_mel.mel_default_value()
 
 class MelCtdaFo3(MelCtda):
     """Version of MelCtda that handles the additional complexities that were
@@ -444,9 +444,9 @@ class MelRaceParts(MelBase):
     def getSlotsUsed(self):
         return tuple(self._indx_to_attr.itervalues())
 
-    def getDefaulters(self, defaulters_, mel_providers, mel_key):
+    def getDefaulters(self, mel_set_instance, mel_key):
         for element in self._indx_to_loader.itervalues():
-            element.getDefaulters(defaulters_, mel_providers, mel_key)
+            element.getDefaulters(mel_set_instance, mel_key)
 
     def load_mel(self, record, ins, sub_type, size_, readId,
                  __unpacker=_int_unpacker):

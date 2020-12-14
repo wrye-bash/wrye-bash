@@ -612,10 +612,9 @@ class MelBptdParts(MelGroups):
             MelBase(b'NAM5', u'texture_hashes'),
         )
 
-    def getDefaulters(self, defaulters_, mel_providers, mel_key):
-        defaulters_[u'_had_bptn'] = lambda : False
-        super(MelBptdParts, self).getDefaulters(defaulters_, mel_providers,
-                                                mel_key)
+    def getDefaulters(self, mel_set_instance, mel_key):
+        mel_set_instance.defaulters[u'_had_bptn'] = False
+        super(MelBptdParts, self).getDefaulters(mel_set_instance, mel_key)
 
     def getSlotsUsed(self):
         return (u'_had_bptn',) + super(MelBptdParts, self).getSlotsUsed()
@@ -2218,7 +2217,7 @@ class MrePerk(MelRecord):
                 MelUnion({
                     (0, 4): MelBase(b'EPFD', u'param1'),
                     1: MelFloat(b'EPFD', u'param1'),
-                    2: MelStruct(b'EPFD', u'If', u'param1', u'param2'),
+                    2: MelStruct(b'EPFD', u'If', (u'param1', None), u'param2'),
                     # 2: MelUnion({
                     #     5: MelStruct(b'EPFD', u'If', u'param1', u'param2'),
                     # }, decider=AttrValDecider(u'../function',
