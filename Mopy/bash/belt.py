@@ -226,7 +226,7 @@ class PageSelect(PageInstaller):
         self.bmp_item.on_mouse_left_dclick.subscribe(
             lambda selected_index: self._click_on_image())
 
-    def OnSelect(self, lb_selection_dex, lb_selection_str):
+    def OnSelect(self, lb_selection_dex, _lb_selection_str):
         self.listOptions.lb_select_index(lb_selection_dex) # event.Skip() won't do
         self.Selection(lb_selection_dex)
 

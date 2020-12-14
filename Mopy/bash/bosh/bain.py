@@ -1421,28 +1421,6 @@ class InstallerArchive(Installer):
                 # Just allow Bash's atexit function to clean it when quitting.
                 pass
 
-    @staticmethod
-    def _fix_pngs(pngs_to_fix, progress=None):
-        """Runs pngcrush on extracted PNGs to fix invalid sRGB profiles, which
-        would otherwise cause a warning in wx3. Note that we only do this for
-        archives, since people working on projects _should_ see such
-        warnings.
-
-        :param pngs_to_fix: A list of strings denoting the PNGs that we have
-                            to look at.
-        :param progress: The (optional) progress dialog to update."""
-        if not pngs_to_fix: return # fastpath out, otherwise Progress errors
-        if progress:
-            progress.setFull(len(pngs_to_fix))
-        tmp_dir = bass.getTempDir()
-        for pngs_processed, target_png in enumerate(pngs_to_fix, start=1):
-            if progress:
-                progress(pngs_processed,
-                         u'\n%s\n%s' % (_(u'Fixing PNGs...'), target_png))
-            # Will pass through Popen, which tries to encode as ASCII
-            with tmp_dir.join(target_png).unicodeSafe() as ascii_png:
-                archives.fix_png(ascii_png.s)
-
     def _extract_wizard_files(self, wizard_file_name, wizard_prog_title):
         with balt.Progress(wizard_prog_title, u'\n' + u' ' * 60,
                            abort=True) as progress:
@@ -1454,11 +1432,8 @@ class InstallerArchive(Installer):
                                         u'gif', u'pcx', u'pnm', u'tif',
                                         u'tiff', u'tga', u'iff', u'xpm',
                                         u'ico', u'cur', u'ani',)))
-            pngs_to_fix = [p for p in files_to_extract if
-                           p.lower().endswith(u'.png')]
-            unpack_dir = self.unpackToTemp(files_to_extract,
-                bolt.SubProgress(progress,0,0.7), recurse=True)
-            self._fix_pngs(pngs_to_fix, bolt.SubProgress(progress, 0.7, 1.0))
+            unpack_dir = self.unpackToTemp(files_to_extract, progress,
+                                           recurse=True)
         return unpack_dir.join(wizard_file_name)
 
     def wizard_file(self):

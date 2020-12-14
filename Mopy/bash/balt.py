@@ -2384,7 +2384,7 @@ class DnDStatusBar(wx.StatusBar):
 
     def OnSize(self, event=None):
         rect = self.GetFieldRect(0)
-        (xPos, yPos) = (rect.x + 4, rect.y + 2)
+        xPos, yPos = rect.x + 4, rect.y
         for button in self.buttons:
             button.component_position = (xPos, yPos)
             xPos += self.iconsSize

@@ -81,6 +81,9 @@ def _import_wx():
         # moved/deleted wx modules
         from wx import _core
         sys.modules['wx._gdi'] = _core
+        # Disable image loading errors - wxPython is missing the actual flag
+        # constants for some reason, so just use 0 (no flags)
+        _wx.Image.SetDefaultLoadFlags(0)
     except Exception:
         but_kwargs = {'text': u"QUIT",
                       'fg': 'red'}  # foreground button color
@@ -603,11 +606,11 @@ def _wxSelectGame(game_icons, msgtext):
 # Version checks --------------------------------------------------------------
 def _rightWxVersion():
     wxver = _wx.version()
-    if not wxver.startswith(u'4.0'):
+    if not wxver.startswith(u'4.1'):
         return balt.askYes(
             None, u'Warning: you appear to be using a non-supported version '
                   u'of wxPython (%s). This will cause problems! It is highly '
-                  u'recommended you use a 4.0.x version. Do you still want to '
+                  u'recommended you use a 4.1.x version. Do you still want to '
                   u'run Wrye Bash?' % wxver,
             u'Warning: Non-Supported wxPython detected',)
     return True
