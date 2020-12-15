@@ -4731,13 +4731,9 @@ class MreScen(MelRecord):
             MelNull('HNAM'),
             # Phase description. Always present, even if just a null-terminator
             MelString(b'NAM0', u'phase_desc',),
-            MelGroup('startConditions',
-                MelConditions(),
-            ),
-            MelNull('NEXT'),
-            MelGroup('completionConditions',
-                MelConditions(),
-            ),
+            MelConditions(u'startConditions'),
+            MelNull(b'NEXT'),
+            MelConditions(u'completionConditions'),
             # The next three are all leftovers
             MelGroup(u'unused1',
                 MelBase('SCHR','schr_p'),
