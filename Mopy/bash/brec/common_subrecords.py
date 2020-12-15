@@ -444,9 +444,9 @@ class MelRaceParts(MelBase):
     def getSlotsUsed(self):
         return tuple(self._indx_to_attr.itervalues())
 
-    def getDefaulters(self, mel_set_instance, mel_key):
+    def getDefaulters(self, mel_set_instance):
         for element in self._indx_to_loader.itervalues():
-            element.getDefaulters(mel_set_instance, mel_key)
+            element.getDefaulters(mel_set_instance)
 
     def load_mel(self, record, ins, sub_type, size_, readId,
                  __unpacker=_int_unpacker):

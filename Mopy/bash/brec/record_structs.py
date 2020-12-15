@@ -48,7 +48,7 @@ class MelSet(object):
         self.formElements = set()
         self.mel_providers_dict = {}
         for element in self.elements:
-            element.getDefaulters(self, u'')
+            element.getDefaulters(self)
             element.getLoaders(self.loaders)
             element.hasFids(self.formElements)
         for sig_candidate in self.loaders:
@@ -179,7 +179,7 @@ class MelSet(object):
         distributor = _MelDistributor(distributor_config.copy())
         self.elements += (distributor,)
         distributor.getLoaders(self.loaders)
-        distributor.getDefaulters(self, u'')
+        distributor.getDefaulters(self)
         distributor.set_mel_set(self)
         return self
 

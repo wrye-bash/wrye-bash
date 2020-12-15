@@ -54,7 +54,7 @@ class MreHeaderBase(MelRecord):
         def getSlotsUsed(self):
             return (u'masters', u'master_sizes')
 
-        def getDefaulters(self, mel_set_instance, mel_key):
+        def getDefaulters(self, mel_set_instance):
             mel_set_instance.listers.update([u'masters', u'master_sizes'])
 
         def load_mel(self, record, ins, sub_type, size_, readId,

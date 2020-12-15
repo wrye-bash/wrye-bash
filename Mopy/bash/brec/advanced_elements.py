@@ -181,10 +181,10 @@ class _MelDistributor(MelNull):
         # the index where we left off in the last load_mel
         return u'_loader_state', u'_seq_index'
 
-    def getDefaulters(self, mel_set_instance, mel_key):
+    def getDefaulters(self, mel_set_instance):
         mel_set_instance.listers.add(u'_loader_state')
         mel_set_instance.defaulters[u'_seq_index'] = None
-        super(_MelDistributor, self).getDefaulters(mel_set_instance, mel_key)
+        super(_MelDistributor, self).getDefaulters(mel_set_instance)
 
     def set_mel_set(self, mel_set):
         """Sets parent MelSet. We use this to collect the attribute names
@@ -362,12 +362,12 @@ class MelArray(MelBase):
         self._element.hasFids(temp_elements)
         if temp_elements: formElements.add(self)
 
-    def getDefaulters(self, mel_set_instance, mel_key):
+    def getDefaulters(self, mel_set_instance):
         if self.attr in mel_set_instance.listers:
             raise SyntaxError(u'%s duplicate attr %s' % (self, self.attr))
         mel_set_instance.listers.add(self.attr)
         if self._prelude:
-            self._prelude.getDefaulters(mel_set_instance, mel_key)
+            self._prelude.getDefaulters(mel_set_instance)
         # self._element.getDefaulters(mel_set_instance, mel_key)
         mel_set_instance.mel_providers_dict[self.attr] = self._mel_object_type
 
@@ -832,7 +832,7 @@ class MelUnion(MelBase):
                 self.fid_elements.add(self.fallback)
         if self.fid_elements: formElements.add(self)
 
-    def getDefaulters(self, mel_set_instance, mel_key):
+    def getDefaulters(self, mel_set_instance):
         # Ask each element - but we *don't* want to set our _union_type
         # attributes here! If we did, then we'd have no way to distinguish
         # between a loaded and a freshly constructed record.
@@ -845,11 +845,11 @@ class MelUnion(MelBase):
         defaultrs[self.decider_result_attr] = None
         if hasattr(self.decider, u'_loader'):
             # yep this one two will be assigned to slotted MelObject
-            self.decider._loader.getDefaulters(mel_set_instance, mel_key)
+            self.decider._loader.getDefaulters(mel_set_instance)
         for element in self.element_mapping.itervalues():
-            element.getDefaulters(mel_set_instance, mel_key)
+            element.getDefaulters(mel_set_instance)
         if self.fallback:
-            self.fallback.getDefaulters(mel_set_instance, mel_key)
+            self.fallback.getDefaulters(mel_set_instance)
 
     def mapFids(self, record, function, save=False):
         element = self._get_element_from_record(record)

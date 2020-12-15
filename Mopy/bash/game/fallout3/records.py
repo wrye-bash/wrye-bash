@@ -612,9 +612,9 @@ class MelBptdParts(MelGroups):
             MelBase(b'NAM5', u'texture_hashes'),
         )
 
-    def getDefaulters(self, mel_set_instance, mel_key):
+    def getDefaulters(self, mel_set_instance):
         mel_set_instance.defaulters[u'_had_bptn'] = False
-        super(MelBptdParts, self).getDefaulters(mel_set_instance, mel_key)
+        super(MelBptdParts, self).getDefaulters(mel_set_instance)
 
     def getSlotsUsed(self):
         return (u'_had_bptn',) + super(MelBptdParts, self).getSlotsUsed()

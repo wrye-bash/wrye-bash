@@ -191,11 +191,11 @@ class MelBase(Subrecord):
     def getSlotsUsed(self):
         return self.attr,
 
-    def getDefaulters(self, mel_set_instance, mel_key):
+    def getDefaulters(self, mel_set_instance):
+        # type: (MelSet) -> None
         """Register self as a default/mel_object provider.
-        :param mel_key: the key to the (possibly nested) mel_object factory
-            (may contain dots)
-        """
+        :param mel_set_instance: the record's/MelObject melSet whose structures
+            we populate."""
         try:
             defaultrs = mel_set_instance.defaulters
             if self.attr in defaultrs and self.default != defaultrs[self.attr]:
@@ -316,8 +316,8 @@ class MelCounter(MelBase):
     def getLoaders(self, loaders):
         loaders[self._counter_mel.mel_sig] = self
 
-    def getDefaulters(self, mel_set_instance, mel_key):
-        self._counter_mel.getDefaulters(mel_set_instance, mel_key)
+    def getDefaulters(self, mel_set_instance):
+        self._counter_mel.getDefaulters(mel_set_instance)
 
     def load_mel(self, record, ins, sub_type, size_, readId):
         self._counter_mel.load_mel(record, ins, sub_type, size_, readId)
@@ -371,7 +371,7 @@ class MelFids(MelBase):
     def hasFids(self,formElements):
         formElements.add(self)
 
-    def getDefaulters(self, mel_set_instance, mel_key):
+    def getDefaulters(self, mel_set_instance):
         if self.attr in mel_set_instance.listers:
             raise SyntaxError(
                 u'%s duplicate attr %s' % (self, self.attr))
@@ -402,7 +402,7 @@ class MelNull(MelBase):
     def getSlotsUsed(self):
         return ()
 
-    def getDefaulters(self, mel_set_instance, mel_key):
+    def getDefaulters(self, mel_set_instance):
         pass
 
     def load_mel(self, record, ins, sub_type, size_, readId):
@@ -442,9 +442,9 @@ class MelSequential(MelBase):
                                in element.signatures}
         self._sub_loaders = {}
 
-    def getDefaulters(self, mel_set_instance, mel_key):
+    def getDefaulters(self, mel_set_instance):
         for element in self.elements:
-            element.getDefaulters(mel_set_instance, mel_key)
+            element.getDefaulters(mel_set_instance)
 
     def getLoaders(self, loaders):
         # We need a copy of the loaders in case we're used in a distributor
@@ -538,7 +538,10 @@ class MelGroup(MelSequential):
                 return target
         self._mel_object_type = _MelObject
 
-    def getDefaulters(self, mel_set_instance, mel_key):
+    def getDefaulters(self, mel_set_instance, mel_key=u''):
+        """In addition to parent method, populate the mel_providers_dict
+        :param mel_key: the key to the (possibly nested) mel_object factory
+            (may contain dots)."""
         if not mel_key:
             mel_set_instance.mel_providers_dict[self.attr] = self._mel_object_type
             # # we are a top-level group so we need to directly set record attrs
@@ -597,15 +600,13 @@ class MelGroups(MelGroup):
         super(MelGroups, self).__init__(attr, *elements)
         self._init_sigs = self.elements[0].signatures
 
-    def getDefaulters(self, mel_set_instance, mel_key):
+    def getDefaulters(self, mel_set_instance, mel_key=u''):
         mel_set_instance.listers.add(self.attr)
         def _att(attr):
             return u'%s.%s' % (mel_key, attr) if mel_key else attr
         super(MelGroups, self).getDefaulters(mel_set_instance, _att(self.attr))
         mel_set_instance.mel_providers_dict[
             _att(self.attr)] = self._mel_object_type
-        # # mel_set_instance.mel_providers_dict.update(
-        # #     (_att(k), v) for k, v in self.mel_providers.iteritems())
 
     def load_mel(self, record, ins, sub_type, size_, readId):
         if sub_type in self._init_sigs:
@@ -691,7 +692,7 @@ class MelLString(MelString):
 class MelStrings(MelString):
     """Represents array of strings."""
 
-    def getDefaulters(self, mel_set_instance, mel_key):
+    def getDefaulters(self, mel_set_instance):
         mel_set_instance.listers.add(self.attr)
 
     def load_mel(self, record, ins, sub_type, size_, readId):
@@ -745,7 +746,7 @@ class MelStruct(MelBase):
     def hasFids(self,formElements):
         if self.formAttrs: formElements.add(self)
 
-    def getDefaulters(self, mel_set_instance, mel_key):
+    def getDefaulters(self, mel_set_instance):
         defaultrs = mel_set_instance.defaulters
         common_attrs = set(self.attrs) & set(defaultrs)
         dups = common_attrs & set((a, defaultrs[a], dflt) for a, dflt in
