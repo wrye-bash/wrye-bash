@@ -541,25 +541,25 @@ class MelGroup(MelSequential):
     def getDefaulters(self, mel_set_instance, mel_key):
         if not mel_key:
             mel_set_instance.mel_providers_dict[self.attr] = self._mel_object_type
-            # we are a top-level group so we need to directly set record attrs
-            defaultrs = mel_set_instance.defaulters
-            common_attrs = set(self._mel_object_type.mel_set_obj.defaulters) & set(
-                defaultrs)
-            if common_attrs:
-                dups = set((a, defaultrs[a],
-                            self._mel_object_type.mel_set_obj.defaulters[a]) for a
-                           in common_attrs if defaultrs[a] !=
-                           self._mel_object_type.mel_set_obj.defaulters[a])
-                if dups:
-                    raise SyntaxError(u'%s duplicate attr(s) %s' % (self, dups))
-            defaultrs.update(self._mel_object_type.mel_set_obj.defaulters)
-            common_listers = mel_set_instance.listers & \
-                             self._mel_object_type.mel_set_obj.listers
-            if common_listers:
-                raise SyntaxError(
-                    u'%s duplicate attr(s) %s' % (self, common_listers))
-            mel_set_instance.listers.update(
-                self._mel_object_type.mel_set_obj.listers)
+            # # we are a top-level group so we need to directly set record attrs
+            # defaultrs = mel_set_instance.defaulters
+            # common_attrs = set(self._mel_object_type.mel_set_obj.defaulters) & set(
+            #     defaultrs)
+            # if common_attrs:
+            #     dups = set((a, defaultrs[a],
+            #                 self._mel_object_type.mel_set_obj.defaulters[a]) for a
+            #                in common_attrs if defaultrs[a] !=
+            #                self._mel_object_type.mel_set_obj.defaulters[a])
+            #     if dups:
+            #         raise SyntaxError(u'%s duplicate attr(s) %s' % (self, dups))
+            # defaultrs.update(self._mel_object_type.mel_set_obj.defaulters)
+            # common_listers = mel_set_instance.listers & \
+            #                  self._mel_object_type.mel_set_obj.listers
+            # if common_listers:
+            #     raise SyntaxError(
+            #         u'%s duplicate attr(s) %s' % (self, common_listers))
+            # mel_set_instance.listers.update(
+            #     self._mel_object_type.mel_set_obj.listers)
             for k, v in self._mel_object_type.mel_set_obj.mel_providers_dict.items():
                 mel_set_instance.mel_providers_dict[u'%s.%s' % (self.attr, k)] = v
         else: # we are a MelGroups nested inside a MelGroup inform parent Group
