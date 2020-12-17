@@ -314,7 +314,7 @@ class PageFinish(PageInstaller):
         parent.parser.choiceIdex += 1
         textTitle = Label(self, _(u'The installer script has finished, and '
                                   u'will apply the following settings:'))
-        textTitle.wrap(parent._native_widget.GetPageSize()[0] - 10)
+        textTitle.wrap(parent.get_page_size()[0] - 10)
         # Sub-packages
         self.listSubs = CheckListBox(self,
             choices=[x.replace(u'&', u'&&') for x in subs])
@@ -437,7 +437,7 @@ class PageVersions(PageInstaller):
         text_warning = Label(self, _(u'WARNING: The following version '
                                      u'requirements are not met for using '
                                      u'this installer.'))
-        text_warning.wrap(parent._native_widget.GetPageSize()[0] - 20)
+        text_warning.wrap(parent.get_page_size()[0] - 20)
         self.checkOk = CheckBox(self, _(u'Install anyway.'))
         self.checkOk.on_checked.subscribe(self._enableForward)
         VLayout(items=[

@@ -29,7 +29,7 @@ __author__ = u'nycz'
 
 import wx as _wx
 
-from .base_components import _AComponent
+from .base_components import _AComponent, csf
 
 CENTER, LEFT, RIGHT, TOP, BOTTOM = (u'center', u'left', u'right', u'top',
                                     u'bottom')
@@ -136,7 +136,8 @@ class _ALayout(object):
         if border > 0:
             self._border_wrapper = _wx.BoxSizer(_wx.VERTICAL)
             self._border_wrapper.Add(self._sizer, proportion=1,
-                                     flag=_wx.ALL | _wx.EXPAND, border=border)
+                                     flag=_wx.ALL | _wx.EXPAND,
+                                     border=border * csf())
         else:
             self._border_wrapper = None
         self._default_item_loptions = LayoutOptions(item_border, item_expand,
@@ -204,17 +205,17 @@ class _ALineLayout(_ALayout):
                 self._add_spacer(self.spacing)
             lt_flags = options.layout_flags(use_horizontal=self._is_vertical,
                                             use_vertical=not self._is_vertical)
-            self._sizer.Add(item, proportion=options.weight, flag=lt_flags,
-                            border=options.border)
+            self._sizer.Add(item, proportion=options.weight * csf(),
+                            flag=lt_flags, border=options.border * csf())
             self._sizer.SetItemMinSize(item, -1, -1)
 
     def _add_spacer(self, length=4):
         """Add a fixed space to the layout."""
-        self._sizer.AddSpacer(length)
+        self._sizer.AddSpacer(length * csf())
 
     def _add_stretch(self, weight=1):
         """Add a growing space to the layout."""
-        self._sizer.AddStretchSpacer(prop=weight)
+        self._sizer.AddStretchSpacer(prop=weight * csf())
 
 class HLayout(_ALineLayout):
     """A simple horizontal layout."""
@@ -265,8 +266,8 @@ class GridLayout(_ALayout):
             grow and fill available space
         :param items: Items or (item, options) pairs to add directly.
         """
-        super(GridLayout, self).__init__(
-            _wx.GridBagSizer(hgap=h_spacing, vgap=v_spacing), **kwargs)
+        super(GridLayout, self).__init__(_wx.GridBagSizer(
+            hgap=h_spacing * csf(), vgap=v_spacing * csf()), **kwargs)
         self._default_item_loptions.row_span = 1
         self._default_item_loptions.col_span = 1
         if items:
@@ -282,9 +283,10 @@ class GridLayout(_ALayout):
         If item is None, nothing will be added."""
         item, options = self._get_item_options(item)
         if item is None: return
-        self._sizer.Add(item, (row, col),
-                        span=(options.row_span, options.col_span),
-                        flag=options.layout_flags(), border=options.border)
+        self._sizer.Add(item, (row, col), span=(options.row_span,
+                                                options.col_span),
+                        flag=options.layout_flags(),
+                        border=options.border * csf())
         self._sizer.SetItemMinSize(item, -1, -1)
 
     def append_row(self, items):

@@ -27,7 +27,6 @@ what."""
 import os
 import toml
 import traceback
-import wx
 
 class FailedTest(Exception):
     """Misc exception for when a test should fail for meta reasons."""
@@ -119,7 +118,7 @@ def _emulate_startup():
     # bush needs _() to be available, so need to do it like this
     global bush
     from .. import localize
-    localize.setup_locale(u'English', wx)
+    localize.setup_locale(u'English')
     from .. import bush
     # noinspection PyProtectedMember
     bush._supportedGames()

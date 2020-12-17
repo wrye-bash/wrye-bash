@@ -92,7 +92,7 @@ class Picture(_AComponent):
         return self.bitmap
 
     def _handle_resize(self): ##: is all these wx.Bitmap calls needed? One right way?
-        x, y = self.component_size
+        x, y = self.scaled_size()
         if x <= 0 or y <= 0: return
         self.buffer = _wx.Bitmap(x,y)
         dc = _wx.MemoryDC()

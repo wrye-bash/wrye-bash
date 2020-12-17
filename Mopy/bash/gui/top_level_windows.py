@@ -27,7 +27,7 @@ __author__ = u'Utumno, Infernio'
 import wx as _wx
 import wx.adv as _adv     # wxPython wizard class
 
-from .base_components import _AComponent, Color, WithFirstShow
+from .base_components import _AComponent, Color, WithFirstShow, csf
 
 # Special constant defining a window as having whatever position the underlying
 # GUI implementation picks for it by default.
@@ -45,8 +45,8 @@ class _TopLevelWin(_AComponent):
     def __init__(self, parent, sizes_dict, icon_bundle, *args, **kwargs):
         # dict holding size/pos info ##: can be bass.settings or balt.sizes
         self._sizes_dict = sizes_dict
-        self._set_pos_size(kwargs, sizes_dict)
         super(_TopLevelWin, self).__init__(parent, *args, **kwargs)
+        self._set_pos_size(kwargs, sizes_dict)
         self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
         self._on_close_evt.subscribe(self.on_closing)
         if icon_bundle: self.set_icons(icon_bundle)
@@ -56,9 +56,9 @@ class _TopLevelWin(_AComponent):
         wanted_pos = kwargs.get('pos', None) or sizes_dict.get(
             self._pos_key, self._def_pos)
         # Resolve the special DEFAULT_POSITION constant to a real value
-        kwargs['pos'] = (self._def_pos if wanted_pos == DEFAULT_POSITION
-                         else wanted_pos)
-        kwargs['size'] = kwargs.get('size', None) or sizes_dict.get(
+        self.component_position = (
+            self._def_pos if wanted_pos == DEFAULT_POSITION else wanted_pos)
+        self.component_size = kwargs.get('size', None) or sizes_dict.get(
             self._size_key, self._def_size)
 
     @property
@@ -204,6 +204,12 @@ class DialogWindow(_TopLevelWin):
         """Closes the modal dialog with a custom exit code."""
         self._native_widget.EndModal(custom_code)
 
+class StartupDialog(DialogWindow):
+    """Dialog shown during early boot, generally due to errors."""
+    def __init__(self, *args, **kwargs):
+        sd_style = _wx.STAY_ON_TOP | _wx.DIALOG_NO_PARENT
+        super(StartupDialog, self).__init__(*args, style=sd_style, **kwargs)
+
 class WizardDialog(DialogWindow, WithFirstShow):
     """Wrap a wx wizard control.
 
@@ -249,6 +255,12 @@ class WizardDialog(DialogWindow, WithFirstShow):
     def enable_forward_btn(self, do_enable):
         self._native_widget.FindWindowById(_wx.ID_FORWARD).Enable(do_enable)
 
+    def get_page_size(self):
+        """Returns the width and height that each page in the installer will
+        have available, in device-independent pixels (DIP)."""
+        p_size = self._native_widget.ToDIP(self._native_widget.GetPageSize())
+        return p_size.width, p_size.height
+
 # Panels ----------------------------------------------------------------------
 class PanelWin(_AComponent):
     _wx_widget_type = _wx.Panel
@@ -262,16 +274,14 @@ class Splitter(_AComponent):
 
     def __init__(self, parent, allow_split=True, min_pane_size=0,
                  sash_gravity=0):
-        # wx.SplitterWindow is native and does not respect any of the border
-        # flags on Windows :/
         super(Splitter, self).__init__(parent, style=_wx.SP_LIVE_UPDATE)
         if not allow_split: # Don't allow unsplitting
             self._native_widget.Bind(_wx.EVT_SPLITTER_DCLICK,
                                      lambda event: event.Veto())
         if min_pane_size:
-            self._native_widget.SetMinimumPaneSize(min_pane_size)
+            self.set_min_pane_size(min_pane_size)
         if sash_gravity:
-            self._native_widget.SetSashGravity(sash_gravity)
+            self.set_sash_gravity(sash_gravity)
         self._panes = None
 
     def make_panes(self, sash_position=0, first_pane=None, second_pane=None,
@@ -290,7 +300,7 @@ class Splitter(_AComponent):
         self._native_widget.SetSashPosition(sash_position)
 
     def set_min_pane_size(self, min_pane_size):
-        self._native_widget.SetMinimumPaneSize(min_pane_size)
+        self._native_widget.SetMinimumPaneSize(min_pane_size * csf())
 
     def set_sash_gravity(self, sash_gravity):
         self._native_widget.SetSashGravity(sash_gravity)
@@ -334,9 +344,11 @@ class ScrollableWindow(_AComponent):
 
     def __init__(self, parent, scroll_horizontal=True, scroll_vertical=True):
         super(ScrollableWindow, self).__init__(parent)
-        self._native_widget.SetScrollbars(
-            20 if scroll_horizontal else 0, 20 if scroll_vertical else 0,
-            50 if scroll_horizontal else 0, 50 if scroll_vertical else 0)
+        scroll_h = (20 if scroll_horizontal else 0) * csf()
+        scroll_v = (20 if scroll_vertical else 0) * csf()
+        units_h = (50 if scroll_horizontal else 0) * csf()
+        units_v = (50 if scroll_vertical else 0) * csf()
+        self._native_widget.SetScrollbars(scroll_h, scroll_v, units_h, units_v)
 
 class CenteredSplash(_AComponent):
     """A centered splash screen without a timeout. Only disappears when either

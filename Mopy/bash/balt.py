@@ -2155,7 +2155,9 @@ class ListBoxes(WrappingTextMixin, DialogWindow):
         self.itemMenu = Links()
         self.itemMenu.append(_CheckList_SelectAll())
         self.itemMenu.append(_CheckList_SelectAll(False))
-        minWidth = self._native_widget.GetTextExtent(title)[0] * 1.2 + 64
+        # TODO(inf) de-wx!
+        minWidth = self._native_widget.ToDIP(
+            self._native_widget.GetTextExtent(title)).width * 1.2 + 64
         self._panel_text.wrap(minWidth) # otherwise expands to max width
         layout = VLayout(border=5, spacing=5, items=[self._panel_text])
         self._ctrls = {}

@@ -29,7 +29,7 @@ __author__ = u'nycz, Infernio'
 import wx as _wx
 import wx.adv as _adv
 
-from .base_components import _AComponent
+from .base_components import _AComponent, csf
 
 # Text Input ------------------------------------------------------------------
 class TextAlignment(object): # PY3: enum
@@ -214,22 +214,25 @@ class Label(_ALabel):
     # _native_widget: type: _wx.StaticText
     _wx_widget_type = _wx.StaticText
 
-    def __init__(self, parent, init_text):
+    def __init__(self, parent, init_text, alignment=TextAlignment.LEFT):
         """Creates a new Label with the specified parent and text.
 
         :param parent: The object that this label belongs to.
-        :param init_text: The initial text of this label."""
-        super(Label, self).__init__(parent, label=init_text)
+        :param init_text: The initial text of this label.
+        :param alignment: The alignment of text in this component."""
+        super(Label, self).__init__(parent, label=init_text,
+                                    style=_ta_to_wx[alignment])
         self._init_text = init_text
 
     def wrap(self, max_length): # type: (int) -> None
         """Wraps this label's text so that each line is at most max_length
         pixels long.
 
-        :param max_length: The maximum number of pixels a line may be long."""
+        :param max_length: The maximum number of device-independent pixels
+            (DIP) a line may be long."""
         self._native_widget.Freeze()
         self._native_widget.SetLabel(self._init_text)
-        self._native_widget.Wrap(max_length)
+        self._native_widget.Wrap(max_length * csf())
         self._native_widget.Thaw()
 
 class HyperlinkLabel(_ALabel):

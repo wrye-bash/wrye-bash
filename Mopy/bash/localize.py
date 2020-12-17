@@ -42,7 +42,7 @@ from . import bass, bolt
 
 #------------------------------------------------------------------------------
 # Locale Detection & Setup
-def setup_locale(cli_lang, _wx):
+def setup_locale(cli_lang):
     """Sets up wx and Wrye Bash locales, ensuring they match or falling back
     to English if that is impossible. Also considers cli_lang as an override,
     installs the gettext translation and remembers the locale we end up with
@@ -55,9 +55,9 @@ def setup_locale(cli_lang, _wx):
 
     :param cli_lang: The language the user specified on the command line, or
         None.
-    :param _wx: The wx instance to use.
     :return: The wx.Locale object we ended up using."""
     # We need a throwaway wx.App so that the calls below work
+    import wx as _wx
     _temp_app = _wx.App(False)
     # Set the wx language - otherwise we will crash when loading any images
     if cli_lang and _wx.Locale.FindLanguageInfo(cli_lang):

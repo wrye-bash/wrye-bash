@@ -26,6 +26,7 @@ more specialized parts (e.g. _AComponent)."""
 __author__ = u'nycz, Infernio'
 
 import os
+import platform
 import textwrap
 import wx as _wx
 from .events import EventHandler, null_processor
@@ -34,6 +35,17 @@ from ..exception import AbstractError
 from ..exception import ArgumentError
 
 # Utilities -------------------------------------------------------------------
+_cached_csf = None
+def csf(): ##: This is ugly, is there no nicer way?
+    """Returns the content scale factor (CSF) needed for high DPI displays."""
+    global _cached_csf
+    if _cached_csf is None:
+        if platform.system() != u'Darwin': ##: Linux? os.name == 'nt' if so
+           _cached_csf = _wx.Window().GetContentScaleFactor()
+        else:
+            _cached_csf = 1.0 # Everything scales automatically on macOS
+    return _cached_csf
+
 def wrapped_tooltip(tooltip_text, wrap_width=50):
     """Returns tooltip with wrapped copy of text."""
     tooltip_text = textwrap.fill(tooltip_text, wrap_width)
@@ -258,23 +270,35 @@ class _AComponent(object):
     def component_size(self):
         """Returns the width and height of this component as a tuple.
 
-        :return: A tuple containing the width and height size of this component
-                 as two integers."""
-        curr_size = self._native_widget.GetSize()
+        :return: A tuple containing the width and height in device-independent
+            pixels (DIP) of this component as two integers."""
+        curr_size = self._native_widget.ToDIP(self._native_widget.GetSize())
         return curr_size.width, curr_size.height
 
     @component_size.setter
     def component_size(self, new_size): # type: (tuple) -> None
-        """Changes the X and Y size of this component to the specified
+        """Changes the width and height of this component to the specified
         values.
 
-        :param new_size: A tuple of two integers, X and Y size."""
-        self._native_widget.SetSize(new_size)
+        :param new_size: A tuple of two integers, width and height, in
+            device-independent pixels (DIP)."""
+        self._native_widget.SetSize(self._native_widget.FromDIP(new_size))
+
+    def scaled_size(self):
+        """Returns the actual width and height in physical pixels that this
+        component takes up. For most use cases, you will want component_size
+        instead.
+
+        :return: A tuple containing the width and height of this component as
+            two integers."""
+        curr_size = self._native_widget.GetSize()
+        return curr_size.width, curr_size.height
 
     def set_min_size(self, width, height): # type: (int, int) -> None
         """Sets the minimum size of this component to the specified width and
-        height."""
-        self._native_widget.SetMinSize(_wx.Size(width, height))
+        height in device-independent pixels (DIP)."""
+        self._native_widget.SetMinSize(self._native_widget.FromDIP(
+            (width, height)))
 
     # focus methods wrappers
     def set_focus_from_kb(self):
@@ -454,8 +478,9 @@ class ImageWrapper(object):
                 # Hack - when user scales windows display icon may need scaling
                 if w != self.iconSize or h != self.iconSize: # rescale !
                     self.bitmap = _wx.Bitmap(
-                        _wx.ImageFromBitmap(self.bitmap).Scale(
-                          self.iconSize, self.iconSize, _wx.IMAGE_QUALITY_HIGH))
+                        self.bitmap.ConvertToImage().Scale(
+                            self.iconSize, self.iconSize,
+                            _wx.IMAGE_QUALITY_HIGH))
             else:
                 self.bitmap = _wx.Bitmap(self._img_path, self._img_type)
         return self.bitmap
