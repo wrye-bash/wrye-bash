@@ -751,7 +751,7 @@ class ModInfo(FileInfo):
                     bsa.extract_assets(assets, out_path.s)
                 except BSAError as e:
                     raise ModError(self.name,
-                                   u"Could not extract Strings File from "
+                                   u'Could not extract Strings File from '
                                    u"'%s': %s" % (bsa.name, e))
                 paths.update(imap(out_path.join, assets))
         return paths
@@ -2171,7 +2171,7 @@ class ModInfos(FileInfos):
         """Rescan specified mods. Return value is only meaningful when
         return_results is set to True."""
         messagetext = _(u'Check ESL Qualifications') if bush.game.check_esl \
-            else _(u"Mark Mergeable")
+            else _(u'Mark Mergeable')
         with prog or balt.Progress(_(messagetext) + u' ' * 30) as prog:
             return self._rescanMergeable(names, prog, return_results)
 
@@ -3406,7 +3406,7 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
             u"This is probably not recoverable with the current file. Do you "
             u"want to try the backup BashSettings.dat? (It will have all your "
             u"UI choices of the time before last that you used Wrye Bash.")
-        usebck = balt.askYes(None, msg % err, _(u"Settings Load Error"))
+        usebck = balt.askYes(None, msg % err, _(u'Settings Load Error'))
         if usebck:
             try:
                 bass.settings = _loadBakOrEmpty()
@@ -3418,15 +3418,15 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
                     u"settings and load Wrye Bash without your saved UI "
                     u"settings?. (Otherwise Wrye Bash won't start up)")
                 delete = balt.askYes(None, msg % err,
-                                     _(u"Settings Load Error"))
+                                     _(u'Settings Load Error'))
                 if delete: bass.settings = _loadBakOrEmpty(delBackup=True)
                 else:raise
         else:
             msg = _(
-                u"Do you want to delete the corrupted settings and load Wrye "
-                u"Bash without your saved UI settings?. (Otherwise Wrye Bash "
+                u'Do you want to delete the corrupted settings and load Wrye '
+                u'Bash without your saved UI settings?. (Otherwise Wrye Bash '
                 u"won't start up)")
-            delete = balt.askYes(None, msg, _(u"Settings Load Error"))
+            delete = balt.askYes(None, msg, _(u'Settings Load Error'))
             if delete: # ignore bak but don't delete
                 bass.settings = _loadBakOrEmpty(ignoreBackup=True)
             else: raise

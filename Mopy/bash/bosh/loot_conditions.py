@@ -319,7 +319,7 @@ def _process_path(file_path):
             if parents_done:
                 raise ParserError(
                     u"Illegal file path: Unexpected '..' (may only be at the "
-                    u"start of the path).", file_path)
+                    u'start of the path).', file_path)
             parents += 1
         else:
             # Remember that we're done parsing any parent specifiers

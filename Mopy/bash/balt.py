@@ -514,7 +514,7 @@ def playSound(parent,sound):
     if sound.IsOk():
         sound.Play(wx.adv.SOUND_ASYNC)
     else:
-        showError(parent,_(u"Invalid sound file %s.") % sound)
+        showError(parent,_(u'Invalid sound file %s.') % sound)
 
 # Other Windows ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2243,8 +2243,8 @@ def readme_url(mopy, advanced=False):
                                                                      u'%20')
     else:
         # Fallback to Git repository
-        readme = u"http://wrye-bash.github.io/docs/Wrye%20Bash" \
-                 u"%20General%20Readme.html"
+        readme = u'http://wrye-bash.github.io/docs/Wrye%20Bash' \
+                 u'%20General%20Readme.html'
     return readme
 
 class INIListCtrl(wx.ListCtrl):

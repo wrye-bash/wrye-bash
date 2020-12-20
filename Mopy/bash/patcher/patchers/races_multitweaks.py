@@ -794,7 +794,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
             log(u'. ~~%s~~' % _(u'None'))
         else:
             log(_(u"In order to prevent 'googly eyes', incompatible eyes have "
-                  u"been removed from the following races."))
+                  u'been removed from the following races.'))
             for eid in sorted(racesFiltered):
                 log(u'* ' + eid)
         if mod_npcsFixed:

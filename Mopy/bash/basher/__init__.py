@@ -325,9 +325,9 @@ class MasterList(_ModsUIList):
         # using self.__class__.keyPrefix for common saves/mods masters settings
         return settings.getChanged(self.__class__.keyPrefix + u'.cols')
 
-    message = _(u"Edit/update the masters list? Note that the update process "
-                u"may automatically rename some files. Be sure to review the "
-                u"changes before saving.")
+    message = _(u'Edit/update the masters list? Note that the update process '
+                u'may automatically rename some files. Be sure to review the '
+                u'changes before saving.')
 
     def __init__(self, parent, listData=None, keyPrefix=keyPrefix, panel=None,
                  detailsPanel=None):
@@ -470,14 +470,14 @@ class MasterList(_ModsUIList):
             masters_name in bosh.modInfos.merged and 2)
         on_display = self.detailsPanel.displayed_item
         if status == 30: # master is missing
-            mouseText += _(u"Missing master of %s.  ") % on_display
+            mouseText += _(u'Missing master of %s.  ') % on_display
         #--HACK - load order status
         elif on_display in bosh.modInfos:
             if status == 20:
-                mouseText += _(u"Reordered relative to other masters.  ")
+                mouseText += _(u'Reordered relative to other masters.  ')
             lo_index = load_order.cached_lo_index
             if lo_index(on_display) < lo_index(masters_name):
-                mouseText += _(u"Loads after %s.  ") % on_display
+                mouseText += _(u'Loads after %s.  ') % on_display
                 status = 20 # paint orange
         item_format.icon_key = status, oninc
         self.mouseTexts[mi] = mouseText
@@ -709,9 +709,9 @@ class INIList(balt.UIList):
     def _warn_tweak_game_ini(chosen):
         ask = True
         if chosen in bush.game.Ini.dropdown_inis:
-            message = (_(u"Apply an ini tweak to %s?") % chosen + u'\n\n' + _(
-                u"WARNING: Incorrect tweaks can result in CTDs and even "
-                u"damage to your computer!"))
+            message = (_(u'Apply an ini tweak to %s?') % chosen + u'\n\n' + _(
+                u'WARNING: Incorrect tweaks can result in CTDs and even '
+                u'damage to your computer!'))
             ask = balt.askContinue(balt.Link.Frame, message,
                                    u'bash.iniTweaks.continue', _(u'INI Tweaks'))
         return ask
@@ -1676,8 +1676,8 @@ class ModDetails(_ModsSavesDetails):
         class _TagLink(CheckLink):
             @property
             def link_help(self):
-                return _(u"Add %(tag)s to %(modname)s") % (
-                    {'tag': self._text, 'modname': mod_info.name})
+                return _(u'Add %(tag)s to %(modname)s') % (
+                    {u'tag': self._text, u'modname': mod_info.name})
             def _check(self): return self._text in mod_tags
             def Execute(self):
                 """Toggle bash tag from menu."""
@@ -1998,10 +1998,10 @@ class SaveList(balt.UIList):
         #--Pass Event onward
         hitItem = self._getItemClicked(lb_dex_and_flags, on_icon=True)
         if not hitItem: return
-        msg = _(u"Clicking on a save icon will disable/enable the save "
-                u"by changing its extension to %(ess)s (enabled) or .esr "
-                u"(disabled). Autosaves and quicksaves will be left alone."
-                % {'ess': bush.game.Ess.ext})
+        msg = _(u'Clicking on a save icon will disable/enable the save '
+                u'by changing its extension to %(ess)s (enabled) or .esr '
+                u'(disabled). Autosaves and quicksaves will be left alone.'
+                % {u'ess': bush.game.Ess.ext})
         if not balt.askContinue(self, msg, u'bash.saves.askDisable.continue'):
             return
         newEnabled = not bosh.SaveInfos.is_save_enabled(hitItem)
@@ -2525,7 +2525,7 @@ class InstallersList(balt.UIList):
     def dndAllow(self, event):
         if not self.sort_column in self._dndColumns:
             msg = _(u"Drag and drop in the Installer's list is only allowed "
-                    u"when the list is sorted by install order")
+                    u'when the list is sorted by install order')
             balt.askContinue(self, msg, u'bash.installers.dnd.column.continue')
             return super(InstallersList, self).dndAllow(event) # disallow
         return True
@@ -3071,7 +3071,7 @@ class InstallersPanel(BashTab):
                 u'If you do, Bash will first need to initialize some data. '
                 u'This can take on the order of five minutes if there are '
                 u'many mods installed.') + u'\n\n\t' + _(
-                u"If not, you can enable it at any time by right-clicking "
+                u'If not, you can enable it at any time by right-clicking '
                 u"the column header menu and selecting 'Enabled'.")
             settings[u'bash.installers.enabled'] = balt.askYes(self, message,
                                                               _(u'Installers'))
@@ -3458,8 +3458,8 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
         self.tabKey = tabKey
         self.enabled = canDisable
         className, self._text, item = tabInfo.get(self.tabKey,[None,None,None])
-        self._help = _(u"Show/Hide the %(tabtitle)s Tab.") % (
-            {'tabtitle': self._text})
+        self._help = _(u'Show/Hide the %(tabtitle)s Tab.') % (
+            {u'tabtitle': self._text})
 
     def _append(self, window): return self._text is not None
 
@@ -3811,16 +3811,16 @@ class BashFrame(WindowFrame):
         if not len(bosh.bsaInfos): bosh.bsaInfos.refresh()
         if len(bosh.bsaInfos) + len(bosh.modInfos) >= 325 and not \
                 settings[u'bash.mods.autoGhost']:
-            message = _(u"It appears that you have more than 325 mods and bsas"
-                u" in your data directory and auto-ghosting is disabled. This "
-                u"may cause problems in %s; see the readme under auto-ghost "
-                u"for more details and please enable auto-ghost.") % \
+            message = _(u'It appears that you have more than 325 mods and bsas'
+                u' in your data directory and auto-ghosting is disabled. This '
+                u'may cause problems in %s; see the readme under auto-ghost '
+                u'for more details and please enable auto-ghost.') % \
                       bush.game.displayName
             if len(bosh.bsaInfos) + len(bosh.modInfos) >= 400:
-                message = _(u"It appears that you have more than 400 mods and "
-                    u"bsas in your data directory and auto-ghosting is "
-                    u"disabled. This will cause problems in %s; see the readme"
-                    u" under auto-ghost for more details. ") % \
+                message = _(u'It appears that you have more than 400 mods and '
+                    u'bsas in your data directory and auto-ghosting is '
+                    u'disabled. This will cause problems in %s; see the readme'
+                    u' under auto-ghost for more details. ') % \
                           bush.game.displayName
             balt.showWarning(self, message, _(u'Too many mod files.'))
 
@@ -3930,9 +3930,9 @@ class BashFrame(WindowFrame):
     def _warn_reset_load_order(self):
         if load_order.warn_locked and not bass.inisettings[
             u'SkipResetTimeNotifications']:
-            balt.showWarning(self, _(u"Load order has changed outside of Bash "
-                u"and has been reverted to the one saved in Bash. You can hit "
-                u"Ctrl + Z while the mods list has focus to undo this."),
+            balt.showWarning(self, _(u'Load order has changed outside of Bash '
+                u'and has been reverted to the one saved in Bash. You can hit '
+                u'Ctrl + Z while the mods list has focus to undo this.'),
                              _(u'Lock Load Order'))
             load_order.warn_locked = False
 
@@ -4015,8 +4015,8 @@ class BashFrame(WindowFrame):
               self, _(u'Warnings'), _(u'The following warnings were found:'),
             message, liststyle=u'list', canCancel=False)
 
-    _ini_missing = _(u"%(ini)s does not exist yet.  %(game)s will create this "
-        u"file on first run.  INI tweaks will not be usable until then.")
+    _ini_missing = _(u'%(ini)s does not exist yet.  %(game)s will create this '
+        u'file on first run.  INI tweaks will not be usable until then.')
     @balt.conversation
     def warn_game_ini(self):
         #--Corrupt Oblivion.ini

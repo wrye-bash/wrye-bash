@@ -774,9 +774,9 @@ class WryeParser(ScriptParser.Parser):
             except ScriptParser.ParserError as e:
                 bolt.deprint(u'Error in wizard script', traceback=True)
                 return PageError(self._wiz_parent, _(u'Installer Wizard'),
-                                 _(u'An error occurred in the wizard script:') + '\n'
-                                 + _(u'Line %s:\t%s') % (self.cLine, newline.strip(u'\n')) + '\n'
-                                 + _(u'Error:\t%s') % e)
+                     u'\n'.join([_(u'An error occurred in the wizard script:'),
+                     _(u'Line %s:\t%s') % (self.cLine, newline.strip(u'\n')),
+                     _(u'Error:\t%s') % e]))
             except Exception:
                 bolt.deprint(u'Error while running wizard', traceback=True)
                 msg = u'\n'.join([_(u'An unhandled error occurred while '
@@ -1543,7 +1543,7 @@ class WryeParser(ScriptParser.Parser):
                                self.plugin_renames, self.bAuto, self.notes,
                                self.iniedits)
 
-    def kwdCancel(self, msg=_(u"No reason given")):
+    def kwdCancel(self, msg=_(u'No reason given')):
         self.page = PageError(self._wiz_parent, _(u'The installer wizard was canceled:'), msg)
 
 bolt.codebox = WryeParser.codebox

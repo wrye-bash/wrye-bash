@@ -1706,7 +1706,7 @@ class InstallersData(DataStore):
         return changed
 
     def __load(self, progress):
-        progress(0, _(u"Loading Data..."))
+        progress(0, _(u'Loading Data...'))
         self.dictFile.load()
         self.converters_data.load()
         data = self.dictFile.data
@@ -1827,7 +1827,7 @@ class InstallersData(DataStore):
         for subPending, is_project in zip(
                 (pending - projects, pending & projects), (False, True)):
             if not subPending: continue
-            progress(0,_(u"Scanning Packages..."))
+            progress(0,_(u'Scanning Packages...'))
             progress.setFull(len(subPending))
             for index,package in enumerate(sorted(subPending)):
                 progress(index, _(u'Scanning Packages...') + u'\n%s' % package)
@@ -2917,7 +2917,7 @@ class InstallersData(DataStore):
                 _print_loose_conflicts(higher_loose, _(u'Higher'))
             report = buff.getvalue()
         if not list_overrides and not report and not srcInstaller.is_active:
-            report = _(u"No Underrides. Mod is not completely un-installed.")
+            report = _(u'No Underrides. Mod is not completely un-installed.')
         return report
 
     def getPackageList(self,showInactive=True):

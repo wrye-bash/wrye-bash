@@ -132,7 +132,7 @@ class ConvertersData(DataDict):
         self.bcfCRC_converter = newData
         pendingChanged = False
         if bool(pending):
-            progress(0, _(u"Scanning Converters..."))
+            progress(0, _(u'Scanning Converters...'))
             progress.setFull(len(pending))
             for index, bcf_archive in enumerate(sorted(pending)):
                 progress(index,
@@ -307,7 +307,7 @@ class InstallerConverter(object):
             command = u'"%s" x "%s" BCF.dat -y -so -sccUTF-8' % (
                 archives.exe7z, converter_path)
             archives.wrapPopenOut(command, translate, errorMsg=
-                u"\nLoading %s:\nBCF extraction failed." % self.fullPath)
+            u'\nLoading %s:\nBCF extraction failed.' % self.fullPath)
 
     def save(self, destInstaller):
         #--Dump settings into BCF.dat
@@ -382,7 +382,7 @@ class InstallerConverter(object):
         """Copy and/or move extracted files into their proper arrangement."""
         tmpDir = bass.getTempDir()
         destDir = bass.newTempDir()
-        progress(0, _(u"Moving files..."))
+        progress(0, _(u'Moving files...'))
         progress.setFull(1 + len(self.convertedFiles))
         #--Make a copy of dupeCount
         dupes = dict(self.dupeCount.iteritems())
@@ -399,14 +399,14 @@ class InstallerConverter(object):
                 srcDir = u'%s' % srcDir # Path defines __unicode__()
                 srcFile = tempJoin(srcDir, srcFile)
             else:
-                srcFile = tempJoin(u"%08X" % srcDir, srcFile)
+                srcFile = tempJoin(u'%08X' % srcDir, srcFile)
             destFile = destJoin(destFile)
             if not srcFile.exists():
-                raise StateError(u"%s: Missing source file:\n%s" % (
+                raise StateError(u'%s: Missing source file:\n%s' % (
                     self.fullPath.stail, srcFile))
             if destFile is None:
                 raise StateError(
-                    u"%s: Unable to determine file destination for:\n%s" % (
+                    u'%s: Unable to determine file destination for:\n%s' % (
                     self.fullPath.stail, srcFile))
             numDupes = dupes[crcValue]
             #--Keep track of how many times the file is referenced by
@@ -562,7 +562,7 @@ class InstallerConverter(object):
         extracted to its own sub-directory to prevent file thrashing"""
         #--Sanity check
         if not fileNames: raise ArgumentError(
-                u"No files to extract for %s." % srcInstaller)
+                u'No files to extract for %s.' % srcInstaller)
         tmpDir = bass.getTempDir()
         tempList = bolt.Path.baseTempDir().join(u'WryeBash_listfile.txt')
         #--Dump file list
@@ -570,7 +570,7 @@ class InstallerConverter(object):
             with tempList.open(u'w', encoding=u'utf-8-sig') as out:
                 out.write(u'\n'.join(fileNames))
         except Exception as e:
-            raise StateError, (u"Error creating file list for 7z:\nError: %s"
+            raise StateError, (u'Error creating file list for 7z:\nError: %s'
                                % e), sys.exc_info()[2]
         #--Determine settings for 7z
         installerCRC = srcInstaller.crc

@@ -33,11 +33,11 @@ from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
 from ..bolt import CsvReader, GPath
 from ..gui import BusyCursor
 
-__all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
-           'Mods_OblivionVersion', 'Mods_CreateBlankBashedPatch',
-           'Mods_CreateBlank', 'Mods_ListMods', 'Mods_ListBashTags',
-           'Mods_CleanDummyMasters', 'Mods_AutoGhost', 'Mods_LockLoadOrder',
-           'Mods_ScanDirty', 'Mods_CrcRefresh', 'Mods_AutoESLFlagBP',
+__all__ = [u'Mods_EsmsFirst', u'Mods_LoadList', u'Mods_SelectedFirst',
+           u'Mods_OblivionVersion', u'Mods_CreateBlankBashedPatch',
+           u'Mods_CreateBlank', u'Mods_ListMods', u'Mods_ListBashTags',
+           u'Mods_CleanDummyMasters', u'Mods_AutoGhost', u'Mods_LockLoadOrder',
+           u'Mods_ScanDirty', u'Mods_CrcRefresh', u'Mods_AutoESLFlagBP',
            u'Mods_LockActivePlugins', u'Mods_ModChecker',
            u'Mods_ExportBashTags', u'Mods_ImportBashTags',
            u'Mods_ClearManualBashTags']
@@ -98,7 +98,7 @@ class Mods_LoadList(ChoiceLink):
                     bosh.modInfos.lo_activate_all()
                 except exception.PluginsFullError:
                     self._showError(
-                        _(u"Mod list is full, so some mods were skipped"),
+                        _(u'Mod list is full, so some mods were skipped'),
                         _(u'Select All'))
                 except exception.BoltError as e:
                     self._showError(u'%s' % e, _(u'Select All'))
@@ -226,8 +226,8 @@ class Mods_CreateBlankBashedPatch(ItemLink):
             self.window.ClearSelected(clear_details=True)
             self.window.RefreshUI(redraw=[newPatchName], refreshSaves=False)
         else:
-            self._showWarning(u"Unable to create new bashed patch: "
-                              u"10 bashed patches already exist!")
+            self._showWarning(u'Unable to create new bashed patch: '
+                              u'10 bashed patches already exist!')
 
 class Mods_CreateBlank(ItemLink):
     """Create a new blank mod."""
@@ -254,26 +254,26 @@ class Mods_CreateBlank(ItemLink):
 #------------------------------------------------------------------------------
 class Mods_ListMods(ItemLink):
     """Copies list of mod files to clipboard."""
-    _text = _(u"List Mods...")
-    _help = _(u"Copies list of active mod files to clipboard.")
+    _text = _(u'List Mods...')
+    _help = _(u'Copies list of active mod files to clipboard.')
 
     def Execute(self):
         #--Get masters list
         list_txt = bosh.modInfos.getModList(showCRC=balt.getKeyState(67))
         balt.copyToClipboard(list_txt)
-        self._showLog(list_txt, title=_(u"Active Mod Files"), fixedFont=False)
+        self._showLog(list_txt, title=_(u'Active Mod Files'), fixedFont=False)
 
 #------------------------------------------------------------------------------
 # Basically just a convenient 'whole LO' version of Mod_ListBashTags
 class Mods_ListBashTags(ItemLink):
     """Copies list of bash tags to clipboard."""
-    _text = _(u"List Bash Tags...")
-    _help = _(u"Copies list of bash tags to clipboard.")
+    _text = _(u'List Bash Tags...')
+    _help = _(u'Copies list of bash tags to clipboard.')
 
     def Execute(self):
         tags_text = bosh.modInfos.getTagList()
         balt.copyToClipboard(tags_text)
-        self._showLog(tags_text, title=_(u"Bash Tags"), fixedFont=False)
+        self._showLog(tags_text, title=_(u'Bash Tags'), fixedFont=False)
 
 #------------------------------------------------------------------------------
 class Mods_CleanDummyMasters(EnabledLink):
@@ -329,8 +329,8 @@ class Mods_ScanDirty(BoolLink):
 class Mods_LockLoadOrder(CheckLink):
     """Turn on Lock Load Order feature."""
     _text = _(u'Lock Load Order')
-    _help = _(u"Will reset mod Load Order to whatever Wrye Bash has saved for"
-             u" them whenever Wrye Bash refreshes data/starts up.")
+    _help = _(u'Will reset mod Load Order to whatever Wrye Bash has saved for'
+             u' them whenever Wrye Bash refreshes data/starts up.')
 
     def _check(self): return load_order.locked
 

@@ -27,7 +27,7 @@ from .. import archives, bass, balt
 from ..balt import ItemLink, Progress
 from ..bolt import GPath, SubProgress
 
-__all__ = ['BSA_ExtractToProject', 'BSA_ListContents']
+__all__ = [u'BSA_ExtractToProject', u'BSA_ListContents']
 
 class BSA_ExtractToProject(ItemLink):
     """Extracts one or more BSAs into projects."""

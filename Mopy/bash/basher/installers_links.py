@@ -30,20 +30,20 @@ from .. import bass, bosh, balt, bush, load_order
 from ..balt import BoolLink, AppendableLink, ItemLink, ListBoxes, \
     EnabledLink
 
-__all__ = ['Installers_SortActive', 'Installers_SortProjects',
-           'Installers_Refresh', 'Installers_AddMarker',
-           'Installers_CreateNewProject', 'Installers_MonitorInstall',
-           'Installers_ListPackages', 'Installers_AnnealAll',
-           'Installers_UninstallAllPackages',
-           'Installers_UninstallAllUnknownFiles', 'Installers_AvoidOnStart',
-           'Installers_Enabled', 'Installers_AutoAnneal',
-           'Installers_AutoWizard', 'Installers_AutoRefreshProjects',
-           'Installers_AutoRefreshBethsoft',
-           'Installers_AutoApplyEmbeddedBCFs', 'Installers_BsaRedirection',
-           'Installers_RemoveEmptyDirs',
-           'Installers_ConflictsReportShowsInactive',
-           'Installers_ConflictsReportShowsLower',
-           'Installers_ConflictsReportShowBSAConflicts',
+__all__ = [u'Installers_SortActive', u'Installers_SortProjects',
+           u'Installers_Refresh', u'Installers_AddMarker',
+           u'Installers_CreateNewProject', u'Installers_MonitorInstall',
+           u'Installers_ListPackages', u'Installers_AnnealAll',
+           u'Installers_UninstallAllPackages',
+           u'Installers_UninstallAllUnknownFiles', u'Installers_AvoidOnStart',
+           u'Installers_Enabled', u'Installers_AutoAnneal',
+           u'Installers_AutoWizard', u'Installers_AutoRefreshProjects',
+           u'Installers_AutoRefreshBethsoft',
+           u'Installers_AutoApplyEmbeddedBCFs', u'Installers_BsaRedirection',
+           u'Installers_RemoveEmptyDirs',
+           u'Installers_ConflictsReportShowsInactive',
+           u'Installers_ConflictsReportShowsLower',
+           u'Installers_ConflictsReportShowBSAConflicts',
            u'Installers_WizardOverlay', u'Installers_GlobalSkips',
            u'Installers_GlobalRedirects']
 
@@ -190,7 +190,7 @@ class Installers_AnnealAll(Installers_Link):
         """Anneal all packages."""
         ui_refresh = [False, False]
         try:
-            with balt.Progress(_(u"Annealing..."),u'\n'+u' '*60) as progress:
+            with balt.Progress(_(u'Annealing...'),u'\n'+u' '*60) as progress:
                 self.idata.bain_anneal(None, ui_refresh, progress=progress)
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
@@ -203,27 +203,27 @@ class Installers_UninstallAllPackages(Installers_Link):
     @balt.conversation
     def Execute(self):
         """Uninstall all packages."""
-        if not self._askYes(_(u"Really uninstall All Packages?")): return
+        if not self._askYes(_(u'Really uninstall All Packages?')): return
         ui_refresh = [False, False]
         try:
-            with balt.Progress(_(u"Uninstalling..."),u'\n'+u' '*60) as progress:
+            with balt.Progress(_(u'Uninstalling...'),u'\n'+u' '*60) as progress:
                 self.idata.bain_uninstall('ALL', ui_refresh, progress=progress)
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
 
 class Installers_Refresh(AppendableLink, Installers_Link):
     """Refreshes all Installers data."""
-    msg = _(u"Refresh ALL data from scratch? This may take five to ten minutes"
-            u" (or more) depending on the number of mods you have installed.")
+    msg = _(u'Refresh ALL data from scratch? This may take five to ten minutes'
+            u' (or more) depending on the number of mods you have installed.')
 
     def __init__(self, full_refresh=False):
         super(Installers_Refresh, self).__init__()
         self.full_refresh = full_refresh
         self._text = _(u'Full Refresh') if full_refresh else _(u'Refresh Data')
         self._help = _(
-            u"Perform a full refresh of all data files, recalculating all "
-            u"CRCs.  This can take 5-15 minutes.") if self.full_refresh else _(
-            u"Rescan the Data directory and all project directories.")
+            u'Perform a full refresh of all data files, recalculating all '
+            u'CRCs.  This can take 5-15 minutes.') if self.full_refresh else _(
+            u'Rescan the Data directory and all project directories.')
 
     def _append(self, window): return bass.settings[u'bash.installers.enabled']
 
@@ -285,13 +285,13 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
 #------------------------------------------------------------------------------
 class Installers_AutoAnneal(BoolLink):
     _text, _bl_key = _(u'Auto-Anneal'), u'bash.installers.autoAnneal'
-    _help = _(u"Enable/Disable automatic annealing of packages.")
+    _help = _(u'Enable/Disable automatic annealing of packages.')
 
 class Installers_AutoWizard(BoolLink):
     _text = _(u'Auto-Anneal/Install Wizards')
     _bl_key = u'bash.installers.autoWizard'
-    _help = _(u"Enable/Disable automatic installing or anneal (as applicable)"
-             u" of packages after running its wizard.")
+    _help = _(u'Enable/Disable automatic installing or anneal (as applicable) '
+              u'of packages after running its wizard.')
 
 class _Installers_BoolLink_Refresh(BoolLink):
     def Execute(self):
@@ -302,8 +302,8 @@ class Installers_WizardOverlay(_Installers_BoolLink_Refresh):
     """Toggle using the wizard overlay icon"""
     _text  = _(u'Wizard Icon Overlay')
     _bl_key = u'bash.installers.wizardOverlay'
-    _help =_(u"Enable/Disable the magic wand icon overlay for packages with"
-            u" Wizards.")
+    _help =_(u'Enable/Disable the magic wand icon overlay for packages with '
+             u'Wizards.')
 
 class Installers_AutoRefreshProjects(BoolLink):
     """Toggle autoRefreshProjects setting and update."""
@@ -335,11 +335,11 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
     _bl_key = u'bash.installers.autoRefreshBethsoft'
     _help = _(u'Skip installing Bethesda ESMs, ESPs, and BSAs')
     opposite = True
-    message = _(u"Enable installation of Bethsoft Content?") + u'\n\n' + _(
-        u"In order to support this, Bethesda ESPs, ESMs, and BSAs need to "
-        u"have their CRCs calculated.  Moreover Bethesda ESPs, ESMs will have "
-        u"their crc recalculated every time on booting BAIN.  Are you sure "
-        u"you want to continue?")
+    message = _(u'Enable installation of Bethsoft Content?') + u'\n\n' + _(
+        u'In order to support this, Bethesda ESPs, ESMs, and BSAs need to '
+        u'have their CRCs calculated.  Moreover Bethesda ESPs, ESMs will have '
+        u'their crc recalculated every time on booting BAIN.  Are you sure '
+        u'you want to continue?')
 
     @balt.conversation
     def Execute(self):
@@ -363,9 +363,9 @@ class Installers_Enabled(BoolLink):
     _text, _bl_key, _help = _(u'Enabled'), u'bash.installers.enabled', _(
         u'Enable/Disable the Installers tab.')
     dialogTitle = _(u'Enable Installers')
-    message = _(u"Do you want to enable Installers?") + u'\n\n\t' + _(
-        u"If you do, Bash will first need to initialize some data. This can "
-        u"take on the order of five minutes if there are many mods installed.")
+    message = _(u'Do you want to enable Installers?') + u'\n\n\t' + _(
+        u'If you do, Bash will first need to initialize some data. This can '
+        u'take on the order of five minutes if there are many mods installed.')
 
     @balt.conversation
     def Execute(self):
