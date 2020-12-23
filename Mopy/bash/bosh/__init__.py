@@ -1391,7 +1391,7 @@ class TableFileInfos(DataStore):
         if paths_to_keys is None: # we passed the keys in, get the paths
             paths_to_keys = {self[n].abs_path: n for n in deleted_keys}
         if check_existence:
-            for filePath in paths_to_keys.keys():
+            for filePath in list(paths_to_keys):
                 if filePath.exists():
                     del paths_to_keys[filePath] # item was not deleted
         self._notify_bain(deleted=paths_to_keys)
@@ -1593,7 +1593,7 @@ class INIInfos(TableFileInfos):
         choice = bass.settings[u'bash.ini.choice'] # type: int
         if isinstance(_target_inis, OrderedDict):
             try:
-                previous_ini = _target_inis.keys()[choice]
+                previous_ini = list(_target_inis)[choice]
                 ##: HACK - sometimes choice points to Browse... - real fix
                 # is to remove Browse from the list of inis....
                 if _target_inis[previous_ini] is None:
@@ -1602,9 +1602,8 @@ class INIInfos(TableFileInfos):
                 choice, previous_ini = -1, None
         else: # not an OrderedDict, updating from 306
             choice, previous_ini = -1, None
-        for ini_name in _target_inis.keys():
+        for ini_name, ini_path in _target_inis.items(): # dict may be modified
             if ini_name == _(u'Browse...'): continue
-            ini_path = _target_inis[ini_name]
             # If user started with non-translated, 'Browse...'
             # will still be in here, but in English.  It wont get picked
             # up by the previous check, so we'll just delete any non-Path
@@ -1618,7 +1617,7 @@ class INIInfos(TableFileInfos):
         try:
             csChoices = {x.lower() for x in _target_inis}
         except AttributeError: # 'Path' object has no attribute 'lower'
-            deprint(u'_target_inis contain a Path %s' % _target_inis.keys())
+            deprint(u'_target_inis contain a Path %s' % list(_target_inis))
             csChoices = {(u'%s' % x).lower() for x in _target_inis}
         for iFile in gameInis: # add the game inis even if missing
             if iFile.abs_path.tail.cs not in csChoices:
@@ -1627,7 +1626,7 @@ class INIInfos(TableFileInfos):
             _target_inis[_(u'Browse...')] = None
         self.__sort_target_inis()
         if previous_ini:
-            choice = bass.settings[u'bash.ini.choices'].keys().index(
+            choice = list(bass.settings[u'bash.ini.choices']).index(
                 previous_ini)
         bass.settings[u'bash.ini.choice'] = choice if choice >= 0 else 0
         self.ini = bass.settings[u'bash.ini.choices'].values()[
@@ -2080,7 +2079,7 @@ class ModInfos(FileInfos):
         iniPaths = (self[m].getIniPath() for m in load_order.cached_active_tuple())
         iniPaths = [p for p in iniPaths if p.isfile()]
         # delete non existent inis from cache
-        for key in self._plugin_inis.keys():
+        for key in list(self._plugin_inis):
             if key not in iniPaths:
                 del self._plugin_inis[key]
         # update cache with new or modified files

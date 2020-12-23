@@ -113,8 +113,7 @@ class _AParser(object):
         returns the result.
 
         :param mod_info: The ModInfo object to read.
-        :param target_types: A list, set or tuple containing strings that shows
-            which record types to load.
+        :param target_types: An iterable yielding record signatures to load.
         :return: An object representing the loaded plugin."""
         mod_file = ModFile(mod_info, LoadFactory(
             False, *[MreRecord.type_class[t] for t in target_types]))
@@ -304,7 +303,7 @@ class _AParser(object):
         :return: A dict mapping record types to the number of changed records
             in them."""
         return self._do_write_plugin(self._load_plugin(
-            mod_info, self.id_stored_info.keys()))
+            mod_info, self.id_stored_info))
 
     # Reading from CSV
     def _get_read_format(self, csv_fields):

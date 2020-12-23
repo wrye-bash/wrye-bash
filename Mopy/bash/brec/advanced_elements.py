@@ -75,7 +75,7 @@ class _MelDistributor(MelNull):
         mappings_to_iterate = [self.distributor_config] # TODO(inf) Proper name for dicts / mappings (scopes?)
         while mappings_to_iterate:
             mapping = mappings_to_iterate.pop()
-            for signature_str in mapping.keys():
+            for signature_str in list(mapping):
                 if not isinstance(signature_str, bytes):
                     self._raise_syntax_error(
                         u'All keys must be signature bytestrings (offending '
@@ -150,7 +150,7 @@ class _MelDistributor(MelNull):
         while mappings_to_iterate:
             mapping = mappings_to_iterate.pop()
             # The keys are always subrecord signatures
-            for signature in mapping.keys():
+            for signature in list(mapping):
                 # We will definitely need this signature
                 self._target_sigs.add(signature)
                 resolved_entry = mapping[signature]
@@ -457,7 +457,7 @@ class MelTruncatedStruct(MelStruct):
             target_unpacker = self._all_unpackers[size_]
         except KeyError:
             raise exception.ModSizeError(
-                ins.inName, readId, tuple(self._all_unpackers.keys()), size_)
+                ins.inName, readId, tuple(self._all_unpackers), size_)
         # Actually unpack the struct and pad it with defaults if it's an older,
         # truncated version
         unpacked_val = ins.unpack(target_unpacker, size_, readId)
@@ -833,7 +833,7 @@ class MelUnion(MelBase):
         for element in self.element_mapping.itervalues():
             element.getLoaders(temp_loaders)
         if self.fallback: self.fallback.getLoaders(temp_loaders)
-        for signature in temp_loaders.keys():
+        for signature in temp_loaders:
             loaders[signature] = self
 
     def hasFids(self, formElements):

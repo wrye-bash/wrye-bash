@@ -55,7 +55,7 @@ class _Mods_LoadListData(balt.ListEditorData):
 
     def getItemList(self):
         """Returns load list keys in alpha order."""
-        return sorted(self.loadListDict.keys(), key=lambda a: a.lower())
+        return sorted(self.loadListDict, key=lambda a: a.lower())
 
     def rename(self,oldName,newName):
         """Renames oldName to newName."""
@@ -164,7 +164,7 @@ class Mods_LoadList(ChoiceLink):
 
     @property
     def _choices(self):
-        return sorted(self.load_lists.keys(), key=lambda a: a.lower())
+        return sorted(self.load_lists, key=lambda a: a.lower())
 
 # "Sort by" submenu -----------------------------------------------------------
 class Mods_EsmsFirst(CheckLink, EnabledLink):
@@ -357,7 +357,7 @@ class Mods_CrcRefresh(ItemLink):
             message += u'  * ' + u'\n  * '.join(
                 [u'%s: cached %08X real %08X' % (k, v[1], v[0]) for k, v in
                  mismatched.iteritems()])
-            self.window.RefreshUI(redraw=mismatched.keys(), refreshSaves=False)
+            self.window.RefreshUI(redraw=mismatched, refreshSaves=False)
         else: message += _(u'No stale cached CRC values detected')
         self._showWryeLog(message)
 

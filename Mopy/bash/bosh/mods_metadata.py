@@ -212,7 +212,7 @@ def checkMods(showModList=False, showCRC=False, showVersion=True,
                   u'%(cleaning_wiki_url)s for more information.') % {
                 u'cleaning_wiki_url': _cleaning_wiki_url,
                 u'xedit_name': bush.game.Xe.full_name})
-            for mod in sorted(shouldClean.keys()):
+            for mod in sorted(shouldClean):
                 log(u'* __%s:__  %s' % (mod, shouldClean[mod]))
         if shouldCleanMaybe:
             log.setHeader(

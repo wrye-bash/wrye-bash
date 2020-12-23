@@ -1014,7 +1014,7 @@ class ImportActors(_ImporterPatcherPanel):
     patcher_name = _(u'Import Actors')
     patcher_desc = _(u'Import various actor attributes from source mods.')
     autoKey = set(chain.from_iterable(
-        d.iterkeys() for d in bush.game.actor_importer_attrs.itervalues()))
+        d for d in bush.game.actor_importer_attrs.itervalues()))
     _config_key = u'ActorImporter'
     patcher_type = preservers.ImportActorsPatcher
 

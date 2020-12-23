@@ -972,7 +972,7 @@ class UIList(wx.Panel):
 
     # Column properties
     @property
-    def allCols(self): return self.labels.keys()
+    def allCols(self): return list(self.labels)
     @property
     def colWidths(self):
         return _settings.getChanged(self.keyPrefix + u'.colWidths', {})
@@ -1610,7 +1610,7 @@ class UIList(wx.Panel):
             # If we don't have a global link menu, reset and abort
             glb_menu.set_categories([])
             return
-        tab_categories = self.global_links.keys()
+        tab_categories = list(self.global_links)
         # Check if we have to change category names
         if not glb_menu.categories_equal(tab_categories):
             # Release and recreate the global menu to avoid GUI flicker

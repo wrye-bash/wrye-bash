@@ -23,6 +23,7 @@
 """This module contains the oblivion record classes."""
 import re
 from collections import OrderedDict
+from itertools import chain
 
 from ... import brec
 from ...bolt import Flags, sio
@@ -231,8 +232,7 @@ class MelEffects(MelSequential):
             element.getLoaders(self._vanilla_loaders)
         for element in self._obme_elements:
             element.getLoaders(self._obme_loaders)
-        for signature in (self._vanilla_loaders.keys() +
-                          self._obme_loaders.keys()):
+        for signature in chain(self._vanilla_loaders, self._obme_loaders):
             loaders[signature] = self
 
     def hasFids(self, formElements):

@@ -506,7 +506,7 @@ class SaveFile(object):
         #--Change Records
         changeHisto = [0]*256
         typeModHisto = defaultdict(Counter)
-        knownTypes = set(bush.game.save_rec_types.keys())
+        knownTypes = set(bush.game.save_rec_types)
         lostChanges = {}
         objRefBases = {}
         objRefNullBases = 0
@@ -565,7 +565,7 @@ class SaveFile(object):
             log(u' Null Bases: %s' % objRefNullBases)
         if objRefBases:
             log(_(u' Count IRef     BaseId'))
-            for iref in sorted(objRefBases.keys()):
+            for iref in sorted(objRefBases):
                 count,cumSize = objRefBases[iref]
                 if iref >> 24 == 255:
                     parentid = iref
@@ -589,7 +589,7 @@ class SaveFile(object):
             if full:
                 createdCounts[(citem.recType, full)] += 1
             progress.plus()
-        for key in createdCounts.keys()[:]:
+        for key in list(createdCounts):
             minCount = (50,100)[key[0] == 'ALCH']
             if createdCounts[key] < minCount:
                 del createdCounts[key]

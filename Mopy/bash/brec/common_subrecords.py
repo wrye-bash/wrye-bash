@@ -436,7 +436,7 @@ class MelRaceParts(MelNull):
         temp_loaders = {}
         for element in self._indx_to_loader.itervalues():
             element.getLoaders(temp_loaders)
-        for signature in temp_loaders.keys():
+        for signature in temp_loaders:
             loaders[signature] = self
 
     def getSlotsUsed(self):

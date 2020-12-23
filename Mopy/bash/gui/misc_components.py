@@ -233,8 +233,8 @@ class Table(WithCharEvents):
             # row/column separators, proper spacing and labels
             clip_text = []
             row_labels = set(chain.from_iterable(
-                r.iterkeys() for r in sel_cells.itervalues()))
-            col_labels = sel_cells.keys()
+                r for r in sel_cells.itervalues()))
+            col_labels = list(sel_cells) ##: do we need the list here?
             # First calculate the maximum label lengths we'll have to pad to
             max_row_length = max(imap(len, row_labels))
             max_col_lengths = {}

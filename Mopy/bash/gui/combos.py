@@ -240,11 +240,11 @@ class TreePanel(_APageComponent):
             page_desc = page_descriptions.get(page_name, u'')
             if isinstance(page_val, dict):
                 # This is not a leaf, add a link page and then the subpages
-                link_page = self._LinkPage(self,
-                    page_desc, self.select_page, page_name, page_val.keys())
+                link_page = self._LinkPage(self, page_desc, self.select_page,
+                                           page_name, page_val)
                 self.add_page(link_page, page_name)
                 for subpage_name, subpage_val in sorted(page_val.iteritems(),
-                        key=lambda i: i[0]):
+                        key=lambda (k, v): k):
                     if subpage_val.should_appear():
                         new_subpage = subpage_val(self, page_descriptions.get(
                             u'%s/%s' % (page_name, subpage_name), u''))

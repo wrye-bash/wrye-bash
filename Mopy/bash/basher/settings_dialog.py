@@ -1382,10 +1382,10 @@ class TrustedBinariesPage(_AFixedPage):
         ]).apply_to(self)
 
     def _check_changed(self):
-        good_changed = self._binaries_list.left_items != bass.settings[
-            u'bash.installers.goodDlls'].keys()
-        bad_changed = self._binaries_list.right_items != bass.settings[
-            u'bash.installers.badDlls'].keys()
+        good_changed = self._binaries_list.left_items != list(bass.settings[
+            u'bash.installers.goodDlls'])
+        bad_changed = self._binaries_list.right_items != list(bass.settings[
+            u'bash.installers.badDlls'])
         self._mark_changed(self, good_changed or bad_changed)
         self.update_layout()
 
@@ -1530,10 +1530,10 @@ class TrustedBinariesPage(_AFixedPage):
         self._mark_changed(self, False)
 
     def _populate_binaries(self):
-        self._binaries_list.left_items = bass.settings[
-            u'bash.installers.goodDlls'].keys()
-        self._binaries_list.right_items = bass.settings[
-            u'bash.installers.badDlls'].keys()
+        self._binaries_list.left_items = list(bass.settings[
+            u'bash.installers.goodDlls'])
+        self._binaries_list.right_items = list(bass.settings[
+            u'bash.installers.badDlls'])
 
     @staticmethod
     def should_appear():

@@ -488,7 +488,7 @@ class _Installers_RescanningLink(Installers_Link, BoolLink):
 
     def _do_installers_rescan(self):
         """Performs the rescan of installers after toggling the link."""
-        self.window.rescanInstallers(self.idata.keys(), abort=False,
+        self.window.rescanInstallers(self.idata, abort=False, # iterate idata
             update_from_data=False,##:update data too when turning skips off ??
             shallow=True)
 

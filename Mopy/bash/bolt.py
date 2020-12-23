@@ -445,8 +445,8 @@ def GPathPurge():
         2) Prior to building a bashed patch
         3) Prior to saving settings files
     """
-    for key in _gpaths.keys():
-        # Using .keys() allows use to modify the dictionary while iterating
+    for key in list(_gpaths):
+        # Using list() allows us to modify the dictionary while iterating
         if sys.getrefcount(_gpaths[key]) == 2:
             # 1 for the reference in the _gpaths dictionary,
             # 1 for the temp reference passed to sys.getrefcount
@@ -1182,8 +1182,6 @@ class DataDict(object):
         return self.data.pop(key,default)
     def iteritems(self):
         return self.data.iteritems()
-    def iterkeys(self):
-        return self.data.iterkeys()
     def itervalues(self):
         return self.data.itervalues()
 
@@ -1430,7 +1428,7 @@ class Settings(DataDict):
     def loadDefaults(self, default_settings):
         """Add default settings to dictionary. Will not replace values that are already set."""
         self.defaults = default_settings
-        for key in default_settings.keys():
+        for key in default_settings: # PY3: ChainMap?
             if key not in self.data:
                 self.data[key] = copy.deepcopy(default_settings[key])
 
@@ -1569,16 +1567,14 @@ def unpack_spaced_string(ins, replacement_char=b'\x07'):
 class DataTableColumn(object):
     """DataTable accessor that presents table column as a dictionary."""
     def __init__(self, table, column):
-        self._table = table
+        self._table = table # type: DataTable
         self.column = column
     #--Dictionary Emulation
     def __iter__(self):
         """Dictionary emulation."""
-        tableData = self._table.data
         column = self.column
-        return (key for key in tableData.keys() if (column in tableData[key]))
-    def keys(self):
-        return list(self.__iter__())
+        return (key for key, col_dict in self._table.iteritems() if
+                column in col_dict)
     def items(self):
         """Dictionary emulation."""
         tableData = self._table.data

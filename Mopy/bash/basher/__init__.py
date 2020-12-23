@@ -1757,7 +1757,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         return settings[u'bash.ini.choices']
 
     @property
-    def _ini_keys(self): return settings[u'bash.ini.choices'].keys()
+    def _ini_keys(self): return list(settings[u'bash.ini.choices'])
 
     @property
     def ini_name(self): return self._ini_keys[settings[u'bash.ini.choice']]
@@ -2638,7 +2638,7 @@ class InstallersList(balt.UIList):
                         op = partial(installer.refreshBasic,
                                      SubProgress(progress, index, index + 1),
                                      calculate_projects_crc)
-                    dest.update(op().keys())
+                    dest.update(op())
                 self.data_store.hasChanged = True  # is it really needed ?
                 if update_from_data:
                     progress(0, _(u'Refreshing From Data...') + u'\n' + u' ' * 60)
@@ -3612,7 +3612,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
     def drag_tab(self, newPos):
         # Find the key
         removeTitle = self.GetPageText(newPos)
-        oldOrder = settings[u'bash.tabs.order'].keys()
+        oldOrder = list(settings[u'bash.tabs.order'])
         for removeKey in oldOrder:
             if tabInfo[removeKey][1] == removeTitle:
                 break
@@ -3965,14 +3965,14 @@ class BashFrame(WindowFrame):
                        warn_strings=False, warn_bsas=False):
         #--Any new corrupted files?
         message = []
-        corruptMods = set(bosh.modInfos.corrupted.keys())
+        corruptMods = set(bosh.modInfos.corrupted)
         if warn_mods and not corruptMods <= self.knownCorrupted:
             m = [_(u'Plugin warnings'),
                  _(u'The following mod files have unrecognized headers: ')]
             m.extend(sorted(corruptMods))
             message.append(m)
             self.knownCorrupted |= corruptMods
-        corruptSaves = set(bosh.saveInfos.corrupted.keys())
+        corruptSaves = set(bosh.saveInfos.corrupted)
         if warn_saves and not corruptSaves <= self.knownCorrupted:
             m = [_(u'Save game warnings'),
                  _(u'The following save files have errors: ')]

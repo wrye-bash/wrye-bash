@@ -1344,7 +1344,7 @@ class WryeParser(ScriptParser.Parser):
                     wiz_img_path = std_img_path
             image_paths.append(wiz_img_path)
         self.page = PageSelect(self._wiz_parent, bMany, _(u'Installer Wizard'),
-                               main_desc, titles.keys(), descs, image_paths,
+                               main_desc, list(titles), descs, image_paths,
                                titles.values())
 
     def kwdCase(self, value):
@@ -1413,9 +1413,9 @@ class WryeParser(ScriptParser.Parser):
     def kwdDeSelectAll(self): self._SelectAll(False)
 
     def _SelectAll(self, bSelect):
-        for i in self.sublist.keys():
+        for i in list(self.sublist):
             self.sublist[i] = bSelect
-        for i in self.plugin_list.keys():
+        for i in list(self.plugin_list):
             self.plugin_list[i] = bSelect
 
     def kwd_select_plugin(self, plugin_name):
@@ -1436,7 +1436,7 @@ class WryeParser(ScriptParser.Parser):
     def kwd_de_select_all_plugins(self): self._select_all_plugins(False)
 
     def _select_all_plugins(self, should_activate):
-        for i in self.plugin_list.keys():
+        for i in list(self.plugin_list):
             self.plugin_list[i] = should_activate
 
     def kwd_rename_plugin(self, plugin_name, new_name):

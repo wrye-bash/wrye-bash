@@ -64,7 +64,7 @@ class DocBrowser(WindowFrame):
         # Mod Name
         self._mod_name_box = TextField(mod_list_window, editable=False)
         self._mod_list = ListBox(mod_list_window,
-             choices=sorted(x.s for x in self._db_doc_paths.keys()),
+             choices=sorted(x.s for x in self._db_doc_paths),
              isSort=True, onSelect=self._do_select_mod)
         # Buttons
         self._set_btn = Button(main_window, _(u'Set Doc...'),

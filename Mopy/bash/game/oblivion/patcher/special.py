@@ -156,7 +156,7 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
             with sio(book.text) as buff:
                 buff.seek(0,os.SEEK_END)
                 buffWrite = buff.write
-                for effectName in sorted(effect_ingred.keys()):
+                for effectName in sorted(effect_ingred):
                     effects = [indexFull for indexFull in
                                effect_ingred[effectName] if indexFull[0] < num]
                     if effects:

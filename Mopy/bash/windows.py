@@ -349,8 +349,8 @@ class TaskDialog(object):
 
     def bind(self, task_dialog_event, func):
         """Bind a function to one of the task dialog events."""
-        if task_dialog_event not in self.__events.keys():
-            raise Exception("The control does not support the event.")
+        if task_dialog_event not in self.__events:
+            raise Exception(u'The control does not support the event.')
         self.__events[task_dialog_event].append(func)
         return self
 
@@ -410,7 +410,7 @@ class TaskDialog(object):
 
     def set_footer_icon(self, icon):
         """Set the icon that appears in the footer of the dialog."""
-        self._footer_is_stock = icon in self.stock_icons.keys()
+        self._footer_is_stock = icon in self.stock_icons
         self._footer_icon = self.stock_icons[
             icon] if self._footer_is_stock else icon
         return self
@@ -521,9 +521,7 @@ class TaskDialog(object):
             # Enumerate through button list
             for i, button in enumerate(self._buttons):
                 text, elevated, default = self.__parse_button(button)
-
-                if (text.lower() in self.stock_buttons.keys()
-                    and self._conv_stock):
+                if text.lower() in self.stock_buttons and self._conv_stock:
                     # This is a stock button.
                     conf.dwCommonButtons = (conf.dwCommonButtons
                                             |self.stock_buttons[text.lower()])

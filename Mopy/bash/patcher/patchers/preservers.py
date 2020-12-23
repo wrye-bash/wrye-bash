@@ -161,7 +161,7 @@ class _APreserver(ImportPatcher):
     def initData(self, progress, __attrgetters=attrgetter_cache):
         if not self.isActive: return
         id_data = self.id_data
-        loadFactory = LoadFactory(False, *self.recAttrs_class.keys())
+        loadFactory = LoadFactory(False, *self.recAttrs_class)
         progress.setFull(len(self.srcs) + len(self.csv_srcs))
         cachedMasters = {}
         minfs = self.patchFile.p_file_minfos

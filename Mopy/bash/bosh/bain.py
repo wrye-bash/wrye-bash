@@ -263,8 +263,8 @@ class Installer(object):
             self.espmNots.add(GPath(oldName))
 
     def resetAllEspmNames(self):
-        for espm in self.remaps.keys():
-            # Need to use .keys(), since 'resetEspmName' will use
+        for espm in list(self.remaps):
+            # Need to use list(), since 'resetEspmName' will use
             # del self.remaps[oldName], changing the dictionary size.
             self.resetEspmName(self.remaps[espm])
 
@@ -351,7 +351,7 @@ class Installer(object):
         else:
             dest_scr = self.refreshDataSizeCrc()
         if self.overrideSkips:
-            InstallersData.overridden_skips.update(dest_scr.keys())
+            InstallersData.overridden_skips.update(dest_scr)
 
     def __copy__(self):
         """Create a copy of self -- works for subclasses too (assuming
@@ -855,11 +855,10 @@ class Installer(object):
                     # There are files in this folder, call it the starting point
                     break
                 rootDirs = root[u'dirs']
-                rootDirKeys = rootDirs.keys()
-                if len(rootDirKeys) == 1:
+                if len(rootDirs) == 1:
                     # Only one subfolder, see if it's either the data folder,
                     # or an accepted Data sub-folder
-                    rootDirKey = rootDirKeys[0]
+                    rootDirKey = list(rootDirs)[0]
                     rootDirKeyL = rootDirKey.lower()
                     if rootDirKeyL in dataDirsPlus or rootDirKeyL == data_dir:
                         # Found suitable starting point
@@ -1141,7 +1140,7 @@ class Installer(object):
         """Install specified files to Game\Data directory."""
         destFiles = set(destFiles)
         dest_src = self.refreshDataSizeCrc(True)
-        for k in dest_src.keys():
+        for k in list(dest_src):
             if k not in destFiles: del dest_src[k]
         if not dest_src: return bolt.LowerDict(), set(), set(), set()
         progress = progress if progress else bolt.Progress()
@@ -2252,7 +2251,7 @@ class InstallersData(DataStore):
         """Move specified archives to specified position."""
         old_ordered = self.sorted_values(set(self.data) - set(moveList))
         new_ordered = self.sorted_values(moveList)
-        if newPos >= len(self.keys()): newPos = len(old_ordered)
+        if newPos >= len(self): newPos = len(old_ordered)
         for index, installer in enumerate(old_ordered[:newPos]):
             installer.order = index
         for index, installer in enumerate(new_ordered):
@@ -2959,9 +2958,8 @@ class InstallersData(DataStore):
         :type installerKeys: collections.Iterable[bolt.Path]
         :rtype: list[bolt.Path]
         """
-        def _package(x):
-            return self[x].is_archive() or self[x].is_project()
-        return filter(_package, installerKeys)
+        return [x for x in installerKeys
+                if self[x].is_archive() or self[x].is_project()]
 
     def createFromData(self, projectPath, ci_files, progress):
         if not ci_files: return

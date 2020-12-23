@@ -646,9 +646,8 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
             currentMesh = (
                 race.rightEye.modPath.lower(), race.leftEye.modPath.lower())
             try:
-                maxEyesMesh = \
-                    sorted(mesh_eye.keys(), key=lambda a: len(mesh_eye[a]),
-                           reverse=True)[0]
+                maxEyesMesh = sorted(mesh_eye, key=lambda a: len(mesh_eye[a]),
+                                     reverse=True)[0]
             except IndexError:
                 maxEyesMesh = blueEyeMesh
             #--Single eye mesh, but doesn't match current mesh?

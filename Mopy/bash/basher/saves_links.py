@@ -424,7 +424,7 @@ class Save_EditCreatedData(balt.ListEditorData):
 
     def getItemList(self):
         """Returns load list keys in alpha order."""
-        items = sorted(self.name_nameRecords.keys())
+        items = sorted(self.name_nameRecords)
         items.sort(key=lambda x: self.name_nameRecords[x][1][0].recType)
         return items
 
@@ -544,7 +544,7 @@ class Save_EditPCSpellsData(balt.ListEditorData):
 
     def getItemList(self):
         """Returns load list keys in alpha order."""
-        return sorted(self.player_spells.keys(), key=lambda a: a.lower())
+        return sorted(self.player_spells, key=lambda a: a.lower())
 
     def getInfo(self,item):
         """Returns string info on specified item."""
@@ -833,7 +833,7 @@ class Save_Unbloat(OneItemLink):
         message = [_(u'Remove savegame bloating?')]
         if createdCounts:
             for (created_item_rec_type, rec_full), count_ in sorted(
-                    createdCounts.items()):
+                    createdCounts.iteritems()):
                 message.append(u'  %s %s: %u' % (
                     created_item_rec_type, rec_full, count_))
         if nullRefCount:
@@ -846,7 +846,7 @@ class Save_Unbloat(OneItemLink):
             return
         #--Remove bloating
         with balt.Progress(_(u'Removing Bloat')) as progress:
-            nums = saveFile.removeBloating(createdCounts.keys(),True,SubProgress(progress,0,0.9))
+            nums = saveFile.removeBloating(createdCounts,True,SubProgress(progress,0,0.9))
             progress(0.9,_(u'Saving...'))
             saveFile.safeSave()
         self._showOk((_(u'Uncreated Objects: %d') + u'\n' +

@@ -735,7 +735,7 @@ class Installer_Refresh(_InstallerLink):
     @balt.conversation
     def Execute(self):
         self.window.rescanInstallers(self.selected, abort=True,
-                            calculate_projects_crc=self.calculate_projects_crc)
+            calculate_projects_crc=self.calculate_projects_crc)
 
 class Installer_SkipVoices(CheckLink, _RefreshingLink):
     """Toggle skipVoices flag on installer."""

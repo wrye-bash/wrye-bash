@@ -129,7 +129,7 @@ class OmodFile(object):
                         name = maFileSize.group(2).strip().strip(u'\r')
                         filesizes[name] = size
         # drop the last line entry
-        del filesizes[filesizes.keys()[-1]]
+        del filesizes[list(filesizes)[-1]]
         return filesizes, sum(filesizes.itervalues())
 
     def extractToProject(self,outDir,progress=None):

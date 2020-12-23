@@ -325,7 +325,7 @@ class _Mod_LabelsData(balt.ListEditorData):
         #--Edit table entries.
         colGroup = bosh.modInfos.table.getColumn(self.column)
         changed= []
-        for fileName in colGroup.keys():
+        for fileName in list(colGroup):
             if colGroup[fileName] == oldName:
                 colGroup[fileName] = newName
                 changed.append(fileName)
@@ -340,7 +340,7 @@ class _Mod_LabelsData(balt.ListEditorData):
         #--Edit table entries.
         colGroup = bosh.modInfos.table.getColumn(self.column)
         changed= []
-        for fileName in colGroup.keys():
+        for fileName in list(colGroup):
             if colGroup[fileName] == item:
                 del colGroup[fileName]
                 changed.append(fileName)
@@ -429,7 +429,7 @@ class _ModGroups(object):
     def readFromModInfos(self,mods=None):
         """Imports mods/groups from modInfos."""
         column = bosh.modInfos.table.getColumn(u'group')
-        mods = mods or column.keys()# if mods are None read groups for all mods
+        mods = mods or list(column) # if mods are None read groups for all mods
         groups = tuple(column.get(x) for x in mods)
         self.mod_group.update((x,y) for x,y in zip(mods,groups) if y)
 
@@ -2370,7 +2370,7 @@ class Mod_FullNames_Import(_Mod_Import_Link):
         with bolt.sio() as buff:
             format_ = u'%s:   %s >> %s\n'
             #buff.write(format_ % (_(u'Editor Id'),_(u'Name')))
-            for eid in sorted(changed.keys()):
+            for eid in sorted(changed):
                 full, newFull = changed[eid]
                 try:
                     buff.write(format_ % (eid, full, newFull))

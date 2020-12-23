@@ -208,7 +208,7 @@ class _AListsMerger(ListPatcher):
             empty_lists = []
             # Build a dict mapping leveled lists to other leveled lists that
             # they are sublists in
-            sub_supers = {x: [] for x in stored_lists.keys()}
+            sub_supers = {x: [] for x in stored_lists} ##: defaultdict??
             for stored_list in sorted(stored_lists.values()):
                 list_fid = stored_list.fid
                 if not stored_list.items:

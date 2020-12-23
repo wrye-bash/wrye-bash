@@ -336,4 +336,4 @@ class TestOrderedLowerDict(TestLowerDict):
     def test_keys(self):
         a = self.dict_type([(u'sape', 4139), (u'guido', 4127),
                             (u'jack', 4098)])
-        assert a.keys() == [u'sape', u'guido', u'jack']
+        assert list(a) == [u'sape', u'guido', u'jack']
