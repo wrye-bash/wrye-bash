@@ -1500,7 +1500,7 @@ class ModDetails(_ModsSavesDetails):
             self.modified.text_content = self.modifiedStr
             return
         #--Normalize format
-        modifiedStr = time.strftime('%c', newTimeTup)
+        modifiedStr = time.strftime(u'%c', newTimeTup)
         self.modifiedStr = modifiedStr
         self.modified.text_content = modifiedStr #--Normalize format
         self.SetEdited()
