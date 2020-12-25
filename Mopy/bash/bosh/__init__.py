@@ -591,7 +591,7 @@ class ModInfo(FileInfo):
 
     def readHeader(self):
         """Read header from file and set self.header attribute."""
-        with ModReader(self.name,self.getPath().open('rb')) as ins:
+        with ModReader(self.name,self.getPath().open(u'rb')) as ins:
             try:
                 tes4_rec_header = self._read_tes4_record(ins)
                 self.header = bush.game.plugin_header_class(tes4_rec_header,
@@ -607,8 +607,8 @@ class ModInfo(FileInfo):
     def writeHeader(self):
         """Write Header. Actually have to rewrite entire file."""
         filePath = self.getPath()
-        with filePath.open('rb') as ins:
-            with filePath.temp.open('wb') as out:
+        with filePath.open(u'rb') as ins:
+            with filePath.temp.open(u'wb') as out:
                 try:
                     #--Open original and skip over header
                     reader = ModReader(self.name,ins)
@@ -751,7 +751,7 @@ class ModInfo(FileInfo):
                     bsa.extract_assets(assets, out_path.s)
                 except BSAError as e:
                     raise ModError(self.name,
-                                   u"Could not extract Strings File from "
+                                   u'Could not extract Strings File from '
                                    u"'%s': %s" % (bsa.name, e))
                 paths.update(imap(out_path.join, assets))
         return paths
@@ -938,7 +938,7 @@ class INIInfo(IniFile):
     def is_applicable(self, stat=None):
         stat = stat or self.tweak_status()
         return stat != -20 and (
-            bass.settings['bash.ini.allowNewLines'] or stat != -10)
+            bass.settings[u'bash.ini.allowNewLines'] or stat != -10)
 
     def getStatus(self, target_ini=None, target_ini_settings=None):
         """Returns status of the ini tweak:
@@ -1113,8 +1113,8 @@ class SaveInfo(FileInfo):
         """Rewrites masters of existing save file."""
         if not self.abs_path.exists():
             raise SaveFileError(self.abs_path.head, u'File does not exist.')
-        with self.abs_path.open('rb') as ins:
-            with self.abs_path.temp.open('wb') as out:
+        with self.abs_path.open(u'rb') as ins:
+            with self.abs_path.temp.open(u'wb') as out:
                 oldMasters = self.header.writeMasters(ins, out)
         oldMasters = [GPath_no_norm(decoder(x)) for x in oldMasters]
         self.abs_path.untemp()
@@ -1589,8 +1589,8 @@ class INIInfos(TableFileInfos):
         self._ini = None
         # Check the list of target INIs, remove any that don't exist
         # if _target_inis is not an OrderedDict choice won't be set correctly
-        _target_inis = bass.settings['bash.ini.choices'] # type: OrderedDict
-        choice = bass.settings['bash.ini.choice'] # type: int
+        _target_inis = bass.settings[u'bash.ini.choices'] # type: OrderedDict
+        choice = bass.settings[u'bash.ini.choice'] # type: int
         if isinstance(_target_inis, OrderedDict):
             try:
                 previous_ini = _target_inis.keys()[choice]
@@ -1627,11 +1627,11 @@ class INIInfos(TableFileInfos):
             _target_inis[_(u'Browse...')] = None
         self.__sort_target_inis()
         if previous_ini:
-            choice = bass.settings['bash.ini.choices'].keys().index(
+            choice = bass.settings[u'bash.ini.choices'].keys().index(
                 previous_ini)
-        bass.settings['bash.ini.choice'] = choice if choice >= 0 else 0
-        self.ini = bass.settings['bash.ini.choices'].values()[
-            bass.settings['bash.ini.choice']]
+        bass.settings[u'bash.ini.choice'] = choice if choice >= 0 else 0
+        self.ini = bass.settings[u'bash.ini.choices'].values()[
+            bass.settings[u'bash.ini.choice']]
 
     @property
     def ini(self):
@@ -1648,10 +1648,10 @@ class INIInfos(TableFileInfos):
     def update_targets(targets_dict):
         """Update 'bash.ini.choices' with targets_dict then re-sort the dict
         of target INIs"""
-        for existing_ini in bass.settings['bash.ini.choices']:
+        for existing_ini in bass.settings[u'bash.ini.choices']:
             targets_dict.pop(existing_ini, None)
         if targets_dict:
-            bass.settings['bash.ini.choices'].update(targets_dict)
+            bass.settings[u'bash.ini.choices'].update(targets_dict)
             # now resort
             INIInfos.__sort_target_inis()
         return targets_dict
@@ -2132,7 +2132,7 @@ class ModInfos(FileInfos):
         toggling bash.mods.autoGhost to False we forcibly unghost all mods
         """
         changed = []
-        toGhost = bass.settings.get('bash.mods.autoGhost',False)
+        toGhost = bass.settings.get(u'bash.mods.autoGhost',False)
         if force or toGhost:
             allowGhosting = self.table.getColumn(u'allowGhosting')
             for mod, modInfo in self.iteritems():
@@ -2171,7 +2171,7 @@ class ModInfos(FileInfos):
         """Rescan specified mods. Return value is only meaningful when
         return_results is set to True."""
         messagetext = _(u'Check ESL Qualifications') if bush.game.check_esl \
-            else _(u"Mark Mergeable")
+            else _(u'Mark Mergeable')
         with prog or balt.Progress(_(messagetext) + u' ' * 30) as prog:
             return self._rescanMergeable(names, prog, return_results)
 
@@ -3406,7 +3406,7 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
             u"This is probably not recoverable with the current file. Do you "
             u"want to try the backup BashSettings.dat? (It will have all your "
             u"UI choices of the time before last that you used Wrye Bash.")
-        usebck = balt.askYes(None, msg % err, _(u"Settings Load Error"))
+        usebck = balt.askYes(None, msg % err, _(u'Settings Load Error'))
         if usebck:
             try:
                 bass.settings = _loadBakOrEmpty()
@@ -3418,15 +3418,15 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
                     u"settings and load Wrye Bash without your saved UI "
                     u"settings?. (Otherwise Wrye Bash won't start up)")
                 delete = balt.askYes(None, msg % err,
-                                     _(u"Settings Load Error"))
+                                     _(u'Settings Load Error'))
                 if delete: bass.settings = _loadBakOrEmpty(delBackup=True)
                 else:raise
         else:
             msg = _(
-                u"Do you want to delete the corrupted settings and load Wrye "
-                u"Bash without your saved UI settings?. (Otherwise Wrye Bash "
+                u'Do you want to delete the corrupted settings and load Wrye '
+                u'Bash without your saved UI settings?. (Otherwise Wrye Bash '
                 u"won't start up)")
-            delete = balt.askYes(None, msg, _(u"Settings Load Error"))
+            delete = balt.askYes(None, msg, _(u'Settings Load Error'))
             if delete: # ignore bak but don't delete
                 bass.settings = _loadBakOrEmpty(ignoreBackup=True)
             else: raise

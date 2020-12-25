@@ -57,7 +57,7 @@ def compress7z(command, full_dest, rel_dest, srcDir, progress=None):
     index, errorLine = 0, u''
     with proc.stdout as out:
         for line in iter(out.readline, b''):
-            line = unicode(line, 'utf8') # utf-8 is ok, see compressCommand
+            line = unicode(line, u'utf8') # utf-8 is ok, see compressCommand
             if regErrMatch(line):
                 errorLine = line + u''.join(out)
                 break
@@ -86,7 +86,7 @@ def extract7z(src_archive, extract_dir, progress=None, readExtensions=None,
     index, errorLine, subArchives = 0, u'', []
     with proc.stdout as out:
         for line in iter(out.readline, b''):
-            line = unicode(line, 'utf8')
+            line = unicode(line, u'utf8')
             if regErrMatch(line):
                 errorLine = line + u''.join(out)
                 break

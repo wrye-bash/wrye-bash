@@ -175,7 +175,7 @@ def persist_orders(__keep_max=256):
         _lords_pickle.data['_current_list_index'] = _current_list_index
     _lords_pickle.data['_active_mods_lists'] = _active_mods_lists
     ##: save them also in BashSettings.dat in case someone downgrades - drop !
-    bass.settings['bash.loadLists.data'] = _active_mods_lists
+    bass.settings[u'bash.loadLists.data'] = _active_mods_lists
     _lords_pickle.save()
 
 def _keep_max(max_to_keep, length):
@@ -333,17 +333,17 @@ def __load_pickled_load_orders():
     if b'Bethesda ESMs' in _active_mods_lists: ##: backwards compat
         _active_mods_lists[u'Vanilla'] = _active_mods_lists[b'Bethesda ESMs']
         del _active_mods_lists[b'Bethesda ESMs']
-    locked = bass.settings.get('bosh.modInfos.resetMTimes', False)
+    locked = bass.settings.get(u'bosh.modInfos.resetMTimes', False)
 
 def get_active_mods_lists():
     """Get the user active mods lists from BashLoadOrder.dat, except if they
     are still saved in BashSettings.dat"""
     global _active_mods_lists
     if _active_mods_lists is __active_mods_sentinel:
-        settings_mods_list = bass.settings.get('bash.loadLists.data',
+        settings_mods_list = bass.settings.get(u'bash.loadLists.data',
                                                __active_mods_sentinel)
         # if settings_mods_list is not __active_mods_sentinel:
-        #     del bass.settings['bash.loadLists.data']
+        #     del bass.settings[u'bash.loadLists.data']
         _active_mods_lists = settings_mods_list
     return _active_mods_lists
 
@@ -397,7 +397,7 @@ def toggle_lock_load_order(user_warning_callback):
     if lock:
         # Make sure the user actually wants to enable this
         lock = user_warning_callback()
-    bass.settings['bosh.modInfos.resetMTimes'] = locked = lock
+    bass.settings[u'bosh.modInfos.resetMTimes'] = locked = lock
 
 class Unlock(object):
 

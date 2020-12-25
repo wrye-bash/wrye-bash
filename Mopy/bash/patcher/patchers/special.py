@@ -47,11 +47,11 @@ class _AListsMerger(ListPatcher):
         OOOMods = {GPath(u"Oscuro's_Oblivion_Overhaul.esm"),
                    GPath(u"Oscuro's_Oblivion_Overhaul.esp")}
         FransMods = {GPath(u"Francesco's Leveled Creatures-Items Mod.esm"),
-                     GPath(u"Francesco.esp")}
-        WCMods = {GPath(u"Oblivion Warcry.esp"),
-                  GPath(u"Oblivion Warcry EV.esp")}
-        TIEMods = {GPath(u"TIE.esp")}
-        OverhaulCompat = GPath(u"Unofficial Oblivion Patch.esp") in mods and (
+                     GPath(u'Francesco.esp')}
+        WCMods = {GPath(u'Oblivion Warcry.esp'),
+                  GPath(u'Oblivion Warcry EV.esp')}
+        TIEMods = {GPath(u'TIE.esp')}
+        OverhaulCompat = GPath(u'Unofficial Oblivion Patch.esp') in mods and (
                 (OOOMods | WCMods) & mods) or (
                                  FransMods & mods and not (TIEMods & mods))
         if OverhaulCompat:
@@ -417,7 +417,7 @@ class ContentsCheckerPatcher(Patcher):
                         keep(record.fid)
                 # Log the result if we removed at least one entry
                 if id_removed:
-                    log(u"\n=== " + rec_type)
+                    log(u'\n=== ' + rec_type)
                     for contId in sorted(id_removed):
                         log(u'* ' + id_eid[contId])
                         for removedId in sorted(id_removed[contId]):

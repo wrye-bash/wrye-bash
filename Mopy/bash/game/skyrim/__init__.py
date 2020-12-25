@@ -42,7 +42,7 @@ class SkyrimGameInfo(GameInfo):
     regInstallKeys = (u'Bethesda Softworks\\Skyrim', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/skyrim/'
     nexusName = u'Skyrim Nexus'
-    nexusKey = 'bash.installers.openSkyrimNexus.continue'
+    nexusKey = u'bash.installers.openSkyrimNexus.continue'
 
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
         _j(u'meshes', u'actors', u'character', u'facegendata', u'facegeom'),

@@ -382,13 +382,13 @@ class Installer(object):
     def goodDlls(force_recalc=False):
         if Installer._goodDlls is None or force_recalc:
             Installer._goodDlls = collections.defaultdict(list,
-                bass.settings['bash.installers.goodDlls'])
+                bass.settings[u'bash.installers.goodDlls'])
         return Installer._goodDlls
     @staticmethod
     def badDlls(force_recalc=False):
         if Installer._badDlls is None or force_recalc:
             Installer._badDlls = collections.defaultdict(list,
-                bass.settings['bash.installers.badDlls'])
+                bass.settings[u'bash.installers.badDlls'])
         return Installer._badDlls
     # while checking for skips process some installer attributes
     _attributes_process = {}
@@ -402,24 +402,24 @@ class Installer(object):
         del Installer._global_skips[:]
         del Installer._global_start_skips[:]
         Installer._global_skip_extensions.clear()
-        if bass.settings['bash.installers.skipTESVBsl']:
+        if bass.settings[u'bash.installers.skipTESVBsl']:
             Installer._global_skip_extensions.add('.bsl')
-        if bass.settings['bash.installers.skipScriptSources']:
+        if bass.settings[u'bash.installers.skipScriptSources']:
             Installer._global_skip_extensions.update(
                 bush.game.Psc.source_extensions)
         # skips files starting with...
-        if bass.settings['bash.installers.skipDistantLOD']:
+        if bass.settings[u'bash.installers.skipDistantLOD']:
             Installer._global_start_skips.append(u'distantlod')
-        if bass.settings['bash.installers.skipLandscapeLODMeshes']:
+        if bass.settings[u'bash.installers.skipLandscapeLODMeshes']:
             meshes_lod = os_sep.join((u'meshes', u'landscape', u'lod'))
             Installer._global_start_skips.append(meshes_lod)
-        if bass.settings['bash.installers.skipScreenshots']:
+        if bass.settings[u'bash.installers.skipScreenshots']:
             Installer._global_start_skips.append(u'screenshots')
         # LOD textures
         skipLODTextures = bass.settings[
-            'bash.installers.skipLandscapeLODTextures']
+            u'bash.installers.skipLandscapeLODTextures']
         skipLODNormals = bass.settings[
-            'bash.installers.skipLandscapeLODNormals']
+            u'bash.installers.skipLandscapeLODNormals']
         skipAllTextures = skipLODTextures and skipLODNormals
         tex_gen = os_sep.join((u'textures', u'landscapelod', u'generated'))
         if skipAllTextures:
@@ -429,12 +429,12 @@ class Installer(object):
         elif skipLODNormals: Installer._global_skips.append(
             lambda f: f.startswith(tex_gen) and f.endswith(u'_fn.dds'))
         # Skipped extensions
-        skipObse = not bass.settings['bash.installers.allowOBSEPlugins']
+        skipObse = not bass.settings[u'bash.installers.allowOBSEPlugins']
         if skipObse:
             Installer._global_start_skips.append(
                 bush.game.Se.plugin_dir.lower() + os_sep)
             Installer._global_skip_extensions |= Installer._executables_ext
-        if bass.settings['bash.installers.skipImages']:
+        if bass.settings[u'bash.installers.skipImages']:
             Installer._global_skip_extensions |= imageExts
         Installer._init_executables_skips()
 
@@ -456,7 +456,7 @@ class Installer(object):
             rsplit = fileLower.rsplit(os_sep, 1)
             parentDir, fname = (u'', rsplit[0]) if len(rsplit) == 1 else rsplit
             if not self.overrideSkips and bass.settings[
-                'bash.installers.skipDocs'] and not (
+                u'bash.installers.skipDocs'] and not (
                         fname in bush.game.Bain.no_skip) and not (
                         fileExt in bush.game.Bain.no_skip_dirs.get(
                 parentDir, [])):
@@ -503,7 +503,7 @@ class Installer(object):
             if fileLower in bush.game.bethDataFiles:
                 self.hasBethFiles = True
                 if not self.overrideSkips and not bass.settings[
-                    'bash.installers.autoRefreshBethsoft']:
+                    u'bash.installers.autoRefreshBethsoft']:
                     self.skipDirFiles.add(_(u'[Bethesda Content]') + u' ' +
                                           full)
                     return None # FIXME - after renames ?
@@ -551,10 +551,10 @@ class Installer(object):
                                         desc, ext, badDlls, goodDlls)
             if not balt.askYes(balt.Link.Frame,message, dialogTitle):
                 badDlls[fileLower].append([archiveRoot,size,crc])
-                bass.settings['bash.installers.badDlls'] = Installer._badDlls
+                bass.settings[u'bash.installers.badDlls'] = Installer._badDlls
                 return True
             goodDlls[fileLower].append([archiveRoot,size,crc])
-            bass.settings['bash.installers.goodDlls'] = Installer._goodDlls
+            bass.settings[u'bash.installers.goodDlls'] = Installer._goodDlls
             return False
         if bush.game.Se.se_abbrev:
             _obse = partial(__skipExecutable,
@@ -1042,7 +1042,7 @@ class Installer(object):
         project = outDir.join(project)
         with project.unicodeSafe() as projectDir:
             #--Dump file list
-            with self.tempList.open('w',encoding='utf-8-sig') as out:
+            with self.tempList.open(u'w', encoding=u'utf-8-sig') as out:
                 if release:
                     out.write(u'*thumbs.db\n')
                     out.write(u'*desktop.ini\n')
@@ -1326,7 +1326,7 @@ class InstallerArchive(Installer):
             u'No files to extract for %s.' % self.archive)
         # expand wildcards in fileNames to get actual count of files to extract
         #--Dump file list
-        with self.tempList.open('w',encoding='utf8') as out:
+        with self.tempList.open(u'w', encoding=u'utf8') as out:
             out.write(u'\n'.join(fileNames))
         #--Ensure temp dir empty
         bass.rmTempDir()
@@ -1682,7 +1682,7 @@ class InstallersData(DataStore):
         progress = progress or bolt.Progress()
         #--Archive invalidation
         from . import oblivionIni, InstallerMarker, modInfos
-        if bass.settings.get('bash.bsaRedirection') and oblivionIni.abs_path.exists():
+        if bass.settings.get(u'bash.bsaRedirection') and oblivionIni.abs_path.exists():
             oblivionIni.setBsaRedirection(True)
         #--Load Installers.dat if not loaded - will set changed to True
         changed = not self.loaded and self.__load(progress)
@@ -1706,7 +1706,7 @@ class InstallersData(DataStore):
         return changed
 
     def __load(self, progress):
-        progress(0, _(u"Loading Data..."))
+        progress(0, _(u'Loading Data...'))
         self.dictFile.load()
         self.converters_data.load()
         data = self.dictFile.data
@@ -1827,7 +1827,7 @@ class InstallersData(DataStore):
         for subPending, is_project in zip(
                 (pending - projects, pending & projects), (False, True)):
             if not subPending: continue
-            progress(0,_(u"Scanning Packages..."))
+            progress(0,_(u'Scanning Packages...'))
             progress.setFull(len(subPending))
             for index,package in enumerate(sorted(subPending)):
                 progress(index, _(u'Scanning Packages...') + u'\n%s' % package)
@@ -1941,7 +1941,7 @@ class InstallersData(DataStore):
                     pending.add(item)
                     continue
                 elif installer and not fullRefresh and (installer.skipRefresh
-                       or not bass.settings['bash.installers.autoRefreshProjects']):
+                       or not bass.settings[u'bash.installers.autoRefreshProjects']):
                     installers.add(item) # installer is present
                     continue # and needs not refresh
             else:
@@ -2035,7 +2035,7 @@ class InstallersData(DataStore):
         new_sizeCrcDate, pending, pending_size = \
             self._process_data_dir(dirDirsFiles, progress)
         #--Remove empty dirs?
-        if not bass.settings['bash.installers.removeEmptyDirs']:
+        if not bass.settings[u'bash.installers.removeEmptyDirs']:
             for empty in emptyDirs:
                 try: empty.removedirs()
                 except OSError: pass
@@ -2068,7 +2068,7 @@ class InstallersData(DataStore):
         oldGet = self.data_sizeCrcDate.get
         ghost_norm = bolt.LowerDict(
             (y, x) for x, y in Installer.getGhosted().iteritems())
-        if bass.settings['bash.installers.autoRefreshBethsoft']:
+        if bass.settings[u'bash.installers.autoRefreshBethsoft']:
             bethFiles = set()
         else:
             beth_keys = {CIstr(b) for b in
@@ -2121,21 +2121,21 @@ class InstallersData(DataStore):
     def _skips_in_data_dir(sDirs):
         """Skip some top level directories based on global settings - EVEN
         on a fullRefresh."""
-        setSkipOBSE = not bass.settings['bash.installers.allowOBSEPlugins']
-        setSkipDocs = bass.settings['bash.installers.skipDocs']
-        setSkipImages = bass.settings['bash.installers.skipImages']
+        setSkipOBSE = not bass.settings[u'bash.installers.allowOBSEPlugins']
+        setSkipDocs = bass.settings[u'bash.installers.skipDocs']
+        setSkipImages = bass.settings[u'bash.installers.skipImages']
         newSDirs = (x for x in sDirs if
                     x.lower() not in Installer.dataDirsMinus)
-        if bass.settings['bash.installers.skipDistantLOD']:
+        if bass.settings[u'bash.installers.skipDistantLOD']:
             newSDirs = (x for x in newSDirs if x.lower() != u'distantlod')
-        if bass.settings['bash.installers.skipLandscapeLODMeshes']:
+        if bass.settings[u'bash.installers.skipLandscapeLODMeshes']:
             newSDirs = (x for x in newSDirs if x.lower() != os.path.join(
                 u'meshes', u'landscape', u'lod'))
-        if bass.settings['bash.installers.skipScreenshots']:
+        if bass.settings[u'bash.installers.skipScreenshots']:
             newSDirs = (x for x in newSDirs if x.lower() != u'screenshots')
         # LOD textures
-        if bass.settings['bash.installers.skipLandscapeLODTextures'] and \
-                bass.settings['bash.installers.skipLandscapeLODNormals']:
+        if bass.settings[u'bash.installers.skipLandscapeLODTextures'] and \
+                bass.settings[u'bash.installers.skipLandscapeLODNormals']:
             newSDirs = (x for x in newSDirs if x.lower() != os.path.join(
                 u'textures', u'landscapelod', u'generated'))
         if setSkipOBSE:
@@ -2329,9 +2329,9 @@ class InstallersData(DataStore):
                 tweakPath.remove()
                 continue
             # Re-write the tweak
-            with tweakPath.open('w') as ini_:
+            with tweakPath.open(u'w') as ini_:
                 ini_.write(u'; INI Tweak created by Wrye Bash, using settings '
-                          u'from old file.\n\n')
+                           u'from old file.\n\n')
                 ini_.writelines(lines)
             # we notify BAIN below, although highly improbable the created ini
             # is included to a package
@@ -2570,7 +2570,7 @@ class InstallersData(DataStore):
             elif installer.is_active:
                 masked |= self.__restore(installer, removes, restores,
                                          cede_ownership)
-        anneal = bass.settings['bash.installers.autoAnneal']
+        anneal = bass.settings[u'bash.installers.autoAnneal']
         self._remove_restore(removes, restores, refresh_ui, cede_ownership,
                              progress, unArchives, anneal)
 
@@ -2917,7 +2917,7 @@ class InstallersData(DataStore):
                 _print_loose_conflicts(higher_loose, _(u'Higher'))
             report = buff.getvalue()
         if not list_overrides and not report and not srcInstaller.is_active:
-            report = _(u"No Underrides. Mod is not completely un-installed.")
+            report = _(u'No Underrides. Mod is not completely un-installed.')
         return report
 
     def getPackageList(self,showInactive=True):

@@ -30,104 +30,103 @@ def parse():
     parser = argparse.ArgumentParser()
 
     #### Groups ####
-    def arg(group, dashed, descr, dest, action='store', default=None):
+    def arg(group, dashed, descr, dest, action=u'store', default=None):
         group.add_argument(dashed, descr, dest=dest, action=action,
-                           default='' if default is None else default,
+                           default=u'' if default is None else default,
                            help=h) # so we can wrap help but not too much
 
     ### Path Group ###
-    pathGroup = parser.add_argument_group("Path Arguments",
-        r"""All path arguments must be absolute paths and use either forward
-        slashes (/) or two backward slashes (\\). All of these can also be
-        set in the ini (where you can also use relative paths) and if set
-        in both cmd line takes precedence.""")
+    pathGroup = parser.add_argument_group(u'Path Arguments',
+        u'All path arguments must be absolute paths and use either forward '
+        r'slashes (/) or two backward slashes (\\). All of these can also '
+        u'be set in the ini (where you can also use relative paths) and if '
+        u'set in both cmd line takes precedence.')
     # oblivionPath #
-    h = """Specifies the game directory (the one containing the game's exe).
-    Use this argument if Bash is located outside of the game directory,
-    and the --game argument failed to find it."""
-    arg(pathGroup, '-o', '--oblivionPath', dest='oblivionPath')
+    h = (u"Specifies the game directory (the one containing the game's exe). "
+         u'Use this argument if Bash is located outside of the game '
+         u'directory, and automatic detection failed to find it.')
+    arg(pathGroup, u'-o', u'--oblivionPath', dest=u'oblivionPath')
 
     ### User Path Group ###
-    userPathGroup = parser.add_argument_group("User Directory Arguments",
-        """These arguments allow you to specify your user directories in
-        several ways. These are only useful if the regular procedure for
-        getting the user directory fails. And even in that case, the user
-        is probably better off installing win32com.""")
+    userPathGroup = parser.add_argument_group(u'User Directory Arguments',
+        u'These arguments allow you to specify your user directories in '
+        u'several ways. These are only useful if the regular procedure for '
+        u'getting the user directory fails. And even in that case, the user '
+        u'is probably better off installing win32com.')
     # personalPath #
-    h = r"""Specify the user's personal directory. (Like "C:\\Documents and
-    Settings\\Wrye\\My Documents") If you need to set this then you probably
-    need to set -l too"""
-    arg(userPathGroup, '-p', '--personalPath', dest='personalPath')
+    h = (u"Specify the user's personal directory. (Like \"C:\\Documents and "
+         u'Settings\\Wrye\\My Documents") If you need to set this then you '
+         u'probably need to set -l too.')
+    arg(userPathGroup, u'-p', u'--personalPath', dest=u'personalPath')
     # userPath #
-    h = """Specify the user profile path. May help if HOMEDRIVE and/or
-    HOMEPATH are missing from the user's environment"""
-    arg(userPathGroup, '-u', '--userPath', dest='userPath')
+    h = (u'Specify the user profile path. May help if HOMEDRIVE and/or '
+         u"HOMEPATH are missing from the user's environment.")
+    arg(userPathGroup, u'-u', u'--userPath', dest=u'userPath')
     # localAppDataPath #
-    h = """Specify the user's local application data directory.If you need
-    to set this then you probably need to set -p too."""
-    arg(userPathGroup, '-l', '--localAppDataPath', dest='localAppDataPath')
+    h = (u"Specify the user's local application data directory. If you need "
+         u'to set this then you probably need to set -p too.')
+    arg(userPathGroup, u'-l', u'--localAppDataPath', dest=u'localAppDataPath')
 
     ### Backup Group ###
-    backupGroup = parser.add_argument_group("Backup and Restore Arguments",
-        """These arguments allow you to do backup and restore settings
-        operations.""")
+    backupGroup = parser.add_argument_group(u'Backup and Restore Arguments',
+        u'These arguments allow you to do backup and restore settings '
+        u'operations.')
     # backup #
-    h = """Backup all Bash settings to an archive file before the app
-    launches. You have to specify the filepath with the -f/--filename
-    option. If also -r is specified Bash will not start."""
-    arg(backupGroup, '-b', '--backup', dest='backup', action='store_true',
+    h = (u'Backup all Bash settings to an archive file before the app '
+         u'launches. You have to specify the filepath with the -f/--filename '
+         u'option. If also -r is specified Bash will not start.')
+    arg(backupGroup, u'-b', u'--backup', dest=u'backup', action=u'store_true',
         default=False)
     # restore #
-    h = """Restore all Bash settings from an archive file before the app
-    launches. You have to specify the filepath with the -f/--filename
-    option. If also -b is specified Bash will not start."""
-    arg(backupGroup, '-r', '--restore', dest='restore', action='store_true',
+    h = (u'Restore all Bash settings from an archive file before the app '
+         u'launches. You have to specify the filepath with the -f/--filename '
+         u'option. If also -b is specified Bash will not start.')
+    arg(backupGroup, u'-r', u'--restore', dest=u'restore', action=u'store_true',
         default=False)
     # filename #
-    h = """The file to use with the -r or -b options. For -r must be a '.7z'
-    backup file or a dir where such a file was extracted. For -b must be a
-    valid path to a '.7z' file that will be overwritten if it exists."""
-    arg(backupGroup, '-f', '--filename', dest='filename')
+    h = (u"The file to use with the -r or -b options. For -r must be a '.7z' "
+         u'backup file or a dir where such a file was extracted. For -b must '
+         u"be a valid path to a '.7z' file that will be overwritten if it "
+         u"exists.")
+    arg(backupGroup, u'-f', u'--filename', dest=u'filename')
     # quietquit #
-    h = """Close Bash after creating or restoring backup and do not display
-    any prompts or message dialogs."""
-    arg(backupGroup, '-q', '--quiet-quit', dest='quietquit',
-        action='store_true', default=False)
+    h = (u'Close Bash after creating or restoring backup and do not display '
+         u'any prompts or message dialogs.')
+    arg(backupGroup, u'-q', u'--quiet-quit', dest=u'quietquit',
+        action=u'store_true', default=False)
 
     #### Individual Arguments ####
-    parser.add_argument('-d', '--debug',
-                        action='store_true',
+    parser.add_argument(u'-d', u'--debug',
+                        action=u'store_true',
                         default=False,
-                        dest='debug',
-                        help='Useful if bash is crashing on startup or if '
-                             'you want to print a lot of information'
-                             ' (e.g. while developing or '
-                             'debugging).')
-    parser.add_argument('--no-uac',
-                        action='store_true',
-                        dest='noUac',
-                        help='suppress the prompt to restart in admin mode '
-                             'when UAC is detected.')
-    parser.add_argument('--uac',
-                        action='store_true',
-                        dest='uac',
-                        help='always start in admin mode if UAC protection is '
-                             'detected.')
-    parser.add_argument('--genHtml',
-                        default=None,
-                        help=argparse.SUPPRESS)
-    parser.add_argument('-L', '--Language',
-                        action='store',
-                        default='',
-                        dest='language',
-                        help='Specify the user language overriding the system '
-                             'language settings.')
+                        dest=u'debug',
+                        help=u'Useful if bash is crashing on startup or if '
+                             u'you want to print a lot of information'
+                             u' (e.g. while developing or debugging).')
+    parser.add_argument(u'--no-uac',
+                        action=u'store_true',
+                        dest=u'noUac',
+                        help=u'suppress the prompt to restart in admin mode '
+                             u'when UAC is detected.')
+    parser.add_argument(u'--uac',
+                        action=u'store_true',
+                        dest=u'uac',
+                        help=u'always start in admin mode if UAC protection is '
+                             u'detected.')
+    parser.add_argument(u'--genHtml', default=None, help=argparse.SUPPRESS)
+    parser.add_argument(u'-L', u'--Language',
+                        action=u'store',
+                        default=u'',
+                        dest=u'language',
+                        help=u'Specify the user language overriding the '
+                             u'system language settings.')
     # parse and error check backup options
     args = parser.parse_args()
     if args.backup and args.restore:
-        parser.error('You specified both backup and restore')
+        parser.error(u'You specified both backup and restore')
     elif (args.backup or args.restore) and not args.filename:
-        parser.error('You must specify a filename for use with backup/restore')
+        parser.error(u'You must specify a filename for use with '
+                     u'backup/restore')
     return args
 
 _short_to_long = {

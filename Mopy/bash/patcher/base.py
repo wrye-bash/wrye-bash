@@ -103,7 +103,7 @@ class AListPatcher(Abstract_Patcher):
         """Logs the Source mods for this patcher."""
         log(self.__class__.srcsHeader)
         if not self.srcs:
-            log(u". ~~%s~~" % _(u'None'))
+            log(u'. ~~%s~~' % _(u'None'))
         else:
             for srcFile in self.srcs:
                 log(u'* %s' % srcFile)
@@ -282,7 +282,7 @@ class AMultiTweakItem(object):
     def isNew(self):
         """returns whether this tweak is new (i.e. whether the value was not
         loaded from a saved config"""
-        return getattr(self, "_isNew", False)
+        return getattr(self, '_isNew', False)
 
     def getListLabel(self):
         """Returns label to be used in list"""

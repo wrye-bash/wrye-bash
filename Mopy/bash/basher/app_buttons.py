@@ -82,8 +82,8 @@ class StatusBar_Button(ItemLink):
 
     def GetBitmapButton(self, window, image=None, onRClick=None):
         """Create and return gui button - you must define imageKey - WIP overrides"""
-        btn_image = image or balt.images[self.imageKey %
-                        bass.settings['bash.statusbar.iconSize']].GetBitmap()
+        btn_image = image or balt.images[self.imageKey % bass.settings[
+            u'bash.statusbar.iconSize']].GetBitmap()
         if self.gButton is not None:
             self.gButton.destroy_component()
         self.gButton = ClickableImage(window, btn_image,
@@ -106,7 +106,7 @@ class StatusBar_Button(ItemLink):
     # Helper function to get OBSE version
     @property
     def obseVersion(self):
-        if not bass.settings['bash.statusbar.showversion']: return u''
+        if not bass.settings[u'bash.statusbar.showversion']: return u''
         for ver_file in bush.game.Se.ver_files:
             ver_path = bass.dirs[u'app'].join(ver_file)
             if ver_path.exists():
@@ -126,7 +126,7 @@ class _App_Button(StatusBar_Button):
 
     @property
     def version(self):
-        if not bass.settings['bash.statusbar.showversion']: return u''
+        if not bass.settings[u'bash.statusbar.showversion']: return u''
         if self.IsPresent():
             version = self.exePath.strippedVersion
             if version != (0,):
@@ -139,7 +139,7 @@ class _App_Button(StatusBar_Button):
 
     @property
     def sb_button_tip(self):
-        if not bass.settings['bash.statusbar.showversion']: return self._tip
+        if not bass.settings[u'bash.statusbar.showversion']: return self._tip
         else:
             return self._tip + u' ' + self.version
 
@@ -167,7 +167,7 @@ class _App_Button(StatusBar_Button):
 
     def GetBitmapButton(self, window, image=None, onRClick=None):
         if not self.IsPresent(): return None
-        size = bass.settings['bash.statusbar.iconSize'] # 16, 24, 32
+        size = bass.settings[u'bash.statusbar.iconSize'] # 16, 24, 32
         idex = (size // 8) - 2 # 0, 1, 2, duh
         super(_App_Button, self).GetBitmapButton(
             window, self.images[idex].GetBitmap(), onRClick)
@@ -338,7 +338,7 @@ class _Mods_xEditExpert(BoolLink):
     key = bush.game.Xe.xe_key_prefix + u'.iKnowWhatImDoing'
 
 class _Mods_xEditSkipBSAs(BoolLink):
-    """Toggle xEdit expert mode (when launched via Bash)."""
+    """Toggle xEdit skip bsa mode (when launched via Bash)."""
     _text = _(u'Skip BSAs')
     _help = _(u'Skip loading BSAs when opening %s. Will disable some of its '
               u'functions.') % bush.game.Xe.full_name
@@ -414,15 +414,15 @@ class App_Tes4View(_ExeButton):
 class _Mods_BOSSDisableLockTimes(BoolLink):
     """Toggle Lock Load Order disabling when launching BOSS through Bash."""
     _text = _(u'BOSS Disable Lock Load Order')
-    key = 'BOSS.ClearLockTimes'
+    _bl_key = u'BOSS.ClearLockTimes'
     _help = _(u"If selected, will temporarily disable Bash's Lock Load Order "
               u'when running BOSS through Bash.')
 
 #------------------------------------------------------------------------------
 class _Mods_BOSSLaunchGUI(BoolLink):
     """If BOSS.exe is available then boss_gui.exe should be too."""
-    _text, key, _help = _(u'Launch using GUI'), 'BOSS.UseGUI', \
-                        _(u"If selected, Bash will run BOSS's GUI.")
+    _text, _bl_key, _help = _(u'Launch using GUI'), u'BOSS.UseGUI', \
+                            _(u"If selected, Bash will run BOSS's GUI.")
 
 class App_BOSS(_ExeButton):
     """loads BOSS"""
@@ -434,11 +434,11 @@ class App_BOSS(_ExeButton):
         self.mainMenu.append(_Mods_BOSSDisableLockTimes())
 
     def Execute(self):
-        if bass.settings['BOSS.UseGUI']:
+        if bass.settings[u'BOSS.UseGUI']:
             self.exePath = self.boss_path.head.join(u'boss_gui.exe')
         else:
             self.exePath = self.boss_path
-        self.wait = bool(bass.settings['BOSS.ClearLockTimes'])
+        self.wait = bool(bass.settings[u'BOSS.ClearLockTimes'])
         extraArgs = []
         if balt.getKeyState(82) and balt.getKeyState_Shift():
             extraArgs.append(u'-r 2',) # Revert level 2 - BOSS version 1.6+
@@ -453,7 +453,7 @@ class App_BOSS(_ExeButton):
             extraArgs.append(u'-g%s' % bush.game.fsName,)
         self.extraArgs = tuple(extraArgs)
         super(App_BOSS, self).Execute()
-        if bass.settings['BOSS.ClearLockTimes']:
+        if bass.settings[u'BOSS.ClearLockTimes']:
             # Clear the saved times from before
             with load_order.Unlock():
                 # Refresh to get the new load order that BOSS specified. If
@@ -511,7 +511,7 @@ class Game_Button(_ExeButton):
 
     @property
     def version(self):
-        if not bass.settings['bash.statusbar.showversion']: return u''
+        if not bass.settings[u'bash.statusbar.showversion']: return u''
         version = self._version_path.strippedVersion
         if version != (0,):
             version = u'.'.join([u'%s'%x for x in version])
@@ -576,8 +576,8 @@ class _StatefulButton(StatusBar_Button):
         elif state == -1: #--Invert
             self.button_state = True ^ self.button_state
         if self.gButton:
-            self.gButton.image = balt.images[self.imageKey %
-                        bass.settings['bash.statusbar.iconSize']].GetBitmap()
+            self.gButton.image = balt.images[self.imageKey % bass.settings[
+                u'bash.statusbar.iconSize']].GetBitmap()
             self.gButton.tooltip = self.sb_button_tip
 
     @property
@@ -609,7 +609,7 @@ class _StatefulButton(StatusBar_Button):
 
 class Obse_Button(_StatefulButton):
     """Obse on/off state button."""
-    _state_key = 'bash.obse.on'
+    _state_key = u'bash.obse.on'
     _state_img_key = u'checkbox.green.%s.%s'
     @property
     def _present(self):
@@ -626,17 +626,17 @@ class Obse_Button(_StatefulButton):
         return state
 
     @property
-    def sb_button_tip(self): return ((_(u"%s%s Disabled"), _(u"%s%s Enabled"))[
+    def sb_button_tip(self): return ((_(u'%s%s Disabled'), _(u'%s%s Enabled'))[
         self.button_state]) % (bush.game.Se.se_abbrev, self.obseVersion)
 
     def UpdateToolTips(self):
-        tipAttr = ('sb_button_tip', 'obseTip')[self.button_state]
+        tipAttr = (u'sb_button_tip', u'obseTip')[self.button_state]
         for button in _App_Button.obseButtons:
             button.gButton.tooltip = getattr(button, tipAttr, u'')
 
 class LAA_Button(_StatefulButton):
     """4GB Launcher on/off state button."""
-    _state_key = 'bash.laa.on'
+    _state_key = u'bash.laa.on'
     _state_img_key = u'checkbox.blue.%s.%s'
     @property
     def _present(self):
@@ -660,7 +660,7 @@ class LAA_Button(_StatefulButton):
 #------------------------------------------------------------------------------
 class AutoQuit_Button(_StatefulButton):
     """Button toggling application closure when launching Oblivion."""
-    _state_key = 'bash.autoQuit.on'
+    _state_key = u'bash.autoQuit.on'
     _state_img_key = u'checkbox.red.%s.%s'
     _default_state = False
 
@@ -669,13 +669,13 @@ class AutoQuit_Button(_StatefulButton):
         [u'off', u'x'][self.button_state], u'%d')
 
     @property
-    def sb_button_tip(self): return (_(u"Auto-Quit Disabled"), _(u"Auto-Quit Enabled"))[
+    def sb_button_tip(self): return (_(u'Auto-Quit Disabled'), _(u'Auto-Quit Enabled'))[
         self.button_state]
 
 #------------------------------------------------------------------------------
 class App_Help(StatusBar_Button):
     """Show help browser."""
-    imageKey, _tip = u'help.%s', _(u"Help File")
+    imageKey, _tip = u'help.%s', _(u'Help File')
 
     def Execute(self):
         readme_html = bass.dirs[u'mopy'].join(
@@ -688,18 +688,18 @@ class App_Help(StatusBar_Button):
 #------------------------------------------------------------------------------
 class App_DocBrowser(StatusBar_Button):
     """Show doc browser."""
-    imageKey, _tip = u'doc.%s', _(u"Doc Browser")
+    imageKey, _tip = u'doc.%s', _(u'Doc Browser')
 
     def Execute(self):
         if not Link.Frame.docBrowser:
             DocBrowser().show_frame()
-            bass.settings['bash.modDocs.show'] = True
+            bass.settings[u'bash.modDocs.show'] = True
         Link.Frame.docBrowser.raise_frame()
 
 #------------------------------------------------------------------------------
 class App_Settings(StatusBar_Button):
     """Show settings dialog."""
-    imageKey, _tip = 'settingsbutton.%s', _(u'Settings')
+    imageKey, _tip = u'settingsbutton.%s', _(u'Settings')
 
     def GetBitmapButton(self, window, image=None, onRClick=None):
         return super(App_Settings, self).GetBitmapButton(
@@ -711,12 +711,12 @@ class App_Settings(StatusBar_Button):
 #------------------------------------------------------------------------------
 class App_Restart(StatusBar_Button):
     """Restart Wrye Bash"""
-    _tip = _(u"Restart")
+    _tip = _(u'Restart')
 
     def GetBitmapButton(self, window, image=None, onRClick=None):
-        size = bass.settings['bash.statusbar.iconSize']
+        size = bass.settings[u'bash.statusbar.iconSize']
         return super(App_Restart, self).GetBitmapButton(
-            window, staticBitmap(window, special='undo', size=(size,size)),
+            window, staticBitmap(window, special=u'undo', size=(size,size)),
             onRClick)
 
     def Execute(self): Link.Frame.Restart()
@@ -724,7 +724,7 @@ class App_Restart(StatusBar_Button):
 #------------------------------------------------------------------------------
 class App_ModChecker(StatusBar_Button):
     """Show mod checker."""
-    imageKey, _tip = 'modchecker.%s', _(u"Mod Checker")
+    imageKey, _tip = u'modchecker.%s', _(u'Mod Checker')
 
     def Execute(self):
         ModChecker.create_or_raise()

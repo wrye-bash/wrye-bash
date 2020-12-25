@@ -193,7 +193,7 @@ class Mod_OrderByName(EnabledLink):
         message += (u'\n\n' + _(
             u'Note that some mods need to be in a specific order to work '
             u'correctly, and this sort operation may break that order.'))
-        if not self._askContinue(message, 'bash.sortMods.continue',
+        if not self._askContinue(message, u'bash.sortMods.continue',
                                  _(u'Sort Mods')): return
         #--Do it
         self.selected.sort()
@@ -412,7 +412,7 @@ class _Mod_Labels(ChoiceLink):
             @property
             def link_help(self): return _(
                 u"Applies the label '%(lbl)s' to the selected mod(s).") % {
-                                            'lbl': self._text}
+                                            u'lbl': self._text}
         self.__class__.choiceLinkType = _LabelLink
 
     @property
@@ -465,8 +465,8 @@ class _ModGroups(object):
         textPath = GPath(textPath)
         mod_group = self.mod_group
         rowFormat = u'"%s","%s"\n'
-        with textPath.open('w',encoding='utf-8-sig') as out:
-            out.write(rowFormat % (_(u"Mod"),_(u"Group")))
+        with textPath.open(u'w', encoding=u'utf-8-sig') as out:
+            out.write(rowFormat % (_(u'Mod'), _(u'Group')))
             for mod in sorted(mod_group):
                 out.write(rowFormat % (mod, mod_group[mod]))
 
@@ -490,7 +490,7 @@ class _Mod_Groups_Export(ItemLink):
         modGroups = _ModGroups()
         modGroups.readFromModInfos(self.selected)
         modGroups.writeToText(textPath)
-        self._showOk(_(u"Exported %d mod/groups.") % len(modGroups.mod_group))
+        self._showOk(_(u'Exported %d mod/groups.') % len(modGroups.mod_group))
 
 class _Mod_Groups_Import(ItemLink):
     """Import mod groups from text file."""
@@ -500,9 +500,9 @@ class _Mod_Groups_Import(ItemLink):
 
     def Execute(self):
         message = _(
-            u"Import groups from a text file ? This will assign to selected "
-            u"mods the group they are assigned in the text file, if any.")
-        if not self._askContinue(message, 'bash.groups.import.continue',
+            u'Import groups from a text file ? This will assign to selected '
+            u'mods the group they are assigned in the text file, if any.')
+        if not self._askContinue(message, u'bash.groups.import.continue',
                                  _(u'Import Groups')): return
         textDir = bass.dirs[u'patches']
         #--File dialog
@@ -520,8 +520,8 @@ class _Mod_Groups_Import(ItemLink):
         changed = modGroups.writeToModInfos(self.selected)
         bosh.modInfos.refresh()
         self.window.RefreshUI(refreshSaves=False) # was True (importing groups)
-        self._showOk(_(u"Imported %d mod/groups (%d changed).") % (
-            len(modGroups.mod_group), changed), _(u"Import Groups"))
+        self._showOk(_(u'Imported %d mod/groups (%d changed).') % (
+            len(modGroups.mod_group), changed), _(u'Import Groups'))
 
 class Mod_Groups(_Mod_Labels):
     """Add mod group links."""
@@ -548,14 +548,14 @@ class Mod_Groups(_Mod_Labels):
     def _doRefresh(self):
         """Add to the list of groups groups currently assigned to mods."""
         self.listEditor.SetItemsTo(list(set(bass.settings[
-            'bash.mods.groups']) | _ModGroups.assignedGroups()))
+            u'bash.mods.groups']) | _ModGroups.assignedGroups()))
 
     def _doSync(self):
         """Set the list of groups to groups currently assigned to mods."""
         msg = _(u'This will set the list of available groups to the groups '
                 u'currently assigned to mods. Continue ?')
         if not balt.askContinue(self.listEditor, msg,
-                                'bash.groups.sync.continue',
+                                u'bash.groups.sync.continue',
                                 _(u'Sync Groups')): return
         self.listEditor.SetItemsTo(list(_ModGroups.assignedGroups()))
 
@@ -565,13 +565,13 @@ class Mod_Groups(_Mod_Labels):
         Won't clear user set groups from the modlist - most probably not
         what the user wants.
         """
-        msg = _(u"This will reset the list of available groups to the default "
+        msg = _(u'This will reset the list of available groups to the default '
                 u"group list. It won't however remove non default groups from "
-                u"mods that are already tagged with them. Continue ?")
+                u'mods that are already tagged with them. Continue ?')
         if not balt.askContinue(self.listEditor, msg,
-                                'bash.groups.reset.continue',
+                                u'bash.groups.reset.continue',
                                 _(u'Reset Groups')): return
-        self.listEditor.SetItemsTo(list(settingDefaults['bash.mods.groups']))
+        self.listEditor.SetItemsTo(list(settingDefaults[u'bash.mods.groups']))
 
 #--Ratings --------------------------------------------------------------------
 class Mod_Ratings(_Mod_Labels):
@@ -598,11 +598,11 @@ class Mod_Details(OneItemLink):
             progress(0.7,_(u'Sorting records.'))
             for group in sorted(mod_details.group_records):
                 buff.write(group+u'\n')
-                if group in ('CELL','WRLD','DIAL'):
+                if group in (b'CELL',b'WRLD',b'DIAL'):
                     buff.write(u'  '+_(u'(Details not provided for this record type.)')+u'\n\n')
                     continue
                 records = mod_details.group_records[group]
-                records.sort(key = lambda a: a[1].lower())
+                records.sort(key=lambda a: a[1].lower())
                 #if group != 'GMST': records.sort(key = lambda a: a[0] >> 24)
                 for fid,eid in records:
                     buff.write(u'  %08X %s\n' % (fid,eid))
@@ -619,13 +619,13 @@ class Mod_ShowReadme(OneItemLink):
     def Execute(self):
         if not Link.Frame.docBrowser:
             DocBrowser().show_frame()
-            bass.settings['bash.modDocs.show'] = True
+            bass.settings[u'bash.modDocs.show'] = True
         Link.Frame.docBrowser.SetMod(self._selected_item)
         Link.Frame.docBrowser.raise_frame()
 
 class Mod_ListBashTags(ItemLink):
     """Copies list of bash tags to clipboard."""
-    _text = _(u"List Bash Tags...")
+    _text = _(u'List Bash Tags...')
     _help = _(u'Copies list of bash tags to clipboard')
 
     def Execute(self):
@@ -633,7 +633,7 @@ class Mod_ListBashTags(ItemLink):
         modInfos = [x for x in self.iselected_infos()]
         tags_text = bosh.modInfos.getTagList(modInfos)
         balt.copyToClipboard(tags_text)
-        self._showLog(tags_text, title=_(u"Bash Tags"), fixedFont=False)
+        self._showLog(tags_text, title=_(u'Bash Tags'), fixedFont=False)
 
 def _getUrl(installer):
     """"Try to get the url of the installer (order of priority will be:
@@ -722,7 +722,7 @@ class Mod_CopyModInfo(ItemLink):
             else: info_txt += _(u'URL: %s') % _getUrl(installer)
             labels = self.window.labels
             for col in self.window.cols:
-                if col == 'File': continue
+                if col == u'File': continue
                 lab = labels[col](self.window, fileName)
                 info_txt += u'\n%s: %s' % (col, lab if lab else u'-')
             #-- Version, if it exists
@@ -736,7 +736,7 @@ class Mod_CopyModInfo(ItemLink):
 
 class Mod_ListDependent(OneItemLink):
     """Copies list of masters to clipboard."""
-    _text = _(u"List Dependencies")
+    _text = _(u'List Dependencies')
 
     @property
     def link_help(self):
@@ -786,7 +786,7 @@ class Mod_JumpToInstaller(AppendableLink, OneItemLink):
             u'filename': self._selected_item}
 
     def _append(self, window): return balt.Link.Frame.iPanel and bass.settings[
-        'bash.installers.enabled']
+        u'bash.installers.enabled']
 
     def _enable(self):
         return (super(Mod_JumpToInstaller, self)._enable()
@@ -825,7 +825,7 @@ class _GhostLink(ItemLink):
         self.window.RefreshUI(redraw=changed, refreshSaves=False)
 
 class _Mod_AllowGhosting_All(_GhostLink, ItemLink):
-    _text, _help = _(u"Allow Ghosting"), _(u'Allow Ghosting for selected mods')
+    _text, _help = _(u'Allow Ghosting'), _(u'Allow Ghosting for selected mods')
     setAllow = staticmethod(lambda fname: True) # allow ghosting
     toGhost = staticmethod(lambda fname:not load_order.cached_is_active(fname))
 
@@ -878,12 +878,12 @@ class Mod_AllowGhosting(TransLink):
     def _decide(self, window, selection):
         if len(selection) == 1:
             class _CheckLink(_GhostLink, CheckLink):
-                _text = _(u"Disallow Ghosting")
-                _help = _(u"Toggle Ghostability")
+                _text = _(u'Disallow Ghosting')
+                _help = _(u'Toggle Ghostability')
                 def _check(self): return not self.getAllow(self.selected[0])
             return _CheckLink()
         else:
-            subMenu = balt.MenuLink(_(u"Ghosting"))
+            subMenu = balt.MenuLink(_(u'Ghosting'))
             subMenu.links.append(_Mod_AllowGhosting_All())
             subMenu.links.append(_Mod_DisallowGhosting_All())
             subMenu.links.append(_Mod_AllowGhostingInvert_All())
@@ -915,7 +915,7 @@ class Mod_MarkMergeable(ItemLink):
         yes = [x for x in self.selected if
                x not in tagged_no_merge and x in bosh.modInfos.mergeable]
         no = set(self.selected) - set(yes)
-        no = [u"%s:%s" % (x, y) for x, y in result.iteritems() if x in no]
+        no = [u'%s:%s' % (x, y) for x, y in result.iteritems() if x in no]
         if bush.game.check_esl:
             message = u'== %s\n\n' % _(
                 u'Plugins that qualify for ESL flagging.')
@@ -1050,47 +1050,47 @@ class Mod_Patch_Update(_Mod_BP_Link):
             elif u'Deactivate' in tags: deactivate.append(mod)
         checklists = []
         unfilteredKey = _(u"Tagged 'Filter'")
-        mergeKey = _(u"Mergeable")
+        mergeKey = _(u'Mergeable')
         noMergeKey = _(u"Mergeable, but tagged 'NoMerge'")
         deactivateKey = _(u"Tagged 'Deactivate'")
         if unfiltered:
-            group = [unfilteredKey, _(u"These mods should be deactivated "
-                u"before building the patch, and then merged or imported into "
-                u"the Bashed Patch."), ]
+            group = [unfilteredKey, _(u'These mods should be deactivated '
+                u'before building the patch, and then merged or imported into '
+                u'the Bashed Patch.'), ]
             group.extend(unfiltered)
             checklists.append(group)
         if merge:
-            group = [mergeKey, _(u"These mods are mergeable.  "
-                u"While it is not important to Wrye Bash functionality or "
-                u"the end contents of the Bashed Patch, it is suggested that "
-                u"they be deactivated and merged into the patch.  This helps "
-                u"avoid the maximum esp/esm limit."), ]
+            group = [mergeKey, _(u'These mods are mergeable.  '
+                u'While it is not important to Wrye Bash functionality or '
+                u'the end contents of the Bashed Patch, it is suggested that '
+                u'they be deactivated and merged into the patch.  This helps '
+                u'avoid the maximum esp/esm limit.'), ]
             group.extend(merge)
             checklists.append(group)
         if noMerge:
-            group = [noMergeKey, _(u"These mods are mergeable, but tagged "
+            group = [noMergeKey, _(u'These mods are mergeable, but tagged '
                 u"'NoMerge'.  They should be deactivated before building the "
-                u"patch and imported into the Bashed Patch."), ]
+                u'patch and imported into the Bashed Patch.'), ]
             group.extend(noMerge)
             checklists.append(group)
         if deactivate:
             group = [deactivateKey, _(u"These mods are tagged 'Deactivate'.  "
-                u"They should be deactivated before building the patch, and "
-                u"merged or imported into the Bashed Patch."), ]
+                u'They should be deactivated before building the patch, and '
+                u'merged or imported into the Bashed Patch.'), ]
             group.extend(deactivate)
             checklists.append(group)
         if not checklists: return
         with ListBoxes(Link.Frame,
-            _(u"Deactivate these mods prior to patching"),
-            _(u"The following mods should be deactivated prior to building "
-              u"the patch."), checklists, bCancel=_(u'Skip')) as dialog:
+            _(u'Deactivate these mods prior to patching'),
+            _(u'The following mods should be deactivated prior to building '
+              u'the patch.'), checklists, bCancel=_(u'Skip')) as dialog:
             if not dialog.show_modal(): return
             deselect = set()
-            for (lst, key) in [(unfiltered, unfilteredKey),
+            for (lst, lst_key) in [(unfiltered, unfilteredKey),
                                (merge, mergeKey),
                                (noMerge, noMergeKey),
                                (deactivate, deactivateKey), ]:
-                deselect |= set(dialog.getChecked(key, lst))
+                deselect |= set(dialog.getChecked(lst_key, lst))
             if not deselect:
                 return
             else:
@@ -1166,7 +1166,7 @@ class _DirtyLink(ItemLink):
 
 class _Mod_SkipDirtyCheckAll(_DirtyLink, CheckLink):
     _help = _(u"Set whether to check or not the selected mod(s) against LOOT's "
-             u"dirty mod list")
+             u'dirty mod list')
 
     def __init__(self, bSkip):
         super(_Mod_SkipDirtyCheckAll, self).__init__()
@@ -1198,7 +1198,7 @@ class Mod_SkipDirtyCheck(TransLink):
         if len(selection) == 1:
             class _CheckLink(_DirtyLink, CheckLink):
                 _text = _(u"Don't check against LOOT's dirty mod list")
-                _help = _(u"Toggles scanning for dirty mods on a per-mod basis")
+                _help = _(u'Toggles scanning for dirty mods on a per-mod basis')
 
                 def _check(self): return bosh.modInfos.table.getItem(
                         self.selected[0], u'ignoreDirty', False)
@@ -1206,7 +1206,7 @@ class Mod_SkipDirtyCheck(TransLink):
 
             return _CheckLink()
         else:
-            subMenu = balt.MenuLink(_(u"Dirty edit scanning"))
+            subMenu = balt.MenuLink(_(u'Dirty edit scanning'))
             subMenu.links.append(_Mod_SkipDirtyCheckAll(True))
             subMenu.links.append(_Mod_SkipDirtyCheckAll(False))
             subMenu.links.append(_Mod_SkipDirtyCheckInvert())
@@ -1300,8 +1300,8 @@ class Mod_RemoveWorldOrphans(_NotObLink):
     _help = _(u'Remove orphaned cell records')
 
     def Execute(self):
-        message = _(u"In some circumstances, editing a mod will leave orphaned cell records in the world group. This command will remove such orphans.")
-        if not self._askContinue(message, 'bash.removeWorldOrphans.continue',
+        message = _(u'In some circumstances, editing a mod will leave orphaned cell records in the world group. This command will remove such orphans.')
+        if not self._askContinue(message, u'bash.removeWorldOrphans.continue',
                                  _(u'Remove World Orphans')): return
         for index, (fileName, fileInfo) in enumerate(self.iselected_pairs()):
             if bosh.reOblivion.match(fileName.s):
@@ -1309,7 +1309,7 @@ class Mod_RemoveWorldOrphans(_NotObLink):
                                   _(u'Remove World Orphans'))
                 continue
             #--Export
-            with balt.Progress(_(u"Remove World Orphans")) as progress:
+            with balt.Progress(_(u'Remove World Orphans')) as progress:
                 loadFactory = mod_files.LoadFactory(True, MreRecord.type_class[
                     b'CELL'], MreRecord.type_class[b'WRLD'])
                 modFile = mod_files.ModFile(fileInfo, loadFactory)
@@ -1319,13 +1319,13 @@ class Mod_RemoveWorldOrphans(_NotObLink):
                 if orphans:
                     progress(0.1, _(u'Saving %s.') % fileName)
                     modFile.safeSave()
-                progress(1.0,_(u"Done."))
+                progress(1.0,_(u'Done.'))
             #--Log
             if orphans:
-                self._showOk(_(u"Orphan cell blocks removed: %d.") % orphans,
+                self._showOk(_(u'Orphan cell blocks removed: %d.') % orphans,
                              fileName.s)
             else:
-                self._showOk(_(u"No changes required."), fileName.s)
+                self._showOk(_(u'No changes required.'), fileName.s)
 
 #------------------------------------------------------------------------------
 class Mod_FogFixer(ItemLink):
@@ -1336,7 +1336,7 @@ class Mod_FogFixer(ItemLink):
 
     def Execute(self):
         message = _(u'Apply Nvidia fog fix.  This modify fog values in interior cells to avoid the Nvidia black screen bug.')
-        if not self._askContinue(message, 'bash.cleanMod.continue',
+        if not self._askContinue(message, u'bash.cleanMod.continue',
                                  _(u'Nvidia Fog Fix')): return
         with balt.Progress(_(u'Nvidia Fog Fix')) as progress:
             progress.setFull(len(self.selected))
@@ -1425,7 +1425,7 @@ class Mod_DecompileAll(_NotObLink):
 
     def Execute(self):
         message = _(u"This command will remove the effects of a 'compile all' by removing all scripts whose texts appear to be identical to the version that they override.")
-        if not self._askContinue(message, 'bash.decompileAll.continue',
+        if not self._askContinue(message, u'bash.decompileAll.continue',
                                  _(u'Decompile All')): return
         for fileName, fileInfo in self.iselected_pairs():
             file_name_s = fileName.s
@@ -1533,7 +1533,7 @@ class Mod_FlipEsm(_Esm_Esl_Flip):
               u'with the ".esm" and ".esl" extension are always forced to '
               u'load as masters. Therefore, we disallow selecting those '
               u'plugins for ESP/ESM conversion on newer games.'))
-        if not self._askContinue(message, 'bash.flipToEsmp.continue',
+        if not self._askContinue(message, u'bash.flipToEsmp.continue',
                                  _(u'Flip to ESM')): return
         for modInfo in self.iselected_infos():
             modInfo.set_esm_flag(not modInfo.has_esm_flag())
@@ -1565,7 +1565,7 @@ class Mod_FlipEsl(_Esm_Esl_Flip):
               u'plugin. We therefore disallow selecting files with the .esl '
               u'extension for converting into a light plugin (as they '
               u'implicitly are light plugins already).'))
-        if not self._askContinue(message, 'bash.flipToEslp.continue',
+        if not self._askContinue(message, u'bash.flipToEslp.continue',
                                  _(u'Flip to ESL')): return
         for modInfo in self.iselected_infos():
             modInfo.set_esl_flag(not modInfo.has_esl_flag())
@@ -1607,7 +1607,7 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
                     u'of all ESP masters of the selected plugin. Useful for '
                     u'loading ESP-mastered mods in the %(ck_name)s.') % (
                     {u'ck_name': bush.game.Ck.long_name})
-        if not self._askContinue(message, 'bash.flipMasters.continue'): return
+        if not self._askContinue(message, u'bash.flipMasters.continue'): return
         for masterPath in self.espMasters:
             master_mod_info = bosh.modInfos.get(masterPath)
             if master_mod_info:
@@ -1630,7 +1630,7 @@ class Mod_SetVersion(OneItemLink):
                 int(10 * self._selected_info.header.version) != 8)
 
     def Execute(self):
-        if not self._askContinue(self.message, 'bash.setModVersion.continue',
+        if not self._askContinue(self.message, u'bash.setModVersion.continue',
                                  _(u'Set File Version')): return
         self._selected_info.makeBackup()
         self._selected_info.header.version = 0.8
@@ -1650,16 +1650,16 @@ class Mod_Fids_Replace(OneItemLink):
     """Replace fids according to text file."""
     _text = _(u'Form IDs...')
     _help = _(u'Replace fids according to text file')
-    message = _(u"For advanced modders only! Systematically replaces one set "
-        u"of Form Ids with another in npcs, creatures, containers and leveled "
-        u"lists according to a Replacers.csv file.")
+    message = _(u'For advanced modders only! Systematically replaces one set '
+        u'of Form Ids with another in npcs, creatures, containers and leveled '
+        u'lists according to a Replacers.csv file.')
 
     @staticmethod
     def _parser():
         return FidReplacer()
 
     def Execute(self):
-        if not self._askContinue(self.message, 'bash.formIds.replace.continue',
+        if not self._askContinue(self.message, u'bash.formIds.replace.continue',
                                  _(u'Import Form IDs')): return
         textDir = bass.dirs[u'patches']
         #--File dialog
@@ -1672,7 +1672,7 @@ class Mod_Fids_Replace(OneItemLink):
             self._showError(_(u'Source file must be a csv file.'))
             return
         #--Export
-        with balt.Progress(_(u"Import Form IDs")) as progress:
+        with balt.Progress(_(u'Import Form IDs')) as progress:
             replacer = self._parser()
             progress(0.1,_(u'Reading') + u' %s.' % textName)
             replacer.readFromText(textPath)
@@ -1680,7 +1680,7 @@ class Mod_Fids_Replace(OneItemLink):
             changed = replacer.updateMod(self._selected_info)
             progress(1.0,_(u'Done.'))
         #--Log
-        if not changed: self._showOk(_(u"No changes required."))
+        if not changed: self._showOk(_(u'No changes required.'))
         else: self._showLog(changed, title=_(u'Objects Changed'),
                             asDialog=True)
 
@@ -1758,9 +1758,9 @@ class _Mod_Export_Link(_Import_Export_Link, ItemLink):
     def _parser(self): raise AbstractError
 
 class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
-    noChange = _(u"No changes required.")
+    noChange = _(u'No changes required.')
     supportedExts = {u'.csv'}
-    progressTitle = continueInfo = continueKey = 'OVERRIDE'
+    progressTitle = continueInfo = continueKey = u'OVERRIDE'
 
     def _parser(self): raise AbstractError
     @property
@@ -1812,10 +1812,10 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
         #--Extension error check
         ext = textName.cext
         if ext not in supportedExts:
-            espml = u"or ".join(bush.game.espm_extensions)
+            espml = u'or '.join(bush.game.espm_extensions)
             self._showError(_(u'Source file must be a {0} file{1}.'.format(
                 self.__class__.csvFile, (len(supportedExts) > 1 and (
-                        u" or mod (%s or .ghost)" % espml)) or u"")))
+                        u' or mod (%s or .ghost)' % espml)) or u'')))
             return
         #--Import
         changed = self._import(ext, textDir, textName, textPath)
@@ -1835,7 +1835,7 @@ class Mod_ActorLevels_Export(_Mod_Export_Link):
     csvFile = u'_NPC_Levels.csv'
     progressTitle = _(u'Export NPC levels')
     _text = _(u'NPC Levels...')
-    _help = _(u"Export NPC level info from mod to text file.")
+    _help = _(u'Export NPC level info from mod to text file.')
 
     def _parser(self):
         return ActorLevels()
@@ -1844,7 +1844,7 @@ class Mod_ActorLevels_Export(_Mod_Export_Link):
         message = (_(u'This command will export the level info for NPCs whose level is offset with respect to the PC.  The exported file can be edited with most spreadsheet programs and then reimported.')
                    + u'\n\n' +
                    _(u'See the Bash help file for more info.'))
-        if not self._askContinue(message, 'bash.actorLevels.export.continue',
+        if not self._askContinue(message, u'bash.actorLevels.export.continue',
                                  _(u'Export NPC Levels')): return
         super(Mod_ActorLevels_Export, self).Execute()
 
@@ -1854,11 +1854,11 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
     csvFile = u'_NPC_Levels.csv'
     progressTitle = _(u'Import NPC Levels')
     _text = _(u'NPC Levels...')
-    _help = _(u"Import NPC level info from text file to mod")
+    _help = _(u'Import NPC level info from text file to mod')
     continueInfo = _(
         u'This command will import NPC level info from a previously exported '
         u'file.') + u'\n\n' + _(u'See the Bash help file for more info.')
-    continueKey = 'bash.actorLevels.import.continue'
+    continueKey = u'bash.actorLevels.import.continue'
     noChange = _(u'No relevant NPC levels to import.')
 
     def _parser(self):
@@ -1886,10 +1886,10 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
     _text = _(u'Relations...')
     _help = _(u'Import faction relations from text file to mod')
     continueInfo = _(
-        u"This command will import faction relation info from a previously "
-        u"exported file.") + u'\n\n' + _(
-        u"See the Bash help file for more info.")
-    continueKey = 'bash.factionRelations.import.continue'
+        u'This command will import faction relation info from a previously '
+        u'exported file.') + u'\n\n' + _(
+        u'See the Bash help file for more info.')
+    continueKey = u'bash.factionRelations.import.continue'
     noChange = _(u'No relevant faction relations to import.')
 
     def _parser(self):
@@ -1917,9 +1917,9 @@ class Mod_Factions_Import(_Mod_Import_Link):
     _text = _(u'Factions...')
     _help = _(u'Import factions from text file to mod')
     continueInfo = _(
-        u"This command will import faction ranks from a previously exported "
-        u"file.") + u'\n\n' + _(u'See the Bash help file for more info.')
-    continueKey = 'bash.factionRanks.import.continue'
+        u'This command will import faction ranks from a previously exported '
+        u'file.') + u'\n\n' + _(u'See the Bash help file for more info.')
+    continueKey = u'bash.factionRanks.import.continue'
     noChange = _(u'No relevant faction ranks to import.')
 
     def _parser(self):
@@ -1947,17 +1947,17 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         defaultPath = bass.dirs[u'patches'].join(u'%s Exported Scripts' % fileName)
         def OnOk():
             dialog.accept_modal()
-            bass.settings['bash.mods.export.deprefix'] = gdeprefix.text_content.strip()
-            bass.settings['bash.mods.export.skip'] = gskip.text_content.strip()
-            bass.settings['bash.mods.export.skipcomments'] = gskipcomments.is_checked
+            bass.settings[u'bash.mods.export.deprefix'] = gdeprefix.text_content.strip()
+            bass.settings[u'bash.mods.export.skip'] = gskip.text_content.strip()
+            bass.settings[u'bash.mods.export.skipcomments'] = gskipcomments.is_checked
         dialog = DialogWindow(Link.Frame, _(u'Export Scripts Options'))
         gskip = TextField(dialog)
         gdeprefix = TextField(dialog)
         gskipcomments = CheckBox(dialog, _(u'Filter Out Comments'),
           chkbx_tooltip=_(u"If active doesn't export comments in the scripts"))
-        gskip.text_content = bass.settings['bash.mods.export.skip']
-        gdeprefix.text_content = bass.settings['bash.mods.export.deprefix']
-        gskipcomments.is_checked = bass.settings['bash.mods.export.skipcomments']
+        gskip.text_content = bass.settings[u'bash.mods.export.skip']
+        gdeprefix.text_content = bass.settings[u'bash.mods.export.deprefix']
+        gskipcomments.is_checked = bass.settings[u'bash.mods.export.skipcomments']
         msg = [_(u'Remove prefix from file names i.e. enter cob to save '
                  u'script cobDenockInit'),
                _(u'as DenockInit.ext rather than as cobDenockInit.ext'),
@@ -1991,9 +1991,9 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         scriptText = self._parser()
         scriptText.readFromMod(fileInfo, fileName)
         exportedScripts = scriptText.writeToText(
-            bass.settings['bash.mods.export.skip'], textDir,
-            bass.settings['bash.mods.export.deprefix'], fileName,
-            bass.settings['bash.mods.export.skipcomments'])
+            bass.settings[u'bash.mods.export.skip'], textDir,
+            bass.settings[u'bash.mods.export.deprefix'], fileName,
+            bass.settings[u'bash.mods.export.skipcomments'])
         #finally:
         self._showLog(exportedScripts, title=_(u'Export Scripts'),
                       asDialog=True)
@@ -2003,9 +2003,9 @@ class Mod_Scripts_Import(_Mod_Import_Link):
     _text = _(u'Scripts...')
     _help = _(u'Import scripts from text file')
     continueInfo = _(
-        u"Import script from a text file.  This will replace existing "
-        u"scripts and is not reversible (except by restoring from backup)!")
-    continueKey = 'bash.scripts.import.continue'
+        u'Import script from a text file.  This will replace existing '
+        u'scripts and is not reversible (except by restoring from backup)!')
+    continueKey = u'bash.scripts.import.continue'
     progressTitle = _(u'Import Scripts')
 
     def _parser(self):
@@ -2023,7 +2023,7 @@ class Mod_Scripts_Import(_Mod_Import_Link):
         if textDir is None:
             return
         message = (_(u"Import scripts that don't exist in the esp as new"
-                     u" scripts?") + u'\n' +
+                     u' scripts?') + u'\n' +
                    _(u'(If not they will just be skipped).')
                    )
         makeNew = self._askYes(message, _(u'Import Scripts'),
@@ -2033,8 +2033,8 @@ class Mod_Scripts_Import(_Mod_Import_Link):
         changed, added = scriptText.writeToMod(self._selected_info, makeNew)
         #--Log
         if not (len(changed) or len(added)):
-            self._showOk(_(u"No changed or new scripts to import."),
-                         _(u"Import Scripts"))
+            self._showOk(_(u'No changed or new scripts to import.'),
+                         _(u'Import Scripts'))
             return
         if changed:
             changedScripts = (_(u'Imported %d changed scripts from %s:') +
@@ -2065,7 +2065,7 @@ class Mod_Stats_Export(_Mod_Export_Link):
     types specified in bush.game.statsTypes)."""
     askTitle = _(u'Export stats to:')
     csvFile = u'_Stats.csv'
-    progressTitle = _(u"Export Stats")
+    progressTitle = _(u'Export Stats')
     _text = _(u'Stats...')
     _help = _(u'Export stats from mod to text file')
 
@@ -2079,10 +2079,10 @@ class Mod_Stats_Import(_Mod_Import_Link):
     progressTitle = _(u'Import Stats')
     _text = _(u'Stats...')
     _help = _(u'Import stats from text file')
-    continueInfo = _(u"Import item stats from a text file. This will replace "
-                     u"existing stats and is not reversible!")
-    continueKey = 'bash.stats.import.continue'
-    noChange = _(u"No relevant stats to import.")
+    continueInfo = _(u'Import item stats from a text file. This will replace '
+                     u'existing stats and is not reversible!')
+    continueKey = u'bash.stats.import.continue'
+    noChange = _(u'No relevant stats to import.')
 
     def _parser(self):
         return ItemStats()
@@ -2115,9 +2115,9 @@ class Mod_Prices_Import(_Mod_Import_Link):
     progressTitle = _(u'Import Prices')
     _text = _(u'Prices...')
     _help = _(u'Import item prices from text file or other mod')
-    continueInfo = _(u"Import item prices from a text file.  This will "
-                     u"replace existing prices and is not reversible!")
-    continueKey = 'bash.prices.import.continue'
+    continueInfo = _(u'Import item prices from a text file.  This will '
+                     u'replace existing prices and is not reversible!')
+    continueKey = u'bash.prices.import.continue'
     noChange = _(u'No relevant prices to import.')
     supportedExts = {u'.csv', u'.ghost'} | bush.game.espm_extensions
 
@@ -2153,10 +2153,10 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
     _text = _(u'Sigil Stones...')
     _help = _(u'Import Sigil Stone details from text file')
     continueInfo = _(
-        u"Import Sigil Stone details from a text file.  This will replace "
-        u"the existing data on sigil stones with the same form ids and is "
-        u"not reversible!")
-    continueKey = 'bash.SigilStone.import.continue'
+        u'Import Sigil Stone details from a text file.  This will replace '
+        u'the existing data on sigil stones with the same form ids and is '
+        u'not reversible!')
+    continueKey = u'bash.SigilStone.import.continue'
     noChange = _(u'No relevant Sigil Stone details to import.')
 
     def _parser(self):
@@ -2207,10 +2207,10 @@ class Mod_SpellRecords_Import(_SpellRecords_Link, _Mod_Import_Link):
     progressTitle = _(u'Import Spell details')
     _text = _(u'Spells...')
     _help = _(u'Import Spell details from text file')
-    continueInfo = _(u"Import Spell details from a text file.  This will "
-        u"replace the existing data on spells with the same form ids and is "
-        u"not reversible!")
-    continueKey = 'bash.SpellRecords.import.continue'
+    continueInfo = _(u'Import Spell details from a text file.  This will '
+        u'replace the existing data on spells with the same form ids and is '
+        u'not reversible!')
+    continueKey = u'bash.SpellRecords.import.continue'
     noChange = _(u'No relevant Spell details to import.')
     _do_what = _(u'Import flags and effects?')
 
@@ -2243,10 +2243,10 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
     progressTitle = _(u'Import Ingredient details')
     _text = _(u'Ingredients...')
     _help = _(u'Import Ingredient details from text file')
-    continueInfo = _(u"Import Ingredient details from a text file.  This will "
-                     u"replace the existing data on Ingredients with the same "
-                     u"form ids and is not reversible!")
-    continueKey = 'bash.Ingredient.import.continue'
+    continueInfo = _(u'Import Ingredient details from a text file.  This will '
+                     u'replace the existing data on Ingredients with the same '
+                     u'form ids and is not reversible!')
+    continueKey = u'bash.Ingredient.import.continue'
     noChange = _(u'No relevant Ingredient details to import.')
 
     def _parser(self):
@@ -2267,7 +2267,7 @@ class Mod_EditorIds_Export(_Mod_Export_Link):
     """Export editor ids from mod to text file."""
     askTitle = _(u'Export eids to:')
     csvFile = u'_Eids.csv'
-    progressTitle = _(u"Export Editor Ids")
+    progressTitle = _(u'Export Editor Ids')
     _text = _(u'Editor Ids...')
     _help = _(u'Export faction editor ids from mod to text file')
 
@@ -2278,9 +2278,9 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
     """Import editor ids from text file."""
     askTitle = _(u'Import eids from:')
     csvFile = u'_Eids.csv'
-    continueInfo = _(u"Import editor ids from a text file. This will replace "
-                     u"existing ids and is not reversible!")
-    continueKey = 'bash.editorIds.import.continue'
+    continueInfo = _(u'Import editor ids from a text file. This will replace '
+                     u'existing ids and is not reversible!')
+    continueKey = u'bash.editorIds.import.continue'
     progressTitle = _(u'Import Editor Ids')
     _text = _(u'Editor Ids...')
     _help = _(u'Import faction editor ids from text file')
@@ -2311,7 +2311,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
                 editorIds.readFromText(textPath,questionableEidsSet,badEidsList)
                 progress(0.2, _(u'Applying to %s.') % self._selected_item)
                 changed = editorIds.writeToMod(self._selected_info)
-                progress(1.0,_(u"Done."))
+                progress(1.0,_(u'Done.'))
             #--Log
             if not changed:
                 self._showOk(self.__class__.noChange)
@@ -2334,7 +2334,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
                 buff.close()
                 self._showLog(log_text, title=_(u'Objects Changed'))
         except BoltError as e:
-            self._showWarning('%r' % e)
+            self._showWarning(u'%r' % e)
 
 #------------------------------------------------------------------------------
 from ..parsers import FullNames
@@ -2343,7 +2343,7 @@ class Mod_FullNames_Export(_Mod_Export_Link):
     """Export full names from mod to text file."""
     askTitle = _(u'Export names to:')
     csvFile = u'_Names.csv'
-    progressTitle = _(u"Export Names")
+    progressTitle = _(u'Export Names')
     _text = _(u'Names...')
     _help = _(u'Export full names from mod to text file')
 
@@ -2356,9 +2356,9 @@ class Mod_FullNames_Import(_Mod_Import_Link):
     csvFile = u'_Names.csv'
     progressTitle = _(u'Import Names')
     continueInfo = _(
-        u"Import record names from a text file. This will replace existing "
-        u"names and is not reversible!")
-    continueKey = 'bash.fullNames.import.continue'
+        u'Import record names from a text file. This will replace existing '
+        u'names and is not reversible!')
+    continueKey = u'bash.fullNames.import.continue'
     _text = _(u'Names...')
     _help = _(u'Import full names from text file or other mod')
     supportedExts = {u'.csv', u'.ghost'} | bush.game.espm_extensions

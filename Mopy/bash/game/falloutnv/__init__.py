@@ -41,7 +41,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     regInstallKeys = (u'Bethesda Softworks\\FalloutNV',u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/newvegas/'
     nexusName = u'New Vegas Nexus'
-    nexusKey = u'bash.installers.openNewVegasNexus'
+    nexusKey = u'bash.installers.openNewVegasNexus.continue'
 
     class Se(Fallout3GameInfo.Se):
         se_abbrev = u'NVSE'

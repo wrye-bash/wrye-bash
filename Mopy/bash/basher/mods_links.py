@@ -33,11 +33,11 @@ from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
 from ..bolt import CsvReader, GPath
 from ..gui import BusyCursor
 
-__all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
-           'Mods_OblivionVersion', 'Mods_CreateBlankBashedPatch',
-           'Mods_CreateBlank', 'Mods_ListMods', 'Mods_ListBashTags',
-           'Mods_CleanDummyMasters', 'Mods_AutoGhost', 'Mods_LockLoadOrder',
-           'Mods_ScanDirty', 'Mods_CrcRefresh', 'Mods_AutoESLFlagBP',
+__all__ = [u'Mods_EsmsFirst', u'Mods_LoadList', u'Mods_SelectedFirst',
+           u'Mods_OblivionVersion', u'Mods_CreateBlankBashedPatch',
+           u'Mods_CreateBlank', u'Mods_ListMods', u'Mods_ListBashTags',
+           u'Mods_CleanDummyMasters', u'Mods_AutoGhost', u'Mods_LockLoadOrder',
+           u'Mods_ScanDirty', u'Mods_CrcRefresh', u'Mods_AutoESLFlagBP',
            u'Mods_LockActivePlugins', u'Mods_ModChecker',
            u'Mods_ExportBashTags', u'Mods_ImportBashTags',
            u'Mods_ClearManualBashTags']
@@ -98,7 +98,7 @@ class Mods_LoadList(ChoiceLink):
                     bosh.modInfos.lo_activate_all()
                 except exception.PluginsFullError:
                     self._showError(
-                        _(u"Mod list is full, so some mods were skipped"),
+                        _(u'Mod list is full, so some mods were skipped'),
                         _(u'Select All'))
                 except exception.BoltError as e:
                     self._showError(u'%s' % e, _(u'Select All'))
@@ -144,7 +144,7 @@ class Mods_LoadList(ChoiceLink):
             @property
             def link_help(self):
                 return _(u'Activate mods in the %(list_name)s list' % {
-                    'list_name': self._text})
+                    u'list_name': self._text})
         self.__class__.choiceLinkType = _LoListLink
 
     @property
@@ -194,24 +194,24 @@ class Mods_OblivionVersion(CheckLink, EnabledLink):
     """Specify/set Oblivion version."""
     _help = _(u'Specify/set Oblivion version')
 
-    def __init__(self, key, setProfile=False):
+    def __init__(self, version_key, setProfile=False):
         super(Mods_OblivionVersion, self).__init__()
-        self.key = self._text = key
+        self._version_key = self._text = version_key
         self.setProfile = setProfile
 
-    def _check(self): return bosh.modInfos.voCurrent == self.key
+    def _check(self): return bosh.modInfos.voCurrent == self._version_key
 
     def _enable(self):
         return bosh.modInfos.voCurrent is not None \
-                          and self.key in bosh.modInfos.voAvailable
+               and self._version_key in bosh.modInfos.voAvailable
 
     def Execute(self):
         """Handle selection."""
-        if bosh.modInfos.voCurrent == self.key: return
-        bosh.modInfos.setOblivionVersion(self.key)
+        if bosh.modInfos.voCurrent == self._version_key: return
+        bosh.modInfos.setOblivionVersion(self._version_key)
         self.window.RefreshUI(refreshSaves=True) # True: refresh save's masters
         if self.setProfile:
-            bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,'vOblivion',self.key)
+            bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,u'vOblivion', self._version_key)
         Link.Frame.set_bash_frame_title()
 
 # "File" submenu --------------------------------------------------------------
@@ -226,8 +226,8 @@ class Mods_CreateBlankBashedPatch(ItemLink):
             self.window.ClearSelected(clear_details=True)
             self.window.RefreshUI(redraw=[newPatchName], refreshSaves=False)
         else:
-            self._showWarning(u"Unable to create new bashed patch: "
-                              u"10 bashed patches already exist!")
+            self._showWarning(u'Unable to create new bashed patch: '
+                              u'10 bashed patches already exist!')
 
 class Mods_CreateBlank(ItemLink):
     """Create a new blank mod."""
@@ -254,26 +254,26 @@ class Mods_CreateBlank(ItemLink):
 #------------------------------------------------------------------------------
 class Mods_ListMods(ItemLink):
     """Copies list of mod files to clipboard."""
-    _text = _(u"List Mods...")
-    _help = _(u"Copies list of active mod files to clipboard.")
+    _text = _(u'List Mods...')
+    _help = _(u'Copies list of active mod files to clipboard.')
 
     def Execute(self):
         #--Get masters list
         list_txt = bosh.modInfos.getModList(showCRC=balt.getKeyState(67))
         balt.copyToClipboard(list_txt)
-        self._showLog(list_txt, title=_(u"Active Mod Files"), fixedFont=False)
+        self._showLog(list_txt, title=_(u'Active Mod Files'), fixedFont=False)
 
 #------------------------------------------------------------------------------
 # Basically just a convenient 'whole LO' version of Mod_ListBashTags
 class Mods_ListBashTags(ItemLink):
     """Copies list of bash tags to clipboard."""
-    _text = _(u"List Bash Tags...")
-    _help = _(u"Copies list of bash tags to clipboard.")
+    _text = _(u'List Bash Tags...')
+    _help = _(u'Copies list of bash tags to clipboard.')
 
     def Execute(self):
         tags_text = bosh.modInfos.getTagList()
         balt.copyToClipboard(tags_text)
-        self._showLog(tags_text, title=_(u"Bash Tags"), fixedFont=False)
+        self._showLog(tags_text, title=_(u'Bash Tags'), fixedFont=False)
 
 #------------------------------------------------------------------------------
 class Mods_CleanDummyMasters(EnabledLink):
@@ -299,7 +299,7 @@ class Mods_CleanDummyMasters(EnabledLink):
 #------------------------------------------------------------------------------
 class Mods_AutoGhost(BoolLink):
     """Toggle Auto-ghosting."""
-    _text, key = _(u'Auto-Ghost'), 'bash.mods.autoGhost'
+    _text, _bl_key = _(u'Auto-Ghost'), u'bash.mods.autoGhost'
     _help = _(u'Toggles whether or not to automatically ghost all disabled '
               u'mods.')
 
@@ -314,13 +314,13 @@ class Mods_AutoESLFlagBP(BoolLink):
     _text = _(u'ESL-Flag Bashed Patches')
     _help = _(u'Automatically flags any built Bashed Patches as ESLs, freeing '
               u'up a load order slot.')
-    key = 'bash.mods.auto_flag_esl'
+    _bl_key = u'bash.mods.auto_flag_esl'
 
 class Mods_ScanDirty(BoolLink):
     """Read mod CRC's to check for dirty mods."""
     _text = _(u"Check mods against LOOT's dirty mod list")
     _help = _(u'Display a tooltip if mod is dirty and underline dirty mods.')
-    key = 'bash.mods.scanDirty'
+    _bl_key = u'bash.mods.scanDirty'
 
     def Execute(self):
         super(Mods_ScanDirty, self).Execute()
@@ -329,8 +329,8 @@ class Mods_ScanDirty(BoolLink):
 class Mods_LockLoadOrder(CheckLink):
     """Turn on Lock Load Order feature."""
     _text = _(u'Lock Load Order')
-    _help = _(u"Will reset mod Load Order to whatever Wrye Bash has saved for"
-             u" them whenever Wrye Bash refreshes data/starts up.")
+    _help = _(u'Will reset mod Load Order to whatever Wrye Bash has saved for'
+             u' them whenever Wrye Bash refreshes data/starts up.')
 
     def _check(self): return load_order.locked
 
@@ -341,7 +341,7 @@ class Mods_LockLoadOrder(CheckLink):
                         u'feature is good for maintaining your load order, it '
                         u'will also undo any load order changes that you have '
                         u'made outside Bash.')
-            return self._askContinue(message, 'bash.load_order.lock_continue',
+            return self._askContinue(message, u'bash.load_order.lock.continue',
                                      title=_(u'Lock Load Order'))
         load_order.toggle_lock_load_order(_show_lo_lock_warning)
 
@@ -350,7 +350,7 @@ class Mods_LockActivePlugins(BoolLink, EnabledLink):
     _text = _(u'Lock Active Plugins')
     _help = _(u"Enhances 'Lock Load Order' to also detect when mods are "
               u'enabled or disabled and to undo those changes too.')
-    key = u'bash.load_order.lock_active_plugins'
+    _bl_key = u'bash.load_order.lock_active_plugins'
 
     def _enable(self): return load_order.locked # needs Lock LO to be on
 

@@ -167,16 +167,21 @@ class OmodFile(object):
             # Collect OMOD conversion data
             ocdDir = stageDir.join(u'omod conversion data')
             progress(0.46, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\ninfo.txt')
-            self.writeInfo(ocdDir.join(u'info.txt'), self.omod_path.stail, extractDir.join(u'readme').exists(), extractDir.join(u'script').exists())
+            scr_path = extractDir.join(u'script')
+            readme_path = extractDir.join(u'readme')
+            readme_exists = readme_path.exists()
+            scr_exists = scr_path.exists()
+            self.writeInfo(ocdDir.join(u'info.txt'), self.omod_path.stail,
+                           readme_exists, scr_exists)
             progress(0.47, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nscript')
-            if extractDir.join(u'script').exists():
-                with open(extractDir.join(u'script').s, 'rb') as ins:
-                    with ocdDir.join(u'script.txt').open('w') as output:
+            if scr_exists:
+                with scr_path.open(u'rb') as ins:
+                    with ocdDir.join(u'script.txt').open(u'w') as output:
                         output.write(_readNetString(ins))
             progress(0.48, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nreadme.rtf')
-            if extractDir.join(u'readme').exists():
-                with open(extractDir.join(u'readme').s, 'rb') as ins:
-                    with ocdDir.join(u'readme.rtf').open('w') as output:
+            if readme_exists:
+                with readme_path.open(u'rb') as ins:
+                    with ocdDir.join(u'readme.rtf').open(u'w') as output:
                         output.write(_readNetString(ins))
             progress(0.49, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nscreenshot')
             if extractDir.join(u'image').exists():
@@ -252,7 +257,7 @@ class OmodFile(object):
         # Extract data stream to an uncompressed stream
         subprogress = bolt.SubProgress(progress,0,0.3,full=dataPath.size)
         subprogress(0, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % dataPath.stail)
-        with dataPath.open('rb') as ins:
+        with dataPath.open(u'rb') as ins:
             done = 0
             with open(outPath.join(dataPath.sbody+u'.tmp').s, u'wb') as output:
                 # Decoder properties

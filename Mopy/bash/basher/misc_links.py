@@ -31,10 +31,10 @@ from ..balt import EnabledLink, AppendableLink, ItemLink, RadioLink, \
 from ..bolt import GPath
 from ..gui import ImageWrapper
 
-__all__ = ['ColumnsMenu', 'Master_ChangeTo', 'Master_Disable',
-           'Screens_NextScreenShot', 'Screens_JpgQuality',
-           'Screens_JpgQualityCustom', 'Screen_Rename', 'Screen_ConvertTo',
-           'Master_AllowEdit', 'Master_ClearRenames', 'SortByMenu',
+__all__ = [u'ColumnsMenu', u'Master_ChangeTo', u'Master_Disable',
+           u'Screens_NextScreenShot', u'Screens_JpgQuality',
+           u'Screens_JpgQualityCustom', u'Screen_Rename', u'Screen_ConvertTo',
+           u'Master_AllowEdit', u'Master_ClearRenames', u'SortByMenu',
            u'Misc_SettingsDialog']
 
 # Screen Links ----------------------------------------------------------------
@@ -108,7 +108,7 @@ class Screen_ConvertTo(EnabledLink):
                     destPath = srcPath.root+u'.'+self.ext
                     if srcPath == destPath or destPath.exists(): continue
                     bitmap = ImageWrapper.Load(srcPath, quality=bass.settings[
-                        'bash.screens.jpgQuality'])
+                        u'bash.screens.jpgQuality'])
                     result = bitmap.SaveFile(destPath.s,self.imageType)
                     if not result: continue
                     srcPath.remove()
@@ -127,17 +127,17 @@ class Screens_JpgQuality(RadioLink):
         self._text = u'%i' % self.quality
 
     def _check(self):
-        return self.quality == bass.settings['bash.screens.jpgQuality']
+        return self.quality == bass.settings[u'bash.screens.jpgQuality']
 
     def Execute(self):
-        bass.settings['bash.screens.jpgQuality'] = self.quality
+        bass.settings[u'bash.screens.jpgQuality'] = self.quality
 
 #------------------------------------------------------------------------------
 class Screens_JpgQualityCustom(Screens_JpgQuality):
     """Sets a custom JPG quality."""
     def __init__(self):
         super(Screens_JpgQualityCustom, self).__init__(
-            bass.settings['bash.screens.jpgCustomQuality'])
+            bass.settings[u'bash.screens.jpgCustomQuality'])
         self._text = _(u'Custom [%i]') % self.quality
 
     def Execute(self):
@@ -145,7 +145,7 @@ class Screens_JpgQualityCustom(Screens_JpgQuality):
                                   min=0, max=100)
         if quality is None: return
         self.quality = quality
-        bass.settings['bash.screens.jpgCustomQuality'] = self.quality
+        bass.settings[u'bash.screens.jpgCustomQuality'] = self.quality
         self._text = _(u'Custom [%i]') % quality
         super(Screens_JpgQualityCustom, self).Execute()
 
@@ -168,7 +168,7 @@ class Master_ClearRenames(ItemLink):
     _help = _(u'Clear internal Bash renames dictionary')
 
     def Execute(self):
-        bass.settings['bash.mods.renames'].clear()
+        bass.settings[u'bash.mods.renames'].clear()
         self.window.RefreshUI()
 
 class _Master_EditList(OneItemLink): # one item cause _singleSelect = True
@@ -183,8 +183,8 @@ class _Master_EditList(OneItemLink): # one item cause _singleSelect = True
 
 class Master_ChangeTo(_Master_EditList):
     """Rename/replace master through file dialog."""
-    _text = _(u"Change to...")
-    _help = _(u"Rename/replace master through file dialog")
+    _text = _(u'Change to...')
+    _help = _(u'Rename/replace master through file dialog')
 
     @balt.conversation
     def Execute(self):
@@ -200,21 +200,21 @@ class Master_ChangeTo(_Master_EditList):
         (newDir,newName) = newPath.headTail
         #--Valid directory?
         if newDir != bosh.modInfos.store_dir:
-            self._showError(_(u"File must be selected from "
-                u"%s Data Files directory." % bush.game.displayName))
+            self._showError(_(u'File must be selected from '
+                u'%s Data Files directory.' % bush.game.displayName))
             return
         elif newName == master_name:
             return
         #--Save Name
         masterInfo.set_name(newName)
-        bass.settings.getChanged('bash.mods.renames')[master_name] = newName
+        bass.settings.getChanged(u'bash.mods.renames')[master_name] = newName
         self.window.SetMasterlistEdited(repopulate=True)
 
 #------------------------------------------------------------------------------
 class Master_Disable(AppendableLink, _Master_EditList):
     """Rename/replace master through file dialog."""
-    _text = _(u"Disable")
-    _help = _(u"Disable master")
+    _text = _(u'Disable')
+    _help = _(u'Disable master')
 
     def _append(self, window): #--Saves only
         return isinstance(window.detailsPanel, SaveDetails)
@@ -235,9 +235,9 @@ class _Column(CheckLink, EnabledLink):
         """
         super(_Column, self).__init__()
         self.colName = _text
-        self._text = bass.settings['bash.colNames'][_text]
+        self._text = bass.settings[u'bash.colNames'][_text]
         self._help = _(u"Show/Hide '%(colname)s' column.") % {
-            'colname': self._text}
+            u'colname': self._text}
 
     def _enable(self):
         return self.colName not in self.window.persistent_columns
@@ -295,12 +295,12 @@ class _SortBy(RadioLink):
     def __init__(self, _text='COLNAME'):
         super(_SortBy, self).__init__()
         self.sortCol = _text
-        self._text = bass.settings['bash.colNames'][_text]
+        self._text = bass.settings[u'bash.colNames'][_text]
         self._help = _(u'Sort by %s') % self._text
 
     def _check(self): return self.window.sort_column == self.sortCol
 
-    def Execute(self): self.window.SortItems(self.sortCol, 'INVERT')
+    def Execute(self): self.window.SortItems(self.sortCol, u'INVERT')
 
 class SortByMenu(ChoiceMenuLink):
     """Link-based interface to decide what to sort the list by."""

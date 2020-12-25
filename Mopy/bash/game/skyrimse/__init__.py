@@ -40,7 +40,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
 
     nexusUrl = u'https://www.nexusmods.com/skyrimspecialedition/'
     nexusName = u'Skyrim SE Nexus'
-    nexusKey = 'bash.installers.openSkyrimSeNexus.continue'
+    nexusKey = u'bash.installers.openSkyrimSeNexus.continue'
 
     espm_extensions = SkyrimGameInfo.espm_extensions | {u'.esl'}
     has_achlist = True

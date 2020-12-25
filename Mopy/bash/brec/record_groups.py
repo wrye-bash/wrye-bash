@@ -1133,8 +1133,8 @@ class MobCells(MobBase):
         """Returns the total size of the block, but also returns a
         dictionary containing the sizes of the individual block,subblocks."""
         bsbCellBlocks = [(x.getBsb(),x) for x in self.cellBlocks]
-        bsbCellBlocks.sort(key = lambda y: y[1].cell.fid)
-        bsbCellBlocks.sort(key = itemgetter(0))
+        bsbCellBlocks.sort(key=lambda y: y[1].cell.fid)
+        bsbCellBlocks.sort(key=itemgetter(0))
         bsb_size = {}
         hsize = RecordHeader.rec_header_size
         totalSize = hsize

@@ -29,20 +29,20 @@ from ..bolt import GPath
 from ..gui import BusyCursor
 from ..localize import format_date, unformat_date
 
-__all__ = ['Files_Unhide', 'File_Backup', 'File_Duplicate', 'File_Snapshot',
-           'File_RevertToBackup', 'File_RevertToSnapshot', 'File_ListMasters',
-           'File_Redate']
+__all__ = [u'Files_Unhide', u'File_Backup', u'File_Duplicate',
+           u'File_Snapshot', u'File_RevertToBackup', u'File_RevertToSnapshot',
+           u'File_ListMasters', u'File_Redate']
 
 #------------------------------------------------------------------------------
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Files_Unhide(ItemLink):
     """Unhide file(s). (Move files back to Data Files or Save directory.)"""
-    _text = _(u"Unhide...")
+    _text = _(u'Unhide...')
 
     def __init__(self, files_type):
         super(Files_Unhide, self).__init__()
-        self._help = _(u"Unhides hidden %ss.") % files_type
+        self._help = _(u'Unhides hidden %ss.') % files_type
 
     @balt.conversation
     def Execute(self):
@@ -62,8 +62,8 @@ class Files_Unhide(ItemLink):
             #--File already unhidden?
             destPath = destDir.join(srcFileName)
             if destPath.exists() or (destPath + u'.ghost').exists():
-                self._showWarning(_(u"File skipped: %s. File is already "
-                                    u"present.") % (srcFileName,))
+                self._showWarning(_(u'File skipped: %s. File is already '
+                                    u'present.') % (srcFileName,))
             #--Move it?
             else:
                 srcFiles.append(srcPath)
@@ -86,10 +86,10 @@ class File_Duplicate(ItemLink):
     _text = _(u'Duplicate...')
     _help = _(u'Make a copy of the selected file(s).')
 
-    _bsaAndBlocking = _(u"This mod has an associated archive (%s" +
-                        bush.game.Bsa.bsa_extension + u") and an "
-        u"associated plugin-name-specific directory (e.g. Sound\\Voice\\%s), "
-        u"which will not be attached to the duplicate mod.") + u'\n\n' + \
+    _bsaAndBlocking = _(u'This mod has an associated archive (%s' +
+                        bush.game.Bsa.bsa_extension + u') and an '
+        u'associated plugin-name-specific directory (e.g. Sound\\Voice\\%s), '
+        u'which will not be attached to the duplicate mod.') + u'\n\n' + \
         _(u'Note that the BSA archive may also contain a plugin-name-specific '
         u'directory, which would remain detached even if a duplicate archive '
         u'were also created.')
@@ -135,7 +135,7 @@ class File_Duplicate(ItemLink):
                 destDir, destName = destPath.headTail
             if (destDir == fileInfo.dir) and (destName == to_duplicate):
                 self._showError(
-                    _(u"Files cannot be duplicated to themselves!"))
+                    _(u'Files cannot be duplicated to themselves!'))
                 continue
             fileInfos.copy_info(to_duplicate, destDir, destName)
             if fileInfo.isMod(): ##: move this inside copy_info
@@ -152,12 +152,12 @@ class File_Duplicate(ItemLink):
 
 class File_ListMasters(OneItemLink):
     """Copies list of masters to clipboard."""
-    _text = _(u"List Masters...")
+    _text = _(u'List Masters...')
 
     @property
     def link_help(self):
-        return _("Copies list of %(filename)s's masters to the clipboard.") % (
-                        {'filename': self.selected[0]})
+        return _(u"Copies list of %(filename)s's masters to the clipboard.") % (
+                        {u'filename': self.selected[0]})
 
     def Execute(self):
         list_of_mods = bosh.modInfos.getModList(fileInfo=self._selected_info)
@@ -258,7 +258,7 @@ class File_RevertToSnapshot(OneItemLink):
 class File_Backup(ItemLink):
     """Backup file."""
     _text = _(u'Backup')
-    _help = _(u"Create a backup of the selected file(s).")
+    _help = _(u'Create a backup of the selected file(s).')
 
     def Execute(self):
         for fileInfo in self.iselected_infos():

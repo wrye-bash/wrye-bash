@@ -166,12 +166,12 @@ class DocBrowser(WindowFrame):
         if mod_name in self._db_doc_paths:
             (docs_dir, file_name) = self._db_doc_paths[mod_name].headTail
         else:
-            docs_dir = bass.settings['bash.modDocs.dir'] or bass.dirs[u'mods']
+            docs_dir = bass.settings[u'bash.modDocs.dir'] or bass.dirs[u'mods']
             file_name = GPath(u'')
         doc_path = balt.askOpen(self, _(u'Select doc for %s:') % mod_name,
                                 docs_dir, file_name, u'*.*')
         if not doc_path: return
-        bass.settings['bash.modDocs.dir'] = doc_path.head
+        bass.settings[u'bash.modDocs.dir'] = doc_path.head
         if mod_name not in self._db_doc_paths:
             self._mod_list.lb_append(mod_name.s)
         self._db_doc_paths[mod_name] = doc_path
@@ -202,7 +202,7 @@ class DocBrowser(WindowFrame):
         doc_path = self._db_doc_paths.get(self._mod_name)
         if not doc_path: return  # nothing to save if no file is loaded
         self._doc_ctrl.set_text_modified(False)
-        with doc_path.open('w', encoding='utf-8-sig') as out:
+        with doc_path.open(u'w', encoding=u'utf-8-sig') as out:
             out.write(self._doc_ctrl.fallback_text)
         if self._doc_is_wtxt:
             bolt.WryeText.genHtml(doc_path, None,
@@ -284,7 +284,7 @@ class DocBrowser(WindowFrame):
         """Handle window close event.
         Remember window size, position, etc."""
         self.DoSave()
-        bass.settings['bash.modDocs.show'] = False
+        bass.settings[u'bash.modDocs.show'] = False
         Link.Frame.docBrowser = None
         super(DocBrowser, self).on_closing(destroy)
 

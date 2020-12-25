@@ -51,7 +51,7 @@ class ImportFaceDialog(DialogWindow):
         self.listBox.set_min_size(175, 150)
         #--Name,Race,Gender Checkboxes
         fi_flgs = bosh.faces.PCFaces.pcf_flags(
-            bass.settings.get('bash.faceImport.flags', 0x4))
+            bass.settings.get(u'bash.faceImport.flags', 0x4))
         self.nameCheck = CheckBox(self, _(u'Name'), checked=fi_flgs.name)
         self.raceCheck = CheckBox(self, _(u'Race'), checked=fi_flgs.race)
         self.genderCheck = CheckBox(self, _(u'Gender'), checked=fi_flgs.gender)
@@ -91,7 +91,8 @@ class ImportFaceDialog(DialogWindow):
         self.raceText.label_text = face.getRaceName()
         self.genderText.label_text = face.getGenderName()
         self.statsText.label_text = _(u'Health ') + unicode(face.health)
-        itemImagePath = bass.dirs[u'mods'].join(u'Docs', u'Images', '%s.jpg' % item)
+        itemImagePath = bass.dirs[u'mods'].join(u'Docs', u'Images',
+                                                u'%s.jpg' % item)
         # TODO(ut): any way to get the picture ? see mod_links.Mod_Face_Import
         self.picture.set_bitmap(itemImagePath)
         self.listBox.lb_select_index(lb_selection_dex)
@@ -113,8 +114,9 @@ class ImportFaceDialog(DialogWindow):
         pc_flags.stats = self.statsCheck.is_checked
         pc_flags.iclass = self.classCheck.is_checked
         #deprint(flags.getTrueAttrs())
-        bass.settings['bash.faceImport.flags'] = int(pc_flags)
-        bosh.faces.PCFaces.save_setFace(self.fileInfo, self.fdata[item], pc_flags)
+        bass.settings[u'bash.faceImport.flags'] = int(pc_flags)
+        bosh.faces.PCFaces.save_setFace(self.fileInfo, self.fdata[item],
+                                        pc_flags)
         balt.showOk(self, _(u'Face imported.'), self.fileInfo.name.s)
         self.accept_modal()
 
@@ -156,7 +158,7 @@ class CreateNewProject(DialogWindow):
              LayoutOptions(h_align=CENTER))
         ]).apply_to(self, fit=True)
         # Dialog Icon Handlers
-        self.set_icon(installercons.get_image('off.white.dir').GetIcon())
+        self.set_icon(installercons.get_image(u'off.white.dir').GetIcon())
         self.OnCheckBoxChange()
         self.OnCheckProjectsColorTextCtrl(self.textName.text_content)
 
@@ -178,12 +180,12 @@ class CreateNewProject(DialogWindow):
         if self.checkEsp.is_checked or self.checkEspMasterless.is_checked:
             if self.checkWizard.is_checked:
                 self.set_icon(
-                    installercons.get_image('off.white.dir.wiz').GetIcon())
+                    installercons.get_image(u'off.white.dir.wiz').GetIcon())
             else:
                 self.set_icon(
-                    installercons.get_image('off.white.dir').GetIcon())
+                    installercons.get_image(u'off.white.dir').GetIcon())
         else:
-            self.set_icon(installercons.get_image('off.grey.dir').GetIcon())
+            self.set_icon(installercons.get_image(u'off.grey.dir').GetIcon())
 
     def OnClose(self):
         """ Create the New Project and add user specified extras. """
@@ -210,7 +212,7 @@ class CreateNewProject(DialogWindow):
         if self.checkWizard.is_checked:
             # Create empty wizard.txt
             wizardPath = tempProject.join(u'wizard.txt')
-            with wizardPath.open('w',encoding='utf-8') as out:
+            with wizardPath.open(u'w', encoding=u'utf-8') as out:
                 out.write(u'; %s BAIN Wizard Installation Script\n' % projectName)
         if self.checkWizardImages.is_checked:
             # Create 'Wizard Images' directory

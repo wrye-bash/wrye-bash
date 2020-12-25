@@ -29,8 +29,8 @@ Bash to use, so must be imported and run high up in the booting sequence.
 # Imports ---------------------------------------------------------------------
 import collections
 import textwrap
-from . import game as game_init
 from . import bass
+from . import game as game_init
 from .bolt import GPath, Path, deprint
 from .env import get_registry_game_path
 from .exception import BoltError
@@ -61,7 +61,7 @@ def _supportedGames():
         if not ispkg: continue # game support modules are packages
         # Equivalent of "from game import <modname>"
         try:
-            module = __import__('game',globals(),locals(),[modname],-1)
+            module = __import__(u'game',globals(),locals(),[modname],-1)
             submod = getattr(module,modname)
             game_type = submod.GAME_TYPE
             _allModules[game_type.displayName] = submod
@@ -161,7 +161,7 @@ def __setGame(gamename, msg):
     gamePath = foundGames[gamename]
     game = _allGames[gamename](gamePath)
     game_mod = _allModules[gamename]
-    deprint(msg % {'gamename': gamename}, gamePath)
+    deprint(msg % {u'gamename': gamename}, gamePath)
     # Unload the other modules from the cache
     _allGames.clear()
     _allModules.clear()

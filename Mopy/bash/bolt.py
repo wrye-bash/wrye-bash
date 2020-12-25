@@ -81,29 +81,29 @@ except ImportError:
 #  This is only useful when reading fields from mods, as the encoding is not
 #  known.  For normal filesystem interaction, these functions are not needed
 encodingOrder = (
-    'ascii',    # Plain old ASCII (0-127)
-    'gbk',      # GBK (simplified Chinese + some)
-    'cp932',    # Japanese
-    'cp949',    # Korean
-    'cp1252',   # English (extended ASCII)
-    'utf8',
-    'cp500',
-    'UTF-16LE',
-    )
+    u'ascii',    # Plain old ASCII (0-127)
+    u'gbk',      # GBK (simplified Chinese + some)
+    u'cp932',    # Japanese
+    u'cp949',    # Korean
+    u'cp1252',   # English (extended ASCII)
+    u'utf8',
+    u'cp500',
+    u'UTF-16LE',
+)
 if os.name == u'nt':
-    encodingOrder += ('mbcs',)
+    encodingOrder += (u'mbcs',)
 
 _encodingSwap = {
     # The encoding detector reports back some encodings that
     # are subsets of others.  Use the better encoding when
     # given the option
     # 'reported encoding':'actual encoding to use',
-    'GB2312': 'gbk',        # Simplified Chinese
-    'SHIFT_JIS': 'cp932',   # Japanese
-    'windows-1252': 'cp1252',
-    'windows-1251': 'cp1251',
-    'utf-8': 'utf8',
-    }
+    u'GB2312': u'gbk',        # Simplified Chinese
+    u'SHIFT_JIS': u'cp932',   # Japanese
+    u'windows-1252': u'cp1252',
+    u'windows-1251': u'cp1251',
+    u'utf-8': u'utf8',
+}
 
 # Preferred encoding to use when decoding/encoding strings in plugin files
 # None = auto
@@ -129,8 +129,8 @@ def decoder(byte_str, encoding=None, avoidEncodings=()):
     if isinstance(byte_str, unicode) or byte_str is None: return byte_str
     # Try the user specified encoding first
     # TODO(ut) monkey patch
-    if encoding == 'cp65001':
-        encoding = 'utf-8'
+    if encoding == u'cp65001':
+        encoding = u'utf-8'
     if encoding:
         try: return unicode(byte_str, encoding)
         except UnicodeDecodeError: pass
@@ -713,7 +713,7 @@ class Path(object):
     def crc(self):
         """Calculates and returns crc value for self."""
         crc = 0
-        with self.open('rb') as ins:
+        with self.open(u'rb') as ins:
             for block in iter(partial(ins.read, 2097152), ''):
                 crc = crc32(block, crc) # 2MB at a time, probably ok
         return crc & 0xffffffff
@@ -795,10 +795,10 @@ class Path(object):
                         try: chmod(rootJoin(filename),stat_flags)
                         except: pass
 
-    def open(self,*args,**kwdargs):
+    def open(self,*args,**kwdargs): # PY3: drop - open() accepts encoding now
         if self.shead and not os.path.exists(self.shead):
             os.makedirs(self.shead)
-        if 'encoding' in kwdargs:
+        if u'encoding' in kwdargs:
             return codecs.open(self._s,*args,**kwdargs)
         else:
             return open(self._s,*args,**kwdargs)
@@ -984,23 +984,26 @@ class CsvReader(object):
         for line in unicode_csv_data:
             yield line.encode('utf8')
 
-    def __init__(self,path):
-        self.ins = GPath(path).open('rb', encoding='utf-8-sig')
-        excel_fmt = ('excel','excel-tab')[u'\t' in self.ins.readline()]
-        if excel_fmt == 'excel':
-            delimiter = (',',';')[u';' in self.ins.readline()]
-            self.ins.seek(0)
-            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),excel_fmt,delimiter=delimiter)
+    def __init__(self,path): ##: Py3 Revisit - is Csv reader still bytes?  get rid of BOM?
+        self.ins = GPath(path).open(u'r', encoding=u'utf-8-sig')
+        first_line = self.ins.readline()
+        excel_fmt = b'excel-tab' if u'\t' in first_line else b'excel'
+        self.ins.seek(0)
+        if excel_fmt == b'excel':
+            # TypeError: "delimiter" must be string, not unicode
+            delimiter = b';' if b';' in first_line else b','
+            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),
+                                     excel_fmt, delimiter=delimiter)
         else:
-            self.ins.seek(0)
-            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),excel_fmt)
+            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),
+                                     excel_fmt)
 
     def __enter__(self): return self
     def __exit__(self, exc_type, exc_value, exc_traceback): self.ins.close()
 
     def __iter__(self):
-        for iter in self.reader:
-            yield [unicode(x,'utf8') for x in iter]
+        for row in self.reader:
+            yield [unicode(x, u'utf8') for x in row]
 
     def close(self):
         self.reader = None
@@ -1354,7 +1357,7 @@ class PickleDict(object):
                 cor.moveTo(cor_name)
                 cor = None
             try:
-                with path.open('rb') as ins:
+                with path.open(u'rb') as ins:
                     try:
                         firstPickle = pickle.load(ins)
                     except ValueError:
@@ -2341,8 +2344,8 @@ class WryeText(object):
             srcPath = GPath(ins)
             outPath = GPath(out) or srcPath.root+u'.html'
             cssDirs = (srcPath.head,) + cssDirs
-            ins = srcPath.open(encoding='utf-8-sig')
-            out = outPath.open('w',encoding='utf-8-sig')
+            ins = srcPath.open(encoding=u'utf-8-sig')
+            out = outPath.open(u'w',encoding=u'utf-8-sig')
         else:
             srcPath = outPath = None
         # Setup
@@ -2610,7 +2613,7 @@ class WryeText(object):
                 if cssPath.exists(): break
             else:
                 raise exception.BoltError(u'Css file not found: %s' % cssName)
-            with cssPath.open('r',encoding='utf-8-sig') as cssIns:
+            with cssPath.open(u'r', encoding=u'utf-8-sig') as cssIns:
                 css = u''.join(cssIns.readlines())
             if u'<' in css:
                 raise exception.BoltError(u'Non css tag in %s' % cssPath)

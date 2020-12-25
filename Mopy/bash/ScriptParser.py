@@ -429,7 +429,7 @@ class Parser(object):
         self.tokens = []
         self.Flow = []
 
-        self.opChars = ''
+        self.opChars = u''
         self.operators = {}
         self.keywords = {}
         self.functions = {}
@@ -543,8 +543,8 @@ class Parser(object):
 
         # If we have a keyword, just run it
         if self.tokens[0].type == KEYWORD:
-            key = self.tokens.pop(0)
-            key(*self.tokens)
+            kwrd = self.tokens.pop(0)
+            kwrd(*self.tokens)
         # It's just an expression, didnt start with a keyword
         else:
             # Convert to reverse-polish notation and execute
@@ -658,7 +658,7 @@ class Parser(object):
                 # Dot operator
                 if i.text == self.dotOperator:
                     if idex+1 >= len(tokens):
-                        error(_(u"Dot operator: no function to call."))
+                        error(_(u'Dot operator: no function to call.'))
                     if tokens[idex+1].type != FUNCTION:
                         error(_(u"Dot operator: cannot access non-function '%s'.") % tokens[idex+1].text)
                     if not tokens[idex+1].tkn.dotFunction:
@@ -843,11 +843,11 @@ class Parser(object):
     def _stateDQuote(self, c):
         if c == u'\\': return self._stateDQuoteEscape
         if c == u'"':
-            if not self.word: self.word = u""
+            if not self.word: self.word = u''
             self._emit(type_=STRING)
             return self._stateSpace
         if c == u'\n':
-            error(_(u"Unterminated double quote."))
+            error(_(u'Unterminated double quote.'))
         self._grow(c)
         return self._stateDQuote
     def _stateDQuoteEscape(self, c):
