@@ -122,7 +122,7 @@ class OmodFile(object):
             cmd7z = [archives.exe7z, u'l', u'-r', u'-sccUTF-8', tempOmod.s]
             with subprocess.Popen(cmd7z, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout as ins:
                 for line in ins:
-                    line = unicode(line,'utf8')
+                    line = unicode(line,u'utf8')
                     maFileSize = reFileSize.match(line)
                     if maFileSize: #also matches the last line with total sizes
                         size = int(maFileSize.group(1))
@@ -350,7 +350,7 @@ class OmodConfig(object):
             for attr in (u'omod_author', u'email', u'website', u'abstract'):
                 # OBMM reads it fine if in UTF-8, so we'll do that.
                 _writeNetString(out, getattr(config, attr).encode(u'utf-8'))
-            out.write('\x74\x1a\x74\x67\xf2\x7a\xca\x88') #--Random date time
+            out.write(b'\x74\x1a\x74\x67\xf2\x7a\xca\x88') #--Random date time
             pack_byte_signed(out, 0) #--zip compression (will be ignored)
-            out.write('\xFF\xFF\xFF\xFF')
+            out.write(b'\xFF\xFF\xFF\xFF')
         configPath.untemp()

@@ -368,7 +368,7 @@ class ModCleaner(object):
                             header = insUnpackRecHeader()
                             rtype,hsize = header.recType,header.size
                             #(type,size,flags,fid,uint2) = ins.unpackRecHeader()
-                            if rtype == 'GRUP':
+                            if rtype == b'GRUP':
                                 groupType = header.groupType
                                 if groupType == 0 and header.label not in __wrld_types:
                                     # Skip Tops except for WRLD and CELL groups
@@ -392,9 +392,9 @@ class ModCleaner(object):
                             else:
                                 header_fid = header.fid
                                 if doUDR and header.flags1 & 0x20 and rtype in (
-                                    'ACRE',               #--Oblivion only
-                                    'ACHR','REFR',        #--Both
-                                    'NAVM','PHZD','PGRE', #--Skyrim only
+                                    b'ACRE',               #--Oblivion only
+                                    b'ACHR',b'REFR',        #--Both
+                                    b'NAVM',b'PHZD',b'PGRE', #--Skyrim only
                                     ):
                                     if not detailed:
                                         udr[header_fid] = ModCleaner.UdrInfo(header_fid)

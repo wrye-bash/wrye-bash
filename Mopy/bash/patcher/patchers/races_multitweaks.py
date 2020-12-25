@@ -301,7 +301,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
     """Race patcher - we inherit from AMultiTweaker to use tweak_instances."""
     patcher_group = u'Special'
     patcher_order = 40
-    _read_write_records = ('RACE', 'EYES', 'HAIR', 'NPC_',)
+    _read_write_records = (b'RACE', b'EYES', b'HAIR', b'NPC_')
     _tweak_classes = [RaceTweaker_BiggerOrcsAndNords,
         RaceTweaker_MergeSimilarRaceHairs, RaceTweaker_MergeSimilarRaceEyes,
         RaceTweaker_PlayableEyes, RaceTweaker_PlayableHairs,
@@ -328,7 +328,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
                            'skill7', 'skill7Boost'}
         self.eyeKeys = {u'Eyes'}
         self.eye_mesh = {}
-        self.scanTypes = {'RACE', 'EYES', 'HAIR', 'NPC_'}
+        self.scanTypes = {b'RACE', b'EYES', b'HAIR', b'NPC_'}
         self.vanilla_eyes = _find_vanilla_eyes()
         self.enabled_tweaks = enabled_tweaks
 
@@ -452,11 +452,11 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
         if not (set(modFile.tops) & self.scanTypes): return
         srcEyes = {record.fid for record in modFile.EYES.getActiveRecords()}
         #--Eyes, Hair
-        for type in ('EYES','HAIR'):
-            patchBlock = getattr(self.patchFile,type)
+        for rec_sig in (b'EYES', b'HAIR'):
+            patchBlock = getattr(self.patchFile,rec_sig)
             id_records = patchBlock.id_records
-            for record in getattr(modFile,type).getActiveRecords():
-                races_data[type].append(record.fid)
+            for record in getattr(modFile,rec_sig).getActiveRecords():
+                races_data[rec_sig].append(record.fid)
                 if record.fid not in id_records:
                     patchBlock.setRecord(record.getTypeCopy())
         #--Npcs with unassigned eyes
@@ -512,7 +512,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
         if not self.isActive: return
         patchFile = self.patchFile
         keep = patchFile.getKeeper()
-        if 'RACE' not in patchFile.tops: return
+        if b'RACE' not in patchFile.tops: return
         racesPatched = []
         racesSorted = []
         racesFiltered = []

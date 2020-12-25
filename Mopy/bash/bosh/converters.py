@@ -56,13 +56,15 @@ class ConvertersData(DataDict):
     def load(self):
         self.converterFile.load()
         convertData = self.converterFile.data
-        self.bcfCRC_converter = convertData.get('bcfCRC_converter', dict())
-        self.srcCRC_converters = convertData.get('srcCRC_converters', dict())
+        self.bcfCRC_converter = convertData.get(u'bcfCRC_converter', {}) or \
+                                convertData.get(b'bcfCRC_converter', {})
+        self.srcCRC_converters = convertData.get(u'srcCRC_converters', {}) or \
+                                 convertData.get(b'srcCRC_converters', {})
         return True
 
     def save(self):
-        self.converterFile.data['bcfCRC_converter'] = self.bcfCRC_converter
-        self.converterFile.data['srcCRC_converters'] = self.srcCRC_converters
+        self.converterFile.data[u'bcfCRC_converter'] = self.bcfCRC_converter
+        self.converterFile.data[u'srcCRC_converters'] = self.srcCRC_converters
         self.converterFile.save()
 
     def refreshConvertersNeeded(self):
@@ -225,8 +227,8 @@ class InstallerConverter(object):
         #--Do NOT reorder persistBCF,persistDAT,addedPersist or you will
         # break existing BCFs!
         #--Do NOT add new attributes to persistBCF, persistDAT.
-        self.persistBCF = ['srcCRCs']
-        self.persistDAT = ['crc', 'fullPath']
+        self.persistBCF = [u'srcCRCs']
+        self.persistDAT = [u'crc', u'fullPath']
         #--Any new BCF persistent variables are not allowed. Additional work
         #  needed to support backwards compat.
         #--Any new DAT persistent variables must be appended to
@@ -242,13 +244,13 @@ class InstallerConverter(object):
         # They're always read from BCF.dat
         #--Do NOT reorder settings,volatile,addedSettings or you will break
         # existing BCFs!
-        self._converter_settings = ['comments', 'espmNots', 'hasExtraData',
-                                    'isSolid', 'skipVoices', 'subActives']
-        self.volatile = ['convertedFiles', 'dupeCount']
+        self._converter_settings = [u'comments', u'espmNots', u'hasExtraData',
+                                    u'isSolid', u'skipVoices', u'subActives']
+        self.volatile = [u'convertedFiles', u'dupeCount']
         #--Any new saved variables, whether they're settings or volatile
         # must be appended to addedSettings.
         #----They must be able to handle being set to None
-        self.addedSettings = ['blockSize', ]
+        self.addedSettings = [u'blockSize']
         self.convertedFiles = []
         self.dupeCount = {}
         #--Cheap init overloading...
@@ -579,7 +581,7 @@ class InstallerConverter(object):
             apath = installers_dir.join(srcInstaller)
         else:
             apath = srcInstaller
-        subTempDir = tmpDir.join(u"%08X" % installerCRC)
+        subTempDir = tmpDir.join(u'%08X' % installerCRC)
         if progress:
             progress(0, u'%s\n' % srcInstaller + _(u'Extracting files...'))
             progress.setFull(1 + len(fileNames))

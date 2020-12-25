@@ -101,7 +101,7 @@ class BackupSettings(object):
     file that stores those versions."""
 
     def __init__(self, settings_file, fsName, root_prefix, mods_folder):
-        self._backup_dest_file = settings_file # absolute path to dest 7z file
+        self._backup_dest_file = GPath(settings_file) # absolute path to dest 7z file
         self.files = {}
         for (bash_dir, tmpdir), setting_files in _init_settings_files(
                 fsName, root_prefix, mods_folder).iteritems():

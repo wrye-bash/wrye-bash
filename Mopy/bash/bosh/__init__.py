@@ -419,8 +419,8 @@ class ModInfo(FileInfo):
         if recalculate:
             path_crc = self.abs_path.crc
             if path_crc != cached_crc:
-                modInfos.table.setItem(self.name,u'crc',path_crc)
-                modInfos.table.setItem(self.name,u'ignoreDirty',False)
+                modInfos.table.setItem(self.name, u'crc', path_crc)
+                modInfos.table.setItem(self.name, u'ignoreDirty', False)
             modInfos.table.setItem(self.name, u'crc_mtime', self._file_mod_time)
             modInfos.table.setItem(self.name, u'crc_size', self._file_size)
         return path_crc, cached_crc
@@ -458,7 +458,7 @@ class ModInfo(FileInfo):
         set_time = FileInfo.setmtime(self, set_time)
         # Prevent re-calculating the File CRC
         if not crc_changed:
-            modInfos.table.setItem(self.name,u'crc_mtime', set_time)
+            modInfos.table.setItem(self.name, u'crc_mtime', set_time)
         else:
             self.calculate_crc(recalculate=True)
 
@@ -619,7 +619,7 @@ class ModInfo(FileInfo):
                     self.header.dump(out)
                     #--Write remainder
                     outWrite = out.write
-                    for block in iter(partial(ins.read, 0x5000000), ''):
+                    for block in iter(partial(ins.read, 0x5000000), b''):
                         outWrite(block)
                 except struct.error as rex:
                     raise ModError(self.name,u'Struct.error: %s' % rex)
@@ -696,7 +696,7 @@ class ModInfo(FileInfo):
         # type: (basestring) -> Iterable[Path]
         sbody, ext = self.name.sbody, self.get_extension()
         for join, format_str in bush.game.Esp.stringsFiles:
-            fname = format_str % {'body': sbody, 'ext': ext, 'language': lang}
+            fname = format_str % {u'body': sbody, u'ext': ext, u'language': lang}
             assetPath = empty_path.join(*join).join(fname)
             yield assetPath
 
@@ -1048,7 +1048,7 @@ from . import cosaves
 
 class SaveInfo(FileInfo):
     cosave_types = () # cosave types for this game - set once in SaveInfos
-    _cosave_ui_string = {PluggyCosave: 'XP', xSECosave: 'XO'} # ui strings
+    _cosave_ui_string = {PluggyCosave: u'XP', xSECosave: u'XO'} # ui strings
 
     def __init__(self, fullpath, load_cache=False):
         # Dict of cosaves that may come with this save file. Need to get this
@@ -1139,7 +1139,7 @@ class SaveInfo(FileInfo):
             if inst and inst.abs_path.exists():
                 co_ui_strings[j] = self._cosave_ui_string[co_typ][
                     abs(inst.abs_path.mtime - self.mtime) < 10]
-        return '\n'.join(co_ui_strings)
+        return u'\n'.join(co_ui_strings)
 
     def backup_restore_paths(self, first=False, fname=None):
         """Return as parent and in addition back up paths for the cosaves."""
@@ -1235,12 +1235,12 @@ class DataStore(DataDict):
         """Deletes member file(s)."""
         full_delete_paths, delete_info = self.files_to_delete(delete_keys,
             raise_on_master_deletion=kwargs.pop(
-                'raise_on_master_deletion', True))
+                u'raise_on_master_deletion', True))
         try:
             self._delete_operation(full_delete_paths, delete_info, **kwargs)
         finally:
             #--Refresh
-            if kwargs.pop('doRefresh', True):
+            if kwargs.pop(u'doRefresh', True):
                 self.delete_refresh(full_delete_paths, delete_info,
                                     check_existence=True)
 
@@ -1248,8 +1248,8 @@ class DataStore(DataDict):
         raise AbstractError
 
     def _delete_operation(self, paths, delete_info, **kwargs):
-        confirm = kwargs.pop('confirm', False)
-        recycle = kwargs.pop('recycle', True)
+        confirm = kwargs.pop(u'confirm', False)
+        recycle = kwargs.pop(u'recycle', True)
         env.shellDelete(paths, confirm=confirm, recycle=recycle)
 
     def delete_refresh(self, deleted, deleted2, check_existence):
@@ -1566,7 +1566,7 @@ class DefaultIniInfo(DefaultIniFile, INIInfo):
     def is_default_tweak(self): return True
 
 # noinspection PyUnusedLocal
-def ini_info_factory(fullpath, load_cache='Ignored'):
+def ini_info_factory(fullpath, load_cache=u'Ignored'):
     """INIInfos factory
     :param fullpath: fullpath to the ini file to wrap
     :param load_cache: dummy param used in INIInfos#new_info factory call
@@ -2699,7 +2699,7 @@ class ModInfos(FileInfos):
     def files_to_delete(self, filenames, **kwargs):
         for f in set(filenames):
             if f.s == bush.game.master_file:
-                if kwargs.pop('raise_on_master_deletion', True):
+                if kwargs.pop(u'raise_on_master_deletion', True):
                     raise BoltError(
                         u"Cannot delete the game's master file(s).")
                 else:
@@ -2762,7 +2762,7 @@ class ModInfos(FileInfos):
     def getVersion(self, fileName):
         """Extracts and returns version number for fileName from header.hedr.description."""
         if not fileName in self.data or not self.data[fileName].header:
-            return ''
+            return u''
         maVersion = reVersion.search(self[fileName].header.description)
         return (maVersion and maVersion.group(2)) or u''
 

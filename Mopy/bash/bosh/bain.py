@@ -161,7 +161,7 @@ class Installer(object):
             try:
                 with open(asFile, u'rb') as ins:
                     insTell = ins.tell
-                    for block in iter(partial(ins.read, 2097152), ''):
+                    for block in iter(partial(ins.read, 2097152), b''):
                         crc = crc32(block, crc) # 2MB at a time, probably ok
                         sub(insTell())
             except IOError:
@@ -403,7 +403,7 @@ class Installer(object):
         del Installer._global_start_skips[:]
         Installer._global_skip_extensions.clear()
         if bass.settings[u'bash.installers.skipTESVBsl']:
-            Installer._global_skip_extensions.add('.bsl')
+            Installer._global_skip_extensions.add(u'.bsl')
         if bass.settings[u'bash.installers.skipScriptSources']:
             Installer._global_skip_extensions.update(
                 bush.game.Psc.source_extensions)
@@ -838,11 +838,11 @@ class Installer(object):
                 if dirName not in layout and layout:
                     # A second directory in the archive root, start in the root
                     break
-                root = layoutSetdefault(dirName,{'dirs':{},'files':False})
+                root = layoutSetdefault(dirName,{u'dirs':{},u'files':False})
                 for frag in frags[1:-1]:
-                    root = root['dirs'].setdefault(frag,{'dirs':{},'files':False})
+                    root = root[u'dirs'].setdefault(frag,{u'dirs':{},u'files':False})
                 # the last frag is a file, so its parent dir has files
-                root['files'] = True
+                root[u'files'] = True
         else:
             if not layout: return
             rootStr = next(iter(layout))
@@ -851,10 +851,10 @@ class Installer(object):
             rootStr = u''.join((rootStr, _os_sep))
             data_dir = bush.game.mods_dir.lower()
             while True:
-                if root['files']:
+                if root[u'files']:
                     # There are files in this folder, call it the starting point
                     break
-                rootDirs = root['dirs']
+                rootDirs = root[u'dirs']
                 rootDirKeys = rootDirs.keys()
                 if len(rootDirKeys) == 1:
                     # Only one subfolder, see if it's either the data folder,
@@ -1677,7 +1677,7 @@ class InstallersData(DataStore):
 
     def refresh(self, *args, **kwargs): return self.irefresh(*args, **kwargs)
 
-    def irefresh(self, progress=None, what='DIONSC', fullRefresh=False,
+    def irefresh(self, progress=None, what=u'DIONSC', fullRefresh=False,
                  refresh_info=None, deleted=None, pending=None, projects=None):
         progress = progress or bolt.Progress()
         #--Archive invalidation
@@ -1692,14 +1692,14 @@ class InstallersData(DataStore):
         if fullRefresh: # BAIN uses modInfos crc cache
             with gui.BusyCursor(): modInfos.refresh_crcs()
         #--Refresh Other - FIXME(ut): docs
-        if 'D' in what:
+        if u'D' in what:
             changed |= self._refresh_from_data_dir(progress, fullRefresh)
-        if 'I' in what: changed |= self._refreshInstallers(
+        if u'I' in what: changed |= self._refreshInstallers(
             progress, fullRefresh, refresh_info, deleted, pending, projects)
-        if 'O' in what or changed: changed |= self.refreshOrder()
-        if 'N' in what or changed: changed |= self.refreshNorm()
-        if 'S' in what or changed: changed |= self.refreshInstallersStatus()
-        if 'C' in what or changed: changed |= \
+        if u'O' in what or changed: changed |= self.refreshOrder()
+        if u'N' in what or changed: changed |= self.refreshNorm()
+        if u'S' in what or changed: changed |= self.refreshInstallersStatus()
+        if u'C' in what or changed: changed |= \
             self.converters_data.refreshConverters(progress, fullRefresh)
         #--Done
         if changed: self.hasChanged = True
@@ -1756,7 +1756,7 @@ class InstallersData(DataStore):
         deleted = {item.tail for item in deleted
                    if not check_existence or not item.exists()}
         if deleted:
-            self.irefresh(what='I', deleted=deleted)
+            self.irefresh(what=u'I', deleted=deleted)
         elif markers:
             self.refreshOrder()
 
@@ -1779,7 +1779,7 @@ class InstallersData(DataStore):
     def move_infos(self, sources, destinations, window, bash_frame):
         moved = super(InstallersData, self).move_infos(sources, destinations,
                                                        window, bash_frame)
-        self.irefresh(what='I', pending=moved)
+        self.irefresh(what=u'I', pending=moved)
         return moved
 
     #--Refresh Functions ------------------------------------------------------
@@ -1848,7 +1848,7 @@ class InstallersData(DataStore):
         installer.refreshBasic(progress, recalculate_project_crc=_fullRefresh)
         if progress: progress(1.0, _(u'Done'))
         if do_refresh:
-            self.irefresh(what='NS')
+            self.irefresh(what=u'NS')
         return installer
 
     def applyEmbeddedBCFs(self, installers=None, destArchives=None,
@@ -1886,7 +1886,7 @@ class InstallersData(DataStore):
                 # installer.hasBCF = False
                 installers.remove(installer)
             finally: bcfFile.remove()
-        self.irefresh(what='I', pending=pending)
+        self.irefresh(what=u'I', pending=pending)
         return pending, list(GPath(x.archive) for x in installers)
 
     def apply_converter(self, converter, destArchive, progress, msg,
@@ -1911,7 +1911,7 @@ class InstallersData(DataStore):
             if pending is not None: # caller must take care of the else below !
                 pending.append(destArchive)
             else:
-                self.irefresh(what='I', pending=[destArchive])
+                self.irefresh(what=u'I', pending=[destArchive])
                 return iArchive
         except StateError:
             deprint(msg, traceback=True)
@@ -2031,7 +2031,7 @@ class InstallersData(DataStore):
             if not (sDirs or sFiles): emptyDirsAdd(GPath(asDir))
             if asDir == asRoot: InstallersData._skips_in_data_dir(sDirs)
             dirDirsFilesAppend((asDir, sDirs, sFiles))
-        progress(0, _(u"%s: Scanning...") % bass.dirs[u'mods'].stail)
+        progress(0, _(u'%s: Scanning...') % bass.dirs[u'mods'].stail)
         new_sizeCrcDate, pending, pending_size = \
             self._process_data_dir(dirDirsFiles, progress)
         #--Remove empty dirs?
@@ -2188,7 +2188,7 @@ class InstallersData(DataStore):
         new_skips_overrides = self.overridden_skips - set(self.data_sizeCrcDate)
         progress = progress or bolt.Progress()
         progress(0, (
-            _(u"%s: Skips overrides...") % bass.dirs[u'mods'].stail) + u'\n')
+            _(u'%s: Skips overrides...') % bass.dirs[u'mods'].stail) + u'\n')
         self.update_data_SizeCrcDate(new_skips_overrides, progress)
 
     @staticmethod
@@ -2432,7 +2432,7 @@ class InstallersData(DataStore):
                      override=True):
         try: return self._install(packages, refresh_ui, progress, last,
                                   override)
-        finally: self.irefresh(what='NS')
+        finally: self.irefresh(what=u'NS')
 
     #--Uninstall, Anneal, Clean
     @staticmethod
@@ -2543,7 +2543,7 @@ class InstallersData(DataStore):
 
     def bain_uninstall(self, unArchives, refresh_ui, progress=None):
         """Uninstall selected archives."""
-        if unArchives == 'ALL': unArchives = self.data
+        if unArchives == u'ALL': unArchives = self.data
         unArchives = frozenset(self[x] for x in unArchives)
         data_sizeCrcDate = self.data_sizeCrcDate
         #--Determine files to remove and files to restore. Keep in mind that
@@ -2591,14 +2591,14 @@ class InstallersData(DataStore):
                 for ci_dest in owned_files:
                     if modInfos.rightFileType(ci_dest):
                         refresh_ui[0] = True
-                        modInfos.table.setItem(GPath(ci_dest), 'installer',
+                        modInfos.table.setItem(GPath(ci_dest), u'installer',
                                                installer)
                     elif InstallersData._is_ini_tweak(ci_dest):
                         refresh_ui[1] = True
                         iniInfos.table.setItem(GPath(ci_dest).tail,
-                                               'installer', installer)
+                                               u'installer', installer)
         finally:
-            self.irefresh(what='NS')
+            self.irefresh(what=u'NS')
 
     def _restoreFiles(self, restores, refresh_ui, progress):
         installer_destinations = {}
@@ -2659,7 +2659,7 @@ class InstallersData(DataStore):
                     # bp_doc on a different drive, will be skipped anyway
                     continue
                 # Keep both versions of the BP doc (.txt and .html)
-                keepFiles.add((bolt.CIstr('%s' % bp_doc)))
+                keepFiles.add((bolt.CIstr(u'%s' % bp_doc)))
                 keepFiles.add((bolt.CIstr(
                     bp_doc.root.s + (u'.txt' if bp_doc.cext == u'.html'
                                      else u'.html'))))
@@ -2705,7 +2705,7 @@ class InstallersData(DataStore):
                 if emptyDir.isdir() and not emptyDir.list():
                     emptyDir.removedirs()
         finally:
-            self.irefresh(what='NS')
+            self.irefresh(what=u'NS')
 
     #--Utils
     @staticmethod

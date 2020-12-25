@@ -368,7 +368,7 @@ settingDefaults = { # keep current naming format till refactored
                          u'Cell'],
     u'bash.saves.sort': u'Modified',
     u'bash.saves.colReverse': {
-        u'Modified': 1,
+        u'Modified': True,
     },
     u'bash.saves.colWidths': {
         u'File': 375,
@@ -378,10 +378,22 @@ settingDefaults = { # keep current naming format till refactored
         u'Player': 70,
         u'Cell': 80,
     },
-    #Wrye Bash: BSAs
+    #--Wrye Bash: BSAs
     u'bash.BSAs.cols': [u'File', u'Modified', u'Size'],
+    u'bash.BSAs.sort': u'File',
     u'bash.BSAs.colReverse': {
-        u'Modified':1,
+        u'Modified': True,
+    },
+    u'bash.BSAs.colWidths': {
+        u'File': 150,
+        u'Modified': 150,
+        u'Size': 75,
+    },
+    #--Wrye Bash: Screens
+    u'bash.screens.cols': [u'File', u'Modified', u'Size'],
+    u'bash.screens.sort': u'File',
+    u'bash.screens.colReverse': {
+        u'Modified': True,
     },
     u'bash.screens.colWidths': {
         u'File': 100,

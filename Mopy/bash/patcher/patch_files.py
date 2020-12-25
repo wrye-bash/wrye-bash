@@ -58,7 +58,7 @@ class PatchFile(ModFile):
         log.setHeader(u'= ' + _(u'Overview'), True)
         log.setHeader(u'=== ' + _(u'Date/Time'))
         log(u'* ' + format_date(time.time()))
-        log(u'* ' + _(u'Elapsed Time: ') + 'TIMEPLACEHOLDER')
+        log(u'* ' + _(u'Elapsed Time: ') + u'TIMEPLACEHOLDER')
         def _link(link_id):
             return (readme_url(mopy=bass.dirs[u'mopy'], advanced=True),
                     u'#%s' % link_id)

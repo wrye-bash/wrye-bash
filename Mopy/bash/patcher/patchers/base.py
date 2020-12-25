@@ -230,12 +230,12 @@ class ReplaceFormIDsPatcher(ListPatcher):
             progress.plus()
 
     def getReadClasses(self):
-        return tuple(
-            MreRecord.simpleTypes | ({'CELL', 'WRLD', 'REFR', 'ACHR', 'ACRE'}))
+        return tuple(MreRecord.simpleTypes | (
+            {b'CELL', b'WRLD', b'REFR', b'ACHR', b'ACRE'}))
 
     def getWriteClasses(self):
-        return tuple(
-            MreRecord.simpleTypes | ({'CELL', 'WRLD', 'REFR', 'ACHR', 'ACRE'}))
+        return tuple(MreRecord.simpleTypes | (
+            {b'CELL', b'WRLD', b'REFR', b'ACHR', b'ACRE'}))
 
     def scanModFile(self,modFile,progress):
         """Scans specified mod file to extract info. May add record to patch mod,

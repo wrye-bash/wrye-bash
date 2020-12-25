@@ -207,7 +207,7 @@ class Installers_UninstallAllPackages(Installers_Link):
         ui_refresh = [False, False]
         try:
             with balt.Progress(_(u'Uninstalling...'),u'\n'+u' '*60) as progress:
-                self.idata.bain_uninstall('ALL', ui_refresh, progress=progress)
+                self.idata.bain_uninstall(u'ALL', ui_refresh, progress=progress)
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
 
