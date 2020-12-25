@@ -1666,12 +1666,11 @@ class ModDetails(_ModsSavesDetails):
                 if mod_info.setBashTagsDesc(mod_tags):
                     _refreshUI()
                 else:
-                    thinSplitterWin = self.window.GetParent().GetParent(
-                        ).GetParent().GetParent()
-                    balt.showError(thinSplitterWin,
-                        _(u'Description field including the Bash Tags must be '
-                          u'at most 511 characters. Edit the description to '
-                          u'leave enough room.'))
+                    balt.showError(
+                        Link.Frame, _(u'Description field including the Bash '
+                                      u'Tags must be at most 511 characters. '
+                                      u'Edit the description to leave enough '
+                                      u'room.'))
         # Tags links
         class _TagLink(CheckLink):
             @property

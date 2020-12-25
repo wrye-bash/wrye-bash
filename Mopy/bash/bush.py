@@ -114,10 +114,9 @@ def _detectGames(cli_path=u'', bash_ini_=None):
         if not test_path.isabs():
             test_path = Path.getcwd().join(test_path)
         installPaths[u'cmd'] = (test_path,
-            _(u'Set game mode to %(gamename)s specified via -o argument') +
-              u': ',
-            _(u'No known game in the path specified via -o argument: ' +
-              u'%(path)s'))
+            u'Set game mode to %(gamename)s specified via -o argument: ',
+            u'No known game in the path specified via -o argument: '
+            u'%(path)s')
     #--Second: check if sOblivionPath is specified in the ini
     ini_game_path = bass.get_ini_option(bash_ini_, u'sOblivionPath')
     if ini_game_path and not ini_game_path == u'.':
@@ -125,10 +124,10 @@ def _detectGames(cli_path=u'', bash_ini_=None):
         if not test_path.isabs():
             test_path = Path.getcwd().join(test_path)
         installPaths[u'ini'] = (test_path,
-            _(u'Set game mode to %(gamename)s based on sOblivionPath setting '
-              u'in bash.ini') + u': ',
-            _(u'No known game in the path specified in sOblivionPath ini '
-              u'setting: %(path)s'))
+            u'Set game mode to %(gamename)s based on sOblivionPath setting in '
+            u'bash.ini: ',
+            u'No known game in the path specified in sOblivionPath ini '
+            u'setting: %(path)s')
     #--Third: Detect what game is installed one directory up from Mopy
     test_path = Path.getcwd()
     if test_path.cs[-4:] == u'mopy':
@@ -136,11 +135,12 @@ def _detectGames(cli_path=u'', bash_ini_=None):
         if not test_path.isabs():
             test_path = Path.getcwd().join(test_path)
         installPaths[u'upMopy'] = (test_path,
-            _(u'Set game mode to %(gamename)s found in parent directory of'
-              u' Mopy') + u': ',
-            _(u'No known game in parent directory of Mopy: %(path)s'))
+            u'Set game mode to %(gamename)s found in parent directory of '
+            u'Mopy: ',
+            u'No known game in parent directory of Mopy: %(path)s')
     #--Detect
-    deprint(u'Detecting games via the -o argument, bash.ini and relative path:')
+    deprint(u'Detecting games via the -o argument, bash.ini and relative '
+            u'path:')
     # iterate installPaths in insert order ('cmd', 'ini', 'upMopy')
     for test_path, foundMsg, errorMsg in installPaths.itervalues():
         for gamename, info in _allGames.items():
