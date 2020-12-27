@@ -3073,6 +3073,9 @@ class BSAInfos(FileInfos):
     """BSAInfo collection. Represents bsa files in game's Data directory."""
     # BSAs that have versions other than the one expected for the current game
     mismatched_versions = set()
+    # Maps BA2 hashes to BA2 names, used to detect collisions
+    _ba2_hashes = collections.defaultdict(list)
+    ba2_collisions = set()
 
     def __init__(self):
         if bush.game.displayName == u'Oblivion':
@@ -3120,10 +3123,20 @@ class BSAInfos(FileInfos):
                  notify_bain=False):
         new_bsa = super(BSAInfos, self).new_info(fileName, _in_refresh, owner,
                                                  notify_bain)
+        new_bsa_name = new_bsa.name
         # Check if the BSA has a mismatched version - if so, schedule a warning
         if bush.game.Bsa.valid_versions: # If empty, skip checks for this game
             if new_bsa.inspect_version() not in bush.game.Bsa.valid_versions:
-                self.mismatched_versions.add(new_bsa.name)
+                self.mismatched_versions.add(new_bsa_name)
+        # For BA2s, check for hash collisions
+        if new_bsa_name.cext == u'.ba2':
+            ba2_entry = self._ba2_hashes[new_bsa.ba2_hash()]
+            # Drop the previous collision if it's present, then check if we
+            # have a new one
+            self.ba2_collisions.discard(u' & '.join(sorted(ba2_entry)))
+            ba2_entry.append(new_bsa_name.s)
+            if len(ba2_entry) >= 2:
+                self.ba2_collisions.add(u' & '.join(sorted(ba2_entry)))
         return new_bsa
 
     @property
