@@ -341,6 +341,7 @@ class Installer(object):
                 rescan = True
         elif self.fileRootIdex and not self.extras_dict.get('root_path', u''):
             rescan = True ##: for people that used my wip branch, drop on 307
+        self.extras_dict = {unicode(k): v for k, v in self.extras_dict.iteritems()}
         if not self.abs_path.exists(): # pickled installer deleted outside bash
             return  # don't do anything should be deleted from our data soon
         if not isinstance(self.src_sizeCrcDate, bolt.LowerDict):
@@ -679,7 +680,7 @@ class Installer(object):
         plugin_extensions = bush.game.espm_extensions
         reReadMeMatch = Installer.reReadMe.match
         #--Scan over fileSizeCrcs
-        root_path = self.extras_dict.get('root_path', u'')
+        root_path = self.extras_dict.get(u'root_path', u'')
         rootIdex = len(root_path)
         # For backwards compatibility - drop in 308
         self._fixme_drop__fomod_backwards_compat()
@@ -875,7 +876,7 @@ class Installer(object):
                 else:
                     # Multiple folders, stop here even if it's no good
                     break
-            self.extras_dict['root_path'] = rootStr # keeps case
+            self.extras_dict[u'root_path'] = rootStr # keeps case
             self.fileRootIdex = len(rootStr)
 
     def _remap_files(self, dest, fileLower, rootLower, fileExt, file_relative,
@@ -937,7 +938,7 @@ class Installer(object):
         dataDirsPlus = self.dataDirsPlus
         # hasExtraData is NOT taken into account when calculating package
         # structure or the root_path
-        root_path = self.extras_dict.get('root_path', u'')
+        root_path = self.extras_dict.get(u'root_path', u'')
         for full, size, crc in self.fileSizeCrcs:#break if type=1 else churn on
             if root_path: # exclude all files that are not under root_dir
                 if not full.startswith(root_path): continue

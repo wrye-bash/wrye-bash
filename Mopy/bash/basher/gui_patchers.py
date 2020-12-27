@@ -823,7 +823,7 @@ class _ImporterPatcherPanel(_ListPatcherPanel):
             importedMods = [item for item,value in
                             self.configChecks.iteritems() if
                             value and bosh.ModInfos.rightFileType(item)]
-            configs['ImportedMods'].update(importedMods)
+            configs[u'ImportedMods'].update(importedMods)
         return config
 
 class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):

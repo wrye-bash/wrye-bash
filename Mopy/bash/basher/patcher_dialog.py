@@ -298,7 +298,7 @@ class PatchDialog(DialogWindow):
                 raise # will raise the SkipError which is correctly processed
 
     def __config(self):
-        config = {'ImportedMods': set()}
+        config = {u'ImportedMods': set()}
         for p in self._gui_patchers: p.saveConfig(config)
         return config
 

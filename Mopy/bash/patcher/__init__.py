@@ -33,7 +33,7 @@ def exportConfig(patch_name, config, win, outDir):
     if outPath:
         table = bolt.DataTable(bolt.PickleDict(outPath))
         table.setItem(bolt.GPath(u'Saved Bashed Patch Configuration (Python)'),
-            'bash.patch.configs', config)
+            u'bash.patch.configs', config)
         table.save()
 
 def getPatchesPath(fileName):

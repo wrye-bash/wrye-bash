@@ -43,8 +43,7 @@ from itertools import imap
 from ._mergeability import isPBashMergeable, is_esl_capable
 from .loot_parser import LOOTParser, libloot_version
 from .mods_metadata import get_tags_from_dir
-from .. import bass, bolt, balt, bush, env, load_order, archives, \
-    initialization
+from .. import bass, bolt, balt, bush, env, load_order, initialization
 from ..archives import readExts
 from ..bass import dirs, inisettings
 from ..bolt import GPath, DataDict, deprint, sio, Path, decoder, AFile, \
@@ -2336,7 +2335,9 @@ class ModInfos(FileInfos):
                         if skip_active and load_order.cached_is_active(
                                 modName): continue
                         merged_.add(modName)
-            for imp_name in patchConfigs.get(u'ImportedMods', tuple()):
+            imp_mods = patchConfigs.get(u'ImportedMods', ()) or \
+                       patchConfigs.get(b'ImportedMods', ())
+            for imp_name in imp_mods:
                 if imp_name in self:
                     if skip_active and load_order.cached_is_active(
                             imp_name): continue
