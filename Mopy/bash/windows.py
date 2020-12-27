@@ -296,22 +296,16 @@ _HEADING = 3
 class TaskDialog(object):
     """Wrapper class for the Win32 task dialog."""
 
-    stock_icons = {u'warning' : 65535,
-                  u'error' : 65534,
-                  u'information' : 65533,
-                  u'shield' : 65532}
-    stock_buttons = {u'ok' : 0x01, #1
-                    u'yes' : 0x02, #2
-                    u'no' : 0x04, #4
-                    u'cancel' : 0x08, #8
-                    u'retry' : 0x10, #16
-                    u'close' : 0x20} #32
-    stock_button_ids = {u'ok': 1,
-                       u'cancel': 2,
-                       u'retry': 4,
-                       u'yes': 6,
-                       u'no': 7,
-                       u'close': 8}
+    stock_icons = {u'warning': 65535, u'error': 65534, u'information': 65533,
+                   u'shield': 65532}
+    stock_buttons = {u'ok': 0x01,  #1
+                     u'yes': 0x02,  #2
+                     u'no': 0x04,  #4
+                     u'cancel': 0x08,  #8
+                     u'retry': 0x10,  #16
+                     u'close': 0x20}  #32
+    stock_button_ids = {u'ok': 1, u'cancel': 2, u'retry': 4, u'yes': 6,
+                        u'no': 7, u'close': 8}
 
     def __init__(self, title, heading, content, buttons=(), main_icon=None,
                  parenthwnd=None, footer=None):
