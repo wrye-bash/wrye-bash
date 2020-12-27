@@ -308,8 +308,8 @@ class Installer(object):
         try:
             self.__setstate(values)
         except Exception as e:
-            print(('Failed loading %s' % values[0]) + ' due to %s' % e)
-            deprint('Failed loading %s' % values[0], traceback=True)
+            print((u'Failed loading %s' % values[0]) + u' due to %s' % e)
+            deprint(u'Failed loading %s' % values[0], traceback=True)
             # init to default values and let it be picked for refresh in
             # InstallersData#scan_installers_dir
             self.initDefault()
@@ -664,7 +664,7 @@ class Installer(object):
         plugin_extensions = bush.game.espm_extensions
         reReadMeMatch = Installer.reReadMe.match
         #--Scan over fileSizeCrcs
-        root_path = self.extras_dict.get('root_path', u'')
+        root_path = self.extras_dict.get(u'root_path', u'')
         rootIdex = len(root_path)
         # For backwards compatibility - drop in 308
         self._fixme_drop__fomod_backwards_compat()
@@ -860,7 +860,7 @@ class Installer(object):
                 else:
                     # Multiple folders, stop here even if it's no good
                     break
-            self.extras_dict['root_path'] = rootStr # keeps case
+            self.extras_dict[u'root_path'] = rootStr # keeps case
             self.fileRootIdex = len(rootStr)
 
     def _remap_files(self, dest, fileLower, rootLower, fileExt, file_relative,
@@ -922,7 +922,7 @@ class Installer(object):
         dataDirsPlus = self.dataDirsPlus
         # hasExtraData is NOT taken into account when calculating package
         # structure or the root_path
-        root_path = self.extras_dict.get('root_path', u'')
+        root_path = self.extras_dict.get(u'root_path', u'')
         for full, size, crc in self.fileSizeCrcs:#break if type=1 else churn on
             if root_path: # exclude all files that are not under root_dir
                 if not full.startswith(root_path): continue

@@ -195,8 +195,8 @@ class OmodFile(object):
             else:
                 extract = self.extractFilesZip
 
-            pluginSize = sizes_.get('plugins',0)
-            dataSize = sizes_.get('data',0)
+            pluginSize = sizes_.get(u'plugins',0)
+            dataSize = sizes_.get(u'data',0)
             subprogress = bolt.SubProgress(progress, 0.5, 1)
             with stageDir.unicodeSafe() as tempOut:
                 if extractDir.join(u'plugins.crc').exists() and extractDir.join(u'plugins').exists():

@@ -2885,7 +2885,7 @@ class ModInfos(FileInfos):
                             (arcSaves, newSaves))
         load_order.swap(arcPath, newPath)
         # Swap Oblivion version to memorized version
-        voNew = saveInfos.profiles.setItemDefault(newSaves, 'vOblivion',
+        voNew = saveInfos.profiles.setItemDefault(newSaves, u'vOblivion',
                                                   self.voCurrent)
         if voNew in self.voAvailable: self.setOblivionVersion(voNew)
 
