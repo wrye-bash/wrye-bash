@@ -3850,6 +3850,7 @@ class BashFrame(WindowFrame):
         self.knownInvalidVerions = set()
         self.known_sse_form43_mods = set()
         self.known_mismatched_version_bsas = set()
+        self.known_ba2_collisions = set()
         self.incompleteInstallError = False
 
     @balt.conversation
@@ -4058,6 +4059,16 @@ class BashFrame(WindowFrame):
             m.extend(sorted(bsa_mvers - self.known_mismatched_version_bsas))
             message.append(m)
             self.known_mismatched_version_bsas |= bsa_mvers
+        ba2_colls = bosh.bsaInfos.ba2_collisions
+        if warn_bsas and not ba2_colls <= self.known_ba2_collisions:
+            m = [_(u'BA2 Hash Collisions'),
+                 _(u'The following BA2s have filenames whose hashes collide, '
+                   u'which will cause one or more of them to fail to work '
+                   u'correctly. This should be corrected by the mod author(s) '
+                   u'by renaming the files to avoid the collision: ')]
+            m.extend(sorted(ba2_colls - self.known_ba2_collisions))
+            message.append(m)
+            self.known_ba2_collisions |= ba2_colls
         if message:
             ListBoxes.display_dialog(
               self, _(u'Warnings'), _(u'The following warnings were found:'),
