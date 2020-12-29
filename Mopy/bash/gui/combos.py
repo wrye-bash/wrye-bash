@@ -297,6 +297,37 @@ class TreePanel(_APageComponent):
         # Need to return FINISH, otherwise the browser would try to open it
         return EventResult.FINISH
 
+    def get_selected_page_path(self):
+        """Returns the path to the currently selected page. E.g. if there's a
+        page 'Bar' which is a child of the page 'Foo' and 'Bar' is currently
+        selected, this would return 'Foo/Bar'."""
+        ##: If you still don't believe me about the terrible API, look how
+        # similar this mess is to the other method up there.
+        tree_ctrl = self._native_widget.GetTreeCtrl()
+        root_item = tree_ctrl.GetRootItem()
+        # The root does not actually exist, so look at its first child. The
+        # cookie value is only needed by wx to keep track of the current
+        # iteration, it has no meaning outside of that
+        curr_child, cookie = tree_ctrl.GetFirstChild(root_item)
+        while curr_child.IsOk():
+            child_name = tree_ctrl.GetItemText(curr_child)
+            if tree_ctrl.IsSelected(curr_child):
+                # It's a top-level page, just return the name
+                return child_name
+            # Otherwise, look at all *its* children
+            curr_subchild, sub_cookie = tree_ctrl.GetFirstChild(curr_child)
+            while curr_subchild.IsOk():
+                subchild_name = tree_ctrl.GetItemText(curr_subchild)
+                if tree_ctrl.IsSelected(curr_subchild):
+                    # Found it as a subchild, separate them with a slash
+                    return u'%s/%s' % (child_name, subchild_name)
+                curr_subchild, sub_cookie = tree_ctrl.GetNextChild(
+                    curr_child, sub_cookie)
+            # None of the subchildren of this child are selected, move on to
+            # the next child
+            curr_child, cookie = tree_ctrl.GetNextChild(root_item, cookie)
+        return None
+
 class ATreeMixin(_AComponent):
     """A mixin for all leaf pages in a TreePanel."""
     @staticmethod
