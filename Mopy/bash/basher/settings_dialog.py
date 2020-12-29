@@ -23,6 +23,7 @@
 import os
 import subprocess
 import webbrowser
+from collections import defaultdict
 
 from . import BashStatusBar, tabInfo
 from .constants import colorInfo, settingDefaults
@@ -74,7 +75,8 @@ class SettingsDialog(DialogWindow):
 #        self._search_bar = SearchBar(self)
 #        self._search_bar.on_text_changed.subscribe(self._handle_search)
         help_btn = ClickableImage(self, balt.images[u'help.24'].GetBitmap(),
-            btn_tooltip=_(u'Open the Wrye Bash readme in a browser.'))
+            btn_tooltip=_(u'View the readme section for the currently active '
+                          u'settings page.'))
         help_btn.on_clicked.subscribe(self._open_readme)
         ok_btn = OkButton(self)
         ok_btn.on_clicked.subscribe(self._send_ok)
@@ -107,12 +109,11 @@ class SettingsDialog(DialogWindow):
 
     def _open_readme(self):
         """Handles a click on the help button by opening the readme."""
-        general_readme = bass.dirs[u'mopy'].join(
-            u'Docs', u'Wrye Bash General Readme.html')
-        if general_readme.isfile():
-            webbrowser.open(general_readme.s)
-        else:
-            balt.showError(self, _(u'Cannot find General Readme file.'))
+        ##: skip_local because webbrowser.open eats anchors on Windows
+        advanced_radme = balt.readme_url(mopy=bass.dirs[u'mopy'],
+                                         advanced=True, skip_local=True)
+        help_anchor = _page_anchors[self._tab_tree.get_selected_page_path()]
+        webbrowser.open(advanced_radme + u'#' + help_anchor)
 
     def _send_apply(self):
         """Propagates an Apply button click to all child pages."""
@@ -1579,3 +1580,15 @@ _page_descriptions = {
         _(u'Change which binaries (DLLs, EXEs, etc.) you trust. Untrusted '
           u'binaries will be skipped by BAIN when installing packages.')
 }
+
+# Anchor refs into the WB Advanced Readme
+_page_anchors = defaultdict(lambda: u'settings', {
+    _(u'Appearance') + u'/' + _(u'Colors'): u'settings-appearance-colors',
+    _(u'Appearance') + u'/' + _(u'Language'): u'settings-appearance-language',
+    _(u'Appearance') + u'/' + _(u'Status Bar'):
+        u'settings-appearance-status-bar',
+    _(u'Backups'): u'settings-backups',
+    _(u'Confirmations'): u'settings-confirmations',
+    _(u'General'): u'settings-general',
+    _(u'Trusted Binaries'): u'settings-trusted-binaries',
+})

@@ -47,7 +47,6 @@ try:
 except ImportError: # linux
     win32gui = None
     raise
-from .env import winreg
 
 # Button constants - happen to mirror wxPython's
 BTN_OK                          = 5100
@@ -257,25 +256,6 @@ class SHSTOCKICONINFO(Structure):
                 (u'iIcon', c_int),
                 (u'szPath', c_wchar*MAX_PATH)]
 
-
-#--Start a webpage with an anchor ---------------------------------------------
-# Need to do this specially, because doing it via os.startfile, ShellExecute,
-# etc drops off the anchor part of the url
-def StartURL(url):
-    url = u'%s' % url # stringify if a Path instance
-    # Get default browser location
-    try:
-        key = winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,u'http\\shell\\open\\command')
-        value = winreg.EnumValue(key,0)
-        cmd = value[1]
-        cmd = cmd.replace(u'%1',url)
-        subprocess.Popen(cmd)
-    except WindowsError:
-        # Registry detection failed, fallback
-        # This method doesn't work with # anchors in the url name on windows
-        import webbrowser
-        webbrowser.open(url,new=2)
-
 #------------------------------------------------------------------------------
 
 #------Message codes------#
@@ -349,9 +329,6 @@ class TaskDialog(object):
             raise Exception(u'The control does not support the event.')
         self.__events[task_dialog_event].append(func)
         return self
-
-    def bindHyperlink(self):
-        self.bind(HYPERLINK_CLICKED, lambda *args: StartURL(args[1]))
 
     @property
     def heading(self): return self._heading
@@ -666,7 +643,3 @@ class TaskDialog(object):
                                    self._progress_bar[u'range'])
         windll.user32.SendMessageW(self.__handle, _SETPBARPOS,
                                    self._progress_bar[u'pos'], 0)
-
-
-if __name__ == u'__main__':
-    help(TaskDialog)

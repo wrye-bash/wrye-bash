@@ -334,7 +334,6 @@ def vistaDialog(parent, message, title, checkBoxTxt=None,
                              main_icon=icon,
                              parenthwnd=parent.GetHandle() if parent else None,
                              footer=footer)
-    dialog.bindHyperlink()
     if expander:
         dialog.set_expander(expander,False,not footer)
     if checkBoxTxt:
@@ -2233,18 +2232,16 @@ def ask_uac_restart(message, title, mopy):
             u'\n\n' + _(u'See the <A href="%(readmePath)s">readme</A> '
                 u'for more information.') % {u'readmePath': readme}])[0]
 
-def readme_url(mopy, advanced=False):
-    readme = mopy.join(u'Docs',
-                       u'Wrye Bash Advanced Readme.html' if advanced else
-                       u'Wrye Bash General Readme.html')
-    if readme.exists():
-        readme = u'file:///' + readme.s.replace(u'\\', u'/').replace(u' ',
-                                                                     u'%20')
+def readme_url(mopy, advanced=False, skip_local=False):
+    readme_name = (u'Wrye Bash Advanced Readme.html' if advanced else
+                   u'Wrye Bash General Readme.html')
+    readme = mopy.join(u'Docs', readme_name)
+    if not skip_local and readme.isfile():
+        readme = u'file:///' + readme.s.replace(u'\\', u'/')
     else:
         # Fallback to Git repository
-        readme = u'http://wrye-bash.github.io/docs/Wrye%20Bash' \
-                 u'%20General%20Readme.html'
-    return readme
+        readme = u'http://wrye-bash.github.io/docs/' + readme_name
+    return readme.replace(u' ', u'%20')
 
 class INIListCtrl(wx.ListCtrl):
 
