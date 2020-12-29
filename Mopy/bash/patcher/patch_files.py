@@ -124,9 +124,9 @@ class PatchFile(ModFile):
                 message += mname.s
             log(message)
         #--Load Mods and error mods
-        if self.aliases:
+        if self.pfile_aliases:
             log.setHeader(u'= ' + _(u'Mod Aliases'))
-            for alias_target, alias_repl in sorted(self.aliases.iteritems()):
+            for alias_target, alias_repl in sorted(self.pfile_aliases.iteritems()):
                 log(u'* %s >> %s' % (alias_target, alias_repl))
 
     def init_patchers_data(self, patchers, progress):
@@ -150,7 +150,7 @@ class PatchFile(ModFile):
         self.longFids = True
         self.keepIds = set()
         # Aliases from one mod name to another. Used by text file patchers.
-        self.aliases = {}
+        self.pfile_aliases = {}
         self.mergeIds = set()
         self.loadErrorMods = []
         self.worldOrphanMods = []

@@ -207,7 +207,7 @@ class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
 
     def readFromText(self, textPath):
         """Imports type_id_name from specified text file."""
-        aliases = self.patchFile.aliases
+        aliases = self.patchFile.pfile_aliases
         id_exhaustion = self.id_exhaustion
         with CsvReader(textPath) as ins:
             for fields in ins:
@@ -298,7 +298,7 @@ class MorphFactionsPatcher(ListPatcher, _ExSpecialList):
 
     def readFromText(self, textPath):
         """Imports id_info from specified text file."""
-        aliases = self.patchFile.aliases
+        aliases = self.patchFile.pfile_aliases
         id_info = self.id_info
         with CsvReader(textPath) as ins:
             for fields in ins:
