@@ -46,7 +46,7 @@ def _coerce(value, newtype, base=None, AllowNone=False):
         elif newtype is unicode: retValue = decoder(value)
         else: retValue = newtype(value)
         if (AllowNone and
-            (isinstance(retValue,str) and retValue.lower() == 'none') or
+            (isinstance(retValue,str) and retValue.lower() == b'none') or
             (isinstance(retValue,unicode) and retValue.lower() == u'none')
             ):
             return None
