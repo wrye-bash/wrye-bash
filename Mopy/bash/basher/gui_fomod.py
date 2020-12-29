@@ -31,7 +31,7 @@ from ..balt import EnabledLink, Links, colors
 from ..exception import AbstractError
 from ..fomod import FailedCondition, FomodInstaller, InstallerGroup, \
     InstallerOption, InstallerPage
-from ..gui import CENTER, CheckBox, HBoxedLayout, HLayout, Label, \
+from ..gui import CENTER, CheckBox, VBoxedLayout, HLayout, Label, \
     LayoutOptions, TextArea, VLayout, WizardDialog, EventResult, \
     PictureWithCursor, RadioButton, ScrollableWindow, Stretch, Table, \
     BusyCursor
@@ -216,7 +216,8 @@ class PageSelect(PageInstaller):
         groups_layout = VLayout(spacing=5, item_expand=True)
         first_checkable = None
         for grp in inst_page: # type: InstallerGroup
-            options_layout = VLayout(spacing=2)
+            options_layout = VBoxedLayout(panel_groups, title=grp.group_name,
+                spacing=2)
             first_selectable = None
             any_selected = False
             gtype = grp.group_type
@@ -303,16 +304,14 @@ class PageSelect(PageInstaller):
                 # (e.g. radio buttons won't have run their logic for unchecking
                 # the other button yet).
                 block_chk.block_user(self._handle_block_user)
-            groups_layout.add(HBoxedLayout(
-                panel_groups, title=grp.group_name, item_expand=True,
-                item_weight=1, items=[options_layout]))
+            groups_layout.add(options_layout)
         # Show details for the first option on this page by default
         if first_checkable:
             self._set_option_details(first_checkable)
         groups_layout.apply_to(panel_groups)
         VLayout(spacing=10, item_expand=True, items=[
             (HLayout(spacing=5, item_expand=True, item_weight=1, items=[
-                HBoxedLayout(self, title=inst_page.page_name, item_expand=True,
+                VBoxedLayout(self, title=inst_page.page_name, item_expand=True,
                              item_weight=1, items=[panel_groups]),
                 VLayout(spacing=5, item_expand=True, item_weight=1, items=[
                     self._bmp_item,

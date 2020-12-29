@@ -2704,8 +2704,8 @@ class InstallersDetails(_SashDetailsPanel):
         self.sp_panel, espmsPanel = self.checkListSplitter.make_panes(
             vertically=True)
         #--Sub-Installers
-        self.gSubList = CheckListBox(self.sp_panel, isExtended=True,
-                                     onCheck=self._check_subitem)
+        self.gSubList = CheckListBox(self.sp_panel, isExtended=True)
+        self.gSubList.on_box_checked.subscribe(self._check_subitem)
         self.gSubList.on_mouse_right_up.subscribe(self._sub_selection_menu)
         # FOMOD/Sub-Packages radio buttons
         self.fomod_btn = RadioButton(self.sp_panel, _(u'FOMOD'))
@@ -2720,8 +2720,8 @@ class InstallersDetails(_SashDetailsPanel):
         self._update_fomod_state()
         #--Espms
         self.espms = []
-        self.gEspmList = CheckListBox(espmsPanel, isExtended=True,
-                                      onCheck=self._on_check_plugin)
+        self.gEspmList = CheckListBox(espmsPanel, isExtended=True)
+        self.gEspmList.on_box_checked.subscribe(self._on_check_plugin)
         self.gEspmList.on_mouse_left_dclick.subscribe(
             self._on_plugin_filter_dclick)
         self.gEspmList.on_mouse_right_up.subscribe(self._selection_menu)
@@ -2800,7 +2800,7 @@ class InstallersDetails(_SashDetailsPanel):
                 sub_names_ = [x.replace(u'&', u'&&') for x in
                               installer.subNames[1:]]
                 vals = installer.subActives[1:]
-                self.gSubList.setCheckListItems(sub_names_, vals)
+                self.gSubList.set_all_items_keep_pos(sub_names_, vals)
             self._update_fomod_state()
             #--Espms
             if not installer.espms:
@@ -2811,7 +2811,7 @@ class InstallersDetails(_SashDetailsPanel):
                 names_ = [[u'', u'*'][installer.isEspmRenamed(x.s)] +
                           x.s.replace(u'&', u'&&') for x in names]
                 vals = [x not in installer.espmNots for x in names]
-                self.gEspmList.setCheckListItems(names_, vals)
+                self.gEspmList.set_all_items_keep_pos(names_, vals)
             #--Comments
             self.gComments.text_content = installer.comments
 
@@ -3004,7 +3004,7 @@ class InstallersDetails(_SashDetailsPanel):
         self.fomod_btn.is_checked = fomod_checked
         self.sp_btn.is_checked = not fomod_checked
         self.gSubList.enabled = not fomod_checked
-        self.sp_panel.pnl_layout()
+        self.sp_panel.update_layout()
 
     def set_fomod_mode(self, fomod_enabled):
         """Programatically enables or disables FOMOD mode and updates the GUI

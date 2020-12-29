@@ -34,7 +34,8 @@ from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
     LayoutOptions, OkButton, PanelWin, Stretch, TextArea, TreePanel, VLayout, \
     WrappingTextMixin, ListBox, Label, Spacer, HBoxedLayout, CheckBox, \
     TextField, OpenButton, ScrollableWindow, ClickableImage, RevertButton, \
-    SaveButton, SaveAsButton, DoubleListBox, ATreeMixin, CheckListBox
+    SaveButton, SaveAsButton, DoubleListBox, ATreeMixin, CheckListBox, \
+    VBoxedLayout
 from ..localize import dump_translator
 
 class SettingsDialog(DialogWindow):
@@ -449,14 +450,11 @@ class ConfigureEditorDialog(DialogWindow):
                 browse_editor_btn,
             ]),
             Spacer(12),
-            HBoxedLayout(self, title=_(u'Parameters'), item_expand=True,
-                item_weight=1, items=[
-                VLayout(spacing=4, items=[
-                    (self._params_field, LayoutOptions(expand=True, weight=1)),
-                    Label(self, _(u"Note: '%s' will be replaced by the path "
-                                  u'to the localization file.')),
-                    Spacer(4), self._po_rename_box,
-                ]),
+            VBoxedLayout(self, title=_(u'Parameters'), spacing=4, items=[
+                (self._params_field, LayoutOptions(expand=True, weight=1)),
+                Label(self, _(u"Note: '%s' will be replaced by the path "
+                              u'to the localization file.')),
+                Spacer(4), self._po_rename_box,
             ]),
             Stretch(), HLayout(spacing=5, items=[
                 Stretch(), ok_btn, CancelButton(self),
@@ -554,19 +552,17 @@ class LanguagePage(_AScrollablePage):
             self._panel_text,
             HBoxedLayout(self, title=_(u'Change Language'),
                 items=[self._lang_dropdown]),
-            (HBoxedLayout(self, title=_(u'Manage Localizations'),
-                item_expand=True, item_weight=1, items=[
-                    VLayout(spacing=4, item_expand=True, items=[
-                        is_standalone_warning,
-                        (HLayout(spacing=4, item_expand=True, items=[
-                            (self._l10n_list, LayoutOptions(weight=1)),
-                            VLayout(spacing=4, item_expand=True, items=[
-                                configure_editor_btn, dump_localization_btn,
-                                HorizontalLine(self), self._edit_l10n_btn,
-                                self._rename_l10n_btn,
-                            ]),
-                        ]), LayoutOptions(weight=1)),
-                    ]),
+            (VBoxedLayout(self, title=_(u'Manage Localizations'),
+                spacing=4, item_expand=True, items=[
+                    is_standalone_warning,
+                    (HLayout(spacing=4, item_expand=True, items=[
+                        (self._l10n_list, LayoutOptions(weight=1)),
+                        VLayout(spacing=4, item_expand=True, items=[
+                            configure_editor_btn, dump_localization_btn,
+                            HorizontalLine(self), self._edit_l10n_btn,
+                            self._rename_l10n_btn,
+                        ]),
+                    ]), LayoutOptions(weight=1)),
                 ]), LayoutOptions(weight=1)),
         ]).apply_to(self)
 
@@ -737,8 +733,8 @@ class StatusBarPage(_AScrollablePage):
         self._populate_icon_lists()
         VLayout(border=6, spacing=6, item_expand=True, items=[
             self._panel_text, Spacer(3),
-            HBoxedLayout(self, item_border=3, title=_(u'General'), items=[
-                VLayout(spacing=6, items=[
+            VBoxedLayout(self, title=_(u'General'), item_border=3, spacing=6,
+                items=[
                     self._show_app_ver_chk,
                     HLayout(spacing=6, items=[
                         Label(self, _(u'Icon Size:')),
@@ -746,7 +742,6 @@ class StatusBarPage(_AScrollablePage):
                         Label(self, _(u'(currently disabled due to unsolved '
                                       u'glitches and crashes)'))
                     ]),
-                ]),
             ]),
             (HBoxedLayout(self, item_expand=True,
                 title=_(u'Manage Hidden Buttons'), items=[self._icon_lists]),
@@ -1119,7 +1114,8 @@ class ConfirmationsPage(_AFixedPage):
             checked=bass.settings[u'bash.show_internal_keys'])
         self._show_keys_checkbox.on_checked.subscribe(self._on_show_keys)
         self._confirmation_list = CheckListBox(self, isSort=True,
-            isHScroll=True, onCheck=self._on_check_conf)
+            isHScroll=True)
+        self._confirmation_list.on_box_checked.subscribe(self._on_check_conf)
         self._file_drop_dropdown = DropDown(self, value=self._saved_action,
             choices=sorted(self._label_to_action), auto_tooltip=False)
         self._file_drop_dropdown.tooltip = _(u'Choose what to do with files '
@@ -1275,22 +1271,17 @@ class GeneralPage(_AScrollablePage):
         self._uac_restart_checkbox.visible = env.isUAC
         VLayout(border=6, spacing=3, item_expand=True, items=[
             self._panel_text,
-            HBoxedLayout(self, title=_(u'Game'), items=[
-                VLayout(spacing=6, items=[
-                    HLayout(spacing=6, items=[
-                        Label(self, _(u'Managed Game:')), self._managed_game,
-                    ]),
-                    HLayout(spacing=6, items=[
-                        Label(self, _(u'Plugin Encoding:')),
-                        self._plugin_encoding,
-                    ]),
+            VBoxedLayout(self, title=_(u'Game'), spacing=6, items=[
+                HLayout(spacing=6, items=[
+                    Label(self, _(u'Managed Game:')), self._managed_game,
+                ]),
+                HLayout(spacing=6, items=[
+                    Label(self, _(u'Plugin Encoding:')), self._plugin_encoding,
                 ]),
             ]),
-            HBoxedLayout(self, title=_(u'Miscellaneous'), items=[
-                VLayout(spacing=6, items=[
-                    self._deprint_checkbox, self._global_menu_checkbox,
-                    self._alt_name_checkbox, self._uac_restart_checkbox,
-                ]),
+            VBoxedLayout(self, title=_(u'Miscellaneous'), spacing=6, items=[
+                self._deprint_checkbox, self._global_menu_checkbox,
+                self._alt_name_checkbox, self._uac_restart_checkbox,
             ]),
         ]).apply_to(self)
 
@@ -1395,7 +1386,7 @@ class TrustedBinariesPage(_AFixedPage):
         bad_changed = self._binaries_list.right_items != bass.settings[
             u'bash.installers.badDlls'].keys()
         self._mark_changed(self, good_changed or bad_changed)
-        self.pnl_layout()
+        self.update_layout()
 
     ##: Here be (some) dragons, especially in the import method
     def _export_lists(self):

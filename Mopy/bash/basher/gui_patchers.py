@@ -96,7 +96,7 @@ class _PatcherPanel(object):
     def Layout(self):
         """Layout control components."""
         if self.gConfigPanel:
-            self.gConfigPanel.pnl_layout()
+            self.gConfigPanel.update_layout()
 
     def _set_focus(self): # TODO(ut) check if set_focus is enough
         self.patch_dialog.gPatchers.set_focus_from_kb()
@@ -263,7 +263,8 @@ class _ListPatcherPanel(_PatcherPanel):
         if self.forceItemCheck:
             self.gList = ListBox(gConfigPanel, isSingle=False)
         else:
-            self.gList = CheckListBox(gConfigPanel, onCheck=self.OnListCheck)
+            self.gList = CheckListBox(gConfigPanel)
+            self.gList.on_box_checked.subscribe(self.OnListCheck)
         #--Manual controls
         if self.forceAuto:
             side_button_layout = None
@@ -521,8 +522,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         if self.gConfigPanel: return self.gConfigPanel
         gConfigPanel = super(_TweakPatcherPanel, self).GetConfigPanel(
             parent, config_layout, gTipText)
-        self.gTweakList = CheckListBox(self.gConfigPanel,
-                                       onCheck=self.TweakOnListCheck)
+        self.gTweakList = CheckListBox(self.gConfigPanel)
+        self.gTweakList.on_box_checked.subscribe(self.TweakOnListCheck)
         #--Events
         self._bind_mouse_events(self.gTweakList)
         self.gTweakList.on_mouse_leaving.subscribe(self._mouse_leaving)

@@ -257,9 +257,6 @@ class PanelWin(_AComponent):
         super(PanelWin, self).__init__(
             parent, style=_wx.TAB_TRAVERSAL | (no_border and _wx.NO_BORDER))
 
-    def pnl_layout(self): self._native_widget.Layout()
-    def pnl_hide(self): self._native_widget.Hide()
-
 class Splitter(_AComponent):
     _wx_widget_type = _wx.SplitterWindow
 

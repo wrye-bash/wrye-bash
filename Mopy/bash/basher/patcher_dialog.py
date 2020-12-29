@@ -89,8 +89,8 @@ class PatchDialog(DialogWindow):
             lambda: self.mass_select_recursive(False))
         cancelButton = CancelButton(self)
         self.gPatchers = CheckListBox(self, choices=patcherNames,
-                                      isSingle=True, onSelect=self.OnSelect,
-                                      onCheck=self.OnCheck)
+                                      isSingle=True, onSelect=self.OnSelect)
+        self.gPatchers.on_box_checked.subscribe(self.OnCheck)
         self.gExportConfig = SaveAsButton(self, btn_label=_(u'Export'))
         self.gExportConfig.on_clicked.subscribe(self.ExportConfig)
         self.gImportConfig = OpenButton(self, btn_label=_(u'Import'))
@@ -128,7 +128,7 @@ class PatchDialog(DialogWindow):
         #--Patcher panels
         for patcher in self._gui_patchers:
             patcher.GetConfigPanel(self, self.config_layout,
-                                   self.gTipText).pnl_hide()
+                self.gTipText).visible = False
         initial_select = min(len(self._gui_patchers) - 1, 1)
         if initial_select >= 0:
             self.gPatchers.lb_select_index(initial_select) # callback not fired
@@ -144,9 +144,10 @@ class PatchDialog(DialogWindow):
         """Show patcher panel."""
         if patcher == self.currentPatcher: return
         if self.currentPatcher is not None:
-            self.currentPatcher.gConfigPanel.pnl_hide()
-        patcher.GetConfigPanel(self, self.config_layout, self.gTipText).visible = True
-        self._native_widget.Layout()
+            self.currentPatcher.gConfigPanel.visible = False
+        patcher.GetConfigPanel(self, self.config_layout,
+            self.gTipText).visible = True
+        self.update_layout()
         patcher.Layout()
         self.currentPatcher = patcher
 
@@ -171,13 +172,14 @@ class PatchDialog(DialogWindow):
             patchFile.initFactories(SubProgress(progress,0.1,0.2)) #no speeding needed/really possible (less than 1/4 second even with large LO)
             patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
             patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
-            if patchFile.tes4.num_masters > 255:
+            if patchFile.tes4.num_masters > bush.game.Esp.master_limit:
                 balt.showError(self,
                     _(u'The resulting Bashed Patch contains too many '
-                      u'masters (>255). You can try to disable some '
+                      u'masters (>%u). You can try to disable some '
                       u'patchers, create a second Bashed Patch and '
                       u'rebuild that one with only the patchers you '
-                      u'disabled in this one active.'))
+                      u'disabled in this one active.')
+                    % bush.game.Esp.master_limit)
                 return # Abort, we'll just blow up on saving it
             #--Save
             progress.setCancel(False, u'%s\n' % patch_name + _(u'Saving...'))

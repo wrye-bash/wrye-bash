@@ -335,6 +335,8 @@ class GameInfo(object):
         max_lvl_list_size = 0
         # A tuple containing all biped flag names (in order) for this game
         biped_flag_names = ()
+        # The maximum number of masters that a plugin can have for this game.
+        master_limit = 255 # 256 - 1 for the plugin itself
 
     # Bash Tags supported by this game
     allTags = set()

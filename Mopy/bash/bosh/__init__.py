@@ -448,7 +448,7 @@ class ModInfo(FileInfo):
             return u''
         elif self.is_esl():
             # Need to undo the offset we applied to sort ESLs after regulars
-            sort_offset = load_order.max_plugins()[0] - 1
+            sort_offset = load_order.max_espms() - 1
             return u'FE %03X' % (cr_index - sort_offset)
         else:
             return u'%02X' % cr_index
@@ -1791,11 +1791,11 @@ def _lo_cache(lord_func):
         3 if both changed else 0
         """
         try:
-            old_lo, old_active = load_order.cached_lord.loadOrder, \
-                                 load_order.cached_lord.activeOrdered
+            old_lo, old_active = load_order.cached_lo_tuple(), \
+                                 load_order.cached_active_tuple()
             lord_func(self, *args, **kwargs)
-            lo, active = load_order.cached_lord.loadOrder, \
-                         load_order.cached_lord.activeOrdered
+            lo, active = load_order.cached_lo_tuple(), \
+                         load_order.cached_active_tuple()
             lo_changed = lo != old_lo
             active_changed = active != old_active
             active_set_changed = active_changed and (
@@ -1817,9 +1817,8 @@ def _lo_cache(lord_func):
                 self[neu].setGhost(False)
             return (lo_changed and 1) + (active_changed and 2)
         finally:
-            self._lo_wip, self._active_wip = list(
-                load_order.cached_lord.loadOrder), list(
-                load_order.cached_lord.activeOrdered)
+            self._lo_wip = list(load_order.cached_lo_tuple())
+            self._active_wip = list(load_order.cached_active_tuple())
     return _modinfos_cache_wrapper
 
 #------------------------------------------------------------------------------
@@ -1914,9 +1913,9 @@ class ModInfos(FileInfos):
 
         Always call AFTER setting the load order - make sure we unghost
         ourselves so ctime of the unghosted mods is not set."""
-        load_order.save_lo(load_order.cached_lord.loadOrder,
-                           load_order.cached_lord.lorder(
-                        active if active is not None else self._active_wip))
+        load_order.save_lo(load_order.cached_lo_tuple(),
+            load_order.cached_lord.lorder(
+                active if active is not None else self._active_wip))
 
     @_lo_cache
     def cached_lo_save_lo(self):
@@ -2420,9 +2419,9 @@ class ModInfos(FileInfos):
             if espms_extra or esls_extra:
                 msg = u'%s: Trying to activate more than ' % fileName
                 if espms_extra:
-                    msg += u'%d espms' % load_order.max_plugins()[0]
+                    msg += u'%d espms' % load_order.max_espms()
                 else:
-                    msg += u'%d light plugins' % load_order.max_plugins()[1]
+                    msg += u'%d light plugins' % load_order.max_esls()
                 raise PluginsFullError(msg)
             _children = (_children or tuple()) + (fileName,)
             if fileName in _children[:-1]:
@@ -2561,16 +2560,22 @@ class ModInfos(FileInfos):
         iniFiles.append(oblivionIni)
         return iniFiles
 
-    def create_new_mod(self, newName, selected=(), masterless=False,
-                       directory=empty_path, bashed_patch=False):
+    def create_new_mod(self, newName, selected=(), wanted_masters=None,
+            directory=empty_path, bashed_patch=False, esm_flag=False,
+            esl_flag=False):
+        if wanted_masters is None:
+            wanted_masters = [self.masterName]
         directory = directory or self.store_dir
         new_name = GPath(newName)
         newInfo = self.factory(directory.join(new_name))
         newFile = ModFile(newInfo)
-        if not masterless:
-            newFile.tes4.masters = [self.masterName]
+        newFile.tes4.masters = wanted_masters
         if bashed_patch:
             newFile.tes4.author = u'BASHED PATCH'
+        if esm_flag:
+            newFile.tes4.flags1.esm = True
+        if esl_flag:
+            newFile.tes4.flags1.eslFile = True
         newFile.safeSave()
         if directory == self.store_dir:
             self.new_info(new_name, notify_bain=True) # notify just in case...
@@ -2588,7 +2593,7 @@ class ModInfos(FileInfos):
             modName = GPath(u'Bashed Patch, %d.esp' % num)
             if modName not in self:
                 self.create_new_mod(modName, selected=selected_mods,
-                                    masterless=True, bashed_patch=True)
+                                    wanted_masters=[], bashed_patch=True)
                 return modName
         return None
 
@@ -2899,7 +2904,7 @@ class ModInfos(FileInfos):
         # defaultdict factory
         regular_index = 0
         esl_index = 0
-        esl_offset = load_order.max_plugins()[0] - 1
+        esl_offset = load_order.max_espms() - 1
         self.real_indices.clear()
         for p in load_order.cached_active_tuple():
             if self[p].is_esl():

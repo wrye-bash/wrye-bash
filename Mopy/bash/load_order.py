@@ -71,8 +71,11 @@ def in_master_block(minf):
 def check_active_limit(mods):
     return _game_handle.check_active_limit(mods)
 
-def max_plugins():
-    return _game_handle.max_espms, _game_handle.max_esls
+def max_espms():
+    return _game_handle.max_espms
+
+def max_esls():
+    return _game_handle.max_esls
 
 def initialize_load_order_files():
     if bass.dirs[u'saveBase'] == bass.dirs[u'app']:
@@ -193,9 +196,16 @@ def _keep_max(max_to_keep, length):
 # Load Order utility methods - make sure the cache is valid when using them
 def cached_active_tuple():
     """Return the currently cached active mods in load order as a tuple.
-    :rtype : tuple[bolt.Path]
-    """
+
+    :rtype: tuple[bolt.Path]"""
     return cached_lord.activeOrdered
+
+def cached_lo_tuple():
+    """Return the currently cached load order (including inactive mods) as a
+    tuple.
+
+    :rtype: tuple[bolt.Path]"""
+    return cached_lord.loadOrder
 
 def cached_is_active(mod):
     """Return true if the mod is in the current active mods cache."""
@@ -224,6 +234,7 @@ def get_ordered(mod_paths):
     :type mod_paths: collections.Iterable[bolt.Path]
     :rtype : list[bolt.Path]
     """
+    # resolve time conflicts or no load order
     mod_paths = sorted(mod_paths)
     mod_paths.sort(key=cached_lo_index_or_max)
     return mod_paths

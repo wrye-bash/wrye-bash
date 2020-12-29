@@ -170,7 +170,7 @@ class FixInfo(object):
                     u'folder' % path) + u'\n'
         msg += self.act_order_differs_from_load_order
         if self.selectedExtra:
-            msg += u'Active list contains more than 255 espms' \
+            msg += u'Active list contains more plugins than allowed' \
                    u' - the following plugins will be deactivated: '
             msg += _pl(self.selectedExtra)
         if self.act_duplicates:

@@ -293,19 +293,19 @@ class DocumentViewer(_AComponent):
         is available."""
         if not web_viewer_available(): return
         self._update_views(viewer_type=ViewerType.HTML)
-        self._native_widget.Layout()
+        self.update_layout()
 
     def switch_to_pdf(self):
         """Disables the other viewers and switches to PDF mode, if PDFViewer is
         available."""
         if not pdf_viewer_available(): return
         self._update_views(viewer_type=ViewerType.PDF)
-        self._native_widget.Layout()
+        self.update_layout()
 
     def switch_to_text(self):
         """Disables the other viewers and switches to raw text mode."""
         self._update_views(viewer_type=ViewerType.TEXT)
-        self._native_widget.Layout()
+        self.update_layout()
 
     def get_buttons(self):
         """Returns the three navigation buttons as a tuple."""

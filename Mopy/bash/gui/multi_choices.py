@@ -25,6 +25,8 @@ through a list, a dropdown, or even a color picker."""
 
 __author__ = u'nycz, Utumno'
 
+from itertools import izip
+
 import wx as _wx
 
 from .base_components import _AComponent, Color, WithCharEvents, \
@@ -204,7 +206,7 @@ class CheckListBox(ListBox, WithCharEvents):
     """A list of checkboxes, of which one or more can be selected.
 
     Events:
-      - on_check_list_box(index: int): Posted when user checks an item from
+      - on_box_checked(index: int): Posted when user checks an item from the
         list. The default arg processor extracts the index of the event.
       - on_context(lb_instance: CheckListBox): Posted when this CheckListBox is
         right-clicked.
@@ -215,15 +217,13 @@ class CheckListBox(ListBox, WithCharEvents):
     bind_mouse_leaving = bind_lclick_double = True
     _wx_widget_type = _wx.CheckListBox
 
+    # note isSingle=False by default
     def __init__(self, parent, choices=None, isSingle=False, isSort=False,
-                 isHScroll=False, isExtended=False, onSelect=None,
-                 onCheck=None): # note isSingle=False by default
+                 isHScroll=False, isExtended=False, onSelect=None):
         super(CheckListBox, self).__init__(parent, choices, isSingle, isSort,
                                            isHScroll, isExtended, onSelect)
-        if onCheck:
-            self.on_check_list_box = self._evt_handler(
-                _wx.EVT_CHECKLISTBOX, lambda event: [event.GetSelection()])
-            self.on_check_list_box.subscribe(onCheck)
+        self.on_box_checked = self._evt_handler(_wx.EVT_CHECKLISTBOX,
+            lambda event: [event.GetSelection()])
         self.on_context = self._evt_handler(_wx.EVT_CONTEXT_MENU,
                                             lambda event: [self])
 
@@ -233,15 +233,40 @@ class CheckListBox(ListBox, WithCharEvents):
     def lb_is_checked_at_index(self, lb_selection_dex):
         return self._native_widget.IsChecked(lb_selection_dex)
 
-    def setCheckListItems(self, names, values):
+    def toggle_checked_at_index(self, lb_selection_dex):
+        do_check = not self.lb_is_checked_at_index(lb_selection_dex)
+        self.lb_check_at_index(lb_selection_dex, do_check)
+
+    def set_all_checkmarks(self, checked):
+        """Sets all checkmarks to the specified state - checked if True,
+        unchecked if False."""
+        for i in xrange(self.lb_get_items_count()):
+            self.lb_check_at_index(i, checked)
+
+    def get_checked_strings(self):
+        """Returns a list of string representations of all checked items."""
+        return self._native_widget.GetCheckedStrings()
+
+    def set_all_items(self, all_keys, all_values):
+        """Completely clears the list and repopulates it using the specified
+        key and value lists. Much faster than set_all_items_keep_pos, but
+        discards the current scroll position."""
+        self.lb_clear()
+        for i, (k, v) in enumerate(izip(all_keys, all_values)):
+            self.lb_append(k)
+            self.lb_check_at_index(i, v)
+
+    ##: Test that the claim below is actually accurate
+    def set_all_items_keep_pos(self, names, values):
         """Convenience method for setting a bunch of wxCheckListBox items. The
         main advantage of this is that it doesn't clear the list unless it
-        needs to. Which is good if you want to preserve the scroll position
-        of the list. """
+        needs to, which is good if you want to preserve the scroll position
+        of the list. If you do not need that behavior, however, use
+        set_all_items instead as it is much faster."""
         if not names:
             self.lb_clear()
         else:
-            for index, (name, value) in enumerate(zip(names, values)):
+            for index, (name, value) in enumerate(izip(names, values)):
                 if index >= self.lb_get_items_count():
                     self.lb_append(name)
                 else:
@@ -253,13 +278,3 @@ class CheckListBox(ListBox, WithCharEvents):
                 self.lb_check_at_index(index, value)
             for index in range(self.lb_get_items_count(), len(names), -1):
                 self.lb_delete_at_index(index - 1)
-
-    def toggle_checked_at_index(self, lb_selection_dex):
-        do_check = not self.lb_is_checked_at_index(lb_selection_dex)
-        self.lb_check_at_index(lb_selection_dex, do_check)
-
-    def set_all_checkmarks(self, checked):
-        """Sets all checkmarks to the specified state - checked if True,
-        unchecked if False."""
-        for i in xrange(self.lb_get_items_count()):
-            self.lb_check_at_index(i, checked)

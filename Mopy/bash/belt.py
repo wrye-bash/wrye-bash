@@ -316,15 +316,15 @@ class PageFinish(PageInstaller):
                                   u'will apply the following settings:'))
         textTitle.wrap(parent._native_widget.GetPageSize()[0] - 10)
         # Sub-packages
-        self.listSubs = CheckListBox(
-            self, choices=[x.replace(u'&', u'&&') for x in subs],
-            onCheck=self._on_select_subs)
+        self.listSubs = CheckListBox(self,
+            choices=[x.replace(u'&', u'&&') for x in subs])
+        self.listSubs.on_box_checked.subscribe(self._on_select_subs)
         for index,key in enumerate(subs):
             if subsList[key]:
                 self.listSubs.lb_check_at_index(index, True)
                 self._wiz_parent.ret.select_sub_packages.append(key)
-        self.plugin_selection = CheckListBox(self, choices=displayed_plugins,
-            onCheck=self._on_select_plugin)
+        self.plugin_selection = CheckListBox(self, choices=displayed_plugins)
+        self.plugin_selection.on_box_checked.subscribe(self._on_select_plugin)
         for index,key in enumerate(plugins):
             if plugin_list[key]:
                 self.plugin_selection.lb_check_at_index(index, True)
