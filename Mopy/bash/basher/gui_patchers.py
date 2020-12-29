@@ -195,15 +195,15 @@ class _AliasesPatcherPanel(_PatcherPanel):
         """Sets alias text according to current aliases."""
         self.gAliases.text_content = u'\n'.join([
             u'%s >> %s' % (alias_target, alias_repl)
-            for alias_target, alias_repl in sorted(self.aliases.items())])
+            for alias_target, alias_repl in sorted(self._ci_aliases.items())])
 
     def OnEditAliases(self):
         aliases_text = self.gAliases.text_content
-        self.aliases.clear()
+        self._ci_aliases.clear()
         for line in aliases_text.split(u'\n'):
             fields = map(unicode.strip,line.split(u'>>'))
             if len(fields) != 2 or not fields[0] or not fields[1]: continue
-            self.aliases[GPath(fields[0])] = GPath(fields[1])
+            self._ci_aliases[GPath(fields[0])] = GPath(fields[1])
         self.SetAliasText()
 
     #--Config Phase -----------------------------------------------------------
@@ -211,7 +211,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
         """Get config from configs dictionary and/or set to default."""
         config = super(_AliasesPatcherPanel, self).getConfig(configs)
         #--Update old configs to use Paths instead of strings.
-        self.aliases = dict(# map(GPath, item) gives a list (item is a tuple)
+        self._ci_aliases = dict(# map(GPath, item) gives a list (item is a tuple)
             map(GPath, item) for item in
             config.get('aliases', self.__class__.default_aliases).iteritems())
         return config
@@ -220,7 +220,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
         """Save config to configs dictionary."""
         #--Toss outdated configCheck data.
         config = super(_AliasesPatcherPanel, self).saveConfig(configs)
-        config['aliases'] = self.aliases
+        config[u'aliases'] = self._ci_aliases
         return config
 
     def _log_config(self, conf, config, clip, log):
@@ -232,7 +232,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
     def get_patcher_instance(self, patch_file):
         """Set patch_file aliases dict"""
         if self.isEnabled:
-            patch_file.aliases = self.aliases
+            patch_file.pfile_aliases = self._ci_aliases
         return self.patcher_type(self.patcher_name, patch_file)
 
 #------------------------------------------------------------------------------
