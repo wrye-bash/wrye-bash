@@ -1249,7 +1249,7 @@ class Mod_ScanDirty(ItemLink):
             if modInfo.isBP(): itms = set()
             if udrs or itms:
                 pos = len(dirty)
-                dirty.append(u'* __%s__:\n' % modInfo.name)
+                dirty.append(u'* __%s__:\n' % modInfo)
                 dirty[pos] += u'  * %s: %i\n' % (_(u'UDR'),len(udrs))
                 for udr in sorted(udrs):
                     if udr.parentEid:
@@ -1274,9 +1274,9 @@ class Mod_ScanDirty(ItemLink):
                             strFid(udr.fid),udr.type,parentStr,parentParentStr,atPos)
                     dirty[pos] += u'    * %s\n' % item
             elif udrs is None or itms is None:
-                error.append(u'* __%s__' % modInfo.name)
+                error.append(u'* __%s__' % modInfo)
             else:
-                clean.append(u'* __%s__' % modInfo.name)
+                clean.append(u'* __%s__' % modInfo)
         #-- Show log
         if dirty:
             log(_(u'Detected %d dirty mods:') % len(dirty))

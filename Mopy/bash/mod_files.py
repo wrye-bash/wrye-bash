@@ -241,8 +241,7 @@ class ModFile(object):
                         else:
                             # Duplicate top-level group and we can merge
                             deprint(u'%s: Duplicate top-level %s group, '
-                                    u'merging' % (
-                                self.fileInfo.name, label))
+                                    u'merging' % (self.fileInfo, label))
                             self.tops[label].merge_records(new_top, set(),
                                 set(), False, False)
                     else:
@@ -250,8 +249,7 @@ class ModFile(object):
                         header.skip_group(ins)
                 except:
                     if catch_errors:
-                        deprint(u'Error in %s' % self.fileInfo.name,
-                                traceback=True)
+                        deprint(u'Error in %s' % self.fileInfo, traceback=True)
                         break
                     else:
                         # Useful for implementing custom error behavior, see
@@ -265,14 +263,12 @@ class ModFile(object):
         """CLI command. If hasSaved, will ask if user wants to save the file,
         and then save if the answer is yes. If hasSaved == False, then does nothing."""
         if not hasChanged: return
-        fileName = self.fileInfo.name
-        if re.match(u'' r'\s*[yY]',
-                    raw_input(u'\nSave changes to %s [y/n]?: ' % fileName),
-                    flags=re.U):
+        if re.match(u'' r'\s*[yY]', raw_input(
+            u'\nSave changes to %s [y/n]?: ' % self.fileInfo), flags=re.U):
             self.safeSave()
-            print(u'%s saved.' % fileName)
+            print(u'%s saved.' % self.fileInfo)
         else:
-            print(u'%s not saved.' % fileName)
+            print(u'%s not saved.' % self.fileInfo)
 
     def safeSave(self):
         """Save data to file safely.  Works under UAC."""
@@ -419,7 +415,7 @@ class ModFile(object):
             return self.cached_mgef_names
 
     def __repr__(self):
-        return u'ModFile<%s>' % self.fileInfo.name
+        return u'ModFile<%s>' % self.fileInfo
 
 # TODO(inf) Use this for a bunch of stuff in mods_metadata.py (e.g. UDRs)
 class ModHeaderReader(object):
@@ -448,8 +444,7 @@ class ModHeaderReader(object):
                         ins_seek(header.size, 1)
             except (OSError, struct_error) as e:
                 raise ModError(ins.inName, u'Error scanning %s, file read '
-                                           u"pos: %i\nCaused by: '%r'" % (
-                    mod_info.name, ins.tell(), e))
+                    u"pos: %i\nCaused by: '%r'" % (mod_info, ins.tell(), e))
         return ret_headers
 
     ##: The method above has to be very fast, but this one can afford to be
@@ -494,6 +489,5 @@ class ModHeaderReader(object):
                         ins_seek(header.size, 1)
             except (OSError, struct_error) as e:
                 raise ModError(ins.inName, u'Error scanning %s, file read '
-                                           u"pos: %i\nCaused by: '%r'" % (
-                    mod_info.name, ins.tell(), e))
+                    u"pos: %i\nCaused by: '%r'" % (mod_info, ins.tell(), e))
         return ret_headers

@@ -55,7 +55,7 @@ class PatchDialog(DialogWindow):
     def __init__(self, parent, patchInfo, mods_to_reselect):
         self.mods_to_reselect = mods_to_reselect
         self.parent = parent
-        title = _(u'Update ') + u'%s' % patchInfo.name
+        title = _(u'Update ') + u'%s' % patchInfo
         size = balt.sizes.get(self.__class__.__name__, (500,600))
         super(PatchDialog, self).__init__(parent, title=title,
             icon_bundle=Resources.bashMonkey, sizes_dict=balt.sizes, size=size)
