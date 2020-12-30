@@ -968,7 +968,7 @@ def clearReadOnly(dirPath):
 def cext_(string_val):
     return os.path.splitext(string_val)[-1].lower()
 def body_(string_val):
-    return os.path.basename(string_val)
+    return os.path.basename(os.path.splitext(string_val)[0])
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines
@@ -1373,7 +1373,8 @@ class PickleDict(object):
                     else:
                         raise PickleDict.Mold(path)
                 return 1 + (path == self.backup)
-            except (OSError, IOError, EOFError, ValueError): #PY3:FileNotFound
+            except (OSError, IOError, EOFError, ValueError,
+                    pickle.UnpicklingError): #PY3:FileNotFound
                 pass
         else:
             if cor is not None:

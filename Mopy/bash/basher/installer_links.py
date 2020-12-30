@@ -43,7 +43,7 @@ from .. import bass, bolt, bosh, bush, balt, archives
 from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
     UIList_Rename, UIList_Hide
 from ..belt import InstallerWizard, generateTweakLines
-from ..bolt import GPath, SubProgress, LogFile, round_size, text_wrap, body_
+from ..bolt import GPath, SubProgress, LogFile, round_size, text_wrap
 from ..exception import CancelError, SkipError, StateError
 from ..gui import BusyCursor
 
@@ -310,8 +310,9 @@ class Installer_Wizard(_Installer_AWizardLink):
         lastApplied = None
         new_targets = {}
         for iniFile, wizardEdits in ret.ini_edits.iteritems():
-            outFile = bass.dirs[u'ini_tweaks'].join(u'%s - Wizard Tweak [%s].ini' %
-                (installer.archive, body_(iniFile)))
+            basen = os.path.basename(os.path.splitext(iniFile)[0])
+            outFile = bass.dirs[u'ini_tweaks'].join(
+                u'%s - Wizard Tweak [%s].ini' % (installer.archive, basen))
             with outFile.open(u'w') as out:
                 out.write(u'\n'.join(generateTweakLines(wizardEdits, iniFile)))
                 out.write(u'\n')
@@ -817,7 +818,7 @@ class Installer_CopyConflicts(_SingleInstallable):
                     srcFull = ijoin(package, src)
                     destFull = ijoin(destDir, g_path, src)
                     if srcFull.exists():
-                        progress(curFile, self._selected_item.s + u'\n' + _(
+                        progress(curFile, u'%s\n' % self._selected_item + _(
                             u'Copying files...') + u'\n' + src)
                         srcFull.copyTo(destFull)
                         curFile += 1

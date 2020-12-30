@@ -927,7 +927,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                 subProgress(index+0.5,_(u'Updating ') + saveName.s)
                 if releveledCount:
                     saveFile.safeSave()
-                message += u'\n%d %s' % (releveledCount,saveName.s)
+                message += u'\n%d %s' % (releveledCount,saveName)
         if modErrors:
             message += u'\n\n'+_(u'Some mods had load errors and were skipped:')+u'\n* '
             message += u'\n* '.join(modErrors)

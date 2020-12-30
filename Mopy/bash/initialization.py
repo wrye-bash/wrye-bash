@@ -23,6 +23,7 @@
 """Functions for initializing Bash data structures on boot. For now exports
 functions to initialize bass.dirs that need be initialized high up into the
 boot sequence to be able to backup/restore settings."""
+import os
 from ConfigParser import ConfigParser, MissingSectionHeaderError
 # Local - don't import anything else
 from . import env
@@ -272,6 +273,10 @@ def init_dirs_mopy():
     dirs[u'db'] = dirs[u'bash'].join(u'db')
     dirs[u'templates'] = dirs[u'mopy'].join(u'templates')
     dirs[u'images'] = dirs[u'bash'].join(u'images')
+    from . import archives
+    if os.name == u'nt': # don't add local directory to binaries on linux
+        archives.exe7z = dirs[u'compiled'].join(archives.exe7z).s
+        archives.pngcrush = dirs[u'compiled'].join(archives.pngcrush).s
     global mopy_dirs_initialized
     mopy_dirs_initialized = True
 

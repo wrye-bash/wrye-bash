@@ -133,10 +133,14 @@ class File_Duplicate(ItemLink):
                     defaultFile=destName.s, wildcard=wildcard)
                 if not destPath: return
                 destDir, destName = destPath.headTail
-            if (destDir == fileInfo.dir) and (destName == to_duplicate):
-                self._showError(
-                    _(u'Files cannot be duplicated to themselves!'))
-                continue
+                if destDir == fileInfo.dir:
+                    if destName == to_duplicate:
+                        self._showError(
+                            _(u'Files cannot be duplicated to themselves!'))
+                        continue
+                    elif destName in fileInfos:
+                        self._showError(_(u'%s exists!') % destPath)
+                        continue
             fileInfos.copy_info(to_duplicate, destDir, destName)
             if fileInfo.isMod(): ##: move this inside copy_info
                 fileInfos.cached_lo_insert_after(to_duplicate, destName)
