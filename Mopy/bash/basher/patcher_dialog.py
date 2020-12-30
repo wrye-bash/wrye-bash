@@ -218,7 +218,7 @@ class PatchDialog(DialogWindow):
             readme = readme.root + u'.html'
             bosh.modInfos.table.setItem(patch_name, u'doc', readme)
             balt.playSound(self.parent, bass.inisettings[u'SoundSuccess'])
-            balt.WryeLog(self.parent, readme, patch_name.s,
+            balt.WryeLog(self.parent, readme, patch_name,
                          log_icons=Resources.bashBlue)
             #--Select?
             if self.mods_to_reselect:

@@ -401,10 +401,12 @@ def askWarning(parent, message, title=_(u'Warning')):
 
 def showOk(parent, message, title=u''):
     """Shows a modal error message."""
+    if isinstance(title, bolt.Path): title = title.s
     return askStyled(parent, message, title, wx.OK)
 
 def showError(parent, message, title=_(u'Error')):
     """Shows a modal error message."""
+    if isinstance(title, bolt.Path): title = title.s
     return askStyled(parent, message, title, wx.OK | wx.ICON_HAND)
 
 def showWarning(parent, message, title=_(u'Warning'), do_center=False):
@@ -424,6 +426,7 @@ class _Log(object):
         #--Sizing
         key__pos_ = self._settings_key + u'.pos'
         key__size_ = self._settings_key + u'.size'
+        if isinstance(title, bolt.Path): title = title.s
         #--DialogWindow or WindowFrame
         if self.asDialog:
             window = DialogWindow(parent, title, sizes_dict=_settings,
