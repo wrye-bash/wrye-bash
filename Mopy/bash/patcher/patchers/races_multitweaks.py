@@ -450,7 +450,6 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
         """Add appropriate records from modFile."""
         races_data = self.races_data
         eye_mesh = self.eye_mesh
-        modName = modFile.fileInfo.name
         if not (set(modFile.tops) & self.scanTypes): return
         srcEyes = {record.fid for record in modFile.EYES.getActiveRecords()}
         #--Eyes, Hair
@@ -478,7 +477,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
                 # it's an internal or unused RACE
                 if record.full:
                     deprint(u'No right and/or no left eye recorded in race '
-                            u'%s, from mod %s' % (record.full, modName))
+                        u'%s, from mod %s' % (record.full, modFile.fileInfo))
                 continue
             for eye in record.eyes:
                 if eye in srcEyes:

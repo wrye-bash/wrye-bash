@@ -169,6 +169,10 @@ class FileInfo(AFile):
         self.extras = {}
         super(FileInfo, self).__init__(g_path, load_cache)
 
+    def __str__(self):
+        """Alias for self.name."""
+        return self.name.s
+
     def _reset_masters(self):
         #--Master Names/Order
         self.masterNames = tuple(self._get_masters())
@@ -738,8 +742,7 @@ class ModInfo(FileInfo):
                 try:
                     found_assets = bsa_info.has_assets(extract)
                 except (BSAError, OverflowError):
-                    deprint(u'Failed to parse %s' % bsa_info.name,
-                            traceback=True)
+                    deprint(u'Failed to parse %s' % bsa_info, traceback=True)
                     continue
                 if not found_assets: continue
                 bsa_assets[bsa_info] = found_assets
@@ -755,21 +758,21 @@ class ModInfo(FileInfo):
                     msg += (u'\nThe following BSAs were scanned (based on '
                             u'name and INI settings), but none of them '
                             u'contain the missing files:\n%s' % u'\n'.join(
-                        u' - %s' % e.name for e in potential_bsas))
+                        u' - %s' % bsa_inf for bsa_inf in potential_bsas))
                 else:
                     msg += (u'\nNo BSAs were found that could contain the '
                             u'missing strings - this is bad, validate your '
                             u'game installation and double-check your INI '
                             u'settings')
                 raise ModError(self.name, msg)
-            for bsa, assets in bsa_assets.iteritems():
-                out_path = dirs[u'bsaCache'].join(bsa.name)
+            for bsa_inf, assets in bsa_assets.iteritems():
+                out_path = dirs[u'bsaCache'].join(bsa_inf.name)
                 try:
-                    bsa.extract_assets(assets, out_path.s)
+                    bsa_inf.extract_assets(assets, out_path.s)
                 except BSAError as e:
                     raise ModError(self.name,
                                    u'Could not extract Strings File from '
-                                   u"'%s': %s" % (bsa.name, e))
+                                   u"'%s': %s" % (bsa_inf, e))
                 paths.update(imap(out_path.join, assets))
         return paths
 
@@ -804,7 +807,7 @@ class ModInfo(FileInfo):
                 continue
             # Check in BSA's next
             if __debug == 1:
-                deprint(u'Scanning BSAs for string files for %s' % self.name)
+                deprint(u'Scanning BSAs for string files for %s' % self)
                 __debug = 2
             for bsa_info in bsa_infos:
                 try:
@@ -812,10 +815,10 @@ class ModInfo(FileInfo):
                         break # found
                 except (BSAError, OverflowError):
                     print(u'Failed to parse %s:\n%s' % (
-                        bsa_info.name, traceback.format_exc()))
+                        bsa_info, traceback.format_exc()))
                     continue
                 if __debug == 2:
-                    deprint(u'Asset %s not in %s' % (assetPath, bsa_info.name))
+                    deprint(u'Asset %s not in %s' % (assetPath, bsa_info))
             else: # not found
                 return True
         return False
@@ -2328,10 +2331,10 @@ class ModInfos(FileInfos):
             if fileInfo:
                 masters_set = set(fileInfo.masterNames)
                 missing = sorted(x for x in masters_set if x not in self)
-                log.setHeader(head+_(u'Missing Masters for %s: ') % fileInfo.name)
+                log.setHeader(head + _(u'Missing Masters for %s: ') % fileInfo)
                 for mod in missing:
                     log(bul + u'xx %s' % mod)
-                log.setHeader(head+_(u'Masters for %s: ') % fileInfo.name)
+                log.setHeader(head + _(u'Masters for %s: ') % fileInfo)
                 present = {x for x in masters_set if x in self}
                 if fileInfo.name in self: #--In case is bashed patch (cf getSemiActive)
                     present.add(fileInfo.name)
@@ -2412,7 +2415,7 @@ class ModInfos(FileInfos):
                      u'higher-ranking ones.') + u'\n'
         if mod_list:
             for modInfo in mod_list:
-                tagList += u'\n* %s\n' % modInfo.name
+                tagList += u'\n* %s\n' % modInfo
                 if modInfo.getBashTags():
                     tagList = ModInfos._tagsies(modInfo, tagList)
                 else: tagList += u'    '+_(u'No tags')
@@ -2421,7 +2424,7 @@ class ModInfos(FileInfos):
             lindex = lambda t: load_order.cached_lo_index(t[0])
             for __mname, modInfo in sorted(modInfos.iteritems(), key=lindex):
                 if modInfo.getBashTags():
-                    tagList += u'\n* %s\n' % modInfo.name
+                    tagList += u'\n* %s\n' % modInfo
                     tagList = ModInfos._tagsies(modInfo, tagList)
         tagList += u'[/spoiler]'
         return tagList

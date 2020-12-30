@@ -1248,7 +1248,7 @@ class Mod_ScanDirty(ItemLink):
             if modInfo.isBP(): itms = set()
             if udrs or itms:
                 pos = len(dirty)
-                dirty.append(u'* __%s__:\n' % modInfo.name)
+                dirty.append(u'* __%s__:\n' % modInfo)
                 dirty[pos] += u'  * %s: %i\n' % (_(u'UDR'),len(udrs))
                 for udr in sorted(udrs):
                     if udr.parentEid:
@@ -1273,9 +1273,9 @@ class Mod_ScanDirty(ItemLink):
                             strFid(udr.fid),udr.type,parentStr,parentParentStr,atPos)
                     dirty[pos] += u'    * %s\n' % item
             elif udrs is None or itms is None:
-                error.append(u'* __%s__' % modInfo.name)
+                error.append(u'* __%s__' % modInfo)
             else:
-                clean.append(u'* __%s__' % modInfo.name)
+                clean.append(u'* __%s__' % modInfo)
         #-- Show log
         if dirty:
             log(_(u'Detected %d dirty mods:') % len(dirty))
@@ -1304,7 +1304,7 @@ class Mod_RemoveWorldOrphans(_NotObLink):
                                  _(u'Remove World Orphans')): return
         for index, (fileName, fileInfo) in enumerate(self.iselected_pairs()):
             if bosh.reOblivion.match(fileName.s):
-                self._showWarning(_(u'Skipping %s') % fileName,
+                self._showWarning(_(u'Skipping %s') % fileInfo,
                                   _(u'Remove World Orphans'))
                 continue
             #--Export
@@ -1312,11 +1312,11 @@ class Mod_RemoveWorldOrphans(_NotObLink):
                 loadFactory = mod_files.LoadFactory(True, MreRecord.type_class[
                     b'CELL'], MreRecord.type_class[b'WRLD'])
                 modFile = mod_files.ModFile(fileInfo, loadFactory)
-                progress(0,_(u'Reading') + u' %s.' % fileName)
+                progress(0,_(u'Reading') + u' %s.' % fileInfo)
                 modFile.load(True,SubProgress(progress,0,0.7))
                 orphans = ('WRLD' in modFile.tops) and modFile.WRLD.orphansSkipped
                 if orphans:
-                    progress(0.1, _(u'Saving %s.') % fileName)
+                    progress(0.1, _(u'Saving %s.') % fileInfo)
                     modFile.safeSave()
                 progress(1.0,_(u'Done.'))
             #--Log
@@ -1429,7 +1429,7 @@ class Mod_DecompileAll(_NotObLink):
         for fileName, fileInfo in self.iselected_pairs():
             file_name_s = fileName.s
             if bosh.reOblivion.match(file_name_s):
-                self._showWarning(_(u'Skipping %s') % fileName,
+                self._showWarning(_(u'Skipping %s') % fileInfo,
                                   _(u'Decompile All'))
                 continue
             loadFactory = mod_files.LoadFactory(True, MreRecord.type_class[b'SCPT'])

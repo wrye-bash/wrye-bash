@@ -2729,8 +2729,8 @@ class InstallersData(DataStore):
         return (k for k in active_bsas if k.name.s in inst.ci_dest_sizeCrc)
 
     @staticmethod
-    def _parse_error(bs, reason):
-        deprint(u'Error parsing %s [%s]' % (bs.name, reason), traceback=True)
+    def _parse_error(bsa_inf, reason):
+        deprint(u'Error parsing %s [%s]' % (bsa_inf, reason), traceback=True)
 
     ##: Maybe cache the result? Can take a bit of time to calculate
     def find_conflicts(self, src_installer, active_bsas=None, bsa_cause=None,
@@ -2773,7 +2773,7 @@ class InstallersData(DataStore):
             asset_to_bsa, src_assets = self.find_src_assets(src_installer,
                                                             active_bsas)
             remaining_bsas = copy.copy(active_bsas)
-            def process_bsa_conflicts(b_inf, b_source):
+            def _process_bsa_conflicts(b_inf, b_source):
                 try: # conflicting assets from this installer active bsas
                     curConflicts = b_inf.assets & src_assets
                 except BSAError:
@@ -2810,11 +2810,11 @@ class InstallersData(DataStore):
                         ##: Support for inactive BSA conflicts
                         del remaining_bsas[bsa_info]
                     else:
-                        process_bsa_conflicts(bsa_info, package.s)
+                        _process_bsa_conflicts(bsa_info, package.s)
             # Check all left-over BSAs - they either came from an INI or from a
             # plugin file not managed by BAIN (e.g. a DLC)
             for rem_bsa in remaining_bsas:
-                process_bsa_conflicts(rem_bsa, bsa_cause[rem_bsa])
+                _process_bsa_conflicts(rem_bsa, bsa_cause[rem_bsa])
             def _sort_bsa_conflicts(bsa_conflict):
                 return active_bsas[bsa_conflict[1]]
             lower_bsa.sort(key=_sort_bsa_conflicts)
@@ -2897,17 +2897,17 @@ class InstallersData(DataStore):
                 origin_ini_match = self._ini_origin.match
                 def _print_bsa_conflicts(conflicts, title=_(u'Lower')):
                     buff.write(u'= %s %s\n' % (title, u'=' * 40))
-                    for origin_, bsa_, confl_ in conflicts:
-                        # If the origin is an INI, then active_bsas[bsa_] does
-                        # not contain a meaningful result (will be an extremely
-                        # large/small number)
+                    for origin_, bsa_inf, confl_ in conflicts:
+                        # If the origin is an INI, then active_bsas[bsa_inf]
+                        # does not contain a meaningful result (will be an
+                        # extremely large/small number)
                         ini_ma = origin_ini_match(origin_)
                         if ini_ma:
                             buff.write(u'==%s== %s : %s\n' % (
-                                ini_ma.group(1), ini_ma.group(2), bsa_.name))
+                                ini_ma.group(1), ini_ma.group(2), bsa_inf))
                         else:
                             buff.write(u'==%X== %s : %s\n' % (
-                                active_bsas[bsa_], origin_, bsa_.name))
+                                active_bsas[bsa_inf], origin_, bsa_inf))
                         buff.write(u'\n'.join(confl_) + u'\n\n')
                 if include_lower and lower_bsa:
                     _print_bsa_conflicts(lower_bsa, _(u'Lower'))
