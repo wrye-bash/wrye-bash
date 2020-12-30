@@ -1311,9 +1311,9 @@ class _UsesEffectsMixin(_HandleAliases):
         effects = []
         while len(_effects) >= 13:
             _effect,_effects = _effects[1:13],_effects[13:]
-            name,magnitude,area,duration,range_,actorvalue,semod,seobj,\
+            eff_name,magnitude,area,duration,range_,actorvalue,semod,seobj,\
             seschool,sevisual,seflags,sename = tuple(_effect)
-            name = _coerce(name,unicode,AllowNone=True) #OBME not supported
+            eff_name = _coerce(eff_name,unicode,AllowNone=True) #OBME not supported
             # (support requires adding a mod/objectid format to the
             # csv, this assumes all MGEFCodes are raw)
             magnitude = _coerce(magnitude,int,AllowNone=True)
@@ -1327,9 +1327,9 @@ class _UsesEffectsMixin(_HandleAliases):
             if actorvalue:
                 actorvalue = actorValueName_Number.get(actorvalue.lower(),
                                                        _coerce(actorvalue,int))
-            if None in (name,magnitude,area,duration,range_,actorvalue):
+            if None in (eff_name,magnitude,area,duration,range_,actorvalue):
                 continue
-            effect = [name,magnitude,area,duration,range_,actorvalue]
+            effect = [eff_name,magnitude,area,duration,range_,actorvalue]
             semod = _coerce(semod, unicode, AllowNone=True)
             seobj = _coerce(seobj, int, 16, AllowNone=True)
             seschool = _coerce(seschool, unicode, AllowNone=True)
@@ -1513,16 +1513,16 @@ class SigilStoneDetails(_UsesEffectsMixin):
             outWrite = out.write
             outWrite(headFormat % header)
             for fid in sorted(fid_stats,key=lambda x:fid_stats[x][0].lower()):
-                eid,name,modpath,modb,iconpath,scriptfid,uses,value,weight,\
+                eid,name_,modpath,modb,iconpath,scriptfid,uses,value,weight,\
                 effects = fid_stats[fid]
                 scriptfid = scriptfid or (GPath(u'None'),None)
                 try:
                     output = rowFormat % (
-                        fid[0],fid[1],eid,name,modpath,modb,iconpath,
+                        fid[0],fid[1],eid,name_,modpath,modb,iconpath,
                         scriptfid[0],scriptfid[1],uses,value,weight)
                 except TypeError:
                     output = altrowFormat % (
-                        fid[0],fid[1],eid,name,modpath,modb,iconpath,
+                        fid[0],fid[1],eid,name_,modpath,modb,iconpath,
                         scriptfid[0],scriptfid[1],uses,value,weight)
                 output += self.writeEffects(effects)
                 output += u'\n'
@@ -1937,16 +1937,16 @@ class IngredientDetails(_UsesEffectsMixin):
         with textPath.open(u'w', encoding=u'utf-8-sig') as out:
             out.write(headFormat % header)
             for fid in sorted(fid_stats,key=lambda x:fid_stats[x][0].lower()):
-                eid,name,modpath,modb,iconpath,scriptfid,value,weight,\
+                eid,name_,modpath,modb,iconpath,scriptfid,value,weight,\
                 effects = fid_stats[fid]
                 scriptfid = scriptfid or (GPath(u'None'), None)
                 try:
                     output = rowFormat % (
-                        fid[0],fid[1],eid,name,modpath,modb,iconpath,
+                        fid[0],fid[1],eid,name_,modpath,modb,iconpath,
                         scriptfid[0],scriptfid[1],value,weight)
                 except TypeError:
                     output = altrowFormat % (
-                        fid[0],fid[1],eid,name,modpath,modb,iconpath,
+                        fid[0],fid[1],eid,name_,modpath,modb,iconpath,
                         scriptfid[0],scriptfid[1],value,weight)
                 output += self.writeEffects(effects)
                 output += u'\n'

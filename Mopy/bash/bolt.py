@@ -465,19 +465,21 @@ class Path(object):
     invalid_chars_re = re.compile(u'' r'(.*)([/\\:*?"<>|]+)(.*)', re.I | re.U)
 
     @staticmethod
-    def getNorm(name):
-        """Return the normpath for specified name/path object."""
-        if isinstance(name,Path): return name._s
-        elif not name: return name
-        elif isinstance(name,str): name = decoder(name)
-        return os.path.normpath(name)
+    def getNorm(str_or_path):
+        # type: (unicode|str|Path) -> unicode
+        """Return the normpath for specified stringy/path object."""
+        if isinstance(str_or_path, Path): return str_or_path._s
+        elif not str_or_path: return u'' # and not maybe b''
+        elif isinstance(str_or_path, str): str_or_path = decoder(str_or_path)
+        return os.path.normpath(str_or_path)
 
     @staticmethod
-    def __getCase(name):
+    def __getCase(stringy):
+        # type: (unicode|str|None) -> unicode|None
         """Return the normpath+normcase for specified name/path object."""
-        if not name: return name
-        if isinstance(name, str): name = decoder(name)
-        return os.path.normcase(os.path.normpath(name))
+        if not stringy: return stringy if stringy is None else u''
+        if isinstance(stringy, str): stringy = decoder(stringy)
+        return os.path.normcase(os.path.normpath(stringy))
 
     @staticmethod
     def getcwd():
@@ -499,22 +501,26 @@ class Path(object):
     __slots__ = (u'_s', u'_cs', u'_sroot', u'_shead', u'_stail', u'_ext',
                  u'_cext', u'_sbody')
 
-    def __init__(self, name):
-        """Initialize."""
-        if isinstance(name,Path):
-            self.__setstate__(name._s)
-        else:
-            self.__setstate__(name)
+    def __init__(self, string_or_path):
+        # type: (basestring) -> None ##: does it ever accept str or Path?
+        """Initialize with a basestring - paths/str should no longer be
+        accepted."""
+        self.__setstate__(string_or_path, self.getNorm)
+        ##: should only accept unicode
+        # self._s = os.path.normpath(string_or_path)
+        # self._cs = self._s.lower()
 
     def __getstate__(self):
         """Used by pickler. _cs is redundant,so don't include."""
         return self._s
 
-    def __setstate__(self,norm):
+    def __setstate__(self, norm, __norm_f=decoder):
         """Used by unpickler. Reconstruct _cs."""
         # Older pickle files stored filename in str, not unicode
-        norm = decoder(norm) # decoder will check for unicode
+        norm = __norm_f(norm) # decoder will check for unicode
         self._s = norm
+        # Reconstruct _cs, lower() should suffice if we unpickle a Path, but
+        # not if called in __init__
         self._cs = os.path.normcase(norm)
 
     def __len__(self):
@@ -723,9 +729,10 @@ class Path(object):
     #--Path stuff -------------------------------------------------------
     #--New Paths, subpaths
     def __add__(self,other):
+        # you can't add to None: ValueError - that's good
         return GPath(self._s + Path.getNorm(other))
     def join(*args):
-        norms = [Path.getNorm(x) for x in args]
+        norms = [Path.getNorm(x) for x in args] # join(..,None,..) -> TypeError
         return GPath(os.path.join(*norms))
 
     def list(self):
@@ -750,7 +757,7 @@ class Path(object):
                        [GPath_no_norm(x) for x in dirs],
                        [GPath_no_norm(x) for x in files])
 
-    def relpath(self,path):
+    def relpath(self,path): # os.path.relpath(p,[s]): AttributeError if s==None
         return GPath(os.path.relpath(self._s,Path.getNorm(path)))
 
     def drive(self):
@@ -1023,11 +1030,11 @@ class Flags(object):
         Names are either strings or (index,name) tuples.
         E.g., Flags.getNames('isQuest','isHidden',None,(4,'isDark'),(7,'hasWater'))"""
         namesDict = {}
-        for index,name in enumerate(names):
-            if isinstance(name,tuple):
-                namesDict[name[1]] = name[0]
-            elif name: #--skip if "name" is 0 or None
-                namesDict[name] = index
+        for index,flg_name in enumerate(names):
+            if isinstance(flg_name,tuple):
+                namesDict[flg_name[1]] = flg_name[0]
+            elif flg_name: #--skip if "name" is 0 or None
+                namesDict[flg_name] = index
         return namesDict
 
     #--Generation
@@ -2633,11 +2640,11 @@ class WryeText(object):
         for line in outLines:
             if reContentsTag.match(line):
                 if contents and not didContents:
-                    baseLevel = min([level for (level,name,text) in contents])
-                    for (level,name,text) in contents:
+                    baseLevel = min([level for (level,name_,text) in contents])
+                    for (level,name_,text) in contents:
                         level = level - baseLevel + 1
                         if level <= addContents:
-                            outWrite(u'<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name,text))
+                            outWrite(u'<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name_,text))
                     didContents = True
             else:
                 outWrite(line)
