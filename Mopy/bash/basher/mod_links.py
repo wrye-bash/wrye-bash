@@ -607,7 +607,7 @@ class Mod_Details(OneItemLink):
                 for fid,eid in records:
                     buff.write(u'  %08X %s\n' % (fid,eid))
                 buff.write(u'\n')
-            self._showLog(buff.getvalue(), title=self._selected_item.s,
+            self._showLog(buff.getvalue(), title=self._selected_item,
                           fixedFont=True)
             buff.close()
 
@@ -1322,9 +1322,9 @@ class Mod_RemoveWorldOrphans(_NotObLink):
             #--Log
             if orphans:
                 self._showOk(_(u'Orphan cell blocks removed: %d.') % orphans,
-                             fileName.s)
+                             fileName)
             else:
-                self._showOk(_(u'No changes required.'), fileName.s)
+                self._showOk(_(u'No changes required.'), fileName)
 
 #------------------------------------------------------------------------------
 class Mod_FogFixer(ItemLink):
@@ -1711,8 +1711,7 @@ class Mod_Face_Import(OneItemLink):
             imagePath.head.makedirs()
             image.SaveFile(imagePath.s, ImageWrapper.typesDict[u'jpg'])
         self.window.RefreshUI(refreshSaves=False) # import save to esp
-        self._showOk(_(u'Imported face to: %s') % npc.eid,
-                     self._selected_item.s)
+        self._showOk(_(u'Imported face to: %s') % npc.eid, self._selected_item)
 
 #--Common
 class _Import_Export_Link(AppendableLink):
