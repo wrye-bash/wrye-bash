@@ -125,9 +125,8 @@ class OmodFile(object):
                     line = unicode(line,u'utf8')
                     maFileSize = reFileSize.match(line)
                     if maFileSize: #also matches the last line with total sizes
-                        size = int(maFileSize.group(1))
-                        name = maFileSize.group(2).strip().strip(u'\r')
-                        filesizes[name] = size
+                        name_ = maFileSize.group(2).strip().strip(u'\r')
+                        filesizes[name_] = int(maFileSize.group(1))
         # drop the last line entry
         del filesizes[list(filesizes)[-1]]
         return filesizes, sum(filesizes.itervalues())
@@ -155,10 +154,9 @@ class OmodFile(object):
                         line = unicode(line,'utf8')
                         maExtracting = reExtracting.match(line)
                         if maExtracting:
-                            name = maExtracting.group(1).strip().strip(u'\r')
-                            size = sizes_[name]
-                            subprogress(float(current) / total, self.omod_path.stail + u'\n' + _(u'Extracting...') + u'\n' + name)
-                            current += size
+                            name_ = maExtracting.group(1).strip().strip(u'\r')
+                            subprogress(float(current) / total, self.omod_path.stail + u'\n' + _(u'Extracting...') + u'\n' + name_)
+                            current += sizes_[name_]
 
             # Get compression type
             progress(0.4, self.omod_path.stail + u'\n' + _(u'Reading config'))
@@ -242,9 +240,9 @@ class OmodFile(object):
         # Split the uncompressed stream into files
         progress(0, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % streamPath.stail)
         with streamPath.open(u'rb') as bin_out:
-            for i,name in enumerate(fileNames):
-                progress(i, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % streamPath.stail + u'\n' + name)
-                outFile = outDir.join(name)
+            for i,fname in enumerate(fileNames):
+                progress(i, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % streamPath.stail + u'\n' + fname)
+                outFile = outDir.join(fname)
                 with outFile.open(u'wb') as output:
                     output.write(bin_out.read(sizes_[i]))
         progress(len(fileNames))
@@ -308,8 +306,8 @@ class OmodFile(object):
 
 class OmodConfig(object):
     """Tiny little omod config class."""
-    def __init__(self,name):
-        self.name = name.s
+    def __init__(self, omod_proj):
+        self.omod_proj = omod_proj.s
         self.vMajor = 0
         self.vMinor = 1
         self.vBuild = 0
@@ -319,37 +317,40 @@ class OmodConfig(object):
         self.abstract = u''
 
     @staticmethod
-    def getOmodConfig(name):
+    def getOmodConfig(omod_proj):
         """Get obmm config file for project."""
-        config = OmodConfig(name)
-        configPath = bass.dirs[u'installers'].join(name,u'omod conversion data',u'config')
+        config = OmodConfig(omod_proj)
+        configPath = bass.dirs[u'installers'].join(omod_proj,
+            u'omod conversion data', u'config')
         if configPath.exists():
             with open(configPath.s,u'rb') as ins:
                 ins.read(1) #--Skip first four bytes
                 # OBMM can support UTF-8, so try that first, then fail back to
-                config.name = decoder(_readNetString(ins), encoding=u'utf-8')
+                config.omod_proj = decoder(_readNetString(ins),
+                                           encoding=u'utf-8')
                 config.vMajor = unpack_int_signed(ins)
                 config.vMinor = unpack_int_signed(ins)
                 for attr in (u'omod_author',u'email',u'website',u'abstract'):
-                    setattr(config, attr, decoder(_readNetString(ins), encoding=u'utf-8'))
+                    setattr(config, attr,
+                            decoder(_readNetString(ins), encoding=u'utf-8'))
                 ins.read(8) #--Skip date-time
                 ins.read(1) #--Skip zip-compression
                 #config['vBuild'], = ins.unpack('I',4)
         return config
 
-    @staticmethod
-    def writeOmodConfig(name, config):
+    def writeOmodConfig(self):
         """Write obmm config file for project."""
-        configPath = bass.dirs[u'installers'].join(name,u'omod conversion data',u'config')
+        configPath = bass.dirs[u'installers'].join(self.omod_proj,
+            u'omod conversion data', u'config')
         configPath.head.makedirs()
         with open(configPath.temp.s,u'wb') as out:
             pack_byte(out, 4)
-            _writeNetString(out, config.name.encode(u'utf8'))
-            pack_int_signed(out, config.vMajor)
-            pack_int_signed(out, config.vMinor)
+            _writeNetString(out, self.omod_proj.encode(u'utf8'))
+            pack_int_signed(out, self.vMajor)
+            pack_int_signed(out, self.vMinor)
             for attr in (u'omod_author', u'email', u'website', u'abstract'):
                 # OBMM reads it fine if in UTF-8, so we'll do that.
-                _writeNetString(out, getattr(config, attr).encode(u'utf-8'))
+                _writeNetString(out, getattr(self, attr).encode(u'utf-8'))
             out.write(b'\x74\x1a\x74\x67\xf2\x7a\xca\x88') #--Random date time
             pack_byte_signed(out, 0) #--zip compression (will be ignored)
             out.write(b'\xFF\xFF\xFF\xFF')

@@ -423,7 +423,6 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
 
     def __init__(self, parent, project):
         #--Data
-        self.project = project
         self.config = config = omods.OmodConfig.getOmodConfig(project)
         #--GUI
         super(InstallerProject_OmodConfigDialog, self).__init__(parent,
@@ -431,7 +430,7 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
             icon_bundle=Resources.bashBlue, sizes_dict=bass.settings,
             caption=True, clip_children=True, tab_traversal=True)
         #--Fields
-        self.gName = TextField(self, init_text=config.name, max_length=100)
+        self.gName = TextField(self, init_text=config.omod_proj,max_length=100)
         self.gVersion = TextField(self, u'{:d}.{:02d}'.format(
             config.vMajor, config.vMinor), max_length=32)
         self.gWebsite = TextField(self, config.website, max_length=512)
@@ -465,7 +464,7 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
         """Handle save button."""
         config = self.config
         #--Text fields
-        config.name = self.gName.text_content.strip()
+        config.omod_proj = self.gName.text_content.strip()
         config.website = self.gWebsite.text_content.strip()
         config.omod_author = self.gAuthor.text_content.strip()
         config.email = self.gEmail.text_content.strip()
@@ -478,5 +477,5 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
         else:
             config.vMajor,config.vMinor = (0,0)
         #--Done
-        omods.OmodConfig.writeOmodConfig(self.project, self.config)
+        self.config.writeOmodConfig()
         self.on_closing()

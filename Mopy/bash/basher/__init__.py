@@ -4172,9 +4172,9 @@ class BashFrame(WindowFrame):
             goodRoots = {p.root for p in fileInfos.keys()}
             backupDir = fileInfos.bash_dir.join(u'Backups')
             if not backupDir.isdir(): continue
-            for name in backupDir.list():
-                back_path = backupDir.join(name)
-                if name.root not in goodRoots and back_path.isfile():
+            for back_fname in backupDir.list():
+                back_path = backupDir.join(back_fname)
+                if back_fname.root not in goodRoots and back_path.isfile():
                     back_path.remove()
 
     @staticmethod

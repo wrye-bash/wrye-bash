@@ -1283,8 +1283,8 @@ class UIList(wx.Panel):
 
     def DeleteAll(self): self.__gList.DeleteAll()
 
-    def EnsureVisibleItem(self, name, focus=False):
-        self.EnsureVisibleIndex(self.GetIndex(name), focus=focus)
+    def EnsureVisibleItem(self, itm_name, focus=False):
+        self.EnsureVisibleIndex(self.GetIndex(itm_name), focus=focus)
 
     def EnsureVisibleIndex(self, dex, focus=False):
         self.__gList._native_widget.Focus(dex) if focus else self.__gList._native_widget.EnsureVisible(dex)

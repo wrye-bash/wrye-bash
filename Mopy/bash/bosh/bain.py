@@ -2171,11 +2171,11 @@ class InstallersData(DataStore):
         :type dest_paths: set[unicode]"""
         root_files = []
         norm_ghost = Installer.getGhosted()
-        for path in dest_paths:
-            sp = path.rsplit(os.sep, 1) # split into ['rel_path, 'file']
+        for data_path in dest_paths:
+            sp = data_path.rsplit(os.sep, 1) # split into ['rel_path, 'file']
             if len(sp) == 1: # top level file
-                name = norm_ghost.get(path, path)
-                root_files.append((bass.dirs[u'mods'].s, name))
+                data_path = norm_ghost.get(data_path, data_path)
+                root_files.append((bass.dirs[u'mods'].s, data_path))
             else:
                 root_files.append((bass.dirs[u'mods'].join(sp[0]).s, sp[1]))
         root_dirs_files = []

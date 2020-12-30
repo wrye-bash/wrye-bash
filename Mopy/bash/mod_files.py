@@ -325,7 +325,7 @@ class ModFile(object):
     def getShortMapper(self):
         """Returns a mapping function to map long fids to short fids."""
         masters_list = self.tes4.masters + [self.fileInfo.name]
-        indices = {name: index for index, name in enumerate(masters_list)}
+        indices = {mname: index for index, mname in enumerate(masters_list)}
         has_expanded_range = bush.game.Esp.expanded_plugin_range
         if (has_expanded_range and len(masters_list) > 1
                 and self.tes4.version >= 1.0):

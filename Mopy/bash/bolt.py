@@ -1025,11 +1025,11 @@ class Flags(object):
         Names are either strings or (index,name) tuples.
         E.g., Flags.getNames('isQuest','isHidden',None,(4,'isDark'),(7,'hasWater'))"""
         namesDict = {}
-        for index,name in enumerate(names):
-            if isinstance(name,tuple):
-                namesDict[name[1]] = name[0]
-            elif name: #--skip if "name" is 0 or None
-                namesDict[name] = index
+        for index,flg_name in enumerate(names):
+            if isinstance(flg_name,tuple):
+                namesDict[flg_name[1]] = flg_name[0]
+            elif flg_name: #--skip if "name" is 0 or None
+                namesDict[flg_name] = index
         return namesDict
 
     #--Generation
@@ -1095,21 +1095,21 @@ class Flags(object):
         self._field = ((self._field & ~mask) | value)
 
     #--As class
-    def __getattr__(self,name):
+    def __getattr__(self, attr_key):
         """Get value by flag name. E.g. flags.isQuestItem"""
         try:
-            names = object.__getattribute__(self,'_names')
-            index = names[name]
-            return (object.__getattribute__(self,'_field') >> index) & 1 == 1
+            names = object.__getattribute__(self, u'_names')
+            index = names[attr_key]
+            return (object.__getattribute__(self, u'_field') >> index) & 1 == 1
         except KeyError:
-            raise AttributeError(name)
+            raise AttributeError(attr_key)
 
-    def __setattr__(self,name,value):
+    def __setattr__(self, attr_key, value):
         """Set value by flag name. E.g., flags.isQuestItem = False"""
-        if name in ('_field','_names'):
-            object.__setattr__(self,name,value)
+        if attr_key in (u'_field', u'_names'):
+            object.__setattr__(self, attr_key, value)
         else:
-            self.__setitem__(self._names[name],value)
+            self.__setitem__(self._names[attr_key], value)
 
     #--Native operations
     def __eq__( self, other):
@@ -1147,7 +1147,7 @@ class Flags(object):
 
     def getTrueAttrs(self):
         """Returns attributes that are true."""
-        trueNames = [name for name in self._names if getattr(self,name)]
+        trueNames = [flname for flname in self._names if getattr(self, flname)]
         trueNames.sort(key=lambda xxx: self._names[xxx])
         return tuple(trueNames)
 
@@ -2633,11 +2633,11 @@ class WryeText(object):
         for line in outLines:
             if reContentsTag.match(line):
                 if contents and not didContents:
-                    baseLevel = min([level for (level,name,text) in contents])
-                    for (level,name,text) in contents:
+                    baseLevel = min([level for (level,name_,text) in contents])
+                    for (level,name_,text) in contents:
                         level = level - baseLevel + 1
                         if level <= addContents:
-                            outWrite(u'<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name,text))
+                            outWrite(u'<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name_,text))
                     didContents = True
             else:
                 outWrite(line)
