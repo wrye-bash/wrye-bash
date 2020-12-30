@@ -1100,21 +1100,21 @@ class Flags(object):
         self._field = ((self._field & ~mask) | value)
 
     #--As class
-    def __getattr__(self,name):
+    def __getattr__(self, attrname):
         """Get value by flag name. E.g. flags.isQuestItem"""
         try:
             names = object.__getattribute__(self, u'_names')
-            index = names[name]
+            index = names[attrname]
             return (object.__getattribute__(self, u'_field') >> index) & 1 == 1
         except KeyError:
-            raise AttributeError(name)
+            raise AttributeError(attrname)
 
-    def __setattr__(self,name,value):
+    def __setattr__(self, attrname, value):
         """Set value by flag name. E.g., flags.isQuestItem = False"""
-        if name in (u'_field', u'_names'):
-            object.__setattr__(self,name,value)
+        if attrname in (u'_field', u'_names'):
+            object.__setattr__(self, attrname, value)
         else:
-            self.__setitem__(self._names[name],value)
+            self.__setitem__(self._names[attrname], value)
 
     #--Native operations
     def __eq__( self, other):
@@ -1152,7 +1152,7 @@ class Flags(object):
 
     def getTrueAttrs(self):
         """Returns attributes that are true."""
-        trueNames = [name for name in self._names if getattr(self,name)]
+        trueNames = [flname for flname in self._names if getattr(self, flname)]
         trueNames.sort(key=lambda xxx: self._names[xxx])
         return tuple(trueNames)
 
