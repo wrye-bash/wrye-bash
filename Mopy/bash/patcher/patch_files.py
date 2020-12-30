@@ -159,7 +159,7 @@ class PatchFile(ModFile):
         #--Mods
         # checking for files to include in patch, investigate
         loadMods = [m for m in load_order.cached_lower_loading(
-            modInfo.name) if load_order.cached_is_active(m)]
+            modInfo.ci_key) if load_order.cached_is_active(m)]
         if not loadMods:
             raise BoltError(u"No active mods loading before the bashed patch")
         self.loadMods = tuple(loadMods)
@@ -177,7 +177,7 @@ class PatchFile(ModFile):
         gmst_rec.eid = gmst_eid
         gmst_rec.value = gmst_val
         gmst_rec.longFids = True
-        gmst_rec.fid = (self.fileInfo.name, self.tes4.getNextObject())
+        gmst_rec.fid = (self.fileInfo.ci_key, self.tes4.getNextObject())
         self.keepIds.add(gmst_rec.fid)
         self.tops[b'GMST'].setRecord(gmst_rec)
 
@@ -277,7 +277,7 @@ class PatchFile(ModFile):
         """Completes merge process. Use this when finished using
         scanLoadMods."""
         if not self._patcher_instances: return
-        self._log_header(log, self.fileInfo.name)
+        self._log_header(log, self.fileInfo.ci_key)
         # Run buildPatch on each patcher
         self.keepIds |= self.mergeIds
         subProgress = SubProgress(progress, 0, 0.9, len(self._patcher_instances))

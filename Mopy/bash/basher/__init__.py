@@ -1042,7 +1042,7 @@ class ModList(_ModsUIList):
             from .frames import DocBrowser
             DocBrowser().show_frame()
             settings[u'bash.modDocs.show'] = True
-        Link.Frame.docBrowser.SetMod(modInfo.name)
+        Link.Frame.docBrowser.SetMod(modInfo.ci_key)
         Link.Frame.docBrowser.raise_frame()
 
     def _handle_key_down(self, wrapped_evt):
@@ -1348,7 +1348,7 @@ class _EditableMixinOnFileInfos(_EditableMixin):
     def file_info(self): raise AbstractError
     @property
     def displayed_item(self):
-        return self.file_info.name if self.file_info else None
+        return self.file_info.ci_key if self.file_info else None
 
     def __init__(self, masterPanel, ui_list_panel):
         # super(_EditableMixinOnFileInfos, self).__init__(masterPanel)
@@ -1386,12 +1386,12 @@ class _EditableMixinOnFileInfos(_EditableMixin):
 
     @balt.conversation
     def _refresh_detail_info(self):
-        try: # use self.file_info.name, as name may have been updated
+        try: # use self.file_info.ci_key, as name may have been updated
             # Although we could avoid rereading the header I leave it here as
             # an extra error check - error handling is WIP
-            self.panel_uilist.data_store.new_info(self.file_info.name,
+            self.panel_uilist.data_store.new_info(self.file_info.ci_key,
                                                   notify_bain=True)
-            return self.file_info.name
+            return self.file_info.ci_key
         except FileError as e:
             deprint(u'Failed to edit details for %s' % self.displayed_item,
                     traceback=True)
@@ -1541,7 +1541,7 @@ class ModDetails(_ModsSavesDetails):
         if fileName:
             modInfo = self.modInfo = bosh.modInfos[fileName]
             #--Remember values for edit checks
-            self.fileStr = modInfo.name.s
+            self.fileStr = modInfo.ci_key.s
             self.authorStr = modInfo.header.author
             self.modifiedStr = format_date(modInfo.mtime)
             self.descriptionStr = modInfo.header.description
@@ -1624,16 +1624,9 @@ class ModDetails(_ModsSavesDetails):
         u'Sound\\Voice\\%s) which will become detached when the mod is '
         u'renamed.')
 
-    def _askResourcesOk(self, fileInfo):
-        msg = bosh.modInfos.askResourcesOk(fileInfo,
-                                           bsaAndBlocking=self.bsaAndBlocking,
-                                           bsa=self.bsa,blocking=self.blocking)
-        if not msg: return True # resources ok
-        return balt.askWarning(self, msg, _(u'Rename ') + fileInfo.name.s)
-
     def testChanges(self): # used by the master list when editing is disabled
         modInfo = self.modInfo
-        if not modInfo or (self.fileStr == modInfo.name and
+        if not modInfo or (self.fileStr == modInfo.ci_key and
                            self.modifiedStr == format_date(modInfo.mtime) and
                            self.authorStr == modInfo.header.author and
                            self.descriptionStr == modInfo.header.description):
@@ -1643,13 +1636,17 @@ class ModDetails(_ModsSavesDetails):
     def DoSave(self):
         modInfo = self.modInfo
         #--Change Tests
-        changeName = (self.fileStr != modInfo.name)
+        changeName = (self.fileStr != modInfo.ci_key)
         changeDate = (self.modifiedStr != format_date(modInfo.mtime))
         changeHedr = (self.authorStr != modInfo.header.author or
                       self.descriptionStr != modInfo.header.description)
         changeMasters = self.uilist.edited
         #--Warn on rename if file has BSA and/or dialog
-        if changeName and not self._askResourcesOk(modInfo): return
+        if changeName:
+            msg = modInfo.askResourcesOk(bsaAndBlocking=self.bsaAndBlocking,
+                                         bsa=self.bsa, blocking=self.blocking)
+            if msg and not balt.askWarning(self, msg, _(
+                u'Rename ') + u'%s' % modInfo): return
         #--Only change date?
         if changeDate and not (changeName or changeHedr or changeMasters):
             self._set_date(modInfo)
@@ -1662,7 +1659,7 @@ class ModDetails(_ModsSavesDetails):
         modInfo.makeBackup()
         #--Change Name?
         if changeName:
-            oldName,newName = modInfo.name,GPath(self.fileStr.strip())
+            oldName,newName = modInfo.ci_key,GPath(self.fileStr.strip())
             #--Bad name?
             if (bosh.modInfos.isBadFileName(newName.s) and
                 not balt.askContinue(self,_(
@@ -1688,7 +1685,7 @@ class ModDetails(_ModsSavesDetails):
         if changeDate or changeHedr or changeMasters:
             # we reread header to make sure was written correctly
             detail_item = self._refresh_detail_info()
-        else: detail_item = self.file_info.name
+        else: detail_item = self.file_info.ci_key
         #--Done
         with load_order.Unlock():
             bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=changeDate)
@@ -1785,7 +1782,7 @@ class ModDetails(_ModsSavesDetails):
                 _refresh_only_details()
         # Copy tags to various places
         bashTagsDesc = mod_info.getBashTagsDesc()
-        tag_plugin_name = mod_info.name
+        tag_plugin_name = mod_info.ci_key
         # We need to grab both the ones from the description and from LOOT,
         # since we need to save a diff in case of Copy to BashTags
         added_tags, deleted_tags = bosh.read_loot_tags(tag_plugin_name)
@@ -1798,7 +1795,7 @@ class ModDetails(_ModsSavesDetails):
             _text = _(u'Copy to BashTags')
             _help = _(u'Copies a diff between currently applied tags and '
                       u'description/LOOT tags to %s.') % (
-                bass.dirs[u'tag_files'].join(mod_info.name.body + u'.txt'))
+                bass.dirs[u'tag_files'].join(mod_info.ci_key.body + u'.txt'))
             def _enable(self):
                 return (not mod_info.is_auto_tagged() and
                         bosh.read_dir_tags(tag_plugin_name) != dir_diff)
@@ -2233,7 +2230,7 @@ class SaveDetails(_ModsSavesDetails):
         if fileName:
             saveInfo = self.saveInfo = bosh.saveInfos[fileName]
             #--Remember values for edit checks
-            self.fileStr = saveInfo.name.s
+            self.fileStr = saveInfo.ci_key.s
             self.playerNameStr = saveInfo.header.pcName
             self.curCellStr = saveInfo.header.pcLocation
             self.gameDays = saveInfo.header.gameDays
@@ -2292,7 +2289,7 @@ class SaveDetails(_ModsSavesDetails):
 
     def testChanges(self): # used by the master list when editing is disabled
         saveInfo = self.saveInfo
-        if not saveInfo or self.fileStr == saveInfo.name:
+        if not saveInfo or self.fileStr == saveInfo.ci_key:
             self.DoCancel()
 
     @balt.conversation
@@ -2300,7 +2297,7 @@ class SaveDetails(_ModsSavesDetails):
         """Event: Clicked Save button."""
         saveInfo = self.saveInfo
         #--Change Tests
-        changeName = (self.fileStr != saveInfo.name)
+        changeName = (self.fileStr != saveInfo.ci_key)
         changeMasters = self.uilist.edited
         #--Backup
         saveInfo.makeBackup() ##: why backup when just renaming - #292
@@ -2321,10 +2318,10 @@ class SaveDetails(_ModsSavesDetails):
             saveInfo.write_masters()
             saveInfo.setmtime(prevMTime)
             detail_item = self._refresh_detail_info()
-        else: detail_item = self.file_info.name
+        else: detail_item = self.file_info.ci_key
         kwargs = {u'to_del': to_del, u'detail_item': detail_item}
         if detail_item is None:
-            kwargs[u'to_del'] = to_del | {self.file_info.name}
+            kwargs[u'to_del'] = to_del | {self.file_info.ci_key}
         else:
             kwargs[u'redraw'] = [detail_item]
         self.panel_uilist.RefreshUI(**kwargs)
@@ -3508,7 +3505,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         if fileName:
             self._bsa_info = bosh.bsaInfos[fileName]
             #--Remember values for edit checks
-            self.fileStr = self._bsa_info.name.s
+            self.fileStr = self._bsa_info.ci_key.s
             self.gInfo.text_content = self._bsa_info.get_table_prop(u'info',
                 _(u'Notes: '))
         else:
@@ -3527,12 +3524,12 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
     def DoSave(self):
         """Event: Clicked Save button."""
         #--Change Tests
-        changeName = (self.fileStr != self._bsa_info.name)
+        changeName = (self.fileStr != self._bsa_info.ci_key)
         #--Change Name?
         if changeName:
             newName = GPath(self.fileStr.strip())
             if self.panel_uilist.try_rename(self._bsa_info, newName):
-                self.panel_uilist.RefreshUI(detail_item=self.file_info.name)
+                self.panel_uilist.RefreshUI(detail_item=self.file_info.ci_key)
 
 #------------------------------------------------------------------------------
 class BSAPanel(BashTab):
@@ -4092,7 +4089,7 @@ class BashFrame(WindowFrame):
             message.append(m)
             self.knownCorrupted |= corruptSaves
         valid_vers = bush.game.Esp.validHeaderVersions
-        invalidVersions = {x.name for x in bosh.modInfos.itervalues() if
+        invalidVersions = {ck for ck, x in bosh.modInfos.iteritems() if
                            all(x.header.version != v for v in valid_vers)}
         if warn_mods and not invalidVersions <= self.knownInvalidVerions:
             m = [_(u'Unrecognized Versions'),

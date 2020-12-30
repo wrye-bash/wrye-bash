@@ -202,7 +202,7 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
         self.isActive = bool(self.cyrodiilQuests)
 
     def scanModFile(self,modFile,progress):
-        if modFile.fileInfo.name == _ob_path: return
+        if modFile.fileInfo.ci_key == _ob_path: return
         cyrodiilQuests = self.cyrodiilQuests
         patchBlock = self.patchFile.tops[b'QUST']
         for record in modFile.tops[b'QUST'].getActiveRecords():

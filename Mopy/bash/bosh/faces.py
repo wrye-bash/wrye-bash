@@ -183,7 +183,7 @@ class PCFaces(object):
         #--Player ACHR
         record = saveFile.getRecord(0x14)
         data = record[-1]
-        namePos = PCFaces.save_getNamePos(saveFile.fileInfo.name, data,
+        namePos = PCFaces.save_getNamePos(saveFile.fileInfo.ci_key, data,
                                           encode(saveFile.header.pcName))
         (face.fggs_p, face.fgga_p, face.fgts_p, face.race, face.hair, face.eye,
             face.hairLength, face.hairRed, face.hairBlue, face.hairGreen, face.unused3, face.gender) = struct_unpack(
@@ -307,7 +307,7 @@ class PCFaces(object):
                 buff.seek(4,1)
         oldRecord = saveFile.getRecord(0x14)
         oldData = oldRecord[-1]
-        namePos = PCFaces.save_getNamePos(saveFile.fileInfo.name, oldData,
+        namePos = PCFaces.save_getNamePos(saveFile.fileInfo.ci_key, oldData,
                                           encode(saveFile.header.pcName))
         buff.write(oldData)
         #--Modify buffer with face data.
@@ -387,7 +387,7 @@ class PCFaces(object):
         saveFile.load()
         record = saveFile.getRecord(0x14)
         data = record[-1]
-        namePos = PCFaces.save_getNamePos(saveInfo.name, data,
+        namePos = PCFaces.save_getNamePos(saveInfo.ci_key, data,
                                           encode(saveFile.header.pcName))
         raceRef,hairRef = struct_unpack(u'2I', data[namePos-22:namePos-14])
         if hairRef != 0: return False

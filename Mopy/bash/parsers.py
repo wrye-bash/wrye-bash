@@ -264,7 +264,7 @@ class _AParser(_HandleAliases):
                 for record in rec_block.getActiveRecords():
                     self.id_context[record.fid] = \
                         self._read_record_fp(record)
-            self._fp_mods.add(mod_to_read.fileInfo.name)
+            self._fp_mods.add(mod_to_read.fileInfo.ci_key)
         # Process the mod's masters first, but see if we need to sort them
         master_names = loaded_mod.tes4.masters
         if self._needs_fp_master_sort:
@@ -274,7 +274,7 @@ class _AParser(_HandleAliases):
             _fp_loop(self._load_plugin(bosh.modInfos[mod_name], keepAll=False,
                                        target_types=self._fp_types))
         # Finally, process the mod itself
-        if loaded_mod.fileInfo.name in self._fp_mods: return
+        if loaded_mod.fileInfo.ci_key in self._fp_mods: return
         _fp_loop(loaded_mod)
 
     # TODO(inf) Might need second_pass parameter?
@@ -337,7 +337,7 @@ class _AParser(_HandleAliases):
         automatically clear id_stored_data to allow combining multiple sources.
 
         :param mod_info: The ModInfo instance to read from."""
-        self._current_mod = mod_info.name
+        self._current_mod = mod_info.ci_key
         # Check if we need to read at all
         a_types = self.all_types
         if not a_types:
@@ -532,7 +532,7 @@ class ActorLevels(_HandleAliases):
         from . import bosh
         mod_id_levels, gotLevels = self.mod_id_levels, self.gotLevels
         loadFactory = self._load_factory(keepAll=False)
-        for modName in (modInfo.masterNames + (modInfo.name,)):
+        for modName in (modInfo.masterNames + (modInfo.ci_key,)):
             if modName in gotLevels: continue
             modFile = ModFile(bosh.modInfos[modName],loadFactory)
             modFile.load(True)
@@ -547,7 +547,7 @@ class ActorLevels(_HandleAliases):
         mod_id_levels = self.mod_id_levels
         modFile = self._load_plugin(modInfo)
         changed = 0
-        id_levels = mod_id_levels.get(modInfo.name,
+        id_levels = mod_id_levels.get(modInfo.ci_key,
                                       mod_id_levels.get(GPath(u'Unknown'),
                                                         None))
         if id_levels:

@@ -103,21 +103,17 @@ class File_Duplicate(ItemLink):
         u'Sound\\Voice\\%s), which will not be attached to the duplicate '
         u'mod.')
 
-    def _askResourcesOk(self, fileInfo):
-        msg = bosh.modInfos.askResourcesOk(fileInfo,
-                                           bsaAndBlocking=self._bsaAndBlocking,
-                                           bsa=self._bsa,
-                                           blocking=self._blocking)
-        if not msg: return True  # resources ok
-        return self._askWarning(msg, _(u'Duplicate %s') % fileInfo.name.s)
-
     @balt.conversation
     def Execute(self):
         dests = []
         fileInfos = self.window.data_store
         for to_duplicate, fileInfo in self.iselected_pairs():
             #--Mod with resources? Warn on rename if file has bsa and/or dialog
-            if not self._askResourcesOk(fileInfo): continue
+            msg = fileInfo.askResourcesOk(fileInfo,
+                bsaAndBlocking=self._bsaAndBlocking, bsa=self._bsa,
+                blocking=self._blocking)
+            if msg and not self._askWarning(msg, _(
+                u'Duplicate %s') % fileInfo): continue
             #--Continue copy
             r, e = to_duplicate.root, to_duplicate.ext
             destName = fileInfo.unique_key(r, e, add_copy=True)
