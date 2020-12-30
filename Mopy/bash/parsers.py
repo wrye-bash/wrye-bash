@@ -58,6 +58,12 @@ class _HandleAliases(object):
         modname = GPath(modname)
         return GPath(self.aliases.get(modname, modname)) ##: drop GPath?
 
+    def _coerce_fid(self, modname, hex_fid):
+        """Create a long formid from a unicode modname and a unicode
+        hexadecimal - it will blow with ValueError if hex_fid is not
+        convertible."""
+        return self._get_alias(modname), int(hex_fid, 16)
+
 # TODO(inf) Once refactoring is done, we could easily take in Progress objects
 #  for more accurate progress bars when importing/exporting
 class _AParser(_HandleAliases):
@@ -408,8 +414,8 @@ class ActorFactions(_AParser):
             for fields in ins:
                 if len(fields) < 8 or fields[3][:2] != u'0x': continue
                 type_,aed,amod,aobj,fed,fmod,fobj,rank = fields[:9]
-                aid = (self._get_alias(amod), int(aobj[2:], 16))
-                fid = (self._get_alias(fmod), int(fobj[2:], 16))
+                aid = self._coerce_fid(amod ,aobj[2:])
+                fid = self._coerce_fid(fmod, fobj[2:])
                 rank = int(rank)
                 id_factions = type_id_factions[type_]
                 factions = id_factions.get(aid)
@@ -497,7 +503,7 @@ class ActorLevels(_HandleAliases):
         mod_id_levels = self.mod_id_levels
         with CsvReader(textPath) as ins:
             for fields in ins:
-                if fields[0][:2] == u'0x': #old format
+                if fields[0][:2] == u'0x': #old format ## TODO(ut) drop?
                     fid,eid,offset,calcMin,calcMax = fields[:5]
                     source = GPath(u'Unknown')
                     fidObject = _coerce(fid[4:], int, 16)
@@ -510,15 +516,10 @@ class ActorLevels(_HandleAliases):
                     if len(fields) < 7 or fields[3][:2] != u'0x': continue
                     source,eid,fidMod,fidObject,offset,calcMin,calcMax = \
                         fields[:7]
-                    source = _coerce(source, unicode)
                     if source.lower() in (u'none', bush.game.master_file.lower()): continue
                     source = GPath(source)
-                    eid = _coerce(eid, unicode)
-                    # fidMod = _coerce(fidMod, unicode) ##: already unicode??
                     if fidMod.lower() == u'none': continue
-                    fidObject = _coerce(fidObject[2:], int, 16)
-                    if fidObject is None: continue
-                    fid = (self._get_alias(fidMod), fidObject)
+                    fid = self._coerce_fid(fidMod, fidObject[2:])
                     offset = _coerce(offset, int)
                     calcMin = _coerce(calcMin, int)
                     calcMax = _coerce(calcMax, int)
@@ -667,9 +668,7 @@ class EditorIds(_HandleAliases):
             for fields in ins:
                 if len(fields) < 4 or fields[2][:2] != u'0x': continue
                 top_grup,mod,objectIndex,eid = fields[:4] ##: debug: top_grup??
-                # group = _coerce(group,unicode) ##: why?? CsvReader returns unicode
-                longid = (self._get_alias(mod),
-                          _coerce(objectIndex[2:], int, 16))
+                longid = self._coerce_fid(mod, objectIndex[2:])
                 eid = _coerce(eid,unicode, AllowNone=True)
                 if not reValidEid.match(eid):
                     if badEidsList is not None:
@@ -761,8 +760,8 @@ class FactionRelations(_AParser):
             for fields in ins:
                 if len(fields) < 7 or fields[2][:2] != u'0x': continue
                 med, mmod, mobj, oed, omod, oobj = fields[:6]
-                mid = (self._get_alias(mmod), _coerce(mobj[2:], int, 16))
-                oid = (self._get_alias(omod), _coerce(oobj[2:], int, 16))
+                mid = self._coerce_fid(mmod, mobj[2:])
+                oid = self._coerce_fid(omod, oobj[2:])
                 relation_attrs = (oid,) + tuple(fields[6:])
                 relations = id_relations.get(mid)
                 if relations is None:
@@ -811,10 +810,10 @@ class FidReplacer(_HandleAliases):
                 if len(fields) < 7 or fields[2][:2] != u'0x'\
                         or fields[6][:2] != u'0x': continue
                 oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
+                oldId = self._coerce_fid(oldMod, oldObj)
+                newId = self._coerce_fid(newMod, newObj)
                 oldEid = _coerce(oldEid, unicode, AllowNone=True)
                 newEid = _coerce(newEid, unicode, AllowNone=True)
-                oldId = (self._get_alias(oldMod), _coerce(oldObj, int, 16))
-                newId = (self._get_alias(newMod), _coerce(newObj, int, 16))
                 old_new[oldId] = newId
                 old_eid[oldId] = oldEid
                 new_eid[newId] = newEid
@@ -922,7 +921,7 @@ class FullNames(_HandleAliases):
             for fields in ins:
                 if len(fields) < 5 or fields[2][:2] != u'0x': continue
                 top_grup,mod,objectIndex,eid,full = fields[:5]
-                longid = (self._get_alias(mod), _coerce(objectIndex[2:], int, 16))
+                longid = self._coerce_fid(mod, objectIndex[2:])
                 eid = _coerce(eid, unicode, AllowNone=True)
                 full = _coerce(full, unicode, AllowNone=True)
                 if top_grup in type_id_name:
@@ -1104,14 +1103,13 @@ class ItemStats(_HandleAliases):
             attr_type = self.attr_type
             for fields in ins:
                 if len(fields) < 3 or fields[2][:2] != u'0x': continue
-                group,modName,objectStr = fields[0:3]
-                longid = (self._get_alias(modName),
-                          _coerce(objectStr,int,16))
-                attrs = self.class_attrs[group]
+                top_grup,modName,objectStr = fields[:3]
+                longid = self._coerce_fid(modName, objectStr)
+                attrs = self.class_attrs[top_grup]
                 attr_value = {}
                 for attr, value in zip(attrs, fields[3:3+len(attrs)]):
                     attr_value[attr] = attr_type[attr](value)
-                self.class_fid_attr_value[group][longid].update(attr_value)
+                self.class_fid_attr_value[top_grup][longid].update(attr_value)
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
@@ -1482,10 +1480,10 @@ class SigilStoneDetails(_UsesEffectsMixin):
                 if len(fields) < 12 or fields[1][:2] != u'0x': continue
                 mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,uses,\
                 value,weight = fields[:12]
-                mid = (self._get_alias(mmod), _coerce(mobj, int, 16))
+                mid = self._coerce_fid(mmod, mobj)
                 smod = _coerce(smod,unicode,AllowNone=True)
                 if smod is None: sid = None
-                else: sid = (self._get_alias(smod), _coerce(sobj, int, 16))
+                else: sid = self._coerce_fid(smod, sobj)
                 eid = _coerce(eid,unicode,AllowNone=True)
                 full = _coerce(full,unicode,AllowNone=True)
                 modPath = _coerce(modPath,unicode,AllowNone=True)
@@ -1579,13 +1577,13 @@ class ItemPrices(_HandleAliases):
         with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 6 or fields[1][:2] != u'0x': continue
-                mmod,mobj,value,eid,name,group = fields[:6]
-                longid = (self._get_alias(mmod), _coerce(mobj, int, 16))
+                mmod,mobj,value,eid,itm_name,top_grup = fields[:6]
+                longid = self._coerce_fid(mmod, mobj)
                 value = _coerce(value, int)
                 eid = _coerce(eid, unicode, AllowNone=True)
-                name = _coerce(name, unicode, AllowNone=True)
-                group = _coerce(group, unicode)
-                class_fid_stats[group][longid] = [value,eid,name]
+                itm_name = _coerce(itm_name, unicode, AllowNone=True)
+                top_grup = _coerce(top_grup, unicode)
+                class_fid_stats[top_grup][longid] = [value,eid,itm_name]
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
@@ -1738,7 +1736,7 @@ class SpellRecords(_UsesEffectsMixin):
                 fields = fields[8:]
                 group = _coerce(group, unicode)
                 if group.lower() != u'spel': continue
-                mid = (self._get_alias(mmod), _coerce(mobj, int, 16))
+                mid = self._coerce_fid(mmod, mobj)
                 eid = _coerce(eid, unicode, AllowNone=True)
                 cost = _coerce(cost, int)
                 levelType = _coerce(levelType, unicode)
@@ -1800,7 +1798,7 @@ class SpellRecords(_UsesEffectsMixin):
                     output = rowFormat % (
                     u'SPEL', fid[0], fid[1], eid, cost, levelType, spellType,
                     spell_flags, mc, ss, its, aeil, saa, daar, tewt)
-                    output += self.writeEffects(effects, False)
+                    output += self.writeEffects(effects)
                 else:
                     eid, cost, levelType, spellType, spell_flags = \
                         fid_stats[fid]
@@ -1908,10 +1906,10 @@ class IngredientDetails(_UsesEffectsMixin):
                 if len(fields) < 11 or fields[1][:2] != u'0x': continue
                 mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,value,\
                 weight = fields[:11]
-                mid = (self._get_alias(mmod), _coerce(mobj, int, 16))
+                mid = self._coerce_fid(mmod, mobj)
                 smod = _coerce(smod, unicode, AllowNone=True)
                 if smod is None: sid = None
-                else: sid = (self._get_alias(smod), _coerce(sobj, int, 16))
+                else: sid = self._coerce_fid(smod, sobj)
                 eid = _coerce(eid, unicode, AllowNone=True)
                 full = _coerce(full, unicode, AllowNone=True)
                 modPath = _coerce(modPath, unicode, AllowNone=True)
