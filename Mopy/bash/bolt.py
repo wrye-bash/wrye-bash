@@ -130,10 +130,10 @@ def decoder(byte_str, encoding=None, avoidEncodings=()):
     """Decode a byte string to unicode, using heuristics on encoding."""
     if isinstance(byte_str, unicode) or byte_str is None: return byte_str
     # Try the user specified encoding first
-    # TODO(ut) monkey patch
-    if encoding == u'cp65001':
-        encoding = u'utf-8'
     if encoding:
+        # TODO(ut) monkey patch
+        if encoding == u'cp65001':
+            encoding = u'utf-8'
         try: return unicode(byte_str, encoding)
         except UnicodeDecodeError: pass
     # Try to detect the encoding next
@@ -465,19 +465,21 @@ class Path(object):
     invalid_chars_re = re.compile(u'' r'(.*)([/\\:*?"<>|]+)(.*)', re.I | re.U)
 
     @staticmethod
-    def getNorm(name):
-        """Return the normpath for specified name/path object."""
-        if isinstance(name,Path): return name._s
-        elif not name: return name
-        elif isinstance(name,str): name = decoder(name)
-        return os.path.normpath(name)
+    def getNorm(str_or_path):
+        # type: (unicode|str|Path) -> unicode
+        """Return the normpath for specified basename/Path object."""
+        if isinstance(str_or_path, Path): return str_or_path._s
+        elif not str_or_path: return u'' # and not maybe b''
+        elif isinstance(str_or_path, str): str_or_path = decoder(str_or_path)
+        return os.path.normpath(str_or_path)
 
     @staticmethod
-    def __getCase(name):
-        """Return the normpath+normcase for specified name/path object."""
-        if not name: return name
-        if isinstance(name, str): name = decoder(name)
-        return os.path.normcase(os.path.normpath(name))
+    def __getCase(opt_str):
+        # type: (unicode|str|None) -> unicode|None
+        """Return the normpath+normcase for specified basestring/None object."""
+        if not opt_str: return opt_str if opt_str is None else u''
+        if isinstance(opt_str, str): opt_str = decoder(opt_str)
+        return os.path.normcase(os.path.normpath(opt_str))
 
     @staticmethod
     def getcwd():
@@ -499,22 +501,22 @@ class Path(object):
     __slots__ = ('_s', '_cs', '_sroot', '_shead', '_stail', '_ext',
                  '_cext', '_sbody')
 
-    def __init__(self, name):
-        """Initialize."""
-        if isinstance(name,Path):
-            self.__setstate__(name._s)
-        else:
-            self.__setstate__(name)
+    def __init__(self, norm_str):
+        # type: (unicode) -> None
+        """Initialize with unicode - call only in GPath."""
+        self._s = _s = norm_str # path must be normalized
+        self._cs = _s.lower()
 
     def __getstate__(self):
         """Used by pickler. _cs is redundant,so don't include."""
         return self._s
 
-    def __setstate__(self,norm):
+    def __setstate__(self, norm):
         """Used by unpickler. Reconstruct _cs."""
         # Older pickle files stored filename in str, not unicode
-        norm = decoder(norm) # decoder will check for unicode
+        norm = decoder(norm)  # decoder will check for unicode
         self._s = norm
+        # Reconstruct _cs, lower() should suffice
         self._cs = os.path.normcase(norm)
 
     def __len__(self):
@@ -723,9 +725,10 @@ class Path(object):
     #--Path stuff -------------------------------------------------------
     #--New Paths, subpaths
     def __add__(self,other):
+        # you can't add to None: ValueError - that's good
         return GPath(self._s + Path.getNorm(other))
     def join(*args):
-        norms = [Path.getNorm(x) for x in args]
+        norms = [Path.getNorm(x) for x in args] # join(..,None,..) -> TypeError
         return GPath(os.path.join(*norms))
 
     def list(self):
@@ -750,7 +753,7 @@ class Path(object):
                        [GPath_no_norm(x) for x in dirs],
                        [GPath_no_norm(x) for x in files])
 
-    def relpath(self,path):
+    def relpath(self,path): # os.path.relpath(p,[s]): AttributeError if s==None
         return GPath(os.path.relpath(self._s,Path.getNorm(path)))
 
     def drive(self):

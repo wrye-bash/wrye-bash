@@ -22,7 +22,7 @@
 # =============================================================================
 from collections import OrderedDict
 from ..bolt import LowerDict, DefaultLowerDict, OrderedLowerDict, decoder, \
-    encode, getbestencoding
+    encode, getbestencoding, GPath, Path
 
 def test_getbestencoding():
     """Tests getbestencoding. Keep this one small, we don't want to test
@@ -337,3 +337,98 @@ class TestOrderedLowerDict(TestLowerDict):
         a = self.dict_type([(u'sape', 4139), (u'guido', 4127),
                             (u'jack', 4098)])
         assert list(a) == [u'sape', u'guido', u'jack']
+
+class TestPath(object):
+    """Path's odds and ends."""
+
+    def test__eq__(self):
+        # reminder
+        assert u'' == b'' # Py3 False!
+        assert u'123' == b'123' # Py3 False!
+        assert not (u'' == [])
+        assert not (u'' == [1])
+        assert not (u'' == None)
+        assert not (u'' == True)
+        assert not (u'' == 55)
+        # paths and unicode
+        p = GPath(u'c:/random/path.txt')
+        assert u'c:/random/path.txt' == p
+        assert u'' r'c:\random\path.txt' == p
+        assert GPath(u'c:/random/path.txt') == p
+        assert GPath(u'' r'c:\random\path.txt') == p
+        # paths and str
+        assert b'c:/random/path.txt' == p
+        assert b'' r'c:\random\path.txt' == p
+        assert GPath(b'c:/random/path.txt') == p
+        assert GPath(b'' r'c:\random\path.txt') == p
+        # test comp with Falsy
+        assert not (p == [])
+        assert not (p == False)
+        try:
+            assert not (p == [1])
+        except AttributeError:
+            pass
+        # Falsy and "empty" Path
+        empty = GPath(u'')
+        assert empty == Path(u'')
+        assert empty == u''
+        assert empty == b''
+        ## below should raise
+        assert empty == [] ##: raise
+        assert empty == False ##: raise
+        assert not (None == p)
+        try:
+            assert not (empty == [1])
+        except AttributeError:
+            pass
+
+    def test__le__(self):
+        # reminder
+        assert u'' <= b'' # Py3 False!
+        assert u'123' <= b'123' # Py3 False!
+        assert not (u'' <= [])
+        assert not (u'' <= [1])
+        assert not (u'' <= None)
+        assert not (u'' <= True)
+        assert not (u'' <= 55)
+        # paths and unicode
+        p = GPath(u'c:/random/path.txt')
+        assert u'c:/random/path.txt' <= p
+        assert u'' r'c:\random\path.txt' <= p
+        assert GPath(u'c:/random/path.txt') <= p
+        assert GPath(u'' r'c:\random\path.txt') <= p
+        # paths and str
+        assert b'c:/random/path.txt' <= p
+        assert b'' r'c:\random\path.txt' <= p
+        assert GPath(b'c:/random/path.txt') <= p
+        assert GPath(b'' r'c:\random\path.txt') <= p
+        # test comp with Falsy
+        assert not (p <= [])
+        assert not (p <= False)
+        try:
+            assert not (p <= [1])
+        except AttributeError:
+            pass
+        # Falsy and "empty" Path
+        empty = GPath(u'')
+        assert empty <= Path(u'')
+        assert empty <= u''
+        assert empty <= b''
+        ## below should raise
+        assert empty <= [] ##: raise
+        assert empty <= False ##: raise
+        assert (None <= p) ## !
+        try:
+            assert not (empty <= [1])
+        except AttributeError:
+            pass
+
+    def test_dict_keys(self):
+        d = {GPath(u'c:/random/path.txt'): 1}
+        assert not (u'c:/random/path.txt' in d) ## oops
+        assert u'' r'c:\random\path.txt' in d
+        assert GPath(u'c:/random/path.txt') in d
+        assert GPath(u'' r'c:\random\path.txt') in d
+        dd = {u'c:/random/path.txt': 1}
+        assert not GPath(u'c:/random/path.txt') in dd
+        assert not GPath(u'' r'c:\random\path.txt') in dd
