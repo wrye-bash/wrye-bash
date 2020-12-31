@@ -676,10 +676,9 @@ class Mod_CreateLOOTReport(_NotObLink):
                 continue # Skip if it's going to be a useless entry
             # Name of file, plus a link if we can figure it out
             log_txt += u"  - name: '%s'\n" % fileName
-            installer = bosh.modInfos.table.getItem(
-                fileName, u'installer', u'')
-            if installer:
-                log_txt += u"    url: [ '%s' ]\n" % _getUrl(installer)
+            inst = fileInfo.get_table_prop(u'installer', u'')
+            if inst:
+                log_txt += u"    url: [ '%s' ]\n" % _getUrl(inst)
             # Tags applied after the description
             fmt_tags = sorted(added | {u'-%s' % t for t in removed})
             if fmt_tags:
@@ -712,14 +711,14 @@ class Mod_CopyModInfo(ItemLink):
             spoiler = False
         # Create the report
         isFirst = True
-        for i,fileName in enumerate(self.selected):
+        for i, (fileName, fileInfo) in enumerate(self.iselected_pairs()):
             # add a blank line in between mods
             if isFirst: isFirst = False
             else: info_txt += u'\n\n'
             #-- Name of file, plus a link if we can figure it out
-            installer = bosh.modInfos.table.getItem(fileName,u'installer',u'')
-            if not installer: info_txt += fileName.s
-            else: info_txt += _(u'URL: %s') % _getUrl(installer)
+            inst = fileInfo.get_table_prop(u'installer', u'')
+            if not inst: info_txt += fileName.s
+            else: info_txt += _(u'URL: %s') % _getUrl(inst)
             labels = self.window.labels
             for col in self.window.cols:
                 if col == u'File': continue
@@ -813,8 +812,8 @@ class _GhostLink(ItemLink):
         (un)ghosting as needed."""
         files = []
         for fileName, fileInfo in self.iselected_pairs():
-            bosh.modInfos.table.setItem(fileName, u'allowGhosting',
-                                        self.__class__.setAllow(fileName))
+            fileInfo.set_table_prop(u'allowGhosting',
+                                    self.__class__.setAllow(fileName))
             oldGhost = fileInfo.isGhost
             if fileInfo.setGhost(self.__class__.toGhost(fileName)) != oldGhost:
                 files.append(fileName)
@@ -952,8 +951,7 @@ class Mod_Patch_Update(_Mod_BP_Link):
     def _initData(self, window, selection):
         super(Mod_Patch_Update, self)._initData(window, selection)
         # Detect the mode the patch was build in
-        config = bosh.modInfos.table.getItem(self._selected_item,
-                                             u'bash.patch.configs', {})
+        config = self._selected_info.get_table_prop(u'bash.patch.configs', {})
         self._config_is_cbash = configIsCBash(config)
         self.mods_to_reselect = set()
 
@@ -1108,8 +1106,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
 
     def Execute(self):
         #--Config
-        config = bosh.modInfos.table.getItem(self._selected_item,
-                                             u'bash.patch.configs', {})
+        config = self._selected_info.get_table_prop(u'bash.patch.configs', {})
         # Detect and warn about patch mode
         if configIsCBash(config):
             self._showError(_(u'The selected patch was built in CBash mode, '
@@ -1148,8 +1145,7 @@ class Mod_ExportPatchConfig(_Mod_BP_Link):
     @balt.conversation
     def Execute(self):
         #--Config
-        config = bosh.modInfos.table.getItem(self._selected_item,
-                                             u'bash.patch.configs', {})
+        config = self._selected_info.get_table_prop(u'bash.patch.configs', {})
         exportConfig(patch_name=self._selected_item.s, config=config,
             win=self.window, outDir=bass.dirs[u'patches'])
 
@@ -1159,9 +1155,9 @@ class _DirtyLink(ItemLink):
     def _ignoreDirty(self, filename): raise AbstractError
 
     def Execute(self):
-        for fileName in self.selected:
-            bosh.modInfos.table.setItem(fileName, u'ignoreDirty',
-                                        self._ignoreDirty(fileName))
+        for fileName, fileInfo in self.iselected_pairs():
+            fileInfo.set_table_prop(u'ignoreDirty',
+                                    self._ignoreDirty(fileName))
         self.window.RefreshUI(redraw=self.selected, refreshSaves=False)
 
 class _Mod_SkipDirtyCheckAll(_DirtyLink, CheckLink):
@@ -1176,10 +1172,8 @@ class _Mod_SkipDirtyCheckAll(_DirtyLink, CheckLink):
             u"Check against LOOT's dirty mod list")
 
     def _check(self):
-        for fileName in self.selected:
-            if bosh.modInfos.table.getItem(fileName,
-                    u'ignoreDirty', self.skip) != self.skip: return False
-        return True
+        return all(finf.get_table_prop(u'ignoreDirty', self.skip) == self.skip
+                   for finf in self.iselected_infos())
 
     def _ignoreDirty(self, filename): return self.skip
 
@@ -1200,8 +1194,8 @@ class Mod_SkipDirtyCheck(TransLink):
                 _text = _(u"Don't check against LOOT's dirty mod list")
                 _help = _(u'Toggles scanning for dirty mods on a per-mod basis')
 
-                def _check(self): return bosh.modInfos.table.getItem(
-                        self.selected[0], u'ignoreDirty', False)
+                def _check(self): return next(self.iselected_infos()
+                    ).get_table_prop(u'ignoreDirty', False)
                 def _ignoreDirty(self, filename): return self._check() ^ True
 
             return _CheckLink()

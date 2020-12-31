@@ -132,7 +132,7 @@ def checkMods(showModList=False, showCRC=False, showVersion=True,
         #--Look for dirty edits
         shouldClean = {}
         scan = []
-        dirty_msgs = [(x, modInfos.getDirtyMessage(x)) for x in active]
+        dirty_msgs = [(x, modInfos[x].getDirtyMessage()) for x in active]
         for x, y in dirty_msgs:
             if y[0]:
                 shouldClean[x] = y[1]
