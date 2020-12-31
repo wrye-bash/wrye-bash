@@ -328,6 +328,9 @@ class Installer(object):
     def ipath(self): ##: aka abs_path
         return bass.dirs[u'installers'].join(self.archive)
 
+    def get_hide_dir(self): ##: Copy-pasted from InstallersData.hidden_dir!
+        return bass.dirs[u'modsBash'].join(u'Hidden')
+
     def __setstate(self,values):
         self.initDefault() # runs on __init__ called by __reduce__
         map(self.__setattr__,self.persistent,values)

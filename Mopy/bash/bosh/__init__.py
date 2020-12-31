@@ -260,6 +260,9 @@ class FileInfo(AFile):
     def set_table_prop(self, prop, val):
         return self.getFileInfos().table.setItem(self.name, prop, val)
 
+    def get_hide_dir(self):
+        return self.getFileInfos().hidden_dir
+
     def _doBackup(self,backupDir,forceBackup=False):
         """Creates backup(s) of file, places in backupDir."""
         #--Skip backup?
@@ -368,6 +371,22 @@ class ModInfo(FileInfo):
             self.isGhost = \
                 not fullpath.exists() and (fullpath + u'.ghost').exists()
         super(ModInfo, self).__init__(fullpath, load_cache)
+
+    def get_hide_dir(self):
+        dest_dir = self.getFileInfos().hidden_dir
+        #--Use author subdirectory instead?
+        mod_author = self.header.author
+        if mod_author:
+            authorDir = dest_dir.join(mod_author)
+            if authorDir.isdir():
+                return authorDir
+        #--Use group subdirectory instead?
+        file_group = self.get_table_prop(u'group')
+        if file_group:
+            groupDir = dest_dir.join(file_group)
+            if groupDir.isdir():
+                return groupDir
+        return dest_dir
 
     def _reset_cache(self, stat_tuple, load_cache):
         super(ModInfo, self)._reset_cache(stat_tuple, load_cache)
@@ -1340,8 +1359,6 @@ class DataStore(DataDict):
         """Return the folder where Bash should move the file info to hide it
         :rtype: bolt.Path"""
         return self.bash_dir.join(u'Hidden')
-
-    def get_hide_dir(self, name): return self.hidden_dir
 
     def move_infos(self, sources, destinations, window, bash_frame):
         # hasty hack for Files_Unhide, must absorb move_info
@@ -2786,22 +2803,6 @@ class ModInfos(FileInfos):
         self.refresh() # yak, it should have an "added" parameter
         bash_frame.warn_corrupted(warn_mods=True, warn_strings=True)
         return moved
-
-    def get_hide_dir(self, name):
-        dest_dir =self.hidden_dir
-        #--Use author subdirectory instead?
-        mod_author = self[name].header.author
-        if mod_author:
-            authorDir = dest_dir.join(mod_author)
-            if authorDir.isdir():
-                return authorDir
-        #--Use group subdirectory instead?
-        file_group = self.table.getItem(name, u'group')
-        if file_group:
-            groupDir = dest_dir.join(file_group)
-            if groupDir.isdir():
-                return groupDir
-        return dest_dir
 
     #--Mod info/modify --------------------------------------------------------
     def getVersion(self, fileName):

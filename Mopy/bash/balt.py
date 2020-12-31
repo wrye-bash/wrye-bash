@@ -1557,17 +1557,20 @@ class UIList(wx.Panel):
             self.data_store.store_dir.makedirs()
         self.data_store.store_dir.start()
 
-    def hide(self, keys):
-        for key in keys:
-            destDir = self.data_store.get_hide_dir(key)
-            if destDir.join(key).exists():
+    def hide(self, items):
+        deletd = []
+        for ci_key, inf in items:
+            destDir = inf.get_hide_dir()
+            if destDir.join(ci_key).exists():
                 message = (_(u'A file named %s already exists in the hidden '
-                             u'files directory. Overwrite it?') % key)
+                             u'files directory. Overwrite it?') % ci_key)
                 if not askYes(self, message, _(u'Hide Files')): continue
             #--Do it
-            with BusyCursor(): self.data_store.move_info(key, destDir)
+            with BusyCursor():
+                self.data_store.move_info(ci_key, destDir)
+                deletd.append(ci_key)
         #--Refresh stuff
-        self.data_store.delete_refresh(keys, None, check_existence=True)
+        self.data_store.delete_refresh(deletd, None, check_existence=True)
 
     # Generate unique filenames when duplicating files etc
     @staticmethod
@@ -2060,7 +2063,7 @@ class UIList_Hide(ItemLink):
                         u'moved to the %(hdir)s directory.') % (
                           {u'hdir': self.window.data_store.hidden_dir})
             if not self._askYes(message, _(u'Hide Files')): return
-        self.window.hide(self.selected)
+        self.window.hide(self.iselected_pairs())
         self.window.RefreshUI(refreshSaves=True)
 
 # wx Wrappers -----------------------------------------------------------------
