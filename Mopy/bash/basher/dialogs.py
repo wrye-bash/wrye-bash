@@ -57,7 +57,7 @@ class ImportFaceDialog(DialogWindow):
         #--Name,Race,Gender Checkboxes
         fi_flgs = bosh.faces.PCFaces.pcf_flags(
             bass.settings.get(u'bash.faceImport.flags', 0x4))
-        self.nameCheck = CheckBox(self, _(u'Name'), checked=fi_flgs.name)
+        self.nameCheck = CheckBox(self, _(u'Name'), checked=fi_flgs.pcf_name)
         self.raceCheck = CheckBox(self, _(u'Race'), checked=fi_flgs.race)
         self.genderCheck = CheckBox(self, _(u'Gender'), checked=fi_flgs.gender)
         self.statsCheck = CheckBox(self, _(u'Stats'), checked=fi_flgs.stats)
@@ -113,7 +113,7 @@ class ImportFaceDialog(DialogWindow):
         #--Do import
         pc_flags = bosh.faces.PCFaces.pcf_flags() # make a copy of PCFaces flags
         pc_flags.hair = pc_flags.eye = True
-        pc_flags.name = self.nameCheck.is_checked
+        pc_flags.pcf_name = self.nameCheck.is_checked
         pc_flags.race = self.raceCheck.is_checked
         pc_flags.gender = self.genderCheck.is_checked
         pc_flags.stats = self.statsCheck.is_checked

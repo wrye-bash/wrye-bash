@@ -32,9 +32,9 @@ from ..mod_files import LoadFactory, MasterMap, ModFile
 
 class PCFaces(object):
     """Package: Objects and functions for working with face data."""
-    pcf_flags = Flags(0, Flags.getNames(
-        'name', 'race', 'gender', 'hair', 'eye', 'iclass', 'stats', 'factions',
-        'modifiers', 'spells'))
+    pcf_flags = Flags(0, Flags.getNames(u'pcf_name', u'race', u'gender',
+                                        u'hair', u'eye', u'iclass', u'stats',
+                                        u'factions', u'modifiers', u'spells'))
 
     class PCFace(object):
         """Represents a face."""
@@ -319,7 +319,7 @@ class PCFaces(object):
         else:
             buff.seek(1,1)
         #--Name?
-        if pcf_flags.name:
+        if pcf_flags.pcf_name:
             postName = buff.getvalue()[buff.tell()+len(saveFile.pcName)+2:]
             buffPack('B',len(face.pcName)+1)
             buff.write(
