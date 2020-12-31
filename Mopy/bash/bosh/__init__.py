@@ -249,10 +249,16 @@ class FileInfo(AFile):
         raise AbstractError()
 
     # Backup stuff - beta, see #292 -------------------------------------------
-    def getFileInfos(self):
+    def getFileInfos(self): # Py3: cached property
         """Return one of the FileInfos singletons depending on fileInfo type.
         :rtype: FileInfos"""
         raise AbstractError
+
+    def get_table_prop(self, prop, default=None):
+        return self.getFileInfos().table.getItem(self.name, prop, default)
+
+    def set_table_prop(self, prop, val):
+        return self.getFileInfos().table.setItem(self.name, prop, val)
 
     def _doBackup(self,backupDir,forceBackup=False):
         """Creates backup(s) of file, places in backupDir."""
@@ -424,25 +430,23 @@ class ModInfo(FileInfo):
                 mod_ext != (u'.esp', u'.esm')[int(self.header.flags1) & 1])
 
     def calculate_crc(self, recalculate=False):
-        cached_crc = modInfos.table.getItem(self.name, u'crc')
+        cached_crc = self.get_table_prop(u'crc')
         if not recalculate:
-            cached_mtime = modInfos.table.getItem(self.name, u'crc_mtime')
-            cached_size = modInfos.table.getItem(self.name, u'crc_size')
             recalculate = cached_crc is None \
-                          or self._file_mod_time != cached_mtime \
-                          or self._file_size != cached_size
+                or self._file_mod_time != self.get_table_prop(u'crc_mtime') \
+                or self._file_size != self.get_table_prop(u'crc_size')
         path_crc = cached_crc
         if recalculate:
             path_crc = self.abs_path.crc
             if path_crc != cached_crc:
-                modInfos.table.setItem(self.name, u'crc', path_crc)
-                modInfos.table.setItem(self.name, u'ignoreDirty', False)
-            modInfos.table.setItem(self.name, u'crc_mtime', self._file_mod_time)
-            modInfos.table.setItem(self.name, u'crc_size', self._file_size)
+                self.set_table_prop(u'crc', path_crc)
+                self.set_table_prop(u'ignoreDirty', False)
+            self.set_table_prop(u'crc_mtime', self._file_mod_time)
+            self.set_table_prop(u'crc_size', self._file_size)
         return path_crc, cached_crc
 
     def cached_mod_crc(self): # be sure it's valid before using it!
-        return modInfos.table.getItem(self.name, u'crc')
+        return self.get_table_prop(u'crc')
 
     def crc_string(self):
         try:
@@ -474,7 +478,7 @@ class ModInfo(FileInfo):
         set_time = FileInfo.setmtime(self, set_time)
         # Prevent re-calculating the File CRC
         if not crc_changed:
-            modInfos.table.setItem(self.name, u'crc_mtime', set_time)
+            self.set_table_prop(u'crc_mtime', set_time)
         else:
             self.calculate_crc(recalculate=True)
 
@@ -534,7 +538,7 @@ class ModInfo(FileInfo):
     #--Bash Tags --------------------------------------------------------------
     def setBashTags(self,keys):
         """Sets bash keys as specified."""
-        modInfos.table.setItem(self.name,u'bashTags',keys)
+        self.set_table_prop(u'bashTags', keys)
 
     def setBashTagsDesc(self,keys):
         """Sets bash keys as specified."""
@@ -555,7 +559,7 @@ class ModInfo(FileInfo):
 
     def getBashTags(self):
         """Returns any Bash flag keys. Drops obsolete tags."""
-        ret_tags = modInfos.table.getItem(self.name, u'bashTags', set())
+        ret_tags = self.get_table_prop(u'bashTags', set())
         fixed_tags = process_tags(ret_tags, drop_unknown=False)
         if fixed_tags != ret_tags:
             self.setBashTags(fixed_tags)
@@ -592,12 +596,12 @@ class ModInfo(FileInfo):
         sources like the description, LOOT masterlist and BashTags files.
 
         :type default_auto: bool | None"""
-        return modInfos.table.getItem(self.name, u'autoBashTags', default_auto)
+        return self.get_table_prop(u'autoBashTags', default_auto)
 
     def set_auto_tagged(self, auto_tagged):
         """Changes whether or not this plugin receives its tags
         automatically. See is_auto_tagged."""
-        modInfos.table.setItem(self.name, u'autoBashTags', auto_tagged)
+        self.set_table_prop(u'autoBashTags', auto_tagged)
 
     #--Header Editing ---------------------------------------------------------
     def _read_tes4_record(self, ins):
@@ -646,9 +650,9 @@ class ModInfo(FileInfo):
         filePath.untemp()
         self.setmtime(crc_changed=True)
         #--Merge info
-        size,canMerge = modInfos.table.getItem(self.name,u'mergeInfo',(None,None))
-        if size is not None:
-            modInfos.table.setItem(self.name,u'mergeInfo',(filePath.size,canMerge))
+        stored_size, canMerge = self.get_table_prop(u'mergeInfo', (None, None))
+        if stored_size is not None:
+            self.set_table_prop(u'mergeInfo', (filePath.size, canMerge))
 
     def writeDescription(self, new_desc):
         """Sets description to specified text and then writes hedr."""
@@ -874,6 +878,14 @@ class ModInfo(FileInfo):
         # TODO(inf) On FO4, ONAM is based on all overrides in complex records.
         #  That will have to go somewhere like ModFile.save though.
 
+    def getDirtyMessage(self):
+        """Returns a dirty message from LOOT."""
+        if self.get_table_prop(u'ignoreDirty', False):
+            return False, u''
+        if lootDb.is_plugin_dirty(self.name, self.getFileInfos()): ##: modInfos
+            return True, _(u'Contains dirty edits, needs cleaning.')
+        return False, u''
+
 # Deprecated/Obsolete Bash Tags -----------------------------------------------
 # Tags that have been removed from Wrye Bash and should be dropped from pickle
 # files
@@ -981,7 +993,7 @@ class INIInfo(IniFile):
         mismatch = 0
         ini_settings = target_ini_settings if target_ini_settings is not None \
             else target_ini.get_ci_settings()
-        self_installer = infos.table.getItem(self.abs_path.tail, u'installer')
+        self_installer = self.get_table_prop(u'installer')
         for section_key in tweak_settings:
             if section_key not in ini_settings:
                 return _status(-10)
@@ -996,10 +1008,10 @@ class INIInfo(IniFile):
                         # tweak that is applied, and from the same installer
                         mismatch = 2
                         if self_installer is None: continue
-                        for name, ini_info in infos.iteritems():
+                        for ini_info in infos.itervalues():
                             if self is ini_info: continue
-                            if self_installer != infos.table.getItem(
-                                    name, u'installer'): continue
+                            if self_installer != ini_info.get_table_prop(
+                                    u'installer'): continue
                             # It's from the same installer
                             if self._incompatible(ini_info): continue
                             value = ini_info.getSetting(section_key, item, None)
@@ -1017,6 +1029,9 @@ class INIInfo(IniFile):
             return _status(15)
         elif mismatch == 2:
             return _status(10)
+
+    def get_table_prop(self, prop, default=None):
+        return iniInfos.table.getItem(self.abs_path.tail.s, prop, default)
 
     def reset_status(self): self._status = None
 
@@ -2249,18 +2264,17 @@ class ModInfos(FileInfos):
     def _refresh_bash_tags(self):
         """Reloads bash tags for all mods set to receive automatic bash
         tags."""
-        for modName, mod in self.iteritems(): # type: (Path, ModInfo)
-            autoTag = mod.is_auto_tagged(default_auto=None)
-            if autoTag is None and self.table.getItem(
-                    modName, u'bashTags') is None:
+        for modinf in self.itervalues(): # type: ModInfo
+            autoTag = modinf.is_auto_tagged(default_auto=None)
+            if autoTag is None and modinf.get_table_prop(u'bashTags') is None:
                 # A new mod, set auto tags to True (default)
-                mod.set_auto_tagged(True)
+                modinf.set_auto_tagged(True)
                 autoTag = True
             elif autoTag is None:
                 # An old mod that had manual bash tags added, disable auto tags
-                mod.set_auto_tagged(False)
+                modinf.set_auto_tagged(False)
             if autoTag:
-                mod.reloadBashTags()
+                modinf.reloadBashTags()
 
     def refresh_crcs(self, mods=None): #TODO(ut) progress !
         if mods is None: mods = self.keys()
@@ -2578,14 +2592,6 @@ class ModInfos(FileInfos):
             return False
         except UnicodeEncodeError:
             return True
-
-    def getDirtyMessage(self, modname):
-        """Returns a dirty message from LOOT."""
-        if self.table.getItem(modname, u'ignoreDirty', False):
-            return False, u''
-        if lootDb.is_plugin_dirty(modname, self):
-            return True, _(u'Contains dirty edits, needs cleaning.')
-        return False, u''
 
     def ini_files(self): ##: What about SkyrimCustom.ini etc?
         iniFiles = self._plugin_inis.values() # in active order

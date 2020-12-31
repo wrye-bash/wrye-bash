@@ -61,7 +61,7 @@ class PatchDialog(DialogWindow):
             icon_bundle=Resources.bashMonkey, sizes_dict=balt.sizes, size=size)
         #--Data
         list_patches_dir() # refresh cached dir
-        patchConfigs = bosh.modInfos.table.getItem(patchInfo.name,u'bash.patch.configs',{})
+        patchConfigs = patchInfo.get_table_prop(u'bash.patch.configs', {})
         if configIsCBash(patchConfigs):
             patchConfigs = {}
         isFirstLoad = 0 == len(patchConfigs)
@@ -162,7 +162,8 @@ class PatchDialog(DialogWindow):
             progress = balt.Progress(patch_name.s,(u' '*60+u'\n'), abort=True)
             timer1 = time.clock()
             #--Save configs
-            self._saveConfig(patch_name)
+            config = self.__config()
+            self.patchInfo.set_table_prop(u'bash.patch.configs', config)
             #--Do it
             log = bolt.LogFile(StringIO.StringIO())
             patchFile = PatchFile(self.patchInfo)
@@ -216,7 +217,7 @@ class PatchDialog(DialogWindow):
             #finally:
             #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
             readme = readme.root + u'.html'
-            bosh.modInfos.table.setItem(patch_name, u'doc', readme)
+            self.patchInfo.set_table_prop(u'doc', readme)
             balt.playSound(self.parent, bass.inisettings[u'SoundSuccess'])
             balt.WryeLog(self.parent, readme, patch_name,
                          log_icons=Resources.bashBlue)
@@ -301,11 +302,6 @@ class PatchDialog(DialogWindow):
         for p in self._gui_patchers: p.saveConfig(config)
         return config
 
-    def _saveConfig(self, patch_name):
-        """Save the configuration"""
-        config = self.__config()
-        bosh.modInfos.table.setItem(patch_name, u'bash.patch.configs', config)
-
     def ExportConfig(self):
         """Export the configuration to a user selected dat file."""
         config = self.__config()
@@ -362,8 +358,7 @@ class PatchDialog(DialogWindow):
 
     def RevertConfig(self):
         """Revert configuration back to saved"""
-        patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,
-                                                   u'bash.patch.configs', {})
+        patchConfigs = self.patchInfo.get_table_prop(u'bash.patch.configs', {})
         self._load_config(patchConfigs)
 
     def DefaultConfig(self):
