@@ -140,9 +140,12 @@ class MelEffects(MelSequential):
         # Vanilla Elements ----------------------------------------------------
         self._vanilla_elements = [
             MelGroups(u'effects',
-                MelStruct(b'EFID', u'4s', (u'name', b'REHE')),
-                MelStruct(b'EFIT', u'4s4Ii', (u'name', b'REHE'), u'magnitude',
-                          u'area', u'duration', u'recipient', u'actorValue'),
+                # REHE is Restore target's Health - EFID.effect_id
+                # must be the same as EFIT.effect_id
+                MelStruct(b'EFID', u'4s', (u'effect_id', b'REHE')),
+                MelStruct(b'EFIT', u'4s4Ii', (u'effect_id', b'REHE'),
+                          u'magnitude', u'area', u'duration', u'recipient',
+                          u'actorValue'),
                 MelGroup(u'scriptEffect',
                     MelEffectsScit(b'SCIT', u'2I4sB3s', (FID, u'script'),
                         u'school', (u'visual', null4),
@@ -159,7 +162,7 @@ class MelEffects(MelSequential):
                         extra_contents=[u'efit_param_info',
                                         u'efix_param_info'],
                         reserved_byte_count=10),
-                MelStruct(b'EFID', u'4s', (u'name', b'REHE')),
+                MelStruct(b'EFID', u'4s', (u'effect_id', b'REHE')),
                 MelUnion({
                     0: MelStruct(b'EFIT', u'4s4I4s', (u'unused_name', null4),
                                  u'magnitude', u'area', u'duration',
@@ -390,7 +393,7 @@ class MreHasEffects(object):
         effects = []
         effectsAppend = effects.append
         for effect in self.effects:
-            mgef, actorValue = effect.name, effect.actorValue
+            mgef, actorValue = effect.effect_id, effect.actorValue
             if mgef not in bush.game.generic_av_effects:
                 actorValue = 0
             effectsAppend((mgef,actorValue))
@@ -401,8 +404,8 @@ class MreHasEffects(object):
         from ... import bush
         spellSchool = [0,0]
         for effect in self.effects:
-            school = bush.game.mgef_school[effect.name]
-            effectValue = bush.game.mgef_basevalue[effect.name]
+            school = bush.game.mgef_school[effect.effect_id]
+            effectValue = bush.game.mgef_basevalue[effect.effect_id]
             if effect.magnitude:
                 effectValue *= effect.magnitude
             if effect.area:
@@ -427,8 +430,8 @@ class MreHasEffects(object):
                 if effect.scriptEffect:
                     effectName = effect.scriptEffect.full or u'Script Effect'
                 else:
-                    effectName = bush.game.mgef_name[effect.name]
-                    if effect.name in avEffects:
+                    effectName = bush.game.mgef_name[effect.effect_id]
+                    if effect.effect_id in avEffects:
                         effectName = re.sub(_(u'(Attribute|Skill)'),aValues[effect.actorValue],effectName)
                 buffWrite(u'o+*'[effect.recipient]+u' '+effectName)
                 if effect.magnitude: buffWrite(u' %sm'%effect.magnitude)

@@ -216,7 +216,7 @@ class MelEffects(MelGroups):
     """Represents ingredient/potion/enchantment/spell effects."""
     def __init__(self):
         MelGroups.__init__(self, u'effects',
-            MelFid(b'EFID', u'name'), # baseEffect, name
+            MelFid(b'EFID', u'effect_formid'), # baseEffect ##: effect_id as in Oblivion?
             MelStruct(b'EFIT', u'f2I', u'magnitude', u'area', u'duration'),
             MelConditions(),
         )
@@ -1886,7 +1886,7 @@ class MreColl(MelRecord):
         MelUInt32('BNAM', 'layerID'),
         MelColor('FNAM'),
         MelUInt32Flags(b'GNAM', u'flags', CollisionLayerFlags,),
-        MelString('MNAM','name',),
+        MelString(b'MNAM', u'col_layer_name',),
         MelUInt32('INTV', 'interactablesCount'),
         MelFidList('CNAM','collidesWith',),
     )
@@ -4734,7 +4734,8 @@ class MreScen(MelRecord):
         MelUInt32Flags(b'FNAM', u'flags', ScenFlags1),
         MelGroups('phases',
             MelNull('HNAM'),
-            MelString('NAM0','name',),
+            # Phase description. Always present, even if just a null-terminator
+            MelString(b'NAM0', u'phase_desc',),
             MelGroup('startConditions',
                 MelConditions(),
             ),
@@ -4768,7 +4769,7 @@ class MreScen(MelRecord):
         ),
         MelGroups('actions',
             MelUInt16('ANAM', 'actionType'),
-            MelString('NAM0','name',),
+            MelString('NAM0', u'action_desc',),
             MelUInt32('ALID', 'actorID',),
             MelBase('LNAM','lnam_p',),
             MelUInt32('INAM', 'index'),

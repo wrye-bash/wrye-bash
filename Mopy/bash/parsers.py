@@ -1402,7 +1402,7 @@ class SigilStoneDetails(_UsesEffectsMixin):
         for record in modFile.SGST.getActiveRecords():
             effects = []
             for effect in record.effects:
-                effectlist = [effect.name,effect.magnitude,effect.area,
+                effectlist = [effect.effect_id,effect.magnitude,effect.area,
                               effect.duration,effect.recipient,
                               effect.actorValue]
                 if effect.scriptEffect:
@@ -1432,7 +1432,7 @@ class SigilStoneDetails(_UsesEffectsMixin):
             if not newStats: continue
             effects = []
             for effect in record.effects:
-                effectlist = [effect.name,effect.magnitude,effect.area,
+                effectlist = [effect.effect_id,effect.magnitude,effect.area,
                               effect.duration,effect.recipient,
                               effect.actorValue]
                 if effect.scriptEffect:
@@ -1456,7 +1456,7 @@ class SigilStoneDetails(_UsesEffectsMixin):
                 record.effects = []
                 for effect in effects:
                     neweffect = record.getDefault(u'effects')
-                    neweffect.name,neweffect.magnitude,neweffect.area,\
+                    neweffect.effect_id,neweffect.magnitude,neweffect.area,\
                     neweffect.duration,neweffect.recipient,\
                     neweffect.actorValue,scripteffect = effect
                     if len(scripteffect):
@@ -1650,7 +1650,7 @@ class SpellRecords(_UsesEffectsMixin):
             if detailed:
                 effects = []
                 for effect in record.effects:
-                    effectlist = [effect.name,effect.magnitude,effect.area,
+                    effectlist = [effect.effect_id,effect.magnitude,effect.area,
                                   effect.duration,effect.recipient,
                                   effect.actorValue]
                     if effect.scriptEffect:
@@ -1678,7 +1678,7 @@ class SpellRecords(_UsesEffectsMixin):
             if detailed:
                 effects = []
                 for effect in record.effects:
-                    effectlist = [effect.name,effect.magnitude,effect.area,
+                    effectlist = [effect.effect_id,effect.magnitude,effect.area,
                                   effect.duration,effect.recipient,
                                   effect.actorValue]
                     if effect.scriptEffect:
@@ -1699,7 +1699,7 @@ class SpellRecords(_UsesEffectsMixin):
                     record.effects = []
                     for effect in effects:
                         neweffect = record.getDefault(u'effects')
-                        neweffect.name,neweffect.magnitude,neweffect.area,\
+                        neweffect.effect_id,neweffect.magnitude,neweffect.area,\
                         neweffect.duration,neweffect.recipient,\
                         neweffect.actorValue,scripteffect = effect
                         if len(scripteffect):
@@ -1828,7 +1828,7 @@ class IngredientDetails(_UsesEffectsMixin):
         for record in modFile.INGR.getActiveRecords():
             effects = []
             for effect in record.effects:
-                effectlist = [effect.name,effect.magnitude,effect.area,
+                effectlist = [effect.effect_id,effect.magnitude,effect.area,
                               effect.duration,effect.recipient,
                               effect.actorValue]
                 if effect.scriptEffect:
@@ -1858,7 +1858,7 @@ class IngredientDetails(_UsesEffectsMixin):
             if not newStats: continue
             effects = []
             for effect in record.effects:
-                effectlist = [effect.name,effect.magnitude,effect.area,
+                effectlist = [effect.effect_id,effect.magnitude,effect.area,
                               effect.duration,effect.recipient,
                               effect.actorValue]
                 if effect.scriptEffect:
@@ -1882,7 +1882,7 @@ class IngredientDetails(_UsesEffectsMixin):
                 record.effects = []
                 for effect in effects:
                     neweffect = record.getDefault(u'effects')
-                    neweffect.name,neweffect.magnitude,neweffect.area,\
+                    neweffect.effect_id,neweffect.magnitude,neweffect.area,\
                     neweffect.duration,neweffect.recipient,\
                     neweffect.actorValue,scripteffect = effect
                     if len(scripteffect):

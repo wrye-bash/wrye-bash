@@ -68,10 +68,10 @@ class _ANamesTweak(MultiTweakItem):
         return (record,)
 
     def _is_effect_hostile(self, magic_effect):
-        """Returns a truthy value if the specified MGEF is nonhostile."""
+        """Returns a truthy value if the specified MGEF is hostile."""
         return (magic_effect.scriptEffect.flags.hostile
                 if magic_effect.scriptEffect
-                else magic_effect.name in self._tweak_mgef_hostiles)
+                else magic_effect.effect_id in self._tweak_mgef_hostiles)
 
     def _try_renaming(self, record):
         """Checks if renaming via _exec_rename would change the specified
@@ -88,7 +88,7 @@ class _AMgefNamesTweak(_ANamesTweak):
     def _get_effect_school(self, magic_effect):
         """Returns the school of the specified MGEF."""
         return (magic_effect.scriptEffect.school if magic_effect.scriptEffect
-                else self._tweak_mgef_school.get(magic_effect.name, 6))
+                else self._tweak_mgef_school.get(magic_effect.effect_id, 6))
 
     def wants_record(self, record):
         # Once we have MGEFs indexed, we can try renaming to check more

@@ -253,8 +253,8 @@ class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
             if not (duration and record.spellType == 2): continue
             isExhausted = False ##: unused, was it supposed to be used?
             for effect in record.effects:
-                if effect.name == b'SEFF' and effect.scriptEffect.script == \
-                        exhaustId:
+                if effect.effect_id == b'SEFF' \
+                        and effect.scriptEffect.script == exhaustId:
                     duration = 0
                     break
             if not duration: continue
@@ -262,7 +262,7 @@ class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
             record.full = u'+' + record.full
             record.spellType = 3 #--Lesser power
             effect = record.getDefault(u'effects')
-            effect.name = b'SEFF'
+            effect.effect_id = b'SEFF'
             effect.duration = duration
             scriptEffect = record.getDefault(u'effects.scriptEffect')
             scriptEffect.full = u'Power Exhaustion'
