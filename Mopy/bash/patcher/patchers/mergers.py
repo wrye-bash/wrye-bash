@@ -270,30 +270,30 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
 
     def __init__(self, p_name, p_file, p_sources):
         super(ImportActorsAIPackagesPatcher, self).__init__(p_name, p_file, p_sources)
-        # long_fid -> {'merged':list[long_fid], 'deleted':list[long_fid]}
+        # long_fid -> {u'merged':list[long_fid], u'deleted':list[long_fid]}
         self.id_merged_deleted = {}
 
     def _insertPackage(self, id_merged_deleted, fi, index, pkg, recordData):
-        fi_merged = id_merged_deleted[fi]['merged']
+        fi_merged = id_merged_deleted[fi][u'merged']
         if index == 0: fi_merged.insert(0, pkg)# insert as first item
-        elif index == (len(recordData['merged']) - 1):
+        elif index == (len(recordData[u'merged']) - 1):
             fi_merged.append(pkg)  # insert as last item
         else:  # figure out a good spot to insert it based on next or last
             # recognized item (ugly ugly ugly)
             i = index - 1
             while i >= 0:
-                if recordData['merged'][i] in fi_merged:
+                if recordData[u'merged'][i] in fi_merged:
                     slot = fi_merged.index(
-                        recordData['merged'][i]) + 1
+                        recordData[u'merged'][i]) + 1
                     fi_merged.insert(slot, pkg)
                     break
                 i -= 1
             else:
                 i = index + 1
-                while i != len(recordData['merged']):
-                    if recordData['merged'][i] in fi_merged:
+                while i != len(recordData[u'merged']):
+                    if recordData[u'merged'][i] in fi_merged:
                         slot = fi_merged.index(
-                            recordData['merged'][i])
+                            recordData[u'merged'][i])
                         fi_merged.insert(slot, pkg)
                         break
                     i += 1
@@ -338,45 +338,45 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
                             del tempData[fi]
                             continue
                         if fi in mer_del:
-                            if tempData[fi] == mer_del[fi]['merged']:
+                            if tempData[fi] == mer_del[fi][u'merged']:
                                 continue
-                        recordData = {'deleted':[],'merged':tempData[fi]}
+                        recordData = {u'deleted':[],u'merged':tempData[fi]}
                         for pkg in record.aiPackages:
                             if pkg not in tempData[fi]:
-                                recordData['deleted'].append(pkg)
+                                recordData[u'deleted'].append(pkg)
                         if fi not in mer_del:
                             mer_del[fi] = recordData
                         else:
-                            for pkg in recordData['deleted']:
-                                if pkg in mer_del[fi]['merged']:
-                                    mer_del[fi]['merged'].remove(pkg)
-                                mer_del[fi]['deleted'].append(pkg)
-                            if mer_del[fi]['merged'] == []:
-                                for pkg in recordData['merged']:
-                                    if pkg in mer_del[fi]['deleted'] and not \
+                            for pkg in recordData[u'deleted']:
+                                if pkg in mer_del[fi][u'merged']:
+                                    mer_del[fi][u'merged'].remove(pkg)
+                                mer_del[fi][u'deleted'].append(pkg)
+                            if mer_del[fi][u'merged'] == []:
+                                for pkg in recordData[u'merged']:
+                                    if pkg in mer_del[fi][u'deleted'] and not \
                                       u'Actors.AIPackagesForceAdd' in bashTags:
                                         continue
-                                    mer_del[fi]['merged'].append(pkg)
+                                    mer_del[fi][u'merged'].append(pkg)
                                 continue
-                            for index, pkg in enumerate(recordData['merged']):
-                                if pkg not in mer_del[fi]['merged']:# so needs
+                            for index, pkg in enumerate(recordData[u'merged']):
+                                if pkg not in mer_del[fi][u'merged']:# so needs
                                     #  to be added... (unless deleted that is)
                                     # find the correct position to add and add.
-                                    if pkg in mer_del[fi]['deleted'] and not \
+                                    if pkg in mer_del[fi][u'deleted'] and not \
                                       u'Actors.AIPackagesForceAdd' in bashTags:
                                         continue  # previously deleted
                                     self._insertPackage(mer_del, fi, index,
                                                         pkg, recordData)
                                     continue # Done with this package
-                                elif index == mer_del[fi]['merged'].index(
+                                elif index == mer_del[fi][u'merged'].index(
                                         pkg) or (
-                                    len(recordData['merged']) - index) == (
-                                    len(mer_del[fi]['merged']) - mer_del[fi][
-                                    'merged'].index(pkg)):
+                                    len(recordData[u'merged']) - index) == (
+                                    len(mer_del[fi][u'merged']) - mer_del[fi][
+                                    u'merged'].index(pkg)):
                                     continue  # pkg same in both lists.
                                 else:  # this import is later loading so we'll
                                     #  assume it is better order
-                                    mer_del[fi]['merged'].remove(pkg)
+                                    mer_del[fi][u'merged'].remove(pkg)
                                     self._insertPackage(mer_del, fi, index,
                                                         pkg, recordData)
             progress.plus()
@@ -389,7 +389,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
             for record in modFile.tops[top_grup_sig].getActiveRecords():
                 fid = record.fid
                 if fid not in merged_deleted: continue
-                if record.aiPackages != merged_deleted[fid]['merged']:
+                if record.aiPackages != merged_deleted[fid][u'merged']:
                     patchBlock.setRecord(record.getTypeCopy())
 
     def buildPatch(self,log,progress): # buildPatch1:no modFileTops, for type..
@@ -403,8 +403,8 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
                 fid = record.fid
                 if fid not in merged_deleted: continue
                 changed = False
-                if record.aiPackages != merged_deleted[fid]['merged']:
-                    record.aiPackages = merged_deleted[fid]['merged']
+                if record.aiPackages != merged_deleted[fid][u'merged']:
+                    record.aiPackages = merged_deleted[fid][u'merged']
                     changed = True
                 if changed:
                     keep(record.fid)
@@ -421,7 +421,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
 
     def __init__(self, p_name, p_file, p_sources):
         super(ImportActorsSpellsPatcher, self).__init__(p_name, p_file, p_sources)
-        # long_fid -> {'merged':list[long_fid], 'deleted':list[long_fid]}
+        # long_fid -> {u'merged':list[long_fid], u'deleted':list[long_fid]}
         self.id_merged_deleted = {}
 
     def initData(self,progress):
@@ -462,69 +462,69 @@ class ImportActorsSpellsPatcher(ImportPatcher):
                             del tempData[fid]
                             continue
                         if fid in mer_del:
-                            if tempData[fid] == mer_del[fid]['merged']: continue
-                        recordData = {'deleted':[],'merged':tempData[fid]}
+                            if tempData[fid] == mer_del[fid][u'merged']: continue
+                        recordData = {u'deleted':[],u'merged':tempData[fid]}
                         for spell in record.spells:
                             if spell not in tempData[fid]:
-                                recordData['deleted'].append(spell)
+                                recordData[u'deleted'].append(spell)
                         if fid not in mer_del:
                             mer_del[fid] = recordData
                         else:
-                            for spell in recordData['deleted']:
-                                if spell in mer_del[fid]['merged']:
-                                    mer_del[fid]['merged'].remove(spell)
-                                mer_del[fid]['deleted'].append(spell)
-                            if mer_del[fid]['merged'] == []:
-                                for spell in recordData['merged']:
-                                    if spell in mer_del[fid]['deleted'] and not u'Actors.SpellsForceAdd' in bashTags: continue
-                                    mer_del[fid]['merged'].append(spell)
+                            for spell in recordData[u'deleted']:
+                                if spell in mer_del[fid][u'merged']:
+                                    mer_del[fid][u'merged'].remove(spell)
+                                mer_del[fid][u'deleted'].append(spell)
+                            if mer_del[fid][u'merged'] == []:
+                                for spell in recordData[u'merged']:
+                                    if spell in mer_del[fid][u'deleted'] and not u'Actors.SpellsForceAdd' in bashTags: continue
+                                    mer_del[fid][u'merged'].append(spell)
                                 continue
-                            for index, spell in enumerate(recordData['merged']):
-                                if spell not in mer_del[fid]['merged']: # so needs to be added... (unless deleted that is)
+                            for index, spell in enumerate(recordData[u'merged']):
+                                if spell not in mer_del[fid][u'merged']: # so needs to be added... (unless deleted that is)
                                     # find the correct position to add and add.
-                                    if spell in mer_del[fid]['deleted'] and not u'Actors.SpellsForceAdd' in bashTags: continue #previously deleted
+                                    if spell in mer_del[fid][u'deleted'] and not u'Actors.SpellsForceAdd' in bashTags: continue #previously deleted
                                     if index == 0:
-                                        mer_del[fid]['merged'].insert(0, spell) #insert as first item
-                                    elif index == (len(recordData['merged'])-1):
-                                        mer_del[fid]['merged'].append(spell) #insert as last item
+                                        mer_del[fid][u'merged'].insert(0, spell) #insert as first item
+                                    elif index == (len(recordData[u'merged'])-1):
+                                        mer_del[fid][u'merged'].append(spell) #insert as last item
                                     else: #figure out a good spot to insert it based on next or last recognized item (ugly ugly ugly)
                                         i = index - 1
                                         while i >= 0:
-                                            if recordData['merged'][i] in mer_del[fid]['merged']:
-                                                slot = mer_del[fid]['merged'].index(recordData['merged'][i]) + 1
-                                                mer_del[fid]['merged'].insert(slot, spell)
+                                            if recordData[u'merged'][i] in mer_del[fid][u'merged']:
+                                                slot = mer_del[fid][u'merged'].index(recordData[u'merged'][i]) + 1
+                                                mer_del[fid][u'merged'].insert(slot, spell)
                                                 break
                                             i -= 1
                                         else:
                                             i = index + 1
-                                            while i != len(recordData['merged']):
-                                                if recordData['merged'][i] in mer_del[fid]['merged']:
-                                                    slot = mer_del[fid]['merged'].index(recordData['merged'][i])
-                                                    mer_del[fid]['merged'].insert(slot, spell)
+                                            while i != len(recordData[u'merged']):
+                                                if recordData[u'merged'][i] in mer_del[fid][u'merged']:
+                                                    slot = mer_del[fid][u'merged'].index(recordData[u'merged'][i])
+                                                    mer_del[fid][u'merged'].insert(slot, spell)
                                                     break
                                                 i += 1
                                     continue # Done with this package
-                                elif index == mer_del[fid]['merged'].index(spell) or (len(recordData['merged'])-index) == (len(mer_del[fid]['merged'])-mer_del[fid]['merged'].index(spell)): continue #spell same in both lists.
+                                elif index == mer_del[fid][u'merged'].index(spell) or (len(recordData[u'merged'])-index) == (len(mer_del[fid][u'merged'])-mer_del[fid][u'merged'].index(spell)): continue #spell same in both lists.
                                 else: #this import is later loading so we'll assume it is better order
-                                    mer_del[fid]['merged'].remove(spell)
+                                    mer_del[fid][u'merged'].remove(spell)
                                     if index == 0:
-                                        mer_del[fid]['merged'].insert(0, spell) #insert as first item
-                                    elif index == (len(recordData['merged'])-1):
-                                        mer_del[fid]['merged'].append(spell) #insert as last item
+                                        mer_del[fid][u'merged'].insert(0, spell) #insert as first item
+                                    elif index == (len(recordData[u'merged'])-1):
+                                        mer_del[fid][u'merged'].append(spell) #insert as last item
                                     else:
                                         i = index - 1
                                         while i >= 0:
-                                            if recordData['merged'][i] in mer_del[fid]['merged']:
-                                                slot = mer_del[fid]['merged'].index(recordData['merged'][i]) + 1
-                                                mer_del[fid]['merged'].insert(slot, spell)
+                                            if recordData[u'merged'][i] in mer_del[fid][u'merged']:
+                                                slot = mer_del[fid][u'merged'].index(recordData[u'merged'][i]) + 1
+                                                mer_del[fid][u'merged'].insert(slot, spell)
                                                 break
                                             i -= 1
                                         else:
                                             i = index + 1
-                                            while i != len(recordData['merged']):
-                                                if recordData['merged'][i] in mer_del[fid]['merged']:
-                                                    slot = mer_del[fid]['merged'].index(recordData['merged'][i])
-                                                    mer_del[fid]['merged'].insert(slot, spell)
+                                            while i != len(recordData[u'merged']):
+                                                if recordData[u'merged'][i] in mer_del[fid][u'merged']:
+                                                    slot = mer_del[fid][u'merged'].index(recordData[u'merged'][i])
+                                                    mer_del[fid][u'merged'].insert(slot, spell)
                                                     break
                                                 i += 1
             progress.plus()
@@ -537,7 +537,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
             for record in modFile.tops[top_grup_sig].getActiveRecords():
                 fid = record.fid
                 if fid in merged_deleted:
-                    if record.spells != merged_deleted[fid]['merged']:
+                    if record.spells != merged_deleted[fid][u'merged']:
                         patchBlock.setRecord(record.getTypeCopy())
 
     def buildPatch(self,log,progress): # buildPatch1:no modFileTops, for type..
@@ -551,7 +551,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
                 fid = record.fid
                 if fid not in merged_deleted: continue
                 changed = False
-                mergedSpells = sorted(merged_deleted[fid]['merged'])
+                mergedSpells = sorted(merged_deleted[fid][u'merged'])
                 if sorted(record.spells) != mergedSpells:
                     record.spells = mergedSpells
                     changed = True

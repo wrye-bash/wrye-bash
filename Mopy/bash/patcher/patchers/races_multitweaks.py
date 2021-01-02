@@ -313,9 +313,8 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
     def __init__(self, p_name, p_file, p_sources, enabled_tweaks):
         # NB: call the ListPatcher __init__ not the AMultiTweaker one!
         super(AMultiTweaker, self).__init__(p_name, p_file, p_sources)
-        self.races_data = {'EYES':[],'HAIR':[]}
-        self.raceData = {} #--Race eye meshes, hair,eyes
-        self.tempRaceData = {}
+        self.races_data = {b'EYES': [], b'HAIR': []}
+        self.raceData = defaultdict(dict) #--Race eye meshes, hair,eyes
         #--Restrict srcs to active/merged mods.
         self.srcs = [x for x in self.srcs if x in p_file.allSet]
         self.isActive = True #--Always enabled to support eye filtering
@@ -354,29 +353,29 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
             srcFile = self._mod_file_read(srcInfo)
             bashTags = srcInfo.getBashTags()
             if b'RACE' not in srcFile.tops: continue
-            self.tempRaceData = {} #so as not to carry anything over!
+            tmp_race_data = defaultdict(dict) #so as not to carry anything over!
             if u'R.ChangeSpells' in bashTags and u'R.AddSpells' in bashTags:
                 raise BoltError(
                     u'WARNING mod %s has both R.AddSpells and R.ChangeSpells '
                     u'tags - only one of those tags should be on a mod at '
                     u'one time' % srcMod)
             for race in srcFile.tops[b'RACE'].getActiveRecords():
-                tempRaceData = self.tempRaceData.setdefault(race.fid,{})
-                raceData = self.raceData.setdefault(race.fid,{})
+                tempRaceData = tmp_race_data[race.fid]
+                raceData = self.raceData[race.fid]
                 if u'Hair' in bashTags:
-                    raceHair = raceData.setdefault('hairs',[])
+                    raceHair = raceData.setdefault(u'hairs',[]) ##: set? used in contains tests
                     for hair in race.hairs:
                         if hair not in raceHair: raceHair.append(hair)
                 if self.eyeKeys & bashTags:
-                    tempRaceData['rightEye'] = race.rightEye
-                    tempRaceData['leftEye'] = race.leftEye
-                    raceEyes = raceData.setdefault('eyes',[])
+                    tempRaceData[u'rightEye'] = race.rightEye
+                    tempRaceData[u'leftEye'] = race.leftEye
+                    raceEyes = raceData.setdefault(u'eyes',[]) ##: set?
                     for eye in race.eyes:
                         if eye not in raceEyes: raceEyes.append(eye)
                 if u'Voice-M' in bashTags:
-                    tempRaceData['maleVoice'] = race.maleVoice
+                    tempRaceData[u'maleVoice'] = race.maleVoice
                 if u'Voice-F' in bashTags:
-                    tempRaceData['femaleVoice'] = race.femaleVoice
+                    tempRaceData[u'femaleVoice'] = race.femaleVoice
                 if u'Body-M' in bashTags:
                     for body_key in ['male' + k for k in self.bodyKeys]:
                         tempRaceData[body_key] = getattr(race, body_key)
@@ -396,12 +395,12 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
                     for mouth_key in ('mouth', 'tongue'):
                         tempRaceData[mouth_key] = getattr(race, mouth_key)
                 if u'R.Head' in bashTags:
-                    tempRaceData['head'] = race.head
+                    tempRaceData[u'head'] = race.head
                 if u'R.Ears' in bashTags:
                     for ears_key in ('maleEars', 'femaleEars'):
                         tempRaceData[ears_key] = getattr(race, ears_key)
                 if u'R.Relations' in bashTags:
-                    relations = raceData.setdefault('relations',{})
+                    relations = raceData.setdefault(u'relations', {})
                     for x in race.relations:
                         relations[x.faction] = x.mod
                 if u'R.Attributes-F' in bashTags:
@@ -414,11 +413,11 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
                     for skill_key in self.raceSkills:
                         tempRaceData[skill_key] = getattr(race, skill_key)
                 if u'R.AddSpells' in bashTags:
-                    tempRaceData['AddSpells'] = race.spells
+                    tempRaceData[u'AddSpells'] = race.spells
                 if u'R.ChangeSpells' in bashTags:
-                    raceData['spellsOverride'] = race.spells
+                    raceData[u'spellsOverride'] = race.spells
                 if u'R.Description' in bashTags:
-                    tempRaceData['text'] = race.text
+                    tempRaceData[u'text'] = race.text
             for master in srcInfo.masterNames:
                 if not master in bosh.modInfos: continue  # or break
                 # filter mods
@@ -430,16 +429,16 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
                     if b'RACE' not in masterFile.tops: continue
                     cachedMasters[master] = masterFile
                 for race in masterFile.tops[b'RACE'].getActiveRecords():
-                    if race.fid not in self.tempRaceData: continue
-                    tempRaceData = self.tempRaceData[race.fid]
+                    if race.fid not in tmp_race_data: continue
+                    tempRaceData = tmp_race_data[race.fid]
                     raceData = self.raceData[race.fid]
-                    if 'AddSpells' in tempRaceData:
-                        raceData.setdefault('AddSpells', [])
-                        for spell in tempRaceData['AddSpells']:
+                    if u'AddSpells' in tempRaceData:
+                        raceData.setdefault(u'AddSpells', []) ##: set?
+                        for spell in tempRaceData[u'AddSpells']:
                             if spell not in race.spells:
-                                if spell not in raceData['AddSpells']:
-                                    raceData['AddSpells'].append(spell)
-                        del tempRaceData['AddSpells']
+                                if spell not in raceData[u'AddSpells']:
+                                    raceData[u'AddSpells'].append(spell)
+                        del tempRaceData[u'AddSpells']
                     for race_key in tempRaceData:
                         if tempRaceData[race_key] != getattr(race, race_key):
                             raceData[race_key] = tempRaceData[race_key]
@@ -522,50 +521,50 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
         #--Import race info
         for race in patchFile.tops[b'RACE'].records:
             #~~print 'Building',race.eid
-            raceData = self.raceData.get(race.fid,None)
+            raceData = self.raceData.get(race.fid, None)
             if not raceData: continue
             raceChanged = False
             #-- Racial Hair and  Eye sets
-            if 'hairs' in raceData and (
-                        set(race.hairs) != set(raceData['hairs'])):
-                race.hairs = raceData['hairs']
+            if u'hairs' in raceData and (
+                        set(race.hairs) != set(raceData[u'hairs'])):
+                race.hairs = raceData[u'hairs']
                 raceChanged = True
-            if 'eyes' in raceData:
-                if set(race.eyes) != set(raceData['eyes']):
-                    race.eyes = raceData['eyes']
+            if u'eyes' in raceData:
+                if set(race.eyes) != set(raceData[u'eyes']):
+                    race.eyes = raceData[u'eyes']
                     raceChanged = True
             #-- Eye paths:
-            if 'rightEye' in raceData:
+            if u'rightEye' in raceData:
                 if not race.rightEye:
                     deprint(u'Very odd race %s found - no right eye '
                             u'assigned' % race.full)
                 else:
-                    if race.rightEye.modPath != raceData['rightEye'].modPath:
-                        race.rightEye.modPath = raceData['rightEye'].modPath
+                    if race.rightEye.modPath != raceData[u'rightEye'].modPath:
+                        race.rightEye.modPath = raceData[u'rightEye'].modPath
                         raceChanged = True
-            if 'leftEye' in raceData:
+            if u'leftEye' in raceData:
                 if not race.leftEye:
                     deprint(u'Very odd race %s found - no left eye '
                             u'assigned' % race.full)
                 else:
-                    if race.leftEye.modPath != raceData['leftEye'].modPath:
-                        race.leftEye.modPath = raceData['leftEye'].modPath
+                    if race.leftEye.modPath != raceData[u'leftEye'].modPath:
+                        race.leftEye.modPath = raceData[u'leftEye'].modPath
                         raceChanged = True
             #--Teeth/Mouth/head/ears/description
-            for basic_key in ('teethLower', 'teethUpper', 'mouth', 'tongue',
-                              'text', 'head'):
+            for basic_key in (u'teethLower', u'teethUpper', u'mouth',
+                              u'tongue', u'text', u'head'): ##: rename text
                 if basic_key in raceData:
                     if getattr(race, basic_key) != raceData[basic_key]:
                         setattr(race, basic_key, raceData[basic_key])
                         raceChanged = True
             #--spells
-            if 'spellsOverride' in raceData:
-                race.spells = raceData['spellsOverride']
-            if 'AddSpells' in raceData:
-                raceData['spells'] = race.spells
-                for spell in raceData['AddSpells']:
-                    raceData['spells'].append(spell)
-                race.spells = raceData['spells']
+            if u'spellsOverride' in raceData:
+                race.spells = raceData[u'spellsOverride']
+            if u'AddSpells' in raceData:
+                raceData[u'spells'] = race.spells
+                for spell in raceData[u'AddSpells']:
+                    raceData[u'spells'].append(spell)
+                race.spells = raceData[u'spells']
             #--skills
             for skill_key in self.raceSkills:
                 if skill_key in raceData:
@@ -573,7 +572,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
                         setattr(race, skill_key, raceData[skill_key])
                         raceChanged = True
             #--Gender info (voice, gender specific body data)
-            for gender in ('male','female'):
+            for gender in (u'male',u'female'):
                 bodyKeys = self.bodyKeys.union(self.raceAttributes.union(
                     {'Ears', 'Voice'}))
                 bodyKeys = [gender + k for k in bodyKeys]
@@ -583,8 +582,8 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
                             setattr(race, body_key, raceData[body_key])
                             raceChanged = True
             #--Relations
-            if 'relations' in raceData:
-                relations = raceData['relations']
+            if u'relations' in raceData:
+                relations = raceData[u'relations']
                 oldRelations = {(x.faction, x.mod) for x in race.relations}
                 newRelations = set(relations.iteritems())
                 if newRelations != oldRelations:
@@ -657,7 +656,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
             if debug:
                 for mesh,eyes in mesh_eye.iteritems():
                     print(mesh)
-                    for eye in eyes: print(' ',strFid(eye))
+                    for eye in eyes: print(u' ',strFid(eye))
             if len(mesh_eye) > 1 and (race.flags.playable or race.fid == (
                     _main_master, 0x038010)):
                 #--If blueEyeMesh (mesh used for vanilla eyes) is present,
