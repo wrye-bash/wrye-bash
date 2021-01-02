@@ -102,8 +102,10 @@ class LoadFactory(object):
             self.topTypes.add(b'WRLD')
             if self.keepAll:
                 for cell_rec_sig in __cell_rec_sigs:
-                    self.type_class.setdefault(cell_rec_sig, MreRecord)
-        elif recType == b'INFO': ##: apart from this set(type_class) == topTypes
+                    if cell_rec_sig not in self.type_class:
+                        self.type_class[cell_rec_sig] = MreRecord
+        ##: apart from this and cell stuff above set(type_class) == topTypes
+        elif recType == b'INFO':
             self.topTypes.add(b'DIAL')
         else:
             self.topTypes.add(recType)
