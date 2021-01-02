@@ -1748,16 +1748,18 @@ class INIInfos(TableFileInfos):
         # re-add default tweaks
         for k in self.keys():
             if k not in newNames: del self[k]
-        set_keys = set(self.keys())
-        for k, d in self._default_tweaks.iteritems():
-            if k not in set_keys:
-                default_info = self.setdefault(k, d) # type: DefaultIniInfo
-                if k in _deleted_: # we restore default over copy
-                    _updated.add(k)
-                    default_info.reset_status()
+        for k, default_info in self._missing_default_inis():
+            self[k] = default_info # type: DefaultIniInfo
+            if k in _deleted_: # we restore default over copy
+                _updated.add(k)
+                default_info.reset_status()
         if _updated:
             self._notify_bain(changed={self[n].abs_path for n in _updated})
         return _added, _deleted_, _updated
+
+    def _missing_default_inis(self):
+        return ((k, v) for k, v in self._default_tweaks.iteritems() if
+                k not in self)
 
     def refresh(self, refresh_infos=True, refresh_target=True):
         _added = _deleted_ = _updated = set()
@@ -1783,12 +1785,10 @@ class INIInfos(TableFileInfos):
         for name in deleted:
             self.pop(name, None)
             self.table.delRow(name)
-        set_keys = set(self.keys())
-        if not _in_refresh: # readd default tweaks
-            for k, d in self._default_tweaks.iteritems():
-                if k not in set_keys:
-                    default_info = self.setdefault(k, d) # type: DefaultIniInfo
-                    default_info.reset_status()
+        if not _in_refresh: # re-add default tweaks
+            for k, default_info in self._missing_default_inis():
+                self[k] = default_info  # type: DefaultIniInfo
+                default_info.reset_status()
         return deleted
 
     def get_tweak_lines_infos(self, tweakPath):
@@ -2912,9 +2912,10 @@ class ModInfos(FileInfos):
         self._lo_caches_remove_mods([newName])
         self._lo_wip.insert(oldIndex, oldName)
         def _activate(active, mod):
-            if active: self[mod].setGhost(False) # needed if autoGhost is False
-            (self.lo_activate if active else self.lo_deactivate)(mod,
-                                                                 doSave=False)
+            if active:
+                self[mod].setGhost(False) # needed if autoGhost is False
+                self.lo_activate(mod, doSave=False)
+            else: self.lo_deactivate(mod, doSave=False)
         _activate(is_new_info_active, oldName)
         _activate(is_master_active, self.masterName)
         # Save to disc (load order and plugins.txt)
@@ -2929,8 +2930,10 @@ class ModInfos(FileInfos):
                             (arcSaves, newSaves))
         load_order.swap(arcPath, newPath)
         # Swap Oblivion version to memorized version
-        voNew = saveInfos.profiles.setItemDefault(newSaves, 'vOblivion',
-                                                  self.voCurrent)
+        voNew = saveInfos.profiles.getItem(newSaves, u'vOblivion', None)
+        if voNew is None:
+            saveInfos.profiles.setItem(newSaves, u'vOblivion', self.voCurrent)
+            voNew = self.voCurrent
         if voNew in self.voAvailable: self.setOblivionVersion(voNew)
 
     def size_mismatch(self, plugin_name, plugin_size):

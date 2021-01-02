@@ -43,17 +43,14 @@ def getPatchesPath(fileName):
     else:
         return bass.dirs[u'defaultPatches'].join(fileName)
 
-def getPatchesList():
-    """Get a basic list of potential Bash Patches."""
-    return set(bass.dirs[u'patches'].list()) | set(
-        bass.dirs[u'defaultPatches'].list()) # Empty list if it doesn't exist
-
 # this is set once and stays the same for the patch execution session
 _patches_set = None
 
 def list_patches_dir():
+    """Get a basic list of potential Bash Patches csv sources."""
     global _patches_set
-    _patches_set = getPatchesList()
+    _patches_set = set(bass.dirs[u'patches'].list()) | set(
+        bass.dirs[u'defaultPatches'].list())
 
 def patches_set():
     if _patches_set is None: list_patches_dir()

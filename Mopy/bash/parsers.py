@@ -453,7 +453,7 @@ class ActorLevels(_HandleAliases):
 
     def __init__(self, aliases_=None):
         super(ActorLevels, self).__init__(aliases_)
-        self.mod_id_levels = {} #--levels = mod_id_levels[mod][longid]
+        self.mod_id_levels = defaultdict(dict) #--levels = mod_id_levels[mod][longid]
         self.gotLevels = set()
 
     def readFromMod(self,modInfo):
@@ -466,10 +466,9 @@ class ActorLevels(_HandleAliases):
             modFile = ModFile(bosh.modInfos[modName],loadFactory)
             modFile.load(True)
             for record in modFile.NPC_.getActiveRecords():
-                id_levels = mod_id_levels.setdefault(modName,{})
-                id_levels[record.fid] = (
-                    record.eid, bool(record.flags.pcLevelOffset),
-                    record.level,record.calcMin,record.calcMax)
+                mod_id_levels[modName][record.fid] = (
+                    record.eid, bool(record.flags.pcLevelOffset), record.level,
+                    record.calcMin, record.calcMax)
             gotLevels.add(modName)
 
     def writeToMod(self,modInfo):
@@ -493,7 +492,6 @@ class ActorLevels(_HandleAliases):
                             level,calcMin,calcMax)
                         record.setChanged()
                         changed += 1
-                    # else: print mod_id_levels
         #--Done
         if changed: modFile.safeSave()
         return changed
@@ -523,12 +521,10 @@ class ActorLevels(_HandleAliases):
                     offset = _coerce(offset, int)
                     calcMin = _coerce(calcMin, int)
                     calcMax = _coerce(calcMax, int)
-                id_levels = mod_id_levels.setdefault(source, {})
-                id_levels[fid] = (eid, 1, offset, calcMin, calcMax)
+                mod_id_levels[source][fid] = (eid, 1, offset, calcMin, calcMax)
 
     def writeToText(self,textPath):
         """Export NPC level data to specified text file."""
-        mod_id_levels = self.mod_id_levels
         headFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s",' \
                      u'"%s"\n'
         rowFormat = u'"%s","%s","%s","0x%06X","%d","%d","%d"'
@@ -541,13 +537,13 @@ class ActorLevels(_HandleAliases):
                 _(u'Old IsPCLevelOffset'),_(u'Old Offset'),_(u'Old CalcMin'),
                 _(u'Old CalcMax')))
             #Sorted based on mod, then editor ID
-            obId_levels = mod_id_levels[GPath(bush.game.master_file)]
-            for mod in sorted(mod_id_levels):
+            obId_levels = self.mod_id_levels[GPath(bush.game.master_file)]
+            for mod, id_levels in sorted(self.mod_id_levels.iteritems(),
+                                         key=lambda (k, v): k):
                 if mod.s.lower() == bush.game.master_file.lower(): continue
-                id_levels = mod_id_levels[mod]
                 sor = sorted(id_levels.iteritems(), # PY3: unpack to list
-                           key=lambda ((fidM, __), (eid_, _1, _2, _3, _4)): (
-                           (u'%s' % fidM).lower(), eid_.lower()))
+                             key=lambda ((fidM, __), (eid_, _1, _2, _3, _4)): (
+                                 (u'%s' % fidM).lower(), eid_.lower()))
                 for (fidMod, fidObject), (
                         eid, isOffset, offset, calcMin, calcMax) in sor:
                     if isOffset:
@@ -570,7 +566,7 @@ class EditorIds(_HandleAliases):
 
     def __init__(self, types=None, aliases_=None):
         super(EditorIds, self).__init__(aliases_)
-        self.type_id_eid = {} #--eid = eids[type][longid]
+        self.type_id_eid = defaultdict(dict) #--eid = eids[type][longid]
         self.old_new = {}
         if types:
             self.types = types
@@ -588,22 +584,19 @@ class EditorIds(_HandleAliases):
         for type_ in types:
             typeBlock = modFile.tops.get(type_)
             if not typeBlock: continue
-            if type_ not in type_id_eid: type_id_eid[type_] = {}
             id_eid = type_id_eid[type_]
             for record in typeBlock.getActiveRecords():
                 if record.eid: id_eid[record.fid] = record.eid
 
     def writeToMod(self,modInfo):
         """Exports eids to specified mod."""
-        type_id_eid,types = self.type_id_eid,self.types
-        classes = [MreRecord.type_class[x] for x in types]
-        loadFactory = LoadFactory(True,*classes)
+        loadFactory = LoadFactory(True, *self.types)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         changed = []
-        for type_ in types:
-            id_eid = type_id_eid.get(type_,None)
-            typeBlock = modFile.tops.get(type_,None)
+        for type_ in self.types:
+            id_eid = self.type_id_eid.get(type_, None)
+            typeBlock = modFile.tops.get(type_, None)
             if not id_eid or not typeBlock: continue
             for record in typeBlock.records:
                 newEid = id_eid.get(record.fid)
@@ -677,7 +670,7 @@ class EditorIds(_HandleAliases):
                 if questionableEidsSet is not None and not reGoodEid.match(
                         eid):
                     questionableEidsSet.add(eid)
-                id_eid = type_id_eid.setdefault(top_grup, {})
+                id_eid = type_id_eid[top_grup]
                 id_eid[longid] = eid
                 #--Explicit old to new def? (Used for script updating.)
                 if len(fields) > 4:
@@ -691,8 +684,8 @@ class EditorIds(_HandleAliases):
         with textPath.open(u'w', encoding=u'utf-8-sig') as out:
             out.write(headFormat % (
                 _(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id')))
-            for type_ in sorted(type_id_eid):
-                id_eid = type_id_eid[type_]
+            for type_, id_eid in sorted(type_id_eid.iteritems(),
+                                        key=lambda (k, v): k):
                 for id_, eid_ in sorted(id_eid.iteritems(),
                     key=lambda (__, eid_): eid_.lower()):
                     out.write(rowFormat % (type_, id_[0], id_[1], eid_))
@@ -1592,7 +1585,7 @@ class ItemPrices(_HandleAliases):
             format_,header = csvFormat(u'iss'),(u'"' + u'","'.join((
                 _(u'Mod Name'),_(u'ObjectIndex'),_(u'Value'),_(u'Editor Id'),
                 _(u'Name'),_(u'Type'))) + u'"\n')
-            for group, fid_stats in sorted(class_fid_stats.iteritems()):
+            for group, fid_stats in sorted(class_fid_stats.iteritems()): ##: key=lambda (k, v): k ?
                 if not fid_stats: continue
                 out.write(header)
                 for fid in sorted(fid_stats,key=lambda x:(
