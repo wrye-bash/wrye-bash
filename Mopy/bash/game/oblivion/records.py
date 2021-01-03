@@ -608,7 +608,7 @@ class MreBook(MelRecord):
         MelFull(),
         MelModel(),
         MelIcon(),
-        MelDescription(u'text'),
+        MelDescription(u'book_text'),
         MelScript(),
         MelFid('ENAM','enchantment'),
         MelOptUInt16('ANAM', 'enchantPoints'),
