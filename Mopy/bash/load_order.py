@@ -155,7 +155,7 @@ __empty = LoadOrder()
 cached_lord = __empty # must always be valid (or __empty)
 
 # Saved load orders
-lo_entry = collections.namedtuple('lo_entry', ['date', 'lord'])
+lo_entry = collections.namedtuple(u'lo_entry', [u'date', u'lord'])
 _saved_load_orders = [] # type: list[lo_entry]
 _current_list_index = -1
 

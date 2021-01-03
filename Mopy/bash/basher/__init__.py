@@ -537,7 +537,7 @@ class MasterList(_ModsUIList):
         elif newName == u'':
             return EventResult.CANCEL
         else:
-            balt.showError(self,_(u'File %s does not exist.') % newName.s)
+            balt.showError(self, _(u'File %s does not exist.') % newName)
             return EventResult.CANCEL
 
     #--GetMasters
@@ -2362,7 +2362,7 @@ class InstallersList(balt.UIList):
             if textNextLower == selectedText:
                 lenNextLower = lenWithExt
             else:
-                lenNextLower = len(textNextLower.s)
+                lenNextLower = len(textNextLower)
             if renaming_type.is_archive():
                 selection_span = (0, lenNextLower)
             elif renaming_type.is_marker():

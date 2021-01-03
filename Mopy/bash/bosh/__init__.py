@@ -3450,7 +3450,7 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
         if ignoreBackup: _bak.moveTo(u'%s.ignore' % _bak)
         # load the .bak file, or an empty settings dict saved to disc at exit
         loaded = _load()
-        if ignoreBackup: GPath(u'%s.ignore' % _bak).moveTo(_bak.s)
+        if ignoreBackup: GPath(u'%s.ignore' % _bak).moveTo(_bak)
         return loaded
     #--Set bass.settings ------------------------------------------------------
     try:
