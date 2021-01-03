@@ -430,8 +430,8 @@ class ActorFactions(_AParser):
                                                        x[0]).lower()):
                         factionEid = id_eid.get(faction,u'Unknown')
                         out.write(rowFormat % (
-                            type_,actorEid,id_[0].s,id_[1],factionEid,
-                            faction[0].s,faction[1],rank))
+                            type_, actorEid, id_[0], id_[1], factionEid,
+                            faction[0], faction[1], rank))
 
 #------------------------------------------------------------------------------
 class ActorLevels(object):
@@ -1269,28 +1269,24 @@ class ScriptText(object):
         with Progress(_(u'Import Scripts')) as progress:
             for root_dir, dirs, files in textPath.walk():
                 y = len(files)
-                z = 0
-                for name in files:
-                    z += 1
-                    if name.cext != inisettings[u'ScriptFileExt']:
-                        progress(((1/y)*z),_(u'Skipping file %s.') % name.s)
+                for z, f in enumerate(files, 1):
+                    if f.cext != inisettings[u'ScriptFileExt']:
+                        progress(((1 / y) * z), _(u'Skipping file %s.') % f)
                         continue
-                    progress(((1 / y) * z),_(u'Reading file %s.') % name.s)
-                    with root_dir.join(name).open(
+                    progress(((1 / y) * z), _(u'Reading file %s.') % f)
+                    with root_dir.join(f).open(
                             u'r', encoding=u'utf-8-sig') as text:
                         lines = text.readlines()
                     try:
                         modName,FormID,eid = lines[0][1:-2],lines[1][1:-2], \
                                              lines[2][1:-2]
-                    except:
-                        deprint(
-                            _(u'%s has malformed script header lines - was '
-                              u'skipped') % name)
+                    except IndexError:
+                        deprint(u'Skipped %s - malformed script header lines:'
+                                u'\n%s' % (f, u''.join(lines[:3])))
                         continue
                     scriptText = u''.join(lines[3:])
                     eid_data[eid] = (scriptText, FormID)
-        if eid_data: return True
-        return False
+        return bool(eid_data)
 
 #------------------------------------------------------------------------------
 class _UsesEffectsMixin(object):
