@@ -20,6 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from collections import defaultdict as _defaultdict # hide from dynamic import
 
 #--Game ESM/ESP/BSA files
 #  These filenames need to be in lowercase,
@@ -463,21 +464,6 @@ condition_function_data = {
     1028: (u'ClearInvalidRegistrations', 0, 0),
 }
 getvatsvalue_index = 407
-
-GlobalsTweaks = [
-    (_(u'World: Timescale'),_(u'Timescale will be set to:'),
-        u'timescale',
-        (u'1',         1),
-        (u'8',         8),
-        (u'10',       10),
-        (u'12',       12),
-        (u'[20]',     20),
-        (u'24',       24),
-        (u'30',       30),
-        (u'40',       40),
-        (_(u'Custom'), 20),
-        ),
-    ]
 
 GmstTweaks = [
     (_(u'Msg: Soul Captured'),
@@ -1661,6 +1647,16 @@ assorted_tweaks = {
     u'AssortedTweak_AbsorbSummonFix',
 }
 staff_condition = (u'animationType', 8)
+
+#------------------------------------------------------------------------------
+# Tweak Settings
+#------------------------------------------------------------------------------
+settings_tweaks = {
+    u'GlobalsTweak_Timescale',
+}
+settings_defaults = _defaultdict(lambda: None, {
+    u'GlobalsTweak_Timescale': u'20',
+})
 
 #------------------------------------------------------------------------------
 # Import Relations

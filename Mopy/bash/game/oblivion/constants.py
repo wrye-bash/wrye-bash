@@ -20,7 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 #--Game ESM/ESP/BSA files
 #  These filenames need to be in lowercase,
 bethDataFiles = {
@@ -267,18 +266,6 @@ save_rec_types = {
 }
 
 GlobalsTweaks = [
-    (_(u'World: Timescale'),_(u'Timescale will be set to:'),
-        u'timescale',
-        (u'1',         1),
-        (u'8',         8),
-        (u'10',       10),
-        (u'12',       12),
-        (u'18',       18),
-        (u'24',       24),
-        (u'[30]',     30),
-        (u'40',       40),
-        (_(u'Custom'), 0),
-        ),
     (_(u'Thieves Guild: Quest Stealing Penalty'),
      _(u'The penalty (in Septims) for stealing while doing a Thieves Guild job:'),
         u'tgpricesteal',
@@ -1375,6 +1362,13 @@ actor_tweaks = {
 # Tweak Names
 #------------------------------------------------------------------------------
 body_tags = u'ARGHTCCPBS'
+
+#------------------------------------------------------------------------------
+# Tweak Names
+#------------------------------------------------------------------------------
+settings_tweaks = {
+    u'GlobalsTweak_Timescale',
+}
 
 #------------------------------------------------------------------------------
 # Import Relations

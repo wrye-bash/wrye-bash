@@ -248,10 +248,11 @@ class AMultiTweakItem(object):
             if value in self.choiceValues:
                 self.chosen = self.choiceValues.index(value)
             else:
-                for choice_label in self.choiceLabels:
+                for i, choice_label in enumerate(self.choiceLabels):
                     if choice_label.startswith(_(u'Custom')):
-                        self.chosen = self.choiceLabels.index(choice_label)
+                        self.chosen = i
                         self.choiceValues[self.chosen] = value
+                        break
         else:
             if self.default:
                 self.chosen = self.default

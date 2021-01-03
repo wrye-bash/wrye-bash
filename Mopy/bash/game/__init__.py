@@ -416,30 +416,6 @@ class GameInfo(object):
     save_rec_types = {}
 
     """
-    GLOB record tweaks used by
-    patcher.patchers.multitweak_settings.TweakSettingsPatcher
-
-    Each entry is a tuple in the following format:
-      (DisplayText, MouseoverText, GLOB EditorID, Option1, Option2, ...,
-      OptionN)
-      -EditorID can be a plain string, or a tuple of multiple Editor IDs.
-      If it's a tuple, then Value (below) must be a tuple of equal length,
-      providing values for each GLOB
-    Each Option is a tuple:
-      (DisplayText, Value)
-      - If you enclose DisplayText in brackets like this: _(u'[Default]'),
-      then the patcher will treat this option as the default value.
-      - If you use _(u'Custom') as the entry, the patcher will bring up a
-      number input dialog
-
-    To make a tweak Enabled by Default, enclose the tuple entry for the
-    tweak in a list, and make a dictionary as the second list item with {
-    u'default_enabled': True}. See the UOP Vampire face fix for an example of
-    this (in the GMST Tweaks)
-    """
-    GlobalsTweaks = []
-
-    """
     GMST record tweaks used by
     patcher.patchers.multitweak_settings.TweakSettingsPatcher
 
@@ -574,6 +550,13 @@ class GameInfo(object):
     body_tags = u''
 
     #--------------------------------------------------------------------------
+    # Tweak Settings
+    #--------------------------------------------------------------------------
+    settings_tweaks = set()
+    # Allows changing the defaults for certain tweaks per game
+    settings_defaults = defaultdict(lambda: None)
+
+    #--------------------------------------------------------------------------
     # Import Relations
     #--------------------------------------------------------------------------
     relations_attrs = ()
@@ -672,7 +655,8 @@ class GameInfo(object):
         u'soundsLongsTypes', u'soundsTypes', u'spell_stats_attrs',
         u'spell_stats_types', u'statsHeaders', u'statsTypes', u'text_types',
         u'assorted_tweaks', u'staff_condition', u'static_attenuation_rec_type',
-        u'nonplayable_biped_flags', u'not_playable_flag'
+        u'nonplayable_biped_flags', u'not_playable_flag', u'settings_tweaks',
+        u'settings_defaults',
     }
 
     @classmethod

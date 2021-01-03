@@ -305,21 +305,6 @@ condition_function_data = {
 }
 getvatsvalue_index = 408
 
-GlobalsTweaks = [
-    (_(u'World: Timescale'),_(u'Timescale will be set to:'),
-        u'timescale',
-        (u'1',         1),
-        (u'8',         8),
-        (u'10',        10),
-        (u'12',        12),
-        (u'20',        20),
-        (u'24',        24),
-        (u'[30]',      30),
-        (u'40',        40),
-        (_(u'Custom'), 30),
-        ),
-    ]
-
 GmstTweaks = [
     (_(u'Camera: Chase Distance'),
      _(u'Distance camera can be moved away from PC using mouse wheel.'),
@@ -1047,6 +1032,13 @@ actor_tweaks = {
 # Tweak Names
 #------------------------------------------------------------------------------
 body_tags = u'HAGPBFE'
+
+#------------------------------------------------------------------------------
+# Tweak Settings
+#------------------------------------------------------------------------------
+settings_tweaks = {
+    u'GlobalsTweak_Timescale',
+}
 
 #------------------------------------------------------------------------------
 # Tweak Assorted
