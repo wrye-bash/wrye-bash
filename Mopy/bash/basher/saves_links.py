@@ -765,8 +765,8 @@ class Save_Stats(OneItemLink):
             progress(0.9,_(u'Calculating statistics.'))
             saveFile.logStats(log)
             progress.Destroy()
-            text = log.out.getvalue()
-            self._showLog(text, title=self._selected_item, fixedFont=False)
+            statslog = log.out.getvalue()
+            self._showLog(statslog, title=self._selected_item, fixedFont=False)
 
 #------------------------------------------------------------------------------
 class _Save_StatCosave(AppendableLink, OneItemLink):
@@ -782,8 +782,9 @@ class _Save_StatCosave(AppendableLink, OneItemLink):
         with BusyCursor(), bolt.sio() as out:
             log = bolt.LogFile(out)
             self._cosave.dump_to_log(log, self._selected_info.header.masters)
-            text = log.out.getvalue()
-        self._showLog(text, title=self._cosave.abs_path.tail, fixedFont=False)
+            logtxt = log.out.getvalue()
+        self._showLog(logtxt, title=self._cosave.abs_path.tail,
+                      fixedFont=False)
 
 #------------------------------------------------------------------------------
 class Save_StatObse(_Save_StatCosave):

@@ -554,7 +554,7 @@ class ListEditorData(object):
     def getInfo(self,item):
         """Returns string info on specified item."""
         return u''
-    def setInfo(self,item,text):
+    def setInfo(self, item, info_text):
         """Sets string info on specified item."""
         raise AbstractError
 
@@ -1152,10 +1152,10 @@ class UIList(wx.Panel):
                 self.mouse_index = itemDex
                 if itemDex >= 0:
                     item = self.GetItem(itemDex) # get the item for this index
-                    text = self.mouseTexts.get(item, u'')
-                    if text != self.mouseTextPrev:
-                        Link.Frame.set_status_info(text)
-                        self.mouseTextPrev = text
+                    item_txt = self.mouseTexts.get(item, u'')
+                    if item_txt != self.mouseTextPrev:
+                        Link.Frame.set_status_info(item_txt)
+                        self.mouseTextPrev = item_txt
     def _handle_mouse_leaving(self):
         if self.mouse_index is not None:
             self.mouse_index = None
@@ -1435,11 +1435,11 @@ class UIList(wx.Panel):
                 listCtrl.lc_set_column_width(colDex, colWidth)
             else: # Update an existing column
                 column = listCtrl.lc_get_column(colDex)
-                text = column.GetText() # Py3: unicode?
-                if text == colName:
+                col_text = column.GetText() # Py3: unicode?
+                if col_text == colName:
                     # Don't change it, just make sure the width is correct
                     listCtrl.lc_set_column_width(colDex, colWidth)
-                elif text not in names:
+                elif col_text not in names:
                     # Column that doesn't exist anymore
                     listCtrl.lc_delete_column(colDex)
                     continue # do not increment colDex or update colDict
@@ -2068,9 +2068,9 @@ class UIList_Hide(ItemLink):
 
 # wx Wrappers -----------------------------------------------------------------
 #------------------------------------------------------------------------------
-def copyToClipboard(text):
+def copyToClipboard(text_to_copy):
     if wx.TheClipboard.Open():
-        wx.TheClipboard.SetData(wx.TextDataObject(text))
+        wx.TheClipboard.SetData(wx.TextDataObject(text_to_copy))
         wx.TheClipboard.Close()
 
 def copyListToClipboard(selected):
