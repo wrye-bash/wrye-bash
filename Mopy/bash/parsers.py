@@ -1258,8 +1258,8 @@ class ScriptText(object):
                         continue
                     progress(((1 / y) * z), _(u'Reading file %s.') % f)
                     with root_dir.join(f).open(
-                            u'r', encoding=u'utf-8-sig') as text:
-                        lines = text.readlines()
+                            u'r', encoding=u'utf-8-sig') as ins:
+                        lines = ins.readlines()
                     try:
                         modName,FormID,eid = lines[0][1:-2],lines[1][1:-2], \
                                              lines[2][1:-2]

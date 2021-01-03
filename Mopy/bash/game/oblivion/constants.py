@@ -533,7 +533,7 @@ del _cobl, _ob
 # Import Text
 #------------------------------------------------------------------------------
 text_types = {
-    b'BOOK': (u'text',),
+    b'BOOK': (u'book_text',),
     b'BSGN': (u'text',),
     b'CLAS': (u'description',),
     b'LSCR': (u'description',),

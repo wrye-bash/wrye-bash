@@ -362,7 +362,7 @@ class _ATextReplacer(_ANamesTweak):
         b'AMMO': (u'full',),
         b'APPA': (u'full',),
         b'ARMO': (u'full',),
-        b'BOOK': (u'full', u'text'),
+        b'BOOK': (u'full', u'book_text'),
         b'BSGN': (u'full', u'text'),
         b'CLAS': (u'full', u'description'),
         b'CLOT': (u'full',),
