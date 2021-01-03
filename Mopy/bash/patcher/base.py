@@ -29,8 +29,6 @@ from this module outside of the patcher package."""
 # unhelpful) docs from overriding methods to save some (100s) lines. We must
 # also document which methods MUST be overridden by raising AbstractError. For
 # instance Patcher.buildPatch() apparently is NOT always overridden
-import copy
-
 from .. import load_order
 from ..exception import AbstractError
 
@@ -113,7 +111,7 @@ class AMultiTweaker(Abstract_Patcher):
     configured through a choice menu."""
     patcher_group = u'Tweakers'
     patcher_order = 30
-    _tweak_classes = [] # override in implementations
+    _tweak_classes = set() # override in implementations
 
     def __init__(self, p_name, p_file, enabled_tweaks):
         super(AMultiTweaker, self).__init__(p_name, p_file)
@@ -122,9 +120,8 @@ class AMultiTweaker(Abstract_Patcher):
 
     @classmethod
     def tweak_instances(cls):
-        tweak_classes = copy.deepcopy(cls._tweak_classes)
         # Sort alphabetically first for aesthetic reasons
-        tweak_classes.sort(key=lambda c: c.tweak_name)
+        tweak_classes = sorted(cls._tweak_classes, key=lambda c: c.tweak_name)
         # After that, sort to make tweaks instantiate & run in the right order
         tweak_classes.sort(key=lambda c: c.tweak_order)
         return [t() for t in tweak_classes]

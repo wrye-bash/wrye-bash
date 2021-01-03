@@ -913,4 +913,4 @@ class TweakAssortedPatcher(MultiTweaker):
     # tweakers use this flag to determine which records to target, so they
     # *must* run afterwards or we'll miss some records.
     patcher_order = 29
-    _tweak_classes = [globals()[t] for t in bush.game.assorted_tweaks]
+    _tweak_classes = {globals()[t] for t in bush.game.assorted_tweaks}

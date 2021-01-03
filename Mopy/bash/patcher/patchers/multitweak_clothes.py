@@ -23,13 +23,10 @@
 
 """This module contains oblivion multitweak item patcher classes that belong
 to the Clothes Multitweaker - as well as the tweaker itself."""
-import itertools
-from ...patcher.base import AMultiTweaker, DynamicTweak
-from ...patcher.patchers.base import MultiTweakItem
-from ...patcher.patchers.base import MultiTweaker
+from ...patcher.patchers.base import MultiTweaker, MultiTweakItem
 
 # Patchers: 30 ----------------------------------------------------------------
-class ClothesTweak(DynamicTweak, MultiTweakItem):
+class _AClothesTweak(MultiTweakItem):
     tweak_read_classes = b'CLOT',
     clothes_flags = {
         u'hoods':    0x00000002,
@@ -44,10 +41,9 @@ class ClothesTweak(DynamicTweak, MultiTweakItem):
         u'rings':    0x000000C0, # (1<<6) | (1<<7),
     }
 
-    def __init__(self, tweak_name, tweak_tip, tweak_key, *tweak_choices):
-        super(ClothesTweak, self).__init__(tweak_name, tweak_tip, tweak_key,
-            *tweak_choices)
-        type_key = tweak_key[:tweak_key.find(u'.')]
+    def __init__(self):
+        super(_AClothesTweak, self).__init__()
+        type_key = self.tweak_key[:self.tweak_key.find(u'.')]
         self.or_type_flags = type_key == u'rings'
         self.type_flags = self.clothes_flags[type_key]
 
@@ -60,7 +56,7 @@ class ClothesTweak(DynamicTweak, MultiTweakItem):
                 rec_type_flags & my_type_flags == rec_type_flags)))
 
 #------------------------------------------------------------------------------
-class ClothesTweak_MaxWeight(ClothesTweak):
+class _AClothesTweak_MaxWeight(_AClothesTweak):
     """Shared code of max weight tweaks."""
     tweak_log_msg = _(u'Clothes Reweighed: %(total_changed)d')
 
@@ -71,7 +67,7 @@ class ClothesTweak_MaxWeight(ClothesTweak):
         # Guess (i.e. super_weight) is intentionally overweight
         max_weight = self.chosen_weight
         super_weight = max(10, 5 * max_weight)
-        return super(ClothesTweak_MaxWeight, self).wants_record(
+        return super(_AClothesTweak_MaxWeight, self).wants_record(
             record) and max_weight < record.weight < super_weight
 
     def tweak_record(self, record):
@@ -80,10 +76,34 @@ class ClothesTweak_MaxWeight(ClothesTweak):
     def tweak_log(self, log, count):
         self.tweak_log_header = (self.tweak_name +
                                  u' [%4.2f]' % self.chosen_weight)
-        super(ClothesTweak_MaxWeight, self).tweak_log(log, count)
+        super(_AClothesTweak_MaxWeight, self).tweak_log(log, count)
 
 #------------------------------------------------------------------------------
-class ClothesTweak_Unblock(ClothesTweak):
+class ClothesTweak_MaxWeightAmulets(_AClothesTweak_MaxWeight):
+    tweak_name = _(u'Max Weight Amulets')
+    tweak_tip = _(u'Amulet weight will be capped.')
+    tweak_key = u'amulets.maxWeight'
+    tweak_choices = [(u'0.0', 0.0), (u'0.1', 0.1), (u'0.2', 0.2),
+                     (u'0.5', 0.5), (_(u'Custom'), 0.0)]
+
+#------------------------------------------------------------------------------
+class ClothesTweak_MaxWeightRings(_AClothesTweak_MaxWeight):
+    tweak_name = _(u'Max Weight Rings')
+    tweak_tip = _(u'Ring weight will be capped.')
+    tweak_key = u'rings.maxWeight'
+    tweak_choices = [(u'0.0', 0.0), (u'0.1', 0.1), (u'0.2', 0.2),
+                     (u'0.5', 0.5), (_(u'Custom'), 0.0)]
+
+#------------------------------------------------------------------------------
+class ClothesTweak_MaxWeightHoods(_AClothesTweak_MaxWeight):
+    tweak_name = _(u'Max Weight Hoods')
+    tweak_tip = _(u'Hood weight will be capped.')
+    tweak_key = u'hoods.maxWeight'
+    tweak_choices = [(u'0.2', 0.2), (u'0.5', 0.5), (u'1.0', 1.0),
+                     (_(u'Custom'), 0.0)]
+
+#------------------------------------------------------------------------------
+class _AClothesTweak_Unblock(_AClothesTweak):
     """Unlimited rings, amulets."""
     tweak_log_msg = _(u'Clothes Tweaked: %(total_changed)d')
 
@@ -97,62 +117,53 @@ class ClothesTweak_Unblock(ClothesTweak):
         return self._unblock_flags
 
     def wants_record(self, record):
-        return super(ClothesTweak_Unblock, self).wants_record(
+        return super(_AClothesTweak_Unblock, self).wants_record(
             record) and int(record.biped_flags & self.unblock_flags)
 
     def tweak_record(self, record):
         record.biped_flags &= ~self.unblock_flags
 
 #------------------------------------------------------------------------------
-class _AClothesTweaker(AMultiTweaker):
-    """Patches clothes in miscellaneous ways."""
-    _read_write_records = (b'CLOT',)
-    _unblock = ((_(u'Unlimited Amulets'),
-                 _(u"Wear unlimited number of amulets - but they won't"
-                   u'display.'),
-                 u'amulets.unblock.amulets',),
-                (_(u'Unlimited Rings'),
-                 _(u"Wear unlimited number of rings - but they won't"
-                   u'display.'),
-                 u'rings.unblock.rings'),
-                (_(u'Gloves Show Rings'),
-                 _(u'Gloves will always show rings. (Conflicts with Unlimited '
-                   u'Rings.)'),
-                 u'gloves.unblock.rings2'),
-                (_(u'Robes Show Pants'),
-                _(u"Robes will allow pants, greaves, skirts - but they'll"
-                  u'clip.'),
-                u'robes.unblock.pants'),
-                (_(u'Robes Show Amulets'),
-                _(u'Robes will always show amulets. (Conflicts with Unlimited '
-                  u'Amulets.)'),
-                u'robes.show.amulets2'),)
-    _max_weight = ((_(u'Max Weight Amulets'),
-                    _(u'Amulet weight will be capped.'),
-                    u'amulets.maxWeight',
-                    (u'0.0', 0.0),
-                    (u'0.1', 0.1),
-                    (u'0.2', 0.2),
-                    (u'0.5', 0.5),
-                    (_(u'Custom'), 0.0),),
-                   (_(u'Max Weight Rings'), _(u'Ring weight will be capped.'),
-                    u'rings.maxWeight',
-                    (u'0.0', 0.0),
-                    (u'0.1', 0.1),
-                    (u'0.2', 0.2),
-                    (u'0.5', 0.5),
-                    (_(u'Custom'), 0.0),),
-                   (_(u'Max Weight Hoods'), _(u'Hood weight will be capped.'),
-                    u'hoods.maxWeight',
-                    (u'0.2', 0.2),
-                    (u'0.5', 0.5),
-                    (u'1.0', 1.0),
-                    (_(u'Custom'), 0.0),),)
+class ClothesTweak_UnlimitedAmulets(_AClothesTweak_Unblock):
+    tweak_name = _(u'Unlimited Amulets')
+    tweak_tip = _(u"Wear unlimited number of amulets - but they won't "
+                  u'display.')
+    tweak_key = u'amulets.unblock.amulets'
 
-class TweakClothesPatcher(_AClothesTweaker,MultiTweaker):
-    @classmethod
-    def tweak_instances(cls):
-        return sorted(itertools.chain(
-            (ClothesTweak_Unblock(*x) for x in cls._unblock),
-            (ClothesTweak_MaxWeight(*x) for x in cls._max_weight)),
-                      key=lambda a: a.tweak_name.lower())
+#------------------------------------------------------------------------------
+class ClothesTweak_UnlimitedRings(_AClothesTweak_Unblock):
+    tweak_name = _(u'Unlimited Rings')
+    tweak_tip = _(u"Wear unlimited number of rings - but they won't "
+                  u'display.')
+    tweak_key = u'rings.unblock.rings'
+
+#------------------------------------------------------------------------------
+class ClothesTweak_GlovesShowRings(_AClothesTweak_Unblock):
+    tweak_name = _(u'Gloves Show Rings')
+    tweak_tip = _(u'Gloves will always show rings (conflicts with Unlimited '
+                  u'Rings).')
+    tweak_key = u'gloves.unblock.rings2'
+
+#------------------------------------------------------------------------------
+class ClothesTweak_RobesShowPants(_AClothesTweak_Unblock):
+    tweak_name = _(u'Robes Show Pants')
+    tweak_tip = _(u"Robes will allow pants, greaves, skirts - but they'll "
+                  u'clip.')
+    tweak_key = u'robes.unblock.pants'
+
+#------------------------------------------------------------------------------
+class ClothesTweak_RobesShowAmulets(_AClothesTweak_Unblock):
+    tweak_name = _(u'Robes Show Amulets')
+    tweak_tip = _(u'Robes will always show amulets (conflicts with Unlimited '
+                  u'Amulets).')
+    tweak_key = u'robes.show.amulets2'
+
+#------------------------------------------------------------------------------
+class TweakClothesPatcher(MultiTweaker):
+    """Patches clothes in miscellaneous ways."""
+    _tweak_classes = {
+        ClothesTweak_MaxWeightAmulets, ClothesTweak_MaxWeightRings,
+        ClothesTweak_MaxWeightHoods, ClothesTweak_UnlimitedAmulets,
+        ClothesTweak_UnlimitedRings, ClothesTweak_GlovesShowRings,
+        ClothesTweak_RobesShowPants, ClothesTweak_RobesShowAmulets,
+    }

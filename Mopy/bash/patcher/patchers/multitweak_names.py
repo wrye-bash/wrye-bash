@@ -526,14 +526,14 @@ class NamesTweak_SecurityToLockpicking(_ATextReplacer):
 #------------------------------------------------------------------------------
 class TweakNamesPatcher(MultiTweaker):
     """Tweaks record full names in various ways."""
-    _tweak_classes = [
+    _tweak_classes = {
         NamesTweak_BodyTags, NamesTweak_Body_Armor, NamesTweak_Body_Clothes,
         NamesTweak_Potions, NamesTweak_Scrolls, NamesTweak_Spells,
         NamesTweak_Weapons, NamesTweak_DwarvenToDwemer,
         NamesTweak_DwarfsToDwarves, NamesTweak_StaffsToStaves,
         NamesTweak_FatigueToStamina, NamesTweak_MarksmanToArchery,
-        NamesTweak_SecurityToLockpicking
-    ]
+        NamesTweak_SecurityToLockpicking,
+    }
 
     def __init__(self, p_name, p_file, enabled_tweaks):
         super(TweakNamesPatcher, self).__init__(p_name, p_file, enabled_tweaks)

@@ -302,10 +302,12 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
     patcher_group = u'Special'
     patcher_order = 40
     _read_write_records = (b'RACE', b'EYES', b'HAIR', b'NPC_')
-    _tweak_classes = [RaceTweaker_BiggerOrcsAndNords,
-        RaceTweaker_MergeSimilarRaceHairs, RaceTweaker_MergeSimilarRaceEyes,
-        RaceTweaker_PlayableEyes, RaceTweaker_PlayableHairs,
-        RaceTweaker_SexlessHairs, RaceTweaker_AllEyes, RaceTweaker_AllHairs, ]
+    _tweak_classes = {
+        RaceTweaker_BiggerOrcsAndNords, RaceTweaker_MergeSimilarRaceHairs,
+        RaceTweaker_MergeSimilarRaceEyes, RaceTweaker_PlayableEyes,
+        RaceTweaker_PlayableHairs, RaceTweaker_SexlessHairs,
+        RaceTweaker_AllEyes, RaceTweaker_AllHairs,
+    }
 
     def __init__(self, p_name, p_file, p_sources, enabled_tweaks):
         # NB: call the ListPatcher __init__ not the AMultiTweaker one!
