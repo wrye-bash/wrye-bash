@@ -265,49 +265,6 @@ save_rec_types = {
     61: _(u'AI Package'),
 }
 
-GlobalsTweaks = [
-    (_(u'Thieves Guild: Quest Stealing Penalty'),
-     _(u'The penalty (in Septims) for stealing while doing a Thieves Guild job:'),
-        u'tgpricesteal',
-        (u'100',     100),
-        (u'150',     150),
-        (u'[200]',   200),
-        (u'300',     300),
-        (u'400',     400),
-        (_(u'Custom'), 0),
-        ),
-    (_(u'Thieves Guild: Quest Killing Penalty'),
-     _(u'The penalty (in Septims) for killing while doing a Thieves Guild job:'),
-        u'tgpriceperkill',
-        (u'250',     250),
-        (u'500',     500),
-        (u'[1000]', 1000),
-        (u'1500',   1500),
-        (u'2000',   2000),
-        (_(u'Custom'), 0),
-        ),
-    (_(u'Thieves Guild: Quest Attacking Penalty'),
-     _(u'The penalty (in Septims) for attacking while doing a Thieves Guild job:'),
-        u'tgpriceattack',
-        (u'100',     100),
-        (u'250',     250),
-        (u'[500]',   500),
-        (u'750',     750),
-        (u'1000',   1000),
-        (_(u'Custom'), 0),
-        ),
-    (_(u'Crime: Force Jail'),
-     _(u'The amount of Bounty at which a jail sentence is mandatory'),
-        u'crimeforcejail',
-        (u'1000',   1000),
-        (u'2500',   2500),
-        (u'[5000]', 5000),
-        (u'7500',   7500),
-        (u'10000', 10000),
-        (_(u'Custom'), 0),
-        ),
-    ]
-
 GmstTweaks = [
     (_(u'Arrow: Litter Count'),
      _(u'Maximum number of spent arrows allowed in cell.'),
@@ -1368,6 +1325,10 @@ body_tags = u'ARGHTCCPBS'
 #------------------------------------------------------------------------------
 settings_tweaks = {
     u'GlobalsTweak_Timescale',
+    u'GlobalsTweak_ThievesGuild_QuestStealingPenalty',
+    u'GlobalsTweak_ThievesGuild_QuestKillingPenalty',
+    u'GlobalsTweak_ThievesGuild_QuestAttackingPenalty',
+    u'GlobalsTweak_Crime_ForceJail',
 }
 
 #------------------------------------------------------------------------------

@@ -88,6 +88,58 @@ class GlobalsTweak_Timescale(_AGlobalsTweak):
                      (_(u'Custom'), 0)]
 
 #------------------------------------------------------------------------------
+class GlobalsTweak_ThievesGuild_QuestStealingPenalty(_AGlobalsTweak):
+    tweak_name = _(u'Thieves Guild: Quest Stealing Penalty')
+    tweak_tip = _(u'The penalty (in Septims) for stealing while doing a '
+                  u'Thieves Guild job:')
+    tweak_key = u'tgpricesteal'
+    tweak_choices = [(u'100',     100),
+                     (u'150',     150),
+                     (u'[200]',   200),
+                     (u'300',     300),
+                     (u'400',     400),
+                     (_(u'Custom'), 0)]
+
+#------------------------------------------------------------------------------
+class GlobalsTweak_ThievesGuild_QuestKillingPenalty(_AGlobalsTweak):
+    tweak_name = _(u'Thieves Guild: Quest Killing Penalty')
+    tweak_tip = _(u'The penalty (in Septims) for killing while doing a '
+                  u'Thieves Guild job:')
+    tweak_key = u'tgpriceperkill'
+    tweak_choices = [(u'250',     250),
+                     (u'500',     500),
+                     (u'[1000]', 1000),
+                     (u'1500',   1500),
+                     (u'2000',   2000),
+                     (_(u'Custom'), 0)]
+
+#------------------------------------------------------------------------------
+class GlobalsTweak_ThievesGuild_QuestAttackingPenalty(_AGlobalsTweak):
+    tweak_name = _(u'Thieves Guild: Quest Attacking Penalty')
+    tweak_tip = _(u'The penalty (in Septims) for attacking while doing a '
+                  u'Thieves Guild job:')
+    tweak_key = u'tgpriceattack'
+    tweak_choices = [(u'100',     100),
+                     (u'250',     250),
+                     (u'[500]',   500),
+                     (u'750',     750),
+                     (u'1000',   1000),
+                     (_(u'Custom'), 0)]
+
+#------------------------------------------------------------------------------
+class GlobalsTweak_Crime_ForceJail(_AGlobalsTweak):
+    tweak_name = _(u'Crime: Force Jail')
+    tweak_tip = _(u'The amount of Bounty at which a jail sentence is '
+                  u'mandatory')
+    tweak_key = u'crimeforcejail'
+    tweak_choices = [(u'1000',   1000),
+                     (u'2500',   2500),
+                     (u'[5000]', 5000),
+                     (u'7500',   7500),
+                     (u'10000', 10000),
+                     (_(u'Custom'), 0)]
+
+#------------------------------------------------------------------------------
 class _AGmstTweak(_ASettingsTweak):
     """Sets a GMST to specified value."""
     tweak_read_classes = b'GMST',
