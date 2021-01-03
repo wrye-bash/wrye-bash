@@ -20,6 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import copy
 import os
 import re
 from collections import Counter, defaultdict
@@ -87,10 +88,10 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
         """Edits patch file as desired. Will write to log."""
         if not self.isActive: return
         #--Setup
-        mgef_name = self.patchFile.getMgefName()
-        for mgef in mgef_name:
-            mgef_name[mgef] = re.sub(_(u'(Attribute|Skill)'), u'',
-                                     mgef_name[mgef])
+        alt_names = copy.deepcopy(self.patchFile.getMgefName())
+        attr_or_skill = u'(%s|%s)' % (_(u'Attribute'), _(u'Skill'))
+        for mgef in alt_names:
+            alt_names[mgef] = re.sub(attr_or_skill, u'', alt_names[mgef])
         actorEffects = bush.game.generic_av_effects
         actorNames = bush.game.actor_values
         keep = self.patchFile.getKeeper()
@@ -133,7 +134,7 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
                                                  key=lambda a: a[1].lower()):
                     buffWrite(full+u'\r\n')
                     for mgef,actorValue in effects[:num]:
-                        effectName = mgef_name[mgef]
+                        effectName = alt_names[mgef]
                         if mgef in actorEffects:
                             effectName += actorNames[actorValue]
                         buffWrite(u'  '+effectName+u'\r\n')
@@ -143,7 +144,7 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
         effect_ingred = defaultdict(list)
         for _fid,(eid,full,effects) in id_ingred.iteritems():
             for index,(mgef,actorValue) in enumerate(effects):
-                effectName = mgef_name[mgef]
+                effectName = alt_names[mgef]
                 if mgef in actorEffects: effectName += actorNames[actorValue]
                 effect_ingred[effectName].append((index,full))
         #--Effect catalogs

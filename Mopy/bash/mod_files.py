@@ -379,7 +379,7 @@ class ModFile(object):
                               else nonhostile_recs)
                 target_set.add(record.eid)
                 target_set.add(unpack_eid(record.eid.encode(u'ascii'))[0])
-                m_names[record.eid] = record.full
+                m_names[record.eid] = record.full or u'' # could this be None?
         self.cached_mgef_school = m_school
         self.cached_mgef_hostiles = m_hostiles - nonhostile_recs | hostile_recs
         self.cached_mgef_names = m_names

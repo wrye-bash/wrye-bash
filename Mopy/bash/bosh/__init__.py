@@ -838,9 +838,9 @@ class ModInfo(FileInfo):
                 # We're a master now, so calculate the ONAM
                 temp_headers = ModHeaderReader.read_temp_child_headers(self)
                 num_masters = len(self.masterNames)
-                # Note that the only thing that matters is the first two bytes
-                # of the fid, since both overrides and injected records need
-                # ONAM. We sort because xEdit does as well.
+                # Note that the only thing that matters is the first byte of
+                # the fid, since both overrides and injected records need ONAM.
+                # We sort because xEdit does as well.
                 new_onam = sorted(h.fid for h in temp_headers
                                   if (h.fid >> 24) < num_masters)
             else:

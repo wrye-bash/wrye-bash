@@ -165,10 +165,11 @@ class LOOTParser(object):
                                     for r, e in masterlist.iteritems()
                                     if is_regex(r)]
             self._cached_merges = {}
-        except yaml.YAMLError:
+        except (TypeError, yaml.YAMLError):
             if not catch_errors:
                 raise
-            deprint(u'Error when parsing LOOT masterlist', traceback=True)
+            deprint(u'Error when parsing LOOT masterlist %s, it likely has '
+                    u'malformed syntax' % masterlist_path, traceback=True)
 
     def is_plugin_dirty(self, plugin_name, mod_infos):
         """Checks if the specified plugin is dirty according to the information
