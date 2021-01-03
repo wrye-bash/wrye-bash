@@ -380,9 +380,9 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
                     split = line.split(u':')
                     if len(split) != 2:
                         continue
-                    key = split[0]
+                    color_key = split[0]
                     # Verify color exists
-                    if key not in colors:
+                    if color_key not in colors:
                         continue
                     # Parse the color, verify that it's actually valid
                     color_tup = tuple([int(c.strip()) for c
@@ -395,9 +395,10 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
                     else:
                         # All checks passed, save it
                         color = Color(*color_tup)
-                        if color == colors[key] and key not in self.changes:
+                        if (color == colors[color_key] and
+                                color_key not in self.changes):
                             continue # skip, identical to our current state
-                        self.changes[key] = color
+                        self.changes[color_key] = color
         except Exception as e:
             balt.showError(self,
                 _(u'An error occurred reading from ') + inPath.stail +

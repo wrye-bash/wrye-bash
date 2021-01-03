@@ -2237,11 +2237,13 @@ class InstallersData(DataStore):
             # Ini tweaks and mods - those are keyed in data by rel path...
             relpath = apath.relpath(bass.dirs[u'mods'])
             # ghosts...
-            key = relpath.root.s if relpath.cs[-6:] == u'.ghost' else relpath.s
+            path_key = (relpath.root.s if relpath.cs[-6:] == u'.ghost'
+                        else relpath.s)
             if apath in deleted:
-                do_refresh |= bool(self.data_sizeCrcDate.pop(key, None))
+                do_refresh |= bool(self.data_sizeCrcDate.pop(path_key, None))
             else:
-                self.data_sizeCrcDate[key] = (apath.size,apath.crc,apath.mtime)
+                self.data_sizeCrcDate[path_key] = (apath.size, apath.crc,
+                                                   apath.mtime)
                 do_refresh = True
         return do_refresh # Some tracked files changed, update installers status
 

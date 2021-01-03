@@ -1144,7 +1144,7 @@ class Flags(object):
     def getTrueAttrs(self):
         """Returns attributes that are true."""
         trueNames = [name for name in self._names if getattr(self,name)]
-        trueNames.sort(key = lambda xxx: self._names[xxx])
+        trueNames.sort(key=lambda xxx: self._names[xxx])
         return tuple(trueNames)
 
     def __repr__(self):
@@ -1260,13 +1260,14 @@ class MainFunctions(object):
         """Initialization."""
         self.funcs = {}
 
-    def add(self,func,key=None):
+    def add(self, func, func_key=None):
         """Add a callable object.
         func - A function or class instance.
-        key - Command line invocation for object (defaults to name of func).
+        func_key - Command line invocation for object (defaults to name of
+        func).
         """
-        key = key or func.__name__
-        self.funcs[key] = func
+        func_key = func_key or func.__name__
+        self.funcs[func_key] = func
         return func
 
     def main(self):
@@ -1274,10 +1275,10 @@ class MainFunctions(object):
         #--Get func
         args = sys.argv[1:]
         attrs = args.pop(0).split(u'.')
-        key = attrs.pop(0)
-        func = self.funcs.get(key)
+        func_key = attrs.pop(0)
+        func = self.funcs.get(func_key)
         if not func:
-            msg = _(u"Unknown function/object: %s") % key
+            msg = _(u'Unknown function/object: %s') % func_key
             try: print(msg)
             except UnicodeError: print(msg.encode('mbcs'))
             return

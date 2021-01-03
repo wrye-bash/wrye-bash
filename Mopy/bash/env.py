@@ -56,14 +56,14 @@ def get_registry_path(subkey, entry, detection_file):
     for hkey in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
         for wow6432 in (u'', u'Wow6432Node\\'):
             try:
-                key = winreg.OpenKey(
+                reg_key = winreg.OpenKey(
                     hkey, u'Software\\%s%s' % (wow6432, subkey), 0,
                     winreg.KEY_READ | winreg.KEY_WOW64_64KEY)
-                value = winreg.QueryValueEx(key, entry)
+                reg_val = winreg.QueryValueEx(reg_key, entry)
             except OSError:
                 continue
-            if value[1] != winreg.REG_SZ: continue
-            installPath = GPath(value[0])
+            if reg_val[1] != winreg.REG_SZ: continue
+            installPath = GPath(reg_val[0])
             if not installPath.exists(): continue
             exePath = installPath.join(detection_file)
             if not exePath.exists(): continue
@@ -94,11 +94,11 @@ except ImportError:
     envDefs = _os.environ
 
     def subEnv(match):
-        key = match.group(1).upper()
-        if not envDefs.get(key):
-            raise BoltError(u'Can\'t find user directories in windows registry'
-                    u'.\n>> See "If Bash Won\'t Start" in bash docs for help.')
-        return envDefs[key]
+        env_var = match.group(1).upper()
+        if not envDefs.get(env_var):
+            raise BoltError(u"Can't find user directories in windows registry."
+                u'\n>> See "If Bash Won\'t Start" in bash docs for help.')
+        return envDefs[env_var]
 
     def _getShellPath(folderKey): ##: mkdirs
         if not winreg:  # Linux HACK

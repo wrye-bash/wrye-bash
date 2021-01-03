@@ -673,14 +673,14 @@ class GameIni(IniFile):
     def setBsaRedirection(self,doRedirect=True):
         """Activate or deactivate BSA redirection - game ini must exist!"""
         if self.isCorrupted: return
-        section, key = bush.game.Ini.bsa_redirection_key
-        if not section or not key: return
+        br_section, br_key = bush.game.Ini.bsa_redirection_key
+        if not br_section or not br_key: return
         aiBsa = dirs[u'mods'].join(u'ArchiveInvalidationInvalidated!.bsa')
         aiBsaMTime = time.mktime((2006, 1, 2, 0, 0, 0, 0, 2, 0))
         if aiBsa.exists() and aiBsa.mtime > aiBsaMTime:
             aiBsa.mtime = aiBsaMTime
         # check if BSA redirection is active
-        sArchives = self.getSetting(section, key, u'')
+        sArchives = self.getSetting(br_section, br_key, u'')
         is_bsa_redirection_active = any(x for x in sArchives.split(u',')
             if x.strip().lower() in self.bsaRedirectors)
         if doRedirect == is_bsa_redirection_active:
@@ -692,7 +692,7 @@ class GameIni(IniFile):
                 env.shellCopy(source, aiBsa, allowUndo=True, autoRename=True)
             except (env.AccessDeniedError, CancelError, SkipError):
                 return
-        sArchives = self.getSetting(section,key,u'')
+        sArchives = self.getSetting(br_section, br_key, u'')
         #--Strip existing redirectors out
         archives_ = [x.strip() for x in sArchives.split(u',') if
                      x.strip().lower() not in self.bsaRedirectors]

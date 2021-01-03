@@ -335,14 +335,14 @@ class _Mods_xEditExpert(BoolLink):
     """Toggle xEdit expert mode (when launched via Bash)."""
     _text = _(u'Expert Mode')
     _help = _(u'Launch %s in expert mode.') % bush.game.Xe.full_name
-    key = bush.game.Xe.xe_key_prefix + u'.iKnowWhatImDoing'
+    _bl_key = bush.game.Xe.xe_key_prefix + u'.iKnowWhatImDoing'
 
 class _Mods_xEditSkipBSAs(BoolLink):
     """Toggle xEdit skip bsa mode (when launched via Bash)."""
     _text = _(u'Skip BSAs')
     _help = _(u'Skip loading BSAs when opening %s. Will disable some of its '
               u'functions.') % bush.game.Xe.full_name
-    key = bush.game.Xe.xe_key_prefix + u'.skip_bsas'
+    _bl_key = bush.game.Xe.xe_key_prefix + u'.skip_bsas'
 
 class App_Tes4View(_ExeButton):
     """Allow some extra args for Tes4View."""

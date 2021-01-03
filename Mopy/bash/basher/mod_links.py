@@ -603,7 +603,7 @@ class Mod_Details(OneItemLink):
                     continue
                 records = mod_details.group_records[group]
                 records.sort(key=lambda a: a[1].lower())
-                #if group != 'GMST': records.sort(key = lambda a: a[0] >> 24)
+                #if group != 'GMST': records.sort(key=lambda a: a[0] >> 24)
                 for fid,eid in records:
                     buff.write(u'  %08X %s\n' % (fid,eid))
                 buff.write(u'\n')
