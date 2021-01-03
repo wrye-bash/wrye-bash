@@ -23,8 +23,8 @@
 """This module contains the skyrim record classes."""
 from collections import OrderedDict
 
-from ... import brec
-from ...bolt import Flags, encode, struct_pack, structs_cache
+from ... import brec, bolt
+from ...bolt import Flags, struct_pack, structs_cache, unpack_str16
 from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, MreHeaderBase, MelBase, MelFidList, \
@@ -392,33 +392,40 @@ class MelWaterVelocities(MelSequential):
 
 #------------------------------------------------------------------------------
 # VMAD - Virtual Machine Adapters
-def _dump_vmad_str16(str_val, __packer=structs_cache[u'H'].pack):
-    """Encodes the specified string using cp1252 and returns data for both its
+def _dump_str16(str_val, __packer=structs_cache[u'H'].pack):
+    """Encodes the specified string using UTF-8 and returns data for both its
     length (as a 16-bit integer) and its encoded value."""
-    encoded_str = encode(str_val, firstEncoding=u'cp1252')
+    encoded_str = bolt.encode(str_val, firstEncoding=bolt.pluginEncoding)
     return __packer(len(encoded_str)) + encoded_str
 
-def _read_vmad_str16(ins, read_id, __unpacker=structs_cache[u'H'].unpack):
+def _dump_vmad_str16(str_val, __packer=structs_cache[u'H'].pack):
+    """Encodes the specified string using UTF-8 and returns data for both its
+    length (as a 16-bit integer) and its encoded value."""
+    encoded_str = str_val.encode(u'utf8')
+    return __packer(len(encoded_str)) + encoded_str
+
+def _read_str16(ins):
+    """Reads a 16-bit length integer, then reads a string in that length."""
+    return bolt.decoder(unpack_str16(ins))
+
+def _read_vmad_str16(ins):
     """Reads a 16-bit length integer, then reads a string in that length.
-    Always uses cp1252 to decode."""
-    return ins.read(ins.unpack(__unpacker, 2, read_id)[0], read_id).decode(
-        u'cp1252')
+    Always uses UTF-8 to decode."""
+    return unpack_str16(ins).decode(u'utf8')
 
 class _AVmadComponent(object):
     """Abstract base class for VMAD components. Specify a 'processors'
     class variable to use. Syntax: OrderedDict, mapping an attribute name
-    for the record to a tuple containing a format string (limited to format
-    strings that resolve to a single attribute) and the format size for that
-    format string. 'str16' is a special format string that instead calls
-    _read_vmad_str16/_dump_vmad_str16 to handle the matching attribute. If
-    using str16, you may omit the format size.
+    for the record to a tuple containing an unpacker, a packer and a size.
+    'str16' is a special value that instead calls _read_str16/_dump_str16 to
+    handle the matching attribute.
 
     You can override any of the methods specified below to do other things
     after or before 'processors' has been evaluated, just be sure to call
     super(...).{dump,load}_data(...) when appropriate.
 
-    :type processors: OrderedDict[unicode, tuple[unicode, unicode] |
-        tuple[unicode]]"""
+    :type processors: OrderedDict[unicode, tuple[callable, callable, int] |
+        unicode]"""
     processors = OrderedDict()
 
     def dump_frag(self, record):
@@ -431,7 +438,7 @@ class _AVmadComponent(object):
             if fmt != u'str16':
                 out_data += fmt[1](attr_val)
             else:
-                out_data += _dump_vmad_str16(attr_val)
+                out_data += _dump_str16(attr_val)
         return out_data
 
     def load_frag(self, record, ins, vmad_version, obj_format, read_id):
@@ -442,7 +449,7 @@ class _AVmadComponent(object):
             if fmt != u'str16':
                 setattr(record, attr, ins.unpack(fmt[0], fmt[2], read_id)[0])
             else:
-                setattr(record, attr, _read_vmad_str16(ins, read_id))
+                setattr(record, attr, _read_str16(ins))
 
     def make_new(self):
         """Creates a new runtime instance of this component with the
@@ -933,7 +940,7 @@ class MelVmad(MelBase):
                 record.prop_data = ObjectRef.from_file(
                     ins, obj_format, read_id)
             elif property_type == 2: # string
-                record.prop_data = _read_vmad_str16(ins, read_id)
+                record.prop_data = _read_vmad_str16(ins)
             elif property_type == 3: # sint32
                 record.prop_data = ins.unpack(__unpackers[u'i'], 4, read_id)[0]
             elif property_type == 4: # float
@@ -946,7 +953,7 @@ class MelVmad(MelBase):
                 record.prop_data = ObjectRef.array_from_file(ins, obj_format,
                                                              read_id)
             elif property_type == 12: # string array
-                record.prop_data = [_read_vmad_str16(ins, read_id) for _x in
+                record.prop_data = [_read_vmad_str16(ins) for _x in
                                     xrange(ins.unpack(
                                         __unpackers[u'I'], 4, read_id)[0])]
             elif property_type == 13: # sint32 array
@@ -1036,7 +1043,9 @@ class MelVmad(MelBase):
 
         @property
         def used_slots(self):
-            return [u'prop_data'] + super(MelVmad.Property, self).used_slots
+            # Manually implemented to avoid depending on self.processors, which
+            # may be either _new_processors or _old_processors right now
+            return [u'prop_name', u'prop_type', u'prop_flags', u'prop_data']
 
     # Aliases -----------------------------------------------------------------
     class Alias(_AVariableContainer):
