@@ -20,7 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from collections import defaultdict as _defaultdict # hide from dynamic import
 
 #--Game ESM/ESP/BSA files
 #  These filenames need to be in lowercase,
@@ -898,16 +897,16 @@ staff_condition = (u'animationType', 8)
 # Tweak Settings
 #------------------------------------------------------------------------------
 settings_tweaks = {
-    u'GlobalsTweak_Timescale',
+    u'GlobalsTweak_Timescale_Tes5',
     u'GmstTweak_Msg_SoulCaptured',
     u'GmstTweak_Actor_StrengthEncumbranceMultiplier',
-    u'GmstTweak_AI_MaxActiveActors',
-    u'GmstTweak_Arrow_RecoveryfromActor',
+    u'GmstTweak_AI_MaxActiveActors_Tes5',
+    u'GmstTweak_Arrow_RecoveryFromActor_Tes5',
     u'GmstTweak_Arrow_Speed',
-    u'GmstTweak_World_CellRespawnTime',
+    u'GmstTweak_World_CellRespawnTime_Tes5',
     u'GmstTweak_World_CellRespawnTime_Cleared',
     u'GmstTweak_Combat_Alchemy',
-    u'GmstTweak_Combat_MaxActors',
+    u'GmstTweak_Combat_MaxActors_Tes5',
     u'GmstTweak_Combat_RechargeWeapons',
     u'GmstTweak_Actor_MaxCompanions',
     u'GmstTweak_Crime_AlarmDistance',
@@ -920,7 +919,7 @@ settings_tweaks = {
     u'GmstTweak_Magic_MaxResistance',
     u'GmstTweak_Magic_MaxSummons',
     u'GmstTweak_Actor_VerticalObjectDetection',
-    u'GmstTweak_Actor_MaxJumpHeight_Fo3',
+    u'GmstTweak_Actor_MaxJumpHeight',
     u'GmstTweak_Player_FastTravelTimeMultiplier',
     u'GmstTweak_Combat_CriticalHitChance',
     u'GmstTweak_Actor_UnconsciousnessDuration',
@@ -928,13 +927,13 @@ settings_tweaks = {
     u'GmstTweak_Player_HorseTurningSpeed',
     u'GmstTweak_Camera_PCDeathTime',
     u'GmstTweak_Actor_GreetingDistance',
-    u'GmstTweak_Bounty_HorseTheft',
+    u'GmstTweak_Bounty_HorseTheft_Tes5',
     u'GmstTweak_Player_InventoryQuantityPrompt',
-    u'GmstTweak_Player_MaxDraggableWeight',
-    u'GmstTweak_Warning_InteriorDistancetoHostiles',
-    u'GmstTweak_Warning_ExteriorDistancetoHostiles',
-    u'GmstTweak_Combat_MaximumArmorRating',
-    u'GmstTweak_Arrow_MaxArrowsAttachedtoNPC',
+    u'GmstTweak_Player_MaxDraggableWeight_Tes5',
+    u'GmstTweak_Warning_InteriorDistanceToHostiles',
+    u'GmstTweak_Warning_ExteriorDistanceToHostiles',
+    u'GmstTweak_Combat_MaximumArmorRating_Tes5',
+    u'GmstTweak_Arrow_MaxArrowsAttachedToNPC',
     u'GmstTweak_Combat_AIProjectileDodgeFix',
     u'GmstTweak_Combat_MaxAllyHits_Tes5',
     u'GmstTweak_Actor_MerchantRestockTime',
@@ -966,23 +965,11 @@ settings_tweaks = {
     u'GmstTweak_SoulTrap_CommonSoulLevel',
     u'GmstTweak_SoulTrap_GreaterSoulLevel',
     u'GmstTweak_SoulTrap_GrandSoulLevel',
-    u'GmstTweak_AI_ConversationChance',
+    u'GmstTweak_AI_ConversationChance_Tes5',
     u'GmstTweak_AI_ConversationChance_Interior',
     u'GmstTweak_AI_MaxDeadActors',
     u'GmstTweak_Bounty_Theft',
 }
-settings_defaults = _defaultdict(lambda: None, {
-    u'GlobalsTweak_Timescale': u'20',
-    u'GmstTweak_AI_MaxActiveActors': u'20',
-    u'GmstTweak_Arrow_RecoveryfromActor': u'33%',
-    u'GmstTweak_World_CellRespawnTime': _(u'10 Days'),
-    u'GmstTweak_Combat_MaxActors': u'20',
-    u'GmstTweak_Bounty_HorseTheft': u'100',
-    u'GmstTweak_Player_InventoryQuantityPrompt': u'5',
-    u'GmstTweak_Player_MaxDraggableWeight': u'115',
-    u'GmstTweak_Combat_MaximumArmorRating': u'90',
-    u'GmstTweak_AI_ConversationChance': u'25%',
-})
 
 #------------------------------------------------------------------------------
 # Import Relations

@@ -130,7 +130,7 @@ class _ARaceTweak(MultiTweakItem):
 class RaceTweaker_BiggerOrcsAndNords(_ARaceTweak):
     """Adjusts the Orc and Nord race records to be taller/heavier."""
     tweak_read_classes = b'RACE',
-    tweak_name = _(u'Bigger Nords and Orcs')
+    tweak_name = _(u'Bigger Nords And Orcs')
     tweak_tip = _(u'Adjusts the Orc and Nord race records to be '
                   u'taller/heavier - to be more lore friendly.')
     tweak_key = u'BiggerOrcsandNords'
@@ -165,7 +165,7 @@ class RaceTweaker_BiggerOrcsAndNords(_ARaceTweak):
 class RaceTweaker_MergeSimilarRaceHairs(_ARaceTweak):
     """Merges similar race's hairs (kinda specifically designed for SOVVM's
     bearded races)."""
-    tweak_name = _(u'Merge Hairs from similar races')
+    tweak_name = _(u'Merge Hairs From Similar Races')
     tweak_tip = _(u'Merges hair lists from similar races (e.g. give RBP '
                   u'khajit hair to all the other varieties of khajits in '
                   u'Elsweyr).')
@@ -190,7 +190,7 @@ class RaceTweaker_MergeSimilarRaceHairs(_ARaceTweak):
 # -----------------------------------------------------------------------------
 class RaceTweaker_MergeSimilarRaceEyes(_ARaceTweak):
     """Merges similar race's eyes."""
-    tweak_name = _(u'Merge Eyes from similar races')
+    tweak_name = _(u'Merge Eyes From Similar Races')
     tweak_tip = _(u'Merges eye lists from similar races (f.e. give RBP khajit '
                   u'eyes to all the other varieties of khajits in Elsweyr)')
     tweak_key = u'MergeSimilarRaceEyeLists'

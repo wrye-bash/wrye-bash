@@ -20,7 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from collections import defaultdict as _defaultdict # hide from dynamic import
 
 #--Game ESM/ESP/BSA files
 #  These filenames need to be in lowercase,
@@ -734,7 +733,7 @@ settings_tweaks = {
     u'GmstTweak_Camera_ChaseDistance_Fo3',
     u'GmstTweak_Compass_RecognitionDistance',
     u'GmstTweak_Actor_UnconsciousnessDuration',
-    u'GmstTweak_Actor_MaxJumpHeight_Fo3',
+    u'GmstTweak_Actor_MaxJumpHeight',
     u'GmstTweak_Camera_PCDeathTime',
     u'GmstTweak_World_CellRespawnTime',
     u'GmstTweak_CostMultiplier_Repair_Fo3',
@@ -753,16 +752,13 @@ settings_tweaks = {
     u'GmstTweak_Player_PipBoyLightKeypressDelay',
     u'GmstTweak_Combat_VATSPlaybackDelay',
     u'GmstTweak_Combat_NPCDeathXPThreshold',
-    u'GmstTweak_Hacking_MaximumNumberofWords',
+    u'GmstTweak_Hacking_MaximumNumberOfWords',
     u'GmstTweak_Visuals_ShellCameraDistance',
     u'GmstTweak_Visuals_ShellLitterTime',
     u'GmstTweak_Visuals_ShellLitterCount',
     u'GmstTweak_Hacking_TerminalSpeedAdjustment',
     u'GmstTweak_Player_MaxDraggableWeight',
 }
-settings_defaults = _defaultdict(lambda: None, {
-    u'GmstTweak_Player_InventoryQuantityPrompt': u'5',
-})
 
 #------------------------------------------------------------------------------
 # Tweak Assorted

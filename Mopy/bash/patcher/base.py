@@ -211,10 +211,6 @@ class AMultiTweakItem(object):
         for choice_index, choice_tuple in enumerate(self.tweak_choices):
             # See comments above for the syntax definition
             choice_label, choice_items = choice_tuple[0], choice_tuple[1:]
-            # FIXME(inf) Temp, drop: Blow up on the previous syntax
-            if choice_label.startswith(u'[') and choice_label.endswith(u']'):
-                self._raise_tweak_syntax_error(u'Outdated "[]" syntax, use '
-                                               u'default_choice instead')
             if choice_label == self.default_choice:
                 choice_label = u'[%s]' % choice_label
                 self.default = choice_index

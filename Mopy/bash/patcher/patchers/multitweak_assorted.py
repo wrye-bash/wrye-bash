@@ -553,7 +553,7 @@ class AssortedTweak_UniformGroundcover(MultiTweakItem):
 class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
     """Sets Cast When Used Enchantment number of uses."""
     tweak_read_classes = b'ENCH',
-    tweak_name = _(u'Number of Uses For Pre-enchanted Weapons and Staves')
+    tweak_name = _(u'Number Of Uses For Pre-enchanted Weapons And Staves')
     tweak_tip = _(u'The charge amount and cast cost will be edited so that '
                   u'all enchanted weapons and staves have the amount of uses '
                   u'specified. Cost will be rounded up to 1 (unless set to '

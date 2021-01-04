@@ -279,7 +279,7 @@ class AsIntendedBoarsPatcher(_ACreatureTweak):
 #------------------------------------------------------------------------------
 class SWALKNPCAnimationPatcher(_AFemaleOnlyTweak):
     """Changes all female NPCs to use Mur Zuk's Sexy Walk."""
-    tweak_name = _(u'Sexy Walk for female NPCs')
+    tweak_name = _(u'Sexy Walk For Female NPCs')
     tweak_tip = _(u"Changes all female NPCs to use Mur Zuk's Sexy Walk - "
                   u"Requires Mur Zuk's Sexy Walk animation file.")
     tweak_key = u'Mur Zuk SWalk'
@@ -293,7 +293,7 @@ class SWALKNPCAnimationPatcher(_AFemaleOnlyTweak):
 #------------------------------------------------------------------------------
 class RWALKNPCAnimationPatcher(_AFemaleOnlyTweak):
     """Changes all female NPCs to use Mur Zuk's Real Walk."""
-    tweak_name = _(u'Real Walk for female NPCs')
+    tweak_name = _(u'Real Walk For Female NPCs')
     tweak_tip = _(u"Changes all female NPCs to use Mur Zuk's Real Walk - "
                   u"Requires Mur Zuk's Real Walk animation file.")
     tweak_key = u'Mur Zuk RWalk'

@@ -229,7 +229,7 @@ _re_old_magic_label = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ', re.U)
 class NamesTweak_Scrolls(_AMgefNamesTweak):
     """Names tweaker for scrolls."""
     tweak_read_classes = b'BOOK',
-    tweak_name = _(u'Notes and Scrolls')
+    tweak_name = _(u'Notes And Scrolls')
     tweak_tip = _(u'Mark notes and scrolls to sort separately from books.')
     tweak_key = u'scrolls'
     tweak_choices = [(_(u'~Fire Ball'),     u'~'),

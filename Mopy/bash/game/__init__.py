@@ -529,8 +529,6 @@ class GameInfo(object):
     # Tweak Settings
     #--------------------------------------------------------------------------
     settings_tweaks = set()
-    # Allows changing the defaults for certain tweaks per game
-    settings_defaults = defaultdict(lambda: None)
 
     #--------------------------------------------------------------------------
     # Import Relations
@@ -631,7 +629,6 @@ class GameInfo(object):
         u'spell_stats_types', u'statsHeaders', u'statsTypes', u'text_types',
         u'assorted_tweaks', u'staff_condition', u'static_attenuation_rec_type',
         u'nonplayable_biped_flags', u'not_playable_flag', u'settings_tweaks',
-        u'settings_defaults',
     }
 
     @classmethod
