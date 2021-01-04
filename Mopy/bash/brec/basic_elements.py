@@ -267,9 +267,8 @@ class MelCounter(MelBase):
     def dumpData(self, record, out):
         # Count the counted type first, then check if we should even dump
         val_len = len(getattr(record, self.counted_attr, []))
+        setattr(record, self._counter_mel.attr, val_len)
         if val_len:
-            # We should dump, so update the counter and do it
-            setattr(record, self._counter_mel.attr, val_len)
             self._counter_mel.dumpData(record, out)
 
     @property
