@@ -615,10 +615,9 @@ class GameInfo(object):
     # Import from the constants module ----------------------------------------
     # Class attributes moved to constants module, set dynamically at init
     _constants_members = {
-        u'GmstTweaks', u'actor_importer_attrs',
         u'actor_tweaks', u'actor_types', u'actor_values', u'bethDataFiles',
         u'body_tags', u'cc_valid_types', u'cc_passes',
-        u'cell_float_attrs', u'cellRecAttrs',
+        u'cell_float_attrs', u'cellRecAttrs', u'actor_importer_attrs',
         u'cell_skip_interior_attrs', u'condition_function_data',
         u'default_eyes', u'destructible_types', u'ench_stats_attrs',
         u'generic_av_effects', u'getvatsvalue_index',

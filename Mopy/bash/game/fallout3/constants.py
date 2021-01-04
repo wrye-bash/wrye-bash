@@ -745,7 +745,7 @@ settings_tweaks = {
     u'GmstTweak_Player_InventoryQuantityPrompt',
     u'GmstTweak_Gore_CombatDismemberPartChance',
     u'GmstTweak_Gore_CombatExplodePartChance',
-    u'GmstTweak_LeveledItemMaxleveldifference',
+    u'GmstTweak_LevelDifference_ItemMax',
     u'GmstTweak_Movement_BaseSpeed',
     u'GmstTweak_Movement_SneakMultiplier',
     u'GmstTweak_Combat_VATSPlayerDamageMultiplier',

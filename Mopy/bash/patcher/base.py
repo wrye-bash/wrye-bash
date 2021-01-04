@@ -152,8 +152,6 @@ class AMultiTweakItem(object):
     # self.choiceValues[self.chosen]. It is up to each tweak to decide for
     # itself how to best lay these out.
     #
-    # If a label starts with '[' and ends with ']', it is treated as the
-    # default option.
     # If a label starts with 'Custom' (or the translated equivalent of it), it
     # is treated as a custom choice. This choice will allow the user to choose
     # any value they wish.
@@ -163,13 +161,18 @@ class AMultiTweakItem(object):
     # can only be toggled on and off.
     #
     # An example:
-    # tweak_choices = [(_(u'One Day', 24), (_(u'[Two Days]'), 48)]
+    # tweak_choices = [(_(u'One Day', 24), (_(u'Two Days'), 48),
+    #                  (_(u'Custom'), 24)]
     #
-    # This will show two options to the user, with the 'Two Days' option as the
-    # default one. When retrieving a value via self.choiceValues[self.chosen],
-    # either 24 or 48 will be returned, which the tweak could use to e.g.
-    # change a record attribute controlling how long a quest is delayed.
+    # This will show three options to the user, with the third one allowing
+    # them to select a custom value. When retrieving a value via
+    # self.choiceValues[self.chosen], the selected value (24, 48 or a custom
+    # one) will be returned, which the tweak could use to e.g. change a record
+    # attribute controlling how long a quest is delayed.
     tweak_choices = []
+    # The choice label (see tweak_choices above) that should be selected by
+    # default.
+    default_choice = None
     # The header to log before logging anything else about this tweak.
     # If set to None, defaults to this tweak's name. Automatically gets wtxt
     # formatting prepended.
@@ -208,21 +211,28 @@ class AMultiTweakItem(object):
         for choice_index, choice_tuple in enumerate(self.tweak_choices):
             # See comments above for the syntax definition
             choice_label, choice_items = choice_tuple[0], choice_tuple[1:]
+            # FIXME(inf) Temp, drop: Blow up on the previous syntax
+            if choice_label.startswith(u'[') and choice_label.endswith(u']'):
+                self._raise_tweak_syntax_error(u'Outdated "[]" syntax, use '
+                                               u'default_choice instead')
+            if choice_label == self.default_choice:
+                choice_label = u'[%s]' % choice_label
+                self.default = choice_index
             # Validate that we have at most one custom value
             if choice_label.startswith(_(u'Custom')):
+                if self.default == choice_index:
+                    self._raise_tweak_syntax_error(u'A custom choice may not '
+                                                   u'be the default choice')
                 if has_custom:
                     self._raise_tweak_syntax_error(u'At most one custom '
                                                    u'choice may be specified')
                 has_custom = True
             self.choiceLabels.append(choice_label)
             self.choiceValues.append(choice_items)
-            if choice_label.startswith(u'[') and choice_label.endswith(u']'):
-                # This is the default item, check for duplicates and mark it
-                if self.default is not None:
-                    self._raise_tweak_syntax_error(u'Tweaks may only have one '
-                                                   u'default item')
-                self.default = choice_index
         if self.default is None:
+            if self.default_choice is not None:
+                self._raise_tweak_syntax_error(u'default_choice is not in '
+                                               u'tweak_choices')
             self.default = 0 # no explicit default item, so default to first
         #--Config
         self.isEnabled = False
