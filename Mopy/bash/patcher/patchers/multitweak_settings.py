@@ -267,7 +267,8 @@ class GmstTweak_Arrow_RecoveryfromActor(_AGmstTweak):
     tweak_name = _(u'Arrow: Recovery from Actor')
     tweak_tip = _(u'Chance that an arrow shot into an actor can be recovered.')
     tweak_key = (u'iArrowInventoryChance',)
-    tweak_choices = [(u'[50%]',     50),
+    tweak_choices = [(u'33%',       33),
+                     (u'[50%]',     50),
                      (u'60%',       60),
                      (u'70%',       70),
                      (u'80%',       80),
@@ -395,7 +396,8 @@ class GmstTweak_Player_HorseTurningSpeed(_AGmstTweak):
 #------------------------------------------------------------------------------
 class GmstTweak_Camera_PCDeathTime(_AGmstTweak):
     tweak_name = _(u'Camera: PC Death Time')
-    tweak_tip = _(u"Time after player's death before reload menu appears.")
+    tweak_tip = _(u"Time after player's death before the last save is "
+                  u"loaded/the reload menu appears.")
     tweak_key = (u'fPlayerDeathReloadTime',)
     tweak_choices = [(_(u'15 Seconds'),     15.0),
                      (_(u'30 Seconds'),     30.0),
@@ -407,7 +409,7 @@ class GmstTweak_Camera_PCDeathTime(_AGmstTweak):
 #------------------------------------------------------------------------------
 class GmstTweak_World_CellRespawnTime(_AGmstTweak):
     tweak_name = _(u'World: Cell Respawn Time')
-    tweak_tip = _(u'Time before unvisited cell respawns. But longer times '
+    tweak_tip = _(u'Time before unvisited cells respawn. Longer times '
                   u'increase save sizes.')
     tweak_key = (u'iHoursToRespawnCell',)
     tweak_choices = [(_(u'1 Day'),             24),
@@ -626,7 +628,8 @@ class GmstTweak_Crime_AlarmDistance(_AGmstTweak):
     tweak_tip = _(u'Distance from player that NPCs (guards) will be alerted '
                   u'of a crime.')
     tweak_key = (u'iCrimeAlarmRecDistance',)
-    tweak_choices = [(u'6000',      6000),
+    tweak_choices = [(u'8000',      8000),
+                     (u'6000',      6000),
                      (u'[4000]',    4000),
                      (u'3000',      3000),
                      (u'2000',      2000),
@@ -650,18 +653,17 @@ class GmstTweak_Crime_PrisonDurationModifier(_AGmstTweak):
 #------------------------------------------------------------------------------
 class GmstTweak_CostMultiplier_Enchantment(_AGmstTweak):
     tweak_name = _(u'Cost Multiplier: Enchantment')
-    tweak_tip = _(u'Cost factor for enchanting items, OOO default is 120, '
-                  u'vanilla 10.')
+    tweak_tip = _(u'Cost factor for enchanting items.')
     tweak_key = (u'fEnchantmentGoldMult',)
-    tweak_choices = [(u'[10]',      10.0),
-                     (u'20',        20.0),
-                     (u'30',        30.0),
-                     (u'50',        50.0),
-                     (u'70',        70.0),
-                     (u'90',        90.0),
-                     (u'120',      120.0),
-                     (u'150',      150.0),
-                     (_(u'Custom'), 10.0)]
+    tweak_choices = [(u'[10]',                  10.0),
+                     (u'20',                    20.0),
+                     (u'30',                    30.0),
+                     (u'50',                    50.0),
+                     (u'70',                    70.0),
+                     (u'90',                    90.0),
+                     (_(u'120 (OOO default)'), 120.0),
+                     (u'150',                  150.0),
+                     (_(u'Custom'),             10.0)]
 
 #------------------------------------------------------------------------------
 class GmstTweak_CostMultiplier_SpellMaking(_AGmstTweak):
@@ -748,7 +750,7 @@ class GmstTweak_Bounty_Assault(_AGmstTweak):
 #------------------------------------------------------------------------------
 class GmstTweak_Bounty_HorseTheft(_AGmstTweak):
     tweak_name = _(u'Bounty: Horse Theft')
-    tweak_tip = _(u'Bounty for horse theft')
+    tweak_tip = _(u'Bounty for horse theft.')
     tweak_key = (u'iCrimeGoldStealHorse',)
     tweak_choices = [(u'10',         10),
                      (u'25',         25),
@@ -831,14 +833,14 @@ class GmstTweak_Warning_InteriorDistancetoHostiles(_AGmstTweak):
     tweak_tip = _(u'The minimum distance hostile actors have to be to be '
                   u'allowed to sleep, travel etc, when inside interiors.')
     tweak_key = (u'fHostileActorInteriorDistance',)
-    tweak_choices = [(u'10',          10.0),
-                     (u'100',        100.0),
-                     (u'500',        500.0),
-                     (u'1000',      1000.0),
-                     (u'[2000]',    2000.0),
-                     (u'3000',      3000.0),
-                     (u'4000',      4000.0),
-                     (_(u'Custom'), 2000.0)]
+    tweak_choices = [(u'10',                     10.0),
+                     (u'100',                   100.0),
+                     (u'500',                   500.0),
+                     (u'1000',                 1000.0),
+                     (u'[2000]',               2000.0),
+                     (u'3000',                 3000.0),
+                     (u'4000',                 4000.0),
+                     (_(u'Custom (in units)'), 2000.0)]
 
 #------------------------------------------------------------------------------
 class GmstTweak_Warning_ExteriorDistancetoHostiles(_AGmstTweak):
@@ -846,16 +848,16 @@ class GmstTweak_Warning_ExteriorDistancetoHostiles(_AGmstTweak):
     tweak_tip = _(u'The minimum distance hostile actors have to be to be '
                   u'allowed to sleep, travel etc, when outside.')
     tweak_key = (u'fHostileActorExteriorDistance',)
-    tweak_choices = [(u'10',          10.0),
-                     (u'100',        100.0),
-                     (u'500',        500.0),
-                     (u'1000',      1000.0),
-                     (u'2000',      2000.0),
-                     (u'[3000]',    3000.0),
-                     (u'4000',      4000.0),
-                     (u'5000',      5000.0),
-                     (u'6000',      6000.0),
-                     (_(u'Custom'), 3000.0)]
+    tweak_choices = [(u'10',                     10.0),
+                     (u'100',                   100.0),
+                     (u'500',                   500.0),
+                     (u'1000',                 1000.0),
+                     (u'2000',                 2000.0),
+                     (u'[3000]',               3000.0),
+                     (u'4000',                 4000.0),
+                     (u'5000',                 5000.0),
+                     (u'6000',                 6000.0),
+                     (_(u'Custom (in units)'), 3000.0)]
 
 #------------------------------------------------------------------------------
 class GmstTweak_UOPVampireAgingandFaceFix(_AGmstTweak):
@@ -906,7 +908,7 @@ class GmstTweak_Player_InventoryQuantityPrompt(_AGmstTweak):
 class GmstTweak_Bounty_Trespassing(_AGmstTweak):
     tweak_name = _(u'Bounty: Trespassing')
     tweak_tip = _(u'Bounty for trespassing.')
-    tweak_key = (u'iCrimeGoldTresspass',)
+    tweak_key = (u'iCrimeGoldTresspass',) # (sic), corrected in Skyrim
     tweak_choices = [(u'1',         1),
                      (u'[5]',       5),
                      (u'8',         8),
@@ -1001,8 +1003,7 @@ class GmstTweak_Player_MaxDraggableWeight(_AGmstTweak):
 #------------------------------------------------------------------------------
 class GmstTweak_AI_ConversationChance(_AGmstTweak):
     tweak_name = _(u'AI: Conversation Chance')
-    tweak_tip = _(u'Chance of NPCs engaging each other in conversation '
-                  u'(possibly also with the player).')
+    tweak_tip = _(u'Chance of NPCs engaging in conversation.')
     tweak_key = (u'fAISocialchanceForConversation',)
     tweak_choices = [(u'10%',        10.0),
                      (u'25%',        25.0),
@@ -1013,8 +1014,7 @@ class GmstTweak_AI_ConversationChance(_AGmstTweak):
 #------------------------------------------------------------------------------
 class GmstTweak_AI_ConversationChance_Interior(_AGmstTweak):
     tweak_name = _(u'AI: Conversation Chance - Interior')
-    tweak_tip = _(u'Chance of NPCs engaging each other in conversation '
-                  u'(possibly also with the player) - in interiors.')
+    tweak_tip = _(u'Chance of NPCs engaging in conversation - in interiors.')
     tweak_key = (u'fAISocialchanceForConversationInterior',)
     tweak_choices = [(u'10%',        10.0),
                      (u'[25%]',      25.0),
@@ -1294,6 +1294,459 @@ class GmstTweak_Hacking_TerminalSpeedAdjustment(_AGmstTweak):
                      (u'x 4',       2000, 80, 268, 125, 188, 600, 600),
                      (u'[x 6]',     3000, 120, 402, 83, 126, 900, 900),
                      (_(u'Custom'), 3000, 120, 402, 83, 126, 900, 900)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Msg_SoulCaptured(_AGmstTweak):
+    tweak_name = _(u'Msg: Soul Captured')
+    tweak_tip = _(u'Message upon capturing a soul in a Soul Gem.')
+    tweak_key = (u'sSoulCaptured',)
+    tweak_choices = [(_(u'[None]'),         u' '),
+                     (u'.',                 u'.'),
+                     (_(u'Hmm...'), _(u'Hmm...')),
+                     (_(u'Custom'),      _(u' '))]
+
+#------------------------------------------------------------------------------
+class GmstTweak_World_CellRespawnTime_Cleared(_AGmstTweak):
+    tweak_name = _(u'World: Cell Respawn Time (Cleared)')
+    tweak_tip = _(u'Time before cleared cells respawn. Longer times increase '
+                  u'save sizes.')
+    tweak_key = (u'iHoursToRespawnCellCleared',)
+    tweak_choices = [(_(u'10 Days'),           240),
+                     (_(u'15 Days'),           360),
+                     (_(u'20 Days'),           480),
+                     (_(u'25 Days'),           600),
+                     (_(u'[30 Days]'),         720),
+                     (_(u'2 Months'),         1440),
+                     (_(u'6 Months'),         4320),
+                     (_(u'1 Year'),           8760),
+                     (_(u'Custom (in hours)'), 720)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Bounty_Assault_Tes5(_AGmstTweak):
+    tweak_name = _(u'Bounty: Assault')
+    tweak_tip = _(u"Bounty for attacking a 'good' npc.")
+    tweak_key = (u'iCrimeGoldAttack',)
+    tweak_choices = [(u'[40]',      40),
+                     (u'100',      100),
+                     (u'200',      200),
+                     (u'300',      300),
+                     (u'400',      400),
+                     (u'500',      500),
+                     (u'650',      650),
+                     (u'800',      800),
+                     (_(u'Custom'), 40)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Bounty_Jailbreak_Tes5(_AGmstTweak):
+    tweak_name = _(u'Bounty: Jailbreak')
+    tweak_tip = _(u'Bounty for escaping from jail.')
+    tweak_key = (u'iCrimeGoldEscape',)
+    tweak_choices = [(u'50',         50),
+                     (u'[100]',     100),
+                     (u'125',       125),
+                     (u'150',       150),
+                     (u'175',       175),
+                     (u'200',       200),
+                     (_(u'Custom'), 100)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Bounty_Trespassing_Tes5(_AGmstTweak):
+    tweak_name = _(u'Bounty: Trespassing')
+    tweak_tip = _(u'Bounty for trespassing.')
+    tweak_key = (u'iCrimeGoldTrespass',)
+    tweak_choices = [(u'1',         1),
+                     (u'[5]',       5),
+                     (u'8',         8),
+                     (u'10',       10),
+                     (u'20',       20),
+                     (_(u'Custom'), 5)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Magic_MaxResistance(_AGmstTweak):
+    tweak_name = _(u'Magic: Max Resistance')
+    tweak_tip = _(u'Maximum level of resistance a player can have to various '
+                  u'forms of magic and disease.')
+    tweak_key = (u'fPlayerMaxResistance',)
+    tweak_choices = [(u'50%',       50.0),
+                     (u'60%',       60.0),
+                     (u'70%',       70.0),
+                     (u'80%',       80.0),
+                     (u'[85%]',     85.0),
+                     (u'90%',       90.0),
+                     (u'100%',     100.0),
+                     (_(u'Custom'), 85.0)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Magic_MaxSummons(_AGmstTweak):
+    tweak_name = _(u'Magic: Max Summons')
+    tweak_tip = _(u'Maximum number of creatures an actor can summon (affects '
+                  u'both NPCs and the player).')
+    tweak_key = (u'iMaxSummonedCreatures',)
+    tweak_choices = [(u'[1]',       1),
+                     (u'3',         3),
+                     (u'5',         5),
+                     (u'8',         8),
+                     (u'10',       10),
+                     (_(u'Custom'), 1)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Actor_VerticalObjectDetection(_AGmstTweak):
+    tweak_name = _(u'Actor: Vertical Object Detection')
+    tweak_tip = _(u'Changes the vertical range in which NPCs detect objects. '
+                  u'The first value must be >= 0 and the second one must be '
+                  u'<= 0.')
+    tweak_key = (u'fSandboxCylinderTop', u'fSandboxCylinderBottom')
+    tweak_choices = [(u'[x 1]',     150.0, -100.0),
+                     (u'x 2',       300.0, -200.0),
+                     (u'x 3',       450.0, -300.0),
+                     (u'x 4',       600.0, -400.0),
+                     (u'x 5',       750.0, -500.0),
+                     (_(u'Custom'), 150.0, -100.0)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Player_FastTravelTimeMultiplier(_AGmstTweak):
+    tweak_name = _(u'Player: Fast Travel Time Multiplier')
+    tweak_tip = _(u'Changes how much time passes while fast traveling. By '
+                  u'default, it passes ~3x slower than if you had walked the '
+                  u'distance.')
+    tweak_key = (u'fFastTravelSpeedMult',)
+    tweak_choices = [(_(u'[Default Speed]'), 1.0),
+                     (_(u'Walking Speed'),   3.5),
+                     (_(u'Horse Speed'),     4.0),
+                     (_(u'Custom'),          2.0)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_CriticalHitChance(_AGmstTweak):
+    tweak_name = _(u'Combat: Critical Hit Chance')
+    tweak_tip = _(u'The chance of a strike being a critical hit.')
+    tweak_key = (u'fWeaponConditionCriticalChanceMult',)
+    tweak_choices = [(_(u'0% (Disabled)'),     0.0),
+                     (u'1%',                   0.1),
+                     (u'5%',                   0.5),
+                     (u'[10%]',                0.1),
+                     (u'25%',                 0.25),
+                     (u'50%',                  0.5),
+                     (_(u'100% (Always)'),     1.0),
+                     (_(u'Custom (Max: 1.0)'), 0.1)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Arrow_MaxArrowsAttachedtoNPC(_AGmstTweak):
+    tweak_name = _(u'Arrow: Max Arrows Attached to NPC')
+    tweak_tip = _(u'The Maximum number of arrows that can be sticking out of '
+                  u'an actor.')
+    tweak_key = (u'iMaxAttachedArrows',)
+    tweak_choices = [(u'[3]',         3),
+                     (u'10',       10.0),
+                     (u'30',       30.0),
+                     (u'50',       50.0),
+                     (u'100',     100.0),
+                     (_(u'Custom'), 3.0)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_AIProjectileDodgeFix(_AGmstTweak):
+    tweak_name = _(u'Combat: AI Projectile Dodge Fix')
+    tweak_tip = _(u'Removes the uncanny ability of NPCs to dodge projectiles '
+                  u'being launched at them from range.')
+    tweak_key = (u'fCombatDodgeChanceMax',)
+    tweak_choices = [(_(u'Enabled'), 0.0)]
+    default_enabled = True
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_MaxAllyHits_Tes5(_AGmstTweak):
+    tweak_name = _(u'Combat: Max Ally Hits')
+    tweak_tip = _(u'Number of hits allowed by allies out of combat before '
+                  u'attacking the player.')
+    tweak_key = (u'iAllyHitNonCombatAllowed',)
+    tweak_choices = [(u'0',         0),
+                     (u'[3]',       3),
+                     (u'5',         5),
+                     (u'8',         8),
+                     (u'10',       10),
+                     (u'15',       15),
+                     (_(u'Custom'), 3)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Actor_MerchantRestockTime(_AGmstTweak):
+    tweak_name = _(u'Actor: Merchant Restock Time')
+    tweak_tip = _(u'The amount of time required for vendors to restock items '
+                  u'and gold.')
+    tweak_key = (u'iDaysToRespawnVendor',)
+    tweak_choices = [(_(u'Instant'),          0),
+                     (_(u'12 Hours'),       0.5),
+                     (_(u'1 Day'),            1),
+                     (_(u'[2 Days]'),         2),
+                     (_(u'4 Days'),           4),
+                     (_(u'1 week'),           7),
+                     (_(u'2 weeks'),         14),
+                     (_(u'1 Month'),         28),
+                     (_(u'Never'),        99999),
+                     (_(u'Custom (in days)'), 2)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Player_FallDamageThreshold(_AGmstTweak):
+    tweak_name = _(u'Player: Fall Damage Threshold')
+    tweak_tip = _(u'Changes the height at which you take fall damage.')
+    tweak_key = (u'fJumpFallHeightMin',)
+    tweak_choices = [(u'0.5x',                 300.0),
+                     (_(u'[Default]'),         600.0),
+                     (u'2x',                  1200.0),
+                     (u'3x',                  1800.0),
+                     (u'4x',                  2400.0),
+                     (u'5x',                  3000.0),
+                     (_(u'No Fall Damage'),  99999.0),
+                     (_(u'Custom (in units)'), 600.0)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Player_SprintingCost(_AGmstTweak):
+    tweak_name = _(u'Player: Sprinting Cost')
+    tweak_tip = _(u'Changes the stamina drain that occurs when sprinting.')
+    tweak_key = (u'fSprintStaminaDrainMult',)
+    tweak_choices = [(_(u'None'),                        0.0),
+                     (_(u'Halved'),                      3.5),
+                     (_(u'[Default]'),                   7.0),
+                     (_(u'Doubled'),                    14.0),
+                     (_(u'Tripled'),                    21.0),
+                     (_(u'Custom (Lower = Less Drain)'), 7.0)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Visuals_MasserSize(_AGmstTweak):
+    tweak_name = _(u'Visuals: Masser Size')
+    tweak_tip = _(u'Changes the size of the moon Masser (the larger one) in '
+                  u'the night sky.')
+    tweak_key = (u'iMasserSize',)
+    tweak_choices = [(_(u'50% Smaller'), 45),
+                     (_(u'25% Smaller'), 68),
+                     (_(u'[Default]'),   90),
+                     (_(u'25% Larger'), 113),
+                     (_(u'50% Larger'), 135),
+                     (_(u'Custom'),      90)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Visuals_MasserSpeed(_AGmstTweak):
+    tweak_name = _(u'Visuals: Masser Speed')
+    tweak_tip = _(u'Changes how quickly the moon Masser (the larger one) '
+                  u'moves in the night sky.')
+    tweak_key = (u'fMasserSpeed',)
+    tweak_choices = [(u'0.5x',                0.125),
+                     (u'[1x]',                 0.25),
+                     (u'2x',                    0.5),
+                     (u'3x',                   0.75),
+                     (_(u'Custom (in units)'), 0.25)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Visuals_SecundaSize(_AGmstTweak):
+    tweak_name = _(u'Visuals: Secunda Size')
+    tweak_tip = _(u'Changes the size of the moon Secunda (the smaller one) '
+                  u'in the night sky.')
+    tweak_key = (u'iSecundaSize',)
+    tweak_choices = [(_(u'50% Smaller'), 20),
+                     (_(u'25% Smaller'), 30),
+                     (_(u'[Default]'),   40),
+                     (_(u'25% Larger'),  50),
+                     (_(u'50% Larger'),  60),
+                     (_(u'Custom'),      40)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Visuals_SecundaSpeed(_AGmstTweak):
+    tweak_name = _(u'Visuals: Secunda Speed')
+    tweak_tip = _(u'Changes how quickly the moon Secunda (the smaller one) '
+                  u'moves in the night sky.')
+    tweak_key = (u'fSecundaSpeed',)
+    tweak_choices = [(u'0.5x',                0.15),
+                     (u'[1x]',                 0.3),
+                     (u'2x',                   0.6),
+                     (u'3x',                   0.9),
+                     (_(u'Custom (in units)'), 0.3)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_AI_BumpReactionDelay(_AGmstTweak):
+    tweak_name = _(u'AI: Bump Reaction Delay')
+    tweak_tip = _(u'Changes how long it takes until NPCs (particularly '
+                  u'followers) that have commented on you bumping into them '
+                  u'repeat that dialogue. Infinite effectively disables it.')
+    tweak_key = (u'fBumpReactionSmallDelayTime',)
+    tweak_choices = [(_(u'Infinite'), 99999.0),
+                     (_(u'10x Longer'),  10.0),
+                     (_(u'5x Longer'),    5.0),
+                     (_(u'[Default]'),    1.0)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Magic_MaxActiveRunes(_AGmstTweak):
+    tweak_name = _(u'Magic: Max Active Runes')
+    tweak_tip = _(u'How many rune spells the player can have active '
+                  u'simultaneously.')
+    tweak_key = (u'iMaxPlayerRunes',)
+    tweak_choices = [(u'[1]',             1),
+                     (u'3',               3),
+                     (u'5',               5),
+                     (u'10',             10),
+                     (u'50',             50),
+                     (_(u'No Limit'), 99999),
+                     (_(u'Custom'),       1)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Actor_FasterShouts(_AGmstTweak):
+    tweak_name = _(u'Actor: Faster Shouts')
+    tweak_tip = _(u'Decreases the time that the shout key must be held to '
+                  u'shout multiple words. Custom is for the first word and '
+                  u'the rest of the shout.')
+    tweak_key = (u'fShoutTime1', u'fShoutTime2')
+    tweak_choices = [(_(u'4x Faster'),             0.05, 0.225),
+                     (_(u'2x Faster'),               0.1, 0.45),
+                     (_(u'[Default]'),                0.2, 0.9),
+                     (_(u'2x Slower'),                0.4, 1.8),
+                     (_(u'4x Slower'),                0.8, 3.6),
+                     (_(u'Custom (in milliseconds)'), 0.2, 0.9)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_FasterTwo_HandedWeapons(_AGmstTweak):
+    tweak_name = _(u'Combat: Faster Two-Handed Weapons')
+    tweak_tip = _(u'Changes 2-hand weapon animation speed.')
+    tweak_key = (u'fWeaponTwoHandedAnimationSpeedMult',)
+    tweak_choices = [(_(u'50% Slower'),  0.75),
+                     (_(u'25% Slower'), 1.125),
+                     (_(u'[Default]'),    1.5),
+                     (_(u'25% Faster'), 1.875),
+                     (_(u'50% Faster'),  2.25),
+                     (_(u'Custom'),       1.5)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Actor_TrainingLimit_Tes5(_AGmstTweak):
+    tweak_name = _(u'Actor: Training Limit')
+    tweak_tip = _(u'Maximum number of Training allowed by trainers.')
+    tweak_key = (u'iTrainingNumAllowedPerLevel',)
+    tweak_choices = [(u'1',               1),
+                     (u'[5]',             5),
+                     (u'8',               8),
+                     (u'10',             10),
+                     (u'20',             20),
+                     (_(u'Unlimited'), 9999),
+                     (_(u'Custom'),       0)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Player_UnderwaterBreathControl(_AGmstTweak):
+    tweak_name = _(u'Player: Underwater Breath Control')
+    tweak_tip = _(u'How long the player can hold their breath while swimming '
+                  u'- does not affect Argonians.')
+    tweak_key = (u'fActorSwimBreathBase', u'fActorSwimBreathMult')
+    tweak_choices = [(_(u'[10 seconds]'),                 10.0, 0.3),
+                     (_(u'20 seconds'),                   20.0, 0.3),
+                     (_(u'40 seconds'),                  40.0, 0.45),
+                     (_(u'60 seconds'),                   60.0, 0.6),
+                     (_(u'Custom (Base and Multiplier)'), 10.0, 0.3)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_StealthDamageBonus(_AGmstTweak):
+    tweak_name = _(u'Combat: Stealth Damage Bonus')
+    tweak_tip = _(u'Increases the amount of damage you do with daggers, bows '
+                  u'and crossbows while sneaking.')
+    tweak_key = (u'fCombatSneak1HDaggerMult', u'fCombatSneakBowMult',
+                 u'fCombatSneakCrossbowMult')
+    tweak_choices = [(_(u'[None]'),                         3.0, 2.0, 2.0),
+                     (u'2x',                                6.0, 4.0, 4.0),
+                     (u'3x',                                9.0, 6.0, 6.0),
+                     (u'4x',                               12.0, 8.0, 8.0),
+                     (_(u'Custom (Dagger, Bow, Crossbow)'), 3.0, 2.0, 2.0)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Msg_CannotEquipItemFix(_AGmstTweak):
+    tweak_name = _(u'Msg: Cannot Equip Item Fix')
+    tweak_tip = _(u"Disables the 'You cannot equip this item' message because "
+                  u"some Skyrim mods (e.g. Frostfall) use activatable misc "
+                  u"objects that require it to be disabled.")
+    tweak_key = (u'sCantEquipGeneric',)
+    tweak_choices = [(_(u'Enabled'), u'')]
+    default_enabled = True
+
+#------------------------------------------------------------------------------
+class GmstTweak_Msg_NotEnoughCharge_Tes5(_AGmstTweak):
+    tweak_name = _(u'Msg: Not Enough Charge')
+    tweak_tip = _(u'Message when enchanted item is out of charge.')
+    tweak_key = (u'sEnchantInsufficientCharge',)
+    tweak_choices = [(_(u'[None]'),         u' '),
+                     (u'.',                 u'.'),
+                     (_(u'Hmm...'), _(u'Hmm...')),
+                     (_(u'Custom'),      _(u' '))]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Msg_CarryingTooMuch(_AGmstTweak):
+    tweak_name = _(u'Msg: Carrying Too Much')
+    tweak_tip = _(u'Message when you are carrying too much to run.')
+    tweak_key = (u'sOverEncumbered',)
+    tweak_choices = [(_(u'[None]'),         u' '),
+                     (u'.',                 u'.'),
+                     (_(u'Hmm...'), _(u'Hmm...')),
+                     (_(u'Custom'),      _(u' '))]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Magic_InvisibilityDetectionDifficulty(_AGmstTweak):
+    tweak_name = _(u'Magic: Invisibility Detection Difficulty')
+    tweak_tip = _(u'Determines how difficult it is for NPCs to see you while '
+                  u'you are invisible.')
+    tweak_key = (u'fSneakStealthBoyMult',)
+    tweak_choices = [(_(u'[Impossible]'),         0.0),
+                     (_(u'75% Harder'),          0.25),
+                     (_(u'50% Harder'),           0.5),
+                     (_(u'25% Harder'),          0.75),
+                     (_(u'Nullify Invisibility'), 1.0),
+                     (_(u'Custom'),               0.0)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Bounty_Shapeshifting(_AGmstTweak):
+    tweak_name = _(u'Bounty: Shapeshifting')
+    tweak_tip = _(u'The bounty for transforming into a vampire lord or '
+                  u'werewolf in front of people.')
+    tweak_key = (u'iCrimeGoldWerewolf',)
+    tweak_choices = [(u'500',        500),
+                     (u'750',        750),
+                     (u'[1000]',    1000),
+                     (u'1250',      1250),
+                     (u'1500',      1500),
+                     (_(u'Custom'), 1000)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_SoulTrap_LesserSoulLevel(_AGmstTweak):
+    tweak_name = _(u'Soul Trap: Lesser Soul Level')
+    tweak_tip = _(u"The level at which NPC souls are considered 'lesser'.")
+    tweak_key = (u'iLesserSoulActorLevel',)
+    tweak_choices = [(u'[4]',       4),
+                     (u'16',       16),
+                     (u'28',       28),
+                     (u'38',       38),
+                     (_(u'Custom'), 4)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_SoulTrap_CommonSoulLevel(_AGmstTweak):
+    tweak_name = _(u'Soul Trap: Common Soul Level')
+    tweak_tip = _(u"The level at which NPC souls are considered 'common'.")
+    tweak_key = (u'iCommonSoulActorLevel',)
+    tweak_choices = [(u'4',          4),
+                     (u'[16]',      16),
+                     (u'28',        28),
+                     (u'38',        38),
+                     (_(u'Custom'), 16)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_SoulTrap_GreaterSoulLevel(_AGmstTweak):
+    tweak_name = _(u'Soul Trap: Greater Soul Level')
+    tweak_tip = _(u"The level at which NPC souls are considered 'greater'.")
+    tweak_key = (u'iGreaterSoulActorLevel',)
+    tweak_choices = [(u'4',          4),
+                     (u'16',        16),
+                     (u'[28]',      28),
+                     (u'38',        38),
+                     (_(u'Custom'), 28)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_SoulTrap_GrandSoulLevel(_AGmstTweak):
+    tweak_name = _(u'Soul Trap: Grand Soul Level')
+    tweak_tip = _(u"The level at which NPC souls are considered 'grand'.")
+    tweak_key = (u'iGrandSoulActorLevel',)
+    tweak_choices = [(u'4',          4),
+                     (u'16',        16),
+                     (u'28',        28),
+                     (u'[38]',      38),
+                     (_(u'Custom'), 38)]
 
 #------------------------------------------------------------------------------
 class TweakSettingsPatcher(MultiTweaker):

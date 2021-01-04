@@ -314,18 +314,3 @@ class AMultiTweakItem(object):
         ITPOs through! Must be implemented by every PBash tweak that supports
         pooling (see MultiTweakItem.supports_pooling)."""
         raise AbstractError(u'tweak_record not implemented')
-
-# TODO(inf) DEPRECATED! - don't use for new tweaks -> all tweaks should really
-#  be static classes, much more readable
-class DynamicTweak(AMultiTweakItem):
-    """A tweak that has its name, tip, key and choices passed in as init
-    parameters."""
-    def __init__(self, tweak_name, tweak_tip, tweak_key, *tweak_choices):
-        self.tweak_name = tweak_name
-        self.tweak_tip = tweak_tip
-        self.tweak_key = tweak_key
-        self.tweak_choices = list(tweak_choices)
-        super(DynamicTweak, self).__init__()
-
-    def __repr__(self):  return u'%s(%s)' % (
-        self.__class__.__name__, self.tweak_name)
