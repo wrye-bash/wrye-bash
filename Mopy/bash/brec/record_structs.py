@@ -463,7 +463,7 @@ class MreRecord(object):
         # If not MreRecord, then we will have info in data.
         if self.__class__ != MreRecord:
             if attr not in self.__slots__: return value
-            return self.__getattribute__(attr)
+            return getattr(self, attr)
         for subrec in self.iterate_subrecords(mel_sigs={mel_sig_}):
             value = bolt.cstrip(subrec.mel_data)
             break

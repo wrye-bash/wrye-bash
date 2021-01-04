@@ -307,13 +307,13 @@ class MreLeveledListBase(MelRecord):
         #--Relevel or not?
         if other.re_records:
             for attr in self.__class__.top_copy_attrs:
-                self.__setattr__(attr,other.__getattribute__(attr))
+                setattr(self, attr, getattr(other, attr))
             self.flags = other.flags()
         else:
             for attr in self.__class__.top_copy_attrs:
-                otherAttr = other.__getattribute__(attr)
+                otherAttr = getattr(other, attr)
                 if otherAttr is not None:
-                    self.__setattr__(attr, otherAttr)
+                    setattr(self, attr, otherAttr)
             self.flags |= other.flags
         #--Remove items based on other.removes
         if other.de_records or other.re_records:
@@ -350,11 +350,9 @@ class MreLeveledListBase(MelRecord):
                 (self.flags != other.flags)):
             self.mergeOverLast = True
         else:
-            my_val = self.__getattribute__
-            other_val = other.__getattribute__
             # Check copy-attributes first, break if they are different
             for attr in self.__class__.top_copy_attrs:
-                if my_val(attr) != other_val(attr):
+                if getattr(self, attr) != getattr(other, attr):
                     self.mergeOverLast = True
                     break
             else:
@@ -362,10 +360,9 @@ class MreLeveledListBase(MelRecord):
                 otherlist = other.entries
                 otherlist.sort(key=entry_copy_attrs_key)
                 for selfEntry,otherEntry in zip(self.entries,otherlist):
-                    my_val = selfEntry.__getattribute__
-                    other_val = otherEntry.__getattribute__
                     for attr in self.__class__.entry_copy_attrs:
-                        if my_val(attr) != other_val(attr):
+                        if getattr(selfEntry, attr) != getattr(
+                                otherEntry, attr):
                             break
                     else:
                         # attributes are identical, try next entry
