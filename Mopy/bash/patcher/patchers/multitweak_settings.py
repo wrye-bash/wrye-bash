@@ -889,7 +889,7 @@ class GmstTweak_AI_MaxDeadActors(_AGmstTweak):
 #------------------------------------------------------------------------------
 class GmstTweak_Player_InventoryQuantityPrompt(_AGmstTweak):
     tweak_name = _(u'Player: Inventory Quantity Prompt')
-    tweak_tip = _(u'Number of items in a stack at which point Oblivion '
+    tweak_tip = _(u'Number of items in a stack at which point the game '
                   u'prompts for a quantity.')
     tweak_key = (u'iInventoryAskQuantityAt',)
     tweak_choices = [(_(u'Always Prompt'),    1),
@@ -1072,6 +1072,228 @@ class GmstTweak_Bounty_Jailbreak(_AGmstTweak):
                      (u'175',       175),
                      (u'200',       200),
                      (_(u'Custom'), 100)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Camera_ChaseDistance_Fo3(_AGmstTweak):
+    tweak_name = _(u'Camera: Chase Distance')
+    tweak_tip = _(u'Distance camera can be moved away from PC using mouse '
+                  u'wheel.')
+    tweak_key = (u'fVanityModeWheelMax', u'fChase3rdPersonZUnitsPerSecond')
+    tweak_choices = [(u'x 1.5',    900.0, 1200.0),
+                     (u'x 2',     1200.0, 1600.0),
+                     (u'x 3',     1800.0, 2400.0),
+                     (u'x 5',     3000.0, 4000.0),
+                     (u'x 10',    6000.0, 5000.0),
+                     (_(u'Custom'), 600.0, 800.0)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Actor_MaxJumpHeight_Fo3(_AGmstTweak):
+    tweak_name = _(u'Actor: Max Jump Height')
+    tweak_tip = _(u'Increases the height to which you can jump.')
+    tweak_key = (u'fJumpHeightMin',)
+    tweak_choices = [(u'0.5x',      38.0),
+                     (u'[1x]',      76.0),
+                     (u'2x',       152.0),
+                     (u'3x',       228.0),
+                     (u'4x',       304.0),
+                     (_(u'Custom'), 76.0)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_CostMultiplier_Repair_Fo3(_AGmstTweak):
+    tweak_name = _(u'Cost Multiplier: Repair')
+    tweak_tip = _(u'Cost factor for repairing items.')
+    tweak_key = (u'fItemRepairCostMult',)
+    tweak_choices = [(u'1.0',       1.0),
+                     (u'1.25',     1.25),
+                     (u'1.5',       1.5),
+                     (u'1.75',     1.75),
+                     (u'[2.0]',     2.0),
+                     (u'2.5',       2.5),
+                     (u'3.0',       3.0),
+                     (_(u'Custom'), 2.0)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Gore_CombatDismemberPartChance(_AGmstTweak):
+    tweak_name = _(u'Gore: Combat Dismember Part Chance')
+    tweak_tip = _(u'The chance that body parts will be dismembered.')
+    tweak_key = (u'iCombatDismemberPartChance',)
+    tweak_choices = [(u'0',          0),
+                     (u'25',        25),
+                     (u'[50]',      50),
+                     (u'80',        80),
+                     (u'100',      100),
+                     (_(u'Custom'), 50)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Gore_CombatExplodePartChance(_AGmstTweak):
+    tweak_name = _(u'Gore: Combat Explode Part Chance')
+    tweak_tip = _(u'The chance that body parts will explode.')
+    tweak_key = (u'iCombatExplodePartChance',)
+    tweak_choices = [(u'0',          0),
+                     (u'25',        25),
+                     (u'50',        50),
+                     (u'[75]',      75),
+                     (u'100',      100),
+                     (_(u'Custom'), 75)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_LeveledItemMaxleveldifference(_AGmstTweak):
+    tweak_name = _(u'Leveled Item Max level difference')
+    tweak_tip = _(u'Maximum difference to player level for leveled items.')
+    tweak_key = (u'iLevItemLevelDifferenceMax',)
+    tweak_choices = [(u'1',               1),
+                     (u'5',               5),
+                     (u'[8]',             8),
+                     (u'10',             10),
+                     (u'20',             20),
+                     (_(u'Unlimited'), 9999),
+                     (_(u'Custom'),       8)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Movement_BaseSpeed(_AGmstTweak):
+    tweak_name = _(u'Movement: Base Speed')
+    tweak_tip = _(u'Changes base movement speed.')
+    tweak_key = (u'fMoveBaseSpeed',)
+    tweak_choices = [(u'[77.0]',    77.0),
+                     (u'90.0',      90.0),
+                     (_(u'Custom'), 77.0)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Movement_SneakMultiplier(_AGmstTweak):
+    tweak_name = _(u'Movement: Sneak Multiplier')
+    tweak_tip = _(u'Movement speed is multiplied by this when the actor is sneaking.')
+    tweak_key = (u'fMoveSneakMult',)
+    tweak_choices = [(u'[0.57]',    0.57),
+                     (u'0.66',      0.66),
+                     (_(u'Custom'), 0.57)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_VATSPlayerDamageMultiplier(_AGmstTweak):
+    tweak_name = _(u'Combat: VATS Player Damage Multiplier')
+    tweak_tip = _(u'Multiplier of damage that player receives in VATS.')
+    tweak_key = (u'fVATSPlayerDamageMult',)
+    tweak_choices = [(u'0.10',       0.1),
+                     (u'0.25',      0.25),
+                     (u'0.50',       0.5),
+                     (u'[0.75]',    0.75),
+                     (u'1.00',       1.0),
+                     (_(u'Custom'), 0.75)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_AutoAimFix(_AGmstTweak):
+    tweak_name = _(u'Combat: Auto Aim Fix')
+    tweak_tip = _(u'Increase Auto Aim settings to a level at which snipers '
+                  u'can benefit from them.')
+    tweak_key = (u'fAutoAimMaxDistance', u'fAutoAimScreenPercentage',
+                 u'fAutoAimMaxDegrees', u'fAutoAimMissRatioLow',
+                 u'fAutoAimMissRatioHigh', u'fAutoAimMaxDegreesMiss')
+    tweak_choices = [(_(u'Harder'), 50000.0, -180.0, 1.1, 1.0, 1.3, 3.0)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Player_PipBoyLightKeypressDelay(_AGmstTweak):
+    tweak_name = _(u'Player: PipBoy Light Keypress Delay')
+    tweak_tip = _(u'Seconds of delay until the PipBoy light switches on.')
+    tweak_key = (u'fPlayerPipBoyLightTimer',)
+    tweak_choices = [(u'0.3',       0.3),
+                     (u'0.4',       0.4),
+                     (u'0.5',       0.5),
+                     (u'0.6',       0.6),
+                     (u'0.7',       0.7),
+                     (u'[0.8]',     0.8),
+                     (u'1.0',       1.0),
+                     (_(u'Custom'), 0.8)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_VATSPlaybackDelay(_AGmstTweak):
+    tweak_name = _(u'Combat: VATS Playback Delay')
+    tweak_tip = _(u'Seconds of delay after the VATS Camera finished playback.')
+    tweak_key = (u'fVATSPlaybackDelay',)
+    tweak_choices = [(u'0.01',      0.01),
+                     (u'0.05',      0.05),
+                     (u'0.10',       0.1),
+                     (u'[0.17]',    0.17),
+                     (u'0.25',      0.25),
+                     (_(u'Custom'), 0.17)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_NPCDeathXPThreshold(_AGmstTweak):
+    tweak_name = _(u'Combat: NPC Death XP Threshold')
+    tweak_tip = _(u'Percentage of total damage you have to inflict in order '
+                  u'to get XP.')
+    tweak_key = (u'iXPDeathRewardHealthThreshold',)
+    tweak_choices = [(u'0%',         0),
+                     (u'25%',       25),
+                     (u'[40%]',     40),
+                     (u'50%',       50),
+                     (u'75%',       75),
+                     (_(u'Custom'), 40)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Hacking_MaximumNumberofWords(_AGmstTweak):
+    tweak_name = _(u'Hacking: Maximum Number of Words')
+    tweak_tip = _(u'The maximum number of words appearing in the terminal '
+                  u'hacking mini-game.')
+    tweak_key = (u'iHackingMaxWords',)
+    tweak_choices = [(u'1',          1),
+                     (u'4',          4),
+                     (u'8',          8),
+                     (u'12',        12),
+                     (u'16',        16),
+                     (u'[20]',      20),
+                     (_(u'Custom'), 20)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Visuals_ShellCameraDistance(_AGmstTweak):
+    tweak_name = _(u'Visuals: Shell Camera Distance')
+    tweak_tip = _(u'Maximum distance at which gun arisings (shell case, '
+                  u'particle, decal) show from camera.')
+    tweak_key = (u'fGunParticleCameraDistance', u'fGunShellCameraDistance',
+                 u'fGunDecalCameraDistance')
+    tweak_choices = [(u'x 1.5',     3072.0, 768.0, 3072.0),
+                     (u'x 2',      4096.0, 1024.0, 4096.0),
+                     (u'x 3',      6144.0, 1536.0, 6144.0),
+                     (u'x 4',      8192.0, 2048.0, 8192.0),
+                     (u'x 5',    10240.0, 2560.0, 10240.0),
+                     (_(u'Custom'), 2048.0, 512.0, 2048.0)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Visuals_ShellLitterTime(_AGmstTweak):
+    tweak_name = _(u'Visuals: Shell Litter Time')
+    tweak_tip = _(u'Time before shell cases fade away from cells.')
+    tweak_key = (u'fGunShellLifetime',)
+    tweak_choices = [(_(u'[10 Seconds]'),        10.0),
+                     (_(u'20 Seconds'),          20.0),
+                     (_(u'30 Seconds'),          30.0),
+                     (_(u'1 Minute'),            60.0),
+                     (_(u'3 Minutes'),          180.0),
+                     (_(u'5 Minutes'),          300.0),
+                     (_(u'Custom (in seconds)'), 10.0)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Visuals_ShellLitterCount(_AGmstTweak):
+    tweak_name = _(u'Visuals: Shell Litter Count')
+    tweak_tip = _(u'Maximum number of debris (shell case, etc) allowed in '
+                  u'cell.')
+    tweak_key = (u'iDebrisMaxCount',)
+    tweak_choices = [(u'[50]',      50),
+                     (u'100',      100),
+                     (u'500',      500),
+                     (u'1000',    1000),
+                     (u'3000',    3000),
+                     (_(u'Custom'), 50)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Hacking_TerminalSpeedAdjustment(_AGmstTweak):
+    tweak_name = _(u'Hacking: Terminal Speed Adjustment')
+    tweak_tip = _(u'The display speed at the time of terminal hacking.')
+    tweak_key = (u'iHackingDumpRate', u'iHackingInputRate',
+                 u'iHackingOutputRate', u'iHackingFlashOffDuration',
+                 u'iHackingFlashOnDuration', u'iComputersDisplayRateMenus',
+                 u'iComputersDisplayRateNotes')
+    tweak_choices = [(u'x 2',       1000, 40, 134, 250, 375, 300, 300),
+                     (u'x 4',       2000, 80, 268, 125, 188, 600, 600),
+                     (u'[x 6]',     3000, 120, 402, 83, 126, 900, 900),
+                     (_(u'Custom'), 3000, 120, 402, 83, 126, 900, 900)]
 
 #------------------------------------------------------------------------------
 class TweakSettingsPatcher(MultiTweaker):

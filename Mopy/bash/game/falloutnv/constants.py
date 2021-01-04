@@ -177,21 +177,6 @@ del condition_function_data[1165] # GetWeaponHasScope, 1076 in FNV
 del condition_function_data[1166] # IsControlPressed, 1131 in FNV
 del condition_function_data[1213] # GetFOSEBeta, 1026 in FNV
 
-GmstTweaks = GmstTweaks[:]
-GmstTweaks.insert(0, (
-    _(u'Actor: Strength Encumbrance Multiplier'),
-    _(u"Actor's Strength X this = Actor's Encumbrance capacity."),
-        (u'fActorStrengthEncumbranceMult',),
-        (u'1',            1.0),
-        (u'3',            3.0),
-        (u'[5]',          5.0),
-        (u'8',            8.0),
-        (u'10',           10.0),
-        (u'20',           20.0),
-        (_(u'Unlimited'), 999999.0),
-        (_(u'Custom'),    5.0),
-    ))
-
 #------------------------------------------------------------------------------
 # Import Names
 #------------------------------------------------------------------------------
@@ -423,3 +408,8 @@ actor_importer_attrs[b'NPC_'][u'Actors.ACBS'] = ( # FO3 + flags.autocalcService
 # Tweak Assorted
 #------------------------------------------------------------------------------
 assorted_tweaks |= {u'AssortedTweak_ArrowWeight'}
+
+#------------------------------------------------------------------------------
+# Tweak Assorted
+#------------------------------------------------------------------------------
+settings_tweaks |= {u'GmstTweak_Actor_StrengthEncumbranceMultiplier'}
