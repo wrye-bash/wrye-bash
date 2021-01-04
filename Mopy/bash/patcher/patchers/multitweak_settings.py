@@ -234,6 +234,13 @@ class _AGmstTweak(_ASettingsTweak):
                 patch_file.new_gmst(self._find_original_eid(remaining_eid),
                     self._find_chosen_value(remaining_eid))
 
+class _AMsgTweak(_AGmstTweak):
+    """Base class for GMST tweaks in the Msg: category."""
+    tweak_choices = [(_(u'[None]'),         u' '),
+                     (u'.',                 u'.'),
+                     (_(u'Hmm...'), _(u'Hmm...')),
+                     (_(u'Custom'),      _(u' '))]
+
 #------------------------------------------------------------------------------
 class GmstTweak_Arrow_LitterCount(_AGmstTweak):
     tweak_name = _(u'Arrow: Litter Count')
@@ -448,105 +455,65 @@ class GmstTweak_Magic_BoltSpeed(_AGmstTweak):
                      (_(u'Custom (base 1000)'), 1000.0)]
 
 #------------------------------------------------------------------------------
-class GmstTweak_Msg_EquipMiscItem(_AGmstTweak):
+class GmstTweak_Msg_EquipMiscItem(_AMsgTweak):
     tweak_name = _(u'Msg: Equip Misc. Item')
     tweak_tip = _(u'Message upon equipping misc. item.')
     tweak_key = (u'sCantEquipGeneric',)
-    tweak_choices = [(_(u'[None]'),         u' '),
-                     (u'.',                 u'.'),
-                     (_(u'Hmm...'), _(u'Hmm...')),
-                     (_(u'Custom'),      _(u' '))]
 
 #------------------------------------------------------------------------------
-class GmstTweak_Msg_AutoSaving(_AGmstTweak):
+class GmstTweak_Msg_AutoSaving(_AMsgTweak):
     tweak_name = _(u'Msg: Auto Saving')
     tweak_tip = _(u'Message upon auto saving.')
     tweak_key = (u'sAutoSaving',)
-    tweak_choices = [(_(u'[None]'),         u' '),
-                     (u'.',                 u'.'),
-                     (_(u'Hmm...'), _(u'Hmm...')),
-                     (_(u'Custom'),      _(u' '))]
 
 #------------------------------------------------------------------------------
-class GmstTweak_Msg_HarvestFailure(_AGmstTweak):
+class GmstTweak_Msg_HarvestFailure(_AMsgTweak):
     tweak_name = _(u'Msg: Harvest Failure')
     tweak_tip = _(u'Message upon failure at harvesting flora.')
     tweak_key = (u'sFloraFailureMessage',)
-    tweak_choices = [(_(u'[None]'),         u' '),
-                     (u'.',                 u'.'),
-                     (_(u'Hmm...'), _(u'Hmm...')),
-                     (_(u'Custom'),      _(u' '))]
 
 #------------------------------------------------------------------------------
-class GmstTweak_Msg_HarvestSuccess(_AGmstTweak):
+class GmstTweak_Msg_HarvestSuccess(_AMsgTweak):
     tweak_name = _(u'Msg: Harvest Success')
     tweak_tip = _(u'Message upon success at harvesting flora.')
     tweak_key = (u'sFloraSuccessMessage',)
-    tweak_choices = [(_(u'[None]'),         u' '),
-                     (u'.',                 u'.'),
-                     (_(u'Hmm...'), _(u'Hmm...')),
-                     (_(u'Custom'),      _(u' '))]
 
 #------------------------------------------------------------------------------
-class GmstTweak_Msg_QuickSave(_AGmstTweak):
+class GmstTweak_Msg_QuickSave(_AMsgTweak):
     tweak_name = _(u'Msg: Quick Save')
     tweak_tip = _(u'Message upon quick saving.')
     tweak_key = (u'sQuickSaving',)
-    tweak_choices = [(_(u'[None]'),         u' '),
-                     (u'.',                 u'.'),
-                     (_(u'Hmm...'), _(u'Hmm...')),
-                     (_(u'Custom'),      _(u' '))]
 
 #------------------------------------------------------------------------------
-class GmstTweak_Msg_HorseStabled(_AGmstTweak):
+class GmstTweak_Msg_HorseStabled(_AMsgTweak):
     tweak_name = _(u'Msg: Horse Stabled')
     tweak_tip = _(u'Message upon fast traveling with a horse to a city.')
     tweak_key = (u'sFastTravelHorseatGate',)
-    tweak_choices = [(_(u'[None]'),         u' '),
-                     (u'.',                 u'.'),
-                     (_(u'Hmm...'), _(u'Hmm...')),
-                     (_(u'Custom'),      _(u' '))]
 
 #------------------------------------------------------------------------------
-class GmstTweak_Msg_NoFastTravel(_AGmstTweak):
+class GmstTweak_Msg_NoFastTravel(_AMsgTweak):
     tweak_name = _(u'Msg: No Fast Travel')
     tweak_tip = _(u'Message when attempting to fast travel when fast travel '
                   u'is unavailable due to location.')
     tweak_key = (u'sNoFastTravelScriptBlock',)
-    tweak_choices = [(_(u'[None]'),         u' '),
-                     (u'.',                 u'.'),
-                     (_(u'Hmm...'), _(u'Hmm...')),
-                     (_(u'Custom'),      _(u' '))]
 
 #------------------------------------------------------------------------------
-class GmstTweak_Msg_LoadingArea(_AGmstTweak):
+class GmstTweak_Msg_LoadingArea(_AMsgTweak):
     tweak_name = _(u'Msg: Loading Area')
     tweak_tip = _(u'Message when background loading area.')
     tweak_key = (u'sLoadingArea',)
-    tweak_choices = [(_(u'[None]'),         u' '),
-                     (u'.',                 u'.'),
-                     (_(u'Hmm...'), _(u'Hmm...')),
-                     (_(u'Custom'),      _(u' '))]
 
 #------------------------------------------------------------------------------
-class GmstTweak_Msg_QuickLoad(_AGmstTweak):
+class GmstTweak_Msg_QuickLoad(_AMsgTweak):
     tweak_name = _(u'Msg: Quick Load')
     tweak_tip = _(u'Message when quick loading.')
     tweak_key = (u'sQuickLoading',)
-    tweak_choices = [(_(u'[None]'),         u' '),
-                     (u'.',                 u'.'),
-                     (_(u'Hmm...'), _(u'Hmm...')),
-                     (_(u'Custom'),      _(u' '))]
 
 #------------------------------------------------------------------------------
-class GmstTweak_Msg_NotEnoughCharge(_AGmstTweak):
+class GmstTweak_Msg_NotEnoughCharge(_AMsgTweak):
     tweak_name = _(u'Msg: Not Enough Charge')
     tweak_tip = _(u'Message when enchanted item is out of charge.')
     tweak_key = (u'sNoCharge',)
-    tweak_choices = [(_(u'[None]'),         u' '),
-                     (u'.',                 u'.'),
-                     (_(u'Hmm...'), _(u'Hmm...')),
-                     (_(u'Custom'),      _(u' '))]
 
 #------------------------------------------------------------------------------
 class GmstTweak_CostMultiplier_Repair(_AGmstTweak):
@@ -1296,14 +1263,10 @@ class GmstTweak_Hacking_TerminalSpeedAdjustment(_AGmstTweak):
                      (_(u'Custom'), 3000, 120, 402, 83, 126, 900, 900)]
 
 #------------------------------------------------------------------------------
-class GmstTweak_Msg_SoulCaptured(_AGmstTweak):
+class GmstTweak_Msg_SoulCaptured(_AMsgTweak):
     tweak_name = _(u'Msg: Soul Captured')
     tweak_tip = _(u'Message upon capturing a soul in a Soul Gem.')
     tweak_key = (u'sSoulCaptured',)
-    tweak_choices = [(_(u'[None]'),         u' '),
-                     (u'.',                 u'.'),
-                     (_(u'Hmm...'), _(u'Hmm...')),
-                     (_(u'Custom'),      _(u' '))]
 
 #------------------------------------------------------------------------------
 class GmstTweak_World_CellRespawnTime_Cleared(_AGmstTweak):
@@ -1659,24 +1622,16 @@ class GmstTweak_Msg_CannotEquipItemFix(_AGmstTweak):
     default_enabled = True
 
 #------------------------------------------------------------------------------
-class GmstTweak_Msg_NotEnoughCharge_Tes5(_AGmstTweak):
+class GmstTweak_Msg_NotEnoughCharge_Tes5(_AMsgTweak):
     tweak_name = _(u'Msg: Not Enough Charge')
     tweak_tip = _(u'Message when enchanted item is out of charge.')
     tweak_key = (u'sEnchantInsufficientCharge',)
-    tweak_choices = [(_(u'[None]'),         u' '),
-                     (u'.',                 u'.'),
-                     (_(u'Hmm...'), _(u'Hmm...')),
-                     (_(u'Custom'),      _(u' '))]
 
 #------------------------------------------------------------------------------
-class GmstTweak_Msg_CarryingTooMuch(_AGmstTweak):
+class GmstTweak_Msg_CarryingTooMuch(_AMsgTweak):
     tweak_name = _(u'Msg: Carrying Too Much')
     tweak_tip = _(u'Message when you are carrying too much to run.')
     tweak_key = (u'sOverEncumbered',)
-    tweak_choices = [(_(u'[None]'),         u' '),
-                     (u'.',                 u'.'),
-                     (_(u'Hmm...'), _(u'Hmm...')),
-                     (_(u'Custom'),      _(u' '))]
 
 #------------------------------------------------------------------------------
 class GmstTweak_Magic_InvisibilityDetectionDifficulty(_AGmstTweak):
