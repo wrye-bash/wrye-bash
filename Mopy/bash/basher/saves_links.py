@@ -33,7 +33,7 @@ from .dialogs import ImportFaceDialog
 from .. import bass, bosh, bolt, balt, bush, load_order, initialization
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, UIList_Rename
-from ..bolt import GPath, SubProgress, struct_pack, struct_unpack
+from ..bolt import GPath, SubProgress
 from ..bosh import faces, SaveInfo
 from ..brec import MreRecord
 from ..exception import ArgumentError, BoltError, CancelError, ModError
@@ -689,7 +689,7 @@ class Save_RepairAbomb(OneItemLink):
         saveFile.load()
         (tcSize,abombCounter,abombFloat) = saveFile.getAbomb()
         #--Continue?
-        progress = 100*abombFloat/struct_unpack('f', struct_pack('I',0x49000000))[0]
+        progress = 100 * abombFloat / 524288.0 # 0x49000000 cast to a float
         newCounter = 0x41000000
         if abombCounter <= newCounter:
             self._showOk(_(u'Abomb counter is too low to reset.'))

@@ -34,7 +34,7 @@ from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     MelOptFloat, MelOptUInt32, MelIcons, MelFloat, null1, null3, MelSInt32, \
     MelFixedString, FixedString, AutoFixedString, MreGmstBase, MelOptUInt8, \
     MreLeveledListBase, MelUInt16, null4, SizeDecider, MelLists, null2, \
-    MelTruncatedStruct, MelColor, MelStrings
+    MelTruncatedStruct, MelColor, MelStrings, MelUInt32Flags
 if brec.MelModel is None:
 
     class _MelModel(MelGroup):
@@ -237,7 +237,7 @@ class MreLeveledList(MreLeveledListBase):
     # Bad names to mirror the other games (needed by MreLeveledListBase)
     melSet = MelSet(
         MelMWId(),
-        MelUInt32(b'DATA', (_lvl_flags, u'flags')),
+        MelUInt32Flags(b'DATA', u'flags', _lvl_flags),
         MelUInt8(b'NNAM', u'chanceNone'),
         MelCounter(MelUInt32(b'INDX', u'entry_count'), counts=u'entries'),
         MelGroups(u'entries',
@@ -256,15 +256,15 @@ class MreTes3(MreHeaderBase):
 
     melSet = MelSet(
         MelStruct(b'HEDR', u'fI32s256sI', (u'version', 1.3), u'esp_flags',
-            (AutoFixedString(32), u'author'),
-            (AutoFixedString(256), u'description'), u'numRecords'),
+            (AutoFixedString(32), u'author_pstr'),
+            (AutoFixedString(256), u'description_pstr'), u'numRecords'),
         MreHeaderBase.MelMasterNames(),
         MelSavesOnly(
             # Wrye Mash calls unknown1 'day', but that seems incorrect?
             MelStruct(b'GMDT', u'6f64sf32s', u'pc_curr_health',
                 u'pc_max_health', u'unknown1', u'unknown2', u'unknown3',
-                u'unknown4', (FixedString(64), u'curr_cell'), u'unknown5',
-                (AutoFixedString(32), u'pc_name')),
+                u'unknown4', (FixedString(64), u'curr_cell'),
+                u'unknown5', (AutoFixedString(32), u'pc_name')),
             MelBase(b'SCRD', u'unknown_scrd'), # likely screenshot-related
             MelArray(u'screenshot_data',
                 # Yes, the correct order is bgra
@@ -511,7 +511,7 @@ class MreCont(MelRecord):
         MelModel(),
         MelMWFull(),
         MelFloat(b'CNDT', u'cont_weight'),
-        MelUInt32(b'FLAG', (_cont_flags, u'cont_flags')),
+        MelUInt32Flags(b'FLAG', u'cont_flags', _cont_flags),
         MelItems(),
         MelScriptId(),
     )
@@ -551,7 +551,7 @@ class MreCrea(MelRecord):
             u'crea_attack_min_1', u'crea_attack_max_1', u'crea_attack_min_2',
             u'crea_attack_max_2', u'crea_attack_min_3', u'crea_attack_max_3',
             u'crea_gold'),
-        MelUInt32(b'FLAG', (_crea_flags, u'crea_flags')),
+        MelUInt32Flags(b'FLAG', u'crea_flags', _crea_flags),
         MelRefScale(),
         MelItems(),
         MelMWSpells(),
@@ -707,8 +707,8 @@ class MreInfo(MelRecord):
             MelString(b'SCVR', u'condition_string'),
             # None here are on purpose - 0 is a valid value, but only certain
             # conditions need these subrecords to be present
-            MelOptUInt32(b'INTV', (u'comparison_int', None)),
-            MelOptFloat(b'FLTV', (u'comparison_float', None)),
+            MelOptUInt32(b'INTV', u'comparison_int', None),
+            MelOptFloat(b'FLTV', u'comparison_float', None),
         ),
         MelString(b'BNAM', u'result_text'),
         MelOptUInt8(b'QSTN', u'quest_name'),
@@ -750,7 +750,7 @@ class MreLand(MelRecord):
     ##: No MelMWId, will that be a problem?
     melSet = MelSet(
         MelStruct(b'INTV', u'2I', u'land_x', u'land_y'),
-        MelUInt32(b'DATA', (_data_type_flags, u'dt_flags')),
+        MelUInt32Flags(b'DATA', u'dt_flags', _data_type_flags),
         # These are all very large and too complex to manipulate -> MelBase
         MelBase(b'VNML', u'vertex_normals'),
         MelBase(b'VHGT', u'vertex_height_map'),
@@ -934,7 +934,7 @@ class MreNpc(MelRecord):
                 u'npc_fatigue', u'npc_disposition', u'npc_reputation',
                 u'npc_rank', (u'unknown3', null1), u'npc_gold'),
         }, decider=NpcDataDecider()),
-        MelUInt32(b'FLAG', (_npc_flags, u'npc_flags')),
+        MelUInt32Flags(b'FLAG', u'npc_flags', _npc_flags),
         MelItems(),
         MelMWSpells(),
         MelAIData(),

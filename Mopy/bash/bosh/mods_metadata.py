@@ -21,14 +21,13 @@
 #
 # =============================================================================
 from __future__ import division
-import struct
+import zlib
 from collections import defaultdict
-from functools import partial
 
 from ._mergeability import is_esl_capable
 from .. import balt, bolt, bush, bass, load_order
-from ..bolt import GPath, deprint, sio, struct_pack, struct_unpack
-from ..brec import ModReader, MreRecord, RecordHeader
+from ..bolt import GPath, deprint, sio, structs_cache
+from ..brec import ModReader, MreRecord, RecordHeader, SubrecordBlob, null1
 from ..exception import CancelError, ModError
 
 # BashTags dir ----------------------------------------------------------------
@@ -325,8 +324,8 @@ class ModCleaner(object):
 
     @staticmethod
     def scan_Many(modInfos, what=DEFAULT, progress=bolt.Progress(),
-        detailed=False, __unpacker=struct.Struct(u'=12s2f2l2f').unpack,
-        __wrld_types=_wrld_types):
+        detailed=False, __unpacker=structs_cache[u'=12s2f2l2f'].unpack,
+        __wrld_types=_wrld_types, __unpacker2=structs_cache[u'2i'].unpack):
         """Scan multiple mods for dirty edits"""
         if len(modInfos) == 0: return []
         if not (what & (ModCleaner.UDR|ModCleaner.FOG)):
@@ -359,10 +358,7 @@ class ModCleaner(object):
                         insAtEnd = ins.atEnd
                         insTell = ins.tell
                         insUnpackRecHeader = ins.unpackRecHeader
-                        insUnpackSubHeader = ins.unpackSubHeader
-                        insRead = ins.read
-                        ins_unpack = partial(ins.unpack, __unpacker)
-                        headerSize = RecordHeader.rec_header_size
+                        ins_seek = ins.seek
                         while not insAtEnd():
                             subprogress(insTell())
                             header = insUnpackRecHeader()
@@ -372,7 +368,7 @@ class ModCleaner(object):
                                 groupType = header.groupType
                                 if groupType == 0 and header.label not in __wrld_types:
                                     # Skip Tops except for WRLD and CELL groups
-                                    insRead(hsize-headerSize)
+                                    header.skip_group(ins)
                                 elif detailed:
                                     if groupType == 1:
                                         # World Children
@@ -409,15 +405,15 @@ class ModCleaner(object):
                                 if doFog and rtype == b'CELL':
                                     nextRecord = insTell() + hsize
                                     while insTell() < nextRecord:
-                                        (nextType,nextSize) = insUnpackSubHeader()
-                                        if nextType != 'XCLL':
-                                            insRead(nextSize)
-                                        else:
-                                            color,near,far,rotXY,rotZ,fade,clip = ins_unpack(nextSize,'CELL.XCLL')
+                                        subrec = SubrecordBlob(ins, rtype, mel_sigs={b'XCLL'})
+                                        if subrec.mel_data is not None:
+                                            color, near, far, rotXY, rotZ, \
+                                            fade, clip = __unpacker(
+                                                subrec.mel_data)
                                             if not (near or far or clip):
                                                 fog.add(header_fid)
                                 else:
-                                    insRead(hsize)
+                                    ins_seek(hsize, 1)
                         if parents_to_scan:
                             # Detailed info - need to re-scan for CELL and WRLD infomation
                             ins.seek(0)
@@ -428,19 +424,18 @@ class ModCleaner(object):
                                 rtype,hsize = header.recType,header.size
                                 if rtype == b'GRUP':
                                     if header.groupType == 0 and header.label not in __wrld_types:
-                                        insRead(hsize-headerSize)
+                                        header.skip_group(ins)
                                 else:
                                     fid = header.fid
                                     if fid in parents_to_scan:
                                         record = MreRecord(header,ins,True)
-                                        record.loadSubrecords()
                                         eid = u''
-                                        for subrec in record.subrecords:
+                                        for subrec in record.iterate_subrecords(mel_sigs={b'EDID', b'XCLC'}):
                                             if subrec.mel_sig == b'EDID':
-                                                eid = bolt.decoder(subrec.data)
+                                                eid = bolt.decoder(subrec.mel_data)
                                             elif subrec.mel_sig == b'XCLC':
-                                                pos = struct_unpack(
-                                                    '=2i', subrec.data[:8])
+                                                pos = __unpacker2(
+                                                    subrec.mel_data[:8])
                                         for udrFid in parents_to_scan[fid]:
                                             if rtype == b'CELL':
                                                 udr[udrFid].parentEid = eid
@@ -450,7 +445,7 @@ class ModCleaner(object):
                                             elif rtype == b'WRLD':
                                                 udr[udrFid].parentParentEid = eid
                                     else:
-                                        insRead(hsize)
+                                        ins_seek(hsize, 1)
                     except CancelError:
                         raise
                     except:
@@ -467,8 +462,9 @@ class NvidiaFogFixer(object):
         self.modInfo = modInfo
         self.fixedCells = set()
 
-    def fix_fog(self, progress, __unpacker=struct.Struct(u'=12s2f2l2f').unpack,
-                __wrld_types=_wrld_types):
+    def fix_fog(self, progress, __unpacker=structs_cache[u'=12s2f2l2f'].unpack,
+                __wrld_types=_wrld_types,
+                __packer=structs_cache[u'12s2f2l2f'].pack):
         """Duplicates file, then walks through and edits file as necessary."""
         progress.setFull(self.modInfo.size)
         fixedCells = self.fixedCells
@@ -476,14 +472,9 @@ class NvidiaFogFixer(object):
         #--File stream
         minfo_path = self.modInfo.getPath()
         #--Scan/Edit
-        with ModReader(self.modInfo.name,minfo_path.open('rb')) as ins:
-            ins_unpack = partial(ins.unpack, __unpacker)
-            with minfo_path.temp.open('wb') as  out:
+        with ModReader(self.modInfo.name,minfo_path.open(u'rb')) as ins:
+            with minfo_path.temp.open(u'wb') as  out:
                 def copy(size):
-                    buff = ins.read(size)
-                    out.write(buff)
-                def copyPrev(size):
-                    ins.seek(-size,1)
                     buff = ins.read(size)
                     out.write(buff)
                 while not ins.atEnd():
@@ -491,7 +482,7 @@ class NvidiaFogFixer(object):
                     header = ins.unpackRecHeader()
                     type,size = header.recType,header.size
                     #(type,size,str0,fid,uint2) = ins.unpackRecHeader()
-                    copyPrev(RecordHeader.rec_header_size)
+                    out.write(header.pack_head())
                     if type == b'GRUP':
                         if header.groupType != 0: #--Ignore sub-groups
                             pass
@@ -501,17 +492,16 @@ class NvidiaFogFixer(object):
                     elif type == b'CELL':
                         nextRecord = ins.tell() + size
                         while ins.tell() < nextRecord:
-                            (type,size) = ins.unpackSubHeader()
-                            copyPrev(6)
-                            if type != 'XCLL':
-                                copy(size)
-                            else:
+                            subrec = SubrecordBlob(ins, type)
+                            if subrec.mel_sig == b'XCLL':
                                 color, near, far, rotXY, rotZ, fade, clip = \
-                                    ins_unpack(size, 'CELL.XCLL')
+                                    __unpacker(subrec.mel_data)
                                 if not (near or far or clip):
                                     near = 0.0001
+                                    subrec.mel_data = __packer(color, near,
+                                        far, rotXY, rotZ, fade, clip)
                                     fixedCells.add(header.fid)
-                                out.write(struct_pack('=12s2f2l2f', color, near, far, rotXY, rotZ, fade,clip))
+                            subrec.packSub(out, subrec.mel_data)
                     #--Non-Cells
                     else:
                         copy(size)
@@ -527,51 +517,55 @@ class NvidiaFogFixer(object):
 class ModDetails(object):
     """Details data for a mods file. Similar to TesCS Details view."""
     def __init__(self):
-        self.group_records = {} #--group_records[group] = [(fid0,eid0),(fid1,eid1),...]
+        # group_records[group] = [(fid0, eid0), (fid1, eid1),...]
+        self.group_records = defaultdict(list)
 
-    def readFromMod(self, modInfo, progress=None):
+    def readFromMod(self, modInfo, progress=None,
+            __unpacker=structs_cache[u'I'].unpack):
         """Extracts details from mod file."""
         def getRecordReader(flags, size):
             """Decompress record data as needed."""
             if not MreRecord.flags1_(flags).compressed:
-                return ins,ins.tell()+size
+                new_rec_data = ins.read(size)
             else:
-                import zlib
-                sizeCheck, = struct_unpack('I', ins.read(4))
-                decomp = zlib.decompress(ins.read(size-4))
-                if len(decomp) != sizeCheck:
+                size_check = __unpacker(ins.read(4))[0]
+                new_rec_data = zlib.decompress(ins.read(size - 4))
+                if len(new_rec_data) != size_check:
                     raise ModError(ins.inName,
-                        u'Mis-sized compressed data. Expected %d, got %d.' % (size,len(decomp)))
-                reader = ModReader(modInfo.name,sio(decomp))
-                return reader,sizeCheck
+                        u'Mis-sized compressed data. Expected %d, got '
+                        u'%d.' % (size, len(new_rec_data)))
+            return ModReader(modInfo.name, sio(new_rec_data))
         progress = progress or bolt.Progress()
-        group_records = self.group_records = {}
-        records = group_records[bush.game.Esp.plugin_header_sig] = []
-        with ModReader(modInfo.name,modInfo.getPath().open('rb')) as ins:
+        group_records = self.group_records
+        records = group_records[bush.game.Esp.plugin_header_sig]
+        complex_groups = {b'CELL', b'DIAL', b'WRLD'}
+        if bush.game.fsName in (u'Fallout4', u'Fallout4VR'):
+            complex_groups.add(b'QUST')
+        with ModReader(modInfo.name, modInfo.abs_path.open(u'rb')) as ins:
             while not ins.atEnd():
                 header = ins.unpackRecHeader()
-                recType, rec_siz = header.recType, header.size
-                if recType == 'GRUP':
-                    # FIXME(ut): monkey patch for fallout QUST GRUP
-                    if bush.game.fsName in (u'Fallout4', u'Fallout4VR') and \
-                            header.groupType == 10:
-                        header.skip_group(ins)
-                        continue
+                rtyp = header.recType
+                rsiz = header.size
+                if rtyp == b'GRUP':
                     label = header.label
-                    progress(1.0*ins.tell()/modInfo.size,_(u"Scanning: ")+label)
-                    records = group_records.setdefault(label,[])
-                    if label in ('CELL', 'WRLD', 'DIAL'): # skip these groups
+                    progress(1.0 * ins.tell() / modInfo.size,
+                             _(u'Scanning: %s') % unicode(label))
+                    records = group_records[label]
+                    if label in complex_groups: # skip these groups
                         header.skip_group(ins)
                 else:
                     eid = u''
-                    nextRecord = ins.tell() + rec_siz
-                    recs, endRecs = getRecordReader(header.flags1, rec_siz)
-                    while recs.tell() < endRecs:
-                        (recType, rec_siz) = recs.unpackSubHeader()
-                        if recType == 'EDID':
-                            eid = recs.readString(rec_siz)
+                    next_record = ins.tell() + rsiz
+                    recs = getRecordReader(header.flags1, rsiz)
+                    while not recs.atEnd():
+                        subrec = SubrecordBlob(recs, rtyp, mel_sigs={b'EDID'})
+                        if subrec.mel_data is not None:
+                            # FIXME copied from readString
+                            eid = u'\n'.join(bolt.decoder(
+                                x, bolt.pluginEncoding,
+                                avoidEncodings=(u'utf8', u'utf-8')) for x
+                                in subrec.mel_data.rstrip(null1).split(b'\n'))
                             break
-                        recs.seek(rec_siz, 1)
-                    records.append((header.fid,eid))
-                    ins.seek(nextRecord)
+                    records.append((header.fid, eid))
+                    ins.seek(next_record) # we may have break'd at EDID
         del group_records[bush.game.Esp.plugin_header_sig]

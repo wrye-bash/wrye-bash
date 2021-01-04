@@ -22,16 +22,15 @@
 # =============================================================================
 """This module contains the falloutnv record classes."""
 from __future__ import division
-import struct
 # Set MelModel in brec, in this case it's identical to the fallout 3 one
 from ..fallout3.records import MelOwnership, MelDestructible, MelEffects, \
     MelConditions, MelEmbeddedScript, MelItems, MelEquipmentType, MelBipedData
 from ..fallout3.records import _MelModel # HACK - needed for tests
-from ...bolt import Flags
+from ...bolt import Flags, struct_calcsize
 from ...brec import MelModel # set in Mopy/bash/game/fallout3/records.py
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MelSet, MelFid, MelOptStruct, MelFids, MelBase, \
-    MelFidList, MreGmstBase, MreHeaderBase, MelUnicode, MelColorInterpolator, \
+    MelFidList, MreGmstBase, MreHeaderBase, MelColorInterpolator, \
     MelValueInterpolator, MelRegnEntrySubrecord, MelFloat, MelSInt8, \
     MelSInt16, MelSInt32, MelUInt8, MelUInt32, MelOptFid, MelOptFloat, \
     MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, MelBounds, null1, \
@@ -40,7 +39,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelObject, MreWithItems, MelRef3D, MelXlod, MelNull, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
     MelDecalData, MelDescription, MelPickupSound, MelDropSound, \
-    MelActivateParents
+    MelActivateParents, MelUInt8Flags, MelOptUInt32Flags
 from ...exception import ModSizeError
 
 #------------------------------------------------------------------------------
@@ -55,8 +54,8 @@ class MreTes4(MreHeaderBase):
                   ('nextObject', 0x800)),
         MelNull(b'OFST'), # Not even CK/xEdit can recalculate these right now
         MelBase('DELE','dele_p',),  #--Obsolete?
-        MelUnicode('CNAM','author',u'',512),
-        MelUnicode('SNAM','description',u'',512),
+        MreHeaderBase.MelAuthor(),
+        MreHeaderBase.MelDescription(),
         MreHeaderBase.MelMasterNames(),
         MelFidList('ONAM','overrides'),
         MelBase('SCRN', 'screenshot'),
@@ -387,7 +386,7 @@ class MreCell(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelUInt8('DATA', (cellFlags, 'flags', 0)),
+        MelUInt8Flags(b'DATA', u'flags', cellFlags),
         # None defaults here are on purpose - XCLC does not necessarily exist,
         # but 0 is a valid value for both coordinates (duh)
         MelSkipInterior(MelTruncatedStruct(b'XCLC', u'2iI', (u'posX', None),
@@ -404,11 +403,11 @@ class MreCell(MelRecord):
                            old_versions={'3Bs3Bs3Bs2f2i2f'}),
         MelBase('IMPF','footstepMaterials'), #--todo rewrite specific class.
         MelFid('LTMP','lightTemplate'),
-        MelOptUInt32('LNAM', (inheritFlags, 'lightInheritFlags', 0)),
+        MelOptUInt32Flags(b'LNAM', u'lightInheritFlags', inheritFlags),
         # GECK default for water is -2147483648, but by setting default here to
         # -2147483649, we force the Bashed Patch to retain the value of the
         # last mod.
-        MelOptFloat('XCLW', ('waterHeight', -2147483649)),
+        MelOptFloat(b'XCLW', u'waterHeight', -2147483649),
         MelString('XNAM','waterNoiseTexture'),
         MelFidList('XCLR','regions'),
         MelOptUInt8('XCMT', 'xcmt_p'),
@@ -690,7 +689,7 @@ class MreHdpt(MelRecord):
         MelEdid(),
         MelFull(),
         MelModel(),
-        MelUInt8('DATA', (_flags, 'flags')),
+        MelUInt8Flags(b'DATA', u'flags', _flags),
         MelFids('HNAM','extraParts'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -930,7 +929,7 @@ class MreLigh(MelRecord):
                   ('unused1',null1),(_flags,'flags',0),'falloff','fov','value',
                   'weight'),
         # None here is on purpose! See AssortedTweak_LightFadeValueFix
-        MelOptFloat(b'FNAM', (u'fade', None)),
+        MelOptFloat(b'FNAM', u'fade', None),
         MelFid('SNAM','sound'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1022,7 +1021,7 @@ class MreMset(MelRecord):
         MelFloat('MNAM', 'mnam'),
         MelFloat('NNAM', 'nnam'),
         MelFloat('ONAM', 'onam'),
-        MelUInt8('PNAM', (_flags, 'enableFlags')),
+        MelUInt8Flags(b'PNAM', u'enableFlags', _flags),
         MelFloat('DNAM', 'dnam'),
         MelFloat('ENAM', 'enam'),
         MelFloat('FNAM', 'fnam'),
@@ -1464,7 +1463,7 @@ class MreStat(MelRecord):
         MelEdid(),
         MelBounds(),
         MelModel(),
-        MelSInt8('BRUS', ('passthroughSound', -1)),
+        MelSInt8(b'BRUS', u'passthroughSound', -1),
         MelFid('RNAM','soundRandomLooping'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1630,7 +1629,7 @@ class MelWthrColorsFnv(MelArray):
     as well. Can't simply use MelArray because MelTruncatedStruct does not
     have a static_size."""
     # TODO(inf) Rework MelArray - instead of static_size, have a
-    #  get_entry_size that receives the total size_ of loadData.
+    #  get_entry_size that receives the total size_ of load_mel.
     #  MelTruncatedStruct could override that and make a guess based on its
     #  sizes. If that guess doesn't work, a small override class can be
     #  created by hand
@@ -1654,17 +1653,17 @@ class MelWthrColorsFnv(MelArray):
             wthr_sub_sig, *struct_definition,
             old_versions={u'3Bs3Bs3Bs3Bs'})
 
-    def loadData(self, record, ins, sub_type, size_, readId):
+    def load_mel(self, record, ins, sub_type, size_, readId):
         if size_ == self._new_sizes[sub_type]:
-            super(MelWthrColorsFnv, self).loadData(record, ins, sub_type,
-                size_, readId)
+            super(MelWthrColorsFnv, self).load_mel(record, ins, sub_type,
+                                                   size_, readId)
         elif size_ == self._old_sizes[sub_type]:
             # Copied and adjusted from MelArray. Yuck. See comment below
             # docstring for some ideas for getting rid of this
             append_entry = getattr(record, self.attr).append
             entry_slots = self._element_old.attrs
-            entry_size = struct.calcsize(u'3Bs3Bs3Bs3Bs')
-            load_entry = self._element_old.loadData
+            entry_size = struct_calcsize(u'3Bs3Bs3Bs3Bs')
+            load_entry = self._element_old.load_mel
             for x in xrange(size_ // entry_size):
                 arr_entry = MelObject()
                 append_entry(arr_entry)

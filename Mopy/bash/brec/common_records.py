@@ -24,18 +24,18 @@
 some commonly needed records."""
 
 from __future__ import division, print_function
-import struct
 from operator import attrgetter
 
 from .advanced_elements import FidNotNullDecider, AttrValDecider, MelArray, \
     MelUnion
 from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroups, \
-    MelLString, MelNull, MelStruct, MelUInt32, MelSInt32, MelFixedString
+    MelLString, MelNull, MelStruct, MelUInt32, MelSInt32, MelFixedString, \
+    MelUnicode
 from .common_subrecords import MelEdid
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID
-from .. import bass, bolt, exception
-from ..bolt import decoder, encode, GPath, sio
+from .. import bolt, exception
+from ..bolt import decoder, GPath, struct_pack, structs_cache
 from ..exception import StateError
 
 #------------------------------------------------------------------------------
@@ -58,8 +58,8 @@ class MreHeaderBase(MelRecord):
             record.masters = []
             record.master_sizes = []
 
-        def loadData(self, record, ins, sub_type, size_, readId,
-                     __unpacker=struct.Struct(u'Q').unpack):
+        def load_mel(self, record, ins, sub_type, size_, readId,
+                     __unpacker=structs_cache[u'Q'].unpack):
             if sub_type == b'MAST':
                 # Don't use ins.readString, because it will try to use
                 # bolt.pluginEncoding for the filename. This is one case where
@@ -73,8 +73,6 @@ class MreHeaderBase(MelRecord):
                     ins.unpack(__unpacker, size_, readId)[0])
 
         def dumpData(self,record,out):
-            pack1 = out.packSub0
-            pack2 = out.packSub
             # Truncate or pad the sizes with zeroes as needed
             # TODO(inf) For Morrowind, this will have to query the files for
             #  their size and then store that
@@ -84,8 +82,33 @@ class MreHeaderBase(MelRecord):
                     num_masters - num_sizes)
             for master_name, master_size in zip(record.masters,
                                                 record.master_sizes):
-                pack1(b'MAST', encode(master_name.s, firstEncoding=u'cp1252'))
-                pack2(b'DATA', u'Q', master_size)
+                MelUnicode(b'MAST', '', encoding=u'cp1252').packSub(
+                    out, master_name.s)
+                MelBase(b'DATA', '').packSub(
+                    out, struct_pack(u'Q', master_size))
+
+    class MelAuthor(MelUnicode):
+        def __init__(self):
+            super(MreHeaderBase.MelAuthor, self).__init__(b'CNAM',
+                u'author_pstr', u'', 511)
+
+    class MelDescription(MelUnicode):
+        def __init__(self):
+            super(MreHeaderBase.MelDescription, self).__init__(b'SNAM',
+                u'description_pstr', u'', 511)
+
+    @property
+    def description(self):
+        return self.description_pstr or u''
+    @description.setter
+    def description(self, new_desc):
+        self.description_pstr = new_desc
+    @property
+    def author(self):
+        return self.author_pstr
+    @author.setter
+    def author(self, val):
+        self.author_pstr = val
 
     def loadData(self, ins, endPos):
         super(MreHeaderBase, self).loadData(ins, endPos)

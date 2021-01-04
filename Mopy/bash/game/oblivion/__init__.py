@@ -21,7 +21,7 @@
 #
 # =============================================================================
 """GameInfo override for TES IV: Oblivion."""
-import struct
+import struct as _struct
 from collections import defaultdict
 from os.path import join as _j
 
@@ -276,7 +276,7 @@ class OblivionGameInfo(GameInfo):
         header_type.rec_header_size = 20
         header_type.rec_pack_format = [u'=4s', u'I', u'I', u'I', u'I']
         header_type.rec_pack_format_str = u''.join(header_type.rec_pack_format)
-        header_type.header_unpack = struct.Struct(
+        header_type.header_unpack = _struct.Struct(
             header_type.rec_pack_format_str).unpack
         header_type.pack_formats = {0: u'=4sI4s2I'}
         header_type.pack_formats.update(

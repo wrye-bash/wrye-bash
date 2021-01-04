@@ -25,25 +25,27 @@ definitions for some commonly needed subrecords."""
 
 from __future__ import division, print_function
 from collections import defaultdict
+from itertools import chain
 
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
     MelUnion, PartialLoadDecider, FlagDecider
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
-    MelOptFloat, MelOptUInt8, MelOptUInt32, MelOptFid, MelReadOnly, MelUInt8, \
-    MelFids
+    MelOptFloat, MelOptFid, MelReadOnly, MelFids, MelOptUInt32Flags, \
+    MelUInt8Flags, MelOptUInt8Flags, MelOptSInt32
 from .utils_constants import _int_unpacker, FID, null1, null2, null3, null4
-from ..bolt import Flags, encode, struct_pack, struct_unpack
+from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte
+from ..exception import ModError
 
 #------------------------------------------------------------------------------
-class MelActionFlags(MelOptUInt32):
+class MelActionFlags(MelOptUInt32Flags):
     """XACT (Action Flags) subrecord for REFR records."""
     _act_flags = Flags(0, Flags.getNames(u'act_use_default', u'act_activate',
         u'act_open', u'act_open_by_default'))
 
     def __init__(self):
-        super(MelActionFlags, self).__init__(
-            b'XACT', (self._act_flags, u'action_flags'))
+        super(MelActionFlags, self).__init__(b'XACT', u'action_flags',
+                                             self._act_flags)
 
 #------------------------------------------------------------------------------
 class MelActivateParents(MelGroup):
@@ -53,7 +55,7 @@ class MelActivateParents(MelGroup):
 
     def __init__(self):
         super(MelActivateParents, self).__init__(u'activate_parents',
-            MelUInt8(b'XAPD', (self._ap_flags, u'activate_parent_flags')),
+            MelUInt8Flags(b'XAPD', u'activate_parent_flags', self._ap_flags),
             MelGroups(u'activate_parent_refs',
                 MelStruct(b'XAPR', u'If', (FID, u'ap_reference'), u'ap_delay'),
             ),
@@ -155,8 +157,8 @@ class MelCtda(MelUnion):
     # Nesting workarounds -----------------------------------------------------
     # To avoid having to nest MelUnions too deeply - hurts performance even
     # further (see below) plus grows exponentially
-    def loadData(self, record, ins, sub_type, size_, readId):
-        super(MelCtda, self).loadData(record, ins, sub_type, size_, readId)
+    def load_mel(self, record, ins, sub_type, size_, readId):
+        super(MelCtda, self).load_mel(record, ins, sub_type, size_, readId)
         # See _build_struct comments above for an explanation of this
         record.compValue = struct_unpack(u'fI'[record.operFlag.use_global],
                                          record.compValue)[0]
@@ -220,8 +222,8 @@ class MelCtdaFo3(MelCtda):
         self._ignore_ifuncs = ({106, 285} if bush.game.fsName == u'FalloutNV'
                                else set()) # 106 == IsFacingUp, 285 == IsLeftUp
 
-    def loadData(self, record, ins, sub_type, size_, readId):
-        super(MelCtdaFo3, self).loadData(record, ins, sub_type, size_, readId)
+    def load_mel(self, record, ins, sub_type, size_, readId):
+        super(MelCtdaFo3, self).load_mel(record, ins, sub_type, size_, readId)
         if record.ifunc == self._getvatsvalue_ifunc:
             record.param2 = struct_unpack(self._vats_param2_fmt[record.param1],
                                           record.param2)[0]
@@ -446,18 +448,18 @@ class MelRaceParts(MelNull):
         for element in self._indx_to_loader.itervalues():
             element.setDefault(record)
 
-    def loadData(self, record, ins, sub_type, size_, readId,
+    def load_mel(self, record, ins, sub_type, size_, readId,
                  __unpacker=_int_unpacker):
         if sub_type == 'INDX':
             self._last_indx, = ins.unpack(__unpacker, size_, readId)
         else:
-            self._indx_to_loader[self._last_indx].loadData(
+            self._indx_to_loader[self._last_indx].load_mel(
                 record, ins, sub_type, size_, readId)
 
     def dumpData(self, record, out):
         for part_indx, part_attr in self._indx_to_attr.iteritems():
             if hasattr(record, part_attr): # only dump present parts
-                out.packSub('INDX', '=I', part_indx)
+                MelUInt32('INDX', '').packSub(out, struct_pack(u'=I',  part_indx))
                 self._indx_to_loader[part_indx].dumpData(record, out)
 
     @property
@@ -468,14 +470,15 @@ class MelRaceParts(MelNull):
 class MelRaceVoices(MelStruct):
     """Set voices to zero, if equal race fid. If both are zero, then skip
     dumping."""
-    def dumpData(self, record, out):
+    def pack_subrecord_data(self, record):
         if record.maleVoice == record.fid: record.maleVoice = 0
         if record.femaleVoice == record.fid: record.femaleVoice = 0
         if (record.maleVoice, record.femaleVoice) != (0, 0):
-            super(MelRaceVoices, self).dumpData(record, out)
+            return super(MelRaceVoices, self).pack_subrecord_data(record)
+        return None
 
 #------------------------------------------------------------------------------
-class MelScript(MelFid):
+class MelScript(MelFid): # TODO(ut) : MelOptFid ??
     """Represents the common script subrecord in TES4/FO3/FNV."""
     def __init__(self):
         super(MelScript, self).__init__(b'SCRI', u'script')
@@ -517,7 +520,7 @@ class MelMapMarker(MelGroup):
     def __init__(self, with_reputation=False):
         group_elems = [
             MelBase(b'XMRK', u'marker_data'),
-            MelOptUInt8(b'FNAM', (self._marker_flags, u'marker_flags')),
+            MelOptUInt8Flags(b'FNAM', u'marker_flags', self._marker_flags),
             MelFull(),
             MelOptStruct(b'TNAM', u'Bs', u'marker_type', u'unused1'),
         ]
@@ -534,7 +537,7 @@ class MelMODS(MelBase):
     def setDefault(self,record):
         record.__setattr__(self.attr,None)
 
-    def loadData(self, record, ins, sub_type, size_, readId,
+    def load_mel(self, record, ins, sub_type, size_, readId,
                  __unpacker=_int_unpacker):
         insUnpack = ins.unpack
         insRead32 = ins.readString32
@@ -548,16 +551,13 @@ class MelMODS(MelBase):
             dataAppend((string,fid,index))
         record.__setattr__(self.attr,data)
 
-    def dumpData(self,record,out):
+    def pack_subrecord_data(self,record):
         data = record.__getattribute__(self.attr)
         if data is not None:
-            data = record.__getattribute__(self.attr)
-            outData = struct_pack('I', len(data))
-            for (string,fid,index) in data:
-                outData += struct_pack('I', len(string))
-                outData += encode(string)
-                outData += struct_pack('=2I', fid, index)
-            out.packSub(self.mel_sig, outData)
+            return b''.join(chain([struct_pack(u'I', len(data))],
+                *([struct_pack(u'I', len(string)), encode(string),
+                   struct_pack(u'=2I', fid, index)]
+                  for (string, fid, index) in data)))
 
     def mapFids(self,record,function,save=False):
         attr = self.attr
@@ -598,7 +598,7 @@ class MelRef3D(MelOptStruct):
 class MelRefScale(MelOptFloat):
     """Scale for a reference record (REFR, ACHR, etc.)."""
     def __init__(self):
-        super(MelRefScale, self).__init__(b'XSCL', (u'ref_scale', 1.0))
+        super(MelRefScale, self).__init__(b'XSCL', u'ref_scale', 1.0)
 
 #------------------------------------------------------------------------------
 class MelSpells(MelFids):
@@ -623,3 +623,38 @@ class MelXlod(MelOptStruct):
     def __init__(self):
         super(MelXlod, self).__init__(b'XLOD', u'3f', u'lod1', u'lod2',
                                       u'lod3')
+
+#------------------------------------------------------------------------------
+class MelOwnership(MelGroup):
+    """Handles XOWN, XRNK for cells and cell children."""
+
+    def __init__(self, attr=u'ownership'):
+        MelGroup.__init__(self, attr,
+            MelOptFid(b'XOWN', u'owner'),
+            # None here is on purpose - rank == 0 is a valid value, but XRNK
+            # does not have to be present
+            MelOptSInt32(b'XRNK', u'rank', None),
+        )
+
+    def dumpData(self,record,out):
+        if record.ownership and record.ownership.owner: ##: use pack_subrecord_data ?
+            MelGroup.dumpData(self,record,out)
+
+class MelDebrData(MelStruct):
+    def __init__(self):
+        # Format doesn't matter, struct.Struct(u'') works! ##: MelStructured
+        super(MelDebrData, self).__init__(b'DATA', u'', u'percentage',
+            (u'modPath', null1), u'flags')
+
+    def load_mel(self, record, ins, sub_type, size_, readId):
+        byte_data = ins.read(size_, readId)
+        (record.percentage,) = unpack_byte(ins, byte_data[0:1])
+        record.modPath = byte_data[1:-2]
+        if byte_data[-2] != null1:
+            raise ModError(ins.inName,u'Unexpected subrecord: %s' % readId)
+        (record.flags,) = struct_unpack(u'B',byte_data[-1])
+
+    def pack_subrecord_data(self, record):
+        return b''.join(
+            [struct_pack(u'B', record.percentage), record.modPath, null1,
+             struct_pack(u'B', record.flags)])

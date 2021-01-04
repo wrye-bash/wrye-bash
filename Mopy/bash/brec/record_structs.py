@@ -26,8 +26,10 @@ subrecords in memory."""
 from __future__ import division, print_function
 import copy
 import zlib
+from functools import partial
 
-from .mod_io import ModReader, ModWriter
+from .basic_elements import SubrecordBlob, unpackSubHeader
+from .mod_io import ModReader
 from .utils_constants import strFid, _int_unpacker
 from .. import bolt, exception
 from ..bolt import decoder, sio, struct_pack
@@ -95,12 +97,12 @@ class MelSet(object):
         loaders = self.loaders
         # Load each subrecord
         ins_at_end = ins.atEnd
-        load_sub_header = ins.unpackSubHeader
+        load_sub_header = partial(unpackSubHeader, ins)
         read_id_prefix = rec_type + '.'
         while not ins_at_end(endPos, rec_type):
             sub_type, sub_size = load_sub_header(rec_type)
             try:
-                loaders[sub_type].loadData(record, ins, sub_type, sub_size,
+                loaders[sub_type].load_mel(record, ins, sub_type, sub_size,
                                            read_id_prefix + sub_type)
             except KeyError:
                 # Wrap this error to make it more understandable
@@ -137,9 +139,9 @@ class MelSet(object):
                              and record.eid is not None else u''),
                 })
                 for attr in record.__slots__:
-                    if hasattr(record, attr):
-                        bolt.deprint(u'> %s: %r' % (
-                            attr, getattr(record, attr)))
+                    attr1 = getattr(record, attr, None)
+                    if attr1 is not None:
+                        bolt.deprint(u'> %s: %r' % (attr, attr1))
                 raise
 
     def mapFids(self,record,mapper,save=False):
@@ -184,50 +186,7 @@ class MelSet(object):
         return self
 
 #------------------------------------------------------------------------------
-# Subrecords and records ------------------------------------------------------
-class MreSubrecord(object):
-    """Generic Subrecord."""
-    def __init__(self,type,size,ins=None):
-        self.changed = False
-        self.subType = type
-        self.size = size
-        self.data = None
-        self.inName = ins and ins.inName
-        if ins: self.load(ins)
-
-    def load(self,ins):
-        self.data = ins.read(self.size,'----.'+self.subType)
-
-    def setChanged(self,value=True):
-        """Sets changed attribute to value. [Default = True.]"""
-        self.changed = value
-
-    def setData(self,data):
-        """Sets data and size."""
-        self.data = data
-        self.size = len(data)
-
-    def getSize(self):
-        """Return size of self.data, after, if necessary, packing it."""
-        if not self.changed: return self.size
-        #--StringIO Object
-        with ModWriter(sio()) as out:
-            self.dumpData(out)
-            #--Done
-            self.data = out.getvalue()
-        self.size = len(self.data)
-        self.setChanged(False)
-        return self.size
-
-    def dumpData(self,out):
-        """Dumps state into out. Called by getSize()."""
-        raise exception.AbstractError
-
-    def dump(self,out):
-        if self.changed: raise exception.StateError(u'Data changed: ' + self.subType)
-        if not self.data: raise exception.StateError(u'Data undefined: ' + self.subType)
-        out.packSub(self.subType,self.data)
-
+# Records ---------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class MreRecord(object):
     """Generic Record. flags1 are game specific see comments."""
@@ -330,7 +289,7 @@ class MreRecord(object):
         # MultiBound
         (31,'multiBound'), # {0x80000000}
         ))
-    __slots__ = ['header','recType','fid','flags1','size','flags2','changed','subrecords','data','inName','longFids',]
+    __slots__ = ['header','recType','fid','flags1','size','flags2','changed','data','inName','longFids',]
     #--Set at end of class data definitions.
     type_class = None
     simpleTypes = None
@@ -345,8 +304,7 @@ class MreRecord(object):
         self.flags2 = header.flags2
         self.longFids = False #--False: Short (numeric); True: Long (espname,objectindex)
         self.changed = False
-        self.subrecords = None
-        self.data = ''
+        self.data = None
         self.inName = ins and ins.inName
         if ins: self.load(ins, do_unpack)
 
@@ -420,22 +378,22 @@ class MreRecord(object):
 
         Subclasses should actually read the data, but MreRecord just skips over
         it (assuming that the raw data has already been read to itself. To force
-        reading data into an array of subrecords, use loadSubrecords()."""
+        reading data into an array of subrecords, use iterate_subrecords()."""
         ins.seek(endPos)
 
-    def loadSubrecords(self):
-        """This is for MreRecord only. It reads data into an array of subrecords,
-        so that it can be handled in a simplistic way."""
-        self.subrecords = []
+    def iterate_subrecords(self, mel_sigs=frozenset()):
+        """This is for MreRecord only. Iterates over data unpacking them to
+        subrecords - DEPRECATED.
+
+        :type mel_sigs: set"""
         if not self.data: return
         with self.getReader() as reader:
             _rec_sig_ = self.recType
             readAtEnd = reader.atEnd
-            readSubHeader = reader.unpackSubHeader
-            subAppend = self.subrecords.append
             while not readAtEnd(reader.size,_rec_sig_):
-                (type,size) = readSubHeader(_rec_sig_)
-                subAppend(MreSubrecord(type,size,reader))
+                subrec = SubrecordBlob(reader, _rec_sig_, mel_sigs)
+                if not mel_sigs or subrec.mel_sig in mel_sigs:
+                    yield subrec
 
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
@@ -458,7 +416,7 @@ class MreRecord(object):
             u'Packing Error: %s %s: Fids in long format.'
             % (self.recType,self.fid))
         #--Pack data and return size.
-        with ModWriter(sio()) as out:
+        with sio() as out:
             self.dumpData(out)
             self.data = out.getvalue()
         if self.flags1.compressed:
@@ -472,11 +430,11 @@ class MreRecord(object):
     def dumpData(self,out):
         """Dumps state into data. Called by getSize(). This default version
         just calls subrecords to dump to out."""
-        if self.subrecords is None:
-            raise exception.StateError(u'Subrecords not unpacked. [%s: %s %08X]' %
+        if self.data is None:
+            raise exception.StateError(u'Dumping empty record. [%s: %s %08X]' %
                                        (self.inName, self.recType, self.fid))
-        for subrecord in self.subrecords:
-            subrecord.dump(out)
+        for subrecord in self.iterate_subrecords():
+            subrecord.packSub(out, subrecord.mel_data)
 
     def dump(self,out):
         """Dumps all data to output stream."""
@@ -496,37 +454,19 @@ class MreRecord(object):
         return ModReader(self.inName,sio(self.getDecompressed()))
 
     #--Accessing subrecords ---------------------------------------------------
-    def getSubString(self,subType):
+    def getSubString(self, mel_sig_):
         """Returns the (stripped) string for a zero-terminated string
         record."""
         # Common subtype expanded in self?
-        attr = MreRecord.subtype_attr.get(subType)
+        attr = MreRecord.subtype_attr.get(mel_sig_)
         value = None # default
         # If not MreRecord, then we will have info in data.
         if self.__class__ != MreRecord:
             if attr not in self.__slots__: return value
             return self.__getattribute__(attr)
-        # Subrecords available?
-        if self.subrecords is not None:
-            for subrecord in self.subrecords:
-                if subrecord.mel_sig == subType:
-                    value = bolt.cstrip(subrecord.data)
-                    break
-        # No subrecords, but we have data.
-        elif self.data:
-            with self.getReader() as reader:
-                _rec_sig_ = self.recType
-                readAtEnd = reader.atEnd
-                readSubHeader = reader.unpackSubHeader
-                readSeek = reader.seek
-                readRead = reader.read
-                while not readAtEnd(reader.size,_rec_sig_):
-                    (type,size) = readSubHeader(_rec_sig_)
-                    if type != subType:
-                        readSeek(size,1)
-                    else:
-                        value = bolt.cstrip(readRead(size))
-                        break
+        for subrec in self.iterate_subrecords(mel_sigs={mel_sig_}):
+            value = bolt.cstrip(subrec.mel_data)
+            break
         return decoder(value)
 
 #------------------------------------------------------------------------------

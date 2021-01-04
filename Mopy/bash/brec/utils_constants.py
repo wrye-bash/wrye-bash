@@ -24,10 +24,10 @@
 almost all other parts of brec."""
 
 from __future__ import division, print_function
-import struct
 
 from .. import bolt
-from ..bolt import cstrip, decoder, Flags, struct_pack, struct_unpack
+from ..bolt import cstrip, decoder, Flags, struct_pack, struct_unpack, \
+    structs_cache
 # no local imports, imported everywhere in brec
 
 # Random stuff ----------------------------------------------------------------
@@ -55,7 +55,7 @@ def _coerce(value, newtype, base=None, AllowNone=False):
         if newtype is int: return 0
         return None
 
-_int_unpacker = struct.Struct(u'I').unpack
+_int_unpacker = structs_cache[u'I'].unpack
 
 def _make_hashable(target_obj):
     """Bit of a HACK, but at least it fixes any code that just *assumed* set
@@ -152,3 +152,9 @@ group_types = {0: u'Top', 1: u'World Children', 2: u'Interior Cell Block',
                7: u'Topic Children', 8: u'Cell Persistent Childen',
                9: u'Cell Temporary Children',
                10: u'Cell Visible Distant Children/Quest Children'}
+
+def get_structs(struct_format):
+    """Create a struct and return bound unpack, pack and size methods in a
+    tuple."""
+    _struct = structs_cache[struct_format]
+    return _struct.unpack, _struct.pack, _struct.size
