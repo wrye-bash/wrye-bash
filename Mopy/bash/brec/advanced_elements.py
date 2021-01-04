@@ -269,14 +269,15 @@ class _MelDistributor(MelNull):
         # current_mapping will actually be a list, namely the sequence we're
         # iterating over.
         if seq_index is not None:
-            dist_specifier = current_mapping[seq_index]
-            if self._accepts_signature(dist_specifier, sub_type):
-                # We're good to go, call the next loader in the sequence and
-                # increment the sequence index
-                self._distribute_load(dist_specifier, record, ins, size_,
-                                      readId)
-                record._seq_index += 1
-                return
+            if seq_index < len(current_mapping):
+                dist_specifier = current_mapping[seq_index]
+                if self._accepts_signature(dist_specifier, sub_type):
+                    # We're good to go, call the next loader in the sequence
+                    # and increment the sequence index
+                    self._distribute_load(dist_specifier, record, ins, size_,
+                                          readId)
+                    record._seq_index += 1
+                    return
             # The sequence is either over or we prematurely hit a non-matching
             # type - either way, stop distributing loads to it.
             record._seq_index = None

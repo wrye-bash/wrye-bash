@@ -1509,9 +1509,10 @@ inventoryTypes = ('NPC_','CONT',)
 #------------------------------------------------------------------------------
 # Import Keywords
 #------------------------------------------------------------------------------
-keywords_types = ('ACTI', 'ALCH', 'AMMO', 'ARMO', 'BOOK', 'FLOR', 'FURN',
-                  'INGR', 'KEYM', 'LCTN', 'MGEF', 'MISC', 'NPC_', 'SCRL',
-                  'SLGM', 'SPEL', 'TACT', 'WEAP',)
+keywords_types = (b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'FLOR',
+                  b'FURN', b'INGR', b'KEYM', b'LCTN', b'MGEF', b'MISC',
+                  b'NPC_', b'RACE', b'SCRL', b'SLGM', b'SPEL', b'TACT',
+                  b'WEAP',)
 
 #------------------------------------------------------------------------------
 # Import Text

@@ -41,7 +41,8 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
     MelPickupSound, MelDropSound, MelActivateParents, BipedFlags, MelColor, \
     MelColorO, MelSpells, MelFixedString, MelUInt8Flags, MelUInt16Flags, \
-    MelUInt32Flags, MelOptUInt16Flags, MelOwnership, MelDebrData, get_structs
+    MelUInt32Flags, MelOptUInt16Flags, MelOwnership, MelDebrData, \
+    get_structs, MelOptUInt32Flags
 from ...exception import ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -136,24 +137,22 @@ class MelBipedObjectData(MelStruct):
                                                      size_, readId)
 
 #------------------------------------------------------------------------------
-class MelAttackData(MelStruct):
-    """Wrapper around MelStruct to share some code between the NPC_ and RACE
-    definitions."""
-    DataFlags = Flags(0, Flags.getNames('ignoreWeapon', 'bashAttack',
-                                         'powerAttack', 'leftAttack',
-                                         'rotatingAttack', 'unknown6',
-                                         'unknown7', 'unknown8', 'unknown9',
-                                         'unknown10', 'unknown11', 'unknown12',
-                                         'unknown13', 'unknown14', 'unknown15',
-                                         'unknown16',))
+class MelAttacks(MelGroups):
+    """Handles the ATKD/ATKE subrecords shared between NPC_ and RACE."""
+    _atk_flags = Flags(0, Flags.getNames(u'ignoreWeapon', u'bashAttack',
+                                         u'powerAttack', u'leftAttack',
+                                         u'rotatingAttack'))
 
     def __init__(self):
-        MelStruct.__init__(self, 'ATKD', '2f2I3fI3f', 'damageMult',
-                           'attackChance', (FID, 'attackSpell'),
-                           (MelAttackData.DataFlags, 'attackDataFlags', 0),
-                           'attackAngle', 'strikeAngle', 'stagger',
-                           (FID, 'attackType'), 'knockdown', 'recoveryTime',
-                           'staminaMult')
+        super(MelAttacks, self).__init__(u'attacks',
+             MelStruct(b'ATKD', u'2f2I3fI3f', u'attack_mult', u'attack_chance',
+                       (FID, u'attack_spell'),
+                       (self._atk_flags, u'attack_data_flags'),
+                       u'attack_angle', u'strike_angle', u'attack_stagger',
+                       (FID, u'attack_type'), u'attack_knockdown',
+                       u'recovery_time', u'stamina_mult'),
+             MelString(b'ATKE', u'attack_event'),
+        )
 
 #------------------------------------------------------------------------------
 class MelCoed(MelOptStruct):
@@ -340,6 +339,14 @@ class MelSMFlags(MelStruct):
             sm_fmt = u'2H'
             sm_elements.append((self._quest_flags, u'quest_flags'))
         super(MelSMFlags, self).__init__(b'DNAM', sm_fmt, *sm_elements)
+
+#------------------------------------------------------------------------------
+class MelSpellCounter(MelCounter):
+    """Handles the SPCT (Spell Counter) subrecord. To be used in combination
+    with MelSpells."""
+    def __init__(self):
+        super(MelSpellCounter, self).__init__(
+            MelUInt32(b'SPCT', u'spell_count'), counts=u'spells')
 
 #------------------------------------------------------------------------------
 class MelSpit(MelStruct):
@@ -3589,16 +3596,13 @@ class MreNpc(MreActorBase):
         MelOptFid('VTCK', 'voice'),
         MelOptFid('TPLT', 'template'),
         MelFid('RNAM','race'),
-        MelCounter(MelUInt32(b'SPCT', u'spell_count'), counts=u'spells'),
+        MelSpellCounter(),
         MelSpells(),
         MelDestructible(),
         MelOptFid('WNAM', 'wornArmor'),
         MelOptFid('ANAM', 'farawaymodel'),
         MelOptFid('ATKR', 'attackRace'),
-        MelGroups('attacks',
-            MelAttackData(),
-            MelString('ATKE', 'attackEvents')
-        ),
+        MelAttacks(),
         MelOptFid('SPOR', 'spectator'),
         MelOptFid('OCOR', 'observe'),
         MelOptFid('GWOR', 'guardWarn'),
@@ -4150,17 +4154,302 @@ class MreQust(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# RACE ------------------------------------------------------------------------
-# Needs Updating
+class _MelTintMasks(MelGroups):
+    """Hacky way to allow a MelGroups of two MelGroups."""
+    def __init__(self, attr):
+        super(_MelTintMasks, self).__init__(attr,
+            MelGroups(u'tint_textures',
+                MelUInt16(b'TINI', u'tint_index'),
+                MelString(b'TINT', u'tint_file'),
+                MelOptUInt16(b'TINP', u'tint_mask_type'),
+                MelOptFid(b'TIND', u'tint_preset_default'),
+            ),
+            MelGroups(u'tint_presets',
+                MelFid(b'TINC', u'preset_color'),
+                MelOptFloat(b'TINV', u'preset_default'),
+                MelOptUInt16(b'TIRS', u'preset_index'),
+            ),
+        )
+        self._init_sigs = {b'TINI'}
+
+class _RaceDataFlags1(Flags):
+    """The Overlay/Override Head Part List flags are mutually exclusive."""
+    def _clean_unused_flags(self):
+        if self.overlay_head_part_list and self.override_head_part_list:
+            self.overlay_head_part_list = False
+        super(_RaceDataFlags1, self)._clean_unused_flags()
+
 class MreRace(MelRecord):
     """Race."""
     rec_sig = b'RACE'
 
+    _data_flags_1 = _RaceDataFlags1(0, Flags.getNames(
+        u'playable', u'facegen_head', u'child', u'tilt_front_back',
+        u'tilt_left_right', u'no_shadow', u'swims', u'flies', u'walks',
+        u'immobile', u'not_pushable', u'no_combat_in_water',
+        u'no_rotating_to_head_track', u'dont_show_blood_spray',
+        u'dont_show_blood_decal', u'uses_head_track_anim',
+        u'spells_align_with_magic_mode', u'use_world_raycasts_for_footik',
+        u'allow_ragdoll_collisions', u'regen_hp_in_combat', u'cant_open_doors',
+        u'allow_pc_dialogue', u'no_knockdowns', u'allow_pickpocket',
+        u'always_use_proxy_controller', u'dont_show_weapon_blood',
+        u'overlay_head_part_list', u'override_head_part_list',
+        u'can_pickup_items', u'allow_multiple_membrane_shaders',
+        u'can_dual_wield', u'avoids_roads',
+    ))
+    _data_flags_2 = Flags(0, Flags.getNames(
+        (0, u'use_advanced_avoidance'),
+        (1, u'non_hostile'),
+        (4, u'allow_mounted_combat'),
+    ))
+    _equip_type_flags = Flags(0, Flags.getNames(
+        u'et_hand_to_hand_melee', u'et_one_hand_sword', u'et_one_hand_dagger',
+        u'et_one_hand_axe', u'et_one_hand_mace', u'et_two_hand_sword',
+        u'et_two_hand_axe', u'et_bow', u'et_staff', u'et_spell', u'et_shield',
+        u'et_torch', u'et_crossbow',
+    ), unknown_is_unused=True)
+
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-    )
+        MelDescription(), # required
+        MelSpellCounter(),
+        MelSpells(),
+        MelOptFid(b'WNAM', u'race_skin'),
+        MelBipedObjectData(), # required
+        MelKeywords(),
+        MelTruncatedStruct( # required
+            b'DATA', u'14b2s4fI7fI2ifi5fi4fI9f', u'skill1', u'skill1Boost',
+            u'skill2', u'skill2Boost', u'skill3', u'skill3Boost', u'skill4',
+            u'skill4Boost', u'skill5', u'skill5Boost', u'skill6',
+            u'skill6Boost', u'skill7', u'skill7Boost', (u'unknown1', null2),
+            u'maleHeight', u'femaleHeight', u'maleWeight', u'femaleWeight',
+            (_data_flags_1, u'data_flags_1'), u'starting_health',
+            u'starting_magicka', u'starting_stamina', u'base_carry_weight',
+            u'base_mass', u'acceleration_rate', u'deceleration_rate',
+            u'race_size', u'head_biped_object', u'hair_biped_object',
+            u'injured_health_percentage', u'shield_biped_object',
+            u'health_regen', u'magicka_regen', u'stamina_regen',
+            u'unarmed_damage', u'unarmed_reach', u'body_biped_object',
+            u'aim_angle_tolerance', u'flight_radius',
+            u'angular_acceleration_tolerance', u'angular_tolerance',
+            (_data_flags_2, u'data_flags_2'), (u'mount_offset_x', -63.479000),
+            u'mount_offset_y', u'mount_offset_z',
+            (u'dismount_offset_x', -50.0), u'dismount_offset_y',
+            (u'dismount_offset_z', 65.0), u'mount_camera_offset_x',
+            (u'mount_camera_offset_y', -300.0), u'mount_camera_offset_z',
+            old_versions={u'14b2s4fI7fI2ifi5fi4fI'}),
+        MelBase(b'MNAM', u'male_marker', b''), # required
+        MelString(b'ANAM', u'male_skeletal_model'),
+        # Texture hash - we have to give it a name for the distributor
+        MelReadOnly(MelBase(b'MODT', u'male_hash')),
+        MelBase(b'FNAM', u'female_marker', b''), # required
+        MelString(b'ANAM', u'female_skeletal_model'),
+        # Texture hash - we have to give it a name for the distributor
+        MelReadOnly(MelBase(b'MODT', u'female_hash')),
+        MelBase(b'NAM2', u'marker_nam2_1'),
+        MelGroups(u'movement_type_names',
+            MelString(b'MTNM', u'mt_name'),
+        ),
+        # required
+        MelStruct(b'VTCK', u'2I', (FID, u'maleVoice'), (FID, u'femaleVoice')),
+        MelOptStruct(b'DNAM', u'2I', (FID, u'male_decapitate_armor'),
+                     (FID, u'female_decapitate_armor')),
+        MelOptStruct(b'HCLF', u'2I', (FID, u'male_default_hair_color'),
+                     (FID, u'female_default_hair_color')),
+        ##: Needs to be updated for total tint count, but not even xEdit can do
+        # that right now
+        MelOptUInt16(b'TINL', u'tint_count'),
+        MelFloat(b'PNAM', u'facegen_main_clamp'), # required
+        MelFloat(b'UNAM', u'facegen_face_clamp'), # required
+        MelOptFid(b'ATKR', u'attack_race'),
+        MelAttacks(),
+        MelBase(b'NAM1', u'body_data_marker', b''), # required
+        MelBase(b'MNAM', u'male_data_marker', b''), # required
+        MelGroups(u'male_body_data',
+            MelUInt32(b'INDX', u'body_part_index'), # required
+            MelModel(),
+        ),
+        MelBase(b'FNAM', u'female_data_marker', b''), # required
+        MelGroups(u'female_body_data',
+            MelUInt32(b'INDX', u'body_part_index'), # required
+            MelModel(),
+        ),
+        MelFidList(b'HNAM', u'hairs'),
+        MelFidList(b'ENAM', u'eyes'),
+        MelFid(b'GNAM', u'body_part_data'), # required
+        MelBase(b'NAM2', u'marker_nam2_2'),
+        MelBase(b'NAM3', u'behavior_graph_marker', b''), # required
+        MelBase(b'MNAM', u'male_graph_marker', b''), # required
+        MelModel(u'male_behavior_graph'),
+        MelBase(b'FNAM', u'female_graph_marker', b''), # required
+        MelModel(u'female_behavior_graph'),
+        MelOptFid(b'NAM4', u'material_type'),
+        MelOptFid(b'NAM5', u'impact_data_set'),
+        MelOptFid(b'NAM7', u'decapitation_fx'),
+        MelOptFid(b'ONAM', u'open_loot_sound'),
+        MelOptFid(b'LNAM', u'close_loot_sound'),
+        MelGroups(u'biped_object_names', ##: required, len should always be 32!
+            MelString(b'NAME', u'bo_name'),
+        ),
+        MelGroups(u'movement_types',
+            MelFid(b'MTYP', u'movement_type'),
+            MelOptStruct(b'SPED', u'11f', u'override_left_walk',
+                         u'override_left_run', u'override_right_walk',
+                         u'override_right_run', u'override_forward_walk',
+                         u'override_forward_run', u'override_back_walk',
+                         u'override_back_run', u'override_rotate_walk',
+                         u'override_rotate_run', u'unknown1'),
+        ),
+        MelOptUInt32Flags(b'VNAM', u'equip_type_flags', _equip_type_flags),
+        MelGroups(u'equip_slots',
+            MelFid(b'QNAM', u'equip_slot'),
+        ),
+        MelOptFid(b'UNES', u'unarmed_equip_slot'),
+        MelGroups(u'phoneme_target_names',
+            MelString(b'PHTN', u'pt_name'),
+        ),
+        MelGroups(u'facefx_phonemes',
+            MelTruncatedStruct(
+                b'PHWT', u'16f', u'aah_lipbigaah_weight',
+                u'bigaah_lipdst_weight', u'bmp_lipeee_weight',
+                u'chjsh_lipfv_weight', u'dst_lipk_weight', u'eee_lipl_weight',
+                u'eh_lipr_weight', u'fv_lipth_weight', u'i_weight',
+                u'k_weight', u'n_weight', u'oh_weight', u'oohq_weight',
+                u'r_weight', u'th_weight', u'w_weight', old_versions={u'8f'}),
+        ),
+        MelOptFid(b'WKMV', u'base_movement_default_walk'),
+        MelOptFid(b'RNMV', u'base_movement_default_run'),
+        MelOptFid(b'SWMV', u'base_movement_default_swim'),
+        MelOptFid(b'FLMV', u'base_movement_default_fly'),
+        MelOptFid(b'SNMV', u'base_movement_default_sneak'),
+        MelOptFid(b'SPMV', u'base_movement_default_sprint'),
+        MelBase(b'NAM0', u'male_head_data_marker'),
+        MelBase(b'MNAM', u'male_head_parts_marker'),
+        MelGroups(u'male_head_parts',
+            MelUInt32(b'INDX', u'head_part_number'),
+            MelOptFid(b'HEAD', u'head_part'),
+        ),
+        # The MPAVs are semi-decoded in xEdit, but including them seems wholly
+        # unnecessary (too complex to edit, tons of flags, many unknowns)
+        MelBase(b'MPAI', u'male_morph_unknown1'),
+        MelBase(b'MPAV', u'male_nose_variants'),
+        MelBase(b'MPAI', u'male_morph_unknown2'),
+        MelBase(b'MPAV', u'male_brow_variants'),
+        MelBase(b'MPAI', u'male_morph_unknown3'),
+        MelBase(b'MPAV', u'male_eye_variants'),
+        MelBase(b'MPAI', u'male_morph_unknown4'),
+        MelBase(b'MPAV', u'male_lip_variants'),
+        MelGroups(u'male_race_presets',
+            MelFid(b'RPRM', u'preset_npc'),
+        ),
+        MelGroups(u'male_available_hair_colors',
+            MelFid(b'AHCM', u'hair_color'),
+        ),
+        MelGroups(u'male_face_texture_sets',
+            MelFid(b'FTSM', u'face_texture_set'),
+        ),
+        MelOptFid(b'DFTM', u'male_default_face_texture'),
+        _MelTintMasks(u'male_tint_masks'),
+        MelModel(u'male_head_model'),
+        MelBase(b'NAM0', u'female_head_data_marker'),
+        MelBase(b'FNAM', u'female_head_parts_marker'),
+        MelGroups(u'female_head_parts',
+            MelUInt32(b'INDX', u'head_part_number'),
+            MelOptFid(b'HEAD', u'head_part'),
+        ),
+        # The MPAVs are semi-decoded in xEdit, but including them seems wholly
+        # unnecessary (too complex to edit, tons of flags, many unknowns)
+        MelBase(b'MPAI', u'female_morph_unknown1'),
+        MelBase(b'MPAV', u'female_nose_variants'),
+        MelBase(b'MPAI', u'female_morph_unknown2'),
+        MelBase(b'MPAV', u'female_brow_variants'),
+        MelBase(b'MPAI', u'female_morph_unknown3'),
+        MelBase(b'MPAV', u'female_eye_variants'),
+        MelBase(b'MPAI', u'female_morph_unknown4'),
+        MelBase(b'MPAV', u'female_lip_variants'),
+        MelGroups(u'female_race_presets',
+            MelFid(b'RPRF', u'preset_npc'),
+        ),
+        MelGroups(u'female_available_hair_colors',
+            MelFid(b'AHCF', u'hair_color'),
+        ),
+        MelGroups(u'female_face_texture_sets',
+            MelFid(b'FTSF', u'face_texture_set'),
+        ),
+        MelOptFid(b'DFTF', u'female_default_face_texture'),
+        _MelTintMasks(u'female_tint_masks'),
+        MelModel(u'female_head_model'),
+        MelOptFid(b'NAM8', u'morph_race'),
+        MelOptFid(b'RNAM', u'armor_race'),
+    ).with_distributor({
+        b'DATA': {
+            b'MNAM': (u'male_marker', {
+                b'ANAM': u'male_skeletal_model',
+                b'MODT': u'male_hash',
+            }),
+            b'FNAM': (u'female_marker', {
+                b'ANAM': u'female_skeletal_model',
+                b'MODT': u'female_hash',
+            }),
+            b'NAM2': u'marker_nam2_1',
+        },
+        b'NAM1': {
+            b'MNAM': (u'male_data_marker', {
+                b'INDX|MODL|MODT|MODS': u'male_body_data',
+            }),
+            b'FNAM': (u'female_data_marker', {
+                b'INDX|MODL|MODT|MODS': u'female_body_data',
+            }),
+            b'NAM2': u'marker_nam2_2',
+        },
+        b'NAM3': {
+            b'MNAM': (u'male_graph_marker', {
+                b'MODL|MODT|MODS': u'male_behavior_graph',
+            }),
+            b'FNAM': (u'female_graph_marker', {
+                b'MODL|MODT|MODS': u'female_behavior_graph',
+            }),
+        },
+        b'NAM0': (u'male_head_data_marker', {
+            b'MNAM': (u'male_head_parts_marker', {
+                b'INDX|HEAD': u'male_head_parts',
+                b'MPAI': [
+                    (b'MPAI', u'male_morph_unknown1'),
+                    (b'MPAV', u'male_nose_variants'),
+                    (b'MPAI', u'male_morph_unknown2'),
+                    (b'MPAV', u'male_brow_variants'),
+                    (b'MPAI', u'male_morph_unknown3'),
+                    (b'MPAV', u'male_eye_variants'),
+                    (b'MPAI', u'male_morph_unknown4'),
+                    (b'MPAV', u'male_lip_variants'),
+                ],
+                b'TINI|TINT|TINP|TIND|TINC|TINV|TIRS': u'male_tint_masks',
+                b'MODL|MODT|MODS': u'male_head_model',
+            }),
+            # For some ungodly reason Bethesda inserted another NAM0 after the
+            # male section. So we have to make a hierarchy where the second
+            # NAM0 sits inside the dict of the first NAM0.
+            b'NAM0': (u'female_head_data_marker', {
+                b'FNAM': (u'female_head_parts_marker', {
+                    b'INDX|HEAD': u'female_head_parts',
+                    b'MPAI': [
+                        (b'MPAI', u'female_morph_unknown1'),
+                        (b'MPAV', u'female_nose_variants'),
+                        (b'MPAI', u'female_morph_unknown2'),
+                        (b'MPAV', u'female_brow_variants'),
+                        (b'MPAI', u'female_morph_unknown3'),
+                        (b'MPAV', u'female_eye_variants'),
+                        (b'MPAI', u'female_morph_unknown4'),
+                        (b'MPAV', u'female_lip_variants'),
+                    ],
+                    b'TINI|TINT|TINP|TIND|TINC|TINV|TIRS':
+                        u'female_tint_masks',
+                    b'MODL|MODT|MODS': u'female_head_model',
+                }),
+            }),
+        }),
+    })
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------

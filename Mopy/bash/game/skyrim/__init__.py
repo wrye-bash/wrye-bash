@@ -270,7 +270,7 @@ class SkyrimGameInfo(GameInfo):
             MreLscr, MreDlvw, MreTree, MreWatr, MreFlor, MreEyes, MreWeap, \
             MreIngr, MreClfm, MreMesg, MreLigh, MreExpl, MreLcrt, MreStat, \
             MreAmmo, MreSmqn, MreImad, MreSoun, MreAvif, MreCont, MreIpct, \
-            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk
+            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk, MreRace
         # ---------------------------------------------------------------------
         # Unused records, they have empty GRUP in skyrim.esm-------------------
         # CLDC HAIR PWAT RGDL SCOL SCPT
@@ -303,6 +303,7 @@ class SkyrimGameInfo(GameInfo):
             MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun,
             MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
             MreWatr, MreWeap, MreWoop, MreWthr, MreQust, MrePack, MreFact,
+            MreRace,
         )
 
         # MreScpt is Oblivion/FO3/FNV Only
@@ -351,7 +352,7 @@ class SkyrimGameInfo(GameInfo):
             MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, MreSmqn,
             MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd, MreStat,
             MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop,
-            MreWthr, MreCell, MreWrld, MreQust, MreTes4, MrePack,
+            MreWthr, MreCell, MreWrld, MreQust, MreTes4, MrePack, MreRace,
             # MreNavm, MreNavi
         )}
         brec.MreRecord.simpleTypes = (
