@@ -4218,7 +4218,7 @@ class MreRace(MelRecord):
         MelOptFid(b'WNAM', u'race_skin'),
         MelBipedObjectData(), # required
         MelKeywords(),
-        MelStruct( # required
+        MelTruncatedStruct( # required
             b'DATA', u'14b2s4fI7fI2ifi5fi4fI9f', u'skill1', u'skill1Boost',
             u'skill2', u'skill2Boost', u'skill3', u'skill3Boost', u'skill4',
             u'skill4Boost', u'skill5', u'skill5Boost', u'skill6',
@@ -4237,7 +4237,8 @@ class MreRace(MelRecord):
             u'mount_offset_y', u'mount_offset_z',
             (u'dismount_offset_x', -50.0), u'dismount_offset_y',
             (u'dismount_offset_z', 65.0), u'mount_camera_offset_x',
-            (u'mount_camera_offset_y', -300.0), u'mount_camera_offset_z'),
+            (u'mount_camera_offset_y', -300.0), u'mount_camera_offset_z',
+            old_versions={u'14b2s4fI7fI2ifi5fi4fI'}),
         MelBase(b'MNAM', u'male_marker', b''), # required
         MelString(b'ANAM', u'male_skeletal_model'),
         # Texture hash - we have to give it a name for the distributor
