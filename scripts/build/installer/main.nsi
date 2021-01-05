@@ -1,5 +1,6 @@
 ; Wrye Bash.nsi
 Unicode true
+ManifestDPIAware true
 
 ;-------------------------------- Includes:
     !addincludedir "${__FILEDIR__}"
