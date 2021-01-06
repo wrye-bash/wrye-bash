@@ -155,7 +155,7 @@ class PatchDialog(DialogWindow):
     def PatchExecute(self):
         """Do the patch."""
         self.accept_modal()
-        patchFile = progress = None
+        progress = None
         try:
             patch_name = self.patchInfo.name
             patch_size = self.patchInfo.size
@@ -166,7 +166,7 @@ class PatchDialog(DialogWindow):
             self.patchInfo.set_table_prop(u'bash.patch.configs', config)
             #--Do it
             log = bolt.LogFile(StringIO.StringIO())
-            patchFile = PatchFile(self.patchInfo)
+            patchFile = PatchFile(self.patchInfo, bosh.modInfos)
             enabled_patchers = [p.get_patcher_instance(patchFile) for p in
                                 self._gui_patchers if p.isEnabled] ##: what happens if empty
             patchFile.init_patchers_data(enabled_patchers, SubProgress(progress, 0, 0.1)) #try to speed this up!
