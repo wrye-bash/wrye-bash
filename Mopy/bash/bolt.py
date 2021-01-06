@@ -1172,8 +1172,8 @@ class DataDict(object):
         del self.data[key]
     def __len__(self):
         return len(self.data)
-    def keys(self):
-        return self.data.keys()
+    def __iter__(self):
+        return iter(self.data)
     def values(self):
         return self.data.values()
     def items(self):

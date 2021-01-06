@@ -1071,7 +1071,7 @@ class UIList(wx.Panel):
     def PopulateItems(self):
         """Sort items and populate entire list."""
         self.mouseTexts.clear()
-        items = set(self.data_store.keys())
+        items = set(self.data_store)
         if self.__class__._target_ini:
             # hack for avoiding the syscall in get_ci_settings
             target_setts = self.data_store.ini.get_ci_settings()
@@ -1355,16 +1355,16 @@ class UIList(wx.Panel):
         """Sort and return items by specified column, possibly in reverse
         order.
 
-        If items are not specified, sort self.data_store.keys() and
-        return that. If sortSpecial is False do not apply extra sortings."""
-        items = items if items is not None else self.data_store.keys()
+        If items are not specified, sort self.data_store keys and return that.
+        If sortSpecial is False do not apply extra sortings."""
         def key(k): # if key is None then keep it None else provide self
             k = self._sort_keys[k]
             return bolt.natural_key() if k is None else partial(k, self)
         defaultKey = key(self._default_sort_col)
         defSort = col == self._default_sort_col
         # always apply default sort
-        items.sort(key=defaultKey, reverse=defSort and reverse)
+        items = sorted(self.data_store if items is None else items,
+                       key=defaultKey, reverse=defSort and reverse)
         if not defSort: items.sort(key=key(col), reverse=reverse)
         if sortSpecial:
             for lamda in self._extra_sortings: lamda(self, items)

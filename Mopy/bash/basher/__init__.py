@@ -4153,8 +4153,8 @@ class BashFrame(WindowFrame):
     def CleanSettings():
         """Cleans junk from settings before closing."""
         #--Clean rename dictionary.
-        modNames = set(bosh.modInfos.keys())
-        modNames.update(bosh.modInfos.table.keys())
+        modNames = set(bosh.modInfos)
+        modNames.update(bosh.modInfos.table)
         renames = bass.settings.getChanged(u'bash.mods.renames')
         for key,value in renames.items():
             if value not in modNames:
@@ -4175,7 +4175,7 @@ class BashFrame(WindowFrame):
             settings.setChanged(u'bash.colors')
         #--Clean backup
         for fileInfos in (bosh.modInfos,bosh.saveInfos):
-            goodRoots = {p.root for p in fileInfos.keys()}
+            goodRoots = {p.root for p in fileInfos}
             backupDir = fileInfos.bash_dir.join(u'Backups')
             if not backupDir.isdir(): continue
             for back_fname in backupDir.list():
@@ -4285,7 +4285,7 @@ class BashApp(wx.App):
         if settings[u'bash.version'] != bass.AppVersion:
             settings[u'bash.version'] = bass.AppVersion
             # rescan mergeability on version upgrade to detect new mergeable
-            bosh.modInfos.rescanMergeable(bosh.modInfos.data, bolt.Progress())
+            bosh.modInfos.rescanMergeable(bosh.modInfos, bolt.Progress())
 
 # Initialization --------------------------------------------------------------
 from .gui_patchers import initPatchers

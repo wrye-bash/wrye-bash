@@ -2267,7 +2267,7 @@ class InstallersData(DataStore):
     #--Operations -------------------------------------------------------------
     def moveArchives(self,moveList,newPos):
         """Move specified archives to specified position."""
-        old_ordered = self.sorted_values(set(self.data) - set(moveList))
+        old_ordered = self.sorted_values(set(self) - set(moveList))
         new_ordered = self.sorted_values(moveList)
         if newPos >= len(self): newPos = len(old_ordered)
         for index, installer in enumerate(old_ordered[:newPos]):
@@ -2562,8 +2562,8 @@ class InstallersData(DataStore):
 
     def bain_uninstall(self, unArchives, refresh_ui, progress=None):
         """Uninstall selected archives."""
-        if unArchives == u'ALL': unArchives = self.data
-        unArchives = frozenset(self[x] for x in unArchives)
+        if unArchives == u'ALL': unArchives = frozenset(self.itervalues())
+        else: unArchives = frozenset(self[x] for x in unArchives)
         data_sizeCrcDate = self.data_sizeCrcDate
         #--Determine files to remove and files to restore. Keep in mind that
         #  multiple input archives may be interspersed with other archives that
@@ -2641,7 +2641,7 @@ class InstallersData(DataStore):
         * Correct underrides in anPackages.
         * Install missing files from active anPackages."""
         progress = progress if progress else bolt.Progress()
-        anPackages = (self[package] for package in (anPackages or self.keys()))
+        anPackages = (self[package] for package in (anPackages or self))
         #--Get remove/refresh files from anPackages
         removes = set()
         for installer in anPackages:

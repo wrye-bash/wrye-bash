@@ -1465,7 +1465,7 @@ class TableFileInfos(DataStore):
 
     def save(self):
         # items deleted outside Bash
-        for deleted in set(self.table.keys()) - set(self.keys()):
+        for deleted in set(self.table) - set(self):
             del self.table[deleted]
         self.table.save()
 
@@ -1499,7 +1499,7 @@ class FileInfos(TableFileInfos):
     #--Refresh
     def refresh(self, refresh_infos=True, booting=False):
         """Refresh from file directory."""
-        oldNames = set(self.data) | set(self.corrupted)
+        oldNames = set(self) | set(self.corrupted)
         _added = set()
         _updated = set()
         newNames = self._names()
@@ -1746,7 +1746,7 @@ class INIInfos(TableFileInfos):
         self.delete_refresh(_deleted_, None, check_existence=False,
                             _in_refresh=True)
         # re-add default tweaks
-        for k in self.keys():
+        for k in list(self):
             if k not in newNames: del self[k]
         for k, default_info in self._missing_default_inis():
             self[k] = default_info # type: DefaultIniInfo
@@ -2128,7 +2128,7 @@ class ModInfos(FileInfos):
         self._setOblivionVersions()
         oldMergeable = set(self.mergeable)
         scanList = self._refreshMergeable()
-        difMergeable = (oldMergeable ^ self.mergeable) & set(self.keys())
+        difMergeable = (oldMergeable ^ self.mergeable) & set(self)
         if scanList:
             self.rescanMergeable(scanList)
         hasChanged += bool(scanList or difMergeable)
@@ -2294,9 +2294,8 @@ class ModInfos(FileInfos):
                 modinf.reloadBashTags()
 
     def refresh_crcs(self, mods=None): #TODO(ut) progress !
-        if mods is None: mods = self.keys()
         pairs = {}
-        for mod in mods:
+        for mod in (self if mods is None else mods):
             inf = self[mod]
             pairs[inf.name] = inf.calculate_crc(recalculate=True)
         return pairs
@@ -2374,7 +2373,7 @@ class ModInfos(FileInfos):
                 log.setHeader(head+_(u'Active Mod Files:'))
                 masters_set = set(load_order.cached_active_tuple())
                 merged,imported = self.merged,self.imported
-            all_mods = (masters_set | merged | imported) & set(self.keys())
+            all_mods = (masters_set | merged | imported) & set(self)
             all_mods = load_order.get_ordered(all_mods)
             #--List
             modIndex = 0
@@ -2494,7 +2493,7 @@ class ModInfos(FileInfos):
             if fileName in _children[:-1]:
                 raise BoltError(u'Circular Masters: ' +u' >> '.join(x.s for x in _children))
             #--Select masters
-            if _modSet is None: _modSet = set(self.keys())
+            if _modSet is None: _modSet = set(self)
             #--Check for bad masternames:
             #  Disabled for now
             ##if self[fileName].hasBadMasterNames():
@@ -2548,7 +2547,7 @@ class ModInfos(FileInfos):
                 if not m in toActivate:
                     self.lo_activate(m, doSave=False)
                     toActivate.add(m)
-            mods = load_order.get_ordered(self.keys())
+            mods = load_order.get_ordered(self)
             # first select the bashed patch(es) and their masters
             for mod in mods:
                 if self[mod].isBP(): _add_to_activate(mod)
@@ -2575,7 +2574,7 @@ class ModInfos(FileInfos):
 
     def lo_activate_exact(self, modNames):
         """Activate exactly the specified set of mods."""
-        modsSet, all_mods = set(modNames), set(self.keys())
+        modsSet, all_mods = set(modNames), set(self)
         #--Ensure plugins that cannot be deselected stay selected
         modsSet.update(load_order.must_be_active_if_present() & all_mods)
         #--Deselect/select plugins
@@ -2997,7 +2996,7 @@ class SaveInfos(FileInfos):
         self.profiles = bolt.DataTable(bolt.PickleDict(
             dirs[u'saveBase'].join(u'BashProfiles.dat')))
         # save profiles used to have a trailing slash, remove it if present
-        for row in self.profiles.keys():
+        for row in list(self.profiles):
             if row.endswith(u'\\'):
                 self.profiles.moveRow(row, row[:-1])
         SaveInfo.cosave_types = cosaves.get_cosave_types(

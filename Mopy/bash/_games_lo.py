@@ -461,7 +461,7 @@ class Game(object):
             lo_order_changed = True
         # below do not apply to timestamp method (on getting it)
         loadorder_set = set(lord)
-        mods_set = set(cached_minfs.keys())
+        mods_set = set(cached_minfs)
         fix_lo.lo_removed = loadorder_set - mods_set # may remove corrupted mods
         # present in text file, we are supposed to take care of that
         fix_lo.lo_added |= mods_set - loadorder_set
@@ -805,8 +805,8 @@ class TimestampGame(Game):
 
     # Abstract overrides ------------------------------------------------------
     def __calculate_mtime_order(self, mods=None): # excludes corrupt mods
-        if mods is None: mods = self.mod_infos.keys()
-        mods = sorted(mods) # sort case insensitive (for time conflicts)
+        # sort case insensitive (for time conflicts)
+        mods = sorted(self.mod_infos if mods is None else mods)
         mods.sort(key=lambda x: self.mod_infos[x].mtime)
         mods.sort(key=lambda x: not self.in_master_block(self.mod_infos[x]))
         return mods
@@ -826,7 +826,7 @@ class TimestampGame(Game):
         return active
 
     def _persist_load_order(self, lord, active):
-        assert set(self.mod_infos.keys()) == set(lord) # (lord must be valid)
+        assert set(self.mod_infos) == set(lord) # (lord must be valid)
         if len(lord) == 0: return
         current = self.__calculate_mtime_order()
         # break conflicts

@@ -140,7 +140,7 @@ class Mods_LoadList(ChoiceLink):
             def Execute(self):
                 """Activate mods in list."""
                 mods = set(_self.load_lists[self._text])
-                mods = [m for m in self.window.data_store.keys() if m in mods]
+                mods = [m for m in self.window.data_store if m in mods]
                 self._selectExact(mods)
             @property
             def link_help(self):
