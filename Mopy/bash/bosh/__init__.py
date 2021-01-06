@@ -1596,7 +1596,7 @@ class FileInfos(TableFileInfos):
         destDir.makedirs()
         if not destName: destName = fileName
         srcPath = self[fileName].getPath()
-        if destDir == self.store_dir and destName in self.data:
+        if destDir == self.store_dir and destName in self:
             destPath = self[destName].getPath()
         else:
             destPath = destDir.join(destName)
@@ -2158,7 +2158,7 @@ class ModInfos(FileInfos):
         be skipped."""
         bad = self.bad_names = set()
         activeBad = self.activeBad = set()
-        for fileName in self.data:
+        for fileName in self:
             if self.isBadFileName(fileName.s):
                 if load_order.cached_is_active(fileName):
                     ## For now, we'll leave them active, until
@@ -2804,9 +2804,9 @@ class ModInfos(FileInfos):
         return moved
 
     #--Mod info/modify --------------------------------------------------------
-    def getVersion(self, fileName):
+    def getVersion(self, fileName): ##: move to ModInfo?
         """Extracts and returns version number for fileName from header.hedr.description."""
-        if not fileName in self.data or not self.data[fileName].header:
+        if not fileName in self or not self[fileName].header: ##: header not always present?
             return u''
         maVersion = reVersion.search(self[fileName].header.description)
         return (maVersion and maVersion.group(2)) or u''
@@ -2859,7 +2859,7 @@ class ModInfos(FileInfos):
         if self.store_dir.join(oldName).exists():
             raise StateError(u"Can't swap: %s already exists." % oldName)
         newName = GPath(baseName.sbody + u'_' + newVersion + u'.esm')
-        if newName not in self.data:
+        if newName not in self:
             raise StateError(u"Can't swap: %s doesn't exist." % newName)
         return newName, oldName
 

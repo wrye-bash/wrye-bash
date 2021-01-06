@@ -25,7 +25,6 @@ import time
 from collections import defaultdict, Counter
 from operator import attrgetter
 from .. import bush # for game etc
-from .. import bosh # for modInfos
 from .. import bolt # for type hints
 from ..balt import readme_url
 from .. import load_order
@@ -113,7 +112,7 @@ class PatchFile(ModFile):
             for mod in self.compiledAllMods: log(u'* %s' % mod)
         log.setHeader(u'=== ' + _(u'Active Mods'), True)
         for mname in self.allMods:
-            version = bosh.modInfos.getVersion(mname)
+            version = self.p_file_minfos.getVersion(mname)
             if mname in self.loadSet:
                 message = u'* %02X ' % (self.loadMods.index(mname),)
             else:
@@ -142,11 +141,11 @@ class PatchFile(ModFile):
         self._patcher_instances = [p for p in patchers if p.isActive]
 
     #--Instance
-    def __init__(self, modInfo):
+    def __init__(self, modInfo, p_file_minfos):
         """Initialization."""
         ModFile.__init__(self,modInfo,None)
         self.tes4.author = u'BASHED PATCH'
-        self.tes4.masters = [bosh.modInfos.masterName]
+        self.tes4.masters = [p_file_minfos.masterName]
         self.longFids = True
         self.keepIds = set()
         # Aliases from one mod name to another. Used by text file patchers.
@@ -168,7 +167,7 @@ class PatchFile(ModFile):
         self.loadMods = tuple(loadMods)
         self.loadSet = frozenset(self.loadMods)
         self.set_mergeable_mods([])
-        self.p_file_minfos = bosh.modInfos
+        self.p_file_minfos = p_file_minfos
 
     def getKeeper(self):
         """Returns a function to add fids to self.keepIds."""
@@ -204,7 +203,7 @@ class PatchFile(ModFile):
         nullProgress = Progress()
         progress = progress.setFull(len(self.allMods))
         for index,modName in enumerate(self.allMods):
-            modInfo = bosh.modInfos[modName]
+            modInfo = self.p_file_minfos[modName]
             bashTags = modInfo.getBashTags()
             if modName in self.loadSet and u'Filter' in bashTags:
                 self.unFilteredMods.append(modName)

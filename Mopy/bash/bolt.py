@@ -1431,8 +1431,8 @@ class Settings(DataDict):
         """Add default settings to dictionary. Will not replace values that are already set."""
         self.defaults = default_settings
         for key in default_settings: # PY3: ChainMap?
-            if key not in self.data:
-                self.data[key] = copy.deepcopy(default_settings[key])
+            if key not in self:
+                self[key] = copy.deepcopy(default_settings[key])
 
     def save(self):
         """Save to pickle file. Only key/values marked as changed are saved."""
@@ -1452,16 +1452,16 @@ class Settings(DataDict):
 
     def setChanged(self,key):
         """Marks given key as having been changed. Use if value is a dictionary, list or other object."""
-        if key not in self.data:
+        if key not in self:
             raise exception.ArgumentError(u'No settings data for ' + key)
         self.changed.add(key)
 
     def getChanged(self,key,default=None):
         """Gets and marks as changed."""
-        if default is not None and key not in self.data:
-            self.data[key] = default
+        if default is not None and key not in self:
+            self[key] = default
         self.setChanged(key)
-        return self.data.get(key)
+        return self.get(key)
 
     #--Dictionary Emulation
     def __setitem__(self,key,value):

@@ -1704,8 +1704,8 @@ class InstallersData(DataStore):
         #--Load Installers.dat if not loaded - will set changed to True
         changed = not self.loaded and self.__load(progress)
         #--Last marker
-        if self.lastKey not in self.data:
-            self.data[self.lastKey] = InstallerMarker(self.lastKey)
+        if self.lastKey not in self:
+            self[self.lastKey] = InstallerMarker(self.lastKey)
         if fullRefresh: # BAIN uses modInfos crc cache
             with gui.BusyCursor(): modInfos.refresh_crcs()
         #--Refresh Other - FIXME(ut): docs
