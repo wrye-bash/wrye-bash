@@ -1606,9 +1606,9 @@ class DataTableColumn(object):
 #------------------------------------------------------------------------------
 class DataTable(DataDict):
     """Simple data table of rows and columns, saved in a pickle file. It is
-    currently used by modInfos to represent properties associated with modfiles,
-    where each modfile is a row, and each property (e.g. modified date or
-    'mtime') is a column.
+    currently used by TableFileInfos to represent properties associated with
+    mod/save/bsa/ini files, where each file is a row, and each property (e.g.
+    modified date or 'mtime') is a column.
 
     The "table" is actually a dictionary of dictionaries. E.g.
         propValue = table['fileName']['propName']

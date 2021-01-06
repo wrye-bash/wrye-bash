@@ -140,8 +140,8 @@ class Installer(object):
                             new_sizeCrcDate, progress)
         # drop _asFile
         old_sizeCrcDate.clear()
-        for rpFile, (size, crc, date, _asFile) in new_sizeCrcDate.iteritems():
-            old_sizeCrcDate[rpFile] = (size, crc, date)
+        for rpFile, (siz, crc, date, _asFile) in new_sizeCrcDate.iteritems():
+            old_sizeCrcDate[rpFile] = (siz, crc, date)
         return changed
 
     @staticmethod
@@ -154,10 +154,10 @@ class Installer(object):
         # is size 0 - add len(pending) to the progress bar max to ensure we
         # don't hit 100% and cause the progress bar to prematurely disappear
         progress.setFull(pending_size + len(pending))
-        for rpFile, (size, _crc, date, asFile) in iter(sorted(pending.items())):
+        for rpFile, (siz, _crc, date, asFile) in iter(sorted(pending.items())):
             progress(done, progress_msg + rpFile)
-            sub = bolt.SubProgress(progress, done, done + size + 1)
-            sub.setFull(size + 1)
+            sub = bolt.SubProgress(progress, done, done + siz + 1)
+            sub.setFull(siz + 1)
             crc = 0
             try:
                 with open(asFile, u'rb') as ins:
@@ -171,8 +171,8 @@ class Installer(object):
                         traceback=True)
                 continue
             crc &= 0xFFFFFFFF
-            done += size + 1
-            new_sizeCrcDate[rpFile] = (size, crc, date, asFile)
+            done += siz + 1
+            new_sizeCrcDate[rpFile] = (siz, crc, date, asFile)
 
     #--Initialization, etc ----------------------------------------------------
     def initDefault(self):

@@ -1461,9 +1461,9 @@ class ModDetails(_ModsSavesDetails):
         self.gAuthor.on_focus_lost.subscribe(self.OnEditAuthor)
         self.gAuthor.on_text_changed.subscribe(self.OnAuthorEdit)
         #--Modified
-        self.modified = TextField(top, max_length=32)
-        self.modified.on_focus_lost.subscribe(self.OnEditModified)
-        self.modified.on_text_changed.subscribe(self.OnModifiedEdit)
+        self.modified_txt = TextField(top, max_length=32)
+        self.modified_txt.on_focus_lost.subscribe(self.OnEditModified)
+        self.modified_txt.on_text_changed.subscribe(self.OnModifiedEdit)
         # size=(textWidth, -1),
         #--Description
         self._desc_area = TextArea(top, auto_tooltip=False, max_length=511)
@@ -1480,7 +1480,7 @@ class ModDetails(_ModsSavesDetails):
             HLayout(items=[Label(top, _(u'File:')), Stretch(), self.version]),
             self._fname_ctrl,
             Label(top, _(u'Author:')), self.gAuthor,
-            Label(top, _(u'Modified:')), self.modified,
+            Label(top, _(u'Modified:')), self.modified_txt,
             Label(top, _(u'Description:')),
             (self._desc_area, LayoutOptions(expand=True, weight=1))
         ]).apply_to(top)
@@ -1515,7 +1515,7 @@ class ModDetails(_ModsSavesDetails):
         #--Set fields
         self._fname_ctrl.text_content = self.fileStr
         self.gAuthor.text_content = self.authorStr
-        self.modified.text_content = self.modifiedStr
+        self.modified_txt.text_content = self.modifiedStr
         self._desc_area.text_content = self.descriptionStr
         self.version.label_text = self.versionStr
         self.uilist.SetFileInfo(self.modInfo)
@@ -1547,19 +1547,19 @@ class ModDetails(_ModsSavesDetails):
 
     def OnEditModified(self):
         if not self.modInfo: return
-        modifiedStr = self.modified.text_content
+        modifiedStr = self.modified_txt.text_content
         if modifiedStr == self.modifiedStr: return
         try:
             newTimeTup = unformat_date(modifiedStr, '%c')
             time.mktime(newTimeTup)
         except ValueError:
             balt.showError(self,_(u'Unrecognized date: ')+modifiedStr)
-            self.modified.text_content = self.modifiedStr
+            self.modified_txt.text_content = self.modifiedStr
             return
         #--Normalize format
         modifiedStr = time.strftime('%c', newTimeTup)
         self.modifiedStr = modifiedStr
-        self.modified.text_content = modifiedStr #--Normalize format
+        self.modified_txt.text_content = modifiedStr #--Normalize format
         self.SetEdited()
 
     def OnEditDescription(self):

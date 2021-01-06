@@ -31,7 +31,7 @@ from .save_headers import OblivionSaveHeader
 from .. import bolt, bush
 from ..bolt import Flags, sio, deprint, encode, SubProgress, unpack_many, \
     unpack_int, unpack_short, struct_unpack, pack_int, pack_short, pack_byte, \
-    structs_cache
+    structs_cache, unpack_str8
 from ..brec import ModReader, MreRecord, getObjectIndex, getFormIndices, \
     unpack_header
 from ..exception import ModError, StateError
@@ -105,8 +105,7 @@ class SreNPC(object):
                 num, = _unpack('H',2)
                 self.modifiers = list(starmap(_unpack, repeat(('=Bf', 5), num)))
             if sr_flags.full:
-                size, = _unpack('B',1)
-                self.full = ins.read(size)
+                self.full = unpack_str8(ins)
             if sr_flags.skills:
                 self.skills = list(_unpack('21B',21))
         #--Done
@@ -266,9 +265,9 @@ class SaveFile(object):
             self.header = OblivionSaveHeader(self.fileInfo.abs_path,
                                              load_image=True, ins=ins)
             #--Pre-Records copy buffer
-            def insCopy(buff,size,backSize=0):
+            def insCopy(buff, siz, backSize=0):
                 if backSize: ins.seek(-backSize,1)
-                buff.write(ins.read(size+backSize))
+                buff.write(ins.read(siz + backSize))
 
             #--"Globals" block
             fidsPointer,recordsNum = unpack_many(ins, '2I')

@@ -201,8 +201,8 @@ def cpy(src, dst):
             os.makedirs(dstdir)
         shutil.copy2(src, dst)
 
-def pack_7z(archive, *args):
-    cmd_7z = [EXE_7z, u'a', u'-m0=lzma2', u'-mx9', archive, u'Mopy/'] + list(args)
+def pack_7z(archive_, *args):
+    cmd_7z = [EXE_7z, u'a', u'-m0=lzma2', u'-mx9', archive_, u'Mopy/'] + list(args)
     utils.run_subprocess(cmd_7z, LOGGER, cwd=ROOT_PATH)
 
 def get_nsis_root(cmd_arg):
@@ -264,7 +264,7 @@ def download_redists():
 
 def pack_manual(version):
     """ Packages the manual (python source) version. """
-    archive = os.path.join(
+    archive_ = os.path.join(
         DIST_PATH, u'Wrye Bash {} - Python Source.7z'.format(version)
     )
     join = os.path.join
@@ -280,7 +280,7 @@ def pack_manual(version):
     for orig, target in files_to_include.items():
         cpy(orig, target)
     try:
-        pack_7z(archive, *[u'-xr!' + a for a in ignores])
+        pack_7z(archive_, *[u'-xr!' + a for a in ignores])
     finally:
         for path in files_to_include.values():
             rm(path)
@@ -317,7 +317,7 @@ def build_executable(version, file_version):
 
 def pack_standalone(version):
     """ Packages the standalone version. """
-    archive = os.path.join(
+    archive_ = os.path.join(
         DIST_PATH, u'Wrye Bash {} - Standalone Executable.7z'.format(version)
     )
     ignores = (
@@ -335,7 +335,7 @@ def pack_standalone(version):
         u'Mopy/bash/tests',
         u'Mopy/redist',
     )
-    pack_7z(archive, *[u'-xr!' + a for a in ignores])
+    pack_7z(archive_, *[u'-xr!' + a for a in ignores])
 
 def pack_installer(nsis_path, version, file_version):
     """ Packages the installer version. """

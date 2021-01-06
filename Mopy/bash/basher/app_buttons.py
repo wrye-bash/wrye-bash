@@ -167,8 +167,8 @@ class _App_Button(StatusBar_Button):
 
     def GetBitmapButton(self, window, image=None, onRClick=None):
         if not self.IsPresent(): return None
-        size = bass.settings[u'bash.statusbar.iconSize'] # 16, 24, 32
-        idex = (size // 8) - 2 # 0, 1, 2, duh
+        iconSize = bass.settings[u'bash.statusbar.iconSize'] # 16, 24, 32
+        idex = (iconSize // 8) - 2 # 0, 1, 2, duh
         super(_App_Button, self).GetBitmapButton(
             window, self.images[idex].GetBitmap(), onRClick)
         if self.obseTip is not None:
@@ -714,9 +714,9 @@ class App_Restart(StatusBar_Button):
     _tip = _(u'Restart')
 
     def GetBitmapButton(self, window, image=None, onRClick=None):
-        size = bass.settings[u'bash.statusbar.iconSize']
-        return super(App_Restart, self).GetBitmapButton(
-            window, staticBitmap(window, special=u'undo', size=(size,size)),
+        iconSize = bass.settings[u'bash.statusbar.iconSize']
+        return super(App_Restart, self).GetBitmapButton(window,
+            staticBitmap(window, special=u'undo', size=(iconSize, iconSize)),
             onRClick)
 
     def Execute(self): Link.Frame.Restart()
