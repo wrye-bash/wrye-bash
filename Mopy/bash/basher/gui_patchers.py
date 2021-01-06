@@ -170,8 +170,6 @@ class _PatcherPanel(object):
 
 #------------------------------------------------------------------------------
 class _AliasesPatcherPanel(_PatcherPanel):
-    # CONFIG DEFAULTS
-    default_aliases = {}
     patcher_name = _(u'Alias Mod Names')
     patcher_desc = _(u'Specify mod aliases for reading CSV source files.')
 
@@ -213,7 +211,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
         #--Update old configs to use Paths instead of strings.
         self._ci_aliases = dict(# map(GPath, item) gives a list (item is a tuple)
             map(GPath, item) for item in
-            config.get('aliases', self.__class__.default_aliases).iteritems())
+            (config.get(u'aliases', {}) or config.get(b'aliases', {})).iteritems())
         return config
 
     def saveConfig(self, configs):
@@ -224,7 +222,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
         return config
 
     def _log_config(self, conf, config, clip, log):
-        aliases = conf.get('aliases', {})
+        aliases = config.get(u'aliases', {}) or  config.get(b'aliases', {})
         for mod, alias in aliases.iteritems():
             log(u'* __%s__ >> %s' % (mod, alias))
             clip.write(u'  %s >> %s\n' % (mod, alias))
