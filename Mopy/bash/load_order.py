@@ -168,13 +168,13 @@ def persist_orders(__keep_max=256):
     length = len(_saved_load_orders)
     if length > __keep_max:
         x, y = _keep_max(__keep_max, length)
-        _lords_pickle.data['_saved_load_orders'] = \
+        _lords_pickle.pickled_data[u'_saved_load_orders'] = \
             _saved_load_orders[_current_list_index - x:_current_list_index + y]
-        _lords_pickle.data['_current_list_index'] = x
+        _lords_pickle.pickled_data[u'_current_list_index'] = x
     else:
-        _lords_pickle.data['_saved_load_orders'] = _saved_load_orders
-        _lords_pickle.data['_current_list_index'] = _current_list_index
-    _lords_pickle.data['_active_mods_lists'] = _active_mods_lists
+        _lords_pickle.pickled_data[u'_saved_load_orders'] = _saved_load_orders
+        _lords_pickle.pickled_data[u'_current_list_index'] = _current_list_index
+    _lords_pickle.pickled_data[u'_active_mods_lists'] = _active_mods_lists
     ##: save them also in BashSettings.dat in case someone downgrades - drop !
     bass.settings[u'bash.loadLists.data'] = _active_mods_lists
     _lords_pickle.save()
@@ -377,10 +377,11 @@ def __load_pickled_load_orders():
         active_mods_list = __active_mods_sentinel
     else:
         active_mods_list = {}
-    _saved_load_orders = _lords_pickle.data.get('_saved_load_orders', [])
-    _current_list_index = _lords_pickle.data.get('_current_list_index', -1)
-    _active_mods_lists = _lords_pickle.data.get('_active_mods_lists',
-                                                active_mods_list)
+    _get = lambda x, d: _lords_pickle.pickled_data.get(
+        x, d) or _lords_pickle.pickled_data.get(x.encode(u'ascii'), d)
+    _saved_load_orders = _get(u'_saved_load_orders', [])
+    _current_list_index = _get(u'_current_list_index', -1)
+    _active_mods_lists = _get(u'_active_mods_lists', active_mods_list)
     if b'Bethesda ESMs' in _active_mods_lists: ##: backwards compat
         _active_mods_lists[u'Vanilla'] = _active_mods_lists[b'Bethesda ESMs']
         del _active_mods_lists[b'Bethesda ESMs']

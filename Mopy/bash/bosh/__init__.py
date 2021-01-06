@@ -1379,7 +1379,7 @@ class TableFileInfos(DataStore):
         deprint(u' bash_dir: %s' % self.bash_dir)
         self.store_dir.makedirs()
         self.bash_dir.makedirs() # self.store_dir may need be set
-        self.data = {} # populated in refresh ()
+        self._data = {} # populated in refresh ()
         # the type of the table keys is always bolt.Path
         self.table = bolt.DataTable(
             bolt.PickleDict(self.bash_dir.join(u'Table.dat')))

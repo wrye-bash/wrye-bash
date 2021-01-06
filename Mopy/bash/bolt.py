@@ -1162,30 +1162,30 @@ class DataDict(object):
     dictionary is its 'data' attribute."""
 
     def __contains__(self,key):
-        return key in self.data
+        return key in self._data
     def __getitem__(self,key):
         """Return value for key or raise KeyError if not present."""
-        return self.data[key]
+        return self._data[key]
     def __setitem__(self,key,value):
-        self.data[key] = value
+        self._data[key] = value
     def __delitem__(self,key):
-        del self.data[key]
+        del self._data[key]
     def __len__(self):
-        return len(self.data)
+        return len(self._data)
     def __iter__(self):
-        return iter(self.data)
+        return iter(self._data)
     def values(self):
-        return self.data.values()
+        return self._data.values()
     def items(self):
-        return self.data.items()
+        return self._data.items()
     def get(self,key,default=None):
-        return self.data.get(key,default)
+        return self._data.get(key, default)
     def pop(self,key,default=None):
-        return self.data.pop(key,default)
+        return self._data.pop(key, default)
     def iteritems(self):
-        return self.data.iteritems()
+        return self._data.iteritems()
     def itervalues(self):
-        return self.data.itervalues()
+        return self._data.itervalues()
 
 #------------------------------------------------------------------------------
 class AFile(object):
@@ -1323,7 +1323,7 @@ class PickleDict(object):
         self.backup = pkl_path.backup
         self.readOnly = readOnly
         self.vdata = {}
-        self.data = {}
+        self.pickled_data = {}
 
     def exists(self):
         return self._pkl_path.exists() or self.backup.exists()
@@ -1351,7 +1351,7 @@ class PickleDict(object):
           2: Data read from backup file
         """
         self.vdata.clear()
-        self.data.clear()
+        self.pickled_data.clear()
         cor = cor_name =  None
         for path in (self._pkl_path, self.backup):
             if cor is not None:
@@ -1370,7 +1370,7 @@ class PickleDict(object):
                         continue  # file corrupt - try next file
                     if firstPickle == 'VDATA2':
                         self.vdata.update(pickle.load(ins))
-                        self.data.update(pickle.load(ins))
+                        self.pickled_data.update(pickle.load(ins))
                     else:
                         raise PickleDict.Mold(path)
                 return 1 + (path == self.backup)
@@ -1386,15 +1386,15 @@ class PickleDict(object):
     def save(self):
         """Save to pickle file.
 
-        Three objects are writen - a version string and the vdata and data
-        dictionaries, in this order. Current version string is VDATA2.
-        """
+        Three objects are writen - a version string and the vdata and
+        pickled_data dictionaries, in this order. Current version string is
+        VDATA2."""
         if self.readOnly: return False
         #--Pickle it
         self.vdata['boltPaths'] = True # needed so pre 307 versions don't blow
-        with self._pkl_path.temp.open('wb') as out:
-            for data in ('VDATA2',self.vdata,self.data):
-                pickle.dump(data,out,-1)
+        with self._pkl_path.temp.open(u'wb') as out:
+            for pkl in (b'VDATA2', self.vdata, self.pickled_data):
+                pickle.dump(pkl, out, -1)
         self._pkl_path.untemp(doBackup=True)
         return True
 
@@ -1419,10 +1419,10 @@ class Settings(DataDict):
             res = dictFile.load()
             self.cleanSave = res == 0 # no data read - do not attempt to read on save
             self.vdata = dictFile.vdata.copy()
-            self.data = dictFile.data.copy()
+            self._data = dictFile.pickled_data.copy()
         else:
             self.vdata = {}
-            self.data = {}
+            self._data = {}
         self.defaults = {}
         self.changed = set()
         self.deleted = set()
@@ -1441,13 +1441,13 @@ class Settings(DataDict):
         # on a clean save ignore BashSettings.dat.bak possibly corrupt
         if not self.cleanSave: dictFile.load()
         dictFile.vdata = self.vdata.copy()
-        for key in self.deleted:
-            dictFile.data.pop(key,None)
-        for key in self.changed:
-            if self.data[key] == self.defaults.get(key,None):
-                dictFile.data.pop(key,None)
+        for del_key in self.deleted:
+            dictFile.pickled_data.pop(del_key, None)
+        for changed_key in self.changed:
+            if self[changed_key] == self.defaults.get(changed_key, None):
+                dictFile.pickled_data.pop(changed_key, None)
             else:
-                dictFile.data[key] = self.data[key]
+                dictFile.pickled_data[changed_key] = self[changed_key]
         dictFile.save()
 
     def setChanged(self,key):
@@ -1468,19 +1468,19 @@ class Settings(DataDict):
         """Dictionary emulation. Marks key as changed."""
         if key in self.deleted: self.deleted.remove(key)
         self.changed.add(key)
-        self.data[key] = value
+        self._data[key] = value
 
     def __delitem__(self,key):
         """Dictionary emulation. Marks key as deleted."""
         if key in self.changed: self.changed.remove(key)
         self.deleted.add(key)
-        del self.data[key]
+        del self._data[key]
 
     def pop(self,key,default=None):
         """Dictionary emulation: extract value and delete from dictionary."""
         if key in self.changed: self.changed.remove(key)
         self.deleted.add(key)
-        return self.data.pop(key,default)
+        return self._data.pop(key, default)
 
 # Structure wrappers ----------------------------------------------------------
 class _StructsCache(dict):
@@ -1579,7 +1579,7 @@ class DataTableColumn(object):
                 column in col_dict)
     def items(self):
         """Dictionary emulation."""
-        tableData = self._table.data
+        tableData = self._table._data
         column = self.column
         return [(key,tableData[key][column]) for key in self]
     def clear(self):
@@ -1591,11 +1591,11 @@ class DataTableColumn(object):
     #--Overloaded
     def __contains__(self,key):
         """Dictionary emulation."""
-        tableData = self._table.data
+        tableData = self._table._data
         return key in tableData and self.column in tableData[key]
     def __getitem__(self,key):
         """Dictionary emulation."""
-        return self._table.data[key][self.column]
+        return self._table._data[key][self.column]
     def __setitem__(self,key,value):
         """Dictionary emulation. Marks key as changed."""
         self._table.setItem(key, self.column, value)
@@ -1620,7 +1620,7 @@ class DataTable(DataDict):
         self.dictFile = dictFile
         dictFile.load()
         self.vdata = dictFile.vdata
-        self.data = dictFile.data
+        self._data = dictFile.pickled_data
         self.hasChanged = False ##: move to PickleDict
 
     def save(self):
@@ -1631,9 +1631,8 @@ class DataTable(DataDict):
 
     def getItem(self,row,column,default=None):
         """Get item from row, column. Return default if row,column doesn't exist."""
-        data = self.data
-        if row in data and column in data[row]:
-            return data[row][column]
+        if row in self._data and column in self._data[row]:
+            return self._data[row][column]
         else:
             return default
 
@@ -1643,58 +1642,53 @@ class DataTable(DataDict):
 
     def setItem(self,row,column,value):
         """Set value for row, column."""
-        data = self.data
-        if row not in data:
-            data[row] = {}
-        data[row][column] = value
+        if row not in self._data:
+            self._data[row] = {}
+        self._data[row][column] = value
         self.hasChanged = True
 
     def delItem(self,row,column):
         """Deletes item in row, column."""
-        data = self.data
-        if row in data and column in data[row]:
-            del data[row][column]
+        if row in self._data and column in self._data[row]:
+            del self._data[row][column]
             self.hasChanged = True
 
     def delRow(self,row):
         """Deletes row."""
-        data = self.data
-        if row in data:
-            del data[row]
+        if row in self._data:
+            del self._data[row]
             self.hasChanged = True
 
     def delColumn(self,column):
         """Deletes column of data."""
-        for rowData in self.data.values():
+        for rowData in self._data.values():
             if column in rowData:
                 del rowData[column]
                 self.hasChanged = True
 
     def moveRow(self,oldRow,newRow):
         """Renames a row of data."""
-        data = self.data
-        if oldRow in data:
-            data[newRow] = data[oldRow]
-            del data[oldRow]
+        if oldRow in self._data:
+            self._data[newRow] = self._data[oldRow]
+            del self._data[oldRow]
             self.hasChanged = True
 
     def copyRow(self,oldRow,newRow):
         """Copies a row of data."""
-        data = self.data
-        if oldRow in data:
-            data[newRow] = data[oldRow].copy()
+        if oldRow in self._data:
+            self._data[newRow] = self._data[oldRow].copy()
             self.hasChanged = True
 
     #--Dictionary emulation
     def __setitem__(self,key,value):
-        self.data[key] = value
+        self._data[key] = value
         self.hasChanged = True
     def __delitem__(self,key):
-        del self.data[key]
+        del self._data[key]
         self.hasChanged = True
     def pop(self,key,default=None):
         self.hasChanged = True
-        return self.data.pop(key,default)
+        return self._data.pop(key, default)
 
 # Util Functions --------------------------------------------------------------
 #------------------------------------------------------------------------------
