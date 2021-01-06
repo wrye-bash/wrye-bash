@@ -62,10 +62,10 @@ class SreNPC(object):
         __slots__ = (u'flags', u'baseSpell', u'fatigue', u'barterGold',
                      u'level', u'calcMin', u'calcMax')
 
-    def __init__(self, sre_flags=0, data=None):
+    def __init__(self, sre_flags=0, data_=None):
         for attr in self.__slots__:
             setattr(self, attr, None)
-        if data: self.load(sre_flags, data)
+        if data_: self.load(sre_flags, data_)
 
     def getDefault(self,attr):
         """Returns a default version. Only supports acbs."""
@@ -76,9 +76,9 @@ class SreNPC(object):
         acbs.flags = bush.game_mod.records.MreNpc._flags(acbs.flags)
         return acbs
 
-    def load(self, sr_flags, data):
+    def load(self, sr_flags, data_):
         """Loads variables from data."""
-        with sio(data) as ins:
+        with sio(data_) as ins:
             def _unpack(fmt, fmt_siz):
                 return struct_unpack(fmt, ins.read(fmt_siz))
             sr_flags = SreNPC.sre_flags(sr_flags)

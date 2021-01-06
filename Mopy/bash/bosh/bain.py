@@ -1629,7 +1629,7 @@ class InstallersData(DataStore):
         self.bash_dir.makedirs()
         #--Persistent data
         self.dictFile = bolt.PickleDict(self.bash_dir.join(u'Installers.dat'))
-        self.data = {}
+        self._data = {}
         self.data_sizeCrcDate = bolt.LowerDict()
         from . import converters
         self.converters_data = converters.ConvertersData(bass.dirs[u'bainData'],
@@ -1696,9 +1696,9 @@ class InstallersData(DataStore):
         progress(0, _(u'Loading Data...'))
         self.dictFile.load()
         self.converters_data.load()
-        data = self.dictFile.data
-        self.data = data.get(u'installers', {}) or data.get(b'installers', {})
-        pickle = data.get(u'sizeCrcDate', {}) or data.get(b'sizeCrcDate', {})
+        pickl_data = self.dictFile.pickled_data
+        self._data = pickl_data.get(u'installers', {}) or pickl_data.get(b'installers', {})
+        pickle = pickl_data.get(u'sizeCrcDate', {}) or pickl_data.get(b'sizeCrcDate', {})
         self.data_sizeCrcDate = bolt.LowerDict(pickle) if not isinstance(
             pickle, bolt.LowerDict) else pickle
         # fixup: all markers had their archive attribute set to u'===='
@@ -1711,8 +1711,8 @@ class InstallersData(DataStore):
     def save(self):
         """Saves to pickle file."""
         if self.hasChanged:
-            self.dictFile.data[u'installers'] = self.data
-            self.dictFile.data[u'sizeCrcDate'] = self.data_sizeCrcDate
+            self.dictFile.pickled_data[u'installers'] = self._data
+            self.dictFile.pickled_data[u'sizeCrcDate'] = self.data_sizeCrcDate
             self.dictFile.vdata[u'version'] = 2
             self.dictFile.save()
             self.converters_data.save()

@@ -55,7 +55,7 @@ class ConvertersData(DataDict):
 
     def load(self):
         self.converterFile.load()
-        convertData = self.converterFile.data
+        convertData = self.converterFile.pickled_data
         self.bcfCRC_converter = convertData.get(u'bcfCRC_converter', {}) or \
                                 convertData.get(b'bcfCRC_converter', {})
         self.srcCRC_converters = convertData.get(u'srcCRC_converters', {}) or \
@@ -63,8 +63,8 @@ class ConvertersData(DataDict):
         return True
 
     def save(self):
-        self.converterFile.data[u'bcfCRC_converter'] = self.bcfCRC_converter
-        self.converterFile.data[u'srcCRC_converters'] = self.srcCRC_converters
+        self.converterFile.pickled_data[u'bcfCRC_converter'] = self.bcfCRC_converter
+        self.converterFile.pickled_data[u'srcCRC_converters'] = self.srcCRC_converters
         self.converterFile.save()
 
     def refreshConvertersNeeded(self):
