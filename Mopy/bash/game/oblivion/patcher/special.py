@@ -27,12 +27,12 @@ import re
 
 from collections import Counter, defaultdict
 from .... import bush, load_order
-from ....bolt import GPath, CsvReader, deprint
+from ....bolt import GPath, deprint
 from ....brec import MreRecord, RecHeader, null4
 from ....mod_files import ModFile, LoadFactory
 from ....parsers import _HandleAliases
 from ....patcher import getPatchesPath
-from ....patcher.base import Patcher, Abstract_Patcher, AListPatcher
+from ....patcher.base import Patcher, Abstract_Patcher
 from ....patcher.patchers.base import ListPatcher
 
 __all__ = [u'CoblCatalogsPatcher', u'CoblExhaustionPatcher',
@@ -184,24 +184,12 @@ class _ExSpecialList(_HandleAliases, ListPatcher, _ExSpecial):
         super(_ExSpecialList, self).__init__(p_file.pfile_aliases)
         ListPatcher.__init__(self, p_name, p_file, p_sources)
         self.id_info = {}
+
     @classmethod
     def gui_cls_vars(cls):
         cls_vars = super(_ExSpecialList, cls).gui_cls_vars()
         more = {u'canAutoItemCheck': False, u'_csv_key': cls._csv_key}
         return cls_vars.update(more) or cls_vars
-
-    def readFromText(self, textPath):  ##: belongs to a parsers.CsvParser class
-        """Imports id_info from specified text file."""
-        id_info = self.id_info
-        with CsvReader(textPath) as ins:
-            for fields in ins:
-                try:
-                    if fields[1][:2] != u'0x':  # may raise IndexError
-                        continue
-                    fields = self._parse_line(fields) # Py3: unpack
-                    self._update_info_dict(fields)
-                except (IndexError, ValueError, TypeError):
-                    """TypeError/ValueError trying to unpack None/few values"""
 
 class CoblExhaustionPatcher(_ExSpecialList):
     """Modifies most Greater power to work with Cobl's power exhaustion
@@ -226,8 +214,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
         for srcMod in load_order.get_ordered(count):
             log(u'  * %s: %d' % (srcMod, count[srcMod]))
 
-    @staticmethod
-    def _parse_line(csv_fields): # mod, objectIndex, time
+    def _parse_line(self, csv_fields): # mod, objectIndex, time
         return csv_fields[0], csv_fields[1], int(csv_fields[3])
 
     def _update_info_dict(self, fields):
@@ -308,8 +295,7 @@ class MorphFactionsPatcher(_ExSpecialList):
         for mod in load_order.get_ordered(changed):
             log(u'* %s: %d' % (mod, changed[mod]))
 
-    @staticmethod
-    def _parse_line(csv_fields):
+    def _parse_line(self, csv_fields):
         # type: # (list[unicode]) -> tuple[object] | None
         mod, objectIndex = csv_fields[0], csv_fields[1]
         morphName = csv_fields[4].strip()

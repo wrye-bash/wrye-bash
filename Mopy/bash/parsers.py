@@ -65,7 +65,38 @@ class _HandleAliases(object):
         """Create a long formid from a unicode modname and a unicode
         hexadecimal - it will blow with ValueError if hex_fid is not
         convertible."""
-        return self._get_alias(modname), int(hex_fid, 16)
+        if not hex_fid.startswith(u'0x'): raise ValueError
+        return self._get_alias(modname), int(hex_fid, 0)
+
+    def readFromText(self, csv_path):
+        """Reads information from the specified CSV file and stores the result
+        in id_stored_info. You must override _parse_line/_update_info_dict for
+        this method to work.
+
+        :param csv_path: The path to the CSV file that should be read."""
+        with CsvReader(csv_path) as ins:
+            for fields in ins:
+                try:
+                    fields = self._parse_line(fields)
+                    self._update_info_dict(fields)
+                except (IndexError, ValueError, TypeError):
+                    """TypeError/ValueError trying to unpack None/few values"""
+
+    def _parse_line(self, csv_fields):
+        """Parses the specified CSV line and returns a tuple containing the
+        result. Currently returns what _update_info_dict will use - we want to
+        standardise this (for instance the record signature described by this
+        line, the name of the plugin from which this line originated, the
+        (short) FormID of this record and the rest of the info as a tuple).
+
+        :param csv_fields: A line in a CSV file, already split into fields.
+        :return: A tuple containing the input to _update_info_dict."""
+        raise AbstractError
+
+    def _update_info_dict(self, fields):
+        """Update the parser's instance id_stored_info - both id and
+        stored_info vary in type and meaning."""
+        raise AbstractError
 
     def _load_plugin(self, mod_info, keepAll=True, target_types=None):
         """Loads the specified record types in the specified ModInfo and
@@ -327,48 +358,11 @@ class _AParser(_HandleAliases):
         return self._do_write_plugin(self._load_plugin(mod_info, keepAll=False,
             target_types=self.id_stored_info))
 
-    # Reading from CSV
-    def _get_read_format(self, csv_fields):
-        """Determines the _ACsvFormat to use when reading the specified CSV
-        line. We need to be dynamic here since some parsers need to support
-        multiple formats (e.g. for backwards compatibility).
-
-        :param csv_fields: A line in a CSV file, already split into fields.
-        :return: An _ACsvFormat instance (*not* a class!)."""
-        raise AbstractError()
-
-    def readFromText(self, csv_path):
-        """Reads information from the specified CSV file and stores the result
-        in id_stored_info. You must override _get_format for this method to
-        work.
-
-        :param csv_path: The path to the CSV file that should be read."""
-        with CsvReader(csv_path) as ins:
-            for csv_fields in ins:
-                # Figure out which format to use, then ask the format to parse
-                # the line
-                cur_format = self._get_read_format(csv_fields)
-                rec_type, source_mod, fid_key, rec_info = \
-                    cur_format.parse_line(csv_fields)
-                self.id_stored_info[rec_type][source_mod][fid_key] = rec_info
-
     # Other API
     @property
     def all_types(self):
         """Returns a set of all record types that this parser requires."""
         return set(self._fp_types) | set(self._sp_types)
-
-# CSV Formats
-class _ACsvFormat(object):
-    """A format determines how lines in a CSV file are parsed and written."""
-    def parse_line(self, csv_fields):
-        """Parses the specified CSV line and returns a tuple containing the
-        result.
-
-        :param csv_fields: A line in a CSV file, already split into fields.
-        :return: A tuple containing the following, in order: The type of record
-            described by this line, the name of the plugin from which this line
-            originated, the (short) FormID of this"""
 
 class ActorFactions(_AParser):
     """Parses factions from NPCs and Creatures (in games that have those). Can
@@ -412,22 +406,21 @@ class ActorFactions(_AParser):
             target_entry.rank = rank
             target_entry.unused1 = b'ODB'
 
-    def readFromText(self,textPath):
-        """Imports faction data from specified text file."""
-        type_id_factions = self.id_stored_info
-        with CsvReader(textPath) as ins:
-            for fields in ins:
-                if len(fields) < 8 or fields[3][:2] != u'0x': continue
-                type_,aed,amod,aobj,fed,fmod,fobj,rank = fields[:9]
-                aid = self._coerce_fid(amod, aobj)
-                fid = self._coerce_fid(fmod, fobj)
-                rank = int(rank)
-                id_factions = type_id_factions[type_]
-                factions = id_factions.get(aid)
-                factiondict = dict(factions or [])
-                factiondict.update({fid:rank})
-                id_factions[aid] = [(fid,rank) for fid,rank in
-                                    factiondict.iteritems()]
+    def _parse_line(self, csv_fields):
+        type_, _aed, amod, aobj, _fed, fmod, fobj, rank = csv_fields[:9]
+        aid = self._coerce_fid(amod, aobj)
+        fid = self._coerce_fid(fmod, fobj)
+        rank = int(rank)
+        return aid, fid, rank, type_
+
+    def _update_info_dict(self, fields):
+        aid, fid, rank, type_ = fields
+        id_factions = self.id_stored_info[type_]
+        factions = id_factions.get(aid)
+        factiondict = dict(factions or [])
+        factiondict.update({fid: rank})
+        id_factions[aid] = [(fid, rank) for fid, rank in
+                            factiondict.iteritems()]
 
     def writeToText(self,textPath):
         """Exports faction data to specified text file."""
@@ -441,15 +434,15 @@ class ActorFactions(_AParser):
                 _(u'Rank')))
             for type_ in sorted(type_id_factions):
                 id_factions = type_id_factions[type_]
-                for id_ in sorted(id_factions,
-                                  key=lambda x:id_eid.get(x).lower()):
-                    actorEid = id_eid.get(id_,u'Unknown')
-                    for faction,rank in sorted(id_factions[id_],
-                                               key=lambda x:id_eid.get(
-                                                       x[0]).lower()):
-                        factionEid = id_eid.get(faction,u'Unknown')
+                tuples = ((a, b, id_eid.get(a, u'Unknown')) for a, b in
+                          id_factions.iteritems())
+                for aid, factions, actorEid in sorted(tuples, key=lambda
+                        (_a, _b, c): c.lower()):
+                    for faction,rank in sorted(
+                            factions, key=lambda x:id_eid.get(x[0]).lower()):
+                        factionEid = id_eid.get(faction, u'Unknown')
                         out.write(rowFormat % (
-                            type_, actorEid, id_[0], id_[1], factionEid,
+                            type_, actorEid, aid[0], aid[1], factionEid,
                             faction[0], faction[1], rank))
 
 #------------------------------------------------------------------------------
@@ -748,25 +741,25 @@ class FactionRelations(_AParser):
             for rel_attr, rel_val in izip(self.cls_rel_attrs, relation):
                 setattr(target_entry, rel_attr, rel_val)
 
-    def readFromText(self,textPath):
-        """Imports faction relations from specified text file."""
+    def _parse_line(self, csv_fields):
+        _med, mmod, mobj, _oed, omod, oobj = csv_fields[:6]
+        mid = self._coerce_fid(mmod, mobj)
+        oid = self._coerce_fid(omod, oobj)
+        relation_attrs = (oid,) + tuple(csv_fields[6:])
+        return mid, relation_attrs
+
+    def _update_info_dict(self, fields):
+        mid, relation_attrs = fields
         id_relations = self.id_stored_info[b'FACT']
-        with CsvReader(textPath) as ins:
-            for fields in ins:
-                if len(fields) < 7 or fields[2][:2] != u'0x': continue
-                med, mmod, mobj, oed, omod, oobj = fields[:6]
-                mid = self._coerce_fid(mmod, mobj)
-                oid = self._coerce_fid(omod, oobj)
-                relation_attrs = (oid,) + tuple(fields[6:])
-                relations = id_relations.get(mid)
-                if relations is None:
-                    relations = id_relations[mid] = []
-                for index,entry in enumerate(relations):
-                    if entry[0] == oid:
-                        relations[index] = relation_attrs
-                        break
-                else:
-                    relations.append(relation_attrs)
+        relations = id_relations.get(mid)
+        if relations is None:
+            relations = id_relations[mid] = []
+        for index, entry in enumerate(relations):
+            if entry[0] == relation_attrs[0]: # oid
+                relations[index] = relation_attrs
+                break
+        else:
+            relations.append(relation_attrs)
 
     def writeToText(self,textPath):
         """Exports faction relations to specified text file."""
