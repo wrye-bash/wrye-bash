@@ -2409,13 +2409,20 @@ class ModInfos(FileInfos):
     @staticmethod
     def _tagsies(modInfo, tagList):
         mname = modInfo.name
-        def _tags(msg, iterable, tagsList):
-            return tagsList + u'  * ' + msg + u', '.join(iterable) + u'\n'
+        # Tracks if this plugin has at least one bash tags source - which may
+        # still result in no tags at the end, e.g. if source A adds a tag and
+        # source B removes it
+        has_tags_source = False
+        def _tags(tags_msg, tags_iter, tagsList):
+            tags_result = u', '.join(tags_iter) if tags_iter else _(u'No tags')
+            return tagsList + u'  * ' + tags_msg + tags_result + u'\n'
         tags_desc = modInfo.getBashTagsDesc()
+        has_tags_source |= bool(tags_desc)
         if tags_desc:
             tagList = _tags(_(u'From Plugin Description: '), sorted(tags_desc),
                             tagList)
         loot_added, loot_removed = read_loot_tags(mname)
+        has_tags_source |= bool(loot_added | loot_removed)
         if loot_added:
             tagList = _tags(_(u'From LOOT Masterlist and / or Userlist: '),
                             sorted(loot_added), tagList)
@@ -2423,6 +2430,7 @@ class ModInfos(FileInfos):
             tagList = _tags(_(u'Removed by LOOT Masterlist and / or '
                               u'Userlist: '), sorted(loot_removed), tagList)
         dir_added, dir_removed = read_dir_tags(mname)
+        has_tags_source |= bool(dir_added | dir_removed)
         tags_file = u"'Data/BashTags/%s'" % (mname.body + u'.txt')
         if dir_added:
             tagList = _tags(_(u'Added by %s: ') % tags_file, sorted(dir_added),
@@ -2432,9 +2440,11 @@ class ModInfos(FileInfos):
                             sorted(dir_removed), tagList)
         sorted_tags = sorted(modInfo.getBashTags())
         if not modInfo.is_auto_tagged() and sorted_tags:
+            has_tags_source = True
             tagList = _tags(_(u'From Manual (overrides all other sources): '),
                 sorted_tags, tagList)
-        return _tags(_(u'Result: '), sorted_tags, tagList)
+        return (_tags(_(u'Result: '), sorted_tags, tagList)
+                if has_tags_source else tagList + u'    %s\n' % _(u'No tags'))
 
     @staticmethod
     def getTagList(mod_list=None):
@@ -2449,9 +2459,7 @@ class ModInfos(FileInfos):
         if mod_list:
             for modInfo in mod_list:
                 tagList += u'\n* %s\n' % modInfo
-                if modInfo.getBashTags():
-                    tagList = ModInfos._tagsies(modInfo, tagList)
-                else: tagList += u'    '+_(u'No tags')
+                tagList = ModInfos._tagsies(modInfo, tagList)
         else:
             # sort output by load order
             lindex = lambda t: load_order.cached_lo_index(t[0])

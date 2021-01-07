@@ -1691,26 +1691,27 @@ class ModDetails(_ModsSavesDetails):
                 _refreshUI()
         # Copy tags to various places
         bashTagsDesc = mod_info.getBashTagsDesc()
+        tag_plugin_name = mod_info.name
+        # We need to grab both the ones from the description and from LOOT,
+        # since we need to save a diff in case of Copy to Data/BashTags
+        added_tags, deleted_tags = bosh.read_loot_tags(tag_plugin_name)
+        # Emulate the effects of applying the LOOT tags
+        old_tags = bashTagsDesc.copy()
+        old_tags |= added_tags
+        old_tags -= deleted_tags
+        dir_diff = bosh.mods_metadata.diff_tags(mod_tags, old_tags)
         class _CopyBashTagsDir(EnabledLink):
             _text = _(u'Copy to Data/BashTags')
-            _help = _(u'Copies currently applied tags to %s.') % (
+            _help = _(u'Copies a diff between currently applied tags and '
+                      u'description/LOOT tags to %s.') % (
                 bass.dirs[u'tag_files'].join(mod_info.name.body + u'.txt'))
             def _enable(self):
-                return (not mod_info.is_auto_tagged()
-                        and mod_tags != bashTagsDesc)
+                return (not mod_info.is_auto_tagged() and
+                        bosh.read_dir_tags(tag_plugin_name) != dir_diff)
             def Execute(self):
                 """Copy manually assigned bash tags into the Data/BashTags
                 folder."""
-                # We need to grab both the ones from the description and from
-                # LOOT, since we need to save a diff
-                plugin_name = mod_info.name
-                added_tags, deleted_tags = bosh.read_loot_tags(plugin_name)
-                # Emulate the effects of applying the LOOT tags
-                old_tags = bashTagsDesc.copy()
-                old_tags |= added_tags
-                old_tags -= deleted_tags
-                bosh.mods_metadata.save_tags_to_dir(plugin_name, mod_tags,
-                                                    old_tags)
+                bosh.mods_metadata.save_tags_to_dir(tag_plugin_name, dir_diff)
                 _refreshUI()
         class _CopyDesc(EnabledLink):
             _text = _(u'Copy to Description')
