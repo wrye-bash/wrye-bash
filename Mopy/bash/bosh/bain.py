@@ -1066,15 +1066,19 @@ class Installer(object):
                 self.tempList.remove()
             outFile.moveTo(realOutFile)
 
-    def _do_sync_data(self, proj_dir, delta_files):
+    def _do_sync_data(self, proj_dir, delta_files, progress):
         """Performs a Sync from Data on the specified project directory with
         the specified missing or mismatched files."""
         data_dir_join = bass.dirs[u'mods'].join
         norm_ghost_get = Installer.getGhosted().get
         upt_numb = del_numb = 0
         proj_dir_join = proj_dir.join
+        progress.setFull(len(delta_files))
         for rel_src, rel_dest in self.refreshDataSizeCrc().iteritems():
             if rel_src not in delta_files: continue
+            progress(del_numb + upt_numb,
+                     _(u'Syncing from %s folder...') % bush.game.mods_dir +
+                     u'\n' + rel_src)
             full_src = data_dir_join(norm_ghost_get(rel_src, rel_src))
             full_dest = proj_dir_join(rel_dest)
             if not full_src.exists():
@@ -1214,7 +1218,7 @@ class Installer(object):
         """
         raise AbstractError
 
-    def sync_from_data(self, delta_files):
+    def sync_from_data(self, delta_files, progress):
         """Updates this installer according to the specified files in the Data
         directory.
 
@@ -1446,14 +1450,16 @@ class InstallerArchive(Installer):
         return self._extract_wizard_files(self.has_fomod_conf,
                                           _(u'Extracting FOMOD files...'))
 
-    def sync_from_data(self, delta_files): ##: add a progress param?
+    def sync_from_data(self, delta_files, progress):
         # Extract to a temp project, then perform the sync as if it were a
         # regular project and finally repack
         unpack_dir = self.unpackToTemp([x[0] for x in self.fileSizeCrcs],
-            recurse=True)
-        upt_numb, del_numb = self._do_sync_data(unpack_dir, delta_files)
+            recurse=True, progress=SubProgress(progress, 0.1, 0.4))
+        upt_numb, del_numb = self._do_sync_data(
+            unpack_dir, delta_files, progress=SubProgress(progress, 0.4, 0.5))
         self.packToArchive(unpack_dir, self.writable_archive_name(),
-                           isSolid=True, blockSize=None)
+                           isSolid=True, blockSize=None,
+                           progress=SubProgress(progress, 0.5, 1.0))
         bass.rmTempDir()
         return upt_numb, del_numb
 
@@ -1581,8 +1587,8 @@ class InstallerProject(Installer):
         return self._fs_install(dest_src, srcDirJoin, progress, progressPlus,
                                 None)
 
-    def sync_from_data(self, delta_files):
-        return self._do_sync_data(self.ipath, delta_files)
+    def sync_from_data(self, delta_files, progress):
+        return self._do_sync_data(self.ipath, delta_files, progress)
 
     @staticmethod
     def _list_package(apath, log):

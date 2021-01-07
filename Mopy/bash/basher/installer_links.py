@@ -1128,7 +1128,8 @@ class Installer_SyncFromData(_SingleInstallable):
         with balt.Progress(self._text, u'\n' + u' ' * 60) as progress:
             progress(0.1,_(u'Updating files.'))
             actual_upd, actual_del = self._selected_info.sync_from_data(
-                sel_missing | sel_mismatched)
+                sel_missing | sel_mismatched,
+                progress=SubProgress(progress, 0.1, 0.7))
             if (actual_del != len(sel_missing)
                     or actual_upd != len(sel_mismatched)):
                 self._showWarning(
