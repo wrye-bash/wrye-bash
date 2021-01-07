@@ -37,7 +37,7 @@ from ..exception import BoltError, CancelError, FileEditError, \
 from ..gui import CancelButton, DeselectAllButton, HLayout, Label, \
     LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
     SaveAsButton, SelectAllButton, Stretch, VLayout, DialogWindow, \
-    CheckListBox, HorizontalLine
+    CheckListBox, HorizontalLine, EventResult
 from ..patcher import exportConfig, list_patches_dir
 from ..patcher.patch_files import PatchFile
 
@@ -426,4 +426,5 @@ class PatchDialog(DialogWindow):
             patcher = self.currentPatcher
             if patcher is not None:
                 patcher.mass_select(select=not wrapped_evt.is_shift_down)
-                return
+                # Otherwise will select 'Alias Mod Names' ('A' key is pressed!)
+                return EventResult.FINISH

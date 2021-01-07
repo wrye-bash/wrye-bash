@@ -31,7 +31,7 @@ from .base_components import _AComponent
 
 class Button(_AComponent):
     """Represents a generic button that can be pressed, triggering an action.
-    You probably want one of the more specialized versions of this class
+    When appropriate, use one of the more specialized versions of this class
     (e.g. OkButton or CancelButton).
 
     Events:
