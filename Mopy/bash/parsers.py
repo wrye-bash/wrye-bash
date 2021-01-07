@@ -486,32 +486,20 @@ class ActorLevels(_HandleAliases):
         if changed: modFile.safeSave()
         return changed
 
-    def readFromText(self,textPath):
-        """Imports NPC level data from specified text file."""
-        mod_id_levels = self.mod_id_levels
-        with CsvReader(textPath) as ins:
-            for fields in ins:
-                if fields[0][:2] == u'0x': #old format ## TODO(ut) drop?
-                    fid,eid,offset,calcMin,calcMax = fields[:5]
-                    source = GPath(u'Unknown')
-                    fidObject = _coerce(fid[4:], int, 16)
-                    fid = (GPath(bush.game.master_file), fidObject)
-                    eid = _coerce(eid, unicode)
-                    offset = _coerce(offset, int)
-                    calcMin = _coerce(calcMin, int)
-                    calcMax = _coerce(calcMax, int)
-                else:
-                    if len(fields) < 7 or fields[3][:2] != u'0x': continue
-                    source,eid,fidMod,fidObject,offset,calcMin,calcMax = \
-                        fields[:7]
-                    if source.lower() in (u'none', bush.game.master_file.lower()): continue
-                    source = GPath(source)
-                    if fidMod.lower() == u'none': continue
-                    fid = self._coerce_fid(fidMod, fidObject)
-                    offset = _coerce(offset, int)
-                    calcMin = _coerce(calcMin, int)
-                    calcMax = _coerce(calcMax, int)
-                mod_id_levels[source][fid] = (eid, 1, offset, calcMin, calcMax)
+    def _parse_line(self, csv_fields):
+        source, eid, fidMod, fidObject, offset, calcMin, calcMax = csv_fields[:7]
+        if source.lower() in (u'none', bush.game.master_file.lower()): # yak!!
+            raise TypeError
+        if fidMod.lower() == u'none': raise TypeError
+        fid = self._coerce_fid(fidMod, fidObject)
+        offset = _coerce(offset, int)
+        calcMin = _coerce(calcMin, int)
+        calcMax = _coerce(calcMax, int)
+        return source, fid, eid, offset, calcMax, calcMin
+
+    def _update_info_dict(self, fields):
+        source, fid, eid, offset, calcMax, calcMin = fields
+        self.mod_id_levels[source][fid] = (eid, 1, offset, calcMin, calcMax)
 
     def writeToText(self,textPath):
         """Export NPC level data to specified text file."""
@@ -644,9 +632,7 @@ class EditorIds(_HandleAliases):
             reGoodEid = re.compile(u'^[a-zA-Z]')
             for fields in ins:
                 if len(fields) < 4 or fields[2][:2] != u'0x': continue
-                top_grup,mod,objectIndex,eid = fields[:4] ##: debug: top_grup??
-                longid = self._coerce_fid(mod, objectIndex)
-                eid = _coerce(eid,unicode, AllowNone=True)
+                eid, longid, top_grup = self._parse_line(fields)
                 if not reValidEid.match(eid):
                     if badEidsList is not None:
                         badEidsList.append(eid)
@@ -659,6 +645,12 @@ class EditorIds(_HandleAliases):
                 #--Explicit old to new def? (Used for script updating.)
                 if len(fields) > 4:
                     self.old_new[_coerce(fields[4], unicode).lower()] = eid
+
+    def _parse_line(self, csv_fields):
+        top_grup, mod, objectIndex, eid = csv_fields[:4]  ##: debug: top_grup??
+        longid = self._coerce_fid(mod, objectIndex)
+        eid = _coerce(eid, unicode, AllowNone=True)
+        return eid, longid, top_grup
 
     def writeToText(self,textPath):
         """Exports eids to specified text file."""
@@ -764,21 +756,19 @@ class FidReplacer(_HandleAliases):
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id
 
-    def readFromText(self,textPath):
-        """Reads replacement data from specified text file."""
-        old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
-        with CsvReader(textPath) as ins:
-            for fields in ins:
-                if len(fields) < 7 or fields[2][:2] != u'0x'\
-                        or fields[6][:2] != u'0x': continue
-                oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
-                oldId = self._coerce_fid(oldMod, oldObj)
-                newId = self._coerce_fid(newMod, newObj)
-                oldEid = _coerce(oldEid, unicode, AllowNone=True)
-                newEid = _coerce(newEid, unicode, AllowNone=True)
-                old_new[oldId] = newId
-                old_eid[oldId] = oldEid
-                new_eid[newId] = newEid
+    def _parse_line(self, csv_fields):
+        oldMod, oldObj, oldEid, newEid, newMod, newObj = csv_fields[1:7]
+        oldId = self._coerce_fid(oldMod, oldObj)
+        newId = self._coerce_fid(newMod, newObj)
+        oldEid = _coerce(oldEid, unicode, AllowNone=True)
+        newEid = _coerce(newEid, unicode, AllowNone=True)
+        return newEid, newId, oldEid, oldId
+
+    def _update_info_dict(self, fields):
+        newEid, newId, oldEid, oldId = fields
+        self.old_new[oldId] = newId
+        self.old_eid[oldId] = oldEid
+        self.new_eid[newId] = newEid
 
     def updateMod(self,modInfo,changeBase=False):
         """Updates specified mod file."""
@@ -828,7 +818,8 @@ class FullNames(_HandleAliases):
 
     def __init__(self, types=None, aliases_=None):
         super(FullNames, self).__init__(aliases_)
-        self.type_id_name = {} #--(eid,name) = type_id_name[type][longid] # TODO: defaultdict
+        #--(eid,name) = type_id_name[type][longid]
+        self.type_id_name = defaultdict(dict)
         self.types = types or bush.game.namesTypes
 
     def readFromMod(self,modInfo):
@@ -838,7 +829,6 @@ class FullNames(_HandleAliases):
         for type_ in self.types:
             typeBlock = modFile.tops.get(type_,None)
             if not typeBlock: continue
-            if type_ not in type_id_name: type_id_name[type_] = {}
             id_name = type_id_name[type_]
             for record in typeBlock.getActiveRecords():
                 longid = record.fid
@@ -865,20 +855,16 @@ class FullNames(_HandleAliases):
         if changed: modFile.safeSave()
         return changed
 
-    def readFromText(self,textPath):
-        """Imports type_id_name from specified text file."""
-        type_id_name = self.type_id_name
-        with CsvReader(textPath) as ins:
-            for fields in ins:
-                if len(fields) < 5 or fields[2][:2] != u'0x': continue
-                top_grup,mod,objectIndex,eid,full = fields[:5]
-                longid = self._coerce_fid(mod, objectIndex)
-                eid = _coerce(eid, unicode, AllowNone=True)
-                full = _coerce(full, unicode, AllowNone=True)
-                if top_grup in type_id_name:
-                    type_id_name[top_grup][longid] = (eid,full)
-                else:
-                    type_id_name[top_grup] = {longid:(eid,full)}
+    def _parse_line(self, csv_fields):
+        top_grup, mod, objectIndex, eid, full = csv_fields[:5]
+        longid = self._coerce_fid(mod, objectIndex)
+        eid = _coerce(eid, unicode, AllowNone=True)
+        full = _coerce(full, unicode, AllowNone=True)
+        return eid, full, longid, top_grup
+
+    def _update_info_dict(self, fields):
+        eid, full, longid, top_grup = fields
+        self.type_id_name[top_grup][longid] = (eid, full)
 
     def writeToText(self,textPath):
         """Exports type_id_name to specified text file."""
