@@ -1452,13 +1452,19 @@ class InstallerArchive(Installer):
         unpack_dir = self.unpackToTemp([x[0] for x in self.fileSizeCrcs],
             recurse=True)
         upt_numb, del_numb = self._do_sync_data(unpack_dir, delta_files)
+        self.packToArchive(unpack_dir, self.writable_archive_name(),
+                           isSolid=True, blockSize=None)
+        bass.rmTempDir()
+        return upt_numb, del_numb
+
+    def writable_archive_name(self):
+        """Returns a version of the name of this archive with the file
+        extension changed to be writable (i.e. zip or 7z), if it isn't
+        already."""
         archive_name = GPath(self.archive)
         new_ext = (archive_name.cext if archive_name.cext in archives.writeExts
                    else archives.defaultExt)
-        self.packToArchive(unpack_dir, archive_name.root + new_ext,
-            isSolid=True, blockSize=None)
-        bass.rmTempDir()
-        return upt_numb, del_numb
+        return archive_name.root + new_ext
 
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):

@@ -1094,7 +1094,8 @@ class Installer_SyncFromData(_SingleInstallable):
                     self._selected_info.mismatchedFiles)
 
     def Execute(self):
-        if self._selected_item.cext == u'.rar':
+        was_rar = self._selected_item.cext == u'.rar'
+        if was_rar:
             if not self._askYes(
                     _(u'.rar files cannot be modified. Wrye Bash can however '
                       u'repack them to .7z files, which can then be '
@@ -1138,8 +1139,17 @@ class Installer_SyncFromData(_SingleInstallable):
                     _(u'Updated %s. Expected to update %s file(s).') % (
                         actual_upd, len(sel_mismatched))  + u'\n' +
                     _(u'Check the integrity of the installer.'))
-            self._selected_info.refreshBasic(SubProgress(progress, 0.1, 0.99))
-            self.idata.irefresh(what=u'NS')
+            self._selected_info.refreshBasic(SubProgress(progress, 0.7, 0.8))
+            if was_rar:
+                final_package = self._selected_info.writable_archive_name()
+                # Move the new archive directly underneath the old archive
+                self.idata.refresh_installer(
+                    final_package, is_project=False, do_refresh=False,
+                    progress=SubProgress(progress, 0.8, 0.9),
+                    install_order=self._selected_info.order + 1)
+                self.idata[final_package].is_active = True
+            self.idata.irefresh(progress=SubProgress(progress, 0.9, 0.99),
+                                what=u'NS')
             self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
