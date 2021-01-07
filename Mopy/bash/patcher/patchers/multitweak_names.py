@@ -33,7 +33,7 @@ from collections import OrderedDict
 from ...bolt import build_esub, RecPath
 from ...brec import MreRecord  # yuck, see usage below
 from ...exception import AbstractError
-from ...parsers import LoadFactory, ModFile  # yuck, see usage below
+from ...mod_files import LoadFactory, ModFile  # yuck, see usage below
 from ...patcher.patchers.base import MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker
 
@@ -282,10 +282,6 @@ class NamesTweak_Scrolls(_AMgefNamesTweak):
             ench_plugin.load(do_unpack=True)
             for record in ench_plugin.ENCH.getActiveRecords():
                 id_ench[record.fid] = record
-
-    def finish_tweaking(self, patch_file):
-        # Clean this up ##: not sure if actually needed?
-        self._look_up_ench = None
 
     def _get_rename_params(self, record):
         return record, lambda e: self._look_up_ench.get(e, 6) ##: 6?

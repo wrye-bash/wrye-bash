@@ -28,7 +28,9 @@ import random
 import re
 # Internal
 from ... import bush, load_order
+from ...brec import MreRecord  # yuck, see usage below
 from ...bolt import GPath, deprint, floats_equal
+from ...mod_files import LoadFactory, ModFile  # yuck, see usage below
 from ...patcher.patchers.base import MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker
 
@@ -865,6 +867,43 @@ class AssortedTweak_AllWaterDamages(MultiTweakItem):
 
     def tweak_record(self, record):
         record.flags.causesDamage = True
+
+#------------------------------------------------------------------------------
+class AssortedTweak_AbsorbSummonFix(MultiTweakItem):
+    """Adds the 'No Absorb/Reflect' flag to summoning spells."""
+    tweak_read_classes = b'SPEL',
+    tweak_name = _(u'Magic: Summoning Absorption Fix')
+    tweak_tip = _(u'Adds the "No Absorb/Reflect" flag to all summoning '
+                  u'spells. Fixes those spells with spell absorption.')
+    tweak_key = u'AbsorbSummonFix'
+    tweak_log_msg = _(u'Spells fixed: %(total_changed)d')
+    default_enabled = True
+    _look_up_mgef = None
+
+    def prepare_for_tweaking(self, patch_file):
+        ##: Same HACK as in NamesTweak_Scrolls.prepare_for_tweaking
+        self._look_up_mgef = id_mgef = {}
+        mgef_factory = LoadFactory(False, MreRecord.type_class[b'MGEF'])
+        for pl_path in patch_file.loadMods:
+            ench_plugin = ModFile(patch_file.p_file_minfos[pl_path],
+                                  mgef_factory)
+            ench_plugin.load(do_unpack=True)
+            for record in ench_plugin.tops[b'MGEF'].getActiveRecords():
+                id_mgef[record.fid] = record
+
+    def wants_record(self, record):
+        if record.dataFlags.noAbsorbReflect: return False
+        # If we don't have MGEF lookup available yet, just forward everything
+        if not self._look_up_mgef: return True
+        # Otherwise, we can look through the effects for the right archetype
+        for spell_eff in record.effects:
+            mgef_record = self._look_up_mgef.get(spell_eff.effect_formid)
+            if mgef_record and mgef_record.effect_archetype == 18:
+                return True # 18 == Summon Creature
+        return False
+
+    def tweak_record(self, record):
+        record.dataFlags.noAbsorbReflect = True
 
 #------------------------------------------------------------------------------
 class TweakAssortedPatcher(MultiTweaker):

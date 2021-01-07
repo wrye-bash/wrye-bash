@@ -1658,6 +1658,7 @@ assorted_tweaks = {
     u'AssortedTweak_LightFadeValueFix',
     u'AssortedTweak_TextlessLSCRs',
     u'AssortedTweak_AllWaterDamages',
+    u'AssortedTweak_AbsorbSummonFix',
 }
 staff_condition = (u'animationType', 8)
 
