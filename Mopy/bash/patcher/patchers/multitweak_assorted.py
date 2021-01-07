@@ -851,6 +851,22 @@ class AssortedTweak_GunsUseISAnimation(MultiTweakItem):
         record.dnamFlags1.dontUse1stPersonISAnimations = False
 
 #------------------------------------------------------------------------------
+class AssortedTweak_AllWaterDamages(MultiTweakItem):
+    """Add the 'Causes Damage' flag to all WATR records."""
+    tweak_read_classes = b'WATR',
+    tweak_name = _(u'Mark All Water As Damaging')
+    tweak_tip = _(u'Adds the "Causes Damage" flag to every type of water in '
+                  u'the game. Used by some needs mods.')
+    tweak_key = u'AllWaterDamages'
+    tweak_log_msg = _(u'Waters marked as damaging: %(total_changed)d')
+
+    def wants_record(self, record):
+        return not record.flags.causesDamage
+
+    def tweak_record(self, record):
+        record.flags.causesDamage = True
+
+#------------------------------------------------------------------------------
 class TweakAssortedPatcher(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     # Run this before all other tweakers, since it contains the 'playable'

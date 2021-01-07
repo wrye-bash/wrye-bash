@@ -1657,6 +1657,7 @@ assorted_tweaks = {
     u'AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly',
     u'AssortedTweak_LightFadeValueFix',
     u'AssortedTweak_TextlessLSCRs',
+    u'AssortedTweak_AllWaterDamages',
 }
 staff_condition = (u'animationType', 8)
 
