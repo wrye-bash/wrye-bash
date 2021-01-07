@@ -30,6 +30,7 @@ from .... import bush, load_order
 from ....bolt import GPath, CsvReader, deprint
 from ....brec import MreRecord, RecHeader, null4
 from ....mod_files import ModFile, LoadFactory
+from ....parsers import _HandleAliases
 from ....patcher import getPatchesPath
 from ....patcher.base import Patcher, Abstract_Patcher, AListPatcher
 from ....patcher.patchers.base import ListPatcher
@@ -177,15 +178,32 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
         log(u'* '+_(u'Effects Cataloged') + u': %d' % len(effect_ingred))
 
 #------------------------------------------------------------------------------
-class _ExSpecialList(_ExSpecial, AListPatcher):
+class _ExSpecialList(_HandleAliases, ListPatcher, _ExSpecial):
 
+    def __init__(self, p_name, p_file, p_sources):
+        super(_ExSpecialList, self).__init__(p_file.pfile_aliases)
+        ListPatcher.__init__(self, p_name, p_file, p_sources)
+        self.id_info = {}
     @classmethod
     def gui_cls_vars(cls):
         cls_vars = super(_ExSpecialList, cls).gui_cls_vars()
         more = {u'canAutoItemCheck': False, u'_csv_key': cls._csv_key}
         return cls_vars.update(more) or cls_vars
 
-class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
+    def readFromText(self, textPath):  ##: belongs to a parsers.CsvParser class
+        """Imports id_info from specified text file."""
+        id_info = self.id_info
+        with CsvReader(textPath) as ins:
+            for fields in ins:
+                try:
+                    if fields[1][:2] != u'0x':  # may raise IndexError
+                        continue
+                    fields = self._parse_line(fields) # Py3: unpack
+                    self._update_info_dict(fields)
+                except (IndexError, ValueError, TypeError):
+                    """TypeError/ValueError trying to unpack None/few values"""
+
+class CoblExhaustionPatcher(_ExSpecialList):
     """Modifies most Greater power to work with Cobl's power exhaustion
     feature."""
     patcher_name = _(u'Cobl Exhaustion')
@@ -200,7 +218,7 @@ class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
         super(CoblExhaustionPatcher, self).__init__(p_name, p_file, p_sources)
         self.isActive |= (_cobl_main in p_file.loadSet and
             self.patchFile.p_file_minfos.getVersionFloat(_cobl_main) > 1.65)
-        self.id_exhaustion = {}
+        self.id_exhaustion = self.id_info
 
     def _pLog(self, log, count):
         log.setHeader(u'= ' + self._patcher_name)
@@ -208,21 +226,12 @@ class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
         for srcMod in load_order.get_ordered(count):
             log(u'  * %s: %d' % (srcMod, count[srcMod]))
 
-    def readFromText(self, textPath):
-        """Imports type_id_name from specified text file."""
-        aliases = self.patchFile.pfile_aliases
-        id_exhaustion = self.id_exhaustion
-        with CsvReader(textPath) as ins:
-            for fields in ins:
-                try:
-                    if fields[1][:2] != u'0x': # may raise IndexError
-                        continue
-                    mod, objectIndex, eid, time = fields[:4] # may raise VE
-                    mod = GPath(mod)
-                    longid = (aliases.get(mod, mod), int(objectIndex[2:], 16))
-                    id_exhaustion[longid] = int(time)
-                except (IndexError, ValueError):
-                    pass #ValueError: Either we couldn't unpack or int() failed
+    @staticmethod
+    def _parse_line(csv_fields): # mod, objectIndex, time
+        return csv_fields[0], csv_fields[1], int(csv_fields[3])
+
+    def _update_info_dict(self, fields):
+        self.id_info[self._coerce_fid(fields[0], fields[1])] = fields[2]
 
     def initData(self,progress):
         """Get names from source files."""
@@ -234,7 +243,7 @@ class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
                 u'%s is no longer in patches set' % srcFile, traceback=True)
             progress.plus()
 
-    def scanModFile(self,modFile,progress):
+    def scanModFile(self,modFile,progress): # if b'SPEL' not in modFile.tops: return
         patchRecords = self.patchFile.tops[b'SPEL']
         for record in modFile.tops[b'SPEL'].getActiveRecords():
             if not record.spellType == 2: continue
@@ -281,7 +290,7 @@ class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
         self._pLog(log, count)
 
 #------------------------------------------------------------------------------
-class MorphFactionsPatcher(ListPatcher, _ExSpecialList):
+class MorphFactionsPatcher(_ExSpecialList):
     """Mark factions that player can acquire while morphing."""
     patcher_name = _(u'Morph Factions')
     patcher_desc = u'\n\n'.join(
@@ -299,26 +308,22 @@ class MorphFactionsPatcher(ListPatcher, _ExSpecialList):
         for mod in load_order.get_ordered(changed):
             log(u'* %s: %d' % (mod, changed[mod]))
 
-    def readFromText(self, textPath):
-        """Imports id_info from specified text file."""
-        aliases = self.patchFile.pfile_aliases
-        id_info = self.id_info
-        with CsvReader(textPath) as ins:
-            for fields in ins:
-                if len(fields) < 6 or fields[1][:2] != u'0x':
-                    continue
-                mod, objectIndex = fields[:2]
-                mod = GPath(mod)
-                longid = (aliases.get(mod, mod), int(objectIndex, 0))
-                morphName = fields[4].strip()
-                rankName = fields[5].strip()
-                if not morphName: continue
-                if not rankName: rankName = _(u'Member')
-                id_info[longid] = (morphName, rankName)
+    @staticmethod
+    def _parse_line(csv_fields):
+        # type: # (list[unicode]) -> tuple[object] | None
+        mod, objectIndex = csv_fields[0], csv_fields[1]
+        morphName = csv_fields[4].strip()
+        if not morphName:
+            return None # caller unpacks -> TypeError (should not happen often)
+        rankName = csv_fields[5].strip() or _(u'Member')
+        return mod, objectIndex, morphName, rankName
+
+    def _update_info_dict(self, fields):
+        self.id_info[self._coerce_fid(fields[0], fields[1])] = fields[2:]
 
     def __init__(self, p_name, p_file, p_sources):
         super(MorphFactionsPatcher, self).__init__(p_name, p_file, p_sources)
-        self.id_info = {} #--Morphable factions keyed by fid
+        # self.id_info #--Morphable factions keyed by fid
         self.isActive &= _cobl_main in p_file.loadSet
         self.mFactLong = (_cobl_main, 0x33FB)
 
