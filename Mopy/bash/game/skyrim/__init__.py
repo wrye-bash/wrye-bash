@@ -120,6 +120,7 @@ class SkyrimGameInfo(GameInfo):
             u'shadersfx',
             u'skse',
             u'skyproc patchers',
+            u'slanims', # nsfw mods
             u'source', # see Psc.source_redirects above
             u'strings',
             u'tools', # FNIS

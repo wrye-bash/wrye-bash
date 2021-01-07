@@ -77,7 +77,8 @@ class Installer(object):
         u'(' + u'|'.join(docExts) + u')$', re.I | re.U)
     skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
-                u'.fomod', u'.tb2', u'.lzma', u'.manifest', u'.ckm'}
+                u'.fomod', u'.tb2', u'.lzma', u'.manifest', u'.ckm',
+                u'.vortex_backup'}
     skipExts.update(set(readExts))
     scriptExts = {u'.txt', u'.ini', u'.cfg'}
     commonlyEditedExts = scriptExts | {u'.xml'}
@@ -368,7 +369,8 @@ class Installer(object):
     # Those files/folders will be always skipped by refreshDataSizeCrc()
     _silentSkipsStart = (
         u'--', u'omod conversion data' + os_sep, u'wizard images' + os_sep)
-    _silentSkipsEnd = (u'thumbs.db', u'desktop.ini', u'meta.ini', u'config')
+    _silentSkipsEnd = (u'thumbs.db', u'desktop.ini', u'meta.ini', u'config',
+                       u'__folder_managed_by_vortex')
 
     # global skips that can be overridden en masse by the installer
     _global_skips = []
