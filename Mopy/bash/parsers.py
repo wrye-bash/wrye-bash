@@ -70,32 +70,22 @@ class _HandleAliases(object):
 
     def readFromText(self, csv_path):
         """Reads information from the specified CSV file and stores the result
-        in id_stored_info. You must override _parse_line/_update_info_dict for
-        this method to work.
+        in id_stored_info. You must override _parse_line for this method to
+        work.
 
         :param csv_path: The path to the CSV file that should be read."""
         with CsvReader(csv_path) as ins:
             for fields in ins:
                 try:
-                    fields = self._parse_line(fields)
-                    self._update_info_dict(fields)
+                    self._parse_line(fields)
                 except (IndexError, ValueError, TypeError):
                     """TypeError/ValueError trying to unpack None/few values"""
 
     def _parse_line(self, csv_fields):
-        """Parses the specified CSV line and returns a tuple containing the
-        result. Currently returns what _update_info_dict will use - we want to
-        standardise this (for instance the record signature described by this
-        line, the name of the plugin from which this line originated, the
-        (short) FormID of this record and the rest of the info as a tuple).
+        """Parse the specified CSV line and update the parser's instance
+        id_stored_info - both id and stored_info vary in type and meaning.
 
-        :param csv_fields: A line in a CSV file, already split into fields.
-        :return: A tuple containing the input to _update_info_dict."""
-        raise AbstractError
-
-    def _update_info_dict(self, fields):
-        """Update the parser's instance id_stored_info - both id and
-        stored_info vary in type and meaning."""
+        :param csv_fields: A line in a CSV file, already split into fields."""
         raise AbstractError
 
     def _load_plugin(self, mod_info, keepAll=True, target_types=None):
@@ -404,15 +394,11 @@ class ActorFactions(_AParser):
             target_entry.unused1 = b'ODB'
 
     def _parse_line(self, csv_fields):
-        type_, _aed, amod, aobj, _fed, fmod, fobj, rank = csv_fields[:8]
+        top_grup, _aed, amod, aobj, _fed, fmod, fobj, rank = csv_fields[:8]
         aid = self._coerce_fid(amod, aobj)
         fid = self._coerce_fid(fmod, fobj)
         rank = int(rank)
-        return type_, aid, fid, rank
-
-    def _update_info_dict(self, fields):
-        type_, aid, fid, rank = fields
-        self.id_stored_info[type_][aid][fid] = rank
+        self.id_stored_info[top_grup.encode(u'ascii')][aid][fid] = rank
 
     def writeToText(self,textPath):
         """Exports faction data to specified text file."""
@@ -495,10 +481,6 @@ class ActorLevels(_HandleAliases):
         offset = _coerce(offset, int)
         calcMin = _coerce(calcMin, int)
         calcMax = _coerce(calcMax, int)
-        return source, fid, eid, offset, calcMax, calcMin
-
-    def _update_info_dict(self, fields):
-        source, fid, eid, offset, calcMax, calcMin = fields
         self.mod_id_levels[source][fid] = (eid, 1, offset, calcMin, calcMax)
 
     def writeToText(self,textPath):
@@ -720,11 +702,7 @@ class FactionRelations(_AParser):
         _med, mmod, mobj, _oed, omod, oobj = csv_fields[:6]
         mid = self._coerce_fid(mmod, mobj)
         oid = self._coerce_fid(omod, oobj)
-        return mid, oid, tuple(csv_fields[6:])
-
-    def _update_info_dict(self, fields):
-        mid, oid, relation_attrs = fields
-        self.id_stored_info[b'FACT'][mid][oid] = relation_attrs
+        self.id_stored_info[b'FACT'][mid][oid] = tuple(csv_fields[6:])
 
     def writeToText(self,textPath):
         """Exports faction relations to specified text file."""
@@ -762,10 +740,6 @@ class FidReplacer(_HandleAliases):
         newId = self._coerce_fid(newMod, newObj)
         oldEid = _coerce(oldEid, unicode, AllowNone=True)
         newEid = _coerce(newEid, unicode, AllowNone=True)
-        return newEid, newId, oldEid, oldId
-
-    def _update_info_dict(self, fields):
-        newEid, newId, oldEid, oldId = fields
         self.old_new[oldId] = newId
         self.old_eid[oldId] = oldEid
         self.new_eid[newId] = newEid
@@ -860,11 +834,7 @@ class FullNames(_HandleAliases):
         longid = self._coerce_fid(mod, objectIndex)
         eid = _coerce(eid, unicode, AllowNone=True)
         full = _coerce(full, unicode, AllowNone=True)
-        return eid, full, longid, top_grup
-
-    def _update_info_dict(self, fields):
-        eid, full, longid, top_grup = fields
-        self.type_id_name[top_grup][longid] = (eid, full)
+        self.type_id_name[top_grup.encode(u'ascii')][longid] = (eid, full)
 
     def writeToText(self,textPath):
         """Exports type_id_name to specified text file."""
@@ -1030,19 +1000,16 @@ class ItemStats(_HandleAliases):
         if changed: modFile.safeSave()
         return changed
 
-    def readFromText(self,textPath):
+    def _parse_line(self, csv_fields):
         """Reads stats from specified text file."""
-        with CsvReader(textPath) as ins:
-            attr_type = self.attr_type
-            for fields in ins:
-                if len(fields) < 3 or fields[2][:2] != u'0x': continue
-                top_grup,modName,objectStr = fields[:3]
-                longid = self._coerce_fid(modName, objectStr)
-                attrs = self.class_attrs[top_grup]
-                attr_value = {}
-                for attr, value in izip(attrs, fields[3:3+len(attrs)]):
-                    attr_value[attr] = attr_type[attr](value)
-                self.class_fid_attr_value[top_grup][longid].update(attr_value)
+        top_grup, modName, objectStr = csv_fields[:3]
+        longid = self._coerce_fid(modName, objectStr)
+        attrs = self.class_attrs[top_grup]
+        attr_value = {}
+        for attr, value in izip(attrs, csv_fields[3:3 + len(attrs)]):
+            attr_value[attr] = self.attr_type[attr](value)
+        self.class_fid_attr_value[top_grup.encode(u'ascii')][longid].update(
+            attr_value)
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
@@ -1494,19 +1461,15 @@ class ItemPrices(_HandleAliases):
         if changed: modFile.safeSave()
         return changed
 
-    def readFromText(self,textPath):
-        """Reads stats from specified text file."""
-        class_fid_stats = self.class_fid_stats
-        with CsvReader(textPath) as ins:
-            for fields in ins:
-                if len(fields) < 6 or fields[1][:2] != u'0x': continue
-                mmod,mobj,value,eid,itm_name,top_grup = fields[:6]
-                longid = self._coerce_fid(mmod, mobj)
-                value = _coerce(value, int)
-                eid = _coerce(eid, unicode, AllowNone=True)
-                itm_name = _coerce(itm_name, unicode, AllowNone=True)
-                top_grup = _coerce(top_grup, unicode)
-                class_fid_stats[top_grup][longid] = [value,eid,itm_name]
+    def _parse_line(self, csv_fields):
+        mmod, mobj, value, eid, itm_name, top_grup = csv_fields[:6]
+        longid = self._coerce_fid(mmod, mobj)
+        value = _coerce(value, int)
+        eid = _coerce(eid, unicode, AllowNone=True)
+        itm_name = _coerce(itm_name, unicode, AllowNone=True)
+        top_grup = _coerce(top_grup, unicode)
+        self.class_fid_stats[top_grup.encode(u'ascii')][longid] = [value, eid,
+                                                                   itm_name]
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""

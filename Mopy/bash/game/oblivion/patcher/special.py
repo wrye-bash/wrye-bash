@@ -215,10 +215,8 @@ class CoblExhaustionPatcher(_ExSpecialList):
             log(u'  * %s: %d' % (srcMod, count[srcMod]))
 
     def _parse_line(self, csv_fields): # mod, objectIndex, time
-        return csv_fields[0], csv_fields[1], int(csv_fields[3])
-
-    def _update_info_dict(self, fields):
-        self.id_info[self._coerce_fid(fields[0], fields[1])] = fields[2]
+        self.id_info[self._coerce_fid(csv_fields[0], csv_fields[1])] = int(
+            csv_fields[3])
 
     def initData(self,progress):
         """Get names from source files."""
@@ -302,10 +300,7 @@ class MorphFactionsPatcher(_ExSpecialList):
         if not morphName:
             return None # caller unpacks -> TypeError (should not happen often)
         rankName = csv_fields[5].strip() or _(u'Member')
-        return mod, objectIndex, morphName, rankName
-
-    def _update_info_dict(self, fields):
-        self.id_info[self._coerce_fid(fields[0], fields[1])] = fields[2:]
+        self.id_info[self._coerce_fid(mod, objectIndex)] = morphName, rankName
 
     def __init__(self, p_name, p_file, p_sources):
         super(MorphFactionsPatcher, self).__init__(p_name, p_file, p_sources)
