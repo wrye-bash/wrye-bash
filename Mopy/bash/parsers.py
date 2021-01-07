@@ -702,24 +702,17 @@ class FactionRelations(_AParser):
     def _read_record_sp(self, record):
         # Look if we already have relations and base ourselves on those,
         # otherwise make a new list
-        relations = self.id_stored_info[b'FACT'].get(record.fid, [])
-        other_index = {y[0]: x for x, y in enumerate(relations)}
+        relations = self.id_stored_info[b'FACT'][record.fid]
         # Merge added relations, preserve changed relations
         for relation in record.relations:
             rel_attrs = tuple(getattr(relation, a) for a
                               in self.cls_rel_attrs)
             other_fac = rel_attrs[0]
-            if other_fac in other_index:
-                # This is just a change, preserve the latest value
-                relations[other_index[other_fac]] = rel_attrs
-            else:
-                # This is an addition, merge it
-                relations.append(rel_attrs)
+            relations[other_fac] = rel_attrs[1:]
         return relations
 
     def _write_record(self, record, new_info, cur_info):
-        for relation in set(new_info) - set(cur_info):
-            rel_fac = relation[0]
+        for rel_fac, rel_attributes in set(new_info.iteritems()) - set(cur_info.iteritems()):
             # See if this is a new relation or a change to an existing one
             for entry in record.relations:
                 if rel_fac == entry.faction:
@@ -731,45 +724,37 @@ class FactionRelations(_AParser):
                 target_entry = MelObject()
                 record.relations.append(target_entry)
             # Actually write out the attributes from new_info
-            for rel_attr, rel_val in izip(self.cls_rel_attrs, relation):
+            for rel_attr, rel_val in izip(self.cls_rel_attrs,
+                                         (rel_fac,) + rel_attributes): ##: Py3: unpack
                 setattr(target_entry, rel_attr, rel_val)
 
     def _parse_line(self, csv_fields):
         _med, mmod, mobj, _oed, omod, oobj = csv_fields[:6]
         mid = self._coerce_fid(mmod, mobj)
         oid = self._coerce_fid(omod, oobj)
-        relation_attrs = (oid,) + tuple(csv_fields[6:])
-        return mid, relation_attrs
+        return mid, oid, tuple(csv_fields[6:])
 
     def _update_info_dict(self, fields):
-        mid, relation_attrs = fields
-        id_relations = self.id_stored_info[b'FACT']
-        relations = id_relations.get(mid)
-        if relations is None:
-            relations = id_relations[mid] = []
-        for index, entry in enumerate(relations):
-            if entry[0] == relation_attrs[0]: # oid
-                relations[index] = relation_attrs
-                break
-        else:
-            relations.append(relation_attrs)
+        mid, oid, relation_attrs = fields
+        self.id_stored_info[b'FACT'][mid][oid] = relation_attrs
 
     def writeToText(self,textPath):
         """Exports faction relations to specified text file."""
         id_relations, id_eid = self.id_stored_info[b'FACT'], self.id_context
         with textPath.open(u'w', encoding=u'utf-8-sig') as out:
             out.write(bush.game.relations_csv_header)
-            for main_fid, rel in sorted(id_relations.iteritems(),
-                key=lambda (mfid, __): id_eid.get(mfid).lower()):
-                main_eid = id_eid.get(main_fid, u'Unknown')
-                for relation_obj in sorted(rel, # PY3: unpack to list
-                    key=lambda x: id_eid.get(x[0]).lower()):
-                    other_fid = relation_obj[0]
-                    other_eid = id_eid.get(other_fid, u'Unknown')
+            tuples = ((a, b, id_eid.get(a, u'Unknown')) for a, b in
+                      id_relations.iteritems())
+            for main_fid, rel, main_eid in sorted(tuples, key=lambda
+                    (_a, _b, c): c.lower()):
+                tuples = ((a, b, id_eid.get(a, u'Unknown')) for a, b in
+                          rel.iteritems())
+                for other_fid, relation_obj, other_eid in sorted(tuples, # PY3: unpack to list
+                        key=lambda (_a, _b, c): c.lower()):
                     # I wish py2 allowed star exprs in tuples/lists...
                     row_vals = (main_eid, main_fid[0], main_fid[1],
                                 other_eid, other_fid[0],
-                                other_fid[1]) + relation_obj[1:]
+                                other_fid[1]) + relation_obj
                     out.write(bush.game.relations_csv_row_format % row_vals)
 
 #------------------------------------------------------------------------------

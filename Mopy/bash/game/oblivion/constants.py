@@ -728,7 +728,7 @@ settings_tweaks = {
 #------------------------------------------------------------------------------
 # Import Relations
 #------------------------------------------------------------------------------
-relations_attrs = (u'faction', u'mod')
+relations_attrs = (u'faction', u'mod') ##: mod?
 relations_csv_header = u'"%s","%s","%s","%s","%s","%s","%s"\n' % (
     _(u'Main Eid'), _(u'Main Mod'), _(u'Main Object'), _(u'Other Eid'),
     _(u'Other Mod'), _(u'Other Object'), _(u'Modifier'))
