@@ -32,7 +32,7 @@ from ..balt import Links, SeparatorLink, CheckLink
 from ..bolt import GPath, text_wrap
 from ..gui import Button, CheckBox, HBoxedLayout, Label, LayoutOptions, \
     Spacer, TextArea, TOP, VLayout, EventResult, PanelWin, ListBox, \
-    CheckListBox
+    CheckListBox, DeselectAllButton, SelectAllButton
 from ..patcher import patch_files, patches_set, base
 
 reCsvExt = re.compile(u'' r'\.csv$', re.I | re.U)
@@ -67,9 +67,10 @@ class _PatcherPanel(object):
     def SetIsFirstLoad(self,isFirstLoad):
         self.is_first_load = isFirstLoad
 
-    def _EnsurePatcherEnabled(self):
-        self.patch_dialog.CheckPatcher(self)
-        self.isEnabled = True
+    def _enable_self(self, self_enabled=True):
+        """Enables or disables this patcher and notifies the patcher dialog."""
+        self.isEnabled = self_enabled
+        self.patch_dialog.check_patcher(self, self_enabled)
 
     def _BoldPatcherLabel(self): self.patch_dialog.BoldPatcher(self)
 
@@ -161,7 +162,8 @@ class _PatcherPanel(object):
 
     def _import_config(self, default=False): pass
 
-    def mass_select(self, select=True): self.isEnabled = select
+    def mass_select(self, select=True):
+        self._enable_self(select)
 
     def get_patcher_instance(self, patch_file):
         """Instantiate and return an instance of self.__class__.patcher_type,
@@ -307,9 +309,9 @@ class _ListPatcherPanel(_PatcherPanel):
 
     def _get_select_layout(self):
         if not self.selectCommands: return None
-        self.gSelectAll = Button(self.gConfigPanel, _(u'Select All'))
+        self.gSelectAll = SelectAllButton(self.gConfigPanel)
         self.gSelectAll.on_clicked.subscribe(lambda: self.mass_select(True))
-        self.gDeselectAll = Button(self.gConfigPanel, _(u'Deselect All'))
+        self.gDeselectAll = DeselectAllButton(self.gConfigPanel)
         self.gDeselectAll.on_clicked.subscribe(lambda: self.mass_select(False))
         return VLayout(spacing=4, items=[self.gSelectAll, self.gDeselectAll])
 
@@ -344,23 +346,19 @@ class _ListPatcherPanel(_PatcherPanel):
                         item, effectiveDefaultItemCheck))
         self.configItems = items
         if patcherOn:
-            self._EnsurePatcherEnabled()
+            self._enable_self()
         if patcherBold:
             self._BoldPatcherLabel()
 
-    def OnListCheck(self, lb_selection_dex=None):
+    def OnListCheck(self, _lb_selection_dex=None):
         """One of list items was checked. Update all configChecks states."""
-        ensureEnabled = False
-        for index,item in enumerate(self.items):
-            checked = self.gList.lb_is_checked_at_index(index)
+        any_checked = False
+        for i, item in enumerate(self.items):
+            checked = self.gList.lb_is_checked_at_index(i)
             self.configChecks[item] = checked
             if checked:
-                ensureEnabled = True
-        if lb_selection_dex is not None:
-            if self.gList.lb_is_checked_at_index(lb_selection_dex):
-                self._EnsurePatcherEnabled()
-        elif ensureEnabled:
-            self._EnsurePatcherEnabled()
+                any_checked = True
+        self._enable_self(any_checked)
 
     def OnAutomatic(self, is_checked):
         """Automatic checkbox changed."""
@@ -539,11 +537,10 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
 
     def _get_tweak_select_layout(self):
         if self.selectCommands:
-            self.gTweakSelectAll = Button(self.gConfigPanel, _(u'Select All'))
+            self.gTweakSelectAll = SelectAllButton(self.gConfigPanel)
             self.gTweakSelectAll.on_clicked.subscribe(
                 lambda: self.mass_select(True))
-            self.gTweakDeselectAll = Button(self.gConfigPanel,
-                                            _(u'Deselect All'))
+            self.gTweakDeselectAll = DeselectAllButton(self.gConfigPanel)
             self.gTweakDeselectAll.on_clicked.subscribe(
                 lambda: self.mass_select(False))
             tweak_select_layout = VLayout(spacing=4, items=[
@@ -586,9 +583,9 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 ensureEnabled = True
         if lb_selection_dex is not None:
             if self.gTweakList.lb_is_checked_at_index(lb_selection_dex):
-                self._EnsurePatcherEnabled()
+                self._enable_self()
         elif ensureEnabled:
-            self._EnsurePatcherEnabled()
+            self._enable_self()
 
     def _mouse_leaving(self):
         self.gTipText.label_text = u''

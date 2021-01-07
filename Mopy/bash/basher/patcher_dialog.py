@@ -83,10 +83,10 @@ class PatchDialog(DialogWindow):
         env.setUAC(self.gExecute._native_widget.GetHandle(), True)
         self.gSelectAll = SelectAllButton(self)
         self.gSelectAll.on_clicked.subscribe(
-            lambda: self.mass_select_recursive(True))
+            lambda: self._mass_select_recursive(True))
         self.gDeselectAll = DeselectAllButton(self)
         self.gDeselectAll.on_clicked.subscribe(
-            lambda: self.mass_select_recursive(False))
+            lambda: self._mass_select_recursive(False))
         cancelButton = CancelButton(self)
         self.gPatchers = CheckListBox(self, choices=patcherNames,
                                       isSingle=True, onSelect=self.OnSelect)
@@ -133,10 +133,10 @@ class PatchDialog(DialogWindow):
         if initial_select >= 0:
             self.gPatchers.lb_select_index(initial_select) # callback not fired
             self.ShowPatcher(self._gui_patchers[initial_select]) # so this is needed
-        self.SetOkEnable()
+        self._update_ok_btn()
 
     #--Core -------------------------------
-    def SetOkEnable(self):
+    def _update_ok_btn(self):
         """Enable Build Patch button if at least one patcher is enabled."""
         self.gExecute.enabled = any(p.isEnabled for p in self._gui_patchers)
 
@@ -358,7 +358,7 @@ class PatchDialog(DialogWindow):
             patcher.import_config(patchConfigs, set_first_load=set_first_load,
                                   default=default)
             self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
-        self.SetOkEnable()
+        self._update_ok_btn()
 
     def RevertConfig(self):
         """Revert configuration back to saved"""
@@ -370,13 +370,13 @@ class PatchDialog(DialogWindow):
         """Revert configuration back to default"""
         self._load_config({}, set_first_load=True, default=True)
 
-    def mass_select_recursive(self, select=True):
+    def _mass_select_recursive(self, select=True):
         """Select or deselect all patchers and entries in patchers with child
         entries."""
         self.gPatchers.set_all_checkmarks(checked=select)
         for patcher in self._gui_patchers:
             patcher.mass_select(select=select)
-        self.gExecute.enabled = select
+        self._update_ok_btn()
 
     #--GUI --------------------------------
     def OnSelect(self, lb_selection_dex, _lb_selection_str):
@@ -384,17 +384,16 @@ class PatchDialog(DialogWindow):
         self.ShowPatcher(self._gui_patchers[lb_selection_dex])
         self.gPatchers.lb_select_index(lb_selection_dex)
 
-    def CheckPatcher(self, patcher):
-        """Enable a patcher - Called from a patcher's OnCheck method."""
-        index = self._gui_patchers.index(patcher)
-        self.gPatchers.lb_check_at_index(index, True)
-        self.SetOkEnable()
+    def check_patcher(self, patcher, enable_patcher=True):
+        """Enable or disable a patcher."""
+        self.gPatchers.lb_check_at_index(
+            self._gui_patchers.index(patcher), enable_patcher)
+        self._update_ok_btn()
 
     def BoldPatcher(self, patcher):
         """Set the patcher label to bold font.  Called from a patcher when
         it realizes it has something new in its list"""
-        index = self._gui_patchers.index(patcher)
-        self.gPatchers.lb_bold_font_at_index(index)
+        self.gPatchers.lb_bold_font_at_index(self._gui_patchers.index(patcher))
 
     def OnCheck(self, lb_selection_dex):
         """Toggle patcher activity state."""
@@ -402,7 +401,7 @@ class PatchDialog(DialogWindow):
         patcher.isEnabled = self.gPatchers.lb_is_checked_at_index(lb_selection_dex)
         self.gPatchers.lb_select_index(lb_selection_dex)
         self.ShowPatcher(patcher) # SetSelection does not fire the callback
-        self.SetOkEnable()
+        self._update_ok_btn()
 
     def _mouse_leaving(self): self._set_tip_text(-1)
 
