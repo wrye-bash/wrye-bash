@@ -325,7 +325,7 @@ class ImportActorsFactionsPatcher(_APreserver):
             ret_obj.rank = obj_rank
             return ret_obj
         self._process_csv_sources(
-            {r: {f: {u'factions': [make_obj(r, o) for o in a]}
+            {r: {f: {u'factions': [make_obj(r, o) for o in a.iteritems()]}
                  for f, a in d.iteritems()}
              for r, d in fact_parser.id_stored_info.iteritems()})
 

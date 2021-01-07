@@ -158,7 +158,7 @@ class _AParser(_HandleAliases):
         self._sp_types = ()
         # Maps record types to dicts that map long fids to stored information
         # May have been retrieved from mod in second pass, or from a CSV file
-        self.id_stored_info = defaultdict(dict)
+        self.id_stored_info = defaultdict(lambda : defaultdict(dict))
         # Automatically set to True when called by a patcher - can be used to
         # alter behavior correspondingly
         self.called_from_patcher = False
@@ -384,13 +384,10 @@ class ActorFactions(_AParser):
         return bool(record.factions)
 
     def _read_record_sp(self, record):
-        return [(f.faction, f.rank) for f in record.factions]
-
-    def _should_write_record(self, new_info, cur_info):
-        return bool(set(new_info) - set(cur_info))
+        return {f.faction: f.rank for f in record.factions}
 
     def _write_record(self, record, new_info, cur_info):
-        for faction, rank in set(new_info) - set(cur_info):
+        for faction, rank in set(new_info.iteritems()) - set(cur_info.iteritems()):
             # Check if this an addition or a change
             for entry in record.factions:
                 if entry.faction == faction:
@@ -407,20 +404,15 @@ class ActorFactions(_AParser):
             target_entry.unused1 = b'ODB'
 
     def _parse_line(self, csv_fields):
-        type_, _aed, amod, aobj, _fed, fmod, fobj, rank = csv_fields[:9]
+        type_, _aed, amod, aobj, _fed, fmod, fobj, rank = csv_fields[:9] # FIXME: 8?
         aid = self._coerce_fid(amod, aobj)
         fid = self._coerce_fid(fmod, fobj)
         rank = int(rank)
-        return aid, fid, rank, type_
+        return type_, aid, fid, rank
 
     def _update_info_dict(self, fields):
-        aid, fid, rank, type_ = fields
-        id_factions = self.id_stored_info[type_]
-        factions = id_factions.get(aid)
-        factiondict = dict(factions or [])
-        factiondict.update({fid: rank})
-        id_factions[aid] = [(fid, rank) for fid, rank in
-                            factiondict.iteritems()]
+        type_, aid, fid, rank = fields
+        self.id_stored_info[type_][aid][fid] = rank
 
     def writeToText(self,textPath):
         """Exports faction data to specified text file."""
@@ -438,9 +430,10 @@ class ActorFactions(_AParser):
                           id_factions.iteritems())
                 for aid, factions, actorEid in sorted(tuples, key=lambda
                         (_a, _b, c): c.lower()):
-                    for faction,rank in sorted(
-                            factions, key=lambda x:id_eid.get(x[0]).lower()):
-                        factionEid = id_eid.get(faction, u'Unknown')
+                    tuples = ((a, b, id_eid.get(a, u'Unknown')) for a, b in
+                              factions.iteritems())
+                    for faction, rank, factionEid in sorted(tuples,
+                            key=lambda (_a, _b, c): c.lower()):
                         out.write(rowFormat % (
                             type_, actorEid, aid[0], aid[1], factionEid,
                             faction[0], faction[1], rank))
