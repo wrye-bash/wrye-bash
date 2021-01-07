@@ -2700,8 +2700,8 @@ class InstallersData(DataStore):
         return filtered_removes
 
     def clean_data_dir(self, removes,  refresh_ui):
-        destDir = bass.dirs[u'bainData'].join(u'Data Folder Contents (%s)' %
-            bolt.timestamp())
+        destDir = bass.dirs[u'bainData'].join(u'%s Folder Contents (%s)' %
+            bush.game.mods_dir, bolt.timestamp())
         try:
             from . import modInfos
             emptyDirs, mods = set(), set()

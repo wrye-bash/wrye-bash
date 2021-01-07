@@ -31,7 +31,7 @@ from ..balt import BoolLink, AppendableLink, ItemLink, ListBoxes, \
     EnabledLink
 
 __all__ = [u'Installers_SortActive', u'Installers_SortProjects',
-           u'Installers_Refresh', u'Installers_AddMarker',
+           u'Installers_RefreshData', u'Installers_AddMarker',
            u'Installers_CreateNewProject', u'Installers_MonitorInstall',
            u'Installers_ListPackages', u'Installers_AnnealAll',
            u'Installers_UninstallAllPackages',
@@ -45,7 +45,7 @@ __all__ = [u'Installers_SortActive', u'Installers_SortProjects',
            u'Installers_ConflictsReportShowsLower',
            u'Installers_ConflictsReportShowBSAConflicts',
            u'Installers_WizardOverlay', u'Installers_GlobalSkips',
-           u'Installers_GlobalRedirects']
+           u'Installers_GlobalRedirects', u'Installers_FullRefresh']
 
 #------------------------------------------------------------------------------
 # Installers Links ------------------------------------------------------------
@@ -63,15 +63,15 @@ class Installers_AddMarker(ItemLink):
 class Installers_MonitorInstall(Installers_Link):
     """Monitors Data folder for external installation."""
     _text = _(u'Monitor External Installation...')
-    _help = _(u'Monitors the Data folder during installation via manual '
-              u'install or 3rd party tools.')
+    _help = _(u'Monitors the %s folder during installation via manual install '
+              u'or 3rd party tools.') % bush.game.mods_dir
 
     @balt.conversation
     def Execute(self):
         msg = _(u'Wrye Bash will monitor your data folder for changes when '
                 u'installing a mod via an external application or manual '
-                u'install.  This will require two refreshes of the Data folder'
-                u' and may take some time.')
+                u'install.  This will require two refreshes of the %s folder '
+                u'and may take some time.') % bush.game.mods_dir
         if not balt.askOk(self.window, msg, _(u'External Installation')):
             return
         # Refresh Data
@@ -102,7 +102,8 @@ class Installers_MonitorInstall(Installers_Link):
         touchedFiles -= changedFiles
 
         if not newFiles and not changedFiles and not touchedFiles:
-            self._showOk(_(u'No changes were detected in the Data directory.'),
+            self._showOk(_(u'No changes were detected in the %s '
+                           u'directory.') % bush.game.mods_dir,
                          _(u'External Installation'))
             return
         newFiles = sorted(newFiles) # sorts case insensitive as those are CIStr
@@ -115,8 +116,8 @@ class Installers_MonitorInstall(Installers_Link):
         touchedFilesKey = _(u'Touched Files: %(count)i') % {u'count':len(touchedFiles)}
         delFilesKey = _(u'Deleted Files')
         if newFiles:
-            group = [newFilesKey, _(
-                u'These files are newly added to the Data directory.'), ]
+            group = [newFilesKey, _(u'These files are newly added to the %s '
+                                    u'directory.') % bush.game.mods_dir]
             group.extend(newFiles)
             checklists.append(group)
         if changedFiles:
@@ -137,8 +138,9 @@ class Installers_MonitorInstall(Installers_Link):
                 u'capability to remove files when installing.'), ]
             group.extend(sorted(delFiles))
         with ListBoxes(self.window, _(u'External Installation'),
-            _(u'The following changes were detected in the Data directory'),
-            checklists, bOk=_(u'Create Project')) as dialog:
+                       _(u'The following changes were detected in the %s '
+                         u'directory.') % bush.game.mods_dir,
+                       checklists, bOk=_(u'Create Project')) as dialog:
             if not dialog.show_modal(): return
             include = set()
             for (lst, key) in [(newFiles, newFilesKey),
@@ -183,8 +185,9 @@ class Installers_ListPackages(Installers_Link):
 class Installers_AnnealAll(Installers_Link):
     """Anneal all packages."""
     _text = _(u'Anneal All')
-    _help = _(u'This will install any missing files (for active installers)'
-             u' and correct all install order and reconfiguration errors.')
+    _help = _(u'Install any missing files (for active packages) and update '
+              u'the contents of the %s folder to account for all install '
+              u'order and configuration changes.') % bush.game.mods_dir
 
     @balt.conversation
     def Execute(self):
@@ -212,29 +215,35 @@ class Installers_UninstallAllPackages(Installers_Link):
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
 
-class Installers_Refresh(AppendableLink, Installers_Link):
+class _AInstallers_Refresh(AppendableLink, Installers_Link):
     """Refreshes all Installers data."""
-    msg = _(u'Refresh ALL data from scratch? This may take five to ten minutes'
-            u' (or more) depending on the number of mods you have installed.')
-
-    def __init__(self, full_refresh=False):
-        super(Installers_Refresh, self).__init__()
-        self.full_refresh = full_refresh
-        self._text = _(u'Full Refresh') if full_refresh else _(u'Refresh Data')
-        self._help = _(
-            u'Perform a full refresh of all data files, recalculating all '
-            u'CRCs.  This can take 5-15 minutes.') if self.full_refresh else _(
-            u'Rescan the Data directory and all project directories.')
+    _full_refresh = False
 
     def _append(self, window): return bass.settings[u'bash.installers.enabled']
 
     @balt.conversation
     def Execute(self):
-        """Refreshes all Installers data"""
-        if self.full_refresh and not self._askWarning(self.msg, self._text):
-            return
         self.idata.reset_refresh_flag_on_projects()
-        self.iPanel.ShowPanel(fullRefresh=self.full_refresh,scan_data_dir=True)
+        self.iPanel.ShowPanel(fullRefresh=self._full_refresh,
+                              scan_data_dir=True)
+
+class Installers_FullRefresh(_AInstallers_Refresh):
+    _text = _(u'Full Refresh')
+    _help = _(u'Perform a full refresh of all data files, recalculating all '
+              u'CRCs. This can take 5-15 minutes.')
+    _fr_msg = _(u'Refresh ALL data from scratch? This may take five to ten '
+                u'minutes (or more) depending on the number of mods you have '
+                u'installed.')
+    _full_refresh = True
+
+    def Execute(self):
+        if not self._askWarning(self._fr_msg, self._text): return
+        super(Installers_FullRefresh, self).Execute()
+
+class Installers_RefreshData(_AInstallers_Refresh):
+    _text = _(u'Refresh Data')
+    _help = _(u'Rescan the %s directory and all project '
+              u'directories.') % bush.game.mods_dir
 
 class Installers_UninstallAllUnknownFiles(Installers_Link):
     """Uninstall all files that do not come from a current package/bethesda
@@ -242,15 +251,17 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
     Folder Contents (date/time)\."""
     _text = _(u'Clean Data')
     _help = _(u'This will remove all mod files that are not linked to an '
-             u'active installer out of the Data folder.')
-    fullMessage = (_(u'Clean Data directory?') + u' ' + _help + u'\n\n' + _(
-        u'This includes files that were installed manually or by another '
-        u'program. Files will be moved to the "%s" directory instead of '
-        u'being deleted so you can retrieve them later if necessary.') %
-                   bass.dirs[u'bainData'].join(u'Data Folder Contents <date>')
-        + u'\n\n' + _(u'Note that you will first be shown a list of files '
-                      u'that this operation would remove and will have a '
-                      u'chance to change the selection.'))
+             u'active installer out of the %s folder.') % bush.game.mods_dir
+    fullMessage = (_(u'Clean %s directory?') % bush.game.mods_dir + u' ' +
+                   _help + u'\n\n' + _(
+                u'This includes files that were installed manually or by '
+                u'another program. Files will be moved to the "%s" directory '
+                u'instead of being deleted so you can retrieve them later if '
+                u'necessary.') % bass.dirs[u'bainData'].join(
+                u'%s Folder Contents <date>' % bush.game.mods_dir) + u'\n\n' +
+                   _(u'Note that you will first be shown a list of files that '
+                     u'this operation would remove and will have a chance to '
+                     u'change the selection.'))
 
     @balt.conversation
     def Execute(self):
@@ -260,22 +271,26 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
             all_unknown_files = self.idata.get_clean_data_dir_list()
             if not all_unknown_files:
                 self._showOk(
-                    _(u'There are no untracked files in the Data folder.'),
-                    _(u'Data folder is clean'))
+                    _(u'There are no untracked files in the %s '
+                      u'folder.') % bush.game.mods_dir,
+                    _(u'%s folder is clean') % bush.game.mods_dir)
                 return
             message = [u'',       # adding a tool tip
-                       _(u'Uncheck files to keep them in the Data folder.')]
+                       _(u'Uncheck files to keep them in the %s '
+                         u'folder.') % bush.game.mods_dir]
             all_unknown_files.sort()
             message.extend(all_unknown_files)
             with ListBoxes(self.window,
-                  _(u'Move files out of the Data folder.'),
-                  _(u'Uncheck any files you want to keep in the Data folder.'),
+                  _(u'Move files out of the %s folder.') % bush.game.mods_dir,
+                  _(u'Uncheck any files you want to keep in the %s '
+                    u'folder.') % bush.game.mods_dir,
                   [message]) as dialog:
                 selected_unknown_files = dialog.show_modal() and \
                     dialog.getChecked(message[0], all_unknown_files)
             if selected_unknown_files:
-                with balt.Progress(_(u'Cleaning Data Files...'),
-                                   u'\n' + u' ' * 65):
+                with balt.Progress(
+                        _(u'Cleaning %s contents...') % bush.game.mods_dir,
+                        u'\n' + u' ' * 65):
                     self.idata.clean_data_dir(selected_unknown_files,
                                               ui_refresh)
         finally:
@@ -447,7 +462,7 @@ class Installers_RemoveEmptyDirs(BoolLink):
     """Toggles option to remove empty directories on file scan."""
     _text = _(u'Remove Empty Directories')
     _help = _(u'Toggles whether or not Wrye Bash will remove empty '
-              u'directories when scanning the Data folder.')
+              u'directories when scanning the %s folder.') % bush.game.mods_dir
     _bl_key = u'bash.installers.removeEmptyDirs'
 
 # Sorting Links

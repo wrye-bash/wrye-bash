@@ -373,7 +373,10 @@ class Installer_OpenReadme(OneItemLink, _InstallerLink):
 class Installer_Anneal(_NoMarkerLink):
     """Anneal all packages."""
     _text = _(u'Anneal')
-    _help = _(u'Anneal all files in selected package(s).')
+    _help = _(u'Install any missing files (for active packages) and update '
+              u'the contents of the %s folder to account for install order '
+              u'and configuration changes in the selected '
+              u'package(s).') % bush.game.mods_dir
 
     def Execute(self):
         ui_refresh = [False, False]
@@ -614,8 +617,8 @@ class Installer_ExportAchlist(OneItemLink, _InstallerLink):
         with BusyCursor(), open(achlist.s, u'w') as out:
             out.write(u'[\n\t"')
             lines = u'",\n\t"'.join(
-                u'\\'.join((u'Data', d)).replace(u'\\', u'\\\\') for d in
-                bolt.sortFiles(self._selected_info.ci_dest_sizeCrc)
+                u'\\'.join((bush.game.mods_dir, d)).replace(u'\\', u'\\\\')
+                for d in bolt.sortFiles(self._selected_info.ci_dest_sizeCrc)
                 # exclude top level files and docs - last one monkey patched
                 if os.path.split(d)[0] and not d.lower().startswith(u'docs'))
             out.write(lines)
@@ -1090,7 +1093,8 @@ class InstallerProject_OmodConfig(_SingleProject):
 class Installer_SyncFromData(_SingleInstallable):
     """Synchronize an archive or project with files from the Data directory."""
     _text = _(u'Sync from Data')
-    _help = _(u'Synchronize an installer with files from the Data directory')
+    _help = _(u'Synchronize an installer with files from the %s '
+              u'directory.') % bush.game.mods_dir
 
     def _enable(self):
         if not super(Installer_SyncFromData, self)._enable(): return False
@@ -1119,8 +1123,9 @@ class Installer_SyncFromData(_SingleInstallable):
         msg_upd.extend(mismatched)
         sel_missing, sel_mismatched = [], []
         with balt.ListBoxes(self.window, self._text,
-                            _(u'Update %s according to data directory?')
-                            % self._selected_item + u'\n' +
+                            _(u'Update %s according to %s directory?')
+                            % (self._selected_item, bush.game.mods_dir)
+                            + u'\n' +
                             _(u'Uncheck any files you want to keep '
                               u'unchanged.'), [msg_del, msg_upd]) as dialog:
             if dialog.show_modal():

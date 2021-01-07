@@ -2431,7 +2431,8 @@ class ModInfos(FileInfos):
                               u'Userlist: '), sorted(loot_removed), tagList)
         dir_added, dir_removed = read_dir_tags(mname)
         has_tags_source |= bool(dir_added | dir_removed)
-        tags_file = u"'Data/BashTags/%s'" % (mname.body + u'.txt')
+        tags_file = u"'%s/BashTags/%s'" % (bush.game.mods_dir,
+                                           mname.body + u'.txt')
         if dir_added:
             tagList = _tags(_(u'Added by %s: ') % tags_file, sorted(dir_added),
                             tagList)

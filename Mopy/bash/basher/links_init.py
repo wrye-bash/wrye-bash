@@ -201,8 +201,8 @@ def InitInstallerLinks():
         InstallersList.column_links.append(files_menu)
     InstallersList.column_links.append(SeparatorLink())
     #--Actions
-    InstallersList.column_links.append(Installers_Refresh())
-    InstallersList.column_links.append(Installers_Refresh(full_refresh=True))
+    InstallersList.column_links.append(Installers_RefreshData())
+    InstallersList.column_links.append(Installers_FullRefresh())
     InstallersList.column_links.append(Installers_AddMarker())
     InstallersList.column_links.append(Installers_MonitorInstall())
     InstallersList.column_links.append(SeparatorLink())
@@ -332,8 +332,8 @@ def InitInstallerLinks():
     edit_menu.append(Installers_UninstallAllUnknownFiles())
     edit_menu.append(Installers_UninstallAllPackages())
     edit_menu.append(SeparatorLink())
-    edit_menu.append(Installers_Refresh())
-    edit_menu.append(Installers_Refresh(full_refresh=True))
+    edit_menu.append(Installers_RefreshData())
+    edit_menu.append(Installers_FullRefresh())
     # View Menu
     view_menu = InstallersList.global_links[_(u'View')]
     view_menu.append(SortByMenu(

@@ -1693,7 +1693,7 @@ class ModDetails(_ModsSavesDetails):
         bashTagsDesc = mod_info.getBashTagsDesc()
         tag_plugin_name = mod_info.name
         # We need to grab both the ones from the description and from LOOT,
-        # since we need to save a diff in case of Copy to Data/BashTags
+        # since we need to save a diff in case of Copy to BashTags
         added_tags, deleted_tags = bosh.read_loot_tags(tag_plugin_name)
         # Emulate the effects of applying the LOOT tags
         old_tags = bashTagsDesc.copy()
@@ -1701,7 +1701,7 @@ class ModDetails(_ModsSavesDetails):
         old_tags -= deleted_tags
         dir_diff = bosh.mods_metadata.diff_tags(mod_tags, old_tags)
         class _CopyBashTagsDir(EnabledLink):
-            _text = _(u'Copy to Data/BashTags')
+            _text = _(u'Copy to BashTags')
             _help = _(u'Copies a diff between currently applied tags and '
                       u'description/LOOT tags to %s.') % (
                 bass.dirs[u'tag_files'].join(mod_info.name.body + u'.txt'))
@@ -2698,7 +2698,8 @@ class InstallersList(balt.UIList):
                     dest.update(op())
                 self.data_store.hasChanged = True  # is it really needed ?
                 if update_from_data:
-                    progress(0, _(u'Refreshing From Data...') + u'\n' + u' ' * 60)
+                    progress(0, _(u'Refreshing From %s...')
+                             % bush.game.mods_dir + u'\n' + u' ' * 60)
                     self.data_store.update_data_SizeCrcDate(dest, progress)
         except CancelError:  # User canceled the refresh
             if not abort: raise # I guess CancelError is raised on aborting
@@ -3874,16 +3875,16 @@ class BashFrame(WindowFrame):
         if len(bosh.bsaInfos) + len(bosh.modInfos) >= 325 and not \
                 settings[u'bash.mods.autoGhost']:
             message = _(u'It appears that you have more than 325 mods and bsas'
-                u' in your data directory and auto-ghosting is disabled. This '
+                u' in your %s directory and auto-ghosting is disabled. This '
                 u'may cause problems in %s; see the readme under auto-ghost '
                 u'for more details and please enable auto-ghost.') % \
-                      bush.game.displayName
+                      (bush.game.mods_dir, bush.game.displayName)
             if len(bosh.bsaInfos) + len(bosh.modInfos) >= 400:
                 message = _(u'It appears that you have more than 400 mods and '
-                    u'bsas in your data directory and auto-ghosting is '
+                    u'bsas in your %s directory and auto-ghosting is '
                     u'disabled. This will cause problems in %s; see the readme'
                     u' under auto-ghost for more details. ') % \
-                          bush.game.displayName
+                          (bush.game.mods_dir, bush.game.displayName)
             balt.showWarning(self, message, _(u'Too many mod files.'))
 
     def bind_refresh(self, bind=True):
@@ -4113,7 +4114,8 @@ class BashFrame(WindowFrame):
         msg = _(u'Installation appears incomplete.  Please re-unzip bash '
         u'to game directory so that ALL files are installed.') + u'\n\n' + _(
         u'Correct installation will create %s\\Mopy and '
-        u'%s\\Data\\Docs directories.') % (bush.game.fsName, bush.game.fsName)
+        u'%s\\%s\\Docs directories.') % (bush.game.fsName, bush.game.fsName,
+                                         bush.game.mods_dir)
         balt.showWarning(self, msg, _(u'Incomplete Installation'))
 
     def on_closing(self, destroy=True):
