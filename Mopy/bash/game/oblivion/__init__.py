@@ -69,6 +69,7 @@ class OblivionGameInfo(GameInfo):
         cosave_ext = u'.obse'
         url = u'http://obse.silverlock.org/'
         url_tip = u'http://obse.silverlock.org/'
+        limit_fixer_plugins = [u'mod_limit_fix.dll', u'Trifle.dll']
 
     class Ge(GameInfo.Ge):
         ge_abbrev = u'OBGE'

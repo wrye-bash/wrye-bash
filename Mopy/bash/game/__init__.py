@@ -110,57 +110,79 @@ class GameInfo(object):
     class Ck(object):
         """Information about the official plugin editor (generally called some
         variation of 'Creation Kit') for this game."""
-        ck_abbrev = u''   # Abbreviated name
-        long_name = u''   # Full name
-        exe = u'*DNE*'    # Executable to run
+        # Abbreviated name
+        ck_abbrev = u''
+        # Full name
+        long_name = u''
+        # Executable to run
+        exe = u'*DNE*'
         # Argument to pass to the script extender to load the CK. If None,
         # indicates that this game's script extender does not have this feature
         se_args = None
-        image_name = u''  # Image name template for the status bar
+        # Image name template for the status bar
+        image_name = u''
 
     class Se(object):
         """Information about the Script Extender for this game."""
-        se_abbrev = u''   # Abbreviated name. If this is empty, it signals that
-                          # no xSE is available for this game. Note that this
-                          # should NEVER be used to program other xSE
-                          # behavior - create new variables like plugin_dir and
-                          # cosave_ext instead.
-        long_name = u''   # Full name
-        exe = u''         # Exe to run
-        ver_files = []    # List of file names to use for version detection.
-                          # Tried in order until one exists. Needed because
-                          # it's technically not required to install the EXE.
-        plugin_dir = u''  # One level above the directory in which xSE plugins
-                          # should be placed (e.g. when plugins should be in
-                          # Data\OBSE\Plugins, this should be u'OBSE')
-        cosave_tag = u''  # The magic tag that the cosaves use (e.g. u'SKSE').
-                          # If this is empty, it signals that this script
-                          # extender has no cosaves.
-        cosave_ext = u''  # The extension that the cosaves use (e.g. u'.skse')
-        url = u''         # URL to download from
-        url_tip = u''     # Tooltip for mouse over the URL
+        # Abbreviated name. If this is empty, it signals that no xSE is
+        # available for this game. Note that this should NEVER be used to
+        # program other xSE behavior - create new variables like plugin_dir and
+        # cosave_ext instead.
+        se_abbrev = u''
+        # Full name
+        long_name = u''
+        # Exe to run
+        exe = u''
+        # List of file names to use for version detection. Tried in order until
+        # one exists. Needed because it's technically not required to install
+        # the EXE.
+        ver_files = []
+        # One level above the directory in which xSE plugins should be placed
+        # (e.g. when plugins should be in Data\OBSE\Plugins, this should be
+        # u'OBSE')
+        plugin_dir = u''
+        # The magic tag that the cosaves use (e.g. u'SKSE'). If this is empty,
+        # it signals that this script extender has no cosaves.
+        cosave_tag = u''
+        # The extension that the cosaves use (e.g. u'.skse')
+        cosave_ext = u''
+        # URL to download from
+        url = u''
+        # Tooltip for mouse over the URL
+        url_tip = u''
+        # A list of xSE plugins that fix the plugin/BSA handle problem. Empty
+        # if that does not apply to this game.
+        limit_fixer_plugins = []
 
     class Sd(object):
         """Information about Script Dragon for this game."""
-        sd_abbrev = u''   # Abbreviated name. If this is empty, it signals that
-                          # no Script Dragon is available for this game.
-        long_name = u''   # Full name
-        install_dir = u'' # The directory, relative to the Data folder, into
-                          # which Script Dragon plugins will be installed.
+        # Abbreviated name. If this is empty, it signals that no Script Dragon
+        # is available for this game.
+        sd_abbrev = u''
+        # Full name
+        long_name = u''
+        # The directory, relative to the Data folder, into which Script Dragon
+        # plugins will be installed.
+        install_dir = u''
 
     class Sp(object):
         """Information about SkyProc patchers for this game."""
-        sp_abbrev = u''   # Abbreviated name. If this is empty, it signals that
-                          # this game does not support SkyProc patchers.
-        long_name = u''   # Full name
-        install_dir = u'' # The directory, relative to the Data folder, into
-                          # which SkyProc patchers will be installed.
+        # Abbreviated name. If this is empty, it signals that this game does
+        # not support SkyProc patchers.
+        sp_abbrev = u''
+        # Full name
+        long_name = u''
+        # The directory, relative to the Data folder, into which SkyProc
+        # patchers will be installed.
+        install_dir = u''
 
     class Ge(object):
         """Information about the Graphics Extender for this game."""
-        ge_abbrev = u'' # Abbreviated name. If this is empty, it signals
-                        # that no graphics extender is available for this game.
-        long_name = u'' # Full name
+        # Abbreviated name. If this is empty, it signals that no graphics
+        # extender is available for this game.
+        ge_abbrev = u''
+        # Full name
+        long_name = u''
         # exe is treated specially here.  If it is a string, then it should
         # be the path relative to the root directory of the game, if it is
         # a list, each list element should be an iterable to pass to Path.join
@@ -169,16 +191,20 @@ class GameInfo(object):
         # for Oblivion, as the newer OBGE has a different filename than the
         # older OBGE
         exe = u''
-        url = u''       # URL to download from
-        url_tip = u''   # Tooltip for mouse over the URL
+        # URL to download from
+        url = u''
+        # Tooltip for mouse over the URL
+        url_tip = u''
 
     class Laa(object):
         """Information about the LAA (Large Address Aware) launcher for this
         game."""
-        laa_name = u''      # Display name of the launcher
-        exe = u'*DNE*'      # Executable to run
-        launchesSE = False  # Whether the launcher will automatically launch
-                            # the SE
+        # Display name of the launcher
+        laa_name = u''
+        # Executable to run
+        exe = u'*DNE*'
+        # Whether the launcher will automatically launch the SE
+        launchesSE = False
 
     class Ini(object):
         """Information about this game's INI handling."""
@@ -220,9 +246,12 @@ class GameInfo(object):
     class Ess(object):
         """Information about WB's capabilities with regards to save file
         viewing and editing for this game."""
-        canReadBasic = True # Can read the info needed for the Save Tab display
-        canEditMore = False # Advanced editing
-        ext = u'.ess'       # Save file extension
+        # Can read the info needed for the Save Tab display
+        canReadBasic = True
+        # Advanced editing
+        canEditMore = False
+        # Save file extension
+        ext = u'.ess'
 
     class Bsa(object):
         """Information about the BSAs (Bethesda Archives) used by this game."""
@@ -304,11 +333,13 @@ class GameInfo(object):
     # Plugin format stuff
     class Esp(object):
         # Wrye Bash capabilities
-        canBash = False         # Can create Bashed Patches
-        canEditHeader = False   # Can edit basic info in the main header
-                                # record - generally has signature 'TES4'
-        # Valid ESM/ESP header versions
-        #  These are the valid 'version' numbers for the game file headers
+        # Can create Bashed Patches
+        canBash = False
+        # Can edit basic info in the main header record - generally has
+        # signature 'TES4'
+        canEditHeader = False
+        # Valid ESM/ESP header versions. These are the valid 'version' numbers
+        # for the game file headers
         validHeaderVersions = tuple()
         # used to locate string translation files
         stringsFiles = [

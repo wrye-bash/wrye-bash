@@ -71,6 +71,7 @@ class Fallout3GameInfo(GameInfo):
         cosave_ext = u'.fose'
         url = u'http://fose.silverlock.org/'
         url_tip = u'http://fose.silverlock.org/'
+        limit_fixer_plugins = [u'mod_limit_fix.dll']
 
     class Ini(GameInfo.Ini):
         allow_new_lines = False

@@ -3855,8 +3855,14 @@ class BashFrame(WindowFrame):
 
     @balt.conversation
     def warnTooManyModsBsas(self):
-        if bush.game.fsName != u'Oblivion': return
+        limit_fixers = bush.game.Se.limit_fixer_plugins
+        if not limit_fixers: return # Problem does not apply to this game
         if not bass.inisettings[u'WarnTooManyFiles']: return
+        for lf in limit_fixers:
+            lf_path = bass.dirs[u'mods'].join(bush.game.Se.plugin_dir,
+                                              u'plugins', lf)
+            if lf_path.isfile():
+                return # Limit-fixing xSE plugin installed
         if not len(bosh.bsaInfos): bosh.bsaInfos.refresh()
         if len(bosh.bsaInfos) + len(bosh.modInfos) >= 325 and not \
                 settings[u'bash.mods.autoGhost']:
