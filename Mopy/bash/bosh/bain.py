@@ -37,7 +37,8 @@ from functools import partial, wraps
 from itertools import groupby, imap, izip
 from operator import itemgetter, attrgetter
 
-from . import imageExts, DataStore, BestIniFile, InstallerConverter, ModInfos
+from . import imageExts, DataStore, BestIniFile, InstallerConverter, \
+    ModInfos, ListInfo
 from .. import balt, gui # YAK!
 from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
@@ -50,7 +51,7 @@ from ..ini_files import OBSEIniFile
 
 os_sep = unicode(os.path.sep) # PY3: already unicode
 
-class Installer(object):
+class Installer(ListInfo):
     """Object representing an installer archive, its user configuration, and
     its installation state."""
     #--Member data
@@ -1293,6 +1294,8 @@ class InstallerArchive(Installer):
     """Represents an archive installer entry."""
     __slots__ = tuple() #--No new slots
     type_string = _(u'Archive')
+    _valid_exts_re = u'' r'(\.(' + u'|'.join(
+        ext[1:] for ext in archives.readExts) + u')+)'
 
     @classmethod
     def is_archive(cls): return True

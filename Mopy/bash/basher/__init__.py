@@ -1360,24 +1360,15 @@ class _EditableMixinOnFileInfos(_EditableMixin):
         #--Changed?
         fileStr = self._fname_ctrl.text_content
         if fileStr == self.fileStr: return
-        #--Extension Changed?
-        if fileStr[-4:].lower() != self.fileStr[-4:].lower():
-            balt.showError(self,_(u"Incorrect file extension: ")+fileStr[-3:])
-            self._fname_ctrl.text_content = self.fileStr
-        #--Validate the filename - no need to check for extension again
-        elif not self._validate_filename(fileStr):
-            self._fname_ctrl.text_content = self.fileStr
-        #--Else file exists?
-        elif self.file_info.dir.join(fileStr).exists():
-            balt.showError(self,_(u"File %s already exists.") % fileStr)
+        #--Validate the filename
+        name_path, root, _numStr = self.file_info.validate_name(fileStr)
+        if root is None:
+            balt.showError(self, name_path) # it's an error message in this case
             self._fname_ctrl.text_content = self.fileStr
         #--Okay?
         else:
             self.fileStr = fileStr
             self.SetEdited()
-
-    def _validate_filename(self, fileStr):
-        return self.panel_uilist.validate_filename(fileStr)[0]
 
     def OnFileEdit(self, new_text):
         """Event: Editing filename."""
@@ -2026,22 +2017,14 @@ class SaveList(balt.UIList):
                                                      u'pcLocation')),
     ])
 
-    __ext_group = u'(\.(' + bush.game.Ess.ext[1:] + u'|' + \
-                  bush.game.Ess.ext[1:-1] + u'r' + u'))' # add bak !!!
-    def validate_filename(self, name_new, has_digits=False, ext=u'',
-            is_filename=True, _old_path=None):
-        if _old_path and bosh.bak_file_pattern.match(_old_path.s): ##: YAK add cosave support for bak
-            balt.showError(self, _(u'Renaming bak files is not supported.'))
-            return None, None, None ##: this used to not-Skip now it Vetoes
-        return super(SaveList, self).validate_filename(name_new,
-            has_digits=has_digits, ext=self.__ext_group,
-            is_filename=is_filename)
-
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Savegame renamed."""
         if is_edit_cancelled: return EventResult.FINISH # todo CANCEL?
-        root, newName, _numStr = self.validate_filename(evt_label)
-        if not root: return EventResult.CANCEL # validate_filename would Veto
+        newName, root, _numStr = \
+            self.panel.detailsPanel.file_info.validate_filename_str(evt_label)
+        if not root:
+            balt.showError(self, newName)
+            return EventResult.CANCEL # validate_filename would Veto
         item_edited = [self.panel.detailsPanel.displayed_item]
         selected = [s for s in self.GetSelected() if
                     not bosh.bak_file_pattern.match(s.s)] # YAK !
@@ -2211,10 +2194,6 @@ class SaveDetails(_ModsSavesDetails):
         """Info field was edited."""
         if self.saveInfo and self.gInfo.modified:
             self.saveInfo.set_table_prop(u'info', new_text)
-
-    def _validate_filename(self, fileStr):
-        return self.panel_uilist.validate_filename(fileStr,
-            _old_path=self.saveInfo.name)[0]
 
     def testChanges(self): # used by the master list when editing is disabled
         saveInfo = self.saveInfo
@@ -2406,19 +2385,16 @@ class InstallersList(balt.UIList):
             uilist_ctrl.ec_set_selection(*selection_span)
             return EventResult.FINISH  ##: needed?
 
-    __ext_group = \
-        r'(\.(' + u'|'.join(ext[1:] for ext in archives.readExts) + u')+)'
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Renamed some installers"""
         if is_edit_cancelled: return EventResult.FINISH ##: previous behavior todo TTT
         selected = self.GetSelected()
+        # all selected have common type! enforced in OnBeginEditLabel
         renaming_type = type(self.data_store[selected[0]])
-        installables = self.data_store.filterInstallables(selected)
-        kwargs = {u'is_filename': bool(installables)}
-        if renaming_type.is_archive():
-            kwargs[u'ext'] = self.__ext_group
-        root, newName, _numStr = self.validate_filename(evt_label, **kwargs)
-        if not root: return EventResult.CANCEL
+        newName, root, _numStr = renaming_type.validate_filename_str(evt_label)
+        if root is None:
+            balt.showError(self, newName)
+            return EventResult.CANCEL
         #--Rename each installer, keeping the old extension (for archives)
         with BusyCursor():
             refreshes, ex = [(False, False, False)], None
@@ -3312,8 +3288,6 @@ class ScreensList(balt.UIList):
     global_links = OrderedDefaultDict(lambda: Links()) # Global menu
     _shellUI = True
     _editLabels = _copy_paths = True
-    __ext_group = \
-        r'(\.(' + u'|'.join(ext[1:] for ext in bosh.imageExts) + u')+)'
 
     _sort_keys = {u'File'    : None,
                   u'Modified': lambda self, a: self.data_store[a].mtime,
@@ -3337,9 +3311,11 @@ class ScreensList(balt.UIList):
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Rename selected screenshots."""
         if is_edit_cancelled: return EventResult.CANCEL
-        root, _newName, numStr = self.validate_filename(evt_label, has_digits=True,
-                                                        ext=self.__ext_group)
+        newName, root, numStr = \
+            self.panel.detailsPanel.file_info.validate_filename_str(
+                evt_label, has_digits=True)
         if not (root or numStr): # allow for number only names
+            balt.showError(self, newName)
             return EventResult.CANCEL
         selected = self.GetSelected()
         #--Rename each screenshot, keeping the old extension

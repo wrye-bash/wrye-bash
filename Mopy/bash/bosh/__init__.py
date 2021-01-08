@@ -99,6 +99,38 @@ imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp', u'.tif'}
 #------------------------------------------------------------------------------
 # File System -----------------------------------------------------------------
 #------------------------------------------------------------------------------
+class ListInfo(object):
+    """Info object displayed in Wrye Bash list."""
+    __slots__ = ()
+    _valid_exts_re = u''
+    _is_filename = True
+
+    @classmethod
+    def validate_filename_str(cls, name_str, has_digits=False):
+        """Basic validation of list item name - those are usually filenames so
+        they should contain valid chars. We also optionally check for match
+        with an extension group (apart from projects and markers).
+
+        :type name_str: unicode
+        """
+        if not name_str:
+            return _(u'Empty name !'), None, None
+        char = cls._is_filename and bolt.Path.has_invalid_chars(name_str)
+        if char:
+            return _(u'%(new_name)s contains invalid character (%(char)s)') % {
+                u'new_name': name_str, u'char': char}, None, None
+        # require at least one char before extension
+        regex = u'^%s(.*?)' % (u'' r'(?=.+\.)' if cls._valid_exts_re else u'')
+        if has_digits: regex += u'' r'(\d*)'
+        regex += cls._valid_exts_re + u'$'
+        rePattern = re.compile(regex, re.I | re.U)
+        maPattern = rePattern.match(name_str)
+        if maPattern:
+            num_str = maPattern.groups()[1] if has_digits else None
+        if not maPattern or not (maPattern.groups()[0] or num_str):
+            return (_(u'Bad extension or file root: ') + name_str), None, None
+        return GPath(name_str), maPattern.groups(u'')[0], num_str # default u''
+
 class MasterInfo(object):
     """Slight abstraction over ModInfo that allows us to represent masters that
     are missing an active mod counterpart."""
@@ -151,7 +183,7 @@ class MasterInfo(object):
         return u'%s<%r>' % (self.__class__.__name__, self.curr_name)
 
 #------------------------------------------------------------------------------
-class FileInfo(AFile):
+class FileInfo(AFile, ListInfo):
     """Abstract Mod, Save or BSA File. Features a half baked Backup API."""
     _null_stat = (-1, None, None)
 
@@ -357,12 +389,25 @@ class FileInfo(AFile):
     def snapshot_dir(self):
         return self.getFileInfos().bash_dir.join(u'Snapshots')
 
+    def validate_name(self, name_str):
+        # disallow extension change but not if no-extension info type
+        check_ext = name_str and self.__class__._valid_exts_re
+        if check_ext and not name_str.lower().endswith(self._file_key.cext):
+            return _(u'%s: Incorrect file extension (must be %s)') % (
+                name_str, self._file_key.ext), None, None
+        #--Else file exists?
+        if self.dir.join(name_str).exists(): ##: check using file_infos?
+            return _(u'File %s already exists.') % name_str, None, None
+        return self.__class__.validate_filename_str(name_str)
+
 #------------------------------------------------------------------------------
 reBashTags = re.compile(u'{{ *BASH *:[^}]*}}\\s*\\n?',re.U)
 
 class ModInfo(FileInfo):
     """A plugin file. Currently, these are .esp, .esm, .esl and .esu files."""
     _has_esm_flag = _is_esl = False # Cached, since we need it so often
+    _valid_exts_re = u'' r'(\.(' + u'|'.join(
+        x[1:] for x in bush.game.espm_extensions) + u')+)'
 
     def __init__(self, fullpath, load_cache=False):
         self.isGhost = endsInGhost = (fullpath.cs[-6:] == u'.ghost')
@@ -1105,6 +1150,8 @@ from . import cosaves
 class SaveInfo(FileInfo):
     cosave_types = () # cosave types for this game - set once in SaveInfos
     _cosave_ui_string = {PluggyCosave: u'XP', xSECosave: u'XO'} # ui strings
+    _valid_exts_re = u'' r'(\.(' + bush.game.Ess.ext[1:] + u'|' + \
+                     bush.game.Ess.ext[1:-1] + u'r' + u'))' # add bak !!!
 
     def __init__(self, fullpath, load_cache=False):
         # Dict of cosaves that may come with this save file. Need to get this
@@ -1112,6 +1159,12 @@ class SaveInfo(FileInfo):
         # for SSE and FO4
         self._co_saves = self.get_cosaves_for_path(fullpath)
         super(SaveInfo, self).__init__(fullpath, load_cache)
+
+    def validate_name(self, name_str):
+        # TODO: renaming bak would drop this override
+        if bak_file_pattern.match(self.name.s):
+            return _(u'Renaming bak files is not supported.'), None, None
+        return super(SaveInfo, self).validate_name(name_str)
 
     def getFileInfos(self): return saveInfos
 
@@ -1271,6 +1324,8 @@ class SaveInfo(FileInfo):
 class ScreenInfo(FileInfo):
     """Cached screenshot, stores a bitmap and refreshes it when its cache is
     invalidated."""
+    _valid_exts_re = u'' r'(\.(' + u'|'.join(ext[1:] for ext in imageExts) + u')+)'
+
     def __init__(self, fullpath, load_cache=False):
         self.cached_bitmap = None
         super(ScreenInfo, self).__init__(fullpath, load_cache)
@@ -3153,6 +3208,8 @@ class BSAInfos(FileInfos):
         _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
 
         class BSAInfo(FileInfo, _bsa_type):
+            _valid_exts_re = u'' r'(\.(' + bush.game.Bsa.bsa_extension[
+                                           1:] + u')+)'
             def __init__(self, fullpath, load_cache=False):
                 try:  # Never load_cache for memory reasons - let it be
                     # loaded as needed
