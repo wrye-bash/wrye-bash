@@ -2391,7 +2391,8 @@ class InstallersList(balt.UIList):
         selected = self.GetSelected()
         # all selected have common type! enforced in OnBeginEditLabel
         renaming_type = type(self.data_store[selected[0]])
-        newName, root, _numStr = renaming_type.validate_filename_str(evt_label)
+        newName, root, _numStr = renaming_type.validate_filename_str(evt_label,
+            allowed_exts=archives.readExts)
         if root is None:
             balt.showError(self, newName)
             return EventResult.CANCEL
