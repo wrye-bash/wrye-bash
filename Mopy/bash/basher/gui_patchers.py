@@ -511,6 +511,10 @@ class _ChoiceMenuMixin(object):
 
     def ShowChoiceMenu(self, lb_selection_dex): raise exception.AbstractError
 
+_label_formats = {unicode: u'%s', float: u'%4.2f', int: u'%d'}
+def _custom_label(label, value): # edit label text with value
+    return u'%s: %s' % (label, _label_formats[type(value)] % value)
+
 class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
     """Patcher panel with list of checkable, configurable tweaks."""
     tweak_label = _(u'Tweaks')
@@ -550,11 +554,6 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         self.SetTweaks()
         return tweak_select_layout
 
-    @staticmethod
-    def _label(label, value): # edit label text with value
-        formatStr = u' %s' if isinstance(value, basestring) else u' %4.2f '
-        return label + formatStr % value
-
     def SetTweaks(self):
         """Set item to specified set of items."""
         self.gTweakList.lb_clear()
@@ -562,8 +561,9 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         patcherBold = False
         for index,tweak in enumerate(self._all_tweaks):
             label = tweak.getListLabel()
-            if tweak.choiceLabels and tweak.choiceLabels[tweak.chosen].startswith(u'Custom'):
-                label = self._label(label, tweak.choiceValues[tweak.chosen][0])
+            if tweak.choiceLabels and tweak.choiceLabels[
+                tweak.chosen] == tweak.custom_choice:
+                label = _custom_label(label, tweak.choiceValues[tweak.chosen][0])
             self.gTweakList.lb_insert(label, index)
             self.gTweakList.lb_check_at_index(index, tweak.isEnabled)
             if not isFirstLoad and tweak.isNew():
@@ -627,8 +627,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         for index,label in enumerate(choiceLabels):
             if label == u'----':
                 links.append(SeparatorLink())
-            elif label.startswith(_(u'Custom')):
-                label = self._label(label, tweak.choiceValues[index][0])
+            elif label == tweak.custom_choice:
+                label = _custom_label(label, tweak.choiceValues[index][0])
                 links.append(_ValueLinkCustom(label, index))
             else:
                 links.append(_ValueLink(label, index))
@@ -712,7 +712,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         if not validation_error: # no error, we're good to go
             tweak.choiceValues[index] = value
             tweak.chosen = index
-            label = self._label(tweak.getListLabel(), value[0])
+            label = _custom_label(tweak.getListLabel(), value[0])
             self.gTweakList.lb_set_label_at_index(tweakIndex, label)
             self.gTweakList.lb_check_at_index(tweakIndex, True)
             self.TweakOnListCheck() # fired so this line is needed (?)

@@ -89,6 +89,11 @@ class MultiTweakItem(AMultiTweakItem):
         np_flag_attr, np_flag_name = bush.game.not_playable_flag
         return getattr(getattr(record, np_flag_attr), np_flag_name)
 
+class CustomChoiceTweak(MultiTweakItem):
+    """Base class for tweaks that have a custom choice with the 'Custom'
+    label."""
+    custom_choice = _(u'Custom')
+
 class MultiTweaker(AMultiTweaker,Patcher):
 
     def initData(self,progress):

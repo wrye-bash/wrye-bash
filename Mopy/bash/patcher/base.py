@@ -152,27 +152,27 @@ class AMultiTweakItem(object):
     # self.choiceValues[self.chosen]. It is up to each tweak to decide for
     # itself how to best lay these out.
     #
-    # If a label starts with 'Custom' (or the translated equivalent of it), it
-    # is treated as a custom choice. This choice will allow the user to choose
-    # any value they wish.
     # Setting a label to '----' will not add a new choice. Instead, a separator
     # will be added at that point in the dropdown.
     # If only one choice is available, no dropdown will be shown - the tweak
     # can only be toggled on and off.
     #
     # An example:
-    # tweak_choices = [(_(u'One Day', 24), (_(u'Two Days'), 48),
-    #                  (_(u'Custom'), 24)]
+    # tweak_choices = [(_(u'One Day', 24), (_(u'Two Days'), 48)]
     #
-    # This will show three options to the user, with the third one allowing
-    # them to select a custom value. When retrieving a value via
-    # self.choiceValues[self.chosen], the selected value (24, 48 or a custom
-    # one) will be returned, which the tweak could use to e.g. change a record
-    # attribute controlling how long a quest is delayed.
+    # This will show two options to the user. When retrieving a value via
+    # self.choiceValues[self.chosen][0], the selected value (24 or 48) will be
+    # returned, which the tweak could use to e.g. change a record attribute
+    # controlling how long a quest is delayed.
     tweak_choices = []
     # The choice label (see tweak_choices above) that should be selected by
     # default.
     default_choice = None
+    # If set to a string, adds a new choice to the end of the tweak_choices
+    # list with that label and the default choice's value (see default_choice)
+    # that will open a dialog allowing the user to pick a custom value when
+    # clicked.
+    custom_choice = None
     # The header to log before logging anything else about this tweak.
     # If set to None, defaults to this tweak's name. Automatically gets wtxt
     # formatting prepended.
@@ -202,7 +202,6 @@ class AMultiTweakItem(object):
         self.choiceLabels = []
         self.choiceValues = []
         self.default = None
-        has_custom = False
         # Caught some copy-paste mistakes where I forgot to make a it list,
         # left it in for that reason
         if not isinstance(self.tweak_choices, list):
@@ -214,15 +213,6 @@ class AMultiTweakItem(object):
             if choice_label == self.default_choice:
                 choice_label = u'[%s]' % choice_label
                 self.default = choice_index
-            # Validate that we have at most one custom value
-            if choice_label.startswith(_(u'Custom')):
-                if self.default == choice_index:
-                    self._raise_tweak_syntax_error(u'A custom choice may not '
-                                                   u'be the default choice')
-                if has_custom:
-                    self._raise_tweak_syntax_error(u'At most one custom '
-                                                   u'choice may be specified')
-                has_custom = True
             self.choiceLabels.append(choice_label)
             self.choiceValues.append(choice_items)
         if self.default is None:
@@ -230,6 +220,10 @@ class AMultiTweakItem(object):
                 self._raise_tweak_syntax_error(u'default_choice is not in '
                                                u'tweak_choices')
             self.default = 0 # no explicit default item, so default to first
+        # Create the custom choice if a label was specified for it
+        if self.custom_choice is not None:
+            self.choiceLabels.append(self.custom_choice)
+            self.choiceValues.append(self.choiceValues[self.default])
         #--Config
         self.isEnabled = False
         self.chosen = 0
@@ -254,11 +248,9 @@ class AMultiTweakItem(object):
             if value in self.choiceValues:
                 self.chosen = self.choiceValues.index(value)
             else:
-                for i, choice_label in enumerate(self.choiceLabels):
-                    if choice_label.startswith(_(u'Custom')):
-                        self.chosen = i
-                        self.choiceValues[self.chosen] = value
-                        break
+                if self.custom_choice is not None:
+                    self.chosen = len(self.choiceLabels) - 1 # always last
+                    self.choiceValues[self.chosen] = value
         else:
             if self.default:
                 self.chosen = self.default

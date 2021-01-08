@@ -24,10 +24,10 @@
 to the Settings Multitweaker - as well as the tweaker itself."""
 from ... import bush # for game
 from ...bolt import floats_equal
-from ...patcher.patchers.base import MultiTweakItem
-from ...patcher.patchers.base import MultiTweaker
+from ...patcher.patchers.base import MultiTweakItem, MultiTweaker, \
+    CustomChoiceTweak
 
-class _AGlobalsTweak(MultiTweakItem):
+class _AGlobalsTweak(CustomChoiceTweak):
     """Sets a global to specified value."""
     tweak_read_classes = b'GLOB',
     show_key_for_custom = True
@@ -61,8 +61,7 @@ class GlobalsTweak_Timescale(_AGlobalsTweak):
                      (u'20',        20),
                      (u'24',        24),
                      (u'30',        30),
-                     (u'40',        40),
-                     (_(u'Custom'), 0)]
+                     (u'40',        40)]
     default_choice = u'30'
 
 class GlobalsTweak_Timescale_Tes5(GlobalsTweak_Timescale):
@@ -78,8 +77,7 @@ class GlobalsTweak_ThievesGuild_QuestStealingPenalty(_AGlobalsTweak):
                      (u'150',     150),
                      (u'200',     200),
                      (u'300',     300),
-                     (u'400',     400),
-                     (_(u'Custom'), 0)]
+                     (u'400',     400)]
     default_choice = u'200'
 
 #------------------------------------------------------------------------------
@@ -92,8 +90,7 @@ class GlobalsTweak_ThievesGuild_QuestKillingPenalty(_AGlobalsTweak):
                      (u'500',     500),
                      (u'1000',   1000),
                      (u'1500',   1500),
-                     (u'2000',   2000),
-                     (_(u'Custom'), 0)]
+                     (u'2000',   2000)]
     default_choice = u'1000'
 
 #------------------------------------------------------------------------------
@@ -106,8 +103,7 @@ class GlobalsTweak_ThievesGuild_QuestAttackingPenalty(_AGlobalsTweak):
                      (u'250',     250),
                      (u'500',     500),
                      (u'750',     750),
-                     (u'1000',   1000),
-                     (_(u'Custom'), 0)]
+                     (u'1000',   1000)]
     default_choice = u'500'
 
 #------------------------------------------------------------------------------
@@ -120,8 +116,7 @@ class GlobalsTweak_Crime_ForceJail(_AGlobalsTweak):
                      (u'2500',   2500),
                      (u'5000',   5000),
                      (u'7500',   7500),
-                     (u'10000', 10000),
-                     (_(u'Custom'), 0)]
+                     (u'10000', 10000)]
     default_choice = u'5000'
 
 #------------------------------------------------------------------------------
@@ -197,18 +192,16 @@ class _AGmstTweak(MultiTweakItem):
 
     def tweak_log(self, log, count): # count is ignored here
         if len(self.choiceLabels) > 1:
-            if self.choiceLabels[self.chosen].startswith(_(u'Custom')):
+            chosen_label = self.choiceLabels[self.chosen]
+            if chosen_label == self.custom_choice:
                 if isinstance(self.chosen_values[0], basestring):
-                    log(u'* %s: %s %s' % (
-                        self.tweak_name, self.choiceLabels[self.chosen],
-                        self.chosen_values[0]))
+                    log(u'* %s: %s %s' % (self.tweak_name, chosen_label,
+                                          self.chosen_values[0]))
                 else:
-                    log(u'* %s: %s %4.2f' % (
-                        self.tweak_name, self.choiceLabels[self.chosen],
-                        self.chosen_values[0]))
+                    log(u'* %s: %s %4.2f' % (self.tweak_name, chosen_label,
+                                             self.chosen_values[0]))
             else:
-                log(u'* %s: %s' % (
-                    self.tweak_name, self.choiceLabels[self.chosen]))
+                log(u'* %s: %s' % (self.tweak_name, chosen_label))
         else:
             log(u'* ' + self.tweak_name)
 
@@ -219,12 +212,14 @@ class _AGmstTweak(MultiTweakItem):
                 patch_file.new_gmst(self._find_original_eid(remaining_eid),
                     self._find_chosen_value(remaining_eid))
 
-class _AMsgTweak(_AGmstTweak):
+class _AGmstCCTweak(_AGmstTweak, CustomChoiceTweak):
+    """Variant of _AGmstTweak that also includes CustomChoiceTweak."""
+
+class _AMsgTweak(_AGmstCCTweak):
     """Base class for GMST tweaks in the Msg: category."""
     tweak_choices = [(_(u'None'),           u' '),
                      (u'.',                 u'.'),
-                     (_(u'Hmm...'), _(u'Hmm...')),
-                     (_(u'Custom'),      _(u' '))]
+                     (_(u'Hmm...'), _(u'Hmm...'))]
     default_choice = _(u'None')
 
 class _AAllowTweak(_AGmstTweak):
@@ -233,37 +228,34 @@ class _AAllowTweak(_AGmstTweak):
                      (_(u'Disallow'), 0)]
     default_choice = _(u'Disallow')
 
-class _ALeveledDiffTweak(_AGmstTweak):
+class _ALeveledDiffTweak(_AGmstCCTweak):
     """Base class for Level Difference tweaks."""
     tweak_choices = [(u'1',               1),
                      (u'5',               5),
                      (u'8',               8),
                      (u'10',             10),
                      (u'20',             20),
-                     (_(u'Unlimited'), 9999),
-                     (_(u'Custom'),       8)]
+                     (_(u'Unlimited'), 9999)]
     default_choice = u'8'
 
-class _ASoulTrapTweak(_AGmstTweak):
+class _ASoulTrapTweak(_AGmstCCTweak):
     """Base class for Soul Trap tweaks."""
-    tweak_choices = [(u'4',         4),
-                     (u'16',       16),
-                     (u'28',       28),
-                     (u'38',       38),
-                     (_(u'Custom'), 4)]
+    tweak_choices = [(u'4',   4),
+                     (u'16', 16),
+                     (u'28', 28),
+                     (u'38', 38)]
 
 #------------------------------------------------------------------------------
-class GmstTweak_Arrow_LitterCount(_AGmstTweak):
+class GmstTweak_Arrow_LitterCount(_AGmstCCTweak):
     tweak_name = _(u'Arrow: Litter Count')
     tweak_tip = _(u'Maximum number of spent arrows allowed in cell.')
     tweak_key = (u'iArrowMaxRefCount',)
-    tweak_choices = [(u'15',        15),
-                     (u'25',        25),
-                     (u'35',        35),
-                     (u'50',        50),
-                     (u'100',      100),
-                     (u'500',      500),
-                     (_(u'Custom'), 15)]
+    tweak_choices = [(u'15',   15),
+                     (u'25',   25),
+                     (u'35',   35),
+                     (u'50',   50),
+                     (u'100', 100),
+                     (u'500', 500)]
     default_choice = u'15'
 
 #------------------------------------------------------------------------------
@@ -271,30 +263,29 @@ class GmstTweak_Arrow_LitterTime(_AGmstTweak):
     tweak_name = _(u'Arrow: Litter Time')
     tweak_tip = _(u'Time before spent arrows fade away from cells and actors.')
     tweak_key = (u'fArrowAgeMax',)
-    tweak_choices = [(_(u'1 Minute'),            60.0),
-                     (_(u'1.5 Minutes'),         90.0),
-                     (_(u'2 Minutes'),          120.0),
-                     (_(u'3 Minutes'),          180.0),
-                     (_(u'5 Minutes'),          300.0),
-                     (_(u'10 Minutes'),         600.0),
-                     (_(u'30 Minutes'),        1800.0),
-                     (_(u'1 Hour'),            3600.0),
-                     (_(u'Custom (in Seconds)'), 90.0)]
+    tweak_choices = [(_(u'1 Minute'),     60.0),
+                     (_(u'1.5 Minutes'),  90.0),
+                     (_(u'2 Minutes'),   120.0),
+                     (_(u'3 Minutes'),   180.0),
+                     (_(u'5 Minutes'),   300.0),
+                     (_(u'10 Minutes'),  600.0),
+                     (_(u'30 Minutes'), 1800.0),
+                     (_(u'1 Hour'),     3600.0)]
     default_choice = _(u'1.5 Minutes')
+    custom_choice = _(u'Custom (in seconds)')
 
 #------------------------------------------------------------------------------
-class GmstTweak_Arrow_RecoveryFromActor(_AGmstTweak):
+class GmstTweak_Arrow_RecoveryFromActor(_AGmstCCTweak):
     tweak_name = _(u'Arrow: Recovery From Actor')
     tweak_tip = _(u'Chance that an arrow shot into an actor can be recovered.')
     tweak_key = (u'iArrowInventoryChance',)
-    tweak_choices = [(u'33%',       33),
-                     (u'50%',       50),
-                     (u'60%',       60),
-                     (u'70%',       70),
-                     (u'80%',       80),
-                     (u'90%',       90),
-                     (u'100%',     100),
-                     (_(u'Custom'), 50)]
+    tweak_choices = [(u'33%',   33),
+                     (u'50%',   50),
+                     (u'60%',   60),
+                     (u'70%',   70),
+                     (u'80%',   80),
+                     (u'90%',   90),
+                     (u'100%', 100)]
     default_choice = u'50%'
 
 class GmstTweak_Arrow_RecoveryFromActor_Tes5(
@@ -302,26 +293,25 @@ class GmstTweak_Arrow_RecoveryFromActor_Tes5(
     default_choice = u'33%'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Arrow_Speed(_AGmstTweak):
+class GmstTweak_Arrow_Speed(_AGmstCCTweak):
     tweak_name = _(u'Arrow: Speed')
     tweak_tip = _(u'Speed of a full power arrow.')
     tweak_key = (u'fArrowSpeedMult',)
-    tweak_choices = [(u'x1.0',                     1500.0),
-                     (u'x1.2',                     1800.0),
-                     (u'x1.4',                     2100.0),
-                     (u'x1.6',                     2400.0),
-                     (u'x1.8',                     2700.0),
-                     (u'x2.0',                     3000.0),
-                     (u'x2.2',                     3300.0),
-                     (u'x2.4',                     3600.0),
-                     (u'x2.6',                     3900.0),
-                     (u'x2.8',                     4200.0),
-                     (u'x3.0',                     4500.0),
-                     (_(u'Custom (base is 1500)'), 1500.0)]
+    tweak_choices = [(u'x1.0', 1500.0),
+                     (u'x1.2', 1800.0),
+                     (u'x1.4', 2100.0),
+                     (u'x1.6', 2400.0),
+                     (u'x1.8', 2700.0),
+                     (u'x2.0', 3000.0),
+                     (u'x2.2', 3300.0),
+                     (u'x2.4', 3600.0),
+                     (u'x2.6', 3900.0),
+                     (u'x2.8', 4200.0),
+                     (u'x3.0', 4500.0)]
     default_choice = u'x1.0'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Camera_ChaseTightness(_AGmstTweak):
+class GmstTweak_Camera_ChaseTightness(_AGmstCCTweak):
     tweak_name = _(u'Camera: Chase Tightness')
     tweak_tip = _(u'Tightness of chase camera to player turning.')
     tweak_key = (u'fChase3rdPersonVanityXYMult', u'fChase3rdPersonXYMult')
@@ -329,41 +319,37 @@ class GmstTweak_Camera_ChaseTightness(_AGmstTweak):
                      (u'x2.0',                              8.0, 8.0),
                      (u'x3.0',                            12.0, 12.0),
                      (u'x5.0',                            20.0, 20.0),
-                     (_(u'ChaseCameraMod.esp (x 24.75)'), 99.0, 99.0),
-                     (_(u'Custom'),                         4.0, 4.0)]
+                     (_(u'ChaseCameraMod.esp (x 24.75)'), 99.0, 99.0)]
 
 #------------------------------------------------------------------------------
-class GmstTweak_Camera_ChaseDistance(_AGmstTweak):
+class GmstTweak_Camera_ChaseDistance(_AGmstCCTweak):
     tweak_name = _(u'Camera: Chase Distance')
     tweak_tip = _(u'Distance camera can be moved away from PC using mouse '
                   u'wheel.')
     tweak_key = (u'fVanityModeWheelMax', u'fChase3rdPersonZUnitsPerSecond',
                  u'fVanityModeWheelMult')
-    tweak_choices = [(u'x1.5',      900.0, 450.0, 0.15),
-                     (u'x2',        1200.0, 600.0, 0.2),
-                     (u'x3',        1800.0, 900.0, 0.3),
-                     (u'x5',       3000.0, 1000.0, 0.3),
-                     (u'x10',      6000.0, 2000.0, 0.3),
-                     (_(u'Custom'), 600.0, 300.0, 0.15)]
+    tweak_choices = [(u'x1.5', 900.0, 450.0, 0.15),
+                     (u'x2',   1200.0, 600.0, 0.2),
+                     (u'x3',   1800.0, 900.0, 0.3),
+                     (u'x5',  3000.0, 1000.0, 0.3),
+                     (u'x10', 6000.0, 2000.0, 0.3)]
 
 class GmstTweak_Camera_ChaseDistance_Fo3(GmstTweak_Camera_ChaseDistance):
     tweak_key = (u'fVanityModeWheelMax', u'fChase3rdPersonZUnitsPerSecond')
-    tweak_choices = [(u'x1.5',     900.0, 1200.0),
-                     (u'x2',      1200.0, 1600.0),
-                     (u'x3',      1800.0, 2400.0),
-                     (u'x5',      3000.0, 4000.0),
-                     (u'x10',     6000.0, 5000.0),
-                     (_(u'Custom'), 600.0, 800.0)]
+    tweak_choices = [(u'x1.5', 900.0, 1200.0),
+                     (u'x2',  1200.0, 1600.0),
+                     (u'x3',  1800.0, 2400.0),
+                     (u'x5',  3000.0, 4000.0),
+                     (u'x10', 6000.0, 5000.0)]
 
 #------------------------------------------------------------------------------
-class GmstTweak_Magic_ChameleonRefraction(_AGmstTweak):
+class GmstTweak_Magic_ChameleonRefraction(_AGmstCCTweak):
     tweak_name = _(u'Magic: Chameleon Refraction')
     tweak_tip = _(u'Chameleon with transparency instead of refraction effect.')
     tweak_key = (u'fChameleonMinRefraction', u'fChameleonMaxRefraction')
-    tweak_choices = [(_(u'Zero'),      0.0, 0.0),
-                     (_(u'Normal'),   0.01, 1.0),
-                     (_(u'Full'),      1.0, 1.0),
-                     (_(u'Custom'),   0.01, 1.0)]
+    tweak_choices = [(_(u'Zero'),    0.0, 0.0),
+                     (_(u'Normal'), 0.01, 1.0),
+                     (_(u'Full'),    1.0, 1.0)]
     default_choice = _(u'Normal')
 
 #------------------------------------------------------------------------------
@@ -376,7 +362,7 @@ class GmstTweak_Compass_Disable(_AGmstTweak):
                      (_(u'Quests and POIs'), 1801)]
 
 #------------------------------------------------------------------------------
-class GmstTweak_Compass_RecognitionDistance(_AGmstTweak):
+class GmstTweak_Compass_RecognitionDistance(_AGmstCCTweak):
     tweak_name = _(u'Compass: Recognition Distance')
     tweak_tip = _(u'Distance at which markers (dungeons, towns etc.) begin to '
                   u'show on the compass.')
@@ -387,8 +373,7 @@ class GmstTweak_Compass_RecognitionDistance(_AGmstTweak):
                      (_(u'Default'),     12500),
                      (_(u'25% Further'), 15625),
                      (_(u'50% Further'), 18750),
-                     (_(u'75% Further'), 21875),
-                     (_(u'Custom'),      12500)]
+                     (_(u'75% Further'), 21875)]
     default_choice = _(u'Default')
 
 #------------------------------------------------------------------------------
@@ -396,28 +381,27 @@ class GmstTweak_Actor_UnconsciousnessDuration(_AGmstTweak):
     tweak_name = _(u'Actor: Unconsciousness Duration')
     tweak_tip = _(u'Time which essential NPCs stay unconscious.')
     tweak_key = (u'fEssentialDeathTime',)
-    tweak_choices = [(_(u'10 Seconds'),          10.0),
-                     (_(u'20 Seconds'),          20.0),
-                     (_(u'30 Seconds'),          30.0),
-                     (_(u'1 Minute'),            60.0),
-                     (_(u'1 1/2 Minutes'),       90.0),
-                     (_(u'2 Minutes'),          120.0),
-                     (_(u'3 Minutes'),          180.0),
-                     (_(u'5 Minutes'),          300.0),
-                     (_(u'Custom (in Seconds)'), 10.0)]
+    tweak_choices = [(_(u'10 Seconds'),    10.0),
+                     (_(u'20 Seconds'),    20.0),
+                     (_(u'30 Seconds'),    30.0),
+                     (_(u'1 Minute'),      60.0),
+                     (_(u'1 1/2 Minutes'), 90.0),
+                     (_(u'2 Minutes'),    120.0),
+                     (_(u'3 Minutes'),    180.0),
+                     (_(u'5 Minutes'),    300.0)]
     default_choice = _(u'10 Seconds')
+    custom_choice = _(u'Custom (in seconds)')
 
 #------------------------------------------------------------------------------
-class GmstTweak_Movement_FatigueFromRunningEncumbrance(_AGmstTweak):
+class GmstTweak_Movement_FatigueFromRunningEncumbrance(_AGmstCCTweak):
     tweak_name = _(u'Movement: Fatigue From Running/Encumbrance')
     tweak_tip = _(u'Fatigue cost of running and encumbrance.')
     tweak_key = (u'fFatigueRunBase', u'fFatigueRunMult')
-    tweak_choices = [(u'x1.5',     12.0, 6.0),
-                     (u'x2',       16.0, 8.0),
-                     (u'x3',      24.0, 12.0),
-                     (u'x4',      32.0, 16.0),
-                     (u'x5',      40.0, 20.0),
-                     (_(u'Custom'), 8.0, 4.0)]
+    tweak_choices = [(u'x1.5', 12.0, 6.0),
+                     (u'x2',   16.0, 8.0),
+                     (u'x3',  24.0, 12.0),
+                     (u'x4',  32.0, 16.0),
+                     (u'x5',  40.0, 20.0)]
 
 #------------------------------------------------------------------------------
 class GmstTweak_Player_HorseTurningSpeed(_AGmstTweak):
@@ -425,15 +409,15 @@ class GmstTweak_Player_HorseTurningSpeed(_AGmstTweak):
     tweak_tip = _(u'Speed at which your horse can turn.')
     tweak_key = (u'iHorseTurnDegreesPerSecond',
                  u'iHorseTurnDegreesRampUpPerSecond')
-    tweak_choices = [(_(u'Default'),                             45, 80),
-                     (u'x1.5',                                  68, 120),
-                     (u'x2',                                    90, 160),
-                     (u'x3',                                   135, 240),
-                     (_(u'Custom (Turning and ramp-up speeds)'), 45, 80)]
+    tweak_choices = [(_(u'Default'), 45, 80),
+                     (u'x1.5',      68, 120),
+                     (u'x2',        90, 160),
+                     (u'x3',       135, 240)]
     default_choice = _(u'Default')
+    custom_choice = _(u'Custom (Turning and ramp-up speeds)')
 
 #------------------------------------------------------------------------------
-class GmstTweak_Camera_PCDeathTime(_AGmstTweak):
+class GmstTweak_Camera_PCDeathTime(_AGmstCCTweak):
     tweak_name = _(u'Camera: PC Death Time')
     tweak_tip = _(u"Time after player's death before the last save is "
                   u"loaded/the reload menu appears.")
@@ -442,8 +426,7 @@ class GmstTweak_Camera_PCDeathTime(_AGmstTweak):
                      (_(u'30 Seconds'),     30.0),
                      (_(u'1 Minute'),       60.0),
                      (_(u'5 Minute'),      300.0),
-                     (_(u'Unlimited'), 9999999.0),
-                     (_(u'Custom'),         15.0)]
+                     (_(u'Unlimited'), 9999999.0)]
 
 #------------------------------------------------------------------------------
 class GmstTweak_World_CellRespawnTime(_AGmstTweak):
@@ -451,16 +434,16 @@ class GmstTweak_World_CellRespawnTime(_AGmstTweak):
     tweak_tip = _(u'Time before unvisited cells respawn. Longer times '
                   u'increase save sizes.')
     tweak_key = (u'iHoursToRespawnCell',)
-    tweak_choices = [(_(u'1 Day'),             24),
-                     (_(u'3 Days'),            72),
-                     (_(u'5 Days'),           120),
-                     (_(u'10 Days'),          240),
-                     (_(u'20 Days'),          480),
-                     (_(u'1 Month'),          720),
-                     (_(u'6 Months'),        4368),
-                     (_(u'1 Year'),          8760),
-                     (_(u'Custom (in hours)'), 72)]
+    tweak_choices = [(_(u'1 Day'),      24),
+                     (_(u'3 Days'),     72),
+                     (_(u'5 Days'),    120),
+                     (_(u'10 Days'),   240),
+                     (_(u'20 Days'),   480),
+                     (_(u'1 Month'),   720),
+                     (_(u'6 Months'), 4368),
+                     (_(u'1 Year'),   8760)]
     default_choice = _(u'3 Days')
+    custom_choice = _(u'Custom (in hours)')
 
 class GmstTweak_World_CellRespawnTime_Tes5(GmstTweak_World_CellRespawnTime):
     default_choice = _(u'10 Days')
@@ -473,21 +456,20 @@ class GmstTweak_Combat_RechargeWeapons(_AAllowTweak):
     default_choice = _(u'Allow')
 
 #------------------------------------------------------------------------------
-class GmstTweak_Magic_BoltSpeed(_AGmstTweak):
+class GmstTweak_Magic_BoltSpeed(_AGmstCCTweak):
     tweak_name = _(u'Magic: Bolt Speed')
     tweak_tip = _(u'Speed of magic bolt/projectile.')
     tweak_key = (u'fMagicProjectileBaseSpeed',)
-    tweak_choices = [(u'x1.2',                  1200.0),
-                     (u'x1.4',                  1400.0),
-                     (u'x1.6',                  1600.0),
-                     (u'x1.8',                  1800.0),
-                     (u'x2.0',                  2000.0),
-                     (u'x2.2',                  2200.0),
-                     (u'x2.4',                  2400.0),
-                     (u'x2.6',                  2600.0),
-                     (u'x2.8',                  2800.0),
-                     (u'x3.0',                  3000.0),
-                     (_(u'Custom (base 1000)'), 1000.0)]
+    tweak_choices = [(u'x1.2', 1200.0),
+                     (u'x1.4', 1400.0),
+                     (u'x1.6', 1600.0),
+                     (u'x1.8', 1800.0),
+                     (u'x2.0', 2000.0),
+                     (u'x2.2', 2200.0),
+                     (u'x2.4', 2400.0),
+                     (u'x2.6', 2600.0),
+                     (u'x2.8', 2800.0),
+                     (u'x3.0', 3000.0)]
 
 #------------------------------------------------------------------------------
 class GmstTweak_Msg_EquipMiscItem(_AMsgTweak):
@@ -554,131 +536,123 @@ class GmstTweak_Msg_NotEnoughCharge_Tes5(GmstTweak_Msg_NotEnoughCharge):
     tweak_key = (u'sEnchantInsufficientCharge',)
 
 #------------------------------------------------------------------------------
-class GmstTweak_CostMultiplier_Repair(_AGmstTweak):
+class GmstTweak_CostMultiplier_Repair(_AGmstCCTweak):
     tweak_name = _(u'Cost Multiplier: Repair')
     tweak_tip = _(u'Cost factor for repairing items.')
     tweak_key = (u'fRepairCostMult',)
-    tweak_choices = [(u'0.1',       0.1),
-                     (u'0.2',       0.2),
-                     (u'0.3',       0.3),
-                     (u'0.4',       0.4),
-                     (u'0.5',       0.5),
-                     (u'0.6',       0.6),
-                     (u'0.7',       0.7),
-                     (u'0.8',       0.8),
-                     (u'0.9',       0.9),
-                     (u'1.0',       1.0),
-                     (_(u'Custom'), 0.9)]
+    tweak_choices = [(u'0.1', 0.1),
+                     (u'0.2', 0.2),
+                     (u'0.3', 0.3),
+                     (u'0.4', 0.4),
+                     (u'0.5', 0.5),
+                     (u'0.6', 0.6),
+                     (u'0.7', 0.7),
+                     (u'0.8', 0.8),
+                     (u'0.9', 0.9),
+                     (u'1.0', 1.0)]
     default_choice = u'0.9'
 
 class GmstTweak_CostMultiplier_Repair_Fo3(GmstTweak_CostMultiplier_Repair):
     tweak_key = (u'fItemRepairCostMult',)
-    tweak_choices = [(u'1.0',       1.0),
-                     (u'1.25',     1.25),
-                     (u'1.5',       1.5),
-                     (u'1.75',     1.75),
-                     (u'2.0',       2.0),
-                     (u'2.5',       2.5),
-                     (u'3.0',       3.0),
-                     (_(u'Custom'), 2.0)]
+    tweak_choices = [(u'1.0',   1.0),
+                     (u'1.25', 1.25),
+                     (u'1.5',   1.5),
+                     (u'1.75', 1.75),
+                     (u'2.0',   2.0),
+                     (u'2.5',   2.5),
+                     (u'3.0',   3.0)]
     default_choice = u'2.0'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Actor_GreetingDistance(_AGmstTweak):
+class GmstTweak_Actor_GreetingDistance(_AGmstCCTweak):
     tweak_name = _(u'Actor: Greeting Distance')
     tweak_tip = _(u'Distance (in units) at which NPCs will greet the player.')
     tweak_key = (u'fAIMinGreetingDistance',)
-    tweak_choices = [(u'50',         50.0),
-                     (u'100',       100.0),
-                     (u'125',       125.0),
-                     (u'150',       150.0),
-                     (u'200',       200.0),
-                     (u'300',       300.0),
-                     (_(u'Custom'), 150.0)]
+    tweak_choices = [(u'50',   50.0),
+                     (u'100', 100.0),
+                     (u'125', 125.0),
+                     (u'150', 150.0),
+                     (u'200', 200.0),
+                     (u'300', 300.0)]
     default_choice = u'150'
 
 #------------------------------------------------------------------------------
-class GmstTweak_CostMultiplier_Recharge(_AGmstTweak):
+class GmstTweak_CostMultiplier_Recharge(_AGmstCCTweak):
     tweak_name = _(u'Cost Multiplier: Recharge')
     tweak_tip = _(u'Cost factor for recharging items.')
     tweak_key = (u'fRechargeGoldMult',)
-    tweak_choices = [(u'0.1',       0.1),
-                     (u'0.2',       0.2),
-                     (u'0.3',       0.3),
-                     (u'0.5',       0.5),
-                     (u'0.7',       0.7),
-                     (u'1.0',       1.0),
-                     (u'1.5',       1.5),
-                     (u'2.0',       2.0),
-                     (_(u'Custom'), 2.0)]
+    tweak_choices = [(u'0.1', 0.1),
+                     (u'0.2', 0.2),
+                     (u'0.3', 0.3),
+                     (u'0.5', 0.5),
+                     (u'0.7', 0.7),
+                     (u'1.0', 1.0),
+                     (u'1.5', 1.5),
+                     (u'2.0', 2.0)]
     default_choice = u'2.0'
 
 #------------------------------------------------------------------------------
-class GmstTweak_MasterOfMercantileExtraGoldAmount(_AGmstTweak):
+class GmstTweak_MasterOfMercantileExtraGoldAmount(_AGmstCCTweak):
     tweak_name = _(u'Master Of Mercantile Extra Gold Amount')
     tweak_tip = _(u'How much more barter gold all merchants have for a master '
                   u'of mercantile.')
     tweak_key = (u'iPerkExtraBarterGoldMaster',)
-    tweak_choices = [(u'300',       300),
-                     (u'400',       400),
-                     (u'500',       500),
-                     (u'600',       600),
-                     (u'800',       800),
-                     (u'1000',     1000),
-                     (_(u'Custom'), 500)]
+    tweak_choices = [(u'300',   300),
+                     (u'400',   400),
+                     (u'500',   500),
+                     (u'600',   600),
+                     (u'800',   800),
+                     (u'1000', 1000)]
     default_choice = u'500'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Combat_MaxActors(_AGmstTweak):
+class GmstTweak_Combat_MaxActors(_AGmstCCTweak):
     tweak_name = _(u'Combat: Max Actors')
     tweak_tip = _(u'Maximum number of actors that can actively be in combat '
                   u'with the player.')
     tweak_key = (u'iNumberActorsInCombatPlayer',)
-    tweak_choices = [(u'10',        10),
-                     (u'15',        15),
-                     (u'20',        20),
-                     (u'30',        30),
-                     (u'40',        40),
-                     (u'50',        50),
-                     (u'80',        80),
-                     (_(u'Custom'), 10)]
+    tweak_choices = [(u'10', 10),
+                     (u'15', 15),
+                     (u'20', 20),
+                     (u'30', 30),
+                     (u'40', 40),
+                     (u'50', 50),
+                     (u'80', 80)]
     default_choice = u'10'
 
 class GmstTweak_Combat_MaxActors_Tes5(GmstTweak_Combat_MaxActors):
     default_choice = u'20'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Crime_AlarmDistance(_AGmstTweak):
+class GmstTweak_Crime_AlarmDistance(_AGmstCCTweak):
     tweak_name = _(u'Crime: Alarm Distance')
     tweak_tip = _(u'Distance from player that NPCs (guards) will be alerted '
                   u'of a crime.')
     tweak_key = (u'iCrimeAlarmRecDistance',)
-    tweak_choices = [(u'8000',      8000),
-                     (u'6000',      6000),
-                     (u'4000',      4000),
-                     (u'3000',      3000),
-                     (u'2000',      2000),
-                     (u'1000',      1000),
-                     (u'500',        500),
-                     (_(u'Custom'), 4000)]
+    tweak_choices = [(u'8000', 8000),
+                     (u'6000', 6000),
+                     (u'4000', 4000),
+                     (u'3000', 3000),
+                     (u'2000', 2000),
+                     (u'1000', 1000),
+                     (u'500',   500)]
     default_choice = u'4000'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Crime_PrisonDurationModifier(_AGmstTweak):
+class GmstTweak_Crime_PrisonDurationModifier(_AGmstCCTweak):
     tweak_name = _(u'Crime: Prison Duration Modifier')
     tweak_tip = _(u'Days in prison is your bounty divided by this number.')
     tweak_key = (u'iCrimeDaysInPrisonMod',)
-    tweak_choices = [(u'50',         50),
-                     (u'60',         60),
-                     (u'70',         70),
-                     (u'80',         80),
-                     (u'90',         90),
-                     (u'100',       100),
-                     (_(u'Custom'), 100)]
+    tweak_choices = [(u'50',   50),
+                     (u'60',   60),
+                     (u'70',   70),
+                     (u'80',   80),
+                     (u'90',   90),
+                     (u'100', 100)]
     default_choice = u'100'
 
 #------------------------------------------------------------------------------
-class GmstTweak_CostMultiplier_Enchantment(_AGmstTweak):
+class GmstTweak_CostMultiplier_Enchantment(_AGmstCCTweak):
     tweak_name = _(u'Cost Multiplier: Enchantment')
     tweak_tip = _(u'Cost factor for enchanting items.')
     tweak_key = (u'fEnchantmentGoldMult',)
@@ -689,25 +663,23 @@ class GmstTweak_CostMultiplier_Enchantment(_AGmstTweak):
                      (u'70',                    70.0),
                      (u'90',                    90.0),
                      (_(u'120 (OOO default)'), 120.0),
-                     (u'150',                  150.0),
-                     (_(u'Custom'),             10.0)]
+                     (u'150',                  150.0)]
     default_choice = u'10'
 
 #------------------------------------------------------------------------------
-class GmstTweak_CostMultiplier_SpellMaking(_AGmstTweak):
+class GmstTweak_CostMultiplier_SpellMaking(_AGmstCCTweak):
     tweak_name = _(u'Cost Multiplier: Spell Making')
     tweak_tip = _(u'Cost factor for making spells.')
     tweak_key = (u'fSpellmakingGoldMult',)
-    tweak_choices = [(u'3',         3.0),
-                     (u'5',         5.0),
-                     (u'8',         8.0),
-                     (u'10',       10.0),
-                     (u'15',       15.0),
-                     (_(u'Custom'), 3.0)]
+    tweak_choices = [(u'3',   3.0),
+                     (u'5',   5.0),
+                     (u'8',   8.0),
+                     (u'10', 10.0),
+                     (u'15', 15.0)]
     default_choice = u'3'
 
 #------------------------------------------------------------------------------
-class GmstTweak_AI_MaxActiveActors(_AGmstTweak):
+class GmstTweak_AI_MaxActiveActors(_AGmstCCTweak):
     tweak_name = _(u'AI: Max Active Actors')
     tweak_tip = _(u'Maximum actors whose AI can be active. Must be higher '
                   u'than Combat: Max Actors')
@@ -719,39 +691,36 @@ class GmstTweak_AI_MaxActiveActors(_AGmstTweak):
                      (_(u'MMM Default: 40'), 40),
                      (u'50',                 50),
                      (u'60',                 60),
-                     (u'100',               100),
-                     (_(u'Custom'),          25)]
+                     (u'100',               100)]
     default_choice = u'25'
 
 class GmstTweak_AI_MaxActiveActors_Tes5(GmstTweak_AI_MaxActiveActors):
     default_choice = u'20'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Magic_MaxPlayerSummons(_AGmstTweak):
+class GmstTweak_Magic_MaxPlayerSummons(_AGmstCCTweak):
     tweak_name = _(u'Magic: Max Player Summons')
     tweak_tip = _(u'Maximum number of creatures the player can summon.')
     tweak_key = (u'iMaxPlayerSummonedCreatures',)
-    tweak_choices = [(u'1',         1),
-                     (u'3',         3),
-                     (u'5',         5),
-                     (u'8',         8),
-                     (u'10',       10),
-                     (_(u'Custom'), 1)]
+    tweak_choices = [(u'1',   1),
+                     (u'3',   3),
+                     (u'5',   5),
+                     (u'8',   8),
+                     (u'10', 10)]
     default_choice = u'1'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Combat_MaxAllyHits(_AGmstTweak):
+class GmstTweak_Combat_MaxAllyHits(_AGmstCCTweak):
     tweak_name = _(u'Combat: Max Ally Hits')
     tweak_tip = _(u'Maximum number of hits on an ally allowed in combat '
                   u'before the ally will attack the hitting character.')
     tweak_key = (u'iAllyHitAllowed',)
-    tweak_choices = [(u'0',         0),
-                     (u'3',         3),
-                     (u'5',         5),
-                     (u'8',         8),
-                     (u'10',       10),
-                     (u'15',       15),
-                     (_(u'Custom'), 5)]
+    tweak_choices = [(u'0',   0),
+                     (u'3',   3),
+                     (u'5',   5),
+                     (u'8',   8),
+                     (u'10', 10),
+                     (u'15', 15)]
     default_choice = u'5'
 
 class GmstTweak_Combat_MaxAllyHits_Tes5(GmstTweak_Combat_MaxAllyHits):
@@ -761,33 +730,31 @@ class GmstTweak_Combat_MaxAllyHits_Tes5(GmstTweak_Combat_MaxAllyHits):
     default_choice = u'3'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Magic_MaxNPCSummons(_AGmstTweak):
+class GmstTweak_Magic_MaxNPCSummons(_AGmstCCTweak):
     tweak_name = _(u'Magic: Max NPC Summons')
     tweak_tip = _(u'Maximum number of creatures that each NPC can summon')
     tweak_key = (u'iAICombatMaxAllySummonCount',)
-    tweak_choices = [(u'1',         1),
-                     (u'3',         3),
-                     (u'5',         5),
-                     (u'8',         8),
-                     (u'10',       10),
-                     (u'15',       15),
-                     (_(u'Custom'), 3)]
+    tweak_choices = [(u'1',   1),
+                     (u'3',   3),
+                     (u'5',   5),
+                     (u'8',   8),
+                     (u'10', 10),
+                     (u'15', 15)]
     default_choice = u'3'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Bounty_Assault(_AGmstTweak):
+class GmstTweak_Bounty_Assault(_AGmstCCTweak):
     tweak_name = _(u'Bounty: Assault')
     tweak_tip = _(u"Bounty for attacking a 'good' npc.")
     tweak_key = (u'iCrimeGoldAttackMin',)
-    tweak_choices = [(u'40',         40),
-                     (u'100',       100),
-                     (u'200',       200),
-                     (u'300',       300),
-                     (u'400',       400),
-                     (u'500',       500),
-                     (u'650',       650),
-                     (u'800',       800),
-                     (_(u'Custom'), 500)]
+    tweak_choices = [(u'40',   40),
+                     (u'100', 100),
+                     (u'200', 200),
+                     (u'300', 300),
+                     (u'400', 400),
+                     (u'500', 500),
+                     (u'650', 650),
+                     (u'800', 800)]
     default_choice = u'500'
 
 class GmstTweak_Bounty_Assault_Tes5(GmstTweak_Bounty_Assault):
@@ -795,34 +762,32 @@ class GmstTweak_Bounty_Assault_Tes5(GmstTweak_Bounty_Assault):
     default_choice = u'40'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Bounty_HorseTheft(_AGmstTweak):
+class GmstTweak_Bounty_HorseTheft(_AGmstCCTweak):
     tweak_name = _(u'Bounty: Horse Theft')
     tweak_tip = _(u'Bounty for horse theft.')
     tweak_key = (u'iCrimeGoldStealHorse',)
-    tweak_choices = [(u'10',         10),
-                     (u'25',         25),
-                     (u'50',         50),
-                     (u'100',       100),
-                     (u'200',       200),
-                     (u'250',       250),
-                     (u'300',       300),
-                     (u'450',       450),
-                     (_(u'Custom'), 100)]
+    tweak_choices = [(u'10',   10),
+                     (u'25',   25),
+                     (u'50',   50),
+                     (u'100', 100),
+                     (u'200', 200),
+                     (u'250', 250),
+                     (u'300', 300),
+                     (u'450', 450)]
     default_choice = u'250'
 
 class GmstTweak_Bounty_HorseTheft_Tes5(GmstTweak_Bounty_HorseTheft):
     default_choice = u'100'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Bounty_Theft(_AGmstTweak):
+class GmstTweak_Bounty_Theft(_AGmstCCTweak):
     tweak_name = _(u'Bounty: Theft')
     tweak_tip = _(u'Bounty for stealing, as fraction of item value.')
     tweak_key = (u'fCrimeGoldSteal',)
-    tweak_choices = [(u'1/4',      0.25),
-                     (u'1/2',       0.5),
-                     (u'3/4',      0.75),
-                     (u'1',         1.0),
-                     (_(u'Custom'), 0.5)]
+    tweak_choices = [(u'1/4', 0.25),
+                     (u'1/2',  0.5),
+                     (u'3/4', 0.75),
+                     (u'1',    1.0)]
     default_choice = u'1/2'
 
 #------------------------------------------------------------------------------
@@ -838,20 +803,19 @@ class GmstTweak_Combat_Repair(_AAllowTweak):
     tweak_key = (u'iAllowRepairDuringCombat',)
 
 #------------------------------------------------------------------------------
-class GmstTweak_Actor_MaxCompanions(_AGmstTweak):
+class GmstTweak_Actor_MaxCompanions(_AGmstCCTweak):
     tweak_name = _(u'Actor: Max Companions')
     tweak_tip = _(u'Maximum number of actors following the player.')
     tweak_key = (u'iNumberActorsAllowedToFollowPlayer',)
-    tweak_choices = [(u'2',         2),
-                     (u'4',         4),
-                     (u'6',         6),
-                     (u'8',         8),
-                     (u'10',       10),
-                     (_(u'Custom'), 6)]
+    tweak_choices = [(u'2',   2),
+                     (u'4',   4),
+                     (u'6',   6),
+                     (u'8',   8),
+                     (u'10', 10)]
     default_choice = u'6'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Actor_TrainingLimit(_AGmstTweak):
+class GmstTweak_Actor_TrainingLimit(_AGmstCCTweak):
     tweak_name = _(u'Actor: Training Limit')
     tweak_tip = _(u'Maximum number of Training allowed by trainers.')
     tweak_key = (u'iTrainingSkills',)
@@ -860,25 +824,23 @@ class GmstTweak_Actor_TrainingLimit(_AGmstTweak):
                      (u'8',               8),
                      (u'10',             10),
                      (u'20',             20),
-                     (_(u'Unlimited'), 9999),
-                     (_(u'Custom'),       0)]
+                     (_(u'Unlimited'), 9999)]
     default_choice = u'5'
 
 class GmstTweak_Actor_TrainingLimit_Tes5(GmstTweak_Actor_TrainingLimit):
     tweak_key = (u'iTrainingNumAllowedPerLevel',)
 
 #------------------------------------------------------------------------------
-class GmstTweak_Combat_MaximumArmorRating(_AGmstTweak):
+class GmstTweak_Combat_MaximumArmorRating(_AGmstCCTweak):
     tweak_name = _(u'Combat: Maximum Armor Rating')
     tweak_tip = _(u'The Maximum amount of protection you will get from armor.')
     tweak_key = (u'fMaxArmorRating',)
-    tweak_choices = [(u'50',        50.0),
-                     (u'75',        75.0),
-                     (u'85',        85.0),
-                     (u'90',        90.0),
-                     (u'95',        95.0),
-                     (u'100',      100.0),
-                     (_(u'Custom'), 85.0)]
+    tweak_choices = [(u'50',   50.0),
+                     (u'75',   75.0),
+                     (u'85',   85.0),
+                     (u'90',   90.0),
+                     (u'95',   95.0),
+                     (u'100', 100.0)]
     default_choice = u'85'
 
 class GmstTweak_Combat_MaximumArmorRating_Tes5(
@@ -891,15 +853,15 @@ class GmstTweak_Warning_InteriorDistanceToHostiles(_AGmstTweak):
     tweak_tip = _(u'The minimum distance hostile actors have to be to be '
                   u'allowed to sleep, travel etc, when inside interiors.')
     tweak_key = (u'fHostileActorInteriorDistance',)
-    tweak_choices = [(u'10',                     10.0),
-                     (u'100',                   100.0),
-                     (u'500',                   500.0),
-                     (u'1000',                 1000.0),
-                     (u'2000',                 2000.0),
-                     (u'3000',                 3000.0),
-                     (u'4000',                 4000.0),
-                     (_(u'Custom (in units)'), 2000.0)]
+    tweak_choices = [(u'10',     10.0),
+                     (u'100',   100.0),
+                     (u'500',   500.0),
+                     (u'1000', 1000.0),
+                     (u'2000', 2000.0),
+                     (u'3000', 3000.0),
+                     (u'4000', 4000.0)]
     default_choice = u'2000'
+    custom_choice = _(u'Custom (in units)')
 
 #------------------------------------------------------------------------------
 class GmstTweak_Warning_ExteriorDistanceToHostiles(_AGmstTweak):
@@ -907,17 +869,17 @@ class GmstTweak_Warning_ExteriorDistanceToHostiles(_AGmstTweak):
     tweak_tip = _(u'The minimum distance hostile actors have to be to be '
                   u'allowed to sleep, travel etc, when outside.')
     tweak_key = (u'fHostileActorExteriorDistance',)
-    tweak_choices = [(u'10',                     10.0),
-                     (u'100',                   100.0),
-                     (u'500',                   500.0),
-                     (u'1000',                 1000.0),
-                     (u'2000',                 2000.0),
-                     (u'3000',                 3000.0),
-                     (u'4000',                 4000.0),
-                     (u'5000',                 5000.0),
-                     (u'6000',                 6000.0),
-                     (_(u'Custom (in units)'), 3000.0)]
+    tweak_choices = [(u'10',     10.0),
+                     (u'100',   100.0),
+                     (u'500',   500.0),
+                     (u'1000', 1000.0),
+                     (u'2000', 2000.0),
+                     (u'3000', 3000.0),
+                     (u'4000', 4000.0),
+                     (u'5000', 5000.0),
+                     (u'6000', 6000.0)]
     default_choice = u'3000'
+    custom_choice = _(u'Custom (in units)')
 
 #------------------------------------------------------------------------------
 class GmstTweak_UOPVampireAgingAndFaceFix(_AGmstTweak):
@@ -930,7 +892,7 @@ class GmstTweak_UOPVampireAgingAndFaceFix(_AGmstTweak):
     default_enabled = True
 
 #------------------------------------------------------------------------------
-class GmstTweak_AI_MaxDeadActors(_AGmstTweak):
+class GmstTweak_AI_MaxDeadActors(_AGmstCCTweak):
     tweak_name = _(u'AI: Max Dead Actors')
     tweak_tip = _(u"Maximum number of dead actors allowed before they're "
                   u"removed.")
@@ -939,18 +901,17 @@ class GmstTweak_AI_MaxDeadActors(_AGmstTweak):
                  u'iRemoveExcessDeadComplexTotalActorCount',
                  u'iRemoveExcessDeadComplexCount', u'fRemoveExcessDeadTime',
                  u'fRemoveExcessComplexDeadTime')
-    tweak_choices = [(u'x1',        15, 20, 20, 3, 10.0, 2.5),
-                     (u'x1.5',      22, 30, 30, 6, 30.0, 7.5),
-                     (u'x2',       30, 40, 40, 9, 50.0, 12.5),
-                     (u'x2.5',    37, 50, 50, 12, 70.0, 17.5),
-                     (u'x3',      45, 60, 60, 15, 90.0, 22.5),
-                     (u'x3.5',   52, 70, 70, 18, 110.0, 27.5),
-                     (u'x4',     60, 80, 80, 21, 130.0, 32.5),
-                     (_(u'Custom'), 15, 20, 20, 3, 10.0, 2.5)]
+    tweak_choices = [(u'x1',      15, 20, 20, 3, 10.0, 2.5),
+                     (u'x1.5',    22, 30, 30, 6, 30.0, 7.5),
+                     (u'x2',     30, 40, 40, 9, 50.0, 12.5),
+                     (u'x2.5',  37, 50, 50, 12, 70.0, 17.5),
+                     (u'x3',    45, 60, 60, 15, 90.0, 22.5),
+                     (u'x3.5', 52, 70, 70, 18, 110.0, 27.5),
+                     (u'x4',   60, 80, 80, 21, 130.0, 32.5)]
     default_choice = u'x1'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Player_InventoryQuantityPrompt(_AGmstTweak):
+class GmstTweak_Player_InventoryQuantityPrompt(_AGmstCCTweak):
     tweak_name = _(u'Player: Inventory Quantity Prompt')
     tweak_tip = _(u'Number of items in a stack at which point the game '
                   u'prompts for a quantity.')
@@ -962,8 +923,7 @@ class GmstTweak_Player_InventoryQuantityPrompt(_AGmstTweak):
                      (u'5',                   5),
                      (u'10',                 10),
                      (u'20',                 20),
-                     (_(u'Never Prompt'), 99999),
-                     (_(u'Custom'),           5)]
+                     (_(u'Never Prompt'), 99999)]
     default_choice = u'5'
 
 class GmstTweak_Player_InventoryQuantityPrompt_Tes4(
@@ -971,33 +931,31 @@ class GmstTweak_Player_InventoryQuantityPrompt_Tes4(
     default_choice = u'3'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Bounty_Trespassing(_AGmstTweak):
+class GmstTweak_Bounty_Trespassing(_AGmstCCTweak):
     tweak_name = _(u'Bounty: Trespassing')
     tweak_tip = _(u'Bounty for trespassing.')
     tweak_key = (u'iCrimeGoldTresspass',) # (sic), corrected in Skyrim
-    tweak_choices = [(u'1',         1),
-                     (u'5',         5),
-                     (u'8',         8),
-                     (u'10',       10),
-                     (u'20',       20),
-                     (_(u'Custom'), 5)]
+    tweak_choices = [(u'1',   1),
+                     (u'5',   5),
+                     (u'8',   8),
+                     (u'10', 10),
+                     (u'20', 20)]
     default_choice = u'5'
 
 class GmstTweak_Bounty_Trespassing_Tes5(GmstTweak_Bounty_Trespassing):
     tweak_key = (u'iCrimeGoldTrespass',)
 
 #------------------------------------------------------------------------------
-class GmstTweak_Bounty_Pickpocketing(_AGmstTweak):
+class GmstTweak_Bounty_Pickpocketing(_AGmstCCTweak):
     tweak_name = _(u'Bounty: Pickpocketing')
     tweak_tip = _(u'Bounty for pickpocketing.')
     tweak_key = (u'iCrimeGoldPickpocket',)
-    tweak_choices = [(u'5',          5),
-                     (u'8',          8),
-                     (u'10',        10),
-                     (u'25',        25),
-                     (u'50',        50),
-                     (u'100',      100),
-                     (_(u'Custom'), 25)]
+    tweak_choices = [(u'5',     5),
+                     (u'8',     8),
+                     (u'10',   10),
+                     (u'25',   25),
+                     (u'50',   50),
+                     (u'100', 100)]
     default_choice = u'25'
 
 #------------------------------------------------------------------------------
@@ -1013,7 +971,7 @@ class GmstTweak_LevelDifference_ItemMax(_ALeveledDiffTweak):
     tweak_key = (u'iLevItemLevelDifferenceMax',)
 
 #------------------------------------------------------------------------------
-class GmstTweak_Actor_StrengthEncumbranceMultiplier(_AGmstTweak):
+class GmstTweak_Actor_StrengthEncumbranceMultiplier(_AGmstCCTweak):
     tweak_name = _(u'Actor: Strength Encumbrance Multiplier')
     tweak_tip = _(u"Actor's Strength X this = Actor's Encumbrance capacity.")
     tweak_key = (u'fActorStrengthEncumbranceMult',)
@@ -1023,32 +981,29 @@ class GmstTweak_Actor_StrengthEncumbranceMultiplier(_AGmstTweak):
                      (u'8',                 8.0),
                      (u'10',               10.0),
                      (u'20',               20.0),
-                     (_(u'Unlimited'), 999999.0),
-                     (_(u'Custom'),         5.0)]
+                     (_(u'Unlimited'), 999999.0)]
     default_choice = u'5'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Visuals_NPCBlood(_AGmstTweak):
+class GmstTweak_Visuals_NPCBlood(_AGmstCCTweak):
     tweak_name = _(u'Visuals: NPC Blood')
     tweak_tip = _(u'Changes or disables NPC Blood splatter textures.')
     tweak_key = (u'sBloodTextureDefault', u'sBloodTextureExtra1',
                  u'sBloodTextureExtra2', u'sBloodParticleDefault',
                  u'sBloodParticleExtra1', u'sBloodParticleExtra2')
-    tweak_choices = [(_(u'No Blood'), u'', u'', u'', u'', u'', u''),
-                     (_(u'Custom'),   u'', u'', u'', u'', u'', u'')]
+    tweak_choices = [(_(u'No Blood'), u'', u'', u'', u'', u'', u'')]
 
 #------------------------------------------------------------------------------
-class GmstTweak_AI_MaxSmileDistance(_AGmstTweak):
+class GmstTweak_AI_MaxSmileDistance(_AGmstCCTweak):
     tweak_name = _(u'AI: Max Smile Distance')
     tweak_tip = _(u'Maximum distance for NPCs to start smiling.')
     tweak_key = (u'fAIMaxSmileDistance',)
     tweak_choices = [(_(u'No Smiles'),       0.0),
-                     (_(u'Default (128)'), 128.0),
-                     (_(u'Custom'),        128.0)]
+                     (_(u'Default (128)'), 128.0)]
     default_choice = _(u'Default (128)')
 
 #------------------------------------------------------------------------------
-class GmstTweak_Player_MaxDraggableWeight(_AGmstTweak):
+class GmstTweak_Player_MaxDraggableWeight(_AGmstCCTweak):
     tweak_name = _(u'Player: Max Draggable Weight')
     tweak_tip = _(u'Maximum weight to be able move things with the drag key.')
     tweak_key = (u'fMoveWeightMax',)
@@ -1056,8 +1011,7 @@ class GmstTweak_Player_MaxDraggableWeight(_AGmstTweak):
                      (u'150',                          150.0),
                      (u'250',                          250.0),
                      (u'500',                          500.0),
-                     (_(u'MovableBodies.esp (1500)'), 1500.0),
-                     (_(u'Custom'),                    150.0)]
+                     (_(u'MovableBodies.esp (1500)'), 1500.0)]
     default_choice = u'150'
 
 class GmstTweak_Player_MaxDraggableWeight_Tes5(
@@ -1065,30 +1019,28 @@ class GmstTweak_Player_MaxDraggableWeight_Tes5(
     default_choice = u'115'
 
 #------------------------------------------------------------------------------
-class GmstTweak_AI_ConversationChance(_AGmstTweak):
+class GmstTweak_AI_ConversationChance(_AGmstCCTweak):
     tweak_name = _(u'AI: Conversation Chance')
     tweak_tip = _(u'Chance of NPCs engaging in conversation.')
     tweak_key = (u'fAISocialchanceForConversation',)
-    tweak_choices = [(u'10%',        10.0),
-                     (u'25%',        25.0),
-                     (u'50%',        50.0),
-                     (u'100%',      100.0),
-                     (_(u'Custom'), 100.0)]
+    tweak_choices = [(u'10%',   10.0),
+                     (u'25%',   25.0),
+                     (u'50%',   50.0),
+                     (u'100%', 100.0)]
     default_choice = u'100%'
 
 class GmstTweak_AI_ConversationChance_Tes5(GmstTweak_AI_ConversationChance):
     default_choice = u'25%'
 
 #------------------------------------------------------------------------------
-class GmstTweak_AI_ConversationChance_Interior(_AGmstTweak):
+class GmstTweak_AI_ConversationChance_Interior(_AGmstCCTweak):
     tweak_name = _(u'AI: Conversation Chance - Interior')
     tweak_tip = _(u'Chance of NPCs engaging in conversation - in interiors.')
     tweak_key = (u'fAISocialchanceForConversationInterior',)
-    tweak_choices = [(u'10%',        10.0),
-                     (u'25%',        25.0),
-                     (u'50%',        50.0),
-                     (u'100%',      100.0),
-                     (_(u'Custom'), 100.0)]
+    tweak_choices = [(u'10%',   10.0),
+                     (u'25%',   25.0),
+                     (u'50%',   50.0),
+                     (u'100%', 100.0)]
     default_choice = u'25%'
 
 #------------------------------------------------------------------------------
@@ -1096,64 +1048,60 @@ class GmstTweak_Crime_PickpocketingChance(_AGmstTweak):
     tweak_name = _(u'Crime: Pickpocketing Chance')
     tweak_tip = _(u'Improve chances of successful pickpocketing.')
     tweak_key = (u'fPickPocketMinChance', u'fPickPocketMaxChance')
-    tweak_choices = [(_(u'0% to 50%'),                   0.0, 50.0),
-                     (_(u'0% to 75%'),                   0.0, 75.0),
-                     (_(u'0% to 90%'),                   0.0, 90.0),
-                     (_(u'0% to 100%'),                 0.0, 100.0),
-                     (_(u'25% to 100%'),               25.0, 100.0),
-                     (_(u'50% to 100%'),               50.0, 100.0),
-                     (_(u'Custom (Min and Max Chance)'), 0.0, 90.0)]
+    tweak_choices = [(_(u'0% to 50%'),     0.0, 50.0),
+                     (_(u'0% to 75%'),     0.0, 75.0),
+                     (_(u'0% to 90%'),     0.0, 90.0),
+                     (_(u'0% to 100%'),   0.0, 100.0),
+                     (_(u'25% to 100%'), 25.0, 100.0),
+                     (_(u'50% to 100%'), 50.0, 100.0)]
     default_choice = _(u'0% to 90%')
+    custom_choice = _(u'Custom (Min and Max Chance)')
 
 #------------------------------------------------------------------------------
-class GmstTweak_Actor_MaxJumpHeight(_AGmstTweak):
+class GmstTweak_Actor_MaxJumpHeight(_AGmstCCTweak):
     tweak_name = _(u'Actor: Max Jump Height')
     tweak_tip = _(u'Increases the height to which you can jump.')
     tweak_key = (u'fJumpHeightMin',)
-    tweak_choices = [(u'0.5x',      38.0),
-                     (u'1x',        76.0),
-                     (u'2x',       152.0),
-                     (u'3x',       228.0),
-                     (u'4x',       304.0),
-                     (_(u'Custom'), 76.0)]
+    tweak_choices = [(u'0.5x', 38.0),
+                     (u'1x',   76.0),
+                     (u'2x',  152.0),
+                     (u'3x',  228.0),
+                     (u'4x',  304.0)]
     default_choice = u'1x'
 
 class GmstTweak_Actor_MaxJumpHeight_Tes4(GmstTweak_Actor_MaxJumpHeight):
     tweak_tip = _(u'Increases the height to which you can jump. First value '
                   u'is min, second is max.')
     tweak_key = (u'fJumpHeightMin', u'fJumpHeightMax')
-    tweak_choices = [(u'0.5x',       38.0, 82.0),
-                     (u'1x',        76.0, 164.0),
-                     (u'2x',       152.0, 328.0),
-                     (u'3x',       228.0, 492.0),
-                     (u'4x',       304.0, 656.0),
-                     (_(u'Custom'), 76.0, 164.0)]
+    tweak_choices = [(u'0.5x', 38.0, 82.0),
+                     (u'1x',  76.0, 164.0),
+                     (u'2x', 152.0, 328.0),
+                     (u'3x', 228.0, 492.0),
+                     (u'4x', 304.0, 656.0)]
 
 #------------------------------------------------------------------------------
-class GmstTweak_Bounty_Murder(_AGmstTweak):
+class GmstTweak_Bounty_Murder(_AGmstCCTweak):
     tweak_name = _(u'Bounty: Murder')
     tweak_tip = _(u'Bounty for committing a witnessed murder.')
     tweak_key = (u'iCrimeGoldMurder',)
-    tweak_choices = [(u'500',        500),
-                     (u'750',        750),
-                     (u'1000',      1000),
-                     (u'1250',      1250),
-                     (u'1500',      1500),
-                     (_(u'Custom'), 1000)]
+    tweak_choices = [(u'500',   500),
+                     (u'750',   750),
+                     (u'1000', 1000),
+                     (u'1250', 1250),
+                     (u'1500', 1500)]
     default_choice = u'1000'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Bounty_Jailbreak(_AGmstTweak):
+class GmstTweak_Bounty_Jailbreak(_AGmstCCTweak):
     tweak_name = _(u'Bounty: Jailbreak')
     tweak_tip = _(u'Bounty for escaping from jail.')
     tweak_key = (u'iCrimeGoldJailBreak',)
-    tweak_choices = [(u'50',         50),
-                     (u'100',       100),
-                     (u'125',       125),
-                     (u'150',       150),
-                     (u'175',       175),
-                     (u'200',       200),
-                     (_(u'Custom'), 100)]
+    tweak_choices = [(u'50',   50),
+                     (u'100', 100),
+                     (u'125', 125),
+                     (u'150', 150),
+                     (u'175', 175),
+                     (u'200', 200)]
     default_choice = u'50'
 
 class GmstTweak_Bounty_Jailbreak_Tes5(GmstTweak_Bounty_Jailbreak):
@@ -1161,63 +1109,58 @@ class GmstTweak_Bounty_Jailbreak_Tes5(GmstTweak_Bounty_Jailbreak):
     default_choice = u'100'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Gore_CombatDismemberPartChance(_AGmstTweak):
+class GmstTweak_Gore_CombatDismemberPartChance(_AGmstCCTweak):
     tweak_name = _(u'Gore: Combat Dismember Part Chance')
     tweak_tip = _(u'The chance that body parts will be dismembered.')
     tweak_key = (u'iCombatDismemberPartChance',)
-    tweak_choices = [(u'0',          0),
-                     (u'25',        25),
-                     (u'50',        50),
-                     (u'80',        80),
-                     (u'100',      100),
-                     (_(u'Custom'), 50)]
+    tweak_choices = [(u'0',     0),
+                     (u'25',   25),
+                     (u'50',   50),
+                     (u'80',   80),
+                     (u'100', 100)]
     default_choice = u'50'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Gore_CombatExplodePartChance(_AGmstTweak):
+class GmstTweak_Gore_CombatExplodePartChance(_AGmstCCTweak):
     tweak_name = _(u'Gore: Combat Explode Part Chance')
     tweak_tip = _(u'The chance that body parts will explode.')
     tweak_key = (u'iCombatExplodePartChance',)
-    tweak_choices = [(u'0',          0),
-                     (u'25',        25),
-                     (u'50',        50),
-                     (u'75',        75),
-                     (u'100',      100),
-                     (_(u'Custom'), 75)]
+    tweak_choices = [(u'0',     0),
+                     (u'25',   25),
+                     (u'50',   50),
+                     (u'75',   75),
+                     (u'100', 100)]
     default_choice = u'75'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Movement_BaseSpeed(_AGmstTweak):
+class GmstTweak_Movement_BaseSpeed(_AGmstCCTweak):
     tweak_name = _(u'Movement: Base Speed')
     tweak_tip = _(u'Changes base movement speed.')
     tweak_key = (u'fMoveBaseSpeed',)
-    tweak_choices = [(u'77.0',      77.0),
-                     (u'90.0',      90.0),
-                     (_(u'Custom'), 77.0)]
+    tweak_choices = [(u'77.0', 77.0),
+                     (u'90.0', 90.0)]
     default_choice = u'77.0'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Movement_SneakMultiplier(_AGmstTweak):
+class GmstTweak_Movement_SneakMultiplier(_AGmstCCTweak):
     tweak_name = _(u'Movement: Sneak Multiplier')
     tweak_tip = _(u'Movement speed is multiplied by this when the actor is '
                   u'sneaking.')
     tweak_key = (u'fMoveSneakMult',)
-    tweak_choices = [(u'0.57',      0.57),
-                     (u'0.66',      0.66),
-                     (_(u'Custom'), 0.57)]
+    tweak_choices = [(u'0.57', 0.57),
+                     (u'0.66', 0.66)]
     default_choice = u'0.57'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Combat_VATSPlayerDamageMultiplier(_AGmstTweak):
+class GmstTweak_Combat_VATSPlayerDamageMultiplier(_AGmstCCTweak):
     tweak_name = _(u'Combat: VATS Player Damage Multiplier')
     tweak_tip = _(u'Multiplier of damage that player receives in VATS.')
     tweak_key = (u'fVATSPlayerDamageMult',)
-    tweak_choices = [(u'0.10',       0.1),
-                     (u'0.25',      0.25),
-                     (u'0.50',       0.5),
-                     (u'0.75',      0.75),
-                     (u'1.00',       1.0),
-                     (_(u'Custom'), 0.75)]
+    tweak_choices = [(u'0.10',  0.1),
+                     (u'0.25', 0.25),
+                     (u'0.50',  0.5),
+                     (u'0.75', 0.75),
+                     (u'1.00',  1.0)]
     default_choice = u'0.75'
 
 #------------------------------------------------------------------------------
@@ -1228,119 +1171,112 @@ class GmstTweak_Combat_AutoAimFix(_AGmstTweak):
     tweak_key = (u'fAutoAimMaxDistance', u'fAutoAimScreenPercentage',
                  u'fAutoAimMaxDegrees', u'fAutoAimMissRatioLow',
                  u'fAutoAimMissRatioHigh', u'fAutoAimMaxDegreesMiss')
-    tweak_choices = [(_(u'Harder'), 50000.0, -180.0, 1.1, 1.0, 1.3, 3.0)]
+    tweak_choices = [(u'Harder', 50000.0, -180.0, 1.1, 1.0, 1.3, 3.0)]
 
 #------------------------------------------------------------------------------
-class GmstTweak_Player_PipBoyLightKeypressDelay(_AGmstTweak):
+class GmstTweak_Player_PipBoyLightKeypressDelay(_AGmstCCTweak):
     tweak_name = _(u'Player: PipBoy Light Keypress Delay')
     tweak_tip = _(u'Seconds of delay until the PipBoy light switches on.')
     tweak_key = (u'fPlayerPipBoyLightTimer',)
-    tweak_choices = [(u'0.3',       0.3),
-                     (u'0.4',       0.4),
-                     (u'0.5',       0.5),
-                     (u'0.6',       0.6),
-                     (u'0.7',       0.7),
-                     (u'0.8',       0.8),
-                     (u'1.0',       1.0),
-                     (_(u'Custom'), 0.8)]
+    tweak_choices = [(u'0.3', 0.3),
+                     (u'0.4', 0.4),
+                     (u'0.5', 0.5),
+                     (u'0.6', 0.6),
+                     (u'0.7', 0.7),
+                     (u'0.8', 0.8),
+                     (u'1.0', 1.0)]
     default_choice = u'0.8'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Combat_VATSPlaybackDelay(_AGmstTweak):
+class GmstTweak_Combat_VATSPlaybackDelay(_AGmstCCTweak):
     tweak_name = _(u'Combat: VATS Playback Delay')
     tweak_tip = _(u'Seconds of delay after the VATS Camera finished playback.')
     tweak_key = (u'fVATSPlaybackDelay',)
-    tweak_choices = [(u'0.01',      0.01),
-                     (u'0.05',      0.05),
-                     (u'0.10',       0.1),
-                     (u'0.17',      0.17),
-                     (u'0.25',      0.25),
-                     (_(u'Custom'), 0.17)]
+    tweak_choices = [(u'0.01', 0.01),
+                     (u'0.05', 0.05),
+                     (u'0.10',  0.1),
+                     (u'0.17', 0.17),
+                     (u'0.25', 0.25)]
     default_choice = u'0.17'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Combat_NPCDeathXPThreshold(_AGmstTweak):
+class GmstTweak_Combat_NPCDeathXPThreshold(_AGmstCCTweak):
     tweak_name = _(u'Combat: NPC Death XP Threshold')
     tweak_tip = _(u'Percentage of total damage you have to inflict in order '
                   u'to get XP.')
     tweak_key = (u'iXPDeathRewardHealthThreshold',)
-    tweak_choices = [(u'0%',         0),
-                     (u'25%',       25),
-                     (u'40%',       40),
-                     (u'50%',       50),
-                     (u'75%',       75),
-                     (_(u'Custom'), 40)]
+    tweak_choices = [(u'0%',   0),
+                     (u'25%', 25),
+                     (u'40%', 40),
+                     (u'50%', 50),
+                     (u'75%', 75)]
     default_choice = u'40%'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Hacking_MaximumNumberOfWords(_AGmstTweak):
+class GmstTweak_Hacking_MaximumNumberOfWords(_AGmstCCTweak):
     tweak_name = _(u'Hacking: Maximum Number Of Words')
     tweak_tip = _(u'The maximum number of words appearing in the terminal '
                   u'hacking mini-game.')
     tweak_key = (u'iHackingMaxWords',)
-    tweak_choices = [(u'1',          1),
-                     (u'4',          4),
-                     (u'8',          8),
-                     (u'12',        12),
-                     (u'16',        16),
-                     (u'20',        20),
-                     (_(u'Custom'), 20)]
+    tweak_choices = [(u'1',   1),
+                     (u'4',   4),
+                     (u'8',   8),
+                     (u'12', 12),
+                     (u'16', 16),
+                     (u'20', 20)]
     default_choice = u'20'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Visuals_ShellCameraDistance(_AGmstTweak):
+class GmstTweak_Visuals_ShellCameraDistance(_AGmstCCTweak):
     tweak_name = _(u'Visuals: Shell Camera Distance')
     tweak_tip = _(u'Maximum distance at which gun arisings (shell case, '
                   u'particle, decal) show from camera.')
     tweak_key = (u'fGunParticleCameraDistance', u'fGunShellCameraDistance',
                  u'fGunDecalCameraDistance')
-    tweak_choices = [(u'x1.5',      3072.0, 768.0, 3072.0),
-                     (u'x2',       4096.0, 1024.0, 4096.0),
-                     (u'x3',       6144.0, 1536.0, 6144.0),
-                     (u'x4',       8192.0, 2048.0, 8192.0),
-                     (u'x5',     10240.0, 2560.0, 10240.0),
-                     (_(u'Custom'), 2048.0, 512.0, 2048.0)]
+    tweak_choices = [(u'x1.5',  3072.0, 768.0, 3072.0),
+                     (u'x2',   4096.0, 1024.0, 4096.0),
+                     (u'x3',   6144.0, 1536.0, 6144.0),
+                     (u'x4',   8192.0, 2048.0, 8192.0),
+                     (u'x5', 10240.0, 2560.0, 10240.0)]
 
 #------------------------------------------------------------------------------
 class GmstTweak_Visuals_ShellLitterTime(_AGmstTweak):
     tweak_name = _(u'Visuals: Shell Litter Time')
     tweak_tip = _(u'Time before shell cases fade away from cells.')
     tweak_key = (u'fGunShellLifetime',)
-    tweak_choices = [(_(u'10 Seconds'),          10.0),
-                     (_(u'20 Seconds'),          20.0),
-                     (_(u'30 Seconds'),          30.0),
-                     (_(u'1 Minute'),            60.0),
-                     (_(u'3 Minutes'),          180.0),
-                     (_(u'5 Minutes'),          300.0),
-                     (_(u'Custom (in Seconds)'), 10.0)]
+    tweak_choices = [(_(u'10 Seconds'), 10.0),
+                     (_(u'20 Seconds'), 20.0),
+                     (_(u'30 Seconds'), 30.0),
+                     (_(u'1 Minute'),   60.0),
+                     (_(u'3 Minutes'), 180.0),
+                     (_(u'5 Minutes'), 300.0)]
     default_choice = _(u'10 Seconds')
+    custom_choice = _(u'Custom (in seconds)')
 
 #------------------------------------------------------------------------------
-class GmstTweak_Visuals_ShellLitterCount(_AGmstTweak):
+class GmstTweak_Visuals_ShellLitterCount(_AGmstCCTweak):
     tweak_name = _(u'Visuals: Shell Litter Count')
     tweak_tip = _(u'Maximum number of debris (shell case, etc) allowed in '
                   u'cell.')
     tweak_key = (u'iDebrisMaxCount',)
-    tweak_choices = [(u'50',        50),
-                     (u'100',      100),
-                     (u'500',      500),
-                     (u'1000',    1000),
-                     (u'3000',    3000),
-                     (_(u'Custom'), 50)]
+    tweak_choices = [(u'50',     50),
+                     (u'100',   100),
+                     (u'500',   500),
+                     (u'1000', 1000),
+                     (u'3000', 3000)]
     default_choice = u'50'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Hacking_TerminalSpeedAdjustment(_AGmstTweak):
+class GmstTweak_Hacking_TerminalSpeedAdjustment(_AGmstCCTweak):
     tweak_name = _(u'Hacking: Terminal Speed Adjustment')
     tweak_tip = _(u'The display speed at the time of terminal hacking.')
     tweak_key = (u'iHackingDumpRate', u'iHackingInputRate',
                  u'iHackingOutputRate', u'iHackingFlashOffDuration',
                  u'iHackingFlashOnDuration', u'iComputersDisplayRateMenus',
                  u'iComputersDisplayRateNotes')
-    tweak_choices = [(u'x2',        1000, 40, 134, 250, 375, 300, 300),
-                     (u'x4',        2000, 80, 268, 125, 188, 600, 600),
-                     (u'x6',        3000, 120, 402, 83, 126, 900, 900),
-                     (_(u'Custom'), 3000, 120, 402, 83, 126, 900, 900)]
+    tweak_choices = [(u'x2', 1000, 40, 134, 250, 375, 300, 300),
+                     (u'x4', 2000, 80, 268, 125, 188, 600, 600),
+                     (u'x6', 3000, 120, 402, 83, 126, 900, 900)]
     default_choice = u'x6'
 
 #------------------------------------------------------------------------------
@@ -1355,64 +1291,61 @@ class GmstTweak_World_CellRespawnTime_Cleared(_AGmstTweak):
     tweak_tip = _(u'Time before cleared cells respawn. Longer times increase '
                   u'save sizes.')
     tweak_key = (u'iHoursToRespawnCellCleared',)
-    tweak_choices = [(_(u'10 Days'),           240),
-                     (_(u'15 Days'),           360),
-                     (_(u'20 Days'),           480),
-                     (_(u'25 Days'),           600),
-                     (_(u'30 Days'),           720),
-                     (_(u'2 Months'),         1440),
-                     (_(u'6 Months'),         4320),
-                     (_(u'1 Year'),           8760),
-                     (_(u'Custom (in hours)'), 720)]
+    tweak_choices = [(_(u'10 Days'),   240),
+                     (_(u'15 Days'),   360),
+                     (_(u'20 Days'),   480),
+                     (_(u'25 Days'),   600),
+                     (_(u'30 Days'),   720),
+                     (_(u'2 Months'), 1440),
+                     (_(u'6 Months'), 4320),
+                     (_(u'1 Year'),   8760)]
     default_choice = _(u'30 Days')
+    custom_choice = _(u'Custom (in hours)')
 
 #------------------------------------------------------------------------------
-class GmstTweak_Magic_MaxResistance(_AGmstTweak):
+class GmstTweak_Magic_MaxResistance(_AGmstCCTweak):
     tweak_name = _(u'Magic: Max Resistance')
     tweak_tip = _(u'Maximum level of resistance a player can have to various '
                   u'forms of magic and disease.')
     tweak_key = (u'fPlayerMaxResistance',)
-    tweak_choices = [(u'50%',       50.0),
-                     (u'60%',       60.0),
-                     (u'70%',       70.0),
-                     (u'80%',       80.0),
-                     (u'85%',       85.0),
-                     (u'90%',       90.0),
-                     (u'100%',     100.0),
-                     (_(u'Custom'), 85.0)]
+    tweak_choices = [(u'50%',   50.0),
+                     (u'60%',   60.0),
+                     (u'70%',   70.0),
+                     (u'80%',   80.0),
+                     (u'85%',   85.0),
+                     (u'90%',   90.0),
+                     (u'100%', 100.0)]
     default_choice = u'85%'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Magic_MaxSummons(_AGmstTweak):
+class GmstTweak_Magic_MaxSummons(_AGmstCCTweak):
     tweak_name = _(u'Magic: Max Summons')
     tweak_tip = _(u'Maximum number of creatures an actor can summon (affects '
                   u'both NPCs and the player).')
     tweak_key = (u'iMaxSummonedCreatures',)
-    tweak_choices = [(u'1',         1),
-                     (u'3',         3),
-                     (u'5',         5),
-                     (u'8',         8),
-                     (u'10',       10),
-                     (_(u'Custom'), 1)]
+    tweak_choices = [(u'1',   1),
+                     (u'3',   3),
+                     (u'5',   5),
+                     (u'8',   8),
+                     (u'10', 10)]
     default_choice = u'1'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Actor_VerticalObjectDetection(_AGmstTweak):
+class GmstTweak_Actor_VerticalObjectDetection(_AGmstCCTweak):
     tweak_name = _(u'Actor: Vertical Object Detection')
     tweak_tip = _(u'Changes the vertical range in which NPCs detect objects. '
                   u'The first value must be >= 0 and the second one must be '
                   u'<= 0.')
     tweak_key = (u'fSandboxCylinderTop', u'fSandboxCylinderBottom')
-    tweak_choices = [(u'x1',        150.0, -100.0),
-                     (u'x2',        300.0, -200.0),
-                     (u'x3',        450.0, -300.0),
-                     (u'x4',        600.0, -400.0),
-                     (u'x5',        750.0, -500.0),
-                     (_(u'Custom'), 150.0, -100.0)]
+    tweak_choices = [(u'x1', 150.0, -100.0),
+                     (u'x2', 300.0, -200.0),
+                     (u'x3', 450.0, -300.0),
+                     (u'x4', 600.0, -400.0),
+                     (u'x5', 750.0, -500.0)]
     default_choice = u'x1'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Player_FastTravelTimeMultiplier(_AGmstTweak):
+class GmstTweak_Player_FastTravelTimeMultiplier(_AGmstCCTweak):
     tweak_name = _(u'Player: Fast Travel Time Multiplier')
     tweak_tip = _(u'Changes how much time passes while fast traveling. By '
                   u'default, it passes ~3x slower than if you had walked the '
@@ -1420,8 +1353,7 @@ class GmstTweak_Player_FastTravelTimeMultiplier(_AGmstTweak):
     tweak_key = (u'fFastTravelSpeedMult',)
     tweak_choices = [(_(u'Default Speed'), 1.0),
                      (_(u'Walking Speed'), 3.5),
-                     (_(u'Horse Speed'),   4.0),
-                     (_(u'Custom'),        2.0)]
+                     (_(u'Horse Speed'),   4.0)]
     default_choice = _(u'Default Speed')
 
 #------------------------------------------------------------------------------
@@ -1429,28 +1361,27 @@ class GmstTweak_Combat_CriticalHitChance(_AGmstTweak):
     tweak_name = _(u'Combat: Critical Hit Chance')
     tweak_tip = _(u'The chance of a strike being a critical hit.')
     tweak_key = (u'fWeaponConditionCriticalChanceMult',)
-    tweak_choices = [(_(u'0% (Disabled)'),     0.0),
-                     (u'1%',                   0.1),
-                     (u'5%',                   0.5),
-                     (u'10%',                  0.1),
-                     (u'25%',                 0.25),
-                     (u'50%',                  0.5),
-                     (_(u'100% (Always)'),     1.0),
-                     (_(u'Custom (Max: 1.0)'), 0.1)]
+    tweak_choices = [(_(u'0% (Disabled)'), 0.0),
+                     (u'1%',               0.1),
+                     (u'5%',               0.5),
+                     (u'10%',              0.1),
+                     (u'25%',             0.25),
+                     (u'50%',              0.5),
+                     (_(u'100% (Always)'), 1.0)]
     default_choice = u'10%'
+    custom_choice = _(u'Custom (Max: 1.0)')
 
 #------------------------------------------------------------------------------
-class GmstTweak_Arrow_MaxArrowsAttachedToNPC(_AGmstTweak):
+class GmstTweak_Arrow_MaxArrowsAttachedToNPC(_AGmstCCTweak):
     tweak_name = _(u'Arrow: Max Arrows Attached To NPC')
     tweak_tip = _(u'The Maximum number of arrows that can be sticking out of '
                   u'an actor.')
     tweak_key = (u'iMaxAttachedArrows',)
-    tweak_choices = [(u'3',           3),
-                     (u'10',       10.0),
-                     (u'30',       30.0),
-                     (u'50',       50.0),
-                     (u'100',     100.0),
-                     (_(u'Custom'), 3.0)]
+    tweak_choices = [(u'3',       3),
+                     (u'10',   10.0),
+                     (u'30',   30.0),
+                     (u'50',   50.0),
+                     (u'100', 100.0)]
     default_choice = u'3'
 
 #------------------------------------------------------------------------------
@@ -1468,48 +1399,48 @@ class GmstTweak_Actor_MerchantRestockTime(_AGmstTweak):
     tweak_tip = _(u'The amount of time required for vendors to restock items '
                   u'and gold.')
     tweak_key = (u'iDaysToRespawnVendor',)
-    tweak_choices = [(_(u'Instant'),          0),
-                     (_(u'12 Hours'),       0.5),
-                     (_(u'1 Day'),            1),
-                     (_(u'2 Days'),           2),
-                     (_(u'4 Days'),           4),
-                     (_(u'1 week'),           7),
-                     (_(u'2 weeks'),         14),
-                     (_(u'1 Month'),         28),
-                     (_(u'Never'),        99999),
-                     (_(u'Custom (in days)'), 2)]
+    tweak_choices = [(_(u'Instant'),    0),
+                     (_(u'12 Hours'), 0.5),
+                     (_(u'1 Day'),      1),
+                     (_(u'2 Days'),     2),
+                     (_(u'4 Days'),     4),
+                     (_(u'1 Week'),     7),
+                     (_(u'2 Weeks'),   14),
+                     (_(u'1 Month'),   28),
+                     (_(u'Never'),  99999)]
     default_choice = _(u'2 Days')
+    custom_choice = _(u'Custom (in days)')
 
 #------------------------------------------------------------------------------
 class GmstTweak_Player_FallDamageThreshold(_AGmstTweak):
     tweak_name = _(u'Player: Fall Damage Threshold')
     tweak_tip = _(u'Changes the height at which you take fall damage.')
     tweak_key = (u'fJumpFallHeightMin',)
-    tweak_choices = [(u'0.5x',                 300.0),
-                     (u'1x',                   600.0),
-                     (u'2x',                  1200.0),
-                     (u'3x',                  1800.0),
-                     (u'4x',                  2400.0),
-                     (u'5x',                  3000.0),
-                     (_(u'No Fall Damage'),  99999.0),
-                     (_(u'Custom (in units)'), 600.0)]
+    tweak_choices = [(u'0.5x',                300.0),
+                     (u'1x',                  600.0),
+                     (u'2x',                 1200.0),
+                     (u'3x',                 1800.0),
+                     (u'4x',                 2400.0),
+                     (u'5x',                 3000.0),
+                     (_(u'No Fall Damage'), 99999.0)]
     default_choice = u'1x'
+    custom_choice = _(u'Custom (in units)')
 
 #------------------------------------------------------------------------------
 class GmstTweak_Player_SprintingCost(_AGmstTweak):
     tweak_name = _(u'Player: Sprinting Cost')
     tweak_tip = _(u'Changes the stamina drain that occurs when sprinting.')
     tweak_key = (u'fSprintStaminaDrainMult',)
-    tweak_choices = [(_(u'None'),                        0.0),
-                     (_(u'Halved'),                      3.5),
-                     (_(u'Default'),                     7.0),
-                     (_(u'Doubled'),                    14.0),
-                     (_(u'Tripled'),                    21.0),
-                     (_(u'Custom (Lower = Less Drain)'), 7.0)]
+    tweak_choices = [(_(u'None'),     0.0),
+                     (_(u'Halved'),   3.5),
+                     (_(u'Default'),  7.0),
+                     (_(u'Doubled'), 14.0),
+                     (_(u'Tripled'), 21.0)]
     default_choice = _(u'Default')
+    custom_choice = _(u'Custom (Lower = Less Drain)')
 
 #------------------------------------------------------------------------------
-class GmstTweak_Visuals_MasserSize(_AGmstTweak):
+class GmstTweak_Visuals_MasserSize(_AGmstCCTweak):
     tweak_name = _(u'Visuals: Masser Size')
     tweak_tip = _(u'Changes the size of the moon Masser (the larger one) in '
                   u'the night sky.')
@@ -1518,8 +1449,7 @@ class GmstTweak_Visuals_MasserSize(_AGmstTweak):
                      (_(u'25% Smaller'), 68),
                      (_(u'Default'),     90),
                      (_(u'25% Larger'), 113),
-                     (_(u'50% Larger'), 135),
-                     (_(u'Custom'),      90)]
+                     (_(u'50% Larger'), 135)]
     default_choice = _(u'Default')
 
 #------------------------------------------------------------------------------
@@ -1528,15 +1458,15 @@ class GmstTweak_Visuals_MasserSpeed(_AGmstTweak):
     tweak_tip = _(u'Changes how quickly the moon Masser (the larger one) '
                   u'moves in the night sky.')
     tweak_key = (u'fMasserSpeed',)
-    tweak_choices = [(u'0.5x',                0.125),
-                     (u'1x',                   0.25),
-                     (u'2x',                    0.5),
-                     (u'3x',                   0.75),
-                     (_(u'Custom (in units)'), 0.25)]
+    tweak_choices = [(u'0.5x', 0.125),
+                     (u'1x',    0.25),
+                     (u'2x',     0.5),
+                     (u'3x',    0.75)]
     default_choice = u'1x'
+    custom_choice = _(u'Custom (in units)')
 
 #------------------------------------------------------------------------------
-class GmstTweak_Visuals_SecundaSize(_AGmstTweak):
+class GmstTweak_Visuals_SecundaSize(_AGmstCCTweak):
     tweak_name = _(u'Visuals: Secunda Size')
     tweak_tip = _(u'Changes the size of the moon Secunda (the smaller one) '
                   u'in the night sky.')
@@ -1545,8 +1475,7 @@ class GmstTweak_Visuals_SecundaSize(_AGmstTweak):
                      (_(u'25% Smaller'), 30),
                      (_(u'Default'),     40),
                      (_(u'25% Larger'),  50),
-                     (_(u'50% Larger'),  60),
-                     (_(u'Custom'),      40)]
+                     (_(u'50% Larger'),  60)]
     default_choice = _(u'Default')
 
 #------------------------------------------------------------------------------
@@ -1555,15 +1484,15 @@ class GmstTweak_Visuals_SecundaSpeed(_AGmstTweak):
     tweak_tip = _(u'Changes how quickly the moon Secunda (the smaller one) '
                   u'moves in the night sky.')
     tweak_key = (u'fSecundaSpeed',)
-    tweak_choices = [(u'0.5x',                0.15),
-                     (u'1x',                   0.3),
-                     (u'2x',                   0.6),
-                     (u'3x',                   0.9),
-                     (_(u'Custom (in units)'), 0.3)]
+    tweak_choices = [(u'0.5x', 0.15),
+                     (u'1x',    0.3),
+                     (u'2x',    0.6),
+                     (u'3x',    0.9)]
     default_choice = u'1x'
+    custom_choice = _(u'Custom (in units)')
 
 #------------------------------------------------------------------------------
-class GmstTweak_AI_BumpReactionDelay(_AGmstTweak):
+class GmstTweak_AI_BumpReactionDelay(_AGmstCCTweak):
     tweak_name = _(u'AI: Bump Reaction Delay')
     tweak_tip = _(u'Changes how long it takes until NPCs (particularly '
                   u'followers) that have commented on you bumping into them '
@@ -1576,7 +1505,7 @@ class GmstTweak_AI_BumpReactionDelay(_AGmstTweak):
     default_choice = _(u'Default')
 
 #------------------------------------------------------------------------------
-class GmstTweak_Magic_MaxActiveRunes(_AGmstTweak):
+class GmstTweak_Magic_MaxActiveRunes(_AGmstCCTweak):
     tweak_name = _(u'Magic: Max Active Runes')
     tweak_tip = _(u'How many rune spells the player can have active '
                   u'simultaneously.')
@@ -1586,8 +1515,7 @@ class GmstTweak_Magic_MaxActiveRunes(_AGmstTweak):
                      (u'5',               5),
                      (u'10',             10),
                      (u'50',             50),
-                     (_(u'No Limit'), 99999),
-                     (_(u'Custom'),       1)]
+                     (_(u'No Limit'), 99999)]
     default_choice = u'1'
 
 #------------------------------------------------------------------------------
@@ -1597,16 +1525,16 @@ class GmstTweak_Actor_FasterShouts(_AGmstTweak):
                   u'shout multiple words. Custom is for the first word and '
                   u'the rest of the shout.')
     tweak_key = (u'fShoutTime1', u'fShoutTime2')
-    tweak_choices = [(_(u'4x Faster'),             0.05, 0.225),
-                     (_(u'2x Faster'),               0.1, 0.45),
-                     (_(u'Default'),                  0.2, 0.9),
-                     (_(u'2x Slower'),                0.4, 1.8),
-                     (_(u'4x Slower'),                0.8, 3.6),
-                     (_(u'Custom (in Milliseconds)'), 0.2, 0.9)]
+    tweak_choices = [(_(u'4x Faster'), 0.05, 0.225),
+                     (_(u'2x Faster'),   0.1, 0.45),
+                     (_(u'Default'),      0.2, 0.9),
+                     (_(u'2x Slower'),    0.4, 1.8),
+                     (_(u'4x Slower'),    0.8, 3.6)]
     default_choice = _(u'Default')
+    custom_choice = _(u'Custom (in milliseconds)')
 
 #------------------------------------------------------------------------------
-class GmstTweak_Combat_FasterTwo_HandedWeapons(_AGmstTweak):
+class GmstTweak_Combat_FasterTwo_HandedWeapons(_AGmstCCTweak):
     tweak_name = _(u'Combat: Faster Two-Handed Weapons')
     tweak_tip = _(u'Changes 2-hand weapon animation speed.')
     tweak_key = (u'fWeaponTwoHandedAnimationSpeedMult',)
@@ -1614,8 +1542,7 @@ class GmstTweak_Combat_FasterTwo_HandedWeapons(_AGmstTweak):
                      (_(u'25% Slower'), 1.125),
                      (_(u'Default'),      1.5),
                      (_(u'25% Faster'), 1.875),
-                     (_(u'50% Faster'),  2.25),
-                     (_(u'Custom'),       1.5)]
+                     (_(u'50% Faster'),  2.25)]
     default_choice = _(u'Default')
 
 #------------------------------------------------------------------------------
@@ -1624,12 +1551,12 @@ class GmstTweak_Player_UnderwaterBreathControl(_AGmstTweak):
     tweak_tip = _(u'How long the player can hold their breath while swimming '
                   u'- does not affect Argonians.')
     tweak_key = (u'fActorSwimBreathBase', u'fActorSwimBreathMult')
-    tweak_choices = [(_(u'10 Seconds'),                   10.0, 0.3),
-                     (_(u'20 Seconds'),                   20.0, 0.3),
-                     (_(u'40 Seconds'),                  40.0, 0.45),
-                     (_(u'60 Seconds'),                   60.0, 0.6),
-                     (_(u'Custom (Base and Multiplier)'), 10.0, 0.3)]
+    tweak_choices = [(_(u'10 Seconds'),  10.0, 0.3),
+                     (_(u'20 Seconds'),  20.0, 0.3),
+                     (_(u'40 Seconds'), 40.0, 0.45),
+                     (_(u'60 Seconds'),  60.0, 0.6)]
     default_choice = _(u'10 Seconds')
+    custom_choice = _(u'Custom (Base and Multiplier)')
 
 #------------------------------------------------------------------------------
 class GmstTweak_Combat_StealthDamageBonus(_AGmstTweak):
@@ -1638,12 +1565,12 @@ class GmstTweak_Combat_StealthDamageBonus(_AGmstTweak):
                   u'and crossbows while sneaking.')
     tweak_key = (u'fCombatSneak1HDaggerMult', u'fCombatSneakBowMult',
                  u'fCombatSneakCrossbowMult')
-    tweak_choices = [(_(u'None'),                           3.0, 2.0, 2.0),
-                     (u'2x',                                6.0, 4.0, 4.0),
-                     (u'3x',                                9.0, 6.0, 6.0),
-                     (u'4x',                               12.0, 8.0, 8.0),
-                     (_(u'Custom (Dagger, Bow, Crossbow)'), 3.0, 2.0, 2.0)]
-    default_choice = _(u'None')
+    tweak_choices = [(u'1x',  3.0, 2.0, 2.0),
+                     (u'2x',  6.0, 4.0, 4.0),
+                     (u'3x',  9.0, 6.0, 6.0),
+                     (u'4x', 12.0, 8.0, 8.0)]
+    default_choice = u'1x'
+    custom_choice = _(u'Custom (Dagger, Bow, Crossbow)')
 
 #------------------------------------------------------------------------------
 class GmstTweak_Msg_CannotEquipItemFix(_AGmstTweak):
@@ -1662,7 +1589,7 @@ class GmstTweak_Msg_CarryingTooMuch(_AMsgTweak):
     tweak_key = (u'sOverEncumbered',)
 
 #------------------------------------------------------------------------------
-class GmstTweak_Magic_InvisibilityDetectionDifficulty(_AGmstTweak):
+class GmstTweak_Magic_InvisibilityDetectionDifficulty(_AGmstCCTweak):
     tweak_name = _(u'Magic: Invisibility Detection Difficulty')
     tweak_tip = _(u'Determines how difficult it is for NPCs to see you while '
                   u'you are invisible.')
@@ -1671,22 +1598,20 @@ class GmstTweak_Magic_InvisibilityDetectionDifficulty(_AGmstTweak):
                      (_(u'75% Harder'),          0.25),
                      (_(u'50% Harder'),           0.5),
                      (_(u'25% Harder'),          0.75),
-                     (_(u'Nullify Invisibility'), 1.0),
-                     (_(u'Custom'),               0.0)]
+                     (_(u'Nullify Invisibility'), 1.0)]
     default_choice = _(u'Impossible')
 
 #------------------------------------------------------------------------------
-class GmstTweak_Bounty_Shapeshifting(_AGmstTweak):
+class GmstTweak_Bounty_Shapeshifting(_AGmstCCTweak):
     tweak_name = _(u'Bounty: Shapeshifting')
     tweak_tip = _(u'The bounty for transforming into a vampire lord or '
                   u'werewolf in front of people.')
     tweak_key = (u'iCrimeGoldWerewolf',)
-    tweak_choices = [(u'500',        500),
-                     (u'750',        750),
-                     (u'1000',      1000),
-                     (u'1250',      1250),
-                     (u'1500',      1500),
-                     (_(u'Custom'), 1000)]
+    tweak_choices = [(u'500',   500),
+                     (u'750',   750),
+                     (u'1000', 1000),
+                     (u'1250', 1250),
+                     (u'1500', 1500)]
     default_choice = u'1000'
 
 #------------------------------------------------------------------------------

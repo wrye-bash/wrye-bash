@@ -23,7 +23,8 @@
 
 """This module contains oblivion multitweak item patcher classes that belong
 to the Clothes Multitweaker - as well as the tweaker itself."""
-from ...patcher.patchers.base import MultiTweaker, MultiTweakItem
+from ...patcher.patchers.base import MultiTweaker, MultiTweakItem, \
+    CustomChoiceTweak
 
 # Patchers: 30 ----------------------------------------------------------------
 class _AClothesTweak(MultiTweakItem):
@@ -56,7 +57,7 @@ class _AClothesTweak(MultiTweakItem):
                 rec_type_flags & my_type_flags == rec_type_flags)))
 
 #------------------------------------------------------------------------------
-class _AClothesTweak_MaxWeight(_AClothesTweak):
+class _AClothesTweak_MaxWeight(_AClothesTweak, CustomChoiceTweak):
     """Shared code of max weight tweaks."""
     tweak_log_msg = _(u'Clothes Reweighed: %(total_changed)d')
 
@@ -84,7 +85,7 @@ class ClothesTweak_MaxWeightAmulets(_AClothesTweak_MaxWeight):
     tweak_tip = _(u'Amulet weight will be capped.')
     tweak_key = u'amulets.maxWeight'
     tweak_choices = [(u'0.0', 0.0), (u'0.1', 0.1), (u'0.2', 0.2),
-                     (u'0.5', 0.5), (_(u'Custom'), 0.0)]
+                     (u'0.5', 0.5)]
 
 #------------------------------------------------------------------------------
 class ClothesTweak_MaxWeightRings(_AClothesTweak_MaxWeight):
@@ -92,15 +93,14 @@ class ClothesTweak_MaxWeightRings(_AClothesTweak_MaxWeight):
     tweak_tip = _(u'Ring weight will be capped.')
     tweak_key = u'rings.maxWeight'
     tweak_choices = [(u'0.0', 0.0), (u'0.1', 0.1), (u'0.2', 0.2),
-                     (u'0.5', 0.5), (_(u'Custom'), 0.0)]
+                     (u'0.5', 0.5)]
 
 #------------------------------------------------------------------------------
 class ClothesTweak_MaxWeightHoods(_AClothesTweak_MaxWeight):
     tweak_name = _(u'Max Weight Hoods')
     tweak_tip = _(u'Hood weight will be capped.')
     tweak_key = u'hoods.maxWeight'
-    tweak_choices = [(u'0.2', 0.2), (u'0.5', 0.5), (u'1.0', 1.0),
-                     (_(u'Custom'), 0.0)]
+    tweak_choices = [(u'0.2', 0.2), (u'0.5', 0.5), (u'1.0', 1.0)]
 
 #------------------------------------------------------------------------------
 class _AClothesTweak_Unblock(_AClothesTweak):
