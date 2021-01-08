@@ -215,6 +215,14 @@ class _AGmstTweak(MultiTweakItem):
 class _AGmstCCTweak(_AGmstTweak, CustomChoiceTweak):
     """Variant of _AGmstTweak that also includes CustomChoiceTweak."""
 
+class _AGmstCCSecondsTweak(_AGmstTweak):
+    """Variant of _AGmstTweak to factor out 'in seconds' custom tweaks."""
+    custom_choice = _(u'Custom (in seconds)')
+
+class _AGmstCCUnitsTweak(_AGmstTweak):
+    """Variant of _AGmstTweak to factor out 'in units' custom tweaks."""
+    custom_choice = _(u'Custom (in units)')
+
 class _AMsgTweak(_AGmstCCTweak):
     """Base class for GMST tweaks in the Msg: category."""
     tweak_choices = [(_(u'None'),           u' '),
@@ -259,7 +267,7 @@ class GmstTweak_Arrow_LitterCount(_AGmstCCTweak):
     default_choice = u'15'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Arrow_LitterTime(_AGmstTweak):
+class GmstTweak_Arrow_LitterTime(_AGmstCCSecondsTweak):
     tweak_name = _(u'Arrow: Litter Time')
     tweak_tip = _(u'Time before spent arrows fade away from cells and actors.')
     tweak_key = (u'fArrowAgeMax',)
@@ -272,7 +280,6 @@ class GmstTweak_Arrow_LitterTime(_AGmstTweak):
                      (_(u'30 Minutes'), 1800.0),
                      (_(u'1 Hour'),     3600.0)]
     default_choice = _(u'1.5 Minutes')
-    custom_choice = _(u'Custom (in seconds)')
 
 #------------------------------------------------------------------------------
 class GmstTweak_Arrow_RecoveryFromActor(_AGmstCCTweak):
@@ -377,7 +384,7 @@ class GmstTweak_Compass_RecognitionDistance(_AGmstCCTweak):
     default_choice = _(u'Default')
 
 #------------------------------------------------------------------------------
-class GmstTweak_Actor_UnconsciousnessDuration(_AGmstTweak):
+class GmstTweak_Actor_UnconsciousnessDuration(_AGmstCCSecondsTweak):
     tweak_name = _(u'Actor: Unconsciousness Duration')
     tweak_tip = _(u'Time which essential NPCs stay unconscious.')
     tweak_key = (u'fEssentialDeathTime',)
@@ -390,7 +397,6 @@ class GmstTweak_Actor_UnconsciousnessDuration(_AGmstTweak):
                      (_(u'3 Minutes'),    180.0),
                      (_(u'5 Minutes'),    300.0)]
     default_choice = _(u'10 Seconds')
-    custom_choice = _(u'Custom (in seconds)')
 
 #------------------------------------------------------------------------------
 class GmstTweak_Movement_FatigueFromRunningEncumbrance(_AGmstCCTweak):
@@ -848,7 +854,7 @@ class GmstTweak_Combat_MaximumArmorRating_Tes5(
     default_choice = u'90'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Warning_InteriorDistanceToHostiles(_AGmstTweak):
+class GmstTweak_Warning_InteriorDistanceToHostiles(_AGmstCCUnitsTweak):
     tweak_name = _(u'Warning: Interior Distance To Hostiles')
     tweak_tip = _(u'The minimum distance hostile actors have to be to be '
                   u'allowed to sleep, travel etc, when inside interiors.')
@@ -861,10 +867,9 @@ class GmstTweak_Warning_InteriorDistanceToHostiles(_AGmstTweak):
                      (u'3000', 3000.0),
                      (u'4000', 4000.0)]
     default_choice = u'2000'
-    custom_choice = _(u'Custom (in units)')
 
 #------------------------------------------------------------------------------
-class GmstTweak_Warning_ExteriorDistanceToHostiles(_AGmstTweak):
+class GmstTweak_Warning_ExteriorDistanceToHostiles(_AGmstCCUnitsTweak):
     tweak_name = _(u'Warning: Exterior Distance To Hostiles')
     tweak_tip = _(u'The minimum distance hostile actors have to be to be '
                   u'allowed to sleep, travel etc, when outside.')
@@ -879,7 +884,6 @@ class GmstTweak_Warning_ExteriorDistanceToHostiles(_AGmstTweak):
                      (u'5000', 5000.0),
                      (u'6000', 6000.0)]
     default_choice = u'3000'
-    custom_choice = _(u'Custom (in units)')
 
 #------------------------------------------------------------------------------
 class GmstTweak_UOPVampireAgingAndFaceFix(_AGmstTweak):
@@ -1240,7 +1244,7 @@ class GmstTweak_Visuals_ShellCameraDistance(_AGmstCCTweak):
                      (u'x5', 10240.0, 2560.0, 10240.0)]
 
 #------------------------------------------------------------------------------
-class GmstTweak_Visuals_ShellLitterTime(_AGmstTweak):
+class GmstTweak_Visuals_ShellLitterTime(_AGmstCCSecondsTweak):
     tweak_name = _(u'Visuals: Shell Litter Time')
     tweak_tip = _(u'Time before shell cases fade away from cells.')
     tweak_key = (u'fGunShellLifetime',)
@@ -1251,7 +1255,6 @@ class GmstTweak_Visuals_ShellLitterTime(_AGmstTweak):
                      (_(u'3 Minutes'), 180.0),
                      (_(u'5 Minutes'), 300.0)]
     default_choice = _(u'10 Seconds')
-    custom_choice = _(u'Custom (in seconds)')
 
 #------------------------------------------------------------------------------
 class GmstTweak_Visuals_ShellLitterCount(_AGmstCCTweak):
@@ -1412,7 +1415,7 @@ class GmstTweak_Actor_MerchantRestockTime(_AGmstTweak):
     custom_choice = _(u'Custom (in days)')
 
 #------------------------------------------------------------------------------
-class GmstTweak_Player_FallDamageThreshold(_AGmstTweak):
+class GmstTweak_Player_FallDamageThreshold(_AGmstCCUnitsTweak):
     tweak_name = _(u'Player: Fall Damage Threshold')
     tweak_tip = _(u'Changes the height at which you take fall damage.')
     tweak_key = (u'fJumpFallHeightMin',)
@@ -1424,7 +1427,6 @@ class GmstTweak_Player_FallDamageThreshold(_AGmstTweak):
                      (u'5x',                 3000.0),
                      (_(u'No Fall Damage'), 99999.0)]
     default_choice = u'1x'
-    custom_choice = _(u'Custom (in units)')
 
 #------------------------------------------------------------------------------
 class GmstTweak_Player_SprintingCost(_AGmstTweak):
@@ -1453,7 +1455,7 @@ class GmstTweak_Visuals_MasserSize(_AGmstCCTweak):
     default_choice = _(u'Default')
 
 #------------------------------------------------------------------------------
-class GmstTweak_Visuals_MasserSpeed(_AGmstTweak):
+class GmstTweak_Visuals_MasserSpeed(_AGmstCCUnitsTweak):
     tweak_name = _(u'Visuals: Masser Speed')
     tweak_tip = _(u'Changes how quickly the moon Masser (the larger one) '
                   u'moves in the night sky.')
@@ -1463,7 +1465,6 @@ class GmstTweak_Visuals_MasserSpeed(_AGmstTweak):
                      (u'2x',     0.5),
                      (u'3x',    0.75)]
     default_choice = u'1x'
-    custom_choice = _(u'Custom (in units)')
 
 #------------------------------------------------------------------------------
 class GmstTweak_Visuals_SecundaSize(_AGmstCCTweak):
@@ -1479,7 +1480,7 @@ class GmstTweak_Visuals_SecundaSize(_AGmstCCTweak):
     default_choice = _(u'Default')
 
 #------------------------------------------------------------------------------
-class GmstTweak_Visuals_SecundaSpeed(_AGmstTweak):
+class GmstTweak_Visuals_SecundaSpeed(_AGmstCCUnitsTweak):
     tweak_name = _(u'Visuals: Secunda Speed')
     tweak_tip = _(u'Changes how quickly the moon Secunda (the smaller one) '
                   u'moves in the night sky.')
@@ -1489,7 +1490,6 @@ class GmstTweak_Visuals_SecundaSpeed(_AGmstTweak):
                      (u'2x',    0.6),
                      (u'3x',    0.9)]
     default_choice = u'1x'
-    custom_choice = _(u'Custom (in units)')
 
 #------------------------------------------------------------------------------
 class GmstTweak_AI_BumpReactionDelay(_AGmstCCTweak):
