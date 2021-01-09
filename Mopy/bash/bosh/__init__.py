@@ -477,6 +477,10 @@ class ModInfo(FileInfo):
         """Return the plugin masters, in the order listed in its header."""
         return self.header.masters
 
+    def get_dependents(self):
+        """Return a set of all plugins that have this plugin as a master."""
+        return modInfos.dependents[self.name]
+
     # Ghosting and ghosting related overrides ---------------------------------
     def do_update(self, raise_on_error=False):
         self.isGhost, old_ghost = not self._file_key.exists() and (
@@ -1854,6 +1858,8 @@ class ModInfos(FileInfos):
                                          u'found')
         # Maps plugins to 'real indices', i.e. the ones the game will assign.
         self.real_indices = collections.defaultdict(lambda: sys.maxsize)
+        # Maps each plugin to a set of all plugins that have it as a master
+        self.dependents = collections.defaultdict(set)
         self.mergeable = set() #--Set of all mods which can be merged.
         self.bad_names = set() #--Set of all mods with names that can't be saved to plugins.txt
         self.missing_strings = set() #--Set of all mods with missing .STRINGS files
@@ -2063,7 +2069,11 @@ class ModInfos(FileInfos):
         # Scan the data dir, getting info on added, deleted and modified files
         if refresh_infos:
             change = FileInfos.refresh(self, booting=booting)
-            if change: _added, _updated, deleted = change
+            if change:
+                _added, _updated, deleted = change
+                # If any plugins have been added, updated or deleted, we need
+                # to recalculate dependents
+                self._recalc_dependents()
             hasChanged = bool(change)
         # If refresh_infos is False and mods are added _do_ manually refresh
         _modTimesChange = _modTimesChange and not load_order.using_txt_file()
@@ -2474,19 +2484,16 @@ class ModInfos(FileInfos):
         sel = diff
         #--Unselect children
         children = set()
-        def _children(parent):
-            for selFile in sel:
-                if selFile in children: continue # if no more => no more in sel
-                for master in self[selFile].masterNames:
-                    if master == parent:
-                        children.add(selFile)
-                        break
-        for fileName in fileNames: _children(fileName)
+        cached_dependents = self.dependents
+        for fileName in fileNames:
+            children |= cached_dependents[fileName]
         while children:
             child = children.pop()
+            if child not in sel: continue # already inactive, skip checks
             sel.remove(child)
-            _children(child)
-        self._active_wip = load_order.get_ordered(sel)
+            children |= cached_dependents[child]
+        # Commit the changes made above
+        self._active_wip = [x for x in self._active_wip if x in sel]
         #--Save
         if doSave: self.cached_lo_save_active()
         return old - sel # return deselected
@@ -2740,6 +2747,7 @@ class ModInfos(FileInfos):
         self._reset_info_sets()
         self._refreshMissingStrings()
         self._refreshMergeable()
+        self._recalc_dependents()
 
     def _additional_deletes(self, fileInfo, toDelete):
         super(ModInfos, self)._additional_deletes(fileInfo, toDelete)
@@ -2929,6 +2937,15 @@ class ModInfos(FileInfos):
                 r_index = regular_index
                 regular_index += 1
             self.real_indices[p] = r_index
+
+    def _recalc_dependents(self):
+        """Recalculates the dependents cache. See ModInfo.get_dependents for
+        more information."""
+        cached_dependents = self.dependents
+        cached_dependents.clear()
+        for p, p_info in self.iteritems():
+            for p_master in p_info.masterNames:
+                cached_dependents[p_master].add(p)
 
 #------------------------------------------------------------------------------
 class SaveInfos(FileInfos):
