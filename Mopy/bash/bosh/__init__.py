@@ -2276,26 +2276,34 @@ class ModInfos(FileInfos):
                                               notify_bain)
 
     #--Mod selection ----------------------------------------------------------
-    def getSemiActive(self, patches=None):
+    def getSemiActive(self, patches=None, skip_active=False):
         """Return (merged,imported) mods made semi-active by Bashed Patch.
 
         If no bashed patches are present in 'patches' then return empty sets.
         Else for each bashed patch use its config (if present) to find mods
-        it merges or imports."""
+        it merges or imports.
+
+        :param patches: A set of mods to look for bashed patches in.
+        :param skip_active: If True, only return inactive merged/imported
+            plugins."""
         if patches is None: patches = set(load_order.cached_active_tuple())
         merged_,imported_ = set(),set()
-        patches &= self.bashed_patches
-        for patch in patches:
+        for patch in patches & self.bashed_patches:
             patchConfigs = self.table.getItem(patch, u'bash.patch.configs')
             if not patchConfigs: continue
             pm_config_key = u'PatchMerger'
             if patchConfigs.get(pm_config_key,{}).get(u'isEnabled'):
                 config_checked = patchConfigs[pm_config_key][u'configChecks']
-                for modName in config_checked:
-                    if config_checked[modName] and modName in self:
+                for modName, is_merged in config_checked.iteritems():
+                    if is_merged and modName in self:
+                        if skip_active and load_order.cached_is_active(
+                                modName): continue
                         merged_.add(modName)
-            imported_.update(filter(lambda x: x in self,
-                patchConfigs.get(u'ImportedMods', tuple())))
+            for imp_name in patchConfigs.get(u'ImportedMods', tuple()):
+                if imp_name in self:
+                    if skip_active and load_order.cached_is_active(
+                            imp_name): continue
+                    imported_.add(imp_name)
         return merged_,imported_
 
     def getModList(self,showCRC=False,showVersion=True,fileInfo=None,wtxt=False):

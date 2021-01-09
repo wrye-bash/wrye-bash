@@ -225,6 +225,9 @@ def cached_active_index(mod): return cached_lord.activeIndex(mod)
 def cached_lower_loading(mod):
     return cached_lord.loadOrder[:cached_lo_index(mod)]
 
+def cached_higher_loading(mod):
+    return cached_lord.loadOrder[cached_lo_index(mod):]
+
 def get_ordered(mod_paths):
     """Return a list containing mod_paths' elements sorted into load order.
 

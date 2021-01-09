@@ -1061,8 +1061,8 @@ class ModList(_ModsUIList):
         mod_clicked_on_icon = self._getItemClicked(lb_dex_and_flags, on_icon=True)
         if mod_clicked_on_icon:
             self._toggle_active_state(mod_clicked_on_icon)
-            # select manually as OnSelectItem() will fire for the wrong
-            # index if list is sorted with active mods first
+            # _handle_select no longer seems to fire for the wrong index, but
+            # deselecting the others is still the better behavior here
             self.SelectAndShowItem(mod_clicked_on_icon, deselectOthers=True,
                                    focus=True)
             return EventResult.FINISH
@@ -1070,7 +1070,7 @@ class ModList(_ModsUIList):
             mod_clicked = self._getItemClicked(lb_dex_and_flags)
             if wrapped_evt.is_alt_down and mod_clicked:
                 if self.jump_to_mods_installer(mod_clicked): return
-            #--Pass Event onward to OnSelectItem
+            # Pass Event onward to _handle_select
 
     def _select(self, modName):
         super(ModList, self)._select(modName)
@@ -1086,13 +1086,13 @@ class ModList(_ModsUIList):
     def _toggle_active_state(self, *mods):
         """Toggle active state of mods given - all mods must be either
         active or inactive."""
-        refreshNeeded = False
         active = [mod for mod in mods if load_order.cached_is_active(mod)]
         assert not active or len(active) == len(mods) # empty or all
         inactive = (not active and mods) or []
         changes = collections.defaultdict(dict)
-        # Deactivate ?
+        # Track which plugins we activated or deactivated
         touched = set()
+        # Deactivate ?
         # Track illegal deactivations for the return value
         illegal_deactivations = []
         for act in active:
@@ -1103,16 +1103,14 @@ class ModList(_ModsUIList):
                     # Can't deactivate that mod, track this
                     illegal_deactivations.append(act.s)
                     continue
-                refreshNeeded += len(changed)
-                if len(changed) > (act in changed): # deactivated children
-                    touched |= changed
+                touched |= changed
+                if len(changed) > (act in changed): # deactivated dependents
                     changed = [x for x in changed if x != act]
                     changes[self.__deactivated_key][act] = \
                         load_order.get_ordered(changed)
             except BoltError as e:
                 balt.showError(self, u'%s' % e)
         # Activate ?
-        touched = set()
         # Track illegal activations for the return value
         illegal_activations = []
         for inact in inactive:
@@ -1127,9 +1125,8 @@ class ModList(_ModsUIList):
                     # Can't activate that mod, track this
                     illegal_activations.append(inact.s)
                     continue
-                refreshNeeded += len(activated)
-                if len(activated) > (inact in activated):
-                    touched |= set(activated)
+                touched |= set(activated)
+                if len(activated) > (inact in activated): # activated masters
                     activated = [x for x in activated if x != inact]
                     changes[self.__activated_key][inact] = activated
             except BoltError as e:
@@ -1149,10 +1146,24 @@ class ModList(_ModsUIList):
                 _(u"You can't activate the following mods:")
                 + u'\n%s' % u', '.join(illegal_activations),
                 u'bash.mods.dnd.illegal_activation.continue')
-        if refreshNeeded:
+        if touched:
             bosh.modInfos.cached_lo_save_active()
             self.__toggle_active_msg(changes)
-            self.RefreshUI(refreshSaves=True)
+            ##: We have to refresh every active plugin that loads higher than
+            # the lowest-loading one that was (un)checked as well since their
+            # load order/index columns will change. A full refresh is complete
+            # overkill for this, but alas... -> #353
+            low_touched = min(touched, key=load_order.cached_lo_index_or_max)
+            touched.update(load_order.cached_higher_loading(low_touched))
+            # If the touched plugins include BPs, we need to refresh their
+            # imported/merged plugins too (checkbox icons). Note that we can do
+            # this after the lowest-loading check above, because the
+            # imported/merged plugins will not affect any other plugins if they
+            # aren't active, and won't need an update if they are active.
+            t_imported, t_merged = bosh.modInfos.getSemiActive(
+                touched, skip_active=True)
+            touched |= t_imported | t_merged
+            self.RefreshUI(redraw=touched, refreshSaves=True)
 
     __activated_key = _(u'Masters activated:')
     __deactivated_key = _(u'Children deactivated:')
