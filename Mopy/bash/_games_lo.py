@@ -445,10 +445,11 @@ class Game(object):
         master_dex = 0
         # Tracks if fix_lo.lo_reordered needs updating
         lo_order_changed = any(fix_lo.lo_reordered)
+        cached_minfs = self.mod_infos
         try:
             master_dex = lord.index(master_name)
         except ValueError:
-            if not master_name in self.mod_infos:
+            if not master_name in cached_minfs:
                 raise exception.BoltError(
                     u'%s is missing or corrupted' % master_name)
             fix_lo.lo_added = {master_name}
@@ -460,7 +461,7 @@ class Game(object):
             lo_order_changed = True
         # below do not apply to timestamp method (on getting it)
         loadorder_set = set(lord)
-        mods_set = set(self.mod_infos.keys())
+        mods_set = set(cached_minfs.keys())
         fix_lo.lo_removed = loadorder_set - mods_set # may remove corrupted mods
         # present in text file, we are supposed to take care of that
         fix_lo.lo_added |= mods_set - loadorder_set
@@ -468,19 +469,22 @@ class Game(object):
         lord[:] = [x for x in lord if x not in fix_lo.lo_removed]
         # See if any esm files are loaded below an esp and reorder as necessary
         ol = lord[:]
-        lord.sort(key=lambda m: not self.in_master_block(self.mod_infos[m]))
+        in_mblock = self.in_master_block
+        lord.sort(key=lambda m: not in_mblock(cached_minfs[m]))
         lo_order_changed |= ol != lord
-        # Append new plugins to load order
-        index_first_esp = self._index_of_first_esp(lord)
-        for mod in fix_lo.lo_added:
-            if self.in_master_block(self.mod_infos[mod]):
-                if not mod == master_name:
-                    lord.insert(index_first_esp, mod)
-                else:
-                    lord.insert(0, master_name)
-                    bolt.deprint(u'%s inserted to Load order' % master_name)
-                index_first_esp += 1
-            else: lord.append(mod)
+        if fix_lo.lo_added:
+            # Append new plugins to load order
+            index_first_esp = self._index_of_first_esp(lord)
+            for mod in fix_lo.lo_added:
+                if in_mblock(cached_minfs[mod]):
+                    if not mod == master_name:
+                        lord.insert(index_first_esp, mod)
+                    else:
+                        lord.insert(0, master_name)
+                        bolt.deprint(u'%s inserted to Load order' %
+                                     master_name)
+                    index_first_esp += 1
+                else: lord.append(mod)
         # end textfile get
         fix_lo.lo_duplicates = self._check_for_duplicates(lord)
         lo_order_changed |= self._order_fixed(lord)
