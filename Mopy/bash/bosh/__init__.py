@@ -349,7 +349,7 @@ reBashTags = re.compile(u'{{ *BASH *:[^}]*}}\\s*\\n?',re.U)
 
 class ModInfo(FileInfo):
     """A plugin file. Currently, these are .esp, .esm, .esl and .esu files."""
-    _is_esl = False # Cached, since we need it so often
+    _has_esm_flag = _is_esl = False # Cached, since we need it so often
 
     def __init__(self, fullpath, load_cache=False):
         self.isGhost = endsInGhost = (fullpath.cs[-6:] == u'.ghost')
@@ -364,6 +364,7 @@ class ModInfo(FileInfo):
         # check if we have a cached crc for this file, use fresh mtime and size
         if load_cache: self.calculate_crc() # for added and hopefully updated
         if bush.game.has_esl: self._recalc_esl()
+        self._recalc_esm()
 
     def getFileInfos(self): return modInfos
 
@@ -374,14 +375,19 @@ class ModInfo(FileInfo):
     def has_esm_flag(self):
         """Check if the mod info is a master file based on master flag -
         header must be set"""
-        return self.header.flags1.esm
+        return self._has_esm_flag
 
     def set_esm_flag(self, new_esm_flag):
         """Changes this file's ESM flag to the specified value. Recalculates
         ONAM info if necessary."""
         self.header.flags1.esm = new_esm_flag
         self.update_onam()
+        self._recalc_esm()
         self.writeHeader()
+
+    def _recalc_esm(self):
+        """Forcibly recalculates the cached ESM status."""
+        self._has_esm_flag = self.header.flags1.esm
 
     def has_esl_flag(self):
         """Check if the mod info is an ESL based on ESL flag alone - header
