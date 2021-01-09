@@ -349,6 +349,7 @@ reBashTags = re.compile(u'{{ *BASH *:[^}]*}}\\s*\\n?',re.U)
 
 class ModInfo(FileInfo):
     """A plugin file. Currently, these are .esp, .esm, .esl and .esu files."""
+    _is_esl = False # Cached, since we need it so often
 
     def __init__(self, fullpath, load_cache=False):
         self.isGhost = endsInGhost = (fullpath.cs[-6:] == u'.ghost')
@@ -362,6 +363,7 @@ class ModInfo(FileInfo):
         super(ModInfo, self)._reset_cache(stat_tuple, load_cache)
         # check if we have a cached crc for this file, use fresh mtime and size
         if load_cache: self.calculate_crc() # for added and hopefully updated
+        if bush.game.has_esl: self._recalc_esl()
 
     def getFileInfos(self): return modInfos
 
@@ -389,13 +391,17 @@ class ModInfo(FileInfo):
     def set_esl_flag(self, new_esl_flag):
         """Changes this file's ESL flag to the specified value."""
         self.header.flags1.eslFile = new_esl_flag
+        self._recalc_esl()
         self.writeHeader()
 
     def is_esl(self):
         """Check if this is a light plugin - .esl files are automatically
         set the light flag, for espms check the flag."""
-        return bush.game.has_esl and (self.get_extension() == u'.esl' or
-                                      self.has_esl_flag())
+        return self._is_esl
+
+    def _recalc_esl(self):
+        """Forcibly recalculates the cached ESL status."""
+        self._is_esl = self.has_esl_flag() or self.get_extension() == u'.esl'
 
     def isInvertedMod(self):
         """Extension indicates esp/esm, but byte setting indicates opposite."""
