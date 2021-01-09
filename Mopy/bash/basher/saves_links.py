@@ -38,7 +38,7 @@ from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
 from ..bolt import GPath, SubProgress
 from ..bosh import faces, SaveInfo
 from ..exception import ArgumentError, BoltError, ModError, AbstractError
-from ..gui import BusyCursor, ImageWrapper
+from ..gui import BusyCursor, ImageWrapper, FileSave
 from ..mod_files import LoadFactory, MasterMap, ModFile
 
 __all__ = [u'Saves_Profiles', u'Save_Rename', u'Save_Renumber', u'Save_Move',
@@ -265,7 +265,7 @@ class Save_ImportFace(OneItemLink):
                    u' (*' + exts + u')|*' + exts
         #--File dialog
         srcPath = self._askOpen(title=_(u'Face Source:'), defaultDir=srcDir,
-                                wildcard=wildcard, mustExist=True)
+                                wildcard=wildcard)
         if not srcPath: return
         fname = srcPath.tail.s
         if bosh.SaveInfos.rightFileType(fname): # Import from a save
@@ -315,8 +315,8 @@ class Save_ExportScreenshot(OneItemLink):
     _help = _(u'Export the saved screenshot from a save game')
 
     def Execute(self):
-        imagePath = balt.askSave(Link.Frame, _(u'Save Screenshot as:'),
-            bass.dirs[u'patches'].s,
+        imagePath = FileSave.display_dialog(Link.Frame,
+            _(u'Save Screenshot as:'), bass.dirs[u'patches'].s,
             _(u'Screenshot %s.jpg') % self._selected_item, u'*.jpg')
         if not imagePath: return
         # TODO(inf) de-wx! All the image stuff is still way too close to wx

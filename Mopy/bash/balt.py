@@ -45,7 +45,8 @@ from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
     Font, CheckListBox, UIListCtrl, PanelWin, Colors, DocumentViewer, \
     ImageWrapper, BusyCursor, GlobalMenu, WrappingTextMixin, HorizontalLine, \
-    staticBitmap, bell, copy_files_to_clipboard
+    staticBitmap, bell, copy_files_to_clipboard, FileOpenMultiple, FileOpen, \
+    FileSave
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -251,38 +252,6 @@ class _ContinueDialog(DialogWindow):
         else:
             return super(_ContinueDialog, cls).display_dialog(*args, **kwargs)
         return result, check
-
-#------------------------------------------------------------------------------
-# TODO(inf) de-wx! move all the ask* methods to gui? Then we can easily
-#  resolve wrapped parents
-def askOpen(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=wx.FD_OPEN,mustExist=False):
-    """Show as file dialog and return selected path(s)."""
-    defaultDir,defaultFile = [GPath(x).s for x in (defaultDir,defaultFile)]
-    dialog = wx.FileDialog(_AComponent._resolve(parent), title, defaultDir,
-                           defaultFile, wildcard, style)
-    if dialog.ShowModal() != wx.ID_OK:
-        result = False
-    elif style & wx.FD_MULTIPLE:
-        result = [GPath(path) for path in dialog.GetPaths()]
-        if mustExist:
-            for returned_path in result:
-                if not returned_path.exists():
-                    result = False
-                    break
-    else:
-        result = GPath(dialog.GetPath())
-        if mustExist and not result.exists():
-            result = False
-    dialog.Destroy()
-    return result
-
-def askOpenMulti(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=wx.FD_FILE_MUST_EXIST):
-    """Show as open dialog and return selected path(s)."""
-    return askOpen(parent,title,defaultDir,defaultFile,wildcard,wx.FD_OPEN|wx.FD_MULTIPLE|style)
-
-def askSave(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=wx.FD_OVERWRITE_PROMPT):
-    """Show as save dialog and return selected path(s)."""
-    return askOpen(parent,title,defaultDir,defaultFile,wildcard,wx.FD_SAVE|style)
 
 #------------------------------------------------------------------------------
 def askText(parent, message, title=u'', default=u'', strip=True):
@@ -1578,8 +1547,8 @@ class UIList(wx.Panel):
         srcDir = self.data_store.hidden_dir
         wildcard = self._unhide_wildcard()
         destDir = self.data_store.store_dir
-        srcPaths = askOpenMulti(self, _(u'Unhide files:'), defaultDir=srcDir,
-                                wildcard=wildcard)
+        srcPaths = FileOpenMultiple.display_dialog(self, _(u'Unhide files:'),
+            defaultDir=srcDir, wildcard=wildcard)
         return destDir, srcDir, srcPaths
 
     # Global Menu -------------------------------------------------------------
@@ -1706,10 +1675,9 @@ class Link(object):
         return askContinue(self.window, message, continueKey, title=title)
 
     def _askOpen(self, title=u'', defaultDir=u'', defaultFile=u'',
-                 wildcard=u'', mustExist=False):
-        return askOpen(self.window, title=title, defaultDir=defaultDir,
-                       defaultFile=defaultFile, wildcard=wildcard,
-                       mustExist=mustExist)
+                 wildcard=u''):
+        return FileOpen.display_dialog(self.window, title=title,
+            defaultDir=defaultDir, defaultFile=defaultFile, wildcard=wildcard)
 
     def _showOk(self, message, title=u''):
         if not title: title = self._text
@@ -1727,9 +1695,9 @@ class Link(object):
         return showError(self.window, message, title)
 
     def _askSave(self, title=u'', defaultDir=u'', defaultFile=u'',
-                 wildcard=u'', style=wx.FD_OVERWRITE_PROMPT):
-        return askSave(self.window, title, defaultDir, defaultFile, wildcard,
-                       style)
+                 wildcard=u''):
+        return FileSave.display_dialog(self.window, title, defaultDir,
+                                       defaultFile, wildcard)
 
     _default_icons = object()
     def _showLog(self, logText, title=u'', asDialog=False, fixedFont=False,

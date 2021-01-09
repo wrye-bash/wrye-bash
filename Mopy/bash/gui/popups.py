@@ -35,6 +35,7 @@ from .multi_choices import CheckListBox
 from .text_components import Label, SearchBar, TextAlignment
 from .top_level_windows import DialogWindow
 from ..bolt import dict_sort
+from ..bolt import GPath ##: remove this it's for file dialogs
 from ..exception import AbstractError
 
 class CopyOrMovePopup(DialogWindow): ##: wx.PopupWindow?
@@ -174,3 +175,51 @@ class MultiChoicePopup(_TransientPopup):
         # type: (list, bool) -> None
         """Called when multiple items have been checked or unchecked."""
         raise AbstractError(u'on_mass_select not implemented')
+
+# File Dialogs ----------------------------------------------------------------
+class _FileDialog(_AComponent):
+    """Ask user for a filesystem path using the system dialogs."""
+    _wx_widget_type = _wx.FileDialog
+    _dialog_style = _wx.FD_OPEN | _wx.FD_FILE_MUST_EXIST
+
+    def __init__(self, parent, title=u'', defaultDir=u'', defaultFile=u'',
+                 wildcard=u'', allow_create=False):
+        defaultDir,defaultFile = [GPath(x).s for x in (defaultDir,defaultFile)]
+        style_ = self.__class__._dialog_style
+        if allow_create and style_ & _wx.FD_FILE_MUST_EXIST:
+            style_ ^= _wx.FD_FILE_MUST_EXIST
+        super(_FileDialog, self).__init__(parent, title, defaultDir,
+                                          defaultFile, wildcard, style=style_)
+
+    def __enter__(self): return self
+    def __exit__(self, exc_type, exc_val, exc_tb): self.destroy_component()
+
+    @classmethod
+    def display_dialog(cls, *args, **kwargs):
+        """Instantiate a dialog, display it and return the ShowModal result."""
+        with cls(*args, **kwargs) as dialog:
+            if dialog._native_widget.ShowModal() != _wx.ID_OK:
+                return False
+            return dialog._validate_input()
+
+    def _validate_input(self):
+        return GPath(self._native_widget.GetPath())
+
+class FileOpen(_FileDialog):
+    """'Open file' dialog."""
+
+class FileOpenMultiple(_FileDialog):
+    """'Open files' dialog that returns a *list* of files to open."""
+    _dialog_style = _wx.FD_OPEN | _wx.FD_MULTIPLE | _wx.FD_FILE_MUST_EXIST
+
+    def __init__(self, parent, title=u'', defaultDir=u'', defaultFile=u'',
+                 wildcard=u''): ##:mustExist seems True given the FD_FILE_MUST_EXIST?
+        super(FileOpenMultiple, self).__init__(parent, title, defaultDir,
+                                               defaultFile, wildcard)
+
+    def _validate_input(self):
+        return [GPath(p) for p in self._native_widget.GetPaths()]
+
+class FileSave(_FileDialog):
+    """'Save as' dialog."""
+    _dialog_style = _wx.FD_SAVE | _wx.FD_OVERWRITE_PROMPT

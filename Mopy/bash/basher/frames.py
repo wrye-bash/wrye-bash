@@ -34,7 +34,7 @@ from ..bosh import mods_metadata
 from ..gui import Button, CancelButton, CheckBox, GridLayout, HLayout, Label, \
     LayoutOptions, SaveButton, Spacer, Stretch, TextArea, TextField, VLayout, \
     web_viewer_available, Splitter, WindowFrame, ListBox, DocumentViewer, \
-    pdf_viewer_available, bell, copy_text_to_clipboard
+    pdf_viewer_available, bell, copy_text_to_clipboard, FileOpen, FileSave
 
 class DocBrowser(WindowFrame):
     """Doc Browser frame."""
@@ -169,8 +169,9 @@ class DocBrowser(WindowFrame):
         else:
             docs_dir = bass.settings[u'bash.modDocs.dir'] or bass.dirs[u'mods']
             file_name = GPath(u'')
-        doc_path = balt.askOpen(self, _(u'Select doc for %s:') % mod_name,
-                                docs_dir, file_name, u'*.*')
+        doc_path = FileOpen.display_dialog(self,
+            _(u'Select doc for %s:') % mod_name, docs_dir, file_name, u'*.*',
+            allow_create=True)
         if not doc_path: return
         bass.settings[u'bash.modDocs.dir'] = doc_path.head
         if mod_name not in self._db_doc_paths:
@@ -183,8 +184,8 @@ class DocBrowser(WindowFrame):
         old_path = self._db_doc_paths[self._mod_name]
         (work_dir,file_name) = old_path.headTail
         #--Dialog
-        dest_path = balt.askSave(self, _(u'Rename file to:'), work_dir,
-                                 file_name, u'*.*')
+        dest_path = FileSave.display_dialog(self, _(u'Rename file to:'),
+                                            work_dir, file_name, u'*.*')
         if not dest_path or dest_path == old_path: return
         #--OS renaming
         dest_path.remove()

@@ -20,13 +20,13 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from .. import balt, bolt, bass
+from .. import bolt, bass, gui
 
 def exportConfig(patch_name, config, win, outDir):
     outFile = patch_name + u'_Configuration.dat'
     outDir.makedirs()
     #--File dialog
-    outPath = balt.askSave(win,
+    outPath = gui.FileSave.display_dialog(win,
         title=_(u'Export Bashed Patch configuration to:'),
         defaultDir=outDir, defaultFile=outFile,
         wildcard=u'*_Configuration.dat')

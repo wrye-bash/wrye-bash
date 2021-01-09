@@ -31,7 +31,7 @@ from ..balt import Links, SeparatorLink, CheckLink
 from ..bolt import GPath, text_wrap, dict_sort
 from ..gui import Button, CheckBox, HBoxedLayout, Label, LayoutOptions, \
     Spacer, TextArea, TOP, VLayout, EventResult, PanelWin, ListBox, \
-    CheckListBox, DeselectAllButton, SelectAllButton
+    CheckListBox, DeselectAllButton, SelectAllButton, FileOpenMultiple
 from ..patcher import patch_files, patches_set, base
 
 reCsvExt = re.compile(u'' r'\.csv$', re.I | re.U)
@@ -385,7 +385,8 @@ class _ListPatcherPanel(_PatcherPanel):
         wildcard = bosh.modInfos.plugin_wildcard()
         #--File dialog
         title = _(u'Get ')+self.__class__.listLabel
-        srcPaths = balt.askOpenMulti(self.gConfigPanel,title,srcDir, u'', wildcard)
+        srcPaths = FileOpenMultiple.display_dialog(self.gConfigPanel, title,
+                                                   srcDir, u'', wildcard)
         if not srcPaths: return
         #--Get new items
         for srcPath in srcPaths:

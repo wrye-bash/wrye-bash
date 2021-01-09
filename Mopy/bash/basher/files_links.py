@@ -220,8 +220,7 @@ class File_RevertToSnapshot(OneItemLink):
         #--File dialog
         srcDir.makedirs()
         snapPath = self._askOpen(_(u'Revert %s to snapshot:') % fileName,
-                                 defaultDir=srcDir, wildcard=wildcard,
-                                 mustExist=True)
+                                 defaultDir=srcDir, wildcard=wildcard)
         if not snapPath: return
         snapName = snapPath.tail
         #--Warning box

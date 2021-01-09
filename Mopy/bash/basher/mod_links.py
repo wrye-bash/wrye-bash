@@ -476,7 +476,19 @@ class _ModGroups(CsvParser):
         for mod, mod_grp in dict_sort(self.mod_group):
             out.write(rowFormat % (mod, mod_grp))
 
-class _Mod_Groups_Export(ItemLink):
+class _CsvExport_Link(ItemLink):
+    """Mixin for links exporting in a csv file."""
+
+    def _csv_out(self, textName):
+        textDir = bass.dirs[u'patches']
+        textDir.makedirs()
+        #--File dialog
+        textPath = self._askSave(title=self.__class__.askTitle,
+                                 defaultDir=textDir, defaultFile=textName,
+                                 wildcard=u'*' + self.__class__.csvFile)
+        return textPath
+
+class _Mod_Groups_Export(_CsvExport_Link):
     """Export mod groups to text file."""
     askTitle = _(u'Export groups to:')
     csvFile = u'_Groups.csv'
@@ -485,12 +497,7 @@ class _Mod_Groups_Export(ItemLink):
 
     def Execute(self):
         textName = u'My' + self.__class__.csvFile
-        textDir = bass.dirs[u'patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = self._askSave(title=self.__class__.askTitle,
-                                 defaultDir=textDir, defaultFile=textName,
-                                 wildcard=u'*' + self.__class__.csvFile)
+        textPath = self._csv_out(textName)
         if not textPath: return
         #--Export
         modGroups = _ModGroups()
@@ -512,8 +519,8 @@ class _Mod_Groups_Import(ItemLink):
                                  _(u'Import Groups')): return
         textDir = bass.dirs[u'patches']
         #--File dialog
-        textPath = self._askOpen(_(u'Import names from:'),textDir,
-            u'', u'*_Groups.csv',mustExist=True)
+        textPath = self._askOpen(_(u'Import names from:'), textDir, u'',
+                                 u'*_Groups.csv')
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
@@ -1650,8 +1657,8 @@ class Mod_Fids_Replace(OneItemLink):
                                  _(u'Import Form IDs')): return
         textDir = bass.dirs[u'patches']
         #--File dialog
-        textPath = self._askOpen(_(u'Form ID mapper file:'),textDir,
-            u'', u'*_Formids.csv',mustExist=True)
+        textPath = self._askOpen(_(u'Form ID mapper file:'), textDir, u'',
+                                 u'*_Formids.csv')
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
@@ -1688,7 +1695,7 @@ class Mod_Face_Import(OneItemLink):
         }
         #--File dialog
         srcPath = self._askOpen(_(u'Face Source:'), defaultDir=srcDir,
-                                wildcard=wildcard, mustExist=True)
+                                wildcard=wildcard)
         if not srcPath: return
         #--Get face
         srcInfo = bosh.SaveInfo(srcPath, load_cache=True)
@@ -1723,15 +1730,10 @@ class _Import_Export_Link(AppendableLink):
             # FIXME(inf) old-style export link, drop once parsers refactored
             return True
 
-class _Mod_Export_Link(_Import_Export_Link, ItemLink):
+class _Mod_Export_Link(_Import_Export_Link, _CsvExport_Link):
     def Execute(self):
         textName = self.selected[0].root + self.__class__.csvFile
-        textDir = bass.dirs[u'patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = self._askSave(title=self.__class__.askTitle,
-                                 defaultDir=textDir, defaultFile=textName,
-                                 wildcard=u'*' + self.__class__.csvFile)
+        textPath = self._csv_out(textName)
         if not textPath: return
         (textDir, textName) = textPath.headTail
         #--Export
@@ -1799,7 +1801,7 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
         textDir = bass.dirs[u'patches']
         #--File dialog
         textPath = self._askOpen(self.__class__.askTitle, textDir, textName,
-                                 self._wildcard, mustExist=True)
+                                 self._wildcard)
         if not textPath: return
         (textDir, textName) = textPath.headTail
         #--Extension error check
@@ -2277,8 +2279,8 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
         textName = self._selected_item.root + self.__class__.csvFile
         textDir = bass.dirs[u'patches']
         #--File dialog
-        textPath = self._askOpen(self.__class__.askTitle,textDir,
-            textName, self._wildcard ,mustExist=True)
+        textPath = self._askOpen(self.__class__.askTitle, textDir,
+                                 textName, self._wildcard)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check

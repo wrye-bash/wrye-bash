@@ -1308,8 +1308,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
         readTypes = u'*%s' % u';*'.join(archives.readExts)
         #--Select target archive
         destArchive = self._askOpen(title=_(u"Select the BAIN'ed Archive:"),
-                                    defaultDir=self.idata.store_dir,
-                                    wildcard=readTypes, mustExist=True)
+            defaultDir=self.idata.store_dir, wildcard=readTypes)
         if not destArchive: return
         #--Error Checking
         BCFArchive = destArchive = destArchive.tail
