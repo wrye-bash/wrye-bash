@@ -494,18 +494,23 @@ class Game(object):
         if quiet: fix_active = FixInfo() # discard fix info
         # Throw out files that aren't on disk as well as .esu files, which must
         # never be active
-        acti_filtered = [x for x in acti if x in self.mod_infos
+        cached_minfs = self.mod_infos
+        acti_filtered = [x for x in acti if x in cached_minfs
                          and x.cext != u'.esu']
-        fix_active.act_removed = set(acti) - set(acti_filtered)
+        # Use sets to avoid O(n) lookups due to lists
+        acti_filtered_set = set(acti_filtered)
+        lord_set = set(lord)
+        fix_active.act_removed = set(acti) - acti_filtered_set
         if fix_active.act_removed and not quiet:
             # take note as we may need to rewrite plugins txt
-            self.mod_infos.selectedBad = fix_active.lo_removed
+            cached_minfs.selectedBad = fix_active.lo_removed
         if not self.allow_deactivate_master:
-            if not self.master_path in acti_filtered:
+            if self.master_path not in acti_filtered_set:
                 acti_filtered.insert(0, self.master_path)
+                acti_filtered_set.add(self.master_path)
                 fix_active.master_not_active = self.master_path
         for path in self.must_be_active_if_present:
-            if path in lord and not path in acti_filtered:
+            if path in lord_set and path not in acti_filtered_set:
                 fix_active.missing_must_be_active.append(path)
         # order - affects which mods are chopped off if > 255 (the ones that
         # load last) - won't trigger saving but for Skyrim
@@ -513,7 +518,7 @@ class Game(object):
             self._check_active_order(acti_filtered, lord)
         for path in fix_active.missing_must_be_active: # insert after the last master
             acti_filtered.insert(self._index_of_first_esp(acti_filtered), path)
-        # Check for duplicates
+        # Check for duplicates - NOTE: this modifies acti_filtered!
         fix_active.act_duplicates = self._check_for_duplicates(acti_filtered)
         # check if we have more than 256 active mods
         drop_espms, drop_esls = self.check_active_limit(acti_filtered)
@@ -522,7 +527,7 @@ class Game(object):
         # contain files that are no longer on disk (i.e. not in acti_filtered)
         acti[:] = [x for x in acti_filtered if x not in disable]
         if disable: # chop off extra
-            self.mod_infos.selectedExtra = fix_active.selectedExtra = [
+            cached_minfs.selectedExtra = fix_active.selectedExtra = [
                 x for x in acti_filtered if x in disable]
         before_reorder = acti # with overflowed plugins removed
         if self._order_fixed(acti):
@@ -561,13 +566,15 @@ class Game(object):
     def _check_for_duplicates(plugins_list):
         """:type plugins_list: list[bolt.Path]"""
         mods, duplicates, j = set(), set(), 0
+        mods_add = mods.add
+        duplicates_add = duplicates.add
         for i, mod in enumerate(plugins_list[:]):
             if mod in mods:
                 del plugins_list[i - j]
                 j += 1
-                duplicates.add(mod)
+                duplicates_add(mod)
             else:
-                mods.add(mod)
+                mods_add(mod)
         return duplicates
 
     # INITIALIZATION ----------------------------------------------------------
@@ -1117,10 +1124,12 @@ class AsteriskGame(Game):
 
     def check_active_limit(self, acti_filtered):
         acti_filtered_espm = []
+        append_espm = acti_filtered_espm.append
         acti_filtered_esl = []
+        append_esl = acti_filtered_esl.append
+        cached_minfs = self.mod_infos
         for x in acti_filtered:
-            (acti_filtered_esl if self.mod_infos[
-                x].is_esl() else acti_filtered_espm).append(x)
+            (append_esl if cached_minfs[x].is_esl() else append_espm)(x)
         return set(acti_filtered_espm[self.max_espms:]) , set(
             acti_filtered_esl[self.max_esls:])
 
