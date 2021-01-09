@@ -1053,7 +1053,9 @@ class ModList(_ModsUIList):
         # Ctrl+Z: Undo last load order or active plugins change
         # Can't use ord('Z') below - check wx._core.KeyEvent docs
         elif wrapped_evt.is_cmd_down and code == 26:
-            undo_redo_op(self.data_store.undo_load_order)
+            undo_redo_op(self.data_store.redo_load_order
+                         if wrapped_evt.is_shift_down
+                         else self.data_store.undo_load_order)
         elif wrapped_evt.is_cmd_down and code == 25:
             undo_redo_op(self.data_store.redo_load_order)
         else: # correctly update the highlight around selected mod

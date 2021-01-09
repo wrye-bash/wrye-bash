@@ -624,7 +624,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 <p>Bash features a sophisticated undo/redo load order feature, comprising both load order changes <em>of active <strong>or</strong> inactive
     plugins</em> and activating/de-activating plugins. Whether you activate a plugin, drag and drop it in another position, deactivate a
     plugin (having its children deactivated too) etc, you can always hit <code>Ctrl+Z</code> <em>while the list of mods has focus</em> to undo
-    the operation or <code>Ctrl+Y</code> to redo it. Bash keeps the load orders (meaning total load order of <em>all</em> installed plugins
+    the operation or <code>Ctrl+Y</code>/<code>Ctrl+Shift+Z</code> to redo it. Bash keeps the load orders (meaning total load order of <em>all</em> installed plugins
     and active state of the plugins) in its internal structures and will persist those on disc on shutting down,
     in <code>My Games\&lt;Game&gt;\BashLoadOrders.dat</code>, so you can undo/redo on restarting Bash.
 <p>The undo/redo feature will try to preserve as many load orders as possible - so unlike undo/redo in other applications if you have an
