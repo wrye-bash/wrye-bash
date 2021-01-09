@@ -298,8 +298,8 @@ class MasterList(_ModsUIList):
         u'File'         : lambda self, a:
             self.data_store[a].curr_name.s.lower(),
         # Missing mods sort last alphabetically
-        u'Current Order': lambda self, a: self.loadOrderNames.index(
-           self.data_store[a].curr_name),
+        u'Current Order': lambda self, a: self.loadOrderNames[
+            self.data_store[a].curr_name],
     }
     def _activeModsFirst(self, items):
         if self.selectedFirst:
@@ -335,7 +335,7 @@ class MasterList(_ModsUIList):
         self.edited = False
         self.detailsPanel = detailsPanel
         self.fileInfo = None
-        self.loadOrderNames = [] # cache, orders missing last alphabetically
+        self.loadOrderNames = {} # cache, orders missing last alphabetically
         self._allowEditKey = keyPrefix + u'.allowEdit'
         self.is_inaccurate = False # Mirrors SaveInfo.has_inaccurate_masters
         #--Parent init
@@ -395,7 +395,7 @@ class MasterList(_ModsUIList):
         status = masterInfo.getStatus()
         if status == 30: return status # does not exist
         # current load order of master relative to other masters
-        loadOrderIndex = self.loadOrderNames.index(masters_name)
+        loadOrderIndex = self.loadOrderNames[masters_name]
         ordered = load_order.cached_active_tuple()
         if mi != loadOrderIndex: # there are active masters out of order
             return 20  # orange
@@ -485,7 +485,8 @@ class MasterList(_ModsUIList):
     #--Relist
     def _reList(self):
         fileOrderNames = [v.curr_name for v in self.data_store.itervalues()]
-        self.loadOrderNames = load_order.get_ordered(fileOrderNames)
+        self.loadOrderNames = {p: i for i, p in enumerate(
+            load_order.get_ordered(fileOrderNames))}
 
     #--InitEdit
     def InitEdit(self):

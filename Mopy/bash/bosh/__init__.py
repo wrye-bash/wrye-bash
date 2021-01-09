@@ -700,7 +700,9 @@ class ModInfo(FileInfo):
 
     def getIniPath(self):
         """Returns path to plugin's INI, if it were to exists."""
-        return self.getPath().root.root + u'.ini' # chops off ghost if ghosted
+        # GPath_no_norm is okay because we got this by changing the extension
+        # of a GPath object, meaning it was already normpath'd
+        return GPath_no_norm(self._file_key.s[:-3] + u'ini') # ignore .ghost
 
     def _string_files_paths(self, lang):
         # type: (basestring) -> Iterable[Path]
@@ -1807,8 +1809,10 @@ def _lo_cache(lord_func):
                          load_order.cached_active_tuple()
             lo_changed = lo != old_lo
             active_changed = active != old_active
+            active_set = set(active)
+            old_active_set = set(old_active)
             active_set_changed = active_changed and (
-                set(active) != set(old_active))
+                    active_set != old_active_set)
             if active_changed:
                 self._refresh_mod_inis() # before _refreshMissingStrings !
                 self._refreshBadNames()
@@ -1821,7 +1825,7 @@ def _lo_cache(lord_func):
             # to do this. We could technically be smarter, but this takes <1ms
             # even with hundreds of plugins
             self._recalc_real_indices()
-            new_active = set(active) - set(old_active)
+            new_active = active_set - old_active_set
             for neu in new_active: # new active mods, unghost
                 self[neu].setGhost(False)
             return (lo_changed and 1) + (active_changed and 2)
