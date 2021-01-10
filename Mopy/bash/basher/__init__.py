@@ -1002,6 +1002,20 @@ class ModList(_ModsUIList):
 
     def OnChar(self, wrapped_evt):
         """Char event: Reorder (Ctrl+Up and Ctrl+Down)."""
+        def undo_redo_op(lo_op):
+            # Grab copies of the old LO/actives for find_first_difference
+            prev_lo = load_order.cached_lo_tuple()
+            prev_acti = load_order.cached_active_tuple()
+            if not lo_op(): return # nothing to do
+            curr_lo = load_order.cached_lo_tuple()
+            curr_acti = load_order.cached_active_tuple()
+            low_diff = load_order.find_first_difference(
+                prev_lo, prev_acti, curr_lo, curr_acti)
+            if low_diff is None: return # load orders were identical
+            # Finally, we pass to _lo_redraw_targets to take all other relevant
+            # details into account
+            self.RefreshUI(redraw=self._lo_redraw_targets({curr_lo[low_diff]}),
+                           refreshSaves=True)
         code = wrapped_evt.key_code
         if wrapped_evt.is_cmd_down and code in balt.wxArrows:
             if not self.dndAllow(event=None): return
@@ -1026,11 +1040,9 @@ class ModList(_ModsUIList):
         # Ctrl+Z: Undo last load order or active plugins change
         # Can't use ord('Z') below - check wx._core.KeyEvent docs
         elif wrapped_evt.is_cmd_down and code == 26:
-            if self.data_store.undo_load_order():
-                self.RefreshUI(refreshSaves=True)
+            undo_redo_op(self.data_store.undo_load_order)
         elif wrapped_evt.is_cmd_down and code == 25:
-            if self.data_store.redo_load_order():
-                self.RefreshUI(refreshSaves=True)
+            undo_redo_op(self.data_store.redo_load_order)
         else: # correctly update the highlight around selected mod
             return EventResult.CONTINUE
         return EventResult.FINISH
@@ -1082,6 +1094,31 @@ class ModList(_ModsUIList):
         return bosh.modInfos.plugin_wildcard()
 
     #--Helpers ---------------------------------------------
+    @staticmethod
+    def _lo_redraw_targets(impacted_plugins):
+        """Given a set of plugins (as paths) that were impacted by a load order
+        operation, returns a set UIList keys (as paths) for elements that need
+        to be redrawn."""
+        ui_impacted = impacted_plugins.copy()
+        ##: We have to refresh every active plugin that loads higher than
+        # the lowest-loading one that was (un)checked as well since their
+        # load order/index columns will change. A full refresh is complete
+        # overkill for this, but alas... -> #353
+        if len(impacted_plugins) == 1:
+            lowest_impacted = next(iter(impacted_plugins)) # fast path
+        else:
+            lowest_impacted = min(ui_impacted,
+                                  key=load_order.cached_lo_index_or_max)
+        ui_impacted.update(load_order.cached_higher_loading(lowest_impacted))
+        # If the touched plugins include BPs, we need to refresh their
+        # imported/merged plugins too (checkbox icons). Note that we can do
+        # this after the lowest-loading check above, because the
+        # imported/merged plugins will not affect any other plugins if they
+        # aren't active, and won't need an update if they are active.
+        ui_imported, ui_merged = bosh.modInfos.getSemiActive(
+            ui_impacted, skip_active=True)
+        return ui_impacted | ui_imported | ui_merged
+
     @balt.conversation
     def _toggle_active_state(self, *mods):
         """Toggle active state of mods given - all mods must be either
@@ -1149,21 +1186,8 @@ class ModList(_ModsUIList):
         if touched:
             bosh.modInfos.cached_lo_save_active()
             self.__toggle_active_msg(changes)
-            ##: We have to refresh every active plugin that loads higher than
-            # the lowest-loading one that was (un)checked as well since their
-            # load order/index columns will change. A full refresh is complete
-            # overkill for this, but alas... -> #353
-            low_touched = min(touched, key=load_order.cached_lo_index_or_max)
-            touched.update(load_order.cached_higher_loading(low_touched))
-            # If the touched plugins include BPs, we need to refresh their
-            # imported/merged plugins too (checkbox icons). Note that we can do
-            # this after the lowest-loading check above, because the
-            # imported/merged plugins will not affect any other plugins if they
-            # aren't active, and won't need an update if they are active.
-            t_imported, t_merged = bosh.modInfos.getSemiActive(
-                touched, skip_active=True)
-            touched |= t_imported | t_merged
-            self.RefreshUI(redraw=touched, refreshSaves=True)
+            self.RefreshUI(redraw=self._lo_redraw_targets(touched),
+                           refreshSaves=True)
 
     __activated_key = _(u'Masters activated:')
     __deactivated_key = _(u'Children deactivated:')

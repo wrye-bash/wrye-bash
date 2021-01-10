@@ -1951,10 +1951,10 @@ class ModInfos(FileInfos):
         load_order.save_lo(self._lo_wip, acti=self._active_wip)
 
     @_lo_cache
-    def undo_load_order(self): load_order.undo_load_order()
+    def undo_load_order(self): return load_order.undo_load_order()
 
     @_lo_cache
-    def redo_load_order(self): load_order.redo_load_order()
+    def redo_load_order(self): return load_order.redo_load_order()
 
     #--Load Order utility methods - be sure cache is valid when using them
     def cached_lo_insert_after(self, previous, new_mod):
