@@ -756,19 +756,18 @@ class Mod_ListDependent(OneItemLink):
             log = bolt.LogFile(out)
             log(u'[spoiler]')
             log.setHeader(head + legend + u': ')
-            loOrder =  lambda tup: load_order.cached_lo_index_or_max(tup[0])
             text_list = u''
-            for mod, info in sorted(modInfos.items(), key=loOrder):
-                if sel_target in info.masterNames:
-                    hexIndex = modInfos.hexIndexString(mod)
-                    if hexIndex:
-                        prefix = bul + hexIndex
-                    elif mod in merged_:
-                        prefix = bul + u'++'
-                    else:
-                        prefix = bul + (u'**' if mod in imported_ else u'__')
-                    text_list = u'%s  %s' % (prefix, mod)
-                    log(text_list)
+            for mod in load_order.get_ordered(
+                    self._selected_info.get_dependents()):
+                hexIndex = modInfos.hexIndexString(mod)
+                if hexIndex:
+                    prefix = bul + hexIndex
+                elif mod in merged_:
+                    prefix = bul + u'++'
+                else:
+                    prefix = bul + (u'**' if mod in imported_ else u'__')
+                text_list = u'%s  %s' % (prefix, mod)
+                log(text_list)
             if not text_list:  log(u'None')
             log(u'[/spoiler]')
             text_list = bolt.winNewLines(log.out.getvalue())

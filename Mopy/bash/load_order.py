@@ -45,11 +45,9 @@ import sys
 import math
 import collections
 import time
+from itertools import izip
 # Internal
-from . import bass
-from . import bolt
-from . import bush
-from . import exception
+from . import bass, bolt, bush, exception
 # Game instance providing load order operations API
 from . import _games_lo
 
@@ -225,6 +223,9 @@ def cached_active_index(mod): return cached_lord.activeIndex(mod)
 def cached_lower_loading(mod):
     return cached_lord.loadOrder[:cached_lo_index(mod)]
 
+def cached_higher_loading(mod):
+    return cached_lord.loadOrder[cached_lo_index(mod):]
+
 def get_ordered(mod_paths):
     """Return a list containing mod_paths' elements sorted into load order.
 
@@ -240,7 +241,46 @@ def get_ordered(mod_paths):
     return mod_paths
 
 def filter_pinned(imods):
-    return filter(_game_handle.pinned_mods.__contains__, imods)
+    return filter(_game_handle.pinned_mods().__contains__, imods)
+
+def find_first_difference(lo_a, acti_a, lo_b, acti_b):
+    """Returns the first different index (in terms of LO indices) between two
+    load orders A and B. Returns None if the two are identical (but don't use
+    it for that, just compare tuples :P)."""
+    # Acts as a replacement for cached_lo_index
+    lindex_a = {p: i for i, p in enumerate(lo_a)}
+    lindex_b = {p: i for i, p in enumerate(lo_b)}
+    # Look for the first difference between the LOs
+    low_diff = (None, None)
+    for a, b in izip(lo_a, lo_b):
+        if a != b:
+            low_diff = (a, b)
+            break
+    if low_diff != (None, None):
+        # We found a difference, use the smaller of the two indices into each
+        # load orders' LO list
+        low_lo = min(lindex_a[low_diff[0]], lindex_b[low_diff[1]])
+    elif len(lo_a) != len(lo_b):
+        # We found no difference but the lengths are different, so plugins have
+        # been removed from the end of one of them
+        low_lo = min(len(lo_a), len(lo_b))
+    else: low_lo = None # no difference in LO
+    # Then do the exact same thing with actives
+    low_diff = (None, None)
+    for a, b in izip(acti_a, acti_b):
+        if a != b:
+            low_diff = (a, b)
+            break
+    if low_diff != (None, None):
+        low_acti = min(lindex_a[low_diff[0]], lindex_b[low_diff[1]])
+    elif len(acti_a) != len(acti_b):
+        low_acti = min(len(acti_a), len(acti_b))
+    else: low_acti = None
+    # Finally, we need to deal with cases where one of the two is None and
+    # return the smaller result
+    if low_lo is None: return low_acti
+    elif low_acti is None: return low_lo
+    else: return min(low_lo, low_acti)
 
 # Get and set API -------------------------------------------------------------
 def save_lo(lord, acti=None, __index_move=0, quiet=False):
@@ -358,11 +398,11 @@ def get_active_mods_lists():
         _active_mods_lists = settings_mods_list
     return _active_mods_lists
 
-def undo_load_order(): return __restore(-1)
+def undo_load_order(): return _restore_lo(-1)
 
-def redo_load_order(): return __restore(1)
+def redo_load_order(): return _restore_lo(1)
 
-def __restore(index_move):
+def _restore_lo(index_move):
     index = _current_list_index + index_move
     if index < 0 or index > len(_saved_load_orders) - 1: return cached_lord
     previous = _saved_load_orders[index].lord
@@ -373,7 +413,7 @@ def __restore(index_move):
     previous = LoadOrder(lord, acti) # possibly fixed
     if previous == cached_lord:
         index_move += int(math.copysign(1, index_move)) # increase or decrease by 1
-        return __restore(index_move)
+        return _restore_lo(index_move)
     return save_lo(previous.loadOrder, previous.activeOrdered,
                    __index_move=index_move, quiet=True)
 

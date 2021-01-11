@@ -298,8 +298,8 @@ class MasterList(_ModsUIList):
         u'File'         : lambda self, a:
             self.data_store[a].curr_name.s.lower(),
         # Missing mods sort last alphabetically
-        u'Current Order': lambda self, a: self.loadOrderNames.index(
-           self.data_store[a].curr_name),
+        u'Current Order': lambda self, a: self.loadOrderNames[
+            self.data_store[a].curr_name],
     }
     def _activeModsFirst(self, items):
         if self.selectedFirst:
@@ -335,7 +335,7 @@ class MasterList(_ModsUIList):
         self.edited = False
         self.detailsPanel = detailsPanel
         self.fileInfo = None
-        self.loadOrderNames = [] # cache, orders missing last alphabetically
+        self.loadOrderNames = {} # cache, orders missing last alphabetically
         self._allowEditKey = keyPrefix + u'.allowEdit'
         self.is_inaccurate = False # Mirrors SaveInfo.has_inaccurate_masters
         #--Parent init
@@ -395,7 +395,7 @@ class MasterList(_ModsUIList):
         status = masterInfo.getStatus()
         if status == 30: return status # does not exist
         # current load order of master relative to other masters
-        loadOrderIndex = self.loadOrderNames.index(masters_name)
+        loadOrderIndex = self.loadOrderNames[masters_name]
         ordered = load_order.cached_active_tuple()
         if mi != loadOrderIndex: # there are active masters out of order
             return 20  # orange
@@ -485,7 +485,8 @@ class MasterList(_ModsUIList):
     #--Relist
     def _reList(self):
         fileOrderNames = [v.curr_name for v in self.data_store.itervalues()]
-        self.loadOrderNames = load_order.get_ordered(fileOrderNames)
+        self.loadOrderNames = {p: i for i, p in enumerate(
+            load_order.get_ordered(fileOrderNames))}
 
     #--InitEdit
     def InitEdit(self):
@@ -852,7 +853,12 @@ class ModList(_ModsUIList):
         return bosh.modInfos.dropItems(dropItem, firstItem, lastItem)
 
     def OnDropIndexes(self, indexes, newIndex):
-        if self._dropIndexes(indexes, newIndex): self._refreshOnDrop()
+        if self._dropIndexes(indexes, newIndex):
+            # Take all indices into account - we may be moving plugins up, in
+            # which case the smallest index is in indexes, or we may be moving
+            # plugins down, in which case the smallest index is newIndex
+            lowest_index = min(newIndex, min(indexes))
+            self._refreshOnDrop(lowest_index)
 
     def dndAllow(self, event):
         msg = u''
@@ -872,13 +878,15 @@ class ModList(_ModsUIList):
         return True
 
     @balt.conversation
-    def _refreshOnDrop(self):
+    def _refreshOnDrop(self, first_index):
         #--Save and Refresh
         try:
             bosh.modInfos.cached_lo_save_all()
         except BoltError as e:
             balt.showError(self, u'%s' % e)
-        self.RefreshUI(refreshSaves=True)
+        first_impacted = load_order.cached_lo_tuple()[first_index]
+        self.RefreshUI(redraw=self._lo_redraw_targets({first_impacted}),
+                       refreshSaves=True)
 
     #--Populate Item
     def set_item_format(self, mod_name, item_format, target_ini_setts):
@@ -1001,6 +1009,20 @@ class ModList(_ModsUIList):
 
     def OnChar(self, wrapped_evt):
         """Char event: Reorder (Ctrl+Up and Ctrl+Down)."""
+        def undo_redo_op(lo_op):
+            # Grab copies of the old LO/actives for find_first_difference
+            prev_lo = load_order.cached_lo_tuple()
+            prev_acti = load_order.cached_active_tuple()
+            if not lo_op(): return # nothing to do
+            curr_lo = load_order.cached_lo_tuple()
+            curr_acti = load_order.cached_active_tuple()
+            low_diff = load_order.find_first_difference(
+                prev_lo, prev_acti, curr_lo, curr_acti)
+            if low_diff is None: return # load orders were identical
+            # Finally, we pass to _lo_redraw_targets to take all other relevant
+            # details into account
+            self.RefreshUI(redraw=self._lo_redraw_targets({curr_lo[low_diff]}),
+                           refreshSaves=True)
         code = wrapped_evt.key_code
         if wrapped_evt.is_cmd_down and code in balt.wxArrows:
             if not self.dndAllow(event=None): return
@@ -1015,21 +1037,25 @@ class ModList(_ModsUIList):
                 chunks[chunk].append(dex)
             moveMod = 1 if code in balt.wxArrowDown else -1
             moved = False
+            # Initialize the lowest index to the smallest existing one (we
+            # won't ever beat this one if we are moving indices up)
+            lowest_index = min(indexes)
             for chunk in chunks:
                 if not chunk: continue # nothing to move, skip
                 newIndex = chunk[0] + moveMod
                 if chunk[-1] + moveMod == self.item_count:
                     continue # trying to move last plugin past the list
+                # Check if moving hits a new lowest index (this is the case if
+                # we are moving indices down)
+                lowest_index = min(lowest_index, newIndex)
                 moved |= self._dropIndexes(chunk, newIndex)
-            if moved: self._refreshOnDrop()
+            if moved: self._refreshOnDrop(lowest_index)
         # Ctrl+Z: Undo last load order or active plugins change
         # Can't use ord('Z') below - check wx._core.KeyEvent docs
         elif wrapped_evt.is_cmd_down and code == 26:
-            if self.data_store.undo_load_order():
-                self.RefreshUI(refreshSaves=True)
+            undo_redo_op(self.data_store.undo_load_order)
         elif wrapped_evt.is_cmd_down and code == 25:
-            if self.data_store.redo_load_order():
-                self.RefreshUI(refreshSaves=True)
+            undo_redo_op(self.data_store.redo_load_order)
         else: # correctly update the highlight around selected mod
             return EventResult.CONTINUE
         return EventResult.FINISH
@@ -1060,8 +1086,8 @@ class ModList(_ModsUIList):
         mod_clicked_on_icon = self._getItemClicked(lb_dex_and_flags, on_icon=True)
         if mod_clicked_on_icon:
             self._toggle_active_state(mod_clicked_on_icon)
-            # select manually as OnSelectItem() will fire for the wrong
-            # index if list is sorted with active mods first
+            # _handle_select no longer seems to fire for the wrong index, but
+            # deselecting the others is still the better behavior here
             self.SelectAndShowItem(mod_clicked_on_icon, deselectOthers=True,
                                    focus=True)
             return EventResult.FINISH
@@ -1069,7 +1095,7 @@ class ModList(_ModsUIList):
             mod_clicked = self._getItemClicked(lb_dex_and_flags)
             if wrapped_evt.is_alt_down and mod_clicked:
                 if self.jump_to_mods_installer(mod_clicked): return
-            #--Pass Event onward to OnSelectItem
+            # Pass Event onward to _handle_select
 
     def _select(self, modName):
         super(ModList, self)._select(modName)
@@ -1081,17 +1107,42 @@ class ModList(_ModsUIList):
         return bosh.modInfos.plugin_wildcard()
 
     #--Helpers ---------------------------------------------
+    @staticmethod
+    def _lo_redraw_targets(impacted_plugins):
+        """Given a set of plugins (as paths) that were impacted by a load order
+        operation, returns a set UIList keys (as paths) for elements that need
+        to be redrawn."""
+        ui_impacted = impacted_plugins.copy()
+        ##: We have to refresh every active plugin that loads higher than
+        # the lowest-loading one that was (un)checked as well since their
+        # load order/index columns will change. A full refresh is complete
+        # overkill for this, but alas... -> #353
+        if len(impacted_plugins) == 1:
+            lowest_impacted = next(iter(impacted_plugins)) # fast path
+        else:
+            lowest_impacted = min(ui_impacted,
+                                  key=load_order.cached_lo_index_or_max)
+        ui_impacted.update(load_order.cached_higher_loading(lowest_impacted))
+        # If the touched plugins include BPs, we need to refresh their
+        # imported/merged plugins too (checkbox icons). Note that we can do
+        # this after the lowest-loading check above, because the
+        # imported/merged plugins will not affect any other plugins if they
+        # aren't active, and won't need an update if they are active.
+        ui_imported, ui_merged = bosh.modInfos.getSemiActive(
+            ui_impacted, skip_active=True)
+        return ui_impacted | ui_imported | ui_merged
+
     @balt.conversation
     def _toggle_active_state(self, *mods):
         """Toggle active state of mods given - all mods must be either
         active or inactive."""
-        refreshNeeded = False
         active = [mod for mod in mods if load_order.cached_is_active(mod)]
         assert not active or len(active) == len(mods) # empty or all
         inactive = (not active and mods) or []
         changes = collections.defaultdict(dict)
-        # Deactivate ?
+        # Track which plugins we activated or deactivated
         touched = set()
+        # Deactivate ?
         # Track illegal deactivations for the return value
         illegal_deactivations = []
         for act in active:
@@ -1102,16 +1153,14 @@ class ModList(_ModsUIList):
                     # Can't deactivate that mod, track this
                     illegal_deactivations.append(act.s)
                     continue
-                refreshNeeded += len(changed)
-                if len(changed) > (act in changed): # deactivated children
-                    touched |= changed
+                touched |= changed
+                if len(changed) > (act in changed): # deactivated dependents
                     changed = [x for x in changed if x != act]
                     changes[self.__deactivated_key][act] = \
                         load_order.get_ordered(changed)
             except BoltError as e:
                 balt.showError(self, u'%s' % e)
         # Activate ?
-        touched = set()
         # Track illegal activations for the return value
         illegal_activations = []
         for inact in inactive:
@@ -1126,9 +1175,8 @@ class ModList(_ModsUIList):
                     # Can't activate that mod, track this
                     illegal_activations.append(inact.s)
                     continue
-                refreshNeeded += len(activated)
-                if len(activated) > (inact in activated):
-                    touched |= set(activated)
+                touched |= set(activated)
+                if len(activated) > (inact in activated): # activated masters
                     activated = [x for x in activated if x != inact]
                     changes[self.__activated_key][inact] = activated
             except BoltError as e:
@@ -1148,10 +1196,11 @@ class ModList(_ModsUIList):
                 _(u"You can't activate the following mods:")
                 + u'\n%s' % u', '.join(illegal_activations),
                 u'bash.mods.dnd.illegal_activation.continue')
-        if refreshNeeded:
+        if touched:
             bosh.modInfos.cached_lo_save_active()
             self.__toggle_active_msg(changes)
-            self.RefreshUI(refreshSaves=True)
+            self.RefreshUI(redraw=self._lo_redraw_targets(touched),
+                           refreshSaves=True)
 
     __activated_key = _(u'Masters activated:')
     __deactivated_key = _(u'Children deactivated:')

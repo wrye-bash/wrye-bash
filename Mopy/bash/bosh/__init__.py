@@ -349,6 +349,7 @@ reBashTags = re.compile(u'{{ *BASH *:[^}]*}}\\s*\\n?',re.U)
 
 class ModInfo(FileInfo):
     """A plugin file. Currently, these are .esp, .esm, .esl and .esu files."""
+    _has_esm_flag = _is_esl = False # Cached, since we need it so often
 
     def __init__(self, fullpath, load_cache=False):
         self.isGhost = endsInGhost = (fullpath.cs[-6:] == u'.ghost')
@@ -362,6 +363,8 @@ class ModInfo(FileInfo):
         super(ModInfo, self)._reset_cache(stat_tuple, load_cache)
         # check if we have a cached crc for this file, use fresh mtime and size
         if load_cache: self.calculate_crc() # for added and hopefully updated
+        if bush.game.has_esl: self._recalc_esl()
+        self._recalc_esm()
 
     def getFileInfos(self): return modInfos
 
@@ -372,14 +375,19 @@ class ModInfo(FileInfo):
     def has_esm_flag(self):
         """Check if the mod info is a master file based on master flag -
         header must be set"""
-        return self.header.flags1.esm
+        return self._has_esm_flag
 
     def set_esm_flag(self, new_esm_flag):
         """Changes this file's ESM flag to the specified value. Recalculates
         ONAM info if necessary."""
         self.header.flags1.esm = new_esm_flag
         self.update_onam()
+        self._recalc_esm()
         self.writeHeader()
+
+    def _recalc_esm(self):
+        """Forcibly recalculates the cached ESM status."""
+        self._has_esm_flag = self.header.flags1.esm
 
     def has_esl_flag(self):
         """Check if the mod info is an ESL based on ESL flag alone - header
@@ -389,13 +397,17 @@ class ModInfo(FileInfo):
     def set_esl_flag(self, new_esl_flag):
         """Changes this file's ESL flag to the specified value."""
         self.header.flags1.eslFile = new_esl_flag
+        self._recalc_esl()
         self.writeHeader()
 
     def is_esl(self):
         """Check if this is a light plugin - .esl files are automatically
         set the light flag, for espms check the flag."""
-        return bush.game.has_esl and (self.get_extension() == u'.esl' or
-                                      self.has_esl_flag())
+        return self._is_esl
+
+    def _recalc_esl(self):
+        """Forcibly recalculates the cached ESL status."""
+        self._is_esl = self.has_esl_flag() or self.get_extension() == u'.esl'
 
     def isInvertedMod(self):
         """Extension indicates esp/esm, but byte setting indicates opposite."""
@@ -464,6 +476,10 @@ class ModInfo(FileInfo):
     def _get_masters(self):
         """Return the plugin masters, in the order listed in its header."""
         return self.header.masters
+
+    def get_dependents(self):
+        """Return a set of all plugins that have this plugin as a master."""
+        return modInfos.dependents[self.name]
 
     # Ghosting and ghosting related overrides ---------------------------------
     def do_update(self, raise_on_error=False):
@@ -688,7 +704,9 @@ class ModInfo(FileInfo):
 
     def getIniPath(self):
         """Returns path to plugin's INI, if it were to exists."""
-        return self.getPath().root.root + u'.ini' # chops off ghost if ghosted
+        # GPath_no_norm is okay because we got this by changing the extension
+        # of a GPath object, meaning it was already normpath'd
+        return GPath_no_norm(self._file_key.s[:-3] + u'ini') # ignore .ghost
 
     def _string_files_paths(self, lang):
         # type: (basestring) -> Iterable[Path]
@@ -1795,8 +1813,10 @@ def _lo_cache(lord_func):
                          load_order.cached_active_tuple()
             lo_changed = lo != old_lo
             active_changed = active != old_active
+            active_set = set(active)
+            old_active_set = set(old_active)
             active_set_changed = active_changed and (
-                set(active) != set(old_active))
+                    active_set != old_active_set)
             if active_changed:
                 self._refresh_mod_inis() # before _refreshMissingStrings !
                 self._refreshBadNames()
@@ -1809,7 +1829,7 @@ def _lo_cache(lord_func):
             # to do this. We could technically be smarter, but this takes <1ms
             # even with hundreds of plugins
             self._recalc_real_indices()
-            new_active = set(active) - set(old_active)
+            new_active = active_set - old_active_set
             for neu in new_active: # new active mods, unghost
                 self[neu].setGhost(False)
             return (lo_changed and 1) + (active_changed and 2)
@@ -1838,6 +1858,8 @@ class ModInfos(FileInfos):
                                          u'found')
         # Maps plugins to 'real indices', i.e. the ones the game will assign.
         self.real_indices = collections.defaultdict(lambda: sys.maxsize)
+        # Maps each plugin to a set of all plugins that have it as a master
+        self.dependents = collections.defaultdict(set)
         self.mergeable = set() #--Set of all mods which can be merged.
         self.bad_names = set() #--Set of all mods with names that can't be saved to plugins.txt
         self.missing_strings = set() #--Set of all mods with missing .STRINGS files
@@ -1922,16 +1944,17 @@ class ModInfos(FileInfos):
     @_lo_cache
     def cached_lo_save_all(self):
         """Save load order and plugins.txt"""
+        active_wip_set = set(self._active_wip)
         dex = {x: i for i, x in enumerate(self._lo_wip) if
-               x in set(self._active_wip)}
+               x in active_wip_set}
         self._active_wip.sort(key=dex.__getitem__) # order in their load order
         load_order.save_lo(self._lo_wip, acti=self._active_wip)
 
     @_lo_cache
-    def undo_load_order(self): load_order.undo_load_order()
+    def undo_load_order(self): return load_order.undo_load_order()
 
     @_lo_cache
-    def redo_load_order(self): load_order.redo_load_order()
+    def redo_load_order(self): return load_order.redo_load_order()
 
     #--Load Order utility methods - be sure cache is valid when using them
     def cached_lo_insert_after(self, previous, new_mod):
@@ -2046,7 +2069,11 @@ class ModInfos(FileInfos):
         # Scan the data dir, getting info on added, deleted and modified files
         if refresh_infos:
             change = FileInfos.refresh(self, booting=booting)
-            if change: _added, _updated, deleted = change
+            if change:
+                _added, _updated, deleted = change
+                # If any plugins have been added, updated or deleted, we need
+                # to recalculate dependents
+                self._recalc_dependents()
             hasChanged = bool(change)
         # If refresh_infos is False and mods are added _do_ manually refresh
         _modTimesChange = _modTimesChange and not load_order.using_txt_file()
@@ -2249,26 +2276,34 @@ class ModInfos(FileInfos):
                                               notify_bain)
 
     #--Mod selection ----------------------------------------------------------
-    def getSemiActive(self, patches=None):
+    def getSemiActive(self, patches=None, skip_active=False):
         """Return (merged,imported) mods made semi-active by Bashed Patch.
 
         If no bashed patches are present in 'patches' then return empty sets.
         Else for each bashed patch use its config (if present) to find mods
-        it merges or imports."""
+        it merges or imports.
+
+        :param patches: A set of mods to look for bashed patches in.
+        :param skip_active: If True, only return inactive merged/imported
+            plugins."""
         if patches is None: patches = set(load_order.cached_active_tuple())
         merged_,imported_ = set(),set()
-        patches &= self.bashed_patches
-        for patch in patches:
+        for patch in patches & self.bashed_patches:
             patchConfigs = self.table.getItem(patch, u'bash.patch.configs')
             if not patchConfigs: continue
             pm_config_key = u'PatchMerger'
             if patchConfigs.get(pm_config_key,{}).get(u'isEnabled'):
                 config_checked = patchConfigs[pm_config_key][u'configChecks']
-                for modName in config_checked:
-                    if config_checked[modName] and modName in self:
+                for modName, is_merged in config_checked.iteritems():
+                    if is_merged and modName in self:
+                        if skip_active and load_order.cached_is_active(
+                                modName): continue
                         merged_.add(modName)
-            imported_.update(filter(lambda x: x in self,
-                patchConfigs.get(u'ImportedMods', tuple())))
+            for imp_name in patchConfigs.get(u'ImportedMods', tuple()):
+                if imp_name in self:
+                    if skip_active and load_order.cached_is_active(
+                            imp_name): continue
+                    imported_.add(imp_name)
         return merged_,imported_
 
     def getModList(self,showCRC=False,showVersion=True,fileInfo=None,wtxt=False):
@@ -2457,19 +2492,16 @@ class ModInfos(FileInfos):
         sel = diff
         #--Unselect children
         children = set()
-        def _children(parent):
-            for selFile in sel:
-                if selFile in children: continue # if no more => no more in sel
-                for master in self[selFile].masterNames:
-                    if master == parent:
-                        children.add(selFile)
-                        break
-        for fileName in fileNames: _children(fileName)
+        cached_dependents = self.dependents
+        for fileName in fileNames:
+            children |= cached_dependents[fileName]
         while children:
             child = children.pop()
+            if child not in sel: continue # already inactive, skip checks
             sel.remove(child)
-            _children(child)
-        self._active_wip = load_order.get_ordered(sel)
+            children |= cached_dependents[child]
+        # Commit the changes made above
+        self._active_wip = [x for x in self._active_wip if x in sel]
         #--Save
         if doSave: self.cached_lo_save_active()
         return old - sel # return deselected
@@ -2723,6 +2755,7 @@ class ModInfos(FileInfos):
         self._reset_info_sets()
         self._refreshMissingStrings()
         self._refreshMergeable()
+        self._recalc_dependents()
 
     def _additional_deletes(self, fileInfo, toDelete):
         super(ModInfos, self)._additional_deletes(fileInfo, toDelete)
@@ -2912,6 +2945,15 @@ class ModInfos(FileInfos):
                 r_index = regular_index
                 regular_index += 1
             self.real_indices[p] = r_index
+
+    def _recalc_dependents(self):
+        """Recalculates the dependents cache. See ModInfo.get_dependents for
+        more information."""
+        cached_dependents = self.dependents
+        cached_dependents.clear()
+        for p, p_info in self.iteritems():
+            for p_master in p_info.masterNames:
+                cached_dependents[p_master].add(p)
 
 #------------------------------------------------------------------------------
 class SaveInfos(FileInfos):

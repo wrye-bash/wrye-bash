@@ -327,7 +327,6 @@ class Game(object):
                                      previous_lord)
         return lord, active # return what was set or was previously set
 
-    @property
     def pinned_mods(self): return {self.master_path}
 
     # Conflicts - only for timestamp games
@@ -446,10 +445,11 @@ class Game(object):
         master_dex = 0
         # Tracks if fix_lo.lo_reordered needs updating
         lo_order_changed = any(fix_lo.lo_reordered)
+        cached_minfs = self.mod_infos
         try:
             master_dex = lord.index(master_name)
         except ValueError:
-            if not master_name in self.mod_infos:
+            if not master_name in cached_minfs:
                 raise exception.BoltError(
                     u'%s is missing or corrupted' % master_name)
             fix_lo.lo_added = {master_name}
@@ -461,7 +461,7 @@ class Game(object):
             lo_order_changed = True
         # below do not apply to timestamp method (on getting it)
         loadorder_set = set(lord)
-        mods_set = set(self.mod_infos.keys())
+        mods_set = set(cached_minfs.keys())
         fix_lo.lo_removed = loadorder_set - mods_set # may remove corrupted mods
         # present in text file, we are supposed to take care of that
         fix_lo.lo_added |= mods_set - loadorder_set
@@ -469,19 +469,22 @@ class Game(object):
         lord[:] = [x for x in lord if x not in fix_lo.lo_removed]
         # See if any esm files are loaded below an esp and reorder as necessary
         ol = lord[:]
-        lord.sort(key=lambda m: not self.in_master_block(self.mod_infos[m]))
+        in_mblock = self.in_master_block
+        lord.sort(key=lambda m: not in_mblock(cached_minfs[m]))
         lo_order_changed |= ol != lord
-        # Append new plugins to load order
-        index_first_esp = self._index_of_first_esp(lord)
-        for mod in fix_lo.lo_added:
-            if self.in_master_block(self.mod_infos[mod]):
-                if not mod == master_name:
-                    lord.insert(index_first_esp, mod)
-                else:
-                    lord.insert(0, master_name)
-                    bolt.deprint(u'%s inserted to Load order' % master_name)
-                index_first_esp += 1
-            else: lord.append(mod)
+        if fix_lo.lo_added:
+            # Append new plugins to load order
+            index_first_esp = self._index_of_first_esp(lord)
+            for mod in fix_lo.lo_added:
+                if in_mblock(cached_minfs[mod]):
+                    if not mod == master_name:
+                        lord.insert(index_first_esp, mod)
+                    else:
+                        lord.insert(0, master_name)
+                        bolt.deprint(u'%s inserted to Load order' %
+                                     master_name)
+                    index_first_esp += 1
+                else: lord.append(mod)
         # end textfile get
         fix_lo.lo_duplicates = self._check_for_duplicates(lord)
         lo_order_changed |= self._order_fixed(lord)
@@ -495,18 +498,23 @@ class Game(object):
         if quiet: fix_active = FixInfo() # discard fix info
         # Throw out files that aren't on disk as well as .esu files, which must
         # never be active
-        acti_filtered = [x for x in acti if x in self.mod_infos
+        cached_minfs = self.mod_infos
+        acti_filtered = [x for x in acti if x in cached_minfs
                          and x.cext != u'.esu']
-        fix_active.act_removed = set(acti) - set(acti_filtered)
+        # Use sets to avoid O(n) lookups due to lists
+        acti_filtered_set = set(acti_filtered)
+        lord_set = set(lord)
+        fix_active.act_removed = set(acti) - acti_filtered_set
         if fix_active.act_removed and not quiet:
             # take note as we may need to rewrite plugins txt
-            self.mod_infos.selectedBad = fix_active.lo_removed
+            cached_minfs.selectedBad = fix_active.lo_removed
         if not self.allow_deactivate_master:
-            if not self.master_path in acti_filtered:
+            if self.master_path not in acti_filtered_set:
                 acti_filtered.insert(0, self.master_path)
+                acti_filtered_set.add(self.master_path)
                 fix_active.master_not_active = self.master_path
         for path in self.must_be_active_if_present:
-            if path in lord and not path in acti_filtered:
+            if path in lord_set and path not in acti_filtered_set:
                 fix_active.missing_must_be_active.append(path)
         # order - affects which mods are chopped off if > 255 (the ones that
         # load last) - won't trigger saving but for Skyrim
@@ -514,7 +522,7 @@ class Game(object):
             self._check_active_order(acti_filtered, lord)
         for path in fix_active.missing_must_be_active: # insert after the last master
             acti_filtered.insert(self._index_of_first_esp(acti_filtered), path)
-        # Check for duplicates
+        # Check for duplicates - NOTE: this modifies acti_filtered!
         fix_active.act_duplicates = self._check_for_duplicates(acti_filtered)
         # check if we have more than 256 active mods
         drop_espms, drop_esls = self.check_active_limit(acti_filtered)
@@ -523,7 +531,7 @@ class Game(object):
         # contain files that are no longer on disk (i.e. not in acti_filtered)
         acti[:] = [x for x in acti_filtered if x not in disable]
         if disable: # chop off extra
-            self.mod_infos.selectedExtra = fix_active.selectedExtra = [
+            cached_minfs.selectedExtra = fix_active.selectedExtra = [
                 x for x in acti_filtered if x in disable]
         before_reorder = acti # with overflowed plugins removed
         if self._order_fixed(acti):
@@ -562,13 +570,15 @@ class Game(object):
     def _check_for_duplicates(plugins_list):
         """:type plugins_list: list[bolt.Path]"""
         mods, duplicates, j = set(), set(), 0
+        mods_add = mods.add
+        duplicates_add = duplicates.add
         for i, mod in enumerate(plugins_list[:]):
             if mod in mods:
                 del plugins_list[i - j]
                 j += 1
-                duplicates.add(mod)
+                duplicates_add(mod)
             else:
-                mods.add(mod)
+                mods_add(mod)
         return duplicates
 
     # INITIALIZATION ----------------------------------------------------------
@@ -882,9 +892,8 @@ class TextfileGame(Game):
         self.mtime_loadorder_txt = 0
         self.size_loadorder_txt = 0
 
-    @property
     def pinned_mods(self):
-        return super(TextfileGame, self).pinned_mods | set(
+        return super(TextfileGame, self).pinned_mods() | set(
             self.must_be_active_if_present)
 
     def load_order_changed(self):
@@ -944,7 +953,8 @@ class TextfileGame(Game):
         # handle desync with plugins txt
         if cached_active is not None:
             cached_active_copy = cached_active[:]
-            active_in_lo = [x for x in lo if x in set(cached_active)]
+            cached_active_set = set(cached_active)
+            active_in_lo = [x for x in lo if x in cached_active_set]
             w = {x: i for i, x in enumerate(lo)}
             while active_in_lo:
                 for i, (ordered, current) in enumerate(
@@ -1027,11 +1037,9 @@ class AsteriskGame(Game):
     _ccc_fallback = ()
     _star = True
 
-    @property
-    def remove_from_plugins_txt(self): return set()
+    def plugins_txt_entries_to_remove(self): return set()
 
-    @property
-    def pinned_mods(self): return self.remove_from_plugins_txt
+    def pinned_mods(self): return self.plugins_txt_entries_to_remove()
 
     def load_order_changed(self): return self._plugins_txt_modified()
 
@@ -1064,8 +1072,11 @@ class AsteriskGame(Game):
         lo, active = (lo if cached_load_order is None else cached_load_order,
                       active if cached_active is None else cached_active)
         to_drop = []
-        for rem in self.remove_from_plugins_txt:
-            if rem in active or rem in lo:
+        # Use sets to avoid O(n) lookups
+        active_set = set(active)
+        lo_set = set(lo)
+        for rem in self.plugins_txt_entries_to_remove():
+            if rem in active_set or rem in lo_set:
                 to_drop.append(rem)
         lo, active = self._readd_in_lists(lo, active)
         msg = u''
@@ -1085,8 +1096,9 @@ class AsteriskGame(Game):
 
     def _persist_load_order(self, lord, active):
         assert active # must at least contain the master esm for these games
-        lord = [x for x in lord if x not in self.remove_from_plugins_txt]
-        active = [x for x in active if x not in self.remove_from_plugins_txt]
+        rem_from_lo = self.plugins_txt_entries_to_remove()
+        lord = [x for x in lord if x not in rem_from_lo]
+        active = [x for x in active if x not in rem_from_lo]
         self._write_plugins_txt(lord, active)
 
     def _persist_active_plugins(self, active, lord):
@@ -1106,7 +1118,8 @@ class AsteriskGame(Game):
 
     # Validation overrides ----------------------------------------------------
     def _order_fixed(self, lord):
-        lo = [x for x in lord if x not in self.remove_from_plugins_txt]
+        rem_from_lo = self.plugins_txt_entries_to_remove()
+        lo = [x for x in lord if x not in rem_from_lo]
         add = self._fixed_order_plugins()
         if add + lo != lord:
             lord[:] = add + lo
@@ -1115,10 +1128,12 @@ class AsteriskGame(Game):
 
     def check_active_limit(self, acti_filtered):
         acti_filtered_espm = []
+        append_espm = acti_filtered_espm.append
         acti_filtered_esl = []
+        append_esl = acti_filtered_esl.append
+        cached_minfs = self.mod_infos
         for x in acti_filtered:
-            (acti_filtered_esl if self.mod_infos[
-                x].is_esl() else acti_filtered_espm).append(x)
+            (append_esl if cached_minfs[x].is_esl() else append_espm)(x)
         return set(acti_filtered_espm[self.max_espms:]) , set(
             acti_filtered_esl[self.max_esls:])
 
@@ -1127,8 +1142,9 @@ class AsteriskGame(Game):
         # add the plugins that should not be in plugins.txt in the lists,
         # assuming they should also be active
         add = self._fixed_order_plugins()
-        lo = [x for x in lo if x not in self.remove_from_plugins_txt]
-        active = [x for x in active if x not in self.remove_from_plugins_txt]
+        rem_from_lo = self.plugins_txt_entries_to_remove()
+        lo = [x for x in lo if x not in rem_from_lo]
+        active = [x for x in active if x not in rem_from_lo]
         return add + lo, add + active
 
     def _fixed_order_plugins(self):
@@ -1332,8 +1348,7 @@ class Fallout4(AsteriskGame):
         u'ccCRSFO4001-PipCoA.esl',
     ))
 
-    @property
-    def remove_from_plugins_txt(self):
+    def plugins_txt_entries_to_remove(self):
         return {GPath_no_norm(u'Fallout4.esm')} | set(
             self.must_be_active_if_present)
 
@@ -1409,8 +1424,7 @@ class SkyrimSE(AsteriskGame):
         u'ccEEJSSE004-Hall.esl',
     ))
 
-    @property
-    def remove_from_plugins_txt(self):
+    def plugins_txt_entries_to_remove(self):
         return {GPath_no_norm(u'Skyrim.esm')} | set(
             self.must_be_active_if_present)
 

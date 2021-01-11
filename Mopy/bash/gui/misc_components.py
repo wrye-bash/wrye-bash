@@ -184,9 +184,9 @@ class Table(WithCharEvents):
             for r, cell_label in enumerate(table_data[column_label]):
                 self._native_widget.SetCellValue(r, c, cell_label)
         self._native_widget.AutoSize()
-        self.on_key_up.subscribe(self._handle_key_up)
+        self.on_key_up.subscribe(self._on_table_key_up)
 
-    def _handle_key_up(self, wrapped_evt):
+    def _on_table_key_up(self, wrapped_evt):
         """Internal handler, implements copy and paste, select all, etc."""
         kcode = wrapped_evt.key_code
         if wrapped_evt.is_cmd_down:
