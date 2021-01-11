@@ -1922,8 +1922,9 @@ class ModInfos(FileInfos):
     @_lo_cache
     def cached_lo_save_all(self):
         """Save load order and plugins.txt"""
+        active_wip_set = set(self._active_wip)
         dex = {x: i for i, x in enumerate(self._lo_wip) if
-               x in set(self._active_wip)}
+               x in active_wip_set}
         self._active_wip.sort(key=dex.__getitem__) # order in their load order
         load_order.save_lo(self._lo_wip, acti=self._active_wip)
 

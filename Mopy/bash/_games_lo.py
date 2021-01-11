@@ -942,7 +942,8 @@ class TextfileGame(Game):
         # handle desync with plugins txt
         if cached_active is not None:
             cached_active_copy = cached_active[:]
-            active_in_lo = [x for x in lo if x in set(cached_active)]
+            cached_active_set = set(cached_active)
+            active_in_lo = [x for x in lo if x in cached_active_set]
             w = {x: i for i, x in enumerate(lo)}
             while active_in_lo:
                 for i, (ordered, current) in enumerate(
