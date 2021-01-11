@@ -853,7 +853,12 @@ class ModList(_ModsUIList):
         return bosh.modInfos.dropItems(dropItem, firstItem, lastItem)
 
     def OnDropIndexes(self, indexes, newIndex):
-        if self._dropIndexes(indexes, newIndex): self._refreshOnDrop()
+        if self._dropIndexes(indexes, newIndex):
+            # Take all indices into account - we may be moving plugins up, in
+            # which case the smallest index is in indexes, or we may be moving
+            # plugins down, in which case the smallest index is newIndex
+            lowest_index = min(newIndex, min(indexes))
+            self._refreshOnDrop(lowest_index)
 
     def dndAllow(self, event):
         msg = u''
@@ -873,13 +878,15 @@ class ModList(_ModsUIList):
         return True
 
     @balt.conversation
-    def _refreshOnDrop(self):
+    def _refreshOnDrop(self, first_index):
         #--Save and Refresh
         try:
             bosh.modInfos.cached_lo_save_all()
         except BoltError as e:
             balt.showError(self, u'%s' % e)
-        self.RefreshUI(refreshSaves=True)
+        first_impacted = load_order.cached_lo_tuple()[first_index]
+        self.RefreshUI(redraw=self._lo_redraw_targets({first_impacted}),
+                       refreshSaves=True)
 
     #--Populate Item
     def set_item_format(self, mod_name, item_format, target_ini_setts):
@@ -1030,13 +1037,19 @@ class ModList(_ModsUIList):
                 chunks[chunk].append(dex)
             moveMod = 1 if code in balt.wxArrowDown else -1
             moved = False
+            # Initialize the lowest index to the smallest existing one (we
+            # won't ever beat this one if we are moving indices up)
+            lowest_index = min(indexes)
             for chunk in chunks:
                 if not chunk: continue # nothing to move, skip
                 newIndex = chunk[0] + moveMod
                 if chunk[-1] + moveMod == self.item_count:
                     continue # trying to move last plugin past the list
+                # Check if moving hits a new lowest index (this is the case if
+                # we are moving indices down)
+                lowest_index = min(lowest_index, newIndex)
                 moved |= self._dropIndexes(chunk, newIndex)
-            if moved: self._refreshOnDrop()
+            if moved: self._refreshOnDrop(lowest_index)
         # Ctrl+Z: Undo last load order or active plugins change
         # Can't use ord('Z') below - check wx._core.KeyEvent docs
         elif wrapped_evt.is_cmd_down and code == 26:
