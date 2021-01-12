@@ -1228,10 +1228,16 @@ class UIList(wx.Panel):
     def OnDClick(self, lb_dex_and_flags): pass
     def OnChar(self, wrapped_evt): pass
     #--Edit labels - only registered if _editLabels != False
+    def _rename_type(self):
+        """Check if the operation is allowed and return the item type of the
+        selected labels to be renamed."""
+        to_rename = self.GetSelectedInfos()
+        return (to_rename and type(to_rename[0])) or None
     def OnBeginEditLabel(self, evt_label, uilist_ctrl):
         """Start renaming: deselect the extension."""
-        to = len(GPath(evt_label).sbody)
-        uilist_ctrl.ec_set_selection(0, to)
+        rename_type = self._rename_type()
+        uilist_ctrl.ec_set_selection(*rename_type.rename_area_idxs(evt_label))
+        return EventResult.FINISH  ##: needed?
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         # should only be subscribed if _editLabels==True and overridden
         raise AbstractError

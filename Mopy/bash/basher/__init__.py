@@ -69,7 +69,7 @@ import wx
 from .. import bush, bosh, bolt, bass, env, load_order, archives
 from ..bolt import GPath, SubProgress, deprint, round_size, OrderedDefaultDict, \
     dict_sort
-from ..bosh import omods
+from ..bosh import omods, ModInfo
 from ..exception import AbstractError, BoltError, CancelError, FileError, \
     SkipError, UnknownListener
 from ..localize import format_date, unformat_date
@@ -546,6 +546,12 @@ class MasterList(_ModsUIList):
         if not self.allowEdit: return EventResult.CANCEL
         # pass event on (for label editing)
         return super(MasterList, self).OnBeginEditLabel(evt_label, uilist_ctrl)
+
+    def _rename_type(self):
+        """Check if the operation is allowed and return ModInfo as the item
+        type of the selected label to be renamed."""
+        to_rename = self.GetSelected()
+        return (to_rename and ModInfo) or None
 
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         newName = GPath(evt_label)
@@ -2334,63 +2340,54 @@ class InstallersList(balt.UIList):
 
     def OnBeginEditLabel(self, evt_label, uilist_ctrl):
         """Start renaming installers"""
-        to_rename = self.GetSelectedInfos()
-        if not to_rename:
-            # We somehow got here but have nothing selected, abort
+        if not self._rename_type():
+            # Can't rename mixed installer types or last marker
             return EventResult.CANCEL
+        uilist_ctrl.ec_set_on_char_handler(self._OnEditLabelChar)
+        return super(InstallersList, self).OnBeginEditLabel(evt_label,
+                                                            uilist_ctrl)
+
+    def _rename_type(self):
         #--Only rename multiple items of the same type
-        renaming_type = type(to_rename[0])
+        renaming_type = super(InstallersList, self)._rename_type()
+        if renaming_type is None: return None
         last_marker = u'==last=='
-        for item in to_rename:
+        for item in self.GetSelectedInfos():
             if not type(item) is renaming_type:
                 balt.showError(self, _(
                     u"Bash can't rename mixed installers types"))
-                return EventResult.CANCEL
+                return None
             #--Also, don't allow renaming the 'Last' marker
-            elif item.archive.lower() == last_marker:
-                return EventResult.CANCEL
-        uilist_ctrl.ec_set_on_char_handler(self._OnEditLabelChar)
-        #--Markers, change the selection to not include the '=='
-        if renaming_type.is_marker():
-            to = len(evt_label) - 2
-            uilist_ctrl.ec_set_selection(2, to)
-        #--Archives, change the selection to not include the extension
-        elif renaming_type.is_archive():
-            return super(InstallersList, self).OnBeginEditLabel(evt_label,
-                                                                uilist_ctrl)
-        return EventResult.FINISH  ##: needed?
+            elif item.archive.lower() == last_marker: ##: we should drop that - create a singleton last marker
+                balt.showError(self, _(
+                    u'Renaming %s is not allowed' % u'==Last=='))
+                return None
+        return renaming_type
 
     def _OnEditLabelChar(self, is_f2_down, ec_value, uilist_ctrl):
         """For pressing F2 on the edit box for renaming"""
         if is_f2_down:
-            to_rename = self.GetSelected()
-            renaming_type = type(self.data_store[to_rename[0]])
-            # (start, stop), if start==stop there is no selection
-            selection_span = uilist_ctrl.ec_get_selection()
-            lenWithExt = len(ec_value)
-            if selection_span[0] != 0:
-                selection_span = (0,lenWithExt)
-            selectedText = GPath(ec_value[selection_span[0]:selection_span[1]])
-            textNextLower = selectedText.body
-            if textNextLower == selectedText:
-                lenNextLower = lenWithExt
+            to_rename = self.GetSelectedInfos()
+            renaming_type = type(to_rename[0])
+            start, stop = uilist_ctrl.ec_get_selection()
+            if start == stop: # if start==stop there is no selection
+                selection_span = 0, len(ec_value)
             else:
-                lenNextLower = len(textNextLower)
-            if renaming_type.is_archive():
-                selection_span = (0, lenNextLower)
-            elif renaming_type.is_marker():
-                selection_span = (2, lenWithExt - 2)
-            else:
-                selection_span = (0, lenWithExt)
+                sel_start, _sel_stop = renaming_type.rename_area_idxs(
+                    ec_value, start, stop)
+                if (sel_start, _sel_stop) == (start, stop):
+                    selection_span = 0, len(ec_value)  # rewind selection
+                else:
+                    selection_span = sel_start, _sel_stop
             uilist_ctrl.ec_set_selection(*selection_span)
             return EventResult.FINISH  ##: needed?
 
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Renamed some installers"""
         if is_edit_cancelled: return EventResult.FINISH ##: previous behavior todo TTT
-        selected = self.GetSelected()
+        selected = self.GetSelectedInfos()
         # all selected have common type! enforced in OnBeginEditLabel
-        renaming_type = type(self.data_store[selected[0]])
+        renaming_type = type(selected[0])
         newName, root, _numStr = renaming_type.validate_filename_str(evt_label,
             allowed_exts=archives.readExts)
         if root is None:
@@ -2401,7 +2398,7 @@ class InstallersList(balt.UIList):
             refreshes, ex = [(False, False, False)], None
             newselected = []
             try:
-                for package in selected:
+                for package in self.GetSelected():
                     name_new = self.new_name(newName)
                     refreshes.append(
                         self.data_store.rename_info(package, name_new))

@@ -134,6 +134,15 @@ class ListInfo(object):
             return (_(u'Bad extension or file root: ') + name_str), None, None
         return GPath(name_str), maPattern.groups(u'')[0], num_str # default u''
 
+    # Gui renaming stuff ------------------------------------------------------
+    @classmethod
+    def rename_area_idxs(cls, text_str, start=0, stop=None):
+        """Return the selection span of item being renamed - usually to
+        exclude the extension."""
+        if cls._valid_exts_re and not start: # start == 0
+            return 0, len(GPath(text_str[:stop]).sbody)
+        return 0, len(text_str) # if selection not at start reset
+
     @classmethod
     def get_store(cls):
         raise AbstractError(u'%s does not provide a data store' % type(cls))

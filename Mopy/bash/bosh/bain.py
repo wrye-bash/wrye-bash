@@ -1258,6 +1258,13 @@ class InstallerMarker(Installer):
     @classmethod
     def is_marker(cls): return True
 
+    @classmethod
+    def rename_area_idxs(cls, text_str, start=0, stop=None):
+        """Markers, change the selection to not include the '=='."""
+        if text_str[:2] == text_str[-2:] == u'==':
+            return 2, len(text_str) - 2
+        return 0, len(text_str)
+
     def __init__(self,archive):
         Installer.__init__(self,archive)
         self.modified = time.time()
