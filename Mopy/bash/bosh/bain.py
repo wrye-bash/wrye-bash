@@ -325,7 +325,7 @@ class Installer(object):
             self.initDefault()
 
     @property
-    def ipath(self): ##: aka abs_path
+    def abs_path(self):
         return bass.dirs[u'installers'].join(self.archive)
 
     def get_hide_dir(self): ##: Copy-pasted from InstallersData.hidden_dir!
@@ -341,7 +341,7 @@ class Installer(object):
                 rescan = True
         elif self.fileRootIdex and not self.extras_dict.get('root_path', u''):
             rescan = True ##: for people that used my wip branch, drop on 307
-        if not self.ipath.exists():  # pickled installer deleted outside bash
+        if not self.abs_path.exists(): # pickled installer deleted outside bash
             return  # don't do anything should be deleted from our data soon
         if not isinstance(self.src_sizeCrcDate, bolt.LowerDict):
             self.src_sizeCrcDate = bolt.LowerDict(
@@ -1096,7 +1096,7 @@ class Installer(object):
             for asDir, sDirs, sFiles in bolt.walkdir(proj_dir.s):
                 if not (sDirs or sFiles): empties.add(GPath(asDir))
             for empty in empties: empty.removedirs()
-            self.ipath.makedirs()  #--In case it just got wiped out.
+            self.abs_path.makedirs()  #--In case it just got wiped out.
         return upt_numb, del_numb
 
     def size_or_mtime_changed(self, apath):
@@ -1207,7 +1207,7 @@ class Installer(object):
             log = bolt.LogFile(out)
             log.setHeader(u'%s ' % self.archive + _(u'Package Structure:'))
             log(u'[spoiler]\n', False)
-            self._list_package(self.ipath, log)
+            self._list_package(self.abs_path, log)
             log(u'[/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
 
@@ -1234,6 +1234,7 @@ class InstallerMarker(Installer):
     """Represents a marker installer entry."""
     __slots__ = tuple() #--No new slots
     type_string = _(u'Marker')
+    _is_filename = False
 
     @classmethod
     def is_marker(cls): return True
@@ -1298,7 +1299,7 @@ class InstallerArchive(Installer):
     def _refreshSource(self, progress, recalculate_project_crc):
         """Refresh fileSizeCrcs, size, modified, crc, isSolid from archive."""
         #--Basic file info
-        self.size, self.modified = self.ipath.size_mtime() ##: aka _file_size _file_mod_time
+        self.size, self.modified = self.abs_path.size_mtime() ##: aka _file_size _file_mod_time
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
         self.isSolid = False
@@ -1317,12 +1318,12 @@ class InstallerArchive(Installer):
                     fileSizeCrcs.append((_li.filepath, _li.size, _li.crc))
                     _li.cumCRC += _li.crc
                 _li.filepath = _li.size = _li.crc = _li.isdir = 0
-        with self.ipath.unicodeSafe() as tempArch:
+        with self.abs_path.unicodeSafe() as tempArch:
             try:
                 list_archive(tempArch, _parse_archive_line)
                 self.crc = _li.cumCRC & 0xFFFFFFFF
             except:
-                archive_msg = u"Unable to read archive '%s'." % self.ipath
+                archive_msg = u"Unable to read archive '%s'." % self.abs_path
                 deprint(archive_msg, traceback=True)
                 raise InstallerArchiveError(archive_msg)
 
@@ -1339,7 +1340,7 @@ class InstallerArchive(Installer):
             out.write(u'\n'.join(fileNames))
         #--Ensure temp dir empty
         bass.rmTempDir()
-        with self.ipath.unicodeSafe() as arch:
+        with self.abs_path.unicodeSafe() as arch:
             if progress:
                 progress.state = 0
                 progress.setFull(len(fileNames))
@@ -1500,7 +1501,7 @@ class InstallerProject(Installer):
         :return: max modification time for files/folders in project directory
         :rtype: int"""
         #--Scan for changed files
-        apRoot = self.ipath
+        apRoot = self.abs_path
         rootName = apRoot.stail
         progress = progress if progress else bolt.Progress()
         progress_msg = rootName + u'\n' + _(u'Scanning...')
@@ -1586,12 +1587,12 @@ class InstallerProject(Installer):
         progress(0, self.archive + u'\n' + _(u'Moving files...'))
         progressPlus = progress.plus
         #--Copy Files
-        srcDirJoin = self.ipath.join
+        srcDirJoin = self.abs_path.join
         return self._fs_install(dest_src, srcDirJoin, progress, progressPlus,
                                 None)
 
     def sync_from_data(self, delta_files, progress):
-        return self._do_sync_data(self.ipath, delta_files, progress)
+        return self._do_sync_data(self.abs_path, delta_files, progress)
 
     @staticmethod
     def _list_package(apath, log):
@@ -1610,11 +1611,11 @@ class InstallerProject(Installer):
     def renameInstaller(self, name_new, idata_):
         return self._installer_rename(idata_, name_new)
 
-    def _open_txt_file(self, rel_path): self.ipath.join(rel_path).start()
+    def _open_txt_file(self, rel_path): self.abs_path.join(rel_path).start()
 
-    def wizard_file(self): return self.ipath.join(self.hasWizard)
+    def wizard_file(self): return self.abs_path.join(self.hasWizard)
 
-    def fomod_file(self): return self.ipath.join(self.has_fomod_conf)
+    def fomod_file(self): return self.abs_path.join(self.has_fomod_conf)
 
 def projects_walk_cache(func): ##: HACK ! Profile
     """Decorator to make sure I dont leak self._dir_dirs_files project cache.
@@ -1981,11 +1982,11 @@ class InstallersData(DataStore):
         """Refresh installer status."""
         inOrder, pending = [], []
         # not specifying the key below results in double time
-        for archive, installer in sorted(self.iteritems(), key=itemgetter(0)):
+        for iname, installer in sorted(self.iteritems(), key=itemgetter(0)):
             if installer.order >= 0:
-                inOrder.append((archive, installer))
+                inOrder.append((iname, installer))
             else:
-                pending.append((archive, installer))
+                pending.append((iname, installer))
         inOrder.sort(key=lambda x: x[1].order)
         for dex, (key, value) in enumerate(inOrder):
             if self.lastKey == key:
@@ -1994,7 +1995,7 @@ class InstallersData(DataStore):
         else:
             inOrder += pending
         changed = False
-        for order, (archive, installer) in enumerate(inOrder):
+        for order, (iname, installer) in enumerate(inOrder):
             if installer.order != order:
                 installer.order = order
                 changed = True

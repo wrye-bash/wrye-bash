@@ -1039,10 +1039,10 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
         # Ask the user first to avoid the progress dialog shoving itself over
         # any dialogs we pop up
         to_unpack = []
-        for archive, installer in self.idata.sorted_pairs(self.selected):
-            project = archive.root
+        for iname, installer in self.idata.sorted_pairs(self.selected):
+            project = iname.root
             if self.isSingleArchive():
-                result = self._askText(_(u'Unpack %s to Project:') % archive,
+                result = self._askText(_(u'Unpack %s to Project:') % iname,
                                        default=project.s)
                 if not result: return
                 # Error checking
