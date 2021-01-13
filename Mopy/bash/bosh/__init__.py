@@ -362,9 +362,10 @@ class ModInfo(FileInfo):
     def _reset_cache(self, stat_tuple, load_cache):
         super(ModInfo, self)._reset_cache(stat_tuple, load_cache)
         # check if we have a cached crc for this file, use fresh mtime and size
-        if load_cache: self.calculate_crc() # for added and hopefully updated
-        if bush.game.has_esl: self._recalc_esl()
-        self._recalc_esm()
+        if load_cache:
+            self.calculate_crc() # for added and hopefully updated
+            if bush.game.has_esl: self._recalc_esl()
+            self._recalc_esm()
 
     def getFileInfos(self): return modInfos
 

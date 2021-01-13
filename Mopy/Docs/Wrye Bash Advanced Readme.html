@@ -180,18 +180,35 @@
 
 <h3 id="install-components">Python Components <a class="back2top" href="#contents">Back to top</a></h3>
 <p>If you are installing the Python version of Wrye Bash and wish to install the Python dependencies separately, the following must be installed.</p>
-<p>Installation is easiest by just using pip, which comes with Python (see below). Simply run <code>path/to/python.exe -m pip install -r requirements.txt</code>
-    (obviously replacing <code>path/to/python.exe</code> with the actual path to your python.exe).</p>
 <p class="emphasis">Note that the 64-bit versions are <em>required</em> - we no longer support 32-bit operating systems.</p>
+<p><a href="https://www.python.org/ftp/python/2.7.18/python-2.7.18.msi">Python 2.7.18</a>: Versions prior to this one may work with Wrye Bash,
+    but have not been tested. Updating is recommended for bug and security fixes.</p>
+<p>Installation is easiest by just using pip, which comes with Python (see above). Simply run <code>path/to/python.exe -m pip install -r requirements.txt</code>
+    (obviously replacing <code>path/to/python.exe</code> with the actual path to your python.exe).</p>
+<p>If you want to do it manually, the rest of this section will list out each
+    dependency and what it's used for. Using the latest version of these is
+    recommended. If that one doesn't work / isn't available for Python 2, use
+    the newest version that does work.</p>
+<p>Required libaries:</p>
 <ul>
-    <li><a href="https://www.python.org/ftp/python/2.7.18/python-2.7.18.msi">Python 2.7.18</a>: Versions prior to 2.7.18 may work with Wrye Bash,
-        but have not been tested. Updating is recommended for bug and security fixes.</li>
-    <li><a href="https://pypi.org/project/wxPython">wxPython 4.0.7.post2</a>: Newer versions may work, older ones will not.</li>
-    <li><a href="https://pypi.org/project/chardet/">Mozilla's chardet library</a>: Wrye Bash uses this library to help in detecting
-        character encodings used when reading and writing encoded Unicode strings.</li>
-    <li><a href="https://pypi.org/project/pywin32/">PyWin32</a>: Wrye Bash uses this library to interact with Windows in various ways.</li>
-    <li><a href="https://pypi.python.org/pypi/scandir">scandir</a>: Optional but highly recommended module (in the standard library since
-        python 3.5). Scandir speeds up disk I/O operations (namely os. walk) by 5-50x on the Windows operating system family.</li>
+    <li><a href="https://pypi.org/project/chardet">chardet</a>: Used to detect
+        character encodings for reading and writing encoded Unicode
+        strings.</li>
+    <li><a href="https://pypi.org/project/lz4">python-lz4</a>: Used to read and
+        write LZ4 data in saves and BSAs.</li>
+    <li><a href="https://pypi.org/project/pywin32">pywin32</a>: Used to
+        interact with Windows in various ways.</li>
+    <li><a href="https://pypi.org/project/PyYAML">PyYAML</a>: Used to parse
+        YAML data, e.g. LOOT masterlists.</li>
+    <li><a href="https://pypi.org/project/wxPython">wxPython</a>: Used for
+        building Wrye Bash's GUI.</li>
+</ul>
+<p>Optional libaries:</p>
+<ul>
+    <li><a href="https://pypi.org/project/scandir">scandir</a>: Many refresh
+        and BAIN operations will become faster if this is installed.</li>
+    <li><a href="https://pypi.org/project/PyMuPDF">PyMuPDF</a>: The doc browser
+        will be able to display PDFs if this is installed.</li>
 </ul>
 
 <h2 id="bain">Installers Tab <a class="back2top" href="#contents">Back to top</a></h2>
