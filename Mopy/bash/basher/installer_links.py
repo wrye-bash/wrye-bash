@@ -648,11 +648,15 @@ class Installer_Move(_InstallerLink):
         self.window.RefreshUI(
             detail_item=self.iPanel.detailsPanel.displayed_item)
 
-class Installer_Open(balt.UIList_OpenItems, _NoMarkerLink):
+class Installer_Open(balt.UIList_OpenItems, EnabledLink):
     """Open selected installer(s). Selected markers are skipped."""
 
+    def _enable(self):
+        # Can't use _NoMarkerLink since it will skip unrecognized packages
+        return not any(p.is_marker() for p in self.iselected_infos())
+
     def Execute(self):
-        self.window.OpenSelected(selected=self._installables)
+        self.window.OpenSelected(selected=self.selected)
 
 #------------------------------------------------------------------------------
 class _Installer_OpenAt(_InstallerLink):

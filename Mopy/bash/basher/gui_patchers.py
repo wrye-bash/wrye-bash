@@ -677,6 +677,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                         return
                     try:
                         value.append(float(new))
+                        new = None # Reset, we may have a multi-key tweak
+                        break
                     except ValueError:
                         balt.showError(self.gConfigPanel,
                                        _(u"'%s' is not a valid floating point "

@@ -1,5 +1,5 @@
 # Runtime, required
-chardet==3.0.4
+chardet==4.0.0
 lz4==2.2.1
 pywin32==224
 PyYAML==5.3.1
