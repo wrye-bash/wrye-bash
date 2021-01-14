@@ -27,7 +27,7 @@ from . import bEnableWizard, BashFrame
 from .constants import installercons
 from .. import bass, balt, bosh, bolt, bush, env, load_order
 from ..balt import colors, bell
-from ..bosh import faces
+from ..bosh import faces, ModInfo
 from ..gui import BOTTOM, Button, CancelButton, CENTER, CheckBox, GridLayout, \
     HLayout, Label, LayoutOptions, OkButton, RIGHT, Stretch, TextField, \
     VLayout, DialogWindow, ListBox, Picture, DropDown, CheckListBox, \
@@ -380,8 +380,8 @@ class CreateNewPlugin(DialogWindow):
     def _handle_ok(self):
         """Internal callback to handle the OK button."""
         pw = self._parent_window
-        chosen_name = pw.new_name(self._plugin_name.text_content +
-                                  self._plugin_ext.get_value())
+        chosen_name = ModInfo.unique_name(self._plugin_name.text_content +
+                                          self._plugin_ext.get_value())
         windowSelected = pw.GetSelected()
         pw.data_store.create_new_mod(chosen_name, windowSelected,
             esm_flag=self._esm_flag.is_checked,

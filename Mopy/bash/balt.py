@@ -1569,27 +1569,6 @@ class UIList(wx.Panel):
         #--Refresh stuff
         self.data_store.delete_refresh(deletd, None, check_existence=True)
 
-    # Generate unique filenames when duplicating files etc
-    @staticmethod
-    def _new_name(new_name, count):
-        count += 1
-        new_name = GPath(new_name.root + (u' (%d)' % count) + new_name.ext)
-        return new_name, count
-
-    def new_name(self, new_name):
-        new_name = GPath(new_name)
-        base_name, count = new_name, 0
-        while new_name in self.data_store:
-            new_name, count = self._new_name(base_name, count)
-        return new_name
-
-    @staticmethod
-    def new_path(new_name, dest_dir):
-        base_name, count = new_name, 0
-        while dest_dir.join(new_name).exists() and count < 1000:
-            new_name, count = UIList._new_name(base_name, count)
-        return new_name
-
     @staticmethod
     def _unhide_wildcard(): raise AbstractError
     def unhide(self):

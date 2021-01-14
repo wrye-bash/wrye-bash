@@ -134,6 +134,30 @@ class ListInfo(object):
             return (_(u'Bad extension or file root: ') + name_str), None, None
         return GPath(name_str), maPattern.groups(u'')[0], num_str # default u''
 
+    # Generate unique filenames when duplicating files etc
+    @staticmethod
+    def _new_name(base_name, count, add_copy=False):
+        r, e = base_name.sroot, base_name.ext
+        if not count:
+            return GPath(r + (_(u' Copy') if add_copy else u'') + e)
+        return GPath(r + (u' (%d)' % count) + e)
+
+    @classmethod
+    def unique_name(cls, name_str, add_copy=False): # Py3: kwargs
+        base_name, count = cls._new_name(GPath(name_str), 0, add_copy), 0
+        while GPath(name_str) in cls.get_store():
+            count += 1
+            name_str= cls._new_name(base_name, count, add_copy)
+        return GPath(name_str) # gpath markers and projects
+
+    @classmethod
+    def new_path(cls, name_str, dest_dir):
+        base_name, count = cls._new_name(name_str, 0, True), 0
+        while dest_dir.join(name_str).exists() and count < 1000:
+            count += 1
+            name_str= cls._new_name(base_name, count)
+        return name_str
+
     # Gui renaming stuff ------------------------------------------------------
     @classmethod
     def rename_area_idxs(cls, text_str, start=0, stop=None):

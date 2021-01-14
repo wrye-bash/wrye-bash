@@ -414,20 +414,19 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
     @balt.conversation
     def Execute(self):
         """Duplicate selected Installer."""
-        curName = self._selected_item
-        isdir = self.idata.store_dir.join(curName).isdir()
-        if isdir: root,ext = curName,u''
-        else: root,ext = curName.root, curName.ext
-        newName = self.window.new_name(root + _(u' Copy') + ext)
+        newName = self._selected_info.unique_name(self._selected_item,
+                                                  add_copy=True)
+        allowed_exts = {} if not self._selected_info.is_archive() else {
+            self._selected_item.ext}
         result = self._askFilename(
             _(u'Duplicate %s to:') % self._selected_item, newName.s,
             inst_type=type(self._selected_info),
             disallow_overwrite=True, no_dir=False, ##: no_dir=False?
-            allowed_exts={ext.lower()} if ext else {}, use_default_ext=False)
+            allowed_exts=allowed_exts, use_default_ext=False)
         if not result: return
         #--Duplicate
         with BusyCursor():
-            self.idata.copy_installer(curName, result)
+            self.idata.copy_installer(self._selected_item, result)
             self.idata.irefresh(what=u'N')
         self.window.RefreshUI(detail_item=result)
 

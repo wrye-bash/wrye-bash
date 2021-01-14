@@ -67,9 +67,9 @@ import wx
 
 #--Local
 from .. import bush, bosh, bolt, bass, env, load_order, archives
-from ..bolt import GPath, SubProgress, deprint, round_size, OrderedDefaultDict, \
-    dict_sort
-from ..bosh import omods, ModInfo
+from ..bolt import GPath, SubProgress, deprint, round_size, \
+    OrderedDefaultDict, dict_sort
+from ..bosh import omods, ModInfo, SaveInfo
 from ..exception import AbstractError, BoltError, CancelError, FileError, \
     SkipError, UnknownListener
 from ..localize import format_date, unformat_date
@@ -2037,7 +2037,7 @@ class SaveList(balt.UIList):
         to_select = set()
         to_del = set()
         for save_key in selected:
-            newFileName = self.new_name(newName)
+            newFileName = SaveInfo.unique_name(newName)
             if not self._try_rename(save_key, newFileName, to_select,
                                     item_edited): break
             to_del.add(save_key)
@@ -2399,7 +2399,7 @@ class InstallersList(balt.UIList):
             newselected = []
             try:
                 for package in self.GetSelected():
-                    name_new = self.new_name(newName)
+                    name_new = renaming_type.unique_name(newName)
                     refreshes.append(
                         self.data_store.rename_info(package, name_new))
                     if refreshes[-1][0]: newselected.append(name_new)
@@ -2422,19 +2422,6 @@ class InstallersList(balt.UIList):
                 #--Reselected the renamed items
                 self.SelectItemsNoCallback(newselected)
             return EventResult.CANCEL
-
-    def new_name(self, new_name):
-        new_name = GPath(new_name)
-        to_rename = self.GetSelected()
-        renaming_type = to_rename and type(self.data_store[to_rename[0]])
-        if renaming_type and renaming_type.is_marker():
-            new_name, count = GPath(u'==' + new_name.s.strip(u'=') + u'=='), 0
-            while new_name in self.data_store:
-                count += 1
-                new_name = GPath(u'==' + new_name.s.strip(u'=') + (
-                    u' (%d)' % count) + u'==')
-            return GPath(u'==' + new_name.s.strip(u'=') + u'==')
-        return super(InstallersList, self).new_name(new_name)
 
     @staticmethod
     def _unhide_wildcard():

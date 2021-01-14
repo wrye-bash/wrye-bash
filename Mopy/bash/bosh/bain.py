@@ -1255,6 +1255,11 @@ class InstallerMarker(Installer):
     type_string = _(u'Marker')
     _is_filename = False
 
+    @staticmethod
+    def _new_name(base_name, count, add_copy=False):
+        cnt_str = (u' (%d)' % count) if count else u''
+        return GPath(u'==' + base_name.s.strip(u'=') + cnt_str + u'==')
+
     @classmethod
     def is_marker(cls): return True
 
@@ -1530,6 +1535,11 @@ class InstallerProject(Installer):
 
     @classmethod
     def is_project(cls): return True
+
+    @staticmethod
+    def _new_name(base_name, count, add_copy=False):
+        return base_name + ((_(u' Copy') if add_copy else u'') + (
+                u' (%d)' % count) if count else u'')
 
     def __reduce__(self):
         from . import InstallerProject as boshInstallerProject
