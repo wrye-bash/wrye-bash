@@ -2632,8 +2632,8 @@ class ModInfos(FileInfos):
         if wanted_masters is None:
             wanted_masters = [self.masterName]
         directory = directory or self.store_dir
-        new_name = GPath(newName)
-        newInfo = self.factory(directory.join(new_name))
+        new_mod_name = GPath(newName)
+        newInfo = self.factory(directory.join(new_mod_name))
         newFile = ModFile(newInfo)
         newFile.tes4.masters = wanted_masters
         if bashed_patch:
@@ -2644,10 +2644,10 @@ class ModInfos(FileInfos):
             newFile.tes4.flags1.eslFile = True
         newFile.safeSave()
         if directory == self.store_dir:
-            self.new_info(new_name, notify_bain=True) # notify just in case...
+            self.new_info(new_mod_name, notify_bain=True) # notify just in case...
             last_selected = load_order.get_ordered(selected)[
                 -1] if selected else self._lo_wip[-1]
-            self.cached_lo_insert_after(last_selected, new_name)
+            self.cached_lo_insert_after(last_selected, new_mod_name)
             self.cached_lo_save_lo()
             self.refresh(refresh_infos=False)
 

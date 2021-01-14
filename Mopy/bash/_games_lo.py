@@ -347,16 +347,16 @@ class Game(object):
     def load_order_changed(self): return True # timestamps, just calculate it
 
     # Swap plugins and loadorder txt
-    def swap(self, old_path, new_path):
+    def swap(self, old_dir, new_dir):
         """Save current plugins into oldPath directory and load plugins from
         newPath directory (if present)."""
         # If this game has no plugins.txt, don't try to swap it
         if not self.__class__.has_plugins_txt: return
         # Save plugins.txt inside the old (saves) directory
         if self.plugins_txt_path.exists():
-            self.plugins_txt_path.copyTo(old_path.join(u'plugins.txt'))
+            self.plugins_txt_path.copyTo(old_dir.join(u'plugins.txt'))
         # Move the new plugins.txt here for use
-        move = new_path.join(u'plugins.txt')
+        move = new_dir.join(u'plugins.txt')
         if move.exists():
             move.copyTo(self.plugins_txt_path)
             self.plugins_txt_path.mtime = time.time() # copy will not change mtime, bad
@@ -766,14 +766,14 @@ class INIGame(Game):
             return self._cached_ini_lo.needs_update()
         return super(INIGame, self).load_order_changed()
 
-    def swap(self, old_path, new_path):
+    def swap(self, old_dir, new_dir):
         def _do_swap(cached_ini, ini_key):
             # If there's no INI inside the old (saves) directory, copy it
-            old_ini = old_path.join(ini_key[0])
+            old_ini = old_dir.join(ini_key[0])
             if not old_ini.isfile():
                 cached_ini.abs_path.copyTo(old_ini)
             # Read from the new INI if it exists and write to our main INI
-            move_ini = new_path.join(ini_key[0])
+            move_ini = new_dir.join(ini_key[0])
             if move_ini.isfile():
                 self._write_ini(cached_ini, ini_key, self._read_ini(
                     self._mk_ini(move_ini), ini_key))
@@ -781,7 +781,7 @@ class INIGame(Game):
             _do_swap(self._cached_ini_actives, self.ini_key_actives)
         if self._handles_lo:
             _do_swap(self._cached_ini_lo, self.ini_key_lo)
-        super(INIGame, self).swap(old_path, new_path)
+        super(INIGame, self).swap(old_dir, new_dir)
 
     def get_acti_file(self):
         if self._handles_actives:
@@ -936,13 +936,13 @@ class TextfileGame(Game):
     def _must_update_active(cls, deleted, reordered):
         return deleted or reordered
 
-    def swap(self, old_path, new_path):
-        super(TextfileGame, self).swap(old_path, new_path)
+    def swap(self, old_dir, new_dir):
+        super(TextfileGame, self).swap(old_dir, new_dir)
         # Save loadorder.txt inside the old (saves) directory
         if self.loadorder_txt_path.exists():
-            self.loadorder_txt_path.copyTo(old_path.join(u'loadorder.txt'))
+            self.loadorder_txt_path.copyTo(old_dir.join(u'loadorder.txt'))
         # Move the new loadorder.txt here for use
-        move = new_path.join(u'loadorder.txt')
+        move = new_dir.join(u'loadorder.txt')
         if move.exists():
             move.copyTo(self.loadorder_txt_path)
             self.loadorder_txt_path.mtime = time.time() # update mtime to trigger refresh

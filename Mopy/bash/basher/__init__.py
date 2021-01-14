@@ -849,6 +849,7 @@ class ModList(_ModsUIList):
         (u'CRC',        lambda self, p: self.data_store[p].crc_string()),
         (u'Mod Status', lambda self, p: self.data_store[p].txt_status()),
     ])
+    _copy_paths = True
 
     #-- Drag and Drop-----------------------------------------------------
     def _dropIndexes(self, indexes, newIndex): # will mess with plugins cache !
@@ -1083,10 +1084,6 @@ class ModList(_ModsUIList):
                                          len(toActivate) == len(selected)
                              else toActivate)
             self._toggle_active_state(*toggle_target)
-        # Ctrl+C: Copy file(s) to clipboard
-        elif wrapped_evt.is_cmd_down and wrapped_evt.key_code == ord(u'C'):
-            balt.copyListToClipboard([self.data_store[mod].getPath().s
-                                      for mod in self.GetSelected()])
         super(ModList, self)._handle_key_up(wrapped_evt)
 
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
@@ -1976,7 +1973,7 @@ class SaveList(balt.UIList):
     column_links = Links() #--Column menu
     context_links = Links() #--Single item menu
     global_links = OrderedDefaultDict(lambda: Links()) # Global menu
-    _editLabels = True
+    _editLabels = _copy_paths = True
     _sort_keys = {
         u'File'    : None, # just sort by name
         u'Modified': lambda self, a: self.data_store[a].mtime,
@@ -2055,15 +2052,6 @@ class SaveList(balt.UIList):
         item_format.icon_key = status, on
 
     #--Events ---------------------------------------------
-    def _handle_key_up(self, wrapped_evt):
-        code = wrapped_evt.key_code
-        # Ctrl+C: Copy file(s) to clipboard
-        if wrapped_evt.is_cmd_down and code == ord(u'C'):
-            sel = map(lambda save: self.data_store[save].getPath().s,
-                      self.GetSelected())
-            balt.copyListToClipboard(sel)
-        super(SaveList, self)._handle_key_up(wrapped_evt)
-
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
         #--Pass Event onward
         hitItem = self._getItemClicked(lb_dex_and_flags, on_icon=True)
@@ -2275,7 +2263,7 @@ class InstallersList(balt.UIList):
     icons = installercons
     _sunkenBorder = False
     _shellUI = True
-    _editLabels = True
+    _editLabels = _copy_paths = True
     _default_sort_col = u'Package'
     _sort_keys = {
         u'Package' : None,
@@ -2658,11 +2646,6 @@ class InstallersList(balt.UIList):
         if wrapped_evt.is_cmd_down and wrapped_evt.is_shift_down and \
                 code == ord(u'N'):
             self.addMarker()
-        # Ctrl+C: Copy file(s) to clipboard
-        elif wrapped_evt.is_cmd_down and code == ord(u'C'):
-            sel = map(lambda x: bass.dirs[u'installers'].join(x).s,
-                      self.GetSelected())
-            balt.copyListToClipboard(sel)
         super(InstallersList, self)._handle_key_up(wrapped_evt)
 
     # Installer specific ------------------------------------------------------
@@ -3306,7 +3289,7 @@ class ScreensList(balt.UIList):
     context_links = Links() #--Single item menu
     global_links = OrderedDefaultDict(lambda: Links()) # Global menu
     _shellUI = True
-    _editLabels = True
+    _editLabels = _copy_paths = True
     __ext_group = \
         r'(\.(' + u'|'.join(ext[1:] for ext in bosh.imageExts) + u')+)'
 
@@ -3363,16 +3346,6 @@ class ScreensList(balt.UIList):
         # Enter: Open selected screens
         if wrapped_evt.key_code in balt.wxReturn: self.OpenSelected()
         else: super(ScreensList, self)._handle_key_up(wrapped_evt)
-
-    def _handle_key_up(self, wrapped_evt):
-        """Char event: Activate selected items, select all items"""
-        code = wrapped_evt.key_code
-        # Ctrl+C: Copy file(s) to clipboard
-        if wrapped_evt.is_cmd_down and code == ord(u'C'):
-            sel = map(lambda x: bosh.screen_infos.store_dir.join(x).s,
-                      self.GetSelected())
-            balt.copyListToClipboard(sel)
-        super(ScreensList, self)._handle_key_up(wrapped_evt)
 
 #------------------------------------------------------------------------------
 class ScreensDetails(_DetailsMixin, NotebookPanel):

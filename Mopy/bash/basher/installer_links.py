@@ -269,6 +269,8 @@ class Installer_Wizard(_Installer_AWizardLink):
                     wizard.ensureDisplayed()
                 ret = wizard.Run()
                 if ret.canceled:
+                    if isinstance(ret.canceled, unicode):
+                        self._showWarning(ret.canceled)
                     idetails.refreshCurrent(sel_package)
                     continue
                 sel_package.resetAllEspmNames()

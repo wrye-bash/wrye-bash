@@ -1579,11 +1579,14 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
             __reEspExt=re.compile(u'' r'\.esp(.ghost)?$', re.I | re.U)):
         present_mods = window.data_store
         modinfo_masters = present_mods[selection[0]].masterNames
-        enable = len(selection) == 1 and len(modinfo_masters) > 1
-        self.espMasters = [master for master in modinfo_masters
-                           if master in present_mods and
-                           __reEspExt.search(master.s)] if enable else []
-        self.enable = bool(self.espMasters)
+        if len(selection) == 1 and len(modinfo_masters) > 1:
+            self.espMasters = [master for master in modinfo_masters if
+                               master in present_mods and __reEspExt.search(
+                                   master.s)]
+            self._do_enable = bool(self.espMasters)
+        else:
+            self.espMasters = []
+            self._do_enable = False
         for mastername in self.espMasters:
             masterInfo = bosh.modInfos.get(mastername, None)
             if masterInfo and masterInfo.isInvertedMod():
@@ -1593,7 +1596,7 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
             self.toEsm = True
         super(Mod_FlipMasters, self)._initData(window, selection)
 
-    def _enable(self): return self.enable
+    def _enable(self): return self._do_enable
 
     def _exec_flip(self):
         message = _(u'WARNING! For advanced modders only! Flips the ESM flag '

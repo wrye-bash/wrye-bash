@@ -922,6 +922,7 @@ class UIList(wx.Panel):
     _dndFiles = _dndList = False
     _dndColumns = ()
     _target_ini = False # pass the target_ini settings on PopulateItem
+    _copy_paths = False # enable the Ctrl+C shortcut
 
     def __init__(self, parent, keyPrefix, listData=None, panel=None):
         wx.Panel.__init__(self, _AComponent._resolve(parent), style=wx.WANTS_CHARS)
@@ -1173,7 +1174,8 @@ class UIList(wx.Panel):
     def _handle_key_up(self, wrapped_evt):
         """Char event: select all items, delete selected items, rename."""
         code = wrapped_evt.key_code
-        if wrapped_evt.is_cmd_down and code == ord(u'A'): # Ctrl+A
+        cmd_down = wrapped_evt.is_cmd_down
+        if cmd_down and code == ord(u'A'): # Ctrl+A
             if wrapped_evt.is_shift_down: # de-select all
                 self.ClearSelected(clear_details=True)
             else: # select all
@@ -1189,8 +1191,12 @@ class UIList(wx.Panel):
         elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
         elif code in wxDelete:
             with BusyCursor(): self.DeleteItems(wrapped_evt=wrapped_evt)
-        elif wrapped_evt.is_cmd_down and code == ord(u'O'): # Ctrl+O
+        elif cmd_down and code == ord(u'O'): # Ctrl+O
             self.open_data_store()
+        # Ctrl+C: Copy file(s) to clipboard
+        elif self.__class__._copy_paths and cmd_down and code == ord(u'C'):
+            copyListToClipboard(
+                [x.abs_path.s for x in self.GetSelectedInfos()])
 
     # Columns callbacks
     def OnColumnClick(self, evt_col):
@@ -1267,6 +1273,10 @@ class UIList(wx.Panel):
         order."""
         return self._get_selected()
 
+    def GetSelectedInfos(self, selected=None):
+        """Return list of infos selected (highlighted) in the interface."""
+        return [self.data_store[k] for k in (selected or self.GetSelected())]
+
     def SelectItem(self, item, deselectOthers=False):
         dex = self.GetIndex(item)
         if deselectOthers: self.ClearSelected()
@@ -1305,17 +1315,17 @@ class UIList(wx.Panel):
 
     def OpenSelected(self, selected=None):
         """Open selected files with default program."""
-        selected = selected if selected else self.GetSelected()
+        selected = self.GetSelectedInfos(selected)
         num = len(selected)
         if num > UIList.max_items_open and not askContinue(self,
             _(u'Trying to open %(num)s items - are you sure ?') % {u'num': num},
             u'bash.maxItemsOpen.continue'): return
-        for filename in selected:
-            filepath = self.data_store.store_dir.join(filename)
+        for sel_inf in selected:
             try:
-                filepath.start()
+                sel_inf.abs_path.start()
             except OSError:
-                deprint(u'Failed to open %s' % filepath, traceback=True)
+                deprint(u'Failed to open %s' % sel_inf.abs_path,
+                        traceback=True)
 
     #--Sorting ----------------------------------------------------------------
     def SortItems(self, column=None, reverse=u'CURRENT'):

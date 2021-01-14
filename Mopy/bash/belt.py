@@ -116,12 +116,13 @@ class InstallerWizard(WizardDialog):
     def _get_prev_page(self):
         return self.parser.Back()
 
-    def _cancel_wizard(self):
-        self.ret.canceled = True
+    def _cancel_wizard(self, msg=None):
+        self.ret.canceled = msg or True
 
     def Run(self):
-        if not self.parser.Begin(self.wizard_file):
-            self._cancel_wizard() # Wizard could not be read
+        err_msg = self.parser.Begin(self.wizard_file)
+        if err_msg:
+            self._cancel_wizard(err_msg) # Wizard could not be read
         else:
             self._run_wizard()
         # Clean up temp files
@@ -721,17 +722,16 @@ class WryeParser(ScriptParser.Parser):
         self.cLine = 0
         self.reversing = 0
         self.ExecCount = 0
-        if file_path.exists() and file_path.isfile():
-            try:
-                with file_path.open(encoding=u'utf-8-sig') as script:
-                    # Ensure \n line endings for the script parser
-                    self.lines = [x.replace(u'\r\n',u'\n') for x in script.readlines()]
-                return True
-            except UnicodeError:
-                balt.showWarning(self._wiz_parent, _(u'Could not read the wizard file.  Please ensure it is encoded in UTF-8 format.'))
-                return False
-        balt.showWarning(self._wiz_parent, _(u'Could not open wizard file'))
-        return False
+        try:
+            with file_path.open(encoding=u'utf-8-sig') as script:
+                # Ensure \n line endings for the script parser
+                self.lines = [x.replace(u'\r\n', u'\n') for x in script.readlines()]
+            return None
+        except UnicodeError:
+            return _(u'Could not read the wizard file.  Please ensure it is '
+                     u'encoded in UTF-8 format.')
+        except (OSError, IOError):
+            return _(u'Could not open wizard file')
 
     def _reset_vars(self):
         self.variables.clear()
@@ -1416,16 +1416,16 @@ class WryeParser(ScriptParser.Parser):
         for i in list(self.plugin_list):
             self.plugin_list[i] = should_activate
 
-    def kwd_rename_plugin(self, plugin_name, new_name):
+    def kwd_rename_plugin(self, plugin_name, new_plugin_name):
         plugin_name = self._resolve_plugin_rename(plugin_name)
         if plugin_name:
             # Keep same extension
-            if plugin_name.lower()[-4:] != new_name.lower()[-4:]:
+            if plugin_name.lower()[-4:] != new_plugin_name.lower()[-4:]:
                 raise ScriptParser.ParserError(_(u'Cannot rename %s to %s: '
                                                  u'the extensions must '
                                                  u'match.') %
-                                               (plugin_name, new_name))
-            self.plugin_renames[plugin_name] = new_name
+                                               (plugin_name, new_plugin_name))
+            self.plugin_renames[plugin_name] = new_plugin_name
 
     def kwd_reset_plugin_name(self, plugin_name):
         plugin_name = self._resolve_plugin_rename(plugin_name)

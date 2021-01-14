@@ -169,11 +169,11 @@ class _AComponent(object):
         :return: This component's name."""
         return self._native_widget.GetName()
 
-    def set_component_name(self, new_name): # type: (unicode) -> None
+    def set_component_name(self, new_ctrl_name): # type: (unicode) -> None
         """Sets the name of this component to the specified name.
 
-        :param new_name: The string to change this component's name to."""
-        self._native_widget.SetName(new_name)
+        :param new_ctrl_name: The string to change this component's name to."""
+        self._native_widget.SetName(new_ctrl_name)
 
     @property
     def visible(self): # type: () -> bool
